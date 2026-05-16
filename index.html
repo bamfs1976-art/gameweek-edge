@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
+<title>Gameweek Edge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
+   Brand, 6-area navigation, 21 panels as navigable pages.
+   Placeholder content. No live API, accounts or paywall yet.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── DESIGN TOKENS ─────────────────────────────────────── */
+/* Light mode is the default (:root). Dark mode overrides. */
+:root{
+  /* Surfaces */
+  --bg:#f4f6f8;
+  --surface:#ffffff;
+  --surface-2:#ffffff;
+  --surface-3:#eef1f4;
+  --elevated:#ffffff;
+
+  /* Borders */
+  --border:rgba(12,16,20,.08);
+  --border-2:rgba(12,16,20,.13);
+  --border-3:rgba(12,16,20,.22);
+
+  /* Text */
+  --text:#10171e;
+  --text-2:#586673;
+  --text-3:#8a97a4;
+  --text-4:#b4bfc9;
+
+  /* Brand — deep confident pitch green */
+  --green:#15824a;
+  --green-bright:#1f9d5c;
+  --green-soft:rgba(31,157,92,.11);
+  --green-glow:rgba(31,157,92,.20);
+
+  /* Accents */
+  --amber:#b9741a;
+  --amber-soft:rgba(185,116,26,.11);
+  --red:#cc3d39;
+  --red-soft:rgba(204,61,57,.10);
+  --blue:#2f6dc7;
+  --blue-soft:rgba(47,109,199,.10);
+  --purple:#7a5cc7;
+  --purple-soft:rgba(122,92,199,.10);
+
+  /* Radii */
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:22px;--r-pill:999px;
+
+  /* Layout */
+  --sidebar-w:248px;
+  --topbar-h:60px;
+  --bottomnav-h:66px;
+
+  /* Shadow */
+  --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
+  --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
+
+  /* Motion */
+  --ease:cubic-bezier(.2,.8,.2,1);
+
+  /* Fonts */
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Public Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+
+/* ── DARK MODE ──────────────────────────────────────────── */
+/* Lifted, softer dark — not near-black. Easier on the eyes. */
+[data-theme="dark"]{
+  --bg:#161b22;
+  --surface:#1f262f;
+  --surface-2:#262e38;
+  --surface-3:#2f3945;
+  --elevated:#262e38;
+
+  --border:rgba(255,255,255,.08);
+  --border-2:rgba(255,255,255,.14);
+  --border-3:rgba(255,255,255,.22);
+
+  --text:#eef2f5;
+  --text-2:#a7b4c0;
+  --text-3:#717f8c;
+  --text-4:#4b5763;
+
+  --green:#22a564;
+  --green-bright:#34cc81;
+  --green-soft:rgba(52,204,129,.13);
+  --green-glow:rgba(52,204,129,.26);
+
+  --amber:#e3a043;
+  --amber-soft:rgba(227,160,67,.14);
+  --red:#e8625e;
+  --red-soft:rgba(232,98,94,.14);
+  --blue:#5e98e6;
+  --blue-soft:rgba(94,152,230,.14);
+  --purple:#a78ce6;
+  --purple-soft:rgba(167,140,230,.14);
+
+  --shadow:0 1px 3px rgba(0,0,0,.34),0 6px 18px rgba(0,0,0,.26);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.44),0 16px 40px rgba(0,0,0,.34);
+}
+
+/* ── RESET & BASE ──────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-size:16px}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  line-height:1.5;
+  overflow-x:hidden;
+  transition:background .25s var(--ease),color .25s var(--ease);
+}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-3)}
+::selection{background:var(--green-soft);color:var(--green-bright)}
+
+/* ── SKIP LINK ─────────────────────────────────────────── */
+.skip-link{
+  position:absolute;left:-9999px;top:10px;z-index:9999;
+  padding:10px 18px;background:var(--green);color:#fff;
+  border-radius:var(--r-md);font-weight:700;font-size:.85rem;
+}
+.skip-link:focus{left:14px}
+
+/* ── FOCUS VISIBILITY ──────────────────────────────────── */
+:focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
+
+/* ── LAYOUT SHELL ──────────────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ───────────────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;bottom:0;z-index:200;
+  transition:transform .32s var(--ease);
+}
+
+/* Logo block */
+.sb-brand{
+  display:flex;align-items:center;gap:11px;
+  padding:18px 18px 16px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{width:38px;height:38px;flex-shrink:0}
+.brand-text{display:flex;flex-direction:column;line-height:1.1}
+.brand-name{
+  font-family:var(--font-display);
+  font-size:1.04rem;letter-spacing:-.02em;
+}
+.brand-name .light{font-weight:500;color:var(--text-2)}
+.brand-name .bold{font-weight:800;color:var(--text)}
+.brand-tag{
+  font-size:.62rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--green-bright);margin-top:3px;
+}
+
+/* Gameweek strip */
+.sb-gw{
+  padding:13px 18px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(150deg,var(--green-soft) 0%,transparent 72%);
+}
+.gw-row{display:flex;align-items:baseline;justify-content:space-between}
+.gw-label{
+  font-size:.62rem;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--green-bright);
+}
+.gw-num{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+.gw-deadline{font-size:.72rem;color:var(--text-3);margin-top:3px}
+.gw-deadline b{color:var(--amber);font-weight:600}
+.live-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--green-bright);margin-right:5px;vertical-align:middle;
+}
+@media(prefers-reduced-motion:no-preference){
+  .live-dot{animation:pulse 2.4s var(--ease) infinite}
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Nav */
+.sb-nav{flex:1;overflow-y:auto;padding:8px 10px 16px}
+.nav-area{margin-bottom:2px}
+.nav-area-btn{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:10px 12px;border-radius:var(--r-sm);
+  color:var(--text-2);font-size:.86rem;font-weight:600;
+  transition:background .14s var(--ease),color .14s var(--ease);
+}
+.nav-area-btn:hover{background:var(--surface-3);color:var(--text)}
+.nav-area-btn.active{background:var(--green-soft);color:var(--green-bright)}
+.nav-area-ic{
+  width:20px;height:20px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav-area-ic svg{width:18px;height:18px}
+.nav-area-label{flex:1;text-align:left}
+.nav-chevron{
+  width:14px;height:14px;flex-shrink:0;color:var(--text-3);
+  transition:transform .2s var(--ease);
+}
+.nav-area-btn.expanded .nav-chevron{transform:rotate(90deg)}
+.lock-badge{
+  font-size:.58rem;font-weight:800;letter-spacing:.04em;
+  padding:2px 7px;border-radius:var(--r-pill);
+  background:var(--amber-soft);color:var(--amber);
+  display:flex;align-items:center;gap:3px;
+}
+.lock-badge svg{width:9px;height:9px}
+
+/* Sub-panels */
+.nav-sub{
+  overflow:hidden;max-height:0;
+  transition:max-height .28s var(--ease);
+}
+.nav-sub.open{max-height:520px}
+.nav-sub-btn{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:8px 12px 8px 43px;border-radius:var(--r-sm);
+  color:var(--text-3);font-size:.81rem;font-weight:500;
+  transition:background .12s var(--ease),color .12s var(--ease);
+  position:relative;
+}
+.nav-sub-btn:hover{background:var(--surface-3);color:var(--text-2)}
+.nav-sub-btn.active{color:var(--green-bright);font-weight:700;background:var(--green-soft)}
+.nav-sub-btn.active::before{
+  content:'';position:absolute;left:24px;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--green-bright);
+}
+.nav-sub-lock{margin-left:auto;width:11px;height:11px;color:var(--text-4)}
+
+/* Sidebar footer */
+.sb-foot{
+  padding:12px 18px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sb-foot-v{font-size:.66rem;color:var(--text-4)}
+.theme-toggle{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 10px;border-radius:var(--r-pill);
+  background:var(--surface-3);border:1px solid var(--border);
+  font-size:.7rem;font-weight:600;color:var(--text-2);
+  transition:background .14s var(--ease);
+}
+.theme-toggle:hover{background:var(--border-2)}
+.theme-toggle svg{width:14px;height:14px}
+
+/* ── MAIN ──────────────────────────────────────────────── */
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;display:flex;flex-direction:column;min-height:100vh;
+}
+
+/* Topbar */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  height:var(--topbar-h);padding:0 26px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.tb-left{display:flex;align-items:center;gap:13px;min-width:0}
+.hamburger{
+  display:none;width:38px;height:38px;
+  align-items:center;justify-content:center;
+  border-radius:var(--r-sm);background:var(--surface-3);
+  border:1px solid var(--border);
+}
+.hamburger svg{width:18px;height:18px}
+
+/* Topbar logo */
+.tb-logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.tb-logo-mark{width:30px;height:30px;flex-shrink:0}
+.tb-logo-text{
+  font-family:var(--font-display);font-size:.96rem;
+  letter-spacing:-.02em;white-space:nowrap;
+}
+.tb-logo-text .light{font-weight:500;color:var(--text-2)}
+.tb-logo-text .bold{font-weight:800;color:var(--text)}
+.tb-divider{
+  width:1px;height:24px;background:var(--border-2);flex-shrink:0;
+}
+
+.tb-crumb{display:flex;flex-direction:column;min-width:0}
+.tb-area{
+  font-size:.64rem;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-3);
+}
+.tb-title{
+  font-family:var(--font-display);font-size:1.04rem;
+  font-weight:700;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tb-right{display:flex;align-items:center;gap:9px}
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:var(--r-md);
+  font-size:.83rem;font-weight:600;white-space:nowrap;
+  transition:transform .1s var(--ease),filter .14s var(--ease),background .14s var(--ease);
+}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 2px 8px var(--green-glow)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
+.btn-ghost:hover{background:var(--border-2);color:var(--text)}
+.btn-sm{padding:7px 12px;font-size:.76rem}
+.btn-icon{width:38px;height:38px;padding:0;justify-content:center}
+@media(prefers-reduced-motion:no-preference){.btn:active{transform:scale(.97)}}
+
+/* ── PAGES ─────────────────────────────────────────────── */
+.page{display:none;padding:24px 26px 40px;flex:1}
+.page.active{display:block}
+@media(prefers-reduced-motion:no-preference){
+  .page.active{animation:fadeIn .32s var(--ease)}
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.page-head{margin-bottom:22px}
+.page-head h1{
+  font-family:var(--font-display);font-size:1.5rem;
+  font-weight:800;letter-spacing:-.03em;
+}
+.page-head p{font-size:.85rem;color:var(--text-3);margin-top:4px}
+.page-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* Locked banner */
+.lock-banner{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;border-radius:var(--r-lg);
+  background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
+  margin-bottom:20px;
+}
+.lock-banner svg{width:22px;height:22px;color:var(--amber);flex-shrink:0}
+.lock-banner-text{flex:1;min-width:0}
+.lock-banner-text b{color:var(--text);font-size:.88rem}
+.lock-banner-text p{font-size:.78rem;color:var(--text-2);margin-top:2px}
+
+/* ── GRID HELPERS ──────────────────────────────────────── */
+.grid{display:grid;gap:14px}
+.g-2{grid-template-columns:repeat(2,1fr)}
+.g-3{grid-template-columns:repeat(3,1fr)}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.g-sb{grid-template-columns:1fr 300px}
+
+/* ── CARD ──────────────────────────────────────────────── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+.card-title{
+  font-size:.68rem;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-3);
+  margin-bottom:14px;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;
+}
+
+/* ── KPI CARD ──────────────────────────────────────────── */
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:18px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%}
+.kpi-label{
+  font-size:.66rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:9px;
+}
+.kpi-value{
+  font-family:var(--font-display);font-size:1.9rem;
+  font-weight:800;letter-spacing:-.04em;line-height:1;
+}
+.kpi-delta{font-size:.72rem;color:var(--text-3);margin-top:6px}
+
+/* ── PLACEHOLDER CONTENT ───────────────────────────────── */
+.ph-block{
+  border:1.5px dashed var(--border-2);
+  border-radius:var(--r-md);
+  background:var(--surface-2);
+  padding:22px;text-align:center;
+}
+.ph-block-icon{
+  width:42px;height:42px;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-md);background:var(--green-soft);
+}
+.ph-block-icon svg{width:22px;height:22px;color:var(--green-bright)}
+.ph-block h3{font-size:.92rem;font-weight:700;margin-bottom:5px}
+.ph-block p{font-size:.8rem;color:var(--text-3);max-width:440px;margin:0 auto;line-height:1.55}
+.ph-tag{
+  display:inline-block;margin-top:12px;
+  font-size:.66rem;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;padding:4px 10px;border-radius:var(--r-pill);
+  background:var(--surface-3);color:var(--text-3);
+}
+
+/* Shimmer bars to suggest data */
+.ph-bars{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.ph-bar{height:34px;border-radius:var(--r-sm);background:var(--surface-3);position:relative;overflow:hidden}
+.ph-bar::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,var(--border-2),transparent);
+  transform:translateX(-100%);
+}
+@media(prefers-reduced-motion:no-preference){
+  .ph-bar::after{animation:shimmer 1.8s var(--ease) infinite}
+}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.ph-bar.w80{width:80%}.ph-bar.w65{width:65%}.ph-bar.w90{width:90%}
+
+/* ── PITCH PREVIEW ─────────────────────────────────────── */
+.pitch-preview{
+  background:linear-gradient(176deg,#1a7a45 0%,#15633a 50%,#1a7a45 100%);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r-md);
+  padding:22px 12px;position:relative;overflow:hidden;
+  min-height:330px;
+}
+.pitch-preview::before{
+  content:'';position:absolute;top:50%;left:7%;right:7%;height:1px;
+  background:rgba(255,255,255,.16);
+}
+.pitch-preview::after{
+  content:'';position:absolute;top:50%;left:50%;
+  width:78px;height:78px;transform:translate(-50%,-50%);
+  border:1px solid rgba(255,255,255,.16);border-radius:50%;
+}
+.pitch-row{
+  display:flex;justify-content:center;gap:14px;
+  margin-bottom:20px;position:relative;z-index:2;
+}
+.pitch-row:last-child{margin-bottom:0}
+.jersey{
+  width:44px;height:46px;
+  background:rgba(255,255,255,.92);
+  clip-path:polygon(20% 0,0 14%,0 30%,17% 24%,17% 100%,83% 100%,83% 24%,100% 30%,100% 14%,80% 0,62% 8%,50% 10%,38% 8%);
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.35));
+}
+
+/* ── TABS WITHIN PANEL ─────────────────────────────────── */
+.panel-tabs{
+  display:flex;gap:4px;margin-bottom:18px;
+  background:var(--surface-2);padding:4px;border-radius:var(--r-md);
+  width:fit-content;flex-wrap:wrap;
+}
+.panel-tab{
+  padding:7px 14px;border-radius:var(--r-sm);
+  font-size:.79rem;font-weight:600;color:var(--text-3);
+  transition:background .14s var(--ease),color .14s var(--ease);
+}
+.panel-tab:hover{color:var(--text-2)}
+.panel-tab.active{background:var(--green);color:#fff}
+
+/* ── BADGES ────────────────────────────────────────────── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:var(--r-pill);
+  font-size:.66rem;font-weight:700;
+}
+.badge-green{background:var(--green-soft);color:var(--green-bright)}
+.badge-amber{background:var(--amber-soft);color:var(--amber)}
+.badge-red{background:var(--red-soft);color:var(--red)}
+.badge-blue{background:var(--blue-soft);color:var(--blue)}
+.badge-grey{background:var(--surface-3);color:var(--text-3)}
+
+/* ── OVERLAY (mobile drawer) ───────────────────────────── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:190;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(2px);
+}
+.overlay.show{display:block}
+
+/* ── BOTTOM NAV (mobile) ───────────────────────────────── */
+.bottom-nav{display:none}
+
+/* ── RESPONSIVE ────────────────────────────────────────── */
+@media(max-width:1080px){
+  .g-4{grid-template-columns:repeat(2,1fr)}
+  .g-sb{grid-template-columns:1fr}
+}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .g-3{grid-template-columns:repeat(2,1fr)}
+  .page{padding:18px 16px calc(var(--bottomnav-h) + 24px)}
+
+  /* Bottom nav appears */
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;
+    height:var(--bottomnav-h);
+    background:var(--surface);border-top:1px solid var(--border);
+    padding:0 4px env(safe-area-inset-bottom);
+    align-items:center;justify-content:space-around;
+    box-shadow:0 -2px 16px rgba(0,0,0,.18);
+  }
+  .bn-item{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    flex:1;max-width:84px;padding:7px 4px;border-radius:var(--r-sm);
+    color:var(--text-3);
+    transition:color .14s var(--ease);
+  }
+  .bn-item.active{color:var(--green-bright)}
+  .bn-ic{
+    width:40px;height:26px;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--r-sm);transition:background .14s var(--ease);
+  }
+  .bn-ic svg{width:19px;height:19px}
+  .bn-item.active .bn-ic{background:var(--green-soft)}
+  .bn-label{font-size:.6rem;font-weight:700;letter-spacing:.02em}
+}
+@media(max-width:560px){
+  .g-2,.g-3,.g-4{grid-template-columns:1fr}
+  .page-head h1{font-size:1.3rem}
+  .kpi-value{font-size:1.65rem}
+  .topbar{padding:0 14px}
+  /* On phones: logo mark only, hide wordmark and divider, keep breadcrumb */
+  .tb-logo-text{display:none}
+  .tb-divider{display:none}
+  .tb-left{gap:10px}
+}
+@supports(padding:max(0px)){
+  .bottom-nav{padding-bottom:max(4px,env(safe-area-inset-bottom))}
+}
+
+/* ── UTILITY ───────────────────────────────────────────── */
+.mb-14{margin-bottom:14px}
+.mb-20{margin-bottom:20px}
+.mt-14{margin-top:14px}
+.text-2{color:var(--text-2)}
+.text-3{color:var(--text-3)}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+<div class="overlay" id="overlay" aria-hidden="true"></div>
+
+<div class="shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+
+    <!-- Logo -->
+    <div class="sb-brand">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--green)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--green-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></div>
+        <div class="brand-tag">FPL, with an edge</div>
+      </div>
+    </div>
+
+    <!-- Gameweek strip -->
+    <div class="sb-gw">
+      <div class="gw-row">
+        <span class="gw-label"><span class="live-dot"></span>Gameweek</span>
+        <span class="gw-num" id="gw-num">37</span>
+      </div>
+      <div class="gw-deadline">Deadline <b id="gw-deadline">Sat 11:00</b></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sb-nav" id="sb-nav" aria-label="App areas"></nav>
+
+    <!-- Footer -->
+    <div class="sb-foot">
+      <span class="sb-foot-v">Gameweek Edge v5.0</span>
+      <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+        <span id="theme-icon"></span>
+        <span id="theme-label">Light</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main" id="main-wrap">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="hamburger" id="hamburger" aria-label="Open navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18"/>
+          </svg>
+        </button>
+        <a href="#" class="tb-logo" id="tb-logo" aria-label="Gameweek Edge home">
+          <svg class="tb-logo-mark" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--green)"/>
+            <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--green-bright)" stroke-width="1.5" opacity="0.5"/>
+            <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+            <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+          </svg>
+          <span class="tb-logo-text"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        </a>
+        <span class="tb-divider" aria-hidden="true"></span>
+        <div class="tb-crumb">
+          <span class="tb-area" id="tb-area">Home</span>
+          <span class="tb-title" id="tb-title">Dashboard</span>
+        </div>
+      </div>
+      <div class="tb-right">
+        <button class="btn btn-ghost btn-icon" id="refresh-btn" aria-label="Refresh data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
+          </svg>
+        </button>
+        <button class="btn btn-primary btn-sm" id="signin-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+          </svg>
+          Sign in
+        </button>
+      </div>
+    </header>
+
+    <!-- Pages render here -->
+    <div id="pages"></div>
+
+  </div>
+</div>
+
+<!-- ═══ BOTTOM NAV (mobile) ═══ -->
+<nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   GAMEWEEK EDGE — Shell logic
+   Navigation model, page rendering, theme. Placeholder content.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── ICON SET (inline SVG, recolours with currentColor) ──── */
+const ICON = {
+  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/>',
+  team:'<circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>',
+  live:'<circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M3 3a13 13 0 0 0 0 18M21 3a13 13 0 0 1 0 18"/>',
+  intel:'<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6"/>',
+  players:'<path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="currentColor"/><circle cx="14" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="19" r="2" fill="currentColor"/>',
+  planner:'<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4M8 13h3M8 16.5h6"/>',
+  chevron:'<path d="M9 6l6 6-6 6"/>',
+  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.5 4.5l1.8 1.8M17.7 17.7l1.8 1.8M19.5 4.5l-1.8 1.8M6.3 17.7l-1.8 1.8"/>',
+  moon:'<path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/>',
+  dashboard:'<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
+  bolt:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
+  squad:'<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/>',
+  swap:'<path d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8"/>',
+  star:'<path d="M12 2.5l2.9 6 6.6.6-5 4.4 1.5 6.4L12 16.6 6 19.9l1.5-6.4-5-4.4 6.6-.6z"/>',
+  pulse:'<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8.5-8 9.5C7.5 20.5 4 17 4 12V6z"/>',
+  rotate:'<path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>',
+  question:'<circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.6.4c0 1.9-2.8 2.4-2.8 4M12 17.2h.01"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  users:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5"/><path d="M16 5.2A3 3 0 0 1 16 11M21 20c0-2.4-1.6-4.2-4-4.8"/>',
+  compare:'<path d="M12 3v18M5 8 2 11l3 3M19 8l3 3-3 3"/><path d="M2 11h7M15 11h7"/>',
+  trend:'<path d="M3 17l6-6 4 4 8-8M21 7v5h-5"/>',
+  arrows:'<path d="M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4"/>',
+  cross:'<path d="M12 5v14M5 12h14"/>',
+  flag:'<path d="M5 21V3M5 4h11l-2 4 2 4H5"/>',
+  calendar:'<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>',
+  diamond:'<path d="M12 2.5 21 12l-9 9.5L3 12z"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  whistle:'<circle cx="9" cy="14" r="6"/><path d="M13 10 21 6v5l-7 3"/><path d="M9 8V5h4"/>'
+};
+
+function svg(path,extra){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
+    'stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+path+'</svg>';
+}
+
+/* ── NAVIGATION MODEL — 6 areas, 21 panels ──────────────── */
+const NAV = [
+  {
+    id:'home', label:'Home', icon:'home',
+    panels:[
+      {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
+      {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'}
+    ]
+  },
+  {
+    id:'myteam', label:'My Team', icon:'team',
+    panels:[
+      {id:'squad', label:'My Squad', icon:'squad', tier:'free'},
+      {id:'transfers', label:'Transfer Planner', icon:'swap', tier:'free'},
+      {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'}
+    ]
+  },
+  {
+    id:'live', label:'Live', icon:'live', tier:'paid',
+    panels:[
+      {id:'liverank', label:'Live Rank', icon:'pulse', tier:'paid'},
+      {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
+      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
+      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'}
+    ]
+  },
+  {
+    id:'intel', label:'Intelligence', icon:'intel', tier:'paid',
+    panels:[
+      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid'},
+      {id:'template', label:'Template Meter', icon:'grid', tier:'paid'},
+      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'}
+    ]
+  },
+  {
+    id:'players', label:'Players', icon:'players',
+    panels:[
+      {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
+      {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
+      {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
+      {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
+      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid'},
+      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'}
+    ]
+  },
+  {
+    id:'planner', label:'Planner', icon:'planner',
+    panels:[
+      {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
+      {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free'},
+      {id:'gwhistory', label:'GW History', icon:'calendar', tier:'paid'},
+      {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
+      {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
+    ]
+  }
+];
+
+/* Flat lookup of every panel */
+const PANELS = {};
+NAV.forEach(area=>area.panels.forEach(p=>{
+  PANELS[p.id]={...p, areaId:area.id, areaLabel:area.label};
+}));
+
+/* ── PANEL CONTENT DEFINITIONS (placeholder, shell only) ──── */
+/* Each panel describes what it will hold once built in step 2. */
+const PANEL_CONTENT = {
+  dashboard:{
+    desc:'Season snapshot, this gameweek\u2019s key actions and live alerts at a glance.',
+    layout:'dashboard'
+  },
+  'gw-actions':{
+    desc:'The three things worth doing before this deadline, ranked by impact.',
+    layout:'actions'
+  },
+  squad:{
+    desc:'Your 15 players on the pitch, with form, price and fitness status.',
+    layout:'squad'
+  },
+  transfers:{
+    desc:'Plan transfer moves across several gameweeks and weigh up any points hit.',
+    layout:'standard'
+  },
+  captain:{
+    desc:'Multi-factor captain scoring with safe and differential picks.',
+    layout:'cards3'
+  },
+  liverank:{
+    desc:'Your estimated overall rank, updating live through the matchday.',
+    layout:'standard'
+  },
+  defcon:{
+    desc:'Players you do not own who are scoring now, ranked by the damage to your rank.',
+    layout:'standard'
+  },
+  autosubs:{
+    desc:'A live projection of which bench players will sub in, and the points swing.',
+    layout:'standard'
+  },
+  whatif:{
+    desc:'Test how a goal, assist or clean sheet would move your rank before the match ends.',
+    layout:'standard'
+  },
+  eo:{
+    desc:'Effective ownership, the real measure of rank gain at the top of the game.',
+    layout:'standard'
+  },
+  template:{
+    desc:'How closely your squad matches the top 10k template, and where your edge sits.',
+    layout:'standard'
+  },
+  rivals:{
+    desc:'Track up to five rivals, see squad overlap and what it takes to beat them.',
+    layout:'standard'
+  },
+  compare:{
+    desc:'Compare up to four players side by side on form, xG, price and ownership.',
+    layout:'standard'
+  },
+  diffs:{
+    desc:'Players under 15% owned with strong underlying numbers and rank upside.',
+    layout:'standard'
+  },
+  price:{
+    desc:'Forward-looking price momentum so you buy before the overnight lock.',
+    layout:'standard'
+  },
+  injuries:{
+    desc:'Fitness news, suspension risk and return timelines across the league.',
+    layout:'standard'
+  },
+  setpiece:{
+    desc:'Confirmed penalty and free-kick takers with a confidence rating.',
+    layout:'standard'
+  },
+  rotation:{
+    desc:'European fixture congestion and start probability for rotation-risk players.',
+    layout:'standard'
+  },
+  fixtures:{
+    desc:'A six-gameweek fixture difficulty grid for every team.',
+    layout:'standard'
+  },
+  chips:{
+    desc:'Chip allocation and the best gameweeks to deploy each one.',
+    layout:'standard'
+  },
+  gwhistory:{
+    desc:'Every gameweek of your season, with score, rank and captain return.',
+    layout:'standard'
+  },
+  watchlist:{
+    desc:'Keep an eye on players you are considering before you commit a transfer.',
+    layout:'standard'
+  },
+  alerts:{
+    desc:'Price, injury, booking and deadline alerts tuned to your squad.',
+    layout:'standard'
+  }
+};
+
+/* ── STATE ─────────────────────────────────────────────── */
+let currentPanel='dashboard';
+let expandedArea='home';
+
+/* ── BUILD SIDEBAR NAV ─────────────────────────────────── */
+function buildNav(){
+  const nav=document.getElementById('sb-nav');
+  nav.innerHTML='';
+  NAV.forEach(area=>{
+    const wrap=document.createElement('div');
+    wrap.className='nav-area';
+
+    const btn=document.createElement('button');
+    btn.className='nav-area-btn';
+    btn.dataset.area=area.id;
+    btn.setAttribute('aria-expanded','false');
+    btn.innerHTML=
+      '<span class="nav-area-ic">'+svg(ICON[area.icon])+'</span>'+
+      '<span class="nav-area-label">'+area.label+'</span>'+
+      (area.tier==='paid'
+        ? '<span class="lock-badge">'+svg(ICON.lock,'width="9" height="9"')+'Pro</span>'
+        : '')+
+      '<span class="nav-chevron">'+svg(ICON.chevron)+'</span>';
+    btn.addEventListener('click',()=>toggleArea(area.id));
+    wrap.appendChild(btn);
+
+    const sub=document.createElement('div');
+    sub.className='nav-sub';
+    sub.dataset.sub=area.id;
+    area.panels.forEach(p=>{
+      const sb=document.createElement('button');
+      sb.className='nav-sub-btn';
+      sb.dataset.panel=p.id;
+      sb.innerHTML=
+        '<span>'+p.label+'</span>'+
+        (p.tier==='paid'?'<span class="nav-sub-lock">'+svg(ICON.lock,'width="11" height="11"')+'</span>':'');
+      sb.addEventListener('click',()=>openPanel(p.id));
+      sub.appendChild(sb);
+    });
+    wrap.appendChild(sub);
+    nav.appendChild(wrap);
+  });
+}
+
+/* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
+function buildBottomNav(){
+  const bn=document.getElementById('bottom-nav');
+  bn.innerHTML='';
+  NAV.forEach(area=>{
+    const item=document.createElement('button');
+    item.className='bn-item';
+    item.dataset.area=area.id;
+    item.innerHTML=
+      '<span class="bn-ic">'+svg(ICON[area.icon])+'</span>'+
+      '<span class="bn-label">'+area.label+'</span>';
+    item.addEventListener('click',()=>{
+      openPanel(area.panels[0].id);
+    });
+    bn.appendChild(item);
+  });
+}
+
+/* ── TOGGLE AREA EXPANSION ─────────────────────────────── */
+function toggleArea(areaId){
+  const isOpen=(expandedArea===areaId);
+  expandedArea=isOpen?null:areaId;
+  syncNav();
+}
+
+/* ── OPEN A PANEL ──────────────────────────────────────── */
+function openPanel(panelId){
+  currentPanel=panelId;
+  expandedArea=PANELS[panelId].areaId;
+  renderPage(panelId);
+  syncNav();
+  closeSidebar();
+  window.scrollTo({top:0});
+}
+
+/* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
+function syncNav(){
+  const activeArea=PANELS[currentPanel].areaId;
+
+  document.querySelectorAll('.nav-area-btn').forEach(btn=>{
+    const a=btn.dataset.area;
+    btn.classList.toggle('expanded',a===expandedArea);
+    btn.classList.toggle('active',a===activeArea);
+    btn.setAttribute('aria-expanded',a===expandedArea?'true':'false');
+  });
+  document.querySelectorAll('.nav-sub').forEach(sub=>{
+    sub.classList.toggle('open',sub.dataset.sub===expandedArea);
+  });
+  document.querySelectorAll('.nav-sub-btn').forEach(btn=>{
+    const isActive=btn.dataset.panel===currentPanel;
+    btn.classList.toggle('active',isActive);
+    if(isActive){btn.setAttribute('aria-current','page');}
+    else{btn.removeAttribute('aria-current');}
+  });
+  document.querySelectorAll('.bn-item').forEach(item=>{
+    item.classList.toggle('active',item.dataset.area===activeArea);
+  });
+}
+
+/* ── RENDER A PAGE ─────────────────────────────────────── */
+function renderPage(panelId){
+  const panel=PANELS[panelId];
+  const content=PANEL_CONTENT[panelId];
+
+  document.getElementById('tb-area').textContent=panel.areaLabel;
+  document.getElementById('tb-title').textContent=panel.label;
+  document.title='Gameweek Edge \u2014 '+panel.label;
+
+  const pages=document.getElementById('pages');
+  const isPaid=(panel.tier==='paid');
+
+  let body='';
+
+  /* Locked banner for Pro panels */
+  if(isPaid){
+    body+=
+      '<div class="lock-banner">'+
+        svg(ICON.lock,'width="22" height="22"')+
+        '<div class="lock-banner-text">'+
+          '<b>This is a Gameweek Edge Pro feature</b>'+
+          '<p>Live and intelligence tools will sit behind Pro. The preview below shows what it does.</p>'+
+        '</div>'+
+        '<button class="btn btn-primary btn-sm">See Pro</button>'+
+      '</div>';
+  }
+
+  /* Layout variants */
+  if(content.layout==='dashboard'){
+    body+=dashboardLayout();
+  } else if(content.layout==='actions'){
+    body+=actionsLayout();
+  } else if(content.layout==='squad'){
+    body+=squadLayout();
+  } else if(content.layout==='cards3'){
+    body+=cards3Layout(content.desc);
+  } else {
+    body+=standardLayout(panel,content);
+  }
+
+  pages.innerHTML=
+    '<main class="page active" id="main" tabindex="-1">'+
+      '<div class="page-head">'+
+        '<div class="page-head-row">'+
+          '<div>'+
+            '<h1>'+panel.label+'</h1>'+
+            '<p>'+content.desc+'</p>'+
+          '</div>'+
+        '</div>'+
+      '</div>'+
+      body+
+    '</main>';
+}
+
+/* ── LAYOUT: DASHBOARD ─────────────────────────────────── */
+function dashboardLayout(){
+  const kpi=(label,value,delta,colour)=>
+    '<div class="kpi">'+
+      '<div class="kpi-accent" style="background:'+colour+'"></div>'+
+      '<div class="kpi-label">'+label+'</div>'+
+      '<div class="kpi-value">'+value+'</div>'+
+      '<div class="kpi-delta">'+delta+'</div>'+
+    '</div>';
+
+  return ''+
+    '<div class="grid g-4 mb-20">'+
+      kpi('Total Points','\u2014','Sign in to load','var(--green)')+
+      kpi('Overall Rank','\u2014','Sign in to load','var(--blue)')+
+      kpi('Team Value','\u00a3\u2014','Sign in to load','var(--amber)')+
+      kpi('Free Transfers','\u2014','Sign in to load','var(--purple)')+
+    '</div>'+
+    '<div class="grid g-sb mb-20">'+
+      '<div class="card">'+
+        '<div class="card-title">This Gameweek \u2014 Key Actions</div>'+
+        phBlock('bolt','Your gameweek actions','Once you sign in and link your FPL Manager ID, the three highest-impact actions for this deadline appear here.')+
+      '</div>'+
+      '<div class="card">'+
+        '<div class="card-title">Chip Status</div>'+
+        '<div class="ph-bars">'+
+          '<div class="ph-bar"></div><div class="ph-bar w80"></div>'+
+          '<div class="ph-bar w90"></div><div class="ph-bar w65"></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="grid g-2">'+
+      '<div class="card">'+
+        '<div class="card-title">Fixture Difficulty \u2014 Next 5</div>'+
+        '<div class="ph-bars">'+
+          '<div class="ph-bar"></div><div class="ph-bar w90"></div><div class="ph-bar w80"></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<div class="card-title">Price Movement</div>'+
+        '<div class="ph-bars">'+
+          '<div class="ph-bar w90"></div><div class="ph-bar"></div><div class="ph-bar w65"></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+
+/* ── LAYOUT: GW ACTIONS ────────────────────────────────── */
+function actionsLayout(){
+  const action=(n,colour)=>
+    '<div class="card mb-14" style="border-left:3px solid '+colour+'">'+
+      '<div class="card-title">Action '+n+'</div>'+
+      '<div class="ph-bars"><div class="ph-bar w90"></div><div class="ph-bar w65"></div></div>'+
+    '</div>';
+  return ''+
+    action(1,'var(--red)')+
+    action(2,'var(--amber)')+
+    action(3,'var(--green)')+
+    phBlock('bolt','Personalised to your squad','Sign in and link your Manager ID. Gameweek Edge will rank the three moves most likely to gain you rank this week.');
+}
+
+/* ── LAYOUT: SQUAD (pitch hero) ────────────────────────── */
+function squadLayout(){
+  const jrow=n=>{
+    let j='';for(let i=0;i<n;i++){j+='<div class="jersey"></div>';}
+    return '<div class="pitch-row">'+j+'</div>';
+  };
+  return ''+
+    '<div class="grid g-sb mb-20">'+
+      '<div class="card">'+
+        '<div class="card-title">Formation <span class="badge badge-grey">Preview</span></div>'+
+        '<div class="pitch-preview">'+
+          jrow(1)+jrow(4)+jrow(4)+jrow(2)+
+        '</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<div class="card-title">Season Summary</div>'+
+        '<div class="ph-bars">'+
+          '<div class="ph-bar"></div><div class="ph-bar w80"></div>'+
+          '<div class="ph-bar w90"></div><div class="ph-bar w65"></div>'+
+        '</div>'+
+        phTagOnly()+
+      '</div>'+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="card-title">Full Squad</div>'+
+      phBlock('squad','Your 15 players','Sign in and enter your FPL Manager ID. Your full squad loads here with live points, price, ownership and fitness status, all pulled from the official FPL API.')+
+    '</div>';
+}
+
+/* ── LAYOUT: 3 CARDS (captaincy) ───────────────────────── */
+function cards3Layout(desc){
+  const c=label=>
+    '<div class="card">'+
+      '<div class="card-title">'+label+'</div>'+
+      '<div class="ph-bars"><div class="ph-bar"></div><div class="ph-bar w80"></div></div>'+
+    '</div>';
+  return ''+
+    '<div class="grid g-3 mb-20">'+
+      c('Pick 1 \u2014 Safe')+c('Pick 2 \u2014 Balanced')+c('Pick 3 \u2014 Differential')+
+    '</div>'+
+    phBlock('star','Multi-factor captain scoring','Captain picks are scored on fixture, form, expected goals and assists, set-piece duty and effective ownership. Sign in to score your own squad.');
+}
+
+/* ── LAYOUT: STANDARD ──────────────────────────────────── */
+function standardLayout(panel,content){
+  return ''+
+    '<div class="card mb-20">'+
+      '<div class="card-title">'+panel.label+
+        ' <span class="badge '+(panel.tier==='paid'?'badge-amber':'badge-green')+'">'+
+        (panel.tier==='paid'?'Pro':'Free')+'</span></div>'+
+      '<div class="ph-bars">'+
+        '<div class="ph-bar"></div><div class="ph-bar w90"></div>'+
+        '<div class="ph-bar w80"></div><div class="ph-bar w65"></div>'+
+      '</div>'+
+    '</div>'+
+    phBlock(panel.icon,panel.label+' \u2014 coming in step two',
+      content.desc+' This panel is in place structurally. Step two wires it to live FPL API data.');
+}
+
+/* ── HELPER: placeholder block ─────────────────────────── */
+function phBlock(icon,title,text){
+  return ''+
+    '<div class="ph-block">'+
+      '<div class="ph-block-icon">'+svg(ICON[icon]||ICON.dashboard)+'</div>'+
+      '<h3>'+title+'</h3>'+
+      '<p>'+text+'</p>'+
+      '<span class="ph-tag">Shell preview</span>'+
+    '</div>';
+}
+function phTagOnly(){
+  return '<div style="text-align:center;margin-top:14px"><span class="ph-tag">Shell preview</span></div>';
+}
+
+/* ── THEME ─────────────────────────────────────────────── */
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme',theme);
+  const isDark=(theme==='dark');
+  document.getElementById('theme-icon').innerHTML=
+    svg(isDark?ICON.sun:ICON.moon,'width="14" height="14"');
+  document.getElementById('theme-label').textContent=isDark?'Light':'Dark';
+}
+function toggleTheme(){
+  const current=document.documentElement.getAttribute('data-theme');
+  applyTheme(current==='dark'?'light':'dark');
+}
+
+/* ── SIDEBAR DRAWER (mobile) ───────────────────────────── */
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ── INIT ──────────────────────────────────────────────── */
+function init(){
+  buildNav();
+  buildBottomNav();
+  applyTheme('light');
+  renderPage('dashboard');
+  syncNav();
+
+  document.getElementById('hamburger').addEventListener('click',openSidebar);
+  document.getElementById('overlay').addEventListener('click',closeSidebar);
+  document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
+  document.getElementById('refresh-btn').addEventListener('click',function(){
+    const ic=this.querySelector('svg');
+    ic.style.transition='transform .5s var(--ease)';
+    ic.style.transform='rotate(360deg)';
+    setTimeout(()=>{ic.style.transform='rotate(0)';ic.style.transition='none';},520);
+  });
+  document.getElementById('signin-btn').addEventListener('click',function(){
+    alert('Sign in arrives in Phase 2. This shell shows structure and brand only.');
+  });
+  document.getElementById('tb-logo').addEventListener('click',function(e){
+    e.preventDefault();
+    openPanel('dashboard');
+  });
+
+  /* Close drawer on Escape */
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape')closeSidebar();
+  });
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
