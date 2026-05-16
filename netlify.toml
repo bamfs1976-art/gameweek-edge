@@ -1,0 +1,27 @@
+# Gameweek Edge — Netlify configuration
+# Single-page static site with a serverless proxy to the official FPL API.
+
+[build]
+  publish    = "."
+  functions  = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Pretty-path alias so the client can call /api/<path> instead of the full function URL.
+[[redirects]]
+  from   = "/api/*"
+  to     = "/.netlify/functions/fpl?path=:splat"
+  status = 200
+
+# Security headers applied to every response.
+# CSP allows: inline style/script (single-file HTML), Google Fonts, FPL kit imagery, and same-origin fetches (proxy is same-origin).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options    = "nosniff"
+    X-Frame-Options           = "DENY"
+    Referrer-Policy           = "strict-origin-when-cross-origin"
+    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    Content-Security-Policy   = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fantasy.premierleague.com https://resources.premierleague.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
