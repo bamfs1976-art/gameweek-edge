@@ -1045,6 +1045,24 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
 .alert-item-title{font-weight:700;font-size:.86rem;line-height:1.3}
 .alert-item-detail{font-size:.76rem;color:var(--text-3);margin-top:3px;line-height:1.45}
 
+/* ── PANEL: WHAT-IF SIMULATOR ──────────────────────────── */
+.whatif-form{display:flex;gap:14px;flex-wrap:wrap}
+.whatif-field{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
+.whatif-field label{
+  font-size:.72rem;font-weight:700;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.whatif-field select{
+  padding:12px 14px;background:var(--surface-2);
+  border:1px solid var(--border-2);border-radius:var(--r-md);
+  font-size:.95rem;color:var(--text);min-height:44px;cursor:pointer;
+  font-weight:600;
+}
+.whatif-field select:focus{
+  outline:none;border-color:var(--green-bright);
+  box-shadow:0 0 0 3px var(--green-glow);
+}
+
 /* ── RESPONSIVE ────────────────────────────────────────── */
 @media(max-width:1080px){
   .g-4{grid-template-columns:repeat(2,1fr)}
@@ -1678,8 +1696,18 @@ async function renderPage(panelId){
 
 function attachPageEvents(){
   document.querySelectorAll('[data-act]').forEach(el=>{
-    el.addEventListener('click', onActionClick);
+    if(el.tagName==='SELECT'){
+      el.addEventListener('change', onSelectChange);
+    } else {
+      el.addEventListener('click', onActionClick);
+    }
   });
+}
+function onSelectChange(e){
+  const el = e.currentTarget;
+  const act = el.dataset.act;
+  if(act==='whatif-player'){ whatifSel.playerId = parseInt(el.value,10); renderPage('whatif'); }
+  else if(act==='whatif-outcome'){ whatifSel.outcome = el.value; renderPage('whatif'); }
 }
 function onActionClick(e){
   const el = e.currentTarget;
@@ -1718,6 +1746,25 @@ function onActionClick(e){
     saveAlerts(a);
     el.classList.toggle('on', !!a[key]);
     el.setAttribute('aria-checked', a[key]?'true':'false');
+  }
+  else if(act==='rival-add'){
+    const input = document.getElementById('rival-input');
+    if(!input) return;
+    const v = (input.value||'').trim();
+    if(!/^\d{1,9}$/.test(v)){
+      input.setAttribute('aria-invalid','true'); input.focus(); return;
+    }
+    const id = parseInt(v,10);
+    const r = loadRivals();
+    if(r.length>=5) return;
+    if(!r.includes(id)){ r.push(id); saveRivals(r); }
+    input.value=''; input.removeAttribute('aria-invalid');
+    renderPage('rivals');
+  }
+  else if(act==='rival-remove'){
+    const id = parseInt(el.dataset.id,10);
+    saveRivals(loadRivals().filter(x=>x!==id));
+    renderPage('rivals');
   }
 }
 
@@ -3289,6 +3336,561 @@ async function renderAlerts(){
   '</div>';
 }
 
+/* ── LIVE: Live Rank ───────────────────────────────────── */
+async function renderLiveRank(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Live Rank</div>'+
+      needsManagerBlock('to track your live GW points and projected overall rank as matches play out')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const cur = findCurrentEvent(events);
+  const target = cur && !cur.finished ? cur : [...events].reverse().find(e=>e.finished);
+  if(!target){
+    return emptyBlock('No live or recent gameweek','Live Rank lights up during matchday. After GW finalisation it shows your end-state recap.');
+  }
+  let picks, live;
+  try{
+    [picks, live] = await Promise.all([FPL.picks(MGR.id, target.id), FPL.live(target.id)]);
+  }catch(e){ return errorBlock('Could not load live data: '+e.message, 'liverank'); }
+
+  const liveById = new Map((live.elements||[]).map(e=>[e.id,e]));
+  const xi = picks.picks.filter(p=>p.position<=11);
+  let totalPts = 0, playedCount = 0;
+  const rows = xi.map(p=>{
+    const el = elementById.get(p.element);
+    const liveEl = liveById.get(p.element);
+    const stats = liveEl ? liveEl.stats : null;
+    const basePts = stats ? (stats.total_points||0) : 0;
+    const contribution = basePts * p.multiplier;
+    totalPts += contribution;
+    if(stats && stats.minutes>0) playedCount++;
+    return {p, el, stats, basePts, contribution};
+  });
+  const transferCost = picks.entry_history ? picks.entry_history.event_transfers_cost : 0;
+  totalPts -= transferCost;
+  const avg = target.average_entry_score||0;
+  const high = target.highest_score||0;
+  const status = target.finished ? 'Final' : target.is_current ? 'Live' : 'Upcoming';
+  const deltaVsAvg = avg ? totalPts - avg : 0;
+
+  return '<div class="grid g-3 mb-20">'+
+    kpiCard('Live GW points', String(totalPts), avg?((deltaVsAvg>0?'+':'')+deltaVsAvg+' vs GW avg '+avg):'', 'var(--green)', deltaVsAvg>0?'up':(deltaVsAvg<0?'down':''))+
+    kpiCard('GW status', status, 'GW '+target.id+(playedCount?' · '+playedCount+'/11 played':''), 'var(--blue)')+
+    kpiCard('GW high / avg', (high||'—')+' / '+(avg||'—'), 'Across the global player base', 'var(--amber)')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">Your starting XI — live points breakdown</div>'+
+    '<div class="player-list">'+
+      rows.sort((a,b)=>b.contribution-a.contribution).map(r=>{
+        const t = teamById.get(r.el.team);
+        const mark = r.p.is_captain?'C':r.p.is_vice_captain?'V':'';
+        return '<div class="player-row">'+
+          '<div class="player-row-shirt">'+kitSvg(t, r.el.element_type===1)+'</div>'+
+          '<div class="player-row-main">'+
+            '<div class="player-row-name">'+escapeHtml(r.el.web_name)+(mark?' <span class="badge badge-green" style="margin-left:4px">'+mark+'</span>':'')+'</div>'+
+            '<div class="player-row-meta">'+
+              '<span>'+(r.stats?r.stats.minutes+' min':'yet to play')+'</span>'+
+              (r.stats && r.stats.goals_scored?'<span class="dot"></span><span>'+r.stats.goals_scored+' G</span>':'')+
+              (r.stats && r.stats.assists?'<span class="dot"></span><span>'+r.stats.assists+' A</span>':'')+
+              (r.stats && r.stats.bonus?'<span class="dot"></span><span>+'+r.stats.bonus+' bonus</span>':'')+
+              (r.stats && r.stats.clean_sheets?'<span class="dot"></span><span>CS</span>':'')+
+            '</div>'+
+          '</div>'+
+          '<div class="player-row-pts">'+r.contribution+(r.p.multiplier>1?' <span class="text-3" style="font-size:.7rem;font-weight:600">×'+r.p.multiplier+'</span>':'')+'</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+    (transferCost?'<p class="text-3" style="font-size:.78rem;margin-top:10px">Transfer hit applied this GW: −'+transferCost+'</p>':'')+
+  '</div>';
+}
+
+/* ── LIVE: DefCon Threats ──────────────────────────────── */
+async function renderDefcon(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">DefCon Threats</div>'+
+      needsManagerBlock('to see which high-ownership players you don\'t own are scoring right now')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const cur = findCurrentEvent(events);
+  const target = cur && !cur.finished ? cur : [...events].reverse().find(e=>e.finished);
+  if(!target){
+    return emptyBlock('No live or recent gameweek','DefCon goes live during matchday — it tracks high-ownership scorers not in your squad.');
+  }
+  let picks, live;
+  try{
+    [picks, live] = await Promise.all([FPL.picks(MGR.id, target.id), FPL.live(target.id)]);
+  }catch(e){ return errorBlock('Could not load live data: '+e.message, 'defcon'); }
+
+  const myIds = new Set(picks.picks.map(p=>p.element));
+  const threats = (live.elements||[]).map(le=>{
+    const el = elementById.get(le.id); if(!el) return null;
+    const points = le.stats.total_points||0;
+    const ownership = parseFloat(el.selected_by_percent)||0;
+    return {el, le, points, ownership, threat: ownership * points};
+  }).filter(x=>x && !myIds.has(x.el.id) && x.points>0)
+    .sort((a,b)=>b.threat-a.threat)
+    .slice(0,12);
+
+  if(!threats.length){
+    return '<div class="card"><div class="card-title">DefCon Threats — GW '+target.id+'</div>'+
+      emptyBlock('No active threats','No high-ownership non-owned players are scoring right now. You\'re safe.')+
+    '</div>';
+  }
+  return '<div class="card">'+
+    '<div class="card-title">Top 12 threats — non-owned players damaging your rank</div>'+
+    '<div class="player-list">'+
+      threats.map((th,i)=>{
+        const t = teamById.get(th.el.team);
+        return '<div class="player-row">'+
+          '<span class="price-rank">'+(i+1)+'</span>'+
+          '<div class="player-row-shirt">'+kitSvg(t, th.el.element_type===1)+'</div>'+
+          '<div class="player-row-main">'+
+            '<div class="player-row-name">'+escapeHtml(th.el.web_name)+' <span class="text-3" style="font-weight:500">· '+escapeHtml(t?t.short_name:'')+'</span></div>'+
+            '<div class="player-row-meta">'+
+              '<span>'+th.ownership.toFixed(1)+'% owned</span><span class="dot"></span>'+
+              '<span>'+th.points+' pts live</span>'+
+              (th.le.stats.goals_scored?'<span class="dot"></span><span>'+th.le.stats.goals_scored+' G</span>':'')+
+              (th.le.stats.assists?'<span class="dot"></span><span>'+th.le.stats.assists+' A</span>':'')+
+              (th.le.stats.bonus?'<span class="dot"></span><span>+'+th.le.stats.bonus+' bonus</span>':'')+
+            '</div>'+
+          '</div>'+
+          '<div class="player-row-pts">'+th.threat.toFixed(0)+'</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">Threat = ownership × live points. The right-hand number is the magnitude of rank damage from not owning them.</p>'+
+  '</div>';
+}
+
+/* ── LIVE: Auto-Sub Tracker ────────────────────────────── */
+async function renderAutoSubs(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Auto-Sub Tracker</div>'+
+      needsManagerBlock('to project which bench players will sub in this gameweek')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  const cur = findCurrentEvent(events);
+  const target = cur && !cur.finished ? cur : [...events].reverse().find(e=>e.finished);
+  if(!target){
+    return emptyBlock('No active gameweek','Auto-Sub Tracker lights up during matchday to project bench substitutions.');
+  }
+  let picks, live;
+  try{
+    [picks, live] = await Promise.all([FPL.picks(MGR.id, target.id), FPL.live(target.id)]);
+  }catch(e){ return errorBlock('Could not load live data: '+e.message, 'autosubs'); }
+
+  const liveById = new Map((live.elements||[]).map(e=>[e.id,e]));
+  const lineup = picks.picks;
+  const automaticSubs = picks.automatic_subs||[];
+  const starters = lineup.filter(p=>p.position<=11);
+  const bench = lineup.filter(p=>p.position>11);
+
+  const playerStatus = (p) => {
+    const liveEl = liveById.get(p.element);
+    if(!liveEl) return {label:'No data', cls:'badge-grey'};
+    const mins = liveEl.stats.minutes||0;
+    if(mins>=60) return {label:mins+' min', cls:'badge-green'};
+    if(mins>0) return {label:mins+' min', cls:'badge-blue'};
+    return {label:'Yet to play', cls:'badge-grey'};
+  };
+
+  const confirmedSubs = automaticSubs.length ? '<div class="card mb-20">'+
+    '<div class="card-title">Confirmed automatic subs this GW</div>'+
+    '<div class="player-list">'+
+      automaticSubs.map(s=>{
+        const inEl = elementById.get(s.element_in);
+        const outEl = elementById.get(s.element_out);
+        return '<div class="player-row">'+
+          '<span class="badge badge-green">IN</span>'+
+          '<div class="player-row-main"><div class="player-row-name">'+escapeHtml(inEl?inEl.web_name:'?')+'</div></div>'+
+          '<span class="badge badge-red">OUT</span>'+
+          '<div class="player-row-main"><div class="player-row-name">'+escapeHtml(outEl?outEl.web_name:'?')+'</div></div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+  '</div>' : '';
+
+  return confirmedSubs +
+    '<div class="grid g-2">'+
+      '<div class="card">'+
+        '<div class="card-title">Starting XI — play status</div>'+
+        '<div class="player-list">'+
+          starters.map(p=>{
+            const el = elementById.get(p.element); if(!el) return '';
+            const t = teamById.get(el.team);
+            const status = playerStatus(p);
+            return '<div class="player-row">'+
+              '<div class="player-row-shirt">'+kitSvg(t, el.element_type===1)+'</div>'+
+              '<div class="player-row-main">'+
+                '<div class="player-row-name">'+escapeHtml(el.web_name)+'</div>'+
+                '<div class="player-row-meta"><span>'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml((types.get(el.element_type)||{}).singular_name_short||'')+'</span></div>'+
+              '</div>'+
+              '<span class="badge '+status.cls+'">'+escapeHtml(status.label)+'</span>'+
+            '</div>';
+          }).join('') +
+        '</div>'+
+      '</div>'+
+      '<div class="card">'+
+        '<div class="card-title">Bench — auto-sub priority order</div>'+
+        '<div class="player-list">'+
+          bench.map((p,i)=>{
+            const el = elementById.get(p.element); if(!el) return '';
+            const t = teamById.get(el.team);
+            const isKeeper = el.element_type===1;
+            return '<div class="player-row">'+
+              '<div class="player-row-shirt">'+kitSvg(t, isKeeper)+'</div>'+
+              '<div class="player-row-main">'+
+                '<div class="player-row-name">'+escapeHtml(el.web_name)+'</div>'+
+                '<div class="player-row-meta"><span>'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml((types.get(el.element_type)||{}).singular_name_short||'')+'</span></div>'+
+              '</div>'+
+              '<span class="badge badge-blue">'+(isKeeper?'GK sub':'Sub '+(i+1))+'</span>'+
+            '</div>';
+          }).join('') +
+        '</div>'+
+        '<p class="text-3" style="font-size:.74rem;margin-top:10px">Outfield subs only fire if a starter records 0 minutes once all GW matches finish. GK swap is straight one-for-one.</p>'+
+      '</div>'+
+    '</div>';
+}
+
+/* ── LIVE: What-If Simulator ───────────────────────────── */
+let whatifSel = { playerId:null, outcome:'goal' };
+const WHATIF_POINTS = {
+  1: {goal:10, assist:3, cleanSheet:4, save3:1, penaltySave:5}, /* GKP */
+  2: {goal:6,  assist:3, cleanSheet:4},                          /* DEF */
+  3: {goal:5,  assist:3, cleanSheet:1},                          /* MID */
+  4: {goal:4,  assist:3, cleanSheet:0}                           /* FWD */
+};
+async function renderWhatIf(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">What-If Simulator</div>'+
+      needsManagerBlock('to simulate how a goal, assist or clean sheet would move your GW score')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  const cur = findCurrentEvent(events);
+  const target = cur && !cur.finished ? cur : findNextDeadlineEvent(events) || [...events].reverse().find(e=>e.finished);
+  if(!target){
+    return emptyBlock('No active gameweek','Open this during matchday to test point swings on any player in your XI.');
+  }
+  let picks, live;
+  try{ picks = await FPL.picks(MGR.id, target.id); }
+  catch(e){ return errorBlock('Could not load picks: '+e.message,'whatif'); }
+  try{ live = await FPL.live(target.id); }catch(e){ live = {elements:[]}; }
+
+  const liveById = new Map((live.elements||[]).map(e=>[e.id,e]));
+  const xi = picks.picks.filter(p=>p.position<=11).map(p=>({p, el:elementById.get(p.element)})).filter(x=>x.el);
+  if(!xi.length){ return emptyBlock('No XI to simulate','Your starting XI for this gameweek isn\'t available.'); }
+  if(!whatifSel.playerId || !xi.find(x=>x.el.id===whatifSel.playerId)) whatifSel.playerId = xi[0].el.id;
+  const sel = xi.find(x=>x.el.id===whatifSel.playerId);
+  const rules = WHATIF_POINTS[sel.el.element_type] || {};
+
+  const outcomes = [
+    {key:'goal', label:'Score a goal'},
+    {key:'assist', label:'Get an assist'},
+    {key:'cleanSheet', label:'Keep a clean sheet'},
+    {key:'save3', label:'Make 3 saves'},
+    {key:'penaltySave', label:'Save a penalty'}
+  ].filter(o=>rules[o.key]!=null && rules[o.key]>0);
+  if(!outcomes.find(o=>o.key===whatifSel.outcome)) whatifSel.outcome = outcomes[0]?outcomes[0].key:'goal';
+  const outcomePts = rules[whatifSel.outcome]||0;
+  const multiplier = sel.p.multiplier||1;
+  const contribution = outcomePts * multiplier;
+
+  let currentTotal = 0, playedCount = 0;
+  picks.picks.filter(p=>p.position<=11).forEach(p=>{
+    const liveEl = liveById.get(p.element);
+    if(liveEl){
+      currentTotal += (liveEl.stats.total_points||0) * p.multiplier;
+      if(liveEl.stats.minutes>0) playedCount++;
+    }
+  });
+  const transferCost = picks.entry_history ? picks.entry_history.event_transfers_cost : 0;
+  currentTotal -= transferCost;
+  const projectedTotal = currentTotal + contribution;
+  const avg = target.average_entry_score||0;
+  const deltaVsAvg = avg ? projectedTotal - avg : 0;
+  const outcomeLabel = (outcomes.find(o=>o.key===whatifSel.outcome)||{label:'score'}).label.toLowerCase();
+
+  const xiOptions = xi.map(x=>'<option value="'+x.el.id+'"'+(x.el.id===whatifSel.playerId?' selected':'')+'>'+escapeHtml(x.el.web_name)+' ('+escapeHtml((types.get(x.el.element_type)||{}).singular_name_short||'')+')'+(x.p.is_captain?' [C]':x.p.is_vice_captain?' [V]':'')+'</option>').join('');
+  const outcomeOptions = outcomes.map(o=>'<option value="'+o.key+'"'+(o.key===whatifSel.outcome?' selected':'')+'>'+escapeHtml(o.label)+' (+'+rules[o.key]+' base)</option>').join('');
+
+  return '<div class="card mb-20">'+
+    '<div class="card-title">Simulate an outcome — pick a player, then an event</div>'+
+    '<div class="whatif-form">'+
+      '<div class="whatif-field">'+
+        '<label for="whatif-player">Player from your XI</label>'+
+        '<select id="whatif-player" data-act="whatif-player">'+xiOptions+'</select>'+
+      '</div>'+
+      '<div class="whatif-field">'+
+        '<label for="whatif-outcome">Outcome</label>'+
+        '<select id="whatif-outcome" data-act="whatif-outcome">'+outcomeOptions+'</select>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="grid g-3">'+
+    kpiCard('Current GW total', String(currentTotal), playedCount+'/11 played', 'var(--blue)')+
+    kpiCard('If ' + sel.el.web_name + ' ' + outcomeLabel.replace('keep a ','keeps a ').replace('score a','scores a').replace('get an','gets an').replace('make 3','makes 3').replace('save a','saves a'),
+            '+'+contribution, outcomePts+' base · ×'+multiplier+' multiplier', 'var(--green)','up')+
+    kpiCard('Projected new total', String(projectedTotal), avg?((deltaVsAvg>0?'+':'')+deltaVsAvg+' vs GW avg'):'', 'var(--amber)', deltaVsAvg>0?'up':deltaVsAvg<0?'down':'')+
+  '</div>'+
+  '<p class="text-3" style="font-size:.74rem;margin-top:14px">Quick model — applies FPL scoring rules for the outcome to your selected player. Bonus, BPS swings and rank deltas need full event simulation and are not modelled in Phase 2.</p>';
+}
+
+/* ── INTEL: EO Tracker ─────────────────────────────────── */
+async function renderEO(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  const totalAttr = elements.reduce((s,p)=>s + ((parseFloat(p.form)||0) + (parseFloat(p.expected_goals_per_90)||0)*4 + (parseFloat(p.expected_assists_per_90)||0)*2), 0) || 1;
+  const eos = elements.filter(p=>parseFloat(p.selected_by_percent)>0).map(p=>{
+    const own = parseFloat(p.selected_by_percent)||0;
+    const attr = (parseFloat(p.form)||0) + (parseFloat(p.expected_goals_per_90)||0)*4 + (parseFloat(p.expected_assists_per_90)||0)*2;
+    const capFactor = (attr / totalAttr) * 100;
+    const eo = own + capFactor * 2;
+    return {p, own, capFactor, eo};
+  }).sort((a,b)=>b.eo-a.eo).slice(0,25);
+
+  if(!eos.length){
+    return emptyBlock('No EO data yet','Effective Ownership comes online once ownership signal builds up across the player base.');
+  }
+  const maxEo = eos[0].eo;
+  return '<div class="card">'+
+    '<div class="card-title">Top 25 by estimated Effective Ownership — the real rank-gain metric</div>'+
+    '<div class="player-list">'+
+      eos.map((e,i)=>{
+        const p=e.p, t=teamById.get(p.team);
+        return '<div class="player-row">'+
+          '<span class="price-rank">'+(i+1)+'</span>'+
+          '<div class="player-row-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+          '<div class="player-row-main">'+
+            '<div class="player-row-name">'+escapeHtml(p.web_name)+' <span class="text-3" style="font-weight:500">· '+escapeHtml(t?t.short_name:'')+' · '+escapeHtml((types.get(p.element_type)||{}).singular_name_short||'')+'</span></div>'+
+            '<div class="price-bar-track" style="margin-top:6px"><div class="price-bar-fill" style="background:var(--green-bright);width:'+Math.max(8,(e.eo/maxEo)*100)+'%"></div></div>'+
+            '<div class="player-row-meta" style="margin-top:4px">'+
+              '<span>Own '+e.own.toFixed(1)+'%</span><span class="dot"></span>'+
+              '<span>Est cap '+e.capFactor.toFixed(1)+'%</span>'+
+            '</div>'+
+          '</div>'+
+          '<div class="player-row-pts">'+e.eo.toFixed(1)+'<span class="text-3" style="font-size:.7rem;font-weight:600"> EO</span></div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">EO ≈ ownership + (captain share × 2). Captain share is estimated from form and xG (FPL doesn\'t expose aggregate captaincy). True top-10k EO arrives with Pro\'s aggregate data feed.</p>'+
+  '</div>';
+}
+
+/* ── INTEL: Template Meter ─────────────────────────────── */
+async function renderTemplate(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Template Meter</div>'+
+      needsManagerBlock('to see how closely your squad mirrors the top-15 template and where your edge sits')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  const target = findNextDeadlineEvent(events) || findCurrentEvent(events) || [...events].reverse().find(e=>e.finished);
+  if(!target){
+    return emptyBlock('No active gameweek','Template Meter compares your XI against the most-owned players — needs an active GW.');
+  }
+  let picks;
+  try{ picks = await FPL.picks(MGR.id, target.id); }
+  catch(e){
+    const lastFin = [...events].reverse().find(e=>e.finished);
+    if(lastFin && lastFin.id!==target.id){
+      try{ picks = await FPL.picks(MGR.id, lastFin.id); }catch(e2){}
+    }
+  }
+  if(!picks) return emptyBlock('No saved squad to compare','Save a team for the upcoming gameweek on the FPL site and Template Meter unlocks.');
+
+  const template = elements.filter(p=>p.status!=='u')
+    .sort((a,b)=>parseFloat(b.selected_by_percent)-parseFloat(a.selected_by_percent))
+    .slice(0,15);
+  const templateIds = new Set(template.map(p=>p.id));
+  const xi = picks.picks.filter(p=>p.position<=11);
+  const matched = xi.filter(p=>templateIds.has(p.element));
+  const matchPct = Math.round((matched.length / xi.length) * 100);
+  const myIds = new Set(picks.picks.map(p=>p.element));
+  const missing = template.filter(p=>!myIds.has(p.id)).slice(0,10);
+
+  const xiHtml = xi.map(p=>{
+    const el = elementById.get(p.element); if(!el) return '';
+    const t = teamById.get(el.team);
+    const isTemplate = templateIds.has(p.element);
+    return '<div class="player-row">'+
+      '<div class="player-row-shirt">'+kitSvg(t, el.element_type===1)+'</div>'+
+      '<div class="player-row-main">'+
+        '<div class="player-row-name">'+escapeHtml(el.web_name)+
+          ' '+(isTemplate?'<span class="badge badge-green" style="margin-left:4px">Template</span>'
+                         :'<span class="badge badge-purple" style="margin-left:4px">Differential</span>')+'</div>'+
+        '<div class="player-row-meta"><span>'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml((types.get(el.element_type)||{}).singular_name_short||'')+'</span><span class="dot"></span><span>'+escapeHtml(el.selected_by_percent||'0')+'% own</span></div>'+
+      '</div>'+
+      '<div class="player-row-aside"><b>'+fmtPrice(el.now_cost)+'</b>Form '+escapeHtml(el.form||'—')+'</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="grid g-3 mb-20">'+
+    kpiCard('Template match', matched.length+' / '+xi.length, matchPct+'% of your XI is template', 'var(--green)')+
+    kpiCard('Uniqueness', (100-matchPct)+'%', (xi.length-matched.length)+' differentials vs template', 'var(--purple)')+
+    kpiCard('Template size', '15', 'Top-15 most-owned across the game', 'var(--blue)')+
+  '</div>'+
+  '<div class="grid g-2">'+
+    '<div class="card">'+
+      '<div class="card-title">Your XI — template vs differentials</div>'+
+      '<div class="player-list">'+xiHtml+'</div>'+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="card-title">Template you don\'t own — biggest risk if they score</div>'+
+      (missing.length ?
+        '<div class="player-list">'+missing.map(p=>{
+          const t = teamById.get(p.team);
+          return '<div class="player-row">'+
+            '<div class="player-row-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+            '<div class="player-row-main">'+
+              '<div class="player-row-name">'+escapeHtml(p.web_name)+'</div>'+
+              '<div class="player-row-meta"><span>'+escapeHtml(t?t.short_name:'')+'</span><span class="dot"></span><span>'+escapeHtml(p.selected_by_percent||'0')+'% own</span></div>'+
+            '</div>'+
+            '<div class="player-row-aside"><b>'+fmtPrice(p.now_cost)+'</b>'+escapeHtml(p.form||'—')+' form</div>'+
+          '</div>';
+        }).join('') +'</div>' :
+        '<p class="text-3" style="font-size:.82rem">You own every template player. Strong alignment — your rank moves with the top 10k crowd.</p>')+
+    '</div>'+
+  '</div>';
+}
+
+/* ── INTEL: Rival Scout ────────────────────────────────── */
+const RIVAL_KEY='gwedge.rivals';
+function loadRivals(){
+  try{ const s=localStorage.getItem(RIVAL_KEY); return s?JSON.parse(s):[]; }catch(e){ return []; }
+}
+function saveRivals(list){
+  try{ localStorage.setItem(RIVAL_KEY, JSON.stringify(list)); }catch(e){}
+}
+async function renderRivals(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Rival Scout</div>'+
+      needsManagerBlock('to track up to five rivals and see your squad overlap, gaps and what it takes to beat them')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const target = findNextDeadlineEvent(events) || findCurrentEvent(events) || [...events].reverse().find(e=>e.finished);
+
+  const rivals = loadRivals();
+  let myPicks = null;
+  if(target){ try{ myPicks = await FPL.picks(MGR.id, target.id); }catch(e){} }
+  const myIds = myPicks ? new Set(myPicks.picks.map(p=>p.element)) : new Set();
+  const myEntry = await MGR.getEntry();
+
+  const rivalData = await Promise.all(rivals.map(async id=>{
+    try{
+      const entry = await FPL.entry(id);
+      let picks = null;
+      if(target){ try{ picks = await FPL.picks(id, target.id); }catch(e){} }
+      return {id, entry, picks};
+    }catch(e){ return {id, error:e.message}; }
+  }));
+
+  const adder =
+    '<div class="watch-add">'+
+      '<input type="text" class="watch-input" id="rival-input" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="Add a rival Manager ID (e.g. 12345)" aria-label="Rival Manager ID">'+
+      '<button class="btn btn-primary btn-sm" data-act="rival-add"'+(rivals.length>=5?' disabled':'')+'>'+svg(ICON.users,'width="14" height="14"')+'Add rival</button>'+
+    '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin:6px 0 14px">'+rivals.length+'/5 rivals tracked. IDs are the number in the URL of your rival\'s FPL team page.</p>';
+
+  if(!rivals.length){
+    return '<div class="card">'+
+      '<div class="card-title">Add up to five rivals to scout</div>'+
+      adder +
+      emptyBlock('No rivals tracked yet','Paste a Manager ID above to add a rival. Their squad, points gap and squad overlap with yours appear once added.')+
+    '</div>';
+  }
+
+  const cards = rivalData.map(r=>{
+    if(r.error || !r.entry){
+      return '<div class="card mb-14">'+
+        '<div class="card-title"><span class="card-title-text">Rival #'+r.id+' — could not load</span>'+
+        '<button class="btn btn-outline btn-sm" data-act="rival-remove" data-id="'+r.id+'">Remove</button></div>'+
+        '<p class="text-3" style="font-size:.82rem">'+escapeHtml(r.error||'Unknown error')+'</p>'+
+      '</div>';
+    }
+    const e = r.entry;
+    const rivalIds = r.picks ? new Set(r.picks.picks.map(p=>p.element)) : new Set();
+    const shared = [...myIds].filter(id=>rivalIds.has(id));
+    const rivalOnly = [...rivalIds].filter(id=>!myIds.has(id));
+    const meOnly = [...myIds].filter(id=>!rivalIds.has(id));
+    const myTotal = myEntry ? myEntry.summary_overall_points : 0;
+    const ptsDiff = myTotal - (e.summary_overall_points||0);
+    const lead = ptsDiff===0 ? 'level' : (ptsDiff>0 ? 'you +'+fmtNum(ptsDiff) : 'they +'+fmtNum(-ptsDiff));
+    const leadCls = ptsDiff>0 ? 'up' : ptsDiff<0 ? 'down' : '';
+
+    return '<div class="card mb-14">'+
+      '<div class="card-title"><span class="card-title-text"><b>'+escapeHtml(e.name||'Unnamed')+'</b> · '+escapeHtml(((e.player_first_name||'')+' '+(e.player_last_name||'')).trim())+'</span>'+
+        '<button class="btn btn-outline btn-sm" data-act="rival-remove" data-id="'+r.id+'">Remove</button></div>'+
+      '<div class="grid g-4 mb-14">'+
+        kpiCard('Total', fmtNum(e.summary_overall_points), lead, 'var(--green)', leadCls)+
+        kpiCard('Overall rank', fmtNum(e.summary_overall_rank), 'GW '+fmtNum(e.summary_event_points||0)+' pts', 'var(--blue)')+
+        kpiCard('Team value', fmtMoney(e.last_deadline_value), 'Bank '+fmtMoney(e.last_deadline_bank), 'var(--amber)')+
+        kpiCard('Squad overlap', shared.length+' / 15', 'shared with you', 'var(--purple)')+
+      '</div>'+
+      (r.picks ? '<div class="grid g-2">'+
+        '<div><div class="card-title">Only in their squad</div>'+ rivalSquadList(rivalOnly, elementById, teamById, 6) +'</div>'+
+        '<div><div class="card-title">Only in yours</div>'+ rivalSquadList(meOnly, elementById, teamById, 6) +'</div>'+
+      '</div>' : '<p class="text-3" style="font-size:.78rem">Squad picks unavailable for this rival.</p>')+
+    '</div>';
+  }).join('');
+
+  return '<div class="card mb-20">'+
+    '<div class="card-title">Track rivals</div>'+
+    adder +
+  '</div>' + cards;
+}
+function rivalSquadList(ids, elementById, teamById, max){
+  if(!ids.length) return '<p class="text-3" style="font-size:.78rem;padding:6px 4px">None — squads fully aligned on this side.</p>';
+  const slice = ids.slice(0, max||6).map(id=>elementById.get(id)).filter(Boolean);
+  return '<div class="player-list">'+
+    slice.map(el=>{
+      const t = teamById.get(el.team);
+      return '<div class="player-row">'+
+        '<div class="player-row-shirt">'+kitSvg(t, el.element_type===1)+'</div>'+
+        '<div class="player-row-main">'+
+          '<div class="player-row-name">'+escapeHtml(el.web_name)+'</div>'+
+          '<div class="player-row-meta"><span>'+escapeHtml(t?t.short_name:'')+'</span><span class="dot"></span><span>'+escapeHtml(el.selected_by_percent||'0')+'% own</span></div>'+
+        '</div>'+
+        '<div class="player-row-aside"><b>'+fmtPrice(el.now_cost)+'</b>'+escapeHtml(el.form||'—')+' form</div>'+
+      '</div>';
+    }).join('') +
+    (ids.length>(max||6) ? '<p class="text-3" style="font-size:.74rem;padding:8px 4px 0;text-align:center">+'+(ids.length-(max||6))+' more</p>' : '')+
+  '</div>';
+}
+
 /* ── DEFAULT (coming soon for unwired panels) ──────────── */
 async function renderComingSoon(panel){
   return '<div class="card">'+
@@ -3315,6 +3917,13 @@ const PANEL_RENDERERS = {
   gwhistory:    renderGwHistory,
   watchlist:    renderWatchlist,
   alerts:       renderAlerts,
+  liverank:     renderLiveRank,
+  defcon:       renderDefcon,
+  autosubs:     renderAutoSubs,
+  whatif:       renderWhatIf,
+  eo:           renderEO,
+  template:     renderTemplate,
+  rivals:       renderRivals,
 };
 
 /* ═══════════════════════════════════════════════════════════
