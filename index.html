@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
 <meta name="color-scheme" content="light dark">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fantasy.premierleague.com https://resources.premierleague.com; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://esm.sh; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fantasy.premierleague.com https://resources.premierleague.com; connect-src 'self' https://knodunjnsxelmpziupwk.supabase.co wss://knodunjnsxelmpziupwk.supabase.co https://esm.sh; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1063,6 +1063,116 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
   box-shadow:0 0 0 3px var(--green-glow);
 }
 
+/* ── PHASE 3: AUTH ─────────────────────────────────────── */
+.auth-tabs{
+  display:flex;gap:4px;background:var(--surface-2);
+  padding:4px;border-radius:var(--r-md);margin-bottom:18px;
+}
+.auth-tab{
+  flex:1;padding:9px 12px;border-radius:var(--r-sm);
+  font-size:.83rem;font-weight:600;color:var(--text-3);
+  transition:background .14s var(--ease),color .14s var(--ease);
+  min-height:38px;
+}
+.auth-tab:hover{color:var(--text-2)}
+.auth-tab.active{background:var(--green);color:#fff}
+.auth-tab[aria-selected="true"]{background:var(--green);color:#fff}
+
+.auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.auth-field label{
+  font-size:.72rem;font-weight:700;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.auth-field input{
+  padding:12px 14px;background:var(--surface-2);
+  border:1px solid var(--border-2);border-radius:var(--r-md);
+  font-size:.95rem;color:var(--text);min-height:44px;
+}
+.auth-field input:focus{
+  outline:none;border-color:var(--green-bright);
+  box-shadow:0 0 0 3px var(--green-glow);
+}
+.auth-field input[aria-invalid="true"]{border-color:var(--red)}
+.auth-error{
+  font-size:.78rem;color:var(--red);font-weight:600;min-height:18px;
+}
+.auth-note{
+  font-size:.78rem;color:var(--text-3);margin-top:8px;line-height:1.5;
+}
+.auth-note a,.auth-link{
+  color:var(--green-bright);font-weight:700;cursor:pointer;
+  text-decoration:underline;text-underline-offset:2px;
+}
+.auth-success{
+  padding:14px;background:var(--green-soft);
+  border:1px solid color-mix(in srgb,var(--green) 25%,transparent);
+  border-radius:var(--r-md);font-size:.85rem;line-height:1.5;
+}
+.auth-success b{display:block;margin-bottom:4px}
+
+/* Account dropdown in topbar */
+.account-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:7px 12px 7px 8px;border-radius:var(--r-pill);
+  background:var(--surface);border:1px solid var(--border-2);
+  font-size:.76rem;font-weight:600;color:var(--text-2);
+  min-height:44px;cursor:pointer;
+  transition:background .14s var(--ease),border-color .14s var(--ease);
+}
+.account-pill:hover{background:var(--surface-3);border-color:var(--border-3)}
+.account-avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),#5e98e6);
+  color:#fff;font-weight:800;font-size:.78rem;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+}
+.account-email{
+  max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:var(--text);font-weight:700;
+}
+.account-menu{
+  position:absolute;top:calc(100% + 6px);right:0;
+  background:var(--surface);border:1px solid var(--border-2);
+  border-radius:var(--r-md);box-shadow:var(--shadow-lg);
+  min-width:220px;padding:6px;z-index:300;
+  display:none;
+}
+.account-menu.open{display:block}
+.account-menu-head{
+  padding:8px 10px;border-bottom:1px solid var(--border);
+  margin-bottom:4px;
+}
+.account-menu-head .label{font-size:.66rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-3)}
+.account-menu-head .email{font-size:.82rem;font-weight:700;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.account-menu button{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:9px 10px;border-radius:var(--r-sm);
+  font-size:.82rem;font-weight:600;color:var(--text-2);
+  text-align:left;
+}
+.account-menu button:hover{background:var(--surface-3);color:var(--text)}
+.account-menu button.danger{color:var(--red)}
+.account-menu button.danger:hover{background:var(--red-soft);color:var(--red)}
+.account-menu button svg{width:14px;height:14px}
+
+.tb-right{position:relative}
+
+/* Migration prompt */
+.migrate-prompt{
+  display:flex;align-items:center;gap:14px;
+  padding:14px 18px;border-radius:var(--r-lg);
+  background:var(--green-soft);
+  border:1px solid color-mix(in srgb,var(--green) 30%,transparent);
+  margin-bottom:20px;flex-wrap:wrap;
+}
+.migrate-prompt-text{flex:1;min-width:220px}
+.migrate-prompt-text b{display:block;font-size:.9rem}
+.migrate-prompt-text p{font-size:.78rem;color:var(--text-2);margin-top:3px}
+.migrate-prompt-actions{display:flex;gap:8px;flex-wrap:wrap}
+
 /* ── RESPONSIVE ────────────────────────────────────────── */
 @media(max-width:1080px){
   .g-4{grid-template-columns:repeat(2,1fr)}
@@ -1168,10 +1278,74 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
       </div>
     </div>
     <div class="modal-foot">
-      <button class="btn btn-ghost btn-sm" id="mgr-clear" hidden>Sign out</button>
+      <button class="btn btn-ghost btn-sm" id="mgr-clear" hidden>Forget</button>
       <button class="btn btn-outline btn-sm" id="mgr-cancel">Cancel</button>
       <button class="btn btn-primary btn-sm" id="mgr-save">
         <span id="mgr-save-label">Save Manager ID</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ AUTH MODAL (Phase 3) ═══ -->
+<div class="modal-backdrop" id="auth-modal" hidden>
+  <div class="modal" role="dialog" aria-labelledby="auth-modal-title" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="auth-modal-title">Sign in to Gameweek Edge</h2>
+      <button class="btn-close" id="auth-modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="auth-tabs" role="tablist" aria-label="Auth options">
+        <button class="auth-tab active" role="tab" aria-selected="true" data-auth-tab="signin">Sign in</button>
+        <button class="auth-tab" role="tab" aria-selected="false" data-auth-tab="signup">Create account</button>
+        <button class="auth-tab" role="tab" aria-selected="false" data-auth-tab="forgot">Reset</button>
+      </div>
+
+      <div id="auth-pane-signin" class="auth-pane">
+        <div class="auth-field">
+          <label for="auth-signin-email">Email</label>
+          <input type="email" id="auth-signin-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+        </div>
+        <div class="auth-field">
+          <label for="auth-signin-password">Password</label>
+          <input type="password" id="auth-signin-password" autocomplete="current-password" placeholder="At least 8 characters">
+        </div>
+        <div class="auth-error" id="auth-signin-error" role="alert" aria-live="polite"></div>
+        <p class="auth-note">Forgot your password? <button class="auth-link" data-auth-tab="forgot">Reset it</button></p>
+      </div>
+
+      <div id="auth-pane-signup" class="auth-pane" hidden>
+        <div class="auth-field">
+          <label for="auth-signup-email">Email</label>
+          <input type="email" id="auth-signup-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+        </div>
+        <div class="auth-field">
+          <label for="auth-signup-password">Password</label>
+          <input type="password" id="auth-signup-password" autocomplete="new-password" placeholder="At least 8 characters">
+        </div>
+        <div class="auth-error" id="auth-signup-error" role="alert" aria-live="polite"></div>
+        <p class="auth-note">By creating an account you agree that your Manager ID, watchlist and alerts are stored in our database and only accessible to you.</p>
+      </div>
+
+      <div id="auth-pane-forgot" class="auth-pane" hidden>
+        <div class="auth-field">
+          <label for="auth-forgot-email">Email</label>
+          <input type="email" id="auth-forgot-email" autocomplete="email" inputmode="email" placeholder="you@example.com">
+        </div>
+        <div class="auth-error" id="auth-forgot-error" role="alert" aria-live="polite"></div>
+        <p class="auth-note">We'll send a password reset link. Open it in this browser to set a new password.</p>
+      </div>
+
+      <div id="auth-success" class="auth-success" hidden></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline btn-sm" id="auth-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="auth-submit">
+        <span id="auth-submit-label">Sign in</span>
       </button>
     </div>
   </div>
@@ -1251,6 +1425,13 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
           </svg>
           <span id="mgr-btn-label">Add Manager ID</span>
         </button>
+        <button class="btn btn-outline btn-sm" id="account-btn" aria-label="Sign in or open account menu" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+          </svg>
+          <span id="account-btn-label">Sign in</span>
+        </button>
+        <div class="account-menu" id="account-menu" role="menu" aria-labelledby="account-btn"></div>
       </div>
     </header>
 
@@ -1259,6 +1440,17 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
 </div>
 
 <nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
+
+<!-- Supabase SDK (Phase 3): ES module from esm.sh, pinned to v2.x -->
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+const SUPABASE_URL = 'https://knodunjnsxelmpziupwk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_xCECe0czArDwwIBtR8Mzxg_tuhyGYu-';
+window._supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce' }
+});
+window.dispatchEvent(new Event('supabase-ready'));
+</script>
 
 <script>
 'use strict';
@@ -1480,6 +1672,287 @@ const MGR = {
     try{ sessionStorage.removeItem(MGR_KEY); }catch(e){}
   }
 };
+
+/* ── PHASE 3: AUTH (Supabase) ──────────────────────────── */
+const AUTH = {
+  user: null,
+  session: null,
+  ready: false,
+  listeners: [],
+
+  on(fn){ this.listeners.push(fn); },
+  emit(){ this.listeners.forEach(fn=>{ try{ fn(this.user); }catch(e){ console.warn(e); } }); },
+
+  client(){
+    return window._supabase || null;
+  },
+
+  async init(){
+    const sb = this.client();
+    if(!sb){
+      /* Supabase SDK failed to load — keep app working in signed-out mode */
+      this.ready = true;
+      this.emit();
+      return;
+    }
+    try{
+      const { data:{ session } } = await sb.auth.getSession();
+      this.session = session;
+      this.user = session ? session.user : null;
+    }catch(e){
+      console.warn('Auth init failed', e);
+    }
+    sb.auth.onAuthStateChange((_evt, session)=>{
+      this.session = session;
+      this.user = session ? session.user : null;
+      this.emit();
+    });
+    this.ready = true;
+    this.emit();
+  },
+
+  async signIn(email, password){
+    const sb = this.client(); if(!sb) throw new Error('Auth service unavailable.');
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) throw error;
+    return data;
+  },
+
+  async signUp(email, password){
+    const sb = this.client(); if(!sb) throw new Error('Auth service unavailable.');
+    const { data, error } = await sb.auth.signUp({
+      email, password,
+      options: { emailRedirectTo: window.location.origin }
+    });
+    if(error) throw error;
+    return data;
+  },
+
+  async resetPassword(email){
+    const sb = this.client(); if(!sb) throw new Error('Auth service unavailable.');
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+    if(error) throw error;
+  },
+
+  async signOut(){
+    const sb = this.client(); if(!sb) return;
+    await sb.auth.signOut();
+  }
+};
+
+/* ── PHASE 3: STORE (Supabase or localStorage) ─────────── */
+/* In-memory cache hydrated on init and on auth state change.
+   Reads stay synchronous (renderers don't need to await).
+   Writes update the cache then persist (DB if signed in, localStorage otherwise). */
+const WATCH_KEY  = 'gwedge.watchlist';
+const ALERTS_KEY = 'gwedge.alerts';
+const RIVAL_KEY  = 'gwedge.rivals';
+
+function defaultAlerts(){
+  return {
+    ownedPriceRise:true, ownedPriceFall:true, ownedInjury:true,
+    watchPriceRise:true, watchPriceFall:false, watchInjury:true,
+    deadline:true
+  };
+}
+
+function alertsFromRow(row){
+  if(!row) return defaultAlerts();
+  return {
+    ownedPriceRise: !!row.owned_price_rise,
+    ownedPriceFall: !!row.owned_price_fall,
+    ownedInjury:    !!row.owned_injury,
+    watchPriceRise: !!row.watch_price_rise,
+    watchPriceFall: !!row.watch_price_fall,
+    watchInjury:    !!row.watch_injury,
+    deadline:       !!row.deadline
+  };
+}
+function alertsToRow(a, userId){
+  return {
+    user_id: userId,
+    owned_price_rise: !!a.ownedPriceRise,
+    owned_price_fall: !!a.ownedPriceFall,
+    owned_injury:     !!a.ownedInjury,
+    watch_price_rise: !!a.watchPriceRise,
+    watch_price_fall: !!a.watchPriceFall,
+    watch_injury:     !!a.watchInjury,
+    deadline:         !!a.deadline
+  };
+}
+
+const Store = {
+  cache: { watchlist: [], rivals: [], alerts: defaultAlerts(), managerId: null },
+  hydrated: false,
+
+  /* Local fallbacks */
+  _readLocalWatchlist(){ try{ const s=localStorage.getItem(WATCH_KEY);  return s?JSON.parse(s):[]; }catch(e){ return []; } },
+  _writeLocalWatchlist(list){ try{ localStorage.setItem(WATCH_KEY, JSON.stringify(list)); }catch(e){} },
+  _readLocalRivals(){    try{ const s=localStorage.getItem(RIVAL_KEY);  return s?JSON.parse(s):[]; }catch(e){ return []; } },
+  _writeLocalRivals(list){    try{ localStorage.setItem(RIVAL_KEY, JSON.stringify(list)); }catch(e){} },
+  _readLocalAlerts(){
+    try{ const s=localStorage.getItem(ALERTS_KEY); return s ? Object.assign(defaultAlerts(), JSON.parse(s)) : defaultAlerts(); }
+    catch(e){ return defaultAlerts(); }
+  },
+  _writeLocalAlerts(a){ try{ localStorage.setItem(ALERTS_KEY, JSON.stringify(a)); }catch(e){} },
+
+  async hydrate(){
+    if(AUTH.user){
+      const sb = AUTH.client(); const uid = AUTH.user.id;
+      try{
+        const [profile, watch, riv, alerts] = await Promise.all([
+          sb.from('gwedge_profiles').select('manager_id').eq('user_id', uid).maybeSingle(),
+          sb.from('gwedge_watchlist').select('player_id').eq('user_id', uid),
+          sb.from('gwedge_rivals').select('rival_manager_id').eq('user_id', uid),
+          sb.from('gwedge_alert_prefs').select('*').eq('user_id', uid).maybeSingle()
+        ]);
+        this.cache.managerId = profile.data ? profile.data.manager_id : null;
+        this.cache.watchlist = (watch.data||[]).map(r=>r.player_id);
+        this.cache.rivals    = (riv.data||[]).map(r=>r.rival_manager_id);
+        this.cache.alerts    = alerts.data ? alertsFromRow(alerts.data) : defaultAlerts();
+      }catch(e){
+        console.warn('Store hydrate failed', e);
+      }
+    } else {
+      this.cache.managerId = MGR.id;
+      this.cache.watchlist = this._readLocalWatchlist();
+      this.cache.rivals    = this._readLocalRivals();
+      this.cache.alerts    = this._readLocalAlerts();
+    }
+    this.hydrated = true;
+  },
+
+  /* Manager ID — DB when signed in, sessionStorage when not */
+  async setManagerId(id){
+    this.cache.managerId = id;
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_profiles').upsert({ user_id: AUTH.user.id, manager_id: id }, { onConflict: 'user_id' });
+    }
+    /* MGR.save already writes sessionStorage */
+  },
+
+  /* Watchlist */
+  watchItems(){ return [...this.cache.watchlist]; },
+  async addWatchItem(playerId){
+    if(this.cache.watchlist.includes(playerId)) return;
+    this.cache.watchlist.push(playerId);
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_watchlist').insert({ user_id: AUTH.user.id, player_id: playerId });
+    } else {
+      this._writeLocalWatchlist(this.cache.watchlist);
+    }
+  },
+  async removeWatchItem(playerId){
+    const i = this.cache.watchlist.indexOf(playerId);
+    if(i<0) return;
+    this.cache.watchlist.splice(i,1);
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_watchlist').delete().eq('user_id', AUTH.user.id).eq('player_id', playerId);
+    } else {
+      this._writeLocalWatchlist(this.cache.watchlist);
+    }
+  },
+
+  /* Rivals */
+  rivalItems(){ return [...this.cache.rivals]; },
+  async addRival(id){
+    if(this.cache.rivals.includes(id) || this.cache.rivals.length>=5) return;
+    this.cache.rivals.push(id);
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_rivals').insert({ user_id: AUTH.user.id, rival_manager_id: id });
+    } else {
+      this._writeLocalRivals(this.cache.rivals);
+    }
+  },
+  async removeRival(id){
+    const i = this.cache.rivals.indexOf(id);
+    if(i<0) return;
+    this.cache.rivals.splice(i,1);
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_rivals').delete().eq('user_id', AUTH.user.id).eq('rival_manager_id', id);
+    } else {
+      this._writeLocalRivals(this.cache.rivals);
+    }
+  },
+
+  /* Alert prefs */
+  alerts(){ return Object.assign({}, this.cache.alerts); },
+  async setAlertPref(key, value){
+    if(!(key in this.cache.alerts)) return;
+    this.cache.alerts[key] = !!value;
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_alert_prefs').upsert(alertsToRow(this.cache.alerts, AUTH.user.id), { onConflict: 'user_id' });
+    } else {
+      this._writeLocalAlerts(this.cache.alerts);
+    }
+  },
+
+  /* Migration helpers (signed-out → signed-in) */
+  hasLocalDataToMigrate(){
+    return this._readLocalWatchlist().length>0 ||
+           this._readLocalRivals().length>0 ||
+           !!sessionStorage.getItem(MGR_KEY);
+  },
+
+  async migrateLocalToAccount(){
+    if(!AUTH.user) return { migrated:false };
+    const sb = AUTH.client(); const uid = AUTH.user.id;
+    const localWatch  = this._readLocalWatchlist();
+    const localRivals = this._readLocalRivals();
+    const localAlerts = this._readLocalAlerts();
+    const localMgr    = sessionStorage.getItem(MGR_KEY);
+    const counts = { watchlist:0, rivals:0, alerts:false, managerId:false };
+
+    if(localMgr && /^\d{1,9}$/.test(localMgr)){
+      const mid = parseInt(localMgr,10);
+      await sb.from('gwedge_profiles').upsert({ user_id: uid, manager_id: mid }, { onConflict: 'user_id' });
+      this.cache.managerId = mid;
+      counts.managerId = true;
+    }
+    if(localWatch.length){
+      const rows = localWatch.map(player_id => ({ user_id: uid, player_id }));
+      const { error } = await sb.from('gwedge_watchlist').upsert(rows, { onConflict: 'user_id,player_id', ignoreDuplicates: true });
+      if(!error){ counts.watchlist = localWatch.length; }
+    }
+    if(localRivals.length){
+      const rows = localRivals.map(rival_manager_id => ({ user_id: uid, rival_manager_id }));
+      const { error } = await sb.from('gwedge_rivals').upsert(rows, { onConflict: 'user_id,rival_manager_id', ignoreDuplicates: true });
+      if(!error){ counts.rivals = localRivals.length; }
+    }
+    /* Always overwrite alert prefs (single row) — preserves user intent from anonymous use */
+    await sb.from('gwedge_alert_prefs').upsert(alertsToRow(localAlerts, uid), { onConflict: 'user_id' });
+    counts.alerts = true;
+
+    /* Clear local data once migrated */
+    try{ localStorage.removeItem(WATCH_KEY); }catch(e){}
+    try{ localStorage.removeItem(RIVAL_KEY); }catch(e){}
+    try{ localStorage.removeItem(ALERTS_KEY); }catch(e){}
+    /* Keep MGR.id in session — it stays useful as a runtime value */
+
+    /* Re-hydrate */
+    await this.hydrate();
+    return { migrated:true, counts };
+  },
+
+  async discardLocalData(){
+    try{ localStorage.removeItem(WATCH_KEY); }catch(e){}
+    try{ localStorage.removeItem(RIVAL_KEY); }catch(e){}
+    try{ localStorage.removeItem(ALERTS_KEY); }catch(e){}
+  }
+};
+
+/* Backwards-compat wrappers — old renderer code still reads these synchronously */
+function loadWatchlist(){ return Store.watchItems(); }
+function loadRivals(){    return Store.rivalItems(); }
+function loadAlerts(){    return Store.alerts(); }
 
 /* ── BOOTSTRAP HELPERS ─────────────────────────────────── */
 let bootstrapPromise = null;
@@ -1709,10 +2182,11 @@ function onSelectChange(e){
   if(act==='whatif-player'){ whatifSel.playerId = parseInt(el.value,10); renderPage('whatif'); }
   else if(act==='whatif-outcome'){ whatifSel.outcome = el.value; renderPage('whatif'); }
 }
-function onActionClick(e){
+async function onActionClick(e){
   const el = e.currentTarget;
   const act = el.dataset.act;
   if(act==='open-mgr'){ openMgrModal(); }
+  else if(act==='open-auth'){ openAuthModal(el.dataset.tab||'signin'); }
   else if(act==='retry'){
     const h = el.dataset.handle;
     if(h && PANEL_RENDERERS[h]) renderPage(h);
@@ -1729,23 +2203,22 @@ function onActionClick(e){
     cmpPlayers = cmpPlayers.filter(x=>x!==id);
     renderPage('compare');
   }
-  else if(act==='watch-add'){ handleAddFromPicker('watch-input','watch-list', id=>{
-    const w = loadWatchlist();
-    if(!w.includes(id)){ w.push(id); saveWatchlist(w); }
+  else if(act==='watch-add'){ handleAddFromPicker('watch-input','watch-list', async id=>{
+    await Store.addWatchItem(id);
     renderPage('watchlist');
   }); }
   else if(act==='watch-remove'){
     const id = parseInt(el.dataset.id,10);
-    saveWatchlist(loadWatchlist().filter(x=>x!==id));
+    await Store.removeWatchItem(id);
     renderPage('watchlist');
   }
   else if(act==='alert-toggle'){
     const key = el.dataset.key;
-    const a = loadAlerts();
-    a[key] = !a[key];
-    saveAlerts(a);
-    el.classList.toggle('on', !!a[key]);
-    el.setAttribute('aria-checked', a[key]?'true':'false');
+    const current = Store.cache.alerts[key];
+    const next = !current;
+    el.classList.toggle('on', next);
+    el.setAttribute('aria-checked', next?'true':'false');
+    await Store.setAlertPref(key, next);
   }
   else if(act==='rival-add'){
     const input = document.getElementById('rival-input');
@@ -1755,16 +2228,22 @@ function onActionClick(e){
       input.setAttribute('aria-invalid','true'); input.focus(); return;
     }
     const id = parseInt(v,10);
-    const r = loadRivals();
-    if(r.length>=5) return;
-    if(!r.includes(id)){ r.push(id); saveRivals(r); }
+    if(Store.cache.rivals.length>=5) return;
+    await Store.addRival(id);
     input.value=''; input.removeAttribute('aria-invalid');
     renderPage('rivals');
   }
   else if(act==='rival-remove'){
     const id = parseInt(el.dataset.id,10);
-    saveRivals(loadRivals().filter(x=>x!==id));
+    await Store.removeRival(id);
     renderPage('rivals');
+  }
+  else if(act==='migrate-yes'){
+    await runMigration();
+  }
+  else if(act==='migrate-no'){
+    await Store.discardLocalData();
+    dismissMigrationPrompt();
   }
 }
 
@@ -2590,32 +3069,7 @@ function capLeaderboard(items, teamById){
   '</div>';
 }
 
-/* ── WATCHLIST / ALERTS STORAGE ────────────────────────── */
-const WATCH_KEY='gwedge.watchlist';
-const ALERTS_KEY='gwedge.alerts';
-function loadWatchlist(){
-  try{ const s=localStorage.getItem(WATCH_KEY); return s?JSON.parse(s):[]; }
-  catch(e){ return []; }
-}
-function saveWatchlist(list){
-  try{ localStorage.setItem(WATCH_KEY, JSON.stringify(list)); }catch(e){}
-}
-function defaultAlerts(){
-  return {
-    ownedPriceRise:true, ownedPriceFall:true, ownedInjury:true,
-    watchPriceRise:true, watchPriceFall:false, watchInjury:true,
-    deadline:true
-  };
-}
-function loadAlerts(){
-  try{
-    const s=localStorage.getItem(ALERTS_KEY);
-    return s ? Object.assign(defaultAlerts(), JSON.parse(s)) : defaultAlerts();
-  }catch(e){ return defaultAlerts(); }
-}
-function saveAlerts(a){
-  try{ localStorage.setItem(ALERTS_KEY, JSON.stringify(a)); }catch(e){}
-}
+/* (Watchlist/Alerts storage now lives in the Phase 3 Store module above.) */
 
 /* Player picker datalist HTML — sorted by ownership for relevance */
 function playerDatalist(elements, teamById, listId, limit){
@@ -3783,13 +4237,6 @@ async function renderTemplate(){
 }
 
 /* ── INTEL: Rival Scout ────────────────────────────────── */
-const RIVAL_KEY='gwedge.rivals';
-function loadRivals(){
-  try{ const s=localStorage.getItem(RIVAL_KEY); return s?JSON.parse(s):[]; }catch(e){ return []; }
-}
-function saveRivals(list){
-  try{ localStorage.setItem(RIVAL_KEY, JSON.stringify(list)); }catch(e){}
-}
 async function renderRivals(){
   if(!MGR.id){
     return '<div class="card"><div class="card-title">Rival Scout</div>'+
@@ -4086,6 +4533,8 @@ async function submitMgr(){
   saveLabel.textContent = 'Checking…';
   try{
     await MGR.save(raw);
+    /* Persist to account if signed in */
+    try{ await Store.setManagerId(MGR.id); }catch(e){ console.warn('Failed to save Manager ID to account:', e); }
     closeMgrModal();
     syncMgrPill();
     invalidateAll();
@@ -4100,12 +4549,234 @@ async function submitMgr(){
     saveLabel.textContent = prev;
   }
 }
-function signOutMgr(){
+async function signOutMgr(){
+  /* "Forget" — clears Manager ID from session and (if signed in) from the account profile */
   MGR.clear();
+  if(AUTH.user){
+    try{
+      const sb = AUTH.client();
+      await sb.from('gwedge_profiles').upsert({ user_id: AUTH.user.id, manager_id: null }, { onConflict: 'user_id' });
+      Store.cache.managerId = null;
+    }catch(e){ console.warn('Failed to clear Manager ID on account:', e); }
+  }
   syncMgrPill();
   closeMgrModal();
   invalidateAll();
   renderPage(currentPanel);
+}
+
+/* ── PHASE 3: AUTH MODAL UI ────────────────────────────── */
+let authTab = 'signin';
+let authLastFocus = null;
+function openAuthModal(tab){
+  if(tab) authTab = tab;
+  authLastFocus = document.activeElement;
+  switchAuthTab(authTab, false);
+  document.getElementById('auth-modal').hidden = false;
+  setTimeout(()=>{
+    const pane = document.getElementById('auth-pane-'+authTab);
+    const firstInput = pane && pane.querySelector('input');
+    if(firstInput) firstInput.focus();
+  }, 30);
+}
+function closeAuthModal(){
+  document.getElementById('auth-modal').hidden = true;
+  document.getElementById('auth-success').hidden = true;
+  document.getElementById('auth-success').textContent='';
+  ['signin','signup','forgot'].forEach(t=>{
+    const err = document.getElementById('auth-'+t+'-error'); if(err) err.textContent='';
+  });
+  if(authLastFocus){ try{ authLastFocus.focus(); }catch(e){} }
+}
+function switchAuthTab(tab, focus){
+  authTab = tab;
+  ['signin','signup','forgot'].forEach(t=>{
+    const pane = document.getElementById('auth-pane-'+t);
+    const tabBtn = document.querySelector('[data-auth-tab="'+t+'"]');
+    if(pane) pane.hidden = (t!==tab);
+    if(tabBtn){
+      tabBtn.classList.toggle('active', t===tab);
+      tabBtn.setAttribute('aria-selected', t===tab ? 'true' : 'false');
+    }
+  });
+  const labels = {signin:'Sign in', signup:'Create account', forgot:'Send reset link'};
+  document.getElementById('auth-submit-label').textContent = labels[tab];
+  document.getElementById('auth-success').hidden = true;
+  if(focus !== false){
+    const firstInput = document.getElementById('auth-pane-'+tab).querySelector('input');
+    if(firstInput) firstInput.focus();
+  }
+}
+
+async function submitAuth(){
+  const submitBtn = document.getElementById('auth-submit');
+  const label = document.getElementById('auth-submit-label');
+  const prev = label.textContent;
+  submitBtn.disabled = true; label.textContent = 'Working…';
+  try{
+    if(authTab === 'signin'){
+      const email = document.getElementById('auth-signin-email').value.trim();
+      const pass  = document.getElementById('auth-signin-password').value;
+      const err   = document.getElementById('auth-signin-error');
+      err.textContent='';
+      if(!email || !pass){ err.textContent='Enter your email and password.'; return; }
+      try{
+        await AUTH.signIn(email, pass);
+        /* AUTH state change handler will close modal and re-render */
+      }catch(e){
+        err.textContent = e.message || 'Sign-in failed. Check your email and password.';
+      }
+    } else if(authTab === 'signup'){
+      const email = document.getElementById('auth-signup-email').value.trim();
+      const pass  = document.getElementById('auth-signup-password').value;
+      const err   = document.getElementById('auth-signup-error');
+      err.textContent='';
+      if(!email){ err.textContent='Enter your email.'; return; }
+      if(!pass || pass.length<8){ err.textContent='Password must be at least 8 characters.'; return; }
+      try{
+        await AUTH.signUp(email, pass);
+        showAuthSuccess(
+          '<b>Check your email</b>'+
+          'We\'ve sent a confirmation link to <b>'+escapeHtml(email)+'</b>. Open it in this browser to finish creating your account.'
+        );
+      }catch(e){
+        err.textContent = e.message || 'Could not create account.';
+      }
+    } else if(authTab === 'forgot'){
+      const email = document.getElementById('auth-forgot-email').value.trim();
+      const err   = document.getElementById('auth-forgot-error');
+      err.textContent='';
+      if(!email){ err.textContent='Enter your email.'; return; }
+      try{
+        await AUTH.resetPassword(email);
+        showAuthSuccess(
+          '<b>Reset link sent</b>'+
+          'If an account exists for <b>'+escapeHtml(email)+'</b>, a password reset link is now in your inbox.'
+        );
+      }catch(e){
+        err.textContent = e.message || 'Could not send reset email.';
+      }
+    }
+  } finally {
+    submitBtn.disabled = false; label.textContent = prev;
+  }
+}
+function showAuthSuccess(html){
+  const box = document.getElementById('auth-success');
+  box.innerHTML = html;
+  box.hidden = false;
+}
+
+/* ── PHASE 3: ACCOUNT MENU ─────────────────────────────── */
+function syncAccountUI(){
+  const btn = document.getElementById('account-btn');
+  const label = document.getElementById('account-btn-label');
+  const menu = document.getElementById('account-menu');
+  if(AUTH.user){
+    const em = AUTH.user.email || '';
+    const initial = (em.charAt(0)||'G').toUpperCase();
+    btn.classList.remove('btn-outline','btn-sm');
+    btn.classList.add('account-pill');
+    btn.innerHTML =
+      '<span class="account-avatar">'+escapeHtml(initial)+'</span>'+
+      '<span class="account-email">'+escapeHtml(em)+'</span>';
+    btn.setAttribute('aria-label', 'Signed in as '+em+' — open account menu');
+    menu.innerHTML =
+      '<div class="account-menu-head">'+
+        '<div class="label">Signed in as</div>'+
+        '<div class="email">'+escapeHtml(em)+'</div>'+
+      '</div>'+
+      '<button data-act="open-mgr">'+svg(ICON.team,'width="14" height="14"')+'Change Manager ID</button>'+
+      '<button class="danger" id="signout-btn">'+svg(ICON.lock,'width="14" height="14"')+'Sign out</button>';
+  } else {
+    btn.classList.remove('account-pill');
+    btn.classList.add('btn','btn-outline','btn-sm');
+    btn.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+
+        '<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>'+
+      '</svg>'+
+      '<span id="account-btn-label">Sign in</span>';
+    btn.setAttribute('aria-label','Sign in or create an account');
+    menu.innerHTML = '';
+  }
+  menu.classList.remove('open');
+  btn.setAttribute('aria-expanded','false');
+}
+function toggleAccountMenu(){
+  const btn = document.getElementById('account-btn');
+  const menu = document.getElementById('account-menu');
+  if(!AUTH.user){
+    openAuthModal('signin');
+    return;
+  }
+  const isOpen = menu.classList.toggle('open');
+  btn.setAttribute('aria-expanded', isOpen?'true':'false');
+  if(isOpen){
+    /* Wire the dynamic Sign out button */
+    const so = document.getElementById('signout-btn');
+    if(so) so.onclick = async ()=>{ await AUTH.signOut(); };
+    /* Wire any data-act buttons inside the menu */
+    menu.querySelectorAll('[data-act]').forEach(el=>{
+      el.addEventListener('click', onActionClick);
+    });
+  }
+}
+function closeAccountMenu(){
+  document.getElementById('account-menu').classList.remove('open');
+  document.getElementById('account-btn').setAttribute('aria-expanded','false');
+}
+
+/* ── PHASE 3: MIGRATION PROMPT ─────────────────────────── */
+let migrationDismissed = false;
+function maybeShowMigrationPrompt(){
+  if(!AUTH.user) return;
+  if(migrationDismissed) return;
+  if(!Store.hasLocalDataToMigrate()) return;
+
+  /* Build a banner injected at the top of the current page */
+  const pages = document.getElementById('pages');
+  if(!pages) return;
+  const main = pages.querySelector('.page');
+  if(!main) return;
+  const head = main.querySelector('.page-head');
+  if(!head || head.parentNode.querySelector('#migrate-prompt')) return;
+
+  const banner = document.createElement('div');
+  banner.className = 'migrate-prompt';
+  banner.id = 'migrate-prompt';
+  banner.innerHTML =
+    '<div class="migrate-prompt-text">'+
+      '<b>Copy your saved data to this account?</b>'+
+      '<p>We found a Manager ID, watchlist or alert prefs in this browser. Copy them to your account so they sync across devices.</p>'+
+    '</div>'+
+    '<div class="migrate-prompt-actions">'+
+      '<button class="btn btn-primary btn-sm" data-act="migrate-yes">Copy to my account</button>'+
+      '<button class="btn btn-outline btn-sm" data-act="migrate-no">Discard local copy</button>'+
+    '</div>';
+  head.insertAdjacentElement('afterend', banner);
+  banner.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click', onActionClick));
+}
+async function runMigration(){
+  const res = await Store.migrateLocalToAccount();
+  migrationDismissed = true;
+  dismissMigrationPrompt();
+  if(res && res.migrated){
+    /* If a Manager ID came across, prime MGR for live data */
+    if(Store.cache.managerId){
+      MGR.id = Store.cache.managerId;
+      try{ sessionStorage.setItem(MGR_KEY, String(MGR.id)); }catch(e){}
+      MGR.entry = null;
+      try{ await MGR.getEntry(); }catch(e){}
+      syncMgrPill();
+    }
+    invalidateAll();
+    renderPage(currentPanel);
+  }
+}
+function dismissMigrationPrompt(){
+  const b = document.getElementById('migrate-prompt');
+  if(b) b.remove();
+  migrationDismissed = true;
 }
 function syncMgrPill(){
   const btn = document.getElementById('mgr-btn');
@@ -4154,7 +4825,7 @@ async function refreshGwStrip(){
 }
 
 /* ── INIT ──────────────────────────────────────────────── */
-function init(){
+async function init(){
   MGR.init();
   buildNav();
   buildBottomNav();
@@ -4190,11 +4861,74 @@ function init(){
     e.preventDefault(); openPanel('dashboard');
   });
 
-  document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){ closeSidebar(); if(!document.getElementById('mgr-modal').hidden) closeMgrModal(); }
+  /* Phase 3 auth wiring */
+  document.getElementById('account-btn').addEventListener('click', toggleAccountMenu);
+  document.getElementById('auth-modal-close').addEventListener('click', closeAuthModal);
+  document.getElementById('auth-cancel').addEventListener('click', closeAuthModal);
+  document.getElementById('auth-submit').addEventListener('click', submitAuth);
+  document.getElementById('auth-modal').addEventListener('click', function(e){
+    if(e.target===this) closeAuthModal();
+  });
+  document.querySelectorAll('[data-auth-tab]').forEach(el=>{
+    el.addEventListener('click', function(){ switchAuthTab(this.dataset.authTab, true); });
+  });
+  document.getElementById('auth-modal').addEventListener('keydown', function(e){
+    if(e.key==='Enter' && e.target.tagName==='INPUT') submitAuth();
+  });
+  /* Click outside account menu closes it */
+  document.addEventListener('click', function(e){
+    const btn = document.getElementById('account-btn');
+    const menu = document.getElementById('account-menu');
+    if(!btn || !menu) return;
+    if(menu.classList.contains('open') && !btn.contains(e.target) && !menu.contains(e.target)){
+      closeAccountMenu();
+    }
   });
 
-  /* First paint: render page + sidebar GW strip in parallel; prime MGR.entry if we have one */
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      closeSidebar();
+      if(!document.getElementById('mgr-modal').hidden) closeMgrModal();
+      if(!document.getElementById('auth-modal').hidden) closeAuthModal();
+      closeAccountMenu();
+    }
+  });
+
+  /* Wait for Supabase SDK (loads from esm.sh as an ES module).
+     If it's slow or fails, we proceed in signed-out mode after a timeout. */
+  await waitForSupabase(5000);
+  await AUTH.init();
+  AUTH.on(async (user)=>{
+    /* Auth state changed */
+    syncAccountUI();
+    /* If signed in, pull profile.manager_id into MGR if MGR is empty */
+    if(user){
+      closeAuthModal();
+      await Store.hydrate();
+      if(!MGR.id && Store.cache.managerId){
+        MGR.id = Store.cache.managerId;
+        try{ sessionStorage.setItem(MGR_KEY, String(MGR.id)); }catch(e){}
+        MGR.entry = null;
+        try{ await MGR.getEntry(); }catch(e){}
+      }
+      syncMgrPill();
+      invalidateAll();
+      await renderPage(currentPanel);
+      maybeShowMigrationPrompt();
+    } else {
+      migrationDismissed = false;
+      await Store.hydrate();
+      syncMgrPill();
+      invalidateAll();
+      renderPage(currentPanel);
+    }
+  });
+
+  /* Initial hydrate (signed-out path even if auth not ready yet) */
+  await Store.hydrate();
+
+  /* First paint */
+  syncAccountUI();
   syncMgrPill();
   refreshGwStrip();
   if(MGR.id){
@@ -4202,6 +4936,19 @@ function init(){
   }
   renderPage('dashboard');
   syncNav();
+
+  /* If we're already signed in on first paint, run the migration check */
+  if(AUTH.user) maybeShowMigrationPrompt();
+}
+
+function waitForSupabase(timeoutMs){
+  return new Promise(resolve=>{
+    if(window._supabase) return resolve();
+    let done = false;
+    const handler = ()=>{ if(done) return; done=true; window.removeEventListener('supabase-ready', handler); resolve(); };
+    window.addEventListener('supabase-ready', handler);
+    setTimeout(()=>{ if(done) return; done=true; window.removeEventListener('supabase-ready', handler); resolve(); }, timeoutMs||3000);
+  });
 }
 
 document.addEventListener('DOMContentLoaded',init);
