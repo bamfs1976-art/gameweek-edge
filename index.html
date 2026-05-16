@@ -804,10 +804,254 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
 /* ── BOTTOM NAV (mobile) ───────────────────────────────── */
 .bottom-nav{display:none}
 
+/* ── PANEL: COMPARE ────────────────────────────────────── */
+.cmp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.cmp-slot{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:18px 12px;
+  display:flex;flex-direction:column;align-items:center;
+  text-align:center;position:relative;min-height:160px;justify-content:center;
+}
+.cmp-slot.empty{
+  border:1.5px dashed var(--border-2);background:var(--surface-2);
+  color:var(--text-3);font-size:.82rem;
+}
+.cmp-shirt{width:44px;height:46px;margin-bottom:8px}
+.cmp-shirt svg{width:100%;height:100%}
+.cmp-slot .cmp-name{font-family:var(--font-display);font-weight:800;font-size:1.02rem;letter-spacing:-.02em;line-height:1.1}
+.cmp-slot .cmp-team{font-size:.7rem;color:var(--text-3);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:4px}
+.cmp-remove{
+  position:absolute;top:6px;right:6px;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:var(--surface-3);color:var(--text-2);
+  transition:background .14s var(--ease),color .14s var(--ease);
+}
+.cmp-remove:hover{background:var(--red-soft);color:var(--red)}
+.cmp-remove svg{width:12px;height:12px}
+.cmp-search,.watch-add{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.cmp-search input,.watch-input{
+  flex:1;min-width:200px;padding:11px 14px;
+  background:var(--surface-2);border:1px solid var(--border-2);
+  border-radius:var(--r-md);font-size:.9rem;color:var(--text);
+  min-height:44px;
+}
+.cmp-search input:focus,.watch-input:focus{
+  outline:none;border-color:var(--green-bright);box-shadow:0 0 0 3px var(--green-glow);
+}
+.cmp-stat-table{display:flex;flex-direction:column;gap:1px;margin-top:20px}
+.cmp-stat-row{
+  display:grid;grid-template-columns:140px repeat(4,1fr);gap:10px;
+  padding:9px 12px;border-radius:var(--r-sm);align-items:center;
+}
+.cmp-stat-row:nth-child(odd){background:var(--surface-3)}
+.cmp-stat-label{font-size:.78rem;color:var(--text-3);font-weight:600}
+.cmp-stat-val{font-family:var(--font-mono);font-weight:600;text-align:center;font-size:.86rem}
+.cmp-stat-val.best{color:var(--green-bright);font-weight:800}
+.cmp-stat-val.empty{color:var(--text-4)}
+
+/* ── PANEL: PRICE PREDICTOR ────────────────────────────── */
+.price-list{display:flex;flex-direction:column;gap:1px}
+.price-list .price-row+.price-row{border-top:1px solid var(--border)}
+.price-row{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.price-row:hover{background:var(--surface-3)}
+.price-rank{
+  width:24px;flex-shrink:0;text-align:center;font-family:var(--font-mono);
+  font-weight:700;color:var(--text-3);font-size:.78rem;
+}
+.price-bar-wrap{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.price-bar-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.price-bar-name{font-weight:700;font-size:.85rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.price-bar-meta{font-size:.72rem;color:var(--text-3);font-family:var(--font-mono)}
+.price-bar-track{height:6px;background:var(--surface-3);border-radius:var(--r-pill);overflow:hidden}
+.price-bar-fill{height:100%;border-radius:var(--r-pill)}
+.price-row.up .price-bar-fill{background:linear-gradient(90deg,var(--green-soft),var(--green-bright))}
+.price-row.down .price-bar-fill{background:linear-gradient(90deg,var(--red-soft),var(--red))}
+.price-confidence{
+  font-family:var(--font-mono);font-size:.9rem;font-weight:700;text-align:right;
+  min-width:64px;flex-shrink:0;
+}
+.price-row.up .price-confidence{color:var(--green-bright)}
+.price-row.down .price-confidence{color:var(--red)}
+
+/* ── PANEL: INJURY MONITOR ─────────────────────────────── */
+.inj-group{margin-bottom:22px}
+.inj-group:last-child{margin-bottom:0}
+.inj-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.inj-head h3{font-family:var(--font-display);font-size:1rem;font-weight:800;letter-spacing:-.02em}
+.inj-count{font-size:.72rem;color:var(--text-3);font-weight:600}
+.inj-row .inj-news{font-size:.76rem;color:var(--text-2);margin-top:3px;line-height:1.45;
+  white-space:normal;overflow-wrap:break-word}
+.inj-chance{
+  font-family:var(--font-mono);font-weight:700;font-size:.84rem;
+  text-align:right;min-width:46px;flex-shrink:0;
+}
+
+/* ── PANEL: SET PIECE ──────────────────────────────────── */
+.sp-grid{
+  display:grid;
+  grid-template-columns:78px repeat(3,1fr);
+  border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;
+}
+.sp-cell{
+  padding:10px 12px;font-size:.84rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;min-height:54px;
+}
+.sp-grid > .sp-cell:nth-last-child(-n+4){border-bottom:none}
+.sp-header{
+  background:var(--surface-3);font-weight:700;font-size:.66rem;
+  color:var(--text-2);text-transform:uppercase;letter-spacing:.07em;min-height:42px;
+}
+.sp-team{font-weight:800;font-family:var(--font-mono);font-size:.88rem}
+.sp-name{font-weight:600;flex:1;min-width:0;line-height:1.2}
+.sp-conf{
+  font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 7px;border-radius:var(--r-pill);flex-shrink:0;
+}
+.sp-conf.high{background:var(--green-soft);color:var(--green-bright)}
+.sp-conf.med{background:var(--amber-soft);color:var(--amber)}
+.sp-empty{color:var(--text-3);font-size:.76rem;font-style:italic}
+
+/* ── PANEL: FIXTURE PLANNER ────────────────────────────── */
+.fix-head{
+  display:grid;gap:4px;flex:1;
+  font-size:.62rem;font-weight:800;letter-spacing:.06em;color:var(--text-3);
+  text-transform:uppercase;text-align:center;margin-left:64px;margin-bottom:8px;
+}
+.fix-grid{display:flex;flex-direction:column;gap:4px}
+.fix-row{display:flex;align-items:center;gap:8px}
+.fix-team-label{
+  width:56px;flex-shrink:0;font-size:.74rem;font-weight:700;
+  color:var(--text-2);font-family:var(--font-mono);
+  display:flex;align-items:baseline;justify-content:space-between;gap:4px;
+}
+.fix-team-label small{font-size:.64rem;font-weight:600;color:var(--text-3);font-family:var(--font-mono)}
+.fix-cells{display:grid;gap:4px;flex:1;min-width:0}
+.fix-cell{
+  min-height:42px;border-radius:6px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25);
+  padding:3px;line-height:1.1;text-align:center;
+}
+.fix-cell .opp{font-family:var(--font-mono)}
+.fix-cell .ha{font-size:.58rem;opacity:.88;margin-top:1px;letter-spacing:.04em;font-weight:700}
+.fix-cell.empty{background:var(--surface-3);color:var(--text-4);text-shadow:none}
+.fix-cell.dgw{position:relative}
+.fix-cell.dgw::after{
+  content:'';position:absolute;top:3px;right:3px;
+  width:6px;height:6px;border-radius:50%;background:#fff;
+  box-shadow:0 0 0 1.5px rgba(0,0,0,.25);
+}
+.fix-double{display:grid;gap:2px;grid-template-rows:1fr 1fr;height:100%;width:100%}
+.fix-legend{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px;
+  font-size:.72rem;color:var(--text-3)}
+.fix-legend-chip{display:inline-flex;align-items:center;gap:5px}
+.fix-legend-swatch{width:14px;height:14px;border-radius:3px;position:relative}
+
+/* ── PANEL: CHIP STRATEGY ──────────────────────────────── */
+.chip-list{display:flex;flex-direction:column;gap:10px}
+.chip-card{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  box-shadow:var(--shadow);border-left:3px solid var(--green);
+}
+.chip-card.used{border-left-color:var(--text-3);opacity:.75}
+.chip-icon{
+  width:38px;height:38px;border-radius:var(--r-sm);
+  background:var(--green-soft);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.chip-icon svg{width:18px;height:18px;color:var(--green-bright)}
+.chip-card.used .chip-icon{background:var(--surface-3)}
+.chip-card.used .chip-icon svg{color:var(--text-3)}
+.chip-body{flex:1;min-width:0}
+.chip-name-line{font-family:var(--font-display);font-weight:800;font-size:1.02rem;letter-spacing:-.02em}
+.chip-state{font-size:.76rem;color:var(--text-3);margin-top:3px;font-weight:600}
+.chip-rec{font-size:.84rem;color:var(--text-2);margin-top:8px;line-height:1.55}
+
+/* ── PANEL: GW HISTORY ─────────────────────────────────── */
+.gwh-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.gwh-card{
+  padding:14px 16px;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);
+}
+.gwh-card-label{font-size:.64rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3)}
+.gwh-card-val{font-family:var(--font-display);font-weight:800;font-size:1.3rem;
+  letter-spacing:-.02em;margin-top:4px}
+.gwh-table{display:flex;flex-direction:column;gap:1px}
+.gwh-header,.gwh-row{
+  display:grid;grid-template-columns:42px 1fr 70px 90px 80px 100px;gap:10px;
+  padding:10px 12px;align-items:center;font-size:.84rem;border-radius:var(--r-sm);
+}
+.gwh-header{
+  font-size:.62rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--text-3);background:var(--surface-3);border-radius:var(--r-md);margin-bottom:6px;
+}
+.gwh-row:nth-child(odd){background:var(--surface-3)}
+.gwh-row.best{outline:1px solid var(--green-bright);background:var(--green-soft)}
+.gwh-row.worst{outline:1px solid var(--red);background:var(--red-soft)}
+.gwh-pts{font-family:var(--font-mono);font-weight:800;text-align:right}
+.gwh-rank{font-family:var(--font-mono);text-align:right;color:var(--text-2)}
+.gwh-move{font-family:var(--font-mono);font-weight:700;text-align:right;font-size:.8rem}
+.gwh-move.up{color:var(--green-bright)}
+.gwh-move.down{color:var(--red)}
+.spark{height:70px;width:100%;margin:4px 0 12px;display:block}
+
+/* ── PANEL: ALERTS ─────────────────────────────────────── */
+.alert-toggles{display:flex;flex-direction:column;gap:1px}
+.alert-toggle{
+  display:flex;align-items:center;gap:14px;
+  padding:12px 14px;border-radius:var(--r-sm);
+}
+.alert-toggle:nth-child(odd){background:var(--surface-3)}
+.alert-toggle-text{flex:1;min-width:0}
+.alert-toggle-name{font-weight:700;font-size:.86rem}
+.alert-toggle-desc{font-size:.74rem;color:var(--text-3);margin-top:3px;line-height:1.4}
+.switch{
+  position:relative;width:44px;height:26px;flex-shrink:0;
+  background:var(--surface-3);border-radius:var(--r-pill);
+  border:1px solid var(--border-2);cursor:pointer;
+  transition:background .15s var(--ease),border-color .15s var(--ease);
+}
+.switch::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:18px;height:18px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+  transition:transform .18s var(--ease);
+}
+.switch.on{background:var(--green-bright);border-color:var(--green-bright)}
+.switch.on::after{transform:translateX(18px)}
+.switch:focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px}
+.alert-feed{display:flex;flex-direction:column;gap:1px}
+.alert-feed .alert-item+.alert-item{border-top:1px solid var(--border)}
+.alert-item{display:flex;gap:12px;padding:12px 14px;align-items:flex-start}
+.alert-item-icon{
+  width:34px;height:34px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:var(--surface-3);
+}
+.alert-item-icon svg{width:16px;height:16px;color:var(--text-2)}
+.alert-item.price-up .alert-item-icon{background:var(--green-soft)}
+.alert-item.price-up .alert-item-icon svg{color:var(--green-bright)}
+.alert-item.price-down .alert-item-icon,
+.alert-item.injury .alert-item-icon{background:var(--red-soft)}
+.alert-item.price-down .alert-item-icon svg,
+.alert-item.injury .alert-item-icon svg{color:var(--red)}
+.alert-item.deadline .alert-item-icon{background:var(--amber-soft)}
+.alert-item.deadline .alert-item-icon svg{color:var(--amber)}
+.alert-item-body{flex:1;min-width:0}
+.alert-item-title{font-weight:700;font-size:.86rem;line-height:1.3}
+.alert-item-detail{font-size:.76rem;color:var(--text-3);margin-top:3px;line-height:1.45}
+
 /* ── RESPONSIVE ────────────────────────────────────────── */
 @media(max-width:1080px){
   .g-4{grid-template-columns:repeat(2,1fr)}
   .g-sb,.g-sb-left{grid-template-columns:1fr}
+  .cmp-grid{grid-template-columns:repeat(2,1fr)}
+  .cmp-stat-row{grid-template-columns:90px repeat(4,1fr)}
+  .gwh-header,.gwh-row{grid-template-columns:34px 1fr 60px 80px 60px 80px;font-size:.78rem}
 }
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
@@ -842,6 +1086,16 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
 }
 @media(max-width:560px){
   .g-2,.g-3,.g-4,.cap-grid{grid-template-columns:1fr}
+  .cmp-grid{grid-template-columns:1fr}
+  .cmp-stat-row{grid-template-columns:1fr;text-align:left}
+  .cmp-stat-row .cmp-stat-val{text-align:left}
+  .gwh-header,.gwh-row{grid-template-columns:34px 1fr 56px 56px;font-size:.74rem}
+  .gwh-header > div:nth-child(n+5),.gwh-row > div:nth-child(n+5){display:none}
+  .gwh-row > div:nth-child(4),.gwh-header > div:nth-child(4){display:none}
+  .sp-grid{font-size:.78rem}
+  .sp-cell{padding:8px 10px;min-height:48px}
+  .fix-team-label{width:48px;font-size:.7rem}
+  .fix-head{margin-left:56px}
   .page-head h1{font-size:1.35rem}
   .kpi-value{font-size:1.65rem}
   .topbar{padding:0 14px}
@@ -1437,6 +1691,46 @@ function onActionClick(e){
   }
   else if(act==='set-panel'){
     openPanel(el.dataset.panel);
+  }
+  else if(act==='cmp-add'){ handleAddFromPicker('cmp-input','cmp-list', id=>{
+    if(!cmpPlayers.includes(id) && cmpPlayers.length<4) cmpPlayers.push(id);
+    renderPage('compare');
+  }); }
+  else if(act==='cmp-remove'){
+    const id = parseInt(el.dataset.id,10);
+    cmpPlayers = cmpPlayers.filter(x=>x!==id);
+    renderPage('compare');
+  }
+  else if(act==='watch-add'){ handleAddFromPicker('watch-input','watch-list', id=>{
+    const w = loadWatchlist();
+    if(!w.includes(id)){ w.push(id); saveWatchlist(w); }
+    renderPage('watchlist');
+  }); }
+  else if(act==='watch-remove'){
+    const id = parseInt(el.dataset.id,10);
+    saveWatchlist(loadWatchlist().filter(x=>x!==id));
+    renderPage('watchlist');
+  }
+  else if(act==='alert-toggle'){
+    const key = el.dataset.key;
+    const a = loadAlerts();
+    a[key] = !a[key];
+    saveAlerts(a);
+    el.classList.toggle('on', !!a[key]);
+    el.setAttribute('aria-checked', a[key]?'true':'false');
+  }
+}
+
+function handleAddFromPicker(inputId, listId, onAdd){
+  const input = document.getElementById(inputId);
+  const list = document.getElementById(listId);
+  if(!input || !list) return;
+  const val = input.value.trim();
+  if(!val) return;
+  const opt = Array.from(list.options).find(o=>o.value===val);
+  if(opt && opt.dataset.id){
+    onAdd(parseInt(opt.dataset.id,10));
+    input.value='';
   }
 }
 
@@ -2249,6 +2543,752 @@ function capLeaderboard(items, teamById){
   '</div>';
 }
 
+/* ── WATCHLIST / ALERTS STORAGE ────────────────────────── */
+const WATCH_KEY='gwedge.watchlist';
+const ALERTS_KEY='gwedge.alerts';
+function loadWatchlist(){
+  try{ const s=localStorage.getItem(WATCH_KEY); return s?JSON.parse(s):[]; }
+  catch(e){ return []; }
+}
+function saveWatchlist(list){
+  try{ localStorage.setItem(WATCH_KEY, JSON.stringify(list)); }catch(e){}
+}
+function defaultAlerts(){
+  return {
+    ownedPriceRise:true, ownedPriceFall:true, ownedInjury:true,
+    watchPriceRise:true, watchPriceFall:false, watchInjury:true,
+    deadline:true
+  };
+}
+function loadAlerts(){
+  try{
+    const s=localStorage.getItem(ALERTS_KEY);
+    return s ? Object.assign(defaultAlerts(), JSON.parse(s)) : defaultAlerts();
+  }catch(e){ return defaultAlerts(); }
+}
+function saveAlerts(a){
+  try{ localStorage.setItem(ALERTS_KEY, JSON.stringify(a)); }catch(e){}
+}
+
+/* Player picker datalist HTML — sorted by ownership for relevance */
+function playerDatalist(elements, teamById, listId, limit){
+  const sorted = elements.slice().sort((a,b)=>(parseFloat(b.selected_by_percent)||0)-(parseFloat(a.selected_by_percent)||0));
+  const opts = sorted.slice(0, limit||500).map(p=>{
+    const t = teamById.get(p.team);
+    const label = p.web_name + (t?' ('+t.short_name+')':'');
+    return '<option value="'+escapeHtml(label)+'" data-id="'+p.id+'"></option>';
+  }).join('');
+  return '<datalist id="'+listId+'">'+opts+'</datalist>';
+}
+
+/* ── PLAYERS: Player Compare ───────────────────────────── */
+let cmpPlayers = [];
+async function renderCompare(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  cmpPlayers = cmpPlayers.filter(id=>elements.find(p=>p.id===id));
+
+  const slots = [];
+  for(let i=0;i<4;i++){
+    const id = cmpPlayers[i];
+    if(id){
+      const p = elements.find(e=>e.id===id);
+      const t = teamById.get(p.team);
+      slots.push(
+        '<div class="cmp-slot">'+
+          '<button class="cmp-remove" data-act="cmp-remove" data-id="'+id+'" aria-label="Remove '+escapeHtml(p.web_name)+'">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'+
+          '</button>'+
+          '<div class="cmp-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+          '<div class="cmp-name">'+escapeHtml(p.web_name)+'</div>'+
+          '<div class="cmp-team">'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml((types.get(p.element_type)||{}).singular_name_short||'')+' · '+fmtPrice(p.now_cost)+'</div>'+
+        '</div>'
+      );
+    } else {
+      slots.push('<div class="cmp-slot empty">'+(cmpPlayers.length===0 && i===0?'Pick a player to start':'Slot '+(i+1)+' empty')+'</div>');
+    }
+  }
+
+  let statTable = '<p class="text-3" style="font-size:.82rem;text-align:center;margin-top:18px">Add at least two players to see stat comparison.</p>';
+  if(cmpPlayers.length>=2){
+    const STATS = [
+      {key:'total_points', label:'Total points'},
+      {key:'form', label:'Form (last 5)'},
+      {key:'points_per_game', label:'Points / game'},
+      {key:'minutes', label:'Minutes'},
+      {key:'goals_scored', label:'Goals'},
+      {key:'assists', label:'Assists'},
+      {key:'clean_sheets', label:'Clean sheets'},
+      {key:'expected_goals', label:'xG (season)'},
+      {key:'expected_assists', label:'xA (season)'},
+      {key:'expected_goals_per_90', label:'xG / 90'},
+      {key:'expected_assists_per_90', label:'xA / 90'},
+      {key:'bps', label:'BPS'},
+      {key:'ict_index', label:'ICT index'},
+      {key:'selected_by_percent', label:'Ownership %'},
+      {key:'now_cost', label:'Price', fmt:fmtPrice, lowerBetter:true}
+    ];
+    const players = cmpPlayers.slice(0,4).map(id=>elements.find(e=>e.id===id));
+    statTable = '<div class="cmp-stat-table">'+
+      STATS.map(s=>{
+        const vals = players.map(p=>parseFloat(p[s.key]));
+        const valid = vals.filter(v=>!isNaN(v));
+        const best = valid.length ? (s.lowerBetter ? Math.min(...valid) : Math.max(...valid)) : null;
+        const cells = players.map((p,i)=>{
+          const raw = p[s.key];
+          const display = s.fmt ? s.fmt(raw) : (raw==null||raw===''?'—':String(raw));
+          const isBest = !isNaN(vals[i]) && vals[i]===best && best!=null && valid.length>1 && !valid.every(v=>v===valid[0]);
+          return '<div class="cmp-stat-val'+(isBest?' best':'')+'">'+escapeHtml(display)+'</div>';
+        }).join('');
+        const pad = '<div class="cmp-stat-val empty">—</div>'.repeat(4-players.length);
+        return '<div class="cmp-stat-row">'+
+          '<div class="cmp-stat-label">'+escapeHtml(s.label)+'</div>'+
+          cells+pad+
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  return '<div class="card mb-20">'+
+    '<div class="card-title">Add up to four players to compare side-by-side</div>'+
+    '<div class="cmp-search">'+
+      '<input type="text" id="cmp-input" list="cmp-list" autocomplete="off" placeholder="Start typing a player name…" aria-label="Player search">'+
+      playerDatalist(elements, teamById, 'cmp-list')+
+      '<button class="btn btn-primary btn-sm" data-act="cmp-add">'+svg(ICON.compare,'width="14" height="14"')+'Add to compare</button>'+
+    '</div>'+
+    '<div class="cmp-grid">'+slots.join('')+'</div>'+
+    statTable+
+  '</div>'+
+  '<p class="text-3" style="font-size:.74rem">Green values are the leader for each stat. Price uses lower-is-better. Stats come live from the official FPL API.</p>';
+}
+
+/* ── PLAYERS: Differentials ────────────────────────────── */
+async function renderDiffs(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  const diffs = elements
+    .filter(p => p.status==='a' && parseFloat(p.selected_by_percent)<=15)
+    .map(p => {
+      const form = parseFloat(p.form)||0;
+      const xg90 = parseFloat(p.expected_goals_per_90)||0;
+      const xa90 = parseFloat(p.expected_assists_per_90)||0;
+      const ict = parseFloat(p.ict_index)||0;
+      const own = parseFloat(p.selected_by_percent)||0;
+      return { p, score: form*1.4 + (xg90+xa90)*9 + ict*0.04 - own*0.06 };
+    })
+    .filter(d => d.score > 0)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,20);
+
+  if(!diffs.length){
+    return emptyBlock('No qualifying differentials','Once the season produces enough underlying-stat data, sub-15% owned players with strong xG land here.');
+  }
+
+  return '<div class="card">'+
+    '<div class="card-title">Top 20 differentials — ≤15% ownership, ranked by xG, xA, form vs popularity</div>'+
+    '<div class="player-list">'+
+      diffs.map((d,i)=>{
+        const p=d.p, t=teamById.get(p.team);
+        const pos=(types.get(p.element_type)||{}).singular_name_short||'';
+        return '<div class="player-row">'+
+          '<span class="price-rank">'+(i+1)+'</span>'+
+          '<div class="player-row-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+          '<div class="player-row-main">'+
+            '<div class="player-row-name">'+escapeHtml(p.web_name)+'</div>'+
+            '<div class="player-row-meta">'+
+              '<span>'+escapeHtml(t?t.short_name:'')+'</span><span class="dot"></span>'+
+              '<span>'+escapeHtml(pos)+'</span><span class="dot"></span>'+
+              '<span>'+escapeHtml(p.selected_by_percent||'0')+'% own</span><span class="dot"></span>'+
+              '<span>xG/90 '+escapeHtml(p.expected_goals_per_90||'0')+' · xA/90 '+escapeHtml(p.expected_assists_per_90||'0')+'</span>'+
+            '</div>'+
+          '</div>'+
+          '<div class="player-row-aside"><b>'+fmtPrice(p.now_cost)+'</b>Form '+escapeHtml(p.form||'—')+'</div>'+
+          '<div class="player-row-pts">'+d.score.toFixed(1)+'</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">Score is a weighted blend of form (×1.4) + xG/90 + xA/90 (×9) + ICT (×0.04) minus ownership penalty (×0.06). Higher = stronger differential case.</p>'+
+  '</div>';
+}
+
+/* ── PLAYERS: Price Predictor ──────────────────────────── */
+async function renderPrice(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const totalPlayers = bs.total_players || 10000000;
+
+  const scored = elements.map(p=>{
+    const inEvt = p.transfers_in_event||0;
+    const outEvt = p.transfers_out_event||0;
+    const net = inEvt - outEvt;
+    const ratio = Math.abs(net) / totalPlayers;
+    const conf = Math.min(99, Math.round(ratio*16000));
+    return {p, net, ratio, conf};
+  });
+  const risers = scored.filter(s=>s.net>0 && s.conf>5).sort((a,b)=>b.net-a.net).slice(0,10);
+  const fallers = scored.filter(s=>s.net<0 && s.conf>5).sort((a,b)=>a.net-b.net).slice(0,10);
+
+  if(!risers.length && !fallers.length){
+    return emptyBlock('No active price movement','Transfer volumes are low — usually because we’re between gameweeks. Movement signals strengthen mid-week.');
+  }
+
+  const renderList = (list, isUp) => {
+    if(!list.length) return '<p class="text-3" style="font-size:.78rem;padding:8px">No qualifying '+(isUp?'risers':'fallers')+' right now.</p>';
+    return '<div class="price-list">'+
+      list.map((s,i)=>{
+        const p=s.p, t=teamById.get(p.team);
+        return '<div class="price-row '+(isUp?'up':'down')+'">'+
+          '<span class="price-rank">'+(i+1)+'</span>'+
+          '<div class="price-bar-wrap">'+
+            '<div class="price-bar-row">'+
+              '<span class="price-bar-name">'+escapeHtml(p.web_name)+' <span class="text-3" style="font-weight:500">· '+escapeHtml(t?t.short_name:'')+'</span></span>'+
+              '<span class="price-bar-meta">'+fmtPrice(p.now_cost)+'</span>'+
+            '</div>'+
+            '<div class="price-bar-track"><div class="price-bar-fill" style="width:'+Math.max(8,s.conf)+'%"></div></div>'+
+            '<div class="price-bar-row">'+
+              '<span class="price-bar-meta">Net '+(isUp?'+':'')+fmtNum(s.net)+' · '+escapeHtml(p.selected_by_percent||'0')+'% own</span>'+
+            '</div>'+
+          '</div>'+
+          '<span class="price-confidence">'+(isUp?'+':'−')+s.conf+'%</span>'+
+        '</div>';
+      }).join('') +
+    '</div>';
+  };
+
+  return '<div class="grid g-2 mb-20">'+
+    '<div class="card">'+
+      '<div class="card-title">Top 10 — likely to rise tonight</div>'+
+      renderList(risers, true) +
+    '</div>'+
+    '<div class="card">'+
+      '<div class="card-title">Top 10 — likely to fall tonight</div>'+
+      renderList(fallers, false) +
+    '</div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<p class="text-3" style="font-size:.78rem;margin:0">Confidence is derived from net transfers as a share of total active managers. FPL\'s exact change thresholds aren\'t public, so this is a heuristic — most reliable in the 6 hours before the overnight price update.</p>'+
+  '</div>';
+}
+
+/* ── PLAYERS: Injury Monitor ───────────────────────────── */
+async function renderInjuries(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  const flagged = elements.filter(p=>p.status && p.status!=='a')
+    .sort((a,b)=>parseFloat(b.selected_by_percent)-parseFloat(a.selected_by_percent));
+
+  if(!flagged.length){
+    return emptyBlock('No injury flags right now','Every player is currently flagged available. Press conference and team news updates typically arrive Friday morning.');
+  }
+
+  const groups = [
+    {key:'i', label:'Injured', badge:'badge-red'},
+    {key:'d', label:'Doubt', badge:'badge-amber'},
+    {key:'s', label:'Suspended', badge:'badge-red'},
+    {key:'n', label:'Not in squad', badge:'badge-grey'},
+    {key:'u', label:'Unavailable', badge:'badge-red'}
+  ];
+
+  const html = groups.map(g=>{
+    const players = flagged.filter(p=>p.status===g.key);
+    if(!players.length) return '';
+    return '<div class="inj-group">'+
+      '<div class="inj-head">'+
+        '<h3>'+escapeHtml(g.label)+'</h3>'+
+        '<span class="badge '+g.badge+'">'+players.length+'</span>'+
+        '<span class="inj-count">Sorted by ownership %</span>'+
+      '</div>'+
+      '<div class="player-list">'+
+        players.slice(0,15).map(p=>{
+          const t = teamById.get(p.team);
+          const pos = (types.get(p.element_type)||{}).singular_name_short||'';
+          return '<div class="player-row inj-row">'+
+            '<div class="player-row-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+            '<div class="player-row-main">'+
+              '<div class="player-row-name">'+escapeHtml(p.web_name)+' <span class="text-3" style="font-weight:500">· '+escapeHtml(t?t.short_name:'')+' · '+escapeHtml(pos)+'</span></div>'+
+              '<div class="inj-news">'+escapeHtml(p.news||'No detail given')+'</div>'+
+            '</div>'+
+            '<div class="player-row-aside"><b>'+escapeHtml(p.selected_by_percent||'0')+'%</b>'+fmtPrice(p.now_cost)+'</div>'+
+            '<div class="inj-chance">'+(p.chance_of_playing_next_round!=null?p.chance_of_playing_next_round+'%':'—')+'</div>'+
+          '</div>';
+        }).join('') +
+      '</div>'+
+    '</div>';
+  }).filter(Boolean).join('');
+
+  return '<div class="card">'+
+    '<div class="card-title">Premier League injury board — '+flagged.length+' flagged players</div>'+
+    html +
+  '</div>';
+}
+
+/* ── PLAYERS: Set Piece Register ───────────────────────── */
+async function renderSetPiece(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teams = bs.teams;
+
+  const byTeam = new Map();
+  teams.forEach(t=>byTeam.set(t.id, {team:t, pen:[], fk:[], corn:[]}));
+  elements.filter(p=>p.status==='a').forEach(p=>{
+    const slot = byTeam.get(p.team); if(!slot) return;
+    if(p.penalties_order!=null) slot.pen.push(p);
+    if(p.direct_freekicks_order!=null) slot.fk.push(p);
+    if(p.corners_and_indirect_freekicks_order!=null) slot.corn.push(p);
+  });
+  byTeam.forEach(s=>{
+    s.pen.sort((a,b)=>a.penalties_order-b.penalties_order);
+    s.fk.sort((a,b)=>a.direct_freekicks_order-b.direct_freekicks_order);
+    s.corn.sort((a,b)=>a.corners_and_indirect_freekicks_order-b.corners_and_indirect_freekicks_order);
+  });
+
+  const rows = [...byTeam.values()]
+    .filter(s=>s.pen.length||s.fk.length||s.corn.length)
+    .sort((a,b)=>a.team.short_name.localeCompare(b.team.short_name));
+
+  if(!rows.length){
+    return emptyBlock('No set-piece data yet','Once the season starts, confirmed penalty, free-kick and corner takers appear here per team.');
+  }
+
+  const cell = (list) => {
+    if(!list || !list.length) return '<div class="sp-cell"><span class="sp-empty">no clear taker</span></div>';
+    const main = list[0];
+    const second = list[1];
+    const order = main.penalties_order || main.direct_freekicks_order || main.corners_and_indirect_freekicks_order;
+    return '<div class="sp-cell">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div class="sp-name">'+escapeHtml(main.web_name)+'</div>'+
+        (second ? '<div class="text-3" style="font-size:.7rem;margin-top:2px">backup: '+escapeHtml(second.web_name)+'</div>' : '')+
+      '</div>'+
+      '<span class="sp-conf '+(order===1?'high':'med')+'">'+(order===1?'1st':order+'nd')+'</span>'+
+    '</div>';
+  };
+
+  return '<div class="card">'+
+    '<div class="card-title">Set-piece register — primary taker for every team</div>'+
+    '<div class="sp-grid">'+
+      '<div class="sp-cell sp-header">Team</div>'+
+      '<div class="sp-cell sp-header">Penalties</div>'+
+      '<div class="sp-cell sp-header">Direct FKs</div>'+
+      '<div class="sp-cell sp-header">Corners / indirect</div>'+
+      rows.map(s =>
+        '<div class="sp-cell"><span class="sp-team">'+escapeHtml(s.team.short_name)+'</span></div>'+
+        cell(s.pen) + cell(s.fk) + cell(s.corn)
+      ).join('') +
+    '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">Confidence: 1st = first-choice taker; 2nd = next in line if the first isn\'t playing.</p>'+
+  '</div>';
+}
+
+/* ── PLAYERS: Rotation Risk ────────────────────────────── */
+async function renderRotation(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  const events = bs.events||[];
+  const target = findNextDeadlineEvent(events) || findCurrentEvent(events);
+
+  let teamFixCount = new Map();
+  if(target){
+    try{
+      const fixtures = await FPL.fixtures(target.id);
+      fixtures.forEach(f=>{
+        teamFixCount.set(f.team_h,(teamFixCount.get(f.team_h)||0)+1);
+        teamFixCount.set(f.team_a,(teamFixCount.get(f.team_a)||0)+1);
+      });
+    }catch(e){}
+  }
+
+  const risky = elements
+    .filter(p=>p.status==='a' && (parseFloat(p.minutes)||0) > 600)
+    .map(p=>{
+      const starts = parseFloat(p.starts)||1;
+      const minsPerStart = (parseFloat(p.minutes)||0)/starts;
+      const fixCount = teamFixCount.get(p.team)||1;
+      return { p, minsPerStart, fixCount, score: (minsPerStart * fixCount)/90 };
+    })
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,15);
+
+  if(!risky.length){
+    return emptyBlock('Rotation pool unavailable','Player minutes aren’t reliable yet — likely off-season. Rotation flags switch back on once the season has a few gameweeks of data.');
+  }
+
+  return '<div class="card">'+
+    '<div class="card-title">Top 15 rotation risks — minutes load × upcoming fixture count</div>'+
+    '<div class="player-list">'+
+      risky.map((r,i)=>{
+        const p=r.p, t=teamById.get(p.team);
+        const pos=(types.get(p.element_type)||{}).singular_name_short||'';
+        return '<div class="player-row">'+
+          '<span class="price-rank">'+(i+1)+'</span>'+
+          '<div class="player-row-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+          '<div class="player-row-main">'+
+            '<div class="player-row-name">'+escapeHtml(p.web_name)+' <span class="text-3" style="font-weight:500">· '+escapeHtml(t?t.short_name:'')+' · '+escapeHtml(pos)+'</span></div>'+
+            '<div class="player-row-meta">'+
+              '<span>'+r.minsPerStart.toFixed(0)+' mins / start</span><span class="dot"></span>'+
+              '<span>'+r.fixCount+' fixture'+(r.fixCount===1?'':'s')+' next GW</span><span class="dot"></span>'+
+              '<span>'+escapeHtml(p.selected_by_percent||'0')+'% own</span>'+
+            '</div>'+
+          '</div>'+
+          '<div class="player-row-aside"><b>'+fmtPrice(p.now_cost)+'</b>'+escapeHtml(p.form||'—')+' form</div>'+
+          '<div class="player-row-pts">'+r.score.toFixed(1)+'</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">Score = mins-per-start × next-GW fixtures ÷ 90. UCL/UEL fixtures aren\'t in the FPL API, so this is a domestic-only estimate — combine with team news from the Injury Monitor.</p>'+
+  '</div>';
+}
+
+/* ── PLANNER: Fixture Planner ──────────────────────────── */
+async function renderFixtures(){
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const teams = bs.teams||[];
+  const upcoming = events.filter(e=>!e.finished).slice(0,6);
+  if(!upcoming.length){
+    return emptyBlock('No upcoming gameweeks','The next season fixture list usually drops in mid-June.');
+  }
+  let fixtures;
+  try{ fixtures = await FPL.fixtures(); }
+  catch(e){ return errorBlock('Could not load fixtures: '+e.message,'fixtures'); }
+
+  const evIds = new Set(upcoming.map(e=>e.id));
+  const byTeamEvent = new Map();
+  fixtures.filter(f=>evIds.has(f.event)).forEach(f=>{
+    pushFix(byTeamEvent, f.team_h, f.event, {opp:f.team_a, home:true, fdr:f.team_h_difficulty});
+    pushFix(byTeamEvent, f.team_a, f.event, {opp:f.team_h, home:false, fdr:f.team_a_difficulty});
+  });
+
+  const teamScore = new Map();
+  teams.forEach(t=>{
+    let total=0, count=0;
+    upcoming.forEach(e=>{
+      const list=(byTeamEvent.get(t.id)||{})[e.id]||[];
+      list.forEach(g=>{ total+=g.fdr; count++; });
+    });
+    teamScore.set(t.id,{total,count,avg:count?total/count:99});
+  });
+  const sorted = [...teams].sort((a,b)=>(teamScore.get(a.id)||{}).avg-(teamScore.get(b.id)||{}).avg);
+  const n = upcoming.length;
+  const headers = upcoming.map(e=>'<div>GW '+e.id+'</div>').join('');
+
+  return '<div class="card mb-20">'+
+    '<div class="card-title">Six-gameweek fixture difficulty — easiest schedule first</div>'+
+    '<div class="fix-head" style="grid-template-columns:repeat('+n+',1fr)">'+headers+'</div>'+
+    '<div class="fix-grid">'+
+      sorted.map(t=>{
+        const score = teamScore.get(t.id)||{avg:99,count:0};
+        return '<div class="fix-row">'+
+          '<div class="fix-team-label">'+escapeHtml(t.short_name)+' <small>'+(score.count?score.avg.toFixed(1):'—')+'</small></div>'+
+          '<div class="fix-cells" style="grid-template-columns:repeat('+n+',1fr)">'+
+            upcoming.map(e=>{
+              const list = (byTeamEvent.get(t.id)||{})[e.id];
+              if(!list || !list.length) return '<div class="fix-cell empty">—</div>';
+              if(list.length>1){
+                return '<div class="fix-cell dgw '+fdrClass(list.reduce((s,g)=>s+g.fdr,0)/list.length)+'">'+
+                  '<div class="fix-double">'+
+                    list.map(g=>{
+                      const opp = teams.find(x=>x.id===g.opp);
+                      return '<div class="opp" title="DGW">'+escapeHtml(opp?opp.short_name:'?')+'<span class="ha">'+(g.home?'H':'A')+'</span></div>';
+                    }).join('') +
+                  '</div>'+
+                '</div>';
+              }
+              const g = list[0];
+              const opp = teams.find(x=>x.id===g.opp);
+              return '<div class="fix-cell '+fdrClass(g.fdr)+'"><span class="opp">'+escapeHtml(opp?opp.short_name:'?')+'</span><span class="ha">'+(g.home?'H':'A')+'</span></div>';
+            }).join('') +
+          '</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+    '<div class="fix-legend">'+
+      '<span class="fix-legend-chip"><span class="fix-legend-swatch fdr-1"></span>Easy</span>'+
+      '<span class="fix-legend-chip"><span class="fix-legend-swatch fdr-2"></span>Favourable</span>'+
+      '<span class="fix-legend-chip"><span class="fix-legend-swatch fdr-3"></span>Neutral</span>'+
+      '<span class="fix-legend-chip"><span class="fix-legend-swatch fdr-4"></span>Tough</span>'+
+      '<span class="fix-legend-chip"><span class="fix-legend-swatch fdr-5"></span>Hardest</span>'+
+      '<span class="fix-legend-chip">H/A = home / away</span>'+
+      '<span class="fix-legend-chip">DGW = double gameweek</span>'+
+    '</div>'+
+  '</div>';
+}
+
+/* ── PLANNER: Chip Strategy ────────────────────────────── */
+async function renderChips(){
+  let used = [];
+  if(MGR.id){
+    try{ const hist = await FPL.history(MGR.id); used = hist.chips||[]; }catch(e){}
+  }
+  const usedMap = {};
+  used.forEach(c=>{ usedMap[c.name]=c.event; });
+
+  const chipDefs = [
+    {key:'wildcard', label:'Wildcard', icon:'rotate',
+      rec:'Best deployed after an international break when team form swings, or just before a fixture difficulty drop. The first wildcard expires after GW19; the second runs to the end of the season.'},
+    {key:'bboost', label:'Bench Boost', icon:'squad',
+      rec:'Strongest in a double gameweek where all four bench players have eligible fixtures. Watch for blank GWs in the back half of the season.'},
+    {key:'3xc', label:'Triple Captain', icon:'star',
+      rec:'Save for a premium captain in a double gameweek with home fixtures. The textbook trigger is Salah or Haaland at home to a bottom-half side in a DGW.'},
+    {key:'freehit', label:'Free Hit', icon:'bolt',
+      rec:'Best used in a blank gameweek to field a fresh XI, or to chase a double gameweek for managers who can\'t move enough players via transfers alone.'},
+    {key:'manager', label:'Assistant Manager', icon:'team',
+      rec:'New chip for 2025/26. Usage rules vary by season — confirm in the official FPL app before deploying.'}
+  ];
+
+  return '<div class="card">'+
+    '<div class="card-title">Chip strategy — usage status and best deployment windows</div>'+
+    (MGR.id ? '' : '<p class="card-sub" style="margin-bottom:14px">Add your Manager ID to see which chips you\'ve already used. The recommendations below apply generically.</p>')+
+    '<div class="chip-list">'+
+      chipDefs.map(c=>{
+        const gw = usedMap[c.key];
+        const isUsed = !!gw;
+        return '<div class="chip-card '+(isUsed?'used':'')+'">'+
+          '<div class="chip-icon">'+svg(ICON[c.icon]||ICON.diamond,'width="18" height="18"')+'</div>'+
+          '<div class="chip-body">'+
+            '<div class="chip-name-line">'+escapeHtml(c.label)+'</div>'+
+            '<div class="chip-state">'+(isUsed?'Used in GW '+gw:(MGR.id?'Available':'Status will load with your Manager ID'))+'</div>'+
+            '<div class="chip-rec">'+escapeHtml(c.rec)+'</div>'+
+          '</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+  '</div>';
+}
+
+/* ── PLANNER: GW History ───────────────────────────────── */
+async function renderGwHistory(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">GW History</div>'+
+      needsManagerBlock('to load every gameweek of your season with score, rank movement and captain return')+
+    '</div>';
+  }
+  let hist;
+  try{ hist = await FPL.history(MGR.id); }
+  catch(e){ return errorBlock('Could not load history: '+e.message,'gwhistory'); }
+  const cur = (hist && hist.current) || [];
+  if(!cur.length){
+    return emptyBlock('No gameweek history yet','Once you play a gameweek with this Manager ID, every GW score, rank movement and total appears here.');
+  }
+
+  const best = cur.reduce((b,gw)=>gw.points>b.points?gw:b,cur[0]);
+  const worst = cur.reduce((b,gw)=>gw.points<b.points?gw:b,cur[0]);
+  const avgPts = (cur.reduce((s,gw)=>s+gw.points,0)/cur.length).toFixed(1);
+  const ranks = cur.map(gw=>gw.overall_rank);
+  const minR = Math.min(...ranks), maxR = Math.max(...ranks);
+  const denomR = (maxR-minR)||1;
+  const pts = cur.map((gw,i)=>{
+    const x = ((cur.length-1)?(i/(cur.length-1))*100:50).toFixed(1);
+    const y = (((gw.overall_rank-minR)/denomR)*100).toFixed(1);
+    return x+','+y;
+  }).join(' ');
+  const spark = '<svg class="spark" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+
+    '<polyline fill="rgba(31,157,92,.14)" stroke="none" points="0,100 '+pts+' 100,100"/>'+
+    '<polyline fill="none" stroke="var(--green-bright)" stroke-width="1.4" points="'+pts+'"/>'+
+  '</svg>';
+
+  return '<div class="gwh-summary">'+
+    '<div class="gwh-card"><div class="gwh-card-label">Best GW</div><div class="gwh-card-val">'+best.points+' pts <span class="text-3" style="font-size:.8rem;font-weight:600">(GW '+best.event+')</span></div></div>'+
+    '<div class="gwh-card"><div class="gwh-card-label">Worst GW</div><div class="gwh-card-val">'+worst.points+' pts <span class="text-3" style="font-size:.8rem;font-weight:600">(GW '+worst.event+')</span></div></div>'+
+    '<div class="gwh-card"><div class="gwh-card-label">Average</div><div class="gwh-card-val">'+avgPts+' pts <span class="text-3" style="font-size:.8rem;font-weight:600">/ GW</span></div></div>'+
+  '</div>'+
+  '<div class="card mb-20">'+
+    '<div class="card-title">Overall rank trajectory — lower is better</div>'+
+    spark +
+    '<p class="text-3" style="font-size:.74rem;margin:0">Start: '+fmtNum(cur[0].overall_rank)+' · End: '+fmtNum(cur[cur.length-1].overall_rank)+' · Best: '+fmtNum(minR)+' · Worst: '+fmtNum(maxR)+'</p>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">Every gameweek this season — newest first</div>'+
+    '<div class="gwh-table">'+
+      '<div class="gwh-header">'+
+        '<div>GW</div><div>Status</div>'+
+        '<div style="text-align:right">Pts</div>'+
+        '<div style="text-align:right">GW rank</div>'+
+        '<div style="text-align:right">Move</div>'+
+        '<div style="text-align:right">Overall</div>'+
+      '</div>'+
+      cur.slice().reverse().map((gw,i,arr)=>{
+        const prev = arr[i+1];
+        const move = prev ? prev.overall_rank - gw.overall_rank : 0;
+        const isBest = gw.event===best.event, isWorst = gw.event===worst.event;
+        const moveCls = move>0?'up':(move<0?'down':'');
+        return '<div class="gwh-row'+(isBest?' best':'')+(isWorst?' worst':'')+'">'+
+          '<div><b>'+gw.event+'</b></div>'+
+          '<div>'+(gw.event_transfers_cost?'Hit −'+gw.event_transfers_cost:'')+
+            (isBest?' <span class="badge badge-green" style="margin-left:4px">Best</span>':'')+
+            (isWorst?' <span class="badge badge-red" style="margin-left:4px">Worst</span>':'')+'</div>'+
+          '<div class="gwh-pts">'+gw.points+'</div>'+
+          '<div class="gwh-rank">'+fmtNum(gw.rank)+'</div>'+
+          '<div class="gwh-move '+moveCls+'">'+(move===0?'—':(move>0?'+':'')+fmtNum(move))+'</div>'+
+          '<div class="gwh-rank">'+fmtNum(gw.overall_rank)+'</div>'+
+        '</div>';
+      }).join('') +
+    '</div>'+
+  '</div>';
+}
+
+/* ── PLANNER: Watchlist ────────────────────────────────── */
+async function renderWatchlist(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  const watch = loadWatchlist();
+  const items = watch.map(id=>elements.find(p=>p.id===id)).filter(Boolean);
+
+  const list = items.length ?
+    '<div class="player-list">'+
+      items.map(p=>{
+        const t = teamById.get(p.team);
+        const pos = (types.get(p.element_type)||{}).singular_name_short||'';
+        const flag = p.status==='i'?'<span class="badge badge-red" style="margin-left:6px">Out</span>'
+                  : p.status==='d'?'<span class="badge badge-amber" style="margin-left:6px">Doubt</span>'
+                  : p.status==='s'?'<span class="badge badge-red" style="margin-left:6px">Susp</span>':'';
+        return '<div class="player-row">'+
+          '<div class="player-row-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+          '<div class="player-row-main">'+
+            '<div class="player-row-name">'+escapeHtml(p.web_name)+flag+'</div>'+
+            '<div class="player-row-meta">'+
+              '<span>'+escapeHtml(t?t.short_name:'')+'</span><span class="dot"></span>'+
+              '<span>'+escapeHtml(pos)+'</span><span class="dot"></span>'+
+              '<span>'+escapeHtml(p.selected_by_percent||'0')+'% own · '+fmtNum(p.transfers_in_event||0)+' in this GW</span>'+
+            '</div>'+
+          '</div>'+
+          '<div class="player-row-aside"><b>'+fmtPrice(p.now_cost)+'</b>Form '+escapeHtml(p.form||'—')+'</div>'+
+          '<button class="cmp-remove" style="position:static" data-act="watch-remove" data-id="'+p.id+'" aria-label="Remove '+escapeHtml(p.web_name)+' from watchlist">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'+
+          '</button>'+
+        '</div>';
+      }).join('') +
+    '</div>' :
+    emptyBlock('Your watchlist is empty','Add players via the search above. They\'ll show live form and price here, and feed the Alerts panel.');
+
+  return '<div class="card">'+
+    '<div class="card-title">Saved players — stored locally in this browser</div>'+
+    '<div class="watch-add">'+
+      '<input type="text" class="watch-input" id="watch-input" list="watch-list" autocomplete="off" placeholder="Search a player to add…" aria-label="Add player to watchlist">'+
+      playerDatalist(elements, teamById, 'watch-list')+
+      '<button class="btn btn-primary btn-sm" data-act="watch-add">'+svg(ICON.eye,'width="14" height="14"')+'Add to watchlist</button>'+
+    '</div>'+
+    list +
+  '</div>';
+}
+
+/* ── PLANNER: Alerts ───────────────────────────────────── */
+async function renderAlerts(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const events = bs.events||[];
+  const target = findNextDeadlineEvent(events) || findCurrentEvent(events);
+  const alerts = loadAlerts();
+  const watch = loadWatchlist();
+  const totalPlayers = bs.total_players||10000000;
+
+  const toggleDefs = [
+    {key:'ownedPriceRise', name:'Owned: price rise', desc:'Heads-up when a player in your squad is about to rise.'},
+    {key:'ownedPriceFall', name:'Owned: price fall', desc:'Warning when a player you own is about to fall.'},
+    {key:'ownedInjury',    name:'Owned: injury or doubt', desc:'Alert when an owned player gets flagged or fresh news drops.'},
+    {key:'watchPriceRise', name:'Watchlist: price rise', desc:'Buy before the lock when a watchlisted player is about to rise.'},
+    {key:'watchPriceFall', name:'Watchlist: price fall', desc:'Heads-up when a watchlisted player is about to fall.'},
+    {key:'watchInjury',    name:'Watchlist: injury news', desc:'Alert when a watchlisted player gets flagged.'},
+    {key:'deadline',       name:'Deadline reminder', desc:'Reminder appears in this panel two hours before the FPL deadline.'}
+  ];
+  const togglesHtml = '<div class="alert-toggles">'+
+    toggleDefs.map(t=>(
+      '<div class="alert-toggle">'+
+        '<div class="alert-toggle-text">'+
+          '<div class="alert-toggle-name">'+escapeHtml(t.name)+'</div>'+
+          '<div class="alert-toggle-desc">'+escapeHtml(t.desc)+'</div>'+
+        '</div>'+
+        '<button class="switch '+(alerts[t.key]?'on':'')+'" role="switch" aria-checked="'+(alerts[t.key]?'true':'false')+'" data-act="alert-toggle" data-key="'+t.key+'" aria-label="'+escapeHtml(t.name)+'"></button>'+
+      '</div>'
+    )).join('') +
+  '</div>';
+
+  const myIds = new Set();
+  if(MGR.id && target){
+    try{
+      const picks = await FPL.picks(MGR.id, target.id);
+      picks.picks.forEach(p=>myIds.add(p.element));
+    }catch(e){}
+  }
+  const watchSet = new Set(watch);
+  const feed = [];
+
+  elements.forEach(p=>{
+    const isOwned = myIds.has(p.id);
+    const isWatched = watchSet.has(p.id);
+    if(!isOwned && !isWatched) return;
+    const t = teamById.get(p.team);
+    const teamLabel = t?t.short_name:'';
+    const net = (p.transfers_in_event||0)-(p.transfers_out_event||0);
+    const ratio = Math.abs(net)/totalPlayers;
+    const sources = (isOwned && isWatched) ? 'owned + watch' : (isOwned ? 'owned' : 'watchlist');
+
+    if(net>0 && ratio>0.0005){
+      if((isOwned && alerts.ownedPriceRise)||(isWatched && alerts.watchPriceRise)){
+        feed.push({type:'price-up', sortKey:ratio, title:p.web_name+' likely to rise',
+          detail:'Net +'+fmtNum(net)+' transfers · '+teamLabel+' · '+sources, icon:'arrowUp'});
+      }
+    }
+    if(net<0 && ratio>0.0005){
+      if((isOwned && alerts.ownedPriceFall)||(isWatched && alerts.watchPriceFall)){
+        feed.push({type:'price-down', sortKey:ratio, title:p.web_name+' fall risk',
+          detail:'Net '+fmtNum(net)+' transfers · '+teamLabel+' · '+sources, icon:'arrowDown'});
+      }
+    }
+    if(p.status && p.status!=='a'){
+      if((isOwned && alerts.ownedInjury)||(isWatched && alerts.watchInjury)){
+        feed.push({type:'injury', sortKey:99, title:p.web_name+' flagged',
+          detail:(p.news||'No detail')+' · '+teamLabel+' · '+sources, icon:'warning'});
+      }
+    }
+  });
+
+  if(alerts.deadline && target && target.deadline_time){
+    const ms = new Date(target.deadline_time).getTime() - Date.now();
+    if(ms>0 && ms<2*60*60*1000){
+      feed.push({type:'deadline', sortKey:100, title:'Deadline imminent — '+countdown(target.deadline_time),
+        detail:'GW '+target.id+' locks at '+fmtDeadlineLong(target.deadline_time), icon:'clock'});
+    }
+  }
+  feed.sort((a,b)=>b.sortKey-a.sortKey);
+
+  const feedHtml = feed.length ?
+    '<div class="alert-feed">'+feed.slice(0,30).map(a=>(
+      '<div class="alert-item '+a.type+'">'+
+        '<div class="alert-item-icon">'+svg(ICON[a.icon]||ICON.bell,'width="16" height="16"')+'</div>'+
+        '<div class="alert-item-body">'+
+          '<div class="alert-item-title">'+escapeHtml(a.title)+'</div>'+
+          '<div class="alert-item-detail">'+escapeHtml(a.detail)+'</div>'+
+        '</div>'+
+      '</div>'
+    )).join('') +'</div>' :
+    emptyBlock('No active alerts','Once any player you own or watch triggers one of the conditions above, alerts appear here. Refresh for the latest signals.');
+
+  return '<div class="card mb-20">'+
+    '<div class="card-title">Alert subscriptions — stored locally in this browser</div>'+
+    togglesHtml +
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">Active alerts — computed against current FPL data</div>'+
+    feedHtml +
+  '</div>';
+}
+
 /* ── DEFAULT (coming soon for unwired panels) ──────────── */
 async function renderComingSoon(panel){
   return '<div class="card">'+
@@ -2264,6 +3304,17 @@ const PANEL_RENDERERS = {
   squad:        renderSquad,
   transfers:    renderTransfers,
   captain:      renderCaptain,
+  compare:      renderCompare,
+  diffs:        renderDiffs,
+  price:        renderPrice,
+  injuries:     renderInjuries,
+  setpiece:     renderSetPiece,
+  rotation:     renderRotation,
+  fixtures:     renderFixtures,
+  chips:        renderChips,
+  gwhistory:    renderGwHistory,
+  watchlist:    renderWatchlist,
+  alerts:       renderAlerts,
 };
 
 /* ═══════════════════════════════════════════════════════════
