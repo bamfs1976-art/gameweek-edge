@@ -1160,6 +1160,101 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 .tb-right{position:relative}
 
+/* ── PHASE 4: PAYWALL + UPGRADE ────────────────────────── */
+.pro-preview-hero{
+  display:grid;grid-template-columns:1fr 320px;gap:18px;
+  padding:24px;background:var(--surface);
+  border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
+  border-radius:var(--r-lg);
+  box-shadow:var(--shadow);margin-bottom:20px;
+  background-image:linear-gradient(135deg,var(--amber-soft) 0%,transparent 55%);
+}
+.pro-preview-hero h2{
+  font-family:var(--font-display);font-size:1.45rem;font-weight:800;
+  letter-spacing:-.03em;line-height:1.15;margin-bottom:6px;
+}
+.pro-preview-hero .tag{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.66rem;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--amber);
+  margin-bottom:10px;
+}
+.pro-preview-hero .tag svg{width:12px;height:12px}
+.pro-preview-hero p{font-size:.92rem;color:var(--text-2);line-height:1.55;margin-bottom:16px}
+.pro-bullets{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+.pro-bullets li{
+  display:flex;align-items:flex-start;gap:10px;
+  font-size:.86rem;color:var(--text);line-height:1.5;
+}
+.pro-bullets li svg{
+  width:18px;height:18px;flex-shrink:0;color:var(--green-bright);
+  margin-top:2px;
+}
+.pro-preview-cta{
+  background:var(--surface);
+  border:1px solid var(--border-2);border-radius:var(--r-md);
+  padding:18px;display:flex;flex-direction:column;gap:12px;
+  align-self:start;
+}
+.pro-price{
+  font-family:var(--font-display);font-size:1.85rem;
+  font-weight:800;letter-spacing:-.03em;line-height:1;
+}
+.pro-price .per{font-size:.85rem;color:var(--text-3);font-weight:600;letter-spacing:0}
+.pro-or{font-size:.74rem;color:var(--text-3);text-align:center}
+.pro-season{
+  font-family:var(--font-display);font-size:1.3rem;
+  font-weight:800;letter-spacing:-.02em;
+}
+.pro-season-note{font-size:.72rem;color:var(--text-3);margin-top:2px}
+
+/* Lite paywall — for short Pro previews (e.g. inside layouts already at the top) */
+.pro-lite{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 18px;border-radius:var(--r-lg);
+  background:var(--amber-soft);
+  border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
+  margin-bottom:20px;
+}
+.pro-lite svg{width:22px;height:22px;color:var(--amber);flex-shrink:0}
+.pro-lite-text{flex:1;min-width:200px}
+.pro-lite-text b{color:var(--text);font-size:.9rem}
+.pro-lite-text p{font-size:.78rem;color:var(--text-2);margin-top:3px}
+
+/* Upgrade modal */
+#upgrade-modal .modal{max-width:540px}
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0 14px}
+.plan-card{
+  background:var(--surface-2);border:1.5px solid var(--border-2);
+  border-radius:var(--r-md);padding:18px;cursor:pointer;
+  transition:border-color .14s var(--ease),background .14s var(--ease);
+  display:flex;flex-direction:column;gap:8px;text-align:left;
+}
+.plan-card:hover{border-color:var(--green-bright);background:var(--surface)}
+.plan-card.selected{border-color:var(--green-bright);background:var(--green-soft)}
+.plan-card .plan-label{
+  font-size:.64rem;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--green-bright);
+}
+.plan-card .plan-price{font-family:var(--font-display);font-size:1.6rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.plan-card .plan-price .per{font-size:.78rem;color:var(--text-3);font-weight:600;letter-spacing:0}
+.plan-card .plan-desc{font-size:.78rem;color:var(--text-2);line-height:1.45}
+.plan-card .plan-badge{
+  font-size:.62rem;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;padding:3px 7px;border-radius:var(--r-pill);
+  background:var(--green-bright);color:#fff;align-self:flex-start;
+}
+
+.pro-active-banner{
+  display:flex;align-items:center;gap:14px;padding:14px 18px;
+  background:var(--green-soft);
+  border:1px solid color-mix(in srgb,var(--green) 25%,transparent);
+  border-radius:var(--r-lg);margin-bottom:20px;
+}
+.pro-active-banner svg{width:22px;height:22px;color:var(--green-bright);flex-shrink:0}
+.pro-active-banner b{font-size:.88rem;color:var(--text)}
+.pro-active-banner p{font-size:.76rem;color:var(--text-2);margin-top:2px}
+
 /* Migration prompt */
 .migrate-prompt{
   display:flex;align-items:center;gap:14px;
@@ -1180,6 +1275,7 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
   .cmp-grid{grid-template-columns:repeat(2,1fr)}
   .cmp-stat-row{grid-template-columns:90px repeat(4,1fr)}
   .gwh-header,.gwh-row{grid-template-columns:34px 1fr 60px 80px 60px 80px;font-size:.78rem}
+  .pro-preview-hero{grid-template-columns:1fr}
 }
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
@@ -1346,6 +1442,46 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
       <button class="btn btn-outline btn-sm" id="auth-cancel">Cancel</button>
       <button class="btn btn-primary btn-sm" id="auth-submit">
         <span id="auth-submit-label">Sign in</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ UPGRADE MODAL (Phase 4) ═══ -->
+<div class="modal-backdrop" id="upgrade-modal" hidden>
+  <div class="modal" role="dialog" aria-labelledby="upgrade-modal-title" aria-modal="true">
+    <div class="modal-head">
+      <h2 id="upgrade-modal-title">Unlock Gameweek Edge Pro</h2>
+      <button class="btn-close" id="upgrade-modal-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--text-2);line-height:1.55;margin-bottom:12px">
+        Pro gives you live matchday intelligence — your live rank, the players hurting it, and full scouting of rivals and the top-10k template.
+      </p>
+      <div class="plan-grid">
+        <button class="plan-card selected" data-plan="monthly" data-act="select-plan">
+          <span class="plan-label">Monthly</span>
+          <span class="plan-price">£4.99 <span class="per">/ month</span></span>
+          <span class="plan-desc">Cancel anytime. Auto-renews monthly until cancelled.</span>
+        </button>
+        <button class="plan-card" data-plan="season" data-act="select-plan">
+          <span class="plan-label">Season pass</span>
+          <span class="plan-badge">Save ~50%</span>
+          <span class="plan-price">£24.99 <span class="per">one-off</span></span>
+          <span class="plan-desc">Covers the rest of the 2025/26 Premier League season. No renewal.</span>
+        </button>
+      </div>
+      <div class="auth-error" id="upgrade-error" role="alert" aria-live="polite"></div>
+      <p class="auth-note">Payments are handled by Stripe. We don't store card details. By upgrading you agree that your subscription tier is stored against your Gameweek Edge account.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline btn-sm" id="upgrade-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="upgrade-submit">
+        <span id="upgrade-submit-label">Continue to Stripe</span>
       </button>
     </div>
   </div>
@@ -1784,8 +1920,18 @@ function alertsToRow(a, userId){
 }
 
 const Store = {
-  cache: { watchlist: [], rivals: [], alerts: defaultAlerts(), managerId: null },
+  cache: { watchlist: [], rivals: [], alerts: defaultAlerts(), managerId: null, tier: 'free', subscriptionStatus: null, proUntil: null },
   hydrated: false,
+
+  isPro(){
+    if(this.cache.tier !== 'pro') return false;
+    /* If pro_until is in the past, treat as free until next webhook refresh */
+    if(this.cache.proUntil){
+      const until = new Date(this.cache.proUntil).getTime();
+      if(isFinite(until) && until < Date.now()) return false;
+    }
+    return true;
+  },
 
   /* Local fallbacks */
   _readLocalWatchlist(){ try{ const s=localStorage.getItem(WATCH_KEY);  return s?JSON.parse(s):[]; }catch(e){ return []; } },
@@ -1803,23 +1949,29 @@ const Store = {
       const sb = AUTH.client(); const uid = AUTH.user.id;
       try{
         const [profile, watch, riv, alerts] = await Promise.all([
-          sb.from('gwedge_profiles').select('manager_id').eq('user_id', uid).maybeSingle(),
+          sb.from('gwedge_profiles').select('manager_id, tier, subscription_status, pro_until').eq('user_id', uid).maybeSingle(),
           sb.from('gwedge_watchlist').select('player_id').eq('user_id', uid),
           sb.from('gwedge_rivals').select('rival_manager_id').eq('user_id', uid),
           sb.from('gwedge_alert_prefs').select('*').eq('user_id', uid).maybeSingle()
         ]);
-        this.cache.managerId = profile.data ? profile.data.manager_id : null;
-        this.cache.watchlist = (watch.data||[]).map(r=>r.player_id);
-        this.cache.rivals    = (riv.data||[]).map(r=>r.rival_manager_id);
-        this.cache.alerts    = alerts.data ? alertsFromRow(alerts.data) : defaultAlerts();
+        this.cache.managerId          = profile.data ? profile.data.manager_id : null;
+        this.cache.tier               = (profile.data && profile.data.tier) || 'free';
+        this.cache.subscriptionStatus = profile.data ? profile.data.subscription_status : null;
+        this.cache.proUntil           = profile.data ? profile.data.pro_until : null;
+        this.cache.watchlist          = (watch.data||[]).map(r=>r.player_id);
+        this.cache.rivals             = (riv.data||[]).map(r=>r.rival_manager_id);
+        this.cache.alerts             = alerts.data ? alertsFromRow(alerts.data) : defaultAlerts();
       }catch(e){
         console.warn('Store hydrate failed', e);
       }
     } else {
-      this.cache.managerId = MGR.id;
-      this.cache.watchlist = this._readLocalWatchlist();
-      this.cache.rivals    = this._readLocalRivals();
-      this.cache.alerts    = this._readLocalAlerts();
+      this.cache.managerId          = MGR.id;
+      this.cache.tier               = 'free';
+      this.cache.subscriptionStatus = null;
+      this.cache.proUntil           = null;
+      this.cache.watchlist          = this._readLocalWatchlist();
+      this.cache.rivals             = this._readLocalRivals();
+      this.cache.alerts             = this._readLocalAlerts();
     }
     this.hydrated = true;
   },
@@ -2116,14 +2268,10 @@ function escapeHtml(s){
 function pageFrame(panel, bodyHtml){
   const isPaid=(panel.tier==='paid');
   let lock='';
-  if(isPaid){
-    lock = '<div class="lock-banner">'+
-      svg(ICON.lock,'width="22" height="22"')+
-      '<div class="lock-banner-text">'+
-        '<b>This is a Gameweek Edge Pro feature</b>'+
-        '<p>Live and intelligence tools sit behind Pro from Phase 4. Preview below.</p>'+
-      '</div>'+
-      '<button class="btn btn-primary btn-sm">See Pro</button>'+
+  if(isPaid && Store.isPro && Store.isPro()){
+    lock = '<div class="pro-active-banner">'+
+      svg(ICON.check,'width="22" height="22"')+
+      '<div><b>Pro feature</b><p>You have Pro access through your account. Live data updates here in real time.</p></div>'+
     '</div>';
   }
   return '<main class="page active" id="main" tabindex="-1">'+
@@ -2150,6 +2298,16 @@ async function renderPage(panelId){
   document.title = 'Gameweek Edge — '+panel.label;
 
   const pages = document.getElementById('pages');
+
+  /* Phase 4 paywall: Pro panels for free users get a preview hero instead of the real data */
+  if(panel.tier==='paid' && !Store.isPro()){
+    pages.innerHTML = pageFrame(panel, proPreviewHero(panel));
+    attachPageEvents();
+    document.getElementById('main').focus({preventScroll:true});
+    if(myToken !== renderToken) return;
+    return;
+  }
+
   pages.innerHTML = pageFrame(panel, loadingBlock('Loading '+panel.label+'…'));
 
   const handler = PANEL_RENDERERS[panelId] || renderComingSoon;
@@ -2165,6 +2323,87 @@ async function renderPage(panelId){
   pages.innerHTML = pageFrame(panel, bodyHtml);
   attachPageEvents();
   document.getElementById('main').focus({preventScroll:true});
+}
+
+/* ── PHASE 4: PRO PREVIEW CONTENT ──────────────────────── */
+const PRO_PREVIEWS = {
+  liverank:  { headline:'Watch your overall rank move in real time', bullets:[
+    'Live GW points across your starting XI, captain x2 applied',
+    'Estimated rank delta vs the global average each minute',
+    'Bonus and BPS swings flagged as they update on the official feed'
+  ]},
+  defcon:    { headline:'See exactly which non-owned players are hurting your rank', bullets:[
+    'Top 12 threats ranked by ownership × live points scored',
+    'Goals, assists, bonus and clean sheets flagged per threat',
+    'Stops you doom-scrolling for the bad news'
+  ]},
+  autosubs:  { headline:'Know your auto-subs before they fire', bullets:[
+    'Live play status for every starter — played, playing, yet to play',
+    'Bench priority order and projected sub swings',
+    'Confirmed automatic subs surface the moment they land'
+  ]},
+  whatif:    { headline:'Test point swings before the match ends', bullets:[
+    'Pick any player in your XI, simulate a goal, assist or clean sheet',
+    'Captain multiplier and FPL position-specific scoring applied',
+    'Projected new total vs gameweek average instantly'
+  ]},
+  eo:        { headline:'See effective ownership — the real rank-gain metric', bullets:[
+    'Top 25 players by EO (ownership + captain share × 2)',
+    'Captain share estimated from form and xG',
+    'See where the herd sits so you know which differentials matter'
+  ]},
+  template:  { headline:'Match yourself against the top-10k template', bullets:[
+    'Template = top-15 most-owned players across the game',
+    'Your match score and uniqueness % computed live from your XI',
+    'Identifies template players you don\'t own — biggest rank risk'
+  ]},
+  rivals:    { headline:'Scout up to five rivals in detail', bullets:[
+    'Track rivals by Manager ID; pull their entry + picks live',
+    'Squad overlap, unique players on each side, points gap',
+    'Stored against your account so it syncs across devices'
+  ]},
+  setpiece:  { headline:'Confirmed penalty, free-kick and corner takers', bullets:[
+    'Primary and backup taker for each set-piece type per team',
+    '1st-choice vs 2nd-choice confidence per player',
+    'Updates as managers shuffle responsibilities mid-season'
+  ]},
+  rotation:  { headline:'Spot rotation risks before they cost you a captain', bullets:[
+    'Top 15 risks ranked by minutes load × upcoming fixture density',
+    'Domestic minutes + fixture count per player',
+    'Pairs with Injury Monitor for the full team-news picture'
+  ]},
+  gwhistory: { headline:'Every gameweek of your season at a glance', bullets:[
+    'Score, captain return, rank movement and overall rank per GW',
+    'Best / worst gameweeks highlighted automatically',
+    'Sparkline trajectory of your overall rank over the season'
+  ]}
+};
+
+function proPreviewHero(panel){
+  const meta = PRO_PREVIEWS[panel.id] || { headline:'Unlock '+panel.label, bullets:[PANEL_DESC[panel.id]||''] };
+  const cta = AUTH.user
+    ? '<button class="btn btn-primary" data-act="open-upgrade" style="width:100%">'+svg(ICON.bolt,'width="14" height="14"')+'Upgrade to Pro</button>'
+    : '<button class="btn btn-primary" data-act="open-auth" data-tab="signup" style="width:100%">'+svg(ICON.team,'width="14" height="14"')+'Create account to upgrade</button>'+
+      '<button class="btn btn-outline btn-sm" data-act="open-auth" data-tab="signin" style="width:100%">I already have an account</button>';
+  return '<div class="pro-preview-hero">'+
+    '<div>'+
+      '<span class="tag">'+svg(ICON.lock,'width="12" height="12"')+'Gameweek Edge Pro</span>'+
+      '<h2>'+escapeHtml(meta.headline)+'</h2>'+
+      '<p>'+escapeHtml(PANEL_DESC[panel.id]||'')+'</p>'+
+      '<ul class="pro-bullets">'+
+        meta.bullets.map(b=>(
+          '<li>'+svg(ICON.check,'width="18" height="18"')+'<span>'+escapeHtml(b)+'</span></li>'
+        )).join('') +
+      '</ul>'+
+    '</div>'+
+    '<div class="pro-preview-cta">'+
+      '<div class="pro-price">£4.99 <span class="per">/ month</span></div>'+
+      '<div class="pro-or">— or —</div>'+
+      '<div class="pro-season">£24.99 <span class="per" style="font-weight:600">season pass</span></div>'+
+      '<div class="pro-season-note">Save ~50% vs monthly. Covers the rest of 2025/26.</div>'+
+      cta +
+    '</div>'+
+  '</div>';
 }
 
 function attachPageEvents(){
@@ -2244,6 +2483,13 @@ async function onActionClick(e){
   else if(act==='migrate-no'){
     await Store.discardLocalData();
     dismissMigrationPrompt();
+  }
+  else if(act==='open-upgrade'){ openUpgradeModal(); }
+  else if(act==='select-plan'){
+    selectedPlan = el.dataset.plan;
+    document.querySelectorAll('.plan-card').forEach(c=>{
+      c.classList.toggle('selected', c.dataset.plan===selectedPlan);
+    });
   }
 }
 
@@ -4778,6 +5024,67 @@ function dismissMigrationPrompt(){
   if(b) b.remove();
   migrationDismissed = true;
 }
+
+/* ── PHASE 4: UPGRADE MODAL ────────────────────────────── */
+let selectedPlan = 'monthly';
+let upgradeLastFocus = null;
+function openUpgradeModal(){
+  if(!AUTH.user){
+    /* Free user must sign up first so we can attach the subscription to a user_id */
+    openAuthModal('signup');
+    return;
+  }
+  upgradeLastFocus = document.activeElement;
+  selectedPlan = 'monthly';
+  document.querySelectorAll('.plan-card').forEach(c=>{
+    c.classList.toggle('selected', c.dataset.plan===selectedPlan);
+  });
+  document.getElementById('upgrade-error').textContent='';
+  document.getElementById('upgrade-modal').hidden = false;
+}
+function closeUpgradeModal(){
+  document.getElementById('upgrade-modal').hidden = true;
+  if(upgradeLastFocus){ try{ upgradeLastFocus.focus(); }catch(e){} }
+}
+
+async function submitUpgrade(){
+  const submitBtn = document.getElementById('upgrade-submit');
+  const label = document.getElementById('upgrade-submit-label');
+  const err = document.getElementById('upgrade-error');
+  err.textContent='';
+  submitBtn.disabled = true;
+  const prev = label.textContent;
+  label.textContent = 'Working…';
+  try{
+    const sb = AUTH.client();
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session){ err.textContent='Your session has expired. Sign in again.'; return; }
+    const res = await fetch('/.netlify/functions/stripe-checkout', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+session.access_token },
+      body: JSON.stringify({ plan: selectedPlan })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(res.status===503){
+      err.innerHTML = '<b>Billing not yet live.</b> '+escapeHtml(data.message||'Stripe is being set up. You\'ll be able to upgrade as soon as the account is approved.');
+      return;
+    }
+    if(!res.ok){
+      err.textContent = data.message || ('Checkout failed ('+res.status+'). Please try again.');
+      return;
+    }
+    if(data.url){
+      window.location.assign(data.url);
+      return;
+    }
+    err.textContent = 'Unexpected response from billing service.';
+  }catch(e){
+    err.textContent = e.message || 'Network error reaching the billing service.';
+  }finally{
+    submitBtn.disabled = false;
+    label.textContent = prev;
+  }
+}
 function syncMgrPill(){
   const btn = document.getElementById('mgr-btn');
   const label = document.getElementById('mgr-btn-label');
@@ -4875,6 +5182,14 @@ async function init(){
   document.getElementById('auth-modal').addEventListener('keydown', function(e){
     if(e.key==='Enter' && e.target.tagName==='INPUT') submitAuth();
   });
+
+  /* Phase 4 upgrade modal */
+  document.getElementById('upgrade-modal-close').addEventListener('click', closeUpgradeModal);
+  document.getElementById('upgrade-cancel').addEventListener('click', closeUpgradeModal);
+  document.getElementById('upgrade-submit').addEventListener('click', submitUpgrade);
+  document.getElementById('upgrade-modal').addEventListener('click', function(e){
+    if(e.target===this) closeUpgradeModal();
+  });
   /* Click outside account menu closes it */
   document.addEventListener('click', function(e){
     const btn = document.getElementById('account-btn');
@@ -4890,6 +5205,7 @@ async function init(){
       closeSidebar();
       if(!document.getElementById('mgr-modal').hidden) closeMgrModal();
       if(!document.getElementById('auth-modal').hidden) closeAuthModal();
+      if(!document.getElementById('upgrade-modal').hidden) closeUpgradeModal();
       closeAccountMenu();
     }
   });
@@ -4939,6 +5255,38 @@ async function init(){
 
   /* If we're already signed in on first paint, run the migration check */
   if(AUTH.user) maybeShowMigrationPrompt();
+
+  /* Handle ?upgrade=success / ?upgrade=cancel return from Stripe Checkout */
+  handleUpgradeReturn();
+}
+
+function handleUpgradeReturn(){
+  const params = new URLSearchParams(window.location.search);
+  const upgrade = params.get('upgrade');
+  if(!upgrade) return;
+  /* Strip the param from the URL so refresh doesn't re-trigger */
+  const cleaned = window.location.pathname + window.location.hash;
+  try{ window.history.replaceState({}, '', cleaned); }catch(e){}
+  if(upgrade==='success'){
+    /* Re-hydrate so the Pro tier lands. Webhook may take a couple of seconds; retry a few times. */
+    retryHydrateUntilPro(6, 1500);
+  } else if(upgrade==='cancel'){
+    /* No-op: user came back from Stripe without paying. Could show a toast. */
+  }
+}
+async function retryHydrateUntilPro(attempts, intervalMs){
+  for(let i=0;i<attempts;i++){
+    await Store.hydrate();
+    if(Store.isPro()){
+      invalidateAll();
+      renderPage(currentPanel);
+      return;
+    }
+    await new Promise(r=>setTimeout(r, intervalMs));
+  }
+  /* One last render even if it didn't flip — user can refresh */
+  invalidateAll();
+  renderPage(currentPanel);
 }
 
 function waitForSupabase(timeoutMs){
