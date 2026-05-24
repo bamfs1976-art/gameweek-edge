@@ -1,0 +1,14 @@
+node_modules/
+.netlify/
+.env
+.env.local
+.env.*.local
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*.log
+npm-debug.log*
+.claude/launch.json
