@@ -1073,6 +1073,48 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
   box-shadow:0 0 0 3px var(--green-glow);
 }
 
+/* ── PHASE 6: JOURNAL — TRANSFER LEDGER + GW P&L ───────── */
+.ledger-row{
+  display:grid;grid-template-columns:38px 1fr auto 1fr auto;
+  gap:10px;align-items:center;padding:10px 12px;border-radius:var(--r-sm);
+}
+.ledger-row+.ledger-row{border-top:1px solid var(--border)}
+.ledger-row:nth-child(odd){background:var(--surface-3)}
+.ledger-gw{
+  font-family:var(--font-mono);font-weight:800;font-size:.78rem;
+  color:var(--text-3);text-align:center;
+}
+.ledger-side{display:flex;align-items:center;gap:8px;min-width:0}
+.ledger-side.right{flex-direction:row-reverse;text-align:right}
+.ledger-name{font-weight:700;font-size:.86rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ledger-pts{font-family:var(--font-mono);font-weight:700;font-size:.74rem;color:var(--text-2)}
+.ledger-arrow{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--surface);border:1px solid var(--border-2);
+  color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.ledger-arrow svg{width:14px;height:14px}
+.ledger-pnl{
+  font-family:var(--font-mono);font-weight:800;font-size:1rem;
+  min-width:64px;text-align:right;
+}
+.ledger-pnl.profit{color:var(--green-on-soft)}
+.ledger-pnl.loss{color:var(--red-on-soft)}
+.ledger-pnl.flat{color:var(--text-3)}
+.export-btn{margin-left:auto}
+.export-btn svg{width:14px;height:14px}
+
+.chart-box{
+  background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:14px;
+}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.74rem;color:var(--text-3);margin-top:10px}
+.chart-legend-chip{display:inline-flex;align-items:center;gap:6px}
+.chart-legend-swatch{width:14px;height:3px;border-radius:2px}
+.chart-tall{height:180px;display:block;width:100%}
+
 /* ── PHASE 3: AUTH ─────────────────────────────────────── */
 .auth-tabs{
   display:flex;gap:4px;background:var(--surface-2);
@@ -1647,6 +1689,10 @@ const ICON = {
   clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>',
   arrowUp:'<path d="M12 19V5M5 12l7-7 7 7"/>',
   arrowDown:'<path d="M12 5v14M19 12l-7 7-7-7"/>',
+  journal:'<path d="M4 4a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1 0-4h12"/><path d="M9 6h6M9 10h6"/>',
+  ledger:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+  gwpnl:'<path d="M3 17l5-5 4 4 5-7 4 4"/><path d="M3 21h18"/>',
+  csv:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14l2 3 2-3M16 14v3M16 17h-2"/>',
 };
 
 function svg(path,extra){
@@ -1690,6 +1736,10 @@ const NAV = [
     {id:'gwhistory', label:'GW History', icon:'calendar', tier:'paid'},
     {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
     {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
+  ]},
+  { id:'journal', label:'Journal', icon:'journal', panels:[
+    {id:'ledger', label:'Transfer Ledger', icon:'ledger', tier:'free'},
+    {id:'gwpnl',  label:'GW P&L Dashboard', icon:'gwpnl', tier:'free'}
   ]}
 ];
 const PANELS = {};
@@ -1718,7 +1768,9 @@ const PANEL_DESC = {
   chips:'Chip allocation and the best gameweeks to deploy each one.',
   gwhistory:'Every gameweek of your season, with score, rank and captain return.',
   watchlist:'Keep an eye on players you are considering before you commit a transfer.',
-  alerts:'Price, injury, booking and deadline alerts tuned to your squad.'
+  alerts:'Price, injury, booking and deadline alerts tuned to your squad.',
+  ledger:'Every confirmed transfer this season with the points won or lost. Auto-pulled from the FPL API — nothing to type.',
+  gwpnl:'Your gameweek scores against the global average across the season, with running points above or below the field and the chip log.'
 };
 
 /* ── API CLIENT ────────────────────────────────────────── */
@@ -1769,6 +1821,7 @@ const FPL = {
   picks:      (id,gw)   => apiCall('entry/'+id+'/event/'+gw+'/picks/', 2*60*1000),
   live:       (gw)      => apiCall('event/'+gw+'/live/',         30*1000),
   player:     (id)      => apiCall('element-summary/'+id+'/',    10*60*1000),
+  transfers:  (id)      => apiCall('entry/'+id+'/transfers/',    5*60*1000),
 };
 
 function invalidateAll(){
@@ -2184,6 +2237,67 @@ function initials(first, last){
   return ((f+l) || 'GE').toUpperCase();
 }
 
+/* ── PHASE 6: CSV EXPORT ───────────────────────────────── */
+/* Builds a CSV string from rows (array of objects). All values escaped for
+   quotes, commas and newlines. Triggers a browser download. */
+function downloadCsv(filename, rows){
+  if(!rows || !rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const esc = v => {
+    if(v==null) return '';
+    const s = String(v);
+    return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+  const lines = [headers.join(',')];
+  rows.forEach(r => lines.push(headers.map(h=>esc(r[h])).join(',')));
+  const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.style.display='none';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+/* Cache of latest CSV payload per panel — populated by renderers,
+   consumed by the 'export-csv' action handler. */
+const CSV_CACHE = {};
+function exportBtn(panelKey, label){
+  return '<button class="btn btn-outline btn-sm export-btn" data-act="export-csv" data-key="'+
+    escapeHtml(panelKey)+'" aria-label="'+escapeHtml(label||'Export to CSV')+'">'+
+    svg(ICON.csv,'width="14" height="14"')+'CSV</button>';
+}
+
+/* ── PHASE 6: SVG LINE CHART (multi-series, no library) ── */
+/* seriesArr: [{values:[Number,...], color:String, fill?:String}, ...]
+   All series must share the same length. Returns an SVG string sized
+   to fill its container via class="spark" or custom dims via opts.   */
+function svgLineChart(seriesArr, opts){
+  opts = opts || {};
+  const cls = opts.class || 'spark';
+  if(!seriesArr.length || !seriesArr[0].values.length) return '<div class="'+cls+'"></div>';
+  const all = seriesArr.flatMap(s=>s.values).filter(v=>typeof v==='number' && !isNaN(v));
+  if(!all.length) return '<div class="'+cls+'"></div>';
+  let min = Math.min(...all), max = Math.max(...all);
+  if(min===max){ min -= 1; max += 1; }
+  const denom = max - min;
+  const n = seriesArr[0].values.length;
+  const pad = 2;
+  const polylines = seriesArr.map(s=>{
+    const pts = s.values.map((v,i)=>{
+      const x = ((n-1)?(i/(n-1))*(100-2*pad) + pad : 50);
+      const y = 100 - pad - ((v-min)/denom)*(100-2*pad);
+      return x.toFixed(1)+','+y.toFixed(1);
+    }).join(' ');
+    let out = '';
+    if(s.fill){
+      out += '<polyline fill="'+s.fill+'" stroke="none" points="'+pad+',100 '+pts+' '+(100-pad)+',100"/>';
+    }
+    out += '<polyline fill="none" stroke="'+s.color+'" stroke-width="'+(s.width||1.4)+'" stroke-linejoin="round" stroke-linecap="round" '+
+      (s.dash?'stroke-dasharray="'+s.dash+'" ':'')+'points="'+pts+'"/>';
+    return out;
+  }).join('');
+  return '<svg class="'+cls+'" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+polylines+'</svg>';
+}
+
 /* ── KIT SVG (team-coloured shirt) ─────────────────────── */
 const KIT_COLOURS = {
   /* team.code → { primary, secondary, isKeeperHue? } – picked from official kits */
@@ -2500,6 +2614,11 @@ async function onActionClick(e){
     document.querySelectorAll('.plan-card').forEach(c=>{
       c.classList.toggle('selected', c.dataset.plan===selectedPlan);
     });
+  }
+  else if(act==='export-csv'){
+    const key = el.dataset.key;
+    const payload = CSV_CACHE[key];
+    if(payload) downloadCsv(payload.filename, payload.rows);
   }
 }
 
@@ -4594,6 +4713,301 @@ function rivalSquadList(ids, elementById, teamById, max){
   '</div>';
 }
 
+/* ── JOURNAL: Transfer Ledger ──────────────────────────── */
+async function renderLedger(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Transfer Ledger</div>'+
+      needsManagerBlock('to auto-log every transfer with the points won or lost')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const elementById = new Map(bs.elements.map(p=>[p.id,p]));
+  const teamById   = new Map(bs.teams.map(t=>[t.id,t]));
+  const events     = bs.events||[];
+
+  let transfers;
+  try{ transfers = await FPL.transfers(MGR.id); }
+  catch(e){ return errorBlock('Could not load transfer history: '+e.message,'ledger'); }
+  if(!transfers || !transfers.length){
+    return emptyBlock('No transfers yet','As soon as you make a transfer it appears here automatically with the points it earned or cost.');
+  }
+
+  /* Each transfer has element_in, element_out, costs, event. We score it from the
+     event's live data so the user sees the actual outcome of each move.
+     Pull each unique GW's live data in parallel, keyed by event. */
+  const uniqueEvents = [...new Set(transfers.map(t=>t.event))];
+  const liveByEvent = new Map();
+  await Promise.all(uniqueEvents.map(async ev=>{
+    try{
+      const live = await FPL.live(ev);
+      const map = new Map((live.elements||[]).map(le=>[le.id, le.stats.total_points||0]));
+      liveByEvent.set(ev, map);
+    }catch(e){ liveByEvent.set(ev, new Map()); }
+  }));
+
+  /* Newest first for display, oldest first for cumulative chart */
+  const sortedOldFirst = [...transfers].sort((a,b)=>a.event-b.event ||
+    (new Date(a.time)).getTime() - (new Date(b.time)).getTime());
+
+  const rows = sortedOldFirst.map(t=>{
+    const elIn  = elementById.get(t.element_in);
+    const elOut = elementById.get(t.element_out);
+    const liveMap = liveByEvent.get(t.event) || new Map();
+    const ptsIn  = liveMap.get(t.element_in)  || 0;
+    const ptsOut = liveMap.get(t.element_out) || 0;
+    const pnl = ptsIn - ptsOut;
+    return { t, elIn, elOut, ptsIn, ptsOut, pnl };
+  });
+
+  let running = 0;
+  const cumulative = rows.map(r=>{ running += r.pnl; return running; });
+  const totalPnl = running;
+
+  const best  = rows.reduce((b,r)=>r.pnl>b.pnl?r:b, rows[0]);
+  const worst = rows.reduce((w,r)=>r.pnl<w.pnl?r:w, rows[0]);
+  const winners = rows.filter(r=>r.pnl>0).length;
+  const losers  = rows.filter(r=>r.pnl<0).length;
+  const rating  = rows.length ? Math.max(1, Math.round((winners/rows.length)*10)) : 0;
+
+  /* Build CSV cache */
+  CSV_CACHE['ledger'] = {
+    filename: 'gameweek-edge-transfer-ledger-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: rows.map(r=>({
+      gameweek: r.t.event,
+      time: r.t.time,
+      player_out: r.elOut ? r.elOut.web_name : r.t.element_out,
+      player_out_sold_for: ((r.t.element_out_cost||0)/10).toFixed(1),
+      player_out_points_that_gw: r.ptsOut,
+      player_in: r.elIn ? r.elIn.web_name : r.t.element_in,
+      player_in_bought_for: ((r.t.element_in_cost||0)/10).toFixed(1),
+      player_in_points_that_gw: r.ptsIn,
+      pnl: r.pnl
+    }))
+  };
+
+  /* Cumulative chart line */
+  const chart = svgLineChart([
+    { values: cumulative, color: 'var(--green-bright)', fill: 'rgba(31,157,92,.14)', width: 1.6 }
+  ], { class: 'spark chart-tall' });
+
+  const pnlClass = totalPnl>0 ? 'profit' : totalPnl<0 ? 'loss' : 'flat';
+  const pnlDelta = totalPnl>0 ? '+'+totalPnl+' pts ahead of doing nothing'
+                 : totalPnl<0 ? totalPnl+' pts behind doing nothing'
+                 : 'level with doing nothing';
+
+  /* Display newest first */
+  const display = [...rows].reverse();
+
+  const rowHtml = display.map(r=>{
+    const tIn  = teamById.get(r.elIn  ? r.elIn.team  : 0);
+    const tOut = teamById.get(r.elOut ? r.elOut.team : 0);
+    const cls  = r.pnl>0 ? 'profit' : r.pnl<0 ? 'loss' : 'flat';
+    const sign = r.pnl>0 ? '+' : '';
+    return '<div class="ledger-row">'+
+      '<span class="ledger-gw">GW '+r.t.event+'</span>'+
+      '<div class="ledger-side">'+
+        '<div class="player-row-shirt">'+kitSvg(tOut, r.elOut && r.elOut.element_type===1)+'</div>'+
+        '<div style="min-width:0">'+
+          '<div class="ledger-name">'+escapeHtml(r.elOut ? r.elOut.web_name : 'Unknown')+'</div>'+
+          '<div class="ledger-pts">sold '+((r.t.element_out_cost||0)/10).toFixed(1)+' · '+r.ptsOut+' pts</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="ledger-arrow" title="Transfer">'+svg(ICON.swap,'width="14" height="14"')+'</div>'+
+      '<div class="ledger-side right">'+
+        '<div class="player-row-shirt">'+kitSvg(tIn, r.elIn && r.elIn.element_type===1)+'</div>'+
+        '<div style="min-width:0">'+
+          '<div class="ledger-name">'+escapeHtml(r.elIn ? r.elIn.web_name : 'Unknown')+'</div>'+
+          '<div class="ledger-pts">bought '+((r.t.element_in_cost||0)/10).toFixed(1)+' · '+r.ptsIn+' pts</div>'+
+        '</div>'+
+      '</div>'+
+      '<span class="ledger-pnl '+cls+'">'+sign+r.pnl+'</span>'+
+    '</div>';
+  }).join('');
+
+  const bestHtml = best ?
+    (best.elIn ? best.elIn.web_name : 'Unknown')+' in for '+(best.elOut ? best.elOut.web_name : 'Unknown')+
+    ' (GW '+best.t.event+', '+(best.pnl>0?'+':'')+best.pnl+')' : '—';
+  const worstHtml = worst ?
+    (worst.elIn ? worst.elIn.web_name : 'Unknown')+' in for '+(worst.elOut ? worst.elOut.web_name : 'Unknown')+
+    ' (GW '+worst.t.event+', '+worst.pnl+')' : '—';
+
+  return '<div class="grid g-3 mb-20">'+
+    kpiCard('Running P&L', (totalPnl>0?'+':'')+totalPnl+' pts', pnlDelta,
+            totalPnl>0?'var(--green)':totalPnl<0?'var(--red)':'var(--text-3)',
+            totalPnl>0?'up':totalPnl<0?'down':'')+
+    kpiCard('Transfers logged', String(rows.length),
+            winners+' profitable · '+losers+' loss-making', 'var(--blue)')+
+    kpiCard('Season rating', rating+' / 10',
+            (rating>=7?'Strong':rating>=4?'Mixed':'Tough')+' season for transfers', 'var(--amber)')+
+  '</div>'+
+  '<div class="card mb-20">'+
+    '<div class="card-title"><span class="card-title-text">Running P&L across the season</span></div>'+
+    '<div class="chart-box">'+chart+'</div>'+
+    '<div class="chart-legend">'+
+      '<span class="chart-legend-chip"><span class="chart-legend-swatch" style="background:var(--green-bright)"></span>Cumulative points gained from your transfers</span>'+
+    '</div>'+
+  '</div>'+
+  '<div class="grid g-2 mb-20">'+
+    '<div class="card"><div class="card-title">Best transfer</div>'+
+      '<p style="font-size:.92rem;font-weight:600;margin:0">'+escapeHtml(bestHtml)+'</p></div>'+
+    '<div class="card"><div class="card-title">Worst transfer</div>'+
+      '<p style="font-size:.92rem;font-weight:600;margin:0">'+escapeHtml(worstHtml)+'</p></div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Every transfer — newest first</span>'+
+      exportBtn('ledger','Export transfer ledger to CSV')+
+    '</div>'+
+    rowHtml +
+  '</div>';
+}
+
+/* ── JOURNAL: GW P&L Dashboard ─────────────────────────── */
+async function renderGwPnL(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">GW P&L Dashboard</div>'+
+      needsManagerBlock('to track every gameweek\'s score against the global average automatically')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const events = bs.events||[];
+  const avgByEvent = new Map(events.map(e=>[e.id, e.average_entry_score||0]));
+
+  let history;
+  try{ history = await FPL.history(MGR.id); }
+  catch(e){ return errorBlock('Could not load history: '+e.message,'gwpnl'); }
+  const cur = (history && history.current) || [];
+  const chips = (history && history.chips) || [];
+  if(!cur.length){
+    return emptyBlock('No gameweeks played yet','Once you play a gameweek the chart and breakdown auto-fill from the FPL API.');
+  }
+
+  /* Per-GW delta and cumulative */
+  let running = 0;
+  const rows = cur.map(gw=>{
+    const avg = avgByEvent.get(gw.event)||0;
+    const delta = gw.points - avg;
+    running += delta;
+    return { gw, avg, delta, cumulative: running };
+  });
+
+  const above = rows.filter(r=>r.delta>0).length;
+  const totalDelta = running;
+  const totalHits = cur.reduce((s,gw)=>s+(gw.event_transfers_cost||0), 0);
+  const avgScore = (cur.reduce((s,gw)=>s+gw.points,0)/cur.length).toFixed(1);
+  const verdict = totalDelta>0 ? 'Beating the average' : totalDelta<0 ? 'Behind the average' : 'Level with the average';
+
+  /* Chart: two lines — your points and the average per GW */
+  const yourPoints = rows.map(r=>r.gw.points);
+  const avgPoints  = rows.map(r=>r.avg);
+  const chart = svgLineChart([
+    { values: avgPoints,  color: 'var(--text-3)', width: 1.2, dash: '3,3' },
+    { values: yourPoints, color: 'var(--green-bright)', fill: 'rgba(31,157,92,.14)', width: 1.6 }
+  ], { class: 'spark chart-tall' });
+
+  /* Cumulative delta sparkline */
+  const cumChart = svgLineChart([
+    { values: rows.map(r=>r.cumulative),
+      color: totalDelta>=0 ? 'var(--green-bright)' : 'var(--red)',
+      fill: totalDelta>=0 ? 'rgba(31,157,92,.14)' : 'rgba(204,61,57,.10)',
+      width: 1.6 }
+  ], { class: 'spark' });
+
+  /* Chip log */
+  const chipLabel = {'wildcard':'Wildcard','bboost':'Bench Boost','3xc':'Triple Captain','freehit':'Free Hit','manager':'Assistant Mgr'};
+  const chipHtml = chips.length ?
+    '<div class="player-list">'+chips.map(c=>{
+      const gw = cur.find(g=>g.event===c.event);
+      const pts = gw ? gw.points : '—';
+      const diff = gw ? gw.points-(avgByEvent.get(c.event)||0) : 0;
+      const cls = diff>0?'badge-green':diff<0?'badge-red':'badge-grey';
+      return '<div class="player-row">'+
+        '<span class="badge badge-grey" style="min-width:74px;justify-content:center">GW '+c.event+'</span>'+
+        '<div class="player-row-main"><div class="player-row-name">'+escapeHtml(chipLabel[c.name]||c.name)+'</div>'+
+          '<div class="player-row-meta"><span>Scored '+pts+' pts</span></div></div>'+
+        '<span class="badge '+cls+'">'+(diff>0?'+':'')+diff+' vs avg</span>'+
+      '</div>';
+    }).join('')+'</div>'
+    : '<p class="text-3" style="font-size:.82rem;padding:6px 4px">No chips used yet this season.</p>';
+
+  /* CSV cache */
+  CSV_CACHE['gwpnl'] = {
+    filename: 'gameweek-edge-gw-pnl-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: rows.map(r=>({
+      gameweek: r.gw.event,
+      score: r.gw.points,
+      gw_average: r.avg,
+      delta_vs_average: r.delta,
+      cumulative_delta: r.cumulative,
+      gw_rank: r.gw.rank,
+      overall_rank: r.gw.overall_rank,
+      transfer_cost: r.gw.event_transfers_cost||0,
+      points_on_bench: r.gw.points_on_bench||0
+    }))
+  };
+
+  /* Table */
+  const table = '<div class="gwh-table">'+
+    '<div class="gwh-header">'+
+      '<div>GW</div><div>Status</div>'+
+      '<div style="text-align:right">Pts</div>'+
+      '<div style="text-align:right">Avg</div>'+
+      '<div style="text-align:right">Δ vs avg</div>'+
+      '<div style="text-align:right">Cumulative</div>'+
+    '</div>'+
+    rows.slice().reverse().map(r=>{
+      const cls = r.delta>0 ? 'up' : r.delta<0 ? 'down' : '';
+      return '<div class="gwh-row">'+
+        '<div><b>'+r.gw.event+'</b></div>'+
+        '<div>'+(r.gw.event_transfers_cost?'Hit −'+r.gw.event_transfers_cost:'')+'</div>'+
+        '<div class="gwh-pts">'+r.gw.points+'</div>'+
+        '<div class="gwh-rank">'+r.avg+'</div>'+
+        '<div class="gwh-move '+cls+'">'+(r.delta>0?'+':'')+r.delta+'</div>'+
+        '<div class="gwh-move '+(r.cumulative>0?'up':r.cumulative<0?'down':'')+'">'+
+          (r.cumulative>0?'+':'')+r.cumulative+'</div>'+
+      '</div>';
+    }).join('') +
+  '</div>';
+
+  return '<div class="grid g-4 mb-20">'+
+    kpiCard('Verdict', verdict,
+            (totalDelta>0?'+':'')+totalDelta+' pts vs average season-to-date',
+            'var(--green)', totalDelta>0?'up':totalDelta<0?'down':'')+
+    kpiCard('GWs beating avg', above+' / '+rows.length,
+            'Hit rate '+Math.round(above/rows.length*100)+'%', 'var(--blue)')+
+    kpiCard('Average score', avgScore+' pts',
+            'Your typical gameweek', 'var(--amber)')+
+    kpiCard('Spent on hits', totalHits+' pts',
+            'Total transfer cost this season', 'var(--purple)')+
+  '</div>'+
+  '<div class="card mb-20">'+
+    '<div class="card-title"><span class="card-title-text">Your points vs the global average</span></div>'+
+    '<div class="chart-box">'+chart+'</div>'+
+    '<div class="chart-legend">'+
+      '<span class="chart-legend-chip"><span class="chart-legend-swatch" style="background:var(--green-bright)"></span>Your score</span>'+
+      '<span class="chart-legend-chip"><span class="chart-legend-swatch" style="background:var(--text-3);border-bottom:1px dashed var(--text-3);height:1px"></span>GW average</span>'+
+    '</div>'+
+  '</div>'+
+  '<div class="grid g-2 mb-20">'+
+    '<div class="card">'+
+      '<div class="card-title">Cumulative ± vs average</div>'+
+      cumChart +
+      '<p class="text-3" style="font-size:.74rem;margin:6px 0 0">A line climbing means you\'re pulling ahead of the field.</p>'+
+    '</div>'+
+    '<div class="card">'+
+      '<div class="card-title">Chip log — what you got from each</div>'+
+      chipHtml +
+    '</div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Every gameweek — newest first</span>'+
+      exportBtn('gwpnl','Export GW P&L to CSV')+
+    '</div>'+
+    table +
+  '</div>';
+}
+
 /* ── DEFAULT (coming soon for unwired panels) ──────────── */
 async function renderComingSoon(panel){
   return '<div class="card">'+
@@ -4627,6 +5041,8 @@ const PANEL_RENDERERS = {
   eo:           renderEO,
   template:     renderTemplate,
   rivals:       renderRivals,
+  ledger:       renderLedger,
+  gwpnl:        renderGwPnL,
 };
 
 /* ═══════════════════════════════════════════════════════════
