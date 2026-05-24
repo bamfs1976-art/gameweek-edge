@@ -1073,6 +1073,235 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
   box-shadow:0 0 0 3px var(--green-glow);
 }
 
+/* ── PHASE 8: BOOKINGS / CAPTAINCY AUDIT / HIT CALC ────── */
+.filter-bar{
+  display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  margin-bottom:14px;padding:10px 12px;background:var(--surface-3);
+  border-radius:var(--r-md);
+}
+.filter-bar label{
+  font-size:.72rem;font-weight:700;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.filter-bar select,.filter-bar input{
+  padding:8px 10px;background:var(--surface);border:1px solid var(--border-2);
+  border-radius:var(--r-sm);font-size:.84rem;color:var(--text);
+  min-height:36px;
+}
+.filter-bar select:focus,.filter-bar input:focus{
+  outline:none;border-color:var(--green-bright);box-shadow:0 0 0 2px var(--green-glow);
+}
+.book-row{
+  display:grid;grid-template-columns:36px 1fr 70px 80px 100px;
+  gap:10px;align-items:center;padding:10px 12px;border-radius:var(--r-sm);
+}
+.book-row+.book-row{border-top:1px solid var(--border)}
+.book-row:nth-child(odd){background:var(--surface-3)}
+.book-rate{font-family:var(--font-mono);font-weight:800;font-size:.95rem;text-align:right}
+.book-rate.high{color:var(--red-on-soft)}
+.book-rate.med{color:var(--amber-on-soft)}
+.book-yel{
+  font-family:var(--font-mono);font-weight:700;font-size:.86rem;text-align:right;
+  display:flex;align-items:center;gap:5px;justify-content:flex-end;
+}
+.yel-card{
+  width:12px;height:16px;background:#f1d046;border-radius:2px;
+  box-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+.book-flags{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+
+.audit-row{
+  display:grid;grid-template-columns:42px 1fr 1fr 60px 60px 32px;
+  gap:10px;align-items:center;padding:10px 12px;border-radius:var(--r-sm);
+}
+.audit-row+.audit-row{border-top:1px solid var(--border)}
+.audit-row:nth-child(odd){background:var(--surface-3)}
+.audit-cap{display:flex;align-items:center;gap:8px;min-width:0}
+.audit-cap-shirt{width:30px;height:32px;flex-shrink:0}
+.audit-cap-shirt svg{width:100%;height:100%}
+.audit-cap-name{font-weight:700;font-size:.84rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.audit-pts{font-family:var(--font-mono);font-weight:800;font-size:.9rem;text-align:right}
+.audit-verdict{
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.78rem;flex-shrink:0;
+}
+.audit-verdict.correct{background:var(--green-soft);color:var(--green-on-soft)}
+.audit-verdict.wrong{background:var(--red-soft);color:var(--red-on-soft)}
+.audit-verdict svg{width:14px;height:14px}
+
+.hit-form{
+  display:grid;grid-template-columns:1fr auto 1fr auto;gap:14px;
+  align-items:end;
+}
+.hit-form .auth-field{margin:0}
+.hit-arrow{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--green-soft);color:var(--green-on-soft);
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:6px;
+}
+.hit-arrow svg{width:18px;height:18px}
+.hit-verdict-card{
+  display:flex;align-items:center;gap:14px;
+  padding:16px 18px;border-radius:var(--r-lg);
+  background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--green);
+}
+.hit-verdict-card.borderline{border-left-color:var(--amber)}
+.hit-verdict-card.bad{border-left-color:var(--red)}
+.hit-verdict-icon{
+  width:50px;height:50px;border-radius:50%;
+  background:var(--green-soft);color:var(--green-on-soft);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.hit-verdict-card.borderline .hit-verdict-icon{background:var(--amber-soft);color:var(--amber-on-soft)}
+.hit-verdict-card.bad .hit-verdict-icon{background:var(--red-soft);color:var(--red-on-soft)}
+.hit-verdict-icon svg{width:24px;height:24px}
+.hit-verdict-text{flex:1}
+.hit-verdict-label{font-size:.66rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3)}
+.hit-verdict-headline{font-family:var(--font-display);font-size:1.3rem;font-weight:800;letter-spacing:-.02em;margin-top:3px}
+.hit-verdict-detail{font-size:.82rem;color:var(--text-2);margin-top:4px;line-height:1.5}
+
+@media(max-width:1080px){
+  .book-row{grid-template-columns:30px 1fr 60px 70px}
+  .book-row .book-flags{display:none}
+  .audit-row{grid-template-columns:34px 1fr 60px 30px;font-size:.78rem}
+  .audit-row > div:nth-child(3),.audit-row > div:nth-child(5){display:none}
+  .hit-form{grid-template-columns:1fr}
+  .hit-arrow{display:none}
+}
+
+/* ── PHASE 7: CHIP PLANNER + PRICE WATCH ───────────────── */
+.chip-planner-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+  margin-bottom:18px;
+}
+.chip-card-mini{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-md);padding:12px 14px;
+  display:flex;flex-direction:column;gap:8px;
+  border-left:3px solid var(--blue);
+}
+.chip-card-mini.used{opacity:.7;border-left-color:var(--text-3)}
+.chip-card-mini.planned{border-left-color:var(--green-bright)}
+.chip-card-mini.invalid{border-left-color:var(--red);background:var(--red-soft)}
+.chip-mini-head{display:flex;align-items:center;gap:8px}
+.chip-mini-icon{
+  width:28px;height:28px;border-radius:var(--r-sm);
+  background:var(--blue-soft);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.chip-mini-icon svg{width:14px;height:14px;color:var(--blue-on-soft)}
+.chip-card-mini.planned .chip-mini-icon{background:var(--green-soft)}
+.chip-card-mini.planned .chip-mini-icon svg{color:var(--green-on-soft)}
+.chip-card-mini.used .chip-mini-icon{background:var(--surface-3)}
+.chip-card-mini.used .chip-mini-icon svg{color:var(--text-3)}
+.chip-mini-name{font-weight:700;font-size:.86rem;line-height:1.1}
+.chip-mini-half{font-size:.66rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-3);margin-top:1px}
+.chip-mini-state{font-size:.78rem;color:var(--text-2)}
+.chip-mini-controls{display:flex;align-items:center;gap:6px}
+.chip-mini-controls select{
+  flex:1;padding:8px 10px;background:var(--surface-2);
+  border:1px solid var(--border-2);border-radius:var(--r-sm);
+  font-size:.84rem;font-weight:600;color:var(--text);
+  min-height:36px;
+}
+.chip-mini-controls select:focus{outline:none;border-color:var(--green-bright);
+  box-shadow:0 0 0 2px var(--green-glow)}
+.chip-mini-clear{
+  width:30px;height:30px;border-radius:var(--r-sm);
+  background:var(--surface-3);color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;
+}
+.chip-mini-clear:hover{background:var(--red-soft);color:var(--red-on-soft)}
+.chip-mini-clear svg{width:12px;height:12px}
+.chip-mini-warn{
+  font-size:.72rem;font-weight:700;color:var(--red-on-soft);
+  display:flex;align-items:center;gap:5px;margin-top:4px;
+}
+.chip-mini-warn svg{width:12px;height:12px}
+
+/* 38-GW timeline */
+.gw-timeline{
+  display:grid;grid-template-columns:repeat(38, minmax(34px,1fr));
+  gap:3px;overflow-x:auto;padding-bottom:6px;
+}
+.gw-cell{
+  position:relative;min-height:48px;border-radius:6px;
+  background:var(--surface-3);border:1px solid var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:.66rem;font-weight:700;color:var(--text-3);
+  padding:3px 2px;text-align:center;line-height:1.1;
+}
+.gw-cell.cur{outline:2px solid var(--green-bright);outline-offset:-2px}
+.gw-cell.blank{background:var(--red-soft);color:var(--red-on-soft);border-color:color-mix(in srgb,var(--red) 30%,transparent)}
+.gw-cell.dgw{background:var(--amber-soft);color:var(--amber-on-soft);border-color:color-mix(in srgb,var(--amber) 30%,transparent)}
+.gw-cell-num{font-family:var(--font-mono);font-weight:800;font-size:.72rem}
+.gw-cell-chip{font-size:.6rem;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;margin-top:2px;
+  background:var(--green);color:#fff;padding:1px 4px;border-radius:3px;
+}
+.gw-cell.invalid-placement .gw-cell-chip{background:var(--red);color:#fff}
+.timeline-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;
+  font-size:.72rem;color:var(--text-3)}
+
+/* Price Watch */
+.pw-row{
+  display:grid;grid-template-columns:36px 1fr auto auto 120px auto;
+  gap:10px;align-items:center;padding:10px 12px;border-radius:var(--r-sm);
+}
+.pw-row+.pw-row{border-top:1px solid var(--border)}
+.pw-row:nth-child(odd){background:var(--surface-3)}
+.pw-shirt{width:30px;height:32px}
+.pw-shirt svg{width:100%;height:100%}
+.pw-name{font-weight:700;font-size:.88rem;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pw-meta{font-size:.72rem;color:var(--text-3);margin-top:2px}
+.pw-price{
+  font-family:var(--font-mono);font-weight:800;font-size:.95rem;
+  text-align:right;min-width:64px;
+}
+.pw-change{
+  font-family:var(--font-mono);font-weight:700;font-size:.84rem;
+  text-align:right;min-width:60px;
+}
+.pw-change.up{color:var(--green-on-soft)}
+.pw-change.down{color:var(--red-on-soft)}
+.pw-change.flat{color:var(--text-3)}
+.pw-target-wrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.pw-target-input{
+  width:72px;padding:7px 8px;background:var(--surface-2);
+  border:1px solid var(--border-2);border-radius:var(--r-sm);
+  font-size:.82rem;font-family:var(--font-mono);font-weight:600;color:var(--text);
+  text-align:right;min-height:36px;
+}
+.pw-target-input:focus{outline:none;border-color:var(--green-bright);box-shadow:0 0 0 2px var(--green-glow)}
+.pw-target-set{font-size:.66rem;color:var(--green-on-soft);font-weight:700}
+.pw-target-hit{
+  font-size:.66rem;font-weight:800;color:#fff;background:var(--green);
+  padding:2px 6px;border-radius:var(--r-pill);letter-spacing:.05em;text-transform:uppercase;
+}
+.pw-target-clear{
+  width:28px;height:28px;border-radius:var(--r-sm);
+  background:var(--surface-3);color:var(--text-3);
+  display:flex;align-items:center;justify-content:center;
+}
+.pw-target-clear:hover{background:var(--red-soft);color:var(--red-on-soft)}
+.pw-target-clear svg{width:11px;height:11px}
+
+@media(max-width:1080px){
+  .chip-planner-grid{grid-template-columns:repeat(2,1fr)}
+  .gw-timeline{grid-template-columns:repeat(19, minmax(34px,1fr))}
+  .pw-row{grid-template-columns:30px 1fr auto auto;font-size:.84rem}
+  .pw-row .pw-target-wrap,.pw-row .pw-change{display:none}
+}
+@media(max-width:560px){
+  .chip-planner-grid{grid-template-columns:1fr}
+}
+
 /* ── PHASE 6: JOURNAL — TRANSFER LEDGER + GW P&L ───────── */
 .ledger-row{
   display:grid;grid-template-columns:38px 1fr auto 1fr auto;
@@ -1727,19 +1956,24 @@ const NAV = [
     {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
     {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
     {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
+    {id:'bookings', label:'Bookings Risk', icon:'flag', tier:'free'},
     {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid'},
     {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'}
   ]},
   { id:'planner', label:'Planner', icon:'planner', panels:[
     {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
-    {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free'},
+    {id:'chips', label:'Chip Planner', icon:'diamond', tier:'free'},
     {id:'gwhistory', label:'GW History', icon:'calendar', tier:'paid'},
     {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
     {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
   ]},
-  { id:'journal', label:'Journal', icon:'journal', panels:[
-    {id:'ledger', label:'Transfer Ledger', icon:'ledger', tier:'free'},
-    {id:'gwpnl',  label:'GW P&L Dashboard', icon:'gwpnl', tier:'free'}
+  { id:'journal', label:'Manager Hub', icon:'journal', panels:[
+    {id:'ledger',   label:'Transfer Ledger',  icon:'ledger', tier:'free'},
+    {id:'gwpnl',    label:'GW P&L Dashboard', icon:'gwpnl',  tier:'free'},
+    {id:'captaud',  label:'Captaincy Audit',  icon:'star',   tier:'free'},
+    {id:'hitcalc',  label:'Points Hit Calculator', icon:'arrows', tier:'free'},
+    {id:'pricewatch', label:'Price Watch',    icon:'eye',    tier:'free'},
+    {id:'audit',    label:'Season Audit',     icon:'check',  tier:'free'}
   ]}
 ];
 const PANELS = {};
@@ -1764,13 +1998,18 @@ const PANEL_DESC = {
   injuries:'Fitness news, suspension risk and return timelines across the league.',
   setpiece:'Confirmed penalty and free-kick takers with a confidence rating.',
   rotation:'European fixture congestion and start probability for rotation-risk players.',
+  bookings:'Yellow card load, booking rate and suspension risk for every Premier League player.',
   fixtures:'A six-gameweek fixture difficulty grid for every team.',
-  chips:'Chip allocation and the best gameweeks to deploy each one.',
+  chips:'Eight chips, 38 gameweeks. Assign your remaining chips to future windows; the FPL API auto-fills the ones you have already used.',
   gwhistory:'Every gameweek of your season, with score, rank and captain return.',
   watchlist:'Keep an eye on players you are considering before you commit a transfer.',
   alerts:'Price, injury, booking and deadline alerts tuned to your squad.',
   ledger:'Every confirmed transfer this season with the points won or lost. Auto-pulled from the FPL API — nothing to type.',
-  gwpnl:'Your gameweek scores against the global average across the season, with running points above or below the field and the chip log.'
+  gwpnl:'Your gameweek scores against the global average across the season, with running points above or below the field and the chip log.',
+  captaud:'Auto-graded captain decisions per gameweek: did you pick the top scorer in your squad each week?',
+  hitcalc:'Quick math on whether a points hit pays off. Pick two players, the app computes the gain from form and the break-even.',
+  pricewatch:'Live price movement for your squad and watchlist, with optional sell-price targets.',
+  audit:'Honest season audit — every gameweek auto-tagged for decision quality, with a season score out of ten.'
 };
 
 /* ── API CLIENT ────────────────────────────────────────── */
@@ -1982,8 +2221,16 @@ function alertsToRow(a, userId){
   };
 }
 
+const CHIPPLAN_KEY = 'gwedge.chipPlan';
+const PRICETGT_KEY = 'gwedge.priceTargets';
+
 const Store = {
-  cache: { watchlist: [], rivals: [], alerts: defaultAlerts(), managerId: null, tier: 'free', subscriptionStatus: null, proUntil: null },
+  cache: {
+    watchlist: [], rivals: [], alerts: defaultAlerts(),
+    managerId: null, tier: 'free', subscriptionStatus: null, proUntil: null,
+    chipPlan: {},        /* { wc1: gw, fh1: gw, ... } — null means unplanned */
+    priceTargets: {}     /* { player_id: target_sell_in_tenths } */
+  },
   hydrated: false,
 
   isPro(){
@@ -2006,16 +2253,22 @@ const Store = {
     catch(e){ return defaultAlerts(); }
   },
   _writeLocalAlerts(a){ try{ localStorage.setItem(ALERTS_KEY, JSON.stringify(a)); }catch(e){} },
+  _readLocalChipPlan(){ try{ const s=localStorage.getItem(CHIPPLAN_KEY); return s?JSON.parse(s):{}; }catch(e){ return {}; } },
+  _writeLocalChipPlan(o){ try{ localStorage.setItem(CHIPPLAN_KEY, JSON.stringify(o)); }catch(e){} },
+  _readLocalPriceTargets(){ try{ const s=localStorage.getItem(PRICETGT_KEY); return s?JSON.parse(s):{}; }catch(e){ return {}; } },
+  _writeLocalPriceTargets(o){ try{ localStorage.setItem(PRICETGT_KEY, JSON.stringify(o)); }catch(e){} },
 
   async hydrate(){
     if(AUTH.user){
       const sb = AUTH.client(); const uid = AUTH.user.id;
       try{
-        const [profile, watch, riv, alerts] = await Promise.all([
+        const [profile, watch, riv, alerts, chipPlan, priceTgt] = await Promise.all([
           sb.from('gwedge_profiles').select('manager_id, tier, subscription_status, pro_until').eq('user_id', uid).maybeSingle(),
           sb.from('gwedge_watchlist').select('player_id').eq('user_id', uid),
           sb.from('gwedge_rivals').select('rival_manager_id').eq('user_id', uid),
-          sb.from('gwedge_alert_prefs').select('*').eq('user_id', uid).maybeSingle()
+          sb.from('gwedge_alert_prefs').select('*').eq('user_id', uid).maybeSingle(),
+          sb.from('gwedge_chip_plan').select('chip_key,event').eq('user_id', uid),
+          sb.from('gwedge_price_targets').select('player_id,target_sell').eq('user_id', uid)
         ]);
         this.cache.managerId          = profile.data ? profile.data.manager_id : null;
         this.cache.tier               = (profile.data && profile.data.tier) || 'free';
@@ -2024,6 +2277,8 @@ const Store = {
         this.cache.watchlist          = (watch.data||[]).map(r=>r.player_id);
         this.cache.rivals             = (riv.data||[]).map(r=>r.rival_manager_id);
         this.cache.alerts             = alerts.data ? alertsFromRow(alerts.data) : defaultAlerts();
+        this.cache.chipPlan           = (chipPlan.data||[]).reduce((acc,r)=>{ acc[r.chip_key]=r.event; return acc; }, {});
+        this.cache.priceTargets       = (priceTgt.data||[]).reduce((acc,r)=>{ acc[r.player_id]=r.target_sell; return acc; }, {});
       }catch(e){
         console.warn('Store hydrate failed', e);
       }
@@ -2035,6 +2290,8 @@ const Store = {
       this.cache.watchlist          = this._readLocalWatchlist();
       this.cache.rivals             = this._readLocalRivals();
       this.cache.alerts             = this._readLocalAlerts();
+      this.cache.chipPlan           = this._readLocalChipPlan();
+      this.cache.priceTargets       = this._readLocalPriceTargets();
     }
     this.hydrated = true;
   },
@@ -2110,10 +2367,56 @@ const Store = {
     }
   },
 
+  /* Chip plan — { chipKey: event } */
+  chipPlan(){ return Object.assign({}, this.cache.chipPlan); },
+  async setChipPlan(chipKey, event){
+    if(event===null || event===undefined){
+      delete this.cache.chipPlan[chipKey];
+      if(AUTH.user){
+        const sb = AUTH.client();
+        await sb.from('gwedge_chip_plan').delete().eq('user_id', AUTH.user.id).eq('chip_key', chipKey);
+      } else {
+        this._writeLocalChipPlan(this.cache.chipPlan);
+      }
+      return;
+    }
+    this.cache.chipPlan[chipKey] = event;
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_chip_plan').upsert({ user_id: AUTH.user.id, chip_key: chipKey, event: event }, { onConflict: 'user_id,chip_key' });
+    } else {
+      this._writeLocalChipPlan(this.cache.chipPlan);
+    }
+  },
+
+  /* Price targets — { player_id: target_in_tenths } */
+  priceTargets(){ return Object.assign({}, this.cache.priceTargets); },
+  async setPriceTarget(playerId, targetTenths){
+    if(targetTenths===null || targetTenths===undefined){
+      delete this.cache.priceTargets[playerId];
+      if(AUTH.user){
+        const sb = AUTH.client();
+        await sb.from('gwedge_price_targets').delete().eq('user_id', AUTH.user.id).eq('player_id', playerId);
+      } else {
+        this._writeLocalPriceTargets(this.cache.priceTargets);
+      }
+      return;
+    }
+    this.cache.priceTargets[playerId] = targetTenths;
+    if(AUTH.user){
+      const sb = AUTH.client();
+      await sb.from('gwedge_price_targets').upsert({ user_id: AUTH.user.id, player_id: playerId, target_sell: targetTenths }, { onConflict: 'user_id,player_id' });
+    } else {
+      this._writeLocalPriceTargets(this.cache.priceTargets);
+    }
+  },
+
   /* Migration helpers (signed-out → signed-in) */
   hasLocalDataToMigrate(){
     return this._readLocalWatchlist().length>0 ||
            this._readLocalRivals().length>0 ||
+           Object.keys(this._readLocalChipPlan()).length>0 ||
+           Object.keys(this._readLocalPriceTargets()).length>0 ||
            !!sessionStorage.getItem(MGR_KEY);
   },
 
@@ -2123,8 +2426,10 @@ const Store = {
     const localWatch  = this._readLocalWatchlist();
     const localRivals = this._readLocalRivals();
     const localAlerts = this._readLocalAlerts();
+    const localChips  = this._readLocalChipPlan();
+    const localPrices = this._readLocalPriceTargets();
     const localMgr    = sessionStorage.getItem(MGR_KEY);
-    const counts = { watchlist:0, rivals:0, alerts:false, managerId:false };
+    const counts = { watchlist:0, rivals:0, alerts:false, managerId:false, chipPlan:0, priceTargets:0 };
 
     if(localMgr && /^\d{1,9}$/.test(localMgr)){
       const mid = parseInt(localMgr,10);
@@ -2142,6 +2447,16 @@ const Store = {
       const { error } = await sb.from('gwedge_rivals').upsert(rows, { onConflict: 'user_id,rival_manager_id', ignoreDuplicates: true });
       if(!error){ counts.rivals = localRivals.length; }
     }
+    const chipRows = Object.entries(localChips).filter(([k,v])=>v).map(([chip_key,event])=>({user_id:uid,chip_key,event}));
+    if(chipRows.length){
+      const { error } = await sb.from('gwedge_chip_plan').upsert(chipRows, { onConflict: 'user_id,chip_key' });
+      if(!error){ counts.chipPlan = chipRows.length; }
+    }
+    const priceRows = Object.entries(localPrices).map(([player_id,target_sell])=>({user_id:uid,player_id:parseInt(player_id,10),target_sell}));
+    if(priceRows.length){
+      const { error } = await sb.from('gwedge_price_targets').upsert(priceRows, { onConflict: 'user_id,player_id' });
+      if(!error){ counts.priceTargets = priceRows.length; }
+    }
     /* Always overwrite alert prefs (single row) — preserves user intent from anonymous use */
     await sb.from('gwedge_alert_prefs').upsert(alertsToRow(localAlerts, uid), { onConflict: 'user_id' });
     counts.alerts = true;
@@ -2150,6 +2465,8 @@ const Store = {
     try{ localStorage.removeItem(WATCH_KEY); }catch(e){}
     try{ localStorage.removeItem(RIVAL_KEY); }catch(e){}
     try{ localStorage.removeItem(ALERTS_KEY); }catch(e){}
+    try{ localStorage.removeItem(CHIPPLAN_KEY); }catch(e){}
+    try{ localStorage.removeItem(PRICETGT_KEY); }catch(e){}
     /* Keep MGR.id in session — it stays useful as a runtime value */
 
     /* Re-hydrate */
@@ -2161,6 +2478,8 @@ const Store = {
     try{ localStorage.removeItem(WATCH_KEY); }catch(e){}
     try{ localStorage.removeItem(RIVAL_KEY); }catch(e){}
     try{ localStorage.removeItem(ALERTS_KEY); }catch(e){}
+    try{ localStorage.removeItem(CHIPPLAN_KEY); }catch(e){}
+    try{ localStorage.removeItem(PRICETGT_KEY); }catch(e){}
   }
 };
 
@@ -2538,12 +2857,58 @@ function attachPageEvents(){
       el.addEventListener('click', onActionClick);
     }
   });
+  document.querySelectorAll('[data-act-input]').forEach(el=>{
+    el.addEventListener('change', onInputChange);
+    el.addEventListener('blur', onInputChange);
+  });
+  document.querySelectorAll('[data-act-check]').forEach(el=>{
+    el.addEventListener('change', onCheckChange);
+  });
 }
-function onSelectChange(e){
+async function onInputChange(e){
   const el = e.currentTarget;
-  const act = el.dataset.act;
-  if(act==='whatif-player'){ whatifSel.playerId = parseInt(el.value,10); renderPage('whatif'); }
-  else if(act==='whatif-outcome'){ whatifSel.outcome = el.value; renderPage('whatif'); }
+  const act = el.dataset.actInput;
+  if(act==='price-set'){
+    const pid = parseInt(el.dataset.pid,10);
+    const raw = el.value.trim();
+    if(!raw){ return; }
+    const num = parseFloat(raw);
+    if(isNaN(num) || num<3.5 || num>20){
+      el.setAttribute('aria-invalid','true');
+      return;
+    }
+    el.removeAttribute('aria-invalid');
+    await Store.setPriceTarget(pid, Math.round(num*10));
+    renderPage('pricewatch');
+    return;
+  }
+  if(act==='book-min'){
+    const n = parseInt(el.value,10);
+    bookingsFilter.min = isNaN(n)?0:n;
+    renderPage('bookings');
+    return;
+  }
+  if(act==='hit-out' || act==='hit-in'){
+    const listId = act==='hit-out' ? 'hit-out-list' : 'hit-in-list';
+    const list = document.getElementById(listId);
+    if(!list) return;
+    const opt = Array.from(list.options).find(o=>o.value===el.value.trim());
+    if(opt && opt.dataset.id){
+      const id = parseInt(opt.dataset.id,10);
+      if(act==='hit-out') hitState.outId = id;
+      else                hitState.inId  = id;
+      renderPage('hitcalc');
+    }
+    return;
+  }
+}
+function onCheckChange(e){
+  const el = e.currentTarget;
+  const act = el.dataset.actCheck;
+  if(act==='book-susp'){
+    bookingsFilter.suspensionOnly = el.checked;
+    renderPage('bookings');
+  }
 }
 async function onActionClick(e){
   const el = e.currentTarget;
@@ -2619,6 +2984,41 @@ async function onActionClick(e){
     const key = el.dataset.key;
     const payload = CSV_CACHE[key];
     if(payload) downloadCsv(payload.filename, payload.rows);
+  }
+  else if(act==='chip-clear'){
+    const chip = el.dataset.chip;
+    await Store.setChipPlan(chip, null);
+    renderPage('chips');
+  }
+  else if(act==='price-clear'){
+    const pid = parseInt(el.dataset.pid,10);
+    await Store.setPriceTarget(pid, null);
+    renderPage('pricewatch');
+  }
+}
+
+function onSelectChange(e){
+  const el = e.currentTarget;
+  const act = el.dataset.act;
+  if(act==='whatif-player'){ whatifSel.playerId = parseInt(el.value,10); renderPage('whatif'); return; }
+  if(act==='whatif-outcome'){ whatifSel.outcome = el.value; renderPage('whatif'); return; }
+  if(act==='chip-assign'){
+    const chip = el.dataset.chip;
+    const val = el.value;
+    const ev = val ? parseInt(val,10) : null;
+    Store.setChipPlan(chip, ev).then(()=>renderPage('chips'));
+    return;
+  }
+  if(act==='book-filter'){
+    const key = el.dataset.key;
+    bookingsFilter[key] = el.value;
+    renderPage('bookings');
+    return;
+  }
+  if(act==='hit-count'){
+    hitState.hits = parseInt(el.value,10);
+    renderPage('hitcalc');
+    return;
   }
 }
 
@@ -3260,7 +3660,10 @@ async function renderTransfers(){
     '<div class="tx-stat"><div class="tx-stat-label">Hit cost / extra</div><div class="tx-stat-val">−4 pts</div></div>'+
   '</div>'+
   '<div class="card mb-20">'+
-    '<div class="card-title">Your current squad — ready to plan transfers against</div>'+
+    '<div class="card-title"><span class="card-title-text">Your current squad — ready to plan transfers against</span>'+
+      '<button class="btn btn-outline btn-sm" data-act="set-panel" data-panel="ledger">'+
+        svg(ICON.ledger,'width="14" height="14"')+'View Transfer Ledger</button>'+
+    '</div>'+
     playerListBlock(picks.picks, elementById, teamById, types, picks.picks.find(p=>p.is_captain), picks.picks.find(p=>p.is_vice_captain)) +
   '</div>'+
   '<div class="card">'+
@@ -3387,7 +3790,10 @@ async function renderCaptain(){
       cards.map(c=>capCard(c.kind, c.rank, c.data, teamById)).join('') +
     '</div>'+
     '<div class="card">'+
-      '<div class="card-title">Top 10 captain scores '+(MGR.id?' — from your squad':' — league wide')+'</div>'+
+      '<div class="card-title"><span class="card-title-text">Top 10 captain scores'+(MGR.id?' — from your squad':' — league wide')+'</span>'+
+        (MGR.id ? '<button class="btn btn-outline btn-sm" data-act="set-panel" data-panel="captaud">'+
+          svg(ICON.check,'width="14" height="14"')+'See past captain audit</button>' : '')+
+      '</div>'+
       capLeaderboard(scored.slice(0,10), teamById) +
     '</div>';
 }
@@ -3901,44 +4307,169 @@ async function renderFixtures(){
   '</div>';
 }
 
-/* ── PLANNER: Chip Strategy ────────────────────────────── */
+/* ── PLANNER: Chip Planner (rebuild) ───────────────────── */
+const CHIP_DEFS = [
+  {key:'wc1', label:'Wildcard',       short:'WC',  half:1, apiName:'wildcard'},
+  {key:'fh1', label:'Free Hit',       short:'FH',  half:1, apiName:'freehit'},
+  {key:'tc1', label:'Triple Captain', short:'TC',  half:1, apiName:'3xc'},
+  {key:'bb1', label:'Bench Boost',    short:'BB',  half:1, apiName:'bboost'},
+  {key:'wc2', label:'Wildcard',       short:'WC',  half:2, apiName:'wildcard'},
+  {key:'fh2', label:'Free Hit',       short:'FH',  half:2, apiName:'freehit'},
+  {key:'tc2', label:'Triple Captain', short:'TC',  half:2, apiName:'3xc'},
+  {key:'bb2', label:'Bench Boost',    short:'BB',  half:2, apiName:'bboost'}
+];
+const CHIP_ICON_KEY = { WC:'rotate', FH:'bolt', TC:'star', BB:'squad' };
+
 async function renderChips(){
+  const bs = await getBootstrap();
+  const events = bs.events || [];
+  const totalGw = Math.max(38, events.length);
+
+  /* Used chips auto-pulled from manager history */
   let used = [];
   if(MGR.id){
     try{ const hist = await FPL.history(MGR.id); used = hist.chips||[]; }catch(e){}
   }
-  const usedMap = {};
-  used.forEach(c=>{ usedMap[c.name]=c.event; });
+  const usedByKey = {};
+  const counters = {};
+  used.slice().sort((a,b)=>a.event-b.event).forEach(c=>{
+    counters[c.name] = (counters[c.name]||0) + 1;
+    const idx = counters[c.name];
+    const def = CHIP_DEFS.find(d=>d.apiName===c.name && d.half===idx);
+    if(def) usedByKey[def.key] = c.event;
+  });
 
-  const chipDefs = [
-    {key:'wildcard', label:'Wildcard', icon:'rotate',
-      rec:'Best deployed after an international break when team form swings, or just before a fixture difficulty drop. The first wildcard expires after GW19; the second runs to the end of the season.'},
-    {key:'bboost', label:'Bench Boost', icon:'squad',
-      rec:'Strongest in a double gameweek where all four bench players have eligible fixtures. Watch for blank GWs in the back half of the season.'},
-    {key:'3xc', label:'Triple Captain', icon:'star',
-      rec:'Save for a premium captain in a double gameweek with home fixtures. The textbook trigger is Salah or Haaland at home to a bottom-half side in a DGW.'},
-    {key:'freehit', label:'Free Hit', icon:'bolt',
-      rec:'Best used in a blank gameweek to field a fresh XI, or to chase a double gameweek for managers who can\'t move enough players via transfers alone.'},
-    {key:'manager', label:'Assistant Manager', icon:'team',
-      rec:'New chip for 2025/26. Usage rules vary by season — confirm in the official FPL app before deploying.'}
-  ];
+  /* Blank / double GW detection from fixtures */
+  let fixtures = [];
+  try{ fixtures = await FPL.fixtures(); }catch(e){}
+  const gwInfo = {};
+  fixtures.forEach(f=>{
+    if(!f.event) return;
+    if(!gwInfo[f.event]) gwInfo[f.event] = { teams:new Set(), count:0 };
+    gwInfo[f.event].count++;
+    gwInfo[f.event].teams.add(f.team_h);
+    gwInfo[f.event].teams.add(f.team_a);
+  });
+  const gwStatus = {};
+  for(let i=1;i<=totalGw;i++){
+    const info = gwInfo[i];
+    if(!info){ gwStatus[i] = 'normal'; continue; }
+    if(info.teams.size < 20) gwStatus[i] = 'blank';
+    else if(info.count > 10) gwStatus[i] = 'double';
+    else gwStatus[i] = 'normal';
+  }
 
-  return '<div class="card">'+
-    '<div class="card-title">Chip strategy — usage status and best deployment windows</div>'+
-    (MGR.id ? '' : '<p class="card-sub" style="margin-bottom:14px">Add your Manager ID to see which chips you\'ve already used. The recommendations below apply generically.</p>')+
-    '<div class="chip-list">'+
-      chipDefs.map(c=>{
-        const gw = usedMap[c.key];
-        const isUsed = !!gw;
-        return '<div class="chip-card '+(isUsed?'used':'')+'">'+
-          '<div class="chip-icon">'+svg(ICON[c.icon]||ICON.diamond,'width="18" height="18"')+'</div>'+
-          '<div class="chip-body">'+
-            '<div class="chip-name-line">'+escapeHtml(c.label)+'</div>'+
-            '<div class="chip-state">'+(isUsed?'Used in GW '+gw:(MGR.id?'Available':'Status will load with your Manager ID'))+'</div>'+
-            '<div class="chip-rec">'+escapeHtml(c.rec)+'</div>'+
-          '</div>'+
-        '</div>';
-      }).join('') +
+  const planned = Store.chipPlan();
+  const curEvent = (events.find(e=>e.is_current) || events.find(e=>e.is_next) || {}).id || 0;
+  const plannedGwSet = new Set(Object.values(planned).filter(v=>v));
+
+  /* 8 chip cards */
+  const chipCards = CHIP_DEFS.map(def=>{
+    const usedGw = usedByKey[def.key];
+    const plannedGw = planned[def.key];
+    const halfLabel = def.half===1 ? 'First half · by GW19' : 'Second half · from GW20';
+    const numberSuffix = ' ' + def.half;
+
+    if(usedGw){
+      return '<div class="chip-card-mini used">'+
+        '<div class="chip-mini-head">'+
+          '<div class="chip-mini-icon">'+svg(ICON[CHIP_ICON_KEY[def.short]]||ICON.diamond,'width="14" height="14"')+'</div>'+
+          '<div style="flex:1"><div class="chip-mini-name">'+escapeHtml(def.label+numberSuffix)+'</div>'+
+          '<div class="chip-mini-half">'+escapeHtml(halfLabel)+'</div></div>'+
+        '</div>'+
+        '<div class="chip-mini-state">Used in GW '+usedGw+'</div>'+
+      '</div>';
+    }
+
+    const minGw = def.half===1 ? 1 : 20;
+    const maxGw = def.half===1 ? 19 : totalGw;
+    const opts = ['<option value="">— not planned —</option>'];
+    for(let gw=minGw; gw<=maxGw; gw++){
+      const status = gwStatus[gw];
+      const sel = plannedGw && plannedGw===gw;
+      const conflict = plannedGwSet.has(gw) && !sel;
+      let label = 'GW '+gw;
+      if(status==='blank') label += ' · Blank';
+      else if(status==='double') label += ' · Double';
+      if(conflict) label += ' (another chip)';
+      opts.push('<option value="'+gw+'"'+(sel?' selected':'')+'>'+escapeHtml(label)+'</option>');
+    }
+
+    const isPlanned = !!plannedGw;
+    const isInvalid = isPlanned && def.half===1 && plannedGw>19;
+    const stateLabel = isPlanned
+      ? 'Planned for GW '+plannedGw + (gwStatus[plannedGw]==='double'?' (Double)':gwStatus[plannedGw]==='blank'?' (Blank)':'')
+      : 'Unplanned';
+
+    const warning = isInvalid
+      ? '<div class="chip-mini-warn">'+svg(ICON.warning,'width="12" height="12"')+'First-half chip after GW19 — not allowed by FPL</div>'
+      : '';
+
+    const cls = 'chip-card-mini' + (isPlanned?' planned':'') + (isInvalid?' invalid':'');
+    const clearBtn = isPlanned
+      ? '<button class="chip-mini-clear" data-act="chip-clear" data-chip="'+def.key+'" aria-label="Clear planned chip">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      : '';
+
+    return '<div class="'+cls+'">'+
+      '<div class="chip-mini-head">'+
+        '<div class="chip-mini-icon">'+svg(ICON[CHIP_ICON_KEY[def.short]]||ICON.diamond,'width="14" height="14"')+'</div>'+
+        '<div style="flex:1"><div class="chip-mini-name">'+escapeHtml(def.label+numberSuffix)+'</div>'+
+        '<div class="chip-mini-half">'+escapeHtml(halfLabel)+'</div></div>'+
+      '</div>'+
+      '<div class="chip-mini-state">'+escapeHtml(stateLabel)+'</div>'+
+      '<div class="chip-mini-controls">'+
+        '<select data-act="chip-assign" data-chip="'+def.key+'" aria-label="Assign '+escapeHtml(def.label)+' to a gameweek">'+
+          opts.join('')+
+        '</select>'+
+        clearBtn +
+      '</div>'+
+      warning +
+    '</div>';
+  }).join('');
+
+  /* 38-GW timeline */
+  const cells = [];
+  for(let gw=1; gw<=totalGw; gw++){
+    let chipBadge = '';
+    let cellExtra = '';
+    const usedHere = Object.entries(usedByKey).find(([k,v])=>v===gw);
+    const plannedHere = Object.entries(planned).find(([k,v])=>v===gw);
+    if(usedHere){
+      const def = CHIP_DEFS.find(d=>d.key===usedHere[0]);
+      if(def) chipBadge = '<span class="gw-cell-chip" style="background:var(--text-2)">'+def.short+'</span>';
+    } else if(plannedHere){
+      const def = CHIP_DEFS.find(d=>d.key===plannedHere[0]);
+      if(def){
+        const invalid = def.half===1 && gw>19;
+        chipBadge = '<span class="gw-cell-chip"'+(invalid?' style="background:var(--red)"':'')+'>'+def.short+'</span>';
+        if(invalid) cellExtra = ' invalid-placement';
+      }
+    }
+    const status = gwStatus[gw] || 'normal';
+    const isCur = curEvent===gw;
+    cells.push('<div class="gw-cell '+status+(isCur?' cur':'')+cellExtra+'" title="GW '+gw+
+      (status!=='normal'?' ('+status.toUpperCase()+')':'')+'">'+
+      '<span class="gw-cell-num">'+gw+'</span>'+chipBadge+
+    '</div>');
+  }
+
+  const noMgrNote = MGR.id ? ''
+    : '<div class="card-sub" style="margin-bottom:14px">Add your Manager ID to auto-fill the chips you have already used. Otherwise the planner treats all eight as available.</div>';
+
+  return '<div class="card mb-20">'+
+    '<div class="card-title">Your eight chips for 2025/26 — pick the gameweek for each</div>'+
+    noMgrNote +
+    '<div class="chip-planner-grid">'+ chipCards +'</div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">38-gameweek timeline — chip placements, blank and double gameweeks</div>'+
+    '<div class="gw-timeline">'+cells.join('')+'</div>'+
+    '<div class="timeline-legend">'+
+      '<span class="chart-legend-chip"><span class="chart-legend-swatch" style="background:var(--red-soft);border:1px solid color-mix(in srgb,var(--red) 30%,transparent);height:12px;border-radius:3px"></span>Blank GW</span>'+
+      '<span class="chart-legend-chip"><span class="chart-legend-swatch" style="background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);height:12px;border-radius:3px"></span>Double GW</span>'+
+      '<span class="chart-legend-chip"><span style="background:var(--text-2);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:3px">WC</span> Already used</span>'+
+      '<span class="chart-legend-chip"><span style="background:var(--green);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:3px">WC</span> Planned</span>'+
     '</div>'+
   '</div>';
 }
@@ -4489,8 +5020,64 @@ async function renderWhatIf(){
 async function renderEO(){
   const bs = await getBootstrap();
   const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
   const teamById = new Map(bs.teams.map(t=>[t.id,t]));
   const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  const events = bs.events||[];
+
+  /* EO Risk sub-view: user's captain vs rivals' captains */
+  let eoRiskHtml = '';
+  if(MGR.id){
+    const target = findNextDeadlineEvent(events) || findCurrentEvent(events) || [...events].reverse().find(e=>e.finished);
+    const rivalIds = Store.rivalItems();
+    if(target){
+      try{
+        const myPicks = await FPL.picks(MGR.id, target.id);
+        const myCap = myPicks.picks.find(p=>p.is_captain);
+        if(myCap){
+          const myCapEl = elementById.get(myCap.element);
+          const myCapOwn = parseFloat(myCapEl ? myCapEl.selected_by_percent : 0) || 0;
+          /* Pull rival captains in parallel */
+          const rivalCaps = await Promise.all(rivalIds.map(async rid=>{
+            try{
+              const [entry, picks] = await Promise.all([FPL.entry(rid), FPL.picks(rid, target.id).catch(()=>null)]);
+              if(!picks) return null;
+              const cap = picks.picks.find(p=>p.is_captain);
+              if(!cap) return null;
+              const el = elementById.get(cap.element);
+              return { entry, el, own: parseFloat(el?el.selected_by_percent:0)||0 };
+            }catch(e){ return null; }
+          }));
+          const valid = rivalCaps.filter(Boolean);
+          const sameCap = valid.filter(r=>r.el && r.el.id===myCapEl.id).length;
+          const avgRivalOwn = valid.length ? valid.reduce((s,r)=>s+r.own, 0)/valid.length : 0;
+          const eoGap = myCapOwn - avgRivalOwn;
+          let verdict, verdictDetail, cardCls;
+          if(myCapOwn >= 35){
+            verdict = 'Safe'; cardCls = '';
+            verdictDetail = 'Your captain is widely owned. You move with the field — limited rank swing in either direction.';
+          } else if(myCapOwn >= 12){
+            verdict = 'Differential'; cardCls = 'borderline';
+            verdictDetail = 'A meaningful number of managers own '+myCapEl.web_name+'. A haul gains real rank, a blank costs it.';
+          } else {
+            verdict = 'Contrarian'; cardCls = 'bad';
+            verdictDetail = 'Very few managers own '+myCapEl.web_name+'. The rank swing is large in both directions — a blank hurts more than a haul gains.';
+          }
+          const tCap = teamById.get(myCapEl ? myCapEl.team : 0);
+          eoRiskHtml = '<div class="hit-verdict-card '+cardCls+'" style="margin-bottom:18px">'+
+            '<div class="audit-cap-shirt">'+kitSvg(tCap, myCapEl && myCapEl.element_type===1)+'</div>'+
+            '<div class="hit-verdict-text">'+
+              '<div class="hit-verdict-label">EO Risk</div>'+
+              '<div class="hit-verdict-headline">'+escapeHtml(verdict)+' — '+escapeHtml(myCapEl.web_name)+' '+myCapOwn.toFixed(1)+'% owned</div>'+
+              '<div class="hit-verdict-detail">'+escapeHtml(verdictDetail)+
+                (valid.length?' '+sameCap+' of your '+valid.length+' tracked rivals also captained '+myCapEl.web_name+' (avg rival captain own '+avgRivalOwn.toFixed(1)+'%, gap '+(eoGap>0?'+':'')+eoGap.toFixed(1)+'%).':' Add rivals via Rival Scout to see how you compare.')+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }
+      }catch(e){ /* silent — keep the rest of the panel functional */ }
+    }
+  }
 
   const totalAttr = elements.reduce((s,p)=>s + ((parseFloat(p.form)||0) + (parseFloat(p.expected_goals_per_90)||0)*4 + (parseFloat(p.expected_assists_per_90)||0)*2), 0) || 1;
   const eos = elements.filter(p=>parseFloat(p.selected_by_percent)>0).map(p=>{
@@ -4502,10 +5089,10 @@ async function renderEO(){
   }).sort((a,b)=>b.eo-a.eo).slice(0,25);
 
   if(!eos.length){
-    return emptyBlock('No EO data yet','Effective Ownership comes online once ownership signal builds up across the player base.');
+    return eoRiskHtml + emptyBlock('No EO data yet','Effective Ownership comes online once ownership signal builds up across the player base.');
   }
   const maxEo = eos[0].eo;
-  return '<div class="card">'+
+  return eoRiskHtml + '<div class="card">'+
     '<div class="card-title">Top 25 by estimated Effective Ownership — the real rank-gain metric</div>'+
     '<div class="player-list">'+
       eos.map((e,i)=>{
@@ -4631,12 +5218,17 @@ async function renderRivals(){
   const myIds = myPicks ? new Set(myPicks.picks.map(p=>p.element)) : new Set();
   const myEntry = await MGR.getEntry();
 
+  /* Pre-fetch my history once for the gap chart */
+  let myHistory = null;
+  try{ myHistory = await FPL.history(MGR.id); }catch(e){}
+
   const rivalData = await Promise.all(rivals.map(async id=>{
     try{
       const entry = await FPL.entry(id);
-      let picks = null;
+      let picks = null, history = null;
       if(target){ try{ picks = await FPL.picks(id, target.id); }catch(e){} }
-      return {id, entry, picks};
+      try{ history = await FPL.history(id); }catch(e){}
+      return {id, entry, picks, history};
     }catch(e){ return {id, error:e.message}; }
   }));
 
@@ -4682,10 +5274,11 @@ async function renderRivals(){
         kpiCard('Team value', fmtMoney(e.last_deadline_value), 'Bank '+fmtMoney(e.last_deadline_bank), 'var(--amber)')+
         kpiCard('Squad overlap', shared.length+' / 15', 'shared with you', 'var(--purple)')+
       '</div>'+
-      (r.picks ? '<div class="grid g-2">'+
+      (r.picks ? '<div class="grid g-2 mb-14">'+
         '<div><div class="card-title">Only in their squad</div>'+ rivalSquadList(rivalOnly, elementById, teamById, 6) +'</div>'+
         '<div><div class="card-title">Only in yours</div>'+ rivalSquadList(meOnly, elementById, teamById, 6) +'</div>'+
       '</div>' : '<p class="text-3" style="font-size:.78rem">Squad picks unavailable for this rival.</p>')+
+      buildRivalGapBlock(myHistory, r.history, e) +
     '</div>';
   }).join('');
 
@@ -4694,6 +5287,45 @@ async function renderRivals(){
     adder +
   '</div>' + cards;
 }
+function buildRivalGapBlock(myHistory, rivalHistory, rivalEntry){
+  if(!myHistory || !rivalHistory) return '';
+  const my = (myHistory.current||[]);
+  const rival = (rivalHistory.current||[]);
+  if(!my.length || !rival.length) return '';
+  const byEvent = new Map(rival.map(r=>[r.event, r]));
+  const series = my.map(m=>{
+    const r = byEvent.get(m.event);
+    return r ? (m.total_points - r.total_points) : null;
+  });
+  /* Only series points where both managers have data */
+  const validIdx = series.map((v,i)=>v==null?-1:i).filter(i=>i>=0);
+  if(!validIdx.length) return '';
+  const values = validIdx.map(i=>series[i]);
+  const gws = validIdx.map(i=>my[i].event);
+  const currentGap = values[values.length-1];
+  const prevGap = values.length>1 ? values[values.length-2] : currentGap;
+  const change = currentGap - prevGap;
+  const fastClosing = (-change) > 5; /* rival pulling more than 5 pts back per GW */
+  const chartColor = currentGap>=0 ? 'var(--green-bright)' : 'var(--red)';
+  const chartFill  = currentGap>=0 ? 'rgba(31,157,92,.14)' : 'rgba(204,61,57,.10)';
+  const chart = svgLineChart([{ values, color:chartColor, fill:chartFill, width:1.6 }], { class:'spark' });
+  const verdict = currentGap>0
+    ? 'You lead '+escapeHtml(rivalEntry.name||'them')+' by '+fmtNum(currentGap)+' pts.'
+    : currentGap<0
+    ? 'You trail '+escapeHtml(rivalEntry.name||'them')+' by '+fmtNum(-currentGap)+' pts.'
+    : 'Level with '+escapeHtml(rivalEntry.name||'them')+'.';
+  const flag = fastClosing
+    ? '<span class="badge badge-amber" style="margin-left:6px">Closing fast</span>'
+    : '';
+  return '<div class="card-title" style="margin-top:6px"><span class="card-title-text">Points gap over the season</span></div>'+
+    chart +
+    '<p class="text-3" style="font-size:.76rem;margin-top:6px">'+
+      verdict + flag +
+      ' Last GW move: '+(change>0?'+':'')+change+' pts. '+
+      'Started GW '+gws[0]+', latest GW '+gws[gws.length-1]+'.'+
+    '</p>';
+}
+
 function rivalSquadList(ids, elementById, teamById, max){
   if(!ids.length) return '<p class="text-3" style="font-size:.78rem;padding:6px 4px">None — squads fully aligned on this side.</p>';
   const slice = ids.slice(0, max||6).map(id=>elementById.get(id)).filter(Boolean);
@@ -5008,6 +5640,634 @@ async function renderGwPnL(){
   '</div>';
 }
 
+/* ── MANAGER HUB: Price Watch ──────────────────────────── */
+async function renderPriceWatch(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  /* Build the watched player set: squad (if MGR) + watchlist + any with price targets set */
+  let watchedIds = new Set(Store.watchItems());
+  Object.keys(Store.priceTargets()).forEach(id=>watchedIds.add(parseInt(id,10)));
+  let squadIds = new Set();
+  if(MGR.id){
+    const events = bs.events||[];
+    const target = findNextDeadlineEvent(events) || findCurrentEvent(events) || [...events].reverse().find(e=>e.finished);
+    if(target){
+      try{
+        const picks = await FPL.picks(MGR.id, target.id);
+        picks.picks.forEach(p=>{ squadIds.add(p.element); watchedIds.add(p.element); });
+      }catch(e){}
+    }
+  }
+
+  const targets = Store.priceTargets();
+  const players = [...watchedIds].map(id=>elementById.get(id)).filter(Boolean);
+
+  if(!players.length){
+    return '<div class="card">'+
+      '<div class="card-title">Price Watch</div>'+
+      emptyBlock('No players to watch yet',
+        'Add players to your Watchlist (in Planner), or save your team via Manager ID. Price targets are optional.')+
+    '</div>';
+  }
+
+  /* Sort: target-hit first, then biggest movers desc */
+  players.sort((a,b)=>{
+    const tgtA = targets[a.id]; const tgtB = targets[b.id];
+    const hitA = tgtA && a.now_cost>=tgtA ? 1 : 0;
+    const hitB = tgtB && b.now_cost>=tgtB ? 1 : 0;
+    if(hitB!==hitA) return hitB-hitA;
+    return Math.abs(b.cost_change_start||0) - Math.abs(a.cost_change_start||0);
+  });
+
+  /* KPI: total squad value change vs season start across watched players */
+  const totalChange = players.reduce((s,p)=>s + (p.cost_change_start||0), 0);
+  const risers = players.filter(p=>(p.cost_change_event||0)>0).length;
+  const fallers = players.filter(p=>(p.cost_change_event||0)<0).length;
+  const targetsHit = players.filter(p=>targets[p.id] && p.now_cost>=targets[p.id]).length;
+
+  const rowHtml = players.map(p=>{
+    const t = teamById.get(p.team);
+    const pos = (types.get(p.element_type)||{}).singular_name_short||'';
+    const seasonChange = p.cost_change_start||0;
+    const eventChange  = p.cost_change_event||0;
+    const tgt = targets[p.id];
+    const tgtHit = tgt && p.now_cost>=tgt;
+    const isSquad = squadIds.has(p.id);
+    const changeCls = eventChange>0?'up':eventChange<0?'down':'flat';
+    const changeText = eventChange===0 ? '—' : (eventChange>0?'+':'') + (eventChange/10).toFixed(1);
+
+    const targetCell = tgtHit
+      ? '<span class="pw-target-hit" title="Current price is at or above your target">Target hit</span>'+
+        '<button class="pw-target-clear" data-act="price-clear" data-pid="'+p.id+'" aria-label="Clear target">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      : (tgt
+        ? '<span class="pw-target-set">Target '+(tgt/10).toFixed(1)+'</span>'+
+          '<button class="pw-target-clear" data-act="price-clear" data-pid="'+p.id+'" aria-label="Clear target">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+        : '<input class="pw-target-input" type="number" step="0.1" min="3.5" max="20" placeholder="Set target" '+
+          'data-act-input="price-set" data-pid="'+p.id+'" aria-label="Set sell target for '+escapeHtml(p.web_name)+'">');
+
+    return '<div class="pw-row">'+
+      '<div class="pw-shirt">'+kitSvg(t, p.element_type===1)+'</div>'+
+      '<div style="min-width:0">'+
+        '<div class="pw-name">'+escapeHtml(p.web_name)+(isSquad?' <span class="badge badge-green" style="margin-left:4px">In squad</span>':'')+'</div>'+
+        '<div class="pw-meta">'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml(pos)+' · started '+((p.now_cost-(p.cost_change_start||0))/10).toFixed(1)+'</div>'+
+      '</div>'+
+      '<span class="pw-price">'+(p.now_cost/10).toFixed(1)+'</span>'+
+      '<span class="pw-change '+changeCls+'">'+(eventChange===0?'—':changeText)+'</span>'+
+      '<div class="pw-target-wrap">'+targetCell+'</div>'+
+    '</div>';
+  }).join('');
+
+  /* CSV cache */
+  CSV_CACHE['pricewatch'] = {
+    filename: 'gameweek-edge-price-watch-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: players.map(p=>{
+      const t = teamById.get(p.team);
+      return {
+        player: p.web_name,
+        team: t?t.short_name:'',
+        in_squad: squadIds.has(p.id),
+        season_start_price: ((p.now_cost-(p.cost_change_start||0))/10).toFixed(1),
+        current_price: (p.now_cost/10).toFixed(1),
+        change_season: ((p.cost_change_start||0)/10).toFixed(1),
+        change_this_gw: ((p.cost_change_event||0)/10).toFixed(1),
+        target_sell: targets[p.id] ? (targets[p.id]/10).toFixed(1) : '',
+        target_hit: targets[p.id] ? (p.now_cost>=targets[p.id]) : ''
+      };
+    })
+  };
+
+  return '<div class="grid g-4 mb-20">'+
+    kpiCard('Watching', String(players.length),
+            (squadIds.size?squadIds.size+' from your squad · ':'')+(players.length-squadIds.size)+' watchlist',
+            'var(--blue)')+
+    kpiCard('Season total ±', (totalChange>0?'+':'')+(totalChange/10).toFixed(1)+'m',
+            'Across all watched players', 'var(--green)', totalChange>0?'up':totalChange<0?'down':'')+
+    kpiCard('Movers this GW', risers+' up · '+fallers+' down',
+            (risers-fallers>=0?'+':'')+(risers-fallers)+' net', 'var(--amber)')+
+    kpiCard('Targets hit', targetsHit+' / '+Object.keys(targets).length,
+            'Players at or above your sell price', targetsHit>0?'var(--green)':'var(--text-3)', targetsHit>0?'up':'')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Watched players — live price from the FPL API</span>'+
+      exportBtn('pricewatch','Export price watch to CSV')+
+    '</div>'+
+    rowHtml +
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">Set an optional sell target by typing a price (in £m) in the right column. We flag the moment a player meets it.</p>'+
+  '</div>';
+}
+
+/* ── PLAYERS: Bookings Risk ────────────────────────────── */
+/* Phase 8 panel state — survives re-renders within a session */
+const bookingsFilter = { pos:'all', team:'all', min:0, suspensionOnly:false };
+async function renderBookings(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  /* Compute booking rate for every player with at least one start */
+  const scored = elements.filter(p=>p.minutes>0).map(p=>{
+    const yel = p.yellow_cards||0;
+    const starts = p.starts || Math.max(1, Math.round((p.minutes||0)/90));
+    const rate = starts ? (yel/starts)*100 : 0;
+    /* PL suspension thresholds: 5 yellows (GW1-19), 10 (GW20-32), 15 (GW33-38) */
+    const suspensionRisk = yel >= 4;
+    const ban = yel >= 5;
+    return { p, yel, starts, rate, suspensionRisk, ban };
+  });
+
+  /* Apply filters */
+  let filtered = scored.filter(s=>{
+    if(bookingsFilter.pos!=='all' && s.p.element_type!==parseInt(bookingsFilter.pos,10)) return false;
+    if(bookingsFilter.team!=='all' && s.p.team!==parseInt(bookingsFilter.team,10)) return false;
+    if(bookingsFilter.min>0 && s.rate<bookingsFilter.min) return false;
+    if(bookingsFilter.suspensionOnly && !s.suspensionRisk) return false;
+    return true;
+  }).sort((a,b)=>b.rate-a.rate);
+
+  const top = filtered.slice(0,30);
+
+  /* Build filter controls */
+  const posOpts = '<option value="all">All positions</option>'+
+    [...types.values()].map(t=>'<option value="'+t.id+'"'+(bookingsFilter.pos==String(t.id)?' selected':'')+'>'+escapeHtml(t.singular_name_short)+'</option>').join('');
+  const teamOpts = '<option value="all">All teams</option>'+
+    [...teamById.values()].sort((a,b)=>a.short_name.localeCompare(b.short_name))
+      .map(t=>'<option value="'+t.id+'"'+(bookingsFilter.team==String(t.id)?' selected':'')+'>'+escapeHtml(t.short_name)+'</option>').join('');
+
+  /* KPI summary */
+  const totalFlagged = scored.filter(s=>s.suspensionRisk).length;
+  const highRisk = scored.filter(s=>s.rate>30 && s.starts>=5).length;
+  const bansActive = scored.filter(s=>s.ban).length;
+
+  /* Rows */
+  const rowsHtml = top.map(s=>{
+    const t = teamById.get(s.p.team);
+    const pos = (types.get(s.p.element_type)||{}).singular_name_short||'';
+    const rateClass = s.rate>30 ? 'high' : s.rate>20 ? 'med' : '';
+    const flags = [];
+    if(s.rate>30 && s.starts>=5) flags.push('<span class="badge badge-red">High risk</span>');
+    if(s.suspensionRisk && !s.ban) flags.push('<span class="badge badge-amber">Susp. risk</span>');
+    if(s.ban) flags.push('<span class="badge badge-red">Ban triggered</span>');
+    return '<div class="book-row">'+
+      '<div class="pw-shirt">'+kitSvg(t, s.p.element_type===1)+'</div>'+
+      '<div style="min-width:0">'+
+        '<div class="pw-name">'+escapeHtml(s.p.web_name)+'</div>'+
+        '<div class="pw-meta">'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml(pos)+' · '+s.starts+' starts</div>'+
+      '</div>'+
+      '<span class="book-yel"><span class="yel-card" aria-hidden="true"></span>'+s.yel+'</span>'+
+      '<span class="book-rate '+rateClass+'">'+s.rate.toFixed(0)+'%</span>'+
+      '<div class="book-flags">'+(flags.join(' ')||'<span class="badge badge-grey">Clean</span>')+'</div>'+
+    '</div>';
+  }).join('');
+
+  /* CSV cache */
+  CSV_CACHE['bookings'] = {
+    filename: 'gameweek-edge-bookings-risk-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: filtered.map(s=>{
+      const t = teamById.get(s.p.team);
+      const pos = (types.get(s.p.element_type)||{}).singular_name_short||'';
+      return {
+        player: s.p.web_name, team: t?t.short_name:'', position: pos,
+        starts: s.starts, yellow_cards: s.yel, booking_rate_pct: s.rate.toFixed(1),
+        suspension_risk: s.suspensionRisk, ban_triggered: s.ban,
+        next_fixture_referee: '', referee_avg_bookings: ''
+      };
+    })
+  };
+
+  return '<div class="grid g-4 mb-20">'+
+    kpiCard('Players flagged', String(totalFlagged), '4+ yellows accumulated', 'var(--amber)')+
+    kpiCard('High booking rate', String(highRisk), '>30% with 5+ starts', 'var(--red)')+
+    kpiCard('Ban threshold met', String(bansActive), '5+ yellows triggers a ban window', 'var(--red)')+
+    kpiCard('Showing', filtered.length+' / '+scored.length, 'After current filters', 'var(--blue)')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Bookings risk board — sortable by rate</span>'+
+      exportBtn('bookings','Export bookings to CSV')+
+    '</div>'+
+    '<div class="filter-bar">'+
+      '<label for="book-pos">Position</label>'+
+      '<select id="book-pos" data-act="book-filter" data-key="pos">'+posOpts+'</select>'+
+      '<label for="book-team">Team</label>'+
+      '<select id="book-team" data-act="book-filter" data-key="team">'+teamOpts+'</select>'+
+      '<label for="book-min">Min rate %</label>'+
+      '<input id="book-min" type="number" min="0" max="100" step="5" value="'+bookingsFilter.min+'" data-act-input="book-min">'+
+      '<label style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="book-susp" '+(bookingsFilter.suspensionOnly?'checked':'')+' data-act-check="book-susp"> Suspension risk only</label>'+
+    '</div>'+
+    (top.length ? rowsHtml : '<p class="text-3" style="font-size:.84rem;padding:18px;text-align:center">No players match the current filters.</p>')+
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">Yellow-card data from the FPL API. Referee fields are in the CSV export schema for future integration but not populated (the FPL API does not expose referee data).</p>'+
+  '</div>';
+}
+
+/* ── MANAGER HUB: Captaincy Audit ──────────────────────── */
+async function renderCaptaud(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Captaincy Audit</div>'+
+      needsManagerBlock('to auto-grade every captain decision against your squad each gameweek')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const events = bs.events||[];
+  const finished = events.filter(e=>e.finished);
+  if(!finished.length){
+    return emptyBlock('No finished gameweeks yet','Captaincy Audit kicks in once you have played a gameweek.');
+  }
+
+  /* For each finished GW: pull picks + live in parallel */
+  const data = await Promise.all(finished.map(async ev=>{
+    try{
+      const [picks, live] = await Promise.all([FPL.picks(MGR.id, ev.id), FPL.live(ev.id)]);
+      return { ev, picks, live };
+    }catch(e){ return { ev, picks:null, live:null, error:e.message }; }
+  }));
+
+  const rows = data.map(d=>{
+    if(!d.picks || !d.live) return null;
+    const liveById = new Map((d.live.elements||[]).map(le=>[le.id, le.stats.total_points||0]));
+    const cap = d.picks.picks.find(p=>p.is_captain);
+    if(!cap) return null;
+    const capEl = elementById.get(cap.element);
+    const capPts = liveById.get(cap.element)||0;
+    /* Best alternative within the user's full 15 */
+    let best = { id:cap.element, pts: capPts };
+    d.picks.picks.forEach(p=>{
+      const pts = liveById.get(p.element)||0;
+      if(pts>best.pts){ best = { id:p.element, pts: pts }; }
+    });
+    const bestEl = elementById.get(best.id);
+    const correct = best.id === cap.element;
+    const missed = correct ? 0 : (best.pts - capPts);
+    return { ev:d.ev, capEl, capPts: capPts*2, bestEl, bestPts: best.pts*2, correct, missed };
+  }).filter(Boolean);
+
+  if(!rows.length){
+    return emptyBlock('Captaincy audit unavailable','No captain picks could be loaded for completed gameweeks.');
+  }
+
+  const correctCount = rows.filter(r=>r.correct).length;
+  const hitRate = Math.round((correctCount/rows.length)*100);
+  const totalCapPts = rows.reduce((s,r)=>s+r.capPts, 0);
+  const totalMissed = rows.reduce((s,r)=>s+r.missed, 0);
+
+  CSV_CACHE['captaud'] = {
+    filename: 'gameweek-edge-captaincy-audit-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: rows.map(r=>({
+      gameweek: r.ev.id,
+      captain: r.capEl ? r.capEl.web_name : r.capEl,
+      captain_points_with_armband: r.capPts,
+      best_pick_in_squad: r.bestEl ? r.bestEl.web_name : '',
+      best_points_with_armband: r.bestPts,
+      correct: r.correct,
+      points_missed: r.missed*2
+    }))
+  };
+
+  const tbl = rows.slice().reverse().map(r=>{
+    const tCap = teamById.get(r.capEl ? r.capEl.team : 0);
+    const tBest = teamById.get(r.bestEl ? r.bestEl.team : 0);
+    return '<div class="audit-row">'+
+      '<div><span class="ledger-gw">GW '+r.ev.id+'</span></div>'+
+      '<div class="audit-cap">'+
+        '<div class="audit-cap-shirt">'+kitSvg(tCap, r.capEl && r.capEl.element_type===1)+'</div>'+
+        '<div><div class="audit-cap-name">'+escapeHtml(r.capEl?r.capEl.web_name:'?')+'</div>'+
+        '<div class="pw-meta">Your captain</div></div>'+
+      '</div>'+
+      '<div class="audit-cap">'+
+        '<div class="audit-cap-shirt">'+kitSvg(tBest, r.bestEl && r.bestEl.element_type===1)+'</div>'+
+        '<div><div class="audit-cap-name">'+escapeHtml(r.bestEl?r.bestEl.web_name:'?')+'</div>'+
+        '<div class="pw-meta">Top scorer in your squad</div></div>'+
+      '</div>'+
+      '<span class="audit-pts">'+r.capPts+'</span>'+
+      '<span class="audit-pts">'+r.bestPts+'</span>'+
+      '<span class="audit-verdict '+(r.correct?'correct':'wrong')+'" title="'+(r.correct?'Correct':'−'+(r.missed*2)+' missed')+'">'+
+        (r.correct ? svg(ICON.check,'width="14" height="14"') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>')+
+      '</span>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="grid g-4 mb-20">'+
+    kpiCard('Hit rate', hitRate+'%', correctCount+' / '+rows.length+' GW captain calls right', hitRate>=50?'var(--green)':'var(--red)', hitRate>=50?'up':'down')+
+    kpiCard('Captain points', String(totalCapPts), 'With armband multiplier', 'var(--blue)')+
+    kpiCard('Points missed', String(totalMissed*2), 'From picking the wrong captain', totalMissed>0?'var(--red)':'var(--text-3)', totalMissed>0?'down':'')+
+    kpiCard('Best alt average', (totalCapPts/Math.max(1,rows.length)).toFixed(1), 'Mean captain return / GW', 'var(--amber)')+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Every gameweek — captain vs top scorer in your squad</span>'+
+      exportBtn('captaud','Export captaincy audit to CSV')+
+    '</div>'+
+    tbl +
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px">A green tick means your captain was the highest-scoring player across your 15. A red cross shows how much you left on the bench.</p>'+
+  '</div>';
+}
+
+/* ── MANAGER HUB: Points Hit Calculator ────────────────── */
+const hitState = { outId:null, inId:null, hits:1 };
+async function renderHitCalc(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+
+  /* Datalist of all relevant players */
+  const datalistOpts = elements.slice()
+    .sort((a,b)=>(parseFloat(b.selected_by_percent)||0)-(parseFloat(a.selected_by_percent)||0))
+    .slice(0,500).map(p=>{
+      const t=teamById.get(p.team);
+      return '<option value="'+escapeHtml(p.web_name+(t?' ('+t.short_name+')':''))+'" data-id="'+p.id+'"></option>';
+    }).join('');
+
+  const outEl = hitState.outId ? elementById.get(hitState.outId) : null;
+  const inEl  = hitState.inId  ? elementById.get(hitState.inId)  : null;
+
+  let verdictHtml = '<div class="hit-verdict-card" style="border-left-color:var(--text-3)">'+
+    '<div class="hit-verdict-icon" style="background:var(--surface-3);color:var(--text-3)">'+svg(ICON.question,'width="24" height="24"')+'</div>'+
+    '<div class="hit-verdict-text">'+
+      '<div class="hit-verdict-label">Verdict</div>'+
+      '<div class="hit-verdict-headline">Pick two players</div>'+
+      '<div class="hit-verdict-detail">Search a player you would transfer out and a player you would transfer in. The verdict updates automatically from each player\'s current form.</div>'+
+    '</div>'+
+  '</div>';
+
+  let stats = '';
+  if(outEl && inEl){
+    const formOut = parseFloat(outEl.form)||0;
+    const formIn  = parseFloat(inEl.form)||0;
+    const gainPerWeek = formIn - formOut;
+    const cost = hitState.hits * 4;
+    const weeksRemaining = Math.max(1, bs.events.filter(e=>!e.finished).length);
+    const netThisGw = gainPerWeek - cost;
+    const breakEvenWeeks = gainPerWeek>0 ? Math.ceil(cost/gainPerWeek) : Infinity;
+
+    let verdict, headline, detail, cardCls;
+    if(gainPerWeek <= 0){
+      verdict = 'bad';
+      headline = 'Do not take the hit';
+      detail = 'Form of '+inEl.web_name+' ('+formIn.toFixed(1)+') is not above '+outEl.web_name+' ('+formOut.toFixed(1)+'). You\'d pay '+cost+' points for nothing.';
+      cardCls = 'bad';
+    } else if(netThisGw >= 0){
+      verdict = 'good';
+      headline = 'Worth it';
+      detail = 'Even in week one, '+inEl.web_name+' projects '+gainPerWeek.toFixed(1)+' pts more than '+outEl.web_name+'. Net '+(netThisGw>0?'+':'')+netThisGw.toFixed(1)+' pts after the hit.';
+      cardCls = '';
+    } else if(breakEvenWeeks <= weeksRemaining){
+      verdict = 'borderline';
+      headline = 'Borderline — break-even in '+breakEvenWeeks+' '+(breakEvenWeeks===1?'GW':'GWs');
+      detail = 'The transfer pays back the '+cost+'-point hit after '+breakEvenWeeks+' gameweeks. There are '+weeksRemaining+' left, so the maths just about works.';
+      cardCls = 'borderline';
+    } else {
+      verdict = 'bad';
+      headline = 'Do not take the hit';
+      detail = 'Break-even needs '+breakEvenWeeks+' GWs at the current form gap, but only '+weeksRemaining+' remain this season.';
+      cardCls = 'bad';
+    }
+
+    verdictHtml = '<div class="hit-verdict-card '+cardCls+'">'+
+      '<div class="hit-verdict-icon">'+svg(verdict==='good'?ICON.check:verdict==='borderline'?ICON.question:ICON.warning,'width="24" height="24"')+'</div>'+
+      '<div class="hit-verdict-text">'+
+        '<div class="hit-verdict-label">Verdict</div>'+
+        '<div class="hit-verdict-headline">'+escapeHtml(headline)+'</div>'+
+        '<div class="hit-verdict-detail">'+escapeHtml(detail)+'</div>'+
+      '</div>'+
+    '</div>';
+
+    stats = '<div class="grid g-4 mb-20">'+
+      kpiCard('Form gap / GW', (gainPerWeek>0?'+':'')+gainPerWeek.toFixed(1)+' pts',
+              inEl.web_name+' vs '+outEl.web_name, gainPerWeek>0?'var(--green)':'var(--red)',
+              gainPerWeek>0?'up':'down')+
+      kpiCard('Cost of hits', '−'+cost+' pts',
+              hitState.hits+' extra transfer'+(hitState.hits>1?'s':''), 'var(--red)')+
+      kpiCard('Net this GW', (netThisGw>0?'+':'')+netThisGw.toFixed(1)+' pts',
+              netThisGw>=0?'Profitable from week one':'Costs points up front',
+              netThisGw>=0?'var(--green)':'var(--amber)', netThisGw>=0?'up':'down')+
+      kpiCard('Break-even', isFinite(breakEvenWeeks)?breakEvenWeeks+' GWs':'never',
+              isFinite(breakEvenWeeks)?'Gameweeks of outperformance needed':'Form gap is negative', 'var(--blue)')+
+    '</div>';
+  }
+
+  return stats +
+  '<div class="card mb-20">'+
+    '<div class="card-title">Pick the two players and any extra transfer hits</div>'+
+    '<div class="hit-form">'+
+      '<div class="auth-field">'+
+        '<label for="hit-out-input">Player out</label>'+
+        '<input type="text" id="hit-out-input" list="hit-out-list" autocomplete="off" placeholder="Search player to remove…" '+
+          'value="'+escapeHtml(outEl?outEl.web_name+' ('+(teamById.get(outEl.team)?teamById.get(outEl.team).short_name:'')+')':'')+'" data-act-input="hit-out">'+
+        '<datalist id="hit-out-list">'+datalistOpts+'</datalist>'+
+      '</div>'+
+      '<div class="hit-arrow" aria-hidden="true">'+svg(ICON.swap,'width="18" height="18"')+'</div>'+
+      '<div class="auth-field">'+
+        '<label for="hit-in-input">Player in</label>'+
+        '<input type="text" id="hit-in-input" list="hit-in-list" autocomplete="off" placeholder="Search player to bring in…" '+
+          'value="'+escapeHtml(inEl?inEl.web_name+' ('+(teamById.get(inEl.team)?teamById.get(inEl.team).short_name:'')+')':'')+'" data-act-input="hit-in">'+
+        '<datalist id="hit-in-list">'+datalistOpts+'</datalist>'+
+      '</div>'+
+      '<div class="auth-field">'+
+        '<label for="hit-count">Extra transfers</label>'+
+        '<select id="hit-count" data-act="hit-count">'+
+          '<option value="1"'+(hitState.hits===1?' selected':'')+'>1 (−4 pts)</option>'+
+          '<option value="2"'+(hitState.hits===2?' selected':'')+'>2 (−8 pts)</option>'+
+          '<option value="3"'+(hitState.hits===3?' selected':'')+'>3 (−12 pts)</option>'+
+        '</select>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  verdictHtml +
+  '<p class="text-3" style="font-size:.74rem;margin-top:14px">Form is FPL\'s rolling points-per-game over the last five matches. Break-even uses the form gap and the gameweek cost: cost ÷ gap = weeks to pay back.</p>';
+}
+
+/* ── MANAGER HUB: Season Decision Audit ────────────────── */
+async function renderAudit(){
+  if(!MGR.id){
+    return '<div class="card"><div class="card-title">Season Audit</div>'+
+      needsManagerBlock('to auto-grade every gameweek of your season for decision quality')+
+    '</div>';
+  }
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const elementById = new Map(elements.map(p=>[p.id,p]));
+  const events = bs.events||[];
+  const avgByEvent = new Map(events.map(e=>[e.id, e.average_entry_score||0]));
+  const finished = events.filter(e=>e.finished);
+  if(!finished.length){
+    return emptyBlock('No finished gameweeks yet','Season Audit kicks in once you have played a gameweek.');
+  }
+
+  /* Pull history, transfers, plus picks + live for each finished GW */
+  let history, transfers = [];
+  try{
+    [history, transfers] = await Promise.all([
+      FPL.history(MGR.id),
+      FPL.transfers(MGR.id).catch(()=>[])
+    ]);
+  }catch(e){ return errorBlock('Could not load history: '+e.message,'audit'); }
+
+  const gwData = await Promise.all(finished.map(async ev=>{
+    try{
+      const [picks, live] = await Promise.all([FPL.picks(MGR.id, ev.id), FPL.live(ev.id)]);
+      return { ev, picks, live };
+    }catch(e){ return { ev, picks:null, live:null }; }
+  }));
+
+  /* Map transfers by event for transfer outcome scoring */
+  const tBy = {};
+  transfers.forEach(t=>{ if(!tBy[t.event]) tBy[t.event] = []; tBy[t.event].push(t); });
+
+  /* For each GW: tag captain, transfer, hit, chip decisions */
+  const rows = gwData.map(d=>{
+    if(!d.picks || !d.live) return null;
+    const liveById = new Map((d.live.elements||[]).map(le=>[le.id, le.stats.total_points||0]));
+    const gwHist = (history.current||[]).find(h=>h.event===d.ev.id) || {};
+    const score = gwHist.points||0;
+    const avg = avgByEvent.get(d.ev.id)||0;
+    /* Captain */
+    const cap = d.picks.picks.find(p=>p.is_captain);
+    let capCorrect = true, capMissed = 0;
+    if(cap){
+      let best = liveById.get(cap.element)||0;
+      d.picks.picks.forEach(p=>{
+        const pts = liveById.get(p.element)||0;
+        if(pts>best){ best = pts; capCorrect = false; }
+      });
+      capMissed = Math.max(0, best - (liveById.get(cap.element)||0)) * 2;
+    }
+    /* Transfers — compare this GW's transferred-in vs transferred-out points THIS GW */
+    const txs = tBy[d.ev.id]||[];
+    let txGood = 0, txBad = 0, txDelta = 0;
+    txs.forEach(t=>{
+      const inPts = liveById.get(t.element_in)||0;
+      const outPts = liveById.get(t.element_out)||0;
+      txDelta += (inPts - outPts);
+      if(inPts > outPts) txGood++; else if(inPts < outPts) txBad++;
+    });
+    /* Hit decision: was the gain worth -4 per hit? */
+    const hitCost = gwHist.event_transfers_cost||0;
+    let hitVerdict = 'none';
+    if(hitCost>0){ hitVerdict = (txDelta >= hitCost) ? 'good' : 'bad'; }
+    /* Chip */
+    const chipUsed = (history.chips||[]).find(c=>c.event===d.ev.id);
+    let chipVerdict = 'none';
+    if(chipUsed){ chipVerdict = (score - avg) > 10 ? 'good' : 'bad'; }
+    /* Decision quality tag */
+    const decisions = [];
+    if(cap) decisions.push(capCorrect?1:0);
+    if(txs.length) decisions.push(txGood>txBad?1:0);
+    if(chipUsed) decisions.push(chipVerdict==='good'?1:0);
+    if(hitCost>0) decisions.push(hitVerdict==='good'?1:0);
+    const decisionScore = decisions.length ? decisions.reduce((a,b)=>a+b,0)/decisions.length : null;
+    /* Tag */
+    const beatAvg = score > avg;
+    let tag;
+    if(decisionScore===null){
+      tag = beatAvg ? 'GG' : 'BB';
+    } else {
+      tag = (decisionScore>=0.5 && beatAvg) ? 'GG' :
+            (decisionScore>=0.5 && !beatAvg) ? 'GB' :
+            (decisionScore<0.5 && beatAvg) ? 'BG' : 'BB';
+    }
+    return {
+      ev: d.ev.id, score, avg,
+      capName: cap ? (elementById.get(cap.element)||{}).web_name : '',
+      capCorrect, capMissed,
+      txs: txs.length, txGood, txBad, txDelta,
+      hitCost, hitVerdict,
+      chipUsed: chipUsed ? chipUsed.name : null, chipVerdict,
+      decisionScore, tag
+    };
+  }).filter(Boolean);
+
+  const correctDecisions = rows.reduce((s,r)=>s + (r.decisionScore!==null?Math.round(r.decisionScore*( (r.capName?1:0)+(r.txs?1:0)+(r.hitCost?1:0)+(r.chipUsed?1:0) )):0), 0);
+  const totalDecisions = rows.reduce((s,r)=>s + ((r.capName?1:0)+(r.txs?1:0)+(r.hitCost?1:0)+(r.chipUsed?1:0)), 0);
+  const quality = totalDecisions ? Math.round((correctDecisions/totalDecisions)*100) : 0;
+  /* Self-inflicted vs bad luck: missed captain points + bad transfers + bad hits = self-inflicted */
+  const selfInflicted = rows.reduce((s,r)=>s + r.capMissed + Math.max(0, r.hitCost) - Math.max(0, r.txDelta), 0);
+  /* Out-of-ten verdict */
+  const decisionScore10 = Math.round(quality/10);
+  const verdictTxt = decisionScore10>=8 ? 'Sharp decision-making — most calls correct'
+                   : decisionScore10>=5 ? 'Solid in places, costly elsewhere'
+                   : decisionScore10>=3 ? 'Decision quality is dragging your rank'
+                   : 'Tough season — many calls have gone against you';
+
+  CSV_CACHE['audit'] = {
+    filename: 'gameweek-edge-season-audit-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: rows.map(r=>({
+      gameweek: r.ev, score: r.score, gw_average: r.avg, beat_avg: r.score>r.avg,
+      captain: r.capName, captain_correct: r.capCorrect, captain_points_missed: r.capMissed,
+      transfers_made: r.txs, transfers_profitable: r.txGood, transfers_loss: r.txBad, transfer_net: r.txDelta,
+      hit_cost: r.hitCost, hit_verdict: r.hitVerdict,
+      chip_used: r.chipUsed || '', chip_verdict: r.chipVerdict,
+      decision_quality_pct: r.decisionScore===null?'':Math.round(r.decisionScore*100),
+      tag: r.tag
+    }))
+  };
+
+  const tagLabels = { GG:'Good call, good result', GB:'Good call, bad result', BG:'Bad call, good result', BB:'Bad call, bad result' };
+  const tagBadge = (tag) => {
+    const cls = tag==='GG'?'badge-green':tag==='GB'?'badge-blue':tag==='BG'?'badge-amber':'badge-red';
+    return '<span class="badge '+cls+'" title="'+escapeHtml(tagLabels[tag])+'">'+tag+'</span>';
+  };
+  const tbl = rows.slice().reverse().map(r=>{
+    const beatCls = r.score>r.avg?'up':r.score<r.avg?'down':'';
+    return '<div class="gwh-row">'+
+      '<div><b>GW '+r.ev+'</b></div>'+
+      '<div>'+(r.capName?'C: '+escapeHtml(r.capName)+(r.capCorrect?' ✓':' ✗'):'—')+'</div>'+
+      '<div class="gwh-pts">'+r.score+'</div>'+
+      '<div class="gwh-move '+beatCls+'">'+(r.score-r.avg>0?'+':'')+(r.score-r.avg)+'</div>'+
+      '<div>'+(r.txs?r.txs+' tx ('+r.txGood+'/'+(r.txs)+')':'—')+'</div>'+
+      '<div style="text-align:right">'+tagBadge(r.tag)+'</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="grid g-4 mb-20">'+
+    kpiCard('Decision quality', quality+'%', correctDecisions+' / '+totalDecisions+' decisions right',
+            quality>=60?'var(--green)':quality>=40?'var(--amber)':'var(--red)',
+            quality>=60?'up':quality<40?'down':'')+
+    kpiCard('Season verdict', decisionScore10+' / 10', verdictTxt,
+            decisionScore10>=6?'var(--green)':decisionScore10>=4?'var(--amber)':'var(--red)',
+            decisionScore10>=6?'up':decisionScore10<4?'down':'')+
+    kpiCard('Self-inflicted', (selfInflicted>=0?'-':'+')+Math.abs(selfInflicted)+' pts',
+            'Captain misses, bad transfers, bad hits', selfInflicted>0?'var(--red)':'var(--green)',
+            selfInflicted>0?'down':'up')+
+    kpiCard('GWs analysed', String(rows.length), 'Finished gameweeks tagged', 'var(--blue)')+
+  '</div>'+
+  '<div class="card mb-20">'+
+    '<div class="card-title">How tags work</div>'+
+    '<div class="grid g-2" style="gap:8px">'+
+      '<p style="font-size:.86rem;line-height:1.55"><b style="color:var(--green-on-soft)">GG</b> good decisions, good result — you earned the rank.</p>'+
+      '<p style="font-size:.86rem;line-height:1.55"><b style="color:var(--blue-on-soft)">GB</b> good decisions, bad result — unlucky, keep your process.</p>'+
+      '<p style="font-size:.86rem;line-height:1.55"><b style="color:var(--amber-on-soft)">BG</b> bad decisions, good result — flag it, don\'t repeat.</p>'+
+      '<p style="font-size:.86rem;line-height:1.55"><b style="color:var(--red-on-soft)">BB</b> bad decisions, bad result — the loss is on you.</p>'+
+    '</div>'+
+  '</div>'+
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Per-gameweek breakdown — newest first</span>'+
+      exportBtn('audit','Export season audit to CSV')+
+    '</div>'+
+    '<div class="gwh-table">'+
+      '<div class="gwh-header">'+
+        '<div>GW</div><div>Captain</div>'+
+        '<div style="text-align:right">Pts</div>'+
+        '<div style="text-align:right">Δ avg</div>'+
+        '<div>Transfers</div>'+
+        '<div style="text-align:right">Tag</div>'+
+      '</div>'+ tbl +
+    '</div>'+
+  '</div>';
+}
+
 /* ── DEFAULT (coming soon for unwired panels) ──────────── */
 async function renderComingSoon(panel){
   return '<div class="card">'+
@@ -5043,6 +6303,11 @@ const PANEL_RENDERERS = {
   rivals:       renderRivals,
   ledger:       renderLedger,
   gwpnl:        renderGwPnL,
+  pricewatch:   renderPriceWatch,
+  bookings:     renderBookings,
+  captaud:      renderCaptaud,
+  hitcalc:      renderHitCalc,
+  audit:        renderAudit,
 };
 
 /* ═══════════════════════════════════════════════════════════
