@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="light">
+<html lang="en-GB" data-theme="light" data-guided="false">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1132,6 +1132,249 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
   box-shadow:0 0 0 3px var(--green-glow);
 }
 
+/* ── PHASE 12: GUIDED MODE ─────────────────────────────── */
+/* Toggle via #guide-toggle in sidebar footer. Persists to localStorage.
+   When [data-guided="true"] on <html>, any element with a data-guide
+   attribute renders an italic explanation underneath via ::after. */
+[data-guided="true"] [data-guide]{position:relative}
+[data-guided="true"] [data-guide]::after{
+  content: attr(data-guide);
+  display:block;
+  font-family:var(--font-body);
+  font-size:.78rem;
+  color:var(--text-3);
+  font-style:italic;
+  font-weight:400;
+  line-height:1.45;
+  margin-top:4px;
+  letter-spacing:0;
+  text-transform:none;
+  max-width:380px;
+  white-space:normal;
+}
+/* Some labels live inside flex/grid cells that need extra room when guides
+   appear. The line-height + max-width above handles most; specific overrides
+   for tight contexts: */
+[data-guided="true"] th[data-guide]::after{font-weight:500}
+[data-guided="true"] .gwh-header[data-guide]::after,
+[data-guided="true"] .gwh-header > div[data-guide]::after{display:none}
+.guide-toggle.on{background:var(--green-soft);color:var(--green-on-soft);border-color:color-mix(in srgb,var(--green) 30%,transparent)}
+
+/* ── PHASE 12: CONFIDENCE RATING (pre + post GW) ───────── */
+.conf-popup{
+  position:fixed;bottom:18px;left:18px;right:18px;
+  background:var(--surface);border:1px solid var(--border);
+  border-left:4px solid var(--green);
+  border-radius:var(--r-lg);padding:18px 20px;
+  box-shadow:var(--shadow-lg);
+  z-index:300;max-width:480px;margin-left:auto;margin-right:auto;
+  transform:translateY(140%);transition:transform .32s var(--ease);
+}
+.conf-popup.show{transform:translateY(0)}
+.conf-popup[hidden]{display:none}
+.conf-popup-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  margin-bottom:10px;
+}
+.conf-popup-head h2{font-family:var(--font-body);font-size:1rem;font-weight:700;margin:0;color:var(--text)}
+.conf-popup-head .btn-close{
+  width:32px;height:32px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;background:var(--surface-3);color:var(--text-2);
+  flex-shrink:0;
+}
+.conf-popup-head .btn-close svg{width:13px;height:13px}
+.conf-popup p{font-size:.84rem;color:var(--text-2);margin:0 0 12px}
+.conf-q{margin-bottom:10px}
+.conf-q-label{font-size:.82rem;font-weight:600;margin-bottom:4px;display:block;color:var(--text)}
+.conf-stars{display:inline-flex;flex-direction:row-reverse;gap:2px;padding:0;border:0;margin:0}
+.conf-stars input{position:absolute;width:1px;height:1px;opacity:0;clip:rect(0 0 0 0);overflow:hidden}
+.conf-stars label{
+  cursor:pointer;font-size:1.5rem;color:var(--text-4);padding:3px 5px;
+  transition:color .12s var(--ease);line-height:1;border-radius:4px;
+}
+.conf-stars input:checked ~ label,
+.conf-stars label:hover,
+.conf-stars label:hover ~ label{color:var(--amber)}
+.conf-stars input:focus-visible + label{outline:2.5px solid var(--green-bright);outline-offset:2px}
+.conf-popup-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+
+/* Post-GW review card (rendered inline on Dashboard) */
+.conf-post{
+  background:var(--surface);border:1px solid var(--border);
+  border-left:4px solid var(--blue);border-radius:var(--r-lg);
+  padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow);
+}
+.conf-post h2{font-family:var(--font-body);font-size:.78rem;font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--text-2);margin:0 0 12px}
+.conf-post-row{
+  display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;
+  padding:10px 0;border-top:1px solid var(--border);
+}
+.conf-post-row:first-of-type{border-top:0}
+.conf-post-decision{font-weight:700;font-size:.86rem}
+.conf-post-conf{font-family:var(--font-mono);font-weight:700;font-size:.82rem;color:var(--amber-on-soft)}
+.conf-post-outcome{font-size:.78rem;color:var(--text-3)}
+.conf-post-feedback{
+  margin-top:6px;font-size:.82rem;color:var(--text-2);line-height:1.45;
+  grid-column:1 / -1;
+}
+
+/* ── PHASE 12: CHIP TOOLTIPS (hover + focus) ───────────── */
+.chip-card-mini{position:relative}
+.chip-tip{
+  position:absolute;bottom:calc(100% + 8px);left:8px;right:8px;
+  background:var(--text);color:var(--bg);
+  padding:10px 12px;border-radius:var(--r-md);
+  font-size:.76rem;line-height:1.45;font-weight:500;
+  opacity:0;visibility:hidden;pointer-events:none;
+  transition:opacity .15s var(--ease);
+  z-index:20;box-shadow:var(--shadow-lg);
+}
+.chip-tip::after{
+  content:'';position:absolute;top:100%;left:18px;
+  border:6px solid transparent;border-top-color:var(--text);
+}
+.chip-card-mini:hover > .chip-tip,
+.chip-card-mini:focus-within > .chip-tip{opacity:1;visibility:visible}
+
+.gw-cell.has-chip{cursor:help}
+.gw-cell.has-chip:focus-visible{
+  outline:2.5px solid var(--green-bright);outline-offset:2px;
+}
+
+/* ── PHASE 12: 3-GW TRANSFER PLANNER ───────────────────── */
+.txp-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 14px;
+}
+.txp-card{
+  padding:14px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:var(--r-md);border-left:3px solid var(--border-2);
+}
+.txp-card.txp-ft{border-left-color:var(--green-bright)}
+.txp-card.txp-hit{border-left-color:var(--red)}
+.txp-card.txp-none{border-left-color:var(--border-2)}
+.txp-head{
+  font-family:var(--font-mono);font-weight:800;font-size:.84rem;
+  color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:10px;
+}
+.txp-field{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.txp-field label{
+  font-size:.66rem;font-weight:700;color:var(--text-2);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.txp-field select, .txp-field input{
+  padding:8px 10px;background:var(--surface);
+  border:1px solid var(--border-2);border-radius:var(--r-sm);
+  font-size:.84rem;color:var(--text);min-height:36px;width:100%;
+}
+.txp-field select:focus, .txp-field input:focus{
+  outline:none;border-color:var(--green-bright);box-shadow:0 0 0 2px var(--green-glow);
+}
+.txp-status{
+  font-size:.74rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  margin-top:8px;padding:6px 8px;border-radius:var(--r-sm);text-align:center;
+}
+.txp-status.ft{background:var(--green-soft);color:var(--green-on-soft)}
+.txp-status.hit{background:var(--red-soft);color:var(--red-on-soft)}
+.txp-status.none{background:var(--surface-3);color:var(--text-3)}
+.txp-summary{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.txp-stat{
+  flex:1;min-width:140px;padding:10px 12px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-md);
+}
+.txp-stat-label{
+  font-size:.64rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3);
+}
+.txp-stat-val{font-family:var(--font-mono);font-weight:800;font-size:1.2rem;margin-top:3px}
+.txp-stat-val.bad,.txp-stat-val.down{color:var(--red-on-soft)}
+.txp-stat-val.up{color:var(--green-on-soft)}
+@media(max-width:1080px){.txp-grid{grid-template-columns:1fr}}
+
+/* ── PHASE 12: AI CARD ─────────────────────────────────── */
+.ai-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:18px 20px 22px;
+  margin-bottom:20px;box-shadow:var(--shadow);
+  position:relative;
+}
+.ai-card-head{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ai-dot{
+  width:9px;height:9px;border-radius:50%;background:var(--green-bright);
+  box-shadow:0 0 0 4px var(--green-soft);
+  flex-shrink:0;
+}
+@media(prefers-reduced-motion:no-preference){
+  .ai-dot{animation:aiPulse 2.2s var(--ease) infinite}
+}
+@keyframes aiPulse{0%,100%{opacity:1}50%{opacity:.55}}
+.ai-dot-off{background:var(--text-4);box-shadow:none;animation:none}
+.ai-card-title{
+  font-family:var(--font-body);font-size:.78rem;font-weight:800;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--text-2);
+  margin:0;
+}
+.ai-prose{font-size:.95rem;line-height:1.6;color:var(--text);margin:0;max-width:64ch}
+.ai-error{font-size:.86rem;color:var(--text-3);margin:0}
+.ai-card-foot{
+  position:absolute;bottom:8px;right:14px;
+  font-size:.66rem;font-weight:600;color:var(--text-4);letter-spacing:.04em;
+}
+.ai-skel{
+  height:.95rem;border-radius:var(--r-sm);
+  background:linear-gradient(90deg,var(--surface-3) 0%,var(--border-2) 50%,var(--surface-3) 100%);
+  background-size:200% 100%;margin-bottom:8px;
+}
+.ai-skel-short{width:78%}
+@media(prefers-reduced-motion:no-preference){
+  .ai-skel{animation:aiSkel 1.8s linear infinite}
+}
+@keyframes aiSkel{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── PHASE 12: PREDICTED POINTS ────────────────────────── */
+.pred-table-wrap{overflow-x:auto;margin-top:6px}
+.pred-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.86rem}
+.pred-table th{
+  text-align:left;padding:9px 10px;font-size:.66rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);
+  background:var(--surface-3);
+}
+.pred-table th:first-child{border-top-left-radius:var(--r-sm)}
+.pred-table th:last-child{border-top-right-radius:var(--r-sm)}
+.pred-table td{padding:10px;vertical-align:middle;border-bottom:1px solid var(--border)}
+.pred-table tbody tr:nth-child(even) td{background:var(--surface-3)}
+.pred-table .pred-rank{font-family:var(--font-mono);font-weight:600;color:var(--text-3);width:34px}
+.pred-name{display:flex;align-items:center;gap:10px;min-width:0}
+.pred-name .pw-shirt{flex-shrink:0}
+.pred-name b{font-weight:700;font-size:.88rem}
+.pred-num{font-family:var(--font-mono);font-weight:800;text-align:right;min-width:50px}
+.pred-num.muted{font-weight:600;color:var(--text-2)}
+.pred-band{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:3px 10px;border-radius:var(--r-pill);
+  font-size:.62rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  color:#fff;min-width:62px;
+}
+.pred-band-high{background:var(--green)}
+.pred-band-med{background:var(--amber-on-soft)}
+.pred-band-low{background:var(--text-3)}
+.range-slider{
+  -webkit-appearance:none;appearance:none;
+  width:140px;height:6px;background:var(--border-2);border-radius:var(--r-pill);
+  outline:none;cursor:pointer;
+}
+.range-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:18px;height:18px;
+  background:var(--navy);border-radius:50%;cursor:pointer;
+  border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.range-slider::-moz-range-thumb{
+  width:18px;height:18px;background:var(--navy);border-radius:50%;
+  cursor:pointer;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);
+}
+.range-slider:focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px}
+
 /* ── PHASE 8: BOOKINGS / CAPTAINCY AUDIT / HIT CALC ────── */
 .filter-bar{
   display:flex;gap:8px;flex-wrap:wrap;align-items:center;
@@ -1856,11 +2099,19 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
     <nav class="sb-nav" id="sb-nav" aria-label="App areas"></nav>
 
     <div class="sb-foot">
-      <span class="sb-foot-v">Gameweek Edge v0.2</span>
-      <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
-        <span id="theme-icon"></span>
-        <span id="theme-label">Light</span>
-      </button>
+      <span class="sb-foot-v">Gameweek Edge v1.0</span>
+      <div style="display:flex;gap:6px">
+        <button class="theme-toggle guide-toggle" id="guide-toggle" aria-label="Toggle guided mode — show plain-English explanations under every metric" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          <span>Guide</span>
+        </button>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+          <span id="theme-icon"></span>
+          <span id="theme-label">Light</span>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -1916,6 +2167,9 @@ input,select{font-family:inherit;font-size:inherit;color:inherit}
 </div>
 
 <nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
+
+<!-- Phase 12 Enhancement 5: pre-deadline confidence rating slide-up -->
+<aside class="conf-popup" id="conf-popup" hidden role="dialog" aria-labelledby="conf-popup-title" aria-modal="false"></aside>
 
 <!-- Supabase SDK (Phase 3): ES module from esm.sh, pinned to v2.x -->
 <script type="module">
@@ -2013,10 +2267,11 @@ const NAV = [
   { id:'players', label:'Players', icon:'players', panels:[
     {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
     {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
+    {id:'predicted', label:'Predicted Points', icon:'target', tier:'free'},
     {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
     {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
     {id:'bookings', label:'Bookings Risk', icon:'flag', tier:'free'},
-    {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid'},
+    {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'free'},
     {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'}
   ]},
   { id:'planner', label:'Planner', icon:'planner', panels:[
@@ -2053,6 +2308,7 @@ const PANEL_DESC = {
   rivals:'Track up to five rivals, see squad overlap and what it takes to beat them.',
   compare:'Compare up to four players side by side on form, xG, price and ownership.',
   diffs:'Players under 15% owned with strong underlying numbers and rank upside.',
+  predicted:'Top 30 players ranked by predicted points for the next gameweek, blending form with fixture difficulty, home advantage and position.',
   price:'Forward-looking price momentum so you buy before the overnight lock.',
   injuries:'Fitness news, suspension risk and return timelines across the league.',
   setpiece:'Confirmed penalty and free-kick takers with a confidence rating.',
@@ -2720,6 +2976,87 @@ function kitSvg(team, isKeeper){
     '</svg>';
 }
 
+/* ── PHASE 12: AI CLIENT + CARD BUILDERS ───────────────── */
+/* Single typed POST to /.netlify/functions/ai. Server enforces the
+   allowed type list and reads the Anthropic key from env only — the
+   client never sends a key. */
+async function callAi(type, payload){
+  const res = await fetch('/.netlify/functions/ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ type: type }, payload))
+  });
+  if(!res.ok){
+    let err = ''; try{ const j = await res.json(); err = j.error||''; }catch(e){}
+    throw new Error(err || ('AI service returned '+res.status));
+  }
+  const data = await res.json();
+  return (data && data.text) ? data.text.trim() : '';
+}
+
+function aiCardSkeleton(title, panelKey){
+  return '<div class="ai-card" aria-busy="true" data-ai-card="'+escapeHtml(panelKey)+'" role="region" aria-label="'+escapeHtml(title)+'">'+
+    '<div class="ai-card-head">'+
+      '<span class="ai-dot" aria-hidden="true"></span>'+
+      '<h2 class="ai-card-title">'+escapeHtml(title)+'</h2>'+
+    '</div>'+
+    '<div class="ai-skel"></div>'+
+    '<div class="ai-skel ai-skel-short"></div>'+
+    '<div class="ai-card-foot">Powered by Claude</div>'+
+  '</div>';
+}
+function aiCardContent(title, text){
+  return '<div class="ai-card" role="region" aria-label="'+escapeHtml(title)+'">'+
+    '<div class="ai-card-head">'+
+      '<span class="ai-dot" aria-hidden="true"></span>'+
+      '<h2 class="ai-card-title">'+escapeHtml(title)+'</h2>'+
+    '</div>'+
+    '<p class="ai-prose">'+escapeHtml(text)+'</p>'+
+    '<div class="ai-card-foot">Powered by Claude</div>'+
+  '</div>';
+}
+function aiCardError(title, msg){
+  return '<div class="ai-card" role="region" aria-label="'+escapeHtml(title)+'">'+
+    '<div class="ai-card-head">'+
+      '<span class="ai-dot ai-dot-off" aria-hidden="true"></span>'+
+      '<h2 class="ai-card-title">'+escapeHtml(title)+'</h2>'+
+    '</div>'+
+    '<p class="ai-error">'+escapeHtml(msg)+'</p>'+
+    '<div class="ai-card-foot">Powered by Claude</div>'+
+  '</div>';
+}
+
+/* Queued AI jobs by panel id — runQueuedAi fires after page render */
+const aiJobs = {};
+function queueAi(panelKey, opts){
+  /* opts: { type, payload, title, cacheKey, errorMsg } */
+  aiJobs[panelKey] = opts;
+}
+async function runQueuedAi(panelKey){
+  const job = aiJobs[panelKey];
+  if(!job) return;
+  delete aiJobs[panelKey];
+  const target = document.querySelector('[data-ai-card="'+panelKey+'"]');
+  if(!target) return;
+  /* Cache check first */
+  let cached = null;
+  try{ cached = sessionStorage.getItem(job.cacheKey); }catch(e){}
+  if(cached){
+    target.outerHTML = aiCardContent(job.title, cached);
+    return;
+  }
+  try{
+    const text = await callAi(job.type, job.payload);
+    try{ sessionStorage.setItem(job.cacheKey, text); }catch(e){}
+    /* Re-find target — DOM may have been re-rendered if user navigated */
+    const t2 = document.querySelector('[data-ai-card="'+panelKey+'"]');
+    if(t2) t2.outerHTML = aiCardContent(job.title, text);
+  }catch(err){
+    const t2 = document.querySelector('[data-ai-card="'+panelKey+'"]');
+    if(t2) t2.outerHTML = aiCardError(job.title, job.errorMsg || 'Briefing unavailable right now.');
+  }
+}
+
 /* ── STATE BLOCK RENDERERS ─────────────────────────────── */
 function loadingBlock(message){
   return '<div class="state-block" role="status" aria-live="polite">'+
@@ -2825,6 +3162,10 @@ async function renderPage(panelId){
   pages.innerHTML = pageFrame(panel, bodyHtml);
   attachPageEvents();
   document.getElementById('main').focus({preventScroll:true});
+  /* Fire any AI jobs queued by the renderer (fire and forget) */
+  runQueuedAi(panelId);
+  /* Phase 12 Enhancement 6: attach data-guide attrs to common labels */
+  applyGuideAttrs();
 }
 
 /* ── PHASE 4: PRO PREVIEW CONTENT ──────────────────────── */
@@ -2947,6 +3288,17 @@ async function onInputChange(e){
     renderPage('bookings');
     return;
   }
+  if(act==='pred-own'){
+    const n = parseInt(el.value,10);
+    predFilter.minOwn = isNaN(n)?0:n;
+    /* Update label live without full re-render */
+    const lbl = document.getElementById('pred-own-label');
+    if(lbl) lbl.textContent = predFilter.minOwn+'%';
+    el.setAttribute('aria-valuenow', String(predFilter.minOwn));
+    /* Re-render only on input end (change event vs continuous input) */
+    if(e.type==='change') renderPage('predicted');
+    return;
+  }
   if(act==='hit-out' || act==='hit-in'){
     const listId = act==='hit-out' ? 'hit-out-list' : 'hit-in-list';
     const list = document.getElementById(listId);
@@ -2957,6 +3309,25 @@ async function onInputChange(e){
       if(act==='hit-out') hitState.outId = id;
       else                hitState.inId  = id;
       renderPage('hitcalc');
+    }
+    return;
+  }
+  if(act==='txp-set-in'){
+    const slot = el.dataset.slot;
+    const list = document.getElementById('tx-plan-in-list');
+    if(!list) return;
+    const plan = loadTxPlan();
+    if(!plan['gw'+slot]) plan['gw'+slot] = {};
+    const raw = el.value.trim();
+    if(!raw){
+      delete plan['gw'+slot].in;
+      saveTxPlan(plan); renderPage('transfers'); return;
+    }
+    const opt = Array.from(list.options).find(o=>o.value===raw);
+    if(opt && opt.dataset.id){
+      plan['gw'+slot].in = opt.dataset.id;
+      saveTxPlan(plan);
+      renderPage('transfers');
     }
     return;
   }
@@ -3044,11 +3415,20 @@ async function onActionClick(e){
     const payload = CSV_CACHE[key];
     if(payload) downloadCsv(payload.filename, payload.rows);
   }
+  else if(act==='txp-reset'){
+    if(MGR.id) try{ localStorage.removeItem('gwedge_transfer_plan_'+MGR.id); }catch(e){}
+    renderPage('transfers');
+  }
   else if(act==='chip-clear'){
     const chip = el.dataset.chip;
     await Store.setChipPlan(chip, null);
     renderPage('chips');
   }
+  else if(act==='chip-simulate'){
+    await runChipSimulate();
+  }
+  else if(act==='conf-save'){ saveConfRatings(); }
+  else if(act==='conf-dismiss'){ dismissConfPopup(); }
   else if(act==='price-clear'){
     const pid = parseInt(el.dataset.pid,10);
     await Store.setPriceTarget(pid, null);
@@ -3074,9 +3454,25 @@ function onSelectChange(e){
     renderPage('bookings');
     return;
   }
+  if(act==='pred-filter'){
+    const key = el.dataset.key;
+    predFilter[key] = el.value;
+    renderPage('predicted');
+    return;
+  }
   if(act==='hit-count'){
     hitState.hits = parseInt(el.value,10);
     renderPage('hitcalc');
+    return;
+  }
+  if(act==='txp-set-out'){
+    const slot = el.dataset.slot;
+    const plan = loadTxPlan();
+    if(!plan['gw'+slot]) plan['gw'+slot] = {};
+    if(el.value){ plan['gw'+slot].out = el.value; }
+    else { delete plan['gw'+slot].out; }
+    saveTxPlan(plan);
+    renderPage('transfers');
     return;
   }
 }
@@ -3097,6 +3493,184 @@ function handleAddFromPicker(inputId, listId, onAdd){
 /* ═══════════════════════════════════════════════════════════
    PANEL RENDERERS
    ═══════════════════════════════════════════════════════════ */
+
+/* PHASE 12 Enhancement 5: Confidence Rating system.
+   Pre-deadline slide-up card (any panel, 48h then 24h windows).
+   Post-GW inline card on Dashboard once the rated GW finishes. */
+function confStorageKey(gw){ return 'gwedge_confidence_'+gw+'_'+(MGR.id||'guest'); }
+function confDismissKey(gw){ return 'gwedge_conf_dismiss_'+gw+'_'+(MGR.id||'guest'); }
+function loadConfRating(gw){
+  try{ const s = localStorage.getItem(confStorageKey(gw)); return s ? JSON.parse(s) : null; }
+  catch(e){ return null; }
+}
+function saveConfRating(gw, data){
+  try{ localStorage.setItem(confStorageKey(gw), JSON.stringify(data)); }catch(e){}
+}
+function loadConfDismiss(gw){
+  try{ return parseInt(localStorage.getItem(confDismissKey(gw))||'0',10); }
+  catch(e){ return 0; }
+}
+function saveConfDismiss(gw, level){
+  try{ localStorage.setItem(confDismissKey(gw), String(level)); }catch(e){}
+}
+
+function shouldShowConfPopup(events){
+  const next = (events||[]).find(e=>e.is_next) || (events||[]).find(e=>!e.finished);
+  if(!next || !next.deadline_time) return null;
+  const ms = new Date(next.deadline_time).getTime() - Date.now();
+  if(ms <= 0) return null;
+  const hours = ms / (3600*1000);
+  if(hours > 48) return null;
+  const existing = loadConfRating(next.id);
+  if(existing && existing.confidence) return null; /* already rated */
+  const dismiss = loadConfDismiss(next.id);
+  /* 48-24h window: show if dismiss < 1; 24-0h window: show if dismiss < 2 */
+  if(hours > 24){ if(dismiss >= 1) return null; }
+  else { if(dismiss >= 2) return null; }
+  return { gw: next.id, hoursUntil: hours };
+}
+
+async function maybeMountConfPopup(){
+  const popup = document.getElementById('conf-popup');
+  if(!popup) return;
+  let events = [];
+  try{ const bs = await getBootstrap(); events = bs.events||[]; }catch(e){ popup.hidden = true; return; }
+  const state = shouldShowConfPopup(events);
+  if(!state){ popup.classList.remove('show'); popup.hidden = true; return; }
+
+  /* Build chip question only if MGR has a chip planned for this GW */
+  let chipPlannedHere = false;
+  if(MGR.id){
+    const cp = Store.chipPlan();
+    chipPlannedHere = Object.values(cp).includes(state.gw);
+  }
+
+  popup.innerHTML =
+    '<div class="conf-popup-head">'+
+      '<h2 id="conf-popup-title">Rate your GW '+state.gw+' decisions</h2>'+
+      '<button class="btn-close" data-act="conf-dismiss" aria-label="Dismiss confidence rating">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'+
+      '</button>'+
+    '</div>'+
+    '<p>How confident are you in your calls for this gameweek? Rate from 1 star (low) to 5 stars (high). Saved locally — you\'ll see how each one panned out after the gameweek.</p>'+
+    confStarsBlock('cap', 'Captain choice')+
+    confStarsBlock('tr',  'Transfer decision')+
+    (chipPlannedHere ? confStarsBlock('chip', 'Chip decision') : '')+
+    '<div class="conf-popup-foot">'+
+      '<button class="btn btn-outline btn-sm" data-act="conf-dismiss">Ask me later</button>'+
+      '<button class="btn btn-primary btn-sm" data-act="conf-save" data-gw="'+state.gw+'" data-chip="'+(chipPlannedHere?'1':'0')+'">Save ratings</button>'+
+    '</div>';
+  popup.hidden = false;
+  /* Trigger slide-in on next frame */
+  requestAnimationFrame(()=>popup.classList.add('show'));
+  /* Wire dynamic handlers */
+  popup.querySelectorAll('[data-act]').forEach(el=>el.addEventListener('click', onActionClick));
+}
+function confStarsBlock(name, label){
+  const rows = [5,4,3,2,1].map(v=>
+    '<input type="radio" id="conf-'+name+'-'+v+'" name="conf-'+name+'" value="'+v+'">'+
+    '<label for="conf-'+name+'-'+v+'" aria-label="'+v+' out of 5">★</label>'
+  ).join('');
+  return '<div class="conf-q">'+
+    '<span class="conf-q-label">'+escapeHtml(label)+'</span>'+
+    '<fieldset class="conf-stars">'+
+      '<legend class="sr-only">'+escapeHtml(label)+' confidence rating</legend>'+
+      rows +
+    '</fieldset>'+
+  '</div>';
+}
+function dismissConfPopup(){
+  const popup = document.getElementById('conf-popup');
+  if(!popup) return;
+  /* Determine GW from data attribute on the save button */
+  const saveBtn = popup.querySelector('[data-act="conf-save"]');
+  if(saveBtn){
+    const gw = parseInt(saveBtn.dataset.gw, 10);
+    const cur = loadConfDismiss(gw);
+    saveConfDismiss(gw, Math.min(2, cur+1));
+  }
+  popup.classList.remove('show');
+  setTimeout(()=>{ popup.hidden = true; }, 320);
+}
+function saveConfRatings(){
+  const popup = document.getElementById('conf-popup');
+  if(!popup) return;
+  const saveBtn = popup.querySelector('[data-act="conf-save"]');
+  if(!saveBtn) return;
+  const gw = parseInt(saveBtn.dataset.gw, 10);
+  const hasChip = saveBtn.dataset.chip === '1';
+  const read = (name) => {
+    const c = popup.querySelector('input[name="conf-'+name+'"]:checked');
+    return c ? parseInt(c.value, 10) : null;
+  };
+  const data = { gw, savedAt: Date.now(), captain: { confidence: read('cap') }, transfer: { confidence: read('tr') } };
+  if(hasChip) data.chip = { confidence: read('chip') };
+  /* Require at least the captain rating */
+  if(!data.captain.confidence){
+    const lbl = popup.querySelector('.conf-q-label'); if(lbl) lbl.style.color='var(--red-on-soft)';
+    return;
+  }
+  saveConfRating(gw, data);
+  popup.classList.remove('show');
+  setTimeout(()=>{ popup.hidden = true; }, 320);
+}
+
+/* Post-GW: returns HTML for a follow-up card if a rated GW has now finished
+   and we haven't shown the follow-up yet. Uses /api type confidence_feedback
+   for each decision. Fire-and-forget AI calls — placeholder rendered first. */
+async function buildConfPostReviewHtml(events, history, picks, captainEl, captainPts, gwAvg){
+  /* Find the most recent finished GW with a saved rating that hasn't been reviewed */
+  for(const ev of [...events].reverse()){
+    if(!ev.finished) continue;
+    const rating = loadConfRating(ev.id);
+    if(!rating || rating.reviewed) continue;
+    const gwHist = (history.current||[]).find(h=>h.event===ev.id);
+    if(!gwHist) continue;
+    const outcomes = {
+      captain: 'Captain '+(captainEl ? captainEl.web_name : '—')+' scored '+(captainPts||0)+' points (GW average score was '+gwAvg+').',
+      transfer: 'Transfers this gameweek: '+(gwHist.event_transfers||0)+(gwHist.event_transfers_cost?' (hit −'+gwHist.event_transfers_cost+' pts)':'')+'. GW score '+gwHist.points+' vs avg '+gwAvg+'.',
+    };
+    if(rating.chip){
+      const chip = (history.chips||[]).find(c=>c.event===ev.id);
+      outcomes.chip = chip ? ('Chip '+chip.name+' used. GW score '+gwHist.points+' vs avg '+gwAvg+'.') : ('No chip recorded for this gameweek.');
+    }
+    /* Mark reviewed immediately so we don't loop */
+    rating.reviewed = true; saveConfRating(ev.id, rating);
+    /* Build skeleton card; replace each row's feedback async */
+    const rowFor = (key, label) => {
+      const conf = rating[key] && rating[key].confidence;
+      if(conf == null) return '';
+      const feedbackId = 'conf-feedback-'+key+'-'+ev.id;
+      /* Queue AI per row */
+      callAi('confidence_feedback', {
+        decision: label,
+        confidence: conf,
+        outcome: outcomes[key],
+        gwNumber: ev.id
+      }).then(text=>{
+        const t = document.getElementById(feedbackId);
+        if(t) t.textContent = text;
+      }).catch(()=>{
+        const t = document.getElementById(feedbackId);
+        if(t) t.textContent = 'Feedback unavailable.';
+      });
+      return '<div class="conf-post-row">'+
+        '<div><div class="conf-post-decision">'+escapeHtml(label)+'</div>'+
+          '<div class="conf-post-outcome">'+escapeHtml(outcomes[key])+'</div></div>'+
+        '<div class="conf-post-conf" title="Your confidence">'+conf+' / 5 ★</div>'+
+        '<div></div>'+
+        '<p class="conf-post-feedback" id="'+feedbackId+'">Generating reflection…</p>'+
+      '</div>';
+    };
+    return '<div class="conf-post" role="region" aria-label="Decision review for GW '+ev.id+'">'+
+      '<h2>How your GW '+ev.id+' decisions panned out</h2>'+
+      rowFor('captain', 'Captain choice') +
+      rowFor('transfer', 'Transfer decision') +
+      (rating.chip ? rowFor('chip', 'Chip decision') : '')+
+    '</div>';
+  }
+  return '';
+}
 
 /* ── HOME: Dashboard ───────────────────────────────────── */
 async function renderDashboard(){
@@ -3159,7 +3733,99 @@ async function renderDashboard(){
   /* FDR next 5 */
   const fdrBlock = await fdrNext5(events, teams);
 
+  /* PHASE 12 Enhancement 1: AI Decision Brief */
+  let briefHtml = '';
+  if(MGR.id){
+    const target = nextEvent || curEvent;
+    if(target){
+      try{
+        const entry = await MGR.getEntry();
+        /* Pick the top captain candidate from the squad if we can */
+        let captainName = 'your top form pick', captainOwnership = 0;
+        try{
+          const picks = await FPL.picks(MGR.id, target.id);
+          const eb = new Map(elements.map(p=>[p.id,p]));
+          const xi = picks.picks.filter(p=>p.position<=11).map(p=>eb.get(p.element)).filter(Boolean);
+          const scored = xi.map(p=>{
+            const form = parseFloat(p.form)||0;
+            const xg90 = parseFloat(p.expected_goals_per_90)||0;
+            const xa90 = parseFloat(p.expected_assists_per_90)||0;
+            return { p, score: form*2 + (xg90+xa90)*5 };
+          }).sort((a,b)=>b.score-a.score);
+          if(scored[0]){
+            captainName = scored[0].p.web_name;
+            captainOwnership = parseFloat(scored[0].p.selected_by_percent)||0;
+          }
+        }catch(e){ /* picks not available — fall back */ }
+        if(!captainName || captainOwnership===0){
+          const fallback = [...elements].filter(p=>p.status==='a').sort((a,b)=>(parseFloat(b.form)||0)-(parseFloat(a.form)||0))[0];
+          if(fallback){ captainName = fallback.web_name; captainOwnership = parseFloat(fallback.selected_by_percent)||0; }
+        }
+        const inTop  = [...elements].sort((a,b)=>(b.transfers_in_event||0)-(a.transfers_in_event||0))[0];
+        const outTop = [...elements].sort((a,b)=>(b.transfers_out_event||0)-(a.transfers_out_event||0))[0];
+        let chipsRemaining = 5;
+        try{
+          const hist = await FPL.history(MGR.id);
+          chipsRemaining = Math.max(0, 5 - ((hist.chips||[]).length));
+        }catch(e){}
+        const payload = {
+          captainName,
+          captainOwnership: captainOwnership.toFixed(1),
+          topTransferIn:  inTop  ? inTop.web_name  : 'the week\'s top buy',
+          topTransferOut: outTop ? outTop.web_name : 'the week\'s top sell',
+          chipsRemaining,
+          currentRank: entry.summary_overall_rank ? fmtNum(entry.summary_overall_rank) : 'unranked',
+          gwNumber: target.id
+        };
+        queueAi('dashboard', {
+          type: 'decision_brief',
+          payload,
+          title: "This Gameweek's Brief",
+          cacheKey: 'gwedge_brief_'+target.id+'_'+MGR.id,
+          errorMsg: 'Brief unavailable — check back after the deadline'
+        });
+        briefHtml = aiCardSkeleton("This Gameweek's Brief", 'dashboard');
+      }catch(e){
+        /* If anything fails, render an error card up-front (no fetch attempted) */
+        briefHtml = aiCardError("This Gameweek's Brief", 'Brief unavailable — check back after the deadline');
+      }
+    }
+  } else {
+    /* Signed-out / no Manager ID — show a static prompt card instead of an AI call */
+    briefHtml = '<div class="ai-card" role="region" aria-label="This Gameweek\'s Brief">'+
+      '<div class="ai-card-head"><span class="ai-dot ai-dot-off" aria-hidden="true"></span>'+
+      '<h2 class="ai-card-title">This Gameweek\'s Brief</h2></div>'+
+      '<p class="ai-prose">Add your Manager ID to see a personalised gameweek brief covering your captain, the most important transfer and your chip situation.</p>'+
+      '<div class="ai-card-foot">Powered by Claude</div>'+
+    '</div>';
+  }
+
+  /* PHASE 12 Enhancement 5: post-GW Confidence review (only for signed Manager) */
+  let confPostHtml = '';
+  if(MGR.id){
+    try{
+      const history = await FPL.history(MGR.id);
+      const finishedRecent = [...events].reverse().find(e=>e.finished);
+      if(finishedRecent && loadConfRating(finishedRecent.id) && !loadConfRating(finishedRecent.id).reviewed){
+        const elementById = new Map(elements.map(p=>[p.id,p]));
+        let capEl = null, capPts = 0;
+        try{
+          const picks = await FPL.picks(MGR.id, finishedRecent.id);
+          const live  = await FPL.live(finishedRecent.id);
+          const liveById = new Map((live.elements||[]).map(le=>[le.id, le.stats.total_points||0]));
+          const cap = picks.picks.find(p=>p.is_captain);
+          if(cap){ capEl = elementById.get(cap.element); capPts = (liveById.get(cap.element)||0) * (cap.multiplier||2); }
+        }catch(e){}
+        confPostHtml = await buildConfPostReviewHtml(
+          events, history, null, capEl, capPts, finishedRecent.average_entry_score||0
+        );
+      }
+    }catch(e){ /* skip silently */ }
+  }
+
   return ''+
+    confPostHtml +
+    briefHtml +
     kpiBlock +
     '<div class="grid g-sb mb-20">'+
       '<div class="card">'+
@@ -3728,8 +4394,106 @@ async function renderTransfers(){
   '<div class="card">'+
     '<div class="card-title">Suggested swaps — form drop in / hot incoming</div>'+
     suggestSwaps(squadList, elements, teamById, freeTransfers, bank) +
+  '</div>'+
+  build3GwPlanSection(picks, elements, elementById, teamById, freeTransfers);
+}
+
+/* PHASE 12 Enhancement 3: 3-Gameweek Transfer Sequence Planner.
+   Persists to localStorage gwedge_transfer_plan_{managerId}. */
+function loadTxPlan(){
+  if(!MGR.id) return {};
+  try{ const s = localStorage.getItem('gwedge_transfer_plan_'+MGR.id); return s ? JSON.parse(s) : {}; }
+  catch(e){ return {}; }
+}
+function saveTxPlan(plan){
+  if(!MGR.id) return;
+  try{ localStorage.setItem('gwedge_transfer_plan_'+MGR.id, JSON.stringify(plan)); }catch(e){}
+}
+function build3GwPlanSection(picks, elements, elementById, teamById, freeTransfers){
+  const plan = loadTxPlan();
+  const squadIds = picks.picks.map(p=>p.element);
+  const buildSquadOpts = (selectedId) => '<option value="">— no player out —</option>' +
+    squadIds.map(id=>{
+      const el = elementById.get(id); if(!el) return '';
+      const t = teamById.get(el.team);
+      const sel = String(id)===String(selectedId) ? ' selected' : '';
+      return '<option value="'+id+'"'+sel+'>'+escapeHtml(el.web_name+' ('+(t?t.short_name:'')+')')+'</option>';
+    }).join('');
+
+  const allDatalist = '<datalist id="tx-plan-in-list">' +
+    elements.slice()
+      .filter(p=>!squadIds.includes(p.id))
+      .sort((a,b)=>(parseFloat(b.selected_by_percent)||0)-(parseFloat(a.selected_by_percent)||0))
+      .slice(0,500)
+      .map(p=>{
+        const t = teamById.get(p.team);
+        return '<option value="'+escapeHtml(p.web_name+(t?' ('+t.short_name+')':''))+'" data-id="'+p.id+'"></option>';
+      }).join('') +
+    '</datalist>';
+
+  /* Simulate cumulative FT pool across 3 GWs */
+  let ftPool = Math.max(0, freeTransfers);
+  let totalHits = 0;
+  let totalValueChange = 0;
+  const rowStatuses = [];
+  for(let i=1;i<=3;i++){
+    const slot = plan['gw'+i] || {};
+    const hasTransfer = slot.in && slot.out;
+    if(hasTransfer){
+      const outEl = elementById.get(parseInt(slot.out,10));
+      const inEl  = elementById.get(parseInt(slot.in,10));
+      if(outEl && inEl) totalValueChange += (inEl.now_cost - outEl.now_cost);
+      if(ftPool >= 1){
+        rowStatuses.push({cls:'ft', text:'Free transfer'});
+        ftPool -= 1;
+      } else {
+        totalHits += 4;
+        rowStatuses.push({cls:'hit', text:'Hit −4 pts'});
+      }
+    } else {
+      rowStatuses.push({cls:'none', text:'No transfer planned'});
+    }
+    ftPool = Math.min(ftPool + 1, 5);
+  }
+
+  const cards = [1,2,3].map(i=>{
+    const slot = plan['gw'+i] || {};
+    const status = rowStatuses[i-1];
+    const inEl = slot.in ? elementById.get(parseInt(slot.in,10)) : null;
+    const inValue = inEl ? (inEl.web_name + ' (' + ((teamById.get(inEl.team)||{}).short_name||'') + ')') : '';
+    return '<div class="txp-card txp-'+status.cls+'">'+
+      '<div class="txp-head">GW+'+i+'</div>'+
+      '<div class="txp-field">'+
+        '<label for="txp-out-'+i+'" data-guide="Pick the player you intend to transfer out in this gameweek.">Out</label>'+
+        '<select id="txp-out-'+i+'" data-act="txp-set-out" data-slot="'+i+'" aria-label="Player out for GW+'+i+'">'+
+          buildSquadOpts(slot.out)+
+        '</select>'+
+      '</div>'+
+      '<div class="txp-field">'+
+        '<label for="txp-in-'+i+'" data-guide="Search and pick the player you would bring in.">In</label>'+
+        '<input type="text" id="txp-in-'+i+'" list="tx-plan-in-list" autocomplete="off" placeholder="Search player to bring in…" value="'+escapeHtml(inValue)+'" data-act-input="txp-set-in" data-slot="'+i+'" aria-label="Player in for GW+'+i+'">'+
+      '</div>'+
+      '<div class="txp-status '+status.cls+'">'+escapeHtml(status.text)+'</div>'+
+    '</div>';
+  }).join('');
+
+  return '<div class="card mt-20">'+
+    '<div class="card-title"><span class="card-title-text">3-Gameweek Plan</span>'+
+      '<button class="btn btn-outline btn-sm" data-act="txp-reset">Reset plan</button>'+
+    '</div>'+
+    '<p class="card-sub" style="margin-bottom:0">Plan up to one transfer per upcoming gameweek. Saved automatically. Free transfer pool starts at '+freeTransfers+' and earns one back each gameweek (capped at 5).</p>'+
+    allDatalist +
+    '<div class="txp-grid">'+cards+'</div>'+
+    '<div class="txp-summary">'+
+      '<div class="txp-stat"><div class="txp-stat-label" data-guide="Each extra transfer beyond your free transfer costs 4 points, deducted from your gameweek score.">Total hit cost</div>'+
+        '<div class="txp-stat-val '+(totalHits>0?'bad':'')+'">'+(totalHits>0?'−'+totalHits+' pts':'0 pts')+'</div></div>'+
+      '<div class="txp-stat"><div class="txp-stat-label" data-guide="The net change in your squad price across the three planned transfers.">Projected value change</div>'+
+        '<div class="txp-stat-val '+(totalValueChange>0?'up':totalValueChange<0?'down':'')+'">'+
+        (totalValueChange>0?'+':'')+(totalValueChange/10).toFixed(1)+'m</div></div>'+
+    '</div>'+
   '</div>';
 }
+
 function suggestSwaps(squadList, elements, teamById, freeTransfers, bank){
   /* For each squad player, find a same-position player with higher form, affordable with bank */
   const suggestions = [];
@@ -4378,6 +5142,19 @@ const CHIP_DEFS = [
   {key:'bb2', label:'Bench Boost',    short:'BB',  half:2, apiName:'bboost'}
 ];
 const CHIP_ICON_KEY = { WC:'rotate', FH:'bolt', TC:'star', BB:'squad' };
+/* Historical-average rank/points impact per chip type. Used as static tooltip
+   text on chip cards and on timeline cells that hold a chip. Labelled as
+   historical averages, not predictions. */
+const CHIP_HISTORICAL_TIP = {
+  WC: 'Wildcard — typically recovers 20-80k rank positions when used before a good fixture run. Historical average.',
+  FH: 'Free Hit — typically saves 15-40 points compared to a blank squad when used in a blank gameweek. Historical average.',
+  BB: 'Bench Boost — typically adds 15-35 points above a normal gameweek with a full squad in a double gameweek. Historical average.',
+  TC: 'Triple Captain — typically adds 20-50 points above a standard captain week when used on a premium captain in a double gameweek. Historical average.'
+};
+
+/* 2025/26 confirmed-at-time-of-writing gameweek statuses (provisional). */
+const CONFIRMED_DGWS_2526 = [25, 33, 36];
+const CONFIRMED_BGWS_2526 = [29, 34];
 
 async function renderChips(){
   const bs = await getBootstrap();
@@ -4429,14 +5206,17 @@ async function renderChips(){
     const halfLabel = def.half===1 ? 'First half · by GW19' : 'Second half · from GW20';
     const numberSuffix = ' ' + def.half;
 
+    const tipText = CHIP_HISTORICAL_TIP[def.short] || '';
+
     if(usedGw){
-      return '<div class="chip-card-mini used">'+
+      return '<div class="chip-card-mini used" tabindex="0">'+
         '<div class="chip-mini-head">'+
           '<div class="chip-mini-icon">'+svg(ICON[CHIP_ICON_KEY[def.short]]||ICON.diamond,'width="14" height="14"')+'</div>'+
           '<div style="flex:1"><div class="chip-mini-name">'+escapeHtml(def.label+numberSuffix)+'</div>'+
           '<div class="chip-mini-half">'+escapeHtml(halfLabel)+'</div></div>'+
         '</div>'+
         '<div class="chip-mini-state">Used in GW '+usedGw+'</div>'+
+        '<div class="chip-tip" role="tooltip">'+escapeHtml(tipText)+'</div>'+
       '</div>';
     }
 
@@ -4484,6 +5264,7 @@ async function renderChips(){
         clearBtn +
       '</div>'+
       warning +
+      '<div class="chip-tip" role="tooltip">'+escapeHtml(tipText)+'</div>'+
     '</div>';
   }).join('');
 
@@ -4492,23 +5273,30 @@ async function renderChips(){
   for(let gw=1; gw<=totalGw; gw++){
     let chipBadge = '';
     let cellExtra = '';
+    let chipShort = null;
     const usedHere = Object.entries(usedByKey).find(([k,v])=>v===gw);
     const plannedHere = Object.entries(planned).find(([k,v])=>v===gw);
     if(usedHere){
       const def = CHIP_DEFS.find(d=>d.key===usedHere[0]);
-      if(def) chipBadge = '<span class="gw-cell-chip" style="background:var(--text-2)">'+def.short+'</span>';
+      if(def){ chipBadge = '<span class="gw-cell-chip" style="background:var(--text-2)">'+def.short+'</span>'; chipShort = def.short; }
     } else if(plannedHere){
       const def = CHIP_DEFS.find(d=>d.key===plannedHere[0]);
       if(def){
         const invalid = def.half===1 && gw>19;
         chipBadge = '<span class="gw-cell-chip"'+(invalid?' style="background:var(--red)"':'')+'>'+def.short+'</span>';
         if(invalid) cellExtra = ' invalid-placement';
+        chipShort = def.short;
       }
     }
     const status = gwStatus[gw] || 'normal';
     const isCur = curEvent===gw;
-    cells.push('<div class="gw-cell '+status+(isCur?' cur':'')+cellExtra+'" title="GW '+gw+
-      (status!=='normal'?' ('+status.toUpperCase()+')':'')+'">'+
+    /* Chip cells become focusable and carry the historical-average tooltip
+       text as both title (mouse) and aria-label (assistive tech). */
+    const hasChipCls = chipShort ? ' has-chip' : '';
+    const tipText = chipShort ? (' — '+CHIP_HISTORICAL_TIP[chipShort]) : '';
+    const focusAttrs = chipShort ? ' tabindex="0" aria-label="GW '+gw+(status!=='normal'?' '+status:'')+tipText+'"' : '';
+    cells.push('<div class="gw-cell '+status+(isCur?' cur':'')+cellExtra+hasChipCls+'" title="GW '+gw+
+      (status!=='normal'?' ('+status.toUpperCase()+')':'')+tipText+'"'+focusAttrs+'>'+
       '<span class="gw-cell-num">'+gw+'</span>'+chipBadge+
     '</div>');
   }
@@ -4521,7 +5309,7 @@ async function renderChips(){
     noMgrNote +
     '<div class="chip-planner-grid">'+ chipCards +'</div>'+
   '</div>'+
-  '<div class="card">'+
+  '<div class="card mb-20">'+
     '<div class="card-title">38-gameweek timeline — chip placements, blank and double gameweeks</div>'+
     '<div class="gw-timeline">'+cells.join('')+'</div>'+
     '<div class="timeline-legend">'+
@@ -4530,7 +5318,84 @@ async function renderChips(){
       '<span class="chart-legend-chip"><span style="background:var(--text-2);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:3px">WC</span> Already used</span>'+
       '<span class="chart-legend-chip"><span style="background:var(--green);color:#fff;font-size:.6rem;font-weight:800;padding:1px 5px;border-radius:3px">WC</span> Planned</span>'+
     '</div>'+
+    '<p class="text-3" style="font-size:.74rem;margin-top:10px">Hover or focus a chip card or a timeline cell with a chip to see its historical-average impact.</p>'+
+  '</div>'+
+  /* PHASE 12 Enhancement 4: Simulate — AI chip advice button */
+  '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Simulate chip strategy with AI</span>'+
+      '<button class="btn btn-primary btn-sm" data-act="chip-simulate" aria-label="Generate AI chip strategy advice">'+
+        svg(ICON.bolt,'width="14" height="14"')+'Simulate</button>'+
+    '</div>'+
+    '<p class="card-sub" style="margin-bottom:8px">Get a plain-English chip deployment recommendation for the rest of the season. Uses confirmed double gameweeks ('+CONFIRMED_DGWS_2526.map(g=>'GW'+g).join(', ')+') and blank gameweeks ('+CONFIRMED_BGWS_2526.map(g=>'GW'+g).join(', ')+') — provisional and subject to FPL confirmation.</p>'+
+    '<div id="chip-simulate-output"></div>'+
   '</div>';
+}
+
+/* PHASE 12 Enhancement 4: Chip Simulate AI handler.
+   Builds the chip_advice payload from live FPL data + Store chip plan,
+   posts to /.netlify/functions/ai, renders the result in #chip-simulate-output. */
+async function runChipSimulate(){
+  const out = document.getElementById('chip-simulate-output');
+  if(!out) return;
+  out.innerHTML = aiCardSkeleton('Chip Simulation', 'chip-simulate-inline');
+  try{
+    const bs = await getBootstrap();
+    const events = bs.events||[];
+    const elements = bs.elements||[];
+    const cur = findCurrentEvent(events) || findNextDeadlineEvent(events) || events[0];
+
+    /* Chips remaining = our 8-slot model minus what's been used (history.chips) */
+    let usedKeys = new Set();
+    if(MGR.id){
+      try{
+        const hist = await FPL.history(MGR.id);
+        const counters = {};
+        (hist.chips||[]).slice().sort((a,b)=>a.event-b.event).forEach(c=>{
+          counters[c.name] = (counters[c.name]||0) + 1;
+          const def = CHIP_DEFS.find(d=>d.apiName===c.name && d.half===counters[c.name]);
+          if(def) usedKeys.add(def.key);
+        });
+      }catch(e){}
+    }
+    const remaining = CHIP_DEFS.filter(d=>!usedKeys.has(d.key))
+      .map(d=>d.label + ' ' + d.half).join(', ') || 'none';
+
+    /* Squad strength = average form across the user's XI, rounded to 1dp on a 1-10 scale. */
+    let squadStrength = 5;
+    if(MGR.id && cur){
+      try{
+        const elementById = new Map(elements.map(p=>[p.id,p]));
+        const picks = await FPL.picks(MGR.id, cur.id);
+        const xi = picks.picks.filter(p=>p.position<=11).map(p=>elementById.get(p.element)).filter(Boolean);
+        if(xi.length){
+          const avgForm = xi.reduce((s,p)=>s+(parseFloat(p.form)||0),0)/xi.length;
+          /* FPL form 0-10 already, clamp to 1-10 scale */
+          squadStrength = Math.max(1, Math.min(10, Math.round(avgForm*10)/10));
+        }
+      }catch(e){}
+    }
+
+    const payload = {
+      chipsRemaining: remaining,
+      currentGw: cur ? cur.id : 1,
+      confirmedDgws: CONFIRMED_DGWS_2526.map(g=>'GW'+g).join(', ') + ' (provisional)',
+      confirmedBgws: CONFIRMED_BGWS_2526.map(g=>'GW'+g).join(', ') + ' (provisional)',
+      squadStrength
+    };
+    const cacheKey = 'gwedge_chip_advice_'+(cur?cur.id:'na')+'_'+(MGR.id||'guest');
+    let cached = null;
+    try{ cached = sessionStorage.getItem(cacheKey); }catch(e){}
+    if(cached){
+      out.innerHTML = aiCardContent('Chip Simulation', cached);
+      return;
+    }
+    const text = await callAi('chip_advice', payload);
+    try{ sessionStorage.setItem(cacheKey, text); }catch(e){}
+    out.innerHTML = aiCardContent('Chip Simulation', text);
+  }catch(err){
+    out.innerHTML = aiCardError('Chip Simulation', 'Chip simulation unavailable right now. Try again in a moment.');
+  }
 }
 
 /* ── PLANNER: GW History ───────────────────────────────── */
@@ -5341,7 +6206,43 @@ async function renderRivals(){
     '</div>';
   }).join('');
 
-  return '<div class="card mb-20">'+
+  /* PHASE 12 Enhancement 7: AI Mini-League Story.
+     Built from rivalData (current points + trend from history). */
+  let storyHtml = '';
+  if(target && myEntry && rivalData.length){
+    const rivalsPayload = rivalData.map(r=>{
+      if(!r.entry) return null;
+      const gap = (myEntry.summary_overall_points||0) - (r.entry.summary_overall_points||0);
+      let trend = 'level';
+      if(myHistory && r.history){
+        const my = myHistory.current||[]; const them = r.history.current||[];
+        if(my.length>=2 && them.length>=2){
+          const lastMine  = my[my.length-1].total_points - my[my.length-2].total_points;
+          const lastTheirs = them[them.length-1].total_points - them[them.length-2].total_points;
+          const lastDelta = lastMine - lastTheirs;
+          if(gap > 0){
+            trend = lastDelta < -3 ? 'closing' : lastDelta > 3 ? 'falling away' : 'level';
+          } else if(gap < 0){
+            trend = lastDelta > 3 ? 'closing' : lastDelta < -3 ? 'falling away' : 'level';
+          }
+        }
+      }
+      return { name: r.entry.name || ('Rival '+r.id), gap, trend };
+    }).filter(Boolean);
+    if(rivalsPayload.length){
+      const myName = (myEntry.player_first_name||'') + ' ' + (myEntry.player_last_name||'');
+      queueAi('rivals', {
+        type: 'mini_league_story',
+        payload: { managerName: myName.trim() || (myEntry.name||'You'), rivals: rivalsPayload, gwNumber: target.id },
+        title: 'League Story',
+        cacheKey: 'gwedge_league_story_'+target.id+'_'+MGR.id,
+        errorMsg: 'Story unavailable this gameweek'
+      });
+      storyHtml = aiCardSkeleton('League Story', 'rivals');
+    }
+  }
+
+  return storyHtml + '<div class="card mb-20">'+
     '<div class="card-title">Track rivals</div>'+
     adder +
   '</div>' + cards;
@@ -5820,6 +6721,131 @@ async function renderPriceWatch(){
     rowHtml +
     '<p class="text-3" style="font-size:.74rem;margin-top:12px">Set an optional sell target by typing a price (in £m) in the right column. We flag the moment a player meets it.</p>'+
   '</div>';
+}
+
+/* ── PLAYERS: Predicted Points (Phase 12 enhancement) ──── */
+/* Auto-pulled from FPL bootstrap + fixtures. No external dependency, no AI.
+   Formula: form × FDR multiplier × home advantage × position weight.       */
+const predFilter = { position:'all', minOwn:0 };
+const FDR_MULT = (fdr) => fdr<=2 ? 1.2 : fdr===3 ? 1.0 : fdr===4 ? 0.85 : 0.7;
+const POS_WEIGHT = { 1:0.85, 2:0.9, 3:1.0, 4:1.05 };
+
+async function renderPredicted(){
+  const bs = await getBootstrap();
+  const elements = bs.elements;
+  const teamById = new Map(bs.teams.map(t=>[t.id,t]));
+  const types = new Map(bs.element_types.map(t=>[t.id,t]));
+  const events = bs.events||[];
+  const target = findNextDeadlineEvent(events) || findCurrentEvent(events);
+
+  let fixtures;
+  try{ fixtures = await FPL.fixtures(); }
+  catch(e){ return errorBlock('Could not load fixtures: '+e.message,'predicted'); }
+
+  if(!target){
+    return emptyBlock('No upcoming gameweek','Predicted Points needs a scheduled fixture. Once next season starts, this panel auto-fills.');
+  }
+
+  /* Team → next fixture in target GW (skip teams with no fixture: blank GW) */
+  const teamFix = new Map();
+  fixtures.filter(f=>f.event===target.id).forEach(f=>{
+    teamFix.set(f.team_h, { opp:f.team_a, isHome:true,  fdr:f.team_h_difficulty });
+    teamFix.set(f.team_a, { opp:f.team_h, isHome:false, fdr:f.team_a_difficulty });
+  });
+
+  const scored = elements.filter(p=>p.status==='a').map(p=>{
+    const form = parseFloat(p.form)||0;
+    const fix = teamFix.get(p.team);
+    if(!fix) return null;
+    const fdrM = FDR_MULT(fix.fdr);
+    const homeM = fix.isHome ? 1.08 : 1.0;
+    const posM = POS_WEIGHT[p.element_type] || 1;
+    const predicted = +(form * fdrM * homeM * posM).toFixed(1);
+    let band;
+    if(form > 6 && fix.fdr <= 2) band = 'High';
+    else if((form >= 4 && form <= 6) || fix.fdr === 3) band = 'Medium';
+    else band = 'Low';
+    return { p, fix, predicted, form, band };
+  }).filter(Boolean);
+
+  const filtered = scored
+    .filter(s => predFilter.position==='all' || s.p.element_type===parseInt(predFilter.position,10))
+    .filter(s => (parseFloat(s.p.selected_by_percent)||0) >= predFilter.minOwn)
+    .sort((a,b)=>b.predicted-a.predicted);
+
+  const top = filtered.slice(0,30);
+
+  CSV_CACHE['predicted'] = {
+    filename: 'gameweek-edge-predicted-points-'+new Date().toISOString().slice(0,10)+'.csv',
+    rows: filtered.map(s=>{
+      const t = teamById.get(s.p.team);
+      const opp = teamById.get(s.fix.opp);
+      return {
+        player: s.p.web_name,
+        team: t?t.short_name:'',
+        position: (types.get(s.p.element_type)||{}).singular_name_short||'',
+        opponent: opp?opp.short_name:'',
+        home_or_away: s.fix.isHome ? 'H' : 'A',
+        fdr: s.fix.fdr,
+        form: s.form,
+        predicted_points: s.predicted,
+        confidence_band: s.band,
+        ownership_pct: s.p.selected_by_percent
+      };
+    })
+  };
+
+  const posOpts = '<option value="all">All positions</option>'+
+    [...types.values()].map(t=>'<option value="'+t.id+'"'+(predFilter.position===String(t.id)?' selected':'')+'>'+escapeHtml(t.singular_name_short)+'</option>').join('');
+
+  const tableHtml = top.length ? buildPredTable(top, teamById, types)
+    : '<p class="text-3" style="font-size:.84rem;padding:20px;text-align:center">No players match the current filters.</p>';
+
+  return '<div class="card">'+
+    '<div class="card-title">'+
+      '<span class="card-title-text">Top 30 predicted points — Gameweek '+target.id+'</span>'+
+      exportBtn('predicted','Export predicted points to CSV')+
+    '</div>'+
+    '<div class="filter-bar" role="region" aria-label="Predicted Points filters">'+
+      '<label for="pred-pos" data-guide="Filter the table by position: GK, DEF, MID or FWD.">Position</label>'+
+      '<select id="pred-pos" data-act="pred-filter" data-key="position" aria-label="Filter by position">'+posOpts+'</select>'+
+      '<label for="pred-own" data-guide="Hide players owned by fewer than this percentage of managers.">Min ownership <b id="pred-own-label">'+predFilter.minOwn+'%</b></label>'+
+      '<input id="pred-own" class="range-slider" type="range" min="0" max="60" step="1" value="'+predFilter.minOwn+'" data-act-input="pred-own" aria-valuemin="0" aria-valuemax="60" aria-valuenow="'+predFilter.minOwn+'" aria-label="Minimum ownership percentage">'+
+    '</div>'+
+    tableHtml +
+    '<p class="text-3" style="font-size:.74rem;margin-top:12px" data-guide="The formula combines four signals: recent form (last 30 days), the FDR for the next fixture, a small home advantage boost and a per-position weighting.">Predicted score = form × FDR multiplier × home advantage × position weight. Showing '+top.length+' of '+filtered.length+' qualifying players.</p>'+
+  '</div>';
+}
+
+function buildPredTable(rows, teamById, types){
+  const head = '<thead><tr>'+
+    '<th scope="col">#</th>'+
+    '<th scope="col" data-guide="Player and team.">Player</th>'+
+    '<th scope="col">Pos</th>'+
+    '<th scope="col" data-guide="Next fixture: opponent short code, home or away (H/A), and FDR 1-5.">Fixture</th>'+
+    '<th scope="col" style="text-align:right" data-guide="A player\'s average points per game over the last 30 days. Higher is better.">Form</th>'+
+    '<th scope="col" style="text-align:right" data-guide="An estimate of how many FPL points this player is likely to score in the next gameweek, based on form and fixture difficulty.">Predicted</th>'+
+    '<th scope="col" data-guide="How reliable the predicted points estimate is. High means strong recent form against an easy fixture. Low means less certainty.">Confidence</th>'+
+  '</tr></thead>';
+  const body = rows.map((r,i)=>{
+    const t = teamById.get(r.p.team);
+    const opp = teamById.get(r.fix.opp);
+    const pos = (types.get(r.p.element_type)||{}).singular_name_short||'';
+    const bandCls = r.band==='High'?'pred-band-high':r.band==='Medium'?'pred-band-med':'pred-band-low';
+    return '<tr>'+
+      '<td class="pred-rank">'+(i+1)+'</td>'+
+      '<td><div class="pred-name"><div class="pw-shirt">'+kitSvg(t, r.p.element_type===1)+'</div>'+
+        '<div><b>'+escapeHtml(r.p.web_name)+'</b>'+
+          '<div class="pw-meta">'+escapeHtml(t?t.short_name:'')+' · '+escapeHtml(r.p.selected_by_percent||'0')+'% owned</div>'+
+        '</div></div></td>'+
+      '<td>'+escapeHtml(pos)+'</td>'+
+      '<td>'+escapeHtml(opp?opp.short_name:'?')+' ('+(r.fix.isHome?'H':'A')+', FDR '+r.fix.fdr+')</td>'+
+      '<td class="pred-num muted">'+r.form.toFixed(1)+'</td>'+
+      '<td class="pred-num">'+r.predicted.toFixed(1)+'</td>'+
+      '<td><span class="pred-band '+bandCls+'" aria-label="Confidence '+r.band+'">'+r.band+'</span></td>'+
+    '</tr>';
+  }).join('');
+  return '<div class="pred-table-wrap"><table class="pred-table">'+head+'<tbody>'+body+'</tbody></table></div>';
 }
 
 /* ── PLAYERS: Bookings Risk ────────────────────────────── */
@@ -6363,6 +7389,7 @@ const PANEL_RENDERERS = {
   ledger:       renderLedger,
   gwpnl:        renderGwPnL,
   pricewatch:   renderPriceWatch,
+  predicted:    renderPredicted,
   bookings:     renderBookings,
   captaud:      renderCaptaud,
   hitcalc:      renderHitCalc,
@@ -6505,6 +7532,89 @@ function loadTheme(){
     if(saved==='light'||saved==='dark') t=saved;
   }catch(e){}
   applyTheme(t);
+}
+
+/* ── PHASE 12 Enhancement 6: GUIDED MODE ───────────────── */
+const GUIDE_KEY = 'gwedge.guided';
+const GUIDE_TEXTS = {
+  'form': "A player's average points per game over the last 30 days. Higher is better.",
+  'last 5': "A player's average points per game over the last 30 days. Higher is better.",
+  'xg': "How many goals a player was statistically expected to score based on the quality of their shots.",
+  'xa': "How many assists a player was statistically expected to create based on the chances they set up.",
+  'xg / 90': "Expected goals per 90 minutes played. Filters out players who play short minutes.",
+  'xa / 90': "Expected assists per 90 minutes played. Filters out players who play short minutes.",
+  'xg + xa': "Combined expected goals and assists — the underlying attacking output.",
+  'xgi': "Combined expected goals and assists — the underlying attacking output.",
+  'ict index': "A combined score of Influence, Creativity and Threat. Useful for comparing players across positions.",
+  'ict': "A combined score of Influence, Creativity and Threat. Useful for comparing players across positions.",
+  'ownership': "The percentage of all FPL managers who currently have this player in their squad.",
+  'ownership %': "The percentage of all FPL managers who currently have this player in their squad.",
+  'eo': "Effective Ownership — adjusted ownership that accounts for how many managers have also captained this player. A captained player counts double.",
+  'effective ownership': "Effective Ownership — adjusted ownership that accounts for how many managers have also captained this player. A captained player counts double.",
+  'fdr': "Fixture Difficulty Rating. 1 is the easiest possible game, 5 is the hardest.",
+  'fixture difficulty': "Fixture Difficulty Rating. 1 is the easiest possible game, 5 is the hardest.",
+  'price': "The player's current FPL price in millions. Prices change daily based on how many managers are buying and selling.",
+  'team value': "Your squad's total market value at the most recent deadline.",
+  'transfer delta': "The net number of managers who transferred this player in or out this week. Positive means more buying than selling.",
+  'movers': "The net number of managers who transferred this player in or out this week. Positive means more buying than selling.",
+  'predicted points': "An estimate of how many FPL points this player is likely to score in the next gameweek, based on form and fixture difficulty.",
+  'predicted': "An estimate of how many FPL points this player is likely to score in the next gameweek, based on form and fixture difficulty.",
+  'confidence band': "How reliable the predicted points estimate is. High means strong recent form against an easy fixture. Low means less certainty.",
+  'confidence': "How reliable the predicted points estimate is. High means strong recent form against an easy fixture. Low means less certainty.",
+  'break-even': "The number of gameweeks a new player needs to outscore the one you sold before the transfer pays for itself.",
+  'hit cost': "Each extra transfer beyond your free transfer costs 4 points, deducted from your gameweek score.",
+  'hit cost / extra': "Each extra transfer beyond your free transfer costs 4 points, deducted from your gameweek score.",
+  'free transfers': "How many transfers you can make this gameweek without incurring a 4-point hit.",
+  'total points': "Your overall FPL points across the whole season so far.",
+  'overall rank': "Your rank among all FPL managers worldwide. Lower is better.",
+  'bank': "Money left over in your squad budget after buying your 15 players.",
+  'captain score': "A combined score weighing form, fixture, expected goals, set-piece duty and home/away. Higher means a stronger captain pick.",
+  'season rating': "Your season-to-date transfer success rate. Higher means more of your transfers paid off.",
+  'gw rank': "Your rank among all FPL managers for this single gameweek's score."
+};
+
+function applyGuide(on){
+  document.documentElement.setAttribute('data-guided', on?'true':'false');
+  const btn = document.getElementById('guide-toggle');
+  if(btn){
+    btn.setAttribute('aria-pressed', on?'true':'false');
+    btn.classList.toggle('on', on);
+  }
+  try{ localStorage.setItem(GUIDE_KEY, on?'true':'false'); }catch(e){}
+}
+function toggleGuide(){
+  applyGuide(document.documentElement.getAttribute('data-guided')!=='true');
+}
+function loadGuide(){
+  let on = false;
+  try{ on = localStorage.getItem(GUIDE_KEY) === 'true'; }catch(e){}
+  applyGuide(on);
+}
+
+/* Walk recently-rendered labels and attach data-guide attributes where the
+   text matches a known guide entry. Respects existing data-guide overrides. */
+function applyGuideAttrs(){
+  const selectors = [
+    '.kpi-label', '.card-title-text', '.cap-factor-label',
+    '.tx-stat-label', '.gwh-card-label', '.txp-stat-label',
+    '.cmp-stat-label', '.filter-bar label',
+    '.pred-table th', '.gwh-header > div', '.chart-legend-chip'
+  ];
+  document.querySelectorAll(selectors.join(',')).forEach(el=>{
+    if(el.hasAttribute('data-guide')) return;
+    const raw = (el.textContent||'').trim();
+    if(!raw) return;
+    const key = raw.toLowerCase().replace(/\s+/g,' ').replace(/[.,:;–—]$/,'').trim();
+    if(GUIDE_TEXTS[key]){ el.setAttribute('data-guide', GUIDE_TEXTS[key]); return; }
+    /* Loose contains-match for short labels (avoid over-matching) */
+    for(const k of Object.keys(GUIDE_TEXTS)){
+      if(key === k){ el.setAttribute('data-guide', GUIDE_TEXTS[k]); return; }
+      if(key.length < 30 && key.indexOf(k) >= 0){
+        el.setAttribute('data-guide', GUIDE_TEXTS[k]);
+        return;
+      }
+    }
+  });
 }
 
 /* ── SIDEBAR DRAWER (mobile) ───────────────────────────── */
@@ -6915,10 +8025,12 @@ async function init(){
   buildNav();
   buildBottomNav();
   loadTheme();
+  loadGuide();
 
   document.getElementById('hamburger').addEventListener('click',openSidebar);
   document.getElementById('overlay').addEventListener('click',closeSidebar);
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
+  document.getElementById('guide-toggle').addEventListener('click',toggleGuide);
   document.getElementById('refresh-btn').addEventListener('click',function(){
     const ic=this.querySelector('svg');
     ic.style.transition='transform .5s var(--ease)';
@@ -7038,6 +8150,9 @@ async function init(){
 
   /* If we're already signed in on first paint, run the migration check */
   if(AUTH.user) maybeShowMigrationPrompt();
+
+  /* Phase 12 Enhancement 5: mount the confidence rating popup if conditions match */
+  maybeMountConfPopup();
 
   /* Handle ?upgrade=success / ?upgrade=cancel return from Stripe Checkout */
   handleUpgradeReturn();

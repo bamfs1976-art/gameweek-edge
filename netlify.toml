@@ -1,5 +1,8 @@
 # Gameweek Edge — Netlify configuration
-# Single-page static site with a serverless proxy to the official FPL API.
+# Single-page static site with two serverless functions:
+#   /.netlify/functions/fpl  — whitelisted proxy to the official FPL API
+#   /.netlify/functions/ai   — typed proxy to the Anthropic API (Phase 12)
+# Both functions are auto-discovered under netlify/functions/.
 
 [build]
   publish    = "."
@@ -8,7 +11,7 @@
 [functions]
   node_bundler = "esbuild"
 
-# Pretty-path alias so the client can call /api/<path> instead of the full function URL.
+# Pretty-path alias so the client can call /api/<path> for FPL data.
 [[redirects]]
   from   = "/api/*"
   to     = "/.netlify/functions/fpl?path=:splat"
