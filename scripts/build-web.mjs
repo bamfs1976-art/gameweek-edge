@@ -12,8 +12,9 @@ const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
 
 /* Static web assets to copy verbatim into www/. Add to this list as
-   the app grows (icons, manifest, etc.). */
-const STATIC_FILES = ['index.html'];
+   the app grows. */
+const STATIC_FILES = ['index.html', 'manifest.webmanifest', 'sw.js'];
+const STATIC_DIRS = ['icons'];
 
 async function clean() {
   if (existsSync(OUT)) await rm(OUT, { recursive: true, force: true });
@@ -24,9 +25,11 @@ async function copyStatic() {
   for (const f of STATIC_FILES) {
     if (existsSync(join(ROOT, f))) await copyFile(join(ROOT, f), join(OUT, f));
   }
-  /* Copy an assets/ folder if one exists. */
-  const assets = join(ROOT, 'assets');
-  if (existsSync(assets)) await copyDir(assets, join(OUT, 'assets'));
+  /* Copy static asset folders (icons, etc.) into www/. */
+  for (const d of STATIC_DIRS) {
+    const src = join(ROOT, d);
+    if (existsSync(src)) await copyDir(src, join(OUT, d));
+  }
 }
 
 async function copyDir(src, dest) {

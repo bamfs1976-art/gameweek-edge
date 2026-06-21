@@ -4,7 +4,8 @@
 # via an absolute URL — see GE_CONFIG in index.html.)
 
 [build]
-  publish = "."
+  command = "npm run build:web"
+  publish = "www"
   functions = "netlify/functions"
 
 [functions]

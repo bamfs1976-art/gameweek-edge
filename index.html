@@ -10,6 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="Gameweek Edge">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1727,6 +1730,14 @@ function initNetwork(){
   updateNetwork(navigator.onLine!==false);
 }
 
+/* ── PWA SERVICE WORKER (web only) ─────────────────────── */
+function registerSW(){
+  if(window.GENative&&window.GENative.isNative)return;     // native shell bundles its own assets
+  if(!('serviceWorker' in navigator))return;
+  if(location.protocol!=='https:'&&location.hostname!=='localhost')return;
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{});});
+}
+
 /* Lightweight pull-to-refresh on the window scroll (native only).
    The page scrolls at document level, so we gate on scroll position
    being at the very top. */
@@ -1783,8 +1794,9 @@ function init(){
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
   document.getElementById('refresh-btn').addEventListener('click',doRefresh);
 
-  /* Connectivity banner (web + native) and native shell wiring. */
+  /* Connectivity banner (web + native), PWA worker, native shell wiring. */
   initNetwork();
+  registerSW();
   initNative();
 
   /* Manager ID linking. */
