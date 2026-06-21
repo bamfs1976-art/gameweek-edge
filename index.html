@@ -291,6 +291,20 @@ html.offline .net-banner{transform:translateY(0)}
 .modal-row .btn{flex:1;justify-content:center}
 .modal-hint{font-size:.72rem;color:var(--text-3);margin-top:14px;line-height:1.5}
 
+/* Player search suggestions */
+.sugg{display:flex;flex-direction:column;margin-top:8px;gap:1px}
+.sugg-row{display:flex;flex-direction:column;align-items:flex-start;text-align:left;
+  padding:9px 12px;background:var(--surface-3);border-radius:var(--r-sm)}
+.sugg-row:hover{background:var(--border-2)}
+/* Inline fixture-difficulty tag (next opponent) */
+.badge.fdrtag{color:#0c1014;padding:0 6px;font-weight:800}
+.fdrtag.fdr-5{color:#fff}
+/* Alert preference toggle row */
+.alert-tog{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 2px;border-bottom:1px solid var(--border);font-size:.86rem;font-weight:600}
+.alert-tog:last-of-type{border-bottom:none}
+.alert-tog input{width:20px;height:20px;accent-color:var(--green-bright)}
+
 /* ── LAYOUT SHELL ──────────────────────────────────────── */
 .shell{display:flex;min-height:100vh}
 
@@ -1269,8 +1283,6 @@ function renderPage(panelId){
   /* Layout variants. Wired panels render a skeleton then hydrate live. */
   if(WIRED[panelId]){
     body+='<div id="ge-data" class="ge-host">'+skel(5)+'</div>';
-  } else if(content.layout==='cards3'){
-    body+=cards3Layout(content.desc);
   } else {
     body+=standardLayout(panel,content);
   }
@@ -1542,30 +1554,267 @@ function dlTable(b,list,heads,metrics){
     '<span class="dl-grow">Player</span><span class="dl-col">'+heads[0]+'</span><span class="dl-col">'+heads[1]+'</span></div>'+rows+'</div>';
 }
 
+/* ═══════════════════════════════════════════════════════════
+   PHASE 2 (cont.) — remaining free panels
+   ═══════════════════════════════════════════════════════════ */
+
+/* Next unfinished fixture per team, from the cached fixtures list. */
+function buildNextFix(b,fixtures){
+  const map={};
+  fixtures.filter(f=>f.event).sort((a,c)=>a.event-c.event).forEach(f=>{
+    if(f.finished)return;
+    if(!map[f.team_h])map[f.team_h]={opp:teamShort(b,f.team_a),diff:f.team_h_difficulty,home:true,event:f.event};
+    if(!map[f.team_a])map[f.team_a]={opp:teamShort(b,f.team_h),diff:f.team_a_difficulty,home:false,event:f.event};
+  });
+  return map;
+}
+function nextFixLabel(nf){
+  return nf?(esc(nf.opp)+' ('+(nf.home?'H':'A')+') '+'<span class="badge fdrtag fdr-'+nf.diff+'">'+nf.diff+'</span>'):'—';
+}
+
+/* Reusable player search → suggestion list. onPick(id) is called on click. */
+function renderSuggestions(b,query,container,exclude,onPick){
+  const q=(query||'').trim().toLowerCase();
+  if(q.length<2){container.innerHTML='';return;}
+  const matches=b.elements.filter(e=>
+    !exclude.has(e.id) &&
+    ((e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().includes(q))
+  ).sort((a,c)=>c.total_points-a.total_points).slice(0,6);
+  container.innerHTML=matches.map(e=>
+    '<button class="sugg-row" data-id="'+e.id+'"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+'</span></button>'
+  ).join('')||'<div class="dl-sub" style="padding:8px 4px">No matches.</div>';
+  Array.prototype.forEach.call(container.querySelectorAll('.sugg-row'),btn=>{
+    btn.addEventListener('click',()=>onPick(parseInt(btn.dataset.id,10)));
+  });
+}
+
+/* ── Transfer Planner: targets by position (+ your budget) ─ */
+async function hydrateTransfers(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  let budget='';
+  const mid=getMid();
+  if(mid){
+    try{const e=await loadEntry(mid);
+      budget='<div class="card mb-20"><div class="card-title">Your budget</div>'+
+        '<div class="statgrid">'+
+          '<div class="stat"><div class="stat-l">Team Value</div><div class="stat-v">'+money(e.last_deadline_value||0)+'</div></div>'+
+          '<div class="stat"><div class="stat-l">In the Bank</div><div class="stat-v">'+money(e.last_deadline_bank||0)+'</div></div>'+
+        '</div></div>';
+    }catch(_){}
+  }
+  const posName={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const sections=[1,2,3,4].map(t=>{
+    const list=b.elements.filter(e=>e.element_type===t&&e.status==='a'&&e.minutes>0)
+      .sort((a,c)=>parseFloat(c.form)-parseFloat(a.form)).slice(0,5);
+    const rows=list.map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'% · next '+nextFixLabel(nf[e.team])+'</span></span>'+
+      '<span class="dl-col mono">'+e.form+'</span></div>').join('');
+    return '<div class="card mb-20"><div class="card-title">'+posName[t]+' — in form</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
+  }).join('');
+  host.innerHTML=budget+
+    '<div class="dl-sub" style="margin-bottom:12px">Transfer targets ranked by recent form, with each player’s next fixture difficulty. Link your team to see your budget.</div>'+
+    sections;
+}
+
+/* ── Captaincy Lab: rank by expected points (ep_next) ──── */
+async function hydrateCaptain(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const epn=e=>parseFloat(e.ep_next||'0');
+  let pool=b.elements.filter(e=>e.status==='a'&&epn(e)>0);
+  let scopeNote='Top captain picks across the league this gameweek.';
+  const mid=getMid();
+  if(mid){
+    try{const picks=await loadPicks(mid,b.cur.id);
+      const xi=new Set(picks.picks.filter(p=>p.position<=11).map(p=>p.element));
+      const mine=pool.filter(e=>xi.has(e.id));
+      if(mine.length){pool=mine;scopeNote='Scored from your starting XI for GW'+b.cur.id+'.';}
+    }catch(_){}
+  }
+  pool=pool.sort((a,c)=>epn(c)-epn(a));
+  if(!pool.length){host.innerHTML=stateBox('star','No captain data yet','Expected points appear once fixtures for the gameweek are set.');return;}
+  const top=pool.slice(0,3);
+  const diff=pool.filter(e=>parseFloat(e.selected_by_percent)<15).slice(0,1)[0];
+  const labels=['Safe','Balanced','Differential'];
+  const cards=top.map((e,i)=>
+    '<div class="card"><div class="card-title">'+labels[i]+'</div>'+
+      '<div class="stat-v">'+esc(e.web_name)+'</div>'+
+      '<div class="dl-sub" style="margin:2px 0 10px">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</div>'+
+      '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+e.ep_next+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Form</div><div class="stat-v">'+e.form+'</div></div></div>'+
+      '<div class="dl-sub" style="margin-top:10px">Next: '+nextFixLabel(nf[e.team])+'</div>'+
+    '</div>').join('');
+  const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-sub">'+teamShort(b,e.team)+' · next '+nextFixLabel(nf[e.team])+'</span></span>'+
+    '<span class="dl-col mono">'+e.ep_next+'</span><span class="dl-col mono">'+e.form+'</span></div>').join('');
+  host.innerHTML=
+    '<div class="dl-sub" style="margin-bottom:12px">'+scopeNote+(diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
+    '<div class="grid g-3 mb-20">'+cards+'</div>'+
+    '<div class="card"><div class="card-title">Ranked by expected points</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player · next</span>'+
+      '<span class="dl-col">xPts</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
+}
+
+/* ── Chip Strategy: used vs remaining (from history) ───── */
+async function hydrateChips(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const hist=await loadHistory(mid);
+  const used=hist.chips||[];
+  const nice={wildcard:'Wildcard','3xc':'Triple Captain',bboost:'Bench Boost',freehit:'Free Hit',manager:'Assistant Manager'};
+  const usedRows=used.length?used.map(c=>
+    '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(nice[c.name]||c.name)+'</span></span>'+
+    '<span style="font-weight:700;color:var(--text-2)">GW'+c.event+'</span></div>').join('')
+    :'<div class="dl-row"><span class="dl-sub">No chips played yet this season.</span></div>';
+  const usedNames=used.map(c=>c.name);
+  const standard=[['wildcard','Wildcard'],['3xc','Triple Captain'],['bboost','Bench Boost'],['freehit','Free Hit']];
+  const remaining=standard.filter(([k])=>!usedNames.includes(k));
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">Chips played</div>'+
+      '<div class="dl">'+usedRows+'</div></div>'+
+    '<div class="card mb-20"><div class="card-title">Still available</div>'+
+      '<div class="dl">'+(remaining.length?remaining.map(([,n])=>
+        '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+n+'</span></span>'+
+        '<span class="badge badge-green">Ready</span></div>').join('')
+        :'<div class="dl-row"><span class="dl-sub">All standard chips used.</span></div>')+'</div></div>'+
+    '<div class="card"><div class="ge-state">'+svg(ICON.diamond)+
+      '<b>When to play them</b><p>Bench Boost and Triple Captain pay off in double gameweeks; Free Hit covers a blank. Watch the Fixture Planner for upcoming doubles and blanks.</p></div></div>';
+}
+
+/* ── Watchlist: local list of tracked players ──────────── */
+function loadWatch(){try{return JSON.parse(localStorage.getItem('ge-watch')||'[]');}catch(_){return [];}}
+function saveWatch(a){try{localStorage.setItem('ge-watch',JSON.stringify(a));}catch(_){}}
+function addWatch(id){const a=loadWatch();if(!a.includes(id)){a.push(id);saveWatch(a);}}
+function removeWatch(id){saveWatch(loadWatch().filter(x=>x!==id));}
+async function hydrateWatchlist(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const watch=loadWatch();
+  const rows=watch.map(id=>{const e=b.els[id];if(!e)return '';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · form '+e.form+' · next '+nextFixLabel(nf[e.team])+'</span></span>'+
+      '<button class="btn btn-ghost btn-sm" data-rm="'+e.id+'">Remove</button></div>';
+  }).join('');
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">Add a player</div>'+
+      '<input class="modal-in" id="watch-search" placeholder="Search players…" autocomplete="off">'+
+      '<div class="sugg" id="watch-sugg"></div></div>'+
+    '<div class="card"><div class="card-title">Your watchlist'+(watch.length?' ('+watch.length+')':'')+'</div>'+
+      (watch.length?'<div class="dl">'+rows+'</div>'
+        :'<div class="ge-state">'+svg(ICON.eye)+'<b>Nothing watched yet</b><p>Search above to track players you’re considering. Your list is saved on this device.</p></div>')+
+    '</div>';
+  const inp=host.querySelector('#watch-search'),sugg=host.querySelector('#watch-sugg');
+  const excl=new Set(watch);
+  inp.addEventListener('input',()=>renderSuggestions(b,inp.value,sugg,excl,id=>{addWatch(id);renderPage('watchlist');}));
+  Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'),btn=>
+    btn.addEventListener('click',()=>{removeWatch(parseInt(btn.dataset.rm,10));renderPage('watchlist');}));
+}
+
+/* ── Player Compare: up to 4 side by side ──────────────── */
+let COMPARE=[];
+async function hydrateCompare(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
+  const sel=COMPARE.map(id=>b.els[id]);
+  const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
+  const table=sel.length?
+    '<div class="fdr"><table>'+
+      '<tr><th class="tm">Player</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><button class="btn btn-ghost btn-sm" data-rm="'+e.id+'" style="margin-top:4px">Remove</button></td>').join('')+'</tr>'+
+      metric('Team',e=>teamShort(b,e.team))+
+      metric('Position',e=>posShort(b,e.element_type))+
+      metric('Price',e=>money(e.now_cost))+
+      metric('Owned %',e=>e.selected_by_percent)+
+      metric('Total pts',e=>e.total_points)+
+      metric('Form',e=>e.form)+
+      metric('Pts / game',e=>e.points_per_game)+
+      metric('xG',e=>e.expected_goals||'—')+
+      metric('xA',e=>e.expected_assists||'—')+
+      metric('ICT',e=>e.ict_index)+
+      metric('Next',e=>nextFixLabel(nf[e.team]))+
+    '</table></div>'
+    :'<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add up to four players side by side.</p></div>';
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">Add players ('+sel.length+'/4)</div>'+
+      '<input class="modal-in" id="cmp-search" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
+      '<div class="sugg" id="cmp-sugg"></div></div>'+
+    '<div class="card">'+table+'</div>';
+  const inp=host.querySelector('#cmp-search'),sugg=host.querySelector('#cmp-sugg');
+  if(inp&&!inp.disabled){
+    inp.addEventListener('input',()=>renderSuggestions(b,inp.value,sugg,new Set(COMPARE),id=>{
+      if(COMPARE.length<4&&!COMPARE.includes(id))COMPARE.push(id);renderPage('compare');}));
+  }
+  Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'),btn=>
+    btn.addEventListener('click',()=>{COMPARE=COMPARE.filter(x=>x!==parseInt(btn.dataset.rm,10));renderPage('compare');}));
+}
+
+/* ── Alerts: live feed + local notification preferences ── */
+function loadAlertPrefs(){try{return JSON.parse(localStorage.getItem('ge-alert-prefs')||'{}');}catch(_){return {};}}
+function setAlertPref(k,v){const p=loadAlertPrefs();p[k]=v;try{localStorage.setItem('ge-alert-prefs',JSON.stringify(p));}catch(_){}}
+async function hydrateAlerts(host){
+  const b=await boot();
+  const mid=getMid();
+  let owned=null;
+  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  const scope=e=>!owned||owned.has(e.id);
+  const net=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
+
+  const ms=new Date(b.cur.deadline_time)-Date.now();
+  const days=Math.floor(ms/86400e3),hrs=Math.floor((ms%86400e3)/3600e3);
+  const deadline='<div class="card mb-20" style="border-left:3px solid var(--amber)"><div class="card-title">Next deadline</div>'+
+    '<div class="stat-v">'+(ms>0?(days>0?days+'d ':'')+hrs+'h to go':'Deadline passed')+'</div>'+
+    '<div class="dl-sub">'+esc(b.cur.name)+' · '+fmtDeadline(b.cur.deadline_time)+'</div></div>';
+
+  const injuries=b.elements.filter(e=>e.status&&e.status!=='a'&&scope(e))
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,6);
+  const falls=b.elements.filter(e=>scope(e)&&net(e)<-30000)
+    .sort((a,c)=>net(a)-net(c)).slice(0,6);
+  const feed=(title,list,fmt)=> '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
+    (list.length?'<div class="dl">'+list.map(fmt).join('')+'</div>':'<div class="dl-sub">Nothing flagged'+(owned?' in your squad':'')+'.</div>')+'</div>';
+
+  const prefs=loadAlertPrefs();
+  const toggle=(k,label)=>'<label class="alert-tog"><span>'+label+'</span>'+
+    '<input type="checkbox" data-pref="'+k+'"'+(prefs[k]!==false?' checked':'')+'></label>';
+
+  host.innerHTML=
+    deadline+
+    (owned?'':'<div class="dl-sub" style="margin-bottom:12px">Link your team to tune these alerts to your squad.</div>')+
+    feed('Fitness flags'+(owned?' in your squad':''),injuries,e=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
+      ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span></span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+(e.news?' · '+esc(e.news):'')+'</span></span></div>')+
+    feed('Price-fall risk'+(owned?' in your squad':''),falls,e=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · net out '+fmtK(-net(e))+'</span></span>'+
+      '<span class="dl-col neg">'+(e.cost_change_event/10).toFixed(1)+'</span></div>')+
+    '<div class="card"><div class="card-title">Notify me about</div>'+
+      toggle('price','Price changes')+toggle('injury','Injuries & doubts')+
+      toggle('deadline','Deadline reminders')+
+      '<div class="dl-sub" style="margin-top:12px">Preferences are saved on this device. Push delivery arrives with the mobile app notifications (Phase M2).</div></div>';
+  Array.prototype.forEach.call(host.querySelectorAll('[data-pref]'),cb=>
+    cb.addEventListener('change',()=>setAlertPref(cb.dataset.pref,cb.checked)));
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
   'gw-actions':hydrateGwActions,
   squad:hydrateSquad,
+  transfers:hydrateTransfers,
+  captain:hydrateCaptain,
+  chips:hydrateChips,
+  watchlist:hydrateWatchlist,
+  alerts:hydrateAlerts,
+  compare:hydrateCompare,
   fixtures:hydrateFixtures,
   diffs:hydrateDiffs,
   price:hydratePrice,
   injuries:hydrateInjuries
 };
-
-/* ── LAYOUT: 3 CARDS (captaincy) ───────────────────────── */
-function cards3Layout(desc){
-  const c=label=>
-    '<div class="card">'+
-      '<div class="card-title">'+label+'</div>'+
-      '<div class="ph-bars"><div class="ph-bar"></div><div class="ph-bar w80"></div></div>'+
-    '</div>';
-  return ''+
-    '<div class="grid g-3 mb-20">'+
-      c('Pick 1 \u2014 Safe')+c('Pick 2 \u2014 Balanced')+c('Pick 3 \u2014 Differential')+
-    '</div>'+
-    phBlock('star','Multi-factor captain scoring','Captain picks are scored on fixture, form, expected goals and assists, set-piece duty and effective ownership. Sign in to score your own squad.');
-}
 
 /* ── LAYOUT: STANDARD ──────────────────────────────────── */
 function standardLayout(panel,content){
