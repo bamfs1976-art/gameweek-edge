@@ -1,0 +1,21 @@
+{
+  "appId": "com.gameweekedge.app",
+  "appName": "Gameweek Edge",
+  "webDir": "www",
+  "backgroundColor": "#f4f6f8",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#f4f6f8"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#15824a",
+      "showSpinner": false,
+      "iosSplashResourceName": "Splash"
+    },
+    "Keyboard": {
+      "resize": "native"
+    }
+  }
+}

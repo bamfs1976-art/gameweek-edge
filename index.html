@@ -2,8 +2,14 @@
 <html lang="en-GB" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f161d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gameweek Edge">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,6 +145,54 @@ a{color:inherit;text-decoration:none}
 
 /* ── FOCUS VISIBILITY ──────────────────────────────────── */
 :focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
+
+/* ── NATIVE SHELL (Capacitor iOS / Android) ────────────── */
+/* These rules only apply when running inside the native wrapper.
+   window.GENative adds .native (and .native-ios / .native-android)
+   to <html> on launch. The web build is untouched. */
+html.native, html.native body{
+  /* Stop the whole web page rubber-banding like a browser. */
+  overscroll-behavior:none;
+  -webkit-tap-highlight-color:transparent;
+}
+html.native{
+  /* App chrome should not feel like selectable text. */
+  -webkit-touch-callout:none;
+}
+html.native .topbar,
+html.native .sidebar,
+html.native .bottom-nav,
+html.native .btn,
+html.native .nav-area,
+html.native .nav-sub{
+  -webkit-user-select:none;user-select:none;
+}
+/* Top safe-area: push the sticky topbar clear of the notch / status bar. */
+html.native .topbar{
+  height:calc(var(--topbar-h) + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);
+}
+/* Drawer header sits under the status bar too when opened. */
+html.native .sb-brand{
+  padding-top:calc(18px + env(safe-area-inset-top));
+}
+/* Body copy and data stay selectable — only chrome is locked. */
+html.native .page, html.native .card{-webkit-user-select:text;user-select:text}
+
+/* Pull-to-refresh affordance (native only). */
+.ptr-spinner{
+  position:fixed;left:50%;transform:translateX(-50%);
+  top:calc(env(safe-area-inset-top) + 8px);
+  width:30px;height:30px;border-radius:50%;
+  display:none;place-items:center;z-index:300;pointer-events:none;
+  background:var(--surface);border:1px solid var(--border-2);
+  box-shadow:0 4px 14px rgba(12,16,20,.14);
+  opacity:0;transition:opacity .18s var(--ease);
+}
+html.native .ptr-spinner.show{display:grid;opacity:1}
+.ptr-spinner svg{width:16px;height:16px;color:var(--green-bright)}
+.ptr-spinner.spin svg{animation:ptrspin .7s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
 
 /* ── LAYOUT SHELL ──────────────────────────────────────── */
 .shell{display:flex;min-height:100vh}
@@ -651,6 +705,13 @@ a{color:inherit;text-decoration:none}
 <!-- ═══ BOTTOM NAV (mobile) ═══ -->
 <nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
 
+<!-- Pull-to-refresh affordance (shown only in the native app) -->
+<div class="ptr-spinner" id="ptr-spinner" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+</div>
+
+<!-- Native bridge: defines window.GENative. No-op on the web build. -->
+<script src="native.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Shell logic
@@ -1155,6 +1216,12 @@ function applyTheme(theme){
   document.getElementById('theme-icon').innerHTML=
     svg(isDark?ICON.sun:ICON.moon,'width="14" height="14"');
   document.getElementById('theme-label').textContent=isDark?'Light':'Dark';
+  /* Persist and let the native shell colour the status bar to match. */
+  try{localStorage.setItem('ge-theme',theme);}catch(_){}
+  window.GENative&&GENative.setTheme(theme);
+}
+function storedTheme(){
+  try{return localStorage.getItem('ge-theme');}catch(_){return null;}
 }
 function toggleTheme(){
   const current=document.documentElement.getAttribute('data-theme');
@@ -1171,23 +1238,106 @@ function closeSidebar(){
   document.getElementById('overlay').classList.remove('show');
 }
 
+/* ── REFRESH ───────────────────────────────────────────── */
+/* Spins the topbar refresh icon. In Phase 2 this re-pulls live data;
+   for the shell it animates so the gesture feels real. */
+function doRefresh(){
+  const btn=document.getElementById('refresh-btn');
+  const ic=btn&&btn.querySelector('svg');
+  if(ic){
+    ic.style.transition='transform .5s var(--ease)';
+    ic.style.transform='rotate(360deg)';
+    setTimeout(()=>{ic.style.transform='rotate(0)';ic.style.transition='none';},520);
+  }
+  window.GENative&&GENative.hapticLight();
+}
+
+/* ── NATIVE SHELL INTEGRATION ──────────────────────────── */
+function initNative(){
+  const N=window.GENative;
+  if(!N||!N.isNative)return;
+
+  /* First meaningful paint is done — drop the splash. */
+  requestAnimationFrame(()=>setTimeout(()=>N.hideSplash(),60));
+
+  /* Light haptic when changing area or panel, so taps feel native. */
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.nav-sub,.bn-item,.nav-area'))N.hapticSelection();
+    else if(e.target.closest('.btn,.theme-toggle,.hamburger'))N.hapticLight();
+  },true);
+
+  /* Android hardware back closes the drawer first. */
+  window.addEventListener('ge:back',closeSidebar);
+
+  /* Returning to the foreground refreshes (Phase 2 wires live data). */
+  window.addEventListener('ge:resume',doRefresh);
+
+  /* Reflect connectivity so panels can show an offline state later. */
+  window.addEventListener('ge:network',e=>{
+    document.documentElement.classList.toggle('offline',!(e.detail&&e.detail.connected));
+  });
+
+  initPullToRefresh();
+}
+
+/* Lightweight pull-to-refresh on the window scroll (native only).
+   The page scrolls at document level, so we gate on scroll position
+   being at the very top. */
+function initPullToRefresh(){
+  const spinner=document.getElementById('ptr-spinner');
+  const scrollTop=()=>window.scrollY||document.documentElement.scrollTop||0;
+  const THRESHOLD=72;
+  let startY=0,pulling=false,dist=0;
+
+  document.addEventListener('touchstart',e=>{
+    if(scrollTop()>0||e.touches.length!==1){pulling=false;return;}
+    startY=e.touches[0].clientY;pulling=true;dist=0;
+  },{passive:true});
+
+  document.addEventListener('touchmove',e=>{
+    if(!pulling)return;
+    dist=e.touches[0].clientY-startY;
+    if(dist>0&&scrollTop()<=0){
+      spinner.classList.add('show');
+      spinner.style.transform='translateX(-50%) translateY('+Math.min(dist*0.4,46)+'px)';
+      if(dist>THRESHOLD&&!spinner.dataset.armed){
+        spinner.dataset.armed='1';window.GENative&&GENative.hapticLight();
+      }
+    }
+  },{passive:true});
+
+  document.addEventListener('touchend',()=>{
+    if(!pulling)return;
+    pulling=false;
+    if(dist>THRESHOLD){
+      spinner.classList.add('spin');
+      doRefresh();
+      setTimeout(()=>{
+        spinner.classList.remove('show','spin');
+        spinner.style.transform='';delete spinner.dataset.armed;
+      },650);
+    }else{
+      spinner.classList.remove('show');
+      spinner.style.transform='';delete spinner.dataset.armed;
+    }
+  });
+}
+
 /* ── INIT ──────────────────────────────────────────────── */
 function init(){
   buildNav();
   buildBottomNav();
-  applyTheme('light');
+  applyTheme(storedTheme()||'light');
   renderPage('dashboard');
   syncNav();
 
   document.getElementById('hamburger').addEventListener('click',openSidebar);
   document.getElementById('overlay').addEventListener('click',closeSidebar);
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
-  document.getElementById('refresh-btn').addEventListener('click',function(){
-    const ic=this.querySelector('svg');
-    ic.style.transition='transform .5s var(--ease)';
-    ic.style.transform='rotate(360deg)';
-    setTimeout(()=>{ic.style.transform='rotate(0)';ic.style.transition='none';},520);
-  });
+  document.getElementById('refresh-btn').addEventListener('click',doRefresh);
+
+  /* Native shell wiring (all no-ops on the web build). */
+  initNative();
   document.getElementById('signin-btn').addEventListener('click',function(){
     alert('Sign in arrives in Phase 2. This shell shows structure and brand only.');
   });
