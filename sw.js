@@ -8,6 +8,7 @@ const SHELL = [
   '/',
   '/index.html',
   '/native.js',
+  '/auth.js',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -39,7 +40,8 @@ self.addEventListener('fetch', (e) => {
      immediately, falling back to cache when offline. */
   const isShell = req.mode === 'navigate' ||
     url.pathname === '/' || url.pathname === '/index.html' ||
-    url.pathname === '/native.js' || url.pathname === '/manifest.webmanifest';
+    url.pathname === '/native.js' || url.pathname === '/auth.js' ||
+    url.pathname === '/manifest.webmanifest';
 
   if (isShell) {
     e.respondWith(

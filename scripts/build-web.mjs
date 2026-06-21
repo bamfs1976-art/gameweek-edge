@@ -52,7 +52,19 @@ async function bundleNative() {
   });
 }
 
+async function bundleAuth() {
+  await build({
+    entryPoints: [join(ROOT, 'src/auth/index.js')],
+    bundle: true,
+    minify: true,
+    format: 'iife',
+    target: ['es2019'],
+    outfile: join(OUT, 'auth.js')
+  });
+}
+
 await clean();
 await copyStatic();
 await bundleNative();
-console.log('✓ Built www/ (index.html + native.js)');
+await bundleAuth();
+console.log('✓ Built www/ (index.html + native.js + auth.js)');

@@ -32,6 +32,17 @@ On Android, Chrome shows an **Install app** prompt for the same site.
 
 > PWA notes: works offline after first load; push notifications require iOS 16.4+ and are added in a later phase; it is not listed in the App Store. For a store-listed native build, see the cloud-build options in `README_MOBILE.md`.
 
+## Accounts (Supabase)
+
+Sign-in is **optional** — signed out, everything works locally on the device. Sign in (sidebar → *Sign in to sync*) and your **Manager ID, tier, watchlist and rivals sync to the cloud** and follow you across devices.
+
+- Email/password sign-up, sign-in and password reset via Supabase Auth.
+- Data lives in `gwedge_*` tables with **row-level security** (`auth.uid() = user_id` on every policy) — each user can only read/write their own rows.
+- On first sign-in, local and cloud data are **merged** (nothing is lost), then the cloud becomes the working copy.
+- The Supabase URL + publishable key are in `index.html` (`SUPA`). The publishable key is public-safe; RLS does the protecting. The client SDK is bundled locally into `www/auth.js` (no third-party CDN).
+
+> **One Supabase setting for email links:** in the Supabase dashboard → Authentication → URL Configuration, set the **Site URL** (and add to **Redirect URLs**) to your deployed Netlify URL, so sign-up confirmation and password-reset links return to the app.
+
 ## Live FPL data
 
 All data comes live from the official FPL API via the proxy (the FPL API has no CORS and blocks direct browser calls). Bootstrap/fixtures are cached with a TTL; manager and live-matchday data are never cached. Enter your **FPL Manager ID** (topbar → *Link Team*) to load your squad, points and rank.

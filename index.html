@@ -414,9 +414,19 @@ html.offline .net-banner{transform:translateY(0)}
 /* Sidebar footer */
 .sb-foot{
   padding:12px 18px;border-top:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;flex-direction:column;gap:10px;
 }
+.sb-foot-row{display:flex;align-items:center;justify-content:space-between}
 .sb-foot-v{font-size:.66rem;color:var(--text-4)}
+.acct-btn{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:9px 11px;border-radius:var(--r-md);
+  background:var(--surface-3);border:1px solid var(--border);
+  font-size:.82rem;font-weight:600;color:var(--text-2);text-align:left;
+}
+.acct-btn:hover{background:var(--border-2);color:var(--text)}
+.acct-btn svg{width:16px;height:16px;flex-shrink:0;color:var(--green-bright)}
+.acct-btn .acct-label{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .theme-toggle{
   display:flex;align-items:center;gap:7px;
   padding:6px 10px;border-radius:var(--r-pill);
@@ -536,6 +546,8 @@ html.offline .net-banner{transform:translateY(0)}
 .pro-price{flex:1;background:var(--surface-3);border-radius:var(--r-md);padding:14px}
 .pro-price-v{font-family:var(--font-display);font-size:1.4rem;font-weight:800}
 .pro-price-l{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.acct-link{display:block;width:100%;text-align:center;margin-top:14px;
+  font-size:.78rem;font-weight:600;color:var(--green-bright)}
 /* When Pro, hide the lock badges in the nav */
 html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
@@ -777,11 +789,17 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
     <!-- Footer -->
     <div class="sb-foot">
-      <span class="sb-foot-v">Gameweek Edge v5.0</span>
-      <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
-        <span id="theme-icon"></span>
-        <span id="theme-label">Light</span>
+      <button class="acct-btn" id="acct-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>
+        <span class="acct-label" id="acct-label">Sign in to sync</span>
       </button>
+      <div class="sb-foot-row">
+        <span class="sb-foot-v">Gameweek Edge v5.0</span>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+          <span id="theme-icon"></span>
+          <span id="theme-label">Light</span>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -873,8 +891,16 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   <div class="modal-card" id="pro-body"></div>
 </div>
 
+<!-- Account modal -->
+<div class="modal" id="acct-modal" role="dialog" aria-modal="true" aria-labelledby="acct-title">
+  <div class="modal-bg" data-acct-close></div>
+  <div class="modal-card" id="acct-body"></div>
+</div>
+
 <!-- Native bridge: defines window.GENative. No-op on the web build. -->
 <script src="native.js"></script>
+<!-- Supabase client factory: defines window.GE_SUPABASE. -->
+<script src="auth.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Shell logic
@@ -986,7 +1012,7 @@ async function boot(){
 
 /* ── Manager ID state ──────────────────────────────────── */
 function getMid(){try{return localStorage.getItem('ge-mid')||'';}catch(_){return '';}}
-function setMid(v){try{v?localStorage.setItem('ge-mid',String(v)):localStorage.removeItem('ge-mid');}catch(_){}}
+function setMid(v){try{v?localStorage.setItem('ge-mid',String(v)):localStorage.removeItem('ge-mid');}catch(_){}cloudProfile({manager_id:v?Number(v):null});}
 
 /* ── Formatting helpers ────────────────────────────────── */
 const money=c=>'£'+(c/10).toFixed(1);
@@ -1034,7 +1060,7 @@ const PRO_BENEFITS=[
 ];
 function getTier(){try{return localStorage.getItem('ge-tier')==='pro'?'pro':'free';}catch(_){return 'free';}}
 function isPro(){return getTier()==='pro';}
-function setTier(t){try{localStorage.setItem('ge-tier',t==='pro'?'pro':'free');}catch(_){}reflectTier();}
+function setTier(t){const v=t==='pro'?'pro':'free';try{localStorage.setItem('ge-tier',v);}catch(_){}reflectTier();cloudProfile({tier:v});}
 function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());}
 
 /* The value preview shown to free users on a Pro panel. */
@@ -1077,6 +1103,143 @@ function setProPreview(on){
   buildNav();syncNav();
   renderPage(currentPanel);
   window.GENative&&(on?GENative.hapticSuccess():GENative.hapticSelection());
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACCOUNTS (Supabase)
+   Optional sign-in. Signed out, everything works locally. Signed in,
+   Manager ID, tier, watchlist and rivals sync to the cloud (RLS keeps
+   each user to their own rows) so they follow the user across devices.
+   ═══════════════════════════════════════════════════════════ */
+const SUPA={url:'https://knodunjnsxelmpziupwk.supabase.co',
+  key:'sb_publishable_xCECe0czArDwwIBtR8Mzxg_tuhyGYu-'};
+let sb=null,SESSION=null,SYNCED_UID=null;
+function uid(){return SESSION&&SESSION.user?SESSION.user.id:null;}
+
+function initAuth(){
+  if(!window.GE_SUPABASE)return;
+  try{
+    sb=window.GE_SUPABASE.createClient(SUPA.url,SUPA.key,
+      {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  }catch(_){return;}
+  sb.auth.getSession().then(({data})=>onAuthChange(data&&data.session)).catch(()=>{});
+  sb.auth.onAuthStateChange((_evt,session)=>onAuthChange(session));
+}
+function onAuthChange(session){
+  SESSION=session||null;
+  updateAcctLabel();
+  if(uid()&&uid()!==SYNCED_UID)syncOnLogin();
+  if(!uid())SYNCED_UID=null;
+}
+function updateAcctLabel(){
+  const el=document.getElementById('acct-label');
+  if(el)el.textContent=SESSION?(SESSION.user.email||'My account'):'Sign in to sync';
+}
+
+/* On first sign-in, merge local and cloud so nothing is lost, then make
+   the cloud the working copy. */
+async function syncOnLogin(){
+  const id=uid();if(!id||!sb)return;SYNCED_UID=id;
+  try{
+    const {data:prof}=await sb.from('gwedge_profiles').select('manager_id,tier').eq('user_id',id).maybeSingle();
+    const localMid=getMid();
+    if(prof&&prof.manager_id){try{localStorage.setItem('ge-mid',String(prof.manager_id));}catch(_){}}
+    else if(localMid){await sb.from('gwedge_profiles').upsert({user_id:id,manager_id:Number(localMid)});}
+    if(prof&&prof.tier){try{localStorage.setItem('ge-tier',prof.tier);}catch(_){}}
+
+    const {data:wl}=await sb.from('gwedge_watchlist').select('player_id').eq('user_id',id);
+    const cloudW=(wl||[]).map(r=>r.player_id), localW=loadWatch();
+    const unionW=[...new Set([...cloudW,...localW])];
+    const addW=unionW.filter(x=>!cloudW.includes(x));
+    if(addW.length)await sb.from('gwedge_watchlist').upsert(addW.map(p=>({user_id:id,player_id:p})));
+    saveWatch(unionW);
+
+    const {data:rv}=await sb.from('gwedge_rivals').select('rival_manager_id').eq('user_id',id);
+    const cloudR=(rv||[]).map(r=>String(r.rival_manager_id)), localR=loadRivals();
+    const unionR=[...new Set([...cloudR,...localR])];
+    const addR=unionR.filter(x=>!cloudR.includes(x));
+    if(addR.length)await sb.from('gwedge_rivals').upsert(addR.map(r=>({user_id:id,rival_manager_id:Number(r)})));
+    saveRivals(unionR);
+  }catch(_){}
+  reflectTier();buildNav();syncNav();refreshIdentity();
+  if(getMid())loadEntry(getMid()).then(refreshIdentity).catch(()=>{});
+  renderPage(currentPanel);
+}
+
+/* Cloud writers (fire-and-forget; local storage stays the working copy). */
+function cloudProfile(patch){if(sb&&uid())sb.from('gwedge_profiles').upsert(Object.assign({user_id:uid()},patch)).then(()=>{},()=>{});}
+function cloudWatchAdd(pid){if(sb&&uid())sb.from('gwedge_watchlist').upsert({user_id:uid(),player_id:pid}).then(()=>{},()=>{});}
+function cloudWatchDel(pid){if(sb&&uid())sb.from('gwedge_watchlist').delete().eq('user_id',uid()).eq('player_id',pid).then(()=>{},()=>{});}
+function cloudRivalAdd(rid){if(sb&&uid())sb.from('gwedge_rivals').upsert({user_id:uid(),rival_manager_id:Number(rid)}).then(()=>{},()=>{});}
+function cloudRivalDel(rid){if(sb&&uid())sb.from('gwedge_rivals').delete().eq('user_id',uid()).eq('rival_manager_id',Number(rid)).then(()=>{},()=>{});}
+
+/* ── Account modal ─────────────────────────────────────── */
+function openAccount(){
+  const body=document.getElementById('acct-body');
+  if(SESSION){
+    body.innerHTML=
+      '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
+      '<h3 id="acct-title">You’re signed in</h3>'+
+      '<p style="text-align:center;color:var(--text-2);font-size:.86rem;margin-bottom:6px">'+esc(SESSION.user.email||'')+'</p>'+
+      '<p class="modal-hint" style="text-align:center;margin:0 0 16px">Your Manager ID, tier, watchlist and rivals sync across every device you sign in on.</p>'+
+      '<button class="btn btn-primary" style="width:100%;justify-content:center" id="acct-signout">Sign out</button>'+
+      '<div class="modal-row"><button class="btn btn-ghost" data-acct-close>Close</button></div>';
+    document.getElementById('acct-signout').addEventListener('click',doSignOut);
+  }else{
+    body.innerHTML=
+      '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
+      '<h3 id="acct-title">Sign in to sync</h3>'+
+      '<p class="modal-hint" style="margin:0 0 14px">Create an account to carry your team, watchlist and Pro status across devices. It’s optional — the app works without it.</p>'+
+      '<input class="modal-in" id="acct-email" type="email" inputmode="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">'+
+      '<input class="modal-in" id="acct-pass" type="password" autocomplete="current-password" placeholder="Password (min 6 characters)">'+
+      '<div class="modal-err" id="acct-err" role="alert"></div>'+
+      '<div class="modal-row"><button class="btn btn-ghost" id="acct-create">Create account</button>'+
+        '<button class="btn btn-primary" id="acct-signin">Sign in</button></div>'+
+      '<button class="acct-link" id="acct-reset">Forgot password?</button>';
+    document.getElementById('acct-signin').addEventListener('click',()=>doAuth('in'));
+    document.getElementById('acct-create').addEventListener('click',()=>doAuth('up'));
+    document.getElementById('acct-reset').addEventListener('click',doReset);
+    document.getElementById('acct-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth('in');});
+  }
+  document.getElementById('acct-modal').classList.add('show');
+}
+function closeAccount(){document.getElementById('acct-modal').classList.remove('show');}
+function acctErr(m){const e=document.getElementById('acct-err');if(e)e.textContent=m;}
+async function doAuth(mode){
+  if(!sb){acctErr('Accounts are unavailable right now.');return;}
+  const email=(document.getElementById('acct-email').value||'').trim();
+  const pass=document.getElementById('acct-pass').value||'';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){acctErr('Enter a valid email.');return;}
+  if(pass.length<6){acctErr('Password must be at least 6 characters.');return;}
+  acctErr('');
+  const btn=document.getElementById(mode==='in'?'acct-signin':'acct-create');
+  const label=btn.textContent;btn.disabled=true;btn.textContent='…';
+  try{
+    if(mode==='in'){
+      const {error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error)throw error;
+      closeAccount();window.GENative&&GENative.hapticSuccess();
+    }else{
+      const {data,error}=await sb.auth.signUp({email,password:pass,
+        options:{emailRedirectTo:location.origin}});
+      if(error)throw error;
+      if(data.session){closeAccount();}                 // confirmations off
+      else acctErr('Account created — check your email to confirm, then sign in.');
+    }
+  }catch(e){acctErr((e&&e.message)||'Something went wrong.');window.GENative&&GENative.hapticWarning();}
+  finally{btn.disabled=false;btn.textContent=label;}
+}
+async function doReset(){
+  if(!sb)return;
+  const email=(document.getElementById('acct-email').value||'').trim();
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){acctErr('Enter your email above first.');return;}
+  try{await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+    acctErr('Password reset link sent — check your email.');}
+  catch(e){acctErr((e&&e.message)||'Could not send reset email.');}
+}
+async function doSignOut(){
+  if(sb)try{await sb.auth.signOut();}catch(_){}
+  SESSION=null;SYNCED_UID=null;updateAcctLabel();closeAccount();
 }
 
 /* ── NAVIGATION MODEL — 6 areas, 21 panels ──────────────── */
@@ -1773,8 +1936,8 @@ async function hydrateChips(host){
 /* ── Watchlist: local list of tracked players ──────────── */
 function loadWatch(){try{return JSON.parse(localStorage.getItem('ge-watch')||'[]');}catch(_){return [];}}
 function saveWatch(a){try{localStorage.setItem('ge-watch',JSON.stringify(a));}catch(_){}}
-function addWatch(id){const a=loadWatch();if(!a.includes(id)){a.push(id);saveWatch(a);}}
-function removeWatch(id){saveWatch(loadWatch().filter(x=>x!==id));}
+function addWatch(id){const a=loadWatch();if(!a.includes(id)){a.push(id);saveWatch(a);cloudWatchAdd(id);}}
+function removeWatch(id){saveWatch(loadWatch().filter(x=>x!==id));cloudWatchDel(id);}
 async function hydrateWatchlist(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
@@ -2121,9 +2284,9 @@ async function hydrateRivals(host){
   const inp=host.querySelector('#rival-in');
   if(inp&&!inp.disabled)inp.addEventListener('keydown',e=>{
     if(e.key==='Enter'){const v=(inp.value||'').trim();
-      if(/^[0-9]{1,9}$/.test(v)&&!rivals.includes(v)){const a=loadRivals();a.push(v);saveRivals(a);renderPage('rivals');}}});
+      if(/^[0-9]{1,9}$/.test(v)&&!rivals.includes(v)){const a=loadRivals();a.push(v);saveRivals(a);cloudRivalAdd(v);renderPage('rivals');}}});
   Array.prototype.forEach.call(host.querySelectorAll('[data-rmrival]'),btn=>
-    btn.addEventListener('click',()=>{saveRivals(loadRivals().filter(x=>x!==btn.dataset.rmrival));renderPage('rivals');}));
+    btn.addEventListener('click',()=>{saveRivals(loadRivals().filter(x=>x!==btn.dataset.rmrival));cloudRivalDel(btn.dataset.rmrival);renderPage('rivals');}));
 }
 
 /* ── Set Piece Register: takers from official order fields ─ */
@@ -2440,6 +2603,11 @@ function init(){
   /* Pro upgrade modal. */
   document.addEventListener('click',e=>{if(e.target.closest('[data-pro-close]'))closeUpgrade();});
 
+  /* Accounts. */
+  initAuth();
+  document.getElementById('acct-btn').addEventListener('click',openAccount);
+  document.addEventListener('click',e=>{if(e.target.closest('[data-acct-close]'))closeAccount();});
+
   document.getElementById('tb-logo').addEventListener('click',function(e){
     e.preventDefault();
     openPanel('dashboard');
@@ -2452,7 +2620,7 @@ function init(){
 
   /* Close drawer / modals on Escape */
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();}
+    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();closeAccount();}
   });
 }
 
