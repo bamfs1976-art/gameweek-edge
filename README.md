@@ -36,7 +36,10 @@ On Android, Chrome shows an **Install app** prompt for the same site.
 
 All data comes live from the official FPL API via the proxy (the FPL API has no CORS and blocks direct browser calls). Bootstrap/fixtures are cached with a TTL; manager and live-matchday data are never cached. Enter your **FPL Manager ID** (topbar → *Link Team*) to load your squad, points and rank.
 
-Every **free** panel is wired to live data: Dashboard, This Gameweek, My Squad (live pitch), Transfer Planner, Captaincy Lab, Fixture Planner, Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist (saved on device), Alerts, and Player Compare. The **Pro** panels (Live and Intelligence tabs, plus Set Piece Register and Rotation Risk) are gated for a later phase behind the paywall.
+**All 21 panels are wired to live data.**
+
+- **Free:** Dashboard, This Gameweek, My Squad (live pitch), Transfer Planner, Captaincy Lab, Fixture Planner, Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist (saved on device), Alerts, Player Compare.
+- **Pro** (fully functional now, marked with a Pro indicator; the paywall that gates them arrives with billing in Phase M4): Live Rank, DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, Set Piece Register, Rotation Risk.
 
 ## Project layout
 

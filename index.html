@@ -1799,6 +1799,293 @@ async function hydrateAlerts(host){
     cb.addEventListener('change',()=>setAlertPref(cb.dataset.pref,cb.checked)));
 }
 
+/* ═══════════════════════════════════════════════════════════
+   PRO PANELS — Live + Intelligence + Set Piece / Rotation
+   Fully functional now; gated behind the paywall in Phase M4.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Shared live helpers. */
+function statsById(live){const m={};(live.elements||[]).forEach(e=>{m[e.id]=e.stats||{};});return m;}
+function gwStatusByTeam(b,fixtures){
+  const m={};
+  fixtures.filter(f=>f.event===b.cur.id).forEach(f=>{
+    m[f.team_h]={started:!!f.started,finished:!!f.finished};
+    m[f.team_a]={started:!!f.started,finished:!!f.finished};
+  });
+  return m;
+}
+function teamGamesPlayed(fixtures){
+  const m={};fixtures.forEach(f=>{if(f.finished){m[f.team_h]=(m[f.team_h]||0)+1;m[f.team_a]=(m[f.team_a]||0)+1;}});return m;
+}
+
+/* ── Live Rank: live GW tracker ────────────────────────── */
+async function hydrateLiveRank(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
+  const st=statsById(live);
+  const status=gwStatusByTeam(b,fixtures);
+  const xi=picks.picks.filter(p=>p.position<=11);
+  let toPlay=0,playing=0,done=0,points=0;
+  xi.forEach(p=>{
+    const el=b.els[p.element]||{};const ts=status[el.team]||{};
+    const s=st[p.element]||{};
+    points+=(s.total_points||0)*(p.multiplier||1);
+    if(ts.finished)done++;else if(ts.started)playing++;else toPlay++;
+  });
+  const avg=b.cur.average_entry_score||0;
+  const diff=points-avg;
+  host.innerHTML=
+    '<div class="grid g-4 mb-20">'+
+      kpi('Live GW Points',points,'GW'+b.cur.id+' so far','var(--green)')+
+      kpi('vs Average',(diff>=0?'+':'')+diff,'Avg '+(avg||'—'),diff>=0?'var(--green)':'var(--red)')+
+      kpi('Still to Play',toPlay,playing+' playing now','var(--blue)')+
+      kpi('Completed',done+'/11','of your XI','var(--purple)')+
+    '</div>'+
+    '<div class="card"><div class="ge-state">'+svg(ICON.pulse)+
+      '<b>Live through the matchday</b><p>Your points update as matches play out. An exact live overall rank needs the full FPL population; this tracks your score, players left, and your margin over the gameweek average.</p></div></div>';
+}
+
+/* ── DefCon Threats: high-scoring players you don't own ─── */
+async function hydrateDefcon(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const b=await boot();
+  const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
+  const owned=new Set(picks.picks.map(p=>p.element));
+  const st=statsById(live);
+  const threats=b.elements
+    .filter(e=>!owned.has(e.id)&&(st[e.id]&&st[e.id].total_points>0))
+    .map(e=>({e,pts:st[e.id].total_points,own:parseFloat(e.selected_by_percent)||0}))
+    .sort((a,c)=>(c.pts*c.own)-(a.pts*a.own))
+    .slice(0,12);
+  if(!threats.length){host.innerHTML=stateBox('shield','No threats yet','Once matches kick off, high-owned players you don’t have who are scoring will appear here, ranked by the damage to your rank.');return;}
+  const rows=threats.map(t=>'<div class="dl-row">'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(t.e.web_name)+'</span>'+
+    '<span class="dl-sub">'+teamShort(b,t.e.team)+' · '+posShort(b,t.e.element_type)+' · owned by '+t.e.selected_by_percent+'%</span></span>'+
+    '<span class="dl-col neg">'+t.pts+' pts</span></div>').join('');
+  host.innerHTML='<div class="card"><div class="card-title">Threats to your rank — owned players you’re missing</div>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · ownership</span><span class="dl-col">Live</span></div>'+rows+'</div></div>';
+}
+
+/* ── Auto-Sub Tracker: projected substitutions ─────────── */
+async function hydrateAutosubs(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
+  const st=statsById(live);
+  const status=gwStatusByTeam(b,fixtures);
+  const played=p=>{const s=st[p.element]||{};return (s.minutes||0)>0;};
+  const blanked=p=>{const el=b.els[p.element]||{};const ts=status[el.team]||{};return ts.finished&&!played(p);};
+  const starters=picks.picks.filter(p=>p.position<=11);
+  const bench=picks.picks.filter(p=>p.position>11).sort((a,c)=>a.position-c.position);
+  const typeOf=p=>(b.els[p.element]||{}).element_type;
+  let def=starters.filter(p=>played(p)&&typeOf(p)===2).length;
+  let fwd=starters.filter(p=>played(p)&&typeOf(p)===4).length;
+  const subs=[];const usedBench=new Set();
+  starters.filter(blanked).forEach(out=>{
+    const isGk=typeOf(out)===1;
+    const cand=bench.find(bp=>!usedBench.has(bp.position)&&played(bp)&&
+      (isGk?typeOf(bp)===1:typeOf(bp)!==1));
+    if(!cand)return;
+    if(!isGk){ // keep min 3 DEF / 1 FWD
+      const t=typeOf(cand);
+      const newDef=def+(t===2?1:0)-(typeOf(out)===2?1:0);
+      const newFwd=fwd+(t===4?1:0)-(typeOf(out)===4?1:0);
+      if(newDef<3||newFwd<1)return;
+      def=newDef;fwd=newFwd;
+    }
+    usedBench.add(cand.position);
+    subs.push({out,in:cand,gain:(st[cand.element]||{}).total_points||0});
+  });
+  const rows=subs.length?subs.map(s=>'<div class="dl-row">'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc((b.els[s.out.element]||{}).web_name)+' → '+esc((b.els[s.in.element]||{}).web_name)+'</span>'+
+    '<span class="dl-sub">'+posShort(b,typeOf(s.out))+' out · '+posShort(b,typeOf(s.in))+' in</span></span>'+
+    '<span class="dl-col pos">+'+s.gain+'</span></div>').join('')
+    :'<div class="dl-row"><span class="dl-sub">No auto-subs projected — every starter has played or is yet to play.</span></div>';
+  host.innerHTML='<div class="card"><div class="card-title">Projected auto-subs '+
+    (subs.length?'<span class="badge badge-green">+'+subs.reduce((a,s)=>a+s.gain,0)+' pts</span>':'')+'</div>'+
+    '<div class="dl">'+rows+'</div>'+
+    '<div class="dl-sub" style="margin-top:10px">A projection following FPL’s substitution rules. Final auto-subs are confirmed when the gameweek ends.</div></div>';
+}
+
+/* ── What-If Simulator: add hypothetical returns ───────── */
+let SIM={};
+function simPts(el,kind){const p=el.element_type;
+  if(kind==='g')return p===4?4:p===3?5:6;
+  if(kind==='a')return 3;
+  if(kind==='cs')return (p===1||p===2)?4:p===3?1:0;
+  return 0;}
+async function hydrateWhatif(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const b=await boot();
+  const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
+  const st=statsById(live);
+  const xi=picks.picks.filter(p=>p.position<=11);
+  const base=xi.reduce((a,p)=>a+((st[p.element]||{}).total_points||0)*(p.multiplier||1),0);
+  let extra=0;
+  xi.forEach(p=>{const el=b.els[p.element]||{};const s=SIM[p.element];if(!s)return;
+    extra+=(s.g*simPts(el,'g')+s.a*simPts(el,'a')+s.cs*simPts(el,'cs'))*(p.multiplier||1);});
+  const rows=xi.map(p=>{const el=b.els[p.element]||{};const s=SIM[p.element]||{g:0,a:0,cs:0};
+    const tag=(k,lbl)=>'<button class="btn btn-ghost btn-sm" data-sim="'+p.element+'" data-k="'+k+'">+'+lbl+(s[k]?' ('+s[k]+')':'')+'</button>';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(el.web_name)+(p.is_captain?' (C)':'')+'</span>'+
+      '<span class="dl-sub">'+posShort(b,el.element_type)+' · live '+((st[p.element]||{}).total_points||0)+'</span></span>'+
+      '<span style="display:flex;gap:5px;flex-wrap:wrap">'+tag('g','Goal')+tag('a','Assist')+tag('cs','CS')+'</span></div>';
+  }).join('');
+  host.innerHTML=
+    '<div class="grid g-sb mb-20">'+
+      kpi('Live Total',base,'GW'+b.cur.id,'var(--blue)')+
+      kpi('With What-Ifs',base+extra,(extra?'+'+extra+' simulated':'add returns below'),'var(--green)')+
+    '</div>'+
+    '<div class="card"><div class="card-title">Tap to add hypothetical returns '+
+      (extra?'<button class="btn btn-ghost btn-sm" id="sim-reset">Reset</button>':'')+'</div>'+
+      '<div class="dl">'+rows+'</div></div>';
+  Array.prototype.forEach.call(host.querySelectorAll('[data-sim]'),btn=>btn.addEventListener('click',()=>{
+    const id=parseInt(btn.dataset.sim,10),k=btn.dataset.k;
+    SIM[id]=SIM[id]||{g:0,a:0,cs:0};SIM[id][k]=(SIM[id][k]+1)%4;renderPage('whatif');}));
+  const rb=host.querySelector('#sim-reset');if(rb)rb.addEventListener('click',()=>{SIM={};renderPage('whatif');});
+}
+
+/* ── EO Tracker: ownership-based effective ownership ───── */
+async function hydrateEO(host){
+  const b=await boot();
+  const capId=b.cur.most_captained;
+  const list=b.elements.slice().sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,20);
+  const rows=list.map((e,i)=>{
+    const own=parseFloat(e.selected_by_percent)||0;
+    const isCap=e.id===capId;
+    const eo=Math.round(own+(isCap?own:0)); // captaincy roughly doubles exposure for the most-captained
+    return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+(isCap?' <span class="badge badge-blue">Most captained</span>':'')+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+'</span></span>'+
+      '<span class="dl-col mono">'+e.selected_by_percent+'%</span><span class="dl-col mono">~'+eo+'%</span></div>';
+  }).join('');
+  host.innerHTML='<div class="card"><div class="card-title">Effective ownership — most-owned players</div>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
+    '<span class="dl-col">Owned</span><span class="dl-col">EO</span></div>'+rows+'</div>'+
+    '<div class="dl-sub" style="margin-top:10px">EO approximates exposure from overall ownership plus captaincy on the most-captained pick. Precise top-10k EO needs data beyond the public API.</div></div>';
+}
+
+/* ── Template Meter: overlap with the most-owned XI ─────── */
+async function hydrateTemplate(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const b=await boot();
+  const picks=await loadPicks(mid,b.cur.id);
+  const need={1:2,2:5,3:5,4:3};
+  const template=new Set();
+  [1,2,3,4].forEach(t=>{
+    b.elements.filter(e=>e.element_type===t)
+      .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
+      .slice(0,need[t]).forEach(e=>template.add(e.id));
+  });
+  const mine=new Set(picks.picks.map(p=>p.element));
+  let overlap=0;template.forEach(id=>{if(mine.has(id))overlap++;});
+  const pct=Math.round(100*overlap/template.size);
+  const tmplRows=[...template].map(id=>b.els[id]).sort((a,c)=>a.element_type-c.element_type||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
+    .map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+e.selected_by_percent+'%</span></span>'+
+      (mine.has(e.id)?'<span class="badge badge-green">Owned</span>':'<span class="badge badge-grey">Missing</span>')+'</div>').join('');
+  const diffs=[...mine].map(id=>b.els[id]).filter(e=>e&&!template.has(e.id)&&parseFloat(e.selected_by_percent)<15)
+    .map(e=>esc(e.web_name)).slice(0,6);
+  host.innerHTML=
+    '<div class="grid g-sb mb-20">'+
+      kpi('Template Match',pct+'%',overlap+' of '+template.size+' template players','var(--blue)')+
+      kpi('Your Edge',diffs.length+' diffs','low-owned players you back','var(--green)')+
+    '</div>'+
+    (diffs.length?'<div class="card mb-20"><div class="card-title">Where your edge sits</div><div class="dl-sub">'+diffs.join(' · ')+'</div></div>':'')+
+    '<div class="card"><div class="card-title">The template XV (most owned)</div><div class="dl">'+tmplRows+'</div></div>';
+}
+
+/* ── Rival Scout: track up to five rivals ──────────────── */
+function loadRivals(){try{return JSON.parse(localStorage.getItem('ge-rivals')||'[]');}catch(_){return [];}}
+function saveRivals(a){try{localStorage.setItem('ge-rivals',JSON.stringify(a));}catch(_){}}
+async function hydrateRivals(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const b=await boot();
+  const rivals=loadRivals();
+  const me=await loadEntry(mid);
+  let mine=new Set();
+  try{const mp=await loadPicks(mid,b.cur.id);mine=new Set(mp.picks.filter(p=>p.position<=11).map(p=>p.element));}catch(_){}
+  const cards=await Promise.all(rivals.map(async rid=>{
+    try{
+      const [re,rp]=await Promise.all([loadEntry(rid),loadPicks(rid,b.cur.id)]);
+      const rxi=rp.picks.filter(p=>p.position<=11).map(p=>p.element);
+      const overlap=rxi.filter(id=>mine.has(id)).length;
+      const gap=me.summary_overall_points-re.summary_overall_points;
+      return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(re.name)+'</span>'+
+        '<span class="dl-sub">'+esc((re.player_first_name||'')+' '+(re.player_last_name||''))+' · '+overlap+'/11 shared</span></span>'+
+        '<span class="dl-col '+(gap>=0?'pos':'neg')+'">'+(gap>=0?'+':'')+fmtNum(gap)+'</span>'+
+        '<button class="btn btn-ghost btn-sm" data-rmrival="'+rid+'">×</button></div>';
+    }catch(_){
+      return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">ID '+esc(rid)+'</span>'+
+        '<span class="dl-sub">Could not load</span></span><button class="btn btn-ghost btn-sm" data-rmrival="'+rid+'">×</button></div>';
+    }
+  }));
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">Add a rival</div>'+
+      '<input class="modal-in" id="rival-in" inputmode="numeric" placeholder="Rival Manager ID"'+(rivals.length>=5?' disabled':'')+'>'+
+      '<div class="dl-sub" style="margin-top:8px">Track up to five rivals. Points gap is relative to your overall total.</div></div>'+
+    '<div class="card"><div class="card-title">Your rivals'+(rivals.length?' ('+rivals.length+'/5)':'')+'</div>'+
+      (rivals.length?'<div class="dl"><div class="dl-row head"><span class="dl-grow">Rival · shared XI</span><span class="dl-col">Gap</span><span style="width:32px"></span></div>'+cards.join('')+'</div>'
+        :'<div class="ge-state">'+svg(ICON.users)+'<b>No rivals yet</b><p>Add a Manager ID above to compare squads and the points gap.</p></div>')+'</div>';
+  const inp=host.querySelector('#rival-in');
+  if(inp&&!inp.disabled)inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){const v=(inp.value||'').trim();
+      if(/^[0-9]{1,9}$/.test(v)&&!rivals.includes(v)){const a=loadRivals();a.push(v);saveRivals(a);renderPage('rivals');}}});
+  Array.prototype.forEach.call(host.querySelectorAll('[data-rmrival]'),btn=>
+    btn.addEventListener('click',()=>{saveRivals(loadRivals().filter(x=>x!==btn.dataset.rmrival));renderPage('rivals');}));
+}
+
+/* ── Set Piece Register: takers from official order fields ─ */
+async function hydrateSetpiece(host){
+  const b=await boot();
+  const conf=o=>o===1?'<span class="badge badge-green">1st</span>':o===2?'<span class="badge badge-amber">2nd</span>':o===3?'<span class="badge badge-grey">3rd</span>':'';
+  const section=(title,key)=>{
+    const list=b.elements.filter(e=>e[key]&&e[key]<=2)
+      .sort((a,c)=>a[key]-c[key]||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent));
+    const byTeam={};list.forEach(e=>{(byTeam[e.team]=byTeam[e.team]||[]).push(e);});
+    const rows=Object.keys(byTeam).sort((x,y)=>teamShort(b,x).localeCompare(teamShort(b,y))).map(tid=>
+      byTeam[tid].map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+e.selected_by_percent+'% owned</span></span>'+conf(e[key])+'</div>').join('')
+    ).join('');
+    return '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
+      (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No data yet.</div>')+'</div>';
+  };
+  host.innerHTML=
+    '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data. 1st choice is the primary taker.</div>'+
+    section('Penalties','penalties_order')+
+    section('Direct free-kicks','direct_freekicks_order')+
+    section('Corners & indirect free-kicks','corners_and_indirect_freekicks_order');
+}
+
+/* ── Rotation Risk: start rate for premium players ─────── */
+async function hydrateRotation(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const games=teamGamesPlayed(fixtures);
+  const list=b.elements
+    .filter(e=>e.now_cost>=60&&parseFloat(e.selected_by_percent)>=3&&(games[e.team]||0)>=3)
+    .map(e=>{const gp=games[e.team]||1;const rate=(e.starts||0)/gp;return {e,rate,gp};})
+    .filter(x=>x.rate<0.8)
+    .sort((a,c)=>a.rate-c.rate)
+    .slice(0,20);
+  if(!list.length){host.innerHTML=stateBox('flag','No clear rotation risks','Premium players are starting regularly. Risk rises with fixture congestion later in the season.');return;}
+  const rows=list.map(x=>{const e=x.e;const pctv=Math.round(x.rate*100);
+    const band=pctv<55?'badge-red':pctv<75?'badge-amber':'badge-grey';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
+      ' <span class="badge '+band+'">'+pctv+'% starts</span></span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+(e.starts||0)+'/'+x.gp+' games</span></span>'+
+      '<span class="dl-col mono">'+e.selected_by_percent+'%</span></div>';
+  }).join('');
+  host.innerHTML='<div class="card"><div class="card-title">Rotation risk — premium players by start rate</div>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · starts</span><span class="dl-col">Owned</span></div>'+rows+'</div>'+
+    '<div class="dl-sub" style="margin-top:10px">Based on each player’s share of their team’s games started. Lower start rates flag rotation or fitness risk.</div></div>';
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
@@ -1813,7 +2100,17 @@ const WIRED={
   fixtures:hydrateFixtures,
   diffs:hydrateDiffs,
   price:hydratePrice,
-  injuries:hydrateInjuries
+  injuries:hydrateInjuries,
+  /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
+  liverank:hydrateLiveRank,
+  defcon:hydrateDefcon,
+  autosubs:hydrateAutosubs,
+  whatif:hydrateWhatif,
+  eo:hydrateEO,
+  template:hydrateTemplate,
+  rivals:hydrateRivals,
+  setpiece:hydrateSetpiece,
+  rotation:hydrateRotation
 };
 
 /* ── LAYOUT: STANDARD ──────────────────────────────────── */

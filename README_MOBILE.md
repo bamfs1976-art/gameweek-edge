@@ -62,7 +62,7 @@ The app now pulls **live data from the official FPL API**, routed through a Netl
 
 - **Proxy:** `netlify/functions/fpl.js`, wired at `/api/fpl/*` by `netlify.toml`. It whitelists only the endpoints the app needs (no open proxy), adds the User-Agent the FPL API expects, sets CORS, and caches slow-changing data at the edge while never caching live data.
 - **Data layer (`index.html`):** a cached API client (bootstrap/fixtures cached with TTL; manager/live data never cached), a Manager-ID flow (validated against `entry/{id}`, stored locally), and loading/empty/error/offline states on every wired panel.
-- **Panels wired to live data:** all free panels — Dashboard, This Gameweek, My Squad (live pitch + points), Transfer Planner, Captaincy Lab, Fixture Planner (FDR grid), Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist, Alerts, Player Compare. Only the Pro panels remain (gated for the paywall phase).
+- **Panels wired to live data:** all 21 panels. Free — Dashboard, This Gameweek, My Squad (live pitch + points), Transfer Planner, Captaincy Lab, Fixture Planner (FDR grid), Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist, Alerts, Player Compare. Pro (functional, awaiting the paywall) — Live Rank, DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, Set Piece Register, Rotation Risk.
 
 **Web:** deploy the repo to Netlify and it works immediately (`/api/fpl/*` is relative). Run locally with `npx netlify dev`.
 
@@ -73,7 +73,7 @@ The app now pulls **live data from the official FPL API**, routed through a Netl
 - Push notifications (the plugin is installed but registration waits for APNs credentials — Phase M2).
 - Native accounts / biometrics / Sign in with Apple — Phase M3.
 - In-app purchases for Pro — Phase M4. **Note:** in-app digital subscriptions must use Apple IAP, not Stripe.
-- The Pro panels themselves (Live + Intelligence tabs, Set Piece Register, Rotation Risk) — built behind the paywall in a later phase.
+- Tier enforcement: the Pro panels are built and working, but not yet *gated* — that lands with accounts (M3) and billing (M4).
 
 ## A note on the build environment
 
