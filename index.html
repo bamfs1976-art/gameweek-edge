@@ -454,12 +454,14 @@ html.offline .net-banner{transform:translateY(0)}
 /* Topbar logo */
 .tb-logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .tb-logo-mark{width:30px;height:30px;flex-shrink:0}
-.tb-logo-text{
-  font-family:var(--font-display);font-size:.96rem;
-  letter-spacing:-.02em;white-space:nowrap;
-}
+.tb-logo-text{display:flex;flex-direction:column;line-height:1.04;white-space:nowrap}
+.tb-name{font-family:var(--font-display);font-size:.96rem;letter-spacing:-.02em}
 .tb-logo-text .light{font-weight:500;color:var(--text-2)}
 .tb-logo-text .bold{font-weight:800;color:var(--text)}
+.tb-tag{
+  font-size:.56rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--green-bright);margin-top:1px;
+}
 .tb-divider{
   width:1px;height:24px;background:var(--border-2);flex-shrink:0;
 }
@@ -702,9 +704,10 @@ html.offline .net-banner{transform:translateY(0)}
   .page-head h1{font-size:1.3rem}
   .kpi-value{font-size:1.65rem}
   .topbar{padding:0 14px}
-  /* On phones: logo mark only, hide wordmark and divider, keep breadcrumb */
-  .tb-logo-text{display:none}
+  /* On phones: show the name + tagline by the logo; drop the breadcrumb
+     (the page heading already names the panel). */
   .tb-divider{display:none}
+  .tb-crumb{display:none}
   .tb-left{gap:10px}
 }
 @supports(padding:max(0px)){
@@ -784,7 +787,10 @@ html.offline .net-banner{transform:translateY(0)}
             <circle cx="30" cy="11" r="3.4" fill="#fff"/>
             <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
           </svg>
-          <span class="tb-logo-text"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+          <span class="tb-logo-text">
+            <span class="tb-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+            <span class="tb-tag">FPL, with an edge</span>
+          </span>
         </a>
         <span class="tb-divider" aria-hidden="true"></span>
         <div class="tb-crumb">
