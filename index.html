@@ -211,6 +211,83 @@ html.offline .net-banner{transform:translateY(0)}
 .net-banner[hidden]{display:none}
 .net-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
 
+/* ── LIVE DATA UI (Phase 2) ────────────────────────────── */
+.ge-host{min-height:120px}
+.ge-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:34px 20px;color:var(--text-3);gap:10px}
+.ge-state svg{width:30px;height:30px;color:var(--text-4)}
+.ge-state b{color:var(--text-2);font-weight:700;font-size:.92rem}
+.ge-state p{font-size:.82rem;max-width:360px;line-height:1.5}
+.sk{background:linear-gradient(90deg,var(--surface-3) 25%,var(--border-2) 37%,var(--surface-3) 63%);
+  background-size:400% 100%;border-radius:var(--r-sm);height:14px;margin:9px 0}
+@media(prefers-reduced-motion:no-preference){.sk{animation:skl 1.3s ease-in-out infinite}}
+@keyframes skl{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* Data list (table-like, mobile friendly) */
+.dl{display:flex;flex-direction:column;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.dl-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);font-size:.84rem}
+.dl-row.head{background:var(--surface-3);font-size:.64rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--text-3);font-weight:700}
+.dl-rank{width:20px;text-align:right;color:var(--text-3);font-weight:700;font-size:.74rem;flex-shrink:0}
+.dl-grow{flex:1;min-width:0;display:flex;flex-direction:column}
+.dl-nm{font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-sub{font-size:.7rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-col{width:50px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
+  font-weight:700;color:var(--text-2)}
+.dl-col.mono{font-family:var(--font-mono);font-weight:600}
+.dl-col.pos{color:var(--green-bright)}
+.dl-col.neg{color:var(--red)}
+
+/* Fixture difficulty grid */
+.fdr{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r-md)}
+.fdr table{border-collapse:separate;border-spacing:4px}
+.fdr th,.fdr td{font-size:.72rem;text-align:center;white-space:nowrap}
+.fdr th{color:var(--text-3);font-weight:700;padding:2px 4px}
+.fdr .tm{text-align:left;font-weight:800;color:var(--text);position:sticky;left:0;
+  background:var(--surface);padding-right:8px;z-index:1}
+.fdr td.cell{padding:8px 7px;border-radius:7px;font-weight:800;min-width:48px;color:#0c1014}
+.fdr-1{background:#2ecf73}.fdr-2{background:#8fd9a6}.fdr-3{background:#d9dee3;color:#3a4650}
+.fdr-4{background:#f0a3a0}.fdr-5{background:#e05a55;color:#fff}
+.fdr td.blank{background:var(--surface-3);color:var(--text-4);font-weight:600}
+
+/* Big stat row (this gameweek) */
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:var(--surface-3);border-radius:var(--r-md);padding:14px}
+.stat-l{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);font-weight:700}
+.stat-v{font-family:var(--font-display);font-size:1.5rem;font-weight:800;margin-top:3px;letter-spacing:-.02em}
+.stat-s{font-size:.74rem;color:var(--text-2);margin-top:2px}
+
+/* Live pitch (real squad) */
+.pp{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;width:62px}
+.pp .jersey{width:36px;height:38px;margin:0}
+.pp.is-cap .jersey{filter:drop-shadow(0 0 0 #f5c518) drop-shadow(0 2px 5px rgba(0,0,0,.35));
+  background:#ffe08a}
+.pp-badge{position:absolute;top:-5px;right:8px;background:var(--text);color:var(--surface);
+  font-size:.56rem;font-weight:800;border-radius:50%;width:16px;height:16px;display:grid;place-items:center;z-index:2}
+.pp-nm{font-size:.62rem;font-weight:700;color:#fff;background:rgba(0,0,0,.38);
+  border-radius:4px;padding:1px 4px;max-width:62px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp-pt{font-size:.64rem;font-weight:800;color:#0c1014;background:rgba(255,255,255,.94);border-radius:4px;padding:0 6px}
+.bench{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;
+  padding-top:14px;border-top:1px dashed rgba(255,255,255,.25)}
+.bench .pp .jersey{width:30px;height:32px;opacity:.92}
+
+/* Manager ID modal */
+.modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-bg{position:absolute;inset:0;background:rgba(8,12,16,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.modal-card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border-2);
+  border-radius:var(--r-xl);padding:24px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.32)}
+.modal-card h3{font-family:var(--font-display);font-size:1.2rem;margin-bottom:6px}
+.modal-card p{font-size:.82rem;color:var(--text-2);margin-bottom:16px;line-height:1.5}
+.modal-in{width:100%;padding:12px 14px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
+  font-size:1rem;font-family:var(--font-mono);background:var(--surface-3);color:var(--text)}
+.modal-in:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
+.modal-err{color:var(--red);font-size:.78rem;margin-top:8px;min-height:1.1em}
+.modal-row{display:flex;gap:10px;margin-top:8px}
+.modal-row .btn{flex:1;justify-content:center}
+.modal-hint{font-size:.72rem;color:var(--text-3);margin-top:14px;line-height:1.5}
+
 /* ── LAYOUT SHELL ──────────────────────────────────────── */
 .shell{display:flex;min-height:100vh}
 
@@ -704,11 +781,11 @@ html.offline .net-banner{transform:translateY(0)}
             <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
           </svg>
         </button>
-        <button class="btn btn-primary btn-sm" id="signin-btn">
+        <button class="btn btn-primary btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
+            <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
           </svg>
-          Sign in
+          <span class="si-label">Link Team</span>
         </button>
       </div>
     </header>
@@ -731,6 +808,23 @@ html.offline .net-banner{transform:translateY(0)}
 <div class="net-banner" id="net-banner" role="status" aria-live="polite" hidden>
   <span class="net-dot" aria-hidden="true"></span>
   <span>You're offline — showing the last loaded view.</span>
+</div>
+
+<!-- Manager ID modal -->
+<div class="modal" id="mid-modal" role="dialog" aria-modal="true" aria-labelledby="mid-title">
+  <div class="modal-bg" data-mid-close></div>
+  <div class="modal-card">
+    <h3 id="mid-title">Link your team</h3>
+    <p>Enter your FPL Manager ID to load your squad, points and rank. It's the number in your team's URL on the official site.</p>
+    <input class="modal-in" id="mid-input" inputmode="numeric" autocomplete="off"
+      placeholder="e.g. 3500123" aria-label="FPL Manager ID">
+    <div class="modal-err" id="mid-err" role="alert"></div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" id="mid-cancel" data-mid-close>Cancel</button>
+      <button class="btn btn-primary" id="mid-save">Link team</button>
+    </div>
+    <div class="modal-hint">Find it at fantasy.premierleague.com → Points → the number after <b>/entry/</b> in the address bar.</div>
+  </div>
 </div>
 
 <!-- Native bridge: defines window.GENative. No-op on the web build. -->
@@ -780,6 +874,103 @@ const ICON = {
 function svg(path,extra){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
     'stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+path+'</svg>';
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+/* ═══════════════════════════════════════════════════════════
+   LIVE DATA LAYER (Phase 2)
+   All FPL data is fetched through the Netlify proxy (/api/fpl/*).
+   Bootstrap + fixtures are cached; manager/live data never is.
+   ═══════════════════════════════════════════════════════════ */
+const GE_CONFIG = {
+  /* Web (Netlify) uses a relative path. The native app can't use a
+     relative URL, so set its proxy base here (or override at runtime
+     via localStorage 'ge-api-base'). */
+  apiBase: ''
+};
+function apiBase(){
+  try{const o=localStorage.getItem('ge-api-base'); if(o) return o.replace(/\/$/,'');}catch(_){}
+  return GE_CONFIG.apiBase;
+}
+async function api(path,{timeout=14000}={}){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),timeout);
+  try{
+    const r=await fetch(apiBase()+'/api/fpl/'+path,{signal:ctrl.signal,headers:{'Accept':'application/json'}});
+    if(!r.ok)throw Object.assign(new Error('HTTP '+r.status),{status:r.status});
+    return await r.json();
+  }finally{clearTimeout(timer);}
+}
+
+/* In-memory + localStorage cache with TTL. */
+const MEM={};
+async function cached(key,ttl,loader){
+  const now=Date.now();
+  if(MEM[key]&&now-MEM[key].t<ttl)return MEM[key].v;
+  try{const raw=localStorage.getItem('ge-c-'+key);if(raw){const o=JSON.parse(raw);
+    if(now-o.t<ttl){MEM[key]={t:o.t,v:o.v};return o.v;}}}catch(_){}
+  const v=await loader();
+  MEM[key]={t:now,v};
+  try{localStorage.setItem('ge-c-'+key,JSON.stringify({t:now,v}));}catch(_){/* quota: memory only */}
+  return v;
+}
+function clearLiveCache(){
+  Object.keys(MEM).forEach(k=>{if(k!=='boot')delete MEM[k];});
+}
+
+const loadBootstrap=()=>cached('boot',12*3600e3,()=>api('bootstrap-static'));
+const loadFixtures =()=>cached('fixtures',10*60e3,()=>api('fixtures'));
+const loadEntry    =id=>api('entry/'+id);
+const loadHistory  =id=>api('entry/'+id+'/history');
+const loadPicks    =(id,gw)=>api('entry/'+id+'/event/'+gw+'/picks');
+const loadLive     =gw=>api('event/'+gw+'/live');
+
+/* Indexed, memoised view of bootstrap. */
+async function boot(){
+  if(MEM._idx)return MEM._idx;
+  const b=await loadBootstrap();
+  const teams={},els={},types={};
+  b.teams.forEach(t=>teams[t.id]=t);
+  b.elements.forEach(e=>els[e.id]=e);
+  b.element_types.forEach(t=>types[t.id]=t);
+  const cur=b.events.find(e=>e.is_current)||b.events.find(e=>e.is_next)||b.events[b.events.length-1];
+  const idx={raw:b,teams,els,types,cur,events:b.events,elements:b.elements};
+  MEM._idx=idx;return idx;
+}
+
+/* ── Manager ID state ──────────────────────────────────── */
+function getMid(){try{return localStorage.getItem('ge-mid')||'';}catch(_){return '';}}
+function setMid(v){try{v?localStorage.setItem('ge-mid',String(v)):localStorage.removeItem('ge-mid');}catch(_){}}
+
+/* ── Formatting helpers ────────────────────────────────── */
+const money=c=>'£'+(c/10).toFixed(1);
+const fmtNum=n=>(n==null?'—':Number(n).toLocaleString('en-GB'));
+const fmtK=n=>{n=Number(n)||0;return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':String(n);};
+function teamShort(b,id){return b.teams[id]?b.teams[id].short_name:'';}
+function posShort(b,t){return b.types[t]?b.types[t].singular_name_short:'';}
+function fmtDeadline(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+
+    ' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+const STATUS_LABEL={i:'Injured',d:'Doubtful',s:'Suspended',u:'Unavailable',n:'Not available'};
+const STATUS_BADGE={i:'badge-red',d:'badge-amber',s:'badge-red',u:'badge-grey',n:'badge-grey'};
+
+/* ── Panel state helpers (loading / error / empty) ─────── */
+function skel(rows){let s='';for(let i=0;i<(rows||4);i++)s+='<div class="sk" style="width:'+(100-i*8)+'%"></div>';return '<div class="card">'+s+'</div>';}
+function stateBox(icon,title,text,btn){
+  return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
+    '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
+}
+function errorBox(){
+  return stateBox('bolt','Could not load live data',
+    'The FPL API can be slow on matchday. Pull to refresh or try the refresh button.',
+    '<button class="btn btn-ghost btn-sm" onclick="refreshData()">Try again</button>');
+}
+function linkBox(){
+  return stateBox('team','Link your team to see this',
+    'Enter your FPL Manager ID and your personalised data loads here, live from the official API.',
+    '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>');
 }
 
 /* ── NAVIGATION MODEL — 6 areas, 21 panels ──────────────── */
@@ -1072,13 +1263,9 @@ function renderPage(panelId){
       '</div>';
   }
 
-  /* Layout variants */
-  if(content.layout==='dashboard'){
-    body+=dashboardLayout();
-  } else if(content.layout==='actions'){
-    body+=actionsLayout();
-  } else if(content.layout==='squad'){
-    body+=squadLayout();
+  /* Layout variants. Wired panels render a skeleton then hydrate live. */
+  if(WIRED[panelId]){
+    body+='<div id="ge-data" class="ge-host">'+skel(5)+'</div>';
   } else if(content.layout==='cards3'){
     body+=cards3Layout(content.desc);
   } else {
@@ -1097,96 +1284,271 @@ function renderPage(panelId){
       '</div>'+
       body+
     '</main>';
+
+  if(WIRED[panelId]){
+    const host=document.getElementById('ge-data');
+    Promise.resolve().then(()=>WIRED[panelId](host))
+      .catch(err=>{if(host)host.innerHTML=(err&&err.status===404)?
+        stateBox('question','Manager not found','Check the ID and try again.',
+          '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>')
+        :errorBox();});
+  }
 }
 
-/* ── LAYOUT: DASHBOARD ─────────────────────────────────── */
-function dashboardLayout(){
-  const kpi=(label,value,delta,colour)=>
-    '<div class="kpi">'+
-      '<div class="kpi-accent" style="background:'+colour+'"></div>'+
-      '<div class="kpi-label">'+label+'</div>'+
-      '<div class="kpi-value">'+value+'</div>'+
-      '<div class="kpi-delta">'+delta+'</div>'+
-    '</div>';
+/* ═══════════════════════════════════════════════════════════
+   LIVE PANEL HYDRATORS
+   Each takes the #ge-data host node and replaces its skeleton with
+   real, live content (or a link/empty state). Registered in WIRED.
+   ═══════════════════════════════════════════════════════════ */
+const kpi=(label,value,delta,colour)=>
+  '<div class="kpi"><div class="kpi-accent" style="background:'+colour+'"></div>'+
+    '<div class="kpi-label">'+esc(label)+'</div>'+
+    '<div class="kpi-value">'+value+'</div>'+
+    '<div class="kpi-delta">'+esc(delta)+'</div></div>';
 
-  return ''+
+/* Dashboard: season snapshot from entry + history */
+async function hydrateDashboard(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,entry,hist]=await Promise.all([boot(),loadEntry(mid),loadHistory(mid)]);
+  const cur=hist.current||[];
+  const last=cur[cur.length-1]||{};
+  const rankDelta=cur.length>1?(cur[cur.length-2].overall_rank-last.overall_rank):0;
+  const recent=cur.slice(-6);
+  const maxPts=Math.max(1,...recent.map(g=>g.points));
+  const bars=recent.map(g=>
+    '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">'+
+      '<div style="font-size:.66rem;font-weight:700;color:var(--text-2)">'+g.points+'</div>'+
+      '<div style="width:100%;background:var(--green-soft);border-radius:4px 4px 0 0;height:'+
+        Math.round(8+58*g.points/maxPts)+'px"></div>'+
+      '<div style="font-size:.6rem;color:var(--text-3)">GW'+g.event+'</div>'+
+    '</div>').join('');
+  host.innerHTML=
     '<div class="grid g-4 mb-20">'+
-      kpi('Total Points','\u2014','Sign in to load','var(--green)')+
-      kpi('Overall Rank','\u2014','Sign in to load','var(--blue)')+
-      kpi('Team Value','\u00a3\u2014','Sign in to load','var(--amber)')+
-      kpi('Free Transfers','\u2014','Sign in to load','var(--purple)')+
+      kpi('Total Points',fmtNum(entry.summary_overall_points),'Season','var(--green)')+
+      kpi('Overall Rank',fmtNum(entry.summary_overall_rank),
+        (rankDelta>0?'▲ '+fmtNum(rankDelta):rankDelta<0?'▼ '+fmtNum(-rankDelta):'No change')+' last GW','var(--blue)')+
+      kpi('Team Value',money(entry.last_deadline_value||0),
+        'Bank '+money(entry.last_deadline_bank||0),'var(--amber)')+
+      kpi('GW Points',fmtNum(entry.summary_event_points),'GW'+(b.cur.id),'var(--purple)')+
     '</div>'+
     '<div class="grid g-sb mb-20">'+
-      '<div class="card">'+
-        '<div class="card-title">This Gameweek \u2014 Key Actions</div>'+
-        phBlock('bolt','Your gameweek actions','Once you sign in and link your FPL Manager ID, the three highest-impact actions for this deadline appear here.')+
+      '<div class="card"><div class="card-title">Recent Form — Points by Gameweek</div>'+
+        '<div style="display:flex;align-items:flex-end;gap:8px;height:90px;padding-top:8px">'+
+          (bars||'<p class="dl-sub">No gameweeks played yet.</p>')+'</div>'+
       '</div>'+
-      '<div class="card">'+
-        '<div class="card-title">Chip Status</div>'+
-        '<div class="ph-bars">'+
-          '<div class="ph-bar"></div><div class="ph-bar w80"></div>'+
-          '<div class="ph-bar w90"></div><div class="ph-bar w65"></div>'+
+      '<div class="card"><div class="card-title">Manager</div>'+
+        '<div class="stat-v">'+esc((entry.player_first_name||'')+' '+(entry.player_last_name||''))+'</div>'+
+        '<div class="dl-sub" style="margin-top:2px">'+esc(entry.name||'')+'</div>'+
+        '<div class="statgrid" style="margin-top:14px">'+
+          '<div class="stat"><div class="stat-l">Overall</div><div class="stat-v">'+fmtNum(entry.summary_overall_rank)+'</div></div>'+
+          '<div class="stat"><div class="stat-l">GW Rank</div><div class="stat-v">'+fmtNum(entry.summary_event_rank)+'</div></div>'+
         '</div>'+
       '</div>'+
     '</div>'+
-    '<div class="grid g-2">'+
-      '<div class="card">'+
-        '<div class="card-title">Fixture Difficulty \u2014 Next 5</div>'+
-        '<div class="ph-bars">'+
-          '<div class="ph-bar"></div><div class="ph-bar w90"></div><div class="ph-bar w80"></div>'+
-        '</div>'+
-      '</div>'+
-      '<div class="card">'+
-        '<div class="card-title">Price Movement</div>'+
-        '<div class="ph-bars">'+
-          '<div class="ph-bar w90"></div><div class="ph-bar"></div><div class="ph-bar w65"></div>'+
-        '</div>'+
+    '<div class="card"><div class="card-title">Jump in</div>'+
+      '<div class="modal-row" style="margin-top:0">'+
+        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'squad\')">View squad</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'gw-actions\')">This gameweek</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'fixtures\')">Fixtures</button>'+
       '</div>'+
     '</div>';
 }
 
-/* ── LAYOUT: GW ACTIONS ────────────────────────────────── */
-function actionsLayout(){
-  const action=(n,colour)=>
-    '<div class="card mb-14" style="border-left:3px solid '+colour+'">'+
-      '<div class="card-title">Action '+n+'</div>'+
-      '<div class="ph-bars"><div class="ph-bar w90"></div><div class="ph-bar w65"></div></div>'+
+/* This Gameweek: live event intelligence */
+async function hydrateGwActions(host){
+  const b=await boot();
+  const ev=b.cur;
+  const topEl=ev.top_element_info?b.els[ev.top_element_info.id]:null;
+  const cap=b.els[ev.most_captained];
+  const tin=b.els[ev.most_transferred_in];
+  const sel=b.els[ev.most_selected];
+  const stat=(l,v,s)=>'<div class="stat"><div class="stat-l">'+l+'</div><div class="stat-v">'+v+'</div>'+(s?'<div class="stat-s">'+esc(s)+'</div>':'')+'</div>';
+  const pl=(p)=>p?esc(p.web_name)+' ('+teamShort(b,p.team)+')':'—';
+  let mine='';
+  const mid=getMid();
+  if(mid){
+    try{const e=await loadEntry(mid);
+      const diff=e.summary_event_points-(ev.average_entry_score||0);
+      mine='<div class="card mb-20" style="border-left:3px solid '+(diff>=0?'var(--green)':'var(--red)')+'">'+
+        '<div class="card-title">Your gameweek</div>'+
+        '<div class="statgrid">'+
+          stat('Your GW Points',fmtNum(e.summary_event_points))+
+          stat('vs Average',(diff>=0?'+':'')+diff,'Average is '+(ev.average_entry_score||'—'))+
+        '</div></div>';
+    }catch(_){}
+  }
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
+      ' <span class="badge '+(ev.finished?'badge-grey':'badge-green')+'">'+(ev.finished?'Finished':ev.is_current?'Live':'Upcoming')+'</span></div>'+
+      '<div class="dl-sub" style="margin-bottom:12px">Deadline '+fmtDeadline(ev.deadline_time)+'</div>'+
+      '<div class="statgrid">'+
+        stat('Average Score',fmtNum(ev.average_entry_score))+
+        stat('Highest Score',fmtNum(ev.highest_score))+
+      '</div>'+
+    '</div>'+
+    mine+
+    '<div class="card"><div class="card-title">Crowd moves this gameweek</div>'+
+      '<div class="dl">'+
+        '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
+        dlPlain('Most captained',pl(cap))+
+        dlPlain('Most transferred in',pl(tin))+
+        dlPlain('Most selected',pl(sel))+
+        dlPlain('Top scorer',topEl?(esc(topEl.web_name)+' ('+(ev.top_element_info.points)+' pts)'):'—')+
+      '</div>'+
     '</div>';
-  return ''+
-    action(1,'var(--red)')+
-    action(2,'var(--amber)')+
-    action(3,'var(--green)')+
-    phBlock('bolt','Personalised to your squad','Sign in and link your Manager ID. Gameweek Edge will rank the three moves most likely to gain you rank this week.');
+}
+function dlPlain(label,value){
+  return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(label)+'</span></span>'+
+    '<span style="font-weight:700;color:var(--text)">'+value+'</span></div>';
 }
 
-/* ── LAYOUT: SQUAD (pitch hero) ────────────────────────── */
-function squadLayout(){
-  const jrow=n=>{
-    let j='';for(let i=0;i<n;i++){j+='<div class="jersey"></div>';}
-    return '<div class="pitch-row">'+j+'</div>';
+/* My Squad: live pitch from picks + live points */
+async function hydrateSquad(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const b=await boot();
+  const gw=b.cur.id;
+  const [picks,live]=await Promise.all([loadPicks(mid,gw),loadLive(gw)]);
+  const livePts={};(live.elements||[]).forEach(e=>livePts[e.id]=e.stats?e.stats.total_points:0);
+  const eh=picks.entry_history||{};
+  const cell=(pk)=>{
+    const el=b.els[pk.element]||{};
+    const base=livePts[pk.element]||0;
+    const pts=base*(pk.multiplier||1);
+    const badge=pk.is_captain?'C':pk.is_vice_captain?'V':'';
+    return '<div class="pp'+(pk.is_captain?' is-cap':'')+'">'+
+      (badge?'<span class="pp-badge">'+badge+'</span>':'')+
+      '<div class="jersey"></div>'+
+      '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
+      '<span class="pp-pt">'+pts+'</span></div>';
   };
-  return ''+
+  const starters=picks.picks.filter(p=>p.position<=11);
+  const bench=picks.picks.filter(p=>p.position>11);
+  const byType=t=>starters.filter(p=>(b.els[p.element]||{}).element_type===t);
+  const row=arr=>'<div class="pitch-row">'+arr.map(cell).join('')+'</div>';
+  const liveTotal=starters.reduce((s,p)=>s+(livePts[p.element]||0)*(p.multiplier||1),0);
+  host.innerHTML=
     '<div class="grid g-sb mb-20">'+
-      '<div class="card">'+
-        '<div class="card-title">Formation <span class="badge badge-grey">Preview</span></div>'+
+      '<div class="card"><div class="card-title">Your XI '+
+        '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span></div>'+
         '<div class="pitch-preview">'+
-          jrow(1)+jrow(4)+jrow(4)+jrow(2)+
+          row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
+          '<div class="bench">'+bench.map(cell).join('')+'</div>'+
         '</div>'+
       '</div>'+
-      '<div class="card">'+
-        '<div class="card-title">Season Summary</div>'+
-        '<div class="ph-bars">'+
-          '<div class="ph-bar"></div><div class="ph-bar w80"></div>'+
-          '<div class="ph-bar w90"></div><div class="ph-bar w65"></div>'+
+      '<div class="card"><div class="card-title">Gameweek summary</div>'+
+        '<div class="statgrid">'+
+          '<div class="stat"><div class="stat-l">GW Points</div><div class="stat-v">'+fmtNum(eh.points)+'</div></div>'+
+          '<div class="stat"><div class="stat-l">GW Rank</div><div class="stat-v">'+fmtNum(eh.rank)+'</div></div>'+
+          '<div class="stat"><div class="stat-l">Team Value</div><div class="stat-v">'+money(eh.value||0)+'</div></div>'+
+          '<div class="stat"><div class="stat-l">In the Bank</div><div class="stat-v">'+money(eh.bank||0)+'</div></div>'+
         '</div>'+
-        phTagOnly()+
+        (picks.active_chip?'<div class="dl-sub" style="margin-top:12px">Active chip: <b>'+esc(picks.active_chip)+'</b></div>':'')+
       '</div>'+
-    '</div>'+
-    '<div class="card">'+
-      '<div class="card-title">Full Squad</div>'+
-      phBlock('squad','Your 15 players','Sign in and enter your FPL Manager ID. Your full squad loads here with live points, price, ownership and fitness status, all pulled from the official FPL API.')+
     '</div>';
 }
+
+/* Fixture Planner: FDR grid, next 6 GWs */
+async function hydrateFixtures(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const startGw=b.cur.id;
+  const gws=[];for(let g=startGw;g<startGw+6&&g<=38;g++)gws.push(g);
+  const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
+  const byTeamGw={};
+  fixtures.forEach(f=>{
+    if(!f.event||f.event<startGw||f.event>=startGw+6)return;
+    (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),diff:f.team_h_difficulty,home:true};
+    (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),diff:f.team_a_difficulty,home:false};
+  });
+  const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'</tr>';
+  const rows=teams.map(t=>{
+    const cells=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];
+      return c?'<td class="cell fdr-'+c.diff+'">'+esc(c.opp)+(c.home?'':' (a)')+'</td>':'<td class="blank">—</td>';
+    }).join('');
+    return '<tr><td class="tm">'+esc(t.short_name)+'</td>'+cells+'</tr>';
+  }).join('');
+  host.innerHTML=
+    '<div class="card"><div class="card-title">Fixture Difficulty — next '+gws.length+' gameweeks</div>'+
+      '<div class="fdr"><table>'+head+rows+'</table></div>'+
+      '<div class="dl-sub" style="margin-top:10px">Greener is easier, redder is harder. <b>(a)</b> marks an away fixture.</div>'+
+    '</div>';
+}
+
+/* Differentials: low-owned players with strong form */
+async function hydrateDiffs(host){
+  const b=await boot();
+  const list=b.elements
+    .filter(e=>e.status==='a'&&parseFloat(e.selected_by_percent)<12&&e.minutes>0)
+    .sort((a,c)=>parseFloat(c.form)-parseFloat(a.form))
+    .slice(0,20);
+  if(!list.length){host.innerHTML=stateBox('trend','No differentials yet','Once the season is underway, low-owned players in form appear here.');return;}
+  host.innerHTML=
+    '<div class="card"><div class="card-title">Differentials — under 12% owned, ranked by form</div>'+
+      dlTable(b,list,['Form','Pts'],e=>[e.form,e.total_points])+'</div>';
+}
+
+/* Price Predictor: net transfer momentum */
+async function hydratePrice(host){
+  const b=await boot();
+  const score=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
+  const risers=b.elements.slice().sort((a,c)=>score(c)-score(a)).slice(0,12);
+  const fallers=b.elements.slice().sort((a,c)=>score(a)-score(c)).slice(0,12);
+  const tbl=(title,arr,pos)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
+    dlTable(b,arr,['Net in','Price Δ'],e=>[
+      (pos?'+':'')+fmtK(score(e)),
+      (e.cost_change_event>0?'+':'')+(e.cost_change_event/10).toFixed(1)
+    ])+'</div>';
+  host.innerHTML=
+    '<div class="dl-sub" style="margin-bottom:12px">Live transfer momentum this gameweek. Net transfers drive price changes — buy risers before the overnight update.</div>'+
+    tbl('Rising — most bought',risers,true)+
+    tbl('Falling — most sold',fallers,false);
+}
+
+/* Injury Monitor: flagged players by ownership */
+async function hydrateInjuries(host){
+  const b=await boot();
+  const list=b.elements
+    .filter(e=>e.status&&e.status!=='a')
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
+    .slice(0,30);
+  if(!list.length){host.innerHTML=stateBox('cross','No fitness flags','Every player is currently available. Check back closer to the deadline.');return;}
+  const rows=list.map(e=>{
+    const chance=e.chance_of_playing_next_round;
+    return '<div class="dl-row">'+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
+        ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span></span>'+
+        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+
+        (e.news?' · '+esc(e.news):'')+'</span></span>'+
+      '<span class="dl-col">'+(chance==null?'—':chance+'%')+'</span></div>';
+  }).join('');
+  host.innerHTML='<div class="card"><div class="card-title">Fitness & availability — '+list.length+' flagged</div>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+rows+'</div></div>';
+}
+
+/* Shared: a ranked player table with two metric columns. */
+function dlTable(b,list,heads,metrics){
+  const rows=list.map((e,i)=>{
+    const m=metrics(e);
+    return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
+      '<span class="dl-col mono">'+m[0]+'</span><span class="dl-col mono">'+m[1]+'</span></div>';
+  }).join('');
+  return '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span>'+
+    '<span class="dl-grow">Player</span><span class="dl-col">'+heads[0]+'</span><span class="dl-col">'+heads[1]+'</span></div>'+rows+'</div>';
+}
+
+/* Panels wired to live FPL data. */
+const WIRED={
+  dashboard:hydrateDashboard,
+  'gw-actions':hydrateGwActions,
+  squad:hydrateSquad,
+  fixtures:hydrateFixtures,
+  diffs:hydrateDiffs,
+  price:hydratePrice,
+  injuries:hydrateInjuries
+};
 
 /* ── LAYOUT: 3 CARDS (captaincy) ───────────────────────── */
 function cards3Layout(desc){
@@ -1228,9 +1590,6 @@ function phBlock(icon,title,text){
       '<span class="ph-tag">Shell preview</span>'+
     '</div>';
 }
-function phTagOnly(){
-  return '<div style="text-align:center;margin-top:14px"><span class="ph-tag">Shell preview</span></div>';
-}
 
 /* ── THEME ─────────────────────────────────────────────── */
 function applyTheme(theme){
@@ -1262,8 +1621,7 @@ function closeSidebar(){
 }
 
 /* ── REFRESH ───────────────────────────────────────────── */
-/* Spins the topbar refresh icon. In Phase 2 this re-pulls live data;
-   for the shell it animates so the gesture feels real. */
+/* Spins the topbar icon, drops live caches and re-hydrates the panel. */
 function doRefresh(){
   const btn=document.getElementById('refresh-btn');
   const ic=btn&&btn.querySelector('svg');
@@ -1273,6 +1631,59 @@ function doRefresh(){
     setTimeout(()=>{ic.style.transform='rotate(0)';ic.style.transition='none';},520);
   }
   window.GENative&&GENative.hapticLight();
+  refreshData();
+}
+function refreshData(){
+  clearLiveCache();
+  if(WIRED[currentPanel])renderPage(currentPanel);
+}
+
+/* ── MANAGER ID MODAL ──────────────────────────────────── */
+function openMidModal(){
+  const m=document.getElementById('mid-modal');
+  const inp=document.getElementById('mid-input');
+  document.getElementById('mid-err').textContent='';
+  inp.value=getMid();
+  m.classList.add('show');
+  setTimeout(()=>inp.focus(),60);
+}
+function closeMidModal(){document.getElementById('mid-modal').classList.remove('show');}
+async function saveMid(){
+  const inp=document.getElementById('mid-input');
+  const err=document.getElementById('mid-err');
+  const val=(inp.value||'').trim();
+  if(!/^[0-9]{1,9}$/.test(val)){err.textContent='Enter a valid Manager ID (numbers only).';return;}
+  const saveBtn=document.getElementById('mid-save');
+  saveBtn.disabled=true;saveBtn.textContent='Checking…';err.textContent='';
+  try{
+    const entry=await loadEntry(val);            // validates the ID exists
+    setMid(val);
+    refreshIdentity(entry);
+    closeMidModal();
+    renderPage(currentPanel);
+    window.GENative&&GENative.hapticSuccess();
+  }catch(e){
+    err.textContent=(e&&e.status===404)?'No manager found with that ID.':'Could not reach the FPL API. Try again.';
+    window.GENative&&GENative.hapticWarning();
+  }finally{saveBtn.disabled=false;saveBtn.textContent='Link team';}
+}
+/* Reflect the linked team on the topbar button. */
+function refreshIdentity(entry){
+  const btn=document.getElementById('signin-btn');
+  if(!btn)return;
+  const label=btn.querySelector('.si-label')||btn;
+  if(entry&&entry.name){label.textContent=entry.name;}
+  else if(getMid()){label.textContent='My Team';}
+  else{label.textContent='Link Team';}
+}
+
+/* ── GAMEWEEK STRIP (sidebar) ──────────────────────────── */
+async function hydrateGwStrip(){
+  try{
+    const b=await boot();
+    document.getElementById('gw-num').textContent=b.cur.id;
+    document.getElementById('gw-deadline').textContent=fmtDeadline(b.cur.deadline_time);
+  }catch(_){/* leave the static fallback in place */}
 }
 
 /* ── NATIVE SHELL INTEGRATION ──────────────────────────── */
@@ -1292,8 +1703,8 @@ function initNative(){
   /* Android hardware back closes the drawer first. */
   window.addEventListener('ge:back',closeSidebar);
 
-  /* Returning to the foreground refreshes (Phase 2 wires live data). */
-  window.addEventListener('ge:resume',doRefresh);
+  /* Returning to the foreground re-pulls live data. */
+  window.addEventListener('ge:resume',refreshData);
 
   /* Native connectivity events feed the shared handler. */
   window.addEventListener('ge:network',e=>{
@@ -1375,17 +1786,26 @@ function init(){
   /* Connectivity banner (web + native) and native shell wiring. */
   initNetwork();
   initNative();
-  document.getElementById('signin-btn').addEventListener('click',function(){
-    alert('Sign in arrives in Phase 2. This shell shows structure and brand only.');
-  });
+
+  /* Manager ID linking. */
+  document.getElementById('signin-btn').addEventListener('click',openMidModal);
+  document.getElementById('mid-save').addEventListener('click',saveMid);
+  document.getElementById('mid-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveMid();});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-mid-close]'),
+    el=>el.addEventListener('click',closeMidModal));
+
   document.getElementById('tb-logo').addEventListener('click',function(e){
     e.preventDefault();
     openPanel('dashboard');
   });
 
-  /* Close drawer on Escape */
+  /* Live gameweek strip + linked-team label. */
+  hydrateGwStrip();
+  if(getMid()){refreshIdentity();loadEntry(getMid()).then(refreshIdentity).catch(()=>{});}
+
+  /* Close drawer / modal on Escape */
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape')closeSidebar();
+    if(e.key==='Escape'){closeSidebar();closeMidModal();}
   });
 }
 

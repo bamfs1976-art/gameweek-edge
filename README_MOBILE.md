@@ -56,12 +56,24 @@ In Xcode: select your Team under **Signing & Capabilities**, pick a simulator or
 
 After any change to `index.html` or `src/native/`, re-run `npm run sync` (or `npm run ios`, which also opens Xcode) to push the latest web build into the native app.
 
-## Not in M1 (see MOBILE_APP_BRIEF.md)
+## Live FPL data (Phase 2)
+
+The app now pulls **live data from the official FPL API**, routed through a Netlify serverless proxy (the FPL API has no CORS and blocks direct browser calls).
+
+- **Proxy:** `netlify/functions/fpl.js`, wired at `/api/fpl/*` by `netlify.toml`. It whitelists only the endpoints the app needs (no open proxy), adds the User-Agent the FPL API expects, sets CORS, and caches slow-changing data at the edge while never caching live data.
+- **Data layer (`index.html`):** a cached API client (bootstrap/fixtures cached with TTL; manager/live data never cached), a Manager-ID flow (validated against `entry/{id}`, stored locally), and loading/empty/error/offline states on every wired panel.
+- **Panels wired to live data:** Dashboard, This Gameweek, My Squad (live pitch + points), Fixture Planner (FDR grid), Differentials, Price Predictor, Injury Monitor. Remaining panels still show their structural placeholder.
+
+**Web:** deploy the repo to Netlify and it works immediately (`/api/fpl/*` is relative). Run locally with `npx netlify dev`.
+
+**Native (important):** a packaged iOS app can't use a relative API path. Point it at your deployed proxy by setting `GE_CONFIG.apiBase` in `index.html` (or `localStorage['ge-api-base']`) to e.g. `https://your-site.netlify.app`, then `npm run sync`.
+
+## Not yet (see MOBILE_APP_BRIEF.md)
 
 - Push notifications (the plugin is installed but registration waits for APNs credentials — Phase M2).
-- Offline caching of live FPL data — Phase M2.
 - Native accounts / biometrics / Sign in with Apple — Phase M3.
 - In-app purchases for Pro — Phase M4. **Note:** in-app digital subscriptions must use Apple IAP, not Stripe.
+- Remaining panels (Transfer Planner, Captaincy Lab, Chip Strategy, Watchlist, Alerts, Compare, and the Pro tools) — follow-on Phase 2 work.
 
 ## A note on the build environment
 
