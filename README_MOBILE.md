@@ -12,7 +12,10 @@ This repo now ships an iOS app built by **wrapping the existing single-file web 
   - Pull-to-refresh on the dashboard with a branded spinner.
   - Haptics on nav changes, buttons and the refresh gesture.
   - Browser-isms disabled on app chrome (text selection, tap highlight, rubber-band overscroll); body copy stays selectable.
-  - App lifecycle (`resume`), connectivity (`ge:network`), keyboard and Android back wired via DOM events.
+  - A polite, accessible **offline banner** driven by connectivity (web `online`/`offline` events + the native Network plugin).
+  - App lifecycle (`resume`), keyboard and Android back wired via DOM events.
+- Locked to **portrait** on iPhone (iPad keeps all orientations).
+- **Privacy manifest** (`ios/App/App/PrivacyInfo.xcprivacy`) declaring no tracking, no data collection, and the one required-reason API actually used (UserDefaults via `@capacitor/preferences`).
 - Brand app icon and light/dark splash screen generated into the Xcode asset catalogs.
 - App identity: name **Gameweek Edge**, bundle id `com.gameweekedge.app` (change in `capacitor.config.json` if needed).
 
@@ -48,6 +51,8 @@ npx cap open ios
 ```
 
 In Xcode: select your Team under **Signing & Capabilities**, pick a simulator or a connected device, and press **Run**. To ship: **Product → Archive**, then distribute to TestFlight / the App Store.
+
+> **One Xcode step for submission:** drag `App/PrivacyInfo.xcprivacy` into the **App** group in the Xcode navigator and tick the **App** target under *Target Membership* so the privacy manifest is bundled. (It's committed to the repo but not yet referenced in `project.pbxproj`, which can't be safely edited off-Mac.)
 
 After any change to `index.html` or `src/native/`, re-run `npm run sync` (or `npm run ios`, which also opens Xcode) to push the latest web build into the native app.
 

@@ -194,6 +194,23 @@ html.native .ptr-spinner.show{display:grid;opacity:1}
 .ptr-spinner.spin svg{animation:ptrspin .7s linear infinite}
 @keyframes ptrspin{to{transform:rotate(360deg)}}
 
+/* ── OFFLINE BANNER ────────────────────────────────────── */
+/* Toggled by the .offline class on <html> (set from connectivity
+   events). Works on web and native; sits under the safe-area inset. */
+.net-banner{
+  position:fixed;left:0;right:0;
+  top:calc(env(safe-area-inset-top) + 0px);
+  z-index:400;display:flex;align-items:center;justify-content:center;
+  gap:8px;padding:9px 16px;
+  background:var(--amber-soft);color:var(--amber);
+  border-bottom:1px solid var(--amber);
+  font-size:.78rem;font-weight:600;
+  transform:translateY(-100%);transition:transform .26s var(--ease);
+}
+html.offline .net-banner{transform:translateY(0)}
+.net-banner[hidden]{display:none}
+.net-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
+
 /* ── LAYOUT SHELL ──────────────────────────────────────── */
 .shell{display:flex;min-height:100vh}
 
@@ -708,6 +725,12 @@ html.native .ptr-spinner.show{display:grid;opacity:1}
 <!-- Pull-to-refresh affordance (shown only in the native app) -->
 <div class="ptr-spinner" id="ptr-spinner" aria-hidden="true">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+</div>
+
+<!-- Offline banner: announced politely; shown whenever connectivity drops -->
+<div class="net-banner" id="net-banner" role="status" aria-live="polite" hidden>
+  <span class="net-dot" aria-hidden="true"></span>
+  <span>You're offline — showing the last loaded view.</span>
 </div>
 
 <!-- Native bridge: defines window.GENative. No-op on the web build. -->
@@ -1272,12 +1295,25 @@ function initNative(){
   /* Returning to the foreground refreshes (Phase 2 wires live data). */
   window.addEventListener('ge:resume',doRefresh);
 
-  /* Reflect connectivity so panels can show an offline state later. */
+  /* Native connectivity events feed the shared handler. */
   window.addEventListener('ge:network',e=>{
-    document.documentElement.classList.toggle('offline',!(e.detail&&e.detail.connected));
+    updateNetwork(!!(e.detail&&e.detail.connected));
   });
 
   initPullToRefresh();
+}
+
+/* ── CONNECTIVITY (web + native) ───────────────────────── */
+function updateNetwork(connected){
+  document.documentElement.classList.toggle('offline',!connected);
+  const banner=document.getElementById('net-banner');
+  if(banner)banner.hidden=connected;
+}
+function initNetwork(){
+  /* Browser events cover the web build and complement the native plugin. */
+  window.addEventListener('online',()=>updateNetwork(true));
+  window.addEventListener('offline',()=>updateNetwork(false));
+  updateNetwork(navigator.onLine!==false);
 }
 
 /* Lightweight pull-to-refresh on the window scroll (native only).
@@ -1336,7 +1372,8 @@ function init(){
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
   document.getElementById('refresh-btn').addEventListener('click',doRefresh);
 
-  /* Native shell wiring (all no-ops on the web build). */
+  /* Connectivity banner (web + native) and native shell wiring. */
+  initNetwork();
   initNative();
   document.getElementById('signin-btn').addEventListener('click',function(){
     alert('Sign in arrives in Phase 2. This shell shows structure and brand only.');
