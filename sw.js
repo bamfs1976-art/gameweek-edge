@@ -3,7 +3,7 @@
    assets cache-first. Live FPL data (/api/fpl/*) is never touched here —
    the app's own data layer decides what is fresh vs cached. */
 
-const VERSION = 'ge-v1';
+const VERSION = 'ge-v2';
 const SHELL = [
   '/',
   '/index.html',
@@ -33,18 +33,34 @@ self.addEventListener('fetch', (e) => {
 
   /* Never intercept the API — freshness is the data layer's job. */
   if (url.pathname.startsWith('/api/')) return;
+  if (url.origin !== self.location.origin) return;
 
-  /* Same-origin static: cache-first, then network (and cache the result).
-     Navigations fall back to the cached shell when offline. */
-  if (url.origin === self.location.origin) {
+  /* The page/app shell: network-first so deploys reach the app
+     immediately, falling back to cache when offline. */
+  const isShell = req.mode === 'navigate' ||
+    url.pathname === '/' || url.pathname === '/index.html' ||
+    url.pathname === '/native.js' || url.pathname === '/manifest.webmanifest';
+
+  if (isShell) {
     e.respondWith(
-      caches.match(req).then((hit) =>
-        hit || fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(VERSION).then((c) => c.put(req, copy)).catch(() => {});
-          return res;
-        }).catch(() => req.mode === 'navigate' ? caches.match('/index.html') : undefined)
-      )
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(VERSION).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req).then((hit) => hit || caches.match('/index.html')))
     );
+    return;
   }
+
+  /* Other static assets (icons): cache-first, then network. */
+  e.respondWith(
+    caches.match(req).then((hit) =>
+      hit || fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(VERSION).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      })
+    )
+  );
 });
+
