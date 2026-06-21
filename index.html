@@ -511,16 +511,33 @@ html.offline .net-banner{transform:translateY(0)}
 .page-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
 /* Locked banner */
-.lock-banner{
-  display:flex;align-items:center;gap:14px;
-  padding:14px 18px;border-radius:var(--r-lg);
-  background:var(--amber-soft);border:1px solid color-mix(in srgb,var(--amber) 30%,transparent);
-  margin-bottom:20px;
-}
-.lock-banner svg{width:22px;height:22px;color:var(--amber);flex-shrink:0}
-.lock-banner-text{flex:1;min-width:0}
-.lock-banner-text b{color:var(--text);font-size:.88rem}
-.lock-banner-text p{font-size:.78rem;color:var(--text-2);margin-top:2px}
+/* ── PRO PAYWALL ───────────────────────────────────────── */
+.pro-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--r-pill);
+  background:var(--green-soft);color:var(--green-bright);font-size:.66rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase}
+.pro-chip svg{width:12px;height:12px}
+.pro-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);
+  box-shadow:var(--shadow);padding:26px 22px;text-align:center}
+.pro-hero h2{font-family:var(--font-display);font-size:1.5rem;margin:14px 0 6px;letter-spacing:-.02em}
+.pro-lead{font-size:.9rem;color:var(--text-2);max-width:440px;margin:0 auto 20px;line-height:1.5}
+.pro-benefits{display:flex;flex-direction:column;gap:12px;text-align:left;max-width:420px;margin:0 auto 22px}
+.pro-benefit{display:flex;gap:12px;align-items:flex-start}
+.pro-benefit svg{width:22px;height:22px;color:var(--green-bright);flex-shrink:0;margin-top:1px}
+.pro-benefit b{font-size:.88rem;color:var(--text)}
+.pro-benefit p{font-size:.8rem;color:var(--text-2);margin-top:1px;line-height:1.45}
+.pro-foot{font-size:.74rem;color:var(--text-3);margin-top:12px}
+.pro-active{display:flex;align-items:center;gap:8px;font-size:.74rem;font-weight:600;
+  color:var(--text-3);margin-bottom:16px}
+.pro-active .badge svg{width:11px;height:11px;vertical-align:-1px;margin-right:2px}
+/* Upgrade modal extras */
+#pro-body{text-align:center}
+#pro-body h3{font-family:var(--font-display);font-size:1.3rem;margin:12px 0 16px}
+.pro-prices{display:flex;gap:12px;margin:4px 0 16px}
+.pro-price{flex:1;background:var(--surface-3);border-radius:var(--r-md);padding:14px}
+.pro-price-v{font-family:var(--font-display);font-size:1.4rem;font-weight:800}
+.pro-price-l{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+/* When Pro, hide the lock badges in the nav */
+html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 /* ── GRID HELPERS ──────────────────────────────────────── */
 .grid{display:grid;gap:14px}
@@ -850,6 +867,12 @@ html.offline .net-banner{transform:translateY(0)}
   </div>
 </div>
 
+<!-- Upgrade / Pro modal -->
+<div class="modal" id="pro-modal" role="dialog" aria-modal="true" aria-labelledby="pro-title">
+  <div class="modal-bg" data-pro-close></div>
+  <div class="modal-card" id="pro-body"></div>
+</div>
+
 <!-- Native bridge: defines window.GENative. No-op on the web build. -->
 <script src="native.js"></script>
 <script>
@@ -994,6 +1017,66 @@ function linkBox(){
   return stateBox('team','Link your team to see this',
     'Enter your FPL Manager ID and your personalised data loads here, live from the official API.',
     '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PRO TIER & PAYWALL
+   A `tier` of free or pro. Free users see a value preview on Pro
+   panels; Pro users get the live tools. Payment is wired in Phase M4
+   (Stripe on web, Apple/Google IAP in the app) — for now an honest
+   in-app preview unlock lets the tier be experienced end to end.
+   ═══════════════════════════════════════════════════════════ */
+const PRICE={monthly:'£3.99',season:'£24.99'};
+const PRO_BENEFITS=[
+  ['pulse','Live matchday tracking','Live rank, threats and auto-subs as the points land.'],
+  ['users','Rival intelligence','Scout rivals, effective ownership and the top template.'],
+  ['whistle','Deeper player data','Set-piece order and rotation risk on every player.']
+];
+function getTier(){try{return localStorage.getItem('ge-tier')==='pro'?'pro':'free';}catch(_){return 'free';}}
+function isPro(){return getTier()==='pro';}
+function setTier(t){try{localStorage.setItem('ge-tier',t==='pro'?'pro':'free');}catch(_){}reflectTier();}
+function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());}
+
+/* The value preview shown to free users on a Pro panel. */
+function proPreview(panel,content){
+  const benefits=PRO_BENEFITS.map(b=>
+    '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
+  return '<div class="pro-hero">'+
+    '<span class="pro-chip">'+svg(ICON.lock,'width="12" height="12"')+' Gameweek Edge Pro</span>'+
+    '<h2>'+esc(panel.label)+'</h2>'+
+    '<p class="pro-lead">'+esc(content.desc)+'</p>'+
+    '<div class="pro-benefits">'+benefits+'</div>'+
+    '<button class="btn btn-primary" onclick="openUpgrade()">Unlock Pro — from '+PRICE.monthly+'/mo</button>'+
+    '<p class="pro-foot">One subscription unlocks every Pro tool across all your devices.</p>'+
+  '</div>';
+}
+
+function openUpgrade(){
+  const pro=isPro();
+  const benefits=PRO_BENEFITS.map(b=>
+    '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
+  document.getElementById('pro-body').innerHTML=
+    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' Gameweek Edge Pro</span>'+
+    '<h3 id="pro-title">'+(pro?'You’re on Pro':'Unlock the full edge')+'</h3>'+
+    '<div class="pro-benefits">'+benefits+'</div>'+
+    (pro
+      ? '<div class="modal-row"><button class="btn btn-ghost" onclick="setProPreview(false)">Switch back to Free</button></div>'
+      : '<div class="pro-prices">'+
+          '<div class="pro-price"><div class="pro-price-v">'+PRICE.monthly+'</div><div class="pro-price-l">per month</div></div>'+
+          '<div class="pro-price"><div class="pro-price-v">'+PRICE.season+'</div><div class="pro-price-l">season pass</div></div>'+
+        '</div>'+
+        '<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="setProPreview(true)">Preview Pro now</button>'+
+        '<p class="modal-hint">Payment isn’t live yet — this preview unlocks every Pro tool on this device so you can try them. Real billing (card on web, in-app purchase on mobile) arrives with the next phase.</p>')+
+    '<div class="modal-row"><button class="btn btn-ghost" data-pro-close>Close</button></div>';
+  document.getElementById('pro-modal').classList.add('show');
+}
+function closeUpgrade(){document.getElementById('pro-modal').classList.remove('show');}
+function setProPreview(on){
+  setTier(on?'pro':'free');
+  closeUpgrade();
+  buildNav();syncNav();
+  renderPage(currentPanel);
+  window.GENative&&(on?GENative.hapticSuccess():GENative.hapticSelection());
 }
 
 /* ── NAVIGATION MODEL — 6 areas, 21 panels ──────────────── */
@@ -1270,27 +1353,23 @@ function renderPage(panelId){
 
   const pages=document.getElementById('pages');
   const isPaid=(panel.tier==='paid');
+  const locked=isPaid&&!isPro();
 
   let body='';
 
-  /* Locked banner for Pro panels */
-  if(isPaid){
-    body+=
-      '<div class="lock-banner">'+
-        svg(ICON.lock,'width="22" height="22"')+
-        '<div class="lock-banner-text">'+
-          '<b>This is a Gameweek Edge Pro feature</b>'+
-          '<p>Live and intelligence tools will sit behind Pro. The preview below shows what it does.</p>'+
-        '</div>'+
-        '<button class="btn btn-primary btn-sm">See Pro</button>'+
-      '</div>';
-  }
-
-  /* Layout variants. Wired panels render a skeleton then hydrate live. */
-  if(WIRED[panelId]){
-    body+='<div id="ge-data" class="ge-host">'+skel(5)+'</div>';
+  /* Pro panels: free users get a value preview + upgrade prompt; Pro
+     users get the live tool (with a small Pro marker). */
+  if(locked){
+    body+=proPreview(panel,content);
   } else {
-    body+=standardLayout(panel,content);
+    if(isPaid){
+      body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
+    }
+    if(WIRED[panelId]){
+      body+='<div id="ge-data" class="ge-host">'+skel(5)+'</div>';
+    } else {
+      body+=standardLayout(panel,content);
+    }
   }
 
   pages.innerHTML=
@@ -1306,7 +1385,7 @@ function renderPage(panelId){
       body+
     '</main>';
 
-  if(WIRED[panelId]){
+  if(WIRED[panelId]&&!locked){
     const host=document.getElementById('ge-data');
     Promise.resolve().then(()=>WIRED[panelId](host))
       .catch(err=>{if(host)host.innerHTML=(err&&err.status===404)?
@@ -2358,18 +2437,22 @@ function init(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-mid-close]'),
     el=>el.addEventListener('click',closeMidModal));
 
+  /* Pro upgrade modal. */
+  document.addEventListener('click',e=>{if(e.target.closest('[data-pro-close]'))closeUpgrade();});
+
   document.getElementById('tb-logo').addEventListener('click',function(e){
     e.preventDefault();
     openPanel('dashboard');
   });
 
-  /* Live gameweek strip + linked-team label. */
+  /* Live gameweek strip + linked-team label + Pro tier. */
   hydrateGwStrip();
+  reflectTier();
   if(getMid()){refreshIdentity();loadEntry(getMid()).then(refreshIdentity).catch(()=>{});}
 
-  /* Close drawer / modal on Escape */
+  /* Close drawer / modals on Escape */
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeSidebar();closeMidModal();}
+    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();}
   });
 }
 
