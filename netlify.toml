@@ -37,3 +37,9 @@
   to = "/.netlify/functions/stripe-webhook"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/api/portal"
+  to = "/.netlify/functions/portal"
+  status = 200
+  force = true

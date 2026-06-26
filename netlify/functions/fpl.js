@@ -14,7 +14,8 @@ const ALLOW = [
   /^entry\/\d+$/,
   /^entry\/\d+\/history$/,
   /^entry\/\d+\/event\/\d+\/picks$/,
-  /^event\/\d+\/live$/
+  /^event\/\d+\/live$/,
+  /^leagues-classic\/\d+\/standings$/
 ];
 
 const CORS = {
