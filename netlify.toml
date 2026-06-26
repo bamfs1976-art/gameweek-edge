@@ -18,10 +18,10 @@
   status = 200
   force = true
 
-# AI scout report (Claude).
+# AI features (Claude) — scout report, chat, transfers, digest, etc.
 [[redirects]]
-  from = "/api/scout"
-  to = "/.netlify/functions/scout"
+  from = "/api/ai"
+  to = "/.netlify/functions/ai"
   status = 200
   force = true
 

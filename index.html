@@ -305,6 +305,24 @@ html.offline .net-banner{transform:translateY(0)}
 .alert-tog:last-of-type{border-bottom:none}
 .alert-tog input{width:20px;height:20px;accent-color:var(--green-bright)}
 
+/* Ask the Scout (chat) */
+.ask-thread{max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 10px}
+.ask-empty{color:var(--text-3);font-size:.82rem;text-align:center;padding:18px}
+.ask-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:.86rem;line-height:1.5}
+.ask-msg p{margin:0 0 6px}.ask-msg p:last-child{margin:0}
+.ask-msg ul{margin:4px 0;padding-left:18px}.ask-msg h4{margin:4px 0;font-size:.9rem}
+.ask-user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.ask-assistant{align-self:flex-start;background:var(--surface-3);color:var(--text);border-bottom-left-radius:4px}
+.ask-typing{color:var(--text-3);font-style:italic}
+.ask-suggest{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 12px}
+.ask-chip{padding:7px 11px;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border-2);
+  font-size:.76rem;font-weight:600;color:var(--text-2)}
+.ask-chip:hover{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
+.ask-input{display:flex;gap:8px}
+.ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
+  font-size:.9rem;background:var(--surface-3);color:var(--text)}
+.ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
+
 /* ── LAYOUT SHELL ──────────────────────────────────────── */
 .shell{display:flex;min-height:100vh}
 
@@ -942,7 +960,8 @@ const ICON = {
   bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
   eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
   whistle:'<circle cx="9" cy="14" r="6"/><path d="M13 10 21 6v5l-7 3"/><path d="M9 8V5h4"/>',
-  spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>'
+  spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>',
+  chat:'<path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>'
 };
 
 function svg(path,extra){
@@ -1322,7 +1341,8 @@ const NAV = [
       {id:'eo', label:'EO Tracker', icon:'target', tier:'paid'},
       {id:'template', label:'Template Meter', icon:'grid', tier:'paid'},
       {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'},
-      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'}
+      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
+      {id:'ask', label:'Ask the Scout', icon:'chat', tier:'paid'}
     ]
   },
   {
@@ -1407,6 +1427,10 @@ const PANEL_CONTENT = {
   },
   scout:{
     desc:'A predicted-points model picks the optimal team and captain for the gameweek, with an AI scout report.',
+    layout:'standard'
+  },
+  ask:{
+    desc:'Ask anything about your team and the gameweek. The AI scout answers, grounded in your squad and live data.',
     layout:'standard'
   },
   compare:{
@@ -1956,9 +1980,21 @@ async function hydrateTransfers(host){
     return '<div class="card mb-20"><div class="card-title">'+posName[t]+' — in form</div>'+
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
   }).join('');
-  host.innerHTML=budget+
-    '<div class="dl-sub" style="margin-bottom:12px">Transfer targets ranked by recent form, with each player’s next fixture difficulty. Link your team to see your budget.</div>'+
+  const aiCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Transfer Planner</div>'+
+    (getMid()
+      ? '<p class="dl-sub" style="margin-bottom:10px">Claude weighs your squad, budget, fixtures and predicted points to suggest moves — and whether a hit is worth it.</p>'+
+        '<button class="btn btn-primary btn-sm" onclick="genTransferPlan()">Plan my transfers</button><div id="transfer-ai" style="margin-top:14px"></div>'
+      : '<p class="dl-sub">Link your team (top right) for AI transfer advice tailored to your squad.</p>')+
+    '</div>';
+  host.innerHTML=budget+aiCard+
+    '<div class="dl-sub" style="margin-bottom:12px">Transfer targets ranked by recent form, with each player’s next fixture difficulty.</div>'+
     sections;
+}
+function genTransferPlan(){
+  if(!getMid())return;
+  return runAI('transfers',askContext,'transfer-ai',
+    {busy:'Planning your transfers…',retryName:'genTransferPlan',
+     cacheKey:'ge-ai-trans-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+getMid()});
 }
 
 /* ── Captaincy Lab: rank by predicted points (xP) ──────── */
@@ -2540,27 +2576,109 @@ async function buildScoutPayload(){
   return payload;
 }
 
-let SCOUT_BUSY=false;
-async function genScoutReport(){
-  if(SCOUT_BUSY)return;
-  const box=document.getElementById('scout-report');if(!box)return;
-  const b=await boot();const key='ge-scout-'+b.cur.id+'-'+(getMid()||'x');
-  try{const c=localStorage.getItem(key);if(c){box.innerHTML=mdLite(c);return;}}catch(_){}
-  SCOUT_BUSY=true;
-  box.innerHTML='<div class="ge-state">'+svg(ICON.spark)+'<b>Writing your scout report…</b><p>Claude is analysing the gameweek.</p></div>';
+/* Shared AI runner: POST a task to /api/ai, render markdown into box.
+   Optional cacheKey memoises the result (e.g. per gameweek). retryName
+   is a global function name for the retry button. */
+const AI_BUSY={};
+async function runAI(task,contextFn,boxId,opts){
+  opts=opts||{};
+  const box=document.getElementById(boxId);if(!box||AI_BUSY[boxId])return;
+  if(opts.cacheKey){try{const c=localStorage.getItem(opts.cacheKey);if(c){box.innerHTML=mdLite(c);return;}}catch(_){}}
+  AI_BUSY[boxId]=true;
+  box.innerHTML='<div class="ge-state">'+svg(ICON.spark)+'<b>'+(opts.busy||'Thinking…')+'</b><p>Claude is analysing the data.</p></div>';
   try{
-    const payload=await buildScoutPayload();
-    const r=await fetch(apiBase()+'/api/scout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(r.status===503){box.innerHTML=stateBox('spark','AI reports need setup','Add an ANTHROPIC_API_KEY to the Netlify site environment to switch on Claude scout reports.');return;}
+    const context=await contextFn();
+    const r=await fetch(apiBase()+'/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({task,context})});
+    if(r.status===503){box.innerHTML=stateBox('spark','AI needs setup','Add an ANTHROPIC_API_KEY to the Netlify site environment to switch on AI features.');return;}
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const data=await r.json();const text=data.report||'';
-    try{localStorage.setItem(key,text);}catch(_){}
-    box.innerHTML=mdLite(text);
+    const text=((await r.json()).text||'').trim();
+    if(opts.cacheKey)try{localStorage.setItem(opts.cacheKey,text);}catch(_){}
+    box.innerHTML=mdLite(text)||'<p class="dl-sub">No response.</p>';
     window.GENative&&GENative.hapticSuccess();
   }catch(e){
-    box.innerHTML=stateBox('bolt','Could not generate report','The AI service was slow or unavailable. Try again in a moment.',
-      '<button class="btn btn-ghost btn-sm" onclick="genScoutReport()">Retry</button>');
-  }finally{SCOUT_BUSY=false;}
+    box.innerHTML=stateBox('bolt','Could not generate','The AI service was slow or unavailable. Try again in a moment.',
+      opts.retryName?'<button class="btn btn-ghost btn-sm" onclick="'+opts.retryName+'()">Retry</button>':'');
+  }finally{AI_BUSY[boxId]=false;}
+}
+
+function genScoutReport(){
+  return runAI('scout',buildScoutPayload,'scout-report',
+    {busy:'Writing your scout report…',retryName:'genScoutReport',
+     cacheKey:'ge-ai-scout-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+(getMid()||'x')});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ASK THE SCOUT — conversational AI coach (Claude)
+   Grounded in the user's squad + our xP/fixtures data. Numbers come
+   from us; Claude reasons and explains. Pro feature.
+   ═══════════════════════════════════════════════════════════ */
+let ASK_MSGS=[],ASK_PENDING=false;
+
+function renderAskThread(){
+  const t=document.getElementById('ask-thread');if(!t)return;
+  const body=ASK_MSGS.map(m=>'<div class="ask-msg ask-'+m.role+'">'+
+    (m.role==='assistant'?mdLite(m.content):esc(m.content))+'</div>').join('');
+  t.innerHTML=(body||'<div class="ask-empty">Ask a question to get started.</div>')+
+    (ASK_PENDING?'<div class="ask-msg ask-assistant ask-typing">Thinking…</div>':'');
+  t.scrollTop=t.scrollHeight;
+}
+
+/* Compact, grounded context sent with each question. */
+async function askContext(){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const fx=t=>{const n=nf[t];return n?n.opp+(n.home?' (H)':' (A)')+' [diff '+n.diff+']':'';};
+  const ctx={gameweek:b.cur.id,deadline:b.cur.deadline_time};
+  const mid=getMid();
+  if(mid){try{
+    const picks=await loadPicks(mid,b.cur.id);
+    ctx.bank=((picks.entry_history&&picks.entry_history.bank)||0)/10;
+    ctx.teamValue=((picks.entry_history&&picks.entry_history.value)||0)/10;
+    ctx.squad=picks.picks.map(p=>{const el=b.els[p.element]||{};
+      return {name:el.web_name,team:teamShort(b,el.team),pos:posShort(b,el.element_type),
+        price:(el.now_cost||0)/10,xP:xP(b,el,nf[el.team]),starting:p.position<=11,
+        captain:!!p.is_captain,status:el.status,next:fx(el.team)};});
+  }catch(_){}}
+  ctx.topByXP=b.elements.filter(e=>e.status==='a').map(e=>({name:e.web_name,team:teamShort(b,e.team),
+    pos:posShort(b,e.element_type),price:(e.now_cost||0)/10,xP:xP(b,e,nf[e.team]),owned:e.selected_by_percent+'%',next:fx(e.team)}))
+    .sort((a,c)=>c.xP-a.xP).slice(0,24);
+  const w=loadWatch();if(w.length)ctx.watchlist=w.map(id=>b.els[id]).filter(Boolean).map(e=>e.web_name);
+  return ctx;
+}
+
+async function sendAsk(text){
+  text=(text||'').trim();if(!text||ASK_PENDING)return;
+  const inp=document.getElementById('ask-text');if(inp)inp.value='';
+  ASK_MSGS.push({role:'user',content:text});
+  if(ASK_MSGS.length>20)ASK_MSGS=ASK_MSGS.slice(-20);
+  ASK_PENDING=true;renderAskThread();
+  try{
+    const context=await askContext();
+    const r=await fetch(apiBase()+'/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({task:'ask',messages:ASK_MSGS.slice(-10),context})});
+    if(r.status===503)ASK_MSGS.push({role:'assistant',content:'AI chat needs setup — add an `ANTHROPIC_API_KEY` to the Netlify site environment to switch it on.'});
+    else if(!r.ok)throw new Error('HTTP '+r.status);
+    else{const data=await r.json();ASK_MSGS.push({role:'assistant',content:data.text||'(no answer)'});window.GENative&&GENative.hapticLight();}
+  }catch(e){ASK_MSGS.push({role:'assistant',content:'Sorry — I couldn’t answer just then. Please try again in a moment.'});}
+  finally{ASK_PENDING=false;renderAskThread();}
+}
+
+async function hydrateAsk(host){
+  const chips=['Who should I captain this week?','Suggest one transfer for my team','Best differential under 10% owned?','Is my defence strong enough?'];
+  host.innerHTML=
+    '<div class="card"><div class="card-title">'+svg(ICON.chat,'width="15" height="15"')+' Ask the Scout</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers or the gameweek. Answers are grounded in '+(getMid()?'your squad and ':'')+'live data.'+(getMid()?'':' <b>Link your team</b> for personalised advice.')+'</p>'+
+      '<div class="ask-thread" id="ask-thread"></div>'+
+      '<div class="ask-suggest">'+chips.map(q=>'<button class="ask-chip" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
+      '<div class="ask-input"><input id="ask-text" placeholder="Ask the scout…" autocomplete="off" aria-label="Ask the scout a question">'+
+        '<button class="btn btn-primary btn-sm" id="ask-send">Send</button></div>'+
+    '</div>';
+  renderAskThread();
+  const inp=host.querySelector('#ask-text');
+  host.querySelector('#ask-send').addEventListener('click',()=>sendAsk(inp.value));
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendAsk(inp.value);});
+  Array.prototype.forEach.call(host.querySelectorAll('[data-q]'),btn=>btn.addEventListener('click',()=>sendAsk(btn.dataset.q)));
 }
 
 /* Panels wired to live FPL data. */
@@ -2588,7 +2706,8 @@ const WIRED={
   rivals:hydrateRivals,
   setpiece:hydrateSetpiece,
   rotation:hydrateRotation,
-  scout:hydrateScout
+  scout:hydrateScout,
+  ask:hydrateAsk
 };
 
 /* ── LAYOUT: STANDARD ──────────────────────────────────── */
