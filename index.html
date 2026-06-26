@@ -322,6 +322,10 @@ html.offline .net-banner{transform:translateY(0)}
 .ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
   font-size:.9rem;background:var(--surface-3);color:var(--text)}
 .ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
+/* Watchlist item (row + inline AI verdict) */
+.wl-item{border-bottom:1px solid var(--border)}
+.wl-item:last-child{border-bottom:none}
+.wl-item [id^="pcard-"]:not(:empty){margin:0 0 12px}
 
 /* ── LAYOUT SHELL ──────────────────────────────────────── */
 .shell{display:flex;min-height:100vh}
@@ -1686,6 +1690,16 @@ async function hydrateDashboard(host){
         '</div>'+
       '</div>'+
     '</div>'+
+    '<div class="grid g-sb mb-20">'+
+      '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Weekly Digest</div>'+
+        '<p class="dl-sub" style="margin-bottom:10px">Your pre-deadline brief — captain, a transfer thought and a risk to watch.</p>'+
+        aiGate('<button class="btn btn-primary btn-sm" onclick="genDigest()">Generate digest</button>')+
+        '<div id="digest-ai" style="margin-top:12px"></div></div>'+
+      '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Last Gameweek Review</div>'+
+        '<p class="dl-sub" style="margin-bottom:10px">How your last gameweek went versus the average, and one lesson.</p>'+
+        aiGate('<button class="btn btn-primary btn-sm" onclick="genReview()">Review my gameweek</button>')+
+        '<div id="review-ai" style="margin-top:12px"></div></div>'+
+    '</div>'+
     '<div class="card"><div class="card-title">Jump in</div>'+
       '<div class="modal-row" style="margin-top:0">'+
         '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'squad\')">View squad</button>'+
@@ -1983,7 +1997,7 @@ async function hydrateTransfers(host){
   const aiCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Transfer Planner</div>'+
     (getMid()
       ? '<p class="dl-sub" style="margin-bottom:10px">Claude weighs your squad, budget, fixtures and predicted points to suggest moves — and whether a hit is worth it.</p>'+
-        '<button class="btn btn-primary btn-sm" onclick="genTransferPlan()">Plan my transfers</button><div id="transfer-ai" style="margin-top:14px"></div>'
+        aiGate('<button class="btn btn-primary btn-sm" onclick="genTransferPlan()">Plan my transfers</button>')+'<div id="transfer-ai" style="margin-top:14px"></div>'
       : '<p class="dl-sub">Link your team (top right) for AI transfer advice tailored to your squad.</p>')+
     '</div>';
   host.innerHTML=budget+aiCard+
@@ -2059,6 +2073,10 @@ async function hydrateChips(host){
         '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+n+'</span></span>'+
         '<span class="badge badge-green">Ready</span></div>').join('')
         :'<div class="dl-row"><span class="dl-sub">All standard chips used.</span></div>')+'</div></div>'+
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Chip Adviser</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Claude suggests when to play each remaining chip.</p>'+
+      aiGate('<button class="btn btn-primary btn-sm" onclick="genChips()">Advise my chips</button>')+
+      '<div id="chips-ai" style="margin-top:12px"></div></div>'+
     '<div class="card"><div class="ge-state">'+svg(ICON.diamond)+
       '<b>When to play them</b><p>Bench Boost and Triple Captain pay off in double gameweeks; Free Hit covers a blank. Watch the Fixture Planner for upcoming doubles and blanks.</p></div></div>';
 }
@@ -2073,16 +2091,19 @@ async function hydrateWatchlist(host){
   const nf=buildNextFix(b,fixtures);
   const watch=loadWatch();
   const rows=watch.map(id=>{const e=b.els[id];if(!e)return '';
-    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    return '<div class="wl-item"><div class="dl-row" style="padding:11px 0">'+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · form '+e.form+' · next '+nextFixLabel(nf[e.team])+'</span></span>'+
-      '<button class="btn btn-ghost btn-sm" data-rm="'+e.id+'">Remove</button></div>';
+      aiGate('<button class="btn btn-ghost btn-sm" onclick="genPlayer('+e.id+')">AI verdict</button>')+
+      '<button class="btn btn-ghost btn-sm" data-rm="'+e.id+'">Remove</button></div>'+
+      '<div id="pcard-'+e.id+'"></div></div>';
   }).join('');
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add a player</div>'+
       '<input class="modal-in" id="watch-search" placeholder="Search players…" autocomplete="off">'+
       '<div class="sugg" id="watch-sugg"></div></div>'+
     '<div class="card"><div class="card-title">Your watchlist'+(watch.length?' ('+watch.length+')':'')+'</div>'+
-      (watch.length?'<div class="dl">'+rows+'</div>'
+      (watch.length?rows
         :'<div class="ge-state">'+svg(ICON.eye)+'<b>Nothing watched yet</b><p>Search above to track players you’re considering. Your list is saved on this device.</p></div>')+
     '</div>';
   const inp=host.querySelector('#watch-search'),sugg=host.querySelector('#watch-sugg');
@@ -2408,9 +2429,13 @@ async function hydrateRivals(host){
     '<div class="card mb-20"><div class="card-title">Add a rival</div>'+
       '<input class="modal-in" id="rival-in" inputmode="numeric" placeholder="Rival Manager ID"'+(rivals.length>=5?' disabled':'')+'>'+
       '<div class="dl-sub" style="margin-top:8px">Track up to five rivals. Points gap is relative to your overall total.</div></div>'+
-    '<div class="card"><div class="card-title">Your rivals'+(rivals.length?' ('+rivals.length+'/5)':'')+'</div>'+
+    '<div class="card'+(rivals.length?' mb-20':'')+'"><div class="card-title">Your rivals'+(rivals.length?' ('+rivals.length+'/5)':'')+'</div>'+
       (rivals.length?'<div class="dl"><div class="dl-row head"><span class="dl-grow">Rival · shared XI</span><span class="dl-col">Gap</span><span style="width:32px"></span></div>'+cards.join('')+'</div>'
-        :'<div class="ge-state">'+svg(ICON.users)+'<b>No rivals yet</b><p>Add a Manager ID above to compare squads and the points gap.</p></div>')+'</div>';
+        :'<div class="ge-state">'+svg(ICON.users)+'<b>No rivals yet</b><p>Add a Manager ID above to compare squads and the points gap.</p></div>')+'</div>'+
+    (rivals.length?'<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Rival Brief</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">How to overtake them — differentials to target and the captaincy angle.</p>'+
+      aiGate('<button class="btn btn-primary btn-sm" onclick="genRival()">How do I beat them?</button>')+
+      '<div id="rival-ai" style="margin-top:12px"></div></div>':'');
   const inp=host.querySelector('#rival-in');
   if(inp&&!inp.disabled)inp.addEventListener('keydown',e=>{
     if(e.key==='Enter'){const v=(inp.value||'').trim();
@@ -2601,6 +2626,78 @@ async function runAI(task,contextFn,boxId,opts){
       opts.retryName?'<button class="btn btn-ghost btn-sm" onclick="'+opts.retryName+'()">Retry</button>':'');
   }finally{AI_BUSY[boxId]=false;}
 }
+
+/* Gate an AI action button behind Pro (cost control on free panels). */
+function aiGate(buttonHtml){
+  return isPro()?buttonHtml
+    :'<button class="btn btn-ghost btn-sm" onclick="openUpgrade()">'+svg(ICON.lock,'width="12" height="12"')+' Unlock with Pro</button>';
+}
+/* Post-gameweek review context (last finished gameweek vs average). */
+async function reviewContext(){
+  const b=await boot();const ctx={gameweek:b.cur.id};const mid=getMid();
+  if(mid){try{const hist=await loadHistory(mid);const cur=hist.current||[];const last=cur[cur.length-1];
+    if(last){const ev=b.events.find(e=>e.id===last.event)||{};
+      ctx.lastGw={event:last.event,points:last.points,average:ev.average_entry_score,
+        highest:ev.highest_score,overallRank:last.overall_rank,gwRank:last.rank,
+        benchPoints:last.points_on_bench,transferCost:last.event_transfers_cost};}
+  }catch(_){}}
+  return ctx;
+}
+function genDigest(){return runAI('digest',askContext,'digest-ai',
+  {busy:'Writing your digest…',retryName:'genDigest',cacheKey:'ge-ai-digest-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+(getMid()||'x')});}
+function genReview(){return runAI('review',reviewContext,'review-ai',
+  {busy:'Reviewing your gameweek…',retryName:'genReview',cacheKey:'ge-ai-review-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+(getMid()||'x')});}
+
+/* Single-player scouting verdict. */
+async function playerContext(id){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);const e=b.els[id]||{};
+  return {player:{name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),
+    price:(e.now_cost||0)/10,form:e.form,xP:xP(b,e,nf[e.team]),owned:e.selected_by_percent+'%',
+    ppg:e.points_per_game,xG:e.expected_goals,xA:e.expected_assists,status:e.status,news:e.news||'',
+    penaltiesOrder:e.penalties_order,freekicksOrder:e.direct_freekicks_order,
+    next:nf[e.team]?nf[e.team].opp+(nf[e.team].home?' (H)':' (A)')+' [diff '+nf[e.team].diff+']':''}};
+}
+function genPlayer(id){return runAI('player',()=>playerContext(id),'pcard-'+id,
+  {busy:'Scouting…',cacheKey:'ge-ai-player-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+id});}
+
+/* Chip strategy context: chips used/available + fixture doubles/blanks. */
+async function chipContext(){
+  const b=await boot();const ctx={gameweek:b.cur.id};const mid=getMid();
+  const all=[['wildcard','Wildcard'],['3xc','Triple Captain'],['bboost','Bench Boost'],['freehit','Free Hit']];
+  if(mid){try{const hist=await loadHistory(mid);const used=(hist.chips||[]).map(c=>c.name);
+    ctx.chipsUsed=(hist.chips||[]).map(c=>({chip:c.name,gameweek:c.event}));
+    ctx.chipsAvailable=all.filter(([k])=>!used.includes(k)).map(([,n])=>n);
+  }catch(_){}}
+  return ctx;
+}
+function genChips(){return runAI('chips',chipContext,'chips-ai',
+  {busy:'Planning your chips…',retryName:'genChips',cacheKey:'ge-ai-chips-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+(getMid()||'x')});}
+
+/* Rival brief context: my XI + each rival's overlap and points gap. */
+async function rivalContext(){
+  const b=await boot();const mid=getMid();const ctx={gameweek:b.cur.id,rivals:[]};
+  if(!mid)return ctx;
+  try{
+    const me=await loadEntry(mid);ctx.me={name:me.name,points:me.summary_overall_points};
+    const mp=await loadPicks(mid,b.cur.id);
+    const myXi=mp.picks.filter(p=>p.position<=11).map(p=>p.element);
+    ctx.myTeam=myXi.map(id=>{const e=b.els[id]||{};return e.web_name;});
+    const rivals=loadRivals();
+    for(const rid of rivals.slice(0,5)){
+      try{const re=await loadEntry(rid);const rp=await loadPicks(rid,b.cur.id);
+        const rxi=rp.picks.filter(p=>p.position<=11).map(p=>p.element);
+        const diffsThey=rxi.filter(id=>!myXi.includes(id)).map(id=>(b.els[id]||{}).web_name);
+        const diffsYou=myXi.filter(id=>!rxi.includes(id)).map(id=>(b.els[id]||{}).web_name);
+        ctx.rivals.push({name:re.name,pointsGap:me.summary_overall_points-re.summary_overall_points,
+          theirDifferentials:diffsThey,yourDifferentials:diffsYou});
+      }catch(_){}
+    }
+  }catch(_){}
+  return ctx;
+}
+function genRival(){return runAI('rival',rivalContext,'rival-ai',
+  {busy:'Sizing up your rivals…',retryName:'genRival',cacheKey:null});}
 
 function genScoutReport(){
   return runAI('scout',buildScoutPayload,'scout-report',
