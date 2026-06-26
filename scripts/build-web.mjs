@@ -13,7 +13,7 @@ const OUT = join(ROOT, 'www');
 
 /* Static web assets to copy verbatim into www/. Add to this list as
    the app grows. */
-const STATIC_FILES = ['index.html', 'manifest.webmanifest', 'sw.js'];
+const STATIC_FILES = ['index.html', 'landing.html', 'manifest.webmanifest', 'sw.js'];
 const STATIC_DIRS = ['icons'];
 
 async function clean() {

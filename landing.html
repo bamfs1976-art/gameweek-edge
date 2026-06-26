@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gameweek Edge — the calm, clear edge for FPL managers</title>
+<meta name="description" content="Gameweek Edge is the smart companion for Fantasy Premier League managers: an AI scout, predicted points, live matchday tracking, mini-leagues and alerts — all from the official data.">
+<link rel="canonical" href="https://gameweekedge.app/">
+<!-- Social / Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Gameweek Edge — FPL, with an edge">
+<meta property="og:description" content="An AI scout, predicted points, live rank, mini-leagues and alerts for Fantasy Premier League managers.">
+<meta property="og:image" content="https://gameweekedge.app/icons/og.png">
+<meta property="og:url" content="https://gameweekedge.app/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gameweek Edge — FPL, with an edge">
+<meta name="twitter:description" content="An AI scout, predicted points, live rank, mini-leagues and alerts for FPL managers.">
+<meta name="twitter:image" content="https://gameweekedge.app/icons/og.png">
+<meta name="theme-color" content="#15824a">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#15824a;--green-bright:#1f9d5c;--green-soft:rgba(31,157,92,.10);
+  --ink:#10171e;--ink-2:#586673;--ink-3:#8a97a4;
+  --bg:#f4f6f8;--surface:#fff;--surface-2:#eef1f4;--border:rgba(12,16,20,.10);
+  --amber:#b9741a;--purple:#7a5cc7;--blue:#2f6dc7;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;--body:'Public Sans',system-ui,sans-serif;
+  --r:16px;--r-lg:22px;--shadow:0 10px 30px rgba(12,16,20,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--ink);line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+img{max-width:100%}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:.95rem;border-radius:var(--r);padding:13px 22px;cursor:pointer;border:none;transition:transform .12s,filter .15s,background .15s;font-family:var(--body)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--green);color:#fff;box-shadow:0 4px 14px rgba(31,157,92,.3)}
+.btn-primary:hover{filter:brightness(1.07)}
+.btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface-2)}
+.eyebrow{font-size:.72rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--green-bright)}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;line-height:1.1}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:rgba(244,246,248,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .mk{width:34px;height:34px}
+.brand .nm{font-family:var(--display);font-size:1.05rem}
+.brand .nm .l{font-weight:500;color:var(--ink-2)}.brand .nm .b{font-weight:800}
+.nav-links{display:flex;align-items:center;gap:26px;font-weight:600;font-size:.9rem;color:var(--ink-2)}
+.nav-links a:hover{color:var(--ink)}
+@media(max-width:720px){.nav-links a:not(.btn){display:none}}
+
+/* Hero */
+.hero{padding:72px 0 40px;position:relative;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:34px}}
+.hero h1{font-size:3.3rem;font-weight:800;margin:16px 0 18px}
+@media(max-width:900px){.hero h1{font-size:2.5rem}}
+.hero p.lead{font-size:1.18rem;color:var(--ink-2);max-width:540px;margin-bottom:26px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.trust{margin-top:22px;font-size:.84rem;color:var(--ink-3);font-weight:600}
+.trust b{color:var(--green-bright)}
+
+/* Hero visual: stylised app preview */
+.preview{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:18px;transform:rotate(-1.2deg)}
+.pv-top{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.pv-dot{width:9px;height:9px;border-radius:50%;background:var(--surface-2)}
+.pv-kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.pv-kpi{background:var(--surface-2);border-radius:12px;padding:12px}
+.pv-kpi .l{font-size:.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.pv-kpi .v{font-family:var(--display);font-size:1.5rem;font-weight:800;margin-top:3px}
+.pv-pitch{background:linear-gradient(176deg,#1a7a45,#15633a);border-radius:12px;padding:16px 12px;display:flex;flex-direction:column;gap:12px}
+.pv-row{display:flex;justify-content:center;gap:14px}
+.pv-j{width:26px;height:28px;background:rgba(255,255,255,.92);clip-path:polygon(20% 0,0 14%,0 30%,17% 24%,17% 100%,83% 100%,83% 24%,100% 30%,100% 14%,80% 0,62% 8%,50% 10%,38% 8%)}
+
+/* Sections */
+section{padding:64px 0}
+.sec-head{text-align:center;max-width:660px;margin:0 auto 44px}
+.sec-head h2{font-size:2.2rem;font-weight:800;margin:10px 0 12px}
+.sec-head p{color:var(--ink-2);font-size:1.05rem}
+
+/* Strip */
+.strip{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.strip .wrap{display:flex;flex-wrap:wrap;gap:14px 34px;justify-content:center;padding:20px 22px;font-weight:700;font-size:.9rem;color:var(--ink-2)}
+.strip span{display:flex;align-items:center;gap:8px}
+.strip svg{width:18px;height:18px;color:var(--green-bright)}
+
+/* Features */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:900px){.feat-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.feat-grid{grid-template-columns:1fr}}
+.feat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.feat .ic{width:44px;height:44px;border-radius:12px;background:var(--green-soft);display:grid;place-items:center;margin-bottom:14px}
+.feat .ic svg{width:22px;height:22px;color:var(--green-bright)}
+.feat h3{font-size:1.12rem;font-weight:700;margin-bottom:6px}
+.feat p{color:var(--ink-2);font-size:.92rem}
+
+/* AI highlight */
+.ai{background:linear-gradient(160deg,#0f5f37,#15824a);color:#fff;border-radius:var(--r-lg)}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;padding:44px}
+@media(max-width:820px){.ai-grid{grid-template-columns:1fr;padding:32px 24px}}
+.ai h2{color:#fff;font-size:2rem;font-weight:800;margin-bottom:12px}
+.ai p{color:#d9f3e4;font-size:1.02rem;margin-bottom:10px}
+.chat{display:flex;flex-direction:column;gap:10px}
+.bub{max-width:86%;padding:11px 14px;border-radius:14px;font-size:.9rem;line-height:1.45}
+.bub.u{align-self:flex-end;background:#fff;color:var(--ink);border-bottom-right-radius:4px}
+.bub.a{align-self:flex-start;background:rgba(255,255,255,.16);color:#fff;border-bottom-left-radius:4px;backdrop-filter:blur(4px)}
+
+/* Steps */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:s}
+@media(max-width:760px){.steps{grid-template-columns:1fr}}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;font-family:var(--display);font-weight:800;margin-bottom:12px}
+.step h3{font-size:1.1rem;margin-bottom:6px}
+.step p{color:var(--ink-2);font-size:.92rem}
+
+/* Pricing */
+.price-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px;margin:0 auto}
+@media(max-width:680px){.price-grid{grid-template-columns:1fr}}
+.plan{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:30px}
+.plan.pro{border:2px solid var(--green-bright);box-shadow:var(--shadow);position:relative}
+.plan .tag{position:absolute;top:-12px;right:22px;background:var(--green);color:#fff;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:999px}
+.plan h3{font-size:1.3rem;margin-bottom:4px}
+.plan .amt{font-family:var(--display);font-size:2.4rem;font-weight:800;margin:8px 0}
+.plan .amt small{font-size:.95rem;font-weight:600;color:var(--ink-3)}
+.plan .sub{color:var(--ink-3);font-size:.84rem;margin-bottom:18px}
+.plan ul{list-style:none;margin:18px 0;display:flex;flex-direction:column;gap:10px}
+.plan li{display:flex;gap:9px;align-items:flex-start;font-size:.92rem;color:var(--ink-2)}
+.plan li svg{width:18px;height:18px;color:var(--green-bright);flex-shrink:0;margin-top:1px}
+.plan .btn{width:100%;justify-content:center;margin-top:6px}
+
+/* FAQ */
+.faq{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.faq details{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px 20px}
+.faq summary{cursor:pointer;font-weight:700;padding:16px 0;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';font-size:1.3rem;color:var(--green-bright);font-weight:700}
+.faq details[open] summary::after{content:'–'}
+.faq p{color:var(--ink-2);font-size:.94rem;padding:0 0 18px}
+
+/* CTA band */
+.cta-band{text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:48px 24px;box-shadow:var(--shadow)}
+.cta-band h2{font-size:2.1rem;font-weight:800;margin-bottom:10px}
+.cta-band p{color:var(--ink-2);margin-bottom:22px;font-size:1.05rem}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
+.foot-row{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+.foot-links{display:flex;gap:22px;font-size:.88rem;color:var(--ink-2);font-weight:600}
+.disclaimer{margin-top:22px;font-size:.78rem;color:var(--ink-3);max-width:760px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="/" aria-label="Gameweek Edge home">
+      <svg class="mk" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--green)"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+      </svg>
+      <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-primary" href="/">Launch app</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">FPL, with an edge</span>
+      <h1>The calm, clear edge for FPL managers.</h1>
+      <p class="lead">An AI scout, predicted points, live matchday tracking, mini-leagues and smart alerts — all from the official Fantasy Premier League data, in one beautiful app.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/">Launch the app — free</a>
+        <a class="btn btn-ghost" href="#features">See what's inside</a>
+      </div>
+      <p class="trust">Live <b>official data</b> · No ads · Works on iPhone &amp; Android · Your data stays yours</p>
+    </div>
+    <div class="preview" aria-hidden="true">
+      <div class="pv-top"><span class="pv-dot"></span><span class="pv-dot"></span><span class="pv-dot"></span></div>
+      <div class="pv-kpis">
+        <div class="pv-kpi"><div class="l">Live GW Points</div><div class="v">64</div></div>
+        <div class="pv-kpi"><div class="l">Overall Rank</div><div class="v">150k</div></div>
+      </div>
+      <div class="pv-pitch">
+        <div class="pv-row"><span class="pv-j"></span></div>
+        <div class="pv-row"><span class="pv-j"></span><span class="pv-j"></span><span class="pv-j"></span><span class="pv-j"></span></div>
+        <div class="pv-row"><span class="pv-j"></span><span class="pv-j"></span><span class="pv-j"></span></div>
+        <div class="pv-row"><span class="pv-j"></span><span class="pv-j"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg> Live official FPL data</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9 5 .8-3.6 3.5 1 5-4.2-2.3L7.6 17l1-5L5 8.7l5-.8z"/></svg> AI-powered scouting</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Private &amp; secure</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-7-4-7 4z"/></svg> No ads, ever</span>
+  </div>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Everything you need</span>
+      <h2>Serious tools, beautifully simple</h2>
+      <p>The clarity of the official site, with the depth top managers rely on — and an AI scout to tie it together.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9 5 .8-3.6 3.5 1 5-4.2-2.3L7.6 17l1-5L5 8.7l5-.8z"/></svg></div><h3>AI Scout &amp; chat</h3><p>Ask anything about your team. Get a captain pick, transfer plan and gameweek report — grounded in your real squad.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M21 7v5h-5"/></svg></div><h3>Predicted points</h3><p>A transparent model picks the optimal Team of the Week and ranks every captain choice by expected points.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></div><h3>Live matchday</h3><p>Track your live score, rank threats and projected auto-subs as the points land — minute by minute.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M9 18h6M12 13v5M9 21h6"/></svg></div><h3>Mini-leagues</h3><p>Live standings for every classic league, your rank movement, and how to overtake your rivals.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></div><h3>Fixtures &amp; odds</h3><p>A six-gameweek difficulty grid plus win, draw and clean-sheet probabilities for every match.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div><h3>Smart alerts</h3><p>Price changes, injury flags and deadline reminders pushed to your phone — even when the app is closed.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="ai">
+      <div class="ai-grid">
+        <div>
+          <span class="eyebrow" style="color:#bff0d4">Your AI scout</span>
+          <h2>Like a top-10k manager in your pocket</h2>
+          <p>Ask a plain question, get a clear, grounded answer — captaincy, transfers, differentials, chip timing.</p>
+          <p>The numbers come from our own models; the AI explains the call and never invents stats.</p>
+        </div>
+        <div class="chat">
+          <div class="bub u">Haaland or Salah (C) this week?</div>
+          <div class="bub a">Salah edges it — higher predicted points (8.1 vs 7.6) and a softer home fixture. Haaland's the safer pick if you want the template captain.</div>
+          <div class="bub u">Any transfer for £0.5m in the bank?</div>
+          <div class="bub a">Consider Mbeumo → Saka if you can find the funds — better fixtures over the next three and a set-piece role. Not worth a −4 this week, though.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Up and running in a minute</span><h2>How it works</h2></div>
+    <div class="steps">
+      <div class="step"><h3>Open the app</h3><p>Launch it in your browser, or add it to your home screen for a full-screen, app-like experience. No download required.</p></div>
+      <div class="step"><h3>Link your team</h3><p>Pop in your FPL Manager ID once. Your squad, points, rank and history load instantly from the official data.</p></div>
+      <div class="step"><h3>Get your edge</h3><p>Captaincy, transfers, live tracking and your AI scout — every tool tuned to your team, every gameweek.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Simple pricing</span><h2>Start free. Go Pro when you want the edge.</h2></div>
+    <div class="price-grid">
+      <div class="plan">
+        <h3>Free</h3>
+        <div class="amt">£0</div>
+        <div class="sub">Everything to run your own team.</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Dashboard, squad &amp; this gameweek</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Transfer planner &amp; captaincy lab</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Fixtures, differentials &amp; price moves</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Mini-leagues, watchlist &amp; alerts</li>
+        </ul>
+        <a class="btn btn-ghost" href="/">Get started</a>
+      </div>
+      <div class="plan pro">
+        <span class="tag">Most popular</span>
+        <h3>Pro</h3>
+        <div class="amt">£3.99 <small>/ month</small></div>
+        <div class="sub">or £24.99 a season pass · cancel anytime</div>
+        <ul>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Everything in Free</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> AI Scout chat, reports &amp; transfer plans</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Live rank, threats &amp; auto-sub tracker</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> EO, template, rival scout &amp; set-pieces</li>
+        </ul>
+        <a class="btn btn-primary" href="/">Start with Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head"><span class="eyebrow">Good to know</span><h2>Questions, answered</h2></div>
+    <div class="faq">
+      <details><summary>Is this the official Fantasy Premier League app?</summary><p>No. Gameweek Edge is an independent companion that uses the official FPL data to give you deeper analysis. It isn't affiliated with, endorsed by, or connected to the Premier League or the official Fantasy Premier League game.</p></details>
+      <details><summary>Do I need to pay?</summary><p>No — the Free tier has everything you need to run your own team. Pro unlocks the AI scout, live matchday intelligence and rival tools for £3.99/month or £24.99 a season, and you can cancel anytime.</p></details>
+      <details><summary>Which devices does it work on?</summary><p>Any modern browser, on iPhone and Android. Add it to your home screen for a full-screen, app-like experience that works offline and can send you alerts.</p></details>
+      <details><summary>Is my data safe?</summary><p>Yes. We only use your public FPL Manager ID and the official data. Your account, watchlist and preferences are protected with row-level security, and we never sell your data or show ads.</p></details>
+      <details><summary>How accurate is the AI?</summary><p>The numbers — predicted points, optimal teams, probabilities — come from our own transparent models built on the official data. The AI explains the picks and is instructed to use only that data, so it won't invent stats.</p></details>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta-band">
+      <span class="eyebrow">Ready when you are</span>
+      <h2>Get your edge this gameweek</h2>
+      <p>Free to start. No download. Link your team and you're away.</p>
+      <a class="btn btn-primary" href="/">Launch Gameweek Edge</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-row">
+      <a class="brand" href="/">
+        <svg class="mk" viewBox="0 0 38 38" fill="none" aria-hidden="true"><rect x="1" y="1" width="36" height="36" rx="10" fill="var(--green)"/><path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="11" r="3.4" fill="#fff"/></svg>
+        <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
+      </a>
+      <div class="foot-links">
+        <a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><a href="/">Launch app</a>
+      </div>
+    </div>
+    <p class="disclaimer">Gameweek Edge is an independent application and is not affiliated with, endorsed by, or associated with the Premier League or the official Fantasy Premier League game. "Fantasy Premier League" and "Premier League" are trademarks of their respective owners and are used here for descriptive purposes only. © Gameweek Edge.</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -11,6 +11,12 @@
 [functions]
   node_bundler = "esbuild"
 
+# Clean URL for the marketing landing page (share gameweekedge.app/welcome).
+[[redirects]]
+  from = "/welcome"
+  to = "/landing.html"
+  status = 200
+
 # Route the app's API calls to the proxy function, preserving the path.
 [[redirects]]
   from = "/api/fpl/*"
