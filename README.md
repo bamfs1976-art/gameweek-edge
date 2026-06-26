@@ -50,7 +50,11 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 **All 21 panels are wired to live data.**
 
 - **Free:** Dashboard, This Gameweek, My Squad (live pitch), Transfer Planner, Captaincy Lab, Fixture Planner, Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist (saved on device), Alerts, Player Compare.
-- **Pro** (gated behind the paywall): Live Rank, DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, Set Piece Register, Rotation Risk.
+- **Pro** (gated behind the paywall): Live Rank, DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, **Scout AI**, Set Piece Register, Rotation Risk.
+
+**Scout AI** is our own answer to third-party prediction sites, built on the data we already have plus Claude:
+- A transparent **predicted-points (xP)** model — FPL's expected points scaled by availability and fixture difficulty — feeds an optimiser that picks the **Team of the Week** (best valid XI, max 3 per club) and the **captain**. Captaincy Lab now ranks by xP too.
+- An **AI Scout Report** written by Claude (`netlify/functions/scout.js`): the numbers come from our model; Claude explains the picks, captain and transfer angles, grounded only in the data we pass it. The Anthropic key stays server-side; set `ANTHROPIC_API_KEY` in the Netlify site environment to switch it on (without it, the panel shows a setup note). Reports are cached per gameweek.
 
 **Pro paywall:** free users see a value preview and an upgrade prompt on each Pro panel; Pro users get the live tools (lock badges disappear). The tier is real and gated end to end. Card/in-app payment is wired in Phase M4 — for now an honest in-app "Preview Pro" unlock lets the Pro experience be used and tested on the device.
 

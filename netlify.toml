@@ -17,3 +17,10 @@
   to = "/.netlify/functions/fpl/:splat"
   status = 200
   force = true
+
+# AI scout report (Claude).
+[[redirects]]
+  from = "/api/scout"
+  to = "/.netlify/functions/scout"
+  status = 200
+  force = true

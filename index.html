@@ -940,7 +940,8 @@ const ICON = {
   diamond:'<path d="M12 2.5 21 12l-9 9.5L3 12z"/>',
   bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
   eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
-  whistle:'<circle cx="9" cy="14" r="6"/><path d="M13 10 21 6v5l-7 3"/><path d="M9 8V5h4"/>'
+  whistle:'<circle cx="9" cy="14" r="6"/><path d="M13 10 21 6v5l-7 3"/><path d="M9 8V5h4"/>',
+  spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>'
 };
 
 function svg(path,extra){
@@ -1273,7 +1274,8 @@ const NAV = [
     panels:[
       {id:'eo', label:'EO Tracker', icon:'target', tier:'paid'},
       {id:'template', label:'Template Meter', icon:'grid', tier:'paid'},
-      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'}
+      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'},
+      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'}
     ]
   },
   {
@@ -1354,6 +1356,10 @@ const PANEL_CONTENT = {
   },
   rivals:{
     desc:'Track up to five rivals, see squad overlap and what it takes to beat them.',
+    layout:'standard'
+  },
+  scout:{
+    desc:'A predicted-points model picks the optimal team and captain for the gameweek, with an AI scout report.',
     layout:'standard'
   },
   compare:{
@@ -1867,11 +1873,11 @@ async function hydrateTransfers(host){
     sections;
 }
 
-/* ── Captaincy Lab: rank by expected points (ep_next) ──── */
+/* ── Captaincy Lab: rank by predicted points (xP) ──────── */
 async function hydrateCaptain(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
-  const epn=e=>parseFloat(e.ep_next||'0');
+  const epn=e=>xP(b,e,nf[e.team]);
   let pool=b.elements.filter(e=>e.status==='a'&&epn(e)>0);
   let scopeNote='Top captain picks across the league this gameweek.';
   const mid=getMid();
@@ -1891,14 +1897,14 @@ async function hydrateCaptain(host){
     '<div class="card"><div class="card-title">'+labels[i]+'</div>'+
       '<div class="stat-v">'+esc(e.web_name)+'</div>'+
       '<div class="dl-sub" style="margin:2px 0 10px">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</div>'+
-      '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+e.ep_next+'</div></div>'+
+      '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+epn(e)+'</div></div>'+
         '<div class="stat"><div class="stat-l">Form</div><div class="stat-v">'+e.form+'</div></div></div>'+
       '<div class="dl-sub" style="margin-top:10px">Next: '+nextFixLabel(nf[e.team])+'</div>'+
     '</div>').join('');
   const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
     '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
     '<span class="dl-sub">'+teamShort(b,e.team)+' · next '+nextFixLabel(nf[e.team])+'</span></span>'+
-    '<span class="dl-col mono">'+e.ep_next+'</span><span class="dl-col mono">'+e.form+'</span></div>').join('');
+    '<span class="dl-col mono">'+epn(e)+'</span><span class="dl-col mono">'+e.form+'</span></div>').join('');
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">'+scopeNote+(diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
     '<div class="grid g-3 mb-20">'+cards+'</div>'+
@@ -2334,6 +2340,141 @@ async function hydrateRotation(host){
     '<div class="dl-sub" style="margin-top:10px">Based on each player’s share of their team’s games started. Lower start rates flag rotation or fitness risk.</div></div>';
 }
 
+/* ═══════════════════════════════════════════════════════════
+   SCOUT AI — predicted points (xP), optimal team, captain
+   A transparent model over the FPL data we already pull. No third
+   party. Claude adds the natural-language scout report (server-side).
+   ═══════════════════════════════════════════════════════════ */
+
+/* Predicted points for the next gameweek. Base = FPL's own expected
+   points (ep_next), scaled by availability and nudged by fixture. */
+function xP(b,el,nf){
+  let base=parseFloat(el.ep_next||'0');
+  if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
+  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
+  let p=base*(chance/100);
+  if(nf)p*=(1+(3-nf.diff)*0.05);          /* easier fixture up to +10%, harder down to -10% */
+  return Math.max(0,Math.round(p*10)/10);
+}
+
+/* Candidate pool: available players with a positive projection. */
+function scoutScored(b,nf){
+  return b.elements
+    .filter(e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75)&&parseFloat(e.ep_next||'0')>0)
+    .map(e=>({el:e,p:xP(b,e,nf[e.team])}));
+}
+
+/* Best valid XI by total xP (1 GK; DEF/MID/FWD per formation), max 3
+   per club. Tries every legal formation and keeps the highest total. */
+function bestXI(scored){
+  const sorted=scored.slice().sort((a,c)=>c.p-a.p);
+  const forms=[[3,4,3],[3,5,2],[4,5,1],[4,4,2],[4,3,3],[5,4,1],[5,3,2],[5,2,3]];
+  let best=null;
+  forms.forEach(f=>{
+    const need={1:1,2:f[0],3:f[1],4:f[2]},got={1:0,2:0,3:0,4:0},club={},xi=[];
+    for(const s of sorted){
+      const t=s.el.element_type,c=s.el.team;
+      if(got[t]>=need[t]||(club[c]||0)>=3)continue;
+      xi.push(s);got[t]++;club[c]=(club[c]||0)+1;
+      if(xi.length===11)break;
+    }
+    if(xi.length===11){
+      const total=xi.reduce((a,s)=>a+s.p,0);
+      if(!best||total>best.total)best={xi,total,formation:f};
+    }
+  });
+  return best;
+}
+
+/* Minimal markdown → HTML for the Claude report. */
+function mdLite(src){
+  const lines=String(src||'').split('\n');let out='',inList=false;
+  const inline=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+  for(const ln of lines){
+    if(/^\s*[-*]\s+/.test(ln)){if(!inList){out+='<ul>';inList=true;}out+='<li>'+inline(ln.replace(/^\s*[-*]\s+/,''))+'</li>';continue;}
+    if(inList){out+='</ul>';inList=false;}
+    if(/^#{1,4}\s+/.test(ln))out+='<h4>'+inline(ln.replace(/^#{1,4}\s+/,''))+'</h4>';
+    else if(ln.trim())out+='<p>'+inline(ln)+'</p>';
+  }
+  if(inList)out+='</ul>';
+  return out;
+}
+
+/* ── Scout AI panel ────────────────────────────────────── */
+async function hydrateScout(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const team=bestXI(scoutScored(b,nf));
+  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.');return;}
+  const capP=Math.max.apply(null,team.xi.map(s=>s.p));
+  const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
+    return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
+      '<div class="jersey"></div><span class="pp-nm">'+esc(el.web_name)+'</span>'+
+      '<span class="pp-pt">'+s.p+'</span></div>';};
+  const rowFor=t=>'<div class="pitch-row">'+team.xi.filter(s=>s.el.element_type===t).map(cell).join('')+'</div>';
+  const topBy=t=>scoutScored(b,nf).filter(s=>s.el.element_type===t).sort((a,c)=>c.p-a.p).slice(0,3)
+    .map(s=>esc(s.el.web_name)+' '+s.p).join(' · ');
+  host.innerHTML=
+    '<div class="grid g-sb mb-20">'+
+      '<div class="card"><div class="card-title">Team of the Week '+
+        '<span class="badge badge-green">'+team.formation.join('-')+' · '+team.total.toFixed(1)+' xPts</span></div>'+
+        '<div class="pitch-preview">'+rowFor(1)+rowFor(2)+rowFor(3)+rowFor(4)+'</div></div>'+
+      '<div class="card"><div class="card-title">Top predicted by position</div>'+
+        '<div class="dl">'+
+          '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Forwards</span><span class="dl-sub">'+topBy(4)+'</span></span></div>'+
+          '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Midfielders</span><span class="dl-sub">'+topBy(3)+'</span></span></div>'+
+          '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Defenders</span><span class="dl-sub">'+topBy(2)+'</span></span></div>'+
+          '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Goalkeepers</span><span class="dl-sub">'+topBy(1)+'</span></span></div>'+
+        '</div>'+
+        '<div class="dl-sub" style="margin-top:10px">xPts = predicted points: FPL’s expected points scaled by availability and fixture.</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Scout Report</div>'+
+      '<p class="dl-sub" style="margin-bottom:12px">Claude analyses the gameweek and'+(getMid()?' your squad,':'')+' explains the picks, captain and transfer angles.</p>'+
+      '<button class="btn btn-primary btn-sm" onclick="genScoutReport()">Generate AI scout report</button>'+
+      '<div id="scout-report" style="margin-top:14px"></div>'+
+    '</div>';
+}
+
+/* Build the compact payload Claude reasons over. */
+async function buildScoutPayload(){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const team=bestXI(scoutScored(b,nf));
+  const payload={gameweek:b.cur.id,deadline:b.cur.deadline_time,
+    scoutTeam:team?team.xi.map(s=>({name:s.el.web_name,team:teamShort(b,s.el.team),pos:posShort(b,s.el.element_type),xP:s.p})):[]};
+  const mid=getMid();
+  if(mid){try{const picks=await loadPicks(mid,b.cur.id);
+    payload.myTeam=picks.picks.filter(p=>p.position<=11).map(p=>{const el=b.els[p.element]||{};
+      return {name:el.web_name,pos:posShort(b,el.element_type),xP:xP(b,el,nf[el.team]),captain:!!p.is_captain};});
+    payload.bank=((picks.entry_history&&picks.entry_history.bank)||0)/10;
+  }catch(_){}}
+  return payload;
+}
+
+let SCOUT_BUSY=false;
+async function genScoutReport(){
+  if(SCOUT_BUSY)return;
+  const box=document.getElementById('scout-report');if(!box)return;
+  const b=await boot();const key='ge-scout-'+b.cur.id+'-'+(getMid()||'x');
+  try{const c=localStorage.getItem(key);if(c){box.innerHTML=mdLite(c);return;}}catch(_){}
+  SCOUT_BUSY=true;
+  box.innerHTML='<div class="ge-state">'+svg(ICON.spark)+'<b>Writing your scout report…</b><p>Claude is analysing the gameweek.</p></div>';
+  try{
+    const payload=await buildScoutPayload();
+    const r=await fetch(apiBase()+'/api/scout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(r.status===503){box.innerHTML=stateBox('spark','AI reports need setup','Add an ANTHROPIC_API_KEY to the Netlify site environment to switch on Claude scout reports.');return;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json();const text=data.report||'';
+    try{localStorage.setItem(key,text);}catch(_){}
+    box.innerHTML=mdLite(text);
+    window.GENative&&GENative.hapticSuccess();
+  }catch(e){
+    box.innerHTML=stateBox('bolt','Could not generate report','The AI service was slow or unavailable. Try again in a moment.',
+      '<button class="btn btn-ghost btn-sm" onclick="genScoutReport()">Retry</button>');
+  }finally{SCOUT_BUSY=false;}
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
@@ -2358,7 +2499,8 @@ const WIRED={
   template:hydrateTemplate,
   rivals:hydrateRivals,
   setpiece:hydrateSetpiece,
-  rotation:hydrateRotation
+  rotation:hydrateRotation,
+  scout:hydrateScout
 };
 
 /* ── LAYOUT: STANDARD ──────────────────────────────────── */
