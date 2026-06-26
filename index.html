@@ -1007,7 +1007,11 @@ async function boot(){
   b.elements.forEach(e=>els[e.id]=e);
   b.element_types.forEach(t=>types[t.id]=t);
   const cur=b.events.find(e=>e.is_current)||b.events.find(e=>e.is_next)||b.events[b.events.length-1];
-  const idx={raw:b,teams,els,types,cur,events:b.events,elements:b.elements};
+  /* First gameweek that hasn't finished — the planning horizon. Null
+     between seasons (the new FPL game not yet live in the API). */
+  const upcoming=b.events.find(e=>!e.finished)||null;
+  const liveSeason=b.events.some(e=>e.is_current||e.is_next);
+  const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,events:b.events,elements:b.elements};
   MEM._idx=idx;return idx;
 }
 
@@ -1719,9 +1723,35 @@ async function hydrateSquad(host){
 }
 
 /* Fixture Planner: FDR grid, next 6 GWs */
+/* Poisson pmf and a match model from FPL team-strength fields. */
+function poisson(k,l){let p=Math.exp(-l);for(let i=1;i<=k;i++)p*=l/i;return p;}
+function leagueAvg(b){
+  const ts=b.raw.teams;let att=0,def=0;
+  ts.forEach(t=>{att+=((t.strength_attack_home||1100)+(t.strength_attack_away||1100))/2;
+    def+=((t.strength_defence_home||1100)+(t.strength_defence_away||1100))/2;});
+  return {att:att/ts.length,def:def/ts.length};
+}
+function matchModel(b,f,avg){
+  const h=b.teams[f.team_h],a=b.teams[f.team_a];if(!h||!a)return null;
+  const clamp=x=>Math.max(0.2,Math.min(4.2,x));
+  const hx=clamp(1.45*((h.strength_attack_home||avg.att)/avg.att)*(avg.def/(a.strength_defence_away||avg.def)));
+  const ax=clamp(1.15*((a.strength_attack_away||avg.att)/avg.att)*(avg.def/(h.strength_defence_home||avg.def)));
+  let pH=0,pD=0,pA=0;
+  for(let i=0;i<=6;i++)for(let j=0;j<=6;j++){const p=poisson(i,hx)*poisson(j,ax);
+    if(i>j)pH+=p;else if(i===j)pD+=p;else pA+=p;}
+  return {hx,ax,pH,pD,pA,csH:Math.exp(-ax),csA:Math.exp(-hx)};
+}
+
 async function hydrateFixtures(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
-  const startGw=b.cur.id;
+  const upcoming=b.upcoming;
+  const futureFix=fixtures.filter(f=>f.event&&(!upcoming||f.event>=upcoming.id)&&!f.finished);
+  if(!upcoming||!futureFix.length){
+    host.innerHTML=stateBox('calendar','Between seasons',
+      'The 2026/27 fixtures appear here automatically the moment the FPL game opens for the new season. Everything is wired to the official API — no update needed.');
+    return;
+  }
+  const startGw=upcoming.id;
   const gws=[];for(let g=startGw;g<startGw+6&&g<=38;g++)gws.push(g);
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   const byTeamGw={};
@@ -1737,11 +1767,26 @@ async function hydrateFixtures(host){
     }).join('');
     return '<tr><td class="tm">'+esc(t.short_name)+'</td>'+cells+'</tr>';
   }).join('');
+
+  /* Match outlook for the upcoming gameweek. */
+  const avg=leagueAvg(b);
+  const gwFix=fixtures.filter(f=>f.event===startGw);
+  const pc=x=>Math.round(x*100);
+  const outlook=gwFix.map(f=>{const m=matchModel(b,f,avg);if(!m)return '';
+    const csTeam=m.csH>=m.csA?teamShort(b,f.team_h):teamShort(b,f.team_a);
+    const cs=Math.max(m.csH,m.csA);
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+teamShort(b,f.team_h)+' v '+teamShort(b,f.team_a)+'</span>'+
+      '<span class="dl-sub">'+pc(m.pH)+'% / '+pc(m.pD)+'% / '+pc(m.pA)+'% · best CS '+esc(csTeam)+' '+pc(cs)+'%</span></span>'+
+      '<span class="dl-col mono">'+m.hx.toFixed(1)+'–'+m.ax.toFixed(1)+'</span></div>';}).join('');
+
   host.innerHTML=
-    '<div class="card"><div class="card-title">Fixture Difficulty — next '+gws.length+' gameweeks</div>'+
+    '<div class="card mb-20"><div class="card-title">Fixture Difficulty — next '+gws.length+' gameweeks</div>'+
       '<div class="fdr"><table>'+head+rows+'</table></div>'+
       '<div class="dl-sub" style="margin-top:10px">Greener is easier, redder is harder. <b>(a)</b> marks an away fixture.</div>'+
-    '</div>';
+    '</div>'+
+    (outlook?'<div class="card"><div class="card-title">Match outlook — GW'+startGw+'</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Match · home / draw / away · clean sheet</span><span class="dl-col">xG</span></div>'+outlook+'</div>'+
+      '<div class="dl-sub" style="margin-top:10px">Win/draw/win and clean-sheet probabilities from a Poisson model on team attack/defence strength.</div></div>':'');
 }
 
 /* Differentials: low-owned players with strong form */
