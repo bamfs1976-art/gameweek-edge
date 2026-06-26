@@ -43,6 +43,29 @@ Sign-in is **optional** — signed out, everything works locally on the device. 
 
 > **One Supabase setting for email links:** in the Supabase dashboard → Authentication → URL Configuration, set the **Site URL** (and add to **Redirect URLs**) to your deployed Netlify URL, so sign-up confirmation and password-reset links return to the app.
 
+## Billing (Stripe)
+
+Pro is a real paid tier. Free users see a value preview + the upgrade modal; subscribing via **Stripe Checkout** sets their tier server-side.
+
+- `netlify/functions/checkout.js` — creates a Checkout session (monthly subscription or season-pass one-off).
+- `netlify/functions/stripe-webhook.js` — verifies Stripe's signature and sets `gwedge_profiles.tier` using the Supabase **service-role** key (the only place tier is set authoritatively), logging to `gwedge_billing_events`.
+- The client opens Checkout, and on return pulls the new tier from the cloud (with a short retry for webhook lag).
+
+**To switch it on**, set these env vars on the Netlify site (Site configuration → Environment variables):
+
+| Variable | Where to get it |
+|---|---|
+| `STRIPE_SECRET_KEY` | Stripe dashboard → Developers → API keys |
+| `STRIPE_PRICE_MONTHLY` | Stripe → Products → your monthly price ID (`price_…`) |
+| `STRIPE_PRICE_SEASON` | Stripe → Products → your season-pass price ID |
+| `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → Webhooks → add endpoint `https://<site>/api/stripe-webhook` → signing secret |
+| `SUPABASE_URL` | `https://knodunjnsxelmpziupwk.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project settings → API → service_role key (**secret**, server-only) |
+
+Until configured, the upgrade modal falls back to the on-device "Preview Pro" unlock. Set the Stripe webhook to send at least `checkout.session.completed`, `customer.subscription.updated`, and `customer.subscription.deleted`.
+
+> **iOS App Store note:** Stripe web checkout is fine for the **web/PWA**. If you ship the Capacitor app to the App Store, Apple requires **in-app purchase** for digital subscriptions there — that's a separate integration (e.g. RevenueCat) from this Stripe web flow.
+
 ## Live FPL data
 
 All data comes live from the official FPL API via the proxy (the FPL API has no CORS and blocks direct browser calls). Bootstrap/fixtures are cached with a TTL; manager and live-matchday data are never cached. Enter your **FPL Manager ID** (topbar → *Link Team*) to load your squad, points and rank.

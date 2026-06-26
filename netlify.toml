@@ -24,3 +24,16 @@
   to = "/.netlify/functions/scout"
   status = 200
   force = true
+
+# Stripe billing.
+[[redirects]]
+  from = "/api/checkout"
+  to = "/.netlify/functions/checkout"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/stripe-webhook"
+  to = "/.netlify/functions/stripe-webhook"
+  status = 200
+  force = true

@@ -543,7 +543,8 @@ html.offline .net-banner{transform:translateY(0)}
 #pro-body{text-align:center}
 #pro-body h3{font-family:var(--font-display);font-size:1.3rem;margin:12px 0 16px}
 .pro-prices{display:flex;gap:12px;margin:4px 0 16px}
-.pro-price{flex:1;background:var(--surface-3);border-radius:var(--r-md);padding:14px}
+.pro-price{flex:1;background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;cursor:pointer;text-align:center;transition:border-color .14s,background .14s}
+.pro-price:hover{border-color:var(--green-bright);background:var(--green-soft)}
 .pro-price-v{font-family:var(--font-display);font-size:1.4rem;font-weight:800}
 .pro-price-l{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 .acct-link{display:block;width:100%;text-align:center;margin-top:14px;
@@ -1091,15 +1092,57 @@ function openUpgrade(){
     '<h3 id="pro-title">'+(pro?'You’re on Pro':'Unlock the full edge')+'</h3>'+
     '<div class="pro-benefits">'+benefits+'</div>'+
     (pro
-      ? '<div class="modal-row"><button class="btn btn-ghost" onclick="setProPreview(false)">Switch back to Free</button></div>'
+      ? '<div class="modal-row"><button class="btn btn-ghost" onclick="manageOrCancel()">Manage / cancel</button></div>'
       : '<div class="pro-prices">'+
-          '<div class="pro-price"><div class="pro-price-v">'+PRICE.monthly+'</div><div class="pro-price-l">per month</div></div>'+
-          '<div class="pro-price"><div class="pro-price-v">'+PRICE.season+'</div><div class="pro-price-l">season pass</div></div>'+
+          '<button class="pro-price" onclick="startCheckout(\'monthly\')"><div class="pro-price-v">'+PRICE.monthly+'</div><div class="pro-price-l">per month</div></button>'+
+          '<button class="pro-price" onclick="startCheckout(\'season\')"><div class="pro-price-v">'+PRICE.season+'</div><div class="pro-price-l">season pass</div></button>'+
         '</div>'+
-        '<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="setProPreview(true)">Preview Pro now</button>'+
-        '<p class="modal-hint">Payment isn’t live yet — this preview unlocks every Pro tool on this device so you can try them. Real billing (card on web, in-app purchase on mobile) arrives with the next phase.</p>')+
+        '<div class="modal-err" id="pro-err" role="alert"></div>'+
+        '<p class="modal-hint">Secure card payment via Stripe. '+(SESSION?'':'You’ll be asked to sign in first. ')+'Cancel anytime.</p>')+
     '<div class="modal-row"><button class="btn btn-ghost" data-pro-close>Close</button></div>';
   document.getElementById('pro-modal').classList.add('show');
+}
+function manageOrCancel(){
+  /* Pro from the local preview can be switched off here; real subscriptions
+     are cancelled from the Stripe customer portal / email receipt. */
+  setProPreview(false);
+}
+/* Start a Stripe Checkout. Falls back to an on-device preview unlock only
+   if billing isn't configured yet on the server. */
+async function startCheckout(plan){
+  const err=document.getElementById('pro-err');
+  if(!SESSION){closeUpgrade();openAccount();return;}
+  if(err)err.textContent='Opening secure checkout…';
+  try{
+    const r=await fetch(apiBase()+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan,userId:SESSION.user.id,email:SESSION.user.email})});
+    if(r.status===503){checkoutFallback();return;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    if(data.url){location.href=data.url;return;}
+    throw new Error('no url');
+  }catch(e){if(err)err.textContent='Could not open checkout. Please try again.';}
+}
+function checkoutFallback(){
+  document.getElementById('pro-body').innerHTML=
+    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' Gameweek Edge Pro</span>'+
+    '<h3>Card billing not switched on yet</h3>'+
+    '<p class="modal-hint" style="margin:0 0 16px">Stripe isn’t configured on the server yet. You can preview every Pro tool on this device in the meantime.</p>'+
+    '<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="setProPreview(true)">Preview Pro now</button>'+
+    '<div class="modal-row"><button class="btn btn-ghost" data-pro-close>Close</button></div>';
+}
+/* After returning from Stripe, pull the freshly-set tier from the cloud.
+   The webhook may lag a moment, so retry until the session is ready and
+   Pro shows up. */
+async function refreshTierFromCloud(tries){
+  tries=tries||0;
+  if(sb&&uid()){
+    try{const {data}=await sb.from('gwedge_profiles').select('tier').eq('user_id',uid()).maybeSingle();
+      if(data&&data.tier==='pro'){try{localStorage.setItem('ge-tier','pro');}catch(_){}
+        reflectTier();buildNav();syncNav();renderPage(currentPanel);return;}
+    }catch(_){}
+  }
+  if(tries<5)setTimeout(()=>refreshTierFromCloud(tries+1),2500);
 }
 function closeUpgrade(){document.getElementById('pro-modal').classList.remove('show');}
 function setProPreview(on){
@@ -2799,6 +2842,12 @@ function init(){
     e.preventDefault();
     openPanel('dashboard');
   });
+
+  /* Returning from Stripe checkout: pull the new tier and tidy the URL. */
+  if(/[?&]upgrade=success/.test(location.search)){
+    refreshTierFromCloud(0);
+    try{history.replaceState({},'',location.pathname);}catch(_){}
+  }
 
   /* Live gameweek strip + linked-team label + Pro tier. */
   hydrateGwStrip();
