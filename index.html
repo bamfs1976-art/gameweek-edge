@@ -2196,6 +2196,9 @@ async function hydrateAlerts(host){
     '<input type="checkbox" data-pref="'+k+'"'+(prefs[k]!==false?' checked':'')+'></label>';
 
   host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Push alerts</div>'+
+      '<p class="dl-sub" id="push-status" style="margin-bottom:10px">Checking…</p>'+
+      '<button class="btn btn-primary btn-sm" id="push-toggle">Enable push alerts</button></div>'+
     deadline+
     (owned?'':'<div class="dl-sub" style="margin-bottom:12px">Link your team to tune these alerts to your squad.</div>')+
     feed('Fitness flags'+(owned?' in your squad':''),injuries,e=>
@@ -2209,9 +2212,10 @@ async function hydrateAlerts(host){
     '<div class="card"><div class="card-title">Notify me about</div>'+
       toggle('price','Price changes')+toggle('injury','Injuries & doubts')+
       toggle('deadline','Deadline reminders')+
-      '<div class="dl-sub" style="margin-top:12px">Preferences are saved on this device. Push delivery arrives with the mobile app notifications (Phase M2).</div></div>';
+      '<div class="dl-sub" style="margin-top:12px">Saved on this device. When push is on, these control which alerts you receive.</div></div>';
   Array.prototype.forEach.call(host.querySelectorAll('[data-pref]'),cb=>
-    cb.addEventListener('change',()=>setAlertPref(cb.dataset.pref,cb.checked)));
+    cb.addEventListener('change',()=>{setAlertPref(cb.dataset.pref,cb.checked);syncPushPrefs();}));
+  refreshPushUI();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2839,6 +2843,53 @@ async function renderLeagueStandings(host,leagueId,mid){
     (res.length>50?'<div class="dl-sub" style="margin-top:10px">Showing the top 50.</div>':'')+'</div>';
 }
 
+/* ── Web Push (client) ─────────────────────────────────── */
+function pushSupported(){return ('serviceWorker' in navigator)&&('PushManager' in window)&&('Notification' in window);}
+function urlB64ToUint8(base64){
+  const pad='='.repeat((4-base64.length%4)%4);
+  const b=(base64+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(b);const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);return arr;
+}
+async function getPushSub(){try{const reg=await navigator.serviceWorker.ready;return await reg.pushManager.getSubscription();}catch(_){return null;}}
+async function postSub(sub){
+  return fetch(apiBase()+'/api/push-subscribe',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({subscription:sub.toJSON(),userId:SESSION?SESSION.user.id:null,managerId:getMid()||null,prefs:loadAlertPrefs()})});
+}
+async function enablePush(){
+  const btn=document.getElementById('push-toggle');if(btn){btn.disabled=true;btn.textContent='…';}
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted')return;
+    const r=await fetch(apiBase()+'/api/push-key');
+    if(r.status===503){const s=document.getElementById('push-status');if(s)s.textContent='Push isn’t switched on by the server yet (needs VAPID keys).';return;}
+    const {key}=await r.json();
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(key)});
+    await postSub(sub);
+    window.GENative&&GENative.hapticSuccess();
+  }catch(e){}
+  finally{if(btn)btn.disabled=false;refreshPushUI();}
+}
+async function disablePush(){
+  try{const sub=await getPushSub();
+    if(sub){await fetch(apiBase()+'/api/push-unsubscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:sub.endpoint})});await sub.unsubscribe();}
+  }catch(_){}
+  refreshPushUI();
+}
+/* Keep the server's copy of prefs in step when toggles change. */
+async function syncPushPrefs(){try{const sub=await getPushSub();if(sub)await postSub(sub);}catch(_){}}
+
+async function refreshPushUI(){
+  const statusEl=document.getElementById('push-status'),btn=document.getElementById('push-toggle');
+  if(!statusEl||!btn)return;
+  if(!pushSupported()){statusEl.textContent='Push isn’t available in this browser. Add the app to your home screen to enable it.';btn.style.display='none';return;}
+  if(Notification.permission==='denied'){statusEl.textContent='Notifications are blocked — turn them on in your browser/app settings.';btn.style.display='none';return;}
+  const sub=await getPushSub();btn.style.display='';btn.disabled=false;
+  if(sub){statusEl.textContent='Push alerts are on for this device.';btn.textContent='Turn off';btn.onclick=disablePush;}
+  else{statusEl.textContent='Get price changes, injury flags and deadline reminders — even when the app is closed.';btn.textContent='Enable push alerts';btn.onclick=enablePush;}
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
@@ -3126,6 +3177,10 @@ function init(){
     refreshTierFromCloud(0);
     try{history.replaceState({},'',location.pathname);}catch(_){}
   }
+  /* Deep link from a push notification (e.g. /?panel=price). */
+  const pm=(location.search.match(/[?&]panel=([a-z-]+)/)||[])[1];
+  if(pm&&PANELS[pm]){openPanel(pm);
+    try{history.replaceState({},'',location.pathname);}catch(_){}}
 
   /* Live gameweek strip + linked-team label + Pro tier. */
   hydrateGwStrip();

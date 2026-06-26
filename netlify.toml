@@ -43,3 +43,26 @@
   to = "/.netlify/functions/portal"
   status = 200
   force = true
+
+# Web Push.
+[[redirects]]
+  from = "/api/push-key"
+  to = "/.netlify/functions/push-key"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/push-subscribe"
+  to = "/.netlify/functions/push-subscribe"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/push-unsubscribe"
+  to = "/.netlify/functions/push-unsubscribe"
+  status = 200
+  force = true
+
+# Scheduled push sender (hourly).
+[functions."push-cron"]
+  schedule = "@hourly"
