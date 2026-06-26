@@ -66,6 +66,28 @@ Until configured, the upgrade modal falls back to the on-device "Preview Pro" un
 
 > **iOS App Store note:** Stripe web checkout is fine for the **web/PWA**. If you ship the Capacitor app to the App Store, Apple requires **in-app purchase** for digital subscriptions there — that's a separate integration (e.g. RevenueCat) from this Stripe web flow.
 
+## Push alerts (Web Push)
+
+Price-change, injury and deadline alerts delivered even when the app is closed — on the **PWA**, with **no Apple Developer account** (Web Push, not APNs).
+
+- Subscriptions live in `gwedge_push_subs` (RLS-locked to the service role).
+- `push-key` / `push-subscribe` / `push-unsubscribe` functions manage subscriptions; the service worker shows notifications and deep-links to the relevant panel.
+- `push-cron` (scheduled hourly) diffs the FPL bootstrap for overnight price changes and new injury flags, and sends a deadline reminder in the final hours.
+- Enable from the **Alerts** panel; the price/injury/deadline toggles control what you receive.
+
+Env vars: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (a `mailto:` you own), plus `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (shared with billing). Generate keys with `npx web-push generate-vapid-keys`.
+
+## Environment variables (all server-side, on Netlify)
+
+| Feature | Variables |
+|---|---|
+| AI (all Claude features) | `ANTHROPIC_API_KEY` |
+| Billing | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_SEASON`, `STRIPE_WEBHOOK_SECRET` |
+| Accounts/billing/push backend | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` |
+| Push | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` |
+
+Every feature degrades gracefully (a tidy setup note) until its keys are set.
+
 ## Live FPL data
 
 All data comes live from the official FPL API via the proxy (the FPL API has no CORS and blocks direct browser calls). Bootstrap/fixtures are cached with a TTL; manager and live-matchday data are never cached. Enter your **FPL Manager ID** (topbar → *Link Team*) to load your squad, points and rank.
