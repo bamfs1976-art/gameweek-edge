@@ -1893,14 +1893,20 @@ async function hydrateSquad(host){
    FPL API, each prior counting as PRIOR_W matches of evidence, so
    the offline numbers fade as real results accumulate. */
 function poisson(k,l){let p=Math.exp(-l);for(let i=1;i<=k;i++)p*=l/i;return p;}
-const PLSIM={BASE_H:1.62,BASE_A:1.32,RHO:-0.12,PRIOR_W:8,ITER:24,priors:{
-  arsenal:[1.258,0.65],mancity:[1.344,0.768],liverpool:[1.272,0.913],
-  manutd:[1.078,0.967],chelsea:[1.113,0.95],astonvilla:[1.066,0.952],
-  newcastle:[1.106,0.988],spurs:[1.024,1.07],crystalpalace:[0.859,0.953],
-  brighton:[1.02,0.96],nottmforest:[0.935,0.954],bournemouth:[1.037,0.983],
-  brentford:[1.052,1.008],fulham:[0.923,0.974],everton:[0.832,0.903],
-  sunderland:[0.681,0.985],leeds:[0.895,0.98],coventry:[0.824,1.273],
-  ipswich:[0.789,1.284],hull:[0.648,1.486]}};
+/* Priors are [attack, defence, home-advantage]; rho and the decay/home
+   choices are backtest-validated on held-out 2025/26 (RPS 0.2126 vs
+   0.2133 for the plain fit — see the Plsimulator repo's README). */
+const PLSIM={BASE_H:1.62,BASE_A:1.32,RHO:-0.074,PRIOR_W:8,ITER:24,priors:{
+  arsenal:[1.224,0.701,0.992],mancity:[1.262,0.793,1.081],
+  liverpool:[1.247,0.96,0.963],manutd:[1.104,0.961,1.025],
+  chelsea:[1.102,0.975,0.919],astonvilla:[1.034,0.966,1.076],
+  newcastle:[1.003,1.006,1.192],spurs:[0.995,1.083,0.93],
+  crystalpalace:[0.9,0.984,0.93],brighton:[1.012,0.951,0.987],
+  nottmforest:[1.074,0.948,0.791],bournemouth:[1.092,0.961,0.893],
+  brentford:[1.008,0.99,1.075],fulham:[0.884,0.964,1.076],
+  everton:[0.865,0.933,1.041],sunderland:[0.724,0.987,0.996],
+  leeds:[0.88,0.971,1.119],coventry:[0.85,1.199,1.002],
+  ipswich:[0.816,1.244,0.966],hull:[0.693,1.423,0.946]}};
 const PLSIM_ALIAS={manchestercity:'mancity',manchesterunited:'manutd',
   tottenham:'spurs',tottenhamhotspur:'spurs',nottinghamforest:'nottmforest',
   newcastleunited:'newcastle',ipswichtown:'ipswich',hullcity:'hull',
@@ -1908,16 +1914,19 @@ const PLSIM_ALIAS={manchestercity:'mancity',manchesterunited:'manutd',
   afcbournemouth:'bournemouth'};
 function plsimPrior(team){
   const k=String(team&&team.name||'').toLowerCase().replace(/[^a-z]/g,'');
-  return PLSIM.priors[k]||PLSIM.priors[PLSIM_ALIAS[k]]||[1,1];
+  return PLSIM.priors[k]||PLSIM.priors[PLSIM_ALIAS[k]]||[1,1,1];
 }
 /* Fit attack/defence multipliers to this season's finished fixtures,
-   with the priors as pseudo-matches against an average opponent.
+   with the priors as pseudo-matches against an average opponent. The
+   home-advantage multiplier stays at its offline-fitted prior — half a
+   season of home games is too little signal to refit it live.
    Memoised on the cached fixtures array (10-min TTL upstream). */
 function plsimRatings(b,fixtures){
   if(MEM._plsimSrc===fixtures)return MEM._plsim;
   const done=fixtures.filter(f=>f.finished&&f.team_h_score!=null&&f.team_a_score!=null);
-  const ids=b.raw.teams.map(t=>t.id),att={},def={},pa={},pd={};
-  ids.forEach(id=>{const p=plsimPrior(b.teams[id]);att[id]=pa[id]=p[0];def[id]=pd[id]=p[1];});
+  const ids=b.raw.teams.map(t=>t.id),att={},def={},hom={},pa={},pd={};
+  ids.forEach(id=>{const p=plsimPrior(b.teams[id]);
+    att[id]=pa[id]=p[0];def[id]=pd[id]=p[1];hom[id]=p[2]||1;});
   const BM=(PLSIM.BASE_H+PLSIM.BASE_A)/2,W=PLSIM.PRIOR_W;
   for(let it=0;it<PLSIM.ITER;it++){
     const sc={},es={},cn={},ec={};
@@ -1925,12 +1934,12 @@ function plsimRatings(b,fixtures){
       cn[id]=W*BM*pd[id];ec[id]=W*BM*def[id];});
     done.forEach(f=>{
       const h=f.team_h,a=f.team_a;if(att[h]==null||att[a]==null)return;
-      const lh=PLSIM.BASE_H*att[h]*def[a],la=PLSIM.BASE_A*att[a]*def[h];
+      const lh=PLSIM.BASE_H*att[h]*def[a]*hom[h],la=PLSIM.BASE_A*att[a]*def[h];
       sc[h]+=f.team_h_score;es[h]+=lh;sc[a]+=f.team_a_score;es[a]+=la;
       cn[h]+=f.team_a_score;ec[h]+=la;cn[a]+=f.team_h_score;ec[a]+=lh;});
     ids.forEach(id=>{att[id]*=Math.sqrt(sc[id]/es[id]);def[id]*=Math.sqrt(cn[id]/ec[id]);});
   }
-  const r={att,def,fitted:done.length};
+  const r={att,def,hom,fitted:done.length};
   MEM._plsimSrc=fixtures;MEM._plsim=r;return r;
 }
 /* Full scoreline grid (0-10 goals each way) with the Dixon-Coles
@@ -1938,7 +1947,8 @@ function plsimRatings(b,fixtures){
    0-1 and 1-1, exactly the scorelines clean sheets hinge on. */
 function plsimMatch(r,hId,aId){
   if(r.att[hId]==null||r.att[aId]==null)return null;
-  const hx=PLSIM.BASE_H*r.att[hId]*r.def[aId],ax=PLSIM.BASE_A*r.att[aId]*r.def[hId];
+  const hx=PLSIM.BASE_H*r.att[hId]*r.def[aId]*(r.hom&&r.hom[hId]||1),
+    ax=PLSIM.BASE_A*r.att[aId]*r.def[hId];
   const G=10,ph=[],pw=[];
   for(let k=0;k<=G;k++){ph.push(poisson(k,hx));pw.push(poisson(k,ax));}
   const tau=(i,j)=>i===0&&j===0?1-hx*ax*PLSIM.RHO:i===0&&j===1?1+hx*PLSIM.RHO:
