@@ -857,6 +857,9 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   .hero-band .kpi-value{font-size:1.35rem}
 }
 
+.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
+.seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
+.seg-b.on{background:var(--grad-brand);color:#fff}
 </style>
 </head>
 <body>
@@ -2403,27 +2406,76 @@ function renderSuggestions(b,query,container,exclude,onPick){
 }
 
 /* ── Transfer Planner: targets by position (+ your budget) ─ */
-function suggestReplacements(b,hz,outId,selId){
+/* Player style vector: per-90 attacking/defensive shape from FPL's own
+   ICT + xG metrics, so 'closest style' means plays-the-game-like, not
+   just scores-the-same. Built once per position, z-scored within it. */
+const STYLE_KEYS=['xg90','xa90','threat90','creativity90','influence90','shots90','def90'];
+function per90(el,val){const m=el.minutes||0;return m>0?(parseFloat(val||0)*90/m):0;}
+function styleRaw(el){
+  return {
+    xg90:per90(el,el.expected_goals),
+    xa90:per90(el,el.expected_assists),
+    threat90:per90(el,el.threat),
+    creativity90:per90(el,el.creativity),
+    influence90:per90(el,el.influence),
+    shots90:per90(el,el.starts?el.threat:0),
+    def90:per90(el,(parseFloat(el.clearances_blocks_interceptions||0)+parseFloat(el.tackles||0)+parseFloat(el.saves||0)||el.bps*0.1)),
+  };
+}
+function styleStats(b,posType){
+  const key='_style'+posType;
+  if(b[key])return b[key];
+  const pool=b.elements.filter(e=>e.element_type===posType&&(e.minutes||0)>=180);
+  const mean={},sd={};
+  STYLE_KEYS.forEach(k=>{
+    const vals=pool.map(e=>styleRaw(e)[k]);
+    const m=vals.reduce((a,c)=>a+c,0)/(vals.length||1);
+    const v=vals.reduce((a,c)=>a+(c-m)*(c-m),0)/(vals.length||1);
+    mean[k]=m;sd[k]=Math.sqrt(v)||1;
+  });
+  return b[key]={mean,sd};
+}
+function styleVec(b,el){
+  const {mean,sd}=styleStats(b,el.element_type);
+  const raw=styleRaw(el);
+  return STYLE_KEYS.map(k=>(raw[k]-mean[k])/sd[k]);
+}
+function cosine(a,c){
+  let dot=0,na=0,nc=0;
+  for(let i=0;i<a.length;i++){dot+=a[i]*c[i];na+=a[i]*a[i];nc+=c[i]*c[i];}
+  return (na&&nc)?dot/Math.sqrt(na*nc):0;
+}
+
+function suggestReplacements(b,hz,outId,selId,mode){
   const sel=document.getElementById(selId),out=document.getElementById(outId);
   const el=b.els[parseInt(sel.value,10)];
   if(!el){out.innerHTML='';return;}
   const sq=window._sq||{ids:new Set(),bank:0};
   const maxCost=(el.now_cost||0)+(sq.bank||0);
   const own=horizonXP(b,el,hz);
-  const cands=b.elements
+  const byStyle=mode==='style';
+  const vTarget=byStyle?styleVec(b,el):null;
+  let cands=b.elements
     .filter(e=>e.element_type===el.element_type&&e.id!==el.id&&e.status==='a'
-      &&!sq.ids.has(e.id)&&(e.now_cost||0)<=maxCost)
-    .map(e=>({e,h:horizonXP(b,e,hz)}))
-    .sort((a,c)=>c.h-a.h).slice(0,5);
+      &&!sq.ids.has(e.id)&&(e.now_cost||0)<=maxCost&&(e.minutes||0)>=180);
+  if(byStyle)
+    cands=cands.map(e=>({e,h:horizonXP(b,e,hz),sim:cosine(vTarget,styleVec(b,e))}))
+      .sort((a,c)=>c.sim-a.sim).slice(0,5);
+  else
+    cands=cands.map(e=>({e,h:horizonXP(b,e,hz)})).sort((a,c)=>c.h-a.h).slice(0,5);
   out.innerHTML='<div class="dl"><div class="dl-row head"><span class="dl-grow">Alternative</span>'+
+    (byStyle?'<span class="dl-col">Style</span>':'')+
     '<span class="dl-col">xP</span><span class="dl-col">vs '+esc(el.web_name)+'</span></div>'+
-    cands.map(({e,h})=>{const d=h-own;
+    cands.map(({e,h,sim})=>{const d=h-own;
       return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
         '<span class="dl-sub">'+teamShort(MEM._idx,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
+        (byStyle?'<span class="dl-col mono">'+Math.round(Math.max(0,sim)*100)+'%</span>':'')+
         '<span class="dl-col mono">'+h.toFixed(1)+'</span>'+
         '<span class="dl-col mono" style="color:'+(d>=0?'var(--green)':'var(--red)')+'">'+(d>=0?'+':'')+d.toFixed(1)+'</span></div>';
     }).join('')+'</div>'+
-    '<div class="dl-sub" style="margin-top:8px">Within budget (their price + your bank). Cumulative model xP over the horizon; a 4-point hit costs more than a +'+ (4).toFixed(0)+' edge over one week — think in horizons.</div>';
+    '<div class="dl-sub" style="margin-top:8px">'+(byStyle
+      ?'Ranked by playing-style similarity (per-90 goal threat, creativity, involvement and defensive actions), within budget. The xP column still shows the projection so you can weigh style vs points.'
+      :'Ranked by cumulative model xP over the horizon, within budget. A 4-point hit costs more than a +4 edge over one week — think in horizons.')+'</div>';
 }
 
 async function hydrateTransfers(host){
@@ -2446,9 +2498,11 @@ async function hydrateTransfers(host){
       window._sq={ids:new Set(squad.map(e=>e.id)),bank};
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; ranked alternatives by cumulative expected points over the horizon, within your budget.</p>'+
-        '<select class="modal-in" id="rep-sel" style="max-width:340px"><option value="">Choose a player…</option>'+opts+'</select>'+
-        '<div id="rep-out" style="margin-top:12px"></div></div>';
+        '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
+        '<select class="modal-in" id="rep-sel" style="max-width:280px;flex:1 1 200px"><option value="">Choose a player…</option>'+opts+'</select>'+
+        '<div class="seg"><button class="seg-b on" data-mode="xp">Best points</button><button class="seg-b" data-mode="style">Closest style</button></div></div>'+
+        '<div id="rep-out"></div></div>';
     }catch(_){}
   }
   const posName={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
@@ -2464,8 +2518,17 @@ async function hydrateTransfers(host){
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">xP'+hzN+'</span><span class="dl-col">Form</span></div>'+rows+'</div>'+
       '<div class="dl-sub" style="margin-top:8px">xP'+hzN+' = cumulative expected points across the horizon from the fitted team-strength model and validated player projections. Tap a number for the workings.</div></div>';
   }).join('');
-  setTimeout(()=>{const s=document.getElementById('rep-sel');
-    if(s)s.addEventListener('change',()=>suggestReplacements(b,hz,'rep-out','rep-sel'));},0);
+  setTimeout(()=>{
+    const s=document.getElementById('rep-sel');
+    if(!s)return;
+    let mode='xp';
+    const run=()=>suggestReplacements(b,hz,'rep-out','rep-sel',mode);
+    s.addEventListener('change',run);
+    document.querySelectorAll('.seg-b').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+      mode=btn.dataset.mode;run();
+    }));
+  },0);
   const aiCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Transfer Planner</div>'+
     (getMid()
       ? '<p class="dl-sub" style="margin-bottom:10px">Claude weighs your squad, budget, fixtures and predicted points to suggest moves — and whether a hit is worth it.</p>'+
