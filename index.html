@@ -487,6 +487,7 @@ html.offline .net-banner{transform:translateY(0)}
 .main{
   margin-left:var(--sidebar-w);
   flex:1;display:flex;flex-direction:column;min-height:100vh;
+  min-width:0;
 }
 
 /* Topbar */
@@ -600,10 +601,11 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 /* ── GRID HELPERS ──────────────────────────────────────── */
 .grid{display:grid;gap:14px}
-.g-2{grid-template-columns:repeat(2,1fr)}
-.g-3{grid-template-columns:repeat(3,1fr)}
-.g-4{grid-template-columns:repeat(4,1fr)}
-.g-sb{grid-template-columns:1fr 300px}
+.grid>*{min-width:0}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g-sb{grid-template-columns:minmax(0,1fr) 300px}
 
 /* ── CARD ──────────────────────────────────────────────── */
 .card{
@@ -740,8 +742,8 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 /* ── RESPONSIVE ────────────────────────────────────────── */
 @media(max-width:1080px){
-  .g-4{grid-template-columns:repeat(2,1fr)}
-  .g-sb{grid-template-columns:1fr}
+  .g-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g-sb{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
@@ -776,7 +778,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   .bn-label{font-size:.6rem;font-weight:700;letter-spacing:.02em}
 }
 @media(max-width:560px){
-  .g-2,.g-3,.g-4{grid-template-columns:1fr}
+  .g-2,.g-3,.g-4{grid-template-columns:minmax(0,1fr)}
   .page-head h1{font-size:1.3rem}
   .kpi-value{font-size:1.65rem}
   .topbar{padding:0 14px}
@@ -796,6 +798,65 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .mt-14{margin-top:14px}
 .text-2{color:var(--text-2)}
 .text-3{color:var(--text-3)}
+
+/* ── BRAND ELEVATION — gradient moments, depth, motion ───── */
+:root{
+  --grad-brand:linear-gradient(118deg,#0d6e3f 0%,#15945b 45%,#1d6fa8 100%);
+  --grad-glow:0 6px 24px rgba(21,148,91,.28);
+}
+[data-theme="dark"]{
+  --grad-brand:linear-gradient(118deg,#16a35f 0%,#1cbd7e 45%,#2f8fd0 100%);
+  --grad-glow:0 6px 26px rgba(28,189,126,.22);
+}
+.btn{transition:transform .12s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--grad-brand);box-shadow:var(--grad-glow)}
+@media(hover:hover){
+  .card{transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+  .btn-primary:hover{filter:brightness(1.06)}
+}
+/* Hero band: the one full-gradient brand moment per page */
+.hero-band{
+  background:var(--grad-brand);border-radius:var(--r-lg);
+  padding:18px 18px 8px;margin-bottom:20px;box-shadow:var(--grad-glow);
+}
+.hero-band .hb-top{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.hero-band .hb-title{color:rgba(255,255,255,.85);font-size:.72rem;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase}
+.hero-band .btn-onbrand{background:rgba(255,255,255,.16);color:#fff;
+  border:1px solid rgba(255,255,255,.32)}
+.hero-band .grid{margin-bottom:0}
+.hero-band .kpi{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);
+  box-shadow:none;backdrop-filter:blur(2px)}
+.hero-band .kpi-label{color:rgba(255,255,255,.75)}
+.hero-band .kpi-value{color:#fff}
+.hero-band .kpi-delta{color:rgba(255,255,255,.72)}
+.hero-band .kpi-accent{background:rgba(255,255,255,.55)!important}
+/* Journey stepper */
+.jr{counter-reset:step}
+.jr-step{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)}
+.jr-step:last-child{border-bottom:none}
+.jr-num{flex:0 0 34px;height:34px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-family:var(--font-display);
+  background:var(--surface-3);color:var(--text-2);font-size:.95rem}
+.jr-step.done .jr-num{background:var(--grad-brand);color:#fff}
+.jr-body{flex:1;min-width:0}
+.jr-h{font-weight:800;font-family:var(--font-display);letter-spacing:-.01em;margin-bottom:2px}
+.jr-step.done .jr-h{text-decoration:line-through;text-decoration-thickness:2px;
+  text-decoration-color:var(--green);opacity:.75}
+.jr-sub{font-size:.84rem;color:var(--text-2);margin-bottom:8px}
+.jr-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.jr-prog{height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden;margin:4px 0 14px}
+.jr-prog>div{height:100%;background:var(--grad-brand);transition:width .3s var(--ease)}
+@media(max-width:720px){
+  .hero-band .grid.g-4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .hero-band .kpi{min-width:0}
+  .hero-band .kpi-value{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero-band .kpi-value{font-size:1.35rem}
+}
+
 </style>
 </head>
 <body>
@@ -1089,6 +1150,21 @@ const money=c=>'£'+(c/10).toFixed(1);
 const fmtNum=n=>(n==null?'—':Number(n).toLocaleString('en-GB'));
 const fmtK=n=>{n=Number(n)||0;return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':String(n);};
 function teamShort(b,id){return b.teams[id]?b.teams[id].short_name:'';}
+/* Club kit colours (primary, trim) keyed by FPL short name — 2026/27. */
+const KIT={ARS:['#EF0107','#fff'],AVL:['#67022a','#95bfe5'],BOU:['#B50E12','#000'],
+  BRE:['#e30613','#fff'],BHA:['#0057B8','#fff'],CHE:['#034694','#fff'],
+  COV:['#59c1e8','#0a2b47'],CRY:['#1B458F','#C4122E'],EVE:['#003399','#fff'],
+  FUL:['#f5f5f5','#000'],HUL:['#F5A12D','#000'],IPS:['#3a64a3','#fff'],
+  LEE:['#f2f2f2','#1D428A'],LIV:['#C8102E','#fff'],MCI:['#6CABDD','#fff'],
+  MUN:['#DA291C','#000'],NEW:['#241F20','#fff'],NFO:['#DD0000','#fff'],
+  TOT:['#f8f8f8','#132257'],SUN:['#EB172B','#fff'],WHU:['#7A263A','#1BB1E7'],
+  WOL:['#FDB913','#231F20'],BUR:['#6C1D45','#99D6EA'],LUT:['#F78F1E','#002D62'],
+  SHU:['#EE2737','#000'],LEI:['#003090','#fff'],SOU:['#D71920','#fff']};
+function jerseyStyle(b,teamId){
+  const k=KIT[teamShort(b,teamId)];
+  if(!k)return '';
+  return 'background:linear-gradient(165deg,'+k[0]+' 58%,'+k[1]+');';
+}
 function posShort(b,t){return b.types[t]?b.types[t].singular_name_short:'';}
 function fmtDeadline(iso){
   const d=new Date(iso);
@@ -1465,7 +1541,7 @@ const PANEL_CONTENT = {
     layout:'dashboard'
   },
   'gw-actions':{
-    desc:'The three things worth doing before this deadline, ranked by impact.',
+    desc:'Your four weekly decisions — captain, transfers, team, chips — as a guided plan.',
     layout:'actions'
   },
   squad:{
@@ -1756,8 +1832,12 @@ async function deadlineStrip(b,fixtures){
     flags=xi.filter(e=>e.status&&e.status!=='a');
     xiXP=xi.reduce((s,e)=>s+xP(b,e,nf[e.team]),0);
   }catch(_){}}
-  return '<div class="grid g-4 mb-20">'+
-    kpi('Deadline',count,gw?('GW'+gw.id+(dl?' · '+dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'')):'—','var(--red)')+
+  const done=journeyDone(gw?gw.id:0);
+  return '<div class="hero-band"><div class="hb-top">'+
+    '<span class="hb-title">Gameweek '+(gw?gw.id:'—')+' — your week at a glance</span>'+
+    '<button class="btn btn-sm btn-onbrand" onclick="renderPage(\'gw-actions\')">Plan my week · '+done+'/4 →</button>'+
+    '</div><div class="grid g-4">'+
+    kpi('Deadline',count,gw&&dl?dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'—','var(--red)')+
     kpi('Model captain',cap?esc(cap.e.web_name):'—',cap?teamShort(b,cap.e.team)+' · '+cap.p+' xP':'','var(--green)')+
     (flags!=null
       ?kpi('Squad flags',String(flags.length),flags.length?esc(flags.slice(0,2).map(e=>e.web_name).join(', ')):'all fit','var(--amber)')
@@ -1765,7 +1845,21 @@ async function deadlineStrip(b,fixtures){
     (xiXP!=null
       ?kpi('Projected XI',xiXP.toFixed(0)+' pts','model expectation this GW','var(--purple)')
       :kpi('Top xP pool',pool.slice(0,3).map(x=>esc(x.e.web_name)).join(' · ')||'—','the names to own','var(--purple)'))+
-  '</div>';
+  '</div></div>';
+}
+
+/* Weekly journey progress: which of the four decisions are ticked. */
+function journeySteps(gwId){
+  try{return JSON.parse(localStorage.getItem('ge-journey-'+gwId)||'{}');}catch(_){return {};}
+}
+function journeyDone(gwId){
+  const s=journeySteps(gwId);
+  return ['captain','transfers','team','chips'].filter(k=>s[k]).length;
+}
+function journeyToggle(gwId,key){
+  const s=journeySteps(gwId);s[key]=!s[key];
+  try{localStorage.setItem('ge-journey-'+gwId,JSON.stringify(s));}catch(_){}
+  renderPage('gw-actions');
 }
 
 /* Model watch: rating shifts affecting your squad since your last
@@ -1910,8 +2004,56 @@ async function hydrateDashboard(host){
 }
 
 /* This Gameweek: live event intelligence */
+/* The four weekly decisions as a guided, tickable journey. */
+async function journeyCard(b,fixtures){
+  const gw=b.upcoming||b.cur;
+  const nf=buildNextFix(b,fixtures);
+  const hz=buildHorizon(b,fixtures,6);
+  const steps=journeySteps(gw.id);
+  const mid=getMid();
+  const pool=b.elements.filter(e=>e.status==='a')
+    .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
+  let capPool=pool;
+  let flags=[],chipsLeft=null;
+  if(mid){try{
+    const [picks,hist]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid)]);
+    const xi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+    if(xi.length)capPool=xi.map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
+    flags=picks.picks.map(p=>b.els[p.element]).filter(e=>e&&e.status&&e.status!=='a');
+    const used=(hist.chips||[]).map(c=>c.name);
+    chipsLeft=[['wildcard','Wildcard'],['3xc','Triple Captain'],['bboost','Bench Boost'],['freehit','Free Hit']]
+      .filter(([k])=>!used.includes(k)).map(([,n])=>n);
+  }catch(_){}}
+  const upScope=mid&&capPool!==pool?'your XI':'the league';
+  const bestUp=pool.slice(0,3).map(x=>esc(x.e.web_name)+' '+horizonXP(b,x.e,hz).toFixed(0)).join(' · ');
+  const tick=(key,label)=>'<button class="btn btn-sm '+(steps[key]?'btn-ghost':'btn-primary')+'" '+
+    'onclick="journeyToggle('+gw.id+',\''+key+'\')">'+(steps[key]?'Undo':label)+'</button>';
+  const step=(key,n,h,sub,act)=>'<div class="jr-step'+(steps[key]?' done':'')+'">'+
+    '<div class="jr-num">'+(steps[key]?'✓':n)+'</div><div class="jr-body">'+
+    '<div class="jr-h">'+h+'</div><div class="jr-sub">'+sub+'</div>'+
+    '<div class="jr-act">'+act+'</div></div></div>';
+  const done=journeyDone(gw.id);
+  return '<div class="card mb-20"><div class="card-title">Plan my week — GW'+gw.id+'</div>'+
+    '<div class="jr-prog"><div style="width:'+(done*25)+'%"></div></div>'+
+    '<div class="jr">'+
+    step('captain',1,'Pick your captain',
+      'Model picks from '+upScope+': '+capPool.slice(0,3).map(x=>esc(x.e.web_name)+' '+x.p).join(' · '),
+      '<button class="btn btn-sm btn-ghost" onclick="renderPage(\'captain\')">Open Captaincy Lab</button>'+tick('captain','Done'))+
+    step('transfers',2,'Settle your transfers',
+      'Best 6-GW value right now: '+bestUp,
+      '<button class="btn btn-sm btn-ghost" onclick="renderPage(\'transfers\')">Open Transfer Planner</button>'+tick('transfers','Done'))+
+    step('team',3,'Check your team & bench',
+      flags.length?('Flags in your squad: '+flags.slice(0,3).map(e=>esc(e.web_name)).join(', ')):'No fitness flags in your squad'+(mid?'':' — link your team to check'),
+      '<button class="btn btn-sm btn-ghost" onclick="renderPage(\'squad\')">Open My Squad</button>'+tick('team','Done'))+
+    step('chips',4,'Consider your chips',
+      chipsLeft?(chipsLeft.length?('Still available: '+chipsLeft.join(', ')):'All chips used'):'Link your team to track chips',
+      '<button class="btn btn-sm btn-ghost" onclick="renderPage(\'chips\')">Open Chip Strategy</button>'+tick('chips','Done'))+
+    '</div></div>';
+}
+
 async function hydrateGwActions(host){
-  const b=await boot();
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const journey=await journeyCard(b,fixtures);
   const ev=b.cur;
   const topEl=ev.top_element_info?b.els[ev.top_element_info.id]:null;
   const cap=b.els[ev.most_captained];
@@ -1932,7 +2074,7 @@ async function hydrateGwActions(host){
         '</div></div>';
     }catch(_){}
   }
-  host.innerHTML=
+  host.innerHTML=journey+
     '<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
       ' <span class="badge '+(ev.finished?'badge-grey':'badge-green')+'">'+(ev.finished?'Finished':ev.is_current?'Live':'Upcoming')+'</span></div>'+
       '<div class="dl-sub" style="margin-bottom:12px">Deadline '+fmtDeadline(ev.deadline_time)+'</div>'+
@@ -1973,7 +2115,7 @@ async function hydrateSquad(host){
     const badge=pk.is_captain?'C':pk.is_vice_captain?'V':'';
     return '<div class="pp'+(pk.is_captain?' is-cap':'')+'">'+
       (badge?'<span class="pp-badge">'+badge+'</span>':'')+
-      '<div class="jersey"></div>'+
+      '<div class="jersey" style="'+jerseyStyle(b,el.team)+'"></div>'+
       '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
       '<span class="pp-pt">'+pts+'</span></div>';
   };
@@ -3039,7 +3181,7 @@ async function hydrateScout(host){
   const capP=Math.max.apply(null,team.xi.map(s=>s.p));
   const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
     return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
-      '<div class="jersey"></div><span class="pp-nm">'+esc(el.web_name)+'</span>'+
+      '<div class="jersey" style="'+jerseyStyle(b,el.team)+'"></div><span class="pp-nm">'+esc(el.web_name)+'</span>'+
       '<span class="pp-pt">'+s.p+'</span></div>';};
   const rowFor=t=>'<div class="pitch-row">'+team.xi.filter(s=>s.el.element_type===t).map(cell).join('')+'</div>';
   const topBy=t=>scoutScored(b,nf).filter(s=>s.el.element_type===t).sort((a,c)=>c.p-a.p).slice(0,3)
