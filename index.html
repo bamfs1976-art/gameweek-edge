@@ -1109,6 +1109,11 @@ function errorBox(){
     'The FPL API can be slow on matchday. Pull to refresh or try the refresh button.',
     '<button class="btn btn-ghost btn-sm" onclick="refreshData()">Try again</button>');
 }
+function loadDemoTeam(){
+  setMid('1');
+  toast('Demo team loaded — link your own any time');
+  renderPage('dashboard');
+}
 function linkBox(){
   return stateBox('team','Link your team to see this',
     'Enter your FPL Manager ID and your personalised data loads here, live from the official API.',
@@ -1729,10 +1734,127 @@ const kpi=(label,value,delta,colour)=>
     '<div class="kpi-delta">'+esc(delta)+'</div></div>';
 
 /* Dashboard: season snapshot from entry + history */
+/* The deadline strip: countdown, the model's captain, your flags and
+   projected XI — the four things a manager decides each week. */
+async function deadlineStrip(b,fixtures){
+  const gw=b.upcoming||b.cur;
+  const nf=buildNextFix(b,fixtures);
+  const dl=gw&&gw.deadline_time?new Date(gw.deadline_time):null;
+  let count='—';
+  if(dl){const ms=dl-Date.now();
+    if(ms>0){const d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),mi=Math.floor(ms%36e5/6e4);
+      count=d>0?d+'d '+h+'h':h>0?h+'h '+mi+'m':mi+'m';}
+    else count='passed';}
+  const pool=b.elements.filter(e=>e.status==='a')
+    .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
+  const cap=pool[0];
+  let flags=null,xiXP=null;
+  const mid=getMid();
+  if(mid){try{
+    const picks=await loadPicks(mid,b.cur.id);
+    const xi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+    flags=xi.filter(e=>e.status&&e.status!=='a');
+    xiXP=xi.reduce((s,e)=>s+xP(b,e,nf[e.team]),0);
+  }catch(_){}}
+  return '<div class="grid g-4 mb-20">'+
+    kpi('Deadline',count,gw?('GW'+gw.id+(dl?' · '+dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}):'')):'—','var(--red)')+
+    kpi('Model captain',cap?esc(cap.e.web_name):'—',cap?teamShort(b,cap.e.team)+' · '+cap.p+' xP':'','var(--green)')+
+    (flags!=null
+      ?kpi('Squad flags',String(flags.length),flags.length?esc(flags.slice(0,2).map(e=>e.web_name).join(', ')):'all fit','var(--amber)')
+      :kpi('Best value',''+(pool[10]?esc(pool[10].e.web_name):'—'),'high xP beyond the obvious','var(--amber)'))+
+    (xiXP!=null
+      ?kpi('Projected XI',xiXP.toFixed(0)+' pts','model expectation this GW','var(--purple)')
+      :kpi('Top xP pool',pool.slice(0,3).map(x=>esc(x.e.web_name)).join(' · ')||'—','the names to own','var(--purple)'))+
+  '</div>';
+}
+
+/* Model watch: rating shifts affecting your squad since your last
+   visit (the in-browser refit moves as results land). */
+async function modelWatch(b,fixtures,mid){
+  try{
+    const R=plsimRatings(b,fixtures);
+    const picks=await loadPicks(mid,b.cur.id);
+    const myTeams=new Set(picks.picks.map(p=>(b.els[p.element]||{}).team).filter(Boolean));
+    let prev=null;
+    try{prev=JSON.parse(localStorage.getItem('ge-modelwatch')||'null');}catch(_){}
+    const snap={};
+    Object.keys(R.att).forEach(id=>snap[id]=[R.att[id],R.def[id]]);
+    try{localStorage.setItem('ge-modelwatch',JSON.stringify(snap));}catch(_){}
+    if(!prev)return '';
+    const notes=[];
+    myTeams.forEach(id=>{
+      const p=prev[id];if(!p)return;
+      const dAtt=100*(R.att[id]/p[0]-1),dDef=100*(R.def[id]/p[1]-1);
+      const t=teamShort(b,id);
+      if(Math.abs(dAtt)>=3)notes.push(t+' attack '+(dAtt>0?'▲':'▼')+Math.abs(dAtt).toFixed(0)+'%');
+      if(Math.abs(dDef)>=3)notes.push(t+' defence '+(dDef>0?'weakened ':'improved ')+Math.abs(dDef).toFixed(0)+'%');
+    });
+    if(!notes.length)return '';
+    return '<div class="card mb-20"><div class="card-title">Model watch — your squad since your last visit</div>'+
+      '<p class="dl-sub">'+notes.slice(0,4).map(esc).join(' · ')+'</p></div>';
+  }catch(_){return '';}
+}
+
+/* Season projection: your projected XI xP per gameweek extended over
+   the remaining season, with an uncertainty band (sd ~12 per GW). */
+async function seasonProjection(b,fixtures,mid,hist){
+  try{
+    const gw=b.upcoming||b.cur;
+    const remaining=Math.max(0,38-(gw.id-1));
+    if(!remaining)return '';
+    const nf=buildNextFix(b,fixtures);
+    const picks=await loadPicks(mid,b.cur.id);
+    const xi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+    if(xi.length<11)return '';
+    let perGw=xi.reduce((s,e)=>s+xP(b,e,nf[e.team]),0);
+    const capBest=Math.max.apply(null,xi.map(e=>xP(b,e,nf[e.team])));
+    perGw+=capBest;                            /* captain doubles the best pick */
+    const cur=hist.current||[];
+    const sofar=cur.length?cur[cur.length-1].total_points:0;
+    const mean=sofar+remaining*perGw;
+    const sd=12*Math.sqrt(remaining);
+    const avgMean=sofar+remaining*(b.cur.average_entry_score||52);
+    const erf=x=>{const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);
+      const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+      return s*y;};
+    const pBeat=Math.round(100*0.5*(1+erf((mean-avgMean)/(sd*Math.SQRT2*1.41))));
+    return '<div class="card mb-20"><div class="card-title">Season projection — this squad, unchanged</div>'+
+      '<div class="statgrid">'+
+        '<div class="stat"><div class="stat-l">Projected total</div><div class="stat-v">'+Math.round(mean)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Likely range</div><div class="stat-v">'+Math.round(mean-1.28*sd)+'–'+Math.round(mean+1.28*sd)+'</div></div>'+
+      '</div>'+
+      '<p class="dl-sub" style="margin-top:10px">'+remaining+' gameweeks left at ~'+perGw.toFixed(0)+
+      ' model xP per week (best pick captained). ~'+pBeat+'% to finish above the average manager. Transfers, chips and form will move this — treat it as a baseline, not a ceiling.</p></div>';
+  }catch(_){return '';}
+}
+
 async function hydrateDashboard(host){
   const mid=getMid();
-  if(!mid){host.innerHTML=linkBox();return;}
-  const [b,entry,hist]=await Promise.all([boot(),loadEntry(mid),loadHistory(mid)]);
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const strip=await deadlineStrip(b,fixtures);
+  if(!mid){
+    const nf=buildNextFix(b,fixtures);
+    const totw=bestXI(scoutScored(b,nf));
+    const rows=(totw?totw.xi.slice(0,5):[]).map(s=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(s.el.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,s.el.team)+' · '+posShort(b,s.el.element_type)+' · '+money(s.el.now_cost)+'</span></span>'+
+      '<span class="dl-col mono">'+s.p+'</span></div>').join('');
+    host.innerHTML=strip+
+      '<div class="grid g-sb mb-20">'+
+        '<div class="card"><div class="card-title">Model team of the week — top picks</div>'+
+          '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">xP</span></div>'+rows+'</div>'+
+          '<div class="dl-sub" style="margin-top:10px">From the fitted team-strength model + validated player projections.</div></div>'+
+        '<div class="card"><div class="ge-state">'+svg(ICON.team)+
+          '<b>Make it yours</b><p>Link your FPL team for your squad, captaincy, live rank and transfer plans.</p>'+
+          '<div style="display:flex;gap:8px;justify-content:center;margin-top:10px">'+
+          '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="loadDemoTeam()">Try a demo</button></div></div></div>'+
+      '</div>';
+    return;
+  }
+  const [entry,hist]=await Promise.all([loadEntry(mid),loadHistory(mid)]);
+  const watch=await modelWatch(b,fixtures,mid);
+  const proj=await seasonProjection(b,fixtures,mid,hist);
   const cur=hist.current||[];
   const last=cur[cur.length-1]||{};
   const rankDelta=cur.length>1?(cur[cur.length-2].overall_rank-last.overall_rank):0;
@@ -1745,7 +1867,7 @@ async function hydrateDashboard(host){
         Math.round(8+58*g.points/maxPts)+'px"></div>'+
       '<div style="font-size:.6rem;color:var(--text-3)">GW'+g.event+'</div>'+
     '</div>').join('');
-  host.innerHTML=
+  host.innerHTML=strip+watch+proj+
     '<div class="grid g-4 mb-20">'+
       kpi('Total Points',fmtNum(entry.summary_overall_points),'Season','var(--green)')+
       kpi('Overall Rank',fmtNum(entry.summary_overall_rank),
@@ -2139,10 +2261,35 @@ function renderSuggestions(b,query,container,exclude,onPick){
 }
 
 /* ── Transfer Planner: targets by position (+ your budget) ─ */
+function suggestReplacements(b,hz,outId,selId){
+  const sel=document.getElementById(selId),out=document.getElementById(outId);
+  const el=b.els[parseInt(sel.value,10)];
+  if(!el){out.innerHTML='';return;}
+  const sq=window._sq||{ids:new Set(),bank:0};
+  const maxCost=(el.now_cost||0)+(sq.bank||0);
+  const own=horizonXP(b,el,hz);
+  const cands=b.elements
+    .filter(e=>e.element_type===el.element_type&&e.id!==el.id&&e.status==='a'
+      &&!sq.ids.has(e.id)&&(e.now_cost||0)<=maxCost)
+    .map(e=>({e,h:horizonXP(b,e,hz)}))
+    .sort((a,c)=>c.h-a.h).slice(0,5);
+  out.innerHTML='<div class="dl"><div class="dl-row head"><span class="dl-grow">Alternative</span>'+
+    '<span class="dl-col">xP</span><span class="dl-col">vs '+esc(el.web_name)+'</span></div>'+
+    cands.map(({e,h})=>{const d=h-own;
+      return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+        '<span class="dl-sub">'+teamShort(MEM._idx,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
+        '<span class="dl-col mono">'+h.toFixed(1)+'</span>'+
+        '<span class="dl-col mono" style="color:'+(d>=0?'var(--green)':'var(--red)')+'">'+(d>=0?'+':'')+d.toFixed(1)+'</span></div>';
+    }).join('')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Within budget (their price + your bank). Cumulative model xP over the horizon; a 4-point hit costs more than a +'+ (4).toFixed(0)+' edge over one week — think in horizons.</div>';
+}
+
 async function hydrateTransfers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
-  let budget='';
+  const hz=buildHorizon(b,fixtures,6);
+  const hzN=(hz[Object.keys(hz)[0]]||[]).length;
+  let budget='',replacer='';
   const mid=getMid();
   if(mid){
     try{const e=await loadEntry(mid);
@@ -2151,25 +2298,39 @@ async function hydrateTransfers(host){
           '<div class="stat"><div class="stat-l">Team Value</div><div class="stat-v">'+money(e.last_deadline_value||0)+'</div></div>'+
           '<div class="stat"><div class="stat-l">In the Bank</div><div class="stat-v">'+money(e.last_deadline_bank||0)+'</div></div>'+
         '</div></div>';
+      const picks=await loadPicks(mid,b.cur.id);
+      const bank=((picks.entry_history&&picks.entry_history.bank)||0);
+      const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
+      window._sq={ids:new Set(squad.map(e=>e.id)),bank};
+      const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
+      replacer='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
+        '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; ranked alternatives by cumulative expected points over the horizon, within your budget.</p>'+
+        '<select class="modal-in" id="rep-sel" style="max-width:340px"><option value="">Choose a player…</option>'+opts+'</select>'+
+        '<div id="rep-out" style="margin-top:12px"></div></div>';
     }catch(_){}
   }
   const posName={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
   const sections=[1,2,3,4].map(t=>{
     const list=b.elements.filter(e=>e.element_type===t&&e.status==='a'&&e.minutes>0)
-      .sort((a,c)=>parseFloat(c.form)-parseFloat(a.form)).slice(0,5);
-    const rows=list.map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      .map(e=>({e,h:horizonXP(b,e,hz)}))
+      .sort((a,c)=>c.h-a.h).slice(0,6);
+    const rows=list.map(({e,h})=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'% · next '+nextFixLabel(nf[e.team])+'</span></span>'+
+      '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+h.toFixed(1)+'</button></span>'+
       '<span class="dl-col mono">'+e.form+'</span></div>').join('');
-    return '<div class="card mb-20"><div class="card-title">'+posName[t]+' — in form</div>'+
-      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
+    return '<div class="card mb-20"><div class="card-title">'+posName[t]+' — projected over the next '+hzN+' gameweeks</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">xP'+hzN+'</span><span class="dl-col">Form</span></div>'+rows+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">xP'+hzN+' = cumulative expected points across the horizon from the fitted team-strength model and validated player projections. Tap a number for the workings.</div></div>';
   }).join('');
+  setTimeout(()=>{const s=document.getElementById('rep-sel');
+    if(s)s.addEventListener('change',()=>suggestReplacements(b,hz,'rep-out','rep-sel'));},0);
   const aiCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Transfer Planner</div>'+
     (getMid()
       ? '<p class="dl-sub" style="margin-bottom:10px">Claude weighs your squad, budget, fixtures and predicted points to suggest moves — and whether a hit is worth it.</p>'+
         aiGate('<button class="btn btn-primary btn-sm" onclick="genTransferPlan()">Plan my transfers</button>')+'<div id="transfer-ai" style="margin-top:14px"></div>'
       : '<p class="dl-sub">Link your team (top right) for AI transfer advice tailored to your squad.</p>')+
     '</div>';
-  host.innerHTML=budget+aiCard+
+  host.innerHTML=budget+replacer+aiCard+
     '<div class="dl-sub" style="margin-bottom:12px">Transfer targets ranked by recent form, with each player’s next fixture difficulty.</div>'+
     sections;
 }
@@ -2214,7 +2375,8 @@ async function hydrateCaptain(host){
   const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
     '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
     '<span class="dl-sub">'+teamShort(b,e.team)+' · next '+nextFixLabel(nf[e.team])+'</span></span>'+
-    '<span class="dl-col mono">'+epn(e)+'</span><span class="dl-col mono">'+e.form+'</span></div>').join('');
+    '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+epn(e)+'</button></span>'+
+    '<span class="dl-col mono">'+e.form+'</span></div>').join('');
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">'+scopeNote+(diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
     '<div class="grid g-3 mb-20">'+cards+'</div>'+
@@ -2431,12 +2593,21 @@ async function hydrateLiveRank(host){
   });
   const avg=b.cur.average_entry_score||0;
   const diff=points-avg;
+  /* GW percentile estimate: manager GW scores are roughly normal around
+     the average with sd ~ 18; erf approximation for the CDF. */
+  const erf=x=>{const s=x<0?-1:1;x=Math.abs(x);
+    const t=1/(1+0.3275911*x);
+    const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
+    return s*y;};
+  const pctile=avg?Math.round(100*(1-0.5*(1+erf(diff/(18*Math.SQRT2))))):null;
   host.innerHTML=
     '<div class="grid g-4 mb-20">'+
       kpi('Live GW Points',points,'GW'+b.cur.id+' so far','var(--green)')+
       kpi('vs Average',(diff>=0?'+':'')+diff,'Avg '+(avg||'—'),diff>=0?'var(--green)':'var(--red)')+
-      kpi('Still to Play',toPlay,playing+' playing now','var(--blue)')+
-      kpi('Completed',done+'/11','of your XI','var(--purple)')+
+      (pctile!=null
+        ?kpi('GW percentile','~top '+Math.max(1,Math.min(99,pctile))+'%','estimate, all managers',diff>=0?'var(--green)':'var(--red)')
+        :kpi('Still to Play',toPlay,playing+' playing now','var(--blue)'))+
+      kpi('Completed',done+'/11','of your XI · '+toPlay+' to play','var(--purple)')+
     '</div>'+
     liveOddsCard(b,fixtures)+
     '<div class="card"><div class="ge-state">'+svg(ICON.pulse)+
@@ -2736,6 +2907,67 @@ function xP(b,el,nf){
   }else if(nf)p*=(1+(3-nf.diff)*0.05);     /* easier fixture up to +10%, harder down to -10% */
   return Math.max(0,Math.round(p*(chance/100)*10)/10);
 }
+/* Per-team fixture horizon: the model's view of the next N scheduled
+   fixtures (expected goals, clean-sheet odds, opponent). */
+function buildHorizon(b,fixtures,N){
+  N=N||6;
+  const R=plsimRatings(b,fixtures),BM=(PLSIM.BASE_H+PLSIM.BASE_A)/2;
+  const played={};
+  fixtures.forEach(f=>{if(f.finished){played[f.team_h]=(played[f.team_h]||0)+1;
+    played[f.team_a]=(played[f.team_a]||0)+1;}});
+  const map={};
+  fixtures.filter(f=>f.event&&!f.finished).sort((a,c)=>a.event-c.event).forEach(f=>{
+    const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
+    const push=(team,opp,home,lam,cs)=>{
+      const arr=map[team]=map[team]||[];
+      if(arr.length<N)arr.push({event:f.event,opp:teamShort(b,opp),home,
+        lam,cs,lamAvg:BM*R.att[team],gp:played[team]||0});
+    };
+    push(f.team_h,f.team_a,true,m.hx,m.csH);
+    push(f.team_a,f.team_h,false,m.ax,m.csA);
+  });
+  return map;
+}
+/* One fixture's expected points for a player: the native model when the
+   sample allows, else the FPL estimate adjusted by the fixture. */
+function fixtureXP(b,el,fx){
+  const nat=nativeXP(el,fx);
+  if(nat!=null)return nat;
+  let base=parseFloat(el.ep_next||'0');
+  if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
+  const f=el.element_type<=2?0.72+1.0*fx.cs:Math.pow(fx.lam/1.47,0.8);
+  return base*Math.max(0.6,Math.min(1.5,f));
+}
+/* Cumulative expected points over a player's next-N fixture horizon. */
+function horizonXP(b,el,hz){
+  const fxs=hz[el.team]||[];
+  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
+  let total=0;
+  fxs.forEach(fx=>total+=fixtureXP(b,el,fx));
+  return total*(chance/100);
+}
+/* Plain-words breakdown of a player's xP, for the tap-to-explain UI. */
+function xpExplain(b,el,nf){
+  const parts=['FPL estimate '+(el.ep_next||'n/a')];
+  if(nf&&nf.lam!=null){
+    if(el.element_type<=2)parts.push('clean-sheet odds '+Math.round(nf.cs*100)+'% (defensive multiplier)');
+    else parts.push('team expected goals '+nf.lam.toFixed(2)+' vs 1.47 average');
+    const nat=nativeXP(el,nf);
+    if(nat!=null)parts.push('blended 50/50 with native model '+nat.toFixed(1)+
+      ' (minutes x xGI/90 x fixture; validated MAE 0.96 vs 1.04 form baseline)');
+  }
+  const chance=el.chance_of_playing_next_round;
+  if(chance!=null&&chance<100)parts.push('scaled by '+chance+'% chance of playing');
+  return esc(el.web_name)+' xP = '+parts.join(' · ');
+}
+function explainXP(id){
+  const b=MEM._idx;if(!b)return;
+  const el=b.els[id];if(!el)return;
+  loadFixtures().then(fixtures=>{
+    toast(xpExplain(b,el,buildNextFix(b,fixtures)[el.team]));
+  });
+}
+
 /* Native expected points from first principles: minutes share x
    expected goal involvement per 90 x fixture strength, plus
    clean-sheet points from the match model. Validated walk-forward on
