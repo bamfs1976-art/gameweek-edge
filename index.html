@@ -860,6 +860,15 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
 .seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .seg-b.on{background:var(--grad-brand);color:#fff}
+.crest{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;
+  overflow:hidden;vertical-align:middle;margin-right:7px;flex-shrink:0}
+.crest img{width:100%;height:100%;object-fit:contain}
+.avatar{display:inline-flex;align-items:flex-end;justify-content:center;border-radius:50%;
+  overflow:hidden;vertical-align:middle;margin-right:10px;flex-shrink:0;box-shadow:var(--shadow)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.dl-row .dl-grow{display:flex;align-items:center;gap:0;min-width:0}
+.pp .jersey{position:relative}
+.pp .pp-crest{position:absolute;top:-4px;right:6px;width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -1153,6 +1162,34 @@ const money=c=>'£'+(c/10).toFixed(1);
 const fmtNum=n=>(n==null?'—':Number(n).toLocaleString('en-GB'));
 const fmtK=n=>{n=Number(n)||0;return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':String(n);};
 function teamShort(b,id){return b.teams[id]?b.teams[id].short_name:'';}
+/* Official Premier League CDN assets (the same images the FPL site
+   serves), keyed off data the bootstrap already carries. Crests fall
+   back to the club-colour chip and photos to a neutral silhouette
+   when a code is missing or the image fails to load. */
+function crestUrl(b,teamId){
+  const t=b.teams[teamId];
+  return t&&t.code?`https://resources.premierleague.com/premierleague/badges/50/t${t.code}.png`:'';
+}
+function photoUrl(el){
+  const p=el&&(el.photo||el.code);
+  if(!p)return '';
+  return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${String(p).replace('.jpg','').replace('.png','')}.png`;
+}
+/* Small crest chip: real badge over a club-colour tile; if the badge
+   404s it removes itself and the colour tile remains. */
+function crest(b,teamId,px){
+  px=px||18;
+  const url=crestUrl(b,teamId),k=(KIT[teamShort(b,teamId)]||['#8a8a8a'])[0];
+  return `<span class="crest" style="width:${px}px;height:${px}px;background:${k}">`+
+    (url?`<img src="${url}" alt="" loading="lazy" onerror="this.remove()">`:'')+`</span>`;
+}
+/* Player headshot avatar with the club-colour tile as fallback. */
+function avatar(b,el,px){
+  px=px||34;
+  const url=photoUrl(el),k=(KIT[teamShort(b,el.team)]||['#8a8a8a'])[0];
+  return `<span class="avatar" style="width:${px}px;height:${px}px;background:${k}">`+
+    (url?`<img src="${url}" alt="" loading="lazy" onerror="this.remove()">`:'')+`</span>`;
+}
 /* Club kit colours (primary, trim) keyed by FPL short name — 2026/27. */
 const KIT={ARS:['#EF0107','#fff'],AVL:['#67022a','#95bfe5'],BOU:['#B50E12','#000'],
   BRE:['#e30613','#fff'],BHA:['#0057B8','#fff'],CHE:['#034694','#fff'],
@@ -2268,7 +2305,7 @@ async function hydrateFixtures(host){
     const sums=n?'<td class="cell" style="background:var(--surface-3);color:var(--text)">'+lam.toFixed(1)+'</td>'+
       '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+Math.round(100*cs/n)+'</td>'
       :'<td class="blank">—</td><td class="blank">—</td>';
-    return '<tr><td class="tm">'+esc(t.short_name)+'</td>'+cells+sums+'</tr>';
+    return '<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>';
   }).join('');
 
   /* Match outlook for the upcoming gameweek. */
@@ -2348,9 +2385,9 @@ async function hydrateInjuries(host){
 function dlTable(b,list,heads,metrics){
   const rows=list.map((e,i)=>{
     const m=metrics(e);
-    return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
-      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
+    return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
+      '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,14)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
       '<span class="dl-col mono">'+m[0]+'</span><span class="dl-col mono">'+m[1]+'</span></div>';
   }).join('');
   return '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span>'+
@@ -2570,16 +2607,18 @@ async function hydrateCaptain(host){
     const n=nf[e.team]||{};
     const ceiling=n.t3!=null?'Team 3+ goals '+Math.round(n.t3*100)+'% · CS '+Math.round((n.cs||0)*100)+'%':'';
     return '<div class="card"><div class="card-title">'+labels[i]+'</div>'+
-      '<div class="stat-v">'+esc(e.web_name)+'</div>'+
-      '<div class="dl-sub" style="margin:2px 0 10px">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</div>'+
+      '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
+      '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+'</div>'+
+      '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%</div></div></div>'+
+      '<div style="height:8px"></div>'+
       '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+epn(e)+'</div></div>'+
         '<div class="stat"><div class="stat-l">Form</div><div class="stat-v">'+e.form+'</div></div></div>'+
       '<div class="dl-sub" style="margin-top:10px">Next: '+nextFixLabel(nf[e.team])+
       (ceiling?'<br>'+ceiling:'')+'</div>'+
     '</div>';}).join('');
-  const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
-    '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-    '<span class="dl-sub">'+teamShort(b,e.team)+' · next '+nextFixLabel(nf[e.team])+'</span></span>'+
+  const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,30)+
+    '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-sub">'+crest(b,e.team,13)+'next '+nextFixLabel(nf[e.team])+'</span></span>'+
     '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+epn(e)+'</button></span>'+
     '<span class="dl-col mono">'+e.form+'</span></div>').join('');
   host.innerHTML=
@@ -3244,7 +3283,8 @@ async function hydrateScout(host){
   const capP=Math.max.apply(null,team.xi.map(s=>s.p));
   const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
     return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
-      '<div class="jersey" style="'+jerseyStyle(b,el.team)+'"></div><span class="pp-nm">'+esc(el.web_name)+'</span>'+
+      '<div class="jersey" style="'+jerseyStyle(b,el.team)+'">'+crest(b,el.team,18).replace('class="crest"','class="crest pp-crest"')+'</div>'+
+      '<span class="pp-nm">'+esc(el.web_name)+'</span>'+
       '<span class="pp-pt">'+s.p+'</span></div>';};
   const rowFor=t=>'<div class="pitch-row">'+team.xi.filter(s=>s.el.element_type===t).map(cell).join('')+'</div>';
   const topBy=t=>scoutScored(b,nf).filter(s=>s.el.element_type===t).sort((a,c)=>c.p-a.p).slice(0,3)
