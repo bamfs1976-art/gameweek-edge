@@ -407,6 +407,8 @@ html.offline .net-banner{transform:translateY(0)}
 /* League area */
 .lg-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
 .lg-fc{display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;color:#fff;margin-right:2px}
+.lsc-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border-2);border-radius:var(--r-pill);padding:4px 6px 4px 12px;font-size:.78rem}
+.lsc-chip button{border:0;background:none;color:var(--text-3);cursor:pointer;font-size:15px;line-height:1}
 .pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
 .plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
   background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
@@ -1723,7 +1725,10 @@ const NAV = [
     id:'league', label:'League', icon:'trophy',
     panels:[
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
-      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'}
+      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
+      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'},
+      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
+      {id:'scenariolab', label:'Scenario Lab', icon:'diamond', tier:'paid'}
     ]
   }
 ];
@@ -1755,6 +1760,18 @@ const PANEL_CONTENT = {
   },
   clubform:{
     desc:'Every club’s recent form — last 5, 10 and 20 games, overall, home and away — from real results.',
+    layout:'standard'
+  },
+  matchforecast:{
+    desc:'Model win/draw/loss and expected goals for every fixture of a matchday. Pro adds BTTS, over/under 2.5 and the most-likely scorelines.',
+    layout:'standard'
+  },
+  seasonsim:{
+    desc:'Run the full season Monte Carlo: title, European and relegation odds, the finish-position grid, run-in difficulty and next-5/10/20 projections.',
+    layout:'standard'
+  },
+  scenariolab:{
+    desc:'Pin results — a win, draw or exact score — and re-run the season to see how the title, European and relegation odds shift.',
     layout:'standard'
   },
   squad:{
@@ -4857,12 +4874,183 @@ async function hydrateClubForm(host){
   })));
 }
 
+/* ── League season engine (ported from the PL Simulator; operates on the
+   shared bundle's ratings + fixtures, not GE's live-fit) ─────────── */
+const LG_GRID=11,LG_MAXG=10;
+function lgMul32(seed){let a=seed>>>0;return function(){a|=0;a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+function lgLambdas(teams,c,home,away){const th=teams[home],ta=teams[away];
+  return [c.BASE_H*th.attack*ta.defence*(th.home||1),c.BASE_A*ta.attack*th.defence];}
+function lgScoreGrid(lh,la,rho){const ph=[],pa=[];let fh=Math.exp(-lh),fa=Math.exp(-la);
+  for(let k=0;k<=LG_MAXG;k++){ph.push(fh);pa.push(fa);fh=fh*lh/(k+1);fa=fa*la/(k+1);}
+  const g=new Float64Array(LG_GRID*LG_GRID);
+  for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++)g[h*LG_GRID+a]=ph[h]*pa[a];
+  if(rho!=null){g[0]*=1-lh*la*rho;g[1]*=1+lh*rho;g[LG_GRID]*=1+la*rho;g[LG_GRID+1]*=1-rho;}
+  let s=0;for(const p of g)s+=p;for(let i=0;i<g.length;i++)g[i]/=s;return g;}
+function lgCum(g){const c=new Float64Array(g.length);let r=0;for(let i=0;i<g.length;i++){r+=g[i];c[i]=r;}c[c.length-1]=1;return c;}
+function lgSample(cum,rnd){const x=rnd();let lo=0,hi=cum.length-1;while(lo<hi){const m=(lo+hi)>>1;if(cum[m]<x)lo=m+1;else hi=m;}return [Math.floor(lo/LG_GRID),lo%LG_GRID];}
+function lgOutcome(g){let pH=0,pD=0,pA=0;for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++){const p=g[h*LG_GRID+a];if(h>a)pH+=p;else if(h===a)pD+=p;else pA+=p;}return [pH,pD,pA];}
+function lgMarket(g){let btts=0,over=0;const cells=[];for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++){const p=g[h*LG_GRID+a];if(h>=1&&a>=1)btts+=p;if(h+a>=3)over+=p;cells.push([h,a,p]);}cells.sort((x,y)=>y[2]-x[2]);return {btts,over,top:cells.slice(0,5)};}
+function lgCondCum(g,kind){const o=new Float64Array(g.length);let s=0;for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++){const i=h*LG_GRID+a;const ok=kind==='H'?h>a:kind==='A'?a>h:h===a;if(ok){o[i]=g[i];s+=g[i];}}if(s>0)for(let i=0;i<o.length;i++)o[i]/=s;return lgCum(o);}
+function lgNewTable(names){const t={};names.forEach(n=>t[n]={W:0,D:0,L:0,GF:0,GA:0,Pts:0});return t;}
+function lgRec(t,h,a,hg,ag){const rh=t[h],ra=t[a];rh.GF+=hg;rh.GA+=ag;ra.GF+=ag;ra.GA+=hg;if(hg>ag){rh.W++;ra.L++;rh.Pts+=3;}else if(hg<ag){ra.W++;rh.L++;ra.Pts+=3;}else{rh.D++;ra.D++;rh.Pts++;ra.Pts++;}}
+function lgStand(t,names){return [...names].sort((x,y)=>t[y].Pts-t[x].Pts||(t[y].GF-t[y].GA)-(t[x].GF-t[x].GA)||t[y].GF-t[x].GF||x.localeCompare(y));}
+function lgGrids(bundle,overrides){const c=bundle.constants,teams=bundle.teams,fx=bundle.fixtures;
+  const map={};(overrides||[]).forEach(o=>map[o.md+'|'+o.h+'|'+o.a]=o);const flat=[];
+  fx.forEach((md,i)=>md.forEach(([h,a])=>{const o=map[(i+1)+'|'+h+'|'+a];const [lh,la]=lgLambdas(teams,c,h,a);const g=lgScoreGrid(lh,la,c.DC_RHO);
+    if(o&&o.kind==='score')flat.push({h,a,fixed:[o.hg,o.ag]});else if(o)flat.push({h,a,cum:lgCondCum(g,o.kind)});else flat.push({h,a,cum:lgCum(g)});}));return flat;}
+function lgMonteCarlo(bundle,nSims,seed,overrides,els,onDone){
+  const names=Object.keys(bundle.teams),grids=lgGrids(bundle,overrides);
+  const posCounts={},ptsSum={};names.forEach(n=>{posCounts[n]=new Array(20).fill(0);ptsSum[n]=0;});
+  const rnd=lgMul32(seed>>>0);let done=0;const CHUNK=Math.max(200,Math.floor(nSims/40));
+  (function step(){const end=Math.min(done+CHUNK,nSims);
+    for(;done<end;done++){const t=lgNewTable(names);for(const f of grids){let hg,ag;if(f.fixed){hg=f.fixed[0];ag=f.fixed[1];}else{const s=lgSample(f.cum,rnd);hg=s[0];ag=s[1];}lgRec(t,f.h,f.a,hg,ag);}lgStand(t,names).forEach((tm,pos)=>posCounts[tm][pos]++);names.forEach(n=>ptsSum[n]+=t[n].Pts);}
+    if(els)els.bar.style.width=(100*done/nSims)+'%';
+    if(done<nSims){setTimeout(step,0);return;}onDone(posCounts,ptsSum);
+  })();}
+function lgPct(posCounts,n,t,a,b){let s=0;for(let i=a-1;i<b;i++)s+=posCounts[t][i];return 100*s/n;}
+
+/* ── Season Simulator (Pro) ─────────────────────────────────────── */
+function renderSeasonSim(host,bundle,posCounts,ptsSum,n){
+  const names=Object.keys(bundle.teams);
+  const pct=(t,a,b)=>lgPct(posCounts,n,t,a,b);
+  const avgPos=t=>posCounts[t].reduce((s,c,i)=>s+(i+1)*c,0)/n;
+  const order=[...names].sort((a,b)=>pct(b,1,1)-pct(a,1,1)||avgPos(a)-avgPos(b));
+  const rel=[...names].sort((a,b)=>pct(b,18,20)-pct(a,18,20));
+  window.LG_LASTMC={bundle,posCounts,ptsSum,n};
+  const hero='<div class="grid g-sb mb-20">'+
+    kpi('Title favourite',esc(order[0]),pct(order[0],1,1).toFixed(0)+'% · '+esc(order[1])+' '+pct(order[1],1,1).toFixed(0)+'%','var(--green)')+
+    kpi('Most likely down',esc(rel[0]),pct(rel[0],18,20).toFixed(0)+'% relegated','var(--red)')+'</div>';
+  const rows=order.map((t,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td>'+
+    '<td class="num" style="'+lgBar(pct(t,1,1),100,'var(--green-soft)')+'">'+pct(t,1,1).toFixed(1)+'</td>'+
+    '<td class="num">'+pct(t,1,4).toFixed(1)+'</td><td class="num">'+pct(t,1,7).toFixed(1)+'</td>'+
+    '<td class="num" style="'+lgBar(pct(t,18,20),100,'var(--red-soft)')+'">'+pct(t,18,20).toFixed(1)+'</td>'+
+    '<td class="num">'+avgPos(t).toFixed(1)+'</td><td class="num">'+(ptsSum[t]/n).toFixed(1)+'</td></tr>').join('');
+  const table='<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title</th><th class="num">Top 4</th><th class="num">Europe</th><th class="num">Rel</th><th class="num">Pos</th><th class="num">Pts</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  /* Finish-position heatmap */
+  const maxP=Math.max(...order.map(t=>Math.max(...posCounts[t])/n*100));
+  const cell=22;const W=110+20*cell,H=order.length*cell+20;
+  let grid='<svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W,560)+'px;width:100%;height:auto">';
+  order.forEach((t,r)=>{const y=r*cell;grid+='<text x="104" y="'+(y+cell-7)+'" text-anchor="end" style="font-size:9px;fill:var(--text-2)">'+esc(t.length>12?t.slice(0,11)+'…':t)+'</text>';
+    for(let p=0;p<20;p++){const v=posCounts[t][p]/n*100,f=Math.pow(v/maxP,0.55);
+      grid+='<rect x="'+(110+p*cell)+'" y="'+y+'" width="'+(cell-2)+'" height="'+(cell-2)+'" rx="2" fill="var(--green-bright)" fill-opacity="'+(0.05+0.95*f).toFixed(3)+'"><title>'+esc(t)+' — '+(p+1)+': '+v.toFixed(1)+'%</title></rect>';}});
+  grid+='</svg>';
+  const heat='<div class="card mb-20"><div class="card-title">Finish-position grid</div><div class="scroll">'+grid+'</div><div class="dl-sub" style="margin-top:6px">Each row is a club, each column a finishing position — darker = more likely.</div></div>';
+  /* Run-in difficulty */
+  const c=bundle.constants;const xp={};names.forEach(nn=>xp[nn]=0);
+  bundle.fixtures.forEach(md=>md.forEach(([h,a])=>{const [lh,la]=lgLambdas(bundle.teams,c,h,a);const [pH,pD,pA]=lgOutcome(lgScoreGrid(lh,la,c.DC_RHO));xp[h]+=pH*3+pD;xp[a]+=pA*3+pD;}));
+  const sos=names.map(nn=>({t:nn,xpg:xp[nn]/38})).sort((a,b)=>b.xpg-a.xpg);
+  const runin='<div class="card mb-20"><div class="card-title">Run-in difficulty</div><div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">xPts / game</th></tr></thead><tbody>'+
+    sos.map((s,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(s.t)+esc(s.t)+'</td><td class="num" style="'+lgBar(s.xpg,3,'var(--green-soft)')+'">'+s.xpg.toFixed(2)+'</td></tr>').join('')+
+    '</tbody></table></div><div class="dl-sub" style="margin-top:6px">Model expected points per game from the whole schedule — higher is an easier run.</div></div>';
+  host.querySelector('#ss-out').innerHTML=hero+
+    '<div class="card mb-20"><div class="card-title">Season odds — '+n.toLocaleString()+' simulations</div>'+table+
+    '<div class="dl-sub" style="margin-top:8px">Europe = top-7 finish. Same backtested engine as the standalone simulator.</div></div>'+
+    heat+runin;
+}
+async function hydrateSeasonSim(host){
+  host.innerHTML=skel(4);
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('target','Simulator unavailable','The season model loads from our PL Simulator — try again shortly.');return;}
+  if(!m.fixtures){host.innerHTML=stateBox('target','Fixtures not set','The season simulation runs once the 2026/27 fixtures are published.');return;}
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Season Simulator</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Monte Carlo the whole season from the fitted model — title, European and relegation odds, the finish-position grid and run-in difficulty.</p>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+      '<select class="modal-in" id="ss-sims" style="max-width:150px"><option value="2000">2,000 seasons</option><option value="5000" selected>5,000 seasons</option><option value="10000">10,000 seasons</option><option value="25000">25,000 seasons</option></select>'+
+      '<button class="btn btn-primary btn-sm" id="ss-run">Run simulation</button><span class="dl-sub" id="ss-status"></span></div>'+
+    '<div class="prog" id="ss-prog" style="display:none;height:4px;background:var(--surface-3);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:0;background:var(--green)"></div></div>'+
+    '</div><div id="ss-out"></div>';
+  const run=()=>{const n=parseInt(host.querySelector('#ss-sims').value,10)||5000;
+    const prog=host.querySelector('#ss-prog');prog.style.display='block';
+    const btn=host.querySelector('#ss-run');btn.disabled=true;const t0=performance.now();
+    lgMonteCarlo(m,n,42,null,{bar:prog.firstElementChild},(pc,ps)=>{
+      host.querySelector('#ss-status').textContent=n.toLocaleString()+' seasons in '+((performance.now()-t0)/1000).toFixed(1)+'s';
+      prog.style.display='none';renderSeasonSim(host,m,pc,ps,n);btn.disabled=false;});};
+  host.querySelector('#ss-run').addEventListener('click',run);
+  run();
+}
+
+/* ── Scenario Lab (Pro) ─────────────────────────────────────────── */
+let LG_SCEN=[];
+function lgScKey(o){return o.md+'|'+o.h+'|'+o.a;}
+function lgScLabel(o){const r=o.kind==='score'?(o.hg+'–'+o.ag):o.kind==='H'?(o.h+' win'):o.kind==='A'?(o.a+' win'):'draw';return 'MD'+o.md+' '+o.h+' v '+o.a+' → '+r;}
+function lgRenderScList(host){const box=host.querySelector('#lsc-list');
+  if(!LG_SCEN.length){box.innerHTML='<p class="dl-sub">No pinned results yet — add one above. Everything else is simulated as normal.</p>';return;}
+  box.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px">'+LG_SCEN.map((o,i)=>
+    '<span class="lsc-chip">'+esc(lgScLabel(o))+'<button aria-label="remove" data-i="'+i+'">×</button></span>').join('')+'</div>';
+  box.querySelectorAll('button[data-i]').forEach(b=>b.addEventListener('click',()=>{LG_SCEN.splice(+b.dataset.i,1);lgRenderScList(host);}));}
+function lgScFill(host,m){const md=+host.querySelector('#lsc-md').value;const fx=m.fixtures[md-1]||[];
+  const sel=host.querySelector('#lsc-fx');sel.innerHTML='';fx.forEach(([h,a])=>{const o=document.createElement('option');o.value=h+'|'+a;o.textContent=h+' v '+a;sel.appendChild(o);});}
+async function hydrateScenarioLab(host){
+  host.innerHTML=skel(4);
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('diamond','Scenario Lab unavailable','The season model loads from our PL Simulator — try again shortly.');return;}
+  if(!m.fixtures){host.innerHTML=stateBox('diamond','Fixtures not set','Scenario Lab runs once the season fixtures are published.');return;}
+  const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+' Scenario Lab</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Pin results — a win, draw or exact score — then re-run the season to see how the odds shift.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+      '<select class="modal-in" id="lsc-md" style="max-width:130px">'+mdOpts+'</select>'+
+      '<select class="modal-in" id="lsc-fx" style="max-width:200px"></select>'+
+      '<select class="modal-in" id="lsc-res" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
+      '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
+      '<button class="btn btn-ghost btn-sm" id="lsc-add">Add pin</button></div>'+
+    '<div id="lsc-list" style="margin:10px 0"></div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="modal-in" id="lsc-sims" style="max-width:130px"><option>2000</option><option selected>5000</option><option>10000</option></select>'+
+      '<button class="btn btn-primary btn-sm" id="lsc-run">Run scenario</button>'+
+      '<button class="btn btn-ghost btn-sm" id="lsc-clear">Clear</button><span class="dl-sub" id="lsc-status"></span></div>'+
+    '<div class="prog" id="lsc-prog" style="display:none;height:4px;background:var(--surface-3);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:0;background:var(--green)"></div></div>'+
+    '</div><div id="lsc-out"></div>';
+  lgScFill(host,m);lgRenderScList(host);
+  host.querySelector('#lsc-md').addEventListener('change',()=>lgScFill(host,m));
+  host.querySelector('#lsc-res').addEventListener('change',e=>host.querySelector('#lsc-score').style.display=e.target.value==='score'?'':'none');
+  host.querySelector('#lsc-add').addEventListener('click',()=>{const md=+host.querySelector('#lsc-md').value;const [h,a]=host.querySelector('#lsc-fx').value.split('|');const kind=host.querySelector('#lsc-res').value;const o={md,h,a,kind};
+    if(kind==='score'){o.hg=Math.max(0,Math.min(10,parseInt(host.querySelector('#lsc-hg').value,10)||0));o.ag=Math.max(0,Math.min(10,parseInt(host.querySelector('#lsc-ag').value,10)||0));}
+    LG_SCEN=LG_SCEN.filter(x=>lgScKey(x)!==lgScKey(o));LG_SCEN.push(o);lgRenderScList(host);});
+  host.querySelector('#lsc-clear').addEventListener('click',()=>{LG_SCEN=[];lgRenderScList(host);});
+  host.querySelector('#lsc-run').addEventListener('click',()=>{
+    const n=parseInt(host.querySelector('#lsc-sims').value,10)||5000;const prog=host.querySelector('#lsc-prog');prog.style.display='block';
+    const btn=host.querySelector('#lsc-run');btn.disabled=true;
+    lgMonteCarlo(m,n,7,LG_SCEN,{bar:prog.firstElementChild},(pc,ps)=>{prog.style.display='none';btn.disabled=false;
+      const names=Object.keys(m.teams);const pct=(t,a,b)=>lgPct(pc,n,t,a,b);
+      const base=window.LG_LASTMC;const bp=base?(t,a,b)=>lgPct(base.posCounts,base.n,t,a,b):null;
+      const order=[...names].sort((a,b)=>pct(b,1,1)-pct(a,1,1));
+      const dcell=(t,a,b,danger)=>{const v=pct(t,a,b);let d='';if(bp){const dl=v-bp(t,a,b);if(Math.abs(dl)>=0.05){const good=danger?dl<0:dl>0;d=' <span style="color:'+(good?'var(--green-bright)':'var(--red)')+';font-size:.85em">'+(dl>0?'+':'')+dl.toFixed(1)+'</span>';}}return v.toFixed(1)+d;};
+      const rows=order.map((t,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td><td class="num">'+dcell(t,1,1,false)+'</td><td class="num">'+dcell(t,1,4,false)+'</td><td class="num">'+dcell(t,1,7,false)+'</td><td class="num">'+dcell(t,18,20,true)+'</td></tr>').join('');
+      host.querySelector('#lsc-out').innerHTML='<div class="card"><div class="card-title">Scenario odds</div><div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title</th><th class="num">Top 4</th><th class="num">Europe</th><th class="num">Rel</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+        '<div class="dl-sub" style="margin-top:8px">'+(base?'Coloured deltas vs your last Season Simulator run.':'Run the Season Simulator once for baseline deltas.')+' '+LG_SCEN.length+' result'+(LG_SCEN.length===1?'':'s')+' pinned.</div></div>';
+    });});
+}
+
+/* ── Match Forecasts (free 1X2 + xG; Pro adds goal markets) ──────── */
+async function hydrateMatchForecast(host){
+  host.innerHTML=skel(4);
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model — try again shortly.');return;}
+  if(!m.fixtures){host.innerHTML=stateBox('grid','Fixtures not set','Match forecasts appear once the fixtures are published.');return;}
+  const pro=isPro();
+  const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
+  host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Match Forecasts</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><label class="dl-sub" for="mf-md">Matchday</label>'+
+    '<select class="modal-in" id="mf-md" style="max-width:150px">'+mdOpts+'</select></div>'+
+    '<div id="mf-out"></div>'+
+    (pro?'':'<p class="dl-sub" style="margin-top:10px">'+svg(ICON.lock,'width="12" height="12"')+' BTTS, over/under 2.5 and likely scores unlock with Pro.</p>')+
+    '</div>';
+  const c=m.constants;
+  const render=()=>{const md=+host.querySelector('#mf-md').value;const fx=m.fixtures[md-1]||[];
+    const rows=fx.map(([h,a])=>{const [lh,la]=lgLambdas(m.teams,c,h,a);const g=lgScoreGrid(lh,la,c.DC_RHO);const [pH,pD,pA]=lgOutcome(g);
+      let extra='';if(pro){const mk=lgMarket(g);const sc=mk.top.slice(0,3).map(x=>x[0]+'-'+x[1]).join(' · ');
+        extra='<td class="num">'+(mk.btts*100).toFixed(0)+'</td><td class="num">'+(mk.over*100).toFixed(0)+'</td><td>'+sc+'</td>';}
+      return '<tr><td>'+lgDot(h)+esc(h)+'</td><td>'+lgDot(a)+esc(a)+'</td><td class="num" style="'+lgBar(pH*100,100,'var(--green-soft)')+'">'+(pH*100).toFixed(0)+'</td><td class="num">'+(pD*100).toFixed(0)+'</td><td class="num" style="'+lgBar(pA*100,100,'var(--red-soft)')+'">'+(pA*100).toFixed(0)+'</td><td class="num">'+lh.toFixed(2)+'–'+la.toFixed(2)+'</td>'+extra+'</tr>';}).join('');
+    host.querySelector('#mf-out').innerHTML='<div class="pl-scroll"><table class="ptable"><thead><tr><th>Home</th><th>Away</th><th class="num">H%</th><th class="num">D%</th><th class="num">A%</th><th class="num">xG</th>'+(pro?'<th class="num">BTTS</th><th class="num">O2.5</th><th>Scores</th>':'')+'</tr></thead><tbody>'+rows+'</tbody></table></div>';};
+  host.querySelector('#mf-md').addEventListener('change',render);render();
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
   'gw-actions':hydrateGwActions,
   titlerace:hydrateTitleRace,
   clubform:hydrateClubForm,
+  matchforecast:hydrateMatchForecast,
+  seasonsim:hydrateSeasonSim,
+  scenariolab:hydrateScenarioLab,
   blog:hydrateBlog,
   gwhistory:hydrateGwhistory,
   squad:hydrateSquad,
