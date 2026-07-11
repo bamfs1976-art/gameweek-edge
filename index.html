@@ -3291,7 +3291,7 @@ function renderSolver(){
   const mht=show.map((m,i)=>'<div class="dl-row">'+
     '<span class="solver-idx">'+(i+1)+'</span>'+
     '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(m.o.web_name)+'  →  '+esc(m.c.web_name)+'</span>'+
-    '<span class="dl-sub">'+crest(S.b,m.o.team,12)+' '+teamShort(S.b,m.o.team)+' out · '+crest(S.b,m.c.team,12)+' '+teamShort(S.b,m.c.team)+' in · '+money(m.c.now_cost)+'</span></span>'+
+    '<span class="dl-sub">'+crest(S.b,m.o.team,12)+' '+teamShort(S.b,m.o.team)+' out · '+crest(S.b,m.c.team,12)+' '+teamShort(S.b,m.c.team)+' in · '+money(m.c.now_cost)+lgRunTag(S.b,m.c.team,S.ctx)+'</span></span>'+
     '<span class="dl-col mono" style="color:var(--green)">+'+m.g.toFixed(1)+'</span></div>').join('');
   box.innerHTML='<div class="dl"><div class="dl-row head"><span class="dl-grow">Plan</span><span class="dl-col">xP+</span><span class="dl-col">net</span></div>'+oht+'</div>'+
     '<div class="card-title" style="margin-top:14px">Recommended: '+(bestK===0?'roll your transfer':bestK+' move'+(bestK>1?'s':''))+'</div>'+
@@ -3326,7 +3326,7 @@ async function hydrateTransfers(host){
       const bank=((picks.entry_history&&picks.entry_history.bank)||0);
       const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
       window._sq={ids:new Set(squad.map(e=>e.id)),bank};
-      window._solver={b,hz,squad,bank};
+      window._solver={b,hz,squad,bank,ctx:await loadLeagueCtx().catch(()=>null)};
       replacer=solverCard();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
@@ -3381,7 +3381,7 @@ function genTransferPlan(){
 
 /* ── Captaincy Lab: rank by predicted points (xP) ──────── */
 async function hydrateCaptain(host){
-  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const [b,fixtures,lgctx]=await Promise.all([boot(),loadFixtures(),loadLeagueCtx().catch(()=>null)]);
   const nf=buildNextFix(b,fixtures);
   const epn=e=>xP(b,e,nf[e.team]);
   let pool=b.elements.filter(e=>e.status==='a'&&epn(e)>0);
@@ -3405,7 +3405,7 @@ async function hydrateCaptain(host){
     return '<div class="card"><div class="card-title">'+labels[i]+'</div>'+
       '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
       '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+'</div>'+
-      '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%</div></div></div>'+
+      '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%'+lgRunTag(b,e.team,lgctx)+'</div></div></div>'+
       '<div style="height:8px"></div>'+
       '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+epn(e)+'</div></div>'+
         '<div class="stat"><div class="stat-l">Form</div><div class="stat-v">'+e.form+'</div></div></div>'+
@@ -4968,6 +4968,15 @@ function pdLeagueHtml(ctx,club){
     '<div class="dl-sub" style="margin-top:8px;color:'+col+'">'+(x.dead?svg(ICON.flag,'width="12" height="12"')+' ':'')+esc(x.motivation)+
       (x.dead?' — elevated rotation risk (little left to play for).':'')+
       ' Run-in = model points/game over the next '+ctx.horizon+' games; rank 1 = kindest.</div></div>';
+}
+
+/* Compact run-in / stakes tag for a club, for inline use (solver, captaincy). */
+function lgRunTag(b,teamId,ctx){
+  if(!ctx)return '';
+  const club=lgClubOf(b,teamId),x=club&&ctx.byClub[club];
+  if(!x)return '';
+  if(x.dead)return ' · <span style="color:var(--amber)">rotation risk</span>';
+  return ' · run-in #'+x.rank+(x.rank<=6?' <span style="color:var(--green-bright)">✓</span>':x.rank>=15?' <span style="color:var(--red)">tough</span>':'');
 }
 
 /* ── Season Simulator (Pro) ─────────────────────────────────────── */
