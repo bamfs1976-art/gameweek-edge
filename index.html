@@ -2702,12 +2702,12 @@ function plCols(b,xpMap){
     {k:'value_season',l:'Val',num:1,v:e=>parseFloat(e.value_season)||0,d:e=>esc(e.value_season)}
   ];
 }
-function renderPlayerTable(){
-  const S=window._pl;if(!S)return;const {b,xpMap}=S;
-  const table=document.getElementById('pl-table');if(!table)return;
-  const cols=plCols(b,xpMap);
-  const q=PL_STATE.q;
-  let list=b.elements.filter(e=>{
+/* Current filtered + sorted list (no display cap) — shared by the table
+   and the CSV export so they always match what the user is looking at. */
+function plFilteredSorted(){
+  const S=window._pl;if(!S)return [];const {b,xpMap}=S;
+  const cols=plCols(b,xpMap),q=PL_STATE.q;
+  const list=b.elements.filter(e=>{
     if(PL_STATE.pos&&e.element_type!==PL_STATE.pos)return false;
     if(PL_STATE.team&&e.team!==PL_STATE.team)return false;
     if(q&&(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(q)<0)return false;
@@ -2717,6 +2717,46 @@ function renderPlayerTable(){
   list.sort((a,c)=>{const va=col.v(a),vc=col.v(c);
     const base=col.num?(va-vc):String(va).localeCompare(String(vc));
     return base*PL_STATE.dir;});
+  return list;
+}
+/* Build a CSV of the given players with the full data set. */
+function playersCsv(b,xpMap,list){
+  const cols=[
+    ['Player',e=>e.web_name],['Team',e=>teamShort(b,e.team)],['Pos',e=>posShort(b,e.element_type)],
+    ['Price',e=>((e.now_cost||0)/10).toFixed(1)],['Sel%',e=>e.selected_by_percent],
+    ['TotalPts',e=>e.total_points||0],['GWPts',e=>e.event_points||0],['Form',e=>e.form],
+    ['PPG',e=>e.points_per_game],['xP',e=>(xpMap[e.id]||0).toFixed(1)],['Mins',e=>e.minutes||0],
+    ['Goals',e=>e.goals_scored||0],['Assists',e=>e.assists||0],
+    ['xGI_per90',e=>e.expected_goal_involvements_per_90||''],['xGC_per90',e=>e.expected_goals_conceded_per_90||''],
+    ['DefCon_per90',e=>e.defensive_contribution_per_90||''],['Bonus',e=>e.bonus||0],['BPS',e=>e.bps||0],
+    ['ICT',e=>e.ict_index||''],['ValueSeason',e=>e.value_season||''],['Status',e=>e.status||''],
+    ['News',e=>e.news||'']
+  ];
+  const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  return cols.map(c=>c[0]).join(',')+'\n'+
+    list.map(e=>cols.map(c=>q(c[1](e))).join(',')).join('\n');
+}
+function exportPlayersCSV(){
+  const S=window._pl;if(!S)return;
+  const list=plFilteredSorted();
+  if(!list.length){toast('No players to export');return;}
+  const csv=playersCsv(S.b,S.xpMap,list);
+  try{
+    const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const gw=S.b.cur?S.b.cur.id:'';
+    const a=document.createElement('a');a.href=url;a.download='gameweek-edge-players'+(gw?'-gw'+gw:'')+'.csv';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast(list.length+' players exported');
+    window.GENative&&GENative.hapticSuccess&&GENative.hapticSuccess();
+  }catch(_){toast('Export failed on this device');}
+}
+function renderPlayerTable(){
+  const S=window._pl;if(!S)return;const {b,xpMap}=S;
+  const table=document.getElementById('pl-table');if(!table)return;
+  const cols=plCols(b,xpMap);
+  const list=plFilteredSorted();
   const head='<thead><tr>'+cols.map(c=>{
     const active=c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
     return '<th data-k="'+c.k+'" class="'+(c.num?'num':'')+(active?' active':'')+'">'+esc(c.l)+arrow+'</th>';
@@ -2735,8 +2775,9 @@ async function hydrateAllPlayers(host){
   window._pl={b,xpMap};
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
-  host.innerHTML='<div class="card"><div class="card-title">All players</div>'+
-    '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile.</p>'+
+  host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">All players'+
+    '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile. Export CSV downloads exactly what you’re filtered and sorted to.</p>'+
     '<div class="pl-filters">'+
       '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
       '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
