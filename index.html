@@ -404,6 +404,9 @@ html.offline .net-banner{transform:translateY(0)}
 .ptable th:first-child{left:0;z-index:2}
 .ptable tbody tr{cursor:pointer}
 .ptable tbody tr:hover td{background:var(--surface-3)}
+/* League area */
+.lg-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.lg-fc{display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;color:#fff;margin-right:2px}
 .pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
 .plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
   background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
@@ -1227,6 +1230,14 @@ const loadSummary  =id=>cached('sum-'+id,10*60e3,()=>api('element-summary/'+id))
 const loadTransfers=id=>cached('tr-'+id,3*60e3,()=>api('entry/'+id+'/transfers'));
 const loadEventStatus=()=>api('event-status');
 const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('set-piece-notes'));
+/* Shared season-model bundle, published by the PL Simulator (one source of
+   truth for ratings, fixtures, form, odds — CORS-open). Cached 6h. */
+const MODEL_URL='https://plsimulation.netlify.app/model.json';
+const loadModelBundle=()=>cached('model-bundle',6*3600e3,async()=>{
+  const r=await fetch(MODEL_URL,{cache:'no-store'});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+});
 const loadDreamTeam=gw=>cached('dt-'+gw,10*60e3,()=>api('dream-team/'+gw));
 const loadH2HStandings=id=>api('leagues-h2h/'+id+'/standings');
 
@@ -1707,6 +1718,13 @@ const NAV = [
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
     ]
+  },
+  {
+    id:'league', label:'League', icon:'trophy',
+    panels:[
+      {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
+      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'}
+    ]
   }
 ];
 
@@ -1729,6 +1747,14 @@ const PANEL_CONTENT = {
   },
   blog:{
     desc:'Auto-written briefings — talking points, differentials, price watch, fixture swings and captaincy — generated from live data and our model every gameweek.',
+    layout:'standard'
+  },
+  titlerace:{
+    desc:'Title, top-four, European and relegation odds for the season — from the same backtested model that powers the standalone PL Simulator.',
+    layout:'standard'
+  },
+  clubform:{
+    desc:'Every club’s recent form — last 5, 10 and 20 games, overall, home and away — from real results.',
     layout:'standard'
   },
   squad:{
@@ -4748,10 +4774,95 @@ async function hydrateBlog(host){
   }));
 }
 
+/* ═══════════════════════════════════════════════════════════
+   LEAGUE — season odds + club form, from the shared model bundle
+   (the same backtested engine behind the standalone PL Simulator).
+   ═══════════════════════════════════════════════════════════ */
+const LG_COLOR={"Arsenal":"#EF0107","Aston Villa":"#67022a","Bournemouth":"#B50E12",
+  "Brentford":"#e30613","Brighton":"#0057B8","Chelsea":"#034694","Coventry City":"#59c1e8",
+  "Crystal Palace":"#1B458F","Everton":"#003399","Fulham":"#8a8a8a","Hull City":"#F5A12D",
+  "Ipswich Town":"#3a64a3","Leeds United":"#1D428A","Liverpool":"#C8102E","Manchester City":"#6CABDD",
+  "Manchester United":"#DA291C","Newcastle United":"#241F20","Nottingham Forest":"#DD0000",
+  "Tottenham Hotspur":"#132257","Sunderland":"#EB172B"};
+function lgDot(name){const c=LG_COLOR[name];return c?'<span class="lg-dot" style="background:'+c+'"></span>':'';}
+function lgBar(v,max,soft){return 'background:linear-gradient(90deg,'+soft+' '+Math.min(100,100*v/(max||1))+'%,transparent 0)';}
+
+async function hydrateTitleRace(host){
+  host.innerHTML=skel(6);
+  let m;try{m=await loadModelBundle();}catch(e){
+    host.innerHTML=stateBox('trophy','League odds unavailable','The season odds load from our PL Simulator model — try again in a moment.');return;}
+  const snaps=m.odds_history||[],snap=snaps[snaps.length-1];
+  if(!snap||!snap.clubs){host.innerHTML=stateBox('trophy','No season odds yet','Title and relegation odds appear here once the model has run for the season.');return;}
+  const clubs=snap.clubs,names=Object.keys(clubs);
+  const byTitle=[...names].sort((a,b)=>clubs[b].title-clubs[a].title);
+  const byRel=[...names].sort((a,b)=>clubs[b].rel-clubs[a].rel);
+  const st=m.season_state||{};
+  const hero='<div class="grid g-sb mb-20">'+
+    kpi('Title favourite',esc(byTitle[0]),clubs[byTitle[0]].title.toFixed(0)+'% · '+esc(byTitle[1])+' '+clubs[byTitle[1]].title.toFixed(0)+'%','var(--green)')+
+    kpi('Most likely down',esc(byRel[0]),clubs[byRel[0]].rel.toFixed(0)+'% · '+esc(byRel[1])+' '+clubs[byRel[1]].rel.toFixed(0)+'%','var(--red)')+
+  '</div>';
+  const rows=byTitle.map((t,i)=>{const c=clubs[t];
+    return '<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td>'+
+      '<td class="num" style="'+lgBar(c.title,100,'var(--green-soft)')+'">'+c.title.toFixed(1)+'</td>'+
+      '<td class="num" style="'+lgBar(c.top4,100,'var(--green-soft)')+'">'+c.top4.toFixed(1)+'</td>'+
+      '<td class="num" style="'+lgBar(c.rel,100,'var(--red-soft)')+'">'+c.rel.toFixed(1)+'</td></tr>';}).join('');
+  host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Season odds'+
+      (st.label?' <span class="badge badge-grey">'+esc(st.label)+'</span>':'')+'</div>'+
+      '<p class="dl-sub" style="margin-bottom:12px">Title, top-four and relegation probabilities from the fitted team-strength model — backtested within 0.007 RPS of Pinnacle closing odds. Updated '+esc(snap.date||st.updated||'')+'.</p>'+
+      hero+
+      '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title %</th><th class="num">Top 4 %</th><th class="num">Rel %</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<p class="dl-sub" style="margin-top:10px">Full European breakdown, the 20×20 finish grid, editable Scenario Lab and next-5/10/20 projections live in the <b>Season Simulator</b> (Pro) — and free at <a href="https://plsimulation.netlify.app" style="color:var(--green-bright)">plsimulation.netlify.app</a>.</p>'+
+    '</div>';
+}
+
+let LGF_VENUE='overall',LGF_WIN='5';
+function lgFormChips(seq){return (seq||[]).map(r=>{
+  const c=r==='W'?'var(--green-bright)':r==='L'?'var(--red)':'var(--text-3)';
+  return '<span class="lg-fc" style="background:'+c+'">'+r+'</span>';}).join('')||'—';}
+function renderClubForm(host,m){
+  const form=m.form||{},st=m.season_state||{};
+  const names=Object.keys(form).filter(t=>form[t][LGF_VENUE][LGF_WIN].p>0)
+    .sort((a,b)=>form[b][LGF_VENUE][LGF_WIN].ppg-form[a][LGF_VENUE][LGF_WIN].ppg
+      ||(form[b][LGF_VENUE][LGF_WIN].gf-form[b][LGF_VENUE][LGF_WIN].ga)-(form[a][LGF_VENUE][LGF_WIN].gf-form[a][LGF_VENUE][LGF_WIN].ga));
+  const rows=names.map((t,i)=>{const f=form[t][LGF_VENUE][LGF_WIN],gd=f.gf-f.ga;
+    return '<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td><td class="num">'+f.p+'</td>'+
+      '<td class="num">'+f.w+'-'+f.d+'-'+f.l+'</td><td class="num">'+f.gf+'</td><td class="num">'+f.ga+'</td>'+
+      '<td class="num">'+(gd>0?'+':'')+gd+'</td><td class="num"><b>'+f.pts+'</b></td>'+
+      '<td class="num" style="'+lgBar(f.ppg,3,'var(--green-soft)')+'">'+f.ppg.toFixed(2)+'</td>'+
+      '<td>'+lgFormChips(form[t].recent)+'</td></tr>';}).join('');
+  const empty=Object.keys(form).filter(t=>!form[t].overall['20'].p);
+  const seg=(id,cur,opts)=>'<div class="seg" data-seg="'+id+'">'+opts.map(o=>
+    '<button class="seg-b'+(o[0]===cur?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>').join('')+'</div>';
+  host.querySelector('#lgf-out').innerHTML=
+    '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">P</th><th class="num">W-D-L</th><th class="num">GF</th><th class="num">GA</th><th class="num">GD</th><th class="num">Pts</th><th class="num">PPG</th><th>Last 5</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    (empty.length?'<p class="dl-sub" style="margin-top:8px">'+empty.map(esc).join(', ')+' — no '+esc(st.label||'')+' top-flight games (promoted); fills in as the season is played.</p>':'');
+}
+async function hydrateClubForm(host){
+  host.innerHTML=skel(6);
+  let m;try{m=await loadModelBundle();}catch(e){
+    host.innerHTML=stateBox('pulse','Form unavailable','Recent form loads from our PL Simulator model — try again shortly.');return;}
+  if(!m.form){host.innerHTML=stateBox('pulse','No form yet','Recent form appears here once the season’s results are in.');return;}
+  const st=m.season_state||{};
+  host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' Team form</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Recent form from <b>'+esc(st.label||'')+'</b>'+(st.live?' — live, '+st.played_md+' matchdays played':' (last completed season, until 2026/27 kicks off)')+'. Home/Away split the last games at that venue; PPG makes the windows comparable.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
+      '<div class="seg" data-seg="venue"><button class="seg-b on" data-v="overall">Overall</button><button class="seg-b" data-v="home">Home</button><button class="seg-b" data-v="away">Away</button></div>'+
+      '<div class="seg" data-seg="win"><button class="seg-b on" data-v="5">Last 5</button><button class="seg-b" data-v="10">Last 10</button><button class="seg-b" data-v="20">Last 20</button></div>'+
+    '</div><div id="lgf-out"></div></div>';
+  renderClubForm(host,m);
+  host.querySelectorAll('.seg').forEach(seg=>seg.querySelectorAll('.seg-b').forEach(btn=>btn.addEventListener('click',()=>{
+    seg.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+    if(seg.dataset.seg==='venue')LGF_VENUE=btn.dataset.v;else LGF_WIN=btn.dataset.v;
+    renderClubForm(host,m);
+  })));
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
   'gw-actions':hydrateGwActions,
+  titlerace:hydrateTitleRace,
+  clubform:hydrateClubForm,
   blog:hydrateBlog,
   gwhistory:hydrateGwhistory,
   squad:hydrateSquad,
