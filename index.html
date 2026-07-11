@@ -378,6 +378,19 @@ html.offline .net-banner{transform:translateY(0)}
 .bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
 .solver-best{background:var(--green-soft);border-radius:8px}
 .solver-idx{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:.72rem;margin-right:8px;flex:0 0 auto}
+/* Player List table */
+.pl-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.pl-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:var(--r-md)}
+.ptable{border-collapse:collapse;width:100%;font-size:.8rem;white-space:nowrap}
+.ptable th,.ptable td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:pointer;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
+.ptable th:hover{color:var(--text)}
+.ptable th.active{color:var(--green-bright)}
+.ptable th.num,.ptable td.num{text-align:right;font-variant-numeric:tabular-nums}
+.ptable td:first-child{font-weight:600;color:var(--text);position:sticky;left:0;background:var(--surface-2)}
+.ptable th:first-child{left:0;z-index:2}
+.ptable tbody tr{cursor:pointer}
+.ptable tbody tr:hover td{background:var(--surface-3)}
 .ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
   font-size:.9rem;background:var(--surface-3);color:var(--text)}
 .ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
@@ -1632,6 +1645,7 @@ const NAV = [
   {
     id:'players', label:'Players', icon:'players',
     panels:[
+      {id:'allplayers', label:'Player List', icon:'grid', tier:'free'},
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
       {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
@@ -1724,6 +1738,10 @@ const PANEL_CONTENT = {
   },
   ask:{
     desc:'Ask anything about your team and the gameweek. The AI scout answers, grounded in your squad and live data.',
+    layout:'standard'
+  },
+  allplayers:{
+    desc:'Every player in one table with the full data set — tap any column to sort, tap a row for the full profile.',
     layout:'standard'
   },
   compare:{
@@ -2623,6 +2641,94 @@ async function hydrateFixtures(host){
 }
 
 /* Differentials: low-owned players with strong form */
+/* ═══════════════════════════════════════════════════════════
+   PLAYER LIST — every player, full data set, sort on any column.
+   ═══════════════════════════════════════════════════════════ */
+const PL_TEXTCOLS=['web_name','team','pos'];
+let PL_STATE={k:'total_points',dir:-1,pos:0,team:0,q:''};
+function fnum(v){const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);}
+function plCols(b,xpMap){
+  return [
+    {k:'web_name',l:'Player',v:e=>e.web_name,d:e=>esc(e.web_name)},
+    {k:'team',l:'Team',v:e=>teamShort(b,e.team),d:e=>esc(teamShort(b,e.team))},
+    {k:'pos',l:'Pos',v:e=>e.element_type,d:e=>posShort(b,e.element_type)},
+    {k:'now_cost',l:'£',num:1,v:e=>e.now_cost||0,d:e=>money(e.now_cost)},
+    {k:'selected_by_percent',l:'Sel%',num:1,v:e=>parseFloat(e.selected_by_percent)||0,d:e=>esc(e.selected_by_percent)},
+    {k:'total_points',l:'Pts',num:1,v:e=>e.total_points||0},
+    {k:'event_points',l:'GW',num:1,v:e=>e.event_points||0},
+    {k:'form',l:'Form',num:1,v:e=>parseFloat(e.form)||0,d:e=>esc(e.form)},
+    {k:'points_per_game',l:'PPG',num:1,v:e=>parseFloat(e.points_per_game)||0,d:e=>esc(e.points_per_game)},
+    {k:'xp',l:'xP',num:1,v:e=>xpMap[e.id]||0,d:e=>(xpMap[e.id]||0).toFixed(1)},
+    {k:'minutes',l:'Min',num:1,v:e=>e.minutes||0,d:e=>fmtNum(e.minutes)},
+    {k:'goals_scored',l:'G',num:1,v:e=>e.goals_scored||0},
+    {k:'assists',l:'A',num:1,v:e=>e.assists||0},
+    {k:'expected_goal_involvements_per_90',l:'xGI/90',num:1,v:e=>parseFloat(e.expected_goal_involvements_per_90)||0,d:e=>fnum(e.expected_goal_involvements_per_90)},
+    {k:'expected_goals_conceded_per_90',l:'xGC/90',num:1,v:e=>parseFloat(e.expected_goals_conceded_per_90)||0,d:e=>fnum(e.expected_goals_conceded_per_90)},
+    {k:'defensive_contribution_per_90',l:'DefC/90',num:1,v:e=>parseFloat(e.defensive_contribution_per_90)||0,d:e=>fnum(e.defensive_contribution_per_90)},
+    {k:'bonus',l:'Bon',num:1,v:e=>e.bonus||0},
+    {k:'bps',l:'BPS',num:1,v:e=>e.bps||0},
+    {k:'ict_index',l:'ICT',num:1,v:e=>parseFloat(e.ict_index)||0,d:e=>esc(e.ict_index)},
+    {k:'value_season',l:'Val',num:1,v:e=>parseFloat(e.value_season)||0,d:e=>esc(e.value_season)}
+  ];
+}
+function renderPlayerTable(){
+  const S=window._pl;if(!S)return;const {b,xpMap}=S;
+  const table=document.getElementById('pl-table');if(!table)return;
+  const cols=plCols(b,xpMap);
+  const q=PL_STATE.q;
+  let list=b.elements.filter(e=>{
+    if(PL_STATE.pos&&e.element_type!==PL_STATE.pos)return false;
+    if(PL_STATE.team&&e.team!==PL_STATE.team)return false;
+    if(q&&(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+  const col=cols.find(c=>c.k===PL_STATE.k)||cols[5];
+  list.sort((a,c)=>{const va=col.v(a),vc=col.v(c);
+    const base=col.num?(va-vc):String(va).localeCompare(String(vc));
+    return base*PL_STATE.dir;});
+  const head='<thead><tr>'+cols.map(c=>{
+    const active=c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
+    return '<th data-k="'+c.k+'" class="'+(c.num?'num':'')+(active?' active':'')+'">'+esc(c.l)+arrow+'</th>';
+  }).join('')+'</tr></thead>';
+  const cap=300,shown=list.slice(0,cap);
+  const body='<tbody>'+shown.map(e=>'<tr data-id="'+e.id+'">'+cols.map(c=>
+    '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
+  table.innerHTML=head+body;
+  const cnt=document.getElementById('pl-count');
+  if(cnt)cnt.textContent=list.length+' players'+(list.length>cap?' · showing the top '+cap+' for this sort — filter to narrow':'');
+}
+async function hydrateAllPlayers(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const xpMap={};b.elements.forEach(e=>{xpMap[e.id]=xP(b,e,nf[e.team]);});
+  window._pl={b,xpMap};
+  const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
+    .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
+  host.innerHTML='<div class="card"><div class="card-title">All players</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile.</p>'+
+    '<div class="pl-filters">'+
+      '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
+      '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
+      '<select id="pl-team" class="modal-in" style="flex:1 1 120px">'+teamOpts+'</select>'+
+    '</div>'+
+    '<div class="pl-scroll"><table class="ptable" id="pl-table"></table></div>'+
+    '<div class="dl-sub" id="pl-count" style="margin-top:8px"></div></div>';
+  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();renderPlayerTable();});
+  host.querySelector('#pl-pos').addEventListener('change',e=>{PL_STATE.pos=+e.target.value;renderPlayerTable();});
+  host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;renderPlayerTable();});
+  const table=host.querySelector('#pl-table');
+  table.addEventListener('click',ev=>{
+    const th=ev.target.closest('th');
+    if(th&&th.dataset.k){const k=th.dataset.k;
+      if(PL_STATE.k===k)PL_STATE.dir*=-1;
+      else{PL_STATE.k=k;PL_STATE.dir=PL_TEXTCOLS.indexOf(k)>=0?1:-1;}
+      renderPlayerTable();return;}
+    const tr=ev.target.closest('tr[data-id]');
+    if(tr)openPlayer(+tr.dataset.id);
+  });
+  renderPlayerTable();
+}
+
 async function hydrateDiffs(host){
   const b=await boot();
   const list=b.elements
@@ -4541,6 +4647,7 @@ const WIRED={
   chips:hydrateChips,
   watchlist:hydrateWatchlist,
   alerts:hydrateAlerts,
+  allplayers:hydrateAllPlayers,
   compare:hydrateCompare,
   fixtures:hydrateFixtures,
   diffs:hydrateDiffs,
