@@ -404,6 +404,17 @@ html.offline .net-banner{transform:translateY(0)}
 .ptable th:first-child{left:0;z-index:2}
 .ptable tbody tr{cursor:pointer}
 .ptable tbody tr:hover td{background:var(--surface-3)}
+.pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
+.plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:12px 8px 10px;cursor:pointer;text-align:center;transition:border-color .14s,box-shadow .14s}
+.plc:hover{border-color:var(--green-bright);box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.plc-top{position:relative;margin-bottom:2px}
+.plc-crest{position:absolute!important;bottom:-2px;right:-4px;width:17px;height:17px;box-shadow:0 1px 3px rgba(0,0,0,.35);border-radius:4px}
+.plc-flag{position:absolute;top:6px;right:6px;padding:1px 5px;font-size:.58rem}
+.plc-nm{font-weight:700;font-size:.82rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.plc-sub{font-size:.68rem;color:var(--text-3)}
+.plc-stats{font-size:.7rem;color:var(--text-2);margin-top:3px}.plc-stats b{color:var(--text)}
 .ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
   font-size:.9rem;background:var(--surface-3);color:var(--text)}
 .ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
@@ -2469,12 +2480,21 @@ async function hydrateGwActions(host){
     '<div class="card"><div class="card-title">Crowd moves this gameweek</div>'+
       '<div class="dl">'+
         '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
-        dlPlain('Most captained',pl(cap))+
-        dlPlain('Most transferred in',pl(tin))+
-        dlPlain('Most selected',pl(sel))+
-        dlPlain('Top scorer',topEl?(esc(topEl.web_name)+' ('+(ev.top_element_info.points)+' pts)'):'—')+
+        crowdRow(b,'Most captained',cap)+
+        crowdRow(b,'Most transferred in',tin)+
+        crowdRow(b,'Most selected',sel)+
+        crowdRow(b,'Top scorer',topEl,topEl&&ev.top_element_info?ev.top_element_info.points+' pts':'')+
       '</div>'+
     '</div>';
+}
+/* A crowd-signal row with the player's photo, crest and name. */
+function crowdRow(b,label,el,extra){
+  const right=el
+    ? '<span onclick="openPlayer('+el.id+')" style="display:flex;align-items:center;gap:8px;cursor:pointer">'+
+        avatar(b,el,28)+'<span style="text-align:right"><span class="dl-nm" style="display:block">'+esc(el.web_name)+
+        '</span><span class="dl-sub">'+crest(b,el.team,12)+' '+teamShort(b,el.team)+(extra?' · '+esc(extra):'')+'</span></span></span>'
+    : '<span class="dl-sub">—</span>';
+  return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(label)+'</span></span>'+right+'</div>';
 }
 function dlPlain(label,value){
   return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(label)+'</span></span>'+
@@ -2676,7 +2696,7 @@ async function hydrateFixtures(host){
    PLAYER LIST — every player, full data set, sort on any column.
    ═══════════════════════════════════════════════════════════ */
 const PL_TEXTCOLS=['web_name','team','pos'];
-let PL_STATE={k:'total_points',dir:-1,pos:0,team:0,q:''};
+let PL_STATE={k:'total_points',dir:-1,pos:0,team:0,q:'',view:'table'};
 function fnum(v){const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);}
 function plCols(b,xpMap){
   return [
@@ -2752,21 +2772,37 @@ function exportPlayersCSV(){
     window.GENative&&GENative.hapticSuccess&&GENative.hapticSuccess();
   }catch(_){toast('Export failed on this device');}
 }
+/* A photo card for the Player List "Cards" view. */
+function plCard(b,xpMap,e){
+  const st=e.status&&e.status!=='a'
+    ? '<span class="plc-flag badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status).charAt(0)+'</span>':'';
+  return '<button class="plc" data-id="'+e.id+'">'+st+
+    '<div class="plc-top">'+avatar(b,e,46)+crest(b,e.team,15).replace('class="crest"','class="crest plc-crest"')+'</div>'+
+    '<div class="plc-nm">'+esc(e.web_name)+'</div>'+
+    '<div class="plc-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+'</div>'+
+    '<div class="plc-stats"><b>'+(e.total_points||0)+'</b> pts · <b>'+(xpMap[e.id]||0).toFixed(1)+'</b> xP · '+e.selected_by_percent+'%</div>'+
+  '</button>';
+}
 function renderPlayerTable(){
   const S=window._pl;if(!S)return;const {b,xpMap}=S;
-  const table=document.getElementById('pl-table');if(!table)return;
-  const cols=plCols(b,xpMap);
+  const view=document.getElementById('pl-view');if(!view)return;
   const list=plFilteredSorted();
-  const head='<thead><tr>'+cols.map(c=>{
-    const active=c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
-    return '<th data-k="'+c.k+'" class="'+(c.num?'num':'')+(active?' active':'')+'">'+esc(c.l)+arrow+'</th>';
-  }).join('')+'</tr></thead>';
-  const cap=300,shown=list.slice(0,cap);
-  const body='<tbody>'+shown.map(e=>'<tr data-id="'+e.id+'">'+cols.map(c=>
-    '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
-  table.innerHTML=head+body;
+  const cards=PL_STATE.view==='cards';
+  const cap=cards?120:300,shown=list.slice(0,cap);
+  if(cards){
+    view.innerHTML='<div class="pl-cards">'+shown.map(e=>plCard(b,xpMap,e)).join('')+'</div>';
+  }else{
+    const cols=plCols(b,xpMap);
+    const head='<thead><tr>'+cols.map(c=>{
+      const active=c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
+      return '<th data-k="'+c.k+'" class="'+(c.num?'num':'')+(active?' active':'')+'">'+esc(c.l)+arrow+'</th>';
+    }).join('')+'</tr></thead>';
+    const body='<tbody>'+shown.map(e=>'<tr data-id="'+e.id+'">'+cols.map(c=>
+      '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
+    view.innerHTML='<div class="pl-scroll"><table class="ptable">'+head+body+'</table></div>';
+  }
   const cnt=document.getElementById('pl-count');
-  if(cnt)cnt.textContent=list.length+' players'+(list.length>cap?' · showing the top '+cap+' for this sort — filter to narrow':'');
+  if(cnt)cnt.textContent=list.length+' players'+(list.length>cap?' · showing the top '+cap+(cards?'':' for this sort')+' — filter to narrow':'');
 }
 async function hydrateAllPlayers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -2782,21 +2818,26 @@ async function hydrateAllPlayers(host){
       '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
       '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
       '<select id="pl-team" class="modal-in" style="flex:1 1 120px">'+teamOpts+'</select>'+
+      '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button></div>'+
     '</div>'+
-    '<div class="pl-scroll"><table class="ptable" id="pl-table"></table></div>'+
+    '<div id="pl-view"></div>'+
     '<div class="dl-sub" id="pl-count" style="margin-top:8px"></div></div>';
   host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();renderPlayerTable();});
   host.querySelector('#pl-pos').addEventListener('change',e=>{PL_STATE.pos=+e.target.value;renderPlayerTable();});
   host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;renderPlayerTable();});
-  const table=host.querySelector('#pl-table');
-  table.addEventListener('click',ev=>{
+  host.querySelectorAll('#pl-viewseg .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
+    PL_STATE.view=btn.dataset.v;
+    host.querySelectorAll('#pl-viewseg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+    renderPlayerTable();
+  }));
+  host.querySelector('#pl-view').addEventListener('click',ev=>{
     const th=ev.target.closest('th');
     if(th&&th.dataset.k){const k=th.dataset.k;
       if(PL_STATE.k===k)PL_STATE.dir*=-1;
       else{PL_STATE.k=k;PL_STATE.dir=PL_TEXTCOLS.indexOf(k)>=0?1:-1;}
       renderPlayerTable();return;}
-    const tr=ev.target.closest('tr[data-id]');
-    if(tr)openPlayer(+tr.dataset.id);
+    const hit=ev.target.closest('[data-id]');
+    if(hit)openPlayer(+hit.dataset.id);
   });
   renderPlayerTable();
 }
@@ -4676,15 +4717,15 @@ function dreamTeamArticle(b,dt,gw){
   const team=(dt&&dt.team)||[];if(!team.length)return null;
   const byType={1:[],2:[],3:[],4:[]};
   team.forEach(p=>{const e=b.els[p.element];if(e)(byType[e.element_type]=byType[e.element_type]||[]).push({e,pts:p.points||0});});
-  const names={1:'Goalkeeper',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const rowFor=t=>byType[t]&&byType[t].length?'<div class="pitch-row">'+byType[t].sort((a,c)=>c.pts-a.pts)
+    .map(x=>'<div class="pp">'+ppFigure(b,x.e)+'<span class="pp-nm">'+esc(x.e.web_name)+'</span>'+
+      '<span class="pp-pt">'+x.pts+'</span></div>').join('')+'</div>':'';
   const top=dt.top_player&&b.els[dt.top_player.id];
-  let body='';
-  if(top)body+='<p>The single highest scorer of Gameweek '+gw+' was <b>'+esc(top.web_name)+'</b> ('+teamShort(b,top.team)+') on '+(dt.top_player.points||0)+' points.</p>';
-  [1,2,3,4].forEach(t=>{if(!byType[t]||!byType[t].length)return;
-    body+='<h4>'+names[t]+'</h4><ul>'+byType[t].sort((a,c)=>c.pts-a.pts)
-      .map(x=>'<li>'+esc(x.e.web_name)+' — '+x.pts+' pts <span class="muted">('+teamShort(b,x.e.team)+')</span></li>').join('')+'</ul>';});
   const total=team.reduce((s,p)=>s+(p.points||0),0);
-  body+='<p class="muted">Total '+total+' points — the perfect XI with hindsight.</p>';
+  let body='';
+  if(top)body+='<p>Top scorer of Gameweek '+gw+': <b>'+esc(top.web_name)+'</b> ('+teamShort(b,top.team)+') on '+(dt.top_player.points||0)+' points.</p>';
+  body+=pitchWrap(rowFor(1)+rowFor(2)+rowFor(3)+rowFor(4));
+  body+='<p class="muted" style="margin-top:10px">Total '+total+' points — the perfect XI with hindsight.</p>';
   return {kick:'Team of the Week',title:'Gameweek '+gw+' Dream Team',
     dek:'The official highest-scoring XI of the gameweek.',accent:'a-emerald',mins:1,body};
 }
