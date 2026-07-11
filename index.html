@@ -376,6 +376,8 @@ html.offline .net-banner{transform:translateY(0)}
 .pd-chip-hot{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
 .bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:8px;font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
 .bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
+.solver-best{background:var(--green-soft);border-radius:8px}
+.solver-idx{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:.72rem;margin-right:8px;flex:0 0 auto}
 .ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
   font-size:.9rem;background:var(--surface-3);color:var(--text)}
 .ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
@@ -2944,6 +2946,79 @@ function playerDetailHTML(b,fixtures,id){
     '<div class="modal-row" style="margin-top:6px"><button class="btn btn-ghost" data-player-close>Close</button></div>';
 }
 
+/* ═══════════════════════════════════════════════════════════
+   TRANSFER SOLVER — the best 0-3 moves over the horizon.
+   Greedy on cumulative horizon xP with a local pool cap; respects
+   budget (sale value ≈ current price), the 3-per-club cap and
+   position-for-position swaps so the squad stays valid. Each -4 hit
+   is weighed against the points it buys. A fast heuristic, not a MILP
+   — but exact for the single-transfer case that matters most. */
+function solvePlan(b,hz,squad,bank,maxT){
+  const memo=new Map();
+  const hzx=e=>{if(memo.has(e.id))return memo.get(e.id);const v=horizonXP(b,e,hz);memo.set(e.id,v);return v;};
+  const byPos={1:[],2:[],3:[],4:[]};
+  b.elements.filter(e=>e.status==='a'&&(e.minutes||0)>0).forEach(e=>byPos[e.element_type].push(e));
+  for(const k in byPos)byPos[k]=byPos[k].sort((a,c)=>hzx(c)-hzx(a)).slice(0,40);
+  let cur=squad.slice();
+  const curIds=new Set(squad.map(e=>e.id));
+  const club={};squad.forEach(e=>club[e.team]=(club[e.team]||0)+1);
+  let curBank=bank;const moves=[];
+  for(let step=0;step<maxT;step++){
+    let best=null;
+    for(const o of cur){
+      for(const c of byPos[o.element_type]){
+        if(curIds.has(c.id))continue;
+        if((c.now_cost||0)>(o.now_cost||0)+curBank)continue;
+        if(((club[c.team]||0)-(c.team===o.team?1:0))>=3)continue;
+        const g=hzx(c)-hzx(o);
+        if(!best||g>best.g)best={o,c,g};
+      }
+    }
+    if(!best||best.g<=0.05)break;
+    cur=cur.filter(e=>e.id!==best.o.id);cur.push(best.c);
+    curIds.delete(best.o.id);curIds.add(best.c.id);
+    club[best.o.team]=(club[best.o.team]||1)-1;club[best.c.team]=(club[best.c.team]||0)+1;
+    curBank=curBank+(best.o.now_cost||0)-(best.c.now_cost||0);
+    moves.push(best);
+  }
+  return moves;
+}
+function renderSolver(){
+  const S=window._solver;if(!S)return;
+  const box=document.getElementById('solver-out');if(!box)return;
+  const freeT=parseInt((document.getElementById('solver-ft')||{}).value||'1',10);
+  const moves=solvePlan(S.b,S.hz,S.squad,S.bank,3);
+  if(!moves.length){box.innerHTML='<div class="dl-sub">Your squad already projects at the top of its budget over this horizon — rolling your transfer is the model’s call.</div>';return;}
+  const opts=[{k:0,gain:0,hit:0,net:0}];let cum=0;
+  moves.forEach((m,i)=>{cum+=m.g;const k=i+1;const hit=Math.max(0,k-freeT)*4;opts.push({k,gain:cum,hit,net:cum-hit});});
+  const bestK=opts.reduce((a,c)=>c.net>a.net+1e-9?c:a).k;
+  const oht=opts.map(o=>'<div class="dl-row'+(o.k===bestK?' solver-best':'')+'">'+
+    '<span class="dl-grow"><span class="dl-nm">'+(o.k===0?'Roll — 0 transfers':o.k+' transfer'+(o.k>1?'s':''))+
+      (o.k===bestK?' <span class="badge badge-green">best</span>':'')+'</span>'+
+    '<span class="dl-sub">'+(o.hit?'−'+o.hit+' hit':'no hit')+'</span></span>'+
+    '<span class="dl-col mono">+'+o.gain.toFixed(1)+'</span>'+
+    '<span class="dl-col mono" style="color:'+(o.net>=0?'var(--green)':'var(--red)')+'">'+(o.net>=0?'+':'')+o.net.toFixed(1)+'</span></div>').join('');
+  const show=moves.slice(0,Math.max(bestK,1));
+  const mht=show.map((m,i)=>'<div class="dl-row">'+
+    '<span class="solver-idx">'+(i+1)+'</span>'+
+    '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(m.o.web_name)+'  →  '+esc(m.c.web_name)+'</span>'+
+    '<span class="dl-sub">'+crest(S.b,m.o.team,12)+' '+teamShort(S.b,m.o.team)+' out · '+crest(S.b,m.c.team,12)+' '+teamShort(S.b,m.c.team)+' in · '+money(m.c.now_cost)+'</span></span>'+
+    '<span class="dl-col mono" style="color:var(--green)">+'+m.g.toFixed(1)+'</span></div>').join('');
+  box.innerHTML='<div class="dl"><div class="dl-row head"><span class="dl-grow">Plan</span><span class="dl-col">xP+</span><span class="dl-col">net</span></div>'+oht+'</div>'+
+    '<div class="card-title" style="margin-top:14px">Recommended: '+(bestK===0?'roll your transfer':bestK+' move'+(bestK>1?'s':''))+'</div>'+
+    (bestK>0?'<div class="dl">'+mht+'</div>':'<div class="dl-sub">No move clears the points its −4 would cost — bank the transfer for next week.</div>')+
+    '<div class="dl-sub" style="margin-top:8px">xP+ = extra projected points over the horizon; net subtracts −4 hits. Sale value assumes current price (the public API doesn’t expose your exact selling price). A strong greedy heuristic on horizon xP — exact for a single transfer.</div>';
+}
+function solverCard(){
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.swap,'width="15" height="15"')+' Transfer Solver — best moves for the horizon</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">The plan that adds the most projected points over the next several gameweeks, weighing every −4 hit against what it buys. Set your free transfers and compare taking 0–3 moves.</p>'+
+    '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">'+
+      '<label class="dl-sub" for="solver-ft">Free transfers</label>'+
+      '<select class="modal-in" id="solver-ft" style="max-width:84px" onchange="renderSolver()">'+
+        [1,2,3,4,5].map(n=>'<option value="'+n+'">'+n+'</option>').join('')+'</select></div>'+
+    '<div id="solver-out">'+skel(3)+'</div></div>';
+}
+
 async function hydrateTransfers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
@@ -2962,8 +3037,10 @@ async function hydrateTransfers(host){
       const bank=((picks.entry_history&&picks.entry_history.bank)||0);
       const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
       window._sq={ids:new Set(squad.map(e=>e.id)),bank};
+      window._solver={b,hz,squad,bank};
+      replacer=solverCard();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
-      replacer='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
+      replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
         '<select class="modal-in" id="rep-sel" style="max-width:280px;flex:1 1 200px"><option value="">Choose a player…</option>'+opts+'</select>'+
@@ -2985,6 +3062,7 @@ async function hydrateTransfers(host){
       '<div class="dl-sub" style="margin-top:8px">xP'+hzN+' = cumulative expected points across the horizon from the fitted team-strength model and validated player projections. Tap a number for the workings.</div></div>';
   }).join('');
   setTimeout(()=>{
+    if(window._solver)renderSolver();
     const s=document.getElementById('rep-sel');
     if(!s)return;
     let mode='xp';
