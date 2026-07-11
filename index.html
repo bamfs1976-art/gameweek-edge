@@ -1560,7 +1560,7 @@ const NAV = [
       {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
       {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free'},
       {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free'},
-      {id:'gwhistory', label:'GW History', icon:'calendar', tier:'paid'},
+      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
     ]
@@ -1669,7 +1669,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   gwhistory:{
-    desc:'Every gameweek of your season, with score, rank and captain return.',
+    desc:'Your season in review — points by gameweek, captain accuracy, bench waste and rank arrows.',
     layout:'standard'
   },
   watchlist:{
@@ -2091,6 +2091,107 @@ async function journeyCard(b,fixtures){
     '</div></div>';
 }
 
+
+/* ── Manager Report — season review + captain analysis ─── */
+async function hydrateGwhistory(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,hist]=await Promise.all([boot(),loadHistory(mid)]);
+  const cur=(hist.current||[]).filter(g=>g);
+  if(!cur.length){host.innerHTML=stateBox('calendar','No gameweeks yet',
+    'Your season review — points by gameweek, captain accuracy and bench waste — builds here once the season is under way.');return;}
+  const avgByGw={};b.events.forEach(e=>avgByGw[e.id]=e.average_entry_score||0);
+  const best=cur.reduce((a,c)=>c.points>a.points?c:a);
+  const worst=cur.reduce((a,c)=>c.points<a.points?c:a);
+  const benchTot=cur.reduce((s,c)=>s+(c.points_on_bench||0),0);
+  const hitsTot=cur.reduce((s,c)=>s+(c.event_transfers_cost||0),0);
+  let green=0;for(let i=1;i<cur.length;i++)if(cur[i].overall_rank<cur[i-1].overall_rank)green++;
+  const avgPts=Math.round(cur.reduce((s,c)=>s+c.points,0)/cur.length);
+  const beat=cur.filter(c=>c.points>=(avgByGw[c.event]||0)).length;
+
+  /* Points-by-gameweek bars: green when you beat that GW's average. */
+  const W=Math.max(320,cur.length*15),H=150,pad=22;
+  const maxP=Math.max(...cur.map(c=>c.points),...cur.map(c=>avgByGw[c.event]||0),1);
+  const bw=(W-pad)/cur.length;
+  const bars=cur.map((c,i)=>{
+    const x=pad+i*bw,h=(H-24)*c.points/maxP,y=H-18-h;
+    const good=c.points>=(avgByGw[c.event]||0);
+    const ay=H-18-(H-24)*(avgByGw[c.event]||0)/maxP;
+    return '<rect x="'+(x+1).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-2).toFixed(1)+'" height="'+h.toFixed(1)+'" rx="2" fill="'+(good?'var(--green-bright)':'var(--red)')+'" fill-opacity="0.85"><title>GW'+c.event+': '+c.points+' pts (avg '+(avgByGw[c.event]||'—')+')</title></rect>'+
+      '<circle cx="'+(x+bw/2).toFixed(1)+'" cy="'+ay.toFixed(1)+'" r="1.6" fill="var(--text-3)"/>';
+  }).join('');
+  const gwticks=cur.filter((c,i)=>i%5===0&&i<=cur.length-3||i===cur.length-1).map(c=>{
+    const i=cur.indexOf(c),x=pad+i*bw+bw/2;
+    return '<text x="'+x.toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" style="font-size:9px;fill:var(--text-3)">GW'+c.event+'</text>';
+  }).join('');
+  const chart='<div class="card mb-20"><div class="card-title">Points by gameweek</div>'+
+    '<div class="scroll"><svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W,640)+'px;width:100%;height:auto" role="img" aria-label="points by gameweek">'+bars+gwticks+'</svg></div>'+
+    '<div class="dl-sub" style="margin-top:8px">Green bars beat that gameweek’s average (grey dot); red fell short. You beat the average in '+beat+' of '+cur.length+'.</div></div>';
+
+  const tiles='<div class="grid g-4 mb-20">'+
+    kpi('Best gameweek',best.points+' pts','GW'+best.event,'var(--green)')+
+    kpi('Average','+'.replace('+','')+avgPts+' pts','per gameweek','var(--blue)')+
+    kpi('Bench points',String(benchTot),'left on your bench','var(--amber)')+
+    kpi('Green arrows',green+'/'+(cur.length-1),'rank rose · '+hitsTot+' pts on hits','var(--purple)')+
+  '</div>';
+
+  host.innerHTML=tiles+chart+
+    '<div class="card"><div class="card-title">Captain analysis</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">How your armband did across the season — accuracy, points missed to the optimal pick, and your most-trusted captains. Loads each gameweek’s picks, so it takes a moment.</p>'+
+      '<button class="btn btn-primary btn-sm" onclick="genCaptainReport()">Analyse my captains</button>'+
+      '<div id="cap-report" style="margin-top:14px"></div></div>';
+}
+
+async function genCaptainReport(){
+  const box=document.getElementById('cap-report');
+  box.innerHTML=skel(3);
+  try{
+    const b=await boot();const mid=getMid();
+    const hist=await loadHistory(mid);
+    const played=(hist.current||[]).map(g=>g.event).filter(g=>{const e=b.events.find(x=>x.id===g);return e&&e.finished;});
+    if(!played.length){box.innerHTML='<div class="dl-sub">No finished gameweeks yet.</div>';return;}
+    let capTot=0,optTot=0,hit=0;const capCount={};const histRows=[];
+    for(const gw of played){
+      let picks,live;
+      try{[picks,live]=await Promise.all([loadPicks(mid,gw),loadLive(gw)]);}catch(_){continue;}
+      const st=statsById(live);
+      const xi=picks.picks.filter(p=>p.position<=11);
+      const capPick=picks.picks.find(p=>p.is_captain)||xi[0];
+      const mult=capPick&&capPick.multiplier?capPick.multiplier:2;
+      const capBase=(st[capPick.element]||{}).total_points||0;
+      const capPts=capBase*mult;
+      const bestEl=xi.reduce((a,p)=>{const v=(st[p.element]||{}).total_points||0;return v>a.v?{id:p.element,v}:a;},{id:0,v:-1});
+      const optPts=bestEl.v*mult;
+      capTot+=capPts;optTot+=optPts;
+      if(capPick.element===bestEl.id)hit++;
+      capCount[capPick.element]=(capCount[capPick.element]||0)+1;
+      const nm=(b.els[capPick.element]||{}).web_name||'—';
+      const bn=(b.els[bestEl.id]||{}).web_name||'—';
+      histRows.push({gw,nm,capPts,bn,optPts,good:capPick.element===bestEl.id});
+    }
+    const missed=optTot-capTot;
+    const acc=Math.round(100*hit/played.length);
+    const topCaps=Object.entries(capCount).sort((a,c)=>c[1]-a[1]).slice(0,5)
+      .map(([id,n])=>({el:b.els[id],n}));
+    const tiles='<div class="grid g-4 mb-14">'+
+      kpi('Captain points',String(capTot),(capTot/played.length).toFixed(1)+' avg','var(--green)')+
+      kpi('Accuracy',acc+'%',hit+'/'+played.length+' optimal','var(--blue)')+
+      kpi('Missed',String(missed),'to the best pick','var(--red)')+
+      kpi('Optimal',String(optTot),'with hindsight','var(--purple)')+
+    '</div>';
+    const caps='<div class="card-title" style="margin-top:6px">Most captained</div><div class="dl">'+
+      topCaps.map(c=>'<div class="dl-row">'+avatar(b,c.el,30)+
+        '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc((c.el||{}).web_name||'—')+'</span>'+
+        '<span class="dl-sub">'+crest(b,(c.el||{}).team,13)+c.n+'× captained</span></span></div>').join('')+'</div>';
+    const recent=histRows.slice(-6).reverse().map(r=>
+      '<div class="dl-row" style="border-left:3px solid '+(r.good?'var(--green)':'var(--red)')+';padding-left:10px">'+
+      '<span class="dl-grow"><span class="dl-nm">GW'+r.gw+' · '+esc(r.nm)+' '+r.capPts+' pts</span>'+
+      '<span class="dl-sub">'+(r.good?'optimal pick':'best was '+esc(r.bn)+' '+r.optPts+' pts')+'</span></span></div>').join('');
+    box.innerHTML=tiles+caps+'<div class="card-title" style="margin-top:14px">Recent armbands</div><div class="dl">'+recent+'</div>';
+  }catch(e){box.innerHTML='<div class="dl-sub">Couldn’t analyse captains right now.</div>';}
+}
+
+
 async function hydrateGwActions(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const journey=await journeyCard(b,fixtures);
@@ -2344,9 +2445,24 @@ async function hydrateDiffs(host){
 }
 
 /* Price Predictor: net transfer momentum */
+/* Points per million — season value, FPL Core style. */
+function valueList(b,title,arr,highColor){
+  return '<div class="card mb-20"><div class="card-title">'+title+'</div><div class="dl">'+
+    arr.map((x,i)=>'<div class="dl-row"'+(i===0?' style="border:1px solid '+highColor+';border-radius:var(--r-md);background:color-mix(in srgb,'+highColor+' 8%,transparent)"':'')+'>'+
+      avatar(b,x.e,30)+'<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(x.e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,x.e.team,13)+posShort(b,x.e.element_type)+' · '+money(x.e.now_cost)+'</span></span>'+
+      '<span class="dl-col mono" style="color:'+(i===0?highColor:'var(--text)')+';font-weight:800">'+x.v.toFixed(1)+'</span>'+
+      '<span class="dl-col" style="font-size:.7rem;color:var(--text-3)">pts/£m</span></div>').join('')+'</div></div>';
+}
+
 async function hydratePrice(host){
   const b=await boot();
   const score=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
+  const ppm=e=>e.now_cost?e.total_points/(e.now_cost/10):0;
+  const played=b.elements.filter(e=>(e.minutes||0)>=270);
+  const best=played.map(e=>({e,v:ppm(e)})).sort((a,c)=>c.v-a.v).slice(0,5);
+  const prem=b.elements.filter(e=>(e.now_cost||0)>=80&&(e.minutes||0)>=270);
+  const worst=prem.map(e=>({e,v:ppm(e)})).sort((a,c)=>a.v-c.v).slice(0,5);
   const risers=b.elements.slice().sort((a,c)=>score(c)-score(a)).slice(0,12);
   const fallers=b.elements.slice().sort((a,c)=>score(a)-score(c)).slice(0,12);
   const tbl=(title,arr,pos)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
@@ -2354,10 +2470,16 @@ async function hydratePrice(host){
       (pos?'+':'')+fmtK(score(e)),
       (e.cost_change_event>0?'+':'')+(e.cost_change_event/10).toFixed(1)
     ])+'</div>';
+  const valueCards=(best.length
+    ? valueList(b,'Best value — points per million',best,'var(--green)')+
+      (worst.length?valueList(b,'Worst value — premiums underdelivering',worst,'var(--red)'):'')
+    : '');
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">Live transfer momentum this gameweek. Net transfers drive price changes — buy risers before the overnight update.</div>'+
     tbl('Rising — most bought',risers,true)+
-    tbl('Falling — most sold',fallers,false);
+    tbl('Falling — most sold',fallers,false)+
+    valueCards+
+    (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
 }
 
 /* Injury Monitor: flagged players by ownership */
@@ -3660,6 +3782,7 @@ async function refreshPushUI(){
 const WIRED={
   dashboard:hydrateDashboard,
   'gw-actions':hydrateGwActions,
+  gwhistory:hydrateGwhistory,
   squad:hydrateSquad,
   transfers:hydrateTransfers,
   captain:hydrateCaptain,
