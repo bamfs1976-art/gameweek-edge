@@ -1419,6 +1419,20 @@ const SUPA={url:'https://knodunjnsxelmpziupwk.supabase.co',
 let sb=null,SESSION=null,SYNCED_UID=null;
 function uid(){return SESSION&&SESSION.user?SESSION.user.id:null;}
 
+/* Owner allowlist: SHA-256 of the site owner's lowercased email. Grants
+   full (Pro) access on sign-in — gated behind real authentication, so it
+   is not a shared secret anyone can use. Email is hashed, not stored in
+   plaintext. Add more hashes to grant additional owners. */
+const OWNER_HASHES=['3030acf5031d5b815d5e50e0db6cac1beaf3ea9209300ac42fc42bbf2d81fab6'];
+async function isOwner(email){
+  if(!email||!(window.crypto&&crypto.subtle))return false;
+  try{
+    const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(email).trim().toLowerCase()));
+    const hex=Array.prototype.map.call(new Uint8Array(buf),b=>b.toString(16).padStart(2,'0')).join('');
+    return OWNER_HASHES.indexOf(hex)>=0;
+  }catch(_){return false;}
+}
+
 function initAuth(){
   if(!window.GE_SUPABASE)return;
   try{
@@ -1449,6 +1463,13 @@ async function syncOnLogin(){
     if(prof&&prof.manager_id){try{localStorage.setItem('ge-mid',String(prof.manager_id));}catch(_){}}
     else if(localMid){await sb.from('gwedge_profiles').upsert({user_id:id,manager_id:Number(localMid)});}
     if(prof&&prof.tier){try{localStorage.setItem('ge-tier',prof.tier);}catch(_){}}
+
+    /* Site owner: unlock full access and persist it to the cloud profile. */
+    if(SESSION&&await isOwner(SESSION.user.email)){
+      window.GE_OWNER=true;
+      try{localStorage.setItem('ge-tier','pro');}catch(_){}
+      sb.from('gwedge_profiles').upsert({user_id:id,tier:'pro'}).then(()=>{},()=>{});
+    }
 
     const {data:wl}=await sb.from('gwedge_watchlist').select('player_id').eq('user_id',id);
     const cloudW=(wl||[]).map(r=>r.player_id), localW=loadWatch();
@@ -1481,10 +1502,10 @@ function openAccount(){
   const body=document.getElementById('acct-body');
   if(SESSION){
     body.innerHTML=
-      '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
-      '<h3 id="acct-title">You’re signed in</h3>'+
+      '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+(window.GE_OWNER?' Owner':' Account')+'</span>'+
+      '<h3 id="acct-title">'+(window.GE_OWNER?'Owner — full access':'You’re signed in')+'</h3>'+
       '<p style="text-align:center;color:var(--text-2);font-size:.86rem;margin-bottom:6px">'+esc(SESSION.user.email||'')+'</p>'+
-      '<p class="modal-hint" style="text-align:center;margin:0 0 16px">Your Manager ID, tier, watchlist and rivals sync across every device you sign in on.</p>'+
+      '<p class="modal-hint" style="text-align:center;margin:0 0 16px">'+(window.GE_OWNER?'Every Pro feature is unlocked on this account, on every device you sign in on.':'Your Manager ID, tier, watchlist and rivals sync across every device you sign in on.')+'</p>'+
       '<button class="btn btn-primary" style="width:100%;justify-content:center" id="acct-signout">Sign out</button>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-acct-close>Close</button></div>';
     document.getElementById('acct-signout').addEventListener('click',doSignOut);
