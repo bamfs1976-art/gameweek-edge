@@ -3615,9 +3615,14 @@ async function hydrateAlerts(host){
       '<span class="dl-sub">'+teamShort(b,e.team)+' · net out '+fmtK(-net(e))+'</span></span>'+
       '<span class="dl-col neg">'+(e.cost_change_event/10).toFixed(1)+'</span></div>')+
     '<div class="card"><div class="card-title">Notify me about</div>'+
+      '<div class="dl-sub" style="margin:-2px 0 8px">Live — during matches</div>'+
+      toggle('scorer','Your players scoring or assisting')+
+      toggle('bonus','Bonus swings on your players')+
+      toggle('defcon','Your players hitting the DEFCON +2')+
+      '<div class="dl-sub" style="margin:12px 0 8px">Around the deadline</div>'+
       toggle('price','Price changes')+toggle('injury','Injuries & doubts')+
       toggle('deadline','Deadline reminders')+
-      '<div class="dl-sub" style="margin-top:12px">Saved on this device. When push is on, these control which alerts you receive.</div></div>';
+      '<div class="dl-sub" style="margin-top:12px">Live alerts need your team linked. Saved on this device and synced to push when it’s on.</div></div>';
   Array.prototype.forEach.call(host.querySelectorAll('[data-pref]'),cb=>
     cb.addEventListener('change',()=>{setAlertPref(cb.dataset.pref,cb.checked);syncPushPrefs();}));
   refreshPushUI();
