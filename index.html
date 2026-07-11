@@ -2075,6 +2075,20 @@ function armLiveRefresh(panelId){
   },45000);
 }
 function markLive(isLive){window._gwLive=!!isLive;}
+/* Push a live snapshot to the iOS widget + Live Activity via the GWLive
+   Capacitor plugin. No-ops on web and older iOS. Starts the Live Activity
+   the first time a gameweek is in play, updates it thereafter, and ends it
+   when the gameweek is done. */
+function gwLiveBridge(){return (window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.GWLive)||null;}
+let _laStarted=false;
+function updateLiveActivity(snap){
+  const p=gwLiveBridge();if(!p)return;
+  try{
+    p.update(snap);
+    if(snap.playing>0&&!_laStarted){_laStarted=true;p.start(snap);}
+    else if(snap.playing===0&&snap.toPlay===0&&_laStarted){_laStarted=false;p.end();}
+  }catch(_){/* native bridge unavailable */}
+}
 function liveStamp(isLive){
   return '<span class="live-pill'+(isLive?' on':'')+'">'+(isLive
     ?'<span class="live-dot"></span>Live · auto-updating'
@@ -3707,6 +3721,10 @@ async function hydrateLiveRank(host){
     const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);
     return s*y;};
   const pctile=avg?Math.round(100*(1-0.5*(1+erf(diff/(18*Math.SQRT2))))):null;
+  const capEl=b.els[(picks.picks.find(p=>p.is_captain)||{}).element]||{};
+  updateLiveActivity({gw:b.cur.id,points,
+    rankText:pctile!=null?('~top '+Math.max(1,Math.min(99,pctile))+'%'):((diff>=0?'+':'')+diff+' vs avg'),
+    toPlay,playing,captain:capEl.web_name||''});
   host.innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
       '<span class="dl-sub" style="margin:0">Gameweek '+b.cur.id+'</span>'+liveStamp(playing>0)+'</div>'+
