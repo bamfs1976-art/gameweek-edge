@@ -8,6 +8,10 @@ This document is the single source of truth for what the app does, how it is
 built, and where it can grow. It is generated from the current `index.html`
 source, not from memory.
 
+> **Developing on it?** See [`CONTRIBUTING.md`](../CONTRIBUTING.md) for local
+> setup (offline mock API + smoke test), recipes for adding panels/endpoints,
+> conventions and the deploy flow.
+
 ---
 
 ## 1. What Gameweek Edge is
@@ -420,6 +424,10 @@ netlify/functions/
   checkout.js portal.js stripe-webhook.js   billing
   push-key.js push-subscribe.js push-unsubscribe.js push-cron.js  web push
 ios/  capacitor.config.json    iOS wrapper
+dev/
+  mock_fpl.py                  offline mock FPL API + static server
+  smoke.mjs                    headless all-panels smoke test
+CONTRIBUTING.md                local setup, recipes, conventions
 docs/FEATURES.md               this document
 ```
 
