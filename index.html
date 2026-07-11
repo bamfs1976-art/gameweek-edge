@@ -3119,6 +3119,8 @@ function openPlayer(id){
     loadSummary(id).then(sum=>{const slot=document.getElementById('pd-summary');
       if(slot)slot.innerHTML=summarySections(b,sum,id);})
       .catch(()=>{const slot=document.getElementById('pd-summary');if(slot)slot.innerHTML='';});
+    loadLeagueCtx().then(ctx=>{const slot=document.getElementById('pd-league');
+      if(slot)slot.innerHTML=pdLeagueHtml(ctx,lgClubOf(b,(b.els[id]||{}).team));}).catch(()=>{});
   }).catch(()=>{body.innerHTML='<p class="dl-sub" style="padding:8px">Couldn’t load player details.</p>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>';});
 }
@@ -3191,6 +3193,7 @@ function playerDetailHTML(b,fixtures,id){
     '<div class="dl-sub" style="margin-top:8px">Colour = our model’s difficulty (green easy → red hard), from expected goals and clean-sheet odds.</div></div>':'';
   /* Filled asynchronously from element-summary (form graph, splits, seasons). */
   const summarySlot='<div id="pd-summary">'+skel(2)+'</div>';
+  const leagueSlot='<div id="pd-league"></div>';
   /* Underlying per-90 numbers */
   const stat=(l,v)=>'<div class="pd-stat"><span class="pd-sl">'+l+'</span><span class="pd-sv">'+v+'</span></div>';
   const f90=v=>{const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);};
@@ -3228,7 +3231,7 @@ function playerDetailHTML(b,fixtures,id){
     '<p class="dl-sub" style="margin-bottom:10px">A one-look scouting call on '+esc(e.web_name)+', grounded in these numbers.</p>'+
     aiGate('<button class="btn btn-primary btn-sm" onclick="genPlayer('+id+')">Scout this player</button>')+
     '<div id="pcard-'+id+'" style="margin-top:12px"></div></div>';
-  return head+news+kpis+ticker+summarySlot+per90+twinHtml+ai+
+  return head+news+kpis+ticker+leagueSlot+summarySlot+per90+twinHtml+ai+
     '<div class="modal-row" style="margin-top:6px"><button class="btn btn-ghost" data-player-close>Close</button></div>';
 }
 
@@ -3955,8 +3958,9 @@ async function hydrateSetpiece(host){
 
 /* ── Rotation Risk: start rate for premium players ─────── */
 async function hydrateRotation(host){
-  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const [b,fixtures,ctx]=await Promise.all([boot(),loadFixtures(),loadLeagueCtx().catch(()=>null)]);
   const games=teamGamesPlayed(fixtures);
+  const motOf=e=>{const club=lgClubOf(b,e.team);const x=club&&ctx&&ctx.byClub[club];return x?x.motivation:null;};
   const list=b.elements
     .filter(e=>e.now_cost>=60&&parseFloat(e.selected_by_percent)>=3&&(games[e.team]||0)>=3)
     .map(e=>{const gp=games[e.team]||1;const rate=(e.starts||0)/gp;return {e,rate,gp};})
@@ -3966,14 +3970,22 @@ async function hydrateRotation(host){
   if(!list.length){host.innerHTML=stateBox('flag','No clear rotation risks','Premium players are starting regularly. Risk rises with fixture congestion later in the season.');return;}
   const rows=list.map(x=>{const e=x.e;const pctv=Math.round(x.rate*100);
     const band=pctv<55?'badge-red':pctv<75?'badge-amber':'badge-grey';
+    const mot=motOf(e),dead=mot==='Little to play for';
+    const motBadge=dead?' <span class="badge badge-amber">'+esc(mot)+'</span>':'';
     return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
-      ' <span class="badge '+band+'">'+pctv+'% starts</span></span>'+
-      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+(e.starts||0)+'/'+x.gp+' games</span></span>'+
+      ' <span class="badge '+band+'">'+pctv+'% starts</span>'+motBadge+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+(e.starts||0)+'/'+x.gp+' games'+(mot&&!dead?' · '+esc(mot):'')+'</span></span>'+
       '<span class="dl-col mono">'+e.selected_by_percent+'%</span></div>';
   }).join('');
-  host.innerHTML='<div class="card"><div class="card-title">Rotation risk — premium players by start rate</div>'+
+  const deadClubs=ctx?Object.keys(ctx.byClub).filter(n=>ctx.byClub[n].dead):[];
+  const deadNote=deadClubs.length
+    ? '<div class="card mb-20" style="border-left:3px solid var(--amber)"><div class="card-title">'+svg(ICON.flag,'width="14" height="14"')+' Dead-rubber watch</div>'+
+      '<p class="dl-sub"><b>'+deadClubs.map(esc).join(', ')+'</b> have little left to play for this season — expect heavier rotation, whatever the recent start rate.</p></div>'
+    : (ctx&&ctx.live?'':'');
+  host.innerHTML=deadNote+
+    '<div class="card"><div class="card-title">Rotation risk — premium players by start rate</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · starts</span><span class="dl-col">Owned</span></div>'+rows+'</div>'+
-    '<div class="dl-sub" style="margin-top:10px">Based on each player’s share of their team’s games started. Lower start rates flag rotation or fitness risk.</div></div>';
+    '<div class="dl-sub" style="margin-top:10px">Start rate flags rotation or fitness risk; the league stakes tag adds motivation context (a club with nothing to play for rotates more, from the season model).</div></div>';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -4908,6 +4920,55 @@ function lgMonteCarlo(bundle,nSims,seed,overrides,els,onDone){
     if(done<nSims){setTimeout(step,0);return;}onDone(posCounts,ptsSum);
   })();}
 function lgPct(posCounts,n,t,a,b){let s=0;for(let i=a-1;i<b;i++)s+=posCounts[t][i];return 100*s/n;}
+
+/* ── League context: per-club run-in difficulty + stakes, mapped to FPL
+   teams. Powers the FPL-native cross-features (rotation risk, run-in for
+   your assets). ─────────────────────────────────────────────────── */
+const FPL_TO_LG={ARS:'Arsenal',AVL:'Aston Villa',BOU:'Bournemouth',BRE:'Brentford',
+  BHA:'Brighton',CHE:'Chelsea',COV:'Coventry City',CRY:'Crystal Palace',EVE:'Everton',
+  FUL:'Fulham',HUL:'Hull City',IPS:'Ipswich Town',LEE:'Leeds United',LIV:'Liverpool',
+  MCI:'Manchester City',MUN:'Manchester United',NEW:'Newcastle United',
+  NFO:'Nottingham Forest',TOT:'Tottenham Hotspur',SUN:'Sunderland'};
+function lgClubOf(b,teamId){return FPL_TO_LG[teamShort(b,teamId)]||null;}
+const loadLeagueCtx=()=>cached('league-ctx',3600e3,async()=>{
+  const m=await loadModelBundle();
+  const names=Object.keys(m.teams||{});
+  if(!names.length||!m.fixtures)return null;
+  const c=m.constants,st=m.season_state||{},N=6;
+  const startMd=Math.min(38,(st.live?(st.played_md||0):0)+1);
+  const xp={},gp={};names.forEach(n=>{xp[n]=0;gp[n]=0;});
+  for(let md=startMd-1;md<Math.min(m.fixtures.length,startMd-1+N);md++)
+    m.fixtures[md].forEach(([h,a])=>{const [lh,la]=lgLambdas(m.teams,c,h,a);
+      const [pH,pD,pA]=lgOutcome(lgScoreGrid(lh,la,c.DC_RHO));
+      xp[h]+=pH*3+pD;gp[h]++;xp[a]+=pA*3+pD;gp[a]++;});
+  const runin=names.map(n=>({n,xpg:gp[n]?xp[n]/gp[n]:0})).sort((a,b)=>b.xpg-a.xpg);
+  const rank={};runin.forEach((r,i)=>rank[r.n]=i+1);
+  const snaps=m.odds_history||[],snap=snaps[snaps.length-1];
+  const byClub={};
+  names.forEach(n=>{
+    const o=(snap&&snap.clubs&&snap.clubs[n])||{title:0,top4:0,rel:0};
+    const stakes=Math.max(o.title||0,o.top4||0,o.rel||0);
+    let mot='Mid-table',dead=false;
+    if((o.title||0)>=15)mot='Title race';
+    else if((o.top4||0)>=25)mot='European push';
+    else if((o.rel||0)>=15)mot='Relegation fight';
+    else if(stakes<8&&st.live){mot='Little to play for';dead=true;}
+    byClub[n]={xpg:gp[n]?xp[n]/gp[n]:0,rank:rank[n],stakes,motivation:mot,dead};
+  });
+  return {byClub,n:runin.length,live:!!st.live,horizon:N,label:st.label||''};
+});
+function pdLeagueHtml(ctx,club){
+  if(!ctx||!club||!ctx.byClub[club])return '';
+  const x=ctx.byClub[club],col=x.dead?'var(--amber)':'var(--text-2)';
+  return '<div class="card pd-sec"><div class="card-title">League context — '+esc(club)+'</div>'+
+    '<div class="pd-grid">'+
+      '<div class="pd-stat"><span class="pd-sl">Run-in xPts/gm</span><span class="pd-sv">'+x.xpg.toFixed(2)+'</span></div>'+
+      '<div class="pd-stat"><span class="pd-sl">Run-in rank</span><span class="pd-sv">'+(x.rank||'—')+' / '+ctx.n+'</span></div>'+
+    '</div>'+
+    '<div class="dl-sub" style="margin-top:8px;color:'+col+'">'+(x.dead?svg(ICON.flag,'width="12" height="12"')+' ':'')+esc(x.motivation)+
+      (x.dead?' — elevated rotation risk (little left to play for).':'')+
+      ' Run-in = model points/game over the next '+ctx.horizon+' games; rank 1 = kindest.</div></div>';
+}
 
 /* ── Season Simulator (Pro) ─────────────────────────────────────── */
 function renderSeasonSim(host,bundle,posCounts,ptsSum,n){
