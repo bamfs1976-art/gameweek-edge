@@ -14,12 +14,12 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Gameweek Edge — FPL, with an edge">
+<meta property="og:title" content="Gameweek Edge — for fantasy managers">
 <meta property="og:description" content="An AI scout, predicted points, live rank, mini-leagues and alerts for Fantasy Premier League managers.">
 <meta property="og:image" content="https://gameweekedge.app/icons/og.png">
 <meta property="og:url" content="https://gameweekedge.app/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Gameweek Edge — FPL, with an edge">
+<meta name="twitter:title" content="Gameweek Edge — for fantasy managers">
 <meta name="twitter:image" content="https://gameweekedge.app/icons/og.png">
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -982,7 +982,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
       </svg>
       <div class="brand-text">
         <div class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></div>
-        <div class="brand-tag">FPL, with an edge</div>
+        <div class="brand-tag">For fantasy managers</div>
       </div>
     </div>
 
@@ -1036,7 +1036,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
           </svg>
           <span class="tb-logo-text">
             <span class="tb-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
-            <span class="tb-tag">FPL, with an edge</span>
+            <span class="tb-tag">For fantasy managers</span>
           </span>
         </a>
         <span class="tb-divider" aria-hidden="true"></span>
@@ -1274,15 +1274,19 @@ const money=c=>'£'+(c/10).toFixed(1);
 const fmtNum=n=>(n==null?'—':Number(n).toLocaleString('en-GB'));
 const fmtK=n=>{n=Number(n)||0;return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':String(n);};
 function teamShort(b,id){return b.teams[id]?b.teams[id].short_name:'';}
-/* Official Premier League CDN assets (the same images the FPL site
-   serves), keyed off data the bootstrap already carries. Crests fall
-   back to the club-colour chip and photos to a neutral silhouette
-   when a code is missing or the image fails to load. */
+/* Club crests + player photos are served from the Premier League CDN.
+   They're club trademarks / player image-rights, so this master switch
+   lets us ship without them: flip USE_OFFICIAL_IMAGERY to false and every
+   crest becomes its club-colour chip and every photo a neutral silhouette
+   — no call sites change, the built-in fallbacks simply take over. */
+const USE_OFFICIAL_IMAGERY=true;
 function crestUrl(b,teamId){
+  if(!USE_OFFICIAL_IMAGERY)return '';
   const t=b.teams[teamId];
   return t&&t.code?`https://resources.premierleague.com/premierleague/badges/50/t${t.code}.png`:'';
 }
 function photoUrl(el){
+  if(!USE_OFFICIAL_IMAGERY)return '';
   const p=el&&(el.photo||el.code);
   if(!p)return '';
   return `https://resources.premierleague.com/premierleague/photos/players/110x140/p${String(p).replace('.jpg','').replace('.png','')}.png`;
