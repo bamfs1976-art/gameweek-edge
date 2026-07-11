@@ -271,19 +271,32 @@ html.offline .net-banner{transform:translateY(0)}
 .stat-v{font-family:var(--font-display);font-size:1.5rem;font-weight:800;margin-top:3px;letter-spacing:-.02em}
 .stat-s{font-size:.74rem;color:var(--text-2);margin-top:2px}
 
-/* Live pitch (real squad) */
-.pp{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;width:62px}
-.pp .jersey{width:36px;height:38px;margin:0}
-.pp.is-cap .jersey{filter:drop-shadow(0 0 0 #f5c518) drop-shadow(0 2px 5px rgba(0,0,0,.35));
-  background:#ffe08a}
-.pp-badge{position:absolute;top:-5px;right:8px;background:var(--text);color:var(--surface);
-  font-size:.56rem;font-weight:800;border-radius:50%;width:16px;height:16px;display:grid;place-items:center;z-index:2}
-.pp-nm{font-size:.62rem;font-weight:700;color:#fff;background:rgba(0,0,0,.38);
-  border-radius:4px;padding:1px 4px;max-width:62px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pp-pt{font-size:.64rem;font-weight:800;color:#0c1014;background:rgba(255,255,255,.94);border-radius:4px;padding:0 6px}
-.bench{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;
-  padding-top:14px;border-top:1px dashed rgba(255,255,255,.25)}
-.bench .pp .jersey{width:30px;height:32px;opacity:.92}
+/* Live pitch (real squad) — FPL-style player cards with photo + crest */
+.pp{position:relative;display:flex;flex-direction:column;align-items:center;width:66px}
+.pp-fig{width:50px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center}
+.pp-fig img{max-width:100%;max-height:100%;object-fit:contain;object-position:bottom;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+.pp-fig.no-photo::after{content:'';position:absolute;inset:auto 0 2px 0;margin:0 auto;
+  width:40px;height:44px;background:linear-gradient(165deg,var(--kit,#8a8a8a) 58%,var(--kit2,#fff));
+  clip-path:polygon(20% 0,0 14%,0 30%,17% 24%,17% 100%,83% 100%,83% 24%,100% 30%,100% 14%,80% 0,62% 8%,50% 10%,38% 8%);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.pp-crest{position:absolute;bottom:1px;right:3px;width:16px;height:16px;z-index:3;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);border-radius:3px}
+.pp.is-cap .pp-fig::before{content:'';position:absolute;inset:-3px 4px 6px 4px;border-radius:50%;
+  box-shadow:0 0 0 2px #f5c518,0 0 12px 2px rgba(245,197,24,.55);z-index:0}
+.pp-badge{position:absolute;top:-4px;left:6px;background:#f5c518;color:#111826;
+  font-size:.58rem;font-weight:900;border-radius:50%;width:17px;height:17px;display:grid;place-items:center;z-index:4;
+  box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.pp-nm{font-size:.6rem;font-weight:700;color:#fff;background:#111826;letter-spacing:.01em;
+  border-radius:4px 4px 0 0;padding:2px 5px;width:64px;box-sizing:border-box;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.pp-pt{font-size:.66rem;font-weight:800;color:#08130b;width:64px;box-sizing:border-box;text-align:center;
+  background:linear-gradient(180deg,#e9fff2,#bff0d2);border-radius:0 0 4px 4px;padding:1px 5px}
+.bench{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;
+  padding-top:16px;border-top:1px dashed rgba(255,255,255,.28)}
+.bench .pp{width:58px}
+.bench .pp-fig{width:40px;height:44px}
+.bench .pp-nm,.bench .pp-pt{width:56px;font-size:.56rem}
 
 /* Manager ID modal */
 .modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
@@ -741,26 +754,22 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 /* ── PITCH PREVIEW ─────────────────────────────────────── */
 .pitch-preview{
-  background:linear-gradient(176deg,#1a7a45 0%,#15633a 50%,#1a7a45 100%);
-  border:1px solid rgba(255,255,255,.12);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.14)),
+    repeating-linear-gradient(180deg,#1a8f4c 0,#1a8f4c 34px,#16833f 34px,#16833f 68px);
+  border:1px solid rgba(255,255,255,.16);
   border-radius:var(--r-md);
-  padding:22px 12px;position:relative;overflow:hidden;
-  min-height:330px;
+  padding:20px 12px;position:relative;overflow:hidden;
+  min-height:340px;
+  box-shadow:inset 0 0 55px rgba(0,0,0,.30);
 }
-.pitch-preview::before{
-  content:'';position:absolute;top:50%;left:7%;right:7%;height:1px;
-  background:rgba(255,255,255,.16);
-}
-.pitch-preview::after{
-  content:'';position:absolute;top:50%;left:50%;
-  width:78px;height:78px;transform:translate(-50%,-50%);
-  border:1px solid rgba(255,255,255,.16);border-radius:50%;
-}
+.pitch-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 .pitch-row{
-  display:flex;justify-content:center;gap:14px;
-  margin-bottom:20px;position:relative;z-index:2;
+  display:flex;justify-content:center;gap:12px;
+  margin-bottom:16px;position:relative;z-index:2;
 }
 .pitch-row:last-child{margin-bottom:0}
+/* Fallback jersey shape (used only when a player photo is unavailable) */
 .jersey{
   width:44px;height:46px;
   background:rgba(255,255,255,.92);
@@ -931,8 +940,6 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   overflow:hidden;vertical-align:middle;margin-right:10px;flex-shrink:0;box-shadow:var(--shadow)}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .dl-row .dl-grow{display:flex;align-items:center;gap:0;min-width:0}
-.pp .jersey{position:relative}
-.pp .pp-crest{position:absolute;top:-4px;right:6px;width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -1281,6 +1288,31 @@ function jerseyStyle(b,teamId){
   if(!k)return '';
   return 'background:linear-gradient(165deg,'+k[0]+' 58%,'+k[1]+');';
 }
+/* Crisp vector pitch markings, stretched to fill the turf. */
+const PITCH_SVG='<svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">'+
+  '<g fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="1" vector-effect="non-scaling-stroke">'+
+    '<rect x="2" y="2" width="96" height="136" rx="1.5"/>'+
+    '<line x1="2" y1="70" x2="98" y2="70"/>'+
+    '<circle cx="50" cy="70" r="13"/>'+
+    '<rect x="24" y="2" width="52" height="20"/>'+
+    '<rect x="39" y="2" width="22" height="8"/>'+
+    '<rect x="24" y="118" width="52" height="20"/>'+
+    '<rect x="39" y="130" width="22" height="8"/>'+
+  '</g>'+
+  '<g fill="#ffffff" fill-opacity=".55">'+
+    '<circle cx="50" cy="70" r="1.2"/><circle cx="50" cy="14" r="1"/><circle cx="50" cy="126" r="1"/>'+
+  '</g></svg>';
+/* An FPL-style pitch token: the player's real photo (official PL CDN)
+   with the club crest badge, falling back to a kit-colour shirt shape. */
+function ppFigure(b,el){
+  const url=photoUrl(el),kit=KIT[teamShort(b,el.team)]||['#8a8a8a','#ffffff'];
+  const style='--kit:'+kit[0]+';--kit2:'+(kit[1]||'#fff');
+  const img=url?'<img src="'+url+'" alt="" loading="lazy" onerror="this.remove();this.parentNode&&this.parentNode.classList.add(\'no-photo\')">':'';
+  return '<span class="pp-fig'+(url?'':' no-photo')+'" style="'+style+'">'+img+
+    crest(b,el.team,16).replace('class="crest"','class="crest pp-crest"')+'</span>';
+}
+/* Wrap pitch rows with the striped turf + markings. */
+function pitchWrap(inner){return '<div class="pitch-preview">'+PITCH_SVG+inner+'</div>';}
 function posShort(b,t){return b.types[t]?b.types[t].singular_name_short:'';}
 function fmtDeadline(iso){
   const d=new Date(iso);
@@ -2465,7 +2497,7 @@ async function hydrateSquad(host){
     const badge=pk.is_captain?'C':pk.is_vice_captain?'V':'';
     return '<div class="pp'+(pk.is_captain?' is-cap':'')+'">'+
       (badge?'<span class="pp-badge">'+badge+'</span>':'')+
-      '<div class="jersey" style="'+jerseyStyle(b,el.team)+'"></div>'+
+      ppFigure(b,el)+
       '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
       '<span class="pp-pt">'+pts+'</span></div>';
   };
@@ -2478,10 +2510,9 @@ async function hydrateSquad(host){
     '<div class="grid g-sb mb-20">'+
       '<div class="card"><div class="card-title">Your XI '+
         '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span></div>'+
-        '<div class="pitch-preview">'+
+        pitchWrap(
           row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
-          '<div class="bench">'+bench.map(cell).join('')+'</div>'+
-        '</div>'+
+          '<div class="bench">'+bench.map(cell).join('')+'</div>')+
       '</div>'+
       '<div class="card"><div class="card-title">Gameweek summary</div>'+
         '<div class="statgrid">'+
@@ -3979,7 +4010,7 @@ async function hydrateScout(host){
   const capP=Math.max.apply(null,team.xi.map(s=>s.p));
   const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
     return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
-      '<div class="jersey" style="'+jerseyStyle(b,el.team)+'">'+crest(b,el.team,18).replace('class="crest"','class="crest pp-crest"')+'</div>'+
+      ppFigure(b,el)+
       '<span class="pp-nm">'+esc(el.web_name)+'</span>'+
       '<span class="pp-pt">'+s.p+'</span></div>';};
   const rowFor=t=>'<div class="pitch-row">'+team.xi.filter(s=>s.el.element_type===t).map(cell).join('')+'</div>';
@@ -3989,7 +4020,7 @@ async function hydrateScout(host){
     '<div class="grid g-sb mb-20">'+
       '<div class="card"><div class="card-title">Team of the Week '+
         '<span class="badge badge-green">'+team.formation.join('-')+' · '+team.total.toFixed(1)+' xPts</span></div>'+
-        '<div class="pitch-preview">'+rowFor(1)+rowFor(2)+rowFor(3)+rowFor(4)+'</div></div>'+
+        pitchWrap(rowFor(1)+rowFor(2)+rowFor(3)+rowFor(4))+'</div>'+
       '<div class="card"><div class="card-title">Top predicted by position</div>'+
         '<div class="dl">'+
           '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Forwards</span><span class="dl-sub">'+topBy(4)+'</span></span></div>'+
