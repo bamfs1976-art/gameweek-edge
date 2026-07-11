@@ -1195,6 +1195,9 @@ const loadLive     =gw=>api('event/'+gw+'/live');
 const loadSummary  =id=>cached('sum-'+id,10*60e3,()=>api('element-summary/'+id));
 const loadTransfers=id=>cached('tr-'+id,3*60e3,()=>api('entry/'+id+'/transfers'));
 const loadEventStatus=()=>api('event-status');
+const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('set-piece-notes'));
+const loadDreamTeam=gw=>cached('dt-'+gw,10*60e3,()=>api('dream-team/'+gw));
+const loadH2HStandings=id=>api('leagues-h2h/'+id+'/standings');
 
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
@@ -3635,7 +3638,18 @@ async function hydrateRivals(host){
 
 /* ── Set Piece Register: takers from official order fields ─ */
 async function hydrateSetpiece(host){
-  const b=await boot();
+  const [b,notesData]=await Promise.all([boot(),loadSetPieceNotes().catch(()=>null)]);
+  const withNotes=((notesData&&notesData.teams)||[]).filter(t=>t.notes&&t.notes.length);
+  let notesCard='';
+  if(withNotes.length){
+    const rows=withNotes.sort((x,y)=>teamShort(b,x.id).localeCompare(teamShort(b,y.id))).map(t=>
+      '<div class="dl-row" style="align-items:flex-start"><span class="dl-grow" style="display:block">'+
+      '<span class="dl-nm">'+crest(b,t.id,14)+' '+esc((b.teams[t.id]||{}).name||teamShort(b,t.id))+'</span>'+
+      t.notes.map(n=>'<span class="dl-sub" style="display:block;margin-top:3px">'+esc(n.info_message||'')+'</span>').join('')+
+      '</span></div>').join('');
+    notesCard='<div class="card mb-20"><div class="card-title">Official set-piece notes</div><div class="dl">'+rows+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">Straight from the FPL editorial team — the latest word on who takes what, with the reasoning.</div></div>';
+  }
   const conf=o=>o===1?'<span class="badge badge-green">1st</span>':o===2?'<span class="badge badge-amber">2nd</span>':o===3?'<span class="badge badge-grey">3rd</span>':'';
   const section=(title,key)=>{
     const list=b.elements.filter(e=>e[key]&&e[key]<=2)
@@ -3650,6 +3664,7 @@ async function hydrateSetpiece(host){
   };
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data. 1st choice is the primary taker.</div>'+
+    notesCard+
     section('Penalties','penalties_order')+
     section('Direct free-kicks','direct_freekicks_order')+
     section('Corners & indirect free-kicks','corners_and_indirect_freekicks_order');
@@ -4191,51 +4206,65 @@ async function hydrateAsk(host){
 
 /* ── Mini-League Tracker ───────────────────────────────── */
 const loadStandings=id=>api('leagues-classic/'+id+'/standings');
-let LEAGUE_SEL=null;
+let LEAGUE_SEL=null,LEAGUE_TYPE='classic';
 
 async function hydrateLeagues(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
-  if(LEAGUE_SEL){return renderLeagueStandings(host,LEAGUE_SEL,mid);}
+  if(LEAGUE_SEL){return renderLeagueStandings(host,LEAGUE_SEL,mid,LEAGUE_TYPE);}
   const entry=await loadEntry(mid);
-  const leagues=((entry.leagues&&entry.leagues.classic)||[]).filter(l=>l.id);
-  if(!leagues.length){host.innerHTML=stateBox('trophy','No leagues yet','Your classic mini-leagues appear here once you’ve joined some.');return;}
-  const rows=leagues.map(l=>{
+  const classic=((entry.leagues&&entry.leagues.classic)||[]).filter(l=>l.id);
+  const h2h=((entry.leagues&&entry.leagues.h2h)||[]).filter(l=>l.id);
+  if(!classic.length&&!h2h.length){host.innerHTML=stateBox('trophy','No leagues yet','Your mini-leagues appear here once you’ve joined some.');return;}
+  const btn=(l,type)=>{
     const mv=(l.entry_last_rank&&l.entry_rank)?l.entry_last_rank-l.entry_rank:0;
-    return '<button class="dl-row" data-league="'+l.id+'" style="width:100%;text-align:left">'+
+    return '<button class="dl-row" data-league="'+l.id+'" data-type="'+type+'" style="width:100%;text-align:left">'+
       '<span class="dl-grow"><span class="dl-nm">'+esc(l.name)+'</span>'+
       '<span class="dl-sub">Your rank '+fmtNum(l.entry_rank)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></span>'+
       svg(ICON.chevron,'width="16" height="16"')+'</button>';
-  }).join('');
-  host.innerHTML='<div class="card"><div class="card-title">Your mini-leagues</div><div class="dl">'+rows+'</div>'+
-    '<div class="dl-sub" style="margin-top:10px">Tap a league to see the standings.</div></div>';
-  Array.prototype.forEach.call(host.querySelectorAll('[data-league]'),btn=>
-    btn.addEventListener('click',()=>{LEAGUE_SEL=parseInt(btn.dataset.league,10);renderPage('leagues');}));
+  };
+  const group=(title,arr,type)=>arr.length
+    ? '<div class="card mb-20"><div class="card-title">'+title+'</div><div class="dl">'+arr.map(l=>btn(l,type)).join('')+'</div></div>':'';
+  host.innerHTML=group('Classic leagues',classic,'classic')+group('Head-to-head leagues',h2h,'h2h')+
+    '<div class="dl-sub">Tap a league to see the standings.</div>';
+  Array.prototype.forEach.call(host.querySelectorAll('[data-league]'),b=>
+    b.addEventListener('click',()=>{LEAGUE_SEL=parseInt(b.dataset.league,10);LEAGUE_TYPE=b.dataset.type;renderPage('leagues');}));
 }
 
-async function renderLeagueStandings(host,leagueId,mid){
+async function renderLeagueStandings(host,leagueId,mid,type){
   host.innerHTML='<div class="card">'+skel(7)+'</div>';
-  let data;try{data=await loadStandings(leagueId);}catch(e){host.innerHTML=
-    '<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;renderPage(\'leagues\')">‹ All leagues</button>'+errorBox();return;}
+  const back='<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;renderPage(\'leagues\')">‹ All leagues</button>';
+  const h2h=type==='h2h';
+  let data;try{data=await (h2h?loadH2HStandings(leagueId):loadStandings(leagueId));}
+  catch(e){host.innerHTML=back+errorBox();return;}
   const res=(data.standings&&data.standings.results)||[];
   const meId=parseInt(mid,10);
+  const head=h2h
+    ? '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · W-D-L</span><span class="dl-col">Pts</span></div>'
+    : '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · manager</span><span class="dl-col">Total</span></div>';
   const rows=res.slice(0,50).map(r=>{
     const me=r.entry===meId;
     const mv=(r.last_rank&&r.rank)?r.last_rank-r.rank:0;
+    if(h2h)return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
+      '<span class="dl-sub">'+esc(r.player_name)+' · '+(r.matches_won||0)+'-'+(r.matches_drawn||0)+'-'+(r.matches_lost||0)+
+      ' · '+fmtNum(r.points_for)+' pts for'+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></span>'+
+      '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
     return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
       '<span class="dl-grow"><span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
       '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
   }).join('');
-  host.innerHTML=
-    '<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;renderPage(\'leagues\')">‹ All leagues</button>'+
-    '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+'</div>'+
-    '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · manager</span><span class="dl-col">Total</span></div>'+rows+'</div>'+
-    (res.length>50?'<div class="dl-sub" style="margin-top:10px">Showing the top 50.</div>':'')+'</div>'+
-    '<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
+  const awards=h2h?'':'<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Best captain, bench tragedy and differential hero across the league (top 10 managers).</p>'+
     '<button class="btn btn-primary btn-sm" onclick="genAwards('+leagueId+')">Compute awards</button>'+
     '<div id="league-awards" style="margin-top:12px"></div></div>';
+  host.innerHTML=back+
+    '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
+      (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
+    '<div class="dl">'+head+rows+'</div>'+
+    (res.length>50?'<div class="dl-sub" style="margin-top:10px">Showing the top 50.</div>':'')+'</div>'+
+    awards;
 }
 
 /* ── Gameweek awards across a mini-league's top managers ── */
@@ -4443,10 +4472,31 @@ function articleCard(a,i,gw){
   '</article>';
 }
 
+/* Team of the Week from the official dream-team endpoint. */
+function dreamTeamArticle(b,dt,gw){
+  const team=(dt&&dt.team)||[];if(!team.length)return null;
+  const byType={1:[],2:[],3:[],4:[]};
+  team.forEach(p=>{const e=b.els[p.element];if(e)(byType[e.element_type]=byType[e.element_type]||[]).push({e,pts:p.points||0});});
+  const names={1:'Goalkeeper',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const top=dt.top_player&&b.els[dt.top_player.id];
+  let body='';
+  if(top)body+='<p>The single highest scorer of Gameweek '+gw+' was <b>'+esc(top.web_name)+'</b> ('+teamShort(b,top.team)+') on '+(dt.top_player.points||0)+' points.</p>';
+  [1,2,3,4].forEach(t=>{if(!byType[t]||!byType[t].length)return;
+    body+='<h4>'+names[t]+'</h4><ul>'+byType[t].sort((a,c)=>c.pts-a.pts)
+      .map(x=>'<li>'+esc(x.e.web_name)+' — '+x.pts+' pts <span class="muted">('+teamShort(b,x.e.team)+')</span></li>').join('')+'</ul>';});
+  const total=team.reduce((s,p)=>s+(p.points||0),0);
+  body+='<p class="muted">Total '+total+' points — the perfect XI with hindsight.</p>';
+  return {kick:'Team of the Week',title:'Gameweek '+gw+' Dream Team',
+    dek:'The official highest-scoring XI of the gameweek.',accent:'a-emerald',mins:1,body};
+}
 async function hydrateBlog(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   let arts;
   try{arts=blogArticles(b,fixtures);}catch(e){arts=[];}
+  /* Prepend the official Team of the Week for the latest finished gameweek. */
+  const finishedGw=b.events.slice().reverse().find(e=>e.finished);
+  if(finishedGw){try{const dt=await loadDreamTeam(finishedGw.id);
+    const art=dreamTeamArticle(b,dt,finishedGw.id);if(art)arts.unshift(art);}catch(_){}}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
   host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+

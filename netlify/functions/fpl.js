@@ -20,7 +20,8 @@ const ALLOW = [
   /^event-status$/,
   /^dream-team\/\d+$/,
   /^set-piece-notes$/,
-  /^leagues-classic\/\d+\/standings$/
+  /^leagues-classic\/\d+\/standings$/,
+  /^leagues-h2h\/\d+\/standings$/
 ];
 
 const CORS = {
