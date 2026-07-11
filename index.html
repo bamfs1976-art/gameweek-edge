@@ -392,6 +392,16 @@ html.offline .net-banner{transform:translateY(0)}
 .pd-chip-hot{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
 .bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:8px;font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
 .bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
+/* Live status pill + auto-refresh */
+.live-pill{display:inline-flex;align-items:center;gap:6px;font-size:.64rem;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;padding:3px 9px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--text-3)}
+.live-pill.on{background:var(--red-soft);color:var(--red)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:livePulse 1.4s var(--ease) infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+/* DEFCON watch meter */
+.dc-meter{height:7px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:5px}
+.dc-fill{height:100%;border-radius:4px;background:var(--green-bright);transition:width .3s var(--ease)}
+.dc-fill.hit{background:var(--green)}
 .solver-best{background:var(--green-soft);border-radius:8px}
 .solver-idx{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:.72rem;margin-right:8px;flex:0 0 auto}
 /* Player List table */
@@ -1688,6 +1698,7 @@ const NAV = [
     panels:[
       {id:'liverank', label:'Live Rank', icon:'pulse', tier:'paid'},
       {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'paid'},
+      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid'},
       {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
       {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
       {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'}
@@ -1797,6 +1808,10 @@ const PANEL_CONTENT = {
   },
   bonus:{
     desc:'Provisional bonus points projected live from BPS — the 3-2-1 for every match before the FPL API confirms it.',
+    layout:'standard'
+  },
+  dcwatch:{
+    desc:'Your outfield players’ live defensive contributions against the 2025/26 threshold (10 for defenders, 12 for midfielders and forwards) — who has banked the +2 and who is close.',
     layout:'standard'
   },
   defcon:{
@@ -2038,7 +2053,32 @@ function renderPage(panelId){
         stateBox('question','Manager not found','Check the ID and try again.',
           '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>')
         :errorBox();});
-  }
+    armLiveRefresh(panelId);
+  } else { armLiveRefresh(null); }
+}
+
+/* ── Live auto-refresh ─────────────────────────────────────────────
+   The loudest complaint about the official app is that live points and
+   bonus lag. Our Live panels poll while a gameweek is actually in play
+   and the tab is visible, so the numbers stay fresh without a manual
+   reload. Each live hydrator calls markLive(true/false); the tick only
+   refetches when something is live, and liveStamp() shows the pill. */
+const LIVE_PANELS=new Set(['liverank','bonus','dcwatch','autosubs','defcon']);
+let LIVE_TIMER=null;
+function armLiveRefresh(panelId){
+  if(LIVE_TIMER){clearInterval(LIVE_TIMER);LIVE_TIMER=null;}
+  if(!panelId||!LIVE_PANELS.has(panelId))return;
+  LIVE_TIMER=setInterval(()=>{
+    if(currentPanel!==panelId||document.hidden||window._gwLive===false)return;
+    const h=document.getElementById('ge-data');
+    if(h&&WIRED[panelId])Promise.resolve().then(()=>WIRED[panelId](h)).catch(()=>{});
+  },45000);
+}
+function markLive(isLive){window._gwLive=!!isLive;}
+function liveStamp(isLive){
+  return '<span class="live-pill'+(isLive?' on':'')+'">'+(isLive
+    ?'<span class="live-dot"></span>Live · auto-updating'
+    :'Updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}))+'</span>';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3623,6 +3663,18 @@ function plsimLiveProbs(R,f){
   return {pH:pH/s,pD:pD/s,pA:pA/s,rem};
 }
 
+/* Provisional bonus not yet confirmed by the API, per owned XI player —
+   this is what lets our live total lead the official app before bonus
+   locks in. Returns extra points (× multiplier) and a per-element map. */
+function provBonusPts(b,st,fixtures,picks){
+  const gwFix=fixtures.filter(f=>f.event===b.cur.id&&f.started&&!f.finished);
+  const prov={};
+  gwFix.forEach(f=>{const r=bonusForFixture(b,st,f);
+    if(r&&!r.confirmed)r.earners.forEach(x=>{prov[x.e.id]=x.bonus;});});
+  let extra=0;
+  picks.picks.forEach(p=>{if(p.position<=11)extra+=(prov[p.element]||0)*(p.multiplier||1);});
+  return {extra,prov};
+}
 async function hydrateLiveRank(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
@@ -3638,6 +3690,9 @@ async function hydrateLiveRank(host){
     points+=(s.total_points||0)*(p.multiplier||1);
     if(ts.finished)done++;else if(ts.started)playing++;else toPlay++;
   });
+  const pb=provBonusPts(b,st,fixtures,picks);
+  points+=pb.extra;
+  markLive(playing>0);
   const avg=b.cur.average_entry_score||0;
   const diff=points-avg;
   /* GW percentile estimate: manager GW scores are roughly normal around
@@ -3648,8 +3703,10 @@ async function hydrateLiveRank(host){
     return s*y;};
   const pctile=avg?Math.round(100*(1-0.5*(1+erf(diff/(18*Math.SQRT2))))):null;
   host.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<span class="dl-sub" style="margin:0">Gameweek '+b.cur.id+'</span>'+liveStamp(playing>0)+'</div>'+
     '<div class="grid g-4 mb-20">'+
-      kpi('Live GW Points',points,'GW'+b.cur.id+' so far','var(--green)')+
+      kpi('Live GW Points',points,(pb.extra>0?'incl. +'+pb.extra+' provisional bonus':'GW'+b.cur.id+' so far'),'var(--green)')+
       kpi('vs Average',(diff>=0?'+':'')+diff,'Avg '+(avg||'—'),diff>=0?'var(--green)':'var(--red)')+
       (pctile!=null
         ?kpi('GW percentile','~top '+Math.max(1,Math.min(99,pctile))+'%','estimate, all managers',diff>=0?'var(--green)':'var(--red)')
@@ -3732,6 +3789,60 @@ async function hydrateBonus(host){
 }
 
 /* ── DefCon Threats: high-scoring players you don't own ─── */
+/* ── Your DEFCON: live defensive contribution vs the 2025/26 threshold.
+   Defenders bank +2 at 10 combined clearances-blocks-interceptions-
+   tackles-recoveries; midfielders and forwards at 12. Goalkeepers are
+   excluded from DEFCON. total_points from the live feed already includes
+   the +2 once hit; this panel surfaces progress and near-misses live. */
+async function hydrateDcwatch(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
+  const st=statsById(live);
+  const status=gwStatusByTeam(b,fixtures);
+  const THR=t=>t===2?10:(t>=3?12:null);   /* GK excluded */
+  const rows=picks.picks.filter(p=>p.position<=11).map(p=>{
+    const e=b.els[p.element]||{};const thr=THR(e.element_type);if(thr==null)return null;
+    const s=st[p.element]||{};const ts=status[e.team]||{};
+    const dc=parseInt(s.defensive_contribution,10)||0;
+    return {e,thr,dc,mins:s.minutes||0,mult:p.multiplier||1,
+      started:!!ts.started,finished:!!ts.finished,hit:dc>=thr};
+  }).filter(Boolean);
+  markLive(rows.some(r=>r.started&&!r.finished));
+  if(!rows.length){host.innerHTML=stateBox('shield','Nothing to track yet',
+    'Your defenders, midfielders and forwards appear here with their live defensive tally once this gameweek kicks off.');return;}
+  const secured=rows.filter(r=>r.hit);
+  const securedPts=secured.reduce((s,r)=>s+2*r.mult,0);
+  const inPlay=rows.filter(r=>r.started&&!r.finished&&!r.hit);
+  const close=inPlay.filter(r=>r.thr-r.dc<=3).length;
+  const order=rows.slice().sort((a,c)=>
+    (c.hit-a.hit)||((c.started&&!c.finished)-(a.started&&!a.finished))||(c.dc/c.thr-a.dc/a.thr));
+  const rowHtml=order.map(r=>{
+    const need=Math.max(0,r.thr-r.dc),pct=Math.min(100,100*r.dc/r.thr);
+    const state=r.hit?'<span style="color:var(--green)">✓ +'+(2*r.mult)+' banked</span>'
+      :r.finished?'<span style="color:var(--text-3)">missed ('+r.dc+'/'+r.thr+')</span>'
+      :r.mins===0?'<span style="color:var(--text-3)">yet to play</span>'
+      :'<span style="color:var(--amber)">needs '+need+'</span>';
+    return '<div class="dl-row" style="display:block"><div style="display:flex;justify-content:space-between;gap:8px">'+
+      '<span class="dl-nm">'+crest(b,r.e.team,13)+' '+esc(r.e.web_name)+(r.mult>1?' <span class="pd-chip pd-chip-hot">C</span>':'')+
+        ' <span class="dl-sub" style="display:inline">'+posShort(b,r.e.element_type)+'</span></span>'+
+      '<span class="dl-sub" style="margin:0">'+r.dc+'/'+r.thr+' · '+state+'</span></div>'+
+      '<div class="dc-meter"><div class="dc-fill'+(r.hit?' hit':'')+'" style="width:'+pct+'%"></div></div></div>';
+  }).join('');
+  host.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<span class="dl-sub" style="margin:0">Gameweek '+b.cur.id+' · defensive contribution</span>'+liveStamp(window._gwLive)+'</div>'+
+    '<div class="grid g-4 mb-20">'+
+      kpi('+2s banked',secured.length,securedPts+' pts secured','var(--green)')+
+      kpi('In progress',inPlay.length,close+' within 3','var(--amber)')+
+      kpi('Watching',rows.length,'outfield starters','var(--blue)')+
+      kpi('DEFCON points',securedPts,'from your XI','var(--purple)')+
+    '</div>'+
+    '<div class="card"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Your defensive contributions</div>'+
+      '<div class="dl">'+rowHtml+'</div>'+
+      '<div class="dl-sub" style="margin-top:10px">Threshold: 10 for defenders, 12 for midfielders and forwards (clearances, blocks, interceptions, tackles and recoveries). The +2 is added to your live total automatically once a player reaches it.</div></div>';
+}
 async function hydrateDefcon(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
@@ -5145,6 +5256,7 @@ const WIRED={
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
   liverank:hydrateLiveRank,
   bonus:hydrateBonus,
+  dcwatch:hydrateDcwatch,
   defcon:hydrateDefcon,
   autosubs:hydrateAutosubs,
   whatif:hydrateWhatif,
