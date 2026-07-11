@@ -371,6 +371,11 @@ html.offline .net-banner{transform:translateY(0)}
 .pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:8px}
 .pd-sl{font-size:.78rem;color:var(--text-2)}.pd-sv{font-weight:700;font-size:.84rem}
+.pd-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.pd-chip{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
+.pd-chip-hot{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
+.bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:8px;font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
+.bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
 .ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
   font-size:.9rem;background:var(--surface-3);color:var(--text)}
 .ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
@@ -1185,6 +1190,9 @@ const loadEntry    =id=>api('entry/'+id);
 const loadHistory  =id=>api('entry/'+id+'/history');
 const loadPicks    =(id,gw)=>api('entry/'+id+'/event/'+gw+'/picks');
 const loadLive     =gw=>api('event/'+gw+'/live');
+const loadSummary  =id=>cached('sum-'+id,10*60e3,()=>api('element-summary/'+id));
+const loadTransfers=id=>cached('tr-'+id,3*60e3,()=>api('entry/'+id+'/transfers'));
+const loadEventStatus=()=>api('event-status');
 
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
@@ -1579,6 +1587,7 @@ const NAV = [
     id:'live', label:'Live', icon:'live', tier:'paid',
     panels:[
       {id:'liverank', label:'Live Rank', icon:'pulse', tier:'paid'},
+      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'paid'},
       {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
       {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
       {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'}
@@ -1653,6 +1662,10 @@ const PANEL_CONTENT = {
   },
   liverank:{
     desc:'Your estimated overall rank, updating live through the matchday.',
+    layout:'standard'
+  },
+  bonus:{
+    desc:'Provisional bonus points projected live from BPS — the 3-2-1 for every match before the FPL API confirms it.',
     layout:'standard'
   },
   defcon:{
@@ -2242,10 +2255,56 @@ async function hydrateGwhistory(host){
   }
 
   host.innerHTML=tiles+shape+chart+rankChart+chipsSec+
-    '<div class="card"><div class="card-title">Captain analysis</div>'+
+    '<div class="card mb-20"><div class="card-title">Captain analysis</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">How your armband did across the season — accuracy, points missed to the optimal pick, and your most-trusted captains. Loads each gameweek’s picks, so it takes a moment.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="genCaptainReport()">Analyse my captains</button>'+
-      '<div id="cap-report" style="margin-top:14px"></div></div>';
+      '<div id="cap-report" style="margin-top:14px"></div></div>'+
+    '<div class="card"><div class="card-title">Transfer ROI</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Did your transfers pay off? For each move we total the points your incoming player has scored since — versus the one you sold — assuming you held. Loads each player’s history, so it takes a moment.</p>'+
+      '<button class="btn btn-primary btn-sm" onclick="genTransferReport()">Analyse my transfers</button>'+
+      '<div id="tr-report" style="margin-top:14px"></div></div>';
+}
+
+async function genTransferReport(){
+  const box=document.getElementById('tr-report');box.innerHTML=skel(3);
+  try{
+    const b=await boot();const mid=getMid();
+    const trs=await loadTransfers(mid);
+    if(!trs||!trs.length){box.innerHTML='<div class="dl-sub">No transfers made yet this season.</div>';return;}
+    const ids=new Set();trs.forEach(t=>{ids.add(t.element_in);ids.add(t.element_out);});
+    const sums={};
+    await Promise.all([...ids].map(id=>loadSummary(id).then(s=>{sums[id]=s;}).catch(()=>{sums[id]=null;})));
+    const ptsFrom=(id,fromGw)=>{const s=sums[id];if(!s||!s.history)return 0;
+      return s.history.filter(h=>h.round>=fromGw).reduce((a,h)=>a+(h.total_points||0),0);};
+    let net=0;const rows=trs.map(t=>{const inP=ptsFrom(t.element_in,t.event),outP=ptsFrom(t.element_out,t.event);
+      const d=inP-outP;net+=d;
+      return {event:t.event,inN:(b.els[t.element_in]||{}).web_name||'?',
+        outN:(b.els[t.element_out]||{}).web_name||'?',inP,outP,d};});
+    const hist=await loadHistory(mid);
+    const hitsTot=(hist.current||[]).reduce((s,c)=>s+(c.event_transfers_cost||0),0);
+    const eff=net-hitsTot;
+    const wins=rows.filter(r=>r.d>0).length;
+    const best=rows.slice().sort((a,c)=>c.d-a.d)[0];
+    const worst=rows.slice().sort((a,c)=>a.d-c.d)[0];
+    const tiles='<div class="grid g-4 mb-14">'+
+      kpi('Transfers',String(rows.length),wins+' gained points','var(--blue)')+
+      kpi('Net swing',(net>=0?'+':'')+net,'in vs out, held','var(--green)')+
+      kpi('Hits paid','-'+hitsTot,'points on '+(hitsTot/4)+' hits','var(--red)')+
+      kpi('After hits',(eff>=0?'+':'')+eff,'transfers net of hits','var(--purple)')+
+    '</div>';
+    const hl=(r,label,col)=>r?'<div class="dl-row" style="border-left:3px solid '+col+';padding-left:10px">'+
+      '<span class="dl-grow"><span class="dl-nm">'+label+': '+esc(r.inN)+' for '+esc(r.outN)+'</span>'+
+      '<span class="dl-sub">GW'+r.event+' · '+(r.d>=0?'+':'')+r.d+' pts ('+r.inP+' vs '+r.outP+')</span></span></div>':'';
+    const recent=rows.slice(-8).reverse().map(r=>'<div class="dl-row">'+
+      '<span class="dl-grow"><span class="dl-nm">GW'+r.event+' · '+esc(r.inN)+' ← '+esc(r.outN)+'</span>'+
+      '<span class="dl-sub">'+r.inP+' vs '+r.outP+' since</span></span>'+
+      '<span class="dl-col mono" style="color:'+(r.d>=0?'var(--green)':'var(--red)')+'">'+(r.d>=0?'+':'')+r.d+'</span></div>').join('');
+    box.innerHTML=tiles+
+      (best&&best.d>0?hl(best,'Best call','var(--green)'):'')+
+      (worst&&worst.d<0?hl(worst,'Worst call','var(--red)'):'')+
+      '<div class="card-title" style="margin-top:14px">Recent transfers</div><div class="dl">'+recent+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">“Since” = points scored from the gameweek of the move onward, assuming you held both. It doesn’t model later moves, so treat it as the forward swing each transfer created.</div>';
+  }catch(e){box.innerHTML='<div class="dl-sub">Couldn’t analyse transfers right now.</div>';}
 }
 
 async function genCaptainReport(){
@@ -2545,9 +2604,21 @@ async function hydrateDiffs(host){
     .sort((a,c)=>parseFloat(c.form)-parseFloat(a.form))
     .slice(0,20);
   if(!list.length){host.innerHTML=stateBox('trend','No differentials yet','Once the season is underway, low-owned players in form appear here.');return;}
+  /* DefCon leaders: the 2025/26 defensive-contribution scoring category. */
+  const dc90=e=>{const v=parseFloat(e.defensive_contribution_per_90);
+    return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;};
+  const dcon=b.elements.filter(e=>e.status==='a'&&e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
+    .sort((a,c)=>dc90(c)-dc90(a)).slice(0,12);
+  const dconCard=dcon.length
+    ? '<div class="card mb-20"><div class="card-title">Defensive-contribution leaders '+
+        '<span class="badge badge-grey">2025/26</span></div>'+
+        '<p class="dl-sub" style="margin-bottom:10px">Tackles, blocks, interceptions and recoveries now score points. Top defenders and midfielders by DefCon per 90 — the season’s new source of cheap, reliable returns.</p>'+
+        dlTable(b,dcon,['DefCon/90','Total'],e=>[dc90(e).toFixed(1),e.defensive_contribution||0])+'</div>'
+    : '';
   host.innerHTML=
-    '<div class="card"><div class="card-title">Differentials — under 12% owned, ranked by form</div>'+
-      dlTable(b,list,['Form','Pts'],e=>[e.form,e.total_points])+'</div>';
+    '<div class="card mb-20"><div class="card-title">Differentials — under 12% owned, ranked by form</div>'+
+      dlTable(b,list,['Form','Pts'],e=>[e.form,e.total_points])+'</div>'+
+    dconCard;
 }
 
 /* Price Predictor: net transfer momentum */
@@ -2755,9 +2826,49 @@ function openPlayer(id){
   if(!m||!body)return;
   body.innerHTML='<div style="padding:6px">'+skel(5)+'</div>';
   m.classList.add('show');
-  loadFixtures().then(fixtures=>{body.innerHTML=playerDetailHTML(b,fixtures,id);})
-    .catch(()=>{body.innerHTML='<p class="dl-sub" style="padding:8px">Couldn’t load player details.</p>'+
+  loadFixtures().then(fixtures=>{
+    body.innerHTML=playerDetailHTML(b,fixtures,id);
+    loadSummary(id).then(sum=>{const slot=document.getElementById('pd-summary');
+      if(slot)slot.innerHTML=summarySections(b,sum,id);})
+      .catch(()=>{const slot=document.getElementById('pd-summary');if(slot)slot.innerHTML='';});
+  }).catch(()=>{body.innerHTML='<p class="dl-sub" style="padding:8px">Couldn’t load player details.</p>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>';});
+}
+/* Per-GW history, home/away splits and prior seasons from element-summary. */
+function summarySections(b,sum,id){
+  const hist=(sum.history||[]),past=(sum.history_past||[]);
+  if(!hist.length&&!past.length)return '';
+  let out='';
+  if(hist.length){
+    const H=hist.slice(-12),W=Math.max(220,H.length*30),CH=92,pad=6;
+    const maxP=Math.max(4,...H.map(h=>h.total_points||0));
+    const bw=(W-pad*2)/H.length;
+    const bars=H.map((h,i)=>{const bh=(CH-26)*Math.max(0,h.total_points||0)/maxP,x=pad+i*bw,y=CH-18-bh;
+      const op=h.minutes>=60?0.9:h.minutes>0?0.5:0.22;
+      return '<rect x="'+(x+2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-4).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="var(--green-bright)" fill-opacity="'+op+'"><title>GW'+h.round+': '+(h.total_points||0)+' pts · '+(h.minutes||0)+' mins</title></rect>'+
+        '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(CH-5)+'" text-anchor="middle" style="font-size:8px;fill:var(--text-3)">'+h.round+'</text>';}).join('');
+    out+='<div class="card pd-sec"><div class="card-title">Form — last '+H.length+' gameweeks</div>'+
+      '<div class="scroll"><svg viewBox="0 0 '+W+' '+CH+'" style="min-width:'+Math.min(W,520)+'px;width:100%;height:auto" role="img" aria-label="points per gameweek">'+bars+'</svg></div>'+
+      '<div class="dl-sub" style="margin-top:6px">Bar height = points; faded bars flag limited minutes (rotation or a cameo).</div></div>';
+    const agg=f=>{const g=hist.filter(f),p=g.reduce((s,h)=>s+(h.total_points||0),0);
+      return {n:g.length,ppg:g.length?(p/g.length).toFixed(1):'0.0'};};
+    const home=agg(h=>h.was_home),away=agg(h=>!h.was_home);
+    const started=hist.filter(h=>h.minutes>=60).length;
+    const avgMin=Math.round(hist.reduce((s,h)=>s+(h.minutes||0),0)/hist.length);
+    out+='<div class="card pd-sec"><div class="card-title">This season splits</div><div class="pd-grid">'+
+      '<div class="pd-stat"><span class="pd-sl">Home ppg</span><span class="pd-sv">'+home.ppg+'</span></div>'+
+      '<div class="pd-stat"><span class="pd-sl">Away ppg</span><span class="pd-sv">'+away.ppg+'</span></div>'+
+      '<div class="pd-stat"><span class="pd-sl">Started</span><span class="pd-sv">'+started+'/'+hist.length+'</span></div>'+
+      '<div class="pd-stat"><span class="pd-sl">Avg mins</span><span class="pd-sv">'+avgMin+'</span></div></div></div>';
+  }
+  if(past.length){
+    out+='<div class="card pd-sec"><div class="card-title">Previous seasons</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Season</span><span class="dl-col">Pts</span><span class="dl-col">G/A</span><span class="dl-col">Mins</span></div>'+
+      past.slice(-4).reverse().map(s=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(s.season_name)+'</span></span>'+
+        '<span class="dl-col mono">'+(s.total_points||0)+'</span><span class="dl-col mono">'+(s.goals_scored||0)+'/'+(s.assists||0)+'</span>'+
+        '<span class="dl-col mono">'+fmtNum(s.minutes)+'</span></div>').join('')+'</div></div>';
+  }
+  return out;
 }
 function playerDetailHTML(b,fixtures,id){
   const e=b.els[id];
@@ -2767,10 +2878,17 @@ function playerDetailHTML(b,fixtures,id){
   const per=v=>mins>=90?(parseFloat(v||0)*90/mins).toFixed(2):'—';
   const badge=e.status&&e.status!=='a'
     ? ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>':'';
+  const pool=b.elements.length||1;
+  const pct=e.form_rank?Math.max(1,Math.round(100*e.form_rank/pool)):null;
+  const chips=[];
+  if(pct!=null&&pct<=10)chips.push('<span class="pd-chip pd-chip-hot">Form top '+pct+'%</span>');
+  if(e.dreamteam_count)chips.push('<span class="pd-chip">Dream Team ×'+e.dreamteam_count+'</span>');
+  if(e.in_dreamteam)chips.push('<span class="pd-chip pd-chip-hot">In Dream Team now</span>');
+  const chipRow=chips.length?'<div class="pd-chips">'+chips.join('')+'</div>':'';
   const head='<div class="pd-head">'+avatar(b,e,52)+
     '<div class="pd-id"><h3 id="player-title">'+esc(e.web_name)+badge+'</h3>'+
       '<div class="pd-meta">'+crest(b,e.team,15)+' '+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · £'+price.toFixed(1)+'m'+
-      (parseFloat(e.selected_by_percent||0)?' · '+e.selected_by_percent+'% owned':'')+'</div></div>'+
+      (parseFloat(e.selected_by_percent||0)?' · '+e.selected_by_percent+'% owned':'')+'</div>'+chipRow+'</div>'+
     '<button class="pd-x" data-player-close aria-label="Close">&times;</button></div>';
   const kpis='<div class="grid g-4 pd-kpi">'+
     kpi('xP next',xp.toFixed(1),(n?nextFixLabel(n):'no fixture').replace(/<[^>]+>/g,'').trim()||'—','var(--green)')+
@@ -2783,18 +2901,26 @@ function playerDetailHTML(b,fixtures,id){
   const ticker=fx.length?'<div class="card pd-sec"><div class="card-title">Next fixtures</div>'+
     '<div class="pd-tick">'+fx.map(f=>'<span class="pd-fx fdr-'+f.diff+'">'+esc(f.opp)+'<b>'+(f.home?'H':'A')+'</b></span>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Colour = our model’s difficulty (green easy → red hard), from expected goals and clean-sheet odds.</div></div>':'';
+  /* Filled asynchronously from element-summary (form graph, splits, seasons). */
+  const summarySlot='<div id="pd-summary">'+skel(2)+'</div>';
   /* Underlying per-90 numbers */
   const stat=(l,v)=>'<div class="pd-stat"><span class="pd-sl">'+l+'</span><span class="pd-sv">'+v+'</span></div>';
+  const f90=v=>{const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);};
+  const isDef=e.element_type<=2;
   const per90='<div class="card pd-sec"><div class="card-title">Underlying numbers</div><div class="pd-grid">'+
     stat('Minutes',fmtNum(mins))+
     stat('Total pts',fmtNum(e.total_points))+
+    stat('xGI / 90',e.expected_goal_involvements_per_90!=null?f90(e.expected_goal_involvements_per_90):per(e.expected_goals))+
     stat('xG / 90',per(e.expected_goals))+
     stat('xA / 90',per(e.expected_assists))+
-    stat('Threat / 90',per(e.threat))+
-    stat('Creativity / 90',per(e.creativity))+
+    (isDef?stat('xGC / 90',f90(e.expected_goals_conceded_per_90)):stat('Threat / 90',per(e.threat)))+
+    stat('DefCon / 90',e.defensive_contribution_per_90!=null?f90(e.defensive_contribution_per_90):per(e.defensive_contribution))+
+    (e.value_season!=null?stat('Value (season)',e.value_season):'')+
     (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
-    '</div>'+(mins<90?'<div class="dl-sub" style="margin-top:8px">Per-90 rates need a fuller sample — treat these as provisional.</div>':'')+'</div>';
+    '</div>'+
+    '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points (the 2025/26 category). Value = points per £m this season.'+
+    (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
   /* Closest style twin */
   let twinHtml='';
   if(mins>=180){
@@ -2814,7 +2940,7 @@ function playerDetailHTML(b,fixtures,id){
     '<p class="dl-sub" style="margin-bottom:10px">A one-look scouting call on '+esc(e.web_name)+', grounded in these numbers.</p>'+
     aiGate('<button class="btn btn-primary btn-sm" onclick="genPlayer('+id+')">Scout this player</button>')+
     '<div id="pcard-'+id+'" style="margin-top:12px"></div></div>';
-  return head+news+kpis+ticker+per90+twinHtml+ai+
+  return head+news+kpis+ticker+summarySlot+per90+twinHtml+ai+
     '<div class="modal-row" style="margin-top:6px"><button class="btn btn-ghost" data-player-close>Close</button></div>';
 }
 
@@ -3182,6 +3308,53 @@ function liveOddsCard(b,fixtures){
   return '<div class="card mb-20"><div class="card-title">Match odds — live</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Match · home / draw / away</span><span class="dl-col">clock</span></div>'+rows+'</div>'+
     '<div class="dl-sub" style="margin-top:10px">In-play probabilities re-forecast the remaining minutes on top of the current score with the fitted team-strength model.</div></div>';
+}
+
+/* ── Bonus Tracker: provisional 3-2-1 projected from live BPS ──
+   Awards by BPS rank with the official tie rule (joint winners take
+   consecutive slots), so two tied on top → 3,3,1; a tie for second →
+   3,2,2. "Confirmed" once the API has already added bonus. */
+function bonusForFixture(b,st,f){
+  const players=b.elements.filter(e=>e.team===f.team_h||e.team===f.team_a)
+    .map(e=>({e,bps:(st[e.id]||{}).bps||0,mins:(st[e.id]||{}).minutes||0,real:(st[e.id]||{}).bonus||0}))
+    .filter(x=>x.mins>0);
+  if(!players.length)return null;
+  players.sort((a,c)=>c.bps-a.bps);
+  const groups=[];players.forEach(p=>{const g=groups[groups.length-1];
+    if(g&&g.bps===p.bps)g.items.push(p);else groups.push({bps:p.bps,items:[p]});});
+  let slot=[3,2,1];const earners=[];
+  for(const g of groups){if(!slot.length)break;const val=slot[0];
+    g.items.forEach(p=>earners.push({e:p.e,bps:p.bps,bonus:val}));slot=slot.slice(g.items.length);}
+  return {earners,confirmed:players.some(x=>x.real>0)};
+}
+async function hydrateBonus(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const gw=b.cur.id;
+  let live;
+  try{live=await loadLive(gw);}catch(_){
+    host.innerHTML=stateBox('diamond','Bonus tracker offline','Live BPS wasn’t available just now — try again in a moment.');return;}
+  const st=statsById(live);
+  const gwFix=fixtures.filter(f=>f.event===gw&&f.started);
+  if(!gwFix.length){host.innerHTML=stateBox('diamond','No live matches',
+    'Provisional bonus appears here the moment this gameweek kicks off. We rank every player by BPS and project the 3-2-1 before the FPL API confirms it — so you see the real gameweek total early.');return;}
+  const mySet=new Set();
+  const mid=getMid();
+  if(mid){try{const picks=await loadPicks(mid,gw);picks.picks.filter(p=>p.position<=11).forEach(p=>mySet.add(p.element));}catch(_){}}
+  const cards=gwFix.map(f=>{
+    const r=bonusForFixture(b,st,f);if(!r)return '';
+    const rows=r.earners.map(x=>{const mine=mySet.has(x.e.id);
+      return '<div class="dl-row"'+(mine?' style="background:var(--green-soft)"':'')+'>'+
+        '<span class="bonus-b bonus-'+x.bonus+'">+'+x.bonus+'</span>'+
+        '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(x.e.web_name)+(mine?' <span class="badge badge-green">yours</span>':'')+'</span>'+
+        '<span class="dl-sub">'+crest(b,x.e.team,13)+' '+teamShort(b,x.e.team)+' · '+posShort(b,x.e.element_type)+'</span></span>'+
+        '<span class="dl-col mono">'+x.bps+' BPS</span></div>';}).join('');
+    return '<div class="card mb-14"><div class="card-title">'+teamShort(b,f.team_h)+' v '+teamShort(b,f.team_a)+
+      ' <span class="badge '+(r.confirmed?'badge-grey':'badge-green')+'">'+(r.confirmed?'Confirmed':'Provisional')+'</span></div>'+
+      '<div class="dl">'+rows+'</div></div>';
+  }).join('');
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+' Live bonus</div>'+
+      '<p class="dl-sub">Projected bonus from current BPS for every match in play — the real 3-2-1 before the FPL API adds it. '+(mid?'Your players are highlighted. ':'')+'Provisional until the match finishes and bonus is confirmed.</p></div>'+
+    cards;
 }
 
 /* ── DefCon Threats: high-scoring players you don't own ─── */
@@ -4226,6 +4399,7 @@ const WIRED={
   injuries:hydrateInjuries,
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
   liverank:hydrateLiveRank,
+  bonus:hydrateBonus,
   defcon:hydrateDefcon,
   autosubs:hydrateAutosubs,
   whatif:hydrateWhatif,

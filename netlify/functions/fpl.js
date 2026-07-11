@@ -13,8 +13,13 @@ const ALLOW = [
   /^fixtures$/,
   /^entry\/\d+$/,
   /^entry\/\d+\/history$/,
+  /^entry\/\d+\/transfers$/,
   /^entry\/\d+\/event\/\d+\/picks$/,
+  /^element-summary\/\d+$/,
   /^event\/\d+\/live$/,
+  /^event-status$/,
+  /^dream-team\/\d+$/,
+  /^set-piece-notes$/,
   /^leagues-classic\/\d+\/standings$/
 ];
 
@@ -40,7 +45,7 @@ exports.handler = async (event) => {
 
   const qs = event.rawQuery ? '?' + event.rawQuery : '';
   const url = 'https://fantasy.premierleague.com/api/' + sub + '/' + qs;
-  const isLive = /\/live$|\/picks$|^entry\/\d+$/.test(sub);
+  const isLive = /\/live$|\/picks$|^entry\/\d+$|^event-status$/.test(sub);
 
   try {
     const r = await fetch(url, {
