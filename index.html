@@ -274,7 +274,9 @@ html.offline .net-banner{transform:translateY(0)}
 /* Live pitch (real squad) — FPL-style player cards with photo + crest */
 .pp{position:relative;display:flex;flex-direction:column;align-items:center;width:66px}
 .pp-fig{width:50px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;
-  background:radial-gradient(ellipse 74% 84% at 50% 50%,rgba(6,14,9,.58) 0,rgba(6,14,9,.34) 42%,rgba(6,14,9,0) 72%)}
+  border-radius:13px 13px 3px 3px;
+  background:linear-gradient(180deg,rgba(15,34,22,.62),rgba(7,18,12,.86));
+  box-shadow:0 3px 8px rgba(0,0,0,.30)}
 .pp-fig img{max-width:100%;max-height:100%;object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
 .pp-fig.no-photo::after{content:'';position:absolute;inset:auto 0 2px 0;margin:0 auto;
@@ -1315,7 +1317,7 @@ function jerseyStyle(b,teamId){
 }
 /* Crisp vector pitch markings, stretched to fill the turf. */
 const PITCH_SVG='<svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">'+
-  '<g fill="none" stroke="#ffffff" stroke-opacity=".30" stroke-width="1" vector-effect="non-scaling-stroke">'+
+  '<g fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="1" vector-effect="non-scaling-stroke">'+
     '<rect x="2" y="2" width="96" height="136" rx="1.5"/>'+
     '<line x1="2" y1="70" x2="98" y2="70"/>'+
     '<circle cx="50" cy="70" r="13"/>'+
