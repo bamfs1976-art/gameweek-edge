@@ -273,7 +273,8 @@ html.offline .net-banner{transform:translateY(0)}
 
 /* Live pitch (real squad) — FPL-style player cards with photo + crest */
 .pp{position:relative;display:flex;flex-direction:column;align-items:center;width:66px}
-.pp-fig{width:50px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center}
+.pp-fig{width:50px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;
+  background:radial-gradient(ellipse 74% 84% at 50% 50%,rgba(6,14,9,.58) 0,rgba(6,14,9,.34) 42%,rgba(6,14,9,0) 72%)}
 .pp-fig img{max-width:100%;max-height:100%;object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
 .pp-fig.no-photo::after{content:'';position:absolute;inset:auto 0 2px 0;margin:0 auto;
@@ -1314,7 +1315,7 @@ function jerseyStyle(b,teamId){
 }
 /* Crisp vector pitch markings, stretched to fill the turf. */
 const PITCH_SVG='<svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">'+
-  '<g fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="1" vector-effect="non-scaling-stroke">'+
+  '<g fill="none" stroke="#ffffff" stroke-opacity=".30" stroke-width="1" vector-effect="non-scaling-stroke">'+
     '<rect x="2" y="2" width="96" height="136" rx="1.5"/>'+
     '<line x1="2" y1="70" x2="98" y2="70"/>'+
     '<circle cx="50" cy="70" r="13"/>'+
@@ -1323,7 +1324,7 @@ const PITCH_SVG='<svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRa
     '<rect x="24" y="118" width="52" height="20"/>'+
     '<rect x="39" y="130" width="22" height="8"/>'+
   '</g>'+
-  '<g fill="#ffffff" fill-opacity=".55">'+
+  '<g fill="#ffffff" fill-opacity=".30">'+
     '<circle cx="50" cy="70" r="1.2"/><circle cx="50" cy="14" r="1"/><circle cx="50" cy="126" r="1"/>'+
   '</g></svg>';
 /* An FPL-style pitch token: the player's real photo (official PL CDN)
@@ -2386,13 +2387,15 @@ async function hydrateGwhistory(host){
 
   host.innerHTML=tiles+shape+chart+rankChart+chipsSec+
     '<div class="card mb-20"><div class="card-title">Captain analysis</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">How your armband did across the season — accuracy, points missed to the optimal pick, and your most-trusted captains. Loads each gameweek’s picks, so it takes a moment.</p>'+
-      '<button class="btn btn-primary btn-sm" onclick="genCaptainReport()">Analyse my captains</button>'+
-      '<div id="cap-report" style="margin-top:14px"></div></div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">How your armband did across the season — accuracy, points missed to the optimal pick, and your most-trusted captains.</p>'+
+      '<div id="cap-report" style="margin-top:4px">'+skel(3)+'</div></div>'+
     '<div class="card"><div class="card-title">Transfer ROI</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">Did your transfers pay off? For each move we total the points your incoming player has scored since — versus the one you sold — assuming you held. Loads each player’s history, so it takes a moment.</p>'+
-      '<button class="btn btn-primary btn-sm" onclick="genTransferReport()">Analyse my transfers</button>'+
-      '<div id="tr-report" style="margin-top:14px"></div></div>';
+      '<p class="dl-sub" style="margin-bottom:10px">Did your transfers pay off? For each move we total the points your incoming player has scored since — versus the one you sold — assuming you held.</p>'+
+      '<div id="tr-report" style="margin-top:4px">'+skel(3)+'</div></div>';
+  /* Auto-load the two deeper analyses. Each fans out a burst of per-gameweek
+     and per-player requests, so they run after the main report is on screen. */
+  genCaptainReport();
+  genTransferReport();
 }
 
 async function genTransferReport(){
