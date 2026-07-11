@@ -250,6 +250,8 @@ html.offline .net-banner{transform:translateY(0)}
 .dl-col.pos{color:var(--green-bright)}
 .dl-col.neg{color:var(--red)}
 
+/* Horizontally-scrollable wrapper (charts wider than the viewport) */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
 /* Fixture difficulty grid */
 .fdr{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r-md)}
 .fdr table{border-collapse:separate;border-spacing:4px}
@@ -322,11 +324,53 @@ html.offline .net-banner{transform:translateY(0)}
 .ask-user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
 .ask-assistant{align-self:flex-start;background:var(--surface-3);color:var(--text);border-bottom-left-radius:4px}
 .ask-typing{color:var(--text-3);font-style:italic}
+.ask-src{display:block;margin-top:6px;font-size:.66rem;letter-spacing:.03em;text-transform:uppercase;color:var(--text-3);opacity:.8}
 .ask-suggest{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 12px}
 .ask-chip{padding:7px 11px;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border-2);
   font-size:.76rem;font-weight:600;color:var(--text-2)}
 .ask-chip:hover{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
 .ask-input{display:flex;gap:8px}
+/* The Wire — auto blog */
+.blog-intro{margin-bottom:16px}
+.blog-list{display:flex;flex-direction:column;gap:14px}
+.post{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg,16px);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.post.is-open{border-color:var(--border-2);box-shadow:0 6px 22px rgba(0,0,0,.16)}
+.post-hd{display:block;width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:inherit}
+.post-hero{height:74px;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px;color:#fff}
+.post-kick{font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;opacity:.95}
+.post-mark{opacity:.85}
+.a-emerald .post-hero{background:linear-gradient(120deg,#059669,#10b981 70%,#34d399)}
+.a-violet .post-hero{background:linear-gradient(120deg,#6d28d9,#8b5cf6 70%,#a78bfa)}
+.a-amber .post-hero{background:linear-gradient(120deg,#b45309,#f59e0b 70%,#fbbf24)}
+.a-cyan .post-hero{background:linear-gradient(120deg,#0e7490,#06b6d4 70%,#22d3ee)}
+.a-rose .post-hero{background:linear-gradient(120deg,#be123c,#f43f5e 70%,#fb7185)}
+.post-txt{padding:12px 16px 14px}
+.post-title{margin:0 0 5px;font-size:1.04rem;font-weight:800;line-height:1.25;letter-spacing:-.01em}
+.post-dek{margin:0 0 9px;font-size:.85rem;color:var(--text-2);line-height:1.45}
+.post-meta{display:flex;align-items:center;gap:6px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-3)}
+.post-more{margin-left:auto;display:inline-flex;align-items:center;gap:2px;color:var(--green-bright)}
+.post.is-open .post-more svg{transform:rotate(90deg)}.post-more svg{transition:transform .15s}
+.post-full{padding:2px 16px 16px;border-top:1px solid var(--border);font-size:.88rem;line-height:1.6;color:var(--text)}
+.post-full h4{margin:14px 0 6px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2)}
+.post-full p{margin:8px 0}.post-full ul,.post-full ol{margin:6px 0;padding-left:20px}.post-full li{margin:3px 0}
+.post-full .muted{color:var(--text-3);font-size:.9em}
+.post-full .up{color:var(--green-bright);font-weight:700}.post-full .down{color:var(--red);font-weight:700}
+/* Player detail modal */
+.modal-card-lg{max-width:560px;width:100%;max-height:88vh;overflow-y:auto;text-align:left}
+.dl-click{cursor:pointer}.dl-click:hover{background:var(--surface-3)}
+.pd-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pd-id{flex:1;min-width:0}.pd-id h3{margin:0;font-size:1.12rem;font-weight:800}
+.pd-meta{font-size:.8rem;color:var(--text-2);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px}
+.pd-x{align-self:flex-start;background:none;border:0;font-size:1.5rem;line-height:1;color:var(--text-3);cursor:pointer;padding:0 4px}
+.pd-kpi{margin-bottom:14px}.pd-sec{margin-bottom:12px}
+.pd-news{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text);background:var(--surface-3);border-left:3px solid var(--amber);padding:8px 10px;border-radius:8px;margin-bottom:12px}
+.pd-tick{display:flex;gap:6px;flex-wrap:wrap}
+.pd-fx{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:6px 4px;border-radius:8px;font-size:.74rem;font-weight:800;color:#16241b}
+.pd-fx b{font-size:.6rem;opacity:.8;font-weight:600;margin-top:1px}
+.pd-fx.fdr-5{color:#fff}
+.pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:8px}
+.pd-sl{font-size:.78rem;color:var(--text-2)}.pd-sv{font-weight:700;font-size:.84rem}
 .ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
   font-size:.9rem;background:var(--surface-3);color:var(--text)}
 .ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
@@ -1033,6 +1077,11 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   </div>
 </div>
 
+<div class="modal" id="player-modal" role="dialog" aria-modal="true" aria-labelledby="player-title">
+  <div class="modal-bg" data-player-close></div>
+  <div class="modal-card modal-card-lg" id="player-body"></div>
+</div>
+
 <!-- Native bridge: defines window.GENative. No-op on the web build. -->
 <script src="native.js"></script>
 <!-- Supabase client factory: defines window.GE_SUPABASE. -->
@@ -1079,6 +1128,7 @@ const ICON = {
   whistle:'<circle cx="9" cy="14" r="6"/><path d="M13 10 21 6v5l-7 3"/><path d="M9 8V5h4"/>',
   spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>',
   chat:'<path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>',
+  news:'<path d="M4 5h13v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v10a2 2 0 0 1-2 2M7 9h7M7 12.5h7M7 16h4"/>',
   trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 18h6M12 13v5M9 21h6"/>'
 };
 
@@ -1513,7 +1563,8 @@ const NAV = [
     id:'home', label:'Home', icon:'home',
     panels:[
       {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
-      {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'}
+      {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'},
+      {id:'blog', label:'The Wire', icon:'news', tier:'free'}
     ]
   },
   {
@@ -1583,6 +1634,10 @@ const PANEL_CONTENT = {
   'gw-actions':{
     desc:'Your four weekly decisions — captain, transfers, team, chips — as a guided plan.',
     layout:'actions'
+  },
+  blog:{
+    desc:'Auto-written briefings — talking points, differentials, price watch, fixture swings and captaincy — generated from live data and our model every gameweek.',
+    layout:'standard'
   },
   squad:{
     desc:'Your 15 players on the pitch, with form, price and fitness status.',
@@ -2135,7 +2190,58 @@ async function hydrateGwhistory(host){
     kpi('Green arrows',green+'/'+(cur.length-1),'rank rose · '+hitsTot+' pts on hits','var(--purple)')+
   '</div>';
 
-  host.innerHTML=tiles+chart+
+  /* Season shape: consistency, best rank, streaks. */
+  const CHIP_LABEL={wildcard:'Wildcard','3xc':'Triple Captain',bboost:'Bench Boost',freehit:'Free Hit',manager:'Assistant Manager'};
+  const ranks=cur.filter(c=>c.overall_rank);
+  const bestRank=ranks.length?Math.min(...ranks.map(c=>c.overall_rank)):null;
+  const nowRank=ranks.length?ranks[ranks.length-1].overall_rank:null;
+  const sd=Math.round(Math.sqrt(cur.reduce((s,c)=>s+(c.points-avgPts)*(c.points-avgPts),0)/cur.length));
+  let streak=0,bestStreak=0;
+  for(let i=1;i<cur.length;i++){if(cur[i].overall_rank<cur[i-1].overall_rank){streak++;if(streak>bestStreak)bestStreak=streak;}else streak=0;}
+  const shape='<div class="grid g-4 mb-20">'+
+    kpi('Best rank',bestRank?fmtNum(bestRank):'—','season high','var(--green)')+
+    kpi('Consistency','±'+sd,'points swing (std dev)','var(--blue)')+
+    kpi('Best green run',bestStreak+' GW',bestStreak?'consecutive rises':'no run yet','var(--purple)')+
+    kpi('Above average',beat+'/'+cur.length,Math.round(100*beat/cur.length)+'% of weeks','var(--amber)')+
+  '</div>';
+
+  /* Overall-rank trajectory: log scale, line climbs as rank improves. */
+  let rankChart='';
+  if(ranks.length>1){
+    const RW=Math.max(320,cur.length*15),RH=140,lp=6,tp=12,bp=20;
+    const logs=ranks.map(c=>Math.log10(Math.max(1,c.overall_rank)));
+    const mn=Math.min(...logs),mx=Math.max(...logs),sp=(mx-mn)||1;
+    const X=i=>lp+(RW-lp-6)*i/(ranks.length-1);
+    const Y=v=>tp+(RH-tp-bp)*(v-mn)/sp;
+    const line=ranks.map((c,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(logs[i]).toFixed(1)).join(' ');
+    const area=line+' L'+X(ranks.length-1).toFixed(1)+' '+(RH-bp)+' L'+lp+' '+(RH-bp)+' Z';
+    const chipDots=(hist.chips||[]).map(ch=>{const idx=ranks.findIndex(c=>c.event===ch.event);if(idx<0)return '';
+      return '<circle cx="'+X(idx).toFixed(1)+'" cy="'+Y(logs[idx]).toFixed(1)+'" r="3.6" fill="var(--amber)" stroke="var(--surface-2)" stroke-width="1.4"><title>'+(CHIP_LABEL[ch.name]||ch.name)+' · GW'+ch.event+'</title></circle>';}).join('');
+    rankChart='<div class="card mb-20"><div class="card-title">Overall rank trajectory</div>'+
+      '<div class="scroll"><svg viewBox="0 0 '+RW+' '+RH+'" style="min-width:'+Math.min(RW,640)+'px;width:100%;height:auto" role="img" aria-label="overall rank over the season">'+
+      '<path d="'+area+'" fill="var(--green-soft)" opacity="0.55"/>'+
+      '<path d="'+line+'" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linejoin="round"/>'+chipDots+'</svg></div>'+
+      '<div class="dl-sub" style="margin-top:8px">Higher is better — the line climbs as your rank improves. Season high '+fmtNum(bestRank)+', now '+fmtNum(nowRank)+(hist.chips&&hist.chips.length?'. Amber dots mark chips played.':'.')+'</div></div>';
+  }
+
+  /* Chip returns. */
+  const chipRows=(hist.chips||[]).map(ch=>{const g=cur.find(x=>x.event===ch.event);
+    return {name:CHIP_LABEL[ch.name]||ch.name,event:ch.event,raw:ch.name,
+      pts:g?g.points:null,bench:g?g.points_on_bench:null,avg:avgByGw[ch.event]||0};});
+  let chipsSec='';
+  if(chipRows.length){
+    chipsSec='<div class="card mb-20"><div class="card-title">Chip returns</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Chip</span><span class="dl-col">GW pts</span><span class="dl-col">Note</span></div>'+
+      chipRows.map(c=>{const note=c.raw==='bboost'?(c.bench==null?'—':'+'+c.bench+' bench')
+          :c.raw==='3xc'?'triple armband':(c.pts!=null&&c.pts>=c.avg?'beat GW avg':'below avg');
+        return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(c.name)+'</span>'+
+          '<span class="dl-sub">Played GW'+c.event+'</span></span>'+
+          '<span class="dl-col mono">'+(c.pts==null?'—':c.pts)+'</span>'+
+          '<span class="dl-col mono">'+note+'</span></div>';}).join('')+
+      '</div><div class="dl-sub" style="margin-top:8px">Bench Boost shows the bench points it banked; other chips show that gameweek’s score against the average.</div></div>';
+  }
+
+  host.innerHTML=tiles+shape+chart+rankChart+chipsSec+
     '<div class="card"><div class="card-title">Captain analysis</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">How your armband did across the season — accuracy, points missed to the optimal pick, and your most-trusted captains. Loads each gameweek’s picks, so it takes a moment.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="genCaptainReport()">Analyse my captains</button>'+
@@ -2507,7 +2613,7 @@ async function hydrateInjuries(host){
 function dlTable(b,list,heads,metrics){
   const rows=list.map((e,i)=>{
     const m=metrics(e);
-    return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
+    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
       '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+crest(b,e.team,14)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
       '<span class="dl-col mono">'+m[0]+'</span><span class="dl-col mono">'+m[1]+'</span></div>';
@@ -2635,6 +2741,81 @@ function suggestReplacements(b,hz,outId,selId,mode){
     '<div class="dl-sub" style="margin-top:8px">'+(byStyle
       ?'Ranked by playing-style similarity (per-90 goal threat, creativity, involvement and defensive actions), within budget. The xP column still shows the projection so you can weigh style vs points.'
       :'Ranked by cumulative model xP over the horizon, within budget. A 4-point hit costs more than a +4 edge over one week — think in horizons.')+'</div>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PLAYER DETAIL — a full stats card in a modal, reachable from any
+   player table. Season + per-90 numbers, our model's xP and value,
+   a colour-coded fixture ticker and the closest playing-style twin.
+   ═══════════════════════════════════════════════════════════ */
+function closePlayer(){const m=document.getElementById('player-modal');if(m)m.classList.remove('show');}
+function openPlayer(id){
+  const b=MEM._idx;if(!b||!b.els[id])return;
+  const m=document.getElementById('player-modal'),body=document.getElementById('player-body');
+  if(!m||!body)return;
+  body.innerHTML='<div style="padding:6px">'+skel(5)+'</div>';
+  m.classList.add('show');
+  loadFixtures().then(fixtures=>{body.innerHTML=playerDetailHTML(b,fixtures,id);})
+    .catch(()=>{body.innerHTML='<p class="dl-sub" style="padding:8px">Couldn’t load player details.</p>'+
+      '<div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>';});
+}
+function playerDetailHTML(b,fixtures,id){
+  const e=b.els[id];
+  const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5),n=nf[e.team];
+  const price=(e.now_cost||0)/10,xp=xP(b,e,n),hxp=horizonXP(b,e,hz);
+  const mins=e.minutes||0,gp=(n&&n.gp)||0;
+  const per=v=>mins>=90?(parseFloat(v||0)*90/mins).toFixed(2):'—';
+  const badge=e.status&&e.status!=='a'
+    ? ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>':'';
+  const head='<div class="pd-head">'+avatar(b,e,52)+
+    '<div class="pd-id"><h3 id="player-title">'+esc(e.web_name)+badge+'</h3>'+
+      '<div class="pd-meta">'+crest(b,e.team,15)+' '+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · £'+price.toFixed(1)+'m'+
+      (parseFloat(e.selected_by_percent||0)?' · '+e.selected_by_percent+'% owned':'')+'</div></div>'+
+    '<button class="pd-x" data-player-close aria-label="Close">&times;</button></div>';
+  const kpis='<div class="grid g-4 pd-kpi">'+
+    kpi('xP next',xp.toFixed(1),(n?nextFixLabel(n):'no fixture').replace(/<[^>]+>/g,'').trim()||'—','var(--green)')+
+    kpi('xP next 5',hxp.toFixed(1),'over the horizon','var(--blue)')+
+    kpi('Value',price?(xp/price).toFixed(2):'—','xP per £m','var(--purple)')+
+    kpi('Form',e.form||'—',(e.points_per_game||'—')+' pts/game','var(--amber)')+'</div>';
+  const news=e.news?'<div class="pd-news">'+svg(ICON.bell,'width="13" height="13"')+' '+esc(e.news)+'</div>':'';
+  /* Fixture ticker */
+  const fx=(hz[e.team]||[]);
+  const ticker=fx.length?'<div class="card pd-sec"><div class="card-title">Next fixtures</div>'+
+    '<div class="pd-tick">'+fx.map(f=>'<span class="pd-fx fdr-'+f.diff+'">'+esc(f.opp)+'<b>'+(f.home?'H':'A')+'</b></span>').join('')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Colour = our model’s difficulty (green easy → red hard), from expected goals and clean-sheet odds.</div></div>':'';
+  /* Underlying per-90 numbers */
+  const stat=(l,v)=>'<div class="pd-stat"><span class="pd-sl">'+l+'</span><span class="pd-sv">'+v+'</span></div>';
+  const per90='<div class="card pd-sec"><div class="card-title">Underlying numbers</div><div class="pd-grid">'+
+    stat('Minutes',fmtNum(mins))+
+    stat('Total pts',fmtNum(e.total_points))+
+    stat('xG / 90',per(e.expected_goals))+
+    stat('xA / 90',per(e.expected_assists))+
+    stat('Threat / 90',per(e.threat))+
+    stat('Creativity / 90',per(e.creativity))+
+    (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
+    (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
+    '</div>'+(mins<90?'<div class="dl-sub" style="margin-top:8px">Per-90 rates need a fuller sample — treat these as provisional.</div>':'')+'</div>';
+  /* Closest style twin */
+  let twinHtml='';
+  if(mins>=180){
+    const v=styleVec(b,e);let best=null;
+    b.elements.forEach(o=>{if(o.id===e.id||o.element_type!==e.element_type||(o.minutes||0)<180)return;
+      const s=cosine(v,styleVec(b,o));if(!best||s>best.s)best={o,s};});
+    if(best&&best.s>0){const o=best.o;
+      twinHtml='<div class="card pd-sec"><div class="card-title">Closest playing-style twin</div>'+
+        '<div class="dl-row" style="cursor:pointer" onclick="openPlayer('+o.id+')">'+avatar(b,o,32)+
+        '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(o.web_name)+'</span>'+
+        '<span class="dl-sub">'+crest(b,o.team,13)+' '+teamShort(b,o.team)+' · £'+((o.now_cost||0)/10).toFixed(1)+'m · '+Math.round(best.s*100)+'% style match</span></span>'+
+        '<span class="dl-col mono">'+xP(b,o,nf[o.team]).toFixed(1)+' xP</span></div>'+
+        '<div class="dl-sub" style="margin-top:6px">Nearest on per-90 goal threat, creativity, involvement and defensive actions — a like-for-like on how they play.</div></div>';
+    }
+  }
+  const ai='<div class="card pd-sec"><div class="card-title">'+svg(ICON.spark,'width="14" height="14"')+' AI verdict</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">A one-look scouting call on '+esc(e.web_name)+', grounded in these numbers.</p>'+
+    aiGate('<button class="btn btn-primary btn-sm" onclick="genPlayer('+id+')">Scout this player</button>')+
+    '<div id="pcard-'+id+'" style="margin-top:12px"></div></div>';
+  return head+news+kpis+ticker+per90+twinHtml+ai+
+    '<div class="modal-row" style="margin-top:6px"><button class="btn btn-ghost" data-player-close>Close</button></div>';
 }
 
 async function hydrateTransfers(host){
@@ -3284,13 +3465,13 @@ function buildHorizon(b,fixtures,N){
   const map={};
   fixtures.filter(f=>f.event&&!f.finished).sort((a,c)=>a.event-c.event).forEach(f=>{
     const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
-    const push=(team,opp,home,lam,cs)=>{
+    const push=(team,opp,home,lam,cs,win)=>{
       const arr=map[team]=map[team]||[];
       if(arr.length<N)arr.push({event:f.event,opp:teamShort(b,opp),home,
-        lam,cs,lamAvg:BM*R.att[team],gp:played[team]||0});
+        lam,cs,win,diff:plsimDiff(win),lamAvg:BM*R.att[team],gp:played[team]||0});
     };
-    push(f.team_h,f.team_a,true,m.hx,m.csH);
-    push(f.team_a,f.team_h,false,m.ax,m.csA);
+    push(f.team_h,f.team_a,true,m.hx,m.csH,m.pH);
+    push(f.team_a,f.team_h,false,m.ax,m.csA,m.pA);
   });
   return map;
 }
@@ -3567,7 +3748,7 @@ let ASK_MSGS=[],ASK_PENDING=false;
 function renderAskThread(){
   const t=document.getElementById('ask-thread');if(!t)return;
   const body=ASK_MSGS.map(m=>'<div class="ask-msg ask-'+m.role+'">'+
-    (m.role==='assistant'?mdLite(m.content):esc(m.content))+'</div>').join('');
+    (m.role==='assistant'?mdLite(m.content)+(m.local?'<span class="ask-src">grounded in the model</span>':''):esc(m.content))+'</div>').join('');
   t.innerHTML=(body||'<div class="ask-empty">Ask a question to get started.</div>')+
     (ASK_PENDING?'<div class="ask-msg ask-assistant ask-typing">Thinking…</div>':'');
   t.scrollTop=t.scrollHeight;
@@ -3596,28 +3777,155 @@ async function askContext(){
   return ctx;
 }
 
+/* ─── LOCAL GROUNDING ENGINE ────────────────────────────────
+   Answers the common FPL questions straight from our own model
+   outputs (xP, fixtures, value, ownership). It is the hybrid
+   assistant's free floor: it runs when no ANTHROPIC_API_KEY is set
+   or the network is down, so the Scout always answers — grounded in
+   OUR numbers, not a generic chatbot. When a key is present the LLM
+   layer takes over and phrases things conversationally. */
+function fxDiff(next){const m=String(next||'').match(/diff\s*(\d+)/);return m?parseInt(m[1],10):null;}
+function pMoney(p){return '£'+Number(p.price).toFixed(1)+'m';}
+function pLabel(p){return '**'+p.name+'** ('+p.team+' '+p.pos+', '+pMoney(p)+') — '+p.xP+' xP';}
+function pLine(p){return '- '+pLabel(p)+(p.next?' · next '+p.next:'');}
+function findNamed(q,ctx){
+  const all=(ctx.squad||[]).concat(ctx.topByXP||[]);let best=null;
+  all.forEach(p=>{const nm=(p.name||'').toLowerCase();
+    if(nm.length>2&&q.indexOf(nm)>=0&&(!best||nm.length>best.name.length))best=p;});
+  return best;
+}
+function localAnswer(q,ctx){
+  q=(q||'').toLowerCase();
+  const sq=ctx.squad||[],pool=(ctx.topByXP||[]).slice();
+  const start=sq.filter(p=>p.starting);
+  const byXP=a=>a.slice().sort((x,y)=>y.xP-x.xP);
+  const inSquad=nm=>sq.some(p=>p.name===nm);
+  const foot='\n\n_xP is our validated projection (minutes × xGI/90 × fixture strength). Add an `ANTHROPIC_API_KEY` in Netlify to turn on conversational answers._';
+
+  /* Player-specific verdict (sell / keep / is X good). */
+  const named=findNamed(q,ctx);
+  if(named&&/\b(sell|keep|hold|drop|buy|bring|start|bench|good|worth|captain|transfer)\b/.test(q)&&
+     !/\b(differential|value|defen|fixtures?)\b/.test(q)){
+    const rankPool=byXP(pool);const idx=rankPool.findIndex(p=>p.name===named.name);
+    const posPool=byXP(pool.filter(p=>p.pos===named.pos));
+    const posRank=posPool.findIndex(p=>p.name===named.name);
+    const own=named.owned?(' · '+named.owned+' owned'):'';
+    let verdict;
+    if(named.xP>=5.5)verdict='a strong hold — one of the top projections this week';
+    else if(named.xP>=3.8)verdict='a solid starter on the numbers';
+    else verdict='a weak spot — the model sees better points elsewhere';
+    let out='**'+named.name+'** — '+named.xP+' xP'+own+(named.next?' · next '+named.next:'')+
+      '\n\nOn our model that is '+verdict+'.';
+    if(posRank>=0&&posRank<8)out+=' Ranks #'+(posRank+1)+' among '+named.pos+'s in the top pool.';
+    if(named.xP<3.8){const up=posPool.filter(p=>!inSquad(p.name)&&p.xP>named.xP).slice(0,3);
+      if(up.length)out+='\n\nHigher-projected '+named.pos+'s to consider:\n\n'+up.map(pLine).join('\n');}
+    return out+foot;
+  }
+
+  /* Captain / armband. */
+  if(/captain|armband|triple\s*cap/.test(q)){
+    const cand=byXP((start.length?start:pool).filter(p=>p.pos!=='GKP')).slice(0,3);
+    if(!cand.length)return null;
+    return '**Captain — '+cand[0].name+'**\n\n'+cand[0].name+' has the highest projection in '+
+      (start.length?'your XI':'the pool')+' this gameweek'+(cand[0].next?' ('+cand[0].next+')':'')+
+      '. Top options:\n\n'+cand.map(pLine).join('\n')+foot;
+  }
+
+  /* Differential. */
+  if(/differential|diff\b|under\s*\d|low.?owned|template.?breaker/.test(q)){
+    const th=(q.match(/under\s*(\d+)/)||q.match(/(\d+)\s*%/)||[])[1];
+    const cap=th?parseFloat(th):15;
+    const diffs=byXP(pool.filter(p=>{const o=parseFloat(p.owned);return o>0&&o<cap;})).slice(0,5);
+    if(!diffs.length)return 'No strong differentials under '+cap+'% in the top pool right now — the best projections are all well owned.'+foot;
+    return '**Differentials under '+cap+'% owned**\n\nStrong projections the crowd is light on:\n\n'+
+      diffs.map(p=>pLine(p)+' · '+p.owned+' owned').join('\n')+foot;
+  }
+
+  /* Value / budget picks. */
+  if(/\bvalue\b|cheap|budget|points?\s*per|enabler|bargain/.test(q)){
+    const val=pool.filter(p=>p.price>0).map(p=>Object.assign({ppm:p.xP/p.price},p))
+      .sort((a,c)=>c.ppm-a.ppm).slice(0,5);
+    return '**Best value on xP per £m**\n\n'+val.map(p=>pLine(p)+' · '+p.ppm.toFixed(2)+' xP/£m').join('\n')+foot;
+  }
+
+  /* Defence / clean sheets. */
+  if(/defen|clean\s*sheet|back\s*line|\bgk\b|keeper/.test(q)){
+    const def=byXP((start.length?start:pool).filter(p=>p.pos==='DEF'||p.pos==='GKP'));
+    if(!def.length)return null;
+    const easy=def.filter(p=>{const d=fxDiff(p.next);return d!=null&&d<=2;});
+    const tot=def.slice(0,5).reduce((s,p)=>s+p.xP,0);
+    let out=start.length?'**Your defence**\n\nYour back line projects '+tot.toFixed(1)+
+      ' xP from its top five. Ranked:\n\n':'**Top defensive picks**\n\n';
+    out+=def.slice(0,5).map(pLine).join('\n');
+    if(easy.length)out+='\n\nKindest fixtures: '+easy.slice(0,3).map(p=>p.name+' ('+p.next+')').join(', ')+'.';
+    return out+foot;
+  }
+
+  /* Fixtures. */
+  if(/fixtures?|who.*(easy|good).*game|schedule|run of games/.test(q)){
+    const scope=(start.length?start:pool).filter(p=>fxDiff(p.next)!=null);
+    const easy=scope.slice().sort((a,c)=>fxDiff(a.next)-fxDiff(c.next)).slice(0,5);
+    if(!easy.length)return null;
+    return '**Kindest fixtures**\n\nLowest model difficulty '+(start.length?'in your squad':'in the pool')+
+      ':\n\n'+easy.map(p=>'- **'+p.name+'** ('+p.team+') — '+p.next+', '+p.xP+' xP').join('\n')+foot;
+  }
+
+  /* Transfer suggestion. */
+  if(/transfer|swap|replace|who.*(buy|bring)|move|sign/.test(q)){
+    if(!start.length)return 'Link your team (top-right) and I’ll suggest a transfer grounded in your squad. Meanwhile, the top projected players are:\n\n'+
+      byXP(pool).slice(0,5).map(pLine).join('\n')+foot;
+    const weak=byXP(start.filter(p=>p.status==='a'||!p.status)).slice(-1)[0]||byXP(start).slice(-1)[0];
+    const bank=ctx.bank||0;
+    const repl=byXP(pool.filter(p=>p.pos===weak.pos&&!inSquad(p.name)&&p.price<=weak.price+bank)).slice(0,3);
+    let out='**Transfer idea**\n\nYour lowest-projected starter is '+pLabel(weak)+'.';
+    if(repl.length)out+=' Within budget ('+pMoney(weak)+' + '+('£'+bank.toFixed(1))+'m bank) the model prefers:\n\n'+
+      repl.map(pLine).join('\n');
+    else out+=' Nothing clearly better is affordable at '+weak.pos+' right now — hold.';
+    return out+foot;
+  }
+
+  /* General digest fallback. */
+  const cap=byXP(start.length?start:pool)[0];
+  const diff=byXP(pool.filter(p=>parseFloat(p.owned)<15))[0];
+  if(!cap)return null;
+  let out='**Gameweek '+(ctx.gameweek||'')+' — the model’s read**\n\n';
+  out+='- **Captain:** '+cap.name+' ('+cap.xP+' xP'+(cap.next?', '+cap.next:'')+')\n';
+  if(diff)out+='- **Differential:** '+diff.name+' ('+diff.xP+' xP, '+diff.owned+' owned)\n';
+  if(start.length){const weak=byXP(start).slice(-1)[0];out+='- **Weak spot:** '+weak.name+' ('+weak.xP+' xP) — a transfer candidate\n';}
+  out+='\nAsk me about captaincy, transfers, differentials, value, defence or fixtures.'+foot;
+  return out;
+}
+
 async function sendAsk(text){
   text=(text||'').trim();if(!text||ASK_PENDING)return;
   const inp=document.getElementById('ask-text');if(inp)inp.value='';
   ASK_MSGS.push({role:'user',content:text});
   if(ASK_MSGS.length>20)ASK_MSGS=ASK_MSGS.slice(-20);
   ASK_PENDING=true;renderAskThread();
+  let context=null;
+  const local=()=>{try{const a=localAnswer(text,context);
+    if(a)ASK_MSGS.push({role:'assistant',content:a,local:true});
+    else ASK_MSGS.push({role:'assistant',content:'I can help with captaincy, transfers, differentials, value, defence and fixtures — try one of those.',local:true});
+  }catch(_){ASK_MSGS.push({role:'assistant',content:'Sorry — I couldn’t answer just then. Please try again in a moment.'});}};
   try{
-    const context=await askContext();
+    context=await askContext();
     const r=await fetch(apiBase()+'/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({task:'ask',messages:ASK_MSGS.slice(-10),context})});
-    if(r.status===503)ASK_MSGS.push({role:'assistant',content:'AI chat needs setup — add an `ANTHROPIC_API_KEY` to the Netlify site environment to switch it on.'});
+    if(r.status===503)local();                       /* no key: fall back to our own engine */
     else if(!r.ok)throw new Error('HTTP '+r.status);
     else{const data=await r.json();ASK_MSGS.push({role:'assistant',content:data.text||'(no answer)'});window.GENative&&GENative.hapticLight();}
-  }catch(e){ASK_MSGS.push({role:'assistant',content:'Sorry — I couldn’t answer just then. Please try again in a moment.'});}
+  }catch(e){
+    if(context)local();                              /* network hiccup: still answer locally */
+    else ASK_MSGS.push({role:'assistant',content:'Sorry — I couldn’t answer just then. Please try again in a moment.'});
+  }
   finally{ASK_PENDING=false;renderAskThread();}
 }
 
 async function hydrateAsk(host){
-  const chips=['Who should I captain this week?','Suggest one transfer for my team','Best differential under 10% owned?','Is my defence strong enough?'];
+  const chips=['Who should I captain this week?','Suggest one transfer for my team','Best differential under 10% owned?','Best value picks right now?','Is my defence strong enough?','Who has the kindest fixtures?'];
   host.innerHTML=
     '<div class="card"><div class="card-title">'+svg(ICON.chat,'width="15" height="15"')+' Ask the Scout</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers or the gameweek. Answers are grounded in '+(getMid()?'your squad and ':'')+'live data.'+(getMid()?'':' <b>Link your team</b> for personalised advice.')+'</p>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers, differentials, value or fixtures — answered straight from our projection model, free. '+(getMid()?'':'<b>Link your team</b> for personalised advice. ')+'Add an API key in Netlify to upgrade to conversational replies.</p>'+
       '<div class="ask-thread" id="ask-thread" role="log" aria-live="polite"></div>'+
       '<div class="ask-suggest">'+chips.map(q=>'<button class="ask-chip" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
       '<div class="ask-input"><input id="ask-text" placeholder="Ask the scout…" autocomplete="off" aria-label="Ask the scout a question">'+
@@ -3778,10 +4086,132 @@ async function refreshPushUI(){
   else{statusEl.textContent='Get price changes, injury flags and deadline reminders — even when the app is closed.';btn.textContent='Enable push alerts';btn.onclick=enablePush;}
 }
 
+/* ═══════════════════════════════════════════════════════════
+   THE WIRE — automated, data-driven briefings
+   Every article is written from live FPL data and our own model
+   (xP, fixture strength, ownership). No human writer, refreshes
+   itself every gameweek. Deterministic, self-contained.
+   ═══════════════════════════════════════════════════════════ */
+function blogArticles(b,fixtures){
+  const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5),els=b.elements,cur=b.cur,gw=cur.id;
+  const av=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
+  const nm=e=>esc(e.web_name),tm=e=>teamShort(b,e.team),ps=e=>posShort(b,e.element_type),
+        pr=e=>'£'+((e.now_cost||0)/10).toFixed(1)+'m';
+  const top=(arr,key,n)=>arr.slice().sort((a,c)=>key(c)-key(a)).slice(0,n);
+  const li=rows=>'<ul>'+rows.join('')+'</ul>';
+  const arts=[];
+
+  /* 1 — Talking points */
+  const hauls=top(els,e=>e.event_points||0,5);
+  const bwagon=top(els,e=>e.transfers_in_event||0,5);
+  const forms=top(els.filter(av),e=>parseFloat(e.form||0),5);
+  let tp='';
+  if(cur.finished&&(hauls[0]||{}).event_points){
+    tp+='<p>Gameweek '+gw+' is in the books. <b>'+nm(hauls[0])+'</b> ('+tm(hauls[0])+') led the way with '+
+      (hauls[0].event_points||0)+' points'+(hauls[1]?', ahead of '+nm(hauls[1])+' ('+(hauls[1].event_points||0)+
+      ') and '+nm(hauls[2])+' ('+(hauls[2].event_points||0)+')':'')+'.</p>';
+    tp+='<h4>Top hauls</h4>'+li(hauls.map(e=>'<li>'+nm(e)+' — '+(e.event_points||0)+' pts <span class="muted">('+tm(e)+' · '+ps(e)+')</span></li>'));
+  }else{
+    tp+='<p>Gameweek '+gw+' is next up — deadline '+fmtDeadline(cur.deadline_time)+'. These are the players carrying the hottest form into it.</p>';
+    tp+='<h4>Form kings</h4>'+li(forms.map(e=>'<li>'+nm(e)+' — '+e.form+' form <span class="muted">('+tm(e)+' · '+ps(e)+' · '+pr(e)+')</span></li>'));
+  }
+  tp+='<h4>Where the crowd is moving</h4><p>The most-bought players this week are '+
+    bwagon.slice(0,3).map(e=>'<b>'+nm(e)+'</b> ('+fmtNum(e.transfers_in_event)+' in)').join(', ')+'. '+
+    (cur.most_captained&&b.els[cur.most_captained]?'The armband favourite is '+nm(b.els[cur.most_captained])+'.':'')+'</p>';
+  arts.push({kick:'Gameweek briefing',title:'Gameweek '+gw+': The Talking Points',
+    dek:cur.finished?'Who hauled, who flopped, and where the crowd is heading next.':'Form, momentum and the players setting up for a big one.',
+    accent:'a-emerald',mins:2,body:tp});
+
+  /* 2 — Differentials */
+  const diffs=top(els.filter(av).map(e=>({e,x:xP(b,e,nf[e.team]),o:parseFloat(e.selected_by_percent||0)}))
+    .filter(d=>d.o>0&&d.o<10&&d.x>0),d=>d.x,6);
+  if(diffs.length){
+    let db='<p>Our projection rates these six players well above what their ownership suggests — the low-owned picks that can win you a green arrow if they deliver.</p>';
+    db+=li(diffs.map(d=>'<li><b>'+nm(d.e)+'</b> '+d.x.toFixed(1)+' xP <span class="muted">('+tm(d.e)+' · '+ps(d.e)+' · '+pr(d.e)+' · '+d.o.toFixed(1)+'% owned)</span></li>'));
+    db+='<p class="muted">xP = our validated projection: minutes × expected goal involvement per 90 × fixture strength.</p>';
+    arts.push({kick:'Differentials',title:'Six Differentials the Model Likes',
+      dek:'Under 10% owned, strong underlying numbers — the template-breakers for Gameweek '+gw+'.',
+      accent:'a-violet',mins:2,body:db});
+  }
+
+  /* 3 — Price watch */
+  const chg=e=>(e.cost_change_event||0);
+  const risers=top(els,chg,5).filter(e=>chg(e)>0);
+  const fallers=els.slice().sort((a,c)=>chg(a)-chg(c)).slice(0,5).filter(e=>chg(e)<0);
+  const heating=top(els.filter(e=>chg(e)<=0),e=>(e.transfers_in_event||0)-(e.transfers_out_event||0),4);
+  let pw='<p>Price moves change your team value and your transfer flexibility. Here’s what shifted this week and what’s heating up next.</p>';
+  if(risers.length)pw+='<h4>Risers</h4>'+li(risers.map(e=>'<li>'+nm(e)+' <span class="up">+£'+(chg(e)/10).toFixed(1)+'m</span> <span class="muted">to '+pr(e)+'</span></li>'));
+  if(fallers.length)pw+='<h4>Fallers</h4>'+li(fallers.map(e=>'<li>'+nm(e)+' <span class="down">£'+(chg(e)/10).toFixed(1)+'m</span> <span class="muted">to '+pr(e)+'</span></li>'));
+  pw+='<h4>Heating up (buy before the rise)</h4>'+li(heating.map(e=>'<li><b>'+nm(e)+'</b> <span class="muted">net '+fmtNum((e.transfers_in_event||0)-(e.transfers_out_event||0))+' transfers · '+pr(e)+'</span></li>'));
+  arts.push({kick:'Price watch',title:'Price Watch: Movers and Shakers',
+    dek:'Who rose, who fell, and who’s about to — beat the overnight price lock.',
+    accent:'a-amber',mins:2,body:pw});
+
+  /* 4 — Fixture swings (model clean-sheet + expected-goals ease over next 5) */
+  const swing=Object.keys(hz).map(t=>{const a=hz[t];if(!a.length)return null;
+    const ease=a.reduce((s,f)=>s+(f.lam+2*f.cs),0)/a.length;
+    return {t:+t,ease,opps:a.map(f=>f.opp+(f.home?'(H)':'(A)'))};}).filter(Boolean);
+  if(swing.length){
+    const kind=swing.slice().sort((a,c)=>c.ease-a.ease).slice(0,4);
+    const tough=swing.slice().sort((a,c)=>a.ease-c.ease).slice(0,4);
+    const tn=t=>esc((b.teams[t]||{}).name||'');
+    let fb='<p>Our match model scores the next five fixtures for every club on expected goals and clean-sheet odds. Target the green run, fade the red one.</p>';
+    fb+='<h4>Kindest run of fixtures</h4>'+li(kind.map(s=>'<li><b>'+tn(s.t)+'</b> <span class="muted">'+s.opps.join(' · ')+'</span></li>'));
+    fb+='<h4>Toughest run</h4>'+li(tough.map(s=>'<li>'+tn(s.t)+' <span class="muted">'+s.opps.join(' · ')+'</span></li>'));
+    arts.push({kick:'Fixtures',title:'Fixture Swings: Who to Target Next',
+      dek:'The clubs whose next five games open up — and the ones to avoid.',
+      accent:'a-cyan',mins:2,body:fb});
+  }
+
+  /* 5 — Captaincy index */
+  const caps=top(els.filter(av).filter(e=>e.element_type>1).map(e=>({e,x:xP(b,e,nf[e.team])})),d=>d.x,6);
+  if(caps.length){
+    const fx=t=>{const n=nf[t];return n?n.opp+(n.home?' (H)':' (A)'):'';};
+    let cb='<p>The armband is the single biggest call of your week. Ranked purely on our projection for Gameweek '+gw+':</p>';
+    cb+='<ol>'+caps.map(d=>'<li><b>'+nm(d.e)+'</b> '+d.x.toFixed(1)+' xP <span class="muted">('+tm(d.e)+' vs '+fx(d.e.team)+')</span></li>').join('')+'</ol>';
+    cb+='<p class="muted">A safe captain is the top of this list; a differential captain is one further down that few rivals will trust.</p>';
+    arts.push({kick:'Captaincy',title:'The Captaincy Index',
+      dek:'Every top armband option for Gameweek '+gw+', ranked by projected points.',
+      accent:'a-rose',mins:1,body:cb});
+  }
+  return arts;
+}
+
+function articleCard(a,i,gw){
+  return '<article class="post '+a.accent+'">'+
+    '<button class="post-hd" data-post="'+i+'" aria-expanded="false">'+
+      '<div class="post-hero"><span class="post-kick">'+esc(a.kick)+'</span>'+
+        '<span class="post-mark">'+svg(ICON.spark,'width="22" height="22"')+'</span></div>'+
+      '<div class="post-txt"><h3 class="post-title">'+esc(a.title)+'</h3>'+
+        '<p class="post-dek">'+esc(a.dek)+'</p>'+
+        '<div class="post-meta">The Edge Model · GW'+gw+' · '+a.mins+' min read'+
+          '<span class="post-more">Read'+svg(ICON.chevron,'width="14" height="14"')+'</span></div>'+
+      '</div>'+
+    '</button>'+
+    '<div class="post-full" id="post-'+i+'" hidden>'+a.body+'</div>'+
+  '</article>';
+}
+
+async function hydrateBlog(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  let arts;
+  try{arts=blogArticles(b,fixtures);}catch(e){arts=[];}
+  if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
+  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
+      '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
+    '<div class="blog-list">'+arts.map((a,i)=>articleCard(a,i,b.cur.id)).join('')+'</div>';
+  host.querySelectorAll('.post-hd').forEach(btn=>btn.addEventListener('click',()=>{
+    const full=host.querySelector('#post-'+btn.dataset.post),open=btn.getAttribute('aria-expanded')==='true';
+    btn.setAttribute('aria-expanded',String(!open));full.hidden=open;
+    btn.closest('.post').classList.toggle('is-open',!open);
+  }));
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
   'gw-actions':hydrateGwActions,
+  blog:hydrateBlog,
   gwhistory:hydrateGwhistory,
   squad:hydrateSquad,
   transfers:hydrateTransfers,
@@ -4052,6 +4482,9 @@ function init(){
   /* Pro upgrade modal. */
   document.addEventListener('click',e=>{if(e.target.closest('[data-pro-close]'))closeUpgrade();});
 
+  /* Player detail modal. */
+  document.addEventListener('click',e=>{if(e.target.closest('[data-player-close]'))closePlayer();});
+
   /* Accounts. */
   initAuth();
   document.getElementById('acct-btn').addEventListener('click',openAccount);
@@ -4084,7 +4517,7 @@ function init(){
 
   /* Close drawer / modals on Escape */
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();closeAccount();closeOnboard();}
+    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();closeAccount();closeOnboard();closePlayer();}
   });
 }
 
