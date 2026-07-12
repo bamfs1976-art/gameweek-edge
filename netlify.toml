@@ -11,6 +11,25 @@
 [functions]
   node_bundler = "esbuild"
 
+# ── Security headers ─────────────────────────────────────────────
+# The app is a single-file page with inline scripts/styles and inline
+# event handlers, so script-src/style-src need 'unsafe-inline'. The
+# CSP is built from the origins the app actually uses:
+#   connect-src : own /api/* functions, Supabase (auth + REST),
+#                 plsimulation.netlify.app (shared model.json)
+#   img-src     : self + data: + resources.premierleague.com
+#                 (club crests, player photos)
+#   style/font  : Google Fonts (stylesheet + font files)
+# worker-src 'self' keeps the service worker (and push) working.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://resources.premierleague.com; connect-src 'self' https://knodunjnsxelmpziupwk.supabase.co https://plsimulation.netlify.app; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+
 # Clean URL for the marketing landing page (share gameweekedge.app/welcome).
 [[redirects]]
   from = "/welcome"
