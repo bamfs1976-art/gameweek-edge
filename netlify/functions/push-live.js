@@ -19,6 +19,10 @@ const { createClient } = require('@supabase/supabase-js');
 
 exports.config = { schedule: '*/2 * * * *' };
 
+/* Warm-container fallback for the fan-out cursor (see below). */
+let moduleCursor = 0;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 const UA = 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.app)';
 const api = async (path) => {
   const r = await fetch('https://fantasy.premierleague.com/api/' + path, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
@@ -79,8 +83,33 @@ exports.handler = async () => {
   const byMid = {};
   live.forEach((s) => { (byMid[s.manager_id] = byMid[s.manager_id] || []).push(s); });
 
+  /* Cap the per-run fan-out so we never hammer the FPL API at scale:
+     at most MAX_PER_RUN managers per invocation, resumed from a
+     rotating cursor persisted in gwedge_push_state (module scope as a
+     best-effort fallback on warm containers). With a 2-minute
+     schedule every manager is still visited every few minutes. */
+  const MAX_PER_RUN = 150;
+  const mids = Object.keys(byMid).sort();
+  let start = 0;
+  if (mids.length > MAX_PER_RUN) {
+    try {
+      const c = await getState('live-cursor');
+      start = c && Number.isFinite(Number(c.i)) ? Number(c.i) % mids.length : (moduleCursor % mids.length);
+    } catch (_) { start = moduleCursor % mids.length; }
+  }
+  const batch = mids.length > MAX_PER_RUN
+    ? Array.from({ length: MAX_PER_RUN }, (_, i) => mids[(start + i) % mids.length])
+    : mids;
+  if (mids.length > MAX_PER_RUN) {
+    moduleCursor = (start + MAX_PER_RUN) % mids.length;
+    try { await setState('live-cursor', { i: moduleCursor }); } catch (_) { /* best effort */ }
+  }
+
   let sent = 0;
-  for (const mid of Object.keys(byMid)) {
+  let first = true;
+  for (const mid of batch) {
+    if (!first) await sleep(150);                 /* pace the per-manager FPL fetches */
+    first = false;
     let picks;
     try { picks = await api('entry/' + mid + '/event/' + gw.id + '/picks/'); } catch (_) { continue; }
     const xi = (picks.picks || []).filter((p) => p.position <= 11);

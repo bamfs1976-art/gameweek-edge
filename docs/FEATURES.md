@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **6 areas** and **29 panels**. Free panels are open
+Navigation is organised into **7 areas** and **36 panels**. Free panels are open
 to everyone; **Pro** panels require an upgrade (or owner access, see §9).
 
 ```
@@ -58,6 +58,7 @@ My Team
 Live  (Pro)
 ├── Live Percentile      (Pro)   Estimated GW percentile, live through the matchday
 ├── Bonus Tracker        (Pro)   Provisional 3-2-1 bonus from live BPS
+├── Your DEFCON          (Pro)   Your players vs the defensive-contribution threshold
 ├── DefCon Threats       (Pro)   Players you don't own who are scoring now
 ├── Auto-Sub Tracker     (Pro)   Live projection of bench substitutions
 └── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
@@ -85,6 +86,14 @@ Planner
 ├── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
 ├── Watchlist            (free)  Saved players
 └── Alerts               (free)  Price/injury/deadline + model-watch alerts
+
+League
+├── Title Race           (free)  Season odds from the backtested model
+├── Team Form            (free)  Club form over the last 5/10/20 games
+├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
+├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
+├── Season Simulator     (Pro)   Full-season Monte Carlo
+└── Scenario Lab         (Pro)   Pin results and re-run the season
 ```
 
 **Global chrome:** top bar (menu, brand, refresh, My Team), left sidebar

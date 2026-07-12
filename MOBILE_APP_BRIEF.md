@@ -149,7 +149,7 @@ Goal: pass review and ship.
 Tasks:
 1. Full accessibility audit on real devices with VoiceOver and TalkBack. Fix every failure.
 2. Performance and battery pass, especially matchday polling.
-3. Store assets: icon, screenshots for required device sizes, preview text, age rating, and a privacy policy and privacy "nutrition label" / Data Safety form. Position clearly as a **sports analytics tool, not gambling**.
+3. Store assets: icon, screenshots for required device sizes, preview text, age rating, and a privacy policy and privacy "nutrition label" / Data Safety form. Position clearly as a **sports analytics tool, not gambling**. A plain-language privacy policy now ships at **`/privacy.html`** — App Store Connect requires this URL in the app's metadata (App Information → Privacy Policy URL), so point it at `https://<your-domain>/privacy.html`.
 4. App Store and Play Store metadata and review notes. Provide a reviewer test account and a test Manager ID.
 5. Submit to TestFlight / Play internal testing first, then production. Document the release process so updates are repeatable.
 

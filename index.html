@@ -28,7 +28,7 @@
 <style>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
-   Brand, 6-area navigation, 21 panels as navigable pages.
+   Brand, 7-area navigation, 36 panels as navigable pages.
    Placeholder content. No live API, accounts or paywall yet.
    ═══════════════════════════════════════════════════════════ */
 
@@ -1021,7 +1021,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
           <span id="theme-label">Light</span>
         </button>
       </div>
-      <p class="sb-foot-legal">Independent app — not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively.</p>
+      <p class="sb-foot-legal">Independent app — not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively. <a href="/privacy.html" style="color:inherit;text-decoration:underline">Privacy policy</a></p>
     </div>
   </aside>
 
@@ -1698,7 +1698,7 @@ function maybeOnboard(){
 function closeOnboard(){document.getElementById('onb-modal').classList.remove('show');
   try{localStorage.setItem('ge-onboarded','1');}catch(_){}}
 
-/* ── NAVIGATION MODEL — 6 areas, 21 panels ──────────────── */
+/* ── NAVIGATION MODEL — 7 areas, 36 panels ──────────────── */
 const NAV = [
   {
     id:'home', label:'Home', icon:'home',
