@@ -1765,6 +1765,7 @@ const NAV = [
     panels:[
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
       {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
+      {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
       {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'},
       {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
       {id:'scenariolab', label:'Scenario Lab', icon:'diamond', tier:'paid'}
@@ -1799,6 +1800,10 @@ const PANEL_CONTENT = {
   },
   clubform:{
     desc:'Every club’s recent form — last 5, 10 and 20 games, overall, home and away — from real results.',
+    layout:'standard'
+  },
+  lineups:{
+    desc:'A data-driven estimate of each club’s likely starting XI from starts, minutes and availability. An estimate from the numbers — not team news.',
     layout:'standard'
   },
   matchforecast:{
@@ -5490,12 +5495,87 @@ async function hydrateMatchForecast(host){
   host.querySelector('#mf-md').addEventListener('change',render);render();
 }
 
+/* ── Projected XI: estimated starting lineups per club ─────
+   Ranks each club's players by starts share (starts / club games
+   played) and minutes share this season, scaled by availability
+   (status flag + chance_of_playing_next_round), then picks the
+   plausible formation that maximises the combined score. A
+   data-driven estimate from the official bootstrap data — NOT team
+   news. Free tier. */
+function projectXI(b,teamId,gamesPlayed){
+  const played=Math.max(1,gamesPlayed||1);
+  const avail=e=>{
+    if(e.status==='i'||e.status==='s'||e.status==='u'||e.status==='n')return 0.05;
+    const ch=e.chance_of_playing_next_round;
+    return ch==null?1:Math.max(0.05,ch/100);
+  };
+  const scored=b.elements.filter(e=>e.team===teamId).map(e=>{
+    const startShare=Math.min(1,(e.starts||0)/played);
+    const minShare=Math.min(1,(e.minutes||0)/(played*90));
+    return {el:e,p:(0.65*startShare+0.35*minShare)*avail(e)};
+  });
+  const byType={};
+  [1,2,3,4].forEach(t=>byType[t]=scored.filter(x=>x.el.element_type===t).sort((a,c)=>c.p-a.p));
+  const forms=[[3,4,3],[3,5,2],[4,5,1],[4,4,2],[4,3,3],[5,4,1],[5,3,2],[5,2,3]];
+  let best=null;
+  forms.forEach(f=>{
+    const need={1:1,2:f[0],3:f[1],4:f[2]};
+    if([1,2,3,4].some(t=>byType[t].length<need[t]))return;
+    const xi=[].concat(byType[1].slice(0,1),byType[2].slice(0,f[0]),
+      byType[3].slice(0,f[1]),byType[4].slice(0,f[2]));
+    const total=xi.reduce((a,x)=>a+x.p,0);
+    if(!best||total>best.total)best={xi,total,formation:f};
+  });
+  return best;
+}
+let LINEUP_TEAM=null;
+async function hydrateLineups(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const gp=teamGamesPlayed(fixtures);
+  const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
+  if(!teams.length){host.innerHTML=stateBox('squad','No clubs yet','Projected lineups appear once the season data loads.');return;}
+  if(LINEUP_TEAM==null||!b.teams[LINEUP_TEAM])LINEUP_TEAM=teams[0].id;
+  const t=b.teams[LINEUP_TEAM];
+  const proj=projectXI(b,t.id,gp[t.id]);
+  const opts=teams.map(x=>'<option value="'+x.id+'"'+(x.id===t.id?' selected':'')+'>'+esc(x.name)+'</option>').join('');
+  const pct=x=>Math.round(x.p*100);
+  const cell=x=>'<div class="pp">'+ppFigure(b,x.el)+
+    '<span class="pp-nm">'+esc(x.el.web_name)+'</span>'+
+    '<span class="pp-pt">'+pct(x)+'%</span></div>';
+  const rowFor=ty=>'<div class="pitch-row">'+(proj?proj.xi.filter(x=>x.el.element_type===ty).map(cell).join(''):'')+'</div>';
+  const doubts=b.elements.filter(e=>e.team===t.id&&e.status&&e.status!=='a')
+    .sort((a,c)=>(c.minutes||0)-(a.minutes||0)).slice(0,8);
+  const doubtRows=doubts.map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
+    ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span></span>'+
+    '<span class="dl-sub">'+posShort(b,e.element_type)+(e.news?' · '+esc(e.news):'')+'</span></span>'+
+    '<span class="dl-col">'+(e.chance_of_playing_next_round==null?'—':e.chance_of_playing_next_round+'%')+'</span></div>').join('');
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">Club</div>'+
+      '<select class="modal-in" id="lineup-team" style="max-width:280px">'+opts+'</select></div>'+
+    (proj
+      ? '<div class="grid g-sb mb-20">'+
+          '<div class="card"><div class="card-title">'+crest(b,t.id,16)+' '+esc(t.name)+' — projected XI '+
+            '<span class="badge badge-amber">'+proj.formation.join('-')+' · estimate</span></div>'+
+            pitchWrap(rowFor(1)+rowFor(2)+rowFor(3)+rowFor(4))+
+            '<div class="dl-sub" style="margin-top:10px">Each % is the player’s start likelihood from this season’s starts share and minutes share, scaled by availability. A statistical estimate — not team news; check press conferences near the deadline.</div></div>'+
+          '<div class="card"><div class="card-title">Doubts & absences</div>'+
+            (doubtRows?'<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+doubtRows+'</div>'
+              :'<div class="dl-sub">No flagged players at '+esc(t.name)+' right now.</div>')+'</div>'+
+        '</div>'
+      : stateBox('squad','Not enough data yet','Projected lineups build from starts and minutes once the season is under way.'))+
+    '<div class="card"><div class="card-title">Methodology</div>'+
+      '<p class="dl-sub" style="margin:0">Score = 65% starts share ('+(gp[t.id]||0)+' club games played) + 35% minutes share, × availability from the official status flag and chance-of-playing. The XI is the legal formation maximising the combined score. It cannot see tactical rotation or press-conference news — treat it as a base rate, not a leak.</p></div>';
+  const sel=host.querySelector('#lineup-team');
+  if(sel)sel.addEventListener('change',()=>{LINEUP_TEAM=parseInt(sel.value,10);hydrateLineups(host);});
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
   'gw-actions':hydrateGwActions,
   titlerace:hydrateTitleRace,
   clubform:hydrateClubForm,
+  lineups:hydrateLineups,
   matchforecast:hydrateMatchForecast,
   seasonsim:hydrateSeasonSim,
   scenariolab:hydrateScenarioLab,
