@@ -1194,7 +1194,7 @@ function svg(path,extra){
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
     'stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+path+'</svg>';
 }
-function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 /* ═══════════════════════════════════════════════════════════
    LIVE DATA LAYER (Phase 2)
