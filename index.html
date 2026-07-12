@@ -3426,9 +3426,149 @@ function solverCard(){
     '<p class="dl-sub" style="margin-bottom:10px">The plan that adds the most projected points over the next several gameweeks, weighing every −4 hit against what it buys. Set your free transfers and compare taking 0–3 moves.</p>'+
     '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">'+
       '<label class="dl-sub" for="solver-ft">Free transfers</label>'+
-      '<select class="modal-in" id="solver-ft" style="max-width:84px" onchange="renderSolver()">'+
+      '<select class="modal-in" id="solver-ft" style="max-width:84px" onchange="renderSolver();renderSolver3()">'+
         [1,2,3,4,5].map(n=>'<option value="'+n+'">'+n+'</option>').join('')+'</select></div>'+
     '<div id="solver-out">'+skel(3)+'</div></div>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MULTI-WEEK TRANSFER SOLVER — a 3-gameweek plan.
+   Beam search (width 8) over transfer SEQUENCES: at each of the next
+   three gameweeks a state may roll (banking a free transfer, max 5)
+   or make 1–2 position-for-position swaps, respecting budget, the
+   3-per-club cap and position quotas. Each state is scored by the
+   best-XI xP its squad projects in that gameweek (per-GW nativeXP-
+   blended fixtureXP, doubles/blanks included) minus −4 hits beyond
+   the banked free transfers. Not a MILP, but it sequences moves and
+   free-transfer accrual — the two things the greedy solver can't.
+   Selling prices are approximated as current price (see caveat). */
+
+/* Per-team fixtures grouped by gameweek for the given `gws`, in the
+   same shape fixtureXP/nativeXP expect (lam, cs, lamAvg, gp). */
+function buildGwFixtures(b,fixtures,gws){
+  const R=plsimRatings(b,fixtures),BM=(PLSIM.BASE_H+PLSIM.BASE_A)/2;
+  const gwSet=new Set(gws);
+  const played={};
+  fixtures.forEach(f=>{if(f.finished){played[f.team_h]=(played[f.team_h]||0)+1;
+    played[f.team_a]=(played[f.team_a]||0)+1;}});
+  const map={};
+  fixtures.filter(f=>f.event&&gwSet.has(f.event)&&!f.finished).forEach(f=>{
+    const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
+    const push=(team,lam,cs)=>{
+      const byGw=map[team]=map[team]||{};
+      (byGw[f.event]=byGw[f.event]||[]).push({event:f.event,lam,cs,
+        lamAvg:BM*R.att[team],gp:played[team]||0});
+    };
+    push(f.team_h,m.hx,m.csH);
+    push(f.team_a,m.ax,m.csA);
+  });
+  return map;
+}
+function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
+  const memo=new Map();
+  const perGw=(e,g)=>{                       /* one player's xP in one GW (0 on a blank, 2 fixtures on a double) */
+    const k=e.id+':'+g;if(memo.has(k))return memo.get(k);
+    const fxs=(gwFx[e.team]||{})[g]||[];
+    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
+    let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
+    t*=(ch/100);memo.set(k,t);return t;
+  };
+  const restMemo=new Map();
+  const restXP=(e,gi)=>{const k=e.id+':'+gi;if(restMemo.has(k))return restMemo.get(k);
+    let t=0;for(let i=gi;i<gws.length;i++)t+=perGw(e,gws[i]);restMemo.set(k,t);return t;};
+  const xiXP=(sq,g)=>{const best=bestXI(sq.map(e=>({el:e,p:perGw(e,g)})));return best?best.total:0;};
+  const byPos={1:[],2:[],3:[],4:[]};
+  b.elements.filter(e=>e.status==='a'&&(e.minutes||0)>0).forEach(e=>byPos[e.element_type].push(e));
+  for(const k in byPos)byPos[k]=byPos[k].sort((a,c)=>restXP(c,0)-restXP(a,0)).slice(0,30);
+
+  /* Best legal single swaps from a squad, ranked by rest-of-horizon gain. */
+  const topSwaps=(sq,bnk,gi,limit,skipId)=>{
+    const ids=new Set(sq.map(e=>e.id));
+    const club={};sq.forEach(e=>club[e.team]=(club[e.team]||0)+1);
+    const out=[];
+    sq.forEach(o=>{
+      if(skipId&&o.id===skipId)return;
+      byPos[o.element_type].forEach(c=>{
+        if(ids.has(c.id))return;
+        if((c.now_cost||0)>(o.now_cost||0)+bnk)return;
+        if(((club[c.team]||0)-(c.team===o.team?1:0))>=3)return;
+        const gain=restXP(c,gi)-restXP(o,gi);
+        if(gain>0.05)out.push({o,c,gain});
+      });
+    });
+    return out.sort((a,c)=>c.gain-a.gain).slice(0,limit);
+  };
+
+  const BEAM=8;
+  let beam=[{squad:squad.slice(),bank,ft,hits:0,score:0,plan:[]}];
+  gws.forEach((g,gi)=>{
+    const next=[];
+    beam.forEach(st=>{
+      const add=(sq2,bank2,t,moves)=>{
+        const hit=Math.max(0,t-st.ft)*4;
+        next.push({squad:sq2,bank:bank2,
+          ft:Math.min(5,Math.max(0,st.ft-t)+1),   /* free-transfer accrual, capped at 5 */
+          hits:st.hits+hit,score:st.score+xiXP(sq2,g)-hit,
+          plan:st.plan.concat([{gw:g,moves,hit}])});
+      };
+      add(st.squad,st.bank,0,[]);                 /* roll */
+      topSwaps(st.squad,st.bank,gi,6).forEach(s1=>{
+        const sq1=st.squad.filter(e=>e.id!==s1.o.id).concat([s1.c]);
+        const bank1=st.bank+(s1.o.now_cost||0)-(s1.c.now_cost||0);
+        add(sq1,bank1,1,[s1]);
+        const s2=topSwaps(sq1,bank1,gi,1,s1.c.id)[0];
+        if(s2)add(sq1.filter(e=>e.id!==s2.o.id).concat([s2.c]),
+          bank1+(s2.o.now_cost||0)-(s2.c.now_cost||0),2,[s1,s2]);
+      });
+    });
+    next.sort((a,c)=>c.score-a.score);
+    const seen=new Set();beam=[];
+    for(const st of next){                        /* dedupe identical squads to keep the beam diverse */
+      const sig=st.squad.map(e=>e.id).sort((a,c)=>a-c).join(',')+':'+st.ft;
+      if(seen.has(sig))continue;seen.add(sig);
+      beam.push(st);if(beam.length>=BEAM)break;
+    }
+  });
+  let baseline=0;gws.forEach(g=>baseline+=xiXP(squad,g));
+  const best=beam[0]||null;
+  return {best,baseline,gain:best?best.score-baseline:0};
+}
+function renderSolver3(){
+  const S=window._solver;if(!S||!S.fixtures)return;
+  const box=document.getElementById('solver3-out');if(!box)return;
+  const ft=parseInt((document.getElementById('solver-ft')||{}).value||'1',10);
+  const gws=S.b.events.filter(e=>!e.finished).slice(0,3).map(e=>e.id);
+  if(gws.length<2){box.innerHTML='<div class="dl-sub">Not enough gameweeks left for a multi-week plan.</div>';return;}
+  const gwFx=buildGwFixtures(S.b,S.fixtures,gws);
+  const r=solvePlanMulti(S.b,gwFx,gws,S.squad,S.bank,ft);
+  if(!r.best||r.gain<=0.05){
+    box.innerHTML='<div class="dl-sub">Rolling your transfers is the model’s call — no sequence of moves over the next '+gws.length+' gameweeks clears the points it would cost.</div>';
+    return;
+  }
+  const rows=r.best.plan.map(step=>{
+    const moves=step.moves.length
+      ? step.moves.map(m=>'<div class="dl-row"><span class="dl-grow" style="display:block">'+
+          '<span class="dl-nm">'+esc(m.o.web_name)+'  →  '+esc(m.c.web_name)+'</span>'+
+          '<span class="dl-sub">'+crest(S.b,m.o.team,12)+' '+teamShort(S.b,m.o.team)+' out · '+
+          crest(S.b,m.c.team,12)+' '+teamShort(S.b,m.c.team)+' in · '+money(m.c.now_cost)+'</span></span>'+
+          '<span class="dl-col mono" style="color:var(--green)">+'+m.gain.toFixed(1)+'</span></div>').join('')
+      : '<div class="dl-row"><span class="dl-grow"><span class="dl-sub">Roll — bank the free transfer</span></span></div>';
+    return '<div class="card-title" style="margin-top:12px">GW'+step.gw+
+      (step.hit?' <span class="badge badge-red">−'+step.hit+' hit</span>':'')+'</div><div class="dl">'+moves+'</div>';
+  }).join('');
+  box.innerHTML=
+    '<div class="statgrid mb-14">'+
+      '<div class="stat"><div class="stat-l">Net xP gain</div><div class="stat-v" style="color:var(--green)">+'+r.gain.toFixed(1)+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Hits taken</div><div class="stat-v">'+(r.best.hits?'−'+r.best.hits:'none')+'</div></div>'+
+    '</div>'+rows+
+    '<div class="dl-sub" style="margin-top:10px">Beam search (width 8) over transfer sequences for GW'+gws[0]+'–'+gws[gws.length-1]+
+    ': per-gameweek best-XI xP (doubles and blanks included), free-transfer accrual and −4 hits. '+
+    '<b>Caveat:</b> selling prices are approximated as current price — your exact selling price needs an FPL login, which the public API doesn’t allow — so budgets can be slightly optimistic on players who rose in price.</div>';
+}
+function solver3Card(){
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.calendar,'width="15" height="15"')+' 3-GW plan — sequenced transfers</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Plans the next three gameweeks together: when to move, when to roll, and whether a hit pays back over the stretch. Uses the free-transfers setting above.</p>'+
+    '<div id="solver3-out">'+skel(3)+'</div></div>';
 }
 
 async function hydrateTransfers(host){
@@ -3449,8 +3589,8 @@ async function hydrateTransfers(host){
       const bank=((picks.entry_history&&picks.entry_history.bank)||0);
       const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
       window._sq={ids:new Set(squad.map(e=>e.id)),bank};
-      window._solver={b,hz,squad,bank,ctx:await loadLeagueCtx().catch(()=>null)};
-      replacer=solverCard();
+      window._solver={b,hz,squad,bank,fixtures,ctx:await loadLeagueCtx().catch(()=>null)};
+      replacer=solverCard()+solver3Card();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
@@ -3474,7 +3614,7 @@ async function hydrateTransfers(host){
       '<div class="dl-sub" style="margin-top:8px">xP'+hzN+' = cumulative expected points across the horizon from the fitted team-strength model and validated player projections. Tap a number for the workings.</div></div>';
   }).join('');
   setTimeout(()=>{
-    if(window._solver)renderSolver();
+    if(window._solver){renderSolver();renderSolver3();}
     const s=document.getElementById('rep-sel');
     if(!s)return;
     let mode='xp';

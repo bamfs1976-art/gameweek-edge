@@ -127,6 +127,12 @@ captain highlight; plus a gameweek summary (points, rank, value, bank, chip).
   position‑for‑position swaps. Weighs each −4 hit against the points it buys and
   highlights the net‑best number of moves; free‑transfers control (1–5). Exact
   for a single transfer, heuristic beyond.
+- **3-GW plan** — a multi-week solver: beam search (width 8) over transfer
+  *sequences* for the next three gameweeks, scoring each state by per-GW
+  best-XI xP (doubles/blanks included) minus −4 hits, with free-transfer
+  accrual (max 5) and roll decisions. Respects budget, 3-per-club and position
+  quotas. Visible caveat: selling prices are approximated as current price
+  (exact selling price needs an FPL login the public API doesn't allow).
 - **Find a replacement** — pick a player to move on; rank alternatives within
   budget by projected points **or** by playing‑style similarity (cosine on
   z‑scored per‑90 vectors).
@@ -391,7 +397,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
   stats + full sortable list, transfer solver, live bonus projector, DefCon,
   auto blog, Team of the Week, H2H.
 - **Possible next steps:**
-  - Full MILP transfer optimiser (multi‑week solve) vs the current greedy heuristic.
+  - Full MILP transfer optimiser vs the current beam-search 3-GW plan.
   - Authenticated `my-team` integration for exact selling price / free transfers.
   - Native push depth (fpl.team / LiveFPL parity).
   - Editorial expansion of The Wire; column presets on the Player List.
