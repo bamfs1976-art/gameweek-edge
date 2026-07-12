@@ -31,6 +31,13 @@
   status = 200
   force = true
 
+# First-party analytics (fire-and-forget event pings).
+[[redirects]]
+  from = "/api/track"
+  to = "/.netlify/functions/track"
+  status = 200
+  force = true
+
 # Stripe billing.
 [[redirects]]
   from = "/api/checkout"

@@ -339,5 +339,31 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
   </div>
 </footer>
 
+<script>
+/* First-party analytics: a page-view ping and CTA clicks, posted to our
+   own /api/track function. No third-party scripts, no cookies. */
+(function(){
+  function anonId(){
+    try{
+      var a=localStorage.getItem('ge-anon');
+      if(!a){a=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('ge-anon',a);}
+      return a;
+    }catch(_){return 'anon';}
+  }
+  function track(event,props){
+    try{
+      fetch('/api/track',{method:'POST',keepalive:true,
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({event:event,props:props||null,anon_id:anonId()})
+      }).catch(function(){});
+    }catch(_){}
+  }
+  track('landing_view');
+  document.addEventListener('click',function(e){
+    var cta=e.target.closest('a.btn');
+    if(cta)track('landing_cta_click',{label:(cta.textContent||'').trim().slice(0,60),href:cta.getAttribute('href')});
+  });
+})();
+</script>
 </body>
 </html>

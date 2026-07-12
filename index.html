@@ -1438,6 +1438,7 @@ function proPreview(panel,content){
 
 function openUpgrade(){
   const pro=isPro();
+  if(!pro)track('upgrade_modal_shown');
   const benefits=PRO_BENEFITS.map(b=>
     '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
   document.getElementById('pro-body').innerHTML=
@@ -1471,6 +1472,7 @@ async function manageOrCancel(){
 async function startCheckout(plan){
   const err=document.getElementById('pro-err');
   if(!SESSION){closeUpgrade();openAccount();return;}
+  track('checkout_started',{plan});
   if(err)err.textContent='Opening secure checkout…';
   try{
     const r=await fetch(apiBase()+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -2028,6 +2030,7 @@ function syncNav(){
 function renderPage(panelId){
   const panel=PANELS[panelId];
   const content=PANEL_CONTENT[panelId];
+  track('panel_view',{panel:panelId});
 
   document.getElementById('tb-area').textContent=panel.areaLabel;
   document.getElementById('tb-title').textContent=panel.label;
@@ -5442,6 +5445,7 @@ async function saveMid(){
     const entry=await loadEntry(val);            // validates the ID exists
     setMid(val);
     refreshIdentity(entry);
+    track('team_linked');
     toast('Team linked');
     closeMidModal();
     renderPage(currentPanel);
@@ -5607,8 +5611,11 @@ function init(){
     openPanel('dashboard');
   });
 
+  track('app_open');
+
   /* Returning from Stripe checkout: pull the new tier and tidy the URL. */
   if(/[?&]upgrade=success/.test(location.search)){
+    track('checkout_success');
     refreshTierFromCloud(0);
     try{history.replaceState({},'',location.pathname);}catch(_){}
   }
