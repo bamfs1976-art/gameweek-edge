@@ -32,8 +32,8 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 |---|---|
 | Model‑driven xP picks | Captaincy Lab, Scout AI, Transfer Solver, Fixture Planner |
 | Gameweek snapshot | Dashboard, This Gameweek |
-| Live matchday | Live Rank, Bonus Tracker, DefCon Threats, Auto‑Sub Tracker, What‑If |
-| Team linking | Squad, Transfers, Captaincy, Live Rank, Manager Report, Mini‑Leagues |
+| Live matchday | Live Percentile, Bonus Tracker, DefCon Threats, Auto‑Sub Tracker, What‑If |
+| Team linking | Squad, Transfers, Captaincy, Live Percentile, Manager Report, Mini‑Leagues |
 | Intelligence & AI | Scout AI, Ask the Scout, EO/Template/Rival tools |
 | Content | The Wire (auto blog), Team of the Week |
 
@@ -56,7 +56,7 @@ My Team
 └── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
 
 Live  (Pro)
-├── Live Rank            (Pro)   Estimated overall rank, live through the matchday
+├── Live Percentile      (Pro)   Estimated GW percentile, live through the matchday
 ├── Bonus Tracker        (Pro)   Provisional 3-2-1 bonus from live BPS
 ├── DefCon Threats       (Pro)   Players you don't own who are scoring now
 ├── Auto-Sub Tracker     (Pro)   Live projection of bench substitutions
@@ -138,8 +138,11 @@ photo cards for the top picks and a ranked list with next‑fixture difficulty.
 
 ### Live (Pro)
 
-**Live Rank** — estimated overall rank updating through the matchday, with live
-match win‑probabilities re‑forecast on the current score.
+**Live Percentile** — your live gameweek score with an estimated percentile
+versus all managers (a normal approximation around the gameweek average,
+sd ≈ 18), plus live match win‑probabilities re‑forecast on the current score.
+Deliberately framed as a statistical estimate: a true live rank requires the
+full FPL population, which no public API exposes. Panel id stays `liverank`.
 
 **Bonus Tracker** — projects the provisional **3‑2‑1 bonus** from live BPS for
 every match in play *before* the API confirms it, using the official tie rule

@@ -95,7 +95,7 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 **All 21 panels are wired to live data.**
 
 - **Free:** Dashboard, This Gameweek, My Squad (live pitch), Transfer Planner, Captaincy Lab, Fixture Planner, Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist (saved on device), Alerts, Player Compare.
-- **Pro** (gated behind the paywall): Live Rank, DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, **Scout AI**, Set Piece Register, Rotation Risk.
+- **Pro** (gated behind the paywall): Live Percentile (an estimated percentile, not a true live rank), DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, **Scout AI**, Set Piece Register, Rotation Risk.
 
 **Scout AI** is our own answer to third-party prediction sites, built on the data we already have plus Claude:
 - A transparent **predicted-points (xP)** model — FPL's expected points scaled by availability and fixture difficulty — feeds an optimiser that picks the **Team of the Week** (best valid XI, max 3 per club) and the **captain**. Captaincy Lab now ranks by xP too.

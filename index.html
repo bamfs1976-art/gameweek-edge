@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Gameweek Edge — for fantasy managers">
-<meta property="og:description" content="An AI scout, predicted points, live rank, mini-leagues and alerts for Fantasy Premier League managers.">
+<meta property="og:description" content="An AI scout, predicted points, live matchday tracking, mini-leagues and alerts for Fantasy Premier League managers.">
 <meta property="og:image" content="https://gameweekedge.app/icons/og.png">
 <meta property="og:url" content="https://gameweekedge.app/">
 <meta name="twitter:card" content="summary_large_image">
@@ -1129,7 +1129,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
       <circle cx="30" cy="11" r="3.4" fill="#fff"/>
     </svg>
     <h3 id="onb-title">Welcome to Gameweek Edge</h3>
-    <p style="color:var(--text-2);font-size:.88rem;margin-bottom:18px;line-height:1.5">Link your FPL team to unlock your squad, captaincy, transfers, live rank and AI scout — all from the official data. You can always explore first.</p>
+    <p style="color:var(--text-2);font-size:.88rem;margin-bottom:18px;line-height:1.5">Link your FPL team to unlock your squad, captaincy, transfers, live percentile and AI scout — all from the official data. You can always explore first.</p>
     <button class="btn btn-primary" style="width:100%;justify-content:center" id="onb-link">Link my team</button>
     <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px" data-onb-close>Look around first</button>
   </div>
@@ -1413,7 +1413,7 @@ function linkBox(){
    ═══════════════════════════════════════════════════════════ */
 const PRICE={monthly:'£3.99',season:'£24.99'};
 const PRO_BENEFITS=[
-  ['pulse','Live matchday tracking','Live rank, threats and auto-subs as the points land.'],
+  ['pulse','Live matchday tracking','Live percentile, threats and auto-subs as the points land.'],
   ['users','Rival intelligence','Scout rivals, effective ownership and the top template.'],
   ['whistle','Deeper player data','Set-piece order and rotation risk on every player.']
 ];
@@ -1719,7 +1719,7 @@ const NAV = [
   {
     id:'live', label:'Live', icon:'live', tier:'paid',
     panels:[
-      {id:'liverank', label:'Live Rank', icon:'pulse', tier:'paid'},
+      {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'paid'},
       {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'paid'},
       {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid'},
       {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
@@ -1826,7 +1826,7 @@ const PANEL_CONTENT = {
     layout:'cards3'
   },
   liverank:{
-    desc:'Your estimated overall rank, updating live through the matchday.',
+    desc:'Your live gameweek score and an estimated percentile versus all managers, updating through the matchday. A statistical estimate — a true live rank needs the full FPL population.',
     layout:'standard'
   },
   bonus:{
@@ -2260,7 +2260,7 @@ async function hydrateDashboard(host){
           '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">xP</span></div>'+rows+'</div>'+
           '<div class="dl-sub" style="margin-top:10px">From the fitted team-strength model + validated player projections.</div></div>'+
         '<div class="card"><div class="ge-state">'+svg(ICON.team)+
-          '<b>Make it yours</b><p>Link your FPL team for your squad, captaincy, live rank and transfer plans.</p>'+
+          '<b>Make it yours</b><p>Link your FPL team for your squad, captaincy, live percentile and transfer plans.</p>'+
           '<div style="display:flex;gap:8px;justify-content:center;margin-top:10px">'+
           '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>'+
           '<button class="btn btn-ghost btn-sm" onclick="loadDemoTeam()">Try a demo</button></div></div></div>'+
@@ -3685,7 +3685,9 @@ function teamGamesPlayed(fixtures){
   const m={};fixtures.forEach(f=>{if(f.finished){m[f.team_h]=(m[f.team_h]||0)+1;m[f.team_a]=(m[f.team_a]||0)+1;}});return m;
 }
 
-/* ── Live Rank: live GW tracker ────────────────────────── */
+/* ── Live Percentile: live GW tracker (panel id stays `liverank`
+   for deep-link/back-compat). The headline number is a
+   normal-approximation percentile, not a true rank. */
 /* Conditional in-play forecast: remaining-time Poisson on top of the
    current score. rem=0 collapses to the final result; rem=1 is the
    pre-match forecast. */
@@ -3762,7 +3764,7 @@ async function hydrateLiveRank(host){
     '</div>'+
     liveOddsCard(b,fixtures)+
     '<div class="card"><div class="ge-state">'+svg(ICON.pulse)+
-      '<b>Live through the matchday</b><p>Your points update as matches play out. An exact live overall rank needs the full FPL population; this tracks your score, players left, and your margin over the gameweek average.</p></div></div>';
+      '<b>Live through the matchday</b><p>Your points update as matches play out. The percentile is a statistical estimate (a normal approximation around the gameweek average, sd ≈ 18) — a true live rank requires the full FPL population, which no public API exposes. This tracks your score, players left, and your margin over the average.</p></div></div>';
 }
 
 /* Live win-probability card for the current gameweek's fixtures. */
