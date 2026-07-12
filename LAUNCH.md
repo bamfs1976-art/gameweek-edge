@@ -22,9 +22,18 @@ You already connected the repo. Check: Netlify → your site → **Deploys** sho
 ## Step 3 — Gather the values you already have
 - **Supabase URL:** `https://knodunjnsxelmpziupwk.supabase.co`
 - **Supabase service-role key:** Supabase → your project → **Project settings → API → `service_role`** (secret — copy it).
-- **VAPID keys** (I generated these for push — paste as-is):
-  - `VAPID_PUBLIC_KEY=BNQZSMXXiG3U2M9EJLB2uZNUZUZ3XY8wfSWkD_ZoEh929KXs8NsWZL98tJ_eIxQRXLX2dau3rYq81GjfrLseHqA`
-  - `VAPID_PRIVATE_KEY=K7yfX5OiXRLYAoxixIYCnw2W_ERi1_ICBoNtDczx8kU`
+- **VAPID keys** (for push — generate your own, never commit them):
+
+  > ⚠️ **Security notice:** an earlier version of this file contained a live VAPID
+  > private key committed to the repository. **That keypair must be treated as
+  > compromised.** Generate a brand-new keypair (`npx web-push generate-vapid-keys`),
+  > set the new values in the Netlify environment only, and redeploy. Existing push
+  > subscriptions were created against the old key and will stop working — users
+  > simply re-enable push from the Alerts panel to re-subscribe. Never paste key
+  > values into this file or anywhere else in the repo.
+
+  - `VAPID_PUBLIC_KEY=<set in Netlify env — generate with: npx web-push generate-vapid-keys>`
+  - `VAPID_PRIVATE_KEY=<set in Netlify env — generate with: npx web-push generate-vapid-keys>`
   - `VAPID_SUBJECT=mailto:you@yourdomain.com`  ← put a real email you own
 
 ## Step 4 — Put everything into Netlify
@@ -39,8 +48,8 @@ You already connected the repo. Check: Netlify → your site → **Deploys** sho
 | `STRIPE_WEBHOOK_SECRET` | from Step 4b |
 | `SUPABASE_URL` | the URL above |
 | `SUPABASE_SERVICE_ROLE_KEY` | the service-role key |
-| `VAPID_PUBLIC_KEY` | the public key above |
-| `VAPID_PRIVATE_KEY` | the private key above |
+| `VAPID_PUBLIC_KEY` | your freshly generated public key |
+| `VAPID_PRIVATE_KEY` | your freshly generated private key (never commit it) |
 | `VAPID_SUBJECT` | `mailto:` your email |
 
 **b) Add the Stripe webhook:** Stripe → **Developers → Webhooks → Add endpoint** → URL = `https://YOUR-SITE/api/stripe-webhook` → select events **checkout.session.completed**, **customer.subscription.updated**, **customer.subscription.deleted** → save → copy the **Signing secret** (`whsec_…`) into `STRIPE_WEBHOOK_SECRET`.
