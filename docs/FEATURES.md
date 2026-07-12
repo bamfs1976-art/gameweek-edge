@@ -73,7 +73,7 @@ Players
 ├── Player List          (free)  Full sortable table + Cards view + CSV export
 ├── Player Compare       (free)  Up to 4 players side by side
 ├── Differentials        (free)  <12% owned in form + DefCon leaders
-├── Price Predictor      (free)  Net-transfer momentum + value tables
+├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
 ├── Injury Monitor       (free)  Fitness flags by ownership
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
 └── Rotation Risk        (Pro)   Start-rate risk for premium players
@@ -202,8 +202,11 @@ differential, value, defence and fixture questions, grounded in the model.
 **Differentials** — <12% owned in form, plus a **Defensive‑contribution leaders**
 table (the 2025/26 DefCon scoring category).
 
-**Price Predictor** — net‑transfer momentum (risers/fallers) and **points‑per‑million**
-best/worst value tables.
+**Price Predictor** — a threshold model estimates each player's **% likelihood
+of a price rise/fall tonight** (net transfers vs an ownership‑scaled threshold,
+logistic mapping, capped 5–95%, labelled an estimate), with sorted riser/faller
+lists; net‑transfer momentum is kept as a secondary signal, plus
+**points‑per‑million** best/worst value tables.
 
 **Injury Monitor** — fitness flags, suspension risk and return chance by ownership.
 

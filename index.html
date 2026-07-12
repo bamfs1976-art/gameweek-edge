@@ -1882,7 +1882,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   price:{
-    desc:'Forward-looking price momentum so you buy before the overnight lock.',
+    desc:'Estimated rise/fall likelihood tonight for every player, from net transfers against an ownership-scaled threshold — plus transfer momentum and value tables.',
     layout:'standard'
   },
   injuries:{
@@ -3005,16 +3005,50 @@ function valueList(b,title,arr,highColor){
       '<span class="dl-col" style="font-size:.7rem;color:var(--text-3)">pts/£m</span></div>').join('')+'</div></div>';
 }
 
+/* ── Price-change probability model ──────────────────────
+   FPL moves a price when net transfers this gameweek cross a hidden
+   threshold that scales with how many managers own the player. We
+   approximate that behaviour: threshold ≈ max(20k, 30% of owners),
+   owners = ownership% × total managers, then map signed progress
+   towards the threshold through a logistic curve. Monotonic in net
+   transfers; heavily-transferred low-ownership players (small
+   threshold) correctly show high likelihoods. Capped 5–95% and always
+   labelled an estimate — the real algorithm is not public. */
+function priceChangeProb(el,totalPlayers){
+  const inn=el.transfers_in_event||0,out=el.transfers_out_event||0;
+  const net=inn-out;
+  const own=Math.max(0.1,parseFloat(el.selected_by_percent)||0.1);
+  const owners=Math.max(1,(totalPlayers||10e6)*own/100);
+  const threshold=Math.max(20000,0.30*owners);
+  const progress=net/threshold;
+  const raw=100/(1+Math.exp(-4*(Math.abs(progress)-0.5)));
+  const prob=Math.max(5,Math.min(95,Math.round(raw)));
+  return {dir:net>0?'rise':net<0?'fall':'flat',net,prob,progress};
+}
 async function hydratePrice(host){
   const b=await boot();
+  const total=b.raw.total_players||10e6;
   const score=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
   const ppm=e=>e.now_cost?e.total_points/(e.now_cost/10):0;
   const played=b.elements.filter(e=>(e.minutes||0)>=270);
   const best=played.map(e=>({e,v:ppm(e)})).sort((a,c)=>c.v-a.v).slice(0,5);
   const prem=b.elements.filter(e=>(e.now_cost||0)>=80&&(e.minutes||0)>=270);
   const worst=prem.map(e=>({e,v:ppm(e)})).sort((a,c)=>a.v-c.v).slice(0,5);
-  const risers=b.elements.slice().sort((a,c)=>score(c)-score(a)).slice(0,12);
-  const fallers=b.elements.slice().sort((a,c)=>score(a)-score(c)).slice(0,12);
+
+  /* Tonight's likelihoods from the threshold model. */
+  const scored=b.elements.map(e=>({e,pc:priceChangeProb(e,total)}));
+  const riseP=scored.filter(x=>x.pc.dir==='rise').sort((a,c)=>c.pc.prob-a.pc.prob||c.pc.net-a.pc.net).slice(0,12);
+  const fallP=scored.filter(x=>x.pc.dir==='fall').sort((a,c)=>c.pc.prob-a.pc.prob||a.pc.net-c.pc.net).slice(0,12);
+  const probTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
+    dlTable(b,arr.map(x=>x.e),['Tonight','Net '+(up?'in':'out')],e=>{
+      const pc=priceChangeProb(e,total);
+      return ['<span style="color:'+(up?'var(--green)':'var(--red)')+';font-weight:700">'+pc.prob+'%</span>',
+        fmtK(Math.abs(pc.net))];
+    })+'</div>';
+
+  /* Momentum view kept as a secondary signal. */
+  const risers=b.elements.slice().sort((a,c)=>score(c)-score(a)).slice(0,8);
+  const fallers=b.elements.slice().sort((a,c)=>score(a)-score(c)).slice(0,8);
   const tbl=(title,arr,pos)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
     dlTable(b,arr,['Net in','Price Δ'],e=>[
       (pos?'+':'')+fmtK(score(e)),
@@ -3025,9 +3059,13 @@ async function hydratePrice(host){
       (worst.length?valueList(b,'Worst value — premiums underdelivering',worst,'var(--red)'):'')
     : '');
   host.innerHTML=
-    '<div class="dl-sub" style="margin-bottom:12px">Live transfer momentum this gameweek. Net transfers drive price changes — buy risers before the overnight update.</div>'+
-    tbl('Rising — most bought',risers,true)+
-    tbl('Falling — most sold',fallers,false)+
+    '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move tonight, from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL’s exact algorithm is not public.</div>'+
+    probTbl('Likely risers tonight — estimate',riseP,true)+
+    probTbl('Likely fallers tonight — estimate',fallP,false)+
+    '<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
+      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys → higher rise chance), and low-owned players surge fastest because their threshold is small.</p></div>'+
+    tbl('Momentum — most bought (secondary signal)',risers,true)+
+    tbl('Momentum — most sold (secondary signal)',fallers,false)+
     valueCards+
     (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
 }
