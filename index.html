@@ -2142,6 +2142,14 @@ function armLiveRefresh(panelId){
   },45000);
 }
 function markLive(isLive){window._gwLive=!!isLive;}
+/* Coming back to the tab (or foregrounding the app) mid-gameweek should
+   show fresh numbers immediately, not after the next 45s tick. */
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden||!LIVE_TIMER)return;
+  if(!LIVE_PANELS.has(currentPanel)||window._gwLive===false)return;
+  const h=document.getElementById('ge-data');
+  if(h&&WIRED[currentPanel])Promise.resolve().then(()=>WIRED[currentPanel](h)).catch(()=>{});
+});
 /* Push a live snapshot to the iOS widget + Live Activity via the GWLive
    Capacitor plugin. No-ops on web and older iOS. Starts the Live Activity
    the first time a gameweek is in play, updates it thereafter, and ends it

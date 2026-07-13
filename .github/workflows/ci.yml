@@ -32,3 +32,6 @@ jobs:
 
       - name: Core model unit tests
         run: node dev/test-core.mjs
+
+      - name: Shell integrity guard
+        run: node scripts/check-shell.mjs
