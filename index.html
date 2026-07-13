@@ -641,6 +641,8 @@ html.offline .net-banner{transform:translateY(0)}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .tb-right{display:flex;align-items:center;gap:9px}
+.tb-updated{font-size:.66rem;font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:560px){.tb-updated{display:none}}
 
 /* ── BUTTONS ───────────────────────────────────────────── */
 .btn{
@@ -1021,6 +1023,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
           <span id="theme-label">Light</span>
         </button>
       </div>
+      <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>
       <p class="sb-foot-legal">Independent app — not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively. <a href="/privacy.html" style="color:inherit;text-decoration:underline">Privacy policy</a></p>
     </div>
   </aside>
@@ -1056,6 +1059,12 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
         </div>
       </div>
       <div class="tb-right">
+        <span id="tb-updated" class="tb-updated" aria-live="polite"></span>
+        <button class="btn btn-ghost btn-icon" id="export-btn" aria-label="Export the current view as CSV" title="Export the current view as CSV">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/>
+          </svg>
+        </button>
         <button class="btn btn-ghost btn-icon" id="refresh-btn" aria-label="Refresh data">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
@@ -1232,13 +1241,29 @@ function track(event,props){
     }).catch(()=>{});
   }catch(_){/* analytics must never break the app */}
 }
+/* Data-freshness stamp in the topbar: notes the age of whatever slice the
+   current panel just consumed — live fetches and cache hits alike — so the
+   user always knows how old the numbers are. */
+let LAST_DATA_T=0;
+function noteData(t){
+  if(!t)return;
+  LAST_DATA_T=Math.max(LAST_DATA_T,t);
+  const el=document.getElementById('tb-updated');
+  if(!el)return;
+  const d=new Date(LAST_DATA_T);
+  el.textContent='Data '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  el.title='Newest data fetched '+d.toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})+
+    ' — cached slices can be a few minutes older. The refresh button forces a refetch.';
+}
 async function api(path,{timeout=14000}={}){
   const ctrl=new AbortController();
   const timer=setTimeout(()=>ctrl.abort(),timeout);
   try{
     const r=await fetch(apiBase()+'/api/fpl/'+path,{signal:ctrl.signal,headers:{'Accept':'application/json'}});
     if(!r.ok)throw Object.assign(new Error('HTTP '+r.status),{status:r.status});
-    return await r.json();
+    const v=await r.json();
+    noteData(Date.now());
+    return v;
   }finally{clearTimeout(timer);}
 }
 
@@ -1246,9 +1271,9 @@ async function api(path,{timeout=14000}={}){
 const MEM={};
 async function cached(key,ttl,loader){
   const now=Date.now();
-  if(MEM[key]&&now-MEM[key].t<ttl)return MEM[key].v;
+  if(MEM[key]&&now-MEM[key].t<ttl){noteData(MEM[key].t);return MEM[key].v;}
   try{const raw=localStorage.getItem('ge-c-'+key);if(raw){const o=JSON.parse(raw);
-    if(now-o.t<ttl){MEM[key]={t:o.t,v:o.v};return o.v;}}}catch(_){}
+    if(now-o.t<ttl){MEM[key]={t:o.t,v:o.v};noteData(o.t);return o.v;}}}catch(_){}
   const v=await loader();
   MEM[key]={t:now,v};
   try{localStorage.setItem('ge-c-'+key,JSON.stringify({t:now,v}));}catch(_){/* quota: memory only */}
@@ -2015,6 +2040,9 @@ function openPanel(panelId){
   syncNav();
   closeSidebar();
   window.scrollTo({top:0});
+  /* Panel deep links: the current panel lives in the hash so any view can
+     be bookmarked or shared. replaceState keeps the history clean. */
+  try{history.replaceState(null,'',panelId==='dashboard'?location.pathname+location.search:'#'+panelId);}catch(_){}
 }
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
@@ -6179,6 +6207,30 @@ function closeSidebar(){
   document.getElementById('overlay').classList.remove('show');
 }
 
+/* ── EXPORT CURRENT VIEW ───────────────────────────────── */
+/* Generic CSV of whatever the active panel is showing: the Player List
+   keeps its richer dedicated export; every other panel with a rendered
+   table gets a faithful dump of it. */
+function exportViewCSV(){
+  if(currentPanel==='allplayers'&&typeof exportPlayersCSV==='function'){exportPlayersCSV();return;}
+  const page=document.querySelector('.page.active');
+  const table=page&&page.querySelector('table');
+  if(!table){toast('Nothing tabular on this panel to export');return;}
+  const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+  const lines=Array.prototype.map.call(table.querySelectorAll('tr'),tr=>
+    Array.prototype.map.call(tr.querySelectorAll('th,td'),c=>q(c.innerText.replace(/\s+/g,' ').trim())).join(','));
+  if(lines.length<2){toast('Nothing tabular on this panel to export');return;}
+  try{
+    const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='gameweek-edge-'+currentPanel+'.csv';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    toast((lines.length-1)+' rows exported');
+    window.GENative&&GENative.hapticSuccess&&GENative.hapticSuccess();
+  }catch(_){toast('Export failed on this device');}
+}
+
 /* ── REFRESH ───────────────────────────────────────────── */
 /* Spins the topbar icon, drops live caches and re-hydrates the panel. */
 function doRefresh(){
@@ -6396,6 +6448,16 @@ function init(){
   const pm=(location.search.match(/[?&]panel=([a-z-]+)/)||[])[1];
   if(pm&&PANELS[pm]){openPanel(pm);
     try{history.replaceState({},'',location.pathname);}catch(_){}}
+
+  /* Hash deep link (#panelId) — bookmarkable views; openPanel keeps it fresh. */
+  const hp=location.hash.slice(1);
+  if(hp&&PANELS[hp])openPanel(hp);
+  window.addEventListener('hashchange',()=>{
+    const p=location.hash.slice(1);
+    if(p&&PANELS[p]&&p!==currentPanel)openPanel(p);
+  });
+
+  document.getElementById('export-btn').addEventListener('click',exportViewCSV);
 
   /* Live gameweek strip + linked-team label + Pro tier. */
   hydrateGwStrip();
