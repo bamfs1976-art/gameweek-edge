@@ -46,6 +46,11 @@ function extractConst(src, name) {
   if (idx < 0) throw new Error('const not found: ' + name);
   return extractBlock(src, idx) + ';';
 }
+function extractLine(src, re) {
+  const m = src.match(re);
+  if (!m) throw new Error('line not found: ' + re);
+  return m[0];
+}
 
 /* ── build the isolated context ─────────────────────────── */
 const pieces = [
@@ -60,11 +65,14 @@ const pieces = [
   extractFn(html, 'bestXI'),
   extractFn(html, 'minutesSecurity'),
   extractFn(html, 'projectXI'),
+  extractLine(html, /const LG_GRID=\d+,LG_MAXG=\d+;/),
+  extractFn(html, 'lgScoreGrid'),
+  extractFn(html, 'lgCleanSheets'),
   extractFn(aiSrc, 'fitJSON')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, minutesSecurity, projectXI, fitJSON};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, fitJSON};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -183,6 +191,25 @@ ok(proj.xi.every(x => x.p >= 0 && x.p <= 1), 'start likelihoods within [0,1]');
 const injured = squad.map(e => e.element_type === 4 ? { ...e, status: e.id === 13 ? 'i' : e.status } : e);
 const proj2 = core.projectXI({ elements: injured }, 7, 10);
 ok(proj2.xi.filter(x => x.el.status === 'i').every(x => x.p <= 0.06), 'injured players carry a floor score');
+
+/* ── clean-sheet probabilities from the score grid ──────── */
+section('lgScoreGrid / lgCleanSheets');
+const grid = core.lgScoreGrid(1.5, 1.1, -0.074);
+let gridSum = 0;
+for (const p of grid) gridSum += p;
+ok(Math.abs(gridSum - 1) < 1e-9, 'score grid sums to 1');
+const csPair = core.lgCleanSheets(grid);
+ok(csPair[0] >= 0 && csPair[0] <= 1 && csPair[1] >= 0 && csPair[1] <= 1, 'CS probabilities within [0,1]');
+ok(csPair[0] > csPair[1], 'facing the lower-scoring attack ⇒ higher CS%');
+const gridWeakOpp = core.lgScoreGrid(1.5, 0.6, -0.074);
+ok(core.lgCleanSheets(gridWeakOpp)[0] > csPair[0], 'stronger defence (lower xGA) ⇒ higher CS%');
+ok(grid[0] <= Math.min(csPair[0], csPair[1]) + 1e-12, 'P(0-0) never exceeds either CS probability');
+const gridPlain = core.lgScoreGrid(1.5, 1.1, null); /* no DC correction */
+const csPlain = core.lgCleanSheets(gridPlain);
+ok(Math.abs(csPlain[0] - Math.exp(-1.1)) < 1e-3, 'plain-Poisson home CS ≈ e^-λaway');
+ok(Math.abs(csPlain[1] - Math.exp(-1.5)) < 1e-3, 'plain-Poisson away CS ≈ e^-λhome');
+const csDC = core.lgCleanSheets(core.lgScoreGrid(1.5, 1.1, -0.074));
+ok(csDC[0] !== csPlain[0], 'Dixon-Coles correction moves the low-score mass');
 
 /* ── fitJSON (ai.js): valid JSON within budget ──────────── */
 section('fitJSON always yields valid JSON within budget');

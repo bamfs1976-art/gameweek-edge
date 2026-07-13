@@ -1698,7 +1698,7 @@ function maybeOnboard(){
 function closeOnboard(){document.getElementById('onb-modal').classList.remove('show');
   try{localStorage.setItem('ge-onboarded','1');}catch(_){}}
 
-/* ── NAVIGATION MODEL — 7 areas, 36 panels ──────────────── */
+/* ── NAVIGATION MODEL — 7 areas, 37 panels ──────────────── */
 const NAV = [
   {
     id:'home', label:'Home', icon:'home',
@@ -1753,6 +1753,7 @@ const NAV = [
     id:'planner', label:'Planner', icon:'planner',
     panels:[
       {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
+      {id:'csmatrix', label:'Clean Sheet Matrix', icon:'shield', tier:'free'},
       {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free'},
       {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free'},
       {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid'},
@@ -1904,6 +1905,10 @@ const PANEL_CONTENT = {
   },
   fixtures:{
     desc:'A six-gameweek fixture grid with model-based difficulty, expected goals and clean-sheet odds.',
+    layout:'standard'
+  },
+  csmatrix:{
+    desc:'Every club’s clean-sheet probability for the coming gameweeks — from our backtested match model, the same engine as the season simulator.',
     layout:'standard'
   },
   leagues:{
@@ -5290,6 +5295,16 @@ function lgCum(g){const c=new Float64Array(g.length);let r=0;for(let i=0;i<g.len
 function lgSample(cum,rnd){const x=rnd();let lo=0,hi=cum.length-1;while(lo<hi){const m=(lo+hi)>>1;if(cum[m]<x)lo=m+1;else hi=m;}return [Math.floor(lo/LG_GRID),lo%LG_GRID];}
 function lgOutcome(g){let pH=0,pD=0,pA=0;for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++){const p=g[h*LG_GRID+a];if(h>a)pH+=p;else if(h===a)pD+=p;else pA+=p;}return [pH,pD,pA];}
 function lgMarket(g){let btts=0,over=0;const cells=[];for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++){const p=g[h*LG_GRID+a];if(h>=1&&a>=1)btts+=p;if(h+a>=3)over+=p;cells.push([h,a,p]);}cells.sort((x,y)=>y[2]-x[2]);return {btts,over,top:cells.slice(0,5)};}
+/* Clean-sheet probabilities from a score grid: [home CS, away CS].
+   P(home CS) = P(away scores 0) = the grid's away-goals-0 column;
+   P(away CS) = P(home scores 0) = the home-goals-0 row. Same grid
+   (with the Dixon-Coles low-score correction) the simulator samples. */
+function lgCleanSheets(g){
+  let csH=0,csA=0;
+  for(let h=0;h<LG_GRID;h++)csH+=g[h*LG_GRID];
+  for(let a=0;a<LG_GRID;a++)csA+=g[a];
+  return [csH,csA];
+}
 function lgCondCum(g,kind){const o=new Float64Array(g.length);let s=0;for(let h=0;h<LG_GRID;h++)for(let a=0;a<LG_GRID;a++){const i=h*LG_GRID+a;const ok=kind==='H'?h>a:kind==='A'?a>h:h===a;if(ok){o[i]=g[i];s+=g[i];}}if(s>0)for(let i=0;i<o.length;i++)o[i]/=s;return lgCum(o);}
 function lgNewTable(names){const t={};names.forEach(n=>t[n]={W:0,D:0,L:0,GF:0,GA:0,Pts:0});return t;}
 function lgRec(t,h,a,hg,ag){const rh=t[h],ra=t[a];rh.GF+=hg;rh.GA+=ag;ra.GF+=ag;ra.GA+=hg;if(hg>ag){rh.W++;ra.L++;rh.Pts+=3;}else if(hg<ag){ra.W++;rh.L++;ra.Pts+=3;}else{rh.D++;ra.D++;rh.Pts++;ra.Pts++;}}
@@ -5500,6 +5515,91 @@ async function hydrateMatchForecast(host){
   host.querySelector('#mf-md').addEventListener('change',render);render();
 }
 
+/* ── Clean Sheet Matrix: P(clean sheet) per club per gameweek ──
+   For every 2026/27 club in the model bundle, the probability of a
+   clean sheet in each of the next 6 (or 10) gameweeks' fixtures.
+   P(CS) = P(opponent scores 0), read straight off the Dixon-Coles
+   score grid via lgCleanSheets — the same engine as the season
+   simulator. Pre-season the window starts at GW1. Computed once per
+   bundle fetch and cached (MEM._csm). Free tier. */
+let CSM_N=6;
+function csFdr(cs){return 'fdr-'+(cs>=0.42?1:cs>=0.33?2:cs>=0.24?3:cs>=0.15?4:5);}
+function csFdrColor(cs){return cs<0.15?'#fff':(cs>=0.24&&cs<0.33)?'#3a4650':'#0c1014';}
+/* Short code for a model club name, via the FPL short-name mapping. */
+let LG_SHORT=null;
+function lgShort(name){
+  if(!LG_SHORT){LG_SHORT={};Object.keys(FPL_TO_LG).forEach(k=>LG_SHORT[FPL_TO_LG[k]]=k);}
+  return LG_SHORT[name]||String(name||'').slice(0,3).toUpperCase();
+}
+function csMatrixData(m){
+  if(MEM._csmSrc===m)return MEM._csm;
+  const c=m.constants,names=Object.keys(m.teams||{}),st=m.season_state||{};
+  const startMd=Math.min(38,(st.live?(st.played_md||0):0)+1);
+  const H=Math.min(10,39-startMd);
+  const rows={};names.forEach(n=>rows[n]=[]);
+  for(let i=0;i<H;i++){
+    names.forEach(n=>rows[n].push([]));
+    const md=(m.fixtures||[])[startMd-1+i];
+    if(!md)continue;
+    md.forEach(([h,a])=>{
+      const [lh,la]=lgLambdas(m.teams,c,h,a);
+      const cs=lgCleanSheets(lgScoreGrid(lh,la,c.DC_RHO));
+      if(rows[h])rows[h][i].push({opp:a,home:true,cs:cs[0]});
+      if(rows[a])rows[a][i].push({opp:h,home:false,cs:cs[1]});
+    });
+  }
+  const r={rows,names,startMd,horizon:H,live:!!st.live,label:st.label||''};
+  MEM._csmSrc=m;MEM._csm=r;
+  return r;
+}
+async function hydrateCsMatrix(host){
+  host.innerHTML=skel(6);
+  let m;try{m=await loadModelBundle();}catch(e){
+    host.innerHTML=stateBox('shield','Clean-sheet odds unavailable','The matrix loads from our PL Simulator model bundle — try again in a moment.');return;}
+  if(!m.fixtures||!m.teams||!Object.keys(m.teams).length){
+    host.innerHTML=stateBox('shield','Fixtures not set','The clean-sheet matrix appears once the season’s clubs and fixtures are in the model.');return;}
+  const D=csMatrixData(m);
+  host.innerHTML=
+    '<div class="card"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Clean Sheet Matrix'+
+      (D.live?'':' <span class="badge badge-amber">pre-season</span>')+'</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Each cell is the modelled chance the club keeps a clean sheet in that gameweek’s fixture — from our backtested match model, the same engine as the season simulator.'+
+      (D.live?'':' Pre-season, the window is GW1–'+(D.startMd+Math.min(CSM_N,D.horizon)-1)+' of 2026/27.')+'</p>'+
+    '<div class="seg" id="csm-seg" style="margin-bottom:12px">'+
+      '<button class="seg-b'+(CSM_N===6?' on':'')+'" data-n="6">Next 6</button>'+
+      '<button class="seg-b'+(CSM_N===10?' on':'')+'" data-n="10">Next 10</button></div>'+
+    '<div id="csm-out"></div>'+
+    '<div class="dl-sub" style="margin-top:10px">Greener = likelier clean sheet. <b>(a)</b> marks an away fixture; a club with two fixtures in a gameweek shows both stacked, a blank gameweek shows –. Rows sort by average CS% over the window.</div>'+
+    '</div>';
+  const render=()=>{
+    const N=Math.min(CSM_N,D.horizon);
+    const order=D.names.map(n=>{
+      let s=0,k=0;
+      D.rows[n].slice(0,N).forEach(cell=>cell.forEach(f=>{s+=f.cs;k++;}));
+      return {n,mean:k?s/k:0};
+    }).sort((x,y)=>y.mean-x.mean);
+    const head='<tr><th class="tm">Club</th>'+Array.from({length:N},(_,i)=>'<th>GW'+(D.startMd+i)+'</th>').join('')+'<th>Avg</th></tr>';
+    const body=order.map(o=>{
+      const cells=D.rows[o.n].slice(0,N).map(cell=>{
+        if(!cell.length)return '<td class="blank">–</td>';
+        if(cell.length===1){const f=cell[0];
+          return '<td class="cell '+csFdr(f.cs)+'">'+esc(lgShort(f.opp))+(f.home?'':' (a)')+' '+Math.round(f.cs*100)+'</td>';}
+        return '<td class="blank" style="padding:2px 3px">'+cell.map(f=>
+          '<div class="'+csFdr(f.cs)+'" style="border-radius:5px;padding:2px 5px;margin:1px 0;font-weight:800;color:'+csFdrColor(f.cs)+'">'+
+            esc(lgShort(f.opp))+(f.home?'':' (a)')+' '+Math.round(f.cs*100)+'</div>').join('')+'</td>';
+      }).join('');
+      return '<tr><td class="tm">'+lgDot(o.n)+esc(o.n)+'</td>'+cells+
+        '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+Math.round(o.mean*100)+'</td></tr>';
+    }).join('');
+    host.querySelector('#csm-out').innerHTML='<div class="fdr"><table>'+head+body+'</table></div>';
+  };
+  host.querySelectorAll('#csm-seg .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
+    host.querySelectorAll('#csm-seg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+    CSM_N=parseInt(btn.dataset.n,10)||6;
+    render();
+  }));
+  render();
+}
+
 /* ── Minutes security: how nailed a player's minutes look ──
    Pure 0–100 score: a blend of starts share (65%, starts / club
    games) and minutes share (35%, minutes / (club games × 90)),
@@ -5620,6 +5720,7 @@ const WIRED={
   allplayers:hydrateAllPlayers,
   compare:hydrateCompare,
   fixtures:hydrateFixtures,
+  csmatrix:hydrateCsMatrix,
   diffs:hydrateDiffs,
   price:hydratePrice,
   injuries:hydrateInjuries,

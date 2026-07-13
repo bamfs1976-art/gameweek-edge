@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **7 areas** and **36 panels**. Free panels are open
+Navigation is organised into **7 areas** and **37 panels**. Free panels are open
 to everyone; **Pro** panels require an upgrade (or owner access, see §9).
 
 ```
@@ -81,6 +81,7 @@ Players
 
 Planner
 ├── Fixture Planner      (free)  6-GW model FDR grid, xGF, clean-sheet odds
+├── Clean Sheet Matrix   (free)  P(clean sheet) per club per GW, 6/10-GW window
 ├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
 ├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
 ├── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
@@ -235,6 +236,14 @@ plus confirmed penalty / direct‑FK / corner order.
 
 **Fixture Planner** — 6‑gameweek grid with model FDR (from win odds), expected
 goals for, and clean‑sheet odds; plus the upcoming match outlook.
+
+**Clean Sheet Matrix** — for every 2026/27 club (from the shared model bundle),
+the probability of a clean sheet in each of the next 6 or 10 gameweeks'
+fixtures. P(CS) = P(opponent scores 0), read off the same Dixon‑Coles score
+grid the season simulator samples (`lgScoreGrid` → `lgCleanSheets`). Rows sort
+by average CS% over the window; cells show opponent + H/(a) on a green→red
+scale; doubles stack in the cell, blanks show –. Cached per bundle fetch.
+Pre‑season the window is GW1–6 of the new season.
 
 **Mini‑Leagues** — your **classic** and **head‑to‑head** leagues. Classic shows
 total + rank movement and a **Gameweek awards** tool (best captain, bench
