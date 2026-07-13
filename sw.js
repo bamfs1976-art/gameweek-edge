@@ -3,7 +3,7 @@
    assets cache-first. Live FPL data (/api/fpl/*) is never touched here —
    the app's own data layer decides what is fresh vs cached. */
 
-const VERSION = 'ge-v3';
+const VERSION = 'ge-v4';
 const SHELL = [
   '/',
   '/index.html',

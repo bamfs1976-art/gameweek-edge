@@ -28,7 +28,7 @@
 <style>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
-   Brand, 7-area navigation, 36 panels as navigable pages.
+   Brand, 7-area navigation, 38 panels as navigable pages.
    Placeholder content. No live API, accounts or paywall yet.
    ═══════════════════════════════════════════════════════════ */
 
@@ -1698,7 +1698,7 @@ function maybeOnboard(){
 function closeOnboard(){document.getElementById('onb-modal').classList.remove('show');
   try{localStorage.setItem('ge-onboarded','1');}catch(_){}}
 
-/* ── NAVIGATION MODEL — 7 areas, 37 panels ──────────────── */
+/* ── NAVIGATION MODEL — 7 areas, 38 panels ──────────────── */
 const NAV = [
   {
     id:'home', label:'Home', icon:'home',
@@ -1711,6 +1711,7 @@ const NAV = [
   {
     id:'myteam', label:'My Team', icon:'team',
     panels:[
+      {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free'},
       {id:'squad', label:'My Squad', icon:'squad', tier:'free'},
       {id:'transfers', label:'Transfer Planner', icon:'swap', tier:'free'},
       {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'}
@@ -1817,6 +1818,10 @@ const PANEL_CONTENT = {
   },
   scenariolab:{
     desc:'Pin results — a win, draw or exact score — and re-run the season to see how the title, European and relegation odds shift.',
+    layout:'standard'
+  },
+  draft:{
+    desc:'Build your 2026/27 squad before the game launches — 15 players, £100.0m, the real FPL rules, with projected points over GW1–6 from our model.',
     layout:'standard'
   },
   squad:{
@@ -5699,6 +5704,382 @@ async function hydrateLineups(host){
   if(sel)sel.addEventListener('change',()=>{LINEUP_TEAM=parseInt(sel.value,10);hydrateLineups(host);});
 }
 
+/* ═══════════════════════════════════════════════════════════
+   PRE-SEASON DRAFT — plan the 2026/27 squad before launch.
+   Standard FPL rules: 15 players (2 GK / 5 DEF / 5 MID / 3 FWD),
+   £100.0m budget, max 3 per club. Prices are last season's final
+   prices from the bootstrap — a launch estimate, labelled as such.
+   xP6 projects points over GW1–6 from last season's per-90 points
+   rate × availability × a fixture-ease factor over the club's first
+   six 2026/27 fixtures from the model bundle (via plsimMatch on the
+   bundle's fitted ratings). Over-budget drafting is allowed (the bank
+   goes red); only a valid, complete draft saves to ge-draft-v1.
+   Players from relegated clubs are excluded by checking bootstrap
+   club names against the bundle's 2026/27 team list. Free tier.
+   ═══════════════════════════════════════════════════════════ */
+const DRAFT_KEY='ge-draft-v1';
+const DRAFT_BUDGET=1000;              /* tenths of £m = £100.0m */
+const DRAFT_QUOTA={1:2,2:5,3:5,4:3};
+const DRAFT_CLUB_MAX=3;
+let DRAFT_IDS=null;                   /* working draft — may be invalid */
+
+function draftCounts(players){
+  const pos={1:0,2:0,3:0,4:0},clubs={};let cost=0;
+  players.forEach(p=>{pos[p.element_type]=(pos[p.element_type]||0)+1;
+    clubs[p.team]=(clubs[p.team]||0)+1;cost+=p.now_cost||0;});
+  return {pos,clubs,cost};
+}
+/* The standard-rules validator. `saveable` is the strict save gate:
+   complete, within budget and inside every quota. */
+function draftValidate(players,budget){
+  budget=budget==null?DRAFT_BUDGET:budget;
+  const {pos,clubs,cost}=draftCounts(players);
+  const quotaOk=[1,2,3,4].every(t=>(pos[t]||0)<=DRAFT_QUOTA[t]);
+  const clubOk=Object.keys(clubs).every(c=>clubs[c]<=DRAFT_CLUB_MAX);
+  const bank=budget-cost;
+  const complete=players.length===15&&[1,2,3,4].every(t=>(pos[t]||0)===DRAFT_QUOTA[t]);
+  return {pos,clubs,cost,bank,complete,quotaOk,clubOk,
+    overBudget:bank<0,saveable:complete&&quotaOk&&clubOk&&bank>=0};
+}
+/* Can this player join the draft under the position/club/size rules?
+   Budget is deliberately NOT checked — over-budget drafting is allowed. */
+function draftCanAdd(players,el){
+  if(!el||players.length>=15)return false;
+  if(players.some(p=>p.id===el.id))return false;
+  const {pos,clubs}=draftCounts(players);
+  if((pos[el.element_type]||0)>=DRAFT_QUOTA[el.element_type])return false;
+  if((clubs[el.team]||0)>=DRAFT_CLUB_MAX)return false;
+  return true;
+}
+function loadDraftIds(){
+  try{const o=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
+    return o&&Array.isArray(o.ids)?o.ids.filter(x=>typeof x==='number'):[];
+  }catch(_){return [];}
+}
+/* Pre-season projection over GW1–6: last season's points per 90 with a
+   minimum-minutes floor (so 40-minute wonders don't explode), converted
+   to six games via the player's minutes share (a per-90 rate alone
+   would crown super-subs), scaled by availability (soft floor —
+   pre-season flags are often stale) and the club's fixture-ease
+   factor. A rough estimate, labelled everywhere it is shown. */
+function draftXP6(el,ease,clubGames){
+  const mins=el.minutes||0,pts=el.total_points||0;
+  if(pts<=0)return 0;
+  const rate=90*pts/Math.max(mins,450);
+  const share=clubGames>0?Math.min(1,mins/(clubGames*90)):1;
+  let avail=1;
+  if(el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n')avail=0.3;
+  else if(el.chance_of_playing_next_round!=null)avail=Math.max(0.3,el.chance_of_playing_next_round/100);
+  return Math.max(0,rate*6*share*(ease||1)*avail);
+}
+/* 2026/27 fixture context per model club from the bundle: the first-6
+   fixtures (difficulty-coloured in the popover) and a fixture-ease
+   factor around 1 from the average win-probability edge — computed via
+   the existing Dixon-Coles plsimMatch on the bundle's fitted ratings
+   (its {att,def,hom} lookup works keyed by club name). Cached per
+   bundle fetch. */
+function draftBundleCtx(m,N){
+  if(MEM._draftCtxSrc===m)return MEM._draftCtx;
+  N=N||6;
+  const r={att:{},def:{},hom:{}};
+  Object.keys(m.teams||{}).forEach(n=>{const t=m.teams[n];
+    r.att[n]=t.attack;r.def[n]=t.defence;r.hom[n]=t.home||1;});
+  const st=m.season_state||{};
+  const startMd=Math.min(38,(st.live?(st.played_md||0):0)+1);
+  const fix={},ease={};
+  for(let i=0;i<N;i++){
+    const md=(m.fixtures||[])[startMd-1+i];if(!md)continue;
+    md.forEach(([h,a])=>{
+      const x=plsimMatch(r,h,a);if(!x)return;
+      (fix[h]=fix[h]||[]).push({gw:startMd+i,opp:a,home:true,diff:plsimDiff(x.pH),cs:x.csH,edge:x.pH-x.pA});
+      (fix[a]=fix[a]||[]).push({gw:startMd+i,opp:h,home:false,diff:plsimDiff(x.pA),cs:x.csA,edge:x.pA-x.pH});
+    });
+  }
+  Object.keys(fix).forEach(n=>{
+    const e=fix[n].reduce((s,f)=>s+f.edge,0)/fix[n].length;
+    ease[n]=Math.max(0.75,Math.min(1.25,1+0.3*e));
+  });
+  const ctx={fix,ease,startMd};
+  MEM._draftCtxSrc=m;MEM._draftCtx=ctx;
+  return ctx;
+}
+/* Reference "template" draft: greedy best-xP6 fill from the same pool
+   under the same rules, always keeping enough budget to finish the
+   squad at each position's cheapest price. The local diagnosis
+   benchmarks your draft against its total. */
+function draftTemplate(pool,xp6,budget){
+  budget=budget==null?DRAFT_BUDGET:budget;
+  const minCost={};
+  [1,2,3,4].forEach(t=>{const cs=pool.filter(e=>e.element_type===t)
+    .map(e=>e.now_cost||0).sort((a,c)=>a-c);minCost[t]=cs.length?cs[0]:40;});
+  const sorted=pool.slice().sort((a,c)=>(xp6[c.id]||0)-(xp6[a.id]||0));
+  const picked=[];
+  for(const el of sorted){
+    if(picked.length>=15)break;
+    if(!draftCanAdd(picked,el))continue;
+    const {pos,cost}=draftCounts(picked);
+    let reserve=0;
+    [1,2,3,4].forEach(t=>{const need=DRAFT_QUOTA[t]-(pos[t]||0)-(t===el.element_type?1:0);
+      reserve+=Math.max(0,need)*minCost[t];});
+    if(cost+(el.now_cost||0)+reserve>budget)continue;
+    picked.push(el);
+  }
+  return picked;
+}
+/* Local heuristic verdict — always available, free. */
+function draftDiagnosis(S,players,v){
+  if(!players.length)return '<div class="dl-sub">Add players from the pool — the verdict updates as you build.</div>';
+  const b=S.b;
+  const line=(tone,txt)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-sub" style="color:'+
+    (tone==='good'?'var(--green-bright)':tone==='warn'?'var(--amber)':'var(--text-2)')+'">'+txt+'</span></span></div>';
+  let out='';
+  out+=v.overBudget
+    ?line('warn','Over budget by '+money(-v.bank)+' — an over-budget draft can’t be saved.')
+    :line('good',money(v.bank)+' left in the bank.');
+  let maxN=0,maxT=null;
+  Object.keys(v.clubs).forEach(t=>{if(v.clubs[t]>maxN){maxN=v.clubs[t];maxT=t;}});
+  if(maxN>=3)out+=line('warn',maxN+' players from '+esc(teamShort(b,+maxT)||'one club')+' — at the 3-per-club cap; one bad patch there hits three slots.');
+  const spend={1:0,2:0,3:0,4:0};
+  players.forEach(e=>spend[e.element_type]+=e.now_cost||0);
+  if((spend[1]+spend[2])>(spend[3]+spend[4])&&players.length>=8)
+    out+=line('warn','More budget in GK+DEF ('+money(spend[1]+spend[2])+') than MID+FWD ('+money(spend[3]+spend[4])+') — attackers out-score defenders on average.');
+  if(!v.complete){
+    out+=line('note','Squad incomplete — fill to 2 GK / 5 DEF / 5 MID / 3 FWD to unlock saving.');
+  }else{
+    const total=players.reduce((s,e)=>s+(S.xp6[e.id]||0),0);
+    if(S.tmplTotal>0){
+      const gap=S.tmplTotal-total;
+      out+=line(gap<=3?'good':'warn','Projects '+total.toFixed(0)+' pts over GW1–6 vs '+S.tmplTotal.toFixed(0)+' for a greedy template from the same pool'+
+        (gap>3?' — '+gap.toFixed(0)+' behind; look at the risky-minutes slots first.':' — competitive.'));
+    }
+    const risky=players.filter(e=>minutesSecurity(e,S.gp(e.team))<50);
+    out+=risky.length
+      ?line('warn',risky.length+' with risky minutes (&lt;50): '+risky.slice(0,4).map(e=>esc(e.web_name)).join(', ')+(risky.length>4?'…':'')+'.')
+      :line('good','Minutes look secure across the squad.');
+  }
+  return '<div class="dl">'+out+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Local heuristic read — free and instant. All numbers are pre-season estimates from last season’s data.</div>';
+}
+function renderDraftPool(){
+  const S=window._draft;const box=document.getElementById('draft-pool');
+  if(!S||!box)return;
+  const b=S.b,players=DRAFT_IDS.map(id=>b.els[id]).filter(Boolean);
+  let list=S.pool.filter(e=>DRAFT_IDS.indexOf(e.id)<0);
+  if(S.posF)list=list.filter(e=>e.element_type===S.posF);
+  if(S.q)list=list.filter(e=>(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(S.q)>=0);
+  list.sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0));
+  const shown=list.slice(0,40);
+  const rows=shown.map(e=>{
+    const can=draftCanAdd(players,e);
+    return '<div class="dl-row"><span data-draft-open="'+e.id+'" style="cursor:pointer">'+avatar(b,e,30)+'</span>'+
+      '<span class="dl-grow" style="display:block;cursor:pointer" data-draft-open="'+e.id+'"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,13)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+minsBadge(e,S.gp(e.team))+'</span></span>'+
+      '<span class="dl-col mono">'+(S.xp6[e.id]||0).toFixed(1)+'</span>'+
+      '<span class="dl-col"><button class="btn btn-primary btn-sm" style="padding:3px 10px" data-draft-add="'+e.id+'"'+(can?'':' disabled')+'>Add</button></span></div>';
+  }).join('');
+  box.innerHTML='<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · predicted price · minutes</span><span class="dl-col">xP6</span><span class="dl-col"></span></div>'+
+    (rows||'<div class="dl-sub" style="padding:8px 0">No players match.</div>')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">'+list.length+' available · sorted by xP6 (pre-season estimate) · showing the top '+shown.length+'.</div>';
+}
+function renderDraft(){
+  const S=window._draft;if(!S)return;
+  const b=S.b;
+  DRAFT_IDS=DRAFT_IDS.filter(id=>b.els[id]);
+  const players=DRAFT_IDS.map(id=>b.els[id]).filter(Boolean);
+  const v=draftValidate(players);
+  const sum=document.getElementById('draft-summary');
+  if(sum)sum.innerHTML='<div class="statgrid">'+
+    '<div class="stat"><div class="stat-l">Squad</div><div class="stat-v">'+players.length+'/15</div></div>'+
+    '<div class="stat"><div class="stat-l">Spent</div><div class="stat-v">'+money(v.cost)+'</div></div>'+
+    '<div class="stat"><div class="stat-l">Bank</div><div class="stat-v" style="color:'+(v.overBudget?'var(--red)':'var(--green-bright)')+'">'+(v.overBudget?'−':'')+money(Math.abs(v.bank))+'</div></div>'+
+    '<div class="stat"><div class="stat-l">xP6 total</div><div class="stat-v">'+players.reduce((s,e)=>s+(S.xp6[e.id]||0),0).toFixed(0)+'</div></div>'+
+    '</div>';
+  const saveBtn=document.getElementById('draft-save');
+  if(saveBtn)saveBtn.disabled=!v.saveable;
+  const cnt=document.getElementById('draft-count');
+  if(cnt)cnt.textContent=players.length+'/15';
+  const cell=e=>'<div class="pp" data-draft-open="'+e.id+'" role="button" tabindex="0">'+ppFigure(b,e)+
+    '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span></div>';
+  const lbl={1:'GK',2:'DEF',3:'MID',4:'FWD'};
+  const ghost=t=>'<div class="pp" style="opacity:.35" aria-hidden="true"><span class="pp-fig no-photo" style="--kit:var(--surface-3);--kit2:var(--surface-3)"></span>'+
+    '<span class="pp-nm">+ '+lbl[t]+'</span><span class="pp-pt">—</span></div>';
+  const row=t=>{const got=players.filter(e=>e.element_type===t);
+    const miss=Math.max(0,DRAFT_QUOTA[t]-got.length);
+    return '<div class="pitch-row">'+got.map(cell).join('')+Array.from({length:miss},()=>ghost(t)).join('')+'</div>';};
+  const pit=document.getElementById('draft-pitch');
+  if(pit)pit.innerHTML=pitchWrap(row(1)+row(2)+row(3)+row(4));
+  renderDraftPool();
+  const diag=document.getElementById('draft-diag');
+  if(diag)diag.innerHTML=draftDiagnosis(S,players,v);
+}
+function draftClear(){DRAFT_IDS=[];toast('Draft cleared');renderDraft();}
+function draftSaveNow(){
+  const S=window._draft;if(!S)return;
+  const players=DRAFT_IDS.map(id=>S.b.els[id]).filter(Boolean);
+  const v=draftValidate(players);
+  if(!v.saveable){
+    toast(v.overBudget?'Over budget — free up '+money(-v.bank)+' to save':'Pick the full 15 (2 GK / 5 DEF / 5 MID / 3 FWD) to save');
+    return;
+  }
+  try{localStorage.setItem(DRAFT_KEY,JSON.stringify({ids:DRAFT_IDS.slice(),t:Date.now()}));}catch(_){}
+  track('draft_saved',{cost:v.cost});
+  toast('Draft saved on this device');
+}
+function draftRemove(id){DRAFT_IDS=DRAFT_IDS.filter(x=>x!==id);closePlayer();renderDraft();}
+function draftAddFromModal(id){
+  const S=window._draft;if(!S)return;
+  const players=DRAFT_IDS.map(x=>S.b.els[x]).filter(Boolean);
+  const el=S.b.els[id];
+  if(el&&draftCanAdd(players,el))DRAFT_IDS.push(id);
+  closePlayer();renderDraft();
+}
+/* One click replaces the draft with the live 15 (shown once the new
+   season's game is live and a manager ID is linked). */
+async function draftImportLive(){
+  const S=window._draft;const mid=getMid();
+  if(!S||!mid||!S.b.cur)return;
+  try{
+    const picks=await loadPicks(mid,S.b.cur.id);
+    const ids=(picks.picks||[]).map(p=>p.element).filter(id=>S.b.els[id]);
+    if(!ids.length)throw new Error('empty');
+    DRAFT_IDS=ids;
+    track('draft_import_live');
+    toast('Live team imported into the draft');
+    renderDraft();
+  }catch(_){toast('Live picks aren’t available yet — they appear once the game launches');}
+}
+/* Small detail popover for a drafted / pool player: predicted price,
+   xP6, minutes security, first-6 fixtures with difficulty colouring. */
+function openDraftPlayer(id){
+  const S=window._draft;if(!S)return;
+  const b=S.b,e=b.els[id];if(!e)return;
+  const modal=document.getElementById('player-modal'),body=document.getElementById('player-body');
+  if(!modal||!body)return;
+  const club=lgClubOf(b,e.team);
+  const fx=(S.ctx&&club&&S.ctx.fix[club])||[];
+  const players=DRAFT_IDS.map(x=>b.els[x]).filter(Boolean);
+  const inDraft=DRAFT_IDS.indexOf(id)>=0;
+  const can=draftCanAdd(players,e);
+  const tick=fx.length
+    ?'<div class="card pd-sec"><div class="card-title">First '+fx.length+' fixtures — 2026/27</div>'+
+      '<div class="pd-tick">'+fx.map(f=>'<span class="pd-fx fdr-'+f.diff+'">'+esc(lgShort(f.opp))+'<b>'+(f.home?'H':'A')+'</b></span>').join('')+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">Colour = model difficulty (green easy → red hard) from the 2026/27 bundle.</div></div>'
+    :'<div class="card pd-sec"><div class="dl-sub">The 2026/27 fixture list appears once the model bundle loads.</div></div>';
+  body.innerHTML=
+    '<div class="pd-head">'+avatar(b,e,52)+
+      '<div class="pd-id"><h3 id="player-title">'+esc(e.web_name)+'</h3>'+
+      '<div class="pd-meta">'+crest(b,e.team,15)+' '+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+minsBadge(e,S.gp(e.team))+'</div></div>'+
+      '<button class="pd-x" data-player-close aria-label="Close">&times;</button></div>'+
+    '<div class="grid g-4 pd-kpi">'+
+      kpi('Predicted price',money(e.now_cost),'last season’s final / launch estimate','var(--green)')+
+      kpi('xP6',(S.xp6[e.id]||0).toFixed(1),'GW1–6 · pre-season estimate','var(--blue)')+
+      kpi('Mins security',minutesSecurity(e,S.gp(e.team))+'%','last-season starts & minutes','var(--purple)')+
+      kpi('Last season',fmtNum(e.total_points)+' pts',fmtNum(e.minutes)+' mins','var(--amber)')+'</div>'+
+    tick+
+    '<div class="modal-row" style="margin-top:6px">'+
+      (inDraft
+        ?'<button class="btn btn-ghost" onclick="draftRemove('+e.id+')">Remove from draft</button>'
+        :(can?'<button class="btn btn-primary" onclick="draftAddFromModal('+e.id+')">Add to draft</button>':''))+
+      '<button class="btn btn-ghost" data-player-close>Close</button></div>';
+  modal.classList.add('show');
+}
+/* Compact context for the AI draft diagnosis (Pro-gated, same
+   authenticated /api/ai endpoint as every other AI button). */
+async function draftContext(){
+  const S=window._draft;if(!S)return {};
+  const b=S.b;
+  const players=DRAFT_IDS.map(id=>b.els[id]).filter(Boolean);
+  const v=draftValidate(players);
+  const pl=e=>({name:e.web_name,club:teamShort(b,e.team),pos:posShort(b,e.element_type),
+    price:(e.now_cost||0)/10,xP6:+((S.xp6[e.id]||0).toFixed(1)),
+    minsSecurity:minutesSecurity(e,S.gp(e.team))});
+  const candidates=S.pool.filter(e=>DRAFT_IDS.indexOf(e.id)<0&&e.status==='a')
+    .sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0)).slice(0,15).map(pl);
+  return {note:'2026/27 pre-season draft. Prices are launch estimates; xP6 = projected points over GW1-6 (pre-season estimate); minsSecurity 0-100.',
+    budget:DRAFT_BUDGET/10,spent:v.cost/10,bank:v.bank/10,complete:v.complete,
+    squad:players.map(pl),templateXP6:+S.tmplTotal.toFixed(1),candidates};
+}
+function genDraft(){return runAI('draft',draftContext,'draft-ai',{busy:'Reading your draft…',retryName:'genDraft'});}
+async function hydrateDraft(host){
+  let b;
+  try{b=await boot();}catch(e){
+    host.innerHTML=stateBox('squad','Player pool unavailable','The FPL API looks to be between seasons (mid-rollover). The draft board opens as soon as the new player list is up — try again shortly.');
+    return;
+  }
+  let fixtures=[];try{fixtures=await loadFixtures();}catch(_){}
+  let m=null;try{m=await loadModelBundle();}catch(_){}
+  if(DRAFT_IDS==null)DRAFT_IDS=loadDraftIds();
+  /* 2026/27 club filter: bootstrap clubs are kept only if they map into
+     the model bundle's team list (FPL_TO_LG carries the 20 new-season
+     clubs). If the whole bootstrap misses (weird API state), keep all. */
+  const modelClubs=m&&m.teams?Object.keys(m.teams):null;
+  const isNew=t=>{const club=FPL_TO_LG[t.short_name];
+    return club?(!modelClubs||modelClubs.indexOf(club)>=0):false;};
+  let okTeams=new Set(b.raw.teams.filter(isNew).map(t=>t.id));
+  let relegated=b.raw.teams.filter(t=>!okTeams.has(t.id)).map(t=>t.short_name);
+  if(!okTeams.size){okTeams=new Set(b.raw.teams.map(t=>t.id));relegated=[];}
+  const bootClubs=new Set(b.raw.teams.map(t=>FPL_TO_LG[t.short_name]).filter(Boolean));
+  const newSeasonClubs=modelClubs||Object.keys(FPL_TO_LG).map(k=>FPL_TO_LG[k]);
+  const missing=newSeasonClubs.filter(n=>!bootClubs.has(n));
+  DRAFT_IDS=DRAFT_IDS.filter(id=>b.els[id]&&okTeams.has(b.els[id].team));
+  const pool=b.elements.filter(e=>okTeams.has(e.team));
+  const gp=minutesBasis(b,fixtures);
+  const ctx=m?draftBundleCtx(m,6):null;
+  const xp6={};
+  pool.forEach(e=>{const club=lgClubOf(b,e.team);
+    xp6[e.id]=draftXP6(e,ctx&&club?ctx.ease[club]:1,gp(e.team));});
+  const tmpl=draftTemplate(pool.filter(e=>e.status==='a'),xp6);
+  const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
+  const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0};
+  const importBtn=(getMid()&&b.liveSeason)
+    ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
+  const notes=(relegated.length?' Relegated-club players ('+relegated.map(esc).join(', ')+') are excluded.':'')+
+    (missing.length?' '+missing.map(esc).join(', ')+' players appear when FPL launches the 2026/27 game.':'');
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.bolt,'width="15" height="15"')+' Draft board '+
+      '<span class="badge badge-amber">pre-season</span>'+
+      '<span style="margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap">'+importBtn+
+        '<button class="btn btn-ghost btn-sm" onclick="draftClear()">Clear</button>'+
+        '<button class="btn btn-primary btn-sm" id="draft-save" onclick="draftSaveNow()">Save draft</button></span></div>'+
+      '<div id="draft-summary"></div>'+
+      '<p class="dl-sub" style="margin-top:10px">Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
+        'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'+notes+'</p></div>'+
+    '<div class="grid g-sb mb-20">'+
+      '<div class="card"><div class="card-title">Your draft <span class="badge badge-green" id="draft-count"></span></div>'+
+        '<div id="draft-pitch"></div>'+
+        '<div class="dl-sub" style="margin-top:10px">Tap a player for details or to remove. 2 GK / 5 DEF / 5 MID / 3 FWD · £100.0m · max 3 per club. Over-budget drafting is allowed, but the draft only saves when it’s legal.</div></div>'+
+      '<div class="card"><div class="card-title">Player pool</div>'+
+        '<div class="pl-filters" style="margin-bottom:8px">'+
+          '<input id="draft-q" class="modal-in" placeholder="Search players…" autocomplete="off" style="flex:2 1 140px">'+
+          '<select id="draft-pos" class="modal-in" style="flex:1 1 110px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
+        '</div>'+
+        '<div id="draft-pool"></div></div>'+
+    '</div>'+
+    '<div class="card"><div class="card-title">Squad diagnosis</div>'+
+      '<div id="draft-diag"></div>'+
+      '<div style="border-top:1px solid var(--surface-3);margin-top:12px;padding-top:12px">'+
+        '<p class="dl-sub" style="margin-bottom:10px">'+svg(ICON.spark,'width="13" height="13"')+' Claude reads the whole draft — balance, risks and the most valuable swaps.</p>'+
+        aiGate('<button class="btn btn-primary btn-sm" onclick="genDraft()">AI diagnosis</button>')+
+        '<div id="draft-ai" style="margin-top:12px"></div></div></div>';
+  host.addEventListener('click',ev=>{
+    const add=ev.target.closest('[data-draft-add]');
+    if(add){
+      if(add.disabled)return;
+      const el=b.els[parseInt(add.dataset.draftAdd,10)];
+      const players=DRAFT_IDS.map(x=>b.els[x]).filter(Boolean);
+      if(el&&draftCanAdd(players,el)){DRAFT_IDS.push(el.id);renderDraft();}
+      return;
+    }
+    const open=ev.target.closest('[data-draft-open]');
+    if(open)openDraftPlayer(parseInt(open.dataset.draftOpen,10));
+  });
+  const q=host.querySelector('#draft-q');
+  if(q)q.addEventListener('input',()=>{S.q=q.value.trim().toLowerCase();renderDraftPool();});
+  const ps=host.querySelector('#draft-pos');
+  if(ps)ps.addEventListener('change',()=>{S.posF=+ps.value;renderDraftPool();});
+  renderDraft();
+}
+
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
@@ -5711,6 +6092,7 @@ const WIRED={
   scenariolab:hydrateScenarioLab,
   blog:hydrateBlog,
   gwhistory:hydrateGwhistory,
+  draft:hydrateDraft,
   squad:hydrateSquad,
   transfers:hydrateTransfers,
   captain:hydrateCaptain,

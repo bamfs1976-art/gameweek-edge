@@ -68,11 +68,17 @@ const pieces = [
   extractLine(html, /const LG_GRID=\d+,LG_MAXG=\d+;/),
   extractFn(html, 'lgScoreGrid'),
   extractFn(html, 'lgCleanSheets'),
+  extractLine(html, /const DRAFT_BUDGET=\d+;/),
+  extractConst(html, 'DRAFT_QUOTA'),
+  extractLine(html, /const DRAFT_CLUB_MAX=\d+;/),
+  extractFn(html, 'draftCounts'),
+  extractFn(html, 'draftValidate'),
+  extractFn(html, 'draftCanAdd'),
   extractFn(aiSrc, 'fitJSON')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, fitJSON};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -210,6 +216,42 @@ ok(Math.abs(csPlain[0] - Math.exp(-1.1)) < 1e-3, 'plain-Poisson home CS ≈ e^-�
 ok(Math.abs(csPlain[1] - Math.exp(-1.5)) < 1e-3, 'plain-Poisson away CS ≈ e^-λhome');
 const csDC = core.lgCleanSheets(core.lgScoreGrid(1.5, 1.1, -0.074));
 ok(csDC[0] !== csPlain[0], 'Dixon-Coles correction moves the low-score mass');
+
+/* ── draft validators: budget / position / club / save gate ─ */
+section('draftValidate / draftCanAdd rules');
+let draftSeq = 1;
+const mkD = (type, team, cost) => ({ id: draftSeq++, element_type: type, team, now_cost: cost });
+function legalSquad(costGK, costDEF, costMID, costFWD) {
+  const a = [];
+  for (let k = 0; k < 2; k++) a.push(mkD(1, k + 1, costGK));
+  for (let k = 0; k < 5; k++) a.push(mkD(2, k + 1, costDEF));
+  for (let k = 0; k < 5; k++) a.push(mkD(3, k + 6, costMID));
+  for (let k = 0; k < 3; k++) a.push(mkD(4, k + 11, costFWD));
+  return a;
+}
+const sq15 = legalSquad(45, 50, 70, 80); /* cost 930, bank 70 */
+const vOK = core.draftValidate(sq15);
+ok(vOK.complete && vOK.quotaOk && vOK.clubOk, 'legal 15 is complete and inside every quota');
+ok(vOK.cost === 930 && vOK.bank === 70, 'cost and bank computed against the £100.0m budget');
+ok(vOK.saveable, 'valid, complete, in-budget draft is saveable');
+const vRich = core.draftValidate(legalSquad(50, 60, 90, 95)); /* cost 1135 */
+ok(vRich.overBudget && vRich.bank === -135, 'over-budget draft flagged with a negative bank');
+ok(!vRich.saveable, 'over-budget draft is NOT saveable');
+const vPart = core.draftValidate(sq15.slice(0, 14));
+ok(!vPart.complete && !vPart.saveable, 'incomplete squad (14) is not saveable');
+ok(!vPart.overBudget, 'incomplete squad can still be within budget');
+const vClub = core.draftValidate(sq15.map((p, i) => (i >= 2 && i < 6 ? { ...p, team: 99 } : p)));
+ok(!vClub.clubOk && !vClub.saveable, 'four players from one club breaks the 3-per-club rule');
+const vBudget = core.draftValidate(sq15, 900);
+ok(vBudget.overBudget && !vBudget.saveable, 'custom budget respected');
+ok(!core.draftCanAdd(sq15, mkD(4, 15, 60)), 'cannot add a 16th player');
+const part13 = sq15.slice(0, 13); /* 2 GK, 5 DEF, 5 MID, 1 FWD */
+ok(core.draftCanAdd(part13, mkD(4, 15, 60)), 'a needed forward can be added (even over budget)');
+ok(!core.draftCanAdd(part13, mkD(2, 15, 45)), 'cannot exceed the 5-DEF quota');
+ok(!core.draftCanAdd(part13, { ...part13[0] }), 'cannot add a duplicate player');
+const trio = [mkD(2, 7, 45), mkD(3, 7, 60), mkD(4, 7, 60)];
+ok(!core.draftCanAdd(trio, mkD(3, 7, 55)), 'the 3-per-club cap is enforced on add');
+ok(core.draftCanAdd(trio, mkD(3, 8, 55)), 'a fourth player from another club is fine');
 
 /* ── fitJSON (ai.js): valid JSON within budget ──────────── */
 section('fitJSON always yields valid JSON within budget');

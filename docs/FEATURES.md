@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **7 areas** and **37 panels**. Free panels are open
+Navigation is organised into **7 areas** and **38 panels**. Free panels are open
 to everyone; **Pro** panels require an upgrade (or owner access, see §9).
 
 ```
@@ -51,6 +51,7 @@ Home
 └── The Wire             (free)  Auto-written data briefings + Team of the Week
 
 My Team
+├── Pre-season Draft     (free)  2026/27 squad builder — real FPL rules, xP6, AI diagnosis
 ├── My Squad             (free)  Live pitch from your picks + live points
 ├── Transfer Planner     (free)  Transfer Solver + replacement finder + AI plan
 └── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
@@ -125,6 +126,32 @@ the model, refreshed each gameweek, no human writer:
 - **The Captaincy Index** — every armband option ranked by xP.
 
 ### My Team
+
+**Pre-season Draft** — a 2026/27 squad builder for planning before the game
+launches, under the standard FPL rules (15 players: 2 GK / 5 DEF / 5 MID /
+3 FWD, £100.0m, max 3 per club).
+- **Player pool** from the bootstrap with **predicted prices** (last season's
+  final price / launch estimate, labelled). Relegated‑club players are excluded
+  by checking club names against the model bundle's 2026/27 team list; a note
+  explains that promoted‑club players appear when FPL launches.
+- **xP6** — projected points over GW1–6: last season's per‑90 points rate
+  (minimum‑minutes floor) × minutes share × availability × a fixture‑ease
+  factor from the club's first six 2026/27 fixtures (win‑probability edge via
+  the Dixon‑Coles `plsimMatch` on the bundle's fitted ratings). Clearly
+  labelled a pre‑season estimate. Minutes‑security badges throughout.
+- **Pitch layout** consistent with My Squad (rows auto‑arrange by position,
+  ghost slots for unfilled places); tapping any player opens a popover with
+  predicted price, xP6, minutes security and the first‑6 fixtures
+  difficulty‑coloured.
+- **Rules engine** — over‑budget drafting is allowed (bank shows negative in
+  red) but an over‑budget or incomplete squad cannot be **saved**; a valid
+  draft persists to `ge-draft-v1`.
+- **Squad diagnosis** — a free local heuristic verdict (budget balance, club
+  concentration, spend spread, minutes risks, total xP6 vs a greedy "template"
+  draft built from the same pool) plus a Pro‑gated **AI diagnosis** through the
+  authenticated `/api/ai` endpoint (task `draft`).
+- **Import my live team** — once the new season's game is live and a manager
+  ID is linked, one click replaces the draft with the live 15.
 
 **My Squad** — your 15 players on a professional pitch (striped turf, vector
 markings) with real player photos + club crests, name/points label bars,
@@ -355,9 +382,9 @@ transfer count) — needs FPL login, out of scope for the public proxy.
   replies and richer reports. Without a key, features degrade to the local engine
   / a "needs setup" state rather than breaking.
 - **AI tasks** routed through the shared `runAI` runner and `/api/ai`:
-  `digest`, `review`, `scout`, `player`, `chips`, `rival`, `transfers`, and the
-  conversational `ask`. Results are cached per gameweek where sensible; Pro‑gated
-  buttons control cost on free panels.
+  `digest`, `review`, `scout`, `player`, `chips`, `rival`, `transfers`, `draft`
+  (pre‑season squad diagnosis), and the conversational `ask`. Results are cached
+  per gameweek where sensible; Pro‑gated buttons control cost on free panels.
 
 ---
 
@@ -441,6 +468,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
 | `ge-theme` | light / dark preference |
 | `ge-onboarded` | first‑run flag |
 | `ge-watch` | watchlist player ids |
+| `ge-draft-v1` | saved pre‑season draft (player ids) |
 | `ge-rivals` | rival manager ids |
 | `ge-alert-prefs` | alert toggles |
 | `ge-journey-{gw}` | "plan my week" progress |
