@@ -3293,6 +3293,7 @@ function playerDetailHTML(b,fixtures,id){
   const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5),n=nf[e.team];
   const price=(e.now_cost||0)/10,xp=xP(b,e,n),hxp=horizonXP(b,e,hz);
   const mins=e.minutes||0,gp=(n&&n.gp)||0;
+  const gpBasis=minutesBasis(b,fixtures)(e.team);
   const per=v=>mins>=90?(parseFloat(v||0)*90/mins).toFixed(2):'—';
   const badge=e.status&&e.status!=='a'
     ? ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>':'';
@@ -3328,6 +3329,7 @@ function playerDetailHTML(b,fixtures,id){
   const isDef=e.element_type<=2;
   const per90='<div class="card pd-sec"><div class="card-title">Underlying numbers</div><div class="pd-grid">'+
     stat('Minutes',fmtNum(mins))+
+    stat('Mins security',minsBadge(e,gpBasis))+
     stat('Total pts',fmtNum(e.total_points))+
     stat('xGI / 90',e.expected_goal_involvements_per_90!=null?f90(e.expected_goal_involvements_per_90):per(e.expected_goals))+
     stat('xG / 90',per(e.expected_goals))+
@@ -3338,7 +3340,7 @@ function playerDetailHTML(b,fixtures,id){
     (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
     '</div>'+
-    '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points (the 2025/26 category). Value = points per £m this season.'+
+    '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points (the 2025/26 category). Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
   /* Closest style twin */
   let twinHtml='';
@@ -3760,6 +3762,7 @@ let COMPARE=[];
 async function hydrateCompare(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
+  const gpOf=minutesBasis(b,fixtures);
   COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
   const sel=COMPARE.map(id=>b.els[id]);
   const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
@@ -3773,11 +3776,13 @@ async function hydrateCompare(host){
       metric('Total pts',e=>e.total_points)+
       metric('Form',e=>e.form)+
       metric('Pts / game',e=>e.points_per_game)+
+      metric('Mins security',e=>minsBadge(e,gpOf(e.team)))+
       metric('xG',e=>e.expected_goals||'—')+
       metric('xA',e=>e.expected_assists||'—')+
       metric('ICT',e=>e.ict_index)+
       metric('Next',e=>nextFixLabel(nf[e.team]))+
-    '</table></div>'
+    '</table></div>'+
+    '<div class="dl-sub" style="margin-top:8px">Mins security blends starts share, minutes share and availability: secure ≥75, watch 50–74, risky &lt;50. Pre-season it reads from last season’s starts and minutes.</div>'
     :'<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add up to four players side by side.</p></div>';
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add players ('+sel.length+'/4)</div>'+
@@ -5495,25 +5500,50 @@ async function hydrateMatchForecast(host){
   host.querySelector('#mf-md').addEventListener('change',render);render();
 }
 
+/* ── Minutes security: how nailed a player's minutes look ──
+   Pure 0–100 score: a blend of starts share (65%, starts / club
+   games) and minutes share (35%, minutes / (club games × 90)),
+   scaled by availability (status flag + chance_of_playing_next_round).
+   This is the exact score that drives the Projected XI panel —
+   extracted so the draft pool, Player Compare and player popovers
+   all agree. Pre-season it reads from LAST season's starts/minutes;
+   label it as such wherever it is shown.
+   Tiers: secure ≥75, watch 50–74, risky <50. */
+function minutesSecurity(player,clubGamesPlayed){
+  const played=Math.max(1,clubGamesPlayed||1);
+  const startShare=Math.min(1,(player.starts||0)/played);
+  const minShare=Math.min(1,(player.minutes||0)/(played*90));
+  let avail;
+  if(player.status==='i'||player.status==='s'||player.status==='u'||player.status==='n')avail=0.05;
+  else{const ch=player.chance_of_playing_next_round;avail=ch==null?1:Math.max(0.05,ch/100);}
+  return Math.round(100*Math.max(0,Math.min(1,(0.65*startShare+0.35*minShare)*avail)));
+}
+/* Three-tier colour badge for a minutes-security score. */
+function minsBadge(el,gp){
+  if(!(gp>0)&&!((el.minutes||0)>0))return '<span class="badge badge-grey" title="No minutes data yet">Mins —</span>';
+  const v=minutesSecurity(el,gp);
+  const cls=v>=75?'badge-green':v>=50?'badge-amber':'badge-red';
+  return '<span class="badge '+cls+'" title="Minutes security '+v+'/100 — starts share, minutes share and availability (last season’s data until the new season is played)">Mins '+v+'%</span>';
+}
+/* Games-played divisor for the per-season shares: finished fixtures
+   this season, falling back to a full 38 between seasons (when the
+   bootstrap still carries last season's totals but no fixture in the
+   list has finished yet). Returns a lookup by team id. */
+function minutesBasis(b,fixtures){
+  const gpRaw=teamGamesPlayed(fixtures||[]);
+  const fallback=(b&&b.liveSeason)?0:38;
+  return teamId=>gpRaw[teamId]||fallback;
+}
+
 /* ── Projected XI: estimated starting lineups per club ─────
-   Ranks each club's players by starts share (starts / club games
-   played) and minutes share this season, scaled by availability
-   (status flag + chance_of_playing_next_round), then picks the
+   Ranks each club's players by the shared minutesSecurity score
+   (starts share + minutes share × availability), then picks the
    plausible formation that maximises the combined score. A
    data-driven estimate from the official bootstrap data — NOT team
    news. Free tier. */
 function projectXI(b,teamId,gamesPlayed){
-  const played=Math.max(1,gamesPlayed||1);
-  const avail=e=>{
-    if(e.status==='i'||e.status==='s'||e.status==='u'||e.status==='n')return 0.05;
-    const ch=e.chance_of_playing_next_round;
-    return ch==null?1:Math.max(0.05,ch/100);
-  };
-  const scored=b.elements.filter(e=>e.team===teamId).map(e=>{
-    const startShare=Math.min(1,(e.starts||0)/played);
-    const minShare=Math.min(1,(e.minutes||0)/(played*90));
-    return {el:e,p:(0.65*startShare+0.35*minShare)*avail(e)};
-  });
+  const scored=b.elements.filter(e=>e.team===teamId).map(e=>(
+    {el:e,p:minutesSecurity(e,gamesPlayed)/100}));
   const byType={};
   [1,2,3,4].forEach(t=>byType[t]=scored.filter(x=>x.el.element_type===t).sort((a,c)=>c.p-a.p));
   const forms=[[3,4,3],[3,5,2],[4,5,1],[4,4,2],[4,3,3],[5,4,1],[5,3,2],[5,2,3]];

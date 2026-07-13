@@ -212,7 +212,8 @@ differential, value, defence and fixture questions, grounded in the model.
 - Closest playing‑style twin (tap to hop to it).
 - On‑demand AI verdict.
 
-**Player Compare** — up to four players side by side on form, xG, price, ownership, ICT.
+**Player Compare** — up to four players side by side on form, xG, price,
+ownership, ICT and **minutes security** (three‑tier badge).
 
 **Differentials** — <12% owned in form, plus a **Defensive‑contribution leaders**
 table (the 2025/26 DefCon scoring category).
@@ -286,6 +287,13 @@ AI‑assisted.
 - **Playing‑style vectors:** per‑90 xG, xA, threat, creativity, influence, shots,
   defensive actions — z‑scored within position; cosine similarity powers the
   style‑twin and "closest style" transfer mode.
+- **Minutes security** (`minutesSecurity`) — a pure 0–100 score: 65% starts
+  share + 35% minutes share, scaled by availability (status flag +
+  chance‑of‑playing). Tiers: **secure ≥75 / watch 50–74 / risky <50**. The same
+  score drives the Projected XI panel and is surfaced as a badge in the
+  Pre‑season Draft pool and squad cards, a Player Compare row, and the
+  player‑detail modal. Pre‑season it reads from last season's starts/minutes
+  (labelled as such).
 
 > Discipline note: the validated `nativeXP` formula is deliberately **not**
 > silently re‑wired when new fields (xGI/xGC) are surfaced — those are shown as

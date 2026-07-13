@@ -58,12 +58,13 @@ const pieces = [
   extractFn(html, 'fixtureXP'),
   extractFn(html, 'priceChangeProb'),
   extractFn(html, 'bestXI'),
+  extractFn(html, 'minutesSecurity'),
   extractFn(html, 'projectXI'),
   extractFn(aiSrc, 'fitJSON')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, projectXI, fitJSON};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, minutesSecurity, projectXI, fitJSON};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -137,6 +138,28 @@ ok(lowOwn.prob > highOwn.prob, 'same net transfers → low ownership rises with 
 ok(lowOwn.prob >= 90, 'heavily-transferred low-ownership player shows a high estimate');
 const symm = core.priceChangeProb(mk(0, 150e3, 2), TOTAL);
 ok(symm.prob === lowOwn.prob, 'fall probability symmetric with rise');
+
+/* ── minutesSecurity: bounds, monotonicity, availability ── */
+section('minutesSecurity bounds, monotonicity, availability');
+const mkMS = (starts, mins, status, ch) => ({
+  starts, minutes: mins, status: status || 'a',
+  chance_of_playing_next_round: ch == null ? null : ch
+});
+ok(core.minutesSecurity(mkMS(38, 3420), 38) === 100, 'ever-present starter scores 100');
+ok(core.minutesSecurity(mkMS(0, 0), 38) === 0, 'no starts, no minutes scores 0');
+let msPrev = -1, msMono = true;
+for (const s of [0, 5, 10, 20, 30, 38]) {
+  const v = core.minutesSecurity(mkMS(s, s * 90), 38);
+  ok(v >= 0 && v <= 100, 'within [0,100] at ' + s + ' starts');
+  if (v < msPrev) msMono = false;
+  msPrev = v;
+}
+ok(msMono, 'monotonic in starts share');
+ok(core.minutesSecurity(mkMS(38, 3420, 'i'), 38) <= 5, 'injured status is zero-ish (availability floor)');
+ok(core.minutesSecurity(mkMS(38, 3420, 's'), 38) <= 5, 'suspended status is zero-ish');
+ok(core.minutesSecurity(mkMS(38, 3420, 'a', 50), 38) === 50, 'chance-of-playing scales the score');
+ok(core.minutesSecurity(mkMS(99, 99999), 38) <= 100, 'clamped for over-the-top inputs');
+ok(core.minutesSecurity(mkMS(10, 900), 0) >= 0 && core.minutesSecurity(mkMS(10, 900), 0) <= 100, 'zero club games handled');
 
 /* ── projectXI: legal XI from club data ─────────────────── */
 section('projectXI picks a legal XI');
