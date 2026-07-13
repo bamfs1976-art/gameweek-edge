@@ -27,7 +27,7 @@ The clarity of the official FPL site, with the depth serious managers rely on â€
 - Clear space: keep at least half the mark's height clear on all sides.
 - Minimum size: 24px (app), 32px (print/web header).
 - **Don't:** recolour the mark, stretch it, add effects, or place it on a busy background without the green tile.
-- Source artwork: `assets/icon-only.png` (icon), `icons/` (web/PWA), `icons/og.png` (social).
+- Source artwork: `assets/icon-only.png` (icon â€” the mark above bold **GWE** lettering), `assets/icon-mark.png` (chart-only variant for tiny sizes like the favicon), `icons/` (web/PWA), `icons/og.png` (social). Regenerate with `node scripts/gen-art.mjs && node scripts/gen-pwa-icons.mjs`.
 
 ## 6. Colour
 | Token | Hex | Use |
