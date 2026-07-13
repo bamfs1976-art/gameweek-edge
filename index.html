@@ -856,20 +856,23 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   .main{margin-left:0}
   .hamburger{display:flex}
   .g-3{grid-template-columns:repeat(2,1fr)}
-  .page{padding:18px 16px calc(var(--bottomnav-h) + 24px)}
+  /* Keep the last of the content clear of the fixed bottom bar — the bar
+     grows by the home-indicator inset on notched phones, so the padding
+     must too. */
+  .page{padding:18px 16px calc(var(--bottomnav-h) + env(safe-area-inset-bottom,0px) + 28px)}
 
   /* Bottom nav appears */
   .bottom-nav{
     display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;
     height:var(--bottomnav-h);
-    background:var(--surface);border-top:1px solid var(--border);
-    padding:0 4px env(safe-area-inset-bottom);
+    background:var(--surface);border-top:1px solid var(--border-2);
+    padding:0 2px env(safe-area-inset-bottom);
     align-items:center;justify-content:space-around;
-    box-shadow:0 -2px 16px rgba(0,0,0,.18);
+    box-shadow:0 -4px 20px rgba(0,0,0,.22);
   }
   .bn-item{
     display:flex;flex-direction:column;align-items:center;gap:3px;
-    flex:1;max-width:84px;padding:7px 4px;border-radius:var(--r-sm);
+    flex:1;min-width:0;padding:6px 2px;border-radius:var(--r-sm);
     color:var(--text-3);
     transition:color .14s var(--ease);
   }
@@ -878,9 +881,11 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
     width:40px;height:26px;display:flex;align-items:center;justify-content:center;
     border-radius:var(--r-sm);transition:background .14s var(--ease);
   }
-  .bn-ic svg{width:19px;height:19px}
+  .bn-ic svg{width:20px;height:20px}
   .bn-item.active .bn-ic{background:var(--green-soft)}
-  .bn-label{font-size:.6rem;font-weight:700;letter-spacing:.02em}
+  /* One line, always: seven areas share a phone width, so labels are short
+     (see BN_SHORT) and never wrap under the icons. */
+  .bn-label{font-size:.58rem;font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media(max-width:560px){
   .g-2,.g-3,.g-4{grid-template-columns:minmax(0,1fr)}
@@ -891,7 +896,18 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
      (the page heading already names the panel). */
   .tb-divider{display:none}
   .tb-crumb{display:none}
-  .tb-left{gap:10px}
+  .tb-left{gap:8px}
+  /* Declutter the topbar so nothing touches: the tagline goes, the Link
+     Team button collapses to its icon, and the buttons keep clear gaps. */
+  .tb-tag{display:none}
+  .si-label{display:none}
+  #signin-btn{width:38px;height:38px;padding:0;justify-content:center}
+  .tb-right{gap:7px;flex-wrap:nowrap}
+}
+@media(max-width:400px){
+  /* Very narrow phones: the mark alone carries the brand; the page
+     heading names the panel. */
+  .tb-logo-text{display:none}
 }
 @supports(padding:max(0px)){
   .bottom-nav{padding-bottom:max(4px,env(safe-area-inset-bottom))}
@@ -2008,6 +2024,9 @@ function buildNav(){
 }
 
 /* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
+/* Seven areas share a phone width, so the bottom bar uses short labels —
+   truncating "Intelligence" mid-word reads worse than "Intel". */
+const BN_SHORT={myteam:'Team',intel:'Intel',planner:'Plan'};
 function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   bn.innerHTML='';
@@ -2015,9 +2034,10 @@ function buildBottomNav(){
     const item=document.createElement('button');
     item.className='bn-item';
     item.dataset.area=area.id;
+    item.setAttribute('aria-label',area.label);
     item.innerHTML=
       '<span class="bn-ic">'+svg(ICON[area.icon])+'</span>'+
-      '<span class="bn-label">'+area.label+'</span>';
+      '<span class="bn-label">'+(BN_SHORT[area.id]||area.label)+'</span>';
     item.addEventListener('click',()=>{
       openPanel(area.panels[0].id);
     });
