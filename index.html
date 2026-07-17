@@ -272,10 +272,14 @@ html.offline .net-banner{transform:translateY(0)}
 .stat-s{font-size:.74rem;color:var(--text-2);margin-top:2px}
 
 /* Live pitch (real squad) — FPL-style player cards with photo + crest */
-.pp{position:relative;display:flex;flex-direction:column;align-items:center;width:66px}
+/* Cards shrink instead of overflowing: a five-man row must fit a phone
+   pitch without clipping the wide players off the touchline. */
+.pp{position:relative;display:flex;flex-direction:column;align-items:center;flex:0 1 66px;min-width:44px}
 .pp-fig{width:50px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;
   border-radius:13px 13px 3px 3px;
-  background:linear-gradient(180deg,rgba(15,34,22,.62),rgba(7,18,12,.86));
+  /* Near-opaque backdrop: pitch markings must never show through a
+     player's photo tile. */
+  background:linear-gradient(180deg,rgba(17,36,24,.94),rgba(8,19,13,.98));
   box-shadow:0 3px 8px rgba(0,0,0,.30)}
 .pp-fig img{max-width:100%;max-height:100%;object-fit:contain;object-position:bottom;
   filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
@@ -291,14 +295,14 @@ html.offline .net-banner{transform:translateY(0)}
   font-size:.58rem;font-weight:900;border-radius:50%;width:17px;height:17px;display:grid;place-items:center;z-index:4;
   box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .pp-nm{font-size:.6rem;font-weight:700;color:#fff;background:#111826;letter-spacing:.01em;
-  border-radius:4px 4px 0 0;padding:2px 5px;width:64px;box-sizing:border-box;text-align:center;
+  border-radius:4px 4px 0 0;padding:2px 4px;width:100%;max-width:64px;box-sizing:border-box;text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
-.pp-pt{font-size:.7rem;font-weight:800;color:#08130b;width:64px;box-sizing:border-box;text-align:center;
-  background:linear-gradient(180deg,#ffffff,#eef6f1);padding:1px 5px}
+.pp-pt{font-size:.7rem;font-weight:800;color:#08130b;width:100%;max-width:64px;box-sizing:border-box;text-align:center;
+  background:linear-gradient(180deg,#ffffff,#eef6f1);padding:1px 4px}
 .pp:not(:has(.pp-sub)) .pp-pt{border-radius:0 0 4px 4px}
 /* Two-cell stat strip under the points (ownership | price), the
    LiveFPL-style footer that makes each card scannable at a glance. */
-.pp-sub{display:flex;width:64px;box-sizing:border-box;border-radius:0 0 4px 4px;overflow:hidden;
+.pp-sub{display:flex;width:100%;max-width:64px;box-sizing:border-box;border-radius:0 0 4px 4px;overflow:hidden;
   font-size:.56rem;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;line-height:1.5}
 .pp-sub span{flex:1;padding:1px 2px;white-space:nowrap;overflow:hidden}
 .pp-sub .l{background:#dfe6ec;color:#2c3947}
@@ -308,10 +312,10 @@ html.offline .net-banner{transform:translateY(0)}
   filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 .bench{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;
   padding-top:16px;border-top:1px dashed rgba(255,255,255,.28)}
-.bench .pp{width:58px}
+.bench .pp{flex-basis:58px}
 .bench .pp-fig{width:40px;height:44px}
-.bench .pp-nm,.bench .pp-pt{width:56px;font-size:.56rem}
-.bench .pp-sub{width:56px;font-size:.52rem}
+.bench .pp-nm,.bench .pp-pt{max-width:56px;font-size:.56rem}
+.bench .pp-sub{max-width:56px;font-size:.52rem}
 
 /* Manager ID modal */
 .modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
@@ -812,6 +816,11 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .pitch-row{
   display:flex;justify-content:center;gap:12px;
   margin-bottom:16px;position:relative;z-index:2;
+}
+@media(max-width:560px){
+  .pitch-row{gap:5px}
+  .pp-fig{width:44px;height:48px}
+  .pp-sub{font-size:.52rem}
 }
 .pitch-row:last-child{margin-bottom:0}
 /* Fallback jersey shape (used only when a player photo is unavailable) */
