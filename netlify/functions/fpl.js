@@ -51,7 +51,7 @@ exports.handler = async (event) => {
   try {
     const r = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.app)',
+        'User-Agent': 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.co.uk)',
         'Accept': 'application/json'
       }
     });

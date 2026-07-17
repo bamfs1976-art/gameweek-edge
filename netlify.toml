@@ -38,7 +38,7 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://resources.premierleague.com; connect-src 'self' https://knodunjnsxelmpziupwk.supabase.co https://plsimulation.netlify.app; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 
-# Clean URL for the marketing landing page (share gameweekedge.app/welcome).
+# Clean URL for the marketing landing page (share gameweekedge.co.uk/welcome).
 [[redirects]]
   from = "/welcome"
   to = "/landing.html"
