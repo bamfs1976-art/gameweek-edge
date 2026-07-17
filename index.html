@@ -2772,10 +2772,20 @@ async function hydrateSquad(host){
   const byType=t=>starters.filter(p=>(b.els[p.element]||{}).element_type===t);
   const row=arr=>'<div class="pitch-row">'+arr.map(cell).join('')+'</div>';
   const liveTotal=starters.reduce((s,p)=>s+(livePts[p.element]||0)*(p.multiplier||1),0);
+  /* Snapshot for the shareable gameweek card. */
+  const capPick=picks.picks.find(p=>p.is_captain);
+  const topPick=starters.slice().sort((a,c)=>
+    (livePts[c.element]||0)*(c.multiplier||1)-(livePts[a.element]||0)*(a.multiplier||1))[0];
+  window._share={gw,pts:eh.points!=null?eh.points:liveTotal,rank:eh.rank,
+    cap:capPick?(b.els[capPick.element]||{}).web_name:null,
+    top:topPick?{nm:(b.els[topPick.element]||{}).web_name,
+      pts:(livePts[topPick.element]||0)*(topPick.multiplier||1)}:null,
+    chip:picks.active_chip||null};
   host.innerHTML=
     '<div class="grid g-sb mb-20">'+
-      '<div class="card"><div class="card-title">Your XI '+
-        '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span></div>'+
+      '<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Your XI '+
+        '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span>'+
+        '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button></div>'+
         pitchWrap(
           row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
           '<div class="bench">'+bench.map(cell).join('')+'</div>')+
@@ -2790,6 +2800,54 @@ async function hydrateSquad(host){
         (picks.active_chip?'<div class="dl-sub" style="margin-top:12px">Active chip: <b>'+esc(picks.active_chip)+'</b></div>':'')+
       '</div>'+
     '</div>';
+}
+
+/* ── Shareable gameweek card ─────────────────────────────
+   Draws a square social image on a canvas (no external libraries —
+   the CSP allows nothing else) and hands it to the Web Share API,
+   falling back to a download. */
+async function shareSquadCard(){
+  const S=window._share;if(!S){toast('Open My Squad first');return;}
+  const W=1080,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d');
+  /* Turf backdrop with soft stripes. */
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#123524');g.addColorStop(1,'#0a2317');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.fillStyle='rgba(255,255,255,.025)';
+  for(let i=0;i<H;i+=120)x.fillRect(0,i,W,60);
+  x.strokeStyle='rgba(255,255,255,.14)';x.lineWidth=3;
+  x.strokeRect(40,40,W-80,H-80);
+  x.beginPath();x.arc(W/2,40,110,0,Math.PI);x.stroke();
+  x.beginPath();x.arc(W/2,H-40,110,Math.PI,2*Math.PI);x.stroke();
+  const center=(t,y,font,color)=>{x.font=font;x.fillStyle=color;x.textAlign='center';x.fillText(t,W/2,y);};
+  center('GAMEWEEK EDGE',150,'800 44px system-ui,-apple-system,sans-serif','#4ade80');
+  center('Gameweek '+S.gw+(S.chip?' · '+S.chip.toUpperCase():''),225,'600 34px system-ui,sans-serif','rgba(255,255,255,.75)');
+  center(String(S.pts!=null?S.pts:'—'),470,'800 220px system-ui,sans-serif','#ffffff');
+  center('POINTS',540,'700 34px system-ui,sans-serif','rgba(255,255,255,.6)');
+  /* Fact panels. */
+  const panel=(px,label,val)=>{
+    x.fillStyle='rgba(0,0,0,.28)';
+    if(x.roundRect){x.beginPath();x.roundRect(px,610,440,150,18);x.fill();}
+    else x.fillRect(px,610,440,150);
+    x.font='700 28px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';
+    x.textAlign='center';x.fillText(label,px+220,662);
+    x.font='800 44px system-ui,sans-serif';x.fillStyle='#fff';
+    x.fillText(String(val),px+220,722);
+  };
+  panel(80,'GW RANK',S.rank!=null?fmtNum(S.rank):'—');
+  panel(560,'CAPTAIN',S.cap||'—');
+  if(S.top&&S.top.nm)center('Star player: '+S.top.nm+' · '+S.top.pts+' pts',830,'600 34px system-ui,sans-serif','rgba(255,255,255,.8)');
+  center('gameweekedge.netlify.app',965,'700 30px system-ui,sans-serif','#4ade80');
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  if(!blob){toast('Could not build the image');return;}
+  const file=new File([blob],'gameweek-'+S.gw+'.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'My GW'+S.gw,text:'GW'+S.gw+': '+S.pts+' pts on Gameweek Edge'});return;}catch(_){/* cancelled → fall through */}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='gameweek-'+S.gw+'.png';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  toast('Share card downloaded');
 }
 
 /* Fixture Planner: FDR grid, next 6 GWs */
@@ -3752,6 +3810,30 @@ function solver3Card(){
     '<div id="solver3-out">'+skel(3)+'</div></div>';
 }
 
+/* One position section of the transfer-target list under the active sort. */
+function renderTargets(sortKey){
+  const S=window._tt;if(!S)return '';
+  const {b,hz,nf,hzN}=S;
+  const posName={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const keyDesc={xp:'projected over the next '+hzN+' gameweeks',pts:'by total points',
+    value:'by projected points per £m',price:'cheapest playing options'};
+  return [1,2,3,4].map(t=>{
+    const list=b.elements.filter(e=>e.element_type===t&&e.status==='a'&&e.minutes>0)
+      .map(e=>({e,h:horizonXP(b,e,hz)}));
+    if(sortKey==='pts')list.sort((a,c)=>(c.e.total_points||0)-(a.e.total_points||0));
+    else if(sortKey==='value')list.sort((a,c)=>c.h/Math.max(1,c.e.now_cost)-a.h/Math.max(1,a.e.now_cost));
+    else if(sortKey==='price')list.sort((a,c)=>a.e.now_cost-c.e.now_cost||c.h-a.h);
+    else list.sort((a,c)=>c.h-a.h);
+    const rows=list.slice(0,6).map(({e,h})=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'% · '+(e.total_points||0)+' pts · next '+nextFixLabel(nf[e.team])+'</span></span>'+
+      '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+h.toFixed(1)+'</button></span>'+
+      '<span class="dl-col mono">'+e.form+'</span></div>').join('');
+    return '<div class="card mb-20"><div class="card-title">'+posName[t]+' — '+keyDesc[sortKey]+'</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">xP'+hzN+'</span><span class="dl-col">Form</span></div>'+rows+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">xP'+hzN+' = cumulative expected points across the horizon from the fitted team-strength model and validated player projections. Tap a number for the workings.</div></div>';
+  }).join('');
+}
+
 async function hydrateTransfers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
@@ -3781,28 +3863,32 @@ async function hydrateTransfers(host){
         '<div id="rep-out"></div></div>';
     }catch(_){}
   }
-  const posName={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
-  const sections=[1,2,3,4].map(t=>{
-    const list=b.elements.filter(e=>e.element_type===t&&e.status==='a'&&e.minutes>0)
-      .map(e=>({e,h:horizonXP(b,e,hz)}))
-      .sort((a,c)=>c.h-a.h).slice(0,6);
-    const rows=list.map(({e,h})=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'% · next '+nextFixLabel(nf[e.team])+'</span></span>'+
-      '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+h.toFixed(1)+'</button></span>'+
-      '<span class="dl-col mono">'+e.form+'</span></div>').join('');
-    return '<div class="card mb-20"><div class="card-title">'+posName[t]+' — projected over the next '+hzN+' gameweeks</div>'+
-      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · next fixture</span><span class="dl-col">xP'+hzN+'</span><span class="dl-col">Form</span></div>'+rows+'</div>'+
-      '<div class="dl-sub" style="margin-top:8px">xP'+hzN+' = cumulative expected points across the horizon from the fitted team-strength model and validated player projections. Tap a number for the workings.</div></div>';
-  }).join('');
+  /* Transfer targets, re-sortable in place — the sort-while-transferring
+     control users keep asking third-party apps for. */
+  window._tt={b,hz,nf,hzN};
+  const sections='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
+    '<span class="dl-sub">Transfer targets, ranked by</span>'+
+    '<div class="seg" id="tt-sort">'+
+      '<button class="seg-b on" data-s="xp">xP'+hzN+'</button>'+
+      '<button class="seg-b" data-s="pts">Points</button>'+
+      '<button class="seg-b" data-s="value">xP/£m</button>'+
+      '<button class="seg-b" data-s="price">Cheapest</button>'+
+    '</div></div>'+
+    '<div id="tt-sections">'+renderTargets('xp')+'</div>';
   setTimeout(()=>{
     if(window._solver){renderSolver();renderSolver3();}
+    document.querySelectorAll('#tt-sort .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('#tt-sort .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+      const out=document.getElementById('tt-sections');
+      if(out)out.innerHTML=renderTargets(btn.dataset.s);
+    }));
     const s=document.getElementById('rep-sel');
     if(!s)return;
     let mode='xp';
     const run=()=>suggestReplacements(b,hz,'rep-out','rep-sel',mode);
     s.addEventListener('change',run);
-    document.querySelectorAll('.seg-b').forEach(btn=>btn.addEventListener('click',()=>{
-      document.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+    document.querySelectorAll('[data-mode]').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('on',x===btn));
       mode=btn.dataset.mode;run();
     }));
   },0);
