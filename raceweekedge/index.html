@@ -1,0 +1,3055 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="RaceWeek Edge — the calm, clear companion that gives F1 Fantasy managers a measurable edge.">
+<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f161d" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RaceWeek Edge">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:title" content="RaceWeek Edge — for F1 fantasy managers">
+<meta property="og:description" content="Projected points, a team optimiser, DRS Boost picks, chip strategy, track insights and price alerts for F1 Fantasy managers.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RaceWeek Edge — for F1 fantasy managers">
+<title>RaceWeek Edge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════
+   RACEWEEK EDGE — the F1 Fantasy companion.
+   Same structural shell as Gameweek Edge (sidebar / topbar /
+   bottom-nav / theme system), rebranded to racing red and
+   rebuilt panel-by-panel for the official F1 Fantasy game.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════
+   GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
+   Brand, 7-area navigation, 38 panels as navigable pages.
+   Placeholder content. No live API, accounts or paywall yet.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── DESIGN TOKENS ─────────────────────────────────────── */
+/* Light mode is the default (:root). Dark mode overrides. */
+:root{
+  /* Surfaces */
+  --bg:#f4f6f8;
+  --surface:#ffffff;
+  --surface-2:#ffffff;
+  --surface-3:#eef1f4;
+  --elevated:#ffffff;
+
+  /* Borders */
+  --border:rgba(12,16,20,.08);
+  --border-2:rgba(12,16,20,.13);
+  --border-3:rgba(12,16,20,.22);
+
+  /* Text */
+  --text:#10171e;
+  --text-2:#586673;
+  --text-3:#8a97a4;
+  --text-4:#b4bfc9;
+
+  /* Brand — racing red on carbon */
+  --accent:#c8102e;
+  --accent-bright:#e81936;
+  --accent-soft:rgba(200,16,46,.10);
+  --accent-glow:rgba(232,25,54,.20);
+  --up:#1e9e5a;
+  --up-soft:rgba(30,158,90,.12);
+
+  /* Accents */
+  --amber:#b9741a;
+  --amber-soft:rgba(185,116,26,.11);
+  --red:#cc3d39;
+  --red-soft:rgba(204,61,57,.10);
+  --blue:#2f6dc7;
+  --blue-soft:rgba(47,109,199,.10);
+  --purple:#7a5cc7;
+  --purple-soft:rgba(122,92,199,.10);
+
+  /* Radii */
+  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:22px;--r-pill:999px;
+
+  /* Layout */
+  --sidebar-w:248px;
+  --topbar-h:60px;
+  --bottomnav-h:66px;
+
+  /* Shadow */
+  --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
+  --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
+
+  /* Motion */
+  --ease:cubic-bezier(.2,.8,.2,1);
+
+  /* Fonts */
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Public Sans',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+
+/* ── DARK MODE ──────────────────────────────────────────── */
+/* Lifted, softer dark — not near-black. Easier on the eyes. */
+[data-theme="dark"]{
+  --bg:#161b22;
+  --surface:#1f262f;
+  --surface-2:#262e38;
+  --surface-3:#2f3945;
+  --elevated:#262e38;
+
+  --border:rgba(255,255,255,.08);
+  --border-2:rgba(255,255,255,.14);
+  --border-3:rgba(255,255,255,.22);
+
+  --text:#eef2f5;
+  --text-2:#a7b4c0;
+  --text-3:#717f8c;
+  --text-4:#4b5763;
+
+  --accent:#e8304a;
+  --accent-bright:#ff4d63;
+  --accent-soft:rgba(255,77,99,.13);
+  --accent-glow:rgba(255,77,99,.26);
+  --up:#2fbb72;
+  --up-soft:rgba(47,187,114,.14);
+
+  --amber:#e3a043;
+  --amber-soft:rgba(227,160,67,.14);
+  --red:#e8625e;
+  --red-soft:rgba(232,98,94,.14);
+  --blue:#5e98e6;
+  --blue-soft:rgba(94,152,230,.14);
+  --purple:#a78ce6;
+  --purple-soft:rgba(167,140,230,.14);
+
+  --shadow:0 1px 3px rgba(0,0,0,.34),0 6px 18px rgba(0,0,0,.26);
+  --shadow-lg:0 4px 12px rgba(0,0,0,.44),0 16px 40px rgba(0,0,0,.34);
+}
+
+/* ── RESET & BASE ──────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-size:16px}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  line-height:1.5;
+  overflow-x:hidden;
+  transition:background .25s var(--ease),color .25s var(--ease);
+}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border-3)}
+::selection{background:var(--accent-soft);color:var(--accent-bright)}
+
+/* ── SKIP LINK ─────────────────────────────────────────── */
+.skip-link{
+  position:absolute;left:-9999px;top:10px;z-index:9999;
+  padding:10px 18px;background:var(--accent);color:#fff;
+  border-radius:var(--r-md);font-weight:700;font-size:.85rem;
+}
+.skip-link:focus{left:14px}
+
+/* ── FOCUS VISIBILITY ──────────────────────────────────── */
+:focus-visible{outline:2.5px solid var(--accent-bright);outline-offset:2px;border-radius:4px}
+
+/* ── NATIVE SHELL (Capacitor iOS / Android) ────────────── */
+/* These rules only apply when running inside the native wrapper.
+   window.GENative adds .native (and .native-ios / .native-android)
+   to <html> on launch. The web build is untouched. */
+html.native, html.native body{
+  /* Stop the whole web page rubber-banding like a browser. */
+  overscroll-behavior:none;
+  -webkit-tap-highlight-color:transparent;
+}
+html.native{
+  /* App chrome should not feel like selectable text. */
+  -webkit-touch-callout:none;
+}
+html.native .topbar,
+html.native .sidebar,
+html.native .bottom-nav,
+html.native .btn,
+html.native .nav-area,
+html.native .nav-sub{
+  -webkit-user-select:none;user-select:none;
+}
+/* Top safe-area: push the sticky topbar clear of the notch / status bar. */
+html.native .topbar{
+  height:calc(var(--topbar-h) + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);
+}
+/* Drawer header sits under the status bar too when opened. */
+html.native .sb-brand{
+  padding-top:calc(18px + env(safe-area-inset-top));
+}
+/* Body copy and data stay selectable — only chrome is locked. */
+html.native .page, html.native .card{-webkit-user-select:text;user-select:text}
+
+/* Pull-to-refresh affordance (native only). */
+.ptr-spinner{
+  position:fixed;left:50%;transform:translateX(-50%);
+  top:calc(env(safe-area-inset-top) + 8px);
+  width:30px;height:30px;border-radius:50%;
+  display:none;place-items:center;z-index:300;pointer-events:none;
+  background:var(--surface);border:1px solid var(--border-2);
+  box-shadow:0 4px 14px rgba(12,16,20,.14);
+  opacity:0;transition:opacity .18s var(--ease);
+}
+html.native .ptr-spinner.show{display:grid;opacity:1}
+.ptr-spinner svg{width:16px;height:16px;color:var(--accent-bright)}
+.ptr-spinner.spin svg{animation:ptrspin .7s linear infinite}
+@keyframes ptrspin{to{transform:rotate(360deg)}}
+
+/* ── OFFLINE BANNER ────────────────────────────────────── */
+/* Toggled by the .offline class on <html> (set from connectivity
+   events). Works on web and native; sits under the safe-area inset. */
+.net-banner{
+  position:fixed;left:0;right:0;
+  top:calc(env(safe-area-inset-top) + 0px);
+  z-index:400;display:flex;align-items:center;justify-content:center;
+  gap:8px;padding:9px 16px;
+  background:var(--amber-soft);color:var(--amber);
+  border-bottom:1px solid var(--amber);
+  font-size:.78rem;font-weight:600;
+  transform:translateY(-100%);transition:transform .26s var(--ease);
+}
+html.offline .net-banner{transform:translateY(0)}
+.net-banner[hidden]{display:none}
+.net-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
+
+/* ── LIVE DATA UI (Phase 2) ────────────────────────────── */
+.ge-host{min-height:120px}
+.ge-state{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:34px 20px;color:var(--text-3);gap:10px}
+.ge-state svg{width:30px;height:30px;color:var(--text-4)}
+.ge-state b{color:var(--text-2);font-weight:700;font-size:.92rem}
+.ge-state p{font-size:.82rem;max-width:360px;line-height:1.5}
+.sk{background:linear-gradient(90deg,var(--surface-3) 25%,var(--border-2) 37%,var(--surface-3) 63%);
+  background-size:400% 100%;border-radius:var(--r-sm);height:14px;margin:9px 0}
+@media(prefers-reduced-motion:no-preference){.sk{animation:skl 1.3s ease-in-out infinite}}
+@keyframes skl{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+/* Data list (table-like, mobile friendly) */
+.dl{display:flex;flex-direction:column;gap:1px;background:var(--border);
+  border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden}
+.dl-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);font-size:.84rem}
+.dl-row.head{background:var(--surface-3);font-size:.64rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--text-3);font-weight:700}
+.dl-rank{width:20px;text-align:right;color:var(--text-3);font-weight:700;font-size:.74rem;flex-shrink:0}
+.dl-grow{flex:1;min-width:0;display:flex;flex-direction:column}
+.dl-nm{font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-sub{font-size:.7rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dl-col{width:50px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
+  font-weight:700;color:var(--text-2)}
+.dl-col.mono{font-family:var(--font-mono);font-weight:600}
+.dl-col.pos{color:var(--accent-bright)}
+.dl-col.neg{color:var(--red)}
+
+/* Horizontally-scrollable wrapper (charts wider than the viewport) */
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+/* Fixture difficulty grid */
+.fdr{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r-md)}
+.fdr table{border-collapse:separate;border-spacing:4px}
+.fdr th,.fdr td{font-size:.72rem;text-align:center;white-space:nowrap}
+.fdr th{color:var(--text-3);font-weight:700;padding:2px 4px}
+.fdr .tm{text-align:left;font-weight:800;color:var(--text);position:sticky;left:0;
+  background:var(--surface);padding-right:8px;z-index:1}
+.fdr td.cell{padding:8px 7px;border-radius:7px;font-weight:800;min-width:48px;color:#0c1014}
+.fdr-1{background:#2ecf73}.fdr-2{background:#8fd9a6}.fdr-3{background:#d9dee3;color:#3a4650}
+.fdr-4{background:#f0a3a0}.fdr-5{background:#e05a55;color:#fff}
+.fdr td.blank{background:var(--surface-3);color:var(--text-4);font-weight:600}
+
+/* Big stat row (this gameweek) */
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.stat{background:var(--surface-3);border-radius:var(--r-md);padding:14px}
+.stat-l{font-size:.66rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);font-weight:700}
+.stat-v{font-family:var(--font-display);font-size:1.5rem;font-weight:800;margin-top:3px;letter-spacing:-.02em}
+.stat-s{font-size:.74rem;color:var(--text-2);margin-top:2px}
+
+/* Live pitch (real squad) — FPL-style player cards with photo + crest */
+/* Cards shrink instead of overflowing: a five-man row must fit a phone
+   pitch without clipping the wide players off the touchline. */
+.pp{position:relative;display:flex;flex-direction:column;align-items:center;flex:0 1 66px;min-width:44px}
+.pp-fig{width:50px;height:52px;position:relative;display:flex;align-items:flex-end;justify-content:center;
+  border-radius:13px 13px 3px 3px;
+  /* Near-opaque backdrop: pitch markings must never show through a
+     player's photo tile. */
+  background:linear-gradient(180deg,rgba(17,36,24,.94),rgba(8,19,13,.98));
+  box-shadow:0 3px 8px rgba(0,0,0,.30)}
+.pp-fig img{max-width:100%;max-height:100%;object-fit:contain;object-position:bottom;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.45))}
+.pp-fig.no-photo::after{content:'';position:absolute;inset:auto 0 2px 0;margin:0 auto;
+  width:40px;height:44px;background:linear-gradient(165deg,var(--kit,#8a8a8a) 58%,var(--kit2,#fff));
+  clip-path:polygon(20% 0,0 14%,0 30%,17% 24%,17% 100%,83% 100%,83% 24%,100% 30%,100% 14%,80% 0,62% 8%,50% 10%,38% 8%);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+.pp-crest{position:absolute;bottom:1px;right:3px;width:16px;height:16px;z-index:3;
+  box-shadow:0 1px 3px rgba(0,0,0,.4);border-radius:3px}
+.pp.is-cap .pp-fig::before{content:'';position:absolute;inset:-3px 4px 6px 4px;border-radius:50%;
+  box-shadow:0 0 0 2px #f5c518,0 0 12px 2px rgba(245,197,24,.55);z-index:0}
+.pp-badge{position:absolute;top:-4px;left:6px;background:#f5c518;color:#111826;
+  font-size:.58rem;font-weight:900;border-radius:50%;width:17px;height:17px;display:grid;place-items:center;z-index:4;
+  box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.pp-nm{font-size:.6rem;font-weight:700;color:#fff;background:#111826;letter-spacing:.01em;
+  border-radius:4px 4px 0 0;padding:2px 4px;width:100%;max-width:64px;box-sizing:border-box;text-align:center;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.pp-pt{font-size:.7rem;font-weight:800;color:#08130b;width:100%;max-width:64px;box-sizing:border-box;text-align:center;
+  background:linear-gradient(180deg,#ffffff,#eef6f1);padding:1px 4px}
+.pp:not(:has(.pp-sub)) .pp-pt{border-radius:0 0 4px 4px}
+/* Two-cell stat strip under the points (ownership | price), the
+   LiveFPL-style footer that makes each card scannable at a glance. */
+.pp-sub{display:flex;width:100%;max-width:64px;box-sizing:border-box;border-radius:0 0 4px 4px;overflow:hidden;
+  font-size:.56rem;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;line-height:1.5}
+.pp-sub span{flex:1;padding:1px 2px;white-space:nowrap;overflow:hidden}
+.pp-sub .l{background:#dfe6ec;color:#2c3947}
+.pp-sub .r{background:#bff0d2;color:#0c5c33}
+/* Haul / dud marker beside the figure — ⭐ 8+, 👎 played and blanked. */
+.pp-mark{position:absolute;top:-6px;right:-2px;font-size:.85rem;z-index:4;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+/* The bench lives on its own opaque strip "off the pitch", so the
+   centre-circle arc can never run through the bench players. */
+.bench{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;
+  position:relative;z-index:2;padding:9px 10px 7px;border-radius:10px;
+  background:linear-gradient(180deg,#1d4a2e,#163a24);
+  border:1px solid rgba(255,255,255,.22);box-shadow:0 2px 10px rgba(0,12,5,.3)}
+
+/* Match Centre */
+.mc-day{font-weight:700;font-size:.8rem;color:var(--text-2);
+  background:linear-gradient(90deg,var(--accent-soft),transparent);
+  border-radius:var(--r-sm);padding:6px 10px;margin:12px 0 8px}
+.mc-fix{border:1px solid var(--border-2);border-radius:var(--r-md);margin-bottom:8px;
+  overflow:hidden;background:var(--surface)}
+.mc-head{display:grid;grid-template-columns:auto 1fr auto 1fr auto;align-items:center;
+  gap:8px;padding:10px 12px;cursor:pointer}
+.mc-team{display:flex;align-items:center;gap:6px;font-weight:700;min-width:0;font-size:.9rem}
+.mc-team span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-team.h{justify-content:flex-end;text-align:right}
+.mc-score{background:var(--surface-3);border:1px solid var(--border-2);
+  padding:4px 12px;border-radius:8px;font-weight:800;white-space:nowrap}
+.mc-ch{transition:transform .2s;color:var(--text-3);font-size:.75rem}
+.mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
+.mc-cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:.85rem;line-height:1.9}
+.mc-cols .h{text-align:right}
+.mc-sec{text-align:center;font-weight:700;font-size:.72rem;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--text-3);background:var(--surface-2);
+  border-radius:6px;padding:3px;margin:10px 0 6px}
+.mc-you{color:var(--blue);margin-right:3px;font-size:.7rem;vertical-align:2px}
+.bench .pp{flex-basis:58px}
+.bench .pp-fig{width:40px;height:44px}
+.bench .pp-nm,.bench .pp-pt{max-width:56px;font-size:.56rem}
+.bench .pp-sub{max-width:56px;font-size:.52rem}
+
+/* Manager ID modal */
+.modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-bg{position:absolute;inset:0;background:rgba(8,12,16,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.modal-card{position:relative;z-index:1;background:var(--surface);border:1px solid var(--border-2);
+  border-radius:var(--r-xl);padding:24px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.32)}
+.modal-card h3{font-family:var(--font-display);font-size:1.2rem;margin-bottom:6px}
+.modal-card p{font-size:.82rem;color:var(--text-2);margin-bottom:16px;line-height:1.5}
+.modal-in{width:100%;padding:12px 14px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
+  font-size:1rem;font-family:var(--font-mono);background:var(--surface-3);color:var(--text)}
+.modal-in:focus{outline:none;border-color:var(--accent-bright);background:var(--surface)}
+.modal-err{color:var(--red);font-size:.78rem;margin-top:8px;min-height:1.1em}
+.modal-row{display:flex;gap:10px;margin-top:8px}
+.modal-row .btn{flex:1;justify-content:center}
+.modal-hint{font-size:.72rem;color:var(--text-3);margin-top:14px;line-height:1.5}
+
+/* Player search suggestions */
+.sugg{display:flex;flex-direction:column;margin-top:8px;gap:1px}
+.sugg-row{display:flex;flex-direction:column;align-items:flex-start;text-align:left;
+  padding:9px 12px;background:var(--surface-3);border-radius:var(--r-sm)}
+.sugg-row:hover{background:var(--border-2)}
+/* Inline fixture-difficulty tag (next opponent) */
+.badge.fdrtag{color:#0c1014;padding:0 6px;font-weight:800}
+.fdrtag.fdr-5{color:#fff}
+/* Alert preference toggle row */
+.alert-tog{display:flex;align-items:center;justify-content:space-between;
+  padding:11px 2px;border-bottom:1px solid var(--border);font-size:.86rem;font-weight:600}
+.alert-tog:last-of-type{border-bottom:none}
+.alert-tog input{width:20px;height:20px;accent-color:var(--accent-bright)}
+
+/* Ask the Scout (chat) */
+.ask-thread{max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 10px}
+.ask-empty{color:var(--text-3);font-size:.82rem;text-align:center;padding:18px}
+.ask-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:.86rem;line-height:1.5}
+.ask-msg p{margin:0 0 6px}.ask-msg p:last-child{margin:0}
+.ask-msg ul{margin:4px 0;padding-left:18px}.ask-msg h4{margin:4px 0;font-size:.9rem}
+.ask-user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.ask-assistant{align-self:flex-start;background:var(--surface-3);color:var(--text);border-bottom-left-radius:4px}
+.ask-typing{color:var(--text-3);font-style:italic}
+.ask-src{display:block;margin-top:6px;font-size:.66rem;letter-spacing:.03em;text-transform:uppercase;color:var(--text-3);opacity:.8}
+.ask-suggest{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 12px}
+.ask-chip{padding:7px 11px;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border-2);
+  font-size:.76rem;font-weight:600;color:var(--text-2)}
+.ask-chip:hover{background:var(--accent-soft);color:var(--accent-bright);border-color:var(--accent-bright)}
+.ask-input{display:flex;gap:8px}
+/* The Wire — auto blog */
+.blog-intro{margin-bottom:16px}
+.blog-list{display:flex;flex-direction:column;gap:14px}
+.post{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-lg,16px);overflow:hidden;transition:border-color .15s,box-shadow .15s}
+.post.is-open{border-color:var(--border-2);box-shadow:0 6px 22px rgba(0,0,0,.16)}
+.post-hd{display:block;width:100%;text-align:left;background:none;border:0;padding:0;cursor:pointer;color:inherit}
+.post-hero{height:74px;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px;color:#fff}
+.post-kick{font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;opacity:.95}
+.post-mark{opacity:.85}
+.a-emerald .post-hero{background:linear-gradient(120deg,#059669,#10b981 70%,#34d399)}
+.a-violet .post-hero{background:linear-gradient(120deg,#6d28d9,#8b5cf6 70%,#a78bfa)}
+.a-amber .post-hero{background:linear-gradient(120deg,#b45309,#f59e0b 70%,#fbbf24)}
+.a-cyan .post-hero{background:linear-gradient(120deg,#0e7490,#06b6d4 70%,#22d3ee)}
+.a-rose .post-hero{background:linear-gradient(120deg,#be123c,#f43f5e 70%,#fb7185)}
+.post-txt{padding:12px 16px 14px}
+.post-title{margin:0 0 5px;font-size:1.04rem;font-weight:800;line-height:1.25;letter-spacing:-.01em}
+.post-dek{margin:0 0 9px;font-size:.85rem;color:var(--text-2);line-height:1.45}
+.post-meta{display:flex;align-items:center;gap:6px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-3)}
+.post-more{margin-left:auto;display:inline-flex;align-items:center;gap:2px;color:var(--accent-bright)}
+.post.is-open .post-more svg{transform:rotate(90deg)}.post-more svg{transition:transform .15s}
+.post-full{padding:2px 16px 16px;border-top:1px solid var(--border);font-size:.88rem;line-height:1.6;color:var(--text)}
+.post-full h4{margin:14px 0 6px;font-size:.82rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-2)}
+.post-full p{margin:8px 0}.post-full ul,.post-full ol{margin:6px 0;padding-left:20px}.post-full li{margin:3px 0}
+.post-full .muted{color:var(--text-3);font-size:.9em}
+.post-full .up{color:var(--accent-bright);font-weight:700}.post-full .down{color:var(--red);font-weight:700}
+/* Player detail modal */
+.modal-card-lg{max-width:560px;width:100%;max-height:88vh;overflow-y:auto;text-align:left}
+.dl-click{cursor:pointer}.dl-click:hover{background:var(--surface-3)}
+.pd-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pd-id{flex:1;min-width:0}.pd-id h3{margin:0;font-size:1.12rem;font-weight:800}
+.pd-meta{font-size:.8rem;color:var(--text-2);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px}
+.pd-x{align-self:flex-start;background:none;border:0;font-size:1.5rem;line-height:1;color:var(--text-3);cursor:pointer;padding:0 4px}
+.pd-kpi{margin-bottom:14px}.pd-sec{margin-bottom:12px}
+.pd-news{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text);background:var(--surface-3);border-left:3px solid var(--amber);padding:8px 10px;border-radius:8px;margin-bottom:12px}
+.pd-tick{display:flex;gap:6px;flex-wrap:wrap}
+.pd-fx{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:6px 4px;border-radius:8px;font-size:.74rem;font-weight:800;color:#16241b}
+.pd-fx b{font-size:.6rem;opacity:.8;font-weight:600;margin-top:1px}
+.pd-fx.fdr-5{color:#fff}
+.pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:8px}
+.pd-sl{font-size:.78rem;color:var(--text-2)}.pd-sv{font-weight:700;font-size:.84rem}
+.pd-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.pd-chip{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
+.pd-chip-hot{background:var(--accent-soft);color:var(--accent-bright);border-color:var(--accent-bright)}
+.bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:8px;font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
+.bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
+/* Live status pill + auto-refresh */
+.live-pill{display:inline-flex;align-items:center;gap:6px;font-size:.64rem;font-weight:800;letter-spacing:.04em;
+  text-transform:uppercase;padding:3px 9px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--text-3)}
+.live-pill.on{background:var(--red-soft);color:var(--red)}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:livePulse 1.4s var(--ease) infinite}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+/* DEFCON watch meter */
+.dc-meter{height:7px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:5px}
+.dc-fill{height:100%;border-radius:4px;background:var(--accent-bright);transition:width .3s var(--ease)}
+.dc-fill.hit{background:var(--accent)}
+.solver-best{background:var(--accent-soft);border-radius:8px}
+.solver-idx{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;font-size:.72rem;margin-right:8px;flex:0 0 auto}
+/* Player List table */
+.pl-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.pl-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:var(--r-md)}
+.ptable{border-collapse:collapse;width:100%;font-size:.8rem;white-space:nowrap}
+.ptable th,.ptable td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:pointer;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
+.ptable th:hover{color:var(--text)}
+.ptable th.active{color:var(--accent-bright)}
+.ptable th.num,.ptable td.num{text-align:right;font-variant-numeric:tabular-nums}
+.ptable td:first-child{font-weight:600;color:var(--text);position:sticky;left:0;background:var(--surface-2)}
+.ptable th:first-child{left:0;z-index:2}
+.ptable tbody tr{cursor:pointer}
+.ptable tbody tr:hover td{background:var(--surface-3)}
+/* League area */
+.lg-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.lg-fc{display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;color:#fff;margin-right:2px}
+.lsc-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border-2);border-radius:var(--r-pill);padding:4px 6px 4px 12px;font-size:.78rem}
+.lsc-chip button{border:0;background:none;color:var(--text-3);cursor:pointer;font-size:15px;line-height:1}
+.pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
+.plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:12px 8px 10px;cursor:pointer;text-align:center;transition:border-color .14s,box-shadow .14s}
+.plc:hover{border-color:var(--accent-bright);box-shadow:0 4px 14px rgba(0,0,0,.14)}
+.plc-top{position:relative;margin-bottom:2px}
+.plc-crest{position:absolute!important;bottom:-2px;right:-4px;width:17px;height:17px;box-shadow:0 1px 3px rgba(0,0,0,.35);border-radius:4px}
+.plc-flag{position:absolute;top:6px;right:6px;padding:1px 5px;font-size:.58rem}
+.plc-nm{font-weight:700;font-size:.82rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.plc-sub{font-size:.68rem;color:var(--text-3)}
+.plc-stats{font-size:.7rem;color:var(--text-2);margin-top:3px}.plc-stats b{color:var(--text)}
+.ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
+  font-size:.9rem;background:var(--surface-3);color:var(--text)}
+.ask-input input:focus{outline:none;border-color:var(--accent-bright);background:var(--surface)}
+
+/* Toast (action feedback) */
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);
+  transform:translateX(-50%) translateY(16px);background:var(--text);color:var(--surface);
+  padding:11px 18px;border-radius:var(--r-pill);font-size:.84rem;font-weight:600;z-index:600;
+  opacity:0;pointer-events:none;transition:opacity .2s var(--ease),transform .2s var(--ease);
+  box-shadow:0 10px 28px rgba(0,0,0,.28);max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(min-width:901px){.toast{bottom:calc(env(safe-area-inset-bottom) + 24px)}}
+/* Onboarding hero */
+.onb-mark{width:52px;height:52px;margin:0 auto 12px;display:block}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Mini-league: highlight the user's row */
+.dl-row.league-me{background:var(--accent-soft)}
+.dl-row.league-me .dl-nm{color:var(--accent-bright)}
+
+/* Watchlist item (row + inline AI verdict) */
+.wl-item{border-bottom:1px solid var(--border)}
+.wl-item:last-child{border-bottom:none}
+.wl-item [id^="pcard-"]:not(:empty){margin:0 0 12px}
+
+/* ── LAYOUT SHELL ──────────────────────────────────────── */
+.shell{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ───────────────────────────────────────────── */
+.sidebar{
+  width:var(--sidebar-w);
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;left:0;top:0;bottom:0;z-index:200;
+  transition:transform .32s var(--ease);
+}
+
+/* Logo block */
+.sb-brand{
+  display:flex;align-items:center;gap:11px;
+  padding:18px 18px 16px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{width:38px;height:38px;flex-shrink:0}
+.brand-text{display:flex;flex-direction:column;line-height:1.1}
+.brand-name{
+  font-family:var(--font-display);
+  font-size:1.04rem;letter-spacing:-.02em;
+}
+.brand-name .light{font-weight:500;color:var(--text-2)}
+.brand-name .bold{font-weight:800;color:var(--text)}
+.brand-tag{
+  font-size:.62rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent-bright);margin-top:3px;
+}
+
+/* Gameweek strip */
+.sb-gw{
+  padding:13px 18px;
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(150deg,var(--accent-soft) 0%,transparent 72%);
+}
+.gw-row{display:flex;align-items:baseline;justify-content:space-between}
+.gw-label{
+  font-size:.62rem;font-weight:700;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--accent-bright);
+}
+.gw-num{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
+.gw-deadline{font-size:.72rem;color:var(--text-3);margin-top:3px}
+.gw-deadline b{color:var(--amber);font-weight:600}
+.live-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--accent-bright);margin-right:5px;vertical-align:middle;
+}
+@media(prefers-reduced-motion:no-preference){
+  .live-dot{animation:pulse 2.4s var(--ease) infinite}
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Nav */
+.sb-nav{flex:1;overflow-y:auto;padding:8px 10px 16px}
+.nav-area{margin-bottom:2px}
+.nav-area-btn{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:10px 12px;border-radius:var(--r-sm);
+  color:var(--text-2);font-size:.86rem;font-weight:600;
+  transition:background .14s var(--ease),color .14s var(--ease);
+}
+.nav-area-btn:hover{background:var(--surface-3);color:var(--text)}
+.nav-area-btn.active{background:var(--accent-soft);color:var(--accent-bright)}
+.nav-area-ic{
+  width:20px;height:20px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav-area-ic svg{width:18px;height:18px}
+.nav-area-label{flex:1;text-align:left}
+.nav-chevron{
+  width:14px;height:14px;flex-shrink:0;color:var(--text-3);
+  transition:transform .2s var(--ease);
+}
+.nav-area-btn.expanded .nav-chevron{transform:rotate(90deg)}
+.lock-badge{
+  font-size:.58rem;font-weight:800;letter-spacing:.04em;
+  padding:2px 7px;border-radius:var(--r-pill);
+  background:var(--amber-soft);color:var(--amber);
+  display:flex;align-items:center;gap:3px;
+}
+.lock-badge svg{width:9px;height:9px}
+
+/* Sub-panels */
+.nav-sub{
+  overflow:hidden;max-height:0;
+  transition:max-height .28s var(--ease);
+}
+.nav-sub.open{max-height:520px}
+.nav-sub-btn{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:8px 12px 8px 43px;border-radius:var(--r-sm);
+  color:var(--text-3);font-size:.81rem;font-weight:500;
+  transition:background .12s var(--ease),color .12s var(--ease);
+  position:relative;
+}
+.nav-sub-btn:hover{background:var(--surface-3);color:var(--text-2)}
+.nav-sub-btn.active{color:var(--accent-bright);font-weight:700;background:var(--accent-soft)}
+.nav-sub-btn.active::before{
+  content:'';position:absolute;left:24px;top:50%;transform:translateY(-50%);
+  width:5px;height:5px;border-radius:50%;background:var(--accent-bright);
+}
+.nav-sub-lock{margin-left:auto;width:11px;height:11px;color:var(--text-4)}
+
+/* Sidebar footer */
+.sb-foot{
+  padding:12px 18px;border-top:1px solid var(--border);
+  display:flex;flex-direction:column;gap:10px;
+}
+.sb-foot-row{display:flex;align-items:center;justify-content:space-between}
+.sb-foot-v{font-size:.66rem;color:var(--text-4)}
+.sb-foot-legal{font-size:.6rem;line-height:1.45;color:var(--text-4);margin:0}
+.acct-btn{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:9px 11px;border-radius:var(--r-md);
+  background:var(--surface-3);border:1px solid var(--border);
+  font-size:.82rem;font-weight:600;color:var(--text-2);text-align:left;
+}
+.acct-btn:hover{background:var(--border-2);color:var(--text)}
+.acct-btn svg{width:16px;height:16px;flex-shrink:0;color:var(--accent-bright)}
+.acct-btn .acct-label{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.theme-toggle{
+  display:flex;align-items:center;gap:7px;
+  padding:6px 10px;border-radius:var(--r-pill);
+  background:var(--surface-3);border:1px solid var(--border);
+  font-size:.7rem;font-weight:600;color:var(--text-2);
+  transition:background .14s var(--ease);
+}
+.theme-toggle:hover{background:var(--border-2)}
+.theme-toggle svg{width:14px;height:14px}
+
+/* ── MAIN ──────────────────────────────────────────────── */
+.main{
+  margin-left:var(--sidebar-w);
+  flex:1;display:flex;flex-direction:column;min-height:100vh;
+  min-width:0;
+}
+
+/* Topbar */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  height:var(--topbar-h);padding:0 26px;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.tb-left{display:flex;align-items:center;gap:13px;min-width:0}
+.hamburger{
+  display:none;width:38px;height:38px;
+  align-items:center;justify-content:center;
+  border-radius:var(--r-sm);background:var(--surface-3);
+  border:1px solid var(--border);
+}
+.hamburger svg{width:18px;height:18px}
+
+/* Topbar logo */
+.tb-logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.tb-logo-mark{width:30px;height:30px;flex-shrink:0}
+.tb-logo-text{display:flex;flex-direction:column;line-height:1.04;white-space:nowrap}
+.tb-name{font-family:var(--font-display);font-size:.96rem;letter-spacing:-.02em}
+.tb-logo-text .light{font-weight:500;color:var(--text-2)}
+.tb-logo-text .bold{font-weight:800;color:var(--text)}
+.tb-tag{
+  font-size:.56rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent-bright);margin-top:1px;
+}
+.tb-divider{
+  width:1px;height:24px;background:var(--border-2);flex-shrink:0;
+}
+
+.tb-crumb{display:flex;flex-direction:column;min-width:0}
+.tb-area{
+  font-size:.64rem;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-3);
+}
+.tb-title{
+  font-family:var(--font-display);font-size:1.04rem;
+  font-weight:700;letter-spacing:-.02em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tb-right{display:flex;align-items:center;gap:9px}
+.tb-updated{font-size:.66rem;font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media(max-width:560px){.tb-updated{display:none}}
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:9px 16px;border-radius:var(--r-md);
+  font-size:.83rem;font-weight:600;white-space:nowrap;
+  transition:transform .1s var(--ease),filter .14s var(--ease),background .14s var(--ease);
+}
+.btn svg{width:15px;height:15px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow)}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-ghost{background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
+.btn-ghost:hover{background:var(--border-2);color:var(--text)}
+.btn-sm{padding:7px 12px;font-size:.76rem}
+.btn-icon{width:38px;height:38px;padding:0;justify-content:center}
+@media(prefers-reduced-motion:no-preference){.btn:active{transform:scale(.97)}}
+
+/* ── PAGES ─────────────────────────────────────────────── */
+.page{display:none;padding:24px 26px 40px;flex:1}
+.page.active{display:block}
+@media(prefers-reduced-motion:no-preference){
+  .page.active{animation:fadeIn .32s var(--ease)}
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.page-head{margin-bottom:22px}
+.page-head h1{
+  font-family:var(--font-display);font-size:1.5rem;
+  font-weight:800;letter-spacing:-.03em;
+}
+.page-head p{font-size:.85rem;color:var(--text-3);margin-top:4px}
+.page-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* Locked banner */
+/* ── PRO PAYWALL ───────────────────────────────────────── */
+.pro-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--r-pill);
+  background:var(--accent-soft);color:var(--accent-bright);font-size:.66rem;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase}
+.pro-chip svg{width:12px;height:12px}
+.pro-hero{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);
+  box-shadow:var(--shadow);padding:26px 22px;text-align:center}
+.pro-hero h2{font-family:var(--font-display);font-size:1.5rem;margin:14px 0 6px;letter-spacing:-.02em}
+.pro-lead{font-size:.9rem;color:var(--text-2);max-width:440px;margin:0 auto 20px;line-height:1.5}
+.pro-benefits{display:flex;flex-direction:column;gap:12px;text-align:left;max-width:420px;margin:0 auto 22px}
+.pro-benefit{display:flex;gap:12px;align-items:flex-start}
+.pro-benefit svg{width:22px;height:22px;color:var(--accent-bright);flex-shrink:0;margin-top:1px}
+.pro-benefit b{font-size:.88rem;color:var(--text)}
+.pro-benefit p{font-size:.8rem;color:var(--text-2);margin-top:1px;line-height:1.45}
+.pro-foot{font-size:.74rem;color:var(--text-3);margin-top:12px}
+.pro-active{display:flex;align-items:center;gap:8px;font-size:.74rem;font-weight:600;
+  color:var(--text-3);margin-bottom:16px}
+.pro-active .badge svg{width:11px;height:11px;vertical-align:-1px;margin-right:2px}
+/* Upgrade modal extras */
+#pro-body{text-align:center}
+#pro-body h3{font-family:var(--font-display);font-size:1.3rem;margin:12px 0 16px}
+.pro-prices{display:flex;gap:12px;margin:4px 0 16px}
+.pro-price{flex:1;background:var(--surface-3);border:1px solid var(--border);border-radius:var(--r-md);padding:14px;cursor:pointer;text-align:center;transition:border-color .14s,background .14s}
+.pro-price:hover{border-color:var(--accent-bright);background:var(--accent-soft)}
+.pro-price-v{font-family:var(--font-display);font-size:1.4rem;font-weight:800}
+.pro-price-l{font-size:.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.acct-link{display:block;width:100%;text-align:center;margin-top:14px;
+  font-size:.78rem;font-weight:600;color:var(--accent-bright)}
+/* When Pro, hide the lock badges in the nav */
+html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
+
+/* ── GRID HELPERS ──────────────────────────────────────── */
+.grid{display:grid;gap:14px}
+.grid>*{min-width:0}
+.g-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g-sb{grid-template-columns:minmax(0,1fr) 300px}
+
+/* ── CARD ──────────────────────────────────────────────── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  box-shadow:var(--shadow);
+}
+.card-title{
+  font-size:.68rem;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-3);
+  margin-bottom:14px;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;
+}
+
+/* ── KPI CARD ──────────────────────────────────────────── */
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);padding:18px;
+  box-shadow:var(--shadow);position:relative;overflow:hidden;
+}
+.kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%}
+.kpi-label{
+  font-size:.66rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:9px;
+}
+.kpi-value{
+  font-family:var(--font-display);font-size:1.9rem;
+  font-weight:800;letter-spacing:-.04em;line-height:1;
+}
+.kpi-delta{font-size:.72rem;color:var(--text-3);margin-top:6px}
+
+/* ── PLACEHOLDER CONTENT ───────────────────────────────── */
+.ph-block{
+  border:1.5px dashed var(--border-2);
+  border-radius:var(--r-md);
+  background:var(--surface-2);
+  padding:22px;text-align:center;
+}
+.ph-block-icon{
+  width:42px;height:42px;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:var(--r-md);background:var(--accent-soft);
+}
+.ph-block-icon svg{width:22px;height:22px;color:var(--accent-bright)}
+.ph-block h3{font-size:.92rem;font-weight:700;margin-bottom:5px}
+.ph-block p{font-size:.8rem;color:var(--text-3);max-width:440px;margin:0 auto;line-height:1.55}
+.ph-tag{
+  display:inline-block;margin-top:12px;
+  font-size:.66rem;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;padding:4px 10px;border-radius:var(--r-pill);
+  background:var(--surface-3);color:var(--text-3);
+}
+
+/* Shimmer bars to suggest data */
+.ph-bars{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.ph-bar{height:34px;border-radius:var(--r-sm);background:var(--surface-3);position:relative;overflow:hidden}
+.ph-bar::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,var(--border-2),transparent);
+  transform:translateX(-100%);
+}
+@media(prefers-reduced-motion:no-preference){
+  .ph-bar::after{animation:shimmer 1.8s var(--ease) infinite}
+}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.ph-bar.w80{width:80%}.ph-bar.w65{width:65%}.ph-bar.w90{width:90%}
+
+/* ── PITCH PREVIEW ─────────────────────────────────────── */
+.pitch-preview{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.10)),
+    repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 34px,rgba(0,0,0,.02) 34px 68px),
+    linear-gradient(180deg,#3aa862,#2c9853 55%,#279050);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:var(--r-md);
+  padding:26px 12px 20px;position:relative;overflow:hidden;
+  min-height:340px;
+  box-shadow:inset 0 0 60px rgba(0,20,8,.22);
+}
+.pitch-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.pitch-row{
+  display:flex;justify-content:center;gap:12px;
+  margin-bottom:16px;position:relative;z-index:2;
+}
+@media(max-width:560px){
+  .pitch-row{gap:5px}
+  .pp-fig{width:44px;height:48px}
+  .pp-sub{font-size:.52rem}
+}
+.pitch-row:last-child{margin-bottom:0}
+/* Fallback jersey shape (used only when a player photo is unavailable) */
+.jersey{
+  width:44px;height:46px;
+  background:rgba(255,255,255,.92);
+  clip-path:polygon(20% 0,0 14%,0 30%,17% 24%,17% 100%,83% 100%,83% 24%,100% 30%,100% 14%,80% 0,62% 8%,50% 10%,38% 8%);
+  filter:drop-shadow(0 2px 5px rgba(0,0,0,.35));
+}
+
+/* ── TABS WITHIN PANEL ─────────────────────────────────── */
+.panel-tabs{
+  display:flex;gap:4px;margin-bottom:18px;
+  background:var(--surface-2);padding:4px;border-radius:var(--r-md);
+  width:fit-content;flex-wrap:wrap;
+}
+.panel-tab{
+  padding:7px 14px;border-radius:var(--r-sm);
+  font-size:.79rem;font-weight:600;color:var(--text-3);
+  transition:background .14s var(--ease),color .14s var(--ease);
+}
+.panel-tab:hover{color:var(--text-2)}
+.panel-tab.active{background:var(--accent);color:#fff}
+
+/* ── BADGES ────────────────────────────────────────────── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:var(--r-pill);
+  font-size:.66rem;font-weight:700;
+}
+.badge-green{background:var(--up-soft);color:var(--up)}
+.badge-amber{background:var(--amber-soft);color:var(--amber)}
+.badge-red{background:var(--red-soft);color:var(--red)}
+.badge-blue{background:var(--blue-soft);color:var(--blue)}
+.badge-grey{background:var(--surface-3);color:var(--text-3)}
+
+/* ── OVERLAY (mobile drawer) ───────────────────────────── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:190;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(2px);
+}
+.overlay.show{display:block}
+
+/* ── BOTTOM NAV (mobile) ───────────────────────────────── */
+.bottom-nav{display:none}
+
+/* ── RESPONSIVE ────────────────────────────────────────── */
+@media(max-width:1080px){
+  .g-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .g-sb{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:900px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  .main{margin-left:0}
+  .hamburger{display:flex}
+  .g-3{grid-template-columns:repeat(2,1fr)}
+  /* Keep the last of the content clear of the fixed bottom bar — the bar
+     grows by the home-indicator inset on notched phones, so the padding
+     must too. */
+  .page{padding:18px 16px calc(var(--bottomnav-h) + env(safe-area-inset-bottom,0px) + 28px)}
+
+  /* Bottom nav appears */
+  .bottom-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;
+    height:var(--bottomnav-h);
+    background:var(--surface);border-top:1px solid var(--border-2);
+    padding:0 2px env(safe-area-inset-bottom);
+    align-items:center;justify-content:space-around;
+    box-shadow:0 -4px 20px rgba(0,0,0,.22);
+  }
+  .bn-item{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    flex:1;min-width:0;padding:6px 2px;border-radius:var(--r-sm);
+    color:var(--text-3);
+    transition:color .14s var(--ease);
+  }
+  .bn-item.active{color:var(--accent-bright)}
+  .bn-ic{
+    width:40px;height:26px;display:flex;align-items:center;justify-content:center;
+    border-radius:var(--r-sm);transition:background .14s var(--ease);
+  }
+  .bn-ic svg{width:20px;height:20px}
+  .bn-item.active .bn-ic{background:var(--accent-soft)}
+  /* One line, always: seven areas share a phone width, so labels are short
+     (see BN_SHORT) and never wrap under the icons. */
+  .bn-label{font-size:.58rem;font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:560px){
+  .g-2,.g-3,.g-4{grid-template-columns:minmax(0,1fr)}
+  .page-head h1{font-size:1.3rem}
+  .kpi-value{font-size:1.65rem}
+  .topbar{padding:0 14px}
+  /* On phones: show the name + tagline by the logo; drop the breadcrumb
+     (the page heading already names the panel). */
+  .tb-divider{display:none}
+  .tb-crumb{display:none}
+  .tb-left{gap:8px}
+  /* Declutter the topbar so nothing touches: the tagline goes, the Link
+     Team button collapses to its icon, and the buttons keep clear gaps. */
+  .tb-tag{display:none}
+  .si-label{display:none}
+  #signin-btn{width:38px;height:38px;padding:0;justify-content:center}
+  .tb-right{gap:7px;flex-wrap:nowrap}
+}
+@media(max-width:400px){
+  /* Very narrow phones: the mark alone carries the brand; the page
+     heading names the panel. */
+  .tb-logo-text{display:none}
+}
+@supports(padding:max(0px)){
+  .bottom-nav{padding-bottom:max(4px,env(safe-area-inset-bottom))}
+}
+
+/* ── UTILITY ───────────────────────────────────────────── */
+.mb-14{margin-bottom:14px}
+.mb-20{margin-bottom:20px}
+.mt-14{margin-top:14px}
+.text-2{color:var(--text-2)}
+.text-3{color:var(--text-3)}
+
+/* ── BRAND ELEVATION — gradient moments, depth, motion ───── */
+:root{
+  --grad-brand:linear-gradient(118deg,#8f0c22 0%,#c8102e 45%,#a8256f 100%);
+  --grad-glow:0 6px 24px rgba(200,16,46,.28);
+}
+[data-theme="dark"]{
+  --grad-brand:linear-gradient(118deg,#c81734 0%,#e8304a 45%,#c04a8f 100%);
+  --grad-glow:0 6px 26px rgba(232,48,74,.22);
+}
+.btn{transition:transform .12s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--grad-brand);box-shadow:var(--grad-glow)}
+@media(hover:hover){
+  .card{transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+  .btn-primary:hover{filter:brightness(1.06)}
+}
+/* Hero band: the one full-gradient brand moment per page */
+.hero-band{
+  background:var(--grad-brand);border-radius:var(--r-lg);
+  padding:18px 18px 8px;margin-bottom:20px;box-shadow:var(--grad-glow);
+}
+.hero-band .hb-top{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.hero-band .hb-title{color:rgba(255,255,255,.85);font-size:.72rem;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase}
+.hero-band .btn-onbrand{background:rgba(255,255,255,.16);color:#fff;
+  border:1px solid rgba(255,255,255,.32)}
+.hero-band .grid{margin-bottom:0}
+.hero-band .kpi{background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.16);
+  box-shadow:none;backdrop-filter:blur(2px)}
+.hero-band .kpi-label{color:rgba(255,255,255,.75)}
+.hero-band .kpi-value{color:#fff}
+.hero-band .kpi-delta{color:rgba(255,255,255,.72)}
+.hero-band .kpi-accent{background:rgba(255,255,255,.55)!important}
+/* Journey stepper */
+.jr{counter-reset:step}
+.jr-step{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)}
+.jr-step:last-child{border-bottom:none}
+.jr-num{flex:0 0 34px;height:34px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:800;font-family:var(--font-display);
+  background:var(--surface-3);color:var(--text-2);font-size:.95rem}
+.jr-step.done .jr-num{background:var(--grad-brand);color:#fff}
+.jr-body{flex:1;min-width:0}
+.jr-h{font-weight:800;font-family:var(--font-display);letter-spacing:-.01em;margin-bottom:2px}
+.jr-step.done .jr-h{text-decoration:line-through;text-decoration-thickness:2px;
+  text-decoration-color:var(--accent);opacity:.75}
+.jr-sub{font-size:.84rem;color:var(--text-2);margin-bottom:8px}
+.jr-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.jr-prog{height:6px;border-radius:3px;background:var(--surface-3);overflow:hidden;margin:4px 0 14px}
+.jr-prog>div{height:100%;background:var(--grad-brand);transition:width .3s var(--ease)}
+@media(max-width:720px){
+  .hero-band .grid.g-4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .hero-band .kpi{min-width:0}
+  .hero-band .kpi-value{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hero-band .kpi-value{font-size:1.35rem}
+}
+
+.seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
+.seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
+.seg-b.on{background:var(--grad-brand);color:#fff}
+.crest{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;
+  overflow:hidden;vertical-align:middle;margin-right:7px;flex-shrink:0}
+.crest img{width:100%;height:100%;object-fit:contain}
+.avatar{display:inline-flex;align-items:flex-end;justify-content:center;border-radius:50%;
+  overflow:hidden;vertical-align:middle;margin-right:10px;flex-shrink:0;box-shadow:var(--shadow)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.dl-row .dl-grow{display:flex;align-items:center;gap:0;min-width:0}
+
+/* ═══ RACEWEEK EDGE — F1-specific components ═══════════════ */
+
+/* Driver chip: team-colour tile with the race number */
+.numchip{display:inline-flex;align-items:center;justify-content:center;border-radius:7px;
+  font-family:var(--font-mono);font-weight:600;color:#fff;flex-shrink:0;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.22)}
+/* Team colour bar on list rows / cards */
+.teambar{width:4px;align-self:stretch;border-radius:4px;flex-shrink:0;min-height:26px}
+
+/* Garage view (lineup) */
+.garage{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.gcar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:14px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.gcar::before{content:'';position:absolute;inset:0 auto 0 0;width:5px;background:var(--tc,#888)}
+.gcar .g-num{font-family:var(--font-mono);font-weight:600;font-size:1.5rem;color:var(--tc,#888);line-height:1}
+.gcar .g-nm{font-weight:800;font-family:var(--font-display);font-size:1.02rem;margin:6px 0 1px}
+.gcar .g-team{font-size:.74rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
+.gcar .g-row{display:flex;justify-content:space-between;margin-top:10px;font-size:.8rem;color:var(--text-2)}
+.gcar .g-row b{color:var(--text);font-variant-numeric:tabular-nums}
+.gcar.is-drs{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--shadow)}
+.drs-tag{position:absolute;top:10px;right:10px;background:var(--accent);color:#fff;font-size:.62rem;
+  font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:var(--r-pill)}
+
+/* Builder slots */
+.slotgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.slot{border:1.5px dashed var(--border-3);border-radius:var(--r-lg);padding:12px;min-height:86px;
+  display:flex;flex-direction:column;justify-content:center;gap:3px;cursor:pointer;
+  transition:border-color .18s var(--ease),background .18s var(--ease);background:transparent}
+.slot:hover{border-color:var(--accent);background:var(--accent-soft)}
+.slot.filled{border-style:solid;border-color:var(--border);background:var(--surface);
+  cursor:default;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.slot.filled::before{content:'';position:absolute;inset:0 auto 0 0;width:5px;background:var(--tc,#888)}
+.slot .s-hint{color:var(--text-3);font-size:.8rem;text-align:center}
+.slot .s-x{position:absolute;top:8px;right:8px;border:0;background:var(--surface-3);color:var(--text-2);
+  width:22px;height:22px;border-radius:50%;cursor:pointer;font-size:.8rem;line-height:1}
+.slot .s-x:hover{background:var(--red-soft);color:var(--red)}
+.budgetbar{height:10px;border-radius:var(--r-pill);background:var(--surface-3);overflow:hidden;margin:8px 0 4px}
+.budgetbar>div{height:100%;border-radius:var(--r-pill);background:var(--accent);transition:width .3s var(--ease)}
+.budgetbar.over>div{background:var(--red)}
+
+/* Race calendar cards */
+.racecard{display:flex;gap:14px;align-items:center;padding:13px 16px;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.racecard.is-next{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),var(--shadow)}
+.racecard.done{opacity:.62}
+.rc-round{font-family:var(--font-mono);font-weight:600;color:var(--text-3);font-size:.78rem;width:34px;flex-shrink:0}
+.rc-flag{font-size:1.45rem;flex-shrink:0}
+.rc-body{flex:1;min-width:0}
+.rc-nm{font-weight:700;font-size:.92rem}
+.rc-sub{font-size:.76rem;color:var(--text-3)}
+.rc-date{text-align:right;font-size:.8rem;color:var(--text-2);font-variant-numeric:tabular-nums;flex-shrink:0}
+.sprint-badge{display:inline-flex;align-items:center;gap:4px;background:var(--purple-soft);color:var(--purple);
+  font-size:.62rem;font-weight:800;letter-spacing:.05em;padding:2px 7px;border-radius:var(--r-pill);text-transform:uppercase}
+
+/* Countdown tiles */
+.count{display:flex;gap:10px}
+.count .c-cell{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);
+  padding:10px 0;text-align:center;flex:1;box-shadow:var(--shadow)}
+.count .c-v{font-family:var(--font-mono);font-weight:600;font-size:1.5rem;line-height:1;font-variant-numeric:tabular-nums}
+.count .c-l{font-size:.64rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-top:5px}
+
+/* Track trait meters */
+.trait{display:flex;align-items:center;gap:10px;margin:7px 0}
+.trait .t-l{width:132px;font-size:.78rem;color:var(--text-2);flex-shrink:0}
+.trait .t-bar{flex:1;height:8px;border-radius:var(--r-pill);background:var(--surface-3);overflow:hidden}
+.trait .t-bar>div{height:100%;border-radius:var(--r-pill)}
+.trait .t-v{width:34px;text-align:right;font-size:.76rem;font-family:var(--font-mono);color:var(--text-2)}
+
+/* Chip cards */
+.chipcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  padding:14px 16px;box-shadow:var(--shadow)}
+.chipcard.used{opacity:.55}
+.chipcard .ch-hd{display:flex;align-items:center;gap:9px;font-weight:800;font-family:var(--font-display)}
+.chipcard .ch-ic{width:30px;height:30px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--accent-soft);color:var(--accent)}
+.chipcard .ch-ic svg{width:16px;height:16px}
+.chipcard p{font-size:.8rem;color:var(--text-2);margin:8px 0 0;line-height:1.45}
+.chipcard .ch-best{margin-top:10px;font-size:.78rem;background:var(--accent-soft);color:var(--accent);
+  border-radius:var(--r-sm);padding:6px 9px;font-weight:600}
+
+/* Up / down price + points movement */
+.mv-up{color:var(--up);font-weight:700}
+.mv-dn{color:var(--red);font-weight:700}
+.pricebar{height:8px;border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
+.pricebar>div{height:100%}
+
+/* H2H duel rows */
+.duel{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+  padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
+.duel .d-side{display:flex;align-items:center;gap:8px;min-width:0}
+.duel .d-side.right{justify-content:flex-end;text-align:right}
+.duel .d-score{font-family:var(--font-mono);font-weight:600;font-size:.94rem;white-space:nowrap;
+  background:var(--surface-3);border-radius:var(--r-sm);padding:4px 10px}
+.duel .win{color:var(--up)}
+
+/* Points simulator position input */
+.possel{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.possel select,.possel input[type=number]{background:var(--surface);border:1px solid var(--border-2);
+  color:var(--text);border-radius:var(--r-sm);padding:7px 9px;font-size:.85rem;font-family:var(--font-body)}
+
+/* Weather chip */
+.wx{display:inline-flex;align-items:center;gap:6px;background:var(--blue-soft);color:var(--blue);
+  border-radius:var(--r-pill);padding:3px 10px;font-size:.72rem;font-weight:700}
+</style>
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+<div class="overlay" id="overlay" aria-hidden="true"></div>
+
+<div class="shell">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+
+    <!-- Logo -->
+    <div class="sb-brand">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--accent)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--accent-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M7 27 C15 27 13 12 20 12 L31 12" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
+        <circle cx="31" cy="12" r="3.4" fill="#fff"/>
+        <path d="M9 31 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name"><span class="light">RaceWeek</span> <span class="bold">Edge</span></div>
+        <div class="brand-tag">For F1 fantasy managers</div>
+      </div>
+    </div>
+
+    <!-- Round strip -->
+    <div class="sb-gw">
+      <div class="gw-row">
+        <span class="gw-label"><span class="live-dot"></span>Round</span>
+        <span class="gw-num" id="gw-num">–</span>
+      </div>
+      <div class="gw-deadline">Lock-in <b id="gw-deadline">–</b></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sb-nav" id="sb-nav" aria-label="App areas"></nav>
+
+    <!-- Footer -->
+    <div class="sb-foot">
+      <div class="sb-foot-row">
+        <span class="sb-foot-v">RaceWeek Edge v1.0</span>
+        <button class="theme-toggle" id="theme-toggle" aria-label="Switch colour theme">
+          <span id="theme-icon"></span>
+          <span id="theme-label">Light</span>
+        </button>
+      </div>
+      <a class="sb-foot-v" href="https://gameweekedge.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Gameweek Edge ↗</a>
+      <p class="sb-foot-legal">Independent app — not affiliated with, endorsed by or associated with Formula 1, the FIA or the official F1 Fantasy game. F1 and Formula 1 are trademarks of Formula One Licensing BV, used descriptively.</p>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main" id="main-wrap">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="tb-left">
+        <button class="hamburger" id="hamburger" aria-label="Open navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18"/>
+          </svg>
+        </button>
+        <a href="#" class="tb-logo" id="tb-logo" aria-label="RaceWeek Edge home">
+          <svg class="tb-logo-mark" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--accent)"/>
+            <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--accent-bright)" stroke-width="1.5" opacity="0.5"/>
+            <path d="M7 27 C15 27 13 12 20 12 L31 12" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
+            <circle cx="31" cy="12" r="3.4" fill="#fff"/>
+            <path d="M9 31 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+          </svg>
+          <span class="tb-logo-text">
+            <span class="tb-name"><span class="light">RaceWeek</span> <span class="bold">Edge</span></span>
+            <span class="tb-tag">For F1 fantasy managers</span>
+          </span>
+        </a>
+        <span class="tb-divider" aria-hidden="true"></span>
+        <div class="tb-crumb">
+          <span class="tb-area" id="tb-area">Home</span>
+          <span class="tb-title" id="tb-title">Dashboard</span>
+        </div>
+      </div>
+      <div class="tb-right">
+        <span id="tb-updated" class="tb-updated" aria-live="polite"></span>
+        <button class="btn btn-ghost btn-icon" id="export-btn" aria-label="Export the current view as CSV" title="Export the current view as CSV">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/>
+          </svg>
+        </button>
+        <button class="btn btn-ghost btn-icon" id="refresh-btn" aria-label="Refresh data">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
+          </svg>
+        </button>
+        <button class="btn btn-primary btn-sm" id="signin-btn" aria-label="Build my team">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
+          </svg>
+          <span class="si-label">My Team</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Pages render here -->
+    <div id="pages"></div>
+
+  </div>
+</div>
+
+<!-- ═══ BOTTOM NAV (mobile) ═══ -->
+<nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
+
+<!-- Offline banner -->
+<div class="net-banner" id="net-banner" role="status" aria-live="polite" hidden>
+  <span class="net-dot" aria-hidden="true"></span>
+  <span>You're offline — showing the last loaded view.</span>
+</div>
+
+<!-- Upgrade / Pro modal -->
+<div class="modal" id="pro-modal" role="dialog" aria-modal="true" aria-labelledby="pro-title">
+  <div class="modal-bg" data-pro-close></div>
+  <div class="modal-card" id="pro-body"></div>
+</div>
+
+<!-- First-run onboarding -->
+<div class="modal" id="onb-modal" role="dialog" aria-modal="true" aria-labelledby="onb-title">
+  <div class="modal-bg" data-onb-close></div>
+  <div class="modal-card" style="text-align:center">
+    <svg class="onb-mark" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--accent)"/>
+      <path d="M7 27 C15 27 13 12 20 12 L31 12" stroke="#fff" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <circle cx="31" cy="12" r="3.4" fill="#fff"/>
+    </svg>
+    <h3 id="onb-title">Welcome to RaceWeek Edge</h3>
+    <p style="color:var(--text-2);font-size:.88rem;margin-bottom:18px;line-height:1.5">Build your F1 Fantasy team here to unlock projected points, the transfer optimiser, DRS Boost picks, chip strategy and price alerts — all in one calm companion. You can always explore first.</p>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" id="onb-link">Build my team</button>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px" data-onb-close>Look around first</button>
+  </div>
+</div>
+
+<!-- Driver / constructor detail modal -->
+<div class="modal" id="player-modal" role="dialog" aria-modal="true" aria-labelledby="player-title">
+  <div class="modal-bg" data-player-close></div>
+  <div class="modal-card modal-card-lg" id="player-body"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   RACEWEEK EDGE — Shell logic
+   Icon set, helpers, theme, navigation model, page rendering.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── ICON SET (inline SVG, recolours with currentColor) ──── */
+const ICON = {
+  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/>',
+  team:'<circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>',
+  live:'<circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M3 3a13 13 0 0 0 0 18M21 3a13 13 0 0 1 0 18"/>',
+  intel:'<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.6"/>',
+  players:'<path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="currentColor"/><circle cx="14" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="19" r="2" fill="currentColor"/>',
+  planner:'<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4M8 13h3M8 16.5h6"/>',
+  chevron:'<path d="M9 6l6 6-6 6"/>',
+  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.5 4.5l1.8 1.8M17.7 17.7l1.8 1.8M19.5 4.5l-1.8 1.8M6.3 17.7l-1.8 1.8"/>',
+  moon:'<path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/>',
+  dashboard:'<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
+  bolt:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
+  squad:'<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/>',
+  swap:'<path d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8"/>',
+  star:'<path d="M12 2.5l2.9 6 6.6.6-5 4.4 1.5 6.4L12 16.6 6 19.9l1.5-6.4-5-4.4 6.6-.6z"/>',
+  pulse:'<path d="M3 12h4l3 8 4-16 3 8h4"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8.5-8 9.5C7.5 20.5 4 17 4 12V6z"/>',
+  rotate:'<path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>',
+  question:'<circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 0 1 5.6.4c0 1.9-2.8 2.4-2.8 4M12 17.2h.01"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/>',
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+  users:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5"/><path d="M16 5.2A3 3 0 0 1 16 11M21 20c0-2.4-1.6-4.2-4-4.8"/>',
+  compare:'<path d="M12 3v18M5 8 2 11l3 3M19 8l3 3-3 3"/><path d="M2 11h7M15 11h7"/>',
+  trend:'<path d="M3 17l6-6 4 4 8-8M21 7v5h-5"/>',
+  arrows:'<path d="M7 4v16M7 4 3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4"/>',
+  cross:'<path d="M12 5v14M5 12h14"/>',
+  flag:'<path d="M5 21V3M5 4h11l-2 4 2 4H5"/>',
+  calendar:'<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/>',
+  diamond:'<path d="M12 2.5 21 12l-9 9.5L3 12z"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
+  eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
+  spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>',
+  chat:'<path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>',
+  news:'<path d="M4 5h13v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v10a2 2 0 0 1-2 2M7 9h7M7 12.5h7M7 16h4"/>',
+  trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 18h6M12 13v5M9 21h6"/>',
+  helmet:'<path d="M4 13a8 8 0 0 1 16 0v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 12h9l3 2h4"/>',
+  tyre:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+  stopwatch:'<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.8 2M9.5 2.5h5M12 2.5V6"/>',
+  cloud:'<path d="M6.5 19a4.5 4.5 0 0 1-.4-9A6 6 0 0 1 17.8 8.7 4.2 4.2 0 0 1 17.5 19z"/>'
+};
+
+function svg(path,extra){
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
+    'stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+path+'</svg>';
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ── Storage helpers (namespaced rwe-) ─────────────────── */
+function lsGet(k,fb){try{const v=localStorage.getItem('rwe-'+k);return v==null?fb:JSON.parse(v);}catch(_){return fb;}}
+function lsSet(k,v){try{localStorage.setItem('rwe-'+k,JSON.stringify(v));}catch(_){}}
+function lsDel(k){try{localStorage.removeItem('rwe-'+k);}catch(_){}}
+
+/* ── Formatting helpers ────────────────────────────────── */
+const money=m=>'$'+Number(m).toFixed(1)+'M';
+const fmtNum=n=>(n==null?'—':Number(n).toLocaleString('en-GB'));
+const pts=n=>(n>0?'+':'')+Number(n).toFixed(0);
+function fmtDate(iso,opts){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-GB',opts||{weekday:'short',day:'numeric',month:'short'});
+}
+function fmtDateTime(iso){
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+' '+
+    d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
+/* ── Toast ─────────────────────────────────────────────── */
+let toastTimer=null;
+function toast(msg){
+  let t=document.querySelector('.toast');
+  if(!t){t=document.createElement('div');t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+function focusModal(id){
+  const card=document.querySelector('#'+id+' .modal-card');
+  if(card){card.setAttribute('tabindex','-1');card.focus({preventScroll:true});}
+}
+
+/* ── Panel state helpers (loading / error / empty) ─────── */
+function skel(rows){let s='';for(let i=0;i<(rows||4);i++)s+='<div class="sk" style="width:'+(100-i*8)+'%"></div>';return '<div class="card">'+s+'</div>';}
+function stateBox(icon,title,text,btn){
+  return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
+    '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
+}
+function teamBox(){
+  return stateBox('team','Build your team to see this',
+    'Pick your 5 drivers and 2 constructors in the Team Builder and your personalised view loads here.',
+    '<button class="btn btn-primary btn-sm" onclick="openPanel(\'builder\')">Open Team Builder</button>');
+}
+
+/* ═══ PRO TIER (honest on-device preview — billing comes later) ═══ */
+const PRICE={monthly:'£3.99',season:'£19.99'};
+const PRO_BENEFITS=[
+  ['pulse','Race-day tools','The points simulator, sprint strategy and rank-impact views.'],
+  ['users','Rival intelligence','Ownership trends, the template meter and rival scouting.'],
+  ['spark','The Race Engineer','A grounded assistant that answers from the model, not vibes.']
+];
+function getTier(){return lsGet('tier','free')==='pro'?'pro':'free';}
+function isPro(){return getTier()==='pro';}
+function setTier(t){lsSet('tier',t==='pro'?'pro':'free');reflectTier();}
+function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());}
+
+function proPreview(panel,content){
+  const benefits=PRO_BENEFITS.map(b=>
+    '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
+  return '<div class="pro-hero">'+
+    '<span class="pro-chip">'+svg(ICON.lock,'width="12" height="12"')+' RaceWeek Edge Pro</span>'+
+    '<h2>'+esc(panel.label)+'</h2>'+
+    '<p class="pro-lead">'+esc(content.desc)+'</p>'+
+    '<div class="pro-benefits">'+benefits+'</div>'+
+    '<button class="btn btn-primary" onclick="openUpgrade()">Unlock Pro — from '+PRICE.monthly+'/mo</button>'+
+    '<p class="pro-foot">One subscription unlocks every Pro tool across all your devices.</p>'+
+  '</div>';
+}
+function openUpgrade(){
+  const pro=isPro();
+  const benefits=PRO_BENEFITS.map(b=>
+    '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
+  document.getElementById('pro-body').innerHTML=
+    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' RaceWeek Edge Pro</span>'+
+    '<h3 id="pro-title">'+(pro?'You’re on Pro':'Unlock the full edge')+'</h3>'+
+    '<div class="pro-benefits">'+benefits+'</div>'+
+    (pro
+      ? '<div class="modal-row"><button class="btn btn-ghost" onclick="setProPreview(false)">Switch Pro preview off</button></div>'
+      : '<p class="modal-hint" style="margin:0 0 14px">Card billing is not switched on yet. You can preview every Pro panel on <b>this device</b> in the meantime — a device preview, not a subscription.</p>'+
+        '<button class="btn btn-primary" style="width:100%;justify-content:center" onclick="setProPreview(true)">Preview Pro on this device</button>')+
+    '<div class="modal-row"><button class="btn btn-ghost" data-pro-close>Close</button></div>';
+  document.getElementById('pro-modal').classList.add('show');focusModal('pro-modal');
+}
+function closeUpgrade(){document.getElementById('pro-modal').classList.remove('show');}
+function setProPreview(on){
+  setTier(on?'pro':'free');
+  closeUpgrade();buildNav();syncNav();renderPage(currentPanel);
+  toast(on?'Pro preview is on for this device':'Back on the free tier');
+}
+
+/* ═══ NAVIGATION MACHINERY ═══════════════════════════════ */
+let currentPanel='dashboard';
+let expandedArea='home';
+
+function buildNav(){
+  const nav=document.getElementById('sb-nav');
+  nav.innerHTML='';
+  NAV.forEach(area=>{
+    const wrap=document.createElement('div');
+    wrap.className='nav-area';
+    const btn=document.createElement('button');
+    btn.className='nav-area-btn';
+    btn.dataset.area=area.id;
+    btn.setAttribute('aria-expanded','false');
+    btn.innerHTML=
+      '<span class="nav-area-ic">'+svg(ICON[area.icon])+'</span>'+
+      '<span class="nav-area-label">'+area.label+'</span>'+
+      (area.tier==='paid'
+        ? '<span class="lock-badge">'+svg(ICON.lock,'width="9" height="9"')+'Pro</span>':'')+
+      '<span class="nav-chevron">'+svg(ICON.chevron)+'</span>';
+    btn.addEventListener('click',()=>toggleArea(area.id));
+    wrap.appendChild(btn);
+    const sub=document.createElement('div');
+    sub.className='nav-sub';
+    sub.dataset.sub=area.id;
+    area.panels.forEach(p=>{
+      const sb=document.createElement('button');
+      sb.className='nav-sub-btn';
+      sb.dataset.panel=p.id;
+      sb.innerHTML='<span>'+p.label+'</span>'+
+        (p.tier==='paid'?'<span class="nav-sub-lock">'+svg(ICON.lock,'width="11" height="11"')+'</span>':'');
+      sb.addEventListener('click',()=>openPanel(p.id));
+      sub.appendChild(sb);
+    });
+    wrap.appendChild(sub);
+    nav.appendChild(wrap);
+  });
+}
+
+const BN_SHORT={myteam:'Team',intel:'Intel',planner:'Plan',grid:'Grid',raceday:'Race',season:'Season'};
+function buildBottomNav(){
+  const bn=document.getElementById('bottom-nav');
+  bn.innerHTML='';
+  NAV.forEach(area=>{
+    const item=document.createElement('button');
+    item.className='bn-item';
+    item.dataset.area=area.id;
+    item.setAttribute('aria-label',area.label);
+    item.innerHTML=
+      '<span class="bn-ic">'+svg(ICON[area.icon])+'</span>'+
+      '<span class="bn-label">'+(BN_SHORT[area.id]||area.label)+'</span>';
+    item.addEventListener('click',()=>openPanel(area.panels[0].id));
+    bn.appendChild(item);
+  });
+}
+
+function toggleArea(areaId){
+  expandedArea=(expandedArea===areaId)?null:areaId;
+  syncNav();
+}
+function openPanel(panelId){
+  if(!PANELS[panelId])panelId='dashboard';
+  currentPanel=panelId;
+  expandedArea=PANELS[panelId].areaId;
+  renderPage(panelId);
+  syncNav();
+  closeSidebar();
+  window.scrollTo({top:0});
+  try{history.replaceState(null,'',panelId==='dashboard'?location.pathname+location.search:'#'+panelId);}catch(_){}
+}
+function syncNav(){
+  const activeArea=PANELS[currentPanel].areaId;
+  document.querySelectorAll('.nav-area-btn').forEach(btn=>{
+    const a=btn.dataset.area;
+    btn.classList.toggle('expanded',a===expandedArea);
+    btn.classList.toggle('active',a===activeArea);
+    btn.setAttribute('aria-expanded',a===expandedArea?'true':'false');
+  });
+  document.querySelectorAll('.nav-sub').forEach(sub=>{
+    sub.classList.toggle('open',sub.dataset.sub===expandedArea);
+  });
+  document.querySelectorAll('.nav-sub-btn').forEach(btn=>{
+    const isActive=btn.dataset.panel===currentPanel;
+    btn.classList.toggle('active',isActive);
+    if(isActive)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.bn-item').forEach(item=>{
+    item.classList.toggle('active',item.dataset.area===activeArea);
+  });
+}
+
+function renderPage(panelId){
+  const panel=PANELS[panelId];
+  const content=PANEL_CONTENT[panelId]||{desc:''};
+  document.getElementById('tb-area').textContent=panel.areaLabel;
+  document.getElementById('tb-title').textContent=panel.label;
+  document.title='RaceWeek Edge — '+panel.label;
+
+  const pages=document.getElementById('pages');
+  const isPaid=(panel.tier==='paid');
+  const locked=isPaid&&!isPro();
+
+  let body='';
+  if(locked){
+    body+=proPreview(panel,content);
+  }else{
+    if(isPaid){
+      body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
+    }
+    if(WIRED[panelId]){
+      body+='<div id="ge-data" class="ge-host">'+skel(5)+'</div>';
+    }else{
+      body+=stateBox('question','Coming soon','This panel is on the roadmap.');
+    }
+  }
+
+  pages.innerHTML=
+    '<main class="page active" id="main" tabindex="-1">'+
+      '<div class="page-head"><div class="page-head-row"><div>'+
+        '<h1>'+panel.label+'</h1><p>'+content.desc+'</p>'+
+      '</div></div></div>'+
+      body+
+    '</main>';
+
+  if(WIRED[panelId]&&!locked){
+    const host=document.getElementById('ge-data');
+    Promise.resolve().then(()=>WIRED[panelId](host))
+      .catch(err=>{console.error(err);if(host)host.innerHTML=stateBox('bolt','Something went wrong rendering this panel',
+        'Try the refresh button, or another panel.',
+        '<button class="btn btn-ghost btn-sm" onclick="renderPage(currentPanel)">Try again</button>');});
+  }
+}
+
+/* ── Sidebar (mobile) ──────────────────────────────────── */
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+/* ── Theme ─────────────────────────────────────────────── */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  const icon=document.getElementById('theme-icon'),label=document.getElementById('theme-label');
+  if(icon)icon.innerHTML=svg(t==='dark'?ICON.moon:ICON.sun,'width="14" height="14"');
+  if(label)label.textContent=t==='dark'?'Dark':'Light';
+  lsSet('theme',t);
+}
+function initTheme(){
+  const saved=lsGet('theme',null);
+  const t=saved||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  applyTheme(t);
+}
+
+/* ── CSV export of the current panel's main table ──────── */
+function exportCurrentView(){
+  const table=document.querySelector('#ge-data table');
+  if(!table){toast('Nothing tabular to export on this panel');return;}
+  const rows=[...table.querySelectorAll('tr')].map(tr=>
+    [...tr.querySelectorAll('th,td')].map(td=>{
+      let v=td.innerText.replace(/\s+/g,' ').trim();
+      if(/[",\n]/.test(v))v='"'+v.replace(/"/g,'""')+'"';
+      return v;
+    }).join(',')).join('\n');
+  const blob=new Blob(['﻿'+rows],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='raceweek-edge-'+currentPanel+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Exported the current view');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RACEWEEK EDGE — 2026 season data
+   Grid, calendar and launch prices from the official 2026 game.
+   Ratings and track traits are the app's own model inputs —
+   estimates, clearly labelled in the UI, refined as rounds land.
+   ═══════════════════════════════════════════════════════════ */
+
+const F1_TEAMS={
+  MCL:{id:'MCL',name:'McLaren',color:'#FF8000',price:28.9,pit:3,drivers:['NOR','PIA']},
+  FER:{id:'FER',name:'Ferrari',color:'#E8002D',price:23.3,pit:2,drivers:['HAM','LEC']},
+  RBR:{id:'RBR',name:'Red Bull',color:'#3671C6',price:28.2,pit:3,drivers:['VER','HAD']},
+  MER:{id:'MER',name:'Mercedes',color:'#27F4D2',price:29.3,pit:2,drivers:['RUS','ANT']},
+  AST:{id:'AST',name:'Aston Martin',color:'#229971',price:10.3,pit:1,drivers:['ALO','STR']},
+  ALP:{id:'ALP',name:'Alpine',color:'#00A1E8',price:12.5,pit:1,drivers:['GAS','COL']},
+  WIL:{id:'WIL',name:'Williams',color:'#64C4FF',price:12.0,pit:1,drivers:['ALB','SAI']},
+  RBS:{id:'RBS',name:'Racing Bulls',color:'#6692FF',price:6.3,pit:1,drivers:['LAW','LIN']},
+  AUD:{id:'AUD',name:'Audi',color:'#A50034',price:6.6,pit:1,drivers:['HUL','BOR']},
+  HAS:{id:'HAS',name:'Haas',color:'#B6BABD',price:7.4,pit:1,drivers:['OCO','BEA']},
+  CAD:{id:'CAD',name:'Cadillac',color:'#C5A254',price:6.0,pit:0,drivers:['PER','BOT']}
+};
+
+/* qr / rr = model expected qualifying / race finishing position.
+   rel = DNF probability per GP. ov = overtake tendency 0–2.
+   Prices are the official 2026 launch prices. */
+const F1_DRIVERS=[
+  {id:'VER',name:'Max Verstappen',team:'RBR',num:1, price:27.7,qr:2.2, rr:2.0, rel:.05,ov:1.2},
+  {id:'RUS',name:'George Russell',team:'MER',num:63,price:27.4,qr:2.8, rr:2.8, rel:.04,ov:0.9},
+  {id:'NOR',name:'Lando Norris',team:'MCL',num:4, price:27.2,qr:3.0, rr:2.9, rel:.04,ov:1.0},
+  {id:'PIA',name:'Oscar Piastri',team:'MCL',num:81,price:25.5,qr:3.8, rr:3.6, rel:.04,ov:1.0},
+  {id:'ANT',name:'Kimi Antonelli',team:'MER',num:12,price:23.2,qr:4.5, rr:4.6, rel:.06,ov:1.1},
+  {id:'LEC',name:'Charles Leclerc',team:'FER',num:16,price:22.8,qr:4.9, rr:5.0, rel:.05,ov:0.9},
+  {id:'HAM',name:'Lewis Hamilton',team:'FER',num:44,price:22.5,qr:5.6, rr:5.3, rel:.04,ov:1.2},
+  {id:'HAD',name:'Isack Hadjar',team:'RBR',num:6, price:15.1,qr:7.6, rr:7.9, rel:.07,ov:1.0},
+  {id:'GAS',name:'Pierre Gasly',team:'ALP',num:10,price:12.0,qr:9.6, rr:9.8, rel:.06,ov:0.8},
+  {id:'SAI',name:'Carlos Sainz',team:'WIL',num:55,price:11.8,qr:10.0,rr:10.1,rel:.05,ov:1.0},
+  {id:'ALB',name:'Alex Albon',team:'WIL',num:23,price:11.6,qr:10.4,rr:10.4,rel:.05,ov:0.9},
+  {id:'ALO',name:'Fernando Alonso',team:'AST',num:14,price:10.0,qr:11.0,rr:10.8,rel:.06,ov:1.3},
+  {id:'STR',name:'Lance Stroll',team:'AST',num:18,price:8.0, qr:13.2,rr:12.9,rel:.07,ov:0.7},
+  {id:'BEA',name:'Oliver Bearman',team:'HAS',num:87,price:7.4, qr:13.4,rr:13.2,rel:.07,ov:1.1},
+  {id:'OCO',name:'Esteban Ocon',team:'HAS',num:31,price:7.3, qr:13.8,rr:13.6,rel:.06,ov:0.8},
+  {id:'HUL',name:'Nico Hülkenberg',team:'AUD',num:27,price:6.8, qr:14.3,rr:14.1,rel:.08,ov:0.9},
+  {id:'LAW',name:'Liam Lawson',team:'RBS',num:30,price:6.5, qr:14.8,rr:14.8,rel:.07,ov:1.0},
+  {id:'BOR',name:'Gabriel Bortoleto',team:'AUD',num:5, price:6.4, qr:15.4,rr:15.3,rel:.09,ov:0.9},
+  {id:'LIN',name:'Arvid Lindblad',team:'RBS',num:41,price:6.2, qr:16.4,rr:16.8,rel:.10,ov:1.0},
+  {id:'COL',name:'Franco Colapinto',team:'ALP',num:43,price:6.2, qr:15.9,rr:15.9,rel:.09,ov:0.9},
+  {id:'PER',name:'Sergio Pérez',team:'CAD',num:11,price:6.0, qr:16.8,rr:16.3,rel:.11,ov:1.0},
+  {id:'BOT',name:'Valtteri Bottas',team:'CAD',num:77,price:5.9, qr:17.3,rr:17.2,rel:.11,ov:0.7}
+];
+const DRIVER={};F1_DRIVERS.forEach(d=>DRIVER[d.id]=d);
+
+/* 2026 calendar — 22 rounds after the Bahrain and Saudi Arabian GP
+   cancellations. Sprints: China, Miami, Canada, Silverstone,
+   Zandvoort, Singapore. lock = start of qualifying (UTC, estimated
+   session times); on sprint weekends the first lock is Sprint
+   Qualifying on Friday. Track traits are model inputs:
+   ov 0–3 (overtaking ease), sc 0–1 (safety-car likelihood),
+   street = street circuit. */
+const F1_CALENDAR=[
+  {r:1, id:'aus',gp:'Australia',circuit:'Albert Park, Melbourne',flag:'🇦🇺',sprint:false,street:true, ov:1.2,sc:.55,lock:'2026-03-07T05:00:00Z',race:'2026-03-08T04:00:00Z'},
+  {r:2, id:'chn',gp:'China',circuit:'Shanghai International',flag:'🇨🇳',sprint:true, street:false,ov:2.0,sc:.30,lock:'2026-03-13T07:30:00Z',race:'2026-03-15T07:00:00Z'},
+  {r:3, id:'jpn',gp:'Japan',circuit:'Suzuka',flag:'🇯🇵',sprint:false,street:false,ov:1.3,sc:.35,lock:'2026-03-28T06:00:00Z',race:'2026-03-29T05:00:00Z'},
+  {r:4, id:'mia',gp:'Miami',circuit:'Miami International Autodrome',flag:'🇺🇸',sprint:true, street:true, ov:1.8,sc:.50,lock:'2026-05-01T20:30:00Z',race:'2026-05-03T20:00:00Z'},
+  {r:5, id:'can',gp:'Canada',circuit:'Circuit Gilles Villeneuve',flag:'🇨🇦',sprint:true, street:false,ov:2.0,sc:.60,lock:'2026-05-22T21:30:00Z',race:'2026-05-24T18:00:00Z'},
+  {r:6, id:'mon',gp:'Monaco',circuit:'Monte Carlo',flag:'🇲🇨',sprint:false,street:true, ov:0.2,sc:.50,lock:'2026-06-06T14:00:00Z',race:'2026-06-07T13:00:00Z'},
+  {r:7, id:'esp',gp:'Barcelona',circuit:'Circuit de Barcelona-Catalunya',flag:'🇪🇸',sprint:false,street:false,ov:1.2,sc:.20,lock:'2026-06-13T14:00:00Z',race:'2026-06-14T13:00:00Z'},
+  {r:8, id:'aut',gp:'Austria',circuit:'Red Bull Ring, Spielberg',flag:'🇦🇹',sprint:false,street:false,ov:2.0,sc:.30,lock:'2026-06-27T14:00:00Z',race:'2026-06-28T13:00:00Z'},
+  {r:9, id:'gbr',gp:'Great Britain',circuit:'Silverstone',flag:'🇬🇧',sprint:true, street:false,ov:1.8,sc:.35,lock:'2026-07-03T14:30:00Z',race:'2026-07-05T14:00:00Z'},
+  {r:10,id:'bel',gp:'Belgium',circuit:'Spa-Francorchamps',flag:'🇧🇪',sprint:false,street:false,ov:2.2,sc:.40,lock:'2026-07-18T14:00:00Z',race:'2026-07-19T13:00:00Z'},
+  {r:11,id:'hun',gp:'Hungary',circuit:'Hungaroring, Budapest',flag:'🇭🇺',sprint:false,street:false,ov:0.8,sc:.25,lock:'2026-07-25T14:00:00Z',race:'2026-07-26T13:00:00Z'},
+  {r:12,id:'ned',gp:'Netherlands',circuit:'Zandvoort',flag:'🇳🇱',sprint:true, street:false,ov:1.0,sc:.35,lock:'2026-08-21T14:30:00Z',race:'2026-08-23T13:00:00Z'},
+  {r:13,id:'ita',gp:'Italy',circuit:'Monza',flag:'🇮🇹',sprint:false,street:false,ov:2.2,sc:.30,lock:'2026-09-05T14:00:00Z',race:'2026-09-06T13:00:00Z'},
+  {r:14,id:'mad',gp:'Spain (Madrid)',circuit:'Madring, Madrid — debut',flag:'🇪🇸',sprint:false,street:true, ov:1.0,sc:.50,lock:'2026-09-12T13:00:00Z',race:'2026-09-13T13:00:00Z'},
+  {r:15,id:'aze',gp:'Azerbaijan',circuit:'Baku City Circuit',flag:'🇦🇿',sprint:false,street:true, ov:1.8,sc:.65,lock:'2026-09-25T12:00:00Z',race:'2026-09-26T11:00:00Z'},
+  {r:16,id:'sgp',gp:'Singapore',circuit:'Marina Bay',flag:'🇸🇬',sprint:true, street:true, ov:0.8,sc:.70,lock:'2026-10-09T13:30:00Z',race:'2026-10-11T12:00:00Z'},
+  {r:17,id:'usa',gp:'United States',circuit:'COTA, Austin',flag:'🇺🇸',sprint:false,street:false,ov:1.9,sc:.35,lock:'2026-10-24T21:00:00Z',race:'2026-10-25T19:00:00Z'},
+  {r:18,id:'mex',gp:'Mexico City',circuit:'Autódromo Hermanos Rodríguez',flag:'🇲🇽',sprint:false,street:false,ov:1.4,sc:.35,lock:'2026-10-31T21:00:00Z',race:'2026-11-01T20:00:00Z'},
+  {r:19,id:'bra',gp:'São Paulo',circuit:'Interlagos',flag:'🇧🇷',sprint:false,street:false,ov:2.0,sc:.55,lock:'2026-11-07T18:00:00Z',race:'2026-11-08T17:00:00Z'},
+  {r:20,id:'lve',gp:'Las Vegas',circuit:'Las Vegas Strip Circuit',flag:'🇺🇸',sprint:false,street:true, ov:1.9,sc:.45,lock:'2026-11-21T04:00:00Z',race:'2026-11-22T04:00:00Z'},
+  {r:21,id:'qat',gp:'Qatar',circuit:'Lusail',flag:'🇶🇦',sprint:false,street:false,ov:1.2,sc:.30,lock:'2026-11-28T15:00:00Z',race:'2026-11-29T14:00:00Z'},
+  {r:22,id:'abu',gp:'Abu Dhabi',circuit:'Yas Marina',flag:'🇦🇪',sprint:false,street:false,ov:1.3,sc:.25,lock:'2026-12-05T14:00:00Z',race:'2026-12-06T13:00:00Z'}
+];
+
+/* ── Official 2026 scoring constants ───────────────────── */
+const SCORING={
+  quali:[10,9,8,7,6,5,4,3,2,1],                 // P1–P10
+  race:[25,18,15,12,10,8,6,4,2,1],              // P1–P10
+  sprint:[8,7,6,5,4,3,2,1],                     // P1–P8
+  posGained:1, fastestLap:10, sprintFastestLap:5, dotd:10,
+  dnfRace:-20, dnfSprint:-10, dsq:-25,
+  q3BothCars:10,
+  pitTiers:[[2.0,20],[2.2,10],[2.5,5],[3.0,2]], // fastest stop < s → pts
+  transferPenalty:-10, budget:100, freeTransfers:2, maxBank:3,
+  ppmBands:{strongRise:.4,rise:.3,hold:.2}      // 3-race rolling PPM thresholds
+};
+
+/* ── Season state from the calendar ────────────────────── */
+function nextRace(){
+  const now=Date.now();
+  return F1_CALENDAR.find(r=>new Date(r.race).getTime()+3*3600e3>now)||F1_CALENDAR[F1_CALENDAR.length-1];
+}
+function racesDone(){const n=nextRace();return F1_CALENDAR.filter(r=>r.r<n.r);}
+function remainingRaces(){const n=nextRace();return F1_CALENDAR.filter(r=>r.r>=n.r);}
+
+/* ═══ PROJECTION MODEL ═══════════════════════════════════
+   Deterministic expected-points model per driver per round,
+   from the model ratings + track traits. All outputs are
+   estimates and the UI labels them as such. */
+function interpPts(table,pos){
+  const i=Math.floor(pos)-1;
+  if(i>=table.length)return 0;
+  const a=table[i]!=null?table[i]:0, b=table[i+1]!=null?table[i+1]:0;
+  return a+(b-a)*(pos-Math.floor(pos));
+}
+/* Positive-part of expected positions gained, softened. */
+function expGain(qr,rr){const g=qr-rr;return g*SCORING.posGained;}
+
+function driverXP(d,race){
+  race=race||nextRace();
+  /* Street circuits compress the field and raise variance slightly. */
+  const spread=race.street?0.85:1;
+  const eq=1+(d.qr-1)*spread, er=1+(d.rr-1)*spread;
+  const q=interpPts(SCORING.quali,eq);
+  const r=interpPts(SCORING.race,er);
+  const gain=expGain(eq,er);
+  const overtakes=d.ov*race.ov*1.1;
+  const flProb=Math.max(0,(6-er)/16), dotdProb=Math.max(0,(7-er)/22);
+  const bonuses=flProb*SCORING.fastestLap+dotdProb*SCORING.dotd;
+  const scRel=d.rel*(0.7+race.sc*0.8);        // safety-car-heavy tracks punish reliability
+  const dnf=scRel*SCORING.dnfRace;
+  let sprintPts=0;
+  if(race.sprint){
+    sprintPts=interpPts(SCORING.sprint,er)+expGain(eq,er)*0.5+d.ov*race.ov*0.5
+      +Math.max(0,(5-er)/16)*SCORING.sprintFastestLap+scRel*0.5*SCORING.dnfSprint;
+  }
+  return {q,r,gain,overtakes,bonuses,dnf,sprintPts,
+    total:q+r+gain+overtakes+bonuses+dnf+sprintPts};
+}
+function driverXPtotal(d,race){return driverXP(d,race).total;}
+
+function teamXP(t,race){
+  race=race||nextRace();
+  const ds=t.drivers.map(id=>DRIVER[id]);
+  const base=ds.reduce((s,d)=>{
+    const x=driverXP(d,race);
+    return s+x.q+x.r+x.gain+x.overtakes+x.dnf+(race.sprint?x.sprintPts:0);
+  },0);
+  /* Both-cars-into-Q3 expectation. */
+  const q3prob=ds.reduce((p,d)=>p*Math.max(.02,Math.min(.97,(11-d.qr)/10)),1);
+  const q3=q3prob*SCORING.q3BothCars;
+  /* Pit-crew tiers 0–3 → expected pit-stop bonus points. */
+  const pit=[2,5,9,13][t.pit]||2;
+  return {base,q3,pit,total:base+q3+pit};
+}
+function teamXPtotal(t,race){return teamXP(t,race).total;}
+
+/* Horizon xPts over the next N rounds. */
+function horizonXP(entity,isTeam,n){
+  return remainingRaces().slice(0,n||3)
+    .reduce((s,rc)=>s+(isTeam?teamXPtotal(entity,rc):driverXPtotal(entity,rc)),0);
+}
+
+/* ═══ MY TEAM STATE ══════════════════════════════════════
+   {drivers:[5 ids], cons:[2 ids], drs:id, chips:{used chip->round},
+    bank: leftover budget} — all local, synced later. */
+function getTeam(){return lsGet('team',null);}
+function setTeam(t){lsSet('team',t);}
+function teamCost(t){
+  if(!t)return 0;
+  return t.drivers.reduce((s,id)=>s+(DRIVER[id]?DRIVER[id].price:0),0)+
+         t.cons.reduce((s,id)=>s+(F1_TEAMS[id]?F1_TEAMS[id].price:0),0);
+}
+function teamValid(t){
+  return t&&t.drivers.length===5&&t.cons.length===2&&teamCost(t)<=SCORING.budget+1e-9;
+}
+function teamProjection(t,race){
+  if(!t)return 0;
+  race=race||nextRace();
+  let s=t.drivers.reduce((sum,id)=>{
+    let x=driverXPtotal(DRIVER[id],race);
+    if(t.drs===id)x*=2;
+    return sum+x;
+  },0);
+  s+=t.cons.reduce((sum,id)=>sum+teamXPtotal(F1_TEAMS[id],race),0);
+  return s;
+}
+/* The model's reference "template" team: greedy best value under the cap. */
+function templateTeam(race){
+  race=race||nextRace();
+  const drs=F1_DRIVERS.map(d=>({id:d.id,price:d.price,xp:driverXPtotal(d,race),v:driverXPtotal(d,race)/d.price}));
+  const cns=Object.values(F1_TEAMS).map(t=>({id:t.id,price:t.price,xp:teamXPtotal(t,race),v:teamXPtotal(t,race)/t.price}));
+  /* Beam over constructor pairs, greedy drivers by value then upgrade. */
+  let best=null;
+  for(let i=0;i<cns.length;i++)for(let j=i+1;j<cns.length;j++){
+    const cCost=cns[i].price+cns[j].price;
+    if(cCost>SCORING.budget-24)continue;   // must leave room for 5 drivers
+    let pool=[...drs].sort((a,b)=>b.v-a.v);
+    let pick=[],cost=cCost;
+    /* Greedy by value, but always leave enough budget to fill the
+       remaining slots with the cheapest available drivers. */
+    for(const d of pool){
+      if(pick.length>=5)break;
+      const rest=pool.filter(p=>p!==d&&!pick.includes(p)).map(p=>p.price).sort((a,b)=>a-b)
+        .slice(0,4-pick.length).reduce((a,b)=>a+b,0);
+      if(cost+d.price+rest<=SCORING.budget){pick.push(d);cost+=d.price;}
+    }
+    if(pick.length<5)continue;
+    /* Single-swap improvement passes. */
+    let improved=true;
+    while(improved){
+      improved=false;
+      for(let a=0;a<5;a++)for(const cand of drs){
+        if(pick.some(p=>p.id===cand.id))continue;
+        const newCost=cost-pick[a].price+cand.price;
+        if(newCost<=SCORING.budget&&cand.xp>pick[a].xp){
+          cost=newCost;pick[a]=cand;improved=true;
+        }
+      }
+    }
+    const xp=pick.reduce((s,d)=>s+d.xp,0)+cns[i].xp+cns[j].xp+Math.max(...pick.map(d=>d.xp)); // + DRS double on best
+    if(!best||xp>best.xp)best={xp,drivers:pick.map(d=>d.id),cons:[cns[i].id,cns[j].id],cost};
+  }
+  return best;
+}
+
+/* ═══ PRICE MODEL ════════════════════════════════════════
+   The official game moves prices on a 3-race rolling
+   points-per-million window (bands 0.2 / 0.3 / 0.4 PPM).
+   With no live scores in this build, the last-3-races points
+   are estimated from the model; deployed, they come from the
+   results feed. "Points needed" is exact arithmetic either way. */
+function ppmRating(entity,isTeam){
+  const last3=racesDone().slice(-2).concat([nextRace()]);
+  const est=last3.reduce((s,rc)=>s+(isTeam?teamXPtotal(entity,rc):driverXPtotal(entity,rc)),0);
+  const price=entity.price;
+  return {ppm:est/3/price,est3:est,price};
+}
+function priceOutlook(entity,isTeam){
+  const {ppm,price}=ppmRating(entity,isTeam);
+  const b=SCORING.ppmBands;
+  let verdict,cls,delta;
+  if(ppm>=b.strongRise){verdict='Strong rise';cls='mv-up';delta='+0.4';}
+  else if(ppm>=b.rise){verdict='Rise likely';cls='mv-up';delta='+0.2';}
+  else if(ppm>=b.hold){verdict='Holding';cls='';delta='0.0';}
+  else{verdict='Fall risk';cls='mv-dn';delta='−0.2';}
+  /* Points this weekend needed to reach each band, given the last two
+     races' (estimated) points are locked in. */
+  const locked=racesDone().slice(-2).reduce((s,rc)=>s+(isTeam?teamXPtotal(entity,rc):driverXPtotal(entity,rc)),0);
+  const need=band=>Math.max(0,Math.round(band*3*price-locked));
+  return {ppm,verdict,cls,delta,needRise:need(b.rise),needStrong:need(b.strongRise),needHold:need(b.hold)};
+}
+
+/* ═══ CHIP EV PLANNER ════════════════════════════════════
+   Personalised expected value for every unused chip at every
+   remaining round — the piece no other tool computes. */
+const CHIPS=[
+  {id:'extradrs', label:'3x Boost (Extra DRS)',icon:'bolt',
+   desc:'Triple points on one driver for a weekend, instead of the usual 2x. Worth most on a sprint weekend with a strong favourite.'},
+  {id:'limitless',label:'Limitless',icon:'diamond',
+   desc:'Unlimited transfers and no cost cap for one weekend, then your team reverts. Best at the round with the biggest gap between your team and the dream team.'},
+  {id:'wildcard', label:'Wildcard',icon:'rotate',
+   desc:'Unlimited free transfers within the cap — changes are permanent. Play it when your team has drifted from the template.'},
+  {id:'finalfix', label:'Final Fix',icon:'swap',
+   desc:'Swap one driver after qualifying, before the race. Strongest at unpredictable qualifying venues — street circuits and wet weekends.'},
+  {id:'nonegative',label:'No Negative',icon:'shield',
+   desc:'Negative scores are zeroed for the weekend (per category in 2026). Best where DNF and penalty risk peaks — high safety-car tracks.'},
+  {id:'autopilot',label:'Autopilot',icon:'spark',
+   desc:'Your DRS Boost retroactively lands on your highest scorer. Insurance for weekends you cannot follow live.'}
+];
+function chipsUsed(){const t=getTeam();return (t&&t.chips)||{};}
+function chipEV(chipId,race){
+  const t=getTeam(), tmpl=templateTeam(race);
+  const myXP=t&&teamValid(t)?teamProjection(t,race):(tmpl?tmpl.xp:0);
+  const myDrivers=(t&&t.drivers.length?t.drivers:(tmpl?tmpl.drivers:[])).map(id=>DRIVER[id]);
+  const bestX=myDrivers.length?Math.max(...myDrivers.map(d=>driverXPtotal(d,race))):0;
+  switch(chipId){
+    case 'extradrs': return bestX;                       // one extra multiple of your best driver
+    case 'limitless':{
+      const nolimit=F1_DRIVERS.map(d=>driverXPtotal(d,race)).sort((a,b)=>b-a).slice(0,5).reduce((a,b)=>a+b,0)
+        +Object.values(F1_TEAMS).map(tm=>teamXPtotal(tm,race)).sort((a,b)=>b-a).slice(0,2).reduce((a,b)=>a+b,0)
+        +Math.max(...F1_DRIVERS.map(d=>driverXPtotal(d,race)));
+      return Math.max(0,nolimit-myXP);
+    }
+    case 'wildcard': return Math.max(0,(tmpl?tmpl.xp:0)-myXP)*0.9;
+    case 'finalfix': return (race.street?8:3)+race.sc*6;
+    case 'nonegative':{
+      const risk=myDrivers.reduce((s,d)=>s+d.rel*(0.7+race.sc*0.8)*-SCORING.dnfRace,0);
+      return risk;
+    }
+    case 'autopilot':{
+      const xs=myDrivers.map(d=>driverXPtotal(d,race)).sort((a,b)=>b-a);
+      return xs.length>1?(xs[0]-xs[1])*0.5+(race.sprint?2:0):0;
+    }
+  }
+  return 0;
+}
+function bestChipRounds(chipId){
+  return remainingRaces().map(r=>({race:r,ev:chipEV(chipId,r)}))
+    .sort((a,b)=>b.ev-a.ev).slice(0,3);
+}
+
+/* ═══ LIVE RESULTS FEED (optional) ═══════════════════════
+   Deployed behind Netlify, /api/f1/* proxies the community
+   Jolpica-F1 (Ergast successor) API for real standings and
+   results. Without it every panel stays useful on the model. */
+async function f1api(path){
+  const r=await fetch('/api/f1/'+path,{headers:{'Accept':'application/json'}});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+const MEM={};
+async function cachedApi(key,ttl,loader){
+  const now=Date.now();
+  if(MEM[key]&&now-MEM[key].t<ttl)return MEM[key].v;
+  const c=lsGet('c-'+key,null);
+  if(c&&now-c.t<ttl){MEM[key]={t:c.t,v:c.v};return c.v;}
+  const v=await loader();
+  MEM[key]={t:now,v};lsSet('c-'+key,{t:now,v});
+  return v;
+}
+const loadStandings=()=>cachedApi('wdc',30*60e3,()=>f1api('current/driverstandings.json'));
+const loadTeamStandings=()=>cachedApi('wcc',30*60e3,()=>f1api('current/constructorstandings.json'));
+const loadResults=()=>cachedApi('results',15*60e3,()=>f1api('current/results.json?limit=100'));
+
+/* ── Small helpers used across panels ──────────────────── */
+function teamOf(d){return F1_TEAMS[d.team];}
+function numchip(d,px){
+  px=px||30;const t=teamOf(d);
+  return '<span class="numchip" style="width:'+px+'px;height:'+px+'px;font-size:'+(px*.42)+'px;background:'+t.color+'">'+d.num+'</span>';
+}
+function conchip(t,px){
+  px=px||30;
+  return '<span class="numchip" style="width:'+px+'px;height:'+px+'px;font-size:'+(px*.36)+'px;background:'+t.color+'">'+t.id+'</span>';
+}
+function driverRow(d,right,onclick){
+  const t=teamOf(d);
+  return '<div class="dl-row dl-click" onclick="'+(onclick||'openDriver(\''+d.id+'\')')+'">'+
+    '<div class="dl-grow">'+numchip(d,28)+
+    '<div style="margin-left:10px;min-width:0"><div class="dl-nm">'+esc(d.name)+'</div>'+
+    '<div class="dl-sub">'+esc(t.name)+' · '+money(d.price)+'</div></div></div>'+
+    '<div class="dl-col">'+right+'</div></div>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION MODEL — 7 areas, 29 panels
+   ═══════════════════════════════════════════════════════════ */
+const NAV=[
+  {id:'home',label:'Home',icon:'home',panels:[
+    {id:'dashboard',label:'Dashboard',icon:'dashboard',tier:'free'},
+    {id:'raceweek',label:'This Race Week',icon:'bolt',tier:'free'},
+    {id:'wire',label:'The Pit Wall',icon:'news',tier:'free'}
+  ]},
+  {id:'myteam',label:'My Team',icon:'team',panels:[
+    {id:'builder',label:'Team Builder',icon:'squad',tier:'free'},
+    {id:'lineup',label:'My Garage',icon:'helmet',tier:'free'},
+    {id:'transfers',label:'Transfer Planner',icon:'swap',tier:'free'},
+    {id:'drs',label:'DRS Boost Lab',icon:'star',tier:'free'}
+  ]},
+  {id:'raceday',label:'Race Day',icon:'live',panels:[
+    {id:'racecentre',label:'Race Centre',icon:'stopwatch',tier:'free'},
+    {id:'pointsim',label:'Points Simulator',icon:'question',tier:'paid'},
+    {id:'sprint',label:'Sprint Strategy',icon:'bolt',tier:'paid'},
+    {id:'hindsight',label:'Hindsight Optimal',icon:'eye',tier:'paid'}
+  ]},
+  {id:'intel',label:'Intelligence',icon:'intel',panels:[
+    {id:'template',label:'Template Meter',icon:'grid',tier:'paid'},
+    {id:'rivals',label:'Rival Scout',icon:'users',tier:'paid'},
+    {id:'engineer',label:'Race Engineer',icon:'chat',tier:'paid'},
+    {id:'accuracy',label:'Model Accuracy',icon:'target',tier:'free'}
+  ]},
+  {id:'grid',label:'The Grid',icon:'players',panels:[
+    {id:'drivers',label:'Driver List',icon:'grid',tier:'free'},
+    {id:'constructors',label:'Constructors',icon:'flag',tier:'free'},
+    {id:'compare',label:'Driver Compare',icon:'compare',tier:'free'},
+    {id:'price',label:'Price Predictor',icon:'arrows',tier:'free'},
+    {id:'value',label:'Value Finder',icon:'trend',tier:'free'}
+  ]},
+  {id:'planner',label:'Planner',icon:'planner',panels:[
+    {id:'calendar',label:'Race Calendar',icon:'calendar',tier:'free'},
+    {id:'tracks',label:'Track Insights',icon:'tyre',tier:'free'},
+    {id:'chips',label:'Chip Strategy',icon:'diamond',tier:'free'},
+    {id:'watchlist',label:'Watchlist',icon:'eye',tier:'free'},
+    {id:'alerts',label:'Alerts',icon:'bell',tier:'free'}
+  ]},
+  {id:'season',label:'Season',icon:'trophy',panels:[
+    {id:'standings',label:'Standings',icon:'trophy',tier:'free'},
+    {id:'h2h',label:'Teammate H2H',icon:'compare',tier:'free'},
+    {id:'titlerace',label:'Title Race',icon:'pulse',tier:'paid'},
+    {id:'review',label:'Season Review',icon:'calendar',tier:'paid'}
+  ]}
+];
+const PANELS={};
+NAV.forEach(area=>area.panels.forEach(p=>{PANELS[p.id]={...p,areaId:area.id,areaLabel:area.label};}));
+
+const PANEL_CONTENT={
+  dashboard:{desc:'Season snapshot, the countdown to lock-in and this race week’s key actions at a glance.'},
+  raceweek:{desc:'Your four weekly decisions — transfers, DRS Boost, chip, lock-in — as a guided plan.'},
+  wire:{desc:'Auto-written briefings — track preview, the DRS index, price watch, value corner and chip corner — generated from the model every round.'},
+  builder:{desc:'Pick 5 drivers and 2 constructors under the $100M cap — with projected points, value and price outlook beside every choice.'},
+  lineup:{desc:'Your team in the garage — projected points for the coming round, DRS Boost highlighted, chip state and bank.'},
+  transfers:{desc:'The best transfer moves for the coming rounds — penalty-aware (2 free, bank up to 3, −10 each extra), ranked by net projected gain.'},
+  drs:{desc:'Every DRS Boost option ranked by projected points, with safe and differential framing — plus when to reach for the 3x chip instead.'},
+  racecentre:{desc:'The race weekend in your timezone — every lock-in and session, the countdown, track traits and what the model expects.'},
+  pointsim:{desc:'Model a result before it happens — set a grid slot, finish position and bonuses and see the exact fantasy points fall out.'},
+  sprint:{desc:'The six sprint weekends carry extra points and an earlier Friday lock-in. Plan boosts, chips and transfers around them.'},
+  hindsight:{desc:'The optimal team for each round in hindsight — what perfect picks would have scored, and how close you got.'},
+  template:{desc:'How close your team is to the model’s reference team — overlap, gaps, and where your differentials are.'},
+  rivals:{desc:'Track your mini-league rivals’ teams — overlap, differentials each way, projected gaps and what they need to catch you.'},
+  engineer:{desc:'Your race engineer — ask about boosts, transfers, chips, prices or tracks and get an answer grounded in the model, not vibes.'},
+  accuracy:{desc:'How good is the model, really? The methodology in plain English and a round-by-round accuracy log — including the misses.'},
+  drivers:{desc:'Every driver in one sortable view — price, projected points, value, expected qualifying and race pace, reliability. Export as CSV.'},
+  constructors:{desc:'Both cars count. Constructor pricing, projected points, Q3 bonus likelihood and pit-crew tiers.'},
+  compare:{desc:'Up to four drivers side by side — price, projections, track fit and reliability.'},
+  price:{desc:'Prices move on a 3-race points-per-million window — see who’s set to rise or fall and exactly how many points each needs this weekend.'},
+  value:{desc:'Points per million across the grid — the best value picks, the traps, and the budget enablers that fund your premiums.'},
+  calendar:{desc:'All 22 rounds with sprint weekends flagged and every date in your timezone.'},
+  tracks:{desc:'Every circuit’s character — overtaking ease, safety-car likelihood, street vs permanent — and who the model backs there.'},
+  chips:{desc:'All six chips with a personalised expected value for every remaining round — when to play each one, computed for your team.'},
+  watchlist:{desc:'Drivers you’re tracking, with projections and price outlook. Star anyone from any panel.'},
+  alerts:{desc:'Lock-in reminders, price-change warnings and race-start alerts. Push notifications arrive once deployed.'},
+  standings:{desc:'The championship as it stands — drivers and constructors, from the live results feed when connected.'},
+  h2h:{desc:'The first driver you beat is your teammate — the model’s qualifying and race edge inside every garage.'},
+  titlerace:{desc:'The championship simulated thousands of times over the remaining rounds — title odds for every driver and team.'},
+  review:{desc:'Your season, decision by decision — what every transfer and chip earned or cost. Builds as rounds complete.'}
+};
+
+/* ═══════════════════════════════════════════════════════════
+   PANEL HYDRATORS
+   ═══════════════════════════════════════════════════════════ */
+
+/* Shared bits */
+function kpi(label,value,sub,accent){
+  return '<div class="kpi">'+(accent?'<div class="kpi-accent" style="background:var(--accent)"></div>':'')+
+    '<div class="kpi-label">'+label+'</div>'+
+    '<div class="kpi-value">'+value+'</div>'+(sub?'<div class="kpi-delta">'+sub+'</div>':'')+'</div>';
+}
+function card(title,inner,aside){
+  return '<div class="card">'+(title?'<div class="card-title">'+title+(aside?'<span style="margin-left:auto">'+aside+'</span>':'')+'</div>':'')+inner+'</div>';
+}
+function estNote(txt){
+  return '<p class="text-3" style="font-size:.74rem;margin-top:10px">'+esc(txt||'Model estimates — not official game data. They sharpen as rounds complete.')+'</p>';
+}
+function countdownHTML(iso,id){
+  return '<div class="count" data-count="'+iso+'" id="'+(id||'cd')+'">'+
+    ['Days','Hours','Mins','Secs'].map(l=>'<div class="c-cell"><div class="c-v">–</div><div class="c-l">'+l+'</div></div>').join('')+'</div>';
+}
+let CD_TIMER=null;
+function armCountdowns(){
+  if(CD_TIMER)clearInterval(CD_TIMER);
+  const tick=()=>{
+    document.querySelectorAll('[data-count]').forEach(el=>{
+      let ms=new Date(el.dataset.count).getTime()-Date.now();
+      if(ms<0)ms=0;
+      const d=Math.floor(ms/864e5),h=Math.floor(ms/36e5)%24,m=Math.floor(ms/6e4)%60,s=Math.floor(ms/1e3)%60;
+      const cells=el.querySelectorAll('.c-v');
+      if(cells.length===4){cells[0].textContent=d;cells[1].textContent=h;cells[2].textContent=m;cells[3].textContent=s;}
+    });
+  };
+  tick();
+  CD_TIMER=setInterval(tick,1000);
+}
+
+/* ── Watchlist ─────────────────────────────────────────── */
+function getWatch(){return lsGet('watch',[]);}
+function toggleWatch(id){
+  let w=getWatch();
+  if(w.includes(id)){w=w.filter(x=>x!==id);toast('Removed from watchlist');}
+  else{w.push(id);toast('Added to watchlist');}
+  lsSet('watch',w);
+  if(currentPanel==='watchlist')renderPage('watchlist');
+  const btn=document.getElementById('wl-btn-'+id);
+  if(btn)btn.textContent=getWatch().includes(id)?'★ Watching':'☆ Watch';
+}
+
+/* ── Driver detail modal ───────────────────────────────── */
+function openDriver(id){
+  const d=DRIVER[id];if(!d)return;
+  const t=teamOf(d),race=nextRace(),x=driverXP(d,race),po=priceOutlook(d,false);
+  const fit=remainingRaces().slice(0,6).map(rc=>({rc,xp:driverXPtotal(d,rc)}));
+  const best=[...fit].sort((a,b)=>b.xp-a.xp)[0];
+  const rows=[
+    ['Qualifying',x.q],['Race result',x.r],['Positions',x.gain],['Overtakes',x.overtakes],
+    ['Bonus (FL + DotD)',x.bonuses],['DNF risk',x.dnf]
+  ].concat(race.sprint?[['Sprint',x.sprintPts]]:[]);
+  document.getElementById('player-body').innerHTML=
+    '<div class="pd-head">'+numchip(d,52)+
+      '<div style="margin-left:12px"><h3 id="player-title" style="margin:0">'+esc(d.name)+'</h3>'+
+      '<div class="pd-meta">'+esc(t.name)+' · #'+d.num+' · '+money(d.price)+'</div></div>'+
+      '<button class="modal-x pd-x" data-player-close aria-label="Close">✕</button></div>'+
+    '<div class="statgrid mt-14">'+
+      kpi('xPts · '+esc(race.gp),x.total.toFixed(1))+
+      kpi('xPts next 3',horizonXP(d,false,3).toFixed(1))+
+      kpi('Value xP/$M',(x.total/d.price).toFixed(2))+
+      kpi('DNF risk',(d.rel*100).toFixed(0)+'%')+
+    '</div>'+
+    card('Points breakdown — '+esc(race.gp)+(race.sprint?' (sprint)':''),
+      rows.map(r=>'<div class="stat"><span class="stat-l">'+r[0]+'</span><span class="stat-v '+(r[1]<0?'mv-dn':'')+'">'+(r[1]>=0?'+':'')+r[1].toFixed(1)+'</span></div>').join(''))+
+    card('Price outlook','<div class="stat"><span class="stat-l">Verdict</span><b class="'+po.cls+'">'+po.verdict+'</b></div>'+
+      '<div class="stat"><span class="stat-l">Est. 3-race PPM</span><span class="stat-v">'+po.ppm.toFixed(2)+'</span></div>'+
+      '<div class="stat"><span class="stat-l">Points this weekend to rise</span><span class="stat-v">'+po.needRise+'</span></div>')+
+    card('Best upcoming track',best?'<div class="stat"><span class="stat-l">'+best.rc.flag+' '+esc(best.rc.gp)+'</span><span class="stat-v">'+best.xp.toFixed(1)+' xPts</span></div>':'—')+
+    '<div class="modal-row"><button class="btn btn-ghost" id="wl-btn-'+d.id+'" onclick="toggleWatch(\''+d.id+'\')">'+
+      (getWatch().includes(d.id)?'★ Watching':'☆ Watch')+'</button>'+
+      '<button class="btn btn-primary" data-player-close onclick="openPanel(\'compare\')">Compare</button></div>'+
+    estNote();
+  document.getElementById('player-modal').classList.add('show');focusModal('player-modal');
+}
+function closeDriver(){document.getElementById('player-modal').classList.remove('show');}
+
+/* ── HOME · Dashboard ──────────────────────────────────── */
+async function hydrateDashboard(host){
+  const race=nextRace(),t=getTeam();
+  const ranked=[...F1_DRIVERS].map(d=>({d,xp:driverXPtotal(d,race)})).sort((a,b)=>b.xp-a.xp);
+  const movers=[...F1_DRIVERS].map(d=>({d,po:priceOutlook(d,false)}));
+  const risers=movers.filter(m=>m.po.cls==='mv-up').slice(0,3);
+  const fallers=movers.filter(m=>m.po.cls==='mv-dn').slice(0,3);
+  const proj=t&&teamValid(t)?teamProjection(t,race):null;
+  host.innerHTML=
+    '<div class="hero-band"><div>'+
+      '<div class="gw-label" style="color:rgba(255,255,255,.85)"><span class="live-dot"></span>Round '+race.r+(race.sprint?' · <span class="sprint-badge" style="background:rgba(255,255,255,.2);color:#fff">Sprint</span>':'')+'</div>'+
+      '<h2 style="margin:6px 0 2px">'+race.flag+' '+esc(race.gp)+' Grand Prix</h2>'+
+      '<p style="margin:0;opacity:.85">'+esc(race.circuit)+' · Lock-in '+fmtDateTime(race.lock)+' (your time)</p>'+
+    '</div>'+countdownHTML(race.lock)+'</div>'+
+    '<div class="statgrid mt-14">'+
+      kpi('Team value',t?money(teamCost(t)):'—',t?'Bank '+money(Math.max(0,SCORING.budget-teamCost(t))):'Build your team',true)+
+      kpi('Projected · '+esc(race.gp),proj!=null?proj.toFixed(0)+' pts':'—',proj!=null?'incl. 2x DRS Boost':'')+
+      kpi('Chips left',(CHIPS.length-Object.keys(chipsUsed()).length)+' / '+CHIPS.length,'One per weekend')+
+      kpi('Rounds to go',remainingRaces().length,F1_CALENDAR.length+' total in 2026')+
+    '</div>'+
+    (t&&teamValid(t)?'':card('Get started',
+      '<p class="text-2" style="font-size:.86rem;margin:0 0 12px">Build your 5-driver, 2-constructor team and every panel personalises — projections, transfers, DRS Boost and chip advice.</p>'+
+      '<button class="btn btn-primary btn-sm" onclick="openPanel(\'builder\')">Open Team Builder</button>'))+
+    card('The model’s top picks — '+esc(race.gp),
+      '<div class="dl">'+ranked.slice(0,5).map(({d,xp},i)=>
+        '<div class="dl-row dl-click" onclick="openDriver(\''+d.id+'\')"><span class="dl-rank">'+(i+1)+'</span>'+
+        '<div class="dl-grow">'+numchip(d,26)+'<div style="margin-left:10px"><div class="dl-nm">'+esc(d.name)+'</div>'+
+        '<div class="dl-sub">'+esc(teamOf(d).name)+'</div></div></div>'+
+        '<div class="dl-col"><b>'+xp.toFixed(1)+'</b> xPts</div></div>').join('')+'</div>'+estNote())+
+    '<div class="grid g-2">'+
+    card('Price risers',risers.length?risers.map(m=>driverRow(m.d,'<b class="mv-up">'+m.po.delta+'</b>')).join(''):'<p class="text-3" style="font-size:.8rem">No strong risers right now.</p>')+
+    card('Fall risk',fallers.length?fallers.map(m=>driverRow(m.d,'<b class="mv-dn">'+m.po.delta+'</b>')).join(''):'<p class="text-3" style="font-size:.8rem">No fallers flagged.</p>')+
+    '</div>';
+  armCountdowns();
+}
+
+/* ── HOME · This Race Week ─────────────────────────────── */
+async function hydrateRaceweek(host){
+  const race=nextRace(),t=getTeam();
+  const done=lsGet('journey-'+race.r,{});
+  const setStep=(k)=>{const d=lsGet('journey-'+race.r,{});d[k]=!d[k];lsSet('journey-'+race.r,d);renderPage('raceweek');};
+  window._rwStep=setStep;
+  const bestBoost=t&&teamValid(t)
+    ?t.drivers.map(id=>DRIVER[id]).sort((a,b)=>driverXPtotal(b,race)-driverXPtotal(a,race))[0]
+    :[...F1_DRIVERS].sort((a,b)=>driverXPtotal(b,race)-driverXPtotal(a,race))[0];
+  const chipBest=CHIPS.filter(c=>!chipsUsed()[c.id]).map(c=>({c,ev:chipEV(c.id,race)})).sort((a,b)=>b.ev-a.ev)[0];
+  const steps=[
+    {k:'transfers',n:'1',title:'Weigh your transfers',sub:'2 free per race, bank up to 3 — each extra is −10. See the ranked moves.',btn:['Transfer Planner','transfers']},
+    {k:'drs',n:'2',title:'Set your DRS Boost',sub:(bestBoost?'Model pick: '+bestBoost.name+' ('+driverXPtotal(bestBoost,race).toFixed(1)+' xPts → doubled).':'Pick your 2x driver.'),btn:['DRS Boost Lab','drs']},
+    {k:'chip',n:'3',title:'Chip or no chip?',sub:(chipBest?'Best EV this weekend: '+chipBest.c.label+' ('+chipBest.ev.toFixed(0)+' pts).':'All chips used.'),btn:['Chip Strategy','chips']},
+    {k:'lock',n:'4',title:'Locked in before qualifying',sub:'Lock-in is '+fmtDateTime(race.lock)+(race.sprint?' — Sprint Qualifying, Friday!':'')+' in your time.',btn:['Race Centre','racecentre']}
+  ];
+  const prog=steps.filter(s=>done[s.k]).length;
+  host.innerHTML=
+    (race.sprint?card('','<span class="sprint-badge">Sprint weekend</span> <b style="font-size:.86rem">'+race.flag+' '+esc(race.gp)+
+      '</b><p class="text-2" style="font-size:.82rem;margin:8px 0 0">Sprint scoring adds an 8-7-6-5-4-3-2-1 mini-race, sprint DNFs cost −10, and the lock-in moves to Sprint Qualifying on <b>Friday</b>. Don’t get caught out.</p>'):'')+
+    '<div class="jr"><div class="jr-h"><b>Plan my race week</b><span class="jr-prog">'+prog+' of 4 done</span></div>'+
+    steps.map(s=>
+      '<div class="jr-step'+(done[s.k]?' done':'')+'">'+
+        '<button class="jr-num" onclick="_rwStep(\''+s.k+'\')" aria-label="Toggle step">'+(done[s.k]?'✓':s.n)+'</button>'+
+        '<div class="jr-body"><b>'+s.title+'</b><div class="jr-sub">'+s.sub+'</div></div>'+
+        '<button class="btn btn-ghost btn-sm jr-act" onclick="openPanel(\''+s.btn[1]+'\')">'+s.btn[0]+'</button>'+
+      '</div>').join('')+'</div>'+
+    card('Crowd vs model — '+esc(race.gp),
+      '<p class="text-2" style="font-size:.84rem;margin:0 0 10px">The model’s reference five for this track:</p>'+
+      '<div class="dl">'+[...F1_DRIVERS].map(d=>({d,xp:driverXPtotal(d,race)})).sort((a,b)=>b.xp-a.xp).slice(0,5)
+        .map(({d,xp})=>driverRow(d,'<b>'+xp.toFixed(1)+'</b> xPts')).join('')+'</div>'+estNote());
+}
+
+/* ── HOME · The Pit Wall (auto briefings) ──────────────── */
+async function hydrateWire(host){
+  const race=nextRace();
+  const ranked=[...F1_DRIVERS].map(d=>({d,xp:driverXPtotal(d,race)})).sort((a,b)=>b.xp-a.xp);
+  const value=[...F1_DRIVERS].map(d=>({d,v:driverXPtotal(d,race)/d.price})).sort((a,b)=>b.v-a.v);
+  const movers=F1_DRIVERS.map(d=>({d,po:priceOutlook(d,false)}));
+  const chipBest=CHIPS.filter(c=>!chipsUsed()[c.id]).map(c=>({c,best:bestChipRounds(c.id)[0]})).sort((a,b)=>(b.best?b.best.ev:0)-(a.best?a.best.ev:0)).slice(0,3);
+  const post=(kick,title,body)=>'<article class="post"><div class="post-hd"><span class="post-kick">'+kick+'</span><h3 class="post-title">'+title+'</h3></div><div class="post-txt">'+body+'</div></article>';
+  host.innerHTML='<div class="blog-intro">Written by the model from the data — refreshed every round, no human writer.</div>'+
+    '<div class="blog-list">'+
+    post('Track preview',race.flag+' '+esc(race.gp)+': what this circuit rewards',
+      '<p>'+esc(race.circuit)+'. Overtaking ease '+race.ov.toFixed(1)+'/3, safety-car likelihood '+(race.sc*100).toFixed(0)+'%'+(race.street?', street circuit — qualifying position carries extra weight':'')+
+      (race.sprint?'. Sprint weekend: more points on the table and a Friday lock-in.':'.')+'</p>'+
+      '<p>Overtake points favour aggressive racers here'+(race.ov>=1.8?' — a genuine overtaking track, so recovery drives score well.':race.ov<=0.8?' — but passing is hard, so grid position is nearly everything.':'.')+'</p>')+
+    post('The DRS index','Every boost option, ranked',
+      '<div class="dl">'+ranked.slice(0,8).map(({d,xp},i)=>
+        '<div class="dl-row dl-click" onclick="openDriver(\''+d.id+'\')"><span class="dl-rank">'+(i+1)+'</span><div class="dl-grow">'+numchip(d,24)+
+        '<div style="margin-left:10px"><div class="dl-nm">'+esc(d.name)+'</div></div></div><div class="dl-col"><b>'+(xp*2).toFixed(0)+'</b> boosted</div></div>').join('')+'</div>')+
+    post('Price watch','Who moves tonight',
+      '<p>Rising: '+ (movers.filter(m=>m.po.cls==='mv-up').map(m=>esc(m.d.name)).slice(0,4).join(', ')||'nobody flagged')+
+      '. Fall risk: '+(movers.filter(m=>m.po.cls==='mv-dn').map(m=>esc(m.d.name)).slice(0,4).join(', ')||'nobody flagged')+'.</p>'+
+      '<p>Prices move on a 3-race points-per-million window — two-thirds of each change is already locked in before lights out. The Price Predictor shows the exact points each asset needs this weekend.</p>')+
+    post('Value corner','Points per million, leaders',
+      '<div class="dl">'+value.slice(0,6).map(({d,v},i)=>
+        '<div class="dl-row dl-click" onclick="openDriver(\''+d.id+'\')"><span class="dl-rank">'+(i+1)+'</span><div class="dl-grow">'+numchip(d,24)+
+        '<div style="margin-left:10px"><div class="dl-nm">'+esc(d.name)+'</div><div class="dl-sub">'+money(d.price)+'</div></div></div><div class="dl-col"><b>'+v.toFixed(2)+'</b> xP/$M</div></div>').join('')+'</div>')+
+    post('Chip corner','Best chip EV on the board',
+      chipBest.length?'<p>'+chipBest.map(({c,best})=>'<b>'+c.label+'</b> — best at '+(best?best.race.flag+' '+esc(best.race.gp)+' ('+best.ev.toFixed(0)+' pts EV)':'—')).join('. ')+'.</p>':'<p>All chips played.</p>')+
+    '</div>'+estNote();
+}
+
+/* ── MY TEAM · Team Builder ────────────────────────────── */
+let DRAFT=null;
+function draftState(){
+  if(!DRAFT){
+    const t=getTeam();
+    DRAFT=t?JSON.parse(JSON.stringify(t)):{drivers:[],cons:[],drs:null,chips:{}};
+  }
+  return DRAFT;
+}
+function draftAdd(kind,id){
+  const d=draftState();
+  if(kind==='d'){
+    if(d.drivers.includes(id))return;
+    if(d.drivers.length>=5){toast('You already have 5 drivers');return;}
+    d.drivers.push(id);
+  }else{
+    if(d.cons.includes(id))return;
+    if(d.cons.length>=2){toast('You already have 2 constructors');return;}
+    d.cons.push(id);
+  }
+  renderPage('builder');
+}
+function draftRemove(kind,id){
+  const d=draftState();
+  if(kind==='d'){d.drivers=d.drivers.filter(x=>x!==id);if(d.drs===id)d.drs=null;}
+  else d.cons=d.cons.filter(x=>x!==id);
+  renderPage('builder');
+}
+function draftTemplate(){
+  const t=templateTeam();
+  if(!t)return;
+  const d=draftState();
+  d.drivers=[...t.drivers];d.cons=[...t.cons];
+  d.drs=t.drivers.map(id=>DRIVER[id]).sort((a,b)=>driverXPtotal(b)-driverXPtotal(a))[0].id;
+  renderPage('builder');toast('Model template loaded — make it yours');
+}
+function draftSave(){
+  const d=draftState();
+  if(!teamValid(d)){toast('Team must be 5 drivers + 2 constructors within $100M');return;}
+  if(!d.drs)d.drs=d.drivers.map(id=>DRIVER[id]).sort((a,b)=>driverXPtotal(b)-driverXPtotal(a))[0].id;
+  setTeam(d);
+  toast('Team saved');
+  openPanel('lineup');
+}
+async function hydrateBuilder(host){
+  const d=draftState(),race=nextRace();
+  const cost=teamCost(d),bank=SCORING.budget-cost,over=bank<0;
+  const slot=(kind,id,idx)=>{
+    if(!id)return '<div class="slot" onclick="document.getElementById(\'pool\').scrollIntoView({behavior:\'smooth\'})"><span class="s-hint">'+(kind==='d'?'+ Driver slot '+(idx+1):'+ Constructor slot '+(idx+1))+'</span></div>';
+    const e=kind==='d'?DRIVER[id]:F1_TEAMS[id];
+    const t=kind==='d'?teamOf(e):e;
+    const xp=kind==='d'?driverXPtotal(e,race):teamXPtotal(e,race);
+    return '<div class="slot filled" style="--tc:'+t.color+'">'+
+      '<button class="s-x" onclick="draftRemove(\''+kind+'\',\''+id+'\')" aria-label="Remove">✕</button>'+
+      '<b style="font-size:.9rem">'+esc(kind==='d'?e.name:e.name)+'</b>'+
+      '<span class="text-3" style="font-size:.74rem">'+(kind==='d'?esc(t.name)+' · ':'')+money(e.price)+' · '+xp.toFixed(1)+' xPts</span></div>';
+  };
+  const pool=[...F1_DRIVERS].map(dr=>({dr,xp:driverXPtotal(dr,race)})).sort((a,b)=>b.xp/b.dr.price-a.xp/a.dr.price);
+  host.innerHTML=
+    card('Budget',
+      '<div style="display:flex;justify-content:space-between;font-size:.86rem"><span>Spent <b>'+money(cost)+'</b></span><span class="'+(over?'mv-dn':'')+'">Bank <b>'+money(bank)+'</b></span></div>'+
+      '<div class="budgetbar'+(over?' over':'')+'"><div style="width:'+Math.min(100,cost/SCORING.budget*100)+'%"></div></div>'+
+      (over?'<p class="mv-dn" style="font-size:.78rem;margin:6px 0 0">Over the $100M cap — an over-budget team can’t be saved.</p>':''),
+      '<button class="btn btn-ghost btn-sm" onclick="draftTemplate()">Load model template</button>')+
+    card('Drivers — pick 5','<div class="slotgrid">'+[0,1,2,3,4].map(i=>slot('d',d.drivers[i],i)).join('')+'</div>')+
+    card('Constructors — pick 2','<div class="slotgrid">'+[0,1].map(i=>slot('c',d.cons[i],i)).join('')+'</div>')+
+    '<div class="mb-14" style="display:flex;gap:10px"><button class="btn btn-primary" onclick="draftSave()">Save team</button></div>'+
+    '<div id="pool">'+
+    card('Driver pool — best value first',
+      '<div class="dl">'+pool.map(({dr,xp})=>{
+        const inTeam=d.drivers.includes(dr.id);
+        return '<div class="dl-row"><div class="dl-grow">'+numchip(dr,26)+
+          '<div style="margin-left:10px;min-width:0"><div class="dl-nm">'+esc(dr.name)+'</div>'+
+          '<div class="dl-sub">'+esc(teamOf(dr).name)+' · '+money(dr.price)+' · '+xp.toFixed(1)+' xPts</div></div></div>'+
+          '<div class="dl-col"><button class="btn btn-sm '+(inTeam?'btn-ghost':'btn-primary')+'" '+
+          (inTeam?'onclick="draftRemove(\'d\',\''+dr.id+'\')">Remove':'onclick="draftAdd(\'d\',\''+dr.id+'\')">Add')+'</button></div></div>';
+      }).join('')+'</div>')+
+    card('Constructor pool',
+      '<div class="dl">'+Object.values(F1_TEAMS).map(tm=>{
+        const inTeam=d.cons.includes(tm.id),xp=teamXPtotal(tm,race);
+        return '<div class="dl-row"><div class="dl-grow">'+conchip(tm,26)+
+          '<div style="margin-left:10px"><div class="dl-nm">'+esc(tm.name)+'</div>'+
+          '<div class="dl-sub">'+money(tm.price)+' · '+xp.toFixed(1)+' xPts</div></div></div>'+
+          '<div class="dl-col"><button class="btn btn-sm '+(inTeam?'btn-ghost':'btn-primary')+'" '+
+          (inTeam?'onclick="draftRemove(\'c\',\''+tm.id+'\')">Remove':'onclick="draftAdd(\'c\',\''+tm.id+'\')">Add')+'</button></div></div>';
+      }).join('')+'</div>')+'</div>'+estNote();
+}
+
+/* ── MY TEAM · My Garage ───────────────────────────────── */
+function setDrs(id){
+  const t=getTeam();if(!t)return;
+  t.drs=id;setTeam(t);toast('DRS Boost on '+DRIVER[id].name);
+  renderPage(currentPanel);
+}
+async function hydrateLineup(host){
+  const t=getTeam(),race=nextRace();
+  if(!t||!teamValid(t)){host.innerHTML=teamBox();return;}
+  const proj=teamProjection(t,race);
+  host.innerHTML=
+    '<div class="statgrid">'+
+      kpi('Projected · '+esc(race.gp),proj.toFixed(0)+' pts','incl. 2x DRS Boost',true)+
+      kpi('Team value',money(teamCost(t)),'Bank '+money(Math.max(0,SCORING.budget-teamCost(t))))+
+      kpi('Chips left',(CHIPS.length-Object.keys(t.chips||{}).length)+' / 6','')+
+      kpi('Lock-in',fmtDate(race.lock,{weekday:'short'}),new Date(race.lock).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}))+
+    '</div>'+
+    card('Drivers','<div class="garage">'+t.drivers.map(id=>{
+      const d=DRIVER[id],tm=teamOf(d),x=driverXPtotal(d,race),isDrs=t.drs===id;
+      return '<div class="gcar'+(isDrs?' is-drs':'')+'" style="--tc:'+tm.color+'">'+
+        (isDrs?'<span class="drs-tag">2x DRS</span>':'')+
+        '<div class="g-num">'+d.num+'</div><div class="g-nm">'+esc(d.name)+'</div>'+
+        '<div class="g-team">'+esc(tm.name)+'</div>'+
+        '<div class="g-row"><span>xPts</span><b>'+(isDrs?(x*2).toFixed(1)+' (2x)':x.toFixed(1))+'</b></div>'+
+        '<div class="g-row"><span>Price</span><b>'+money(d.price)+'</b></div>'+
+        (isDrs?'':'<button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="setDrs(\''+id+'\')">Make DRS Boost</button>')+
+      '</div>';
+    }).join('')+'</div>')+
+    card('Constructors','<div class="garage">'+t.cons.map(id=>{
+      const tm=F1_TEAMS[id],x=teamXP(tm,race);
+      return '<div class="gcar" style="--tc:'+tm.color+'">'+
+        '<div class="g-nm" style="margin-top:0">'+esc(tm.name)+'</div>'+
+        '<div class="g-team">'+tm.drivers.map(i2=>esc(DRIVER[i2].name.split(' ').pop())).join(' · ')+'</div>'+
+        '<div class="g-row"><span>xPts</span><b>'+x.total.toFixed(1)+'</b></div>'+
+        '<div class="g-row"><span>Q3 + pit bonus</span><b>'+(x.q3+x.pit).toFixed(1)+'</b></div>'+
+        '<div class="g-row"><span>Price</span><b>'+money(tm.price)+'</b></div></div>';
+    }).join('')+'</div>')+
+    '<button class="btn btn-ghost btn-sm" onclick="DRAFT=null;openPanel(\'builder\')">Edit team</button>'+estNote();
+}
+
+/* ── MY TEAM · Transfer Planner ────────────────────────── */
+async function hydrateTransfers(host){
+  const t=getTeam();
+  if(!t||!teamValid(t)){host.innerHTML=teamBox();return;}
+  const horizon=3,bank=SCORING.budget-teamCost(t);
+  const moves=[];
+  t.drivers.forEach(outId=>{
+    const out=DRIVER[outId],outXP=horizonXP(out,false,horizon);
+    F1_DRIVERS.forEach(inn=>{
+      if(t.drivers.includes(inn.id))return;
+      if(inn.price>out.price+bank)return;
+      const gain=horizonXP(inn,false,horizon)-outXP;
+      if(gain>0.5)moves.push({out,inn,gain,dPrice:inn.price-out.price});
+    });
+  });
+  moves.sort((a,b)=>b.gain-a.gain);
+  const free=SCORING.freeTransfers;
+  host.innerHTML=
+    card('How transfers work in 2026',
+      '<p class="text-2" style="font-size:.84rem;margin:0">'+free+' free transfers per race, bank up to '+SCORING.maxBank+', each extra costs '+SCORING.transferPenalty+' pts. Transfers now count as the <b>difference between lock-ins</b> — you can experiment freely before deadline. A move is worth a −10 hit only if it buys more than 10 points over your horizon.</p>')+
+    card('Best single moves — next '+horizon+' rounds',
+      moves.length?'<div class="dl">'+moves.slice(0,10).map((m,i)=>
+        '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span><div class="dl-grow" style="flex-wrap:wrap;gap:4px">'+
+        '<span class="badge badge-red">OUT</span> <b style="font-size:.85rem">'+esc(m.out.name)+'</b>'+
+        '<span class="badge badge-green" style="margin-left:8px">IN</span> <b style="font-size:.85rem">'+esc(m.inn.name)+'</b>'+
+        '<span class="dl-sub" style="width:100%">'+(m.dPrice>=0?'+':'')+m.dPrice.toFixed(1)+'M · '+
+        (m.gain>10?'worth a hit':'within free transfers only')+'</span></div>'+
+        '<div class="dl-col"><b class="mv-up">+'+m.gain.toFixed(1)+'</b> xPts</div></div>').join('')+'</div>'
+      :'<p class="text-3" style="font-size:.84rem">No clear upgrades inside your budget — that’s a good sign.</p>')+
+    card('Two-move combos',
+      (function(){
+        const combos=[];
+        for(let i=0;i<Math.min(moves.length,12);i++)for(let j=i+1;j<Math.min(moves.length,12);j++){
+          const a=moves[i],b=moves[j];
+          if(a.out.id===b.out.id||a.inn.id===b.inn.id)continue;
+          if(a.dPrice+b.dPrice>bank)continue;
+          combos.push({a,b,gain:a.gain+b.gain});
+        }
+        combos.sort((x,y)=>y.gain-x.gain);
+        return combos.length?'<div class="dl">'+combos.slice(0,5).map((c,i)=>
+          '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span><div class="dl-grow" style="flex-wrap:wrap">'+
+          '<span class="dl-sub" style="width:100%">'+esc(c.a.out.name)+' → '+esc(c.a.inn.name)+' · '+esc(c.b.out.name)+' → '+esc(c.b.inn.name)+'</span></div>'+
+          '<div class="dl-col"><b class="mv-up">+'+c.gain.toFixed(1)+'</b> xPts</div></div>').join('')+'</div>'
+        :'<p class="text-3" style="font-size:.84rem">No two-move combo beats the singles within budget.</p>';
+      })())+estNote();
+}
+
+/* ── MY TEAM · DRS Boost Lab ───────────────────────────── */
+async function hydrateDrs(host){
+  const race=nextRace(),t=getTeam();
+  const mine=t&&teamValid(t)?t.drivers:[];
+  const all=[...F1_DRIVERS].map(d=>({d,xp:driverXPtotal(d,race)})).sort((a,b)=>b.xp-a.xp);
+  const safe=all.slice(0,4),diffs=all.filter(({d})=>d.price<15).slice(0,4);
+  const row=({d,xp})=>'<div class="dl-row dl-click" onclick="openDriver(\''+d.id+'\')"><div class="dl-grow">'+numchip(d,26)+
+    '<div style="margin-left:10px"><div class="dl-nm">'+esc(d.name)+(mine.includes(d.id)?' <span class="badge badge-green">yours</span>':'')+'</div>'+
+    '<div class="dl-sub">'+esc(teamOf(d).name)+'</div></div></div>'+
+    '<div class="dl-col"><b>'+(xp*2).toFixed(0)+'</b> boosted'+(mine.includes(d.id)&&t?'<button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="event.stopPropagation();setDrs(\''+d.id+'\')">Boost</button>':'')+'</div></div>';
+  host.innerHTML=
+    (t&&t.drs?card('Current boost','<div class="dl">'+row({d:DRIVER[t.drs],xp:driverXPtotal(DRIVER[t.drs],race)})+'</div>'):'')+
+    card('Safe picks — '+esc(race.gp),'<div class="dl">'+safe.map(row).join('')+'</div>')+
+    card('Differential picks (under $15M)','<div class="dl">'+diffs.map(row).join('')+'</div>')+
+    card('Or reach for the 3x chip?',
+      '<p class="text-2" style="font-size:.84rem;margin:0">'+
+      (chipsUsed().extradrs?'You’ve already played the 3x Boost this season.':
+      'The 3x Boost (Extra DRS) chip turns your 2x into a 3x for one weekend. Best kept for a <b>sprint weekend</b> with a strong favourite — more sessions, more points to triple. Best remaining EV: '+
+      (function(){const b=bestChipRounds('extradrs')[0];return b?b.race.flag+' '+esc(b.race.gp)+' ('+b.ev.toFixed(0)+' extra xPts)':'—';})())+
+      '</p>')+estNote();
+}
+
+/* ── RACE DAY · Race Centre ────────────────────────────── */
+async function hydrateRacecentre(host){
+  const race=nextRace();
+  const lockT=new Date(race.lock),raceT=new Date(race.race);
+  const sessions=race.sprint
+    ?[['Sprint Qualifying — LOCK-IN',race.lock],['Sprint race',new Date(lockT.getTime()+21*3600e3).toISOString()],
+      ['Qualifying',new Date(lockT.getTime()+25*3600e3).toISOString()],['Grand Prix',race.race]]
+    :[['Qualifying — LOCK-IN',race.lock],['Grand Prix',race.race]];
+  const trait=(l,v,max,color)=>'<div class="trait"><span class="t-l">'+l+'</span><div class="t-bar"><div style="width:'+(v/max*100)+'%;background:'+color+'"></div></div><span class="t-v">'+v.toFixed(1)+'</span></div>';
+  host.innerHTML=
+    '<div class="hero-band"><div><div class="gw-label" style="color:rgba(255,255,255,.85)">Round '+race.r+(race.sprint?' · Sprint':'')+'</div>'+
+    '<h2 style="margin:6px 0 2px">'+race.flag+' '+esc(race.gp)+'</h2><p style="margin:0;opacity:.85">'+esc(race.circuit)+'</p></div>'+
+    countdownHTML(race.lock)+'</div>'+
+    card('Weekend in your timezone ('+Intl.DateTimeFormat().resolvedOptions().timeZone+')',
+      '<div class="dl">'+sessions.map(s=>'<div class="dl-row"><div class="dl-grow"><div class="dl-nm">'+s[0]+'</div></div>'+
+      '<div class="dl-col"><b>'+fmtDateTime(s[1])+'</b></div></div>').join('')+'</div>'+
+      (race.sprint?'<p class="mv-dn" style="font-size:.78rem;margin-top:8px"><b>Sprint weekend:</b> your team locks at Sprint Qualifying on Friday — a day earlier than usual.</p>':'')+
+      '<p class="text-3" style="font-size:.74rem;margin-top:8px">Session times are estimates until the official timetable is confirmed.</p>')+
+    card('Track character',
+      trait('Overtaking ease',race.ov,3,'var(--up)')+
+      trait('Safety-car likelihood',race.sc*10,10,'var(--amber)')+
+      '<div class="stat"><span class="stat-l">Circuit type</span><b>'+(race.street?'Street':'Permanent')+'</b></div>')+
+    card('Live timing & weather',
+      '<p class="text-2" style="font-size:.84rem;margin:0">Live session points and a race-day weather feed connect when the app is deployed with its results proxy. Everything else on this page works offline.</p>')+
+    estNote('Track traits are model inputs — estimates, refined as rounds complete.');
+  armCountdowns();
+}
+
+/* ── RACE DAY · Points Simulator ───────────────────────── */
+function runSim(){
+  const dId=document.getElementById('sim-driver').value;
+  const grid=+document.getElementById('sim-grid').value;
+  const fin=+document.getElementById('sim-fin').value;
+  const fl=document.getElementById('sim-fl').checked;
+  const dotd=document.getElementById('sim-dotd').checked;
+  const dnf=document.getElementById('sim-dnf').checked;
+  const ovt=+document.getElementById('sim-ovt').value||0;
+  const d=DRIVER[dId];
+  let total=0,rows=[];
+  const q=SCORING.quali[grid-1]||0;rows.push(['Qualifying P'+grid,q]);total+=q;
+  if(dnf){rows.push(['DNF',SCORING.dnfRace]);total+=SCORING.dnfRace;}
+  else{
+    const r=SCORING.race[fin-1]||0;rows.push(['Race P'+fin,r]);total+=r;
+    const g=(grid-fin)*SCORING.posGained;rows.push([g>=0?'Positions gained':'Positions lost',g]);total+=g;
+    if(ovt){rows.push(['Overtakes ×'+ovt,ovt]);total+=ovt;}
+    if(fl){rows.push(['Fastest lap',SCORING.fastestLap]);total+=SCORING.fastestLap;}
+    if(dotd){rows.push(['Driver of the Day',SCORING.dotd]);total+=SCORING.dotd;}
+  }
+  document.getElementById('sim-out').innerHTML=
+    '<div class="solver-best"><div class="solver-idx">'+esc(d.name)+' would score <b style="font-size:1.3rem">'+total+'</b> pts'+
+    ' <span class="text-3">(doubled to '+(total*2)+' with DRS Boost, tripled to '+(total*3)+' on the 3x chip)</span></div>'+
+    rows.map(r=>'<div class="stat"><span class="stat-l">'+r[0]+'</span><span class="stat-v '+(r[1]<0?'mv-dn':'')+'">'+(r[1]>=0?'+':'')+r[1]+'</span></div>').join('')+'</div>';
+}
+async function hydratePointsim(host){
+  const opts=F1_DRIVERS.map(d=>'<option value="'+d.id+'">'+esc(d.name)+'</option>').join('');
+  const posOpts=n=>Array.from({length:n},(_,i)=>'<option>'+(i+1)+'</option>').join('');
+  host.innerHTML=
+    card('Set a scenario',
+      '<div class="possel">'+
+      '<select id="sim-driver" aria-label="Driver">'+opts+'</select>'+
+      '<label style="font-size:.8rem">Grid <select id="sim-grid">'+posOpts(22)+'</select></label>'+
+      '<label style="font-size:.8rem">Finish <select id="sim-fin">'+posOpts(22)+'</select></label>'+
+      '<label style="font-size:.8rem">Overtakes <input id="sim-ovt" type="number" min="0" max="20" value="0" style="width:58px"></label>'+
+      '<label style="font-size:.8rem"><input type="checkbox" id="sim-fl"> Fastest lap</label>'+
+      '<label style="font-size:.8rem"><input type="checkbox" id="sim-dotd"> DotD</label>'+
+      '<label style="font-size:.8rem"><input type="checkbox" id="sim-dnf"> DNF</label>'+
+      '<button class="btn btn-primary btn-sm" onclick="runSim()">Score it</button></div>'+
+      '<div id="sim-out" class="mt-14"></div>')+
+    card('The 2026 scoring card',
+      '<div class="grid g-2"><div><b style="font-size:.82rem">Qualifying</b>'+
+      SCORING.quali.map((p,i)=>'<div class="stat"><span class="stat-l">P'+(i+1)+'</span><span class="stat-v">+'+p+'</span></div>').join('')+'</div>'+
+      '<div><b style="font-size:.82rem">Race</b>'+
+      SCORING.race.map((p,i)=>'<div class="stat"><span class="stat-l">P'+(i+1)+'</span><span class="stat-v">+'+p+'</span></div>').join('')+
+      '<div class="stat"><span class="stat-l">Fastest lap</span><span class="stat-v">+10</span></div>'+
+      '<div class="stat"><span class="stat-l">Driver of the Day</span><span class="stat-v">+10</span></div>'+
+      '<div class="stat"><span class="stat-l">Position gained</span><span class="stat-v">+1</span></div>'+
+      '<div class="stat"><span class="stat-l">Overtake</span><span class="stat-v">+1</span></div>'+
+      '<div class="stat"><span class="stat-l">DNF</span><span class="stat-v mv-dn">−20</span></div></div></div>');
+}
+
+/* ── RACE DAY · Sprint Strategy ────────────────────────── */
+async function hydrateSprint(host){
+  const sprints=F1_CALENDAR.filter(r=>r.sprint);
+  const t=getTeam();
+  host.innerHTML=
+    card('Why sprints matter',
+      '<p class="text-2" style="font-size:.84rem;margin:0">Six rounds add a sprint: an extra 8-7-6-5-4-3-2-1 score, sprint fastest lap (+5), and a gentler −10 sprint DNF. More points on the table means boosts and the 3x chip are worth more — and the lock-in moves to <b>Sprint Qualifying on Friday</b>.</p>')+
+    '<div class="grid g-sb">'+sprints.map(r=>{
+      const upcoming=remainingRaces().includes(r);
+      const bestB=[...F1_DRIVERS].sort((a,b)=>driverXPtotal(b,r)-driverXPtotal(a,r))[0];
+      const myProj=t&&teamValid(t)?teamProjection(t,r):null;
+      return '<div class="racecard'+(upcoming?'':' done')+'">'+
+        '<span class="rc-flag">'+r.flag+'</span><div class="rc-body">'+
+        '<div class="rc-nm">'+esc(r.gp)+' <span class="sprint-badge">Sprint</span></div>'+
+        '<div class="rc-sub">Lock-in Fri · '+fmtDate(r.lock)+(upcoming?' · model boost pick: '+esc(bestB.name):'')+
+        (myProj!=null&&upcoming?' · your team ~'+myProj.toFixed(0)+' xPts':'')+'</div></div>'+
+        '<div class="rc-date">R'+r.r+'</div></div>';
+    }).join('')+'</div>'+estNote();
+}
+
+/* ── RACE DAY · Hindsight Optimal ──────────────────────── */
+async function hydrateHindsight(host){
+  const race=nextRace(),tmpl=templateTeam(race);
+  host.innerHTML=
+    card('How this works',
+      '<p class="text-2" style="font-size:.84rem;margin:0">After each round, this panel shows the perfect-hindsight team — the highest-scoring legal $100M lineup — next to what you picked. It fills from the live results feed once deployed. Until then, here is the model’s <b>forward-looking</b> optimal for '+race.flag+' '+esc(race.gp)+'.</p>')+
+    (tmpl?card('Model optimal — '+esc(race.gp)+' ('+tmpl.xp.toFixed(0)+' xPts, '+money(tmpl.cost)+')',
+      '<div class="dl">'+tmpl.drivers.map(id=>driverRow(DRIVER[id],'<b>'+driverXPtotal(DRIVER[id],race).toFixed(1)+'</b> xPts')).join('')+
+      tmpl.cons.map(id=>{const tm=F1_TEAMS[id];return '<div class="dl-row"><div class="dl-grow">'+conchip(tm,26)+
+        '<div style="margin-left:10px"><div class="dl-nm">'+esc(tm.name)+'</div><div class="dl-sub">'+money(tm.price)+'</div></div></div>'+
+        '<div class="dl-col"><b>'+teamXPtotal(tm,race).toFixed(1)+'</b> xPts</div></div>';}).join('')+'</div>'):'')+
+    estNote();
+}
+
+/* ── INTEL · Template Meter ────────────────────────────── */
+async function hydrateTemplate(host){
+  const t=getTeam();
+  if(!t||!teamValid(t)){host.innerHTML=teamBox();return;}
+  const tmpl=templateTeam();
+  const overlapD=t.drivers.filter(id=>tmpl.drivers.includes(id));
+  const overlapC=t.cons.filter(id=>tmpl.cons.includes(id));
+  const pct=Math.round((overlapD.length+overlapC.length)/7*100);
+  host.innerHTML=
+    '<div class="statgrid">'+
+      kpi('Template overlap',pct+'%',overlapD.length+' drivers + '+overlapC.length+' constructors',true)+
+      kpi('Your projection',teamProjection(t).toFixed(0)+' pts','next round')+
+      kpi('Template projection',tmpl.xp.toFixed(0)+' pts','model reference team')+
+    '</div>'+
+    card('Shared with the template','<div class="dl">'+
+      (overlapD.map(id=>driverRow(DRIVER[id],'<span class="badge badge-green">both</span>')).join('')||'<p class="text-3" style="font-size:.82rem">None — you’re fully off-template.</p>')+'</div>')+
+    card('Your differentials','<div class="dl">'+
+      (t.drivers.filter(id=>!tmpl.drivers.includes(id)).map(id=>driverRow(DRIVER[id],'<span class="badge badge-blue">edge</span>')).join('')||'<p class="text-3" style="font-size:.82rem">None — you are the template.</p>')+'</div>')+
+    card('Template picks you lack','<div class="dl">'+
+      (tmpl.drivers.filter(id=>!t.drivers.includes(id)).map(id=>driverRow(DRIVER[id],'<b>'+driverXPtotal(DRIVER[id]).toFixed(1)+'</b> xPts')).join('')||'—')+'</div>')+
+    estNote();
+}
+
+/* ── INTEL · Rival Scout ───────────────────────────────── */
+function getRivals(){return lsGet('rivals',[]);}
+function addRival(){
+  const name=document.getElementById('rv-name').value.trim();
+  const ids=[...document.querySelectorAll('.rv-d:checked')].map(c=>c.value);
+  const cons=[...document.querySelectorAll('.rv-c:checked')].map(c=>c.value);
+  if(!name||ids.length!==5||cons.length!==2){toast('Name + exactly 5 drivers + 2 constructors');return;}
+  const rv=getRivals();
+  rv.push({name,drivers:ids,cons});
+  lsSet('rivals',rv.slice(0,5));
+  renderPage('rivals');
+}
+function delRival(i){const rv=getRivals();rv.splice(i,1);lsSet('rivals',rv);renderPage('rivals');}
+async function hydrateRivals(host){
+  const t=getTeam(),race=nextRace(),rivals=getRivals();
+  const myProj=t&&teamValid(t)?teamProjection(t,race):0;
+  host.innerHTML=
+    (rivals.length?rivals.map((r,i)=>{
+      const rTeam={drivers:r.drivers,cons:r.cons,drs:null};
+      const rProj=r.drivers.reduce((s,id)=>s+driverXPtotal(DRIVER[id],race),0)
+        +Math.max(...r.drivers.map(id=>driverXPtotal(DRIVER[id],race)))
+        +r.cons.reduce((s,id)=>s+teamXPtotal(F1_TEAMS[id],race),0);
+      const shared=t?r.drivers.filter(id=>t.drivers.includes(id)):[];
+      const theirEdge=t?r.drivers.filter(id=>!t.drivers.includes(id)):r.drivers;
+      const yourEdge=t?t.drivers.filter(id=>!r.drivers.includes(id)):[];
+      const gap=myProj-rProj;
+      return card(esc(r.name),
+        '<div class="statgrid">'+
+        kpi('Their projection',rProj.toFixed(0)+' pts','best-driver boost assumed')+
+        (t?kpi('Projected gap',(gap>=0?'+':'')+gap.toFixed(0),gap>=0?'you gain this round':'they gain this round',gap>=0):'')+
+        kpi('Squad overlap',shared.length+'/5','shared drivers')+'</div>'+
+        '<div class="grid g-2"><div><b style="font-size:.8rem">Their edge on you</b><div class="dl">'+
+        (theirEdge.map(id=>driverRow(DRIVER[id],'<b>'+driverXPtotal(DRIVER[id],race).toFixed(1)+'</b>')).join('')||'<p class="text-3" style="font-size:.8rem">None.</p>')+'</div></div>'+
+        '<div><b style="font-size:.8rem">Your edge on them</b><div class="dl">'+
+        (yourEdge.map(id=>driverRow(DRIVER[id],'<b>'+driverXPtotal(DRIVER[id],race).toFixed(1)+'</b>')).join('')||'<p class="text-3" style="font-size:.8rem">None.</p>')+'</div></div></div>'+
+        '<button class="btn btn-ghost btn-sm" onclick="delRival('+i+')">Remove rival</button>');
+    }).join(''):stateBox('users','No rivals tracked yet','Add up to five mini-league rivals below — enter their team once and every race week you’ll see the projected gap and the differentials that decide it.'))+
+    card('Add a rival',
+      '<input class="modal-in" id="rv-name" placeholder="Rival name" aria-label="Rival name" style="margin-bottom:10px">'+
+      '<b style="font-size:.8rem">Their 5 drivers</b>'+
+      '<div class="possel" style="margin:8px 0 12px">'+F1_DRIVERS.map(d=>'<label style="font-size:.76rem"><input type="checkbox" class="rv-d" value="'+d.id+'"> '+esc(d.name.split(' ').pop())+'</label>').join('')+'</div>'+
+      '<b style="font-size:.8rem">Their 2 constructors</b>'+
+      '<div class="possel" style="margin:8px 0 12px">'+Object.values(F1_TEAMS).map(tm=>'<label style="font-size:.76rem"><input type="checkbox" class="rv-c" value="'+tm.id+'"> '+esc(tm.name)+'</label>').join('')+'</div>'+
+      '<button class="btn btn-primary btn-sm" onclick="addRival()">Track rival</button>');
+}
+
+/* ── INTEL · Race Engineer (grounded local assistant) ──── */
+function engineerAnswer(q){
+  q=q.toLowerCase();
+  const race=nextRace(),t=getTeam();
+  const top=[...F1_DRIVERS].sort((a,b)=>driverXPtotal(b,race)-driverXPtotal(a,race));
+  if(/boost|drs|captain|2x|double/.test(q)){
+    const mine=t&&teamValid(t)?t.drivers.map(id=>DRIVER[id]).sort((a,b)=>driverXPtotal(b,race)-driverXPtotal(a,race)):null;
+    return 'For '+race.gp+', the model’s strongest boost is <b>'+esc(top[0].name)+'</b> ('+driverXPtotal(top[0],race).toFixed(1)+' xPts, doubled to '+(driverXPtotal(top[0],race)*2).toFixed(0)+').'+
+      (mine?' From your team, best is <b>'+esc(mine[0].name)+'</b> ('+(driverXPtotal(mine[0],race)*2).toFixed(0)+' boosted).':'')+
+      (race.sprint?' Sprint weekend — boosts are worth more with the extra session.':'');
+  }
+  if(/chip|wildcard|limitless|no negative|autopilot|final fix|3x/.test(q)){
+    const best=CHIPS.filter(c=>!chipsUsed()[c.id]).map(c=>({c,b:bestChipRounds(c.id)[0]})).sort((x,y)=>(y.b?y.b.ev:0)-(x.b?x.b.ev:0)).slice(0,3);
+    return best.length?'Best chip EV from here: '+best.map(({c,b})=>'<b>'+c.label+'</b> at '+(b?b.race.flag+' '+esc(b.race.gp)+' (~'+b.ev.toFixed(0)+' pts)':'—')).join('; ')+'. One chip per weekend, so sequence them.':'All six chips are played.';
+  }
+  if(/price|rise|fall|value|money|budget/.test(q)){
+    const risers=F1_DRIVERS.map(d=>({d,po:priceOutlook(d,false)})).filter(m=>m.po.cls==='mv-up').slice(0,3);
+    const val=[...F1_DRIVERS].sort((a,b)=>driverXPtotal(b,race)/b.price-driverXPtotal(a,race)/a.price)[0];
+    return 'Prices move on a 3-race points-per-million window. Currently rising: '+
+      (risers.map(m=>esc(m.d.name)).join(', ')||'nobody flagged')+'. Best value on the grid right now: <b>'+esc(val.name)+'</b> at '+money(val.price)+'. The Price Predictor panel shows the exact points each asset needs this weekend.';
+  }
+  if(/transfer|swap|sell|buy/.test(q)){
+    return t&&teamValid(t)?'Open the Transfer Planner — it ranks every legal move by projected gain over the next three rounds and flags which are worth a −10 hit. Remember: transfers are now counted as the difference between lock-ins, so you can experiment freely before deadline.':'Build your team first, then the Transfer Planner ranks your best moves — penalty-aware.';
+  }
+  if(/track|circuit|monaco|spa|monza|street|overtak/.test(q)){
+    return race.flag+' '+esc(race.gp)+' ('+esc(race.circuit)+'): overtaking ease '+race.ov.toFixed(1)+'/3, safety-car chance '+(race.sc*100).toFixed(0)+'%'+(race.street?', street circuit — qualifying is king':'')+'. '+(race.ov>=1.8?'Recovery drives score well here — overtake points add up.':race.ov<=0.8?'Track position rules — favour strong qualifiers.':'A balanced circuit.');
+  }
+  if(/sprint/.test(q)){
+    return 'Six sprint weekends in 2026: China, Miami, Canada, Silverstone, Zandvoort, Singapore. Extra 8-7-6-5-4-3-2-1 points, sprint DNF only −10, and lock-in moves to Sprint Qualifying on Friday.';
+  }
+  if(/rule|scor|point|how/.test(q)){
+    return '2026 quick card: $100M cap, 5 drivers + 2 constructors, 2 free transfers (bank to 3, −10 each extra). Race points 25-18-15-12-10-8-6-4-2-1, quali 10→1, +1 per position gained and per overtake, +10 fastest lap and DotD, −20 race DNF. Constructors add Q3 bonuses (both cars in Q3 = +10) and pit-stop bonuses (a sub-2s stop is +20).';
+  }
+  return 'I answer from the model: try asking about the best <b>DRS boost</b>, <b>chip timing</b>, <b>price moves</b>, <b>transfers</b>, the <b>next track</b>, <b>sprint weekends</b> or the <b>rules</b>.';
+}
+function askEngineer(){
+  const inp=document.getElementById('eng-in');
+  const q=inp.value.trim();if(!q)return;
+  const th=document.getElementById('eng-thread');
+  th.insertAdjacentHTML('beforeend','<div class="ask-msg ask-user">'+esc(q)+'</div>');
+  th.insertAdjacentHTML('beforeend','<div class="ask-msg">'+engineerAnswer(q)+'<div class="ask-src">Grounded in the RaceWeek Edge model</div></div>');
+  inp.value='';th.scrollTop=th.scrollHeight;
+}
+async function hydrateEngineer(host){
+  const sugg=['Who should I boost this weekend?','When do I play Limitless?','Who is rising in price?','Tell me about the next track','How does sprint scoring work?'];
+  host.innerHTML=
+    '<div class="ask-assistant"><div class="ask-thread" id="eng-thread">'+
+    '<div class="ask-msg">Radio check. Ask about boosts, chips, prices, transfers or tracks — answers come straight from the model.<div class="ask-src">Grounded in the RaceWeek Edge model</div></div>'+
+    '</div>'+
+    '<div class="ask-suggest">'+sugg.map(s=>'<button class="ask-chip" onclick="document.getElementById(\'eng-in\').value=\''+s.replace(/'/g,"\\'")+'\';askEngineer()">'+s+'</button>').join('')+'</div>'+
+    '<div class="sugg-row" style="display:flex;gap:8px;margin-top:10px">'+
+    '<input class="ask-input" id="eng-in" placeholder="Ask your race engineer…" aria-label="Ask a question" onkeydown="if(event.key===\'Enter\')askEngineer()">'+
+    '<button class="btn btn-primary" onclick="askEngineer()">Ask</button></div></div>';
+}
+
+/* ── INTEL · Model Accuracy (transparency) ─────────────── */
+async function hydrateAccuracy(host){
+  const log=lsGet('accuracy-log',[]);
+  host.innerHTML=
+    card('The promise',
+      '<p class="text-2" style="font-size:.86rem;margin:0">Projections you can’t audit are just vibes. This page keeps the model honest: after every round we log projected vs actual points for the top picks — <b>including the misses</b> — so you can judge whether the edge is real.</p>')+
+    card('How the model works',
+      '<div class="stat"><span class="stat-l">Base</span><span style="font-size:.82rem">Expected qualifying + finishing positions per driver, interpolated over the official scoring tables</span></div>'+
+      '<div class="stat"><span class="stat-l">Track layer</span><span style="font-size:.82rem">Overtake points scale with each circuit’s passing ease; street circuits weight qualifying</span></div>'+
+      '<div class="stat"><span class="stat-l">Risk layer</span><span style="font-size:.82rem">Per-driver DNF probability, amplified at high safety-car venues</span></div>'+
+      '<div class="stat"><span class="stat-l">Constructors</span><span style="font-size:.82rem">Both cars + Q3-bonus probability + pit-crew tier expectation</span></div>'+
+      '<div class="stat"><span class="stat-l">2026 caveat</span><span style="font-size:.82rem">All-new regulations reset historic form — early-season ratings carry wide error bars and tighten as results land</span></div>')+
+    (log.length
+      ?card('Round-by-round record','<div style="overflow-x:auto"><table class="ptable"><thead><tr><th>Round</th><th>Projected top pick</th><th>Actual</th><th>Error</th></tr></thead><tbody>'+
+        log.map(r=>'<tr><td>'+esc(r.round)+'</td><td>'+esc(r.pick)+'</td><td>'+esc(r.actual)+'</td><td>'+esc(r.err)+'</td></tr>').join('')+'</tbody></table></div>')
+      :card('Round-by-round record','<p class="text-3" style="font-size:.84rem;margin:0">The log populates as rounds complete with the live results feed connected. No cherry-picking — every round gets a row.</p>'));
+}
+
+/* ── GRID · Driver List ────────────────────────────────── */
+let DRV_SORT={key:'xp',dir:-1};
+function sortDrivers(key){
+  DRV_SORT=DRV_SORT.key===key?{key,dir:-DRV_SORT.dir}:{key,dir:-1};
+  renderPage('drivers');
+}
+async function hydrateDrivers(host){
+  const race=nextRace();
+  const rows=F1_DRIVERS.map(d=>({
+    d,team:teamOf(d).name,price:d.price,xp:driverXPtotal(d,race),xp3:horizonXP(d,false,3),
+    val:driverXPtotal(d,race)/d.price,q:d.qr,r:d.rr,rel:d.rel*100,ov:d.ov
+  }));
+  rows.sort((a,b)=>(a[DRV_SORT.key]>b[DRV_SORT.key]?1:-1)*DRV_SORT.dir);
+  const th=(k,l)=>'<th onclick="sortDrivers(\''+k+'\')" style="cursor:pointer" title="Sort">'+l+(DRV_SORT.key===k?(DRV_SORT.dir<0?' ↓':' ↑'):'')+'</th>';
+  host.innerHTML=
+    '<div class="card" style="padding:0;overflow-x:auto"><table class="ptable"><thead><tr>'+
+    th('d','Driver')+th('team','Team')+th('price','Price')+th('xp','xP next')+th('xp3','xP next 3')+
+    th('val','xP/$M')+th('q','Exp quali')+th('r','Exp race')+th('rel','DNF %')+th('ov','Overtake idx')+
+    '</tr></thead><tbody>'+
+    rows.map(x=>'<tr class="dl-click" onclick="openDriver(\''+x.d.id+'\')">'+
+      '<td><div style="display:flex;align-items:center;gap:8px">'+numchip(x.d,22)+'<b>'+esc(x.d.name)+'</b></div></td>'+
+      '<td>'+esc(x.team)+'</td><td>'+money(x.price)+'</td><td><b>'+x.xp.toFixed(1)+'</b></td><td>'+x.xp3.toFixed(1)+'</td>'+
+      '<td>'+x.val.toFixed(2)+'</td><td>P'+x.q.toFixed(1)+'</td><td>P'+x.r.toFixed(1)+'</td><td>'+x.rel.toFixed(0)+'%</td><td>'+x.ov.toFixed(1)+'</td></tr>').join('')+
+    '</tbody></table></div>'+estNote('Tap any column to sort · tap a row for the full profile · export with the ⬇ button in the top bar.');
+}
+
+/* ── GRID · Constructors ───────────────────────────────── */
+async function hydrateConstructors(host){
+  const race=nextRace();
+  const rows=Object.values(F1_TEAMS).map(t=>({t,x:teamXP(t,race)})).sort((a,b)=>b.x.total-a.x.total);
+  host.innerHTML=
+    '<div class="card" style="padding:0;overflow-x:auto"><table class="ptable"><thead><tr>'+
+    '<th>Constructor</th><th>Drivers</th><th>Price</th><th>xP next</th><th>Q3 bonus</th><th>Pit bonus</th><th>xP/$M</th>'+
+    '</tr></thead><tbody>'+
+    rows.map(({t,x})=>'<tr><td><div style="display:flex;align-items:center;gap:8px">'+conchip(t,22)+'<b>'+esc(t.name)+'</b></div></td>'+
+      '<td>'+t.drivers.map(id=>esc(DRIVER[id].name.split(' ').pop())).join(' · ')+'</td>'+
+      '<td>'+money(t.price)+'</td><td><b>'+x.total.toFixed(1)+'</b></td><td>+'+x.q3.toFixed(1)+'</td><td>+'+x.pit.toFixed(0)+'</td>'+
+      '<td>'+(x.total/t.price).toFixed(2)+'</td></tr>').join('')+
+    '</tbody></table></div>'+
+    card('Constructor scoring, decoded',
+      '<p class="text-2" style="font-size:.84rem;margin:0">Constructors bank <b>both cars’</b> qualifying, sprint and race points, plus bonuses drivers can’t earn: both cars into Q3 (+10) and pit-stop speed (a sub-2.0s stop is +20; the world-record bonus adds +15). A mid-price constructor with a elite pit crew quietly out-earns its price.</p>')+
+    estNote();
+}
+
+/* ── GRID · Driver Compare ─────────────────────────────── */
+function cmpSel(){
+  const ids=[1,2,3,4].map(i=>document.getElementById('cmp-'+i).value).filter(Boolean);
+  lsSet('cmp',ids);renderPage('compare');
+}
+async function hydrateCompare(host){
+  const sel=lsGet('cmp',['VER','NOR']);
+  const race=nextRace();
+  const opts=i=>'<select id="cmp-'+i+'" onchange="cmpSel()"><option value="">—</option>'+
+    F1_DRIVERS.map(d=>'<option value="'+d.id+'"'+(sel[i-1]===d.id?' selected':'')+'>'+esc(d.name)+'</option>').join('')+'</select>';
+  const ds=sel.map(id=>DRIVER[id]).filter(Boolean);
+  const rows=[
+    ['Price',d=>money(d.price)],
+    ['xP next',d=>driverXPtotal(d,race).toFixed(1)],
+    ['xP next 3',d=>horizonXP(d,false,3).toFixed(1)],
+    ['Value xP/$M',d=>(driverXPtotal(d,race)/d.price).toFixed(2)],
+    ['Exp qualifying',d=>'P'+d.qr.toFixed(1)],
+    ['Exp race',d=>'P'+d.rr.toFixed(1)],
+    ['DNF risk',d=>(d.rel*100).toFixed(0)+'%'],
+    ['Overtake index',d=>d.ov.toFixed(1)],
+    ['Price outlook',d=>{const p=priceOutlook(d,false);return '<span class="'+p.cls+'">'+p.verdict+'</span>';}]
+  ];
+  host.innerHTML=
+    card('Choose up to four','<div class="possel">'+[1,2,3,4].map(opts).join('')+'</div>')+
+    (ds.length?'<div class="card" style="padding:0;overflow-x:auto"><table class="ptable"><thead><tr><th></th>'+
+      ds.map(d=>'<th><div style="display:flex;align-items:center;gap:8px">'+numchip(d,22)+esc(d.name.split(' ').pop())+'</div></th>').join('')+'</tr></thead><tbody>'+
+      rows.map(r=>'<tr><td><b style="font-size:.78rem">'+r[0]+'</b></td>'+ds.map(d=>'<td>'+r[1](d)+'</td>').join('')+'</tr>').join('')+
+      '</tbody></table></div>':'')+estNote();
+}
+
+/* ── GRID · Price Predictor ────────────────────────────── */
+async function hydratePrice(host){
+  const all=[...F1_DRIVERS.map(d=>({e:d,isTeam:false})),...Object.values(F1_TEAMS).map(t=>({e:t,isTeam:true}))]
+    .map(x=>({...x,po:priceOutlook(x.e,x.isTeam)}));
+  all.sort((a,b)=>b.po.ppm-a.po.ppm);
+  host.innerHTML=
+    card('How prices move',
+      '<p class="text-2" style="font-size:.84rem;margin:0">The game averages <b>points-per-million over the last 3 races</b>; the rating decides the move (bands ≈ 0.2 / 0.3 / 0.4 PPM). Two races are already locked in — so “points needed this weekend” below is exact arithmetic, not guesswork.</p>')+
+    '<div class="card" style="padding:0;overflow-x:auto"><table class="ptable"><thead><tr>'+
+    '<th>Asset</th><th>Price</th><th>3-race PPM (est)</th><th>Verdict</th><th>Need to hold</th><th>Need to rise</th>'+
+    '</tr></thead><tbody>'+
+    all.map(({e,isTeam,po})=>'<tr'+(isTeam?'':' class="dl-click" onclick="openDriver(\''+e.id+'\')"')+'>'+
+      '<td><div style="display:flex;align-items:center;gap:8px">'+(isTeam?conchip(e,22):numchip(e,22))+'<b>'+esc(e.name)+'</b></div></td>'+
+      '<td>'+money(e.price)+'</td><td>'+po.ppm.toFixed(2)+'</td>'+
+      '<td><span class="'+po.cls+'">'+po.verdict+'</span></td>'+
+      '<td>'+po.needHold+' pts</td><td>'+po.needRise+' pts</td></tr>').join('')+
+    '</tbody></table></div>'+
+    estNote('PPM uses model-estimated recent scores until the live results feed is connected; the thresholds and arithmetic are the real game rules.');
+}
+
+/* ── GRID · Value Finder ───────────────────────────────── */
+async function hydrateValue(host){
+  const race=nextRace();
+  const dv=[...F1_DRIVERS].map(d=>({d,v:horizonXP(d,false,3)/d.price})).sort((a,b)=>b.v-a.v);
+  const cv=Object.values(F1_TEAMS).map(t=>({t,v:horizonXP(t,true,3)/t.price})).sort((a,b)=>b.v-a.v);
+  host.innerHTML='<div class="grid g-2">'+
+    card('Best value drivers — next 3 rounds','<div class="dl">'+dv.slice(0,8).map(({d,v},i)=>
+      '<div class="dl-row dl-click" onclick="openDriver(\''+d.id+'\')"><span class="dl-rank">'+(i+1)+'</span><div class="dl-grow">'+numchip(d,24)+
+      '<div style="margin-left:10px"><div class="dl-nm">'+esc(d.name)+'</div><div class="dl-sub">'+money(d.price)+'</div></div></div>'+
+      '<div class="dl-col"><b>'+v.toFixed(2)+'</b> xP/$M</div></div>').join('')+'</div>')+
+    card('Best value constructors','<div class="dl">'+cv.map(({t,v},i)=>
+      '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span><div class="dl-grow">'+conchip(t,24)+
+      '<div style="margin-left:10px"><div class="dl-nm">'+esc(t.name)+'</div><div class="dl-sub">'+money(t.price)+'</div></div></div>'+
+      '<div class="dl-col"><b>'+v.toFixed(2)+'</b> xP/$M</div></div>').join('')+'</div>')+'</div>'+
+    card('Budget enablers under $8M','<div class="dl">'+
+      F1_DRIVERS.filter(d=>d.price<8).map(d=>({d,v:horizonXP(d,false,3)/d.price})).sort((a,b)=>b.v-a.v)
+      .map(({d,v})=>driverRow(d,'<b>'+v.toFixed(2)+'</b> xP/$M')).join('')+'</div>'+
+      '<p class="text-2" style="font-size:.8rem;margin-top:8px">Cheap seats fund your premiums — the difference between the best and worst enabler compounds over a season.</p>')+
+    estNote();
+}
+
+/* ── PLANNER · Race Calendar ───────────────────────────── */
+async function hydrateCalendar(host){
+  const next=nextRace();
+  host.innerHTML='<div class="grid g-sb">'+F1_CALENDAR.map(r=>{
+    const isNext=r.r===next.r,done=r.r<next.r;
+    return '<div class="racecard'+(isNext?' is-next':'')+(done?' done':'')+'">'+
+      '<span class="rc-round">R'+r.r+'</span><span class="rc-flag">'+r.flag+'</span>'+
+      '<div class="rc-body"><div class="rc-nm">'+esc(r.gp)+(r.sprint?' <span class="sprint-badge">Sprint</span>':'')+(isNext?' <span class="badge badge-green">next</span>':'')+'</div>'+
+      '<div class="rc-sub">'+esc(r.circuit)+'</div></div>'+
+      '<div class="rc-date">'+fmtDate(r.race,{day:'numeric',month:'short'})+'<br><span class="text-3" style="font-size:.7rem">Lock '+fmtDate(r.lock,{weekday:'short'})+' '+new Date(r.lock).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})+'</span></div></div>';
+  }).join('')+'</div>'+
+  card('2026 season shape','<p class="text-2" style="font-size:.84rem;margin:0">22 rounds after the Bahrain and Saudi Arabian cancellations. Six sprint weekends — China, Miami, Canada, Silverstone, Zandvoort, Singapore — carry extra points and a Friday lock-in. Madrid debuts in September. All times shown in your timezone.</p>');
+}
+
+/* ── PLANNER · Track Insights ──────────────────────────── */
+async function hydrateTracks(host){
+  const trait=(l,v,max,color)=>'<div class="trait"><span class="t-l">'+l+'</span><div class="t-bar"><div style="width:'+(v/max*100)+'%;background:'+color+'"></div></div><span class="t-v">'+v.toFixed(1)+'</span></div>';
+  host.innerHTML='<div class="grid g-2">'+remainingRaces().map(r=>{
+    const pick=[...F1_DRIVERS].sort((a,b)=>driverXPtotal(b,r)-driverXPtotal(a,r))[0];
+    return card(r.flag+' '+esc(r.gp)+' · R'+r.r+(r.sprint?' <span class="sprint-badge">Sprint</span>':''),
+      trait('Overtaking ease',r.ov,3,'var(--up)')+
+      trait('Safety-car odds',r.sc*10,10,'var(--amber)')+
+      '<div class="stat"><span class="stat-l">Type</span><b>'+(r.street?'Street':'Permanent')+'</b></div>'+
+      '<div class="stat"><span class="stat-l">Model pick here</span><b class="dl-click" style="cursor:pointer" onclick="openDriver(\''+pick.id+'\')">'+esc(pick.name)+' · '+driverXPtotal(pick,r).toFixed(1)+' xPts</b></div>');
+  }).join('')+'</div>'+estNote('Track traits are the model’s inputs — estimates that sharpen as the 2026 cars show their character.');
+}
+
+/* ── PLANNER · Chip Strategy ───────────────────────────── */
+function markChip(id){
+  const t=getTeam()||{drivers:[],cons:[],drs:null,chips:{}};
+  t.chips=t.chips||{};
+  if(t.chips[id])delete t.chips[id];else t.chips[id]=nextRace().r;
+  setTeam(t);renderPage('chips');
+}
+async function hydrateChips(host){
+  const used=chipsUsed();
+  host.innerHTML=
+    card('The chip rules','<p class="text-2" style="font-size:.84rem;margin:0">Six chips, each once per season, one per weekend. Autopilot, 3x Boost and No Negative are live from Round 1; Limitless, Wildcard and Final Fix unlock from your team’s second race. The EV numbers below are computed <b>for your team</b> at every remaining round — mark chips as used to keep advice honest.</p>')+
+    '<div class="grid g-2">'+CHIPS.map(c=>{
+      const isUsed=!!used[c.id];
+      const best=bestChipRounds(c.id);
+      return '<div class="chipcard'+(isUsed?' used':'')+'">'+
+        '<div class="ch-hd"><span class="ch-ic">'+svg(ICON[c.icon])+'</span>'+c.label+
+        (isUsed?' <span class="badge badge-grey">used · R'+used[c.id]+'</span>':'')+'</div>'+
+        '<p>'+c.desc+'</p>'+
+        (!isUsed&&best.length?'<div class="ch-best">Best EV: '+best.map(b=>b.race.flag+' '+esc(b.race.gp)+' ('+b.ev.toFixed(0)+')').join(' · ')+'</div>':'')+
+        '<button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="markChip(\''+c.id+'\')">'+(isUsed?'Mark unused':'Mark as used')+'</button></div>';
+    }).join('')+'</div>'+estNote();
+}
+
+/* ── PLANNER · Watchlist ───────────────────────────────── */
+async function hydrateWatchlist(host){
+  const w=getWatch(),race=nextRace();
+  host.innerHTML=w.length
+    ?card('Watching '+w.length,'<div class="dl">'+w.map(id=>{
+        const d=DRIVER[id];if(!d)return '';
+        const po=priceOutlook(d,false);
+        return driverRow(d,'<b>'+driverXPtotal(d,race).toFixed(1)+'</b> xPts · <span class="'+po.cls+'">'+po.verdict+'</span>');
+      }).join('')+'</div>')+estNote()
+    :stateBox('eye','Nothing watched yet','Open any driver and tap ☆ Watch — they’ll line up here with projections and price outlook.');
+}
+
+/* ── PLANNER · Alerts ──────────────────────────────────── */
+function toggleAlert(k){
+  const p=lsGet('alert-prefs',{deadline:true,price:true,race:false});
+  p[k]=!p[k];lsSet('alert-prefs',p);renderPage('alerts');
+}
+async function hydrateAlerts(host){
+  const p=lsGet('alert-prefs',{deadline:true,price:true,race:false});
+  const race=nextRace();
+  const tog=(k,label,sub)=>'<div class="dl-row"><div class="dl-grow"><div><div class="dl-nm">'+label+'</div><div class="dl-sub">'+sub+'</div></div></div>'+
+    '<div class="dl-col"><button class="alert-tog'+(p[k]?' on':'')+'" onclick="toggleAlert(\''+k+'\')" role="switch" aria-checked="'+(!!p[k])+'" aria-label="'+label+'"><span></span></button></div></div>';
+  host.innerHTML=
+    card('Next lock-in','<div class="stat"><span class="stat-l">'+race.flag+' '+esc(race.gp)+(race.sprint?' (Sprint Qualifying — Friday!)':'')+'</span><b>'+fmtDateTime(race.lock)+'</b></div>'+countdownHTML(race.lock))+
+    card('Your alerts','<div class="dl">'+
+      tog('deadline','Lock-in reminders','A nudge before every qualifying — and the earlier Friday lock on sprint weekends')+
+      tog('price','Price-change warnings','When a watched or owned asset is on a rise/fall threshold')+
+      tog('race','Race-start alerts','Lights-out reminders in your timezone')+'</div>'+
+      '<p class="text-3" style="font-size:.76rem;margin-top:10px">Preferences save on this device now; push delivery switches on when the app is deployed (service-worker Web Push, no app store needed).</p>');
+  armCountdowns();
+}
+
+/* ── SEASON · Standings ────────────────────────────────── */
+async function hydrateStandings(host){
+  let live=null;
+  try{
+    const j=await loadStandings();
+    live=j.MRData.StandingsTable.StandingsLists[0];
+  }catch(_){/* offline / not deployed — fall through to model */}
+  if(live){
+    const rows=live.DriverStandings.map(s=>({
+      name:s.Driver.givenName+' '+s.Driver.familyName,pts:s.points,pos:s.position,team:(s.Constructors[0]||{}).name||''
+    }));
+    host.innerHTML=card('Drivers’ championship — live','<div class="dl">'+rows.map(r=>
+      '<div class="dl-row"><span class="dl-rank">'+r.pos+'</span><div class="dl-grow"><div><div class="dl-nm">'+esc(r.name)+'</div>'+
+      '<div class="dl-sub">'+esc(r.team)+'</div></div></div><div class="dl-col"><b>'+r.pts+'</b> pts</div></div>').join('')+'</div>');
+    return;
+  }
+  const exp=[...F1_DRIVERS].sort((a,b)=>a.rr-b.rr);
+  host.innerHTML=
+    card('Live standings connect on deploy','<p class="text-2" style="font-size:.84rem;margin:0">Deployed with its results proxy, this panel shows the real drivers’ and constructors’ championships. Until then, here’s the model’s expected pecking order.</p>')+
+    card('Model expected order — 2026','<div class="dl">'+exp.map((d,i)=>
+      driverRow(d,'<span class="text-3">exp. P'+d.rr.toFixed(1)+'</span>')).join('')+'</div>')+estNote();
+}
+
+/* ── SEASON · Teammate H2H ─────────────────────────────── */
+async function hydrateH2h(host){
+  host.innerHTML='<div class="grid g-sb">'+Object.values(F1_TEAMS).map(t=>{
+    const [a,b]=t.drivers.map(id=>DRIVER[id]);
+    const qEdge=1/(1+Math.pow(10,(a.qr-b.qr)/4));  // logistic on rating gap
+    const rEdge=1/(1+Math.pow(10,(a.rr-b.rr)/4));
+    const side=(d,right)=>'<div class="d-side'+(right?' right':'')+'">'+(right?'':'')+numchip(d,24)+'<b style="font-size:.84rem;margin:0 6px">'+esc(d.name.split(' ').pop())+'</b></div>';
+    return '<div class="duel" style="border-left:4px solid '+t.color+'">'+
+      side(a)+'<div class="d-score"><span class="'+(qEdge>=.5?'win':'')+'">'+(qEdge*100).toFixed(0)+'%</span> Q <span class="'+(qEdge<.5?'win':'')+'">'+((1-qEdge)*100).toFixed(0)+'%</span><br>'+
+      '<span class="'+(rEdge>=.5?'win':'')+'">'+(rEdge*100).toFixed(0)+'%</span> R <span class="'+(rEdge<.5?'win':'')+'">'+((1-rEdge)*100).toFixed(0)+'%</span></div>'+side(b,true)+'</div>';
+  }).join('')+'</div>'+
+  card('Why it matters','<p class="text-2" style="font-size:.84rem;margin:0">Teammates share machinery, so the intra-team duel is the cleanest read on driver form — and the fantasy tiebreak between two similarly-priced options in the same car. Percentages are the model’s per-session win odds.</p>')+estNote();
+}
+
+/* ── SEASON · Title Race (Monte Carlo) ─────────────────── */
+function mulberry32(seed){return function(){let t=seed+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+async function hydrateTitlerace(host){
+  const races=remainingRaces(),SIMS=2000,rand=mulberry32(20260717);
+  const wins={},teamPts={};
+  F1_DRIVERS.forEach(d=>wins[d.id]=0);
+  Object.keys(F1_TEAMS).forEach(id=>teamPts[id]=0);
+  const teamWins={};Object.keys(F1_TEAMS).forEach(id=>teamWins[id]=0);
+  for(let s=0;s<SIMS;s++){
+    const tot={};F1_DRIVERS.forEach(d=>tot[d.id]=0);
+    races.forEach(rc=>{
+      const perf=F1_DRIVERS.map(d=>{
+        const dnf=rand()<d.rel*(0.7+rc.sc*0.8);
+        return {id:d.id,team:d.team,dnf,score:d.rr+(rand()*2-1)*4.2};
+      }).sort((x,y)=>x.score-y.score);
+      let pos=1;
+      perf.forEach(p=>{
+        if(p.dnf)return;
+        tot[p.id]+=interpPts(SCORING.race,pos)+(rc.sprint?interpPts(SCORING.sprint,pos)*0.6:0);
+        pos++;
+      });
+    });
+    let bestD=null,bestP=-1;
+    for(const id in tot)if(tot[id]>bestP){bestP=tot[id];bestD=id;}
+    wins[bestD]++;
+    const tp={};F1_DRIVERS.forEach(d=>tp[d.team]=(tp[d.team]||0)+tot[d.id]);
+    let bestT=null,bestTP=-1;
+    for(const id in tp)if(tp[id]>bestTP){bestTP=tp[id];bestT=id;}
+    teamWins[bestT]++;
+  }
+  const dRank=F1_DRIVERS.map(d=>({d,p:wins[d.id]/SIMS})).filter(x=>x.p>0.001).sort((a,b)=>b.p-a.p);
+  const tRank=Object.values(F1_TEAMS).map(t=>({t,p:teamWins[t.id]/SIMS})).filter(x=>x.p>0.001).sort((a,b)=>b.p-a.p);
+  const bar=p=>'<div class="pricebar" style="max-width:220px;flex:1;margin:0 10px"><div style="width:'+(p*100)+'%;background:var(--accent)"></div></div>';
+  host.innerHTML=
+    card('Drivers’ title odds — '+SIMS.toLocaleString()+' season simulations','<div class="dl">'+
+      dRank.map(({d,p},i)=>'<div class="dl-row dl-click" onclick="openDriver(\''+d.id+'\')"><span class="dl-rank">'+(i+1)+'</span>'+
+      '<div class="dl-grow">'+numchip(d,24)+'<b style="margin-left:10px;font-size:.86rem">'+esc(d.name)+'</b>'+bar(p)+'</div>'+
+      '<div class="dl-col"><b>'+(p*100).toFixed(1)+'%</b></div></div>').join('')+'</div>')+
+    card('Constructors’ title odds','<div class="dl">'+
+      tRank.map(({t,p},i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
+      '<div class="dl-grow">'+conchip(t,24)+'<b style="margin-left:10px;font-size:.86rem">'+esc(t.name)+'</b>'+bar(p)+'</div>'+
+      '<div class="dl-col"><b>'+(p*100).toFixed(1)+'%</b></div></div>').join('')+'</div>')+
+    estNote('Monte Carlo over the remaining rounds from the model ratings — deterministic seed, so results are reproducible.');
+}
+
+/* ── SEASON · Season Review ────────────────────────────── */
+async function hydrateReview(host){
+  const t=getTeam(),used=chipsUsed();
+  host.innerHTML=
+    card('Builds as you play','<p class="text-2" style="font-size:.84rem;margin:0">After every round this page grows a row: what your transfers gained or cost, whether your DRS Boost beat the field, and each chip’s actual return vs its EV at the time. With the live results feed connected the whole season reconstructs automatically.</p>')+
+    card('Chips played',Object.keys(used).length?'<div class="dl">'+Object.entries(used).map(([id,rd])=>{
+      const c=CHIPS.find(x=>x.id===id);
+      return '<div class="dl-row"><div class="dl-grow"><div><div class="dl-nm">'+(c?c.label:id)+'</div><div class="dl-sub">Round '+rd+'</div></div></div></div>';
+    }).join('')+'</div>':'<p class="text-3" style="font-size:.84rem;margin:0">No chips marked as used yet — track them in Chip Strategy.</p>')+
+    (t&&teamValid(t)?card('Current team snapshot','<div class="dl">'+
+      t.drivers.map(id=>driverRow(DRIVER[id],money(DRIVER[id].price))).join('')+'</div>'):teamBox());
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WIRED REGISTRY + INIT
+   ═══════════════════════════════════════════════════════════ */
+const WIRED={
+  dashboard:hydrateDashboard,raceweek:hydrateRaceweek,wire:hydrateWire,
+  builder:hydrateBuilder,lineup:hydrateLineup,transfers:hydrateTransfers,drs:hydrateDrs,
+  racecentre:hydrateRacecentre,pointsim:hydratePointsim,sprint:hydrateSprint,hindsight:hydrateHindsight,
+  template:hydrateTemplate,rivals:hydrateRivals,engineer:hydrateEngineer,accuracy:hydrateAccuracy,
+  drivers:hydrateDrivers,constructors:hydrateConstructors,compare:hydrateCompare,price:hydratePrice,value:hydrateValue,
+  calendar:hydrateCalendar,tracks:hydrateTracks,chips:hydrateChips,watchlist:hydrateWatchlist,alerts:hydrateAlerts,
+  standings:hydrateStandings,h2h:hydrateH2h,titlerace:hydrateTitlerace,review:hydrateReview
+};
+
+function refreshData(){
+  Object.keys(MEM).forEach(k=>delete MEM[k]);
+  try{Object.keys(localStorage).forEach(k=>{if(k.startsWith('rwe-c-'))localStorage.removeItem(k);});}catch(_){}
+  renderPage(currentPanel);
+  toast('Refreshed');
+}
+
+function initSidebarStrip(){
+  const race=nextRace();
+  document.getElementById('gw-num').textContent=race.r;
+  document.getElementById('gw-deadline').textContent=
+    fmtDate(race.lock,{weekday:'short'})+' '+new Date(race.lock).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
+function init(){
+  initTheme();reflectTier();
+  buildNav();buildBottomNav();initSidebarStrip();
+
+  document.getElementById('theme-toggle').addEventListener('click',()=>{
+    applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+  });
+  document.getElementById('hamburger').addEventListener('click',openSidebar);
+  document.getElementById('overlay').addEventListener('click',closeSidebar);
+  document.getElementById('tb-logo').addEventListener('click',e=>{e.preventDefault();openPanel('dashboard');});
+  document.getElementById('refresh-btn').addEventListener('click',refreshData);
+  document.getElementById('export-btn').addEventListener('click',exportCurrentView);
+  document.getElementById('signin-btn').addEventListener('click',()=>openPanel(getTeam()?'lineup':'builder'));
+
+  /* Modal close wiring */
+  document.querySelectorAll('[data-pro-close]').forEach(el=>el.addEventListener('click',closeUpgrade));
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[data-player-close]'))closeDriver();
+    if(e.target.closest('[data-onb-close]'))document.getElementById('onb-modal').classList.remove('show');
+    if(e.target.closest('[data-pro-close]'))closeUpgrade();
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){closeDriver();closeUpgrade();closeSidebar();
+      document.getElementById('onb-modal').classList.remove('show');}
+  });
+
+  /* Offline banner */
+  const net=document.getElementById('net-banner');
+  window.addEventListener('offline',()=>net.hidden=false);
+  window.addEventListener('online',()=>net.hidden=true);
+
+  /* Hash deep-links */
+  window.addEventListener('hashchange',()=>{
+    const id=location.hash.slice(1);
+    if(id&&PANELS[id]&&id!==currentPanel)openPanel(id);
+  });
+
+  /* First run */
+  if(!lsGet('onboarded',false)){
+    lsSet('onboarded',true);
+    document.getElementById('onb-modal').classList.add('show');
+    document.getElementById('onb-link').addEventListener('click',()=>{
+      document.getElementById('onb-modal').classList.remove('show');
+      openPanel('builder');
+    });
+  }
+
+  const hash=location.hash.slice(1);
+  openPanel(hash&&PANELS[hash]?hash:'dashboard');
+
+  /* Register the PWA service worker when served over http(s) */
+  if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
