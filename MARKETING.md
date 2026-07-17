@@ -161,7 +161,7 @@ posts from the EO tracker, "the model's GW1 forecasts" thread.
 1. I built the FPL companion I always wanted: live points, a full Match
    Centre, price predictions, and a debrief after every gameweek that tells
    you exactly what your captain call cost you. No ads. Free to use.
-   gameweekedge.netlify.app 🧵
+   gameweekedge.co.uk 🧵
 2. The Match Centre: every match's scorers, cards, saves, defensive
    contributions and the bonus race — with YOUR players flagged, and the
    model's pre-match forecast graded against the real result. [screenshot]

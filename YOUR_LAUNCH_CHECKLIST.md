@@ -14,7 +14,7 @@ season starts the weekend of 15–16 August.
    - Stripe: create the two products (Pro Monthly £3.99 recurring, Season
      Pass £24.99 one-time). The product IDs (`prod_…`) are fine — the app
      accepts them directly. Copy the secret key. Add the webhook
-     (`https://gameweekedge.netlify.app/api/stripe-webhook`, three events
+     (`https://gameweekedge.co.uk/api/stripe-webhook`, three events
      listed in LAUNCH.md step 4b), copy the signing secret.
    - Supabase: project settings → API → copy the `service_role` key. Then
      Authentication → URL Configuration → set the site URL.

@@ -16,11 +16,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Gameweek Edge — for fantasy managers">
 <meta property="og:description" content="An AI scout, predicted points, live matchday tracking, mini-leagues and alerts for Fantasy Premier League managers.">
-<meta property="og:image" content="https://gameweekedge.netlify.app/icons/og.png">
-<meta property="og:url" content="https://gameweekedge.netlify.app/">
+<meta property="og:image" content="https://gameweekedge.co.uk/icons/og.png">
+<meta property="og:url" content="https://gameweekedge.co.uk/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Gameweek Edge — for fantasy managers">
-<meta name="twitter:image" content="https://gameweekedge.netlify.app/icons/og.png">
+<meta name="twitter:image" content="https://gameweekedge.co.uk/icons/og.png">
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2869,7 +2869,7 @@ async function shareSquadCard(){
   panel(80,'GW RANK',S.rank!=null?fmtNum(S.rank):'—');
   panel(560,'CAPTAIN',S.cap||'—');
   if(S.top&&S.top.nm)center('Star player: '+S.top.nm+' · '+S.top.pts+' pts',830,'600 34px system-ui,sans-serif','rgba(255,255,255,.8)');
-  center('gameweekedge.netlify.app',965,'700 30px system-ui,sans-serif','#4ade80');
+  center('gameweekedge.co.uk',965,'700 30px system-ui,sans-serif','#4ade80');
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
   if(!blob){toast('Could not build the image');return;}
   const file=new File([blob],'gameweek-'+S.gw+'.png',{type:'image/png'});

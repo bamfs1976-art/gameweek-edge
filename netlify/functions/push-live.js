@@ -23,7 +23,7 @@ exports.config = { schedule: '*/2 * * * *' };
 let moduleCursor = 0;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const UA = 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.app)';
+const UA = 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.co.uk)';
 const api = async (path) => {
   const r = await fetch('https://fantasy.premierleague.com/api/' + path, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
   if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + path);
@@ -46,7 +46,7 @@ function fixtureBonus(elsByTeam, st, f) {
 
 exports.handler = async () => {
   const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || 'mailto:alerts@gameweekedge.app';
+  const subject = process.env.VAPID_SUBJECT || 'mailto:alerts@gameweekedge.co.uk';
   const supaUrl = process.env.SUPABASE_URL, supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!pub || !priv || !supaUrl || !supaKey) return { statusCode: 200, body: 'not configured' };
 

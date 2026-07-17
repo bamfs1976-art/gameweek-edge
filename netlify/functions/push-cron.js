@@ -16,7 +16,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 exports.config = { schedule: '@hourly' };
 
-const UA = 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.app)';
+const UA = 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.co.uk)';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* Same price-move likelihood model as the app's Price Predictor panel:
@@ -37,7 +37,7 @@ const suspLimit = (gw) => (gw <= 19 ? 5 : gw <= 32 ? 10 : 15);
 
 exports.handler = async () => {
   const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || 'mailto:alerts@gameweekedge.app';
+  const subject = process.env.VAPID_SUBJECT || 'mailto:alerts@gameweekedge.co.uk';
   const supaUrl = process.env.SUPABASE_URL, supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!pub || !priv || !supaUrl || !supaKey) return { statusCode: 200, body: 'not configured' };
 
