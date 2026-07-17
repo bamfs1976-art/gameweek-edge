@@ -316,6 +316,28 @@ html.offline .net-banner{transform:translateY(0)}
   position:relative;z-index:2;padding:9px 10px 7px;border-radius:10px;
   background:linear-gradient(180deg,#1d4a2e,#163a24);
   border:1px solid rgba(255,255,255,.22);box-shadow:0 2px 10px rgba(0,12,5,.3)}
+
+/* Match Centre */
+.mc-day{font-weight:700;font-size:.8rem;color:var(--text-2);
+  background:linear-gradient(90deg,var(--green-soft),transparent);
+  border-radius:var(--r-sm);padding:6px 10px;margin:12px 0 8px}
+.mc-fix{border:1px solid var(--border-2);border-radius:var(--r-md);margin-bottom:8px;
+  overflow:hidden;background:var(--surface)}
+.mc-head{display:grid;grid-template-columns:auto 1fr auto 1fr auto;align-items:center;
+  gap:8px;padding:10px 12px;cursor:pointer}
+.mc-team{display:flex;align-items:center;gap:6px;font-weight:700;min-width:0;font-size:.9rem}
+.mc-team span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mc-team.h{justify-content:flex-end;text-align:right}
+.mc-score{background:var(--surface-3);border:1px solid var(--border-2);
+  padding:4px 12px;border-radius:8px;font-weight:800;white-space:nowrap}
+.mc-ch{transition:transform .2s;color:var(--text-3);font-size:.75rem}
+.mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
+.mc-cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:.85rem;line-height:1.9}
+.mc-cols .h{text-align:right}
+.mc-sec{text-align:center;font-weight:700;font-size:.72rem;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--text-3);background:var(--surface-2);
+  border-radius:6px;padding:3px;margin:10px 0 6px}
+.mc-you{color:var(--blue);margin-right:3px;font-size:.7rem;vertical-align:2px}
 .bench .pp{flex-basis:58px}
 .bench .pp-fig{width:40px;height:44px}
 .bench .pp-nm,.bench .pp-pt{max-width:56px;font-size:.56rem}
@@ -1845,6 +1867,7 @@ const NAV = [
   {
     id:'league', label:'League', icon:'trophy',
     panels:[
+      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
       {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
       {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
@@ -1890,6 +1913,10 @@ const PANEL_CONTENT = {
   },
   matchforecast:{
     desc:'Model win/draw/loss and expected goals for every fixture of a matchday. Pro adds BTTS, over/under 2.5 and the most-likely scorelines.',
+    layout:'standard'
+  },
+  results:{
+    desc:'Every match of the gameweek — scorers, cards, saves, defensive contributions and the bonus race, with your players flagged and the model’s pre-match view beside each result.',
     layout:'standard'
   },
   seasonsim:{
@@ -2189,7 +2216,7 @@ function renderPage(panelId){
    and the tab is visible, so the numbers stay fresh without a manual
    reload. Each live hydrator calls markLive(true/false); the tick only
    refetches when something is live, and liveStamp() shows the pill. */
-const LIVE_PANELS=new Set(['liverank','bonus','dcwatch','autosubs','defcon']);
+const LIVE_PANELS=new Set(['liverank','bonus','dcwatch','autosubs','defcon','results']);
 let LIVE_TIMER=null;
 function armLiveRefresh(panelId){
   if(LIVE_TIMER){clearInterval(LIVE_TIMER);LIVE_TIMER=null;}
@@ -5781,6 +5808,152 @@ async function hydrateMatchForecast(host){
   host.querySelector('#mf-md').addEventListener('change',render);render();
 }
 
+/* ── Match Centre: the gameweek's results and live matches ──
+   Fixture stats come straight off the cached fixtures feed and the
+   event live feed. On top of the usual results detail (scorers, cards,
+   saves, defensive contributions, bonus race) each match carries what
+   no plain results page shows: your squad's players flagged, live FPL
+   points on the bonus race, and the pre-match model view — win
+   chances and expected goals — graded against what actually happened. */
+let RES_GW=null;
+window._resOpen=window._resOpen||new Set();
+function resToggle(id){
+  const S=window._resOpen;S.has(id)?S.delete(id):S.add(id);
+  const d=document.getElementById('mc-d-'+id),ch=document.getElementById('mc-ch-'+id);
+  if(d)d.style.display=S.has(id)?'':'none';
+  if(ch)ch.style.transform=S.has(id)?'rotate(180deg)':'';
+}
+function resNav(step){
+  RES_GW=Math.max(1,Math.min(38,(RES_GW||1)+step));
+  window._resOpen=new Set();
+  const h=document.getElementById('ge-data');
+  if(h)hydrateResults(h);
+}
+async function hydrateResults(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  if(RES_GW==null)RES_GW=b.cur.id;
+  const gw=RES_GW;
+  let owned=new Set();
+  const mid=getMid();
+  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  const fx=fixtures.filter(f=>f.event===gw).slice()
+    .sort((a,c)=>new Date(a.kickoff_time||0)-new Date(c.kickoff_time||0));
+  if(gw===b.cur.id)markLive(fx.some(f=>f.started&&!f.finished));
+  let livePts=null;
+  if(fx.some(f=>f.started)){
+    try{const live=await loadLive(gw);livePts={};
+      (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;});}catch(_){}
+  }
+  const R=plsimRatings(b,fixtures);
+  const S=window._resOpen;
+  const pn=id=>{const e=b.els[id];return e?esc(e.web_name):'—';};
+  const yours=id=>owned.has(id)?'<span class="mc-you" title="In your squad">●</span>':'';
+  const statOf=(f,id)=>{const s=(f.stats||[]).find(x=>x.identifier===id);return s?{h:s.h||[],a:s.a||[]}:{h:[],a:[]};};
+  const thr=t=>t===2?10:t>=3?12:null;
+  const teamName=id=>esc((b.teams[id]||{}).name||teamShort(b,id));
+
+  const detail=f=>{
+    const goals=statOf(f,'goals_scored'),assists=statOf(f,'assists'),og=statOf(f,'own_goals');
+    const yc=statOf(f,'yellow_cards'),rc=statOf(f,'red_cards'),sv=statOf(f,'saves');
+    const dc=statOf(f,'defensive_contribution'),bps=statOf(f,'bps'),bon=statOf(f,'bonus');
+    const pm=statOf(f,'penalties_missed'),ps=statOf(f,'penalties_saved');
+    const sec=t=>'<div class="mc-sec">'+t+'</div>';
+    const cols=(hh,aa)=>'<div class="mc-cols"><div class="h">'+(hh||'<span class="dl-sub">—</span>')+'</div><div>'+(aa||'<span class="dl-sub">—</span>')+'</div></div>';
+    const sideEvents=k=>{
+      const rows=[];
+      const add=(arr,icon,mult)=>arr.forEach(x=>rows.push(yours(x.element)+pn(x.element)+' '+icon+((mult&&x.value>1)?' ×'+x.value:'')));
+      add(goals[k],'⚽',1);add(og[k],'⚽ (og)');add(assists[k],'🅰️',1);
+      add(ps[k],'🧤 pen saved');add(pm[k],'❌ pen missed');
+      add(yc[k],'🟨');add(rc[k],'🟥');
+      return rows.map(r=>'<div>'+r+'</div>').join('');
+    };
+    const dcSide=k=>dc[k].slice().sort((a,c)=>c.value-a.value).map(x=>{
+      const t=thr((b.els[x.element]||{}).element_type);
+      const hit=t!=null&&x.value>=t;
+      return '<div>'+(hit?'<b style="color:var(--green)">+2</b> ':'')+yours(x.element)+pn(x.element)+' ('+x.value+')</div>';
+    }).join('');
+    /* Bonus: official once settled; a provisional 3-2-1 from live BPS
+       (official tie rule) while the match is running. */
+    const officialBonus=!!(bon.h.length||bon.a.length);
+    const prov={};
+    if(!officialBonus&&f.started){
+      const all=[...bps.h,...bps.a].slice().sort((a,c)=>c.value-a.value);
+      const groups=[];
+      all.forEach(p=>{const g=groups[groups.length-1];
+        if(g&&g.v===p.value)g.items.push(p);else groups.push({v:p.value,items:[p]});});
+      let slot=[3,2,1];
+      for(const g of groups){if(!slot.length)break;const val=slot[0];
+        g.items.forEach(p=>{prov[p.element]=val;});slot=slot.slice(g.items.length);}
+    }
+    const bpsSide=k=>bps[k].slice().sort((a,c)=>c.value-a.value).slice(0,5).map(x=>{
+      let mark='';
+      if(officialBonus){const bb=bon[k].find(y=>y.element===x.element);
+        if(bb)mark='<b style="color:var(--green)">+'+bb.value+'</b> ';}
+      else if(prov[x.element])mark='<b style="color:var(--amber)">+'+prov[x.element]+'</b> ';
+      const pts=livePts&&livePts[x.element]!=null?' · '+livePts[x.element]+'pts':'';
+      return '<div>'+mark+yours(x.element)+pn(x.element)+' ('+x.value+pts+')</div>';
+    }).join('');
+    /* Model verdict: the pre-match view vs what happened. */
+    let model='';
+    const m=plsimMatch(R,f.team_h,f.team_a);
+    if(m){
+      const pct=v=>Math.round(v*100);
+      let verdict='';
+      if(f.finished){
+        const p=f.team_h_score>f.team_a_score?m.pH:f.team_h_score<f.team_a_score?m.pA:m.pD;
+        verdict=p<0.22?' <span class="badge badge-amber">Upset — model had it '+pct(p)+'%</span>'
+          :p>=0.5?' <span class="badge badge-green">On script · '+pct(p)+'%</span>':'';
+      }
+      model='<div class="dl-sub" style="margin-top:10px">Model pre-match: '+
+        teamShort(b,f.team_h)+' '+pct(m.pH)+'% · draw '+pct(m.pD)+'% · '+teamShort(b,f.team_a)+' '+pct(m.pA)+
+        '% — xG '+m.hx.toFixed(1)+'–'+m.ax.toFixed(1)+'.'+verdict+'</div>';
+    }
+    const hasEvents=!!(sideEvents('h')||sideEvents('a'));
+    const hasSaves=!!(sv.h.length||sv.a.length);
+    const hasDc=!!(dc.h.length||dc.a.length);
+    const hasBps=!!(bps.h.length||bps.a.length);
+    if(!f.started)return '<div class="dl-sub" style="padding:8px 0">Kick-off '+
+      (f.kickoff_time?new Date(f.kickoff_time).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'TBC')+'.</div>'+model;
+    return (hasEvents?cols(sideEvents('h'),sideEvents('a')):'')+
+      (hasSaves?sec('Saves')+cols(
+        sv.h.map(x=>yours(x.element)+pn(x.element)+' ('+x.value+')').join('<br>'),
+        sv.a.map(x=>yours(x.element)+pn(x.element)+' ('+x.value+')').join('<br>')):'')+
+      (hasDc?sec('Defensive contribution')+cols(dcSide('h'),dcSide('a')):'')+
+      (hasBps?sec((officialBonus?'Bonus':'Provisional bonus')+' · BPS')+cols(bpsSide('h'),bpsSide('a')):'')+
+      model;
+  };
+
+  const badge=f=>f.finished?'<span class="badge badge-grey">FT</span>'
+    :f.started?'<span class="badge badge-red">LIVE</span>'
+    :'<span class="dl-sub" style="font-size:.7rem">'+(f.kickoff_time?new Date(f.kickoff_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'TBC')+'</span>';
+  const fixCard=f=>{
+    const open=S.has(f.id);
+    return '<div class="mc-fix">'+
+      '<div class="mc-head" onclick="resToggle('+f.id+')">'+badge(f)+
+        '<span class="mc-team h"><span>'+teamName(f.team_h)+'</span> '+crest(b,f.team_h,18)+'</span>'+
+        '<span class="mc-score">'+(f.started?(f.team_h_score!=null?f.team_h_score:0)+' – '+(f.team_a_score!=null?f.team_a_score:0):'v')+'</span>'+
+        '<span class="mc-team">'+crest(b,f.team_a,18)+' <span>'+teamName(f.team_a)+'</span></span>'+
+        '<span class="mc-ch" id="mc-ch-'+f.id+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span></div>'+
+      '<div class="mc-det" id="mc-d-'+f.id+'"'+(open?'':' style="display:none"')+'>'+detail(f)+'</div></div>';
+  };
+  let list='',lastDay='';
+  fx.forEach(f=>{
+    const d=f.kickoff_time?new Date(f.kickoff_time).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}):'Date TBC';
+    if(d!==lastDay){list+='<div class="mc-day">'+d+'</div>';lastDay=d;}
+    list+=fixCard(f);
+  });
+  host.innerHTML='<div class="card">'+
+    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Match Centre'+
+      '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
+      '<button class="btn btn-ghost btn-sm" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
+      '<b>GW'+gw+'</b>'+
+      '<button class="btn btn-ghost btn-sm" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button></span></div>'+
+    '<div class="dl-sub" style="margin-bottom:4px">Tap a match for scorers, cards, saves, defensive contributions and the bonus race.'+
+      (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
+    (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
+    '</div>';
+}
+
 /* ── Clean Sheet Matrix: P(clean sheet) per club per gameweek ──
    For every 2026/27 club in the model bundle, the probability of a
    clean sheet in each of the next 6 (or 10) gameweeks' fixtures.
@@ -6349,6 +6522,7 @@ const WIRED={
   clubform:hydrateClubForm,
   lineups:hydrateLineups,
   matchforecast:hydrateMatchForecast,
+  results:hydrateResults,
   seasonsim:hydrateSeasonSim,
   scenariolab:hydrateScenarioLab,
   blog:hydrateBlog,
