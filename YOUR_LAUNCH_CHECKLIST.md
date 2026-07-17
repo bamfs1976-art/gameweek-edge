@@ -29,8 +29,22 @@ season starts the weekend of 15–16 August.
    4242, enable push, ask the Scout a question. Tell me anything that
    misbehaves — I fix, you re-test.
 
-**3. Reserve the X handle (5 min).** Create/claim **@gameweekedge**,
-   paste the bio from `MARKETING.md` §5, set the app icon as avatar.
+**3. Set up the X profile (10 min).** Create/claim **@gameweekedge**,
+   paste the bio from `MARKETING.md` §5, upload the profile picture
+   (`assets/social/gwe-profile-400.png`) and the header banner
+   (`assets/social/gwe-banner-1500x500.png`) — both already delivered
+   in chat too.
+
+**3b. Delete the env-values file (1 min).** Once every value from the
+   `gwe-env-values-v2.txt` sheet is pasted into Netlify, delete the file
+   anywhere you saved it. The VAPID private key must exist only in
+   Netlify.
+
+**3c. BAProTips housekeeping (10 min, any time this week).** The old
+   app is replaced by Bookings Desk: in Netlify, disable/delete the old
+   BAProTips site (or at least any scheduled functions on it); archive
+   the GitHub repo (Settings → Archive); and if an Anthropic key was
+   ever pasted into that app, delete that key in the Anthropic console.
 
 **4. Start warming your Reddit account (5 min/day, from today).** Just
    comment normally in r/FantasyPL threads once a day. If your account is
