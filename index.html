@@ -1815,6 +1815,7 @@ const NAV = [
     panels:[
       {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free'},
       {id:'squad', label:'My Squad', icon:'squad', tier:'free'},
+      {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
       {id:'transfers', label:'Transfer Planner', icon:'swap', tier:'free'},
       {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'}
     ]
@@ -1934,6 +1935,10 @@ const PANEL_CONTENT = {
   squad:{
     desc:'Your 15 players on the pitch, with form, price and fitness status.',
     layout:'squad'
+  },
+  gwreport:{
+    desc:'Your gameweek, debriefed: how it went against the average, what worked, what cost you points, and the model’s suggested transfer and captain for the next deadline.',
+    layout:'standard'
   },
   transfers:{
     desc:'Plan transfer moves across several gameweeks and weigh up any points hit.',
@@ -2875,6 +2880,142 @@ async function shareSquadCard(){
   a.download='gameweek-'+S.gw+'.png';a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   toast('Share card downloaded');
+}
+
+/* ── GW Debrief: your gameweek reviewed, with next steps ──
+   A per-gameweek report card built entirely from data already in the
+   app: summary vs the field, what worked, what cost points, then the
+   model's suggested transfer and captain for the upcoming deadline. */
+let REP_GW=null;
+function repNav(step){
+  REP_GW=(REP_GW||1)+step;
+  const h=document.getElementById('ge-data');
+  if(h)hydrateGwreport(h);
+}
+async function hydrateGwreport(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const finished=b.events.filter(e=>e.finished);
+  if(!finished.length){host.innerHTML=stateBox('calendar','No finished gameweek yet',
+    'Your first debrief appears after GW1 wraps up — how you did, what worked, and what to change.');return;}
+  const minGw=finished[0].id,maxGw=finished[finished.length-1].id;
+  if(REP_GW==null)REP_GW=maxGw;
+  REP_GW=Math.max(minGw,Math.min(maxGw,REP_GW));
+  const gw=REP_GW;
+  const ev=b.events.find(e=>e.id===gw)||{};
+  let picks,live,hist,trs;
+  try{
+    [picks,live,hist]=await Promise.all([loadPicks(mid,gw),loadLive(gw),loadHistory(mid)]);
+    trs=await loadTransfers(mid).catch(()=>[]);
+  }catch(_){host.innerHTML=stateBox('calendar','No data for GW'+gw,'Your team data for this gameweek isn’t available from FPL.');return;}
+  const pts={};(live.elements||[]).forEach(e=>{pts[e.id]=e.stats?e.stats.total_points:0;});
+  const eh=picks.entry_history||{};
+  const nm=id=>{const e=b.els[id];return e?esc(e.web_name):'—';};
+  const xi=picks.picks.filter(p=>p.position<=11);
+  const bench=picks.picks.filter(p=>p.position>11);
+  const base=p=>pts[p.element]||0;
+
+  /* ── Summary vs the field ── */
+  const avg=ev.average_entry_score||0,high=ev.highest_score||0;
+  const rows=(hist.current||[]);
+  const iRow=rows.findIndex(r=>r.event===gw);
+  const orNow=iRow>=0?rows[iRow].overall_rank:null;
+  const orPrev=iRow>0?rows[iRow-1].overall_rank:null;
+  const arrow=orNow&&orPrev?(orNow<orPrev?'▲ '+fmtNum(orPrev-orNow):orNow>orPrev?'▼ '+fmtNum(orNow-orPrev):'—'):'—';
+  const delta=(eh.points||0)-avg;
+  const verdict=delta>=15?'A big week — well clear of the field.'
+    :delta>=5?'A good week — comfortably above the average.'
+    :delta>=-4?'A par week — right around the average.'
+    :delta>=-14?'Below the curve this week.':'A rough one — well under the average.';
+  const summary='<div class="card mb-20"><div class="card-title">GW'+gw+' summary</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">'+verdict+'</p>'+
+    '<div class="grid g-4">'+
+    kpi('Your points',fmtNum(eh.points),'avg '+avg+' · top '+fmtNum(high),delta>=0?'var(--green)':'var(--red)')+
+    kpi('Overall rank',orNow?fmtNum(orNow):'—',arrow,'var(--blue)')+
+    kpi('Bench points',String(eh.points_on_bench||0),'left unused','var(--amber)')+
+    kpi('Transfers',String(eh.event_transfers||0),(eh.event_transfers_cost?'-'+eh.event_transfers_cost+' pts hit':'no hits'),'var(--purple)')+
+    '</div></div>';
+
+  /* ── Captain & transfer accounting ── */
+  const capPick=picks.picks.find(p=>p.multiplier>1)||picks.picks.find(p=>p.is_captain);
+  const capBase=capPick?base(capPick):0;
+  const bestXi=xi.slice().sort((a,c)=>base(c)-base(a));
+  const bestBase=bestXi.length?base(bestXi[0]):0;
+  const capLost=capPick?(bestBase-capBase)*((capPick.multiplier||2)-1):0;
+  const gwTrs=(Array.isArray(trs)?trs:[]).filter(t=>t.event===gw);
+  const trNet=gwTrs.reduce((s,t)=>s+(pts[t.element_in]||0)-(pts[t.element_out]||0),0)-(eh.event_transfers_cost||0);
+
+  /* ── What worked ── */
+  const good=[];
+  const top3=bestXi.slice(0,3).filter(p=>base(p)>=6);
+  if(top3.length)good.push('<b>'+top3.map(p=>nm(p.element)+' ('+base(p)*(p.multiplier||1)+')').join(', ')+'</b> led the way.');
+  if(capPick&&capBase>=bestBase-1&&capBase>=6)good.push('Captaincy nailed — <b>'+nm(capPick.element)+'</b> ('+capBase+' base, ×'+(capPick.multiplier||2)+') was your best call.');
+  gwTrs.filter(t=>(pts[t.element_in]||0)>=6).forEach(t=>good.push('Transfer in <b>'+nm(t.element_in)+'</b> returned '+(pts[t.element_in]||0)+' straight away.'));
+  if(gwTrs.length&&trNet>0)good.push('Your transfers netted <b>+'+trNet+'</b> over who you sold'+(eh.event_transfers_cost?' even after the hit':'')+'.');
+  if((eh.points_on_bench||0)<=2)good.push('Bench well managed — only '+(eh.points_on_bench||0)+' points left behind.');
+  if(!good.length)good.push('Not much clicked this week — the improvement list is where the points are.');
+
+  /* ── Where to improve ── */
+  const bad=[];
+  if(capPick&&capLost>=4)bad.push('Captaincy cost <b>'+capLost+'</b> — <b>'+nm(bestXi[0].element)+'</b> ('+bestBase+') outscored '+nm(capPick.element)+' ('+capBase+').');
+  const benchStars=bench.filter(p=>base(p)>=5).sort((a,c)=>base(c)-base(a));
+  if(benchStars.length){
+    const weakStart=xi.slice().sort((a,c)=>base(a)-base(c))[0];
+    bad.push('<b>'+benchStars.map(p=>nm(p.element)+' ('+base(p)+')').join(', ')+'</b> scored on your bench'+(weakStart&&base(weakStart)<=2?' while '+nm(weakStart.element)+' started and returned '+base(weakStart)+'.':'.'));
+  }
+  gwTrs.filter(t=>(pts[t.element_in]||0)<=2&&(pts[t.element_out]||0)>=5)
+    .forEach(t=>bad.push('Selling <b>'+nm(t.element_out)+'</b> ('+(pts[t.element_out]||0)+') for '+nm(t.element_in)+' ('+(pts[t.element_in]||0)+') backfired this week.'));
+  if(gwTrs.length&&trNet<0)bad.push('The week’s transfers netted <b>'+trNet+'</b>'+(eh.event_transfers_cost?' including the hit':'')+' — one to review, not to panic over.');
+  if(!bad.length)bad.push('Hard to fault — no obvious points left out there.');
+  const list=(title,items,color)=>'<div class="card mb-20" style="border-left:3px solid '+color+'"><div class="card-title">'+title+'</div>'+
+    items.map(t=>'<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5">'+t+'</span></div>').join('')+'</div>';
+
+  /* ── Next gameweek: suggested move + armband ── */
+  let nextSec='';
+  const nextEv=b.events.find(e=>!e.finished);
+  if(nextEv){
+    const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5);
+    const sq=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
+    const ownedIds=new Set(sq.map(e=>e.id));
+    const availOk=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
+    const xiEls=xi.map(p=>b.els[p.element]).filter(Boolean);
+    /* Weakest projected starter → best affordable like-for-like upgrade. */
+    const weakest=xiEls.slice().sort((a,c)=>horizonXP(b,a,hz)-horizonXP(b,c,hz))[0];
+    let move='';
+    if(weakest){
+      const budget=(eh.bank||0)+(weakest.now_cost||0);
+      const clubCount={};sq.forEach(e=>{clubCount[e.team]=(clubCount[e.team]||0)+1;});
+      const cand=b.elements.filter(e=>e.element_type===weakest.element_type&&!ownedIds.has(e.id)&&availOk(e)&&e.now_cost<=budget&&((clubCount[e.team]||0)-(e.team===weakest.team?1:0))<3)
+        .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
+      if(cand){
+        const gain=horizonXP(b,cand,hz)-horizonXP(b,weakest,hz);
+        move='<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5">Move on <b>'+esc(weakest.web_name)+'</b> ('+money(weakest.now_cost)+', '+horizonXP(b,weakest,hz).toFixed(1)+' xP next 5) for <b>'+esc(cand.web_name)+'</b> ('+money(cand.now_cost)+', '+horizonXP(b,cand,hz).toFixed(1)+' xP) — projected <b style="color:var(--green)">+'+gain.toFixed(1)+'</b> over five gameweeks.</span></div>';
+      }
+    }
+    /* Armband: best XI option plus a differential. */
+    const capPool=xiEls.filter(availOk).sort((a,c)=>xP(b,c,nf[c.team])-xP(b,a,nf[a.team]));
+    let capRow='';
+    if(capPool.length){
+      const c1=capPool[0];
+      const diff=capPool.find(e=>parseFloat(e.selected_by_percent)<15&&e!==c1);
+      capRow='<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5">Armband: <b>'+esc(c1.web_name)+'</b> ('+xP(b,c1,nf[c1.team]).toFixed(1)+' xP, next '+nextFixLabel(nf[c1.team])+')'+
+        (diff?' · differential: <b>'+esc(diff.web_name)+'</b> ('+xP(b,diff,nf[diff.team]).toFixed(1)+' xP, '+diff.selected_by_percent+'% owned)':'')+'.</span></div>';
+    }
+    if(move||capRow)nextSec='<div class="card mb-20" style="border-left:3px solid var(--green)"><div class="card-title">'+esc(nextEv.name)+' — suggested moves</div>'+move+capRow+
+      '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
+  }
+
+  host.innerHTML='<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">GW Debrief'+
+      '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
+      '<button class="btn btn-ghost btn-sm" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
+      '<b>GW'+gw+'</b>'+
+      '<button class="btn btn-ghost btn-sm" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button></span></div>'+
+    '<p class="dl-sub" style="margin:0">Your week, reviewed — and what the model would do before the next deadline.</p></div>'+
+    summary+
+    list('What worked',good,'var(--green)')+
+    list('Where to improve',bad,'var(--amber)')+
+    nextSec;
 }
 
 /* Fixture Planner: FDR grid, next 6 GWs */
@@ -6527,6 +6668,7 @@ const WIRED={
   scenariolab:hydrateScenarioLab,
   blog:hydrateBlog,
   gwhistory:hydrateGwhistory,
+  gwreport:hydrateGwreport,
   draft:hydrateDraft,
   squad:hydrateSquad,
   transfers:hydrateTransfers,
