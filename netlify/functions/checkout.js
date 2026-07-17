@@ -1,10 +1,30 @@
 /* Gameweek Edge — create a Stripe Checkout session (Netlify Function)
    POST { plan: 'monthly'|'season', userId, email } -> { url }.
    Requires env vars: STRIPE_SECRET_KEY, STRIPE_PRICE_MONTHLY,
-   STRIPE_PRICE_SEASON. Returns 503 if billing isn't configured so the
-   app falls back gracefully. The secret key never reaches the client. */
+   STRIPE_PRICE_SEASON. Each may be a price id (price_…) or a product id
+   (prod_… — the id shown at the top of Stripe's product page); a product
+   resolves to its default or first active price. Returns 503 if billing
+   isn't configured so the app falls back gracefully. The secret key
+   never reaches the client. */
 
 const Stripe = require('stripe');
+
+/* prod_… -> its price id; price_… passes straight through. Cached across
+   warm invocations so the extra Stripe round-trip happens once. */
+const priceCache = {};
+async function resolvePrice(stripe, id) {
+  if (!id || !id.startsWith('prod_')) return id;
+  if (priceCache[id]) return priceCache[id];
+  const prod = await stripe.products.retrieve(id);
+  let priceId = typeof prod.default_price === 'string' ? prod.default_price : (prod.default_price && prod.default_price.id);
+  if (!priceId) {
+    const prices = await stripe.prices.list({ product: id, active: true, limit: 1 });
+    priceId = prices.data[0] && prices.data[0].id;
+  }
+  if (!priceId) throw new Error('No active price on product ' + id);
+  priceCache[id] = priceId;
+  return priceId;
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -35,7 +55,7 @@ exports.handler = async (event) => {
     const stripe = Stripe(key);
     const session = await stripe.checkout.sessions.create({
       mode,
-      line_items: [{ price, quantity: 1 }],
+      line_items: [{ price: await resolvePrice(stripe, price), quantity: 1 }],
       client_reference_id: userId,
       customer_email: email || undefined,
       metadata: { userId, plan },
