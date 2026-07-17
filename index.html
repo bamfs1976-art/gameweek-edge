@@ -293,13 +293,25 @@ html.offline .net-banner{transform:translateY(0)}
 .pp-nm{font-size:.6rem;font-weight:700;color:#fff;background:#111826;letter-spacing:.01em;
   border-radius:4px 4px 0 0;padding:2px 5px;width:64px;box-sizing:border-box;text-align:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
-.pp-pt{font-size:.66rem;font-weight:800;color:#08130b;width:64px;box-sizing:border-box;text-align:center;
-  background:linear-gradient(180deg,#e9fff2,#bff0d2);border-radius:0 0 4px 4px;padding:1px 5px}
+.pp-pt{font-size:.7rem;font-weight:800;color:#08130b;width:64px;box-sizing:border-box;text-align:center;
+  background:linear-gradient(180deg,#ffffff,#eef6f1);padding:1px 5px}
+.pp:not(:has(.pp-sub)) .pp-pt{border-radius:0 0 4px 4px}
+/* Two-cell stat strip under the points (ownership | price), the
+   LiveFPL-style footer that makes each card scannable at a glance. */
+.pp-sub{display:flex;width:64px;box-sizing:border-box;border-radius:0 0 4px 4px;overflow:hidden;
+  font-size:.56rem;font-weight:700;font-variant-numeric:tabular-nums;text-align:center;line-height:1.5}
+.pp-sub span{flex:1;padding:1px 2px;white-space:nowrap;overflow:hidden}
+.pp-sub .l{background:#dfe6ec;color:#2c3947}
+.pp-sub .r{background:#bff0d2;color:#0c5c33}
+/* Haul / dud marker beside the figure — ⭐ 8+, 👎 played and blanked. */
+.pp-mark{position:absolute;top:-6px;right:-2px;font-size:.85rem;z-index:4;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
 .bench{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;
   padding-top:16px;border-top:1px dashed rgba(255,255,255,.28)}
 .bench .pp{width:58px}
 .bench .pp-fig{width:40px;height:44px}
 .bench .pp-nm,.bench .pp-pt{width:56px;font-size:.56rem}
+.bench .pp-sub{width:56px;font-size:.52rem}
 
 /* Manager ID modal */
 .modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
@@ -787,13 +799,14 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 /* ── PITCH PREVIEW ─────────────────────────────────────── */
 .pitch-preview{
   background:
-    linear-gradient(180deg,rgba(255,255,255,.06),rgba(0,0,0,.14)),
-    repeating-linear-gradient(180deg,#1a8f4c 0,#1a8f4c 34px,#16833f 34px,#16833f 68px);
-  border:1px solid rgba(255,255,255,.16);
+    linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.10)),
+    repeating-linear-gradient(180deg,rgba(255,255,255,.05) 0 34px,rgba(0,0,0,.02) 34px 68px),
+    linear-gradient(180deg,#3aa862,#2c9853 55%,#279050);
+  border:1px solid rgba(255,255,255,.18);
   border-radius:var(--r-md);
-  padding:20px 12px;position:relative;overflow:hidden;
+  padding:26px 12px 20px;position:relative;overflow:hidden;
   min-height:340px;
-  box-shadow:inset 0 0 55px rgba(0,0,0,.30);
+  box-shadow:inset 0 0 60px rgba(0,20,8,.22);
 }
 .pitch-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 .pitch-row{
@@ -1394,14 +1407,27 @@ function jerseyStyle(b,teamId){
   return 'background:linear-gradient(165deg,'+k[0]+' 58%,'+k[1]+');';
 }
 /* Crisp vector pitch markings, stretched to fill the turf. */
+/* Half-pitch markings, goal-to-halfway: netted goal mouth, six-yard and
+   penalty boxes with the D, corner arcs, and the centre circle breaking
+   the bottom (halfway) line — the XI reads GK at the goal down to the
+   forwards on halfway. */
 const PITCH_SVG='<svg class="pitch-lines" viewBox="0 0 100 140" preserveAspectRatio="none" aria-hidden="true">'+
-  '<g fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="1" vector-effect="non-scaling-stroke">'+
-    '<rect x="2" y="2" width="96" height="136" rx="1.5"/>'+
-    '<line x1="2" y1="70" x2="98" y2="70"/>'+
-    '<circle cx="50" cy="70" r="13"/>'+
+  '<defs><pattern id="ppnet" width="2.6" height="2.6" patternUnits="userSpaceOnUse">'+
+    '<path d="M0 0H2.6M0 0V2.6" stroke="#ffffff" stroke-opacity=".5" stroke-width=".35"/>'+
+  '</pattern></defs>'+
+  '<rect x="40" y="0.6" width="20" height="5" fill="url(#ppnet)" stroke="#ffffff" stroke-opacity=".55" stroke-width=".7"/>'+
+  '<g fill="none" stroke="#ffffff" stroke-opacity=".5" stroke-width="1" vector-effect="non-scaling-stroke">'+
+    '<rect x="2" y="2" width="96" height="136"/>'+
+    '<rect x="24" y="2" width="52" height="21"/>'+
+    '<rect x="38" y="2" width="24" height="8.5"/>'+
+    '<path d="M38 23 A 13.5 13.5 0 0 0 62 23"/>'+
+    '<path d="M2 6 A 4 4 0 0 0 6 2"/>'+
+    '<path d="M94 2 A 4 4 0 0 0 98 6"/>'+
+    '<path d="M32 138 A 18 18 0 0 1 68 138"/>'+
   '</g>'+
-  '<g fill="#ffffff" fill-opacity=".22">'+
-    '<circle cx="50" cy="70" r="1.2"/>'+
+  '<g fill="#ffffff" fill-opacity=".5">'+
+    '<circle cx="50" cy="16.5" r="1"/>'+
+    '<circle cx="50" cy="138" r="1.2"/>'+
   '</g></svg>';
 /* An FPL-style pitch token: the player's real photo (official PL CDN)
    with the club crest badge, falling back to a kit-colour shirt shape. */
@@ -2707,18 +2733,26 @@ async function hydrateSquad(host){
   const b=await boot();
   const gw=b.cur.id;
   const [picks,live]=await Promise.all([loadPicks(mid,gw),loadLive(gw)]);
-  const livePts={};(live.elements||[]).forEach(e=>livePts[e.id]=e.stats?e.stats.total_points:0);
+  const livePts={},liveMins={};
+  (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;liveMins[e.id]=e.stats?e.stats.minutes:0;});
   const eh=picks.entry_history||{};
   const cell=(pk)=>{
     const el=b.els[pk.element]||{};
     const base=livePts[pk.element]||0;
     const pts=base*(pk.multiplier||1);
+    const mins=liveMins[pk.element]||0;
     const badge=pk.is_captain?'C':pk.is_vice_captain?'V':'';
+    /* At-a-glance form marker once the player has been on: a haul or a blank. */
+    const mark=pts>=8?'<span class="pp-mark" title="Hauling">🔥</span>'
+      :(mins>=60&&base<=2?'<span class="pp-mark" title="Played and blanked">👎</span>':'');
+    const tsb=el.selected_by_percent!=null?el.selected_by_percent+'%':'—';
     return '<div class="pp'+(pk.is_captain?' is-cap':'')+'">'+
-      (badge?'<span class="pp-badge">'+badge+'</span>':'')+
+      (badge?'<span class="pp-badge">'+badge+'</span>':'')+mark+
       ppFigure(b,el)+
       '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
-      '<span class="pp-pt">'+pts+'</span></div>';
+      '<span class="pp-pt">'+pts+'</span>'+
+      '<span class="pp-sub"><span class="l" title="Selected by '+tsb+' of managers">'+tsb+'</span>'+
+      '<span class="r" title="Price">'+money(el.now_cost||0)+'</span></span></div>';
   };
   const starters=picks.picks.filter(p=>p.position<=11);
   const bench=picks.picks.filter(p=>p.position>11);
