@@ -16,7 +16,7 @@ exports.handler = async (event) => {
     await sb.from('gwedge_push_subs').upsert({
       endpoint: s.endpoint, p256dh: s.keys.p256dh, auth: s.keys.auth,
       user_id: b.userId || null, manager_id: b.managerId ? Number(b.managerId) : null,
-      prefs: b.prefs || { price: true, injury: true, deadline: true, scorer: true, bonus: true, defcon: true }
+      prefs: b.prefs || { price: true, pricerisk: true, injury: true, suspension: true, deadline: true, scorer: true, bonus: true, defcon: true }
     }, { onConflict: 'endpoint' });
     return json(200, { ok: true });
   } catch (e) { return json(502, { error: 'Could not save subscription' }); }

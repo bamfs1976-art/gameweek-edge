@@ -3143,6 +3143,16 @@ function priceChangeProb(el,totalPlayers){
   const prob=Math.max(5,Math.min(95,Math.round(raw)));
   return {dir:net>0?'rise':net<0?'fall':'flat',net,prob,progress};
 }
+
+/* ── Suspension proximity ────────────────────────────────
+   Premier League card bans: 5 yellows by GW19 (1-match ban),
+   10 by GW32 (2 matches), 15 across the season (3 matches). Past a
+   cutoff, earlier yellows can no longer trigger that ban. */
+function suspCutoff(gw){return gw<=19?{limit:5,by:19}:gw<=32?{limit:10,by:32}:{limit:15,by:38};}
+function suspRisk(yellows,gw){
+  const c=suspCutoff(gw),y=yellows||0,left=c.limit-y;
+  return {...c,yellows:y,left,level:left<=0?'banned':left===1?'edge':left===2?'watch':null};
+}
 async function hydratePrice(host){
   const b=await boot();
   const total=b.raw.total_players||10e6;
@@ -3188,25 +3198,60 @@ async function hydratePrice(host){
     (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
 }
 
-/* Injury Monitor: flagged players by ownership */
+/* Injury Monitor: flagged players by ownership + card-ban proximity */
 async function hydrateInjuries(host){
   const b=await boot();
+  /* Own-squad marker, best effort (works without a linked team). */
+  let owned=new Set();
+  const mid=getMid();
+  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  const mine=e=>owned.has(e.id)?' <span class="badge badge-blue">yours</span>':'';
+
   const list=b.elements
     .filter(e=>e.status&&e.status!=='a')
     .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
     .slice(0,30);
-  if(!list.length){host.innerHTML=stateBox('cross','No fitness flags','Every player is currently available. Check back closer to the deadline.');return;}
   const rows=list.map(e=>{
     const chance=e.chance_of_playing_next_round;
     return '<div class="dl-row">'+
       '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
-        ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span></span>'+
+        ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>'+mine(e)+'</span>'+
         '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+
         (e.news?' · '+esc(e.news):'')+'</span></span>'+
       '<span class="dl-col">'+(chance==null?'—':chance+'%')+'</span></div>';
   }).join('');
-  host.innerHTML='<div class="card"><div class="card-title">Fitness & availability — '+list.length+' flagged</div>'+
-    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+rows+'</div></div>';
+  const fitness=list.length
+    ? '<div class="card mb-20"><div class="card-title">Fitness & availability — '+list.length+' flagged</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+rows+'</div></div>'
+    : '<div class="card mb-20"><div class="ge-state">'+svg(ICON.cross)+'<b>No fitness flags</b><p>Every player is currently available. Check back closer to the deadline.</p></div></div>';
+
+  /* Suspension watch: who is one (or two) yellows from a ban. */
+  const gw=b.cur.id;
+  const cut=suspCutoff(gw);
+  const atRisk=b.elements
+    .filter(e=>e.status!=='s'&&suspRisk(e.yellow_cards,gw).level)
+    .sort((a,c)=>{const ra=suspRisk(a.yellow_cards,gw),rc=suspRisk(c.yellow_cards,gw);
+      return ra.left-rc.left||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent);})
+    .slice(0,15);
+  const suspRows=atRisk.map(e=>{
+    const r=suspRisk(e.yellow_cards,gw);
+    const tag=r.level==='edge'
+      ?'<span class="badge badge-red">1 yellow from a ban</span>'
+      :'<span class="badge badge-amber">2 yellows away</span>';
+    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')">'+avatar(b,e,30)+
+      '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+mine(e)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,13)+posShort(b,e.element_type)+' · '+e.selected_by_percent+'% owned · '+tag+'</span></span>'+
+      '<span class="dl-col mono">'+r.yellows+'/'+r.limit+'</span></div>';
+  }).join('');
+  const suspension='<div class="card mb-20"><div class="card-title">Suspension watch — '+cut.limit+' yellows by GW'+cut.by+'</div>'+
+    (atRisk.length
+      ? '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Cards</span></div>'+suspRows+'</div>'
+      : '<div class="dl-sub">Nobody is within two yellows of the '+cut.limit+'-card ban right now.</div>')+
+    '<div class="dl-sub" style="margin-top:10px">Bans: 5 yellows by GW19 = 1 match, 10 by GW32 = 2, 15 in a season = 3. '+
+    'For referee tendencies and deeper card analytics, see our companion app '+
+    '<a href="https://bookingsdesk.netlify.app" target="_blank" rel="noopener">Bookings Desk</a>.</div></div>';
+
+  host.innerHTML=suspension+fitness;
 }
 
 /* Shared: a ranked player table with two metric columns. */
@@ -3416,6 +3461,21 @@ function playerDetailHTML(b,fixtures,id){
   if(pct!=null&&pct<=10)chips.push('<span class="pd-chip pd-chip-hot">Form top '+pct+'%</span>');
   if(e.dreamteam_count)chips.push('<span class="pd-chip">Dream Team ×'+e.dreamteam_count+'</span>');
   if(e.in_dreamteam)chips.push('<span class="pd-chip pd-chip-hot">In Dream Team now</span>');
+  /* Set-piece duties from the official order fields. */
+  if(e.penalties_order===1)chips.push('<span class="pd-chip pd-chip-hot">On penalties</span>');
+  else if(e.penalties_order===2)chips.push('<span class="pd-chip">Pens 2nd choice</span>');
+  if(e.corners_and_indirect_freekicks_order===1)chips.push('<span class="pd-chip">Corners</span>');
+  if(e.direct_freekicks_order===1)chips.push('<span class="pd-chip">Free kicks</span>');
+  /* Card-ban proximity. */
+  const susp=suspRisk(e.yellow_cards,b.cur.id);
+  if(susp.level==='edge')chips.push('<span class="pd-chip pd-chip-hot">1 yellow from a ban</span>');
+  else if(susp.level==='watch')chips.push('<span class="pd-chip">2 yellows from a ban</span>');
+  /* Start likelihood: season start rate × availability flag. */
+  if(gpBasis>=3){
+    const ch=e.chance_of_playing_next_round;
+    const sp=Math.round(100*Math.min(1,(e.starts||0)/gpBasis)*((ch==null?100:ch)/100));
+    chips.push('<span class="pd-chip'+(sp>=80?' pd-chip-hot':'')+'">Starts ~'+sp+'%</span>');
+  }
   const chipRow=chips.length?'<div class="pd-chips">'+chips.join('')+'</div>':'';
   const head='<div class="pd-head">'+avatar(b,e,52)+
     '<div class="pd-id"><h3 id="player-title">'+esc(e.web_name)+badge+'</h3>'+
@@ -3452,6 +3512,7 @@ function playerDetailHTML(b,fixtures,id){
     (e.value_season!=null?stat('Value (season)',e.value_season):'')+
     (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
+    (e.yellow_cards?stat('Yellows',e.yellow_cards+' of '+susp.limit+' by GW'+susp.by):'')+
     '</div>'+
     '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points (the 2025/26 category). Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
@@ -3782,12 +3843,14 @@ async function hydrateCaptain(host){
   const top=pool.slice(0,3);
   const diff=pool.filter(e=>parseFloat(e.selected_by_percent)<15).slice(0,1)[0];
   const labels=['Safe','Balanced','Differential'];
+  /* First-choice penalty takers get a P badge — a real captaincy edge. */
+  const penBadge=e=>e.penalties_order===1?' <span class="badge badge-amber" title="First-choice penalty taker">P</span>':'';
   const cards=top.map((e,i)=>{
     const n=nf[e.team]||{};
     const ceiling=n.t3!=null?'Team 3+ goals '+Math.round(n.t3*100)+'% · CS '+Math.round((n.cs||0)*100)+'%':'';
     return '<div class="card"><div class="card-title">'+labels[i]+'</div>'+
       '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
-      '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+'</div>'+
+      '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+penBadge(e)+'</div>'+
       '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%'+lgRunTag(b,e.team,lgctx)+'</div></div></div>'+
       '<div style="height:8px"></div>'+
       '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+epn(e)+'</div></div>'+
@@ -3796,7 +3859,7 @@ async function hydrateCaptain(host){
       (ceiling?'<br>'+ceiling:'')+'</div>'+
     '</div>';}).join('');
   const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,30)+
-    '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+penBadge(e)+'</span>'+
     '<span class="dl-sub">'+crest(b,e.team,13)+'next '+nextFixLabel(nf[e.team])+'</span></span>'+
     '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+epn(e)+'</button></span>'+
     '<span class="dl-col mono">'+e.form+'</span></div>').join('');
@@ -3932,6 +3995,8 @@ async function hydrateAlerts(host){
     .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,6);
   const falls=b.elements.filter(e=>scope(e)&&net(e)<-30000)
     .sort((a,c)=>net(a)-net(c)).slice(0,6);
+  const suspRisks=b.elements.filter(e=>scope(e)&&e.status!=='s'&&suspRisk(e.yellow_cards,b.cur.id).level==='edge')
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,6);
   const feed=(title,list,fmt)=> '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
     (list.length?'<div class="dl">'+list.map(fmt).join('')+'</div>':'<div class="dl-sub">Nothing flagged'+(owned?' in your squad':'')+'.</div>')+'</div>';
 
@@ -3953,15 +4018,22 @@ async function hydrateAlerts(host){
       '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+teamShort(b,e.team)+' · net out '+fmtK(-net(e))+'</span></span>'+
       '<span class="dl-col neg">'+(e.cost_change_event/10).toFixed(1)+'</span></div>')+
+    feed('One yellow from a ban'+(owned?' in your squad':''),suspRisks,e=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+e.yellow_cards+' of '+suspCutoff(b.cur.id).limit+' yellows</span></span>'+
+      '<span class="dl-col"><span class="badge badge-red">risk</span></span></div>')+
     '<div class="card"><div class="card-title">Notify me about</div>'+
       '<div class="dl-sub" style="margin:-2px 0 8px">Live — during matches</div>'+
       toggle('scorer','Your players scoring or assisting')+
       toggle('bonus','Bonus swings on your players')+
       toggle('defcon','Your players hitting the DEFCON +2')+
       '<div class="dl-sub" style="margin:12px 0 8px">Around the deadline</div>'+
-      toggle('price','Price changes')+toggle('injury','Injuries & doubts')+
+      toggle('price','Price changes')+
+      toggle('pricerisk','Evening warning: your players likely to move tonight')+
+      toggle('injury','Injuries & doubts')+
+      toggle('suspension','Suspension risk — a player reaches one yellow from a ban')+
       toggle('deadline','Deadline reminders')+
-      '<div class="dl-sub" style="margin-top:12px">Live alerts need your team linked. Saved on this device and synced to push when it’s on.</div></div>';
+      '<div class="dl-sub" style="margin-top:12px">Live alerts and the evening price warning need your team linked. Saved on this device and synced to push when it’s on.</div></div>';
   Array.prototype.forEach.call(host.querySelectorAll('[data-pref]'),cb=>
     cb.addEventListener('change',()=>{setAlertPref(cb.dataset.pref,cb.checked);syncPushPrefs();}));
   refreshPushUI();
