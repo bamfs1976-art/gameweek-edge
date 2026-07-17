@@ -218,6 +218,53 @@ themselves in public.
   everything without a name.
 - **Don't spam links in replies.** Content first; the profile carries the link.
 
+## Appendix A — r/FantasyPL mod message (send before posting anything)
+
+> **Subject:** Free FPL tool from a solo builder — where's the right place
+> to share it?
+>
+> Hi mods — I'm a long-time lurker and FPL manager, and over the summer I
+> built a free, ad-free web app for FPL managers (live points, match
+> centre, price predictions, per-gameweek debriefs). No ads on the free
+> tier; there's an optional paid tier for the deepest tools.
+>
+> Before posting anything I wanted to ask how you'd prefer this shared —
+> a standalone post, the weekly thread, or not at all. Happy to follow
+> whatever format you set, include any disclaimers you want, and I'll be
+> in the comments answering questions rather than dropping a link and
+> leaving. Thanks for running the sub.
+
+## Appendix B — replies FAQ (for the launch threads)
+
+Keep answers short, honest, and never defensive.
+
+- **"How is this different from LiveFPL / fpl.page / Fix?"** → "Different
+  focus: no ads anywhere including free, a model that's graded against
+  real results inside the app, and a per-GW debrief nobody else does.
+  LiveFPL's live rank estimate is still the best at what it does — we
+  don't claim otherwise."
+- **"Where does the data come from?"** → "The official FPL API for game
+  data, plus our own team-strength model (backtested on ~2,800 matches;
+  the method and accuracy are shown in-app)."
+- **"Is giving my team ID safe?"** → "Team IDs are public in FPL — anyone
+  can see any team. The app never asks for your FPL login or password."
+- **"What do you do with my data?"** → "Sign-in is optional. First-party
+  analytics only, no ad trackers, nothing sold. AI questions are metered
+  per-account and not used for anything else."
+- **"Why is there a paid tier?"** → "Servers and the AI cost money and I
+  won't run ads. Free tier stays genuinely useful; Pro is the deep tools,
+  and cancelling is one tap in the app."
+- **"Will there be an iOS app?"** → "It installs from the browser today
+  (share → add to home screen) with push alerts. A native App Store build
+  is on the roadmap."
+- **"Feature request: X"** → "Good idea — noted, and I ship fast; watch
+  this thread." (Forward it; quick wins get shipped while the thread is
+  live.)
+- **Someone reports a bug** → thank them, ask for a screenshot, fix fast,
+  reply when live. This is the best marketing moment in the thread.
+- **Someone is hostile** → one polite reply, then disengage. Never argue
+  in a launch thread.
+
 ## 8. Measuring it (already wired)
 
 First-party analytics are live at `/api/track`. Watch weekly: new visitors →
