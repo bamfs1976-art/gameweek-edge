@@ -62,6 +62,8 @@ const pieces = [
   extractFn(html, 'xP'),
   extractFn(html, 'fixtureXP'),
   extractFn(html, 'priceChangeProb'),
+  extractFn(html, 'suspCutoff'),
+  extractFn(html, 'suspRisk'),
   extractFn(html, 'bestXI'),
   extractFn(html, 'minutesSecurity'),
   extractFn(html, 'projectXI'),
@@ -78,7 +80,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -152,6 +154,20 @@ ok(lowOwn.prob > highOwn.prob, 'same net transfers → low ownership rises with 
 ok(lowOwn.prob >= 90, 'heavily-transferred low-ownership player shows a high estimate');
 const symm = core.priceChangeProb(mk(0, 150e3, 2), TOTAL);
 ok(symm.prob === lowOwn.prob, 'fall probability symmetric with rise');
+
+/* ── suspension model: cutoffs and proximity levels ─────── */
+section('suspRisk cutoffs / proximity levels');
+ok(core.suspCutoff(1).limit === 5 && core.suspCutoff(19).limit === 5, '5-card limit through GW19');
+ok(core.suspCutoff(20).limit === 10 && core.suspCutoff(32).limit === 10, '10-card limit GW20–32');
+ok(core.suspCutoff(33).limit === 15 && core.suspCutoff(38).limit === 15, '15-card limit after GW32');
+ok(core.suspRisk(4, 10).level === 'edge', '4 yellows at GW10 → one from a ban');
+ok(core.suspRisk(3, 10).level === 'watch', '3 yellows at GW10 → two away');
+ok(core.suspRisk(2, 10).level === null, '2 yellows at GW10 → no flag');
+ok(core.suspRisk(4, 25).level === null, '4 yellows after the GW19 cutoff → no flag (limit 10)');
+ok(core.suspRisk(9, 25).level === 'edge', '9 yellows at GW25 → one from the 10-card ban');
+ok(core.suspRisk(5, 10).level === 'banned', 'hitting the limit flags as banned');
+ok(core.suspRisk(0, 1).left === 5 && core.suspRisk(0, 1).level === null, 'clean record → 5 left, no flag');
+ok(core.suspRisk(null, 10).yellows === 0, 'null yellows treated as 0');
 
 /* ── minutesSecurity: bounds, monotonicity, availability ── */
 section('minutesSecurity bounds, monotonicity, availability');
