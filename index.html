@@ -2005,6 +2005,23 @@ function openAccount(){
 }
 function closeAccount(){document.getElementById('acct-modal').classList.remove('show');}
 function acctErr(m){const e=document.getElementById('acct-err');if(e)e.textContent=m;}
+/* Turn Supabase auth errors into plain, calm English. Rate-limit / quota
+   errors (HTTP 429) are the common one during heavy use — say what to do,
+   not the raw jargon. */
+function friendlyAuthErr(e){
+  const msg=(e&&e.message)||'';const status=e&&(e.status||e.statusCode);
+  if(status===429||/rate limit|quota|too many|exceeded/i.test(msg))
+    return 'Too many attempts just now — please wait a minute, then try once more.';
+  if(/email not confirmed/i.test(msg))
+    return 'Check your email to confirm your account, then sign in.';
+  if(/invalid login credentials/i.test(msg))
+    return 'Email or password not recognised.';
+  if(/user already registered/i.test(msg))
+    return 'That email already has an account — use Sign in instead.';
+  if(/network|fetch|failed to fetch/i.test(msg))
+    return 'Network problem — check your connection and try again.';
+  return msg||'Something went wrong.';
+}
 async function doAuth(mode){
   if(!sb){acctErr('Accounts are unavailable right now.');return;}
   const email=(document.getElementById('acct-email').value||'').trim();
@@ -2026,7 +2043,7 @@ async function doAuth(mode){
       if(data.session){closeAccount();}                 // confirmations off
       else acctErr('Account created — check your email to confirm, then sign in.');
     }
-  }catch(e){acctErr((e&&e.message)||'Something went wrong.');window.GENative&&GENative.hapticWarning();}
+  }catch(e){acctErr(friendlyAuthErr(e));window.GENative&&GENative.hapticWarning();}
   finally{btn.disabled=false;btn.textContent=label;}
 }
 async function doReset(){
@@ -2035,7 +2052,7 @@ async function doReset(){
   if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){acctErr('Enter your email above first.');return;}
   try{await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
     acctErr('Password reset link sent — check your email.');}
-  catch(e){acctErr((e&&e.message)||'Could not send reset email.');}
+  catch(e){acctErr(friendlyAuthErr(e));}
 }
 async function doSignOut(){
   if(sb)try{await sb.auth.signOut();}catch(_){}
