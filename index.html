@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="light">
+<html lang="en-GB" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
-<meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0f161d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0A0C0F">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gameweek Edge">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -24,7 +23,7 @@
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
@@ -69,12 +68,13 @@
   --purple:#7a5cc7;
   --purple-soft:rgba(122,92,199,.10);
 
-  /* Radii */
-  --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:22px;--r-pill:999px;
+  /* Radii — terminal-tight, 4px max on surfaces */
+  --r-sm:3px;--r-md:4px;--r-lg:4px;--r-xl:6px;--r-pill:4px;
 
   /* Layout */
-  --sidebar-w:248px;
-  --topbar-h:60px;
+  --sidebar-w:48px;
+  --topbar-h:44px;
+  --tickbar-h:28px;
   --bottomnav-h:66px;
 
   /* Shadow */
@@ -84,46 +84,55 @@
   /* Motion */
   --ease:cubic-bezier(.2,.8,.2,1);
 
-  /* Fonts */
-  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
-  --font-body:'Public Sans',system-ui,sans-serif;
+  /* Fonts — mono for data and headers, Inter for UI copy */
+  --font-display:'IBM Plex Mono',ui-monospace,monospace;
+  --font-body:'Inter',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+
+  /* Terminal extras */
+  --hot:#7ab520;          /* single most important number on a screen */
+  --chip:#e7ebef;
 }
 
 /* ── DARK MODE ──────────────────────────────────────────── */
 /* Lifted, softer dark — not near-black. Easier on the eyes. */
+/* Terminal dark — the default. Near-black, hairline borders, sharp
+   semantic colours. Depth comes from borders, not shadows. */
 [data-theme="dark"]{
-  --bg:#161b22;
-  --surface:#1f262f;
-  --surface-2:#262e38;
-  --surface-3:#2f3945;
-  --elevated:#262e38;
+  --bg:#0A0C0F;
+  --surface:#111418;
+  --surface-2:#161A20;
+  --surface-3:#1C2128;
+  --elevated:#161A20;
 
-  --border:rgba(255,255,255,.08);
-  --border-2:rgba(255,255,255,.14);
-  --border-3:rgba(255,255,255,.22);
+  --border:#1F242B;
+  --border-2:#262C34;
+  --border-3:#333A44;
 
-  --text:#eef2f5;
-  --text-2:#a7b4c0;
-  --text-3:#717f8c;
-  --text-4:#4b5763;
+  --text:#E6E8EB;
+  --text-2:#9AA3AD;
+  --text-3:#5B6470;
+  --text-4:#3E454E;
 
-  --green:#22a564;
-  --green-bright:#34cc81;
-  --green-soft:rgba(52,204,129,.13);
-  --green-glow:rgba(52,204,129,.26);
+  --green:#00D26A;
+  --green-bright:#00D26A;
+  --green-soft:rgba(0,210,106,.12);
+  --green-glow:rgba(0,210,106,.22);
 
-  --amber:#e3a043;
-  --amber-soft:rgba(227,160,67,.14);
-  --red:#e8625e;
-  --red-soft:rgba(232,98,94,.14);
-  --blue:#5e98e6;
-  --blue-soft:rgba(94,152,230,.14);
-  --purple:#a78ce6;
-  --purple-soft:rgba(167,140,230,.14);
+  --amber:#F5A524;
+  --amber-soft:rgba(245,165,36,.13);
+  --red:#FF4D4F;
+  --red-soft:rgba(255,77,79,.12);
+  --blue:#3B82F6;
+  --blue-soft:rgba(59,130,246,.13);
+  --purple:#8b7cf6;
+  --purple-soft:rgba(139,124,246,.13);
 
-  --shadow:0 1px 3px rgba(0,0,0,.34),0 6px 18px rgba(0,0,0,.26);
-  --shadow-lg:0 4px 12px rgba(0,0,0,.44),0 16px 40px rgba(0,0,0,.34);
+  --hot:#B6FF3C;
+  --chip:#2A2F36;
+
+  --shadow:none;
+  --shadow-lg:0 0 0 1px var(--border);
 }
 
 /* ── RESET & BASE ──────────────────────────────────────── */
@@ -1036,6 +1045,122 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   overflow:hidden;vertical-align:middle;margin-right:10px;flex-shrink:0;box-shadow:var(--shadow)}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .dl-row .dl-grow{display:flex;align-items:center;gap:0;min-width:0}
+/* ═══════════════════════════════════════════════════════════
+   TERMINAL SKIN — Phase 1 of the "Bloomberg for FPL" redesign.
+   Overrides live at the end of the sheet so the cascade wins;
+   tokens above supply the palette. Depth = borders, not shadows.
+   ═══════════════════════════════════════════════════════════ */
+body{font-size:14px;line-height:1.35}
+
+/* Data is monospace and tabular everywhere it's numeric. */
+.stat-v,.dl-col,.mono,.gw-num,.num,.pd-sv,.dl-rank,.tb-updated,
+.ptable td.num,.ptable th.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+/* Panels: hairline border, 4px radius, 12px padding, tracked label. */
+.card{border:1px solid var(--border-2);box-shadow:none;padding:12px}
+.card-title{font-family:var(--font-mono);font-weight:600;font-size:11px;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--text-2)}
+.dl-row{min-height:28px;padding:5px 10px;font-size:13px}
+.dl-row.head{font-size:10px;letter-spacing:.07em}
+.badge{border-radius:3px;font-family:var(--font-mono);font-size:10px;
+  text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.btn{border-radius:var(--r-md)}
+[data-theme="dark"] .btn-primary{background:var(--green);color:#06130b}
+[data-theme="dark"] .btn-primary:hover{background:#00e876;color:#06130b}
+:focus-visible{outline:2px solid var(--green);outline-offset:1px;border-radius:2px}
+
+/* ── Top ticker strip (28px, always-on, monospace) ── */
+.tickbar{
+  height:var(--tickbar-h);display:flex;align-items:center;gap:18px;
+  padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border);
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;
+  color:var(--text-2);white-space:nowrap;overflow-x:auto;scrollbar-width:none;
+  position:sticky;top:0;z-index:150;
+}
+.tickbar::-webkit-scrollbar{display:none}
+.tk-item b{color:var(--text);font-weight:600}
+.tk-item .pos{color:var(--green)}
+.tk-item .neg{color:var(--red)}
+.tk-brand{color:var(--green);font-weight:700;letter-spacing:.1em}
+.tk-dot{width:5px;height:5px;border-radius:50%;background:var(--green);
+  display:inline-block;margin-right:6px;animation:tkpulse 2s infinite}
+@keyframes tkpulse{0%,100%{opacity:1}50%{opacity:.35}}
+.tk-cmdk{margin-left:auto;font-family:var(--font-mono);font-size:10px;
+  border:1px solid var(--border-2);border-radius:3px;padding:2px 7px;
+  color:var(--text-3);background:var(--surface);flex-shrink:0}
+.tk-cmdk:hover{color:var(--text);border-color:var(--border-3)}
+
+/* ── Slimmer topbar under the ticker ── */
+.topbar{height:var(--topbar-h)}
+.tb-tag{display:none}
+.tb-area{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.tb-title{font-family:var(--font-mono);font-size:13px;font-weight:600}
+
+/* ── Icon rail (desktop): 48px, expands on hover/focus ── */
+@media(min-width:901px){
+  .sidebar{width:48px;overflow:hidden;transition:width .16s var(--ease)}
+  .sidebar:hover,.sidebar:focus-within{width:212px;box-shadow:10px 0 30px rgba(0,0,0,.4)}
+  .sidebar .brand-text,.sidebar .sb-gw,.sidebar .sb-foot{display:none}
+  .sidebar:hover .brand-text,.sidebar:focus-within .brand-text,
+  .sidebar:hover .sb-gw,.sidebar:focus-within .sb-gw,
+  .sidebar:hover .sb-foot,.sidebar:focus-within .sb-foot{display:flex}
+  .sidebar .sb-gw{display:none;flex-direction:column}
+  .sidebar:hover .sb-gw,.sidebar:focus-within .sb-gw{display:block}
+  .sb-brand{padding:12px 8px 10px}
+  .sb-nav{padding:6px 6px 12px}
+  .nav-area-btn{padding:8px;gap:12px;white-space:nowrap}
+  .nav-area-label,.nav-chevron,.lock-badge{opacity:0;transition:opacity .12s}
+  .sidebar:hover .nav-area-label,.sidebar:focus-within .nav-area-label,
+  .sidebar:hover .nav-chevron,.sidebar:focus-within .nav-chevron,
+  .sidebar:hover .lock-badge,.sidebar:focus-within .lock-badge{opacity:1}
+  .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
+}
+@media(max-width:900px){
+  .sidebar{width:248px}
+}
+
+/* ── Command palette (⌘K) ── */
+.cmdk{position:fixed;inset:0;z-index:600;display:flex;align-items:flex-start;
+  justify-content:center;padding:12vh 16px 16px}
+.cmdk[hidden]{display:none}
+.cmdk-bg{position:absolute;inset:0;background:rgba(4,6,8,.6)}
+.cmdk-panel{position:relative;width:100%;max-width:560px;background:var(--surface);
+  border:1px solid var(--border-3);border-radius:var(--r-xl);overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.cmdk-in{width:100%;padding:13px 14px;background:var(--surface);border:0;
+  border-bottom:1px solid var(--border-2);color:var(--text);
+  font-family:var(--font-mono);font-size:14px;outline:none}
+.cmdk-in::placeholder{color:var(--text-3)}
+.cmdk-list{max-height:min(50vh,420px);overflow-y:auto;padding:4px}
+.cmdk-row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
+  border-radius:var(--r-md);color:var(--text-2);font-size:13px;text-align:left}
+.cmdk-row .ck-ic{width:15px;height:15px;color:var(--text-3);flex-shrink:0;display:flex}
+.cmdk-row .ck-ic svg{width:15px;height:15px}
+.cmdk-row b{color:var(--text);font-weight:600}
+.cmdk-row .ck-sub{margin-left:auto;font-family:var(--font-mono);font-size:10px;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--text-3)}
+.cmdk-row.sel{background:var(--surface-3);color:var(--text)}
+.cmdk-row.sel .ck-ic{color:var(--green)}
+.cmdk-foot{display:flex;gap:14px;padding:7px 12px;border-top:1px solid var(--border-2);
+  font-size:10px;color:var(--text-3);font-family:var(--font-mono)}
+.cmdk-foot kbd,.kbd-sheet kbd{border:1px solid var(--border-2);border-radius:3px;
+  padding:0 4px;background:var(--surface-2);font-family:var(--font-mono);font-size:10px}
+
+/* ── Shortcut cheatsheet (?) ── */
+.kbd-overlay{position:fixed;inset:0;z-index:600;display:flex;align-items:center;
+  justify-content:center;padding:16px;background:rgba(4,6,8,.6)}
+.kbd-overlay[hidden]{display:none}
+.kbd-sheet{background:var(--surface);border:1px solid var(--border-3);
+  border-radius:var(--r-xl);padding:16px;max-width:460px;width:100%}
+.kbd-sheet h3{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;
+  letter-spacing:.08em;color:var(--text-2);margin-bottom:10px}
+.kbd-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;color:var(--text-2)}
+.kbd-grid kbd{justify-self:start}
+
+/* Motion discipline. */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>
@@ -1095,6 +1220,16 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   <!-- ═══ MAIN ═══ -->
   <div class="main" id="main-wrap">
 
+    <!-- Terminal ticker: GW, deadline countdown, market + fitness state -->
+    <div class="tickbar" id="tickbar">
+      <span class="tk-item tk-brand"><span class="tk-dot" aria-hidden="true"></span>GWE</span>
+      <span class="tk-item" id="tk-gw">GW —</span>
+      <span class="tk-item" id="tk-dl">DEADLINE <b>—</b></span>
+      <span class="tk-item" id="tk-prices">PRICES <b>—</b></span>
+      <span class="tk-item" id="tk-flags">FLAGS <b>—</b></span>
+      <button class="tk-cmdk" id="tk-cmdk-btn" aria-label="Open command palette">⌘K</button>
+    </div>
+
     <!-- Topbar -->
     <header class="topbar">
       <div class="tb-left">
@@ -1151,6 +1286,39 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 <!-- ═══ BOTTOM NAV (mobile) ═══ -->
 <nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
+
+<!-- ═══ COMMAND PALETTE (⌘K) ═══ -->
+<div class="cmdk" id="cmdk" role="dialog" aria-modal="true" aria-label="Command palette" hidden>
+  <div class="cmdk-bg" data-cmdk-close></div>
+  <div class="cmdk-panel">
+    <input id="cmdk-input" class="cmdk-in" placeholder="Search panels, players, actions…"
+           autocomplete="off" spellcheck="false" aria-label="Command input">
+    <div id="cmdk-list" class="cmdk-list" role="listbox"></div>
+    <div class="cmdk-foot"><span><kbd>↑↓</kbd> navigate</span><span><kbd>↵</kbd> open</span><span><kbd>esc</kbd> close</span></div>
+  </div>
+</div>
+
+<!-- ═══ SHORTCUT CHEATSHEET (?) ═══ -->
+<div class="kbd-overlay" id="kbd-overlay" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" hidden>
+  <div class="kbd-sheet">
+    <h3>Keyboard shortcuts</h3>
+    <div class="kbd-grid">
+      <kbd>⌘K / Ctrl-K</kbd><span>Command palette</span>
+      <kbd>g d</kbd><span>Dashboard</span>
+      <kbd>g s</kbd><span>My Squad</span>
+      <kbd>g t</kbd><span>Transfer Planner</span>
+      <kbd>g c</kbd><span>Captaincy Lab</span>
+      <kbd>g p</kbd><span>Price Predictor</span>
+      <kbd>g f</kbd><span>Fixture Planner</span>
+      <kbd>g m</kbd><span>Match Centre</span>
+      <kbd>g i</kbd><span>Injury Monitor</span>
+      <kbd>g w</kbd><span>Watchlist</span>
+      <kbd>g r</kbd><span>GW Debrief</span>
+      <kbd>?</kbd><span>This cheatsheet</span>
+      <kbd>esc</kbd><span>Close dialogs</span>
+    </div>
+  </div>
+</div>
 
 <!-- Pull-to-refresh affordance (shown only in the native app) -->
 <div class="ptr-spinner" id="ptr-spinner" aria-hidden="true">
@@ -6746,6 +6914,144 @@ function toggleTheme(){
   applyTheme(current==='dark'?'light':'dark');
 }
 
+/* ── TERMINAL TICKER ─────────────────────────────────────
+   28px status strip: GW, live deadline countdown (1s tick), price
+   movers and fitness flags. Reads whatever bootstrap slice is already
+   cached — it never fetches on its own. */
+function tickTicker(){
+  const b=MEM._idx;if(!b||!b.cur)return;
+  const set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
+  set('tk-gw','GW <b>'+b.cur.id+'</b>');
+  const ms=new Date(b.cur.deadline_time)-Date.now();
+  if(ms>0){
+    const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),
+      m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
+    const p=n=>String(n).padStart(2,'0');
+    set('tk-dl','DEADLINE <b>T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s)+'</b>');
+  }else set('tk-dl','DEADLINE <b>PASSED</b>');
+  /* Market + fitness counts, recomputed only when the bootstrap changes. */
+  if(window._tkSrc!==b){
+    window._tkSrc=b;
+    let up=0,dn=0,flags=0;
+    b.elements.forEach(e=>{
+      if(e.cost_change_event>0)up++;else if(e.cost_change_event<0)dn++;
+      if(e.status&&e.status!=='a')flags++;
+    });
+    set('tk-prices','PRICES <b class="pos">↑'+up+'</b> <b class="neg">↓'+dn+'</b>');
+    set('tk-flags','FLAGS <b>'+flags+'</b>');
+  }
+}
+
+/* ── COMMAND PALETTE (⌘K) ────────────────────────────────
+   The primary navigation surface: fuzzy panels, players, actions.
+   Vanilla — no dependency needed at this scale. */
+const CMDK={sel:0,items:[]};
+function cmdkOpen(){
+  const el=document.getElementById('cmdk');
+  el.hidden=false;
+  const inp=document.getElementById('cmdk-input');
+  inp.value='';cmdkRender('');inp.focus();
+  boot().catch(()=>{});   /* warm the player index for search */
+}
+function cmdkClose(){document.getElementById('cmdk').hidden=true;}
+function cmdkScore(label,q){
+  const l=label.toLowerCase();
+  if(l.startsWith(q))return 3;
+  if(l.includes(q))return 2;
+  let i=0;for(const ch of l){if(ch===q[i])i++;if(i===q.length)return 1;}
+  return 0;
+}
+function cmdkItems(q){
+  const out=[];
+  const verbs=[
+    {label:'Link your FPL team',sub:'action',icon:'squad',run:()=>openMidModal()},
+    {label:'Toggle light / dark theme',sub:'action',icon:'sun',run:()=>toggleTheme()},
+    {label:'Refresh data',sub:'action',icon:'rotate',run:()=>location.reload()},
+    {label:'Export current view as CSV',sub:'action',icon:'arrows',run:()=>{const b=document.getElementById('export-btn');b&&b.click();}},
+    {label:'Keyboard shortcuts',sub:'action',icon:'spark',run:()=>{document.getElementById('kbd-overlay').hidden=false;}}
+  ];
+  Object.keys(PANELS).forEach(id=>{
+    const p=PANELS[id];
+    out.push({label:p.label,sub:p.areaLabel,icon:p.icon,run:()=>openPanel(id),
+      score:q?cmdkScore(p.label,q)*2+cmdkScore(p.areaLabel,q):1});
+  });
+  verbs.forEach(v=>out.push({...v,score:q?cmdkScore(v.label,q)*2:0.5}));
+  if(q&&q.length>=2&&MEM._idx){
+    MEM._idx.elements.forEach(e=>{
+      const name=(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase();
+      const s=cmdkScore(name,q);
+      if(s)out.push({label:e.web_name,icon:'players',
+        sub:teamShort(MEM._idx,e.team)+' · '+posShort(MEM._idx,e.element_type)+' · '+money(e.now_cost),
+        run:()=>openPlayer(e.id),score:s*2+Math.min(1,(e.total_points||0)/200)});
+    });
+  }
+  return out.filter(x=>x.score>0).sort((a,c)=>c.score-a.score).slice(0,12);
+}
+function cmdkRender(q){
+  CMDK.items=cmdkItems(q.trim().toLowerCase());
+  CMDK.sel=Math.min(CMDK.sel,Math.max(0,CMDK.items.length-1));
+  document.getElementById('cmdk-list').innerHTML=CMDK.items.map((it,i)=>
+    '<button class="cmdk-row'+(i===CMDK.sel?' sel':'')+'" data-ck="'+i+'" role="option">'+
+    '<span class="ck-ic">'+svg(ICON[it.icon]||ICON.grid)+'</span>'+
+    '<b>'+esc(it.label)+'</b><span class="ck-sub">'+esc(it.sub||'')+'</span></button>').join('')||
+    '<div class="cmdk-row" style="color:var(--text-3)">No matches.</div>';
+}
+function cmdkRun(i){
+  const it=CMDK.items[i];if(!it)return;
+  cmdkClose();
+  try{it.run();}catch(_){}
+}
+function initCmdk(){
+  const inp=document.getElementById('cmdk-input');
+  inp.addEventListener('input',()=>{CMDK.sel=0;cmdkRender(inp.value);});
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'){e.preventDefault();CMDK.sel=Math.min(CMDK.sel+1,CMDK.items.length-1);cmdkRender(inp.value);}
+    else if(e.key==='ArrowUp'){e.preventDefault();CMDK.sel=Math.max(CMDK.sel-1,0);cmdkRender(inp.value);}
+    else if(e.key==='Enter'){e.preventDefault();cmdkRun(CMDK.sel);}
+    else if(e.key==='Escape'){cmdkClose();}
+  });
+  document.getElementById('cmdk-list').addEventListener('click',e=>{
+    const row=e.target.closest('[data-ck]');if(row)cmdkRun(+row.dataset.ck);
+  });
+  document.addEventListener('click',e=>{if(e.target.closest('[data-cmdk-close]'))cmdkClose();});
+  document.getElementById('tk-cmdk-btn').addEventListener('click',cmdkOpen);
+}
+
+/* ── KEYBOARD LAYER ──────────────────────────────────────
+   ⌘K palette, `g <key>` navigation chords, `?` cheatsheet. Chords are
+   suppressed while typing or while any dialog is open. */
+const G_CHORDS={d:'dashboard',s:'squad',t:'transfers',c:'captain',p:'price',
+  f:'fixtures',m:'results',i:'injuries',w:'watchlist',r:'gwreport',l:'liverank'};
+let _pendingG=0;
+function initKeys(){
+  document.addEventListener('keydown',e=>{
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){
+      e.preventDefault();
+      const el=document.getElementById('cmdk');
+      el.hidden?cmdkOpen():cmdkClose();
+      return;
+    }
+    if(e.metaKey||e.ctrlKey||e.altKey)return;
+    const t=e.target;
+    if(t&&(t.matches('input,textarea,select')||t.isContentEditable))return;
+    if(!document.getElementById('cmdk').hidden)return;
+    const kbd=document.getElementById('kbd-overlay');
+    if(e.key==='Escape'&&!kbd.hidden){kbd.hidden=true;return;}
+    if(e.key==='?'){kbd.hidden=!kbd.hidden;return;}
+    if(!kbd.hidden)return;
+    if(_pendingG&&Date.now()-_pendingG<900){
+      const id=G_CHORDS[e.key.toLowerCase()];
+      _pendingG=0;
+      if(id&&PANELS[id]){e.preventDefault();openPanel(id);}
+      return;
+    }
+    if(e.key.toLowerCase()==='g')_pendingG=Date.now();
+  });
+  document.getElementById('kbd-overlay').addEventListener('click',e=>{
+    if(e.target.id==='kbd-overlay')e.target.hidden=true;
+  });
+}
+
 /* ── SIDEBAR DRAWER (mobile) ───────────────────────────── */
 function openSidebar(){
   document.getElementById('sidebar').classList.add('open');
@@ -6944,7 +7250,7 @@ function initPullToRefresh(){
 function init(){
   buildNav();
   buildBottomNav();
-  applyTheme(storedTheme()||'light');
+  applyTheme(storedTheme()||'dark');
   renderPage('dashboard');
   syncNav();
 
@@ -7012,7 +7318,11 @@ function init(){
   hydrateGwStrip();
   reflectTier();
   if(getMid()){refreshIdentity();loadEntry(getMid()).then(refreshIdentity).catch(()=>{});}
-  maybeOnboard();
+  /* Terminal shell: no blocking first-run modal — the persistent Link
+     Team CTA in the topbar carries onboarding instead. */
+  initCmdk();
+  initKeys();
+  setInterval(tickTicker,1000);
 
   /* Close drawer / modals on Escape */
   document.addEventListener('keydown',e=>{
