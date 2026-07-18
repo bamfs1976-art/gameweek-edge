@@ -1195,6 +1195,31 @@ body{font-size:14px;line-height:1.35}
   font-family:var(--font-mono);font-size:11px;color:var(--text-2);letter-spacing:.02em}
 .trust-strip b{color:var(--text)}
 
+/* ── The Wire: newswire rows, not cards ── */
+.blog-list{gap:0;border:1px solid var(--border-2);border-radius:var(--r-md);
+  background:var(--surface);overflow:hidden}
+.post{background:none;border:0;border-bottom:1px solid var(--border);border-radius:0;
+  box-shadow:none;transition:background .12s}
+.post:last-child{border-bottom:0}
+.post:hover{background:var(--surface-2)}
+.post-hero{display:none}
+.post-hd{padding:9px 12px}
+.post-txt{display:flex;flex-direction:column;gap:2px}
+.post-meta{order:-1;font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--text-3);display:flex;gap:10px;align-items:center}
+.post-title{font-size:14px;font-weight:600;margin:0;line-height:1.35}
+.post-dek{font-size:12px;color:var(--text-3);margin:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.post-more{display:none}
+.post-full{padding:0 12px 12px}
+.post.is-open{background:var(--surface-2)}
+
+/* ── Sparkline + keyboard row selection ── */
+.sparkline{vertical-align:middle}
+.qd-foot .sparkline{vertical-align:-3px}
+.row-sel{outline:2px solid var(--green);outline-offset:-2px;background:var(--green-soft)}
+.pl-scroll{max-height:72vh;overflow:auto}
+
 /* Motion discipline. */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -1352,6 +1377,8 @@ body{font-size:14px;line-height:1.35}
       <kbd>g i</kbd><span>Injury Monitor</span>
       <kbd>g w</kbd><span>Watchlist</span>
       <kbd>g r</kbd><span>GW Debrief</span>
+      <kbd>j / k</kbd><span>Next / previous row</span>
+      <kbd>↵</kbd><span>Open selected row</span>
       <kbd>?</kbd><span>This cheatsheet</span>
       <kbd>esc</kbd><span>Close dialogs</span>
     </div>
@@ -2596,6 +2623,23 @@ async function seasonProjection(b,fixtures,mid,hist){
   }catch(_){return '';}
 }
 
+/* ── Sparkline primitive: inline 60×16 trend, terminal-coloured ──
+   Green when the series ends higher than it starts, red otherwise.
+   Pure SVG string — usable inside any row template. */
+function spark(values,opts){
+  opts=opts||{};const w=opts.w||60,h=opts.h||16;
+  const v=(values||[]).filter(x=>x!=null&&isFinite(x));
+  if(v.length<2)return '';
+  const mn=Math.min(...v),mx=Math.max(...v),sp=(mx-mn)||1;
+  const X=i=>1+(i/(v.length-1))*(w-2);
+  const Y=x=>h-2-((x-mn)/sp)*(h-4);
+  const d=v.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x).toFixed(1)).join(' ');
+  const col=opts.color||(v[v.length-1]>=v[0]?'var(--green)':'var(--red)');
+  return '<svg class="sparkline" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'+
+    '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'+
+    '<circle cx="'+X(v.length-1).toFixed(1)+'" cy="'+Y(v[v.length-1]).toFixed(1)+'" r="1.8" fill="'+col+'"/></svg>';
+}
+
 /* ── HOME — the terminal view ────────────────────────────
    Four dense quadrants (action · model XI · differentials · live/
    deadline) over a model-performance trust strip. Fully populated
@@ -2612,11 +2656,13 @@ async function hydrateDashboard(host){
 
   /* ── Q1: this week's calls ── */
   let capPool=b.elements.filter(e=>e.status==='a').map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
-  let squad=null,bank=0,chipsLeft=null,scopeNote='league-wide model';
+  let squad=null,bank=0,chipsLeft=null,scopeNote='league-wide model',formSpark='';
   if(mid){try{
     const [picks,hist]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid)]);
     squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
     bank=(picks.entry_history&&picks.entry_history.bank)||0;
+    const pts=(hist.current||[]).slice(-8).map(g=>g.points);
+    if(pts.length>1)formSpark=' · form '+spark(pts,{w:56,h:13});
     const xiPool=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean)
       .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
     if(xiPool.length){capPool=xiPool;scopeNote='from your XI';}
@@ -2658,7 +2704,7 @@ async function hydrateDashboard(host){
     row('VICE',vice?'<b>'+esc(vice.e.web_name)+'</b>':'—',vice?vice.p.toFixed(1)+' xP':null)+
     row('TRANSFER',trBody,trVal,trCls)+
     row('CHIP',chipsLeft?(chipsLeft.length?'<b>HOLD</b> <span class="dl-sub">'+chipsLeft.join(' · ')+' in hand</span>':'<b>ALL PLAYED</b>'):'<b>HOLD</b>')+
-    '<div class="qd-foot">Confidence '+conf+'% · captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+
+    '<div class="qd-foot">Confidence '+conf+'% · captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+formSpark+
     (mid?'':' · <a href="#" onclick="openMidModal();return false">Link team →</a>')+'</div></div>';
 
   /* ── Q2: model XI ── */
@@ -5951,16 +5997,18 @@ async function hydrateTitleRace(host){
     kpi('Title favourite',esc(byTitle[0]),clubs[byTitle[0]].title.toFixed(0)+'% · '+esc(byTitle[1])+' '+clubs[byTitle[1]].title.toFixed(0)+'%','var(--green)')+
     kpi('Most likely down',esc(byRel[0]),clubs[byRel[0]].rel.toFixed(0)+'% · '+esc(byRel[1])+' '+clubs[byRel[1]].rel.toFixed(0)+'%','var(--red)')+
   '</div>';
+  const titleSeries=t=>snaps.map(s=>(s.clubs&&s.clubs[t])?s.clubs[t].title:null);
   const rows=byTitle.map((t,i)=>{const c=clubs[t];
     return '<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td>'+
       '<td class="num" style="'+lgBar(c.title,100,'var(--green-soft)')+'">'+c.title.toFixed(1)+'</td>'+
       '<td class="num" style="'+lgBar(c.top4,100,'var(--green-soft)')+'">'+c.top4.toFixed(1)+'</td>'+
-      '<td class="num" style="'+lgBar(c.rel,100,'var(--red-soft)')+'">'+c.rel.toFixed(1)+'</td></tr>';}).join('');
+      '<td class="num" style="'+lgBar(c.rel,100,'var(--red-soft)')+'">'+c.rel.toFixed(1)+'</td>'+
+      '<td>'+(snaps.length>1?spark(titleSeries(t),{w:56,h:14}):'')+'</td></tr>';}).join('');
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Season odds'+
       (st.label?' <span class="badge badge-grey">'+esc(st.label)+'</span>':'')+'</div>'+
       '<p class="dl-sub" style="margin-bottom:12px">Title, top-four and relegation probabilities from the fitted team-strength model — backtested within 0.007 RPS of Pinnacle closing odds. Updated '+esc(snap.date||st.updated||'')+'.</p>'+
       hero+
-      '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title %</th><th class="num">Top 4 %</th><th class="num">Rel %</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title %</th><th class="num">Top 4 %</th><th class="num">Rel %</th><th>Trend</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<p class="dl-sub" style="margin-top:10px">Full European breakdown, the 20×20 finish grid, editable Scenario Lab and next-5/10/20 projections live in the <b>Season Simulator</b> (Pro) — and free at <a href="https://plsimulation.netlify.app" style="color:var(--green-bright)">plsimulation.netlify.app</a>.</p>'+
     '</div>';
 }
@@ -7146,9 +7194,23 @@ function initCmdk(){
   document.getElementById('tk-cmdk-btn').addEventListener('click',cmdkOpen);
 }
 
+/* Row navigation: j/k walk the current panel's clickable rows, enter
+   opens the selected one. Selection is a transient class — no state. */
+function rowNav(dir){
+  const rows=Array.from(document.querySelectorAll(
+    '#ge-data .dl-click, #ge-data .ptable tbody tr[data-id], #ge-data .mc-head, #ge-data .post-hd'));
+  if(!rows.length)return;
+  const cur=document.querySelector('.row-sel');
+  let i=rows.indexOf(cur)+dir;
+  i=Math.max(0,Math.min(rows.length-1,i));
+  if(cur)cur.classList.remove('row-sel');
+  rows[i].classList.add('row-sel');
+  rows[i].scrollIntoView({block:'nearest'});
+}
+
 /* ── KEYBOARD LAYER ──────────────────────────────────────
-   ⌘K palette, `g <key>` navigation chords, `?` cheatsheet. Chords are
-   suppressed while typing or while any dialog is open. */
+   ⌘K palette, `g <key>` navigation chords, j/k row-walking, `?`
+   cheatsheet. All suppressed while typing or while a dialog is open. */
 const G_CHORDS={d:'dashboard',s:'squad',t:'transfers',c:'captain',p:'price',
   f:'fixtures',m:'results',i:'injuries',w:'watchlist',r:'gwreport',l:'liverank'};
 let _pendingG=0;
@@ -7174,7 +7236,13 @@ function initKeys(){
       if(id&&PANELS[id]){e.preventDefault();openPanel(id);}
       return;
     }
-    if(e.key.toLowerCase()==='g')_pendingG=Date.now();
+    if(e.key.toLowerCase()==='g'){_pendingG=Date.now();return;}
+    if(e.key==='j'){e.preventDefault();rowNav(1);return;}
+    if(e.key==='k'){e.preventDefault();rowNav(-1);return;}
+    if(e.key==='Enter'){
+      const sel=document.querySelector('.row-sel');
+      if(sel){e.preventDefault();sel.click();}
+    }
   });
   document.getElementById('kbd-overlay').addEventListener('click',e=>{
     if(e.target.id==='kbd-overlay')e.target.hidden=true;
