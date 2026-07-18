@@ -1885,6 +1885,30 @@ const SUPA={url:'https://knodunjnsxelmpziupwk.supabase.co',
 let sb=null,SESSION=null,SYNCED_UID=null;
 function uid(){return SESSION&&SESSION.user?SESSION.user.id:null;}
 
+/* Will a sign-in actually stick on this device? Private Browsing and
+   "Block All Cookies" let us write to storage in-session but wipe it on
+   close, so the user signs in over and over and it never persists. We
+   flag it up-front and warn in the sign-in box, so nobody fights the
+   loop the way it first surfaced in testing. Best-effort: assume OK
+   until a check proves otherwise. */
+let STORAGE_OK=true;
+async function detectStorage(){
+  /* 1) Storage blocked outright (can't even write/read back). */
+  try{
+    localStorage.setItem('ge-ls-probe','1');
+    if(localStorage.getItem('ge-ls-probe')!=='1'){STORAGE_OK=false;return;}
+    localStorage.removeItem('ge-ls-probe');
+  }catch(_){STORAGE_OK=false;return;}
+  /* 2) Private-mode heuristic: browsers cap the storage quota hard in
+     private/incognito (~120MB) vs. gigabytes in a normal tab. */
+  try{
+    if(navigator.storage&&navigator.storage.estimate){
+      const est=await navigator.storage.estimate();
+      if(est&&typeof est.quota==='number'&&est.quota>0&&est.quota<150*1024*1024)STORAGE_OK=false;
+    }
+  }catch(_){/* API absent: leave as best-effort OK */}
+}
+
 /* Owner allowlist: SHA-256 of the site owner's lowercased email. Grants
    full (Pro) access on sign-in — gated behind real authentication, so it
    is not a shared secret anyone can use. Email is hashed, not stored in
@@ -1900,6 +1924,7 @@ async function isOwner(email){
 }
 
 function initAuth(){
+  detectStorage();
   if(!window.GE_SUPABASE)return;
   try{
     sb=window.GE_SUPABASE.createClient(SUPA.url,SUPA.key,
@@ -1990,6 +2015,7 @@ function openAccount(){
       '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
       '<h3 id="acct-title">Sign in to sync</h3>'+
       '<p class="modal-hint" style="margin:0 0 14px">Create an account to carry your team, watchlist and Pro status across devices. It’s optional — the app works without it.</p>'+
+      (STORAGE_OK?'':'<div role="alert" style="background:rgba(245,165,36,.12);border:1px solid rgba(245,165,36,.4);color:var(--amber);border-radius:4px;padding:8px 10px;font-size:.8rem;line-height:1.35;margin:0 0 12px">This browser won’t remember your sign-in — you’re in Private Browsing or storage is blocked. Open <b>gameweekedge.co.uk</b> in a normal tab, or add it to your Home Screen, to stay signed in.</div>')+
       '<input class="modal-in" id="acct-email" type="email" inputmode="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">'+
       '<input class="modal-in" id="acct-pass" type="password" autocomplete="current-password" placeholder="Password (min 6 characters)">'+
       '<div class="modal-err" id="acct-err" role="alert"></div>'+
