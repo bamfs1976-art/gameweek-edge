@@ -1912,7 +1912,17 @@ function onAuthChange(session){
   SESSION=session||null;
   updateAcctLabel();
   if(uid()&&uid()!==SYNCED_UID)syncOnLogin();
-  if(!uid())SYNCED_UID=null;
+  if(!uid()){
+    SYNCED_UID=null;
+    /* Pro rides on the account — no session means no Pro on this
+       device, whether from sign-out here, another tab, or expiry.
+       Only rebuild when there's actually a tier to drop. */
+    window.GE_OWNER=false;
+    if(getTier()==='pro'){
+      try{localStorage.removeItem('ge-tier');}catch(_){}
+      reflectTier();buildNav();syncNav();renderPage(currentPanel);
+    }
+  }
 }
 function updateAcctLabel(){
   const el=document.getElementById('acct-label');
@@ -2029,7 +2039,12 @@ async function doReset(){
 }
 async function doSignOut(){
   if(sb)try{await sb.auth.signOut();}catch(_){}
-  SESSION=null;SYNCED_UID=null;updateAcctLabel();closeAccount();toast('Signed out');
+  SESSION=null;SYNCED_UID=null;window.GE_OWNER=false;
+  /* Belt and braces with onAuthChange: drop the cached Pro tier
+     immediately rather than waiting for the auth event. */
+  try{localStorage.removeItem('ge-tier');}catch(_){}
+  reflectTier();buildNav();syncNav();renderPage(currentPanel);
+  updateAcctLabel();closeAccount();toast('Signed out');
 }
 
 /* ═══════════════════════════════════════════════════════════
