@@ -4,6 +4,14 @@ Everything on this list is yours; everything else (assets, copy, weekly
 content packs, monitoring, fixes) is handled. Dates assume the 2026/27
 season starts the weekend of 15–16 August.
 
+> ✅ **Done (18 July): transactional email is live.** Resend is verified
+> for `gameweekedge.co.uk` (DKIM + SPF + MX + DMARC in Netlify DNS) and
+> wired into Supabase as custom SMTP, sender `noreply@gameweekedge.co.uk`.
+> Signups, confirmations and password resets now send real mail — no more
+> "quota exceeded". Free tier is 100 emails/day (3,000/month); upgrade
+> Resend if a launch spike exceeds that. The `re_…` API key lives only in
+> Supabase's SMTP field.
+
 ---
 
 ## This weekend (Fri 18 – Sun 20 July) — ~90 minutes total
