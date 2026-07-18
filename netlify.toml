@@ -50,6 +50,12 @@
   to = "/?panel=methodology"
   status = 301
 
+# Clean URL for the design-system reference.
+[[redirects]]
+  from = "/design"
+  to = "/?panel=design"
+  status = 301
+
 # Route the app's API calls to the proxy function, preserving the path.
 [[redirects]]
   from = "/api/fpl/*"

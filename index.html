@@ -1214,6 +1214,30 @@ body{font-size:14px;line-height:1.35}
 .post-full{padding:0 12px 12px}
 .post.is-open{background:var(--surface-2)}
 
+/* ── Pro blur-lock: real UI behind a single lock strip ── */
+.pro-lockwrap{position:relative}
+.pro-blur{filter:blur(5px) saturate(.75);pointer-events:none;user-select:none;min-height:300px;overflow:hidden}
+.pro-lockstrip{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);z-index:6;
+  display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
+  padding:20px 16px;border-top:1px solid var(--border-3);border-bottom:1px solid var(--border-3);
+  background:color-mix(in srgb,var(--bg) 92%,transparent)}
+.pls-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;font-weight:700;
+  color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 8px}
+.pls-txt{font-size:13px;color:var(--text-2)}
+/* No padlocks in nav — a quiet mono tag instead. */
+.lock-badge{background:var(--chip);color:var(--text-2);font-family:var(--font-mono);
+  letter-spacing:.08em}
+.lock-badge svg{display:none}
+[data-theme="dark"] .lock-badge{color:var(--text-2)}
+.nav-sub-lock{display:none}
+
+/* ── /design primitives page ── */
+.ds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.ds-swatches{display:flex;flex-wrap:wrap;gap:8px}
+.ds-sw{width:92px;border:1px solid var(--border-2);border-radius:var(--r-md);overflow:hidden}
+.ds-sw>div{height:44px}
+.ds-sw>span{display:block;font-family:var(--font-mono);font-size:9px;padding:4px 6px;color:var(--text-3)}
+
 /* ── Sparkline + keyboard row selection ── */
 .sparkline{vertical-align:middle}
 .qd-foot .sparkline{vertical-align:-3px}
@@ -2118,6 +2142,9 @@ const PANELS = {};
 NAV.forEach(area=>area.panels.forEach(p=>{
   PANELS[p.id]={...p, areaId:area.id, areaLabel:area.label};
 }));
+/* Hidden panel: the design-system reference at /design (not in nav —
+   reachable by URL, the command palette, or the methodology page). */
+PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:'home',areaLabel:'Home'};
 
 /* ── PANEL CONTENT DEFINITIONS (placeholder, shell only) ──── */
 /* Each panel describes what it will hold once built in step 2. */
@@ -2156,6 +2183,10 @@ const PANEL_CONTENT = {
   },
   methodology:{
     desc:'How the numbers are made: the team-strength engine, the xP model, the price estimate — and how they perform against real results.',
+    layout:'standard'
+  },
+  design:{
+    desc:'The terminal design system: tokens, type, and every reusable primitive in one place.',
     layout:'standard'
   },
   seasonsim:{
@@ -2414,10 +2445,17 @@ function renderPage(panelId){
 
   let body='';
 
-  /* Pro panels: free users get a value preview + upgrade prompt; Pro
-     users get the live tool (with a small Pro marker). */
+  /* Pro panels, free user: render the REAL tool, blurred and inert,
+     behind a single lock strip — you can see exactly what you'd get,
+     you just can't use it. (Server-side gates still protect the paid
+     AI endpoints regardless of anything the client shows.) */
   if(locked){
-    body+=proPreview(panel,content);
+    body+='<div class="pro-lockwrap">'+
+      '<div id="ge-data" class="ge-host pro-blur" inert aria-hidden="true">'+
+        (WIRED[panelId]?skel(5):standardLayout(panel,content))+'</div>'+
+      '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
+        '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
+        '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock Pro</button></div></div>';
   } else {
     if(isPaid){
       body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
@@ -2450,6 +2488,12 @@ function renderPage(panelId){
           '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>')
         :errorBox();});
     armLiveRefresh(panelId);
+  } else if(WIRED[panelId]&&locked){
+    /* Hydrate the blurred preview too — real UI, no interaction, no
+       live polling. Failures just leave the skeleton under the blur. */
+    const host=document.getElementById('ge-data');
+    Promise.resolve().then(()=>WIRED[panelId](host)).catch(()=>{});
+    armLiveRefresh(null);
   } else { armLiveRefresh(null); }
 }
 
@@ -2804,6 +2848,32 @@ async function hydrateMethodology(host){
     sec('Changelog — July 2026',
       p('Match Centre with model verdicts · per-gameweek GW Debrief · suspension watch and push alert · personalised price alerts + evening risk warning · set-piece and start-likelihood chips · sortable transfer targets · shareable gameweek card · terminal redesign.'))+
     '<p class="dl-sub">Questions or spot an error? The whole app is built to be checked — tell us and we’ll fix it.</p>';
+}
+
+/* ── /design: the terminal primitives, demoed in one place ── */
+async function hydrateDesign(host){
+  const sw=(name,v)=>'<div class="ds-sw"><div style="background:'+v+'"></div><span>'+name+'<br>'+v+'</span></div>';
+  const panel=(t,body)=>'<div class="card"><div class="card-title">'+t+'</div>'+body+'</div>';
+  host.innerHTML='<div class="ds-grid">'+
+    panel('Tokens · surfaces','<div class="ds-swatches">'+
+      sw('--bg','#0A0C0F')+sw('--surface','#111418')+sw('--surface-2','#161A20')+sw('--border','#1F242B')+'</div>')+
+    panel('Tokens · semantic','<div class="ds-swatches">'+
+      sw('--green','#00D26A')+sw('--red','#FF4D4F')+sw('--amber','#F5A524')+sw('--blue','#3B82F6')+sw('--hot','#B6FF3C')+'</div>')+
+    panel('Type','<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)">Panel label · 11px mono tracked</div>'+
+      '<div style="font-size:14px;margin:6px 0">Body copy — Inter 14/1.35</div>'+
+      '<div class="mono" style="font-size:22px">1,234.56 <span class="pos">+7.8</span> <span class="neg">-2.1</span></div>')+
+    panel('Deltas &amp; badges','<div class="qd-row"><span class="qd-k">DELTA</span><b>Haaland</b><span class="qd-v pos">↑ +0.3</span></div>'+
+      '<div class="qd-row"><span class="qd-k">BADGES</span><span class="badge badge-green">LIVE</span> <span class="badge badge-amber">DOUBTFUL</span> <span class="badge badge-red">FT</span> <span class="badge badge-grey">GW38</span></div>')+
+    panel('Sparkline','<div class="qd-row"><b>Form (rising)</b><span class="qd-v">'+spark([2,5,3,8,9,12],{w:80,h:16})+'</span></div>'+
+      '<div class="qd-row"><b>Form (falling)</b><span class="qd-v">'+spark([12,9,10,6,4,2],{w:80,h:16})+'</span></div>')+
+    panel('Progress bar','<div class="qd-row"><b>Rise 82%</b><span class="qd-bar"><div style="width:82%"></div></span></div>'+
+      '<div class="qd-row"><b>Fall 61%</b><span class="qd-bar fall"><div style="width:61%"></div></span></div>')+
+    panel('Ticker items','<div class="tickbar" style="position:static;border:1px solid var(--border-2);border-radius:4px">'+
+      '<span class="tk-item tk-brand"><span class="tk-dot"></span>GWE</span><span class="tk-item">GW <b>38</b></span>'+
+      '<span class="tk-item">PRICES <b class="pos">↑7</b> <b class="neg">↓12</b></span></div>')+
+    panel('Keys','<span class="cmdk-foot" style="border:0;padding:0"><kbd>⌘K</kbd> <kbd>g s</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>?</kbd></span>')+
+    '</div>'+
+    '<p class="dl-sub" style="margin-top:14px">Every primitive is a plain HTML/CSS pattern driven by the tokens — no components, no build step. Data rows: 28px · card padding 12px · radius 4px max · depth by hairline, never shadow.</p>';
 }
 
 /* This Gameweek: live event intelligence */
@@ -7001,6 +7071,7 @@ async function hydrateDraft(host){
 const WIRED={
   dashboard:hydrateDashboard,
   methodology:hydrateMethodology,
+  design:hydrateDesign,
   'gw-actions':hydrateGwActions,
   titlerace:hydrateTitleRace,
   clubform:hydrateClubForm,
