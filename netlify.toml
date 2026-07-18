@@ -44,6 +44,12 @@
   to = "/landing.html"
   status = 200
 
+# Clean URL for the model methodology page (linked from the trust strip).
+[[redirects]]
+  from = "/methodology"
+  to = "/?panel=methodology"
+  status = 301
+
 # Route the app's API calls to the proxy function, preserving the path.
 [[redirects]]
   from = "/api/fpl/*"

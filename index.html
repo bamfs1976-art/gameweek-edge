@@ -1157,6 +1157,44 @@ body{font-size:14px;line-height:1.35}
 .kbd-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;color:var(--text-2)}
 .kbd-grid kbd{justify-self:start}
 
+/* ── Home quadrants ── */
+.quad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+@media(max-width:1080px){.quad-grid{grid-template-columns:1fr}}
+.qd{position:relative}
+.qd-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.qd-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-2);font-weight:600;display:flex;align-items:center}
+.qd-meta{font-family:var(--font-mono);font-size:10px;color:var(--text-3);letter-spacing:.04em}
+.qd-row{display:flex;align-items:center;gap:10px;min-height:28px;border-bottom:1px solid var(--border);font-size:13px}
+.qd-row:last-of-type{border-bottom:0}
+.qd-k{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;color:var(--text-3);width:78px;flex-shrink:0}
+.qd-v{margin-left:auto;font-family:var(--font-mono);font-variant-numeric:tabular-nums;flex-shrink:0}
+.qd-hot{color:var(--hot);font-weight:700}
+.pos{color:var(--green)}
+.qd-foot{font-size:11px;color:var(--text-3);font-family:var(--font-mono);margin-top:8px;letter-spacing:.02em}
+.qd-foot a{color:var(--green)}
+.qd-count{font-family:var(--font-mono);font-size:42px;font-weight:600;color:var(--text);
+  line-height:1.1;margin:2px 0 10px;font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.qd-sub-label{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;color:var(--text-3);
+  text-transform:uppercase;margin:2px 0}
+.qd-bar{flex:0 0 64px;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-left:auto}
+.qd-bar>div{height:100%;background:var(--green)}
+.qd-bar.fall>div{background:var(--red)}
+.qd-demo::after{content:'DEMO';position:absolute;right:12px;bottom:10px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;color:var(--text-4);
+  border:1px solid var(--border-2);padding:2px 8px;border-radius:3px}
+.qd-pitch .pitch-preview{min-height:0;padding:14px 8px 10px}
+.qd-pitch .pitch-row{gap:6px;margin-bottom:8px}
+.qd-pitch .pp{flex-basis:54px;min-width:38px}
+.qd-pitch .pp-fig{width:32px;height:36px}
+.qd-pitch .pp-nm{max-width:52px;font-size:.55rem}
+.qd-pitch .pp-pt{max-width:52px;font-size:.6rem}
+.qd-pitch .pp-sub{max-width:52px;font-size:.48rem}
+.trust-strip{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;padding:10px 12px;
+  border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface);
+  font-family:var(--font-mono);font-size:11px;color:var(--text-2);letter-spacing:.02em}
+.trust-strip b{color:var(--text)}
+
 /* Motion discipline. */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -1975,7 +2013,8 @@ const NAV = [
     panels:[
       {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'},
-      {id:'blog', label:'The Wire', icon:'news', tier:'free'}
+      {id:'blog', label:'The Wire', icon:'news', tier:'free'},
+      {id:'methodology', label:'Methodology', icon:'spark', tier:'free'}
     ]
   },
   {
@@ -2086,6 +2125,10 @@ const PANEL_CONTENT = {
   },
   results:{
     desc:'Every match of the gameweek — scorers, cards, saves, defensive contributions and the bonus race, with your players flagged and the model’s pre-match view beside each result.',
+    layout:'standard'
+  },
+  methodology:{
+    desc:'How the numbers are made: the team-strength engine, the xP model, the price estimate — and how they perform against real results.',
     layout:'standard'
   },
   seasonsim:{
@@ -2553,85 +2596,168 @@ async function seasonProjection(b,fixtures,mid,hist){
   }catch(_){return '';}
 }
 
+/* ── HOME — the terminal view ────────────────────────────
+   Four dense quadrants (action · model XI · differentials · live/
+   deadline) over a model-performance trust strip. Fully populated
+   without a linked team: the league-wide model drives every quadrant
+   and the action panel carries a DEMO tag until a team is linked. */
 async function hydrateDashboard(host){
   const mid=getMid();
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
-  const strip=await deadlineStrip(b,fixtures);
-  if(!mid){
-    const nf=buildNextFix(b,fixtures);
-    const totw=bestXI(scoutScored(b,nf));
-    const rows=(totw?totw.xi.slice(0,5):[]).map(s=>
-      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(s.el.web_name)+'</span>'+
-      '<span class="dl-sub">'+teamShort(b,s.el.team)+' · '+posShort(b,s.el.element_type)+' · '+money(s.el.now_cost)+'</span></span>'+
-      '<span class="dl-col mono">'+s.p+'</span></div>').join('');
-    host.innerHTML=strip+
-      '<div class="grid g-sb mb-20">'+
-        '<div class="card"><div class="card-title">Model team of the week — top picks</div>'+
-          '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">xP</span></div>'+rows+'</div>'+
-          '<div class="dl-sub" style="margin-top:10px">From the fitted team-strength model + validated player projections.</div></div>'+
-        '<div class="card"><div class="ge-state">'+svg(ICON.team)+
-          '<b>Make it yours</b><p>Link your FPL team for your squad, captaincy, live percentile and transfer plans.</p>'+
-          '<div style="display:flex;gap:8px;justify-content:center;margin-top:10px">'+
-          '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>'+
-          '<button class="btn btn-ghost btn-sm" onclick="loadDemoTeam()">Try a demo</button></div></div></div>'+
-      '</div>';
-    return;
+  const nf=buildNextFix(b,fixtures);
+  const hz=buildHorizon(b,fixtures,5);
+  const stamp=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const qh=(label,kpiHtml)=>'<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>'+label+'</span>'+
+    '<span class="qd-meta">'+(kpiHtml?kpiHtml+' · ':'')+stamp+'</span></div>';
+
+  /* ── Q1: this week's calls ── */
+  let capPool=b.elements.filter(e=>e.status==='a').map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
+  let squad=null,bank=0,chipsLeft=null,scopeNote='league-wide model';
+  if(mid){try{
+    const [picks,hist]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid)]);
+    squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
+    bank=(picks.entry_history&&picks.entry_history.bank)||0;
+    const xiPool=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean)
+      .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
+    if(xiPool.length){capPool=xiPool;scopeNote='from your XI';}
+    const used=(hist.chips||[]).map(c=>c.name);
+    chipsLeft=[['wildcard','WC'],['3xc','TC'],['bboost','BB'],['freehit','FH']]
+      .filter(([k])=>!used.includes(k)).map(([,n])=>n);
+  }catch(_){}}
+  const cap=capPool[0],vice=capPool[1];
+  const row=(k,body,v,cls)=>'<div class="qd-row"><span class="qd-k">'+k+'</span>'+body+
+    (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>';
+  let trBody='',trVal=null,trCls='';
+  if(squad){
+    const availOk=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
+    const owned=new Set(squad.map(e=>e.id));
+    const xiEls=capPool.map(x=>x.e);
+    const weakest=xiEls.slice().sort((a,c)=>horizonXP(b,a,hz)-horizonXP(b,c,hz))[0];
+    if(weakest){
+      const clubCount={};squad.forEach(e=>{clubCount[e.team]=(clubCount[e.team]||0)+1;});
+      const cand=b.elements.filter(e=>e.element_type===weakest.element_type&&!owned.has(e.id)&&availOk(e)&&
+          e.now_cost<=bank+(weakest.now_cost||0)&&((clubCount[e.team]||0)-(e.team===weakest.team?1:0))<3)
+        .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
+      if(cand){
+        const gain=horizonXP(b,cand,hz)-horizonXP(b,weakest,hz);
+        trBody='<b>'+esc(weakest.web_name)+' → '+esc(cand.web_name)+'</b>';
+        trVal=(gain>=0?'+':'')+gain.toFixed(1);trCls=gain>=0?'pos':'neg';
+      }
+    }
   }
-  const [entry,hist]=await Promise.all([loadEntry(mid),loadHistory(mid)]);
-  const watch=await modelWatch(b,fixtures,mid);
-  const proj=await seasonProjection(b,fixtures,mid,hist);
-  const cur=hist.current||[];
-  const last=cur[cur.length-1]||{};
-  const rankDelta=cur.length>1?(cur[cur.length-2].overall_rank-last.overall_rank):0;
-  const recent=cur.slice(-6);
-  const maxPts=Math.max(1,...recent.map(g=>g.points));
-  const bars=recent.map(g=>
-    '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">'+
-      '<div style="font-size:.66rem;font-weight:700;color:var(--text-2)">'+g.points+'</div>'+
-      '<div style="width:100%;background:var(--green-soft);border-radius:4px 4px 0 0;height:'+
-        Math.round(8+58*g.points/maxPts)+'px"></div>'+
-      '<div style="font-size:.6rem;color:var(--text-3)">GW'+g.event+'</div>'+
-    '</div>').join('');
-  host.innerHTML=strip+watch+proj+
-    '<div class="grid g-4 mb-20">'+
-      kpi('Total Points',fmtNum(entry.summary_overall_points),'Season','var(--green)')+
-      kpi('Overall Rank',fmtNum(entry.summary_overall_rank),
-        (rankDelta>0?'▲ '+fmtNum(rankDelta):rankDelta<0?'▼ '+fmtNum(-rankDelta):'No change')+' last GW','var(--blue)')+
-      kpi('Team Value',money(entry.last_deadline_value||0),
-        'Bank '+money(entry.last_deadline_bank||0),'var(--amber)')+
-      kpi('GW Points',fmtNum(entry.summary_event_points),'GW'+(b.cur.id),'var(--purple)')+
-    '</div>'+
-    '<div class="grid g-sb mb-20">'+
-      '<div class="card"><div class="card-title">Recent Form — Points by Gameweek</div>'+
-        '<div style="display:flex;align-items:flex-end;gap:8px;height:90px;padding-top:8px">'+
-          (bars||'<p class="dl-sub">No gameweeks played yet.</p>')+'</div>'+
-      '</div>'+
-      '<div class="card"><div class="card-title">Manager</div>'+
-        '<div class="stat-v">'+esc((entry.player_first_name||'')+' '+(entry.player_last_name||''))+'</div>'+
-        '<div class="dl-sub" style="margin-top:2px">'+esc(entry.name||'')+'</div>'+
-        '<div class="statgrid" style="margin-top:14px">'+
-          '<div class="stat"><div class="stat-l">Overall</div><div class="stat-v">'+fmtNum(entry.summary_overall_rank)+'</div></div>'+
-          '<div class="stat"><div class="stat-l">GW Rank</div><div class="stat-v">'+fmtNum(entry.summary_event_rank)+'</div></div>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
-    '<div class="grid g-sb mb-20">'+
-      '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Weekly Digest</div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">Your pre-deadline brief — captain, a transfer thought and a risk to watch.</p>'+
-        aiGate('<button class="btn btn-primary btn-sm" onclick="genDigest()">Generate digest</button>')+
-        '<div id="digest-ai" style="margin-top:12px"></div></div>'+
-      '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Last Gameweek Review</div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">How your last gameweek went versus the average, and one lesson.</p>'+
-        aiGate('<button class="btn btn-primary btn-sm" onclick="genReview()">Review my gameweek</button>')+
-        '<div id="review-ai" style="margin-top:12px"></div></div>'+
-    '</div>'+
-    '<div class="card"><div class="card-title">Jump in</div>'+
-      '<div class="modal-row" style="margin-top:0">'+
-        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'squad\')">View squad</button>'+
-        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'gw-actions\')">This gameweek</button>'+
-        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'fixtures\')">Fixtures</button>'+
-      '</div>'+
-    '</div>';
+  if(!trBody){
+    const tgt=b.elements.filter(e=>e.status==='a'&&e.now_cost)
+      .sort((a,c)=>horizonXP(b,c,hz)/c.now_cost-horizonXP(b,a,hz)/a.now_cost)[0];
+    trBody=tgt?'<b>'+esc(tgt.web_name)+'</b> <span class="dl-sub">best value next 5</span>':'—';
+    trVal=tgt?horizonXP(b,tgt,hz).toFixed(1):null;
+  }
+  const margin=cap&&vice?(cap.p-vice.p):0;
+  const conf=Math.max(50,Math.min(94,Math.round(55+margin*9)));
+  const q1='<div class="card qd'+(mid?'':' qd-demo')+'">'+qh('This week · action','GW'+b.cur.id)+
+    row('► CAPTAIN',cap?'<b>'+esc(cap.e.web_name)+'</b>':'—',cap?cap.p.toFixed(1)+' xP':null,'qd-hot')+
+    row('VICE',vice?'<b>'+esc(vice.e.web_name)+'</b>':'—',vice?vice.p.toFixed(1)+' xP':null)+
+    row('TRANSFER',trBody,trVal,trCls)+
+    row('CHIP',chipsLeft?(chipsLeft.length?'<b>HOLD</b> <span class="dl-sub">'+chipsLeft.join(' · ')+' in hand</span>':'<b>ALL PLAYED</b>'):'<b>HOLD</b>')+
+    '<div class="qd-foot">Confidence '+conf+'% · captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+
+    (mid?'':' · <a href="#" onclick="openMidModal();return false">Link team →</a>')+'</div></div>';
+
+  /* ── Q2: model XI ── */
+  const totw=bestXI(scoutScored(b,nf));
+  let q2Body='<p class="dl-sub">The model XI appears once fixtures are set.</p>';
+  if(totw){
+    const cell=s=>'<div class="pp">'+ppFigure(b,s.el)+
+      '<span class="pp-nm">'+esc(s.el.web_name)+'</span>'+
+      '<span class="pp-pt">'+s.p.toFixed(1)+'</span>'+
+      '<span class="pp-sub"><span class="l">'+money(s.el.now_cost)+'</span>'+
+      '<span class="r">'+esc((nf[s.el.team]||{}).opp||'—')+(nf[s.el.team]?(nf[s.el.team].home?' H':' A'):'')+'</span></span></div>';
+    const byT=t=>totw.xi.filter(s=>s.el.element_type===t);
+    q2Body='<div class="qd-pitch">'+pitchWrap(
+      '<div class="pitch-row">'+byT(1).map(cell).join('')+'</div>'+
+      '<div class="pitch-row">'+byT(2).map(cell).join('')+'</div>'+
+      '<div class="pitch-row">'+byT(3).map(cell).join('')+'</div>'+
+      '<div class="pitch-row">'+byT(4).map(cell).join('')+'</div>')+'</div>';
+  }
+  const q2='<div class="card qd">'+qh('Model XI',''+(totw?totw.total.toFixed(0)+' xP':'—'))+q2Body+'</div>';
+
+  /* ── Q3: differentials under 10% ── */
+  const diffs=b.elements.filter(e=>e.status==='a'&&parseFloat(e.selected_by_percent)<10&&(!b.liveSeason||e.minutes>0))
+    .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p).slice(0,8);
+  const dRows=diffs.map(({e,p})=>{
+    const d=e.cost_change_event>0?'<span class="pos">↑</span>':e.cost_change_event<0?'<span class="neg">↓</span>':'<span style="color:var(--text-4)">—</span>';
+    return '<div class="qd-row dl-click" onclick="openPlayer('+e.id+')">'+
+      '<b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.web_name)+'</b>'+
+      '<span class="qd-v" style="color:var(--text-2)">'+e.selected_by_percent+'%</span>'+
+      '<span class="qd-v qd-hot" style="width:44px;text-align:right">'+p.toFixed(1)+'</span>'+
+      '<span class="qd-v" style="width:58px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+'</span>'+
+      '<span style="width:14px;text-align:right">'+d+'</span></div>';
+  }).join('');
+  const q3='<div class="card qd">'+qh('Differentials &lt; 10%',diffs.length+' picks')+
+    '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
+    '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
+    '<span style="width:58px;text-align:right">FIX</span><span style="width:14px;text-align:right">ΔP</span></div>'+dRows+'</div>';
+
+  /* ── Q4: live / deadline ── */
+  const total=b.raw.total_players||10e6;
+  const movers=b.elements.map(e=>({e,pc:priceChangeProb(e,total)}))
+    .filter(x=>x.pc.dir!=='flat').sort((a,c)=>c.pc.prob-a.pc.prob).slice(0,5);
+  const mRows=movers.map(x=>'<div class="qd-row">'+
+    '<b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.e.web_name)+'</b>'+
+    '<span class="qd-bar'+(x.pc.dir==='fall'?' fall':'')+'"><div style="width:'+x.pc.prob+'%"></div></span>'+
+    '<span class="qd-v '+(x.pc.dir==='rise'?'pos':'neg')+'" style="width:40px;text-align:right">'+x.pc.prob+'%</span></div>').join('');
+  const flagged=b.elements.filter(e=>e.status&&e.status!=='a')
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,3);
+  const anyLive=fixtures.some(f=>f.event===b.cur.id&&f.started&&!f.finished);
+  const q4='<div class="card qd">'+qh('Live · deadline',anyLive?'IN PLAY':'GW'+b.cur.id)+
+    '<div class="qd-count" id="qd-count">—</div>'+
+    (anyLive?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>':'')+
+    '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players near the threshold.</div>')+
+    '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
+    (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex:1">'+esc(e.web_name)+'</b>'+
+      '<span class="dl-sub" style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(e.news||STATUS_LABEL[e.status]||'flagged')+'</span></div>').join('')
+      :'<div class="dl-sub" style="padding:4px 0">No new flags.</div>')+'</div>';
+
+  /* ── Trust strip: the model graded in public ── */
+  const R=plsimRatings(b,fixtures);
+  const done=fixtures.filter(f=>f.finished&&f.team_h_score!=null&&f.team_a_score!=null);
+  let hits=0,lastHits=0,lastN=0;
+  const lastGw=done.length?Math.max(...done.map(f=>f.event||0)):null;
+  done.forEach(f=>{
+    const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
+    const pred=m.pH>=m.pD&&m.pH>=m.pA?'H':(m.pA>=m.pD?'A':'D');
+    const act=f.team_h_score>f.team_a_score?'H':(f.team_h_score<f.team_a_score?'A':'D');
+    if(pred===act){hits++;if(f.event===lastGw){lastHits++;}}
+    if(f.event===lastGw)lastN++;
+  });
+  const trust='<div class="trust-strip"><span style="color:var(--green);font-weight:700">MODEL</span>'+
+    (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> · '+done.length+' matches</span>'+
+      (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started — backtest below</span>')+
+    '<span>backtest RPS <b>0.2126</b> held-out 25/26</span>'+
+    '<a href="#" onclick="openPanel(\'methodology\');return false" style="margin-left:auto;color:var(--green)">METHODOLOGY →</a></div>';
+
+  host.innerHTML='<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  tickTicker();
+}
+
+/* ── Methodology: how the numbers are made, in plain English ── */
+async function hydrateMethodology(host){
+  const sec=(t,body)=>'<div class="card mb-20"><div class="card-title">'+t+'</div>'+body+'</div>';
+  const p=t=>'<p class="dl-sub" style="margin:0 0 8px;font-size:13px;line-height:1.55">'+t+'</p>';
+  host.innerHTML=
+    sec('Team-strength engine',
+      p('Every club carries an attack and a defence multiplier around the league’s average scoring rates (1.62 home / 1.32 away goals). The starting values are a joint Poisson maximum-likelihood fit over <b>2,796 Premier League and Championship results (2023–26)</b>; on every load the same fit re-runs on this season’s finished fixtures, so the offline numbers fade as real results accumulate.')+
+      p('Scorelines come off a Dixon–Coles-corrected grid (the plain Poisson model misbehaves on 0–0 and 1–1). Win, draw, clean-sheet and 3+-goal probabilities are read straight off that grid — the same engine drives fixture difficulty, the Clean Sheet Matrix, Match Forecasts and the Season Simulator.'))+
+    sec('Backtest',
+      p('The fit is validated on held-out 2025/26 results: ranked probability score <b>0.2126</b> against 0.2133 for the unweighted fit — small edges, honestly reported. The full method and code live in the open PL Simulator repository.')+
+      p('Since the season started, the Match Centre grades every pre-match forecast against the real result — including the misses — and the dashboard’s trust strip totals it up. When the model is wrong, you see it.'))+
+    sec('Player expected points (xP)',
+      p('A player’s xP for a fixture blends the official expected-involvement rates (xG, xA per 90), minutes security (starts, availability flags), position-specific scoring including the 2025/26 defensive-contribution rules, and the team-level match forecast — a striker facing a leaky defence at home projects higher than the same striker away to the champions. Tap any xP number in the app for its workings.'))+
+    sec('Price-change estimate',
+      p('FPL moves prices when net transfers cross a hidden ownership-scaled threshold. We approximate it — roughly 30% of current owners, floor 20k — and map progress through a logistic curve, capped 5–95%. It is an <b>estimate</b> and is always labelled as one; the real algorithm is not public.'))+
+    sec('Suspension & availability',
+      p('Card-ban proximity uses the real cutoffs — 5 yellows by GW19, 10 by GW32, 15 across the season. Fitness comes from the official status flags and news feed. Deeper card analytics live in our companion app, Bookings Desk.'))+
+    sec('Changelog — July 2026',
+      p('Match Centre with model verdicts · per-gameweek GW Debrief · suspension watch and push alert · personalised price alerts + evening risk warning · set-piece and start-likelihood chips · sortable transfer targets · shareable gameweek card · terminal redesign.'))+
+    '<p class="dl-sub">Questions or spot an error? The whole app is built to be checked — tell us and we’ll fix it.</p>';
 }
 
 /* This Gameweek: live event intelligence */
@@ -6826,6 +6952,7 @@ async function hydrateDraft(host){
 /* Panels wired to live FPL data. */
 const WIRED={
   dashboard:hydrateDashboard,
+  methodology:hydrateMethodology,
   'gw-actions':hydrateGwActions,
   titlerace:hydrateTitleRace,
   clubform:hydrateClubForm,
@@ -6927,8 +7054,10 @@ function tickTicker(){
     const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),
       m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
     const p=n=>String(n).padStart(2,'0');
-    set('tk-dl','DEADLINE <b>T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s)+'</b>');
-  }else set('tk-dl','DEADLINE <b>PASSED</b>');
+    const t='T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s);
+    set('tk-dl','DEADLINE <b>'+t+'</b>');
+    set('qd-count',t);
+  }else{set('tk-dl','DEADLINE <b>PASSED</b>');set('qd-count','LIVE');}
   /* Market + fitness counts, recomputed only when the bootstrap changes. */
   if(window._tkSrc!==b){
     window._tkSrc=b;
