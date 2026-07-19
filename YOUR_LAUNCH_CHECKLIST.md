@@ -127,3 +127,30 @@ season starts the weekend of 15–16 August.
   me 6 raw phone screenshots (squad, Match Centre, Debrief, Prices,
   Captaincy, Suspension watch) and I'll re-frame the asset pack with real
   data — always beats staged.
+
+---
+
+## Post-launch backlog (v1.1 ideas — not for launch)
+
+Feature ideas worth building *after* launch, drawn from scouting five
+public FPL repos (nickharris88/fpl-history, fredricksoong-ai/fpl-data-store,
+vivekfrancis1/fpldilemmas, wwvv97/fpl-report, jguilhermealexandre/fpl-analysis).
+
+> ⚠️ **Licence note:** none of those repos declares a licence, so we can't
+> copy their code or processed data — these are idea-only. Any build would
+> be original, from the official FPL API or a properly-licensed historical
+> dataset (to be verified first).
+
+- **Mystery Player daily game** (small) — Wordle-style "guess the player
+  from their stats" puzzle. Cheap, on-brand, and a share/retention hook —
+  the strongest *growth* lever of the three. Best candidate to build first
+  post-launch, ideally timed for a content push.
+- **Historical / career layer** (medium-large) — multi-season player
+  timelines, consistency, home/away splits, all-time records, cross-season
+  head-to-head. The biggest *product* upgrade and a natural fit for the
+  terminal look; gated on sourcing clean historical data legitimately.
+- **Wildcard optimiser** (medium) — one-tap "best legal 15 for £100m" xP
+  solver with budget/position/club constraints, building on the existing
+  draft-template scaffolding.
+- **Read, don't lift:** fpldilemmas' projection-system write-up is worth a
+  look to sharpen the xP model — reference only.
