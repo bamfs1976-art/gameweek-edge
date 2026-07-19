@@ -1115,9 +1115,51 @@ body{font-size:14px;line-height:1.35}
   .sidebar:hover .lock-badge,.sidebar:focus-within .lock-badge{opacity:1}
   .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
 }
+/* xl (≥1280): pin the rail open with labels — no hover flyout, no overlay. */
+@media(min-width:1280px){
+  .sidebar{width:240px;overflow-y:auto;overflow-x:hidden}
+  .sidebar:hover,.sidebar:focus-within{width:240px;box-shadow:none}
+  .sidebar .brand-text,.sidebar .sb-foot{display:flex}
+  .sidebar .sb-gw{display:block}
+  .sb-brand{padding:16px 16px 12px}
+  .sb-nav{padding:8px 10px 14px}
+  .nav-area-btn{padding:9px 11px;gap:12px}
+  .nav-area-label,.nav-chevron,.lock-badge{opacity:1}
+  .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
+  .sidebar:not(:hover):not(:focus-within) .nav-sub.open{max-height:520px}
+  .main{margin-left:240px}
+}
 @media(max-width:900px){
   .sidebar{width:248px}
 }
+
+/* ── Typography tiers (4 utility classes; terminal type system) ── */
+.text-display{font-family:var(--font-body);font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--text)}
+.text-metric{font-family:var(--font-mono);font-size:24px;font-weight:600;line-height:1.15;font-variant-numeric:tabular-nums;color:var(--text)}
+.text-body{font-family:var(--font-body);font-size:14px;font-weight:400;line-height:1.5;color:var(--text-2)}
+.text-caption{font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+@media(max-width:560px){.text-display{font-size:26px}.text-metric{font-size:21px}}
+
+/* ── Model XI: list view + pitch toggle (compact on mobile) ── */
+.qd-mxi[data-mxi="list"] .qd-pitch{display:none}
+.qd-mxi[data-mxi="pitch"] .mxi-list{display:none}
+.mxi-list{display:flex;flex-direction:column}
+.mxi-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto auto 36px;
+  align-items:center;gap:0 8px;min-height:30px;border-bottom:1px solid var(--border);
+  font-size:12.5px;cursor:pointer}
+.mxi-row:last-child{border-bottom:0}
+.mxi-row.mxi-hd{cursor:default;min-height:22px;font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.06em;color:var(--text-3)}
+.mxi-row.mxi-hd .mxi-xp,.mxi-row.mxi-hd .mxi-cell{color:var(--text-3)}
+.mxi-player{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.mxi-club{font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-right:4px}
+.mxi-cell{font-family:var(--font-mono);font-size:11px;color:var(--text-2);text-align:right;font-variant-numeric:tabular-nums}
+.mxi-xp{font-family:var(--font-mono);font-weight:700;color:var(--hot);text-align:right;font-variant-numeric:tabular-nums}
+.mxi-pos{color:var(--text-3)}
+.mxi-row:not(.mxi-hd):hover{background:var(--surface-2)}
+.mxi-toggle{font-family:var(--font-mono);font-size:10px;border:1px solid var(--border-2);
+  border-radius:3px;padding:2px 8px;color:var(--text-3);background:var(--surface);margin-left:8px}
+.mxi-toggle:hover{color:var(--text);border-color:var(--border-3)}
 
 /* ── Command palette (⌘K) ── */
 .cmdk{position:fixed;inset:0;z-index:600;display:flex;align-items:flex-start;
@@ -2756,6 +2798,13 @@ function spark(values,opts){
    deadline) over a model-performance trust strip. Fully populated
    without a linked team: the league-wide model drives every quadrant
    and the action panel carries a DEMO tag until a team is linked. */
+/* Toggle the dashboard Model XI card between the compact list and the pitch. */
+function mxiToggle(btn){
+  const card=btn.closest('.qd-mxi');if(!card)return;
+  const toPitch=card.getAttribute('data-mxi')!=='pitch';
+  card.setAttribute('data-mxi',toPitch?'pitch':'list');
+  btn.textContent=toPitch?'View list':'View pitch';
+}
 async function hydrateDashboard(host){
   const mid=getMid();
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -2818,7 +2867,7 @@ async function hydrateDashboard(host){
     '<div class="qd-foot">Confidence '+conf+'% · captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+formSpark+
     (mid?'':' · <a href="#" onclick="openMidModal();return false">Link team →</a>')+'</div></div>';
 
-  /* ── Q2: model XI ── */
+  /* ── Q2: model XI — list by default on phones, pitch toggle ── */
   const totw=bestXI(scoutScored(b,nf));
   let q2Body='<p class="dl-sub">The model XI appears once fixtures are set.</p>';
   if(totw){
@@ -2828,13 +2877,32 @@ async function hydrateDashboard(host){
       '<span class="pp-sub"><span class="l">'+money(s.el.now_cost)+'</span>'+
       '<span class="r">'+esc((nf[s.el.team]||{}).opp||'—')+(nf[s.el.team]?(nf[s.el.team].home?' H':' A'):'')+'</span></span></div>';
     const byT=t=>totw.xi.filter(s=>s.el.element_type===t);
-    q2Body='<div class="qd-pitch">'+pitchWrap(
+    const pitch='<div class="qd-pitch">'+pitchWrap(
       '<div class="pitch-row">'+byT(1).map(cell).join('')+'</div>'+
       '<div class="pitch-row">'+byT(2).map(cell).join('')+'</div>'+
       '<div class="pitch-row">'+byT(3).map(cell).join('')+'</div>'+
       '<div class="pitch-row">'+byT(4).map(cell).join('')+'</div>')+'</div>';
+    const POSL=['','GKP','DEF','MID','FWD'];
+    const listRows=totw.xi.slice().sort((a,c)=>a.el.element_type-c.el.element_type||c.p-a.p).map(s=>{
+      const el=s.el,f=nf[el.team];
+      return '<div class="mxi-row" onclick="openPlayer('+el.id+')">'+
+        '<span class="mxi-pos text-caption">'+POSL[el.element_type]+'</span>'+
+        '<span class="mxi-player"><span class="mxi-club">'+esc(teamShort(b,el.team))+'</span>'+esc(el.web_name)+'</span>'+
+        '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+'</span>'+
+        '<span class="mxi-cell">'+money(el.now_cost)+'</span>'+
+        '<span class="mxi-cell">'+el.selected_by_percent+'%</span>'+
+        '<span class="mxi-xp">'+s.p.toFixed(1)+'</span></div>';
+    }).join('');
+    q2Body='<div class="mxi-list"><div class="mxi-row mxi-hd">'+
+      '<span class="mxi-pos">POS</span><span class="mxi-player">PLAYER</span>'+
+      '<span class="mxi-cell">FIX</span><span class="mxi-cell">£</span>'+
+      '<span class="mxi-cell">OWN</span><span class="mxi-xp">XP</span></div>'+listRows+'</div>'+pitch;
   }
-  const q2='<div class="card qd">'+qh('Model XI',''+(totw?totw.total.toFixed(0)+' xP':'—'))+q2Body+'</div>';
+  const mxiView=(window.matchMedia&&window.matchMedia('(max-width:767px)').matches)?'list':'pitch';
+  const mxiBtn=totw?'<button class="mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
+  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'">'+
+    '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
+    '<span class="qd-meta">'+(totw?totw.total.toFixed(0)+' xP':'—')+mxiBtn+'</span></div>'+q2Body+'</div>';
 
   /* ── Q3: differentials under 10% ── */
   const diffs=b.elements.filter(e=>e.status==='a'&&parseFloat(e.selected_by_percent)<10&&(!b.liveSeason||e.minutes>0))
