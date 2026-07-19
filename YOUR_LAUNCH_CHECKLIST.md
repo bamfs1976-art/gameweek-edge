@@ -152,5 +152,13 @@ vivekfrancis1/fpldilemmas, wwvv97/fpl-report, jguilhermealexandre/fpl-analysis).
 - **Wildcard optimiser** (medium) — one-tap "best legal 15 for £100m" xP
   solver with budget/position/club constraints, building on the existing
   draft-template scaffolding.
+- **WIRE · Live Feed** (medium, ~½ day) — the news-wire panel from the v6
+  dashboard prototype: timestamped PL/FPL headlines with source tags. Needs
+  an external news source — build the **free RSS + FPL-team-news** version
+  first (BBC/Sky/Guardian/club official RSS: headline + source + outbound
+  link only, never republish article bodies; always attribute). Skip
+  X/Twitter and paid aggregators until coverage proves too thin. Full plan
+  in `WIRE_FEED_SCOPE.md` (kept out of the public repo). The rest of the v6
+  prototype's layout refinements are already shipped.
 - **Read, don't lift:** fpldilemmas' projection-system write-up is worth a
   look to sharpen the xP model — reference only.
