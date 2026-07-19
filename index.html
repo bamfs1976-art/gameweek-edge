@@ -1194,6 +1194,14 @@ body{font-size:14px;line-height:1.35}
   border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface);
   font-family:var(--font-mono);font-size:11px;color:var(--text-2);letter-spacing:.02em}
 .trust-strip b{color:var(--text)}
+.trust-strip .perf-h{color:var(--green);font-weight:700;letter-spacing:.06em}
+/* Dashboard meta line + fitness chips (v6 prototype refinements) */
+.dash-meta{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;color:var(--text-4);
+  display:flex;flex-wrap:wrap;gap:3px 16px;margin:0 0 16px}
+.dash-meta .g{color:var(--green)}
+.inj-chip{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;
+  border:1px solid var(--amber);color:var(--amber);background:rgba(245,165,36,.09);flex-shrink:0;margin-left:8px}
+.inj-chip.out{border-color:var(--red);color:var(--red);background:rgba(255,77,79,.09)}
 
 /* ── The Wire: newswire rows, not cards ── */
 .blog-list{gap:0;border:1px solid var(--border-2);border-radius:var(--r-md);
@@ -2208,7 +2216,7 @@ PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
   dashboard:{
-    desc:'Season snapshot, this gameweek\u2019s key actions and live alerts at a glance.',
+    desc:'The one question this page answers: what should I do this week?',
     layout:'dashboard'
   },
   'gw-actions':{
@@ -2851,7 +2859,16 @@ async function hydrateDashboard(host){
   const mRows=movers.map(x=>'<div class="qd-row">'+
     '<b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(x.e.web_name)+'</b>'+
     '<span class="qd-bar'+(x.pc.dir==='fall'?' fall':'')+'"><div style="width:'+x.pc.prob+'%"></div></span>'+
-    '<span class="qd-v '+(x.pc.dir==='rise'?'pos':'neg')+'" style="width:40px;text-align:right">'+x.pc.prob+'%</span></div>').join('');
+    '<span class="qd-v '+(x.pc.dir==='rise'?'pos':'neg')+'" style="width:52px;text-align:right">'+x.pc.prob+'% '+(x.pc.dir==='rise'?'↑':'↓')+'</span></div>').join('');
+  /* Fitness chip from the FPL chance-of-playing figure — real data. */
+  const injChip=e=>{
+    const c=e.chance_of_playing_next_round;
+    if(e.status==='s')return '<span class="inj-chip out">SUSP</span>';
+    if(e.status==='u'||e.status==='i'||c===0)return '<span class="inj-chip out">OUT</span>';
+    if(c!=null)return '<span class="inj-chip">'+c+'%</span>';
+    if(e.status==='d')return '<span class="inj-chip">DOUBT</span>';
+    return '<span class="inj-chip">?</span>';
+  };
   const flagged=b.elements.filter(e=>e.status&&e.status!=='a')
     .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,3);
   const anyLive=fixtures.some(f=>f.event===b.cur.id&&f.started&&!f.finished);
@@ -2860,8 +2877,8 @@ async function hydrateDashboard(host){
     (anyLive?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>':'')+
     '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players near the threshold.</div>')+
     '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
-    (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex:1">'+esc(e.web_name)+'</b>'+
-      '<span class="dl-sub" style="text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%">'+esc(e.news||STATUS_LABEL[e.status]||'flagged')+'</span></div>').join('')
+    (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex-shrink:0">'+esc(e.web_name)+'</b>'+
+      '<span class="dl-sub" style="flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.news||STATUS_LABEL[e.status]||'flagged')+'</span>'+injChip(e)+'</div>').join('')
       :'<div class="dl-sub" style="padding:4px 0">No new flags.</div>')+'</div>';
 
   /* ── Trust strip: the model graded in public ── */
@@ -2876,13 +2893,18 @@ async function hydrateDashboard(host){
     if(pred===act){hits++;if(f.event===lastGw){lastHits++;}}
     if(f.event===lastGw)lastN++;
   });
-  const trust='<div class="trust-strip"><span style="color:var(--green);font-weight:700">MODEL</span>'+
+  const trust='<div class="trust-strip"><span class="perf-h">MODEL PERFORMANCE</span>'+
     (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> · '+done.length+' matches</span>'+
       (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started — backtest below</span>')+
     '<span>backtest RPS <b>0.2126</b> held-out 25/26</span>'+
     '<a href="#" onclick="openPanel(\'methodology\');return false" style="margin-left:auto;color:var(--green)">METHODOLOGY →</a></div>';
 
-  host.innerHTML='<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  /* Data-provenance meta line (v6 prototype): honest timestamp + source. */
+  const meta='<div class="dash-meta"><span>DATA '+stamp+'</span>'+
+    '<span class="g">SRC OFFICIAL FPL API</span>'+
+    '<span>MODEL held-out RPS 0.2126</span></div>';
+
+  host.innerHTML=meta+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
   tickTicker();
 }
 
