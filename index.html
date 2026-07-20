@@ -2335,7 +2335,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   dcwatch:{
-    desc:'Your outfield players’ live defensive contributions against the 2025/26 threshold (10 for defenders, 12 for midfielders and forwards) — who has banked the +2 and who is close.',
+    desc:'Your outfield players’ live defensive contributions against the threshold (10 for defenders, 12 for midfielders and forwards) — who has banked the +2 and who is close.',
     layout:'standard'
   },
   defcon:{
@@ -2989,7 +2989,7 @@ async function hydrateMethodology(host){
       p('The fit is validated on held-out 2025/26 results: ranked probability score <b>0.2126</b> against 0.2133 for the unweighted fit — small edges, honestly reported. The full method and code live in the open PL Simulator repository.')+
       p('Since the season started, the Match Centre grades every pre-match forecast against the real result — including the misses — and the dashboard’s trust strip totals it up. When the model is wrong, you see it.'))+
     sec('Player expected points (xP)',
-      p('A player’s xP for a fixture blends the official expected-involvement rates (xG, xA per 90), minutes security (starts, availability flags), position-specific scoring including the 2025/26 defensive-contribution rules, and the team-level match forecast — a striker facing a leaky defence at home projects higher than the same striker away to the champions. Tap any xP number in the app for its workings.'))+
+      p('A player’s xP for a fixture blends the official expected-involvement rates (xG, xA per 90), minutes security (starts, availability flags), position-specific scoring including the defensive-contribution rules, and the team-level match forecast — a striker facing a leaky defence at home projects higher than the same striker away to the champions. Tap any xP number in the app for its workings.'))+
     sec('Price-change estimate',
       p('FPL moves prices when net transfers cross a hidden ownership-scaled threshold. We approximate it — roughly 30% of current owners, floor 20k — and map progress through a logistic curve, capped 5–95%. It is an <b>estimate</b> and is always labelled as one; the real algorithm is not public.'))+
     sec('Suspension & availability',
@@ -3880,15 +3880,15 @@ async function hydrateDiffs(host){
     .sort((a,c)=>parseFloat(c.form)-parseFloat(a.form))
     .slice(0,20);
   if(!list.length){host.innerHTML=stateBox('trend','No differentials yet','Once the season is underway, low-owned players in form appear here.');return;}
-  /* DefCon leaders: the 2025/26 defensive-contribution scoring category. */
+  /* DefCon leaders: the defensive-contribution scoring category. */
   const dc90=e=>{const v=parseFloat(e.defensive_contribution_per_90);
     return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;};
   const dcon=b.elements.filter(e=>e.status==='a'&&e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
     .sort((a,c)=>dc90(c)-dc90(a)).slice(0,12);
   const dconCard=dcon.length
     ? '<div class="card mb-20"><div class="card-title">Defensive-contribution leaders '+
-        '<span class="badge badge-grey">2025/26</span></div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">Tackles, blocks, interceptions and recoveries now score points. Top defenders and midfielders by DefCon per 90 — the season’s new source of cheap, reliable returns.</p>'+
+        '<span class="badge badge-grey">2026/27</span></div>'+
+        '<p class="dl-sub" style="margin-bottom:10px">Tackles, blocks, interceptions and recoveries score points. Top defenders and midfielders by DefCon per 90 — a reliable source of cheap returns.</p>'+
         dlTable(b,dcon,['DefCon/90','Total'],e=>[dc90(e).toFixed(1),e.defensive_contribution||0])+'</div>'
     : '';
   host.innerHTML=
@@ -4299,7 +4299,7 @@ function playerDetailHTML(b,fixtures,id){
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
     (e.yellow_cards?stat('Yellows',e.yellow_cards+' of '+susp.limit+' by GW'+susp.by):'')+
     '</div>'+
-    '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points (the 2025/26 category). Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
+    '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points. Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
   /* Closest style twin */
   let twinHtml='';
@@ -5024,7 +5024,7 @@ async function hydrateBonus(host){
 }
 
 /* ── DefCon Threats: high-scoring players you don't own ─── */
-/* ── Your DEFCON: live defensive contribution vs the 2025/26 threshold.
+/* ── Your DEFCON: live defensive contribution vs the threshold.
    Defenders bank +2 at 10 combined clearances-blocks-interceptions-
    tackles-recoveries; midfielders and forwards at 12. Goalkeepers are
    excluded from DEFCON. total_points from the live feed already includes
