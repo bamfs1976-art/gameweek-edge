@@ -2166,8 +2166,8 @@ function maybeOnboard(){
 function closeOnboard(){document.getElementById('onb-modal').classList.remove('show');
   try{localStorage.setItem('ge-onboarded','1');}catch(_){}}
 
-/* ── NAVIGATION MODEL — 7 areas: six free, one paid (Advanced) ──
-   Every Pro tool lives under a single, obviously-paid "Advanced" area so
+/* ── NAVIGATION MODEL — 7 areas: six free, one paid ("The Edge") ──
+   Every Pro tool lives under a single, obviously-paid "The Edge" area so
    free users see one clear upgrade, not Pro locks scattered everywhere. */
 const NAV = [
   {
@@ -2228,7 +2228,7 @@ const NAV = [
     ]
   },
   {
-    id:'intel', label:'Advanced', icon:'intel', tier:'paid',
+    id:'intel', label:'The Edge', icon:'intel', tier:'paid',
     panels:[
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'ask', label:'Ask the Scout', icon:'chat', tier:'paid'},
@@ -2477,7 +2477,7 @@ function buildNav(){
 /* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
 /* Seven areas share a phone width, so the bottom bar uses short labels —
    truncating "Intelligence" mid-word reads worse than "Intel". */
-const BN_SHORT={myteam:'Team',intel:'Pro',planner:'Plan'};
+const BN_SHORT={myteam:'Team',intel:'Edge',planner:'Plan'};
 function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   bn.innerHTML='';
