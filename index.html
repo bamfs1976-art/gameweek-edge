@@ -1823,9 +1823,9 @@ function linkBox(){
    ═══════════════════════════════════════════════════════════ */
 const PRICE={monthly:'£3.99',season:'£24.99'};
 const PRO_BENEFITS=[
-  ['pulse','Live matchday tracking','Live percentile, threats and auto-subs as the points land.'],
-  ['users','Rival intelligence','Scout rivals, effective ownership and the top template.'],
-  ['whistle','Deeper player data','Set-piece order and rotation risk on every player.']
+  ['spark','AI Scout','Ask the Scout about your squad — transfer, captaincy and chip calls, reasoned from the model.'],
+  ['users','Rival intelligence','Scout rivals, effective ownership and the top template — your edge in every mini-league.'],
+  ['question','Simulators & depth','What-If and season simulators, plus set-piece order and rotation risk on every player.']
 ];
 function getTier(){try{return localStorage.getItem('ge-tier')==='pro'?'pro':'free';}catch(_){return 'free';}}
 function isPro(){return getTier()==='pro';}
@@ -2190,8 +2190,8 @@ const NAV = [
   {
     id:'live', label:'Live', icon:'live', tier:'paid',
     panels:[
-      {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'paid'},
-      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'paid'},
+      {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'free'},
+      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free'},
       {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid'},
       {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
       {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
