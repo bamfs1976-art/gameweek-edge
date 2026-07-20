@@ -1245,6 +1245,14 @@ body{font-size:14px;line-height:1.35}
 .inj-chip{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;
   border:1px solid var(--amber);color:var(--amber);background:rgba(245,165,36,.09);flex-shrink:0;margin-left:8px}
 .inj-chip.out{border-color:var(--red);color:var(--red);background:rgba(255,77,79,.09)}
+/* Standard vs The Edge — compact comparison inside the upgrade modal */
+.pro-cmp{border:1px solid var(--border-2);border-radius:var(--r-md);overflow:hidden;margin:2px 0 14px}
+.pro-cmp-row{display:grid;grid-template-columns:1fr 40px 44px;align-items:center;gap:8px;padding:9px 12px;font-size:13px;border-bottom:1px solid var(--border)}
+.pro-cmp-row:last-child{border-bottom:0}
+.pro-cmp-head{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2)}
+.pro-cmp-row span:nth-child(2),.pro-cmp-row span:nth-child(3){text-align:center;font-weight:800}
+.pro-cmp-row .x{color:var(--text-4)}
+.pro-cmp-row .y{color:var(--green)}
 
 /* ── The Wire: newswire rows, not cards ── */
 .blog-list{gap:0;border:1px solid var(--border-2);border-radius:var(--r-md);
@@ -1837,12 +1845,12 @@ function proPreview(panel,content){
   const benefits=PRO_BENEFITS.map(b=>
     '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
   return '<div class="pro-hero">'+
-    '<span class="pro-chip">'+svg(ICON.lock,'width="12" height="12"')+' Gameweek Edge Pro</span>'+
+    '<span class="pro-chip">'+svg(ICON.lock,'width="12" height="12"')+' The Edge</span>'+
     '<h2>'+esc(panel.label)+'</h2>'+
     '<p class="pro-lead">'+esc(content.desc)+'</p>'+
     '<div class="pro-benefits">'+benefits+'</div>'+
-    '<button class="btn btn-primary" onclick="openUpgrade()">Unlock Pro — from '+PRICE.monthly+'/mo</button>'+
-    '<p class="pro-foot">One subscription unlocks every Pro tool across all your devices.</p>'+
+    '<button class="btn btn-primary" onclick="openUpgrade()">Unlock The Edge — from '+PRICE.monthly+'/mo</button>'+
+    '<p class="pro-foot">One subscription unlocks every tool in The Edge, across all your devices.</p>'+
   '</div>';
 }
 
@@ -1851,10 +1859,17 @@ function openUpgrade(){
   if(!pro)track('upgrade_modal_shown');
   const benefits=PRO_BENEFITS.map(b=>
     '<div class="pro-benefit">'+svg(ICON[b[0]])+'<div><b>'+b[1]+'</b><p>'+b[2]+'</p></div></div>').join('');
+  /* Free users see exactly what The Edge adds over the standard app. */
+  const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
+    '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
+    ['AI Scout &amp; Ask the Scout','Rival Scout — overtake your league','EO Tracker &amp; Template Meter',
+     'Season &amp; What-If simulators','Your DEFCON &amp; set-piece register']
+      .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">—</span><span class="y">✓</span></div>').join('')+
+    '</div>';
   document.getElementById('pro-body').innerHTML=
-    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' Gameweek Edge Pro</span>'+
-    '<h3 id="pro-title">'+(pro?'You’re on Pro':'Unlock the full edge')+'</h3>'+
-    '<div class="pro-benefits">'+benefits+'</div>'+
+    '<span class="pro-chip">'+svg(ICON.star,'width="12" height="12"')+' The Edge</span>'+
+    '<h3 id="pro-title">'+(pro?'You’re on The Edge':'Unlock The Edge')+'</h3>'+
+    (pro?'<div class="pro-benefits">'+benefits+'</div>':compare)+
     (pro
       ? '<div class="modal-row"><button class="btn btn-ghost" onclick="manageOrCancel()">Manage / cancel</button></div>'
       : '<div class="pro-prices">'+
@@ -2566,7 +2581,7 @@ function renderPage(panelId){
         (WIRED[panelId]?skel(5):standardLayout(panel,content))+'</div>'+
       '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
         '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
-        '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock Pro</button></div></div>';
+        '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
   } else {
     if(isPaid){
       body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
