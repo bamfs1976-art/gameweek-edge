@@ -598,7 +598,7 @@ html.offline .net-banner{transform:translateY(0)}
   overflow:hidden;max-height:0;
   transition:max-height .28s var(--ease);
 }
-.nav-sub.open{max-height:520px}
+.nav-sub.open{max-height:640px}
 .nav-sub-btn{
   display:flex;align-items:center;gap:9px;width:100%;
   padding:8px 12px 8px 43px;border-radius:var(--r-sm);
@@ -1126,7 +1126,7 @@ body{font-size:14px;line-height:1.35}
   .nav-area-btn{padding:9px 11px;gap:12px}
   .nav-area-label,.nav-chevron,.lock-badge{opacity:1}
   .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub.open{max-height:520px}
+  .sidebar:not(:hover):not(:focus-within) .nav-sub.open{max-height:640px}
   .main{margin-left:240px}
 }
 @media(max-width:900px){
@@ -2166,7 +2166,9 @@ function maybeOnboard(){
 function closeOnboard(){document.getElementById('onb-modal').classList.remove('show');
   try{localStorage.setItem('ge-onboarded','1');}catch(_){}}
 
-/* ── NAVIGATION MODEL — 7 areas, 38 panels ──────────────── */
+/* ── NAVIGATION MODEL — 7 areas: six free, one paid (Advanced) ──
+   Every Pro tool lives under a single, obviously-paid "Advanced" area so
+   free users see one clear upgrade, not Pro locks scattered everywhere. */
 const NAV = [
   {
     id:'home', label:'Home', icon:'home',
@@ -2188,24 +2190,10 @@ const NAV = [
     ]
   },
   {
-    id:'live', label:'Live', icon:'live', tier:'paid',
+    id:'live', label:'Live', icon:'live',
     panels:[
       {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'free'},
-      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free'},
-      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid'},
-      {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
-      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
-      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'}
-    ]
-  },
-  {
-    id:'intel', label:'Intelligence', icon:'intel', tier:'paid',
-    panels:[
-      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid'},
-      {id:'template', label:'Template Meter', icon:'grid', tier:'paid'},
-      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'},
-      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
-      {id:'ask', label:'Ask the Scout', icon:'chat', tier:'paid'}
+      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free'}
     ]
   },
   {
@@ -2215,9 +2203,7 @@ const NAV = [
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
       {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
-      {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
-      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid'},
-      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'}
+      {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'}
     ]
   },
   {
@@ -2227,7 +2213,6 @@ const NAV = [
       {id:'csmatrix', label:'Clean Sheet Matrix', icon:'shield', tier:'free'},
       {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free'},
       {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free'},
-      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
     ]
@@ -2239,7 +2224,24 @@ const NAV = [
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
       {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
       {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
-      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'},
+      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'}
+    ]
+  },
+  {
+    id:'intel', label:'Advanced', icon:'intel', tier:'paid',
+    panels:[
+      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
+      {id:'ask', label:'Ask the Scout', icon:'chat', tier:'paid'},
+      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'},
+      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid'},
+      {id:'template', label:'Template Meter', icon:'grid', tier:'paid'},
+      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid'},
+      {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
+      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
+      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
+      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid'},
+      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
+      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid'},
       {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
       {id:'scenariolab', label:'Scenario Lab', icon:'diamond', tier:'paid'}
     ]
@@ -2475,7 +2477,7 @@ function buildNav(){
 /* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
 /* Seven areas share a phone width, so the bottom bar uses short labels —
    truncating "Intelligence" mid-word reads worse than "Intel". */
-const BN_SHORT={myteam:'Team',intel:'Intel',planner:'Plan'};
+const BN_SHORT={myteam:'Team',intel:'Pro',planner:'Plan'};
 function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   bn.innerHTML='';
