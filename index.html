@@ -6258,9 +6258,10 @@ async function hydrateBlog(host){
   const finishedGw=b.events.slice().reverse().find(e=>e.finished);
   if(finishedGw){try{const dt=await loadDreamTeam(finishedGw.id);
     const art=dreamTeamArticle(b,dt,finishedGw.id);if(art)arts.unshift(art);}catch(_){}}
-  /* Pre-season position-changes briefing: headlines the Wire before any
-     gameweek data exists, slots below the live briefings once it does. */
-  try{const pc=positionChangesArticle();if(finishedGw)arts.push(pc);else arts.unshift(pc);}catch(_){}
+  /* Pre-season 26/27 briefing, pinned to the top of the Wire regardless of
+     season state — the position changes hold for the whole 26/27 campaign.
+     Unshifted last so it sits above the Team of the Week and live briefings. */
+  try{arts.unshift(positionChangesArticle());}catch(_){}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
   host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
