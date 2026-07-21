@@ -1212,6 +1212,14 @@ body{font-size:14px;line-height:1.35}
 /* Two-column from tablet up (iPad portrait 768px included); single column only on phones. */
 @media(max-width:767px){.quad-grid{grid-template-columns:1fr}}
 .qd{position:relative}
+/* Dashboard hero: the one-line "what to do this week" (or live status). */
+.dash-hero{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);
+  border:1px solid var(--border-2);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px}
+.dash-hero-txt{flex:1;min-width:180px;font-size:13.5px;line-height:1.4;color:var(--text-2)}
+.dash-hero-txt b{color:var(--text);font-weight:700}
+.dash-hero.live{border-color:var(--green);background:var(--green-soft)}
+.dash-hero-dot{width:9px;height:9px;border-radius:50%;background:var(--green);flex-shrink:0;animation:tkpulse 2s infinite}
+.dash-hero .btn{flex-shrink:0}
 .qd-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
 .qd-label{font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--text-2);font-weight:600;display:flex;align-items:center}
@@ -2376,7 +2384,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   eo:{
-    desc:'Effective ownership, the real measure of rank gain at the top of the game.',
+    desc:'Your squad split into shields (high-EO, protect your rank) and swords (differentials, attack the field) — plus the high-EO players you don’t own. Effective ownership, made actionable.',
     layout:'standard'
   },
   template:{
@@ -2998,7 +3006,25 @@ async function hydrateDashboard(host){
     '<span class="g">SRC OFFICIAL FPL API</span>'+
     '<span>MODEL held-out RPS 0.2126</span></div>';
 
-  host.innerHTML=meta+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  /* ── Hero: the single "what to do this week" line, or live status ──
+     B4 casual on-ramp + B1 live-rank hero + B3 reliability, up top. */
+  let hero;
+  if(anyLive&&mid){
+    hero='<div class="dash-hero live"><span class="dash-hero-dot" aria-hidden="true"></span>'+
+      '<span class="dash-hero-txt"><b>Gameweek '+b.cur.id+' is live.</b> Your points and live rank are updating now — no lag, no crashes.</span>'+
+      '<a class="btn btn-primary btn-sm" href="#" onclick="openPanel(\'liverank\');return false">Live rank &rarr;</a></div>';
+  } else if(mid&&cap){
+    const isSwap=trBody.indexOf('&rarr;')>=0||trBody.indexOf('→')>=0;
+    const swapTxt=isSwap?('transfer '+trBody.replace(/<[^>]+>/g,'').trim()):'no urgent transfer';
+    hero='<div class="dash-hero"><span class="dash-hero-txt"><b>This week:</b> captain <b>'+esc(cap.e.web_name)+'</b>, '+swapTxt+
+      (chipsLeft&&chipsLeft.length?', hold your chips':'')+'.</span>'+
+      '<a class="btn btn-ghost btn-sm" href="#" onclick="openPanel(\'gw-actions\');return false">Full plan &rarr;</a></div>';
+  } else {
+    hero='<div class="dash-hero"><span class="dash-hero-txt"><b>Link your team</b> to get this week&rsquo;s captain, transfer and chip call in a single line.</span>'+
+      '<a class="btn btn-primary btn-sm" href="#" onclick="openMidModal();return false">Link team</a></div>';
+  }
+
+  host.innerHTML=hero+meta+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
   tickTicker();
 }
 
@@ -4962,6 +4988,16 @@ async function hydrateLiveRank(host){
   updateLiveActivity({gw:b.cur.id,points,
     rankText:pctile!=null?('~top '+Math.max(1,Math.min(99,pctile))+'%'):((diff>=0?'+':'')+diff+' vs avg'),
     toPlay,playing,captain:capEl.web_name||''});
+  /* Live what-if: what a captain haul does to your rank, right now. */
+  const capMult=(picks.picks.find(p=>p.is_captain)||{}).multiplier||2;
+  const haulExtra=capEl.id?(simPts(capEl,'g')+simPts(capEl,'a'))*capMult:0;
+  const haulPts=points+haulExtra;
+  const haulPct=avg?Math.round(100*(1-0.5*(1+erf((haulPts-avg)/(18*Math.SQRT2))))):null;
+  const whatIfCard=(capEl.id&&haulExtra>0)?
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' If your captain hauls</div>'+
+      '<p class="dl-sub" style="margin:0">A goal and an assist from <b>'+esc(capEl.web_name)+'</b> (×'+capMult+') adds <b>+'+haulExtra+'</b> — lifting you to <b>'+haulPts+' pts</b>'+
+      (haulPct!=null?' and roughly <b>top '+Math.max(1,Math.min(99,haulPct))+'%</b>':'')+'. '+
+      '<a href="#" onclick="openPanel(\'whatif\');return false" style="color:var(--green-bright)">Model any player →</a></p></div>':'';
   host.innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
       '<span class="dl-sub" style="margin:0">Gameweek '+b.cur.id+'</span>'+liveStamp(playing>0)+'</div>'+
@@ -4973,6 +5009,7 @@ async function hydrateLiveRank(host){
         :kpi('Still to Play',toPlay,playing+' playing now','var(--blue)'))+
       kpi('Completed',done+'/11','of your XI · '+toPlay+' to play','var(--purple)')+
     '</div>'+
+    whatIfCard+
     liveOddsCard(b,fixtures)+
     '<div class="card"><div class="ge-state">'+svg(ICON.pulse)+
       '<b>Live through the matchday</b><p>Your points update as matches play out. The percentile is a statistical estimate (a normal approximation around the gameweek average, sd ≈ 18) — a true live rank requires the full FPL population, which no public API exposes. This tracks your score, players left, and your margin over the average.</p></div></div>';
@@ -5204,21 +5241,65 @@ async function hydrateWhatif(host){
   const rb=host.querySelector('#sim-reset');if(rb)rb.addEventListener('click',()=>{SIM={};renderPage('whatif');});
 }
 
-/* ── EO Tracker: ownership-based effective ownership ───── */
+/* ── EO Tracker: shields vs swords ─────────────────────────
+   The livefpl framing, made personal: your high-EO players are
+   shields (they protect your rank — everyone rises and falls
+   together), your low-owned picks are swords (they attack the
+   field — how you actually climb), and the high-EO players you
+   DON'T own are where you're exposed. */
 async function hydrateEO(host){
   const b=await boot();
+  const mid=getMid();
   const capId=b.cur.most_captained;
+  const eoOf=e=>{const own=parseFloat(e.selected_by_percent)||0;return Math.round(own+(e.id===capId?own:0));};
+  const plist=(arr,cls,tag)=>arr.length?arr.map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
+      (e.id===capId?' <span class="badge badge-blue">Most captained</span>':'')+'</span>'+
+      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+e.selected_by_percent+'% owned</span></span>'+
+      '<span class="badge '+cls+'">'+tag+'</span><span class="dl-col mono">~'+eoOf(e)+'%</span></div>').join('')
+    :'<div class="dl-sub" style="padding:6px 0">None right now.</div>';
+
+  /* Personalised shields vs swords — from your XI. */
+  let personal='';
+  if(mid){try{
+    const picks=await loadPicks(mid,b.cur.id);
+    const owned=new Set(picks.picks.map(p=>p.element));
+    const xi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+    const shields=xi.filter(e=>eoOf(e)>=15).sort((a,c)=>eoOf(c)-eoOf(a));
+    const swords=xi.filter(e=>parseFloat(e.selected_by_percent)<10).sort((a,c)=>parseFloat(a.selected_by_percent)-parseFloat(c.selected_by_percent));
+    const threats=b.elements.filter(e=>!owned.has(e.id)&&e.status==='a').sort((a,c)=>eoOf(c)-eoOf(a)).slice(0,5);
+    personal=
+      '<div class="grid g-4 mb-20">'+
+        kpi('Shields',shields.length,'high-EO — protect rank','var(--green)')+
+        kpi('Swords',swords.length,'differentials — attack','var(--amber)')+
+        kpi('Exposed to',threats.length,'high-EO you don’t own','var(--red)')+
+      '</div>'+
+      '<div class="card mb-20"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Shields — protect your rank</div>'+
+        '<p class="dl-sub" style="margin-bottom:8px">Players most managers own. When they haul you keep pace; when they blank, so does everyone. This is your safety.</p>'+
+        '<div class="dl">'+plist(shields,'badge-green','Shield')+'</div></div>'+
+      '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Swords — attack the field</div>'+
+        '<p class="dl-sub" style="margin-bottom:8px">Your low-owned picks. When one hauls, you gain on nearly everyone — this is how you climb.</p>'+
+        '<div class="dl">'+plist(swords,'badge-amber','Sword')+'</div></div>'+
+      (threats.length?'<div class="card mb-20"><div class="card-title">Where you’re exposed</div>'+
+        '<p class="dl-sub" style="margin-bottom:8px">High-EO players you don’t own — if they haul, you slip. Your biggest rank risks this week.</p>'+
+        '<div class="dl">'+plist(threats,'badge-red','Threat')+'</div></div>':'');
+  }catch(_){personal='';}}
+  if(!personal){
+    personal='<div class="card mb-20"><div class="ge-state">'+svg(ICON.target)+
+      '<b>Link your team for shields vs swords</b><p>Add your FPL Manager ID to split your own XI into rank-protecting shields and rank-attacking swords, and see where you’re exposed.</p>'+
+      '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
+  }
+
+  /* League-wide reference: the most-owned players and their EO. */
   const list=b.elements.slice().sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,20);
   const rows=list.map((e,i)=>{
-    const own=parseFloat(e.selected_by_percent)||0;
     const isCap=e.id===capId;
-    const eo=Math.round(own+(isCap?own:0)); // captaincy roughly doubles exposure for the most-captained
     return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
       '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+(isCap?' <span class="badge badge-blue">Most captained</span>':'')+'</span>'+
       '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+'</span></span>'+
-      '<span class="dl-col mono">'+e.selected_by_percent+'%</span><span class="dl-col mono">~'+eo+'%</span></div>';
+      '<span class="dl-col mono">'+e.selected_by_percent+'%</span><span class="dl-col mono">~'+eoOf(e)+'%</span></div>';
   }).join('');
-  host.innerHTML='<div class="card"><div class="card-title">Effective ownership — most-owned players</div>'+
+  host.innerHTML=personal+
+    '<div class="card"><div class="card-title">League-wide EO — most-owned players</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
     '<span class="dl-col">Owned</span><span class="dl-col">EO</span></div>'+rows+'</div>'+
     '<div class="dl-sub" style="margin-top:10px">EO approximates exposure from overall ownership plus captaincy on the most-captained pick. Precise top-10k EO needs data beyond the public API.</div></div>';
