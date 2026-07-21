@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
+import ffmpegPath from 'ffmpeg-static';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FPS = 30;
@@ -39,13 +40,15 @@ await browser.close();
 console.error(`Captured ${total} frames.`);
 
 const out = join(outDir, `recap-gw${recap.gw}.mp4`);
-const ff = spawnSync('ffmpeg', [
+const ffBin = ffmpegPath || 'ffmpeg';
+const ff = spawnSync(ffBin, [
   '-y', '-framerate', String(FPS),
   '-i', join(framesDir, 'frame-%04d.png'),
   '-c:v', 'libx264', '-preset', 'medium', '-crf', '19',
   '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
   '-r', String(FPS), out
 ], { stdio: 'inherit' });
-if (ff.status !== 0) { console.error('ffmpeg failed'); process.exit(1); }
+if (ff.error) { console.error('ffmpeg spawn error:', ff.error.message); process.exit(1); }
+if (ff.status !== 0) { console.error('ffmpeg exited with status', ff.status); process.exit(1); }
 rmSync(framesDir, { recursive: true, force: true });
 console.error(`Wrote ${out}`);
