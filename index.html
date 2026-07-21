@@ -2296,7 +2296,7 @@ const PANEL_CONTENT = {
     layout:'dashboard'
   },
   'gw-actions':{
-    desc:'Your four weekly decisions — captain, transfers, team, chips — as a guided plan.',
+    desc:'The gameweek at a glance — top scorers, the transfer market, and our recommended picks by position and by budget, from the latest live data.',
     layout:'actions'
   },
   blog:{
@@ -3365,6 +3365,44 @@ async function hydrateGwActions(host){
         '</div></div>';
     }catch(_){}
   }
+  /* ── Gameweek recommendations, from the latest live data ──
+     Top scorers and the transfer market read the finished gameweek;
+     the recommendation and value cards project the next one. */
+  const nf=buildNextFix(b,fixtures);
+  const nextEv=b.events.find(e=>!e.finished),nextName=nextEv?esc(nextEv.name):'the next gameweek';
+  const gwn='GW'+ev.id;
+  const avail=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75)&&(e.now_cost||0)>0;
+  const prow=(e,right,cls)=>'<div class="dl-row dl-click" onclick="openPlayer('+e.id+')">'+avatar(b,e,28)+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-sub">'+crest(b,e.team,12)+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+'</span></span>'+
+    '<span class="dl-col mono'+(cls?' '+cls:'')+'">'+right+'</span></div>';
+  const sublist=(lbl,rowsHtml,first)=>rowsHtml?'<div class="qd-sub-label"'+(first?'':' style="margin-top:10px"')+'>'+lbl+'</div><div class="dl">'+rowsHtml+'</div>':'';
+
+  const topScorers=b.elements.filter(e=>(e.event_points||0)>0).sort((a,c)=>(c.event_points||0)-(a.event_points||0)).slice(0,5);
+  const tinTop=b.elements.filter(e=>(e.transfers_in_event||0)>0).sort((a,c)=>(c.transfers_in_event||0)-(a.transfers_in_event||0)).slice(0,5);
+  const toutTop=b.elements.filter(e=>(e.transfers_out_event||0)>0).sort((a,c)=>(c.transfers_out_event||0)-(a.transfers_out_event||0)).slice(0,5);
+  const scored=b.elements.filter(avail).map(e=>({e,p:xP(b,e,nf[e.team])})).filter(x=>x.p>0);
+  const byPos=t=>scored.filter(x=>x.e.element_type===t).sort((a,c)=>c.p-a.p).slice(0,2);
+  const band=(lo,hi)=>scored.filter(x=>x.e.now_cost>=lo&&x.e.now_cost<=hi).sort((a,c)=>c.p-a.p).slice(0,3);
+
+  const topCard='<div class="card mb-20"><div class="card-title">Top scorers — '+gwn+'</div>'+
+    (topScorers.length
+      ?'<div class="dl-sub" style="margin-bottom:8px">The biggest returns of the gameweek.</div><div class="dl">'+topScorers.map(e=>prow(e,(e.event_points||0)+' pts','pos')).join('')+'</div>'
+      :'<div class="dl-sub" style="padding:2px 0">Points appear here once the gameweek is under way.</div>')+'</div>';
+  const trCard=(tinTop.length||toutTop.length)?'<div class="card mb-20"><div class="card-title">Transfer market — '+gwn+'</div>'+
+    sublist('MOST TRANSFERRED IN',tinTop.map(e=>prow(e,'+'+fmtK(e.transfers_in_event),'pos')).join(''),true)+
+    sublist('MOST TRANSFERRED OUT',toutTop.map(e=>prow(e,'−'+fmtK(e.transfers_out_event),'neg')).join(''))+'</div>':'';
+  const posRows=[['GKP',1],['DEF',2],['MID',3],['FWD',4]].map((p,i)=>sublist(p[0],byPos(p[1]).map(x=>prow(x.e,x.p.toFixed(1)+' xP','pos')).join(''),i===0)).join('');
+  const posCard=posRows?'<div class="card mb-20"><div class="card-title">Recommended by position</div>'+
+    '<div class="dl-sub" style="margin-bottom:8px">Our model’s top picks for '+nextName+', by projected points.</div>'+posRows+'</div>':'';
+  const valRows=[['Budget · under £5.5m',band(0,54)],['Mid · £5.5–8.4m',band(55,84)],['Premium · £8.5m+',band(85,999)]]
+    .map((pr,i)=>sublist(pr[0],pr[1].map(x=>prow(x.e,x.p.toFixed(1)+' xP','pos')).join(''),i===0)).join('');
+  const valCard=valRows?'<div class="card mb-20"><div class="card-title">Value picks — by budget</div>'+
+    '<div class="dl-sub" style="margin-bottom:8px">The best-projected option at each price point for '+nextName+'.</div>'+valRows+'</div>':'';
+  const crowdCard='<div class="card"><div class="card-title">Crowd favourites</div><div class="dl">'+
+    '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
+    crowdRow(b,'Most captained',cap)+crowdRow(b,'Most selected',sel)+'</div></div>';
+
   host.innerHTML=journey+
     '<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
       ' <span class="badge '+(ev.finished?'badge-grey':'badge-green')+'">'+(ev.finished?'Finished':ev.is_current?'Live':'Upcoming')+'</span></div>'+
@@ -3374,16 +3412,7 @@ async function hydrateGwActions(host){
         stat('Highest Score',fmtNum(ev.highest_score))+
       '</div>'+
     '</div>'+
-    mine+
-    '<div class="card"><div class="card-title">Crowd moves this gameweek</div>'+
-      '<div class="dl">'+
-        '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
-        crowdRow(b,'Most captained',cap)+
-        crowdRow(b,'Most transferred in',tin)+
-        crowdRow(b,'Most selected',sel)+
-        crowdRow(b,'Top scorer',topEl,topEl&&ev.top_element_info?ev.top_element_info.points+' pts':'')+
-      '</div>'+
-    '</div>';
+    mine+topCard+trCard+posCard+valCard+crowdCard;
 }
 /* A crowd-signal row with the player's photo, crest and name. */
 function crowdRow(b,label,el,extra){
