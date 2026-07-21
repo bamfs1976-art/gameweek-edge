@@ -252,7 +252,15 @@ html.offline .net-banner{transform:translateY(0)}
 .dl-rank{width:20px;text-align:right;color:var(--text-3);font-weight:700;font-size:.74rem;flex-shrink:0}
 .dl-grow{flex:1;min-width:0;display:flex;flex-direction:column}
 .dl-nm{font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dl-sub{font-size:.7rem;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Base .dl-sub wraps — it's used for descriptive captions as well as row meta.
+   Inside a list row it must stay a compact single line (ellipsis), so the
+   nowrap is scoped to row contexts only. */
+.dl-sub{font-size:.7rem;color:var(--text-3);line-height:1.45}
+.dl-row .dl-sub,.dl-grow .dl-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+/* Squad-diagnosis rows carry full sentences, so they wrap and left-align
+   instead of the centred, single-line row-meta treatment. */
+.dl-row.diag-row{align-items:flex-start}
+.diag-txt{flex:1;min-width:0;font-size:.72rem;line-height:1.5}
 .dl-col{width:50px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
   font-weight:700;color:var(--text-2)}
 .dl-col.mono{font-family:var(--font-mono);font-weight:600}
@@ -7117,8 +7125,8 @@ function draftTemplate(pool,xp6,budget){
 function draftDiagnosis(S,players,v){
   if(!players.length)return '<div class="dl-sub">Add players from the pool — the verdict updates as you build.</div>';
   const b=S.b;
-  const line=(tone,txt)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-sub" style="color:'+
-    (tone==='good'?'var(--green-bright)':tone==='warn'?'var(--amber)':'var(--text-2)')+'">'+txt+'</span></span></div>';
+  const line=(tone,txt)=>'<div class="dl-row diag-row"><span class="diag-txt" style="color:'+
+    (tone==='good'?'var(--green-bright)':tone==='warn'?'var(--amber)':'var(--text-2)')+'">'+txt+'</span></div>';
   let out='';
   out+=v.overBudget
     ?line('warn','Over budget by '+money(-v.bank)+' — an over-budget draft can’t be saved.')
@@ -7159,7 +7167,7 @@ function renderDraftPool(){
   const rows=shown.map(e=>{
     const can=draftCanAdd(players,e);
     return '<div class="dl-row"><span data-draft-open="'+e.id+'" style="cursor:pointer">'+avatar(b,e,30)+'</span>'+
-      '<span class="dl-grow" style="display:block;cursor:pointer" data-draft-open="'+e.id+'"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-grow" style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;cursor:pointer" data-draft-open="'+e.id+'"><span class="dl-nm" style="max-width:100%">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+crest(b,e.team,13)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+minsBadge(e,S.gp(e.team))+'</span></span>'+
       '<span class="dl-col mono">'+(S.xp6[e.id]||0).toFixed(1)+'</span>'+
       '<span class="dl-col"><button class="btn btn-primary btn-sm" style="padding:3px 10px" data-draft-add="'+e.id+'"'+(can?'':' disabled')+'>Add</button></span></div>';
