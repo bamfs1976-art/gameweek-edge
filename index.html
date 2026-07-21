@@ -6249,11 +6249,40 @@ function priceChangePredictorArticle(){
     accent:'a-amber',mins:2,body};
 }
 
+/* Evergreen pre-season briefing: the new squad-view overlays on the official
+   Pick Team / Points / Transfers pages for 2026/27 — FDR, ownership, next
+   opponent, form and price signals shown in-line, on both Pitch and List. */
+function squadViewsArticle(){
+  let body='<p>The official game is adding switchable <b>squad views</b> to the <b>Pick Team</b>, <b>Points</b> and <b>Transfers</b> pages for 2026/27 — extra decision-making context laid over your own players without leaving the core screens. Pick a view from the dropdown at the top right; it works on both <b>Pitch</b> and <b>List</b>.</p>';
+
+  body+='<h4>The five views</h4>';
+  body+='<ul>'+
+    '<li><b>FDR</b> — each player’s upcoming fixture difficulty, 1 (easiest) to 5 (hardest).</li>'+
+    '<li><b>Ownership</b> — the % of teams that own a player, with an up/down trend once the season is under way.</li>'+
+    '<li><b>Next opponent</b> — who each player faces in their next match.</li>'+
+    '<li><b>Form</b> — average points over the last 30 days <span class="muted">(from once the season starts)</span>.</li>'+
+    '<li><b>Price Change Predictor</b> — whether a player is close to a rise or fall <span class="muted">(from once the season starts)</span>.</li>'+
+    '</ul>';
+
+  body+='<h4>How to get value from it</h4>';
+  body+='<ul>'+
+    '<li><b>FDR view for planning:</b> scan your squad before a transfer or captaincy call — the red runs are your sell triggers, the green runs your holds.</li>'+
+    '<li><b>Ownership view for rank posture:</b> high-owned players protect your rank, low-owned ones can win it. Know which is which before you deviate.</li>'+
+    '<li><b>Form + price together:</b> a cold player on a falling price is a sell you can bring forward; hot form on a rising price is a buy not to dither on.</li>'+
+    '</ul>';
+
+  body+='<p class="muted">Gameweek Edge has surfaced exactly this context — FDR, ownership, next opponent, form and price signals — right on your Squad, Transfer Planner and Fixture pages all along. The official game adding it in-line is the direction of travel, and it’s free here whichever club’s data you’re looking at.</p>';
+
+  return {kick:'Pre-season',title:'FPL’s New Squad Views: FDR, Ownership & Price at a Glance',
+    dek:'Switchable overlays land on the Pick Team, Points and Transfers pages — what each view shows, and how to actually use them.',
+    accent:'a-cyan',mins:2,body};
+}
+
 /* Pinned pre-season briefings for 26/27, newest first. Returned as a list so
    more can be added over the summer; hydrateBlog unshifts them to the top of
    the Wire regardless of season state. */
 function preseasonArticles(){
-  return [priceChangePredictorArticle(), positionChangesArticle()];
+  return [squadViewsArticle(), priceChangePredictorArticle(), positionChangesArticle()];
 }
 
 function articleCard(a,i,gw){
