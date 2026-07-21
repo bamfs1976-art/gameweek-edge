@@ -2400,7 +2400,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   price:{
-    desc:'Estimated rise/fall likelihood tonight for every player, from net transfers against an ownership-scaled threshold — plus transfer momentum and value tables.',
+    desc:'Estimated rise/fall likelihood at the next 00:00 UK price update for every player, from net transfers against an ownership-scaled threshold — plus transfer momentum and value tables.',
     layout:'standard'
   },
   injuries:{
@@ -3989,11 +3989,11 @@ async function hydratePrice(host){
       (worst.length?valueList(b,'Worst value — premiums underdelivering',worst,'var(--red)'):'')
     : '');
   host.innerHTML=
-    '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move tonight, from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL’s exact algorithm is not public.</div>'+
+    '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next <b>00:00 UK time</b> update, from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL’s exact algorithm is not public.</div>'+
     probTbl('Likely risers tonight — estimate',riseP,true)+
     probTbl('Likely fallers tonight — estimate',fallP,false)+
     '<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
-      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys → higher rise chance), and low-owned players surge fastest because their threshold is small.</p></div>'+
+      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys → higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day at <b>00:00 UK time</b>.</p></div>'+
     tbl('Momentum — most bought (secondary signal)',risers,true)+
     tbl('Momentum — most sold (secondary signal)',fallers,false)+
     valueCards+
