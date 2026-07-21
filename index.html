@@ -2190,7 +2190,7 @@ const NAV = [
     panels:[
       {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'},
-      {id:'blog', label:'The Wire', icon:'news', tier:'free'},
+      {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
       {id:'methodology', label:'Methodology', icon:'spark', tier:'free'}
     ]
   },
@@ -6330,7 +6330,7 @@ async function hydrateBlog(host){
      the Week and the live briefings. */
   try{arts.unshift(...preseasonArticles());}catch(_){}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
-  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
+  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire — latest news</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
     '<div class="blog-list">'+arts.map((a,i)=>articleCard(a,i,b.cur.id)).join('')+'</div>';
   host.querySelectorAll('.post-hd').forEach(btn=>btn.addEventListener('click',()=>{
