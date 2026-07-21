@@ -76,11 +76,16 @@ const pieces = [
   extractFn(html, 'draftCounts'),
   extractFn(html, 'draftValidate'),
   extractFn(html, 'draftCanAdd'),
-  extractFn(aiSrc, 'fitJSON')
+  extractFn(aiSrc, 'fitJSON'),
+  /* bestTransfer drives the dashboard/debrief suggestion; stub its only
+     dependency (horizonXP) so we test the logic, not the xP maths. */
+  'function horizonXP(_b, el, _hz){ return el._hx || 0; }',
+  extractLine(html, /const MIN_TR_GAIN=[\d.]+;/),
+  extractFn(html, 'bestTransfer')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -280,6 +285,39 @@ ok(parsed !== null, 'output parses as JSON (never cut mid-token)');
 ok(Array.isArray(parsed.players), 'structure preserved (arrays trimmed, not mangled)');
 const small = { a: 1 };
 ok(core.fitJSON(small, 9000) === JSON.stringify(small), 'small contexts pass through untouched');
+
+/* ── bestTransfer: coherent, captain-safe suggestions ───── */
+section('bestTransfer never sells a protected pick, holds below threshold');
+let bt = 1;
+const mkBT = (type, team, cost, hx, extra) => Object.assign(
+  { id: bt++, element_type: type, team, now_cost: cost, _hx: hx,
+    status: 'a', chance_of_playing_next_round: null, web_name: 'P' + bt,
+    selected_by_percent: '10' }, extra || {});
+/* XI: a strong captain and a genuinely weak starter, same position. */
+const capP = mkBT(3, 1, 90, 3.0);      /* id 2 — the captain */
+const weakP = mkBT(3, 2, 55, 0.0);     /* id 3 — the weak link */
+const xiBT = [capP, weakP];
+const squadBT = [capP, weakP];
+/* Candidate pool: a clear upgrade and a marginal one, both affordable MIDs. */
+const upgrade = mkBT(3, 5, 60, 5.0);   /* +5 over weakP */
+const marginal = mkBT(3, 6, 60, 0.4);  /* +0.4 over weakP — below threshold */
+const bPool = { elements: [capP, weakP, upgrade, marginal] };
+const protect = new Set([capP.id]);
+const pick = core.bestTransfer(bPool, squadBT, xiBT, 40, {}, protect);
+ok(pick !== null, 'a clear upgrade is surfaced');
+ok(pick && pick.out.id === weakP.id, 'sells the weak link, not the captain');
+ok(pick && pick.cand.id === upgrade.id, 'brings in the biggest horizon upgrade');
+ok(pick && pick.gain >= core.MIN_TR_GAIN, 'reported gain clears the threshold');
+/* With only a marginal option, the honest call is HOLD (null). */
+const pickMarginal = core.bestTransfer({ elements: [capP, weakP, marginal] }, squadBT, xiBT, 40, {}, protect);
+ok(pickMarginal === null, 'no move below the gain threshold → hold (no +0.0 suggestion)');
+/* The captain is the weakest by horizon but protected → must not be sold. */
+const capWeak = mkBT(3, 1, 90, 0.0);   /* captain now the lowest hx */
+const otherStarter = mkBT(3, 2, 55, 4.0);
+const pickProtect = core.bestTransfer(
+  { elements: [capWeak, otherStarter, upgrade] }, [capWeak, otherStarter],
+  [capWeak, otherStarter], 40, {}, new Set([capWeak.id]));
+ok(!pickProtect || pickProtect.out.id !== capWeak.id, 'a protected captain is never the sell, even when weakest');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

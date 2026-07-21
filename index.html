@@ -2838,6 +2838,30 @@ function mxiToggle(btn){
   card.setAttribute('data-mxi',toPitch?'pitch':'list');
   btn.textContent=toPitch?'View list':'View pitch';
 }
+/* ── Best coherent single transfer ─────────────────────────
+   The biggest horizon-xP upgrade available for an XI player we are
+   NOT protecting — the captain and vice must never be suggested as a
+   sell in the same breath we recommend captaining them. Returns
+   {out,cand,gain} only when the gain clears a real threshold; below
+   it the honest call is to hold, so we return null (no +0.0 "moves"). */
+const MIN_TR_GAIN=1.5; // horizon xP over the next 5 GWs
+function bestTransfer(b,squadEls,xiEls,bank,hz,protectIds){
+  const availOk=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
+  const owned=new Set(squadEls.map(e=>e.id));
+  const clubCount={};squadEls.forEach(e=>{clubCount[e.team]=(clubCount[e.team]||0)+1;});
+  const protect=protectIds||new Set();
+  let best=null;
+  xiEls.filter(e=>e&&!protect.has(e.id)).forEach(out=>{
+    const cand=b.elements.filter(e=>e.element_type===out.element_type&&!owned.has(e.id)&&availOk(e)&&
+        e.now_cost<=bank+(out.now_cost||0)&&((clubCount[e.team]||0)-(e.team===out.team?1:0))<3)
+      .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
+    if(!cand)return;
+    const gain=horizonXP(b,cand,hz)-horizonXP(b,out,hz);
+    if(!best||gain>best.gain)best={out,cand,gain};
+  });
+  return (best&&best.gain>=MIN_TR_GAIN)?best:null;
+}
+
 async function hydrateDashboard(host){
   const mid=getMid();
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -2868,20 +2892,14 @@ async function hydrateDashboard(host){
     (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>';
   let trBody='',trVal=null,trCls='';
   if(squad){
-    const availOk=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
-    const owned=new Set(squad.map(e=>e.id));
-    const xiEls=capPool.map(x=>x.e);
-    const weakest=xiEls.slice().sort((a,c)=>horizonXP(b,a,hz)-horizonXP(b,c,hz))[0];
-    if(weakest){
-      const clubCount={};squad.forEach(e=>{clubCount[e.team]=(clubCount[e.team]||0)+1;});
-      const cand=b.elements.filter(e=>e.element_type===weakest.element_type&&!owned.has(e.id)&&availOk(e)&&
-          e.now_cost<=bank+(weakest.now_cost||0)&&((clubCount[e.team]||0)-(e.team===weakest.team?1:0))<3)
-        .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
-      if(cand){
-        const gain=horizonXP(b,cand,hz)-horizonXP(b,weakest,hz);
-        trBody='<b>'+esc(weakest.web_name)+' → '+esc(cand.web_name)+'</b>';
-        trVal=(gain>=0?'+':'')+gain.toFixed(1);trCls=gain>=0?'pos':'neg';
-      }
+    /* Never suggest selling the player we're captaining or vice-captaining. */
+    const protect=new Set([cap&&cap.e.id,vice&&vice.e.id].filter(v=>v!=null));
+    const best=bestTransfer(b,squad,capPool.map(x=>x.e),bank,hz,protect);
+    if(best){
+      trBody='<b>'+esc(best.out.web_name)+' → '+esc(best.cand.web_name)+'</b>';
+      trVal='+'+best.gain.toFixed(1);trCls='pos';
+    }else{
+      trBody='<b>HOLD</b> <span class="dl-sub">no move beats your XI</span>';
     }
   }
   if(!trBody){
@@ -3590,27 +3608,25 @@ async function hydrateGwreport(host){
     const ownedIds=new Set(sq.map(e=>e.id));
     const availOk=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
     const xiEls=xi.map(p=>b.els[p.element]).filter(Boolean);
-    /* Weakest projected starter → best affordable like-for-like upgrade. */
-    const weakest=xiEls.slice().sort((a,c)=>horizonXP(b,a,hz)-horizonXP(b,c,hz))[0];
-    let move='';
-    if(weakest){
-      const budget=(eh.bank||0)+(weakest.now_cost||0);
-      const clubCount={};sq.forEach(e=>{clubCount[e.team]=(clubCount[e.team]||0)+1;});
-      const cand=b.elements.filter(e=>e.element_type===weakest.element_type&&!ownedIds.has(e.id)&&availOk(e)&&e.now_cost<=budget&&((clubCount[e.team]||0)-(e.team===weakest.team?1:0))<3)
-        .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
-      if(cand){
-        const gain=horizonXP(b,cand,hz)-horizonXP(b,weakest,hz);
-        move='<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5">Move on <b>'+esc(weakest.web_name)+'</b> ('+money(weakest.now_cost)+', '+horizonXP(b,weakest,hz).toFixed(1)+' xP next 5) for <b>'+esc(cand.web_name)+'</b> ('+money(cand.now_cost)+', '+horizonXP(b,cand,hz).toFixed(1)+' xP) — projected <b style="color:var(--green)">+'+gain.toFixed(1)+'</b> over five gameweeks.</span></div>';
-      }
-    }
-    /* Armband: best XI option plus a differential. */
+    /* Armband first — best XI option plus a differential — so the transfer
+       suggestion can protect it (we never advise selling the player we're
+       recommending as captain). */
     const capPool=xiEls.filter(availOk).sort((a,c)=>xP(b,c,nf[c.team])-xP(b,a,nf[a.team]));
+    const c1=capPool[0];
+    const diff=capPool.find(e=>parseFloat(e.selected_by_percent)<15&&e!==c1);
     let capRow='';
-    if(capPool.length){
-      const c1=capPool[0];
-      const diff=capPool.find(e=>parseFloat(e.selected_by_percent)<15&&e!==c1);
+    if(c1){
       capRow='<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5">Armband: <b>'+esc(c1.web_name)+'</b> ('+xP(b,c1,nf[c1.team]).toFixed(1)+' xP, next '+nextFixLabel(nf[c1.team])+')'+
         (diff?' · differential: <b>'+esc(diff.web_name)+'</b> ('+xP(b,diff,nf[diff.team]).toFixed(1)+' xP, '+diff.selected_by_percent+'% owned)':'')+'.</span></div>';
+    }
+    /* Best coherent transfer over the horizon, protecting the armband picks;
+       an honest HOLD when nothing meaningfully beats the current XI. */
+    const best=bestTransfer(b,sq,xiEls,(eh.bank||0),hz,new Set([c1&&c1.id,diff&&diff.id].filter(v=>v!=null)));
+    let move='';
+    if(best){
+      move='<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5">Move on <b>'+esc(best.out.web_name)+'</b> ('+money(best.out.now_cost)+', '+horizonXP(b,best.out,hz).toFixed(1)+' xP next 5) for <b>'+esc(best.cand.web_name)+'</b> ('+money(best.cand.now_cost)+', '+horizonXP(b,best.cand,hz).toFixed(1)+' xP) — projected <b style="color:var(--green)">+'+best.gain.toFixed(1)+'</b> over five gameweeks.</span></div>';
+    }else{
+      move='<div class="dl-row"><span class="dl-grow" style="display:block;line-height:1.5"><b>Hold your transfer.</b> Nothing available meaningfully beats your current XI over the next five gameweeks — bank it.</span></div>';
     }
     if(move||capRow)nextSec='<div class="card mb-20" style="border-left:3px solid var(--green)"><div class="card-title">'+esc(nextEv.name)+' — suggested moves</div>'+move+capRow+
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
