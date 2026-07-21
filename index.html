@@ -3399,9 +3399,14 @@ async function hydrateGwActions(host){
     .map((pr,i)=>sublist(pr[0],pr[1].map(x=>prow(x.e,x.p.toFixed(1)+' xP','pos')).join(''),i===0)).join('');
   const valCard=valRows?'<div class="card mb-20"><div class="card-title">Value picks — by budget</div>'+
     '<div class="dl-sub" style="margin-bottom:8px">The best-projected option at each price point for '+nextName+'.</div>'+valRows+'</div>':'';
+  const ownByPos=t=>b.elements.filter(e=>e.element_type===t&&(parseFloat(e.selected_by_percent)||0)>0)
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,2);
+  const selRows=[['GKP',1],['DEF',2],['MID',3],['FWD',4]].map((p,i)=>sublist(p[0],ownByPos(p[1]).map(e=>prow(e,e.selected_by_percent+'%')).join(''),i===0)).join('');
+  const selCard=selRows?'<div class="card mb-20"><div class="card-title">Most selected by position</div>'+
+    '<div class="dl-sub" style="margin-bottom:8px">The template — who most managers own in each position.</div>'+selRows+'</div>':'';
   const crowdCard='<div class="card"><div class="card-title">Crowd favourites</div><div class="dl">'+
     '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
-    crowdRow(b,'Most captained',cap)+crowdRow(b,'Most selected',sel)+'</div></div>';
+    crowdRow(b,'Most captained',cap)+'</div></div>';
 
   host.innerHTML=journey+
     '<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
@@ -3412,7 +3417,7 @@ async function hydrateGwActions(host){
         stat('Highest Score',fmtNum(ev.highest_score))+
       '</div>'+
     '</div>'+
-    mine+topCard+trCard+posCard+valCard+crowdCard;
+    mine+topCard+trCard+posCard+selCard+valCard+crowdCard;
 }
 /* A crowd-signal row with the player's photo, crest and name. */
 function crowdRow(b,label,el,extra){
