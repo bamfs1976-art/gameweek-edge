@@ -30,9 +30,23 @@ one.
 scripts/recap/
   fetch-data.mjs                 FPL → recap.json, GW detection
   template.html                  self-contained animated 1080×1080 recap
-  render.mjs                     Playwright frames → ffmpeg → mp4
+  render.mjs                     Playwright frames → ffmpeg → mp4 (with audio)
+  music.mjs                      synthesised royalty-free ambient bed
   preview.mjs                    local contact-sheet of key frames (no ffmpeg)
 ```
+
+### Music
+
+`render.mjs` muxes an audio bed. By default `music.mjs` synthesises an
+original, royalty-free ambient pad (fully owned, safe to post). To use your
+own licensed track instead, drop `music.mp3` (or `.m4a` / `.wav`) into
+`scripts/recap/` — the render prefers a supplied file over the synth.
+
+### Re-rendering
+
+`workflow_dispatch` takes a `force` input: run with **force = true** to
+re-render a gameweek that already has a release (it replaces the release and
+tag). Handy after changing the template or the music.
 
 None of this touches `index.html` or the app bundle; CI stays green.
 
