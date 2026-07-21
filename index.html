@@ -1046,6 +1046,13 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
 .seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .seg-b.on{background:var(--grad-brand);color:#fff}
+/* Full-width, horizontally-scrollable segmented control + its panes
+   (This Gameweek tabs: Scorers · Market · Picks · Value · Template). */
+.gw-seg{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;margin-bottom:14px;scrollbar-width:none}
+.gw-seg::-webkit-scrollbar{display:none}
+.gw-seg .seg-b{flex:1 0 auto;white-space:nowrap}
+.gw-pane{display:none}
+.gw-pane.on{display:block}
 .crest{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;
   overflow:hidden;vertical-align:middle;margin-right:7px;flex-shrink:0}
 .crest img{width:100%;height:100%;object-fit:contain}
@@ -3408,16 +3415,30 @@ async function hydrateGwActions(host){
     '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
     crowdRow(b,'Most captained',cap)+'</div></div>';
 
-  host.innerHTML=journey+
-    '<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
+  const gwInfo='<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
       ' <span class="badge '+(ev.finished?'badge-grey':'badge-green')+'">'+(ev.finished?'Finished':ev.is_current?'Live':'Upcoming')+'</span></div>'+
       '<div class="dl-sub" style="margin-bottom:12px">Deadline '+fmtDeadline(ev.deadline_time)+'</div>'+
       '<div class="statgrid">'+
         stat('Average Score',fmtNum(ev.average_entry_score))+
         stat('Highest Score',fmtNum(ev.highest_score))+
-      '</div>'+
-    '</div>'+
-    mine+topCard+trCard+posCard+selCard+valCard+crowdCard;
+      '</div></div>';
+
+  /* Tabbed hub — one card group per tab, so it's a swipe not a long scroll.
+     Empty groups drop out so their tab never appears. */
+  const panes=[['scorers','Scorers',topCard],['market','Market',trCard],
+    ['picks','Picks',posCard],['value','Value',valCard],
+    ['template','Template',selCard+crowdCard]].filter(p=>p[2]);
+  const segCtl='<div class="seg gw-seg" id="gw-seg" role="tablist">'+
+    panes.map((p,i)=>'<button class="seg-b'+(i===0?' on':'')+'" data-pane="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>';
+  const paneHtml=panes.map((p,i)=>'<div class="gw-pane'+(i===0?' on':'')+'" data-pane="'+p[0]+'">'+p[2]+'</div>').join('');
+
+  host.innerHTML=journey+gwInfo+mine+segCtl+paneHtml;
+  const segEl=host.querySelector('#gw-seg');
+  if(segEl)segEl.addEventListener('click',ev2=>{
+    const btn=ev2.target.closest('.seg-b');if(!btn)return;
+    segEl.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+    host.querySelectorAll('.gw-pane').forEach(p=>p.classList.toggle('on',p.dataset.pane===btn.dataset.pane));
+  });
 }
 /* A crowd-signal row with the player's photo, crest and name. */
 function crowdRow(b,label,el,extra){
