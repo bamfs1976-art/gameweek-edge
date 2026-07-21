@@ -7,7 +7,12 @@ name: Gameweek Recap
 on:
   schedule:
     - cron: '0 9 * * 2' # Tuesdays 09:00 UTC — gameweeks are settled by then
-  workflow_dispatch: {} # manual "Run workflow" button
+  workflow_dispatch: # manual "Run workflow" button
+    inputs:
+      force:
+        description: 'Re-render even if a release already exists'
+        type: boolean
+        default: false
 
 permissions:
   contents: write # publish releases with the video attached
@@ -35,11 +40,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           GW="${{ steps.data.outputs.gw }}"
+          FORCE="${{ github.event.inputs.force }}"
           if [ -z "$GW" ] || [ "$GW" = "none" ]; then
             echo "No finished gameweek to render."
             echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
-          if gh release view "recap-gw$GW" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          if [ "$FORCE" != "true" ] && gh release view "recap-gw$GW" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "recap-gw$GW already published — nothing to do."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
@@ -62,6 +68,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           GW="${{ steps.data.outputs.gw }}"
+          # On a forced re-render, clear any existing release + tag first.
+          gh release delete "recap-gw$GW" -R "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
           gh release create "recap-gw$GW" \
             "scripts/recap/out/recap-gw$GW.mp4" \
             -R "$GITHUB_REPOSITORY" \

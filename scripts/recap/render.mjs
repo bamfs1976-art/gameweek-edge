@@ -7,12 +7,13 @@
  * Run: node scripts/recap/render.mjs
  * Output: scripts/recap/out/recap-gw{n}.mp4
  */
-import { readFileSync, mkdirSync, rmSync } from 'node:fs';
+import { readFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import ffmpegPath from 'ffmpeg-static';
+import { synthBed } from './music.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FPS = 30;
@@ -39,14 +40,22 @@ for (let f = 0; f < total; f++) {
 await browser.close();
 console.error(`Captured ${total} frames.`);
 
+/* Audio bed: prefer a supplied track (music.mp3 / .m4a / .wav next to
+   this script), otherwise synthesise the original royalty-free bed. */
+let audio = ['music.mp3', 'music.m4a', 'music.wav'].map(f => join(HERE, f)).find(existsSync);
+if (!audio) { audio = join(outDir, 'music.wav'); synthBed(audio); console.error('Synthesised music bed.'); }
+else console.error('Using supplied audio: ' + audio);
+
 const out = join(outDir, `recap-gw${recap.gw}.mp4`);
 const ffBin = ffmpegPath || 'ffmpeg';
 const ff = spawnSync(ffBin, [
   '-y', '-framerate', String(FPS),
   '-i', join(framesDir, 'frame-%04d.png'),
+  '-i', audio,
   '-c:v', 'libx264', '-preset', 'medium', '-crf', '19',
-  '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
-  '-r', String(FPS), out
+  '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', String(FPS),
+  '-c:a', 'aac', '-b:a', '160k', '-shortest',
+  out
 ], { stdio: 'inherit' });
 if (ff.error) { console.error('ffmpeg spawn error:', ff.error.message); process.exit(1); }
 if (ff.status !== 0) { console.error('ffmpeg exited with status', ff.status); process.exit(1); }
