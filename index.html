@@ -2384,7 +2384,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   eo:{
-    desc:'Your squad split into shields (high-EO, protect your rank) and swords (differentials, attack the field) — plus the high-EO players you don’t own. Effective ownership, made actionable.',
+    desc:'Your squad split into cover (high-EO, protect your rank) and edge (your differentials, climb the field) — plus the high-EO players you don’t own. Effective ownership, made actionable.',
     layout:'standard'
   },
   template:{
@@ -5264,28 +5264,28 @@ async function hydrateEO(host){
     const picks=await loadPicks(mid,b.cur.id);
     const owned=new Set(picks.picks.map(p=>p.element));
     const xi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
-    const shields=xi.filter(e=>eoOf(e)>=15).sort((a,c)=>eoOf(c)-eoOf(a));
-    const swords=xi.filter(e=>parseFloat(e.selected_by_percent)<10).sort((a,c)=>parseFloat(a.selected_by_percent)-parseFloat(c.selected_by_percent));
-    const threats=b.elements.filter(e=>!owned.has(e.id)&&e.status==='a').sort((a,c)=>eoOf(c)-eoOf(a)).slice(0,5);
+    const cover=xi.filter(e=>eoOf(e)>=15).sort((a,c)=>eoOf(c)-eoOf(a));
+    const edge=xi.filter(e=>parseFloat(e.selected_by_percent)<10).sort((a,c)=>parseFloat(a.selected_by_percent)-parseFloat(c.selected_by_percent));
+    const exposure=b.elements.filter(e=>!owned.has(e.id)&&e.status==='a').sort((a,c)=>eoOf(c)-eoOf(a)).slice(0,5);
     personal=
       '<div class="grid g-4 mb-20">'+
-        kpi('Shields',shields.length,'high-EO — protect rank','var(--green)')+
-        kpi('Swords',swords.length,'differentials — attack','var(--amber)')+
-        kpi('Exposed to',threats.length,'high-EO you don’t own','var(--red)')+
+        kpi('Cover',cover.length,'high-EO — protect rank','var(--green)')+
+        kpi('Edge',edge.length,'differentials — climb','var(--amber)')+
+        kpi('Exposure',exposure.length,'high-EO you don’t own','var(--red)')+
       '</div>'+
-      '<div class="card mb-20"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Shields — protect your rank</div>'+
-        '<p class="dl-sub" style="margin-bottom:8px">Players most managers own. When they haul you keep pace; when they blank, so does everyone. This is your safety.</p>'+
-        '<div class="dl">'+plist(shields,'badge-green','Shield')+'</div></div>'+
-      '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Swords — attack the field</div>'+
-        '<p class="dl-sub" style="margin-bottom:8px">Your low-owned picks. When one hauls, you gain on nearly everyone — this is how you climb.</p>'+
-        '<div class="dl">'+plist(swords,'badge-amber','Sword')+'</div></div>'+
-      (threats.length?'<div class="card mb-20"><div class="card-title">Where you’re exposed</div>'+
+      '<div class="card mb-20"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Cover — protect your rank</div>'+
+        '<p class="dl-sub" style="margin-bottom:8px">Players most managers own. When they haul you keep pace; when they blank, so does everyone — your insurance against the pack.</p>'+
+        '<div class="dl">'+plist(cover,'badge-green','Cover')+'</div></div>'+
+      '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Edge — climb the field</div>'+
+        '<p class="dl-sub" style="margin-bottom:8px">Your low-owned picks — your gameweek edge. When one hauls, you gain on nearly everyone.</p>'+
+        '<div class="dl">'+plist(edge,'badge-amber','Edge')+'</div></div>'+
+      (exposure.length?'<div class="card mb-20"><div class="card-title">Exposure — where you’re short</div>'+
         '<p class="dl-sub" style="margin-bottom:8px">High-EO players you don’t own — if they haul, you slip. Your biggest rank risks this week.</p>'+
-        '<div class="dl">'+plist(threats,'badge-red','Threat')+'</div></div>':'');
+        '<div class="dl">'+plist(exposure,'badge-red','Exposed')+'</div></div>':'');
   }catch(_){personal='';}}
   if(!personal){
     personal='<div class="card mb-20"><div class="ge-state">'+svg(ICON.target)+
-      '<b>Link your team for shields vs swords</b><p>Add your FPL Manager ID to split your own XI into rank-protecting shields and rank-attacking swords, and see where you’re exposed.</p>'+
+      '<b>Link your team for Cover &amp; Edge</b><p>Add your FPL Manager ID to split your own XI into rank-protecting cover and rank-climbing edge picks, and see where you’re exposed.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
   }
 
