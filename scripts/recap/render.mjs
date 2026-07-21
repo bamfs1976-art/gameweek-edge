@@ -48,13 +48,18 @@ else console.error('Using supplied audio: ' + audio);
 
 const out = join(outDir, `recap-gw${recap.gw}.mp4`);
 const ffBin = ffmpegPath || 'ffmpeg';
+/* Snip the audio to the video length with a short fade in and a clean
+   fade-out at the end (so a longer track ends gracefully, not cut dead). */
+const fadeOutStart = Math.max(0, duration - 1.5).toFixed(2);
 const ff = spawnSync(ffBin, [
   '-y', '-framerate', String(FPS),
   '-i', join(framesDir, 'frame-%04d.png'),
   '-i', audio,
   '-c:v', 'libx264', '-preset', 'medium', '-crf', '19',
   '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-r', String(FPS),
-  '-c:a', 'aac', '-b:a', '160k', '-shortest',
+  '-c:a', 'aac', '-b:a', '192k',
+  '-af', `afade=t=in:st=0:d=0.3,afade=t=out:st=${fadeOutStart}:d=1.5`,
+  '-t', String(duration), '-shortest',
   out
 ], { stdio: 'inherit' });
 if (ff.error) { console.error('ffmpeg spawn error:', ff.error.message); process.exit(1); }
