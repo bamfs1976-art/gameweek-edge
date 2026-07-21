@@ -1046,6 +1046,13 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
 .seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .seg-b.on{background:var(--grad-brand);color:#fff}
+/* Full-width, horizontally-scrollable segmented control + its panes
+   (This Gameweek tabs: Scorers · Market · Picks · Value · Template). */
+.gw-seg{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;margin-bottom:14px;scrollbar-width:none}
+.gw-seg::-webkit-scrollbar{display:none}
+.gw-seg .seg-b{flex:1 0 auto;white-space:nowrap}
+.gw-pane{display:none}
+.gw-pane.on{display:block}
 .crest{display:inline-flex;align-items:center;justify-content:center;border-radius:5px;
   overflow:hidden;vertical-align:middle;margin-right:7px;flex-shrink:0}
 .crest img{width:100%;height:100%;object-fit:contain}
@@ -2296,7 +2303,7 @@ const PANEL_CONTENT = {
     layout:'dashboard'
   },
   'gw-actions':{
-    desc:'Your four weekly decisions — captain, transfers, team, chips — as a guided plan.',
+    desc:'The gameweek at a glance — top scorers, the transfer market, and our recommended picks by position and by budget, from the latest live data.',
     layout:'actions'
   },
   blog:{
@@ -3365,25 +3372,73 @@ async function hydrateGwActions(host){
         '</div></div>';
     }catch(_){}
   }
-  host.innerHTML=journey+
-    '<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
+  /* ── Gameweek recommendations, from the latest live data ──
+     Top scorers and the transfer market read the finished gameweek;
+     the recommendation and value cards project the next one. */
+  const nf=buildNextFix(b,fixtures);
+  const nextEv=b.events.find(e=>!e.finished),nextName=nextEv?esc(nextEv.name):'the next gameweek';
+  const gwn='GW'+ev.id;
+  const avail=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75)&&(e.now_cost||0)>0;
+  const prow=(e,right,cls)=>'<div class="dl-row dl-click" onclick="openPlayer('+e.id+')">'+avatar(b,e,28)+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-sub">'+crest(b,e.team,12)+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+'</span></span>'+
+    '<span class="dl-col mono'+(cls?' '+cls:'')+'">'+right+'</span></div>';
+  const sublist=(lbl,rowsHtml,first)=>rowsHtml?'<div class="qd-sub-label"'+(first?'':' style="margin-top:10px"')+'>'+lbl+'</div><div class="dl">'+rowsHtml+'</div>':'';
+
+  const topScorers=b.elements.filter(e=>(e.event_points||0)>0).sort((a,c)=>(c.event_points||0)-(a.event_points||0)).slice(0,5);
+  const tinTop=b.elements.filter(e=>(e.transfers_in_event||0)>0).sort((a,c)=>(c.transfers_in_event||0)-(a.transfers_in_event||0)).slice(0,5);
+  const toutTop=b.elements.filter(e=>(e.transfers_out_event||0)>0).sort((a,c)=>(c.transfers_out_event||0)-(a.transfers_out_event||0)).slice(0,5);
+  const scored=b.elements.filter(avail).map(e=>({e,p:xP(b,e,nf[e.team])})).filter(x=>x.p>0);
+  const byPos=t=>scored.filter(x=>x.e.element_type===t).sort((a,c)=>c.p-a.p).slice(0,2);
+  const band=(lo,hi)=>scored.filter(x=>x.e.now_cost>=lo&&x.e.now_cost<=hi).sort((a,c)=>c.p-a.p).slice(0,3);
+
+  const topCard='<div class="card mb-20"><div class="card-title">Top scorers — '+gwn+'</div>'+
+    (topScorers.length
+      ?'<div class="dl-sub" style="margin-bottom:8px">The biggest returns of the gameweek.</div><div class="dl">'+topScorers.map(e=>prow(e,(e.event_points||0)+' pts','pos')).join('')+'</div>'
+      :'<div class="dl-sub" style="padding:2px 0">Points appear here once the gameweek is under way.</div>')+'</div>';
+  const trCard=(tinTop.length||toutTop.length)?'<div class="card mb-20"><div class="card-title">Transfer market — '+gwn+'</div>'+
+    sublist('MOST TRANSFERRED IN',tinTop.map(e=>prow(e,'+'+fmtK(e.transfers_in_event),'pos')).join(''),true)+
+    sublist('MOST TRANSFERRED OUT',toutTop.map(e=>prow(e,'−'+fmtK(e.transfers_out_event),'neg')).join(''))+'</div>':'';
+  const posRows=[['GKP',1],['DEF',2],['MID',3],['FWD',4]].map((p,i)=>sublist(p[0],byPos(p[1]).map(x=>prow(x.e,x.p.toFixed(1)+' xP','pos')).join(''),i===0)).join('');
+  const posCard=posRows?'<div class="card mb-20"><div class="card-title">Recommended by position</div>'+
+    '<div class="dl-sub" style="margin-bottom:8px">Our model’s top picks for '+nextName+', by projected points.</div>'+posRows+'</div>':'';
+  const valRows=[['Budget · under £5.5m',band(0,54)],['Mid · £5.5–8.4m',band(55,84)],['Premium · £8.5m+',band(85,999)]]
+    .map((pr,i)=>sublist(pr[0],pr[1].map(x=>prow(x.e,x.p.toFixed(1)+' xP','pos')).join(''),i===0)).join('');
+  const valCard=valRows?'<div class="card mb-20"><div class="card-title">Value picks — by budget</div>'+
+    '<div class="dl-sub" style="margin-bottom:8px">The best-projected option at each price point for '+nextName+'.</div>'+valRows+'</div>':'';
+  const ownByPos=t=>b.elements.filter(e=>e.element_type===t&&(parseFloat(e.selected_by_percent)||0)>0)
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,2);
+  const selRows=[['GKP',1],['DEF',2],['MID',3],['FWD',4]].map((p,i)=>sublist(p[0],ownByPos(p[1]).map(e=>prow(e,e.selected_by_percent+'%')).join(''),i===0)).join('');
+  const selCard=selRows?'<div class="card mb-20"><div class="card-title">Most selected by position</div>'+
+    '<div class="dl-sub" style="margin-bottom:8px">The template — who most managers own in each position.</div>'+selRows+'</div>':'';
+  const crowdCard='<div class="card"><div class="card-title">Crowd favourites</div><div class="dl">'+
+    '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
+    crowdRow(b,'Most captained',cap)+'</div></div>';
+
+  const gwInfo='<div class="card mb-20"><div class="card-title">'+esc(ev.name)+
       ' <span class="badge '+(ev.finished?'badge-grey':'badge-green')+'">'+(ev.finished?'Finished':ev.is_current?'Live':'Upcoming')+'</span></div>'+
       '<div class="dl-sub" style="margin-bottom:12px">Deadline '+fmtDeadline(ev.deadline_time)+'</div>'+
       '<div class="statgrid">'+
         stat('Average Score',fmtNum(ev.average_entry_score))+
         stat('Highest Score',fmtNum(ev.highest_score))+
-      '</div>'+
-    '</div>'+
-    mine+
-    '<div class="card"><div class="card-title">Crowd moves this gameweek</div>'+
-      '<div class="dl">'+
-        '<div class="dl-row head"><span class="dl-grow">Signal</span><span style="font-weight:700">Player</span></div>'+
-        crowdRow(b,'Most captained',cap)+
-        crowdRow(b,'Most transferred in',tin)+
-        crowdRow(b,'Most selected',sel)+
-        crowdRow(b,'Top scorer',topEl,topEl&&ev.top_element_info?ev.top_element_info.points+' pts':'')+
-      '</div>'+
-    '</div>';
+      '</div></div>';
+
+  /* Tabbed hub — one card group per tab, so it's a swipe not a long scroll.
+     Empty groups drop out so their tab never appears. */
+  const panes=[['scorers','Scorers',topCard],['market','Market',trCard],
+    ['picks','Picks',posCard],['value','Value',valCard],
+    ['template','Template',selCard+crowdCard]].filter(p=>p[2]);
+  const segCtl='<div class="seg gw-seg" id="gw-seg" role="tablist">'+
+    panes.map((p,i)=>'<button class="seg-b'+(i===0?' on':'')+'" data-pane="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>';
+  const paneHtml=panes.map((p,i)=>'<div class="gw-pane'+(i===0?' on':'')+'" data-pane="'+p[0]+'">'+p[2]+'</div>').join('');
+
+  host.innerHTML=journey+gwInfo+mine+segCtl+paneHtml;
+  const segEl=host.querySelector('#gw-seg');
+  if(segEl)segEl.addEventListener('click',ev2=>{
+    const btn=ev2.target.closest('.seg-b');if(!btn)return;
+    segEl.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===btn));
+    host.querySelectorAll('.gw-pane').forEach(p=>p.classList.toggle('on',p.dataset.pane===btn.dataset.pane));
+  });
 }
 /* A crowd-signal row with the player's photo, crest and name. */
 function crowdRow(b,label,el,extra){
