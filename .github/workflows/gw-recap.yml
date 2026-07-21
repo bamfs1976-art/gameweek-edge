@@ -49,7 +49,7 @@ jobs:
       - name: Install Chromium
         if: steps.gate.outputs.skip == 'false'
         run: |
-          npm i playwright --no-save
+          npm i playwright ffmpeg-static --no-save
           npx playwright install --with-deps chromium
 
       - name: Render the recap video
