@@ -1,0 +1,43 @@
+name: Promo Video
+
+# Renders the evergreen feature/USP promo (scripts/promo/template.html)
+# to a 1080x1080 MP4 and publishes it as the "promo" release for you to
+# download and post on X. Manual only — re-run to refresh after edits.
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promo
+  cancel-in-progress: false
+
+jobs:
+  promo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Chromium
+        run: |
+          npm i playwright ffmpeg-static --no-save
+          npx playwright install --with-deps chromium
+
+      - name: Render the promo video
+        run: node scripts/promo/render.mjs
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete promo -R "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create promo \
+            "scripts/promo/out/promo.mp4" \
+            -R "$GITHUB_REPOSITORY" \
+            --title "Gameweek Edge — Promo" \
+            --notes "Evergreen 1080x1080 feature/USP promo. Download the MP4 and post to X. Independent — not affiliated with the Premier League."
