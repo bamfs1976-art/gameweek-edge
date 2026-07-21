@@ -14,16 +14,21 @@ import { writeFileSync } from 'node:fs';
 const SR = 44100;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
+const TAU = Math.PI * 2;
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12); // MIDI note → frequency
+
 export function synthBed(outPath) {
-  // Four chords (root + triad, with a low octave for warmth), 5s each.
+  // Upbeat, driving bed: 120 BPM, four-on-the-floor kick, plucky bass and a
+  // bright arpeggio over a major I–V–vi–IV loop. Energetic, not ambient.
+  const beat = 0.5, eighth = 0.25, chordDur = 2.0; // 120 BPM, chord every 4 beats
   const chords = [
-    [130.81, 196.00, 261.63, 329.63], // C  (I)
-    [98.00, 196.00, 246.94, 293.66],  // G  (V)
-    [110.00, 220.00, 261.63, 329.63], // Am (vi)
-    [87.31, 174.61, 220.00, 261.63]   // F  (IV)
+    { tones: [60, 64, 67], bass: 36 }, // C
+    { tones: [67, 71, 74], bass: 43 }, // G
+    { tones: [69, 72, 76], bass: 45 }, // Am
+    { tones: [65, 69, 72], bass: 41 }  // F
   ];
-  const chordDur = 5.0;
-  const total = chords.length * chordDur + 0.3;
+  const arpPattern = [0, 1, 2, 3, 2, 1, 0, 1]; // eighth-note steps into the chord tones
+  const total = 20.2;
   const N = Math.floor(total * SR);
   const buf = Buffer.alloc(44 + N * 4);
 
@@ -33,24 +38,38 @@ export function synthBed(outPath) {
   buf.writeUInt32LE(SR, 24); buf.writeUInt32LE(SR * 4, 28); buf.writeUInt16LE(4, 32); buf.writeUInt16LE(16, 34);
   buf.write('data', 36); buf.writeUInt32LE(N * 4, 40);
 
-  const TAU = Math.PI * 2;
   for (let i = 0; i < N; i++) {
     const t = i / SR;
-    let ci = Math.floor(t / chordDur); if (ci >= chords.length) ci = chords.length - 1;
-    const ct = t - ci * chordDur;
-    const swell = clamp(ct / 0.14, 0, 1) * clamp((chordDur - ct) / 0.35, 0, 1); // click-free gentle swell
-    const ch = chords[ci];
-    let l = 0, r = 0;
-    for (const f of ch) {
-      l += Math.sin(TAU * f * t) + 0.14 * Math.sin(TAU * 2 * f * t);
-      r += Math.sin(TAU * f * 1.003 * t) + 0.14 * Math.sin(TAU * 2 * f * 1.003 * t); // slight detune = stereo width
-    }
-    l /= ch.length; r /= ch.length;
-    const fadeIn = clamp(t / 0.9, 0, 1);
-    const fadeOut = clamp((total - 0.2 - t) / 1.7, 0, 1);
-    const g = swell * fadeIn * fadeOut * 0.30; // master level — a bed, not the star
-    buf.writeInt16LE(Math.round(clamp(l * g, -1, 1) * 32767), 44 + i * 4);
-    buf.writeInt16LE(Math.round(clamp(r * g, -1, 1) * 32767), 44 + i * 4 + 2);
+    const ch = chords[Math.floor(t / chordDur) % chords.length];
+    const ct = t - Math.floor(t / chordDur) * chordDur;
+    const bt = t - Math.floor(t / beat) * beat;   // time within the beat
+    const et = t - Math.floor(t / eighth) * eighth; // time within the eighth
+
+    // Warm sustained pad (quiet, underneath).
+    let pad = 0;
+    for (const m of ch.tones) pad += Math.sin(TAU * mtof(m) * t);
+    pad = pad / ch.tones.length * clamp(ct / 0.25, 0, 1) * clamp((chordDur - ct) / 0.35, 0, 1) * 0.10;
+
+    // Plucky bass on every beat.
+    const bf = mtof(ch.bass);
+    const bass = (Math.sin(TAU * bf * t) + 0.3 * Math.sin(TAU * 2 * bf * t))
+      * Math.exp(-bt / 0.14) * clamp(bt / 0.004, 0, 1) * 0.17;
+
+    // Four-on-the-floor kick.
+    const kick = Math.sin(TAU * (45 + 80 * Math.exp(-bt / 0.028)) * bt) * Math.exp(-bt / 0.11) * 0.26;
+
+    // Bright arpeggio (eighth notes).
+    const arpTones = [ch.tones[0], ch.tones[1], ch.tones[2], ch.tones[0] + 12];
+    const af = mtof(arpTones[arpPattern[Math.floor(t / eighth) % arpPattern.length]]);
+    const arp = (Math.sin(TAU * af * t) + 0.25 * Math.sin(TAU * 2 * af * t))
+      * Math.exp(-et / 0.10) * clamp(et / 0.003, 0, 1) * 0.19;
+
+    const fadeIn = clamp(t / 0.15, 0, 1);
+    const fadeOut = clamp((total - t) / 1.2, 0, 1);
+    const s = clamp((pad + bass + kick + arp) * fadeIn * fadeOut * 0.82, -1, 1);
+    const v = Math.round(s * 32767);
+    buf.writeInt16LE(v, 44 + i * 4);
+    buf.writeInt16LE(v, 44 + i * 4 + 2);
   }
   writeFileSync(outPath, buf);
   return outPath;
