@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Recap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080b0f;--panel:#111a22;--panel2:#0d151c;--line:rgba(255,255,255,.09);
+  --green:#1f9d5c;--green2:#15824a;--ink:#eef3f7;--ink2:#93a2ae;--ink3:#5f6d78;
+  --gold:#e7b45a;--red:#e5604d;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;--body:'Public Sans',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body)}
+#stage{position:relative;width:1080px;height:1080px;
+  background:
+    radial-gradient(1200px 700px at 82% -12%,rgba(31,157,92,.20),transparent 60%),
+    radial-gradient(900px 700px at -10% 115%,rgba(31,157,92,.10),transparent 60%),
+    var(--bg);
+}
+/* ── chrome ── */
+.brand{position:absolute;top:54px;left:64px;display:flex;align-items:center;gap:16px;z-index:5}
+.mk{width:56px;height:56px;border-radius:15px;background:var(--green2);display:grid;place-items:center;box-shadow:0 8px 30px rgba(31,157,92,.35)}
+.mk svg{width:36px;height:36px}
+.brand .nm{font-family:var(--display);font-size:30px;letter-spacing:-.01em}
+.brand .nm .l{font-weight:600;color:var(--ink2)}.brand .nm .b{font-weight:800}
+.gwtag{position:absolute;top:60px;right:64px;z-index:5;font-family:var(--font-mono,ui-monospace,monospace);
+  font-weight:800;font-size:22px;letter-spacing:.14em;color:var(--green);
+  border:1px solid rgba(31,157,92,.4);border-radius:999px;padding:10px 20px;background:rgba(31,157,92,.08)}
+.foot{position:absolute;left:0;right:0;bottom:0;height:74px;display:flex;align-items:center;justify-content:center;
+  gap:10px;font-weight:700;font-size:20px;color:var(--ink3);letter-spacing:.02em;border-top:1px solid var(--line);z-index:5}
+.foot b{color:var(--green)}
+
+/* ── scenes ── */
+.scene{position:absolute;inset:0;padding:150px 64px 96px;opacity:0;visibility:hidden}
+.scene.on{visibility:visible}
+.kick{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:24px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--green);margin-bottom:8px}
+.h2{font-family:var(--display);font-weight:800;font-size:66px;letter-spacing:-.02em;line-height:1;margin-bottom:34px}
+
+/* reveal primitives (driven by seek) */
+.rv{opacity:0;transform:translateY(26px)}
+
+/* intro */
+#intro{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding-top:0}
+#intro .big{font-family:var(--display);font-weight:800;font-size:150px;line-height:.92;letter-spacing:-.03em}
+#intro .big .g{color:var(--green)}
+#intro .sub{font-size:34px;color:var(--ink2);font-weight:600;margin-top:20px}
+#intro .rule{height:8px;width:0;background:linear-gradient(90deg,var(--green),transparent);border-radius:8px;margin-top:40px}
+
+/* player rows (hauls) */
+.rows{display:flex;flex-direction:column;gap:13px}
+.prow{display:flex;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--line);
+  border-radius:20px;padding:15px 26px}
+.rank{font-family:var(--display);font-weight:800;font-size:40px;color:var(--ink3);width:46px;text-align:center}
+.ava{position:relative;width:96px;height:96px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  background:linear-gradient(160deg,#243240,#151e27);display:grid;place-items:center}
+.ava-i{font-family:var(--display);font-weight:800;font-size:34px;color:var(--ink2)}
+.ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;background:#1a2530}
+.pmeta{flex:1;min-width:0}
+.pname{font-family:var(--display);font-weight:800;font-size:40px;line-height:1;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.psub{display:flex;align-items:center;gap:10px;margin-top:7px;font-size:23px;font-weight:600;color:var(--ink2)}
+.crest{width:26px;height:26px;object-fit:contain;border-radius:5px;background:#0e1720}
+.pts{font-family:var(--display);font-weight:800;font-size:52px;color:var(--green);white-space:nowrap}
+.pts small{font-size:24px;color:var(--ink3);font-weight:700;margin-left:6px}
+
+/* dream team pitch */
+.pitch{background:linear-gradient(176deg,#137043,#0c4e2f);border:1px solid rgba(255,255,255,.08);
+  border-radius:26px;padding:26px 22px;display:flex;flex-direction:column;gap:20px;position:relative;overflow:hidden}
+.pitch::before{content:"";position:absolute;left:50%;top:50%;width:220px;height:220px;transform:translate(-50%,-50%);
+  border:2px solid rgba(255,255,255,.14);border-radius:50%}
+.prow2{display:flex;justify-content:center;gap:20px;position:relative}
+.chip{width:150px;text-align:center}
+.chip .ava{width:80px;height:80px;margin:0 auto 8px;border:2px solid rgba(255,255,255,.5)}
+.chip .cn{font-weight:800;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip .cp{display:inline-block;margin-top:4px;font-family:var(--display);font-weight:800;font-size:22px;color:#0a3;
+  background:#eafff4;border-radius:8px;padding:1px 10px}
+.dtbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.dttot{font-family:var(--display);font-weight:800;font-size:40px}
+.dttot span{color:var(--green)}
+.dttop{font-size:24px;font-weight:700;color:var(--ink2)}
+.dttop b{color:var(--gold)}
+
+/* numbers grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:34px;position:relative;overflow:hidden}
+.tile .tl{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:20px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:16px}
+.tile .tv{font-family:var(--display);font-weight:800;font-size:52px;line-height:1;letter-spacing:-.01em}
+.tile .ts{font-size:26px;font-weight:700;color:var(--ink2);margin-top:12px}
+.tile.g .tv{color:var(--green)}.tile.gold .tv{color:var(--gold)}
+
+/* outro */
+#outro{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#outro .mk{width:110px;height:110px;border-radius:28px;margin-bottom:34px}
+#outro .mk svg{width:70px;height:70px}
+#outro .o1{font-family:var(--display);font-weight:800;font-size:76px;letter-spacing:-.02em}
+#outro .o2{font-size:38px;font-weight:800;color:var(--green);margin-top:14px}
+#outro .o3{font-size:28px;font-weight:600;color:var(--ink2);margin-top:26px;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="brand">
+    <span class="mk">
+      <svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg>
+    </span>
+    <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
+  </div>
+  <div class="gwtag" id="gwtag">GW38</div>
+
+  <!-- INTRO -->
+  <section class="scene" id="intro">
+    <div class="kick rv" data-i="0">The week in Fantasy</div>
+    <div class="big rv" data-i="1">GAMEWEEK <span class="g" id="gwbig">38</span></div>
+    <div class="big rv" data-i="2" style="color:var(--green)">RECAP</div>
+    <div class="sub rv" data-i="3">Top hauls · Team of the Week · the numbers that mattered</div>
+    <div class="rule" id="introrule"></div>
+  </section>
+
+  <!-- HAULS -->
+  <section class="scene" id="hauls">
+    <div class="kick rv" data-i="0">Biggest returns</div>
+    <div class="h2 rv" data-i="0">Top hauls</div>
+    <div class="rows" id="haulRows"></div>
+  </section>
+
+  <!-- DREAM TEAM -->
+  <section class="scene" id="dream">
+    <div class="dtbar">
+      <div>
+        <div class="kick rv" data-i="0">Official</div>
+        <div class="h2 rv" data-i="0" style="margin:0">Team of the Week</div>
+      </div>
+    </div>
+    <div class="dtbar" style="margin:-14px 0 22px">
+      <div class="dttot rv" data-i="1"><span id="dtTotal">85</span> pts</div>
+      <div class="dttop rv" data-i="1">Star: <b id="dtTop">—</b></div>
+    </div>
+    <div class="pitch" id="pitch"></div>
+  </section>
+
+  <!-- NUMBERS -->
+  <section class="scene" id="numbers">
+    <div class="kick rv" data-i="0">The details</div>
+    <div class="h2 rv" data-i="0">Numbers that mattered</div>
+    <div class="grid" id="numGrid"></div>
+  </section>
+
+  <!-- OUTRO -->
+  <section class="scene" id="outro">
+    <span class="mk rv" data-i="0"><svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg></span>
+    <div class="o1 rv" data-i="1">Get your edge</div>
+    <div class="o2 rv" data-i="2">gameweekedge.co.uk</div>
+    <div class="o3 rv" data-i="3">Ad-free · predicted points · an AI scout · live rank</div>
+  </section>
+
+  <div class="foot">Independent · from the official <b>FPL</b> data · not affiliated with the Premier League</div>
+</div>
+
+<script>
+/* ── data ─────────────────────────────────────────────────────────
+   render.mjs injects window.__RECAP__ before load; the embedded sample
+   below drives the local preview. */
+const SAMPLE={
+  gw:38,
+  hauls:[
+    {name:'Salah',team:'LIV',code:118748,pos:'MID',pts:21},
+    {name:'Haaland',team:'MCI',code:223094,pos:'FWD',pts:17},
+    {name:'Palmer',team:'CHE',code:244851,pos:'MID',pts:15},
+    {name:'Gabriel',team:'ARS',code:205651,pos:'DEF',pts:14},
+    {name:'Mbeumo',team:'BRE',code:225796,pos:'MID',pts:13}
+  ],
+  dream:{total:85,top:'Salah',xi:[
+    {name:'Raya',team:'ARS',code:153133,pos:'GKP',pts:9},
+    {name:'Gabriel',team:'ARS',code:205651,pos:'DEF',pts:14},
+    {name:'Saliba',team:'ARS',code:222510,pos:'DEF',pts:9},
+    {name:'Senesi',team:'BOU',code:214048,pos:'DEF',pts:8},
+    {name:'Salah',team:'LIV',code:118748,pos:'MID',pts:21},
+    {name:'Palmer',team:'CHE',code:244851,pos:'MID',pts:15},
+    {name:'Mbeumo',team:'BRE',code:225796,pos:'MID',pts:13},
+    {name:'Rogers',team:'AVL',code:447295,pos:'MID',pts:11},
+    {name:'Haaland',team:'MCI',code:223094,pos:'FWD',pts:17},
+    {name:'Isak',team:'NEW',code:219168,pos:'FWD',pts:10},
+    {name:'Wood',team:'NFO',code:66749,pos:'FWD',pts:9}
+  ]},
+  numbers:{
+    riser:{name:'Kroupi',val:'+£0.2m'},
+    captain:{name:'Haaland',sub:'34% · 17 pts'},
+    diff:{name:'Rogers',sub:'8% owned · 11 pts'},
+    scores:{avg:52,high:131}
+  }
+};
+const R=window.__RECAP__||SAMPLE;
+const PHOTO=c=>'https://resources.premierleague.com/premierleague/photos/players/110x140/p'+c+'.png';
+const initials=n=>String(n||'').replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const CREST={ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,LIV:14,MCI:43,MUN:1,NEW:4,NFO:17,TOT:6,WHU:21,WOL:39,LEE:2,SUN:56,BUR:90};
+const crestUrl=t=>CREST[t]?'https://resources.premierleague.com/premierleague/badges/50/t'+CREST[t]+'.png':'';
+function ava(size,name,code){
+  return '<span class="ava" style="width:'+size+'px;height:'+size+'px">'+
+    '<span class="ava-i">'+initials(name)+'</span>'+
+    (code?'<img src="'+PHOTO(code)+'" onerror="this.remove()">':'')+'</span>';
+}
+
+/* gwtag / intro numbers */
+document.getElementById('gwtag').textContent='GW'+R.gw;
+document.getElementById('gwbig').textContent=R.gw;
+
+/* hauls */
+document.getElementById('haulRows').innerHTML=(R.hauls||[]).slice(0,5).map((p,i)=>
+  '<div class="prow rv" data-i="'+i+'">'+
+    '<div class="rank">'+(i+1)+'</div>'+ava(84,p.name,p.code)+
+    '<div class="pmeta"><div class="pname">'+p.name+'</div>'+
+      '<div class="psub">'+(crestUrl(p.team)?'<img class="crest" src="'+crestUrl(p.team)+'" onerror="this.remove()">':'')+p.team+' · '+p.pos+'</div></div>'+
+    '<div class="pts">'+p.pts+'<small>pts</small></div></div>').join('');
+
+/* dream team */
+document.getElementById('dtTotal').textContent=(R.dream&&R.dream.total)||'';
+document.getElementById('dtTop').textContent=(R.dream&&R.dream.top)||'—';
+(function(){
+  const xi=(R.dream&&R.dream.xi)||[];
+  const byPos=p=>xi.filter(x=>x.pos===p);
+  const chip=(x,idx)=>'<div class="chip rv" data-i="'+idx+'">'+ava(80,x.name,x.code)+
+    '<div class="cn">'+x.name+'</div><div class="cp">'+x.pts+'</div></div>';
+  let idx=0;const rowHtml=arr=>'<div class="prow2">'+arr.map(x=>chip(x,idx++)).join('')+'</div>';
+  document.getElementById('pitch').innerHTML=
+    rowHtml(byPos('GKP'))+rowHtml(byPos('DEF'))+rowHtml(byPos('MID'))+rowHtml(byPos('FWD'));
+})();
+
+/* numbers */
+(function(){
+  const n=R.numbers||{};
+  const tile=(cls,label,val,sub,i)=>'<div class="tile '+cls+' rv" data-i="'+i+'"><div class="tl">'+label+'</div>'+
+    '<div class="tv">'+val+'</div><div class="ts">'+(sub||'')+'</div></div>';
+  document.getElementById('numGrid').innerHTML=
+    tile('g','Biggest riser',(n.riser&&n.riser.name)||'—',(n.riser&&n.riser.val)||'',0)+
+    tile('gold','Most captained',(n.captain&&n.captain.name)||'—',(n.captain&&n.captain.sub)||'',1)+
+    tile('g','Differential of the week',(n.diff&&n.diff.name)||'—',(n.diff&&n.diff.sub)||'',2)+
+    tile('','Average / Highest',((n.scores&&n.scores.avg)||'—')+' / '+((n.scores&&n.scores.high)||'—'),'points this gameweek',3);
+})();
+
+/* ── timeline ─────────────────────────────────────────────────────
+   seek(t) sets the whole graphic as a pure function of t (seconds) so
+   render.mjs can screenshot deterministic frames. */
+const SCENES=[
+  {id:'intro',t:0,d:2.0},
+  {id:'hauls',t:2.0,d:5.0},
+  {id:'dream',t:7.0,d:6.0},
+  {id:'numbers',t:13.0,d:4.0},
+  {id:'outro',t:17.0,d:3.0}
+];
+const DURATION=20.0;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const easeOut=x=>1-Math.pow(1-clamp(x,0,1),3);
+const STAGGER=0.22,REVEAL=0.55;
+
+function applyReveal(scene,elapsed){
+  scene.querySelectorAll('.rv').forEach(el=>{
+    const i=parseInt(el.dataset.i||'0',10);
+    const p=easeOut((elapsed-i*STAGGER)/REVEAL);
+    el.style.opacity=p;
+    el.style.transform='translateY('+(26*(1-p))+'px)';
+  });
+}
+function seek(t){
+  t=clamp(t,0,DURATION);
+  SCENES.forEach(s=>{
+    const el=document.getElementById(s.id);
+    const active=t>=s.t&&t<s.t+s.d+(s===SCENES[SCENES.length-1]?0.5:0);
+    if(active){
+      el.classList.add('on');el.style.opacity=1;
+      const elapsed=t-s.t;
+      applyReveal(el,elapsed);
+      if(s.id==='intro'){
+        const rp=easeOut((elapsed-0.9)/0.7);
+        document.getElementById('introrule').style.width=(360*rp)+'px';
+      }
+    }else{
+      el.classList.remove('on');el.style.opacity=0;
+    }
+  });
+}
+window.seek=seek;window.RECAP_DURATION=DURATION;
+
+/* Live preview when opened in a browser (render.mjs drives seek itself). */
+if(!window.__RENDER__){
+  let start=null;
+  function loop(ts){
+    if(start==null)start=ts;
+    let t=((ts-start)/1000)%(DURATION+1.2);
+    seek(t);requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+}else{seek(0);}
+</script>
+</body>
+</html>
