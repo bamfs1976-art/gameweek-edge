@@ -6218,6 +6218,44 @@ function positionChangesArticle(){
     accent:'a-violet',mins:3,body};
 }
 
+/* Evergreen pre-season briefing: the official FPL Price Change Predictor
+   arriving for 2026/27 — what it shows, the timing, and how to actually use
+   it without letting price moves drive bad transfers. */
+function priceChangePredictorArticle(){
+  let body='<p>The official game is adding a <b>Price Change Predictor</b> for 2026/27. It tracks transfer activity for every player from official FPL data and shows how close each one is to a price rise or fall — the best steer yet on who moves at the daily <b>00:00 UK time</b> price update.</p>';
+
+  body+='<h4>What it shows</h4>';
+  body+='<ul>'+
+    '<li>A <b>progress %</b> towards a rise or drop for <b>every</b> player, updated daily.</li>'+
+    '<li>After a calibration period, a <b>“predicted progress” %</b> too — anything <b>over 100%</b> means the player is expected to cross the threshold at the next 00:00 change.</li>'+
+    '<li>Plain-language flags — <span class="up">“Very Likely to Rise”</span> and <span class="down">“Likely to Drop”</span>.</li>'+
+    '<li>Sortable by most likely to rise/fall, and filterable by your team, your watchlist, or all players. It also surfaces on player profile pages and the pick-team / transfers screens.</li>'+
+    '</ul>';
+
+  body+='<h4>The catch for now</h4>';
+  body+='<p>All prices are <b>locked until the Gameweek 1 deadline — 21 August, 18:30 BST</b>. There’s nothing to chase until the season is live, so file this for later.</p>';
+
+  body+='<h4>How to actually use it</h4>';
+  body+='<ul>'+
+    '<li><b>Price is a tiebreaker, not a strategy.</b> Never take a −4 just to beat a £0.1m rise — team value is a slow game won over the season, not one deadline.</li>'+
+    '<li><b>Only bring transfers forward, never invent them.</b> If you were already buying a player, do it before the rise; if you were already selling, do it before the drop. Don’t let the predictor pick your moves for you.</li>'+
+    '<li><b>Watch the wagon early.</b> Low-owned players cross the threshold fastest, so a differential can jump before the crowd reacts — get in ahead of the rise.</li>'+
+    '</ul>';
+
+  body+='<p class="muted">Handily, Gameweek Edge already ships a free <b>Price Predictor</b> — tonight’s likely risers and fallers from net transfer momentum. The official tool validates the approach; use both, and treat every figure as a guide, not a guarantee.</p>';
+
+  return {kick:'Pre-season',title:'FPL’s New Price Change Predictor: What It Is, How to Use It',
+    dek:'The official price tool arrives for 26/27 — the timing, the “over 100%” signal, and how to use it without wrecking your transfers.',
+    accent:'a-amber',mins:2,body};
+}
+
+/* Pinned pre-season briefings for 26/27, newest first. Returned as a list so
+   more can be added over the summer; hydrateBlog unshifts them to the top of
+   the Wire regardless of season state. */
+function preseasonArticles(){
+  return [priceChangePredictorArticle(), positionChangesArticle()];
+}
+
 function articleCard(a,i,gw){
   return '<article class="post '+a.accent+'">'+
     '<button class="post-hd" data-post="'+i+'" aria-expanded="false">'+
@@ -6258,10 +6296,10 @@ async function hydrateBlog(host){
   const finishedGw=b.events.slice().reverse().find(e=>e.finished);
   if(finishedGw){try{const dt=await loadDreamTeam(finishedGw.id);
     const art=dreamTeamArticle(b,dt,finishedGw.id);if(art)arts.unshift(art);}catch(_){}}
-  /* Pre-season 26/27 briefing, pinned to the top of the Wire regardless of
-     season state — the position changes hold for the whole 26/27 campaign.
-     Unshifted last so it sits above the Team of the Week and live briefings. */
-  try{arts.unshift(positionChangesArticle());}catch(_){}
+  /* Pre-season 26/27 briefings, pinned to the top of the Wire regardless of
+     season state (newest first). Unshifted last so they sit above the Team of
+     the Week and the live briefings. */
+  try{arts.unshift(...preseasonArticles());}catch(_){}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
   host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
