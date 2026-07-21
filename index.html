@@ -6155,6 +6155,69 @@ function blogArticles(b,fixtures){
   return arts;
 }
 
+/* Evergreen pre-season briefing: the 11 official FPL position changes for
+   2026/27, with our verdict on each. Self-contained (fixed real-world data),
+   so it reads correctly before any live gameweek numbers exist. The verdict
+   is driven purely by the scoring table — where the reclassification unlocks
+   cheaper goals / clean-sheet points / an easier defensive-contribution
+   threshold (upgrade) or strips them away (downgrade). */
+function positionChangesArticle(){
+  /* v: 'up' = value gained, 'down' = value lost, 'watch' = minutes/role first */
+  const changes=[
+    {p:'Junior Kroupi',c:'BOU',from:'FWD',to:'MID',v:'up',
+      note:'13 goals as a No.10, now worth 5pts each plus clean-sheet points. The pick of the bunch.'},
+    {p:'Mats Wieffer',c:'BHA',from:'MID',to:'DEF',v:'up',
+      note:'A right-back reclassified: 6pt goals, 4pt clean sheets and the easier 10-action DefCon bar. Enabler with upside if nailed.'},
+    {p:'Rio Cardines',c:'CRY',from:'MID',to:'DEF',v:'up',
+      note:'Full-back now a defender — clean-sheet points and the cheaper defensive-contribution threshold. Budget option if he starts.'},
+    {p:'Ryan Sessegnon',c:'FUL',from:'MID',to:'DEF',v:'up',
+      note:'Same mechanic: a defender keeping clean sheets earns 4pts, and the DefCon point lands at 10 actions not 12.'},
+    {p:'Eric Moreira',c:'NFO',from:'MID',to:'DEF',v:'up',
+      note:'Forest keep clean sheets; a nailed, cheap defender is exactly what squads hunt for at £4.0–4.5m.'},
+    {p:'Patrick Dorgu',c:'MUN',from:'DEF',to:'MID',v:'watch',
+      note:'MID suits a goalscoring winger, but three starts under Carrick is the real story. A minutes gamble, not a value call.'},
+    {p:'Keane Lewis-Potter',c:'BRE',from:'DEF',to:'MID',v:'watch',
+      note:'Fine as a wide midfielder if he plays; role and minutes decide it. Monitor pre-season.'},
+    {p:'Lamare Bogarde',c:'AVL',from:'DEF',to:'MID',v:'watch',
+      note:'Deep midfield role, low ceiling. Low priority unless the minutes arrive.'},
+    {p:'Myles Lewis-Skelly',c:'ARS',from:'DEF',to:'MID',v:'down',
+      note:'Loses the cut-price attacking-defender cheat code — 6pt goals, 4pt clean sheets and the easier DefCon bar all gone. Needs real output at MID pricing.'},
+    {p:'Georginio Rutter',c:'BHA',from:'MID',to:'FWD',v:'down',
+      note:'5pt goals drop to 4pt, no clean-sheet value, and volatile striker minutes at Brighton.'},
+    {p:'Omar Marmoush',c:'MCI',from:'MID',to:'FWD',v:'down',
+      note:'Loses the 5pt goal and all defensive value, now priced as a forward under a new City manager.'}
+  ];
+  const rank={up:0,watch:1,down:2};
+  const badge=v=>v==='up'?'<span class="up">▲ Upgrade</span>'
+    :v==='down'?'<span class="down">▼ Downgrade</span>'
+    :'<span class="muted">● Watch</span>';
+  const rows=changes.slice().sort((a,c)=>rank[a.v]-rank[c.v]).map(x=>
+    '<tr><td>'+esc(x.p)+'</td><td>'+esc(x.c)+'</td>'+
+    '<td>'+esc(x.from)+' → '+esc(x.to)+'</td><td>'+badge(x.v)+'</td>'+
+    '<td style="white-space:normal;min-width:220px">'+esc(x.note)+'</td></tr>').join('');
+
+  let body='<p>The official game has reclassified 11 players for 2026/27. In FPL the badge only matters because of the <b>scoring table</b> — a move is a value upgrade or downgrade depending on which way it goes.</p>';
+  body+='<div class="pl-scroll" style="max-height:none;margin:10px 0"><table class="ptable"><thead><tr>'+
+    '<th>Scores</th><th class="num">Goal</th><th class="num">Clean sheet</th><th class="num">DefCon point</th></tr></thead><tbody>'+
+    '<tr><td>GK / DEF</td><td class="num">6</td><td class="num">4</td><td class="num">10 actions</td></tr>'+
+    '<tr><td>MID</td><td class="num">5</td><td class="num">1</td><td class="num">12 actions</td></tr>'+
+    '<tr><td>FWD</td><td class="num">4</td><td class="num">0</td><td class="num">12 actions</td></tr>'+
+    '</tbody></table></div>';
+  body+='<p class="muted">So the question for each player is simple: does the new position unlock cheaper goals, clean-sheet points and an easier defensive-contribution threshold — or take them away?</p>';
+
+  body+='<h4>The full list — with our verdict</h4>';
+  body+='<div class="pl-scroll" style="max-height:none;margin:6px 0"><table class="ptable"><thead><tr>'+
+    '<th>Player</th><th>Club</th><th>Change</th><th>Verdict</th><th>Why</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+
+  body+='<h4>The takeaway</h4>';
+  body+='<p>The changes that <b>make you points</b> are the full-backs turned defenders — <b>Wieffer, Cardines, Moreira, Sessegnon</b> — as cheap enablers, and <b>Kroupi</b> as a bargain goalscoring midfielder. The trap is treating <b>Lewis-Skelly</b> and <b>Marmoush</b> as upgrades: both lost points value in the move.</p>';
+  body+='<p class="muted">It’s pre-season — 26/27 prices and nailed roles aren’t locked yet, so these are priorities to confirm at price reveal and through pre-season line-ups, not final buys.</p>';
+
+  return {kick:'Pre-season',title:'FPL 2026/27 Position Changes: Who Wins, Who Loses',
+    dek:'The 11 reclassified players — and our verdict on which moves gain FPL value and which quietly cost it.',
+    accent:'a-violet',mins:3,body};
+}
+
 function articleCard(a,i,gw){
   return '<article class="post '+a.accent+'">'+
     '<button class="post-hd" data-post="'+i+'" aria-expanded="false">'+
@@ -6195,6 +6258,10 @@ async function hydrateBlog(host){
   const finishedGw=b.events.slice().reverse().find(e=>e.finished);
   if(finishedGw){try{const dt=await loadDreamTeam(finishedGw.id);
     const art=dreamTeamArticle(b,dt,finishedGw.id);if(art)arts.unshift(art);}catch(_){}}
+  /* Pre-season 26/27 briefing, pinned to the top of the Wire regardless of
+     season state — the position changes hold for the whole 26/27 campaign.
+     Unshifted last so it sits above the Team of the Week and live briefings. */
+  try{arts.unshift(positionChangesArticle());}catch(_){}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
   host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
