@@ -81,11 +81,12 @@ const pieces = [
      dependency (horizonXP) so we test the logic, not the xP maths. */
   'function horizonXP(_b, el, _hz){ return el._hx || 0; }',
   extractLine(html, /const MIN_TR_GAIN=[\d.]+;/),
-  extractFn(html, 'bestTransfer')
+  extractFn(html, 'bestTransfer'),
+  extractFn(html, 'gwPhase')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -318,6 +319,61 @@ const pickProtect = core.bestTransfer(
   { elements: [capWeak, otherStarter, upgrade] }, [capWeak, otherStarter],
   [capWeak, otherStarter], 40, {}, new Set([capWeak.id]));
 ok(!pickProtect || pickProtect.out.id !== capWeak.id, 'a protected captain is never the sell, even when weakest');
+
+/* ── gwPhase: the between-gameweek state machine ────────── */
+section('gwPhase resolves pre / live / post / between / ended');
+const HR = 3600e3, DAY = 86400e3;
+const T0 = 1_700_000_000_000;               /* fixed "now" for determinism */
+const iso = ms => new Date(ms).toISOString();
+/* Two-event world: GW10 (the one we're around) and GW11 (next). */
+const mkEvents = (cfg) => [
+  { id: 10, deadline_time: iso(cfg.g10), is_current: cfg.cur10, is_next: false,
+    data_checked: !!cfg.checked10 },
+  { id: 11, deadline_time: iso(cfg.g11), is_current: false, is_next: cfg.next11,
+    data_checked: false },
+];
+const bOf = evs => ({ events: evs, cur: evs.find(e => e.is_current) || evs[0] });
+
+/* pre-deadline: GW10 deadline still ahead → count down to it. */
+let evs = mkEvents({ g10: T0 + 2 * DAY, cur10: true, g11: T0 + 9 * DAY, next11: true });
+let r = core.gwPhase(bOf(evs), [], T0);
+ok(r.phase === 'pre', 'before the deadline → pre');
+ok(r.target && r.target.id === 10, 'pre targets the imminent GW');
+
+/* live: GW10 deadline passed, a fixture started and not finished. */
+evs = mkEvents({ g10: T0 - 2 * HR, cur10: true, g11: T0 + 7 * DAY, next11: true });
+let fxLive = [{ event: 10, started: true, finished: false }];
+r = core.gwPhase(bOf(evs), fxLive, T0);
+ok(r.phase === 'live', 'deadline gone with a match in play → live');
+
+/* live: deadline passed, kickoff imminent (no fixture rows / none started). */
+r = core.gwPhase(bOf(evs), [], T0);
+ok(r.phase === 'live', 'deadline gone, awaiting kickoff → live (not dead)');
+
+/* post: all GW10 fixtures finished but data not yet checked (bonus settling). */
+evs = mkEvents({ g10: T0 - 2 * DAY, cur10: true, g11: T0 + 5 * DAY, next11: true, checked10: false });
+let fxDone = [{ event: 10, started: true, finished: true }, { event: 10, started: true, finished: true }];
+r = core.gwPhase(bOf(evs), fxDone, T0);
+ok(r.phase === 'post', 'finished but unchecked → post (result in)');
+
+/* between: GW10 finished AND data checked, GW11 deadline ahead. */
+evs = mkEvents({ g10: T0 - 2 * DAY, cur10: true, g11: T0 + 5 * DAY, next11: true, checked10: true });
+r = core.gwPhase(bOf(evs), fxDone, T0);
+ok(r.phase === 'between', 'finished, checked, next GW ahead → between');
+ok(r.target && r.target.id === 11, 'between counts down to the next GW');
+
+/* ended: last GW finished and checked, no future deadline anywhere. */
+evs = [{ id: 38, deadline_time: iso(T0 - 3 * DAY), is_current: true, is_next: false, data_checked: true }];
+r = core.gwPhase(bOf(evs), [{ event: 38, started: true, finished: true }], T0);
+ok(r.phase === 'ended', 'season over → ended');
+
+/* the regression guard: no configuration yields the old dead combo where
+   the deadline reads "passed" yet the app still points at a stale GW with
+   nothing ahead. Every passed-deadline state must resolve to a live phase. */
+evs = mkEvents({ g10: T0 - 1 * HR, cur10: true, g11: T0 + 6 * DAY, next11: true });
+r = core.gwPhase(bOf(evs), [], T0);
+ok(r.phase !== 'pre' && (r.target ? r.target.id === 11 || r.phase === 'live' : true),
+  'passed deadline never leaves the header pointing at a dead countdown');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
