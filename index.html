@@ -1125,7 +1125,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
 .seg-b.on{background:var(--grad-brand);color:#fff}
 /* Full-width, horizontally-scrollable segmented control + its panes
-   (This Gameweek tabs: Scorers · Market · Picks · Value · Template). */
+   (Gameweek recap tabs: Scorers · Market · Picks · Value · Template). */
 .gw-seg{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;margin-bottom:14px;scrollbar-width:none}
 .gw-seg::-webkit-scrollbar{display:none}
 .gw-seg .seg-b{flex:1 0 auto;white-space:nowrap}
@@ -2370,9 +2370,9 @@ const NAV = [
   {
     id:'home', label:'Home', icon:'home',
     panels:[
-      {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
-      {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'},
+      {id:'myweek', label:'My Week', icon:'target', tier:'free'},
+      {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
       {id:'methodology', label:'Methodology', icon:'spark', tier:'free'},
       {id:'accountability', label:'Model Accountability', icon:'target', tier:'free'}
@@ -2472,7 +2472,7 @@ const PANEL_CONTENT = {
     layout:'dashboard'
   },
   'gw-actions':{
-    desc:'The gameweek at a glance — top scorers, the transfer market, and our recommended picks by position and by budget, from the latest live data.',
+    desc:'A recap of the latest gameweek — top scorers, the transfer market, and standout picks by position and by budget, read from the finished gameweek’s live data.',
     layout:'actions'
   },
   blog:{
@@ -3460,7 +3460,6 @@ async function hydrateDesign(host){
     '<p class="dl-sub" style="margin-top:14px">Every primitive is a plain HTML/CSS pattern driven by the tokens — no components, no build step. Data rows: 28px · card padding 12px · radius 4px max · depth by hairline, never shadow.</p>';
 }
 
-/* This Gameweek: live event intelligence */
 /* ── Manager Report — season review + captain analysis ─── */
 async function hydrateGwhistory(host){
   const mid=getMid();
@@ -8722,9 +8721,10 @@ function initPullToRefresh(){
 }
 
 /* ── INIT ──────────────────────────────────────────────── */
-/* Linked managers land on their personalised My Week briefing; everyone
-   else on the Dashboard. Deep links (hash / ?panel=) still override below. */
-function homePanel(){return getMid()?'myweek':'dashboard';}
+/* The Dashboard is the app's home and starting point for everyone; the
+   personalised My Week briefing is one tap away in the Home area. Deep
+   links (hash / ?panel=) still override below. */
+function homePanel(){return 'dashboard';}
 function init(){
   buildNav();
   buildBottomNav();
