@@ -1805,6 +1805,47 @@ function fmtDeadline(iso){
   return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+
     ' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 }
+/* Compact "Sat 16 Aug" — for forward-looking "next GW opens" copy. */
+function fmtDayShort(iso){
+  return new Date(iso).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+}
+
+/* ── GAMEWEEK PHASE STATE MACHINE ─────────────────────────
+   The FPL bootstrap keeps an event flagged "current" even after
+   its deadline passes and its per-GW price/flag deltas reset to
+   zero. Reading that stale event is what produced the dead
+   "DEADLINE PASSED · PRICES ↑0 ↓0" strip between gameweeks.
+   Resolve the true phase from events (+ fixtures when available)
+   so the header, hero and panels always show a live, useful state:
+     pre     — before the next deadline → count down to it
+     live    — deadline gone, matches rolling (or kickoff imminent)
+     post    — matches done, bonus/prices still settling (result in)
+     between — GW done & checked, next GW's deadline is ahead
+     ended   — no future deadline anywhere (season over)
+   Pure and now-injectable so it can be unit-tested. */
+function gwPhase(b,fixtures,now){
+  now=now||Date.now();
+  const events=(b&&b.events)||[];
+  const fx=fixtures||[];
+  const ms=e=>e&&e.deadline_time?new Date(e.deadline_time).getTime():NaN;
+  const cur=events.find(e=>e.is_current)
+    ||events.slice().reverse().find(e=>ms(e)<=now)
+    ||(b&&b.cur)||events[0]||null;
+  const target=events.find(e=>ms(e)>now)||events.find(e=>e.is_next)||null;
+  const curFix=cur?fx.filter(f=>f.event===cur.id):[];
+  const anyLive=curFix.some(f=>f.started&&!f.finished);
+  const allDone=curFix.length>0&&curFix.every(f=>f.finished);
+  const dataChecked=!!(cur&&cur.data_checked);
+  const curPassed=cur?ms(cur)<=now:false;
+  let phase;
+  if(cur&&!curPassed)                          phase='pre';
+  else if(anyLive)                             phase='live';
+  else if(curPassed&&!allDone&&!dataChecked&&(curFix.length||!fx.length)) phase='live';
+  else if(curPassed&&!dataChecked)             phase='post';
+  else if(target)                              phase='between';
+  else                                         phase='ended';
+  return {phase,cur,target,anyLive,allDone,dataChecked,curPassed};
+}
 const STATUS_LABEL={i:'Injured',d:'Doubtful',s:'Suspended',u:'Unavailable',n:'Not available'};
 const STATUS_BADGE={i:'badge-red',d:'badge-amber',s:'badge-red',u:'badge-grey',n:'badge-grey'};
 
@@ -2967,10 +3008,29 @@ async function hydrateDashboard(host){
   };
   const flagged=b.elements.filter(e=>e.status&&e.status!=='a')
     .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent)).slice(0,3);
-  const anyLive=fixtures.some(f=>f.event===b.cur.id&&f.started&&!f.finished);
-  const q4='<div class="card qd">'+qh('Live · deadline',anyLive?'IN PLAY':'GW'+b.cur.id)+
+  const ph=gwPhase(b,fixtures);
+  const anyLive=ph.phase==='live';
+  const heroLabel=ph.phase==='pre'?'Next deadline'
+    :ph.phase==='live'?'Gameweek live'
+    :ph.phase==='post'?'Gameweek result'
+    :ph.phase==='between'?'Next gameweek'
+    :'Season';
+  const heroTag=ph.phase==='pre'?'GW'+(ph.target?ph.target.id:b.cur.id)
+    :ph.phase==='live'?'IN PLAY'
+    :ph.phase==='post'?'GW'+(ph.cur?ph.cur.id:'')+' in'
+    :ph.phase==='between'?'GW'+(ph.target?ph.target.id:'')+' next'
+    :'ended';
+  /* Forward-looking sub-line so the card never reads as dead between GWs. */
+  const heroNote=ph.phase==='between'&&ph.target
+    ?'<div class="qd-foot" style="margin-bottom:8px">GW'+ph.target.id+' opens <b>'+fmtDeadline(ph.target.deadline_time)+'</b></div>'
+    :ph.phase==='post'
+    ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Bonus &amp; prices settling — see the results →</a></div>'
+    :ph.phase==='live'
+    ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>'
+    :'';
+  const q4='<div class="card qd">'+qh('Live · deadline',heroLabel+' · '+heroTag)+
     '<div class="qd-count" id="qd-count">—</div>'+
-    (anyLive?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>':'')+
+    heroNote+
     '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players near the threshold.</div>')+
     '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
     (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex-shrink:0">'+esc(e.web_name)+'</b>'+
@@ -7547,17 +7607,39 @@ function toggleTheme(){
 function tickTicker(){
   const b=MEM._idx;if(!b||!b.cur)return;
   const set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
-  set('tk-gw','GW <b>'+b.cur.id+'</b>');
-  const ms=new Date(b.cur.deadline_time)-Date.now();
-  if(ms>0){
+  const fx=(MEM.fixtures&&MEM.fixtures.v)||null;
+  const ph=gwPhase(b,fx);
+  const focus=ph.target||ph.cur||b.cur;
+  /* Countdown to a given deadline, or null once it has passed. */
+  const cd=iso=>{const ms=new Date(iso)-Date.now();if(ms<=0)return null;
     const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),
       m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
     const p=n=>String(n).padStart(2,'0');
-    const t='T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s);
-    set('tk-dl','DEADLINE <b>'+t+'</b>');
-    set('qd-count',t);
-  }else{set('tk-dl','DEADLINE <b>PASSED</b>');set('qd-count','LIVE');}
-  /* Market + fitness counts, recomputed only when the bootstrap changes. */
+    return 'T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s);};
+  /* Label the GW the phase is actually about: the live/settling one when
+     mid-play, otherwise the one we're counting down to. */
+  const labelEv=(ph.phase==='live'||ph.phase==='post')?(ph.cur||focus):focus;
+  set('tk-gw','GW <b>'+(labelEv?labelEv.id:b.cur.id)+'</b>');
+  /* Phase-aware header — never the dead "DEADLINE PASSED". */
+  if(ph.phase==='pre'){
+    const t=cd(focus.deadline_time)||'—';
+    set('tk-dl','DEADLINE <b>'+t+'</b>');set('qd-count',t);
+  }else if(ph.phase==='live'){
+    set('tk-dl','<b class="pos">● LIVE</b> GW'+(ph.cur?ph.cur.id:'')+' in play');
+    set('qd-count','LIVE');
+  }else if(ph.phase==='post'){
+    set('tk-dl','GW'+(ph.cur?ph.cur.id:'')+' <b>RESULT IN</b>');
+    set('qd-count','GW'+(ph.cur?ph.cur.id:''));
+  }else if(ph.phase==='between'&&ph.target){
+    const t=cd(ph.target.deadline_time);
+    set('tk-dl','GW'+ph.target.id+' OPENS <b>'+(t||fmtDayShort(ph.target.deadline_time))+'</b>');
+    set('qd-count',t||fmtDayShort(ph.target.deadline_time));
+  }else{
+    set('tk-dl','SEASON <b>ENDED</b>');set('qd-count','—');
+  }
+  /* Market + fitness counts, recomputed only when the bootstrap changes.
+     Between/after a GW the per-event deltas reset to zero — show a neutral
+     "steady" rather than a stark "↑0 ↓0". */
   if(window._tkSrc!==b){
     window._tkSrc=b;
     let up=0,dn=0,flags=0;
@@ -7565,7 +7647,9 @@ function tickTicker(){
       if(e.cost_change_event>0)up++;else if(e.cost_change_event<0)dn++;
       if(e.status&&e.status!=='a')flags++;
     });
-    set('tk-prices','PRICES <b class="pos">↑'+up+'</b> <b class="neg">↓'+dn+'</b>');
+    set('tk-prices',(up||dn)
+      ?'PRICES <b class="pos">↑'+up+'</b> <b class="neg">↓'+dn+'</b>'
+      :'PRICES <b>steady</b>');
     set('tk-flags','FLAGS <b>'+flags+'</b>');
   }
 }
