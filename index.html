@@ -909,6 +909,27 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .conf-amber{background:var(--amber-soft);color:var(--amber)}
 .conf-red{background:var(--red-soft);color:var(--red)}
 
+/* ── My Week briefing rows ─────────────────────────────── */
+.mw-card{padding:0;overflow:hidden}
+.mw-card .qd-head{padding:12px 16px 10px;margin:0;border-bottom:1px solid var(--border-2)}
+.mw-row{padding:13px 16px;border-bottom:1px solid var(--border)}
+.mw-row:last-child{border-bottom:none}
+.mw-head{display:flex;align-items:baseline;gap:12px}
+.mw-lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;color:var(--text-3);
+  width:74px;flex-shrink:0;text-transform:uppercase;text-decoration:none;font-weight:700}
+.mw-lab:hover{color:var(--green)}
+.mw-call{flex:1;min-width:0;font-size:.9rem;line-height:1.45}
+.mw-side{flex-shrink:0;margin-left:8px;align-self:center}
+.mw-exp{margin:8px 0 0 86px}
+.mw-exp summary{cursor:pointer;font-family:var(--font-mono);font-size:10.5px;color:var(--green);
+  list-style:none;display:inline-flex;align-items:center;gap:5px;letter-spacing:.03em}
+.mw-exp summary::-webkit-details-marker{display:none}
+.mw-exp summary::before{content:"▸";display:inline-block;transition:transform .15s}
+.mw-exp[open] summary::before{transform:rotate(90deg)}
+.mw-exp ul{margin:8px 0 2px;padding-left:15px}
+.mw-exp li{font-size:.76rem;color:var(--text-2);line-height:1.5;margin-bottom:4px}
+@media(max-width:520px){.mw-lab{width:100%;margin-bottom:2px}.mw-head{flex-wrap:wrap}.mw-exp{margin-left:0}}
+
 /* ── OVERLAY (mobile drawer) ───────────────────────────── */
 .overlay{
   display:none;position:fixed;inset:0;z-index:190;
@@ -2247,6 +2268,7 @@ const NAV = [
   {
     id:'home', label:'Home', icon:'home',
     panels:[
+      {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'This Gameweek', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
@@ -2334,6 +2356,10 @@ PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:
 /* ── PANEL CONTENT DEFINITIONS (placeholder, shell only) ──── */
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
+  myweek:{
+    desc:'Your whole gameweek in six lines — rank, captain, transfer, chip, watchlist and a fixture to note. Tap “Explain this” to see the model’s reasons.',
+    layout:'standard'
+  },
   dashboard:{
     desc:'The one question this page answers: what should I do this week?',
     layout:'dashboard'
@@ -2564,7 +2590,7 @@ function buildBottomNav(){
       '<span class="bn-ic">'+svg(ICON[area.icon])+'</span>'+
       '<span class="bn-label">'+(BN_SHORT[area.id]||area.label)+'</span>';
     item.addEventListener('click',()=>{
-      openPanel(area.panels[0].id);
+      openPanel(area.id==='home'?homePanel():area.panels[0].id);
     });
     bn.appendChild(item);
   });
@@ -2888,6 +2914,108 @@ function bestTransfer(b,squadEls,xiEls,bank,hz,protectIds){
     if(!best||gain>best.gain)best={out,cand,gain};
   });
   return (best&&best.gain>=MIN_TR_GAIN)?best:null;
+}
+
+/* ── My Week: the six-line personalised briefing ──────────
+   Rank · Captain · Transfer · Chip · Watchlist · Fixture. The
+   Captain / Transfer / Chip rows carry an "Explain this" drawer with the
+   model's top-3 drivers. Default home for linked managers. */
+async function hydrateMyWeek(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=stateBox('team','Link your team for My Week',
+    'Your personalised gameweek briefing — rank, captain, transfer, chip and watchlist — loads here once you link your FPL Manager ID.',
+    '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>');return;}
+  const b=await boot();
+  const [fixtures,picks,hist]=await Promise.all([loadFixtures(),loadPicks(mid,b.cur.id),loadHistory(mid)]);
+  const nf=buildNextFix(b,fixtures);
+  const hz=buildHorizon(b,fixtures,5);
+  const xiEls=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+  const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
+  const bank=(picks.entry_history&&picks.entry_history.bank)||0;
+  const stamp=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const mwRow=(label,to,call,side,explain)=>'<div class="mw-row">'+
+    '<div class="mw-head"><a class="mw-lab" href="#'+to+'" onclick="openPanel(\''+to+'\');return false">'+label+'</a>'+
+      '<div class="mw-call">'+call+'</div>'+(side?'<span class="mw-side">'+side+'</span>':'')+'</div>'+
+    (explain&&explain.length?'<details class="mw-exp"><summary>Explain this</summary><ul>'+
+      explain.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></details>':'')+'</div>';
+
+  /* Row 1 — Rank + this-GW movement. */
+  const cur=hist.current||[];
+  const lastG=cur[cur.length-1],prevG=cur[cur.length-2];
+  let rankCall;
+  if(lastG&&lastG.overall_rank){
+    let mv='<span class="dl-sub">held</span>';
+    if(prevG&&prevG.overall_rank){const d=prevG.overall_rank-lastG.overall_rank;
+      mv=d>0?'<span class="pos">▲ '+fmtNum(Math.abs(d))+'</span>':d<0?'<span class="neg">▼ '+fmtNum(Math.abs(d))+'</span>':'<span class="dl-sub">held</span>';}
+    rankCall='<b>'+fmtNum(lastG.overall_rank)+'</b> overall <span class="dl-sub">· GW'+lastG.event+' '+fmtNum(lastG.rank||0)+' · '+mv+'</span>';
+  }else rankCall='<b>Season not started</b> <span class="dl-sub">rank appears after GW1</span>';
+
+  /* Row 2 — Captain (decision-grade). */
+  const capM=captainModel(b,nf,xiEls,3);
+  const cap=capM.picks[0],capConf=captainConfidence(capM);
+  const capCall=cap?'<b>'+esc(cap.el.web_name)+'</b> (C) <span class="dl-sub">'+cap.xp.toFixed(1)+' xP · '+nextFixLabel(nf[cap.el.team])+'</span>':'<b>—</b> <span class="dl-sub">no eligible captain yet</span>';
+  const capSide=cap?confChip(capConf.value,''):'';
+
+  /* Row 3 — Transfer. */
+  const protect=new Set(capM.picks.slice(0,2).map(p=>p.el.id));
+  const best=bestTransfer(b,squad,xiEls,bank,hz,protect);
+  const fr=transferFrame(best,bank,1,5);
+  const trCall=best
+    ?'<b>'+esc(best.out.web_name)+' → '+esc(best.cand.web_name)+'</b> <span class="dl-sub">'+(fr.priceDelta>0?'+':'')+'£'+fr.priceDelta.toFixed(1)+'m · bank £'+fr.bankAfter.toFixed(1)+'m</span>'
+    :'<b>Hold</b> <span class="dl-sub">no move clears the +1.5 xP bar over 5 GW</span>';
+  const trSide=best?'<span class="pos" style="font-weight:700">+'+best.gain.toFixed(1)+'</span>':'';
+
+  /* Row 4 — Chip. */
+  const used=(hist.chips||[]).map(c=>c.name);
+  const chipsLeft=['wildcard','3xc','bboost','freehit'].filter(k=>!used.includes(k));
+  const adv=chipAdvice(b,fixtures,chipsLeft,xiEls);
+  let chipCall,chipSide='';
+  if(!chipsLeft.length)chipCall='<b>All chips played</b>';
+  else if(adv.best&&adv.best.window!=='hold'){chipCall='<b>'+esc(adv.best.label)+'</b> <span class="dl-sub">'+esc(adv.best.window)+'</span>';chipSide=confChip(adv.best.conf,'');}
+  else{chipCall='<b>Hold '+(adv.best?esc(adv.best.label):'chips')+'</b> <span class="dl-sub">no window yet</span>';chipSide=adv.best?confChip(adv.best.conf,''):'';}
+
+  /* Row 5 — Watchlist alerts. */
+  const watch=loadWatch();
+  const total=b.elements.length;
+  const alerts=[];
+  watch.forEach(id=>{const e=b.els[id];if(!e)return;const tags=[];
+    if(e.status&&e.status!=='a')tags.push(STATUS_LABEL[e.status]||'flagged');
+    const pc=priceChangeProb(e,total);if(pc.prob>=70&&pc.dir!=='flat')tags.push('price '+(pc.dir==='rise'?'↑':'↓')+pc.prob+'%');
+    const n=nf[e.team];if(n&&n.diff!=null&&n.diff<=2)tags.push('easy fixture');
+    if(tags.length)alerts.push({e,tags});});
+  let wCall,wSide='';
+  if(!watch.length)wCall='<b>Watchlist empty</b> <span class="dl-sub">add players to track prices &amp; fitness</span>';
+  else if(!alerts.length)wCall='<b>No alerts</b> <span class="dl-sub">'+watch.length+' watched, all quiet</span>';
+  else{wCall='<b>'+alerts.length+' alert'+(alerts.length>1?'s':'')+'</b> <span class="dl-sub">'+esc(alerts[0].e.web_name)+': '+esc(alerts[0].tags.join(', '))+(alerts.length>1?' · +'+(alerts.length-1)+' more':'')+'</span>';
+    wSide='<span class="badge badge-amber">'+alerts.length+'</span>';}
+
+  /* Row 6 — Fixture spotlight: the standout fixture in your XI. */
+  const teamSeen={},fxRows=[];
+  xiEls.forEach(e=>{const n=nf[e.team];if(n&&n.diff!=null&&!teamSeen[e.team]){teamSeen[e.team]=1;fxRows.push({team:e.team,n});}});
+  fxRows.sort((a,c)=>a.n.diff-c.n.diff);
+  const easy=fxRows[0];
+  const toughN=fxRows.filter(r=>r.n.diff>=4).length;
+  const fCall=easy
+    ?'<b>'+teamShort(b,easy.team)+'</b> '+(easy.n.home?'v ':'@ ')+esc(easy.n.opp)+' <span class="badge fdrtag fdr-'+easy.n.diff+'">'+easy.n.diff+'</span> <span class="dl-sub">best fixture in your XI'+(toughN?' · '+toughN+' tough to watch':'')+'</span>'
+    :'<b>—</b> <span class="dl-sub">fixtures not set yet</span>';
+
+  const phaseNote=(()=>{const ph=gwPhase(b,fixtures);
+    return ph.phase==='live'?'GW'+(ph.cur?ph.cur.id:b.cur.id)+' is live':
+      ph.phase==='post'?'GW'+(ph.cur?ph.cur.id:b.cur.id)+' results settling':
+      ph.phase==='between'&&ph.target?'GW'+ph.target.id+' opens '+fmtDayShort(ph.target.deadline_time):
+      'GW'+(ph.target?ph.target.id:b.cur.id)+' deadline ahead';})();
+
+  host.innerHTML=
+    '<div class="card mw-card">'+
+      '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Your week</span>'+
+        '<span class="qd-meta">'+esc(phaseNote)+' · '+stamp+'</span></div>'+
+      mwRow('Rank','liverank',rankCall,'',null)+
+      mwRow('Captain','captain',capCall,capSide,cap?captainFeatures(b,nf,cap):null)+
+      mwRow('Transfer','transfers',trCall,trSide,transferFeatures(b,hz,best,fr))+
+      mwRow('Chip','chips',chipCall,chipSide,chipsLeft.length?chipFeatures(adv):null)+
+      mwRow('Watchlist','watchlist',wCall,wSide,null)+
+      mwRow('Fixture','fixtures',fCall,'',null)+
+    '</div>';
 }
 
 async function hydrateDashboard(host){
@@ -7280,6 +7408,37 @@ function chipAdvice(b,fixtures,chipsLeft,squadXi){
   all.sort((a,c)=>c.conf-a.conf);
   return {best:all[0]||null,second:all[1]||null,all,nextDbl,nextBlank};
 }
+
+/* Top model drivers behind each My Week call — the "Explain this" drawer.
+   Pure: each returns up to three short reason strings. */
+function captainFeatures(b,nf,pick){
+  const e=pick.el,n=nf[e.team]||{},f=[];
+  f.push('xP '+pick.xp.toFixed(1)+' — form '+(e.form||'0')+', FPL estimate '+(e.ep_next||'n/a'));
+  if(n.lam!=null)f.push('Team xG '+n.lam.toFixed(2)+' vs 1.47 league average'+(n.opp?' ('+(n.home?'H':'A')+' v '+n.opp+')':''));
+  else if(n.opp)f.push('Fixture: '+(n.home?'H':'A')+' v '+n.opp+' (difficulty '+n.diff+')');
+  f.push('EV vs field '+(pick.ev>=0?'+':'')+pick.ev.toFixed(1)+' xP at '+Math.round(pick.eo)+'% captain EO');
+  return f.slice(0,3);
+}
+function transferFeatures(b,hz,best,fr){
+  if(!best)return ['No move clears the +1.5 xP bar over 5 GW',
+    'Your XI is the highest-EV option this week',
+    'Banking the transfer keeps next week flexible'];
+  const f=[];
+  f.push('+'+best.gain.toFixed(1)+' xP over 5 GW (~'+fr.perGw.toFixed(1)+'/GW)');
+  f.push('IN '+best.cand.web_name+' '+horizonXP(b,best.cand,hz).toFixed(1)+' vs OUT '+best.out.web_name+' '+horizonXP(b,best.out,hz).toFixed(1)+' (5-GW xP)');
+  f.push(fr.priceDelta>0?'Costs £'+fr.priceDelta.toFixed(1)+'m — bank after £'+fr.bankAfter.toFixed(1)+'m'
+    :'Frees £'+(-fr.priceDelta).toFixed(1)+'m — bank after £'+fr.bankAfter.toFixed(1)+'m');
+  return f.slice(0,3);
+}
+function chipFeatures(adv){
+  if(!adv||!adv.best)return ['No chip stands out yet','Hold for a double or blank gameweek'];
+  const f=[adv.best.reason];
+  f.push((adv.nextDbl?'Next double: GW'+adv.nextDbl.gw:'No double on the horizon yet')+' · '+
+    (adv.nextBlank?'next blank: GW'+adv.nextBlank.gw:'no blank on the horizon yet'));
+  if(adv.second)f.push('Second-best: '+adv.second.label+' ('+(adv.second.window==='hold'?'hold':adv.second.window)+')');
+  return f.slice(0,3);
+}
+
 /* Games-played divisor for the per-season shares: finished fixtures
    this season, falling back to a full 38 between seasons (when the
    bootstrap still carries last season's totals but no fixture in the
@@ -7732,6 +7891,7 @@ async function hydrateDraft(host){
 
 /* Panels wired to live FPL data. */
 const WIRED={
+  myweek:hydrateMyWeek,
   dashboard:hydrateDashboard,
   methodology:hydrateMethodology,
   design:hydrateDesign,
@@ -8202,11 +8362,16 @@ function initPullToRefresh(){
 }
 
 /* ── INIT ──────────────────────────────────────────────── */
+/* Linked managers land on their personalised My Week briefing; everyone
+   else on the Dashboard. Deep links (hash / ?panel=) still override below. */
+function homePanel(){return getMid()?'myweek':'dashboard';}
 function init(){
   buildNav();
   buildBottomNav();
   applyTheme(storedTheme()||'dark');
-  renderPage('dashboard');
+  const home=homePanel();
+  currentPanel=home;expandedArea=PANELS[home].areaId;
+  renderPage(home);
   syncNav();
 
   document.getElementById('hamburger').addEventListener('click',openSidebar);
@@ -8243,7 +8408,7 @@ function init(){
 
   document.getElementById('tb-logo').addEventListener('click',function(e){
     e.preventDefault();
-    openPanel('dashboard');
+    openPanel(homePanel());
   });
 
   track('app_open');
