@@ -99,11 +99,15 @@ const pieces = [
   /* Section 4: Fixture Difficulty 2.0 + set-piece confidence. */
   extractFn(html, 'fdrAttack'),
   extractFn(html, 'fdrDefence'),
-  extractFn(html, 'setPieceConfidence')
+  extractFn(html, 'setPieceConfidence'),
+  /* Section 4 (6-13): readiness, lineup, community. */
+  extractFn(html, 'benchBoostReadiness'),
+  extractFn(html, 'lineupCheck'),
+  extractFn(html, 'communityAggregate')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -532,6 +536,49 @@ ok(multi.roles.length === 3 && multi.addXp > pen1.addXp, 'a multi-duty taker sta
 ok(multi.value === 82, 'confidence takes the strongest duty (penalties), not the sum');
 const none = core.setPieceConfidence({});
 ok(none.value === 0 && none.roles.length === 0, 'no set-piece duty → zero');
+
+/* ── Section 4 (6-13): readiness, lineup, community ─────── */
+section('benchBoostReadiness: strong bench scores higher');
+const bbEl = (id, xp, status, ch) => ({ id, team: id, element_type: 3, status: status || 'a',
+  chance_of_playing_next_round: ch === undefined ? null : ch,
+  ep_next: String(xp), form: '4', points_per_game: '4', selected_by_percent: '5' });
+const bbNf = { 1: { opp: 'BUR', lam: 1.6, cs: 0.3 }, 2: { opp: 'LUT', lam: 1.6, cs: 0.3 },
+  3: { opp: 'EVE', lam: 1.6, cs: 0.3 }, 4: { opp: 'CHE', lam: 1.6, cs: 0.3 } };
+const strongBench = core.benchBoostReadiness({}, bbNf, [bbEl(1, 5), bbEl(2, 4), bbEl(3, 4), bbEl(4, 4)]);
+const weakBench = core.benchBoostReadiness({}, bbNf, [bbEl(1, 1), bbEl(2, 1, 'i'), bbEl(3, 0), bbEl(4, 1)]);
+ok(strongBench.score > weakBench.score, 'a strong, fit bench scores above a weak/injured one');
+ok(strongBench.playing === 4 && weakBench.playing < 4, 'counts only fit players with a fixture');
+ok(strongBench.tier === core.confTier(strongBench.score), 'tier matches the score');
+ok(core.benchBoostReadiness({}, {}, []).score === 0, 'an empty bench is zero');
+
+section('lineupCheck: flags the point-costing mistakes');
+const lcNf = { 1: { opp: 'BUR' }, 2: { opp: 'LUT' }, 3: { opp: 'EVE' } };  /* team 4 has NO fixture (blank) */
+const lcPick = (element, position, isC) => ({ element, position, is_captain: !!isC });
+const lcEls = { 10: { web_name: 'Fit', team: 1, status: 'a', chance_of_playing_next_round: null },
+  11: { web_name: 'Hurt', team: 2, status: 'i', chance_of_playing_next_round: 0 },
+  12: { web_name: 'Blank', team: 4, status: 'a', chance_of_playing_next_round: null },
+  13: { web_name: 'Nailed', team: 3, status: 'a', chance_of_playing_next_round: null } };
+const lcPicks = { picks: [ lcPick(10, 1, true), lcPick(11, 2), lcPick(12, 3), lcPick(13, 12) ] };
+const issues = core.lineupCheck({ els: lcEls }, lcPicks, lcNf);
+ok(issues.some(i => i.msg.includes('Hurt') && i.level === 'warn'), 'flags a ruled-out starter');
+ok(issues.some(i => i.msg.includes('Blank') && i.msg.toLowerCase().includes('no fixture')), 'flags a starter with no fixture');
+ok(issues.some(i => i.msg.includes('Nailed') && i.level === 'info'), 'flags a nailed player left on the bench');
+/* A legal, fully fit XI (11 starters on a team that has a fixture). */
+const fitEls = {};
+const cleanRows = [];
+for (let i = 0; i < 11; i++) { fitEls[100 + i] = { web_name: 'P' + i, team: 1, status: 'a', chance_of_playing_next_round: null };
+  cleanRows.push(lcPick(100 + i, i + 1, i === 0)); }
+const cleanIssues = core.lineupCheck({ els: fitEls }, { picks: cleanRows }, lcNf);
+ok(cleanIssues.length === 1 && cleanIssues[0].level === 'ok', 'a legal, fully fit XI reports all-good');
+
+section('communityAggregate: the crowd selectors');
+const caB = { cur: { most_captained: 1, most_transferred_in: 2, most_transferred_out: 3, top_element_info: { id: 4 } },
+  els: { 1: { web_name: 'Cap' }, 2: { web_name: 'In' }, 3: { web_name: 'Out' }, 4: { web_name: 'Top' } },
+  elements: [ { id: 5, web_name: 'Owned', selected_by_percent: '61.0' }, { id: 1, web_name: 'Cap', selected_by_percent: '40.0' } ] };
+const ca = core.communityAggregate(caB);
+ok(ca.captain.web_name === 'Cap' && ca.transferIn.web_name === 'In', 'reads crowd captain + transfer in');
+ok(ca.transferOut.web_name === 'Out' && ca.topScorer.web_name === 'Top', 'reads transfer out + top scorer');
+ok(ca.mostOwned.web_name === 'Owned', 'finds the most-owned player');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
