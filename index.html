@@ -900,6 +900,15 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
+/* Reusable confidence chip — green ≥70 · amber 50–69 · red <50. */
+.conf-chip{display:inline-flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:.66rem;font-weight:700;
+  padding:2px 8px;border-radius:var(--r-pill);letter-spacing:.02em;white-space:nowrap}
+.conf-chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.conf-green{background:var(--green-soft);color:var(--green-bright)}
+.conf-amber{background:var(--amber-soft);color:var(--amber)}
+.conf-red{background:var(--red-soft);color:var(--red)}
+
 /* ── OVERLAY (mobile drawer) ───────────────────────────── */
 .overlay{
   display:none;position:fixed;inset:0;z-index:190;
@@ -1222,6 +1231,7 @@ body{font-size:14px;line-height:1.35}
 .qd-v{margin-left:auto;font-family:var(--font-mono);font-variant-numeric:tabular-nums;flex-shrink:0}
 .qd-hot{color:var(--hot);font-weight:700}
 .pos{color:var(--green)}
+.neg{color:var(--red)}
 .qd-foot{font-size:11px;color:var(--text-3);font-family:var(--font-mono);margin-top:8px;letter-spacing:.02em}
 .qd-foot a{color:var(--green)}
 .qd-count{font-family:var(--font-mono);font-size:42px;font-weight:600;color:var(--text);
@@ -2743,7 +2753,8 @@ async function deadlineStrip(b,fixtures){
     else count='passed';}
   const pool=b.elements.filter(e=>e.status==='a')
     .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
-  const cap=pool[0];
+  /* Eligible captains only (MID/FWD, fit) — never headline a keeper. */
+  const cap=pool.filter(x=>captainEligible(x.e))[0]||pool[0];
   let flags=null,xiXP=null;
   const mid=getMid();
   if(mid){try{
@@ -2904,19 +2915,26 @@ async function hydrateDashboard(host){
     chipsLeft=[['wildcard','WC'],['3xc','TC'],['bboost','BB'],['freehit','FH']]
       .filter(([k])=>!used.includes(k)).map(([,n])=>n);
   }catch(_){}}
-  const cap=capPool[0],vice=capPool[1];
+  /* Decision-grade captain: eligible attackers only, with a confidence
+     chip — not merely the highest-xP player of any position. */
+  const capM=captainModel(b,nf,capPool.map(x=>x.e),2);
+  const cap=capM.picks[0]||null,vice=capM.picks[1]||null;
+  const capConf=captainConfidence(capM);
   const row=(k,body,v,cls)=>'<div class="qd-row"><span class="qd-k">'+k+'</span>'+body+
     (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>';
   let trBody='',trVal=null,trCls='';
   if(squad){
     /* Never suggest selling the player we're captaining or vice-captaining. */
-    const protect=new Set([cap&&cap.e.id,vice&&vice.e.id].filter(v=>v!=null));
+    const protect=new Set([cap&&cap.el.id,vice&&vice.el.id].filter(v=>v!=null));
     const best=bestTransfer(b,squad,capPool.map(x=>x.e),bank,hz,protect);
     if(best){
-      trBody='<b>'+esc(best.out.web_name)+' → '+esc(best.cand.web_name)+'</b>';
+      const fr=transferFrame(best,bank,1,5);
+      const pd=fr.priceDelta;
+      trBody='<b>'+esc(best.out.web_name)+' → '+esc(best.cand.web_name)+'</b>'+
+        ' <span class="dl-sub">'+(pd>0?'+':'')+'£'+pd.toFixed(1)+'m · bank £'+fr.bankAfter.toFixed(1)+'m</span>';
       trVal='+'+best.gain.toFixed(1);trCls='pos';
     }else{
-      trBody='<b>HOLD</b> <span class="dl-sub">no move beats your XI</span>';
+      trBody='<b>HOLD</b> <span class="dl-sub">no move clears the +1.5 xP bar over 5 GW</span>';
     }
   }
   if(!trBody){
@@ -2925,14 +2943,22 @@ async function hydrateDashboard(host){
     trBody=tgt?'<b>'+esc(tgt.web_name)+'</b> <span class="dl-sub">best value next 5</span>':'—';
     trVal=tgt?horizonXP(b,tgt,hz).toFixed(1):null;
   }
-  const margin=cap&&vice?(cap.p-vice.p):0;
-  const conf=Math.max(50,Math.min(94,Math.round(55+margin*9)));
+  const margin=capConf.margin||0;
+  /* Chip call: a reasoned window from the fixture calendar, not a bare HOLD. */
+  const chipsCodeLeft=chipsLeft?[['wildcard','WC'],['3xc','TC'],['bboost','BB'],['freehit','FH']]
+    .filter(([,n])=>chipsLeft.includes(n)).map(([k])=>k):null;
+  const chipAdv=chipAdvice(b,fixtures,chipsCodeLeft,squad);
+  let chipBody;
+  if(chipsLeft&&!chipsLeft.length)chipBody='<b>ALL PLAYED</b>';
+  else if(chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold')
+    chipBody='<b>'+chipAdv.best.label+'</b> <span class="dl-sub">'+chipAdv.best.window+'</span>';
+  else chipBody='<b>HOLD</b> <span class="dl-sub">'+(chipAdv&&chipAdv.best?esc(chipAdv.best.reason):(chipsLeft?chipsLeft.join(' · ')+' in hand':'link team'))+'</span>';
   const q1='<div class="card qd'+(mid?'':' qd-demo')+'">'+qh('This week · action','GW'+b.cur.id)+
-    row('► CAPTAIN',cap?'<b>'+esc(cap.e.web_name)+'</b>':'—',cap?cap.p.toFixed(1)+' xP':null,'qd-hot')+
-    row('VICE',vice?'<b>'+esc(vice.e.web_name)+'</b>':'—',vice?vice.p.toFixed(1)+' xP':null)+
+    row('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot')+
+    row('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null)+
     row('TRANSFER',trBody,trVal,trCls)+
-    row('CHIP',chipsLeft?(chipsLeft.length?'<b>HOLD</b> <span class="dl-sub">'+chipsLeft.join(' · ')+' in hand</span>':'<b>ALL PLAYED</b>'):'<b>HOLD</b>')+
-    '<div class="qd-foot">Confidence '+conf+'% · captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+formSpark+
+    row('CHIP',chipBody)+
+    '<div class="qd-foot">'+(cap?confChip(capConf.value,'Captain'):'')+' <span style="opacity:.85">captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+'</span>'+formSpark+
     (mid?'':' · <a href="#" onclick="openMidModal();return false">Link team →</a>')+'</div></div>';
 
   /* ── Q2: model XI — list by default on phones, pitch toggle ── */
@@ -3070,7 +3096,7 @@ async function hydrateDashboard(host){
   } else if(mid&&cap){
     const isSwap=trBody.indexOf('&rarr;')>=0||trBody.indexOf('→')>=0;
     const swapTxt=isSwap?('transfer '+trBody.replace(/<[^>]+>/g,'').trim()):'no urgent transfer';
-    hero='<div class="dash-hero"><span class="dash-hero-txt"><b>This week:</b> captain <b>'+esc(cap.e.web_name)+'</b>, '+swapTxt+
+    hero='<div class="dash-hero"><span class="dash-hero-txt"><b>This week:</b> captain <b>'+esc(cap.el.web_name)+'</b>, '+swapTxt+
       (chipsLeft&&chipsLeft.length?', hold your chips':'')+'.</span>'+
       '<a class="btn btn-ghost btn-sm" href="#" onclick="openPanel(\'gw-actions\');return false">Full plan &rarr;</a></div>';
   } else {
@@ -4682,7 +4708,36 @@ async function hydrateTransfers(host){
       const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
       window._sq={ids:new Set(squad.map(e=>e.id)),bank};
       window._solver={b,hz,squad,bank,fixtures,ctx:await loadLeagueCtx().catch(()=>null)};
-      replacer=solverCard()+solver3Card();
+      /* Decision-grade single move: concrete OUT→IN with the money and the
+         −4 breakeven spelled out, plus the honest "hold" alternative. */
+      const xiEls=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+      const capM=captainModel(b,nf,xiEls,2);
+      const protect=new Set(capM.picks.map(p=>p.el.id));
+      const best=bestTransfer(b,squad,xiEls,bank,hz,protect);
+      let recCard;
+      if(best){
+        const fr=transferFrame(best,bank,1,5);
+        const beTxt=fr.beGw===Infinity?'—':(fr.beGw<=5?fr.beGw.toFixed(1)+' GW':'>5 GW');
+        recCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Recommended move'+
+          confChip(Math.max(45,Math.min(90,Math.round(50+best.gain*6))),'Conf')+'</div>'+
+          '<div class="dl-row" style="align-items:center"><span class="dl-grow"><span class="dl-nm">'+
+            esc(best.out.web_name)+' → <b>'+esc(best.cand.web_name)+'</b></span>'+
+            '<span class="dl-sub">'+(fr.priceDelta>0?'+':'')+'£'+fr.priceDelta.toFixed(1)+'m · bank after £'+fr.bankAfter.toFixed(1)+'m'+(fr.affordable?'':' · <span style="color:var(--red)">over budget</span>')+'</span></span>'+
+            '<span class="dl-col mono" style="text-align:right"><b class="pos">+'+best.gain.toFixed(1)+'</b><br><span class="dl-sub">xP / 5 GW</span></span></div>'+
+          '<div class="statgrid" style="margin-top:10px">'+
+            '<div class="stat"><div class="stat-l">Free transfer</div><div class="stat-v pos">+'+best.gain.toFixed(1)+' xP</div></div>'+
+            '<div class="stat"><div class="stat-l">If a −4 hit</div><div class="stat-v '+(fr.netXP-4>=0?'pos':'neg')+'">'+((fr.netXP-4>=0?'+':'')+(fr.netXP-4).toFixed(1))+' xP</div></div>'+
+            '<div class="stat"><div class="stat-l">−4 breakeven</div><div class="stat-v">'+beTxt+'</div></div></div>'+
+          '<p class="dl-sub" style="margin-top:10px"><b>Hold alternative:</b> keep your XI for a 0 xP change — take this move only if you rate the +'+best.gain.toFixed(1)+' over 5 GW (≈'+fr.perGw.toFixed(1)+'/GW) above banking the transfer.</p></div>';
+      }else{
+        const marg=b.elements.filter(e=>e.status==='a'&&e.now_cost&&e.now_cost<=bank+Math.max.apply(null,squad.map(s=>s.now_cost||0)))
+          .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
+        recCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Recommended move'+confChip(72,'Conf')+'</div>'+
+          '<div class="dl-row"><span class="dl-grow"><span class="dl-nm"><b>Hold</b> — no move clears the +1.5 xP bar over 5 GW</span>'+
+          '<span class="dl-sub">Your XI is the highest-EV option this week; save the transfer.'+
+          (marg?' Closest upgrade if you must: <b>'+esc(marg.web_name)+'</b> ('+horizonXP(b,marg,hz).toFixed(1)+' xP / 5 GW).':'')+'</span></span></div></div>';
+      }
+      replacer=recCard+solverCard()+solver3Card();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
@@ -4743,54 +4798,65 @@ async function hydrateCaptain(host){
   const [b,fixtures,lgctx]=await Promise.all([boot(),loadFixtures(),loadLeagueCtx().catch(()=>null)]);
   const nf=buildNextFix(b,fixtures);
   const epn=e=>xP(b,e,nf[e.team]);
-  let pool=b.elements.filter(e=>e.status==='a'&&epn(e)>0);
-  let scopeNote='Top captain picks across the league this gameweek.';
+  /* Eligible captains only: MID/FWD, ≥60% to play, not out/suspended. */
+  let pool=b.elements.filter(captainEligible);
+  let scopeNote='Eligible captains across the league — attackers only (MID/FWD), 60%+ to play.';
   const mid=getMid();
   if(mid){
     try{const picks=await loadPicks(mid,b.cur.id);
       const xi=new Set(picks.picks.filter(p=>p.position<=11).map(p=>p.element));
       const mine=pool.filter(e=>xi.has(e.id));
-      if(mine.length){pool=mine;scopeNote='Scored from your starting XI for GW'+b.cur.id+'.';}
+      if(mine.length){pool=mine;scopeNote='Scored from the eligible captains in your starting XI for GW'+b.cur.id+'.';}
     }catch(_){}
   }
-  pool=pool.sort((a,c)=>epn(c)-epn(a));
-  if(!pool.length){host.innerHTML=stateBox('star','No captain data yet','Expected points appear once fixtures for the gameweek are set.');return;}
-  const top=pool.slice(0,3);
-  const diff=pool.filter(e=>parseFloat(e.selected_by_percent)<15).slice(0,1)[0];
-  const labels=['Safe','Balanced','Differential'];
+  const model=captainModel(b,nf,pool,3);
+  if(!model.picks.length){host.innerHTML=stateBox('star','No eligible captain yet','Captain picks appear once fixtures are set and an attacker is 60%+ to play.');return;}
+  const conf=captainConfidence(model);
+  const ranked=pool.map(e=>({e,xp:epn(e)})).filter(x=>x.xp>0).sort((a,c)=>c.xp-a.xp);
+  const diff=model.picks.map(p=>p.el).find(e=>parseFloat(e.selected_by_percent)<15);
+  const labels=['Top pick','Alternative','Differential'];
   /* First-choice penalty takers get a P badge — a real captaincy edge. */
   const penBadge=e=>e.penalties_order===1?' <span class="badge badge-amber" title="First-choice penalty taker">P</span>':'';
-  const cards=top.map((e,i)=>{
-    const n=nf[e.team]||{};
+  const cards=model.picks.map((p,i)=>{
+    const e=p.el,n=nf[e.team]||{};
     const ceiling=n.t3!=null?'Team 3+ goals '+Math.round(n.t3*100)+'% · CS '+Math.round((n.cs||0)*100)+'%':'';
-    return '<div class="card"><div class="card-title">'+labels[i]+'</div>'+
+    const evCls=p.ev>=0?'pos':'neg';
+    return '<div class="card">'+
+      '<div class="card-title" style="display:flex;justify-content:space-between;align-items:center">'+labels[i]+
+        (i===0?confChip(conf.value,'Conf'):'')+'</div>'+
       '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
       '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+penBadge(e)+'</div>'+
       '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%'+lgRunTag(b,e.team,lgctx)+'</div></div></div>'+
       '<div style="height:8px"></div>'+
-      '<div class="statgrid"><div class="stat"><div class="stat-l">xPts</div><div class="stat-v">'+epn(e)+'</div></div>'+
-        '<div class="stat"><div class="stat-l">Form</div><div class="stat-v">'+e.form+'</div></div></div>'+
-      '<div class="dl-sub" style="margin-top:10px">Next: '+nextFixLabel(nf[e.team])+
+      '<div class="statgrid"><div class="stat"><div class="stat-l">xP</div><div class="stat-v">'+p.xp.toFixed(1)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Capt EO</div><div class="stat-v">'+Math.round(p.eo)+'%</div></div>'+
+        '<div class="stat"><div class="stat-l">EV vs field</div><div class="stat-v '+evCls+'">'+(p.ev>=0?'+':'')+p.ev.toFixed(1)+'</div></div></div>'+
+      '<div class="dl-sub" style="margin-top:8px">Outcome band (as captain): <b>'+p.band.p10+'</b> · <b>'+p.band.p50+'</b> · <b>'+p.band.p90+'</b> <span style="opacity:.7">P10/P50/P90</span></div>'+
+      '<div class="dl-sub" style="margin-top:6px">Next: '+nextFixLabel(nf[e.team])+
       (ceiling?'<br>'+ceiling:'')+'</div>'+
     '</div>';}).join('');
-  const rows=pool.slice(0,12).map((e,i)=>'<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,30)+
+  const rows=ranked.slice(0,12).map((x,i)=>{const e=x.e;
+    const eo=Math.round(parseFloat(e.selected_by_percent)||0);
+    return '<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,30)+
     '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+penBadge(e)+'</span>'+
-    '<span class="dl-sub">'+crest(b,e.team,13)+'next '+nextFixLabel(nf[e.team])+'</span></span>'+
-    '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+epn(e)+'</button></span>'+
-    '<span class="dl-col mono">'+e.form+'</span></div>').join('');
+    '<span class="dl-sub">'+crest(b,e.team,13)+'next '+nextFixLabel(nf[e.team])+' · '+eo+'% owned</span></span>'+
+    '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+x.xp.toFixed(1)+'</button></span>'+
+    '<span class="dl-col mono">'+e.form+'</span></div>';}).join('');
   host.innerHTML=
-    '<div class="dl-sub" style="margin-bottom:12px">'+scopeNote+(diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
+    '<div class="dl-sub" style="margin-bottom:12px">'+scopeNote+
+      ' <b>EV vs field</b> is your captain xP minus the ownership-weighted xP the field captains — points above the crowd.'+
+      (diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
     '<div class="grid g-3 mb-20">'+cards+'</div>'+
     '<div class="card"><div class="card-title">Ranked by expected points</div>'+
-      '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player · next</span>'+
-      '<span class="dl-col">xPts</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
+      '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player · next · owned</span>'+
+      '<span class="dl-col">xP</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
 }
 
 /* ── Chip Strategy: used vs remaining (from history) ───── */
 async function hydrateChips(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
-  const hist=await loadHistory(mid);
+  const [b,fixtures,hist]=await Promise.all([boot(),loadFixtures(),loadHistory(mid)]);
   const used=hist.chips||[];
   const nice={wildcard:'Wildcard','3xc':'Triple Captain',bboost:'Bench Boost',freehit:'Free Hit',manager:'Assistant Manager'};
   const usedRows=used.length?used.map(c=>
@@ -4800,7 +4866,30 @@ async function hydrateChips(host){
   const usedNames=used.map(c=>c.name);
   const standard=[['wildcard','Wildcard'],['3xc','Triple Captain'],['bboost','Bench Boost'],['freehit','Free Hit']];
   const remaining=standard.filter(([k])=>!usedNames.includes(k));
+  /* Squad XI for personalised Bench Boost / Wildcard signals. */
+  let squadXi=null;
+  try{const picks=await loadPicks(mid,b.cur.id);
+    squadXi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);}catch(_){}
+  const adv=chipAdvice(b,fixtures,remaining.map(([k])=>k),squadXi);
+  /* Recommended-timing card: window + confidence + reason, best first,
+     with a called-out top pick and second-best. Never a bare HOLD. */
+  const advRow=(a,lead)=>'<div class="dl-row diag-row">'+
+      '<span class="diag-txt"><b>'+esc(a.label)+'</b>'+(lead?' <span class="badge badge-green">Best next</span>':'')+
+        '<br><span style="color:var(--text-3)">'+esc(a.reason)+'</span></span>'+
+      '<span class="dl-col" style="width:auto;text-align:right;white-space:nowrap;flex-shrink:0">'+
+        '<span style="font-weight:700;color:var(--text-2)">'+esc(a.window==='hold'?'Hold':a.window==='now'?'Now':a.window)+'</span><br>'+
+        confChip(a.conf,'')+'</span></div>';
+  const timingCard=adv.all.length
+    ?'<div class="card mb-20"><div class="card-title">Recommended timing</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">'+
+        (adv.nextDbl?'Next double: <b>GW'+adv.nextDbl.gw+'</b>. ':'No double on the horizon yet. ')+
+        (adv.nextBlank?'Next blank: <b>GW'+adv.nextBlank.gw+'</b>.':'No blank on the horizon yet.')+'</p>'+
+      '<div class="dl">'+adv.all.map((a,i)=>advRow(a,i===0&&a.window!=='hold')).join('')+'</div>'+
+      (adv.second?'<p class="dl-sub" style="margin-top:10px">Second-best call: <b>'+esc(adv.second.label)+'</b> — '+esc(adv.second.reason)+'</p>':'')+
+      '</div>'
+    :'';
   host.innerHTML=
+    timingCard+
     '<div class="card mb-20"><div class="card-title">Chips played</div>'+
       '<div class="dl">'+usedRows+'</div></div>'+
     '<div class="card mb-20"><div class="card-title">Still available</div>'+
@@ -7056,6 +7145,140 @@ function minsBadge(el,gp){
   const v=minutesSecurity(el,gp);
   const cls=v>=75?'badge-green':v>=50?'badge-amber':'badge-red';
   return '<span class="badge '+cls+'" title="Minutes security '+v+'/100 — starts share, minutes share and availability (last season’s data until the new season is played)">Mins '+v+'%</span>';
+}
+
+/* ── DECISION-GRADE RECOMMENDATION MODEL (Section 2) ───────
+   A reusable confidence chip plus the captain / transfer / chip
+   models that turn raw xP into a decision: who, why, how sure, and
+   what the field is doing. All pure so they can be unit-tested. */
+
+/* Confidence tier + chip — one component reused across surfaces.
+   green ≥70 · amber 50–69 · red <50, always with the number shown. */
+function confTier(v){return v>=70?'green':v>=50?'amber':'red';}
+function confChip(v,label){
+  v=Math.max(0,Math.min(100,Math.round(v)));
+  return '<span class="conf-chip conf-'+confTier(v)+'" title="Model confidence '+v+'/100">'+
+    (label?esc(label)+' ':'')+v+'</span>';
+}
+
+/* Captain eligibility: outfield attackers only (MID/FWD — never GK/DEF),
+   at least a 60% chance of playing, and not suspended / injured-out. */
+function captainEligible(el){
+  if(!el)return false;
+  if(el.element_type!==3&&el.element_type!==4)return false;
+  if(el.status==='s'||el.status==='i'||el.status==='u'||el.status==='n')return false;
+  const ch=el.chance_of_playing_next_round;
+  if(ch!=null&&ch<60)return false;
+  return true;
+}
+/* Heuristic P10/P50/P90 of the DOUBLED captain return. Single-game FPL
+   points are right-skewed: a floor near the appearance points, a median
+   just below the mean, and a long ceiling on a haul. */
+function captainBand(xp){
+  return {p10:Math.round(2*Math.max(2,xp*0.35)),
+          p50:Math.round(2*xp*0.9),
+          p90:Math.round(2*(xp*2.1+1))};
+}
+/* The captain model: eligible top-N with xP, effective ownership as a
+   captain (EO%), the EO-adjusted EV (your xP minus the ownership-weighted
+   xP the field captains — points *above the field*), and an outcome band.
+   Field captaincy share ∝ ownership × xP over the eligible universe. */
+function captainModel(b,nf,pool,topN){
+  topN=topN||3;
+  const cands=(pool||[]).filter(captainEligible)
+    .map(e=>({e,xp:xP(b,e,nf[e.team])}))
+    .filter(x=>x.xp>0).sort((a,c)=>c.xp-a.xp);
+  if(!cands.length)return {picks:[],fieldEV:0,univ:[]};
+  const univ=cands.slice(0,8);
+  const w=univ.map(x=>Math.max(0,parseFloat(x.e.selected_by_percent)||0)*x.xp);
+  const wSum=w.reduce((s,v)=>s+v,0)||1;
+  const shareById={};univ.forEach((x,i)=>shareById[x.e.id]=w[i]/wSum);
+  const fieldEV=univ.reduce((s,x)=>s+shareById[x.e.id]*x.xp,0);
+  const picks=cands.slice(0,topN).map(x=>({
+    el:x.e,xp:x.xp,eo:(shareById[x.e.id]||0)*100,ev:x.xp-fieldEV,band:captainBand(x.xp)}));
+  return {picks,fieldEV,univ};
+}
+/* Confidence in the top captain: how clearly #1 leads #2 on xP, scaled by
+   its availability. Returns a 0–100 value + tier + the xP margin. */
+function captainConfidence(model){
+  const p=(model&&model.picks)||[];
+  if(!p.length)return {value:0,tier:'red',margin:0};
+  const top=p[0];
+  const margin=p.length>1?(top.xp-p[1].xp):Math.max(0.5,top.xp*0.25);
+  const ch=top.el.chance_of_playing_next_round;
+  const avail=ch==null?1:Math.max(0.4,ch/100);
+  const v=Math.max(20,Math.min(96,Math.round((48+margin*15)*avail)));
+  return {value:v,tier:confTier(v),margin};
+}
+
+/* Frame a transfer as a decision: price movement, bank after the move,
+   the multi-GW net xP, and — when it would cost a −4 hit — the breakeven
+   (how many GWs of the projected weekly edge clear the 4-point cost). */
+function transferFrame(best,bankTenths,freeTransfers,horizonN){
+  if(!best)return null;
+  const deltaTenths=best.cand.now_cost-best.out.now_cost;
+  const netXP=best.gain,n=horizonN||5,perGw=netXP/n;
+  const ft=freeTransfers==null?1:freeTransfers;
+  const usesHit=ft<1,hitCost=usesHit?4:0;
+  return {priceDelta:deltaTenths/10,
+          bankAfter:((bankTenths||0)-deltaTenths)/10,
+          netXP,perGw,usesHit,hitCost,
+          beGw:perGw>0?hitCost/perGw:Infinity,
+          clears:netXP-hitCost,
+          affordable:((bankTenths||0)-deltaTenths)>=0};
+}
+
+/* Fixture calendar shape: per-event match count with double/blank
+   detection, so the chip model can point at the real windows. */
+function eventShape(fixtures){
+  const ev={};
+  (fixtures||[]).filter(f=>f.event&&!f.finished).forEach(f=>{
+    const e=ev[f.event]=ev[f.event]||{gw:f.event,count:0,app:{}};
+    e.count++;e.app[f.team_h]=(e.app[f.team_h]||0)+1;e.app[f.team_a]=(e.app[f.team_a]||0)+1;
+  });
+  const rows=Object.values(ev).sort((a,c)=>a.gw-c.gw);
+  const counts=rows.map(r=>r.count).slice().sort((a,c)=>a-c);
+  const modal=counts.length?counts[Math.floor(counts.length/2)]:10;
+  rows.forEach(r=>{
+    r.doubles=Object.keys(r.app).filter(t=>r.app[t]>=2).map(Number);
+    r.isDouble=r.doubles.length>0;
+    r.isBlank=r.count<Math.max(6,modal-2);
+  });
+  return {rows,modal,byGw:ev};
+}
+/* Chip-timing model — recommend a window with a reason and confidence,
+   never a bare HOLD. Bench Boost & Triple Captain want a double GW; Free
+   Hit covers the nearest blank; Wildcard fires on flags / a fixture
+   swing. squadXi is the linked XI (optional) for personalised BB/WC. */
+function chipAdvice(b,fixtures,chipsLeft,squadXi){
+  const shape=eventShape(fixtures);
+  const nextDbl=shape.rows.find(r=>r.isDouble)||null;
+  const nextBlank=shape.rows.find(r=>r.isBlank)||null;
+  const has=c=>!chipsLeft||chipsLeft.indexOf(c)>=0;
+  const flagged=(squadXi||[]).filter(e=>e&&e.status&&e.status!=='a').length;
+  const all=[];
+  if(has('3xc'))all.push(nextDbl
+    ? {chip:'3xc',label:'Triple Captain',window:'GW'+nextDbl.gw,conf:72,
+       reason:'a double gameweek (GW'+nextDbl.gw+') gives your captain two games to return.'}
+    : {chip:'3xc',label:'Triple Captain',window:'hold',conf:40,
+       reason:'no double gameweek on the horizon yet — save it for one.'});
+  if(has('bboost'))all.push(nextDbl
+    ? {chip:'bboost',label:'Bench Boost',window:'GW'+nextDbl.gw,conf:70,
+       reason:'a double gameweek (GW'+nextDbl.gw+') means bench players can also play twice.'}
+    : {chip:'bboost',label:'Bench Boost',window:'hold',conf:38,
+       reason:'no double gameweek scheduled — a strong bench pays most in one.'});
+  if(has('freehit'))all.push(nextBlank
+    ? {chip:'freehit',label:'Free Hit',window:'GW'+nextBlank.gw,conf:74,
+       reason:'a blank gameweek (GW'+nextBlank.gw+') — Free Hit fields a full XI without permanent moves.'}
+    : {chip:'freehit',label:'Free Hit',window:'hold',conf:36,
+       reason:'no blank gameweek on the horizon — hold for a blank or a big double.'});
+  if(has('wildcard'))all.push(flagged>=3
+    ? {chip:'wildcard',label:'Wildcard',window:'now',conf:66,
+       reason:flagged+' of your XI are flagged — a Wildcard resets the squad without hits.'}
+    : {chip:'wildcard',label:'Wildcard',window:'hold',conf:34,
+       reason:'squad is largely fit — hold the Wildcard for a fixture swing or pile-up of flags.'});
+  all.sort((a,c)=>c.conf-a.conf);
+  return {best:all[0]||null,second:all[1]||null,all,nextDbl,nextBlank};
 }
 /* Games-played divisor for the per-season shares: finished fixtures
    this season, falling back to a full 38 between seasons (when the
