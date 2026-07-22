@@ -2223,6 +2223,15 @@ async function syncOnLogin(){
     const addR=unionR.filter(x=>!cloudR.includes(x));
     if(addR.length)await sb.from('gwedge_rivals').upsert(addR.map(r=>({user_id:id,rival_manager_id:Number(r)})));
     saveRivals(unionR);
+
+    /* Alert rules: a per-user preferences blob. Cloud is the base; any
+       local prefs made while signed-out win and get pushed back up. */
+    const {data:ar}=await sb.from('gwedge_alert_rules').select('rules').eq('user_id',id).maybeSingle();
+    const cloudA=(ar&&ar.rules)||{}, localA=loadAlertPrefs();
+    const mergedA=Object.assign({},cloudA,localA);
+    try{localStorage.setItem('ge-alert-prefs',JSON.stringify(mergedA));}catch(_){}
+    if(Object.keys(mergedA).length&&JSON.stringify(mergedA)!==JSON.stringify(cloudA))
+      await sb.from('gwedge_alert_rules').upsert({user_id:id,rules:mergedA,updated_at:new Date().toISOString()});
   }catch(_){}
   reflectTier();buildNav();syncNav();refreshIdentity();
   if(getMid())loadEntry(getMid()).then(refreshIdentity).catch(()=>{});
@@ -2235,6 +2244,7 @@ function cloudWatchAdd(pid){if(sb&&uid())sb.from('gwedge_watchlist').upsert({use
 function cloudWatchDel(pid){if(sb&&uid())sb.from('gwedge_watchlist').delete().eq('user_id',uid()).eq('player_id',pid).then(()=>{},()=>{});}
 function cloudRivalAdd(rid){if(sb&&uid())sb.from('gwedge_rivals').upsert({user_id:uid(),rival_manager_id:Number(rid)}).then(()=>{},()=>{});}
 function cloudRivalDel(rid){if(sb&&uid())sb.from('gwedge_rivals').delete().eq('user_id',uid()).eq('rival_manager_id',Number(rid)).then(()=>{},()=>{});}
+function cloudAlertSave(rules){if(sb&&uid())sb.from('gwedge_alert_rules').upsert({user_id:uid(),rules:rules||{},updated_at:new Date().toISOString()}).then(()=>{},()=>{});}
 
 /* ── Account modal ─────────────────────────────────────── */
 function openAccount(){
@@ -3149,13 +3159,28 @@ async function hydrateAccountability(host){
       const topTxt=pct<1?'top '+pct.toFixed(2)+'%':'top '+Math.round(pct)+'%';
       const played=cur.filter(g=>g.points!=null).length;
       const avgPts=played?Math.round(cur.reduce((s,g)=>s+(g.points||0),0)/played):null;
+      /* Captain hit rate: how often your armband was your XI's top scorer,
+         over the last (up to) six finished gameweeks. Cached loaders. */
+      let capHitTxt='—',capHitSub='last 6 GWs';
+      try{
+        const finishedGws=cur.map(g=>g.event).filter(gw=>{const e=b.events.find(x=>x.id===gw);return e&&e.finished;});
+        const sample=finishedGws.slice(-6);let hit=0,n=0;
+        for(const gw of sample){let picks,live;
+          try{[picks,live]=await Promise.all([loadPicks(mid,gw),loadLive(gw)]);}catch(_){continue;}
+          const st=statsById(live);const xi=picks.picks.filter(p=>p.position<=11);
+          const capPick=picks.picks.find(p=>p.is_captain)||xi[0];if(!capPick)continue;
+          const bestEl=xi.reduce((a,p)=>{const v=(st[p.element]||{}).total_points||0;return v>a.v?{id:p.element,v}:a;},{id:0,v:-1});
+          if(capPick.element===bestEl.id)hit++;n++;}
+        if(n){capHitTxt=Math.round(100*hit/n)+'%';capHitSub=hit+'/'+n+' optimal';}
+      }catch(_){}
       youCard='<div class="card mb-20"><div class="card-title">Your season vs the field</div>'+
         '<div class="statgrid">'+
           '<div class="stat"><div class="stat-l">Overall rank</div><div class="stat-v">'+fmtNum(last.overall_rank)+'</div></div>'+
           '<div class="stat"><div class="stat-l">Percentile</div><div class="stat-v">'+topTxt+'</div></div>'+
+          '<div class="stat"><div class="stat-l">Captain hit rate</div><div class="stat-v">'+capHitTxt+'</div></div>'+
           '<div class="stat"><div class="stat-l">GWs played</div><div class="stat-v">'+played+'</div></div>'+
           '<div class="stat"><div class="stat-l">Avg / GW</div><div class="stat-v">'+(avgPts!=null?avgPts:'—')+'</div></div>'+
-        '</div><div class="dl-sub" style="margin-top:10px">Percentile is your live overall rank against '+fmtNum(totalPlayers)+' managers.</div></div>';
+        '</div><div class="dl-sub" style="margin-top:10px">Percentile is your live overall rank against '+fmtNum(totalPlayers)+' managers · captain hit rate = armband was your top scorer ('+capHitSub+'). Full captain analysis is in the <a href="#gwhistory" onclick="openPanel(\'gwhistory\');return false">Manager Report</a>.</div></div>';
     }
   }catch(_){}}
   host.innerHTML=
@@ -5313,7 +5338,7 @@ async function hydrateCompare(host){
 
 /* ── Alerts: live feed + local notification preferences ── */
 function loadAlertPrefs(){try{return JSON.parse(localStorage.getItem('ge-alert-prefs')||'{}');}catch(_){return {};}}
-function setAlertPref(k,v){const p=loadAlertPrefs();p[k]=v;try{localStorage.setItem('ge-alert-prefs',JSON.stringify(p));}catch(_){}}
+function setAlertPref(k,v){const p=loadAlertPrefs();p[k]=v;try{localStorage.setItem('ge-alert-prefs',JSON.stringify(p));}catch(_){}cloudAlertSave(p);}
 async function hydrateAlerts(host){
   const b=await boot();
   const mid=getMid();
