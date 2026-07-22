@@ -3920,6 +3920,35 @@ function plsimMatch(r,hId,aId){
 function plsimDiff(pWin){return pWin>=0.55?1:pWin>=0.44?2:pWin>=0.30?3:pWin>=0.20?4:5;}
 function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
 
+/* Fixture Difficulty 2.0 body: recolour each cell by the chosen lens —
+   overall win odds, attack (team xG) or defence (clean-sheet odds). */
+function fdrBodyHtml(view){
+  const S=window._fdr;if(!S)return '';const {b,teams,gws,byTeamGw}=S;
+  const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs):c.diff;
+  return teams.map(t=>{
+    let lam=0,cs=0,n=0;
+    const cells=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];
+      if(!c)return '<td class="blank">—</td>';
+      lam+=c.lam;cs+=c.cs;n++;
+      return '<td class="cell fdr-'+grade(c)+'">'+esc(c.opp)+(c.home?'':' (a)')+'</td>';
+    }).join('');
+    const sums=n?'<td class="cell" style="background:var(--surface-3);color:var(--text)">'+lam.toFixed(1)+'</td>'+
+      '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+Math.round(100*cs/n)+'</td>'
+      :'<td class="blank">—</td><td class="blank">—</td>';
+    return '<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>';
+  }).join('');
+}
+function renderFdr(view){
+  const tb=document.getElementById('fdr-tbody');if(tb)tb.innerHTML=fdrBodyHtml(view);
+  document.querySelectorAll('#fdr-view .seg-b').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view));
+  const note=document.getElementById('fdr-note');
+  if(note)note.innerHTML=view==='attack'
+    ?'Greener = easier to <b>score</b> — from each team’s modelled expected goals. '
+    :view==='defence'
+    ?'Greener = easier to keep a <b>clean sheet</b> — from each team’s modelled CS odds. '
+    :'Greener = easier overall — from each fixture’s modelled win odds. ';
+}
+
 async function hydrateFixtures(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const upcoming=b.upcoming;
@@ -3942,19 +3971,10 @@ async function hydrateFixtures(host){
     (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
       diff:m?plsimDiff(m.pA):f.team_a_difficulty,home:false,lam:m?m.ax:0,cs:m?m.csA:0};
   });
+  /* Fixture Difficulty 2.0: the cell colour follows the chosen lens —
+     Overall (win odds), Attack (team xG), or Defence (clean-sheet odds). */
+  window._fdr={b,teams,gws,byTeamGw};
   const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th>xGF</th><th>CS%</th></tr>';
-  const rows=teams.map(t=>{
-    let lam=0,cs=0,n=0;
-    const cells=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];
-      if(!c)return '<td class="blank">—</td>';
-      lam+=c.lam;cs+=c.cs;n++;
-      return '<td class="cell fdr-'+c.diff+'">'+esc(c.opp)+(c.home?'':' (a)')+'</td>';
-    }).join('');
-    const sums=n?'<td class="cell" style="background:var(--surface-3);color:var(--text)">'+lam.toFixed(1)+'</td>'+
-      '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+Math.round(100*cs/n)+'</td>'
-      :'<td class="blank">—</td><td class="blank">—</td>';
-    return '<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>';
-  }).join('');
 
   /* Match outlook for the upcoming gameweek. */
   const gwFix=fixtures.filter(f=>f.event===startGw);
@@ -3967,15 +3987,22 @@ async function hydrateFixtures(host){
       '<span class="dl-col mono">'+m.hx.toFixed(1)+'–'+m.ax.toFixed(1)+'</span></div>';}).join('');
 
   host.innerHTML=
-    '<div class="card mb-20"><div class="card-title">Fixture Difficulty — next '+gws.length+' gameweeks</div>'+
-      '<div class="fdr"><table>'+head+rows+'</table></div>'+
-      '<div class="dl-sub" style="margin-top:10px">Greener is easier, redder is harder — colours come from each fixture’s modelled win odds, not the official FDR. '+
+    '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
+      '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+
+        '<button class="seg-b on" data-view="overall">Overall</button>'+
+        '<button class="seg-b" data-view="attack">Attack</button>'+
+        '<button class="seg-b" data-view="defence">Defence</button></div>'+
+      '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml('overall')+'</tbody></table></div>'+
+      '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
+      'Toggle <b>Attack</b> (how easy to score) and <b>Defence</b> (how easy a clean sheet) to read the fixture for your attackers or defenders. '+
       '<b>(a)</b> marks an away fixture. <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
       (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
     '</div>'+
     (outlook?'<div class="card"><div class="card-title">Match outlook — GW'+startGw+'</div>'+
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Match · home / draw / away · clean sheet</span><span class="dl-col">xG</span></div>'+outlook+'</div>'+
       '<div class="dl-sub" style="margin-top:10px">Win/draw/win, most likely score and clean-sheet probabilities from the fitted Poisson attack/defence model with the Dixon-Coles low-score correction.</div></div>':'');
+  const seg=host.querySelector('#fdr-view');
+  if(seg)seg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn)renderFdr(btn.dataset.view);});
 }
 
 /* Differentials: low-owned players with strong form */
@@ -5663,24 +5690,31 @@ async function hydrateSetpiece(host){
     notesCard='<div class="card mb-20"><div class="card-title">Official set-piece notes</div><div class="dl">'+rows+'</div>'+
       '<div class="dl-sub" style="margin-top:8px">Straight from the FPL editorial team — the latest word on who takes what, with the reasoning.</div></div>';
   }
-  const conf=o=>o===1?'<span class="badge badge-green">1st</span>':o===2?'<span class="badge badge-amber">2nd</span>':o===3?'<span class="badge badge-grey">3rd</span>':'';
-  const section=(title,key)=>{
+  const ordBadge=o=>o===1?'<span class="badge badge-green">1st</span>':o===2?'<span class="badge badge-amber">2nd</span>':o===3?'<span class="badge badge-grey">3rd</span>':'';
+  /* Per-role confidence: how safe the designation is on this duty. */
+  const roleConf=(key,o)=>key==='penalties_order'?(o===1?82:o===2?52:0)
+    :key==='direct_freekicks_order'?(o===1?70:40)
+    :(o===1?64:38);
+  const section=(title,key,valueLine)=>{
     const list=b.elements.filter(e=>e[key]&&e[key]<=2)
       .sort((a,c)=>a[key]-c[key]||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent));
     const byTeam={};list.forEach(e=>{(byTeam[e.team]=byTeam[e.team]||[]).push(e);});
     const rows=Object.keys(byTeam).sort((x,y)=>teamShort(b,x).localeCompare(teamShort(b,y))).map(tid=>
-      byTeam[tid].map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+e.selected_by_percent+'% owned</span></span>'+conf(e[key])+'</div>').join('')
+      byTeam[tid].map(e=>{const spc=setPieceConfidence(e);
+        return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
+        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+e.selected_by_percent+'% owned'+
+        (valueLine&&spc.addXp?' · ≈+'+spc.addXp.toFixed(2)+' xP/gw from set-pieces':'')+'</span></span>'+
+        confChip(roleConf(key,e[key]),'')+ordBadge(e[key])+'</div>';}).join('')
     ).join('');
     return '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
       (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No data yet.</div>')+'</div>';
   };
   host.innerHTML=
-    '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data. 1st choice is the primary taker.</div>'+
+    '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data, each with a <b>confidence</b> rating — how safe the designation is — and, for penalties, the rough xP it adds. 1st choice is the primary taker.</div>'+
     notesCard+
-    section('Penalties','penalties_order')+
-    section('Direct free-kicks','direct_freekicks_order')+
-    section('Corners & indirect free-kicks','corners_and_indirect_freekicks_order');
+    section('Penalties','penalties_order',true)+
+    section('Direct free-kicks','direct_freekicks_order',true)+
+    section('Corners & indirect free-kicks','corners_and_indirect_freekicks_order',true);
 }
 
 /* ── Rotation Risk: start rate for premium players ─────── */
@@ -7437,6 +7471,32 @@ function chipFeatures(adv){
     (adv.nextBlank?'next blank: GW'+adv.nextBlank.gw:'no blank on the horizon yet'));
   if(adv.second)f.push('Second-best: '+adv.second.label+' ('+(adv.second.window==='hold'?'hold':adv.second.window)+')');
   return f.slice(0,3);
+}
+
+/* ── Fixture Difficulty 2.0: attack vs defence, split ─────
+   The official FDR is a single 1–5 per fixture. Ours separates the two
+   things a manager actually cares about: how easy it is for that team's
+   ATTACKERS to score (from modelled team xG) and how easy it is for its
+   DEFENDERS to keep a clean sheet (from modelled CS odds). 1 = easy … 5
+   = hard. Pure and monotonic for testing. */
+function fdrAttack(lam){
+  if(lam>=2.0)return 1;if(lam>=1.6)return 2;if(lam>=1.25)return 3;if(lam>=0.9)return 4;return 5;
+}
+function fdrDefence(cs){
+  if(cs>=0.5)return 1;if(cs>=0.38)return 2;if(cs>=0.26)return 3;if(cs>=0.16)return 4;return 5;
+}
+
+/* Set-piece confidence + rough xP value: how reliable a taker
+   designation is, and how much it adds. Penalties dominate (primary
+   takers convert ~0.6 pts/gw of extra expectation), then direct
+   free-kicks, then corners (assist upside). Pure for testing. */
+function setPieceConfidence(el){
+  let value=0,addXp=0;const roles=[];
+  if(el.penalties_order===1){value=Math.max(value,82);roles.push('penalties');addXp+=0.6;}
+  else if(el.penalties_order===2){value=Math.max(value,52);roles.push('pens (2nd)');addXp+=0.15;}
+  if(el.direct_freekicks_order===1){value=Math.max(value,70);roles.push('free-kicks');addXp+=0.18;}
+  if(el.corners_and_indirect_freekicks_order===1){value=Math.max(value,64);roles.push('corners');addXp+=0.12;}
+  return {value,tier:confTier(value),roles,addXp:Math.round(addXp*100)/100};
 }
 
 /* Games-played divisor for the per-season shares: finished fixtures
