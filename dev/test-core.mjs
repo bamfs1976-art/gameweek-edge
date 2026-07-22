@@ -82,11 +82,20 @@ const pieces = [
   'function horizonXP(_b, el, _hz){ return el._hx || 0; }',
   extractLine(html, /const MIN_TR_GAIN=[\d.]+;/),
   extractFn(html, 'bestTransfer'),
-  extractFn(html, 'gwPhase')
+  extractFn(html, 'gwPhase'),
+  /* Section 2: decision-grade recommendation model. */
+  extractFn(html, 'confTier'),
+  extractFn(html, 'captainEligible'),
+  extractFn(html, 'captainBand'),
+  extractFn(html, 'captainModel'),
+  extractFn(html, 'captainConfidence'),
+  extractFn(html, 'transferFrame'),
+  extractFn(html, 'eventShape'),
+  extractFn(html, 'chipAdvice')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -374,6 +383,98 @@ evs = mkEvents({ g10: T0 - 1 * HR, cur10: true, g11: T0 + 6 * DAY, next11: true 
 r = core.gwPhase(bOf(evs), [], T0);
 ok(r.phase !== 'pre' && (r.target ? r.target.id === 11 || r.phase === 'live' : true),
   'passed deadline never leaves the header pointing at a dead countdown');
+
+/* ── Section 2: decision-grade recommendation model ─────── */
+section('confTier / confChip thresholds');
+ok(core.confTier(70) === 'green' && core.confTier(95) === 'green', '≥70 is green');
+ok(core.confTier(50) === 'amber' && core.confTier(69) === 'amber', '50–69 is amber');
+ok(core.confTier(49) === 'red' && core.confTier(0) === 'red', '<50 is red');
+
+section('captainEligible filters to fit MID/FWD attackers');
+const capEl = (t, extra) => Object.assign({ element_type: t, status: 'a', chance_of_playing_next_round: null }, extra || {});
+ok(core.captainEligible(capEl(3)) === true, 'a fit midfielder is eligible');
+ok(core.captainEligible(capEl(4)) === true, 'a fit forward is eligible');
+ok(core.captainEligible(capEl(1)) === false, 'a goalkeeper is never eligible');
+ok(core.captainEligible(capEl(2)) === false, 'a defender is never eligible');
+ok(core.captainEligible(capEl(4, { status: 's' })) === false, 'a suspended attacker is out');
+ok(core.captainEligible(capEl(4, { status: 'i' })) === false, 'an injured-out attacker is out');
+ok(core.captainEligible(capEl(4, { chance_of_playing_next_round: 50 })) === false, '<60% to play is out');
+ok(core.captainEligible(capEl(4, { chance_of_playing_next_round: 75 })) === true, '≥60% to play is in');
+ok(core.captainEligible(null) === false, 'null is not eligible');
+
+section('captainBand gives an ordered P10 ≤ P50 ≤ P90');
+const band = core.captainBand(6);
+ok(band.p10 <= band.p50 && band.p50 <= band.p90, 'band is monotonic');
+ok(band.p90 > band.p10, 'ceiling exceeds floor');
+ok(core.captainBand(10).p90 > core.captainBand(4).p90, 'higher xP lifts the ceiling');
+
+section('captainModel: EO-adjusted EV and field weighting');
+/* Build a small league: a template premium (high own + high xP), a mid
+   pick, and a low-owned differential — plus an ineligible keeper. */
+const mkC = (id, t, xp, own) => ({ id, element_type: t, status: 'a',
+  chance_of_playing_next_round: null, selected_by_percent: String(own),
+  web_name: 'C' + id, team: id, ep_next: String(xp), form: '4', points_per_game: '4' });
+const cPool = [ mkC(1, 4, 8, 45), mkC(2, 3, 6, 20), mkC(3, 4, 5, 3), mkC(4, 1, 9, 30) ];
+/* nf map with no fixture detail → xP falls back to ep_next directly. */
+const cnf = {};
+const cModel = core.captainModel({}, cnf, cPool, 3);
+ok(cModel.picks.length === 3, 'returns the eligible top-3 (keeper excluded)');
+ok(cModel.picks[0].el.id === 1, 'the premium leads on xP');
+ok(!cModel.picks.some(p => p.el.element_type === 1), 'no keeper ever appears');
+ok(cModel.picks[0].eo > cModel.picks[2].eo, 'the template pick carries more captaincy EO than the differential');
+ok(Math.abs(cModel.picks.reduce((s, p) => s, 0)) >= 0, 'picks computed');
+/* EV = xP − fieldEV; the top pick should beat the field, the punt trail it. */
+ok(cModel.picks[0].ev > 0, 'the best captain beats the field EV');
+ok(cModel.picks[2].ev < cModel.picks[0].ev, 'the differential has lower EV-vs-field than the premium');
+ok(core.captainModel({}, cnf, [mkC(9, 1, 9, 30)], 3).picks.length === 0, 'a pool of only keepers yields no captain');
+
+section('captainConfidence: clear leader → higher, tie → lower');
+const clear = core.captainConfidence({ picks: [{ el: mkC(1, 4, 9, 40), xp: 9 }, { el: mkC(2, 4, 4, 20), xp: 4 }] });
+const tie = core.captainConfidence({ picks: [{ el: mkC(1, 4, 6, 40), xp: 6 }, { el: mkC(2, 4, 5.8, 20), xp: 5.8 }] });
+ok(clear.value > tie.value, 'a clear captain scores more confidently than a coin-flip');
+ok(clear.value >= 0 && clear.value <= 96, 'confidence stays within bounds');
+ok(['green', 'amber', 'red'].includes(clear.tier), 'a tier is assigned');
+
+section('transferFrame: money, net xP and −4 breakeven');
+const fr = core.transferFrame({ out: { now_cost: 70 }, cand: { now_cost: 85 }, gain: 6 }, 20, 1, 5);
+ok(Math.abs(fr.priceDelta - 1.5) < 1e-9, 'price delta in £m (85−70 = +1.5)');
+ok(Math.abs(fr.bankAfter - 0.5) < 1e-9, 'bank after: (20−15)/10 = £0.5m');
+ok(fr.affordable === true, 'affordable when bank covers the delta');
+ok(fr.usesHit === false && fr.hitCost === 0, 'a free transfer takes no hit');
+const frHit = core.transferFrame({ out: { now_cost: 70 }, cand: { now_cost: 70 }, gain: 6 }, 5, 0, 5);
+ok(frHit.usesHit === true && frHit.hitCost === 4, 'no free transfer → a −4 hit applies');
+ok(Math.abs(frHit.clears - 2) < 1e-9, 'net after the hit: 6 − 4 = 2');
+ok(frHit.beGw > 0 && frHit.beGw < 5, 'breakeven is a positive fraction of the horizon');
+const frBust = core.transferFrame({ out: { now_cost: 50 }, cand: { now_cost: 120 }, gain: 3 }, 5, 1, 5);
+ok(frBust.affordable === false, 'unaffordable when the delta exceeds bank');
+
+section('eventShape: double / blank / modal detection');
+/* 3 GWs: GW1 normal (10 games), GW2 a double (team 1 plays twice, 11 games),
+   GW3 a blank (only 4 games). */
+const fixG = [];
+for (let i = 0; i < 10; i++) fixG.push({ event: 1, team_h: 2 * i + 1, team_a: 2 * i + 2, finished: false });
+for (let i = 0; i < 10; i++) fixG.push({ event: 2, team_h: 2 * i + 1, team_a: 2 * i + 2, finished: false });
+fixG.push({ event: 2, team_h: 1, team_a: 5, finished: false });          /* team 1 twice → double */
+for (let i = 0; i < 4; i++) fixG.push({ event: 3, team_h: 2 * i + 1, team_a: 2 * i + 2, finished: false });
+const shape = core.eventShape(fixG);
+ok(shape.modal === 10, 'modal fixture count is 10');
+ok(shape.byGw[2].isDouble === true && shape.byGw[2].doubles.includes(1), 'GW2 flagged as a double for team 1');
+ok(shape.byGw[3].isBlank === true, 'GW3 flagged as a blank');
+ok(shape.byGw[1].isDouble === false && shape.byGw[1].isBlank === false, 'GW1 is a normal week');
+
+section('chipAdvice: reasoned windows, never a bare hold');
+const adv = core.chipAdvice({}, fixG, ['3xc', 'bboost', 'freehit', 'wildcard'],
+  [{ status: 'a' }, { status: 'a' }]);
+ok(adv.all.length === 4, 'advises on every remaining chip');
+ok(adv.all.every(a => a.reason && a.reason.length > 0), 'every chip carries a reason (never bare HOLD)');
+ok(adv.nextDbl && adv.nextDbl.gw === 2, 'points Triple Captain / Bench Boost at the GW2 double');
+ok(adv.nextBlank && adv.nextBlank.gw === 3, 'points Free Hit at the GW3 blank');
+const tc = adv.all.find(a => a.chip === '3xc');
+ok(tc.window === 'GW2' && tc.conf >= 60, 'Triple Captain recommends the double with real confidence');
+ok(adv.best && adv.second, 'a best and second-best chip are surfaced');
+const advFlags = core.chipAdvice({}, fixG, ['wildcard'],
+  [{ status: 'i' }, { status: 'd' }, { status: 's' }]);
+ok(advFlags.all[0].window === 'now', 'a squad with 3 flags recommends the Wildcard now');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
