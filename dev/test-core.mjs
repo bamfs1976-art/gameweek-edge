@@ -95,11 +95,15 @@ const pieces = [
   /* Section 3: My Week "Explain this" feature drivers. */
   extractFn(html, 'captainFeatures'),
   extractFn(html, 'transferFeatures'),
-  extractFn(html, 'chipFeatures')
+  extractFn(html, 'chipFeatures'),
+  /* Section 4: Fixture Difficulty 2.0 + set-piece confidence. */
+  extractFn(html, 'fdrAttack'),
+  extractFn(html, 'fdrDefence'),
+  extractFn(html, 'setPieceConfidence')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -505,6 +509,29 @@ const chf = core.chipFeatures(advForFeat);
 ok(chf.length >= 2, 'chip drivers return at least two reasons');
 ok(chf.some(s => s.includes('GW2') || s.toLowerCase().includes('double')), 'a chip driver names the double');
 ok(core.chipFeatures({ best: null }).length >= 1, 'chipFeatures is safe when nothing stands out');
+
+/* ── Section 4: Fixture Difficulty 2.0 + set-piece confidence ─ */
+section('fdrAttack / fdrDefence: monotonic, easier = lower');
+ok(core.fdrAttack(2.5) === 1 && core.fdrAttack(0.5) === 5, 'high team xG is easy (1), low is hard (5)');
+ok(core.fdrAttack(2.1) <= core.fdrAttack(1.4) && core.fdrAttack(1.4) <= core.fdrAttack(0.7),
+  'attack difficulty falls monotonically with team xG');
+ok(core.fdrDefence(0.6) === 1 && core.fdrDefence(0.1) === 5, 'high CS odds is easy (1), low is hard (5)');
+ok(core.fdrDefence(0.55) <= core.fdrDefence(0.3) && core.fdrDefence(0.3) <= core.fdrDefence(0.12),
+  'defence difficulty falls monotonically with clean-sheet odds');
+ok([1, 2, 3, 4, 5].includes(core.fdrAttack(1.47)) && [1, 2, 3, 4, 5].includes(core.fdrDefence(0.28)),
+  'both grades stay on the 1–5 scale');
+
+section('setPieceConfidence: penalties dominate, roles + xP add');
+const pen1 = core.setPieceConfidence({ penalties_order: 1 });
+ok(pen1.value === 82 && pen1.tier === 'green', 'a primary penalty taker is high confidence');
+ok(pen1.roles.includes('penalties') && pen1.addXp >= 0.5, 'flags the penalty role with real xP value');
+const pen2 = core.setPieceConfidence({ penalties_order: 2 });
+ok(pen2.value < pen1.value, 'the 2nd-choice taker is less certain than the 1st');
+const multi = core.setPieceConfidence({ penalties_order: 1, direct_freekicks_order: 1, corners_and_indirect_freekicks_order: 1 });
+ok(multi.roles.length === 3 && multi.addXp > pen1.addXp, 'a multi-duty taker stacks xP value across roles');
+ok(multi.value === 82, 'confidence takes the strongest duty (penalties), not the sum');
+const none = core.setPieceConfidence({});
+ok(none.value === 0 && none.roles.length === 0, 'no set-piece duty → zero');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
