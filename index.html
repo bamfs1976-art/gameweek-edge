@@ -111,7 +111,7 @@
 
   --text:#E6E8EB;
   --text-2:#9AA3AD;
-  --text-3:#7A838F;
+  --text-3:#8A94A0;   /* AA (≈6.3:1) on the #0A0C0F canvas */
   --text-4:#3E454E;
 
   --green:#00D26A;
@@ -700,8 +700,43 @@ html.offline .net-banner{transform:translateY(0)}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .tb-right{display:flex;align-items:center;gap:9px}
-.tb-updated{font-size:.66rem;font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tb-updated{display:inline-flex;align-items:center;gap:6px;font-size:.66rem;font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Freshness pulse: a soft green heartbeat that a panel is on live data. */
+.tb-updated::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 0 var(--green);animation:tbPulse 2.6s ease-out infinite}
+.tb-updated:empty::before{display:none}
+@keyframes tbPulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--green) 55%,transparent)}
+  70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media(prefers-reduced-motion:reduce){.tb-updated::before{animation:none}}
 @media(max-width:560px){.tb-updated{display:none}}
+
+/* Persistent search launcher — desktop only (≥1024px). Opens ⌘K. */
+.tb-search{display:none}
+@media(min-width:1024px){
+  .tb-search{display:inline-flex;align-items:center;gap:8px;cursor:text;
+    width:210px;height:36px;padding:0 12px;border-radius:var(--r-md);
+    background:var(--surface-3);border:1px solid var(--border-2);
+    color:var(--text-3);font-size:.8rem;transition:border-color .15s}
+  .tb-search:hover{border-color:var(--border-3)}
+  .tb-search svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
+  .tb-search .tbs-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tb-search kbd{font-family:var(--font-mono);font-size:10px;padding:1px 5px;border-radius:3px;
+    background:var(--surface);border:1px solid var(--border-2);color:var(--text-3)}
+}
+
+/* Sticky "Link Team" ribbon — a slim, dismissible on-ramp for guests. */
+.link-ribbon{position:sticky;top:var(--topbar-h);z-index:95;
+  display:flex;align-items:center;gap:12px;padding:9px 20px;
+  background:color-mix(in srgb,var(--green) 12%,var(--bg));
+  border-bottom:1px solid color-mix(in srgb,var(--green) 22%,transparent);
+  font-size:.82rem;color:var(--text-2)}
+.link-ribbon.hidden{display:none}
+.link-ribbon b{color:var(--text)}
+.link-ribbon .lr-cta{margin-left:auto;flex-shrink:0}
+.link-ribbon .lr-x{flex-shrink:0;width:26px;height:26px;display:inline-flex;align-items:center;
+  justify-content:center;border-radius:var(--r-sm);color:var(--text-3);border:0;background:transparent}
+.link-ribbon .lr-x:hover{background:var(--surface-3);color:var(--text)}
+@media(max-width:560px){.link-ribbon{padding:8px 14px;font-size:.76rem}.link-ribbon .lr-msg-long{display:none}}
 
 /* ── BUTTONS ───────────────────────────────────────────── */
 .btn{
@@ -1443,6 +1478,10 @@ body{font-size:14px;line-height:1.35}
         </div>
       </div>
       <div class="tb-right">
+        <button class="tb-search" id="tb-search" aria-label="Search players, panels and actions" title="Search (⌘K)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <span class="tbs-txt">Search…</span><kbd>⌘K</kbd>
+        </button>
         <span id="tb-updated" class="tb-updated" aria-live="polite"></span>
         <button class="btn btn-ghost btn-icon" id="export-btn" aria-label="Export the current view as CSV" title="Export the current view as CSV">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1462,6 +1501,15 @@ body{font-size:14px;line-height:1.35}
         </button>
       </div>
     </header>
+
+    <!-- Sticky guest on-ramp: hidden once a team is linked -->
+    <div class="link-ribbon hidden" id="link-ribbon">
+      <span><b>Link your FPL team</b> <span class="lr-msg-long">to unlock your squad, live rank, captain and transfer calls — all from the official data.</span></span>
+      <button class="btn btn-primary btn-sm lr-cta" onclick="openMidModal()">Link team</button>
+      <button class="lr-x" id="link-ribbon-x" aria-label="Dismiss">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
 
     <!-- Pages render here -->
     <div id="pages"></div>
@@ -3120,7 +3168,9 @@ async function hydrateDashboard(host){
       '<span class="mxi-cell">FIX</span><span class="mxi-cell">£</span>'+
       '<span class="mxi-cell">OWN</span><span class="mxi-xp">XP</span></div>'+listRows+'</div>'+pitch;
   }
-  const mxiView=(window.matchMedia&&window.matchMedia('(max-width:767px)').matches)?'list':'pitch';
+  /* Default to the compact position rows everywhere — quicker to scan than
+     photo tiles; the pitch view stays one tap away via the toggle. */
+  const mxiView='list';
   const mxiBtn=totw?'<button class="mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
   const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'">'+
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
@@ -8318,6 +8368,14 @@ function refreshIdentity(entry){
   if(entry&&entry.name){label.textContent=entry.name;}
   else if(getMid()){label.textContent='My Team';}
   else{label.textContent='Link Team';}
+  syncLinkRibbon();
+}
+/* Show the sticky guest ribbon only when no team is linked and it hasn't
+   been dismissed this session. */
+function syncLinkRibbon(){
+  const r=document.getElementById('link-ribbon');if(!r)return;
+  let dismissed=false;try{dismissed=sessionStorage.getItem('ge-lr-x')==='1';}catch(_){}
+  r.classList.toggle('hidden',!!getMid()||dismissed);
 }
 
 /* ── GAMEWEEK STRIP (sidebar) ──────────────────────────── */
@@ -8438,6 +8496,13 @@ function init(){
   document.getElementById('overlay').addEventListener('click',closeSidebar);
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
   document.getElementById('refresh-btn').addEventListener('click',doRefresh);
+
+  /* Persistent desktop search launcher → command palette. */
+  document.getElementById('tb-search').addEventListener('click',cmdkOpen);
+  /* Sticky guest ribbon: dismiss for the session, and show it if needed. */
+  document.getElementById('link-ribbon-x').addEventListener('click',()=>{
+    try{sessionStorage.setItem('ge-lr-x','1');}catch(_){}syncLinkRibbon();});
+  syncLinkRibbon();
 
   /* Connectivity banner (web + native), PWA worker, native shell wiring. */
   initNetwork();
