@@ -91,11 +91,15 @@ const pieces = [
   extractFn(html, 'captainConfidence'),
   extractFn(html, 'transferFrame'),
   extractFn(html, 'eventShape'),
-  extractFn(html, 'chipAdvice')
+  extractFn(html, 'chipAdvice'),
+  /* Section 3: My Week "Explain this" feature drivers. */
+  extractFn(html, 'captainFeatures'),
+  extractFn(html, 'transferFeatures'),
+  extractFn(html, 'chipFeatures')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -475,6 +479,32 @@ ok(adv.best && adv.second, 'a best and second-best chip are surfaced');
 const advFlags = core.chipAdvice({}, fixG, ['wildcard'],
   [{ status: 'i' }, { status: 'd' }, { status: 's' }]);
 ok(advFlags.all[0].window === 'now', 'a squad with 3 flags recommends the Wildcard now');
+
+/* ── Section 3: My Week "Explain this" feature drivers ──── */
+section('captainFeatures / transferFeatures / chipFeatures');
+const capPick = { el: { team: 1, form: '5.2', ep_next: '6.1', web_name: 'Salah' }, xp: 7.4, eo: 40, ev: 1.8 };
+const capNf = { 1: { lam: 2.1, opp: 'BUR', home: true, diff: 2 } };
+const cf = core.captainFeatures({}, capNf, capPick);
+ok(cf.length === 3, 'captain drivers return three reasons');
+ok(cf[0].includes('7.4'), 'first driver quotes the xP');
+ok(cf.some(s => s.includes('EV vs field')), 'a driver names the EV-vs-field edge');
+ok(cf.some(s => s.includes('2.1') || s.toLowerCase().includes('xg')), 'a driver names the fixture xG');
+
+/* transferFeatures uses horizonXP (stubbed to el._hx in this harness). */
+const tf = core.transferFeatures({}, {},
+  { out: { web_name: 'A', _hx: 2 }, cand: { web_name: 'B', _hx: 8 }, gain: 6 },
+  { priceDelta: 1.5, bankAfter: 0.5, perGw: 1.2 });
+ok(tf.length === 3, 'transfer drivers return three reasons');
+ok(tf[0].includes('6.0') && tf[0].includes('5 GW'), 'leads with the 5-GW net xP');
+ok(tf.some(s => s.includes('£1.5m') && s.includes('0.5')), 'a driver spells out the money');
+const tfHold = core.transferFeatures({}, {}, null, null);
+ok(tfHold.length === 3 && tfHold[0].toLowerCase().includes('no move'), 'HOLD explains why there is no move');
+
+const advForFeat = core.chipAdvice({}, fixG, ['3xc', 'bboost'], [{ status: 'a' }]);
+const chf = core.chipFeatures(advForFeat);
+ok(chf.length >= 2, 'chip drivers return at least two reasons');
+ok(chf.some(s => s.includes('GW2') || s.toLowerCase().includes('double')), 'a chip driver names the double');
+ok(core.chipFeatures({ best: null }).length >= 1, 'chipFeatures is safe when nothing stands out');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
