@@ -2223,15 +2223,9 @@ async function syncOnLogin(){
     const addR=unionR.filter(x=>!cloudR.includes(x));
     if(addR.length)await sb.from('gwedge_rivals').upsert(addR.map(r=>({user_id:id,rival_manager_id:Number(r)})));
     saveRivals(unionR);
-
-    /* Alert rules: a per-user preferences blob. Cloud is the base; any
-       local prefs made while signed-out win and get pushed back up. */
-    const {data:ar}=await sb.from('gwedge_alert_rules').select('rules').eq('user_id',id).maybeSingle();
-    const cloudA=(ar&&ar.rules)||{}, localA=loadAlertPrefs();
-    const mergedA=Object.assign({},cloudA,localA);
-    try{localStorage.setItem('ge-alert-prefs',JSON.stringify(mergedA));}catch(_){}
-    if(Object.keys(mergedA).length&&JSON.stringify(mergedA)!==JSON.stringify(cloudA))
-      await sb.from('gwedge_alert_rules').upsert({user_id:id,rules:mergedA,updated_at:new Date().toISOString()});
+    /* Note: alert preferences persist server-side via the push
+       subscription (gwedge_push_subs.prefs, through syncPushPrefs), so
+       there is no separate alert-rules sync here. */
   }catch(_){}
   reflectTier();buildNav();syncNav();refreshIdentity();
   if(getMid())loadEntry(getMid()).then(refreshIdentity).catch(()=>{});
@@ -2244,7 +2238,6 @@ function cloudWatchAdd(pid){if(sb&&uid())sb.from('gwedge_watchlist').upsert({use
 function cloudWatchDel(pid){if(sb&&uid())sb.from('gwedge_watchlist').delete().eq('user_id',uid()).eq('player_id',pid).then(()=>{},()=>{});}
 function cloudRivalAdd(rid){if(sb&&uid())sb.from('gwedge_rivals').upsert({user_id:uid(),rival_manager_id:Number(rid)}).then(()=>{},()=>{});}
 function cloudRivalDel(rid){if(sb&&uid())sb.from('gwedge_rivals').delete().eq('user_id',uid()).eq('rival_manager_id',Number(rid)).then(()=>{},()=>{});}
-function cloudAlertSave(rules){if(sb&&uid())sb.from('gwedge_alert_rules').upsert({user_id:uid(),rules:rules||{},updated_at:new Date().toISOString()}).then(()=>{},()=>{});}
 
 /* ── Account modal ─────────────────────────────────────── */
 function openAccount(){
@@ -5393,7 +5386,7 @@ async function hydrateCompare(host){
 
 /* ── Alerts: live feed + local notification preferences ── */
 function loadAlertPrefs(){try{return JSON.parse(localStorage.getItem('ge-alert-prefs')||'{}');}catch(_){return {};}}
-function setAlertPref(k,v){const p=loadAlertPrefs();p[k]=v;try{localStorage.setItem('ge-alert-prefs',JSON.stringify(p));}catch(_){}cloudAlertSave(p);}
+function setAlertPref(k,v){const p=loadAlertPrefs();p[k]=v;try{localStorage.setItem('ge-alert-prefs',JSON.stringify(p));}catch(_){}}
 async function hydrateAlerts(host){
   const b=await boot();
   const mid=getMid();
