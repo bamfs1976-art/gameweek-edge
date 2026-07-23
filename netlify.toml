@@ -19,6 +19,12 @@
 [functions]
   node_bundler = "esbuild"
 
+# The prediction logger runs hourly. It extracts the shipping model from
+# index.html at runtime, so the file must be bundled with the function.
+[functions."log-predictions"]
+  schedule = "@hourly"
+  included_files = ["index.html"]
+
 # ── Security headers ─────────────────────────────────────────────
 # The app is a single-file page with inline scripts/styles and inline
 # event handlers, so script-src/style-src need 'unsafe-inline'. The
@@ -112,6 +118,12 @@
 [[redirects]]
   from = "/api/push-unsubscribe"
   to = "/.netlify/functions/push-unsubscribe"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/model-calibration"
+  to = "/.netlify/functions/model-calibration"
   status = 200
   force = true
 

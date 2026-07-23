@@ -58,6 +58,9 @@ const pieces = [
   extractFn(html, 'poisson'),
   extractFn(html, 'plsimMatch'),
   extractFn(html, 'esc'),
+  extractFn(html, 'minutesModel'),
+  extractFn(html, 'recencyWeight'),
+  extractFn(html, 'availAttackMult'),
   extractFn(html, 'nativeXP'),
   extractFn(html, 'xP'),
   extractFn(html, 'fixtureXP'),
@@ -87,6 +90,14 @@ const pieces = [
   extractFn(html, 'confTier'),
   extractFn(html, 'captainEligible'),
   extractFn(html, 'captainBand'),
+  extractFn(html, 'pointsDist'),
+  extractFn(html, 'squadSim'),
+  extractFn(html, 'normCdf'),
+  extractFn(html, 'effEdge'),
+  extractFn(html, 'edgeDelta'),
+  extractFn(html, 'rankEV'),
+  extractFn(html, 'rankOptimiser'),
+  extractFn(html, 'calibration'),
   extractFn(html, 'captainModel'),
   extractFn(html, 'captainConfidence'),
   extractFn(html, 'transferFrame'),
@@ -103,11 +114,14 @@ const pieces = [
   /* Section 4 (6-13): readiness, lineup, community. */
   extractFn(html, 'benchBoostReadiness'),
   extractFn(html, 'lineupCheck'),
-  extractFn(html, 'communityAggregate')
+  extractFn(html, 'communityAggregate'),
+  /* Latest News feed. */
+  extractFn(html, 'timeAgo'),
+  extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -579,6 +593,175 @@ const ca = core.communityAggregate(caB);
 ok(ca.captain.web_name === 'Cap' && ca.transferIn.web_name === 'In', 'reads crowd captain + transfer in');
 ok(ca.transferOut.web_name === 'Out' && ca.topScorer.web_name === 'Top', 'reads transfer out + top scorer');
 ok(ca.mostOwned.web_name === 'Owned', 'finds the most-owned player');
+
+/* ── Latest News feed ───────────────────────────────────── */
+section('timeAgo: relative time buckets');
+const T = 1_700_000_000_000;
+ok(core.timeAgo(new Date(T).toISOString(), T + 30 * 1000) === 'just now', 'under a minute → just now');
+ok(core.timeAgo(new Date(T).toISOString(), T + 5 * 60e3) === '5m ago', 'minutes');
+ok(core.timeAgo(new Date(T).toISOString(), T + 3 * 3600e3) === '3h ago', 'hours');
+ok(core.timeAgo(new Date(T).toISOString(), T + 2 * 86400e3) === '2d ago', 'days');
+ok(core.timeAgo(new Date(T).toISOString(), T + 21 * 86400e3) === '3w ago', 'weeks');
+ok(core.timeAgo('', T) === '' && core.timeAgo('not-a-date', T) === '', 'blank / bad input → empty');
+
+section('latestNews: only news, newest first');
+const nB = { elements: [
+  { id: 1, web_name: 'A', news: '', news_added: '2026-01-01T00:00:00Z' },
+  { id: 2, web_name: 'B', news: 'Knock - 75%', news_added: '2026-01-03T10:00:00Z', status: 'd', chance_of_playing_next_round: 75 },
+  { id: 3, web_name: 'C', news: 'Suspended', news_added: '2026-01-05T09:00:00Z', status: 's' },
+  { id: 4, web_name: 'D', news: '   ', news_added: '2026-01-04T00:00:00Z' },
+  { id: 5, web_name: 'E', news: 'Hamstring', news_added: '2026-01-02T00:00:00Z', status: 'i' },
+] };
+const feed = core.latestNews(nB, 10);
+ok(feed.length === 3, 'only players with real news text (blank/whitespace excluded)');
+ok(feed[0].el.web_name === 'C' && feed[1].el.web_name === 'B' && feed[2].el.web_name === 'E', 'sorted newest → oldest by news_added');
+ok(feed[0].chance === undefined ? true : feed[0].status === 's', 'carries status/chance through');
+ok(core.latestNews(nB, 2).length === 2, 'respects the limit');
+ok(core.latestNews({ elements: [] }, 10).length === 0, 'no elements → empty feed');
+
+/* ── nativeXP: the added scoring categories (P1) ────────── */
+section('nativeXP models bonus, defensive-contribution and saves');
+const nnf = { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.3 };
+const baseMid = { element_type: 3, minutes: 540, expected_goals_per_90: '0.2', expected_assists_per_90: '0.2' };
+const midBase = core.nativeXP(baseMid, nnf);
+ok(midBase != null && midBase > 0, 'a midfielder with a full sample gets positive native xP');
+ok(core.nativeXP(baseMid, { gp: 3, lam: 1.6, lamAvg: 1.5, cs: 0.3 }) === null, 'still null below the 5-game sample floor');
+
+ok(core.nativeXP({ ...baseMid, bonus: 12 }, nnf) > midBase, 'realised bonus lifts the estimate');
+
+const midDC12 = core.nativeXP({ ...baseMid, defensive_contribution_per_90: '12' }, nnf);
+const midDC18 = core.nativeXP({ ...baseMid, defensive_contribution_per_90: '18' }, nnf);
+ok(midDC18 > midDC12 && midDC12 > midBase, 'defensive-contribution points rise with the per-90 rate (MID threshold 12)');
+
+const baseDef = { element_type: 2, minutes: 540, expected_goals_per_90: '0.05', expected_assists_per_90: '0.05' };
+const defLow = core.nativeXP({ ...baseDef, defensive_contribution_per_90: '6' }, nnf);
+const defHigh = core.nativeXP({ ...baseDef, defensive_contribution_per_90: '14' }, nnf);
+ok(defHigh > defLow, 'a ball-winning defender (DEF threshold 10) out-scores a low-action one');
+
+const gk = { element_type: 1, minutes: 540, expected_goals_per_90: '0', expected_assists_per_90: '0' };
+ok(core.nativeXP({ ...gk, saves: 60 }, nnf) > core.nativeXP(gk, nnf), 'goalkeeper saves add points');
+ok(core.nativeXP({ ...gk, defensive_contribution_per_90: '30' }, nnf) === core.nativeXP(gk, nnf),
+  'goalkeepers get no defensive-contribution points (their category is saves)');
+
+/* ── minutes model (P2) ─────────────────────────────────── */
+section('minutesModel: availability reshapes the minutes');
+const nailed = core.minutesModel({ starts: 6, minutes: 540, status: 'a', chance_of_playing_next_round: null }, 6);
+ok(nailed.pStart > 0.95 && nailed.p60 > 0.95 && nailed.minFrac > 0.95, 'a nailed-on starter is ~certain to start and last 60');
+const doubt = core.minutesModel({ starts: 6, minutes: 540, status: 'd', chance_of_playing_next_round: 50 }, 6);
+ok(Math.abs(doubt.pStart - 0.5) < 0.02, 'a 50% doubt halves the start probability');
+ok(doubt.minFrac < nailed.minFrac, 'a doubt lowers expected minutes');
+const outPl = core.minutesModel({ starts: 6, minutes: 540, status: 'i', chance_of_playing_next_round: 0 }, 6);
+ok(outPl.avail === 0 && outPl.pStart === 0 && outPl.minFrac === 0, 'an injured-out player is zeroed');
+const rota = core.minutesModel({ starts: 3, minutes: 360, status: 'a', chance_of_playing_next_round: null }, 6);
+ok(rota.pStart < nailed.pStart, 'a rotation risk starts less often than a nailed player');
+
+section('nativeXP reflects the minutes model');
+const nxNf = { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.3 };
+const fitFwd = { element_type: 4, starts: 6, minutes: 540, status: 'a', chance_of_playing_next_round: null,
+  expected_goals_per_90: '0.5', expected_assists_per_90: '0.2', bonus: 10 };
+const doubtFwd = { ...fitFwd, status: 'd', chance_of_playing_next_round: 50 };
+const outFwd = { ...fitFwd, status: 'i', chance_of_playing_next_round: 0 };
+ok(core.nativeXP(doubtFwd, nxNf) < core.nativeXP(fitFwd, nxNf), 'a doubt lowers native xP');
+ok(core.nativeXP(outFwd, nxNf) === 0, 'a ruled-out player gets zero native xP');
+
+/* ── points distribution (P3) ───────────────────────────── */
+section('pointsDist: ordered percentiles, deterministic, premium hauls more');
+const pdNf = { gp: 6, lam: 1.9, lamAvg: 1.5, cs: 0.4 };
+const prem = { id: 1, element_type: 4, starts: 6, minutes: 540, status: 'a',
+  expected_goals_per_90: '0.85', expected_assists_per_90: '0.2', bonus: 18, defensive_contribution_per_90: '2' };
+const cheap = { id: 2, element_type: 3, starts: 6, minutes: 500, status: 'a',
+  expected_goals_per_90: '0.08', expected_assists_per_90: '0.1', bonus: 4, defensive_contribution_per_90: '3' };
+const dp = core.pointsDist(prem, pdNf);
+ok(dp.p10 <= dp.p50 && dp.p50 <= dp.p90, 'percentiles are ordered');
+ok(dp.mean > 0 && dp.p90 > dp.p10, 'a real spread');
+ok(dp.haul > core.pointsDist(cheap, pdNf).haul, 'the premium hauls more often than the cheap punt');
+const dp2 = core.pointsDist(prem, pdNf);
+ok(dp.p50 === dp2.p50 && dp.p90 === dp2.p90, 'deterministic (seeded on the player id)');
+ok(core.pointsDist(prem, null).mean === 0, 'no fixture model → zeroed distribution');
+const gkDist = core.pointsDist({ id: 3, element_type: 1, starts: 6, minutes: 540, status: 'a', saves: 60 }, { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.45 });
+ok(gkDist.mean > 0, 'a goalkeeper gets a positive distribution (saves + clean sheet)');
+
+/* ── correlated squad simulation (P4) ───────────────────── */
+section('squadSim: projects an XI, captain doubles, shared team outcomes');
+const sq = [];
+for (let i = 0; i < 11; i++) sq.push({ id: 200 + i, team: 1 + (i % 5), element_type: i === 0 ? 1 : i < 5 ? 2 : i < 9 ? 3 : 4,
+  starts: 6, minutes: 540, status: 'a', expected_goals_per_90: i > 4 ? '0.4' : '0.05',
+  expected_assists_per_90: '0.15', bonus: 8, defensive_contribution_per_90: '9', saves: i === 0 ? 60 : 0 });
+const sqNf = { 1: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 }, 2: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 },
+  3: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 }, 4: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 }, 5: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 } };
+const noCap = core.squadSim(sq, sqNf, null);
+const withCap = core.squadSim(sq, sqNf, 205);          /* captain a forward */
+ok(noCap.p10 <= noCap.p50 && noCap.p50 <= noCap.p90, 'squad total percentiles ordered');
+ok(noCap.mean > 20, 'a full XI projects a sensible points total');
+ok(withCap.mean > noCap.mean, 'captaining a starter raises the projection');
+ok(core.squadSim(sq, sqNf, 205).p50 === withCap.p50, 'deterministic (seeded on the squad)');
+ok(core.squadSim([], sqNf, null).mean === 0, 'an empty squad projects zero');
+
+/* ── rank-EV transfer optimiser (P4) ────────────────────── */
+section('normCdf: standard normal CDF');
+ok(Math.abs(core.normCdf(0) - 0.5) < 1e-3, 'CDF at 0 is 0.5');
+ok(core.normCdf(3) > 0.99 && core.normCdf(-3) < 0.01, 'far tails saturate');
+ok(Math.abs(core.normCdf(1.6449) - 0.95) < 2e-3, '95th percentile at z≈1.645');
+ok(core.normCdf(-1) < 0.5 && core.normCdf(1) > 0.5, 'monotone around the mean');
+
+section('effEdge: ownership damps the edge over the field');
+const rnf = { gp: 6, lam: 1.7, lamAvg: 1.5, cs: 0.35 };
+const hi = core.effEdge({ id: 501, element_type: 3, starts: 6, minutes: 540, status: 'a',
+  expected_goals_per_90: '0.55', expected_assists_per_90: '0.3', bonus: 10, selected_by_percent: '60' }, rnf);
+const lo = core.effEdge({ id: 502, element_type: 3, starts: 6, minutes: 540, status: 'a',
+  expected_goals_per_90: '0.55', expected_assists_per_90: '0.3', bonus: 10, selected_by_percent: '4' }, rnf);
+ok(Math.abs(hi.raw.mean - lo.raw.mean) < 0.4, 'same profile → near-identical raw distribution');
+ok(lo.mean > hi.mean, 'the low-owned twin carries a bigger edge over the field');
+ok(lo.sd > hi.sd, 'the differential also swings rank harder');
+ok(hi.o === 0.6 && lo.o === 0.04, 'ownership fraction read from selected_by_percent');
+
+section('rankEV / rankOptimiser: rank pick can differ from points pick');
+const outEl = { id: 510, team: 3, element_type: 3, starts: 6, minutes: 540, status: 'a', now_cost: 70,
+  expected_goals_per_90: '0.15', expected_assists_per_90: '0.1', bonus: 3, selected_by_percent: '30' };
+/* Two candidates: one slightly higher raw points but heavily owned (template),
+   one a hair lower on raw points but a differential. */
+const templ = { id: 511, team: 4, element_type: 3, starts: 6, minutes: 540, status: 'a', now_cost: 70,
+  expected_goals_per_90: '0.62', expected_assists_per_90: '0.32', bonus: 12, selected_by_percent: '70' };
+const diff = { id: 512, team: 5, element_type: 3, starts: 6, minutes: 540, status: 'a', now_cost: 70,
+  expected_goals_per_90: '0.58', expected_assists_per_90: '0.30', bonus: 11, selected_by_percent: '5' };
+const oNf = { 3: rnf, 4: rnf, 5: rnf };
+const rTempl = core.rankEV(templ, outEl, oNf), rDiff = core.rankEV(diff, outEl, oNf);
+ok(rTempl.rawGain > 0 && rDiff.rawGain > 0, 'both upgrades gain raw points');
+ok(rDiff.dMean > rTempl.dMean, 'the differential wins on edge over the field despite lower raw points');
+ok(rDiff.beat > 0.5, 'a positive edge beats the field more than half the time');
+const optB = { elements: [templ, diff], els: { 511: templ, 512: diff } };
+const opt = core.rankOptimiser(optB, [outEl], [outEl], 20, oNf, new Set());
+ok(opt.topRank && opt.topRank.inEl.id === 512, 'optimiser ranks the differential top');
+ok(opt.topPoints && opt.topPoints.inEl.id === 511, 'and still names the raw-points leader');
+ok(opt.diverges === true, 'flags that points and rank disagree here');
+ok(core.rankOptimiser(optB, [outEl], [outEl], 20, oNf, new Set([510])).moves.length === 0, 'a protected player is never sold');
+
+/* ── match model refinements (P6) ───────────────────────── */
+section('recencyWeight / availAttackMult');
+ok(core.recencyWeight(10, 10) === 1, 'the latest gameweek is full weight');
+ok(core.recencyWeight(9, 10) < 1 && core.recencyWeight(9, 10) > core.recencyWeight(1, 10), 'older fixtures decay monotonically');
+ok(Math.abs(core.recencyWeight(0, 10) - Math.pow(0.97, 10)) < 1e-9, '10 GWs back ≈ 0.97^10');
+ok(core.recencyWeight(12, 10) === 1, 'future/clamped events never exceed full weight');
+ok(core.availAttackMult('a') === 1, 'a fit key attacker leaves attack unchanged');
+ok(core.availAttackMult('i') === 0.90 && core.availAttackMult('s') === 0.90, 'a ruled-out key man cuts team attack 10%');
+ok(core.availAttackMult('d') === 0.96, 'a doubtful key man cuts attack 4%');
+
+/* ── calibration (P5) ───────────────────────────────────── */
+section('calibration: Brier score + reliability curve');
+/* Perfectly calibrated: outcomes occur exactly at the predicted rate. */
+const perfect = [];
+for (let b = 0; b < 10; b++) { const p = (b + 0.5) / 10;
+  for (let i = 0; i < 100; i++) perfect.push({ p, y: i < Math.round(p * 100) ? 1 : 0 }); }
+const cp = core.calibration(perfect);
+ok(cp.n === 1000 && cp.brier > 0, 'grades all rows with a Brier score');
+ok(cp.buckets.every(b => Math.abs(b.pMean - b.oFreq) < 0.05), 'a calibrated model tracks the diagonal (pMean ≈ oFreq)');
+/* An over-confident model: always predicts 0.9 but outcomes are 50/50. */
+const over = [];
+for (let i = 0; i < 1000; i++) over.push({ p: 0.9, y: i % 2 });
+const co = core.calibration(over);
+ok(co.brier > cp.brier, 'an over-confident model scores a worse (higher) Brier');
+ok(co.buckets.some(b => b.pMean - b.oFreq > 0.3), 'the reliability curve exposes the over-confidence');
+ok(core.calibration([]).n === 0 && core.calibration([]).brier === null, 'empty input is handled');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
