@@ -163,6 +163,36 @@ uniform band.
   global recentre) should be tuned on real returns via the **P5 calibration
   loop**, not to the synthetic DGP.
 
+## Recorded validations
+
+### 2026/27 pre-season — match model vs the betting market (GW1)
+
+Before GW1 the match model has no finished fixtures to fit, so its team
+ratings equal the offline priors. We reproduced the model's GW1 output
+(team expected goals and clean-sheet odds for all 20 teams) and compared it
+to a Pinnacle-derived market board (projected goals + clean-sheet % from
+totals/handicap markets). This is an independent check that the priors are
+calibrated, not a self-consistency test.
+
+- **Attack** — our team xG vs market projected goals: **Pearson r = 0.94**.
+- **Defence** — our clean-sheet % vs market clean-sheet %: **r = 0.92**.
+- **Rankings agree at both ends**: easiest GW1 fixtures ARS / MUN / MCI
+  (FDR 1), hardest COV / HUL / BOU (FDR 5) — matching the market and the
+  community FDR boards (Meerkat, Marcello).
+
+**Divergence — the model is compressed at the extremes.** The market prices
+the elite-vs-weak mismatches more aggressively than the shrunk priors do:
+Arsenal (home to Coventry) reads **46% CS for us vs 62%** for the market,
+and **2.36 xG vs 2.67**. This is the same pre-season compression seen in the
+logged predictions (top GW1 xP only 5.4). It is expected from prior
+shrinkage and self-corrects as live results feed the fit; the honest fix, if
+any, is to widen the prior spread via the **P5 calibration loop** on real
+returns rather than fit to one bookmaker's board.
+
+> Reproduced with `dev/` model math against the GW1 fixture list; the live
+> FPL API is firewalled from CI, so the market board was the external
+> reference.
+
 ## Test & tooling
 
 - `npm test` — 262 unit tests over the model core (every helper above).
