@@ -4416,48 +4416,54 @@ async function hydrateAllPlayers(host){
   renderPlayerTable();
 }
 
-/* The differential pool: every AVAILABLE player owned by fewer than maxOwn
-   percent of managers. Note there is no minutes gate — at the start of a
-   season nobody has minutes yet, so gating on them (as the old code did)
-   emptied the whole list. Pure. */
+/* The differential pool: the PRIMARY filter is ownership — every AVAILABLE
+   player owned by fewer than maxOwn percent of managers (default 15%). No
+   minutes gate: at the start of a season nobody has minutes yet, so gating on
+   them (as the old code did) emptied the whole list. The caller then ranks
+   this pool by strength (our projection). Pure. */
 function differentials(elements,maxOwn){
-  maxOwn=maxOwn||12;
+  maxOwn=maxOwn==null?15:maxOwn;
   return (elements||[]).filter(e=>e&&e.status==='a'&&(parseFloat(e.selected_by_percent)||0)<maxOwn);
 }
 async function hydrateDiffs(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
   const xpOf=e=>xP(b,e,nf[e.team])||0;
-  const pool=differentials(b.elements,12);
-  if(!pool.length){host.innerHTML=stateBox('trend','No differentials yet','Low-owned players (under 12% owned) appear here.');return;}
-  /* Re-orderable — priced high to low by default, so premium differentials
-     (bold, low-owned picks) lead, spanning the full price range. */
+  const num=(e,k)=>parseFloat(e[k])||0;
+  const MAXOWN=15;
+  /* 1) filter FIRST on ownership (<15%), then 2) rank by strong data. */
+  const pool=differentials(b.elements,MAXOWN);
+  if(!pool.length){host.innerHTML=stateBox('trend','No differentials yet','Low-owned players (under '+MAXOWN+'% owned) appear here.');return;}
+  /* Default order is our projected points (xP) — the strongest-data low-owned
+     picks lead. The toggle offers other lenses. */
   const SORT={
+    xp:{l:'Projection',f:(a,c)=>xpOf(c)-xpOf(a)},
+    form:{l:'Form',f:(a,c)=>num(c,'form')-num(a,'form')},
+    xgi:{l:'xGI/90',f:(a,c)=>num(c,'expected_goal_involvements_per_90')-num(a,'expected_goal_involvements_per_90')},
     price:{l:'Price',f:(a,c)=>(c.now_cost||0)-(a.now_cost||0)},
-    xp:{l:'xP',f:(a,c)=>xpOf(c)-xpOf(a)},
-    form:{l:'Form',f:(a,c)=>(parseFloat(c.form)||0)-(parseFloat(a.form)||0)},
-    owned:{l:'Least owned',f:(a,c)=>(parseFloat(a.selected_by_percent)||0)-(parseFloat(c.selected_by_percent)||0)},
+    owned:{l:'Least owned',f:(a,c)=>num(a,'selected_by_percent')-num(c,'selected_by_percent')},
   };
-  window._diff={b,pool,xpOf,SORT};
-  const seg='<div class="seg" id="diff-sort">'+Object.keys(SORT).map(k=>'<button class="seg-b'+(k==='price'?' on':'')+'" data-s="'+k+'">'+SORT[k].l+'</button>').join('')+'</div>';
-  /* DefCon leaders: the defensive-contribution scoring category. */
+  window._diff={b,pool,xpOf,num,SORT};
+  const seg='<div class="seg" id="diff-sort">'+Object.keys(SORT).map(k=>'<button class="seg-b'+(k==='xp'?' on':'')+'" data-s="'+k+'">'+SORT[k].l+'</button>').join('')+'</div>';
+  /* DefCon leaders — ALSO gated to the differential pool (<15% owned), so the
+     whole page respects the ownership filter. */
   const dc90=e=>{const v=parseFloat(e.defensive_contribution_per_90);
     return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;};
-  const dcon=b.elements.filter(e=>e.status==='a'&&e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
+  const dcon=pool.filter(e=>e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
     .sort((a,c)=>dc90(c)-dc90(a)).slice(0,12);
   const dconCard=dcon.length
-    ? '<div class="card mb-20"><div class="card-title">Defensive-contribution leaders '+
-        '<span class="badge badge-grey">2026/27</span></div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">Tackles, blocks, interceptions and recoveries score points. Top defenders and midfielders by DefCon per 90 — a reliable source of cheap returns.</p>'+
+    ? '<div class="card mb-20"><div class="card-title">Differential DefCon picks '+
+        '<span class="badge badge-grey">under '+MAXOWN+'%</span></div>'+
+        '<p class="dl-sub" style="margin-bottom:10px">Low-owned defenders and midfielders with the strongest defensive-contribution rate — tackles, blocks, interceptions and recoveries all score. A cheap, under-the-radar points source.</p>'+
         dlTable(b,dcon,['DefCon/90','Total'],e=>[dc90(e).toFixed(1),e.defensive_contribution||0])+'</div>'
     : '';
   host.innerHTML=
-    '<div class="card mb-20"><div class="card-title">Differentials — under 12% owned</div>'+
+    '<div class="card mb-20"><div class="card-title">Differentials — under '+MAXOWN+'% owned</div>'+
+      '<p class="dl-sub" style="margin-bottom:8px">Every available player selected by fewer than '+MAXOWN+'% of managers ('+pool.length+' in all), ranked by strength. Default order is our next-gameweek projection (xP); tap a player for the full data.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span class="dl-sub">Order by</span>'+seg+'</div>'+
-      '<div id="diff-list"></div>'+
-      '<div class="dl-sub" style="margin-top:8px">The full pool of available players owned by under 12% — '+pool.length+' in all — re-orderable. xP is our next-gameweek projection.</div></div>'+
+      '<div id="diff-list"></div></div>'+
     dconCard;
-  renderDiffs('price');
+  renderDiffs('xp');
   setTimeout(()=>{document.querySelectorAll('#diff-sort .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
     document.querySelectorAll('#diff-sort .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
     renderDiffs(btn.dataset.s);
@@ -4466,9 +4472,10 @@ async function hydrateDiffs(host){
 function renderDiffs(key){
   const S=window._diff;if(!S)return;
   const box=document.getElementById('diff-list');if(!box)return;
-  const sf=(S.SORT[key]||S.SORT.price).f;
+  const sf=(S.SORT[key]||S.SORT.xp).f;
   const list=S.pool.slice().sort(sf).slice(0,40);
-  box.innerHTML=dlTable(S.b,list,['xP','Owned'],e=>[S.xpOf(e).toFixed(1),e.selected_by_percent+'%']);
+  const f90=v=>{const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);};
+  box.innerHTML=dlTable(S.b,list,['xP','xGI/90'],e=>[S.xpOf(e).toFixed(1),f90(e.expected_goal_involvements_per_90)]);
 }
 
 /* Price Predictor: net transfer momentum */
