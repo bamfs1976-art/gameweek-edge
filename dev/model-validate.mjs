@@ -49,7 +49,9 @@ function extractBlock(src, startIdx) {
 }
 const nativeXPsrc = extractBlock(html, html.indexOf('function nativeXP('));
 const minutesModelSrc = extractBlock(html, html.indexOf('function minutesModel('));
-const nativeXP = new Function(minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
+const helperSrc = ['concedePts', 'effGoalRate', 'negRate90']
+  .map(n => extractBlock(html, html.indexOf('function ' + n + '('))).join('\n');
+const nativeXP = new Function(helperSrc + '\n' + minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
 
 /* The ORIGINAL model, before the P1 additions — for the A/B comparison. */
 function nativeXPold(el, nf) {

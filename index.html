@@ -6150,11 +6150,52 @@ function minutesModel(el,gp){
   const avail=out?0:(ch==null?1:Math.max(0,Math.min(1,ch/100)));
   const startShare=Math.min(1,(el.starts||0)/gp);
   const minShare=Math.min(1,(el.minutes||0)/(gp*90));
-  const pStart=Math.min(1,startShare*avail);
-  const pAppear=Math.min(1,Math.max(startShare,minShare*1.05)*avail);
-  const p60=Math.min(1,(minShare/0.72)*avail);
-  const minFrac=Math.min(1,minShare*avail);
+  /* Two-state mixture (P3.1): a start plus a possible cameo, rather than a
+     flat minutes-share scale. perStart is how complete a match the player
+     logs when they DO start (early subs pull it below 1); cameo is the
+     bench-appearance minutes not explained by starts. This separates a
+     nailed 90-minute man from a 60-and-hooked starter and from a regular
+     sub — three very different p60 and expected-minutes profiles a single
+     minutes-share cannot tell apart. */
+  /* Minutes imply a start floor: you cannot log most of a match from the
+     bench, so infer starts from the minutes share when the start count
+     lags it (and to stay robust if starts is absent). */
+  const startEff=Math.max(startShare,Math.max(0,(minShare-0.15)/0.85));
+  const perStart=(el.starts||0)>0?Math.min(1,(el.minutes||0)/(el.starts*90)):0.9;
+  const cameo=Math.max(0,minShare-startEff*perStart);
+  const pStart=Math.min(1,startEff*avail);
+  const pAppear=Math.min(1,(pStart+cameo)*(out?0:1));
+  const p60=Math.min(1,pStart*Math.max(0.8,perStart/0.9));
+  const minFrac=Math.min(1,pStart*perStart+cameo*0.28*avail);
   return {avail,pStart,pAppear,p60,minFrac};
+}
+/* Expected FPL points a GK or DEF loses to conceded goals in a full match,
+   given the clean-sheet probability cs = P(0 conceded) = exp(-lamC). FPL
+   deducts 1 per 2 conceded, so this is E[floor(X/2)] for X ~ Poisson(lamC)
+   in closed form. nativeXP scored the clean-sheet upside but never this
+   downside, so defenders were systematically over-rated (P-fix 1). */
+function concedePts(cs){
+  const lamC=-Math.log(Math.max(0.03,Math.min(0.99,cs==null?0.28:cs)));
+  return lamC/2-(1-Math.exp(-2*lamC))/4;
+}
+/* Finishing-aware goals-per-90 (P-fix 5): FPL gives xG, but players
+   persistently beat or miss it. Shrink the realised goal rate toward xG,
+   with weight growing as minutes accumulate (to 0.45 by ~20 full games).
+   Falls back to pure xG when goals are unknown, so behaviour is unchanged
+   without the data. */
+function effGoalRate(el){
+  const xg90=parseFloat(el.expected_goals_per_90||'0');
+  if(el.goals_scored==null)return xg90;
+  const mins=Math.max(el.minutes||0,1),g90=(el.goals_scored||0)*90/mins;
+  const w=Math.min(0.45,(el.minutes||0)/(90*20)*0.45);
+  return (1-w)*xg90+w*g90;
+}
+/* Expected negative FPL points per 90 from cards, own goals and penalty
+   misses, from the realised rates (P-fix 4). Never forecast before, so
+   high-risk profiles carried a hidden optimism. Zero without the data. */
+function negRate90(el){
+  const mins=Math.max(el.minutes||0,1),per90=90/mins;
+  return ((el.yellow_cards||0)*1+(el.red_cards||0)*3+(el.own_goals||0)*2+(el.penalties_missed||0)*2)*per90;
 }
 
 /* Native expected points from first principles: expected minutes x
@@ -6173,7 +6214,7 @@ function nativeXP(el,nf){
   const m=minutesModel(el,gp);
   if(m.minFrac<=0)return 0;                            /* ruled out this week */
   const type=el.element_type;
-  const xg90=parseFloat(el.expected_goals_per_90||'0');
+  const xg90=effGoalRate(el);                          /* finishing-aware (P-fix 5) */
   const xa90=parseFloat(el.expected_assists_per_90||'0');
   const fx=nf.lam/nf.lamAvg;
   const gPts=type<=2?6:type===3?5:4;
@@ -6182,6 +6223,10 @@ function nativeXP(el,nf){
     +xg90*m.minFrac*fx*gPts                            /* goals */
     +xa90*m.minFrac*fx*3                               /* assists */
     +csPts*nf.cs*m.p60;                                /* clean sheet */
+  /* Goals-conceded downside for GK and DEF (P-fix 1): mirror the clean
+     sheet, minus 1 per 2 conceded, from the same fixture clean-sheet odds.
+     Scaled by expected minutes on the pitch. */
+  if(type<=2)pts-=concedePts(nf.cs)*m.minFrac;
   /* Bonus from the realised per-90 bonus rate, scaled by expected minutes
      and nudged up to 30 percent by the fixture. */
   const mins=Math.max(el.minutes||0,1);
@@ -6200,7 +6245,9 @@ function nativeXP(el,nf){
     const sv90=(el.saves||0)*90/Math.max(mins,90);
     pts+=(sv90*m.minFrac)/3;
   }
-  return pts;
+  /* Expected deductions for cards, own goals and penalty misses (P-fix 4). */
+  pts-=negRate90(el)*m.minFrac;
+  return Math.max(0,pts);
 }
 
 /* Candidate pool: available players with a positive projection. */
@@ -7699,25 +7746,34 @@ function pointsDist(el,nf,trials){
   if(!nf||nf.lam==null)return {mean:0,p10:0,p50:0,p90:0,haul:0,blank:0};
   const m=minutesModel(el,Math.max(1,nf.gp||6));
   const type=el.element_type,fx=nf.lamAvg?nf.lam/nf.lamAvg:1;
-  const xg=parseFloat(el.expected_goals_per_90||'0'),xa=parseFloat(el.expected_assists_per_90||'0');
+  const xg=effGoalRate(el),xa=parseFloat(el.expected_assists_per_90||'0');   /* finishing-aware (P-fix 5) */
   const dcp=parseFloat(el.defensive_contribution_per_90||'0');
   const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0,thr=type===2?10:12;
   const mins=Math.max(el.minutes||0,1);
   const b90=(el.bonus||0)*90/Math.max(mins,90),sv90=(el.saves||0)*90/Math.max(mins,90);
   const p60c=Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
+  const lamC=type<=2?-Math.log(Math.max(0.03,Math.min(0.99,nf.cs))):0;   /* goals conceded (P-fix 1) */
+  const negExp=negRate90(el);                                            /* cards/OG/pen-miss (P-fix 4) */
   let s=((el.id||1)>>>0)||1;
   const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};
   const pois=l=>{if(l<=0)return 0;const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rnd();}while(p>L);return k-1;};
+  /* Gamma(k) via Marsaglia-Tsang — the per-GW form multiplier that makes
+     returns overdispersed vs plain Poisson (P-fix 2). Real hauls come in
+     streaks, so this fattens the upper tail the captain/rank cards read. */
+  const gam=k=>{if(k<1)return gam(k+1)*Math.pow(rnd(),1/k);const d=k-1/3,c=1/Math.sqrt(9*d);for(;;){let x,v;do{const u1=rnd(),u2=rnd();x=Math.sqrt(-2*Math.log(u1))*Math.cos(6.283185307179586*u2);v=1+c*x;}while(v<=0);v=v*v*v;const u=rnd();if(u<1-0.0331*x*x*x*x)return d*v;if(Math.log(u)<0.5*x*x+d*(1-v+Math.log(v)))return d*v;}};
   const out=new Array(trials);
   for(let i=0;i<trials;i++){
     const play=rnd()<m.pAppear,p60=play&&rnd()<p60c;
+    const form=gam(2.4)/2.4;                          /* mean 1, right-skewed overdispersion */
     let pts=play?1:0;if(p60)pts+=1;
     if(play){
-      pts+=pois(xg*m.minFrac*fx)*gPts+pois(xa*m.minFrac*fx)*3;
+      pts+=pois(xg*m.minFrac*fx*form)*gPts+pois(xa*m.minFrac*fx*form)*3;
       if(p60&&rnd()<nf.cs)pts+=csPts;
+      if(type<=2)pts-=Math.floor(pois(lamC*(p60?1:0.5))/2);    /* concede downside */
       pts+=Math.min(3,pois(b90*m.minFrac));
       if(type>=2&&p60&&pois(dcp*m.minFrac)>=thr)pts+=2;
       if(type===1)pts+=Math.floor(pois(sv90*m.minFrac)/3);
+      pts-=negExp*m.minFrac;                                   /* expected deductions */
     }
     out[i]=pts;
   }
@@ -7742,25 +7798,28 @@ function squadSim(els,nfByTeam,capId,trials){
   const pois=l=>{if(l<=0)return 0;const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rnd();}while(p>L);return k-1;};
   const totals=new Array(trials);
   for(let t=0;t<trials;t++){
-    const cs={},shock={};let sum=0;
+    const cs={},shock={},conc={};let sum=0;
     for(const e of els){
       const nf=nfByTeam[e.team];if(!nf||nf.lam==null)continue;
       const team=e.team;
       if(cs[team]===undefined)cs[team]=rnd()<nf.cs?1:0;          /* shared clean sheet */
       if(shock[team]===undefined)shock[team]=0.55+rnd()*0.9;      /* shared attack shock */
+      if(conc[team]===undefined)conc[team]=cs[team]?0:pois(-Math.log(Math.max(0.03,Math.min(0.99,nf.cs)))); /* shared goals conceded (P-fix 1) */
       const m=minutesModel(e,Math.max(1,nf.gp||6));
       const type=e.element_type,fx=(nf.lamAvg?nf.lam/nf.lamAvg:1)*shock[team];
       const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0;
       const play=rnd()<m.pAppear,p60=play&&rnd()<Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
       let pts=play?1:0;if(p60)pts+=1;
       if(play){
-        pts+=pois(parseFloat(e.expected_goals_per_90||'0')*m.minFrac*fx)*gPts;
+        pts+=pois(effGoalRate(e)*m.minFrac*fx)*gPts;             /* finishing-aware (P-fix 5) */
         pts+=pois(parseFloat(e.expected_assists_per_90||'0')*m.minFrac*fx)*3;
         if(p60&&cs[team])pts+=csPts;
+        if(type<=2&&p60)pts-=Math.floor(conc[team]/2);           /* concede downside, shared per team */
         const mins=Math.max(e.minutes||0,1);
         pts+=Math.min(3,pois((e.bonus||0)*90/Math.max(mins,90)*m.minFrac));
         if(type>=2&&p60&&pois(parseFloat(e.defensive_contribution_per_90||'0')*m.minFrac)>=(type===2?10:12))pts+=2;
         if(type===1)pts+=Math.floor(pois((e.saves||0)*90/Math.max(mins,90)*m.minFrac)/3);
+        pts-=negRate90(e)*m.minFrac;                             /* expected deductions (P-fix 4) */
       }
       sum+=pts*(e.id===capId?2:1);
     }

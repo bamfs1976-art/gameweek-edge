@@ -30,10 +30,18 @@ clean-sheet odds into the player layer, and powers Fixture Difficulty 2.0
 `nativeXP` is expected points from first principles:
 
 ```
-appearance (1 + 1 at 60')  +  goals (xG90 · mins · fixture · goalPts)
+appearance (1 + 1 at 60')  +  goals (effGoalRate · mins · fixture · goalPts)
   +  assists (xA90 · mins · fixture · 3)  +  clean sheet (csPts · CS · p60)
   +  bonus  +  defensive contribution  +  goalkeeper saves
+  −  goals conceded (GK/DEF)  −  expected cards / OG / pen-miss
 ```
+
+`effGoalRate` is finishing-aware: it shrinks a player's realised goal rate
+toward their xG (weight up to 0.45 by ~20 games), so proven finishers are
+not permanently under-rated. The goals-conceded term mirrors the clean
+sheet with the −1-per-2-conceded downside (from the match model's concede
+rate), and the negatives term subtracts expected cards / own goals /
+penalty misses from the realised rates.
 
 `xP` blends `nativeXP` with FPL's own `ep_next`, **sample-adaptively**
 (native weight 0.475 at 5 games → capped 0.70 by mid-season) and scales
@@ -102,10 +110,61 @@ optimiser** (`rankOptimiser`) turns `squadSim`'s distribution work into a
 concrete transfer call on the Transfers page, and the **scheduled
 prediction logger** feeds `calibration` on the Accountability page.
 
+## Accuracy — where the model is strong and where it is not
+
+`node dev/backtest-season.mjs` walks a full simulated 2025/26 season
+(2025/26 rules) forward: at each deadline the model sees only
+season-to-date aggregates, predicts the gameweek, and is scored against
+the realized points. Crucially the ground-truth generator is
+**deliberately mis-specified** relative to the model — it injects
+finishing skill vs xG, penalties, overdispersion/form streaks, minutes
+regimes and negatives (reds/OGs/pen-misses) — so it stress-tests the
+model's *specification*, not its self-consistency. (The live FPL API is
+firewalled from CI, so this is a simulation study; a real snapshot ports
+straight into `model-validate.mjs`.)
+
+**What holds up:**
+- `nativeXP` MAE **beats a 3-GW form baseline** (~2.4 vs ~2.8) and season-PPG,
+  so the added categories earn their place.
+- `pointsDist` haul-probability is **well calibrated** (Brier ~0.07,
+  reliability tracks the diagonal), and the 80% interval covers ~79%.
+- Captaining the model returns **~+2 pts/GW over the highest-form pick**.
+
+**Fixes shipped off the first backtest** (bias by position, before → after):
+1. **Goals-conceded term** for GK/DEF — was the biggest miscalibration:
+   GK **+0.55 → −0.13**, DEF **+0.71 → −0.04**. The model scored the
+   clean-sheet upside but never the −1-per-2-conceded downside.
+2. **Overdispersed `pointsDist`** — a gamma-Poisson form multiplier gives
+   returns the right-skew (streaks/hauls) a plain Poisson misses.
+3. **Two-state minutes model** — a start-plus-cameo mixture (with a
+   minutes-implied start floor) instead of a flat minutes-share scale.
+4. **Expected-deduction term** for cards / own goals / penalty misses.
+5. **Finishing-aware goals** (`effGoalRate`) — shrunk goals-vs-xG blend.
+
+Net: overall MAE **2.61 → 2.41**, overall bias **+0.32 → −0.16**, and the
+per-position bias spread collapsed from `[−0.13, +0.71]` to a tight, near-
+uniform band.
+
+**What the backtest now flags next:**
+- **Forwards** are still under-forecast (~−0.4 pts/GW): bonus
+  concentration, rebounds and secondary chances that pure-xG misses. A
+  forward-specific calibration term is the next win — best fit on live
+  data, not this simulation.
+- The residual upper-tail thinness tracks that forward under-forecast (the
+  hauling position breaching its own ceiling), so the same fix closes it.
+- A true **minutes-regime state** needs per-GW history (element-summary),
+  a data-plumbing follow-on beyond the bootstrap fields.
+- These last-mile parameters (overdispersion `k`, finishing weight, a
+  global recentre) should be tuned on real returns via the **P5 calibration
+  loop**, not to the synthetic DGP.
+
 ## Test & tooling
 
-- `npm test` — 251 unit tests over the model core (every helper above).
-- `node dev/model-validate.mjs [snap.json]` — accuracy backtest.
+- `npm test` — 262 unit tests over the model core (every helper above).
+- `node dev/backtest-season.mjs` — walk-forward season backtest + the
+  "where to improve" report (the section above is generated from it).
+- `node dev/model-validate.mjs [snap.json]` — A/B accuracy backtest;
+  `snap.json` runs it against real finished-gameweek actuals.
 - `node dev/simulate-gameweek.mjs [--html out.html]` — the model's
   gameweek outputs.
 
