@@ -3181,10 +3181,25 @@ async function hydrateAccountability(host){
         '</div><div class="dl-sub" style="margin-top:10px">Percentile is your live overall rank against '+fmtNum(totalPlayers)+' managers · captain hit rate = armband was your top scorer ('+capHitSub+'). Full captain analysis is in the <a href="#gwhistory" onclick="openPanel(\'gwhistory\');return false">Manager Report</a>.</div></div>';
     }
   }catch(_){}}
+  /* Live prediction accuracy from the logged model predictions (P5). */
+  let calCard='';
+  try{
+    const cal=await fetch(apiBase()+'/api/model-calibration').then(r=>r.json()).catch(()=>null);
+    if(cal&&cal.n>0){
+      calCard='<div class="card mb-20"><div class="card-title">Live prediction accuracy</div>'+
+        '<div class="statgrid">'+
+          '<div class="stat"><div class="stat-l">Predictions graded</div><div class="stat-v">'+fmtNum(cal.n)+'</div></div>'+
+          '<div class="stat"><div class="stat-l">Gameweeks</div><div class="stat-v">'+cal.gws+'</div></div>'+
+          '<div class="stat"><div class="stat-l">Points MAE</div><div class="stat-v">'+cal.mae.toFixed(2)+'</div></div>'+
+          (cal.brier!=null?'<div class="stat"><div class="stat-l">Haul Brier</div><div class="stat-v">'+cal.brier.toFixed(3)+'</div></div>':'')+
+        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score — lower is better). The model, graded on live results.</div></div>';
+    }
+  }catch(_){}
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Model scorecard</div>'+scoreGrid+
       '<div class="dl-sub" style="margin-top:10px">The match model is scored on <b>held-out</b> 2025/26 results — a ranked probability score of <b>0.2126</b> (lower is better; a coin-flip is ~0.25). '+
       '“Favourite correct” is how often the higher-probability side actually won or drew as modelled, recomputed live as fixtures finish. Every number here moves with real results — no cherry-picking.</div></div>'+
+    calCard+
     youCard+
     '<div class="card"><div class="ge-state">'+svg(ICON.spark)+
       '<b>Graded in public</b><p>The same fitted attack/defence model powers every recommendation in the app. The full method and code are open in the PL Simulator repository — see the Methodology page.</p></div></div>';
