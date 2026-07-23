@@ -193,6 +193,31 @@ returns rather than fit to one bookmaker's board.
 > FPL API is firewalled from CI, so the market board was the external
 > reference.
 
+### 2026/27 pre-season — chip model vs the community FH4 / WC6 consensus
+
+Checked `chipAdvice` against the pre-season community chip plan (Free Hit
+GW4, Wildcard GW6). **Partial agreement — one bounded gap.**
+
+- **Where it agrees**: the model correctly encodes the proven, event-driven
+  chip theory — Triple Captain and Bench Boost on the next **double**, Free
+  Hit on the next **blank** (with the highest confidence on a blank straight
+  after a double), Wildcard on an injury pile-up (three-plus flagged XI
+  players). That is where these chips return the most points.
+- **The gap**: the community FH4 / WC6 calls are **fixture-swing** driven —
+  Free Hit the gameweek the popular template teams collectively hit hard
+  fixtures (the Man Utd v Man City clash in GW4), Wildcard at the post-
+  international-break inflection (GW6) to reshape for the GW6–15 run. Before
+  any double or blank is scheduled, `chipAdvice` returns **hold** for Free
+  Hit and Wildcard (its copy already says *"hold for a blank or a big
+  fixture swing"*), so it does not reproduce FH4 / WC6.
+
+**Conclusion**: the model is right for the DGW/BGW meta but silent on early-
+season fixture-swing chip timing. Closing it means computing a swing signal
+from the shipped FDR grid + live ownership (a gameweek where the most-owned
+teams’ collective FDR spikes → Free Hit candidate; a fixture-run inflection
+→ Wildcard candidate). Deferred as a follow-up — it needs live ownership,
+not this pre-season snapshot.
+
 ## Test & tooling
 
 - `npm test` — 262 unit tests over the model core (every helper above).

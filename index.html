@@ -4254,6 +4254,10 @@ async function hydrateFixtures(host){
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Match · home / draw / away · clean sheet</span><span class="dl-col">xG</span></div>'+outlook+'</div>'+
     '<div class="dl-sub" style="margin-top:10px">Win/draw/win, most likely score and clean-sheet probabilities from the fitted Poisson attack/defence model with the Dixon-Coles low-score correction.</div></div>':'';
 
+  /* Model XI (window-independent) — projected forward per gameweek below. */
+  const nf=buildNextFix(b,fixtures);
+  const modelXI=bestXI(scoutScored(b,nf));
+
   /* Everything below depends on the chosen horizon, so it rebuilds when the
      window control changes. */
   function build(){
@@ -4279,12 +4283,18 @@ async function hydrateFixtures(host){
       .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
       .sort((a,c)=>c.own-a.own).slice(0,30);
     const pairs=rotationPairs(enablers,teamDiff,6);
+    /* Same idea for cheap keepers — clean-sheet difficulty is the keeper lens. */
+    const gkEnablers=b.elements.filter(e=>e.status==='a'&&e.element_type===1&&(e.now_cost||0)<=45
+        &&((parseFloat(e.selected_by_percent)||0)>=0.3||parseFloat(e.ep_next||'0')>=1))
+      .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
+      .sort((a,c)=>c.own-a.own).slice(0,20);
+    const gkPairs=rotationPairs(gkEnablers,teamDiff,4);
     const rotStrip=p=>gws.map((g,gi)=>{
       const da=teamDiff[p.a.team][gi],dc=teamDiff[p.c.team][gi],d=Math.min(da,dc);
       const t=da<=dc?p.a:p.c,c=(byTeamGw[t.team]||{})[g];
       return '<td class="cell fdr-'+d+'" style="font-size:10px">'+(c?esc(c.opp)+(c.home?'':'(a)'):'—')+'</td>';
     }).join('');
-    const rotRows=pairs.map(p=>
+    const pairRows=arr=>arr.map(p=>
       '<div style="padding:8px 0;border-top:1px solid var(--border)">'+
         '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:5px">'+
           '<span class="dl-nm">'+esc(p.a.name)+' <span class="dl-sub">'+money(p.a.cost)+'</span> <span style="color:var(--text-3)">+</span> '+esc(p.c.name)+' <span class="dl-sub">'+money(p.c.cost)+'</span></span>'+
@@ -4292,10 +4302,14 @@ async function hydrateFixtures(host){
         '</div>'+
         '<div class="fdr"><table><tbody><tr>'+rotStrip(p)+'</tr></tbody></table></div>'+
       '</div>').join('');
-    const rotCard=pairs.length
-      ? '<div class="card mb-20"><div class="card-title">Defensive rotation pairs — best combined run</div>'+
-          '<p class="dl-sub" style="margin-bottom:2px">Two budget defenders (£6.0m or under) whose fixtures alternate, so each week you start whichever has the kinder clean-sheet fixture. The strip shows the fixture you would play — greener is easier. Ranked by combined difficulty over the next '+gws.length+' gameweeks.</p>'+
-          rotRows+'</div>'
+    const gkSection=gkPairs.length
+      ? '<div class="dl-sub" style="margin:12px 0 2px;font-weight:800;color:var(--text)">Goalkeeper rotation (£4.5m and under)</div>'+pairRows(gkPairs)
+      : '';
+    const rotCard=(pairs.length||gkPairs.length)
+      ? '<div class="card mb-20"><div class="card-title">Rotation pairs — best combined run</div>'+
+          '<p class="dl-sub" style="margin-bottom:2px">Two budget players whose fixtures alternate, so each week you start whichever has the kinder clean-sheet fixture. The strip shows the fixture you would play — greener is easier. Ranked by combined difficulty over the next '+gws.length+' gameweeks.</p>'+
+          (pairs.length?'<div class="dl-sub" style="margin:6px 0 2px;font-weight:800;color:var(--text)">Defenders (£6.0m and under)</div>'+pairRows(pairs):'')+
+          gkSection+'</div>'
       : '';
 
     /* Pre-season value board — projected points per £m over the opening run. */
@@ -4320,6 +4334,26 @@ async function hydrateFixtures(host){
           '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">xP'+valN+'</span><span class="dl-col">/£m</span></div>'+valBody+'</div></div>'
       : '';
 
+    /* Opener planner — the Model XI projected forward fixture-by-fixture,
+       with the best captain (armband doubled) each gameweek. */
+    let planCard='';
+    if(modelXI){
+      const prows=gws.map(g=>{
+        let tot=0,capPts=0,capEl=null;
+        modelXI.xi.forEach(s=>{const fx=(byTeamGw[s.el.team]||{})[g];
+          const p=fx?fixtureXP(b,s.el,fx):0;tot+=p;if(p>capPts){capPts=p;capEl=s.el;}});
+        return {g,tot:tot+capPts,cap:capEl,opp:capEl?(byTeamGw[capEl.team]||{})[g]:null};
+      });
+      const grand=prows.reduce((a,r)=>a+r.tot,0);
+      planCard='<div class="card mb-20"><div class="card-title">Opener planner — Model XI by gameweek</div>'+
+        '<p class="dl-sub" style="margin-bottom:6px">Our Model XI projected forward fixture-by-fixture, with the best captain each week (armband doubled). <b>'+grand.toFixed(0)+'</b> projected points over the next '+gws.length+' gameweeks.</p>'+
+        '<div class="dl"><div class="dl-row head"><span class="dl-grow">GW</span><span class="dl-grow">Captain</span><span class="dl-col">Pts</span></div>'+
+        prows.map(r=>'<div class="dl-row"><span class="dl-grow">GW'+r.g+'</span>'+
+          '<span class="dl-grow">'+(r.cap?esc(r.cap.web_name)+(r.opp?' <span class="dl-sub">'+esc(r.opp.opp)+(r.opp.home?' (H)':' (A)')+'</span>':''):'—')+'</span>'+
+          '<span class="dl-col mono" style="font-weight:800">'+r.tot.toFixed(1)+'</span></div>').join('')+
+        '</div></div>';
+    }
+
     host.innerHTML=
       '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
         '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(w=>'<button class="seg-b'+(w===curWin?' on':'')+'" data-win="'+w+'">'+w+' GW</button>').join('')+'</div>'+
@@ -4330,7 +4364,7 @@ async function hydrateFixtures(host){
         '<b>(a)</b> marks an away fixture. <b>FDR</b> totals the 1–5 difficulty (lower is easier); <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
-      rotCard+valCard+outlookCard;
+      planCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
     const wseg=host.querySelector('#fdr-win');
