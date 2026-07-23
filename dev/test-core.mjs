@@ -128,13 +128,14 @@ const pieces = [
   extractFn(html, 'differentials'),
   extractFn(html, 'rotationPairs'),
   extractFn(html, 'bestFixtureRun'),
+  extractFn(html, 'chipSwings'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -750,6 +751,25 @@ ok(core.bestFixtureRun([], 3) === null, 'an empty array yields no run');
   let s = 0; for (let i = r.start; i <= r.end; i++) s += arr[i];
   ok(s === r.sum && r.sum === 6, 'the returned sum matches the marked block');
 }
+
+section('chipSwings: fixture-swing Free Hit and Wildcard windows');
+const fhRuns = [
+  { team: 1, own: 50, diff: [2, 2, 2, 5, 2, 2] },  /* heavily owned, hard fixture at index 3 */
+  { team: 2, own: 40, diff: [2, 2, 2, 5, 2, 2] },
+  { team: 3, own: 1, diff: [5, 5, 5, 1, 5, 5] },   /* barely owned, so its easy week 3 barely moves the field mean */
+];
+const swFH = core.chipSwings(fhRuns, 2, 2);
+ok(swFH.fh.idx === 3, 'Free Hit lands on the week the most-owned teams face the hardest fixtures');
+ok(swFH.fh.clear === true, 'a clear ownership-weighted spike above the window average is flagged');
+const wcRuns = [
+  { team: 1, own: 10, diff: [1, 1, 1, 5, 5, 5, 5, 5, 1, 1] },  /* great early, turns hard from index 3 */
+  { team: 2, own: 10, diff: [5, 5, 5, 1, 1, 1, 1, 1, 5, 5] },  /* the opposite — the reshape target */
+];
+const swWC = core.chipSwings(wcRuns, 5, 1);
+ok(swWC.wc.idx === 3, 'Wildcard lands where the current best-fixture teams turn hardest over the next run');
+ok(swWC.wc.gain > 0, 'the reshape difficulty-shed is positive at the swing boundary');
+ok(core.chipSwings([], 5, 6).fh === null, 'no teams yields no swing');
+ok(core.chipSwings([{ team: 1, own: 5, diff: [2, 2] }], 5, 6).wc === null, 'too short a horizon yields no Wildcard boundary');
 
 section('bestXI drawn from the template pool is a legal, optimal XI');
 /* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
