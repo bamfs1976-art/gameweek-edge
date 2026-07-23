@@ -25,6 +25,9 @@ function extractBlock(src, s) { const o = src.indexOf('{', s); let d = 0, q = nu
     if (c === '{') d++; else if (c === '}') { d--; if (!d) return src.slice(s, j + 1); } } }
 const nativeXP = new Function(
   extractBlock(html, html.indexOf('function minutesModel(')) + '\n' +
+  extractBlock(html, html.indexOf('function concedePts(')) + '\n' +
+  extractBlock(html, html.indexOf('function effGoalRate(')) + '\n' +
+  extractBlock(html, html.indexOf('function negRate90(')) + '\n' +
   extractBlock(html, html.indexOf('function nativeXP(')) + '\nreturn nativeXP;')();
 
 /* deterministic RNG + samplers */

@@ -59,6 +59,9 @@ const pieces = [
   extractFn(html, 'plsimMatch'),
   extractFn(html, 'esc'),
   extractFn(html, 'minutesModel'),
+  extractFn(html, 'concedePts'),
+  extractFn(html, 'effGoalRate'),
+  extractFn(html, 'negRate90'),
   extractFn(html, 'recencyWeight'),
   extractFn(html, 'availAttackMult'),
   extractFn(html, 'nativeXP'),
@@ -121,7 +124,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -642,6 +645,34 @@ const gk = { element_type: 1, minutes: 540, expected_goals_per_90: '0', expected
 ok(core.nativeXP({ ...gk, saves: 60 }, nnf) > core.nativeXP(gk, nnf), 'goalkeeper saves add points');
 ok(core.nativeXP({ ...gk, defensive_contribution_per_90: '30' }, nnf) === core.nativeXP(gk, nnf),
   'goalkeepers get no defensive-contribution points (their category is saves)');
+
+/* ── model fixes from the season backtest ───────────────── */
+section('concedePts: goals-conceded downside for GK/DEF (fix 1)');
+ok(core.concedePts(0.9) < core.concedePts(0.2), 'a leaky fixture (low CS odds) costs more than a solid one');
+ok(core.concedePts(0.28) > 0.2 && core.concedePts(0.28) < 0.6, 'a league-average fixture costs ~0.3-0.4 pts');
+const defSolid = core.nativeXP({ ...baseDef, defensive_contribution_per_90: '8' }, { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.5 });
+const defLeaky = core.nativeXP({ ...baseDef, defensive_contribution_per_90: '8' }, { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.12 });
+ok(defSolid > defLeaky, 'a defender on a solid fixture out-scores the same player on a leaky one');
+const midSolid = core.nativeXP(baseMid, { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.5 });
+const midLeaky = core.nativeXP(baseMid, { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.12 });
+ok((defSolid - defLeaky) > 3 * (midSolid - midLeaky),
+  'a defender is far more CS-sensitive than a midfielder (4pt CS + concede vs a lone 1pt CS)');
+
+section('effGoalRate: finishing-aware goals (fix 5)');
+const noGoalsField = { element_type: 4, minutes: 540, expected_goals_per_90: '0.4' };
+ok(core.effGoalRate(noGoalsField) === 0.4, 'falls back to pure xG when goals are unknown');
+const clinical = core.effGoalRate({ element_type: 4, minutes: 1800, expected_goals_per_90: '0.4', goals_scored: 16 });
+const wasteful = core.effGoalRate({ element_type: 4, minutes: 1800, expected_goals_per_90: '0.4', goals_scored: 4 });
+ok(clinical > 0.4 && clinical < 0.8, 'a clinical finisher is nudged above xG but shrunk, not fully');
+ok(wasteful < 0.4, 'a wasteful finisher is nudged below xG');
+const fwdBt = { element_type: 4, starts: 6, minutes: 540, status: 'a', chance_of_playing_next_round: null,
+  expected_goals_per_90: '0.5', expected_assists_per_90: '0.2', bonus: 10 };
+ok(core.nativeXP({ ...fwdBt, goals_scored: 20 }, nnf) > core.nativeXP(fwdBt, nnf), 'proven finishing lifts native xP');
+
+section('negRate90: expected deductions for negatives (fix 4)');
+ok(core.negRate90({ minutes: 900 }) === 0, 'a clean record deducts nothing');
+ok(core.negRate90({ minutes: 900, red_cards: 1 }) > core.negRate90({ minutes: 900, yellow_cards: 1 }), 'a red costs more than a yellow');
+ok(core.nativeXP({ ...fwdBt, yellow_cards: 8, red_cards: 1 }, nnf) < core.nativeXP(fwdBt, nnf), 'a booking-prone profile is debiased downward');
 
 /* ── minutes model (P2) ─────────────────────────────────── */
 section('minutesModel: availability reshapes the minutes');

@@ -46,7 +46,8 @@ function buildModel(html) {
     grabFn(html, 'poisson'), grabFn(html, 'plsimPrior'), grabFn(html, 'plsimMatch'),
     grabFn(html, 'recencyWeight'), grabFn(html, 'availAttackMult'), grabFn(html, 'plsimRatings'),
     grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'), grabFn(html, 'buildNextFix'),
-    grabFn(html, 'minutesModel'), grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'pointsDist'),
+    grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),
+    grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'pointsDist'),
   ];
   // eslint-disable-next-line no-new-func
   return new Function('const MEM={};\n' + pieces.join('\n') + '\nreturn {buildNextFix,xP,pointsDist};')();

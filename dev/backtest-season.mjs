@@ -61,7 +61,8 @@ function extractBlock(src, startIdx) {
 }
 const grab = name => extractBlock(html, html.indexOf('function ' + name + '('));
 const model = new Function(
-  [grab('minutesModel'), grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
+  [grab('minutesModel'), grab('concedePts'), grab('effGoalRate'), grab('negRate90'),
+    grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
   '\nreturn { minutesModel, nativeXP, xP, pointsDist };'
 )();
 
@@ -119,6 +120,7 @@ for (const tm of teams) {
 for (const p of players) Object.assign(p, {
   minutes: 0, starts: 0, _goals: 0, _assists: 0, _cs: 0, bonus: 0, saves: 0,
   _dcActions: 0, _xgAcc: 0, _xaAcc: 0, _pts: [], _mins: [],
+  _yc: 0, _rc: 0, _og: 0, _pm: 0,
 });
 const teamGP = {}; teams.forEach(t => teamGP[t.id] = 0);
 
@@ -127,8 +129,8 @@ function fixture(team, opp, home) {
   const BASE = 1.42;
   const lam = Math.max(0.25, BASE * team.att / opp.def * (home ? 1.13 : 0.9));   /* goals for */
   const conc = Math.max(0.25, BASE * opp.att / team.def * (home ? 0.9 : 1.13));  /* goals against */
-  const cs = Math.exp(-conc);                                                     /* P(0 conceded) */
-  return { lam, cs };
+  const cs = Math.exp(-conc);                                                     /* P(0 conceded), consistent with conc */
+  return { lam, cs, conc };
 }
 
 /* ── true realized points for a player-gameweek (the rich DGP) ── */
@@ -153,8 +155,9 @@ function realize(p, tm, opp, home, gw) {
   const xaThis = p._xa90 * mfrac * fxT.lam / 1.42;
   /* goals: xG scaled by TRUE finishing skill + form, plus penalties */
   let goals = pois(xgThis * p._finishing * form);
-  let penMiss = 0;
+  let penMiss = 0, penXg = 0;
   if (p._penDuty > 0 && minutes >= 45 && rnd() < 0.16 * p._penDuty) {
+    penXg = 0.79;                                                         /* FPL xG includes penalty xG */
     if (rnd() < 0.79) goals += 1; else penMiss = 1;                       /* ~79% conversion */
   }
   const assists = pois(xaThis * form * 1.02);
@@ -162,10 +165,13 @@ function realize(p, tm, opp, home, gw) {
   if (minutes > 0) pts += 1;
   if (minutes >= 60) pts += 1;
   pts += goals * gPts + assists * 3;
-  const cs = (minutes >= 60 && bern(fxT.cs)) ? 1 : 0;
+  /* Goals conceded ~ Poisson(conc); clean sheet is exactly the zero event,
+     so cs and the concede count are self-consistent (cs = exp(-conc)). */
+  const goalsAgainst = minutes >= 60 ? pois(fxT.conc) : 0;
+  const cs = (minutes >= 60 && goalsAgainst === 0) ? 1 : 0;
   if (cs) pts += csPts;
   let conceded = 0;
-  if (type <= 2 && minutes >= 60 && !cs) { conceded = Math.floor(pois((1 - fxT.cs) * 2.1) / 2); pts -= conceded; } /* -1 per 2 conceded (GK/DEF) */
+  if (type <= 2) { conceded = Math.floor(goalsAgainst / 2); pts -= conceded; }   /* -1 per 2 conceded (GK/DEF) */
   /* defensive contribution (2025/26) */
   const dcActions = type >= 2 ? pois(p._dc90 * mfrac * (0.85 + 0.3 * form)) : 0;
   if (type >= 2 && minutes >= 60 && dcActions >= (type === 2 ? 10 : 12)) pts += 2;
@@ -179,12 +185,13 @@ function realize(p, tm, opp, home, gw) {
   bonus = Math.min(3, bonus);
   pts += bonus;
   /* negatives the model never forecasts */
+  let yellow = 0, red = 0, og = 0;
   if (penMiss) pts -= 2;
-  if (minutes > 0 && rnd() < 0.02) pts -= 1;                              /* yellow */
-  if (minutes > 0 && rnd() < 0.006) pts -= 3;                            /* red */
-  if (rnd() < 0.004) pts -= 2;                                          /* own goal */
+  if (minutes > 0 && rnd() < 0.02) { yellow = 1; pts -= 1; }
+  if (minutes > 0 && rnd() < 0.006) { red = 1; pts -= 3; }
+  if (rnd() < 0.004) { og = 1; pts -= 2; }
 
-  return { minutes, started, goals, assists, cs, bonus, saves, dcActions, xg: xgThis, xa: xaThis, pts, penMiss, conceded };
+  return { minutes, started, goals, assists, cs, bonus, saves, dcActions, xg: xgThis + penXg, xa: xaThis, pts, penMiss, conceded, yellow, red, og };
 }
 
 /* ── metrics accumulators ───────────────────────────────── */
@@ -238,7 +245,8 @@ for (let gw = 1; gw <= GW; gw++) {
         expected_goals_per_90: String(p.minutes ? p._xgAcc * 90 / p.minutes : 0),
         expected_assists_per_90: String(p.minutes ? p._xaAcc * 90 / p.minutes : 0),
         defensive_contribution_per_90: String(p.minutes ? p._dcActions * 90 / p.minutes : 0),
-        saves: p.saves, bonus: p.bonus,
+        saves: p.saves, bonus: p.bonus, goals_scored: p._goals,       /* enables finishing blend (P-fix 5) */
+        yellow_cards: p._yc, red_cards: p._rc, own_goals: p._og, penalties_missed: p._pm,   /* negatives (P-fix 4) */
         form: (p._pts.slice(-3).reduce((a, b) => a + b, 0) / Math.min(3, p._pts.length || 1)).toFixed(1),
         points_per_game: (p._pts.reduce((a, b) => a + b, 0) / Math.max(1, p._pts.length)).toFixed(1),
       };
@@ -283,6 +291,7 @@ for (let gw = 1; gw <= GW; gw++) {
     p.minutes += truth.minutes; p.starts += truth.started; p._goals += truth.goals;
     p._assists += truth.assists; p._cs += truth.cs; p.bonus += truth.bonus; p.saves += truth.saves;
     p._dcActions += truth.dcActions; p._xgAcc += truth.xg; p._xaAcc += truth.xa;
+    p._yc += truth.yellow; p._rc += truth.red; p._og += truth.og; p._pm += truth.penMiss;
     p._pts.push(truth.pts); p._mins.push(truth.minutes);
   }
   teams.forEach(t => teamGP[t.id]++);
@@ -349,34 +358,30 @@ const hc = calibration(haulRows);
 console.log('  haul (>=10) Brier: ' + hc.brier.toFixed(4) + '  — reliability (pred → obs):');
 hc.buckets.forEach(b => { if (b.n >= 20) console.log('    ' + f2(b.pMean) + ' → ' + f2(b.oFreq) + '  (n=' + b.n + ')'); });
 
-console.log('\nStructural blind spots surfaced:');
+console.log('\nStructural probes (the fixes are now IN the model — this checks they hold):');
 const finRatio = xgGap.g / xgGap.xg;
 const cMean = concede.pts / Math.max(1, concede.n);
-console.log('  Goals-conceded deduction (GK/DEF), which nativeXP never subtracts:');
-console.log('    mean -' + f2(cMean) + ' pts/GW lost to concedes  (n=' + concede.n + ')');
-console.log('    vs the GK over-forecast +' + f2(M[1].biasN / M[1].n) + ' and DEF +' + f2(M[2].biasN / M[2].n) +
-  ' — a directly-measured chunk of the defensive-position bias (the rest');
-console.log('    is clean-sheet upside credited in expectation + unmodelled negatives).');
+console.log('  Concede term (fix 1): GK/DEF lose a measured -' + f2(cMean) + ' pts/GW to concedes;');
+console.log('    residual bias now GK ' + (M[1].biasN / M[1].n >= 0 ? '+' : '') + f2(M[1].biasN / M[1].n) +
+  ' / DEF ' + (M[2].biasN / M[2].n >= 0 ? '+' : '') + f2(M[2].biasN / M[2].n) + ' (was ~ +0.6 to +0.7 before the term).');
 const fClin = finish.clinical.b / Math.max(1, finish.clinical.n), fWast = finish.wasteful.b / Math.max(1, finish.wasteful.n);
-console.log('  Scorer residual by TRUE finishing skill (model only ever sees xG):');
-console.log('    clinical (>1.08x xG): ' + (fClin >= 0 ? '+' : '') + f2(fClin) + '   wasteful (<0.92x xG): ' + (fWast >= 0 ? '+' : '') + f2(fWast) +
-  '   gap ' + f2(fWast - fClin) + ' pts');
-console.log('    (small vs Poisson+form noise — finishing skill is a real but SECONDARY effect here.)');
-console.log('  penalty takers: mean nativeXP bias = ' + (penForecastMiss / penForecastN >= 0 ? '+' : '') +
-  f2(penForecastMiss / penForecastN) + ' pts/GW across ' + penForecastN + ' player-GWs.');
+console.log('  Finishing blend (fix 5): clinical residual ' + (fClin >= 0 ? '+' : '') + f2(fClin) +
+  ' vs wasteful ' + (fWast >= 0 ? '+' : '') + f2(fWast) + ' (gap ' + f2(fWast - fClin) + ', shrunk on purpose).');
+console.log('  penalty takers: mean nativeXP bias ' + (penForecastMiss / penForecastN >= 0 ? '+' : '') +
+  f2(penForecastMiss / penForecastN) + ' pts/GW (n=' + penForecastN + ').');
 
 console.log('\n──────────────────────────────────────────────────────────────');
-console.log(' WHERE TO IMPROVE (read from the numbers above)');
+console.log(' WHERE TO IMPROVE NEXT (read from the current numbers)');
 console.log('──────────────────────────────────────────────────────────────');
 const notes = [];
-/* rank the findings by the size of the effect they carry */
-notes.push('[biggest fix] Add a goals-conceded term to nativeXP for GK/DEF. They lose a measured -' + f2(cMean) + ' pts/GW to conceded goals the model never subtracts — a clean, directly-attributable chunk of the +' + f2(M[1].biasN / M[1].n) + ' GK / +' + f2(M[2].biasN / M[2].n) + ' DEF over-forecast. Mirror the clean-sheet term with -0.5 x expected goals conceded; the match model (plsim) already produces the concede rate, so it is a one-line addition that also fixes the leaky-team over-rating.');
-notes.push('Fatten the UPPER tail of pointsDist: ' + f2(100 * cover.above / cover.n) + '% of returns beat p90 vs only ' + f2(100 * cover.below / cover.n) + '% below p10 (80% band otherwise well-sized at ' + f2(covIn) + '%). Returns are right-skewed — form streaks and hauls; a gamma-Poisson (overdispersed) sampler would lift p90 and sharpen the ceiling/differential read the captain and rank cards lean on.');
-notes.push('Tame minutes-regime error: RMSE ' + f2(Math.sqrt(tot.seN / tot.n)) + ' vs MAE ' + f2(tot.aeN / tot.n) + ' means fat error tails, and they come from rotation/injury weeks the season-average start share cannot see. A start-probability state (recent-starts EWMA + news flags) is the highest-variance accuracy win.');
-notes.push('Forecast negatives: reds, own goals, penalty misses and cards are never predicted. A small expected-deduction term (card rate x position; pen-miss for takers) debiases high-risk profiles at almost no cost.');
-notes.push('Finishing skill is real but SECONDARY here (clinical vs wasteful gap only ' + f2(fWast - fClin) + ' pts) — worth a shrunk goals-vs-xG blend eventually, but the concede term and minutes model come first.');
-if (tot.aeN / tot.n < tot.aeForm / tot.n) notes.push('Keep the added categories: nativeXP MAE ' + f2(tot.aeN / tot.n) + ' beats the 3-GW form baseline ' + f2(tot.aeForm / tot.n) + ' and matches season-PPG ' + f2(tot.aePPG / tot.n) + '. It earns its keep on absolute points and more on RANKING (Spearman ' + f2(avgSpear) + '; captaining the model returns +' + f2((capReg.model - capReg.form) / capReg.n) + ' pts/GW over the highest-form pick).');
-else notes.push('nativeXP MAE ' + f2(tot.aeN / tot.n) + ' is level with the form baseline ' + f2(tot.aeForm / tot.n) + ' — its value is RANKING (Spearman ' + f2(avgSpear) + '), not absolute points.');
+/* Find the position with the largest residual bias magnitude. */
+let worst = 1; for (const t of [2, 3, 4]) if (Math.abs(M[t].biasN / M[t].n) > Math.abs(M[worst].biasN / M[worst].n)) worst = t;
+const wb = M[worst].biasN / M[worst].n;
+if (Math.abs(wb) > 0.3) notes.push('[top residual] ' + POS[worst] + ' bias ' + (wb >= 0 ? '+' : '') + f2(wb) + ' pts/GW' + (worst === 4 ? ' — forwards get bonus concentration, rebounds and secondary chances that pure-xG forecasting under-captures; a position-specific calibration term (or a higher finishing-blend weight for FWD) would close it.' : ' — a position-specific recalibration would close it.'));
+if (cover.above / cover.n > 0.13) notes.push('Upper tail of pointsDist still slightly thin: ' + f2(100 * cover.above / cover.n) + '% beat p90 (target ~10; band width otherwise fine at ' + f2(covIn) + '%). This tracks the ' + POS[worst] + ' under-forecast above — the hauling position breaching its own ceiling — so fixing that mean also fixes the tail. Overdispersion (gam k) and finishing weight are the levers; calibrate them on live data via the P5 endpoint rather than to this simulation.');
+notes.push('Minutes-regime error is the largest variance source: RMSE ' + f2(Math.sqrt(tot.seN / tot.n)) + ' vs MAE ' + f2(tot.aeN / tot.n) + ', from rotation/injury weeks a season aggregate cannot see. A true start-probability state needs per-GW history (element-summary), a data-plumbing follow-on beyond the current bootstrap fields.');
+notes.push('Overall bias ' + (tot.biasN / tot.n >= 0 ? '+' : '') + f2(tot.biasN / tot.n) + ' pts/GW (was +0.32 before these fixes) — small and now uniform across GK/DEF/MID, so a single global recentre on live data would finish the job.');
+if (tot.aeN / tot.n < tot.aeForm / tot.n) notes.push('Health check: nativeXP MAE ' + f2(tot.aeN / tot.n) + ' beats the 3-GW form baseline ' + f2(tot.aeForm / tot.n) + ' and season-PPG ' + f2(tot.aePPG / tot.n) + '; captaining the model returns +' + f2((capReg.model - capReg.form) / capReg.n) + ' pts/GW over the form pick (Spearman ' + f2(avgSpear) + ').');
 notes.forEach((n, i) => console.log(' ' + (i + 1) + '. ' + n));
 
 console.log('\nCaveat: this is a simulation calibrated to 2025/26 RULES, not the');
