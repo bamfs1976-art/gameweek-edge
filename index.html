@@ -2427,7 +2427,7 @@ const NAV = [
       {id:'ask', label:'Ask the Scout', icon:'chat', tier:'paid'},
       {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid'},
       {id:'eo', label:'EO Tracker', icon:'target', tier:'paid'},
-      {id:'template', label:'Template Meter', icon:'grid', tier:'paid'},
+      {id:'template', label:'The Template', icon:'grid', tier:'paid'},
       {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid'},
       {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid'},
       {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid'},
@@ -2562,7 +2562,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   template:{
-    desc:'How closely your squad matches the top 10k template, and where your edge sits.',
+    desc:'The most-selected players in each position, the optimal legal XI built from them, and how closely your own squad matches.',
     layout:'standard'
   },
   rivals:{
@@ -5950,32 +5950,63 @@ async function hydrateEO(host){
 /* ── Template Meter: overlap with the most-owned XI ─────── */
 async function hydrateTemplate(host){
   const mid=getMid();
-  if(!mid){host.innerHTML=linkBox();return;}
-  const b=await boot();
-  const picks=await loadPicks(mid,b.cur.id);
-  const need={1:2,2:5,3:5,4:3};
-  const template=new Set();
-  [1,2,3,4].forEach(t=>{
-    b.elements.filter(e=>e.element_type===t)
-      .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
-      .slice(0,need[t]).forEach(e=>template.add(e.id));
-  });
-  const mine=new Set(picks.picks.map(p=>p.element));
-  let overlap=0;template.forEach(id=>{if(mine.has(id))overlap++;});
-  const pct=Math.round(100*overlap/template.size);
-  const tmplRows=[...template].map(id=>b.els[id]).sort((a,c)=>a.element_type-c.element_type||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
-    .map(e=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-      '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+e.selected_by_percent+'%</span></span>'+
-      (mine.has(e.id)?'<span class="badge badge-green">Owned</span>':'<span class="badge badge-grey">Missing</span>')+'</div>').join('');
-  const diffs=[...mine].map(id=>b.els[id]).filter(e=>e&&!template.has(e.id)&&parseFloat(e.selected_by_percent)<15)
-    .map(e=>esc(e.web_name)).slice(0,6);
-  host.innerHTML=
-    '<div class="grid g-sb mb-20">'+
-      kpi('Template Match',pct+'%',overlap+' of '+template.size+' template players','var(--blue)')+
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const nf=buildNextFix(b,fixtures);
+  const N=10;
+  const top=topSelectedByPos(b.elements,N);
+  const scoreOf=e=>xP(b,e,nf[e.team])||0;
+  /* The optimal legal starting XI drawn ONLY from the 40 most-selected
+     players (10 per position), by projected points — the best template team
+     you can field. bestXI enforces a valid formation and max 3 per club. */
+  const pool=[].concat(top[1],top[2],top[3],top[4]).map(e=>({el:e,p:scoreOf(e)}));
+  const xi=bestXI(pool);
+  const xiIds=new Set(xi?xi.xi.map(s=>s.el.id):[]);
+  const capId=xi?xi.xi.slice().sort((a,c)=>c.p-a.p)[0].el.id:null;
+  let xiCard='';
+  if(xi){
+    const cell=s=>{const e=s.el;return '<div class="pp'+(e.id===capId?' is-cap':'')+'">'+
+      (e.id===capId?'<span class="pp-badge">C</span>':'')+ppFigure(b,e)+
+      '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+s.p.toFixed(1)+'</span></div>';};
+    const rowT=t=>'<div class="pitch-row">'+xi.xi.filter(s=>s.el.element_type===t).map(cell).join('')+'</div>';
+    const totXP=xi.xi.reduce((a,s)=>a+s.p,0),totCost=xi.xi.reduce((a,s)=>a+(s.el.now_cost||0),0);
+    const capEl=b.els[capId];
+    xiCard='<div class="card mb-20"><div class="card-title">Optimal template XI '+
+      '<span class="badge badge-green">'+xi.formation.join('-')+'</span></div>'+
+      '<div class="statgrid" style="margin-bottom:6px">'+
+        '<div class="stat"><div class="stat-l">Projected</div><div class="stat-v">'+totXP.toFixed(1)+' xP</div></div>'+
+        '<div class="stat"><div class="stat-l">Captain</div><div class="stat-v" style="font-size:15px">'+esc(capEl?capEl.web_name:'—')+'</div></div>'+
+        '<div class="stat"><div class="stat-l">XI cost</div><div class="stat-v">'+money(totCost)+'</div></div>'+
+      '</div>'+
+      pitchWrap(rowT(1)+rowT(2)+rowT(3)+rowT(4))+
+      '<div class="dl-sub" style="margin-top:10px">The highest projected-points legal XI (valid formation, max 3 per club) built only from the 40 most-selected players below. Numbers are our next-gameweek xP; captain = the top projection. XI cost is for reference — a full 15 also needs 4 bench players inside £100.0m.</div></div>';
+  }
+  const posName={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const tableFor=t=>{
+    const rows=top[t].map((e,i)=>'<div class="dl-row">'+
+      '<span class="dl-col mono" style="width:22px;color:var(--text-3);flex:0 0 22px">'+(i+1)+'</span>'+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+(xiIds.has(e.id)?' <span class="badge badge-green">XI</span>':'')+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,13)+teamShort(b,e.team)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'% owned</span></span>'+
+      '<span class="dl-col mono">'+scoreOf(e).toFixed(1)+'</span></div>').join('');
+    return '<div class="card mb-20"><div class="card-title">Top '+N+' '+posName[t]+' — most selected</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-col" style="width:22px;flex:0 0 22px">#</span><span class="dl-grow">Player · club · price · owned</span><span class="dl-col">xP</span></div>'+
+      (rows||'<div class="dl-sub" style="padding:8px 0">No ownership data yet.</div>')+'</div></div>';
+  };
+  const tables=[1,2,3,4].map(tableFor).join('');
+  /* Personalised: how much of the template you own (only when linked and the
+     picks are available — before the first deadline the API has no squad). */
+  let matchCard='';
+  if(mid){try{
+    const picks=await loadPicks(mid,b.cur.id);
+    const tmpl=new Set(pool.map(x=>x.el.id));
+    const mine=new Set(picks.picks.map(p=>p.element));
+    let overlap=0;tmpl.forEach(id=>{if(mine.has(id))overlap++;});
+    const diffs=[...mine].map(id=>b.els[id]).filter(e=>e&&!tmpl.has(e.id)&&parseFloat(e.selected_by_percent)<15).map(e=>esc(e.web_name)).slice(0,6);
+    matchCard='<div class="grid g-sb mb-20">'+
+      kpi('Template Match',Math.round(100*overlap/tmpl.size)+'%',overlap+' of the '+tmpl.size+' most-selected players','var(--blue)')+
       kpi('Your Edge',diffs.length+' diffs','low-owned players you back','var(--green)')+
-    '</div>'+
-    (diffs.length?'<div class="card mb-20"><div class="card-title">Where your edge sits</div><div class="dl-sub">'+diffs.join(' · ')+'</div></div>':'')+
-    '<div class="card"><div class="card-title">The template XV (most owned)</div><div class="dl">'+tmplRows+'</div></div>';
+    '</div>'+(diffs.length?'<div class="card mb-20"><div class="card-title">Where your edge sits</div><div class="dl-sub">'+diffs.join(' · ')+'</div></div>':'');
+  }catch(_){}}
+  host.innerHTML=matchCard+xiCard+tables;
 }
 
 /* ── Rival Scout: track up to five rivals ──────────────── */
@@ -8262,6 +8293,18 @@ function lineupCheck(b,picks,nf){
 /* Community aggregate: what the field is doing this gameweek — the crowd
    captain, the transfer flow, the top scorer and the most-owned player.
    A thin selector over the bootstrap. Pure. */
+/* Top-N most-selected players in each position, by ownership. The building
+   block for the template view and the template XI. Pure. */
+function topSelectedByPos(elements,n){
+  n=n||10;
+  const by={1:[],2:[],3:[],4:[]};
+  (elements||[]).forEach(e=>{if(by[e.element_type])by[e.element_type].push(e);});
+  [1,2,3,4].forEach(t=>{by[t]=by[t]
+    .filter(e=>(parseFloat(e.selected_by_percent)||0)>0)
+    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
+    .slice(0,n);});
+  return by;
+}
 function communityAggregate(b){
   const ev=(b&&b.cur)||{};const els=(b&&b.els)||{};
   const own=(b&&b.elements)||[];
