@@ -125,13 +125,14 @@ const pieces = [
   extractFn(html, 'lineupCheck'),
   extractFn(html, 'communityAggregate'),
   extractFn(html, 'topSelectedByPos'),
+  extractFn(html, 'differentials'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -691,6 +692,21 @@ ok([1, 2, 3, 4].every(t => top[t].length === 10), 'exactly 10 per position');
 ok(top[3].every((e, i) => i === 0 || parseFloat(e.selected_by_percent) <= parseFloat(top[3][i - 1].selected_by_percent)), 'sorted by ownership descending');
 ok(top[3].every(e => parseFloat(e.selected_by_percent) > 0), 'zero-owned players are excluded');
 ok(core.topSelectedByPos([], 10)[1].length === 0, 'empty pool → empty positions');
+
+section('differentials: full pool, no minutes gate');
+const diffPool = [
+  { id: 1, status: 'a', selected_by_percent: '3.0', minutes: 0, now_cost: 130 },   /* season start, no minutes */
+  { id: 2, status: 'a', selected_by_percent: '11.9', minutes: 540, now_cost: 55 },
+  { id: 3, status: 'a', selected_by_percent: '40.0', minutes: 900, now_cost: 90 },  /* too owned */
+  { id: 4, status: 'i', selected_by_percent: '2.0', minutes: 0, now_cost: 60 },     /* injured out */
+  { id: 5, status: 'a', selected_by_percent: '0', minutes: 0, now_cost: 45 },       /* 0% owned, unplayed */
+];
+const diffs = core.differentials(diffPool, 12);
+ok(diffs.some(e => e.id === 1) && diffs.some(e => e.id === 5), 'includes low-owned players with zero minutes (season start / benched) — the bug fix');
+ok(!diffs.some(e => e.id === 3), 'excludes players at/over the ownership threshold');
+ok(!diffs.some(e => e.id === 4), 'excludes unavailable (injured/suspended) players');
+ok(diffs.length === 3, 'keeps every eligible player — the full range, not just those with minutes');
+ok(core.differentials(diffPool, 5).every(e => parseFloat(e.selected_by_percent) < 5), 'the ownership threshold is honoured');
 
 section('bestXI drawn from the template pool is a legal, optimal XI');
 /* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
