@@ -124,13 +124,14 @@ const pieces = [
   extractFn(html, 'benchBoostReadiness'),
   extractFn(html, 'lineupCheck'),
   extractFn(html, 'communityAggregate'),
+  extractFn(html, 'topSelectedByPos'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -677,6 +678,40 @@ const ca = core.communityAggregate(caB);
 ok(ca.captain.web_name === 'Cap' && ca.transferIn.web_name === 'In', 'reads crowd captain + transfer in');
 ok(ca.transferOut.web_name === 'Out' && ca.topScorer.web_name === 'Top', 'reads transfer out + top scorer');
 ok(ca.mostOwned.web_name === 'Owned', 'finds the most-owned player');
+
+/* ── topSelectedByPos + the optimal template XI ─────────── */
+section('topSelectedByPos: top-N most owned per position');
+let tsId = 1;
+const mkOwn = (type, own, team) => ({ id: tsId++, element_type: type, team: team || (tsId % 8) + 1, web_name: 'P' + tsId, selected_by_percent: String(own), now_cost: 50 });
+const tsPool = [];
+[1, 2, 3, 4].forEach(t => { for (let i = 0; i < 14; i++) tsPool.push(mkOwn(t, 90 - i, t * 100 + i)); });
+tsPool.push(mkOwn(3, 0, 99));   /* zero-owned should be excluded */
+const top = core.topSelectedByPos(tsPool, 10);
+ok([1, 2, 3, 4].every(t => top[t].length === 10), 'exactly 10 per position');
+ok(top[3].every((e, i) => i === 0 || parseFloat(e.selected_by_percent) <= parseFloat(top[3][i - 1].selected_by_percent)), 'sorted by ownership descending');
+ok(top[3].every(e => parseFloat(e.selected_by_percent) > 0), 'zero-owned players are excluded');
+ok(core.topSelectedByPos([], 10)[1].length === 0, 'empty pool → empty positions');
+
+section('bestXI drawn from the template pool is a legal, optimal XI');
+/* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
+const scored = [].concat(top[1], top[2], top[3], top[4]).map((e, i) => ({ el: e, p: parseFloat(e.selected_by_percent) / 10 }));
+const xi = core.bestXI(scored);
+ok(xi && xi.xi.length === 11, 'builds a full XI of 11');
+const cnt = t => xi.xi.filter(s => s.el.element_type === t).length;
+ok(cnt(1) === 1, 'exactly one goalkeeper');
+ok(cnt(2) >= 3 && cnt(2) <= 5 && cnt(3) >= 3 && cnt(3) <= 5 && cnt(4) >= 1 && cnt(4) <= 3, 'a valid outfield formation');
+const clubCount = {}; xi.xi.forEach(s => { clubCount[s.el.team] = (clubCount[s.el.team] || 0) + 1; });
+ok(Object.values(clubCount).every(n => n <= 3), 'never more than 3 from one club');
+ok(xi.xi.every(s => top[s.el.element_type].some(e => e.id === s.el.id)), 'every pick comes from the top-10 template pool');
+/* Optimality: the single highest-xP player in the pool is always fielded, and
+   the chosen formation beats every alternative on total xP. */
+const bestP = scored.slice().sort((a, b) => b.p - a.p)[0];
+ok(xi.xi.some(s => s.el.id === bestP.el.id), 'the top-projected player is always in the XI');
+ok(xi.total === Math.max(...[[3, 4, 3], [3, 5, 2], [4, 5, 1], [4, 4, 2], [4, 3, 3], [5, 4, 1], [5, 3, 2], [5, 2, 3]].map(f => {
+  const need = { 1: 1, 2: f[0], 3: f[1], 4: f[2] }, got = { 1: 0, 2: 0, 3: 0, 4: 0 }, club = {}; let tot = 0, n = 0;
+  for (const s of scored.slice().sort((a, b) => b.p - a.p)) { const t = s.el.element_type, c = s.el.team; if (got[t] >= need[t] || (club[c] || 0) >= 3) continue; tot += s.p; got[t]++; club[c] = (club[c] || 0) + 1; if (++n === 11) break; }
+  return n === 11 ? tot : -1;
+})), 'the XI total equals the best achievable across all legal formations');
 
 /* ── Latest News feed ───────────────────────────────────── */
 section('timeAgo: relative time buckets');
