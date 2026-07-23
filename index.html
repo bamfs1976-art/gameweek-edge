@@ -8378,6 +8378,66 @@ function draftTemplate(pool,xp6,budget){
   }
   return picked;
 }
+/* Reserve-aware add: place el only if the squad can still be finished to a
+   legal 15 within budget afterwards (keeps enough for the cheapest fill of
+   every remaining slot). Shared by the guided builder and the gap-filler. */
+function draftReserveAdd(picked,el,minCost,budget){
+  if(!draftCanAdd(picked,el))return false;
+  const {pos,cost}=draftCounts(picked);let reserve=0;
+  [1,2,3,4].forEach(t=>{const need=DRAFT_QUOTA[t]-(pos[t]||0)-(t===el.element_type?1:0);
+    reserve+=Math.max(0,need)*(minCost[t]||40);});
+  if(cost+(el.now_cost||0)+reserve>budget)return false;
+  picked.push(el);return true;
+}
+function draftMinCost(pool){
+  const m={};[1,2,3,4].forEach(t=>{const cs=pool.filter(e=>e.element_type===t)
+    .map(e=>e.now_cost||0).sort((a,c)=>a-c);m[t]=cs.length?cs[0]:40;});
+  return m;
+}
+/* Guided squad builder (2026/27) — fills a legal 15 that MAXIMISES the
+   pre-season xP6, shaped by three preferences that mirror FPLs own guided
+   flow but optimise rather than merely auto-pick:
+     favClub  include up to 2 of a chosen clubs best-value players
+     bench    strong = a balanced, rotation-ready 15;
+              cheap  = minimum-price bench so the starting XI can go premium
+     tilt     attack / defence budget lean (scores nudged by position)
+   seed varies the pick so Generate again yields a different-but-strong
+   squad. Always returns a complete, in-budget, rules-legal squad. Pure. */
+function draftBuild(pool,xp6,prefs,budget){
+  prefs=prefs||{};budget=budget==null?DRAFT_BUDGET:budget;
+  const tilt=prefs.tilt||'balanced',bench=prefs.bench||'strong',seed=(prefs.seed||0)>>>0;
+  const jit=id=>{let s=(((id>>>0)*2654435761)^seed)>>>0;s=Math.imul(s^s>>>15,1|s);s^=s>>>13;return((s>>>0)%1000)/1000;};
+  const tw=t=>tilt==='attack'?(t>=3?1.12:0.9):tilt==='defence'?(t<=2?1.12:0.9):1;
+  const score={};pool.forEach(e=>{score[e.id]=(xp6[e.id]||0)*tw(e.element_type)*(1+0.06*(jit(e.id)-0.5));});
+  const minCost=draftMinCost(pool),picked=[];
+  /* 1) favourite club: up to 2 best-scoring affordable players */
+  if(prefs.favClub){
+    pool.filter(e=>e.team===prefs.favClub).sort((a,c)=>score[c.id]-score[a.id])
+      .forEach(e=>{if(picked.filter(p=>p.team===prefs.favClub).length<2)draftReserveAdd(picked,e,minCost,budget);});
+  }
+  /* 2) cheap bench: a minimum-price keeper and three cheapest outfielders */
+  if(bench==='cheap'){
+    const gk=pool.filter(e=>e.element_type===1).sort((a,c)=>(a.now_cost||0)-(c.now_cost||0)).find(e=>draftCanAdd(picked,e));
+    if(gk)draftReserveAdd(picked,gk,minCost,budget);
+    const cheapOut=pool.filter(e=>e.element_type>=2).sort((a,c)=>(a.now_cost||0)-(c.now_cost||0));
+    let n=0;for(const e of cheapOut){if(n>=3)break;if(draftReserveAdd(picked,e,minCost,budget))n++;}
+  }
+  /* 3) greedy best-score fill for the rest */
+  pool.slice().sort((a,c)=>score[c.id]-score[a.id]).forEach(el=>{if(picked.length<15)draftReserveAdd(picked,el,minCost,budget);});
+  return picked;
+}
+/* Complete a partial squad, KEEPING the current picks and greedy-filling the
+   rest by xP6 within budget. Powers remove-a-player-then-refill (FPLs
+   remove + Auto Pick), reallocating the freed budget around what was kept. */
+function draftFillGaps(pool,xp6,current,budget){
+  budget=budget==null?DRAFT_BUDGET:budget;
+  const minCost=draftMinCost(pool),picked=(current||[]).slice(),have=new Set(picked.map(e=>e.id));
+  pool.slice().sort((a,c)=>(xp6[c.id]||0)-(xp6[a.id]||0)).forEach(el=>{
+    if(picked.length>=15||have.has(el.id))return;
+    if(draftReserveAdd(picked,el,minCost,budget))have.add(el.id);
+  });
+  return picked;
+}
 /* Local heuristic verdict — always available, free. */
 function draftDiagnosis(S,players,v){
   if(!players.length)return '<div class="dl-sub">Add players from the pool — the verdict updates as you build.</div>';
@@ -8465,6 +8525,34 @@ function renderDraft(){
   if(diag)diag.innerHTML=draftDiagnosis(S,players,v);
 }
 function draftClear(){DRAFT_IDS=[];toast('Draft cleared');renderDraft();}
+/* Guided builder actions (2026/27). Read the three wizard answers, build a
+   fresh squad, and load it into the working draft. */
+function draftGenerate(){
+  const S=window._draft;if(!S)return;
+  const val=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  const club=parseInt(val('wiz-club')||'0',10)||null;
+  const bench=val('wiz-bench')||'strong',tilt=val('wiz-tilt')||'balanced';
+  S._seed=((S._seed||0)+1)>>>0;                       /* re-roll for variety on each press */
+  const avail=S.pool.filter(e=>e.status==='a');       /* skip likely non-starters, like FPLs filter */
+  const built=draftBuild(avail,S.xp6,{favClub:club,bench,tilt,seed:S._seed});
+  DRAFT_IDS=built.map(e=>e.id);
+  track('draft_generated',{club:!!club,bench,tilt});
+  renderDraft();
+  toast(built.length===15?'Squad generated — tweak any pick or save':'Built a partial squad from the available pool');
+}
+function draftAutoFill(){
+  const S=window._draft;if(!S)return;
+  const built=draftTemplate(S.pool.filter(e=>e.status==='a'),S.xp6);
+  DRAFT_IDS=built.map(e=>e.id);track('draft_autofill');renderDraft();
+  toast('Optimal 15 filled by projected points');
+}
+function draftFill(){
+  const S=window._draft;if(!S)return;
+  const current=DRAFT_IDS.map(id=>S.b.els[id]).filter(Boolean);
+  const built=draftFillGaps(S.pool.filter(e=>e.status==='a'),S.xp6,current);
+  DRAFT_IDS=built.map(e=>e.id);renderDraft();
+  toast(built.length>current.length?'Filled the remaining slots around your picks':'Squad already complete');
+}
 function draftSaveNow(){
   const S=window._draft;if(!S)return;
   const players=DRAFT_IDS.map(id=>S.b.els[id]).filter(Boolean);
@@ -8585,6 +8673,25 @@ async function hydrateDraft(host){
   const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0};
   const importBtn=(getMid()&&b.liveSeason)
     ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
+  const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
+    .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
+  const wizard=
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Build it for me</div>'+
+      '<p class="dl-sub" style="margin-bottom:12px">Answer three quick questions and we build a full, legal 15 that <b>maximises projected points</b> — shaped to how you want to play. Then tweak any pick, or regenerate as often as you like. Unlike a basic auto-pick, this optimises the squad.</p>'+
+      '<div class="pl-filters" style="gap:10px;flex-wrap:wrap;align-items:stretch">'+
+        '<label class="dl-sub" style="display:flex;flex-direction:column;gap:4px;flex:1 1 150px">Favourite club'+
+          '<select id="wiz-club" class="modal-in"><option value="0">No preference</option>'+clubOpts+'</select></label>'+
+        '<label class="dl-sub" style="display:flex;flex-direction:column;gap:4px;flex:1 1 150px">Bench'+
+          '<select id="wiz-bench" class="modal-in"><option value="strong">Strong 15 (rotation-ready)</option><option value="cheap">Cheap bench, premium XI</option></select></label>'+
+        '<label class="dl-sub" style="display:flex;flex-direction:column;gap:4px;flex:1 1 150px">Budget lean'+
+          '<select id="wiz-tilt" class="modal-in"><option value="balanced">Balanced</option><option value="attack">More attack</option><option value="defence">More defence</option></select></label>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">'+
+        '<button class="btn btn-primary btn-sm" onclick="draftGenerate()">'+svg(ICON.bolt,'width="13" height="13"')+' Generate team</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="draftAutoFill()">Auto-fill optimal</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="draftFill()">Fill remaining slots</button>'+
+      '</div>'+
+      '<p class="dl-sub" style="margin-top:10px">Remove any player (tap them on the pitch), then <b>Fill remaining slots</b> reallocates the freed budget around what you kept — like FPL’s Auto Pick, but optimised. Pre-season estimates use last season’s data.</p></div>';
   const notes=(relegated.length?' Relegated-club players ('+relegated.map(esc).join(', ')+') are excluded.':'')+
     (missing.length?' '+missing.map(esc).join(', ')+' players appear when FPL launches the 2026/27 game.':'');
   host.innerHTML=
@@ -8596,6 +8703,7 @@ async function hydrateDraft(host){
       '<div id="draft-summary"></div>'+
       '<p class="dl-sub" style="margin-top:10px">Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
         'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'+notes+'</p></div>'+
+    wizard+
     '<div class="grid g-sb mb-20">'+
       '<div class="card"><div class="card-title">Your draft <span class="badge badge-green" id="draft-count"></span></div>'+
         '<div id="draft-pitch"></div>'+
