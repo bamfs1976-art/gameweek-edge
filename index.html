@@ -4605,10 +4605,16 @@ async function hydrateInjuries(host){
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+rows+'</div></div>'
     : '<div class="card mb-20"><div class="ge-state">'+svg(ICON.cross)+'<b>No fitness flags</b><p>Every player is currently available. Check back closer to the deadline.</p></div></div>';
 
-  /* Suspension watch: who is one (or two) yellows from a ban. */
+  /* Suspension watch: who is one (or two) yellows from a ban.
+     Disciplinary totals reset every season. At a season open FPL can still
+     surface last season's yellow_cards before a ball is kicked — so until
+     the season is actually under way (a match has been played this season),
+     treat every count as reset to zero and show nothing at risk. Minutes are
+     the app's pre-season signal: everyone reads 0 until GW1 is played. */
   const gw=b.cur.id;
   const cut=suspCutoff(gw);
-  const atRisk=b.elements
+  const seasonStarted=b.elements.some(e=>(e.minutes||0)>0);
+  const atRisk=!seasonStarted?[]:b.elements
     .filter(e=>e.status!=='s'&&suspRisk(e.yellow_cards,gw).level)
     .sort((a,c)=>{const ra=suspRisk(a.yellow_cards,gw),rc=suspRisk(c.yellow_cards,gw);
       return ra.left-rc.left||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent);})
@@ -4626,7 +4632,9 @@ async function hydrateInjuries(host){
   const suspension='<div class="card mb-20"><div class="card-title">Suspension watch — '+cut.limit+' yellows by GW'+cut.by+'</div>'+
     (atRisk.length
       ? '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Cards</span></div>'+suspRows+'</div>'
-      : '<div class="dl-sub">Nobody is within two yellows of the '+cut.limit+'-card ban right now.</div>')+
+      : '<div class="dl-sub">'+(seasonStarted
+          ? 'Nobody is within two yellows of the '+cut.limit+'-card ban right now.'
+          : 'Card counts reset to zero for the new season — no bookings yet. The watch starts once GW1 is played.')+'</div>')+
     '<div class="dl-sub" style="margin-top:10px">Bans: 5 yellows by GW19 = 1 match, 10 by GW32 = 2, 15 in a season = 3. '+
     'For referee tendencies and deeper card analytics, see our companion app '+
     '<a href="https://bookingsdesk.netlify.app" target="_blank" rel="noopener">Bookings Desk</a>.</div></div>';
