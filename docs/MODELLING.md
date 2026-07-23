@@ -152,8 +152,13 @@ uniform band.
   data, not this simulation.
 - The residual upper-tail thinness tracks that forward under-forecast (the
   hauling position breaching its own ceiling), so the same fix closes it.
-- A true **minutes-regime state** needs per-GW history (element-summary),
-  a data-plumbing follow-on beyond the bootstrap fields.
+- **Minutes-regime state — now shipped.** `minutesModel` blends a
+  recency-weighted start/minute share from `element-summary` history
+  (`recentMinutes`, via `el._recent`) for the linked squad, so a newly
+  nailed or benched player is caught long before the season average moves.
+- **Player-level concede — now shipped.** `concedePts` blends each
+  defender's own `expected_goals_conceded_per_90` with the team clean-sheet
+  odds, so a leaky defender on a decent team is rated below a stingy one.
 - These last-mile parameters (overdispersion `k`, finishing weight, a
   global recentre) should be tuned on real returns via the **P5 calibration
   loop**, not to the synthetic DGP.

@@ -2906,6 +2906,7 @@ async function deadlineStrip(b,fixtures){
   const mid=getMid();
   if(mid){try{
     const picks=await loadPicks(mid,b.cur.id);
+    await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes */
     const xi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
     flags=xi.filter(e=>e.status&&e.status!=='a');
     xiXP=xi.reduce((s,e)=>s+xP(b,e,nf[e.team]),0);
@@ -3048,6 +3049,7 @@ async function hydrateMyWeek(host){
     '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>');return;}
   const b=await boot();
   const [fixtures,picks,hist]=await Promise.all([loadFixtures(),loadPicks(mid,b.cur.id),loadHistory(mid)]);
+  await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes for the squad */
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,5);
   const xiEls=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
@@ -3818,6 +3820,7 @@ async function hydrateSquad(host){
   const b=await boot();
   const gw=b.cur.id;
   const [picks,live,fixtures]=await Promise.all([loadPicks(mid,gw),loadLive(gw),loadFixtures()]);
+  await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes for the projection */
   const nf=buildNextFix(b,fixtures);
   const livePts={},liveMins={};
   (live.elements||[]).forEach(e=>{livePts[e.id]=e.stats?e.stats.total_points:0;liveMins[e.id]=e.stats?e.stats.minutes:0;});
@@ -4869,6 +4872,19 @@ function playerDetailHTML(b,fixtures,id){
     '</div>'+
     '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points. Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
+  /* FPL percentile ranks (API-fix 4): the official API pre-computes each
+     player's rank within their position on form, points-per-game, ICT and
+     ownership. Free context — where this player sits in the pack. */
+  const posN=b.elements.filter(x=>x.element_type===e.element_type).length||1;
+  const rankPct=r=>{const n=parseInt(r,10);return isFinite(n)&&n>0?'top '+Math.max(1,Math.round(100*n/posN))+'%':'—';};
+  const rankBlock=(e.form_rank_type!=null||e.ict_index_rank_type!=null)
+    ?'<div class="card pd-sec"><div class="card-title">How they rank — vs other '+posShort(b,e.element_type)+'s</div><div class="pd-grid">'+
+      stat('Form',rankPct(e.form_rank_type))+
+      stat('Points/game',rankPct(e.points_per_game_rank_type))+
+      stat('ICT index',rankPct(e.ict_index_rank_type))+
+      stat('Ownership',rankPct(e.selected_rank_type))+
+      '</div><div class="dl-sub" style="margin-top:8px">Official FPL percentile ranks within '+posShort(b,e.element_type)+'s — lower % is better. Pre-computed by the API, no modelling.</div></div>'
+    :'';
   /* Closest style twin */
   let twinHtml='';
   if(mins>=180){
@@ -4888,7 +4904,7 @@ function playerDetailHTML(b,fixtures,id){
     '<p class="dl-sub" style="margin-bottom:10px">A one-look scouting call on '+esc(e.web_name)+', grounded in these numbers.</p>'+
     aiGate('<button class="btn btn-primary btn-sm" onclick="genPlayer('+id+')">Scout this player</button>')+
     '<div id="pcard-'+id+'" style="margin-top:12px"></div></div>';
-  return head+news+kpis+ticker+leagueSlot+summarySlot+per90+twinHtml+ai+
+  return head+news+kpis+ticker+leagueSlot+summarySlot+per90+rankBlock+twinHtml+ai+
     '<div class="modal-row" style="margin-top:6px"><button class="btn btn-ghost" data-player-close>Close</button></div>';
 }
 
@@ -5354,12 +5370,22 @@ async function hydrateChips(host){
       '<span class="dl-col" style="width:auto;text-align:right;white-space:nowrap;flex-shrink:0">'+
         '<span style="font-weight:700;color:var(--text-2)">'+esc(a.window==='hold'?'Hold':a.window==='now'?'Now':a.window)+'</span><br>'+
         confChip(a.conf,'')+'</span></div>';
+  /* Crowd chip context (API-fix 5): what chips the field actually played in the
+     most recent finished gameweek, from the event chip_plays counts. */
+  const lastFin=(b.events||[]).filter(e=>e.finished&&e.chip_plays&&e.chip_plays.length).slice(-1)[0];
+  const crowdLine=lastFin?(()=>{
+    const nm={bboost:'Bench Boost','3xc':'Triple Captain',freehit:'Free Hit',wildcard:'Wildcard',manager:'Assistant Manager'};
+    const parts=lastFin.chip_plays.slice().sort((a,c)=>(c.num_played||0)-(a.num_played||0)).slice(0,3)
+      .map(p=>(nm[p.chip_name]||p.chip_name)+' '+fmtNum(p.num_played||0));
+    return parts.length?'<p class="dl-sub" style="margin-top:8px">The field in GW'+lastFin.id+': '+parts.join(' · ')+' played.</p>':'';
+  })():'';
   const timingCard=adv.all.length
     ?'<div class="card mb-20"><div class="card-title">Recommended timing</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">'+
         (adv.nextDbl?'Next double: <b>GW'+adv.nextDbl.gw+'</b>. ':'No double on the horizon yet. ')+
         (adv.nextBlank?'Next blank: <b>GW'+adv.nextBlank.gw+'</b>.':'No blank on the horizon yet.')+'</p>'+
       '<div class="dl">'+adv.all.map((a,i)=>advRow(a,i===0&&a.window!=='hold')).join('')+'</div>'+
+      crowdLine+
       (adv.second?'<p class="dl-sub" style="margin-top:10px">Second-best call: <b>'+esc(adv.second.label)+'</b> — '+esc(adv.second.reason)+'</p>':'')+
       '</div>'
     :'';
@@ -6179,13 +6205,53 @@ function closeXpDrawer(){const d=document.getElementById('xp-drawer');if(d)d.cla
    the season start-share and minutes-share with live availability from
    the news feed (status flags + chance-of-playing) so a doubt reshapes
    the minutes, not just a flat scale. See docs/MODELLING.md. Pure. */
+/* Recency-weighted start / minute share over the last few gameweeks, from an
+   element-summary history array (each entry has round, starts, minutes). Newer
+   gameweeks weigh more (0.85 per step back). Feeds minutesModel via el._recent
+   so the minutes model reacts to a role change well before the season average
+   does. (API-fix 1 — element-summary data we already fetch, now in the model.) */
+function recentMinutes(history,window){
+  const h=(history||[]).filter(r=>r&&r.round!=null).slice(-(window||5));
+  if(!h.length)return {startShare:0,minShare:0,n:0};
+  let ws=0,wm=0,wsum=0;
+  for(let i=0;i<h.length;i++){
+    const wt=Math.pow(0.85,h.length-1-i);
+    ws+=wt*((h[i].starts||0)>0?1:0);
+    wm+=wt*Math.min(1,(h[i].minutes||0)/90);
+    wsum+=wt;
+  }
+  return {startShare:ws/wsum,minShare:wm/wsum,n:h.length};
+}
+/* Enrich a bounded set of players (the linked squad + candidates) with recent
+   minutes from element-summary, so their projections use current form, not
+   just the season average. Only called on a handful of ids — never the whole
+   pool — because element-summary is one request per player. Best-effort. */
+async function attachRecent(b,ids){
+  const uniq=[...new Set(ids)].filter(id=>b.els[id]&&!b.els[id]._recent);
+  await Promise.all(uniq.map(id=>loadSummary(id)
+    .then(s=>{if(s&&s.history)b.els[id]._recent=recentMinutes(s.history,5);})
+    .catch(()=>{})));
+}
 function minutesModel(el,gp){
   gp=Math.max(1,gp||1);
   const out=el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
-  const ch=el.chance_of_playing_next_round;
+  /* Availability: the next-round chance, falling back to this-round when the
+     next-round flag is not yet set (FPL populates this_round earlier around a
+     live gameweek). (API-fix 3: chance_of_playing_this_round.) */
+  let ch=el.chance_of_playing_next_round;
+  if(ch==null&&el.chance_of_playing_this_round!=null)ch=el.chance_of_playing_this_round;
   const avail=out?0:(ch==null?1:Math.max(0,Math.min(1,ch/100)));
-  const startShare=Math.min(1,(el.starts||0)/gp);
-  const minShare=Math.min(1,(el.minutes||0)/(gp*90));
+  let startShare=Math.min(1,(el.starts||0)/gp);
+  let minShare=Math.min(1,(el.minutes||0)/(gp*90));
+  /* Recent-form minutes from element-summary (API-fix 1): el._recent carries
+     recency-weighted start/minute share over the last few gameweeks. Blend it
+     in, weighted up as more recent games accrue, so a newly nailed or newly
+     benched player is caught long before the season average moves. */
+  if(el._recent&&el._recent.n>=2){
+    const w=Math.min(0.6,0.15*el._recent.n);
+    startShare=(1-w)*startShare+w*el._recent.startShare;
+    minShare=(1-w)*minShare+w*el._recent.minShare;
+  }
   /* Two-state mixture (P3.1): a start plus a possible cameo, rather than a
      flat minutes-share scale. perStart is how complete a match the player
      logs when they DO start (early subs pull it below 1); cameo is the
@@ -6205,13 +6271,17 @@ function minutesModel(el,gp){
   const minFrac=Math.min(1,pStart*perStart+cameo*0.28*avail);
   return {avail,pStart,pAppear,p60,minFrac};
 }
-/* Expected FPL points a GK or DEF loses to conceded goals in a full match,
-   given the clean-sheet probability cs = P(0 conceded) = exp(-lamC). FPL
-   deducts 1 per 2 conceded, so this is E[floor(X/2)] for X ~ Poisson(lamC)
-   in closed form. nativeXP scored the clean-sheet upside but never this
-   downside, so defenders were systematically over-rated (P-fix 1). */
-function concedePts(cs){
-  const lamC=-Math.log(Math.max(0.03,Math.min(0.99,cs==null?0.28:cs)));
+/* Expected FPL points a GK or DEF loses to conceded goals in a full match.
+   The team clean-sheet probability cs = P(0 conceded) = exp(-lamC) gives one
+   estimate of the concede rate lamC; the player's own expected_goals_conceded
+   per 90 (xgc90, API-fix 2) gives a second, player-level one. Blend them and
+   return E[floor(X/2)] for X ~ Poisson(lamC) in closed form (FPL deducts 1 per
+   2 conceded). nativeXP scored the clean-sheet upside but never this downside,
+   so defenders were systematically over-rated (P-fix 1). */
+function concedePts(cs,xgc90){
+  let lamC=-Math.log(Math.max(0.03,Math.min(0.99,cs==null?0.28:cs)));
+  const x=parseFloat(xgc90);
+  if(isFinite(x)&&x>0)lamC=0.5*lamC+0.5*Math.min(3.5,x);
   return lamC/2-(1-Math.exp(-2*lamC))/4;
 }
 /* Finishing-aware goals-per-90 (P-fix 5): FPL gives xG, but players
@@ -6262,7 +6332,7 @@ function nativeXP(el,nf){
   /* Goals-conceded downside for GK and DEF (P-fix 1): mirror the clean
      sheet, minus 1 per 2 conceded, from the same fixture clean-sheet odds.
      Scaled by expected minutes on the pitch. */
-  if(type<=2)pts-=concedePts(nf.cs)*m.minFrac;
+  if(type<=2)pts-=concedePts(nf.cs,el.expected_goals_conceded_per_90)*m.minFrac;
   /* Bonus from the realised per-90 bonus rate, scaled by expected minutes
      and nudged up to 30 percent by the fixture. */
   const mins=Math.max(el.minutes||0,1);
@@ -7788,7 +7858,8 @@ function pointsDist(el,nf,trials){
   const mins=Math.max(el.minutes||0,1);
   const b90=(el.bonus||0)*90/Math.max(mins,90),sv90=(el.saves||0)*90/Math.max(mins,90);
   const p60c=Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
-  const lamC=type<=2?-Math.log(Math.max(0.03,Math.min(0.99,nf.cs))):0;   /* goals conceded (P-fix 1) */
+  let lamC=type<=2?-Math.log(Math.max(0.03,Math.min(0.99,nf.cs))):0;   /* goals conceded (P-fix 1) */
+  if(type<=2){const xgc=parseFloat(el.expected_goals_conceded_per_90);if(isFinite(xgc)&&xgc>0)lamC=0.5*lamC+0.5*Math.min(3.5,xgc);}  /* blend player xGC (API-fix 2) */
   const negExp=negRate90(el);                                            /* cards/OG/pen-miss (P-fix 4) */
   let s=((el.id||1)>>>0)||1;
   const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};
