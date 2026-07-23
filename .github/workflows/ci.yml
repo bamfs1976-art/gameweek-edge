@@ -36,5 +36,8 @@ jobs:
       - name: Prediction logger core test
         run: node dev/test-predictions.mjs
 
+      - name: Prediction health core test
+        run: node dev/test-health.mjs
+
       - name: Shell integrity guard
         run: node scripts/check-shell.mjs

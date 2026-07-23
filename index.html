@@ -3196,11 +3196,29 @@ async function hydrateAccountability(host){
         '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score — lower is better). The model, graded on live results.</div></div>';
     }
   }catch(_){}
+  /* Prediction-logger health — shown until graded accuracy exists, so you
+     can see the logger is live (or waiting for the season) at a glance. */
+  let healthCard='';
+  if(!calCard){
+    try{
+      const h=await fetch(apiBase()+'/api/predictions-health').then(r=>r.json()).catch(()=>null);
+      if(h&&h.status){
+        const tone=h.status==='logging'?'green':(h.status==='stale'||h.status==='db-error'||h.status==='not-configured'||h.status==='fpl-unavailable')?'red':'amber';
+        const label={logging:'Logging live','between-seasons':'Between seasons',preseason:'Pre-season','expected-soon':'Starting soon',stale:'Not writing','fpl-unavailable':'FPL API down','db-error':'Store error','not-configured':'Not configured'}[h.status]||h.status;
+        healthCard='<div class="card mb-20"><div class="card-title">Prediction logger'+
+          ' <span class="badge badge-'+tone+'">'+esc(label)+'</span>'+
+          (h.season?' <span class="badge badge-grey">'+esc(h.season)+'</span>':'')+'</div>'+
+          '<div class="dl-sub">'+esc(h.detail||'')+'</div>'+
+          '<div class="dl-sub" style="margin-top:8px">The hourly logger records each upcoming gameweek’s forecast so the model can be graded against real returns here. This line confirms it is running once the season opens.</div></div>';
+      }
+    }catch(_){}
+  }
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Model scorecard</div>'+scoreGrid+
       '<div class="dl-sub" style="margin-top:10px">The match model is scored on <b>held-out</b> 2025/26 results — a ranked probability score of <b>0.2126</b> (lower is better; a coin-flip is ~0.25). '+
       '“Favourite correct” is how often the higher-probability side actually won or drew as modelled, recomputed live as fixtures finish. Every number here moves with real results — no cherry-picking.</div></div>'+
     calCard+
+    healthCard+
     youCard+
     '<div class="card"><div class="ge-state">'+svg(ICON.spark)+
       '<b>Graded in public</b><p>The same fitted attack/defence model powers every recommendation in the app. The full method and code are open in the PL Simulator repository — see the Methodology page.</p></div></div>';
