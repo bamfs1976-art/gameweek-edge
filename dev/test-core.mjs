@@ -109,6 +109,7 @@ const pieces = [
   extractFn(html, 'captainConfidence'),
   extractFn(html, 'transferFrame'),
   extractFn(html, 'eventShape'),
+  extractFn(html, 'capHintFrom'),
   extractFn(html, 'chipAdvice'),
   /* Section 3: My Week "Explain this" feature drivers. */
   extractFn(html, 'captainFeatures'),
@@ -128,7 +129,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -558,6 +559,31 @@ ok(adv.best && adv.second, 'a best and second-best chip are surfaced');
 const advFlags = core.chipAdvice({}, fixG, ['wildcard'],
   [{ status: 'i' }, { status: 'd' }, { status: 's' }]);
 ok(advFlags.all[0].window === 'now', 'a squad with 3 flags recommends the Wildcard now');
+
+/* Free Hit is strongest on the blank right after a double (GW2 double → GW3 blank). */
+const fhAdv = core.chipAdvice({}, fixG, ['freehit'], [{ status: 'a' }]).all.find(a => a.chip === 'freehit');
+ok(fhAdv.window === 'GW3' && fhAdv.conf >= 80 && /after a double/.test(fhAdv.reason), 'Free Hit on a post-double blank scores higher and names the pattern');
+
+/* Single-gameweek Triple Captain (the 2025/26 lesson): with no double on the
+   horizon, a standout single-GW fixture is still a valid TC. */
+const normalFix = [];
+for (let g = 1; g <= 3; g++) for (let i = 0; i < 10; i++) normalFix.push({ event: g, team_h: 2 * i + 1, team_a: 2 * i + 2, finished: false });
+const strongHint = { gw: 1, name: 'Haaland', lam: 2.2, xp: 8.1, opp: 'BUR', home: true };
+const tcSingle = core.chipAdvice({}, normalFix, ['3xc'], [{ status: 'a' }], strongHint).all.find(a => a.chip === '3xc');
+ok(tcSingle.window === 'GW1' && tcSingle.conf >= 55 && /Haaland/.test(tcSingle.reason), 'strong single-GW fixture → Triple Captain recommended even without a double');
+const okHint = { gw: 1, name: 'Palmer', lam: 1.7, xp: 6.2, opp: 'BHA', home: true };
+const tcOk = core.chipAdvice({}, normalFix, ['3xc'], [{ status: 'a' }], okHint).all.find(a => a.chip === '3xc');
+ok(tcOk.window === 'hold' && /best single-GW/.test(tcOk.reason), 'a decent-but-not-elite fixture holds, naming the best single-GW option');
+const weakHint = { gw: 1, name: 'Mbeumo', lam: 1.2, xp: 4.5, opp: 'ARS', home: false };
+const tcWeak = core.chipAdvice({}, normalFix, ['3xc'], [{ status: 'a' }], weakHint).all.find(a => a.chip === '3xc');
+ok(tcWeak.window === 'hold' && tcWeak.conf <= 42, 'a weak fixture holds the Triple Captain');
+const tcNoHint = core.chipAdvice({}, normalFix, ['3xc'], [{ status: 'a' }]).all.find(a => a.chip === '3xc');
+ok(tcNoHint.window === 'hold', 'no double and no hint → hold (unchanged legacy behaviour)');
+
+/* capHintFrom builds the hint from the top captain pick + their fixture. */
+const chHint = core.capHintFrom({ picks: [{ el: { team: 1, web_name: 'Haaland' }, xp: 8.1 }] }, { 1: { event: 5, lam: 2.3, opp: 'BUR', home: true } });
+ok(chHint && chHint.gw === 5 && chHint.name === 'Haaland' && chHint.lam === 2.3 && chHint.home === true, 'capHintFrom reads gw, name, team xG and venue from the top pick');
+ok(core.capHintFrom({ picks: [] }, {}) === null && core.capHintFrom(null, {}) === null, 'capHintFrom is null-safe with no pick');
 
 /* ── Section 3: My Week "Explain this" feature drivers ──── */
 section('captainFeatures / transferFeatures / chipFeatures');
