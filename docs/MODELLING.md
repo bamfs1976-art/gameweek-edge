@@ -102,10 +102,47 @@ optimiser** (`rankOptimiser`) turns `squadSim`'s distribution work into a
 concrete transfer call on the Transfers page, and the **scheduled
 prediction logger** feeds `calibration` on the Accountability page.
 
+## Accuracy — where the model is strong and where it is not
+
+`node dev/backtest-season.mjs` walks a full simulated 2025/26 season
+(2025/26 rules) forward: at each deadline the model sees only
+season-to-date aggregates, predicts the gameweek, and is scored against
+the realized points. Crucially the ground-truth generator is
+**deliberately mis-specified** relative to the model — it injects
+finishing skill vs xG, penalties, overdispersion/form streaks, minutes
+regimes and negatives (reds/OGs/pen-misses) — so it stress-tests the
+model's *specification*, not its self-consistency. (The live FPL API is
+firewalled from CI, so this is a simulation study; a real snapshot ports
+straight into `model-validate.mjs`.)
+
+**What holds up:**
+- `nativeXP` MAE **beats a 3-GW form baseline** (~2.6 vs ~2.8) and matches
+  season-PPG, so the added categories earn their place.
+- `pointsDist` haul-probability is **well calibrated** (Brier ~0.07,
+  reliability tracks the diagonal), and the 80% interval covers ~81%.
+- Captaining the model returns **~+2 pts/GW over the highest-form pick**.
+
+**Where to improve (ranked by measured effect):**
+1. **Goals-conceded term** — `nativeXP` scores the clean-sheet upside but
+   never the −1-per-2-conceded downside, so GK/DEF are over-forecast
+   (+0.5 to +0.7 pts/GW). Mirror the CS term with −0.5 × expected goals
+   conceded (the match model already gives the rate).
+2. **Fatter upper tail in `pointsDist`** — returns beat p90 ~2.5× more
+   than they miss p10; a gamma-Poisson (overdispersed) sampler sharpens
+   the ceiling read the captain/rank cards depend on.
+3. **Minutes-regime state** — RMSE ≫ MAE: the fat error tails are
+   rotation/injury weeks a season-average start share cannot see.
+4. **Expected-deduction term** for negatives (cards, OGs, pen misses).
+5. Finishing skill (goals vs xG) is real but secondary — a shrunk
+   goals-vs-xG blend, after the above.
+
 ## Test & tooling
 
 - `npm test` — 251 unit tests over the model core (every helper above).
-- `node dev/model-validate.mjs [snap.json]` — accuracy backtest.
+- `node dev/backtest-season.mjs` — walk-forward season backtest + the
+  "where to improve" report (the section above is generated from it).
+- `node dev/model-validate.mjs [snap.json]` — A/B accuracy backtest;
+  `snap.json` runs it against real finished-gameweek actuals.
 - `node dev/simulate-gameweek.mjs [--html out.html]` — the model's
   gameweek outputs.
 
