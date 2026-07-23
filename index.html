@@ -3186,7 +3186,8 @@ async function hydrateAccountability(host){
   try{
     const cal=await fetch(apiBase()+'/api/model-calibration').then(r=>r.json()).catch(()=>null);
     if(cal&&cal.n>0){
-      calCard='<div class="card mb-20"><div class="card-title">Live prediction accuracy</div>'+
+      calCard='<div class="card mb-20"><div class="card-title">Live prediction accuracy'+
+        (cal.season?' <span class="badge badge-green">'+esc(cal.season)+'</span>':'')+'</div>'+
         '<div class="statgrid">'+
           '<div class="stat"><div class="stat-l">Predictions graded</div><div class="stat-v">'+fmtNum(cal.n)+'</div></div>'+
           '<div class="stat"><div class="stat-l">Gameweeks</div><div class="stat-v">'+cal.gws+'</div></div>'+

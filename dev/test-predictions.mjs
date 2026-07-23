@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const { computePredictions } = require(join(ROOT, 'netlify', 'functions', 'log-predictions.js'));
+const { computePredictions, seasonLabel } = require(join(ROOT, 'netlify', 'functions', 'log-predictions.js'));
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
 let failures = 0, passes = 0;
@@ -55,6 +55,11 @@ ok(res.gw === 2, 'targets the upcoming gameweek (GW2)');
 ok(res.rows.length > 0, 'produces prediction rows');
 ok(res.rows.length <= elements.length, 'no more rows than players');
 ok(res.rows.every((r) => r.gw === 2 && r.element > 0), 'every row is tagged to GW2 and a player');
+/* Season discriminator — the rollover-safety key. */
+ok(res.season === '2026/27', 'derives the season from the earliest deadline (Aug 2026 -> 2026/27)');
+ok(res.rows.every((r) => r.season === '2026/27'), 'every prediction row carries the season');
+ok(seasonLabel({ events: [{ deadline_time: '2027-08-14T17:30:00Z' }, { deadline_time: '2028-05-20T14:00:00Z' }] }) === '2027/28',
+  'next season would tag 2027/28, so GW1 rows never collide across seasons');
 ok(res.rows.every((r) => r.xp > 0 && Number.isFinite(r.xp)), 'xP is positive and finite');
 ok(res.rows.every((r) => r.haul_prob >= 0 && r.haul_prob <= 1 && r.blank_prob >= 0 && r.blank_prob <= 1), 'haul/blank are probabilities');
 /* All four teams play in GW2, so every fit player should get a row. */

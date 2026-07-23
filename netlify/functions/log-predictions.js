@@ -65,6 +65,19 @@ function indexBoot(boot) {
   return { raw: boot, teams, els, elements: boot.elements || [], events: boot.events || [], upcoming, cur };
 }
 
+/* The season label, derived from the earliest gameweek deadline. FPL
+   renumbers gameweeks from 1 each August, so predictions MUST carry the
+   season or the new campaign's GW1 would overwrite last season's GW1 rows.
+   A season that kicks off in August of year Y is labelled "Y/Y+1". */
+function seasonLabel(boot) {
+  const evs = (boot && boot.events) || [];
+  let ms = Infinity;
+  for (const e of evs) { const t = Date.parse(e.deadline_time); if (Number.isFinite(t) && t < ms) ms = t; }
+  if (!Number.isFinite(ms)) return 'unknown';
+  const y = new Date(ms).getUTCFullYear();
+  return y + '/' + String((y + 1) % 100).padStart(2, '0');
+}
+
 /* Pure core: given the app source + live data, produce the prediction
    rows for the upcoming gameweek. No network, no database — unit-tested. */
 function computePredictions(html, boot, fixtures) {
@@ -72,7 +85,8 @@ function computePredictions(html, boot, fixtures) {
   const b = indexBoot(boot);
   const gw = b.upcoming ? b.upcoming.id : null;
   const deadline = b.upcoming ? b.upcoming.deadline_time : null;
-  if (!gw) return { gw: null, deadline: null, rows: [] };
+  const season = seasonLabel(boot);
+  if (!gw) return { gw: null, deadline: null, season, rows: [] };
   const nf = M.buildNextFix(b, fixtures);
   const rows = [];
   for (const el of b.elements) {
@@ -81,12 +95,12 @@ function computePredictions(html, boot, fixtures) {
     const xp = M.xP(b, el, f);
     if (!(xp > 0)) continue;
     const d = M.pointsDist(el, f);
-    rows.push({ gw, element: el.id,
+    rows.push({ season, gw, element: el.id,
       xp: Math.round(xp * 100) / 100,
       haul_prob: Math.round(d.haul * 1000) / 1000,
       blank_prob: Math.round(d.blank * 1000) / 1000 });
   }
-  return { gw, deadline, rows };
+  return { gw, deadline, season, rows };
 }
 
 /* Locate index.html (shipped alongside the function via included_files). */
@@ -120,29 +134,32 @@ exports.handler = async () => {
 
   /* 1) Log the upcoming gameweek's predictions, but only while the
         deadline is still ahead (freeze once the GW locks). */
+  const season = seasonLabel(boot);
   try {
     const { gw, deadline, rows } = computePredictions(html, boot, fixtures);
     if (gw && deadline && Date.now() < new Date(deadline).getTime() && rows.length) {
       for (let i = 0; i < rows.length; i += 500) {
-        await sb.from('gwedge_predictions').upsert(rows.slice(i, i + 500), { onConflict: 'gw,element' });
+        await sb.from('gwedge_predictions').upsert(rows.slice(i, i + 500), { onConflict: 'season,gw,element' });
       }
       logged = rows.length;
     }
   } catch (e) { /* leave logged at 0 */ }
 
-  /* 2) Backfill actuals for finished gameweeks still missing them. */
+  /* 2) Backfill actuals for this season's finished gameweeks still missing
+        them. Scoped to the current season so last season's rows (same gw
+        numbers) are never touched. */
   try {
     const finishedGws = (boot.events || []).filter((e) => e.finished).map((e) => e.id);
     const { data: pending } = await sb.from('gwedge_predictions')
-      .select('gw').is('actual', null).in('gw', finishedGws);
+      .select('gw').eq('season', season).is('actual', null).in('gw', finishedGws);
     const toGrade = [...new Set((pending || []).map((r) => r.gw))].sort((a, c) => c - a).slice(0, 3);
     for (const gw of toGrade) {
       let live; try { live = await fplGet('event/' + gw + '/live/'); } catch (_) { continue; }
       const pts = {}; (live.elements || []).forEach((e) => { pts[e.id] = e.stats ? e.stats.total_points : null; });
-      const { data: preds } = await sb.from('gwedge_predictions').select('element').eq('gw', gw).is('actual', null);
+      const { data: preds } = await sb.from('gwedge_predictions').select('element').eq('season', season).eq('gw', gw).is('actual', null);
       for (const p of preds || []) {
         if (pts[p.element] == null) continue;
-        await sb.from('gwedge_predictions').update({ actual: pts[p.element] }).eq('gw', gw).eq('element', p.element);
+        await sb.from('gwedge_predictions').update({ actual: pts[p.element] }).eq('season', season).eq('gw', gw).eq('element', p.element);
         graded++;
       }
     }
@@ -153,3 +170,4 @@ exports.handler = async () => {
 
 module.exports.computePredictions = computePredictions;
 module.exports.buildModel = buildModel;
+module.exports.seasonLabel = seasonLabel;

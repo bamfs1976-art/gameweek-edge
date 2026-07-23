@@ -20,9 +20,16 @@ exports.handler = async () => {
   const { createClient } = require('@supabase/supabase-js');
   const sb = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
 
-  const { data, error } = await sb.from('gwedge_predictions')
-    .select('gw,xp,haul_prob,actual').not('actual', 'is', null).limit(50000);
-  if (error || !data || !data.length) return json({ n: 0 }, 300);
+  const { data: all, error } = await sb.from('gwedge_predictions')
+    .select('season,gw,xp,haul_prob,actual').not('actual', 'is', null).limit(50000);
+  if (error || !all || !all.length) return json({ n: 0 }, 300);
+
+  /* Report the latest season that has graded data, so the accuracy card
+     shows this season once it starts grading and last season until then —
+     never a cross-season mix (gameweek numbers repeat every year). */
+  const season = all.reduce((m, r) => (r.season > m ? r.season : m), all[0].season || '');
+  const data = all.filter((r) => (r.season || '') === season);
+  if (!data.length) return json({ n: 0, season }, 300);
 
   let ae = 0; const gws = new Set(); const rel = [];
   for (const r of data) {
@@ -46,6 +53,7 @@ exports.handler = async () => {
 
   return json({
     n: data.length,
+    season,
     gws: gws.size,
     mae: Math.round(mae * 1000) / 1000,
     brier: rel.length ? Math.round(brier / rel.length * 10000) / 10000 : null,
