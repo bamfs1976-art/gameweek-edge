@@ -4257,6 +4257,10 @@ async function hydrateFixtures(host){
   /* Model XI (window-independent) — projected forward per gameweek below. */
   const nf=buildNextFix(b,fixtures);
   const modelXI=bestXI(scoutScored(b,nf));
+  /* Each team's total ownership across its assets — how much of the field it
+     carries, for the fixture-swing chip signal. */
+  const teamOwn={};
+  (b.elements||[]).forEach(e=>{teamOwn[e.team]=(teamOwn[e.team]||0)+(parseFloat(e.selected_by_percent)||0);});
 
   /* Everything below depends on the chosen horizon, so it rebuilds when the
      window control changes. */
@@ -4354,6 +4358,27 @@ async function hydrateFixtures(host){
         '</div></div>';
     }
 
+    /* Fixture-swing chip windows — the Free Hit / Wildcard timing the
+       event-driven chip model (doubles/blanks) cannot see yet. */
+    const swingRuns=teams.map(t=>({team:t.id,name:t.short_name,own:teamOwn[t.id]||0,
+      diff:gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?c.diff:6;})}));
+    const sw=chipSwings(swingRuns,Math.min(5,Math.max(1,gws.length-3)),6);
+    const swItems=[];
+    if(sw.fh&&sw.fh.clear)swItems.push(
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Free Hit — GW'+gws[sw.fh.idx]+
+        ' <span class="badge badge-amber">swing</span></span>'+
+        '<span class="dl-sub">The most-owned teams face their hardest fixtures this week (weighted difficulty '+sw.fh.score.toFixed(2)+' vs '+sw.fh.base.toFixed(2)+' average) — a one-week bespoke XI gains most while the field blanks.</span></span></div>');
+    if(sw.wc&&sw.wc.gain>2)swItems.push(
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Wildcard — GW'+gws[sw.wc.idx]+
+        ' <span class="badge badge-blue">reshape</span></span>'+
+        '<span class="dl-sub">The current best-fixture teams turn hardest from here over the next few gameweeks (difficulty shed by reshaping ≈ '+sw.wc.gain.toFixed(0)+') — the fixtures reshuffle, so a full reset pays.</span></span></div>');
+    const swCard=swItems.length
+      ? '<div class="card mb-20"><div class="card-title">Fixture-swing chip windows</div>'+
+          '<p class="dl-sub" style="margin-bottom:6px">Chip timing from the fixtures themselves — the early-season Free Hit and Wildcard windows before any double or blank is scheduled. Ownership-weighted over the shown horizon; widen the window (15 GW) for the fullest read.</p>'+
+          '<div class="dl">'+swItems.join('')+'</div>'+
+          '<p class="dl-sub" style="margin-top:8px">These complement the double/blank calls on the Chips page — they do not replace them.</p></div>'
+      : '';
+
     host.innerHTML=
       '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
         '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(w=>'<button class="seg-b'+(w===curWin?' on':'')+'" data-win="'+w+'">'+w+' GW</button>').join('')+'</div>'+
@@ -4364,7 +4389,7 @@ async function hydrateFixtures(host){
         '<b>(a)</b> marks an away fixture. <b>FDR</b> totals the 1–5 difficulty (lower is easier); <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
-      planCard+rotCard+valCard+outlookCard;
+      planCard+swCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
     const wseg=host.querySelector('#fdr-win');
@@ -6596,6 +6621,45 @@ function bestFixtureRun(arr,K){
   let best=cur,start=0;
   for(let i=K;i<n;i++){cur+=a[i]-a[i-K];if(cur<best){best=cur;start=i-K+1;}}
   return {start,end:start+K-1,sum:best,K};
+}
+
+/* Fixture-swing chip timing — the early-season Free Hit / Wildcard windows
+   the event-driven chip model (doubles/blanks) cannot see. runs is one entry
+   per team: {team, own (its total ownership across assets), diff:[per-GW 1-5
+   difficulty over the window]}.
+   - Free Hit: the gameweek where the most-owned teams collectively face their
+     hardest fixtures (ownership-weighted mean difficulty peaks) — the field
+     scores least, so a one-week bespoke XI gains most. Flagged only when the
+     spike clears the window average by a margin.
+   - Wildcard: the boundary where the current best-fixture teams (lowest
+     difficulty over the prior 3 GWs) turn hardest over the following N, so
+     reshaping the whole squad sheds the most difficulty. */
+function chipSwings(runs,N,M){
+  N=N||5;M=M||6;
+  const list=(runs||[]).filter(r=>r&&r.diff&&r.diff.length);
+  if(!list.length)return {fh:null,wc:null};
+  const H=list.reduce((m,r)=>Math.min(m,r.diff.length),Infinity);
+  const wsum=list.reduce((a,r)=>a+(r.own||1),0);
+  /* Free Hit: ownership-weighted mean difficulty per gameweek. */
+  let fh=null,grand=0;
+  for(let i=0;i<H;i++){
+    let s=0;for(const r of list)s+=(r.own||1)*r.diff[i];
+    const mean=s/wsum;grand+=mean;
+    if(!fh||mean>fh.score)fh={idx:i,score:mean};
+  }
+  const base=grand/H;
+  if(fh){fh.base=base;fh.clear=fh.score>=base*1.12;}
+  /* Wildcard: the reshape boundary with the largest difficulty shed. */
+  const sumRange=(arr,a,z)=>{let s=0;for(let k=a;k<=z&&k<arr.length;k++)s+=arr[k];return s;};
+  let wc=null;
+  for(let i=3;i+N-1<H;i++){
+    const pre=list.map(r=>({r,d:sumRange(r.diff,i-3,i-1)})).sort((a,c)=>a.d-c.d).slice(0,M);
+    const heldPost=pre.reduce((a,x)=>a+sumRange(x.r.diff,i,i+N-1),0);
+    const freshPost=list.map(r=>sumRange(r.diff,i,i+N-1)).sort((a,c)=>a-c).slice(0,M).reduce((a,d)=>a+d,0);
+    const gain=heldPost-freshPost;
+    if(!wc||gain>wc.gain)wc={idx:i,gain};
+  }
+  return {fh,wc};
 }
 
 /* Candidate pool: available players with a positive projection. */

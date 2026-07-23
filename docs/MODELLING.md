@@ -211,12 +211,20 @@ GW4, Wildcard GW6). **Partial agreement — one bounded gap.**
   Hit and Wildcard (its copy already says *"hold for a blank or a big
   fixture swing"*), so it does not reproduce FH4 / WC6.
 
-**Conclusion**: the model is right for the DGW/BGW meta but silent on early-
-season fixture-swing chip timing. Closing it means computing a swing signal
-from the shipped FDR grid + live ownership (a gameweek where the most-owned
-teams’ collective FDR spikes → Free Hit candidate; a fixture-run inflection
-→ Wildcard candidate). Deferred as a follow-up — it needs live ownership,
-not this pre-season snapshot.
+**Conclusion**: the model was right for the DGW/BGW meta but silent on early-
+season fixture-swing chip timing.
+
+**Closed (shipped).** `chipSwings` now computes the swing windows from the FDR
+grid + live team ownership and surfaces them on the Fixture Planner as
+"Fixture-swing chip windows":
+- **Free Hit** = the gameweek where the ownership-weighted mean difficulty of
+  the field's teams peaks (flagged only when it clears the window average by
+  ≥12%) — the field scores least, so a one-week bespoke XI gains most.
+- **Wildcard** = the boundary where the current best-fixture teams (lowest
+  difficulty over the prior 3 GWs) turn hardest over the following N, i.e. the
+  reshape that sheds the most difficulty.
+
+These complement — do not replace — the double/blank calls in `chipAdvice`.
 
 ## Test & tooling
 
