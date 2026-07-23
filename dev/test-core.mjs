@@ -608,6 +608,30 @@ ok(feed[0].chance === undefined ? true : feed[0].status === 's', 'carries status
 ok(core.latestNews(nB, 2).length === 2, 'respects the limit');
 ok(core.latestNews({ elements: [] }, 10).length === 0, 'no elements → empty feed');
 
+/* ── nativeXP: the added scoring categories (P1) ────────── */
+section('nativeXP models bonus, defensive-contribution and saves');
+const nnf = { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.3 };
+const baseMid = { element_type: 3, minutes: 540, expected_goals_per_90: '0.2', expected_assists_per_90: '0.2' };
+const midBase = core.nativeXP(baseMid, nnf);
+ok(midBase != null && midBase > 0, 'a midfielder with a full sample gets positive native xP');
+ok(core.nativeXP(baseMid, { gp: 3, lam: 1.6, lamAvg: 1.5, cs: 0.3 }) === null, 'still null below the 5-game sample floor');
+
+ok(core.nativeXP({ ...baseMid, bonus: 12 }, nnf) > midBase, 'realised bonus lifts the estimate');
+
+const midDC12 = core.nativeXP({ ...baseMid, defensive_contribution_per_90: '12' }, nnf);
+const midDC18 = core.nativeXP({ ...baseMid, defensive_contribution_per_90: '18' }, nnf);
+ok(midDC18 > midDC12 && midDC12 > midBase, 'defensive-contribution points rise with the per-90 rate (MID threshold 12)');
+
+const baseDef = { element_type: 2, minutes: 540, expected_goals_per_90: '0.05', expected_assists_per_90: '0.05' };
+const defLow = core.nativeXP({ ...baseDef, defensive_contribution_per_90: '6' }, nnf);
+const defHigh = core.nativeXP({ ...baseDef, defensive_contribution_per_90: '14' }, nnf);
+ok(defHigh > defLow, 'a ball-winning defender (DEF threshold 10) out-scores a low-action one');
+
+const gk = { element_type: 1, minutes: 540, expected_goals_per_90: '0', expected_assists_per_90: '0' };
+ok(core.nativeXP({ ...gk, saves: 60 }, nnf) > core.nativeXP(gk, nnf), 'goalkeeper saves add points');
+ok(core.nativeXP({ ...gk, defensive_contribution_per_90: '30' }, nnf) === core.nativeXP(gk, nnf),
+  'goalkeepers get no defensive-contribution points (their category is saves)');
+
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 if (failures) process.exit(1);
