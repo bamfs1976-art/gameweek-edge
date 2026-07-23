@@ -3073,7 +3073,7 @@ async function hydrateMyWeek(host){
   /* Row 4 — Chip. */
   const used=(hist.chips||[]).map(c=>c.name);
   const chipsLeft=['wildcard','3xc','bboost','freehit'].filter(k=>!used.includes(k));
-  const adv=chipAdvice(b,fixtures,chipsLeft,xiEls);
+  const adv=chipAdvice(b,fixtures,chipsLeft,xiEls,capHintFrom(capM,nf));
   let chipCall,chipSide='';
   if(!chipsLeft.length)chipCall='<b>All chips played</b>';
   else if(adv.best&&adv.best.window!=='hold'){chipCall='<b>'+esc(adv.best.label)+'</b> <span class="dl-sub">'+esc(adv.best.window)+'</span>';chipSide=confChip(adv.best.conf,'');}
@@ -3281,7 +3281,7 @@ async function hydrateDashboard(host){
   /* Chip call: a reasoned window from the fixture calendar, not a bare HOLD. */
   const chipsCodeLeft=chipsLeft?[['wildcard','WC'],['3xc','TC'],['bboost','BB'],['freehit','FH']]
     .filter(([,n])=>chipsLeft.includes(n)).map(([k])=>k):null;
-  const chipAdv=chipAdvice(b,fixtures,chipsCodeLeft,squad);
+  const chipAdv=chipAdvice(b,fixtures,chipsCodeLeft,squad,capHintFrom(capM,nf));
   let chipBody;
   if(chipsLeft&&!chipsLeft.length)chipBody='<b>ALL PLAYED</b>';
   else if(chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold')
@@ -5316,7 +5316,8 @@ async function hydrateChips(host){
   try{const picks=await loadPicks(mid,b.cur.id);
     squadXi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
     benchEls=picks.picks.filter(p=>p.position>11).map(p=>b.els[p.element]).filter(Boolean);}catch(_){}
-  const adv=chipAdvice(b,fixtures,remaining.map(([k])=>k),squadXi);
+  const capMChip=captainModel(b,nf,squadXi||b.elements,2);
+  const adv=chipAdvice(b,fixtures,remaining.map(([k])=>k),squadXi,capHintFrom(capMChip,nf));
   /* Bench Boost readiness: how much your bench would add THIS gameweek. */
   let bbCard='';
   if(benchEls&&benchEls.length&&remaining.some(([k])=>k==='bboost')){
@@ -8006,32 +8007,60 @@ function eventShape(fixtures){
   });
   return {rows,modal,byGw:ev};
 }
+/* The standout single-gameweek captaincy fixture, from the top captain pick
+   and their next fixture: name, gameweek, opponent and modelled team xG.
+   Feeds the Triple Captain advice so a strong single GW (an elite attacker
+   at home to a weak side) can be recommended when there is no double. */
+function capHintFrom(capModel,nf){
+  const p=capModel&&capModel.picks&&capModel.picks[0];if(!p)return null;
+  const f=(nf&&nf[p.el.team])||{};
+  return {gw:f.event||null,name:p.el.web_name,lam:f.lam!=null?f.lam:null,
+    xp:p.xp,opp:f.opp||null,home:!!f.home};
+}
 /* Chip-timing model — recommend a window with a reason and confidence,
-   never a bare HOLD. Bench Boost & Triple Captain want a double GW; Free
-   Hit covers the nearest blank; Wildcard fires on flags / a fixture
-   swing. squadXi is the linked XI (optional) for personalised BB/WC. */
-function chipAdvice(b,fixtures,chipsLeft,squadXi){
+   never a bare HOLD. Bench Boost wants a double GW; Free Hit covers the
+   nearest blank (and is at its best on the blank right after a double);
+   Triple Captain wants a double, but a standout SINGLE gameweek fixture is
+   a valid attack when none is scheduled (2025/26 showed top managers Triple
+   Captaining Haaland in strong single GWs, not only doubles); Wildcard
+   fires on flags / a fixture swing. squadXi is the linked XI (optional) for
+   personalised BB/WC; capHint (optional, from capHintFrom) powers the
+   single-GW Triple Captain call. */
+function chipAdvice(b,fixtures,chipsLeft,squadXi,capHint){
   const shape=eventShape(fixtures);
   const nextDbl=shape.rows.find(r=>r.isDouble)||null;
   const nextBlank=shape.rows.find(r=>r.isBlank)||null;
   const has=c=>!chipsLeft||chipsLeft.indexOf(c)>=0;
   const flagged=(squadXi||[]).filter(e=>e&&e.status&&e.status!=='a').length;
   const all=[];
-  if(has('3xc'))all.push(nextDbl
-    ? {chip:'3xc',label:'Triple Captain',window:'GW'+nextDbl.gw,conf:72,
-       reason:'a double gameweek (GW'+nextDbl.gw+') gives your captain two games to return.'}
-    : {chip:'3xc',label:'Triple Captain',window:'hold',conf:40,
-       reason:'no double gameweek on the horizon yet — save it for one.'});
+  if(has('3xc')){
+    const fixTxt=capHint&&capHint.opp?' v '+capHint.opp+(capHint.home?' (H)':' (A)'):'';
+    if(nextDbl)all.push({chip:'3xc',label:'Triple Captain',window:'GW'+nextDbl.gw,conf:72,
+      reason:'a double gameweek (GW'+nextDbl.gw+') gives your captain two games to return.'});
+    else if(capHint&&capHint.lam!=null&&capHint.lam>=1.9&&capHint.gw)all.push({chip:'3xc',label:'Triple Captain',window:'GW'+capHint.gw,conf:60,
+      reason:capHint.name+' has a standout fixture (GW'+capHint.gw+fixTxt+', team xG '+capHint.lam.toFixed(1)+') — a strong single-gameweek Triple Captain even without a double.'});
+    else if(capHint&&capHint.lam!=null&&capHint.lam>=1.6&&capHint.gw)all.push({chip:'3xc',label:'Triple Captain',window:'hold',conf:46,
+      reason:'no double yet — '+capHint.name+' (GW'+capHint.gw+fixTxt+') is the best single-GW option if you are forced to play it.'});
+    else all.push({chip:'3xc',label:'Triple Captain',window:'hold',conf:40,
+      reason:'no double gameweek and no standout single fixture yet — save it.'});
+  }
   if(has('bboost'))all.push(nextDbl
     ? {chip:'bboost',label:'Bench Boost',window:'GW'+nextDbl.gw,conf:70,
        reason:'a double gameweek (GW'+nextDbl.gw+') means bench players can also play twice.'}
     : {chip:'bboost',label:'Bench Boost',window:'hold',conf:38,
        reason:'no double gameweek scheduled — a strong bench pays most in one.'});
-  if(has('freehit'))all.push(nextBlank
-    ? {chip:'freehit',label:'Free Hit',window:'GW'+nextBlank.gw,conf:74,
-       reason:'a blank gameweek (GW'+nextBlank.gw+') — Free Hit fields a full XI without permanent moves.'}
-    : {chip:'freehit',label:'Free Hit',window:'hold',conf:36,
-       reason:'no blank gameweek on the horizon — hold for a blank or a big double.'});
+  if(has('freehit')){
+    /* A blank straight after a double is the classic Free Hit window: load the
+       double, Free Hit the blank that follows. */
+    const blankAfterDbl=nextBlank&&shape.rows.some(r=>r.gw===nextBlank.gw-1&&r.isDouble);
+    all.push(nextBlank
+      ? {chip:'freehit',label:'Free Hit',window:'GW'+nextBlank.gw,conf:blankAfterDbl?82:74,
+         reason:blankAfterDbl
+           ?'a blank gameweek (GW'+nextBlank.gw+') right after a double — load the double, then Free Hit the blank.'
+           :'a blank gameweek (GW'+nextBlank.gw+') — Free Hit fields a full XI without permanent moves.'}
+      : {chip:'freehit',label:'Free Hit',window:'hold',conf:36,
+         reason:'no blank gameweek on the horizon — hold for a blank or a big fixture swing.'});
+  }
   if(has('wildcard'))all.push(flagged>=3
     ? {chip:'wildcard',label:'Wildcard',window:'now',conf:66,
        reason:flagged+' of your XI are flagged — a Wildcard resets the squad without hits.'}
