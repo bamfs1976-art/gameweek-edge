@@ -4187,18 +4187,24 @@ function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
 function fdrBodyHtml(view){
   const S=window._fdr;if(!S)return '';const {b,teams,gws,byTeamGw}=S;
   const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs):c.diff;
-  return teams.map(t=>{
-    let lam=0,cs=0,n=0;
+  /* Rank teams by their total fixture difficulty for the chosen lens — the
+     easiest run first, so the best opening-fixture teams sit at the top
+     (matches how the community reads an FDR grid). */
+  const rows=teams.map(t=>{
+    let lam=0,cs=0,n=0,tot=0;
     const cells=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];
       if(!c)return '<td class="blank">—</td>';
-      lam+=c.lam;cs+=c.cs;n++;
-      return '<td class="cell fdr-'+grade(c)+'">'+esc(c.opp)+(c.home?'':' (a)')+'</td>';
+      lam+=c.lam;cs+=c.cs;n++;const gr=grade(c);tot+=gr;
+      return '<td class="cell fdr-'+gr+'">'+esc(c.opp)+(c.home?'':' (a)')+'</td>';
     }).join('');
-    const sums=n?'<td class="cell" style="background:var(--surface-3);color:var(--text)">'+lam.toFixed(1)+'</td>'+
+    const sums=n?'<td class="cell" style="background:var(--surface-3);color:var(--text);font-weight:800">'+tot+'</td>'+
+      '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+lam.toFixed(1)+'</td>'+
       '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+Math.round(100*cs/n)+'</td>'
-      :'<td class="blank">—</td><td class="blank">—</td>';
-    return '<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>';
-  }).join('');
+      :'<td class="blank">—</td><td class="blank">—</td><td class="blank">—</td>';
+    return {html:'<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>',key:n?tot/n:99};
+  });
+  rows.sort((a,c)=>a.key-c.key);
+  return rows.map(r=>r.html).join('');
 }
 function renderFdr(view){
   const tb=document.getElementById('fdr-tbody');if(tb)tb.innerHTML=fdrBodyHtml(view);
@@ -4221,12 +4227,12 @@ async function hydrateFixtures(host){
     return;
   }
   const startGw=upcoming.id;
-  const gws=[];for(let g=startGw;g<startGw+6&&g<=38;g++)gws.push(g);
+  const gws=[];for(let g=startGw;g<startGw+8&&g<=38;g++)gws.push(g);
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   const R=plsimRatings(b,fixtures);
   const byTeamGw={};
   fixtures.forEach(f=>{
-    if(!f.event||f.event<startGw||f.event>=startGw+6)return;
+    if(!f.event||f.event<startGw||f.event>=startGw+8)return;
     const m=matchModel(b,f,R);
     (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
       diff:m?plsimDiff(m.pH):f.team_h_difficulty,home:true,lam:m?m.hx:0,cs:m?m.csH:0};
@@ -4236,7 +4242,7 @@ async function hydrateFixtures(host){
   /* Fixture Difficulty 2.0: the cell colour follows the chosen lens —
      Overall (win odds), Attack (team xG), or Defence (clean-sheet odds). */
   window._fdr={b,teams,gws,byTeamGw};
-  const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th>xGF</th><th>CS%</th></tr>';
+  const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th>FDR</th><th>xGF</th><th>CS%</th></tr>';
 
   /* Match outlook for the upcoming gameweek. */
   const gwFix=fixtures.filter(f=>f.event===startGw);
@@ -4248,6 +4254,59 @@ async function hydrateFixtures(host){
       '<span class="dl-sub">'+pc(m.pH)+'% / '+pc(m.pD)+'% / '+pc(m.pA)+'% · likely '+m.mlH+'-'+m.mlA+' · best CS '+esc(csTeam)+' '+pc(cs)+'%</span></span>'+
       '<span class="dl-col mono">'+m.hx.toFixed(1)+'–'+m.ax.toFixed(1)+'</span></div>';}).join('');
 
+  /* ── Defensive rotation pairs: reuse the model's per-gameweek defence
+     difficulty to find cheap defenders whose easy fixtures alternate. ── */
+  const teamDiff={};
+  teams.forEach(t=>{teamDiff[t.id]=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?fdrDefence(c.cs):5;});});
+  const enablers=b.elements.filter(e=>e.status==='a'&&e.element_type===2&&(e.now_cost||0)<=60
+      &&((parseFloat(e.selected_by_percent)||0)>=0.3||parseFloat(e.ep_next||'0')>=2))
+    .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
+    .sort((a,c)=>c.own-a.own).slice(0,30);
+  const pairs=rotationPairs(enablers,teamDiff,6);
+  const rotStrip=p=>gws.map((g,gi)=>{
+    const da=teamDiff[p.a.team][gi],dc=teamDiff[p.c.team][gi],d=Math.min(da,dc);
+    const t=da<=dc?p.a:p.c,c=(byTeamGw[t.team]||{})[g];
+    return '<td class="cell fdr-'+d+'" style="font-size:10px">'+(c?esc(c.opp)+(c.home?'':'(a)'):'—')+'</td>';
+  }).join('');
+  const rotRows=pairs.map(p=>
+    '<div style="padding:8px 0;border-top:1px solid var(--border)">'+
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:5px">'+
+        '<span class="dl-nm">'+esc(p.a.name)+' <span class="dl-sub">'+money(p.a.cost)+'</span> <span style="color:var(--text-3)">+</span> '+esc(p.c.name)+' <span class="dl-sub">'+money(p.c.cost)+'</span></span>'+
+        '<span class="dl-col mono" style="color:var(--green);font-weight:800">'+p.green+'/'+p.n+' green</span>'+
+      '</div>'+
+      '<div class="fdr"><table><tbody><tr>'+rotStrip(p)+'</tr></tbody></table></div>'+
+    '</div>').join('');
+  const rotCard=pairs.length
+    ? '<div class="card mb-20"><div class="card-title">Defensive rotation pairs — best combined run</div>'+
+        '<p class="dl-sub" style="margin-bottom:2px">Two budget defenders (£6.0m or under) whose fixtures alternate, so each week you start whichever has the kinder clean-sheet fixture. The strip shows the fixture you would play — greener is easier. Ranked by combined difficulty over the next '+gws.length+' gameweeks.</p>'+
+        rotRows+'</div>'
+    : '';
+
+  /* ── Pre-season value board: projected points per £m over the opening
+     run, so budget enablers and mid-price attackers surface before minutes
+     land (the season value view is empty until games are played). ── */
+  const valN=Math.min(5,gws.length);
+  const hz5=buildHorizon(b,fixtures,valN);
+  const valOf=e=>{const h=horizonXP(b,e,hz5);return e.now_cost?h/(e.now_cost/10):0;};
+  const POSN=['','GKP','DEF','MID','FWD'];
+  const valPool=b.elements.filter(e=>e.status==='a'&&parseFloat(e.ep_next||'0')>0)
+    .map(e=>({e,v:valOf(e),h:horizonXP(b,e,hz5)}));
+  const valBody=[1,2,3,4].map(pos=>{
+    const top=valPool.filter(x=>x.e.element_type===pos).sort((a,c)=>c.v-a.v).slice(0,5);
+    if(!top.length)return '';
+    return '<div class="dl-sub" style="margin:8px 0 3px;font-weight:800;color:var(--text)">'+POSN[pos]+'</div>'+
+      top.map(x=>'<div class="dl-row dl-click" onclick="openPlayer('+x.e.id+')">'+
+        '<span class="dl-grow"><span class="dl-nm">'+esc(x.e.web_name)+'</span>'+
+        '<span class="dl-sub">'+crest(b,x.e.team,13)+teamShort(b,x.e.team)+' · '+money(x.e.now_cost)+'</span></span>'+
+        '<span class="dl-col mono">'+x.h.toFixed(1)+'</span>'+
+        '<span class="dl-col mono" style="color:var(--green);font-weight:800">'+x.v.toFixed(2)+'</span></div>').join('');
+  }).join('');
+  const valCard=valBody
+    ? '<div class="card mb-20"><div class="card-title">Best value — projected points per £m</div>'+
+        '<p class="dl-sub" style="margin-bottom:2px">Model projection over the next '+valN+' gameweeks divided by price — the value picks given the opening fixtures, before minutes data lands. Middle column is xP over the run; green is xP per £m.</p>'+
+        '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">xP'+valN+'</span><span class="dl-col">/£m</span></div>'+valBody+'</div></div>'
+    : '';
+
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
       '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+
@@ -4256,10 +4315,11 @@ async function hydrateFixtures(host){
         '<button class="seg-b" data-view="defence">Defence</button></div>'+
       '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml('overall')+'</tbody></table></div>'+
       '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
-      'Toggle <b>Attack</b> (how easy to score) and <b>Defence</b> (how easy a clean sheet) to read the fixture for your attackers or defenders. '+
-      '<b>(a)</b> marks an away fixture. <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
+      'Teams are ranked <b>easiest run first</b>. Toggle <b>Attack</b> (how easy to score) and <b>Defence</b> (how easy a clean sheet) to re-rank for your attackers or defenders. '+
+      '<b>(a)</b> marks an away fixture. <b>FDR</b> totals the 1–5 difficulty over the window (lower is easier); <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
       (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
     '</div>'+
+    rotCard+valCard+
     (outlook?'<div class="card"><div class="card-title">Match outlook — GW'+startGw+'</div>'+
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Match · home / draw / away · clean sheet</span><span class="dl-col">xG</span></div>'+outlook+'</div>'+
       '<div class="dl-sub" style="margin-top:10px">Win/draw/win, most likely score and clean-sheet probabilities from the fitted Poisson attack/defence model with the Dixon-Coles low-score correction.</div></div>':'');
@@ -6445,6 +6505,38 @@ function nativeXP(el,nf){
   /* Expected deductions for cards, own goals and penalty misses (P-fix 4). */
   pts-=negRate90(el)*m.minFrac;
   return Math.max(0,pts);
+}
+
+/* Best rotating enabler pairs: two cheap players (defenders, or keepers)
+   whose easy fixtures alternate, so each gameweek you start whichever has
+   the kinder fixture and bench the other. teamDiff maps a team id to its
+   per-gameweek difficulty array (1 easy - 5 hard); cands is the enabler
+   pool. Pair score sums, over the shared horizon, the better (lower) of the
+   two difficulties each week — lowest total wins. A green week is one where
+   at least one of the pair has an easy fixture (difficulty 2 or under). No
+   player fills more than two of the returned pairs, to keep the list varied. */
+function rotationPairs(cands,teamDiff,limit){
+  limit=limit||6;
+  const list=(cands||[]).filter(p=>p&&teamDiff[p.team]&&teamDiff[p.team].length);
+  const pairs=[];
+  for(let i=0;i<list.length;i++)for(let j=i+1;j<list.length;j++){
+    const a=list[i],c=list[j];
+    if(a.team===c.team)continue;
+    const da=teamDiff[a.team],dc=teamDiff[c.team];
+    const n=Math.min(da.length,dc.length);
+    let score=0,green=0;
+    for(let g=0;g<n;g++){const best=Math.min(da[g],dc[g]);score+=best;if(best<=2)green++;}
+    pairs.push({a,c,score,green,n,cost:(a.cost||0)+(c.cost||0)});
+  }
+  pairs.sort((x,y)=>x.score-y.score||y.green-x.green||x.cost-y.cost);
+  const seen={},out=[];
+  for(const p of pairs){
+    const ua=seen[p.a.id]||0,uc=seen[p.c.id]||0;
+    if(ua>=2||uc>=2)continue;
+    out.push(p);seen[p.a.id]=ua+1;seen[p.c.id]=uc+1;
+    if(out.length>=limit)break;
+  }
+  return out;
 }
 
 /* Candidate pool: available players with a positive projection. */
