@@ -58,6 +58,7 @@ const pieces = [
   extractFn(html, 'poisson'),
   extractFn(html, 'plsimMatch'),
   extractFn(html, 'esc'),
+  extractFn(html, 'recentMinutes'),
   extractFn(html, 'minutesModel'),
   extractFn(html, 'concedePts'),
   extractFn(html, 'effGoalRate'),
@@ -129,7 +130,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -737,6 +738,14 @@ const midSolid = core.nativeXP(baseMid, { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.5 
 const midLeaky = core.nativeXP(baseMid, { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.12 });
 ok((defSolid - defLeaky) > 3 * (midSolid - midLeaky),
   'a defender is far more CS-sensitive than a midfielder (4pt CS + concede vs a lone 1pt CS)');
+/* concedePts blends the player's own xGC/90 (API-fix 2). */
+ok(core.concedePts(0.28, '2.4') > core.concedePts(0.28), 'a high player xGC/90 raises the concede deduction above the team-only estimate');
+ok(core.concedePts(0.28, '0.5') < core.concedePts(0.28), 'a low player xGC/90 lowers it');
+ok(core.concedePts(0.28, 'x') === core.concedePts(0.28) && core.concedePts(0.28, 0) === core.concedePts(0.28), 'missing / zero xGC leaves the team estimate unchanged');
+const defBase = { element_type: 2, minutes: 540, starts: 6, status: 'a', expected_goals_per_90: '0.05', expected_assists_per_90: '0.05', defensive_contribution_per_90: '8' };
+const defOdds = { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.3 };
+ok(core.nativeXP({ ...defBase, expected_goals_conceded_per_90: '2.2' }, defOdds) < core.nativeXP({ ...defBase, expected_goals_conceded_per_90: '0.6' }, defOdds),
+  'a defender who personally ships more xGC is rated below a stingier one on the same team odds');
 
 section('effGoalRate: finishing-aware goals (fix 5)');
 const noGoalsField = { element_type: 4, minutes: 540, expected_goals_per_90: '0.4' };
@@ -765,6 +774,24 @@ const outPl = core.minutesModel({ starts: 6, minutes: 540, status: 'i', chance_o
 ok(outPl.avail === 0 && outPl.pStart === 0 && outPl.minFrac === 0, 'an injured-out player is zeroed');
 const rota = core.minutesModel({ starts: 3, minutes: 360, status: 'a', chance_of_playing_next_round: null }, 6);
 ok(rota.pStart < nailed.pStart, 'a rotation risk starts less often than a nailed player');
+
+/* ── recent minutes + this-round availability (API-fix 1, 3) ── */
+section('recentMinutes: recency-weighted starts + minutes');
+const allStarts = core.recentMinutes([1, 2, 3, 4, 5].map(r => ({ round: r, starts: 1, minutes: 90 })), 5);
+ok(allStarts.n === 5 && Math.abs(allStarts.startShare - 1) < 1e-9 && Math.abs(allStarts.minShare - 1) < 1e-9, 'five full starts → share 1');
+ok(core.recentMinutes([1, 2, 3].map(r => ({ round: r, starts: 0, minutes: 0 })), 5).startShare === 0, 'three blanks → share 0');
+ok(core.recentMinutes([], 5).n === 0, 'no history → n 0');
+const turnedNailed = core.recentMinutes([{ round: 1, starts: 0, minutes: 0 }, { round: 2, starts: 0, minutes: 0 }, { round: 3, starts: 1, minutes: 90 }, { round: 4, starts: 1, minutes: 90 }, { round: 5, starts: 1, minutes: 90 }], 5);
+ok(turnedNailed.startShare > 0.55, 'a newly nailed player reads above 0.5 (recent gameweeks weigh more)');
+
+section('minutesModel: recent form + this-round availability');
+const seasonRota = { starts: 3, minutes: 360, status: 'a', chance_of_playing_next_round: null };
+ok(core.minutesModel({ ...seasonRota, _recent: { startShare: 1, minShare: 1, n: 5 } }, 6).pStart > core.minutesModel(seasonRota, 6).pStart,
+  'recent starts lift the start probability above the season average');
+ok(core.minutesModel({ ...seasonRota, _recent: { startShare: 0, minShare: 0, n: 5 } }, 6).pStart < core.minutesModel(seasonRota, 6).pStart,
+  'a recent benching pulls it below the season average');
+const thisRoundDoubt = core.minutesModel({ starts: 6, minutes: 540, status: 'd', chance_of_playing_next_round: null, chance_of_playing_this_round: 25 }, 6);
+ok(thisRoundDoubt.pStart < 0.3, 'a this-round doubt is applied when the next-round flag is unset');
 
 section('nativeXP reflects the minutes model');
 const nxNf = { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.3 };
