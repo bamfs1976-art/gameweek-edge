@@ -103,11 +103,14 @@ const pieces = [
   /* Section 4 (6-13): readiness, lineup, community. */
   extractFn(html, 'benchBoostReadiness'),
   extractFn(html, 'lineupCheck'),
-  extractFn(html, 'communityAggregate')
+  extractFn(html, 'communityAggregate'),
+  /* Latest News feed. */
+  extractFn(html, 'timeAgo'),
+  extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -579,6 +582,31 @@ const ca = core.communityAggregate(caB);
 ok(ca.captain.web_name === 'Cap' && ca.transferIn.web_name === 'In', 'reads crowd captain + transfer in');
 ok(ca.transferOut.web_name === 'Out' && ca.topScorer.web_name === 'Top', 'reads transfer out + top scorer');
 ok(ca.mostOwned.web_name === 'Owned', 'finds the most-owned player');
+
+/* ── Latest News feed ───────────────────────────────────── */
+section('timeAgo: relative time buckets');
+const T = 1_700_000_000_000;
+ok(core.timeAgo(new Date(T).toISOString(), T + 30 * 1000) === 'just now', 'under a minute → just now');
+ok(core.timeAgo(new Date(T).toISOString(), T + 5 * 60e3) === '5m ago', 'minutes');
+ok(core.timeAgo(new Date(T).toISOString(), T + 3 * 3600e3) === '3h ago', 'hours');
+ok(core.timeAgo(new Date(T).toISOString(), T + 2 * 86400e3) === '2d ago', 'days');
+ok(core.timeAgo(new Date(T).toISOString(), T + 21 * 86400e3) === '3w ago', 'weeks');
+ok(core.timeAgo('', T) === '' && core.timeAgo('not-a-date', T) === '', 'blank / bad input → empty');
+
+section('latestNews: only news, newest first');
+const nB = { elements: [
+  { id: 1, web_name: 'A', news: '', news_added: '2026-01-01T00:00:00Z' },
+  { id: 2, web_name: 'B', news: 'Knock - 75%', news_added: '2026-01-03T10:00:00Z', status: 'd', chance_of_playing_next_round: 75 },
+  { id: 3, web_name: 'C', news: 'Suspended', news_added: '2026-01-05T09:00:00Z', status: 's' },
+  { id: 4, web_name: 'D', news: '   ', news_added: '2026-01-04T00:00:00Z' },
+  { id: 5, web_name: 'E', news: 'Hamstring', news_added: '2026-01-02T00:00:00Z', status: 'i' },
+] };
+const feed = core.latestNews(nB, 10);
+ok(feed.length === 3, 'only players with real news text (blank/whitespace excluded)');
+ok(feed[0].el.web_name === 'C' && feed[1].el.web_name === 'B' && feed[2].el.web_name === 'E', 'sorted newest → oldest by news_added');
+ok(feed[0].chance === undefined ? true : feed[0].status === 's', 'carries status/chance through');
+ok(core.latestNews(nB, 2).length === 2, 'respects the limit');
+ok(core.latestNews({ elements: [] }, 10).length === 0, 'no elements → empty feed');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

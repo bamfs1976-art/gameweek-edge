@@ -2402,7 +2402,8 @@ const NAV = [
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
       {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
-      {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'}
+      {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
+      {id:'news', label:'Latest News', icon:'bell', tier:'free'}
     ]
   },
   {
@@ -2465,6 +2466,10 @@ const PANEL_CONTENT = {
   },
   accountability:{
     desc:'The model graded in public — how often it calls the right result, its held-out score, and (when you link your team) your rank percentile.',
+    layout:'standard'
+  },
+  news:{
+    desc:'Official player news — injuries, suspensions and availability — newest first, straight from the FPL data.',
     layout:'standard'
   },
   dashboard:{
@@ -4507,6 +4512,34 @@ async function hydrateInjuries(host){
     '<a href="https://bookingsdesk.netlify.app" target="_blank" rel="noopener">Bookings Desk</a>.</div></div>';
 
   host.innerHTML=suspension+fitness;
+}
+
+/* ── Latest News: official player news, newest first ─────
+   The FPL API has no news-feed endpoint; player news lives in the
+   bootstrap `news` / `news_added` fields. This is the recency view —
+   what changed most recently — complementing the ownership-sorted
+   Injury Monitor. */
+async function hydrateNews(host){
+  const b=await boot();
+  let owned=new Set();const mid=getMid();
+  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  const items=latestNews(b,60);
+  if(!items.length){host.innerHTML=stateBox('bell','No player news right now',
+    'Official injury, suspension and availability updates appear here newest-first, straight from the FPL data.');return;}
+  const now=Date.now();
+  const rows=items.map(it=>{const e=it.el;
+    const badge='<span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status||'news')+'</span>';
+    const mine=owned.has(e.id)?' <span class="badge badge-blue">yours</span>':'';
+    const chance=it.chance==null?'':' · '+it.chance+'% to play';
+    return '<div class="dl-row diag-row dl-click" onclick="openPlayer('+e.id+')">'+avatar(b,e,32)+
+      '<span class="diag-txt"><span class="dl-nm" style="white-space:normal">'+esc(e.web_name)+' '+badge+mine+'</span>'+
+      '<span style="display:block;color:var(--text-3);font-size:.78rem;line-height:1.5;margin-top:2px">'+
+        crest(b,e.team,13)+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+chance+' — '+esc(it.news)+'</span></span>'+
+      '<span class="dl-col" style="width:auto;white-space:nowrap;color:var(--text-3);flex-shrink:0;text-align:right">'+esc(timeAgo(it.added,now))+'</span></div>';
+  }).join('');
+  host.innerHTML=
+    '<div class="dl-sub" style="margin-bottom:12px">Official player news — injuries, suspensions and availability — <b>newest first</b>, straight from the FPL data ('+items.length+' updates). Tap a player for detail. For deeper written briefings see <a href="#blog" onclick="openPanel(\'blog\');return false">The Wire</a>.</div>'+
+    '<div class="card"><div class="card-title">Latest player news</div><div class="dl">'+rows+'</div></div>';
 }
 
 /* Shared: a ranked player table with two metric columns. */
@@ -7789,6 +7822,32 @@ function communityStripHtml(b){
   return cells?'<div class="comm-strip"><div class="cs-head">What the community is doing</div><div class="cs-grid">'+cells+'</div></div>':'';
 }
 
+/* Compact relative time — "just now", "2h ago", "3d ago". Pure. */
+function timeAgo(iso,now){
+  if(!iso)return '';
+  const t=new Date(iso).getTime();if(isNaN(t))return '';
+  now=now||Date.now();
+  const s=Math.max(0,Math.floor((now-t)/1000));
+  if(s<60)return 'just now';
+  const m=Math.floor(s/60);if(m<60)return m+'m ago';
+  const h=Math.floor(m/60);if(h<24)return h+'h ago';
+  const d=Math.floor(h/24);if(d<7)return d+'d ago';
+  const w=Math.floor(d/7);if(w<5)return w+'w ago';
+  return Math.floor(d/30)+'mo ago';
+}
+/* Latest official player news — every element carrying a news note,
+   newest first by news_added. The FPL API has no news feed endpoint;
+   this is the recency view of the bootstrap news fields. Pure. */
+function latestNews(b,limit){
+  const els=(b&&b.elements)||[];
+  return els.filter(e=>e.news&&String(e.news).trim())
+    .map(e=>({el:e,news:e.news,status:e.status,added:e.news_added,
+      chance:e.chance_of_playing_next_round,
+      ts:e.news_added?new Date(e.news_added).getTime()||0:0}))
+    .sort((a,c)=>c.ts-a.ts)
+    .slice(0,limit||50);
+}
+
 /* Games-played divisor for the per-season shares: finished fixtures
    this season, falling back to a full 38 between seasons (when the
    bootstrap still carries last season's totals but no fixture in the
@@ -8271,6 +8330,7 @@ const WIRED={
   diffs:hydrateDiffs,
   price:hydratePrice,
   injuries:hydrateInjuries,
+  news:hydrateNews,
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
   liverank:hydrateLiveRank,
   bonus:hydrateBonus,
