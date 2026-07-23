@@ -127,6 +127,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/api/predictions-health"
+  to = "/.netlify/functions/predictions-health"
+  status = 200
+  force = true
+
 # Scheduled push sender (hourly).
 [functions."push-cron"]
   schedule = "@hourly"
