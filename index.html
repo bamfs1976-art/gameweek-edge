@@ -2799,10 +2799,26 @@ function renderPage(panelId){
   if(WIRED[panelId]&&!locked){
     const host=document.getElementById('ge-data');
     Promise.resolve().then(()=>WIRED[panelId](host))
-      .catch(err=>{if(host)host.innerHTML=(err&&err.status===404)?
-        stateBox('question','Manager not found','Check the ID and try again.',
-          '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>')
-        :errorBox();});
+      .catch(async err=>{
+        if(!host)return;
+        if(err&&err.status===404){
+          /* A 404 here usually means the picks endpoint has no data yet, NOT
+             a bad ID — the official API only exposes a manager's squad once
+             the gameweek deadline has passed and teams lock (so before the
+             first deadline of a new season there are no picks to load). Only
+             call the ID invalid if the entry itself is missing. */
+          const mid=getMid();let entryOk=false;
+          if(mid){try{await loadEntry(mid);entryOk=true;}catch(_){}}
+          host.innerHTML=entryOk
+            ? stateBox('calendar','Squad not available yet',
+                'Your team ID is linked and valid. The official FPL API only serves a manager’s squad once the gameweek deadline has passed and teams lock — before the first deadline of a new season there are simply no picks to load. My Week and My Squad fill in automatically once the gameweek locks.',
+                '<button class="btn btn-ghost btn-sm" onclick="openMidModal()">Edit ID</button>')
+            : stateBox('question','Manager not found','Check the ID and try again.',
+                '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>');
+        }else{
+          host.innerHTML=errorBox();
+        }
+      });
     armLiveRefresh(panelId);
   } else if(WIRED[panelId]&&locked){
     /* Hydrate the blurred preview too — real UI, no interaction, no
