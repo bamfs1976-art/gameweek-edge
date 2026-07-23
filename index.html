@@ -3352,8 +3352,10 @@ async function hydrateDashboard(host){
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
     '<span class="qd-meta">'+(totw?totw.total.toFixed(0)+' xP':'—')+mxiBtn+'</span></div>'+q2Body+'</div>';
 
-  /* ── Q3: differentials under 10% ── */
-  const diffs=b.elements.filter(e=>e.status==='a'&&parseFloat(e.selected_by_percent)<10&&(!b.liveSeason||e.minutes>0))
+  /* ── Q3: differentials — like-for-like with the Differentials tab ──
+     Same shared filter (available, under 15% owned, non-premium) and the
+     same ranking (our next-GW projection, xP). */
+  const diffs=differentials(b.elements,15)
     .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p).slice(0,8);
   const dRows=diffs.map(({e,p})=>{
     const d=e.cost_change_event>0?'<span class="pos">↑</span>':e.cost_change_event<0?'<span class="neg">↓</span>':'<span style="color:var(--text-4)">—</span>';
@@ -3364,7 +3366,7 @@ async function hydrateDashboard(host){
       '<span class="qd-v" style="width:58px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+'</span>'+
       '<span style="width:14px;text-align:right">'+d+'</span></div>';
   }).join('');
-  const q3='<div class="card qd">'+qh('Differentials &lt; 10%',diffs.length+' picks')+
+  const q3='<div class="card qd">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
     '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
     '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
     '<span style="width:58px;text-align:right">FIX</span><span style="width:14px;text-align:right">ΔP</span></div>'+dRows+'</div>';
@@ -4421,9 +4423,21 @@ async function hydrateAllPlayers(host){
    minutes gate: at the start of a season nobody has minutes yet, so gating on
    them (as the old code did) emptied the whole list. The caller then ranks
    this pool by strength (our projection). Pure. */
-function differentials(elements,maxOwn){
+/* A genuine differential is an AVAILABLE player the field has overlooked:
+   low ownership AND a real, known ownership figure AND not a premium
+   template pick. The premium gate matters most at a season open, when
+   ownership is still forming and a £14m magnet (Haaland) can briefly read
+   under 15% owned — a pure ownership filter would wrongly surface him.
+   Premiums are the players you build a team AROUND, not differentials. */
+function differentials(elements,maxOwn,maxCost){
   maxOwn=maxOwn==null?15:maxOwn;
-  return (elements||[]).filter(e=>e&&e.status==='a'&&(parseFloat(e.selected_by_percent)||0)<maxOwn);
+  maxCost=maxCost==null?100:maxCost;   /* exclude premiums priced £10.0m+ */
+  return (elements||[]).filter(e=>{
+    if(!e||e.status!=='a')return false;
+    const own=parseFloat(e.selected_by_percent);
+    if(!isFinite(own)||own>=maxOwn)return false;   /* need a real figure under the line */
+    return (e.now_cost||0)<maxCost;
+  });
 }
 async function hydrateDiffs(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -4459,7 +4473,7 @@ async function hydrateDiffs(host){
     : '';
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Differentials — under '+MAXOWN+'% owned</div>'+
-      '<p class="dl-sub" style="margin-bottom:8px">Every available player selected by fewer than '+MAXOWN+'% of managers ('+pool.length+' in all), ranked by strength. Default order is our next-gameweek projection (xP); tap a player for the full data.</p>'+
+      '<p class="dl-sub" style="margin-bottom:8px">Every available non-premium player (under £10.0m) selected by fewer than '+MAXOWN+'% of managers ('+pool.length+' in all), ranked by strength. Premiums are excluded — a £14m template pick is not a differential, even if its ownership hasn’t caught up at a season open. Default order is our next-gameweek projection (xP); tap a player for the full data.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span class="dl-sub">Order by</span>'+seg+'</div>'+
       '<div id="diff-list"></div></div>'+
     dconCard;

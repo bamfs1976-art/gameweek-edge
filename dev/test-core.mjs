@@ -693,22 +693,27 @@ ok(top[3].every((e, i) => i === 0 || parseFloat(e.selected_by_percent) <= parseF
 ok(top[3].every(e => parseFloat(e.selected_by_percent) > 0), 'zero-owned players are excluded');
 ok(core.topSelectedByPos([], 10)[1].length === 0, 'empty pool → empty positions');
 
-section('differentials: full pool, no minutes gate');
+section('differentials: ownership-first, no minutes gate, premiums excluded');
 const diffPool = [
-  { id: 1, status: 'a', selected_by_percent: '3.0', minutes: 0, now_cost: 130 },   /* season start, no minutes */
+  { id: 1, status: 'a', selected_by_percent: '3.0', minutes: 0, now_cost: 55 },    /* season start, no minutes, cheap */
   { id: 2, status: 'a', selected_by_percent: '11.9', minutes: 540, now_cost: 55 },
   { id: 3, status: 'a', selected_by_percent: '40.0', minutes: 900, now_cost: 90 },  /* too owned */
   { id: 4, status: 'i', selected_by_percent: '2.0', minutes: 0, now_cost: 60 },     /* injured out */
   { id: 5, status: 'a', selected_by_percent: '0', minutes: 0, now_cost: 45 },       /* 0% owned, unplayed */
+  { id: 6, status: 'a', selected_by_percent: '3.0', minutes: 0, now_cost: 140 },    /* premium (Haaland) briefly reading low at season open */
+  { id: 7, status: 'a', minutes: 0, now_cost: 50 },                                 /* no ownership figure at all */
 ];
 const diffs = core.differentials(diffPool);   /* default threshold */
 ok(diffs.some(e => e.id === 1) && diffs.some(e => e.id === 5), 'includes low-owned players with zero minutes (season start / benched) — the bug fix');
 ok(diffs.some(e => e.id === 2), 'an 11.9%-owned player is included under the 15% default');
 ok(!diffs.some(e => e.id === 3), 'excludes players at/over the ownership threshold');
 ok(!diffs.some(e => e.id === 4), 'excludes unavailable (injured/suspended) players');
-ok(core.differentials(diffPool).every(e => parseFloat(e.selected_by_percent) < 15), 'the default threshold is 15% — the primary ownership filter');
+ok(!diffs.some(e => e.id === 6), 'excludes premiums (£10.0m+) even when their ownership briefly reads low — the Haaland fix');
+ok(!diffs.some(e => e.id === 7), 'excludes players with no real ownership figure (not treated as 0% differentials)');
+ok(core.differentials(diffPool).every(e => parseFloat(e.selected_by_percent) < 15 && (e.now_cost || 0) < 100), 'every survivor is under 15% owned AND under £10.0m — the primary filters');
 ok(core.differentials(diffPool, 5).every(e => parseFloat(e.selected_by_percent) < 5), 'a custom ownership threshold is honoured');
-ok(core.differentials([{ status: 'a', selected_by_percent: '14.5' }]).length === 1 && core.differentials([{ status: 'a', selected_by_percent: '15.0' }]).length === 0, 'boundary: under 15 in, 15+ out');
+ok(core.differentials([{ status: 'a', selected_by_percent: '9.5', now_cost: 105 }], 15, 120).length === 1, 'a custom premium cap is honoured');
+ok(core.differentials([{ status: 'a', selected_by_percent: '14.5', now_cost: 55 }]).length === 1 && core.differentials([{ status: 'a', selected_by_percent: '15.0', now_cost: 55 }]).length === 0, 'boundary: under 15 in, 15+ out');
 
 section('bestXI drawn from the template pool is a legal, optimal XI');
 /* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
