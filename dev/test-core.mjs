@@ -126,13 +126,14 @@ const pieces = [
   extractFn(html, 'communityAggregate'),
   extractFn(html, 'topSelectedByPos'),
   extractFn(html, 'differentials'),
+  extractFn(html, 'rotationPairs'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -714,6 +715,28 @@ ok(core.differentials(diffPool).every(e => parseFloat(e.selected_by_percent) < 1
 ok(core.differentials(diffPool, 5).every(e => parseFloat(e.selected_by_percent) < 5), 'a custom ownership threshold is honoured');
 ok(core.differentials([{ status: 'a', selected_by_percent: '9.5', now_cost: 105 }], 15, 120).length === 1, 'a custom premium cap is honoured');
 ok(core.differentials([{ status: 'a', selected_by_percent: '14.5', now_cost: 55 }]).length === 1 && core.differentials([{ status: 'a', selected_by_percent: '15.0', now_cost: 55 }]).length === 0, 'boundary: under 15 in, 15+ out');
+
+section('rotationPairs: cheap defenders whose easy fixtures alternate');
+/* Two teams with mirror-image runs (one easy while the other is hard) should
+   pair to an all-green combined run; a third team is hard throughout. */
+const rotDiff = {
+  10: [1, 5, 1, 5, 1, 5],   /* easy on odd weeks */
+  20: [5, 1, 5, 1, 5, 1],   /* easy on even weeks — perfect rotation with 10 */
+  30: [4, 4, 4, 4, 4, 4],   /* always awkward */
+};
+const rotCands = [
+  { id: 1, team: 10, cost: 45, own: 20 },
+  { id: 2, team: 20, cost: 45, own: 18 },
+  { id: 3, team: 30, cost: 45, own: 5 },
+];
+const rp = core.rotationPairs(rotCands, rotDiff, 6);
+ok(rp.length === 3, 'every cross-club pair is returned');
+ok(rp[0].a.team !== rp[0].c.team, 'a pair is always two different clubs');
+ok(rp[0].score === 6 && rp[0].green === 6, 'the mirror pair scores a perfect all-green combined run');
+ok((rp[0].a.team === 10 && rp[0].c.team === 20) || (rp[0].a.team === 20 && rp[0].c.team === 10), 'the best pair is the two mirror-image teams');
+ok(rp[0].score <= rp[rp.length - 1].score, 'pairs are ranked easiest combined run first');
+ok(core.rotationPairs(rotCands, rotDiff, 1).length === 1, 'the limit caps the number of pairs');
+ok(core.rotationPairs([{ id: 9, team: 99, cost: 40 }], rotDiff, 6).length === 0, 'a player whose team has no fixtures yields no pair');
 
 section('bestXI drawn from the template pool is a legal, optimal XI');
 /* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
