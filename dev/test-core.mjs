@@ -127,13 +127,14 @@ const pieces = [
   extractFn(html, 'topSelectedByPos'),
   extractFn(html, 'differentials'),
   extractFn(html, 'rotationPairs'),
+  extractFn(html, 'bestFixtureRun'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -737,6 +738,18 @@ ok((rp[0].a.team === 10 && rp[0].c.team === 20) || (rp[0].a.team === 20 && rp[0]
 ok(rp[0].score <= rp[rp.length - 1].score, 'pairs are ranked easiest combined run first');
 ok(core.rotationPairs(rotCands, rotDiff, 1).length === 1, 'the limit caps the number of pairs');
 ok(core.rotationPairs([{ id: 9, team: 99, cost: 40 }], rotDiff, 6).length === 0, 'a player whose team has no fixtures yields no pair');
+
+section('bestFixtureRun: the lowest-difficulty run of K consecutive gameweeks (purple patch)');
+const brun = core.bestFixtureRun([5, 5, 1, 1, 1, 5], 3);
+ok(brun.start === 2 && brun.end === 4 && brun.sum === 3, 'finds the easiest 3-gameweek block');
+ok(core.bestFixtureRun([2, 2, 2, 2], 2).start === 0, 'ties resolve to the earliest block');
+ok(core.bestFixtureRun([4], 5).K === 1 && core.bestFixtureRun([4], 5).sum === 4, 'K is clamped to the array length');
+ok(core.bestFixtureRun([], 3) === null, 'an empty array yields no run');
+{
+  const arr = [3, 1, 2, 5, 5, 5], r = core.bestFixtureRun(arr, 3);
+  let s = 0; for (let i = r.start; i <= r.end; i++) s += arr[i];
+  ok(s === r.sum && r.sum === 6, 'the returned sum matches the marked block');
+}
 
 section('bestXI drawn from the template pool is a legal, optimal XI');
 /* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
