@@ -5142,7 +5142,26 @@ async function hydrateTransfers(host){
           '<span class="dl-sub">Your XI is the highest-EV option this week; save the transfer.'+
           (marg?' Closest upgrade if you must: <b>'+esc(marg.web_name)+'</b> ('+horizonXP(b,marg,hz).toFixed(1)+' xP / 5 GW).':'')+'</span></span></div></div>';
       }
-      replacer=recCard+solverCard()+solver3Card();
+      /* Rank optimiser (P4): reframe the same candidate moves by edge
+         over the field, and surface where max-points and max-rank diverge. */
+      const opt=rankOptimiser(b,squad,xiEls,bank,nf,protect);
+      let rankCard='';
+      if(opt.topRank&&opt.topRank.dMean>0.05){
+        const own=m=>Math.round(m.ownOut*100)+'% → '+Math.round(m.ownIn*100)+'%';
+        const rows=opt.moves.filter(m=>m.dMean>0.02).slice(0,3).map(m=>
+          '<div class="dl-row" style="align-items:center"><span class="dl-grow"><span class="dl-nm">'+
+            esc(m.outEl.web_name)+' → <b>'+esc(m.inEl.web_name)+'</b></span>'+
+            '<span class="dl-sub">owned '+own(m)+' · beats field '+Math.round(m.beat*100)+'% · raw '+(m.rawGain>=0?'+':'')+m.rawGain.toFixed(1)+' xP</span></span>'+
+            '<span class="dl-col mono" style="text-align:right"><b class="pos">+'+m.dMean.toFixed(1)+'</b><br><span class="dl-sub">rank-xP</span></span></div>').join('');
+        rankCard='<div class="card mb-20"><div class="card-title">Rank optimiser</div>'+
+          '<p class="dl-sub" style="margin-bottom:10px">Rank is relative — a template pick the field also owns lifts everyone the same. These moves are ranked by <b>edge over the field</b>: the ownership-adjusted points that actually gain you places.</p>'+
+          '<div class="dl">'+rows+'</div>'+
+          (opt.diverges
+            ? '<p class="dl-sub" style="margin-top:10px"><b>Points vs rank:</b> most raw points is <b>'+esc(opt.topPoints.inEl.web_name)+'</b> (+'+opt.topPoints.rawGain.toFixed(1)+' xP), but most <b>rank</b> is <b>'+esc(opt.topRank.inEl.web_name)+'</b> ('+Math.round(opt.topRank.ownIn*100)+'% owned) — the lower-owned pick moves you up further when it returns.</p>'
+            : '<p class="dl-sub" style="margin-top:10px">Here the highest-points and highest-rank move agree — a comfortable overlap.</p>')+
+          '<div class="dl-sub" style="margin-top:6px">rank-xP = next-GW expected points weighted by how little of the field owns the player. Complements the 5-GW points view above.</div></div>';
+      }
+      replacer=recCard+rankCard+solverCard()+solver3Card();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
@@ -7750,6 +7769,77 @@ function squadSim(els,nfByTeam,capId,trials){
   totals.sort((a,c)=>a-c);
   const q=f=>totals[Math.min(trials-1,Math.floor(f*trials))];
   return {mean:totals.reduce((a,b)=>a+b,0)/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90)};
+}
+/* Rank-EV transfer optimiser (P4): FPL rank is a relative game, so the
+   move that adds the most raw points is not always the move that gains
+   the most rank. A template pick the whole field also owns lifts your
+   score and the fields score by the same amount, and barely moves you up
+   the mini-league; a lower-owned pick with the same mean lifts you ABOVE
+   the field when it returns. These functions score a candidate transfer
+   by its ownership-adjusted, distribution-based edge over the field,
+   alongside the raw points gain, so the divergence is explicit. Pure;
+   built on pointsDist for the single-GW outcome distribution. */
+function normCdf(z){
+  /* Abramowitz-Stegun 7.1.26 tail approximation of the standard normal. */
+  const t=1/(1+0.2316419*Math.abs(z)),d=0.3989422804014327*Math.exp(-z*z/2);
+  const p=d*t*(0.31938153+t*(-0.356563782+t*(1.781477937+t*(-1.821255978+t*1.330274429))));
+  return z>0?1-p:p;
+}
+/* The single-GW edge over the field from owning el: its outcome
+   distribution, damped by ownership. The field banks a fraction o of the
+   players points on average, so only the un-owned fraction (1 minus o)
+   differentiates you — in both the mean and the swing. */
+function effEdge(el,nf){
+  const d=pointsDist(el,nf);
+  const sd=Math.max(0.5,(d.p90-d.p10)/2.563);          /* p90-p10 spans ~2.563 sd */
+  const o=Math.max(0,Math.min(1,(parseFloat(el&&el.selected_by_percent)||0)/100));
+  return {mean:(1-o)*d.mean,sd:(1-o)*sd,o,raw:d};
+}
+/* Combine two edges into the rank value of swapping outEl for inEl:
+   the differential-points mean, its sd (edges treated as independent),
+   the standardised z, a beats-the-field probability, and the raw
+   (un-adjusted) points gain for contrast. */
+function edgeDelta(ei,eo,inEl,outEl){
+  const dMean=ei.mean-eo.mean,dSd=Math.max(0.5,Math.sqrt(ei.sd*ei.sd+eo.sd*eo.sd));
+  return {dMean,dSd,z:dMean/dSd,beat:normCdf(dMean/dSd),
+    rawGain:ei.raw.mean-eo.raw.mean,ownIn:ei.o,ownOut:eo.o,inEl,outEl};
+}
+function rankEV(inEl,outEl,nf){
+  return edgeDelta(effEdge(inEl,nf[inEl.team]),effEdge(outEl,nf[outEl.team]),inEl,outEl);
+}
+/* For each sellable XI slot, find the incoming player that maximises
+   rank-EV and, separately, the one that maximises raw points, then rank
+   both lists. topRank vs topPoints exposes the core insight: when they
+   disagree, the rank pick is the lower-owned player that moves you up
+   further when it hits. Candidate legality mirrors bestTransfer (budget,
+   3-per-club, availability, not already owned, not protected). Memoised
+   on player id so each distribution is simulated once. */
+function rankOptimiser(b,squadEls,xiEls,bank,nf,protectIds){
+  const availOk=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
+  const owned=new Set(squadEls.map(e=>e.id));
+  const clubCount={};squadEls.forEach(e=>{clubCount[e.team]=(clubCount[e.team]||0)+1;});
+  const protect=protectIds||new Set(),memo={};
+  const edge=el=>memo[el.id]||(memo[el.id]=effEdge(el,nf[el.team]));
+  const rankMoves=[],pointMoves=[];
+  xiEls.filter(e=>e&&!protect.has(e.id)&&nf[e.team]&&nf[e.team].lam!=null).forEach(out=>{
+    const eo=edge(out);
+    const pool=b.elements.filter(e=>e.element_type===out.element_type&&!owned.has(e.id)&&availOk(e)&&
+      (e.now_cost||0)<=bank+(out.now_cost||0)&&((clubCount[e.team]||0)-(e.team===out.team?1:0))<3&&
+      nf[e.team]&&nf[e.team].lam!=null&&(e.minutes||0)>0);
+    let bestR=null,bestP=null;
+    pool.forEach(cand=>{
+      const m=edgeDelta(edge(cand),eo,cand,out);
+      if(!bestR||m.dMean>bestR.dMean)bestR=m;
+      if(!bestP||m.rawGain>bestP.rawGain)bestP=m;
+    });
+    if(bestR)rankMoves.push(bestR);
+    if(bestP)pointMoves.push(bestP);
+  });
+  rankMoves.sort((a,c)=>c.dMean-a.dMean);
+  pointMoves.sort((a,c)=>c.rawGain-a.rawGain);
+  const topRank=rankMoves[0]||null,topPoints=pointMoves[0]||null;
+  return {moves:rankMoves,topRank,topPoints,
+    diverges:!!(topRank&&topPoints&&topRank.inEl.id!==topPoints.inEl.id)};
 }
 /* Calibration (P5): grade probabilistic predictions against outcomes.
    rows are {p: predicted probability 0..1, y: outcome 0/1}. Returns the

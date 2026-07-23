@@ -90,21 +90,21 @@ work below.
 | **1** | Bonus + defensive-contribution + GK saves in `nativeXP`; adaptive blend | **done** |
 | **2** | `minutesModel` — `P(start)` / expected minutes from start-share + minutes-share **blended with live availability** (status + chance-of-playing from the news feed), so a doubt reshapes the minutes rather than a flat scale. `nativeXP` and `xP` now consume it (and `xP` no longer double-scales availability). | **done** |
 | **3** | `pointsDist` — a real seeded per-player **Monte-Carlo** of the gameweek from the same components (mean, P10/P50/P90, haul/blank). Wired into the captain cards: the outcome band and **haul/blank %** are now simulated, not heuristic. | **done** |
-| **4** | `squadSim` — **correlated** whole-XI projection: teammates share one clean-sheet outcome and one attacking shock per team, so a stacked defence / doubled-up attack gets the fatter tails it deserves; captain doubles. Surfaced as "Projected next GW" on My Squad. *(Rank-EV optimiser UI is the remaining follow-on.)* | **done (engine)** |
+| **4** | `squadSim` — **correlated** whole-XI projection: teammates share one clean-sheet outcome and one attacking shock per team, so a stacked defence / doubled-up attack gets the fatter tails it deserves; captain doubles. Surfaced as "Projected next GW" on My Squad. Plus `rankOptimiser` — a **rank-EV** transfer optimiser (`effEdge`/`rankEV`/`normCdf`) that scores each candidate move by its **ownership-adjusted edge over the field** rather than raw points, and calls out where max-points and max-rank diverge. Surfaced as the "Rank optimiser" card on the Transfers page. | **done** |
 | **5** | `calibration` — Brier + reliability curve grading engine; `gwedge_predictions` prediction log (service-role, live); `netlify/functions/log-predictions.js` — an **hourly scheduled function** that extracts the shipping model from `index.html` and logs each upcoming gameweek's forecast, then backfills actuals once a GW finishes; `model-calibration.js` serves the aggregate accuracy, shown as **"Live prediction accuracy"** on the Accountability page. | **done** |
 | **6** | Match model: `recencyWeight` (0.97/GW decay so recent form counts more) in the live refit, and `availAttackMult` — a team whose **top expected-involvement attacker is flagged** is downgraded (−10% out, −4% doubt), tying the fixture model to the news feed. | **done** |
 
 The strategic payoff is P3–P4: forecasting **distributions** rather than
 point estimates, then optimising for **expected rank** vs the field (given
 ownership) rather than raw points — which is what actually moves a manager
-up their mini-league. The remaining follow-ons are the two "populate/act"
-halves: a rank-EV **team optimiser** on top of `squadSim`, and the
-**scheduled prediction logger** that feeds `calibration` on the
-Accountability page.
+up their mini-league. Both halves are now shipped: the rank-EV **team
+optimiser** (`rankOptimiser`) turns `squadSim`'s distribution work into a
+concrete transfer call on the Transfers page, and the **scheduled
+prediction logger** feeds `calibration` on the Accountability page.
 
 ## Test & tooling
 
-- `npm test` — 236 unit tests over the model core (every helper above).
+- `npm test` — 251 unit tests over the model core (every helper above).
 - `node dev/model-validate.mjs [snap.json]` — accuracy backtest.
 - `node dev/simulate-gameweek.mjs [--html out.html]` — the model's
   gameweek outputs.

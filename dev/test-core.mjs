@@ -92,6 +92,11 @@ const pieces = [
   extractFn(html, 'captainBand'),
   extractFn(html, 'pointsDist'),
   extractFn(html, 'squadSim'),
+  extractFn(html, 'normCdf'),
+  extractFn(html, 'effEdge'),
+  extractFn(html, 'edgeDelta'),
+  extractFn(html, 'rankEV'),
+  extractFn(html, 'rankOptimiser'),
   extractFn(html, 'calibration'),
   extractFn(html, 'captainModel'),
   extractFn(html, 'captainConfidence'),
@@ -116,7 +121,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, pointsDist, recencyWeight, availAttackMult, squadSim, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -691,6 +696,45 @@ ok(noCap.mean > 20, 'a full XI projects a sensible points total');
 ok(withCap.mean > noCap.mean, 'captaining a starter raises the projection');
 ok(core.squadSim(sq, sqNf, 205).p50 === withCap.p50, 'deterministic (seeded on the squad)');
 ok(core.squadSim([], sqNf, null).mean === 0, 'an empty squad projects zero');
+
+/* ── rank-EV transfer optimiser (P4) ────────────────────── */
+section('normCdf: standard normal CDF');
+ok(Math.abs(core.normCdf(0) - 0.5) < 1e-3, 'CDF at 0 is 0.5');
+ok(core.normCdf(3) > 0.99 && core.normCdf(-3) < 0.01, 'far tails saturate');
+ok(Math.abs(core.normCdf(1.6449) - 0.95) < 2e-3, '95th percentile at z≈1.645');
+ok(core.normCdf(-1) < 0.5 && core.normCdf(1) > 0.5, 'monotone around the mean');
+
+section('effEdge: ownership damps the edge over the field');
+const rnf = { gp: 6, lam: 1.7, lamAvg: 1.5, cs: 0.35 };
+const hi = core.effEdge({ id: 501, element_type: 3, starts: 6, minutes: 540, status: 'a',
+  expected_goals_per_90: '0.55', expected_assists_per_90: '0.3', bonus: 10, selected_by_percent: '60' }, rnf);
+const lo = core.effEdge({ id: 502, element_type: 3, starts: 6, minutes: 540, status: 'a',
+  expected_goals_per_90: '0.55', expected_assists_per_90: '0.3', bonus: 10, selected_by_percent: '4' }, rnf);
+ok(Math.abs(hi.raw.mean - lo.raw.mean) < 0.4, 'same profile → near-identical raw distribution');
+ok(lo.mean > hi.mean, 'the low-owned twin carries a bigger edge over the field');
+ok(lo.sd > hi.sd, 'the differential also swings rank harder');
+ok(hi.o === 0.6 && lo.o === 0.04, 'ownership fraction read from selected_by_percent');
+
+section('rankEV / rankOptimiser: rank pick can differ from points pick');
+const outEl = { id: 510, team: 3, element_type: 3, starts: 6, minutes: 540, status: 'a', now_cost: 70,
+  expected_goals_per_90: '0.15', expected_assists_per_90: '0.1', bonus: 3, selected_by_percent: '30' };
+/* Two candidates: one slightly higher raw points but heavily owned (template),
+   one a hair lower on raw points but a differential. */
+const templ = { id: 511, team: 4, element_type: 3, starts: 6, minutes: 540, status: 'a', now_cost: 70,
+  expected_goals_per_90: '0.62', expected_assists_per_90: '0.32', bonus: 12, selected_by_percent: '70' };
+const diff = { id: 512, team: 5, element_type: 3, starts: 6, minutes: 540, status: 'a', now_cost: 70,
+  expected_goals_per_90: '0.58', expected_assists_per_90: '0.30', bonus: 11, selected_by_percent: '5' };
+const oNf = { 3: rnf, 4: rnf, 5: rnf };
+const rTempl = core.rankEV(templ, outEl, oNf), rDiff = core.rankEV(diff, outEl, oNf);
+ok(rTempl.rawGain > 0 && rDiff.rawGain > 0, 'both upgrades gain raw points');
+ok(rDiff.dMean > rTempl.dMean, 'the differential wins on edge over the field despite lower raw points');
+ok(rDiff.beat > 0.5, 'a positive edge beats the field more than half the time');
+const optB = { elements: [templ, diff], els: { 511: templ, 512: diff } };
+const opt = core.rankOptimiser(optB, [outEl], [outEl], 20, oNf, new Set());
+ok(opt.topRank && opt.topRank.inEl.id === 512, 'optimiser ranks the differential top');
+ok(opt.topPoints && opt.topPoints.inEl.id === 511, 'and still names the raw-points leader');
+ok(opt.diverges === true, 'flags that points and rank disagree here');
+ok(core.rankOptimiser(optB, [outEl], [outEl], 20, oNf, new Set([510])).moves.length === 0, 'a protected player is never sold');
 
 /* ── match model refinements (P6) ───────────────────────── */
 section('recencyWeight / availAttackMult');
