@@ -701,12 +701,14 @@ const diffPool = [
   { id: 4, status: 'i', selected_by_percent: '2.0', minutes: 0, now_cost: 60 },     /* injured out */
   { id: 5, status: 'a', selected_by_percent: '0', minutes: 0, now_cost: 45 },       /* 0% owned, unplayed */
 ];
-const diffs = core.differentials(diffPool, 12);
+const diffs = core.differentials(diffPool);   /* default threshold */
 ok(diffs.some(e => e.id === 1) && diffs.some(e => e.id === 5), 'includes low-owned players with zero minutes (season start / benched) — the bug fix');
+ok(diffs.some(e => e.id === 2), 'an 11.9%-owned player is included under the 15% default');
 ok(!diffs.some(e => e.id === 3), 'excludes players at/over the ownership threshold');
 ok(!diffs.some(e => e.id === 4), 'excludes unavailable (injured/suspended) players');
-ok(diffs.length === 3, 'keeps every eligible player — the full range, not just those with minutes');
-ok(core.differentials(diffPool, 5).every(e => parseFloat(e.selected_by_percent) < 5), 'the ownership threshold is honoured');
+ok(core.differentials(diffPool).every(e => parseFloat(e.selected_by_percent) < 15), 'the default threshold is 15% — the primary ownership filter');
+ok(core.differentials(diffPool, 5).every(e => parseFloat(e.selected_by_percent) < 5), 'a custom ownership threshold is honoured');
+ok(core.differentials([{ status: 'a', selected_by_percent: '14.5' }]).length === 1 && core.differentials([{ status: 'a', selected_by_percent: '15.0' }]).length === 0, 'boundary: under 15 in, 15+ out');
 
 section('bestXI drawn from the template pool is a legal, optimal XI');
 /* Score the 40-player pool (higher ownership rank ≈ higher xP here) and build. */
