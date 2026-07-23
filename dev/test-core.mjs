@@ -82,6 +82,10 @@ const pieces = [
   extractFn(html, 'draftCounts'),
   extractFn(html, 'draftValidate'),
   extractFn(html, 'draftCanAdd'),
+  extractFn(html, 'draftMinCost'),
+  extractFn(html, 'draftReserveAdd'),
+  extractFn(html, 'draftBuild'),
+  extractFn(html, 'draftFillGaps'),
   extractFn(aiSrc, 'fitJSON'),
   /* bestTransfer drives the dashboard/debrief suggestion; stub its only
      dependency (horizonXP) so we test the logic, not the xP maths. */
@@ -124,7 +128,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -312,6 +316,56 @@ ok(!core.draftCanAdd(part13, { ...part13[0] }), 'cannot add a duplicate player')
 const trio = [mkD(2, 7, 45), mkD(3, 7, 60), mkD(4, 7, 60)];
 ok(!core.draftCanAdd(trio, mkD(3, 7, 55)), 'the 3-per-club cap is enforced on add');
 ok(core.draftCanAdd(trio, mkD(3, 8, 55)), 'a fourth player from another club is fine');
+
+/* ── draftBuild / draftFillGaps: the 2026/27 guided builder ── */
+section('draftBuild: guided, legal, in-budget squad');
+let bseq = 1000;
+const bpool = [], bxp = {};
+const addP = (type, team, cost, xp) => { const p = { id: bseq++, element_type: type, team, now_cost: cost, status: 'a', web_name: 'P' + bseq }; bpool.push(p); bxp[p.id] = xp; };
+for (let team = 1; team <= 20; team++) {
+  addP(1, team, 40, 12 + team % 3 * 4); addP(1, team, 50, 28 + team % 3 * 4);
+  for (let i = 0; i < 4; i++) addP(2, team, 40 + i * 15, 18 + i * 18 + team % 4 * 5);
+  for (let i = 0; i < 4; i++) addP(3, team, 45 + i * 25, 24 + i * 28 + team % 5 * 6);
+  for (let i = 0; i < 2; i++) addP(4, team, 50 + i * 45, 30 + i * 42 + team % 3 * 7);
+}
+/* a deliberately weak club (id 21) nobody would pick on merit — mid-priced
+   so it competes on merit, not as cheap bench fodder */
+for (let i = 0; i < 4; i++) addP(2 + (i % 3), 21, 55, 1);
+const cost4Low = sq => sq.map(e => e.now_cost).sort((a, c) => a - c).slice(0, 4).reduce((a, c) => a + c, 0);
+const xiCost = sq => sq.slice().sort((a, c) => bxp[c.id] - bxp[a.id]).slice(0, 11).reduce((a, c) => a + (c.now_cost || 0), 0);
+const spend = (sq, types) => sq.filter(e => types.includes(e.element_type)).reduce((a, c) => a + (c.now_cost || 0), 0);
+
+const built = core.draftBuild(bpool, bxp, {});
+const bv = core.draftValidate(built);
+ok(built.length === 15, 'builds a full 15');
+ok(bv.complete && bv.quotaOk && bv.clubOk && !bv.overBudget, 'the built squad is complete, legal and within £100.0m');
+ok(built.every(e => e.team !== 21), 'a no-merit club is left out by default');
+
+const fav = core.draftBuild(bpool, bxp, { favClub: 21 });
+ok(fav.filter(e => e.team === 21).length >= 1 && core.draftValidate(fav).saveable, 'favourite-club preference forces in a player from that club, still legal');
+
+const benchStrong = core.draftBuild(bpool, bxp, { bench: 'strong' });
+const benchCheap = core.draftBuild(bpool, bxp, { bench: 'cheap' });
+ok(xiCost(benchCheap) >= xiCost(benchStrong), 'cheap-bench build spends more on the starting XI than the strong-15 build');
+ok(cost4Low(benchCheap) <= cost4Low(benchStrong), 'and its four cheapest (the bench) cost no more');
+
+const atk = core.draftBuild(bpool, bxp, { tilt: 'attack' });
+const def = core.draftBuild(bpool, bxp, { tilt: 'defence' });
+ok(spend(atk, [3, 4]) >= spend(def, [3, 4]), 'attack lean puts more budget into MID+FWD than defence lean');
+
+const s1 = core.draftBuild(bpool, bxp, { seed: 1 }), s2 = core.draftBuild(bpool, bxp, { seed: 2 });
+const idset = a => a.map(e => e.id).sort().join(',');
+ok(idset(s1) !== idset(s2), 'different seeds yield a different squad (Generate again works)');
+ok(core.draftValidate(s1).saveable && core.draftValidate(s2).saveable, 'both re-rolls are legal');
+ok(idset(core.draftBuild(bpool, bxp, { seed: 1 })) === idset(s1), 'same seed + prefs is deterministic');
+
+section('draftFillGaps: keep picks, fill the rest');
+const kept = [built[0], built.find(e => e.element_type === 4), built.find(e => e.element_type === 3)];
+const filled = core.draftFillGaps(bpool, bxp, kept);
+const keptIds = new Set(kept.map(e => e.id));
+ok(filled.length === 15 && core.draftValidate(filled).saveable, 'fills a partial squad to a legal 15');
+ok(kept.every(e => filled.some(f => f.id === e.id)), 'every kept player is retained');
+ok(core.draftFillGaps(bpool, bxp, built).length === 15, 'a complete squad is left untouched');
 
 /* ── fitJSON (ai.js): valid JSON within budget ──────────── */
 section('fitJSON always yields valid JSON within budget');
