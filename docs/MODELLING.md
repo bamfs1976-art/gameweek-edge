@@ -88,13 +88,27 @@ work below.
 | P | Change | Status |
 |---|---|---|
 | **1** | Bonus + defensive-contribution + GK saves in `nativeXP`; adaptive blend | **done** |
-| 2 | Real `P(start)` / minutes model wired to the news feed (a flagged player reshapes the minutes distribution, not just a linear scale) | next |
-| 3 | Ship the per-player points **distribution** into the app (real P10/P50/P90 on captain cards, replacing the heuristic band) | planned |
-| 4 | **Correlated squad simulation** → rank-EV captain/transfer/chip + a team optimiser (budget, formation, 3-per-club, −4 hits) | planned |
-| 5 | **Calibration loop**: log GW predictions to Supabase, grade per-category (are our 60% clean sheets actually 60%?), surface on the Accountability page, retune | planned |
-| 6 | Match model: recency-decay in the live refit, downgrade teams missing key players (uses the news feed), refit home advantage | planned |
+| **2** | `minutesModel` — `P(start)` / expected minutes from start-share + minutes-share **blended with live availability** (status + chance-of-playing from the news feed), so a doubt reshapes the minutes rather than a flat scale. `nativeXP` and `xP` now consume it (and `xP` no longer double-scales availability). | **done** |
+| **3** | `pointsDist` — a real seeded per-player **Monte-Carlo** of the gameweek from the same components (mean, P10/P50/P90, haul/blank). Wired into the captain cards: the outcome band and **haul/blank %** are now simulated, not heuristic. | **done** |
+| **4** | `squadSim` — **correlated** whole-XI projection: teammates share one clean-sheet outcome and one attacking shock per team, so a stacked defence / doubled-up attack gets the fatter tails it deserves; captain doubles. Surfaced as "Projected next GW" on My Squad. *(Rank-EV optimiser UI is the remaining follow-on.)* | **done (engine)** |
+| **5** | `calibration` — Brier score + reliability curve (predicted vs observed per decile), the grading engine for the loop; `supabase/gwedge_predictions.sql` is the prediction log (service-role). *(The scheduled logging function that populates it is the remaining follow-on.)* | **done (engine + schema)** |
+| **6** | Match model: `recencyWeight` (0.97/GW decay so recent form counts more) in the live refit, and `availAttackMult` — a team whose **top expected-involvement attacker is flagged** is downgraded (−10% out, −4% doubt), tying the fixture model to the news feed. | **done** |
 
 The strategic payoff is P3–P4: forecasting **distributions** rather than
 point estimates, then optimising for **expected rank** vs the field (given
 ownership) rather than raw points — which is what actually moves a manager
-up their mini-league.
+up their mini-league. The remaining follow-ons are the two "populate/act"
+halves: a rank-EV **team optimiser** on top of `squadSim`, and the
+**scheduled prediction logger** that feeds `calibration` on the
+Accountability page.
+
+## Test & tooling
+
+- `npm test` — 236 unit tests over the model core (every helper above).
+- `node dev/model-validate.mjs [snap.json]` — accuracy backtest.
+- `node dev/simulate-gameweek.mjs [--html out.html]` — the model's
+  gameweek outputs.
+
+> Harness note: the unit-test extractor matches functions by brace, and
+> does not skip comments — so **model function comments must avoid
+> apostrophes** (they read as string delimiters and break extraction).

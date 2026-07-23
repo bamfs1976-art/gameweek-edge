@@ -3813,6 +3813,9 @@ async function hydrateSquad(host){
     chip:picks.active_chip||null};
   /* Lineup checker — the quiet point-leaks before the deadline. */
   const lc=lineupCheck(b,picks,nf);
+  /* Correlated projection for the coming gameweek (P4). */
+  const projEls=starters.map(p=>b.els[p.element]).filter(Boolean);
+  const proj=squadSim(projEls,nf,capPick?capPick.element:null);
   const lcIcon=l=>l==='warn'?'⚠':l==='info'?'•':'✓';
   const lcCls=l=>l==='warn'?'var(--amber)':l==='info'?'var(--text-3)':'var(--green-bright)';
   const allOk=lc.length===1&&lc[0].level==='ok';
@@ -3838,7 +3841,8 @@ async function hydrateSquad(host){
           '<div class="stat"><div class="stat-l">Team Value</div><div class="stat-v">'+money(eh.value||0)+'</div></div>'+
           '<div class="stat"><div class="stat-l">In the Bank</div><div class="stat-v">'+money(eh.bank||0)+'</div></div>'+
         '</div>'+
-        (picks.active_chip?'<div class="dl-sub" style="margin-top:12px">Active chip: <b>'+esc(picks.active_chip)+'</b></div>':'')+
+        (proj&&proj.mean>0?'<div class="dl-sub" style="margin-top:12px">Projected next GW (correlated sim): median <b>'+proj.p50+'</b> · range <b>'+proj.p10+'–'+proj.p90+'</b> · captain doubled.</div>':'')+
+        (picks.active_chip?'<div class="dl-sub" style="margin-top:8px">Active chip: <b>'+esc(picks.active_chip)+'</b></div>':'')+
       '</div>'+
     '</div>';
 }
@@ -4065,9 +4069,19 @@ function plsimPrior(team){
    home-advantage multiplier stays at its offline-fitted prior — half a
    season of home games is too little signal to refit it live.
    Memoised on the cached fixtures array (10-min TTL upstream). */
+/* Recency decay (P6): weight recent finished fixtures more in the fit —
+   0.97 per gameweek back, so form ~10 GWs old counts ~74 percent. */
+function recencyWeight(ev,maxEv){return Math.pow(0.97,Math.max(0,(maxEv||0)-(ev||0)));}
+/* Availability downgrade (P6): a team whose key attacker is ruled out or
+   doubtful is a weaker attacking side than its season fit suggests.
+   Ties the match model to the news feed. */
+function availAttackMult(status){
+  return status==='i'||status==='s'||status==='u'||status==='n'?0.90:status==='d'?0.96:1;
+}
 function plsimRatings(b,fixtures){
   if(MEM._plsimSrc===fixtures)return MEM._plsim;
   const done=fixtures.filter(f=>f.finished&&f.team_h_score!=null&&f.team_a_score!=null);
+  const maxEv=done.reduce((m,f)=>Math.max(m,f.event||0),0);
   const ids=b.raw.teams.map(t=>t.id),att={},def={},hom={},pa={},pd={};
   ids.forEach(id=>{const p=plsimPrior(b.teams[id]);
     att[id]=pa[id]=p[0];def[id]=pd[id]=p[1];hom[id]=p[2]||1;});
@@ -4078,11 +4092,19 @@ function plsimRatings(b,fixtures){
       cn[id]=W*BM*pd[id];ec[id]=W*BM*def[id];});
     done.forEach(f=>{
       const h=f.team_h,a=f.team_a;if(att[h]==null||att[a]==null)return;
+      const wt=recencyWeight(f.event,maxEv);
       const lh=PLSIM.BASE_H*att[h]*def[a]*hom[h],la=PLSIM.BASE_A*att[a]*def[h];
-      sc[h]+=f.team_h_score;es[h]+=lh;sc[a]+=f.team_a_score;es[a]+=la;
-      cn[h]+=f.team_a_score;ec[h]+=la;cn[a]+=f.team_h_score;ec[a]+=lh;});
+      sc[h]+=wt*f.team_h_score;es[h]+=wt*lh;sc[a]+=wt*f.team_a_score;es[a]+=wt*la;
+      cn[h]+=wt*f.team_a_score;ec[h]+=wt*la;cn[a]+=wt*f.team_h_score;ec[a]+=wt*lh;});
     ids.forEach(id=>{att[id]*=Math.sqrt(sc[id]/es[id]);def[id]*=Math.sqrt(cn[id]/ec[id]);});
   }
+  /* Key-attacker availability: scale a team's attack when its top expected
+     goal-involvement contributor is flagged. */
+  const topAtt={};
+  (b.elements||[]).forEach(e=>{if(e.element_type<3)return;
+    const gi=parseFloat(e.expected_goal_involvements_per_90||'0')*(e.minutes||0);
+    if(!topAtt[e.team]||gi>topAtt[e.team].gi)topAtt[e.team]={gi,status:e.status};});
+  ids.forEach(id=>{const t=topAtt[id];if(t)att[id]*=availAttackMult(t.status);});
   const r={att,def,hom,fitted:done.length};
   MEM._plsimSrc=fixtures;MEM._plsim=r;return r;
 }
@@ -5207,6 +5229,7 @@ async function hydrateCaptain(host){
         '<div class="stat"><div class="stat-l">Capt EO</div><div class="stat-v">'+Math.round(p.eo)+'%</div></div>'+
         '<div class="stat"><div class="stat-l">EV vs field</div><div class="stat-v '+evCls+'">'+(p.ev>=0?'+':'')+p.ev.toFixed(1)+'</div></div></div>'+
       '<div class="dl-sub" style="margin-top:8px">Outcome band (as captain): <b>'+p.band.p10+'</b> · <b>'+p.band.p50+'</b> · <b>'+p.band.p90+'</b> <span style="opacity:.7">P10/P50/P90</span></div>'+
+      (p.haul!=null?'<div class="dl-sub" style="margin-top:4px"><span class="pos">'+Math.round(p.haul*100)+'% haul</span> · <span class="neg">'+Math.round(p.blank*100)+'% blank</span> <span style="opacity:.7">(simulated)</span></div>':'')+
       '<div class="dl-sub" style="margin-top:6px">Next: '+nextFixLabel(nf[e.team])+
       (ceiling?'<br>'+ceiling:'')+'</div>'+
     '</div>';}).join('');
@@ -6006,11 +6029,13 @@ function xP(b,el,nf){
       ?0.72+1.0*nf.cs                      /* ≈1.0 at the ~28% league-average CS rate */
       :Math.pow(nf.lam/1.47,0.8);          /* 1.47 = league-average goals per team per match */
     p*=Math.max(0.6,Math.min(1.5,f));
-    const nat=nativeXP(el,nf);
+    p*=chance/100;                          /* availability on the ep_next base */
+    const nat=nativeXP(el,nf);              /* nat already carries availability (P2) */
     /* Sample-adaptive blend: lean on the FPL ep_next early, then shift
        weight onto our own native model as games accumulate (0.475 at 5
        games, capped 0.70 by mid-season). */
     if(nat!=null){const w=Math.min(0.7,0.35+0.025*(nf.gp||0));p=(1-w)*p+w*nat;}
+    return Math.max(0,Math.round(p*10)/10);
   }else if(nf)p*=(1+(3-nf.diff)*0.05);     /* easier fixture up to +10%, harder down to -10% */
   return Math.max(0,Math.round(p*(chance/100)*10)/10);
 }
@@ -6086,48 +6111,67 @@ function openXpDrawer(name,xp,parts){
 }
 function closeXpDrawer(){const d=document.getElementById('xp-drawer');if(d)d.classList.remove('open');}
 
-/* Native expected points from first principles: minutes share x
+/* Minutes model (P2): probability a player starts, appears at all and
+   lasts 60 minutes, plus the expected fraction of 90 they play. Blends
+   the season start-share and minutes-share with live availability from
+   the news feed (status flags + chance-of-playing) so a doubt reshapes
+   the minutes, not just a flat scale. See docs/MODELLING.md. Pure. */
+function minutesModel(el,gp){
+  gp=Math.max(1,gp||1);
+  const out=el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
+  const ch=el.chance_of_playing_next_round;
+  const avail=out?0:(ch==null?1:Math.max(0,Math.min(1,ch/100)));
+  const startShare=Math.min(1,(el.starts||0)/gp);
+  const minShare=Math.min(1,(el.minutes||0)/(gp*90));
+  const pStart=Math.min(1,startShare*avail);
+  const pAppear=Math.min(1,Math.max(startShare,minShare*1.05)*avail);
+  const p60=Math.min(1,(minShare/0.72)*avail);
+  const minFrac=Math.min(1,minShare*avail);
+  return {avail,pStart,pAppear,p60,minFrac};
+}
+
+/* Native expected points from first principles: expected minutes x
    expected goal involvement per 90 x fixture strength, plus clean-sheet
-   points from the match model — now also modelling the categories the
-   first cut ignored: appearance bonus, the 2025/26 defensive-contribution
-   points, and goalkeeper saves. See docs/MODELLING.md.
+   points from the match model, and the categories the first cut ignored:
+   appearance bonus, the 2025/26 defensive-contribution points, and
+   goalkeeper saves. Minutes now come from minutesModel (P2), so a flagged
+   player is discounted realistically. See docs/MODELLING.md.
    Original core validated walk-forward on 24,173 player-matches of
    2025/26 (MAE 0.96 vs 1.04 for a 5-GW form baseline); dev/model-validate.mjs
    checks the added categories. Returns null until the sample is enough. */
 function nativeXP(el,nf){
   const gp=nf.gp||0;
   if(gp<5||nf.lamAvg==null)return null;
-  const mpg=(el.minutes||0)/gp;
-  if(mpg<20)return null;
+  if((el.minutes||0)/gp<20)return null;
+  const m=minutesModel(el,gp);
+  if(m.minFrac<=0)return 0;                            /* ruled out this week */
   const type=el.element_type;
   const xg90=parseFloat(el.expected_goals_per_90||'0');
   const xa90=parseFloat(el.expected_assists_per_90||'0');
   const fx=nf.lam/nf.lamAvg;
-  const pPlay=Math.min(mpg/90,1),p60=Math.min(mpg/75,1);
   const gPts=type<=2?6:type===3?5:4;
   const csPts=type<=2?4:type===3?1:0;
-  let pts=pPlay+p60                                    /* appearance: 1 + 1 at 60 mins */
-    +xg90*(mpg/90)*fx*gPts                             /* goals */
-    +xa90*(mpg/90)*fx*3                                /* assists */
-    +csPts*nf.cs*p60;                                  /* clean sheet */
-  /* Bonus from the realised per-90 bonus rate, scaled by minutes and
-     nudged up to 30 percent by the fixture. Minutes floored at 90 so a
-     tiny early sample cannot blow it up. */
+  let pts=m.pAppear+m.p60                              /* appearance: 1 + 1 at 60 mins */
+    +xg90*m.minFrac*fx*gPts                            /* goals */
+    +xa90*m.minFrac*fx*3                               /* assists */
+    +csPts*nf.cs*m.p60;                                /* clean sheet */
+  /* Bonus from the realised per-90 bonus rate, scaled by expected minutes
+     and nudged up to 30 percent by the fixture. */
   const mins=Math.max(el.minutes||0,1);
   const bonus90=(el.bonus||0)*90/Math.max(mins,90);
-  pts+=bonus90*(mpg/90)*Math.min(1.3,Math.max(0.7,fx));
+  pts+=bonus90*m.minFrac*Math.min(1.3,Math.max(0.7,fx));
   /* Defensive contribution (2025/26): plus 2 when a player clears the
      per-90 threshold of counted actions (DEF 10, MID and FWD 12).
      Modelled as a logistic P(hit) around that threshold, at 60 mins. */
   if(type>=2){
     const dcp90=parseFloat(el.defensive_contribution_per_90||'0');
     const thr=type===2?10:12;
-    pts+=2*(1/(1+Math.exp(-1.1*(dcp90-thr))))*p60;
+    pts+=2*(1/(1+Math.exp(-1.1*(dcp90-thr))))*m.p60;
   }
   /* Goalkeeper saves: 1 point per 3 saves, from the realised save rate. */
   if(type===1){
     const sv90=(el.saves||0)*90/Math.max(mins,90);
-    pts+=(sv90*(mpg/90))/3;
+    pts+=(sv90*m.minFrac)/3;
   }
   return pts;
 }
@@ -7609,13 +7653,110 @@ function captainEligible(el){
   if(ch!=null&&ch<60)return false;
   return true;
 }
-/* Heuristic P10/P50/P90 of the DOUBLED captain return. Single-game FPL
+/* Heuristic P10/P50/P90 of the DOUBLED captain return — the fallback for
+   when the fixture model is not available (preseason). Single-game FPL
    points are right-skewed: a floor near the appearance points, a median
    just below the mean, and a long ceiling on a haul. */
 function captainBand(xp){
   return {p10:Math.round(2*Math.max(2,xp*0.35)),
           p50:Math.round(2*xp*0.9),
           p90:Math.round(2*(xp*2.1+1))};
+}
+/* Points distribution (P3): a real per-player Monte-Carlo of one
+   gameweek, from the same components as nativeXP (minutes, goals,
+   assists, clean sheet, bonus, defensive contribution, saves). Returns
+   the mean, P10/P50/P90 and the haul (>=10) / blank (<=2) probabilities.
+   Seeded on the player id so the output is stable across renders. */
+function pointsDist(el,nf,trials){
+  trials=trials||2000;
+  if(!nf||nf.lam==null)return {mean:0,p10:0,p50:0,p90:0,haul:0,blank:0};
+  const m=minutesModel(el,Math.max(1,nf.gp||6));
+  const type=el.element_type,fx=nf.lamAvg?nf.lam/nf.lamAvg:1;
+  const xg=parseFloat(el.expected_goals_per_90||'0'),xa=parseFloat(el.expected_assists_per_90||'0');
+  const dcp=parseFloat(el.defensive_contribution_per_90||'0');
+  const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0,thr=type===2?10:12;
+  const mins=Math.max(el.minutes||0,1);
+  const b90=(el.bonus||0)*90/Math.max(mins,90),sv90=(el.saves||0)*90/Math.max(mins,90);
+  const p60c=Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
+  let s=((el.id||1)>>>0)||1;
+  const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};
+  const pois=l=>{if(l<=0)return 0;const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rnd();}while(p>L);return k-1;};
+  const out=new Array(trials);
+  for(let i=0;i<trials;i++){
+    const play=rnd()<m.pAppear,p60=play&&rnd()<p60c;
+    let pts=play?1:0;if(p60)pts+=1;
+    if(play){
+      pts+=pois(xg*m.minFrac*fx)*gPts+pois(xa*m.minFrac*fx)*3;
+      if(p60&&rnd()<nf.cs)pts+=csPts;
+      pts+=Math.min(3,pois(b90*m.minFrac));
+      if(type>=2&&p60&&pois(dcp*m.minFrac)>=thr)pts+=2;
+      if(type===1)pts+=Math.floor(pois(sv90*m.minFrac)/3);
+    }
+    out[i]=pts;
+  }
+  out.sort((a,c)=>a-c);
+  const q=f=>out[Math.min(trials-1,Math.floor(f*trials))];
+  let sum=0,haul=0,blank=0;
+  for(const v of out){sum+=v;if(v>=10)haul++;if(v<=2)blank++;}
+  return {mean:sum/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90),haul:haul/trials,blank:blank/trials};
+}
+/* Correlated squad simulation (P4): project a whole XI for the gameweek
+   with the correlation a per-player point estimate misses — teammates
+   share one clean-sheet outcome and one attacking shock per team, so a
+   defence stacked behind one team, or a double-up up front, gets the
+   fatter tails it deserves. Captain (capId) doubles. Returns the squad
+   total distribution. Seeded on the squad for a stable projection. */
+function squadSim(els,nfByTeam,capId,trials){
+  trials=trials||1500;
+  els=(els||[]).filter(Boolean);
+  if(!els.length)return {mean:0,p10:0,p50:0,p90:0};
+  let s=(els.reduce((a,e)=>(a+(e.id||0))|0,987654321)>>>0)||1;
+  const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};
+  const pois=l=>{if(l<=0)return 0;const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rnd();}while(p>L);return k-1;};
+  const totals=new Array(trials);
+  for(let t=0;t<trials;t++){
+    const cs={},shock={};let sum=0;
+    for(const e of els){
+      const nf=nfByTeam[e.team];if(!nf||nf.lam==null)continue;
+      const team=e.team;
+      if(cs[team]===undefined)cs[team]=rnd()<nf.cs?1:0;          /* shared clean sheet */
+      if(shock[team]===undefined)shock[team]=0.55+rnd()*0.9;      /* shared attack shock */
+      const m=minutesModel(e,Math.max(1,nf.gp||6));
+      const type=e.element_type,fx=(nf.lamAvg?nf.lam/nf.lamAvg:1)*shock[team];
+      const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0;
+      const play=rnd()<m.pAppear,p60=play&&rnd()<Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
+      let pts=play?1:0;if(p60)pts+=1;
+      if(play){
+        pts+=pois(parseFloat(e.expected_goals_per_90||'0')*m.minFrac*fx)*gPts;
+        pts+=pois(parseFloat(e.expected_assists_per_90||'0')*m.minFrac*fx)*3;
+        if(p60&&cs[team])pts+=csPts;
+        const mins=Math.max(e.minutes||0,1);
+        pts+=Math.min(3,pois((e.bonus||0)*90/Math.max(mins,90)*m.minFrac));
+        if(type>=2&&p60&&pois(parseFloat(e.defensive_contribution_per_90||'0')*m.minFrac)>=(type===2?10:12))pts+=2;
+        if(type===1)pts+=Math.floor(pois((e.saves||0)*90/Math.max(mins,90)*m.minFrac)/3);
+      }
+      sum+=pts*(e.id===capId?2:1);
+    }
+    totals[t]=sum;
+  }
+  totals.sort((a,c)=>a-c);
+  const q=f=>totals[Math.min(trials-1,Math.floor(f*trials))];
+  return {mean:totals.reduce((a,b)=>a+b,0)/trials,p10:q(0.10),p50:q(0.50),p90:q(0.90)};
+}
+/* Calibration (P5): grade probabilistic predictions against outcomes.
+   rows are {p: predicted probability 0..1, y: outcome 0/1}. Returns the
+   Brier score (lower is better) and a reliability curve — predicted mean
+   vs observed frequency per decile. A well-calibrated model has
+   pMean ~ oFreq in every bucket; systematic gaps say where to retune.
+   The engine behind the accountability loop. Pure. */
+function calibration(rows){
+  rows=(rows||[]).filter(r=>r&&r.p!=null&&r.y!=null);
+  if(!rows.length)return {n:0,brier:null,buckets:[]};
+  let brier=0;const B=10,acc=Array.from({length:B},()=>({sp:0,sy:0,n:0}));
+  rows.forEach(r=>{const p=Math.max(0,Math.min(1,r.p)),y=r.y?1:0;
+    brier+=(p-y)*(p-y);const b=acc[Math.min(B-1,Math.floor(p*B))];b.sp+=p;b.sy+=y;b.n++;});
+  return {n:rows.length,brier:brier/rows.length,
+    buckets:acc.filter(b=>b.n).map(b=>({pMean:b.sp/b.n,oFreq:b.sy/b.n,n:b.n}))};
 }
 /* The captain model: eligible top-N with xP, effective ownership as a
    captain (EO%), the EO-adjusted EV (your xP minus the ownership-weighted
@@ -7632,8 +7773,13 @@ function captainModel(b,nf,pool,topN){
   const wSum=w.reduce((s,v)=>s+v,0)||1;
   const shareById={};univ.forEach((x,i)=>shareById[x.e.id]=w[i]/wSum);
   const fieldEV=univ.reduce((s,x)=>s+shareById[x.e.id]*x.xp,0);
-  const picks=cands.slice(0,topN).map(x=>({
-    el:x.e,xp:x.xp,eo:(shareById[x.e.id]||0)*100,ev:x.xp-fieldEV,band:captainBand(x.xp)}));
+  const picks=cands.slice(0,topN).map(x=>{
+    const d=pointsDist(x.e,nf[x.e.team]);
+    /* Captain doubles the return, so the band is the doubled single-GW
+       distribution; fall back to the heuristic when there is no fixture. */
+    const band=d.mean>0?{p10:2*d.p10,p50:2*d.p50,p90:2*d.p90}:captainBand(x.xp);
+    return {el:x.e,xp:x.xp,eo:(shareById[x.e.id]||0)*100,ev:x.xp-fieldEV,
+      band,haul:d.haul,blank:d.blank};});
   return {picks,fieldEV,univ};
 }
 /* Confidence in the top captain: how clearly #1 leads #2 on xP, scaled by

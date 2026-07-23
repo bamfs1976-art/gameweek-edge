@@ -23,7 +23,9 @@ function extractBlock(src, s) { const o = src.indexOf('{', s); let d = 0, q = nu
     if (q) { if (e) e = false; else if (c === '\\') e = true; else if (c === q) q = null; continue; }
     if (c === "'" || c === '"' || c === '`') { q = c; continue; }
     if (c === '{') d++; else if (c === '}') { d--; if (!d) return src.slice(s, j + 1); } } }
-const nativeXP = new Function(extractBlock(html, html.indexOf('function nativeXP(')) + '\nreturn nativeXP;')();
+const nativeXP = new Function(
+  extractBlock(html, html.indexOf('function minutesModel(')) + '\n' +
+  extractBlock(html, html.indexOf('function nativeXP(')) + '\nreturn nativeXP;')();
 
 /* deterministic RNG + samplers */
 const rng = (a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(424242);
@@ -56,7 +58,7 @@ function dist(p, nf, trials = 20000) {
 
 /* ── illustrative roster (synthetic per-90 inputs) ──────── */
 const P = (web_name, team, element_type, price, minutes, xg, xa, dcp, bonus, saves) =>
-  ({ web_name, team, element_type, price, minutes,
+  ({ web_name, team, element_type, price, minutes, starts: 6, status: 'a', chance_of_playing_next_round: null,
      expected_goals_per_90: String(xg), expected_assists_per_90: String(xa),
      defensive_contribution_per_90: String(dcp), bonus, saves: saves || 0 });
 const roster = [

@@ -48,7 +48,8 @@ function extractBlock(src, startIdx) {
   throw new Error('unbalanced');
 }
 const nativeXPsrc = extractBlock(html, html.indexOf('function nativeXP('));
-const nativeXP = new Function(nativeXPsrc + '\nreturn nativeXP;')();
+const minutesModelSrc = extractBlock(html, html.indexOf('function minutesModel('));
+const nativeXP = new Function(minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
 
 /* The ORIGINAL model, before the P1 additions — for the A/B comparison. */
 function nativeXPold(el, nf) {
@@ -83,7 +84,9 @@ function makePlayer(type) {
   else if (type === 2) { xg90 = r(0.02, 0.18); xa90 = r(0.02, 0.15); dcp90 = r(4, 16); bonus = Math.round(r(0, 14)); }
   else if (type === 3) { xg90 = r(0.05, 0.5); xa90 = r(0.08, 0.4); dcp90 = r(2, 16); bonus = Math.round(r(0, 16)); }
   else { xg90 = r(0.2, 0.7); xa90 = r(0.05, 0.3); dcp90 = r(1, 6); bonus = Math.round(r(0, 14)); }
-  return { element_type: type, minutes,
+  /* fully available and nailed, so the A/B isolates the added scoring
+     categories rather than the P2 minutes model. */
+  return { element_type: type, minutes, starts: 6, status: 'a', chance_of_playing_next_round: null,
     expected_goals_per_90: String(xg90), expected_assists_per_90: String(xa90),
     defensive_contribution_per_90: String(dcp90), saves, bonus };
 }

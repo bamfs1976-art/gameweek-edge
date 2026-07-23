@@ -58,6 +58,9 @@ const pieces = [
   extractFn(html, 'poisson'),
   extractFn(html, 'plsimMatch'),
   extractFn(html, 'esc'),
+  extractFn(html, 'minutesModel'),
+  extractFn(html, 'recencyWeight'),
+  extractFn(html, 'availAttackMult'),
   extractFn(html, 'nativeXP'),
   extractFn(html, 'xP'),
   extractFn(html, 'fixtureXP'),
@@ -87,6 +90,9 @@ const pieces = [
   extractFn(html, 'confTier'),
   extractFn(html, 'captainEligible'),
   extractFn(html, 'captainBand'),
+  extractFn(html, 'pointsDist'),
+  extractFn(html, 'squadSim'),
+  extractFn(html, 'calibration'),
   extractFn(html, 'captainModel'),
   extractFn(html, 'captainConfidence'),
   extractFn(html, 'transferFrame'),
@@ -110,7 +116,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, timeAgo, latestNews, minutesModel, pointsDist, recencyWeight, availAttackMult, squadSim, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -631,6 +637,87 @@ const gk = { element_type: 1, minutes: 540, expected_goals_per_90: '0', expected
 ok(core.nativeXP({ ...gk, saves: 60 }, nnf) > core.nativeXP(gk, nnf), 'goalkeeper saves add points');
 ok(core.nativeXP({ ...gk, defensive_contribution_per_90: '30' }, nnf) === core.nativeXP(gk, nnf),
   'goalkeepers get no defensive-contribution points (their category is saves)');
+
+/* ── minutes model (P2) ─────────────────────────────────── */
+section('minutesModel: availability reshapes the minutes');
+const nailed = core.minutesModel({ starts: 6, minutes: 540, status: 'a', chance_of_playing_next_round: null }, 6);
+ok(nailed.pStart > 0.95 && nailed.p60 > 0.95 && nailed.minFrac > 0.95, 'a nailed-on starter is ~certain to start and last 60');
+const doubt = core.minutesModel({ starts: 6, minutes: 540, status: 'd', chance_of_playing_next_round: 50 }, 6);
+ok(Math.abs(doubt.pStart - 0.5) < 0.02, 'a 50% doubt halves the start probability');
+ok(doubt.minFrac < nailed.minFrac, 'a doubt lowers expected minutes');
+const outPl = core.minutesModel({ starts: 6, minutes: 540, status: 'i', chance_of_playing_next_round: 0 }, 6);
+ok(outPl.avail === 0 && outPl.pStart === 0 && outPl.minFrac === 0, 'an injured-out player is zeroed');
+const rota = core.minutesModel({ starts: 3, minutes: 360, status: 'a', chance_of_playing_next_round: null }, 6);
+ok(rota.pStart < nailed.pStart, 'a rotation risk starts less often than a nailed player');
+
+section('nativeXP reflects the minutes model');
+const nxNf = { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.3 };
+const fitFwd = { element_type: 4, starts: 6, minutes: 540, status: 'a', chance_of_playing_next_round: null,
+  expected_goals_per_90: '0.5', expected_assists_per_90: '0.2', bonus: 10 };
+const doubtFwd = { ...fitFwd, status: 'd', chance_of_playing_next_round: 50 };
+const outFwd = { ...fitFwd, status: 'i', chance_of_playing_next_round: 0 };
+ok(core.nativeXP(doubtFwd, nxNf) < core.nativeXP(fitFwd, nxNf), 'a doubt lowers native xP');
+ok(core.nativeXP(outFwd, nxNf) === 0, 'a ruled-out player gets zero native xP');
+
+/* ── points distribution (P3) ───────────────────────────── */
+section('pointsDist: ordered percentiles, deterministic, premium hauls more');
+const pdNf = { gp: 6, lam: 1.9, lamAvg: 1.5, cs: 0.4 };
+const prem = { id: 1, element_type: 4, starts: 6, minutes: 540, status: 'a',
+  expected_goals_per_90: '0.85', expected_assists_per_90: '0.2', bonus: 18, defensive_contribution_per_90: '2' };
+const cheap = { id: 2, element_type: 3, starts: 6, minutes: 500, status: 'a',
+  expected_goals_per_90: '0.08', expected_assists_per_90: '0.1', bonus: 4, defensive_contribution_per_90: '3' };
+const dp = core.pointsDist(prem, pdNf);
+ok(dp.p10 <= dp.p50 && dp.p50 <= dp.p90, 'percentiles are ordered');
+ok(dp.mean > 0 && dp.p90 > dp.p10, 'a real spread');
+ok(dp.haul > core.pointsDist(cheap, pdNf).haul, 'the premium hauls more often than the cheap punt');
+const dp2 = core.pointsDist(prem, pdNf);
+ok(dp.p50 === dp2.p50 && dp.p90 === dp2.p90, 'deterministic (seeded on the player id)');
+ok(core.pointsDist(prem, null).mean === 0, 'no fixture model → zeroed distribution');
+const gkDist = core.pointsDist({ id: 3, element_type: 1, starts: 6, minutes: 540, status: 'a', saves: 60 }, { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.45 });
+ok(gkDist.mean > 0, 'a goalkeeper gets a positive distribution (saves + clean sheet)');
+
+/* ── correlated squad simulation (P4) ───────────────────── */
+section('squadSim: projects an XI, captain doubles, shared team outcomes');
+const sq = [];
+for (let i = 0; i < 11; i++) sq.push({ id: 200 + i, team: 1 + (i % 5), element_type: i === 0 ? 1 : i < 5 ? 2 : i < 9 ? 3 : 4,
+  starts: 6, minutes: 540, status: 'a', expected_goals_per_90: i > 4 ? '0.4' : '0.05',
+  expected_assists_per_90: '0.15', bonus: 8, defensive_contribution_per_90: '9', saves: i === 0 ? 60 : 0 });
+const sqNf = { 1: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 }, 2: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 },
+  3: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 }, 4: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 }, 5: { gp: 6, lam: 1.6, lamAvg: 1.5, cs: 0.35 } };
+const noCap = core.squadSim(sq, sqNf, null);
+const withCap = core.squadSim(sq, sqNf, 205);          /* captain a forward */
+ok(noCap.p10 <= noCap.p50 && noCap.p50 <= noCap.p90, 'squad total percentiles ordered');
+ok(noCap.mean > 20, 'a full XI projects a sensible points total');
+ok(withCap.mean > noCap.mean, 'captaining a starter raises the projection');
+ok(core.squadSim(sq, sqNf, 205).p50 === withCap.p50, 'deterministic (seeded on the squad)');
+ok(core.squadSim([], sqNf, null).mean === 0, 'an empty squad projects zero');
+
+/* ── match model refinements (P6) ───────────────────────── */
+section('recencyWeight / availAttackMult');
+ok(core.recencyWeight(10, 10) === 1, 'the latest gameweek is full weight');
+ok(core.recencyWeight(9, 10) < 1 && core.recencyWeight(9, 10) > core.recencyWeight(1, 10), 'older fixtures decay monotonically');
+ok(Math.abs(core.recencyWeight(0, 10) - Math.pow(0.97, 10)) < 1e-9, '10 GWs back ≈ 0.97^10');
+ok(core.recencyWeight(12, 10) === 1, 'future/clamped events never exceed full weight');
+ok(core.availAttackMult('a') === 1, 'a fit key attacker leaves attack unchanged');
+ok(core.availAttackMult('i') === 0.90 && core.availAttackMult('s') === 0.90, 'a ruled-out key man cuts team attack 10%');
+ok(core.availAttackMult('d') === 0.96, 'a doubtful key man cuts attack 4%');
+
+/* ── calibration (P5) ───────────────────────────────────── */
+section('calibration: Brier score + reliability curve');
+/* Perfectly calibrated: outcomes occur exactly at the predicted rate. */
+const perfect = [];
+for (let b = 0; b < 10; b++) { const p = (b + 0.5) / 10;
+  for (let i = 0; i < 100; i++) perfect.push({ p, y: i < Math.round(p * 100) ? 1 : 0 }); }
+const cp = core.calibration(perfect);
+ok(cp.n === 1000 && cp.brier > 0, 'grades all rows with a Brier score');
+ok(cp.buckets.every(b => Math.abs(b.pMean - b.oFreq) < 0.05), 'a calibrated model tracks the diagonal (pMean ≈ oFreq)');
+/* An over-confident model: always predicts 0.9 but outcomes are 50/50. */
+const over = [];
+for (let i = 0; i < 1000; i++) over.push({ p: 0.9, y: i % 2 });
+const co = core.calibration(over);
+ok(co.brier > cp.brier, 'an over-confident model scores a worse (higher) Brier');
+ok(co.buckets.some(b => b.pMean - b.oFreq > 0.3), 'the reliability curve exposes the over-confidence');
+ok(core.calibration([]).n === 0 && core.calibration([]).brier === null, 'empty input is handled');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
