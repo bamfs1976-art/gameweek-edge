@@ -4186,7 +4186,8 @@ function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
    overall win odds, attack (team xG) or defence (clean-sheet odds). */
 function fdrBodyHtml(view){
   const S=window._fdr;if(!S)return '';const {b,teams,gws,byTeamGw}=S;
-  const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs):c.diff;
+  const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
+    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
   /* Rank teams by their total fixture difficulty for the chosen lens — the
      easiest run first, so the best opening-fixture teams sit at the top
      (matches how the community reads an FDR grid). A purple underline marks
@@ -4221,6 +4222,8 @@ function renderFdr(view){
     ?'Greener = easier to <b>score</b> — from each team’s modelled expected goals. '
     :view==='defence'
     ?'Greener = easier to keep a <b>clean sheet</b> — from each team’s modelled CS odds. '
+    :view==='fpl'
+    ?'The <b>official FPL</b> Fixture Difficulty Rating (1–5) — shown for comparison with our model’s view. '
     :'Greener = easier overall — from each fixture’s modelled win odds. ';
 }
 
@@ -4239,7 +4242,7 @@ async function hydrateFixtures(host){
   const pc=x=>Math.round(x*100);
   const POSN=['','GKP','DEF','MID','FWD'];
   const WINS=[6,10,15];
-  const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence']];
+  const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],['fpl','FPL']];
   let curView='overall',curWin=10;
 
   /* Match outlook for the upcoming gameweek — window-independent. */
@@ -4272,9 +4275,9 @@ async function hydrateFixtures(host){
       if(!f.event||f.event<startGw||f.event>=startGw+winN)return;
       const m=matchModel(b,f,R);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
-        diff:m?plsimDiff(m.pH):f.team_h_difficulty,home:true,lam:m?m.hx:0,cs:m?m.csH:0};
+        diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,lam:m?m.hx:0,cs:m?m.csH:0};
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
-        diff:m?plsimDiff(m.pA):f.team_a_difficulty,home:false,lam:m?m.ax:0,cs:m?m.csA:0};
+        diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,lam:m?m.ax:0,cs:m?m.csA:0};
     });
     window._fdr={b,teams,gws,byTeamGw};
     const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th>FDR</th><th>xGF</th><th>CS%</th></tr>';
@@ -4385,7 +4388,7 @@ async function hydrateFixtures(host){
         '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+VIEWS.map(v=>'<button class="seg-b'+(v[0]===curView?' on':'')+'" data-view="'+v[0]+'">'+v[1]+'</button>').join('')+'</div>'+
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
-        'Choose the <b>horizon</b> (6 / 10 / 15 GWs) and toggle the lens — teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
+        'Choose the <b>horizon</b> (6 / 10 / 15 GWs) and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
         '<b>(a)</b> marks an away fixture. <b>FDR</b> totals the 1–5 difficulty (lower is easier); <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
