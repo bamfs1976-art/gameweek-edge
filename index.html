@@ -68,6 +68,13 @@
   --purple:#7a5cc7;
   --purple-soft:rgba(122,92,199,.10);
 
+  /* Semantic accents — CTAs are amber (green stays reserved for positive
+     data), alerts red, warnings amber-yellow. Components use these names so
+     the roles never blur. */
+  --accent-cta:#b9741a;--accent-cta-ink:#ffffff;
+  --accent-alert:#cc3d39;
+  --accent-warn:#b58a12;
+
   /* Radii — terminal-tight, 4px max on surfaces */
   --r-sm:3px;--r-md:4px;--r-lg:4px;--r-xl:6px;--r-pill:4px;
 
@@ -127,6 +134,11 @@
   --blue-soft:rgba(59,130,246,.13);
   --purple:#8b7cf6;
   --purple-soft:rgba(139,124,246,.13);
+
+  /* Semantic accents (dark) — amber CTA on dark ink, red alert, amber-yellow warn. */
+  --accent-cta:#F5A524;--accent-cta-ink:#0A0C0F;
+  --accent-alert:#FF4D4F;
+  --accent-warn:#F5C518;
 
   --hot:#B6FF3C;
   --chip:#2A2F36;
@@ -829,6 +841,10 @@ html.offline .net-banner{transform:translateY(0)}
 .btn svg{width:15px;height:15px}
 .btn-primary{background:var(--green);color:#fff;box-shadow:0 2px 8px var(--green-glow)}
 .btn-primary:hover{filter:brightness(1.08)}
+/* Amber CTA — the primary call-to-action colour (Link team, Next, Ask, Save).
+   Green is reserved for positive data, so actions read as actions. */
+.btn-cta{background:var(--accent-cta);color:var(--accent-cta-ink);font-weight:800}
+.btn-cta:hover{filter:brightness(1.08)}
 .btn-ghost{background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
 .btn-ghost:hover{background:var(--border-2);color:var(--text)}
 .btn-sm{padding:7px 12px;font-size:.76rem}
@@ -1645,7 +1661,7 @@ body{font-size:14px;line-height:1.35}
         </button>
         <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Toggle beginner or expert detail" title="Beginner / Expert detail">Beginner</button>
         <button class="btn btn-ghost btn-icon" id="help-btn" aria-label="Help, tour and glossary" title="Help &amp; glossary">?</button>
-        <button class="btn btn-primary btn-sm" id="signin-btn" aria-label="Link your FPL team">
+        <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
           </svg>
@@ -1744,7 +1760,7 @@ body{font-size:14px;line-height:1.35}
     <div class="modal-err" id="mid-err" role="alert"></div>
     <div class="modal-row">
       <button class="btn btn-ghost" id="mid-cancel" data-mid-close>Cancel</button>
-      <button class="btn btn-primary" id="mid-save">Link team</button>
+      <button class="btn btn-cta" id="mid-save">Link team</button>
     </div>
     <div class="modal-hint">Find it at fantasy.premierleague.com → Points → the number after <b>/entry/</b> in the address bar.</div>
   </div>
@@ -1773,7 +1789,7 @@ body{font-size:14px;line-height:1.35}
     </svg>
     <h3 id="onb-title">Welcome to Gameweek Edge</h3>
     <p style="color:var(--text-2);font-size:.88rem;margin-bottom:18px;line-height:1.5">Link your FPL team to unlock your squad, captaincy, transfers, live percentile and AI scout — all from the official data. You can always explore first.</p>
-    <button class="btn btn-primary" style="width:100%;justify-content:center" id="onb-link">Link my team</button>
+    <button class="btn btn-cta" style="width:100%;justify-content:center" id="onb-link">Link my team</button>
     <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px" data-onb-close>Look around first</button>
   </div>
 </div>
@@ -2685,7 +2701,7 @@ function startTour(){endTour();try{localStorage.removeItem('ge-tour-seen');}catc
   const o=document.createElement('div');o.id='tour';o.className='tour';
   o.innerHTML='<div class="tour-spot"></div><div class="tour-pop"><div class="tour-step"></div><h4 class="tour-title"></h4>'+
     '<p class="tour-body"></p><div class="tour-actions"><a href="#" class="tour-gloss" onclick="endTour();openPanel(\'glossary\');return false">Glossary</a>'+
-    '<button class="btn btn-ghost btn-sm" id="tour-skip">Skip</button><button class="btn btn-primary btn-sm" id="tour-next">Next</button></div></div>';
+    '<button class="btn btn-ghost btn-sm" id="tour-skip">Skip</button><button class="btn btn-cta btn-sm" id="tour-next">Next</button></div></div>';
   document.body.appendChild(o);
   o.querySelector('#tour-skip').onclick=endTour;
   o.querySelector('#tour-next').onclick=function(){TOUR_I++;if(TOUR_I>=TOUR.length)endTour();else tourShow();};
@@ -2717,7 +2733,7 @@ async function buildRightRail(){
   const rail=document.createElement('aside');rail.className='right-rail';rail.id='right-rail';rail.setAttribute('aria-label','Model tools');
   rail.innerHTML=
     '<div class="rr-card"><div class="rr-h">Ask the model</div>'+
-      '<div class="rr-ask-in"><input id="rr-ask-q" type="text" placeholder="captain? transfer? fixtures?" aria-label="Ask the model"><button class="btn btn-primary btn-sm" id="rr-ask-go">Ask</button></div>'+
+      '<div class="rr-ask-in"><input id="rr-ask-q" type="text" placeholder="captain? transfer? fixtures?" aria-label="Ask the model"><button class="btn btn-cta btn-sm" id="rr-ask-go">Ask</button></div>'+
       '<div class="rr-ask-out" id="rr-ask-out">Ask about captaincy, transfers, differentials, fixtures or prices.</div></div>'+
     '<div class="rr-card" id="rr-cap"><div class="rr-h">Captain leverage</div><div class="dl-sub">Loading…</div></div>'+
     '<div class="rr-card" id="rr-recent"><div class="rr-h">Recent model calls</div><div class="dl-sub">Loading…</div></div>';
@@ -9956,7 +9972,7 @@ async function hydrateDraft(host){
       '<span class="badge badge-amber">pre-season</span>'+
       '<span style="margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap">'+importBtn+
         '<button class="btn btn-ghost btn-sm" onclick="draftClear()">Clear</button>'+
-        '<button class="btn btn-primary btn-sm" id="draft-save" onclick="draftSaveNow()">Save draft</button></span></div>'+
+        '<button class="btn btn-cta btn-sm" id="draft-save" onclick="draftSaveNow()">Save draft</button></span></div>'+
       '<div id="draft-summary"></div>'+
       '<p class="dl-sub" style="margin-top:10px">Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
         'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'+notes+'</p></div>'+
