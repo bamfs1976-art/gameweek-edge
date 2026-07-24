@@ -534,7 +534,7 @@ html.offline .net-banner{transform:translateY(0)}
 .post-full .up{color:var(--green-bright);font-weight:700}.post-full .down{color:var(--red);font-weight:700}
 /* Player detail modal */
 .modal-card-lg{max-width:560px;width:100%;max-height:88vh;overflow-y:auto;text-align:left}
-.dl-click{cursor:pointer}.dl-click:hover{background:var(--surface-3)}
+.dl-click{cursor:pointer}.dl-click:hover{background:var(--surface-3);box-shadow:inset 2px 0 0 var(--green)}
 .pd-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .pd-id{flex:1;min-width:0}.pd-id h3{margin:0;font-size:1.12rem;font-weight:800}
 .pd-meta{font-size:.8rem;color:var(--text-2);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px}
@@ -1302,6 +1302,10 @@ body{font-size:14px;line-height:1.35}
 }
 .tickbar::-webkit-scrollbar{display:none}
 .tk-item b{color:var(--text);font-weight:600}
+/* Adaptive deadline tone — the countdown escalates as the deadline nears:
+   neutral out past a week, amber-yellow inside 7 days, red inside 24h. */
+.tk-item b.dl-warn{color:var(--accent-warn)}
+.tk-item b.dl-alert{color:var(--accent-alert)}
 .tk-item .pos{color:var(--green)}
 .tk-item .neg{color:var(--red)}
 .tk-brand{color:var(--green);font-weight:700;letter-spacing:.1em}
@@ -1389,7 +1393,9 @@ body{font-size:14px;line-height:1.35}
 .hot{color:var(--hot)!important;font-weight:700;font-variant-numeric:tabular-nums}
 .card:has(:focus-visible){box-shadow:inset 0 0 0 2px var(--green-bright)}
 .mxi-pos{color:var(--text-3)}
-.mxi-row:not(.mxi-hd):hover{background:var(--surface-2)}
+/* Row hover: a 1px brand left-edge (inset shadow, so no layout shift) makes
+   the whole row read as one clickable target. */
+.mxi-row:not(.mxi-hd):hover{background:var(--surface-2);box-shadow:inset 2px 0 0 var(--green)}
 .mxi-toggle{font-family:var(--font-mono);font-size:10px;border:1px solid var(--border-2);
   border-radius:3px;padding:2px 8px;color:var(--text-3);background:var(--surface);margin-left:8px}
 .mxi-toggle:hover{color:var(--text);border-color:var(--border-3)}
@@ -3750,7 +3756,7 @@ async function hydrateDashboard(host){
       return grp+'<div class="mxi-row" onclick="openPlayer('+el.id+')">'+
         '<span class="mxi-pos text-caption">'+POSL[el.element_type]+'</span>'+
         '<span class="mxi-player"><span class="mxi-club">'+esc(teamShort(b,el.team))+'</span>'+esc(el.web_name)+'</span>'+
-        '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+'</span>'+
+        '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+(f?fdrChip(f.diff):'')+'</span>'+
         '<span class="mxi-cell">'+money(el.now_cost)+'</span>'+
         '<span class="mxi-spark">'+sp+'</span>'+
         '<span class="mxi-xp">'+s.p.toFixed(1)+'</span>'+
@@ -3781,14 +3787,14 @@ async function hydrateDashboard(host){
       '<b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.web_name)+'</b>'+
       '<span class="qd-v" style="color:var(--text-2)">'+e.selected_by_percent+'%</span>'+
       '<span class="qd-v'+(i===0?' hot':'')+'" style="width:44px;text-align:right">'+p.toFixed(1)+'</span>'+
-      '<span class="qd-v" style="width:58px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+'</span>'+
+      '<span class="qd-v" style="width:76px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+(nf[e.team]?fdrChip(nf[e.team].diff):'')+'</span>'+
       '<span style="width:14px;text-align:right">'+d+'</span></div>';
   }).join('');
   const q3='<div class="card qd">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">'+jt('differential','Differentials')+' are strong players under 15% owned — where you gain rank on the field.</p>'+
     '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
     '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
-    '<span style="width:58px;text-align:right">FIX</span><span style="width:14px;text-align:right">'+jt('ΔP')+'</span></div>'+dRows+'</div>';
+    '<span style="width:76px;text-align:right">FIX</span><span style="width:14px;text-align:right">'+jt('ΔP')+'</span></div>'+dRows+'</div>';
 
   /* ── Q4: live / deadline ── */
   const total=b.raw.total_players||10e6;
@@ -3838,7 +3844,7 @@ async function hydrateDashboard(host){
     '<div class="qd-ministats">'+miniStat(moversN,'price movers')+miniStat(flagsN,'fitness flags')+
       miniStat(capConf&&capConf.value!=null?Math.round(capConf.value):'—','model conf')+'</div>'+
     heroNote+
-    '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players close to a price change tonight. Prices update overnight — check back in the morning.</div>')+
+    '<div class="qd-sub-label">'+(b.preseason?'PRICE WATCH':'PRICE WATCH TONIGHT')+'</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">'+(b.preseason?'Prices resume after GW1 kicks off. <a href="#" onclick="openPanel(\'methodology\');return false" style="color:var(--green)">How pricing works →</a>':'No players close to a price change tonight. Prices update overnight — check back in the morning.')+'</div>')+
     '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
     (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex-shrink:0">'+esc(e.web_name)+'</b>'+
       '<span class="dl-sub" style="flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.news||STATUS_LABEL[e.status]||'flagged')+'</span>'+injChip(e)+'</div>').join('')
@@ -5476,6 +5482,10 @@ function buildNextFix(b,fixtures){
 function nextFixLabel(nf){
   return nf?(esc(nf.opp)+' ('+(nf.home?'H':'A')+') '+'<span class="badge fdrtag fdr-'+nf.diff+'">'+nf.diff+'</span>'):'—';
 }
+/* Small fixture-difficulty chip (1–5, colour-graded) — so every fixture text
+   carries its FDR number, not just the opponent. Colour is paired with the
+   number so difficulty is never conveyed by colour alone. */
+function fdrChip(diff){return diff!=null?' <span class="badge fdrtag fdr-'+diff+'">'+diff+'</span>':'';}
 
 /* Reusable player search → suggestion list. onPick(id) is called on click. */
 function renderSuggestions(b,query,container,exclude,onPick){
@@ -10139,7 +10149,10 @@ function tickTicker(){
   if(ph.phase==='pre'){
     const t=cd(focus.deadline_time)||'—';
     const ts=cdShort(focus.deadline_time)||t;
-    set('tk-dl','DEADLINE <b><span class="tk-full">'+t+'</span><span class="tk-short">'+ts+'</span></b>');set('qd-count',t);
+    /* Escalating urgency: red inside 24h, amber-yellow inside a week. */
+    const msLeft=new Date(focus.deadline_time)-Date.now();
+    const tone=msLeft<=0?'':msLeft<=864e5?'dl-alert':msLeft<=6048e5?'dl-warn':'';
+    set('tk-dl','DEADLINE <b'+(tone?' class="'+tone+'"':'')+'><span class="tk-full">'+t+'</span><span class="tk-short">'+ts+'</span></b>');set('qd-count',t);
   }else if(ph.phase==='live'){
     set('tk-dl','<b class="pos">● LIVE</b> GW'+(ph.cur?ph.cur.id:'')+' in play');
     set('qd-count','LIVE');
