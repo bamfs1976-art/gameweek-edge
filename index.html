@@ -1133,6 +1133,11 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
      single line and ellipsize rather than wrap under the icons. */
   .bn-label{font-size:.58rem;font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+/* On the narrowest phones (~360px) the longest label ("Match Centre") would
+   ellipsize; tighten the label a touch so all five read in full. */
+@media(max-width:380px){
+  .bn-label{font-size:.52rem;letter-spacing:0}
+}
 @media(max-width:560px){
   .g-2,.g-3,.g-4{grid-template-columns:minmax(0,1fr)}
   .page-head h1{font-size:1.5rem}
