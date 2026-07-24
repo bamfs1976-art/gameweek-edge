@@ -242,6 +242,14 @@ body[data-density="beginner"] .qd-why{color:var(--text-2)}
   .right-rail{display:block;position:fixed;top:calc(var(--topbar-h) + 8px);right:0;width:280px;
     height:calc(100vh - var(--topbar-h) - 16px);overflow-y:auto;padding:8px 16px 28px 0;z-index:80}
 }
+/* Section 8: DEMO header chip + flash-on-change */
+.demo-chip{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;border:1px solid var(--amber-soft);
+  background:var(--amber-soft);color:var(--amber);padding:2px 6px;border-radius:3px;vertical-align:middle;margin-left:6px}
+@keyframes flashUp{0%{background:var(--green-soft)}100%{background:transparent}}
+@keyframes flashDown{0%{background:var(--red-soft)}100%{background:transparent}}
+.flash-up{animation:flashUp 2s var(--ease,ease) forwards;border-radius:3px}
+.flash-down{animation:flashDown 2s var(--ease,ease) forwards;border-radius:3px}
+@media(prefers-reduced-motion:reduce){.flash-up,.flash-down{animation:none}}
 
 /* ── NATIVE SHELL (Capacitor iOS / Android) ────────────── */
 /* These rules only apply when running inside the native wrapper.
@@ -1412,9 +1420,7 @@ body{font-size:14px;line-height:1.35}
 .qd-bar{flex:0 0 64px;height:4px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-left:auto}
 .qd-bar>div{height:100%;background:var(--green)}
 .qd-bar.fall>div{background:var(--red)}
-.qd-demo::after{content:'DEMO';position:absolute;right:12px;bottom:10px;
-  font-family:var(--font-mono);font-size:10px;letter-spacing:.22em;color:var(--text-4);
-  border:1px solid var(--border-2);padding:2px 8px;border-radius:3px}
+/* DEMO now shows as a chip in the panel header (see qh + .demo-chip). */
 .qd-pitch .pitch-preview{min-height:0;padding:14px 8px 10px}
 .qd-pitch .pitch-row{gap:6px;margin-bottom:8px}
 .qd-pitch .pp{flex-basis:54px;min-width:38px}
@@ -3490,7 +3496,7 @@ async function hydrateDashboard(host){
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,5);
   const stamp=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const qh=(label,kpiHtml)=>'<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>'+label+'</span>'+
+  const qh=(label,kpiHtml,tag)=>'<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>'+label+(tag||'')+'</span>'+
     '<span class="qd-meta">'+(kpiHtml?kpiHtml+' · ':'')+stamp+'</span></div>';
 
   /* ── Q1: this week's calls ── */
@@ -3566,7 +3572,7 @@ async function hydrateDashboard(host){
       (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>'+
       (why?'<div class="qd-why">'+why+'</div>':'')+
       (alt?'<details class="qd-alt"><summary>Alternatives</summary>'+alt+'</details>':'')+'</div>';
-  const q1='<div class="card qd'+(mid?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id)+
+  const q1='<div class="card qd'+(mid?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id,mid?'':'<span class="demo-chip">DEMO</span>')+
     '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
     arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
     arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
@@ -6702,6 +6708,10 @@ function openXpDrawer(name,xp,parts){
   d.classList.add('open');
 }
 function closeXpDrawer(){const d=document.getElementById('xp-drawer');if(d)d.classList.remove('open');}
+/* Flash a number green (up) or red (down) for ~2s when its value changes.
+   Wired to live state (e.g. the ticker flags), not just demo data. */
+function flashEl(el,dir){if(!el)return;el.classList.remove('flash-up','flash-down');void el.offsetWidth;
+  el.classList.add(dir>0?'flash-up':'flash-down');setTimeout(function(){el.classList.remove('flash-up','flash-down');},2100);}
 /* Model XI "why this pick" — form, fixture difficulty, minutes and price,
    in the shared right-side drawer. */
 async function mxiWhy(id){
@@ -9692,6 +9702,8 @@ function tickTicker(){
       ?'PRICES <b class="pos">↑'+up+'</b> <b class="neg">↓'+dn+'</b>'
       :'PRICES <b>steady</b>');
     set('tk-flags','FLAGS <b>'+flags+'</b>');
+    if(MEM._prevFlags!=null&&MEM._prevFlags!==flags)flashEl(document.getElementById('tk-flags'),flags>MEM._prevFlags?1:-1);
+    MEM._prevFlags=flags;
   }
 }
 
