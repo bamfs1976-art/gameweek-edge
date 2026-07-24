@@ -1444,6 +1444,18 @@ body{font-size:14px;line-height:1.35}
 .kbd-grid kbd{justify-self:start}
 
 /* ── Home quadrants ── */
+/* Panel chip row — add/remove dashboard panels. Terminal-flavoured: mono,
+   hairline, the active ones carry the brand tint. */
+.dash-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.dash-chip{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 10px;min-height:28px;border-radius:999px;cursor:pointer;
+  background:transparent;border:1px solid var(--border-2);color:var(--text-3);
+  transition:color .14s var(--ease),border-color .14s var(--ease),background .14s var(--ease)}
+.dash-chip::before{content:'+ ';opacity:.8}
+.dash-chip.on{color:var(--green-bright);border-color:var(--green);background:var(--green-soft)}
+.dash-chip.on::before{content:'✓ '}
+.dash-chip:hover{color:var(--text)}
+.dash-chip.on:hover{color:var(--green-bright)}
 .quad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
 /* Two-column from tablet up (iPad portrait 768px included); single column only on phones. */
 @media(max-width:767px){.quad-grid{grid-template-columns:1fr}}
@@ -2686,6 +2698,42 @@ function applyDensity(d){if(document.body)document.body.setAttribute('data-densi
 function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}applyDensity(d);
   const b=document.getElementById('density-btn');if(b)b.textContent=d==='beginner'?'Beginner':'Expert';}
 
+/* ── Dashboard panel curation ──────────────────────────────
+   The density toggle controls detail *inside* a panel; this controls which
+   panels are on the page at all. A first-time beginner lands on the three
+   that answer "what do I do this week" and can add the rest from the chip
+   row — so the dashboard opens calm and grows on demand, rather than
+   presenting everything at once. Choices persist per browser. */
+const DASH_PANELS=[['action','This week'],['xi','Model XI'],['diffs','Differentials'],['live','Live state']];
+function dashHidden(){
+  try{const raw=localStorage.getItem('ge-dash-hidden');
+    if(raw)return new Set(JSON.parse(raw)||[]);}catch(_){}
+  /* No stored choice: beginners start without Differentials (the most
+     advanced of the four); anyone in expert detail sees the full set. */
+  return new Set(getDensity()==='beginner'?['diffs']:[]);
+}
+function dashApply(){
+  const hid=dashHidden();
+  document.querySelectorAll('#ge-data [data-dash]').forEach(el=>{
+    el.hidden=hid.has(el.getAttribute('data-dash'));});
+  document.querySelectorAll('#ge-data .dash-chip').forEach(c=>{
+    const on=!hid.has(c.getAttribute('data-chip'));
+    c.classList.toggle('on',on);c.setAttribute('aria-pressed',on?'true':'false');});
+}
+function dashToggle(k){
+  const hid=dashHidden();
+  if(hid.has(k))hid.delete(k);else hid.add(k);
+  try{localStorage.setItem('ge-dash-hidden',JSON.stringify([...hid]));}catch(_){}
+  dashApply();
+}
+function dashChipRow(){
+  const hid=dashHidden();
+  return '<div class="dash-chips" role="group" aria-label="Show or hide dashboard panels">'+
+    DASH_PANELS.map(([k,l])=>'<button type="button" class="dash-chip'+(hid.has(k)?'':' on')+'" data-chip="'+k+'"'+
+      ' aria-pressed="'+(hid.has(k)?'false':'true')+'" onclick="dashToggle(\''+k+'\')">'+esc(l)+'</button>').join('')+
+    '</div>';
+}
+
 /* Three-step spotlight tour — non-blocking, skippable, shown once. */
 const TOUR=[
   {sel:'#tour-q1',title:'This Week · Action',body:'Your captain, transfer and chip call for this gameweek, in one glance.'},
@@ -3727,7 +3775,7 @@ async function hydrateDashboard(host){
   /* Status chip: PRE-SEASON dominates before GW1 (numbers are provisional,
      for a linked manager too); otherwise DEMO for an unlinked manager. */
   const statusTag=b.preseason?'<span class="demo-chip">PRE-SEASON</span>':(mid?'':'<span class="demo-chip">DEMO</span>');
-  const q1='<div class="card qd'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id,statusTag)+
+  const q1='<div class="card qd'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id,statusTag)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
     arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
     arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
@@ -3787,7 +3835,7 @@ async function hydrateDashboard(host){
      photo tiles; the pitch view stays one tap away via the toggle. */
   const mxiView='list';
   const mxiBtn=totw?'<button class="btn btn-primary btn-sm mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
-  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="tour-q2">'+
+  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="tour-q2" data-dash="xi">'+
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
     '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+'</span></div>'+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">The 11 players our model would pick this week.</p>'+q2Body+'</div>';
@@ -3806,7 +3854,7 @@ async function hydrateDashboard(host){
       '<span class="qd-v" style="width:76px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+(nf[e.team]?fdrChip(nf[e.team].diff):'')+'</span>'+
       '<span style="width:14px;text-align:right">'+d+'</span></div>';
   }).join('');
-  const q3='<div class="card qd">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
+  const q3='<div class="card qd" data-dash="diffs">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">'+jt('differential','Differentials')+' are strong players under 15% owned — where you gain rank on the field.</p>'+
     '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
     '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
@@ -3856,7 +3904,7 @@ async function hydrateDashboard(host){
   const flagsN=b.elements.filter(e=>e.status&&e.status!=='a').length;
   const moversN=b.elements.reduce((n,e)=>{const pc=priceChangeProb(e,total);return n+((pc.dir!=='flat'&&pc.prob>=60)?1:0);},0);
   const miniStat=(v,l)=>'<div class="qd-ministat"><span class="m-v">'+v+'</span><span class="m-l">'+l+'</span></div>';
-  const q4='<div class="card qd">'+qh('Live state',heroLabel+' · '+heroTag)+
+  const q4='<div class="card qd" data-dash="live">'+qh('Live state',heroLabel+' · '+heroTag)+
     '<div class="qd-ministats">'+miniStat(moversN,'price movers')+miniStat(flagsN,'fitness flags')+
       miniStat(capConf&&capConf.value!=null?Math.round(capConf.value):'—','model conf')+'</div>'+
     heroNote+
@@ -3909,7 +3957,8 @@ async function hydrateDashboard(host){
     hero='';
   }
 
-  host.innerHTML=hero+meta+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  host.innerHTML=hero+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  dashApply();
   tickTicker();
   maybeTour();
 }
