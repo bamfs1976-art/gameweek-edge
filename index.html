@@ -4715,26 +4715,43 @@ async function hydrateFixtures(host){
       .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
       .sort((a,c)=>c.own-a.own).slice(0,20);
     const gkPairs=rotationPairs(gkEnablers,teamDiff,4);
-    const rotStrip=p=>gws.map((g,gi)=>{
-      const da=teamDiff[p.a.team][gi],dc=teamDiff[p.c.team][gi],d=Math.min(da,dc);
+    /* Midfield rotation runs on ATTACKING fixtures — cheap mids whose easy
+       attacking fixtures alternate, so each week you start whichever faces the
+       kinder defence. Different lens from the clean-sheet one above. */
+    const teamDiffAtt={};
+    teams.forEach(t=>{teamDiffAtt[t.id]=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?fdrAttack(c.lam):5;});});
+    const midEnablers=b.elements.filter(e=>e.status==='a'&&e.element_type===3&&(e.now_cost||0)<=65
+        &&((parseFloat(e.selected_by_percent)||0)>=0.3||parseFloat(e.ep_next||'0')>=2))
+      .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
+      .sort((a,c)=>c.own-a.own).slice(0,30);
+    const midPairs=rotationPairs(midEnablers,teamDiffAtt,6);
+    /* dm = the difficulty map for this pair type (clean-sheet for DEF/GK,
+       attacking for MID) — the strip colours by, and starts, whichever club
+       has the kinder fixture in that lens. */
+    const rotStrip=(p,dm)=>gws.map((g,gi)=>{
+      const da=dm[p.a.team][gi],dc=dm[p.c.team][gi],d=Math.min(da,dc);
       const t=da<=dc?p.a:p.c,c=(byTeamGw[t.team]||{})[g];
       return '<td class="cell fdr-'+d+'" style="font-size:10px">'+(c?esc(c.opp)+(c.home?'':'(a)'):'—')+'</td>';
     }).join('');
-    const pairRows=arr=>arr.map(p=>
+    const pairRows=(arr,dm)=>arr.map(p=>
       '<div style="padding:8px 0;border-top:1px solid var(--border)">'+
         '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:5px">'+
           '<span class="dl-nm">'+esc(p.a.name)+' <span class="dl-sub">'+money(p.a.cost)+'</span> <span style="color:var(--text-3)">+</span> '+esc(p.c.name)+' <span class="dl-sub">'+money(p.c.cost)+'</span></span>'+
           '<span class="dl-col mono" style="color:var(--green);font-weight:800">'+p.green+'/'+p.n+' green</span>'+
         '</div>'+
-        '<div class="fdr"><table><tbody><tr>'+rotStrip(p)+'</tr></tbody></table></div>'+
+        '<div class="fdr"><table><tbody><tr>'+rotStrip(p,dm)+'</tr></tbody></table></div>'+
       '</div>').join('');
-    const gkSection=gkPairs.length
-      ? '<div class="dl-sub" style="margin:12px 0 2px;font-weight:800;color:var(--text)">Goalkeeper rotation (£4.5m and under)</div>'+pairRows(gkPairs)
+    const midSection=midPairs.length
+      ? '<div class="dl-sub" style="margin:12px 0 2px;font-weight:800;color:var(--text)">Midfielders (£6.5m and under) — kindest attacking fixtures</div>'+pairRows(midPairs,teamDiffAtt)
       : '';
-    const rotCard=(pairs.length||gkPairs.length)
+    const gkSection=gkPairs.length
+      ? '<div class="dl-sub" style="margin:12px 0 2px;font-weight:800;color:var(--text)">Goalkeeper rotation (£4.5m and under)</div>'+pairRows(gkPairs,teamDiff)
+      : '';
+    const rotCard=(pairs.length||gkPairs.length||midPairs.length)
       ? '<div class="card mb-20"><div class="card-title">Rotation pairs — best combined run</div>'+
-          '<p class="dl-sub" style="margin-bottom:2px">Two budget players whose fixtures alternate, so each week you start whichever has the kinder clean-sheet fixture. The strip shows the fixture you would play — greener is easier. Ranked by combined difficulty over the next '+gws.length+' gameweeks.</p>'+
-          (pairs.length?'<div class="dl-sub" style="margin:6px 0 2px;font-weight:800;color:var(--text)">Defenders (£6.0m and under)</div>'+pairRows(pairs):'')+
+          '<p class="dl-sub" style="margin-bottom:2px">Two budget players whose fixtures alternate, so each week you start whichever has the kinder fixture. Defenders and keepers rotate on <b>clean-sheet</b> difficulty; midfielders on <b>attacking</b> difficulty. The strip shows the fixture you would play — greener is easier. Ranked by combined difficulty over the next '+gws.length+' gameweeks.</p>'+
+          (pairs.length?'<div class="dl-sub" style="margin:6px 0 2px;font-weight:800;color:var(--text)">Defenders (£6.0m and under)</div>'+pairRows(pairs,teamDiff):'')+
+          midSection+
           gkSection+'</div>'
       : '';
 
