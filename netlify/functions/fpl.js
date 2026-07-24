@@ -21,7 +21,8 @@ const ALLOW = [
   /^dream-team\/\d+$/,
   /^set-piece-notes$/,
   /^leagues-classic\/\d+\/standings$/,
-  /^leagues-h2h\/\d+\/standings$/
+  /^leagues-h2h\/\d+\/standings$/,
+  /^leagues-h2h\/\d+\/matches$/
 ];
 
 const CORS = {
