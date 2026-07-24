@@ -43,6 +43,9 @@ const grabConst = (h, n) => extractBlock(h, h.indexOf('const ' + n + '=')) + ';'
 function buildModel(html) {
   const pieces = [
     grabConst(html, 'PLSIM'), grabConst(html, 'PLSIM_ALIAS'),
+    /* PLSIM_PROMOTED is an array literal, not a {} block, so grab it by line
+       (extractBlock only balances braces). plsimPrior references it. */
+    (html.match(/const PLSIM_PROMOTED=\[[\d.,]+\];/) || [''])[0],
     grabFn(html, 'poisson'), grabFn(html, 'plsimPrior'), grabFn(html, 'plsimMatch'),
     grabFn(html, 'recencyWeight'), grabFn(html, 'availAttackMult'), grabFn(html, 'plsimRatings'),
     grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'), grabFn(html, 'buildNextFix'),

@@ -133,11 +133,16 @@ const pieces = [
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews'),
   /* Pre-season readiness: season key derivation for scoped storage. */
-  extractFn(html, 'seasonKeyFrom')
+  extractFn(html, 'seasonKeyFrom'),
+  /* Pre-season readiness: promoted-club prior + bundle season cross-check. */
+  extractConst(html, 'PLSIM_ALIAS'),
+  extractLine(html, /const PLSIM_PROMOTED=\[[\d.,]+\];/),
+  extractFn(html, 'plsimPrior'),
+  extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, PLSIM_PROMOTED, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1027,6 +1032,25 @@ ok(core.seasonKeyFrom([]) === '' && core.seasonKeyFrom([{}]) === '', 'no deadlin
 /* The scoping rule: a stamp from a different season must not equal the
    current one, so stale element-ID lists get discarded. */
 ok(core.seasonKeyFrom([{ deadline_time: '2025-08-15T17:30:00Z' }]) !== core.seasonKeyFrom([{ deadline_time: '2026-08-21T17:30:00Z' }]), 'consecutive seasons produce distinct keys');
+
+section('plsimPrior: promoted-club default (Tier 2)');
+/* A fitted club gets its own prior; an unknown (newly-promoted) club gets a
+   below-average default, not neutral [1,1,1], so opponents arent over-rated. */
+const arsPrior = core.plsimPrior({ name: 'Arsenal' });
+ok(arsPrior[0] > 1.2 && arsPrior[1] < 0.8, 'a fitted club keeps its own strong prior');
+const promoted = core.plsimPrior({ name: 'Wrexham AFC' });
+ok(promoted === core.PLSIM_PROMOTED, 'an unknown/promoted club falls back to PLSIM_PROMOTED');
+ok(promoted[0] < 1 && promoted[1] > 1, 'the promoted default is below average (weaker attack, concedes more)');
+ok(core.plsimPrior({}) === core.PLSIM_PROMOTED && core.plsimPrior(null) === core.PLSIM_PROMOTED, 'missing team name is handled, not a crash');
+ok(core.plsimPrior({ name: 'Manchester City' })[0] > 1.2, 'alias resolves multi-word names (Manchester City -> mancity)');
+
+section('bundleSeasonStale: model-bundle vs live season cross-check (Tier 2)');
+/* Pre-season the bundle intentionally trails (last completed season), so no
+   warning; once games are played a trailing bundle IS stale. */
+ok(core.bundleSeasonStale('2026/27', false, '2025/26') === false, 'pre-season (no games): bundle behind is expected, not stale');
+ok(core.bundleSeasonStale('2026/27', true, '2025/26') === true, 'season started but bundle still last season -> stale');
+ok(core.bundleSeasonStale('2026/27', true, '2026/27') === false, 'season started and bundle caught up -> fresh');
+ok(core.bundleSeasonStale('', true, '2025/26') === false && core.bundleSeasonStale('2026/27', true, '') === false, 'unknown season or missing bundle label -> never warn');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

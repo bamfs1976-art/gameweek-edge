@@ -1009,6 +1009,10 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .badge-green{background:var(--green-soft);color:var(--green-bright)}
 .badge-amber{background:var(--amber-soft);color:var(--amber)}
 .badge-red{background:var(--red-soft);color:var(--red)}
+/* Cross-season staleness note (bundle behind the live season). */
+.season-warn{margin-bottom:12px;padding:8px 12px;border:1px solid var(--amber);
+  border-radius:var(--r-sm);background:var(--amber-soft);color:var(--amber);
+  font-size:.78rem;line-height:1.4}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
@@ -1903,6 +1907,26 @@ const loadModelBundle=()=>cached('model-bundle',6*3600e3,async()=>{
   if(!r.ok)throw new Error('HTTP '+r.status);
   return r.json();
 });
+/* Cross-check the external model bundle against the live FPL season. The app
+   draws from two independent sources — the live API (fixtures/bootstrap) and
+   this bundle (team ratings, odds, planner windows) — that must both be
+   season-current. Pre-season the bundle intentionally shows the last completed
+   season (season_state.live=false); that is expected, not stale. Only warn
+   once real games have been played (b.seasonStarted) but the bundle has not
+   yet been republished for the new season. */
+function bundleSeasonStale(season,seasonStarted,bundleLabel){
+  return !!(seasonStarted&&bundleLabel&&season&&bundleLabel!==season);
+}
+/* HTML note when the bundle is behind the live season, else ''. Reads the
+   live season from the memoised bootstrap (set on app load), so panels need
+   not thread it through. */
+function bundleSeasonWarn(m){
+  try{
+    const st=(m&&m.season_state)||{},season=curSeason();
+    if(!bundleSeasonStale(season,curSeasonStarted(),st.label))return '';
+    return '<div class="season-warn">Season model is still updating for '+esc(season)+' — these figures use the '+esc(st.label)+' model until the new-season data publishes.</div>';
+  }catch(_){return '';}
+}
 const loadDreamTeam=gw=>cached('dt-'+gw,10*60e3,()=>api('dream-team/'+gw));
 const loadH2HStandings=(id,page)=>api('leagues-h2h/'+id+'/standings'+(page>1?'?page_standings='+page:''));
 const loadH2HMatches=(id,page)=>api('leagues-h2h/'+id+'/matches'+(page>1?'?page='+page:''));
@@ -1921,6 +1945,9 @@ function seasonKeyFrom(events){
 }
 /* The current season key, once bootstrap is loaded; '' if not yet known. */
 function curSeason(){return (MEM._idx&&MEM._idx.season)||'';}
+/* Whether the live season has started (any minutes logged); undefined until
+   bootstrap is loaded, so callers treat unknown as "no warning". */
+function curSeasonStarted(){return MEM._idx?MEM._idx.seasonStarted:undefined;}
 
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
@@ -4440,9 +4467,16 @@ const PLSIM_ALIAS={manchestercity:'mancity',manchesterunited:'manutd',
   newcastleunited:'newcastle',ipswichtown:'ipswich',hullcity:'hull',
   coventrycity:'coventry',leedsunited:'leeds',brightonandhovealbion:'brighton',
   afcbournemouth:'bournemouth'};
+/* A newly-promoted club has no fitted prior. Defaulting it to league-average
+   [1,1,1] over-rates it — historically promoted sides attack less and concede
+   more, so their opponents face an easier, not average, fixture. Seed unknown
+   clubs a notch below average (benchmarked to the weakest fitted sides);
+   PRIOR_W is only 8 pseudo-matches, so real results wash this out within a
+   few gameweeks. */
+const PLSIM_PROMOTED=[0.8,1.28,0.97];
 function plsimPrior(team){
   const k=String(team&&team.name||'').toLowerCase().replace(/[^a-z]/g,'');
-  return PLSIM.priors[k]||PLSIM.priors[PLSIM_ALIAS[k]]||[1,1,1];
+  return PLSIM.priors[k]||PLSIM.priors[PLSIM_ALIAS[k]]||PLSIM_PROMOTED;
 }
 /* Fit attack/defence multipliers to this season's finished fixtures,
    with the priors as pseudo-matches against an average opponent. The
@@ -7994,6 +8028,7 @@ async function hydrateTitleRace(host){
       '<td>'+(snaps.length>1?spark(titleSeries(t),{w:56,h:14}):'')+'</td></tr>';}).join('');
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Season odds'+
       (st.label?' <span class="badge badge-grey">'+esc(st.label)+'</span>':'')+'</div>'+
+      bundleSeasonWarn(m)+
       '<p class="dl-sub" style="margin-bottom:12px">Title, top-four and relegation probabilities from the fitted team-strength model — backtested within 0.007 RPS of Pinnacle closing odds. Updated '+esc(snap.date||st.updated||'')+'.</p>'+
       hero+
       '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title %</th><th class="num">Top 4 %</th><th class="num">Rel %</th><th>Trend</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
@@ -8030,6 +8065,7 @@ async function hydrateClubForm(host){
   if(!m.form){host.innerHTML=stateBox('pulse','No form yet','Recent form appears here once the season’s results are in.');return;}
   const st=m.season_state||{};
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' Team form</div>'+
+    bundleSeasonWarn(m)+
     '<p class="dl-sub" style="margin-bottom:10px">Recent form from <b>'+esc(st.label||'')+'</b>'+(st.live?' — live, '+st.played_md+' matchdays played':' (last completed season, until 2026/27 kicks off)')+'. Home/Away split the last games at that venue; PPG makes the windows comparable.</p>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
       '<div class="seg" data-seg="venue"><button class="seg-b on" data-v="overall">Overall</button><button class="seg-b" data-v="home">Home</button><button class="seg-b" data-v="away">Away</button></div>'+
@@ -8264,6 +8300,7 @@ async function hydrateMatchForecast(host){
   const pro=isPro();
   const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Match Forecasts</div>'+
+    bundleSeasonWarn(m)+
     '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px"><label class="dl-sub" for="mf-md">Matchday</label>'+
     '<select class="modal-in" id="mf-md" style="max-width:150px">'+mdOpts+'</select></div>'+
     '<div id="mf-out"></div>'+
@@ -8472,6 +8509,7 @@ async function hydrateCsMatrix(host){
   host.innerHTML=
     '<div class="card"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Clean Sheet Matrix'+
       (D.live?'':' <span class="badge badge-amber">pre-season</span>')+'</div>'+
+    bundleSeasonWarn(m)+
     '<p class="dl-sub" style="margin-bottom:10px">Each cell is the modelled chance the club keeps a clean sheet in that gameweek’s fixture — from our backtested match model, the same engine as the season simulator.'+
       (D.live?'':' Pre-season, the window is GW1–'+(D.startMd+Math.min(CSM_N,D.horizon)-1)+' of 2026/27.')+'</p>'+
     '<div class="seg" id="csm-seg" style="margin-bottom:12px">'+
