@@ -6,6 +6,7 @@ without hitting (or depending on) the real FPL API.
 
 Usage:
     python3 dev/mock_fpl.py            # serves on http://127.0.0.1:8700
+    PRESEASON=1 python3 dev/mock_fpl.py  # models the state before the GW1 deadline
 
 Then open http://127.0.0.1:8700 and, in the browser console, point the app at
 this server and link the demo team:
@@ -23,6 +24,14 @@ import http.server
 import json
 import os
 import random
+
+# Pre-season mode (PRESEASON=1): models the state before the GW1 deadline —
+# every player minutes/form/ownership at zero (ep_next still provisionally
+# seeded), no event finished or current, no fixture played, and the picks
+# endpoint 404s (a squad only unlocks once teams lock). Use it to exercise the
+# pre-season readiness paths (banners, PRE-SEASON chip, season-scoped storage,
+# the "squad unlocks after the deadline" state) that the live-season data hides.
+PRESEASON = os.environ.get("PRESEASON") == "1"
 
 # ── Reference data ───────────────────────────────────────────────────────
 TEAMS = ["Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton",
@@ -90,6 +99,16 @@ for t in teams:
         })
 N = len(elements)
 
+if PRESEASON:
+    # Minutes, form and ownership reset for the new season; ep_next stays as a
+    # provisional projection (FPL seeds it pre-season), so xP-ranked boards are
+    # populated rather than flat.
+    for e in elements:
+        e.update(minutes=0, total_points=0, event_points=0, starts=0,
+                 form="0.0", points_per_game="0.0", selected_by_percent="0.0",
+                 clean_sheets=0, goals_conceded=0, goals_scored=0, assists=0,
+                 bonus=0, bps=0)
+
 events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
            "is_current": g == 1, "is_next": g == 2,
            "deadline_time": f"2026-08-{14 + g:02d}T17:15:00Z",
@@ -122,6 +141,14 @@ for g in range(2, 9):
                          "team_h_difficulty": rng.randint(2, 4),
                          "team_a_difficulty": rng.randint(2, 4),
                          "kickoff_time": f"2026-08-{13 + g * 7:02d}T14:00:00Z"})
+
+if PRESEASON:
+    # No gameweek is finished or current; GW1 is next, nothing played.
+    for ev in events:
+        ev.update(finished=False, is_current=False, is_next=(ev["id"] == 1))
+    for f in fixtures:
+        f.update(finished=False, started=False, minutes=0,
+                 team_h_score=None, team_a_score=None)
 
 bootstrap = {"teams": teams, "elements": elements, "element_types": element_types,
              "events": events, "total_players": 10_000_000}
@@ -266,7 +293,8 @@ def route(path):
         parts = p.split("/")
         eid_ = int(parts[1])
         if p.endswith("picks"):
-            return picks_for(eid_)
+            # Pre-season the squad is not yet locked, so the API 404s.
+            return None if PRESEASON else picks_for(eid_)
         if p.endswith("transfers"):
             return transfers_for(eid_)
         if p.endswith("history"):
