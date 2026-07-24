@@ -1052,6 +1052,54 @@ ok(core.bundleSeasonStale('2026/27', true, '2025/26') === true, 'season started 
 ok(core.bundleSeasonStale('2026/27', true, '2026/27') === false, 'season started and bundle caught up -> fresh');
 ok(core.bundleSeasonStale('', true, '2025/26') === false && core.bundleSeasonStale('2026/27', true, '') === false, 'unknown season or missing bundle label -> never warn');
 
+section('pre-season bootstrap: all-zeros end to end (Tier 4)');
+/* The load-bearing pre-season state the recon flagged as untested: every
+   player minutes=0, form=0, ownership forming. nativeXP is gated off below
+   5 games, so xP leans entirely on FPL's provisional ep_next. These lock
+   that the model degrades gracefully (finite, no crash, sensible empties). */
+const preEl = (id, t, own, epNext) => ({
+  id, element_type: t, team: id, web_name: 'P' + id, status: 'a',
+  minutes: 0, starts: 0, form: '0.0', points_per_game: '0.0',
+  ep_next: String(epNext == null ? 0 : epNext),
+  expected_goals_per_90: '0', expected_assists_per_90: '0',
+  chance_of_playing_next_round: null, now_cost: 60,
+  selected_by_percent: String(own)
+});
+const preNf = { gp: 0 };                       /* no games played yet */
+/* nativeXP is null pre-season (0 games), so the native blend never engages. */
+ok(core.nativeXP(preEl(1, 3, 5, 0), preNf) === null, 'nativeXP is null pre-season (0 games played)');
+/* Cold player with a zero ep_next -> xP is a finite 0, never NaN. */
+const xpCold = core.xP({}, preEl(1, 3, 0, 0), preNf);
+ok(Number.isFinite(xpCold) && xpCold === 0, 'a fully-cold player (ep_next 0) yields a finite xP of 0, not NaN');
+/* With ep_next populated (FPL usually seeds it pre-season), xP tracks it and
+   orders players — so the boards are not flat. */
+const xpSeed = core.xP({}, preEl(2, 3, 5, 4.5), preNf);
+ok(Number.isFinite(xpSeed) && xpSeed > 0, 'a provisional ep_next drives a positive, finite pre-season xP');
+ok(xpSeed > xpCold, 'ep_next differences order players pre-season (boards are not flat)');
+/* Realistic pre-season nf (buildNextFix always sets diff, from plsimDiff or
+   FPL): an easy opener still lifts xP over a hard one, no NaN. */
+const xpEasy = core.xP({}, preEl(3, 3, 5, 4.5), { gp: 0, diff: 2 });
+const xpHard = core.xP({}, preEl(3, 3, 5, 4.5), { gp: 0, diff: 5 });
+ok(Number.isFinite(xpEasy) && Number.isFinite(xpHard) && xpEasy > xpHard, 'fixture difficulty still tilts xP pre-season (easy opener > hard)');
+ok(Number.isFinite(core.xP({}, preEl(4, 3, 5, 4.5), undefined)), 'a player with no upcoming fixture (undefined nf) still yields a finite xP');
+/* captainModel over an all-zero-xP pool degrades to no pick, not a crash. */
+const flatPool = [preEl(1, 3, 5, 0), preEl(2, 4, 3, 0), preEl(3, 3, 8, 0)];
+ok(core.captainModel({}, {}, flatPool, 3).picks.length === 0, 'captainModel returns no pick when every xP is 0 (graceful, not a crash)');
+/* With provisional ep_next it still ranks. */
+const seedPool = [preEl(1, 3, 5, 3.0), preEl(2, 4, 3, 6.0), preEl(3, 3, 8, 4.0)];
+const preCap = core.captainModel({}, {}, seedPool, 3);
+ok(preCap.picks.length === 3 && preCap.picks[0].el.id === 2, 'captainModel ranks on provisional ep_next when present');
+/* Differentials pre-season: 0%-owned non-premium players ARE included (nobody
+   has picked yet), premiums excluded, and a missing ownership figure is not. */
+const preElements = [
+  preEl(1, 3, 0, 3),                              /* 0% owned -> included */
+  Object.assign(preEl(2, 4, 5, 4), { now_cost: 140 }),  /* premium -> excluded */
+  Object.assign(preEl(3, 3, 8, 2), { selected_by_percent: 'x' }), /* no figure -> excluded */
+  preEl(4, 2, 12, 1)                              /* under 15% -> included */
+];
+const preDiffs = core.differentials(preElements, 15).map(e => e.id).sort();
+ok(preDiffs.join(',') === '1,4', 'pre-season differentials include 0%-owned non-premiums, exclude premiums and no-ownership rows');
+
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 if (failures) process.exit(1);
