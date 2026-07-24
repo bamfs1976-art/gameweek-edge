@@ -202,6 +202,24 @@ body[data-density="beginner"] .qd-why{color:var(--text-2)}
 .link-strip{display:flex;align-items:center;gap:10px;padding:7px 14px;font-size:12px;color:var(--text-2);
   background:var(--surface);border-bottom:1px solid var(--border)}
 .link-strip .btn{flex-shrink:0}.link-strip .ls-x{margin-left:auto;background:none;border:0;color:var(--text-3);cursor:pointer;padding:4px}
+/* Mobile (Section 4): 5-item bottom nav, More sheet, decluttered top strip */
+.bn-item{min-height:44px;min-width:44px}
+.more-sheet{position:fixed;inset:0;z-index:210;display:flex;flex-direction:column;justify-content:flex-end}
+.more-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.more-panel{position:relative;background:var(--elevated,var(--surface-2));border-top:1px solid var(--border);
+  border-radius:14px 14px 0 0;padding:8px 10px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(0,0,0,.5)}
+.more-grab{width:36px;height:4px;border-radius:2px;background:var(--border-3,var(--border));margin:6px auto 10px}
+.more-row{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 8px;background:none;border:0;
+  color:var(--text);font-size:15px;text-align:left;border-radius:8px}
+.more-row:hover,.more-row:focus-visible{background:var(--surface-3)}
+.more-row .bn-ic{width:20px;height:20px;color:var(--green-bright)}
+.tk-short{display:none}
+@media(max-width:639px){
+  #tk-prices,#tk-cmdk-btn,.tickbar .tk-brand{display:none}
+  #export-btn,#refresh-btn,#density-btn{display:none}
+  .tickbar{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tk-full{display:none}.tk-short{display:inline}
+}
 
 /* ── NATIVE SHELL (Capacitor iOS / Android) ────────────── */
 /* These rules only apply when running inside the native wrapper.
@@ -2803,23 +2821,47 @@ function buildNav(){
 /* Seven areas share a phone width, so the bottom bar uses short labels —
    truncating "Intelligence" mid-word reads worse than "Intel". */
 const BN_SHORT={myteam:'Team',intel:'Edge',planner:'Plan'};
+/* Five-item bottom nav (mobile): Home · Squad · Scout · Planner · More. The
+   remaining areas live in the More sheet so nothing is orphaned. Labels match
+   the sidebar. */
+const MORE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+const areaBy=id=>NAV.find(a=>a.id===id)||null;
+const BOTTOM_NAV=[
+  {label:'Home',area:'home',icon:'home',go:()=>openPanel(homePanel())},
+  {label:'Squad',area:'myteam',icon:'team',go:()=>{const a=areaBy('myteam');if(a)openPanel(a.panels[0].id);}},
+  {label:'Scout',area:'intel',icon:'spark',go:()=>openPanel('scout')},
+  {label:'Planner',area:'planner',icon:'planner',go:()=>{const a=areaBy('planner');if(a)openPanel(a.panels[0].id);}},
+  {label:'More',area:'',icon:'more',go:()=>openMoreSheet()}
+];
 function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   bn.innerHTML='';
-  NAV.forEach(area=>{
+  BOTTOM_NAV.forEach(it=>{
     const item=document.createElement('button');
     item.className='bn-item';
-    item.dataset.area=area.id;
-    item.setAttribute('aria-label',area.label);
-    item.innerHTML=
-      '<span class="bn-ic">'+svg(ICON[area.icon])+'</span>'+
-      '<span class="bn-label">'+(BN_SHORT[area.id]||area.label)+'</span>';
-    item.addEventListener('click',()=>{
-      openPanel(area.id==='home'?homePanel():area.panels[0].id);
-    });
+    if(it.area)item.dataset.area=it.area;
+    item.setAttribute('aria-label',it.label);
+    item.innerHTML='<span class="bn-ic">'+(it.icon==='more'?MORE_ICON:svg(ICON[it.icon]))+'</span>'+
+      '<span class="bn-label">'+it.label+'</span>';
+    item.addEventListener('click',it.go);
     bn.appendChild(item);
   });
 }
+/* The More sheet: every area not on the bottom bar, plus the glossary. */
+function openMoreSheet(){
+  closeMoreSheet();
+  const items=[['live','Live'],['players','Players'],['league','League'],['glossary','Glossary']]
+    .map(([id,label])=>{
+      const a=areaBy(id);const target=id==='glossary'?'glossary':(a?a.panels[0].id:id);
+      const icon=id==='glossary'?'question':(a?a.icon:'grid');
+      return '<button class="more-row" onclick="closeMoreSheet();openPanel(\''+target+'\')"><span class="bn-ic">'+svg(ICON[icon]||'')+'</span>'+esc(label)+'</button>';
+    }).join('');
+  const s=document.createElement('div');s.id='more-sheet';s.className='more-sheet';
+  s.innerHTML='<div class="more-backdrop" onclick="closeMoreSheet()"></div>'+
+    '<div class="more-panel" role="dialog" aria-label="More navigation"><div class="more-grab"></div>'+items+'</div>';
+  document.body.appendChild(s);
+}
+function closeMoreSheet(){const s=document.getElementById('more-sheet');if(s)s.remove();}
 
 /* ── TOGGLE AREA EXPANSION ─────────────────────────────── */
 function toggleArea(areaId){
@@ -9509,6 +9551,9 @@ function tickTicker(){
       m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
     const p=n=>String(n).padStart(2,'0');
     return 'T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s);};
+  const cdShort=iso=>{const ms=new Date(iso)-Date.now();if(ms<=0)return null;
+    const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),m=Math.floor(ms%3600e3/60e3);
+    return 'T-'+(d>0?d+'d '+h+'h':h>0?h+'h '+m+'m':m+'m');};
   /* Label the GW the phase is actually about: the live/settling one when
      mid-play, otherwise the one we're counting down to. */
   const labelEv=(ph.phase==='live'||ph.phase==='post')?(ph.cur||focus):focus;
@@ -9516,7 +9561,8 @@ function tickTicker(){
   /* Phase-aware header — never the dead "DEADLINE PASSED". */
   if(ph.phase==='pre'){
     const t=cd(focus.deadline_time)||'—';
-    set('tk-dl','DEADLINE <b>'+t+'</b>');set('qd-count',t);
+    const ts=cdShort(focus.deadline_time)||t;
+    set('tk-dl','DEADLINE <b><span class="tk-full">'+t+'</span><span class="tk-short">'+ts+'</span></b>');set('qd-count',t);
   }else if(ph.phase==='live'){
     set('tk-dl','<b class="pos">● LIVE</b> GW'+(ph.cur?ph.cur.id:'')+' in play');
     set('qd-count','LIVE');
