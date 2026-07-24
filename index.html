@@ -216,7 +216,10 @@ body[data-density="beginner"] .qd-why{color:var(--text-2)}
 .tk-short{display:none}
 @media(max-width:639px){
   #tk-prices,#tk-cmdk-btn,.tickbar .tk-brand{display:none}
-  #export-btn,#refresh-btn,#density-btn{display:none}
+  /* Declutter the top bar so the logo never overlaps the actions. Export,
+     refresh and the density toggle move out of the bar (density lives in the
+     More sheet); the wordmark and freshness pill hide, leaving the logo mark. */
+  #export-btn,#refresh-btn,#density-btn,.tb-logo-text,#tb-updated{display:none}
   .tickbar{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .tk-full{display:none}.tk-short{display:inline}
 }
@@ -2863,9 +2866,11 @@ function openMoreSheet(){
       const icon=id==='glossary'?'question':(a?a.icon:'grid');
       return '<button class="more-row" onclick="closeMoreSheet();openPanel(\''+target+'\')"><span class="bn-ic">'+svg(ICON[icon]||'')+'</span>'+esc(label)+'</button>';
     }).join('');
+  const dens=getDensity()==='beginner'?'expert':'beginner';
+  const densRow='<button class="more-row" onclick="setDensity(\''+dens+'\');closeMoreSheet()"><span class="bn-ic">'+svg(ICON.spark||'')+'</span>Detail: '+(getDensity()==='beginner'?'Beginner':'Expert')+' — tap for '+dens+'</button>';
   const s=document.createElement('div');s.id='more-sheet';s.className='more-sheet';
   s.innerHTML='<div class="more-backdrop" onclick="closeMoreSheet()"></div>'+
-    '<div class="more-panel" role="dialog" aria-label="More navigation"><div class="more-grab"></div>'+items+'</div>';
+    '<div class="more-panel" role="dialog" aria-label="More navigation"><div class="more-grab"></div>'+items+densRow+'</div>';
   document.body.appendChild(s);
 }
 function closeMoreSheet(){const s=document.getElementById('more-sheet');if(s)s.remove();}
