@@ -1302,6 +1302,10 @@ body{font-size:14px;line-height:1.35}
 }
 .tickbar::-webkit-scrollbar{display:none}
 .tk-item b{color:var(--text);font-weight:600}
+/* Adaptive deadline tone — the countdown escalates as the deadline nears:
+   neutral out past a week, amber-yellow inside 7 days, red inside 24h. */
+.tk-item b.dl-warn{color:var(--accent-warn)}
+.tk-item b.dl-alert{color:var(--accent-alert)}
 .tk-item .pos{color:var(--green)}
 .tk-item .neg{color:var(--red)}
 .tk-brand{color:var(--green);font-weight:700;letter-spacing:.1em}
@@ -10139,7 +10143,10 @@ function tickTicker(){
   if(ph.phase==='pre'){
     const t=cd(focus.deadline_time)||'—';
     const ts=cdShort(focus.deadline_time)||t;
-    set('tk-dl','DEADLINE <b><span class="tk-full">'+t+'</span><span class="tk-short">'+ts+'</span></b>');set('qd-count',t);
+    /* Escalating urgency: red inside 24h, amber-yellow inside a week. */
+    const msLeft=new Date(focus.deadline_time)-Date.now();
+    const tone=msLeft<=0?'':msLeft<=864e5?'dl-alert':msLeft<=6048e5?'dl-warn':'';
+    set('tk-dl','DEADLINE <b'+(tone?' class="'+tone+'"':'')+'><span class="tk-full">'+t+'</span><span class="tk-short">'+ts+'</span></b>');set('qd-count',t);
   }else if(ph.phase==='live'){
     set('tk-dl','<b class="pos">● LIVE</b> GW'+(ph.cur?ph.cur.id:'')+' in play');
     set('qd-count','LIVE');
