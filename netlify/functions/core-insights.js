@@ -122,21 +122,23 @@ function aggregate(season, matchRows) {
 }
 
 /* Gather every gameweek's match rows for a season. Contiguous scan: fetch in
-   small parallel batches, stop once a whole batch is empty (past the last GW
-   played). Returns { season, rows } or null when the season has no data. */
+   small parallel batches, stop once a whole batch has no DATA (past the last
+   GW played). A gameweek file that exists but is header-only counts as no
+   data — crucial pre-season, when the upcoming season's GW folders are already
+   present but empty, so we must fall through to the last completed season
+   rather than return an empty set. Returns { season, rows } or null. */
 async function collectSeason(season) {
   const rows = [];
-  let found = 0;
   for (let base = 1; base <= MAX_GW; base += 4) {
     const gws = [base, base + 1, base + 2, base + 3].filter((g) => g <= MAX_GW);
     let batch;
     try { batch = await Promise.all(gws.map((g) => fetchGw(season, g))); }
     catch (_) { break; }                                   // upstream hiccup — use what we have
     let any = false;
-    for (const b of batch) if (b) { rows.push(...b); found++; any = true; }
-    if (!any) break;                                       // whole batch 404 → season finished
+    for (const b of batch) if (b && b.length) { rows.push(...b); any = true; }   // header-only → skip
+    if (!any) break;                                       // whole batch 404 / empty → season not yet playing
   }
-  return found ? { season, rows } : null;
+  return rows.length ? { season, rows } : null;
 }
 
 exports.config = { schedule: '30 6,17 * * *' };            /* ~1h after the upstream 07:30 / 17:30 UTC refreshes */
