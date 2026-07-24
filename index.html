@@ -1292,9 +1292,16 @@ body{font-size:14px;line-height:1.35}
 .qd-mxi[data-mxi="list"] .qd-pitch{display:none}
 .qd-mxi[data-mxi="pitch"] .mxi-list{display:none}
 .mxi-list{display:flex;flex-direction:column}
-.mxi-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto auto 36px;
+.mxi-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto 64px 40px 24px;
   align-items:center;gap:0 8px;min-height:30px;border-bottom:1px solid var(--border);
   font-size:12.5px;cursor:pointer}
+.mxi-group{position:sticky;top:0;z-index:1;font-family:var(--font-mono);font-size:9px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--text-3);padding:6px 0 3px;background:var(--surface);border-top:1px solid var(--green-soft)}
+.mxi-group:first-child{border-top:0}
+.mxi-spark{display:flex;align-items:center;justify-content:flex-end}.mxi-spark svg{opacity:.85}
+.mxi-why{background:none;border:1px solid var(--border-2);color:var(--text-3);width:20px;height:20px;border-radius:50%;
+  font-size:11px;font-weight:700;cursor:pointer;justify-self:end;line-height:1}
+.mxi-why:hover,.mxi-why:focus-visible{color:var(--green-bright);border-color:var(--green-bright)}
 .mxi-row:last-child{border-bottom:0}
 .mxi-row.mxi-hd{cursor:default;min-height:22px;font-family:var(--font-mono);font-size:10px;
   letter-spacing:.06em;color:var(--text-3)}
@@ -3510,25 +3517,31 @@ async function hydrateDashboard(host){
       '<div class="pitch-row">'+byT(3).map(cell).join('')+'</div>'+
       '<div class="pitch-row">'+byT(4).map(cell).join('')+'</div>')+'</div>';
     const POSL=['','GKP','DEF','MID','FWD'];
+    let lastPos=0;
     const listRows=totw.xi.slice().sort((a,c)=>a.el.element_type-c.el.element_type||c.p-a.p).map(s=>{
       const el=s.el,f=nf[el.team];
-      return '<div class="mxi-row" onclick="openPlayer('+el.id+')">'+
+      const grp=el.element_type!==lastPos?(lastPos=el.element_type,'<div class="mxi-group">'+POSL[el.element_type]+'</div>'):'';
+      /* Fixture-run xP trend (forward, since a season-open squad has no history). */
+      const series=(hz&&hz[el.team])?hz[el.team].map(fx=>fixtureXP(b,el,fx)):[];
+      const sp=series.length>1?spark(series,{w:60,h:16}):'';
+      return grp+'<div class="mxi-row" onclick="openPlayer('+el.id+')">'+
         '<span class="mxi-pos text-caption">'+POSL[el.element_type]+'</span>'+
         '<span class="mxi-player"><span class="mxi-club">'+esc(teamShort(b,el.team))+'</span>'+esc(el.web_name)+'</span>'+
         '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+'</span>'+
         '<span class="mxi-cell">'+money(el.now_cost)+'</span>'+
-        '<span class="mxi-cell">'+el.selected_by_percent+'%</span>'+
-        '<span class="mxi-xp">'+s.p.toFixed(1)+'</span></div>';
+        '<span class="mxi-spark">'+sp+'</span>'+
+        '<span class="mxi-xp">'+s.p.toFixed(1)+'</span>'+
+        '<button class="mxi-why" aria-label="Why '+esc(el.web_name)+' is picked" onclick="event.stopPropagation();mxiWhy('+el.id+')">?</button></div>';
     }).join('');
     q2Body='<div class="mxi-list"><div class="mxi-row mxi-hd">'+
       '<span class="mxi-pos">POS</span><span class="mxi-player">PLAYER</span>'+
       '<span class="mxi-cell">FIX</span><span class="mxi-cell">£</span>'+
-      '<span class="mxi-cell">OWN</span><span class="mxi-xp">XP</span></div>'+listRows+'</div>'+pitch;
+      '<span class="mxi-cell">TREND</span><span class="mxi-xp">XP</span><span></span></div>'+listRows+'</div>'+pitch;
   }
   /* Default to the compact position rows everywhere — quicker to scan than
      photo tiles; the pitch view stays one tap away via the toggle. */
   const mxiView='list';
-  const mxiBtn=totw?'<button class="mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
+  const mxiBtn=totw?'<button class="btn btn-primary btn-sm mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
   const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="tour-q2">'+
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
     '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+'</span></div>'+
@@ -6614,6 +6627,20 @@ function openXpDrawer(name,xp,parts){
   d.classList.add('open');
 }
 function closeXpDrawer(){const d=document.getElementById('xp-drawer');if(d)d.classList.remove('open');}
+/* Model XI "why this pick" — form, fixture difficulty, minutes and price,
+   in the shared right-side drawer. */
+async function mxiWhy(id){
+  const b=MEM._idx;if(!b)return;const el=b.els[id];if(!el)return;
+  let n={};try{const fx=await loadFixtures();n=buildNextFix(b,fx)[el.team]||{};}catch(_){}
+  const ch=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
+  const parts=[
+    'Form '+(el.form||'0')+' · '+(el.points_per_game||'0')+' pts per game',
+    'Fixture '+(n.opp?(n.home?'H':'A')+' v '+n.opp+' (difficulty '+(n.diff||'—')+')':'to be set'),
+    'Minutes '+ch+'% to start'+(el.status&&el.status!=='a'?' · flagged ('+(STATUS_LABEL[el.status]||el.status)+')':''),
+    'Price '+money(el.now_cost)+' · '+(el.selected_by_percent||'0')+'% owned'
+  ];
+  openXpDrawer(el.web_name,xP(b,el,n),parts);
+}
 
 /* Minutes model (P2): probability a player starts, appears at all and
    lasts 60 minutes, plus the expected fraction of 90 they play. Blends
