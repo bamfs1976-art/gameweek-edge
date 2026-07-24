@@ -3844,7 +3844,7 @@ async function hydrateDashboard(host){
     '<div class="qd-ministats">'+miniStat(moversN,'price movers')+miniStat(flagsN,'fitness flags')+
       miniStat(capConf&&capConf.value!=null?Math.round(capConf.value):'—','model conf')+'</div>'+
     heroNote+
-    '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players close to a price change tonight. Prices update overnight — check back in the morning.</div>')+
+    '<div class="qd-sub-label">'+(b.preseason?'PRICE WATCH':'PRICE WATCH TONIGHT')+'</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">'+(b.preseason?'Prices resume after GW1 kicks off. <a href="#" onclick="openPanel(\'methodology\');return false" style="color:var(--green)">How pricing works →</a>':'No players close to a price change tonight. Prices update overnight — check back in the morning.')+'</div>')+
     '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
     (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex-shrink:0">'+esc(e.web_name)+'</b>'+
       '<span class="dl-sub" style="flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.news||STATUS_LABEL[e.status]||'flagged')+'</span>'+injChip(e)+'</div>').join('')
