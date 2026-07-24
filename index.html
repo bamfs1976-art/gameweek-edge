@@ -184,6 +184,24 @@ body[data-density="beginner"] .beginner-only{display:block}
 .tour-pop .tour-step{font-family:var(--font-mono,monospace);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-3)}
 .tour-pop h4{margin:4px 0}.tour-pop p{margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--text-2)}
 .tour-actions{display:flex;gap:8px;align-items:center}.tour-actions .tour-gloss{margin-right:auto;font-size:11px;color:var(--text-3)}
+/* Enriched "This week · action" rows: why-line, confidence chip, alternatives */
+.qd-arow{border-top:1px solid var(--border)}.qd-arow:first-of-type{border-top:0}
+.qd-why{font-size:10.5px;color:var(--text-3);margin:0 0 7px;padding-left:2px;line-height:1.4}
+body[data-density="beginner"] .qd-why{color:var(--text-2)}
+.qd-alt{margin:0 0 7px}
+.qd-alt summary{font-size:10px;color:var(--green-bright);cursor:pointer;list-style:none;text-transform:uppercase;letter-spacing:.06em}
+.qd-alt summary::-webkit-details-marker{display:none}
+.qd-alt summary::before{content:'▸ ';font-size:9px}.qd-alt[open] summary::before{content:'▾ '}
+.qd-alt-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);padding:3px 0 3px 12px}
+/* Live-state mini-stats (replaces the oversized countdown) */
+.qd-ministats{display:flex;gap:14px;flex-wrap:wrap;padding:4px 0 10px}
+.qd-ministat{display:flex;flex-direction:column;gap:1px}
+.qd-ministat .m-v{font-family:var(--font-mono);font-size:20px;font-weight:600;line-height:1;color:var(--text)}
+.qd-ministat .m-l{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+/* Slim not-linked educational strip (replaces the ribbon banner) */
+.link-strip{display:flex;align-items:center;gap:10px;padding:7px 14px;font-size:12px;color:var(--text-2);
+  background:var(--surface);border-bottom:1px solid var(--border)}
+.link-strip .btn{flex-shrink:0}.link-strip .ls-x{margin-left:auto;background:none;border:0;color:var(--text-3);cursor:pointer;padding:4px}
 
 /* ── NATIVE SHELL (Capacitor iOS / Android) ────────────── */
 /* These rules only apply when running inside the native wrapper.
@@ -1551,11 +1569,10 @@ body{font-size:14px;line-height:1.35}
       </div>
     </header>
 
-    <!-- Sticky guest on-ramp: hidden once a team is linked -->
-    <div class="link-ribbon hidden" id="link-ribbon">
-      <span><b>Link your FPL team</b> <span class="lr-msg-long">to unlock your squad, live rank, captain and transfer calls — all from the official data.</span></span>
-      <button class="btn btn-primary btn-sm lr-cta" onclick="openMidModal()">Link team</button>
-      <button class="lr-x" id="link-ribbon-x" aria-label="Dismiss">
+    <!-- Slim not-linked educational strip: hidden once a team is linked -->
+    <div class="link-strip hidden" id="link-ribbon">
+      <span>Not linked? You’re seeing the model’s recommended squad. <a href="#" onclick="openMidModal();return false"><b>Link team</b></a> to personalise.</span>
+      <button class="ls-x" id="link-ribbon-x" aria-label="Dismiss">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
@@ -3369,7 +3386,7 @@ async function hydrateDashboard(host){
   }catch(_){}}
   /* Decision-grade captain: eligible attackers only, with a confidence
      chip — not merely the highest-xP player of any position. */
-  const capM=captainModel(b,nf,capPool.map(x=>x.e),2);
+  const capM=captainModel(b,nf,capPool.map(x=>x.e),4);
   const cap=capM.picks[0]||null,vice=capM.picks[1]||null;
   const capConf=captainConfidence(capM);
   const row=(k,body,v,cls)=>'<div class="qd-row"><span class="qd-k">'+k+'</span>'+body+
@@ -3405,14 +3422,32 @@ async function hydrateDashboard(host){
   else if(chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold')
     chipBody='<b>'+chipAdv.best.label+'</b> <span class="dl-sub">'+chipAdv.best.window+'</span>';
   else chipBody='<b>HOLD</b> <span class="dl-sub">'+(chipAdv&&chipAdv.best?esc(chipAdv.best.reason):(chipsLeft?chipsLeft.join(' · ')+' in hand':'link team'))+'</span>';
+  /* Enriched rows: a why-line, a High/Medium/Low confidence chip and (for the
+     captain) a next-2-options expander fill the panel with reasoning. */
+  const cLabel=t=>t==='high'?'High':t==='med'?'Medium':'Low';
+  const capTier=confTier(capConf.value||0);
+  const capWhy=cap?(function(){const n=nf[cap.el.team]||{};const ch=cap.el.chance_of_playing_next_round==null?100:cap.el.chance_of_playing_next_round;
+    return 'vs '+esc(n.opp||'?')+(n.home?' (H)':' (A)')+(n.lam!=null?', team xG '+n.lam.toFixed(2):'')+', '+ch+'% to start';})():'';
+  const capAlt=cap?capM.picks.slice(1,3).map(p=>'<div class="qd-alt-row"><span>'+esc(p.el.web_name)+'</span><span class="mono">'+(p.xp!=null?p.xp.toFixed(1):'—')+' xP</span></div>').join(''):'';
+  const trGain=(squad&&trCls==='pos'&&trVal!=null)?parseFloat(String(trVal).replace('+',''))||0:0;
+  const trTier=trGain>=3?'high':trGain>=1.5?'med':'low';
+  const trWhy=squad?(trCls==='pos'?'+'+trGain.toFixed(1)+' xP over the next 5 gameweeks':'holding scores more than any move this week'):'link your team for a transfer tuned to your squad';
+  const chipOn=chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold';
+  const chipTier=chipOn?(chipAdv.best.conf>=67?'high':chipAdv.best.conf>=45?'med':'low'):'low';
+  const chipWhy=chipAdv&&chipAdv.best?esc(chipAdv.best.reason):'';
+  const arow=(k,body,v,cls,why,tier,tierLabel,alt)=>
+    '<div class="qd-arow"><div class="qd-row"><span class="qd-k">'+k+'</span>'+body+
+      (tier?'<span class="conf-chip conf-'+tier+'" style="margin-left:6px">'+tierLabel+'</span>':'')+
+      (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>'+
+      (why?'<div class="qd-why">'+why+'</div>':'')+
+      (alt?'<details class="qd-alt"><summary>Alternatives</summary>'+alt+'</details>':'')+'</div>';
   const q1='<div class="card qd'+(mid?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
-    row('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot')+
-    row('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null)+
-    row('TRANSFER',trBody,trVal,trCls)+
-    row('CHIP',chipBody)+
-    '<div class="qd-foot">'+(cap?confChip(capConf.value,'Captain'):'')+' <span style="opacity:.85">'+jt('captain margin')+' '+(margin>=0?'+':'')+margin.toFixed(1)+' '+jt('xP')+' · <span class="expert-only">'+scopeNote+'</span></span>'+formSpark+
-    (mid?'':' · <a href="#" onclick="openMidModal();return false">Link team →</a>')+'</div></div>';
+    arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
+    arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
+    arow('TRANSFER',trBody,trVal,trCls,trWhy,squad?trTier:'',cLabel(trTier),'')+
+    arow('CHIP',chipBody,null,'',chipWhy,chipOn?chipTier:'',cLabel(chipTier),'')+
+    '<div class="qd-foot"><span style="opacity:.85">'+jt('captain margin')+' '+(margin>=0?'+':'')+margin.toFixed(1)+' '+jt('xP')+' · <span class="expert-only">'+scopeNote+'</span></span>'+formSpark+'</div></div>';
 
   /* ── Q2: model XI — list by default on phones, pitch toggle ── */
   const totw=bestXI(scoutScored(b,nf));
@@ -3513,8 +3548,12 @@ async function hydrateDashboard(host){
     :ph.phase==='live'
     ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>'
     :'';
-  const q4='<div class="card qd">'+qh('Live · deadline',heroLabel+' · '+heroTag)+
-    '<div class="qd-count" id="qd-count">—</div>'+
+  const flagsN=b.elements.filter(e=>e.status&&e.status!=='a').length;
+  const moversN=b.elements.reduce((n,e)=>{const pc=priceChangeProb(e,total);return n+((pc.dir!=='flat'&&pc.prob>=60)?1:0);},0);
+  const miniStat=(v,l)=>'<div class="qd-ministat"><span class="m-v">'+v+'</span><span class="m-l">'+l+'</span></div>';
+  const q4='<div class="card qd">'+qh('Live state',heroLabel+' · '+heroTag)+
+    '<div class="qd-ministats">'+miniStat(moversN,'price movers')+miniStat(flagsN,'fitness flags')+
+      miniStat(capConf&&capConf.value!=null?Math.round(capConf.value):'—','model conf')+'</div>'+
     heroNote+
     '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players near the threshold.</div>')+
     '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
@@ -3560,8 +3599,9 @@ async function hydrateDashboard(host){
       (chipsLeft&&chipsLeft.length?', hold your chips':'')+'.</span>'+
       '<a class="btn btn-ghost btn-sm" href="#" onclick="openPanel(\'gw-actions\');return false">Full plan &rarr;</a></div>';
   } else {
-    hero='<div class="dash-hero"><span class="dash-hero-txt"><b>Link your team</b> to get this week&rsquo;s captain, transfer and chip call in a single line.</span>'+
-      '<a class="btn btn-primary btn-sm" href="#" onclick="openMidModal();return false">Link team</a></div>';
+    /* Not linked: the single primary CTA is the top-bar button and the slim
+       educational strip above — no duplicate hero card here. */
+    hero='';
   }
 
   host.innerHTML=hero+meta+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
