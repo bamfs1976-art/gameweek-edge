@@ -242,6 +242,10 @@ body[data-density="beginner"] .qd-why{color:var(--text-2)}
   .main{margin-right:296px}
   .right-rail{display:block;position:fixed;top:calc(var(--topbar-h) + 8px);right:0;width:280px;
     height:calc(100vh - var(--topbar-h) - 16px);overflow-y:auto;padding:8px 16px 28px 0;z-index:80}
+  /* Full-width workspaces (e.g. the Draft board) reclaim the rail's width —
+     their own two-column layout needs the room more than the companion rail. */
+  body.wide-workspace .main{margin-right:0}
+  body.wide-workspace .right-rail{display:none}
 }
 /* Section 8: DEMO header chip + flash-on-change */
 .demo-chip{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;border:1px solid var(--amber-soft);
@@ -886,6 +890,10 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .g-3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .g-4{grid-template-columns:repeat(4,minmax(0,1fr))}
 .g-sb{grid-template-columns:minmax(0,1fr) 300px}
+/* Draft board: pitch + player pool. The pool is an interactive list (avatar,
+   name, price/mins, xP6, Add) that needs room, so give it a flexible column
+   with a comfortable floor rather than pinning it to a narrow fixed width. */
+.draft-cols{grid-template-columns:minmax(0,1fr) minmax(360px,0.9fr)}
 
 /* ── CARD ──────────────────────────────────────────────── */
 .card{
@@ -1093,7 +1101,7 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 /* ── RESPONSIVE ────────────────────────────────────────── */
 @media(max-width:1080px){
   .g-4{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .g-sb{grid-template-columns:minmax(0,1fr)}
+  .g-sb,.draft-cols{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:900px){
   .sidebar{transform:translateX(-100%)}
@@ -3067,10 +3075,14 @@ function syncNav(){
 }
 
 /* ── RENDER A PAGE ─────────────────────────────────────── */
+/* Panels whose own layout wants the full width — the right rail is hidden on
+   these (≥1024px) so their two-column workspace is not squeezed. */
+const WIDE_PANELS=new Set(['draft']);
 function renderPage(panelId){
   const panel=PANELS[panelId];
   const content=PANEL_CONTENT[panelId];
   track('panel_view',{panel:panelId});
+  document.body.classList.toggle('wide-workspace',WIDE_PANELS.has(panelId));
 
   document.getElementById('tb-area').textContent=panel.areaLabel;
   document.getElementById('tb-title').textContent=panel.label;
@@ -9642,7 +9654,7 @@ async function hydrateDraft(host){
       '<p class="dl-sub" style="margin-top:10px">Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
         'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'+notes+'</p></div>'+
     wizard+
-    '<div class="grid g-sb mb-20">'+
+    '<div class="grid draft-cols mb-20">'+
       '<div class="card"><div class="card-title">Your draft <span class="badge badge-green" id="draft-count"></span></div>'+
         '<div id="draft-pitch"></div>'+
         '<div class="dl-sub" style="margin-top:10px">Tap a player for details or to remove. 2 GK / 5 DEF / 5 MID / 3 FWD · £100.0m · max 3 per club. Over-budget drafting is allowed, but the draft only saves when it’s legal.</div></div>'+
