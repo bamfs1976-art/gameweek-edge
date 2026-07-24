@@ -1,0 +1,69 @@
+/*
+ * Offline test for the FPL Core Insights aggregator's pure core
+ * (netlify/functions/core-insights.js). Proves CSV parsing, per-player
+ * season aggregation (goals prevented, non-penalty xG, per-90s) and season
+ * selection — no network, no Supabase.
+ *
+ * Run: node dev/test-core-insights.mjs   (wired into npm test)
+ */
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
+const { parseCsv, aggregate, deriveSeasonLabel, seasonCandidates } =
+  require(join(ROOT, 'netlify', 'functions', 'core-insights.js'));
+
+let failures = 0, passes = 0;
+const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
+const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
+
+console.log('• core-insights: CSV parse + aggregate');
+
+/* ── CSV parser ─────────────────────────────────────────── */
+const csv = 'player_id,minutes_played,goals_prevented,"quoted"\n7,90,0.5,"a,b"\n7,45,-0.2,c\n';
+const rows = parseCsv(csv);
+ok(rows.length === 2, 'parses two data rows');
+ok(rows[0].player_id === '7' && rows[0].minutes_played === '90', 'maps header to cells');
+ok(rows[0].quoted === 'a,b', 'handles quoted comma field');
+
+/* ── aggregation: two keepers over two gameweeks ────────── */
+/* Player 7 (keeper): GW1 full game preventing +0.5, GW2 half game -0.2.
+   Player 9 (outfield): one game, 1 goal from 0.9 xG incl. a scored penalty. */
+const matchRows = [
+  { player_id: '7', minutes_played: '90', goals_prevented: '0.5', xgot_faced: '2.0', saves: '4', goals_conceded: '1', xg: '0', xgot: '0', big_chances_missed: '0', chances_created: '0', touches_opposition_box: '0', penalties_scored: '0', penalties_missed: '0' },
+  { player_id: '7', minutes_played: '45', goals_prevented: '-0.2', xgot_faced: '1.0', saves: '1', goals_conceded: '1', xg: '0', xgot: '0', big_chances_missed: '0', chances_created: '0', touches_opposition_box: '0', penalties_scored: '0', penalties_missed: '0' },
+  { player_id: '9', minutes_played: '90', goals_prevented: '0', xgot_faced: '0', saves: '0', goals_conceded: '0', xg: '0.90', xgot: '0.80', big_chances_missed: '1', chances_created: '3', touches_opposition_box: '7', penalties_scored: '1', penalties_missed: '0' },
+  { player_id: '', minutes_played: '10', xg: '5' },   // junk row: no id → ignored
+];
+const out = aggregate('2025-2026', matchRows);
+const byId = Object.fromEntries(out.map((r) => [r.element, r]));
+
+ok(out.length === 2, 'ignores rows without a player id');
+
+const k = byId[7];
+ok(k && k.games === 2, 'keeper: two games with minutes');
+ok(k.minutes === 135, 'keeper: minutes summed');
+ok(near(k.goals_prevented, 0.3), 'keeper: goals prevented summed (0.5 - 0.2)');
+ok(near(k.goals_prevented_per_90, 0.2), 'keeper: goals prevented per 90 (0.3 * 90 / 135)');
+ok(k.saves === 5 && k.goals_conceded === 2, 'keeper: saves and conceded summed');
+
+const o = byId[9];
+ok(o && o.games === 1, 'outfielder: one game');
+/* np_xg = 0.90 - 0.79 * 1 penalty = 0.11 */
+ok(near(o.np_xg, 0.11, 1e-9), 'outfielder: non-penalty xG strips the penalty');
+ok(near(o.np_xg_per_90, 0.11, 1e-9), 'outfielder: np xG per 90 over a full game');
+ok(o.big_chances_missed === 1 && o.chances_created === 3 && o.touches_opp_box === 7, 'outfielder: involvement summed');
+ok(o.xgot === 0.8, 'outfielder: xGOT summed');
+
+/* ── season selection ───────────────────────────────────── */
+console.log('• core-insights: season selection');
+ok(deriveSeasonLabel(new Date('2026-07-24T00:00:00Z')) === '2026-2027', 'July belongs to the new season');
+ok(deriveSeasonLabel(new Date('2026-01-10T00:00:00Z')) === '2025-2026', 'January belongs to the running season');
+ok(deriveSeasonLabel(new Date('2025-08-01T00:00:00Z')) === '2025-2026', 'August starts the new season');
+const cands = seasonCandidates(new Date('2026-07-24T00:00:00Z'));
+ok(cands[0] === '2026-2027' && cands[1] === '2025-2026', 'falls back to the previous season');
+
+console.log('\n' + passes + ' passed, ' + failures + ' failed');
+process.exit(failures ? 1 : 0);

@@ -331,10 +331,19 @@ AI‑assisted.
   player‑detail modal. Pre‑season it reads from last season's starts/minutes
   (labelled as such).
 
+- **Goalkeeper shot‑stopping** (`goals_prevented`, from Core Insights §5): a
+  bounded term adds ~1 point per goal prevented per 90 (post‑shot xG faced minus
+  goals conceded) that the fixed saves / concede / clean‑sheet terms cannot see.
+  Guarded by `el._ci`, so it is inert without the mirror. Coefficient set from a
+  seeded Monte‑Carlo (`dev/model-validate.mjs`): it cuts synthetic GK MAE ~43%
+  and pulls the projection for elite and leaky keepers back toward truth.
+
 > Discipline note: the validated `nativeXP` formula is deliberately **not**
 > silently re‑wired when new fields (xGI/xGC) are surfaced — those are shown as
 > stats and only folded into the projection after a backtest that beats the
-> current model.
+> current model. The goalkeeper `goals_prevented` term above followed exactly
+> that rule: surfaced first, then wired in only once `dev/model-validate.mjs`
+> showed it helps (and the change is a no‑op when the mirror is absent).
 
 ---
 
@@ -367,6 +376,27 @@ kit‑shirt fallbacks.
 
 **Not yet used (authenticated‑only):** `my-team/{id}` (exact selling price, free‑
 transfer count) — needs FPL login, out of scope for the public proxy.
+
+### Advanced stats — FPL Core Insights (secondary source)
+
+The official API carries xGI/xGC but not the deeper Opta‑like numbers. We layer
+those in from the open **[FPL Core Insights](https://github.com/olbauday/FPL-Core-Insights)**
+dataset (used freely with attribution), aligned by the official FPL element id:
+
+- A scheduled function (`netlify/functions/core-insights.js`, twice daily) pulls
+  the per‑match `playermatchstats` files, aggregates them per player over the
+  season, and upserts a compact row into `gwedge_core_insights` (service‑role,
+  RLS‑locked, like `gwedge_predictions`). Pre‑season it targets last season —
+  the right prior for GW1.
+- `core-insights-data.js` serves that table as compact JSON at
+  `/api/core-insights`; the client merges it onto player objects in `boot()`
+  (`el._ci`). **Everything is guarded by the presence of `_ci`**, so with the
+  mirror unconfigured or unreachable the app behaves exactly as before.
+- Headline field: goalkeeper **`goals_prevented`** (post‑shot xG faced minus
+  goals conceded — shot‑stopping above expectation), which feeds `nativeXP`
+  (see §4). Also surfaced in the player‑detail modal: non‑penalty xG, xGOT,
+  big chances missed, chances created and touches in the box.
+- No new env vars — reuses `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
 
 ---
 
@@ -456,6 +486,15 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
   - Editorial expansion of The Wire; column presets on the Player List.
   - Extend the photo‑token treatment to EO/Template/Rival lists and DefCon feed.
   - Reddit/sentiment or ownership‑trend signals.
+
+- **Shipped from this review (open‑source data ingestion):**
+  - **FPL Core Insights** advanced‑stats mirror — goalkeeper `goals_prevented`
+    now sharpens `nativeXP`; non‑penalty xG / xGOT / big chances surfaced in the
+    player modal (see §5).
+  - **vaastav real‑actuals backtest** — `dev/backtest-vaastav.mjs` grades the
+    shipping model against a real historical season (MIT‑licensed dataset)
+    instead of only the synthetic generator, so validation is no longer purely
+    a simulation study (see docs/MODELLING.md).
 
 ---
 

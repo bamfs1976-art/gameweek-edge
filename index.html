@@ -1966,6 +1966,19 @@ const loadSummary  =id=>cached('sum-'+id,10*60e3,()=>api('element-summary/'+id))
 const loadTransfers=id=>cached('tr-'+id,3*60e3,()=>api('entry/'+id+'/transfers'));
 const loadEventStatus=()=>api('event-status');
 const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('set-piece-notes'));
+/* FPL Core Insights — aggregated Opta-like stats (goalkeeper goals-prevented,
+   open-play xG, finishing quality) our own Netlify function serves from the
+   open dataset. Best-effort: a short timeout and a graceful null so a missing
+   or unconfigured endpoint never blocks boot; the app just uses official data.
+   Cached 6h to match the upstream twice-daily refresh. */
+const loadCoreInsights=()=>cached('core-insights',6*3600e3,async()=>{
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),6000);
+  try{
+    const r=await fetch(apiBase()+'/api/core-insights',{signal:ctrl.signal,headers:{'Accept':'application/json'}});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(_){return null;}finally{clearTimeout(timer);}
+});
 /* Shared season-model bundle, published by the PL Simulator (one source of
    truth for ratings, fixtures, form, odds — CORS-open). Cached 6h. */
 const MODEL_URL='https://plsimulation.netlify.app/model.json';
@@ -2046,6 +2059,13 @@ async function boot(){
   const seasonStarted=b.elements.some(e=>(e.minutes||0)>0);
   const season=seasonKeyFrom(b.events);
   const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,seasonStarted,preseason:!seasonStarted,season,events:b.events,elements:b.elements};
+  /* Merge FPL Core Insights advanced stats onto the player objects (best
+     effort — never blocks or breaks boot). Guarded everywhere downstream by
+     the presence of `_ci`, so absence leaves every projection unchanged. */
+  try{
+    const ci=await loadCoreInsights();
+    if(ci&&ci.players){idx.coreInsights=ci.season||true;b.elements.forEach(e=>{const c=ci.players[e.id];if(c)e._ci=c;});}
+  }catch(_){/* official data only */}
   MEM._idx=idx;return idx;
 }
 
@@ -5770,6 +5790,32 @@ function playerDetailHTML(b,fixtures,id){
     '</div>'+
     '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points. Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
+  /* Advanced metrics from the open FPL Core Insights dataset — Opta-like
+     numbers the official API does not carry. Only shown when the mirror is
+     configured and has this player (else the section is simply absent). For
+     keepers the headline is goals prevented (post-shot xG faced minus goals
+     conceded — shot-stopping above expectation), which also feeds nativeXP. */
+  let ciBlock='';
+  const ci=e._ci;
+  if(ci&&ci.g>=3){
+    const sg=n=>n>0?'+'+n.toFixed(2):n.toFixed(2);
+    const rows=e.element_type===1
+      ? stat('Goals prevented',sg(ci.gp||0))+
+        stat('GP / 90',ci.gp90!=null?sg(ci.gp90):'—')+
+        stat('Saves',fmtNum(ci.sv))+
+        stat('xGOT faced',ci.xgot!=null?f90(ci.xgot):'—')
+      : stat('Non-pen xG / 90',ci.npxg90!=null?f90(ci.npxg90):'—')+
+        stat('xGOT (total)',ci.xgot!=null?f90(ci.xgot):'—')+
+        stat('Big chances missed',fmtNum(ci.bcm))+
+        stat('Chances created',fmtNum(ci.cc))+
+        stat('Touches in box / 90',ci.tob90!=null?f90(ci.tob90):'—');
+    ciBlock='<div class="card pd-sec"><div class="card-title">Advanced — Core Insights</div><div class="pd-grid">'+
+      rows+'</div><div class="dl-sub" style="margin-top:8px">'+
+      (e.element_type===1
+        ? 'Goals prevented = post-shot xG faced − goals conceded; positive means shot-stopping above expectation. This sharpens the keeper’s projected points.'
+        : 'Non-penalty xG isolates open-play threat; xGOT is on-target shot quality. Extra context beyond the official numbers.')+
+      ' Source: open FPL Core Insights dataset ('+ci.g+' games).</div></div>';
+  }
   /* FPL percentile ranks (API-fix 4): the official API pre-computes each
      player's rank within their position on form, points-per-game, ICT and
      ownership. Free context — where this player sits in the pack. */
@@ -5802,7 +5848,7 @@ function playerDetailHTML(b,fixtures,id){
     '<p class="dl-sub" style="margin-bottom:10px">A one-look scouting call on '+esc(e.web_name)+', grounded in these numbers.</p>'+
     aiGate('<button class="btn btn-primary btn-sm" onclick="genPlayer('+id+')">Scout this player</button>')+
     '<div id="pcard-'+id+'" style="margin-top:12px"></div></div>';
-  return head+news+kpis+ticker+leagueSlot+summarySlot+per90+rankBlock+twinHtml+ai+
+  return head+news+kpis+ticker+leagueSlot+summarySlot+per90+ciBlock+rankBlock+twinHtml+ai+
     '<div class="modal-row" style="margin-top:6px"><button class="btn btn-ghost" data-player-close>Close</button></div>';
 }
 
@@ -7348,6 +7394,22 @@ function nativeXP(el,nf){
   if(type===1){
     const sv90=(el.saves||0)*90/Math.max(mins,90);
     pts+=(sv90*m.minFrac)/3;
+    /* Shot-stopping above expectation (Core Insights, guarded): goals
+       prevented per 90 = post-shot xG faced minus goals conceded. A keeper
+       who beats expectation earns extra save/bonus points and rescues clean
+       sheets the fixture odds alone miss; a leaky one is marked down.
+       Bounded and minutes-scaled. Absent the mirror the term is zero, so the
+       validated core (and the server-side prediction logger) is unchanged.
+       See docs/MODELLING.md and dev/model-validate.mjs. */
+    const ci=el._ci;
+    if(ci&&(ci.g||0)>=5&&ci.gp90!=null){
+      /* Coefficient 1.0 pt per (goal prevented per 90): the marginal value a
+         seeded Monte-Carlo puts on shot-stopping the fixed saves/concede/CS
+         terms miss is ~1.5 (dev/model-validate.mjs); discounted to 1.0 to
+         guard against double-counting bonus. Clamped to a realistic season
+         range so it never dominates. */
+      pts+=Math.max(-0.5,Math.min(0.8,ci.gp90))*1.0*m.minFrac;
+    }
   }
   /* Expected deductions for cards, own goals and penalty misses (P-fix 4). */
   pts-=negRate90(el)*m.minFrac;

@@ -140,6 +140,19 @@
   status = 200
   force = true
 
+# FPL Core Insights advanced stats (goalkeeper goals-prevented, open-play xG,
+# finishing quality) merged onto players client-side.
+[[redirects]]
+  from = "/api/core-insights"
+  to = "/.netlify/functions/core-insights-data"
+  status = 200
+  force = true
+
 # Scheduled push sender (hourly).
 [functions."push-cron"]
   schedule = "@hourly"
+
+# FPL Core Insights aggregator — pulls the open advanced-stats dataset and
+# refreshes public.gwedge_core_insights twice daily, ~1h after upstream.
+[functions."core-insights"]
+  schedule = "30 6,17 * * *"

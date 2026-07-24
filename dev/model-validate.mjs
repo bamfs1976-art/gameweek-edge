@@ -153,6 +153,68 @@ function runSynthetic() {
   if (tot.aeNew >= tot.aeOld) { console.error('\n  REGRESSION: enhanced MAE did not improve.'); process.exit(1); }
 }
 
+/* ── GK shot-stopping (Core Insights goals_prevented) ────── */
+/* Isolates the goalkeeper refinement: keepers carry a hidden shot-stopping
+   skill s (goals prevented per 90). Their true FPL points are Monte-Carlo'd
+   from shots-on-target faced and a skill-adjusted concede rate (better keepers
+   concede less → more saves, more clean sheets, fewer −points). We then score
+   nativeXP WITHOUT the advanced-stats mirror against WITH it (el._ci carries
+   goals_prevented). The fixed saves/concede/clean-sheet terms cannot see
+   shot-stopping skill beyond the raw save count, so the guarded goals_prevented
+   term should cut the goalkeeper's systematic bias. This is the backtest that
+   justifies wiring the term into the shipped model. */
+function runGkShotStopping() {
+  const nf = { gp: 6, lam: 1.5, lamAvg: 1.5, cs: 0.28 };
+  const base = 1.15, sot90 = 3.6, TRIALS = 4000, N = 200;
+  let n = 0, aeNo = 0, aeCi = 0;
+  /* Mean signed bias is ~0 for both (skill is symmetric about 0, so over- and
+     under-projections cancel); the tell is bias SPLIT by skill — the fixed
+     model overrates leaky keepers and underrates elite ones, which the term
+     corrects. So we track bias separately for elite (s>0.1) and leaky (s<−0.1). */
+  const grp = { elite: { n: 0, no: 0, ci: 0 }, leaky: { n: 0, no: 0, ci: 0 } };
+  for (let i = 0; i < N; i++) {
+    const s = -0.3 + 0.6 * rnd();                          // true skill: goals prevented / 90
+    const conc90 = Math.max(0.15, base - s);
+    let ptsSum = 0, svSum = 0;
+    for (let t = 0; t < TRIALS; t++) {
+      const sot = poissonSample(sot90);
+      const pG = Math.min(0.9, conc90 / sot90);
+      let c = 0; for (let k = 0; k < sot; k++) c += bern(pG);
+      const sv = Math.max(0, sot - c);
+      ptsSum += 1 + 1 + Math.floor(sv / 3) + (c === 0 ? 4 : 0) - Math.floor(c / 2);
+      svSum += sv;
+    }
+    const truth = ptsSum / TRIALS;
+    const el = {
+      element_type: 1, status: 'a', chance_of_playing_next_round: null, minutes: 540, starts: 6,
+      expected_goals_per_90: '0', expected_assists_per_90: '0', expected_goals_conceded_per_90: String(conc90),
+      defensive_contribution_per_90: '0', goals_scored: 0, bonus: 0, saves: Math.round(svSum / TRIALS * 6),
+    };
+    const pNo = nativeXP(el, nf);                          // no advanced-stats mirror
+    el._ci = { g: 6, gp90: s };                            // mirror present → goals_prevented term active
+    const pCi = nativeXP(el, nf);
+    if (pNo == null || pCi == null) continue;
+    n++; aeNo += Math.abs(truth - pNo); aeCi += Math.abs(truth - pCi);
+    const g = s > 0.1 ? grp.elite : s < -0.1 ? grp.leaky : null;
+    if (g) { g.n++; g.no += (pNo - truth); g.ci += (pCi - truth); }
+  }
+  const f = x => x.toFixed(3).padStart(8);
+  console.log('\nGoalkeeper shot-stopping — nativeXP with vs without goals_prevented\n');
+  console.log('  overall MAE   no CI ' + (aeNo / n).toFixed(3) + '   +CI ' + (aeCi / n).toFixed(3) +
+    '   (−' + (100 * (aeNo - aeCi) / aeNo).toFixed(1) + '%)');
+  console.log('\n  bias by true skill   n    no CI     +CI');
+  console.log('  --------------------------------------------');
+  console.log(`  elite  (s>+0.1)     ${String(grp.elite.n).padStart(3)} ${f(grp.elite.no / grp.elite.n)} ${f(grp.elite.ci / grp.elite.n)}`);
+  console.log(`  leaky  (s<-0.1)     ${String(grp.leaky.n).padStart(3)} ${f(grp.leaky.no / grp.leaky.n)} ${f(grp.leaky.ci / grp.leaky.n)}`);
+  console.log('\n  Without the mirror the model underrates elite shot-stoppers and overrates leaky');
+  console.log('  ones; goals_prevented pulls both toward truth and cuts overall GK MAE.');
+  const eliteNo = grp.elite.no / grp.elite.n, eliteCi = grp.elite.ci / grp.elite.n;
+  const leakyNo = grp.leaky.no / grp.leaky.n, leakyCi = grp.leaky.ci / grp.leaky.n;
+  if (aeCi > aeNo + 1e-9 || Math.abs(eliteCi) >= Math.abs(eliteNo) || Math.abs(leakyCi) >= Math.abs(leakyNo)) {
+    console.error('\n  REGRESSION: the goals_prevented term did not improve GK accuracy.'); process.exit(1);
+  }
+}
+
 function runReal(path) {
   const snap = JSON.parse(readFileSync(path, 'utf8'));
   const boot = snap.bootstrap, actuals = snap.actuals || {};
@@ -174,7 +236,7 @@ function runReal(path) {
 }
 
 const arg = process.argv[2];
-if (arg) runReal(arg); else runSynthetic();
+if (arg) runReal(arg); else { runSynthetic(); runGkShotStopping(); }
 
 /* buildSnapshot note — to make a real snapshot for the REAL mode:
  *   const boot = await (await fetch('.../api/bootstrap-static/')).json();

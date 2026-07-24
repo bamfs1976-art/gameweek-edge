@@ -101,6 +101,7 @@ work below.
 | **4** | `squadSim` — **correlated** whole-XI projection: teammates share one clean-sheet outcome and one attacking shock per team, so a stacked defence / doubled-up attack gets the fatter tails it deserves; captain doubles. Surfaced as "Projected next GW" on My Squad. Plus `rankOptimiser` — a **rank-EV** transfer optimiser (`effEdge`/`rankEV`/`normCdf`) that scores each candidate move by its **ownership-adjusted edge over the field** rather than raw points, and calls out where max-points and max-rank diverge. Surfaced as the "Rank optimiser" card on the Transfers page. | **done** |
 | **5** | `calibration` — Brier + reliability curve grading engine; `gwedge_predictions` prediction log (service-role, live); `netlify/functions/log-predictions.js` — an **hourly scheduled function** that extracts the shipping model from `index.html` and logs each upcoming gameweek's forecast, then backfills actuals once a GW finishes; `model-calibration.js` serves the aggregate accuracy, shown as **"Live prediction accuracy"** on the Accountability page. | **done** |
 | **6** | Match model: `recencyWeight` (0.97/GW decay so recent form counts more) in the live refit, and `availAttackMult` — a team whose **top expected-involvement attacker is flagged** is downgraded (−10% out, −4% doubt), tying the fixture model to the news feed. | **done** |
+| **7** | **Advanced data ingestion (open source).** Goalkeeper `goals_prevented` from the [FPL Core Insights](https://github.com/olbauday/FPL-Core-Insights) mirror sharpens `nativeXP`'s keeper term (~1 pt per goal prevented / 90, coefficient set by `dev/model-validate.mjs`; inert without the mirror). Plus a **real‑actuals backtest** (`dev/backtest-vaastav.mjs`) against a historical season from the MIT‑licensed [vaastav dataset](https://github.com/vaastav/Fantasy-Premier-League), so accuracy is no longer graded only on synthetic data. | **done** |
 
 The strategic payoff is P3–P4: forecasting **distributions** rather than
 point estimates, then optimising for **expected rank** vs the field (given
@@ -123,9 +124,24 @@ model's *specification*, not its self-consistency. (The live FPL API is
 firewalled from CI, so this is a simulation study; a real snapshot ports
 straight into `model-validate.mjs`.)
 
+**Real‑actuals cross‑check (P7).** `node dev/backtest-vaastav.mjs` grades the
+*shipping* `nativeXP` (extracted verbatim from `index.html`) against a real
+historical season from the open vaastav dataset — real underlying stats and
+real realised points, no synthetic generator. Fixture conditioning is
+neutralised (it isolates the per‑90 scoring core; the Dixon‑Coles layer is
+covered end‑to‑end by `backtest-season.mjs`), and vaastav's own `xP` column is
+dropped for its documented lookahead bias. On 2023/24, **conditional on the
+player appearing** the scoring core beats the 3‑GW form baseline on real
+actuals (MAE ≈ 2.17 vs 2.34). On *all* player‑gameweeks raw MAE is
+minutes‑dominated — recent form implicitly encodes rotation that a pure
+scoring model omits — which is precisely the gap the separately‑validated
+`minutesModel` closes in the live app. A trimmed sample season is committed so
+the check runs offline in `npm test`; `npm run fetch:vaastav` pulls a full one.
+
 **What holds up:**
-- `nativeXP` MAE **beats a 3-GW form baseline** (~2.4 vs ~2.8) and season-PPG,
-  so the added categories earn their place.
+- `nativeXP` MAE **beats a 3-GW form baseline** (~2.4 vs ~2.8 synthetic; ~2.17
+  vs 2.34 on real appearance‑conditional actuals) and season‑PPG, so the added
+  categories earn their place.
 - `pointsDist` haul-probability is **well calibrated** (Brier ~0.07,
   reliability tracks the diagonal), and the 80% interval covers ~79%.
 - Captaining the model returns **~+2 pts/GW over the highest-form pick**.
@@ -228,11 +244,16 @@ These complement — do not replace — the double/blank calls in `chipAdvice`.
 
 ## Test & tooling
 
-- `npm test` — 262 unit tests over the model core (every helper above).
+- `npm test` — unit tests over the model core (every helper above), the
+  prediction-logger and Core-Insights aggregator, plus the real-actuals backtest.
 - `node dev/backtest-season.mjs` — walk-forward season backtest + the
   "where to improve" report (the section above is generated from it).
-- `node dev/model-validate.mjs [snap.json]` — A/B accuracy backtest;
-  `snap.json` runs it against real finished-gameweek actuals.
+- `node dev/model-validate.mjs [snap.json]` — A/B accuracy backtest (now
+  including the goalkeeper `goals_prevented` refinement); `snap.json` runs it
+  against real finished-gameweek actuals.
+- `npm run fetch:vaastav [season]` then `node dev/backtest-vaastav.mjs [season]`
+  — real-actuals backtest against the open vaastav dataset (P7). Runs on a
+  committed trimmed sample offline; pull a full season for a fuller run.
 - `node dev/simulate-gameweek.mjs [--html out.html]` — the model's
   gameweek outputs.
 

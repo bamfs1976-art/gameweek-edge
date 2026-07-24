@@ -43,6 +43,23 @@ Sign-in is **optional** — signed out, everything works locally on the device. 
 
 > **One Supabase setting for email links:** in the Supabase dashboard → Authentication → URL Configuration, set the **Site URL** (and add to **Redirect URLs**) to your deployed Netlify URL, so sign-up confirmation and password-reset links return to the app.
 
+## Advanced stats (FPL Core Insights — optional)
+
+Beyond the official API, the app can layer in Opta‑like metrics from the open
+[FPL Core Insights](https://github.com/olbauday/FPL-Core-Insights) dataset —
+most usefully goalkeeper **goals prevented** (post‑shot xG faced minus goals
+conceded), which sharpens the keeper projection. It is fully optional and needs
+**no new env vars** (it reuses the Supabase service role):
+
+- Create the table once: run `supabase/gwedge_core_insights.sql` in the Supabase
+  SQL editor.
+- A scheduled function (`core-insights.js`, twice daily) aggregates the open
+  dataset into it; `/api/core-insights` serves it and the client merges it onto
+  players. Until the table exists it simply no‑ops and the app uses official
+  data only.
+
+See `docs/FEATURES.md` §5 and `docs/MODELLING.md` (P7) for details.
+
 ## Billing (Stripe)
 
 Pro is a real paid tier. Free users see a value preview + the upgrade modal; subscribing via **Stripe Checkout** sets their tier server-side.
