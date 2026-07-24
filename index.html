@@ -6261,10 +6261,31 @@ let COMPARE=[];
 async function hydrateCompare(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
+  const hz=buildHorizon(b,fixtures,6);
+  const CMP_FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
   const gpOf=minutesBasis(b,fixtures);
   COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
   const sel=COMPARE.map(id=>b.els[id]);
   const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
+  /* Side-by-side fixture comparison over the next 6 gameweeks — one row per
+     gameweek, each cell the player's fixture coloured by difficulty. */
+  const maxN=Math.max.apply(null,[0].concat(sel.map(e=>(hz[e.team]||[]).length)));
+  let fxRows='';
+  for(let i=0;i<maxN;i++){
+    const ev=sel.map(e=>(hz[e.team]||[])[i]).filter(Boolean)[0];
+    fxRows+='<tr><th class="tm">'+(ev?'GW'+ev.event:'—')+'</th>'+sel.map(e=>{
+      const fx=(hz[e.team]||[])[i];
+      return fx?'<td style="background:'+(CMP_FDR_HEX[fx.diff]||'#d9dee3')+';color:#0c1014;font-weight:700">'+esc(fx.opp)+' ('+(fx.home?'H':'A')+')</td>':'<td class="blank">—</td>';
+    }).join('')+'</tr>';
+  }
+  const fixCard=(sel.length&&maxN)
+    ? '<div class="card mb-20"><div class="card-title">Fixture comparison — next '+maxN+' gameweeks</div>'+
+        '<div class="fdr"><table>'+
+          '<tr><th class="tm">GW</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><span class="dl-sub">'+esc(teamShort(b,e.team))+'</span></td>').join('')+'</tr>'+
+          fxRows+
+        '</table></div>'+
+        '<p class="dl-sub" style="margin-top:8px">Each cell is the player’s club fixture that gameweek — greener is an easier opponent (H/A shown). The model difficulty, the same lens as the Fixture Planner.</p></div>'
+    : '';
   const table=sel.length?
     '<div class="fdr"><table>'+
       '<tr><th class="tm">Player</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><button class="btn btn-ghost btn-sm" data-rm="'+e.id+'" style="margin-top:4px">Remove</button></td>').join('')+'</tr>'+
@@ -6279,7 +6300,6 @@ async function hydrateCompare(host){
       metric('xG',e=>e.expected_goals||'—')+
       metric('xA',e=>e.expected_assists||'—')+
       metric('ICT',e=>e.ict_index)+
-      metric('Next',e=>nextFixLabel(nf[e.team]))+
     '</table></div>'+
     '<div class="dl-sub" style="margin-top:8px">Mins security blends starts share, minutes share and availability: secure ≥75, watch 50–74, risky &lt;50. Pre-season it reads from last season’s starts and minutes.</div>'
     :'<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add up to four players side by side.</p></div>';
@@ -6287,6 +6307,7 @@ async function hydrateCompare(host){
     '<div class="card mb-20"><div class="card-title">Add players ('+sel.length+'/4)</div>'+
       '<input class="modal-in" id="cmp-search" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
       '<div class="sugg" id="cmp-sugg"></div></div>'+
+    fixCard+
     '<div class="card">'+table+'</div>';
   const inp=host.querySelector('#cmp-search'),sugg=host.querySelector('#cmp-sugg');
   if(inp&&!inp.disabled){
