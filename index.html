@@ -9719,8 +9719,18 @@ function renderDraft(){
   if(saveBtn)saveBtn.disabled=!v.saveable;
   const cnt=document.getElementById('draft-count');
   if(cnt)cnt.textContent=players.length+'/15';
-  const cell=e=>'<div class="pp" data-draft-open="'+e.id+'" role="button" tabindex="0">'+ppFigure(b,e)+
-    '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span></div>';
+  /* Suggested captain / vice — the two highest-xP6 outfield picks — and each
+     player's opening fixture on the card, so the draft reads like a team sheet. */
+  const FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
+  const outfield=players.filter(e=>e.element_type>=2).sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0));
+  const capId=outfield[0]?outfield[0].id:null,viceId=outfield[1]?outfield[1].id:null;
+  const cell=e=>{
+    const nf=S.nf&&S.nf[e.team];
+    const fx=nf?'<div class="pp-sub"><span class="l" style="flex:1;background:'+(FDR_HEX[nf.diff]||'#d9dee3')+';color:#0c1014">'+esc(nf.opp)+' ('+(nf.home?'H':'A')+')</span></div>':'';
+    const badge=e.id===capId?'<span class="pp-badge">C</span>':e.id===viceId?'<span class="pp-badge" style="background:#c9ccd1">V</span>':'';
+    return '<div class="pp'+(e.id===capId?' is-cap':'')+'" data-draft-open="'+e.id+'" role="button" tabindex="0">'+badge+ppFigure(b,e)+
+      '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span>'+fx+'</div>';
+  };
   const lbl={1:'GK',2:'DEF',3:'MID',4:'FWD'};
   const ghost=t=>'<div class="pp" style="opacity:.35" aria-hidden="true"><span class="pp-fig no-photo" style="--kit:var(--surface-3);--kit2:var(--surface-3)"></span>'+
     '<span class="pp-nm">+ '+lbl[t]+'</span><span class="pp-pt">—</span></div>';
@@ -9879,7 +9889,7 @@ async function hydrateDraft(host){
     xp6[e.id]=draftXP6(e,ctx&&club?ctx.ease[club]:1,gp(e.team));});
   const tmpl=draftTemplate(pool.filter(e=>e.status==='a'),xp6);
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
-  const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0};
+  const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0,nf:buildNextFix(b,fixtures)};
   const importBtn=(getMid()&&b.liveSeason)
     ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
