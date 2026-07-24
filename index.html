@@ -713,8 +713,11 @@ html.offline .net-banner{transform:translateY(0)}
   display:flex;flex-direction:column;gap:10px;
 }
 .sb-foot-row{display:flex;align-items:center;justify-content:space-between}
-.sb-foot-v{font-size:.66rem;color:var(--text-4)}
-.sb-foot-legal{font-size:.6rem;line-height:1.45;color:var(--text-4);margin:0}
+/* Footer version, family link and the legal disclaimer are small but must
+   stay readable — use text-3 (documented AA) rather than the dim text-4,
+   which is reserved for decorative glyphs. */
+.sb-foot-v{font-size:.66rem;color:var(--text-3)}
+.sb-foot-legal{font-size:.6rem;line-height:1.45;color:var(--text-3);margin:0}
 .acct-btn{
   display:flex;align-items:center;gap:9px;width:100%;
   padding:9px 11px;border-radius:var(--r-md);
@@ -1434,7 +1437,7 @@ body{font-size:14px;line-height:1.35}
 .trust-strip b{color:var(--text)}
 .trust-strip .perf-h{color:var(--green);font-weight:700;letter-spacing:.06em}
 /* Dashboard meta line + fitness chips (v6 prototype refinements) */
-.dash-meta{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;color:var(--text-4);
+.dash-meta{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.05em;color:var(--text-3);
   display:flex;flex-wrap:wrap;gap:3px 16px;margin:0 0 16px}
 .dash-meta .g{color:var(--green)}
 .inj-chip{font-family:var(--font-mono);font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;
@@ -4348,9 +4351,9 @@ async function hydrateGwreport(host){
 
   host.innerHTML='<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">GW Debrief'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
-      '<button class="btn btn-ghost btn-sm" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
-      '<button class="btn btn-ghost btn-sm" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button></span></div>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button></span></div>'+
     '<p class="dl-sub" style="margin:0">Your week, reviewed — and what the model would do before the next deadline.</p></div>'+
     summary+
     list('What worked',good,'var(--green)')+
@@ -8350,9 +8353,9 @@ async function hydrateResults(host){
   host.innerHTML='<div class="card">'+
     '<div class="card-title" style="display:flex;align-items:center;gap:8px">Match Centre'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
-      '<button class="btn btn-ghost btn-sm" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
-      '<button class="btn btn-ghost btn-sm" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button></span></div>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button></span></div>'+
     '<div class="dl-sub" style="margin-bottom:4px">Tap a match for scorers, cards, saves, defensive contributions and the bonus race.'+
       (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
     (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
