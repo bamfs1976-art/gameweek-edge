@@ -1907,6 +1907,21 @@ const loadDreamTeam=gw=>cached('dt-'+gw,10*60e3,()=>api('dream-team/'+gw));
 const loadH2HStandings=(id,page)=>api('leagues-h2h/'+id+'/standings'+(page>1?'?page_standings='+page:''));
 const loadH2HMatches=(id,page)=>api('leagues-h2h/'+id+'/matches'+(page>1?'?page='+page:''));
 
+/* Season label ("2026/27") derived from the earliest gameweek deadline —
+   the same anchor the prediction logger uses server-side (earliest deadline
+   year). Used only as an internal stamp to scope per-season localStorage
+   (compared client-to-client, so the exact string format is private). */
+function seasonKeyFrom(events){
+  try{
+    const ds=(events||[]).map(e=>e.deadline_time).filter(Boolean).sort();
+    if(!ds.length)return '';
+    const y=new Date(ds[0]).getUTCFullYear();
+    return y+'/'+String(y+1).slice(-2);
+  }catch(_){return '';}
+}
+/* The current season key, once bootstrap is loaded; '' if not yet known. */
+function curSeason(){return (MEM._idx&&MEM._idx.season)||'';}
+
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
   if(MEM._idx)return MEM._idx;
@@ -1920,7 +1935,12 @@ async function boot(){
      between seasons (the new FPL game not yet live in the API). */
   const upcoming=b.events.find(e=>!e.finished)||null;
   const liveSeason=b.events.some(e=>e.is_current||e.is_next);
-  const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,events:b.events,elements:b.elements};
+  /* Pre-season: no player has logged a minute yet (the same signal the
+     suspension watch uses). Before GW1 completes, form/minutes are 0 and
+     projections are provisional — panels use this to set expectations. */
+  const seasonStarted=b.elements.some(e=>(e.minutes||0)>0);
+  const season=seasonKeyFrom(b.events);
+  const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,seasonStarted,preseason:!seasonStarted,season,events:b.events,elements:b.elements};
   MEM._idx=idx;return idx;
 }
 
@@ -3066,10 +3086,20 @@ function renderPage(panelId){
              call the ID invalid if the entry itself is missing. */
           const mid=getMid();let entryOk=false;
           if(mid){try{await loadEntry(mid);entryOk=true;}catch(_){}}
+          /* Pre-season? Name the actual deadline and point at the Draft, so a
+             valid-but-locked squad reads as an expected milestone, not a fault. */
+          let pre=false,dl='';
+          try{const bb=await boot();pre=bb.preseason;const up=bb.upcoming;
+            if(up&&up.deadline_time)dl=new Date(up.deadline_time).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+          }catch(_){}
           host.innerHTML=entryOk
-            ? stateBox('calendar','Squad not available yet',
-                'Your team ID is linked and valid. The official FPL API only serves a manager’s squad once the gameweek deadline has passed and teams lock — before the first deadline of a new season there are simply no picks to load. My Week and My Squad fill in automatically once the gameweek locks.',
-                '<button class="btn btn-ghost btn-sm" onclick="openMidModal()">Edit ID</button>')
+            ? (pre
+                ? stateBox('calendar','Your squad unlocks after the deadline',
+                    'Linked and valid. The FPL API only serves a manager’s squad once teams lock — so before the first deadline'+(dl?' ('+dl+')':'')+' there are no picks to load. My Week and My Squad fill in automatically the moment the deadline passes. Until then, build and compare your XI on the Pre-season Draft.',
+                    '<button class="btn btn-primary btn-sm" onclick="openPanel(\'draft\')">Open Pre-season Draft</button>')
+                : stateBox('calendar','Squad not available yet',
+                    'Your team ID is linked and valid. The official FPL API only serves a manager’s squad once the gameweek deadline has passed and teams lock. My Week and My Squad fill in automatically once the gameweek locks.',
+                    '<button class="btn btn-ghost btn-sm" onclick="openMidModal()">Edit ID</button>'))
             : stateBox('question','Manager not found','Check the ID and try again.',
                 '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>');
         }else{
@@ -3190,10 +3220,16 @@ async function modelWatch(b,fixtures,mid){
     const picks=await loadPicks(mid,b.cur.id);
     const myTeams=new Set(picks.picks.map(p=>(b.els[p.element]||{}).team).filter(Boolean));
     let prev=null;
-    try{prev=JSON.parse(localStorage.getItem('ge-modelwatch')||'null');}catch(_){}
+    try{
+      const rawmw=JSON.parse(localStorage.getItem('ge-modelwatch')||'null');
+      /* Snapshot is keyed by team ID (resets each season). Ignore a
+         snapshot from a previous season — a cross-season diff is noise. */
+      if(rawmw&&rawmw.snap){const s=curSeason();prev=(rawmw.season&&s&&rawmw.season!==s)?null:rawmw.snap;}
+      else if(rawmw&&!rawmw.snap)prev=rawmw; /* legacy unstamped snapshot */
+    }catch(_){}
     const snap={};
     Object.keys(R.att).forEach(id=>snap[id]=[R.att[id],R.def[id]]);
-    try{localStorage.setItem('ge-modelwatch',JSON.stringify(snap));}catch(_){}
+    try{localStorage.setItem('ge-modelwatch',JSON.stringify({season:curSeason(),snap}));}catch(_){}
     if(!prev)return '';
     const notes=[];
     myTeams.forEach(id=>{
@@ -3581,7 +3617,10 @@ async function hydrateDashboard(host){
       (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>'+
       (why?'<div class="qd-why">'+why+'</div>':'')+
       (alt?'<details class="qd-alt"><summary>Alternatives</summary>'+alt+'</details>':'')+'</div>';
-  const q1='<div class="card qd'+(mid?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id,mid?'':'<span class="demo-chip">DEMO</span>')+
+  /* Status chip: PRE-SEASON dominates before GW1 (numbers are provisional,
+     for a linked manager too); otherwise DEMO for an unlinked manager. */
+  const statusTag=b.preseason?'<span class="demo-chip">PRE-SEASON</span>':(mid?'':'<span class="demo-chip">DEMO</span>');
+  const q1='<div class="card qd'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id,statusTag)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
     arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
     arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
@@ -5895,8 +5934,23 @@ async function hydrateChips(host){
 }
 
 /* ── Watchlist: local list of tracked players ──────────── */
-function loadWatch(){try{return JSON.parse(localStorage.getItem('ge-watch')||'[]');}catch(_){return [];}}
-function saveWatch(a){try{localStorage.setItem('ge-watch',JSON.stringify(a));}catch(_){}}
+/* Stored as {season,ids}. FPL element IDs reset each season, so a list
+   saved last season would point at different players now — discard it when
+   the stamped season no longer matches. A bare-array value is a pre-stamp
+   legacy list: keep it (it gets a stamp on the next save). */
+function loadWatch(){
+  try{
+    const raw=JSON.parse(localStorage.getItem('ge-watch')||'[]');
+    if(Array.isArray(raw))return raw;
+    if(raw&&Array.isArray(raw.ids)){
+      const s=curSeason();
+      if(raw.season&&s&&raw.season!==s)return [];
+      return raw.ids;
+    }
+  }catch(_){}
+  return [];
+}
+function saveWatch(a){try{localStorage.setItem('ge-watch',JSON.stringify({season:curSeason(),ids:a}));}catch(_){}}
 function addWatch(id){const a=loadWatch();if(!a.includes(id)){a.push(id);saveWatch(a);cloudWatchAdd(id);toast('Added to watchlist');}}
 function removeWatch(id){saveWatch(loadWatch().filter(x=>x!==id));cloudWatchDel(id);toast('Removed from watchlist');}
 async function hydrateWatchlist(host){
@@ -9124,7 +9178,11 @@ function draftCanAdd(players,el){
 }
 function loadDraftIds(){
   try{const o=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');
-    return o&&Array.isArray(o.ids)?o.ids.filter(x=>typeof x==='number'):[];
+    if(!o||!Array.isArray(o.ids))return [];
+    /* Element IDs reset each season — drop a draft stamped for a past one. */
+    const s=curSeason();
+    if(o.season&&s&&o.season!==s)return [];
+    return o.ids.filter(x=>typeof x==='number');
   }catch(_){return [];}
 }
 /* Pre-season projection over GW1–6: last season's points per 90 with a
@@ -9380,7 +9438,7 @@ function draftSaveNow(){
     toast(v.overBudget?'Over budget — free up '+money(-v.bank)+' to save':'Pick the full 15 (2 GK / 5 DEF / 5 MID / 3 FWD) to save');
     return;
   }
-  try{localStorage.setItem(DRAFT_KEY,JSON.stringify({ids:DRAFT_IDS.slice(),t:Date.now()}));}catch(_){}
+  try{localStorage.setItem(DRAFT_KEY,JSON.stringify({season:curSeason(),ids:DRAFT_IDS.slice(),t:Date.now()}));}catch(_){}
   track('draft_saved',{cost:v.cost});
   toast('Draft saved on this device');
 }

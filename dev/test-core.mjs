@@ -131,11 +131,13 @@ const pieces = [
   extractFn(html, 'chipSwings'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
-  extractFn(html, 'latestNews')
+  extractFn(html, 'latestNews'),
+  /* Pre-season readiness: season key derivation for scoped storage. */
+  extractFn(html, 'seasonKeyFrom')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1014,6 +1016,17 @@ const co = core.calibration(over);
 ok(co.brier > cp.brier, 'an over-confident model scores a worse (higher) Brier');
 ok(co.buckets.some(b => b.pMean - b.oFreq > 0.3), 'the reliability curve exposes the over-confidence');
 ok(core.calibration([]).n === 0 && core.calibration([]).brier === null, 'empty input is handled');
+
+section('seasonKeyFrom: season label for scoped storage');
+/* Earliest deadline year -> "YYYY/YY". The stamp that invalidates last
+   seasons watchlist / draft (element IDs reset each season). */
+ok(core.seasonKeyFrom([{ deadline_time: '2026-08-21T17:30:00Z' }, { deadline_time: '2026-08-28T17:30:00Z' }]) === '2026/27', 'derives 2026/27 from GW1 deadline');
+ok(core.seasonKeyFrom([{ deadline_time: '2025-08-15T17:30:00Z' }]) === '2025/26', 'derives 2025/26');
+ok(core.seasonKeyFrom([{ deadline_time: '2026-09-01T00:00:00Z' }, { deadline_time: '2026-08-21T17:30:00Z' }]) === '2026/27', 'uses the earliest deadline, not array order');
+ok(core.seasonKeyFrom([]) === '' && core.seasonKeyFrom([{}]) === '', 'no deadlines -> empty (cannot verify -> never discards)');
+/* The scoping rule: a stamp from a different season must not equal the
+   current one, so stale element-ID lists get discarded. */
+ok(core.seasonKeyFrom([{ deadline_time: '2025-08-15T17:30:00Z' }]) !== core.seasonKeyFrom([{ deadline_time: '2026-08-21T17:30:00Z' }]), 'consecutive seasons produce distinct keys');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
