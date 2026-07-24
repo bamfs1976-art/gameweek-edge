@@ -1813,7 +1813,8 @@ const loadModelBundle=()=>cached('model-bundle',6*3600e3,async()=>{
   return r.json();
 });
 const loadDreamTeam=gw=>cached('dt-'+gw,10*60e3,()=>api('dream-team/'+gw));
-const loadH2HStandings=id=>api('leagues-h2h/'+id+'/standings');
+const loadH2HStandings=(id,page)=>api('leagues-h2h/'+id+'/standings'+(page>1?'?page_standings='+page:''));
+const loadH2HMatches=(id,page)=>api('leagues-h2h/'+id+'/matches'+(page>1?'?page='+page:''));
 
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
@@ -7103,8 +7104,8 @@ async function hydrateAsk(host){
 }
 
 /* ── Mini-League Tracker ───────────────────────────────── */
-const loadStandings=id=>api('leagues-classic/'+id+'/standings');
-let LEAGUE_SEL=null,LEAGUE_TYPE='classic';
+const loadStandings=(id,page)=>api('leagues-classic/'+id+'/standings'+(page>1?'?page_standings='+page:''));
+let LEAGUE_SEL=null,LEAGUE_TYPE='classic',LEAGUE_PAGE=1,LEAGUE_ME_RANK=0;
 
 async function hydrateLeagues(host){
   const mid=getMid();
@@ -7116,7 +7117,7 @@ async function hydrateLeagues(host){
   if(!classic.length&&!h2h.length){host.innerHTML=stateBox('trophy','No leagues yet','Your mini-leagues appear here once you’ve joined some.');return;}
   const btn=(l,type)=>{
     const mv=(l.entry_last_rank&&l.entry_rank)?l.entry_last_rank-l.entry_rank:0;
-    return '<button class="dl-row" data-league="'+l.id+'" data-type="'+type+'" style="width:100%;text-align:left">'+
+    return '<button class="dl-row" data-league="'+l.id+'" data-type="'+type+'" data-rank="'+(l.entry_rank||0)+'" style="width:100%;text-align:left">'+
       '<span class="dl-grow"><span class="dl-nm">'+esc(l.name)+'</span>'+
       '<span class="dl-sub">Your rank '+fmtNum(l.entry_rank)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></span>'+
       svg(ICON.chevron,'width="16" height="16"')+'</button>';
@@ -7126,21 +7127,65 @@ async function hydrateLeagues(host){
   host.innerHTML=group('Classic leagues',classic,'classic')+group('Head-to-head leagues',h2h,'h2h')+
     '<div class="dl-sub">Tap a league to see the standings.</div>';
   Array.prototype.forEach.call(host.querySelectorAll('[data-league]'),b=>
-    b.addEventListener('click',()=>{LEAGUE_SEL=parseInt(b.dataset.league,10);LEAGUE_TYPE=b.dataset.type;renderPage('leagues');}));
+    b.addEventListener('click',()=>{LEAGUE_SEL=parseInt(b.dataset.league,10);LEAGUE_TYPE=b.dataset.type;
+      LEAGUE_ME_RANK=parseInt(b.dataset.rank,10)||0;LEAGUE_PAGE=1;renderPage('leagues');}));
 }
 
+function leaguePage(n){LEAGUE_PAGE=Math.max(1,n);renderPage('leagues');}
+/* Sum a manager's starting XI xP for a gameweek (captain doubled via the
+   pick multiplier; bench excluded as multiplier 0). Null before the squads
+   lock, when the picks endpoint is not yet public. */
+async function h2hProject(b,nf,entryId,gw){
+  try{const p=await loadPicks(entryId,gw);if(!p||!p.picks)return null;
+    let sum=0;p.picks.forEach(pk=>{const el=b.els&&b.els[pk.element];if(!el)return;
+      sum+=(xP(b,el,nf[el.team])||0)*(pk.multiplier||0);});
+    return sum;
+  }catch(_){return null;}
+}
+/* This gameweek's head-to-head fixture for the linked manager. */
+async function h2hOpponentCard(leagueId,meId,standings){
+  try{
+    const b=await boot(),gw=b.cur.id;
+    const mdata=await loadH2HMatches(leagueId).catch(()=>null);
+    const mine=((mdata&&mdata.results)||[]).filter(m=>m.entry_1_entry===meId||m.entry_2_entry===meId);
+    if(!mine.length)return '';
+    const mt=mine.find(m=>m.event===gw)||mine.filter(m=>m.event>=gw).sort((a,c)=>a.event-c.event)[0]||mine.sort((a,c)=>c.event-a.event)[0];
+    if(!mt)return '';
+    const a1=mt.entry_1_entry===meId;
+    const me={id:a1?mt.entry_1_entry:mt.entry_2_entry,name:a1?mt.entry_1_name:mt.entry_2_name,mgr:a1?mt.entry_1_player_name:mt.entry_2_player_name,pts:a1?mt.entry_1_points:mt.entry_2_points};
+    const opp={id:a1?mt.entry_2_entry:mt.entry_1_entry,name:a1?mt.entry_2_name:mt.entry_1_name,mgr:a1?mt.entry_2_player_name:mt.entry_1_player_name,pts:a1?mt.entry_2_points:mt.entry_1_points};
+    if(!opp.id)return '<div class="card mb-20"><div class="card-title">Your H2H — GW'+mt.event+'</div><p class="dl-sub" style="margin:0">Bye this gameweek — you score against the league average.</p></div>';
+    const rec=e=>{const r=standings.find(s=>s.entry===e);return r?(r.matches_won||0)+'-'+(r.matches_drawn||0)+'-'+(r.matches_lost||0):'—';};
+    const nf=buildNextFix(b,await loadFixtures());
+    const [pMe,pOpp]=await Promise.all([h2hProject(b,nf,me.id,gw),h2hProject(b,nf,opp.id,gw)]);
+    const projRow=(pMe!=null&&pOpp!=null)
+      ? '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px">'+
+          '<span class="dl-col mono" style="font-size:1.3rem;font-weight:800;color:'+(pMe>=pOpp?'var(--green)':'var(--text)')+'">'+pMe.toFixed(1)+'</span>'+
+          '<span class="dl-sub">projected xP</span>'+
+          '<span class="dl-col mono" style="font-size:1.3rem;font-weight:800;color:'+(pOpp>pMe?'var(--green)':'var(--text)')+'">'+pOpp.toFixed(1)+'</span></div>'
+      : '<div class="dl-sub" style="margin-top:8px">Projections appear once both squads lock at the deadline.</div>';
+    const live=(me.pts||opp.pts)?'<div class="dl-sub" style="margin-top:6px;text-align:center">Live: <b>'+me.pts+'</b> — <b>'+opp.pts+'</b></div>':'';
+    return '<div class="card mb-20"><div class="card-title">Your H2H — GW'+mt.event+(mt.is_knockout?' <span class="badge badge-amber">KO</span>':'')+'</div>'+
+      '<div style="display:flex;justify-content:space-between;gap:12px">'+
+        '<span class="dl-grow"><span class="dl-nm">'+esc(me.name)+' · you</span><span class="dl-sub">'+esc(me.mgr)+' · '+rec(me.id)+'</span></span>'+
+        '<span class="dl-sub" style="align-self:center">vs</span>'+
+        '<span class="dl-grow" style="text-align:right"><span class="dl-nm">'+esc(opp.name)+'</span><span class="dl-sub">'+esc(opp.mgr)+' · '+rec(opp.id)+'</span></span>'+
+      '</div>'+projRow+live+'</div>';
+  }catch(_){return '';}
+}
 async function renderLeagueStandings(host,leagueId,mid,type){
   host.innerHTML='<div class="card">'+skel(7)+'</div>';
-  const back='<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;renderPage(\'leagues\')">‹ All leagues</button>';
-  const h2h=type==='h2h';
-  let data;try{data=await (h2h?loadH2HStandings(leagueId):loadStandings(leagueId));}
+  const back='<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;LEAGUE_PAGE=1;renderPage(\'leagues\')">‹ All leagues</button>';
+  const h2h=type==='h2h',page=LEAGUE_PAGE;
+  let data;try{data=await (h2h?loadH2HStandings(leagueId,page):loadStandings(leagueId,page));}
   catch(e){host.innerHTML=back+errorBox();return;}
   const res=(data.standings&&data.standings.results)||[];
+  const hasNext=!!(data.standings&&data.standings.has_next);
   const meId=parseInt(mid,10);
   const head=h2h
     ? '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · W-D-L</span><span class="dl-col">Pts</span></div>'
     : '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · manager</span><span class="dl-col">Total</span></div>';
-  const rows=res.slice(0,50).map(r=>{
+  const rows=res.map(r=>{
     const me=r.entry===meId;
     const mv=(r.last_rank&&r.rank)?r.last_rank-r.rank:0;
     if(h2h)return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
@@ -7157,11 +7202,20 @@ async function renderLeagueStandings(host,leagueId,mid,type){
     '<p class="dl-sub" style="margin-bottom:10px">Best captain, bench tragedy and differential hero across the league (top 10 managers).</p>'+
     '<button class="btn btn-primary btn-sm" onclick="genAwards('+leagueId+')">Compute awards</button>'+
     '<div id="league-awards" style="margin-top:12px"></div></div>';
-  host.innerHTML=back+
+  const myPage=LEAGUE_ME_RANK?Math.max(1,Math.ceil(LEAGUE_ME_RANK/50)):0;
+  const pager=(page>1||hasNext)
+    ? '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">'+
+        (page>1?'<button class="btn btn-ghost btn-sm" onclick="leaguePage('+(page-1)+')">‹ Prev</button>':'')+
+        '<span class="dl-sub">Page '+page+' · ranks '+((page-1)*50+1)+'–'+((page-1)*50+res.length)+'</span>'+
+        (hasNext?'<button class="btn btn-ghost btn-sm" onclick="leaguePage('+(page+1)+')">Next ›</button>':'')+
+        (myPage&&myPage!==page?'<button class="btn btn-ghost btn-sm" onclick="leaguePage('+myPage+')">Jump to your rank</button>':'')+
+      '</div>'
+    : '';
+  const oppCard=h2h?await h2hOpponentCard(leagueId,meId,res):'';
+  host.innerHTML=back+oppCard+
     '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
-    '<div class="dl">'+head+rows+'</div>'+
-    (res.length>50?'<div class="dl-sub" style="margin-top:10px">Showing the top 50.</div>':'')+'</div>'+
+    '<div class="dl">'+head+rows+'</div>'+pager+'</div>'+
     awards;
 }
 
