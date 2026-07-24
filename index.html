@@ -1013,6 +1013,12 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .season-warn{margin-bottom:12px;padding:8px 12px;border:1px solid var(--amber);
   border-radius:var(--r-sm);background:var(--amber-soft);color:var(--amber);
   font-size:.78rem;line-height:1.4}
+/* Informational pre-season note on xP-ranked panels (projections provisional). */
+.preseason-note{display:flex;gap:8px;align-items:flex-start;margin-bottom:14px;
+  padding:8px 12px;border:1px solid var(--border-2);border-left:2px solid var(--blue);
+  border-radius:var(--r-sm);background:var(--surface-2);color:var(--text-2);
+  font-size:.78rem;line-height:1.4}
+.preseason-note svg{flex-shrink:0;margin-top:1px;color:var(--blue)}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
@@ -1926,6 +1932,17 @@ function bundleSeasonWarn(m){
     if(!bundleSeasonStale(season,curSeasonStarted(),st.label))return '';
     return '<div class="season-warn">Season model is still updating for '+esc(season)+' — these figures use the '+esc(st.label)+' model until the new-season data publishes.</div>';
   }catch(_){return '';}
+}
+/* Informational banner for xP-ranked panels before GW1. Pre-season, minutes
+   and form are zero and ownership is still forming, so the native model is off
+   and projections lean on FPL's provisional ep_next — the ordering sharpens as
+   games are played. `lead` lets a panel tailor the opening clause. Returns ''
+   once the season has started (b.preseason false). */
+function preseasonNote(b,lead){
+  if(!b||!b.preseason)return '';
+  return '<div class="preseason-note">'+svg(ICON.spark,'width="13" height="13"')+
+    '<span><b>Pre-season</b> — '+(lead||'projections are provisional')+
+    '. Minutes, form and ownership reset for the new season and fill in from GW1; the ranking sharpens as games are played.</span></div>';
 }
 const loadDreamTeam=gw=>cached('dt-'+gw,10*60e3,()=>api('dream-team/'+gw));
 const loadH2HStandings=(id,page)=>api('leagues-h2h/'+id+'/standings'+(page>1?'?page_standings='+page:''));
@@ -4890,6 +4907,7 @@ async function hydrateAllPlayers(host){
   host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">All players'+
     '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile. Export CSV downloads exactly what you’re filtered and sorted to.</p>'+
+    preseasonNote(b,'the xP column is provisional')+
     '<div class="pl-filters">'+
       '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
       '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
@@ -4951,7 +4969,7 @@ async function hydrateDiffs(host){
   /* Default order is our projected points (xP) — the strongest-data low-owned
      picks lead. The toggle offers other lenses. */
   const SORT={
-    xp:{l:'Projection',f:(a,c)=>xpOf(c)-xpOf(a)},
+    xp:{l:'Projection',f:(a,c)=>(xpOf(c)-xpOf(a))||((c.now_cost||0)-(a.now_cost||0))},
     form:{l:'Form',f:(a,c)=>num(c,'form')-num(a,'form')},
     xgi:{l:'xGI/90',f:(a,c)=>num(c,'expected_goal_involvements_per_90')-num(a,'expected_goal_involvements_per_90')},
     price:{l:'Price',f:(a,c)=>(c.now_cost||0)-(a.now_cost||0)},
@@ -4973,6 +4991,7 @@ async function hydrateDiffs(host){
     : '';
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Differentials — under '+MAXOWN+'% owned</div>'+
+      preseasonNote(b,'ownership is still forming, so the pool is wide')+
       '<p class="dl-sub" style="margin-bottom:8px">Every available non-premium player (under £10.0m) selected by fewer than '+MAXOWN+'% of managers ('+pool.length+' in all), ranked by strength. Premiums are excluded — a £14m template pick is not a differential, even if its ownership hasn’t caught up at a season open. Default order is our next-gameweek projection (xP); tap a player for the full data.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span class="dl-sub">Order by</span>'+seg+'</div>'+
       '<div id="diff-list"></div></div>'+
@@ -5879,6 +5898,7 @@ async function hydrateCaptain(host){
     '<span class="dl-col mono"><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="explainXP('+e.id+')">'+x.xp.toFixed(1)+'</button></span>'+
     '<span class="dl-col mono">'+e.form+'</span></div>';}).join('');
   host.innerHTML=
+    preseasonNote(b,'captain projections are provisional')+
     '<div class="dl-sub" style="margin-bottom:12px">'+scopeNote+
       ' <b>EV vs field</b> is your captain xP minus the ownership-weighted xP the field captains — points above the crowd.'+
       (diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
