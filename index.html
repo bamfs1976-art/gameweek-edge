@@ -5047,27 +5047,32 @@ function renderDiffs(key){
    ═══════════════════════════════════════════════════════════ */
 let SB_POS=3;                 /* default MID, like the pundit boards */
 let SB_SORT=null,SB_DIR=-1;   /* null → the position's default sort key */
+let SB_PRICE=0;               /* price cap in tenths of £m (0 = any) — budget finder */
 /* Per-90 from a season total; 0 when there are no minutes yet. */
 function sbP90(e,total){const m=e.minutes||0;return m>0?(parseFloat(total)||0)*90/m:0;}
 /* The column set for a position. `low:1` marks a metric where lower is
    better (xGC), so the heat-map inverts. */
 function sbColumns(pos){
   const num=k=>e=>parseFloat(e[k])||0;
-  if(pos===2||pos===1){            /* DEF / GKP — reliability */
-    const cols=[
-      {k:'cs',l:'CS',v:e=>e.clean_sheets||0,fmt:v=>String(Math.round(v))},
-      {k:'csr',l:'CS/st',v:e=>{const s=e.starts||0;return s>0?(e.clean_sheets||0)/s:0;},fmt:v=>v.toFixed(2)},
-      {k:'defc',l:'CBIT/90',v:num('defensive_contribution_per_90'),fmt:v=>v.toFixed(1)}
-    ];
-    if(pos===1)cols.push({k:'sv',l:'Saves/90',v:e=>sbP90(e,e.saves),fmt:v=>v.toFixed(1)});
-    else cols.push({k:'xgc',l:'xGC/90',v:num('expected_goals_conceded_per_90'),fmt:v=>v.toFixed(2),low:1});
-    return cols;
-  }
-  return [                          /* MID / FWD — attacking per-90 */
+  const ga90={k:'ga',l:'G+A/90',v:e=>sbP90(e,(e.goals_scored||0)+(e.assists||0)),fmt:v=>v.toFixed(2)};
+  const defc={k:'defc',l:'CBIT/90',v:num('defensive_contribution_per_90'),fmt:v=>v.toFixed(1)};
+  const cs={k:'cs',l:'CS',v:e=>e.clean_sheets||0,fmt:v=>String(Math.round(v))};
+  if(pos===1)return [            /* GKP — clean sheets + shot-stopping */
+    cs,
+    {k:'csr',l:'CS/st',v:e=>{const s=e.starts||0;return s>0?(e.clean_sheets||0)/s:0;},fmt:v=>v.toFixed(2)},
+    {k:'sv',l:'Saves/90',v:e=>sbP90(e,e.saves),fmt:v=>v.toFixed(1)},
+    {k:'xgc',l:'xGC/90',v:num('expected_goals_conceded_per_90'),fmt:v=>v.toFixed(2),low:1}
+  ];
+  if(pos===2)return [            /* DEF — minutes, attacking threat, DefCon, CS
+                                    (the budget-defender lens: nailed starts +
+                                    returns + defensive contribution) */
+    {k:'st',l:'Starts',v:e=>e.starts||0,fmt:v=>String(Math.round(v))},
+    ga90,defc,cs
+  ];
+  return [                       /* MID / FWD — attacking per-90 */
     {k:'xg',l:'xG/90',v:num('expected_goals_per_90'),fmt:v=>v.toFixed(2)},
     {k:'xa',l:'xA/90',v:num('expected_assists_per_90'),fmt:v=>v.toFixed(2)},
-    {k:'ga',l:'G+A/90',v:e=>sbP90(e,(e.goals_scored||0)+(e.assists||0)),fmt:v=>v.toFixed(2)},
-    {k:'defc',l:'CBIT/90',v:num('defensive_contribution_per_90'),fmt:v=>v.toFixed(1)}
+    ga90,defc
   ];
 }
 /* Heat tint: 0 (worst) → 1 (best) maps red → green at low alpha so it
@@ -5077,16 +5082,23 @@ function renderScoutBoard(){
   const S=window._sb;if(!S)return;
   const box=document.getElementById('sb-out');if(!box)return;
   const b=S.b,pos=SB_POS,cols=sbColumns(pos);
-  /* The position, with a minutes sample so the per-90s mean something. */
-  const list=b.elements.filter(e=>e.element_type===pos&&(e.minutes||0)>=450);
-  const defKey=(pos===2||pos===1)?'cs':'ga';
+  /* The position, with a minutes sample so the per-90s mean something, then
+     an optional price cap for the budget-enabler finder. */
+  let list=b.elements.filter(e=>e.element_type===pos&&(e.minutes||0)>=450);
+  if(SB_PRICE)list=list.filter(e=>(e.now_cost||0)<=SB_PRICE);
+  const defKey=pos===2?'defc':pos===1?'cs':'ga';   /* DEF leads on DefCon */
   const key=SB_SORT||defKey;
   const col=cols.find(c=>c.k===key)||cols[0];
   list.sort((a,c)=>{const d=col.v(c)-col.v(a);return SB_DIR<0?d:-d;});
   const shown=list.slice(0,50);
   if(!shown.length){
-    box.innerHTML=preseasonNote(b,'the board fills from last season’s per-90 form')+
-      stateBox('grid','No per-90 data yet','This board ranks players on their per-90 output — it fills in once players have minutes on the board.');
+    /* Distinguish "no data yet" (pre-season / stats reset) from "the price cap
+       is just too tight for a player with enough minutes at this position". */
+    const dataExists=b.elements.some(e=>e.element_type===pos&&(e.minutes||0)>=450);
+    box.innerHTML=(SB_PRICE&&dataExists)
+      ? stateBox('grid','No '+esc(posShort(b,pos))+' at '+money(SB_PRICE)+' or under','No player at this price has 450+ Premier League minutes yet. Promoted-club players without top-flight history appear once they play. Loosen the price cap to see more.')
+      : preseasonNote(b,'the board fills from last season’s per-90 form')+
+        stateBox('grid','No per-90 data yet','This board ranks players on their per-90 output — it fills in once players have minutes on the board.');
     return;
   }
   const range={};cols.forEach(c=>{const vs=shown.map(c.v);range[c.k]=[Math.min.apply(null,vs),Math.max.apply(null,vs)];});
@@ -5108,7 +5120,7 @@ function renderScoutBoard(){
       '<td><span class="sb-fxc">'+fixCells(e.team)+'</span></td>'+cells+'</tr>';
   }).join('');
   box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table">'+head+rows+'</table></div>'+
-    '<div class="dl-sub" style="margin-top:8px">'+list.length+' '+esc(posShort(b,pos))+' with 450+ minutes · sorted by '+esc(col.l)+' · showing the top '+shown.length+'. Tap a heading to re-sort, a row for the full profile.</div>';
+    '<div class="dl-sub" style="margin-top:8px">'+list.length+' '+esc(posShort(b,pos))+(SB_PRICE?' at '+money(SB_PRICE)+' or under':'')+' with 450+ minutes · sorted by '+esc(col.l)+' · showing the top '+shown.length+'. Tap a heading to re-sort, a row for the full profile.</div>';
 }
 async function hydrateScoutBoard(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -5116,16 +5128,26 @@ async function hydrateScoutBoard(host){
   window._sb={b,hz};
   const seg=[['3','MID'],['4','FWD'],['2','DEF'],['1','GKP']]
     .map(function(o){return '<button class="seg-b'+(SB_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
+  const priceSeg=[['0','Any price'],['45','≤£4.5'],['50','≤£5.0'],['55','≤£5.5']]
+    .map(function(o){return '<button class="seg-b'+(SB_PRICE===+o[0]?' on':'')+'" data-cap="'+o[0]+'">'+o[1]+'</button>';}).join('');
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Scout Board</div>'+
     preseasonNote(b,'per-90 form is last season’s until GW1')+
-    '<p class="dl-sub" style="margin-bottom:10px">A per-90 shortlist by position with the next three fixtures. Attackers show xG, xA, goals+assists and defensive contribution per 90; defenders and keepers show clean-sheet and DEFCON (CBIT) reliability. Greener is stronger for that column across the whole board. Minimum 450 minutes; tap a heading to re-sort.</p>'+
-    '<div class="seg" id="sb-seg" style="margin-bottom:12px">'+seg+'</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">A per-90 shortlist by position with the next three fixtures. Attackers show xG, xA, goals+assists and defensive contribution per 90; defenders show starts, attacking returns, DefCon (CBIT) and clean sheets — set a price cap for the budget-enabler finder. Greener is stronger for that column across the whole board. Minimum 450 Premier League minutes; tap a heading to re-sort.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
+      '<div class="seg" id="sb-seg">'+seg+'</div>'+
+      '<div class="seg" id="sb-price">'+priceSeg+'</div>'+
+    '</div>'+
     '<div id="sb-out"></div></div>';
   renderScoutBoard();
   host.querySelector('#sb-seg').addEventListener('click',function(ev){
     const btn=ev.target.closest('.seg-b');if(!btn)return;
     document.querySelectorAll('#sb-seg .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});
     SB_POS=+btn.dataset.pos;SB_SORT=null;SB_DIR=-1;renderScoutBoard();
+  });
+  host.querySelector('#sb-price').addEventListener('click',function(ev){
+    const btn=ev.target.closest('.seg-b');if(!btn)return;
+    document.querySelectorAll('#sb-price .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});
+    SB_PRICE=+btn.dataset.cap;renderScoutBoard();
   });
   host.addEventListener('click',function(ev){
     const th=ev.target.closest('.sb-sort');
