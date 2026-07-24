@@ -1036,6 +1036,11 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.02em;color:#0c1014;text-transform:uppercase}
 .sb-fx.fdr-5{color:#fff}
 .sb-fx-none{background:var(--surface-3);color:var(--text-4)}
+/* Points Planner: per-gameweek cell (opponent label above the projected xP). */
+.pp-table th{text-align:center}
+.pp-cell{text-align:center;min-width:56px;vertical-align:middle}
+.pp-cell .pp-opp{display:block;font-size:9px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:1px}
+.pp-cell b{font-size:12px;color:var(--text)}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
@@ -2577,6 +2582,7 @@ const NAV = [
     id:'planner', label:'Planner', icon:'planner',
     panels:[
       {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
+      {id:'points5', label:'Points Planner', icon:'target', tier:'free'},
       {id:'csmatrix', label:'Clean Sheet Matrix', icon:'shield', tier:'free'},
       {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free'},
       {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free'},
@@ -2912,6 +2918,10 @@ const PANEL_CONTENT = {
   },
   fixtures:{
     desc:'A six-gameweek fixture grid with model-based difficulty, expected goals and clean-sheet odds.',
+    layout:'standard'
+  },
+  points5:{
+    desc:'The top assets by projected points over the next five (or eight) gameweeks, with a per-gameweek breakdown of opponent and expected points.',
     layout:'standard'
   },
   csmatrix:{
@@ -5155,6 +5165,61 @@ async function hydrateScoutBoard(host){
     const row=ev.target.closest('tr[data-open]');
     if(row)openPlayer(+row.dataset.open);
   });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   POINTS PLANNER — top assets by projected points over the next
+   N gameweeks, with a per-gameweek breakdown (opponent + xP, heat-
+   mapped). Same horizon model as the transfer solver (buildHorizon
+   + fixtureXP), so the planner and the solver agree.
+   ═══════════════════════════════════════════════════════════ */
+let PP_POS=0,PP_N=5;
+function renderPointsPlanner(){
+  const S=window._pp;if(!S)return;const box=document.getElementById('pp-out');if(!box)return;
+  const b=S.b,hz=buildHorizon(b,S.fixtures,PP_N);
+  let pool=b.elements.filter(e=>e.status!=='u'&&(hz[e.team]||[]).length);
+  if(PP_POS)pool=pool.filter(e=>e.element_type===PP_POS);
+  const chanceOf=e=>e.chance_of_playing_next_round==null?1:e.chance_of_playing_next_round/100;
+  const scored=pool.map(e=>{const c=chanceOf(e);
+      const cells=(hz[e.team]||[]).map(fx=>({fx,xp:fixtureXP(b,e,fx)*c}));
+      return {e,cells,total:cells.reduce((s,x)=>s+x.xp,0)};})
+    .sort((a,c)=>c.total-a.total).slice(0,40);
+  if(!scored.length){
+    box.innerHTML=preseasonNote(b,'projections fill in once fixtures are set')+
+      stateBox('calendar','No projections yet','Player projections appear once the new-season fixtures are published.');
+    return;
+  }
+  const maxGw=Math.max.apply(null,scored.map(s=>s.cells.length));
+  let gwHead='';for(let i=0;i<maxGw;i++)gwHead+='<th class="num">'+(i+1)+'</th>';
+  const head='<tr><th>Player</th><th class="num">Next '+PP_N+'</th>'+gwHead+'</tr>';
+  const rows=scored.map(s=>{const e=s.e;let cells='';
+    for(let i=0;i<maxGw;i++){const c=s.cells[i];
+      if(!c){cells+='<td class="pp-cell sb-fx-none">—</td>';continue;}
+      cells+='<td class="pp-cell" style="'+sbHeat(Math.min(1,c.xp/6))+'"><span class="pp-opp">'+esc(c.fx.opp)+' ('+(c.fx.home?'H':'A')+')</span><b>'+c.xp.toFixed(1)+'</b></td>';}
+    return '<tr data-open="'+e.id+'"><td class="sb-pl"><span class="sb-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,12)+esc(posShort(b,e.element_type))+' · '+money(e.now_cost)+'</span></td>'+
+      '<td class="num"><b>'+s.total.toFixed(1)+'</b></td>'+cells+'</tr>';}).join('');
+  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table pp-table">'+head+rows+'</table></div>'+
+    '<div class="dl-sub" style="margin-top:8px">Top '+scored.length+(PP_POS?' '+esc(posShort(b,PP_POS)):'')+' by projected points over the next '+PP_N+' gameweeks · each cell is the fixture and its expected points. Tap a row for the full profile.</div>';
+}
+async function hydratePointsPlanner(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  window._pp={b,fixtures};
+  const posSeg=[['0','All'],['1','GKP'],['2','DEF'],['3','MID'],['4','FWD']]
+    .map(function(o){return '<button class="seg-b'+(PP_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
+  const nSeg=[['5','Next 5'],['8','Next 8']]
+    .map(function(o){return '<button class="seg-b'+(PP_N===+o[0]?' on':'')+'" data-n="'+o[0]+'">'+o[1]+'</button>';}).join('');
+  host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Points Planner</div>'+
+    preseasonNote(b,'projections lean on last season’s form until GW1')+
+    '<p class="dl-sub" style="margin-bottom:10px">The top assets by our projected points over the horizon, with a per-gameweek breakdown — each cell is the opponent and the expected points, greener for a bigger projected haul. Ranked by the horizon total; availability is baked in. Tap a row for the full profile.</p>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><div class="seg" id="pp-pos">'+posSeg+'</div><div class="seg" id="pp-n">'+nSeg+'</div></div>'+
+    '<div id="pp-out"></div></div>';
+  renderPointsPlanner();
+  host.querySelector('#pp-pos').addEventListener('click',function(ev){const btn=ev.target.closest('.seg-b');if(!btn)return;
+    document.querySelectorAll('#pp-pos .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});PP_POS=+btn.dataset.pos;renderPointsPlanner();});
+  host.querySelector('#pp-n').addEventListener('click',function(ev){const btn=ev.target.closest('.seg-b');if(!btn)return;
+    document.querySelectorAll('#pp-n .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});PP_N=+btn.dataset.n;renderPointsPlanner();});
+  host.addEventListener('click',function(ev){const row=ev.target.closest('tr[data-open]');if(row)openPlayer(+row.dataset.open);});
 }
 
 /* Price Predictor: net transfer momentum */
@@ -9854,6 +9919,7 @@ const WIRED={
   scoutboard:hydrateScoutBoard,
   compare:hydrateCompare,
   fixtures:hydrateFixtures,
+  points5:hydratePointsPlanner,
   csmatrix:hydrateCsMatrix,
   diffs:hydrateDiffs,
   price:hydratePrice,
