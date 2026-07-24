@@ -76,6 +76,13 @@
   status = 200
   force = true
 
+# Public "Ask the model" (right-rail stub — canned, no auth).
+[[redirects]]
+  from = "/api/public/ask"
+  to = "/.netlify/functions/ask"
+  status = 200
+  force = true
+
 # First-party analytics (fire-and-forget event pings).
 [[redirects]]
   from = "/api/track"
