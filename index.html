@@ -1126,8 +1126,8 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   }
   .bn-ic svg{width:20px;height:20px}
   .bn-item.active .bn-ic{background:var(--green-soft)}
-  /* One line, always: seven areas share a phone width, so labels are short
-     (see BN_SHORT) and never wrap under the icons. */
+  /* One line, always: five items share a phone width, so labels stay on a
+     single line and ellipsize rather than wrap under the icons. */
   .bn-label{font-size:.58rem;font-weight:700;letter-spacing:.02em;line-height:1;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 @media(max-width:560px){
@@ -2902,19 +2902,16 @@ function buildNav(){
 }
 
 /* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
-/* Seven areas share a phone width, so the bottom bar uses short labels —
-   truncating "Intelligence" mid-word reads worse than "Intel". */
-const BN_SHORT={myteam:'Team',intel:'Edge',planner:'Plan'};
-/* Five-item bottom nav (mobile): Home · Squad · Scout · Planner · More. The
-   remaining areas live in the More sheet so nothing is orphaned. Labels match
-   the sidebar. */
+/* Five-item bottom nav (mobile): Home · My Squad · Player list · Match Centre
+   · More. Each item deep-links to the panel a manager most wants under that
+   label; the remaining areas live in the More sheet so nothing is orphaned. */
 const MORE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
 const areaBy=id=>NAV.find(a=>a.id===id)||null;
 const BOTTOM_NAV=[
   {label:'Home',area:'home',icon:'home',go:()=>openPanel(homePanel())},
-  {label:'Squad',area:'myteam',icon:'team',go:()=>{const a=areaBy('myteam');if(a)openPanel(a.panels[0].id);}},
-  {label:'Scout',area:'intel',icon:'spark',go:()=>openPanel('scout')},
-  {label:'Planner',area:'planner',icon:'planner',go:()=>{const a=areaBy('planner');if(a)openPanel(a.panels[0].id);}},
+  {label:'My Squad',area:'myteam',icon:'squad',go:()=>openPanel('squad')},
+  {label:'Player list',area:'players',icon:'players',go:()=>openPanel('allplayers')},
+  {label:'Match Centre',area:'league',icon:'pulse',go:()=>openPanel('results')},
   {label:'More',area:'',icon:'more',go:()=>openMoreSheet()}
 ];
 function buildBottomNav(){
@@ -2934,7 +2931,7 @@ function buildBottomNav(){
 /* The More sheet: every area not on the bottom bar, plus the glossary. */
 function openMoreSheet(){
   closeMoreSheet();
-  const items=[['live','Live'],['players','Players'],['league','League'],['glossary','Glossary']]
+  const items=[['live','Live'],['planner','Planner'],['intel','The Edge'],['glossary','Glossary']]
     .map(([id,label])=>{
       const a=areaBy(id);const target=id==='glossary'?'glossary':(a?a.panels[0].id:id);
       const icon=id==='glossary'?'question':(a?a.icon:'grid');
