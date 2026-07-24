@@ -3754,7 +3754,7 @@ async function hydrateDashboard(host){
       return grp+'<div class="mxi-row" onclick="openPlayer('+el.id+')">'+
         '<span class="mxi-pos text-caption">'+POSL[el.element_type]+'</span>'+
         '<span class="mxi-player"><span class="mxi-club">'+esc(teamShort(b,el.team))+'</span>'+esc(el.web_name)+'</span>'+
-        '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+'</span>'+
+        '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+(f?fdrChip(f.diff):'')+'</span>'+
         '<span class="mxi-cell">'+money(el.now_cost)+'</span>'+
         '<span class="mxi-spark">'+sp+'</span>'+
         '<span class="mxi-xp">'+s.p.toFixed(1)+'</span>'+
@@ -3785,14 +3785,14 @@ async function hydrateDashboard(host){
       '<b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.web_name)+'</b>'+
       '<span class="qd-v" style="color:var(--text-2)">'+e.selected_by_percent+'%</span>'+
       '<span class="qd-v'+(i===0?' hot':'')+'" style="width:44px;text-align:right">'+p.toFixed(1)+'</span>'+
-      '<span class="qd-v" style="width:58px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+'</span>'+
+      '<span class="qd-v" style="width:76px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+(nf[e.team]?fdrChip(nf[e.team].diff):'')+'</span>'+
       '<span style="width:14px;text-align:right">'+d+'</span></div>';
   }).join('');
   const q3='<div class="card qd">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">'+jt('differential','Differentials')+' are strong players under 15% owned — where you gain rank on the field.</p>'+
     '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
     '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
-    '<span style="width:58px;text-align:right">FIX</span><span style="width:14px;text-align:right">'+jt('ΔP')+'</span></div>'+dRows+'</div>';
+    '<span style="width:76px;text-align:right">FIX</span><span style="width:14px;text-align:right">'+jt('ΔP')+'</span></div>'+dRows+'</div>';
 
   /* ── Q4: live / deadline ── */
   const total=b.raw.total_players||10e6;
@@ -5480,6 +5480,10 @@ function buildNextFix(b,fixtures){
 function nextFixLabel(nf){
   return nf?(esc(nf.opp)+' ('+(nf.home?'H':'A')+') '+'<span class="badge fdrtag fdr-'+nf.diff+'">'+nf.diff+'</span>'):'—';
 }
+/* Small fixture-difficulty chip (1–5, colour-graded) — so every fixture text
+   carries its FDR number, not just the opponent. Colour is paired with the
+   number so difficulty is never conveyed by colour alone. */
+function fdrChip(diff){return diff!=null?' <span class="badge fdrtag fdr-'+diff+'">'+diff+'</span>':'';}
 
 /* Reusable player search → suggestion list. onPick(id) is called on click. */
 function renderSuggestions(b,query,container,exclude,onPick){
