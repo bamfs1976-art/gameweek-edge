@@ -1371,7 +1371,7 @@ body{font-size:14px;line-height:1.35}
 .qd-mxi[data-mxi="list"] .qd-pitch{display:none}
 .qd-mxi[data-mxi="pitch"] .mxi-list{display:none}
 .mxi-list{display:flex;flex-direction:column}
-.mxi-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto 64px 40px 24px;
+.mxi-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto auto 64px 48px 24px;
   align-items:center;gap:0 8px;min-height:30px;border-bottom:1px solid var(--border);
   font-size:12.5px;cursor:pointer}
 .mxi-group{position:sticky;top:0;z-index:1;font-family:var(--font-mono);font-size:9px;letter-spacing:.15em;
@@ -1388,7 +1388,12 @@ body{font-size:14px;line-height:1.35}
 .mxi-player{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
 .mxi-club{font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-right:4px}
 .mxi-cell{font-family:var(--font-mono);font-size:11px;color:var(--text-2);text-align:right;font-variant-numeric:tabular-nums}
-.mxi-xp{font-family:var(--font-mono);font-weight:700;color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.mxi-xp{font-family:var(--font-mono);font-weight:700;color:var(--text);text-align:right;font-variant-numeric:tabular-nums;
+  display:flex;flex-direction:column;align-items:flex-end;line-height:1.05;justify-content:center}
+/* Per-position xP percentile anchor under each number — muted, so it reads as
+   a footnote and green stays reserved for the panel's one headline accent. */
+.mxi-pct{font-family:var(--font-mono);font-size:8px;font-weight:600;letter-spacing:.01em;color:var(--text-3);margin-top:1px;white-space:nowrap}
+.mxi-row.mxi-hd .mxi-xp{flex-direction:row}
 /* Colour discipline: one hot lime accent per panel for its single headline number */
 .hot{color:var(--hot)!important;font-weight:700;font-variant-numeric:tabular-nums}
 .card:has(:focus-visible){box-shadow:inset 0 0 0 2px var(--green-bright)}
@@ -3731,7 +3736,18 @@ async function hydrateDashboard(host){
     '<div class="qd-foot"><span style="opacity:.85">'+jt('captain margin')+' '+(margin>=0?'+':'')+margin.toFixed(1)+' '+jt('xP')+' · <span class="expert-only">'+scopeNote+'</span></span>'+formSpark+'</div></div>';
 
   /* ── Q2: model XI — list by default on phones, pitch toggle ── */
-  const totw=bestXI(scoutScored(b,nf));
+  const xiPool=scoutScored(b,nf);
+  const totw=bestXI(xiPool);
+  /* Per-position xP percentile — anchors each number so a beginner can tell a
+     strong projection from a weak one. "top 8%" = beats 92% of playable
+     players in that position. Position-relative because GK/DEF/MID/FWD score
+     on very different scales. */
+  const xiPctTop=(el,p)=>{
+    const arr=xiPool.filter(x=>x.el.element_type===el.element_type).map(x=>x.p);
+    if(arr.length<5)return null;
+    const better=arr.filter(v=>v>p).length;
+    return Math.min(99,Math.max(1,Math.round(100*better/arr.length)));
+  };
   let q2Body='<p class="dl-sub">The model XI appears once fixtures are set.</p>';
   if(totw){
     const cell=s=>'<div class="pp">'+ppFigure(b,s.el)+
@@ -3759,7 +3775,7 @@ async function hydrateDashboard(host){
         '<span class="mxi-cell">'+esc((f||{}).opp||'—')+(f?(f.home?' H':' A'):'')+(f?fdrChip(f.diff):'')+'</span>'+
         '<span class="mxi-cell">'+money(el.now_cost)+'</span>'+
         '<span class="mxi-spark">'+sp+'</span>'+
-        '<span class="mxi-xp">'+s.p.toFixed(1)+'</span>'+
+        '<span class="mxi-xp">'+s.p.toFixed(1)+(()=>{const pt=xiPctTop(el,s.p);return pt!=null?'<span class="mxi-pct">top '+pt+'%</span>':'';})()+'</span>'+
         '<button class="mxi-why" aria-label="Why '+esc(el.web_name)+' is picked" onclick="event.stopPropagation();mxiWhy('+el.id+')">?</button></div>';
     }).join('');
     q2Body='<div class="mxi-list"><div class="mxi-row mxi-hd">'+
