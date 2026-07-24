@@ -1027,6 +1027,15 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
   border-radius:var(--r-sm);background:var(--surface-2);color:var(--text-2);
   font-size:.78rem;line-height:1.4}
 .preseason-note svg{flex-shrink:0;margin-top:1px;color:var(--blue)}
+/* Scout Board: compact heat-mapped per-90 table + next-3 fixture chips. */
+.sb-table td,.sb-table th{white-space:nowrap}
+.sb-sort{cursor:pointer;user-select:none}
+.sb-pl .sb-nm{display:block;font-weight:600;color:var(--text)}
+.sb-fxc{display:inline-flex;gap:3px}
+.sb-fx{display:inline-flex;align-items:center;justify-content:center;min-width:32px;padding:1px 4px;
+  border-radius:3px;font-size:9px;font-weight:800;letter-spacing:.02em;color:#0c1014;text-transform:uppercase}
+.sb-fx.fdr-5{color:#fff}
+.sb-fx-none{background:var(--surface-3);color:var(--text-4)}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
@@ -2556,6 +2565,7 @@ const NAV = [
     id:'players', label:'Players', icon:'players',
     panels:[
       {id:'allplayers', label:'Player List', icon:'grid', tier:'free'},
+      {id:'scoutboard', label:'Scout Board', icon:'grid', tier:'free'},
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
       {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free'},
@@ -2870,6 +2880,10 @@ const PANEL_CONTENT = {
   },
   allplayers:{
     desc:'Every player in one table with the full data set — tap any column to sort, tap a row for the full profile.',
+    layout:'standard'
+  },
+  scoutboard:{
+    desc:'A per-90 shortlist by position with the next-3 fixtures — xG/xA/G+A/CBIT for attackers, clean-sheet and DEFCON reliability for defenders, heat-mapped across the board.',
     layout:'standard'
   },
   compare:{
@@ -5021,6 +5035,104 @@ function renderDiffs(key){
   const list=S.pool.slice().sort(sf).slice(0,40);
   const f90=v=>{const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);};
   box.innerHTML=dlTable(S.b,list,['xP','xGI/90'],e=>[S.xpOf(e).toFixed(1),f90(e.expected_goal_involvements_per_90)]);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCOUT BOARD — pundit-style per-90 shortlist by position, with
+   the next-3 fixture ticker and a per-column heat-map. Attackers
+   show xG/xA/G+A/CBIT per 90; defenders and keepers show clean-sheet
+   and DEFCON reliability. Everything is read from the standard element
+   fields, so it mirrors last season's form while the API carries it
+   and degrades to a pre-season note when the stats reset to zero.
+   ═══════════════════════════════════════════════════════════ */
+let SB_POS=3;                 /* default MID, like the pundit boards */
+let SB_SORT=null,SB_DIR=-1;   /* null → the position's default sort key */
+/* Per-90 from a season total; 0 when there are no minutes yet. */
+function sbP90(e,total){const m=e.minutes||0;return m>0?(parseFloat(total)||0)*90/m:0;}
+/* The column set for a position. `low:1` marks a metric where lower is
+   better (xGC), so the heat-map inverts. */
+function sbColumns(pos){
+  const num=k=>e=>parseFloat(e[k])||0;
+  if(pos===2||pos===1){            /* DEF / GKP — reliability */
+    const cols=[
+      {k:'cs',l:'CS',v:e=>e.clean_sheets||0,fmt:v=>String(Math.round(v))},
+      {k:'csr',l:'CS/st',v:e=>{const s=e.starts||0;return s>0?(e.clean_sheets||0)/s:0;},fmt:v=>v.toFixed(2)},
+      {k:'defc',l:'CBIT/90',v:num('defensive_contribution_per_90'),fmt:v=>v.toFixed(1)}
+    ];
+    if(pos===1)cols.push({k:'sv',l:'Saves/90',v:e=>sbP90(e,e.saves),fmt:v=>v.toFixed(1)});
+    else cols.push({k:'xgc',l:'xGC/90',v:num('expected_goals_conceded_per_90'),fmt:v=>v.toFixed(2),low:1});
+    return cols;
+  }
+  return [                          /* MID / FWD — attacking per-90 */
+    {k:'xg',l:'xG/90',v:num('expected_goals_per_90'),fmt:v=>v.toFixed(2)},
+    {k:'xa',l:'xA/90',v:num('expected_assists_per_90'),fmt:v=>v.toFixed(2)},
+    {k:'ga',l:'G+A/90',v:e=>sbP90(e,(e.goals_scored||0)+(e.assists||0)),fmt:v=>v.toFixed(2)},
+    {k:'defc',l:'CBIT/90',v:num('defensive_contribution_per_90'),fmt:v=>v.toFixed(1)}
+  ];
+}
+/* Heat tint: 0 (worst) → 1 (best) maps red → green at low alpha so it
+   stays readable on the dark canvas. */
+function sbHeat(score){const s=Math.max(0,Math.min(1,score));return 'background:hsla('+Math.round(s*130)+',65%,45%,.26)';}
+function renderScoutBoard(){
+  const S=window._sb;if(!S)return;
+  const box=document.getElementById('sb-out');if(!box)return;
+  const b=S.b,pos=SB_POS,cols=sbColumns(pos);
+  /* The position, with a minutes sample so the per-90s mean something. */
+  const list=b.elements.filter(e=>e.element_type===pos&&(e.minutes||0)>=450);
+  const defKey=(pos===2||pos===1)?'cs':'ga';
+  const key=SB_SORT||defKey;
+  const col=cols.find(c=>c.k===key)||cols[0];
+  list.sort((a,c)=>{const d=col.v(c)-col.v(a);return SB_DIR<0?d:-d;});
+  const shown=list.slice(0,50);
+  if(!shown.length){
+    box.innerHTML=preseasonNote(b,'the board fills from last season’s per-90 form')+
+      stateBox('grid','No per-90 data yet','This board ranks players on their per-90 output — it fills in once players have minutes on the board.');
+    return;
+  }
+  const range={};cols.forEach(c=>{const vs=shown.map(c.v);range[c.k]=[Math.min.apply(null,vs),Math.max.apply(null,vs)];});
+  const fixCells=team=>{
+    const arr=(S.hz[team]||[]).slice(0,3);let out='';
+    for(let i=0;i<3;i++){const f=arr[i];
+      out+=f?'<span class="sb-fx fdr-'+f.diff+'" title="'+(f.home?'v ':'@ ')+esc(f.opp)+'">'+esc(f.opp)+'</span>'
+            :'<span class="sb-fx sb-fx-none">—</span>';}
+    return out;
+  };
+  const head='<tr><th>Player</th><th>Next 3</th>'+
+    cols.map(c=>'<th class="num sb-sort'+(c.k===key?' active':'')+'" data-k="'+c.k+'">'+esc(c.l)+'</th>').join('')+'</tr>';
+  const rows=shown.map(e=>{
+    const cells=cols.map(c=>{const r=range[c.k],v=c.v(e);
+      const sc=r[1]>r[0]?(v-r[0])/(r[1]-r[0]):0.5;
+      return '<td class="num" style="'+sbHeat(c.low?1-sc:sc)+'">'+c.fmt(v)+'</td>';}).join('');
+    return '<tr data-open="'+e.id+'"><td class="sb-pl"><span class="sb-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,12)+money(e.now_cost)+'</span></td>'+
+      '<td><span class="sb-fxc">'+fixCells(e.team)+'</span></td>'+cells+'</tr>';
+  }).join('');
+  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table">'+head+rows+'</table></div>'+
+    '<div class="dl-sub" style="margin-top:8px">'+list.length+' '+esc(posShort(b,pos))+' with 450+ minutes · sorted by '+esc(col.l)+' · showing the top '+shown.length+'. Tap a heading to re-sort, a row for the full profile.</div>';
+}
+async function hydrateScoutBoard(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const hz=buildHorizon(b,fixtures,3);
+  window._sb={b,hz};
+  const seg=[['3','MID'],['4','FWD'],['2','DEF'],['1','GKP']]
+    .map(function(o){return '<button class="seg-b'+(SB_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
+  host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Scout Board</div>'+
+    preseasonNote(b,'per-90 form is last season’s until GW1')+
+    '<p class="dl-sub" style="margin-bottom:10px">A per-90 shortlist by position with the next three fixtures. Attackers show xG, xA, goals+assists and defensive contribution per 90; defenders and keepers show clean-sheet and DEFCON (CBIT) reliability. Greener is stronger for that column across the whole board. Minimum 450 minutes; tap a heading to re-sort.</p>'+
+    '<div class="seg" id="sb-seg" style="margin-bottom:12px">'+seg+'</div>'+
+    '<div id="sb-out"></div></div>';
+  renderScoutBoard();
+  host.querySelector('#sb-seg').addEventListener('click',function(ev){
+    const btn=ev.target.closest('.seg-b');if(!btn)return;
+    document.querySelectorAll('#sb-seg .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});
+    SB_POS=+btn.dataset.pos;SB_SORT=null;SB_DIR=-1;renderScoutBoard();
+  });
+  host.addEventListener('click',function(ev){
+    const th=ev.target.closest('.sb-sort');
+    if(th){const k=th.dataset.k;if(SB_SORT===k)SB_DIR=-SB_DIR;else{SB_SORT=k;SB_DIR=-1;}renderScoutBoard();return;}
+    const row=ev.target.closest('tr[data-open]');
+    if(row)openPlayer(+row.dataset.open);
+  });
 }
 
 /* Price Predictor: net transfer momentum */
@@ -9717,6 +9829,7 @@ const WIRED={
   watchlist:hydrateWatchlist,
   alerts:hydrateAlerts,
   allplayers:hydrateAllPlayers,
+  scoutboard:hydrateScoutBoard,
   compare:hydrateCompare,
   fixtures:hydrateFixtures,
   csmatrix:hydrateCsMatrix,
