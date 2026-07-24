@@ -6122,8 +6122,18 @@ async function hydrateCaptain(host){
 /* ── Chip Strategy: used vs remaining (from history) ───── */
 async function hydrateChips(host){
   const mid=getMid();
-  if(!mid){host.innerHTML=linkBox();return;}
-  const [b,fixtures,hist]=await Promise.all([boot(),loadFixtures(),loadHistory(mid)]);
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  /* The fixture-swing chip roadmap needs no linked squad — show it to
+     everyone, so the Chip Strategy page is useful pre-season too. */
+  const roadCard=chipRoadmapCard(b,fixtures);
+  if(!mid){
+    host.innerHTML=roadCard+
+      '<div class="card"><div class="ge-state">'+svg(ICON.team)+
+        '<b>Your chips</b><p>Link your team (top right) to see which chips you have left, personalised Bench Boost readiness and the double / blank timing for your own squad.</p>'+
+        '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
+    return;
+  }
+  const hist=await loadHistory(mid);
   const used=hist.chips||[];
   const nice={wildcard:'Wildcard','3xc':'Triple Captain',bboost:'Bench Boost',freehit:'Free Hit',manager:'Assistant Manager'};
   const usedRows=used.length?used.map(c=>
@@ -6181,6 +6191,7 @@ async function hydrateChips(host){
       '</div>'
     :'';
   host.innerHTML=
+    roadCard+
     timingCard+
     bbCard+
     '<div class="card mb-20"><div class="card-title">Chips played</div>'+
@@ -7296,6 +7307,55 @@ function chipSwings(runs,N,M){
     if(!wc||gain>wc.gain)wc={idx:i,gain};
   }
   return {fh,wc};
+}
+
+/* Opening chip roadmap — fixture-swing Free Hit / Wildcard windows plus the
+   single best Triple Captain fixture over the opening horizon. Team-agnostic
+   (ownership-weighted league difficulty), so it needs no linked squad — the
+   pre-season chip plan a manager can read before GW1. Returns an HTML card,
+   or '' when there is no usable fixture horizon. */
+function chipRoadmapCard(b,fixtures){
+  try{
+    const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+    const N=Math.min(8,39-startGw);
+    if(N<3||!fixtures||!fixtures.length)return '';
+    const gws=[];for(let g=startGw;g<startGw+N&&g<=38;g++)gws.push(g);
+    const R=plsimRatings(b,fixtures);
+    const teamOwn={};(b.elements||[]).forEach(e=>{teamOwn[e.team]=(teamOwn[e.team]||0)+(parseFloat(e.selected_by_percent)||0);});
+    const byTeamGw={};
+    fixtures.forEach(f=>{
+      if(!f.event||f.event<startGw||f.event>=startGw+N)return;
+      const m=plsimMatch(R,f.team_h,f.team_a);
+      (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]=m?plsimDiff(m.pH):f.team_h_difficulty;
+      (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]=m?plsimDiff(m.pA):f.team_a_difficulty;
+    });
+    const swingRuns=b.raw.teams.map(t=>({team:t.id,own:teamOwn[t.id]||0,
+      diff:gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c!=null?c:6;})}));
+    const sw=chipSwings(swingRuns,Math.min(5,Math.max(1,gws.length-3)),6);
+    /* Triple Captain: the biggest single-fixture ceiling over the horizon. */
+    const hz=buildHorizon(b,fixtures,N);
+    let tc=null;
+    b.elements.filter(e=>captainEligible(e)).forEach(e=>{(hz[e.team]||[]).forEach((fx,i)=>{
+      const xp=fixtureXP(b,e,fx);if(!tc||xp>tc.xp)tc={xp,el:e,gw:gws[i],opp:fx.opp,home:fx.home};});});
+    const items=[];
+    if(tc&&tc.xp>0)items.push(
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Triple Captain — GW'+tc.gw+
+        ' <span class="badge badge-green">ceiling</span></span>'+
+        '<span class="dl-sub"><b>'+esc(tc.el.web_name)+'</b> '+(tc.home?'v ':'@ ')+esc(tc.opp)+' — the biggest single-fixture projection in the next '+N+' gameweeks ('+tc.xp.toFixed(1)+' xP), so the armband triples the most.</span></span></div>');
+    if(sw.fh&&sw.fh.clear)items.push(
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Free Hit — GW'+gws[sw.fh.idx]+
+        ' <span class="badge badge-amber">swing</span></span>'+
+        '<span class="dl-sub">The most-owned teams face their hardest fixtures this week (weighted difficulty '+sw.fh.score.toFixed(2)+' vs '+sw.fh.base.toFixed(2)+' average) — a one-week bespoke XI gains most while the field struggles.</span></span></div>');
+    if(sw.wc&&sw.wc.gain>2)items.push(
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Wildcard — GW'+gws[sw.wc.idx]+
+        ' <span class="badge badge-blue">reshape</span></span>'+
+        '<span class="dl-sub">The current best-fixture teams turn hardest from here (difficulty shed by reshaping ≈ '+sw.wc.gain.toFixed(0)+') — the fixtures reshuffle, so a full reset pays.</span></span></div>');
+    if(!items.length)return '';
+    return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+' Opening chip roadmap'+
+        (b.preseason?' <span class="badge badge-amber">pre-season</span>':'')+'</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">When the fixtures themselves suggest each chip over the next '+N+' gameweeks — before any double or blank is scheduled, and before you even link a team. Bench Boost timing depends on your own bench (link your team for that).</p>'+
+      '<div class="dl">'+items.join('')+'</div></div>';
+  }catch(_){return '';}
 }
 
 /* Candidate pool: available players with a positive projection. */
