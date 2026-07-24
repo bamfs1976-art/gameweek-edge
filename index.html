@@ -3610,6 +3610,8 @@ async function hydrateDashboard(host){
     ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Bonus &amp; prices settling — see the results →</a></div>'
     :ph.phase==='live'
     ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>'
+    :ph.phase==='pre'
+    ?'<div class="qd-foot" style="margin-bottom:8px">Season starts <b>'+fmtDeadline((ph.target||b.cur).deadline_time)+'</b>. Live rank, ownership drift and captain leverage appear here once the first ball is kicked.</div>'
     :'';
   const flagsN=b.elements.filter(e=>e.status&&e.status!=='a').length;
   const moversN=b.elements.reduce((n,e)=>{const pc=priceChangeProb(e,total);return n+((pc.dir!=='flat'&&pc.prob>=60)?1:0);},0);
@@ -3618,11 +3620,11 @@ async function hydrateDashboard(host){
     '<div class="qd-ministats">'+miniStat(moversN,'price movers')+miniStat(flagsN,'fitness flags')+
       miniStat(capConf&&capConf.value!=null?Math.round(capConf.value):'—','model conf')+'</div>'+
     heroNote+
-    '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players near the threshold.</div>')+
+    '<div class="qd-sub-label">PRICE WATCH TONIGHT</div>'+(mRows||'<div class="dl-sub" style="padding:4px 0">No players close to a price change tonight. Prices update overnight — check back in the morning.</div>')+
     '<div class="qd-sub-label" style="margin-top:8px">FITNESS FLAGS</div>'+
     (flagged.length?flagged.map(e=>'<div class="qd-row"><b style="flex-shrink:0">'+esc(e.web_name)+'</b>'+
       '<span class="dl-sub" style="flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(e.news||STATUS_LABEL[e.status]||'flagged')+'</span>'+injChip(e)+'</div>').join('')
-      :'<div class="dl-sub" style="padding:4px 0">No new flags.</div>')+'</div>';
+      :'<div class="dl-sub" style="padding:4px 0">No new injuries reported since your last visit.</div>')+'</div>';
 
   /* ── Trust strip: the model graded in public ── */
   const R=plsimRatings(b,fixtures);
@@ -4945,7 +4947,7 @@ async function hydrateInjuries(host){
   const fitness=list.length
     ? '<div class="card mb-20"><div class="card-title">Fitness & availability — '+list.length+' flagged</div>'+
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+rows+'</div></div>'
-    : '<div class="card mb-20"><div class="ge-state">'+svg(ICON.cross)+'<b>No fitness flags</b><p>Every player is currently available. Check back closer to the deadline.</p></div></div>';
+    : '<div class="card mb-20"><div class="ge-state">'+svg(ICON.cross)+'<b>No new injuries reported since your last visit</b><p>Every player is currently available. New flags land here the moment the news feed updates — worth a look the night before the deadline.</p></div></div>';
 
   /* Suspension watch: who is one (or two) yellows from a ban.
      Disciplinary totals reset every season. At a season open FPL can still
