@@ -165,6 +165,25 @@ a{color:inherit;text-decoration:none}
 
 /* ── FOCUS VISIBILITY ──────────────────────────────────── */
 :focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
+/* ── UX pass: onboarding tour, jargon tooltips, density toggle ── */
+.jargon{border-bottom:1px dotted var(--text-3);cursor:help;position:relative}
+.jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright);outline:none}
+.jargon:hover::after,.jargon:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
+  width:min(260px,72vw);background:var(--elevated,var(--surface-2));color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:normal;pointer-events:none}
+#help-btn{font-weight:800;font-size:15px;line-height:1}
+#density-btn{font-family:var(--font-mono,monospace);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+body[data-density="beginner"] .expert-only{display:none}
+.beginner-only{display:none}
+body[data-density="beginner"] .beginner-only{display:block}
+.tour{position:fixed;inset:0;z-index:200;pointer-events:none}
+.tour-spot{position:fixed;border:2px solid var(--green-bright);border-radius:8px;box-shadow:0 0 0 100vmax rgba(0,0,0,.55);transition:all .25s var(--ease,ease)}
+.tour-pop{position:fixed;pointer-events:auto;width:288px;max-width:88vw;background:var(--elevated,var(--surface-2));border:1px solid var(--green-bright);
+  border-radius:10px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.tour-pop .tour-step{font-family:var(--font-mono,monospace);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-3)}
+.tour-pop h4{margin:4px 0}.tour-pop p{margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--text-2)}
+.tour-actions{display:flex;gap:8px;align-items:center}.tour-actions .tour-gloss{margin-right:auto;font-size:11px;color:var(--text-3)}
 
 /* ── NATIVE SHELL (Capacitor iOS / Android) ────────────── */
 /* These rules only apply when running inside the native wrapper.
@@ -1521,6 +1540,8 @@ body{font-size:14px;line-height:1.35}
             <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
           </svg>
         </button>
+        <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Toggle beginner or expert detail" title="Beginner / Expert detail">Beginner</button>
+        <button class="btn btn-ghost btn-icon" id="help-btn" aria-label="Help, tour and glossary" title="Help &amp; glossary">?</button>
         <button class="btn btn-primary btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
@@ -2450,10 +2471,88 @@ NAV.forEach(area=>area.panels.forEach(p=>{
 /* Hidden panel: the design-system reference at /design (not in nav —
    reachable by URL, the command palette, or the methodology page). */
 PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:'home',areaLabel:'Home'};
+/* Hidden panel: plain-English glossary at /glossary (reachable from the ? menu,
+   the tour, and inline jargon). */
+PANELS.glossary={id:'glossary',label:'Glossary',icon:'question',tier:'free',areaId:'home',areaLabel:'Home'};
+
+/* ── Onboarding, jargon tooltips and beginner/expert density ──────
+   Plain-English definitions for every term a first-time manager meets. */
+const GLOSSARY={
+  'xP':'Expected points — the model’s forecast of how many FPL points a player scores next gameweek.',
+  'EO':'Effective ownership — the share of the field (including captaincy) who own a player. High EO means owning them protects your rank; low means a differential.',
+  'ΔP':'Projected price change — how close a player is to a price rise (↑) or fall (↓) tonight.',
+  'RPS':'Ranked Probability Score — how well-calibrated the match forecasts are, lower is better. Around 0.21 is strong.',
+  'Captain 50':'The captain’s median outcome — the middle of 50/50 simulations of their gameweek.',
+  'differential':'A low-owned player (under 15% owned). Owning one the field doesn’t is how you climb ranks fast.',
+  'template':'The most-owned players — the “everyone has them” core. Owning the template protects rank; fading it is a gamble.',
+  'threshold':'The net-transfer level at which FPL changes a player’s price.',
+  'captain margin':'How many expected points the top captain pick beats the next-best by. A thin margin means a real choice.',
+  'held-out backtest':'Testing the model on gameweeks it never saw while being fitted — the honest measure of accuracy.',
+  'chip':'A one-off booster (Wildcard, Free Hit, Bench Boost, Triple Captain) you play once per half-season.'
+};
+/* An inline jargon term with a tap- and hover-friendly tooltip. */
+function jt(term,label){const def=GLOSSARY[term]||'';
+  return '<span class="jargon" tabindex="0" role="note" aria-label="'+esc(term)+': '+esc(def)+'" data-tip="'+esc(def)+'">'+esc(label||term)+'</span>';}
+
+/* Beginner shows plain-English one-liners and hides RPS / ΔP / held-out
+   labels; expert shows everything. Default beginner until a team is linked. */
+function getDensity(){try{return localStorage.getItem('ge-density')||(getMid()?'expert':'beginner');}catch(_){return 'beginner';}}
+function applyDensity(d){if(document.body)document.body.setAttribute('data-density',d);}
+function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}applyDensity(d);
+  const b=document.getElementById('density-btn');if(b)b.textContent=d==='beginner'?'Beginner':'Expert';}
+
+/* Three-step spotlight tour — non-blocking, skippable, shown once. */
+const TOUR=[
+  {sel:'#tour-q1',title:'This Week · Action',body:'Your captain, transfer and chip call for this gameweek, in one glance.'},
+  {sel:'#tour-q2',title:'Model XI',body:'The 11 players our model would pick this week.'},
+  {sel:'#signin-btn',title:'Link your team',body:'Personalise all of this to your own squad.'}
+];
+let TOUR_I=0;
+function tourSeen(){try{return localStorage.getItem('ge-tour-seen')==='1';}catch(_){return true;}}
+function endTour(){try{localStorage.setItem('ge-tour-seen','1');}catch(_){}
+  const o=document.getElementById('tour');if(o)o.remove();window.removeEventListener('resize',tourShow);}
+function tourShow(){const o=document.getElementById('tour');if(!o)return;const step=TOUR[TOUR_I];
+  const el=step&&document.querySelector(step.sel);
+  if(!el){TOUR_I++;if(TOUR_I>=TOUR.length)return endTour();return tourShow();}
+  el.scrollIntoView({block:'center',behavior:'smooth'});
+  const r=el.getBoundingClientRect(),spot=o.querySelector('.tour-spot'),pop=o.querySelector('.tour-pop');
+  spot.style.left=(r.left-6)+'px';spot.style.top=(r.top-6)+'px';spot.style.width=(r.width+12)+'px';spot.style.height=(r.height+12)+'px';
+  o.querySelector('.tour-step').textContent='Step '+(TOUR_I+1)+' of '+TOUR.length;
+  o.querySelector('.tour-title').textContent=step.title;o.querySelector('.tour-body').textContent=step.body;
+  o.querySelector('#tour-next').textContent=TOUR_I===TOUR.length-1?'Done':'Next';
+  pop.style.left=Math.max(12,Math.min(r.left,window.innerWidth-300))+'px';
+  if(r.bottom+180<window.innerHeight){pop.style.top=(r.bottom+12)+'px';pop.style.bottom='auto';}
+  else{pop.style.bottom=(window.innerHeight-r.top+12)+'px';pop.style.top='auto';}}
+function startTour(){endTour();try{localStorage.removeItem('ge-tour-seen');}catch(_){}TOUR_I=0;
+  const o=document.createElement('div');o.id='tour';o.className='tour';
+  o.innerHTML='<div class="tour-spot"></div><div class="tour-pop"><div class="tour-step"></div><h4 class="tour-title"></h4>'+
+    '<p class="tour-body"></p><div class="tour-actions"><a href="#" class="tour-gloss" onclick="endTour();openPanel(\'glossary\');return false">Glossary</a>'+
+    '<button class="btn btn-ghost btn-sm" id="tour-skip">Skip</button><button class="btn btn-primary btn-sm" id="tour-next">Next</button></div></div>';
+  document.body.appendChild(o);
+  o.querySelector('#tour-skip').onclick=endTour;
+  o.querySelector('#tour-next').onclick=function(){TOUR_I++;if(TOUR_I>=TOUR.length)endTour();else tourShow();};
+  window.addEventListener('resize',tourShow);tourShow();}
+function maybeTour(){if(tourSeen())return;setTimeout(function(){if(document.getElementById('tour-q1'))startTour();},700);}
+
+async function hydrateGlossary(host){
+  const rows=Object.keys(GLOSSARY).map(k=>'<div class="dl-row" style="display:block;padding:11px 0">'+
+    '<div class="dl-nm mono" style="text-transform:none;color:var(--green-bright)">'+esc(k)+'</div>'+
+    '<div class="dl-sub" style="margin-top:3px;line-height:1.5;font-size:12.5px">'+esc(GLOSSARY[k])+'</div></div>').join('');
+  host.innerHTML='<div class="card mb-20"><div class="card-title">FPL &amp; model terms</div><div class="dl">'+rows+'</div></div>'+
+    '<div class="dl-sub">New to FPL? <a href="#" onclick="startTour();return false">Replay the 3-step tour →</a></div>';
+}
+function wireUXButtons(){
+  const h=document.getElementById('help-btn');if(h&&!h._w){h._w=1;h.addEventListener('click',startTour);}
+  const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent=getDensity()==='beginner'?'Beginner':'Expert';
+    d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
+}
+(function(){function ux(){applyDensity(getDensity());wireUXButtons();}
+  if(document.readyState!=='loading')ux();else document.addEventListener('DOMContentLoaded',ux);})();
 
 /* ── PANEL CONTENT DEFINITIONS (placeholder, shell only) ──── */
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
+  glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
   myweek:{
     desc:'Your whole gameweek in six lines — rank, captain, transfer, chip, watchlist and a fixture to note. Tap “Explain this” to see the model’s reasons.',
     layout:'standard'
@@ -3306,12 +3405,13 @@ async function hydrateDashboard(host){
   else if(chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold')
     chipBody='<b>'+chipAdv.best.label+'</b> <span class="dl-sub">'+chipAdv.best.window+'</span>';
   else chipBody='<b>HOLD</b> <span class="dl-sub">'+(chipAdv&&chipAdv.best?esc(chipAdv.best.reason):(chipsLeft?chipsLeft.join(' · ')+' in hand':'link team'))+'</span>';
-  const q1='<div class="card qd'+(mid?'':' qd-demo')+'">'+qh('This week · action','GW'+b.cur.id)+
+  const q1='<div class="card qd'+(mid?'':' qd-demo')+'" id="tour-q1">'+qh('This week · action','GW'+b.cur.id)+
+    '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
     row('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot')+
     row('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null)+
     row('TRANSFER',trBody,trVal,trCls)+
     row('CHIP',chipBody)+
-    '<div class="qd-foot">'+(cap?confChip(capConf.value,'Captain'):'')+' <span style="opacity:.85">captain margin '+(margin>=0?'+':'')+margin.toFixed(1)+' xP · '+scopeNote+'</span>'+formSpark+
+    '<div class="qd-foot">'+(cap?confChip(capConf.value,'Captain'):'')+' <span style="opacity:.85">'+jt('captain margin')+' '+(margin>=0?'+':'')+margin.toFixed(1)+' '+jt('xP')+' · <span class="expert-only">'+scopeNote+'</span></span>'+formSpark+
     (mid?'':' · <a href="#" onclick="openMidModal();return false">Link team →</a>')+'</div></div>';
 
   /* ── Q2: model XI — list by default on phones, pitch toggle ── */
@@ -3349,9 +3449,10 @@ async function hydrateDashboard(host){
      photo tiles; the pitch view stays one tap away via the toggle. */
   const mxiView='list';
   const mxiBtn=totw?'<button class="mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
-  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'">'+
+  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="tour-q2">'+
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
-    '<span class="qd-meta">'+(totw?totw.total.toFixed(0)+' xP':'—')+mxiBtn+'</span></div>'+q2Body+'</div>';
+    '<span class="qd-meta">'+(totw?totw.total.toFixed(0)+' xP':'—')+mxiBtn+'</span></div>'+
+    '<p class="beginner-only dl-sub" style="margin:2px 0 6px">The 11 players our model would pick this week.</p>'+q2Body+'</div>';
 
   /* ── Q3: differentials — like-for-like with the Differentials tab ──
      Same shared filter (available, under 15% owned, non-premium) and the
@@ -3368,9 +3469,10 @@ async function hydrateDashboard(host){
       '<span style="width:14px;text-align:right">'+d+'</span></div>';
   }).join('');
   const q3='<div class="card qd">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
+    '<p class="beginner-only dl-sub" style="margin:2px 0 6px">'+jt('differential','Differentials')+' are strong players under 15% owned — where you gain rank on the field.</p>'+
     '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
     '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
-    '<span style="width:58px;text-align:right">FIX</span><span style="width:14px;text-align:right">ΔP</span></div>'+dRows+'</div>';
+    '<span style="width:58px;text-align:right">FIX</span><span style="width:14px;text-align:right">'+jt('ΔP')+'</span></div>'+dRows+'</div>';
 
   /* ── Q4: live / deadline ── */
   const total=b.raw.total_players||10e6;
@@ -3435,13 +3537,14 @@ async function hydrateDashboard(host){
   const trust='<div class="trust-strip"><span class="perf-h">MODEL PERFORMANCE</span>'+
     (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> · '+done.length+' matches</span>'+
       (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started — backtest below</span>')+
-    '<span>backtest RPS <b>0.2126</b> held-out 25/26</span>'+
+    '<span class="expert-only">backtest '+jt('RPS')+' <b>0.2126</b> '+jt('held-out backtest','held-out')+' 25/26</span>'+
+    '<span class="beginner-only">forecasts tested on unseen gameweeks — <b>strong</b> accuracy</span>'+
     '<a href="#" onclick="openPanel(\'methodology\');return false" style="margin-left:auto;color:var(--green)">METHODOLOGY →</a></div>';
 
   /* Data-provenance meta line (v6 prototype): honest timestamp + source. */
   const meta='<div class="dash-meta"><span>DATA '+stamp+'</span>'+
     '<span class="g">SRC OFFICIAL FPL API</span>'+
-    '<span>MODEL held-out RPS 0.2126</span></div>';
+    '<span class="expert-only">MODEL held-out '+jt('RPS')+' 0.2126</span></div>';
 
   /* ── Hero: the single "what to do this week" line, or live status ──
      B4 casual on-ramp + B1 live-rank hero + B3 reliability, up top. */
@@ -3463,6 +3566,7 @@ async function hydrateDashboard(host){
 
   host.innerHTML=hero+meta+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
   tickTicker();
+  maybeTour();
 }
 
 /* ── Methodology: how the numbers are made, in plain English ── */
@@ -9254,6 +9358,7 @@ const WIRED={
   myweek:hydrateMyWeek,
   accountability:hydrateAccountability,
   dashboard:hydrateDashboard,
+  glossary:hydrateGlossary,
   methodology:hydrateMethodology,
   design:hydrateDesign,
   'gw-actions':hydrateGwActions,
