@@ -268,8 +268,12 @@ plus confirmed penalty / direct‑FK / corner order.
 
 ### Planner
 
-**Fixture Planner** — 6‑gameweek grid with model FDR (from win odds), expected
-goals for, and clean‑sheet odds; plus the upcoming match outlook.
+**Fixture Planner** — model‑FDR grid (from win odds), expected goals for, and
+clean‑sheet odds; plus the upcoming match outlook. Horizon toggles **6 / 10 / 15
+gameweeks or the whole Season** (the full remaining‑season grid competitors
+paywall — here free, and across four lenses: Overall / Attack / Defence / the
+official FPL rating). Teams re‑rank easiest‑run‑first; a purple underline marks
+each club’s best run in the window.
 
 **Clean Sheet Matrix** — for every 2026/27 club (from the shared model bundle),
 the probability of a clean sheet in each of the next 6 or 10 gameweeks'

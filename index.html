@@ -4839,9 +4839,15 @@ async function hydrateFixtures(host){
   const R=plsimRatings(b,fixtures);
   const pc=x=>Math.round(x*100);
   const POSN=['','GKP','DEF','MID','FWD'];
-  const WINS=[6,10,15];
+  /* Horizon options: the short planning windows, plus a full remaining-season
+     view (the competitor grids people share go the whole way). Standard windows
+     shorter than the remaining season are kept; Season always covers the rest.
+     Late in the campaign the standard ones drop off and Season shrinks to fit. */
+  const REM=39-startGw;
+  const WINS=[[6,'6 GW'],[10,'10 GW'],[15,'15 GW']].filter(p=>p[0]<REM);
+  WINS.push([Math.min(REM,38),'Season']);
   const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],['fpl','FPL']];
-  let curView='overall',curWin=10;
+  let curView='overall',curWin=Math.min(10,REM);
 
   /* Match outlook for the upcoming gameweek — window-independent. */
   const gwFix=fixtures.filter(f=>f.event===startGw);
@@ -4999,11 +5005,11 @@ async function hydrateFixtures(host){
 
     host.innerHTML=
       '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
-        '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(w=>'<button class="seg-b'+(w===curWin?' on':'')+'" data-win="'+w+'">'+w+' GW</button>').join('')+'</div>'+
+        '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(p=>'<button class="seg-b'+(p[0]===curWin?' on':'')+'" data-win="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>'+
         '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+VIEWS.map(v=>'<button class="seg-b'+(v[0]===curView?' on':'')+'" data-view="'+v[0]+'">'+v[1]+'</button>').join('')+'</div>'+
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
-        'Choose the <b>horizon</b> (6 / 10 / 15 GWs) and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
+        'Choose the <b>horizon</b> (6 / 10 / 15 GWs, or the whole <b>Season</b>) and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
         '<b>(a)</b> marks an away fixture. <b>FDR</b> totals the 1–5 difficulty (lower is easier); <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
