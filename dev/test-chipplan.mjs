@@ -137,6 +137,40 @@ console.log('• chipPlanFdr: each chip lands in the week it should');
   ok(Object.keys(plan.picks).length === 4, 'all four chips are placed across the half');
 }
 
+console.log('• chipPlanFdr: GW1 is not a place to spend a squad chip');
+{
+  /* Transfers are unlimited until the GW1 deadline, so a Free Hit or Wildcard
+     in GW1 buys what you already have for free — the chip is simply burnt.
+     GW1 is made the hardest week here precisely so a naive planner WOULD
+     choose it, which is what this has to prevent. */
+  const fx = makeFixtures(1, 19, (gw) => (gw === 1 ? 5 : gw === 11 ? 4.5 : 3));
+  const plan = API.chipPlanFdr(boot(), fx, { startGw: 1 });
+  ok(plan.picks.freehit.gw !== 1, 'Free Hit is never GW1 (got GW' + plan.picks.freehit.gw + ')');
+  ok(plan.picks.freehit.gw === 11, 'it falls through to the next-hardest week instead');
+  ok(!plan.picks.wildcard || plan.picks.wildcard.gw !== 1, 'Wildcard is never GW1 either');
+
+  /* And it must not simply give up on the chip when GW1 is excluded. */
+  ok(plan.picks.freehit != null, 'Free Hit is still placed somewhere in the half');
+
+  /* A blank in GW1 must not tempt it back — the chip is still worthless there. */
+  const blankOne = fx.filter((f) => !(f.event === 1 && f.team_h <= 6));
+  const p2 = API.chipPlanFdr(boot(), blankOne, { startGw: 1 });
+  ok(p2.picks.freehit.gw !== 1, 'even a GW1 blank does not attract the Free Hit');
+
+  /* Chips that change scoring rather than squad access are unaffected: GW1 is
+     a legitimate Bench Boost or Triple Captain week. */
+  const easyOne = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw) => (gw === 1 ? 1 : 3)), { startGw: 1 });
+  ok(easyOne.picks.benchboost.gw === 1, 'Bench Boost may still be played in GW1');
+
+  /* Mid-season the restriction is irrelevant and must not fire. */
+  const mid = API.chipPlanFdr(boot(), makeFixtures(6, 19, (gw) => (gw === 6 ? 5 : 3)), { startGw: 6 });
+  ok(mid.picks.freehit.gw === 6, 'the first week of a mid-season window is still fair game');
+
+  /* Nor should it fire on the second-half window. */
+  const late = API.chipPlanFdr(boot(), makeFixtures(20, 38, (gw) => (gw === 20 ? 5 : 3)), { startGw: 20 });
+  ok(late.picks.freehit.gw === 20, 'GW20 is a normal week for the second-half chip set');
+}
+
 console.log('• chipPlanFdr: blanks and doubles outrank a merely hard week');
 {
   const base = makeFixtures(1, 19, (gw) => (gw === 12 ? 5 : 3));

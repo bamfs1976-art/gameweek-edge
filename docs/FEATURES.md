@@ -496,6 +496,13 @@ and misleading on the model ones.
   to an easy one, measured as improvement only, since clubs getting *worse* is a
   reason to have wildcarded already.
 
+**GW1 is excluded for the Free Hit and Wildcard.** Transfers are unlimited right
+up to the GW1 deadline, so either chip there buys a squad you can already pick
+for nothing — playing one burns it for the whole half. Bench Boost and Triple
+Captain are unaffected, since they change scoring rather than squad access, and
+GW1 remains a legitimate week for both. There is no equivalent restriction at
+GW20: the second‑half chips unlock there, but transfers are not unlimited.
+
 Blanks and doubles override the difficulty read when the calendar has them.
 Chips are assigned in order of how **constrained** they are, not how valuable —
 a blank pins Free Hit to a week, the swing pins the Wildcard, while the armband

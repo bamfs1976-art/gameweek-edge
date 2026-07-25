@@ -9131,11 +9131,19 @@ function chipPlanFdr(b,fixtures,opts){
   const blankRank=gws.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
   const dblRank=gws.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
 
+  /* Transfers are unlimited right up to the GW1 deadline, so in GW1 a Free
+     Hit and a Wildcard both buy something you already have for nothing: any
+     squad they could produce, you can simply pick. Playing either in GW1
+     burns the chip for the entire half. Bench Boost and Triple Captain are
+     unaffected — they change scoring, not squad access — so they stay
+     eligible. There is no equivalent restriction at GW20: the second-half
+     chips unlock there, but transfers are not unlimited. */
+  const usable=g=>g.gw!==1;
   claim('freehit',blankRank.map(g=>({gw:g.gw,blank:g.blanks.length}))
-    .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard}))));
+    .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard}))).filter(usable));
   claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length}))
     .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy}))));
-  claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning})));
+  claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning})).filter(usable));
   claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr})));
   return {window:win,gws:played,picks,
     leagueMean:played.reduce((s,g)=>s+g.mean,0)/played.length};
@@ -9166,7 +9174,9 @@ function chipPlanCard(b,fixtures){
     '<p class="dl-sub" style="margin-bottom:10px">Chips reset at the halfway point, so each one is used inside this window or lost. '+
     'This plan is built from the <b>official FPL difficulty ratings</b> on the fixtures — the same numbers the FPL site shows — '+
     'across all '+plan.gws.length+' gameweeks of the half, not just the next few. '+
-    'Blanks and doubles override everything else when the calendar has them.</p>'+
+    'Blanks and doubles override everything else when the calendar has them.'+
+    (plan.window.from<=1?' <b>GW1 is skipped for the Free Hit and Wildcard</b> — transfers are unlimited until that deadline, '+
+      'so either chip there buys a squad you can already pick for free.':'')+'</p>'+
     '<div class="dl desc">'+order.map(k=>
       '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+CHIP_LABEL[k]+' — GW'+P[k].gw+
       ' <span class="badge '+badge[k]+'">'+(k==='wildcard'?'reshape':k==='freehit'?'swing':k==='benchboost'?'depth':'ceiling')+'</span></span>'+
