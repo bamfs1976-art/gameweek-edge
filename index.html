@@ -4755,6 +4755,66 @@ async function shareTeamReveal(){
 const SOC_W=1080,SOC_H=1350;
 const SOC_BG='#0a1410',SOC_ACCENT='#4ade80',SOC_INK='#ffffff';
 
+/* ── Card imagery ─────────────────────────────────────────────────────
+   Crests and player photos are what make a card look like a broadcast
+   graphic rather than a spreadsheet, but drawing a cross-origin image onto
+   a canvas taints it and makes the PNG export throw. Everything here is
+   therefore routed through our own /api/img proxy, which serves the same
+   bytes from our origin so the canvas stays clean.
+
+   Loading is best-effort by design: a player with no photo, a promoted club
+   with no badge yet, or an offline proxy all resolve to null, and the
+   renderer falls back to the club-colour tile it already draws. A card is
+   never blocked or broken by a missing image. */
+const SOC_IMG=new Map();
+function socProxy(url){return url?'/api/img?u='+encodeURIComponent(url):'';}
+function socLoadImg(url){
+  if(!url)return Promise.resolve(null);
+  if(SOC_IMG.has(url))return SOC_IMG.get(url);
+  const pr=new Promise(resolve=>{
+    const im=new Image();
+    im.crossOrigin='anonymous';
+    let done=false;
+    const finish=v=>{if(!done){done=true;resolve(v);}};
+    im.onload=()=>finish(im.naturalWidth?im:null);
+    im.onerror=()=>finish(null);
+    setTimeout(()=>finish(null),8000);        /* never hang the whole gallery */
+    im.src=socProxy(url);
+  });
+  SOC_IMG.set(url,pr);
+  return pr;
+}
+/* Photos come at 250px where available, falling back to the small size the
+   rest of the app uses, so a 1080-wide card is not drawing upscaled mush. */
+function socPhotoUrls(el){
+  const p=el&&(el.photo||el.code);
+  if(!p||!USE_OFFICIAL_IMAGERY)return [];
+  const id=String(p).replace('.jpg','').replace('.png','');
+  return ['https://resources.premierleague.com/premierleague/photos/players/250x250/p'+id+'.png',
+          'https://resources.premierleague.com/premierleague/photos/players/110x140/p'+id+'.png'];
+}
+async function socFirstImg(urls){
+  for(const u of urls||[]){const im=await socLoadImg(u);if(im)return im;}
+  return null;
+}
+/* Walk every card spec and warm the cache before anything is drawn, so the
+   renderer itself can stay synchronous. */
+async function socPreloadImages(specs){
+  const jobs=[];
+  const want=o=>{
+    if(!o)return;
+    if(o.photos)jobs.push(socFirstImg(o.photos).then(im=>{o._img=im;}));
+    if(o.crest)jobs.push(socLoadImg(o.crest).then(im=>{o._crest=im;}));
+  };
+  (specs||[]).forEach(sp=>{
+    (sp.rows||[]).forEach(r=>r.forEach(want));
+    (sp.bench||[]).forEach(want);
+    (sp.items||[]).forEach(want);
+    (sp.groups||[]).forEach(g=>(g.items||[]).forEach(want));
+  });
+  await Promise.all(jobs);
+}
+
 /* Resolve a player by display name, so a card preset can name Haaland
    without hard-coding an element id that changes every season. */
 function socFind(b,name){
@@ -4777,7 +4837,8 @@ function socPool(b,nf){
 /* An optimiser result turned into pitch rows plus a bench strip. */
 function socSquadCard(b,res,title,sub,note){
   if(!res)return null;
-  const tok=s=>({nm:s.el.web_name,team:teamShort(b,s.el.team),cost:s.el.now_cost,p:s.p});
+  const tok=s=>({nm:s.el.web_name,team:teamShort(b,s.el.team),cost:s.el.now_cost,p:s.p,
+    photos:socPhotoUrls(s.el),crest:crestUrl(b,s.el.team),kit:KIT[teamShort(b,s.el.team)]||['#8a8a8a','#fff']});
   const rows=[1,2,3,4].map(t=>res.xi.filter(s=>s.el.element_type===t)
     .sort((a,c)=>c.p-a.p).map(tok)).filter(r=>r.length);
   return {kind:'pitch',title,sub,note,rows,
@@ -4831,7 +4892,8 @@ function socialSpecs(b,fixtures){
         sub:'Top picks in every band · next 6 fixtures',
         note:'Ranked on projected points. Each band covers its half-million.',
         groups:lad.map(g=>({label:g.label,
-          items:g.players.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1)}))}))};
+          items:g.players.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1),
+            crest:crestUrl(b,p.el.team),photos:socPhotoUrls(p.el)}))}))};
     });
   });
 
@@ -4842,7 +4904,8 @@ function socialSpecs(b,fixtures){
       sub:'Top armband for the next '+plan.length+' gameweeks',
       note:'Projected points per gameweek. DGW rows sum both matches.',
       groups:plan.map(r=>({label:'GW'+r.gw,
-        items:r.picks.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1)}))}))};
+        items:r.picks.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1),
+          crest:crestUrl(b,p.el.team),photos:socPhotoUrls(p.el)}))}))};
   });
 
   push('differentials',()=>{
@@ -4853,7 +4916,8 @@ function socialSpecs(b,fixtures){
       sub:'Under 10% owned · GW'+gw,
       note:'Low ownership plus a real projection — where you gain rank on the field.',
       items:list.map(x=>({nm:x.e.web_name,team:teamShort(b,x.e.team),
-        meta:money(x.e.now_cost)+' · '+x.e.selected_by_percent+'% owned',v:x.p.toFixed(1)}))};
+        meta:money(x.e.now_cost)+' · '+x.e.selected_by_percent+'% owned',v:x.p.toFixed(1),
+        crest:crestUrl(b,x.e.team),photos:socPhotoUrls(x.e)}))};
   });
 
   push('overpriced',()=>{
@@ -4863,7 +4927,8 @@ function socialSpecs(b,fixtures){
       sub:'Paying more than the projection supports',
       note:'FAIR price is what the median rate for that position implies. Compared within position, so defenders are not flattered.',
       items:rows.slice(-8).reverse().map(r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),
-        meta:money(r.el.now_cost)+' · fair £'+r.fair.toFixed(1),v:'+'+r.delta.toFixed(1),neg:true}))};
+        meta:money(r.el.now_cost)+' · fair £'+r.fair.toFixed(1),v:'+'+r.delta.toFixed(1),neg:true,
+        crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
   });
 
   push('defcon',()=>{
@@ -4873,7 +4938,8 @@ function socialSpecs(b,fixtures){
       sub:'Most reliable defensive returners at each price',
       note:'Hit rate is how often they clear the threshold for the +2, not a per-90 average.',
       groups:groups.map(g=>({label:g.label,
-        items:g.players.slice(0,3).map(e=>({nm:e.web_name,team:teamShort(b,e.team),v:dcHitLabel(e)}))}))};
+        items:g.players.slice(0,3).map(e=>({nm:e.web_name,team:teamShort(b,e.team),v:dcHitLabel(e),
+          crest:crestUrl(b,e.team),photos:socPhotoUrls(e)}))}))};
   });
 
   return out;
@@ -4892,8 +4958,9 @@ function renderSocialCard(spec,scale){
   x.scale(scale,scale);
   const W=SOC_W,H=SOC_H;
   const centre=(t,y,font,color)=>{x.font=font;x.fillStyle=color;x.textAlign='center';x.fillText(t,W/2,y);};
+  /* Character-count truncation only — deliberately does NOT touch the font,
+     so a later measureText still reflects whatever the caller set. */
   const clip=(t,max)=>{t=String(t==null?'':t);
-    x.font='800 30px system-ui,sans-serif';
     return t.length>max?t.slice(0,max-1)+'…':t;};
 
   if(spec.kind==='pitch'){
@@ -4915,19 +4982,49 @@ function renderSocialCard(spec,scale){
 
   if(spec.kind==='pitch'){
     const token=(cx,cy,p)=>{
-      const w=196,h=94,px=cx-w/2,py=cy-h/2;
-      x.fillStyle='rgba(0,0,0,.38)';socRound(x,px,py,w,h,16);x.fill();
-      x.lineWidth=2;x.strokeStyle='rgba(255,255,255,.18)';socRound(x,px,py,w,h,16);x.stroke();
+      /* Vertical budget, top down: pad + portrait + gap + three text lines
+         + pad. Deriving h from the parts keeps the name clear of the disc. */
+      const r=30,padT=10,gap=13,lnA=27,lnB=22,lnC=24,padB=8;
+      const w=190,h=padT+2*r+gap+lnA+lnB+lnC+padB,px=cx-w/2,py=cy-h/2;
+      x.fillStyle='rgba(0,0,0,.44)';socRound(x,px,py,w,h,18);x.fill();
+      x.lineWidth=2;x.strokeStyle='rgba(255,255,255,.18)';socRound(x,px,py,w,h,18);x.stroke();
+      /* Portrait disc: club colour behind, photo on top when we have one. */
+      const hy=py+padT+r;
+      const kit=p.kit||['#8a8a8a','#fff'];
+      const grad=x.createLinearGradient(cx-r,hy-r,cx+r,hy+r);
+      grad.addColorStop(0,kit[0]);grad.addColorStop(1,kit[1]||kit[0]);
+      x.save();
+      x.beginPath();x.arc(cx,hy,r,0,2*Math.PI);x.closePath();
+      x.fillStyle=grad;x.fill();x.clip();
+      if(p._img){
+        /* Photos are head-and-shoulders cutouts: cover the disc, anchored to
+           the top so the crop never takes the face off. */
+        const im=p._img,s=Math.max((r*2)/im.naturalWidth,(r*2)/im.naturalHeight)*1.08;
+        const dw=im.naturalWidth*s,dh=im.naturalHeight*s;
+        x.drawImage(im,cx-dw/2,hy-r-2,dw,dh);
+      }
+      x.restore();
+      x.lineWidth=3;x.strokeStyle='rgba(255,255,255,.34)';
+      x.beginPath();x.arc(cx,hy,r,0,2*Math.PI);x.stroke();
+      /* Crest badge tucked on the shoulder of the disc. */
+      if(p._crest){
+        const cr=22,bx=cx+r-4,by=hy+r-10;
+        x.save();
+        x.beginPath();x.arc(bx,by,cr/2+5,0,2*Math.PI);x.closePath();
+        x.fillStyle='rgba(6,14,10,.92)';x.fill();x.clip();
+        x.drawImage(p._crest,bx-cr/2,by-cr/2,cr,cr);
+        x.restore();
+      }
       x.textAlign='center';
-      x.font='800 30px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      x.font='800 27px system-ui,sans-serif';x.fillStyle=SOC_INK;
       let nm=p.nm||'';if(nm.length>13)nm=nm.slice(0,12)+'…';
-      x.fillText(nm,cx,cy-8);
-      x.font='600 23px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.6)';
-      x.fillText((p.team||'')+' · '+money(p.cost||0),cx,cy+20);
-      x.font='700 22px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
-      x.fillText(Number(p.p||0).toFixed(1)+' xP',cx,cy+44);
+      x.fillText(nm,cx,py+padT+2*r+gap+lnA);
+      x.font='600 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.6)';
+      x.fillText((p.team||'')+' · '+money(p.cost||0),cx,py+padT+2*r+gap+lnA+lnB);
+      x.font='800 23px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+      x.fillText(Number(p.p||0).toFixed(1)+' xP',cx,py+padT+2*r+gap+lnA+lnB+lnC);
     };
-    const rows=spec.rows||[],top=356,bottom=H-390;
+    const rows=spec.rows||[],top=372,bottom=H-438;
     const step=rows.length>1?(bottom-top)/(rows.length-1):0;
     rows.forEach((arr,ri)=>{const cy=top+step*ri,n=arr.length||1;
       arr.forEach((p,i)=>token((W*(i+1))/(n+1),cy,p));});
@@ -4957,15 +5054,27 @@ function renderSocialCard(spec,scale){
       socRound(x,40,y,W-80,rh-9,12);x.fill();
       x.textAlign='left';x.font='800 27px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
       x.fillText(grp.label,64,y+rh/2+2);
-      let cx=210;
+      let cx=206;
       (grp.items||[]).forEach((it,i)=>{
+        if(cx>W-190)return;
+        /* Crest chip ahead of each name — club identity at a glance. */
+        const cr=34,ccx=cx+cr/2,ccy=y+rh/2-2;
+        x.save();
+        x.beginPath();x.arc(ccx,ccy,cr/2+4,0,2*Math.PI);x.closePath();
+        x.fillStyle='rgba(255,255,255,.08)';x.fill();x.clip();
+        if(it._crest)x.drawImage(it._crest,ccx-cr/2,ccy-cr/2,cr,cr);
+        x.restore();
+        const tx=cx+cr+14;
         x.font='700 26px system-ui,sans-serif';x.fillStyle=i===0?SOC_INK:'rgba(255,255,255,.72)';
-        const nm=clip(it.nm,15);
-        x.fillText(nm,cx,y+rh/2-4);
+        const nm=clip(it.nm,14);
+        const nmW=x.measureText(nm).width;      /* measured in the NAME font */
+        x.fillText(nm,tx,y+rh/2-4);
+        const sub=it.team+'  '+it.v;
         x.font='600 20px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.45)';
-        x.fillText(it.team+'  '+it.v,cx,y+rh/2+22);
-        cx+=Math.max(210,x.measureText(nm).width+150);
-        if(cx>W-140)return;
+        x.fillText(sub,tx,y+rh/2+22);
+        /* Advance past the wider of the two lines so the next crest cannot
+           land on top of this name. */
+        cx=tx+Math.max(nmW,x.measureText(sub).width)+34;
       });
     });
   } else {
@@ -4978,11 +5087,32 @@ function renderSocialCard(spec,scale){
       socRound(x,40,y,W-80,rh-8,12);x.fill();
       x.textAlign='left';
       x.font='800 30px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.35)';
-      x.fillText(String(i+1),66,y+rh/2+10);
+      x.fillText(String(i+1),64,y+rh/2+10);
+      /* Portrait disc, then the crest as a small badge on its shoulder. */
+      const r=Math.min(34,rh/2-8),hx=140,hy=y+rh/2;
+      x.save();
+      x.beginPath();x.arc(hx,hy,r,0,2*Math.PI);x.closePath();
+      x.fillStyle='rgba(255,255,255,.09)';x.fill();x.clip();
+      if(it._img){
+        const im=it._img,s=Math.max((r*2)/im.naturalWidth,(r*2)/im.naturalHeight)*1.08;
+        x.drawImage(im,hx-im.naturalWidth*s/2,hy-r-2,im.naturalWidth*s,im.naturalHeight*s);
+      }
+      x.restore();
+      x.lineWidth=2;x.strokeStyle='rgba(255,255,255,.22)';
+      x.beginPath();x.arc(hx,hy,r,0,2*Math.PI);x.stroke();
+      if(it._crest){
+        const cr=20,bx=hx+r-4,by=hy+r-8;
+        x.save();
+        x.beginPath();x.arc(bx,by,cr/2+4,0,2*Math.PI);x.closePath();
+        x.fillStyle='rgba(6,14,10,.94)';x.fill();x.clip();
+        x.drawImage(it._crest,bx-cr/2,by-cr/2,cr,cr);
+        x.restore();
+      }
+      const tx=hx+r+26;
       x.font='800 32px system-ui,sans-serif';x.fillStyle=SOC_INK;
-      x.fillText(clip(it.nm,18),126,y+rh/2-2);
+      x.fillText(clip(it.nm,16),tx,y+rh/2-2);
       x.font='600 22px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
-      x.fillText(it.team+' · '+it.meta,126,y+rh/2+26);
+      x.fillText(it.team+' · '+it.meta,tx,y+rh/2+26);
       x.textAlign='right';
       x.font='800 38px system-ui,sans-serif';x.fillStyle=it.neg?'#ff6b6b':SOC_ACCENT;
       x.fillText(it.v,W-70,y+rh/2+12);
@@ -4991,7 +5121,7 @@ function renderSocialCard(spec,scale){
   /* Footer. */
   if(spec.note){
     x.textAlign='center';x.font='600 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
-    const words=String(spec.note).split(' ');let line='',ly=H-104;
+    const words=String(spec.note).split(' ');let line='',ly=H-120;
     const lines=[];
     words.forEach(w=>{const t=line?line+' '+w:w;
       if(x.measureText(t).width>W-140){lines.push(line);line=w;}else line=t;});
@@ -5043,6 +5173,10 @@ async function hydrateSocial(host){
     return;
   }
   window._soc={specs};
+  /* Warm crests and photos before drawing. Best-effort: anything that fails
+     simply falls back to the club-colour tile, so a slow or blocked CDN
+     costs a little polish, never a card. */
+  try{await socPreloadImages(specs);}catch(_){}
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
     ' Social Studio</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Share-ready graphics built from the live model — the numbers on the card are the numbers in the app. '+

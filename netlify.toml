@@ -83,6 +83,14 @@
   status = 200
   force = true
 
+# Same-origin image proxy for the Social Studio canvas (see img.js — a
+# cross-origin image would taint the canvas and break the PNG export).
+[[redirects]]
+  from = "/api/img"
+  to = "/.netlify/functions/img"
+  status = 200
+  force = true
+
 # First-party analytics (fire-and-forget event pings).
 [[redirects]]
   from = "/api/track"

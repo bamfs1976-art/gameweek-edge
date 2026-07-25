@@ -147,6 +147,28 @@ in the bank** (best XI holding ≥£3.0m back) · **Best by price** for each of 
 four positions · **Best captains** for the next 7 gameweeks · **The
 differentials** (<10% owned) · **Priced above the model** · **DefCon by budget**.
 
+**Imagery.** Cards carry official club crests and player portraits — a portrait
+disc with the crest badged on its shoulder for pitch and ranked cards, crest
+chips on the price/captain ladders — over the club‑colour gradient that shows
+through when an image is missing. Every image is best‑effort: a new signing with
+no photo, a promoted club with no badge, or a slow CDN costs a little polish and
+nothing else, because the colour tile is always drawn underneath first.
+
+Canvas export forces one piece of plumbing: drawing a cross‑origin image taints
+the canvas and makes `toBlob()` throw, so card imagery is fetched through a
+same‑origin proxy (`/api/img` → `netlify/functions/img.js`) rather than straight
+from the Premier League CDN. That proxy is host‑allowlisted, size‑capped and
+edge‑cached for a week; it is deliberately not a general‑purpose relay. In‑app
+`<img>` tags are unaffected and still hit the CDN directly, since tainting only
+matters for canvas readback.
+
+> Crests and player photos are club trademarks and player image rights. The app
+> already gates them behind the `USE_OFFICIAL_IMAGERY` master switch (§ helpers);
+> flipping it to `false` drops every card back to club‑colour tiles with no other
+> change. Worth a deliberate decision before cards are used commercially, since
+> a downloaded PNG carrying the site's domain is distribution and promotion, not
+> just in‑app display.
+
 The XI cards run a **constrained squad optimiser** (`squadOptimise`): a legal
 15‑man squad — 2/5/5/3, max 3 per club, inside budget — chosen to maximise the
 expected points of the best XI it can field. Because the bench scores nothing in
