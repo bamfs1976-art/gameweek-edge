@@ -79,8 +79,13 @@ async function fetchGw(season, gw) {
 
 /* ── pure aggregation (unit-tested) ──────────────────────── */
 /* matchRows: flat array of playermatchstats rows (objects) across all
-   gameweeks of one season. Returns one compact record per FPL element id. */
-function aggregate(season, matchRows) {
+   gameweeks of one season. `positions` maps FPL element id → the Core Insights
+   position label (Defender / Midfielder / Forward / Goalkeeper) so we can apply
+   the right defensive-contribution threshold. Returns one record per element. */
+const DEF_THRESHOLD = 10;      /* DEF need 10 CBIT for the +2 */
+const MIDFWD_THRESHOLD = 12;   /* MID/FWD need 12 CBIRT */
+function aggregate(season, matchRows, positions) {
+  positions = positions || {};
   const acc = {};
   for (const m of matchRows) {
     const id = parseInt(m.player_id, 10);
@@ -89,6 +94,7 @@ function aggregate(season, matchRows) {
       season, element: id, games: 0, minutes: 0, goals_prevented: 0, xgot_faced: 0,
       saves: 0, goals_conceded: 0, xg: 0, xgot: 0, big_chances_missed: 0,
       chances_created: 0, touches_opp_box: 0, penalties: 0,
+      dc_starts: 0, dc_hits: 0, dc_actions: 0,
     });
     const mins = num(m.minutes_played);
     if (mins > 0) a.games += 1;
@@ -103,12 +109,26 @@ function aggregate(season, matchRows) {
     a.chances_created += num(m.chances_created);
     a.touches_opp_box += num(m.touches_opposition_box);
     a.penalties += num(m.penalties_scored) + num(m.penalties_missed);
+    /* Defensive-contribution consistency: count a "start" as >= 60 minutes and
+       check the per-match CBIT (DEF) / CBIRT (MID/FWD) against the threshold.
+       Goalkeepers have no defensive-contribution category, so skip them. */
+    const pos = positions[id];
+    if (mins >= 60 && pos && pos !== 'Goalkeeper') {
+      const cbit = num(m.clearances) + num(m.blocks) + num(m.interceptions) + num(m.tackles);
+      const isDef = pos === 'Defender';
+      const actions = isDef ? cbit : cbit + num(m.recoveries);
+      const thr = isDef ? DEF_THRESHOLD : MIDFWD_THRESHOLD;
+      a.dc_starts += 1;
+      a.dc_actions += actions;
+      if (actions >= thr) a.dc_hits += 1;
+    }
   }
   const r2 = (x) => Math.round(x * 100) / 100;
   const r3 = (x) => Math.round(x * 1000) / 1000;
   return Object.values(acc).map((a) => {
     const per90 = a.minutes > 0 ? 90 / a.minutes : 0;
     const npXg = Math.max(0, a.xg - PEN_XG * a.penalties);   /* strip penalty xG → open-play threat */
+    const dcS = a.dc_starts;
     return {
       season: a.season, element: a.element, games: a.games, minutes: Math.round(a.minutes),
       goals_prevented: r2(a.goals_prevented), goals_prevented_per_90: r3(a.goals_prevented * per90),
@@ -117,8 +137,20 @@ function aggregate(season, matchRows) {
       big_chances_missed: Math.round(a.big_chances_missed), chances_created: Math.round(a.chances_created),
       touches_opp_box: Math.round(a.touches_opp_box), touches_opp_box_per_90: r3(a.touches_opp_box * per90),
       penalties: Math.round(a.penalties),
+      defcon_starts: dcS, defcon_hits: a.dc_hits, defcon_actions: Math.round(a.dc_actions),
+      defcon_hit_rate: dcS ? r3(a.dc_hits / dcS) : null,
+      defcon_per_start: dcS ? r2(a.dc_actions / dcS) : null,
     };
   });
+}
+/* Parse players.csv → { elementId: positionLabel }. */
+function positionMap(playersCsv) {
+  const map = {};
+  for (const r of parseCsv(playersCsv)) {
+    const id = parseInt(r.player_id, 10);
+    if (Number.isFinite(id) && r.position) map[id] = r.position;
+  }
+  return map;
 }
 
 /* Gather every gameweek's match rows for a season. Contiguous scan: fetch in
@@ -156,7 +188,15 @@ exports.handler = async () => {
   } catch (_) { return { statusCode: 200, body: 'upstream unavailable' }; }
   if (!picked) return { statusCode: 200, body: 'no season data' };
 
-  const records = aggregate(picked.season, picked.rows);
+  /* Player positions (for the DEF 10 vs MID/FWD 12 defensive-contribution
+     threshold). Best-effort: without it the defcon fields stay null. */
+  let positions = {};
+  try {
+    const r = await fetch(RAW + '/data/' + picked.season + '/players.csv', { headers: { 'User-Agent': UA, Accept: 'text/csv' } });
+    if (r.status === 200) positions = positionMap(await r.text());
+  } catch (_) { /* defcon fields null */ }
+
+  const records = aggregate(picked.season, picked.rows, positions);
   if (!records.length) return { statusCode: 200, body: 'no players' };
 
   const { createClient } = require('@supabase/supabase-js');
@@ -172,5 +212,6 @@ exports.handler = async () => {
 
 module.exports.parseCsv = parseCsv;
 module.exports.aggregate = aggregate;
+module.exports.positionMap = positionMap;
 module.exports.deriveSeasonLabel = deriveSeasonLabel;
 module.exports.seasonCandidates = seasonCandidates;

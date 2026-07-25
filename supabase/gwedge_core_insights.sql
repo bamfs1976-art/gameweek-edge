@@ -41,9 +41,26 @@ create table if not exists public.gwedge_core_insights (
   touches_opp_box        integer,                    -- Σ touches in opposition box
   touches_opp_box_per_90 real,
   penalties              integer,                    -- scored + missed (context for np_xg)
+  -- Defensive-contribution consistency (per-match CBIT/CBIRT vs the FPL
+  -- threshold: DEF 10, MID/FWD 12). The hit rate is how RELIABLY a player
+  -- earns the +2 — more predictive than a per-90 average — and the official
+  -- API cannot give it (no per-match breakdown).
+  defcon_starts          integer,                    -- matches with minutes >= 60 (outfield)
+  defcon_hits            integer,                    -- of those, matches clearing the threshold
+  defcon_actions         integer,                    -- Σ CBIT (DEF) / CBIRT (MID/FWD)
+  defcon_hit_rate        real,                       -- defcon_hits / defcon_starts
+  defcon_per_start       real,                       -- defcon_actions / defcon_starts
   updated_at             timestamptz not null default now(),
   primary key (season, element)
 );
+
+-- Add the defensive-contribution columns to a table created before they
+-- existed (idempotent).
+alter table public.gwedge_core_insights add column if not exists defcon_starts    integer;
+alter table public.gwedge_core_insights add column if not exists defcon_hits      integer;
+alter table public.gwedge_core_insights add column if not exists defcon_actions   integer;
+alter table public.gwedge_core_insights add column if not exists defcon_hit_rate  real;
+alter table public.gwedge_core_insights add column if not exists defcon_per_start real;
 
 create index if not exists gwedge_core_insights_season on public.gwedge_core_insights (season);
 

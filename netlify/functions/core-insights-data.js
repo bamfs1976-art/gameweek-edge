@@ -32,7 +32,7 @@ exports.handler = async () => {
   const season = seasons[0].season;
 
   const { data, error } = await sb.from('gwedge_core_insights')
-    .select('element,games,minutes,goals_prevented,goals_prevented_per_90,xgot,np_xg_per_90,big_chances_missed,chances_created,touches_opp_box_per_90,saves')
+    .select('element,games,minutes,goals_prevented,goals_prevented_per_90,xgot,np_xg_per_90,big_chances_missed,chances_created,touches_opp_box_per_90,saves,defcon_starts,defcon_hit_rate,defcon_per_start')
     .eq('season', season).limit(2000);
   if (error || !data) return json({ configured: true, season, players: {} }, 600);
 
@@ -42,6 +42,7 @@ exports.handler = async () => {
       g: r.games, m: r.minutes, gp: r.goals_prevented, gp90: r.goals_prevented_per_90,
       xgot: r.xgot, npxg90: r.np_xg_per_90, bcm: r.big_chances_missed,
       cc: r.chances_created, tob90: r.touches_opp_box_per_90, sv: r.saves,
+      dcs: r.defcon_starts, dchr: r.defcon_hit_rate, dcps: r.defcon_per_start,
     };
   }
   return json({ configured: true, season, players });

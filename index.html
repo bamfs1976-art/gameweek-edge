@@ -5268,13 +5268,27 @@ async function hydrateDiffs(host){
      whole page respects the ownership filter. */
   const dc90=e=>{const v=parseFloat(e.defensive_contribution_per_90);
     return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;};
+  /* DefCon HIT RATE — how reliably a player earns the +2, the consistency
+     metric FPL's API cannot give. Real per-match rate from the Core Insights
+     mirror where present (>=5 starts); otherwise a model estimate from the
+     per-90 rate vs the threshold (DEF 10 / MID-FWD 12), prefixed "~". */
+  const defThr=e=>e.element_type===2?10:12;
+  const dcHitNum=e=>{const ci=e._ci;
+    return (ci&&(ci.dcs||0)>=5&&ci.dchr!=null)?ci.dchr:1/(1+Math.exp(-1.1*(dc90(e)-defThr(e))));};
+  const dcHitStr=e=>{const ci=e._ci;
+    return (ci&&(ci.dcs||0)>=5&&ci.dchr!=null)?Math.round(ci.dchr*100)+'%':'~'+Math.round(dcHitNum(e)*100)+'%';};
+  const dcPerStr=e=>{const ci=e._ci;
+    if(ci&&(ci.dcs||0)>=5&&ci.dcps!=null)return ci.dcps.toFixed(1);
+    const s=e.starts||0;return s>0?(parseFloat(e.defensive_contribution||0)/s).toFixed(1):'—';};
   const dcon=pool.filter(e=>e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
-    .sort((a,c)=>dc90(c)-dc90(a)).slice(0,12);
+    .sort((a,c)=>dcHitNum(c)-dcHitNum(a)).slice(0,12);
+  const anyReal=dcon.some(e=>e._ci&&(e._ci.dcs||0)>=5&&e._ci.dchr!=null);
   const dconCard=dcon.length
     ? '<div class="card mb-20"><div class="card-title">Differential DefCon picks '+
         '<span class="badge badge-grey">under '+MAXOWN+'%</span></div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">Low-owned defenders and midfielders with the strongest defensive-contribution rate — tackles, blocks, interceptions and recoveries all score. A cheap, under-the-radar points source.</p>'+
-        dlTable(b,dcon,['DefCon/90','Total'],e=>[dc90(e).toFixed(1),e.defensive_contribution||0])+'</div>'
+        '<p class="dl-sub" style="margin-bottom:10px">Low-owned defenders and midfielders ranked by <b>DefCon hit rate</b> — how often they actually clear the threshold for the +2 (tackles, blocks, interceptions, clearances, and recoveries for mids). More predictive than a per-90 average. '+
+        (anyReal?'Real per-match rate from the Core Insights data; ':'')+'a <b>~</b> marks a model estimate. <b>/start</b> is defensive actions per start.</p>'+
+        dlTable(b,dcon,['Hit%','/start','DefC/90'],e=>[dcHitStr(e),dcPerStr(e),dc90(e).toFixed(1)])+'</div>'
     : '';
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Differentials — under '+MAXOWN+'% owned</div>'+
@@ -5658,10 +5672,10 @@ function dlTable(b,list,heads,metrics){
     return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
       '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+crest(b,e.team,14)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+e.selected_by_percent+'%</span></span>'+
-      '<span class="dl-col mono">'+m[0]+'</span><span class="dl-col mono">'+m[1]+'</span></div>';
+      heads.map((_,ci)=>'<span class="dl-col mono">'+m[ci]+'</span>').join('')+'</div>';
   }).join('');
   return '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span>'+
-    '<span class="dl-grow">Player</span><span class="dl-col">'+heads[0]+'</span><span class="dl-col">'+heads[1]+'</span></div>'+rows+'</div>';
+    '<span class="dl-grow">Player</span>'+heads.map(h=>'<span class="dl-col">'+h+'</span>').join('')+'</div>'+rows+'</div>';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -5935,7 +5949,10 @@ function playerDetailHTML(b,fixtures,id){
         stat('xGOT (total)',ci.xgot!=null?f90(ci.xgot):'—')+
         stat('Big chances missed',fmtNum(ci.bcm))+
         stat('Chances created',fmtNum(ci.cc))+
-        stat('Touches in box / 90',ci.tob90!=null?f90(ci.tob90):'—');
+        stat('Touches in box / 90',ci.tob90!=null?f90(ci.tob90):'—')+
+        (((e.element_type===2||e.element_type===3)&&ci.dchr!=null&&(ci.dcs||0)>=5)
+          ? stat('DefCon hit %',Math.round(ci.dchr*100)+'%')+stat('DefC / start',ci.dcps!=null?ci.dcps.toFixed(1):'—')
+          : '');
     ciBlock='<div class="card pd-sec"><div class="card-title">Advanced — Core Insights</div><div class="pd-grid">'+
       rows+'</div><div class="dl-sub" style="margin-top:8px">'+
       (e.element_type===1

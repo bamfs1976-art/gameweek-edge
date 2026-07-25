@@ -416,6 +416,14 @@ dataset (used freely with attribution), aligned by the official FPL element id:
   goals conceded — shot‑stopping above expectation), which feeds `nativeXP`
   (see §4). Also surfaced in the player‑detail modal: non‑penalty xG, xGOT,
   big chances missed, chances created and touches in the box.
+- **DefCon hit rate** (`defcon_hit_rate`, `defcon_per_start`): the per‑match
+  fraction of starts (≥60 mins) a player clears the defensive‑contribution
+  threshold (DEF 10 CBIT, MID/FWD 12 CBIRT) for the +2 — a *consistency* metric
+  the official API cannot give (no per‑match breakdown). Surfaced on the
+  Differentials **DefCon picks** table (ranked by hit rate, with a per‑start
+  actions column) and the player modal; the aggregator joins `players.csv` for
+  the position‑specific threshold. Where the mirror is absent the Differentials
+  table falls back to a model estimate of the hit rate (prefixed `~`).
 - No new env vars — reuses `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`.
 
 ---

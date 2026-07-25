@@ -56,6 +56,37 @@ ok(near(o.np_xg, 0.11, 1e-9), 'outfielder: non-penalty xG strips the penalty');
 ok(near(o.np_xg_per_90, 0.11, 1e-9), 'outfielder: np xG per 90 over a full game');
 ok(o.big_chances_missed === 1 && o.chances_created === 3 && o.touches_opp_box === 7, 'outfielder: involvement summed');
 ok(o.xgot === 0.8, 'outfielder: xGOT summed');
+ok(o.defcon_starts === 0 && o.defcon_hit_rate == null, 'defcon null without a position map');
+
+/* ── defensive-contribution hit rate ────────────────────── */
+console.log('• core-insights: defensive-contribution hit rate');
+const { positionMap } = require(join(ROOT, 'netlify', 'functions', 'core-insights.js'));
+const positions = positionMap('player_id,position\n5,Defender\n6,Midfielder\n7,Goalkeeper\n');
+ok(positions[5] === 'Defender' && positions[6] === 'Midfielder', 'positionMap parses positions');
+
+const dcRow = (id, mins, cl, bl, intc, tk, rec) => ({
+  player_id: String(id), minutes_played: String(mins),
+  clearances: String(cl), blocks: String(bl), interceptions: String(intc), tackles: String(tk), recoveries: String(rec),
+});
+const dcRows = [
+  /* Defender 5 (threshold 10 CBIT): GW1 clears (5+2+2+2=11), GW2 misses (2+1+1+1=5),
+     GW3 clears (10) but only 45 mins → not a "start", ignored. */
+  dcRow(5, 90, 5, 2, 2, 2, 9),
+  dcRow(5, 90, 2, 1, 1, 1, 9),
+  dcRow(5, 45, 10, 0, 0, 0, 0),
+  /* Midfielder 6 (threshold 12 CBIRT): CBIT 8 + recoveries 5 = 13 → clears. */
+  dcRow(6, 90, 3, 1, 2, 2, 5),
+  /* Keeper 7: high CBI but GK has no defcon category → ignored. */
+  dcRow(7, 90, 20, 0, 0, 0, 0),
+];
+const dc = Object.fromEntries(aggregate('2025-2026', dcRows, positions).map((r) => [r.element, r]));
+const d5 = dc[5];
+ok(d5.defcon_starts === 2, 'defender: only >=60-min matches count as starts (bench game excluded)');
+ok(d5.defcon_hits === 1, 'defender: one of two starts clears the CBIT threshold');
+ok(near(d5.defcon_hit_rate, 0.5), 'defender: hit rate = 1/2');
+ok(d5.defcon_actions === 16 && near(d5.defcon_per_start, 8), 'defender: CBIT actions per start (11+5)/2');
+ok(dc[6].defcon_hits === 1 && near(dc[6].defcon_hit_rate, 1), 'midfielder: CBIRT (incl. recoveries) clears 12');
+ok(dc[7].defcon_starts === 0 && dc[7].defcon_hit_rate == null, 'goalkeeper: no defensive-contribution category');
 
 /* ── season selection ───────────────────────────────────── */
 console.log('• core-insights: season selection');
