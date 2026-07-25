@@ -1432,6 +1432,27 @@ body{font-size:14px;line-height:1.35}
   border-radius:3px;padding:2px 8px;color:var(--text-3);background:var(--surface);margin-left:8px}
 .mxi-toggle:hover{color:var(--text);border-color:var(--border-3)}
 
+/* ── Signals feed: full-width terminal log of the model read ── */
+.qd-feed{margin:0 0 16px}
+.sig-feed{display:flex;flex-direction:column}
+.sig-row{display:flex;align-items:center;gap:9px;min-height:27px;
+  border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11.5px}
+.sig-row:last-child{border-bottom:0}
+.sig-tag{flex:0 0 auto;width:54px;text-align:center;font-size:8.5px;font-weight:700;
+  letter-spacing:.04em;padding:2px 0;border-radius:3px;line-height:1.3}
+.sig-name{flex:0 0 auto;max-width:40%;font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sig-club{color:var(--text-3);margin-right:5px;font-size:10px}
+.sig-msg{flex:1 1 auto;min-width:0;color:var(--text-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sig-v{flex:0 0 auto;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.sig-v.pos{color:var(--green)}.sig-v.neg{color:var(--red)}.sig-v.warn{color:var(--accent-warn)}
+.t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
+.t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
+.t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
+.t-defc{background:rgba(90,150,240,.15);color:#5a96f0}
+@media(max-width:480px){.sig-name{max-width:52%}.sig-msg{display:none}}
+
 /* ── Command palette (⌘K) ── */
 .cmdk{position:fixed;inset:0;z-index:600;display:flex;align-items:flex-start;
   justify-content:center;padding:12vh 16px 16px}
@@ -2751,7 +2772,7 @@ function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}apply
    that answer "what do I do this week" and can add the rest from the chip
    row — so the dashboard opens calm and grows on demand, rather than
    presenting everything at once. Choices persist per browser. */
-const DASH_PANELS=[['action','This week'],['xi','Model XI'],['diffs','Differentials'],['live','Live state']];
+const DASH_PANELS=[['action','This week'],['xi','Model XI'],['diffs','Differentials'],['live','Live state'],['feed','Signals']];
 function dashHidden(){
   try{const raw=localStorage.getItem('ge-dash-hidden');
     if(raw)return new Set(JSON.parse(raw)||[]);}catch(_){}
@@ -4008,6 +4029,48 @@ async function hydrateDashboard(host){
     hero='';
   }
 
+  /* ── Signals feed: the model read of this gameweek as a terminal log ──
+     Each line is one actionable thing, drawn only from figures already on the
+     dashboard, tagged and colour-coded like a trade blotter. Ordered by how
+     soon it needs a decision: fitness first, then tonight prices, then the
+     transfer market, then defensive-return form. Empty categories vanish, so
+     pre-season (no price churn) simply shows fewer lines. */
+  const sig=[];
+  const sigClub=e=>'<span class="sig-club">'+esc(teamShort(b,e.team))+'</span>';
+  flagged.forEach(e=>{
+    const c=e.chance_of_playing_next_round;
+    const out=e.status==='s'||e.status==='u'||e.status==='i'||c===0;
+    sig.push({tag:out?'OUT':'FLAG',cls:out?'t-out':'t-flag',
+      html:sigClub(e)+esc(e.web_name),msg:esc(e.news||STATUS_LABEL[e.status]||'flagged'),
+      v:out?'OUT':(c!=null?c+'%':'?'),vcls:out?'neg':'warn'});
+  });
+  movers.filter(x=>x.pc.prob>=55).slice(0,4).forEach(x=>{
+    const rise=x.pc.dir==='rise';
+    sig.push({tag:rise?'PRICE▲':'PRICE▼',cls:rise?'t-up':'t-down',
+      html:sigClub(x.e)+esc(x.e.web_name),msg:rise?'rising tonight':'falling tonight',
+      v:x.pc.prob+'%',vcls:rise?'pos':'neg'});
+  });
+  const netEls=b.elements.map(e=>({e,net:(e.transfers_in_event||0)-(e.transfers_out_event||0)}));
+  netEls.filter(x=>x.net>0).sort((a,c)=>c.net-a.net).slice(0,2).forEach(x=>
+    sig.push({tag:'XFER▲',cls:'t-xin',html:sigClub(x.e)+esc(x.e.web_name),
+      msg:'transferred in',v:'+'+fmtK(x.net),vcls:'pos'}));
+  netEls.filter(x=>x.net<0).sort((a,c)=>a.net-c.net).slice(0,1).forEach(x=>
+    sig.push({tag:'XFER▼',cls:'t-xout',html:sigClub(x.e)+esc(x.e.web_name),
+      msg:'transferred out',v:'−'+fmtK(-x.net),vcls:'neg'}));
+  b.elements.filter(e=>e._ci&&(e._ci.dcs||0)>=5&&e._ci.dchr!=null
+      &&(e.element_type===2||e.element_type===3)&&e.status==='a')
+    .sort((a,c)=>c._ci.dchr-a._ci.dchr).slice(0,2).forEach(e=>
+      sig.push({tag:'DEFC',cls:'t-defc',html:sigClub(e)+esc(e.web_name),
+        msg:'defensive returns',v:Math.round(e._ci.dchr*100)+'%',vcls:''}));
+  const sigRows=sig.slice(0,10).map(s=>'<div class="sig-row">'+
+    '<span class="sig-tag '+s.cls+'">'+s.tag+'</span>'+
+    '<span class="sig-name">'+s.html+'</span>'+
+    '<span class="sig-msg">'+s.msg+'</span>'+
+    '<span class="sig-v '+(s.vcls||'')+'">'+s.v+'</span></div>').join('');
+  const q5=sig.length?'<div class="card qd qd-feed" data-dash="feed">'+
+    qh('Signals','model read · GW'+b.cur.id)+
+    '<div class="sig-feed" role="log" aria-label="Model signals for this gameweek">'+sigRows+'</div></div>':'';
+
   /* Terminal ticker strip — model + team metrics at a glance, above the fold.
      Every value is already computed above; horizontally scrollable on mobile. */
   const tkItem=(l,v,cls)=>'<span class="tk-i"><span class="tk-l">'+l+'</span> <span class="tk-vv'+(cls?' '+cls:'')+'">'+v+'</span></span>';
@@ -4022,7 +4085,7 @@ async function hydrateDashboard(host){
     tkItem('FLAGS',flagsN+' · '+moversN+' price')+
     tkItem('DATA',stamp)+
     '</div>';
-  host.innerHTML=hero+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  host.innerHTML=hero+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+q5+trust;
   dashApply();
   tickTicker();
   maybeTour();

@@ -113,7 +113,20 @@ live alerts strip. Entry point for unlinked users (with a "load demo team" path)
 Topped by a **terminal ticker strip** (model confidence, captain, your rank +
 last‑GW movement or Model XI ΣxP, top differential, flag/price counts, data
 time) — the first slice of the "GWE terminal" dashboard direction; all values
-reuse figures already computed on the page.
+reuse figures already computed on the page. Below the four panels sits a
+full‑width **Signals feed** — a monospace, tagged log of the model read of the
+gameweek (fitness flags, tonight's price movers, the biggest transfer swings,
+and top defensive‑return form from Core Insights), ordered by how soon each
+needs a decision. Every line is drawn from figures already on the dashboard, so
+empty categories simply drop out (pre‑season shows fewer lines). The Model XI
+panel is a dense terminal table (position groups, fixture, price, forward xP
+sparkline, per‑position percentile) with a one‑tap pitch view.
+
+**Power‑user layer** — a **⌘K command palette** (fuzzy search across panels,
+actions and every player, jump straight to a profile) plus a **keyboard layer**:
+`g` chords to jump between panels, `j`/`k` to walk the rows of the current panel,
+`Enter` to open, and `?` for the shortcut cheatsheet. The palette is reachable
+from the ⌘K chip in the dashboard ticker on desktop.
 
 **This Gameweek** — the "four weekly decisions" journey card (captain,
 transfers, team, chips) with progress, plus **Crowd moves** (most captained /
