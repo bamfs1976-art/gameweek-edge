@@ -4967,6 +4967,10 @@ function plCols(b,xpMap){
     {k:'goals_scored',l:'G',num:1,v:e=>e.goals_scored||0},
     {k:'assists',l:'A',num:1,v:e=>e.assists||0},
     {k:'expected_goal_involvements_per_90',l:'xGI/90',num:1,v:e=>parseFloat(e.expected_goal_involvements_per_90)||0,d:e=>fnum(e.expected_goal_involvements_per_90)},
+    /* Non-penalty xG per 90 from the FPL Core Insights mirror (open-play threat,
+       penalties stripped). Missing → sentinel -1 so players without the mirror
+       sort below real values; shown as a dash. */
+    {k:'ci_npxg90',l:'npxG/90',num:1,v:e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:-1,d:e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90.toFixed(2):'—'},
     {k:'expected_goals_conceded_per_90',l:'xGC/90',num:1,v:e=>parseFloat(e.expected_goals_conceded_per_90)||0,d:e=>fnum(e.expected_goals_conceded_per_90)},
     {k:'defensive_contribution_per_90',l:'DefC/90',num:1,v:e=>parseFloat(e.defensive_contribution_per_90)||0,d:e=>fnum(e.defensive_contribution_per_90)},
     {k:'bonus',l:'Bon',num:1,v:e=>e.bonus||0},
@@ -5000,7 +5004,9 @@ function playersCsv(b,xpMap,list){
     ['TotalPts',e=>e.total_points||0],['GWPts',e=>e.event_points||0],['Form',e=>e.form],
     ['PPG',e=>e.points_per_game],['xP',e=>(xpMap[e.id]||0).toFixed(1)],['Mins',e=>e.minutes||0],
     ['Goals',e=>e.goals_scored||0],['Assists',e=>e.assists||0],
-    ['xGI_per90',e=>e.expected_goal_involvements_per_90||''],['xGC_per90',e=>e.expected_goals_conceded_per_90||''],
+    ['xGI_per90',e=>e.expected_goal_involvements_per_90||''],
+    ['npxG_per90',e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:''],
+    ['xGC_per90',e=>e.expected_goals_conceded_per_90||''],
     ['DefCon_per90',e=>e.defensive_contribution_per_90||''],['Bonus',e=>e.bonus||0],['BPS',e=>e.bps||0],
     ['ICT',e=>e.ict_index||''],['ValueSeason',e=>e.value_season||''],['Status',e=>e.status||''],
     ['News',e=>e.news||'']
@@ -5066,7 +5072,7 @@ async function hydrateAllPlayers(host){
     .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
   host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">All players'+
     '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
-    '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile. Export CSV downloads exactly what you’re filtered and sorted to.</p>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile. Export CSV downloads exactly what you’re filtered and sorted to. <b>npxG/90</b> is non-penalty expected goals per 90 (open-play threat) from the Core Insights data; a dash means it isn’t available yet.</p>'+
     preseasonNote(b,'the xP column is provisional')+
     '<div class="pl-filters">'+
       '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+

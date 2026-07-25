@@ -219,15 +219,17 @@ differential, value, defence and fixture questions, grounded in the model.
 ### Players
 
 **Player List** — every player in one view.
-- **Table view:** 20 sortable columns — Player, Team, Pos, Price, Sel%, Total
-  Pts, GW Pts, Form, PPG, **xP**, Mins, Goals, Assists, **xGI/90**, **xGC/90**,
-  **DefC/90**, Bonus, BPS, ICT, Season Value. Click any header to sort asc/desc;
-  sticky player column; caps at 300 rows per sort.
+- **Table view:** 21 sortable columns — Player, Team, Pos, Price, Sel%, Total
+  Pts, GW Pts, Form, PPG, **xP**, Mins, Goals, Assists, **xGI/90**,
+  **npxG/90**, **xGC/90**, **DefC/90**, Bonus, BPS, ICT, Season Value. **npxG/90**
+  (non‑penalty xG per 90 — open‑play threat) comes from the Core Insights mirror
+  (§5) and shows a dash where unavailable, sorting below real values. Click any
+  header to sort asc/desc; sticky player column; caps at 300 rows per sort.
 - **Cards view:** responsive grid of photo cards (headshot + crest + name,
   team/pos/price, pts·xP·ownership).
 - **Filters:** search, position, team.
-- **Export CSV:** downloads exactly the filtered/sorted view — all 22 fields,
-  quoted/escaped, UTF‑8 BOM for Excel, named per gameweek.
+- **Export CSV:** downloads exactly the filtered/sorted view — all 23 fields
+  (including `npxG_per90`), quoted/escaped, UTF‑8 BOM for Excel, named per gameweek.
 - Any row/card opens the full **player‑detail modal**.
 
 **Player‑detail modal** (reached from any player anywhere)
