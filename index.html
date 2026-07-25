@@ -10041,6 +10041,8 @@ function renderDraftPool(){
   let list=S.pool.filter(e=>DRAFT_IDS.indexOf(e.id)<0);
   if(S.posF)list=list.filter(e=>e.element_type===S.posF);
   if(S.q)list=list.filter(e=>(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(S.q)>=0);
+  if(S.priceMax<150)list=list.filter(e=>(e.now_cost||0)<=S.priceMax);
+  if(S.ownMin>0)list=list.filter(e=>(parseFloat(e.selected_by_percent)||0)>=S.ownMin);
   list.sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0));
   const shown=list.slice(0,40);
   const rows=shown.map(e=>{
@@ -10242,7 +10244,7 @@ async function hydrateDraft(host){
     xp6[e.id]=draftXP6(e,ctx&&club?ctx.ease[club]:1,gp(e.team));});
   const tmpl=draftTemplate(pool.filter(e=>e.status==='a'),xp6);
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
-  const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0,nf:buildNextFix(b,fixtures)};
+  const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,nf:buildNextFix(b,fixtures)};
   const importBtn=(getMid()&&b.liveSeason)
     ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
@@ -10285,6 +10287,12 @@ async function hydrateDraft(host){
           '<input id="draft-q" class="modal-in" placeholder="Search players…" autocomplete="off" style="flex:2 1 140px">'+
           '<select id="draft-pos" class="modal-in" style="flex:1 1 110px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
         '</div>'+
+        '<div class="pl-filters" style="margin-bottom:8px;gap:14px">'+
+          '<label class="dl-sub" style="display:flex;flex-direction:column;gap:2px;flex:1 1 150px;margin:0"><span>Max price: <b id="draft-price-v">Any</b></span>'+
+            '<input id="draft-price" type="range" min="40" max="150" step="5" value="150" style="accent-color:var(--green);width:100%"></label>'+
+          '<label class="dl-sub" style="display:flex;flex-direction:column;gap:2px;flex:1 1 150px;margin:0"><span>Min ownership: <b id="draft-own-v">Any</b></span>'+
+            '<input id="draft-own" type="range" min="0" max="50" step="5" value="0" style="accent-color:var(--green);width:100%"></label>'+
+        '</div>'+
         '<div id="draft-pool"></div></div>'+
     '</div>'+
     '<div class="card"><div class="card-title">Squad diagnosis</div>'+
@@ -10309,6 +10317,12 @@ async function hydrateDraft(host){
   if(q)q.addEventListener('input',()=>{S.q=q.value.trim().toLowerCase();renderDraftPool();});
   const ps=host.querySelector('#draft-pos');
   if(ps)ps.addEventListener('change',()=>{S.posF=+ps.value;renderDraftPool();});
+  const pr=host.querySelector('#draft-price'),prV=host.querySelector('#draft-price-v');
+  if(pr)pr.addEventListener('input',()=>{S.priceMax=+pr.value;
+    if(prV)prV.textContent=S.priceMax>=150?'Any':'£'+(S.priceMax/10).toFixed(1);renderDraftPool();});
+  const ow=host.querySelector('#draft-own'),owV=host.querySelector('#draft-own-v');
+  if(ow)ow.addEventListener('input',()=>{S.ownMin=+ow.value;
+    if(owV)owV.textContent=S.ownMin>0?S.ownMin+'%+':'Any';renderDraftPool();});
   renderDraft();
 }
 

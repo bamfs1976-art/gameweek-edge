@@ -133,7 +133,9 @@ launches, under the standard FPL rules (15 players: 2 GK / 5 DEF / 5 MID /
 - **Player pool** from the bootstrap with **predicted prices** (last season's
   final price / launch estimate, labelled). Relegated‑club players are excluded
   by checking club names against the model bundle's 2026/27 team list; a note
-  explains that promoted‑club players appear when FPL launches.
+  explains that promoted‑club players appear when FPL launches. Filter the pool
+  by **search, position, max price and min ownership** (price / ownership range
+  sliders) before it ranks by xP6.
 - **xP6** — projected points over GW1–6: last season's per‑90 points rate
   (minimum‑minutes floor) × minutes share × availability × a fixture‑ease
   factor from the club's first six 2026/27 fixtures (win‑probability edge via
