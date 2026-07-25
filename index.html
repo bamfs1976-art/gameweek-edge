@@ -6286,8 +6286,9 @@ async function hydrateChips(host){
   /* The fixture-swing chip roadmap needs no linked squad — show it to
      everyone, so the Chip Strategy page is useful pre-season too. */
   const roadCard=chipRoadmapCard(b,fixtures);
+  const swingCard=gwSwingCard(b,fixtures);
   if(!mid){
-    host.innerHTML=roadCard+
+    host.innerHTML=roadCard+swingCard+
       '<div class="card"><div class="ge-state">'+svg(ICON.team)+
         '<b>Your chips</b><p>Link your team (top right) to see which chips you have left, personalised Bench Boost readiness and the double / blank timing for your own squad.</p>'+
         '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
@@ -6352,6 +6353,7 @@ async function hydrateChips(host){
     :'';
   host.innerHTML=
     roadCard+
+    swingCard+
     timingCard+
     bbCard+
     '<div class="card mb-20"><div class="card-title">Chips played</div>'+
@@ -7552,6 +7554,82 @@ function chipRoadmapCard(b,fixtures){
         (b.preseason?' <span class="badge badge-amber">pre-season</span>':'')+'</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">When the fixtures themselves suggest each chip over the next '+N+' gameweeks — before any double or blank is scheduled, and before you even link a team. Bench Boost timing depends on your own bench (link your team for that).</p>'+
       '<div class="dl">'+items.join('')+'</div></div>';
+  }catch(_){return '';}
+}
+
+/* Fixture-swing gameweek ranking: for every gameweek in the horizon, the
+   average model fixture difficulty across all clubs (lower is easier). The
+   easiest weeks are where the whole league has kind fixtures at once, so a
+   Bench Boost or Triple Captain pays most and cheap enablers from promoted
+   sides catch points; the toughest weeks (top sides playing each other) can
+   suit a Free Hit that jumps off the field. Difficulty comes from the fitted
+   match model (plsimMatch win probability, mapped 1-5 by plsimDiff) rather
+   than a static grid, and each team-fixture is also weighted by that club total
+   ownership so wMean answers the easiest week for the players people own.
+   Doubles count both fixtures; blanks fall out of the average, so a mean (not a
+   raw sum) keeps the ranking honest across uneven gameweeks. Pure and
+   deterministic. */
+function gwSwing(b,fixtures,N){
+  const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+  N=Math.min(N||10,39-startGw);
+  if(N<2||!fixtures||!fixtures.length)return {gws:[],best:[],worst:[]};
+  const R=plsimRatings(b,fixtures);
+  const teamOwn={};(b.elements||[]).forEach(e=>{teamOwn[e.team]=(teamOwn[e.team]||0)+(parseFloat(e.selected_by_percent)||0);});
+  const acc={};
+  fixtures.forEach(f=>{
+    if(!f.event||f.event<startGw||f.event>=startGw+N)return;
+    const m=plsimMatch(R,f.team_h,f.team_a);
+    const dH=m?plsimDiff(m.pH):f.team_h_difficulty;
+    const dA=m?plsimDiff(m.pA):f.team_a_difficulty;
+    [[f.team_h,f.team_a,dH,1],[f.team_a,f.team_h,dA,0]].forEach(pair=>{
+      const t=pair[0],o=pair[1],d=pair[2],home=pair[3];
+      if(d==null)return;
+      const a=acc[f.event]||(acc[f.event]={gw:f.event,sum:0,wsum:0,own:0,n:0,easy:0,hard:0,fx:[]});
+      const w=teamOwn[t]||0;
+      a.sum+=d;a.n++;a.wsum+=d*w;a.own+=w;
+      if(d<=2)a.easy++;if(d>=4)a.hard++;
+      a.fx.push({team:t,opp:o,home:home,diff:d,own:w});
+    });
+  });
+  const gws=Object.values(acc).map(a=>{
+    const meanDiff=a.n?a.sum/a.n:5;
+    const wMean=a.own>0?a.wsum/a.own:meanDiff;
+    const top=a.fx.filter(x=>x.diff<=2).sort((p,q)=>q.own-p.own).slice(0,3);
+    return {gw:a.gw,meanDiff:meanDiff,wMean:wMean,easy:a.easy,hard:a.hard,n:a.n,top:top};
+  }).sort((p,q)=>p.gw-q.gw);
+  /* Rank by the OWNERSHIP-WEIGHTED mean, not the raw mean: every match has a
+     favourite and an underdog, so the unweighted league mean is near-constant
+     across gameweeks. Weighting by ownership surfaces the weeks where the teams
+     people actually own get the kind fixtures. Easy-fixture count breaks ties. */
+  const best=gws.slice().sort((p,q)=>p.wMean-q.wMean||q.easy-p.easy);
+  const worst=gws.slice().sort((p,q)=>q.wMean-p.wMean||q.hard-p.hard);
+  return {gws:gws,best:best,worst:worst};
+}
+/* Render the fixture-swing ranking as a Chip Strategy card. Team-agnostic, so
+   it shows before a team is linked and pre-season too. Empty string if there is
+   no usable horizon. */
+function gwSwingCard(b,fixtures){
+  try{
+    const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+    const sw=gwSwing(b,fixtures,Math.min(19,39-startGw));
+    if(sw.best.length<3)return '';
+    const nm=id=>teamShort(b,id);
+    const fxStr=t=>t.map(x=>esc(nm(x.team))+(x.home?' v ':' @ ')+esc(nm(x.opp))).join(', ');
+    const bestRows=sw.best.slice(0,5).map((g,i)=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">GW'+g.gw+
+        ' <span class="badge badge-green">'+(i===0?'easiest':'target')+'</span></span>'+
+        '<span class="dl-sub">'+g.easy+' easy fixtures'+(g.top.length?' — '+fxStr(g.top):'')+'</span></span>'+
+        '<span class="dl-col mono">'+g.wMean.toFixed(2)+'</span></div>').join('');
+    const worstRows=sw.worst.slice(0,3).map(g=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">GW'+g.gw+
+        ' <span class="badge badge-amber">tough</span></span>'+
+        '<span class="dl-sub">Owned sides face their hardest fixtures — a Free Hit can jump off the field.</span></span>'+
+        '<span class="dl-col mono">'+g.wMean.toFixed(2)+'</span></div>').join('');
+    return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+' Fixture swings — best gameweeks to target'+
+        (b.preseason?' <span class="badge badge-amber">pre-season</span>':'')+'</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Every gameweek in the next '+sw.gws.length+' ranked by fixture difficulty for the teams people own (lower is easier), from the fitted match model rather than a static grid. The easiest weeks are where a Bench Boost or Triple Captain pays most; the toughest (owned sides facing each other) can suit a Free Hit. The Avg FDR is ownership‑weighted — a plain league average barely moves, since every match has a favourite and an underdog.</p>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Best weeks — Bench Boost / Triple Captain</span><span class="dl-col">Avg FDR</span></div>'+bestRows+'</div>'+
+      '<div class="dl" style="margin-top:12px"><div class="dl-row head"><span class="dl-grow">Toughest weeks — Free Hit</span><span class="dl-col">Avg FDR</span></div>'+worstRows+'</div></div>';
   }catch(_){return '';}
 }
 

@@ -280,7 +280,13 @@ tragedy, differential hero across the top 10). H2H shows W‑D‑L, points‑for
 league points.
 
 **Chip Strategy** — chips used/available and the best gameweeks to play each,
-AI‑assisted.
+AI‑assisted. Includes a **Fixture‑swing gameweek ranking** (`gwSwing`): every
+gameweek in the next ~19 ranked by fixture difficulty for the teams people own
+(ownership‑weighted, from the fitted match model, not a static grid), calling
+out the easiest weeks for Bench Boost / Triple Captain and the toughest (owned
+sides clashing) for a Free Hit. The weighting matters — a plain league average
+barely moves because every match has a favourite and an underdog. Team‑agnostic,
+so it shows before a team is linked and pre‑season.
 
 **Manager Report** (season review)
 - KPI tiles: best GW, average, bench points wasted, green arrows / hits.
