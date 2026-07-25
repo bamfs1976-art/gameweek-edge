@@ -269,6 +269,15 @@ differential, value, defence and fixture questions, grounded in the model.
   seasons (from `element-summary`).
 - Underlying numbers: xGI/90, xG/90, xA/90, xGC/90 (def), DefCon/90, season value, G/A.
 - Closest playing‑style twin (tap to hop to it).
+- **Return consistency** — points per appearance alongside the **spread (SD)**
+  of those returns, plus haul (10+) and blank (≤2) rates, and a profile tag:
+  *Steady* / *Balanced* / *Explosive*. Two players on identical PPG can be
+  completely different assets — one returns a steady five every week, the other
+  blanks four times then hauls twenty — and only the spread separates them.
+  Measured over **appearances only**, so it reads as return shape rather than
+  rotation risk (minutes security has its own stats beside it); classification
+  uses the coefficient of variation, which is scale‑free and so compares a
+  budget defender with a premium striker fairly. Hidden under four appearances.
 - On‑demand AI verdict.
 
 **Scout Board** — a per‑90 shortlist by position with the next three fixtures,
@@ -276,7 +285,14 @@ heat‑mapped per column and filterable by price cap (the budget‑enabler finde
 Attackers show xG, xA, G+A and DefCon per 90; defenders show starts, attacking
 returns, CBIT and clean sheets.
 
-Below it, **DefCon by budget** answers the question that actually comes up —
+Below it, **Best at every price** is the squad‑building ladder: for the selected
+position, the strongest options in each half‑million band, ranked on projected
+points over the next 6 fixtures. Bands are derived from the prices actually in
+the game, so the ladder stretches to fit each position, and a label covers its
+half‑million (£4.5 spans £4.5–£4.9). It answers "who do I buy with the £4.6m I
+have left", not "who is the best player".
+
+Then **DefCon by budget** answers the question that actually comes up —
 not "who is the best defensive returner" but "who is the best at the money I
 have left". Defenders are split into half‑million bands (£4.0m up to £6.0m+)
 and ranked inside each band by **hit rate** (how often they clear the threshold

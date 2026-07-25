@@ -230,5 +230,121 @@ console.log('• valueBoard: fair price vs actual, benchmarked per position');
     'every player at their own positional median is priced fairly, across positions');
 }
 
+/* ── 4. Return consistency ────────────────────────────────────────────── */
+console.log('• consistency: return spread when a player actually plays');
+{
+  const consistency = new Function(grabFn('consistency') + '\nreturn consistency;')();
+  const h = (total_points, minutes = 90) => ({ total_points, minutes });
+
+  /* A flat 5 every week has no spread at all. */
+  const flat = consistency([h(5), h(5), h(5), h(5), h(5), h(5)]);
+  ok(near(flat.ppg, 5), 'a flat return line averages its own value');
+  ok(near(flat.sd, 0), 'no variation gives a zero standard deviation');
+  ok(near(flat.cv, 0), 'coefficient of variation is zero when the spread is');
+  ok(flat.profile === 'steady', 'a flat line is classified steady');
+  ok(flat.haulRate === 0 && flat.blankRate === 0, 'no hauls and no blanks on a flat 5');
+
+  /* Same mean, wildly different shape: four blanks then two 15s. */
+  const spiky = consistency([h(0), h(0), h(0), h(0), h(15), h(15)]);
+  ok(near(spiky.ppg, 5), 'the spiky line has the same mean as the flat one');
+  ok(spiky.sd > flat.sd, 'the spiky line has a larger spread on identical PPG');
+  ok(spiky.profile === 'explosive', 'a blank-or-haul line is classified explosive');
+  ok(near(spiky.haulRate, 2 / 6), 'haul rate counts returns of 10 or more');
+  ok(near(spiky.blankRate, 4 / 6), 'blank rate counts returns of 2 or fewer');
+
+  /* Population SD, checked against a hand-computed case: mean 5,
+     deviations -5,-5,-5,-5,10,10 -> variance (4*25 + 2*100)/6 = 50. */
+  ok(near(spiky.sd, Math.sqrt(50)), 'standard deviation matches the hand calculation');
+  ok(near(spiky.cv, Math.sqrt(50) / 5), 'cv is the spread over the mean');
+
+  /* Blanked appearances count; DID-NOT-PLAY weeks must not, or a benched
+     player would look falsely volatile when the issue is minutes. */
+  const withDnps = consistency([h(5), h(5), h(5), h(5), h(0, 0), h(0, 0), h(0, 0)]);
+  ok(withDnps.n === 4, 'zero-minute gameweeks are excluded from the sample');
+  ok(near(withDnps.ppg, 5), 'excluding DNPs leaves the appearance average intact');
+  ok(near(withDnps.sd, 0), 'DNPs do not manufacture a spread');
+
+  /* A cameo that returns nothing IS a blank, because he played. */
+  const cameo = consistency([h(5), h(5), h(5), h(1, 12)]);
+  ok(cameo.n === 4, 'a short cameo still counts as an appearance');
+  ok(cameo.blanks === 1, 'a scoreless cameo counts as a blank');
+
+  /* Thin samples must refuse to answer rather than guess. */
+  ok(consistency([h(5), h(5), h(5)]) === null, 'fewer than four appearances returns null');
+  ok(consistency([]) === null, 'an empty history returns null');
+  ok(consistency(null) === null, 'a missing history returns null');
+  ok(consistency([h(9, 0), h(9, 0), h(9, 0), h(9, 0), h(9, 0)]) === null,
+    'a history of DNPs only returns null');
+
+  /* The window argument takes the most RECENT appearances. */
+  const recent = consistency([h(0), h(0), h(0), h(0), h(6), h(6), h(6), h(6)], 4);
+  ok(recent.n === 4 && near(recent.ppg, 6), 'the window slices the latest appearances');
+
+  /* Classification boundaries: cv <= 0.6 steady, >= 1.0 explosive. */
+  ok(consistency([h(10), h(10), h(10), h(4)]).profile === 'steady', 'a tight spread reads steady');
+  ok(['balanced', 'explosive'].includes(consistency([h(12), h(2), h(8), h(1)]).profile),
+    'a mixed line is not classified steady');
+
+  /* A zero-scoring line must not divide by zero into a bogus profile. */
+  const allZero = consistency([h(0), h(0), h(0), h(0)]);
+  ok(allZero.cv === 0 && allZero.profile === 'steady', 'an all-zero line has a defined profile');
+}
+
+/* ── 5. Price ladder ──────────────────────────────────────────────────── */
+console.log('• priceLadder: strongest option at each half-million band');
+{
+  const HZ = { 1: [{ event: 1 }], 2: [{ event: 1 }] };
+  const priceLadder = new Function(
+    'function buildHorizon(){return ' + JSON.stringify(HZ) + ';}\n' +
+    'function fixtureXP(b,el,fx){return el.rate;}\n' +
+    'const money=c=>"£"+(c/10).toFixed(1);\n' +
+    grabFn('priceLadder') + '\nreturn priceLadder;'
+  )();
+
+  const p = (id, cost, rate, extra) => Object.assign(
+    { id, now_cost: cost, element_type: 2, team: 1, status: 'a', rate, web_name: 'p' + id }, extra || {});
+
+  const ladder = priceLadder({
+    elements: [
+      p(1, 45, 3), p(2, 47, 5), p(3, 49, 1), p(4, 44, 9),   // 4.5 band: 45,47,49 (44 is 4.0)
+      p(5, 50, 4), p(6, 54, 2),                             // 5.0 band
+      p(7, 60, 7),                                          // 6.0 band
+      p(8, 50, 9, { element_type: 3 }),                     // wrong position
+      p(9, 50, 9, { status: 'u' }),                         // left the club
+      p(10, 50, 0),                                         // no projection
+      p(11, 50, 9, { team: 3 }),                            // club has no fixtures
+    ],
+  }, [], 2, 2, 6);   // perBand 2, so the three-deep 4.5 band proves the cap
+
+  const byLabel = Object.fromEntries(ladder.map(g => [g.label, g.players.map(x => x.el.id)]));
+  ok(ladder.map(g => g.label).join() === '£6.0,£5.0,£4.5,£4.0',
+    'bands come back most expensive first, and only where players exist');
+  ok(byLabel['£4.5'].join() === '2,1', 'a band is ranked by projection and capped at perBand');
+  ok(byLabel['£4.5'].length === 2, 'perBand caps the picks per band');
+  ok(byLabel['£4.0'].join() === '4', 'a 4.4m player falls into the 4.0 band, not 4.5');
+  ok(byLabel['£5.0'].join() === '5,6', '5.0 to 5.4 group into one half-million band');
+  ok(byLabel['£6.0'].join() === '7', 'the top band holds the 6.0m player');
+
+  const all = ladder.flatMap(g => g.players.map(x => x.el.id));
+  ok(!all.includes(8), 'other positions are excluded');
+  ok(!all.includes(9), 'players who left the club are excluded');
+  ok(!all.includes(10), 'players with no projection are excluded');
+  ok(!all.includes(11), 'players whose club has no fixtures are excluded');
+  ok(new Set(all).size === all.length, 'price bands are mutually exclusive');
+
+  /* Band boundaries: 4.9 must stay in 4.5, 5.0 must start a new band. */
+  const edge = priceLadder({ elements: [p(1, 49, 1), p(2, 50, 1)] }, [], 2, 3, 6);
+  ok(edge.length === 2, 'a half-million boundary splits into two bands');
+  ok(edge[0].label === '£5.0' && edge[1].label === '£4.5', 'the boundary lands on the right side');
+
+  /* No fixtures published at all -> empty, so the card hides pre-season. */
+  const none = new Function(
+    'function buildHorizon(){return {};}\nfunction fixtureXP(){return 1;}\n' +
+    'const money=c=>"£"+(c/10).toFixed(1);\n' +
+    grabFn('priceLadder') + '\nreturn priceLadder;')();
+  ok(none({ elements: [p(1, 45, 3)] }, [], 2, 3, 6).length === 0,
+    'no fixtures published yields an empty ladder');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);
