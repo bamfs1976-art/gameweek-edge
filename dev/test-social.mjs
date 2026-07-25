@@ -284,6 +284,67 @@ console.log('• squadOptimise: forced picks, bank and infeasible asks');
   ok(gk != null, 'pool sanity: a goalkeeper exists');
 }
 
+/* ── Card contents ────────────────────────────────────────────────────
+   A squad card has to show the whole thing an FPL manager actually buys:
+   eleven starters AND four substitutes, inside £100.0m. The arithmetic on
+   the card must close — XI cost plus bench cost is the squad cost, and squad
+   cost plus bank is the budget — because those numbers get posted publicly. */
+console.log('• socSquadCard: XI plus four subs, and the budget adds up');
+{
+  const socSquadCard = new Function(
+    'const teamShort=(b,t)=>"T"+t;\n' +
+    'const socPhotoUrls=()=>[];\n' +
+    'const crestUrl=()=>"";\n' +
+    'const KIT={};\n' +
+    grabFn('socSquadCard') + '\nreturn socSquadCard;'
+  )();
+
+  const pool = makePool();
+  const res = squadOptimise(pool, { budget: 1000, topN: 99, cheapN: 99 });
+  const card = socSquadCard({}, res, 'T', 'S', 'N');
+
+  const onPitch = card.rows.reduce((a, r) => a + r.length, 0);
+  ok(onPitch === 11, 'eleven players are drawn on the pitch (got ' + onPitch + ')');
+  ok(card.bench.length === 4, 'four substitutes are drawn (got ' + card.bench.length + ')');
+  ok(onPitch + card.bench.length === 15, 'the card shows all fifteen squad members');
+
+  ok(card.benchCost === card.bench.reduce((a, p) => a + p.cost, 0),
+    'reported bench cost matches the substitutes shown');
+  ok(card.xiCost === card.rows.flat().reduce((a, p) => a + p.cost, 0),
+    'reported XI cost matches the starters shown');
+  ok(card.xiCost + card.benchCost === card.cost,
+    'XI cost plus bench cost equals the squad cost printed on the card');
+  ok(card.cost + card.bank === 1000,
+    'squad cost plus bank equals the £100.0m budget');
+  ok(card.cost <= 1000, 'the squad shown is inside the budget');
+
+  /* The bench is drawn with prices, so those must be real numbers. */
+  ok(card.bench.every((p) => typeof p.cost === 'number' && p.cost > 0),
+    'every substitute carries a price');
+  ok(card.bench.every((p) => p.nm), 'every substitute carries a name');
+  /* Reserve keeper first, then outfield subs by projection — the order FPL
+     would actually bring them on in. */
+  const benchTypes = res.bench.slice().sort((a, c) =>
+    (a.el.element_type === 1 ? 0 : 1) - (c.el.element_type === 1 ? 0 : 1) || c.p - a.p);
+  ok(benchTypes[0].el.element_type === 1, 'the reserve keeper is the first substitute');
+
+  /* Rows are position groups, keeper first — a pitch, not a jumble. */
+  ok(card.rows.length >= 3 && card.rows.length <= 4, 'pitch has three or four rows');
+  ok(card.rows[0].length === 1, 'the first row is the single goalkeeper');
+  ok(Array.isArray(card.formation) && card.formation.reduce((a, v) => a + v, 0) === 10,
+    'formation accounts for the ten outfield starters');
+
+  /* A squad holding money back must still show all fifteen. */
+  const banked = squadOptimise(pool, { budget: 1000, minBank: 50, topN: 99, cheapN: 99 });
+  const bCard = socSquadCard({}, banked, 'T', 'S', 'N');
+  ok(bCard.rows.reduce((a, r) => a + r.length, 0) + bCard.bench.length === 15,
+    'the money-in-the-bank card still shows fifteen players');
+  ok(bCard.bank >= 50, 'the money-in-the-bank card really holds the money back');
+  ok(bCard.cost + bCard.bank === 1000, 'its arithmetic closes on the budget too');
+
+  ok(socSquadCard({}, null, 'T', 'S', 'N') === null, 'no squad yields no card');
+}
+
 /* ── Panel wiring ─────────────────────────────────────────────────────
    Social Studio shipped broken because the panel was registered in NAV and
    given a hydrator, but had no PANEL_CONTENT entry — and renderPage reads

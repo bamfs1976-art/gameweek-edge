@@ -156,6 +156,17 @@ in the bank** (best XI holding ≥£3.0m back) · **Best by price** for each of 
 four positions · **Best captains** for the next 7 gameweeks · **The
 differentials** (<10% owned) · **Priced above the model** · **DefCon by budget**.
 
+**Squad cards show all fifteen.** An FPL squad is eleven starters *plus four
+substitutes* inside £100.0m, so a card showing only the XI tells half the story
+— the bench is where the budget is won or lost. The pitch cards therefore draw
+the four subs as real player cards (portrait, crest, club, price) in a
+**SUBSTITUTES** band under the pitch, labelled with what the bench costs, and
+the totals strip prints **FORMATION · SQUAD OF 15 · IN THE BANK** so squad cost
+plus bank always reads back to the £100.0m budget. Bench order is the one FPL
+would actually use: reserve keeper first, then the outfield subs by projection.
+`dev/test-social.mjs` asserts the arithmetic closes (XI cost + bench cost =
+squad cost; squad cost + bank = budget) rather than leaving it to the eye.
+
 **Imagery.** Cards carry official club crests and player portraits — a portrait
 disc with the crest badged on its shoulder for pitch and ranked cards, crest
 chips on the price/captain ladders — over the club‑colour gradient that shows

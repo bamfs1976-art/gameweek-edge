@@ -4866,8 +4866,14 @@ function socSquadCard(b,res,title,sub,note){
     photos:socPhotoUrls(s.el),crest:crestUrl(b,s.el.team),kit:KIT[teamShort(b,s.el.team)]||['#8a8a8a','#fff']});
   const rows=[1,2,3,4].map(t=>res.xi.filter(s=>s.el.element_type===t)
     .sort((a,c)=>c.p-a.p).map(tok)).filter(r=>r.length);
+  /* Bench in the order FPL would actually use it: reserve keeper apart, then
+     the outfield subs by projection, so the first name is the one most likely
+     to come on. */
+  const bench=res.bench.slice().sort((a,c)=>
+    (a.el.element_type===1?0:1)-(c.el.element_type===1?0:1)||c.p-a.p);
+  const benchCost=bench.reduce((t,s)=>t+(s.el.now_cost||0),0);
   return {kind:'pitch',title,sub,note,rows,
-    bench:res.bench.slice().sort((a,c)=>a.el.element_type-c.el.element_type).map(tok),
+    bench:bench.map(tok),benchCost,xiCost:res.cost-benchCost,
     formation:res.formation,cost:res.cost,bank:res.bank,xp:res.xiXP};
 }
 
@@ -4882,30 +4888,30 @@ function socialSpecs(b,fixtures){
   const ids=names=>names.map(n=>socFind(b,n)).filter(Boolean).map(e=>e.id);
 
   push('data-xi',()=>socSquadCard(b,squadOptimise(pool,{budget:1000}),
-    'THE DATA XI','Highest projected XI · GW'+gw,
-    'Full £100.0m squad, max 3 per club. No favourites, no narratives.'));
+    'THE DATA XI','Full 15-man squad · £100.0m · GW'+gw,
+    'XI plus four subs inside the budget, max 3 per club. No favourites, no narratives.'));
 
   push('haaland-xi',()=>{
     const h=socFind(b,'Haaland');if(!h)return null;
     return socSquadCard(b,squadOptimise(pool,{budget:1000,mustInclude:[h.id]}),
-      'BUILDING AROUND HAALAND','Best XI with Haaland locked in · GW'+gw,
-      'Haaland forced into every squad. The rest is whatever the model can still afford.');
+      'BUILDING AROUND HAALAND','15-man squad, Haaland locked · £100.0m · GW'+gw,
+      'Haaland forced in. XI plus four subs — the rest is whatever the model can still afford.');
   });
 
   push('big-three-xi',()=>{
     const lock=ids(['Haaland','B.Fernandes','Gabriel']);
     if(lock.length<3)return null;
     return socSquadCard(b,squadOptimise(pool,{budget:1000,mustInclude:lock}),
-      'THE BIG THREE','Haaland + Bruno + Gabriel locked · GW'+gw,
-      'Three premiums forced in. This is what is left for the other twelve.');
+      'THE BIG THREE','15-man squad, three premiums locked · £100.0m · GW'+gw,
+      'Haaland, Bruno and Gabriel forced in. This is what is left for the other twelve.');
   });
 
   push('bank-xi',()=>{
     const r=squadOptimise(pool,{budget:1000,minBank:30});
     if(!r)return null;
     return socSquadCard(b,r,'MONEY IN THE BANK',
-      'Best XI holding £'+(r.bank/10).toFixed(1)+'m back · GW'+gw,
-      'Built to leave at least £3.0m spare for early transfers, not to spend every penny.');
+      '15-man squad holding £'+(r.bank/10).toFixed(1)+'m back · GW'+gw,
+      'XI plus four subs, built to leave at least £3.0m spare for early transfers rather than spend every penny.');
   });
 
   /* Best rated in each position at each price point. */
@@ -4993,7 +4999,7 @@ function renderSocialCard(spec,scale){
     x.fillStyle=g;x.fillRect(0,0,W,H);
     x.fillStyle='rgba(255,255,255,.03)';for(let i=0;i<H;i+=130)x.fillRect(0,i,W,65);
     x.strokeStyle='rgba(255,255,255,.13)';x.lineWidth=3;
-    x.strokeRect(36,286,W-72,758);   /* stops above the bench strip */
+    x.strokeRect(36,226,W-72,750);   /* clears the sub-line, stops above the subs band */
   }else{
     x.fillStyle=SOC_BG;x.fillRect(0,0,W,H);
     const g=x.createLinearGradient(0,0,W,H);
@@ -5006,11 +5012,14 @@ function renderSocialCard(spec,scale){
   centre(spec.sub||'',210,'600 30px system-ui,sans-serif','rgba(255,255,255,.72)');
 
   if(spec.kind==='pitch'){
-    const token=(cx,cy,p)=>{
-      /* Vertical budget, top down: pad + portrait + gap + three text lines
-         + pad. Deriving h from the parts keeps the name clear of the disc. */
-      const r=30,padT=10,gap=13,lnA=27,lnB=22,lnC=24,padB=8;
-      const w=190,h=padT+2*r+gap+lnA+lnB+lnC+padB,px=cx-w/2,py=cy-h/2;
+    /* One player card. Sized from an explicit vertical budget so the name can
+       never ride up into the portrait, and parameterised so the bench can
+       reuse it in a compact form rather than duplicating the drawing code. */
+    const token=(cx,cy,p,o)=>{
+      o=o||{};
+      const r=o.r||30,padT=o.padT||10,gap=o.gap||13;
+      const lnA=o.lnA||27,lnB=o.lnB||22,lnC=o.xp===false?0:(o.lnC||24),padB=o.padB||8;
+      const w=o.w||190,h=padT+2*r+gap+lnA+lnB+lnC+padB,px=cx-w/2,py=cy-h/2;
       x.fillStyle='rgba(0,0,0,.44)';socRound(x,px,py,w,h,18);x.fill();
       x.lineWidth=2;x.strokeStyle='rgba(255,255,255,.18)';socRound(x,px,py,w,h,18);x.stroke();
       /* Portrait disc: club colour behind, photo on top when we have one. */
@@ -5033,7 +5042,7 @@ function renderSocialCard(spec,scale){
       x.beginPath();x.arc(cx,hy,r,0,2*Math.PI);x.stroke();
       /* Crest badge tucked on the shoulder of the disc. */
       if(p._crest){
-        const cr=22,bx=cx+r-4,by=hy+r-10;
+        const cr=Math.round(r*0.73),bx=cx+r-4,by=hy+r-10;
         x.save();
         x.beginPath();x.arc(bx,by,cr/2+5,0,2*Math.PI);x.closePath();
         x.fillStyle='rgba(6,14,10,.92)';x.fill();x.clip();
@@ -5041,32 +5050,51 @@ function renderSocialCard(spec,scale){
         x.restore();
       }
       x.textAlign='center';
-      x.font='800 27px system-ui,sans-serif';x.fillStyle=SOC_INK;
-      let nm=p.nm||'';if(nm.length>13)nm=nm.slice(0,12)+'…';
-      x.fillText(nm,cx,py+padT+2*r+gap+lnA);
-      x.font='600 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.6)';
-      x.fillText((p.team||'')+' · '+money(p.cost||0),cx,py+padT+2*r+gap+lnA+lnB);
-      x.font='800 23px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
-      x.fillText(Number(p.p||0).toFixed(1)+' xP',cx,py+padT+2*r+gap+lnA+lnB+lnC);
+      const base=py+padT+2*r+gap;
+      x.font='800 '+(o.fA||27)+'px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      const lim=o.clip||13;
+      let nm=p.nm||'';if(nm.length>lim)nm=nm.slice(0,lim-1)+'…';
+      x.fillText(nm,cx,base+lnA);
+      x.font='600 '+(o.fB||21)+'px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.6)';
+      x.fillText((p.team||'')+' · '+money(p.cost||0),cx,base+lnA+lnB);
+      if(o.xp!==false){
+        x.font='800 23px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+        x.fillText(Number(p.p||0).toFixed(1)+' xP',cx,base+lnA+lnB+lnC);
+      }
     };
-    const rows=spec.rows||[],top=372,bottom=H-438;
+    const rows=spec.rows||[],top=306,bottom=890;
     const step=rows.length>1?(bottom-top)/(rows.length-1):0;
     rows.forEach((arr,ri)=>{const cy=top+step*ri,n=arr.length||1;
       arr.forEach((p,i)=>token((W*(i+1))/(n+1),cy,p));});
-    /* Bench + totals. */
-    const by=H-286;
-    x.fillStyle='rgba(0,0,0,.34)';socRound(x,36,by,W-72,66,14);x.fill();
-    x.textAlign='left';x.font='700 22px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
-    x.fillText('BENCH',60,by+41);
-    x.font='700 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.88)';
-    x.fillText((spec.bench||[]).map(p=>p.nm).filter(Boolean).join('  ·  ').slice(0,60),150,by+41);
-    const sy=H-196;
+
+    /* ── Bench: the four subs drawn as real cards, not a text list ──
+       An FPL squad is fifteen players inside £100.0m, so a card showing only
+       the XI is telling half the story — the bench is where the budget is
+       actually won or lost. Same treatment as the XI, one size down. */
+    const bench=(spec.bench||[]).slice(0,4);
+    x.textAlign='left';
+    x.font='700 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
+    x.fillText('SUBSTITUTES',44,990);
+    if(spec.benchCost!=null){
+      x.textAlign='right';
+      x.font='700 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.42)';
+      x.fillText('£'+(spec.benchCost/10).toFixed(1)+'m of the budget',W-44,990);
+    }
+    const bandY=1004,bandH=136;
+    x.fillStyle='rgba(0,0,0,.30)';socRound(x,36,bandY,W-72,bandH,16);x.fill();
+    x.lineWidth=1;x.strokeStyle='rgba(255,255,255,.10)';socRound(x,36,bandY,W-72,bandH,16);x.stroke();
+    const bOpts={r:24,w:158,padT:8,gap:10,lnA:23,lnB:19,padB:6,xp:false,fA:23,fB:18,clip:11};
+    bench.forEach((p,i)=>token((W*(i+1))/(bench.length+1),bandY+bandH/2,p,bOpts));
+
+    /* Totals: squad cost plus bank always reads back to the £100.0m budget,
+       which is the whole point of showing the bench. */
+    const sy=1170;
     const stat=(cx,label,val)=>{x.textAlign='center';
-      x.font='600 22px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';x.fillText(label,cx,sy);
-      x.font='800 40px system-ui,sans-serif';x.fillStyle=SOC_INK;x.fillText(val,cx,sy+44);};
-    stat(W*0.20,'FORMATION',(spec.formation||[]).join('-'));
-    stat(W*0.50,'SQUAD COST','£'+((spec.cost||0)/10).toFixed(1)+'m');
-    stat(W*0.80,'IN THE BANK','£'+((spec.bank||0)/10).toFixed(1)+'m');
+      x.font='600 20px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';x.fillText(label,cx,sy);
+      x.font='800 36px system-ui,sans-serif';x.fillStyle=SOC_INK;x.fillText(val,cx,sy+40);};
+    stat(W*0.18,'FORMATION',(spec.formation||[]).join('-'));
+    stat(W*0.50,'SQUAD OF 15','£'+((spec.cost||0)/10).toFixed(1)+'m');
+    stat(W*0.82,'IN THE BANK','£'+((spec.bank||0)/10).toFixed(1)+'m');
   } else if(spec.kind==='ladder'){
     const gs=spec.groups||[],top=268,avail=H-top-190;
     /* Rows stretch to fill the card, and a short list is centred rather than
@@ -5145,13 +5173,19 @@ function renderSocialCard(spec,scale){
   }
   /* Footer. */
   if(spec.note){
+    /* Bottom-anchored above the wordmark: wrap, keep the first two lines
+       (the note reads top down, so keeping the LAST two lost the opening
+       words), and mark a truncation rather than cutting mid-sentence. */
     x.textAlign='center';x.font='600 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
-    const words=String(spec.note).split(' ');let line='',ly=H-120;
+    const words=String(spec.note).split(' ');let line='';
     const lines=[];
     words.forEach(w=>{const t=line?line+' '+w:w;
       if(x.measureText(t).width>W-140){lines.push(line);line=w;}else line=t;});
     if(line)lines.push(line);
-    lines.slice(-2).forEach((ln,i)=>x.fillText(ln,W/2,ly+i*27));
+    const use=lines.slice(0,2);
+    if(lines.length>2)use[1]=use[1].replace(/[ ,.;:]+$/,'')+'…';
+    const lastY=H-84;
+    use.forEach((ln,i)=>x.fillText(ln,W/2,lastY-(use.length-1-i)*27));
   }
   centre('gameweekedge.co.uk',H-42,'700 30px system-ui,sans-serif',SOC_ACCENT);
   return cv;
