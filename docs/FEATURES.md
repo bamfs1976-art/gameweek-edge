@@ -371,6 +371,27 @@ differential, value, defence and fixture questions, grounded in the model.
   budget defender with a premium striker fairly. Hidden under four appearances.
 - On‑demand AI verdict.
 
+**Bonus magnets — baseline BPS** *(Scout Board)* — bonus goes to the top BPS
+scorers in a match, and most managers only read BPS after the fact. This asks it
+the other way round: how much BPS does a player bank from open play **before**
+returning? **Baseline BPS** strips out the BPS awarded for goals, assists, clean
+sheets, saves, penalties and cards, leaving what accrues from tackles,
+recoveries, interceptions, passing and the appearance itself. A midfielder on 12
+baseline BPS needs one assist to be in the bonus conversation; one on 3 needs a
+goal *and* an assist. Shown per 90 beside **bonus per start** — the outcome the
+baseline is trying to predict.
+
+Every count it subtracts is an exact bootstrap figure, so there is no estimation
+in the arithmetic and no extra API calls. The **tariff is the assumption**: FPL
+does not publish the BPS table through the API, so the values in `BPS_TARIFF`
+are hard‑coded and are the thing to correct if the numbers ever look off. They
+cover return‑linked actions only — the 2026/27 changes to CBI, tackles and saves
+affect *baseline* actions, which are already inside the reported total and are
+never subtracted. Baseline is clamped at zero, since a negative would only mean
+the tariff has drifted from the game. Available as a Scout Board leaderboard, a
+sortable `Base/90` column with CSV export, a player‑profile stat, a Social Studio
+preset and a card‑builder metric.
+
 **Scout Board** — a per‑90 shortlist by position with the next three fixtures,
 heat‑mapped per column and filterable by price cap (the budget‑enabler finder).
 Attackers show xG, xA, G+A and DefCon per 90; defenders show starts, attacking

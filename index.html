@@ -2899,6 +2899,7 @@ const GLOSSARY={
   'EO':'Effective ownership — the share of the field (including captaincy) who own a player. High EO means owning them protects your rank; low means a differential.',
   'ΔP':'Projected price change — how close a player is to a price rise (↑) or fall (↓) tonight.',
   'RPS':'Ranked Probability Score — how well-calibrated the match forecasts are, lower is better. Around 0.21 is strong.',
+  'bBPS/90':'Baseline BPS per 90 — the bonus-points score a player banks from open play (tackles, recoveries, interceptions, passing, and simply appearing) before scoring or assisting. The BPS awarded for goals, assists, clean sheets and saves is stripped out. A high baseline means one return is often enough to land bonus; a low one means they need a goal and an assist.',
   'Captain 50':'The captain’s median outcome — the middle of 50/50 simulations of their gameweek.',
   'differential':'A low-owned player (under 15% owned). Owning one the field doesn’t is how you climb ranks fast.',
   'template':'The most-owned players — the “everyone has them” core. Owning the template protects rank; fading it is a gamble.',
@@ -4995,6 +4996,17 @@ function socialSpecs(b,fixtures){
         crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
   });
 
+  push('bonus-magnets',()=>{
+    const rows=bpsLeaders(b.elements,450,8);
+    if(rows.length<5)return null;
+    return {kind:'rank',title:'BONUS MAGNETS',
+      sub:'Baseline BPS per 90 · before any return',
+      note:'BPS banked from tackles, recoveries, interceptions and passing, with the BPS for goals, assists, clean sheets and saves stripped out. A high baseline means one return is often enough for bonus.',
+      items:rows.map(r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),
+        meta:money(r.el.now_cost)+' · '+r.bonus.toFixed(2)+' bonus/start',
+        v:r.b90.toFixed(1),crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
+  });
+
   push('defcon',()=>{
     const groups=dcByBracket(b.elements);
     if(!groups.length)return null;
@@ -5290,6 +5302,7 @@ function socMetricDefs(b,fixtures){
     {k:'ppm',l:'Points per £m',v:e=>e.now_cost?(e.total_points||0)/(e.now_cost/10):0,f:v=>v.toFixed(1)},
     {k:'dchr',l:'DefCon hit rate',v:e=>dcHitRate(e),f:v=>Math.round(v*100)+'%'},
     {k:'npxg90',l:'npxG per 90',v:e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:0,f:v=>v.toFixed(2)},
+    {k:'bbps90',l:'Baseline BPS per 90',v:e=>baselineBps90(e),f:v=>v.toFixed(1)},
   ];
 }
 function socBuildSpec(b,fixtures){
@@ -6041,6 +6054,8 @@ function plCols(b,xpMap){
     {k:'defensive_contribution_per_90',l:'DefC/90',num:1,v:e=>parseFloat(e.defensive_contribution_per_90)||0,d:e=>fnum(e.defensive_contribution_per_90)},
     {k:'bonus',l:'Bon',num:1,v:e=>e.bonus||0},
     {k:'bps',l:'BPS',num:1,v:e=>e.bps||0},
+    /* Baseline BPS per 90 — bonus potential before any return. */
+    {k:'bbps90',l:'Base/90',num:1,v:e=>baselineBps90(e),d:e=>baselineBps90(e).toFixed(1)},
     {k:'ict_index',l:'ICT',num:1,v:e=>parseFloat(e.ict_index)||0,d:e=>esc(e.ict_index)},
     {k:'value_season',l:'Val',num:1,v:e=>parseFloat(e.value_season)||0,d:e=>esc(e.value_season)}
   ];
@@ -6073,7 +6088,7 @@ function playersCsv(b,xpMap,list){
     ['xGI_per90',e=>e.expected_goal_involvements_per_90||''],
     ['npxG_per90',e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:''],
     ['xGC_per90',e=>e.expected_goals_conceded_per_90||''],
-    ['DefCon_per90',e=>e.defensive_contribution_per_90||''],['Bonus',e=>e.bonus||0],['BPS',e=>e.bps||0],
+    ['DefCon_per90',e=>e.defensive_contribution_per_90||''],['Bonus',e=>e.bonus||0],['BPS',e=>e.bps||0],['BaselineBPS_per90',e=>baselineBps90(e).toFixed(2)],
     ['ICT',e=>e.ict_index||''],['ValueSeason',e=>e.value_season||''],['Status',e=>e.status||''],
     ['News',e=>e.news||'']
   ];
@@ -6232,6 +6247,89 @@ function dcBracketCard(b){
     '<b>/start</b> is defensive actions per start and <b>ATT</b> counts goals plus assists, so you can see who adds attacking upside on top.'+
     (anyReal?'':' Figures marked <b>~</b> are model estimates until enough per-match data lands.')+'</p>'+
     '<div class="dcb-grid">'+body+'</div></div>';
+}
+
+/* ── Baseline BPS ─────────────────────────────────────────────────────
+   Bonus goes to the top BPS scorers in a match, and most managers only ever
+   look at BPS after the fact. The useful question is the other way round:
+   how much BPS does a player bank from open play BEFORE he returns? A
+   midfielder sitting on 12 baseline BPS needs one assist to be in the bonus
+   conversation; one sitting on 3 needs a goal and an assist.
+
+   Baseline BPS strips out the BPS awarded for the things FPL already pays
+   points for — goals, assists, clean sheets, saves, penalties and cards —
+   leaving what accrues from tackles, recoveries, interceptions, passing and
+   the appearance itself. Every count it subtracts is an exact figure from
+   the bootstrap, so there is no estimation in the arithmetic.
+
+   THE TARIFF IS THE ASSUMPTION. FPL does not publish the BPS table through
+   the API, so these values are hard-coded and are what to correct if the
+   numbers ever look off. They cover the RETURN-linked actions only; the
+   2026/27 changes to CBI, tackles and saves affect baseline actions, which
+   are already inside the reported total and are never subtracted here. */
+const BPS_TARIFF={
+  goal:{1:12,2:12,3:18,4:24},      /* by element_type: GK, DEF, MID, FWD */
+  assist:9,
+  cleanSheet:{1:12,2:12,3:0,4:0},  /* BPS for a clean sheet is GK and DEF only */
+  savesPer:3,savesBps:2,           /* 2 BPS per 3 saves */
+  penSave:15,penMiss:-6,ownGoal:-6,yellow:-3,red:-9,
+};
+function bpsFromReturns(e){
+  if(!e)return 0;
+  const t=e.element_type,n=k=>Number(e[k])||0;
+  return n('goals_scored')*(BPS_TARIFF.goal[t]||0)
+    +n('assists')*BPS_TARIFF.assist
+    +n('clean_sheets')*(BPS_TARIFF.cleanSheet[t]||0)
+    +Math.floor(n('saves')/BPS_TARIFF.savesPer)*BPS_TARIFF.savesBps
+    +n('penalties_saved')*BPS_TARIFF.penSave
+    +n('penalties_missed')*BPS_TARIFF.penMiss
+    +n('own_goals')*BPS_TARIFF.ownGoal
+    +n('yellow_cards')*BPS_TARIFF.yellow
+    +n('red_cards')*BPS_TARIFF.red;
+}
+/* Season baseline BPS. Clamped at zero: a negative would only ever mean the
+   tariff is out of step with the game, and a negative baseline is meaningless. */
+function baselineBps(e){
+  if(!e)return 0;
+  return Math.max(0,(Number(e.bps)||0)-bpsFromReturns(e));
+}
+function baselineBps90(e){
+  const m=Number(e&&e.minutes)||0;
+  return m>0?baselineBps(e)*90/m:0;
+}
+/* Bonus actually banked per start — the outcome baseline BPS is trying to
+   predict, kept alongside it so the two can be read against each other. */
+function bonusPerStart(e){
+  const s=Number(e&&e.starts)||0;
+  return s>0?(Number(e.bonus)||0)/s:0;
+}
+function bpsLeaders(elements,minMinutes,n){
+  const min=minMinutes==null?450:minMinutes;
+  return (elements||[]).filter(e=>e&&e.status!=='u'&&(e.minutes||0)>=min&&(e.bps||0)>0)
+    .map(e=>({el:e,b90:baselineBps90(e),bonus:bonusPerStart(e)}))
+    .sort((a,c)=>c.b90-a.b90).slice(0,n||10);
+}
+function bpsLeaderCard(b){
+  const rows=bpsLeaders(b.elements,450,10);
+  if(rows.length<5)return '';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+
+    ' Bonus magnets — baseline BPS</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">How much BPS a player banks per 90 <b>before</b> returning — '+
+    'tackles, recoveries, interceptions, passing and the appearance itself, with the BPS for goals, assists, '+
+    'clean sheets and saves stripped out. A high baseline means one return is often enough to reach bonus; '+
+    'a low one means they need a goal <i>and</i> an assist. <b>Bonus/start</b> is what they actually banked.</p>'+
+    '<div class="dl">'+
+      '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
+      '<span class="dl-col">'+jt('bBPS/90','Base/90')+'</span><span class="dl-col">Bonus/st</span></div>'+
+      rows.map((r,i)=>'<div class="dl-row dl-click" onclick="openPlayer('+r.el.id+')">'+
+        '<span class="dl-rank">'+(i+1)+'</span>'+avatar(b,r.el,30)+
+        '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
+        '<span class="dl-sub">'+crest(b,r.el.team,13)+posShort(b,r.el.element_type)+' · '+money(r.el.now_cost)+'</span></span>'+
+        '<span class="dl-col mono'+(i===0?' hot':'')+'">'+r.b90.toFixed(1)+'</span>'+
+        '<span class="dl-col mono">'+r.bonus.toFixed(2)+'</span></div>').join('')+
+    '</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Minimum 450 minutes. Baseline includes the BPS for appearing, '+
+    'because that is banked without returning too.</div></div>';
 }
 
 /* ── Price ladder: the best pick at every price point, for one position ──
@@ -6522,7 +6620,8 @@ async function hydrateScoutBoard(host){
     '</div>'+
     '<div id="sb-out"></div></div>'+
     '<div id="sb-ladder"></div>'+
-    dcBracketCard(b);
+    dcBracketCard(b)+
+    bpsLeaderCard(b);
   renderScoutBoard();
   host.querySelector('#sb-seg').addEventListener('click',function(ev){
     const btn=ev.target.closest('.seg-b');if(!btn)return;
@@ -7087,6 +7186,8 @@ function playerDetailHTML(b,fixtures,id){
     stat('xA / 90',per(e.expected_assists))+
     (isDef?stat('xGC / 90',f90(e.expected_goals_conceded_per_90)):stat('Threat / 90',per(e.threat)))+
     stat('DefCon / 90',e.defensive_contribution_per_90!=null?f90(e.defensive_contribution_per_90):per(e.defensive_contribution))+
+    ((e.minutes||0)>=450?stat(jt('bBPS/90','Baseline BPS / 90'),baselineBps90(e).toFixed(1)):'')+
+    ((e.starts||0)>0?stat('Bonus / start',bonusPerStart(e).toFixed(2)):'')+
     (e.value_season!=null?stat('Value (season)',e.value_season):'')+
     (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+

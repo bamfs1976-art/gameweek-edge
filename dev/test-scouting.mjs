@@ -346,5 +346,84 @@ console.log('• priceLadder: strongest option at each half-million band');
     'no fixtures published yields an empty ladder');
 }
 
+/* ── Baseline BPS ─────────────────────────────────────────────────────
+   Strips the BPS awarded for goals, assists, clean sheets, saves, penalties
+   and cards out of a season total, leaving what a player banks from open
+   play. Every count subtracted is exact, so the arithmetic must be exact —
+   this metric ends up on public graphics. */
+console.log('• baselineBps: BPS left once the returns are stripped out');
+{
+  /* BPS_TARIFF spans several lines, so pull it with the brace matcher rather
+     than the single-line const grabber. */
+  const tariffSrc = extractBlock(html, html.indexOf('const BPS_TARIFF='));
+  const B = new Function(
+    tariffSrc + '\n' + grabFn('bpsFromReturns') + '\n' + grabFn('baselineBps') + '\n' +
+    grabFn('baselineBps90') + '\n' + grabFn('bonusPerStart') + '\n' + grabFn('bpsLeaders') + '\n' +
+    'return {BPS_TARIFF,bpsFromReturns,baselineBps,baselineBps90,bonusPerStart,bpsLeaders};'
+  )();
+
+  const p = (o) => Object.assign({
+    id: 1, element_type: 3, minutes: 900, starts: 10, bps: 0, bonus: 0,
+    goals_scored: 0, assists: 0, clean_sheets: 0, saves: 0, penalties_saved: 0,
+    penalties_missed: 0, own_goals: 0, yellow_cards: 0, red_cards: 0, status: 'a',
+  }, o);
+
+  ok(B.bpsFromReturns(p({})) === 0, 'a player with no returns has no return BPS');
+  ok(B.bpsFromReturns(p({ element_type: 4, goals_scored: 2 })) === 48, 'a forward goal is 24 BPS');
+  ok(B.bpsFromReturns(p({ element_type: 3, goals_scored: 2 })) === 36, 'a midfielder goal is 18 BPS');
+  ok(B.bpsFromReturns(p({ element_type: 2, goals_scored: 2 })) === 24, 'a defender goal is 12 BPS');
+  ok(B.bpsFromReturns(p({ assists: 3 })) === 27, 'an assist is 9 BPS');
+  ok(B.bpsFromReturns(p({ element_type: 2, clean_sheets: 4 })) === 48, 'a defender clean sheet is 12 BPS');
+  ok(B.bpsFromReturns(p({ element_type: 3, clean_sheets: 4 })) === 0, 'a midfielder clean sheet earns no BPS');
+  ok(B.bpsFromReturns(p({ element_type: 1, saves: 10 })) === 6, 'saves score 2 BPS per completed three');
+  ok(B.bpsFromReturns(p({ element_type: 1, saves: 2 })) === 0, 'a part-completed set of saves scores nothing');
+  ok(B.bpsFromReturns(p({ yellow_cards: 2 })) === -6, 'a yellow card costs 3 BPS');
+  ok(B.bpsFromReturns(p({ red_cards: 1 })) === -9, 'a red card costs 9 BPS');
+  ok(B.bpsFromReturns(p({ own_goals: 1 })) === -6, 'an own goal costs 6 BPS');
+
+  /* The headline decomposition: baseline is the remainder, exactly. */
+  const mid = p({ element_type: 3, bps: 400, goals_scored: 5, assists: 6, yellow_cards: 3 });
+  const ret = 5 * 18 + 6 * 9 + 3 * -3;            // 90 + 54 - 9 = 135
+  ok(B.bpsFromReturns(mid) === ret, 'return BPS sums every component (' + ret + ')');
+  ok(B.baselineBps(mid) === 400 - ret, 'baseline is the season total minus the returns');
+  ok(near(B.baselineBps90(mid), (400 - ret) * 90 / 900), 'per 90 scales by minutes');
+
+  /* Two players on identical BPS but different return mixes must separate —
+     that is the entire point of the metric. */
+  const grinder = p({ element_type: 3, bps: 300, goals_scored: 0, assists: 0 });
+  const scorer = p({ element_type: 3, bps: 300, goals_scored: 8, assists: 4 });
+  ok(B.baselineBps(grinder) > B.baselineBps(scorer),
+    'on equal BPS, the player who did not return has the higher baseline');
+
+  /* Guards: never negative, never divide by zero, never crash on a stub. */
+  ok(B.baselineBps(p({ bps: 10, element_type: 4, goals_scored: 5 })) === 0,
+    'baseline clamps at zero rather than going negative');
+  ok(B.baselineBps90(p({ minutes: 0, bps: 50 })) === 0, 'no minutes means no per-90');
+  ok(B.baselineBps(null) === 0 && B.baselineBps90({}) === 0, 'missing input is handled');
+  ok(B.bpsFromReturns(null) === 0, 'null player has no return BPS');
+  ok(B.bonusPerStart(p({ bonus: 12, starts: 8 })) === 1.5, 'bonus per start divides by starts');
+  ok(B.bonusPerStart(p({ bonus: 5, starts: 0 })) === 0, 'no starts means no bonus per start');
+
+  /* Missing fields must read as zero, not NaN — bootstrap omits fields for
+     players who have never recorded that action. */
+  const bare = { id: 9, element_type: 2, minutes: 900, bps: 200 };
+  ok(B.bpsFromReturns(bare) === 0, 'absent counts are treated as zero');
+  ok(B.baselineBps(bare) === 200 && isFinite(B.baselineBps90(bare)),
+    'a player with only bps and minutes still computes');
+
+  /* Leaderboard: minutes gate, ordering, and exclusion of departed players. */
+  const pool = [
+    p({ id: 1, bps: 300, minutes: 900 }),
+    p({ id: 2, bps: 600, minutes: 900 }),
+    p({ id: 3, bps: 900, minutes: 200 }),              // below the minutes gate
+    p({ id: 4, bps: 900, minutes: 900, status: 'u' }), // left the club
+    p({ id: 5, bps: 0, minutes: 900 }),                // no BPS at all
+  ];
+  const lead = B.bpsLeaders(pool, 450, 10);
+  ok(lead.map(r => r.el.id).join() === '2,1', 'leaders are gated, ranked and filtered');
+  ok(lead[0].b90 > lead[1].b90, 'sorted by baseline per 90, descending');
+  ok(B.bpsLeaders(pool, 450, 1).length === 1, 'the result count is capped');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

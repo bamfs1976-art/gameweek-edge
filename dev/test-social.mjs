@@ -359,6 +359,7 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
     'const xP=(b,e)=>e._xp||0;\n' +
     'const money=c=>"£"+(c/10).toFixed(1);\n' +
     'const dcHitRate=e=>e._dc||0;\n' +
+    'const baselineBps90=e=>e._bb||0;\n' +
     grabFn('socMetricDefs') + '\nreturn socMetricDefs;'
   )();
 
@@ -374,7 +375,7 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
   const el = {
     id: 1, team: 1, now_cost: 75, total_points: 140, form: '5.5',
     selected_by_percent: '12.3', element_type: 3, minutes: 900,
-    _xp: 5.4, _fx: 2.5, _dc: 0.62, _ci: { npxg90: 0.41 },
+    _xp: 5.4, _fx: 2.5, _dc: 0.62, _bb: 12.4, _ci: { npxg90: 0.41 },
   };
   defs.forEach((d) => {
     const n = d.v(el);
@@ -394,6 +395,7 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
   ok(by.pts.f(by.pts.v(el)) === '140', 'total points formats as a whole number');
   ok(by.ppm.f(by.ppm.v(el)) === (140 / 7.5).toFixed(1), 'points per £m divides by price in millions');
   ok(by.xp6.v(el) === 5, 'xP over 6 sums the horizon fixtures');
+  ok(by.bbps90.f(by.bbps90.v(el)) === '12.4', 'baseline BPS keeps one decimal');
 
   /* Missing advanced data must read as zero, not crash or print undefined. */
   const bare = { id: 2, team: 1, now_cost: 40, element_type: 2 };
