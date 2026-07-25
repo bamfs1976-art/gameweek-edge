@@ -7763,10 +7763,11 @@ async function hydrateChips(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   /* The fixture-swing chip roadmap needs no linked squad — show it to
      everyone, so the Chip Strategy page is useful pre-season too. */
+  const planCard=chipPlanCard(b,fixtures);
   const roadCard=chipRoadmapCard(b,fixtures);
   const swingCard=gwSwingCard(b,fixtures);
   if(!mid){
-    host.innerHTML=roadCard+swingCard+
+    host.innerHTML=planCard+roadCard+swingCard+
       '<div class="card"><div class="ge-state">'+svg(ICON.team)+
         '<b>Your chips</b><p>Link your team (top right) to see which chips you have left, personalised Bench Boost readiness and the double / blank timing for your own squad.</p>'+
         '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
@@ -7830,6 +7831,7 @@ async function hydrateChips(host){
       '</div>'
     :'';
   host.innerHTML=
+    planCard+
     roadCard+
     swingCard+
     timingCard+
@@ -8991,6 +8993,188 @@ function chipSwings(runs,N,M){
    (ownership-weighted league difficulty), so it needs no linked squad — the
    pre-season chip plan a manager can read before GW1. Returns an HTML card,
    or '' when there is no usable fixture horizon. */
+/* ── Half-season chip plan, from the official FPL FDR ─────────────────
+   Chips reset at the halfway point, so a chip either gets used inside its
+   own half or is wasted. That makes the planning window the whole half, not
+   the next few gameweeks, and it makes the question a fixture question.
+
+   This reads the OFFICIAL FDR that FPL publishes on each fixture
+   (team_h_difficulty / team_a_difficulty) rather than our own match model.
+   Two reasons: it is what the question asked for, and it is the shared
+   language of FPL content, so a plan built on it can be argued about with
+   anyone. It also behaves differently from our model difficulty — ours is
+   derived from win probability and is close to zero-sum, so the league mean
+   barely moves week to week, whereas FDR rates each opponent on absolute
+   strength, so a gameweek where the strong sides all play each other really
+   does read as harder. That is what makes ranking gameweeks by mean FDR
+   meaningful here and misleading with the model numbers.
+
+   Chip logic, all of it falling out of the same per-gameweek table:
+     Bench Boost    — the easiest gameweek overall, since a bench only pays
+                      when the fringe players have games worth starting
+     Free Hit       — the hardest gameweek, or a blank; the week your normal
+                      squad is worst placed is the week a bespoke XI gains
+     Triple Captain — the best single fixture available to an elite attacker
+     Wildcard       — the biggest swing, where a large set of clubs go from
+                      a bad run to a good one and reshaping pays for itself
+
+   Blanks and doubles, when the calendar has them, outrank all of the above
+   and are surfaced as such. */
+const CHIP_HALF_END=19;
+function chipHalfWindow(startGw){
+  const s=Math.max(1,startGw||1);
+  return s<=CHIP_HALF_END?{from:s,to:CHIP_HALF_END,half:1}:{from:Math.max(20,s),to:38,half:2};
+}
+function fdrGameweeks(b,fixtures,from,to){
+  const acc={};
+  (fixtures||[]).forEach(f=>{
+    if(!f||!f.event||f.event<from||f.event>to)return;
+    const a=acc[f.event]||(acc[f.event]={gw:f.event,sum:0,n:0,easy:0,hard:0,count:{},rows:[]});
+    [[f.team_h,f.team_a,f.team_h_difficulty,1],[f.team_a,f.team_h,f.team_a_difficulty,0]].forEach(r=>{
+      const team=r[0],opp=r[1],d=Number(r[2]),home=r[3];
+      a.count[team]=(a.count[team]||0)+1;
+      if(!isFinite(d)||!d)return;
+      a.sum+=d;a.n++;
+      if(d<=2)a.easy++;else if(d>=4)a.hard++;
+      a.rows.push({team,opp,home,fdr:d});
+    });
+  });
+  const teams=(b.raw&&b.raw.teams?b.raw.teams:[]).map(t=>t.id);
+  const out=[];
+  for(let g=from;g<=to;g++){
+    const a=acc[g];
+    if(!a){out.push({gw:g,n:0,mean:null,easy:0,hard:0,blanks:teams.slice(),doubles:[],rows:[]});continue;}
+    out.push({gw:g,n:a.n,mean:a.n?a.sum/a.n:null,easy:a.easy,hard:a.hard,
+      blanks:teams.filter(t=>!a.count[t]),
+      doubles:teams.filter(t=>(a.count[t]||0)>1),
+      rows:a.rows});
+  }
+  return out;
+}
+function chipPlanFdr(b,fixtures,opts){
+  opts=opts||{};
+  const startGw=opts.startGw||(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+  const win=chipHalfWindow(startGw);
+  const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.n>0||g.blanks.length);
+  const played=gws.filter(g=>g.mean!=null);
+  if(played.length<3)return null;
+
+  const easiest=played.slice().sort((a,c)=>a.mean-c.mean||c.easy-a.easy)[0];
+  const hardest=played.slice().sort((a,c)=>c.mean-a.mean||c.hard-a.hard)[0];
+  const blankGw=gws.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length)[0]||null;
+  const dblGw=gws.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length)[0]||null;
+
+  /* Wildcard: the point where the most clubs turn from a hard run to an easy
+     one. Only improvement counts — clubs getting worse are not a reason to
+     wildcard, they are a reason to have wildcarded already. */
+  const W=Math.min(4,Math.max(2,Math.floor(played.length/4)));
+  const fdrFor=(gw,team)=>{
+    const g=played.find(x=>x.gw===gw);if(!g)return null;
+    const r=g.rows.filter(x=>x.team===team);
+    return r.length?r.reduce((s,x)=>s+x.fdr,0)/r.length:null;
+  };
+  const teams=(b.raw&&b.raw.teams?b.raw.teams:[]).map(t=>t.id);
+  const wcRank=[];
+  played.forEach((g,i)=>{
+    if(i<W||i>played.length-W)return;          /* need a run either side */
+    let gain=0,turning=0;
+    teams.forEach(t=>{
+      let before=0,bn=0,after=0,an=0;
+      for(let k=i-W;k<i;k++){const v=fdrFor(played[k].gw,t);if(v!=null){before+=v;bn++;}}
+      for(let k=i;k<i+W;k++){const v=fdrFor(played[k].gw,t);if(v!=null){after+=v;an++;}}
+      if(!bn||!an)return;
+      const d=(before/bn)-(after/an);
+      if(d>0){gain+=d;turning++;}
+    });
+    wcRank.push({gw:g.gw,gain,turning});
+  });
+  wcRank.sort((a,c)=>c.gain-a.gain);
+
+  /* Triple Captain: an elite attacker meeting the softest fixture going.
+     Quality gates the shortlist so the answer is never a fringe player who
+     happens to face the worst side in the division. */
+  const pool=(b.elements||[]).filter(e=>captainEligible(e)&&(e.minutes||0)>0)
+    .map(e=>({el:e,q:parseFloat(e.ep_next||'0')||parseFloat(e.form||'0')||((e.total_points||0)/38)}))
+    .sort((a,c)=>c.q-a.q).slice(0,12);
+  const tcAll=[];
+  pool.forEach(({el,q})=>{
+    played.forEach(g=>{
+      g.rows.filter(r=>r.team===el.team).forEach(r=>{
+        tcAll.push({score:q*(6-r.fdr)*(r.home?1.08:1),gw:g.gw,el,opp:r.opp,home:r.home,fdr:r.fdr});
+      });
+    });
+  });
+  tcAll.sort((a,c)=>c.score-a.score);
+  /* One candidate per gameweek — the best armband available that week. */
+  const tcSeen=new Set(),tcRank=[];
+  tcAll.forEach(t=>{if(!tcSeen.has(t.gw)){tcSeen.add(t.gw);tcRank.push(t);}});
+
+  /* Assign a gameweek to each chip, one chip per week.
+
+     Order is by how CONSTRAINED the chip is, not by how valuable it is. A
+     blank or double pins Free Hit and Bench Boost to a specific week; the
+     wildcard swing is a single point in the calendar; the armband is happy
+     with any soft fixture. Letting the most flexible chip claim first was
+     the bug the tests caught — Triple Captain took the swing week and the
+     wildcard silently vanished. Each chip now walks its own ranked list and
+     takes the best week still free, so nothing drops out unless it has no
+     candidates at all. */
+  const taken=new Set(),picks={};
+  const claim=(key,cands)=>{
+    for(const c of cands||[]){
+      if(c==null||c.gw==null||taken.has(c.gw))continue;
+      taken.add(c.gw);picks[key]=c;return;
+    }
+  };
+  const hardRank=played.slice().sort((a,c)=>c.mean-a.mean||c.hard-a.hard);
+  const easyRank=played.slice().sort((a,c)=>a.mean-c.mean||c.easy-a.easy);
+  const blankRank=gws.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
+  const dblRank=gws.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
+
+  claim('freehit',blankRank.map(g=>({gw:g.gw,blank:g.blanks.length}))
+    .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard}))));
+  claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length}))
+    .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy}))));
+  claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning})));
+  claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr})));
+  return {window:win,gws:played,picks,
+    leagueMean:played.reduce((s,g)=>s+g.mean,0)/played.length};
+}
+const CHIP_LABEL={wildcard:'Wildcard',freehit:'Free Hit',benchboost:'Bench Boost',triplecaptain:'Triple Captain'};
+function chipPlanCard(b,fixtures){
+  let plan=null;try{plan=chipPlanFdr(b,fixtures);}catch(_){}
+  if(!plan)return '';
+  const P=plan.picks,avg=plan.leagueMean;
+  const order=['wildcard','benchboost','triplecaptain','freehit']
+    .filter(k=>P[k]).sort((a,c)=>P[a].gw-P[c].gw);
+  if(!order.length)return '';
+  const why=k=>{const p=P[k];
+    if(k==='freehit')return p.blank
+      ? '<b>'+p.blank+' clubs blank</b> that week — a one-week bespoke XI from the clubs that do play is worth more than any transfer plan.'
+      : 'The hardest week of the half on official FDR (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.hard+' fixtures rated 4 or 5). Your normal squad is at its worst, so a bespoke XI gains the most.';
+    if(k==='benchboost')return p.double
+      ? '<b>'+p.double+' clubs play twice</b> — the week a full fifteen is worth the most.'
+      : 'The easiest week of the half (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.easy+' fixtures rated 1 or 2). A bench only pays when the fringe players have games worth starting.';
+    if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(p.opp)+
+      ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.';
+    return '<b>'+p.turning+' clubs</b> swing from a hard run to an easy one around this week (total difficulty shed ≈ '+p.gain.toFixed(1)+
+      '), so this is where a full reshape buys the most fixture.';};
+  const badge={wildcard:'badge-blue',benchboost:'badge-green',triplecaptain:'badge-green',freehit:'badge-amber'};
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+
+    ' Chip plan — GW'+plan.window.from+' to GW'+plan.window.to+
+    ' <span class="badge badge-grey">official FDR</span></div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Chips reset at the halfway point, so each one is used inside this window or lost. '+
+    'This plan is built from the <b>official FPL difficulty ratings</b> on the fixtures — the same numbers the FPL site shows — '+
+    'across all '+plan.gws.length+' gameweeks of the half, not just the next few. '+
+    'Blanks and doubles override everything else when the calendar has them.</p>'+
+    '<div class="dl desc">'+order.map(k=>
+      '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+CHIP_LABEL[k]+' — GW'+P[k].gw+
+      ' <span class="badge '+badge[k]+'">'+(k==='wildcard'?'reshape':k==='freehit'?'swing':k==='benchboost'?'depth':'ceiling')+'</span></span>'+
+      '<span class="dl-sub">'+why(k)+'</span></span></div>').join('')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Official FDR is a season-long rating of the opponent, so it does not know about form, injuries or a new manager. '+
+    'It is a starting frame for the half, not a substitute for checking the week itself — and our own match model, which does move with form, can disagree.</div></div>';
+}
+
 function chipRoadmapCard(b,fixtures){
   try{
     const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;

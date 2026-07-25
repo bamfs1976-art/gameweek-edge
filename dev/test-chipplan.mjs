@@ -1,0 +1,212 @@
+/*
+ * Offline tests for the FDR-driven half-season chip plan.
+ *
+ * Fixtures are constructed so the RIGHT ANSWER IS KNOWN BY CONSTRUCTION —
+ * one gameweek is deliberately the easiest, another deliberately the hardest,
+ * a swing is planted at a chosen week — and the planner has to find them. A
+ * chip put in the wrong week is wasted for the whole half, so the ordering
+ * logic is pinned down rather than eyeballed.
+ *
+ * Run: node dev/test-chipplan.mjs   (wired into npm test)
+ */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+
+function extractBlock(src, startIdx) {
+  const open = src.indexOf('{', startIdx);
+  let depth = 0, inStr = null, esc = false, com = 0;
+  for (let j = open; j < src.length; j++) {
+    const ch = src[j], nx = src[j + 1];
+    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
+    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
+    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
+    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
+    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
+    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
+  }
+  throw new Error('unbalanced');
+}
+const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
+
+const API = new Function(
+  grabConst('CHIP_HALF_END') + '\n' +
+  grabFn('captainEligible') + '\n' +
+  grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr};'
+)();
+
+let failures = 0, passes = 0;
+const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
+
+/* 20 clubs, paired the same way each week; per-gameweek difficulty is dialled
+   in by the caller so each week's mean is known in advance. */
+const TEAMS = Array.from({ length: 20 }, (_, i) => ({ id: i + 1 }));
+const boot = (extra) => Object.assign({
+  raw: { teams: TEAMS },
+  cur: { id: 1 }, upcoming: { id: 1 },
+  elements: [{
+    id: 1, team: 1, element_type: 4, status: 'a', web_name: 'Star',
+    chance_of_playing_next_round: null, ep_next: '8.0', form: '8.0',
+    total_points: 200, minutes: 900,
+  }],
+}, extra || {});
+
+/* difficultyFor(gw, teamId) -> FDR */
+function makeFixtures(from, to, difficultyFor) {
+  const out = [];
+  let id = 1;
+  for (let gw = from; gw <= to; gw++) {
+    for (let i = 0; i < TEAMS.length; i += 2) {
+      const h = TEAMS[i].id, a = TEAMS[i + 1].id;
+      out.push({
+        id: id++, event: gw, team_h: h, team_a: a,
+        team_h_difficulty: difficultyFor(gw, h), team_a_difficulty: difficultyFor(gw, a),
+      });
+    }
+  }
+  return out;
+}
+
+console.log('• chipHalfWindow: chips are bounded by the half they belong to');
+{
+  const w = API.chipHalfWindow;
+  ok(w(1).to === 19 && w(1).half === 1, 'GW1 plans to the end of the first half');
+  ok(w(12).from === 12 && w(12).to === 19, 'mid-half starts from the current gameweek');
+  ok(w(19).to === 19, 'the last gameweek of the half still plans within it');
+  ok(w(20).from === 20 && w(20).to === 38 && w(20).half === 2, 'GW20 rolls into the second-half chip set');
+  ok(w(30).from === 30 && w(30).to === 38, 'later in the second half the window shortens');
+}
+
+console.log('• fdrGameweeks: per-gameweek FDR, blanks and doubles');
+{
+  const fx = makeFixtures(1, 4, () => 3);
+  const gws = API.fdrGameweeks(boot(), fx, 1, 4);
+  ok(gws.length === 4, 'one entry per gameweek');
+  ok(gws.every((g) => g.n === 20), 'every club counted once a week');
+  ok(gws.every((g) => Math.abs(g.mean - 3) < 1e-9), 'mean difficulty is computed');
+  ok(gws.every((g) => !g.blanks.length && !g.doubles.length), 'a full week has no blanks or doubles');
+
+  /* Drop two fixtures from GW2 -> four clubs blank. */
+  const blanked = fx.filter((f) => !(f.event === 2 && f.team_h <= 4));
+  const bg = API.fdrGameweeks(boot(), blanked, 1, 4)[1];
+  ok(bg.blanks.length === 4, 'blanking clubs are detected (' + bg.blanks.length + ')');
+  ok(bg.n === 16, 'a blank reduces the fixture count');
+
+  /* Add a repeat fixture in GW3 -> two clubs double. */
+  const doubled = fx.concat([{ id: 999, event: 3, team_h: 1, team_a: 2, team_h_difficulty: 2, team_a_difficulty: 2 }]);
+  const dg = API.fdrGameweeks(boot(), doubled, 1, 4)[2];
+  ok(dg.doubles.join() === '1,2', 'doubling clubs are detected');
+
+  /* A gameweek with no fixtures at all is a total blank, not a gap. */
+  const missing = fx.filter((f) => f.event !== 3);
+  const mg = API.fdrGameweeks(boot(), missing, 1, 4)[2];
+  ok(mg.n === 0 && mg.blanks.length === 20, 'an empty gameweek blanks every club');
+  ok(mg.mean === null, 'an empty gameweek has no mean');
+
+  ok(API.fdrGameweeks(boot(), [], 1, 4).every((g) => g.n === 0), 'no fixtures yields empty weeks');
+  ok(API.fdrGameweeks(boot(), null, 1, 4).length === 4, 'a missing fixture list does not throw');
+}
+
+console.log('• chipPlanFdr: each chip lands in the week it should');
+{
+  /* GW5 is deliberately the easiest week, GW12 deliberately the hardest. */
+  const fx = makeFixtures(1, 19, (gw) => (gw === 5 ? 1 : gw === 12 ? 5 : 3));
+  const plan = API.chipPlanFdr(boot(), fx, { startGw: 1 });
+  ok(plan != null, 'a plan is produced');
+  ok(plan.window.from === 1 && plan.window.to === 19, 'the plan covers the whole first half');
+  ok(plan.picks.benchboost && plan.picks.benchboost.gw === 5,
+    'Bench Boost goes to the easiest week (got GW' + (plan.picks.benchboost || {}).gw + ')');
+  ok(plan.picks.freehit && plan.picks.freehit.gw === 12,
+    'Free Hit goes to the hardest week (got GW' + (plan.picks.freehit || {}).gw + ')');
+  /* Triple Captain also wants GW5, but Bench Boost has it — two chips cannot
+     share a week, so the armband must still be placed, just elsewhere. This
+     is the case that exposed the original assignment bug, where the flexible
+     chip took the week and a constrained one silently dropped out. */
+  ok(plan.picks.triplecaptain != null, 'Triple Captain is still placed when its first choice is taken');
+  ok(plan.picks.triplecaptain.gw !== 5, 'and it does not double up on the Bench Boost week');
+  ok(plan.picks.triplecaptain.fdr <= 3, 'the armband still gets a fixture no worse than average');
+
+  /* No two chips may share a gameweek — that is the collision guard. */
+  const weeks = Object.values(plan.picks).map((p) => p.gw);
+  ok(new Set(weeks).size === weeks.length, 'no two chips are assigned the same gameweek');
+  ok(Object.keys(plan.picks).length === 4, 'all four chips are placed across the half');
+}
+
+console.log('• chipPlanFdr: blanks and doubles outrank a merely hard week');
+{
+  const base = makeFixtures(1, 19, (gw) => (gw === 12 ? 5 : 3));
+  /* GW8: six clubs blank. GW15: six clubs play twice. */
+  const fx = base.filter((f) => !(f.event === 8 && f.team_h <= 6))
+    .concat([1, 3, 5].map((h, i) => ({
+      id: 900 + i, event: 15, team_h: h, team_a: h + 1,
+      team_h_difficulty: 2, team_a_difficulty: 2,
+    })));
+  const plan = API.chipPlanFdr(boot(), fx, { startGw: 1 });
+  ok(plan.picks.freehit.gw === 8, 'Free Hit switches to the blank gameweek');
+  ok(plan.picks.freehit.blank === 6, 'the blank count is reported (' + plan.picks.freehit.blank + ')');
+  ok(plan.picks.benchboost.gw === 15, 'Bench Boost switches to the double gameweek');
+  ok(plan.picks.benchboost.double === 6, 'the double count is reported');
+}
+
+console.log('• chipPlanFdr: the wildcard finds a planted swing');
+{
+  /* Half the league is hard until GW10 then easy; the other half the reverse.
+     The turn is at GW10, so that is where reshaping buys the most. */
+  const fx = makeFixtures(1, 19, (gw, team) => {
+    const firstHalfClub = team <= 10;
+    const early = gw < 10;
+    return firstHalfClub ? (early ? 5 : 1) : (early ? 1 : 5);
+  });
+  const plan = API.chipPlanFdr(boot(), fx, { startGw: 1 });
+  ok(plan.picks.wildcard != null, 'a wildcard week is chosen');
+  ok(Math.abs(plan.picks.wildcard.gw - 10) <= 1,
+    'wildcard lands on the planted swing (got GW' + plan.picks.wildcard.gw + ')');
+  ok(plan.picks.wildcard.turning >= 8,
+    'it counts the clubs whose run improves (' + plan.picks.wildcard.turning + ')');
+
+  /* A flat league has no swing worth naming, and must not invent a big one. */
+  const flat = API.chipPlanFdr(boot(), makeFixtures(1, 19, () => 3), { startGw: 1 });
+  ok(!flat.picks.wildcard || flat.picks.wildcard.gain < 1,
+    'a league with no swing does not report a large one');
+}
+
+console.log('• chipPlanFdr: quality gates the captain, and guards hold');
+{
+  const fx = makeFixtures(1, 19, (gw, team) => (team === 20 && gw === 7 ? 1 : 3));
+  /* A fringe player at the club with the one soft fixture must not beat a
+     genuine premium — otherwise the chip advice is nonsense. */
+  const b = boot({
+    elements: [
+      { id: 1, team: 1, element_type: 4, status: 'a', web_name: 'Premium', chance_of_playing_next_round: null, ep_next: '9.0', form: '9.0', total_points: 250, minutes: 2000 },
+      { id: 2, team: 20, element_type: 4, status: 'a', web_name: 'Fringe', chance_of_playing_next_round: null, ep_next: '0.4', form: '0.4', total_points: 6, minutes: 200 },
+    ],
+  });
+  const plan = API.chipPlanFdr(b, fx, { startGw: 1 });
+  ok(plan.picks.triplecaptain.el.web_name === 'Premium',
+    'the captain pick is a premium, not a fringe player with a soft draw');
+
+  /* Players who cannot be captained are never suggested. */
+  const injured = boot({
+    elements: [{ id: 1, team: 1, element_type: 4, status: 'i', web_name: 'Out', chance_of_playing_next_round: 0, ep_next: '9.0', form: '9.0', total_points: 250, minutes: 2000 }],
+  });
+  const p2 = API.chipPlanFdr(injured, fx, { startGw: 1 });
+  ok(!p2.picks.triplecaptain, 'an unavailable player is not offered the armband');
+
+  /* Not enough fixtures to plan a half is a null, not a guess. */
+  ok(API.chipPlanFdr(boot(), makeFixtures(1, 2, () => 3), { startGw: 1 }) === null,
+    'too short a window returns null');
+  ok(API.chipPlanFdr(boot(), [], { startGw: 1 }) === null, 'no fixtures returns null');
+
+  /* Second half plans against the second-half window. */
+  const late = API.chipPlanFdr(boot(), makeFixtures(20, 38, (gw) => (gw === 25 ? 1 : 3)), { startGw: 20 });
+  ok(late && late.window.from === 20 && late.window.to === 38, 'a second-half plan uses the second-half window');
+  ok(late.picks.benchboost.gw === 25, 'and still finds the easiest week inside it');
+}
+
+console.log('\n' + passes + ' passed, ' + failures + ' failed');
+process.exit(failures ? 1 : 0);

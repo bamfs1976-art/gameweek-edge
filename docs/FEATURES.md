@@ -471,6 +471,41 @@ total + rank movement and a **Gameweek awards** tool (best captain, bench
 tragedy, differential hero across the top 10). H2H shows W‑D‑L, points‑for and
 league points.
 
+**Chip plan (GW1–19, official FDR)** — chips reset at the halfway point, so
+each one is used inside its half or lost. That makes the planning window the
+whole half, not the next few gameweeks, and it makes the question a fixture
+question. This plan reads the **official FPL difficulty ratings** on each
+fixture (`team_h_difficulty` / `team_a_difficulty`) rather than our own match
+model — it is the shared language of FPL content, so a plan built on it can be
+argued about with anyone.
+
+The two difficulty scales behave differently, and that matters here: ours is
+derived from win probability and is close to zero‑sum, so the league mean barely
+moves week to week; official FDR rates each opponent on absolute strength, so a
+week where the strong sides all play each other genuinely reads as harder.
+Ranking gameweeks by mean FDR is therefore meaningful on the official numbers
+and misleading on the model ones.
+
+- **Bench Boost** → the easiest week of the half. A bench only pays when the
+  fringe players have games worth starting.
+- **Free Hit** → the hardest week, or a blank. The week the normal squad is
+  worst placed is the week a bespoke XI gains most.
+- **Triple Captain** → the softest fixture available to an elite attacker
+  (quality‑gated, so it is never a fringe player with a kind draw).
+- **Wildcard** → the biggest swing: where the most clubs turn from a hard run
+  to an easy one, measured as improvement only, since clubs getting *worse* is a
+  reason to have wildcarded already.
+
+Blanks and doubles override the difficulty read when the calendar has them.
+Chips are assigned in order of how **constrained** they are, not how valuable —
+a blank pins Free Hit to a week, the swing pins the Wildcard, while the armband
+is happy with any soft fixture — and each walks its own ranked list to take the
+best week still free, so one chip can never silently drop out. The window rolls
+to GW20–38 automatically once the second‑half chip set is live.
+
+Official FDR is a season‑long rating of the opponent: it knows nothing about
+form, injuries or a new manager, and the card says so.
+
 **Chip Strategy** — chips used/available and the best gameweeks to play each,
 AI‑assisted. Includes a **Fixture‑swing gameweek ranking** (`gwSwing`): every
 gameweek in the next ~19 ranked by fixture difficulty for the teams people own
