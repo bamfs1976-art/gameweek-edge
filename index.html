@@ -4378,6 +4378,14 @@ async function hydrateSquad(host){
     top:topPick?{nm:(b.els[topPick.element]||{}).web_name,
       pts:(livePts[topPick.element]||0)*(topPick.multiplier||1)}:null,
     chip:picks.active_chip||null};
+  /* Snapshot for the Team Reveal card — the starting XI laid out by row plus
+     the bench, for a shareable pitch image. */
+  const revPk=p=>{const el=b.els[p.element]||{};return {nm:el.web_name||'',cost:el.now_cost||0,
+    team:teamShort(b,el.team),cap:!!p.is_captain,vice:!!p.is_vice_captain};};
+  window._reveal={gw,chip:picks.active_chip||null,value:eh.value,bank:eh.bank,
+    rows:[byType(1),byType(2),byType(3),byType(4)].map(arr=>arr.map(revPk)),
+    bench:bench.map(revPk),
+    formation:[byType(2).length,byType(3).length,byType(4).length]};
   /* Lineup checker — the quiet point-leaks before the deadline. */
   const lc=lineupCheck(b,picks,nf);
   /* Correlated projection for the coming gameweek (P4). */
@@ -4396,7 +4404,8 @@ async function hydrateSquad(host){
     '<div class="grid g-sb mb-20">'+
       '<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Your XI '+
         '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span>'+
-        '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button></div>'+
+        '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="shareTeamReveal()">'+svg(ICON.arrows,'width="13" height="13"')+' Reveal</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button></div>'+
         pitchWrap(
           row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
           '<div class="bench">'+bench.map(cell).join('')+'</div>')+
@@ -4460,6 +4469,69 @@ async function shareSquadCard(){
   a.download='gameweek-'+S.gw+'.png';a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   toast('Share card downloaded');
+}
+
+/* ── Team Reveal card ────────────────────────────────────
+   A portrait pitch image of the starting XI (plus bench), for sharing your
+   squad on socials — the pre-season / deadline "here is my team" card. Pure
+   canvas (no external images, so nothing taints the canvas under the CSP);
+   player tokens are name + price chips laid out by row. */
+async function shareTeamReveal(){
+  const S=window._reveal;if(!S){toast('Open My Squad first');return;}
+  const W=1080,H=1350,cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const x=cv.getContext('2d');
+  /* Turf backdrop + markings. */
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#12482b');g.addColorStop(1,'#0a2c1a');
+  x.fillStyle=g;x.fillRect(0,0,W,H);
+  x.fillStyle='rgba(255,255,255,.03)';for(let i=0;i<H;i+=130)x.fillRect(0,i,W,65);
+  x.strokeStyle='rgba(255,255,255,.13)';x.lineWidth=3;
+  x.strokeRect(36,250,W-72,H-330);
+  x.beginPath();x.arc(W/2,(250+(H-80))/2,90,0,2*Math.PI);x.stroke();
+  x.beginPath();x.moveTo(36,(250+(H-80))/2);x.lineTo(W-36,(250+(H-80))/2);x.stroke();
+  const center=(t,y,font,color)=>{x.font=font;x.fillStyle=color;x.textAlign='center';x.fillText(t,W/2,y);};
+  center('GAMEWEEK EDGE',110,'800 46px system-ui,-apple-system,sans-serif','#4ade80');
+  center('Team Reveal · GW'+S.gw+(S.chip?' · '+String(S.chip).toUpperCase():''),172,'600 34px system-ui,sans-serif','rgba(255,255,255,.8)');
+  center((S.formation||[]).join('-'),218,'700 30px system-ui,sans-serif','rgba(255,255,255,.5)');
+  /* One player token. */
+  const token=(cx,cy,p)=>{
+    const w=182,h=92;const px=cx-w/2,py=cy-h/2;
+    x.fillStyle=p.cap?'rgba(74,222,128,.16)':'rgba(0,0,0,.34)';
+    if(x.roundRect){x.beginPath();x.roundRect(px,py,w,h,16);x.fill();}else x.fillRect(px,py,w,h);
+    x.lineWidth=p.cap?4:2;x.strokeStyle=p.cap?'#4ade80':'rgba(255,255,255,.16)';
+    if(x.roundRect){x.beginPath();x.roundRect(px,py,w,h,16);x.stroke();}else x.strokeRect(px,py,w,h);
+    x.textAlign='center';
+    x.font='800 30px system-ui,sans-serif';x.fillStyle='#fff';
+    let nm=p.nm||'';if(nm.length>13)nm=nm.slice(0,12)+'…';
+    x.fillText(nm,cx,cy-4);
+    x.font='600 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.62)';
+    x.fillText((p.team||'')+' · £'+((p.cost||0)/10).toFixed(1),cx,cy+30);
+    if(p.cap||p.vice){x.beginPath();x.arc(px+w-4,py+4,17,0,2*Math.PI);
+      x.fillStyle=p.cap?'#4ade80':'rgba(255,255,255,.75)';x.fill();
+      x.fillStyle='#0a2c1a';x.font='800 22px system-ui,sans-serif';x.fillText(p.cap?'C':'V',px+w-4,py+12);}
+  };
+  /* Four rows spread down the pitch. */
+  const rows=S.rows||[];const top=320,bottom=H-250,step=rows.length>1?(bottom-top)/(rows.length-1):0;
+  rows.forEach((arr,ri)=>{const cy=top+step*ri;const n=arr.length||1;
+    arr.forEach((p,i)=>token((W*(i+1))/(n+1),cy,p));});
+  /* Bench strip + footer. */
+  x.fillStyle='rgba(0,0,0,.3)';const by=H-176;
+  if(x.roundRect){x.beginPath();x.roundRect(36,by,W-72,72,14);x.fill();}else x.fillRect(36,by,W-72,72);
+  x.textAlign='left';x.font='700 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
+  x.fillText('BENCH',60,by+44);
+  x.font='700 26px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.85)';
+  x.fillText((S.bench||[]).map(p=>p.nm).filter(Boolean).join('  ·  '),168,by+44);
+  if(S.value!=null)center('Squad value £'+(S.value/10).toFixed(1)+'m'+(S.bank!=null?'  ·  Bank £'+(S.bank/10).toFixed(1)+'m':''),H-78,'600 30px system-ui,sans-serif','rgba(255,255,255,.72)');
+  center('gameweekedge.co.uk',H-36,'700 30px system-ui,sans-serif','#4ade80');
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  if(!blob){toast('Could not build the image');return;}
+  const file=new File([blob],'team-reveal-gw'+S.gw+'.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:'My GW'+S.gw+' team',text:'My GW'+S.gw+' squad — built on Gameweek Edge'});return;}catch(_){/* cancelled → fall through */}
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='team-reveal-gw'+S.gw+'.png';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  toast('Team Reveal downloaded');
 }
 
 /* ── GW Debrief: your gameweek reviewed, with next steps ──

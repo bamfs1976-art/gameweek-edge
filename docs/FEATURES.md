@@ -156,6 +156,11 @@ launches, under the standard FPL rules (15 players: 2 GK / 5 DEF / 5 MID /
 **My Squad** — your 15 players on a professional pitch (striped turf, vector
 markings) with real player photos + club crests, name/points label bars,
 captain highlight; plus a gameweek summary (points, rank, value, bank, chip).
+- **Share** — a square results card (GW points, rank, captain, star player).
+- **Reveal** — a portrait **Team Reveal** pitch image of your starting XI (names,
+  clubs, prices, captain/vice badges, bench strip, squad value) for socials.
+  Both are drawn on a `<canvas>` with no external images (nothing taints the
+  canvas under the CSP) and use the Web Share API, falling back to a download.
 
 **Transfer Planner**
 - **Transfer Solver** — recommends the best **0–3 transfer** plan over the fixture
