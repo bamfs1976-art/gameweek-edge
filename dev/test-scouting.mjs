@@ -425,5 +425,56 @@ console.log('• baselineBps: BPS left once the returns are stripped out');
   ok(B.bpsLeaders(pool, 450, 1).length === 1, 'the result count is capped');
 }
 
+/* ── Club bonus leaders ───────────────────────────────────────────────
+   Answers which player at a club actually banks the bonus. Ordering matters
+   in two places at once — players within a club, and clubs against each
+   other — so both are pinned down here. */
+console.log('• clubBonusLeaders: who banks the bonus at each club');
+{
+  const tariffSrc = extractBlock(html, html.indexOf('const BPS_TARIFF='));
+  const C = new Function(
+    tariffSrc + '\n' + grabFn('bpsFromReturns') + '\n' + grabFn('baselineBps') + '\n' +
+    grabFn('baselineBps90') + '\n' + grabFn('bonusPerStart') + '\n' +
+    grabFn('clubBonusLeaders') + '\nreturn clubBonusLeaders;'
+  )();
+  const p = (id, team, bonus, o) => Object.assign({
+    id, team, bonus, element_type: 3, minutes: 900, starts: 10, bps: 300,
+    goals_scored: 0, assists: 0, clean_sheets: 0, saves: 0, status: 'a',
+  }, o || {});
+
+  const els = [
+    p(1, 1, 20), p(2, 1, 30), p(3, 1, 10), p(4, 1, 5),   // club 1 total 65
+    p(5, 2, 40), p(6, 2, 4),                             // club 2 total 44
+    p(7, 3, 9),                                          // club 3 total 9
+    p(8, 3, 99, { minutes: 100 }),                       // below the minutes gate
+    p(9, 3, 99, { status: 'u' }),                        // left the club
+  ];
+  const g = C(els, 3, 270);
+
+  ok(g.map(x => x.team).join() === '1,2,3', 'clubs ordered by total squad bonus');
+  ok(g[0].total === 65, 'club total sums every qualifying player, not just the top three');
+  ok(g[0].players.map(x => x.el.id).join() === '2,1,3', 'players ranked by bonus within a club');
+  ok(g[0].players.length === 3, 'only the top three per club are returned');
+  const all = g.flatMap(x => x.players.map(x2 => x2.el.id));
+  ok(!all.includes(8), 'low-minutes players are excluded');
+  ok(!all.includes(9), 'players who left the club are excluded');
+  ok(g.find(x => x.team === 3).total === 9, 'excluded players do not inflate the club total');
+  ok(C(els, 1, 270)[0].players.length === 1, 'the per-club count is configurable');
+  ok(C([], 3, 270).length === 0, 'an empty league yields no groups');
+
+  /* Baseline BPS breaks a tie on bonus, so two players level on bonus are
+     separated by the underlying rate rather than by array order. */
+  const tie = [
+    p(1, 1, 10, { bps: 200 }),
+    p(2, 1, 10, { bps: 500 }),
+  ];
+  ok(C(tie, 2, 270)[0].players[0].el.id === 2, 'equal bonus is broken by baseline BPS');
+
+  /* Each entry carries what the card prints. */
+  ok(g[0].players.every(x => typeof x.bonus === 'number' &&
+    typeof x.b90 === 'number' && typeof x.perStart === 'number'),
+    'every entry carries bonus, baseline per 90 and bonus per start');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

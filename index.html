@@ -1474,6 +1474,27 @@ body{font-size:14px;line-height:1.35}
 .soc-nm{flex:1 1 auto;min-width:0;font-family:var(--font-mono);font-size:10px;
   letter-spacing:.05em;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* ── Club bonus leaders: who banks the bonus at each club ── */
+.cbl{display:flex;flex-direction:column}
+.cbl-row{display:flex;align-items:center;gap:10px;min-height:38px;
+  border-bottom:1px solid var(--border)}
+.cbl-row:last-child{border-bottom:0}
+.cbl-club{flex:0 0 auto;width:92px;display:flex;align-items:center;gap:6px;font-size:12px}
+.cbl-club b{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em}
+.cbl-tot{margin-left:auto;font-family:var(--font-mono);font-size:10px;color:var(--text-3);
+  font-variant-numeric:tabular-nums}
+.cbl-picks{display:flex;flex:1 1 auto;min-width:0;gap:6px;overflow-x:auto;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cbl-picks::-webkit-scrollbar{display:none}
+.cbl-p{display:inline-flex;flex-direction:column;gap:1px;flex:0 0 auto;cursor:pointer;
+  padding:4px 9px;border:1px solid var(--border-2);border-radius:var(--r-md);
+  background:var(--surface);white-space:nowrap;min-width:118px}
+.cbl-p:hover{border-color:var(--green);background:var(--surface-2)}
+.cbl-p.top{border-color:var(--green);background:var(--green-soft)}
+.cbl-p b{font-size:12.5px;font-weight:600;color:var(--text)}
+.cbl-m{font-family:var(--font-mono);font-size:9.5px;color:var(--text-3);
+  font-variant-numeric:tabular-nums}
+
 /* ── Price ladder: best pick at each half-million band ── */
 .lad-wrap{display:flex;flex-direction:column}
 .lad-row{display:flex;align-items:center;gap:10px;min-height:34px;
@@ -5007,6 +5028,17 @@ function socialSpecs(b,fixtures){
         v:r.b90.toFixed(1),crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
   });
 
+  push('club-bonus',()=>{
+    const groups=clubBonusLeaders(b.elements,3,270).slice(0,10);
+    if(groups.length<6)return null;
+    return {kind:'ladder',title:'WHO TAKES THE BONUS',
+      sub:'Top bonus earners at the ten biggest bonus clubs',
+      note:'Bonus concentrates inside a squad, often on a player you would not guess. Clubs ordered by the bonus their squad banked in total.',
+      groups:groups.map(g=>({label:teamShort(b,g.team),
+        items:g.players.map(p=>({nm:p.el.web_name,team:String(p.bonus)+' bns',
+          v:p.b90.toFixed(1),crest:crestUrl(b,g.team),photos:socPhotoUrls(p.el)}))}))};
+  });
+
   push('defcon',()=>{
     const groups=dcByBracket(b.elements);
     if(!groups.length)return null;
@@ -6332,6 +6364,47 @@ function bpsLeaderCard(b){
     'because that is banked without returning too.</div></div>';
 }
 
+/* ── Club bonus leaders ───────────────────────────────────────────────
+   Baseline BPS answers "who banks BPS without returning"; this answers the
+   question that actually decides a transfer: when you take a Brighton
+   defender, WHICH one takes the bonus? Bonus concentrates inside a squad —
+   often on one player nobody expects — and picking the wrong one costs a
+   couple of points a week all season.
+
+   Clubs are ordered by the bonus their squad banked in total, so the top of
+   the list is also a read on which sides generate bonus at all. */
+function clubBonusLeaders(elements,perClub,minMinutes){
+  const per=perClub||3,min=minMinutes==null?270:minMinutes;
+  const byTeam={};
+  (elements||[]).forEach(e=>{
+    if(!e||e.status==='u'||(e.minutes||0)<min)return;
+    (byTeam[e.team]=byTeam[e.team]||[]).push({el:e,
+      bonus:Number(e.bonus)||0,b90:baselineBps90(e),perStart:bonusPerStart(e)});
+  });
+  return Object.keys(byTeam).map(t=>{
+    const list=byTeam[t].sort((a,c)=>c.bonus-a.bonus||c.b90-a.b90);
+    return {team:+t,total:list.reduce((s,x)=>s+x.bonus,0),players:list.slice(0,per)};
+  }).filter(g=>g.players.length).sort((a,c)=>c.total-a.total);
+}
+function clubBonusCard(b){
+  const groups=clubBonusLeaders(b.elements,3,270);
+  if(groups.length<4)return '';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+
+    ' Who takes the bonus at each club</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Bonus concentrates inside a squad, often on a player you would not guess. '+
+    'These are each club’s top three bonus earners, with <b>'+jt('bBPS/90','base/90')+'</b> — the BPS they bank before returning — '+
+    'underneath. Clubs are ordered by the bonus their squad banked in total, so the top of the list also shows which sides generate bonus at all.</p>'+
+    '<div class="cbl">'+groups.map(g=>
+      '<div class="cbl-row"><span class="cbl-club">'+crest(b,g.team,16)+
+        '<b>'+esc(teamShort(b,g.team))+'</b><span class="cbl-tot">'+g.total+'</span></span>'+
+      '<span class="cbl-picks">'+g.players.map((p,i)=>
+        '<span class="cbl-p'+(i===0?' top':'')+'" onclick="openPlayer('+p.el.id+')">'+
+        '<b>'+esc(p.el.web_name)+'</b>'+
+        '<span class="cbl-m">'+p.bonus+' bonus · '+p.b90.toFixed(1)+' base/90</span></span>').join('')+
+      '</span></div>').join('')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Minimum 270 minutes. Players who have left the club are excluded.</div></div>';
+}
+
 /* ── Price ladder: the best pick at every price point, for one position ──
    The shortlist creators publish every pre-season is really a squad-building
    tool: you rarely ask who is best outright, you ask who is best at the money
@@ -6525,6 +6598,7 @@ function renderDiffs(key){
 let SB_POS=3;                 /* default MID, like the pundit boards */
 let SB_SORT=null,SB_DIR=-1;   /* null → the position's default sort key */
 let SB_PRICE=0;               /* price cap in tenths of £m (0 = any) — budget finder */
+const SB_FIX=6;               /* fixture columns shown on the board */
 /* Per-90 from a season total; 0 when there are no minutes yet. */
 function sbP90(e,total){const m=e.minutes||0;return m>0?(parseFloat(total)||0)*90/m:0;}
 /* The column set for a position. `low:1` marks a metric where lower is
@@ -6584,13 +6658,13 @@ function renderScoutBoard(){
   }
   const range={};cols.forEach(c=>{const vs=shown.map(c.v);range[c.k]=[Math.min.apply(null,vs),Math.max.apply(null,vs)];});
   const fixCells=team=>{
-    const arr=(S.hz[team]||[]).slice(0,3);let out='';
-    for(let i=0;i<3;i++){const f=arr[i];
+    const arr=(S.hz[team]||[]).slice(0,SB_FIX);let out='';
+    for(let i=0;i<SB_FIX;i++){const f=arr[i];
       out+=f?'<span class="sb-fx fdr-'+f.diff+'" title="'+(f.home?'v ':'@ ')+esc(f.opp)+'">'+esc(f.opp)+'</span>'
             :'<span class="sb-fx sb-fx-none">—</span>';}
     return out;
   };
-  const head='<tr><th>Player</th><th>Next 3</th>'+
+  const head='<tr><th>Player</th><th>Next '+SB_FIX+'</th>'+
     cols.map(c=>'<th class="num sb-sort'+(c.k===key?' active':'')+'" data-k="'+c.k+'">'+esc(c.l)+'</th>').join('')+'</tr>';
   const rows=shown.map(e=>{
     const cells=cols.map(c=>{const r=range[c.k],v=c.v(e);
@@ -6605,7 +6679,7 @@ function renderScoutBoard(){
 }
 async function hydrateScoutBoard(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
-  const hz=buildHorizon(b,fixtures,3);
+  const hz=buildHorizon(b,fixtures,6);   /* six ahead — pre-season planning needs the run, not the next game */
   window._sb={b,hz,fixtures};
   const seg=[['3','MID'],['4','FWD'],['2','DEF'],['1','GKP']]
     .map(function(o){return '<button class="seg-b'+(SB_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
@@ -6613,7 +6687,7 @@ async function hydrateScoutBoard(host){
     .map(function(o){return '<button class="seg-b'+(SB_PRICE===+o[0]?' on':'')+'" data-cap="'+o[0]+'">'+o[1]+'</button>';}).join('');
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Scout Board</div>'+
     preseasonNote(b,'per-90 form is last season’s until GW1')+
-    '<p class="dl-sub" style="margin-bottom:10px">A per-90 shortlist by position with the next three fixtures. Attackers show xG, xA, goals+assists and defensive contribution per 90; defenders show starts, attacking returns, DefCon (CBIT) and clean sheets — set a price cap for the budget-enabler finder. Greener is stronger for that column across the whole board. Minimum 450 Premier League minutes; tap a heading to re-sort.</p>'+
+    '<p class="dl-sub" style="margin-bottom:10px">A per-90 shortlist by position with the next six fixtures. Attackers show xG, xA, goals+assists and defensive contribution per 90; defenders show starts, attacking returns, DefCon (CBIT) and clean sheets — set a price cap for the budget-enabler finder. Greener is stronger for that column across the whole board. Minimum 450 Premier League minutes; tap a heading to re-sort.</p>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
       '<div class="seg" id="sb-seg">'+seg+'</div>'+
       '<div class="seg" id="sb-price">'+priceSeg+'</div>'+
@@ -6621,7 +6695,8 @@ async function hydrateScoutBoard(host){
     '<div id="sb-out"></div></div>'+
     '<div id="sb-ladder"></div>'+
     dcBracketCard(b)+
-    bpsLeaderCard(b);
+    bpsLeaderCard(b)+
+    clubBonusCard(b);
   renderScoutBoard();
   host.querySelector('#sb-seg').addEventListener('click',function(ev){
     const btn=ev.target.closest('.seg-b');if(!btn)return;

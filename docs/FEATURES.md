@@ -73,7 +73,7 @@ Intelligence  (Pro)
 
 Players
 ├── Player List          (free)  Full sortable table + Cards view + CSV export
-├── Scout Board          (free)  Per-90 shortlist by position + DefCon by budget
+├── Scout Board          (free)  Per-90 shortlist + price ladder, DefCon + bonus by club
 ├── Player Compare       (free)  Up to 4 players side by side
 ├── Differentials        (free)  <12% owned in form + DefCon leaders
 ├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
@@ -392,7 +392,16 @@ the tariff has drifted from the game. Available as a Scout Board leaderboard, a
 sortable `Base/90` column with CSV export, a player‑profile stat, a Social Studio
 preset and a card‑builder metric.
 
-**Scout Board** — a per‑90 shortlist by position with the next three fixtures,
+**Who takes the bonus at each club** *(Scout Board)* — baseline BPS answers
+"who banks BPS without returning"; this answers the question that decides a
+transfer: when you take a Brighton defender, *which one* takes the bonus? Bonus
+concentrates inside a squad, often on a player you would not guess, and picking
+the wrong one costs a couple of points a week all season. Each club's top three
+bonus earners with their baseline per 90 underneath, clubs ordered by the bonus
+their squad banked in total — so the top of the list also reads as which sides
+generate bonus at all. Minimum 270 minutes; players who have left are excluded.
+
+**Scout Board** — a per‑90 shortlist by position with the next **six** fixtures,
 heat‑mapped per column and filterable by price cap (the budget‑enabler finder).
 Attackers show xG, xA, G+A and DefCon per 90; defenders show starts, attacking
 returns, CBIT and clean sheets.
