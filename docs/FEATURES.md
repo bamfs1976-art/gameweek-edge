@@ -275,7 +275,8 @@ clean‑sheet odds; plus the upcoming match outlook. Horizon toggles **6 / 10 / 
 gameweeks or the whole Season** (the full remaining‑season grid competitors
 paywall — here free, and across four lenses: Overall / Attack / Defence / the
 official FPL rating). Teams re‑rank easiest‑run‑first; a purple underline marks
-each club’s best run in the window.
+each club’s best run in the window. **Team filter** chips hide/show any club in
+the grid (with **All** and, when a team is linked, **My teams** shortcuts).
 
 **Clean Sheet Matrix** — for every 2026/27 club (from the shared model bundle),
 the probability of a clean sheet in each of the next 6 or 10 gameweeks'

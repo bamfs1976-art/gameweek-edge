@@ -1293,6 +1293,13 @@ body{font-size:14px;line-height:1.35}
 .dl.desc .dl-grow{align-items:flex-start;text-align:left}
 .dl.desc .dl-nm{white-space:normal;overflow:visible;text-overflow:clip}
 .dl.desc .dl-sub{white-space:normal;overflow:visible;text-overflow:clip}
+/* Fixture Planner team filter — toggle clubs in/out of the difficulty grid. */
+.fdr-teams{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.tchip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--border-2);
+  border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:11px;font-weight:600;
+  cursor:pointer;line-height:1.6;transition:opacity .12s}
+.tchip-act{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--green)}
+.tchip.off{opacity:.32;text-decoration:line-through}
 .badge{border-radius:3px;font-family:var(--font-mono);font-size:10px;
   text-transform:uppercase;letter-spacing:.04em;font-weight:600}
 .btn{border-radius:var(--r-md)}
@@ -4791,7 +4798,10 @@ function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
 /* Fixture Difficulty 2.0 body: recolour each cell by the chosen lens —
    overall win odds, attack (team xG) or defence (clean-sheet odds). */
 function fdrBodyHtml(view){
-  const S=window._fdr;if(!S)return '';const {b,teams,gws,byTeamGw}=S;
+  const S=window._fdr;if(!S)return '';const {b,gws,byTeamGw}=S;
+  /* Team filter: hide clubs the user has toggled off (empty set = all shown). */
+  const teams=(S.hidden&&S.hidden.size)?S.teams.filter(t=>!S.hidden.has(t.id)):S.teams;
+  if(!teams.length)return '<tr><td class="blank" colspan="99" style="text-align:center;padding:16px">No teams selected — tap <b>All</b> to bring them back.</td></tr>';
   const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
     :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
   /* Rank teams by their total fixture difficulty for the chosen lens — the
@@ -4844,6 +4854,14 @@ async function hydrateFixtures(host){
   }
   const startGw=upcoming.id;
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
+  /* Team filter state: clubs toggled off in the grid. Optional "My teams"
+     shortcut needs the linked squad, so fetch its clubs when a team is linked
+     (best-effort — the filter still works without it). */
+  const hidden=new Set();
+  let ownedClubs=null;
+  const _mid=getMid();
+  if(_mid){try{const _pk=await loadPicks(_mid,b.cur&&b.cur.id);
+    if(_pk&&_pk.picks)ownedClubs=new Set(_pk.picks.map(p=>(b.els[p.element]||{}).team).filter(Boolean));}catch(_){}}
   const R=plsimRatings(b,fixtures);
   const pc=x=>Math.round(x*100);
   const POSN=['','GKP','DEF','MID','FWD'];
@@ -4891,7 +4909,7 @@ async function hydrateFixtures(host){
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
         diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,lam:m?m.ax:0,cs:m?m.csA:0};
     });
-    window._fdr={b,teams,gws,byTeamGw};
+    window._fdr={b,teams,gws,byTeamGw,hidden};
     const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th>FDR</th><th>xGF</th><th>CS%</th></tr>';
 
     /* Defensive rotation pairs — cheap defenders whose easy fixtures alternate. */
@@ -5015,6 +5033,11 @@ async function hydrateFixtures(host){
       '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
         '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(p=>'<button class="seg-b'+(p[0]===curWin?' on':'')+'" data-win="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>'+
         '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+VIEWS.map(v=>'<button class="seg-b'+(v[0]===curView?' on':'')+'" data-view="'+v[0]+'">'+v[1]+'</button>').join('')+'</div>'+
+        '<div class="fdr-teams" id="fdr-teams">'+
+          '<button class="tchip tchip-act" data-tf="all">All</button>'+
+          (ownedClubs&&ownedClubs.size?'<button class="tchip tchip-act" data-tf="mine">My teams</button>':'')+
+          teams.map(t=>'<button class="tchip'+(hidden.has(t.id)?' off':'')+'" data-team="'+t.id+'">'+crest(b,t.id,14)+esc(t.short_name)+'</button>').join('')+
+        '</div>'+
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
         'Choose the <b>horizon</b> (6 / 10 / 15 GWs, or the whole <b>Season</b>) and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
@@ -5026,6 +5049,18 @@ async function hydrateFixtures(host){
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
     const wseg=host.querySelector('#fdr-win');
     if(wseg)wseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){const w=+btn.dataset.win;if(w!==curWin){curWin=w;build();}}});
+    /* Team filter — toggle clubs in/out of the grid without a full rebuild
+       (only the tbody re-renders, so it stays snappy on the Season view). */
+    const tf=host.querySelector('#fdr-teams');
+    if(tf)tf.addEventListener('click',e=>{
+      const chip=e.target.closest('[data-team]');
+      if(chip){const id=+chip.dataset.team;hidden.has(id)?hidden.delete(id):hidden.add(id);}
+      else if(e.target.closest('[data-tf="all"]'))hidden.clear();
+      else if(e.target.closest('[data-tf="mine"]')&&ownedClubs){hidden.clear();teams.forEach(t=>{if(!ownedClubs.has(t.id))hidden.add(t.id);});}
+      else return;
+      tf.querySelectorAll('[data-team]').forEach(c=>c.classList.toggle('off',hidden.has(+c.dataset.team)));
+      renderFdr(curView);
+    });
   }
   build();
 }
