@@ -1432,6 +1432,15 @@ body{font-size:14px;line-height:1.35}
   border-radius:3px;padding:2px 8px;color:var(--text-3);background:var(--surface);margin-left:8px}
 .mxi-toggle:hover{color:var(--text);border-color:var(--border-3)}
 
+/* ── Social Studio: card previews in a responsive gallery ── */
+.soc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.soc-item{border:1px solid var(--border-2);border-radius:var(--r-lg);overflow:hidden;
+  background:var(--surface)}
+.soc-shot{background:#0a1410;line-height:0}
+.soc-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--border-2)}
+.soc-nm{flex:1 1 auto;min-width:0;font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.05em;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ── Price ladder: best pick at each half-million band ── */
 .lad-wrap{display:flex;flex-direction:column}
 .lad-row{display:flex;align-items:center;gap:10px;min-height:34px;
@@ -2744,6 +2753,7 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
+      {id:'social', label:'Social Studio', icon:'grid', tier:'free'},
       {id:'methodology', label:'Methodology', icon:'spark', tier:'free'},
       {id:'accountability', label:'Model Accountability', icon:'target', tier:'free'}
     ]
@@ -4732,6 +4742,326 @@ async function shareTeamReveal(){
   a.download='team-reveal-gw'+S.gw+'.png';a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
   toast('Team Reveal downloaded');
+}
+
+/* ── SOCIAL STUDIO ────────────────────────────────────────────────────
+   Share-ready graphics built from the same model that drives the app, so
+   the numbers on a posted card are the numbers in the product. Every card
+   is drawn to a 1080x1350 canvas (the portrait ratio Instagram and X both
+   crop kindly) and downloads as a PNG.
+
+   Cards regenerate from live data every time the panel opens, which matters
+   in the run-up to GW1 when prices and projections move daily. */
+const SOC_W=1080,SOC_H=1350;
+const SOC_BG='#0a1410',SOC_ACCENT='#4ade80',SOC_INK='#ffffff';
+
+/* Resolve a player by display name, so a card preset can name Haaland
+   without hard-coding an element id that changes every season. */
+function socFind(b,name){
+  const q=String(name||'').toLowerCase();
+  const pool=(b.elements||[]).filter(e=>e.status!=='u');
+  return pool.find(e=>(e.web_name||'').toLowerCase()===q)
+    ||pool.find(e=>(e.web_name||'').toLowerCase().indexOf(q)>=0)
+    ||pool.find(e=>((e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(q)>=0)
+    ||null;
+}
+
+/* The pool the optimiser picks from: available players with a projection. */
+function socPool(b,nf){
+  return (b.elements||[])
+    .filter(e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75))
+    .map(e=>({el:e,p:xP(b,e,nf[e.team])||0}))
+    .filter(s=>s.p>0);
+}
+
+/* An optimiser result turned into pitch rows plus a bench strip. */
+function socSquadCard(b,res,title,sub,note){
+  if(!res)return null;
+  const tok=s=>({nm:s.el.web_name,team:teamShort(b,s.el.team),cost:s.el.now_cost,p:s.p});
+  const rows=[1,2,3,4].map(t=>res.xi.filter(s=>s.el.element_type===t)
+    .sort((a,c)=>c.p-a.p).map(tok)).filter(r=>r.length);
+  return {kind:'pitch',title,sub,note,rows,
+    bench:res.bench.slice().sort((a,c)=>a.el.element_type-c.el.element_type).map(tok),
+    formation:res.formation,cost:res.cost,bank:res.bank,xp:res.xiXP};
+}
+
+/* Every card the studio can produce. Each entry is built lazily so one
+   failing preset never takes the whole panel down. */
+function socialSpecs(b,fixtures){
+  const nf=buildNextFix(b,fixtures);
+  const pool=socPool(b,nf);
+  const gw=b.cur?b.cur.id:1;
+  const out=[];
+  const push=(id,fn)=>{try{const c=fn();if(c)out.push(Object.assign({id},c));}catch(_){}};
+  const ids=names=>names.map(n=>socFind(b,n)).filter(Boolean).map(e=>e.id);
+
+  push('data-xi',()=>socSquadCard(b,squadOptimise(pool,{budget:1000}),
+    'THE DATA XI','Highest projected XI · GW'+gw,
+    'Full £100.0m squad, max 3 per club. No favourites, no narratives.'));
+
+  push('haaland-xi',()=>{
+    const h=socFind(b,'Haaland');if(!h)return null;
+    return socSquadCard(b,squadOptimise(pool,{budget:1000,mustInclude:[h.id]}),
+      'BUILDING AROUND HAALAND','Best XI with Haaland locked in · GW'+gw,
+      'Haaland forced into every squad. The rest is whatever the model can still afford.');
+  });
+
+  push('big-three-xi',()=>{
+    const lock=ids(['Haaland','B.Fernandes','Gabriel']);
+    if(lock.length<3)return null;
+    return socSquadCard(b,squadOptimise(pool,{budget:1000,mustInclude:lock}),
+      'THE BIG THREE','Haaland + Bruno + Gabriel locked · GW'+gw,
+      'Three premiums forced in. This is what is left for the other twelve.');
+  });
+
+  push('bank-xi',()=>{
+    const r=squadOptimise(pool,{budget:1000,minBank:30});
+    if(!r)return null;
+    return socSquadCard(b,r,'MONEY IN THE BANK',
+      'Best XI holding £'+(r.bank/10).toFixed(1)+'m back · GW'+gw,
+      'Built to leave at least £3.0m spare for early transfers, not to spend every penny.');
+  });
+
+  /* Best rated in each position at each price point. */
+  [[1,'GOALKEEPERS'],[2,'DEFENDERS'],[3,'MIDFIELDERS'],[4,'FORWARDS']].forEach(([pos,label])=>{
+    push('ladder-'+pos,()=>{
+      const lad=priceLadder(b,fixtures,pos,3,6);
+      if(!lad.length)return null;
+      return {kind:'ladder',title:'BEST '+label+' BY PRICE',
+        sub:'Top picks in every band · next 6 fixtures',
+        note:'Ranked on projected points. Each band covers its half-million.',
+        groups:lad.map(g=>({label:g.label,
+          items:g.players.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1)}))}))};
+    });
+  });
+
+  push('captains',()=>{
+    const plan=captainPlan(b,fixtures,7);
+    if(!plan.length)return null;
+    return {kind:'ladder',title:'BEST CAPTAINS',
+      sub:'Top armband for the next '+plan.length+' gameweeks',
+      note:'Projected points per gameweek. DGW rows sum both matches.',
+      groups:plan.map(r=>({label:'GW'+r.gw,
+        items:r.picks.map(p=>({nm:p.el.web_name,team:teamShort(b,p.el.team),v:p.xp.toFixed(1)}))}))};
+  });
+
+  push('differentials',()=>{
+    const list=differentials(b.elements,10).map(e=>({e,p:xP(b,e,nf[e.team])||0}))
+      .filter(x=>x.p>0).sort((a,c)=>c.p-a.p).slice(0,10);
+    if(list.length<5)return null;
+    return {kind:'rank',title:'THE DIFFERENTIALS',
+      sub:'Under 10% owned · GW'+gw,
+      note:'Low ownership plus a real projection — where you gain rank on the field.',
+      items:list.map(x=>({nm:x.e.web_name,team:teamShort(b,x.e.team),
+        meta:money(x.e.now_cost)+' · '+x.e.selected_by_percent+'% owned',v:x.p.toFixed(1)}))};
+  });
+
+  push('overpriced',()=>{
+    const rows=valueBoard(b,fixtures,6);
+    if(rows.length<20)return null;
+    return {kind:'rank',title:'PRICED ABOVE THE MODEL',
+      sub:'Paying more than the projection supports',
+      note:'FAIR price is what the median rate for that position implies. Compared within position, so defenders are not flattered.',
+      items:rows.slice(-8).reverse().map(r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),
+        meta:money(r.el.now_cost)+' · fair £'+r.fair.toFixed(1),v:'+'+r.delta.toFixed(1),neg:true}))};
+  });
+
+  push('defcon',()=>{
+    const groups=dcByBracket(b.elements);
+    if(!groups.length)return null;
+    return {kind:'ladder',title:'DEFCON BY BUDGET',
+      sub:'Most reliable defensive returners at each price',
+      note:'Hit rate is how often they clear the threshold for the +2, not a per-90 average.',
+      groups:groups.map(g=>({label:g.label,
+        items:g.players.slice(0,3).map(e=>({nm:e.web_name,team:teamShort(b,e.team),v:dcHitLabel(e)}))}))};
+  });
+
+  return out;
+}
+
+/* ── Canvas renderer ─────────────────────────────────────────────────── */
+function socRound(x,px,py,w,h,r){
+  if(x.roundRect){x.beginPath();x.roundRect(px,py,w,h,r);return;}
+  x.beginPath();x.rect(px,py,w,h);
+}
+function renderSocialCard(spec,scale){
+  scale=scale||1;
+  const cv=document.createElement('canvas');
+  cv.width=Math.round(SOC_W*scale);cv.height=Math.round(SOC_H*scale);
+  const x=cv.getContext('2d');
+  x.scale(scale,scale);
+  const W=SOC_W,H=SOC_H;
+  const centre=(t,y,font,color)=>{x.font=font;x.fillStyle=color;x.textAlign='center';x.fillText(t,W/2,y);};
+  const clip=(t,max)=>{t=String(t==null?'':t);
+    x.font='800 30px system-ui,sans-serif';
+    return t.length>max?t.slice(0,max-1)+'…':t;};
+
+  if(spec.kind==='pitch'){
+    const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#12482b');g.addColorStop(1,'#0a2c1a');
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+    x.fillStyle='rgba(255,255,255,.03)';for(let i=0;i<H;i+=130)x.fillRect(0,i,W,65);
+    x.strokeStyle='rgba(255,255,255,.13)';x.lineWidth=3;
+    x.strokeRect(36,286,W-72,758);   /* stops above the bench strip */
+  }else{
+    x.fillStyle=SOC_BG;x.fillRect(0,0,W,H);
+    const g=x.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'rgba(74,222,128,.10)');g.addColorStop(1,'rgba(74,222,128,0)');
+    x.fillStyle=g;x.fillRect(0,0,W,H);
+  }
+  /* Header. */
+  centre('GAMEWEEK EDGE',86,'800 34px system-ui,-apple-system,sans-serif',SOC_ACCENT);
+  centre(spec.title,158,'800 60px system-ui,sans-serif',SOC_INK);
+  centre(spec.sub||'',210,'600 30px system-ui,sans-serif','rgba(255,255,255,.72)');
+
+  if(spec.kind==='pitch'){
+    const token=(cx,cy,p)=>{
+      const w=196,h=94,px=cx-w/2,py=cy-h/2;
+      x.fillStyle='rgba(0,0,0,.38)';socRound(x,px,py,w,h,16);x.fill();
+      x.lineWidth=2;x.strokeStyle='rgba(255,255,255,.18)';socRound(x,px,py,w,h,16);x.stroke();
+      x.textAlign='center';
+      x.font='800 30px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      let nm=p.nm||'';if(nm.length>13)nm=nm.slice(0,12)+'…';
+      x.fillText(nm,cx,cy-8);
+      x.font='600 23px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.6)';
+      x.fillText((p.team||'')+' · '+money(p.cost||0),cx,cy+20);
+      x.font='700 22px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+      x.fillText(Number(p.p||0).toFixed(1)+' xP',cx,cy+44);
+    };
+    const rows=spec.rows||[],top=356,bottom=H-390;
+    const step=rows.length>1?(bottom-top)/(rows.length-1):0;
+    rows.forEach((arr,ri)=>{const cy=top+step*ri,n=arr.length||1;
+      arr.forEach((p,i)=>token((W*(i+1))/(n+1),cy,p));});
+    /* Bench + totals. */
+    const by=H-286;
+    x.fillStyle='rgba(0,0,0,.34)';socRound(x,36,by,W-72,66,14);x.fill();
+    x.textAlign='left';x.font='700 22px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
+    x.fillText('BENCH',60,by+41);
+    x.font='700 24px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.88)';
+    x.fillText((spec.bench||[]).map(p=>p.nm).filter(Boolean).join('  ·  ').slice(0,60),150,by+41);
+    const sy=H-196;
+    const stat=(cx,label,val)=>{x.textAlign='center';
+      x.font='600 22px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';x.fillText(label,cx,sy);
+      x.font='800 40px system-ui,sans-serif';x.fillStyle=SOC_INK;x.fillText(val,cx,sy+44);};
+    stat(W*0.20,'FORMATION',(spec.formation||[]).join('-'));
+    stat(W*0.50,'SQUAD COST','£'+((spec.cost||0)/10).toFixed(1)+'m');
+    stat(W*0.80,'IN THE BANK','£'+((spec.bank||0)/10).toFixed(1)+'m');
+  } else if(spec.kind==='ladder'){
+    const gs=spec.groups||[],top=268,avail=H-top-190;
+    /* Rows stretch to fill the card, and a short list is centred rather than
+       left hanging with dead space under it. */
+    const rh=Math.min(150,avail/Math.max(1,gs.length));
+    const y0=top+Math.max(0,(avail-rh*gs.length)/2);
+    gs.forEach((grp,gi)=>{
+      const y=y0+gi*rh;
+      x.fillStyle=gi%2?'rgba(255,255,255,.035)':'rgba(255,255,255,.06)';
+      socRound(x,40,y,W-80,rh-9,12);x.fill();
+      x.textAlign='left';x.font='800 27px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+      x.fillText(grp.label,64,y+rh/2+2);
+      let cx=210;
+      (grp.items||[]).forEach((it,i)=>{
+        x.font='700 26px system-ui,sans-serif';x.fillStyle=i===0?SOC_INK:'rgba(255,255,255,.72)';
+        const nm=clip(it.nm,15);
+        x.fillText(nm,cx,y+rh/2-4);
+        x.font='600 20px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.45)';
+        x.fillText(it.team+'  '+it.v,cx,y+rh/2+22);
+        cx+=Math.max(210,x.measureText(nm).width+150);
+        if(cx>W-140)return;
+      });
+    });
+  } else {
+    const items=spec.items||[],top=268,avail=H-top-190;
+    const rh=Math.min(120,avail/Math.max(1,items.length));
+    const y0=top+Math.max(0,(avail-rh*items.length)/2);
+    items.forEach((it,i)=>{
+      const y=y0+i*rh;
+      x.fillStyle=i%2?'rgba(255,255,255,.035)':'rgba(255,255,255,.06)';
+      socRound(x,40,y,W-80,rh-8,12);x.fill();
+      x.textAlign='left';
+      x.font='800 30px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.35)';
+      x.fillText(String(i+1),66,y+rh/2+10);
+      x.font='800 32px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      x.fillText(clip(it.nm,18),126,y+rh/2-2);
+      x.font='600 22px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
+      x.fillText(it.team+' · '+it.meta,126,y+rh/2+26);
+      x.textAlign='right';
+      x.font='800 38px system-ui,sans-serif';x.fillStyle=it.neg?'#ff6b6b':SOC_ACCENT;
+      x.fillText(it.v,W-70,y+rh/2+12);
+    });
+  }
+  /* Footer. */
+  if(spec.note){
+    x.textAlign='center';x.font='600 21px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.5)';
+    const words=String(spec.note).split(' ');let line='',ly=H-104;
+    const lines=[];
+    words.forEach(w=>{const t=line?line+' '+w:w;
+      if(x.measureText(t).width>W-140){lines.push(line);line=w;}else line=t;});
+    if(line)lines.push(line);
+    lines.slice(-2).forEach((ln,i)=>x.fillText(ln,W/2,ly+i*27));
+  }
+  centre('gameweekedge.co.uk',H-42,'700 30px system-ui,sans-serif',SOC_ACCENT);
+  return cv;
+}
+
+function socDownload(i){
+  const S=window._soc;if(!S||!S.specs[i])return;
+  const spec=S.specs[i];
+  const cv=renderSocialCard(spec,1);
+  cv.toBlob(blob=>{
+    if(!blob){toast('Could not build the image');return;}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='gwe-'+spec.id+'.png';a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast('Card downloaded');
+  },'image/png');
+}
+async function socDownloadAll(){
+  const S=window._soc;if(!S)return;
+  toast('Building '+S.specs.length+' cards…');
+  for(let i=0;i<S.specs.length;i++){socDownload(i);await new Promise(r=>setTimeout(r,320));}
+}
+async function socShare(i){
+  const S=window._soc;if(!S||!S.specs[i])return;
+  const spec=S.specs[i];
+  const cv=renderSocialCard(spec,1);
+  const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
+  if(!blob)return;
+  const file=new File([blob],'gwe-'+spec.id+'.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{await navigator.share({files:[file],title:spec.title});return;}catch(_){}
+  }
+  socDownload(i);
+}
+
+async function hydrateSocial(host){
+  host.innerHTML=skel(4);
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  let specs=[];
+  try{specs=socialSpecs(b,fixtures);}catch(_){}
+  if(!specs.length){
+    host.innerHTML=stateBox('grid','No cards yet',
+      'Cards are built from the projection model — they appear once the season’s players and fixtures are loaded.');
+    return;
+  }
+  window._soc={specs};
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
+    ' Social Studio</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Share-ready graphics built from the live model — the numbers on the card are the numbers in the app. '+
+    'Every card is 1080×1350, the portrait ratio Instagram and X both crop kindly, and downloads as a PNG. '+
+    'They rebuild from fresh data each time you open this page, so a card made today reflects today’s prices.</p>'+
+    '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button></div>'+
+    '<div class="soc-grid">'+specs.map((sp,i)=>
+      '<div class="soc-item"><div class="soc-shot" id="soc-'+i+'"></div>'+
+      '<div class="soc-bar"><span class="soc-nm">'+esc(sp.title)+'</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="socShare('+i+')">Share</button>'+
+      '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div></div>').join('')+
+    '</div>';
+  /* Previews render at a third scale — full size only on download. */
+  specs.forEach((sp,i)=>{
+    const box=document.getElementById('soc-'+i);if(!box)return;
+    try{const cv=renderSocialCard(sp,0.34);cv.style.width='100%';cv.style.height='auto';
+      cv.style.display='block';cv.setAttribute('role','img');
+      cv.setAttribute('aria-label',sp.title+' — '+(sp.sub||''));box.appendChild(cv);}catch(_){}
+  });
 }
 
 /* ── GW Debrief: your gameweek reviewed, with next steps ──
@@ -8204,6 +8534,215 @@ function bestXI(scored){
   return best;
 }
 
+/* ── Constrained squad optimiser ──────────────────────────────────────
+   Builds a legal 15-man FPL squad (2 GK, 5 DEF, 5 MID, 3 FWD, max 3 per
+   club, inside a budget) that maximises the expected points of the best
+   XI it can field. The bench scores nothing in the objective, which is
+   why cheap bench fodder falls out on its own rather than being forced.
+
+   Exact optimisation here is a multi-dimensional knapsack, so we take a
+   feasible seed and apply steepest-ascent swaps — singles first, then
+   pairs, because budget couples the picks and funding an upgrade usually
+   means downgrading somewhere else — restarted from several seeds.
+
+   Verified in dev/test-social.mjs against exhaustive enumeration: exact at
+   every budget on a structured pool, exact on 29 of 30 random pools at
+   realistic slack with a worst shortfall of 0.6%, and within 5% even when
+   the budget is squeezed to 1% above the cheapest legal squad. So: very
+   close to optimal, almost always exactly it — not provably optimal.
+
+   opts: budget (tenths, default 1000), mustInclude (element ids),
+   minBank (tenths to leave unspent), topN/cheapN to trim the pool.
+   Returns null when no legal squad exists inside the constraints. */
+const SQUAD_NEED={1:2,2:5,3:5,4:3};
+function squadOptimise(scored,opts){
+  opts=opts||{};
+  const startBudget=opts.budget==null?1000:opts.budget;
+  const cap=startBudget-(opts.minBank||0);
+  const must=new Set(opts.mustInclude||[]);
+  const byId={};(scored||[]).forEach(s=>{byId[s.el.id]=s;});
+  const forced=(opts.mustInclude||[]).map(id=>byId[id]).filter(Boolean);
+  if(forced.length!==must.size)return null;          /* a named player is unavailable */
+
+  const need0={1:SQUAD_NEED[1],2:SQUAD_NEED[2],3:SQUAD_NEED[3],4:SQUAD_NEED[4]};
+  const club0={};
+  for(const s of forced){
+    const t=s.el.element_type;
+    if(--need0[t]<0)return null;                     /* too many forced at one position */
+    club0[s.el.team]=(club0[s.el.team]||0)+1;
+    if(club0[s.el.team]>3)return null;               /* forced picks break the club limit */
+  }
+
+  /* Trim the pool to the strongest by projection plus the cheapest at each
+     position — premium slots come from the first group, bench fodder and
+     enablers from the second. */
+  const pools={};
+  [1,2,3,4].forEach(t=>{
+    const all=(scored||[]).filter(s=>s.el.element_type===t&&!must.has(s.el.id));
+    const byP=all.slice().sort((a,c)=>c.p-a.p).slice(0,opts.topN||30);
+    const byC=all.slice().sort((a,c)=>(a.el.now_cost||0)-(c.el.now_cost||0)).slice(0,opts.cheapN||12);
+    const seen=new Set(),out=[];
+    byP.concat(byC).forEach(s=>{if(!seen.has(s.el.id)){seen.add(s.el.id);out.push(s);}});
+    pools[t]=out;
+  });
+
+  const costOf=sq=>sq.reduce((a,s)=>a+(s.el.now_cost||0),0);
+  const clubOk=sq=>{const c={};
+    for(const s of sq){const n=(c[s.el.team]=(c[s.el.team]||0)+1);if(n>3)return false;}
+    return true;};
+  const objective=sq=>{const x=bestXI(sq);return x?x.total:-1;};
+
+  /* A structurally legal squad, ignoring budget: right shape, club limit kept. */
+  const seed=order=>{
+    const sq=forced.slice(),need=Object.assign({},need0),club=Object.assign({},club0);
+    for(const t of [1,2,3,4]){
+      for(const s of pools[t].slice().sort(order)){
+        if(need[t]<=0)break;
+        if((club[s.el.team]||0)>=3)continue;
+        sq.push(s);need[t]--;club[s.el.team]=(club[s.el.team]||0)+1;
+      }
+      if(need[t]>0)return null;                      /* not enough players at a position */
+    }
+    return sq;
+  };
+  /* Walk a structurally legal squad down to an affordable one by repeatedly
+     taking the single biggest cost saving. Filling greedily by price alone
+     can still overshoot once the club limit blocks the cheapest options, so
+     the seed is repaired here rather than simply rejected. */
+  const afford=sq=>{
+    if(!sq)return null;
+    let cur=sq.slice(),spend=costOf(cur);
+    for(let iter=0;iter<200&&spend>cap;iter++){
+      let move=null;
+      for(let i=0;i<cur.length;i++){
+        if(must.has(cur[i].el.id))continue;
+        for(const inc of pools[cur[i].el.element_type]){
+          if(cur.some((s,k)=>k!==i&&s.el.id===inc.el.id))continue;
+          const nc=spend-(cur[i].el.now_cost||0)+(inc.el.now_cost||0);
+          if(nc>=spend)continue;
+          const trial=cur.slice();trial[i]=inc;
+          if(!clubOk(trial))continue;
+          if(!move||nc<move.nc)move={i,inc,nc};
+        }
+      }
+      if(!move)break;
+      cur[move.i]=move.inc;spend=move.nc;
+    }
+    return spend<=cap?cur:null;
+  };
+  /* Shortlists for the paired move below: the strongest upgrades and the
+     cheapest downgrades at each position. */
+  const K=opts.pairK||8,topK={},cheapK={};
+  [1,2,3,4].forEach(t=>{
+    topK[t]=pools[t].slice().sort((a,c)=>c.p-a.p).slice(0,K);
+    cheapK[t]=pools[t].slice().sort((a,c)=>(a.el.now_cost||0)-(c.el.now_cost||0)).slice(0,K);
+  });
+  const climb=sq=>{
+    if(!sq)return null;
+    let cur=sq.slice(),best=objective(cur),spend=costOf(cur);
+    const held=i=>must.has(cur[i].el.id);            /* a named player never leaves */
+    const usedElsewhere=(id,...skip)=>cur.some((s,k)=>skip.indexOf(k)<0&&s.el.id===id);
+    /* One slot changes hands. */
+    const single=()=>{
+      let pick=null;
+      for(let i=0;i<cur.length;i++){
+        if(held(i))continue;
+        for(const inc of pools[cur[i].el.element_type]){
+          if(usedElsewhere(inc.el.id,i))continue;
+          const nc=spend-(cur[i].el.now_cost||0)+(inc.el.now_cost||0);
+          if(nc>cap)continue;
+          const trial=cur.slice();trial[i]=inc;
+          if(!clubOk(trial))continue;
+          const v=objective(trial);
+          if(v>best+1e-9&&(!pick||v>pick.v))pick={v,nc,apply:t=>{t[i]=inc;}};
+        }
+      }
+      return pick;
+    };
+    /* Two slots change together, so the squad can fund an upgrade in one
+       position by taking a cheaper option in another. Budget couples the
+       picks, so single swaps alone get stuck well short of the optimum. */
+    const paired=()=>{
+      let pick=null;
+      for(let i=0;i<cur.length;i++){
+        if(held(i))continue;
+        for(const up of topK[cur[i].el.element_type]){
+          if(up.el.id===cur[i].el.id||usedElsewhere(up.el.id,i))continue;
+          const gain=(up.el.now_cost||0)-(cur[i].el.now_cost||0);
+          for(let j=0;j<cur.length;j++){
+            if(j===i||held(j))continue;
+            for(const dn of cheapK[cur[j].el.element_type]){
+              if(dn.el.id===cur[j].el.id||dn.el.id===up.el.id||usedElsewhere(dn.el.id,i,j))continue;
+              const nc=spend+gain-(cur[j].el.now_cost||0)+(dn.el.now_cost||0);
+              if(nc>cap)continue;
+              const trial=cur.slice();trial[i]=up;trial[j]=dn;
+              if(!clubOk(trial))continue;
+              const v=objective(trial);
+              if(v>best+1e-9&&(!pick||v>pick.v))pick={v,nc,apply:t=>{t[i]=up;t[j]=dn;}};
+            }
+          }
+        }
+      }
+      return pick;
+    };
+    for(let iter=0;iter<80;iter++){
+      const pick=single()||paired();   /* the paired sweep only runs once singles dry up */
+      if(!pick)break;
+      pick.apply(cur);best=pick.v;spend=pick.nc;
+    }
+    return {squad:cur,value:best,cost:spend};
+  };
+
+  /* Filling position by position lets goalkeepers take club slots that the
+     cheaper defenders needed, so the primary seed walks every candidate in
+     global price order instead and takes whoever still fits. */
+  const seedGlobal=key=>{
+    const need=Object.assign({},need0),club=Object.assign({},club0),sq=forced.slice();
+    const all=[].concat(pools[1],pools[2],pools[3],pools[4])
+      .sort((a,c)=>key(a)-key(c));
+    for(const s of all){
+      const t=s.el.element_type;
+      if(need[t]<=0||(club[s.el.team]||0)>=3)continue;
+      sq.push(s);need[t]--;club[s.el.team]=(club[s.el.team]||0)+1;
+    }
+    return [1,2,3,4].every(t=>need[t]===0)?sq:null;
+  };
+  const cheapest=(a,c)=>(a.el.now_cost||0)-(c.el.now_cost||0);
+  const byValue=(a,c)=>(c.p/Math.max(1,c.el.now_cost||1))-(a.p/Math.max(1,a.el.now_cost||1));
+  const priceKey=s=>s.el.now_cost||0;
+  let winner=null;
+  const consider=sq=>{
+    const r=climb(afford(sq));
+    if(r&&(!winner||r.value>winner.value))winner=r;
+  };
+  consider(seedGlobal(priceKey));
+  consider(seed(cheapest));
+  consider(seed(byValue));
+  /* Restart from jittered prices as well. A swap-based search settles in a
+     local optimum, and different starting squads settle in different ones, so
+     the extra runs both rescue tight budgets that defeat a purely greedy seed
+     and buy accuracy on the rest. The jitter is a fixed sequence, so a given
+     pool always produces the same squad. */
+  {
+    let st=987654321;
+    const rnd=()=>((st=(st*1103515245+12345)&0x7fffffff)/0x7fffffff);
+    const tries=opts.restarts==null?8:opts.restarts;
+    for(let k=0;k<tries||(!winner&&k<50);k++){
+      const jit={};
+      [1,2,3,4].forEach(t=>pools[t].forEach(s=>{jit[s.el.id]=(s.el.now_cost||0)+rnd()*18;}));
+      consider(seedGlobal(s=>jit[s.el.id]));
+    }
+  }
+  if(!winner)return null;
+
+  const x=bestXI(winner.squad);
+  if(!x)return null;
+  const inXI=new Set(x.xi.map(s=>s.el.id));
+  return {squad:winner.squad,xi:x.xi,formation:x.formation,
+    bench:winner.squad.filter(s=>!inXI.has(s.el.id)),
+    cost:winner.cost,bank:startBudget-winner.cost,xiXP:x.total};
+}
+
 /* Minimal markdown → HTML for the Claude report. */
 function mdLite(src){
   const lines=String(src||'').split('\n');let out='',inList=false;
@@ -10850,6 +11389,7 @@ const WIRED={
   seasonsim:hydrateSeasonSim,
   scenariolab:hydrateScenarioLab,
   blog:hydrateBlog,
+  social:hydrateSocial,
   gwhistory:hydrateGwhistory,
   gwreport:hydrateGwreport,
   draft:hydrateDraft,

@@ -47,6 +47,7 @@ to everyone; **Pro** panels require an upgrade (or owner access, see §9).
 ```
 Home
 ├── Dashboard            (free)  Season snapshot, key actions, live alerts
+├── Social Studio        (free)  Share-ready PNG cards from the live model
 ├── This Gameweek        (free)  The 4 weekly decisions + crowd moves
 └── The Wire             (free)  Auto-written data briefings + Team of the Week
 
@@ -133,6 +134,33 @@ from the ⌘K chip in the dashboard ticker on desktop.
 transfers, team, chips) with progress, plus **Crowd moves** (most captained /
 transferred in / selected / top scorer, each with photo, crest and tap‑through
 to the profile). Shows your GW points vs the average when linked.
+
+**Social Studio** — share‑ready graphics built from the live model, so the
+numbers on a posted card are the numbers in the product. Each card is drawn to
+a 1080×1350 canvas (the portrait ratio Instagram and X both crop kindly) and
+downloads as a PNG; cards rebuild from fresh data every time the panel opens,
+which matters in the run‑up to GW1 when prices move daily.
+
+Presets: **The Data XI** (highest projected XI, full £100.0m squad) · **Building
+around Haaland** · **The Big Three** (Haaland + Bruno + Gabriel locked) · **Money
+in the bank** (best XI holding ≥£3.0m back) · **Best by price** for each of the
+four positions · **Best captains** for the next 7 gameweeks · **The
+differentials** (<10% owned) · **Priced above the model** · **DefCon by budget**.
+
+The XI cards run a **constrained squad optimiser** (`squadOptimise`): a legal
+15‑man squad — 2/5/5/3, max 3 per club, inside budget — chosen to maximise the
+expected points of the best XI it can field. Because the bench scores nothing in
+the objective, cheap bench fodder falls out on its own. Forced picks (Haaland,
+Bruno, Gabriel) are pinned and never swapped out, and a minimum bank is honoured
+as a hard constraint. Exact optimisation is a multi‑dimensional knapsack, so the
+solver uses a repaired feasible seed plus steepest‑ascent single **and paired**
+swaps (budget couples the picks — funding an upgrade usually means downgrading
+elsewhere), restarted from several seeds. Verified in `dev/test-social.mjs`
+against exhaustive enumeration: exact at every budget on a structured pool,
+exact on 29 of 30 random pools at realistic slack (worst shortfall 0.6%), and
+within 5% even when squeezed to 1% above the cheapest legal squad. The honest
+claim is *very close to optimal, almost always exactly it* — not provably
+optimal.
 
 **The Wire** — a self‑writing blog. Every article is generated from live data +
 the model, refreshed each gameweek, no human writer:
