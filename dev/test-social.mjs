@@ -284,5 +284,82 @@ console.log('• squadOptimise: forced picks, bank and infeasible asks');
   ok(gk != null, 'pool sanity: a goalkeeper exists');
 }
 
+/* ── Panel wiring ─────────────────────────────────────────────────────
+   Social Studio shipped broken because the panel was registered in NAV and
+   given a hydrator, but had no PANEL_CONTENT entry — and renderPage reads
+   content.desc unguarded, so tapping it threw before anything drew. That is
+   a whole class of bug (register a panel, forget one of the three places it
+   has to appear) and it is checkable statically, so it is checked here for
+   EVERY panel rather than just the new one. */
+console.log('• panel wiring: every panel is registered everywhere it needs to be');
+{
+  const balanced = (src, from, open, close) => {
+    const s = src.indexOf(open, from);
+    let d = 0, inStr = null, esc = false, com = 0;
+    for (let j = s; j < src.length; j++) {
+      const ch = src[j], nx = src[j + 1];
+      if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
+      if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
+      if (ch === '/' && nx === '/') { com = 1; j++; continue; }
+      if (ch === '/' && nx === '*') { com = 2; j++; continue; }
+      if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
+      if (ch === open) d++; else if (ch === close) { d--; if (!d) return src.slice(s, j + 1); }
+    }
+    throw new Error('unbalanced');
+  };
+
+  const NAV = new Function('return ' + balanced(html, html.indexOf('const NAV ='), '[', ']'))();
+  const CONTENT = new Function('return ' + balanced(html, html.indexOf('const PANEL_CONTENT ='), '{', '}'))();
+  /* WIRED holds function references, so only its keys can be read here. */
+  const wiredSrc = balanced(html, html.indexOf('const WIRED='), '{', '}');
+  const wiredKeys = new Set([...wiredSrc.matchAll(/^\s{2}([A-Za-z0-9_-]+)\s*:/gm)].map((m) => m[1]));
+
+  const navPanels = NAV.flatMap((a) => a.panels.map((p) => ({ ...p, area: a.id })));
+  ok(navPanels.length > 20, 'NAV parsed (' + navPanels.length + ' panels)');
+  ok(Object.keys(CONTENT).length > 20, 'PANEL_CONTENT parsed (' + Object.keys(CONTENT).length + ' entries)');
+  ok(wiredKeys.size > 20, 'WIRED keys parsed (' + wiredKeys.size + ')');
+
+  /* The bug that shipped: a panel with no PANEL_CONTENT.desc. */
+  const noDesc = navPanels.filter((p) => !CONTENT[p.id] || !CONTENT[p.id].desc);
+  ok(noDesc.length === 0, 'every NAV panel has a PANEL_CONTENT desc' +
+    (noDesc.length ? ' — missing: ' + noDesc.map((p) => p.id).join(', ') : ''));
+
+  /* A panel with neither a hydrator nor a standard layout renders nothing. */
+  const orphan = navPanels.filter((p) => !wiredKeys.has(p.id) && !(CONTENT[p.id] && CONTENT[p.id].layout));
+  ok(orphan.length === 0, 'every NAV panel has a hydrator or a layout' +
+    (orphan.length ? ' — orphaned: ' + orphan.map((p) => p.id).join(', ') : ''));
+
+  const ids = navPanels.map((p) => p.id);
+  ok(new Set(ids).size === ids.length, 'no duplicate panel ids across areas');
+  ok(navPanels.every((p) => p.label && p.icon && p.tier), 'every panel has a label, icon and tier');
+
+  /* Social Studio specifically: owner-gated, in its own area, and wired. */
+  const social = navPanels.find((p) => p.id === 'social');
+  ok(!!social, 'social panel is registered');
+  ok(social && social.tier === 'owner', 'social is tier owner, not free');
+  ok(social && social.area === 'studio', 'social lives in its own Studio area');
+  ok(wiredKeys.has('social'), 'social has a hydrator');
+  ok(!!(CONTENT.social && CONTENT.social.desc), 'social has a PANEL_CONTENT desc');
+
+  const studio = NAV.find((a) => a.id === 'studio');
+  ok(studio && studio.tier === 'owner', 'the Studio area itself is owner-gated');
+  ok(studio && studio.panels.every((p) => p.tier === 'owner'),
+    'every panel inside Studio is owner-gated');
+
+  /* The gate must actually be applied at each exposure point. */
+  const gate = (fn) => html.includes(fn);
+  ok(gate('function canSeePanel('), 'canSeePanel gate exists');
+  ok(/NAV\.filter\(canSeePanel\)/.test(html), 'sidebar areas are filtered by the gate');
+  ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'sidebar panels are filtered by the gate');
+  ok(/if\(!canSeePanel\(p\)\)return;/.test(html), 'command palette is filtered by the gate');
+  ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),
+    'openPanel guards deep links');
+
+  /* Owner rights come from the signed-in email allowlist, never from a
+     client-settable tier — guard against that regressing. */
+  ok(/function canSeePanel\(p\)\{return !ownerOnly\(p\)\|\|!!window\.GE_OWNER;\}/.test(html),
+    'the gate keys off GE_OWNER, not the local tier setting');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

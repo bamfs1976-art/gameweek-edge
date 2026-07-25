@@ -2753,7 +2753,6 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
-      {id:'social', label:'Social Studio', icon:'grid', tier:'free'},
       {id:'methodology', label:'Methodology', icon:'spark', tier:'free'},
       {id:'accountability', label:'Model Accountability', icon:'target', tier:'free'}
     ]
@@ -2827,8 +2826,26 @@ const NAV = [
       {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
       {id:'scenariolab', label:'Scenario Lab', icon:'diamond', tier:'paid'}
     ]
+  },
+  /* Owner-only. Hidden from the nav, the command palette and the More sheet
+     for everyone else, and openPanel refuses the deep link — so it is not a
+     Pro upsell, it simply does not exist unless the signed-in account is on
+     the owner allowlist. */
+  {
+    id:'studio', label:'Studio', icon:'grid', tier:'owner',
+    panels:[
+      {id:'social', label:'Social Studio', icon:'grid', tier:'owner'}
+    ]
   }
 ];
+
+/* Owner gating. `tier:'owner'` is stricter than 'paid': a Pro panel is shown
+   locked as an upsell, an owner panel is not shown at all. GE_OWNER is set
+   only after a signed-in email matches the OWNER_HASHES allowlist, so a
+   logged-out visitor — and any signed-in user who is not the owner — never
+   sees these entries and cannot reach them by URL. */
+function ownerOnly(o){return !!o&&o.tier==='owner';}
+function canSeePanel(p){return !ownerOnly(p)||!!window.GE_OWNER;}
 
 /* Flat lookup of every panel */
 const PANELS = {};
@@ -3005,6 +3022,10 @@ async function buildRightRail(){
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
+  social:{
+    desc:'Share-ready graphics built from the live model — squad cards, price ladders and captain picks, ready to post.',
+    layout:'standard'
+  },
   myweek:{
     desc:'Your whole gameweek in six lines — rank, captain, transfer, chip, watchlist and a fixture to note. Tap “Explain this” to see the model’s reasons.',
     layout:'standard'
@@ -3203,7 +3224,7 @@ let expandedArea='home';
 function buildNav(){
   const nav=document.getElementById('sb-nav');
   nav.innerHTML='';
-  NAV.forEach(area=>{
+  NAV.filter(canSeePanel).forEach(area=>{
     const wrap=document.createElement('div');
     wrap.className='nav-area';
 
@@ -3224,7 +3245,7 @@ function buildNav(){
     const sub=document.createElement('div');
     sub.className='nav-sub';
     sub.dataset.sub=area.id;
-    area.panels.forEach(p=>{
+    area.panels.filter(canSeePanel).forEach(p=>{
       const sb=document.createElement('button');
       sb.className='nav-sub-btn';
       sb.dataset.panel=p.id;
@@ -3269,7 +3290,8 @@ function buildBottomNav(){
 /* The More sheet: every area not on the bottom bar, plus the glossary. */
 function openMoreSheet(){
   closeMoreSheet();
-  const items=[['live','Live'],['planner','Planner'],['intel','The Edge'],['glossary','Glossary']]
+  const items=[['live','Live'],['planner','Planner'],['intel','The Edge'],
+      ...(window.GE_OWNER?[['studio','Studio']]:[]),['glossary','Glossary']]
     .map(([id,label])=>{
       const a=areaBy(id);const target=id==='glossary'?'glossary':(a?a.panels[0].id:id);
       const icon=id==='glossary'?'question':(a?a.icon:'grid');
@@ -3302,6 +3324,9 @@ function toggleArea(areaId){
 
 /* ── OPEN A PANEL ──────────────────────────────────────── */
 function openPanel(panelId){
+  /* Unknown id, or an owner panel without owner rights, falls back to the
+     dashboard. This is the deep-link guard: typing #social does nothing. */
+  if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';
   currentPanel=panelId;
   expandedArea=PANELS[panelId].areaId;
   renderPage(panelId);
@@ -11699,6 +11724,7 @@ function cmdkItems(q){
   ];
   Object.keys(PANELS).forEach(id=>{
     const p=PANELS[id];
+    if(!canSeePanel(p))return;              /* owner panels stay out of search */
     out.push({label:p.label,sub:p.areaLabel,icon:p.icon,run:()=>openPanel(id),
       score:q?cmdkScore(p.label,q)*2+cmdkScore(p.areaLabel,q):1});
   });

@@ -41,13 +41,12 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **7 areas** and **38 panels**. Free panels are open
+Navigation is organised into **8 areas** and **39 panels** (the Studio area is owner‑only). Free panels are open
 to everyone; **Pro** panels require an upgrade (or owner access, see §9).
 
 ```
 Home
 ├── Dashboard            (free)  Season snapshot, key actions, live alerts
-├── Social Studio        (free)  Share-ready PNG cards from the live model
 ├── This Gameweek        (free)  The 4 weekly decisions + crowd moves
 └── The Wire             (free)  Auto-written data briefings + Team of the Week
 
@@ -98,6 +97,9 @@ League
 ├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
 ├── Season Simulator     (Pro)   Full-season Monte Carlo
 └── Scenario Lab         (Pro)   Pin results and re-run the season
+
+Studio  (owner only — hidden unless the signed-in email is on the owner allowlist)
+└── Social Studio        (owner) Share-ready PNG cards from the live model
 ```
 
 **Global chrome:** top bar (menu, brand, refresh, My Team), left sidebar
@@ -135,8 +137,15 @@ transfers, team, chips) with progress, plus **Crowd moves** (most captained /
 transferred in / selected / top scorer, each with photo, crest and tap‑through
 to the profile). Shows your GW points vs the average when linked.
 
-**Social Studio** — share‑ready graphics built from the live model, so the
-numbers on a posted card are the numbers in the product. Each card is drawn to
+**Social Studio** *(Studio area — owner only)* — share‑ready graphics built from
+the live model, so the numbers on a posted card are the numbers in the product.
+
+Gated to the site owner: `tier:'owner'` is stricter than `'paid'` — a Pro panel
+is shown locked as an upsell, an owner panel is not shown at all. The area is
+filtered out of the sidebar, the ⌘K palette and the mobile More sheet, and
+`openPanel` sends the deep link to the dashboard, so `#social` does nothing for
+anyone else. The gate reads `window.GE_OWNER`, which is set only after a
+signed‑in email matches `OWNER_HASHES` — never from the client‑settable tier. Each card is drawn to
 a 1080×1350 canvas (the portrait ratio Instagram and X both crop kindly) and
 downloads as a PNG; cards rebuild from fresh data every time the panel opens,
 which matters in the run‑up to GW1 when prices move daily.
