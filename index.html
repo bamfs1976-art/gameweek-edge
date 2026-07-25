@@ -1300,6 +1300,18 @@ body{font-size:14px;line-height:1.35}
   cursor:pointer;line-height:1.6;transition:opacity .12s}
 .tchip-act{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--green)}
 .tchip.off{opacity:.32;text-decoration:line-through}
+/* Dashboard terminal ticker strip. */
+.tk-strip{display:flex;gap:18px;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;
+  padding:8px 14px;margin:0 0 12px;border:1px solid var(--border-2);border-radius:var(--r-md);
+  background:var(--surface-2);font-family:var(--font-mono);font-size:11px;scrollbar-width:none}
+.tk-strip::-webkit-scrollbar{display:none}
+.tk-i{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
+.tk-i::before{content:"◆";color:var(--green);opacity:.55;margin-right:8px}
+.tk-i:first-child::before{content:none}
+.tk-l{color:var(--text-3);text-transform:uppercase;letter-spacing:.08em}
+.tk-vv{color:var(--text);font-weight:600}
+.tk-vv .pos{color:var(--green)}
+.tk-vv .neg{color:var(--red)}
 .badge{border-radius:3px;font-family:var(--font-mono);font-size:10px;
   text-transform:uppercase;letter-spacing:.04em;font-weight:600}
 .btn{border-radius:var(--r-md)}
@@ -3737,11 +3749,15 @@ async function hydrateDashboard(host){
   /* ── Q1: this week's calls ── */
   let capPool=b.elements.filter(e=>e.status==='a').map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
   let squad=null,bank=0,chipsLeft=null,scopeNote='league-wide model',formSpark='';
+  let rankNow=null,rankDelta=null;                       /* season rank + last-GW movement, for the ticker */
   if(mid){try{
     const [picks,hist]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid)]);
     squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
     bank=(picks.entry_history&&picks.entry_history.bank)||0;
-    const pts=(hist.current||[]).slice(-8).map(g=>g.points);
+    const curH=hist.current||[];
+    if(curH.length){rankNow=curH[curH.length-1].overall_rank;
+      if(curH.length>1&&curH[curH.length-2].overall_rank!=null)rankDelta=rankNow-curH[curH.length-2].overall_rank;}
+    const pts=curH.slice(-8).map(g=>g.points);
     if(pts.length>1)formSpark=' · form '+spark(pts,{w:56,h:13});
     const xiPool=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean)
       .map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
@@ -3810,7 +3826,7 @@ async function hydrateDashboard(host){
   /* Status chip: PRE-SEASON dominates before GW1 (numbers are provisional,
      for a linked manager too); otherwise DEMO for an unlinked manager. */
   const statusTag=b.preseason?'<span class="demo-chip">PRE-SEASON</span>':(mid?'':'<span class="demo-chip">DEMO</span>');
-  const q1='<div class="card qd'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id,statusTag)+
+  const q1='<div class="card qd'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id+' · CONF '+Math.round(capConf.value||0)+'%',statusTag)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
     arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
     arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
@@ -3992,7 +4008,21 @@ async function hydrateDashboard(host){
     hero='';
   }
 
-  host.innerHTML=hero+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
+  /* Terminal ticker strip — model + team metrics at a glance, above the fold.
+     Every value is already computed above; horizontally scrollable on mobile. */
+  const tkItem=(l,v,cls)=>'<span class="tk-i"><span class="tk-l">'+l+'</span> <span class="tk-vv'+(cls?' '+cls:'')+'">'+v+'</span></span>';
+  const rankDStr=rankDelta==null?'':' <span class="'+(rankDelta<0?'pos':rankDelta>0?'neg':'')+'">('+(rankDelta>0?'+':'')+fmtNum(rankDelta)+')</span>';
+  const tkStrip='<div class="tk-strip" role="status" aria-label="Model and team metrics">'+
+    tkItem('MODEL CONF',Math.round(capConf.value||0)+'%')+
+    (cap?tkItem('CAPTAIN',esc(cap.el.web_name)+' '+cap.xp.toFixed(1)+' xP'):'')+
+    ((mid&&rankNow!=null)
+      ? tkItem('YOUR RANK',fmtNum(rankNow)+rankDStr)
+      : (totw?tkItem('MODEL XI ΣxP',totw.total.toFixed(1)):''))+
+    (diffs.length?tkItem('TOP DIFF',esc(diffs[0].e.web_name)+' '+diffs[0].p.toFixed(1)+' xP'):'')+
+    tkItem('FLAGS',flagsN+' · '+moversN+' price')+
+    tkItem('DATA',stamp)+
+    '</div>';
+  host.innerHTML=hero+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+trust;
   dashApply();
   tickTicker();
   maybeTour();

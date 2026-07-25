@@ -110,6 +110,10 @@ deadline strip, account menu, upgrade modal, player‑detail modal.
 
 **Dashboard** — season snapshot tiles, this gameweek's headline actions, and a
 live alerts strip. Entry point for unlinked users (with a "load demo team" path).
+Topped by a **terminal ticker strip** (model confidence, captain, your rank +
+last‑GW movement or Model XI ΣxP, top differential, flag/price counts, data
+time) — the first slice of the "GWE terminal" dashboard direction; all values
+reuse figures already computed on the page.
 
 **This Gameweek** — the "four weekly decisions" journey card (captain,
 transfers, team, chips) with progress, plus **Crowd moves** (most captained /
