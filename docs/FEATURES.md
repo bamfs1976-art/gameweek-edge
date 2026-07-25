@@ -73,6 +73,7 @@ Intelligence  (Pro)
 
 Players
 ├── Player List          (free)  Full sortable table + Cards view + CSV export
+├── Scout Board          (free)  Per-90 shortlist by position + DefCon by budget
 ├── Player Compare       (free)  Up to 4 players side by side
 ├── Differentials        (free)  <12% owned in form + DefCon leaders
 ├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
@@ -202,6 +203,10 @@ captain highlight; plus a gameweek summary (points, rank, value, bank, chip).
 
 **Captaincy Lab** — ranks candidates by xP with safe / differential framing;
 photo cards for the top picks and a ranked list with next‑fixture difficulty.
+Plus a **captain planner** covering the next 7 gameweeks: the three
+highest‑projected armbands for each upcoming gameweek, from the same
+fixture‑by‑fixture projection the Points Planner uses. Double gameweeks sum
+both legs and are tagged `DGW`; a club that blanks drops out of that row.
 
 ### Live (Pro)
 
@@ -266,6 +271,19 @@ differential, value, defence and fixture questions, grounded in the model.
 - Closest playing‑style twin (tap to hop to it).
 - On‑demand AI verdict.
 
+**Scout Board** — a per‑90 shortlist by position with the next three fixtures,
+heat‑mapped per column and filterable by price cap (the budget‑enabler finder).
+Attackers show xG, xA, G+A and DefCon per 90; defenders show starts, attacking
+returns, CBIT and clean sheets.
+
+Below it, **DefCon by budget** answers the question that actually comes up —
+not "who is the best defensive returner" but "who is the best at the money I
+have left". Defenders are split into half‑million bands (£4.0m up to £6.0m+)
+and ranked inside each band by **hit rate** (how often they clear the threshold
+for the +2, real per‑match data from Core Insights where the sample allows,
+otherwise a tilde‑marked estimate), alongside actions per start and attacking
+returns.
+
 **Player Compare** — up to four players side by side on form, xG, price,
 ownership, ICT and **minutes security** (three‑tier badge).
 
@@ -277,6 +295,14 @@ of a price rise/fall tonight** (net transfers vs an ownership‑scaled threshold
 logistic mapping, capped 5–95%, labelled an estimate), with sorted riser/faller
 lists; net‑transfer momentum is kept as a secondary signal, plus
 **points‑per‑million** best/worst value tables.
+
+Topped by the **Value board** — the forward‑looking counterpart. Every outfield
+player is projected over their next 6 fixtures, then priced against the *median
+rate for their own position*: `FAIR` is the price that rate implies and `DIFF`
+is the gap, so the panel names both the **underpriced** and — rarer, and more
+useful — the **overpriced**. Benchmarking within position is deliberate:
+defenders score fewer points per pound than forwards by design, so one
+league‑wide rate would brand every defender a bargain.
 
 **Injury Monitor** — fitness flags, suspension risk and return chance by ownership.
 

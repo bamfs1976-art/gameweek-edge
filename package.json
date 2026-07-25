@@ -9,7 +9,7 @@
     "ios": "npm run build:web && cap sync ios && cap open ios",
     "mock": "python3 dev/mock_fpl.py",
     "smoke": "node dev/smoke.mjs",
-    "test": "node dev/test-core.mjs && node dev/test-predictions.mjs && node dev/test-health.mjs && node dev/test-core-insights.mjs && node dev/test-gwswing.mjs && node dev/backtest-vaastav.mjs",
+    "test": "node dev/test-core.mjs && node dev/test-predictions.mjs && node dev/test-health.mjs && node dev/test-core-insights.mjs && node dev/test-gwswing.mjs && node dev/test-scouting.mjs && node dev/backtest-vaastav.mjs",
     "backtest:real": "node dev/backtest-vaastav.mjs",
     "fetch:vaastav": "node dev/fetch-vaastav.mjs"
   },

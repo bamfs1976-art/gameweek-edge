@@ -1432,6 +1432,71 @@ body{font-size:14px;line-height:1.35}
   border-radius:3px;padding:2px 8px;color:var(--text-3);background:var(--surface);margin-left:8px}
 .mxi-toggle:hover{color:var(--text);border-color:var(--border-3)}
 
+/* ── Value board: underpriced vs overpriced against the model ── */
+.vb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.vb-t{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-2);margin-bottom:3px}
+.vb-row{display:flex;align-items:center;gap:6px;min-height:27px;
+  border-bottom:1px solid var(--border);font-size:12px;cursor:pointer}
+.vb-row:last-child{border-bottom:0}
+.vb-row:hover{background:var(--surface-2);box-shadow:inset 2px 0 0 var(--green)}
+.vb-hd{cursor:default;min-height:19px;font-family:var(--font-mono);font-size:9px;
+  letter-spacing:.06em;color:var(--text-3)}
+.vb-hd:hover{background:none;box-shadow:none}
+.vb-pos{flex:0 0 auto;width:30px;font-family:var(--font-mono);font-size:9px;
+  font-weight:700;color:var(--text-3)}
+.vb-pos.p2{color:#5a96f0}.vb-pos.p3{color:var(--accent-warn)}.vb-pos.p4{color:var(--green)}
+.vb-hd .vb-pos{color:var(--text-3)}
+.vb-nm{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.vb-c{flex:0 0 auto;width:44px;text-align:right;font-family:var(--font-mono);
+  font-size:11px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.vb-c.pos{color:var(--green);font-weight:700}
+.vb-c.neg{color:var(--red);font-weight:700}
+
+/* ── DefCon by budget: price-bracket columns of defensive returners ── */
+.dcb-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:14px}
+.dcb-band{display:inline-block;font-family:var(--font-mono);font-size:10px;font-weight:700;
+  letter-spacing:.06em;padding:2px 8px;border-radius:3px;margin-bottom:5px;
+  background:var(--green-soft);color:var(--green-bright)}
+.dcb-hd,.dcb-row{display:flex;align-items:center;gap:6px;min-height:26px;
+  border-bottom:1px solid var(--border);font-size:12px}
+.dcb-hd{font-family:var(--font-mono);font-size:9px;letter-spacing:.06em;color:var(--text-3);min-height:19px}
+.dcb-row{cursor:pointer}
+.dcb-row:last-child{border-bottom:0}
+.dcb-row:hover{background:var(--surface-2);box-shadow:inset 2px 0 0 var(--green)}
+.dcb-nm{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.dcb-c{flex:0 0 auto;width:46px;text-align:right;font-family:var(--font-mono);
+  font-size:11px;color:var(--text-2);font-variant-numeric:tabular-nums}
+/* Hit rate reads as a value AND a bar — the fill is the rate itself. */
+.dcb-hit{position:relative;display:inline-block;padding:1px 4px;border-radius:3px;
+  color:var(--text);font-weight:700}
+.dcb-hit::before{content:"";position:absolute;inset:0;width:var(--f,0%);
+  background:var(--green-soft);border-radius:3px;z-index:0}
+
+/* ── Captain planner: one row per upcoming gameweek, top three armbands ── */
+.cp-plan{display:flex;flex-direction:column}
+.cp-row{display:flex;align-items:center;gap:10px;min-height:34px;
+  border-bottom:1px solid var(--border)}
+.cp-row:last-child{border-bottom:0}
+.cp-gw{flex:0 0 auto;width:42px;font-family:var(--font-mono);font-size:10px;
+  letter-spacing:.06em;color:var(--text-3)}
+.cp-picks{display:flex;flex:1 1 auto;min-width:0;gap:6px;overflow-x:auto;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.cp-picks::-webkit-scrollbar{display:none}
+.cp-pick{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;cursor:pointer;
+  padding:3px 8px;border:1px solid var(--border-2);border-radius:var(--r-md);
+  font-size:12px;white-space:nowrap;background:var(--surface)}
+.cp-pick:hover{border-color:var(--green);background:var(--surface-2)}
+.cp-pick.top{border-color:var(--green);background:var(--green-soft)}
+.cp-pick b{font-weight:600;color:var(--text)}
+.cp-xp{font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-2);
+  font-variant-numeric:tabular-nums}
+.cp-pick.top .cp-xp{color:var(--green-bright)}
+.cp-dgw{font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.04em;
+  padding:1px 4px;border-radius:3px;background:rgba(181,138,18,.18);color:var(--accent-warn)}
+
 /* ── Signals feed: full-width terminal log of the model read ── */
 .qd-feed{margin:0 0 16px}
 .sig-feed{display:flex;flex-direction:column}
@@ -5316,6 +5381,136 @@ async function hydrateAllPlayers(host){
   renderPlayerTable();
 }
 
+/* ── DefCon helpers, shared by every panel that ranks defensive returns ──
+   dcRate90 is the per-90 contribution rate, falling back to a season total
+   over minutes when the API per-90 is absent. dcHitRate is the CONSISTENCY
+   metric the official API cannot give: how often a player actually clears
+   the threshold for the +2. It uses the real per-match rate from the Core
+   Insights mirror when the sample allows (>=5 starts), otherwise a logistic
+   estimate from the per-90 rate against the threshold (DEF 10, MID/FWD 12),
+   which the label prefixes with a tilde so an estimate never reads as fact. */
+function dcRate90(e){
+  const v=parseFloat(e.defensive_contribution_per_90);
+  return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;
+}
+function dcThreshold(e){return e.element_type===2?10:12;}
+function dcReal(e){const ci=e._ci;return !!(ci&&(ci.dcs||0)>=5&&ci.dchr!=null);}
+function dcHitRate(e){
+  return dcReal(e)?e._ci.dchr:1/(1+Math.exp(-1.1*(dcRate90(e)-dcThreshold(e))));
+}
+function dcHitLabel(e){
+  return dcReal(e)?Math.round(e._ci.dchr*100)+'%':'~'+Math.round(dcHitRate(e)*100)+'%';
+}
+function dcPerStartLabel(e){
+  const ci=e._ci;
+  if(ci&&(ci.dcs||0)>=5&&ci.dcps!=null)return ci.dcps.toFixed(1);
+  const s=e.starts||0;
+  return s>0?(parseFloat(e.defensive_contribution||0)/s).toFixed(1):'—';
+}
+
+/* ── DefCon by budget: the best defensive returner at each price point ──
+   Creator graphics rank DefCon leaders inside price brackets, because the
+   real question is never "who is best" but "who is best at the money I have
+   left". Brackets are half-million bands from 4.0 up, with everything at 6.0
+   and above pooled into the top band. Defenders only, since the threshold
+   and the shape of the job differ for midfielders. */
+const DC_BRACKETS=[[60,999,'£6.0m+'],[55,60,'£5.5m'],[50,55,'£5.0m'],[45,50,'£4.5m'],[0,45,'£4.0m']];
+function dcByBracket(elements,minMinutes){
+  const min=minMinutes==null?180:minMinutes;
+  const pool=(elements||[]).filter(e=>e&&e.element_type===2&&e.status!=='u'
+    &&(e.minutes||0)>=min&&dcRate90(e)>0);
+  return DC_BRACKETS.map(([lo,hi,label])=>({label,
+    players:pool.filter(e=>(e.now_cost||0)>=lo&&(e.now_cost||0)<hi)
+      .sort((a,c)=>dcHitRate(c)-dcHitRate(a)).slice(0,5)}))
+    .filter(g=>g.players.length);
+}
+function dcBracketCard(b){
+  const groups=dcByBracket(b.elements);
+  if(!groups.length)return '';
+  const anyReal=groups.some(g=>g.players.some(dcReal));
+  const body=groups.map(g=>'<div class="dcb-grp"><div class="dcb-band">'+g.label+'</div>'+
+    '<div class="dcb-hd"><span class="dcb-nm">PLAYER</span><span class="dcb-c">HIT%</span>'+
+      '<span class="dcb-c">/START</span><span class="dcb-c">ATT</span></div>'+
+    g.players.map(e=>{
+      const att=(e.goals_scored||0)+(e.assists||0);
+      return '<div class="dcb-row" onclick="openPlayer('+e.id+')">'+
+        '<span class="dcb-nm">'+crest(b,e.team,13)+esc(e.web_name)+'</span>'+
+        '<span class="dcb-c"><span class="dcb-hit" style="--f:'+Math.round(dcHitRate(e)*100)+'%">'+dcHitLabel(e)+'</span></span>'+
+        '<span class="dcb-c">'+dcPerStartLabel(e)+'</span>'+
+        '<span class="dcb-c">'+att+'</span></div>';}).join('')+'</div>').join('');
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+
+    ' DefCon by budget</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">The most reliable defensive returners at each price point, ranked by '+
+    '<b>hit rate</b> — how often they actually clear the threshold for the +2, not just their per-90 average. '+
+    '<b>/start</b> is defensive actions per start and <b>ATT</b> counts goals plus assists, so you can see who adds attacking upside on top.'+
+    (anyReal?'':' Figures marked <b>~</b> are model estimates until enough per-match data lands.')+'</p>'+
+    '<div class="dcb-grid">'+body+'</div></div>';
+}
+
+/* ── Value board: what a player SHOULD cost, and who is priced above it ──
+   Creator "value analysis" sheets rank every asset on price against output.
+   This is the forward-looking version: project each player over the next N
+   fixtures, then ask what the median rate for their position implies they
+   ought to cost. The gap is the verdict — negative means the market has not
+   caught up, positive means you are paying over the odds.
+
+   Positions are benchmarked separately on purpose. Defenders score fewer
+   points per pound than forwards by design, so a single league-wide rate
+   would brand every defender a bargain and every forward a rip-off. */
+function valueBoard(b,fixtures,N){
+  N=N||6;
+  const hz=buildHorizon(b,fixtures,N);
+  const rows=[];
+  (b.elements||[]).forEach(e=>{
+    if(!e||e.element_type===1||e.status==='u')return;   /* outfield, still at the club */
+    const fxs=hz[e.team]||[];
+    if(!fxs.length)return;
+    let xp=0;fxs.forEach(fx=>{xp+=fixtureXP(b,e,fx);});
+    const price=(e.now_cost||0)/10;
+    if(price<=0||xp<=0)return;
+    rows.push({el:e,xp,price,ppm:xp/price});
+  });
+  const byPos={};
+  rows.forEach(r=>{(byPos[r.el.element_type]=byPos[r.el.element_type]||[]).push(r.ppm);});
+  const medPpm={};
+  Object.keys(byPos).forEach(p=>{
+    const a=byPos[p].slice().sort((x,y)=>x-y);
+    medPpm[p]=a[Math.floor(a.length/2)]||0;
+  });
+  rows.forEach(r=>{
+    const m=medPpm[r.el.element_type]||r.ppm;
+    r.fair=m>0?r.xp/m:r.price;      /* the price the median positional rate implies */
+    r.delta=r.price-r.fair;         /* positive means priced above the model */
+  });
+  return rows.sort((a,c)=>a.delta-c.delta);
+}
+function valueBoardCard(b,fixtures,N){
+  let rows=[];try{rows=valueBoard(b,fixtures,N||6);}catch(_){}
+  if(rows.length<20)return '';
+  const POSL=['','GKP','DEF','MID','FWD'];
+  const line=r=>'<div class="vb-row" onclick="openPlayer('+r.el.id+')">'+
+    '<span class="vb-pos p'+r.el.element_type+'">'+POSL[r.el.element_type]+'</span>'+
+    '<span class="vb-nm">'+crest(b,r.el.team,13)+esc(r.el.web_name)+'</span>'+
+    '<span class="vb-c">'+money(r.el.now_cost)+'</span>'+
+    '<span class="vb-c">£'+r.fair.toFixed(1)+'</span>'+
+    '<span class="vb-c '+(r.delta<0?'pos':'neg')+'">'+(r.delta>0?'+':'')+r.delta.toFixed(1)+'</span></div>';
+  const head='<div class="vb-row vb-hd"><span class="vb-pos">POS</span><span class="vb-nm">PLAYER</span>'+
+    '<span class="vb-c">PRICE</span><span class="vb-c">FAIR</span><span class="vb-c">DIFF</span></div>';
+  const col=(title,note,body)=>'<div class="vb-col"><div class="vb-t">'+title+'</div>'+
+    '<p class="dl-sub" style="margin:0 0 6px">'+note+'</p>'+head+body+'</div>';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.arrows,'width="15" height="15"')+
+    ' Value board — priced against the model</div>'+
+    '<p class="dl-sub" style="margin-bottom:12px">We project every outfield player over their next '+(N||6)+
+    ' fixtures, then work out what the median rate <b>for their position</b> says they should cost. '+
+    '<b>FAIR</b> is that implied price and <b>DIFF</b> is the gap. Positions are compared like for like, '+
+    'so defenders are not flattered against forwards. A negative gap is not a buy signal on its own — '+
+    'cheap players are cheap partly because the market doubts their minutes.</p>'+
+    '<div class="vb-grid">'+
+      col('Underpriced','Delivering more than the price tag implies.',rows.slice(0,10).map(line).join(''))+
+      col('Overpriced','Paying a premium the projection does not support.',rows.slice(-10).reverse().map(line).join(''))+
+    '</div></div>';
+}
+
 /* The differential pool: the PRIMARY filter is ownership — every AVAILABLE
    player owned by fewer than maxOwn percent of managers (default 15%). No
    minutes gate: at the start of a season nobody has minutes yet, so gating on
@@ -5359,20 +5554,7 @@ async function hydrateDiffs(host){
   const seg='<div class="seg" id="diff-sort">'+Object.keys(SORT).map(k=>'<button class="seg-b'+(k==='xp'?' on':'')+'" data-s="'+k+'">'+SORT[k].l+'</button>').join('')+'</div>';
   /* DefCon leaders — ALSO gated to the differential pool (<15% owned), so the
      whole page respects the ownership filter. */
-  const dc90=e=>{const v=parseFloat(e.defensive_contribution_per_90);
-    return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;};
-  /* DefCon HIT RATE — how reliably a player earns the +2, the consistency
-     metric FPL's API cannot give. Real per-match rate from the Core Insights
-     mirror where present (>=5 starts); otherwise a model estimate from the
-     per-90 rate vs the threshold (DEF 10 / MID-FWD 12), prefixed "~". */
-  const defThr=e=>e.element_type===2?10:12;
-  const dcHitNum=e=>{const ci=e._ci;
-    return (ci&&(ci.dcs||0)>=5&&ci.dchr!=null)?ci.dchr:1/(1+Math.exp(-1.1*(dc90(e)-defThr(e))));};
-  const dcHitStr=e=>{const ci=e._ci;
-    return (ci&&(ci.dcs||0)>=5&&ci.dchr!=null)?Math.round(ci.dchr*100)+'%':'~'+Math.round(dcHitNum(e)*100)+'%';};
-  const dcPerStr=e=>{const ci=e._ci;
-    if(ci&&(ci.dcs||0)>=5&&ci.dcps!=null)return ci.dcps.toFixed(1);
-    const s=e.starts||0;return s>0?(parseFloat(e.defensive_contribution||0)/s).toFixed(1):'—';};
+  const dc90=dcRate90,dcHitNum=dcHitRate,dcHitStr=dcHitLabel,dcPerStr=dcPerStartLabel;
   const dcon=pool.filter(e=>e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
     .sort((a,c)=>dcHitNum(c)-dcHitNum(a)).slice(0,12);
   const anyReal=dcon.some(e=>e._ci&&(e._ci.dcs||0)>=5&&e._ci.dchr!=null);
@@ -5498,14 +5680,15 @@ async function hydrateScoutBoard(host){
     .map(function(o){return '<button class="seg-b'+(SB_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
   const priceSeg=[['0','Any price'],['45','≤£4.5'],['50','≤£5.0'],['55','≤£5.5']]
     .map(function(o){return '<button class="seg-b'+(SB_PRICE===+o[0]?' on':'')+'" data-cap="'+o[0]+'">'+o[1]+'</button>';}).join('');
-  host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Scout Board</div>'+
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+' Scout Board</div>'+
     preseasonNote(b,'per-90 form is last season’s until GW1')+
     '<p class="dl-sub" style="margin-bottom:10px">A per-90 shortlist by position with the next three fixtures. Attackers show xG, xA, goals+assists and defensive contribution per 90; defenders show starts, attacking returns, DefCon (CBIT) and clean sheets — set a price cap for the budget-enabler finder. Greener is stronger for that column across the whole board. Minimum 450 Premier League minutes; tap a heading to re-sort.</p>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">'+
       '<div class="seg" id="sb-seg">'+seg+'</div>'+
       '<div class="seg" id="sb-price">'+priceSeg+'</div>'+
     '</div>'+
-    '<div id="sb-out"></div></div>';
+    '<div id="sb-out"></div></div>'+
+    dcBracketCard(b);
   renderScoutBoard();
   host.querySelector('#sb-seg').addEventListener('click',function(ev){
     const btn=ev.target.closest('.seg-b');if(!btn)return;
@@ -5622,7 +5805,7 @@ function suspRisk(yellows,gw){
   return {...c,yellows:y,left,level:left<=0?'banned':left===1?'edge':left===2?'watch':null};
 }
 async function hydratePrice(host){
-  const b=await boot();
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures().catch(()=>[])]);
   const total=b.raw.total_players||10e6;
   const score=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
   const ppm=e=>e.now_cost?e.total_points/(e.now_cost/10):0;
@@ -5662,6 +5845,7 @@ async function hydratePrice(host){
       '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys → higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day at <b>00:00 UK time</b>.</p></div>'+
     tbl('Momentum — most bought (secondary signal)',risers,true)+
     tbl('Momentum — most sold (secondary signal)',fallers,false)+
+    valueBoardCard(b,fixtures,6)+
     valueCards+
     (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
 }
@@ -6505,6 +6689,7 @@ async function hydrateCaptain(host){
       ' <b>EV vs field</b> is your captain xP minus the ownership-weighted xP the field captains — points above the crowd.'+
       (diff?' Differential to consider: <b>'+esc(diff.web_name)+'</b>.':'')+'</div>'+
     '<div class="grid g-3 mb-20">'+cards+'</div>'+
+    captainPlanCard(b,fixtures,7)+
     '<div class="card"><div class="card-title">Ranked by expected points</div>'+
       '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player · next · owned</span>'+
       '<span class="dl-col">xP</span><span class="dl-col">Form</span></div>'+rows+'</div></div>';
@@ -9397,6 +9582,49 @@ function captainEligible(el){
   const ch=el.chance_of_playing_next_round;
   if(ch!=null&&ch<60)return false;
   return true;
+}
+
+/* ── Captain planner: the best armband for each of the next N gameweeks ──
+   Creators publish a "best captains GW1-7" list every pre-season; this is the
+   modelled version. For each upcoming gameweek we rank every eligible captain
+   by expected points over that gameweek, summing both legs of a double and
+   dropping clubs that blank. Pure given a bootstrap plus fixture list, so it
+   is testable and returns an empty array before fixtures are published. */
+function captainPlan(b,fixtures,N){
+  N=N||7;
+  const hz=buildHorizon(b,fixtures,N);
+  const pool=(b.elements||[]).filter(captainEligible);
+  const gws=[];
+  Object.keys(hz).forEach(t=>hz[t].forEach(fx=>{if(gws.indexOf(fx.event)<0)gws.push(fx.event);}));
+  gws.sort((a,c)=>a-c);
+  return gws.slice(0,N).map(gw=>{
+    const ranked=[];
+    pool.forEach(e=>{
+      const legs=(hz[e.team]||[]).filter(fx=>fx.event===gw);
+      if(!legs.length)return;            /* this club blanks in that gameweek */
+      let xp=0;legs.forEach(fx=>{xp+=fixtureXP(b,e,fx);});
+      if(xp>0)ranked.push({el:e,xp,legs:legs.length});
+    });
+    ranked.sort((a,c)=>c.xp-a.xp);
+    return {gw,picks:ranked.slice(0,3)};
+  }).filter(r=>r.picks.length);
+}
+function captainPlanCard(b,fixtures,N){
+  let plan=[];try{plan=captainPlan(b,fixtures,N||7);}catch(_){}
+  if(!plan.length)return '';
+  const rows=plan.map(r=>'<div class="cp-row"><span class="cp-gw">GW'+r.gw+'</span>'+
+    '<span class="cp-picks">'+r.picks.map((p,i)=>
+      '<span class="cp-pick'+(i===0?' top':'')+'" onclick="openPlayer('+p.el.id+')">'+
+      crest(b,p.el.team,13)+'<b>'+esc(p.el.web_name)+'</b>'+
+      (p.legs>1?'<span class="cp-dgw">DGW</span>':'')+
+      '<span class="cp-xp">'+p.xp.toFixed(1)+'</span></span>').join('')+
+    '</span></div>').join('');
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.star,'width="15" height="15"')+
+    ' Captain planner — next '+plan.length+' gameweeks</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">The three highest-projected armbands for each upcoming gameweek, '+
+    'from the same fixture-by-fixture projection the Points Planner uses. A double gameweek sums both matches '+
+    '(<b>DGW</b>); a club that blanks simply drops out of that row. Plan the swing, do not just react to it.</p>'+
+    '<div class="cp-plan">'+rows+'</div></div>';
 }
 /* Heuristic P10/P50/P90 of the DOUBLED captain return — the fallback for
    when the fixture model is not available (preseason). Single-game FPL
