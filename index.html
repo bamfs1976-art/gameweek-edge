@@ -1432,6 +1432,39 @@ body{font-size:14px;line-height:1.35}
   border-radius:3px;padding:2px 8px;color:var(--text-3);background:var(--surface);margin-left:8px}
 .mxi-toggle:hover{color:var(--text);border-color:var(--border-3)}
 
+/* ── Social Studio: the card builder ── */
+.soc-build{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,310px);gap:18px;align-items:start}
+@media(max-width:760px){.soc-build{grid-template-columns:1fr}}
+.soc-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.soc-f{display:flex;flex-direction:column;gap:4px;font-size:12px}
+.soc-f>span{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--text-3)}
+.soc-f input[type=text],.soc-f input:not([type]),.soc-f select{width:100%;padding:7px 9px;
+  background:var(--surface-2);border:1px solid var(--border-2);border-radius:var(--r-md);
+  color:var(--text);font-size:13px}
+.soc-f input[type=range]{width:100%;accent-color:var(--green)}
+.soc-f-row{flex-direction:row;align-items:center;gap:8px}
+.soc-f-row span{text-transform:none;letter-spacing:0;font-size:12px;color:var(--text-2);font-family:inherit}
+.soc-reslist{display:flex;flex-direction:column;margin:6px 0 2px}
+.soc-res{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;background:none;
+  border:0;border-bottom:1px solid var(--border);color:var(--text);font-size:13px;
+  text-align:left;cursor:pointer}
+.soc-res:hover{background:var(--surface-2)}
+.soc-res b{font-weight:600}
+.soc-res .dl-sub{margin-left:auto;font-size:11px}
+.soc-plus{color:var(--green);font-weight:700;font-size:16px;width:16px;text-align:center}
+.soc-chips-head{display:flex;align-items:center;justify-content:space-between;margin:10px 0 6px}
+.soc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.soc-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 4px 3px 7px;
+  border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface-2);
+  font-size:12px;font-weight:600}
+.soc-chip button{background:none;border:0;color:var(--text-3);font-size:15px;
+  line-height:1;padding:0 4px;cursor:pointer}
+.soc-chip button:hover{color:var(--red)}
+.soc-bpreview{border:1px solid var(--border-2);border-radius:var(--r-lg);overflow:hidden;
+  background:var(--surface)}
+.soc-empty{padding:22px 14px;font-size:12px;color:var(--text-3);text-align:center;line-height:1.5}
+
 /* ── Social Studio: card previews in a responsive gallery ── */
 .soc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .soc-item{border:1px solid var(--border-2);border-radius:var(--r-lg);overflow:hidden;
@@ -5221,6 +5254,196 @@ async function socShare(i){
   socDownload(i);
 }
 
+/* ── Card builder ─────────────────────────────────────────────────────
+   The presets answer the questions we thought of; the builder answers the
+   ones we did not. Two modes, both feeding the same renderers the presets
+   use, so a hand-built card is indistinguishable from a shipped one:
+
+     list   — pick any players, choose what number to show beside them
+     squad  — lock players in and let the optimiser fill the rest of the 15
+
+   State persists to localStorage, because losing a half-built card to an
+   accidental refresh is infuriating. */
+const SOC_BUILD={kind:'list',title:'',sub:'',note:'',metric:'xp',sort:true,
+  ids:[],budget:1000,minBank:0};
+const SOC_BUILD_KEY='ge-soc-build';
+function socBuildLoad(){
+  try{const raw=localStorage.getItem(SOC_BUILD_KEY);
+    if(raw)Object.assign(SOC_BUILD,JSON.parse(raw)||{});}catch(_){}
+  if(!Array.isArray(SOC_BUILD.ids))SOC_BUILD.ids=[];
+}
+function socBuildSave(){
+  try{localStorage.setItem(SOC_BUILD_KEY,JSON.stringify(SOC_BUILD));}catch(_){}
+}
+/* What a custom ranked card can show beside each name. Everything here is a
+   number the app already computes, so nothing new has to be validated. */
+function socMetricDefs(b,fixtures){
+  const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,6);
+  const over6=e=>{let t=0;(hz[e.team]||[]).forEach(fx=>{t+=fixtureXP(b,e,fx);});return t;};
+  return [
+    {k:'xp',l:'xP next gameweek',v:e=>xP(b,e,nf[e.team])||0,f:v=>v.toFixed(1)},
+    {k:'xp6',l:'xP over 6 fixtures',v:over6,f:v=>v.toFixed(1)},
+    {k:'pts',l:'Total points',v:e=>e.total_points||0,f:v=>String(Math.round(v))},
+    {k:'form',l:'Form',v:e=>parseFloat(e.form)||0,f:v=>v.toFixed(1)},
+    {k:'price',l:'Price',v:e=>e.now_cost||0,f:v=>money(v)},
+    {k:'own',l:'Ownership',v:e=>parseFloat(e.selected_by_percent)||0,f:v=>v.toFixed(1)+'%'},
+    {k:'ppm',l:'Points per £m',v:e=>e.now_cost?(e.total_points||0)/(e.now_cost/10):0,f:v=>v.toFixed(1)},
+    {k:'dchr',l:'DefCon hit rate',v:e=>dcHitRate(e),f:v=>Math.round(v*100)+'%'},
+    {k:'npxg90',l:'npxG per 90',v:e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:0,f:v=>v.toFixed(2)},
+  ];
+}
+function socBuildSpec(b,fixtures){
+  const S=SOC_BUILD;
+  const byId={};(b.elements||[]).forEach(e=>{byId[e.id]=e;});
+  const picks=S.ids.map(id=>byId[id]).filter(Boolean);
+  if(S.kind==='squad'){
+    const nf=buildNextFix(b,fixtures);
+    const res=squadOptimise(socPool(b,nf),
+      {budget:S.budget,mustInclude:S.ids,minBank:S.minBank});
+    if(!res)return null;                       /* the locked picks do not fit */
+    return Object.assign({id:'custom-squad'},socSquadCard(b,res,
+      S.title||'MY SQUAD',
+      S.sub||('Full 15-man squad · £'+(S.budget/10).toFixed(1)+'m'),
+      S.note||'Built with the Gameweek Edge model. XI plus four subs inside the budget.'));
+  }
+  if(!picks.length)return null;
+  const defs=socMetricDefs(b,fixtures);
+  const m=defs.find(d=>d.k===S.metric)||defs[0];
+  const rows=picks.map(e=>({e,n:m.v(e)}));
+  if(S.sort)rows.sort((a,c)=>c.n-a.n);
+  return {id:'custom-list',kind:'rank',
+    title:S.title||'MY LIST',sub:S.sub||m.l,
+    note:S.note||'Built with the Gameweek Edge model.',
+    items:rows.slice(0,10).map(({e,n})=>({nm:e.web_name,team:teamShort(b,e.team),
+      meta:money(e.now_cost)+' · '+e.selected_by_percent+'% owned',
+      v:m.f(n),crest:crestUrl(b,e.team),photos:socPhotoUrls(e)}))};
+}
+/* Redraw just the builder preview — the preset gallery is untouched. */
+async function socBuildRefresh(){
+  const S=window._soc;if(!S)return;
+  const box=document.getElementById('soc-b-shot');if(!box)return;
+  let spec=null;try{spec=socBuildSpec(S.b,S.fixtures);}catch(_){}
+  window._soc.custom=spec;
+  const bar=document.getElementById('soc-b-actions');
+  if(!spec){
+    box.innerHTML='<div class="soc-empty">'+
+      (SOC_BUILD.kind==='squad'
+        ? 'No legal squad fits those locked players and that budget. Remove one, or raise the budget.'
+        : 'Add a player to start building.')+'</div>';
+    if(bar)bar.hidden=true;
+    return;
+  }
+  try{await socPreloadImages([spec]);}catch(_){}
+  box.innerHTML='';
+  try{const cv=renderSocialCard(spec,0.34);cv.style.width='100%';cv.style.height='auto';
+    cv.style.display='block';cv.setAttribute('role','img');
+    cv.setAttribute('aria-label',spec.title);box.appendChild(cv);}catch(_){}
+  if(bar)bar.hidden=false;
+}
+function socBuildSet(k,v){
+  SOC_BUILD[k]=v;socBuildSave();
+  if(k==='kind')socBuildRender();
+  socBuildRefresh();
+}
+function socBuildAdd(id){
+  id=+id;
+  if(SOC_BUILD.ids.indexOf(id)<0&&SOC_BUILD.ids.length<15){SOC_BUILD.ids.push(id);socBuildSave();}
+  const q=document.getElementById('soc-b-q');if(q)q.value='';
+  socBuildResults('');socBuildChips();socBuildRefresh();
+}
+function socBuildRemove(id){
+  SOC_BUILD.ids=SOC_BUILD.ids.filter(x=>x!==+id);socBuildSave();
+  socBuildChips();socBuildRefresh();
+}
+function socBuildClear(){SOC_BUILD.ids=[];socBuildSave();socBuildChips();socBuildRefresh();}
+function socBuildChips(){
+  const box=document.getElementById('soc-b-chips');const S=window._soc;
+  if(!box||!S)return;
+  const byId={};(S.b.elements||[]).forEach(e=>{byId[e.id]=e;});
+  const list=SOC_BUILD.ids.map(id=>byId[id]).filter(Boolean);
+  box.innerHTML=list.length?list.map(e=>
+    '<span class="soc-chip">'+crest(S.b,e.team,14)+esc(e.web_name)+
+    '<button aria-label="Remove '+esc(e.web_name)+'" onclick="socBuildRemove('+e.id+')">×</button></span>').join('')
+    :'<span class="dl-sub">Nobody picked yet.</span>';
+  const n=document.getElementById('soc-b-count');
+  if(n)n.textContent=list.length+(SOC_BUILD.kind==='squad'?' locked':' picked')+
+    (SOC_BUILD.kind==='list'&&list.length>10?' (top 10 shown)':'');
+}
+function socBuildResults(q){
+  const box=document.getElementById('soc-b-res');const S=window._soc;
+  if(!box||!S)return;
+  q=String(q||'').trim().toLowerCase();
+  if(q.length<2){box.innerHTML='';return;}
+  const chosen=new Set(SOC_BUILD.ids);
+  const hits=(S.b.elements||[]).filter(e=>!chosen.has(e.id)&&
+    ((e.web_name||'')+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().includes(q))
+    .sort((a,c)=>(c.total_points||0)-(a.total_points||0)).slice(0,8);
+  box.innerHTML=hits.length?hits.map(e=>
+    '<button class="soc-res" onclick="socBuildAdd('+e.id+')">'+crest(S.b,e.team,15)+
+    '<b>'+esc(e.web_name)+'</b><span class="dl-sub">'+esc(posShort(S.b,e.element_type))+' · '+
+    money(e.now_cost)+'</span><span class="soc-plus">+</span></button>').join('')
+    :'<div class="dl-sub" style="padding:6px 2px">No match.</div>';
+}
+function socBuildRender(){
+  const host=document.getElementById('soc-builder');const S=window._soc;
+  if(!host||!S)return;
+  const B=SOC_BUILD,sq=B.kind==='squad';
+  const defs=socMetricDefs(S.b,S.fixtures);
+  host.innerHTML=
+    '<div class="seg" style="margin-bottom:10px">'+
+      ['list','squad'].map(k=>'<button class="seg-b'+(B.kind===k?' on':'')+
+        '" onclick="socBuildSet(\'kind\',\''+k+'\')">'+(k==='list'?'Ranked list':'Squad')+'</button>').join('')+
+    '</div>'+
+    '<p class="dl-sub" style="margin:0 0 10px">'+(sq
+      ? 'Lock in the players you want and the optimiser builds the best legal 15 around them, inside your budget.'
+      : 'Pick any players and choose the number shown beside each. Up to ten make the card.')+'</p>'+
+    '<div class="soc-form">'+
+      '<label class="soc-f"><span>Title</span><input id="soc-b-title" maxlength="28" placeholder="'+(sq?'MY SQUAD':'MY LIST')+'" value="'+esc(B.title)+'"></label>'+
+      '<label class="soc-f"><span>Subtitle</span><input id="soc-b-sub" maxlength="46" placeholder="optional" value="'+esc(B.sub)+'"></label>'+
+      (sq
+        ? '<label class="soc-f"><span>Budget £'+(B.budget/10).toFixed(1)+'m</span>'+
+          '<input id="soc-b-budget" type="range" min="900" max="1050" step="5" value="'+B.budget+'"></label>'+
+          '<label class="soc-f"><span>Keep back £'+(B.minBank/10).toFixed(1)+'m</span>'+
+          '<input id="soc-b-bank" type="range" min="0" max="100" step="5" value="'+B.minBank+'"></label>'
+        : '<label class="soc-f"><span>Show</span><select id="soc-b-metric">'+
+          defs.map(d=>'<option value="'+d.k+'"'+(B.metric===d.k?' selected':'')+'>'+esc(d.l)+'</option>').join('')+
+          '</select></label>'+
+          '<label class="soc-f soc-f-row"><input id="soc-b-sort" type="checkbox"'+(B.sort?' checked':'')+
+          '><span>Sort by that number</span></label>')+
+    '</div>'+
+    '<label class="soc-f" style="margin-top:10px"><span>Add players</span>'+
+      '<input id="soc-b-q" placeholder="Search a name…" autocomplete="off"></label>'+
+    '<div id="soc-b-res" class="soc-reslist"></div>'+
+    '<div class="soc-chips-head"><span class="dl-sub" id="soc-b-count"></span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="socBuildClear()">Clear</button></div>'+
+    '<div id="soc-b-chips" class="soc-chips"></div>';
+  const on=(id,ev,fn)=>{const el=document.getElementById(id);if(el)el.addEventListener(ev,fn);};
+  on('soc-b-title','input',e=>{SOC_BUILD.title=e.target.value;socBuildSave();socBuildRefresh();});
+  on('soc-b-sub','input',e=>{SOC_BUILD.sub=e.target.value;socBuildSave();socBuildRefresh();});
+  on('soc-b-metric','change',e=>socBuildSet('metric',e.target.value));
+  on('soc-b-sort','change',e=>socBuildSet('sort',e.target.checked));
+  on('soc-b-q','input',e=>socBuildResults(e.target.value));
+  /* Range labels live in the label text, so re-render on release only. */
+  on('soc-b-budget','change',e=>socBuildSet('budget',+e.target.value));
+  on('soc-b-bank','change',e=>socBuildSet('minBank',+e.target.value));
+  socBuildChips();
+}
+function socCustomDownload(share){
+  const S=window._soc;if(!S||!S.custom)return;
+  const spec=S.custom,cv=renderSocialCard(spec,1);
+  cv.toBlob(async blob=>{
+    if(!blob){toast('Could not build the image');return;}
+    const file=new File([blob],'gwe-'+spec.id+'.png',{type:'image/png'});
+    if(share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      try{await navigator.share({files:[file],title:spec.title});return;}catch(_){}
+    }
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='gwe-'+spec.id+'.png';a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    toast('Card downloaded');
+  },'image/png');
+}
+
 async function hydrateSocial(host){
   host.innerHTML=skel(4);
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -5231,13 +5454,25 @@ async function hydrateSocial(host){
       'Cards are built from the projection model — they appear once the season’s players and fixtures are loaded.');
     return;
   }
-  window._soc={specs};
+  window._soc={specs,b,fixtures,custom:null};
+  socBuildLoad();
   /* Warm crests and photos before drawing. Best-effort: anything that fails
      simply falls back to the club-colour tile, so a slow or blocked CDN
      costs a little polish, never a card. */
   try{await socPreloadImages(specs);}catch(_){}
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
-    ' Social Studio</div>'+
+    ' Build your own</div>'+
+    '<div class="soc-build">'+
+      '<div id="soc-builder"></div>'+
+      '<div class="soc-bpreview"><div class="soc-shot" id="soc-b-shot"></div>'+
+        '<div class="soc-bar" id="soc-b-actions" hidden>'+
+          '<span class="soc-nm">Your card</span>'+
+          '<button class="btn btn-ghost btn-sm" onclick="socCustomDownload(true)">Share</button>'+
+          '<button class="btn btn-primary btn-sm" onclick="socCustomDownload(false)">PNG</button>'+
+        '</div></div>'+
+    '</div></div>'+
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
+    ' Ready-made cards</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Share-ready graphics built from the live model — the numbers on the card are the numbers in the app. '+
     'Every card is 1080×1350, the portrait ratio Instagram and X both crop kindly, and downloads as a PNG. '+
     'They rebuild from fresh data each time you open this page, so a card made today reflects today’s prices.</p>'+
@@ -5248,6 +5483,8 @@ async function hydrateSocial(host){
       '<button class="btn btn-ghost btn-sm" onclick="socShare('+i+')">Share</button>'+
       '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div></div>').join('')+
     '</div>';
+  socBuildRender();
+  socBuildRefresh();
   /* Previews render at a third scale — full size only on download. */
   specs.forEach((sp,i)=>{
     const box=document.getElementById('soc-'+i);if(!box)return;

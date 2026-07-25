@@ -345,6 +345,64 @@ console.log('• socSquadCard: XI plus four subs, and the budget adds up');
   ok(socSquadCard({}, null, 'T', 'S', 'N') === null, 'no squad yields no card');
 }
 
+/* ── Card builder ─────────────────────────────────────────────────────
+   The builder lets a card be assembled by hand, so the numbers it prints are
+   the ones most likely to end up on a public post with nobody double-checking
+   them. The metric definitions are the risky part — a wrong formatter puts a
+   price where a percentage belongs — so every one is exercised. */
+console.log('• socMetricDefs: every metric computes and formats sanely');
+{
+  const socMetricDefs = new Function(
+    'const buildNextFix=()=>({});\n' +
+    'const buildHorizon=()=>({1:[{},{}]});\n' +
+    'const fixtureXP=(b,e)=>e._fx||1;\n' +
+    'const xP=(b,e)=>e._xp||0;\n' +
+    'const money=c=>"£"+(c/10).toFixed(1);\n' +
+    'const dcHitRate=e=>e._dc||0;\n' +
+    grabFn('socMetricDefs') + '\nreturn socMetricDefs;'
+  )();
+
+  const defs = socMetricDefs({}, []);
+  ok(defs.length >= 8, 'a useful spread of metrics is offered (' + defs.length + ')');
+  const keys = defs.map((d) => d.k);
+  ok(new Set(keys).size === keys.length, 'metric keys are unique');
+  ok(defs.every((d) => d.k && d.l && typeof d.v === 'function' && typeof d.f === 'function'),
+    'every metric has a key, label, accessor and formatter');
+
+  /* A representative player, then check each metric returns a finite number
+     and a non-empty string — no NaN and no "undefined" reaching a card. */
+  const el = {
+    id: 1, team: 1, now_cost: 75, total_points: 140, form: '5.5',
+    selected_by_percent: '12.3', element_type: 3, minutes: 900,
+    _xp: 5.4, _fx: 2.5, _dc: 0.62, _ci: { npxg90: 0.41 },
+  };
+  defs.forEach((d) => {
+    const n = d.v(el);
+    ok(typeof n === 'number' && isFinite(n), d.k + ' returns a finite number');
+    const s = d.f(n);
+    ok(typeof s === 'string' && s.length > 0 && !/NaN|undefined/.test(s),
+      d.k + ' formats to a clean string (' + s + ')');
+  });
+
+  /* Spot-check the formatters that carry a unit, since mixing those up is the
+     failure that would actually embarrass a post. */
+  const by = Object.fromEntries(defs.map((d) => [d.k, d]));
+  ok(by.price.f(by.price.v(el)) === '£7.5', 'price formats as pounds');
+  ok(by.own.f(by.own.v(el)) === '12.3%', 'ownership formats as a percentage');
+  ok(by.dchr.f(by.dchr.v(el)) === '62%', 'DefCon hit rate formats as a whole percentage');
+  ok(by.npxg90.f(by.npxg90.v(el)) === '0.41', 'npxG per 90 keeps two decimals');
+  ok(by.pts.f(by.pts.v(el)) === '140', 'total points formats as a whole number');
+  ok(by.ppm.f(by.ppm.v(el)) === (140 / 7.5).toFixed(1), 'points per £m divides by price in millions');
+  ok(by.xp6.v(el) === 5, 'xP over 6 sums the horizon fixtures');
+
+  /* Missing advanced data must read as zero, not crash or print undefined. */
+  const bare = { id: 2, team: 1, now_cost: 40, element_type: 2 };
+  defs.forEach((d) => {
+    const n = d.v(bare);
+    ok(typeof n === 'number' && isFinite(n), d.k + ' survives a player with no stats');
+  });
+}
+
 /* ── Panel wiring ─────────────────────────────────────────────────────
    Social Studio shipped broken because the panel was registered in NAV and
    given a hydrator, but had no PANEL_CONTENT entry — and renderPage reads

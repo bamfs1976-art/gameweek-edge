@@ -156,6 +156,27 @@ in the bank** (best XI holding ≥£3.0m back) · **Best by price** for each of 
 four positions · **Best captains** for the next 7 gameweeks · **The
 differentials** (<10% owned) · **Priced above the model** · **DefCon by budget**.
 
+**Build your own.** Above the ready-made cards sits a builder, so the presets
+answer the questions we thought of and the builder answers the rest. Two modes,
+both feeding the same renderers the presets use — a hand-built card is
+indistinguishable from a shipped one:
+
+- **Ranked list** — search and add any players, then choose the number shown
+  beside each: xP next gameweek, xP over 6 fixtures, total points, form, price,
+  ownership, points per £m, DefCon hit rate or npxG/90. Sort by that number or
+  keep your own order; the top ten make the card.
+- **Squad** — lock in the players you want and the optimiser builds the best
+  legal 15 around them, inside a budget you set with a slider, optionally
+  holding money back. If the locked picks cannot fit, the card says so rather
+  than quietly dropping one.
+
+Title and subtitle are editable, the preview redraws live, and the whole
+configuration persists to `localStorage` so a half-built card survives a
+refresh. `dev/test-builder.mjs` drives it in a real browser (search, add,
+rename, switch metric, flip modes, reload) and `dev/test-social.mjs` asserts
+every metric formatter offline, since a wrong formatter would put a price where
+a percentage belongs on a public post.
+
 **Squad cards show all fifteen.** An FPL squad is eleven starters *plus four
 substitutes* inside £100.0m, so a card showing only the XI tells half the story
 — the bench is where the budget is won or lost. The pitch cards therefore draw
