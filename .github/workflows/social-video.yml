@@ -38,6 +38,10 @@ on:
         description: 'Release tag suffix (e.g. gw1) — reused tags are replaced'
         type: string
         default: ''
+      publish:
+        description: 'Publish a Release. Off = render only, download the artifact'
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -86,8 +90,19 @@ jobs:
             --data "$KIND.json" \
             --name "$KIND"
 
-      - name: Publish release
+      # Always, even when publishing: a Release is public the moment it exists,
+      # so there has to be a way to watch the video before committing to that.
+      - name: Upload the MP4 as a run artifact
         if: steps.data.outputs.skip == 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ github.event.inputs.kind }}
+          path: scripts/recap/out/${{ github.event.inputs.kind }}.mp4
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Publish release
+        if: steps.data.outputs.skip == 'false' && github.event.inputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
