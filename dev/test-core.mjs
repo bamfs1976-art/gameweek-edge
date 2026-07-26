@@ -142,12 +142,18 @@ const pieces = [
   /* Pre-season readiness: promoted-club prior + bundle season cross-check. */
   extractConst(html, 'PLSIM_ALIAS'),
   extractLine(html, /const PLSIM_PROMOTED=\[[\d.,]+\];/),
+  /* plsimPrior falls through to an Elo-derived prior when we have no
+     offline fit for a club; absent Elo restores the old behaviour. */
+  ...['ELO_SCALE', 'ELO_ATT', 'ELO_DEF', 'ELO_CLAMP']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'eloMean'),
+  extractFn(html, 'eloPrior'),
   extractFn(html, 'plsimPrior'),
   extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, PLSIM_PROMOTED, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1048,6 +1054,128 @@ ok(promoted === core.PLSIM_PROMOTED, 'an unknown/promoted club falls back to PLS
 ok(promoted[0] < 1 && promoted[1] > 1, 'the promoted default is below average (weaker attack, concedes more)');
 ok(core.plsimPrior({}) === core.PLSIM_PROMOTED && core.plsimPrior(null) === core.PLSIM_PROMOTED, 'missing team name is handled, not a crash');
 ok(core.plsimPrior({ name: 'Manchester City' })[0] > 1.2, 'alias resolves multi-word names (Manchester City -> mancity)');
+
+
+section('eloPrior: a club-specific prior where we have no fitted one (Tier 2)');
+{
+  /* Real 2026/27 ratings from the Core Insights teams.csv, and the league mean
+     they sit around. */
+  const elo = { 1: 2064, 2: 1921, 3: 1666, 4: 1971, 5: 1533 };
+  const mean = core.eloMean(elo);
+  ok(Math.abs(mean - 1831) < 1, 'the league mean comes from the ratings we have (' + Math.round(mean) + ')');
+  ok(core.eloMean({}) === null && core.eloMean(null) === null, 'no ratings means no mean');
+  ok(core.eloMean({ 1: 2000, 2: NaN }) === 2000, 'a broken rating is left out of the mean');
+
+  const strong = core.eloPrior(2064, mean);
+  const weak = core.eloPrior(1533, mean);
+  ok(strong && weak, 'a rating either side of the mean produces a prior');
+  ok(strong[0] > weak[0], 'the stronger club attacks better');
+  ok(strong[1] < weak[1], 'and concedes less — a LOWER defence multiplier is better');
+  const avg = core.eloPrior(mean, mean);
+  ok(Math.abs(avg[0] - 1) < 0.05 && Math.abs(avg[1] - 1) < 0.05, 'a league-average club is close to neutral');
+  ok(strong[2] === core.PLSIM_PROMOTED[2], 'home advantage is not an Elo question and is left alone');
+
+  /* A wild rating must not produce a wild side. */
+  const absurd = core.eloPrior(9000, mean);
+  ok(absurd[0] <= 1.6 && absurd[1] >= 0.55, 'an absurd rating is clamped to a plausible side');
+  ok(core.eloPrior(NaN, mean) === null && core.eloPrior(1800, null) === null, 'a missing rating or mean yields nothing');
+}
+
+section('plsimPrior: Elo fills the gap, and never overrides a fit (Tier 2)');
+{
+  const elo = { 1: 2064, 2: 1921, 3: 1666, 4: 1971, 5: 1533 };
+  /* A club WITH an offline fit keeps it — the fit is the better estimate and
+     Elo reproducing it to within ~8% is not a reason to trade down. */
+  const arsWith = core.plsimPrior({ name: 'Arsenal', id: 1 }, elo);
+  ok(arsWith === core.PLSIM.priors.arsenal, 'a fitted club keeps its fitted prior even with Elo present');
+
+  /* A club WITHOUT one gets a club-specific prior instead of the single
+     generic promoted number every such club used to share. */
+  const strongUnknown = core.plsimPrior({ name: 'Wrexham AFC', id: 1 }, elo);
+  const weakUnknown = core.plsimPrior({ name: 'Wrexham AFC', id: 5 }, elo);
+  ok(strongUnknown !== core.PLSIM_PROMOTED, 'an unknown club with a rating no longer takes the generic prior');
+  ok(strongUnknown[0] > weakUnknown[0],
+    'and two unknown clubs of different strength no longer get identical priors');
+
+  /* Every fallback still holds. */
+  ok(core.plsimPrior({ name: 'Wrexham AFC', id: 99 }, elo) === core.PLSIM_PROMOTED,
+    'an unknown club with no rating falls back to the generic prior');
+  ok(core.plsimPrior({ name: 'Wrexham AFC', id: 1 }) === core.PLSIM_PROMOTED,
+    'and so does one when no Elo is loaded at all — the old behaviour exactly');
+  ok(core.plsimPrior({ name: 'Arsenal', id: 1 }) === core.PLSIM.priors.arsenal, 'fitted clubs are unaffected by absent Elo');
+  ok(core.plsimPrior({}, elo) === core.PLSIM_PROMOTED && core.plsimPrior(null, elo) === core.PLSIM_PROMOTED,
+    'a missing team is still handled, not a crash');
+}
+
+section('eloPrior: held-out, it beats the generic prior it replaces (Tier 2)');
+{
+  /* The claim that justified using Elo at all, pinned so it survives any
+     change to the fitted coefficients. Leave-one-out over a committed snapshot
+     of real 2026/27 ratings: for each club, predict its prior from Elo using
+     ONLY the other nineteen, and compare against PLSIM_PROMOTED — the single
+     generic number every club without a fit used to share. */
+  const snap = JSON.parse(readFileSync(join(ROOT, 'dev', 'fixtures', 'team-elo-2026-2027.json'), 'utf8'));
+  /* The app's own aliasing, not a copy of it — a duplicate here would drift
+     and silently shrink the sample. */
+  const key = (n) => {
+    const k = String(n).toLowerCase().replace(/[^a-z]/g, '');
+    return core.PLSIM.priors[k] ? k : (core.PLSIM_ALIAS[k] || k);
+  };
+  const data = snap.teams
+    .map((t) => ({ elo: t.elo, prior: core.PLSIM.priors[key(t.name)] }))
+    .filter((d) => d.prior);
+  ok(data.length >= 18, 'the snapshot matches our fitted clubs (' + data.length + '/20)');
+
+  /* Refit the log-linear mapping on a subset — the same shape eloPrior uses. */
+  const refit = (sample, idx) => {
+    const mean = sample.reduce((s, d) => s + d.elo, 0) / sample.length;
+    const X = sample.map((d) => (d.elo - mean) / 400);
+    const Y = sample.map((d) => Math.log(d.prior[idx]));
+    const mx = X.reduce((s, x) => s + x, 0) / X.length;
+    const my = Y.reduce((s, y) => s + y, 0) / Y.length;
+    let num = 0, den = 0;
+    for (let i = 0; i < X.length; i++) { num += (X[i] - mx) * (Y[i] - my); den += (X[i] - mx) ** 2; }
+    const b = num / den;
+    return { a: my - b * mx, b, mean };
+  };
+  for (const [idx, label] of [[0, 'attack'], [1, 'defence']]) {
+    let eloErr = 0, genErr = 0;
+    for (let j = 0; j < data.length; j++) {
+      const rest = data.filter((_, k) => k !== j);
+      const { a, b, mean } = refit(rest, idx);
+      const pred = Math.exp(a + b * (data[j].elo - mean) / 400);
+      eloErr += Math.abs(Math.log(pred) - Math.log(data[j].prior[idx]));
+      genErr += Math.abs(Math.log(core.PLSIM_PROMOTED[idx]) - Math.log(data[j].prior[idx]));
+    }
+    ok(eloErr < genErr * 0.6,
+      'held-out, an Elo prior beats the generic one on ' + label +
+      ' by ' + Math.round(100 * (1 - eloErr / genErr)) + '% (needs >40%)');
+  }
+
+  /* And the SHIPPING coefficients — not a refit — must reproduce the priors
+     we trust, or the mapping baked into the app has drifted from its fit. */
+  const mean = core.eloMean(Object.fromEntries(snap.teams.map((t) => [t.id, t.elo])));
+  let worst = 0;
+  for (const d of data) {
+    const p = core.eloPrior(d.elo, mean);
+    worst = Math.max(worst, Math.abs(Math.log(p[0]) - Math.log(d.prior[0])),
+      Math.abs(Math.log(p[1]) - Math.log(d.prior[1])));
+  }
+  ok(worst < 0.25, 'the shipped coefficients still track the fitted priors (worst |log err| ' + worst.toFixed(3) + ')');
+
+  /* Closeness alone is not enough: a mapping that returned ~1 for every club
+     would be close on average and useless, because the whole point is telling
+     a strong promoted side from a weak one. So check the SPREAD too — the
+     shipped mapping must separate clubs about as much as the priors do. */
+  const sd = (a) => { const m = a.reduce((s, x) => s + x, 0) / a.length; return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / a.length); };
+  for (const [idx, label] of [[0, 'attack'], [1, 'defence']]) {
+    const pred = data.map((d) => Math.log(core.eloPrior(d.elo, mean)[idx]));
+    const act = data.map((d) => Math.log(d.prior[idx]));
+    const ratio = sd(pred) / sd(act);
+    ok(ratio > 0.6 && ratio < 1.4,
+      'the mapping spreads clubs like the priors do on ' + label + ' (sd ratio ' + ratio.toFixed(2) + ')');
+  }
+}
 
 section('bundleSeasonStale: model-bundle vs live season cross-check (Tier 2)');
 /* Pre-season the bundle intentionally trails (last completed season), so no

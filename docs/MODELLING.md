@@ -138,6 +138,29 @@ scoring model omits — which is precisely the gap the separately‑validated
 `minutesModel` closes in the live app. A trimmed sample season is committed so
 the check runs offline in `npm test`; `npm run fetch:vaastav` pulls a full one.
 
+**Club Elo as a prior where we have none.** `PLSIM.priors` are attack/defence
+multipliers fitted offline, per club. Anything outside that table — a promoted
+side with no entry, a club that changed its name — fell back to
+`PLSIM_PROMOTED`: one generic number applied identically to every such team,
+so a strong promoted side and a weak one got the same starting guess.
+
+`/api/team-elo` reads the `elo` column from the open FPL‑Core‑Insights
+`teams.csv`, keyed by the official FPL team id so there is no name matching.
+The mapping is a log‑linear fit of *our own* priors against Elo across the
+2026/27 clubs — correlation **+0.86** on attack and **−0.93** on defence — so it
+reproduces the priors we already trust before being asked to extend them.
+
+It is used **only** where no fitted prior exists. Held out leave‑one‑out, an
+Elo‑derived prior is **67% closer on attack and 82% closer on defence** than the
+generic promoted prior it replaces; against a real fitted prior its residual is
+around 8%, so overriding one would be trading down, and it does not. That
+comparison is pinned in `dev/test-core.mjs` against a committed Elo snapshot,
+along with a check that the shipped coefficients still both *track* the fitted
+priors and *spread* clubs as much as they do — closeness alone would be
+satisfied by returning 1.0 for everyone, which is precisely the useless answer.
+Ratings outside a plausible band are dropped rather than clamped, so a broken
+value falls back to the generic prior instead of becoming a confident wrong one.
+
 **Stratified by outcome band.** One average over every player‑gameweek hides
 where a model is actually weak, so the backtest also reports **RMSE split by
 outcome**, after [OpenFPL](https://arxiv.org/abs/2508.09992): *Zeros* (did not

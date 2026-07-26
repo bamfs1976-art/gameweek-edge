@@ -25,6 +25,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const require = createRequire(import.meta.url);
 const EF = require(join(ROOT, 'netlify/functions/euro-fixtures.js'));
+const TE = require(join(ROOT, 'netlify/functions/team-elo.js'));
 
 /* Comment/string-aware brace matcher (apostrophes in comments are safe). */
 function extractBlock(src, startIdx) {
@@ -221,6 +222,75 @@ console.log('• congestionClubs: naming the tie, not just the number');
   ok(API.congestionClubs({}, nf).length === 0, 'no calendar means no card at all');
   ok(API.congestionClubs(b, null).length === 0, 'and no fixtures means nothing to report');
   ok(API.congestionGames(b.euro, 3, NaN).length === 0, 'an unknown kickoff yields no detail');
+}
+
+console.log('• team-elo: club ratings keyed by the official FPL team id');
+{
+  const csv = [
+    'code,id,name,short_name,strength,pulse_id,elo,fotmob_name',
+    '3,1,Arsenal,ARS,5,1,2064,Arsenal',
+    '7,2,Aston Villa,AVL,3,2,1921,Aston Villa',
+    '90,3,Burnley,BUR,2,43,1666,Burnley',
+  ].join('\n');
+  const m = TE.eloMap(TE.parseCsv(csv));
+  ok(m[1] === 2064 && m[3] === 1666, 'ratings are keyed by FPL team id, so no name matching is needed');
+  ok(Object.keys(m).length === 3, 'every club with a rating is returned');
+
+  /* A bad rating goes MISSING rather than being clamped — the caller then
+     falls back to the generic prior, which is honest. A clamped value would
+     be a confident wrong answer. */
+  const bad = TE.eloMap(TE.parseCsv([
+    'id,name,elo',
+    '1,Good,1900',
+    '2,Zeroed,0',
+    '3,Absurd,99999',
+    '4,Blank,',
+    '5,Words,n/a',
+    ',Nameless,1800',
+  ].join('\n')));
+  ok(Object.keys(bad).length === 1 && bad[1] === 1900, 'zero, absurd, blank and non-numeric ratings are dropped');
+  ok(bad[2] === undefined && bad[3] === undefined, 'and are absent rather than clamped to a plausible-looking value');
+  ok(Object.keys(TE.eloMap([])).length === 0 && Object.keys(TE.eloMap(null)).length === 0, 'no rows is safe');
+
+  /* Season choice: July belongs to the coming campaign, and unlike the cup
+     calendar last season IS a sane fallback here — a club's strength does not
+     reset in August, so a rating from the last completed season beats none. */
+  ok(TE.deriveSeasonLabel(new Date('2026-07-26T00:00:00Z')) === '2026-2027', 'July is the coming season');
+  ok(TE.seasonCandidates(new Date('2026-07-26T00:00:00Z')).join() === '2026-2027,2025-2026',
+    'and last season is a legitimate fallback for a strength rating');
+}
+
+console.log('• cached: a failed fetch is never pinned for the full TTL');
+{
+  /* The best-effort loaders resolve to null when their endpoint is
+     unreachable. Caching that for six hours turns one transient blip into six
+     hours without the feature — which is exactly what happened while wiring
+     the cup calendar up, and cost an afternoon of confusing browser runs. */
+  const store = {};
+  const CACHE = new Function(
+    'MEM', 'localStorage', 'noteData',
+    /* grabFn anchors on `function cached(`, which drops the `async`
+       keyword in front of it — put it back or the awaits inside are a
+       syntax error. */
+    'async ' + grabFn('cached') + '\nreturn cached;'
+  )({}, {
+    getItem: (k) => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = v; },
+  }, () => {});
+
+  let calls = 0;
+  const failing = async () => { calls++; return null; };
+  ok(await CACHE('k', 60000, failing) === null, 'a failing loader still returns null to the caller');
+  ok(await CACHE('k', 60000, failing) === null, 'and again on the next call');
+  ok(calls === 2, 'the loader is retried rather than served a cached failure (' + calls + ' calls)');
+  ok(Object.keys(store).length === 0, 'and nothing is written to storage');
+
+  let hits = 0;
+  const working = async () => { hits++; return { ok: true }; };
+  const first = await CACHE('j', 60000, working);
+  const again = await CACHE('j', 60000, working);
+  ok(first.ok && again.ok && hits === 1, 'a successful result IS cached, exactly once');
+  ok(Object.keys(store).length === 1, 'and persisted');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

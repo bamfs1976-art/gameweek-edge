@@ -315,10 +315,46 @@ def route(path):
     return None
 
 
+# Our own Netlify functions, mocked so the browser exercises the real code
+# paths rather than only the graceful-degradation ones. Deliberately
+# synthetic: club Elo spread evenly across the league, and a midweek European
+# tie three days before the next fixture for the first four clubs.
+def own_api(path):
+    if path == "/api/team-elo":
+        return {"season": "mock", "elo": {str(t["id"]): 1650 + 22 * i
+                                          for i, t in enumerate(teams)}}
+    if path.startswith("/api/euro-fixtures"):
+        gw = (next((e["id"] for e in events if not e.get("finished")), 1))
+        comps = ["UCL", "UEL", "UECL", "EFL"]
+        rows = []
+        for i, t in enumerate(teams[:4]):
+            kick = next((f["kickoff_time"] for f in fixtures
+                         if f.get("event") == gw
+                         and t["id"] in (f["team_h"], f["team_a"])), None)
+            if not kick:
+                continue
+            import datetime as _dt
+            when = _dt.datetime.fromisoformat(kick.replace("Z", "")) - _dt.timedelta(days=3)
+            rows.append({"gw": gw, "team": t["id"], "comp": comps[i % 4],
+                         "kickoff": when.isoformat(), "home": True, "finished": False})
+        return {"season": "mock", "from": gw, "n": 6, "rows": rows}
+    return None
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def do_GET(self):
+        own = own_api(self.path.split("?")[0])
+        if own is not None:
+            data = json.dumps(own).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+            return
         if self.path.startswith("/api/fpl/"):
             body = route(self.path[len("/api/fpl/"):].split("?")[0])
             if body is None:

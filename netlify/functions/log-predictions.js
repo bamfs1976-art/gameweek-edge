@@ -46,7 +46,13 @@ function buildModel(html) {
     /* PLSIM_PROMOTED is an array literal, not a {} block, so grab it by line
        (extractBlock only balances braces). plsimPrior references it. */
     (html.match(/const PLSIM_PROMOTED=\[[\d.,]+\];/) || [''])[0],
-    grabFn(html, 'poisson'), grabFn(html, 'plsimPrior'), grabFn(html, 'plsimMatch'),
+    grabFn(html, 'poisson'),
+    /* plsimPrior consults an Elo-derived prior for clubs with no offline
+       fit; the logger passes no Elo map, so it takes the old path. */
+    ...['ELO_SCALE', 'ELO_ATT', 'ELO_DEF', 'ELO_CLAMP']
+      .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+    grabFn(html, 'eloMean'), grabFn(html, 'eloPrior'),
+    grabFn(html, 'plsimPrior'), grabFn(html, 'plsimMatch'),
     grabFn(html, 'recencyWeight'), grabFn(html, 'availAttackMult'), grabFn(html, 'plsimRatings'),
     grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'),
     /* Fixture congestion: buildNextFix scores it onto each fixture and

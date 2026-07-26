@@ -164,6 +164,14 @@
   status = 200
   force = true
 
+# Club Elo keyed by FPL team id — a club-specific prior for the match model
+# where we have no offline-fitted one.
+[[redirects]]
+  from = "/api/team-elo"
+  to = "/.netlify/functions/team-elo"
+  status = 200
+  force = true
+
 # Scheduled push sender (hourly).
 [functions."push-cron"]
   schedule = "@hourly"
