@@ -1,0 +1,116 @@
+name: Social Video
+
+# Renders any one of the on-demand 1080x1080 videos and publishes it as a
+# GitHub Release for you to download and post.
+#
+# One workflow for the whole series, not one per subject: the fetch, the
+# render and the release are identical for every kind — only the template and
+# the JSON differ, and both are named after the kind. Adding a sixth video
+# means adding it to the `kind` list, not copying this file again.
+#
+# Manual only, unlike the weekly recap. These subjects change when the fixture
+# or squad picture changes, not on a timetable, so publishing one every week
+# would put out near-identical videos. Run one when it is worth showing:
+# pre-season, after a fixture reshuffle, or when the picks move.
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: 'Which video'
+        type: choice
+        options: ['rotation', 'setpieces', 'oop', 'lean', 'chips']
+        default: 'rotation'
+      pos:
+        description: 'rotation only — position (1 GKP, 2 DEF, 3 MID)'
+        type: choice
+        options: ['2', '1', '3']
+        default: '2'
+      max:
+        description: 'rotation only — max price in tenths of £m (50 = £5.0m)'
+        type: string
+        default: '50'
+      weeks:
+        description: 'rotation only — gameweeks to cover'
+        type: string
+        default: '10'
+      tag:
+        description: 'Release tag suffix (e.g. gw1) — reused tags are replaced'
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  # Per kind, so rendering the set-piece video does not queue behind rotation.
+  group: social-video-${{ github.event.inputs.kind }}
+  cancel-in-progress: false
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build the data
+        id: data
+        run: |
+          # Exit 2 means "this subject has nothing to say yet" — a pre-season
+          # out-of-position video, say. That is an honest answer, not a broken
+          # run, so it sets skip=true and the job ends green.
+          set +e
+          node scripts/recap/fetch-video.mjs \
+            --kind "${{ github.event.inputs.kind }}" \
+            --pos "${{ github.event.inputs.pos }}" \
+            --max "${{ github.event.inputs.max }}" \
+            --weeks "${{ github.event.inputs.weeks }}"
+          status=$?
+          [ $status -eq 0 ] || [ $status -eq 2 ] || exit $status
+
+      - name: Install Chromium
+        if: steps.data.outputs.skip == 'false'
+        run: |
+          npm i playwright ffmpeg-static --no-save
+          npx playwright install --with-deps chromium
+
+      - name: Render the video
+        if: steps.data.outputs.skip == 'false'
+        run: |
+          KIND="${{ github.event.inputs.kind }}"
+          node scripts/recap/render.mjs \
+            --template "template-$KIND.html" \
+            --data "$KIND.json" \
+            --name "$KIND"
+
+      - name: Publish release
+        if: steps.data.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          KIND="${{ github.event.inputs.kind }}"
+          SUFFIX="${{ github.event.inputs.tag }}"
+          [ -z "$SUFFIX" ] && SUFFIX="gw${{ steps.data.outputs.gw }}"
+          TAG="$KIND-$SUFFIX"
+          case "$KIND" in
+            rotation)  TITLE="Budget rotation";;
+            setpieces) TITLE="Set-piece takers";;
+            oop)       TITLE="Playing out of position";;
+            lean)      TITLE="Buy the attack or the defence";;
+            chips)     TITLE="Where the chips go";;
+            *)         TITLE="$KIND";;
+          esac
+          # Reusing a tag replaces the video, so a re-run after a tweak is safe.
+          gh release delete "$TAG" -R "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" \
+            "scripts/recap/out/$KIND.mp4" \
+            -R "$GITHUB_REPOSITORY" \
+            --title "$TITLE — $SUFFIX" \
+            --notes "Auto-generated 1080x1080 video from the official FPL data, using the same model the app runs. Same audio bed as the gameweek recap. Independent — not affiliated with the Premier League."
+
+      - name: Nothing to publish
+        if: steps.data.outputs.skip == 'true'
+        run: echo "No data for ${{ github.event.inputs.kind }} yet — nothing rendered."

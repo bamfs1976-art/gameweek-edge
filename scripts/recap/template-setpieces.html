@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — Set Piece Takers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+.pens{display:flex;flex-direction:column;gap:14px;margin-top:34px}
+.pen{display:flex;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--line);
+  border-radius:16px;padding:18px 26px;opacity:0;transform:translateY(18px)}
+.pen .tm{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:24px;
+  letter-spacing:.06em;color:var(--green);min-width:96px}
+.pen .n{font-family:var(--display);font-weight:800;font-size:40px;letter-spacing:-.02em;flex:1}
+.pen .dep{font-size:21px;font-weight:600;color:var(--ink3)}
+.grid3{display:grid;grid-template-columns:118px 1fr 1fr 1fr;gap:10px 16px;margin-top:30px;align-items:center}
+.grid3 .hd{font-size:18px;font-weight:800;letter-spacing:.12em;color:var(--ink3);text-transform:uppercase}
+.grid3 .tm{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:22px;color:var(--green)}
+.grid3 .c{font-size:22px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grid3 .c i{font-style:normal;color:var(--ink3);font-weight:600}
+.grow{opacity:0;transform:translateY(14px)}</style>
+<script src="shared.js"></script>
+</head>
+<body>
+<div id="stage">
+  <div class="brand">
+    <span class="mk">
+      <svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg>
+    </span>
+    <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
+  </div>
+  <div class="gwtag" id="gwtag"></div>
+  <section class="scene" id="intro">
+    <div class="kick rv" data-i="0">Set pieces</div>
+    <div class="big2 rv" data-i="1">WHO TAKES</div>
+    <div class="big2 rv" data-i="2" style="color:var(--green)">WHAT</div>
+    <div class="sub rv" data-i="3" id="introsub"></div>
+    <div class="rule" id="introrule"></div>
+  </section>
+  <section class="scene mid" id="pens">
+    <div class="kick rv" data-i="0">The duty that pays</div>
+    <div class="h2 rv" data-i="0">Penalties</div>
+    <div class="pens" id="penlist"></div>
+  </section>
+  <section class="scene mid" id="grid">
+    <div class="kick rv" data-i="0">All three duties</div>
+    <div class="h2 rv" data-i="0">Club by club</div>
+    <div class="grid3" id="g3"></div>
+  </section>
+  <section class="scene mid" id="numbers">
+    <div class="kick rv" data-i="0">Before you buy</div>
+    <div class="h2 rv" data-i="0">The catch</div>
+    <div class="nums" id="nums"></div>
+    <div class="note rv" data-i="1">Duties change, and the official data lags a manager\u2019s decision \u2014 treat a new season\u2019s first weeks with care.</div>
+  </section>
+  <section class="scene" id="outro">
+    <span class="mk rv" data-i="0"><svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg></span>
+    <div class="o1 rv" data-i="1">Every taker, every club</div>
+    <div class="o2 rv" data-i="2">gameweekedge.co.uk</div>
+    <div class="o3 rv" data-i="3">Straight from the official set-piece order</div>
+  </section>
+  <div class="foot">Independent · from the official <b>FPL</b> data · not affiliated with the Premier League</div>
+</div>
+
+<script>
+const SAMPLE={kind:'setpieces',gw:1,total:20,settled:18,contested:11,
+  pens:[{team:'ARS',name:'Saka',deputy:'Gy\u00f6keres'},{team:'MCI',name:'Haaland',deputy:'Marmoush'},
+    {team:'LIV',name:'Szoboszlai',deputy:'Gakpo'},{team:'CHE',name:'Palmer',deputy:'Fern\u00e1ndez'},
+    {team:'MUN',name:'B.Fernandes',deputy:null},{team:'NEW',name:'Guimar\u00e3es',deputy:'Woltemade'},
+    {team:'AVL',name:'Buend\u00eda',deputy:'Watkins'},{team:'TOT',name:'Solanke',deputy:'Kudus'}],
+  clubs:[{team:'ARS',pen:['Saka'],fk:['Rice'],ck:['Rice']},{team:'AVL',pen:['Buend\u00eda'],fk:['Buend\u00eda'],ck:['Cash']},
+    {team:'BOU',pen:['Kluivert'],fk:['\u00dcnal'],ck:['Tavernier']},{team:'BRE',pen:['Thiago'],fk:['Lewis-Potter'],ck:['Jensen']},
+    {team:'CHE',pen:['Palmer'],fk:['James'],ck:['James']},{team:'LIV',pen:['Szoboszlai'],fk:['Szoboszlai'],ck:['Gakpo']},
+    {team:'MCI',pen:['Haaland'],fk:['Marmoush'],ck:['Cherki']},{team:'MUN',pen:['B.Fernandes'],fk:['B.Fernandes'],ck:['Mbeumo']}]};
+const D=(window.__RECAP__&&window.__RECAP__.kind==='setpieces')?window.__RECAP__:SAMPLE;
+document.getElementById('gwtag').textContent='GW'+D.gw;
+document.getElementById('introsub').textContent='Penalties \u00b7 free-kicks \u00b7 corners \u2014 '+D.total+' clubs';
+document.getElementById('penlist').innerHTML=D.pens.map(function(p){
+  return '<div class="pen"><div class="tm">'+p.team+'</div><div class="n">'+p.name+'</div>'+
+    '<div class="dep">'+(p.deputy?'then '+p.deputy:'no deputy named')+'</div></div>';}).join('');
+document.getElementById('g3').innerHTML='<div class="hd"></div><div class="hd">Penalties</div><div class="hd">Direct FK</div><div class="hd">Corners</div>'+
+  D.clubs.slice(0,9).map(function(c){
+    var cell=function(l){return '<div class="c grow">'+(l.length?l[0]+(l.length>1?' <i>+'+(l.length-1)+'</i>':''):'<i>\u2014</i>')+'</div>';};
+    return '<div class="tm grow">'+c.team+'</div>'+cell(c.pen)+cell(c.fk)+cell(c.ck);}).join('');
+document.getElementById('nums').innerHTML=
+  '<div class="num"><div class="v">'+D.settled+'/'+D.total+'</div><div class="k">clubs with a named taker</div></div>'+
+  '<div class="num"><div class="v">'+D.contested+'</div><div class="k">with a deputy behind him</div></div>';
+const SCENES=[{id:'intro',t:0,d:2.5},{id:'pens',t:2.5,d:6.5},{id:'grid',t:9.0,d:6.0},
+  {id:'numbers',t:15.0,d:3.0},{id:'outro',t:18.0,d:2.0}];
+GWEVid.mount(SCENES,20.0,function(id,e){
+  if(id==='pens')GWEVid.stagger(GWEVid.kids('penlist'),e,0.5,0.34,0.5);
+  if(id==='grid')GWEVid.stagger([].slice.call(document.querySelectorAll('#g3 .grow')),e,0.45,0.055,0.45);
+  if(id==='numbers')GWEVid.stagger(GWEVid.kids('nums'),e,0.45,0.3,0.5);
+});
+</script>
+</body>
+</html>

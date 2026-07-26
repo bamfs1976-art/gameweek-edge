@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — Attack or Defence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+.cols{display:flex;gap:26px;margin-top:34px}
+.col{flex:1}
+.col h3{font-size:22px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-bottom:16px}
+.col.att h3{color:var(--green)}
+.cl{display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);
+  border-radius:15px;padding:16px 20px;margin-bottom:12px;opacity:0;transform:translateY(16px)}
+.cl .tm{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:24px;color:var(--ink);min-width:76px}
+.cl .pc{font-size:19px;font-weight:700;color:var(--ink2);margin-left:auto;white-space:nowrap}
+.bar{height:9px;border-radius:6px;background:rgba(255,255,255,.09);overflow:hidden;flex:1;min-width:60px}
+.bar i{display:block;height:100%;background:var(--green);border-radius:6px}
+.col.def .bar i{background:#5f8fd6}</style>
+<script src="shared.js"></script>
+</head>
+<body>
+<div id="stage">
+  <div class="brand">
+    <span class="mk">
+      <svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg>
+    </span>
+    <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
+  </div>
+  <div class="gwtag" id="gwtag"></div>
+  <section class="scene" id="intro">
+    <div class="kick rv" data-i="0">Every club, one question</div>
+    <div class="big2 rv" data-i="1">ATTACK OR</div>
+    <div class="big2 rv" data-i="2" style="color:var(--green)">DEFENCE?</div>
+    <div class="sub rv" data-i="3" id="introsub"></div>
+    <div class="rule" id="introrule"></div>
+  </section>
+  <section class="scene mid" id="cols">
+    <div class="kick rv" data-i="0">Which end is worth buying</div>
+    <div class="h2 rv" data-i="0">The two extremes</div>
+    <div class="cols">
+      <div class="col att"><h3>Buy the attack</h3><div id="attlist"></div></div>
+      <div class="col def"><h3>Buy the defence</h3><div id="deflist"></div></div>
+    </div>
+  </section>
+  <section class="scene mid" id="both">
+    <div class="kick rv" data-i="0">Strong at both ends</div>
+    <div class="h2 rv" data-i="0" id="bothhead">Where price decides</div>
+    <div class="cols"><div class="col att" style="flex:1"><div id="bothlist"></div></div></div>
+    <div class="note rv" data-i="1">Balanced does not mean average. These rate highly at <b>both</b> ends \u2014 so the pick is about price, not quality.</div>
+  </section>
+  <section class="scene mid" id="numbers">
+    <div class="kick rv" data-i="0">How it is read</div>
+    <div class="h2 rv" data-i="0">From the fitted model</div>
+    <div class="nums" id="nums"></div>
+    <div class="note rv" data-i="1">Percentile within the league, from the model\u2019s own attack and defence ratings \u2014 not last season\u2019s table.</div>
+  </section>
+  <section class="scene" id="outro">
+    <span class="mk rv" data-i="0"><svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg></span>
+    <div class="o1 rv" data-i="1">Know which end to buy</div>
+    <div class="o2 rv" data-i="2">gameweekedge.co.uk</div>
+    <div class="o3 rv" data-i="3">From the fitted model, refit every gameweek</div>
+  </section>
+  <div class="foot">Independent · from the official <b>FPL</b> data · not affiliated with the Premier League</div>
+</div>
+
+<script>
+const SAMPLE={kind:'lean',gw:1,n:20,
+  attack:[{team:'BOU',att:88,def:31,lean:'attack'},{team:'AVL',att:74,def:26,lean:'attack'},
+    {team:'BRE',att:69,def:21,lean:'attack'},{team:'TOT',att:66,def:26,lean:'attack'},{team:'WOL',att:47,def:10,lean:'attack'}],
+  defence:[{team:'CRY',att:21,def:78,lean:'defence'},{team:'EVE',att:15,def:69,lean:'defence'},
+    {team:'NFO',att:36,def:73,lean:'defence'},{team:'FUL',att:26,def:57,lean:'defence'},{team:'BHA',att:42,def:63,lean:'defence'}],
+  both:[{team:'ARS',att:94,def:100},{team:'MCI',att:100,def:84},{team:'LIV',att:89,def:79},{team:'MUN',att:73,def:68}]};
+const D=(window.__RECAP__&&window.__RECAP__.kind==='lean')?window.__RECAP__:SAMPLE;
+document.getElementById('gwtag').textContent='GW'+D.gw;
+document.getElementById('introsub').textContent='All '+D.n+' clubs, rated at both ends';
+function row(c,pct){return '<div class="cl"><div class="tm">'+c.team+'</div>'+
+  '<div class="bar"><i style="width:'+pct+'%"></i></div><div class="pc">'+pct+'th</div></div>';}
+document.getElementById('attlist').innerHTML=D.attack.map(function(c){return row(c,c.att);}).join('');
+document.getElementById('deflist').innerHTML=D.defence.map(function(c){return row(c,c.def);}).join('');
+const both=(D.both&&D.both.length)?D.both:[];
+document.getElementById('bothlist').innerHTML=both.length
+  ?both.map(function(c){return '<div class="cl"><div class="tm">'+c.team+'</div>'+
+     '<div class="bar"><i style="width:'+c.att+'%"></i></div>'+
+     '<div class="pc">'+c.att+'th att \u00b7 '+c.def+'th def</div></div>';}).join('')
+  :'<div class="cl"><div class="tm">\u2014</div><div class="pc">no club rates highly at both ends</div></div>';
+if(!both.length)document.getElementById('bothhead').textContent='Nobody, this season';
+document.getElementById('nums').innerHTML=
+  '<div class="num"><div class="v">'+D.attack[0].att+'th</div><div class="k">'+D.attack[0].team+' attack \u2014 top of the league</div></div>'+
+  '<div class="num"><div class="v">'+D.defence[0].def+'th</div><div class="k">'+D.defence[0].team+' defence \u2014 the safer end</div></div>';
+const SCENES=[{id:'intro',t:0,d:2.5},{id:'cols',t:2.5,d:6.5},{id:'both',t:9.0,d:5.0},
+  {id:'numbers',t:14.0,d:4.0},{id:'outro',t:18.0,d:2.0}];
+GWEVid.mount(SCENES,20.0,function(id,e){
+  if(id==='cols'){GWEVid.stagger(GWEVid.kids('attlist'),e,0.5,0.22,0.45);
+    GWEVid.stagger(GWEVid.kids('deflist'),e,0.62,0.22,0.45);}
+  if(id==='both')GWEVid.stagger(GWEVid.kids('bothlist'),e,0.5,0.28,0.5);
+  if(id==='numbers')GWEVid.stagger(GWEVid.kids('nums'),e,0.45,0.3,0.5);
+});
+</script>
+</body>
+</html>

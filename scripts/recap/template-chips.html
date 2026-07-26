@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — Chip Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+.rail{position:relative;margin-top:44px;padding-top:18px}
+.rail .line{position:absolute;left:0;right:0;top:64px;height:4px;background:rgba(255,255,255,.10);border-radius:3px}
+.ticks{display:flex;justify-content:space-between;position:relative}
+/* position:relative so each chip pill is anchored to ITS OWN tick — without
+   it the absolute pills resolve against the whole rail and stretch. */
+.tick{text-align:center;flex:1;opacity:0;transform:translateY(16px);position:relative}
+.tick .dot{width:22px;height:22px;border-radius:50%;background:var(--panel);border:3px solid rgba(255,255,255,.18);margin:52px auto 0}
+.tick.hit .dot{background:var(--green);border-color:#37c47f;box-shadow:0 0 22px rgba(31,157,92,.65)}
+.tick .lab{font-family:var(--font-mono,ui-monospace,monospace);font-size:17px;font-weight:800;color:var(--ink3);margin-top:12px}
+.tick.hit .lab{color:var(--green)}
+.tick .chip{position:absolute;top:0;transform:translateX(-50%);font-size:17px;font-weight:800;
+  letter-spacing:.04em;color:#04170d;background:var(--green);border-radius:999px;padding:6px 13px;
+  white-space:nowrap;width:max-content}
+.plan{display:flex;flex-direction:column;gap:14px;margin-top:30px}
+.pc2{display:flex;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--line);
+  border-radius:17px;padding:20px 26px;opacity:0;transform:translateY(18px)}
+.pc2 .gw{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:26px;color:var(--green);min-width:104px}
+.pc2 .nm2{font-family:var(--display);font-weight:800;font-size:38px;letter-spacing:-.02em;flex:1}
+.pc2 .why{font-size:20px;font-weight:600;color:var(--ink2);text-align:right}
+.pc2 .prov{font-size:16px;font-weight:800;letter-spacing:.06em;color:var(--gold);margin-top:4px}</style>
+<script src="shared.js"></script>
+</head>
+<body>
+<div id="stage">
+  <div class="brand">
+    <span class="mk">
+      <svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg>
+    </span>
+    <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
+  </div>
+  <div class="gwtag" id="gwtag"></div>
+  <section class="scene" id="intro">
+    <div class="kick rv" data-i="0">Chips</div>
+    <div class="big2 rv" data-i="1">WHEN TO</div>
+    <div class="big2 rv" data-i="2" style="color:var(--green)">PLAY THEM</div>
+    <div class="sub rv" data-i="3" id="introsub"></div>
+    <div class="rule" id="introrule"></div>
+  </section>
+  <section class="scene mid" id="rail">
+    <div class="kick rv" data-i="0">The half, week by week</div>
+    <div class="h2 rv" data-i="0">Where each one lands</div>
+    <div class="rail"><div class="line"></div><div class="ticks" id="ticks"></div></div>
+  </section>
+  <section class="scene mid" id="plan">
+    <div class="kick rv" data-i="0">And why</div>
+    <div class="h2 rv" data-i="0">The reasoning</div>
+    <div class="plan" id="planlist"></div>
+  </section>
+  <section class="scene mid" id="numbers">
+    <div class="kick rv" data-i="0">How it is built</div>
+    <div class="h2 rv" data-i="0">Spread, not stacked</div>
+    <div class="nums" id="nums"></div>
+    <div class="note rv" data-i="1">Chips are kept apart and held as late as the case allows \u2014 fixture difficulty is known today, form is not.</div>
+  </section>
+  <section class="scene" id="outro">
+    <span class="mk rv" data-i="0"><svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg></span>
+    <div class="o1 rv" data-i="1">Plan the whole half</div>
+    <div class="o2 rv" data-i="2">gameweekedge.co.uk</div>
+    <div class="o3 rv" data-i="3">Rebuilt every time the fixtures move</div>
+  </section>
+  <div class="foot">Independent · from the official <b>FPL</b> data · not affiliated with the Premier League</div>
+</div>
+
+<script>
+const SAMPLE={kind:'chips',gw:1,from:1,to:19,half:1,spread:9,
+  picks:[{key:'wildcard',label:'Wildcard',gw:8,why:'11 clubs swing',provisional:false,afterBreak:14},
+    {key:'benchboost',label:'Bench Boost',gw:12,why:'best week in the window',provisional:false,afterBreak:0},
+    {key:'triplecaptain',label:'Triple Captain',gw:15,why:'vs BUR (H)',provisional:true,afterBreak:0,captain:'Haaland'},
+    {key:'freehit',label:'Free Hit',gw:17,why:'6 clubs blank',provisional:true,afterBreak:0}]};
+const D=(window.__RECAP__&&window.__RECAP__.kind==='chips')?window.__RECAP__:SAMPLE;
+document.getElementById('gwtag').textContent='GW'+D.from+'-'+D.to;
+document.getElementById('introsub').textContent='The first half \u00b7 GW'+D.from+'\u2013GW'+D.to+' \u00b7 chips reset at GW20';
+/* One tick per gameweek in the window, condensed so the rail stays readable
+   however long the half is. */
+const SHORT={wildcard:'WC',benchboost:'BB',triplecaptain:'TC',freehit:'FH'};
+const span=D.to-D.from+1,step=Math.max(1,Math.ceil(span/10));
+const marks=[];for(var g=D.from;g<=D.to;g+=step)marks.push(g);
+if(marks[marks.length-1]!==D.to)marks.push(D.to);
+const at={};D.picks.forEach(function(p){
+  var near=marks.reduce(function(a,m){return Math.abs(m-p.gw)<Math.abs(a-p.gw)?m:a;},marks[0]);
+  (at[near]=at[near]||[]).push(p);});
+document.getElementById('ticks').innerHTML=marks.map(function(g){
+  var ps=at[g]||[];
+  /* Short codes on the rail: full chip names are wider than the gap between
+     ticks, so on a half where the chips land close together they overlap and
+     clip. The names are spelled out in the next scene anyway. */
+  return '<div class="tick'+(ps.length?' hit':'')+'">'+
+    ps.map(function(p,i){return '<span class="chip" style="left:50%;top:'+(i*32)+'px">'+SHORT[p.key]+'</span>';}).join('')+
+    '<div class="dot"></div><div class="lab">GW'+g+'</div></div>';}).join('');
+document.getElementById('planlist').innerHTML=D.picks.map(function(p){
+  return '<div class="pc2"><div class="gw">GW'+p.gw+'</div><div class="nm2">'+p.label+'</div>'+
+    '<div class="why">'+p.why+(p.captain?'<br>'+p.captain:'')+
+    (p.provisional?'<div class="prov">PENCILLED IN</div>':'')+'</div></div>';}).join('');
+document.getElementById('nums').innerHTML=
+  '<div class="num"><div class="v">'+D.picks.length+'</div><div class="k">chips placed this half</div></div>'+
+  '<div class="num"><div class="v">'+D.spread+'</div><div class="k">gameweeks apart, first to last</div></div>';
+const SCENES=[{id:'intro',t:0,d:2.5},{id:'rail',t:2.5,d:6.0},{id:'plan',t:8.5,d:6.0},
+  {id:'numbers',t:14.5,d:3.5},{id:'outro',t:18.0,d:2.0}];
+GWEVid.mount(SCENES,20.0,function(id,e){
+  if(id==='rail')GWEVid.stagger(GWEVid.kids('ticks'),e,0.5,0.16,0.45);
+  if(id==='plan')GWEVid.stagger(GWEVid.kids('planlist'),e,0.5,0.42,0.5);
+  if(id==='numbers')GWEVid.stagger(GWEVid.kids('nums'),e,0.45,0.3,0.5);
+});
+</script>
+</body>
+</html>

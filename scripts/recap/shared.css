@@ -1,0 +1,121 @@
+/* Shared chrome for every video in the series. Extracted so the look cannot
+   drift between videos — a copy-pasted head is how a series stops matching.
+   The original recap template keeps its own inline copy: it is the proven,
+   already-shipping one, and was left untouched on purpose. */
+
+:root{
+  --bg:#080b0f;--panel:#111a22;--panel2:#0d151c;--line:rgba(255,255,255,.09);
+  --green:#1f9d5c;--green2:#15824a;--ink:#eef3f7;--ink2:#93a2ae;--ink3:#5f6d78;
+  --gold:#e7b45a;--red:#e5604d;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;--body:'Public Sans',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1080px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--body)}
+#stage{position:relative;width:1080px;height:1080px;
+  background:
+    radial-gradient(1200px 700px at 82% -12%,rgba(31,157,92,.20),transparent 60%),
+    radial-gradient(900px 700px at -10% 115%,rgba(31,157,92,.10),transparent 60%),
+    var(--bg);
+}
+
+/* ── chrome ── */
+.brand{position:absolute;top:54px;left:64px;display:flex;align-items:center;gap:16px;z-index:5}
+.mk{width:56px;height:56px;border-radius:15px;background:var(--green2);display:grid;place-items:center;box-shadow:0 8px 30px rgba(31,157,92,.35)}
+.mk svg{width:36px;height:36px}
+.brand .nm{font-family:var(--display);font-size:30px;letter-spacing:-.01em}
+.brand .nm .l{font-weight:600;color:var(--ink2)}.brand .nm .b{font-weight:800}
+.gwtag{position:absolute;top:60px;right:64px;z-index:5;font-family:var(--font-mono,ui-monospace,monospace);
+  font-weight:800;font-size:22px;letter-spacing:.14em;color:var(--green);
+  border:1px solid rgba(31,157,92,.4);border-radius:999px;padding:10px 20px;background:rgba(31,157,92,.08)}
+.foot{position:absolute;left:0;right:0;bottom:0;height:74px;display:flex;align-items:center;justify-content:center;
+  gap:10px;font-weight:700;font-size:20px;color:var(--ink3);letter-spacing:.02em;border-top:1px solid var(--line);z-index:5}
+.foot b{color:var(--green)}
+
+
+/* ── scenes ── */
+.scene{position:absolute;inset:0;padding:150px 64px 96px;opacity:0;visibility:hidden}
+.scene.on{visibility:visible}
+.kick{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:24px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--green);margin-bottom:8px}
+.h2{font-family:var(--display);font-weight:800;font-size:66px;letter-spacing:-.02em;line-height:1;margin-bottom:34px}
+
+/* reveal primitives (driven by seek) */
+.rv{opacity:0;transform:translateY(26px)}
+
+/* intro */
+#intro{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding-top:0}
+#intro .big{font-family:var(--display);font-weight:800;font-size:150px;line-height:.92;letter-spacing:-.03em}
+#intro .big .g{color:var(--green)}
+#intro .sub{font-size:34px;color:var(--ink2);font-weight:600;margin-top:20px}
+#intro .rule{height:8px;width:0;background:linear-gradient(90deg,var(--green),transparent);border-radius:8px;margin-top:40px}
+
+/* player rows (hauls) */
+.rows{display:flex;flex-direction:column;gap:13px}
+.prow{display:flex;align-items:center;gap:24px;background:var(--panel);border:1px solid var(--line);
+  border-radius:20px;padding:15px 26px}
+.rank{font-family:var(--display);font-weight:800;font-size:40px;color:var(--ink3);width:46px;text-align:center}
+.ava{position:relative;width:96px;height:96px;border-radius:50%;overflow:hidden;flex-shrink:0;
+  background:linear-gradient(160deg,#243240,#151e27);display:grid;place-items:center}
+.ava-i{font-family:var(--display);font-weight:800;font-size:34px;color:var(--ink2)}
+.ava img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;background:#1a2530}
+.pmeta{flex:1;min-width:0}
+.pname{font-family:var(--display);font-weight:800;font-size:40px;line-height:1;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.psub{display:flex;align-items:center;gap:10px;margin-top:7px;font-size:23px;font-weight:600;color:var(--ink2)}
+.crest{width:26px;height:26px;object-fit:contain;border-radius:5px;background:#0e1720}
+.pts{font-family:var(--display);font-weight:800;font-size:52px;color:var(--green);white-space:nowrap}
+.pts small{font-size:24px;color:var(--ink3);font-weight:700;margin-left:6px}
+
+/* dream team pitch */
+.pitch{background:linear-gradient(176deg,#137043,#0c4e2f);border:1px solid rgba(255,255,255,.08);
+  border-radius:26px;padding:26px 22px;display:flex;flex-direction:column;gap:20px;position:relative;overflow:hidden}
+.pitch::before{content:"";position:absolute;left:50%;top:50%;width:220px;height:220px;transform:translate(-50%,-50%);
+  border:2px solid rgba(255,255,255,.14);border-radius:50%}
+.prow2{display:flex;justify-content:center;gap:20px;position:relative}
+.chip{width:150px;text-align:center}
+.chip .ava{width:80px;height:80px;margin:0 auto 8px;border:2px solid rgba(255,255,255,.5)}
+.chip .cn{font-weight:800;font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip .cp{display:inline-block;margin-top:4px;font-family:var(--display);font-weight:800;font-size:22px;color:#0a3;
+  background:#eafff4;border-radius:8px;padding:1px 10px}
+.dtbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:26px}
+.dttot{font-family:var(--display);font-weight:800;font-size:40px}
+.dttot span{color:var(--green)}
+.dttop{font-size:24px;font-weight:700;color:var(--ink2)}
+.dttop b{color:var(--gold)}
+
+/* numbers grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:34px;position:relative;overflow:hidden}
+.tile .tl{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:20px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:16px}
+.tile .tv{font-family:var(--display);font-weight:800;font-size:52px;line-height:1;letter-spacing:-.01em}
+.tile .ts{font-size:26px;font-weight:700;color:var(--ink2);margin-top:12px}
+.tile.g .tv{color:var(--green)}.tile.gold .tv{color:var(--gold)}
+
+/* outro */
+#outro{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#outro .mk{width:110px;height:110px;border-radius:28px;margin-bottom:34px}
+#outro .mk svg{width:70px;height:70px}
+#outro .o1{font-family:var(--display);font-weight:800;font-size:76px;letter-spacing:-.02em}
+#outro .o2{font-size:38px;font-weight:800;color:var(--green);margin-top:14px}
+#outro .o3{font-size:28px;font-weight:600;color:var(--ink2);margin-top:26px;letter-spacing:.02em}
+
+/* ── shared type ── */
+.kick{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:24px;letter-spacing:.2em;color:var(--green);text-transform:uppercase}
+.h2{font-family:var(--display);font-weight:800;font-size:78px;letter-spacing:-.03em;line-height:1.02;margin-top:10px}
+.big2{font-family:var(--display);font-weight:800;font-size:96px;line-height:.98;letter-spacing:-.035em}
+#intro .sub{font-size:34px;color:var(--ink2);font-weight:600;margin-top:20px}
+#intro .rule{height:8px;width:0;background:linear-gradient(90deg,var(--green),transparent);border-radius:8px;margin-top:40px}
+#outro{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+#outro .mk{width:110px;height:110px;border-radius:28px;margin-bottom:34px}
+#outro .mk svg{width:70px;height:70px}
+#outro .o1{font-family:var(--display);font-weight:800;font-size:76px;letter-spacing:-.02em}
+#outro .o2{font-size:38px;font-weight:800;color:var(--green);margin-top:14px}
+#outro .o3{font-size:24px;font-weight:600;color:var(--ink2);margin-top:18px}
+/* Content scenes centre vertically: one block of content each, and
+   top-aligning leaves half a square frame empty. */
+.scene.mid{display:flex;flex-direction:column;justify-content:center}
+.note{margin-top:40px;font-size:24px;font-weight:600;color:var(--ink2);line-height:1.5;max-width:920px}
+.nums{display:flex;gap:22px;margin-top:44px}
+.num{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:34px 22px;text-align:center;opacity:0;transform:translateY(22px)}
+.num .v{font-family:var(--display);font-weight:800;font-size:82px;line-height:1;letter-spacing:-.03em;color:var(--green)}
+.num .k{font-size:20px;font-weight:700;color:var(--ink2);margin-top:14px}

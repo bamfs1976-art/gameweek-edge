@@ -1,38 +1,65 @@
 # Social Video — Pipeline
 
-Two videos share one renderer, one look and **one audio bed**: the weekly
-**Gameweek Recap** and the on-demand **Budget Rotation**. Adding a third is a
-template plus a JSON file, not a second pipeline.
+Six videos share one renderer, one look and **one audio bed**: the weekly
+**Gameweek Recap** plus five on-demand videos drawn from the app's own
+analytics. A seventh is a template plus a JSON file, not a second pipeline.
 
 | Video | Trigger | Template | Data | Release tag |
 |---|---|---|---|---|
 | Gameweek Recap | Tue 09:00 UTC | `template.html` | `fetch-data.mjs` | `recap-gw{n}` |
-| Budget Rotation | manual | `template-rotation.html` | `fetch-rotation.mjs` | `rotation-{tag}` |
+| Budget Rotation | manual | `template-rotation.html` | `fetch-video.mjs --kind rotation` | `rotation-{tag}` |
+| Set-Piece Takers | manual | `template-setpieces.html` | `fetch-video.mjs --kind setpieces` | `setpieces-{tag}` |
+| Out Of Position | manual | `template-oop.html` | `fetch-video.mjs --kind oop` | `oop-{tag}` |
+| Attack Or Defence | manual | `template-lean.html` | `fetch-video.mjs --kind lean` | `lean-{tag}` |
+| Where The Chips Go | manual | `template-chips.html` | `fetch-video.mjs --kind chips` | `chips-{tag}` |
 
 `render.mjs` and `preview.mjs` both take `--template`, `--data` and `--name`,
 defaulting to the recap so existing invocations are unchanged. Scene times come
 from each template's own `RECAP_SCENES`, so a retimed video previews at the
 right moments without the preview script being touched.
 
-## Budget Rotation
+```bash
+node scripts/recap/fetch-video.mjs --kind lean
+node scripts/recap/preview.mjs --template template-lean.html --data lean.json --name v-lean
+node scripts/recap/render.mjs   --template template-lean.html --data lean.json --name lean
+# → scripts/recap/out/lean.mp4
+```
 
-The exactly-solved cheapest way to cover one squad slot across the opening
-run — the same `rotationChain` the Fixture Planner uses, **extracted from
-`index.html` at runtime** rather than reimplemented, so the plan in the video
-is the plan in the app. A second copy would drift within a month.
+## The five on-demand videos
 
-It is **manual, not scheduled**: a rotation plan changes when the fixture
-picture changes, not on a timetable, and publishing weekly would put out
-near-identical videos. Inputs let you pick the position, the price ceiling and
-the horizon.
+All five are **manual, not scheduled**. Their subjects change when the fixture
+or squad picture changes, not on a timetable, and publishing weekly would put
+out near-identical videos. One workflow —
+`.github/workflows/social-video.yml` — covers all five with a `kind` choice
+input; the position, price ceiling and horizon inputs apply to `rotation` only.
 
-Two shapes, chosen by the data rather than by the editor:
+Every one of them **extracts its model from `index.html` at runtime** rather
+than reimplementing it, so what the video says is what the app says. A second
+copy of `rotationChain` or `oopFlag` here would drift within a month.
 
-- **Hold, then switch** — the chain, with each switch marked on the timeline.
-- **One club, all the way** — when holding a single player genuinely beats
-  every rotation, the video says so instead of manufacturing a chain. A blank
-  gameweek renders as *blank*, not as a hard fixture; colouring it red would
-  say the opposite of what it means.
+### A video with no data is not an error
+
+`fetch-video.mjs` exits **2** with a plain-English reason when a subject has
+nothing to say yet — no clearly out-of-position players before a ball is
+kicked, too few fixtures to call a club's venue lean. The workflow treats
+exit 2 as `skip=true` and finishes green without publishing. Manufacturing a
+video out of thin data would be the worse outcome.
+
+- **Budget Rotation** — the exactly-solved cheapest way to cover one squad
+  slot across the opening run, from `rotationChain`. Two shapes, chosen by the
+  data rather than the editor: *hold, then switch* (the chain, each switch
+  marked on the timeline) and *one club, all the way* (when holding a single
+  player genuinely beats every rotation, the video says so). A blank gameweek
+  renders as *blank*, not as a hard fixture; colouring it red would say the
+  opposite of what it means.
+- **Set-Piece Takers** — first-choice penalties, direct free-kicks and corners
+  by club, from the official order fields via `setPieceClubRows`.
+- **Out Of Position** — defenders and midfielders whose non-penalty xG per 90
+  sits a rung above their position's median, from `oopFlag`.
+- **Attack Or Defence** — for each club, whether the model prefers you buy its
+  attack or its defence over the window, from `clubLean`.
+- **Where The Chips Go** — the planner's chip placements across the half, with
+  the gameweek, the fixture and the captain behind each one.
 
 ---
 
@@ -64,16 +91,30 @@ one.
 ## Files
 
 ```
-.github/workflows/gw-recap.yml   scheduled pipeline
+.github/workflows/gw-recap.yml     scheduled recap pipeline
+.github/workflows/social-video.yml manual pipeline, all five on-demand videos
 scripts/recap/
-  fetch-data.mjs                 FPL → recap.json, GW detection
-  template.html                  self-contained animated 1080×1080 recap
-  render.mjs                     Playwright frames → ffmpeg → mp4 (with audio)
-  music.mjs                      synthesised royalty-free ambient bed
-  preview.mjs                    local contact-sheet of key frames (no ffmpeg)
-  fetch-rotation.mjs             FPL + index.html model → rotation.json
-  template-rotation.html         self-contained animated 1080×1080 rotation video
+  fetch-data.mjs                   FPL → recap.json, GW detection
+  fetch-video.mjs                  FPL + index.html model → {kind}.json
+  render.mjs                       Playwright frames → ffmpeg → mp4 (with audio)
+  preview.mjs                      local contact-sheet of key frames (no ffmpeg)
+  music.mjs                        synthesised royalty-free ambient bed
+  music.mp3                        the supplied bed every video actually uses
+  shared.css / shared.js           the chrome and the timeline the series shares
+  template.html                    recap  ─┐
+  template-rotation.html           rotation │ each self-contained,
+  template-setpieces.html          setpieces│ animated, 1080×1080
+  template-oop.html                oop      │
+  template-lean.html               lean     │
+  template-chips.html              chips   ─┘
+  out/{name}.mp4                   the rendered video
 ```
+
+`shared.css` and `shared.js` hold the parts that must look and move
+identically across the series — the brand chrome, the easing, the staggered
+reveal and the deterministic `seek(t)` contract `render.mjs` drives. The
+original recap template keeps its own inline copy: it is the proven,
+already-shipping one and was deliberately left untouched.
 
 ### Music
 
