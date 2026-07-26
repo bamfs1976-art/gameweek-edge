@@ -59,6 +59,11 @@ const pieces = [
   extractFn(html, 'plsimMatch'),
   extractFn(html, 'esc'),
   extractFn(html, 'recentMinutes'),
+  /* minutesModel now discounts a start for midweek European / cup football;
+     with no congestion passed, congestionFactor returns 1 and it is a no-op. */
+  ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'congestionFactor'),
   extractFn(html, 'minutesModel'),
   extractFn(html, 'concedePts'),
   extractFn(html, 'effGoalRate'),

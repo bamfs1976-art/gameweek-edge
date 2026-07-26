@@ -48,7 +48,15 @@ function buildModel(html) {
     (html.match(/const PLSIM_PROMOTED=\[[\d.,]+\];/) || [''])[0],
     grabFn(html, 'poisson'), grabFn(html, 'plsimPrior'), grabFn(html, 'plsimMatch'),
     grabFn(html, 'recencyWeight'), grabFn(html, 'availAttackMult'), grabFn(html, 'plsimRatings'),
-    grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'), grabFn(html, 'buildNextFix'),
+    grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'),
+    /* Fixture congestion: buildNextFix scores it onto each fixture and
+       minutesModel discounts a start for it. The logger passes no European
+       calendar (`b.euro` is undefined), so the load is 0 everywhere and the
+       logged projections match what the app computes without one. */
+    ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
+      .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+    grabFn(html, 'congestionLoad'), grabFn(html, 'congestionFactor'),
+    grabFn(html, 'buildNextFix'),
     grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),
     grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'pointsDist'),
   ];

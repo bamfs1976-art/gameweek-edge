@@ -49,9 +49,14 @@ function extractBlock(src, startIdx) {
 }
 const nativeXPsrc = extractBlock(html, html.indexOf('function nativeXP('));
 const minutesModelSrc = extractBlock(html, html.indexOf('function minutesModel('));
+/* minutesModel now depends on the fixture-congestion helper; historical runs
+   pass no congestion, so congestionFactor returns 1 and nothing changes. */
+const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
+  .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
+  .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
 const helperSrc = ['concedePts', 'effGoalRate', 'negRate90']
   .map(n => extractBlock(html, html.indexOf('function ' + n + '('))).join('\n');
-const nativeXP = new Function(helperSrc + '\n' + minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
+const nativeXP = new Function(congestSrc + '\n' + helperSrc + '\n' + minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
 
 /* The ORIGINAL model, before the P1 additions — for the A/B comparison. */
 function nativeXPold(el, nf) {

@@ -60,8 +60,13 @@ function extractBlock(src, startIdx) {
   throw new Error('unbalanced block from ' + startIdx);
 }
 const grab = name => extractBlock(html, html.indexOf('function ' + name + '('));
+/* minutesModel now depends on the fixture-congestion helper; historical runs
+   pass no congestion, so congestionFactor returns 1 and nothing changes. */
+const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
+  .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
+  .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
 const model = new Function(
-  [grab('minutesModel'), grab('concedePts'), grab('effGoalRate'), grab('negRate90'),
+  [congestSrc, grab('minutesModel'), grab('concedePts'), grab('effGoalRate'), grab('negRate90'),
     grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
   '\nreturn { minutesModel, nativeXP, xP, pointsDist };'
 )();

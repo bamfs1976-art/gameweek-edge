@@ -455,7 +455,39 @@ league‑wide rate would brand every defender a bargain.
 **Set Piece Register** — official written **taker notes** (from `set-piece-notes`)
 plus confirmed penalty / direct‑FK / corner order.
 
-**Rotation Risk** — start‑rate risk for premium players from actual minutes.
+**Rotation Risk** — start‑rate risk for premium players from actual minutes,
+plus **midweek congestion**: the European and cup football the official FPL API
+cannot see.
+
+The FPL API describes exactly one competition. A club playing Thursday in the
+Europa League before a Sunday fixture is invisible to it, yet that is the
+single biggest driver of rotation there is — and by the time `starts` and
+`minutes` reflect it, the points are already gone. `/api/euro-fixtures` reads
+the Champions / Europa / Conference League and the domestic cups from the open
+[FPL‑Core‑Insights](https://github.com/olbauday/FPL-Core-Insights) dataset,
+which files each competition by the FPL gameweek its matches fall in and
+carries the club's official element team id — so the join needs no name
+matching.
+
+Congestion is measured in **days before kickoff**, not fixtures per week,
+because what tires a squad is the gap rather than the count: Thursday to Sunday
+is punishing, Tuesday to the following Saturday is a normal week's rest. A
+match at or inside 3.2 days counts in full, tapering to nothing at six days,
+and only matches *before* the fixture count — a cup tie the following Wednesday
+tires nobody on the Saturday.
+
+The load is not shared evenly. A manager rests the players already sharing
+minutes long before dropping a certain starter, so the same congested week
+barely moves a nailed man and lands hard on the squad player. And it suppresses
+the **start**, not the appearance: a rested player is on the bench, not out of
+the squad, and a good share of him comes on for the last half‑hour, so the start
+probability congestion removes is partly returned as a cameo. Expected minutes
+fall; expected appearances fall much less.
+
+Unlike start rate, this is a *forward‑looking* signal, so it works from GW1
+rather than needing games in the bank. It degrades to nothing: a competition
+that has not kicked off yet simply 404s per gameweek and no club is congested —
+which is the correct answer in July, not a failure.
 
 ### Planner
 

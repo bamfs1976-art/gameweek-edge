@@ -2182,6 +2182,18 @@ const loadCoreInsights=()=>cached('core-insights',6*3600e3,async()=>{
     return await r.json();
   }catch(_){return null;}finally{clearTimeout(timer);}
 });
+/* Midweek European and cup fixtures by gameweek, from our own function.
+   Same best-effort contract as Core Insights: a short timeout and a null on
+   any failure, so a club with no known cup calendar is simply uncongested. */
+const loadEuroFix=(from,n)=>cached('euro-'+from+'-'+n,6*3600e3,async()=>{
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),6000);
+  try{
+    const r=await fetch(apiBase()+'/api/euro-fixtures?from='+from+'&n='+n,
+      {signal:ctrl.signal,headers:{'Accept':'application/json'}});
+    if(!r.ok)return null;
+    return await r.json();
+  }catch(_){return null;}finally{clearTimeout(timer);}
+});
 /* Shared season-model bundle, published by the PL Simulator (one source of
    truth for ratings, fixtures, form, odds — CORS-open). Cached 6h. */
 const MODEL_URL='https://plsimulation.netlify.app/model.json';
@@ -2269,6 +2281,14 @@ async function boot(){
     const ci=await loadCoreInsights();
     if(ci&&ci.players){idx.coreInsights=ci.season||true;b.elements.forEach(e=>{const c=ci.players[e.id];if(c)e._ci=c;});}
   }catch(_){/* official data only */}
+  /* Midweek European / cup calendar for the planning horizon, so the minutes
+     model can see the congestion the FPL API cannot. Same contract as above:
+     absent or empty simply means no club is congested. */
+  try{
+    const startGw=(upcoming&&upcoming.id)||(cur&&cur.id)||1;
+    const ef=await loadEuroFix(startGw,6);
+    if(ef&&ef.rows&&ef.rows.length){idx.euro=euroIndex(ef);idx.euroSeason=ef.season;}
+  }catch(_){/* no congestion signal */}
   MEM._idx=idx;return idx;
 }
 
@@ -7065,16 +7085,21 @@ function buildNextFix(b,fixtures){
   const played={};
   fixtures.forEach(f=>{if(f.finished){played[f.team_h]=(played[f.team_h]||0)+1;
     played[f.team_a]=(played[f.team_a]||0)+1;}});
+  /* Midweek European / cup load carried into each fixture, when the calendar
+     is available. `b.euro` is absent until the endpoint answers and empty
+     before the cup competitions start, and congestionLoad returns 0 for both
+     — so this quietly does nothing rather than guessing. */
+  const kick=f=>Date.parse(f.kickoff_time);
   fixtures.filter(f=>f.event).sort((a,c)=>a.event-c.event).forEach(f=>{
     if(f.finished)return;
     const m=plsimMatch(R,f.team_h,f.team_a);
     if(!map[f.team_h])map[f.team_h]={opp:teamShort(b,f.team_a),home:true,event:f.event,
       diff:m?plsimDiff(m.pH):f.team_h_difficulty,gp:played[f.team_h]||0,
-      lamAvg:m?BM*R.att[f.team_h]:null,
+      lamAvg:m?BM*R.att[f.team_h]:null,kickoff:kick(f),congest:congestionLoad(b.euro,f.team_h,kick(f)),
       lam:m?m.hx:null,cs:m?m.csH:null,t3:m?m.h3:null,win:m?m.pH:null};
     if(!map[f.team_a])map[f.team_a]={opp:teamShort(b,f.team_h),home:false,event:f.event,
       diff:m?plsimDiff(m.pA):f.team_a_difficulty,gp:played[f.team_a]||0,
-      lamAvg:m?BM*R.att[f.team_a]:null,
+      lamAvg:m?BM*R.att[f.team_a]:null,kickoff:kick(f),congest:congestionLoad(b.euro,f.team_a,kick(f)),
       lam:m?m.ax:null,cs:m?m.csA:null,t3:m?m.a3:null,win:m?m.pA:null};
   });
   return map;
@@ -8686,13 +8711,42 @@ async function hydrateRotation(host){
     .filter(x=>x.rate<0.8)
     .sort((a,c)=>a.rate-c.rate)
     .slice(0,20);
-  if(!list.length){host.innerHTML=stateBox('flag','No clear rotation risks','Premium players are starting regularly. Risk rises with fixture congestion later in the season.');return;}
+  /* Midweek congestion is a FORWARD-looking signal, so it works from GW1 —
+     unlike start rate, which needs games in the bank before it says anything.
+     Built first, and shown even when the start-rate list is empty. */
+  const nf=buildNextFix(b,fixtures);
+  const congested=congestionClubs(b,nf);
+  const congestOf=t=>{const c=congested.filter(x=>x.team===t)[0];return c||null;};
+  const congestBadge=t=>{const c=congestOf(t);if(!c)return '';
+    const cls=c.load>=1?'badge-red':'badge-amber';
+    return ' <span class="badge '+cls+'">midweek '+(c.games[0]?c.games[0].comp:'cup')+'</span>';};
+  const congestCard=congested.length
+    ? '<div class="card mb-20" style="border-left:3px solid var(--red)"><div class="card-title">'+
+      svg(ICON.flag,'width="14" height="14"')+' Midweek congestion — before the next fixture</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">The FPL API only describes the Premier League, so this is the football it cannot see. '+
+      'A tie three days before kickoff is the classic rotation trigger; one six days out is just a normal week.</p>'+
+      '<div class="dl">'+congested.slice(0,12).map(c=>{
+        const g=c.games[0];
+        const when=g?(g.days<1?'the day before':g.days<2?'2 days before':Math.round(g.days)+' days before'):'';
+        const comp=g?(CONGEST_COMP[g.comp]||g.comp):'a cup tie';
+        const nm=(b.teams[c.team]||{}).name||teamShort(b,c.team);
+        return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(nm)+
+          ' <span class="badge '+(c.load>=1?'badge-red':'badge-amber')+'">'+(c.load>=1?'heavy':'some')+'</span></span>'+
+          '<span class="dl-sub">'+crest(b,c.team,13)+esc(comp)+' '+esc(when)+' GW'+c.event+
+          (c.games.length>1?' · '+c.games.length+' extra matches':'')+'</span></span>'+
+          '<span class="dl-col mono">'+c.load.toFixed(2)+'</span></div>';
+      }).join('')+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">The load figure feeds the minutes model directly: it lowers the chance of a start, '+
+      'not the chance of an appearance — a rested player is on the bench, not out of the squad. '+
+      'A certain starter is barely touched; the squad players below take most of it.</div></div>'
+    : '';
+  if(!list.length){host.innerHTML=congestCard+stateBox('flag','No clear rotation risks','Premium players are starting regularly. Risk rises with fixture congestion later in the season.');return;}
   const rows=list.map(x=>{const e=x.e;const pctv=Math.round(x.rate*100);
     const band=pctv<55?'badge-red':pctv<75?'badge-amber':'badge-grey';
     const mot=motOf(e),dead=mot==='Little to play for';
     const motBadge=dead?' <span class="badge badge-amber">'+esc(mot)+'</span>':'';
     return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
-      ' <span class="badge '+band+'">'+pctv+'% starts</span>'+motBadge+'</span>'+
+      ' <span class="badge '+band+'">'+pctv+'% starts</span>'+motBadge+congestBadge(e.team)+'</span>'+
       '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+(e.starts||0)+'/'+x.gp+' games'+(mot&&!dead?' · '+esc(mot):'')+'</span></span>'+
       '<span class="dl-col mono">'+e.selected_by_percent+'%</span></div>';
   }).join('');
@@ -8701,7 +8755,7 @@ async function hydrateRotation(host){
     ? '<div class="card mb-20" style="border-left:3px solid var(--amber)"><div class="card-title">'+svg(ICON.flag,'width="14" height="14"')+' Dead-rubber watch</div>'+
       '<p class="dl-sub"><b>'+deadClubs.map(esc).join(', ')+'</b> have little left to play for this season — expect heavier rotation, whatever the recent start rate.</p></div>'
     : (ctx&&ctx.live?'':'');
-  host.innerHTML=deadNote+
+  host.innerHTML=congestCard+deadNote+
     '<div class="card"><div class="card-title">Rotation risk — premium players by start rate</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · starts</span><span class="dl-col">Owned</span></div>'+rows+'</div>'+
     '<div class="dl-sub" style="margin-top:10px">Start rate flags rotation or fitness risk; the league stakes tag adds motivation context (a club with nothing to play for rotates more, from the season model).</div></div>';
@@ -8864,7 +8918,83 @@ async function attachRecent(b,ids){
     .then(s=>{if(s&&s.history)b.els[id]._recent=recentMinutes(s.history,5);})
     .catch(()=>{})));
 }
-function minutesModel(el,gp){
+/* ── Fixture congestion ─────────────────────────────────────
+   The FPL API describes one competition. A club playing Thursday in the
+   Europa League before a Sunday fixture is invisible to it, yet that is the
+   single biggest driver of rotation there is — and by the time `starts` and
+   `minutes` show it, the points are already gone.
+
+   /api/euro-fixtures supplies the missing calendar. Congestion is measured in
+   matches-before-kickoff rather than fixtures-per-week, because what tires a
+   squad is the gap, not the count: Thursday to Sunday is punishing, Tuesday
+   to the following Saturday is a normal week's rest. */
+const CONGEST_FULL=3.2;    /* days: at or under this, a prior match counts in full */
+const CONGEST_FADE=6;      /* days: beyond this, a prior match is simply last week */
+const CONGEST_MAX=0.22;    /* most a fully congested week takes off a start probability */
+const CONGEST_NAILED=0.35; /* share of that a certain starter still carries */
+const CONGEST_TO_BENCH=0.45; /* share of a lost start that comes back as a cameo */
+
+/* The endpoint's flat rows → {teamId:[{gw,comp,ms}]}, kickoffs as epoch ms. */
+function euroIndex(feed){
+  const idx={};
+  ((feed&&feed.rows)||[]).forEach(r=>{
+    const t=parseInt(r.team,10),ms=Date.parse(r.kickoff);
+    if(!Number.isFinite(t)||!Number.isFinite(ms))return;
+    (idx[t]=idx[t]||[]).push({gw:r.gw,comp:r.comp,ms});
+  });
+  Object.keys(idx).forEach(k=>idx[k].sort((a,c)=>a.ms-c.ms));
+  return idx;
+}
+/* How much extra football a club carries into a fixture kicking off at
+   `kickMs`. Only matches BEFORE it count: a cup tie the following Wednesday
+   tires nobody on the Saturday. It may tempt a manager to rest players ahead
+   of it, but that is a different effect and not one this data can measure, so
+   we do not pretend to. */
+function congestionLoad(idx,teamId,kickMs){
+  const list=(idx&&idx[teamId])||[];
+  if(!list.length||!Number.isFinite(kickMs))return 0;
+  let load=0;
+  for(const m of list){
+    const days=(kickMs-m.ms)/86400e3;
+    if(days<=0||days>=CONGEST_FADE)continue;
+    load+=days<=CONGEST_FULL?1:(CONGEST_FADE-days)/(CONGEST_FADE-CONGEST_FULL);
+  }
+  return Math.min(2,load);
+}
+/* Congestion is not shared evenly. A manager rests the players who are
+   already sharing minutes long before dropping a certain starter, so the
+   same congested week barely touches a nailed man and lands hard on the
+   squad player — which is exactly who the Rotation Risk panel lists. */
+/* The matches behind a club's load, newest first — so the panel can name the
+   tie rather than assert a number. */
+function congestionGames(idx,teamId,kickMs){
+  const list=(idx&&idx[teamId])||[];
+  if(!Number.isFinite(kickMs))return [];
+  return list.filter(m=>{const d=(kickMs-m.ms)/86400e3;return d>0&&d<CONGEST_FADE;})
+    .map(m=>({comp:m.comp,ms:m.ms,days:(kickMs-m.ms)/86400e3}))
+    .sort((a,c)=>c.ms-a.ms);
+}
+/* Clubs carrying extra football into their next fixture, worst first. Pure,
+   so the wording is testable without a browser. */
+const CONGEST_COMP={UCL:'Champions League',UEL:'Europa League',UECL:'Conference League',EFL:'EFL Cup',FA:'FA Cup'};
+function congestionClubs(b,nf){
+  if(!b||!b.euro)return [];
+  const out=[];
+  Object.keys(nf||{}).forEach(k=>{
+    const t=parseInt(k,10),f=nf[k];
+    if(!f||!(f.congest>0))return;
+    out.push({team:t,load:f.congest,event:f.event,
+      games:congestionGames(b.euro,t,f.kickoff)});
+  });
+  return out.sort((a,c)=>c.load-a.load||a.team-c.team);
+}
+function congestionFactor(load,startShare){
+  if(!(load>0))return 1;
+  const exposure=1-Math.max(0,Math.min(1,startShare||0));
+  const bite=CONGEST_NAILED+(1-CONGEST_NAILED)*exposure;
+  return Math.max(0.5,1-CONGEST_MAX*Math.min(1,load)*bite);
+}
+function minutesModel(el,gp,congest){
   gp=Math.max(1,gp||1);
   const out=el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
   /* Availability: the next-round chance, falling back to this-round when the
@@ -8896,8 +9026,14 @@ function minutesModel(el,gp){
      lags it (and to stay robust if starts is absent). */
   const startEff=Math.max(startShare,Math.max(0,(minShare-0.15)/0.85));
   const perStart=(el.starts||0)>0?Math.min(1,(el.minutes||0)/(el.starts*90)):0.9;
-  const cameo=Math.max(0,minShare-startEff*perStart);
-  const pStart=Math.min(1,startEff*avail);
+  const cameo0=Math.max(0,minShare-startEff*perStart);
+  /* Congestion suppresses the START, not the appearance. A rested player is
+     on the bench, not out of the squad, and a good share of him comes on for
+     the last half-hour — so the start probability congestion takes away is
+     partly returned as a cameo, and pAppear falls much less than pStart. */
+  const uncong=Math.min(1,startEff*avail);
+  const pStart=Math.min(1,startEff*avail*congestionFactor(congest,startShare));
+  const cameo=Math.min(1,cameo0+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
   const pAppear=Math.min(1,(pStart+cameo)*(out?0:1));
   const p60=Math.min(1,pStart*Math.max(0.8,perStart/0.9));
   const minFrac=Math.min(1,pStart*perStart+cameo*0.28*avail);
@@ -8949,7 +9085,7 @@ function nativeXP(el,nf){
   const gp=nf.gp||0;
   if(gp<5||nf.lamAvg==null)return null;
   if((el.minutes||0)/gp<20)return null;
-  const m=minutesModel(el,gp);
+  const m=minutesModel(el,gp,nf.congest);
   if(m.minFrac<=0)return 0;                            /* ruled out this week */
   const type=el.element_type;
   const xg90=effGoalRate(el);                          /* finishing-aware (P-fix 5) */
@@ -11659,7 +11795,7 @@ function captainBand(xp){
 function pointsDist(el,nf,trials){
   trials=trials||2000;
   if(!nf||nf.lam==null)return {mean:0,p10:0,p50:0,p90:0,haul:0,blank:0};
-  const m=minutesModel(el,Math.max(1,nf.gp||6));
+  const m=minutesModel(el,Math.max(1,nf.gp||6),nf.congest);
   const type=el.element_type,fx=nf.lamAvg?nf.lam/nf.lamAvg:1;
   const xg=effGoalRate(el),xa=parseFloat(el.expected_assists_per_90||'0');   /* finishing-aware (P-fix 5) */
   const dcp=parseFloat(el.defensive_contribution_per_90||'0');
@@ -11721,7 +11857,7 @@ function squadSim(els,nfByTeam,capId,trials){
       if(cs[team]===undefined)cs[team]=rnd()<nf.cs?1:0;          /* shared clean sheet */
       if(shock[team]===undefined)shock[team]=0.55+rnd()*0.9;      /* shared attack shock */
       if(conc[team]===undefined)conc[team]=cs[team]?0:pois(-Math.log(Math.max(0.03,Math.min(0.99,nf.cs)))); /* shared goals conceded (P-fix 1) */
-      const m=minutesModel(e,Math.max(1,nf.gp||6));
+      const m=minutesModel(e,Math.max(1,nf.gp||6),nf.congest);
       const type=e.element_type,fx=(nf.lamAvg?nf.lam/nf.lamAvg:1)*shock[team];
       const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0;
       const play=rnd()<m.pAppear,p60=play&&rnd()<Math.min(1,m.p60/Math.max(m.pAppear,1e-6));

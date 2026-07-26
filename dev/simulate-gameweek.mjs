@@ -23,7 +23,13 @@ function extractBlock(src, s) { const o = src.indexOf('{', s); let d = 0, q = nu
     if (q) { if (e) e = false; else if (c === '\\') e = true; else if (c === q) q = null; continue; }
     if (c === "'" || c === '"' || c === '`') { q = c; continue; }
     if (c === '{') d++; else if (c === '}') { d--; if (!d) return src.slice(s, j + 1); } } }
+/* minutesModel now depends on the fixture-congestion helper; historical runs
+   pass no congestion, so congestionFactor returns 1 and nothing changes. */
+const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
+  .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
+  .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
 const nativeXP = new Function(
+  congestSrc + '\n' +
   extractBlock(html, html.indexOf('function minutesModel(')) + '\n' +
   extractBlock(html, html.indexOf('function concedePts(')) + '\n' +
   extractBlock(html, html.indexOf('function effGoalRate(')) + '\n' +

@@ -156,6 +156,14 @@
   status = 200
   force = true
 
+# Midweek European and cup fixtures by FPL gameweek — the congestion the
+# official FPL API cannot see, used by the minutes model and Rotation Risk.
+[[redirects]]
+  from = "/api/euro-fixtures"
+  to = "/.netlify/functions/euro-fixtures"
+  status = 200
+  force = true
+
 # Scheduled push sender (hourly).
 [functions."push-cron"]
   schedule = "@hourly"

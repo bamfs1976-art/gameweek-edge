@@ -67,8 +67,13 @@ function extractBlock(src, startIdx) {
 }
 const grabFn = (h, n) => extractBlock(h, h.indexOf('function ' + n + '('));
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+/* minutesModel now depends on the fixture-congestion helper; historical runs
+   pass no congestion, so congestionFactor returns 1 and nothing changes. */
+const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
+  .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
+  .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
 const model = new Function(
-  [grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'effGoalRate'),
+  [congestSrc, grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'effGoalRate'),
    grabFn(html, 'negRate90'), grabFn(html, 'nativeXP')].join('\n') + '\nreturn {nativeXP};'
 )();
 
