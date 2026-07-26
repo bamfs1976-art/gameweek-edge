@@ -360,6 +360,7 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
     'const money=c=>"£"+(c/10).toFixed(1);\n' +
     'const dcHitRate=e=>e._dc||0;\n' +
     'const baselineBps90=e=>e._bb||0;\n' +
+    'const socHist=e=>e._hist||null;\n' +
     grabFn('socMetricDefs') + '\nreturn socMetricDefs;'
   )();
 
@@ -376,6 +377,7 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
     id: 1, team: 1, now_cost: 75, total_points: 140, form: '5.5',
     selected_by_percent: '12.3', element_type: 3, minutes: 900,
     _xp: 5.4, _fx: 2.5, _dc: 0.62, _bb: 12.4, _ci: { npxg90: 0.41 },
+    _hist: { n: 12, ppg: 5.5, sd: 3.2, haulRate: 0.25, blankRate: 0.5, profile: 'balanced' },
   };
   defs.forEach((d) => {
     const n = d.v(el);
@@ -396,6 +398,17 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
   ok(by.ppm.f(by.ppm.v(el)) === (140 / 7.5).toFixed(1), 'points per £m divides by price in millions');
   ok(by.xp6.v(el) === 5, 'xP over 6 sums the horizon fixtures');
   ok(by.bbps90.f(by.bbps90.v(el)) === '12.4', 'baseline BPS keeps one decimal');
+  /* History-backed metrics read the per-match summary the builder loads. */
+  ok(by.ppa.f(by.ppa.v(el)) === '5.5', 'points per appearance reads the history');
+  ok(by.sd.f(by.sd.v(el)) === '3.2', 'return spread reads the history');
+  ok(by.haul.f(by.haul.v(el)) === '25%', 'haul rate formats as a percentage');
+  ok(by.blank.f(by.blank.v(el)) === '50%', 'blank rate formats as a percentage');
+  ok(['ppa', 'sd', 'haul', 'blank'].every((k) => by[k].hist), 'they are flagged as needing history');
+  /* A player with no loaded history prints a dash and sorts last, rather
+     than showing a fabricated zero. */
+  const noHist = Object.assign({}, el, { _hist: null });
+  ok(['ppa', 'sd', 'haul', 'blank'].every((k) => by[k].v(noHist) === -1), 'missing history sentinels to -1');
+  ok(['ppa', 'sd', 'haul', 'blank'].every((k) => by[k].f(by[k].v(noHist)) === '—'), 'and prints a dash');
 
   /* Missing advanced data must read as zero, not crash or print undefined. */
   const bare = { id: 2, team: 1, now_cost: 40, element_type: 2 };

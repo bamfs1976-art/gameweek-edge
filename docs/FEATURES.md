@@ -165,8 +165,15 @@ indistinguishable from a shipped one:
 
 - **Ranked list** — search and add any players, then choose the number shown
   beside each: xP next gameweek, xP over 6 fixtures, total points, form, price,
-  ownership, points per £m, DefCon hit rate or npxG/90. Sort by that number or
-  keep your own order; the top ten make the card.
+  ownership, points per £m, DefCon hit rate, npxG/90 or baseline BPS/90. Sort by
+  that number or keep your own order; the top ten make the card.
+  Four further metrics read **per‑match history** — points per appearance,
+  **return spread (SD)**, haul rate and blank rate. Those need
+  `element-summary`, one request per player, which rules them out of a
+  league‑wide leaderboard but is entirely affordable for a handful of
+  hand‑picked players. Summaries are fetched only when such a metric is
+  selected, cached per element for the session, and a player with too thin a
+  sample prints a dash and sorts last rather than showing a fabricated zero.
 - **Squad** — lock in the players you want and the optimiser builds the best
   legal 15 around them, inside a budget you set with a slider, optionally
   holding money back. If the locked picks cannot fit, the card says so rather
@@ -537,6 +544,14 @@ for nothing — playing one burns it for the whole half. Bench Boost and Triple
 Captain are unaffected, since they change scoring rather than squad access, and
 GW1 remains a legitimate week for both. There is no equivalent restriction at
 GW20: the second‑half chips unlock there, but transfers are not unlimited.
+
+**A gameweek needs enough clubs to be a gameweek.** An FPL XI is eleven players
+with at most three per club, so at least **four clubs** must have a fixture
+before a week is playable at all. Below that it is not a blank gameweek, it is
+missing fixture data — and a "gameweek" where every club blanks is not a
+gameweek. Such weeks are dropped from the plan entirely, rather than being
+offered as the ultimate Free Hit, which is exactly what an unguarded blank count
+produced.
 
 Blanks and doubles override the difficulty read when the calendar has them.
 Chips are assigned in order of how **constrained** they are, not how valuable —

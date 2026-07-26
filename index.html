@@ -5381,8 +5381,39 @@ function socMetricDefs(b,fixtures){
     {k:'dchr',l:'DefCon hit rate',v:e=>dcHitRate(e),f:v=>Math.round(v*100)+'%'},
     {k:'npxg90',l:'npxG per 90',v:e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:0,f:v=>v.toFixed(2)},
     {k:'bbps90',l:'Baseline BPS per 90',v:e=>baselineBps90(e),f:v=>v.toFixed(1)},
+    /* These read per-match history, so the builder loads element-summary for
+       the picked players before drawing. Anyone with too thin a sample sorts
+       last and prints a dash rather than a made-up zero. */
+    {k:'ppa',l:'Points per appearance',hist:1,v:e=>{const c=socHist(e);return c?c.ppg:-1;},
+      f:v=>v<0?'—':v.toFixed(1)},
+    {k:'sd',l:'Return spread (SD)',hist:1,v:e=>{const c=socHist(e);return c?c.sd:-1;},
+      f:v=>v<0?'—':v.toFixed(1)},
+    {k:'haul',l:'Haul rate (10+)',hist:1,v:e=>{const c=socHist(e);return c?c.haulRate:-1;},
+      f:v=>v<0?'—':Math.round(v*100)+'%'},
+    {k:'blank',l:'Blank rate (2 or under)',hist:1,v:e=>{const c=socHist(e);return c?c.blankRate:-1;},
+      f:v=>v<0?'—':Math.round(v*100)+'%'},
   ];
 }
+/* ── Per-match history for the builder ────────────────────────────────
+   Return consistency needs the per-gameweek history from element-summary,
+   which is one request per player. That rules it out for a league-wide
+   leaderboard, but the builder only ever holds a handful of hand-picked
+   players, so here it is entirely affordable — fetch just the picks.
+
+   Cached per element for the session, and failures cache as null so a
+   player whose history will not load is simply shown as having none rather
+   than being retried on every keystroke. */
+const SOC_HIST=new Map();
+async function socEnsureHistory(ids){
+  const missing=(ids||[]).filter(id=>!SOC_HIST.has(id));
+  if(!missing.length)return;
+  await Promise.all(missing.map(async id=>{
+    try{const sum=await loadSummary(id);SOC_HIST.set(id,consistency(sum&&sum.history));}
+    catch(_){SOC_HIST.set(id,null);}
+  }));
+}
+function socHist(e){return (e&&SOC_HIST.get(e.id))||null;}
+
 function socBuildSpec(b,fixtures){
   const S=SOC_BUILD;
   const byId={};(b.elements||[]).forEach(e=>{byId[e.id]=e;});
@@ -5402,17 +5433,29 @@ function socBuildSpec(b,fixtures){
   const m=defs.find(d=>d.k===S.metric)||defs[0];
   const rows=picks.map(e=>({e,n:m.v(e)}));
   if(S.sort)rows.sort((a,c)=>c.n-a.n);
+  const meta=e=>{
+    if(!m.hist)return money(e.now_cost)+' · '+e.selected_by_percent+'% owned';
+    const c=socHist(e);
+    return c?(CONSISTENCY_COPY[c.profile][0]+' · '+c.n+' apps'):'not enough games';
+  };
   return {id:'custom-list',kind:'rank',
     title:S.title||'MY LIST',sub:S.sub||m.l,
-    note:S.note||'Built with the Gameweek Edge model.',
+    note:S.note||(m.hist
+      ? 'Measured across appearances only, so this is the shape of the returns rather than rotation risk.'
+      : 'Built with the Gameweek Edge model.'),
     items:rows.slice(0,10).map(({e,n})=>({nm:e.web_name,team:teamShort(b,e.team),
-      meta:money(e.now_cost)+' · '+e.selected_by_percent+'% owned',
-      v:m.f(n),crest:crestUrl(b,e.team),photos:socPhotoUrls(e)}))};
+      meta:meta(e),v:m.f(n),crest:crestUrl(b,e.team),photos:socPhotoUrls(e)}))};
 }
 /* Redraw just the builder preview — the preset gallery is untouched. */
 async function socBuildRefresh(){
   const S=window._soc;if(!S)return;
   const box=document.getElementById('soc-b-shot');if(!box)return;
+  const defs=socMetricDefs(S.b,S.fixtures);
+  const m=defs.find(d=>d.k===SOC_BUILD.metric);
+  if(SOC_BUILD.kind==='list'&&m&&m.hist&&SOC_BUILD.ids.length){
+    box.innerHTML='<div class="soc-empty">Loading match history…</div>';
+    try{await socEnsureHistory(SOC_BUILD.ids);}catch(_){}
+  }
   let spec=null;try{spec=socBuildSpec(S.b,S.fixtures);}catch(_){}
   window._soc.custom=spec;
   const bar=document.getElementById('soc-b-actions');
@@ -9126,6 +9169,9 @@ function clubFdrRuns(b,fixtures,n){
     .sort((a,c)=>a.mean-c.mean);
 }
 
+/* Eleven players, at most three per club: four clubs is the fewest that can
+   field a legal XI, and so the fewest that make a gameweek playable. */
+const MIN_CLUBS_FOR_XI=4;
 const CHIP_HALF_END=19;
 function chipHalfWindow(startGw){
   const s=Math.max(1,startGw||1);
@@ -9149,9 +9195,10 @@ function fdrGameweeks(b,fixtures,from,to){
   const out=[];
   for(let g=from;g<=to;g++){
     const a=acc[g];
-    if(!a){out.push({gw:g,n:0,mean:null,easy:0,hard:0,blanks:teams.slice(),doubles:[],rows:[]});continue;}
+    if(!a){out.push({gw:g,n:0,mean:null,easy:0,hard:0,blanks:teams.slice(),playing:0,doubles:[],rows:[]});continue;}
+    const blanks=teams.filter(t=>!a.count[t]);
     out.push({gw:g,n:a.n,mean:a.n?a.sum/a.n:null,easy:a.easy,hard:a.hard,
-      blanks:teams.filter(t=>!a.count[t]),
+      blanks,playing:teams.length-blanks.length,
       doubles:teams.filter(t=>(a.count[t]||0)>1),
       rows:a.rows});
   }
@@ -9162,7 +9209,13 @@ function chipPlanFdr(b,fixtures,opts){
   const startGw=opts.startGw||(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
   const win=chipHalfWindow(startGw);
   const breaks=opts.breaks||intlBreakGws(b&&b.events);
-  const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.n>0||g.blanks.length);
+  /* An FPL XI is eleven players with at most three from any one club, so at
+     least FOUR clubs must have a fixture before a gameweek is playable at
+     all. Anything below that is not a blank gameweek, it is missing fixture
+     data — and a "gameweek" where every club blanks is not a gameweek. Such
+     weeks are dropped entirely rather than being offered as the ultimate
+     Free Hit, which is exactly what an unguarded blank count produced. */
+  const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.playing>=MIN_CLUBS_FOR_XI);
   gws.forEach(g=>{g.afterBreak=breaks[g.gw]||0;});
   const played=gws.filter(g=>g.mean!=null);
   if(played.length<3)return null;
@@ -9248,8 +9301,8 @@ function chipPlanFdr(b,fixtures,opts){
      post-break week is treated as effectively harder for this chip only. */
   const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0);
   const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy);
-  const blankRank=gws.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
-  const dblRank=gws.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
+  const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
+  const dblRank=played.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
 
   /* Transfers are unlimited right up to the GW1 deadline, so in GW1 a Free
      Hit and a Wildcard both buy something you already have for nothing: any

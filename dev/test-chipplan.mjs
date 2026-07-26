@@ -34,7 +34,7 @@ const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
 const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
 
 const API = new Function(
-  grabConst('CHIP_HALF_END') + '\n' +
+  grabConst('CHIP_HALF_END') + '\n' + grabConst('MIN_CLUBS_FOR_XI') + '\n' +
   grabFn('captainEligible') + '\n' +
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
   grabConst('WC_EARLY_PENALTY') + '\n' +
@@ -311,6 +311,37 @@ console.log('• clubFdrRuns: best fixture runs on official FDR');
   /* Finished fixtures are history and must not count towards a future run. */
   const done = fx.map((f) => (f.event === 1 ? Object.assign({}, f, { finished: true }) : f));
   ok(runs(boot(), done, 6)[0].opps.length === 6, 'finished fixtures are skipped, the window still fills');
+}
+
+console.log('• chipPlanFdr: a gameweek needs enough clubs to be a gameweek');
+{
+  /* An FPL XI is eleven players, max three per club, so four clubs is the
+     fewest that can field one. Below that a week is not a blank gameweek —
+     it is missing fixture data, and offering it as the ultimate Free Hit is
+     nonsense: if every club blanks there is no gameweek at all. */
+  const base = makeFixtures(1, 19, (gw) => (gw === 12 ? 5 : 3));
+
+  const empty = base.filter((f) => f.event !== 9);
+  const p1 = API.chipPlanFdr(boot(), empty, { startGw: 1 });
+  ok(p1.picks.freehit.gw !== 9, 'a gameweek with no fixtures is never the Free Hit week');
+  ok(p1.picks.freehit.gw === 12, 'it falls back to the genuinely hardest week');
+  ok(!p1.gws.some((g) => g.gw === 9), 'the empty week is dropped from the plan entirely');
+  ok(Object.values(p1.picks).every((x) => x.gw !== 9), 'no chip is assigned to it');
+
+  /* Fixtures come in pairs, so the sub-threshold case is a single fixture:
+     two clubs playing, which cannot field eleven at three per club. */
+  const two = base.filter((f) => !(f.event === 9 && f.team_h > 1));
+  const p2 = API.chipPlanFdr(boot(), two, { startGw: 1 });
+  ok(!p2.gws.some((g) => g.gw === 9), 'two clubs playing is still not a playable gameweek');
+  ok(p2.picks.freehit.gw === 12, 'and the Free Hit ignores it');
+
+  /* Four clubs is exactly enough — that IS a blank gameweek, and prime Free Hit. */
+  const four = base.filter((f) => !(f.event === 9 && f.team_h > 4));
+  const p3 = API.chipPlanFdr(boot(), four, { startGw: 1 });
+  const gw9 = p3.gws.find((g) => g.gw === 9);
+  ok(gw9 != null, 'four clubs playing is a playable gameweek');
+  ok(gw9.playing === 4 && gw9.blanks.length === 16, 'and is correctly read as a big blank');
+  ok(p3.picks.freehit.gw === 9, 'a real blank gameweek takes the Free Hit');
 }
 
 console.log('• chipPlanFdr: blanks and doubles outrank a merely hard week');
