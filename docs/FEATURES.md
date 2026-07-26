@@ -616,6 +616,40 @@ to GW20–38 automatically once the second‑half chip set is live.
 Official FDR is a season‑long rating of the opponent: it knows nothing about
 form, injuries or a new manager, and the card says so.
 
+**Transfers and chips are one plan, not two.** A transfer strategy computed
+independently of the chips gives the wrong instruction: it says "fix your
+flagged defender" in the week a wildcard is about to rebuild him for nothing.
+A chip plan that ignores transfers gives an unplayable one: a Bench Boost in a
+week you had no route to making the bench ready for. So there is a single
+engine, surfaced in two layers on top of the plan above.
+
+**Transfer runway** — what to do about the *next* chip. `deadWeight()` ranks
+what in the squad is not earning its place: flagged out, suspended or gone, or
+at most 50% to play (serious); a doubt, or a player with real minutes and no
+starts (moderate); a starter who never finishes, under 55 minutes a start
+(minor). `transferRunway()` reads that against the plan. A **rebuild** chip
+(Wildcard, Free Hit) within three gameweeks means *carry* — bank the transfers
+and stop paying to fix what the chip fixes free. Further out than that, the
+damage costs more than a hit would, so fix the serious problems now. A **bench**
+chip (Bench Boost, Triple Captain) is the opposite instruction entirely: it
+multiplies the squad you have rather than replacing it, so the run‑up is for
+clearing problems, never for saving transfers you will not spend.
+
+**Transfer ledger** — the same plan walked forwards, one row per gameweek from
+now to the last chip, showing what is in the bank at that deadline and whether
+the week banks, spends or plays a chip. The free‑transfer balance is
+**reconstructed from your own transfer history** rather than requiring an
+authenticated `my-team` call: every gameweek grants one, the bank caps at five,
+GW1 is unlimited so nothing comes out of it, and a Wildcard or Free Hit leaves
+the balance untouched — which is precisely why arriving at one with a stack is
+worth planning for. A bench chip week spends from the bank like any other.
+
+The ledger exists to make the stack legible. Five banked transfers is a
+mini‑wildcard you did not have to play a chip for, so banking is part of the
+chip plan rather than doing nothing — but only up to the cap, past which the
+weekly grant is silently lost, and the card names the weeks where that happens.
+It assumes no hits, and says so.
+
 **Chip Strategy** — chips used/available and the best gameweeks to play each,
 AI‑assisted. Includes a **Fixture‑swing gameweek ranking** (`gwSwing`): every
 gameweek in the next ~19 ranked by fixture difficulty for the teams people own
@@ -834,7 +868,8 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
   auto blog, Team of the Week, H2H.
 - **Possible next steps:**
   - Full MILP transfer optimiser vs the current beam-search 3-GW plan.
-  - Authenticated `my-team` integration for exact selling price / free transfers.
+  - Authenticated `my-team` integration for exact selling price (the free‑transfer
+    balance is already reconstructed from transfer history — see Transfer ledger).
   - Native push depth (fpl.team / LiveFPL parity).
   - Editorial expansion of The Wire; column presets on the Player List.
   - Extend the photo‑token treatment to EO/Template/Rival lists and DefCon feed.

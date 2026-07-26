@@ -32,6 +32,9 @@ function extractBlock(src, startIdx) {
 }
 const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
 const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
+/* Some names exist both at top level and shadowed inside a function; anchor to
+   the line start so the sandbox gets the one the app's top-level code sees. */
+const grabTopConst = (n) => { const i = html.indexOf('\nconst ' + n + '=') + 1; return html.slice(i, html.indexOf('\n', i)); };
 
 const API = new Function(
   grabConst('CHIP_HALF_END') + '\n' + grabConst('MIN_CLUBS_FOR_XI') + '\n' +
@@ -43,10 +46,13 @@ const API = new Function(
   grabFn('wcHorizonFactor') + '\n' + grabConst('BB_RUNIN_PENALTY') + '\n' +
   grabConst('FT_CAP') + '\n' + grabConst('CARRY_HORIZON') + '\n' +
   grabFn('deadWeight') + '\n' + grabFn('transferRunway') + '\n' +
+  grabConst('LEDGER_MAX') + '\n' + grabTopConst('CHIP_LABEL') + '\n' +
+  grabFn('freeTransfersFrom') + '\n' + grabFn('transferLedger') + '\n' +
   'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,deadWeight,transferRunway};'
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,' +
+  'deadWeight,transferRunway,freeTransfersFrom,transferLedger};'
 )();
 
 const API_FT_CAP = 5;
@@ -662,6 +668,143 @@ console.log('• transferRunway: what to do with transfers before the chip');
 
   ok(R(b, squad, null) === null, 'no plan means no runway');
   ok(R(b, [], plan(12, 'wildcard')).dead.length === 0, 'an empty squad has no dead weight');
+}
+
+console.log('• freeTransfersFrom: rebuilding the bank from transfer history');
+{
+  const F = API.freeTransfersFrom;
+  const ev = (event, event_transfers) => ({ event, event_transfers });
+
+  ok(F(null) === null && F({ current: [] }) === null, 'no history means no answer');
+  /* GW1 is unlimited, so however many you make there the bank is 1 for GW2.
+     Starting the walk at zero makes this true on its own; the event>1 guard
+     in the code states the rule rather than carrying it. */
+  ok(F({ current: [ev(1, 15)] }) === 1, 'GW1 transfers do not come out of the bank');
+  /* Bank one a week when nothing is spent, up to the cap and no further. */
+  ok(F({ current: [1, 2, 3].map((g) => ev(g, 0)) }) === 3, 'unspent transfers accumulate');
+  ok(F({ current: Array.from({ length: 12 }, (_, i) => ev(i + 1, 0)) }) === API_FT_CAP,
+    'and stop accumulating at the cap');
+  /* Spending draws the bank down before the next week's grant: two banked
+     going into GW3, both spent there, so GW4 is entered on the grant alone. */
+  ok(F({ current: [ev(1, 0), ev(2, 0), ev(3, 2)] }) === 1,
+    'a spend comes off before the following week is granted');
+  /* A hit spends more than you hold; the bank floors at zero, never negative. */
+  ok(F({ current: [ev(1, 0), ev(2, 4)] }) === 1, 'a hit cannot push the bank below zero');
+  /* The whole point of arriving at a wildcard with a stack: it survives. */
+  const wc = { current: [ev(1, 0), ev(2, 0), ev(3, 0), ev(4, 9)], chips: [{ event: 4, name: 'wildcard' }] };
+  ok(F(wc) === API_FT_CAP - 1, 'a wildcard leaves the banked transfers untouched');
+  const fh = { current: [ev(1, 0), ev(2, 0), ev(3, 11)], chips: [{ event: 3, name: 'freehit' }] };
+  ok(F(fh) === 3, 'and so does a free hit');
+  /* A bench chip is not a transfer chip — its week spends normally. Same
+     gameweeks and same transfers as the free hit above, and it ends on 1
+     rather than 3, which is the whole difference. */
+  const bb = { current: [ev(1, 0), ev(2, 0), ev(3, 2)], chips: [{ event: 3, name: 'bboost' }] };
+  ok(F(bb) === 1, 'a bench boost week spends from the bank like any other');
+}
+
+console.log('• transferLedger: the week-by-week save/spend timeline');
+{
+  const L = API.transferLedger;
+  const b = { upcoming: { id: 10 }, cur: { id: 10 } };
+  const clean = [{ id: 2, team: 1, web_name: 'Fine', now_cost: 60, status: 'a', minutes: 900, starts: 10 }];
+  const broken = [
+    { id: 1, team: 1, web_name: 'Hurt', now_cost: 70, status: 'i', minutes: 900, starts: 10 },
+    { id: 3, team: 1, web_name: 'Doubt', now_cost: 65, status: 'd', minutes: 900, starts: 10 },
+  ].concat(clean);
+  const at = (led, gw) => led.rows.filter((r) => r.gw === gw)[0];
+
+  ok(L(b, clean, null) === null && L(b, clean, { picks: {} }) === null, 'no chips means no ledger');
+  ok(L(b, clean, { picks: { wildcard: { gw: 4 } } }) === null, 'a plan entirely in the past gives no ledger');
+
+  /* The timeline runs from now to the last chip, one row per gameweek. */
+  const span = L(b, clean, { picks: { benchboost: { gw: 12 }, wildcard: { gw: 15 } } }, 1);
+  ok(span.rows[0].gw === 10 && span.end === 15, 'the ledger runs from now to the last chip');
+  ok(span.rows.length === 6, 'with a row for every gameweek in between');
+  ok(span.rows.every((r, i) => i === 0 || r.gw === span.rows[i - 1].gw + 1), 'and no gaps');
+
+  /* Long plans are truncated rather than rendering half a season. */
+  const long = L(b, clean, { picks: { wildcard: { gw: 34 } } }, 1);
+  ok(long.rows.length === 10, 'a distant chip truncates the timeline to a readable length');
+
+  /* Banking: with nothing to fix, every week saves and the bank climbs to the cap. */
+  ok(span.rows.filter((r) => r.act === 'save').length === 4, 'a clean squad banks every non-chip week');
+  const climb = L(b, clean, { picks: { wildcard: { gw: 20 } } }, 1);
+  ok(climb.rows[0].bank === 1 && climb.rows[1].bank === 2, 'the bank grows one a week');
+  ok(climb.rows.every((r) => r.bank <= API_FT_CAP), 'and never passes the cap');
+  ok(climb.rows.some((r) => r.capped), 'sitting at the cap is called out as a wasted transfer');
+  /* Not on a chip week though: on a wildcard the transfers are unlimited, so
+     "your free transfer is lost" is simply wrong, and on a bench chip it is
+     noise. Both weeks below sit at the cap. */
+  const atCap = L(b, clean, { picks: { wildcard: { gw: 16 }, benchboost: { gw: 17 } } }, API_FT_CAP);
+  ok(at(atCap, 16).bank === API_FT_CAP && at(atCap, 17).bank === API_FT_CAP, 'both chip weeks sit at the cap');
+  ok(!at(atCap, 16).capped && !at(atCap, 17).capped, 'but a chip week is never flagged as a wasted transfer');
+  ok(at(atCap, 10).capped, 'while an ordinary week at the cap still is');
+  ok(climb.peak === API_FT_CAP, 'the peak bank is reported');
+
+  /* A rebuild chip close by: bank, do not pay to fix what it fixes free. */
+  const carry = L(b, broken, { picks: { wildcard: { gw: 12 } } }, 3);
+  ok(at(carry, 10).act === 'save' && at(carry, 11).act === 'save', 'the weeks before a close wildcard bank');
+  ok(carry.spent === 0, 'nothing is spent on problems the wildcard will fix');
+  ok(at(carry, 12).act === 'chip', 'and the chip week is marked as such');
+  ok(/unlimited transfers/.test(at(carry, 12).note), 'a wildcard week says the transfers are free');
+
+  /* The same squad with the wildcard far away: fix it now instead. */
+  const fixNow = L(b, broken, { picks: { wildcard: { gw: 19 } } }, 3);
+  ok(at(fixNow, 10).act === 'spend', 'a distant rebuild does not excuse carrying the damage');
+  ok(at(fixNow, 10).spend === 2, 'and both problems are dealt with while the bank allows');
+  ok(fixNow.spent === 2, 'the total spend is reported');
+  ok(at(fixNow, 11).bank === 2, 'the bank reflects what was spent, plus the weekly grant');
+  ok(at(fixNow, 11).act === 'save', 'once the squad is clean the ledger goes back to banking');
+
+  /* A thin bank cannot fix everything at once — the spend spills into next week. */
+  const thin = L(b, broken, { picks: { wildcard: { gw: 19 } } }, 1);
+  ok(at(thin, 10).spend === 1 && at(thin, 11).spend === 1, 'a one-transfer bank fixes one problem a week');
+  ok(thin.spent === 2, 'but both still get fixed, a week later');
+
+  /* A bench chip is the opposite instruction: spend before it, never carry. */
+  const bench = L(b, broken, { picks: { benchboost: { gw: 12 } } }, 3);
+  ok(at(bench, 10).act === 'spend', 'problems are fixed in the run-up to a bench chip');
+  ok(at(bench, 12).act === 'chip' && !/unlimited/.test(at(bench, 12).note),
+    'and its week is a chip week with no free transfers');
+  ok(/ready/.test(at(bench, 12).note), 'which says the squad has to be ready for it');
+  /* The plan's own keys, not the API's — a mismatch would silently name the
+     chip "undefined" and, worse, stop the bench chip being recognised. */
+  ok(/^Bench Boost/.test(at(bench, 12).note), 'the chip week names the chip');
+  ok(/^Wildcard/.test(at(carry, 12).note), 'and so does a rebuild week');
+  const tc = L(b, broken, { picks: { triplecaptain: { gw: 12 } } }, 3);
+  ok(at(tc, 10).act === 'spend' && /^Triple Captain/.test(at(tc, 12).note),
+    'a triple captain is a bench-style chip too — spend before it');
+
+  /* With a clean squad there is nothing to spend on, so the run-up to a bench
+     chip banks — but for a stated reason, not for want of anything to do.
+     This is the only place the bench-chip test bites, so without it a chip-key
+     mismatch here would go unnoticed. */
+  const runUp = L(b, clean, { picks: { benchboost: { gw: 13 } } }, 1);
+  ok(at(runUp, 10).act === 'save' && /GW13 run-up/.test(at(runUp, 10).note),
+    'a clean squad banks towards a bench chip, and says so');
+  ok(/run-up/.test(at(L(b, clean, { picks: { triplecaptain: { gw: 13 } } }, 1), 11).note),
+    'a triple captain gets the same run-up treatment');
+  /* Clean squad, distant rebuild, no bench chip to aim at: banking has no
+     destination yet, and the copy says that rather than inventing a reason. */
+  const idle = L(b, clean, { picks: { wildcard: { gw: 19 } } }, 1);
+  ok(/Nothing that needs fixing/.test(at(idle, 10).note),
+    'with nothing to fix and nothing to aim at, banking is just banking');
+
+  /* After a wildcard the squad is clean, so later weeks bank rather than spend. */
+  const after = L(b, broken, { picks: { wildcard: { gw: 11 }, benchboost: { gw: 16 } } }, 2);
+  ok(after.rows.filter((r) => r.gw > 11).every((r) => r.act !== 'spend'),
+    'the wildcard clears the problems, so nothing is spent after it');
+  ok(at(after, 12).bank === at(after, 11).bank + 1, 'and the bank survives the wildcard');
+
+  /* Free Hit rebuilds too — for one week — so the run-up to it banks. */
+  const fh = L(b, broken, { picks: { freehit: { gw: 11 } } }, 2);
+  ok(at(fh, 10).act === 'save', 'a close free hit is worth banking for');
+
+  /* Without a linked team the ledger still runs, assuming a single transfer. */
+  const noFt = L(b, clean, { picks: { wildcard: { gw: 14 } } });
+  ok(noFt.rows[0].bank === 1, 'an unknown bank is assumed to be one transfer');
+  ok(L(b, clean, { picks: { wildcard: { gw: 14 } } }, 99).rows[0].bank === API_FT_CAP,
+    'and an impossible bank is clamped to the cap');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
