@@ -42,6 +42,9 @@ const API = new Function(
   grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' + grabFn('minClubsForXi') + '\n' +
   grabFn('captainEligible') + '\n' +
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
+  /* Break effects scale with how long the break actually is. */
+  grabConst('BREAK_BASE_DAYS') + '\n' + grabConst('WC_BREAK_BONUS_LONG') + '\n' +
+  grabFn('breakSeverity') + '\n' + grabFn('breakScale') + '\n' +
   grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
   grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
   grabConst('CHIP_PROVISIONAL_FROM') + '\n' + grabConst('WC_HORIZON_WEEKS') + '\n' +
@@ -53,7 +56,7 @@ const API = new Function(
   'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,' +
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,breakSeverity,breakScale,' +
   'deadWeight,transferRunway,freeTransfersFrom,transferLedger,minClubsForXi};'
 )();
 
@@ -807,6 +810,74 @@ console.log('• transferLedger: the week-by-week save/spend timeline');
   ok(noFt.rows[0].bank === 1, 'an unknown bank is assumed to be one transfer');
   ok(L(b, clean, { picks: { wildcard: { gw: 14 } } }, 99).rows[0].bank === API_FT_CAP,
     'and an impossible bank is clamped to the cap');
+}
+
+console.log('• breakSeverity: a three-week break is not an eleven-day one');
+{
+  const S = API.breakSeverity, SC = API.breakScale;
+  ok(S(0) === 0 && S(null) === 0 && S(undefined) === 0, 'no break is no severity');
+  ok(S(11) === 0, 'the ordinary international window is the baseline');
+  ok(S(21) === 1, 'a three-week merged break is the full end of the scale');
+  ok(S(16) > 0 && S(16) < 1, 'and a fortnight-and-a-half sits between them');
+  ok(S(16) > S(13) && S(19) > S(16), 'severity rises with the gap');
+  ok(S(40) === 1 && S(5) === 0, 'absurd gaps clamp rather than run away');
+  ok(S('16') === S(16), 'a numeric string still scores');
+
+  /* The scaler must land exactly on the old constants for an ordinary break,
+     so nothing that was tuned against them silently moves. */
+  ok(SC(1.3, 1.45, 11) === 1.3, 'an ordinary break keeps the wildcard bonus it always had');
+  ok(SC(0.88, 0.78, 11) === 0.88, 'and the triple-captain risk it always had');
+  ok(SC(0.3, 0.5, 11) === 0.3, 'and the bench boost penalty');
+
+  /* At the long end each effect points the right way: a longer break helps
+     the wildcard and hurts the two chips that need players to start. */
+  ok(SC(1.3, 1.45, 21) > SC(1.3, 1.45, 11), 'a long break helps the wildcard MORE');
+  ok(SC(0.88, 0.78, 21) < SC(0.88, 0.78, 11), 'and hurts the triple captain more');
+  ok(SC(0.3, 0.5, 21) > SC(0.3, 0.5, 11), 'and penalises the bench boost more');
+  ok(SC(1.3, 1.45, 0) === 1.3, 'no break means no adjustment at all');
+}
+
+console.log('• chipPlanFdr: a longer break shifts the chips further');
+{
+  /* Two identical seasons apart from the length of the break before GW10.
+     The plan must react to the difference, not just to the presence. */
+  const season = (breakDays) => {
+    const evs = [];
+    let t = Date.parse('2026-08-15T11:00:00Z');
+    for (let gw = 1; gw <= 19; gw++) {
+      evs.push({ id: gw, deadline_time: new Date(t).toISOString() });
+      t += (gw === 9 ? breakDays : 7) * 86400e3;
+    }
+    return evs;
+  };
+  const fx = makeFixtures(1, 19, () => 3);
+  const short = API.chipPlanFdr(boot({ events: season(11) }), fx, { startGw: 1 });
+  const long = API.chipPlanFdr(boot({ events: season(22) }), fx, { startGw: 1 });
+  ok(short && long, 'both seasons produce a plan');
+  const brk = API.intlBreakGws(season(22));
+  ok(brk[10] >= 21, 'the long season really does carry a three-week gap into GW10 (' + brk[10] + ')');
+  const brkShort = API.intlBreakGws(season(11));
+  ok(brkShort[10] === 11, 'and the short one an ordinary eleven-day window');
+
+  /* Flat fixtures have no swing to multiply, so the break bonus cannot
+     express itself there — it scales a GAIN, and the gain is zero. Plant the
+     swing on the post-break week so the wildcard actually lands on it, and
+     the difference between the two break lengths becomes visible. */
+  const swing = makeFixtures(1, 19, (gw, team) => {
+    const firstHalfClub = team <= 10, early = gw < 10;
+    return firstHalfClub ? (early ? 5 : 1) : (early ? 1 : 5);
+  });
+  const sShort = API.chipPlanFdr(boot({ events: season(11) }), swing, { startGw: 1 });
+  const sLong = API.chipPlanFdr(boot({ events: season(22) }), swing, { startGw: 1 });
+  const wcShort = sShort.picks.wildcard, wcLong = sLong.picks.wildcard;
+  ok(wcShort && wcLong, 'a wildcard is placed in both');
+  ok(wcShort.gw === 10 && wcLong.gw === 10, 'and lands on the post-break swing week in both');
+  ok(wcLong.afterBreak > wcShort.afterBreak,
+    'the plan carries the actual break length in days, not a yes/no (' +
+    wcShort.afterBreak + ' vs ' + wcLong.afterBreak + ')');
+  ok(wcLong.rankScore > wcShort.rankScore,
+    'and the longer break scores the wildcard higher (' +
+    wcShort.rankScore.toFixed(2) + ' vs ' + wcLong.rankScore.toFixed(2) + ')');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

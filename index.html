@@ -8877,12 +8877,67 @@ async function hydrateSetpiece(host){
     return '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
       (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No data yet.</div>')+'</div>';
   };
+  /* Club-first grid: the question is "if I buy from this club, who is on
+     what", so the club is the row and the three duties are the columns.
+     Names in order, first choice in bold — the whole hierarchy, because the
+     second and third names are exactly what you need when the first is
+     injured or sold. */
+  const spRows=setPieceClubRows(b,4);
+  const spName=(list)=>list.length
+    ? list.map((x,i)=>(i===0?'<b>'+esc(x.el.web_name)+'</b>':esc(x.el.web_name))).join(', ')
+    : '<span style="color:var(--text-4)">—</span>';
+  const gridCard=spRows.length
+    ? '<div class="card mb-20"><div class="card-title">Set-piece takers by club</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Every club’s order on all three duties, <b>first choice in bold</b>. The second and third names matter — they are who inherits the job when the taker is injured, rested or sold.</p>'+
+      '<div class="fdr"><table><tr><th class="tm">Club</th><th style="text-align:left">Penalties</th><th style="text-align:left">Direct FK</th><th style="text-align:left">Corners &amp; indirect</th></tr>'+
+      spRows.map(c=>'<tr><td class="tm">'+crest(b,c.team,15)+esc(teamShort(b,c.team))+'</td>'+
+        '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.pen)+'</td>'+
+        '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.fk)+'</td>'+
+        '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.ck)+'</td></tr>').join('')+
+      '</table></div>'+
+      '<div class="dl-sub" style="margin-top:8px">Set-piece duties change, and the official data lags a manager’s decision — the written notes above are the earlier signal when they disagree.</div></div>'
+    : '';
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data, each with a <b>confidence</b> rating — how safe the designation is — and, for penalties, the rough xP it adds. 1st choice is the primary taker.</div>'+
-    notesCard+
+    notesCard+gridCard+
     section('Penalties','penalties_order',true)+
     section('Direct free-kicks','direct_freekicks_order',true)+
     section('Corners & indirect free-kicks','corners_and_indirect_freekicks_order',true);
+}
+
+/* ── Set pieces, pivoted by club ────────────────────────────
+   The duty-first list answers "who takes the penalties in this league",
+   which nobody asks. The question people actually have is "if I buy from
+   this club, who is on what" — and that needs the club as the row and the
+   three duties as the columns, with the whole ordered hierarchy rather than
+   just the first two names. Same fields, transposed.
+
+   Pure, so both the Set Piece Register and the club dossier can render it. */
+const SP_DUTIES=[['pen','penalties_order','Penalties'],['fk','direct_freekicks_order','Direct free-kicks'],['ck','corners_and_indirect_freekicks_order','Corners & indirect']];
+function setPieceByClub(b,maxPer){
+  const cap=maxPer||4;
+  const out={};
+  (b&&b.elements||[]).forEach(e=>{
+    if(!e)return;
+    SP_DUTIES.forEach(([key,field])=>{
+      const o=e[field];
+      if(!(o>=1)||o>cap)return;
+      const club=out[e.team]=out[e.team]||{team:e.team,pen:[],fk:[],ck:[]};
+      club[key].push({el:e,order:o});
+    });
+  });
+  Object.keys(out).forEach(t=>SP_DUTIES.forEach(([key])=>{
+    out[t][key].sort((a,c)=>a.order-c.order);
+  }));
+  return out;
+}
+/* Clubs that have any set-piece designation at all, in league order. A club
+   with none is left out rather than printed as three dashes. */
+function setPieceClubRows(b,maxPer){
+  const by=setPieceByClub(b,maxPer);
+  return Object.keys(by).map(t=>by[t])
+    .filter(c=>c.pen.length||c.fk.length||c.ck.length)
+    .sort((a,c)=>teamShort(b,a.team).localeCompare(teamShort(b,c.team)));
 }
 
 /* ── Rotation Risk: start rate for premium players ─────── */
@@ -9249,6 +9304,78 @@ function effGoalRate(el){
   const w=Math.min(0.45,(el.minutes||0)/(90*20)*0.45);
   return (1-w)*xg90+w*g90;
 }
+/* ── Out of position ────────────────────────────────────────
+   FPL classifies a player once, in summer, and then pays him on that
+   classification all season however he actually plays. That gap is worth
+   real points, because the scoring tariff is not flat: a midfielder gets 5
+   per goal AND a clean-sheet point, a forward 4 and nothing; a defender gets
+   6 and a full clean sheet. So a midfielder who plays as a striker, or a
+   defender who plays as a winger, is being paid on the better tariff for the
+   job he is doing — the classic OOP bargain the community hunts for by eye.
+
+   It is detectable rather than anecdotal: compare a player's goal threat
+   against the MEDIAN of the position group above his own. Median rather than
+   mean because a handful of elite forwards would drag a mean far out of
+   reach, and the question is "does he threaten like a typical one of those",
+   not "like the best of them".
+
+   Deliberately one-directional on the upside and quiet about the reverse: a
+   forward drifting deep is a genuine downgrade, so it is flagged as a caution
+   rather than a find. */
+const OOP_MIN_MINUTES=450;     /* five full matches — below this it is noise */
+const OOP_STRONG=1.25;         /* comfortably past the benchmark, not scraping it */
+/* Goal threat per 90, preferring the non-penalty rate when Core Insights has
+   it: penalties are a duty, not evidence of where a player plays. */
+function oopThreat(el){
+  const ci=el&&el._ci;
+  if(ci&&Number.isFinite(ci.np_xg_per_90)&&ci.np_xg_per_90>0)return ci.np_xg_per_90;
+  return parseFloat((el&&el.expected_goals_per_90)||'0')||0;
+}
+/* Median goal threat per position group, over players with enough minutes to
+   mean anything. Returns {} when the season is too young to have any. */
+function oopBenchmarks(elements){
+  const by={2:[],3:[],4:[]};
+  (elements||[]).forEach(e=>{
+    if(!e||!by[e.element_type])return;
+    if((e.minutes||0)<OOP_MIN_MINUTES)return;
+    by[e.element_type].push(oopThreat(e));
+  });
+  const out={};
+  Object.keys(by).forEach(k=>{
+    const v=by[k].sort((a,c)=>a-c);
+    if(v.length>=5)out[k]=v[Math.floor(v.length/2)];
+  });
+  return out;
+}
+/* The flag for one player, or null. `marks` comes from oopBenchmarks. */
+function oopFlag(el,marks){
+  if(!el||!marks)return null;
+  const t=el.element_type;
+  if((el.minutes||0)<OOP_MIN_MINUTES)return null;
+  const threat=oopThreat(el);
+  if(!(threat>0))return null;
+  /* A defender is measured against midfielders, a midfielder against
+     forwards — one rung up, never two. */
+  const above=t===2?3:t===3?4:null;
+  if(above&&marks[above]!=null&&threat>=marks[above]){
+    const strong=threat>=marks[above]*OOP_STRONG;
+    return {level:strong?2:1,kind:'up',
+      label:t===2?'plays as a midfielder':'plays as a forward',
+      note:t===2
+        ?'Threatens like a midfielder while scoring on the defender tariff — 6 points a goal and a full clean sheet.'
+        :'Threatens like a forward while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
+      threat,bench:marks[above]};
+  }
+  /* The caution: a forward who threatens less than a typical midfielder is
+     playing away from goal, and forwards are paid worst for it. */
+  if(t===4&&marks[3]!=null&&threat<marks[3]){
+    return {level:-1,kind:'down',label:'playing deep for a forward',
+      note:'Less goal threat than a typical midfielder, on the tariff that pays least for it — 4 points a goal and no clean sheet.',
+      threat,bench:marks[3]};
+  }
+  return null;
+}
+
 /* Expected negative FPL points per 90 from cards, own goals and penalty
    misses, from the realised rates (P-fix 4). Never forecast before, so
    high-risk profiles carried a hidden optimism. Zero without the data. */
@@ -9469,6 +9596,25 @@ function intlBreakGws(events){
    wildcard and hurts the two chips that depend on players actually starting;
    none of it overrides a blank or a double, which are stronger signals. */
 const WC_BREAK_BONUS=1.3,BREAK_RISK=0.88,BREAK_BB_PENALTY=0.3;
+/* But a break is not one thing. The ordinary international window costs a
+   fortnight; a merged or tournament-extended one can run three weeks, and
+   every effect a break has gets stronger with its length — more travel, more
+   players away, more time for a knock to appear and for a manager to change
+   his mind, and correspondingly more time for a wildcarder to plan with the
+   news already in. intlBreakGws has always recorded the gap in days and the
+   plan only ever read it as a yes/no, so a three-week break was scored
+   identically to an eleven-day one. These are the values at the long end,
+   interpolated by how long the break actually is. */
+const BREAK_BASE_DAYS=11,BREAK_LONG_DAYS=21;
+const WC_BREAK_BONUS_LONG=1.45,BREAK_RISK_LONG=0.78,BREAK_BB_PENALTY_LONG=0.5;
+/* 0 for an ordinary window, 1 for a three-week one, clamped at both ends. */
+function breakSeverity(days){
+  const d=Number(days);
+  if(!(d>0))return 0;
+  const c=Math.max(BREAK_BASE_DAYS,Math.min(BREAK_LONG_DAYS,d));
+  return (c-BREAK_BASE_DAYS)/(BREAK_LONG_DAYS-BREAK_BASE_DAYS);
+}
+function breakScale(base,long,days){return base+(long-base)*breakSeverity(days);}
 /* A wildcard in GW2 or GW3 is rarely right even when the fixtures swing
    there. One or two weeks of football is mostly noise: the template has not
    formed, prices have barely moved, and the players you would chase are the
@@ -9638,7 +9784,7 @@ function chipPlanFdr(b,fixtures,opts){
     const early=WC_EARLY_PENALTY[g.gw]||1,horizon=wcHorizonFactor(g.gw);
     wcRank.push({gw:g.gw,gain,turning,afterBreak:g.afterBreak||0,early:early<1?early:0,
       runIn:horizon<1?horizon:0,weeksLeft:38-g.gw,
-      score:gain*(g.afterBreak?WC_BREAK_BONUS:1)*early*horizon});
+      score:gain*(g.afterBreak?breakScale(WC_BREAK_BONUS,WC_BREAK_BONUS_LONG,g.afterBreak):1)*early*horizon});
   });
   wcRank.sort((a,c)=>c.score-a.score||c.gw-a.gw);
 
@@ -9654,7 +9800,7 @@ function chipPlanFdr(b,fixtures,opts){
       g.rows.filter(r=>r.team===el.team).forEach(r=>{
         /* Straight after a break the armband is a gamble: the player may be
            rested, jet-lagged or hurt, and the news lands late. */
-        tcAll.push({score:q*(6-r.fdr)*(r.home?1.08:1)*(g.afterBreak?BREAK_RISK:1)
+        tcAll.push({score:q*(6-r.fdr)*(r.home?1.08:1)*(g.afterBreak?breakScale(BREAK_RISK,BREAK_RISK_LONG,g.afterBreak):1)
             *(TC_RUNIN_RISK[g.gw]||1),
           gw:g.gw,el,opp:r.opp,home:r.home,fdr:r.fdr,afterBreak:g.afterBreak||0,
           runIn:TC_RUNIN_RISK[g.gw]?1:0});
@@ -9732,7 +9878,7 @@ function chipPlanFdr(b,fixtures,opts){
   /* Bench Boost needs fifteen players who actually start. After a break the
      fringe of a squad is exactly who gets rested or returns late, so a
      post-break week is treated as effectively harder for this chip only. */
-  const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0)+(BB_EARLY_PENALTY[g.gw]||0)
+  const bbMean=g=>g.mean+(g.afterBreak?breakScale(BREAK_BB_PENALTY,BREAK_BB_PENALTY_LONG,g.afterBreak):0)+(BB_EARLY_PENALTY[g.gw]||0)
     +(BB_RUNIN_PENALTY[g.gw]||0);
   const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy||c.gw-a.gw);
   const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);

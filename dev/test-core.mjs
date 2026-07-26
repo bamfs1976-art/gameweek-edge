@@ -153,12 +153,22 @@ const pieces = [
   extractFn(html, 'fdrLens'),
   extractFn(html, 'fdrCellValue'),
   extractFn(html, 'fdrRunTotal'),
+  /* Out-of-position detection. */
+  ...['OOP_MIN_MINUTES', 'OOP_STRONG']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'oopThreat'),
+  extractFn(html, 'oopBenchmarks'),
+  extractFn(html, 'oopFlag'),
+  /* Set pieces pivoted club-first. */
+  extractConst(html, 'SP_DUTIES'),
+  extractFn(html, 'setPieceByClub'),
+  extractFn(html, 'setPieceClubRows'),
   extractFn(html, 'plsimPrior'),
   extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1228,6 +1238,116 @@ section('fdr lenses: the cell shows the projection, not just a colour (Tier 2)')
   /* An out-of-range official rating is clamped to average, as the grid does. */
   ok(core.fdrCellValue('fpl', cell({ fdr: 0 })) === '3' && core.fdrCellValue('fpl', cell({ fdr: 9 })) === '3',
     'an impossible official rating reads as average');
+}
+
+section('oopFlag: paid on one tariff, playing another job (Tier 2)');
+{
+  const M = core.OOP_MIN_MINUTES;
+  /* A league where each position group has a clear, separated threat level. */
+  const pool = [];
+  let id = 1;
+  const add = (type, n, xg) => { for (let i = 0; i < n; i++) pool.push({
+    id: id++, element_type: type, minutes: M + 100, expected_goals_per_90: String(xg + i * 0.001) }); };
+  add(2, 8, 0.05); add(3, 8, 0.20); add(4, 8, 0.45);
+  const marks = core.oopBenchmarks(pool);
+  ok(marks[2] < marks[3] && marks[3] < marks[4], 'benchmarks rise with the position group');
+
+  /* A midfielder threatening like a forward is the find. */
+  const oopMid = { element_type: 3, minutes: M + 100, expected_goals_per_90: '0.50' };
+  const f = core.oopFlag(oopMid, marks);
+  ok(f && f.kind === 'up' && /forward/.test(f.label), 'a midfielder with forward threat is flagged');
+  ok(/5 points a goal/.test(f.note), 'and the note names the tariff that makes it worth points');
+
+  /* A defender threatening like a midfielder is the same idea one rung down. */
+  const oopDef = { element_type: 2, minutes: M + 100, expected_goals_per_90: '0.25' };
+  const d = core.oopFlag(oopDef, marks);
+  ok(d && d.kind === 'up' && /midfielder/.test(d.label), 'an attacking defender is flagged');
+  ok(/6 points a goal/.test(d.note), 'with the defender tariff named');
+
+  /* Only ever one rung: a defender with a striker's threat is still "plays as
+     a midfielder", because that is the comparison that pays. */
+  const wild = core.oopFlag({ element_type: 2, minutes: M + 100, expected_goals_per_90: '0.9' }, marks);
+  ok(wild && /midfielder/.test(wild.label), 'a defender is never compared two groups up');
+
+  /* Ordinary players are not flagged. */
+  ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.20' }, marks) === null,
+    'a typical midfielder is not out of position');
+  ok(core.oopFlag({ element_type: 1, minutes: M + 100, expected_goals_per_90: '0' }, marks) === null,
+    'a goalkeeper is never flagged');
+
+  /* Strength: comfortably past the benchmark reads differently from scraping it. */
+  const scrape = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: String(marks[4] + 0.001) }, marks);
+  const clear = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: String(marks[4] * 2) }, marks);
+  ok(scrape.level === 1 && clear.level === 2, 'clearing the benchmark comfortably is a stronger flag');
+
+  /* The caution, and it must be a caution rather than a find. */
+  const deep = core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.05' }, marks);
+  ok(deep && deep.level < 0 && deep.kind === 'down', 'a forward with no goal threat is a caution, not a find');
+
+  /* Sample size and pre-season: no minutes, no claim. */
+  ok(core.oopFlag({ element_type: 3, minutes: M - 1, expected_goals_per_90: '0.9' }, marks) === null,
+    'too few minutes means no flag, however good the rate looks');
+  ok(Object.keys(core.oopBenchmarks(pool.map((p) => Object.assign({}, p, { minutes: 0 })))).length === 0,
+    'a pre-season squad produces no benchmarks at all');
+  ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.9' }, {}) === null,
+    'and with no benchmarks nothing is flagged');
+  ok(core.oopBenchmarks([]).count === undefined && Object.keys(core.oopBenchmarks([])).length === 0, 'an empty league is safe');
+  ok(core.oopFlag(null, marks) === null && core.oopFlag({ element_type: 3, minutes: 9999 }, null) === null,
+    'missing inputs do not throw');
+
+  /* A thin group cannot set a benchmark — three forwards is not a distribution. */
+  const thin = core.oopBenchmarks(pool.filter((p) => p.element_type !== 4).concat(
+    [{ id: 900, element_type: 4, minutes: M + 1, expected_goals_per_90: '0.5' }]));
+  ok(thin[4] === undefined, 'a group with too few players sets no benchmark');
+
+  /* Non-penalty threat is preferred when Core Insights has it: penalties are
+     a duty, not evidence of where a player plays. */
+  const penTaker = { element_type: 3, minutes: M + 100, expected_goals_per_90: '0.60', _ci: { np_xg_per_90: 0.10 } };
+  ok(core.oopThreat(penTaker) === 0.10, 'non-penalty xG is used when available');
+  ok(core.oopFlag(penTaker, marks) === null, 'so a penalty taker is not mistaken for a striker');
+}
+
+section('setPieceByClub: the club is the row, the duty is the column (Tier 2)');
+{
+  const p = (id, team, name, pen, fk, ck) => ({
+    id, team, web_name: name, element_type: 3,
+    penalties_order: pen, direct_freekicks_order: fk, corners_and_indirect_freekicks_order: ck,
+  });
+  const b = {
+    teams: { 1: { short_name: 'BOU' }, 2: { short_name: 'ARS' }, 3: { short_name: 'FUL' } },
+    elements: [
+      p(1, 1, 'Kluivert', 1, 3, null), p(2, 1, 'Kroupi', 2, null, null), p(3, 1, 'Tavernier', 3, 2, 1),
+      p(4, 2, 'Saka', 1, 2, 2), p(5, 2, 'Rice', null, 1, 1),
+      p(6, 3, 'Robinson', 1, null, null),
+      p(7, 3, 'NoDuty', null, null, null),
+    ],
+  };
+  const by = core.setPieceByClub(b);
+  ok(by[1] && by[1].pen.length === 3, 'the whole penalty hierarchy is kept, not just the first two');
+  ok(by[1].pen.map((x) => x.el.web_name).join() === 'Kluivert,Kroupi,Tavernier', 'and it comes back in order');
+  ok(by[1].ck.length === 1 && by[1].ck[0].el.web_name === 'Tavernier', 'each duty is separate');
+  ok(by[2].fk.map((x) => x.el.web_name).join() === 'Rice,Saka', 'a different duty can have a different first choice');
+
+  /* A player on no duty is not a set-piece taker. */
+  ok(!Object.keys(by).some((t) => by[t].pen.concat(by[t].fk, by[t].ck).some((x) => x.el.web_name === 'NoDuty')),
+    'a player with no designation appears nowhere');
+
+  /* Rows: clubs with nothing are omitted, not printed as three dashes. */
+  const rows = core.setPieceClubRows(b);
+  ok(rows.length === 3, 'every club with any designation gets a row');
+  ok(rows[0].team === 2 && rows[1].team === 1, 'rows are in club-name order (ARS, BOU, FUL)');
+  const empty = core.setPieceClubRows({ teams: b.teams, elements: [p(9, 1, 'Nobody', null, null, null)] });
+  ok(empty.length === 0, 'a league with no designations produces no rows at all');
+
+  /* The cap keeps a long tail out of the grid. */
+  const capped = core.setPieceByClub(b, 2);
+  ok(capped[1].pen.length === 2, 'the per-duty cap trims the tail');
+  ok(capped[1].pen.map((x) => x.el.web_name).join() === 'Kluivert,Kroupi', 'keeping the top of the order');
+
+  ok(Object.keys(core.setPieceByClub({ elements: [] })).length === 0, 'an empty squad is safe');
+  ok(Object.keys(core.setPieceByClub({})).length === 0 && Object.keys(core.setPieceByClub(null)).length === 0,
+    'missing input does not throw');
+  ok(Object.keys(core.setPieceByClub({ elements: [null, undefined] })).length === 0, 'holes are ignored');
 }
 
 section('bundleSeasonStale: model-bundle vs live season cross-check (Tier 2)');
