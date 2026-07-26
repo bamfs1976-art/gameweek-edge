@@ -38,13 +38,18 @@ const grabConst = (n) => {
   return html.slice(i, html.indexOf('\n', i));
 };
 
-const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules } = new Function(
+const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules,
+  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP } = new Function(
   grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('minClubsForXi') + '\n' +
+  /* The two terms the transfer solver's objective gained beyond XI xP. */
+  grabConst('FT_CAP') + '\n' + grabConst('BENCH_W') + '\n' + grabConst('FT_LADDER') + '\n' +
+  grabFn('ftValue') + '\n' + grabFn('benchValue') + '\n' +
   /* squadOptimise reads squad shape, club cap and budget from the live game
      rules now; the fallback block is exactly the old hard-coded values. */
   grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' +
   grabFn('squadOptimise') +
-  '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;}};'
+  '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;},'+
+  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP};'
 )();
 
 let failures = 0, passes = 0;
@@ -661,6 +666,86 @@ console.log('• squadOptimise: the club cap holds through the whole search');
     }
   }
   ok(built >= 8, 'enough squads were actually built to make the property meaningful (' + built + ')');
+}
+
+console.log('• ftValue: a banked transfer is worth points, with declining returns');
+{
+  ok(ftValue(1) === 0, 'one free transfer is the baseline, worth nothing extra');
+  ok(ftValue(2) > 0, 'rolling to two is worth something');
+  ok(ftValue(3) > ftValue(2) && ftValue(4) > ftValue(3) && ftValue(5) > ftValue(4),
+    'more banked transfers are always worth more');
+  /* Declining returns: the second is the valuable one, because two in a week
+     is what fixes a squad without a hit. The fifth is nearly spare. */
+  ok(ftValue(2) - ftValue(1) > ftValue(3) - ftValue(2), 'the first roll is the most valuable');
+  ok(ftValue(3) - ftValue(2) > ftValue(4) - ftValue(3), 'and each one after is worth less');
+  ok(ftValue(5) - ftValue(4) < ftValue(2) - ftValue(1), 'the last is worth far less than the first');
+  /* It must never pay to bank instead of taking a clearly worthwhile hit:
+     a whole bank of five is worth less than two hits. */
+  ok(ftValue(5) < 8, 'a full bank is worth less than the hits it would take to fill it (' + ftValue(5) + ')');
+  ok(ftValue(1) === 0 && ftValue(2) - ftValue(1) < 4, 'and one roll never beats a 4-point hit on its own');
+  /* Bounds and junk. */
+  ok(ftValue(9) === ftValue(5), 'value stops accruing at the cap');
+  /* The ladder and the cap have to agree, or one of them silently wins: a
+     ladder shorter than the cap stops paying early, a longer one keeps paying
+     for transfers the game will not let you bank. */
+  ok(FT_LADDER.length === FT_CAP, 'the ladder has exactly one rung per bankable transfer');
+  ok(ftValue(FT_LADDER.length) === ftValue(FT_LADDER.length + 3),
+    'and nothing beyond the last rung is ever paid for');
+  ok(ftValue(0) === 0 && ftValue(-3) === 0 && ftValue(null) === 0 && ftValue(undefined) === 0,
+    'nonsense inputs are worth nothing, not NaN');
+  ok(Number.isFinite(ftValue(2.4)), 'a fractional count still yields a number');
+}
+
+console.log('• benchValue: a substitute is discounted, not worthless');
+{
+  /* Distinct clubs: bestXI enforces the 3-per-club cap, and a squad with no
+     team field puts all fifteen in one bucket and has no legal XI at all. */
+  const el = (id, type, p) => ({ id, element_type: type, team: id, p });
+  const squad = [
+    el(1, 1, 4), el(2, 1, 3),                       // two keepers
+    el(3, 2, 6), el(4, 2, 5), el(5, 2, 4), el(6, 2, 3), el(7, 2, 1),
+    el(8, 3, 8), el(9, 3, 7), el(10, 3, 6), el(11, 3, 5), el(12, 3, 2),
+    el(13, 4, 9), el(14, 4, 6), el(15, 4, 1),
+  ];
+  const score = (e) => e.p;
+  /* Pick the XI the way the solver does — bestXI enforces one keeper and a
+     legal formation, so the bench really is 1 GK + 3 outfield. Taking the top
+     eleven by points instead can leave both keepers starting, which is not a
+     squad FPL would let you field. */
+  const best = bestXI(squad.map((e) => ({ el: e, p: e.p })));
+  ok(best && best.xi.length === 11, 'a legal XI is pickable from the squad');
+  const xiIds = new Set(best.xi.map((s2) => s2.el.id));
+  const v = benchValue(squad, xiIds, score);
+
+  ok(v > 0, 'a bench is worth more than nothing');
+  const benchRaw = squad.filter((e) => !xiIds.has(e.id)).reduce((s, e) => s + e.p, 0);
+  ok(v < benchRaw * 0.5, 'but heavily discounted against its raw points (' + v.toFixed(2) + ' of ' + benchRaw + ')');
+
+  /* Order matters: the first outfield sub comes on far more than the third,
+     so upgrading him must be worth more than upgrading the last man. */
+  const bump = (id, by) => squad.map((e) => (e.id === id ? Object.assign({}, e, { p: e.p + by }) : e));
+  const benchOut = squad.filter((e) => !xiIds.has(e.id) && e.element_type !== 1)
+    .sort((a, b) => b.p - a.p);
+  ok(benchOut.length === 3, 'three outfield substitutes, as FPL has');
+  const upFirst = benchValue(bump(benchOut[0].id, 0.001), xiIds, (e) => e.p);
+  const upLast = benchValue(bump(benchOut[2].id, 0.001), xiIds, (e) => e.p);
+  ok(upFirst > upLast, 'improving the first sub is worth more than improving the last');
+
+  /* The reserve keeper is the least valuable seat on the bench. */
+  const gkId = squad.filter((e) => !xiIds.has(e.id) && e.element_type === 1)[0].id;
+  const upGk = benchValue(bump(gkId, 1), xiIds, (e) => e.p) - v;
+  const upSub1 = benchValue(bump(benchOut[0].id, 1), xiIds, (e) => e.p) - v;
+  ok(upGk < upSub1, 'and the reserve keeper matters least of all');
+
+  /* Never let the bench outweigh the eleven. */
+  ok(BENCH_W.out.concat([BENCH_W.gk]).reduce((s, w) => s + w, 0) < 1,
+    'all four bench weights together are worth less than a single starter');
+
+  ok(benchValue([], new Set(), score) === 0, 'an empty squad has no bench value');
+  ok(benchValue(null, new Set(), score) === 0, 'and neither does a missing one');
+  ok(benchValue(squad, new Set(squad.map((e) => e.id)), score) === 0,
+    'a squad entirely in the XI has an empty bench');
+  ok(benchValue([null, undefined].concat(squad), xiIds, score) === v, 'holes in the squad are ignored');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

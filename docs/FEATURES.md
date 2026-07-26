@@ -291,10 +291,42 @@ captain highlight; plus a gameweek summary (points, rank, value, bank, chip).
   for a single transfer, heuristic beyond.
 - **3-GW plan** — a multi-week solver: beam search (width 8) over transfer
   *sequences* for the next three gameweeks, scoring each state by per-GW
-  best-XI xP (doubles/blanks included) minus −4 hits, with free-transfer
-  accrual (max 5) and roll decisions. Respects budget, 3-per-club and position
+  squad value (doubles/blanks included) minus −4 hits, with free-transfer
+  accrual and roll decisions. Respects budget, 3-per-club and position
   quotas. Visible caveat: selling prices are approximated as current price
   (exact selling price needs an FPL login the public API doesn't allow).
+
+**What a squad is worth beyond its eleven.** The objective used to be best‑XI
+xP minus hits, which makes two real things invisible.
+
+A **substitute is not worthless**. He comes on when someone is benched late,
+injured early or does not play, and the first outfield sub is on far more often
+than the third. Scoring the bench at zero tells the solver every bench is
+equally good — which is how a recommendation quietly guts the cover. Bench
+points now count, heavily discounted and ordered (reserve keeper 0.03, then
+0.21 / 0.06 / 0.002 for the three outfield subs — the weights the open FPL
+solver community has settled on). All four together are worth less than one
+starter, which is asserted.
+
+A **banked transfer is worth points**. Two transfers in one week is what fixes a
+squad without a hit, so a search that scores only points‑this‑horizon will
+always spend rather than save. Each extra banked transfer adds a declining
+amount (2.0 for the second, then 1.6 / 1.3 / 1.1) — the first roll is the
+valuable one and the fifth is nearly spare. A full bank is worth less than the
+hits it would take to fill it, so banking can never beat a clearly worthwhile
+transfer.
+
+In the multi‑week search that bonus is a **terminal** value: it is applied once,
+to the free transfers a plan *ends* with, because the option is realised after
+the horizon rather than inside it. Charging it every gameweek would count the
+same roll three times. The single‑week solver charges each option for the roll
+it spends, measured against rolling everything, so both views agree — and the
+plan table now shows that cost explicitly ("−2.0 roll spent") instead of
+presenting doing nothing as free.
+
+The 15‑man squad optimiser behind the social cards is deliberately left on
+best‑XI xP: it is verified against an exhaustive brute‑force search on that
+objective, and a £100m squad card is judged on the eleven it fields.
 - **Find a replacement** — pick a player to move on; rank alternatives within
   budget by projected points **or** by playing‑style similarity (cosine on
   z‑scored per‑90 vectors).
