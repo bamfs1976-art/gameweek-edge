@@ -2909,6 +2909,7 @@ const NAV = [
     panels:[
       {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
+      {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
       {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
       {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
       {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'}
@@ -3159,6 +3160,10 @@ const PANEL_CONTENT = {
   },
   titlerace:{
     desc:'Title, top-four, European and relegation odds for the season — from the same backtested model that powers the standalone PL Simulator.',
+    layout:'standard'
+  },
+  dossier:{
+    desc:'One club at a time: whether its attack or its defence is the thing worth buying, how different it is at home, every asset ranked with the role that earns the points, and the run ahead.',
     layout:'standard'
   },
   clubform:{
@@ -9537,6 +9542,65 @@ function rotationPairs(cands,teamDiff,limit){
   return out;
 }
 
+/* ── Club dossier ───────────────────────────────────────────
+   Every panel we own is organised by player or by fixture. Nobody has a view
+   organised by CLUB, which is how a large part of the community actually
+   thinks in pre-season: pick a team, work out whether its attack or its
+   defence is the thing worth buying, and find the cheapest way in.
+
+   The computation is pure and split from the rendering, so the awkward parts
+   — a venue split with too few games to mean anything, a club whose rating is
+   missing — can be tested rather than eyeballed. */
+const SPLIT_MIN_GAMES=4;      /* per venue, before a home/away split says anything */
+const SPLIT_EDGE=0.35;        /* goals per game between venues before it is a real gap */
+/* Home and away record from finished fixtures. Deliberately the real results
+   rather than the model: the question "are they different at home" should be
+   answered by what happened, not by the home-advantage term we fitted. */
+function clubSplit(fixtures,teamId){
+  const z=()=>({games:0,gf:0,ga:0,cs:0});
+  const home=z(),away=z();
+  (fixtures||[]).forEach(f=>{
+    if(!f||!f.finished||f.team_h_score==null||f.team_a_score==null)return;
+    if(f.team_h===teamId){home.games++;home.gf+=f.team_h_score;home.ga+=f.team_a_score;if(f.team_a_score===0)home.cs++;}
+    else if(f.team_a===teamId){away.games++;away.gf+=f.team_a_score;away.ga+=f.team_h_score;if(f.team_h_score===0)away.cs++;}
+  });
+  const per=v=>({games:v.games,gf:v.gf,ga:v.ga,cs:v.cs,
+    gfpg:v.games?v.gf/v.games:null,gapg:v.games?v.ga/v.games:null,csr:v.games?v.cs/v.games:null});
+  return {home:per(home),away:per(away),games:home.games+away.games};
+}
+/* Which venue to target, or null when the sample cannot support a claim.
+   Two separate reads, because a club can be a different attacking side at
+   home while conceding the same everywhere. */
+function clubVenueVerdict(split){
+  if(!split)return null;
+  const h=split.home,a=split.away;
+  if(!h||!a||h.games<SPLIT_MIN_GAMES||a.games<SPLIT_MIN_GAMES)return null;
+  const dAtt=h.gfpg-a.gfpg,dDef=a.gapg-h.gapg;
+  return {
+    attack:Math.abs(dAtt)<SPLIT_EDGE?'level':(dAtt>0?'home':'away'),
+    defence:Math.abs(dDef)<SPLIT_EDGE?'level':(dDef>0?'home':'away'),
+    attGap:dAtt,defGap:dDef,
+  };
+}
+/* Is this club's attack or its defence the thing worth buying? Percentile of
+   each within the league, from the fitted ratings — a lower defence
+   multiplier is a better defence, so it is inverted before ranking. */
+const LEAN_EDGE=0.2;
+function clubLean(R,teamId){
+  if(!R||!R.att||R.att[teamId]==null||!R.def||R.def[teamId]==null)return null;
+  const ids=Object.keys(R.att).filter(k=>R.att[k]!=null&&R.def[k]!=null);
+  if(ids.length<4)return null;
+  const pct=(v,arr)=>arr.filter(x=>x<v).length/(arr.length-1||1);
+  const atts=ids.map(k=>R.att[k]),defs=ids.map(k=>-R.def[k]);
+  const attPct=pct(R.att[teamId],atts),defPct=pct(-R.def[teamId],defs);
+  const d=attPct-defPct;
+  return {attPct,defPct,
+    lean:d>LEAN_EDGE?'attack':d<-LEAN_EDGE?'defence':'balanced',
+    /* Both ends strong, or neither — worth saying, because "balanced" reads
+       very differently for a title side and a relegation one. */
+    grade:attPct>=0.6&&defPct>=0.6?'both':attPct<0.4&&defPct<0.4?'neither':'mixed'};
+}
+
 /* ── Rotation chains ────────────────────────────────────────
    A pair alternates between two clubs. But the fixture calendar rarely
    obliges in twos: the creators' budget-rotation graphics run five or six
@@ -11719,6 +11783,136 @@ function renderClubForm(host,m){
     '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">P</th><th class="num">W-D-L</th><th class="num">GF</th><th class="num">GA</th><th class="num">GD</th><th class="num">Pts</th><th class="num">PPG</th><th>Last 5</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
     (empty.length?'<p class="dl-sub" style="margin-top:8px">'+empty.map(esc).join(', ')+' — no '+esc(st.label||'')+' top-flight games (promoted); fills in as the season is played.</p>':'');
 }
+/* ── Club Dossier ─────────────────────────────────────────── */
+let DOSSIER_TEAM=null;
+function dossierPick(id){DOSSIER_TEAM=parseInt(id,10)||null;renderPage('dossier');}
+async function hydrateDossier(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
+  if(!teams.length){host.innerHTML=stateBox('shield','Between seasons','Club dossiers appear the moment the new season opens in the FPL API.');return;}
+  if(DOSSIER_TEAM==null||!b.teams[DOSSIER_TEAM])DOSSIER_TEAM=teams[0].id;
+  const tid=DOSSIER_TEAM;
+  const picker='<div class="fdr-teams" style="margin-bottom:14px">'+teams.map(t=>
+    '<button class="tchip'+(t.id===tid?' tchip-act':'')+'" onclick="dossierPick('+t.id+')">'+
+    crest(b,t.id,14)+esc(t.short_name)+'</button>').join('')+'</div>';
+
+  const R=plsimRatings(b,fixtures);
+  const nf=buildNextFix(b,fixtures);
+  const split=clubSplit(fixtures,tid);
+  const venue=clubVenueVerdict(split);
+  const lean=clubLean(R,tid);
+  const name=(b.teams[tid]||{}).name||teamShort(b,tid);
+
+  /* Shape of the club: which end of it is worth buying. This is the question
+     the whole panel exists to answer, so it goes first. */
+  const pctTxt=p=>Math.round(p*100)+(p>=0.8?'th — elite':p>=0.6?'th — strong':p>=0.4?'th — mid':p>=0.2?'th — weak':'th — poor');
+  const leanCard=lean
+    ? '<div class="card mb-20"><div class="card-title">Attack or defence?</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">'+
+      (lean.lean==='attack'
+        ?'<b>Buy the attack.</b> '+esc(name)+' rate higher going forward than they do at the back, so clean sheets are the less reliable route in — take attacking returns or a structural bargain instead.'
+       :lean.lean==='defence'
+        ?'<b>Buy the defence.</b> They rate higher at the back than going forward, so a cheap defender or the keeper is the surer way in — chasing their attackers is chasing the thinner end.'
+        :'<b>Balanced.</b> Neither end rates clearly above the other'+
+         (lean.grade==='both'?' — and both are strong, so the choice is about price, not quality.'
+          :lean.grade==='neither'?' — and neither is strong, which usually means an enabler rather than a pick.'
+          :', so let fixtures and price decide.'))+'</p>'+
+      '<div class="dl"><div class="dl-row"><span class="dl-grow"><span class="dl-nm">Attack</span></span>'+
+        '<span class="dl-col mono">'+esc(pctTxt(lean.attPct))+'</span></div>'+
+        '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Defence</span></span>'+
+        '<span class="dl-col mono">'+esc(pctTxt(lean.defPct))+'</span></div></div>'+
+      '<div class="dl-sub" style="margin-top:8px">Percentile within the league, from the model’s fitted attack and defence ratings — not last season’s table.</div></div>'
+    : '';
+
+  /* Home and away, from real results. Absent until each venue has enough
+     games, because four fixtures is not a home record. */
+  const g1=x=>x==null?'—':x.toFixed(2);
+  const venueCard=split.games
+    ? '<div class="card mb-20"><div class="card-title">Home vs away</div>'+
+      '<div class="fdr"><table>'+
+        '<tr><th class="tm"></th><th>Played</th><th>Scored/gm</th><th>Conceded/gm</th><th>Clean sheets</th></tr>'+
+        [['Home',split.home],['Away',split.away]].map(([lab,v])=>
+          '<tr><td class="tm">'+lab+'</td><td class="cell" style="background:var(--surface-3);color:var(--text)">'+v.games+'</td>'+
+          '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+g1(v.gfpg)+'</td>'+
+          '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+g1(v.gapg)+'</td>'+
+          '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+v.cs+'</td></tr>').join('')+
+      '</table></div>'+
+      '<p class="dl-sub" style="margin-top:10px">'+
+      (venue
+        ?(venue.attack==='level'&&venue.defence==='level'
+          ?'They travel well — neither end changes much by venue, so a fixture is a fixture.'
+          :[venue.attack==='home'?'<b>Their attack is a home attack</b> ('+venue.attGap.toFixed(2)+' more goals a game there), so target their attackers in home fixtures specifically.'
+            :venue.attack==='away'?'Oddly, they score more on the road ('+(-venue.attGap).toFixed(2)+' a game more).':'',
+            venue.defence==='home'?'<b>The defence is far steadier at home</b> ('+venue.defGap.toFixed(2)+' fewer conceded a game) — buy the clean sheets for home runs, not away ones.'
+            :venue.defence==='away'?'They defend better away than at home ('+(-venue.defGap).toFixed(2)+' fewer conceded a game).':''
+           ].filter(Boolean).join(' '))
+        :'Not enough games at each venue yet to say whether the split means anything — it needs '+SPLIT_MIN_GAMES+' at home and '+SPLIT_MIN_GAMES+' away.')+
+      '</p></div>'
+    : '<div class="card mb-20"><div class="card-title">Home vs away</div><p class="dl-sub" style="margin:0">No results yet this season. The split appears once they have played.</p></div>';
+
+  /* Asset hierarchy: the club's players by projected points, with what each
+     one actually is. This is the "FPL Board" the dossiers all end with. */
+  const marks=oopBenchmarks(b.elements);
+  const spc=setPieceByClub(b,4)[tid];
+  const spRole=e=>{
+    if(!spc)return '';
+    const bits=[];
+    if(spc.pen.some(x=>x.el.id===e.id&&x.order===1))bits.push('penalties');
+    if(spc.fk.some(x=>x.el.id===e.id&&x.order===1))bits.push('free-kicks');
+    if(spc.ck.some(x=>x.el.id===e.id&&x.order===1))bits.push('corners');
+    return bits.length?bits.join(', '):'';
+  };
+  const squad=b.elements.filter(e=>e.team===tid&&e.status!=='u')
+    .map(e=>{const f=nf[tid];const p=f?xP(b,e,f):0;return {e,p};})
+    .sort((a,c)=>c.p-a.p).slice(0,14);
+  const tier=p=>p>=4.5?3:p>=3?2:p>=1.8?1:0;
+  const dots=n=>'<span style="letter-spacing:1px;color:var(--green)">'+'●'.repeat(n)+'</span>'+
+    '<span style="letter-spacing:1px;color:var(--text-4)">'+'●'.repeat(3-n)+'</span>';
+  const assetRows=squad.map(({e,p})=>{
+    const oop=oopFlag(e,marks);
+    const dc=e._ci&&e._ci.defcon_hit_rate;
+    const role=[posShort(b,e.element_type),spRole(e),
+      dc!=null&&dc>=0.4?'DefCon '+Math.round(dc*100)+'%':''].filter(Boolean).join(' · ');
+    /* Name line then role line: the role string carries three facts and would
+       be ellipsised into nothing if it shared a line with the name. */
+    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-grow" style="display:block;min-width:0">'+
+      '<span class="dl-nm" style="display:block">'+esc(e.web_name)+' <span class="dl-sub">'+money(e.now_cost)+'</span>'+
+      (oop&&oop.level>0?' <span class="badge badge-green">'+esc(oop.label)+'</span>':'')+
+      (oop&&oop.level<0?' <span class="badge badge-amber">'+esc(oop.label)+'</span>':'')+
+      (e.status!=='a'?' <span class="badge badge-red">'+esc(e.status)+'</span>':'')+'</span>'+
+      '<span class="dl-sub">'+esc(role)+' · '+e.selected_by_percent+'% owned</span></span>'+
+      '<span class="dl-col">'+dots(tier(p))+'</span>'+
+      '<span class="dl-col mono">'+p.toFixed(1)+'</span></div>';
+  }).join('');
+  const boardCard=squad.length
+    ? '<div class="card mb-20"><div class="card-title">'+esc(name)+' — the board</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Asset · role</span><span class="dl-col">Tier</span><span class="dl-col">xP</span></div>'+
+      assetRows+'</div>'+
+      '<div class="dl-sub" style="margin-top:8px">Ranked by projected points for the next fixture, with the role that earns them: set-piece duty, defensive‑contribution reliability, and an <b>out‑of‑position</b> badge where a player is paid on a better tariff than the job he does.</div></div>'
+    : '';
+
+  /* The run ahead, in the club's own row. */
+  const runGws=[];const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+  for(let g=startGw;g<startGw+8&&g<=38;g++)runGws.push(g);
+  const byGw={};
+  fixtures.forEach(f=>{
+    if(!f.event||f.finished||(f.team_h!==tid&&f.team_a!==tid))return;
+    const home=f.team_h===tid,m=plsimMatch(R,f.team_h,f.team_a);
+    (byGw[f.event]=byGw[f.event]||[]).push({opp:teamShort(b,home?f.team_a:f.team_h),home,
+      diff:m?plsimDiff(home?m.pH:m.pA):(home?f.team_h_difficulty:f.team_a_difficulty)});
+  });
+  const runCard=runGws.length
+    ? '<div class="card mb-20"><div class="card-title">The run ahead</div>'+
+      '<div class="fdr"><table><tr><th class="tm">'+esc(teamShort(b,tid))+'</th>'+runGws.map(g=>'<th>GW'+g+'</th>').join('')+'</tr>'+
+      '<tr><td class="tm">Fixture</td>'+runGws.map(g=>{const l=byGw[g];
+        if(!l||!l.length)return '<td class="blank">—</td>';
+        return '<td class="cell fdr-'+l[0].diff+'">'+l.map(x=>esc(x.opp)+(x.home?'':'(a)')).join('<br>')+'</td>';
+      }).join('')+'</tr></table></div></div>'
+    : '';
+
+  host.innerHTML=picker+leanCard+venueCard+boardCard+runCard;
+}
+
 async function hydrateClubForm(host){
   host.innerHTML=skel(6);
   let m;try{m=await loadModelBundle();}catch(e){
@@ -13393,6 +13587,7 @@ const WIRED={
   design:hydrateDesign,
   'gw-actions':hydrateGwActions,
   titlerace:hydrateTitleRace,
+  dossier:hydrateDossier,
   clubform:hydrateClubForm,
   lineups:hydrateLineups,
   matchforecast:hydrateMatchForecast,

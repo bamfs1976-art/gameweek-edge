@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **8 areas** and **39 panels** (the Studio area is owner‑only). Free panels are open
+Navigation is organised into **8 areas** and **40 panels** (the Studio area is owner‑only). Free panels are open
 to everyone; **Pro** panels require an upgrade (or owner access, see §9).
 
 ```
@@ -92,6 +92,7 @@ Planner
 
 League
 ├── Title Race           (free)  Season odds from the backtested model
+├── Club Dossier         (free)  One club: attack-or-defence, home/away, the board
 ├── Team Form            (free)  Club form over the last 5/10/20 games
 ├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
 ├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
@@ -486,6 +487,31 @@ league‑wide rate would brand every defender a bargain.
 
 **Set Piece Register** — official written **taker notes** (from `set-piece-notes`)
 plus confirmed penalty / direct‑FK / corner order.
+
+**Club Dossier** — every other panel is organised by player or by fixture.
+This one is organised by **club**, which is how a large part of the community
+thinks in pre‑season: pick a team, work out which end of it is worth buying,
+find the cheapest way in.
+
+- **Attack or defence?** Percentile of the club's fitted attack and defence
+  ratings within the league. A side that rates far higher going forward is a
+  "buy the attack" club — clean sheets are the less reliable route in. Being
+  *balanced* is reported differently for a side strong at both ends and one
+  weak at both, because those are opposite messages.
+- **Home vs away**, from real results rather than the model — the question "are
+  they different at home" should be answered by what happened, not by the
+  home‑advantage term we fitted. Attack and defence are judged separately,
+  since a club can score differently by venue while conceding the same
+  everywhere. Below four games at each venue there is no verdict at all.
+- **The board** — every asset ranked by projected points with the role that
+  earns them: set‑piece duty, defensive‑contribution reliability, and an
+  **out‑of‑position** badge where a player is paid on a better tariff than the
+  job he does.
+- **The run ahead** — the club's own fixture row over the next eight.
+
+The tactical half of the creator dossiers — formation, playing style, "new
+manager alert", preseason friendly signals — is editorial and is deliberately
+absent. We can't compute it and won't fake it.
 
 **Rotation Risk** — start‑rate risk for premium players from actual minutes,
 plus **midweek congestion**: the European and cup football the official FPL API

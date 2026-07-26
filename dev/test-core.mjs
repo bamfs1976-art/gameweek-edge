@@ -166,12 +166,18 @@ const pieces = [
   /* Rotation chains: one slot, many clubs, transfers cost something. */
   ...['ROT_SWITCH'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'rotationChain'),
+  /* Club dossier: the venue split and the attack-or-defence read. */
+  ...['SPLIT_MIN_GAMES', 'SPLIT_EDGE', 'LEAN_EDGE']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'clubSplit'),
+  extractFn(html, 'clubVenueVerdict'),
+  extractFn(html, 'clubLean'),
   extractFn(html, 'plsimPrior'),
   extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1441,6 +1447,75 @@ section('rotationChain: one slot, many clubs, transfers cost something (Tier 2)'
   /* A club with no fixture data cannot be part of a chain. */
   ok(core.rotationChain(cands([1, 2, 9]), diff, { switchCost: 1 }).teams.indexOf(9) < 0,
     'a club with no difficulty array is left out');
+}
+
+section('clubSplit / clubVenueVerdict: is this club a different side at home? (Tier 2)');
+{
+  const fx = (team_h, team_a, hs, as_, finished) => ({ team_h, team_a, team_h_score: hs, team_a_score: as_, finished: finished !== false });
+  /* Club 1: strong at home, poor away — the Brentford shape. */
+  const games = [];
+  for (let i = 0; i < 5; i++) games.push(fx(1, 2 + i, 3, 0));       // home: 3-0
+  for (let i = 0; i < 5; i++) games.push(fx(2 + i, 1, 2, 1));       // away: lose 2-1
+  const sp = core.clubSplit(games, 1);
+  ok(sp.home.games === 5 && sp.away.games === 5, 'both venues are counted');
+  ok(sp.home.gf === 15 && sp.home.ga === 0, 'home goals for and against are from the club\'s point of view');
+  ok(sp.away.gf === 5 && sp.away.ga === 10, 'and flip correctly when the club is the away side');
+  ok(sp.home.cs === 5 && sp.away.cs === 0, 'clean sheets are counted per venue');
+  ok(Math.abs(sp.home.gfpg - 3) < 1e-9 && Math.abs(sp.away.gapg - 2) < 1e-9, 'per-game rates are right');
+
+  const v = core.clubVenueVerdict(sp);
+  ok(v.attack === 'home' && v.defence === 'home', 'a home-heavy side is called as one');
+  ok(v.attGap > 0 && v.defGap > 0, 'and the size of each gap comes with it');
+
+  /* A side that travels identically must read as level, not be forced into
+     a verdict — most clubs are not Brentford. */
+  const evenGames = [];
+  for (let i = 0; i < 5; i++) { evenGames.push(fx(1, 2 + i, 2, 1)); evenGames.push(fx(2 + i, 1, 1, 2)); }
+  const ev = core.clubVenueVerdict(core.clubSplit(evenGames, 1));
+  ok(ev.attack === 'level' && ev.defence === 'level', 'a club that travels well reads level');
+
+  /* The two reads are independent: a club can attack differently by venue
+     while conceding the same everywhere. */
+  const mixed = [];
+  for (let i = 0; i < 5; i++) { mixed.push(fx(1, 2 + i, 3, 1)); mixed.push(fx(2 + i, 1, 1, 1)); }
+  const mx = core.clubVenueVerdict(core.clubSplit(mixed, 1));
+  ok(mx.attack === 'home' && mx.defence === 'level', 'attack and defence are judged separately');
+
+  /* Sample size: four games at a venue is not a home record. */
+  const thin = games.slice(0, 3).concat(games.slice(5, 8));
+  ok(core.clubVenueVerdict(core.clubSplit(thin, 1)) === null, 'too few games at each venue means no verdict');
+  ok(core.clubVenueVerdict(core.clubSplit([], 1)) === null, 'and a club with no games has none either');
+  ok(core.clubVenueVerdict(null) === null, 'a missing split does not throw');
+
+  /* Unplayed and malformed fixtures must not leak into the record. */
+  const withFuture = games.concat([fx(1, 9, null, null, false), { team_h: 1, team_a: 9, finished: true }]);
+  ok(core.clubSplit(withFuture, 1).games === 10, 'unplayed and score-less fixtures are ignored');
+  ok(core.clubSplit([null, undefined], 1).games === 0, 'holes in the fixture list are safe');
+  ok(core.clubSplit(games, 99).games === 0, 'a club that played none of these games has an empty record');
+}
+
+section('clubLean: which end of this club is worth buying (Tier 2)');
+{
+  /* Four clubs: 1 all attack, 2 all defence, 3 good at both, 4 poor at both. */
+  const R = {
+    att: { 1: 1.40, 2: 0.80, 3: 1.35, 4: 0.75 },
+    def: { 1: 1.30, 2: 0.70, 3: 0.75, 4: 1.35 },
+  };
+  ok(core.clubLean(R, 1).lean === 'attack', 'a side that rates far higher going forward says buy the attack');
+  ok(core.clubLean(R, 2).lean === 'defence', 'and one that rates higher at the back says buy the defence');
+  ok(core.clubLean(R, 3).lean === 'balanced' && core.clubLean(R, 3).grade === 'both',
+    'a side strong at both ends is balanced AND strong — a very different message');
+  ok(core.clubLean(R, 4).grade === 'neither', 'and one weak at both is called that, not just "balanced"');
+  ok(core.clubLean(R, 1).attPct > core.clubLean(R, 2).attPct, 'percentiles order the league correctly');
+  /* A LOWER defence multiplier is a better defence — the inversion is the
+     easy thing to get backwards. */
+  ok(core.clubLean(R, 2).defPct > core.clubLean(R, 1).defPct,
+    'a lower defence multiplier ranks as the better defence');
+
+  ok(core.clubLean(R, 99) === null, 'a club with no rating has no lean');
+  ok(core.clubLean(null, 1) === null && core.clubLean({}, 1) === null, 'missing ratings do not throw');
+  ok(core.clubLean({ att: { 1: 1, 2: 1 }, def: { 1: 1, 2: 1 } }, 1) === null,
+    'a league too small to rank against gives no verdict');
 }
 
 section('bundleSeasonStale: model-bundle vs live season cross-check (Tier 2)');
