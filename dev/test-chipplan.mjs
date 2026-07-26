@@ -36,8 +36,10 @@ const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return ht
 const API = new Function(
   grabConst('CHIP_HALF_END') + '\n' +
   grabFn('captainEligible') + '\n' +
+  grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
+  grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr};'
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws};'
 )();
 
 let failures = 0, passes = 0;
@@ -135,6 +137,99 @@ console.log('• chipPlanFdr: each chip lands in the week it should');
   const weeks = Object.values(plan.picks).map((p) => p.gw);
   ok(new Set(weeks).size === weeks.length, 'no two chips are assigned the same gameweek');
   ok(Object.keys(plan.picks).length === 4, 'all four chips are placed across the half');
+}
+
+console.log('• intlBreakGws: breaks read off the deadline calendar');
+{
+  const F = API.intlBreakGws;
+  /* Weekly deadlines, with a fortnight before GW5 and GW12. */
+  const mk = (gaps) => {
+    let t = Date.parse('2026-08-14T17:30:00Z');
+    return gaps.map((d, i) => {
+      if (i) t += d * 86400000;
+      return { id: i + 1, deadline_time: new Date(t).toISOString() };
+    });
+  };
+  const evs = mk([0, 7, 7, 7, 14, 7, 7, 7, 7, 7, 7, 14, 7]);
+  const br = F(evs);
+  ok(Object.keys(br).map(Number).sort((a, b) => a - b).join() === '5,12',
+    'a fortnight gap marks the following gameweek (' + Object.keys(br).join() + ')');
+  ok(br[5] === 14 && br[12] === 14, 'the gap length is reported in days');
+
+  ok(Object.keys(F(mk([0, 7, 7, 7, 7, 7]))).length === 0, 'ordinary weeks are not breaks');
+  /* A midweek round SHORTENS the gap, so the test must be one-sided. */
+  ok(Object.keys(F(mk([0, 7, 3, 4, 7]))).length === 0, 'a midweek round is not mistaken for a break');
+  /* 10 days is a fixture reshuffle, not a two-week break. */
+  ok(Object.keys(F(mk([0, 7, 10, 7]))).length === 0, 'a ten-day gap stays below the threshold');
+
+  /* GW1 follows the summer, which is not an international break. */
+  const summer = [
+    { id: 1, deadline_time: '2026-08-14T17:30:00Z' },
+    { id: 2, deadline_time: '2026-08-21T17:30:00Z' },
+  ];
+  ok(!F(summer)[1], 'GW1 is never flagged as post-break');
+
+  /* Robustness: unsorted input, missing and malformed deadlines. */
+  ok(Object.keys(F(evs.slice().reverse())).join() === Object.keys(br).join(), 'input order does not matter');
+  ok(Object.keys(F([{ id: 1 }, { id: 2, deadline_time: 'nonsense' }])).length === 0, 'bad timestamps are ignored');
+  ok(Object.keys(F([])).length === 0 && Object.keys(F(null)).length === 0, 'empty or missing events are safe');
+}
+
+console.log('• chipPlanFdr: the international break moves the chips');
+{
+  /* Flat fixtures everywhere, so difficulty cannot be what decides this —
+     only the break can. GW10 follows a fortnight gap. */
+  const events = (() => {
+    let t = Date.parse('2026-08-14T17:30:00Z');
+    const out = [];
+    for (let i = 1; i <= 19; i++) {
+      if (i > 1) t += (i === 10 ? 14 : 7) * 86400000;
+      out.push({ id: i, deadline_time: new Date(t).toISOString() });
+    }
+    return out;
+  })();
+  const b = boot({ events });
+
+  /* Plant a mild swing at GW7 and a stronger-on-raw-difficulty one at GW10,
+     then check the break is reported and used. */
+  const fx = makeFixtures(1, 19, (gw, team) => (team <= 10 ? (gw < 10 ? 5 : 1) : (gw < 10 ? 1 : 5)));
+  const plan = API.chipPlanFdr(b, fx, { startGw: 1 });
+  ok(plan.breakGws.join() === '10', 'the plan reports the break week');
+  ok(plan.picks.wildcard.gw === 10, 'the Wildcard takes the post-break swing');
+  ok(plan.picks.wildcard.afterBreak === 14, 'and knows it is post-break');
+
+  /* Bench Boost: two weeks equally easy, one of them post-break. It must
+     take the other one. */
+  const bbFx = makeFixtures(1, 19, (gw) => (gw === 10 || gw === 14 ? 1 : 3));
+  const bbPlan = API.chipPlanFdr(b, bbFx, { startGw: 1 });
+  ok(bbPlan.picks.benchboost.gw === 14,
+    'Bench Boost avoids the post-break week when another is just as easy (got GW' +
+    bbPlan.picks.benchboost.gw + ')');
+
+  /* A double gameweek still beats the break penalty — it is the stronger signal. */
+  const dblFx = bbFx.concat([1, 3, 5, 7].map((h, i) => ({
+    id: 800 + i, event: 10, team_h: h, team_a: h + 1, team_h_difficulty: 2, team_a_difficulty: 2,
+  })));
+  const dblPlan = API.chipPlanFdr(b, dblFx, { startGw: 1 });
+  ok(dblPlan.picks.benchboost.gw === 10, 'a double gameweek outranks the break penalty');
+
+  /* Triple Captain: two equally soft fixtures for the same premium, one of
+     them post-break. Asserted on the PREFERENCE order rather than the final
+     assignment, because by the time the armband is placed the other chips
+     may already have taken one of those weeks — which is correct behaviour,
+     just not what is under test here. */
+  const tcFx = makeFixtures(1, 19, (gw, team) => (team === 1 && (gw === 10 || gw === 14) ? 1 : 3));
+  const tcPlan = API.chipPlanFdr(b, tcFx, { startGw: 1 });
+  const tcTop = tcPlan.rank.triplecaptain.filter((t) => t.gw === 10 || t.gw === 14);
+  ok(tcTop.length === 2, 'both soft weeks are captain candidates');
+  ok(tcTop[0].gw === 14,
+    'the non-break week is preferred for the armband (got GW' + tcTop[0].gw + ')');
+  ok(tcTop[0].score > tcTop[1].score, 'and it scores higher, not just sorts earlier');
+  ok(tcPlan.rank.triplecaptain[0].gw === 14, 'it is the top captain candidate overall');
+
+  /* With no break data at all the planner still works. */
+  const noEvents = API.chipPlanFdr(boot(), bbFx, { startGw: 1 });
+  ok(noEvents != null && noEvents.breakGws.length === 0, 'a calendar without breaks still plans');
 }
 
 console.log('• chipPlanFdr: GW1 is not a place to spend a squad chip');

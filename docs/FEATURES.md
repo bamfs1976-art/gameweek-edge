@@ -496,6 +496,31 @@ and misleading on the model ones.
   to an easy one, measured as improvement only, since clubs getting *worse* is a
   reason to have wildcarded already.
 
+**International breaks are read off the calendar**, not hard‑coded. The domestic
+season pauses for roughly a fortnight while national teams play, so the gap
+between consecutive gameweek deadlines about doubles — a gap of 11+ days marks
+the following gameweek as post‑break. Deriving it from `deadline_time` means it
+tracks whatever is actually scheduled, every season, with no FIFA‑window list to
+maintain, and it copes with a season shifted by a tournament. A midweek round
+*shortens* the gap, so the test is one‑sided; GW1 is never flagged, since it
+follows the summer.
+
+A break then moves the chips:
+
+- **Wildcard** is favoured — two clear weeks to plan a reshape, with injuries
+  picked up on international duty already known. This is the classic wildcard
+  window, so a post‑break week wins a close call.
+- **Bench Boost** and **Triple Captain** are penalised. Both need players to
+  actually start, and the fringe of a squad is exactly who gets rested or
+  returns late; the armband is a gamble when news lands after a long flight.
+- **Free Hit** is left neutral — the uncertainty cuts both ways.
+
+None of it overrides a blank or a double, which are far stronger signals: a
+double gameweek still takes the Bench Boost even straight after a break.
+
+The plan also exposes `rank` — each chip's preference order *before* collisions
+are resolved, i.e. what it wanted as distinct from what it got.
+
 **GW1 is excluded for the Free Hit and Wildcard.** Transfers are unlimited right
 up to the GW1 deadline, so either chip there buys a squad you can already pick
 for nothing — playing one burns it for the whole half. Bench Boost and Triple
