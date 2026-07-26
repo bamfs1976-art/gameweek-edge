@@ -7878,6 +7878,10 @@ async function hydrateChips(host){
   try{const picks=await loadPicks(mid,b.cur.id);
     squadXi=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
     benchEls=picks.picks.filter(p=>p.position>11).map(p=>b.els[p.element]).filter(Boolean);}catch(_){}
+  /* The transfer runway needs both the chip plan and the actual squad, so it
+     is built here rather than alongside the other cards. */
+  const runwayCard=transferRunwayCard(b,
+    (squadXi||[]).concat(benchEls||[]),chipPlanFdr(b,fixtures));
   const capMChip=captainModel(b,nf,squadXi||b.elements,2);
   const adv=chipAdvice(b,fixtures,remaining.map(([k])=>k),squadXi,capHintFrom(capMChip,nf));
   /* Bench Boost readiness: how much your bench would add THIS gameweek. */
@@ -7921,6 +7925,7 @@ async function hydrateChips(host){
     :'';
   host.innerHTML=
     planCard+
+    runwayCard+
     roadCard+
     swingCard+
     timingCard+
@@ -9514,6 +9519,100 @@ function chipPlanCard(b,fixtures){
     ' gameweeks apart, so the half is never left without one. '+
     'Official FDR is a season-long rating of the opponent, so it does not know about form, injuries or a new manager, '+
     'and our own match model, which does move with form, can disagree.</div></div>';
+}
+
+/* ── Transfer runway: how to get to the next chip ─────────────────────
+   The chip plan says WHEN to play a chip. This says what to do with the
+   transfers in between, which is where the plan is usually thrown away.
+
+   Two ideas do most of the work. First, a problem you can fix for free
+   later is not worth a transfer now: if the wildcard is close, a dead
+   player is cheaper to carry than to replace, because the wildcard replaces
+   him anyway. Second, free transfers stack up to a cap, and a stack is what
+   turns one gameweek into a mini-wildcard — so banking them deliberately is
+   itself part of the chip plan, not idleness.
+
+   The horizon at which those flip is the number of gameweeks of damage you
+   are willing to absorb. Carrying a non-playing asset for one or two weeks
+   costs a few points; carrying one for six costs more than the hit ever
+   would, so a distant wildcard is no excuse. */
+const FT_CAP=5;                 /* free transfers that can be banked at once */
+const CARRY_HORIZON=3;          /* weeks within which a chip is worth waiting for */
+function deadWeight(b,squad){
+  return (squad||[]).map(e=>{
+    if(!e)return null;
+    const st=e.status,chance=e.chance_of_playing_next_round;
+    const starts=e.starts||0,mins=e.minutes||0;
+    let why=null,severity=0;
+    if(st==='u')why='left the club',severity=3;
+    else if(st==='s')why='suspended',severity=3;
+    else if(st==='i'||chance===0)why='injured',severity=3;
+    else if(chance!=null&&chance<=50)why=chance+'% to play',severity=2;
+    else if(st==='d')why='a doubt',severity=2;
+    else if(mins>=270&&starts>0&&mins/starts<55)why='rarely finishes',severity=1;
+    else if(mins>=270&&starts===0)why='not starting',severity=2;
+    if(!why)return null;
+    return {el:e,why,severity};
+  }).filter(Boolean).sort((a,c)=>c.severity-a.severity);
+}
+/* Given the next chip and how far away it is, what to do about each problem
+   and about the free transfers. Pure, so the wording can be tested. */
+function transferRunway(b,squad,plan){
+  if(!plan)return null;
+  const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+  const chips=Object.keys(plan.picks).map(k=>({key:k,gw:plan.picks[k].gw}))
+    .filter(c=>c.gw>=startGw).sort((a,c)=>a.gw-c.gw);
+  const next=chips[0]||null;
+  const weeks=next?next.gw-startGw:null;
+  const dead=deadWeight(b,squad);
+  /* A wildcard or free hit rebuilds the squad, so problems can wait for it.
+     A bench boost or triple captain does not — it needs the squad fixed
+     BEFORE it, which is the opposite instruction. */
+  const rebuilds=next&&(next.key==='wildcard'||next.key==='freehit');
+  const carry=!!(rebuilds&&weeks!=null&&weeks<=CARRY_HORIZON);
+  return {next,weeks,dead,carry,rebuilds:!!rebuilds,
+    /* Banking is only useful up to the cap, and only if there is time to
+       accumulate. Past the cap a saved transfer is simply lost. */
+    canStack:weeks==null?FT_CAP:Math.max(0,Math.min(FT_CAP,weeks)),
+    fixNow:carry?[]:dead.filter(d=>d.severity>=2)};
+}
+function transferRunwayCard(b,squad,plan){
+  let r=null;try{r=transferRunway(b,squad,plan);}catch(_){}
+  if(!r||!r.next)return '';
+  const label=CHIP_LABEL[r.next.key];
+  const wk=r.weeks===0?'this gameweek':r.weeks===1?'next gameweek':'in '+r.weeks+' gameweeks';
+  const head='Next chip: <b>'+label+'</b>, GW'+r.next.gw+' — '+wk+'.';
+  let advice;
+  if(r.carry){
+    advice=' The '+label+' rebuilds the squad, so <b>stop paying to fix things it will fix for free</b>. '+
+      'Carry the problems below, take no hits, and bank your transfers — you can hold up to '+FT_CAP+
+      ', and arriving with a stack means the weeks after the chip are covered too.';
+  } else if(r.rebuilds){
+    advice=' The '+label+' is still '+r.weeks+' gameweeks out — too far to wait on. Carrying a player you cannot field '+
+      'for that long costs more than a hit would, so <b>fix the serious problems now</b> and bank what is left over.';
+  } else {
+    advice=' A '+label+' needs the squad <b>already working</b> — it multiplies what you have rather than replacing it. '+
+      'Use the run-up to clear the problems below, not to save transfers you will not spend.';
+  }
+  const rows=r.dead.slice(0,6).map(d=>{
+    const act=r.carry?'carry':(d.severity>=2?'fix now':'watch');
+    const cls=act==='fix now'?'badge-amber':act==='carry'?'badge-grey':'badge-blue';
+    return '<div class="dl-row dl-click" onclick="openPlayer('+d.el.id+')">'+
+      '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(d.el.web_name)+
+      ' <span class="badge '+cls+'">'+act+'</span></span>'+
+      '<span class="dl-sub">'+crest(b,d.el.team,13)+esc(d.why)+' · '+money(d.el.now_cost)+'</span></span></div>';
+  }).join('');
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.swap,'width="15" height="15"')+
+    ' Transfer runway</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">'+head+advice+'</p>'+
+    (rows?'<div class="dl desc">'+rows+'</div>'
+      :'<p class="dl-sub" style="margin:0">No dead weight in your squad — everyone is available and playing. '+
+       'Bank the transfers rather than making one for its own sake.</p>')+
+    '<div class="dl-sub" style="margin-top:8px">Free transfers stack to <b>'+FT_CAP+'</b>'+
+    (r.weeks?', so from here you could reach <b>'+r.canStack+'</b> by GW'+r.next.gw:'')+
+    '. A stack is what turns one gameweek into a mini-wildcard, which is why banking is part of the chip plan '+
+    'rather than doing nothing. Anything marked <b>carry</b> is only tolerable because the chip is close — '+
+    'if it slips, revisit it.</div></div>';
 }
 
 function chipRoadmapCard(b,fixtures){

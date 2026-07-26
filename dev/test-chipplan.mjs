@@ -41,12 +41,15 @@ const API = new Function(
   grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
   grabConst('CHIP_PROVISIONAL_FROM') + '\n' + grabConst('WC_HORIZON_WEEKS') + '\n' +
   grabFn('wcHorizonFactor') + '\n' + grabConst('BB_RUNIN_PENALTY') + '\n' +
+  grabConst('FT_CAP') + '\n' + grabConst('CARRY_HORIZON') + '\n' +
+  grabFn('deadWeight') + '\n' + grabFn('transferRunway') + '\n' +
   'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor};'
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,deadWeight,transferRunway};'
 )();
 
+const API_FT_CAP = 5;
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
 
@@ -584,6 +587,81 @@ console.log('• chipPlanFdr: quality gates the captain, and guards hold');
   const late = API.chipPlanFdr(boot(), makeFixtures(20, 38, (gw) => (gw === 25 ? 1 : 3)), { startGw: 20 });
   ok(late && late.window.from === 20 && late.window.to === 38, 'a second-half plan uses the second-half window');
   ok(late.picks.benchboost.gw === 25, 'and still finds the easiest week inside it');
+}
+
+console.log('• deadWeight: what in the squad is not earning its place');
+{
+  const D = API.deadWeight;
+  const p = (id, o) => Object.assign({ id, team: 1, web_name: 'p' + id, now_cost: 50,
+    status: 'a', chance_of_playing_next_round: null, minutes: 900, starts: 10 }, o);
+
+  const flagged = D({}, [
+    p(1),                                                   // fine
+    p(2, { status: 'i' }),                                  // injured
+    p(3, { status: 's' }),                                  // suspended
+    p(4, { status: 'u' }),                                  // gone
+    p(5, { chance_of_playing_next_round: 25 }),             // major doubt
+    p(6, { status: 'd' }),                                  // doubt
+    p(7, { minutes: 300, starts: 0 }),                      // never starts
+    p(8, { minutes: 400, starts: 10 }),                     // starts but hooked
+  ]);
+  const byId = Object.fromEntries(flagged.map((d) => [d.el.id, d]));
+  ok(!byId[1], 'an available, playing asset is not flagged');
+  ok(byId[2].why === 'injured' && byId[2].severity === 3, 'injury is a serious flag');
+  ok(byId[3].why === 'suspended' && byId[4].why === 'left the club', 'suspension and departure are flagged');
+  ok(byId[5].severity === 2 && /25%/.test(byId[5].why), 'a low chance of playing is reported with the number');
+  ok(byId[6].severity === 2, 'a doubt is a moderate flag');
+  ok(byId[7].why === 'not starting', 'a player with minutes but no starts is flagged');
+  ok(byId[8].why === 'rarely finishes', 'a starter who is always hooked is a minor flag');
+  ok(byId[8].severity === 1, 'and only a minor one');
+  ok(flagged[0].severity >= flagged[flagged.length - 1].severity, 'sorted worst first');
+  ok(D({}, []).length === 0 && D({}, null).length === 0, 'an empty squad is safe');
+  ok(D({}, [null, undefined]).length === 0, 'holes in the squad are ignored');
+}
+
+console.log('• transferRunway: what to do with transfers before the chip');
+{
+  const R = API.transferRunway;
+  const b = { upcoming: { id: 10 }, cur: { id: 10 } };
+  const squad = [
+    { id: 1, team: 1, web_name: 'Hurt', now_cost: 70, status: 'i', minutes: 900, starts: 10 },
+    { id: 2, team: 1, web_name: 'Fine', now_cost: 60, status: 'a', minutes: 900, starts: 10,
+      chance_of_playing_next_round: null },
+  ];
+  const plan = (gw, key) => ({ picks: { [key]: { gw } } });
+
+  /* A wildcard two weeks away rebuilds everything — carry the problem. */
+  const soon = R(b, squad, plan(12, 'wildcard'));
+  ok(soon.next.key === 'wildcard' && soon.weeks === 2, 'the next chip and its distance are reported');
+  ok(soon.carry === true, 'a close rebuild chip means carry rather than fix');
+  ok(soon.fixNow.length === 0, 'nothing is urgent when the wildcard is imminent');
+  ok(soon.canStack === 2, 'you can only bank as many transfers as there are weeks');
+
+  /* The same wildcard eight weeks away is no excuse — fix it. */
+  const far = R(b, squad, plan(18, 'wildcard'));
+  ok(far.carry === false, 'a distant wildcard does not justify carrying a dead player');
+  ok(far.fixNow.length === 1 && far.fixNow[0].el.id === 1, 'the injured player is flagged to fix now');
+  ok(far.canStack === API_FT_CAP, 'banking is capped however long the wait');
+
+  /* A Bench Boost is the opposite instruction: it multiplies the squad you
+     have, so the squad must be working BEFORE it, not after. */
+  const bb = R(b, squad, plan(12, 'benchboost'));
+  ok(bb.rebuilds === false, 'a bench chip does not rebuild the squad');
+  ok(bb.carry === false, 'so problems are never carried into it');
+  ok(bb.fixNow.length === 1, 'and they are flagged for fixing even though the chip is close');
+
+  /* Free Hit rebuilds for one week, so it counts as a rebuild chip. */
+  ok(R(b, squad, plan(11, 'freehit')).rebuilds === true, 'a Free Hit counts as a rebuild');
+
+  /* The nearest chip is the one that matters. */
+  const multi = R(b, squad, { picks: { wildcard: { gw: 18 }, benchboost: { gw: 11 } } });
+  ok(multi.next.key === 'benchboost', 'the nearest upcoming chip is chosen');
+  /* Chips already behind us are ignored. */
+  const past = R(b, squad, { picks: { wildcard: { gw: 4 }, freehit: { gw: 15 } } });
+  ok(past.next.key === 'freehit', 'a chip already played is not the next one');
+
+  ok(R(b, squad, null) === null, 'no plan means no runway');
+  ok(R(b, [], plan(12, 'wildcard')).dead.length === 0, 'an empty squad has no dead weight');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
