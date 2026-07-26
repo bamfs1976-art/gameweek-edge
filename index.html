@@ -6084,7 +6084,12 @@ async function hydrateFixtures(host){
   const WINS=[[6,'6 GW'],[10,'10 GW'],[15,'15 GW']].filter(p=>p[0]<REM);
   WINS.push([Math.min(REM,38),'Season']);
   const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],['fpl','FPL']];
-  let curView='overall',curWin=Math.min(10,REM);
+  /* The window has a START as well as a length. Fixed horizons counting from
+     today answer "what is coming", but not "how does GW12-17 look" — which is
+     the question you have when you are planning a wildcard or reading someone
+     else's fixture graphic. curFrom defaults to now, so the panel opens
+     exactly as it always did. */
+  let curView='overall',curWin=Math.min(10,REM),curFrom=startGw;
 
   /* Match outlook for the upcoming gameweek — window-independent. */
   const gwFix=fixtures.filter(f=>f.event===startGw);
@@ -6109,11 +6114,14 @@ async function hydrateFixtures(host){
   /* Everything below depends on the chosen horizon, so it rebuilds when the
      window control changes. */
   function build(){
+    /* Clamp the start so the window always has at least two gameweeks in it,
+       however late in the season the user drags it. */
+    const from=Math.max(startGw,Math.min(curFrom,37));
     const winN=curWin;
-    const gws=[];for(let g=startGw;g<startGw+winN&&g<=38;g++)gws.push(g);
+    const gws=[];for(let g=from;g<from+winN&&g<=38;g++)gws.push(g);
     const byTeamGw={};
     fixtures.forEach(f=>{
-      if(!f.event||f.event<startGw||f.event>=startGw+winN)return;
+      if(!f.event||f.event<from||f.event>=from+winN)return;
       const m=matchModel(b,f,R);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
         diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
@@ -6276,8 +6284,19 @@ async function hydrateFixtures(host){
       : '';
 
     host.innerHTML=
-      '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — next '+gws.length+' gameweeks</div>'+
+      '<div class="card mb-20"><div class="card-title">Fixture Difficulty 2.0 — GW'+gws[0]+'–GW'+gws[gws.length-1]+'</div>'+
         '<div class="seg" id="fdr-win" style="margin-bottom:8px">'+WINS.map(p=>'<button class="seg-b'+(p[0]===curWin?' on':'')+'" data-win="'+p[0]+'">'+p[1]+'</button>').join('')+'</div>'+
+        /* Where the window STARTS. Fixed horizons from today cannot answer
+           "how does GW12-17 look", which is the question behind every wildcard
+           plan and every fixture graphic someone shares. */
+        '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
+          '<label class="dl-sub" for="fdr-from">From</label>'+
+          '<select class="modal-in" id="fdr-from" style="max-width:104px">'+
+            Array.from({length:Math.max(1,38-startGw)},(_,i)=>startGw+i)
+              .map(g=>'<option value="'+g+'"'+(g===from?' selected':'')+'>GW'+g+'</option>').join('')+
+          '</select>'+
+          (from!==startGw?'<button class="btn btn-ghost btn-sm" id="fdr-now">Back to now</button>':'')+
+        '</div>'+
         '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+VIEWS.map(v=>'<button class="seg-b'+(v[0]===curView?' on':'')+'" data-view="'+v[0]+'">'+v[1]+'</button>').join('')+'</div>'+
         '<div class="fdr-teams" id="fdr-teams">'+
           '<button class="tchip tchip-act" data-tf="all">All</button>'+
@@ -6286,7 +6305,7 @@ async function hydrateFixtures(host){
         '</div>'+
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
-        'Choose the <b>horizon</b> (6 / 10 / 15 GWs, or the whole <b>Season</b>) and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
+        'Choose where the window <b>starts</b> and how long it runs (6 / 10 / 15 GWs, or the whole <b>Season</b>), and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
         'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
@@ -6295,6 +6314,10 @@ async function hydrateFixtures(host){
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
     const wseg=host.querySelector('#fdr-win');
     if(wseg)wseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){const w=+btn.dataset.win;if(w!==curWin){curWin=w;build();}}});
+    const fsel=host.querySelector('#fdr-from');
+    if(fsel)fsel.addEventListener('change',()=>{const g=parseInt(fsel.value,10);if(g&&g!==curFrom){curFrom=g;build();}});
+    const fnow=host.querySelector('#fdr-now');
+    if(fnow)fnow.addEventListener('click',()=>{if(curFrom!==startGw){curFrom=startGw;build();}});
     /* Team filter — toggle clubs in/out of the grid without a full rebuild
        (only the tbody re-renders, so it stays snappy on the Season view). */
     const tf=host.querySelector('#fdr-teams');
