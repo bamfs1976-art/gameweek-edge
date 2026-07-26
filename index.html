@@ -9200,6 +9200,28 @@ const CHIP_SEPARATION=3;
    than decided — by then there will be real form and minutes data to check
    it against. Blanks and doubles are calendar facts and stay firm. */
 const CHIP_PROVISIONAL_FROM=5;
+/* ── The run-in ───────────────────────────────────────────────────────
+   The second-half window ends at GW38 and the chips expire with it, which
+   makes the back of it behave unlike anywhere else in the season.
+
+   A Wildcard buys a squad for the gameweeks that FOLLOW it, and the squad
+   persists past the chip reset at GW20 — only the chips renew, not the team.
+   Its value is therefore set by how many gameweeks remain until GW38, not by
+   which half it sits in. Deep into the run-in there is almost nothing left to
+   buy: a GW37 wildcard reshapes a team for two matches. This tapers that
+   value away rather than banning it, and leaves the first half untouched
+   because nineteen-plus weeks always remain there. */
+const WC_HORIZON_WEEKS=6;
+function wcHorizonFactor(gw){
+  return Math.max(0,Math.min(1,(38-gw)/WC_HORIZON_WEEKS));
+}
+/* The final two gameweeks are a rotation lottery: sides with nothing left to
+   play for rest players, and title or relegation races pull the other way.
+   A chip needing eleven or fifteen specific players to start is a poor bet
+   there. Bench Boost pays it in FDR points, Triple Captain as a multiplier.
+   A Free Hit is deliberately unaffected — you pick a fresh XI that week and
+   can simply avoid the clubs with nothing to play for. */
+const BB_RUNIN_PENALTY={37:0.25,38:0.45},TC_RUNIN_RISK={37:0.85,38:0.65};
 const CHIP_HALF_END=19;
 function chipHalfWindow(startGw){
   const s=Math.max(1,startGw||1);
@@ -9278,13 +9300,12 @@ function chipPlanFdr(b,fixtures,opts){
     /* A break is two clear weeks to plan a reshape and, crucially, the point
        where injuries picked up on international duty are known. It is the
        classic wildcard window, so a post-break week wins a close call. */
-    const early=WC_EARLY_PENALTY[g.gw]||1;
+    const early=WC_EARLY_PENALTY[g.gw]||1,horizon=wcHorizonFactor(g.gw);
     wcRank.push({gw:g.gw,gain,turning,afterBreak:g.afterBreak||0,early:early<1?early:0,
-      score:gain*(g.afterBreak?WC_BREAK_BONUS:1)*early});
+      runIn:horizon<1?horizon:0,weeksLeft:38-g.gw,
+      score:gain*(g.afterBreak?WC_BREAK_BONUS:1)*early*horizon});
   });
-  {const top=wcRank.reduce((m,w)=>Math.max(m,w.score),0);
-   wcRank.sort((a,c)=>{const d=c.score-a.score;
-     return Math.abs(d)<=top*TIE_REL?c.gw-a.gw:d;});}
+  wcRank.sort((a,c)=>c.score-a.score||c.gw-a.gw);
 
   /* Triple Captain: an elite attacker meeting the softest fixture going.
      Quality gates the shortlist so the answer is never a fringe player who
@@ -9298,14 +9319,14 @@ function chipPlanFdr(b,fixtures,opts){
       g.rows.filter(r=>r.team===el.team).forEach(r=>{
         /* Straight after a break the armband is a gamble: the player may be
            rested, jet-lagged or hurt, and the news lands late. */
-        tcAll.push({score:q*(6-r.fdr)*(r.home?1.08:1)*(g.afterBreak?BREAK_RISK:1),
-          gw:g.gw,el,opp:r.opp,home:r.home,fdr:r.fdr,afterBreak:g.afterBreak||0});
+        tcAll.push({score:q*(6-r.fdr)*(r.home?1.08:1)*(g.afterBreak?BREAK_RISK:1)
+            *(TC_RUNIN_RISK[g.gw]||1),
+          gw:g.gw,el,opp:r.opp,home:r.home,fdr:r.fdr,afterBreak:g.afterBreak||0,
+          runIn:TC_RUNIN_RISK[g.gw]?1:0});
       });
     });
   });
-  {const top=tcAll.reduce((m,t)=>Math.max(m,t.score),0);
-   tcAll.sort((a,c)=>{const d=c.score-a.score;
-     return Math.abs(d)<=top*TIE_REL?c.gw-a.gw:d;});}
+  tcAll.sort((a,c)=>c.score-a.score||c.gw-a.gw);
   /* One candidate per gameweek — the best armband available that week. */
   const tcSeen=new Set(),tcRank=[];
   tcAll.forEach(t=>{if(!tcSeen.has(t.gw)){tcSeen.add(t.gw);tcRank.push(t);}});
@@ -9339,8 +9360,13 @@ function chipPlanFdr(b,fixtures,opts){
     const best=avail[0];
     let pick=best;
     if(!best.firm){
-      const base=Math.abs(best.rankScore||0);
-      const tol=base>0?base*TIE_REL:TIE_FDR;
+      /* Each ranking carries its own tolerance, because the scales are not
+         comparable: difficulty means live in FDR points (a spread of ~1
+         across a season), while wildcard and captain scores are arbitrary
+         magnitudes where a percentage is the only sensible measure. Deriving
+         one from the other made a 0.3-FDR gap read as a tie and handed the
+         Free Hit to the EASIEST week of the run-in. */
+      const tol=best.tol||TIE_FDR;
       const tied=avail.filter(c=>!c.firm&&Math.abs((c.rankScore||0)-(best.rankScore||0))<=tol);
       const placed=Array.from(taken);
       const clear=g=>!placed.length||placed.every(t=>Math.abs(t-g)>=CHIP_SEPARATION);
@@ -9360,16 +9386,20 @@ function chipPlanFdr(b,fixtures,opts){
     }
     taken.add(pick.gw);picks[key]=pick;
   };
-  const hardRank=played.slice().sort((a,c)=>{
-    const d=c.mean-a.mean;
-    return Math.abs(d)<=TIE_FDR?(c.hard-a.hard||c.gw-a.gw):d;});
+  /* Strict, total orderings only. An earlier version folded the "close
+     enough" tolerance into these comparators, which makes them
+     non-transitive — a and b tie, b and c tie, a and c do not — and
+     Array.sort is free to return anything for such a comparator. It duly
+     put the LEAST hard gameweek first and handed the Free Hit to a double
+     gameweek. The tolerance now lives in claim(), which applies it to an
+     already correctly sorted list, where it is well defined. */
+  const hardRank=played.slice().sort((a,c)=>c.mean-a.mean||c.hard-a.hard||c.gw-a.gw);
   /* Bench Boost needs fifteen players who actually start. After a break the
      fringe of a squad is exactly who gets rested or returns late, so a
      post-break week is treated as effectively harder for this chip only. */
-  const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0)+(BB_EARLY_PENALTY[g.gw]||0);
-  const easyRank=played.slice().sort((a,c)=>{
-    const d=bbMean(a)-bbMean(c);
-    return Math.abs(d)<=TIE_FDR?(c.easy-a.easy||c.gw-a.gw):d;});
+  const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0)+(BB_EARLY_PENALTY[g.gw]||0)
+    +(BB_RUNIN_PENALTY[g.gw]||0);
+  const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy||c.gw-a.gw);
   const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
   const dblRank=played.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
 
@@ -9383,14 +9413,18 @@ function chipPlanFdr(b,fixtures,opts){
   const usable=g=>g.gw!==1;
   claim('freehit',blankRank.map(g=>({gw:g.gw,blank:g.blanks.length,afterBreak:g.afterBreak||0,firm:1}))
     .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard,afterBreak:g.afterBreak||0,
-      rankScore:g.mean}))).filter(usable));
+      rankScore:g.mean,tol:TIE_FDR}))).filter(usable));
   claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0,firm:1}))
     .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0,
-      early:BB_EARLY_PENALTY[g.gw]||0,rankScore:-bbMean(g)}))));
+      early:BB_EARLY_PENALTY[g.gw]||0,runIn:BB_RUNIN_PENALTY[g.gw]||0,
+      rankScore:-bbMean(g),tol:TIE_FDR}))));
+  const wcTol=(wcRank.length?wcRank[0].score:0)*TIE_REL;
   claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,
-    afterBreak:w.afterBreak||0,early:w.early||0,rankScore:w.score})).filter(usable),['freehit']);
+    afterBreak:w.afterBreak||0,early:w.early||0,runIn:w.runIn||0,weeksLeft:w.weeksLeft,
+    rankScore:w.score,tol:wcTol})).filter(usable),['freehit']);
+  const tcTol=(tcRank.length?tcRank[0].score:0)*TIE_REL;
   claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr,
-    afterBreak:t.afterBreak||0,rankScore:t.score})));
+    afterBreak:t.afterBreak||0,runIn:t.runIn||0,rankScore:t.score,tol:tcTol})));
   /* How far out each pick is, and how much better the chosen week really is
      than an average one. A near-zero edge means the fixtures are flat and
      the week is close to arbitrary — worth saying rather than dressing up. */
@@ -9427,13 +9461,16 @@ function chipPlanCard(b,fixtures){
     if(k==='benchboost')return p.double
       ? '<b>'+p.double+' clubs play twice</b> — the week a full fifteen is worth the most.'
       : 'The easiest week of the half (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.easy+' fixtures rated 1 or 2). A bench only pays when the fringe players have games worth starting.'+
-        (p.early?' <b>This early the bench is thin by design</b> — the budget is in the XI — so it is worth less than the fixtures suggest.':'');
+        (p.early?' <b>This early the bench is thin by design</b> — the budget is in the XI — so it is worth less than the fixtures suggest.':'')+
+        (p.runIn?' <b>Run-in rotation risk</b> — sides with nothing to play for rest players, and a bench chip needs fifteen of them to start.':'');
     if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(p.opp)+
-      ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.';
+      ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.'+
+      (p.runIn?' Note the run-in: motivation and rotation are unpredictable this late.':'');
     return '<b>'+p.turning+' clubs</b> swing from a hard run to an easy one around this week (total difficulty shed ≈ '+p.gain.toFixed(1)+
       '), so this is where a full reshape buys the most fixture.'+
       (p.afterBreak?' It also lands straight after the international break — two clear weeks to plan it, with the injury news in.':'')+
-      (p.early?' <b>This early it is a judgement call</b> — one or two weeks of football is mostly noise, so only take it if the squad is already broken.':'');};
+      (p.early?' <b>This early it is a judgement call</b> — one or two weeks of football is mostly noise, so only take it if the squad is already broken.':'')+
+      (p.runIn?' <b>Only '+p.weeksLeft+' gameweek'+(p.weeksLeft===1?'':'s')+' left to shape</b> — a wildcard buys the weeks that follow it, and there are barely any.':'');};
   const badge={wildcard:'badge-blue',benchboost:'badge-green',triplecaptain:'badge-green',freehit:'badge-amber'};
   /* If the best week is barely better than an average one, the fixtures are
      not really telling us anything and the card should say so. */
@@ -9447,7 +9484,10 @@ function chipPlanCard(b,fixtures){
     'across all '+plan.gws.length+' gameweeks of the half, not just the next few. '+
     'Blanks and doubles override everything else when the calendar has them.'+
     (plan.window.from<=1?' <b>GW1 is skipped for the Free Hit and Wildcard</b> — transfers are unlimited until that deadline, '+
-      'so either chip there buys a squad you can already pick for free.':'')+'</p>'+
+      'so either chip there buys a squad you can already pick for free.':'')+
+    (plan.window.half===2?' These chips <b>expire at GW38</b>, so the run-in is handled differently: a Wildcard is worth less the '+
+      'closer it lands to the end, because it buys the weeks that follow it and the squad carries on past the chip reset — '+
+      'while Bench Boost and Triple Captain are marked down in the last two gameweeks, where sides with nothing to play for rest players.':'')+'</p>'+
     (plan.breakGws.length
       ? '<p class="dl-sub" style="margin-bottom:10px">International breaks fall before <b>GW'+
         plan.breakGws.join('</b>, <b>GW')+'</b> — read off the gaps between deadlines, so it follows the real calendar. '+

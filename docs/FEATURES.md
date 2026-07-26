@@ -579,6 +579,25 @@ in**, and when the best week is barely better than average the card says the
 fixture case is thin rather than dressing it up. Blanks and doubles are calendar
 facts and stay firm regardless.
 
+**The second half runs to a deadline.** GW20–38 is planned by the same engine,
+but the back of that window behaves unlike anywhere else because the chips
+expire with the season.
+
+- A **Wildcard** buys the gameweeks that *follow* it, and the squad carries on
+  past the chip reset at GW20 — only the chips renew, not the team. Its value is
+  therefore set by how many gameweeks remain to GW38, not by which half it sits
+  in, and it tapers to nothing over the final six (GW32 full value, GW35 half,
+  GW38 none). A GW37 wildcard reshapes a team for two matches. The first half is
+  untouched, since nineteen‑plus weeks always remain there.
+- **Bench Boost** and **Triple Captain** are marked down in the last two
+  gameweeks. Sides with nothing left to play for rest players, and a chip that
+  needs eleven or fifteen specific players to start is a poor bet.
+- **Free Hit** is deliberately unaffected — you pick a fresh XI that week and
+  can simply avoid the clubs on the beach.
+
+A blank or double still outranks all of it: a GW38 double gameweek takes the
+Bench Boost, and that is asserted.
+
 **A gameweek needs enough clubs to be a gameweek.** An FPL XI is eleven players
 with at most three per club, so at least **four clubs** must have a fixture
 before a week is playable at all. Below that it is not a blank gameweek, it is

@@ -39,11 +39,12 @@ const API = new Function(
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
   grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
   grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
-  grabConst('CHIP_PROVISIONAL_FROM') + '\n' +
+  grabConst('CHIP_PROVISIONAL_FROM') + '\n' + grabConst('WC_HORIZON_WEEKS') + '\n' +
+  grabFn('wcHorizonFactor') + '\n' + grabConst('BB_RUNIN_PENALTY') + '\n' +
   'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns};'
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor};'
 )();
 
 let failures = 0, passes = 0;
@@ -397,6 +398,72 @@ console.log('• chipPlanFdr: distant picks are marked provisional');
   const flat = API.chipPlanFdr(boot(), makeFixtures(1, 19, () => 3), { startGw: 1 });
   ok(Object.values(flat.picks).every((p) => p.edge == null || p.edge < 0.01),
     'flat fixtures report a near-zero edge');
+}
+
+console.log('• wcHorizonFactor: a wildcard is worth the weeks that follow it');
+{
+  const f = API.wcHorizonFactor;
+  /* The squad a wildcard buys carries on past the chip reset at GW20 — only
+     the chips renew, not the team — so its value is set by the gameweeks left
+     to GW38, never by which half it sits in. */
+  ok(f(1) === 1 && f(19) === 1 && f(30) === 1, 'anywhere with a run ahead is unpenalised');
+  ok(f(32) === 1, 'six clear gameweeks is still full value');
+  ok(f(35) === 0.5, 'three left is worth half');
+  ok(f(37) < 0.2 && f(37) > 0, 'two left is worth little but is not zero');
+  ok(f(38) === 0, 'a wildcard in the final gameweek shapes nothing');
+  for (let g = 30; g < 38; g++) ok(f(g) >= f(g + 1), 'value never rises as the season runs out (GW' + g + ')');
+}
+
+console.log('• chipPlanFdr: the second-half run-in');
+{
+  const flat = (from, to) => makeFixtures(from, to, () => 3);
+
+  /* Flat fixtures across GW20-38. Chips should spread and be held late for
+     option value, but the wildcard must not be shoved into the dead end of
+     the season where it buys nothing. */
+  const plan = API.chipPlanFdr(boot(), flat(20, 38), { startGw: 20 });
+  ok(plan.window.from === 20 && plan.window.to === 38, 'the second-half window is planned');
+  const weeks = Object.values(plan.picks).map((p) => p.gw).sort((a, c) => a - c);
+  ok(weeks.length === 4, 'all four second-half chips are placed');
+  for (let i = 1; i < weeks.length; i++) {
+    ok(weeks[i] - weeks[i - 1] >= 3, 'chips ' + weeks[i - 1] + ' and ' + weeks[i] + ' are separated');
+  }
+  ok(plan.picks.wildcard.gw <= 35,
+    'the wildcard is not left to the dead end of the season (GW' + plan.picks.wildcard.gw + ')');
+  ok(plan.picks.benchboost.gw !== 38 && plan.picks.triplecaptain.gw !== 38,
+    'neither bench chip is defaulted into GW38');
+
+  /* An equal swing early in the run-in beats one at the death. */
+  const swing = (turn) => makeFixtures(20, 38, (gw, team) =>
+    (team <= 10 ? (gw < turn ? 5 : 1) : (gw < turn ? 1 : 5)));
+  const late = API.chipPlanFdr(boot(), swing(36), { startGw: 20 });
+  ok(late.picks.wildcard.gw < 36 || late.picks.wildcard.runIn,
+    'a very late swing is either avoided or flagged as run-in');
+
+  /* Bench Boost: two equally easy weeks, one of them GW38. Take the other. */
+  const bb = API.chipPlanFdr(boot(), makeFixtures(20, 38, (gw) => (gw === 30 || gw === 38 ? 1 : 3)), { startGw: 20 });
+  ok(bb.picks.benchboost.gw === 30,
+    'Bench Boost avoids GW38 when an equally easy week exists (got GW' + bb.picks.benchboost.gw + ')');
+
+  /* Triple Captain: same test, on the softest fixture for a premium. */
+  const tc = API.chipPlanFdr(boot(), makeFixtures(20, 38, (gw, team) =>
+    (team === 1 && (gw === 31 || gw === 38) ? 1 : 3)), { startGw: 20 });
+  const tcTop = tc.rank.triplecaptain.filter((t) => t.gw === 31 || t.gw === 38);
+  ok(tcTop.length === 2 && tcTop[0].gw === 31, 'the armband prefers the week that is not GW38');
+
+  /* A double gameweek at the death still wins — a calendar fact outranks the
+     run-in discount, exactly as it outranks the break and early penalties. */
+  const dbl = makeFixtures(20, 38, () => 3).concat([1, 3, 5, 7].map((h, i) => ({
+    id: 600 + i, event: 38, team_h: h, team_a: h + 1, team_h_difficulty: 2, team_a_difficulty: 2,
+  })));
+  ok(API.chipPlanFdr(boot(), dbl, { startGw: 20 }).picks.benchboost.gw === 38,
+    'a GW38 double still takes the Bench Boost');
+
+  /* None of the run-in machinery may leak into the first half. */
+  const first = API.chipPlanFdr(boot(), makeFixtures(1, 19, () => 3), { startGw: 1 });
+  ok(Object.values(first.picks).every((p) => !p.runIn), 'no run-in penalty applies in the first half');
+  ok(!first.picks.wildcard.weeksLeft || first.picks.wildcard.weeksLeft > 19,
+    'a first-half wildcard still has the rest of the season to shape');
 }
 
 console.log('• clubFdrRuns: best fixture runs on official FDR');
