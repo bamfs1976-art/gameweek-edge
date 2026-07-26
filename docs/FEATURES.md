@@ -159,6 +159,20 @@ in the bank** (best XI holding ≥£3.0m back) · **Best by price** for each of 
 four positions · **Best captains** for the next 7 gameweeks · **The
 differentials** (<10% owned) · **Priced above the model** · **DefCon by budget**.
 
+**From the newer analytics**, six more: **Who takes what** (first‑choice
+penalties / free‑kicks / corners, club by club) · **Set and forget** or **One
+slot, N clubs** (the exactly‑solved budget rotation — the title depends on
+whether rotating actually beats holding, and when it doesn't the card says so
+rather than manufacturing a chain) · **Attack or defence?** (which end of each
+club is the one to buy) · **Most goals coming** (projected goals over the next
+six, the number behind the colour) · **Paid on the wrong tariff** (out‑of‑
+position players) · **Playing midweek** (European and cup congestion).
+
+Three of those are *seasonal by nature* and correctly absent in July: the
+out‑of‑position card needs 450 minutes before it will claim anything, and the
+congestion card needs the cup competitions to have started. They appear on
+their own once the data exists.
+
 **Build your own.** Above the ready-made cards sits a builder, so the presets
 answer the questions we thought of and the builder answers the rest. Two modes,
 both feeding the same renderers the presets use — a hand-built card is

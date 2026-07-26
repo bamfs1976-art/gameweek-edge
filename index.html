@@ -5099,7 +5099,7 @@ function socialSpecs(b,fixtures){
     if(rows.length<20)return null;
     return {kind:'rank',title:'UNDERPRICED',
       sub:'Delivering more than the price tag implies',
-      note:'FAIR price is what the median rate for that position implies over the next six fixtures. Compared within position, so defenders are not flattered against forwards.',
+      note:'FAIR price is what the median rate for that position implies over the next six fixtures — compared within position, so defenders are not flattered.',
       items:rows.slice(0,8).map(r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),
         meta:money(r.el.now_cost)+' · fair £'+r.fair.toFixed(1),
         v:r.delta.toFixed(1),crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
@@ -5120,7 +5120,7 @@ function socialSpecs(b,fixtures){
     if(rows.length<5)return null;
     return {kind:'rank',title:'BONUS MAGNETS',
       sub:'Baseline BPS per 90 · before any return',
-      note:'BPS banked from tackles, recoveries, interceptions and passing, with the BPS for goals, assists, clean sheets and saves stripped out. A high baseline means one return is often enough for bonus.',
+      note:'BPS from tackles, recoveries, interceptions and passing, with the BPS for goals, assists and clean sheets stripped out. One return is then often enough.',
       items:rows.map(r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),
         meta:money(r.el.now_cost)+' · '+r.bonus.toFixed(2)+' bonus/start',
         v:r.b90.toFixed(1),crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
@@ -5146,6 +5146,156 @@ function socialSpecs(b,fixtures){
       groups:groups.map(g=>({label:g.label,
         items:g.players.slice(0,3).map(e=>({nm:e.web_name,team:teamShort(b,e.team),v:dcHitLabel(e),
           crest:crestUrl(b,e.team),photos:socPhotoUrls(e)}))}))};
+  });
+
+  /* ── From the new analytics ───────────────────────────────── */
+
+  /* Set-piece takers, club by club. The single most-shared graphic in FPL
+     content, and we hold the same official order fields it is built from. */
+  push('set-pieces',()=>{
+    const rows=setPieceClubRows(b,3).filter(c=>c.pen.length||c.fk.length||c.ck.length).slice(0,10);
+    if(rows.length<6)return null;
+    const first=l=>l.length?l[0].el:null;
+    return {kind:'ladder',title:'WHO TAKES WHAT',
+      sub:'First-choice penalties · free-kicks · corners',
+      note:'Straight from the official set-piece order. Duties change and the data lags a manager’s decision, so treat a new season’s first weeks with care.',
+      groups:rows.map(c=>({label:teamShort(b,c.team),
+        items:[['pen','P'],['fk','FK'],['ck','CK']].map(([k,tag])=>{
+          const e=first(c[k]);
+          return e?{nm:e.web_name,team:tag,crest:crestUrl(b,c.team),photos:socPhotoUrls(e)}:null;
+        }).filter(Boolean)}))};
+  });
+
+  /* One budget slot covered across the whole run — the rotation graphic the
+     community shares every August, built from the exact-solved chain. */
+  push('rotation-chain',()=>{
+    const R=plsimRatings(b,fixtures);
+    const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+    const gws=[];for(let g=startGw;g<startGw+10&&g<=38;g++)gws.push(g);
+    if(gws.length<4)return null;
+    const BM=(PLSIM.BASE_H+PLSIM.BASE_A)/2;
+    const diff={},oppOf={};
+    fixtures.forEach(f=>{
+      if(!f.event||f.finished||gws.indexOf(f.event)<0)return;
+      const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
+      const gi=gws.indexOf(f.event);
+      [[f.team_h,m.csH,f.team_a,true],[f.team_a,m.csA,f.team_h,false]].forEach(([t,cs,opp,home])=>{
+        (diff[t]=diff[t]||new Array(gws.length).fill(5))[gi]=fdrDefence(cs);
+        (oppOf[t]=oppOf[t]||{})[gi]=teamShort(b,opp)+(home?'':'(a)');
+      });
+    });
+    const cands=b.elements.filter(e=>e.status==='a'&&e.element_type===2&&(e.now_cost||0)<=50)
+      .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,el:e}));
+    const ch=rotationChain(cands,diff);
+    if(!ch)return null;
+    /* Sometimes the honest answer is that there IS no rotation — one club's
+       run is good enough to hold throughout. That is a card in its own right,
+       and a better one than a manufactured chain would be, so the two cases
+       are titled differently rather than one of them being suppressed. */
+    const solo=ch.switches===0;
+    /* A single block is one row floating in a tall card, so the no-rotation
+       case gets its own denser shape: the budget defenders whose run is good
+       enough to hold outright, ranked. Same finding, a card's worth of it. */
+    if(solo){
+      const per={};
+      cands.forEach(c=>{const d=diff[c.team];if(!d)return;
+        const tot=d.reduce((x,v)=>x+v,0);
+        if(!per[c.team]||(c.cost||0)<(per[c.team].cost||0))per[c.team]={c,tot,
+          green:d.filter(v=>v<=2).length,n:d.length};});
+      const rows=Object.keys(per).map(t=>per[t]).sort((a2,c2)=>a2.tot-c2.tot).slice(0,8);
+      if(rows.length<4)return null;
+      return {kind:'rank',title:'SET AND FORGET',
+        sub:'£5.0m defenders · GW'+gws[0]+'–GW'+gws[gws.length-1],
+        note:'Every rotation was tested against simply holding one player, and holding won: no switch across these '+ch.n+' gameweeks buys back the transfer it costs.',
+        items:rows.map(r=>({nm:r.c.name,team:teamShort(b,r.c.team),
+          meta:money(r.c.cost)+' · '+r.green+'/'+r.n+' weeks green',
+          v:(r.tot/r.n).toFixed(2),crest:crestUrl(b,r.c.team),photos:socPhotoUrls(r.c.el)}))};
+    }
+    return {kind:'ladder',
+      title:'ONE SLOT, '+ch.teams.length+' CLUBS',
+      sub:'£5.0m defenders · GW'+gws[0]+'–GW'+gws[gws.length-1]+' · '+ch.green+'/'+ch.n+' weeks green',
+      note:'One squad place, transferred in and out — so every switch costs a transfer. The cheapest way to cover the run, solved exactly: '+ch.switches+' transfer'+(ch.switches===1?'':'s')+' in '+ch.n+' gameweeks.',
+      groups:ch.blocks.map(bk=>({
+        label:'GW'+gws[bk.from]+(bk.weeks>1?'–'+gws[bk.to]:''),
+        items:[{nm:bk.player.name,team:teamShort(b,bk.team)+' · '+money(bk.player.cost),
+          crest:crestUrl(b,bk.team),photos:socPhotoUrls(bk.player.el)}]}))};
+  });
+
+  /* Which end of each club is worth buying — the question the dossiers are
+     built around, answered for the whole league on one card. */
+  push('attack-or-defence',()=>{
+    const R=plsimRatings(b,fixtures);
+    const rows=(b.raw.teams||[]).map(t=>({t:t.id,lean:clubLean(R,t.id)}))
+      .filter(r=>r.lean).map(r=>Object.assign({gap:r.lean.attPct-r.lean.defPct},r));
+    if(rows.length<10)return null;
+    /* One row per club, sorted from the most attack-leaning to the most
+       defence-leaning, so the whole league reads top to bottom. */
+    const pick=rows.slice().sort((a,c)=>c.gap-a.gap);
+    const ends=pick.slice(0,5).concat(pick.slice(-4));
+    return {kind:'rank',title:'ATTACK OR DEFENCE?',
+      sub:'Which end of each club is the one to buy',
+      note:'Percentile of each club’s fitted attack and defence rating. Rating higher going forward makes clean sheets the thinner route in — and the reverse.',
+      items:ends.map(r=>({nm:teamShort(b,r.t),
+        team:r.lean.lean==='attack'?'BUY ATTACK':r.lean.lean==='defence'?'BUY DEFENCE':'balanced',
+        meta:Math.round(r.lean.attPct*100)+'th att · '+Math.round(r.lean.defPct*100)+'th def',
+        v:(r.gap>0?'+':'')+Math.round(r.gap*100),neg:r.gap<0,crest:crestUrl(b,r.t)}))};
+  });
+
+  /* Best attacking and defensive runs, in the lens's own unit — the numbers
+     the fixture ticker now shows per cell, summed over the run. */
+  push('xg-runs',()=>{
+    const R=plsimRatings(b,fixtures);
+    const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+    const acc={};
+    fixtures.forEach(f=>{
+      if(!f.event||f.finished||f.event<startGw||f.event>=startGw+6)return;
+      const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
+      (acc[f.team_h]=acc[f.team_h]||{xg:0,cs:0,n:0}).xg+=m.hx;acc[f.team_h].cs+=m.csH;acc[f.team_h].n++;
+      (acc[f.team_a]=acc[f.team_a]||{xg:0,cs:0,n:0}).xg+=m.ax;acc[f.team_a].cs+=m.csA;acc[f.team_a].n++;
+    });
+    const rows=Object.keys(acc).map(t=>Object.assign({t:+t},acc[t])).filter(r=>r.n>=4);
+    if(rows.length<10)return null;
+    return {kind:'rank',title:'MOST GOALS COMING',
+      sub:'Projected goals over the next 6 · model',
+      note:'The model’s expected goals for each club summed across its next six fixtures — the number behind the colour, not a 1–5 difficulty bucket.',
+      items:rows.sort((a,c)=>c.xg-a.xg).slice(0,8).map(r=>({nm:teamShort(b,r.t),
+        team:Math.round(100*r.cs/r.n)+'% CS',meta:r.n+' fixtures',
+        v:r.xg.toFixed(1),crest:crestUrl(b,r.t)}))};
+  });
+
+  /* Out of position: paid on a better tariff than the job. Needs real
+     minutes, so it is absent pre-season rather than guessed at. */
+  push('out-of-position',()=>{
+    const marks=oopBenchmarks(b.elements);
+    const rows=b.elements.map(e=>({e,f:oopFlag(e,marks)}))
+      /* Level 2 only: the panel badge is happy to flag a player who merely
+         clears the benchmark, but a published card asserting he is paid on
+         the wrong tariff should mean players who clear it comfortably. */
+      .filter(r=>r.f&&r.f.level>=2&&r.e.status==='a')
+      .sort((a,c)=>c.f.threat/c.f.bench-a.f.threat/a.f.bench).slice(0,8);
+    if(rows.length<5)return null;
+    return {kind:'rank',title:'PAID ON THE WRONG TARIFF',
+      sub:'Out of position · scoring above their listed role',
+      note:'FPL classifies a player once and pays him on it all season. A midfielder threatening like a forward still earns 5 a goal and a clean-sheet point.',
+      items:rows.map(r=>({nm:r.e.web_name,team:teamShort(b,r.e.team),
+        meta:money(r.e.now_cost)+' · '+r.f.label,
+        v:r.f.threat.toFixed(2),crest:crestUrl(b,r.e.team),photos:socPhotoUrls(r.e)}))};
+  });
+
+  /* Midweek European and cup load — empty until those competitions start,
+     which is the correct answer in July rather than a failure. */
+  push('congestion',()=>{
+    const nf=buildNextFix(b,fixtures);
+    const rows=congestionClubs(b,nf).filter(c=>c.load>0).slice(0,8);
+    if(rows.length<3)return null;
+    return {kind:'rank',title:'PLAYING MIDWEEK',
+      sub:'European and cup football before the next fixture',
+      note:'The football the official FPL API cannot see. A tie three days before kickoff is the classic rotation trigger; one six days out is a normal week.',
+      items:rows.map(c=>{const g=c.games[0];
+        return {nm:teamShort(b,c.team),
+          team:g?(CONGEST_COMP[g.comp]||g.comp):'cup',
+          meta:g?Math.round(g.days)+' days before':'',
+          v:c.load.toFixed(2),crest:crestUrl(b,c.team)};})};
   });
 
   return out;
@@ -5302,7 +5452,11 @@ function renderSocialCard(spec,scale){
         const nm=clip(it.nm,14);
         const nmW=x.measureText(nm).width;      /* measured in the NAME font */
         x.fillText(nm,tx,y+rh/2-4);
-        const sub=it.team+'  '+it.v;
+        /* The sub-line is a label and a value, and a card may legitimately
+           have only one of them — a set-piece taker has a duty but no number
+           worth printing. Join what is actually there rather than stringifying
+           an absent field into the word "undefined" on a published graphic. */
+        const sub=[it.team,it.v].filter(p=>p!=null&&p!=='').join('  ');
         x.font='600 20px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.45)';
         x.fillText(sub,tx,y+rh/2+22);
         /* Advance past the wider of the two lines so the next crest cannot
