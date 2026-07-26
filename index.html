@@ -9182,6 +9182,24 @@ function clubFdrRuns(b,fixtures,n){
 /* Eleven players, at most three per club: four clubs is the fewest that can
    field a legal XI, and so the fewest that make a gameweek playable. */
 const MIN_CLUBS_FOR_XI=4;
+/* Where two weeks make effectively the same fixture case, take the LATER
+   one. Fixture difficulty is a static, season-long rating: it is fully known
+   today and learns nothing between now and GW14. Form, minutes, price moves
+   and who actually starts only exist later. So a chip pencilled in for GW14
+   can be revised with thirteen gameweeks of real evidence, while the same
+   call made for GW4 is locked to pre-season assumptions. Waiting has option
+   value, and ties should break towards it rather than towards whichever week
+   happened to sort first. Tolerances are in the units of each ranking. */
+const TIE_FDR=0.08,TIE_REL=0.10;
+/* A Free Hit reverts the squad, so playing one next to a Wildcard throws
+   away the shaping the Wildcard just paid for. Those two are kept apart.
+   Bench Boost next to a Wildcard is deliberately NOT blocked — wildcarding
+   into a strong bench and boosting it is a real plan, not an accident. */
+const CHIP_SEPARATION=3;
+/* Beyond this many gameweeks out, a fixture-only pick is pencilled in rather
+   than decided — by then there will be real form and minutes data to check
+   it against. Blanks and doubles are calendar facts and stay firm. */
+const CHIP_PROVISIONAL_FROM=5;
 const CHIP_HALF_END=19;
 function chipHalfWindow(startGw){
   const s=Math.max(1,startGw||1);
@@ -9264,7 +9282,9 @@ function chipPlanFdr(b,fixtures,opts){
     wcRank.push({gw:g.gw,gain,turning,afterBreak:g.afterBreak||0,early:early<1?early:0,
       score:gain*(g.afterBreak?WC_BREAK_BONUS:1)*early});
   });
-  wcRank.sort((a,c)=>c.score-a.score);
+  {const top=wcRank.reduce((m,w)=>Math.max(m,w.score),0);
+   wcRank.sort((a,c)=>{const d=c.score-a.score;
+     return Math.abs(d)<=top*TIE_REL?c.gw-a.gw:d;});}
 
   /* Triple Captain: an elite attacker meeting the softest fixture going.
      Quality gates the shortlist so the answer is never a fringe player who
@@ -9283,7 +9303,9 @@ function chipPlanFdr(b,fixtures,opts){
       });
     });
   });
-  tcAll.sort((a,c)=>c.score-a.score);
+  {const top=tcAll.reduce((m,t)=>Math.max(m,t.score),0);
+   tcAll.sort((a,c)=>{const d=c.score-a.score;
+     return Math.abs(d)<=top*TIE_REL?c.gw-a.gw:d;});}
   /* One candidate per gameweek — the best armband available that week. */
   const tcSeen=new Set(),tcRank=[];
   tcAll.forEach(t=>{if(!tcSeen.has(t.gw)){tcSeen.add(t.gw);tcRank.push(t);}});
@@ -9299,18 +9321,55 @@ function chipPlanFdr(b,fixtures,opts){
      takes the best week still free, so nothing drops out unless it has no
      candidates at all. */
   const taken=new Set(),picks={};
-  const claim=(key,cands)=>{
-    for(const c of cands||[]){
-      if(c==null||c.gw==null||taken.has(c.gw))continue;
-      taken.add(c.gw);picks[key]=c;return;
+  /* Pick a week for a chip.
+
+     A blank or a double is a hard calendar fact — if one is available it wins
+     outright. Otherwise the difficulty ranking usually leaves several weeks
+     making effectively the same case, and which of them gets the chip is then
+     a free choice. Spending it on "whichever sorted first" is how all four
+     chips ended up stacked in consecutive gameweeks with two thirds of the
+     half left empty. Among equivalent weeks we therefore take the one FURTHEST
+     from the chips already placed, breaking any remaining tie towards the
+     later week for its option value. Spreading costs nothing when the
+     fixtures are indifferent, and it keeps the half flexible. */
+  const claim=(key,cands,apart)=>{
+    const avail=(cands||[]).filter(c=>c&&c.gw!=null&&!taken.has(c.gw)&&
+      !(apart&&apart.some(k=>picks[k]&&Math.abs(picks[k].gw-c.gw)<CHIP_SEPARATION)));
+    if(!avail.length)return;
+    const best=avail[0];
+    let pick=best;
+    if(!best.firm){
+      const base=Math.abs(best.rankScore||0);
+      const tol=base>0?base*TIE_REL:TIE_FDR;
+      const tied=avail.filter(c=>!c.firm&&Math.abs((c.rankScore||0)-(best.rankScore||0))<=tol);
+      const placed=Array.from(taken);
+      const clear=g=>!placed.length||placed.every(t=>Math.abs(t-g)>=CHIP_SEPARATION);
+      /* Separation is a CONSTRAINT, not something to maximise. Among weeks
+         that make the same case and sit clear of the chips already placed,
+         take the LATEST: holding a chip costs nothing, and by then there is
+         real form and minutes data to check the call against. Maximising
+         distance instead would push a chip earlier than it needs to be,
+         spending it on no information. If nothing clears the separation, the
+         furthest available week is the least-bad answer. */
+      const room=tied.filter(c=>clear(c.gw));
+      if(room.length)pick=room.sort((a,c)=>c.gw-a.gw)[0];
+      else{
+        const dist=g=>placed.length?Math.min.apply(null,placed.map(t=>Math.abs(t-g))):Infinity;
+        pick=tied.slice().sort((a,c)=>dist(c.gw)-dist(a.gw)||c.gw-a.gw)[0]||best;
+      }
     }
+    taken.add(pick.gw);picks[key]=pick;
   };
-  const hardRank=played.slice().sort((a,c)=>c.mean-a.mean||c.hard-a.hard);
+  const hardRank=played.slice().sort((a,c)=>{
+    const d=c.mean-a.mean;
+    return Math.abs(d)<=TIE_FDR?(c.hard-a.hard||c.gw-a.gw):d;});
   /* Bench Boost needs fifteen players who actually start. After a break the
      fringe of a squad is exactly who gets rested or returns late, so a
      post-break week is treated as effectively harder for this chip only. */
   const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0)+(BB_EARLY_PENALTY[g.gw]||0);
-  const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy);
+  const easyRank=played.slice().sort((a,c)=>{
+    const d=bbMean(a)-bbMean(c);
+    return Math.abs(d)<=TIE_FDR?(c.easy-a.easy||c.gw-a.gw):d;});
   const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
   const dblRank=played.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
 
@@ -9322,14 +9381,26 @@ function chipPlanFdr(b,fixtures,opts){
      eligible. There is no equivalent restriction at GW20: the second-half
      chips unlock there, but transfers are not unlimited. */
   const usable=g=>g.gw!==1;
-  claim('freehit',blankRank.map(g=>({gw:g.gw,blank:g.blanks.length,afterBreak:g.afterBreak||0}))
-    .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard,afterBreak:g.afterBreak||0}))).filter(usable));
-  claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0}))
+  claim('freehit',blankRank.map(g=>({gw:g.gw,blank:g.blanks.length,afterBreak:g.afterBreak||0,firm:1}))
+    .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard,afterBreak:g.afterBreak||0,
+      rankScore:g.mean}))).filter(usable));
+  claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0,firm:1}))
     .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0,
-      early:BB_EARLY_PENALTY[g.gw]||0}))));
+      early:BB_EARLY_PENALTY[g.gw]||0,rankScore:-bbMean(g)}))));
   claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,
-    afterBreak:w.afterBreak||0,early:w.early||0})).filter(usable));
-  claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr,afterBreak:t.afterBreak||0})));
+    afterBreak:w.afterBreak||0,early:w.early||0,rankScore:w.score})).filter(usable),['freehit']);
+  claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr,
+    afterBreak:t.afterBreak||0,rankScore:t.score})));
+  /* How far out each pick is, and how much better the chosen week really is
+     than an average one. A near-zero edge means the fixtures are flat and
+     the week is close to arbitrary — worth saying rather than dressing up. */
+  const mean0=played.reduce((t,g)=>t+g.mean,0)/played.length;
+  Object.keys(picks).forEach(k=>{
+    const p=picks[k];
+    p.horizon=p.gw-startGw;
+    p.provisional=p.horizon>CHIP_PROVISIONAL_FROM&&!p.blank&&!p.double;
+    p.edge=p.mean!=null?Math.abs(p.mean-mean0):null;
+  });
   return {window:win,gws:played,picks,breaks,
     /* Preference order per chip BEFORE collisions are resolved — what each
        chip wanted, as distinct from what it got. */
@@ -9364,6 +9435,10 @@ function chipPlanCard(b,fixtures){
       (p.afterBreak?' It also lands straight after the international break — two clear weeks to plan it, with the injury news in.':'')+
       (p.early?' <b>This early it is a judgement call</b> — one or two weeks of football is mostly noise, so only take it if the squad is already broken.':'');};
   const badge={wildcard:'badge-blue',benchboost:'badge-green',triplecaptain:'badge-green',freehit:'badge-amber'};
+  /* If the best week is barely better than an average one, the fixtures are
+     not really telling us anything and the card should say so. */
+  const edges=order.map(k=>P[k].edge).filter(e=>e!=null);
+  const weakCase=edges.length&&Math.max.apply(null,edges)<0.15?Math.max.apply(null,edges):0;
   return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+
     ' Chip plan — GW'+plan.window.from+' to GW'+plan.window.to+
     ' <span class="badge badge-grey">official FDR</span></div>'+
@@ -9383,10 +9458,22 @@ function chipPlanCard(b,fixtures){
     '<div class="dl desc">'+order.map(k=>
       '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+CHIP_LABEL[k]+' — GW'+P[k].gw+
       ' <span class="badge '+badge[k]+'">'+(k==='wildcard'?'reshape':k==='freehit'?'swing':k==='benchboost'?'depth':'ceiling')+'</span>'+
-      (P[k].afterBreak?' <span class="badge badge-grey">post-break</span>':'')+'</span>'+
+      (P[k].afterBreak?' <span class="badge badge-grey">post-break</span>':'')+
+      (P[k].provisional?' <span class="badge badge-grey">pencilled in</span>':'')+'</span>'+
       '<span class="dl-sub">'+why(k)+'</span></span></div>').join('')+'</div>'+
-    '<div class="dl-sub" style="margin-top:8px">Official FDR is a season-long rating of the opponent, so it does not know about form, injuries or a new manager. '+
-    'It is a starting frame for the half, not a substitute for checking the week itself — and our own match model, which does move with form, can disagree.</div></div>';
+    '<div class="dl-sub" style="margin-top:8px">'+
+    (weakCase
+      ? '<b>The fixture case is thin.</b> Difficulty barely varies across this half (the chosen weeks sit only '+
+        weakCase.toFixed(2)+' FDR from an average one), so treat every week here as close to interchangeable and let '+
+        'form, minutes and price decide once the season is running. '
+      : '')+
+    'Anything marked <b>pencilled in</b> is more than '+CHIP_PROVISIONAL_FROM+' gameweeks out: fixtures are all we can see today, '+
+    'but by then there will be real form and minutes data, so revisit it rather than committing now. Where several weeks made much the '+
+    'same case, the chip went to the <b>latest</b> one clear of the others — holding a chip costs nothing, and a call made in GW14 has '+
+    'thirteen gameweeks of evidence behind it that the same call in GW4 does not. Chips are also kept at least '+CHIP_SEPARATION+
+    ' gameweeks apart, so the half is never left without one. '+
+    'Official FDR is a season-long rating of the opponent, so it does not know about form, injuries or a new manager, '+
+    'and our own match model, which does move with form, can disagree.</div></div>';
 }
 
 function chipRoadmapCard(b,fixtures){

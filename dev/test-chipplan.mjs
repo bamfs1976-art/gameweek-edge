@@ -38,6 +38,8 @@ const API = new Function(
   grabFn('captainEligible') + '\n' +
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
   grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
+  grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
+  grabConst('CHIP_PROVISIONAL_FROM') + '\n' +
   'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
@@ -325,6 +327,76 @@ console.log('• chipPlanFdr: an early Bench Boost is discounted too');
   })));
   ok(API.chipPlanFdr(boot(), dbl, { startGw: 1 }).picks.benchboost.gw === 2,
     'a double gameweek outranks the early discount');
+}
+
+console.log('• chipPlanFdr: a close call goes to the later week');
+{
+  /* Completely flat fixtures. Nothing distinguishes any week, so every
+     ranking is a tie — and the plan used to hand all four chips to the
+     earliest weeks purely because they sorted first, leaving the back of the
+     half empty. Fixture difficulty is fully known today and learns nothing;
+     form and minutes only exist later, so a tie should go to the future. */
+  const flat = API.chipPlanFdr(boot(), makeFixtures(1, 19, () => 3), { startGw: 1 });
+  const weeks = Object.values(flat.picks).map((p) => p.gw).sort((a, c) => a - c);
+  ok(weeks.length === 4, 'all four chips still placed on flat fixtures');
+  ok(weeks[weeks.length - 1] >= 10,
+    'the plan reaches the back half of the window (' + weeks.join(',') + ')');
+  ok(weeks[weeks.length - 1] - weeks[0] >= 6,
+    'the chips are spread rather than clustered (span ' + (weeks[weeks.length - 1] - weeks[0]) + ')');
+  /* The headline consequence: when fixtures say nothing, nothing is spent
+     early. Holding a chip costs nothing, and by GW10 there is real form and
+     minutes data to decide on. Committing on flat pre-season FDR is spending
+     a chip to buy no information. */
+  ok(weeks[0] >= 8, 'nothing is committed early when the fixtures are flat (first pick GW' + weeks[0] + ')');
+  /* Separation is respected throughout. */
+  for (let i = 1; i < weeks.length; i++) {
+    ok(weeks[i] - weeks[i - 1] >= 3, 'chips ' + weeks[i - 1] + ' and ' + weeks[i] + ' are separated');
+  }
+
+  /* Two weeks equally easy: the later wins. */
+  const tie = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw) => (gw === 6 || gw === 15 ? 1 : 3)), { startGw: 1 });
+  ok(tie.picks.benchboost.gw === 15, 'an equal Bench Boost case goes later (got GW' + tie.picks.benchboost.gw + ')');
+
+  /* But a genuinely better earlier week still wins — this is a tie-break,
+     not a blanket preference for lateness. */
+  const clear = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw) => (gw === 6 ? 1 : gw === 15 ? 2.5 : 3)), { startGw: 1 });
+  ok(clear.picks.benchboost.gw === 6, 'a clearly better early week still wins');
+}
+
+console.log('• chipPlanFdr: Free Hit and Wildcard are kept apart');
+{
+  /* A Free Hit reverts the squad, so playing one beside a Wildcard throws
+     away the shaping the Wildcard just paid for. */
+  const fx = makeFixtures(1, 19, (gw, team) =>
+    (gw === 11 ? 5 : (team <= 10 ? (gw < 11 ? 5 : 1) : (gw < 11 ? 1 : 5))));
+  const plan = API.chipPlanFdr(boot(), fx, { startGw: 1 });
+  const gap = Math.abs(plan.picks.wildcard.gw - plan.picks.freehit.gw);
+  ok(gap >= 3, 'Wildcard and Free Hit are at least three gameweeks apart (gap ' + gap + ')');
+  ok(plan.picks.wildcard != null && plan.picks.freehit != null, 'both are still placed');
+}
+
+console.log('• chipPlanFdr: distant picks are marked provisional');
+{
+  const plan = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw) => (gw === 16 ? 1 : 3)), { startGw: 1 });
+  const bb = plan.picks.benchboost;
+  ok(bb.gw === 16, 'the standout week is chosen');
+  ok(bb.horizon === 15, 'the horizon is reported in gameweeks');
+  ok(bb.provisional === true, 'a pick far out is flagged as pencilled in');
+
+  /* A blank or double is a calendar fact and stays firm however far out. */
+  const withBlank = makeFixtures(1, 19, () => 3).filter((f) => !(f.event === 16 && f.team_h > 4));
+  const p2 = API.chipPlanFdr(boot(), withBlank, { startGw: 1 });
+  ok(p2.picks.freehit.gw === 16 && p2.picks.freehit.provisional !== true,
+    'a distant blank gameweek is not provisional');
+
+  /* Near-term picks are commitments, not pencil. */
+  const near = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw) => (gw === 3 ? 5 : 3)), { startGw: 1 });
+  ok(near.picks.freehit.provisional !== true, 'a near-term pick is not marked provisional');
+
+  /* The edge over an average week is reported, so a thin case can be owned. */
+  const flat = API.chipPlanFdr(boot(), makeFixtures(1, 19, () => 3), { startGw: 1 });
+  ok(Object.values(flat.picks).every((p) => p.edge == null || p.edge < 0.01),
+    'flat fixtures report a near-zero edge');
 }
 
 console.log('• clubFdrRuns: best fixture runs on official FDR');

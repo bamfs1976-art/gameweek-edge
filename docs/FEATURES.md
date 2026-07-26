@@ -555,6 +555,30 @@ Captain are unaffected, since they change scoring rather than squad access, and
 GW1 remains a legitimate week for both. There is no equivalent restriction at
 GW20: the second‑half chips unlock there, but transfers are not unlimited.
 
+**Chips are spread, and held as late as the case allows.** Fixture difficulty is
+a static season‑long rating: it is fully known today and learns nothing between
+now and GW14. Form, minutes, price moves and who actually starts only exist
+later. So where several weeks make effectively the same case, the chip goes to
+the **latest** one clear of the others — holding a chip costs nothing, and a call
+made in GW14 has thirteen gameweeks of evidence behind it that the same call in
+GW4 does not.
+
+Two rules make that work. Chips are kept at least **3 gameweeks apart**
+(separation is a *constraint*, not something maximised — maximising distance
+would push a chip earlier than it needs to be, spending it to buy no
+information), and the Free Hit is additionally kept clear of the Wildcard, since
+a Free Hit reverts the squad and throws away the shaping the Wildcard just paid
+for. Bench Boost beside a Wildcard is deliberately **not** blocked: wildcarding
+into a strong bench and boosting it is a real plan.
+
+The consequence is that on flat fixtures nothing is committed early — the plan
+holds all four chips into the back half rather than spending them on noise. Each
+pick also carries its `horizon` and an `edge` (how much better the chosen week is
+than an average one); picks more than 5 gameweeks out are flagged **pencilled
+in**, and when the best week is barely better than average the card says the
+fixture case is thin rather than dressing it up. Blanks and doubles are calendar
+facts and stay firm regardless.
+
 **A gameweek needs enough clubs to be a gameweek.** An FPL XI is eleven players
 with at most three per club, so at least **four clubs** must have a fixture
 before a week is playable at all. Below that it is not a blank gameweek, it is
