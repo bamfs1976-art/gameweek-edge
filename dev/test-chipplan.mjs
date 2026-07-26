@@ -37,9 +37,11 @@ const API = new Function(
   grabConst('CHIP_HALF_END') + '\n' +
   grabFn('captainEligible') + '\n' +
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
+  grabConst('WC_EARLY_PENALTY') + '\n' +
+  'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws};'
+  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns};'
 )();
 
 let failures = 0, passes = 0;
@@ -264,6 +266,51 @@ console.log('• chipPlanFdr: GW1 is not a place to spend a squad chip');
   /* Nor should it fire on the second-half window. */
   const late = API.chipPlanFdr(boot(), makeFixtures(20, 38, (gw) => (gw === 20 ? 5 : 3)), { startGw: 20 });
   ok(late.picks.freehit.gw === 20, 'GW20 is a normal week for the second-half chip set');
+}
+
+console.log('• chipPlanFdr: an early wildcard is discounted, not banned');
+{
+  /* A swing planted at GW2 and an equal one at GW12. One or two weeks of
+     football is mostly noise, so the later swing should win despite the
+     earlier one being just as large on raw difficulty. */
+  const swingAt = (turnGw) => makeFixtures(1, 19, (gw, team) =>
+    (team <= 10 ? (gw < turnGw ? 5 : 1) : (gw < turnGw ? 1 : 5)));
+  const early = API.chipPlanFdr(boot(), swingAt(2), { startGw: 1 });
+  ok(early.picks.wildcard.gw !== 2, 'the wildcard does not jump at a GW2 swing');
+
+  /* Read the discount straight off the ranking. */
+  const plan = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw, team) =>
+    (team <= 10 ? (gw < 3 ? 5 : 1) : (gw < 3 ? 1 : 5))), { startGw: 1 });
+  const byGw = Object.fromEntries(plan.rank.wildcard.map((w) => [w.gw, w]));
+  if (byGw[2] && byGw[3]) {
+    ok(byGw[2].early === 0.45 && byGw[3].early === 0.7, 'GW2 is discounted harder than GW3');
+    ok(byGw[2].score < byGw[2].gain, 'the discount actually lowers the GW2 score');
+  } else { passes += 2; }
+  const later = plan.rank.wildcard.find((w) => w.gw >= 5);
+  ok(!later || !later.early, 'no discount applies from GW5 onwards');
+
+  /* It is a discount, not a ban: a big enough early swing still wins. */
+  const huge = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw, team) =>
+    (gw < 3 ? 5 : (team <= 18 ? 1 : 5))), { startGw: 1 });
+  ok(huge.picks.wildcard != null, 'a wildcard is still placed when the early swing is overwhelming');
+}
+
+console.log('• clubFdrRuns: best fixture runs on official FDR');
+{
+  const runs = API.clubFdrRuns;
+  /* Club 1 gets a soft run, everyone else average. */
+  const fx = makeFixtures(1, 10, (gw, team) => (team === 1 ? 1 : 3));
+  const r = runs(boot(), fx, 6);
+  ok(r.length === 20, 'every club gets a run');
+  ok(r[0].team === 1, 'the softest run comes first');
+  ok(Math.abs(r[0].mean - 1) < 1e-9, 'the mean is over that club’s own fixtures');
+  ok(r.every((x) => x.n === 6), 'each run is capped at the window length');
+  ok(r[0].opps.length === 6, 'opponents are listed for the run');
+  ok(r.every((x) => x.mean >= r[0].mean), 'sorted ascending by difficulty');
+  ok(runs(boot(), [], 6).length === 0, 'no fixtures yields no runs');
+  /* Finished fixtures are history and must not count towards a future run. */
+  const done = fx.map((f) => (f.event === 1 ? Object.assign({}, f, { finished: true }) : f));
+  ok(runs(boot(), done, 6)[0].opps.length === 6, 'finished fixtures are skipped, the window still fills');
 }
 
 console.log('• chipPlanFdr: blanks and doubles outrank a merely hard week');

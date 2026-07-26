@@ -5017,6 +5017,47 @@ function socialSpecs(b,fixtures){
         crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
   });
 
+  push('chip-plan',()=>{
+    const plan=chipPlanFdr(b,fixtures);
+    if(!plan)return null;
+    const P=plan.picks;
+    const rows=['wildcard','benchboost','triplecaptain','freehit']
+      .filter(k=>P[k]).sort((a,c)=>P[a].gw-P[c].gw);
+    if(rows.length<3)return null;
+    const tag=k=>{const p=P[k];
+      if(k==='freehit')return p.blank?p.blank+' clubs blank':'hardest week · FDR '+p.mean.toFixed(2);
+      if(k==='benchboost')return p.double?p.double+' clubs double':'easiest week · FDR '+p.mean.toFixed(2);
+      if(k==='triplecaptain')return esc(p.el.web_name)+' · FDR '+p.fdr;
+      return p.turning+' clubs swing'+(p.afterBreak?' · post-break':'');};
+    return {kind:'ladder',
+      title:'CHIP PLAN GW'+plan.window.from+'–'+plan.window.to,
+      sub:'When to play each chip this half · official FDR',
+      note:'Built from the official FPL difficulty ratings across the whole half. Chips reset at the halfway point, so each is used inside this window or lost.',
+      groups:rows.map(k=>({label:'GW'+P[k].gw,
+        items:[{nm:CHIP_LABEL[k].toUpperCase(),team:tag(k),v:''}]}))};
+  });
+
+  push('underpriced',()=>{
+    const rows=valueBoard(b,fixtures,6);
+    if(rows.length<20)return null;
+    return {kind:'rank',title:'UNDERPRICED',
+      sub:'Delivering more than the price tag implies',
+      note:'FAIR price is what the median rate for that position implies over the next six fixtures. Compared within position, so defenders are not flattered against forwards.',
+      items:rows.slice(0,8).map(r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),
+        meta:money(r.el.now_cost)+' · fair £'+r.fair.toFixed(1),
+        v:r.delta.toFixed(1),crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
+  });
+
+  push('fixture-runs',()=>{
+    const runs=clubFdrRuns(b,fixtures,6);
+    if(runs.length<10)return null;
+    return {kind:'rank',title:'BEST FIXTURE RUNS',
+      sub:'Next 6 gameweeks · official FDR',
+      note:'Average official difficulty over each club’s next six fixtures. A season-long rating of the opponent, so it knows nothing about form or injuries.',
+      items:runs.slice(0,8).map(r=>({nm:teamShort(b,r.team),team:r.opps.slice(0,4).join(' '),
+        meta:r.n+' fixtures',v:r.mean.toFixed(2),crest:crestUrl(b,r.team)}))};
+  });
+
   push('bonus-magnets',()=>{
     const rows=bpsLeaders(b.elements,450,8);
     if(rows.length<5)return null;
@@ -5187,14 +5228,19 @@ function renderSocialCard(spec,scale){
       let cx=206;
       (grp.items||[]).forEach((it,i)=>{
         if(cx>W-190)return;
-        /* Crest chip ahead of each name — club identity at a glance. */
+        /* Crest chip ahead of each name — club identity at a glance. Rows
+           that are not about a club (a chip plan, say) carry no crest, and
+           must not leave an empty disc floating where one would be. */
+        const hasCrest=!!(it.crest||it._crest);
         const cr=34,ccx=cx+cr/2,ccy=y+rh/2-2;
-        x.save();
-        x.beginPath();x.arc(ccx,ccy,cr/2+4,0,2*Math.PI);x.closePath();
-        x.fillStyle='rgba(255,255,255,.08)';x.fill();x.clip();
-        if(it._crest)x.drawImage(it._crest,ccx-cr/2,ccy-cr/2,cr,cr);
-        x.restore();
-        const tx=cx+cr+14;
+        if(hasCrest){
+          x.save();
+          x.beginPath();x.arc(ccx,ccy,cr/2+4,0,2*Math.PI);x.closePath();
+          x.fillStyle='rgba(255,255,255,.08)';x.fill();x.clip();
+          if(it._crest)x.drawImage(it._crest,ccx-cr/2,ccy-cr/2,cr,cr);
+          x.restore();
+        }
+        const tx=cx+(hasCrest?cr+14:0);
         x.font='700 26px system-ui,sans-serif';x.fillStyle=i===0?SOC_INK:'rgba(255,255,255,.72)';
         const nm=clip(it.nm,14);
         const nmW=x.measureText(nm).width;      /* measured in the NAME font */
@@ -9048,6 +9094,38 @@ function intlBreakGws(events){
    wildcard and hurts the two chips that depend on players actually starting;
    none of it overrides a blank or a double, which are stronger signals. */
 const WC_BREAK_BONUS=1.3,BREAK_RISK=0.88,BREAK_BB_PENALTY=0.3;
+/* A wildcard in GW2 or GW3 is rarely right even when the fixtures swing
+   there. One or two weeks of football is mostly noise: the template has not
+   formed, prices have barely moved, and the players you would chase are the
+   ones who happened to return once. Unlike GW1 — where the chip is
+   structurally worthless because transfers are still unlimited — an early
+   wildcard is merely usually wrong, so this is a heavy discount rather than
+   a ban. A genuinely broken squad can still out-score it. GW3 is discounted
+   less than GW2, since another week of evidence is another week of evidence. */
+const WC_EARLY_PENALTY={2:0.45,3:0.70};
+/* Each club's next N fixtures on official FDR, best run first. The classic
+   pre-season graphic, and the same numbers the chip plan reads. */
+function clubFdrRuns(b,fixtures,n){
+  n=n||6;
+  const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
+  const acc={};
+  (fixtures||[]).filter(f=>f&&f.event&&f.event>=startGw&&!f.finished)
+    .sort((a,c)=>a.event-c.event)
+    .forEach(f=>{
+      [[f.team_h,f.team_a,f.team_h_difficulty,1],[f.team_a,f.team_h,f.team_a_difficulty,0]].forEach(r=>{
+        const t=r[0],d=Number(r[2]);
+        if(!isFinite(d)||!d)return;
+        const a=acc[t]||(acc[t]={team:t,sum:0,n:0,opps:[]});
+        if(a.n>=n)return;
+        a.sum+=d;a.n++;
+        a.opps.push(teamShort(b,r[1])+(r[3]?'':'*'));   /* asterisk marks away */
+      });
+    });
+  return Object.values(acc).filter(a=>a.n>0)
+    .map(a=>({team:a.team,n:a.n,mean:a.sum/a.n,opps:a.opps}))
+    .sort((a,c)=>a.mean-c.mean);
+}
+
 const CHIP_HALF_END=19;
 function chipHalfWindow(startGw){
   const s=Math.max(1,startGw||1);
@@ -9119,8 +9197,9 @@ function chipPlanFdr(b,fixtures,opts){
     /* A break is two clear weeks to plan a reshape and, crucially, the point
        where injuries picked up on international duty are known. It is the
        classic wildcard window, so a post-break week wins a close call. */
-    wcRank.push({gw:g.gw,gain,turning,afterBreak:g.afterBreak||0,
-      score:gain*(g.afterBreak?WC_BREAK_BONUS:1)});
+    const early=WC_EARLY_PENALTY[g.gw]||1;
+    wcRank.push({gw:g.gw,gain,turning,afterBreak:g.afterBreak||0,early:early<1?early:0,
+      score:gain*(g.afterBreak?WC_BREAK_BONUS:1)*early});
   });
   wcRank.sort((a,c)=>c.score-a.score);
 
@@ -9184,7 +9263,8 @@ function chipPlanFdr(b,fixtures,opts){
     .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard,afterBreak:g.afterBreak||0}))).filter(usable));
   claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0}))
     .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0}))));
-  claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,afterBreak:w.afterBreak||0})).filter(usable));
+  claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,
+    afterBreak:w.afterBreak||0,early:w.early||0})).filter(usable));
   claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr,afterBreak:t.afterBreak||0})));
   return {window:win,gws:played,picks,breaks,
     /* Preference order per chip BEFORE collisions are resolved — what each
@@ -9212,7 +9292,8 @@ function chipPlanCard(b,fixtures){
       ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.';
     return '<b>'+p.turning+' clubs</b> swing from a hard run to an easy one around this week (total difficulty shed ≈ '+p.gain.toFixed(1)+
       '), so this is where a full reshape buys the most fixture.'+
-      (p.afterBreak?' It also lands straight after the international break — two clear weeks to plan it, with the injury news in.':'');};
+      (p.afterBreak?' It also lands straight after the international break — two clear weeks to plan it, with the injury news in.':'')+
+      (p.early?' <b>This early it is a judgement call</b> — one or two weeks of football is mostly noise, so only take it if the squad is already broken.':'');};
   const badge={wildcard:'badge-blue',benchboost:'badge-green',triplecaptain:'badge-green',freehit:'badge-amber'};
   return '<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+
     ' Chip plan — GW'+plan.window.from+' to GW'+plan.window.to+

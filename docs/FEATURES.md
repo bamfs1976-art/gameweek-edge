@@ -150,7 +150,9 @@ a 1080×1350 canvas (the portrait ratio Instagram and X both crop kindly) and
 downloads as a PNG; cards rebuild from fresh data every time the panel opens,
 which matters in the run‑up to GW1 when prices move daily.
 
-Presets: **The Data XI** (highest projected XI, full £100.0m squad) · **Building
+Presets: **Chip plan** (when to play each chip this half) · **Best fixture runs**
+(clubs by official FDR over the next six) · **Underpriced** and **Priced above
+the model** (both halves of the value board) · **The Data XI** (highest projected XI, full £100.0m squad) · **Building
 around Haaland** · **The Big Three** (Haaland + Bruno + Gabriel locked) · **Money
 in the bank** (best XI holding ≥£3.0m back) · **Best by price** for each of the
 four positions · **Best captains** for the next 7 gameweeks · **The
@@ -520,6 +522,14 @@ double gameweek still takes the Bench Boost even straight after a break.
 
 The plan also exposes `rank` — each chip's preference order *before* collisions
 are resolved, i.e. what it wanted as distinct from what it got.
+
+**GW2–3 discount the Wildcard.** A wildcard that early is rarely right even
+when the fixtures swing there: one or two weeks of football is mostly noise, the
+template has not formed, prices have barely moved, and the players you would
+chase are the ones who happened to return once. Unlike GW1 this is a heavy
+*discount* rather than a ban (GW2 ×0.45, GW3 ×0.70 — another week of evidence is
+another week of evidence), so a genuinely broken squad can still out‑score it,
+and the card says so when an early week wins anyway.
 
 **GW1 is excluded for the Free Hit and Wildcard.** Transfers are unlimited right
 up to the GW1 deadline, so either chip there buys a squad you can already pick
