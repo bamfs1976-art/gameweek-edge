@@ -530,6 +530,16 @@ double gameweek still takes the Bench Boost even straight after a break.
 The plan also exposes `rank` — each chip's preference order *before* collisions
 are resolved, i.e. what it wanted as distinct from what it got.
 
+**The first few gameweeks discount the Bench Boost.** The reason is structural
+rather than evidential: early on the budget goes into the XI and the bench is
+deliberately cheap, so boosting four players bought to be cheap — before anyone
+knows which of them start — wastes the chip whatever the fixtures look like.
+Bench value accumulates over a season, so the penalty decays (GW1 +0.60 FDR
+points, GW2 +0.45, GW3 +0.30, GW4 +0.15, nothing from GW5). Unlike the Free Hit
+and Wildcard, GW1 is *included* rather than excluded — a GW1 Bench Boost is
+usable, just poor — and a week good enough still takes it. A double gameweek
+overrides the discount entirely.
+
 **GW2–3 discount the Wildcard.** A wildcard that early is rarely right even
 when the fixtures swing there: one or two weeks of football is mostly noise, the
 template has not formed, prices have barely moved, and the players you would

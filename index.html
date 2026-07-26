@@ -9146,6 +9146,16 @@ const WC_BREAK_BONUS=1.3,BREAK_RISK=0.88,BREAK_BB_PENALTY=0.3;
    a ban. A genuinely broken squad can still out-score it. GW3 is discounted
    less than GW2, since another week of evidence is another week of evidence. */
 const WC_EARLY_PENALTY={2:0.45,3:0.70};
+/* Bench Boost early is weak for a structural reason rather than an
+   evidential one: at the start of a season the budget goes into the XI and
+   the bench is deliberately cheap. Boosting four players who were bought to
+   be cheap, before anyone knows which of them actually start, wastes the
+   chip whatever the fixtures look like. Bench value accumulates over the
+   season, so the penalty decays. Unlike the Free Hit and Wildcard, GW1 is
+   included — a GW1 Bench Boost is usable, just poor. Expressed in FDR
+   points and added to the week's mean, since a lower mean is what the chip
+   is chasing; a double gameweek still overrides it. */
+const BB_EARLY_PENALTY={1:0.60,2:0.45,3:0.30,4:0.15};
 /* Each club's next N fixtures on official FDR, best run first. The classic
    pre-season graphic, and the same numbers the chip plan reads. */
 function clubFdrRuns(b,fixtures,n){
@@ -9299,7 +9309,7 @@ function chipPlanFdr(b,fixtures,opts){
   /* Bench Boost needs fifteen players who actually start. After a break the
      fringe of a squad is exactly who gets rested or returns late, so a
      post-break week is treated as effectively harder for this chip only. */
-  const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0);
+  const bbMean=g=>g.mean+(g.afterBreak?BREAK_BB_PENALTY:0)+(BB_EARLY_PENALTY[g.gw]||0);
   const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy);
   const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
   const dblRank=played.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
@@ -9315,14 +9325,19 @@ function chipPlanFdr(b,fixtures,opts){
   claim('freehit',blankRank.map(g=>({gw:g.gw,blank:g.blanks.length,afterBreak:g.afterBreak||0}))
     .concat(hardRank.map(g=>({gw:g.gw,mean:g.mean,hard:g.hard,afterBreak:g.afterBreak||0}))).filter(usable));
   claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0}))
-    .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0}))));
+    .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0,
+      early:BB_EARLY_PENALTY[g.gw]||0}))));
   claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,
     afterBreak:w.afterBreak||0,early:w.early||0})).filter(usable));
   claim('triplecaptain',tcRank.map(t=>({gw:t.gw,el:t.el,opp:t.opp,home:t.home,fdr:t.fdr,afterBreak:t.afterBreak||0})));
   return {window:win,gws:played,picks,breaks,
     /* Preference order per chip BEFORE collisions are resolved — what each
        chip wanted, as distinct from what it got. */
-    rank:{wildcard:wcRank,triplecaptain:tcRank,benchboost:easyRank,freehit:hardRank},
+    rank:{wildcard:wcRank,
+      triplecaptain:tcRank,
+      benchboost:easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,
+        adjusted:bbMean(g),early:BB_EARLY_PENALTY[g.gw]||0,afterBreak:g.afterBreak||0})),
+      freehit:hardRank},
     breakGws:Object.keys(breaks).map(Number).filter(g=>g>=win.from&&g<=win.to).sort((a,c)=>a-c),
     leagueMean:played.reduce((s,g)=>s+g.mean,0)/played.length};
 }
@@ -9340,7 +9355,8 @@ function chipPlanCard(b,fixtures){
       : 'The hardest week of the half on official FDR (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.hard+' fixtures rated 4 or 5). Your normal squad is at its worst, so a bespoke XI gains the most.';
     if(k==='benchboost')return p.double
       ? '<b>'+p.double+' clubs play twice</b> — the week a full fifteen is worth the most.'
-      : 'The easiest week of the half (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.easy+' fixtures rated 1 or 2). A bench only pays when the fringe players have games worth starting.';
+      : 'The easiest week of the half (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.easy+' fixtures rated 1 or 2). A bench only pays when the fringe players have games worth starting.'+
+        (p.early?' <b>This early the bench is thin by design</b> — the budget is in the XI — so it is worth less than the fixtures suggest.':'');
     if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(p.opp)+
       ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.';
     return '<b>'+p.turning+' clubs</b> swing from a hard run to an easy one around this week (total difficulty shed ≈ '+p.gain.toFixed(1)+

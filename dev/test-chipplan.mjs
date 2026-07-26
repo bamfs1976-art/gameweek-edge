@@ -37,7 +37,7 @@ const API = new Function(
   grabConst('CHIP_HALF_END') + '\n' + grabConst('MIN_CLUBS_FOR_XI') + '\n' +
   grabFn('captainEligible') + '\n' +
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
-  grabConst('WC_EARLY_PENALTY') + '\n' +
+  grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
   'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
@@ -293,6 +293,38 @@ console.log('• chipPlanFdr: an early wildcard is discounted, not banned');
   const huge = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw, team) =>
     (gw < 3 ? 5 : (team <= 18 ? 1 : 5))), { startGw: 1 });
   ok(huge.picks.wildcard != null, 'a wildcard is still placed when the early swing is overwhelming');
+}
+
+console.log('• chipPlanFdr: an early Bench Boost is discounted too');
+{
+  /* Two weeks made equally, and exceptionally, easy: one early, one later.
+     Early the bench is cheap by design — the budget is in the XI — so the
+     later week should win despite identical fixtures. */
+  const fx = makeFixtures(1, 19, (gw) => (gw === 2 || gw === 11 ? 1 : 3));
+  const plan = API.chipPlanFdr(boot(), fx, { startGw: 1 });
+  ok(plan.picks.benchboost.gw === 11,
+    'Bench Boost prefers the later of two equally easy weeks (got GW' +
+    plan.picks.benchboost.gw + ')');
+
+  /* The discount decays: GW1 is penalised hardest, GW4 least, GW5 not at all. */
+  const byGw = Object.fromEntries(plan.rank.benchboost.map((g) => [g.gw, g]));
+  ok(byGw[1].early === 0.6 && byGw[2].early === 0.45 &&
+     byGw[3].early === 0.3 && byGw[4].early === 0.15, 'the penalty decays week by week');
+  ok(!byGw[5].early, 'nothing from GW5 onwards is penalised');
+  ok(byGw[2].adjusted > byGw[2].mean, 'the penalty really moves the ranking value');
+  ok(Math.abs(byGw[11].adjusted - byGw[11].mean) < 1e-9, 'a later week is unadjusted');
+
+  /* Unlike the Free Hit and Wildcard, GW1 is allowed — just discounted. A
+     week good enough still takes it. */
+  const gw1Best = API.chipPlanFdr(boot(), makeFixtures(1, 19, (gw) => (gw === 1 ? 1 : 4)), { startGw: 1 });
+  ok(gw1Best.picks.benchboost.gw === 1, 'a good enough GW1 still takes the Bench Boost');
+
+  /* A double gameweek overrides the discount, same as it overrides the break. */
+  const dbl = fx.concat([1, 3, 5, 7].map((h, i) => ({
+    id: 700 + i, event: 2, team_h: h, team_a: h + 1, team_h_difficulty: 2, team_a_difficulty: 2,
+  })));
+  ok(API.chipPlanFdr(boot(), dbl, { startGw: 1 }).picks.benchboost.gw === 2,
+    'a double gameweek outranks the early discount');
 }
 
 console.log('• clubFdrRuns: best fixture runs on official FDR');
