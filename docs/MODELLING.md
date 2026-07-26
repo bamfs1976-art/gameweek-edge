@@ -138,6 +138,34 @@ scoring model omits — which is precisely the gap the separately‑validated
 `minutesModel` closes in the live app. A trimmed sample season is committed so
 the check runs offline in `npm test`; `npm run fetch:vaastav` pulls a full one.
 
+**Stratified by outcome band.** One average over every player‑gameweek hides
+where a model is actually weak, so the backtest also reports **RMSE split by
+outcome**, after [OpenFPL](https://arxiv.org/abs/2508.09992): *Zeros* (did not
+play), *Blanks* (played, ≤2), *Tickers* (3–4) and *Haulers* (≥5). The bands
+partition the scored population — every row matches exactly one, asserted
+rather than assumed.
+
+The split earns its place immediately. Blended together, recent form beats the
+scoring core on “all player‑gameweeks” and the reason is invisible. Split by
+band on 2023/24 it is unambiguous: the core wins **every band in which the
+player actually took the pitch** (blanks 1.85 vs 2.22, tickers 1.24 vs 2.23,
+haulers 5.47 vs 5.76) and loses only the did‑not‑play band (2.57 vs 1.63) —
+which is exactly the availability signal this run strips out by design. One row
+now carries the whole confound instead of it contaminating the average.
+
+Error is **not** monotonic in the size of the outcome, which is worth stating
+because it is the intuitive and wrong expectation: it is smallest in the band
+nearest the model’s central prediction (tickers) and grows in both directions,
+worst on the hauls that actually move rank.
+
+For orientation, OpenFPL reports 0.818 / 1.291 / 1.517 / 5.142 across those
+bands and the FPL Review Massive Data Model 0.689 / 1.189 / 1.594 / 5.172.
+**Not like‑for‑like** with the figures above: both forecast a real gameweek
+with real fixtures and minutes — their low *Zeros* number is a
+minutes‑prediction result, not a scoring one — while this run neutralises
+fixture conditioning to grade the per‑90 core alone. Their numbers are the
+shape to expect across bands, not a scoreboard.
+
 **What holds up:**
 - `nativeXP` MAE **beats a 3-GW form baseline** (~2.4 vs ~2.8 synthetic; ~2.17
   vs 2.34 on real appearance‑conditional actuals) and season‑PPG, so the added

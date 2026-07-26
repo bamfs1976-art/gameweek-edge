@@ -131,6 +131,29 @@ const NEUTRAL_NF = { gp: 0, lam: 1, lamAvg: 1, cs: 0.28 };   // fx = 1, league-a
    availability. The appearance-conditional bucket is the headline. */
 const mk = () => ({ n: 0, model: 0, form: 0, ppg: 0 });
 const all = mk(), appear = mk();
+
+/* Stratified scoring, after OpenFPL (arXiv:2508.09992), which grades a
+   forecast separately on non-returns, blanks, small returns and hauls rather
+   than reporting one number over everything.
+
+   The reason to bother: a single MAE is dominated by the outcomes that happen
+   most, and in FPL that is players scoring one or two points. A model can look
+   excellent on that average while being useless at the only outcomes that
+   actually move rank — the hauls. Splitting the error by outcome band says
+   which of those two a model is, and the bands are disjoint so every scored
+   player-gameweek lands in exactly one.
+
+   RMSE rather than MAE here, both because it is what OpenFPL publishes and
+   because within a band the large misses are the interesting ones. */
+const BANDS = [
+  { key: 'zeros', label: 'Zeros (did not play)', hit: (r) => r.minutes === 0 },
+  { key: 'blanks', label: 'Blanks (played, ≤2)', hit: (r) => r.minutes > 0 && r.total_points <= 2 },
+  { key: 'tickers', label: 'Tickers (3–4)', hit: (r) => r.total_points >= 3 && r.total_points <= 4 },
+  { key: 'haulers', label: 'Haulers (≥5)', hit: (r) => r.total_points >= 5 },
+];
+const band = {};
+for (const b of BANDS) band[b.key] = { n: 0, model: 0, form: 0, ppg: 0 };
+let bandOverlaps = 0;   /* rows matching zero or more than one band */
 const rowsByGw = new Map();
 for (const r of rows) { (rowsByGw.get(r.gw) || rowsByGw.set(r.gw, []).get(r.gw)).push(r); }
 
@@ -157,6 +180,17 @@ for (let gw = 1; gw <= maxGw; gw++) {
       bkt.n++; bkt.model += Math.abs(xp - r.total_points);
       bkt.form += Math.abs(form - r.total_points); bkt.ppg += Math.abs(ppg - r.total_points);
     }
+    /* Squared error into the outcome band this player-gameweek fell in. The
+       bands must partition the same population `all` scores — every row in
+       exactly one — so match them all and count, rather than taking the first
+       hit and letting an overlap hide behind the ordering. */
+    const hits = BANDS.filter((bd) => bd.hit(r));
+    if (hits.length !== 1) bandOverlaps++;
+    for (const h of hits) {
+      const s = band[h.key];
+      s.n++; s.model += (xp - r.total_points) ** 2;
+      s.form += (form - r.total_points) ** 2; s.ppg += (ppg - r.total_points) ** 2;
+    }
   }
   /* 2) fold this gw's realised outcome into the running aggregates */
   for (const r of wk) {
@@ -181,6 +215,25 @@ console.log('  Note: raw "all" MAE is minutes-dominated — recent form encodes 
 console.log('  the live app closes that gap with its separately-validated minutesModel. The appearance-conditional');
 console.log('  row is the headline: the scoring core beats the 3-GW form baseline on real actuals.');
 
+/* ── stratified by outcome band ─────────────────────────── */
+const rmse = (sq, n) => (n ? Math.sqrt(sq / n) : NaN);
+console.log('\n  RMSE by outcome band (after OpenFPL, arXiv:2508.09992) — where the error actually lives:');
+for (const bd of BANDS) {
+  const s = band[bd.key];
+  console.log(`  ${bd.label.padEnd(22)} n=${String(s.n).padStart(6)}  model ${r3(rmse(s.model, s.n))}  ·  form ${r3(rmse(s.form, s.n))}  ·  PPG ${r3(rmse(s.ppg, s.n))}`);
+}
+console.log('  What the split buys: blended together, recent form beats the scoring core on "all player-');
+console.log('  gameweeks" above and the reason is invisible. Split by band, it is unambiguous — the core wins');
+console.log('  every band in which the player actually took the pitch, and loses only the did-not-play band,');
+console.log('  which is the availability signal this run deliberately strips out. One row carries the confound.');
+console.log('  Error is not monotonic in the size of the outcome: it is smallest nearest the model\'s central');
+console.log('  prediction (tickers) and grows in both directions, worst on the hauls that actually move rank.');
+console.log('  For orientation only, OpenFPL reports 0.818 / 1.291 / 1.517 / 5.142 and the FPL Review Massive');
+console.log('  Data Model 0.689 / 1.189 / 1.594 / 5.172 on those bands. NOT like-for-like with the rows above:');
+console.log('  they forecast a real gameweek with real fixtures and minutes — their low Zeros figure is a');
+console.log('  minutes-prediction result, not a scoring one — while this run neutralises fixture conditioning');
+console.log('  to grade the per-90 scoring core alone. Treat their numbers as the shape to expect, not a scoreboard.');
+
 /* Guard rails: a meaningful sample, a sane MAE, and — the headline claim — the
    scoring core beating recent form once availability is controlled for. Kept
    with a small tolerance so ordinary season-to-season variation never
@@ -191,5 +244,36 @@ const maeModel = appear.model / appear.n;
 ok(appear.n >= 200, 'scored a meaningful appearance sample (>=200 player-gameweeks)');
 ok(Number.isFinite(maeModel) && maeModel > 0 && maeModel < 4, 'model MAE is finite and sane (<4 pts on real actuals)');
 ok(appear.model <= appear.form + 0.05, 'scoring core beats the 3-GW form baseline (appearance-conditional)');
+
+/* The bands partition the population `all` scores, so they must account for
+   every scored player-gameweek exactly once. If that ever stops holding, the
+   band definitions have drifted and the split below means nothing. */
+const bandTotal = BANDS.reduce((s, bd) => s + band[bd.key].n, 0);
+ok(bandOverlaps === 0, `every scored player-gameweek matches exactly one band (${bandOverlaps} did not)`);
+ok(bandTotal === all.n, `outcome bands partition every scored player-gameweek (${bandTotal} vs ${all.n})`);
+for (const bd of BANDS) ok(band[bd.key].n > 0, `outcome band "${bd.key}" has a sample`);
+const bandRmse = Object.fromEntries(BANDS.map((bd) => [bd.key, rmse(band[bd.key].model, band[bd.key].n)]));
+const bandForm = Object.fromEntries(BANDS.map((bd) => [bd.key, rmse(band[bd.key].form, band[bd.key].n)]));
+/* Error is NOT monotonic in the size of the outcome, and expecting it to be
+   was wrong: it is smallest in the band nearest the model's central
+   prediction and grows in both directions from there. A projection that
+   mostly lands around 2–3 points is therefore closest on tickers, further on
+   blanks, and furthest on hauls. */
+ok(bandRmse.tickers < bandRmse.blanks && bandRmse.tickers < bandRmse.haulers,
+  'error is smallest in the band nearest the model\'s central prediction');
+ok(bandRmse.haulers > bandRmse.blanks, 'and hauls remain the hardest band, as they are for everyone');
+ok(Number.isFinite(bandRmse.haulers) && bandRmse.haulers < 8,
+  `haul RMSE is finite and not wild (${r3(bandRmse.haulers)})`);
+/* The headline the split buys us. Blended together, recent form beats the
+   scoring core outright on "all player-gameweeks" and the reason is invisible.
+   Split by band, the picture is unambiguous: the core wins every band in which
+   the player actually took the pitch, and loses only the did-not-play band —
+   which is the availability signal this run deliberately strips out, not a
+   scoring weakness. One row now carries the whole confound. */
+for (const k of ['blanks', 'tickers', 'haulers']) {
+  ok(bandRmse[k] <= bandForm[k] + 0.05, `scoring core beats recent form on ${k}`);
+}
+ok(bandRmse.zeros > bandForm.zeros,
+  'and loses the did-not-play band, which is exactly the availability signal this run removes');
 console.log(failures ? `\n${failures} check(s) failed` : '\nchecks passed');
 process.exit(failures ? 1 : 0);
