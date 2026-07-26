@@ -5,7 +5,14 @@
  *
  * Requires: playwright (chromium) + ffmpeg on PATH.
  * Run: node scripts/recap/render.mjs
- * Output: scripts/recap/out/recap-gw{n}.mp4
+ *      node scripts/recap/render.mjs --template template-rotation.html \
+ *                                    --data rotation.json --name rotation
+ * Output: scripts/recap/out/{name}.mp4  (default recap-gw{n})
+ *
+ * The template, its data file and the output name are all arguments so a
+ * second video is a template plus a JSON file, not a second renderer. The
+ * audio bed, the frame capture and the encode are shared by every video in
+ * the series — which is the point: one track, one look, many subjects.
  */
 import { readFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +24,11 @@ import { synthBed } from './music.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FPS = 30;
-const recap = JSON.parse(readFileSync(join(HERE, 'recap.json'), 'utf8'));
+const arg = (k, d) => { const i = process.argv.indexOf('--' + k); return i > 0 ? process.argv[i + 1] : d; };
+const templateFile = arg('template', 'template.html');
+const dataFile = arg('data', 'recap.json');
+const recap = JSON.parse(readFileSync(join(HERE, dataFile), 'utf8'));
+const name = arg('name', 'recap-gw' + recap.gw);
 const outDir = join(HERE, 'out');
 const framesDir = join(outDir, 'frames');
 rmSync(framesDir, { recursive: true, force: true });
@@ -26,7 +37,7 @@ mkdirSync(framesDir, { recursive: true });
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 });
 await page.addInitScript(data => { window.__RENDER__ = true; window.__RECAP__ = data; }, recap);
-await page.goto('file://' + join(HERE, 'template.html'));
+await page.goto('file://' + join(HERE, templateFile));
 await page.waitForLoadState('networkidle').catch(() => {});
 await page.evaluate(() => document.fonts && document.fonts.ready).catch(() => {});
 await page.waitForTimeout(500); // let player photos / crests settle
@@ -46,7 +57,7 @@ let audio = ['music.mp3', 'music.m4a', 'music.wav'].map(f => join(HERE, f)).find
 if (!audio) { audio = join(outDir, 'music.wav'); synthBed(audio); console.error('Synthesised music bed.'); }
 else console.error('Using supplied audio: ' + audio);
 
-const out = join(outDir, `recap-gw${recap.gw}.mp4`);
+const out = join(outDir, `${name}.mp4`);
 const ffBin = ffmpegPath || 'ffmpeg';
 /* Snip the audio to the video length with a short fade in and a clean
    fade-out at the end (so a longer track ends gracefully, not cut dead). */

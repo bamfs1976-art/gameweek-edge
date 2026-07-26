@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<title>Gameweek Recap</title>
+<title>Gameweek Edge — Budget Rotation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -100,6 +100,52 @@ html,body{width:1080px;height:1080px;overflow:hidden;background:var(--bg);color:
 #outro .o1{font-family:var(--display);font-weight:800;font-size:76px;letter-spacing:-.02em}
 #outro .o2{font-size:38px;font-weight:800;color:var(--green);margin-top:14px}
 #outro .o3{font-size:28px;font-weight:600;color:var(--ink2);margin-top:26px;letter-spacing:.02em}
+
+/* ── rotation-specific ── */
+/* Content scenes centre vertically: these carry one block of content each,
+   and top-aligning it leaves half the frame empty on a square canvas. */
+#timeline,#plan,#numbers{display:flex;flex-direction:column;justify-content:center}
+.strip{display:flex;gap:8px;margin-top:34px}
+.cell{flex:1;border-radius:12px;padding:16px 6px 14px;text-align:center;position:relative;
+  background:var(--panel);border:1px solid var(--line);opacity:0;transform:translateY(18px)}
+.cell .gw{font-family:var(--font-mono,ui-monospace,monospace);font-size:17px;font-weight:800;
+  letter-spacing:.08em;color:var(--ink3)}
+.cell .op{font-size:21px;font-weight:800;margin-top:8px;color:var(--ink)}
+.cell .tm{font-size:16px;font-weight:700;margin-top:6px;color:var(--ink2)}
+.d1{background:#1f9d5c;border-color:#28b96e}.d1 .gw,.d1 .op,.d1 .tm{color:#04170d}
+.d2{background:#2f7f55;border-color:#3d9668}.d2 .gw{color:#0b2418}.d2 .op,.d2 .tm{color:#eaf6ef}
+.d3{background:var(--panel)}
+.d4{background:#5c3230;border-color:#7a4340}.d4 .op,.d4 .tm{color:#ffe9e6}
+.d5{background:#8a3a33;border-color:#a8493f}.d5 .op,.d5 .tm{color:#fff}
+/* A blank gameweek is NOT a hard fixture — colouring it red would say the
+   opposite of what it means. Neutral and obviously empty instead. */
+.cell.blank{background:repeating-linear-gradient(135deg,rgba(255,255,255,.03) 0 8px,transparent 8px 16px),var(--panel2);
+  border-style:dashed;border-color:rgba(255,255,255,.14)}
+.cell.blank .op,.cell.blank .tm{color:var(--ink3)}
+/* A switch is the story, so it is marked on the cell where it happens. */
+.cell.sw::before{content:'';position:absolute;left:-5px;top:10px;bottom:10px;width:3px;
+  border-radius:2px;background:var(--gold);box-shadow:0 0 14px rgba(231,180,90,.7)}
+.cell .swtag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);
+  font-size:13px;font-weight:800;letter-spacing:.1em;color:#08120c;background:var(--gold);
+  border-radius:999px;padding:2px 9px;white-space:nowrap}
+
+.blocks{display:flex;flex-direction:column;gap:20px;margin-top:38px}
+.blk{display:flex;align-items:center;gap:26px;background:var(--panel);border:1px solid var(--line);
+  border-radius:20px;padding:24px 30px;opacity:0;transform:translateY(22px)}
+.blk .win{font-family:var(--font-mono,ui-monospace,monospace);font-weight:800;font-size:26px;
+  letter-spacing:.06em;color:var(--green);min-width:190px}
+.blk .who{flex:1}
+.blk .who .n{font-family:var(--display);font-weight:800;font-size:44px;letter-spacing:-.02em;line-height:1.05}
+.blk .who .m{font-size:22px;font-weight:600;color:var(--ink2);margin-top:6px}
+.blk .arrow{font-size:34px;color:var(--ink3)}
+
+.nums{display:flex;gap:22px;margin-top:44px}
+.num{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:22px;
+  padding:34px 22px;text-align:center;opacity:0;transform:translateY(22px)}
+.num .v{font-family:var(--display);font-weight:800;font-size:88px;line-height:1;letter-spacing:-.03em;color:var(--green)}
+.num .k{font-size:20px;font-weight:700;color:var(--ink2);margin-top:14px;letter-spacing:.02em}
+.note{margin-top:40px;font-size:24px;font-weight:600;color:var(--ink2);line-height:1.5;max-width:900px}
+.big2{font-family:var(--display);font-weight:800;font-size:96px;line-height:.98;letter-spacing:-.035em}
 </style>
 </head>
 <body>
@@ -110,159 +156,139 @@ html,body{width:1080px;height:1080px;overflow:hidden;background:var(--bg);color:
     </span>
     <span class="nm"><span class="l">Gameweek</span> <span class="b">Edge</span></span>
   </div>
-  <div class="gwtag" id="gwtag">GW38</div>
+  <div class="gwtag" id="gwtag">GW2-11</div>
 
   <!-- INTRO -->
   <section class="scene" id="intro">
-    <div class="kick rv" data-i="0">The week in Fantasy</div>
-    <div class="big rv" data-i="1">GAMEWEEK <span class="g" id="gwbig">38</span></div>
-    <div class="big rv" data-i="2" style="color:var(--green)">RECAP</div>
-    <div class="sub rv" data-i="3">Top hauls · Team of the Week · the numbers that mattered</div>
+    <div class="kick rv" data-i="0">One squad slot</div>
+    <div class="big2 rv" data-i="1">BUDGET</div>
+    <div class="big2 rv" data-i="2" style="color:var(--green)">ROTATION</div>
+    <div class="sub rv" data-i="3" id="introsub">The cheapest way to cover the opening run</div>
     <div class="rule" id="introrule"></div>
   </section>
 
-  <!-- HAULS -->
-  <section class="scene" id="hauls">
-    <div class="kick rv" data-i="0">Biggest returns</div>
-    <div class="h2 rv" data-i="0">Top hauls</div>
-    <div class="rows" id="haulRows"></div>
+  <!-- TIMELINE -->
+  <section class="scene" id="timeline">
+    <div class="kick rv" data-i="0">Week by week</div>
+    <div class="h2 rv" data-i="0" id="tlhead">Who you hold, and when</div>
+    <div class="strip" id="strip"></div>
+    <div class="note rv" data-i="1" id="tlnote"></div>
   </section>
 
-  <!-- DREAM TEAM -->
-  <section class="scene" id="dream">
-    <div class="dtbar">
-      <div>
-        <div class="kick rv" data-i="0">Official</div>
-        <div class="h2 rv" data-i="0" style="margin:0">Team of the Week</div>
-      </div>
-    </div>
-    <div class="dtbar" style="margin:-14px 0 22px">
-      <div class="dttot rv" data-i="1"><span id="dtTotal">85</span> pts</div>
-      <div class="dttop rv" data-i="1">Star: <b id="dtTop">—</b></div>
-    </div>
-    <div class="pitch" id="pitch"></div>
+  <!-- THE PLAN -->
+  <section class="scene" id="plan">
+    <div class="kick rv" data-i="0">The plan</div>
+    <div class="h2 rv" data-i="0" id="planhead">Hold, then switch</div>
+    <div class="blocks" id="blocks"></div>
   </section>
 
   <!-- NUMBERS -->
   <section class="scene" id="numbers">
-    <div class="kick rv" data-i="0">The details</div>
-    <div class="h2 rv" data-i="0">Numbers that mattered</div>
-    <div class="grid" id="numGrid"></div>
+    <div class="kick rv" data-i="0">What it buys</div>
+    <div class="h2 rv" data-i="0">The numbers</div>
+    <div class="nums" id="nums"></div>
+    <div class="note rv" data-i="1" id="numnote"></div>
   </section>
 
   <!-- OUTRO -->
   <section class="scene" id="outro">
     <span class="mk rv" data-i="0"><svg viewBox="0 0 38 38" fill="none"><path d="M8 26 L16 16 L22 21 L31 9" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="31" cy="9" r="3.6" fill="#fff"/></svg></span>
-    <div class="o1 rv" data-i="1">Get your edge</div>
+    <div class="o1 rv" data-i="1">Every rotation, tested</div>
     <div class="o2 rv" data-i="2">gameweekedge.co.uk</div>
-    <div class="o3 rv" data-i="3">Ad-free · predicted points · an AI scout · live rank</div>
+    <div class="o3 rv" data-i="3">Solved exactly \u2014 not the best guess, the best plan</div>
   </section>
 
   <div class="foot">Independent · from the official <b>FPL</b> data · not affiliated with the Premier League</div>
 </div>
 
 <script>
-/* ── data ─────────────────────────────────────────────────────────
-   render.mjs injects window.__RECAP__ before load; the embedded sample
-   below drives the local preview. */
-const SAMPLE={
-  gw:38,
-  hauls:[
-    {name:'Salah',team:'LIV',code:118748,pos:'MID',pts:21},
-    {name:'Haaland',team:'MCI',code:223094,pos:'FWD',pts:17},
-    {name:'Palmer',team:'CHE',code:244851,pos:'MID',pts:15},
-    {name:'Gabriel',team:'ARS',code:205651,pos:'DEF',pts:14},
-    {name:'Mbeumo',team:'BRE',code:225796,pos:'MID',pts:13}
-  ],
-  dream:{total:85,top:'Salah',xi:[
-    {name:'Raya',team:'ARS',code:153133,pos:'GKP',pts:9},
-    {name:'Gabriel',team:'ARS',code:205651,pos:'DEF',pts:14},
-    {name:'Saliba',team:'ARS',code:222510,pos:'DEF',pts:9},
-    {name:'Senesi',team:'BOU',code:214048,pos:'DEF',pts:8},
-    {name:'Salah',team:'LIV',code:118748,pos:'MID',pts:21},
-    {name:'Palmer',team:'CHE',code:244851,pos:'MID',pts:15},
-    {name:'Mbeumo',team:'BRE',code:225796,pos:'MID',pts:13},
-    {name:'Rogers',team:'AVL',code:447295,pos:'MID',pts:11},
-    {name:'Haaland',team:'MCI',code:223094,pos:'FWD',pts:17},
-    {name:'Isak',team:'NEW',code:219168,pos:'FWD',pts:10},
-    {name:'Wood',team:'NFO',code:66749,pos:'FWD',pts:9}
-  ]},
-  numbers:{
-    riser:{name:'Kroupi',val:'+£0.2m'},
-    captain:{name:'Haaland',sub:'34% · 17 pts'},
-    diff:{name:'Rogers',sub:'8% owned · 11 pts'},
-    scores:{avg:52,high:131}
-  }
-};
-const R=window.__RECAP__||SAMPLE;
-const PHOTO=c=>'https://resources.premierleague.com/premierleague/photos/players/110x140/p'+c+'.png';
-const initials=n=>String(n||'').replace(/[^A-Za-z ]/g,'').split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
-const CREST={ARS:3,AVL:7,BOU:91,BRE:94,BHA:36,CHE:8,CRY:31,EVE:11,FUL:54,LIV:14,MCI:43,MUN:1,NEW:4,NFO:17,TOT:6,WHU:21,WOL:39,LEE:2,SUN:56,BUR:90};
-const crestUrl=t=>CREST[t]?'https://resources.premierleague.com/premierleague/badges/50/t'+CREST[t]+'.png':'';
-function ava(size,name,code){
-  return '<span class="ava" style="width:'+size+'px;height:'+size+'px">'+
-    '<span class="ava-i">'+initials(name)+'</span>'+
-    (code?'<img src="'+PHOTO(code)+'" onerror="this.remove()">':'')+'</span>';
-}
+/* Sample data so the template previews standalone. render.mjs injects the
+   real dataset as window.__RECAP__ (see fetch-rotation.mjs). */
+const SAMPLE={kind:'rotation',gw:1,posLabel:'defenders',budget:'4.5',
+  gws:[1,2,3,4,5,6,7,8],weeks:8,green:6,switches:2,solo:false,
+  timeline:[
+    {gw:1,team:'SUN',diff:2,opp:'IPS',home:true,change:false},
+    {gw:2,team:'SUN',diff:1,opp:'FUL',home:true,change:false},
+    {gw:3,team:'SUN',diff:2,opp:'BRE',home:false,change:false},
+    {gw:4,team:'NEW',diff:1,opp:'LEE',home:true,change:true},
+    {gw:5,team:'NEW',diff:1,opp:'HUL',home:true,change:false},
+    {gw:6,team:'NEW',diff:2,opp:'COV',home:false,change:false},
+    {gw:7,team:'FUL',diff:3,opp:'IPS',home:false,change:true},
+    {gw:8,team:'FUL',diff:2,opp:'HUL',home:true,change:false}],
+  blocks:[
+    {from:1,to:3,weeks:3,team:'SUN',teamName:'Sunderland',name:'Hume',cost:'4.0'},
+    {from:4,to:6,weeks:3,team:'NEW',teamName:'Newcastle',name:'Hall',cost:'4.5'},
+    {from:7,to:8,weeks:2,team:'FUL',teamName:'Fulham',name:'Robinson',cost:'4.5'}]};
+const D=(window.__RECAP__&&window.__RECAP__.kind==='rotation')?window.__RECAP__:SAMPLE;
 
-/* gwtag / intro numbers */
-document.getElementById('gwtag').textContent='GW'+R.gw;
-document.getElementById('gwbig').textContent=R.gw;
-
-/* hauls */
-document.getElementById('haulRows').innerHTML=(R.hauls||[]).slice(0,5).map((p,i)=>
-  '<div class="prow rv" data-i="'+i+'">'+
-    '<div class="rank">'+(i+1)+'</div>'+ava(84,p.name,p.code)+
-    '<div class="pmeta"><div class="pname">'+p.name+'</div>'+
-      '<div class="psub">'+(crestUrl(p.team)?'<img class="crest" src="'+crestUrl(p.team)+'" onerror="this.remove()">':'')+p.team+' · '+p.pos+'</div></div>'+
-    '<div class="pts">'+p.pts+'<small>pts</small></div></div>').join('');
-
-/* dream team */
-document.getElementById('dtTotal').textContent=(R.dream&&R.dream.total)||'';
-document.getElementById('dtTop').textContent=(R.dream&&R.dream.top)||'—';
-(function(){
-  const xi=(R.dream&&R.dream.xi)||[];
-  const byPos=p=>xi.filter(x=>x.pos===p);
-  const chip=(x,idx)=>'<div class="chip rv" data-i="'+idx+'">'+ava(80,x.name,x.code)+
-    '<div class="cn">'+x.name+'</div><div class="cp">'+x.pts+'</div></div>';
-  let idx=0;const rowHtml=arr=>'<div class="prow2">'+arr.map(x=>chip(x,idx++)).join('')+'</div>';
-  document.getElementById('pitch').innerHTML=
-    rowHtml(byPos('GKP'))+rowHtml(byPos('DEF'))+rowHtml(byPos('MID'))+rowHtml(byPos('FWD'));
-})();
-
-/* numbers */
-(function(){
-  const n=R.numbers||{};
-  const tile=(cls,label,val,sub,i)=>'<div class="tile '+cls+' rv" data-i="'+i+'"><div class="tl">'+label+'</div>'+
-    '<div class="tv">'+val+'</div><div class="ts">'+(sub||'')+'</div></div>';
-  document.getElementById('numGrid').innerHTML=
-    tile('g','Biggest riser',(n.riser&&n.riser.name)||'—',(n.riser&&n.riser.val)||'',0)+
-    tile('gold','Most captained',(n.captain&&n.captain.name)||'—',(n.captain&&n.captain.sub)||'',1)+
-    tile('g','Differential of the week',(n.diff&&n.diff.name)||'—',(n.diff&&n.diff.sub)||'',2)+
-    tile('','Average / Highest',((n.scores&&n.scores.avg)||'—')+' / '+((n.scores&&n.scores.high)||'—'),'points this gameweek',3);
-})();
-
-/* ── timeline ─────────────────────────────────────────────────────
-   seek(t) sets the whole graphic as a pure function of t (seconds) so
-   render.mjs can screenshot deterministic frames. */
 const SCENES=[
-  {id:'intro',t:0,d:2.0},
-  {id:'hauls',t:2.0,d:5.0},
-  {id:'dream',t:7.0,d:6.0},
-  {id:'numbers',t:13.0,d:4.0},
-  {id:'outro',t:17.0,d:3.0}
+  {id:'intro',t:0,d:2.5},
+  {id:'timeline',t:2.5,d:7.0},
+  {id:'plan',t:9.5,d:5.5},
+  {id:'numbers',t:15.0,d:3.0},
+  {id:'outro',t:18.0,d:2.0}
 ];
 const DURATION=20.0;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const easeOut=x=>1-Math.pow(1-clamp(x,0,1),3);
 const STAGGER=0.22,REVEAL=0.55;
 
+/* ── build from data ── */
+document.getElementById('gwtag').textContent='GW'+D.gws[0]+'-'+D.gws[D.gws.length-1];
+document.getElementById('introsub').textContent=
+  '\u00a3'+D.budget+'m '+D.posLabel+' \u00b7 GW'+D.gws[0]+'\u2013GW'+D.gws[D.gws.length-1];
+document.getElementById('tlhead').textContent=D.solo?'One club, all the way':'Who you hold, and when';
+document.getElementById('tlnote').textContent=D.solo
+  ?'No switch across these '+D.weeks+' gameweeks buys back the transfer it costs.'
+  :'A rotation slot is one squad place you transfer in and out of \u2014 so every switch costs a transfer.';
+document.getElementById('planhead').textContent=D.solo?'Set and forget':'Hold, then switch';
+
+const strip=document.getElementById('strip');
+D.timeline.forEach(c=>{
+  const d=document.createElement('div');
+  const blank=!c.opp;
+  d.className='cell '+(blank?'blank':'d'+(c.diff||3))+(c.change?' sw':'');
+  d.innerHTML=(c.change?'<span class="swtag">SWITCH</span>':'')+
+    '<div class="gw">GW'+c.gw+'</div>'+
+    '<div class="op">'+(blank?'BLANK':c.opp)+'</div>'+
+    '<div class="tm">'+c.team+(c.home?'':' (a)')+'</div>';
+  strip.appendChild(d);
+});
+
+const blocks=document.getElementById('blocks');
+D.blocks.forEach((bk,i)=>{
+  const d=document.createElement('div');
+  d.className='blk';
+  d.innerHTML='<div class="win">GW'+bk.from+(bk.weeks>1?'\u2013'+bk.to:'')+'</div>'+
+    '<div class="who"><div class="n">'+bk.name+'</div>'+
+    '<div class="m">'+bk.teamName+' \u00b7 \u00a3'+bk.cost+'m \u00b7 '+bk.weeks+' week'+(bk.weeks===1?'':'s')+'</div></div>';
+  blocks.appendChild(d);
+});
+
+const cheapest=D.blocks.reduce((m,b)=>Math.min(m,parseFloat(b.cost)),99);
+document.getElementById('nums').innerHTML=
+  '<div class="num"><div class="v">'+D.green+'/'+D.weeks+'</div><div class="k">weeks green</div></div>'+
+  '<div class="num"><div class="v">'+D.switches+'</div><div class="k">transfer'+(D.switches===1?'':'s')+'</div></div>'+
+  '<div class="num"><div class="v">\u00a3'+cheapest.toFixed(1)+'</div><div class="k">cheapest slot</div></div>';
+document.getElementById('numnote').textContent=D.solo
+  ?'Every rotation was tested against simply holding one player. Holding won.'
+  :'Solved exactly across every club and every week \u2014 not the best guess, the best plan.';
+
+/* ── timeline ── */
 function applyReveal(scene,elapsed){
   scene.querySelectorAll('.rv').forEach(el=>{
     const i=parseInt(el.dataset.i||'0',10);
     const p=easeOut((elapsed-i*STAGGER)/REVEAL);
     el.style.opacity=p;
     el.style.transform='translateY('+(26*(1-p))+'px)';
+  });
+}
+/* Cells wipe in left to right so the run reads as a run, not a table. */
+function stagger(nodes,elapsed,startAt,per,dur){
+  nodes.forEach((el,i)=>{
+    const p=easeOut((elapsed-startAt-i*per)/dur);
+    el.style.opacity=p;
+    el.style.transform='translateY('+(18*(1-p))+'px)';
   });
 }
 function seek(t){
@@ -278,6 +304,9 @@ function seek(t){
         const rp=easeOut((elapsed-0.9)/0.7);
         document.getElementById('introrule').style.width=(360*rp)+'px';
       }
+      if(s.id==='timeline')stagger([].slice.call(strip.children),elapsed,0.55,0.28,0.5);
+      if(s.id==='plan')stagger([].slice.call(blocks.children),elapsed,0.5,0.62,0.6);
+      if(s.id==='numbers')stagger([].slice.call(document.getElementById('nums').children),elapsed,0.45,0.3,0.5);
     }else{
       el.classList.remove('on');el.style.opacity=0;
     }
@@ -285,13 +314,12 @@ function seek(t){
 }
 window.seek=seek;window.RECAP_DURATION=DURATION;window.RECAP_SCENES=SCENES;
 
-/* Live preview when opened in a browser (render.mjs drives seek itself). */
 if(!window.__RENDER__){
   let start=null;
   function loop(ts){
     if(start==null)start=ts;
-    let t=((ts-start)/1000)%(DURATION+1.2);
-    seek(t);requestAnimationFrame(loop);
+    seek(((ts-start)/1000)%(DURATION+0.6));
+    requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
 }else{seek(0);}
