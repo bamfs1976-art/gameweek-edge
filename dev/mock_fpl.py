@@ -48,9 +48,20 @@ teams = [{"id": i + 1, "name": n, "short_name": SHORT[i], "code": CODES[i],
           "strength_defence_home": 1100, "strength_defence_away": 1100}
          for i, n in enumerate(TEAMS)]
 
-element_types = [{"id": k, "singular_name_short": s, "plural_name": p}
-                 for k, s, p in [(1, "GKP", "Goalkeepers"), (2, "DEF", "Defenders"),
-                                 (3, "MID", "Midfielders"), (4, "FWD", "Forwards")]]
+# squad_select / squad_min_play / squad_max_play are the fields the app reads
+# to learn the squad shape and legal formations, rather than hard-coding them.
+element_types = [{"id": k, "singular_name_short": s, "plural_name": p,
+                  "squad_select": sel, "squad_min_play": lo, "squad_max_play": hi}
+                 for k, s, p, sel, lo, hi in [(1, "GKP", "Goalkeepers", 2, 1, 1),
+                                              (2, "DEF", "Defenders", 5, 3, 5),
+                                              (3, "MID", "Midfielders", 5, 2, 5),
+                                              (4, "FWD", "Forwards", 3, 1, 3)]]
+
+# The rules the game publishes about itself: squad size, XI size, the per-club
+# cap, the budget in tenths, the sell-on fee and the money display divisor.
+game_settings = {"squad_squadsize": 15, "squad_squadplay": 11, "squad_team_limit": 3,
+                 "squad_total_spend": 1000, "transfers_sell_on_fee": 0.5,
+                 "ui_currency_multiplier": 10, "transfers_cap": 20}
 
 # Six players per club (GKP, 2 DEF, 2 MID, FWD) → a legal Team-of-the-Week is
 # always formable, so every panel (incl. Scout AI) renders.
@@ -151,6 +162,7 @@ if PRESEASON:
                  team_h_score=None, team_a_score=None)
 
 bootstrap = {"teams": teams, "elements": elements, "element_types": element_types,
+             "game_settings": game_settings,
              "events": events, "total_players": 10_000_000}
 
 

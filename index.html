@@ -2274,6 +2274,10 @@ async function boot(){
   const seasonStarted=b.elements.some(e=>(e.minutes||0)>0);
   const season=seasonKeyFrom(b.events);
   const idx={raw:b,teams,els,types,cur,upcoming,liveSeason,seasonStarted,preseason:!seasonStarted,season,events:b.events,elements:b.elements};
+  /* Squad shape, budget and the club cap come from the game itself rather
+     than constants, so a rule change lands on its own. Falls back field by
+     field when a payload is partial. */
+  try{RULES=fplRules(b);idx.rules=RULES;}catch(_){RULES=RULES_FALLBACK;idx.rules=RULES;}
   /* Merge FPL Core Insights advanced stats onto the player objects (best
      effort — never blocks or breaks boot). Guarded everywhere downstream by
      the presence of `_ci`, so absence leaves every projection unchanged. */
@@ -2297,7 +2301,7 @@ function getMid(){try{return localStorage.getItem('ge-mid')||'';}catch(_){return
 function setMid(v){try{v?localStorage.setItem('ge-mid',String(v)):localStorage.removeItem('ge-mid');}catch(_){}cloudProfile({manager_id:v?Number(v):null});}
 
 /* ── Formatting helpers ────────────────────────────────── */
-const money=c=>'£'+(c/10).toFixed(1);
+const money=c=>'£'+(c/(RULES.moneyDiv||10)).toFixed(1);
 const fmtNum=n=>(n==null?'—':Number(n).toLocaleString('en-GB'));
 const fmtK=n=>{n=Number(n)||0;return n>=1000?(n/1000).toFixed(n>=10000?0:1)+'k':String(n);};
 function teamShort(b,id){return b.teams[id]?b.teams[id].short_name:'';}
@@ -4962,13 +4966,13 @@ function socialSpecs(b,fixtures){
   const push=(id,fn)=>{try{const c=fn();if(c)out.push(Object.assign({id},c));}catch(_){}};
   const ids=names=>names.map(n=>socFind(b,n)).filter(Boolean).map(e=>e.id);
 
-  push('data-xi',()=>socSquadCard(b,squadOptimise(pool,{budget:1000}),
+  push('data-xi',()=>socSquadCard(b,squadOptimise(pool,{budget:RULES.budget}),
     'THE DATA XI','Full 15-man squad · £100.0m · GW'+gw,
     'XI plus four subs inside the budget, max 3 per club. No favourites, no narratives.'));
 
   push('haaland-xi',()=>{
     const h=socFind(b,'Haaland');if(!h)return null;
-    return socSquadCard(b,squadOptimise(pool,{budget:1000,mustInclude:[h.id]}),
+    return socSquadCard(b,squadOptimise(pool,{budget:RULES.budget,mustInclude:[h.id]}),
       'BUILDING AROUND HAALAND','15-man squad, Haaland locked · £100.0m · GW'+gw,
       'Haaland forced in. XI plus four subs — the rest is whatever the model can still afford.');
   });
@@ -4976,13 +4980,13 @@ function socialSpecs(b,fixtures){
   push('big-three-xi',()=>{
     const lock=ids(['Haaland','B.Fernandes','Gabriel']);
     if(lock.length<3)return null;
-    return socSquadCard(b,squadOptimise(pool,{budget:1000,mustInclude:lock}),
+    return socSquadCard(b,squadOptimise(pool,{budget:RULES.budget,mustInclude:lock}),
       'THE BIG THREE','15-man squad, three premiums locked · £100.0m · GW'+gw,
       'Haaland, Bruno and Gabriel forced in. This is what is left for the other twelve.');
   });
 
   push('bank-xi',()=>{
-    const r=squadOptimise(pool,{budget:1000,minBank:30});
+    const r=squadOptimise(pool,{budget:RULES.budget,minBank:30});
     if(!r)return null;
     return socSquadCard(b,r,'MONEY IN THE BANK',
       '15-man squad holding £'+(r.bank/10).toFixed(1)+'m back · GW'+gw,
@@ -9328,7 +9332,7 @@ function clubFdrRuns(b,fixtures,n){
 
 /* Eleven players, at most three per club: four clubs is the fewest that can
    field a legal XI, and so the fewest that make a gameweek playable. */
-const MIN_CLUBS_FOR_XI=4;
+const MIN_CLUBS_FOR_XI=4;   /* fallback; the plan derives it from the live rules */
 /* Where two weeks make effectively the same fixture case, take the LATER
    one. Fixture difficulty is a static, season-long rating: it is fully known
    today and learns nothing between now and GW14. Form, minutes, price moves
@@ -9412,7 +9416,10 @@ function chipPlanFdr(b,fixtures,opts){
      data — and a "gameweek" where every club blanks is not a gameweek. Such
      weeks are dropped entirely rather than being offered as the ultimate
      Free Hit, which is exactly what an unguarded blank count produced. */
-  const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.playing>=MIN_CLUBS_FOR_XI);
+  /* A week without enough clubs to field a legal XI is not a blank, it is
+     missing fixture data. The threshold follows the live club cap. */
+  const minClubs=minClubsForXi(b&&b.rules);
+  const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.playing>=minClubs);
   gws.forEach(g=>{g.afterBreak=breaks[g.gw]||0;});
   const played=gws.filter(g=>g.mean!=null);
   if(played.length<3)return null;
@@ -10041,23 +10048,87 @@ function bestXI(scored){
    opts: budget (tenths, default 1000), mustInclude (element ids),
    minBank (tenths to leave unspent), topN/cheapN to trim the pool.
    Returns null when no legal squad exists inside the constraints. */
-const SQUAD_NEED={1:2,2:5,3:5,4:3};
+/* ── The game's own rules, read from the game ───────────────
+   Squad shape, budget and the per-club cap are FPL's to change, and FPL
+   publishes them: `bootstrap-static.game_settings` carries the squad size,
+   the XI size, the club limit, the total spend and the sell-on fee, while
+   each `element_types` entry carries `squad_select` (how many of that
+   position make a 15) and `squad_min_play` / `squad_max_play` (the legal
+   formations). Reading them means a rule change lands on its own rather than
+   quietly making every number downstream wrong — which is what a hard-coded
+   constant does, silently, for a whole season.
+
+   RULES_FALLBACK below is today's rulebook and is what the app uses until
+   bootstrap has answered. Two rules are deliberately NOT read: the free
+   transfer cap and the 4-point hit are not published anywhere in the API,
+   and mapping them onto a field whose meaning we cannot confirm would be
+   worse than an honest constant. */
+const RULES_FALLBACK={squadSize:15,xiSize:11,teamLimit:3,budget:1000,need:{1:2,2:5,3:5,4:3},minPlay:{1:1,2:3,3:2,4:1},maxPlay:{1:1,2:5,3:5,4:3},sellFee:0.5,moneyDiv:10,fromApi:false};
+const SQUAD_NEED=RULES_FALLBACK.need;
+let RULES=RULES_FALLBACK;
+/* Build the rules from a raw bootstrap payload. Every field is taken only
+   when it is present and sane, so a partial or renamed payload degrades
+   field by field rather than all at once. Pure, so it is unit-tested. */
+function fplRules(raw){
+  const g=(raw&&raw.game_settings)||{};
+  const types=(raw&&raw.element_types)||[];
+  const pos=(v,d)=>{const n=Number(v);return Number.isFinite(n)&&n>0?n:d;};
+  const need={},minPlay={},maxPlay={};
+  let anyType=false;
+  for(const t of types){
+    const id=Number(t&&t.id);
+    if(!Number.isFinite(id)||!RULES_FALLBACK.need[id])continue;
+    need[id]=pos(t.squad_select,RULES_FALLBACK.need[id]);
+    minPlay[id]=pos(t.squad_min_play,RULES_FALLBACK.minPlay[id]);
+    maxPlay[id]=pos(t.squad_max_play,RULES_FALLBACK.maxPlay[id]);
+    if(t.squad_select!=null)anyType=true;
+  }
+  /* A partial element_types block would give a squad that does not add up,
+     so it is all four positions or none. */
+  const haveTypes=anyType&&[1,2,3,4].every(t=>need[t]!=null);
+  const out={
+    squadSize:pos(g.squad_squadsize,RULES_FALLBACK.squadSize),
+    xiSize:pos(g.squad_squadplay,RULES_FALLBACK.xiSize),
+    teamLimit:pos(g.squad_team_limit,RULES_FALLBACK.teamLimit),
+    budget:pos(g.squad_total_spend,RULES_FALLBACK.budget),
+    sellFee:(Number.isFinite(Number(g.transfers_sell_on_fee))?Number(g.transfers_sell_on_fee):RULES_FALLBACK.sellFee),
+    moneyDiv:pos(g.ui_currency_multiplier,RULES_FALLBACK.moneyDiv),
+    need:haveTypes?need:RULES_FALLBACK.need,
+    minPlay:haveTypes?minPlay:RULES_FALLBACK.minPlay,
+    maxPlay:haveTypes?maxPlay:RULES_FALLBACK.maxPlay,
+    fromApi:!!(g.squad_squadsize||haveTypes),
+  };
+  /* The squad must add up to the stated size, or one of the two sources is
+     stale — trust neither half-way and fall back to a shape that is legal. */
+  const sum=[1,2,3,4].reduce((s,t)=>s+out.need[t],0);
+  if(sum!==out.squadSize){out.need=RULES_FALLBACK.need;out.squadSize=RULES_FALLBACK.squadSize;}
+  return out;
+}
+/* Fewest clubs that can field a legal XI, given the club cap — 11 players at
+   3 per club needs 4 clubs. Derived rather than assumed, so it tracks a rule
+   change with everything else. */
+function minClubsForXi(rules){
+  const r=rules||RULES;
+  return Math.ceil(r.xiSize/Math.max(1,r.teamLimit));
+}
 function squadOptimise(scored,opts){
   opts=opts||{};
-  const startBudget=opts.budget==null?1000:opts.budget;
+  const needCfg=opts.need||RULES.need;
+  const teamLimit=opts.teamLimit||RULES.teamLimit;
+  const startBudget=opts.budget==null?RULES.budget:opts.budget;
   const cap=startBudget-(opts.minBank||0);
   const must=new Set(opts.mustInclude||[]);
   const byId={};(scored||[]).forEach(s=>{byId[s.el.id]=s;});
   const forced=(opts.mustInclude||[]).map(id=>byId[id]).filter(Boolean);
   if(forced.length!==must.size)return null;          /* a named player is unavailable */
 
-  const need0={1:SQUAD_NEED[1],2:SQUAD_NEED[2],3:SQUAD_NEED[3],4:SQUAD_NEED[4]};
+  const need0={1:needCfg[1],2:needCfg[2],3:needCfg[3],4:needCfg[4]};
   const club0={};
   for(const s of forced){
     const t=s.el.element_type;
     if(--need0[t]<0)return null;                     /* too many forced at one position */
     club0[s.el.team]=(club0[s.el.team]||0)+1;
-    if(club0[s.el.team]>3)return null;               /* forced picks break the club limit */
+    if(club0[s.el.team]>teamLimit)return null;       /* forced picks break the club limit */
   }
 
   /* Trim the pool to the strongest by projection plus the cheapest at each
@@ -10075,7 +10146,7 @@ function squadOptimise(scored,opts){
 
   const costOf=sq=>sq.reduce((a,s)=>a+(s.el.now_cost||0),0);
   const clubOk=sq=>{const c={};
-    for(const s of sq){const n=(c[s.el.team]=(c[s.el.team]||0)+1);if(n>3)return false;}
+    for(const s of sq){const n=(c[s.el.team]=(c[s.el.team]||0)+1);if(n>teamLimit)return false;}
     return true;};
   const objective=sq=>{const x=bestXI(sq);return x?x.total:-1;};
 
@@ -10085,7 +10156,7 @@ function squadOptimise(scored,opts){
     for(const t of [1,2,3,4]){
       for(const s of pools[t].slice().sort(order)){
         if(need[t]<=0)break;
-        if((club[s.el.team]||0)>=3)continue;
+        if((club[s.el.team]||0)>=teamLimit)continue;
         sq.push(s);need[t]--;club[s.el.team]=(club[s.el.team]||0)+1;
       }
       if(need[t]>0)return null;                      /* not enough players at a position */
@@ -10189,7 +10260,7 @@ function squadOptimise(scored,opts){
       .sort((a,c)=>key(a)-key(c));
     for(const s of all){
       const t=s.el.element_type;
-      if(need[t]<=0||(club[s.el.team]||0)>=3)continue;
+      if(need[t]<=0||(club[s.el.team]||0)>=teamLimit)continue;
       sq.push(s);need[t]--;club[s.el.team]=(club[s.el.team]||0)+1;
     }
     return [1,2,3,4].every(t=>need[t]===0)?sq:null;
@@ -12361,7 +12432,7 @@ async function hydrateLineups(host){
    club names against the bundle's 2026/27 team list. Free tier.
    ═══════════════════════════════════════════════════════════ */
 const DRAFT_KEY='ge-draft-v1';
-const DRAFT_BUDGET=1000;              /* tenths of £m = £100.0m */
+const DRAFT_BUDGET=1000;              /* tenths of £m = £100.0m (RULES.budget once bootstrap lands) */
 const DRAFT_QUOTA={1:2,2:5,3:5,4:3};
 const DRAFT_CLUB_MAX=3;
 let DRAFT_IDS=null;                   /* working draft — may be invalid */

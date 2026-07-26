@@ -38,9 +38,13 @@ const grabConst = (n) => {
   return html.slice(i, html.indexOf('\n', i));
 };
 
-const { squadOptimise, bestXI } = new Function(
-  grabFn('bestXI') + '\n' + grabConst('SQUAD_NEED') + '\n' + grabFn('squadOptimise') +
-  '\nreturn {squadOptimise,bestXI};'
+const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules } = new Function(
+  grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('minClubsForXi') + '\n' +
+  /* squadOptimise reads squad shape, club cap and budget from the live game
+     rules now; the fallback block is exactly the old hard-coded values. */
+  grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' +
+  grabFn('squadOptimise') +
+  '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;}};'
 )();
 
 let failures = 0, passes = 0;
@@ -493,6 +497,170 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      client-settable tier — guard against that regressing. */
   ok(/function canSeePanel\(p\)\{return !ownerOnly\(p\)\|\|!!window\.GE_OWNER;\}/.test(html),
     'the gate keys off GE_OWNER, not the local tier setting');
+}
+
+console.log('• fplRules: the squad rules come from the game, not from us');
+{
+  /* A payload shaped like the real bootstrap: game_settings plus the
+     element_types block that carries squad_select / squad_min_play /
+     squad_max_play. Field names verified against a typed FPL client. */
+  const boot = (gs, types) => ({
+    game_settings: Object.assign({
+      squad_squadsize: 15, squad_squadplay: 11, squad_team_limit: 3,
+      squad_total_spend: 1000, transfers_sell_on_fee: 0.5, ui_currency_multiplier: 10,
+    }, gs || {}),
+    element_types: types || [
+      { id: 1, squad_select: 2, squad_min_play: 1, squad_max_play: 1 },
+      { id: 2, squad_select: 5, squad_min_play: 3, squad_max_play: 5 },
+      { id: 3, squad_select: 5, squad_min_play: 2, squad_max_play: 5 },
+      { id: 4, squad_select: 3, squad_min_play: 1, squad_max_play: 3 },
+    ],
+  });
+
+  const r = fplRules(boot());
+  ok(r.fromApi === true, 'a real payload is marked as coming from the API');
+  ok(r.squadSize === 15 && r.xiSize === 11 && r.teamLimit === 3 && r.budget === 1000,
+    "today's rules read back unchanged");
+  ok(JSON.stringify(r.need) === JSON.stringify({ 1: 2, 2: 5, 3: 5, 4: 3 }),
+    'the 2/5/5/3 squad comes from squad_select, not from a constant');
+  ok(r.maxPlay[2] === 5 && r.minPlay[2] === 3, 'formation bounds come with it');
+  ok(r.sellFee === 0.5 && r.moneyDiv === 10, 'sell-on fee and the currency divisor are read');
+
+  /* The whole point: a rule change has to actually move. */
+  const changed = fplRules(boot({ squad_squadsize: 16, squad_team_limit: 4, squad_total_spend: 1050 }, [
+    { id: 1, squad_select: 2, squad_min_play: 1, squad_max_play: 1 },
+    { id: 2, squad_select: 5, squad_min_play: 3, squad_max_play: 5 },
+    { id: 3, squad_select: 6, squad_min_play: 2, squad_max_play: 5 },
+    { id: 4, squad_select: 3, squad_min_play: 1, squad_max_play: 3 },
+  ]));
+  ok(changed.squadSize === 16 && changed.need[3] === 6, 'a bigger squad is followed, not overridden');
+  ok(changed.teamLimit === 4 && changed.budget === 1050, 'a new club cap and budget are followed');
+
+  /* Half-changed data is worse than no data: if the positions do not add up
+     to the stated squad size, one of the two blocks is stale. */
+  const mismatch = fplRules(boot({ squad_squadsize: 15 }, [
+    { id: 1, squad_select: 2 }, { id: 2, squad_select: 5 },
+    { id: 3, squad_select: 5 }, { id: 4, squad_select: 9 },
+  ]));
+  ok(JSON.stringify(mismatch.need) === JSON.stringify(RULES_FALLBACK.need),
+    'a squad that does not add up falls back rather than building an illegal 15');
+
+  /* Degrade field by field, never all at once. */
+  const partial = fplRules({ game_settings: { squad_team_limit: 4 } });
+  ok(partial.teamLimit === 4, 'a lone field is still honoured');
+  ok(partial.budget === RULES_FALLBACK.budget, 'and the rest falls back');
+  ok(JSON.stringify(partial.need) === JSON.stringify(RULES_FALLBACK.need),
+    'missing element_types leaves the squad shape alone');
+  const halfTypes = fplRules(boot(null, [{ id: 1, squad_select: 2 }, { id: 2, squad_select: 5 }]));
+  ok(JSON.stringify(halfTypes.need) === JSON.stringify(RULES_FALLBACK.need),
+    'a partial element_types block is all four positions or none');
+
+  /* Junk must never produce a nonsensical rulebook. */
+  for (const junk of [null, undefined, {}, { game_settings: null }, { element_types: 'nope' }]) {
+    const j = fplRules(junk);
+    ok(j.squadSize === 15 && j.teamLimit === 3 && j.budget === 1000, 'junk input yields the fallback rules');
+  }
+  const zeros = fplRules({ game_settings: { squad_squadsize: 0, squad_team_limit: -1, squad_total_spend: 0 } });
+  ok(zeros.squadSize === 15 && zeros.teamLimit === 3 && zeros.budget === 1000,
+    'zero and negative values are rejected, not adopted');
+
+  /* Derived, not assumed: 11 players at 3 per club needs 4 clubs. */
+  ok(minClubsForXi(RULES_FALLBACK) === 4, 'a legal XI needs four clubs under the current cap');
+  ok(minClubsForXi({ xiSize: 11, teamLimit: 4 }) === 3, 'a looser club cap needs fewer clubs');
+  ok(minClubsForXi({ xiSize: 11, teamLimit: 2 }) === 6, 'a tighter one needs more');
+  ok(minClubsForXi({ xiSize: 11, teamLimit: 0 }) === 11, 'a nonsense cap cannot divide by zero');
+}
+
+console.log('• squadOptimise: follows a rule change');
+{
+  const pool = makePool();
+  const base = squadOptimise(pool, { budget: 1000, topN: 99, cheapN: 99 });
+  ok(base && base.squad.length === 15, 'the default rules build a 15-man squad');
+
+  /* makePool spreads its players over six clubs, so a two-per-club rule caps
+     the squad at twelve — genuinely infeasible, and the optimiser has to say
+     so rather than quietly returning an illegal fifteen. */
+  setRules(Object.assign({}, RULES_FALLBACK, { teamLimit: 2 }));
+  ok(squadOptimise(pool, { budget: 1000, topN: 99, cheapN: 99 }) === null,
+    'a club cap that cannot be satisfied is reported as infeasible');
+
+  /* The same rule against a pool with clubs enough to satisfy it: now the cap
+     must bind rather than be ignored. This is the check that the hard-coded
+     3 really was removed. */
+  /* Ten clubs: enough that a two-per-club squad of fifteen fits, and few
+     enough that at least one club holds three players to force. */
+  const wide = makePool().map((s, i) => ({ el: Object.assign({}, s.el, { team: 1 + (i % 10) }), p: s.p }));
+  const tight = squadOptimise(wide, { budget: 1000, topN: 99, cheapN: 99 });
+  if (tight) {
+    const club = {};
+    tight.squad.forEach((s) => { club[s.el.team] = (club[s.el.team] || 0) + 1; });
+    ok(Object.values(club).every((n) => n <= 2), 'a two-per-club rule is obeyed');
+  } else ok(false, 'twelve clubs is enough to build a two-per-club squad');
+
+  /* A per-call override beats the global rules, so a card can ask a what-if
+     question without changing the game for everything else. */
+  setRules(RULES_FALLBACK);
+  const loose = squadOptimise(wide, { budget: 1000, topN: 99, cheapN: 99 });
+  const forced = squadOptimise(wide, { budget: 1000, teamLimit: 2, topN: 99, cheapN: 99 });
+  if (forced && loose) {
+    const club = {};
+    forced.squad.forEach((s) => { club[s.el.team] = (club[s.el.team] || 0) + 1; });
+    ok(Object.values(club).every((n) => n <= 2), 'an opts.teamLimit override is honoured');
+    ok(forced.xiXP <= loose.xiXP + 1e-9, 'and a tighter constraint cannot score better');
+  } else ok(false, 'the override should still be feasible');
+  ok(squadOptimise(pool, { budget: 1000, topN: 99, cheapN: 99 }).squad.length === 15,
+    'and the global rules are unchanged by it');
+
+  /* Forced picks are checked against the cap before the search starts. */
+  const sameClub = wide.filter((x) => x.el.team === 1).slice(0, 3).map((x) => x.el.id);
+  ok(sameClub.length === 3, 'the wide pool has three players at one club to force');
+  ok(squadOptimise(wide, { budget: 1000, mustInclude: sameClub, teamLimit: 2, topN: 99, cheapN: 99 }) === null,
+    'three forced picks from one club break a two-per-club rule');
+  ok(squadOptimise(wide, { budget: 1000, mustInclude: sameClub, teamLimit: 3, topN: 99, cheapN: 99 }) !== null,
+    'and are fine under a three-per-club rule');
+
+  /* The squad SHAPE is configurable too, not just the caps. */
+  const shaped = squadOptimise(wide, { budget: 1000, need: { 1: 2, 2: 4, 3: 6, 4: 3 }, topN: 99, cheapN: 99 });
+  if (shaped) {
+    const byPos = {};
+    shaped.squad.forEach((s) => { byPos[s.el.element_type] = (byPos[s.el.element_type] || 0) + 1; });
+    ok(byPos[2] === 4 && byPos[3] === 6, 'a 2/4/6/3 squad is built when the rules say so');
+  } else ok(false, 'a 2/4/6/3 squad should be buildable');
+}
+
+console.log('• squadOptimise: the club cap holds through the whole search');
+{
+  /* The cap is enforced in three separate places — the forced picks, the
+     seed, and the legality check the swap moves consult. A steepest-ascent
+     search will happily exploit any one of them being wrong, so assert the
+     property on the FINISHED squad across a spread of pools and caps rather
+     than trusting one path. */
+  let seed = 991;
+  const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  let built = 0;
+  for (let trial = 0; trial < 8; trial++) {
+    const pool = [];
+    let id = 1;
+    const add = (type, n) => {
+      for (let i = 0; i < n; i++) {
+        pool.push({
+          el: { id: id++, element_type: type, now_cost: 40 + Math.floor(rnd() * 60), team: 1 + Math.floor(rnd() * 10), web_name: 'c' + id },
+          p: rnd() * 9,
+        });
+      }
+    };
+    add(1, 6); add(2, 12); add(3, 12); add(4, 8);
+    for (const teamLimit of [2, 3]) {
+      const got = squadOptimise(pool, { budget: 1000, teamLimit, topN: 99, cheapN: 99 });
+      if (!got) continue;
+      built++;
+      const club = {};
+      got.squad.forEach((s) => { club[s.el.team] = (club[s.el.team] || 0) + 1; });
+      const worst = Math.max(...Object.values(club));
+      ok(worst <= teamLimit, 'trial ' + trial + ' cap ' + teamLimit + ': squad respects the cap (worst ' + worst + ')');
+    }
+  }
+  ok(built >= 8, 'enough squads were actually built to make the property meaningful (' + built + ')');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

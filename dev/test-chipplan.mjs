@@ -38,6 +38,8 @@ const grabTopConst = (n) => { const i = html.indexOf('\nconst ' + n + '=') + 1; 
 
 const API = new Function(
   grabConst('CHIP_HALF_END') + '\n' + grabConst('MIN_CLUBS_FOR_XI') + '\n' +
+  /* The playable-week threshold is derived from the live club cap now. */
+  grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' + grabFn('minClubsForXi') + '\n' +
   grabFn('captainEligible') + '\n' +
   grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
   grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
@@ -52,7 +54,7 @@ const API = new Function(
   grabFn('intlBreakGws') + '\n' +
   grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
   'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,' +
-  'deadWeight,transferRunway,freeTransfersFrom,transferLedger};'
+  'deadWeight,transferRunway,freeTransfersFrom,transferLedger,minClubsForXi};'
 )();
 
 const API_FT_CAP = 5;

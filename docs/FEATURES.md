@@ -648,6 +648,30 @@ to GW20–38 automatically once the second‑half chip set is live.
 Official FDR is a season‑long rating of the opponent: it knows nothing about
 form, injuries or a new manager, and the card says so.
 
+**The squad rules come from the game, not from us.** Squad shape, budget and
+the per‑club cap are FPL's to change, and FPL publishes them — so the app reads
+them rather than assuming. `bootstrap-static.game_settings` carries
+`squad_squadsize`, `squad_squadplay`, `squad_team_limit`, `squad_total_spend`,
+`transfers_sell_on_fee` and `ui_currency_multiplier`; each `element_types` entry
+carries `squad_select` (how many of that position make a 15) and
+`squad_min_play` / `squad_max_play` (the legal formations). No extra request is
+needed — it all ships inside the bootstrap the app already loads.
+
+The optimiser, the social cards and the money formatter all read from that
+rulebook, and the minimum clubs needed for a playable gameweek is *derived*
+(⌈XI ÷ club cap⌉ = 4) rather than asserted. A hard‑coded constant does not fail
+loudly when a rule moves; it quietly makes every number downstream wrong for a
+whole season, which is exactly what happened across the game when the
+free‑transfer cap went from two to five.
+
+It degrades field by field: a missing or nonsensical value falls back to
+today's rulebook rather than taking the whole block down, and a squad shape
+that does not add up to the stated squad size is rejected outright — half‑stale
+data is worse than none. Two rules are deliberately **not** read: the
+free‑transfer cap and the 4‑point hit are not published anywhere in the API, and
+mapping them onto a field whose meaning cannot be confirmed would be worse than
+an honest constant.
+
 **Transfers and chips are one plan, not two.** A transfer strategy computed
 independently of the chips gives the wrong instruction: it says "fix your
 flagged defender" in the week a wildcard is about to rebuild him for nothing.
