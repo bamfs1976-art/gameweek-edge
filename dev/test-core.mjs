@@ -163,12 +163,15 @@ const pieces = [
   extractConst(html, 'SP_DUTIES'),
   extractFn(html, 'setPieceByClub'),
   extractFn(html, 'setPieceClubRows'),
+  /* Rotation chains: one slot, many clubs, transfers cost something. */
+  ...['ROT_SWITCH'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'rotationChain'),
   extractFn(html, 'plsimPrior'),
   extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1348,6 +1351,96 @@ section('setPieceByClub: the club is the row, the duty is the column (Tier 2)');
   ok(Object.keys(core.setPieceByClub({})).length === 0 && Object.keys(core.setPieceByClub(null)).length === 0,
     'missing input does not throw');
   ok(Object.keys(core.setPieceByClub({ elements: [null, undefined] })).length === 0, 'holes are ignored');
+}
+
+section('rotationChain: one slot, many clubs, transfers cost something (Tier 2)');
+{
+  const cands = (teams) => teams.map((t) => ({ id: t * 10, team: t, cost: 45 }));
+
+  /* Brute force every possible sequence of clubs over the horizon and score
+     it the same way, so "optimal" is a claim we can actually check rather
+     than assert. Exponential, hence tiny cases only. */
+  const brute = (teams, diff, sw) => {
+    const N = Math.min(...teams.map((t) => diff[t].length));
+    let best = null;
+    const walk = (g, path, total) => {
+      if (g === N) { if (!best || total < best.total - 1e-9) best = { total, path: path.slice() }; return; }
+      for (const t of teams) {
+        const step = diff[t][g] + (g > 0 && path[g - 1] !== t ? sw : 0);
+        walk(g + 1, path.concat([t]), total + step);
+      }
+    };
+    walk(0, [], 0);
+    return best;
+  };
+  const totalOf = (r, diff, sw) =>
+    r.path.reduce((s, t, g) => s + diff[t][g] + (g > 0 && r.path[g - 1] !== t ? sw : 0), 0);
+
+  /* A planted chain: club 1 is green early, club 2 green in the middle,
+     club 3 green late — exactly the shape the creator graphics show. */
+  const diff = { 1: [1, 1, 5, 5, 5, 5], 2: [5, 5, 1, 1, 5, 5], 3: [5, 5, 5, 5, 1, 1] };
+  const teams = [1, 2, 3];
+  const r = core.rotationChain(cands(teams), diff, { switchCost: 1 });
+  ok(r != null, 'a chain is found');
+  ok(r.path.join() === '1,1,2,2,3,3', 'it walks the planted chain (' + r.path.join() + ')');
+  ok(r.blocks.length === 3 && r.switches === 2, 'compressed into three blocks with two switches');
+  ok(r.blocks[0].weeks === 2 && r.blocks[0].team === 1, 'each block records its club and length');
+  ok(r.green === 6, 'and every week of the horizon is covered green');
+  ok(r.teams.join() === '1,2,3', 'the chain is whichever clubs the path visits');
+
+  /* The claim, checked: matches exhaustive search. */
+  for (const sw of [0, 0.5, 1, 2, 5]) {
+    const got = core.rotationChain(cands(teams), diff, { switchCost: sw });
+    const bf = brute(teams, diff, sw);
+    ok(Math.abs(totalOf(got, diff, sw) - bf.total) < 1e-9,
+      'matches brute force at switch cost ' + sw);
+  }
+
+  /* The switch cost is what controls chain length, and that must be visible. */
+  const cheap = core.rotationChain(cands(teams), diff, { switchCost: 0 });
+  const dear = core.rotationChain(cands(teams), diff, { switchCost: 50 });
+  ok(dear.switches === 0, 'an expensive transfer means never switching at all');
+  ok(dear.teams.length === 1, 'so the chain collapses to a single club');
+  ok(cheap.switches >= dear.switches, 'and a free transfer switches at least as often');
+
+  /* Ties must prefer staying: an equal-cost plan with fewer transfers is
+     strictly better in a game where transfers are the scarce resource. */
+  const flat = { 1: [3, 3, 3, 3], 2: [3, 3, 3, 3] };
+  const t = core.rotationChain(cands([1, 2]), flat, { switchCost: 0 });
+  ok(t.switches === 0, 'identical clubs never switch, even when switching is free');
+  /* The case that actually exercises the tie-break, on the path that gets
+     chosen: holding club 2 throughout costs 3 + 0 = 3, and starting on club 1
+     then paying a transfer costs 1 + 2 + 0 = 3 as well. Dead level, so only
+     an explicit preference for staying avoids spending a transfer to buy
+     nothing at all. */
+  const tie = core.rotationChain(cands([1, 2]), { 1: [1, 3], 2: [3, 0] }, { switchCost: 2 });
+  ok(tie.switches === 0, 'a tie is settled by NOT spending a transfer');
+  ok(tie.path.join() === '2,2', 'so the plan holds one club rather than churning (' + tie.path.join() + ')');
+
+  /* One candidate per club, and the cheapest one — a rotation slot is a
+     budget slot. */
+  /* Cheapest FIRST in the list, so "keep the last one seen" would pick the
+     expensive player and the assertion below would catch it. */
+  const dup = core.rotationChain(
+    [{ id: 2, team: 1, cost: 45 }, { id: 1, team: 1, cost: 70 }, { id: 3, team: 2, cost: 50 }],
+    { 1: [1, 1, 5, 5], 2: [5, 5, 1, 1] }, { switchCost: 1 });
+  ok(dup.blocks[0].player.cost === 45, 'the cheapest player at a club represents it');
+  ok(dup.minCost === 45 && dup.maxCost === 50, 'the price range of the chain is reported');
+
+  /* Horizons of different length: the shortest club array bounds the run. */
+  const ragged = core.rotationChain(cands([1, 2]), { 1: [1, 1, 1, 1, 1], 2: [5, 5] }, { switchCost: 1 });
+  ok(ragged.n === 2, 'the horizon is the shortest club history available');
+
+  /* Degenerate inputs return null rather than a misleading empty chain. */
+  ok(core.rotationChain(cands([1]), { 1: [1, 2, 3] }) === null, 'one club is not a rotation');
+  ok(core.rotationChain([], diff) === null && core.rotationChain(null, diff) === null, 'no candidates, no chain');
+  ok(core.rotationChain(cands(teams), null) === null, 'no fixture difficulty, no chain');
+  ok(core.rotationChain(cands([1, 2]), { 1: [1], 2: [1] }) === null, 'a single gameweek is not a rotation');
+  ok(core.rotationChain([null, undefined].concat(cands(teams)), diff, { switchCost: 1 }).teams.length === 3,
+    'holes in the candidate list are ignored');
+  /* A club with no fixture data cannot be part of a chain. */
+  ok(core.rotationChain(cands([1, 2, 9]), diff, { switchCost: 1 }).teams.indexOf(9) < 0,
+    'a club with no difficulty array is left out');
 }
 
 section('bundleSeasonStale: model-bundle vs live season cross-check (Tier 2)');

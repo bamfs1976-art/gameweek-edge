@@ -6174,6 +6174,36 @@ async function hydrateFixtures(host){
     const gkSection=gkPairs.length
       ? '<div class="dl-sub" style="margin:12px 0 2px;font-weight:800;color:var(--text)">Goalkeeper rotation (£4.5m and under)</div>'+pairRows(gkPairs,teamDiff)
       : '';
+    /* Chains: the same slot, but allowed more than two clubs. A pair only
+       works when the calendar happens to alternate in twos; a chain follows
+       whatever shape the fixtures actually have, paying a transfer each time
+       it moves. Rendered as blocks — own this club for these weeks, then
+       that one — because that is the plan you execute. */
+    const chainOf=(cs,dm)=>{try{return rotationChain(cs,dm);}catch(_){return null;}};
+    const chains=[['Defenders',chainOf(enablers,teamDiff),teamDiff],
+      ['Midfielders',chainOf(midEnablers,teamDiffAtt),teamDiffAtt],
+      ['Goalkeepers',chainOf(gkEnablers,teamDiff),teamDiff]].filter(x=>x[1]&&x[1].switches>0);
+    const chainRows=chains.map(([label,ch,dm])=>{
+      const strip=gws.map((g,gi)=>{const t=ch.path[gi],d=dm[t][gi],c=(byTeamGw[t]||{})[g];
+        const edge=gi>0&&ch.path[gi-1]!==t;
+        return '<td class="cell fdr-'+d+'" style="font-size:10px'+(edge?';box-shadow:inset 3px 0 0 var(--purple,#a855f7)':'')+'">'+
+          (c?esc(c.opp)+(c.home?'':'(a)'):'—')+'</td>';}).join('');
+      const plan=ch.blocks.map(bk=>'<b>'+esc(bk.player.name)+'</b> <span class="dl-sub">'+
+        teamShort(b,bk.team)+' · GW'+gws[bk.from]+(bk.weeks>1?'–'+gws[bk.to]:'')+'</span>').join(
+        ' <span style="color:var(--text-3)">→</span> ');
+      return '<div style="padding:8px 0;border-top:1px solid var(--border)">'+
+        '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:5px">'+
+          '<span class="dl-nm">'+esc(label)+'</span>'+
+          '<span class="dl-col mono" style="color:var(--green);font-weight:800">'+ch.green+'/'+ch.n+' green · '+
+            ch.switches+' transfer'+(ch.switches===1?'':'s')+'</span></div>'+
+        '<div class="dl-sub" style="margin-bottom:5px">'+plan+'</div>'+
+        '<div class="fdr"><table><tbody><tr>'+strip+'</tr></tbody></table></div></div>';
+    }).join('');
+    const chainCard=chainRows
+      ? '<div class="card mb-20"><div class="card-title">Rotation chains — one slot, several clubs</div>'+
+        '<p class="dl-sub" style="margin-bottom:2px">A pair only works when the calendar alternates in twos. A chain follows whatever shape the fixtures really have — hold this club for three weeks, then that one — and because a rotation slot is <b>one squad place you transfer in and out of</b>, every switch is charged a transfer. The plan below is the cheapest way to cover the next '+gws.length+' gameweeks, solved exactly rather than guessed. A purple edge marks each switch.</p>'+
+        chainRows+'</div>'
+      : '';
     const rotCard=(pairs.length||gkPairs.length||midPairs.length)
       ? '<div class="card mb-20"><div class="card-title">Rotation pairs — best combined run</div>'+
           '<p class="dl-sub" style="margin-bottom:2px">Two budget players whose fixtures alternate, so each week you start whichever has the kinder fixture. Defenders and keepers rotate on <b>clean-sheet</b> difficulty; midfielders on <b>attacking</b> difficulty. The strip shows the fixture you would play — greener is easier. Ranked by combined difficulty over the next '+gws.length+' gameweeks.</p>'+
@@ -6260,7 +6290,7 @@ async function hydrateFixtures(host){
         'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
-      planCard+swCard+rotCard+valCard+outlookCard;
+      planCard+swCard+chainCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
     const wseg=host.querySelector('#fdr-win');
@@ -9482,6 +9512,79 @@ function rotationPairs(cands,teamDiff,limit){
     if(out.length>=limit)break;
   }
   return out;
+}
+
+/* ── Rotation chains ────────────────────────────────────────
+   A pair alternates between two clubs. But the fixture calendar rarely
+   obliges in twos: the creators' budget-rotation graphics run five or six
+   clubs across a dozen gameweeks — Sunderland for three, then Newcastle for
+   three, then Fulham — because that is what actually tiles the run green.
+
+   The important thing a pair search misses is that a rotation slot is ONE
+   squad place you transfer in and out of, so every switch costs a transfer.
+   A "chain" that changes club every week is worthless however green it looks.
+   That makes this a shortest-path problem rather than a choose-the-best-k
+   problem: hold exactly one club each gameweek, pay the fixture difficulty
+   for the week you hold it, and pay a switch cost whenever you change.
+
+   Solved exactly with a Viterbi pass over the gameweeks — no greedy, no
+   sampling — so the schedule returned is the genuinely cheapest way to cover
+   the horizon, and the chain is simply whichever clubs that path visits. The
+   switch cost is what controls chain length: raise it and the answer is a
+   pair with long blocks, lower it and it hops more often. */
+const ROT_SWITCH=1.1;   /* difficulty points a transfer is worth spending to switch club */
+function rotationChain(cands,teamDiff,opts){
+  opts=opts||{};
+  const switchCost=opts.switchCost==null?ROT_SWITCH:opts.switchCost;
+  /* One candidate per club — the cheapest, because a rotation slot is a
+     budget slot and the whole point is that it is cheap. */
+  const byTeam={};
+  (cands||[]).forEach(p=>{
+    if(!p||!teamDiff||!teamDiff[p.team]||!teamDiff[p.team].length)return;
+    const cur=byTeam[p.team];
+    if(!cur||(p.cost||0)<(cur.cost||0))byTeam[p.team]=p;
+  });
+  const teams=Object.keys(byTeam).map(Number);
+  if(teams.length<2)return null;
+  const N=Math.min.apply(null,teams.map(t=>teamDiff[t].length));
+  if(!(N>=2))return null;
+
+  /* cost[t] = cheapest total to arrive at gameweek g holding club t. */
+  let cost={};teams.forEach(t=>{cost[t]=teamDiff[t][0];});
+  const back=[];
+  for(let g=1;g<N;g++){
+    const next={},ptr={};
+    teams.forEach(t=>{
+      let bestFrom=null,bestVal=Infinity;
+      teams.forEach(u=>{
+        /* Staying wins ties: an equal-cost plan that makes fewer transfers is
+           strictly better in a game where transfers are the scarce thing. */
+        const v=cost[u]+(u===t?0:switchCost);
+        if(v<bestVal-1e-9||(Math.abs(v-bestVal)<=1e-9&&u===t)){bestVal=v;bestFrom=u;}
+      });
+      next[t]=bestVal+teamDiff[t][g];ptr[t]=bestFrom;
+    });
+    back.push(ptr);cost=next;
+  }
+  /* Backtrack the cheapest ending. */
+  let end=teams[0];teams.forEach(t=>{if(cost[t]<cost[end])end=t;});
+  const path=new Array(N);path[N-1]=end;
+  for(let g=N-1;g>0;g--)path[g-1]=back[g-1][path[g]];
+
+  /* Compress the path into blocks — consecutive weeks on the same club. */
+  const blocks=[];
+  for(let g=0;g<N;g++){
+    const t=path[g],last=blocks[blocks.length-1];
+    if(last&&last.team===t){last.to=g;last.weeks++;last.diff+=teamDiff[t][g];}
+    else blocks.push({team:t,player:byTeam[t],from:g,to:g,weeks:1,diff:teamDiff[t][g]});
+  }
+  const raw=path.reduce((s,t,g)=>s+teamDiff[t][g],0);
+  const green=path.reduce((s,t,g)=>s+(teamDiff[t][g]<=2?1:0),0);
+  const used=blocks.map(b=>b.team).filter((t,i,a)=>a.indexOf(t)===i);
+  const prices=used.map(t=>byTeam[t].cost||0);
+  return {blocks,teams:used,path,n:N,score:raw,mean:raw/N,green,
+    switches:blocks.length-1,
+    minCost:Math.min.apply(null,prices),maxCost:Math.max.apply(null,prices)};
 }
 
 /* A team fixture purple patch: the single best (lowest total difficulty) run
