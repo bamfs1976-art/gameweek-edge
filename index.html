@@ -378,7 +378,13 @@ html.offline .net-banner{transform:translateY(0)}
 .fdr th{color:var(--text-3);font-weight:700;padding:2px 4px}
 .fdr .tm{text-align:left;font-weight:800;color:var(--text);position:sticky;left:0;
   background:var(--surface);padding-right:8px;z-index:1}
-.fdr td.cell{padding:8px 7px;border-radius:7px;font-weight:800;min-width:48px;color:#0c1014}
+.fdr td.cell{padding:6px 7px;border-radius:7px;font-weight:800;min-width:54px;color:#0c1014}
+/* Two lines per cell: the lens's projection, then the fixture it comes from.
+   The opponent is deliberately quieter — it is the context, not the answer. */
+.fdr .fdr-val{display:block;font-size:.86rem;font-weight:800;line-height:1.15}
+.fdr .fdr-opp{display:block;font-size:.63rem;font-weight:700;opacity:.72;line-height:1.15;margin-top:1px}
+.fdr td.fdr-tot{background:var(--surface-3);color:var(--text)}
+.fdr td.fdr-tot .fdr-opp{opacity:.6}
 .fdr-1{background:#2ecf73}.fdr-2{background:#8fd9a6}.fdr-3{background:#d9dee3;color:#3a4650}
 .fdr-4{background:#f0a3a0}.fdr-5{background:#e05a55;color:#fff}
 .fdr td.blank{background:var(--surface-3);color:var(--text-4);font-weight:600}
@@ -5965,6 +5971,36 @@ function plsimMatch(r,hId,aId){
 function plsimDiff(pWin){return pWin>=0.55?1:pWin>=0.44?2:pWin>=0.30?3:pWin>=0.20?4:5;}
 function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
 
+/* ── What each lens actually shows ──────────────────────────
+   The grid used to colour a cell by a 1-5 difficulty bucket and print only
+   the opponent. But the bucket is derived from a real projection we already
+   computed — expected goals, clean-sheet odds, win probability — and then
+   thrown away for display. Two fixtures both shaded "2" can be 1.6 and 2.5
+   expected goals, which is the difference between a fixture you plan around
+   and one you do not.
+
+   So each lens now prints its own number in the cell, and the run total is in
+   the same unit rather than a sum of difficulty buckets. Pure, so the
+   formatting and the totals are unit-tested. */
+const FDR_LENS={
+  overall:{unit:'WIN',cell:c=>Math.round((c.win||0)*100)+'%',
+    total:cs=>cs.length?Math.round(100*cs.reduce((s,c)=>s+(c.win||0),0)/cs.length)+'%':'—'},
+  attack:{unit:'GLS',cell:c=>(c.lam||0).toFixed(2),
+    total:cs=>cs.reduce((s,c)=>s+(c.lam||0),0).toFixed(2)},
+  defence:{unit:'xCS',cell:c=>Math.round((c.cs||0)*100)+'%',
+    total:cs=>cs.reduce((s,c)=>s+(c.cs||0),0).toFixed(2)},
+  fpl:{unit:'FDR',cell:c=>String(c.fdr>=1&&c.fdr<=5?c.fdr:3),
+    total:cs=>String(cs.reduce((s,c)=>s+(c.fdr>=1&&c.fdr<=5?c.fdr:3),0))},
+};
+function fdrLens(view){return FDR_LENS[view]||FDR_LENS.overall;}
+/* The cell's headline number for a lens, and the run total beneath it. Both
+   tolerate a missing cell, because a blank gameweek has none. */
+function fdrCellValue(view,c){return c?fdrLens(view).cell(c):'—';}
+function fdrRunTotal(view,cells){
+  const list=(cells||[]).filter(Boolean);
+  return list.length?fdrLens(view).total(list):'—';
+}
+
 /* Fixture Difficulty 2.0 body: recolour each cell by the chosen lens —
    overall win odds, attack (team xG) or defence (clean-sheet odds). */
 function fdrBodyHtml(view){
@@ -5985,16 +6021,21 @@ function fdrBodyHtml(view){
     const grades=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?grade(c):6;});
     const run=bestFixtureRun(grades,K);
     const patch=(run&&run.sum/run.K<=2.8)?run:null;
-    const cells=gws.map((g,gi)=>{const c=(byTeamGw[t.id]||{})[g];
+    const rowCells=gws.map(g=>(byTeamGw[t.id]||{})[g]||null);
+    const cells=gws.map((g,gi)=>{const c=rowCells[gi];
       if(!c)return '<td class="blank">—</td>';
       lam+=c.lam;cs+=c.cs;n++;const gr=grade(c);tot+=gr;
       const inPatch=patch&&gi>=patch.start&&gi<=patch.end;
-      return '<td class="cell fdr-'+gr+'"'+(inPatch?' style="box-shadow:inset 0 -3px 0 #a855f7"':'')+'>'+esc(c.opp)+(c.home?'':' (a)')+'</td>';
+      /* The projection first, the opponent underneath: the number is what you
+         plan around, the fixture is the context for it. */
+      return '<td class="cell fdr-'+gr+'"'+(inPatch?' style="box-shadow:inset 0 -3px 0 #a855f7"':'')+'>'+
+        '<span class="fdr-val">'+esc(fdrCellValue(view,c))+'</span>'+
+        '<span class="fdr-opp">'+esc(c.opp)+(c.home?'':' (a)')+'</span></td>';
     }).join('');
-    const sums=n?'<td class="cell" style="background:var(--surface-3);color:var(--text);font-weight:800">'+tot+'</td>'+
-      '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+lam.toFixed(1)+'</td>'+
-      '<td class="cell" style="background:var(--surface-3);color:var(--text)">'+Math.round(100*cs/n)+'</td>'
-      :'<td class="blank">—</td><td class="blank">—</td><td class="blank">—</td>';
+    const L=fdrLens(view);
+    const sums=n?'<td class="cell fdr-tot"><span class="fdr-val">'+esc(fdrRunTotal(view,rowCells))+'</span>'+
+      '<span class="fdr-opp">'+L.unit+'</span></td>'
+      :'<td class="blank">—</td>';
     return {html:'<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>',key:n?tot/n:99};
   });
   rows.sort((a,c)=>a.key-c.key);
@@ -6075,12 +6116,17 @@ async function hydrateFixtures(host){
       if(!f.event||f.event<startGw||f.event>=startGw+winN)return;
       const m=matchModel(b,f,R);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
-        diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,lam:m?m.hx:0,cs:m?m.csH:0};
+        diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
+        lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0};
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
-        diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,lam:m?m.ax:0,cs:m?m.csA:0};
+        diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,
+        lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0};
     });
     window._fdr={b,teams,gws,byTeamGw,hidden};
-    const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th>FDR</th><th>xGF</th><th>CS%</th></tr>';
+    /* One summary column, in the active lens's own unit — the old FDR / xGF /
+       CS% trio was those same three totals shown at once, only one of which
+       matched what you were looking at. */
+    const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th id="fdr-tot-h">Total</th></tr>';
 
     /* Defensive rotation pairs — cheap defenders whose easy fixtures alternate. */
     const teamDiff={};
@@ -6211,7 +6257,7 @@ async function hydrateFixtures(host){
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
         'Choose the <b>horizon</b> (6 / 10 / 15 GWs, or the whole <b>Season</b>) and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
-        '<b>(a)</b> marks an away fixture. <b>FDR</b> totals the 1–5 difficulty (lower is easier); <b>xGF</b> and <b>CS%</b> sum expected goals and average clean-sheet chance over the shown gameweeks'+
+        'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
       planCard+swCard+rotCard+valCard+outlookCard;

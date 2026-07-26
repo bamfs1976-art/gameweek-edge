@@ -82,7 +82,7 @@ Players
 └── Rotation Risk        (Pro)   Start-rate risk for premium players
 
 Planner
-├── Fixture Planner      (free)  6-GW model FDR grid, xGF, clean-sheet odds
+├── Fixture Planner      (free)  Model FDR grid — per-cell xG / CS% / win odds
 ├── Clean Sheet Matrix   (free)  P(clean sheet) per club per GW, 6/10-GW window
 ├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
 ├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
@@ -524,7 +524,19 @@ which is the correct answer in July, not a failure.
 ### Planner
 
 **Fixture Planner** — model‑FDR grid (from win odds), expected goals for, and
-clean‑sheet odds; plus the upcoming match outlook. Horizon toggles **6 / 10 / 15
+clean‑sheet odds; plus the upcoming match outlook.
+
+**Every cell shows its lens's projection, not just a colour.** The grid used to
+shade a cell by a 1–5 difficulty bucket and print only the opponent — but that
+bucket is derived from a projection the model already computed and then threw
+away for display. Two fixtures shaded the same "2" can be 1.6 and 2.5 expected
+goals, which is the difference between a fixture worth planning around and one
+that is not. Each lens now prints its own number with the fixture underneath:
+win chance (Overall), expected goals (Attack), clean‑sheet odds (Defence), or
+the official 1–5 rating (FPL FDR). The run **Total** is in the same unit —
+summed for goals, expected clean sheets and official FDR; *averaged* for win
+chance, since summing probabilities would be meaningless. A blank gameweek
+reads as a dash, never a zero. Horizon toggles **6 / 10 / 15
 gameweeks or the whole Season** (the full remaining‑season grid competitors
 paywall — here free, and across four lenses: Overall / Attack / Defence / the
 official FPL rating). Teams re‑rank easiest‑run‑first; a purple underline marks

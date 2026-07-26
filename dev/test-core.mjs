@@ -148,12 +148,17 @@ const pieces = [
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'eloMean'),
   extractFn(html, 'eloPrior'),
+  /* Fixture-planner lenses: each cell now prints its own projection. */
+  extractConst(html, 'FDR_LENS'),
+  extractFn(html, 'fdrLens'),
+  extractFn(html, 'fdrCellValue'),
+  extractFn(html, 'fdrRunTotal'),
   extractFn(html, 'plsimPrior'),
   extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1175,6 +1180,54 @@ section('eloPrior: held-out, it beats the generic prior it replaces (Tier 2)');
     ok(ratio > 0.6 && ratio < 1.4,
       'the mapping spreads clubs like the priors do on ' + label + ' (sd ratio ' + ratio.toFixed(2) + ')');
   }
+}
+
+section('fdr lenses: the cell shows the projection, not just a colour (Tier 2)');
+{
+  /* A cell as the planner builds one: opponent, difficulty bucket, official
+     FDR, and the three projections the model already computed. */
+  const cell = (o) => Object.assign({ opp: 'BOU', home: true, diff: 2, fdr: 2, lam: 2.21, cs: 0.33, win: 0.62 }, o || {});
+
+  ok(core.fdrCellValue('attack', cell()) === '2.21', 'the attack lens prints expected goals');
+  ok(core.fdrCellValue('defence', cell()) === '33%', 'the defence lens prints clean-sheet odds');
+  ok(core.fdrCellValue('overall', cell()) === '62%', 'the overall lens prints the win chance');
+  ok(core.fdrCellValue('fpl', cell()) === '2', 'the FPL lens prints the official rating');
+
+  /* The whole point: two cells that colour identically can be very different
+     fixtures, and the number is what separates them. */
+  const easy = cell({ lam: 2.5, diff: 2 }), meh = cell({ lam: 1.6, diff: 2 });
+  ok(easy.diff === meh.diff, 'two fixtures can share a difficulty bucket');
+  ok(core.fdrCellValue('attack', easy) !== core.fdrCellValue('attack', meh),
+    'but the attack lens tells them apart');
+
+  /* Totals are in the lens's own unit, not a sum of 1-5 buckets. */
+  const run = [cell({ lam: 2.21, cs: 0.33, win: 0.62, fdr: 2 }),
+    cell({ lam: 1.65, cs: 0.33, win: 0.5, fdr: 3 }),
+    cell({ lam: 2.78, cs: 0.46, win: 0.7, fdr: 2 })];
+  ok(core.fdrRunTotal('attack', run) === '6.64', 'the attack total sums expected goals over the run');
+  ok(core.fdrRunTotal('fpl', run) === '7', 'the FPL total sums the official ratings');
+  ok(core.fdrRunTotal('defence', run) === '1.12', 'the defence total sums clean-sheet chance (expected clean sheets)');
+  ok(core.fdrRunTotal('overall', run) === '61%', 'the overall total AVERAGES win chance — summing probabilities would be meaningless');
+  ok(core.fdrLens('attack').unit === 'GLS' && core.fdrLens('defence').unit === 'xCS',
+    'each lens names its own unit');
+
+  /* Blanks: a club with no fixture that week has no cell at all. */
+  ok(core.fdrCellValue('attack', null) === '—', 'a blank gameweek shows a dash, not a zero');
+  ok(core.fdrRunTotal('attack', [null, null]) === '—', 'an all-blank run has no total');
+  ok(core.fdrRunTotal('attack', [null, cell({ lam: 2 }), null]) === '2.00',
+    'and a partial run totals only the fixtures that exist');
+  ok(core.fdrRunTotal('attack', []) === '—' && core.fdrRunTotal('attack', null) === '—', 'an empty run is safe');
+
+  /* Missing model output must read as zero, never NaN on the page. */
+  const bare = { opp: 'X', home: true, diff: 3, fdr: 3 };
+  for (const v of ['overall', 'attack', 'defence', 'fpl']) {
+    ok(!/NaN|undefined/.test(core.fdrCellValue(v, bare)), 'the ' + v + ' lens never renders NaN');
+  }
+  ok(core.fdrCellValue('nonsense', cell()) === core.fdrCellValue('overall', cell()),
+    'an unknown lens falls back to overall rather than throwing');
+  /* An out-of-range official rating is clamped to average, as the grid does. */
+  ok(core.fdrCellValue('fpl', cell({ fdr: 0 })) === '3' && core.fdrCellValue('fpl', cell({ fdr: 9 })) === '3',
+    'an impossible official rating reads as average');
 }
 
 section('bundleSeasonStale: model-bundle vs live season cross-check (Tier 2)');
