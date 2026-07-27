@@ -48,11 +48,17 @@ body{
 .brand .lt{font-weight:600;color:var(--text-2)}
 .brand-tag{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--blue-bright);margin-top:1px}
 .hdr-sp{flex:1}
-.hdr-link{
-  font-size:.76rem;font-weight:600;color:var(--text-2);text-decoration:none;
-  padding:7px 12px;border:1px solid var(--border);border-radius:8px;transition:.15s;white-space:nowrap;
+/* Competition switcher, mirroring the one in Gameweek Edge's sidebar.
+   Both games are on this origin, so the inactive half is a plain link and
+   the session travels with the user. */
+.sw{display:flex;gap:3px;padding:3px;background:var(--navy-2);border:1px solid var(--border);border-radius:9px}
+.sw-btn{
+  padding:6px 13px;border-radius:6px;text-decoration:none;
+  font-size:.72rem;font-weight:700;letter-spacing:.04em;color:var(--text-3);transition:.15s;
 }
-.hdr-link:hover{color:var(--text);border-color:var(--blue-bright);background:var(--blue-soft)}
+a.sw-btn:hover{color:var(--text);background:var(--surface-2)}
+.sw-btn.active{background:var(--blue);color:#fff}
+a.sw-btn:focus-visible{outline:2px solid var(--blue-bright);outline-offset:1px}
 
 /* Tabs */
 .tabs{display:flex;gap:4px;overflow-x:auto;padding:12px 0 0;scrollbar-width:none}
@@ -139,7 +145,12 @@ tr:last-child td{border-bottom:0}
       <div class="brand-tag">European fantasy football</div>
     </div>
     <div class="hdr-sp"></div>
-    <a class="hdr-link" id="sibling" href="https://gameweekedge.co.uk">Gameweek Edge ↗</a>
+    <!-- Mirror of the switcher in Gameweek Edge's sidebar. Same origin, so
+         the signed-in session and Pro tier follow the user both ways. -->
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge — Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">UCL</span>
+    </nav>
   </div>
   <div class="wrap">
     <nav class="tabs" id="tabs" aria-label="Sections"></nav>
@@ -152,10 +163,10 @@ tr:last-child td{border-bottom:0}
   <div class="cross">
     <div class="cross-t">
       <b>Play the Premier League too?</b>
-      Gameweek Edge is the same model, built for Fantasy Premier League and FPL Challenge.
-      One account and one Pro subscription cover both apps.
+      Gameweek Edge is the same model, built for Fantasy Premier League — and it is
+      part of this site. Your account and your Pro subscription come with you.
     </div>
-    <a class="btn" href="https://gameweekedge.co.uk">Open Gameweek Edge</a>
+    <a class="btn" href="/">Open Gameweek Edge</a>
   </div>
   <p><b>Euro Matchday Edge</b> is not affiliated with, endorsed by, or associated with UEFA
      or the official UEFA Champions League Fantasy game. Competition and club names are

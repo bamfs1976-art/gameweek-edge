@@ -4,49 +4,46 @@ The calm, clear edge for **European fantasy football** — the sibling app to
 Gameweek Edge, running the identical model over the UEFA Champions League
 Fantasy game.
 
-## Why it lives in this repo
+## Why it lives in this repo, and on this URL
 
-Because the model must not be copied. Gameweek Edge's `index.html` is the
-single source of truth for the match model, the expected-points model and the
-squad optimiser — and it has to stay that way, because the eleven test files
-and both backtests locate those functions **by name inside that file** and
-evaluate them verbatim. That is what makes "the model we grade is the model we
-ship" true.
+Two reasons, and neither is convenience.
 
-So Euro Matchday Edge does not contain a model. `build.mjs` lifts the
+**The model must not be copied.** Gameweek Edge's `index.html` is the single
+source of truth for the match model, the expected-points model and the squad
+optimiser — and it has to stay that way, because the test files and both
+backtests locate those functions **by name inside that file** and evaluate
+them verbatim. That is what makes "the model we grade is the model we ship"
+true. So this app contains no model: `scripts/build-web.mjs` lifts the
 league-agnostic functions out of `../index.html` at build time (via
-`../scripts/extract-engine.mjs`) and writes them to `dist/engine.js`, which the
-app loads. An improvement to the minutes model lands in both apps on the next
-deploy, with nobody porting anything.
+`scripts/extract-engine.mjs`) and writes `www/euro/engine.js`, which the app
+loads. An improvement to the minutes model reaches both apps on the next
+deploy with nobody porting anything.
+
+**The session is per-origin.** Supabase persists the auth session in
+`localStorage`. On a separate domain a user would have to sign in again, and
+the Pro tier they bought in Gameweek Edge would look absent here — the one
+thing that must never happen when the pitch is "one subscription covers
+both". Serving from `/euro/` on the same origin makes it true for free: same
+`localStorage`, same session, same `gwedge_profiles` row.
 
 ```
-ucl/
-  netlify.toml     this site's Netlify config (base directory = ucl)
-  build.mjs        assembles dist/ from app/ + the shared engine
+euro/
   app/             the shell: fetch, arrange, render. No model code.
-  functions/ucl.js UEFA feed → the FPL vocabulary the engine speaks
-  dist/            build output (gitignored)
+  README.md        this file
+../netlify/functions/ucl.js   UEFA feed → the FPL vocabulary the engine speaks
 ```
 
 ## Deploying
 
-Euro Matchday Edge is a **second Netlify site from the same repository**:
+There is nothing separate to deploy. `npm run build:web` emits `www/` (Gameweek
+Edge) and `www/euro/` (this app) together, and the single `netlify.toml` at the
+repo root routes `/api/ucl/*` to the UEFA proxy. One site, one build, one
+domain.
 
-| | Gameweek Edge | Euro Matchday Edge |
-|---|---|---|
-| Base directory | *(repo root)* | `ucl` |
-| Config read | `/netlify.toml` | `/ucl/netlify.toml` |
-| Build command | `npm run build:web` | `node build.mjs` |
-| Publish | `www` | `dist` (i.e. `ucl/dist`) |
-| Functions | `netlify/functions` | `ucl/functions` |
-
-Setting the base directory is what stops the two sites fighting over the
-publish directory — Netlify reads the `netlify.toml` inside the base, not the
-one at the repo root. Netlify still clones the whole repository, so the build
-can reach `../index.html`.
-
-Build locally from the repo root with `npm run build:ucl` (or `npm run
-build:all` for both sites).
+If you want `euromatchdayedge.co.uk` to work as well, add it as a **domain
+alias** on the same Netlify site and redirect it to `/euro/` — an alias, not a
+second site, so the origin the app actually runs on stays `gameweekedge.co.uk`
+and the shared session survives.
 
 ## Accounts and Pro
 

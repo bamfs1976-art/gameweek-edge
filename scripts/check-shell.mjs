@@ -28,7 +28,9 @@ const sw = readFileSync(join(root, 'sw.js'), 'utf8');
 const shellBlock = sw.match(/const SHELL = \[([\s\S]*?)\]/);
 assert.ok(shellBlock, 'sw.js has no SHELL precache list');
 const shell = [...shellBlock[1].matchAll(/'(\/[^']+)'/g)].map((m) => m[1]).filter((p) => p !== '/');
-const BUILT = new Set(['/native.js', '/auth.js']); // produced by scripts/build-web.mjs / netlify build
+// Produced by scripts/build-web.mjs, so they exist in www/ but not in the repo.
+const BUILT = new Set(['/native.js', '/auth.js',
+  '/euro/', '/euro/index.html', '/euro/engine.js', '/euro/manifest.webmanifest']);
 for (const p of shell) {
   if (BUILT.has(p)) continue;
   assert.ok(existsSync(join(root, p)), `sw.js precaches ${p} but the file does not exist`);

@@ -656,6 +656,24 @@ html.offline .net-banner{transform:translateY(0)}
   text-transform:uppercase;color:var(--green-bright);margin-top:3px;
 }
 
+/* Competition switcher — FPL / UCL. Both games live on this origin now
+   (UCL at /euro/), so this is navigation rather than a cross-promo: a
+   segmented control where the inactive half is a plain link. Deliberately
+   above the gameweek strip, because which competition you are in changes
+   every number below it. */
+.sb-game{
+  display:flex;gap:3px;margin:11px 14px 0;padding:3px;
+  background:var(--bg-2);border:1px solid var(--border);border-radius:9px;
+}
+.sb-game-btn{
+  flex:1;padding:6px 8px;border-radius:6px;text-align:center;text-decoration:none;
+  font-size:.7rem;font-weight:700;letter-spacing:.04em;color:var(--text-3);
+  transition:background .15s,color .15s;
+}
+a.sb-game-btn:hover{color:var(--text);background:var(--border-2)}
+.sb-game-btn.active{background:var(--green);color:#fff}
+a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset:1px}
+
 /* Gameweek strip */
 .sb-gw{
   padding:13px 18px;
@@ -1822,6 +1840,15 @@ body{font-size:14px;line-height:1.35}
       </div>
     </div>
 
+    <!-- Competition switcher. UCL is a separate app on the same origin, so
+         this is an ordinary link — and because the origin is shared, the
+         signed-in session and Pro tier follow the user across it. -->
+    <div class="sb-game" role="group" aria-label="Choose competition">
+      <span class="sb-game-btn active" aria-current="page">FPL</span>
+      <a class="sb-game-btn" href="/euro/"
+         title="Euro Matchday Edge — UEFA Champions League Fantasy. Your account and Pro come with you.">UCL</a>
+    </div>
+
     <!-- Gameweek strip -->
     <div class="sb-gw">
       <div class="gw-row">
@@ -1847,11 +1874,12 @@ body{font-size:14px;line-height:1.35}
           <span id="theme-label">Light</span>
         </button>
       </div>
-      <!-- Sibling app. Same account, same Pro subscription: tier lives on the
-           shared gwedge_profiles row, so unlocking one unlocks both. -->
-      <a class="sb-sibling" href="https://euromatchdayedge.co.uk" rel="noopener">
+      <!-- The switcher above is the quick route; this explains what is at the
+           other end of it for anyone who has not been. Same origin, so the
+           session travels; tier lives on the shared gwedge_profiles row. -->
+      <a class="sb-sibling" href="/euro/">
         <span class="sb-sib-mark" aria-hidden="true"></span>
-        <span class="sb-sib-t"><b>Euro Matchday Edge</b>European fantasy football — your Pro covers it</span>
+        <span class="sb-sib-t"><b>Euro Matchday Edge</b>Champions League Fantasy — your Pro covers it</span>
         <span class="sb-sib-go" aria-hidden="true">↗</span>
       </a>
       <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>

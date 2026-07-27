@@ -1,5 +1,5 @@
 /*
- * Tests for the Euro Matchday Edge data layer (ucl/functions/ucl.js).
+ * Tests for the Euro Matchday Edge data layer (netlify/functions/ucl.js).
  *
  * This normaliser is the highest-risk code in the second app. Every number
  * Euro Matchday Edge shows depends on it, and it was written without a reachable
@@ -24,7 +24,7 @@ import vm from 'node:vm';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const mod = require(join(ROOT, 'ucl/functions/ucl.js'));
+const mod = require(join(ROOT, 'netlify/functions/ucl.js'));
 const { pick, toPos, rowsOf, normPlayer, normTeam, normFixture, unmapped, POS } = mod._internal;
 
 let failures = 0, passes = 0;
@@ -200,7 +200,7 @@ console.log('• handler: end-to-end over a mocked upstream');
 
 console.log('• the app shell parses and uses only the shared engine');
 {
-  const html = readFileSync(join(ROOT, 'ucl/app/index.html'), 'utf8');
+  const html = readFileSync(join(ROOT, 'euro/app/index.html'), 'utf8');
   const scripts = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
   ok(scripts.length === 1, 'one inline script');
   let parsed = true;
@@ -226,7 +226,7 @@ console.log('• the app actually renders against the shared engine');
      view is rendered and inspected. */
   const { buildEngine } = await import('../scripts/extract-engine.mjs');
   const engineSrc = buildEngine(readFileSync(join(ROOT, 'index.html'), 'utf8'));
-  const appSrc = readFileSync(join(ROOT, 'ucl/app/index.html'), 'utf8')
+  const appSrc = readFileSync(join(ROOT, 'euro/app/index.html'), 'utf8')
     .match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/)[1];
 
   /* Enough of a DOM for the shell: elements it looks up by id, plus the
@@ -333,7 +333,7 @@ console.log('• early in the league phase it says "too early", not "no data"');
   /* This is what everyone sees for the first five matchdays of an eight-round
      league phase, so it is at least as important as the happy path. The model
      declining to project is not a fault and must not read like one. */
-  const html = readFileSync(join(ROOT, 'ucl/app/index.html'), 'utf8');
+  const html = readFileSync(join(ROOT, 'euro/app/index.html'), 'utf8');
   const appSrc = html.match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/)[1];
   const fn = appSrc.slice(appSrc.indexOf('function emptyState('));
   const body = fn.slice(0, fn.indexOf('\n}') + 2);
@@ -351,7 +351,33 @@ console.log('• early in the league phase it says "too early", not "no data"');
   const nat = engineGate.slice(engineGate.indexOf('function nativeXP('));
   const gate = nat.slice(0, 300).match(/gp<(\d+)/);
   ok(gate && Number(gate[1]) === 5, 'nativeXP still refuses below 5 games (found ' +
-    (gate ? gate[1] : 'no gate') + ') — update XP_MIN_GAMES in ucl/app if this changed');
+    (gate ? gate[1] : 'no gate') + ') — update XP_MIN_GAMES in euro/app if this changed');
+}
+
+console.log('• the service worker serves the right app at /euro/');
+{
+  /* Both apps share an origin and therefore share one service worker, whose
+     scope is the whole site whether it wants it or not. Two ways that bites:
+     an offline /euro/ navigation falling back to Gameweek Edge's shell, and
+     /euro/engine.js — the model itself — being pinned cache-first so a
+     deployed model fix never reaches anyone with the worker installed. */
+  const sw = readFileSync(join(ROOT, 'sw.js'), 'utf8');
+
+  ok(/const EURO = '\/euro\/'/.test(sw), 'the worker knows about the second app');
+  ok(/startsWith\(EURO\) \? '\/euro\/index\.html' : '\/index\.html'/.test(sw),
+    'offline, a /euro/ navigation falls back to the euro shell, not Gameweek Edge');
+
+  const codeBlock = sw.slice(sw.indexOf('const CODE'), sw.indexOf('self.addEventListener'));
+  for (const p of ['/euro/engine.js', '/euro/index.html', '/euro/']) {
+    ok(codeBlock.includes("'" + p + "'"), p + ' is treated as code (network-first), not a cached asset');
+  }
+  const shellBlock = sw.slice(sw.indexOf('const SHELL'), sw.indexOf('const CODE'));
+  ok(shellBlock.includes("'/euro/'"), 'the euro shell is precached so it opens offline');
+
+  /* A stale worker would keep serving the old cache under the old version. */
+  const ver = sw.match(/const VERSION = '([^']+)'/);
+  ok(ver && ver[1] !== 'ge-v5', 'the cache version was bumped so installed workers refresh (' +
+    (ver ? ver[1] : 'none') + ')');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

@@ -39,7 +39,7 @@ The clarity of the official FPL site, with the depth serious managers rely on �
 | Blue bright | `#4d86ff` | Accents, links, active states |
 | Text | `#eaf0ff` · secondary `#a9b7d8` · tertiary `#7d8cb0` | |
 
-- **Logo.** The identical form line and node from the Gameweek Edge mark, on a navy tile (`#1b3a8f`) instead of green. The two marks must stay recognisably the same shape — that is what makes them read as a family. Source: `ucl/app/icon.svg`.
+- **Logo.** The identical form line and node from the Gameweek Edge mark, on a navy tile (`#1b3a8f`) instead of green. The two marks must stay recognisably the same shape — that is what makes them read as a family. Source: `euro/app/icon.svg`.
 - **Disclaimer** on every public surface: *not affiliated with, endorsed by, or associated with UEFA or the official UEFA Champions League Fantasy game.*
 - **No competition imagery.** Gameweek Edge ships club crests and player photos from the Premier League CDN behind the `USE_OFFICIAL_IMAGERY` switch. Euro Matchday Edge ships none at all — its CSP has no third-party `img-src` — so there is no equivalent switch to get wrong.
 

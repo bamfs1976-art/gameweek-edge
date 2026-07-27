@@ -16,9 +16,9 @@
  * So index.html stays the single source of truth, and this script does at
  * build time what the tests do at test time: pull the named, league-agnostic
  * functions out and emit them as a plain script that assigns them to
- * `window.GEEngine`. Euro Matchday Edge loads that.
+ * `window.GEEngine`. Euro Matchday Edge (served at /euro/) loads that.
  *
- * Run via scripts/build-web.mjs. Emits www-ucl/engine.js.
+ * Run via scripts/build-web.mjs. Emits www/euro/engine.js.
  */
 import { readFileSync } from 'node:fs';
 

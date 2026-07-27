@@ -69,6 +69,14 @@
   status = 200
   force = true
 
+# UEFA Champions League Fantasy, normalised into the FPL vocabulary the shared
+# model engine speaks. Serves Euro Matchday Edge at /euro/.
+[[redirects]]
+  from = "/api/ucl/*"
+  to = "/.netlify/functions/ucl/:splat"
+  status = 200
+  force = true
+
 # AI features (Claude) — scout report, chat, transfers, digest, etc.
 [[redirects]]
   from = "/api/ai"

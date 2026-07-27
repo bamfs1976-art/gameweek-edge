@@ -6,12 +6,24 @@ The calm, clear companion that gives fantasy managers a measurable edge. A singl
 - **iOS app** — the same app wrapped natively with Capacitor (see [`README_MOBILE.md`](README_MOBILE.md)).
 - **Live data** — pulled from the official game APIs through Netlify serverless proxies.
 
-## A sibling app
+## Two games, one site
 
-Gameweek Edge covers **Fantasy Premier League**. A sibling app, **Euro Matchday
-Edge**, covers UEFA Champions League Fantasy and lives in
-[`ucl/`](ucl/README.md) — a second Netlify site from this repo, sharing the
-model engine rather than copying it.
+Gameweek Edge covers **Fantasy Premier League** at `/`. **Euro Matchday
+Edge** — a separate app with its own name and its own night-blue identity —
+covers UEFA Champions League Fantasy at **`/euro/`**, from the same
+deployment. Source in [`euro/`](euro/README.md).
+
+They are one Netlify site on purpose, not for tidiness. Supabase persists the
+session in `localStorage`, which is **scoped per origin** — so on two domains
+a user would sign in twice, and a Pro subscription bought on one would look
+absent on the other. Same origin makes *one account, one subscription, both
+games* true in the browser rather than only in the database.
+
+The two apps share the model, not the code: `scripts/build-web.mjs` lifts the
+league-agnostic engine out of `index.html` at build time (see
+`scripts/extract-engine.mjs`) and writes it to `www/euro/engine.js`. A fix to
+the minutes model reaches both on the next deploy with nobody porting
+anything.
 
 ### Game packs
 
@@ -160,7 +172,7 @@ The Anthropic key stays server-side — set `ANTHROPIC_API_KEY` on the Netlify s
 
 ```
 index.html              the app AND the model (single source of truth)
-ucl/                    Euro Matchday Edge — the sibling app (see ucl/README.md)
+euro/                   Euro Matchday Edge — the UCL app, served at /euro/
 scripts/extract-engine.mjs  lifts the shared model out of index.html at build time
 src/native/index.js      native bridge (Capacitor) → bundled to www/native.js
 manifest.webmanifest     PWA manifest        sw.js  PWA service worker

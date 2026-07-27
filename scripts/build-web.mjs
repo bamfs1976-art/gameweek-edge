@@ -4,12 +4,21 @@
    Run via: npm run build:web   (cap sync calls this through npm run sync) */
 
 import { build } from 'esbuild';
-import { mkdir, copyFile, rm, readdir, stat } from 'node:fs/promises';
+import { mkdir, copyFile, rm, readdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { extractEngine } from './extract-engine.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
+/* Euro Matchday Edge is a second app, but NOT a second site. It ships at
+   /euro/ on this same origin, and that is load-bearing rather than tidy:
+   the Supabase session lives in localStorage, which is scoped per origin, so
+   two domains would mean signing in twice and a Pro subscription that looks
+   absent on the app you did not buy it from. One origin makes "one account,
+   one subscription, both games" true in the browser and not just in the
+   database. */
+const EURO_OUT = join(OUT, 'euro');
 
 /* Static web assets to copy verbatim into www/. Add to this list as
    the app grows. */
@@ -63,8 +72,21 @@ async function bundleAuth() {
   });
 }
 
+/* Euro Matchday Edge: its own shell, plus the shared model engine lifted out
+   of index.html at build time. The engine is never copied into the euro/
+   source — index.html stays the single source of truth for the model,
+   because that is the file the test suite grades. */
+async function buildEuro() {
+  await copyDir(join(ROOT, 'euro/app'), EURO_OUT);
+  const engine = extractEngine(join(ROOT, 'index.html'));
+  await writeFile(join(EURO_OUT, 'engine.js'), engine, 'utf8');
+  return engine.length;
+}
+
 await clean();
 await copyStatic();
 await bundleNative();
 await bundleAuth();
+const engineBytes = await buildEuro();
 console.log('✓ Built www/ (index.html + native.js + auth.js)');
+console.log(`✓ Built www/euro/ (Euro Matchday Edge + ${(engineBytes / 1024).toFixed(0)}kB shared engine)`);

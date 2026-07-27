@@ -2,16 +2,19 @@
   "name": "Euro Matchday Edge",
   "short_name": "Matchday Edge",
   "description": "Projected points, match forecasts and matchday difficulty for European fantasy football.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/euro/",
+  "scope": "/euro/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a1024",
   "theme_color": "#0a1024",
-  "categories": ["sports", "utilities"],
+  "categories": [
+    "sports",
+    "utilities"
+  ],
   "icons": [
     {
-      "src": "icon.svg",
+      "src": "/euro/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

@@ -11,9 +11,7 @@
     "smoke": "node dev/smoke.mjs",
     "test": "node dev/test-core.mjs && node dev/test-engine.mjs && node dev/test-ucl.mjs && node dev/test-predictions.mjs && node dev/test-health.mjs && node dev/test-core-insights.mjs && node dev/test-gwswing.mjs && node dev/test-scouting.mjs && node dev/test-congestion.mjs && node dev/test-chipplan.mjs && node dev/test-social.mjs && node dev/backtest-vaastav.mjs",
     "backtest:real": "node dev/backtest-vaastav.mjs",
-    "fetch:vaastav": "node dev/fetch-vaastav.mjs",
-    "build:ucl": "node scripts/build-ucl.mjs",
-    "build:all": "npm run build:web && npm run build:ucl"
+    "fetch:vaastav": "node dev/fetch-vaastav.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^6.0.3",
