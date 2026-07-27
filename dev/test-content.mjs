@@ -17,6 +17,8 @@ import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAY
   from '../scripts/content/stories.mjs';
 import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
   from '../scripts/content/candidates.mjs';
+import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS }
+  from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -250,6 +252,102 @@ console.log('• candidate builders produce honest stories, or none');
     try { fn(...args); } catch (_) { threw = true; }
     ok(!threw, name + ' survives an empty league');
   }
+}
+
+
+console.log('• club threads: the grade is the payload, so it needs a rule');
+{
+  const P = (o) => ({ web_name: 'X', element_type: 3, now_cost: 60, teamGames: 10,
+    starts: 10, minutes: 900, goals: 5, assists: 5, avgDifficulty: 2.5, ...o });
+
+  /* Each component must move only with its own input. */
+  ok(minutesScore(P({ starts: 10 })) > minutesScore(P({ starts: 3, minutes: 300 })),
+    'more starts means more minutes security');
+  ok(returnsScore(P({ xp: 6 })) > returnsScore(P({ xp: 1 })), 'a higher projection scores higher');
+  ok(fixtureScore(P({ avgDifficulty: 2 })) > fixtureScore(P({ avgDifficulty: 4.5 })),
+    'an easier run scores higher');
+  for (const fn of [minutesScore, returnsScore, fixtureScore]) {
+    for (const probe of [P({}), P({ starts: 1e6, minutes: 1e6, xp: 1e6, avgDifficulty: -50 }),
+      P({ starts: -5, minutes: -5, xp: -5, avgDifficulty: 99 })]) {
+      const v = fn(probe);
+      ok(v >= 0 && v <= 1, fn.name + ' stays in 0..1 (' + v + ')');
+    }
+  }
+
+  /* The congestion discount is the whole reason to model this rather than
+     eyeball it — a European midweek must visibly cost minutes security. */
+  const clear = minutesScore(P({ congestion: 0 }));
+  const loaded = minutesScore(P({ congestion: 1 }));
+  ok(loaded < clear, 'midweek European load reduces minutes security (' +
+    clear.toFixed(2) + ' → ' + loaded.toFixed(2) + ')');
+
+  /* The veto: strong everywhere else must not rescue a player who will not
+     start. This is the recommendation that would actually cost someone. */
+  const benched = grade(P({ starts: 1, minutes: 120, xp: 9, avgDifficulty: 1.5 }));
+  ok(benched.status.key === 'avoid', 'elite returns cannot outvote insecure minutes');
+  ok(/minutes/.test(benched.why), 'and the reason says so (' + benched.why + ')');
+
+  ok(grade(P({ xp: 6, starts: 10, avgDifficulty: 2 })).status.key === 'major',
+    'strong on all three is a major target');
+  ok(grade(P({ xp: 6, starts: 10, avgDifficulty: 4.4 })).status.key === 'watchlist',
+    'strong on two is watchlist');
+  ok(grade(P({ xp: 1.2, starts: 10, avgDifficulty: 4.4 })).status.key === 'monitor',
+    'strong on one is monitor');
+
+  /* July: no projection at all. The thread must still grade, or the format
+     is unusable in exactly the window it exists for. */
+  const preseason = grade(P({ xp: null, goals: 8, assists: 4, minutes: 900 }));
+  ok(preseason.status.key !== 'avoid', 'realised output stands in when nothing projects yet');
+
+  const clubOf = (players, extra = {}) => buildThread({ name: 'CLB', fullName: 'Club',
+    scored: 60, conceded: 40, avgDifficulty: 2.6,
+    fixtures: [{ gw: 1, opp: 'AAA', home: true }, { gw: 2, opp: 'BBB', home: false }],
+    players, ...extra });
+
+  const strongSquad = [P({ web_name: 'A', xp: 6.5 }), P({ web_name: 'B', xp: 6.2 }),
+    P({ web_name: 'C', xp: 3.0, element_type: 4 })];
+  const t = clubOf(strongSquad);
+  ok(t.posts.length >= 6, 'a thread is at least six posts (' + t.posts.length + ')');
+  const kinds = t.posts.map((p) => p.kind);
+  for (const k of ['hook', 'baseline', 'key-asset', 'rotation-risk', 'hierarchy', 'takeaway']) {
+    ok(kinds.includes(k), 'thread includes the ' + k + ' post');
+  }
+  ok(t.posts.every((p) => p.title && p.lines.length), 'every post has a title and body');
+  ok(t.verdict.verdict === 'load-up', 'two majors reads as a club to load up on');
+
+  /* The Coventry conclusion: one cheap name, nothing else — an enabler
+     source, not a team to buy into. */
+  const thin = clubOf([P({ web_name: 'Cheap', now_cost: 40, element_type: 2, xp: 4.2 }),
+    P({ web_name: 'Meh', xp: 1.0, avgDifficulty: 4.5 }),
+    P({ web_name: 'Bench', starts: 1, minutes: 90, xp: 5 })]);
+  ok(thin.verdict.verdict === 'enabler-source',
+    'one cheap qualifier reads as an enabler source (' + thin.verdict.verdict + ')');
+
+  const hier = t.posts.find((p) => p.kind === 'hierarchy');
+  const order = { major: 0, watchlist: 1, monitor: 2, avoid: 3 };
+  ok(hier.rows.every((r, i, a) => i === 0 || order[a[i-1].status] <= order[r.status]),
+    'the hierarchy is ordered best status first');
+  ok(hier.rows.every((r) => r.light && r.name && r.cost), 'each row carries its traffic light');
+
+  /* A club with nobody worth naming must still produce a usable thread
+     rather than throwing or inventing a recommendation. */
+  const empty = clubOf([]);
+  ok(empty.posts.length >= 4 && empty.verdict.verdict === 'avoid',
+    'an empty squad still yields a thread, and it says avoid');
+  ok(Object.values(STATUS).every((s) => s.light && s.label), 'every status has a light and a label');
+
+  /* Pre-season there are no results, and "0 scored, 0 conceded" would read as
+     a fact rather than as an absence — in the window these threads exist for. */
+  const noFootball = buildThread({ name: 'X', played: 0, scored: 0, conceded: 0,
+    avgDifficulty: 2.5, players: [], fixtures: [] });
+  const baseline = noFootball.posts.find((x) => x.kind === 'baseline').lines[0];
+  ok(!/0 scored|Scored 0/.test(baseline), 'no results reads as absence, not as zeros');
+  ok(/No results yet/.test(baseline), 'and says so plainly (' + baseline + ')');
+
+  const withFootball = buildThread({ name: 'Y', played: 6, scored: 9, conceded: 4,
+    avgDifficulty: 2.5, players: [], fixtures: [] });
+  ok(/Scored 9, conceded 4/.test(withFootball.posts.find((x) => x.kind === 'baseline').lines[0]),
+    'a real baseline is still reported');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

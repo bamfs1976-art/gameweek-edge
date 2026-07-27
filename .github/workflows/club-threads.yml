@@ -1,0 +1,49 @@
+name: Club Threads
+
+# Generates the pre-season club preview threads — one per club, six posts
+# each, every asset graded on returns, minutes and fixtures.
+#
+# Manual only, unlike the daily card. These are a pre-season series and a
+# club's picture changes when the squad or the fixture list does, not on a
+# timetable; running it weekly would publish twenty near-identical threads.
+#
+# Like the daily card it publishes for review and posts nowhere itself. The
+# grades name real players and carry a recommendation — that is precisely the
+# output that should not go out unread.
+
+on:
+  workflow_dispatch:
+    inputs:
+      club:
+        description: 'Club short name (ARS, MCI …), or leave blank for all 20'
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  threads:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+
+      - name: Generate
+        run: |
+          if [ -n "${{ inputs.club }}" ]; then
+            node scripts/content/club-thread.mjs --club "${{ inputs.club }}"
+          else
+            node scripts/content/club-thread.mjs --all
+          fi
+
+      - name: Publish for review
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: threads-${{ github.run_number }}
+          name: "Club threads${{ inputs.club && format(' — {0}', inputs.club) || ' — all clubs' }}"
+          files: scripts/content/threads/*

@@ -8,6 +8,7 @@ www/
 # it is what stops the feed repeating itself between runs.
 scripts/content/out/
 scripts/content/content.json
+scripts/content/threads/
 
 # OS / editor
 .DS_Store
