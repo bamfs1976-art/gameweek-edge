@@ -39,25 +39,49 @@ export const STATUS = {
 const clamp01 = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0);
 const money = (c) => '£' + (c / 10).toFixed(1) + 'm';
 const POS = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/* A full season, used as the reference when the current one has not started. */
+export const SEASON_GAMES = 38;
 
 /* Minutes security. `congestion` is 0..1 from the congestion model — how
    loaded the club's midweek calendar is — and it is subtracted rather than
    averaged in, because a European tie three days before kick-off does not
-   average out against a good start record; it eats into it. */
+   average out against a good start record; it eats into it.
+
+   Before a ball is kicked `teamGames` is 0 while the minutes on file are last
+   season's, so the reference has to be a full season. Dividing by "no matches
+   yet" instead — which is what a floor of 1 amounts to — scores one substitute
+   appearance as an ever-present, and pre-season is when these threads run. */
 export function minutesScore(p) {
-  const starts = clamp01((p.starts || 0) / Math.max(1, p.teamGames || 1));
-  const played = clamp01((p.minutes || 0) / Math.max(90, (p.teamGames || 1) * 90));
+  const games = (p.teamGames || 0) > 0 ? p.teamGames : SEASON_GAMES;
+  const starts = clamp01((p.starts || 0) / games);
+  const played = clamp01((p.minutes || 0) / (games * 90));
   const base = 0.65 * starts + 0.35 * played;
   return clamp01(base - 0.35 * clamp01(p.congestion || 0));
 }
 
+/* How much realised output is worth trusting. A per-90 rate off a handful of
+   substitute appearances is not evidence: one goal and one assist in 152
+   minutes is a better rate than any established forward's and means nothing,
+   yet it is enough to put a teenager above Saka in a hierarchy. So the rate is
+   shrunk toward an ordinary one in proportion to the football behind it — at
+   RETURNS_PRIOR_MINUTES a player's own rate carries half the weight, and a
+   cameo carries almost none. */
+export const RETURNS_PRIOR = 0.25;         /* the score of an unremarkable contributor */
+export const RETURNS_PRIOR_MINUTES = 900;  /* ten full matches */
+
 /* Returns. Prefers the projection; falls back to realised output per 90 when
    the model declines to project (early season, thin sample) so a club thread
-   is still possible in July — which is precisely when these threads run. */
+   is still possible in July — which is precisely when these threads run. Only
+   the fallback is shrunk: a projection has already done its own regressing. */
 export function returnsScore(p) {
   if (p.xp != null && Number.isFinite(p.xp)) return clamp01(p.xp / 6);
-  const per90 = (p.minutes || 0) > 0 ? ((p.goals || 0) + (p.assists || 0)) / ((p.minutes || 0) / 90) : 0;
-  return clamp01(per90 / 0.8);
+  const mins = Math.max(0, p.minutes || 0);
+  if (!mins) return 0;
+  const own = clamp01(((p.goals || 0) + (p.assists || 0)) / (mins / 90) / 0.8);
+  const w = mins / (mins + RETURNS_PRIOR_MINUTES);
+  return clamp01(w * own + (1 - w) * RETURNS_PRIOR);
 }
 
 /* Fixtures, on our own 1 (easiest) to 5 (hardest) scale. */
@@ -200,7 +224,9 @@ export function buildThread(club) {
   if (key) {
     posts.push({ kind: 'key-asset', title: `Key asset — ${key.web_name} (${money(key.now_cost)} ${POS[key.element_type]})`,
       lines: [
-        key.minutes != null ? `${key.minutes} minutes, ${key.goals || 0} goals, ${key.assists || 0} assists.` : null,
+        key.minutes != null
+          ? `${plural(key.minutes, 'minute')}, ${plural(key.goals || 0, 'goal')}, ` +
+            `${plural(key.assists || 0, 'assist')}.` : null,
         key.xp != null ? `Projects ${key.xp.toFixed(2)} points next gameweek.` : null,
         ...key.angles.map((a) => `${a.tag}: ${a.note}.`),
         `${key.grade.status.light} ${key.grade.status.label} — ${key.grade.why}.`
@@ -211,7 +237,8 @@ export function buildThread(club) {
   if (att && att.web_name !== (key && key.web_name)) {
     posts.push({ kind: 'attacking-target', title: `Attacking target — ${att.web_name} (${money(att.now_cost)} ${POS[att.element_type]})`,
       lines: [
-        `${att.goals || 0} goals, ${att.assists || 0} assists in ${att.minutes || 0} minutes.`,
+        `${plural(att.goals || 0, 'goal')}, ${plural(att.assists || 0, 'assist')} ` +
+          `in ${plural(att.minutes || 0, 'minute')}.`,
         `${att.grade.status.light} ${att.grade.status.label} — ${att.grade.why}.`
       ], player: att.web_name, status: att.grade.status.key });
   }
@@ -247,15 +274,19 @@ export function buildThread(club) {
      club for X, not Y" is the thing worth reading. */
   const named = hierarchy.filter((p) => p.angles.length &&
     ['major', 'watchlist'].includes(p.grade.status.key)).slice(0, 2);
+  const who = named.map((p) => `${p.web_name}'s ${p.angles[0].tag}`).join(' and ');
+  const tail = named.some((p) => p.angles.some((a) => a.tag === 'defensive floor'))
+    ? ' — points that do not need a clean sheet.' : '.';
+  /* On a club we have just said not to buy, "the angle is X" reads as a
+     contradiction one line after the verdict. The angle is still worth naming
+     there — it is simply the thing that would change the verdict, not a
+     reason to override it. */
+  const angleLine = !named.length ? null
+    : verdict.verdict === 'avoid'
+      ? `If that changes, it changes through ${who}${tail}`
+      : `The angle is ${who}${tail}`;
   posts.push({ kind: 'takeaway', title: 'Takeaway',
-    lines: [
-      verdict.text,
-      ...(named.length
-        ? [`The angle is ${named.map((p) => `${p.web_name}'s ${p.angles[0].tag}`).join(' and ')}` +
-           (named.some((p) => p.angles.some((a) => a.tag === 'defensive floor'))
-             ? ' — points that do not need a clean sheet.' : '.')]
-        : [])
-    ] });
+    lines: [verdict.text, angleLine].filter(Boolean) });
 
   return { club: name, fullName, verdict, posts, graded: hierarchy.length };
 }

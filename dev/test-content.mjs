@@ -299,6 +299,28 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   const preseason = grade(P({ xp: null, goals: 8, assists: 4, minutes: 900 }));
   ok(preseason.status.key !== 'avoid', 'realised output stands in when nothing projects yet');
 
+  /* The cameo problem, from the first real run: Arsenal's key asset came out
+     as a 17-year-old with 1 goal and 1 assist in 152 minutes, ranked above
+     Saka and Gyökeres. A per-90 rate off two substitute appearances is the
+     best rate in the squad and is worth nothing, so it has to be shrunk
+     toward an ordinary one by how much football stands behind it. */
+  const cameo = { xp: null, minutes: 152, starts: 1, goals: 1, assists: 1, teamGames: 0 };
+  const proven = { xp: null, minutes: 2600, starts: 30, goals: 10, assists: 12, teamGames: 0 };
+  ok(returnsScore(P(cameo)) < returnsScore(P(proven)),
+    'a cameo rate does not outscore a season of proven output (' +
+    returnsScore(P(cameo)).toFixed(2) + ' vs ' + returnsScore(P(proven)).toFixed(2) + ')');
+  ok(returnsScore(P(cameo)) < 0.55, 'and it does not clear the strong-returns bar');
+  ok(returnsScore(P({ xp: null, minutes: 0, starts: 0, goals: 0, assists: 0 })) === 0,
+    'no football at all scores zero rather than inheriting the prior');
+
+  /* Same run, same root cause on the other axis: pre-season teamGames is 0,
+     and dividing by "no matches yet" made one appearance look nailed on. */
+  ok(minutesScore(P(cameo)) < 0.35, 'pre-season, a cameo is not mistaken for an ever-present (' +
+    minutesScore(P(cameo)).toFixed(2) + ')');
+  ok(minutesScore(P(proven)) >= 0.7, 'while a genuine ever-present still reads as nailed on (' +
+    minutesScore(P(proven)).toFixed(2) + ')');
+  ok(grade(P(cameo)).status.key === 'avoid', 'so the cameo cannot be recommended');
+
   const clubOf = (players, extra = {}) => buildThread({ name: 'CLB', fullName: 'Club',
     scored: 60, conceded: 40, avgDifficulty: 2.6,
     fixtures: [{ gw: 1, opp: 'AAA', home: true }, { gw: 2, opp: 'BBB', home: false }],
@@ -371,6 +393,31 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(/clean sheet/.test(take), 'a defensive floor is framed as points without a clean sheet');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
+
+  /* An angle one line under "worth monitoring rather than buying" reads as a
+     contradiction — the first run said exactly that about Chelsea and then
+     named Palmer. On a club we are not buying, the angle is what would change
+     the verdict, and the copy has to say so. */
+  const avoidWithAngle = buildThread({ name: 'CFC', fullName: 'Chelsea', played: 10,
+    scored: 30, conceded: 30, avgDifficulty: 4.4, fixtures: [],
+    players: [P2({ web_name: 'Palmer', xp: 3.4, avgDifficulty: 4.4,
+      oop: { level: 1, label: 'attacking like a forward' } })] });
+  const avoidTake = avoidWithAngle.posts.find((x) => x.kind === 'takeaway').lines;
+  ok(avoidWithAngle.verdict.verdict === 'avoid', 'the setup is a club we are not buying into');
+  ok(avoidTake.some((l) => /Palmer/.test(l)), 'the angle is still named (' + avoidTake.join(' | ') + ')');
+  ok(!avoidTake.some((l) => /^The angle is/.test(l)),
+    'but not as a buying reason directly under "rather than buying"');
+  ok(avoidTake.some((l) => /If that changes/.test(l)), 'it is framed as what would change the verdict');
+
+  /* One goal is not "1 goals". The threads name real players; the copy has to
+     survive being read. */
+  const singular = buildThread({ name: 'Z', fullName: 'Zed', played: 10,
+    scored: 20, conceded: 20, avgDifficulty: 2.2, fixtures: [],
+    players: [P2({ web_name: 'One', goals: 1, assists: 1, minutes: 900, xp: 6.2 })] });
+  const keyLine = singular.posts.find((x) => x.kind === 'key-asset').lines.join(' ');
+  ok(/1 goal,/.test(keyLine) && /1 assist\./.test(keyLine),
+    'a single goal and assist read as singular (' + keyLine + ')');
+  ok(!/1 goals|1 assists|1 minutes/.test(keyLine), 'and never as "1 goals"');
 
   const withFootball = buildThread({ name: 'Y', played: 6, scored: 9, conceded: 4,
     avgDifficulty: 2.5, players: [], fixtures: [] });
