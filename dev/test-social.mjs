@@ -519,6 +519,119 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),
     'openPanel guards deep links');
 
+  /* Retired panels. Merging one panel into another silently breaks every
+     bookmark and shared link pointing at the old id — openPanel's guard sends
+     an unknown id to the dashboard, which looks like the app losing the page.
+     An alias keeps those links landing on whatever absorbed the panel. */
+  const ALIAS = new Function('return ' + balanced(html, html.indexOf('const PANEL_ALIAS='), '{', '}'))();
+  const navIds = new Set(ids);
+  for (const [from, to] of Object.entries(ALIAS)) {
+    ok(!navIds.has(from), from + ': an alias is for a RETIRED id, not a live panel');
+    ok(navIds.has(to), from + ' → ' + to + ': the alias target is a live panel');
+    ok(wiredKeys.has(to) || (CONTENT[to] && CONTENT[to].layout),
+      from + ' → ' + to + ': the target actually renders');
+  }
+  ok(ALIAS.scenariolab === 'seasonsim', 'Scenario Lab redirects to the simulator that absorbed it');
+  ok(!wiredKeys.has('scenariolab'), 'and its hydrator is gone rather than orphaned');
+  ok(/function resolvePanel\(id\)\{return PANEL_ALIAS\[id\]\|\|id;\}/.test(html),
+    'there is one resolver rather than the lookup inlined per call site');
+  ok(/panelId=resolvePanel\(panelId\);/.test(html), 'openPanel resolves the alias');
+  /* Order matters: resolve first, then guard, or the alias never runs. */
+  ok(html.indexOf('panelId=resolvePanel(panelId);') <
+     html.indexOf("if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';"),
+    'the alias is resolved before the unknown-id fallback');
+  /* The bug a browser caught and the source test missed: the boot paths test
+     PANELS[id] themselves, BEFORE openPanel ever sees the id, so a retired id
+     was rejected as unknown and the alias never ran. Every entry point has to
+     resolve for itself. */
+  ok(/const hp=resolvePanel\(location\.hash\.slice\(1\)\);/.test(html),
+    'the hash deep link resolves aliases on load');
+  ok(/const p=resolvePanel\(location\.hash\.slice\(1\)\);/.test(html),
+    'and so does hashchange');
+  ok(/const pm=resolvePanel\(\(location\.search\.match/.test(html),
+    'and the ?panel= query link');
+  for (const m of html.matchAll(/if\((?:hp|p|pm)&&PANELS\[(?:hp|p|pm)\]/g)) {
+    const before = html.slice(0, m.index);
+    ok(/resolvePanel\([^)]*\)/.test(before.slice(-400)),
+      'each PANELS[] entry-point check is preceded by a resolve');
+  }
+
+  /* The dashboard's way out. On the analytics, 279 of 286 visitors never
+     opened a second panel — the page answered their questions and offered
+     nowhere to go. These links are the fix, so they have to point at panels
+     that exist, are reachable, and are free. */
+  const WHY = new Function('return ' + balanced(html, html.indexOf('const NEXT_WHY='), '{', '}'))();
+  const byId = Object.fromEntries(navPanels.map((p) => [p.id, p]));
+  ok(Object.keys(WHY).length >= 6, 'there are enough destinations to choose from');
+  for (const id of Object.keys(WHY)) {
+    ok(!!byId[id], id + ': next-step target is a real NAV panel');
+    ok(byId[id] && byId[id].tier === 'free',
+      id + ': next steps are discovery, not an upsell (tier ' + (byId[id] || {}).tier + ')');
+    ok(WHY[id] && WHY[id].length > 8 && WHY[id] !== (byId[id] || {}).label,
+      id + ': the subtitle says what you get rather than repeating the name');
+  }
+  ok(/function dashNextSteps\(mid\)/.test(html), 'the next-steps builder exists');
+  ok(/canSeePanel\(PANELS\[id\]\)/.test(html), 'and filters through the capability gate');
+  ok(/\.slice\(0,\s*6\)/.test(html), 'and is capped rather than listing everything');
+  ok(/host\.innerHTML=hero\+tkStrip\+meta\+dashChipRow\(\)\+.*dashNextSteps\(mid\)/.test(html),
+    'the dashboard actually renders it');
+  /* Unlinked visitors are the ones who bounce, and the personalised panels
+     are dead ends for them, so the two lists must genuinely differ. */
+  const nextSrc = balanced(html, html.indexOf('function dashNextSteps(mid)'), '{', '}');
+  const lists = [...nextSrc.matchAll(/\[((?:'[a-z]+',?)+)\]/g)].map((m) =>
+    m[1].split(',').map((s) => s.replace(/'/g, '')));
+  ok(lists.length === 2, 'there is a linked list and an unlinked list');
+  ok(lists.length === 2 && lists[0].join() !== lists[1].join(),
+    'and they are not the same list');
+  ok(lists.length === 2 && !lists[1].includes('squad') && !lists[1].includes('transfers'),
+    'the unlinked list holds nothing that needs a linked team');
+  for (const l of lists) {
+    for (const id of l) ok(!!WHY[id], id + ': every listed panel has a subtitle');
+    ok(l.length <= 6, 'a list is at most six long (' + l.length + ')');
+  }
+
+  /* The merged simulator. Scenario Lab used to be a second panel that told
+     you to go and run this one first for a baseline; the pinning now lives
+     here. Run the real hydrator against stubs so the merge is checked rather
+     than assumed — the browser can't reach the model bundle, and an empty
+     state looks identical to a panel that never built its controls. */
+  const simSrc = balanced(html, html.indexOf('async function hydrateSeasonSim('), '{', '}');
+  const fakeEl = () => ({ value: '5000', style: {}, textContent: '', disabled: false,
+    innerHTML: '', options: [], open: false, firstElementChild: { style: {} },
+    addEventListener() {}, querySelectorAll: () => [], appendChild() {} });
+  let painted = '', mcCalls = [];
+  const host = { set innerHTML(v) { painted = v; }, get innerHTML() { return painted; },
+    querySelector: () => fakeEl(), querySelectorAll: () => [] };
+  const bundle = { fixtures: Array.from({ length: 38 }, () => [['ARS', 'CHE']]),
+    teams: { ARS: {}, CHE: {} } };
+  const env = {
+    skel: () => '', stateBox: (i, t) => 'STATE:' + t, svg: () => '', esc: (s) => String(s),
+    ICON: { target: '' }, loadModelBundle: async () => bundle,
+    lgScFill: () => {}, lgRenderScList: () => {}, LG_SCEN: [],
+    renderSeasonSim: () => {}, renderScenarioOdds: () => {},
+    lgMonteCarlo: (m, n, seed, pins) => { mcCalls.push({ n, seed, pins }); },
+    performance: { now: () => 0 }, document: { createElement: fakeEl }
+  };
+  const keys = Object.keys(env);
+  /* balanced() returns the body block, so the wrapper supplies the signature. */
+  await new Function(...keys, 'return (async function(host)' + simSrc + ')')
+    (...keys.map((k) => env[k]))(host);
+
+  ok(!/^STATE:/.test(painted), 'the simulator renders rather than falling into an empty state');
+  ok(/ss-run/.test(painted), 'the run button is built');
+  ok(/ss-pin/.test(painted), 'the pin control lives on the simulator now');
+  ok(/lsc-md/.test(painted) && /lsc-fx/.test(painted) && /lsc-add/.test(painted),
+    'the matchday, fixture and add-pin controls came across from Scenario Lab');
+  ok(/lsc-out/.test(painted) && /ss-out/.test(painted),
+    'both output slots exist, so a pinned run and a baseline run each have somewhere to go');
+  ok(!/Run the Season Simulator once/.test(painted),
+    'and it no longer tells you to go and run a different panel first');
+  ok(mcCalls.length === 1, 'the panel runs a simulation on open (' + mcCalls.length + ')');
+  ok(mcCalls[0] && mcCalls[0].pins === null,
+    'with no pins, so the first run is the baseline the pinned runs compare against');
+  ok(mcCalls[0] && mcCalls[0].seed === 42,
+    'on the seed the standalone simulator used, so published numbers do not move');
+
   /* Owner rights come from the signed-in email allowlist, never from a
      client-settable tier — guard against that regressing. The gate now also
      answers the capability question, so pin the two properties rather than

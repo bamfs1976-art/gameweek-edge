@@ -1700,6 +1700,21 @@ body{font-size:14px;line-height:1.35}
 .dash-chip.on::before{content:'✓ '}
 .dash-chip:hover{color:var(--text)}
 .dash-chip.on:hover{color:var(--green-bright)}
+/* Next steps — the dashboard's only way out. Everyone who opens the app
+   lands here, so it has to point somewhere; a handful of named destinations
+   beats fifty in a sidebar nobody opens. */
+.dash-next{margin:18px 0 4px}
+.dash-next-h{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+.dash-next-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media(max-width:640px){.dash-next-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dash-next-b{display:block;width:100%;text-align:left;cursor:pointer;padding:10px 12px;
+  border-radius:10px;background:var(--surface-2);border:1px solid var(--border-2);
+  transition:border-color .14s var(--ease),background .14s var(--ease)}
+.dash-next-b:hover{border-color:var(--green);background:var(--green-soft)}
+.dash-next-b:focus-visible{outline:2px solid var(--green-bright);outline-offset:1px}
+.dash-next-t{display:block;font-size:13px;font-weight:600;color:var(--text)}
+.dash-next-s{display:block;font-size:11px;color:var(--text-3);margin-top:2px}
 .quad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
 /* Two-column from tablet up (iPad portrait 768px included); single column only on phones. */
 @media(max-width:767px){.quad-grid{grid-template-columns:1fr}}
@@ -3057,8 +3072,7 @@ const NAV = [
       {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
       {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
       {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']},
-      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
-      {id:'scenariolab', label:'Scenario Lab', icon:'diamond', tier:'paid'}
+      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'}
     ]
   },
   /* Owner-only. Hidden from the nav, the command palette and the More sheet
@@ -3332,11 +3346,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   seasonsim:{
-    desc:'Run the full season Monte Carlo: title, European and relegation odds, the finish-position grid, run-in difficulty and next-5/10/20 projections.',
-    layout:'standard'
-  },
-  scenariolab:{
-    desc:'Pin results — a win, draw or exact score — and re-run the season to see how the title, European and relegation odds shift.',
+    desc:'Run the full season Monte Carlo: title, European and relegation odds, the finish-position grid, run-in difficulty and next-5/10/20 projections. Pin results — a win, draw or exact score — and re-run to see how the odds shift against that baseline.',
     layout:'standard'
   },
   draft:{
@@ -3580,7 +3590,15 @@ function toggleArea(areaId){
 }
 
 /* ── OPEN A PANEL ──────────────────────────────────────── */
+/* Panels that have been merged into another. A retired id still resolves, so
+   an old bookmark or shared link lands on the thing that absorbed it rather
+   than silently falling back to the dashboard. */
+const PANEL_ALIAS={scenariolab:'seasonsim'};
+/* Every entry point has to resolve before it tests PANELS[id], or a retired
+   id is rejected as unknown and the alias never gets a chance to run. */
+function resolvePanel(id){return PANEL_ALIAS[id]||id;}
 function openPanel(panelId){
+  panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back to the
      dashboard. This is the deep-link guard: typing #social does nothing. */
   if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';
@@ -4142,6 +4160,41 @@ async function hydrateAccountability(host){
       '<b>Graded in public</b><p>The same fitted attack/defence model powers every recommendation in the app. The full method and code are open in the PL Simulator repository — see the Methodology page.</p></div></div>';
 }
 
+/* ── Dashboard next steps ───────────────────────────────────
+   Every human who opens the app lands on the dashboard and, on the numbers,
+   almost none of them ever open a second panel. The quadrants answer this
+   week's questions but the page has no way out of itself — fifty panels sit
+   behind a sidebar nobody opens. So it ends with a handful of named
+   destinations, chosen for whether a team is linked yet.
+
+   Free panels only, deliberately: this is discovery, not an upsell. */
+const NEXT_WHY={
+  transfers:'Plan moves over the next five gameweeks',
+  captain:'Compare the armband candidates',
+  squad:'Your XI, bench order and flags',
+  draft:'Build your fifteen before the game opens',
+  fixtures:'Who has the kindest run, and when',
+  diffs:'Low-owned players the model rates',
+  chips:'When to play each chip',
+  allplayers:'Filter and sort the whole player pool',
+  price:'Tonight’s likely risers and fallers'
+};
+function dashNextSteps(mid){
+  /* Without a linked team the personalised panels are dead ends, so the
+     unlinked list is everything that stands on its own. */
+  const order=mid
+    ?['transfers','captain','fixtures','diffs','chips','squad']
+    :['draft','fixtures','allplayers','diffs','price','chips'];
+  const items=order.filter(id=>NEXT_WHY[id]&&PANELS[id]&&canSeePanel(PANELS[id])).slice(0,6);
+  if(!items.length)return '';
+  return '<div class="dash-next"><div class="dash-next-h">Where to next</div>'+
+    '<div class="dash-next-row">'+items.map(id=>
+      '<button type="button" class="dash-next-b" onclick="openPanel(\''+id+'\')">'+
+        '<span class="dash-next-t">'+esc(PANELS[id].label)+'</span>'+
+        '<span class="dash-next-s">'+esc(NEXT_WHY[id])+'</span></button>').join('')+
+    '</div></div>';
+}
+
 async function hydrateDashboard(host){
   const mid=getMid();
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -4469,7 +4522,7 @@ async function hydrateDashboard(host){
     tkItem('FLAGS',flagsN+' · '+moversN+' price')+
     tkItem('DATA',stamp)+
     '</div>';
-  host.innerHTML=hero+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+q5+trust;
+  host.innerHTML=hero+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+q5+dashNextSteps(mid)+trust;
   dashApply();
   tickTicker();
   maybeTour();
@@ -12104,7 +12157,7 @@ async function hydrateTitleRace(host){
       '<p class="dl-sub" style="margin-bottom:12px">Title, top-four and relegation probabilities from the fitted team-strength model — backtested within 0.007 RPS of Pinnacle closing odds. Updated '+esc(snap.date||st.updated||'')+'.</p>'+
       hero+
       '<div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title %</th><th class="num">Top 4 %</th><th class="num">Rel %</th><th>Trend</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-      '<p class="dl-sub" style="margin-top:10px">Full European breakdown, the 20×20 finish grid, editable Scenario Lab and next-5/10/20 projections live in the <b>Season Simulator</b> (Pro) — and free at <a href="https://plsimulation.netlify.app" style="color:var(--green-bright)">plsimulation.netlify.app</a>.</p>'+
+      '<p class="dl-sub" style="margin-top:10px">Full European breakdown, the 20×20 finish grid, pinned-result scenarios and next-5/10/20 projections live in the <b>Season Simulator</b> (Pro) — and free at <a href="https://plsimulation.netlify.app" style="color:var(--green-bright)">plsimulation.netlify.app</a>.</p>'+
     '</div>';
 }
 
@@ -12469,24 +12522,75 @@ async function hydrateSeasonSim(host){
   host.innerHTML=skel(4);
   let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('target','Simulator unavailable','The season model loads from our PL Simulator — try again shortly.');return;}
   if(!m.fixtures){host.innerHTML=stateBox('target','Fixtures not set','The season simulation runs once the 2026/27 fixtures are published.');return;}
+  const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Season Simulator</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Monte Carlo the whole season from the fitted model — title, European and relegation odds, the finish-position grid and run-in difficulty.</p>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
       '<select class="modal-in" id="ss-sims" style="max-width:150px"><option value="2000">2,000 seasons</option><option value="5000" selected>5,000 seasons</option><option value="10000">10,000 seasons</option><option value="25000">25,000 seasons</option></select>'+
       '<button class="btn btn-primary btn-sm" id="ss-run">Run simulation</button><span class="dl-sub" id="ss-status"></span></div>'+
     '<div class="prog" id="ss-prog" style="display:none;height:4px;background:var(--surface-3);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:0;background:var(--green)"></div></div>'+
-    '</div><div id="ss-out"></div>';
+    /* Pinning used to be a separate panel that told you to go and run this
+       one first for a baseline. It is the same simulation with some results
+       held fixed, so it lives here and the baseline is simply the last
+       unpinned run — which always exists, because this panel runs one. */
+    '<details class="ss-pin" style="margin-top:12px"><summary class="dl-sub" style="cursor:pointer">Pin results and re-run</summary>'+
+      '<p class="dl-sub" style="margin:8px 0">Fix a win, draw or exact score, then re-run. Everything else is simulated as normal and the odds are shown against the unpinned baseline.</p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+        '<select class="modal-in" id="lsc-md" style="max-width:130px">'+mdOpts+'</select>'+
+        '<select class="modal-in" id="lsc-fx" style="max-width:200px"></select>'+
+        '<select class="modal-in" id="lsc-res" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
+        '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
+        '<button class="btn btn-ghost btn-sm" id="lsc-add">Add pin</button>'+
+        '<button class="btn btn-ghost btn-sm" id="lsc-clear">Clear</button></div>'+
+      '<div id="lsc-list" style="margin:10px 0"></div>'+
+    '</details>'+
+    '</div><div id="lsc-out"></div><div id="ss-out"></div>';
+
+  lgScFill(host,m);lgRenderScList(host);
+  host.querySelector('#lsc-md').addEventListener('change',()=>lgScFill(host,m));
+  host.querySelector('#lsc-res').addEventListener('change',e=>host.querySelector('#lsc-score').style.display=e.target.value==='score'?'':'none');
+  host.querySelector('#lsc-add').addEventListener('click',()=>{
+    const md=+host.querySelector('#lsc-md').value;const [h,a]=host.querySelector('#lsc-fx').value.split('|');
+    const kind=host.querySelector('#lsc-res').value;const o={md,h,a,kind};
+    if(kind==='score'){o.hg=Math.max(0,Math.min(10,parseInt(host.querySelector('#lsc-hg').value,10)||0));
+      o.ag=Math.max(0,Math.min(10,parseInt(host.querySelector('#lsc-ag').value,10)||0));}
+    LG_SCEN=LG_SCEN.filter(x=>lgScKey(x)!==lgScKey(o));LG_SCEN.push(o);lgRenderScList(host);});
+  host.querySelector('#lsc-clear').addEventListener('click',()=>{LG_SCEN=[];lgRenderScList(host);
+    host.querySelector('#lsc-out').innerHTML='';});
+
   const run=()=>{const n=parseInt(host.querySelector('#ss-sims').value,10)||5000;
     const prog=host.querySelector('#ss-prog');prog.style.display='block';
     const btn=host.querySelector('#ss-run');btn.disabled=true;const t0=performance.now();
-    lgMonteCarlo(m,n,42,null,{bar:prog.firstElementChild},(pc,ps)=>{
-      host.querySelector('#ss-status').textContent=n.toLocaleString()+' seasons in '+((performance.now()-t0)/1000).toFixed(1)+'s';
-      prog.style.display='none';renderSeasonSim(host,m,pc,ps,n);btn.disabled=false;});};
+    const pins=LG_SCEN.length?LG_SCEN.slice():null;
+    /* Seed 42 for the baseline, 7 for a pinned run — the same pair the two
+       panels used, so numbers people have already seen do not move. */
+    lgMonteCarlo(m,n,pins?7:42,pins,{bar:prog.firstElementChild},(pc,ps)=>{
+      host.querySelector('#ss-status').textContent=n.toLocaleString()+' seasons in '+((performance.now()-t0)/1000).toFixed(1)+'s'+(pins?' · '+pins.length+' pinned':'');
+      prog.style.display='none';btn.disabled=false;
+      if(pins)renderScenarioOdds(host,m,pc,ps,n);
+      else{host.querySelector('#lsc-out').innerHTML='';renderSeasonSim(host,m,pc,ps,n);}});};
   host.querySelector('#ss-run').addEventListener('click',run);
   run();
 }
 
-/* ── Scenario Lab (Pro) ─────────────────────────────────────────── */
+/* The pinned view: the same odds table, coloured against the baseline the
+   unpinned run left behind. */
+function renderScenarioOdds(host,m,pc,ps,n){
+  const names=Object.keys(m.teams);const pct=(t,a,b)=>lgPct(pc,n,t,a,b);
+  const base=window.LG_LASTMC;const bp=base?(t,a,b)=>lgPct(base.posCounts,base.n,t,a,b):null;
+  const order=[...names].sort((a,b)=>pct(b,1,1)-pct(a,1,1));
+  const dcell=(t,a,b,danger)=>{const v=pct(t,a,b);let d='';
+    if(bp){const dl=v-bp(t,a,b);
+      if(Math.abs(dl)>=0.05){const good=danger?dl<0:dl>0;
+        d=' <span style="color:'+(good?'var(--green-bright)':'var(--red)')+';font-size:.85em">'+(dl>0?'+':'')+dl.toFixed(1)+'</span>';}}
+    return v.toFixed(1)+d;};
+  const rows=order.map((t,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td><td class="num">'+dcell(t,1,1,false)+'</td><td class="num">'+dcell(t,1,4,false)+'</td><td class="num">'+dcell(t,1,7,false)+'</td><td class="num">'+dcell(t,18,20,true)+'</td></tr>').join('');
+  host.querySelector('#ss-out').innerHTML='';
+  host.querySelector('#lsc-out').innerHTML='<div class="card mb-20"><div class="card-title">Scenario odds</div><div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title</th><th class="num">Top 4</th><th class="num">Europe</th><th class="num">Rel</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="dl-sub" style="margin-top:8px">'+(bp?'Coloured deltas vs the unpinned baseline.':'Clear the pins and re-run for a baseline to compare against.')+' '+LG_SCEN.length+' result'+(LG_SCEN.length===1?'':'s')+' pinned.</div></div>';
+}
+
+/* ── Season-simulator scenario pins ─────────────────────────────── */
 let LG_SCEN=[];
 function lgScKey(o){return o.md+'|'+o.h+'|'+o.a;}
 function lgScLabel(o){const r=o.kind==='score'?(o.hg+'–'+o.ag):o.kind==='H'?(o.h+' win'):o.kind==='A'?(o.a+' win'):'draw';return 'MD'+o.md+' '+o.h+' v '+o.a+' → '+r;}
@@ -12497,45 +12601,6 @@ function lgRenderScList(host){const box=host.querySelector('#lsc-list');
   box.querySelectorAll('button[data-i]').forEach(b=>b.addEventListener('click',()=>{LG_SCEN.splice(+b.dataset.i,1);lgRenderScList(host);}));}
 function lgScFill(host,m){const md=+host.querySelector('#lsc-md').value;const fx=m.fixtures[md-1]||[];
   const sel=host.querySelector('#lsc-fx');sel.innerHTML='';fx.forEach(([h,a])=>{const o=document.createElement('option');o.value=h+'|'+a;o.textContent=h+' v '+a;sel.appendChild(o);});}
-async function hydrateScenarioLab(host){
-  host.innerHTML=skel(4);
-  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('diamond','Scenario Lab unavailable','The season model loads from our PL Simulator — try again shortly.');return;}
-  if(!m.fixtures){host.innerHTML=stateBox('diamond','Fixtures not set','Scenario Lab runs once the season fixtures are published.');return;}
-  const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
-  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+' Scenario Lab</div>'+
-    '<p class="dl-sub" style="margin-bottom:10px">Pin results — a win, draw or exact score — then re-run the season to see how the odds shift.</p>'+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-      '<select class="modal-in" id="lsc-md" style="max-width:130px">'+mdOpts+'</select>'+
-      '<select class="modal-in" id="lsc-fx" style="max-width:200px"></select>'+
-      '<select class="modal-in" id="lsc-res" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
-      '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
-      '<button class="btn btn-ghost btn-sm" id="lsc-add">Add pin</button></div>'+
-    '<div id="lsc-list" style="margin:10px 0"></div>'+
-    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><select class="modal-in" id="lsc-sims" style="max-width:130px"><option>2000</option><option selected>5000</option><option>10000</option></select>'+
-      '<button class="btn btn-primary btn-sm" id="lsc-run">Run scenario</button>'+
-      '<button class="btn btn-ghost btn-sm" id="lsc-clear">Clear</button><span class="dl-sub" id="lsc-status"></span></div>'+
-    '<div class="prog" id="lsc-prog" style="display:none;height:4px;background:var(--surface-3);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:0;background:var(--green)"></div></div>'+
-    '</div><div id="lsc-out"></div>';
-  lgScFill(host,m);lgRenderScList(host);
-  host.querySelector('#lsc-md').addEventListener('change',()=>lgScFill(host,m));
-  host.querySelector('#lsc-res').addEventListener('change',e=>host.querySelector('#lsc-score').style.display=e.target.value==='score'?'':'none');
-  host.querySelector('#lsc-add').addEventListener('click',()=>{const md=+host.querySelector('#lsc-md').value;const [h,a]=host.querySelector('#lsc-fx').value.split('|');const kind=host.querySelector('#lsc-res').value;const o={md,h,a,kind};
-    if(kind==='score'){o.hg=Math.max(0,Math.min(10,parseInt(host.querySelector('#lsc-hg').value,10)||0));o.ag=Math.max(0,Math.min(10,parseInt(host.querySelector('#lsc-ag').value,10)||0));}
-    LG_SCEN=LG_SCEN.filter(x=>lgScKey(x)!==lgScKey(o));LG_SCEN.push(o);lgRenderScList(host);});
-  host.querySelector('#lsc-clear').addEventListener('click',()=>{LG_SCEN=[];lgRenderScList(host);});
-  host.querySelector('#lsc-run').addEventListener('click',()=>{
-    const n=parseInt(host.querySelector('#lsc-sims').value,10)||5000;const prog=host.querySelector('#lsc-prog');prog.style.display='block';
-    const btn=host.querySelector('#lsc-run');btn.disabled=true;
-    lgMonteCarlo(m,n,7,LG_SCEN,{bar:prog.firstElementChild},(pc,ps)=>{prog.style.display='none';btn.disabled=false;
-      const names=Object.keys(m.teams);const pct=(t,a,b)=>lgPct(pc,n,t,a,b);
-      const base=window.LG_LASTMC;const bp=base?(t,a,b)=>lgPct(base.posCounts,base.n,t,a,b):null;
-      const order=[...names].sort((a,b)=>pct(b,1,1)-pct(a,1,1));
-      const dcell=(t,a,b,danger)=>{const v=pct(t,a,b);let d='';if(bp){const dl=v-bp(t,a,b);if(Math.abs(dl)>=0.05){const good=danger?dl<0:dl>0;d=' <span style="color:'+(good?'var(--green-bright)':'var(--red)')+';font-size:.85em">'+(dl>0?'+':'')+dl.toFixed(1)+'</span>';}}return v.toFixed(1)+d;};
-      const rows=order.map((t,i)=>'<tr><td class="num">'+(i+1)+'</td><td>'+lgDot(t)+esc(t)+'</td><td class="num">'+dcell(t,1,1,false)+'</td><td class="num">'+dcell(t,1,4,false)+'</td><td class="num">'+dcell(t,1,7,false)+'</td><td class="num">'+dcell(t,18,20,true)+'</td></tr>').join('');
-      host.querySelector('#lsc-out').innerHTML='<div class="card"><div class="card-title">Scenario odds</div><div class="pl-scroll"><table class="ptable"><thead><tr><th class="num">#</th><th>Club</th><th class="num">Title</th><th class="num">Top 4</th><th class="num">Europe</th><th class="num">Rel</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-        '<div class="dl-sub" style="margin-top:8px">'+(base?'Coloured deltas vs your last Season Simulator run.':'Run the Season Simulator once for baseline deltas.')+' '+LG_SCEN.length+' result'+(LG_SCEN.length===1?'':'s')+' pinned.</div></div>';
-    });});
-}
 
 /* ── Match Forecasts (free 1X2 + xG; Pro adds goal markets) ──────── */
 async function hydrateMatchForecast(host){
@@ -14049,7 +14114,6 @@ const WIRED={
   matchforecast:hydrateMatchForecast,
   results:hydrateResults,
   seasonsim:hydrateSeasonSim,
-  scenariolab:hydrateScenarioLab,
   blog:hydrateBlog,
   social:hydrateSocial,
   gwhistory:hydrateGwhistory,
@@ -14604,15 +14668,15 @@ function init(){
     try{history.replaceState({},'',location.pathname);}catch(_){}
   }
   /* Deep link from a push notification (e.g. /?panel=price). */
-  const pm=(location.search.match(/[?&]panel=([a-z-]+)/)||[])[1];
+  const pm=resolvePanel((location.search.match(/[?&]panel=([a-z-]+)/)||[])[1]);
   if(pm&&PANELS[pm]){openPanel(pm);
     try{history.replaceState({},'',location.pathname);}catch(_){}}
 
   /* Hash deep link (#panelId) — bookmarkable views; openPanel keeps it fresh. */
-  const hp=location.hash.slice(1);
+  const hp=resolvePanel(location.hash.slice(1));
   if(hp&&PANELS[hp])openPanel(hp);
   window.addEventListener('hashchange',()=>{
-    const p=location.hash.slice(1);
+    const p=resolvePanel(location.hash.slice(1));
     if(p&&PANELS[p]&&p!==currentPanel)openPanel(p);
   });
 
