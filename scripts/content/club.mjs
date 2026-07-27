@@ -49,6 +49,10 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export const FULL_STARTS = 30;
 export const FULL_MINUTES = 2700;
 
+/* How hard a fully congested calendar bites into minutes security. Named
+   because the rotation post has to be able to undo it to attribute a doubt. */
+export const CONGESTION_WEIGHT = 0.35;
+
 /* Minutes security. `congestion` is 0..1 from the congestion model — how
    loaded the club's midweek calendar is — and it is subtracted rather than
    averaged in, because a European tie three days before kick-off does not
@@ -63,7 +67,7 @@ export function minutesScore(p) {
   const starts = clamp01((p.starts || 0) / (games > 0 ? games : FULL_STARTS));
   const played = clamp01((p.minutes || 0) / (games > 0 ? games * 90 : FULL_MINUTES));
   const base = 0.65 * starts + 0.35 * played;
-  return clamp01(base - 0.35 * clamp01(p.congestion || 0));
+  return clamp01(base - CONGESTION_WEIGHT * clamp01(p.congestion || 0));
 }
 
 /* How much realised output is worth trusting. A per-90 rate off a handful of
@@ -126,6 +130,53 @@ export function angles(p) {
   }
   if (p.setPieces) out.push({ tag: 'set pieces', note: p.setPieces });
   return out;
+}
+
+/* WHO IS ACTUALLY A ROTATION RISK.
+
+   The first version of this post listed whoever had the lowest minutes score,
+   which on a real squad meant fourth-choice keepers and players about to be
+   sold. Nobody was ever going to buy them, so warning about them is noise
+   dressed as analysis.
+
+   A rotation risk is a tension, not a low number: a player good enough that
+   you are tempted, whose minutes are the thing that could ruin it. Weak on
+   both counts is not a risk — it is a squad player. Strong on both is not a
+   risk either. The post is only worth reading where the two disagree.
+
+   Note this deliberately ignores the grade's minutes veto. A player with real
+   returns and no starts is graded `avoid`, and he is also the single most
+   important name in this post — he is the trap the whole format exists to
+   name. */
+export const ROTATION_TEMPT = 0.5;   /* enough returns that someone is tempted */
+export const ROTATION_SECURE = 0.7;  /* below this, the minutes are a live question */
+
+export function rotationTension(p) {
+  const g = p.grade || {};
+  return clamp01(g.returns) * (1 - clamp01(g.minutes));
+}
+
+export function rotationRisks(graded, limit = 4) {
+  return (graded || [])
+    .filter((p) => p.grade && p.grade.returns >= ROTATION_TEMPT &&
+      p.grade.minutes < ROTATION_SECURE)
+    .sort((a, b) => rotationTension(b) - rotationTension(a))
+    .slice(0, limit);
+}
+
+/* Why this particular name is on the list — the reader needs the shape of the
+   doubt, not just a percentage. Congestion is called out by name where it is
+   the cause, because that is the part a hand-written thread cannot see. */
+function riskNote(p, congestion = 0) {
+  const own = clamp01(p.congestion ?? congestion);
+  /* Blame the calendar only where the calendar is the reason: without its
+     discount this player would clear the bar. Any weaker test credits
+     congestion for doubts it did not cause. */
+  if (own > 0 && p.grade.minutes + CONGESTION_WEIGHT * own >= ROTATION_SECURE) {
+    return 'and the midweek calendar is what is eating it';
+  }
+  if (p.grade.minutes < 0.35) return 'so the returns are on a player who does not start';
+  return 'on a player whose returns would otherwise buy him';
 }
 
 export function grade(p) {
@@ -251,7 +302,7 @@ export function buildThread(club) {
   /* Rotation risk is the post where the model earns its place: the hand-
      written versions say "monitor preseason lineups", which is advice to go
      and do the work yourself. */
-  const atRisk = graded.filter((p) => p.grade.minutes < 0.6).slice(0, 4);
+  const atRisk = rotationRisks(graded);
   posts.push({ kind: 'rotation-risk', title: 'Rotation risk',
     lines: [
       congestion > 0.15
@@ -259,9 +310,14 @@ export function buildThread(club) {
           'and discounts start probability accordingly.'
         : 'No unusual midweek load in the window we can see.',
       ...(atRisk.length
-        ? atRisk.map((p) => `${p.web_name} — ${(p.grade.minutes * 100).toFixed(0)}% minutes security`)
-        : ['Nobody in the squad reads as a rotation trap on current evidence.'])
-    ] });
+        ? atRisk.map((p) => `${p.web_name} (${money(p.now_cost)} ${POS[p.element_type]}) — ` +
+          `${(p.grade.minutes * 100).toFixed(0)}% minutes security, ${riskNote(p, congestion)}`)
+        : ['Nobody here is both worth owning and short of minutes — whatever the ' +
+           'risk is at this club, it is not rotation.'])
+    ],
+    rows: atRisk.map((p) => ({ name: p.web_name, cost: money(p.now_cost),
+      position: POS[p.element_type], minutes: +p.grade.minutes.toFixed(2),
+      returns: +p.grade.returns.toFixed(2), tension: +rotationTension(p).toFixed(3) })) });
 
   posts.push({ kind: 'hierarchy', title: 'Hierarchy',
     lines: hierarchy.slice(0, 6).map((p) =>

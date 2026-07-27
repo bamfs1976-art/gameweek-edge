@@ -17,8 +17,8 @@ import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAY
   from '../scripts/content/stories.mjs';
 import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
   from '../scripts/content/candidates.mjs';
-import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles }
-  from '../scripts/content/club.mjs';
+import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles,
+  rotationRisks, rotationTension } from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -405,6 +405,66 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(/clean sheet/.test(take), 'a defensive floor is framed as points without a clean sheet');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
+
+  /* Rotation risk is a tension, not a low number. The first real run filled
+     this post with fourth-choice keepers and players on their way out — true,
+     and useless, because nobody was going to buy them anyway. */
+  {
+    const G = (o) => ({ web_name: 'N', now_cost: 60, element_type: 3,
+      grade: { returns: 0.8, minutes: 0.5 }, ...o });
+    const tempting = G({ web_name: 'Tempting', grade: { returns: 0.85, minutes: 0.45 } });
+    const fringe = G({ web_name: 'Fringe', grade: { returns: 0.10, minutes: 0.05 } });
+    const nailed = G({ web_name: 'Nailed', grade: { returns: 0.90, minutes: 0.95 } });
+    const picked = rotationRisks([nailed, fringe, tempting]);
+    const names = picked.map((p) => p.web_name);
+    ok(names.includes('Tempting'), 'a player worth wanting with shaky minutes is the risk');
+    ok(!names.includes('Fringe'),
+      'a squad player nobody would buy is not a rotation risk, just a squad player');
+    ok(!names.includes('Nailed'), 'and neither is a nailed-on starter');
+
+    /* Ordered by how much the two disagree, so the sharpest warning leads. */
+    const mild = G({ web_name: 'Mild', grade: { returns: 0.55, minutes: 0.68 } });
+    ok(rotationTension(tempting) > rotationTension(mild),
+      'the sharper tension ranks first (' + rotationTension(tempting).toFixed(2) +
+      ' vs ' + rotationTension(mild).toFixed(2) + ')');
+    ok(rotationRisks([mild, tempting])[0].web_name === 'Tempting', 'and leads the post');
+    ok(rotationRisks([nailed, fringe]).length === 0,
+      'a squad with no tension yields no names rather than filler');
+
+    /* The trap the format exists for: real returns, no starts. The grade vetoes
+       him to `avoid`, and that is exactly why he must still be named here. */
+    const trap = G({ web_name: 'Trap', grade: { returns: 0.75, minutes: 0.2 } });
+    ok(rotationRisks([trap]).length === 1, 'a vetoed player is still a rotation warning');
+
+    const squad = [P2({ web_name: 'Star', xp: 6.4 }),
+      P2({ web_name: 'Rotated', xp: 6.0, starts: 5, minutes: 500 }),
+      P2({ web_name: 'Nobody', xp: 0.4, starts: 0, minutes: 20 })];
+    const rot = buildThread({ name: 'R', fullName: 'Rot', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad })
+      .posts.find((x) => x.kind === 'rotation-risk');
+    ok(rot.lines.some((l) => /Rotated/.test(l)), 'the thread names the tempting-but-rotated player');
+    ok(!rot.lines.some((l) => /Nobody/.test(l)), 'and leaves the non-player out of it');
+    ok(rot.lines.some((l) => /would otherwise buy him|does not start|midweek/.test(l)),
+      'every name comes with the shape of the doubt (' + rot.lines.join(' | ') + ')');
+    ok(rot.rows.every((r) => r.name && r.tension >= 0), 'the post carries structured rows too');
+
+    /* Congestion is the part a hand-written thread cannot see, so where it is
+       the cause it has to be named as the cause. */
+    const euro = P2({ web_name: 'Euro', xp: 6.2, starts: 8, minutes: 700 });
+    const club = { name: 'C', fullName: 'Cong', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: [euro] };
+    const congested = buildThread({ ...club, congestion: 0.8 })
+      .posts.find((x) => x.kind === 'rotation-risk');
+    ok(congested.lines.some((l) => /midweek calendar is what is eating it/.test(l)),
+      'a European midweek is named as the cause (' + congested.lines.join(' | ') + ')');
+
+    /* The same player at a club with no midweek football must not have the
+       calendar blamed for a doubt it did not cause. */
+    const domestic = buildThread({ ...club, congestion: 0 })
+      .posts.find((x) => x.kind === 'rotation-risk');
+    ok(!domestic.lines.some((l) => /midweek calendar/.test(l)),
+      'and is not blamed where there is none (' + domestic.lines.join(' | ') + ')');
+  }
 
   /* An angle one line under "worth monitoring rather than buying" reads as a
      contradiction — the first run said exactly that about Chelsea and then
