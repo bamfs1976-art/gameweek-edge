@@ -1,0 +1,88 @@
+name: Daily Content
+
+# Picks the strongest story from the day's model output, renders a 1080x1080
+# card and drafts the post copy, then publishes both as a GitHub Release for
+# you to review and post.
+#
+# It does NOT post anywhere by itself, and that is deliberate. The model
+# chooses what is worth saying; a human still decides whether to say it. An
+# account that publishes unreviewed automated takes about named players is
+# one bad edge case away from an apology.
+#
+# A quiet day publishes nothing. The selector has a floor (MIN_SCORE in
+# scripts/content/stories.mjs) and when nothing clears it the run succeeds
+# having produced no card — silence is a correct outcome, not a failure, so
+# the steps below are conditional rather than the job being allowed to fail.
+
+on:
+  schedule:
+    # 09:00 UTC daily — after overnight price changes have settled and early
+    # enough to leave the day free for posting.
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Render even if the best story is below the score floor'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # publish the release, and commit the history file
+
+jobs:
+  content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+
+      # Writes scripts/content/content.json and sets `published` for the
+      # steps below. Reads scripts/content/history.json from the repo, which
+      # is what stops the feed repeating itself across runs.
+      - name: Pick today's story
+        id: pick
+        run: node scripts/content/fetch-data.mjs
+
+      - name: Render the card and copy
+        if: steps.pick.outputs.published == 'true' || inputs.force
+        run: node scripts/content/render.mjs
+
+      - name: Publish for review
+        if: steps.pick.outputs.published == 'true' || inputs.force
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: content-${{ github.run_number }}
+          name: "Daily card — ${{ steps.pick.outputs.kind }}"
+          body_path: scripts/content/out/post.txt
+          files: |
+            scripts/content/out/card.png
+            scripts/content/out/post.txt
+            scripts/content/out/post.json
+            scripts/content/content.json
+
+      # The history file is the pipeline's memory. Committing it back is what
+      # makes novelty work across runs, and it doubles as a plain-text record
+      # of what the account has said and when.
+      - name: Remember what was said
+        if: steps.pick.outputs.published == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/content/history.json
+          git diff --staged --quiet || git commit -m "Content: ${{ steps.pick.outputs.kind }} (run ${{ github.run_number }})"
+          git push
+
+      - name: Report a quiet day
+        if: steps.pick.outputs.published != 'true'
+        run: |
+          echo "### No card today" >> $GITHUB_STEP_SUMMARY
+          node -e "const p=require('./scripts/content/content.json');
+            console.log(p.reason||'no reason recorded');
+            console.log('considered:',p.considered,'candidates');" >> $GITHUB_STEP_SUMMARY

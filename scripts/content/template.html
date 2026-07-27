@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — daily card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Daily content card — 1080×1080, same palette and faces as the recap
+   videos so the still and the motion series read as one account.
+
+   One template, every story kind. The kinds differ only in the BODY block
+   they fill (a ranked table, a fixture strip, a single figure), so a new
+   kind is a new body renderer here rather than a new template file — the
+   same argument that keeps the video series on one renderer. */
+:root{
+  --bg:#080b0f; --panel:#101820; --line:rgba(147,162,174,.18);
+  --green:#1f9d5c; --green2:#15824a; --ink:#eef3f7; --ink2:#93a2ae; --ink3:#5f6d78;
+  --amber:#e0a33a; --red:#e0605a;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --body:'Public Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1080px;background:var(--bg);color:var(--ink);font-family:var(--body)}
+.card{
+  width:1080px;height:1080px;padding:64px 68px;display:flex;flex-direction:column;
+  background:
+    radial-gradient(900px 520px at 82% -8%,rgba(31,157,92,.20),transparent 62%),
+    linear-gradient(168deg,#0b1016 0%,#080b0f 58%);
+}
+
+/* Header */
+.hd{display:flex;align-items:center;gap:16px}
+.mark{width:52px;height:52px;flex:none}
+.brand{font-family:var(--display);font-size:27px;font-weight:800;letter-spacing:-.02em}
+.brand span{font-weight:600;color:var(--ink2)}
+.kind{
+  margin-left:auto;font-size:16px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--green);border:1px solid rgba(31,157,92,.45);border-radius:999px;padding:9px 18px;
+  background:rgba(31,157,92,.10);
+}
+
+/* Headline */
+.head{margin-top:44px}
+h1{font-family:var(--display);font-size:74px;line-height:.98;font-weight:800;letter-spacing:-.03em}
+h1.sm{font-size:60px}
+h1.xs{font-size:50px}
+.sub{margin-top:18px;font-size:25px;font-weight:600;color:var(--ink2);line-height:1.35;max-width:88%}
+
+/* Body */
+/* Centred in the space between headline and footer: a short body sitting
+   hard against the headline leaves a void at the bottom that reads as a
+   layout bug rather than as breathing room. */
+.body{margin:auto 0;padding:16px 0}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;padding:0 14px 14px;font-size:15px;font-weight:800;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--ink3);
+}
+td{padding:17px 14px;font-size:29px;font-weight:700;border-top:1px solid var(--line)}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.top td{background:rgba(31,157,92,.11)}
+tr.top td:first-child{box-shadow:inset 4px 0 0 var(--green)}
+.nm{font-weight:800}
+.meta{display:block;font-size:18px;font-weight:600;color:var(--ink3);margin-top:3px}
+.val{color:var(--green);font-weight:800}
+
+/* Fixture strip */
+.fix{display:flex;gap:12px;flex-wrap:wrap}
+.fx{
+  flex:1;min-width:132px;border-radius:16px;padding:34px 12px;text-align:center;
+  border:1px solid var(--line);background:var(--panel);
+}
+.fx b{display:block;font-family:var(--display);font-size:36px;font-weight:800;letter-spacing:-.02em}
+.fx i{display:block;font-style:normal;font-size:15px;font-weight:700;color:var(--ink3);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:9px}
+.fx u{display:block;text-decoration:none;font-size:15px;font-weight:700;color:var(--ink3);margin-top:6px}
+.fx.d1{background:rgba(46,207,115,.20);border-color:rgba(46,207,115,.5)}
+.fx.d2{background:rgba(46,207,115,.11);border-color:rgba(46,207,115,.32)}
+.fx.d3{background:var(--panel)}
+.fx.d4{background:rgba(224,96,90,.11);border-color:rgba(224,96,90,.32)}
+.fx.d5{background:rgba(224,96,90,.20);border-color:rgba(224,96,90,.5)}
+
+/* Big single figure */
+.big{display:flex;align-items:baseline;gap:22px;margin-top:8px}
+.big b{font-family:var(--display);font-size:150px;font-weight:800;letter-spacing:-.045em;color:var(--green);line-height:1}
+.big span{font-size:27px;font-weight:700;color:var(--ink2);max-width:420px;line-height:1.3}
+
+/* Footer */
+.ft{display:flex;align-items:flex-end;gap:20px;border-top:1px solid var(--line);padding-top:26px}
+.ft-l{font-size:20px;font-weight:700;color:var(--ink2)}
+.ft-l em{display:block;font-style:normal;font-size:15px;font-weight:600;color:var(--ink3);margin-top:7px;max-width:620px;line-height:1.4}
+.ft-r{margin-left:auto;text-align:right;font-family:var(--display);font-size:23px;font-weight:800;color:var(--green)}
+.ft-r em{display:block;font-style:normal;font-family:var(--body);font-size:15px;font-weight:600;color:var(--ink3);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="hd">
+    <svg class="mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+      <rect x="1" y="1" width="36" height="36" rx="10" fill="#15824a"/>
+      <rect x="1" y="1" width="36" height="36" rx="10" stroke="#1f9d5c" stroke-width="1.5" opacity=".55"/>
+      <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+    </svg>
+    <div class="brand"><span>Gameweek</span> Edge</div>
+    <div class="kind" id="kind">—</div>
+  </div>
+
+  <div class="head">
+    <h1 id="h1">—</h1>
+    <p class="sub" id="sub"></p>
+  </div>
+
+  <div class="body" id="body"></div>
+
+  <div class="ft">
+    <div class="ft-l"><span>Projections from our own expected-points model</span>
+      <em>Not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League.</em>
+    </div>
+    <div class="ft-r">gameweekedge.co.uk<em id="ftgw"></em></div>
+  </div>
+</div>
+
+<script>
+/* The renderer sets window.__DATA__ before the page paints. Kept as an
+   injected global rather than a fetch so the template opens straight from
+   the filesystem with no server — the same choice the recap templates make. */
+const D = window.__DATA__ || { story: null };
+const esc = (s) => String(s == null ? '' : s)
+  .replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const band = (d) => 'd' + Math.max(1, Math.min(5, Math.round(d || 3)));
+
+/* Long headlines must shrink rather than overflow the card — a clipped
+   headline is the one failure that makes an automated card obviously
+   automated. */
+function fit(el, text) {
+  el.textContent = text;
+  el.className = text.length > 46 ? 'xs' : text.length > 30 ? 'sm' : '';
+}
+
+const BODIES = {
+  'price-verdict': (d) => '<table><thead><tr><th>Player</th><th class="n">Cost</th>' +
+    '<th class="n">Owned</th><th class="n">xP</th></tr></thead><tbody>' +
+    d.rows.map((r, i) => '<tr class="' + (i === 0 ? 'top' : '') + '">' +
+      '<td><span class="nm">' + esc(r.name) + '</span><span class="meta">' + esc(r.team) + '</span></td>' +
+      '<td class="n">' + esc(r.cost) + '</td>' +
+      '<td class="n">' + r.owned.toFixed(1) + '%</td>' +
+      '<td class="n ' + (i === 0 ? 'val' : '') + '">' + r.xp.toFixed(2) + '</td></tr>').join('') +
+    '</tbody></table>',
+
+  differential: (d) => '<div class="big"><b>' + d.xp.toFixed(1) + '</b>' +
+    '<span>projected points next gameweek, at ' + d.owned.toFixed(1) + '% ownership</span></div>' +
+    '<table><tbody><tr><td><span class="nm">' + esc(d.name) + '</span>' +
+    '<span class="meta">' + esc(d.team) + ' · ' + esc(d.position) + '</span></td>' +
+    '<td class="n">' + esc(d.cost) + '</td></tr></tbody></table>',
+
+  'template-risk': (d) => '<div class="big"><b>' + Math.round(d.owned) + '%</b>' +
+    '<span>own ' + esc(d.name) + ', who plays ' + (d.home ? '' : 'away to ') + esc(d.opponent) +
+    ' — difficulty ' + d.difficulty.toFixed(1) + ' of 5</span></div>',
+
+  value: (d) => '<div class="big"><b>' + d.ppm.toFixed(1) + '</b>' +
+    '<span>points per £m — the ' + esc(d.position) + ' median is ' + d.medianPpm.toFixed(1) + '</span></div>' +
+    '<table><tbody><tr><td><span class="nm">' + esc(d.name) + '</span>' +
+    '<span class="meta">' + esc(d.team) + '</span></td>' +
+    '<td class="n">' + esc(d.cost) + '</td><td class="n">' + d.points + ' pts</td></tr></tbody></table>',
+
+  'purple-patch': (d) => '<div class="fix">' + d.fixtures.map((f) =>
+    '<div class="fx ' + band(f.difficulty) + '"><i>GW' + f.gw + '</i><b>' +
+    esc(f.opp) + '</b><u>' + (f.home ? 'HOME' : 'AWAY') + '</u></div>').join('') + '</div>',
+
+  'fixture-swing': (d) => '<div class="fix">' + d.fixtures.map((f) =>
+    '<div class="fx ' + band(f.difficulty) + '"><i>GW' + f.gw + '</i><b>' +
+    esc(f.opp) + '</b><u>' + (f.home ? 'HOME' : 'AWAY') + '</u></div>').join('') + '</div>',
+
+  'chip-window': (d) => '<div class="big"><b>' + esc(d.chip || '—') + '</b>' +
+    '<span>' + esc(d.note || '') + '</span></div>'
+};
+
+const s = D.story;
+if (s) {
+  document.getElementById('kind').textContent = s.label || s.kind;
+  fit(document.getElementById('h1'), s.headline || '');
+  document.getElementById('sub').textContent = s.sub || '';
+  const render = BODIES[s.kind];
+  document.getElementById('body').innerHTML = render ? render(s.data || {}) : '';
+  document.getElementById('ftgw').textContent = D.gameweek ? 'Gameweek ' + D.gameweek : '';
+}
+window.__READY__ = true;
+</script>
+</body>
+</html>
