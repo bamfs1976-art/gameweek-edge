@@ -769,6 +769,23 @@ html.offline .net-banner{transform:translateY(0)}
    which is reserved for decorative glyphs. */
 .sb-foot-v{font-size:.66rem;color:var(--text-3)}
 .sb-foot-legal{font-size:.6rem;line-height:1.45;color:var(--text-3);margin:0}
+/* Sibling app card. Matchday Edge is the same model on a different
+   competition, so it gets a real card rather than another footer link —
+   but a quiet one, below the account button, not competing with the nav. */
+.sb-sibling{
+  display:flex;align-items:center;gap:9px;margin:9px 0 4px;padding:8px 10px;
+  border:1px solid var(--border);border-radius:var(--r-md);
+  background:linear-gradient(150deg,rgba(47,109,199,.12),transparent 75%);
+  text-decoration:none;transition:border-color .15s,background .15s;
+}
+.sb-sibling:hover{border-color:#4d86ff;background:rgba(47,109,199,.16)}
+.sb-sib-mark{
+  width:16px;height:16px;flex:none;border-radius:5px;background:#1b3a8f;
+  box-shadow:inset 0 0 0 1px rgba(77,134,255,.6);
+}
+.sb-sib-t{flex:1;font-size:.63rem;line-height:1.35;color:var(--text-3)}
+.sb-sib-t b{display:block;font-size:.74rem;color:var(--text-2);font-weight:650}
+.sb-sib-go{font-size:.7rem;color:var(--text-3)}
 .acct-btn{
   display:flex;align-items:center;gap:9px;width:100%;
   padding:9px 11px;border-radius:var(--r-md);
@@ -1862,6 +1879,13 @@ body{font-size:14px;line-height:1.35}
           <span id="theme-label">Light</span>
         </button>
       </div>
+      <!-- Sibling app. Same account, same Pro subscription: tier lives on the
+           shared gwedge_profiles row, so unlocking one unlocks both. -->
+      <a class="sb-sibling" href="https://matchdayedge.co.uk" rel="noopener">
+        <span class="sb-sib-mark" aria-hidden="true"></span>
+        <span class="sb-sib-t"><b>Matchday Edge</b>European fantasy football — your Pro covers it</span>
+        <span class="sb-sib-go" aria-hidden="true">↗</span>
+      </a>
       <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>
       <p class="sb-foot-legal">Independent app — not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively. <a href="/privacy.html" style="color:inherit;text-decoration:underline">Privacy policy</a></p>
     </div>

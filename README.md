@@ -1,10 +1,54 @@
 # Gameweek Edge
 
-The calm, clear companion that gives Fantasy Premier League managers a measurable edge. A single-file web app (`index.html`, vanilla JS) that runs three ways from one codebase:
+The calm, clear companion that gives fantasy managers a measurable edge. A single-file web app (`index.html`, vanilla JS) that runs three ways from one codebase:
 
 - **Web app / PWA** — installable on phones from the browser (this is the no-Mac way onto an iPhone).
 - **iOS app** — the same app wrapped natively with Capacitor (see [`README_MOBILE.md`](README_MOBILE.md)).
-- **Live data** — pulled from the official FPL API through a Netlify serverless proxy.
+- **Live data** — pulled from the official game APIs through Netlify serverless proxies.
+
+## Two games, one app — and a second app
+
+Gameweek Edge covers **Fantasy Premier League** and **FPL Challenge**, switched
+from the sidebar. A sibling app, **Matchday Edge**, covers UEFA Champions
+League Fantasy and lives in [`ucl/`](ucl/README.md).
+
+### Game packs
+
+A *game pack* (`GAMES` in `index.html`) says where a game's data comes from,
+what its scoring looks like, and — the part that does the real work — which of
+its **mechanics exist at all**. Panels declare the capabilities they need
+(`needs:` in the `NAV` registry) and a panel whose capability is missing is
+**removed, not locked**:
+
+> A Pro panel still exists for a free user — it is shown locked, as an upsell.
+> The Price Predictor in a game where prices never move is not locked, it is
+> *meaningless*. Those are different states and the UI says so.
+
+| | FPL | Challenge |
+|---|---|---|
+| Prices move | ✅ | ❌ — Price Predictor hidden |
+| Chips | ✅ | ❌ — Chip Strategy hidden |
+| Transfer cost (−4) | ✅ | ❌ — free and unlimited, solver stops pricing hits |
+| Pre-season squad | ✅ | ❌ — squad is rebuilt weekly |
+| Ownership / bonus / DefCon | ✅ | ✅ — same players, same base scoring |
+
+Each game keeps its **own entry id and its own cache namespace** — the two
+return payloads that look alike, so an unscoped key would serve one game's
+bootstrap to the other and read as quietly wrong numbers rather than an error.
+FPL deliberately keeps the original unsuffixed storage key and the original
+`manager_id` column, so existing installs and synced profiles carry over
+untouched. Run `supabase/gwedge_profiles_games.sql` once to add
+`challenge_entry_id`.
+
+Adding a third game means adding a pack and a proxy function. No panel needs to
+know it happened.
+
+> **Challenge data is unverified.** `netlify/functions/challenge.js` targets
+> `fplchallenge.premierleague.com`, which could not be reached from the machine
+> that wrote it. Its API is documented as an endpoint-for-endpoint mirror of the
+> FPL one; confirm with `npx netlify dev` and one call to
+> `/api/challenge/bootstrap-static`. If the host is wrong, `UPSTREAM` is the
+> only line to change.
 
 ## Run / deploy (web + PWA)
 
@@ -134,7 +178,9 @@ The Anthropic key stays server-side — set `ANTHROPIC_API_KEY` on the Netlify s
 ## Project layout
 
 ```
-index.html              the app (single source of truth)
+index.html              the app AND the model (single source of truth)
+ucl/                    Matchday Edge — the sibling app (see ucl/README.md)
+scripts/extract-engine.mjs  lifts the shared model out of index.html at build time
 src/native/index.js      native bridge (Capacitor) → bundled to www/native.js
 manifest.webmanifest     PWA manifest        sw.js  PWA service worker
 icons/                   PWA icons
