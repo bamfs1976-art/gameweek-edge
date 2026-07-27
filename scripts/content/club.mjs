@@ -41,8 +41,13 @@ const money = (c) => '£' + (c / 10).toFixed(1) + 'm';
 const POS = { 1: 'GKP', 2: 'DEF', 3: 'MID', 4: 'FWD' };
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
-/* A full season, used as the reference when the current one has not started. */
-export const SEASON_GAMES = 38;
+/* What a nailed-on player actually racks up over a season — NOT 38 and 3420.
+   Nobody plays every minute; a first-choice outfielder lands near thirty
+   starts once rest, knocks and the odd suspension are taken out. Measuring
+   against the theoretical maximum instead marks every real starter as
+   rotation-prone, which on the first run had Saka "worth watching". */
+export const FULL_STARTS = 30;
+export const FULL_MINUTES = 2700;
 
 /* Minutes security. `congestion` is 0..1 from the congestion model — how
    loaded the club's midweek calendar is — and it is subtracted rather than
@@ -54,9 +59,9 @@ export const SEASON_GAMES = 38;
    yet" instead — which is what a floor of 1 amounts to — scores one substitute
    appearance as an ever-present, and pre-season is when these threads run. */
 export function minutesScore(p) {
-  const games = (p.teamGames || 0) > 0 ? p.teamGames : SEASON_GAMES;
-  const starts = clamp01((p.starts || 0) / games);
-  const played = clamp01((p.minutes || 0) / (games * 90));
+  const games = p.teamGames || 0;
+  const starts = clamp01((p.starts || 0) / (games > 0 ? games : FULL_STARTS));
+  const played = clamp01((p.minutes || 0) / (games > 0 ? games * 90 : FULL_MINUTES));
   const base = 0.65 * starts + 0.35 * played;
   return clamp01(base - 0.35 * clamp01(p.congestion || 0));
 }

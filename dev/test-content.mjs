@@ -321,6 +321,18 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
     minutesScore(P(proven)).toFixed(2) + ')');
   ok(grade(P(cameo)).status.key === 'avoid', 'so the cameo cannot be recommended');
 
+  /* Both ends have to hold at once, and the second run proved the first fix
+     could break the second: measured against a theoretical 38x90 season, Saka
+     on 2218 minutes came out "minutes worth watching" and Arsenal cleared
+     nobody. The reference is what a first-choice player actually plays. */
+  const nailed = P({ xp: null, teamGames: 0, starts: 26, minutes: 2218,
+    goals: 7, assists: 10 });
+  ok(minutesScore(nailed) >= 0.7, 'a first-choice season reads as nailed on, not rotated (' +
+    minutesScore(nailed).toFixed(2) + ')');
+  ok(/nailed on/.test(grade(nailed).why), 'and the copy says so (' + grade(nailed).why + ')');
+  ok(grade({ ...nailed, avgDifficulty: 2.4 }).status.key === 'major',
+    'a first-choice player with a kind run is a major target');
+
   const clubOf = (players, extra = {}) => buildThread({ name: 'CLB', fullName: 'Club',
     scored: 60, conceded: 40, avgDifficulty: 2.6,
     fixtures: [{ gw: 1, opp: 'AAA', home: true }, { gw: 2, opp: 'BBB', home: false }],
