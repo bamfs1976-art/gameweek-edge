@@ -32,6 +32,8 @@ const nativeXP = new Function(
   congestSrc + '\n' +
   extractBlock(html, html.indexOf('function minutesModel(')) + '\n' +
   extractBlock(html, html.indexOf('function concedePts(')) + '\n' +
+  extractBlock(html, html.indexOf('function savePts(')) + '\n' +
+  extractBlock(html, html.indexOf('function dcHitProb(')) + '\n' +
   extractBlock(html, html.indexOf('function effGoalRate(')) + '\n' +
   extractBlock(html, html.indexOf('function negRate90(')) + '\n' +
   extractBlock(html, html.indexOf('function nativeXP(')) + '\nreturn nativeXP;')();

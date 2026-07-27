@@ -66,7 +66,7 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
   .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
 const model = new Function(
-  [congestSrc, grab('minutesModel'), grab('concedePts'), grab('effGoalRate'), grab('negRate90'),
+  [congestSrc, grab('minutesModel'), grab('concedePts'), grab('savePts'), grab('dcHitProb'), grab('effGoalRate'), grab('negRate90'),
     grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
   '\nreturn { minutesModel, nativeXP, xP, pointsDist };'
 )();

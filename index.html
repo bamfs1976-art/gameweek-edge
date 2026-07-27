@@ -9416,21 +9416,27 @@ function buildHorizon(b,fixtures,N){
 }
 /* One fixture's expected points for a player: the native model when the
    sample allows, else the FPL estimate adjusted by the fixture. */
+/* Availability is applied HERE, once, on whichever branch is taken: the
+   native model already carries it (minutesModel consumes the same flag), the
+   ep_next fallback does not and is scaled explicitly. Callers must not scale
+   again — horizonXP used to, which charged a 50 percent doubt as 25 percent
+   across the whole solver and transfer surface, while every other caller of
+   this function left the fallback branch unscaled entirely. */
 function fixtureXP(b,el,fx){
   const nat=nativeXP(el,fx);
   if(nat!=null)return nat;
   let base=parseFloat(el.ep_next||'0');
   if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
   const f=el.element_type<=2?0.72+1.0*fx.cs:Math.pow(fx.lam/1.47,0.8);
-  return base*Math.max(0.6,Math.min(1.5,f));
+  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
+  return base*Math.max(0.6,Math.min(1.5,f))*(chance/100);
 }
 /* Cumulative expected points over a player's next-N fixture horizon. */
 function horizonXP(b,el,hz){
   const fxs=hz[el.team]||[];
-  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
   let total=0;
   fxs.forEach(fx=>total+=fixtureXP(b,el,fx));
-  return total*(chance/100);
+  return total;
 }
 /* The model's top drivers behind a player's xP — the "Explain this pick"
    bullets. Pure list; the string form joins them for legacy callers. */
@@ -9440,7 +9446,12 @@ function xpExplainParts(b,el,nf){
     if(el.element_type<=2)parts.push('Clean-sheet odds '+Math.round(nf.cs*100)+'% — the defensive multiplier'+(nf.opp?' ('+(nf.home?'H':'A')+' v '+nf.opp+')':''));
     else parts.push('Team expected goals '+nf.lam.toFixed(2)+' vs 1.47 league average'+(nf.opp?' ('+(nf.home?'H':'A')+' v '+nf.opp+')':''));
     const nat=nativeXP(el,nf);
-    if(nat!=null)parts.push('Blended 50/50 with the native model '+nat.toFixed(1)+' (minutes × xGI/90 × fixture; validated MAE 0.96 vs 1.04 form baseline)');
+    if(nat!=null){
+      const w=Math.min(0.7,0.35+0.025*(nf.gp||0));
+      parts.push('Blended '+Math.round(w*100)+'/'+Math.round((1-w)*100)+' toward the native model '+nat.toFixed(1)+
+        ' (minutes × xGI/90 × fixture) — the native weight rises with the sample, from 48% at five games to 70% by mid-season');
+      parts.push('Model accuracy: MAE 2.16 points vs 2.37 for a recent-form baseline, graded on real returns (see the Accountability page)');
+    }
   }
   const chance=el.chance_of_playing_next_round;
   if(chance!=null&&chance<100)parts.push('Scaled by '+chance+'% chance of playing');
@@ -9649,6 +9660,34 @@ function concedePts(cs,xgc90){
   if(isFinite(x)&&x>0)lamC=0.5*lamC+0.5*Math.min(3.5,x);
   return lamC/2-(1-Math.exp(-2*lamC))/4;
 }
+/* Expected FPL points from goalkeeper saves in a match where the keeper is
+   expected to face lamS saves. FPL pays 1 point per 3 saves, so the value is
+   E[floor(S/3)] for S ~ Poisson(lamS), NOT E[S]/3 — a third of a point apart
+   at every realistic save rate, because the expected remainder is about one
+   save. This mirrors concedePts, which already does the same job for the
+   minus 1 per 2 conceded; the saves term was the one place the scoring rule
+   was applied to the mean rather than the distribution. Summed over the pmf,
+   which converges far inside the loop bound. Self-contained on purpose, so
+   the extraction harnesses need no extra helper. */
+function savePts(lamS){
+  if(!(lamS>0))return 0;
+  let p=Math.exp(-lamS),e=0;
+  const K=Math.ceil(lamS+10*Math.sqrt(lamS)+12);
+  for(let k=1;k<=K;k++){p*=lamS/k;e+=p*Math.floor(k/3);}
+  return e;
+}
+/* Probability a player clears the defensive-contribution threshold: the
+   chance a Poisson count of counted actions at rate lamD reaches thr. The
+   scoring rule is a threshold on a count, so the model of it is that count
+   crossing the line — which is exactly the event pointsDist and squadSim
+   simulate, so the point estimate and the distribution now agree by
+   construction instead of by two unrelated approximations. */
+function dcHitProb(lamD,thr){
+  if(!(lamD>0))return 0;
+  let p=Math.exp(-lamD),c=p;
+  for(let k=1;k<thr;k++){p*=lamD/k;c+=p;}
+  return Math.max(0,Math.min(1,1-c));
+}
 /* Finishing-aware goals-per-90 (P-fix 5): FPL gives xG, but players
    persistently beat or miss it. Shrink the realised goal rate toward xG,
    with weight growing as minutes accumulate (to 0.45 by ~20 full games).
@@ -9747,15 +9786,23 @@ function negRate90(el){
    appearance bonus, the 2025/26 defensive-contribution points, and
    goalkeeper saves. Minutes now come from minutesModel (P2), so a flagged
    player is discounted realistically. See docs/MODELLING.md.
-   Original core validated walk-forward on 24,173 player-matches of
-   2025/26 (MAE 0.96 vs 1.04 for a 5-GW form baseline); dev/model-validate.mjs
-   checks the added categories. Returns null until the sample is enough. */
+   Graded walk-forward against a mis-specified generator in
+   dev/backtest-season.mjs and against real returns in
+   dev/backtest-vaastav.mjs; dev/model-validate.mjs checks the added
+   categories. Returns null until the sample is enough. */
 function nativeXP(el,nf){
   const gp=nf.gp||0;
   if(gp<5||nf.lamAvg==null)return null;
   if((el.minutes||0)/gp<20)return null;
   const m=minutesModel(el,gp,nf.congest);
   if(m.minFrac<=0)return 0;                            /* ruled out this week */
+  /* Expected minutes GIVEN the player appears. minFrac is the unconditional
+     expectation — it already averages in the weeks he does not play — so any
+     term that is itself conditioned on appearing (the save count, the
+     defensive-contribution threshold) must use this instead, or the absence
+     is charged twice. The per-90 rate terms below are unconditional and
+     correctly keep minFrac. */
+  const mfC=m.pAppear>0?Math.min(1,m.minFrac/m.pAppear):m.minFrac;
   const type=el.element_type;
   const xg90=effGoalRate(el);                          /* finishing-aware (P-fix 5) */
   const xa90=parseFloat(el.expected_assists_per_90||'0');
@@ -9781,12 +9828,13 @@ function nativeXP(el,nf){
   if(type>=2){
     const dcp90=parseFloat(el.defensive_contribution_per_90||'0');
     const thr=type===2?10:12;
-    pts+=2*(1/(1+Math.exp(-1.1*(dcp90-thr))))*m.p60;
+    pts+=2*dcHitProb(dcp90*mfC,thr)*m.p60;
   }
-  /* Goalkeeper saves: 1 point per 3 saves, from the realised save rate. */
+  /* Goalkeeper saves: 1 point per 3 saves, from the realised save rate. The
+     floor is charged on the count, not on its mean — see savePts. */
   if(type===1){
     const sv90=(el.saves||0)*90/Math.max(mins,90);
-    pts+=(sv90*m.minFrac)/3;
+    pts+=m.pAppear*savePts(sv90*mfC);
     /* Shot-stopping above expectation (Core Insights, guarded): goals
        prevented per 90 = post-shot xG faced minus goals conceded. A keeper
        who beats expectation earns extra save/bonus points and rescues clean
@@ -12152,6 +12200,7 @@ async function hydrateDossier(host){
   /* Asset hierarchy: the club's players by projected points, with what each
      one actually is. This is the "FPL Board" the dossiers all end with. */
   const marks=oopBenchmarks(b.elements);
+  const gpNow=(nf[tid]&&nf[tid].gp)||0;
   const spc=setPieceByClub(b,4)[tid];
   const spRole=e=>{
     if(!spc)return '';
@@ -12175,9 +12224,12 @@ async function hydrateDossier(host){
     /* Name line then role line: the role string carries three facts and would
        be ellipsised into nothing if it shared a line with the name. */
     return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-grow" style="display:block;min-width:0">'+
-      '<span class="dl-nm" style="display:block">'+esc(e.web_name)+' <span class="dl-sub">'+money(e.now_cost)+'</span>'+
+      /* Badges wrap rather than ellipsise: a clipped "Mins 4…" is worse than
+         a second line, and this row can carry four of them. */
+      '<span class="dl-nm" style="display:block;white-space:normal;overflow:visible;text-overflow:clip">'+esc(e.web_name)+' <span class="dl-sub">'+money(e.now_cost)+'</span>'+
       (oop&&oop.level>0?' <span class="badge badge-green">'+esc(oop.label)+'</span>':'')+
       (oop&&oop.level<0?' <span class="badge badge-amber">'+esc(oop.label)+'</span>':'')+
+      ' '+minsBadge(e,gpNow)+
       (e.status!=='a'?' <span class="badge badge-red">'+esc(e.status)+'</span>':'')+'</span>'+
       '<span class="dl-sub">'+esc(role)+' · '+e.selected_by_percent+'% owned</span></span>'+
       '<span class="dl-col">'+dots(tier(p))+'</span>'+
@@ -12188,6 +12240,45 @@ async function hydrateDossier(host){
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Asset · role</span><span class="dl-col">Tier</span><span class="dl-col">xP</span></div>'+
       assetRows+'</div>'+
       '<div class="dl-sub" style="margin-top:8px">Ranked by projected points for the next fixture, with the role that earns them: set-piece duty, defensive‑contribution reliability, and an <b>out‑of‑position</b> badge where a player is paid on a better tariff than the job he does.</div></div>'
+    : '';
+
+  /* Who is competing for a shirt. The dossiers spend three cards on this
+     per club — "if he is rotated or plays centre-back, who inherits?" —
+     and nothing else in the app answers it. */
+  const POS_LABEL={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const depth=clubDepth(b.elements,tid,gpNow);
+  const depthGroups=[1,2,3,4].filter(p=>depth[p]).map(p=>{
+    const g=depth[p],lead=g.rows.length>1?g.rows[0].sec-g.rows[1].sec:null;
+    const verdict=!g.rows.length
+      ? 'No player here has FPL minutes to rank yet.'
+      : g.settled
+        ? '<b>'+esc(g.rows[0].e.web_name)+'</b> is clear'+
+          (lead!=null?' — '+lead+' points of minutes security ahead of '+esc(g.rows[1].e.web_name):'')+'.'
+        : 'Unsettled — <b>'+esc(g.rows[0].e.web_name)+'</b> and <b>'+esc(g.rows[1].e.web_name)+'</b> are '+
+          (lead>0?'within '+lead+' points':'level')+', so neither owns the shirt.';
+    const rows=g.rows.map(r=>
+      '<div class="dl-row dl-click" onclick="openPlayer('+r.e.id+')"><span class="dl-grow" style="min-width:0">'+
+      '<span class="dl-nm">'+esc(r.e.web_name)+' <span class="dl-sub">'+money(r.e.now_cost)+'</span>'+
+      (r.tied?' <span class="badge badge-amber">contested</span>':'')+'</span></span>'+
+      '<span class="dl-col mono">'+r.sec+'%</span></div>').join('');
+    /* Signings and academy players carry no minutes at this club, so they
+       cannot be ranked — but they are exactly who a depth question is
+       about, so say they exist instead of dropping them. */
+    const unr=g.unranked.length
+      ? '<div class="dl-sub" style="margin-top:6px">No FPL minutes yet: '+
+        g.unranked.slice(0,6).map(e=>esc(e.web_name)).join(', ')+
+        (g.unranked.length>6?' +'+(g.unranked.length-6)+' more':'')+
+        ' — new signings and academy players are unranked, not ruled out.</div>'
+      : '';
+    return '<div style="margin-bottom:14px"><div class="dl-sub" style="margin-bottom:4px"><b>'+POS_LABEL[p]+'</b></div>'+
+      '<p class="dl-sub" style="margin:0 0 6px">'+verdict+'</p>'+
+      (rows?'<div class="dl">'+rows+'</div>':'')+unr+'</div>';
+  }).join('');
+  const depthCard=depthGroups
+    ? '<div class="card mb-20"><div class="card-title">Competing for a shirt</div>'+depthGroups+
+      '<div class="dl-sub">Ranked by <b>minutes security</b> — starts share, minutes share and availability — not by a guess at the formation, which the FPL data does not carry. '+
+      'Two players within '+DEPTH_TIE+' points are marked <b>contested</b>: the pecking order is not settled, so the cheaper one is often the differential. '+
+      'Until the new season is played this reads last season’s minutes.</div></div>'
     : '';
 
   /* The run ahead, in the club's own row. */
@@ -12209,7 +12300,7 @@ async function hydrateDossier(host){
       }).join('')+'</tr></table></div></div>'
     : '';
 
-  host.innerHTML=picker+leanCard+venueCard+boardCard+runCard;
+  host.innerHTML=picker+leanCard+venueCard+boardCard+depthCard+runCard;
 }
 
 async function hydrateClubForm(host){
@@ -12728,6 +12819,49 @@ function minsBadge(el,gp){
   return '<span class="badge '+cls+'" title="Minutes security '+v+'/100 — starts share, minutes share and availability (last season’s data until the new season is played)">Mins '+v+'%</span>';
 }
 
+/* ── Club depth: who is competing for the same shirt ───────
+   The club dossiers all circle the same question — if the first-choice
+   man is rotated or shifts position, who inherits the minutes? Rotation
+   chains answer the opposite question (one slot, several clubs), so
+   nothing else here covers it.
+
+   Deliberately NOT modelled as "starting slots": the formation a club
+   settles on is not in the FPL data, and guessing 3-4-2-1 over 4-2-3-1
+   changes who counts as a starter. Instead each position is ranked by
+   minutes security and the places where two players sit close enough
+   that the pecking order is unsettled are marked — which is the thing
+   worth knowing whichever shape they play. */
+const DEPTH_TIE=12;        /* security points; closer than this is a real contest */
+const DEPTH_FRINGE=25;     /* below this a player is not in the conversation */
+const DEPTH_MAX=6;         /* per position: the contest, plus the next man in */
+function clubDepth(elements,teamId,gp){
+  const out={};
+  [1,2,3,4].forEach(pos=>{
+    const pool=(elements||[]).filter(e=>e.team===teamId&&e.element_type===pos&&e.status!=='u');
+    /* A player with no minutes at all cannot be ranked on minutes: he scores
+       zero and falls below the fringe on his own, so no separate filter is
+       needed to keep him out of the ranking. He still has to be named — that
+       set is mostly summer signings and academy call-ups, precisely the
+       players a depth question is about — so it is listed alongside. */
+    const unranked=pool.filter(e=>!(e.minutes>0)&&!(e.starts>0));
+    const rows=pool.map(e=>({e,sec:minutesSecurity(e,gp)}))
+      .sort((a,c)=>c.sec-a.sec||a.e.id-c.e.id)
+      .filter(r=>r.sec>=DEPTH_FRINGE).slice(0,DEPTH_MAX);
+    /* Tied to the man above OR the man below: a contest is a cluster, and
+       marking only the lower half of it would read as though the leader
+       were clear. */
+    rows.forEach((r,i)=>{
+      r.gap=i?rows[i-1].sec-r.sec:null;
+      r.tied=(i>0&&rows[i-1].sec-r.sec<=DEPTH_TIE)||
+             (i<rows.length-1&&r.sec-rows[i+1].sec<=DEPTH_TIE);
+    });
+    if(rows.length||unranked.length)
+      out[pos]={rows,unranked,
+        settled:rows.length<2||(rows[0].sec-rows[1].sec)>DEPTH_TIE};
+  });
+  return out;
+}
+
 /* ── DECISION-GRADE RECOMMENDATION MODEL (Section 2) ───────
    A reusable confidence chip plus the captain / transfer / chip
    models that turn raw xP into a decision: who, why, how sure, and
@@ -12823,6 +12957,12 @@ function pointsDist(el,nf,trials){
   let lamC=type<=2?-Math.log(Math.max(0.03,Math.min(0.99,nf.cs))):0;   /* goals conceded (P-fix 1) */
   if(type<=2){const xgc=parseFloat(el.expected_goals_conceded_per_90);if(isFinite(xgc)&&xgc>0)lamC=0.5*lamC+0.5*Math.min(3.5,xgc);}  /* blend player xGC (API-fix 2) */
   const negExp=negRate90(el);                                            /* cards/OG/pen-miss (P-fix 4) */
+  /* Expected minutes GIVEN the player appears. Everything below is drawn
+     inside a branch that has already conditioned on appearing, so it must use
+     the conditional expectation — minFrac is unconditional and already
+     carries the weeks he does not play, which would charge the absence twice.
+     The p60 draw below gets this right; the rate terms did not. */
+  const mfC=m.pAppear>0?Math.min(1,m.minFrac/m.pAppear):m.minFrac;
   let s=((el.id||1)>>>0)||1;
   const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};
   const pois=l=>{if(l<=0)return 0;const L=Math.exp(-l);let k=0,p=1;do{k++;p*=rnd();}while(p>L);return k-1;};
@@ -12836,13 +12976,18 @@ function pointsDist(el,nf,trials){
     const form=gam(2.4)/2.4;                          /* mean 1, right-skewed overdispersion */
     let pts=play?1:0;if(p60)pts+=1;
     if(play){
-      pts+=pois(xg*m.minFrac*fx*form)*gPts+pois(xa*m.minFrac*fx*form)*3;
+      pts+=pois(xg*mfC*fx*form)*gPts+pois(xa*mfC*fx*form)*3;
       if(p60&&rnd()<nf.cs)pts+=csPts;
       if(type<=2)pts-=Math.floor(pois(lamC*(p60?1:0.5))/2);    /* concede downside */
-      pts+=Math.min(3,pois(b90*m.minFrac));
-      if(type>=2&&p60&&pois(dcp*m.minFrac)>=thr)pts+=2;
-      if(type===1)pts+=Math.floor(pois(sv90*m.minFrac)/3);
-      pts-=negExp*m.minFrac;                                   /* expected deductions */
+      pts+=Math.min(3,pois(b90*mfC));
+      if(type>=2&&p60&&pois(dcp*mfC)>=thr)pts+=2;
+      if(type===1)pts+=Math.floor(pois(sv90*mfC)/3);
+      /* Deductions are whole points, drawn — not a fraction taken off an
+         otherwise integer score. Subtracting the mean instead moved every
+         trial off the integers, so a trial that scored exactly 10 landed
+         below the haul line and the entire probability mass at 10 was lost
+         from the haul figure, however small the deduction. */
+      pts-=pois(negExp*mfC);                                   /* expected deductions */
     }
     out[i]=pts;
   }
@@ -12878,17 +13023,21 @@ function squadSim(els,nfByTeam,capId,trials){
       const type=e.element_type,fx=(nf.lamAvg?nf.lam/nf.lamAvg:1)*shock[team];
       const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0;
       const play=rnd()<m.pAppear,p60=play&&rnd()<Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
+      /* Expected minutes given he appears — the branch below has already
+         conditioned on that, so the unconditional minFrac would charge the
+         absence a second time. Same correction as pointsDist. */
+      const mfC=m.pAppear>0?Math.min(1,m.minFrac/m.pAppear):m.minFrac;
       let pts=play?1:0;if(p60)pts+=1;
       if(play){
-        pts+=pois(effGoalRate(e)*m.minFrac*fx)*gPts;             /* finishing-aware (P-fix 5) */
-        pts+=pois(parseFloat(e.expected_assists_per_90||'0')*m.minFrac*fx)*3;
+        pts+=pois(effGoalRate(e)*mfC*fx)*gPts;                   /* finishing-aware (P-fix 5) */
+        pts+=pois(parseFloat(e.expected_assists_per_90||'0')*mfC*fx)*3;
         if(p60&&cs[team])pts+=csPts;
         if(type<=2&&p60)pts-=Math.floor(conc[team]/2);           /* concede downside, shared per team */
         const mins=Math.max(e.minutes||0,1);
-        pts+=Math.min(3,pois((e.bonus||0)*90/Math.max(mins,90)*m.minFrac));
-        if(type>=2&&p60&&pois(parseFloat(e.defensive_contribution_per_90||'0')*m.minFrac)>=(type===2?10:12))pts+=2;
-        if(type===1)pts+=Math.floor(pois((e.saves||0)*90/Math.max(mins,90)*m.minFrac)/3);
-        pts-=negRate90(e)*m.minFrac;                             /* expected deductions (P-fix 4) */
+        pts+=Math.min(3,pois((e.bonus||0)*90/Math.max(mins,90)*mfC));
+        if(type>=2&&p60&&pois(parseFloat(e.defensive_contribution_per_90||'0')*mfC)>=(type===2?10:12))pts+=2;
+        if(type===1)pts+=Math.floor(pois((e.saves||0)*90/Math.max(mins,90)*mfC)/3);
+        pts-=pois(negRate90(e)*mfC);                             /* expected deductions (P-fix 4) */
       }
       sum+=pts*(e.id===capId?2:1);
     }

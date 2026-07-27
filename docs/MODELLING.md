@@ -103,6 +103,8 @@ work below.
 | **6** | Match model: `recencyWeight` (0.97/GW decay so recent form counts more) in the live refit, and `availAttackMult` — a team whose **top expected-involvement attacker is flagged** is downgraded (−10% out, −4% doubt), tying the fixture model to the news feed. | **done** |
 | **7** | **Advanced data ingestion (open source).** Goalkeeper `goals_prevented` from the [FPL Core Insights](https://github.com/olbauday/FPL-Core-Insights) mirror sharpens `nativeXP`'s keeper term (~1 pt per goal prevented / 90, coefficient set by `dev/model-validate.mjs`; inert without the mirror). Plus a **real‑actuals backtest** (`dev/backtest-vaastav.mjs`) against a historical season from the MIT‑licensed [vaastav dataset](https://github.com/vaastav/Fantasy-Premier-League), so accuracy is no longer graded only on synthetic data. | **done** |
 
+| **8** | **Consistency pass over the scoring rules and the accountability loop.** Four defects found by reviewing the model against itself rather than against a harness that grades the same code: (a) `pointsDist` / `squadSim` gated scoring on an appearance draw and then still scaled by the *unconditional* `minFrac`, charging the absence twice — every distribution ran 12-20% light, and 29% for a rotation risk, biting hardest on exactly the players the rank tools weigh; (b) goalkeeper saves were credited as `E[S]/3` rather than `E[floor(S/3)]`, a flat +0.33 pts/GW on every keeper (`savePts`, mirroring `concedePts`); (c) the defensive-contribution term used a hand-picked logistic in `nativeXP` and a Poisson threshold in the simulators — now one `dcHitProb` in both, so the point estimate is the expectation of the event simulated; (d) `horizonXP` applied availability a second time on top of `nativeXP`, charging a 50% doubt as 25% across the whole solver and transfer surface, while every other `fixtureXP` caller left the fallback branch unscaled — availability now lives in `fixtureXP`, once. Plus deductions drawn as whole points instead of shaved off an integer score, which had been silently deleting the entire probability mass at exactly 10 from every haul figure. **The accountability loop was also grading a different model than ships**: `log-predictions.js` built its bootstrap with no Elo map and no European calendar, so promoted clubs were logged on the generic prior and every club in Europe without its congestion discount; and it compared a single-fixture projection against a whole-gameweek actual, booking a phantom miss on every double. | **done** |
+
 The strategic payoff is P3–P4: forecasting **distributions** rather than
 point estimates, then optimising for **expected rank** vs the field (given
 ownership) rather than raw points — which is what actually moves a manager
@@ -132,7 +134,7 @@ neutralised (it isolates the per‑90 scoring core; the Dixon‑Coles layer is
 covered end‑to‑end by `backtest-season.mjs`), and vaastav's own `xP` column is
 dropped for its documented lookahead bias. On 2023/24, **conditional on the
 player appearing** the scoring core beats the 3‑GW form baseline on real
-actuals (MAE ≈ 2.17 vs 2.34). On *all* player‑gameweeks raw MAE is
+actuals (MAE 2.145 vs 2.37, and season PPG 2.176). On *all* player‑gameweeks raw MAE is
 minutes‑dominated — recent form implicitly encodes rotation that a pure
 scoring model omits — which is precisely the gap the separately‑validated
 `minutesModel` closes in the live app. A trimmed sample season is committed so
@@ -158,8 +160,12 @@ comparison is pinned in `dev/test-core.mjs` against a committed Elo snapshot,
 along with a check that the shipped coefficients still both *track* the fitted
 priors and *spread* clubs as much as they do — closeness alone would be
 satisfied by returning 1.0 for everyone, which is precisely the useless answer.
-Ratings outside a plausible band are dropped rather than clamped, so a broken
-value falls back to the generic prior instead of becoming a confident wrong one.
+A rating outside a plausible band (800-2600 Elo) is dropped rather than clamped,
+so a broken value falls back to the generic prior instead of becoming a
+confident wrong one. Note the two guards are different things: that one drops
+the *rating*, while `ELO_CLAMP` pins the *derived multiplier* to [0.55, 1.60] —
+a backstop that does not bind at real Premier League Elo spreads, but that would
+produce a clamped extreme rather than a fallback if it ever did.
 
 **Stratified by outcome band.** One average over every player‑gameweek hides
 where a model is actually weak, so the backtest also reports **RMSE split by
@@ -171,10 +177,14 @@ rather than assumed.
 The split earns its place immediately. Blended together, recent form beats the
 scoring core on “all player‑gameweeks” and the reason is invisible. Split by
 band on 2023/24 it is unambiguous: the core wins **every band in which the
-player actually took the pitch** (blanks 1.85 vs 2.22, tickers 1.24 vs 2.23,
-haulers 5.47 vs 5.76) and loses only the did‑not‑play band (2.57 vs 1.63) —
+player actually took the pitch** (blanks 1.848 vs 2.303, tickers 1.201 vs 2.100,
+haulers 5.242 vs 5.528) and loses only the did‑not‑play band (2.737 vs 1.550) —
 which is exactly the availability signal this run strips out by design. One row
 now carries the whole confound instead of it contaminating the average.
+
+> Every figure on this page is printed by the harness that produced it, on each
+> `npm test` run. They move whenever the model does, so if this page and a run
+> ever disagree, the run is right.
 
 Error is **not** monotonic in the size of the outcome, which is worth stating
 because it is the intuitive and wrong expectation: it is smallest in the band
@@ -190,12 +200,17 @@ fixture conditioning to grade the per‑90 core alone. Their numbers are the
 shape to expect across bands, not a scoreboard.
 
 **What holds up:**
-- `nativeXP` MAE **beats a 3-GW form baseline** (~2.4 vs ~2.8 synthetic; ~2.17
-  vs 2.34 on real appearance‑conditional actuals) and season‑PPG, so the added
+- `nativeXP` MAE **beats a 3-GW form baseline** (2.39 vs 2.79 synthetic; 2.145
+  vs 2.37 on real appearance‑conditional actuals) and season‑PPG, so the added
   categories earn their place.
-- `pointsDist` haul-probability is **well calibrated** (Brier ~0.07,
-  reliability tracks the diagonal), and the 80% interval covers ~79%.
-- Captaining the model returns **~+2 pts/GW over the highest-form pick**.
+- `pointsDist` haul-probability is **well calibrated** (Brier 0.0711, reliability
+  tracks the diagonal), and the **p90 ceiling is honest**: 9.93% of actuals beat
+  it against a 10% target. The p10 floor is limited by discreteness — most
+  players floor at 0 and an actual cannot fall below that — so only 2.91% land
+  under it and the nominal 80% band therefore covers 87%. The tail a captain
+  pick actually reads is the upper one.
+- Captaining the model returns **+2.8 pts/GW over the highest-form pick**
+  (9.10 vs 6.30), with regret against perfect hindsight down to 12.83.
 
 **Fixes shipped off the first backtest** (bias by position, before → after):
 1. **Goals-conceded term** for GK/DEF — was the biggest miscalibration:
@@ -208,9 +223,38 @@ shape to expect across bands, not a scoreboard.
 4. **Expected-deduction term** for cards / own goals / penalty misses.
 5. **Finishing-aware goals** (`effGoalRate`) — shrunk goals-vs-xG blend.
 
-Net: overall MAE **2.61 → 2.41**, overall bias **+0.32 → −0.16**, and the
-per-position bias spread collapsed from `[−0.13, +0.71]` to a tight, near-
-uniform band.
+Net: overall MAE **2.61 → 2.39**, and the per-position bias spread collapsed
+from `[−0.13, +0.71]` to a tight, near-uniform band — see P8 for where it
+stands now.
+
+**What the P8 consistency pass moved** (`dev/backtest-season.mjs`, same harness
+before and after — only the model changed):
+
+| | before | after |
+|---|---|---|
+| MAE (`nativeXP`) | 2.41 | **2.39** |
+| GK MAE / bias | 1.54 / **+0.17** | **1.48** / **−0.06** |
+| DEF MAE | 2.33 | **2.31** |
+| MID MAE | 2.60 | **2.58** |
+| captain pts/GW | 8.20 | **9.10** |
+| haul Brier | 0.0730 | **0.0711** |
+| actuals above p90 (target 10%) | **17.70%** | **9.93%** |
+
+and on real returns (`dev/backtest-vaastav.mjs`): appearance-conditional MAE
+2.155 → **2.145**, with three of the four outcome bands improving (zeros 2.771 →
+2.737, blanks 1.871 → 1.848, tickers 1.230 → 1.201; haulers 5.229 → 5.242).
+
+The captain line is the one that matters most for a manager: correcting the
+conditional-minutes error raised every distribution, but it raised the rotation
+risks furthest, which is what changed the ranking rather than just the level.
+
+**One thing got honestly worse.** Overall bias moved −0.16 → **−0.22**. The old
+goalkeeper saves over-credit and the over-generous defensive-contribution
+logistic were *positive* errors sitting on top of a model that under-forecasts;
+removing them stopped two wrongs cancelling and exposed the real residual. It is
+now small, uniform and one-directional across GK/DEF/MID, which is the shape a
+single global recentre fixes — and that recentre belongs on live returns via the
+P5 loop, not fitted to this simulation.
 
 **What the backtest now flags next:**
 - **Forwards** are still under-forecast (~−0.4 pts/GW): bonus
@@ -301,7 +345,14 @@ These complement — do not replace — the double/blank calls in `chipAdvice`.
   "where to improve" report (the section above is generated from it).
 - `node dev/model-validate.mjs [snap.json]` — A/B accuracy backtest (now
   including the goalkeeper `goals_prevented` refinement); `snap.json` runs it
-  against real finished-gameweek actuals.
+  against real finished-gameweek actuals. Its ground-truth generator used to
+  omit the goals-conceded deduction entirely and draw the clean sheet
+  independently of it — so a model carrying a correct `−1 per 2 conceded` term
+  was marked down for it. It now draws one goals-against count and reads the
+  clean sheet off it, as `backtest-season.mjs` and the file's own
+  goals-prevented generator already did. Under that corrected harness, the P8
+  terms move overall MAE 0.40 → **0.30** and bias +0.33 → **+0.14** (GK 0.38 →
+  **0.25**; forwards unchanged, as they carry neither term).
 - `npm run fetch:vaastav [season]` then `node dev/backtest-vaastav.mjs [season]`
   — real-actuals backtest against the open vaastav dataset (P7). Runs on a
   committed trimmed sample offline; pull a full season for a fuller run.
