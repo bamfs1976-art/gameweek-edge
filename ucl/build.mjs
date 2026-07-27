@@ -1,4 +1,4 @@
-/* Matchday Edge — build.
+/* Euro Matchdayedge — build.
  *
  * Assembles ucl/dist/ from:
  *   app/           this site's own shell, styles and panels
@@ -36,7 +36,7 @@ async function copyDir(src, dest) {
 
 if (!existsSync(PARENT_INDEX)) {
   throw new Error(
-    'Cannot find ../index.html. Matchday Edge builds the shared model engine ' +
+    'Cannot find ../index.html. Euro Matchdayedge builds the shared model engine ' +
     'out of Gameweek Edge, so it must be built from inside the full repo — ' +
     'set the Netlify site\'s base directory to `ucl`, not its repository to a subtree.'
   );

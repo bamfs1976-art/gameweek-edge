@@ -1,8 +1,8 @@
 /*
- * Tests for the Matchday Edge data layer (ucl/functions/ucl.js).
+ * Tests for the Euro Matchdayedge data layer (ucl/functions/ucl.js).
  *
  * This normaliser is the highest-risk code in the second app. Every number
- * Matchday Edge shows depends on it, and it was written without a reachable
+ * Euro Matchdayedge shows depends on it, and it was written without a reachable
  * upstream to observe — so it is deliberately tolerant of several plausible
  * field spellings, and these tests pin the behaviour that tolerance must have:
  *
@@ -281,7 +281,7 @@ console.log('• the app actually renders against the shared engine');
       querySelectorAll: () => [],
       addEventListener(){}
     },
-    location: { hash: '', href: 'https://matchdayedge.co.uk/' },
+    location: { hash: '', href: 'https://euromatchdayedge.co.uk/' },
     URL, URLSearchParams, setTimeout, Math, JSON, isFinite, Number, String, Object, Array, Set, Map,
     fetch: async (url) => ({
       ok: true, status: 200,

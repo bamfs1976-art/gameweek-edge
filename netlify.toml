@@ -69,14 +69,6 @@
   status = 200
   force = true
 
-# FPL Challenge — the weekly-rules game on its own host. Same player pool
-# and scoring, different rulebook; the app selects it via the game pack.
-[[redirects]]
-  from = "/api/challenge/*"
-  to = "/.netlify/functions/challenge/:splat"
-  status = 200
-  force = true
-
 # AI features (Claude) — scout report, chat, transfers, digest, etc.
 [[redirects]]
   from = "/api/ai"

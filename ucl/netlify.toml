@@ -1,4 +1,4 @@
-# Matchday Edge — Netlify configuration.
+# Euro Matchdayedge — Netlify configuration.
 #
 # This is a SECOND Netlify site built from the same repository as Gameweek
 # Edge. In the Netlify UI, set that site's **base directory** to `ucl` —
@@ -6,7 +6,7 @@
 # stop fighting over publish directories.
 #
 #   Site 1  Gameweek Edge   base: (repo root)  →  /netlify.toml   → www/
-#   Site 2  Matchday Edge   base: ucl          →  this file       → ucl/dist/
+#   Site 2  Euro Matchdayedge   base: ucl          →  this file       → ucl/dist/
 #
 # The build reaches up to ../index.html to lift the shared model engine out of
 # Gameweek Edge, which is why this must stay in the same repo rather than
@@ -25,7 +25,7 @@
 # Mirrors the Gameweek Edge policy. The app is a single page with inline
 # script and style, so those need 'unsafe-inline'; everything else is
 # locked to the origins actually used. No third-party image host is
-# allowed — Matchday Edge ships without competition imagery (see BRAND).
+# allowed — Euro Matchdayedge ships without competition imagery (see BRAND).
 [[headers]]
   for = "/*"
   [headers.values]

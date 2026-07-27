@@ -1,10 +1,10 @@
-/* Matchday Edge — UEFA Champions League Fantasy proxy (Netlify Function).
+/* Euro Matchdayedge — UEFA Champions League Fantasy proxy (Netlify Function).
 
    Same job as fpl.js, different game and a genuinely different shape. UCL
    Fantasy is not a mirror of the FPL API, so this function does two things
    fpl.js does not:
 
-   1. It NORMALISES. The rest of Matchday Edge — and, more importantly, the
+   1. It NORMALISES. The rest of Euro Matchdayedge — and, more importantly, the
       shared model engine lifted out of Gameweek Edge — expects the FPL
       vocabulary: elements, teams, element_types, events, fixtures. UEFA
       publishes its own field names. Translating once, here, is what lets the
@@ -25,12 +25,12 @@
    Then compare `_unmapped` in the response (a list of upstream keys this
    function did not recognise) against `MAP` below. Anything important
    sitting in `_unmapped` is a field to add. Until that pass is done, treat
-   Matchday Edge's projections as unvalidated.
+   Euro Matchdayedge's projections as unvalidated.
 
    Sources: UEFA's public gaming feeds. If the host or path is wrong, FEEDS
    below is the only block to edit. */
 
-const UA = 'Mozilla/5.0 (compatible; MatchdayEdge/1.0; +https://matchdayedge.co.uk)';
+const UA = 'Mozilla/5.0 (compatible; EuroMatchdayedge/1.0; +https://euromatchdayedge.co.uk)';
 
 /* Upstream feed templates. `{season}` and `{md}` are substituted per request.
    Kept as data so a path change is a one-line edit, not a code change. */

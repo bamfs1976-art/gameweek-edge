@@ -656,24 +656,6 @@ html.offline .net-banner{transform:translateY(0)}
   text-transform:uppercase;color:var(--green-bright);margin-top:3px;
 }
 
-/* Game switcher — FPL / Challenge. A segmented control rather than a
-   dropdown: there are two games, both should be visible, and which one you
-   are in changes every number on screen, so it should never be one click
-   hidden behind a menu. Only rendered when more than one game exists. */
-.sb-game{
-  display:flex;gap:3px;margin:11px 14px 0;padding:3px;
-  background:var(--bg-2);border:1px solid var(--border);border-radius:9px;
-}
-.sb-game-btn{
-  flex:1;padding:6px 8px;border:0;border-radius:6px;cursor:pointer;
-  background:transparent;color:var(--text-3);
-  font-family:inherit;font-size:.7rem;font-weight:700;letter-spacing:.04em;
-  transition:background .15s,color .15s;
-}
-.sb-game-btn:hover{color:var(--text)}
-.sb-game-btn.active{background:var(--green);color:#fff}
-.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset:1px}
-
 /* Gameweek strip */
 .sb-gw{
   padding:13px 18px;
@@ -688,16 +670,6 @@ html.offline .net-banner{transform:translateY(0)}
 .gw-num{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-.03em}
 .gw-deadline{font-size:.72rem;color:var(--text-3);margin-top:3px}
 .gw-deadline b{color:var(--amber);font-weight:600}
-/* This week's Challenge rule (Challenge game only) */
-.gw-challenge{
-  margin-top:7px;padding:6px 8px;border-radius:7px;
-  background:var(--green-soft);border:1px solid var(--border);
-  font-size:.72rem;line-height:1.35;color:var(--text-2);
-}
-.gw-ch-label{
-  display:block;font-size:.58rem;font-weight:700;letter-spacing:.11em;
-  text-transform:uppercase;color:var(--green-bright);margin-bottom:2px;
-}
 .live-dot{
   display:inline-block;width:6px;height:6px;border-radius:50%;
   background:var(--green-bright);margin-right:5px;vertical-align:middle;
@@ -769,7 +741,7 @@ html.offline .net-banner{transform:translateY(0)}
    which is reserved for decorative glyphs. */
 .sb-foot-v{font-size:.66rem;color:var(--text-3)}
 .sb-foot-legal{font-size:.6rem;line-height:1.45;color:var(--text-3);margin:0}
-/* Sibling app card. Matchday Edge is the same model on a different
+/* Sibling app card. Euro Matchdayedge is the same model on a different
    competition, so it gets a real card rather than another footer link —
    but a quiet one, below the account button, not competing with the nav. */
 .sb-sibling{
@@ -1850,9 +1822,6 @@ body{font-size:14px;line-height:1.35}
       </div>
     </div>
 
-    <!-- Game switcher (FPL / Challenge) — built from the game packs -->
-    <div class="sb-game" id="sb-game" role="group" aria-label="Choose fantasy game"></div>
-
     <!-- Gameweek strip -->
     <div class="sb-gw">
       <div class="gw-row">
@@ -1860,7 +1829,6 @@ body{font-size:14px;line-height:1.35}
         <span class="gw-num" id="gw-num">37</span>
       </div>
       <div class="gw-deadline">Deadline <b id="gw-deadline">Sat 11:00</b></div>
-      <div class="gw-challenge hidden" id="gw-challenge"></div>
     </div>
 
     <!-- Navigation -->
@@ -1881,9 +1849,9 @@ body{font-size:14px;line-height:1.35}
       </div>
       <!-- Sibling app. Same account, same Pro subscription: tier lives on the
            shared gwedge_profiles row, so unlocking one unlocks both. -->
-      <a class="sb-sibling" href="https://matchdayedge.co.uk" rel="noopener">
+      <a class="sb-sibling" href="https://euromatchdayedge.co.uk" rel="noopener">
         <span class="sb-sib-mark" aria-hidden="true"></span>
-        <span class="sb-sib-t"><b>Matchday Edge</b>European fantasy football — your Pro covers it</span>
+        <span class="sb-sib-t"><b>Euro Matchdayedge</b>European fantasy football — your Pro covers it</span>
         <span class="sb-sib-go" aria-hidden="true">↗</span>
       </a>
       <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>
@@ -2144,20 +2112,18 @@ function svg(path,extra){
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 /* ═══════════════════════════════════════════════════════════
-   GAME PACKS
-   The app runs against more than one fantasy game. A pack says where
-   the data comes from, what the game's scoring looks like, and — the
-   part that matters most — which of the game's *mechanics* exist at
-   all. FPL has price changes, chips and bonus points; Challenge does
-   not. Rather than scatter `if(game==='challenge')` through forty-odd
-   panels, each pack declares capabilities and the panels that depend
-   on a missing one simply do not appear.
+   GAME PACK
+   One place that says where the data comes from, what the scoring looks
+   like, and which of the game's *mechanics* exist at all. Gameweek Edge
+   plays Fantasy Premier League and nothing else, so today there is one
+   pack and every capability is present.
 
-   A pack is deliberately NOT a fork of the model. Both packs here share
-   the same player pool, the same match model and the same xP code; only
-   the endpoints and the rulebook differ.
-
-   Adding a third game means adding an entry here and a proxy function —
+   The capability layer earns its place even so, because it is what a
+   panel checks instead of assuming. `hasCap('transferCost')` reads as a
+   question about the game rather than a constant, and a game without
+   price changes would remove the Price Predictor rather than show it
+   locked — a Pro panel is withheld from you, a missing mechanic simply
+   does not exist. Adding a second game means adding a pack and a proxy;
    no panel needs to know it happened.
    ═══════════════════════════════════════════════════════════ */
 
@@ -2167,13 +2133,6 @@ function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;',
 const CAPS = ['prices','chips','ownership','bps','defcon','autosubs','publicEntry',
   'setPieces','seasonHistory','transferCost','preseasonDraft','congestion'];
 
-/* Endpoints that describe *players and clubs* rather than a fantasy game.
-   Both games draw on the same Premier League, so these always resolve
-   against the FPL host whichever pack is active — Challenge does not
-   publish its own set-piece notes, and it would be the same notes if it
-   did. Anything not listed here is game-scoped. */
-const SHARED_ENDPOINTS = [/^set-piece-notes$/];
-
 const GAMES = {
   fpl: {
     id:'fpl',
@@ -2181,65 +2140,15 @@ const GAMES = {
     short:'FPL',
     apiPath:'/api/fpl/',
     entryLabel:'Manager ID',
-    entryHelp:'Find it in the FPL site URL: /entry/<b>1234567</b>/event/1',
+    entryHelp:'Find it at fantasy.premierleague.com → Points → the number after <b>/entry/</b> in the address bar.',
     site:'https://fantasy.premierleague.com',
-    /* Full-fat FPL: every mechanic the app was originally built for. */
     caps:{prices:true,chips:true,ownership:true,bps:true,defcon:true,autosubs:true,
       publicEntry:true,setPieces:true,seasonHistory:true,transferCost:true,
       preseasonDraft:true,congestion:true},
     scoring:{goal:{1:6,2:6,3:5,4:4},cs:{1:4,2:4,3:1,4:0},defconThreshold:{2:10,3:12,4:12}}
-  },
-  challenge: {
-    id:'challenge',
-    label:'FPL Challenge',
-    short:'Challenge',
-    apiPath:'/api/challenge/',
-    entryLabel:'Challenge entry ID',
-    entryHelp:'Find it in the Challenge site URL: /entry/<b>1234567</b>/event/1',
-    site:'https://fplchallenge.premierleague.com',
-    /* Challenge rebuilds the squad every week against a new rule, so the
-       mechanics that only make sense across a season are absent:
-       - prices never move (nothing to predict)
-       - there are no chips to plan
-       - transfers are unlimited and free, so there is no hit to weigh
-       - the pre-season squad builder has nothing to build towards
-       Ownership, bonus and the defensive-contribution rules all still
-       apply — it is the same player pool and the same base scoring. */
-    caps:{prices:false,chips:false,ownership:true,bps:true,defcon:true,autosubs:true,
-      publicEntry:true,setPieces:true,seasonHistory:true,transferCost:false,
-      preseasonDraft:false,congestion:true},
-    scoring:{goal:{1:6,2:6,3:5,4:4},cs:{1:4,2:4,3:1,4:0},defconThreshold:{2:10,3:12,4:12}},
-    /* Each Challenge gameweek carries its own rule ("three clubs only",
-       "defenders score double"). The game publishes it per event; we read
-       it where present and otherwise say nothing rather than guess. */
-    weeklyRule:true
   }
 };
-const GAME_DEFAULT='fpl';
-
-/* The active pack. Persisted so a manager who plays Challenge lands back
-   in Challenge, and mirrored to the cloud profile alongside the manager ID. */
-let GAME=GAMES[GAME_DEFAULT];
-function gameId(){return GAME.id;}
-function setGame(id,{reload=true}={}){
-  const next=GAMES[id]||GAMES[GAME_DEFAULT];
-  if(next.id===GAME.id)return;
-  GAME=next;
-  try{localStorage.setItem('ge-game',GAME.id);}catch(_){}
-  /* Every cached slice is game-scoped, but the in-memory index is not —
-     drop it wholesale so nothing from the previous game survives the switch. */
-  Object.keys(MEM).forEach(k=>delete MEM[k]);
-  track('game_switch',{game:GAME.id});
-  if(reload)location.reload();
-}
-function restoreGame(){
-  try{
-    const q=new URLSearchParams(location.search).get('game');
-    const saved=q||localStorage.getItem('ge-game');
-    if(saved&&GAMES[saved]){GAME=GAMES[saved];if(q)localStorage.setItem('ge-game',GAME.id);}
-  }catch(_){/* default pack */}
-}
-restoreGame();
+const GAME=GAMES.fpl;
 
 /* Does the active game have this mechanic? Unknown names return false so a
    mistyped capability hides its panel rather than showing a broken one. */
@@ -2253,7 +2162,7 @@ function capsMet(needs){
 /* ═══════════════════════════════════════════════════════════
    LIVE DATA LAYER (Phase 2)
    Game data is fetched through the active pack's Netlify proxy
-   (/api/fpl/* or /api/challenge/*).
+   (/api/fpl/*).
    Bootstrap + fixtures are cached; manager/live data never is.
    ═══════════════════════════════════════════════════════════ */
 const GE_CONFIG = {
@@ -2301,13 +2210,8 @@ function noteData(t){
   el.title='Newest data fetched '+d.toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})+
     ' — cached slices can be a few minutes older. The refresh button forces a refetch.';
 }
-/* Route an endpoint to the right proxy: game-scoped by default, but the
-   shared player/club endpoints always go to the FPL host (see
-   SHARED_ENDPOINTS). Returns the full path including the leading base. */
-function apiPathFor(path){
-  const shared=SHARED_ENDPOINTS.some(re=>re.test(path));
-  return apiBase()+(shared?GAMES.fpl.apiPath:GAME.apiPath)+path;
-}
+/* Full request path for an endpoint, via the active pack's proxy. */
+function apiPathFor(path){return apiBase()+GAME.apiPath+path;}
 async function api(path,{timeout=14000}={}){
   const ctrl=new AbortController();
   const timer=setTimeout(()=>ctrl.abort(),timeout);
@@ -2322,10 +2226,9 @@ async function api(path,{timeout=14000}={}){
 
 /* In-memory + localStorage cache with TTL. */
 const MEM={};
-/* Cache keys are scoped to the active game. Both games describe the same
-   Premier League with the same-looking payloads, so an unscoped key would
-   happily serve a Challenge bootstrap to FPL and vice versa — the kind of
-   bug that shows up as quietly wrong numbers rather than an error. */
+/* Cache keys are scoped to the active game, so a second pack could never be
+   served a slice cached by the first — the kind of bug that shows up as
+   quietly wrong numbers rather than an error. */
 function ck(key){return GAME.id+':'+key;}
 async function cached(key,ttl,loader){
   const now=Date.now();
@@ -2503,12 +2406,12 @@ async function boot(){
 }
 
 /* ── Manager ID state ──────────────────────────────────────
-   A Challenge entry is a different number from an FPL manager ID, so each
-   game keeps its own. FPL deliberately keeps the original unsuffixed key
-   and the original `manager_id` cloud column, so every existing install
-   and every synced profile carries over untouched. */
-const MID_KEY={fpl:'ge-mid',challenge:'ge-mid-challenge'};
-const MID_COL={fpl:'manager_id',challenge:'challenge_entry_id'};
+   Keyed per game so a second pack would carry its own entry id rather than
+   inherit one that means nothing to it. FPL keeps the original unsuffixed
+   storage key and the original `manager_id` column, so every existing
+   install and every synced profile is untouched. */
+const MID_KEY={fpl:'ge-mid'};
+const MID_COL={fpl:'manager_id'};
 function midKey(g){return MID_KEY[g||GAME.id]||('ge-mid-'+(g||GAME.id));}
 function getMid(g){try{return localStorage.getItem(midKey(g))||'';}catch(_){return '';}}
 function setMid(v,g){
@@ -3150,10 +3053,10 @@ const NAV = [
 function ownerOnly(o){return !!o&&o.tier==='owner';}
 /* Two independent gates, and the distinction matters. Owner/Pro gating is
    about *who you are* — a Pro panel still exists for a free user, shown
-   locked as an upsell. A capability gate is about *what the game has*: the
-   Price Predictor is not a locked feature in Challenge, it is a meaningless
-   one, because prices never move. So a panel whose capability is absent is
-   removed entirely rather than shown behind a lock. */
+   locked as an upsell. A capability gate is about *what the game has*: in a
+   game where prices never move the Price Predictor is not withheld from you,
+   it is meaningless. So a panel whose capability is absent is removed
+   entirely rather than shown behind a lock. */
 function canSeePanel(p){
   if(ownerOnly(p)&&!window.GE_OWNER)return false;
   return capsMet(p&&p.needs);
@@ -3541,32 +3444,6 @@ const PANEL_CONTENT = {
 /* ── STATE ─────────────────────────────────────────────── */
 let currentPanel='dashboard';
 let expandedArea='home';
-
-/* ── BUILD GAME SWITCHER ───────────────────────────────── */
-/* Switching game reloads the app. That is a deliberate choice over trying to
-   re-render in place: the bootstrap, the fixtures, the squad, the rules and
-   half the panel list all change at once, and a reload is the one way to be
-   certain nothing from the previous game is left on screen. */
-function buildGameSwitch(){
-  const el=document.getElementById('sb-game');
-  if(!el)return;
-  const ids=Object.keys(GAMES);
-  /* One game is not a choice — hide the control entirely rather than show a
-     single dead button. */
-  if(ids.length<2){el.style.display='none';return;}
-  el.innerHTML='';
-  ids.forEach(id=>{
-    const g=GAMES[id],active=id===GAME.id;
-    const b=document.createElement('button');
-    b.className='sb-game-btn'+(active?' active':'');
-    b.type='button';
-    b.textContent=g.short;
-    b.title=g.label;
-    b.setAttribute('aria-pressed',active?'true':'false');
-    if(!active)b.addEventListener('click',()=>setGame(id));
-    el.appendChild(b);
-  });
-}
 
 /* ── BUILD SIDEBAR NAV ─────────────────────────────────── */
 function buildNav(){
@@ -13129,9 +13006,9 @@ function transferFrame(best,bankTenths,freeTransfers,horizonN,chargeHits){
   const deltaTenths=best.cand.now_cost-best.out.now_cost;
   const netXP=best.gain,n=horizonN||5,perGw=netXP/n;
   const ft=freeTransfers==null?1:freeTransfers;
-  /* Games without a transfer cost (Challenge rebuilds the squad every week,
-     free and unlimited) never charge a hit, so the breakeven maths collapses
-     to "is the move an improvement" — which is what a zero hitCost gives. */
+  /* A game without a transfer cost never charges a hit, so the breakeven
+     maths collapses to "is the move an improvement" — which is exactly what
+     a zero hitCost gives. */
   const usesHit=(chargeHits!==false)&&ft<1,hitCost=usesHit?4:0;
   return {priceDelta:deltaTenths/10,
           bankAfter:((bankTenths||0)-deltaTenths)/10,
@@ -14388,39 +14265,7 @@ async function hydrateGwStrip(){
     const b=await boot();
     document.getElementById('gw-num').textContent=b.cur.id;
     document.getElementById('gw-deadline').textContent=fmtDeadline(b.cur.deadline_time);
-    renderChallengeRule(b.cur);
   }catch(_){/* leave the static fallback in place */}
-}
-
-/* ── THIS WEEK'S CHALLENGE ─────────────────────────────────
-   Challenge sets a different rule every gameweek — three clubs only,
-   defenders score double, a budget cut. It is the single most important
-   thing on screen in that game, because it changes what a good squad even
-   is, so it sits in the sidebar strip under the deadline.
-
-   The field it arrives in is read defensively across the plausible names:
-   the game publishes it per event, but this was written without a reachable
-   payload to confirm which key it lands under. An unrecognised shape shows
-   nothing at all — an empty strip is honest, a guessed rule is not. */
-function challengeRule(ev){
-  if(!GAME.weeklyRule||!ev)return '';
-  const cand=[ev.challenge,ev.challenge_name,ev.chip_name,ev.name,ev.rule,ev.description];
-  for(const c of cand){
-    if(typeof c!=='string')continue;
-    const s=c.trim();
-    /* "Gameweek 7" is the event's own name, not a challenge — reject the
-       label the API always has in favour of one it only sometimes has. */
-    if(!s||/^gameweek\s*\d+$/i.test(s))continue;
-    return s;
-  }
-  return '';
-}
-function renderChallengeRule(ev){
-  const host=document.getElementById('gw-challenge');
-  if(!host)return;
-  const rule=challengeRule(ev);
-  host.innerHTML=rule?'<span class="gw-ch-label">This week</span>'+esc(rule):'';
-  host.classList.toggle('hidden',!rule);
 }
 
 /* ── NATIVE SHELL INTEGRATION ──────────────────────────── */
@@ -14521,7 +14366,6 @@ function initPullToRefresh(){
    links (hash / ?panel=) still override below. */
 function homePanel(){return 'dashboard';}
 function init(){
-  buildGameSwitch();
   buildNav();
   buildBottomNav();
   applyTheme(storedTheme()||'dark');

@@ -533,13 +533,15 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
 console.log('• game packs: capabilities decide which panels exist');
 {
   /* A pack describes a fantasy game's mechanics. A panel that depends on a
-     mechanic the active game does not have is removed, not locked — the
-     Price Predictor is meaningless in Challenge, not a paid upsell. */
+     mechanic the active game does not have is removed, not locked — in a game
+     without price changes the Price Predictor is meaningless, not a paid
+     upsell. Gameweek Edge ships one pack today; these tests hold the contract
+     that a second one would have to satisfy. */
   const packSrc = html.slice(html.indexOf('const GAMES = {'));
   const GAMES = new Function('return ' + extractBlock(packSrc, packSrc.indexOf('{')) + ';')();
   const CAPS = new Function('return ' + html.match(/const CAPS\s*=\s*(\[[^\]]*\])/)[1] + ';')();
 
-  ok(!!GAMES.fpl && !!GAMES.challenge, 'both game packs are registered');
+  ok(!!GAMES.fpl, 'the FPL pack is registered');
   for (const [id, g] of Object.entries(GAMES)) {
     ok(!!g.label && !!g.short && !!g.apiPath, id + ': has a label, short name and api path');
     ok(/^\/api\/[a-z-]+\/$/.test(g.apiPath), id + ': api path is a routed proxy prefix');
@@ -554,26 +556,28 @@ console.log('• game packs: capabilities decide which panels exist');
   /* FPL is the full-fat game: it must keep every mechanic the app was built
      for, or a capability typo would quietly strip panels from the main app. */
   ok(CAPS.every((c) => GAMES.fpl.caps[c] === true), 'FPL retains every capability');
-  /* Challenge rebuilds the squad weekly against a new rule. */
-  ok(GAMES.challenge.caps.prices === false, 'Challenge has no price changes');
-  ok(GAMES.challenge.caps.chips === false, 'Challenge has no chips');
-  ok(GAMES.challenge.caps.preseasonDraft === false, 'Challenge has no pre-season squad to build');
-  ok(GAMES.challenge.caps.bps === true, 'Challenge still scores bonus — same players, same scoring');
 
-  /* Every capability a panel asks for must be a real one, and every declared
-     capability should earn its place by gating at least one panel. */
+  /* Every capability a panel asks for must be a real one. */
   const needed = new Set(NAV_ALL.flatMap((p) => p.needs || []));
   const bogus = [...needed].filter((c) => !CAPS.includes(c));
   ok(bogus.length === 0, 'no panel depends on an undeclared capability (' + (bogus.join() || 'none') + ')');
 
-  /* The panels that must disappear in Challenge, and the ones that must not. */
+  /* With every FPL capability present, nothing may be hidden — a stray `false`
+     or a mistyped `needs:` would silently delete a panel from the live app,
+     which is the failure this whole mechanism could most easily cause. */
   const needsOf = (id) => (NAV_ALL.find((p) => p.id === id) || {}).needs || [];
   const visibleIn = (game, id) => needsOf(id).every((c) => GAMES[game].caps[c] === true);
-  for (const id of ['price', 'chips', 'draft']) {
-    ok(visibleIn('fpl', id) && !visibleIn('challenge', id), id + ': shown in FPL, hidden in Challenge');
-  }
+  const hidden = NAV_ALL.filter((p) => !visibleIn('fpl', p.id)).map((p) => p.id);
+  ok(hidden.length === 0, 'no panel is hidden in FPL (' + (hidden.join() || 'none') + ')');
+
+  /* The gate must still WORK, or it is decoration that would not catch a
+     regression. Prove it against a hypothetical pack rather than a shipped
+     one: a game without prices loses the Price Predictor and keeps the rest. */
+  const noPrices = { ...GAMES.fpl.caps, prices: false };
+  const wouldShow = (id) => needsOf(id).every((c) => noPrices[c] === true);
+  ok(!wouldShow('price'), 'a pack without prices would drop the Price Predictor');
   for (const id of ['squad', 'captain', 'fixtures', 'eo', 'bonus', 'results']) {
-    ok(visibleIn('fpl', id) && visibleIn('challenge', id), id + ': shown in both games');
+    ok(wouldShow(id), id + ': survives a capability it does not depend on');
   }
 }
 

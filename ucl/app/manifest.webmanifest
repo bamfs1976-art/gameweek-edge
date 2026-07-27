@@ -1,6 +1,6 @@
 {
-  "name": "Matchday Edge",
-  "short_name": "Matchday",
+  "name": "Euro Matchdayedge",
+  "short_name": "Matchdayedge",
   "description": "Projected points, match forecasts and matchday difficulty for European fantasy football.",
   "start_url": "/",
   "scope": "/",

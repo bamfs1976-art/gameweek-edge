@@ -1,7 +1,7 @@
 /*
  * Tests for the shared-engine extraction (scripts/extract-engine.mjs).
  *
- * Matchday Edge runs on model code lifted out of Gameweek Edge's index.html
+ * Euro Matchdayedge runs on model code lifted out of Gameweek Edge's index.html
  * at build time. If that lift is wrong, the second app is wrong in ways no
  * panel test would catch — so the extraction itself is tested here:
  *

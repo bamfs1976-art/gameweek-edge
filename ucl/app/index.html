@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Matchday Edge — the calm, clear edge for European fantasy football</title>
+<title>Euro Matchdayedge — the calm, clear edge for European fantasy football</title>
 <meta name="description" content="Projected points, match forecasts and matchday difficulty for UEFA Champions League Fantasy. Built on the same model as Gameweek Edge.">
 <meta name="theme-color" content="#0a1024">
 <link rel="manifest" href="manifest.webmanifest">
@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════
-   MATCHDAY EDGE — sibling brand to Gameweek Edge.
+   EURO MATCHDAYEDGE — sibling brand to Gameweek Edge.
 
    Gameweek Edge is pitch green and daytime. European football is a
    night competition, so this is deep navy under floodlights: the same
@@ -135,7 +135,7 @@ tr:last-child td{border-bottom:0}
       <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>
     </svg>
     <div>
-      <div class="brand"><span class="lt">Matchday</span> Edge</div>
+      <div class="brand"><span class="lt">Euro</span> Matchdayedge</div>
       <div class="brand-tag">European fantasy football</div>
     </div>
     <div class="hdr-sp"></div>
@@ -157,7 +157,7 @@ tr:last-child td{border-bottom:0}
     </div>
     <a class="btn" href="https://gameweekedge.co.uk">Open Gameweek Edge</a>
   </div>
-  <p><b>Matchday Edge</b> is not affiliated with, endorsed by, or associated with UEFA
+  <p><b>Euro Matchdayedge</b> is not affiliated with, endorsed by, or associated with UEFA
      or the official UEFA Champions League Fantasy game. Competition and club names are
      used descriptively only.</p>
   <p id="data-note" class="muted"></p>
@@ -262,7 +262,7 @@ function nextFixtures(idx){
       .forEach(f => {
         const m = E.plsimMatch(R, f.team_h, f.team_a);
         if(!m) return;
-        /* congest: Matchday Edge has no midweek-congestion feed (see README),
+        /* congest: Euro Matchdayedge has no midweek-congestion feed (see README),
            so it is honestly zero rather than a guess. */
         if(out[f.team_h] == null) out[f.team_h] =
           {lam: m.hx, cs: m.csH, lamAvg: BM * R.att[f.team_h], gp: played[f.team_h] || 0, congest: 0,
