@@ -267,8 +267,11 @@ console.log('• cached: a failed fetch is never pinned for the full TTL');
      hours without the feature — which is exactly what happened while wiring
      the cup calendar up, and cost an afternoon of confusing browser runs. */
   const store = {};
+  /* `ck` namespaces every key by the active game pack; it comes along
+     verbatim so the test exercises the real scoping rather than a stub. */
   const CACHE = new Function(
-    'MEM', 'localStorage', 'noteData',
+    'MEM', 'localStorage', 'noteData', 'GAME',
+    grabFn('ck') + '\n' +
     /* grabFn anchors on `function cached(`, which drops the `async`
        keyword in front of it — put it back or the awaits inside are a
        syntax error. */
@@ -276,7 +279,7 @@ console.log('• cached: a failed fetch is never pinned for the full TTL');
   )({}, {
     getItem: (k) => (k in store ? store[k] : null),
     setItem: (k, v) => { store[k] = v; },
-  }, () => {});
+  }, () => {}, { id: 'fpl' });
 
   let calls = 0;
   const failing = async () => { calls++; return null; };

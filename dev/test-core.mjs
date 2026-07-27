@@ -579,6 +579,15 @@ ok(Math.abs(frHit.clears - 2) < 1e-9, 'net after the hit: 6 − 4 = 2');
 ok(frHit.beGw > 0 && frHit.beGw < 5, 'breakeven is a positive fraction of the horizon');
 const frBust = core.transferFrame({ out: { now_cost: 50 }, cand: { now_cost: 120 }, gain: 3 }, 5, 1, 5);
 ok(frBust.affordable === false, 'unaffordable when the delta exceeds bank');
+/* A game with no transfer cost (Challenge: unlimited free transfers, squad
+   rebuilt weekly) must never frame a move as costing a hit, even with no free
+   transfer banked. The default stays "charges hits" so FPL is unaffected. */
+const frFree = core.transferFrame({ out: { now_cost: 70 }, cand: { now_cost: 70 }, gain: 6 }, 5, 0, 5, false);
+ok(frFree.usesHit === false && frFree.hitCost === 0, 'a game without transfer costs takes no hit');
+ok(Math.abs(frFree.clears - 6) < 1e-9, 'and the full gain survives (6 − 0 = 6)');
+ok(frFree.beGw === 0, 'breakeven is immediate when nothing is spent');
+ok(core.transferFrame({ out: { now_cost: 70 }, cand: { now_cost: 70 }, gain: 6 }, 5, 0, 5).usesHit === true,
+  'omitting the flag still charges the hit (FPL default unchanged)');
 
 section('eventShape: double / blank / modal detection');
 /* 3 GWs: GW1 normal (10 games), GW2 a double (team 1 plays twice, 11 games),

@@ -33,6 +33,27 @@ function extractBlock(src, startIdx) {
   throw new Error('unbalanced');
 }
 const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+/* Bracket-matched slice for any opener — extractBlock only knows braces, and
+   NAV is an array literal. Shared so more than one block can read it. */
+function balancedFrom(src, from, open, close) {
+  const start = src.indexOf(open, from);
+  let depth = 0, inStr = null, esc = false;
+  for (let i = start; i < src.length; i++) {
+    const ch = src[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (ch === inStr) inStr = null;
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
+    if (ch === open) depth++;
+    else if (ch === close) { depth--; if (!depth) return src.slice(start, i + 1); }
+  }
+  throw new Error('unbalanced');
+}
+const NAV_ALL = new Function('return ' + balancedFrom(html, html.indexOf('const NAV ='), '[', ']'))()
+  .flatMap((a) => a.panels.map((p) => ({ ...p, area: a.id })));
 const grabConst = (n) => {
   const i = html.indexOf('const ' + n + '=');
   return html.slice(i, html.indexOf('\n', i));
@@ -492,16 +513,68 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   /* The gate must actually be applied at each exposure point. */
   const gate = (fn) => html.includes(fn);
   ok(gate('function canSeePanel('), 'canSeePanel gate exists');
-  ok(/NAV\.filter\(canSeePanel\)/.test(html), 'sidebar areas are filtered by the gate');
+  ok(/NAV\.filter\(canSeeArea\)/.test(html), 'sidebar areas are filtered by the gate');
   ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'sidebar panels are filtered by the gate');
   ok(/if\(!canSeePanel\(p\)\)return;/.test(html), 'command palette is filtered by the gate');
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),
     'openPanel guards deep links');
 
   /* Owner rights come from the signed-in email allowlist, never from a
-     client-settable tier — guard against that regressing. */
-  ok(/function canSeePanel\(p\)\{return !ownerOnly\(p\)\|\|!!window\.GE_OWNER;\}/.test(html),
-    'the gate keys off GE_OWNER, not the local tier setting');
+     client-settable tier — guard against that regressing. The gate now also
+     answers the capability question, so pin the two properties rather than
+     the exact source: it consults GE_OWNER, and it never consults the tier. */
+  const gateSrc = html.slice(html.indexOf('function canSeePanel(p){'));
+  const gateBody = gateSrc.slice(0, gateSrc.indexOf('\n}') + 2);
+  ok(/window\.GE_OWNER/.test(gateBody), 'the gate keys off GE_OWNER');
+  ok(!/isPro\(|ge-tier|TIER/.test(gateBody), 'the gate never consults the local tier setting');
+  ok(/capsMet\(/.test(gateBody), 'the gate also applies the game-capability check');
+}
+
+console.log('• game packs: capabilities decide which panels exist');
+{
+  /* A pack describes a fantasy game's mechanics. A panel that depends on a
+     mechanic the active game does not have is removed, not locked — the
+     Price Predictor is meaningless in Challenge, not a paid upsell. */
+  const packSrc = html.slice(html.indexOf('const GAMES = {'));
+  const GAMES = new Function('return ' + extractBlock(packSrc, packSrc.indexOf('{')) + ';')();
+  const CAPS = new Function('return ' + html.match(/const CAPS\s*=\s*(\[[^\]]*\])/)[1] + ';')();
+
+  ok(!!GAMES.fpl && !!GAMES.challenge, 'both game packs are registered');
+  for (const [id, g] of Object.entries(GAMES)) {
+    ok(!!g.label && !!g.short && !!g.apiPath, id + ': has a label, short name and api path');
+    ok(/^\/api\/[a-z-]+\/$/.test(g.apiPath), id + ': api path is a routed proxy prefix');
+    /* Every capability must be answered explicitly — a pack that simply
+       omits one would inherit `false` silently and lose a panel unnoticed. */
+    const missing = CAPS.filter((c) => typeof g.caps[c] !== 'boolean');
+    ok(missing.length === 0, id + ': declares every capability (' + (missing.join() || 'all present') + ')');
+    const unknown = Object.keys(g.caps).filter((c) => !CAPS.includes(c));
+    ok(unknown.length === 0, id + ': declares no unknown capability (' + (unknown.join() || 'none') + ')');
+  }
+
+  /* FPL is the full-fat game: it must keep every mechanic the app was built
+     for, or a capability typo would quietly strip panels from the main app. */
+  ok(CAPS.every((c) => GAMES.fpl.caps[c] === true), 'FPL retains every capability');
+  /* Challenge rebuilds the squad weekly against a new rule. */
+  ok(GAMES.challenge.caps.prices === false, 'Challenge has no price changes');
+  ok(GAMES.challenge.caps.chips === false, 'Challenge has no chips');
+  ok(GAMES.challenge.caps.preseasonDraft === false, 'Challenge has no pre-season squad to build');
+  ok(GAMES.challenge.caps.bps === true, 'Challenge still scores bonus — same players, same scoring');
+
+  /* Every capability a panel asks for must be a real one, and every declared
+     capability should earn its place by gating at least one panel. */
+  const needed = new Set(NAV_ALL.flatMap((p) => p.needs || []));
+  const bogus = [...needed].filter((c) => !CAPS.includes(c));
+  ok(bogus.length === 0, 'no panel depends on an undeclared capability (' + (bogus.join() || 'none') + ')');
+
+  /* The panels that must disappear in Challenge, and the ones that must not. */
+  const needsOf = (id) => (NAV_ALL.find((p) => p.id === id) || {}).needs || [];
+  const visibleIn = (game, id) => needsOf(id).every((c) => GAMES[game].caps[c] === true);
+  for (const id of ['price', 'chips', 'draft']) {
+    ok(visibleIn('fpl', id) && !visibleIn('challenge', id), id + ': shown in FPL, hidden in Challenge');
+  }
+  for (const id of ['squad', 'captain', 'fixtures', 'eo', 'bonus', 'results']) {
+    ok(visibleIn('fpl', id) && visibleIn('challenge', id), id + ': shown in both games');
+  }
 }
 
 console.log('• fplRules: the squad rules come from the game, not from us');
