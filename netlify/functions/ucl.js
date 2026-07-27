@@ -30,7 +30,7 @@
    Sources: UEFA's public gaming feeds. If the host or path is wrong, FEEDS
    below is the only block to edit. */
 
-const UA = 'Mozilla/5.0 (compatible; EuroMatchdayEdge/1.0; +https://euromatchdayedge.co.uk)';
+const UA = 'Mozilla/5.0 (compatible; EuroMatchdayEdge/1.0; +https://gameweekedge.co.uk/euro/)';
 
 /* Upstream feed templates. `{season}` and `{md}` are substituted per request.
    Kept as data so a path change is a one-line edit, not a code change. */

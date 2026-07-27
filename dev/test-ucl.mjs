@@ -281,7 +281,7 @@ console.log('• the app actually renders against the shared engine');
       querySelectorAll: () => [],
       addEventListener(){}
     },
-    location: { hash: '', href: 'https://euromatchdayedge.co.uk/' },
+    location: { hash: '', href: 'https://gameweekedge.co.uk/euro/' },
     URL, URLSearchParams, setTimeout, Math, JSON, isFinite, Number, String, Object, Array, Set, Map,
     fetch: async (url) => ({
       ok: true, status: 200,

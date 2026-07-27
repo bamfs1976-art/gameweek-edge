@@ -40,10 +40,12 @@ Edge) and `www/euro/` (this app) together, and the single `netlify.toml` at the
 repo root routes `/api/ucl/*` to the UEFA proxy. One site, one build, one
 domain.
 
-If you want `euromatchdayedge.co.uk` to work as well, add it as a **domain
-alias** on the same Netlify site and redirect it to `/euro/` — an alias, not a
-second site, so the origin the app actually runs on stays `gameweekedge.co.uk`
-and the shared session survives.
+**No second domain is needed, and buying one would cost you something.** The
+session is per-origin, so a separate domain means signing in twice and a Pro
+subscription that looks absent on whichever app you did not buy it from. If you
+ever do want a vanity URL, add it as a Netlify **domain alias** that redirects
+to `gameweekedge.co.uk/euro/` — an alias resolving to this origin, never a
+second site serving its own copy.
 
 ## Accounts and Pro
 
