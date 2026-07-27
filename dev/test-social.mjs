@@ -493,6 +493,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(orphan.length === 0, 'every NAV panel has a hydrator or a layout' +
     (orphan.length ? ' — orphaned: ' + orphan.map((p) => p.id).join(', ') : ''));
 
+  const byIdAll = Object.fromEntries(navPanels.map((p) => [p.id, p]));
   const ids = navPanels.map((p) => p.id);
   ok(new Set(ids).size === ids.length, 'no duplicate panel ids across areas');
   ok(navPanels.every((p) => p.label && p.icon && p.tier), 'every panel has a label, icon and tier');
@@ -533,6 +534,36 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   }
   ok(ALIAS.scenariolab === 'seasonsim', 'Scenario Lab redirects to the simulator that absorbed it');
   ok(!wiredKeys.has('scenariolab'), 'and its hydrator is gone rather than orphaned');
+  ok(ALIAS.ask === 'scout', 'Ask the Scout redirects to the scout that absorbed it');
+  ok(!wiredKeys.has('ask'), 'and its hydrator is gone too');
+
+  /* Two panels called DEFCON, one of which had nothing to do with defensive
+     contributions, sat next to each other in the same area. Same capability,
+     different question, indistinguishable names. */
+  const dc = navPanels.filter((p) => /defcon/i.test(p.label));
+  ok(dc.length === 1, 'only one panel is named for defensive contributions (' +
+    navPanels.filter((p) => /defcon/i.test(p.label)).map((p) => p.label).join(', ') + ')');
+  ok(byIdAll.defcon && byIdAll.defcon.label === 'Rank Threats',
+    'the rank-threat panel is named for what it does');
+  ok(/Nothing to do with defensive contributions/.test(CONTENT.defcon.desc),
+    'and its description says so, since the id still reads defcon');
+
+  /* The ask box is a section of the scout now, not a Pro panel of its own.
+     It has to survive the merge in both of the scout's branches — including
+     "predictions not ready", which it does not depend on. */
+  ok(!navPanels.some((p) => p.id === 'ask'), 'Ask is no longer its own nav entry');
+  ok(/function askCardHtml\(\)/.test(html) && /function wireAsk\(host\)/.test(html),
+    'the ask box is split into markup and wiring so the scout can place it');
+  const scoutSrc = balanced(html, html.indexOf('async function hydrateScout('), '{', '}');
+  ok((scoutSrc.match(/askCardHtml\(\)/g) || []).length === 2,
+    'the scout renders the ask box on both paths (' +
+    (scoutSrc.match(/askCardHtml\(\)/g) || []).length + ')');
+  ok((scoutSrc.match(/wireAsk\(host\)/g) || []).length === 2, 'and wires it on both');
+  ok(/Predictions not ready[\s\S]{0,120}askCardHtml\(\)/.test(scoutSrc),
+    'including the empty state, which the ask box does not depend on');
+  ok(/ask-thread/.test(html) && /ask-send/.test(html), 'the ask controls still exist');
+  ok(/(scout|ask)/.test(CONTENT.scout.desc) && /ask box/.test(CONTENT.scout.desc),
+    'and the scout description mentions what it absorbed');
   ok(/function resolvePanel\(id\)\{return PANEL_ALIAS\[id\]\|\|id;\}/.test(html),
     'there is one resolver rather than the lookup inlined per call site');
   ok(/panelId=resolvePanel\(panelId\);/.test(html), 'openPanel resolves the alias');
@@ -548,6 +579,11 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
     'the hash deep link resolves aliases on load');
   ok(/const p=resolvePanel\(location\.hash\.slice\(1\)\);/.test(html),
     'and so does hashchange');
+  /* Landing on a retired id while already on the target renders the right
+     panel but leaves the dead id in the address bar, so the URL names a panel
+     that no longer exists. */
+  ok(/if\(location\.hash\.slice\(1\)!==p\)\{[\s\S]{0,80}replaceState\(null,'','#'\+p\)/.test(html),
+    'a retired id is normalised out of the URL even when no navigation happens');
   ok(/const pm=resolvePanel\(\(location\.search\.match/.test(html),
     'and the ?panel= query link');
   for (const m of html.matchAll(/if\((?:hp|p|pm)&&PANELS\[(?:hp|p|pm)\]/g)) {

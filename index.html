@@ -3061,12 +3061,14 @@ const NAV = [
     id:'intel', label:'The Edge', icon:'intel', tier:'paid',
     panels:[
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
-      {id:'ask', label:'Ask the Scout', icon:'chat', tier:'paid'},
       {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid', needs:['publicEntry']},
       {id:'eo', label:'EO Tracker', icon:'target', tier:'paid', needs:['ownership']},
       {id:'template', label:'The Template', icon:'grid', tier:'paid', needs:['ownership']},
       {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid', needs:['defcon']},
-      {id:'defcon', label:'DefCon Threats', icon:'shield', tier:'paid', needs:['defcon']},
+      /* Nothing to do with defensive contributions, despite the id — this is
+         the rank-threat list, and sitting next to "Your DEFCON" under a
+         near-identical name made two unrelated panels look like a pair. */
+      {id:'defcon', label:'Rank Threats', icon:'shield', tier:'paid', needs:['defcon']},
       {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid', needs:['autosubs']},
       {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
       {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
@@ -3382,7 +3384,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   defcon:{
-    desc:'Players you do not own who are scoring now, ranked by the damage to your rank.',
+    desc:'High-owned players you do not own who are scoring now, ranked by the damage to your rank. Nothing to do with defensive contributions — for those, see Your DEFCON.',
     layout:'standard'
   },
   autosubs:{
@@ -3406,11 +3408,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   scout:{
-    desc:'A predicted-points model picks the optimal team and captain for the gameweek, with an AI scout report.',
-    layout:'standard'
-  },
-  ask:{
-    desc:'Ask anything about your team and the gameweek. The AI scout answers, grounded in your squad and live data.',
+    desc:'A predicted-points model picks the optimal team and captain for the gameweek, with an AI scout report — and an ask box for anything else about your team, captaincy, transfers, differentials, value or fixtures.',
     layout:'standard'
   },
   allplayers:{
@@ -3593,7 +3591,7 @@ function toggleArea(areaId){
 /* Panels that have been merged into another. A retired id still resolves, so
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
-const PANEL_ALIAS={scenariolab:'seasonsim'};
+const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout'};
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
@@ -11237,7 +11235,10 @@ async function hydrateScout(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
   const team=bestXI(scoutScored(b,nf));
-  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.');return;}
+  /* No predictions yet is not a reason to withhold the ask box — it answers
+     from the model directly and does not need this week's XI. */
+  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.')+askCardHtml();
+    wireAsk(host);return;}
   const capP=Math.max.apply(null,team.xi.map(s=>s.p));
   const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
     return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
@@ -11266,7 +11267,9 @@ async function hydrateScout(host){
       '<p class="dl-sub" style="margin-bottom:12px">Claude analyses the gameweek and'+(getMid()?' your squad,':'')+' explains the picks, captain and transfer angles.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="genScoutReport()">Generate AI scout report</button>'+
       '<div id="scout-report" style="margin-top:14px"></div>'+
-    '</div>';
+    '</div>'+
+    askCardHtml();
+  wireAsk(host);
 }
 
 /* Build the compact payload Claude reasons over. */
@@ -11609,18 +11612,24 @@ async function sendAsk(text){
   finally{ASK_PENDING=false;renderAskThread();}
 }
 
-async function hydrateAsk(host){
+/* The ask box used to be its own Pro panel sitting next to Scout AI — same
+   subject, same tier, adjacent in the nav, and nothing of its own but a chat
+   shell. It is a section of the scout now. Split into markup and wiring so
+   the scout panel can place it after its report. */
+function askCardHtml(){
   const chips=['Who should I captain this week?','Suggest one transfer for my team','Best differential under 10% owned?','Best value picks right now?','Is my defence strong enough?','Who has the kindest fixtures?'];
-  host.innerHTML=
-    '<div class="card"><div class="card-title">'+svg(ICON.chat,'width="15" height="15"')+' Ask the Scout</div>'+
+  return '<div class="card"><div class="card-title">'+svg(ICON.chat,'width="15" height="15"')+' Ask the Scout</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers, differentials, value or fixtures — answered straight from our projection model, free. '+(getMid()?'':'<b>Link your team</b> for personalised advice. ')+'Add an API key in Netlify to upgrade to conversational replies.</p>'+
       '<div class="ask-thread" id="ask-thread" role="log" aria-live="polite"></div>'+
       '<div class="ask-suggest">'+chips.map(q=>'<button class="ask-chip" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
       '<div class="ask-input"><input id="ask-text" placeholder="Ask the scout…" autocomplete="off" aria-label="Ask the scout a question">'+
         '<button class="btn btn-primary btn-sm" id="ask-send">Send</button></div>'+
     '</div>';
+}
+function wireAsk(host){
   renderAskThread();
   const inp=host.querySelector('#ask-text');
+  if(!inp)return;
   host.querySelector('#ask-send').addEventListener('click',()=>sendAsk(inp.value));
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendAsk(inp.value);});
   Array.prototype.forEach.call(host.querySelectorAll('[data-q]'),btn=>btn.addEventListener('click',()=>sendAsk(btn.dataset.q)));
@@ -14148,7 +14157,6 @@ const WIRED={
   setpiece:hydrateSetpiece,
   rotation:hydrateRotation,
   scout:hydrateScout,
-  ask:hydrateAsk,
   leagues:hydrateLeagues
 };
 
@@ -14677,7 +14685,12 @@ function init(){
   if(hp&&PANELS[hp])openPanel(hp);
   window.addEventListener('hashchange',()=>{
     const p=resolvePanel(location.hash.slice(1));
-    if(p&&PANELS[p]&&p!==currentPanel)openPanel(p);
+    if(!p||!PANELS[p])return;
+    if(p!==currentPanel){openPanel(p);return;}
+    /* Already here — but arriving via a retired id leaves that id in the bar,
+       so the URL claims a panel that no longer exists. Normalise it. */
+    if(location.hash.slice(1)!==p){
+      try{history.replaceState(null,'','#'+p);}catch(_){}}
   });
 
   document.getElementById('export-btn').addEventListener('click',exportViewCSV);

@@ -26,7 +26,7 @@ const MID = process.env.MID || '101';
 const PANELS = [
   'dashboard', 'gw-actions', 'blog', 'squad', 'transfers', 'captain',
   'liverank', 'bonus', 'defcon', 'autosubs', 'whatif',
-  'eo', 'template', 'rivals', 'scout', 'ask',
+  'eo', 'template', 'rivals', 'scout',
   'allplayers', 'compare', 'diffs', 'price', 'injuries', 'setpiece', 'rotation',
   'fixtures', 'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts', 'dossier'
 ];
