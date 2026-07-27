@@ -1,7 +1,7 @@
 /* Gameweek Edge — shared engine extraction.
  *
- * Two apps now run on this model: Gameweek Edge (Fantasy Premier League and
- * FPL Challenge) and Euro Matchdayedge (UEFA Champions League Fantasy). The model
+ * Two apps now run on this model: Gameweek Edge (Fantasy Premier League) and
+ * Euro Matchday Edge (UEFA Champions League Fantasy). The model
  * itself — the Poisson/Dixon-Coles match layer, the expected-points layer and
  * the squad optimiser — is the same code in both, and it must stay that way:
  * a fix to the minutes model should land in both apps or the second one is a
@@ -16,7 +16,7 @@
  * So index.html stays the single source of truth, and this script does at
  * build time what the tests do at test time: pull the named, league-agnostic
  * functions out and emit them as a plain script that assigns them to
- * `window.GEEngine`. Euro Matchdayedge loads that.
+ * `window.GEEngine`. Euro Matchday Edge loads that.
  *
  * Run via scripts/build-web.mjs. Emits www-ucl/engine.js.
  */

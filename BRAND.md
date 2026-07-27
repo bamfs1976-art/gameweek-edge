@@ -23,13 +23,13 @@ The clarity of the official FPL site, with the depth serious managers rely on �
 - Every public surface carries the disclaimer: *not affiliated with, endorsed by, or associated with the Premier League or the official Fantasy Premier League game.*
 - **The same rule applies to every sibling app**, against that competition's rights holder. It governs the visual identity too, not just the name: no competition marks, no borrowed palettes, no starball.
 
-## 4a. Euro Matchdayedge — the sibling brand
+## 4a. Euro Matchday Edge — the sibling brand
 
-**Euro Matchdayedge** is the same product for European fantasy football (UEFA Champions League Fantasy). It is a sibling, not a sub-brand: its own name, its own colour, the same voice.
+**Euro Matchday Edge** is the same product for European fantasy football (UEFA Champions League Fantasy). It is a sibling, not a sub-brand: its own name, its own colour, the same voice.
 
 - **Name rule.** "Champions League" / "UCL" / "UEFA" never appear in the product name — only descriptively in body copy. "Matchday" is used because it is the competition's own word for a gameweek, and it is not a trademark.
 - **Relationship line:** *European fantasy football.* Cross-promo copy is "your Pro covers it" — one account, one subscription, both apps.
-- **Colour.** Gameweek Edge is pitch green and daytime; European football is a night competition, so Euro Matchdayedge is deep navy under floodlights. Same typography, same calm, a different time of day.
+- **Colour.** Gameweek Edge is pitch green and daytime; European football is a night competition, so Euro Matchday Edge is deep navy under floodlights. Same typography, same calm, a different time of day.
 
 | Token | Hex | Use |
 |---|---|---|
@@ -41,7 +41,7 @@ The clarity of the official FPL site, with the depth serious managers rely on �
 
 - **Logo.** The identical form line and node from the Gameweek Edge mark, on a navy tile (`#1b3a8f`) instead of green. The two marks must stay recognisably the same shape — that is what makes them read as a family. Source: `ucl/app/icon.svg`.
 - **Disclaimer** on every public surface: *not affiliated with, endorsed by, or associated with UEFA or the official UEFA Champions League Fantasy game.*
-- **No competition imagery.** Gameweek Edge ships club crests and player photos from the Premier League CDN behind the `USE_OFFICIAL_IMAGERY` switch. Euro Matchdayedge ships none at all — its CSP has no third-party `img-src` — so there is no equivalent switch to get wrong.
+- **No competition imagery.** Gameweek Edge ships club crests and player photos from the Premier League CDN behind the `USE_OFFICIAL_IMAGERY` switch. Euro Matchday Edge ships none at all — its CSP has no third-party `img-src` — so there is no equivalent switch to get wrong.
 
 ## 5. Logo
 - The mark is a rounded square in pitch green with a white upward "form" line and a node — momentum and an edge.

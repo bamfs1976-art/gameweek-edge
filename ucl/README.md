@@ -1,4 +1,4 @@
-# Euro Matchdayedge
+# Euro Matchday Edge
 
 The calm, clear edge for **European fantasy football** — the sibling app to
 Gameweek Edge, running the identical model over the UEFA Champions League
@@ -13,7 +13,7 @@ and both backtests locate those functions **by name inside that file** and
 evaluate them verbatim. That is what makes "the model we grade is the model we
 ship" true.
 
-So Euro Matchdayedge does not contain a model. `build.mjs` lifts the
+So Euro Matchday Edge does not contain a model. `build.mjs` lifts the
 league-agnostic functions out of `../index.html` at build time (via
 `../scripts/extract-engine.mjs`) and writes them to `dist/engine.js`, which the
 app loads. An improvement to the minutes model lands in both apps on the next
@@ -30,9 +30,9 @@ ucl/
 
 ## Deploying
 
-Euro Matchdayedge is a **second Netlify site from the same repository**:
+Euro Matchday Edge is a **second Netlify site from the same repository**:
 
-| | Gameweek Edge | Euro Matchdayedge |
+| | Gameweek Edge | Euro Matchday Edge |
 |---|---|---|
 | Base directory | *(repo root)* | `ucl` |
 | Config read | `/netlify.toml` | `/ucl/netlify.toml` |
@@ -53,7 +53,7 @@ build:all` for both sites).
 One account, one subscription, both apps. Both sites talk to the **same
 Supabase project** and the same `gwedge_profiles` row, and `tier` lives on that
 row — so the existing Stripe webhook that sets `tier = 'pro'` already unlocks
-Euro Matchdayedge. There is nothing extra to buy and no second integration.
+Euro Matchday Edge. There is nothing extra to buy and no second integration.
 
 ## ⚠️ The data layer is unverified
 
@@ -124,8 +124,8 @@ Two consequences worth being deliberate about:
    message and cross-checks the threshold against `nativeXP`'s own gate, so
    the two cannot drift apart silently.
 2. **Match forecasts and matchday difficulty are the launch product**, not
-   player projections. They work from the first played fixture. If Euro
-   Matchdayedge is marketed on projected points from matchday 1, it will look broken
+   player projections. They work from the first played fixture. If Euro Matchday
+   Edge is marketed on projected points from matchday 1, it will look broken
    when it is in fact being careful.
 
 The honest fixes, in order of value:

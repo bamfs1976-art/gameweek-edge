@@ -8,8 +8,8 @@ The calm, clear companion that gives fantasy managers a measurable edge. A singl
 
 ## A sibling app
 
-Gameweek Edge covers **Fantasy Premier League**. A sibling app, **Euro
-Matchdayedge**, covers UEFA Champions League Fantasy and lives in
+Gameweek Edge covers **Fantasy Premier League**. A sibling app, **Euro Matchday
+Edge**, covers UEFA Champions League Fantasy and lives in
 [`ucl/`](ucl/README.md) — a second Netlify site from this repo, sharing the
 model engine rather than copying it.
 
@@ -160,7 +160,7 @@ The Anthropic key stays server-side — set `ANTHROPIC_API_KEY` on the Netlify s
 
 ```
 index.html              the app AND the model (single source of truth)
-ucl/                    Euro Matchdayedge — the sibling app (see ucl/README.md)
+ucl/                    Euro Matchday Edge — the sibling app (see ucl/README.md)
 scripts/extract-engine.mjs  lifts the shared model out of index.html at build time
 src/native/index.js      native bridge (Capacitor) → bundled to www/native.js
 manifest.webmanifest     PWA manifest        sw.js  PWA service worker
