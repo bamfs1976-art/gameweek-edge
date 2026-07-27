@@ -66,22 +66,37 @@ It is built to fail visibly rather than quietly: every field goes through
 a mis-named field shows as missing data rather than as a confident wrong
 number. But that only limits the damage; it does not make the numbers right.
 
-**Do this before trusting any projection:**
+**Do this before trusting any projection** — one command, no deploy, no keys,
+from any machine that can reach `gaming.uefa.com`:
 
 ```bash
-npx netlify dev            # from the ucl/ directory
-curl localhost:8888/api/ucl/health | jq
+node dev/ucl-probe.mjs
 ```
 
-`health` returns the upstream record count, how many survived mapping,
-`unmappedKeys`, and a raw-vs-mapped sample pair. Then:
+The probe imports the real normalisers from `netlify/functions/ucl.js` — not a
+copy — so what it reports is exactly what production does with the same
+payload. It answers four questions in order and stops at the first one that
+makes the rest meaningless:
 
-1. If `mapped` is 0 but `upstream` is not, the position or id field is wrong —
-   fix `POS` / `normPlayer` first, nothing else works until then.
-2. Read `unmappedKeys`. Anything meaningful there (xG, expected assists,
-   minutes) is a field worth adding to `normPlayer`.
-3. If the request itself fails, the paths in `FEEDS` are wrong. That block is
-   the only thing to edit.
+1. **Do the feeds resolve?** The season token is the least certain part of the
+   integration, so it tries a spread of encodings rather than making you
+   iterate. If none answer, `FEEDS` is wrong and it says so and stops.
+2. **Does each record map?** `id`, position and club are the three that must
+   land — a player missing any is dropped. It reports how many were dropped
+   *and why*, per missing field.
+3. **What was not recognised?** The `unmappedKeys` list is the shopping list
+   for `normPlayer`: anything meaningful there (xG, expected assists) is worth
+   adding.
+4. **Is there enough football?** `nativeXP` needs five matches per club, so a
+   feed can be perfectly mapped and still too early — a state the probe names
+   rather than conflating with a fault.
+
+Its verdict is one of `READY`, `MAPPED_BUT_TOO_EARLY`, `MAPPING_INCOMPLETE`
+or `FEED_UNREACHABLE`. Add `--json` for a machine-readable dump.
+
+Production also exposes `/api/ucl/health` for a live spot-check, but the probe
+is the better tool: it covers players, teams *and* fixtures, and it runs
+against the real upstream without waiting on a deploy.
 
 `dev/test-ucl.mjs` covers the mapping logic against synthetic payloads in
 several plausible upstream spellings, so a change to the normalisers is safe
