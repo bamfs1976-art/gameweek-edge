@@ -151,6 +151,21 @@ function computePredictions(html, boot, fixtures, elo, euroFeed) {
   return { gw, deadline, season, rows };
 }
 
+/* Schema changes in this project are a manual step in the Supabase SQL editor
+   (see supabase/gwedge_predictions.sql), so a deploy can land before the
+   migration does. `fixtures` is the newest column; if it is not there yet,
+   write the rows without it rather than losing the gameweek entirely — the
+   only cost is that doubles are not marked until the migration runs. Every
+   other feature in this app degrades this way rather than failing shut. */
+async function upsertPredictions(sb, rows) {
+  const r = await sb.from('gwedge_predictions').upsert(rows, { onConflict: 'season,gw,element' });
+  if (!r || !r.error) return r;
+  const msg = String((r.error && r.error.message) || '');
+  if (!/fixtures/i.test(msg)) return r;
+  const trimmed = rows.map(({ fixtures, ...rest }) => rest);
+  return sb.from('gwedge_predictions').upsert(trimmed, { onConflict: 'season,gw,element' });
+}
+
 /* Locate index.html (shipped alongside the function via included_files). */
 function readIndexHtml() {
   const candidates = [
@@ -179,17 +194,21 @@ exports.handler = async () => {
      in-process rather than over HTTP (same deploy, no round trip), and each
      is best-effort: without them the model still runs, it just runs the way
      it did before these data sources existed — which is exactly the drift
-     this is here to stop. */
-  const sideInput = async (mod, event) => {
+     this is here to stop.
+     The requires are static string literals because esbuild traces the
+     bundle statically: a computed module path would not be bundled and
+     would throw at runtime in production, having passed every local test. */
+  const sideInput = async (handler, event) => {
     try {
-      const r = await require('./' + mod + '.js').handler(event || {});
+      const r = await handler(event || {});
       return r && r.statusCode === 200 ? JSON.parse(r.body) : null;
     } catch (_) { return null; }
   };
   const upcomingId = ((boot.events || []).find((e) => !e.finished) || {}).id || 1;
   const [eloRes, euroRes] = await Promise.all([
-    sideInput('team-elo'),
-    sideInput('euro-fixtures', { queryStringParameters: { from: String(Math.max(1, upcomingId - 1)), n: '3' } }),
+    sideInput(require('./team-elo.js').handler),
+    sideInput(require('./euro-fixtures.js').handler,
+      { queryStringParameters: { from: String(Math.max(1, upcomingId - 1)), n: '3' } }),
   ]);
   const elo = (eloRes && eloRes.elo) || null;
 
@@ -205,7 +224,7 @@ exports.handler = async () => {
     const { gw, deadline, rows } = computePredictions(html, boot, fixtures, elo, euroRes);
     if (gw && deadline && Date.now() < new Date(deadline).getTime() && rows.length) {
       for (let i = 0; i < rows.length; i += 500) {
-        await sb.from('gwedge_predictions').upsert(rows.slice(i, i + 500), { onConflict: 'season,gw,element' });
+        await upsertPredictions(sb, rows.slice(i, i + 500));
       }
       logged = rows.length;
     }
@@ -222,19 +241,30 @@ exports.handler = async () => {
     for (const gw of toGrade) {
       let live; try { live = await fplGet('event/' + gw + '/live/'); } catch (_) { continue; }
       const pts = {}; (live.elements || []).forEach((e) => { pts[e.id] = e.stats ? e.stats.total_points : null; });
-      /* Upsert the graded rows in batches rather than one UPDATE per player:
-         a full gameweek is 500-plus round trips otherwise. The whole row is
-         re-sent because upsert replaces it, so the prediction columns are
-         selected back and passed through unchanged. */
+      /* Fill in the actuals in batches rather than one round trip per player
+         (a full gameweek is 500-plus otherwise). Grouped by score and applied
+         with UPDATE ... IN: an FPL return spans maybe thirty distinct values,
+         so this is a couple of dozen calls. Deliberately not an upsert — that
+         would replace the whole row, so every prediction column would have to
+         be read back and echoed, and any column this function did not know
+         about would be reset to its default. Filling one column in place
+         cannot do that. */
       const { data: preds } = await sb.from('gwedge_predictions')
-        .select('season,gw,element,fixtures,xp,haul_prob,blank_prob')
-        .eq('season', season).eq('gw', gw).is('actual', null);
-      const done = (preds || []).filter((p) => pts[p.element] != null)
-        .map((p) => ({ ...p, actual: pts[p.element] }));
-      for (let i = 0; i < done.length; i += 500) {
-        await sb.from('gwedge_predictions').upsert(done.slice(i, i + 500), { onConflict: 'season,gw,element' });
+        .select('element').eq('season', season).eq('gw', gw).is('actual', null);
+      const byScore = new Map();
+      for (const p of preds || []) {
+        const v = pts[p.element];
+        if (v == null) continue;
+        if (!byScore.has(v)) byScore.set(v, []);
+        byScore.get(v).push(p.element);
       }
-      graded += done.length;
+      for (const [actual, ids] of byScore) {
+        for (let i = 0; i < ids.length; i += 500) {
+          await sb.from('gwedge_predictions').update({ actual })
+            .eq('season', season).eq('gw', gw).in('element', ids.slice(i, i + 500));
+        }
+        graded += ids.length;
+      }
     }
   } catch (e) { /* leave graded at 0 */ }
 
