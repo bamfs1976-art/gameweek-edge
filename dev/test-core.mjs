@@ -66,6 +66,8 @@ const pieces = [
   extractFn(html, 'congestionFactor'),
   extractFn(html, 'minutesModel'),
   extractFn(html, 'concedePts'),
+  extractFn(html, 'savePts'),
+  extractFn(html, 'dcHitProb'),
   extractFn(html, 'effGoalRate'),
   extractFn(html, 'negRate90'),
   extractFn(html, 'recencyWeight'),
@@ -73,6 +75,10 @@ const pieces = [
   extractFn(html, 'nativeXP'),
   extractFn(html, 'xP'),
   extractFn(html, 'fixtureXP'),
+  /* The real horizonXP, renamed: transferFeatures below is tested against a
+     stub of the same name, and a later function declaration would shadow
+     this one. Both are wanted, so they cannot share a name. */
+  extractFn(html, 'horizonXP').replace('function horizonXP(', 'function horizonXPreal('),
   extractFn(html, 'priceChangeProb'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
@@ -177,7 +183,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, effGoalRate, negRate90, pointsDist, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -902,6 +908,100 @@ const defBase = { element_type: 2, minutes: 540, starts: 6, status: 'a', expecte
 const defOdds = { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.3 };
 ok(core.nativeXP({ ...defBase, expected_goals_conceded_per_90: '2.2' }, defOdds) < core.nativeXP({ ...defBase, expected_goals_conceded_per_90: '0.6' }, defOdds),
   'a defender who personally ships more xGC is rated below a stingier one on the same team odds');
+
+section('savePts: the saves floor is charged on the count, not on its mean');
+/* FPL pays 1 point per 3 saves, so the value is E[floor(S/3)], not E[S]/3.
+   The gap is the expected remainder — about one save, a third of a point —
+   and it is very nearly constant across every realistic save rate. */
+const exactSavePts = (lam) => { let p = Math.exp(-lam), e = 0; for (let k = 1; k <= 200; k++) { p *= lam / k; e += p * Math.floor(k / 3); } return e; };
+for (const lam of [1.5, 3, 4.6, 6]) {
+  ok(Math.abs(core.savePts(lam) - exactSavePts(lam)) < 1e-9, 'savePts matches a direct pmf sum at lam=' + lam);
+  ok(core.savePts(lam) < lam / 3, 'the floor costs points against the naive mean/3 at lam=' + lam);
+}
+ok(Math.abs((3 / 3 - core.savePts(3)) - (6 / 3 - core.savePts(6))) < 0.02,
+  'the over-credit the old term carried is flat in the save rate (so it was a bias, not noise)');
+ok(core.savePts(0) === 0 && core.savePts(-1) === 0, 'no saves expected, no points, no throw');
+const gkQuiet = { element_type: 1, minutes: 540, starts: 6, status: 'a', saves: 12, expected_goals_per_90: '0', expected_assists_per_90: '0' };
+const gkBusy = { ...gkQuiet, saves: 40 };
+const gkOdds = { gp: 6, lam: 1.2, lamAvg: 1.5, cs: 0.3 };
+ok(core.nativeXP(gkBusy, gkOdds) > core.nativeXP(gkQuiet, gkOdds), 'a busier keeper still projects higher');
+
+section('dcHitProb: the defensive-contribution threshold, as a threshold');
+ok(core.dcHitProb(0, 10) === 0, 'no counted actions, no chance of the bonus');
+ok(core.dcHitProb(20, 10) > 0.99 && core.dcHitProb(3, 10) < 0.01, 'far either side of the line is near-certain either way');
+ok(core.dcHitProb(10, 10) > 0.4 && core.dcHitProb(10, 10) < 0.6, 'right on the threshold is close to a coin flip');
+ok(core.dcHitProb(12, 12) < core.dcHitProb(12, 10), 'the midfielder threshold of 12 is harder than the defender 10 at the same rate');
+/* The point estimate must equal the expectation of the event the simulators
+   draw — that agreement is the whole reason this replaced a hand-picked
+   logistic that had no relationship to it. */
+const dcDef = { element_type: 2, minutes: 540, starts: 6, status: 'a', expected_goals_per_90: '0.05', expected_assists_per_90: '0.05', expected_goals_conceded_per_90: '1.2' };
+const dcOdds = { gp: 6, lam: 1.4, lamAvg: 1.5, cs: 0.3 };
+const dcLow = core.nativeXP({ ...dcDef, defensive_contribution_per_90: '4' }, dcOdds);
+const dcHigh = core.nativeXP({ ...dcDef, defensive_contribution_per_90: '14' }, dcOdds);
+ok(dcHigh - dcLow > 1.2 && dcHigh - dcLow <= 2, 'clearing the threshold is worth close to, and never more than, the 2 points on offer');
+
+section('conditional minutes: the absence is charged once, not twice');
+/* minFrac is the UNCONDITIONAL expected minutes — it already averages in the
+   weeks a player does not appear. Anything drawn inside a branch that has
+   already conditioned on appearing must use minFrac/pAppear instead, or the
+   same absence is applied a second time. pointsDist and squadSim did the
+   latter, which ran every distribution light and bit hardest on exactly the
+   rotation risks the rank tools exist to weigh. */
+const cmOdds = { gp: 20, lam: 1.6, lamAvg: 1.47, cs: 0.3 };
+const cmNailed = { id: 501, element_type: 3, team: 1, status: 'a', minutes: 1800, starts: 20, bonus: 14, saves: 0,
+  expected_goals_per_90: '0.4', expected_assists_per_90: '0.25', expected_goals_conceded_per_90: '1.3',
+  defensive_contribution_per_90: '4', yellow_cards: 3 };
+const cmRota = { ...cmNailed, id: 502, minutes: 1050, starts: 11 };
+for (const [who, el] of [['a nailed starter', cmNailed], ['a rotation risk', cmRota]]) {
+  const nat = core.nativeXP(el, cmOdds), sim = core.pointsDist(el, cmOdds, 40000).mean;
+  ok(Math.abs(sim - nat) / nat < 0.06,
+    'the simulated mean agrees with the point estimate for ' + who + ' (within 6%)');
+}
+/* The distortion used to scale with the chance of NOT appearing, so it did
+   not cancel out of a comparison between two players. */
+const mNailed = core.minutesModel(cmNailed, 20), mRota = core.minutesModel(cmRota, 20);
+ok(mRota.pAppear < mNailed.pAppear, 'the rotation risk really is the less certain starter');
+const errNailed = Math.abs(core.pointsDist(cmNailed, cmOdds, 40000).mean - core.nativeXP(cmNailed, cmOdds));
+const errRota = Math.abs(core.pointsDist(cmRota, cmOdds, 40000).mean - core.nativeXP(cmRota, cmOdds));
+ok(Math.abs(errRota - errNailed) < 0.35, 'and the two layers no longer diverge further the less certain the starter is');
+
+section('deductions are drawn as whole points, not shaved off the score');
+/* Subtracting a fractional expectation from an otherwise integer score moved
+   every trial off the integers, so a trial that scored exactly 10 fell below
+   the haul line — losing the whole probability mass at 10 from the haul
+   figure however small the deduction was. */
+const cardy = { ...cmNailed, id: 503, yellow_cards: 9, red_cards: 1 };
+const clean = { ...cmNailed, id: 503, yellow_cards: 0, red_cards: 0 };
+const dCardy = core.pointsDist(cardy, cmOdds, 60000), dClean = core.pointsDist(clean, cmOdds, 60000);
+ok(dCardy.mean < dClean.mean, 'a booking-prone player still projects below a clean one');
+ok(dClean.haul - dCardy.haul < 0.02,
+  'but the cards cost him a sliver of haul probability, not a fifth of it');
+ok(Number.isInteger(dClean.p10) && Number.isInteger(dClean.p50) && Number.isInteger(dClean.p90),
+  'the quantiles are whole points, as an FPL score is');
+ok(Number.isInteger(dCardy.p50), 'and stay whole once deductions are in play');
+
+section('availability is applied once across the horizon');
+/* fixtureXP owns the availability scale on whichever branch it takes, so
+   horizonXP must not apply it again — it used to, charging a 50 percent
+   doubt as 25 percent everywhere the solver and transfer tools read. */
+const hzOdds = { gp: 20, lam: 1.6, lamAvg: 1.47, cs: 0.3, event: 21 };
+const hzMap = { 1: [hzOdds, hzOdds, hzOdds] };
+const hzFit = { ...cmNailed, id: 504, chance_of_playing_next_round: null };
+const hzDoubt = { ...cmNailed, id: 505, chance_of_playing_next_round: 50 };
+ok(Math.abs(core.horizonXPreal(null, hzFit, hzMap) - 3 * core.fixtureXP(null, hzFit, hzOdds)) < 1e-9,
+  'the horizon is the sum of its fixtures for a fit player');
+ok(Math.abs(core.horizonXPreal(null, hzDoubt, hzMap) - 3 * core.fixtureXP(null, hzDoubt, hzOdds)) < 1e-9,
+  'and for a doubtful one — no second scale applied on the way out');
+const hzRatio = core.horizonXPreal(null, hzDoubt, hzMap) / core.horizonXPreal(null, hzFit, hzMap);
+ok(hzRatio > 0.42 && hzRatio < 0.58, 'a 50 percent doubt costs about half the horizon, not three quarters of it');
+/* The fallback branch (no native model yet) must carry availability too — it
+   used to get none at all from every caller except horizonXP. */
+const hzYoung = { element_type: 3, minutes: 120, starts: 1, status: 'a', ep_next: '4.0', chance_of_playing_next_round: 50,
+  expected_goals_per_90: '0.3', expected_assists_per_90: '0.2' };
+const hzYoungFit = { ...hzYoung, chance_of_playing_next_round: null };
+ok(core.nativeXP(hzYoung, { gp: 3, lam: 1.6, lamAvg: 1.47, cs: 0.3 }) === null, 'the sample is too thin for the native model');
+ok(core.fixtureXP(null, hzYoung, hzOdds) < core.fixtureXP(null, hzYoungFit, hzOdds),
+  'so the ep_next fallback carries the doubt itself');
 
 section('effGoalRate: finishing-aware goals (fix 5)');
 const noGoalsField = { element_type: 4, minutes: 540, expected_goals_per_90: '0.4' };

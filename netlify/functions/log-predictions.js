@@ -47,8 +47,9 @@ function buildModel(html) {
        (extractBlock only balances braces). plsimPrior references it. */
     (html.match(/const PLSIM_PROMOTED=\[[\d.,]+\];/) || [''])[0],
     grabFn(html, 'poisson'),
-    /* plsimPrior consults an Elo-derived prior for clubs with no offline
-       fit; the logger passes no Elo map, so it takes the old path. */
+    /* plsimPrior consults an Elo-derived prior for clubs with no offline fit.
+       The logger now supplies the same Elo map the client does, so promoted
+       clubs are graded on the prior the app actually shows them. */
     ...['ELO_SCALE', 'ELO_ATT', 'ELO_DEF', 'ELO_CLAMP']
       .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
     grabFn(html, 'eloMean'), grabFn(html, 'eloPrior'),
@@ -56,22 +57,31 @@ function buildModel(html) {
     grabFn(html, 'recencyWeight'), grabFn(html, 'availAttackMult'), grabFn(html, 'plsimRatings'),
     grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'),
     /* Fixture congestion: buildNextFix scores it onto each fixture and
-       minutesModel discounts a start for it. The logger passes no European
-       calendar (`b.euro` is undefined), so the load is 0 everywhere and the
-       logged projections match what the app computes without one. */
+       minutesModel discounts a start for it. The logger now supplies the same
+       European calendar the client does, so a club playing Thursday is graded
+       with the rotation discount the app shows rather than without it. */
     ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
       .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
-    grabFn(html, 'congestionLoad'), grabFn(html, 'congestionFactor'),
-    grabFn(html, 'buildNextFix'),
-    grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),
-    grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'pointsDist'),
+    grabFn(html, 'euroIndex'), grabFn(html, 'congestionLoad'), grabFn(html, 'congestionFactor'),
+    grabFn(html, 'buildNextFix'), grabFn(html, 'buildGwFixtures'),
+    grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
+    grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),
+    grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'fixtureXP'), grabFn(html, 'pointsDist'),
   ];
   // eslint-disable-next-line no-new-func
-  return new Function('const MEM={};\n' + pieces.join('\n') + '\nreturn {buildNextFix,xP,pointsDist};')();
+  return new Function('const MEM={};\n' + pieces.join('\n')
+    + '\nreturn {buildNextFix,buildGwFixtures,euroIndex,xP,fixtureXP,pointsDist};')();
 }
 
-/* Index the bootstrap the way boot() does, minimally. */
-function indexBoot(boot) {
+/* Index the bootstrap the way boot() does, minimally. `elo` and `euroFeed`
+   are the same two side inputs the client attaches (idx.elo / idx.euro): the
+   match model reads b.elo for clubs with no fitted prior, and buildNextFix
+   reads b.euro for midweek European load. Omitting them was silently grading
+   a different model than the one that ships — promoted clubs on the generic
+   prior, and every club in Europe with no congestion discount. Both stay
+   optional, so a failed fetch degrades to the old behaviour rather than
+   blocking the run. */
+function indexBoot(boot, elo, euro) {
   const teams = {}, els = {};
   (boot.teams || []).forEach((t) => { teams[t.id] = t; });
   (boot.elements || []).forEach((e) => { els[e.id] = e; });
@@ -79,7 +89,10 @@ function indexBoot(boot) {
   const cur = (boot.events || []).find((e) => e.is_current)
     || (boot.events || []).find((e) => e.is_next)
     || (boot.events || [])[(boot.events || []).length - 1] || null;
-  return { raw: boot, teams, els, elements: boot.elements || [], events: boot.events || [], upcoming, cur };
+  const b = { raw: boot, teams, els, elements: boot.elements || [], events: boot.events || [], upcoming, cur };
+  if (elo && Object.keys(elo).length) b.elo = elo;
+  if (euro && Object.keys(euro).length) b.euro = euro;
+  return b;
 }
 
 /* The season label, derived from the earliest gameweek deadline. FPL
@@ -96,26 +109,44 @@ function seasonLabel(boot) {
 }
 
 /* Pure core: given the app source + live data, produce the prediction
-   rows for the upcoming gameweek. No network, no database — unit-tested. */
-function computePredictions(html, boot, fixtures) {
+   rows for the upcoming gameweek. No network, no database — unit-tested.
+   `elo` and `euroFeed` are optional and mirror the client. */
+function computePredictions(html, boot, fixtures, elo, euroFeed) {
   const M = buildModel(html);
-  const b = indexBoot(boot);
+  const euro = euroFeed && euroFeed.rows && euroFeed.rows.length ? M.euroIndex(euroFeed) : null;
+  const b = indexBoot(boot, elo, euro);
   const gw = b.upcoming ? b.upcoming.id : null;
   const deadline = b.upcoming ? b.upcoming.deadline_time : null;
   const season = seasonLabel(boot);
   if (!gw) return { gw: null, deadline: null, season, rows: [] };
   const nf = M.buildNextFix(b, fixtures);
+  /* buildNextFix keeps only a team's NEXT fixture, but the actual we grade
+     against is the whole gameweek. On a double that compares one match to
+     two and books a large phantom under-forecast. Take the extra legs from
+     buildGwFixtures — the same per-gameweek view the multi-week solver uses
+     — and add them on the same per-fixture basis. A single gameweek is
+     therefore byte-identical to before, so the logged series stays
+     continuous. */
+  const gwFx = M.buildGwFixtures(b, fixtures, [gw]);
   const rows = [];
   for (const el of b.elements) {
     const f = nf[el.team];
     if (!f || f.event !== gw) continue;                 // only players with a fixture this GW
-    const xp = M.xP(b, el, f);
+    const legs = (gwFx[el.team] || {})[gw] || [];
+    let xp = M.xP(b, el, f);
     if (!(xp > 0)) continue;
-    const d = M.pointsDist(el, f);
+    for (let i = 1; i < legs.length; i++) xp += M.fixtureXP(b, el, legs[i]);
+    /* A haul probability is not additive across matches, and the model does
+       not simulate a two-match gameweek — so on a double it is left null
+       rather than logged as a single-match number the grader would then
+       score as if it covered both. xP is additive, so it is not. */
+    const dbl = legs.length > 1;
+    const d = dbl ? null : M.pointsDist(el, f);
     rows.push({ season, gw, element: el.id,
+      fixtures: Math.max(1, legs.length),
       xp: Math.round(xp * 100) / 100,
-      haul_prob: Math.round(d.haul * 1000) / 1000,
-      blank_prob: Math.round(d.blank * 1000) / 1000 });
+      haul_prob: d ? Math.round(d.haul * 1000) / 1000 : null,
+      blank_prob: d ? Math.round(d.blank * 1000) / 1000 : null });
   }
   return { gw, deadline, season, rows };
 }
@@ -144,6 +175,24 @@ exports.handler = async () => {
   try { [boot, fixtures] = await Promise.all([fplGet('bootstrap-static/'), fplGet('fixtures/')]); }
   catch (_) { return { statusCode: 200, body: 'fpl unavailable' }; }
 
+  /* The two side inputs the client attaches to its bootstrap. Invoked
+     in-process rather than over HTTP (same deploy, no round trip), and each
+     is best-effort: without them the model still runs, it just runs the way
+     it did before these data sources existed — which is exactly the drift
+     this is here to stop. */
+  const sideInput = async (mod, event) => {
+    try {
+      const r = await require('./' + mod + '.js').handler(event || {});
+      return r && r.statusCode === 200 ? JSON.parse(r.body) : null;
+    } catch (_) { return null; }
+  };
+  const upcomingId = ((boot.events || []).find((e) => !e.finished) || {}).id || 1;
+  const [eloRes, euroRes] = await Promise.all([
+    sideInput('team-elo'),
+    sideInput('euro-fixtures', { queryStringParameters: { from: String(Math.max(1, upcomingId - 1)), n: '3' } }),
+  ]);
+  const elo = (eloRes && eloRes.elo) || null;
+
   const { createClient } = require('@supabase/supabase-js');
   const sb = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
 
@@ -153,7 +202,7 @@ exports.handler = async () => {
         deadline is still ahead (freeze once the GW locks). */
   const season = seasonLabel(boot);
   try {
-    const { gw, deadline, rows } = computePredictions(html, boot, fixtures);
+    const { gw, deadline, rows } = computePredictions(html, boot, fixtures, elo, euroRes);
     if (gw && deadline && Date.now() < new Date(deadline).getTime() && rows.length) {
       for (let i = 0; i < rows.length; i += 500) {
         await sb.from('gwedge_predictions').upsert(rows.slice(i, i + 500), { onConflict: 'season,gw,element' });
@@ -173,12 +222,19 @@ exports.handler = async () => {
     for (const gw of toGrade) {
       let live; try { live = await fplGet('event/' + gw + '/live/'); } catch (_) { continue; }
       const pts = {}; (live.elements || []).forEach((e) => { pts[e.id] = e.stats ? e.stats.total_points : null; });
-      const { data: preds } = await sb.from('gwedge_predictions').select('element').eq('season', season).eq('gw', gw).is('actual', null);
-      for (const p of preds || []) {
-        if (pts[p.element] == null) continue;
-        await sb.from('gwedge_predictions').update({ actual: pts[p.element] }).eq('season', season).eq('gw', gw).eq('element', p.element);
-        graded++;
+      /* Upsert the graded rows in batches rather than one UPDATE per player:
+         a full gameweek is 500-plus round trips otherwise. The whole row is
+         re-sent because upsert replaces it, so the prediction columns are
+         selected back and passed through unchanged. */
+      const { data: preds } = await sb.from('gwedge_predictions')
+        .select('season,gw,element,fixtures,xp,haul_prob,blank_prob')
+        .eq('season', season).eq('gw', gw).is('actual', null);
+      const done = (preds || []).filter((p) => pts[p.element] != null)
+        .map((p) => ({ ...p, actual: pts[p.element] }));
+      for (let i = 0; i < done.length; i += 500) {
+        await sb.from('gwedge_predictions').upsert(done.slice(i, i + 500), { onConflict: 'season,gw,element' });
       }
+      graded += done.length;
     }
   } catch (e) { /* leave graded at 0 */ }
 

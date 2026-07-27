@@ -54,7 +54,7 @@ const minutesModelSrc = extractBlock(html, html.indexOf('function minutesModel('
 const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
   .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
-const helperSrc = ['concedePts', 'effGoalRate', 'negRate90']
+const helperSrc = ['concedePts', 'savePts', 'dcHitProb', 'effGoalRate', 'negRate90']
   .map(n => extractBlock(html, html.indexOf('function ' + n + '('))).join('\n');
 const nativeXP = new Function(congestSrc + '\n' + helperSrc + '\n' + minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
 
@@ -112,7 +112,16 @@ function truePoints(el, nf, trials) {
     let pts = (mpg > 0 ? 1 : 0) + (mpg >= 60 ? 1 : 0);                       // appearance
     pts += poissonSample(xg90 * (mpg / 90) * fx) * gPts;                     // goals
     pts += poissonSample(xa90 * (mpg / 90) * fx) * 3;                        // assists
-    if (mpg >= 60) pts += bern(nf.cs) * csPts;                               // clean sheet
+    /* Goals conceded, and the clean sheet as its zero event. This generator
+       used to draw the clean sheet on its own and never deduct for concedes
+       at all — which is not how FPL scores, is not what the shipping model
+       forecasts, and is not what the goals-prevented generator below or
+       backtest-season do. A model carrying a correct -1 per 2 conceded term
+       was therefore marked down for it. Drawing one goals-against count and
+       reading the clean sheet off it makes the two self-consistent. */
+    const ga = mpg >= 60 ? poissonSample(-Math.log(Math.max(0.03, Math.min(0.99, nf.cs)))) : 0;
+    if (mpg >= 60 && ga === 0) pts += csPts;                                 // clean sheet
+    if (type <= 2) pts -= Math.floor(ga / 2);                                // -1 per 2 conceded
     pts += Math.min(3, poissonSample(bonus90 * (mpg / 90)));                 // bonus (0–3)
     if (type >= 2 && mpg >= 60) {                                           // defensive contribution
       if (poissonSample(dcp90 * (mpg / 90)) >= thr) pts += 2;
@@ -169,8 +178,13 @@ function runSynthetic() {
    term should cut the goalkeeper's systematic bias. This is the backtest that
    justifies wiring the term into the shipped model. */
 function runGkShotStopping() {
-  const nf = { gp: 6, lam: 1.5, lamAvg: 1.5, cs: 0.28 };
+  /* The fixture clean-sheet odds are those of the AVERAGE keeper in this
+     generator — exp(-base) — not an unrelated league constant. The point of
+     the test is that the fixed terms cannot see a keeper's skill DEVIATION
+     from average; feeding them a mean that disagrees with the generator adds
+     a flat error on top of that, which is not the effect being measured. */
   const base = 1.15, sot90 = 3.6, TRIALS = 4000, N = 200;
+  const nf = { gp: 6, lam: 1.5, lamAvg: 1.5, cs: Math.exp(-base) };
   let n = 0, aeNo = 0, aeCi = 0;
   /* Mean signed bias is ~0 for both (skill is symmetric about 0, so over- and
      under-projections cancel); the tell is bias SPLIT by skill — the fixed

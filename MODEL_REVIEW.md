@@ -6,6 +6,18 @@ P5 accountability loop, after the recent run of work — Elo priors, the Europea
 congestion feed, outcome-band backtesting, the chip planner and the bench/FT-aware
 solver. Read-only review; no model code was changed.*
 
+> **Resolution (2026-07-27).** All eight findings are now fixed and shipped; the
+> outcome is recorded as **P8** in `docs/MODELLING.md`. Headlines, same harness
+> before and after: MAE 2.41 → **2.39**, captain **8.20 → 9.10 pts/GW**, actuals
+> above p90 **17.70% → 9.93%** (target 10), haul Brier 0.0730 → **0.0711**, GK
+> bias **+0.17 → −0.06**; on real returns appearance-conditional MAE 2.155 →
+> **2.145** with three of four outcome bands improving. Overall bias moved
+> −0.16 → **−0.22** — worse on paper, and honestly so: two positive
+> specification errors had been cancelling a real under-forecast. The remaining
+> residual is uniform and belongs to a global recentre on live returns.
+>
+> The review below is left as written, as the record of what was found.
+
 ## Verdict
 
 The model core is in good shape and the recent work is real: the Elo prior, the

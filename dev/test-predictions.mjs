@@ -68,6 +68,56 @@ ok(res.rows.length === elements.length, 'all players with a fixture are logged')
 const fwd = res.rows.find((r) => r.element === 4), gk = res.rows.find((r) => r.element === 1);
 ok(fwd && gk && fwd.xp > 0 && gk.xp > 0, 'both a forward and a goalkeeper are projected');
 
+ok(res.rows.every((r) => r.fixtures === 1), 'a single gameweek is tagged as one fixture');
+
+/* ── the side inputs the client attaches ─────────────────
+   The logger used to build its bootstrap without them, which silently graded
+   promoted clubs on the generic prior and every European club with no
+   congestion discount — a different model from the one the app shows. */
+const eloMap = { 1: 1950, 2: 1930, 3: 1500, 4: 1450 };
+const resElo = computePredictions(html, boot, fixtures, eloMap);
+ok(resElo.rows.length === res.rows.length, 'an Elo map changes projections, not which players are logged');
+/* Teams 3 and 4 are absent from PLSIM.priors, so only they consult Elo. A
+   plain re-run must therefore be identical for 1 and 2 and differ for 3/4. */
+const xpOf = (rs, id) => (rs.find((r) => r.element === id) || {}).xp;
+ok(xpOf(resElo.rows, 1) === xpOf(res.rows, 1), 'a club with a fitted prior is untouched by Elo');
+ok(xpOf(resElo.rows, 9) !== xpOf(res.rows, 9), 'a club with no fitted prior takes the Elo-derived prior');
+
+/* Congestion reaches the projection through minutesModel, which only runs
+   once nativeXP is live — so this needs a season with enough games behind it
+   than the two-fixture league above. Six finished gameweeks, then a seventh
+   kicking off on the Sunday after a Thursday tie for Team 1. */
+const eventsC = [1, 2, 3, 4, 5, 6].map((id) => ({ id, deadline_time: '2026-08-' + (8 + id) + 'T17:30:00Z', finished: true, data_checked: true }))
+  .concat([{ id: 7, deadline_time: '2999-01-01T11:00:00Z', finished: false, is_current: true }]);
+const fixturesC = [];
+for (let gw = 1; gw <= 6; gw++) {
+  fixturesC.push({ event: gw, team_h: gw % 2 ? 1 : 2, team_a: gw % 2 ? 3 : 4, team_h_score: 2, team_a_score: 1, finished: true });
+  fixturesC.push({ event: gw, team_h: gw % 2 ? 2 : 1, team_a: gw % 2 ? 4 : 3, team_h_score: 1, team_a_score: 1, finished: true });
+}
+fixturesC.push({ event: 7, team_h: 1, team_a: 2, finished: false, kickoff_time: '2999-01-05T15:00:00Z' });
+fixturesC.push({ event: 7, team_h: 3, team_a: 4, finished: false, kickoff_time: '2999-01-05T15:00:00Z' });
+const bootC = { ...boot, events: eventsC };
+const euroFeed = { rows: [{ team: 1, gw: 7, comp: 'UCL', kickoff: '2999-01-03T20:00:00Z' }] };
+const resEuro = computePredictions(html, bootC, fixturesC, null, euroFeed);
+const resNoEuro = computePredictions(html, bootC, fixturesC);
+ok(xpOf(resNoEuro.rows, 3) > 0, 'the six-gameweek league has the sample for the native model');
+ok(xpOf(resEuro.rows, 3) < xpOf(resNoEuro.rows, 3), 'a Thursday European tie discounts the Sunday projection');
+ok(xpOf(resEuro.rows, 7) === xpOf(resNoEuro.rows, 7), 'a club not in Europe is unaffected');
+
+/* ── double gameweeks ────────────────────────────────────
+   The actual graded against is the whole gameweek, so a club playing twice
+   must be projected over both legs or the row books a phantom miss. */
+const dblFixtures = fixtures.concat([{ event: 2, team_h: 1, team_a: 4, finished: false, team_h_difficulty: 3, team_a_difficulty: 3 }]);
+const resDbl = computePredictions(html, boot, dblFixtures);
+const dblRow = resDbl.rows.find((r) => r.element === 3);      // a Team 1 midfielder
+const sglRow = resDbl.rows.find((r) => r.element === 7);      // a Team 2 midfielder, single
+ok(dblRow.fixtures === 2 && sglRow.fixtures === 1, 'the fixture count distinguishes a double from a single');
+ok(dblRow.xp > xpOf(res.rows, 3), 'a double gameweek projects more than the same single gameweek');
+ok(dblRow.haul_prob === null && dblRow.blank_prob === null,
+  'haul/blank are left null on a double rather than logged as a one-match number');
+ok(sglRow.haul_prob != null, 'a single gameweek still carries haul/blank');
+ok(xpOf(resDbl.rows, 7) === xpOf(res.rows, 7), 'a single gameweek is unchanged by the double-aware path');
+
 /* No upcoming gameweek → no rows, no throw. */
 const bootDone = { ...boot, events: [{ id: 38, deadline_time: '2026-05-20T14:00:00Z', finished: true, is_current: true }] };
 const res2 = computePredictions(html, bootDone, fixtures);

@@ -18,9 +18,10 @@ create table if not exists public.gwedge_predictions (
   season     text    not null default '2025/26',
   gw         integer not null,
   element    integer not null,
-  xp         real    not null,          -- predicted expected points
-  haul_prob  real,                      -- P(>=10)
-  blank_prob real,                      -- P(<=2)
+  xp         real    not null,          -- predicted expected points, whole gameweek
+  fixtures   integer not null default 1, -- matches this club plays in the gameweek
+  haul_prob  real,                      -- P(>=10); null on a double (not additive)
+  blank_prob real,                      -- P(<=2);  null on a double
   actual     integer,                   -- filled in when the gameweek finishes
   created_at timestamptz not null default now(),
   primary key (season, gw, element)
@@ -31,6 +32,13 @@ create table if not exists public.gwedge_predictions (
 -- from (gw, element) to (season, gw, element).
 alter table public.gwedge_predictions
   add column if not exists season text not null default '2025/26';
+
+-- The gameweek's fixture count. buildNextFix projects a club's NEXT match,
+-- but the actual is the whole gameweek, so on a double the logged xP now
+-- sums both legs and this column records which rows those are. Older rows
+-- default to 1, which is what they were.
+alter table public.gwedge_predictions
+  add column if not exists fixtures integer not null default 1;
 
 do $$
 begin
