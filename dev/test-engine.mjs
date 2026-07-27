@@ -97,6 +97,19 @@ console.log('• the engine defines everything it calls');
     'a name inside a string is not a call');
   ok(!unresolvedReferences('function a(o){ return o.ghost(); }').length,
     'a method call on an object is not an undefined global');
+
+  /* A missing CONSTANT is not a call, so the call-site rule cannot see it —
+     which is exactly how OOP_STRONG reached a run and threw. The convention
+     in this codebase is SCREAMING_CASE for module constants, so that is
+     checked too, with the two things it must not mistake for a reference. */
+  ok(unresolvedReferences('function a(){ return MISSING_THING + 1; }').includes('MISSING_THING'),
+    'a bare missing constant is detected');
+  ok(!unresolvedReferences('const O = { SOME_KEY: 1 }; function a(){ return O.SOME_KEY; }').length,
+    'an object key is a definition, not a missing reference');
+  ok(!unresolvedReferences('const A_ONE = 1, B_TWO = 2; function f(){ return A_ONE + B_TWO; }').length,
+    'both names in a multi-declarator const are seen as declared');
+  ok(!unresolvedReferences('const NAME_X = 1; function f(){ return NAME_X; }').length,
+    'a declared constant is not flagged');
 }
 
 console.log('• the emitted bundle runs and exports what it declares');

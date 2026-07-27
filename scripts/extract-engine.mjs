@@ -124,6 +124,11 @@ export const ENGINE_FNS = [
   'nativeXP', 'effGoalRate', 'negRate90', 'concedePts', 'recencyWeight', 'availAttackMult',
   'dcHitProb', 'savePts',
 
+  /* Out-of-position threat: a defender who attacks is scored on a defender's
+     tariff, which is the single most exploitable classification in the game
+     and the reason a club preview names one full-back over another. */
+  'oopThreat', 'oopBenchmarks', 'oopFlag',
+
   /* Distribution helpers used by the simulators. */
   'normCdf', 'pointsDist', 'squadSim',
 
@@ -143,6 +148,8 @@ export const ENGINE_CONSTS = [
   'ELO_SCALE', 'ELO_ATT', 'ELO_DEF', 'ELO_CLAMP',
   /* Fixture congestion: how a midweek match suppresses the next start. */
   'CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH',
+  /* Out-of-position thresholds. */
+  'OOP_MIN_MINUTES', 'OOP_STRONG',
   /* Squad rules and the transfer solver's valuation terms. */
   'RULES_FALLBACK', 'BENCH_W', 'FT_LADDER', 'FT_CAP',
 ];
@@ -235,6 +242,13 @@ export function unresolvedReferences(bundle) {
   const declared = new Set(['window', 'GEEngine', 'RULES', 'MEM', 'arguments']);
   const add = (n) => { if (n) declared.add(n); };
   for (const m of code.matchAll(/\b(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/g)) add(m[1]);
+  /* `const LG_GRID=11,LG_MAXG=10` declares two names; the rule above sees one. */
+  for (const m of code.matchAll(/\b(?:const|let|var)\s+([^;\n]+)/g)) {
+    for (const part of m[1].split(',')) {
+      const n = part.trim().match(/^([A-Za-z_$][\w$]*)\s*=/);
+      if (n) add(n[1]);
+    }
+  }
   for (const m of code.matchAll(/([A-Za-z_$][\w$]*)\s*[:=]\s*function/g)) add(m[1]);
   for (const m of code.matchAll(/\b([A-Za-z_$][\w$]*)\s*=>/g)) add(m[1]);
   /* parameter lists and destructuring targets */
@@ -246,11 +260,18 @@ export function unresolvedReferences(bundle) {
   }
 
   const missing = new Map();
-  /* A call site, excluding property access (`x.foo(`) and keywords. */
-  for (const m of code.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g)) {
-    const n = m[1];
-    if (declared.has(n) || JS_GLOBALS.has(n) || JS_KEYWORDS.has(n)) continue;
+  const flag = (n) => {
+    if (declared.has(n) || JS_GLOBALS.has(n) || JS_KEYWORDS.has(n)) return;
     missing.set(n, (missing.get(n) || 0) + 1);
-  }
+  };
+  /* A call site, excluding property access (`x.foo(`) and keywords. */
+  for (const m of code.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g)) flag(m[1]);
+  /* And bare SCREAMING_CASE references. A missing constant is not a call, so
+     the rule above cannot see it — which is exactly how OOP_STRONG reached a
+     run and threw. This codebase spells every module-level constant that way,
+     so the convention is a reliable enough signal to check.
+     A trailing `:` means an object key (`PLSIM={BASE_H:1.62}`), which is a
+     definition rather than a reference and must not be flagged. */
+  for (const m of code.matchAll(/(?<![.\w$])([A-Z][A-Z0-9_]{2,})(?![\w$])(?!\s*[(:])/g)) flag(m[1]);
   return [...missing.keys()].sort();
 }

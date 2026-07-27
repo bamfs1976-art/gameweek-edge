@@ -81,6 +81,22 @@ async function congestionByTeam() {
 }
 const congestion = await congestionByTeam();
 
+/* Out-of-position benchmarks are league-wide medians, so they are computed
+   once over every player rather than per club. Returns {} when the season is
+   too young to have any, and oopFlag then returns null for everyone — the
+   angle simply goes unmentioned rather than being guessed at. */
+const oopMarks = E.oopBenchmarks(idx.elements);
+
+/* How often a player clears the defensive-contribution threshold in a start.
+   The same dcHitProb the expected-points model uses, so the thread and the
+   app cannot disagree about whether a centre-back has a floor. */
+function defconRate(e) {
+  const per90 = parseFloat(e.defensive_contribution_per_90 || '0');
+  if (!(per90 > 0)) return null;
+  const thr = e.element_type === 2 ? 10 : 12;      /* DEF 10, MID/FWD 12 */
+  return E.dcHitProb(per90, thr);
+}
+
 function clubData(teamId) {
   const t = idx.teams[teamId];
   const run = (runs[teamId] || []).slice(0, 6);
@@ -96,6 +112,8 @@ function clubData(teamId) {
       minutes: e.minutes || 0, starts: e.starts || 0, goals: e.goals_scored || 0,
       assists: e.assists || 0, teamGames: teamGames[teamId] || 0,
       xp: nf ? E.nativeXP(e, nf) : null,
+      oop: E.oopFlag(e, oopMarks),
+      defconRate: defconRate(e),
       avgDifficulty, congestion: congestion[teamId] || 0
     }))
     /* Anyone with no football behind them cannot be graded honestly. */

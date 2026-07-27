@@ -67,6 +67,38 @@ export function fixtureScore(p) {
   return clamp01((4.5 - d) / 2.5);
 }
 
+/* WHY a player is worth naming, beyond the score.
+
+   The sharpest club previews do not just rank assets — they say what the
+   angle is. "Target Palace for Muñoz's out-of-position attack and CB
+   defensive-action volume, not pure clean sheets" is a better take than any
+   ordering, because it tells you what you are buying and what would break it.
+
+   Two angles carry most of that, and both are things the model knows and a
+   hand-written thread has to eyeball:
+
+   OUT OF POSITION  a defender scored on a defender's tariff while attacking
+                    like a midfielder. The most exploitable classification in
+                    the game, and the reason one full-back is worth naming
+                    over another at the same price.
+   DEFENSIVE ACTION the defensive-contribution floor. A centre-back who
+                    clears and intercepts enough banks points in games his
+                    team concedes in — which is precisely the case for buying
+                    a defender whose clean-sheet odds are ordinary. */
+export function angles(p) {
+  const out = [];
+  if (p.oop && p.oop.level > 0) {
+    out.push({ tag: 'out of position', note: p.oop.label ||
+      'attacking returns on a defender\'s tariff' });
+  }
+  if (p.defconRate != null && p.defconRate >= 0.45) {
+    out.push({ tag: 'defensive floor', note: 'banks defensive-contribution points ' +
+      'in roughly ' + Math.round(p.defconRate * 100) + '% of starts, clean sheet or not' });
+  }
+  if (p.setPieces) out.push({ tag: 'set pieces', note: p.setPieces });
+  return out;
+}
+
 export function grade(p) {
   const minutes = minutesScore(p);
   const returns = returnsScore(p);
@@ -131,7 +163,8 @@ export function buildThread(club) {
   const hasBaseline = scored != null && conceded != null && (played == null || played > 0);
 
   const graded = players
-    .map((p) => ({ ...p, grade: grade({ ...p, congestion: p.congestion ?? congestion }) }))
+    .map((p) => ({ ...p, angles: angles(p),
+      grade: grade({ ...p, congestion: p.congestion ?? congestion }) }))
     .sort((a, b) => (b.grade.returns + b.grade.minutes) - (a.grade.returns + a.grade.minutes));
 
   const rank = { major: 0, watchlist: 1, monitor: 2, avoid: 3 };
@@ -169,6 +202,7 @@ export function buildThread(club) {
       lines: [
         key.minutes != null ? `${key.minutes} minutes, ${key.goals || 0} goals, ${key.assists || 0} assists.` : null,
         key.xp != null ? `Projects ${key.xp.toFixed(2)} points next gameweek.` : null,
+        ...key.angles.map((a) => `${a.tag}: ${a.note}.`),
         `${key.grade.status.light} ${key.grade.status.label} — ${key.grade.why}.`
       ].filter(Boolean), player: key.web_name, status: key.grade.status.key });
   }
@@ -199,15 +233,29 @@ export function buildThread(club) {
 
   posts.push({ kind: 'hierarchy', title: 'Hierarchy',
     lines: hierarchy.slice(0, 6).map((p) =>
-      `${p.grade.status.light} ${p.web_name} (${money(p.now_cost)} ${POS[p.element_type]})`),
+      `${p.grade.status.light} ${p.web_name} (${money(p.now_cost)} ${POS[p.element_type]})` +
+      (p.angles.length ? ` — ${p.angles.map((a) => a.tag).join(', ')}` : '')),
     rows: hierarchy.slice(0, 6).map((p) => ({
       name: p.web_name, cost: money(p.now_cost), position: POS[p.element_type],
       status: p.grade.status.key, light: p.grade.status.light,
+      angles: p.angles.map((a) => a.tag),
       returns: +p.grade.returns.toFixed(2), minutes: +p.grade.minutes.toFixed(2),
       fixtures: +p.grade.fixtures.toFixed(2)
     })) });
 
-  posts.push({ kind: 'takeaway', title: 'Takeaway', lines: [verdict.text] });
+  /* Name the angle in the takeaway. "Buy this club" is a ranking; "buy this
+     club for X, not Y" is the thing worth reading. */
+  const named = hierarchy.filter((p) => p.angles.length &&
+    ['major', 'watchlist'].includes(p.grade.status.key)).slice(0, 2);
+  posts.push({ kind: 'takeaway', title: 'Takeaway',
+    lines: [
+      verdict.text,
+      ...(named.length
+        ? [`The angle is ${named.map((p) => `${p.web_name}'s ${p.angles[0].tag}`).join(' and ')}` +
+           (named.some((p) => p.angles.some((a) => a.tag === 'defensive floor'))
+             ? ' — points that do not need a clean sheet.' : '.')]
+        : [])
+    ] });
 
   return { club: name, fullName, verdict, posts, graded: hierarchy.length };
 }

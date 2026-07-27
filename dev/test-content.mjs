@@ -17,7 +17,7 @@ import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAY
   from '../scripts/content/stories.mjs';
 import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
   from '../scripts/content/candidates.mjs';
-import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS }
+import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles }
   from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
@@ -343,6 +343,34 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   const baseline = noFootball.posts.find((x) => x.kind === 'baseline').lines[0];
   ok(!/0 scored|Scored 0/.test(baseline), 'no results reads as absence, not as zeros');
   ok(/No results yet/.test(baseline), 'and says so plainly (' + baseline + ')');
+
+  /* The angle is what makes a preview worth reading — "buy this club for X,
+     not Y" rather than a ranking. Both angles are things the model knows and
+     a hand-written thread has to eyeball. */
+  ok(angles({}).length === 0, 'no angle is claimed without evidence');
+  ok(angles({ oop: { level: 1, label: 'attacking like a midfielder' } })
+    .some((a) => a.tag === 'out of position'), 'an out-of-position defender is flagged');
+  ok(angles({ oop: { level: -1, label: 'playing deep' } }).length === 0,
+    'playing BELOW position is not a buying angle');
+  ok(angles({ defconRate: 0.7 }).some((a) => a.tag === 'defensive floor'),
+    'a reliable defensive-contribution floor is flagged');
+  ok(angles({ defconRate: 0.1 }).length === 0, 'an unreliable one is not');
+
+  const P2 = (o) => ({ web_name: 'X', element_type: 2, now_cost: 55, teamGames: 10,
+    starts: 10, minutes: 900, goals: 3, assists: 4, avgDifficulty: 2.2, xp: 6.2, ...o });
+  const palace = buildThread({ name: 'CPFC', fullName: 'Palace', played: 10,
+    scored: 41, conceded: 51, avgDifficulty: 2.4, fixtures: [],
+    players: [
+      P2({ web_name: 'Munoz', oop: { level: 1, label: 'attacking like a midfielder' } }),
+      P2({ web_name: 'Richards', defconRate: 0.72, xp: 4.0 }),
+      P2({ web_name: 'Filler', xp: 1.0, avgDifficulty: 4.5 })
+    ] });
+  const take = palace.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+  ok(/angle is/.test(take), 'the takeaway names the angle, not just a ranking');
+  ok(/Munoz|Richards/.test(take), 'and names who it belongs to (' + take.slice(0, 90) + ')');
+  ok(/clean sheet/.test(take), 'a defensive floor is framed as points without a clean sheet');
+  const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
+  ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
 
   const withFootball = buildThread({ name: 'Y', played: 6, scored: 9, conceded: 4,
     avgDifficulty: 2.5, players: [], fixtures: [] });
