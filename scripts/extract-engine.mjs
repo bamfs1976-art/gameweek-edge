@@ -117,8 +117,12 @@ export const ENGINE_FNS = [
      by construction — it counts matches, it does not care whose they are. */
   'recentMinutes', 'minutesModel', 'minutesSecurity', 'congestionLoad', 'congestionFactor',
 
-  /* Expected points from first principles, and its inputs. */
+  /* Expected points from first principles, and its inputs. `dcHitProb` and
+     `savePts` are not called by the app directly — nativeXP calls them — but
+     an extraction that omits a callee produces an engine that parses, loads,
+     and then throws the first time a projection is asked for. */
   'nativeXP', 'effGoalRate', 'negRate90', 'concedePts', 'recencyWeight', 'availAttackMult',
+  'dcHitProb', 'savePts',
 
   /* Distribution helpers used by the simulators. */
   'normCdf', 'pointsDist', 'squadSim',
@@ -197,4 +201,56 @@ ${parts.map((p) => '  ' + p.replace(/\n/g, '\n  ')).join('\n')}
 
 export function extractEngine(indexPath) {
   return buildEngine(readFileSync(indexPath, 'utf8'));
+}
+
+/* ── Unresolved-reference check ──────────────────────────────────────
+   The failure mode this exists to prevent: someone improves the model in
+   index.html, `nativeXP` starts calling a new helper, the extraction still
+   parses and still loads — and the second app throws the first time anyone
+   asks for a projection. That is a silent break of the other app caused by
+   a change that looks entirely local.
+
+   So the emitted bundle is scanned for names it CALLS but never DEFINES.
+   Comments and every kind of literal are stripped first, so a function name
+   mentioned in prose is not mistaken for a call. Called-but-undefined is the
+   detectable subset — it covers helper functions, which is what actually
+   goes missing — and dev/test-engine.mjs additionally executes the model. */
+const JS_GLOBALS = new Set([
+  'Math', 'JSON', 'Object', 'Array', 'Number', 'String', 'Boolean', 'Date', 'RegExp',
+  'Map', 'Set', 'Error', 'Promise', 'Float64Array', 'Float32Array', 'Int32Array',
+  'isFinite', 'isNaN', 'parseFloat', 'parseInt', 'console', 'undefined', 'NaN', 'Infinity'
+]);
+const JS_KEYWORDS = new Set(('if else for while return function const let var new typeof ' +
+  'instanceof in of do break continue switch case default try catch finally throw delete ' +
+  'void null true false class extends super yield await async').split(' '));
+
+export function unresolvedReferences(bundle) {
+  const code = bundle
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/[^\n]*/g, ' ')
+    .replace(/'(\\.|[^'\\])*'/g, "''")
+    .replace(/"(\\.|[^"\\])*"/g, '""')
+    .replace(/`(\\.|[^`\\])*`/g, '``');
+
+  const declared = new Set(['window', 'GEEngine', 'RULES', 'MEM', 'arguments']);
+  const add = (n) => { if (n) declared.add(n); };
+  for (const m of code.matchAll(/\b(?:const|let|var|function)\s+([A-Za-z_$][\w$]*)/g)) add(m[1]);
+  for (const m of code.matchAll(/([A-Za-z_$][\w$]*)\s*[:=]\s*function/g)) add(m[1]);
+  for (const m of code.matchAll(/\b([A-Za-z_$][\w$]*)\s*=>/g)) add(m[1]);
+  /* parameter lists and destructuring targets */
+  for (const m of code.matchAll(/\(([^()]*)\)\s*(?:=>|\{)/g)) {
+    for (const a of m[1].split(',')) add(a.trim().replace(/[{}[\]]/g, '').split(/[=:.\s]/)[0]);
+  }
+  for (const m of code.matchAll(/(?:const|let|var)\s*[{[]([^}\]]*)[}\]]/g)) {
+    for (const a of m[1].split(',')) add(a.trim().split(/[=:\s]/)[0]);
+  }
+
+  const missing = new Map();
+  /* A call site, excluding property access (`x.foo(`) and keywords. */
+  for (const m of code.matchAll(/(?<![.\w$])([A-Za-z_$][\w$]*)\s*\(/g)) {
+    const n = m[1];
+    if (declared.has(n) || JS_GLOBALS.has(n) || JS_KEYWORDS.has(n)) continue;
+    missing.set(n, (missing.get(n) || 0) + 1);
+  }
+  return [...missing.keys()].sort();
 }

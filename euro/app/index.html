@@ -288,11 +288,15 @@ function nextFixtures(idx){
 function projections(idx){
   if(!idx.fixtures.length) return [];
   const nf = nextFixtures(idx);
+  /* nativeXP returns null by design when the sample is too thin — that is
+     not an error. An exception IS one: it means the shared engine is missing
+     a function the model started calling, and swallowing it would present a
+     broken build as "no projections available". Let the first one through so
+     show() reports it as the fault it is. */
   return idx.elements.map(el => {
     const f = nf[el.team];
     if(!f) return null;
-    let xp = null;
-    try { xp = E.nativeXP(el, f); } catch(_) { xp = null; }
+    const xp = E.nativeXP(el, f);
     return (xp == null || !isFinite(xp)) ? null : {el, xp};
   }).filter(Boolean);
 }

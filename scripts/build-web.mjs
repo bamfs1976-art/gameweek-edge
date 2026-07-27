@@ -7,7 +7,7 @@ import { build } from 'esbuild';
 import { mkdir, copyFile, rm, readdir, stat, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { extractEngine } from './extract-engine.mjs';
+import { extractEngine, unresolvedReferences } from './extract-engine.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
@@ -79,6 +79,18 @@ async function bundleAuth() {
 async function buildEuro() {
   await copyDir(join(ROOT, 'euro/app'), EURO_OUT);
   const engine = extractEngine(join(ROOT, 'index.html'));
+  /* A model change in index.html can add a callee the extraction list does
+     not know about. The bundle still parses and still loads; it throws the
+     first time a projection is asked for. Fail the build instead — a broken
+     deploy of the second app must not be the way anyone finds out. */
+  const missing = unresolvedReferences(engine);
+  if (missing.length) {
+    throw new Error(
+      'Shared engine references ' + missing.length + ' name(s) it does not define: ' +
+      missing.join(', ') + '.\nAdd them to ENGINE_FNS/ENGINE_CONSTS in ' +
+      'scripts/extract-engine.mjs — they are almost certainly helpers a model ' +
+      'function in index.html started calling.');
+  }
   await writeFile(join(EURO_OUT, 'engine.js'), engine, 'utf8');
   return engine.length;
 }

@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import vm from 'node:vm';
-import { sliceBalanced, buildEngine, ENGINE_FNS, ENGINE_CONSTS } from '../scripts/extract-engine.mjs';
+import { sliceBalanced, buildEngine, unresolvedReferences, ENGINE_FNS, ENGINE_CONSTS } from '../scripts/extract-engine.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -72,6 +72,31 @@ console.log('• every declared engine member extracts cleanly');
   for (const name of ENGINE_CONSTS) {
     ok(html.includes('const ' + name + '='), name + ': constant present in index.html');
   }
+}
+
+console.log('• the engine defines everything it calls');
+{
+  /* The exact break that a merge from main caused once: a model improvement in
+     index.html made nativeXP call two new helpers, the extraction still parsed
+     and still loaded, and the second app threw the first time anyone asked for
+     a projection. Parsing is not enough; the call graph has to close. */
+  const missing = unresolvedReferences(buildEngine(html));
+  ok(missing.length === 0,
+    'no unresolved references in the shared engine (' + (missing.join(', ') || 'none') + ')');
+
+  /* And the check must actually be capable of failing, or it is decoration. */
+  const planted = unresolvedReferences('function a(){ return notDefinedAnywhere(1); }');
+  ok(planted.includes('notDefinedAnywhere'), 'the check detects a genuinely missing callee');
+  ok(!unresolvedReferences('function a(){ return Math.max(1,2); }').length,
+    'built-ins are not reported');
+  ok(!unresolvedReferences('function a(){ return b(); } function b(){ return 1; }').length,
+    'a locally defined callee is not reported');
+  ok(!unresolvedReferences('/* calls ghost() in prose */ function a(){ return 1; }').length,
+    'a name mentioned only in a comment is not a call');
+  ok(!unresolvedReferences('function a(){ return "ghost(" + 1; }').length,
+    'a name inside a string is not a call');
+  ok(!unresolvedReferences('function a(o){ return o.ghost(); }').length,
+    'a method call on an object is not an undefined global');
 }
 
 console.log('• the emitted bundle runs and exports what it declares');
