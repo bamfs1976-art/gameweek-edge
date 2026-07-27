@@ -12055,6 +12055,7 @@ async function hydrateDossier(host){
   /* Asset hierarchy: the club's players by projected points, with what each
      one actually is. This is the "FPL Board" the dossiers all end with. */
   const marks=oopBenchmarks(b.elements);
+  const gpNow=(nf[tid]&&nf[tid].gp)||0;
   const spc=setPieceByClub(b,4)[tid];
   const spRole=e=>{
     if(!spc)return '';
@@ -12078,9 +12079,12 @@ async function hydrateDossier(host){
     /* Name line then role line: the role string carries three facts and would
        be ellipsised into nothing if it shared a line with the name. */
     return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-grow" style="display:block;min-width:0">'+
-      '<span class="dl-nm" style="display:block">'+esc(e.web_name)+' <span class="dl-sub">'+money(e.now_cost)+'</span>'+
+      /* Badges wrap rather than ellipsise: a clipped "Mins 4…" is worse than
+         a second line, and this row can carry four of them. */
+      '<span class="dl-nm" style="display:block;white-space:normal;overflow:visible;text-overflow:clip">'+esc(e.web_name)+' <span class="dl-sub">'+money(e.now_cost)+'</span>'+
       (oop&&oop.level>0?' <span class="badge badge-green">'+esc(oop.label)+'</span>':'')+
       (oop&&oop.level<0?' <span class="badge badge-amber">'+esc(oop.label)+'</span>':'')+
+      ' '+minsBadge(e,gpNow)+
       (e.status!=='a'?' <span class="badge badge-red">'+esc(e.status)+'</span>':'')+'</span>'+
       '<span class="dl-sub">'+esc(role)+' · '+e.selected_by_percent+'% owned</span></span>'+
       '<span class="dl-col">'+dots(tier(p))+'</span>'+
@@ -12091,6 +12095,45 @@ async function hydrateDossier(host){
       '<div class="dl"><div class="dl-row head"><span class="dl-grow">Asset · role</span><span class="dl-col">Tier</span><span class="dl-col">xP</span></div>'+
       assetRows+'</div>'+
       '<div class="dl-sub" style="margin-top:8px">Ranked by projected points for the next fixture, with the role that earns them: set-piece duty, defensive‑contribution reliability, and an <b>out‑of‑position</b> badge where a player is paid on a better tariff than the job he does.</div></div>'
+    : '';
+
+  /* Who is competing for a shirt. The dossiers spend three cards on this
+     per club — "if he is rotated or plays centre-back, who inherits?" —
+     and nothing else in the app answers it. */
+  const POS_LABEL={1:'Goalkeepers',2:'Defenders',3:'Midfielders',4:'Forwards'};
+  const depth=clubDepth(b.elements,tid,gpNow);
+  const depthGroups=[1,2,3,4].filter(p=>depth[p]).map(p=>{
+    const g=depth[p],lead=g.rows.length>1?g.rows[0].sec-g.rows[1].sec:null;
+    const verdict=!g.rows.length
+      ? 'No player here has FPL minutes to rank yet.'
+      : g.settled
+        ? '<b>'+esc(g.rows[0].e.web_name)+'</b> is clear'+
+          (lead!=null?' — '+lead+' points of minutes security ahead of '+esc(g.rows[1].e.web_name):'')+'.'
+        : 'Unsettled — <b>'+esc(g.rows[0].e.web_name)+'</b> and <b>'+esc(g.rows[1].e.web_name)+'</b> are '+
+          (lead>0?'within '+lead+' points':'level')+', so neither owns the shirt.';
+    const rows=g.rows.map(r=>
+      '<div class="dl-row dl-click" onclick="openPlayer('+r.e.id+')"><span class="dl-grow" style="min-width:0">'+
+      '<span class="dl-nm">'+esc(r.e.web_name)+' <span class="dl-sub">'+money(r.e.now_cost)+'</span>'+
+      (r.tied?' <span class="badge badge-amber">contested</span>':'')+'</span></span>'+
+      '<span class="dl-col mono">'+r.sec+'%</span></div>').join('');
+    /* Signings and academy players carry no minutes at this club, so they
+       cannot be ranked — but they are exactly who a depth question is
+       about, so say they exist instead of dropping them. */
+    const unr=g.unranked.length
+      ? '<div class="dl-sub" style="margin-top:6px">No FPL minutes yet: '+
+        g.unranked.slice(0,6).map(e=>esc(e.web_name)).join(', ')+
+        (g.unranked.length>6?' +'+(g.unranked.length-6)+' more':'')+
+        ' — new signings and academy players are unranked, not ruled out.</div>'
+      : '';
+    return '<div style="margin-bottom:14px"><div class="dl-sub" style="margin-bottom:4px"><b>'+POS_LABEL[p]+'</b></div>'+
+      '<p class="dl-sub" style="margin:0 0 6px">'+verdict+'</p>'+
+      (rows?'<div class="dl">'+rows+'</div>':'')+unr+'</div>';
+  }).join('');
+  const depthCard=depthGroups
+    ? '<div class="card mb-20"><div class="card-title">Competing for a shirt</div>'+depthGroups+
+      '<div class="dl-sub">Ranked by <b>minutes security</b> — starts share, minutes share and availability — not by a guess at the formation, which the FPL data does not carry. '+
+      'Two players within '+DEPTH_TIE+' points are marked <b>contested</b>: the pecking order is not settled, so the cheaper one is often the differential. '+
+      'Until the new season is played this reads last season’s minutes.</div></div>'
     : '';
 
   /* The run ahead, in the club's own row. */
@@ -12112,7 +12155,7 @@ async function hydrateDossier(host){
       }).join('')+'</tr></table></div></div>'
     : '';
 
-  host.innerHTML=picker+leanCard+venueCard+boardCard+runCard;
+  host.innerHTML=picker+leanCard+venueCard+boardCard+depthCard+runCard;
 }
 
 async function hydrateClubForm(host){
@@ -12629,6 +12672,49 @@ function minsBadge(el,gp){
   const v=minutesSecurity(el,gp);
   const cls=v>=75?'badge-green':v>=50?'badge-amber':'badge-red';
   return '<span class="badge '+cls+'" title="Minutes security '+v+'/100 — starts share, minutes share and availability (last season’s data until the new season is played)">Mins '+v+'%</span>';
+}
+
+/* ── Club depth: who is competing for the same shirt ───────
+   The club dossiers all circle the same question — if the first-choice
+   man is rotated or shifts position, who inherits the minutes? Rotation
+   chains answer the opposite question (one slot, several clubs), so
+   nothing else here covers it.
+
+   Deliberately NOT modelled as "starting slots": the formation a club
+   settles on is not in the FPL data, and guessing 3-4-2-1 over 4-2-3-1
+   changes who counts as a starter. Instead each position is ranked by
+   minutes security and the places where two players sit close enough
+   that the pecking order is unsettled are marked — which is the thing
+   worth knowing whichever shape they play. */
+const DEPTH_TIE=12;        /* security points; closer than this is a real contest */
+const DEPTH_FRINGE=25;     /* below this a player is not in the conversation */
+const DEPTH_MAX=6;         /* per position: the contest, plus the next man in */
+function clubDepth(elements,teamId,gp){
+  const out={};
+  [1,2,3,4].forEach(pos=>{
+    const pool=(elements||[]).filter(e=>e.team===teamId&&e.element_type===pos&&e.status!=='u');
+    /* A player with no minutes at all cannot be ranked on minutes: he scores
+       zero and falls below the fringe on his own, so no separate filter is
+       needed to keep him out of the ranking. He still has to be named — that
+       set is mostly summer signings and academy call-ups, precisely the
+       players a depth question is about — so it is listed alongside. */
+    const unranked=pool.filter(e=>!(e.minutes>0)&&!(e.starts>0));
+    const rows=pool.map(e=>({e,sec:minutesSecurity(e,gp)}))
+      .sort((a,c)=>c.sec-a.sec||a.e.id-c.e.id)
+      .filter(r=>r.sec>=DEPTH_FRINGE).slice(0,DEPTH_MAX);
+    /* Tied to the man above OR the man below: a contest is a cluster, and
+       marking only the lower half of it would read as though the leader
+       were clear. */
+    rows.forEach((r,i)=>{
+      r.gap=i?rows[i-1].sec-r.sec:null;
+      r.tied=(i>0&&rows[i-1].sec-r.sec<=DEPTH_TIE)||
+             (i<rows.length-1&&r.sec-rows[i+1].sec<=DEPTH_TIE);
+    });
+    if(rows.length||unranked.length)
+      out[pos]={rows,unranked,
+        settled:rows.length<2||(rows[0].sec-rows[1].sec)>DEPTH_TIE};
+  });
+  return out;
 }
 
 /* ── DECISION-GRADE RECOMMENDATION MODEL (Section 2) ───────

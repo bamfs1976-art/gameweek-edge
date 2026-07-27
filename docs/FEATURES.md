@@ -92,7 +92,7 @@ Planner
 
 League
 ├── Title Race           (free)  Season odds from the backtested model
-├── Club Dossier         (free)  One club: attack-or-defence, home/away, the board
+├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
 ├── Team Form            (free)  Club form over the last 5/10/20 games
 ├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
 ├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
@@ -518,14 +518,33 @@ find the cheapest way in.
   since a club can score differently by venue while conceding the same
   everywhere. Below four games at each venue there is no verdict at all.
 - **The board** — every asset ranked by projected points with the role that
-  earns them: set‑piece duty, defensive‑contribution reliability, and an
-  **out‑of‑position** badge where a player is paid on a better tariff than the
-  job he does.
+  earns them: set‑piece duty, defensive‑contribution reliability, **minutes
+  security**, and an **out‑of‑position** badge where a player is paid on a
+  better tariff than the job he does.
+- **Competing for a shirt** — the club's depth at each position, ranked by
+  minutes security, marking the places where two players sit close enough
+  that the pecking order is unsettled. This is the question the creator
+  dossiers spend three cards on per club: *if the first‑choice man is rotated
+  or shifts position, who inherits the minutes?* Rotation Risk and the
+  planner's rotation chains answer the opposite question — one slot, several
+  clubs — so nothing else here covers it.
+
+  It is deliberately **not** modelled as starting slots. The formation a club
+  settles on is not in the FPL data, and guessing 3‑4‑2‑1 over 4‑2‑3‑1 changes
+  who counts as a starter; the pecking order and where it is contested is the
+  useful part either way. Players with no minutes at the club — summer
+  signings, academy call‑ups, exactly who a depth question is about — cannot
+  be ranked on minutes, so they are **named as unranked rather than dropped**.
 - **The run ahead** — the club's own fixture row over the next eight.
 
 The tactical half of the creator dossiers — formation, playing style, "new
 manager alert", preseason friendly signals — is editorial and is deliberately
-absent. We can't compute it and won't fake it.
+absent. We can't compute it and won't fake it. The same goes for **role
+watch** ("great as an advanced ten, avoid in deep midfield"): the API does not
+publish where on the pitch a player operates, and a proxy built from xG/xA
+variance would be confidently wrong exactly when it mattered — a deep
+midfielder on set pieces would read as advanced. The out‑of‑position badge is
+the bounded, computable version of that idea.
 
 **Rotation Risk** — start‑rate risk for premium players from actual minutes,
 plus **midweek congestion**: the European and cup football the official FPL API

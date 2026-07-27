@@ -178,12 +178,15 @@ const pieces = [
   extractFn(html, 'clubSplit'),
   extractFn(html, 'clubVenueVerdict'),
   extractFn(html, 'clubLean'),
+  ...['DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'clubDepth'),
   extractFn(html, 'plsimPrior'),
   extractFn(html, 'bundleSeasonStale')
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1673,6 +1676,52 @@ const preElements = [
 ];
 const preDiffs = core.differentials(preElements, 15).map(e => e.id).sort();
 ok(preDiffs.join(',') === '1,4', 'pre-season differentials include 0%-owned non-premiums, exclude premiums and no-ownership rows');
+
+/* ── clubDepth: who is competing for the same shirt ─────── */
+section('clubDepth — pecking order, contests and the unrankable');
+/* gp = 10, so minutesSecurity = 100*(0.65*starts/10 + 0.35*mins/900). */
+const mkDepth = (id, pos, starts, mins, extra) => Object.assign(
+  { id, team: 1, element_type: pos, status: 'a', web_name: 'P' + id, now_cost: 45, starts, minutes: mins },
+  extra || {});
+const depthPool = [
+  mkDepth(1, 2, 10, 900),   /* 100 */
+  mkDepth(2, 2, 9, 810),    /*  90 — 10 behind, a contest */
+  mkDepth(3, 2, 5, 450),    /*  50 — 40 behind, clear of the contest */
+  mkDepth(4, 2, 2, 180),    /*  20 — under the fringe, not in the conversation */
+  mkDepth(5, 3, 10, 900),   /* 100 */
+  mkDepth(6, 3, 5, 450),    /*  50 — 50 behind, so the shirt is settled */
+  mkDepth(7, 3, 0, 0),      /* no minutes at all — unrankable, not fringe */
+  mkDepth(8, 3, 10, 900, { status: 'u' }),         /* left the club */
+  mkDepth(10, 3, 0, 0, { status: 'u' }),           /* left, and never played */
+  mkDepth(9, 2, 10, 900, { team: 2 })              /* another club entirely */
+];
+const dep = core.clubDepth(depthPool, 1, 10);
+ok(dep[2].rows.map(r => r.e.id).join(',') === '1,2,3', 'defenders rank by minutes security, fringe player dropped');
+ok(dep[2].rows.every(r => r.sec >= core.DEPTH_FRINGE), 'no ranked row sits below the fringe threshold');
+ok(dep[2].settled === false, 'a 10-point lead is not a settled shirt');
+ok(dep[2].rows[0].tied === true && dep[2].rows[1].tied === true, 'both halves of a contest are marked, not just the lower one');
+ok(dep[2].rows[2].tied === false, 'the man 40 points adrift is not part of the contest');
+ok(dep[3].settled === true && dep[3].rows[0].tied === false, 'a 50-point lead is a settled shirt');
+ok(dep[3].unranked.map(e => e.id).join(',') === '7', 'a player with no minutes is listed as unrankable, not ranked last');
+ok(dep[3].rows.every(r => r.e.id !== 7), 'the unrankable player is kept out of the ranking');
+/* A departed player with no minutes must not surface as "one to watch" — the
+   unranked list is the only place he could slip through. */
+ok(!dep[3].unranked.some(e => e.id === 10), 'a player who has left the club never reaches the unranked list');
+ok(!dep[2].rows.some(r => r.e.id === 9) && !dep[3].rows.some(r => r.e.id === 8),
+  'another club and a departed player are both excluded');
+ok(dep[1] === undefined && dep[4] === undefined, 'positions with nobody at all are absent, not empty groups');
+/* A contest can sit BELOW a clear leader — the tie check has to look both
+   ways, or the middle of the table reads as settled. */
+const midPool = [mkDepth(1, 2, 10, 900), mkDepth(2, 2, 6, 540), mkDepth(3, 2, 5, 579), mkDepth(4, 2, 2, 180)];
+const midDep = core.clubDepth(midPool, 1, 10);
+ok(midDep[2].settled === true, 'leader 40 clear reads as settled');
+ok(midDep[2].rows[0].tied === false && midDep[2].rows[1].tied === true && midDep[2].rows[2].tied === true,
+  'a contest below a clear leader is marked on both players');
+/* The list is capped so a 30-man squad does not become the panel. */
+const bigPool = Array.from({ length: 9 }, (_, i) => mkDepth(i + 1, 2, 10 - i * 0.5, 900 - i * 45));
+ok(core.clubDepth(bigPool, 1, 10)[2].rows.length === core.DEPTH_MAX,
+  'the ranking is capped at DEPTH_MAX per position');
+ok(Object.keys(core.clubDepth([], 1, 10)).length === 0, 'an empty squad yields no groups rather than throwing');
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

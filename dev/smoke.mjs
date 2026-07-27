@@ -28,7 +28,7 @@ const PANELS = [
   'liverank', 'bonus', 'defcon', 'autosubs', 'whatif',
   'eo', 'template', 'rivals', 'scout', 'ask',
   'allplayers', 'compare', 'diffs', 'price', 'injuries', 'setpiece', 'rotation',
-  'fixtures', 'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts'
+  'fixtures', 'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts', 'dossier'
 ];
 
 const pw = await import(process.env.PLAYWRIGHT_PKG || 'playwright');
