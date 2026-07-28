@@ -333,6 +333,51 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(grade({ ...nailed, avgDifficulty: 2.4 }).status.key === 'major',
     'a first-choice player with a kind run is a major target');
 
+  /* THE DEFENDER PROBLEM, from running this against Everton: a centre-back
+     who banks defensive contributions and clean sheets graded last of six,
+     because the returns axis only counted goals and assists. On that axis he
+     scores nothing by construction, so no amount of defensive value could
+     move him and the defensive-floor tag decorated a ranking it could not
+     change. Returns are points per 90 now, on the real tariff. */
+  const cb = { element_type: 2, xp: null, teamGames: 0, starts: 32, minutes: 2900,
+    goals: 1, assists: 1, cleanSheets: 9, defconRate: 0.55, avgDifficulty: 3.0 };
+  const cbNoFloor = { ...cb, cleanSheets: 0, defconRate: 0 };
+  ok(returnsScore(cb) > returnsScore(cbNoFloor),
+    'clean sheets and a defensive floor count as returns (' +
+    returnsScore(cb).toFixed(2) + ' vs ' + returnsScore(cbNoFloor).toFixed(2) + ')');
+  ok(returnsScore(cb) >= 0.55,
+    'a high-volume centre-back clears the returns bar on his own merits (' +
+    returnsScore(cb).toFixed(2) + ')');
+  ok(grade(cb).status.key !== 'avoid' && /projects well/.test(grade(cb).why),
+    'and grades on it (' + grade(cb).why + ')');
+
+  /* A defender must not out-rank a genuinely elite attacker, though — the
+     point is that the floor is visible, not that it wins. */
+  const striker = { element_type: 4, xp: null, teamGames: 0, starts: 30, minutes: 2700,
+    goals: 18, assists: 6, cleanSheets: 0, defconRate: 0, avgDifficulty: 3.0 };
+  ok(returnsScore(striker) > returnsScore(cb),
+    'an elite forward still scores higher than a defensive floor (' +
+    returnsScore(striker).toFixed(2) + ' vs ' + returnsScore(cb).toFixed(2) + ')');
+
+  /* The tariff is position-aware: the same goal is worth more to a defender. */
+  const sameNumbers = { xp: null, teamGames: 0, starts: 30, minutes: 2700,
+    goals: 6, assists: 4, cleanSheets: 0, defconRate: 0 };
+  ok(returnsScore({ ...sameNumbers, element_type: 2 }) >
+     returnsScore({ ...sameNumbers, element_type: 4 }),
+    'identical goals are worth more on the defender tariff');
+  ok(returnsScore({ ...sameNumbers, element_type: 3 }) >
+     returnsScore({ ...sameNumbers, element_type: 4 }),
+    'and more to a midfielder than a forward');
+
+  /* Clean sheets pay a defender, barely pay a midfielder, and never a
+     forward — crediting them flat would invent value up front. */
+  const cs = { xp: null, teamGames: 0, starts: 30, minutes: 2700, goals: 0,
+    assists: 0, cleanSheets: 12, defconRate: 0 };
+  ok(returnsScore({ ...cs, element_type: 2 }) > returnsScore({ ...cs, element_type: 3 }),
+    'a clean sheet is worth more to a defender than a midfielder');
+  ok(returnsScore({ ...cs, element_type: 4 }) === returnsScore({ ...cs, element_type: 4, cleanSheets: 0 }),
+    'and nothing at all to a forward');
+
   const clubOf = (players, extra = {}) => buildThread({ name: 'CLB', fullName: 'Club',
     scored: 60, conceded: 40, avgDifficulty: 2.6,
     fixtures: [{ gw: 1, opp: 'AAA', home: true }, { gw: 2, opp: 'BBB', home: false }],

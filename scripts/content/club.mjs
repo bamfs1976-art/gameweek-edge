@@ -80,6 +80,34 @@ export function minutesScore(p) {
 export const RETURNS_PRIOR = 0.25;         /* the score of an unremarkable contributor */
 export const RETURNS_PRIOR_MINUTES = 900;  /* ten full matches */
 
+/* WHAT COUNTS AS A RETURN.
+
+   Goals and assists alone are not the answer, and a comparison made the cost
+   obvious: run against Everton, this graded Tarkowski last of six, while the
+   hand-written previews lead on him. He is a centre-back who banks defensive
+   contributions and clean sheets — on a goal-involvement axis he scores
+   roughly nothing by construction, so the ranking could never see him and the
+   defensive-floor tag decorated a position it had no power to change.
+
+   So the fallback is measured in POINTS per 90, on the real tariff, and every
+   way a player earns them counts:
+
+     GOALS       6 for a keeper or defender, 5 a midfielder, 4 a forward
+     ASSISTS     3, flat
+     CLEAN SHEET 4 for a keeper or defender, 1 a midfielder, nothing up front
+     DEFCON      2 whenever the defensive-contribution threshold is cleared,
+                 so a ball-winner has a floor a striker does not
+
+   Appearance points are deliberately excluded: every starter gets them, so
+   they separate nobody and would only compress the scale. */
+export const GOAL_PTS = { 1: 6, 2: 6, 3: 5, 4: 4 };
+export const ASSIST_PTS = 3;
+export const CS_PTS = { 1: 4, 2: 4, 3: 1, 4: 0 };
+export const DEFCON_PTS = 2;
+/* Points per 90, above appearance, that reads as a top-end return — roughly
+   an elite midfielder's goal and assist rate. */
+export const RETURNS_PTS_SCALE = 3.5;
+
 /* Returns. Prefers the projection; falls back to realised output per 90 when
    the model declines to project (early season, thin sample) so a club thread
    is still possible in July — which is precisely when these threads run. Only
@@ -88,7 +116,13 @@ export function returnsScore(p) {
   if (p.xp != null && Number.isFinite(p.xp)) return clamp01(p.xp / 6);
   const mins = Math.max(0, p.minutes || 0);
   if (!mins) return 0;
-  const own = clamp01(((p.goals || 0) + (p.assists || 0)) / (mins / 90) / 0.8);
+  const t = p.element_type || 3;
+  const per90 = (n) => (n || 0) / (mins / 90);
+  const pts = per90(p.goals) * (GOAL_PTS[t] != null ? GOAL_PTS[t] : 5)
+    + per90(p.assists) * ASSIST_PTS
+    + per90(p.cleanSheets) * (CS_PTS[t] != null ? CS_PTS[t] : 0)
+    + DEFCON_PTS * clamp01(p.defconRate || 0);
+  const own = clamp01(pts / RETURNS_PTS_SCALE);
   const w = mins / (mins + RETURNS_PRIOR_MINUTES);
   return clamp01(w * own + (1 - w) * RETURNS_PRIOR);
 }

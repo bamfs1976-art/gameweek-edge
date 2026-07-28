@@ -111,6 +111,9 @@ function clubData(teamId) {
       web_name: e.web_name, element_type: e.element_type, now_cost: e.now_cost,
       minutes: e.minutes || 0, starts: e.starts || 0, goals: e.goals_scored || 0,
       assists: e.assists || 0, teamGames: teamGames[teamId] || 0,
+      /* Clean sheets are a return for a defender the way a goal is for a
+         forward, so the grade needs them as well as the attacking numbers. */
+      cleanSheets: e.clean_sheets || 0,
       xp: nf ? E.nativeXP(e, nf) : null,
       oop: E.oopFlag(e, oopMarks),
       defconRate: defconRate(e),
