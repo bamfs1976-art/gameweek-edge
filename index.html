@@ -10316,6 +10316,43 @@ const WC_EARLY_PENALTY={2:0.45,3:0.70};
    points and added to the week's mean, since a lower mean is what the chip
    is chasing; a double gameweek still overrides it. */
 const BB_EARLY_PENALTY={1:0.60,2:0.45,3:0.30,4:0.15};
+
+/* ── Midweek congestion, read off the same calendar ───────────────────
+   The mirror image of an international break. intlBreakGws looks for an
+   unusually LONG gap between deadlines; a midweek round makes the gap
+   unusually SHORT — and its own comment already noted that, then threw the
+   information away.
+
+   It is worth keeping, because the argument that penalises a post-break
+   Bench Boost applies harder to a congested one. A squad playing three
+   games in eight days rotates, and the fringe players a Bench Boost depends
+   on are exactly the ones who come out. A weekend with a midweek round on
+   BOTH sides is the worst week of the season to need fifteen players to
+   start, and it is a mistake good managers still make in public.
+
+   Returns {gw: sides}, where sides is 1 or 2 — how many of a gameweek's
+   neighbours sit inside the short-gap window. */
+const CONGEST_GAP_DAYS=5;            /* a normal week is seven */
+function congestedGws(events){
+  const evs=(events||[]).filter(e=>e&&e.id&&e.deadline_time).slice().sort((a,c)=>a.id-c.id);
+  const gap=(a,b)=>{const x=Date.parse(a),y=Date.parse(b);
+    return (isFinite(x)&&isFinite(y))?(y-x)/86400000:null;};
+  const out={};
+  for(let i=0;i<evs.length;i++){
+    let sides=0;
+    if(i>0){const d=gap(evs[i-1].deadline_time,evs[i].deadline_time);
+      if(d!=null&&d<CONGEST_GAP_DAYS)sides++;}
+    if(i<evs.length-1){const d=gap(evs[i].deadline_time,evs[i+1].deadline_time);
+      if(d!=null&&d<CONGEST_GAP_DAYS)sides++;}
+    if(sides)out[evs[i].id]=sides;
+  }
+  return out;
+}
+/* In FDR points, added to the week's mean like the other Bench Boost
+   penalties — so a double gameweek still overrides it. Both sides costs more
+   than twice one side: it is not two independent midweeks, it is a squad
+   playing three times in eight days with the weekend in the middle. */
+const BB_CONGEST_PENALTY={1:0.25,2:0.60};
 /* Each club's next N fixtures on official FDR, best run first. The classic
    pre-season graphic, and the same numbers the chip plan reads. */
 function clubFdrRuns(b,fixtures,n){
@@ -10419,6 +10456,7 @@ function chipPlanFdr(b,fixtures,opts){
   const startGw=opts.startGw||(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
   const win=chipHalfWindow(startGw);
   const breaks=opts.breaks||intlBreakGws(b&&b.events);
+  const congested=opts.congested||congestedGws(b&&b.events);
   /* An FPL XI is eleven players with at most three from any one club, so at
      least FOUR clubs must have a fixture before a gameweek is playable at
      all. Anything below that is not a blank gameweek, it is missing fixture
@@ -10429,7 +10467,7 @@ function chipPlanFdr(b,fixtures,opts){
      missing fixture data. The threshold follows the live club cap. */
   const minClubs=minClubsForXi(b&&b.rules);
   const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.playing>=minClubs);
-  gws.forEach(g=>{g.afterBreak=breaks[g.gw]||0;});
+  gws.forEach(g=>{g.afterBreak=breaks[g.gw]||0;g.congested=congested[g.gw]||0;});
   const played=gws.filter(g=>g.mean!=null);
   if(played.length<3)return null;
 
@@ -10561,7 +10599,7 @@ function chipPlanFdr(b,fixtures,opts){
      fringe of a squad is exactly who gets rested or returns late, so a
      post-break week is treated as effectively harder for this chip only. */
   const bbMean=g=>g.mean+(g.afterBreak?breakScale(BREAK_BB_PENALTY,BREAK_BB_PENALTY_LONG,g.afterBreak):0)+(BB_EARLY_PENALTY[g.gw]||0)
-    +(BB_RUNIN_PENALTY[g.gw]||0);
+    +(BB_RUNIN_PENALTY[g.gw]||0)+(BB_CONGEST_PENALTY[g.congested]||0);
   const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy||c.gw-a.gw);
   const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
   const dblRank=played.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
@@ -10580,6 +10618,7 @@ function chipPlanFdr(b,fixtures,opts){
   claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0,firm:1}))
     .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0,
       early:BB_EARLY_PENALTY[g.gw]||0,runIn:BB_RUNIN_PENALTY[g.gw]||0,
+      congested:g.congested||0,
       rankScore:-bbMean(g),tol:TIE_FDR}))));
   const wcTol=(wcRank.length?wcRank[0].score:0)*TIE_REL;
   claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,
@@ -10598,13 +10637,15 @@ function chipPlanFdr(b,fixtures,opts){
     p.provisional=p.horizon>CHIP_PROVISIONAL_FROM&&!p.blank&&!p.double;
     p.edge=p.mean!=null?Math.abs(p.mean-mean0):null;
   });
-  return {window:win,gws:played,picks,breaks,
+  return {window:win,gws:played,picks,breaks,congested,
+    congestGws:Object.keys(congested).map(Number).filter(g=>g>=win.from&&g<=win.to).sort((a,c)=>a-c),
     /* Preference order per chip BEFORE collisions are resolved — what each
        chip wanted, as distinct from what it got. */
     rank:{wildcard:wcRank,
       triplecaptain:tcRank,
       benchboost:easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,
-        adjusted:bbMean(g),early:BB_EARLY_PENALTY[g.gw]||0,afterBreak:g.afterBreak||0})),
+        adjusted:bbMean(g),early:BB_EARLY_PENALTY[g.gw]||0,afterBreak:g.afterBreak||0,
+        congested:g.congested||0})),
       freehit:hardRank},
     breakGws:Object.keys(breaks).map(Number).filter(g=>g>=win.from&&g<=win.to).sort((a,c)=>a-c),
     leagueMean:played.reduce((s,g)=>s+g.mean,0)/played.length};
@@ -10658,10 +10699,22 @@ function chipPlanCard(b,fixtures){
         'It works against <b>Bench Boost</b> and <b>Triple Captain</b>, which both need players to actually start, '+
         'and the fringe of a squad is exactly who gets rested or returns late. A blank or double still outranks all of it.</p>'
       : '')+
+    /* The same calendar, read the other way. A well-known manager called a
+       Bench Boost for a weekend flanked by two midweek rounds and withdrew it
+       when someone pointed that out — the signal was in the fixture list all
+       along, and this is the panel that should have said so first. */
+    (plan.congestGws&&plan.congestGws.length
+      ? '<p class="dl-sub" style="margin-bottom:10px">Midweek rounds crowd <b>GW'+
+        plan.congestGws.join('</b>, <b>GW')+'</b> — short gaps between deadlines, the mirror of a break. '+
+        'These weeks are marked down for <b>Bench Boost</b> for the same reason a post-break week is, only harder: '+
+        'a squad playing three games in eight days rotates, and the fringe players a Bench Boost needs are the first out. '+
+        'A weekend with a midweek round on each side is the worst week of the half to need fifteen starters.</p>'
+      : '')+
     '<div class="dl desc">'+order.map(k=>
       '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+CHIP_LABEL[k]+' — GW'+P[k].gw+
       ' <span class="badge '+badge[k]+'">'+(k==='wildcard'?'reshape':k==='freehit'?'swing':k==='benchboost'?'depth':'ceiling')+'</span>'+
       (P[k].afterBreak?' <span class="badge badge-grey">post-break</span>':'')+
+      (P[k].congested?' <span class="badge badge-amber">'+(P[k].congested>1?'midweek both sides':'midweek round')+'</span>':'')+
       (P[k].provisional?' <span class="badge badge-grey">pencilled in</span>':'')+'</span>'+
       '<span class="dl-sub">'+why(k)+'</span></span></div>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">'+
