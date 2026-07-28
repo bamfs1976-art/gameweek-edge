@@ -18,18 +18,33 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const aiSrc = readFileSync(join(ROOT, 'netlify/functions/ai.js'), 'utf8');
 
 /* ── extraction helpers ─────────────────────────────────── */
+/* Comments are skipped BEFORE strings, and that ordering is the whole point.
+   Without it an ordinary apostrophe in prose — "a midfielder's tariff" inside
+   an explanatory comment — opens a phantom string, the scanner sails past the
+   closing brace, and the extracted "function" swallows whatever follows it.
+   That is not hypothetical: it is how this file started failing the moment a
+   comment in oopFlag used the word midfielder's. The sibling extractors in
+   extract-engine.mjs and test-chipplan.mjs already did this; this one was the
+   last naive scanner left. */
 function extractBlock(src, startIdx) {
   const open = src.indexOf('{', startIdx);
   if (open < 0) throw new Error('no opening brace');
-  let depth = 0, inStr = null, esc = false;
+  let depth = 0, inStr = null, esc = false, com = 0;
   for (let j = open; j < src.length; j++) {
-    const ch = src[j];
+    const ch = src[j], nx = src[j + 1];
+    if (com) {
+      if (com === 1 && ch === '\n') com = 0;
+      else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; }
+      continue;
+    }
     if (inStr) {
       if (esc) esc = false;
       else if (ch === '\\') esc = true;
       else if (ch === inStr) inStr = null;
       continue;
     }
+    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
+    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
     if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
     if (ch === '{') depth++;
     else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
@@ -160,7 +175,7 @@ const pieces = [
   extractFn(html, 'fdrCellValue'),
   extractFn(html, 'fdrRunTotal'),
   /* Out-of-position detection. */
-  ...['OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL']
+  ...['OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_MID_PCTL', 'OOP_MID_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'oopThreat'),
   extractFn(html, 'oopQuantile'),
@@ -199,6 +214,38 @@ function ok(cond, label) {
 function section(name) { console.log('• ' + name); }
 
 /* ── esc ────────────────────────────────────────────────── */
+section('extractBlock: the harness must not corrupt what it measures');
+{
+  /* Every assertion in this file rests on extractBlock pulling out exactly
+     one function. When it over-captures the tests do not fail honestly —
+     the whole sandbox stops parsing, or worse, silently tests the wrong
+     code. So the scanner is tested against the things that fool it. */
+  const cases = [
+    ["apostrophe in a block comment", "function f(){ /* a midfielder's tariff */ return 1; }"],
+    ["apostrophe in a line comment", "function f(){ // the striker's job\n return 1; }"],
+    ["quote in a block comment", 'function f(){ /* he said "no" */ return 1; }'],
+    ["brace in a line comment", "function f(){ // }\n return 1; }"],
+    ["brace in a block comment", "function f(){ /* } */ return 1; }"],
+    ["brace in a string", 'function f(){ var s = "}"; return 1; }'],
+    ["brace in a template", "function f(){ var s = `}`; return 1; }"],
+    ["escaped quote", "function f(){ var s = 'it\\'s'; return 1; }"],
+    ["comment marker inside a string", 'function f(){ var s = "/*"; return 1; }']
+  ];
+  for (const [label, src] of cases) {
+    let got = null;
+    try { got = extractBlock(src, 0); } catch (_) { /* reported below */ }
+    ok(got === src, 'captures exactly the function: ' + label +
+      (got === src ? '' : ' — got ' + JSON.stringify(got)));
+  }
+  /* And the real thing: the function whose comment broke this. */
+  const flag = extractFn(html, 'oopFlag');
+  ok((flag.match(/^function [A-Za-z0-9_$]+\(/gm) || []).length === 1,
+    'oopFlag extracts as one function, not a run-on');
+  let parsed = true;
+  try { new Function('return (' + flag + ')'); } catch (_) { parsed = false; }
+  ok(parsed, 'and it parses on its own');
+}
+
 section('esc escapes <>&"\'');
 ok(core.esc('<script>') === '&lt;script&gt;', 'angle brackets escaped');
 ok(core.esc('a&b') === 'a&amp;b', 'ampersand escaped');

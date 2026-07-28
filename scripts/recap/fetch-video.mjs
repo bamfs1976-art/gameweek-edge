@@ -68,6 +68,7 @@ const M = new Function('const MEM={};\n' + [
   lineConst('ROT_SWITCH'), fn('rotationChain'),
   lineConst('LEAN_EDGE'), fn('clubLean'),
   lineConst('OOP_MIN_MINUTES'), lineConst('OOP_PCTL'), lineConst('OOP_STRONG_PCTL'),
+  lineConst('OOP_MID_PCTL'), lineConst('OOP_MID_STRONG_PCTL'),
   lineConst('OOP_LOW_PCTL'), lineConst('OOP_MIN_POOL'),
   fn('oopThreat'), fn('oopQuantile'), fn('oopBenchmarks'), fn('oopFlag'),
   lineConst('SP_DUTIES'), fn('setPieceByClub'), fn('setPieceClubRows'),

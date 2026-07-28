@@ -9863,20 +9863,35 @@ function effGoalRate(el){
    threatens like one would be extraordinary, so the bar excluded almost every
    player it was built to find.
 
-   The question is not "does he threaten like a midfielder". It is "does he
-   threaten unlike a defender" — an outlier WITHIN his own classification,
-   which is what the community means by out of position and what actually
-   converts into points, because he is scored on his own tariff either way.
-   So the test is a percentile among players sharing his position: the top
-   OOP_PCTL of defenders for goal threat is a defender being used further
-   forward than defenders are.
+   The question for a DEFENDER is not "does he threaten like a midfielder".
+   It is "does he threaten unlike a defender" — an outlier WITHIN his own
+   classification. That is what the community means by out of position, and
+   the tariff is why it converts: a defender pushed forward gains goal threat
+   while keeping 6 points a goal, a full clean sheet and the defensive
+   threshold. The absolute level does not have to be high for the edge to be
+   real, so the bar is a percentile among defenders.
+
+   A MIDFIELDER is the opposite case, and reading the first version's output
+   proved it. A percentile among midfielders flagged Saka, Bruno Fernandes,
+   Palmer and Mbeumo — the most template attacking midfielders in the game.
+   Nobody calls those out of position; "top 15% of midfielders for goal
+   threat" only says "is a good attacking midfielder", which is not
+   information. The midfielder tariff is already the best balanced one in the
+   game (5 a goal AND a clean-sheet point), so there is no mismatch to exploit
+   merely by being good. The mismatch exists only when he is genuinely leading
+   the line, so a midfielder keeps the absolute bar: he must threaten like a
+   FORWARD.
+
+   The asymmetry is not a fudge — it falls out of the scoring system.
 
    Deliberately one-directional on the upside and quiet about the reverse: a
    forward drifting deep is a genuine downgrade, so it is flagged as a caution
    rather than a find. */
 const OOP_MIN_MINUTES=450;     /* five full matches — below this it is noise */
-const OOP_PCTL=0.85;           /* top 15% of his own position — unusual, not merely good */
+const OOP_PCTL=0.85;           /* a defender in the top 15% of defenders is unusual, not merely good */
 const OOP_STRONG_PCTL=0.95;    /* top 5% — the ones worth naming in a headline */
+const OOP_MID_PCTL=0.50;       /* a midfielder must reach a typical FORWARD's threat */
+const OOP_MID_STRONG_PCTL=0.85;/* and a good one to be called a striker outright */
 const OOP_LOW_PCTL=0.15;       /* the caution: bottom 15% of forwards for threat */
 const OOP_MIN_POOL=8;          /* below this a percentile is noise, not a distribution */
 /* Goal threat per 90, preferring the non-penalty rate when Core Insights has
@@ -9909,6 +9924,7 @@ function oopBenchmarks(elements){
     const v=by[k].sort((a,c)=>a-c);
     if(v.length<OOP_MIN_POOL)return;
     out[k]={high:oopQuantile(v,OOP_PCTL),top:oopQuantile(v,OOP_STRONG_PCTL),
+      mid:oopQuantile(v,OOP_MID_PCTL),fwdStrong:oopQuantile(v,OOP_MID_STRONG_PCTL),
       low:oopQuantile(v,OOP_LOW_PCTL),n:v.length};
   });
   return out;
@@ -9921,23 +9937,30 @@ function oopFlag(el,marks){
   const threat=oopThreat(el);
   if(!(threat>0))return null;
   const m=marks[t];
-  if(!m)return null;
-  /* Measured against his OWN position: a defender who threatens unlike a
-     defender is being used further forward than defenders are, and is paid
-     on the defender tariff for it. */
-  if((t===2||t===3)&&m.high!=null&&threat>=m.high){
-    const strong=m.top!=null&&threat>=m.top;
-    return {level:strong?2:1,kind:'up',
-      label:t===2?'attacks like a winger, paid like a defender'
-        :'plays as a striker, paid like a midfielder',
-      note:t===2
-        ?'Among the most attacking defenders in the league while scoring on the defender tariff — 6 points a goal and a full clean sheet.'
-        :'Among the most goal-threatening midfielders while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
+  /* A DEFENDER is measured against his OWN position: one who threatens unlike
+     a defender is being used further forward than defenders are, and keeps
+     the defender tariff while doing it. */
+  if(t===2){
+    if(!m||m.high==null||!(threat>=m.high))return null;
+    return {level:(m.top!=null&&threat>=m.top)?2:1,kind:'up',
+      label:'attacks like a winger, paid like a defender',
+      note:'Among the most attacking defenders in the league while scoring on the defender tariff — 6 points a goal and a full clean sheet.',
       threat,bench:m.high,pool:m.n};
+  }
+  /* A MIDFIELDER is measured against FORWARDS, because his own tariff is
+     already the best balanced one — being a good attacking midfielder is not
+     a mismatch to exploit, leading the line on a midfielder's tariff is. */
+  if(t===3){
+    const f=marks[4];
+    if(!f||f.mid==null||!(threat>=f.mid))return null;
+    return {level:(f.fwdStrong!=null&&threat>=f.fwdStrong)?2:1,kind:'up',
+      label:'plays as a striker, paid like a midfielder',
+      note:'Carries a forward\u2019s goal threat while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
+      threat,bench:f.mid,pool:f.n};
   }
   /* The caution: a forward with less goal threat than almost any other
      forward is playing away from goal, on the tariff that pays worst for it. */
-  if(t===4&&m.low!=null&&threat<=m.low){
+  if(t===4&&m&&m.low!=null&&threat<=m.low){
     return {level:-1,kind:'down',label:'playing deep for a forward',
       note:'Among the least goal-threatening forwards in the league, on the tariff that pays least for it — 4 points a goal and no clean sheet.',
       threat,bench:m.low,pool:m.n};
