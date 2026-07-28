@@ -1715,6 +1715,9 @@ body{font-size:14px;line-height:1.35}
 .dash-next-b:focus-visible{outline:2px solid var(--green-bright);outline-offset:1px}
 .dash-next-t{display:block;font-size:13px;font-weight:600;color:var(--text)}
 .dash-next-s{display:block;font-size:11px;color:var(--text-3);margin-top:2px}
+.an-bar{display:inline-block;width:110px;height:6px;border-radius:3px;background:var(--surface-3);
+  vertical-align:middle;overflow:hidden}
+.an-bar>span{display:block;height:100%;background:var(--green);border-radius:3px}
 .quad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
 /* Two-column from tablet up (iPad portrait 768px included); single column only on phones. */
 @media(max-width:767px){.quad-grid{grid-template-columns:1fr}}
@@ -3084,7 +3087,8 @@ const NAV = [
   {
     id:'studio', label:'Studio', icon:'grid', tier:'owner',
     panels:[
-      {id:'social', label:'Social Studio', icon:'grid', tier:'owner'}
+      {id:'social', label:'Social Studio', icon:'grid', tier:'owner'},
+      {id:'analytics', label:'Analytics', icon:'pulse', tier:'owner'}
     ]
   }
 ];
@@ -3289,6 +3293,10 @@ const PANEL_CONTENT = {
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
   social:{
     desc:'Share-ready graphics built from the live model — squad cards, price ladders and captain picks, ready to post.',
+    layout:'standard'
+  },
+  analytics:{
+    desc:'Who is actually using the app: daily external visitors with bots and your own devices removed, which areas they reach, and how many come back.',
     layout:'standard'
   },
   myweek:{
@@ -5983,6 +5991,92 @@ function socCustomDownload(share){
     setTimeout(()=>URL.revokeObjectURL(a.href),5000);
     toast('Card downloaded');
   },'image/png');
+}
+
+/* ── Analytics (owner) ───────────────────────────────────────
+   Reads /api/analytics, which does the filtering server-side: crawlers were
+   82% of the first sample, and the owner's own devices are another chunk, so
+   an unfiltered number is worse than none. The endpoint verifies the signed-in
+   email against the owner allowlist itself — GE_OWNER only hides the panel. */
+let ANALYTICS_DAYS=14;
+function analyticsBar(pct){
+  return '<span class="an-bar" aria-hidden="true"><span style="width:'+Math.max(2,pct)+'%"></span></span>';
+}
+async function hydrateAnalytics(host){
+  const seg=[[7,'7 days'],[14,'14 days'],[30,'30 days']].map(o=>
+    '<button class="seg-b'+(ANALYTICS_DAYS===o[0]?' on':'')+'" data-d="'+o[0]+'">'+o[1]+'</button>').join('');
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' Who is using the app</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">External visitors only — crawlers and your own devices are removed before anything is counted. Your devices are found by who has opened an owner-only panel, not by guesswork.</p>'+
+    '<div class="seg" id="an-range">'+seg+'</div></div>'+
+    '<div id="an-out">'+skel(4)+'</div>';
+  host.querySelector('#an-range').addEventListener('click',ev=>{
+    const btn=ev.target.closest('.seg-b');if(!btn)return;
+    ANALYTICS_DAYS=+btn.dataset.d;renderPage('analytics');});
+  const out=host.querySelector('#an-out');
+  const tok=aiToken();
+  if(!tok){out.innerHTML=stateBox('users','Sign in required','Analytics reads your own event table, so it needs a signed-in owner session.');return;}
+  let d;
+  try{
+    const r=await fetch(apiBase()+'/api/analytics?days='+ANALYTICS_DAYS,
+      {headers:{Authorization:'Bearer '+tok}});
+    if(r.status===403){out.innerHTML=stateBox('users','Owner only','This account is not on the owner allowlist.');return;}
+    if(r.status===503){out.innerHTML=stateBox('pulse','Not configured','Analytics needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY set in Netlify.');return;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    d=await r.json();
+  }catch(e){out.innerHTML=stateBox('pulse','Analytics unavailable',String(e.message||e));return;}
+
+  const t=d.totals||{};
+  if(!t.externalVisitors){
+    out.innerHTML=stateBox('pulse','No external visitors yet',
+      'Nobody outside your own devices has opened the app in the last '+d.windowDays+' days. '+
+      (t.botsExcluded?t.botsExcluded+' crawler'+(t.botsExcluded===1?'':'s')+' filtered out.':''));
+    return;
+  }
+  /* The retention line is the one number worth leading on: arrivals without
+     returns is a traffic problem the panel list cannot explain. */
+  const back=t.returnedAnotherDay||0;
+  const stuck=t.dashboardOnly||0;
+  const kpis='<div class="grid g-sb mb-20">'+
+    kpi('External visitors',t.externalVisitors,d.windowDays+' days · '+t.botsExcluded+' bots removed','var(--blue)')+
+    kpi('Came back',back,back?'on another day':'nobody returned','var(--'+(back?'green':'red')+')')+
+    kpi('Dashboard only',stuck,t.externalVisitors?Math.round(100*stuck/t.externalVisitors)+'% never went deeper':'','var(--amber)')+
+    kpi('Teams linked',t.teamsLinked||0,'from '+(t.panelViews||0)+' panel views','var(--green)')+
+  '</div>';
+
+  const dayRows=(d.daily||[]).map(x=>'<tr><td>'+esc(x.date)+'</td>'+
+    '<td class="num">'+x.visitors+'</td><td class="num">'+x.newVisitors+'</td>'+
+    '<td class="num">'+x.views+'</td>'+
+    '<td class="num'+(x.pastDashboard?' pos':'')+'">'+x.pastDashboard+'</td>'+
+    '<td class="num'+(x.teamsLinked?' pos':'')+'">'+x.teamsLinked+'</td></tr>').join('');
+  const daily='<div class="card mb-20"><div class="card-title">By day</div><div class="pl-scroll">'+
+    '<table class="ptable"><thead><tr><th>Date</th><th class="num">Visitors</th><th class="num">New</th>'+
+    '<th class="num">Views</th><th class="num">Past dashboard</th><th class="num">Linked</th></tr></thead>'+
+    '<tbody>'+dayRows+'</tbody></table></div></div>';
+
+  const areaRows=(d.areas||[]).map(a=>'<tr><td>'+esc(a.area.replace(/(^|\s)\S/g,c=>c.toUpperCase()))+'</td>'+
+    '<td class="num">'+a.views+'</td><td class="num">'+a.people+'</td>'+
+    '<td class="num">'+a.panels+'</td>'+
+    '<td>'+analyticsBar(a.pct)+' <span class="dl-sub">'+a.pct+'%</span></td></tr>').join('');
+  const untouched=(d.untouchedAreas||[]).length
+    ? '<div class="dl-sub" style="margin-top:10px">Not opened by anyone: <b>'+
+      d.untouchedAreas.map(a=>esc(a.replace(/(^|\s)\S/g,c=>c.toUpperCase()))).join(', ')+
+      '</b> — whole areas of the app nobody outside has reached.</div>'
+    : '';
+  const areas='<div class="card mb-20"><div class="card-title">Areas</div><div class="pl-scroll">'+
+    '<table class="ptable"><thead><tr><th>Area</th><th class="num">Views</th><th class="num">People</th>'+
+    '<th class="num">Panels</th><th>Share</th></tr></thead><tbody>'+areaRows+'</tbody></table></div>'+
+    untouched+'</div>';
+
+  const pl=(d.panels||[]).slice(0,15).map(p=>'<div class="dl-row">'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc((PANELS[p.panel]&&PANELS[p.panel].label)||p.panel)+'</span>'+
+    '<span class="dl-sub">'+p.people+' '+(p.people===1?'person':'people')+'</span></span>'+
+    '<span class="dl-col">'+p.views+'</span></div>').join('');
+  const panels='<div class="card"><div class="card-title">Panels opened</div>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Panel</span><span class="dl-col">Views</span></div>'+
+    pl+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Counts this small are noise individually — one person versus two means nothing. The shape is what to read.</div></div>';
+
+  out.innerHTML=kpis+daily+areas+panels;
 }
 
 async function hydrateSocial(host){
@@ -14125,6 +14219,7 @@ const WIRED={
   seasonsim:hydrateSeasonSim,
   blog:hydrateBlog,
   social:hydrateSocial,
+  analytics:hydrateAnalytics,
   gwhistory:hydrateGwhistory,
   gwreport:hydrateGwreport,
   draft:hydrateDraft,

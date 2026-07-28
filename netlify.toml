@@ -106,6 +106,14 @@
   status = 200
   force = true
 
+# Owner analytics. Reads the event table, so the function verifies the
+# caller's Supabase token against the owner allowlist before answering.
+[[redirects]]
+  from = "/api/analytics"
+  to = "/.netlify/functions/analytics"
+  status = 200
+  force = true
+
 # Stripe billing.
 [[redirects]]
   from = "/api/checkout"
