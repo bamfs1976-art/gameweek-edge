@@ -91,10 +91,13 @@ const oopMarks = E.oopBenchmarks(idx.elements);
    The same dcHitProb the expected-points model uses, so the thread and the
    app cannot disagree about whether a centre-back has a floor. */
 function defconRate(e) {
-  const per90 = parseFloat(e.defensive_contribution_per_90 || '0');
+  /* Via the engine's dcRate90, so the thread and the app derive the rate the
+     same way — including its fallback to the season total, which matters
+     because FPL ships the per-90 field populated with zero rather than
+     absent. */
+  const per90 = E.dcRate90(e);
   if (!(per90 > 0)) return null;
-  const thr = e.element_type === 2 ? 10 : 12;      /* DEF 10, MID/FWD 12 */
-  return E.dcHitProb(per90, thr);
+  return E.dcHitProb(per90, E.dcThreshold(e));
 }
 
 /* Set-piece duty, phrased for a thread. angles() has always looked for this

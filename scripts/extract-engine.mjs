@@ -122,7 +122,7 @@ export const ENGINE_FNS = [
      an extraction that omits a callee produces an engine that parses, loads,
      and then throws the first time a projection is asked for. */
   'nativeXP', 'effGoalRate', 'negRate90', 'concedePts', 'recencyWeight', 'availAttackMult',
-  'dcHitProb', 'savePts',
+  'dcHitProb', 'savePts', 'dcRate90', 'dcThreshold',
 
   /* Out-of-position threat: a defender who attacks is scored on a defender's
      tariff, which is the single most exploitable classification in the game

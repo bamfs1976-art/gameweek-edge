@@ -177,6 +177,8 @@ const pieces = [
   /* Out-of-position detection. */
   ...['OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_MID_PCTL', 'OOP_MID_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'dcRate90'),
+  extractFn(html, 'dcThreshold'),
   extractFn(html, 'oopThreat'),
   extractFn(html, 'oopQuantile'),
   extractFn(html, 'oopBenchmarks'),
@@ -202,7 +204,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -214,6 +216,27 @@ function ok(cond, label) {
 function section(name) { console.log('• ' + name); }
 
 /* ── esc ────────────────────────────────────────────────── */
+section('dcRate90: a zero is not the same as no data');
+{
+  /* Measured against the live bootstrap, not assumed: the per-90 field comes
+     back PRESENT and set to 0 for every player with real minutes, so a
+     fallback keyed on isNaN could never fire against the shape FPL actually
+     sends. This is the assertion that would have caught that. */
+  const F = core.dcRate90;
+  ok(F({ defensive_contribution_per_90: '9.5', defensive_contribution: 0, minutes: 900 }) === 9.5,
+    'a real per-90 figure is used as-is');
+  const derived = F({ defensive_contribution_per_90: '0', defensive_contribution: 100, minutes: 900 });
+  ok(Math.abs(derived - 10) < 1e-9,
+    'a ZERO per-90 with a real season total derives the rate (' + derived + ')');
+  ok(Math.abs(F({ defensive_contribution: 100, minutes: 900 }) - 10) < 1e-9,
+    'and so does an absent field');
+  ok(F({ defensive_contribution_per_90: '0', defensive_contribution: 0, minutes: 900 }) === 0,
+    'no data anywhere still gives zero rather than an invention');
+  ok(Number.isFinite(F({})), 'a bare element does not divide by zero');
+  ok(core.dcThreshold({ element_type: 2 }) === 10 && core.dcThreshold({ element_type: 3 }) === 12,
+    'the threshold follows the position');
+}
+
 section('extractBlock: the harness must not corrupt what it measures');
 {
   /* Every assertion in this file rests on extractBlock pulling out exactly

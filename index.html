@@ -6951,9 +6951,16 @@ async function hydrateAllPlayers(host){
    Insights mirror when the sample allows (>=5 starts), otherwise a logistic
    estimate from the per-90 rate against the threshold (DEF 10, MID/FWD 12),
    which the label prefixes with a tilde so an estimate never reads as fact. */
+/* The fallback fires on a ZERO as well as on an absent field, and that is not
+   pedantry. A diagnostic run against the live bootstrap found the per-90 field
+   PRESENT and set to 0 for all 288 players with real minutes — not missing.
+   `isNaN` never sees a zero, so the derivation it exists to provide could
+   never run against the shape FPL actually sends. Both zero still gives zero,
+   so nothing changes where there is genuinely no data. */
 function dcRate90(e){
   const v=parseFloat(e.defensive_contribution_per_90);
-  return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;
+  if(v>0)return v;
+  return parseFloat(e.defensive_contribution||0)*90/(e.minutes||1);
 }
 function dcThreshold(e){return e.element_type===2?10:12;}
 function dcReal(e){const ci=e._ci;return !!(ci&&(ci.dcs||0)>=5&&ci.dchr!=null);}
