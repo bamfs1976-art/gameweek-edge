@@ -206,8 +206,27 @@ if (process.argv.includes('--defcon')) {
     const present = per90.filter((v) => v > 0);
     const rates = pool.map(defconRate).filter((v) => v != null);
     const thr = t === 2 ? 10 : 12;
+    /* "Empty" and "zero" are different diagnoses with different fixes, and
+       dcRate90's fallback only fires on the first — parseFloat('0') is 0, not
+       NaN, so a populated zero silently defeats it. */
+    const absent = pool.filter((e) => e.defensive_contribution_per_90 == null).length;
+    const literalZero = pool.filter((e) => e.defensive_contribution_per_90 != null &&
+      parseFloat(e.defensive_contribution_per_90) === 0).length;
+    const totals = pool.map((e) => parseInt(e.defensive_contribution, 10) || 0).filter((v) => v > 0);
     console.log(`${named[t]}  n=${pool.length}  with a per-90 figure: ${present.length}`);
-    if (!present.length) { console.log('   field is empty or zero for every player'); continue; }
+    console.log(`   per90 field: absent ${absent}, present-but-zero ${literalZero}`);
+    console.log(`   season TOTAL defensive_contribution > 0: ${totals.length}` +
+      (totals.length ? `  median ${q(totals, 0.5)}  max ${q(totals, 1)}` : ''));
+    if (totals.length) {
+      const derived = pool.map((e) => ((parseInt(e.defensive_contribution, 10) || 0) * 90) / (e.minutes || 1))
+        .filter((v) => v > 0);
+      console.log(`   derived per90 (total*90/mins)  median ${q(derived, 0.5).toFixed(2)}` +
+        `  p75 ${q(derived, 0.75).toFixed(2)}  p90 ${q(derived, 0.9).toFixed(2)}  max ${q(derived, 1).toFixed(2)}`);
+      const dr = derived.map((v) => E.dcHitProb(v, thr));
+      console.log(`   derived dcHitProb  median ${q(dr, 0.5).toFixed(3)}  p90 ${q(dr, 0.9).toFixed(3)}` +
+        `  max ${q(dr, 1).toFixed(3)}   clears 0.45: ${dr.filter((r) => r >= 0.45).length}`);
+    }
+    if (!present.length) { console.log('   no usable per-90 field'); continue; }
     console.log(`   per90  min ${q(present, 0).toFixed(2)}  median ${q(present, 0.5).toFixed(2)}` +
       `  p75 ${q(present, 0.75).toFixed(2)}  p90 ${q(present, 0.9).toFixed(2)}  max ${q(present, 1).toFixed(2)}` +
       `   (threshold ${thr})`);
