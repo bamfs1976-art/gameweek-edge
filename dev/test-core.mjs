@@ -160,9 +160,10 @@ const pieces = [
   extractFn(html, 'fdrCellValue'),
   extractFn(html, 'fdrRunTotal'),
   /* Out-of-position detection. */
-  ...['OOP_MIN_MINUTES', 'OOP_STRONG']
+  ...['OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'oopThreat'),
+  extractFn(html, 'oopQuantile'),
   extractFn(html, 'oopBenchmarks'),
   extractFn(html, 'oopFlag'),
   /* Set pieces pivoted club-first. */
@@ -186,7 +187,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1361,49 +1362,83 @@ section('fdr lenses: the cell shows the projection, not just a colour (Tier 2)')
     'an impossible official rating reads as average');
 }
 
-section('oopFlag: paid on one tariff, playing another job (Tier 2)');
+section('oopFlag: unusual for his own position, paid on his own tariff (Tier 2)');
 {
   const M = core.OOP_MIN_MINUTES;
-  /* A league where each position group has a clear, separated threat level. */
+  /* A realistic league: within each position most players cluster low and a
+     few sit well clear. That spread is the whole point — the flag is looking
+     for the tail of a position, not for a player who resembles another one. */
   const pool = [];
   let id = 1;
-  const add = (type, n, xg) => { for (let i = 0; i < n; i++) pool.push({
-    id: id++, element_type: type, minutes: M + 100, expected_goals_per_90: String(xg + i * 0.001) }); };
-  add(2, 8, 0.05); add(3, 8, 0.20); add(4, 8, 0.45);
+  const add = (type, xgs) => xgs.forEach((xg) => pool.push({
+    id: id++, element_type: type, minutes: M + 100, expected_goals_per_90: String(xg) }));
+  /* 20 defenders: nearly all negligible, two genuine attacking full-backs. */
+  add(2, [0.02, 0.02, 0.03, 0.03, 0.03, 0.04, 0.04, 0.04, 0.05, 0.05,
+          0.05, 0.06, 0.06, 0.07, 0.07, 0.08, 0.09, 0.10, 0.22, 0.30]);
+  /* 20 midfielders: a spread, with a couple playing as strikers. */
+  add(3, [0.05, 0.06, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.15, 0.16,
+          0.17, 0.18, 0.20, 0.22, 0.25, 0.28, 0.32, 0.36, 0.55, 0.62]);
+  /* 20 forwards, including two who barely threaten at all. */
+  add(4, [0.12, 0.14, 0.20, 0.25, 0.30, 0.33, 0.36, 0.38, 0.40, 0.42,
+          0.45, 0.47, 0.50, 0.52, 0.55, 0.58, 0.62, 0.66, 0.70, 0.80]);
   const marks = core.oopBenchmarks(pool);
-  ok(marks[2] < marks[3] && marks[3] < marks[4], 'benchmarks rise with the position group');
 
-  /* A midfielder threatening like a forward is the find. */
-  const oopMid = { element_type: 3, minutes: M + 100, expected_goals_per_90: '0.50' };
-  const f = core.oopFlag(oopMid, marks);
-  ok(f && f.kind === 'up' && /forward/.test(f.label), 'a midfielder with forward threat is flagged');
-  ok(/5 points a goal/.test(f.note), 'and the note names the tariff that makes it worth points');
+  ok(marks[2] && marks[3] && marks[4], 'every position group gets its own cut-offs');
+  ok(marks[2].high < marks[2].top, 'the strong cut-off sits above the ordinary one');
+  ok(marks[2].n === 20, 'and the pool size is reported (' + marks[2].n + ')');
 
-  /* A defender threatening like a midfielder is the same idea one rung down. */
-  const oopDef = { element_type: 2, minutes: M + 100, expected_goals_per_90: '0.25' };
-  const d = core.oopFlag(oopDef, marks);
-  ok(d && d.kind === 'up' && /midfielder/.test(d.label), 'an attacking defender is flagged');
-  ok(/6 points a goal/.test(d.note), 'with the defender tariff named');
+  /* THE REGRESSION THIS REPLACES. The old rule compared a defender against
+     the MEDIAN MIDFIELDER, which is a genuinely attacking footballer — so it
+     flagged nobody across two real club previews, including the league's
+     most-cited out-of-position players. An attacking full-back must be found
+     by his own position's distribution, and this pool is built so the two
+     rules disagree: 0.12 is a standout among defenders and nowhere near a
+     typical midfielder. */
+  const fullBack = { element_type: 2, minutes: M + 100, expected_goals_per_90: '0.12' };
+  const medianMid = core.oopQuantile(
+    pool.filter((p) => p.element_type === 3).map((p) => parseFloat(p.expected_goals_per_90)).sort((a, b) => a - b), 0.5);
+  ok(0.12 < medianMid, 'the test case would fail the old median-midfielder bar (' + medianMid + ')');
+  ok(0.12 >= marks[2].high, 'while clearing his own position\'s bar (' + marks[2].high.toFixed(3) + ')');
+  const fb = core.oopFlag(fullBack, marks);
+  ok(fb && fb.kind === 'up', 'but an attacking full-back IS flagged now');
+  ok(fb && /defender/.test(fb.label), 'and the label is about his own position (' + (fb || {}).label + ')');
+  ok(fb && /6 points a goal/.test(fb.note), 'with the tariff that makes it worth points');
 
-  /* Only ever one rung: a defender with a striker's threat is still "plays as
-     a midfielder", because that is the comparison that pays. */
-  const wild = core.oopFlag({ element_type: 2, minutes: M + 100, expected_goals_per_90: '0.9' }, marks);
-  ok(wild && /midfielder/.test(wild.label), 'a defender is never compared two groups up');
+  /* Same idea for a midfielder playing as a striker. */
+  const striker = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.55' }, marks);
+  ok(striker && striker.kind === 'up' && /midfielder/.test(striker.label),
+    'a midfielder in his position\'s top tail is flagged');
+  ok(striker && /5 points a goal/.test(striker.note), 'with the midfielder tariff named');
 
-  /* Ordinary players are not flagged. */
-  ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.20' }, marks) === null,
-    'a typical midfielder is not out of position');
+  /* The tail is the claim, so the middle of a position must stay silent —
+     otherwise the flag means "quite good" and stops being information. */
+  ok(core.oopFlag({ element_type: 2, minutes: M + 100, expected_goals_per_90: '0.05' }, marks) === null,
+    'a typical defender is not out of position');
+  ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.15' }, marks) === null,
+    'nor a typical midfielder');
   ok(core.oopFlag({ element_type: 1, minutes: M + 100, expected_goals_per_90: '0' }, marks) === null,
     'a goalkeeper is never flagged');
 
-  /* Strength: comfortably past the benchmark reads differently from scraping it. */
-  const scrape = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: String(marks[4] + 0.001) }, marks);
-  const clear = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: String(marks[4] * 2) }, marks);
-  ok(scrape.level === 1 && clear.level === 2, 'clearing the benchmark comfortably is a stronger flag');
+  /* No more than the stated share of a position may be flagged, or the
+     percentile has stopped meaning what it says. */
+  const defs = pool.filter((p) => p.element_type === 2);
+  const flagged = defs.filter((p) => core.oopFlag(p, marks));
+  ok(flagged.length <= Math.ceil(defs.length * (1 - core.OOP_PCTL)) + 1,
+    'only the top tail of a position is flagged (' + flagged.length + ' of ' + defs.length + ')');
+  ok(flagged.length >= 1, 'but the tail is not empty');
 
-  /* The caution, and it must be a caution rather than a find. */
-  const deep = core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.05' }, marks);
-  ok(deep && deep.level < 0 && deep.kind === 'down', 'a forward with no goal threat is a caution, not a find');
+  /* Strength: the top of the tail reads differently from its edge. */
+  const edge = core.oopFlag({ element_type: 2, minutes: M + 100,
+    expected_goals_per_90: String(marks[2].high) }, marks);
+  const peak = core.oopFlag({ element_type: 2, minutes: M + 100,
+    expected_goals_per_90: String(marks[2].top + 0.05) }, marks);
+  ok(edge.level === 1 && peak.level === 2, 'the very top of a position is a stronger flag');
+
+  /* The caution, and it must stay a caution rather than a find. */
+  const deep = core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.12' }, marks);
+  ok(deep && deep.level < 0 && deep.kind === 'down', 'a forward with no goal threat is a caution');
+  ok(core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.80' }, marks) === null,
+    'and an elite forward is not flagged at all — he is exactly where he should be');
 
   /* Sample size and pre-season: no minutes, no claim. */
   ok(core.oopFlag({ element_type: 3, minutes: M - 1, expected_goals_per_90: '0.9' }, marks) === null,
@@ -1412,14 +1447,23 @@ section('oopFlag: paid on one tariff, playing another job (Tier 2)');
     'a pre-season squad produces no benchmarks at all');
   ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.9' }, {}) === null,
     'and with no benchmarks nothing is flagged');
-  ok(core.oopBenchmarks([]).count === undefined && Object.keys(core.oopBenchmarks([])).length === 0, 'an empty league is safe');
+  ok(Object.keys(core.oopBenchmarks([])).length === 0, 'an empty league is safe');
   ok(core.oopFlag(null, marks) === null && core.oopFlag({ element_type: 3, minutes: 9999 }, null) === null,
     'missing inputs do not throw');
 
-  /* A thin group cannot set a benchmark — three forwards is not a distribution. */
+  /* A thin group cannot describe a distribution — a percentile over four
+     players is an ordering, not a tail. */
   const thin = core.oopBenchmarks(pool.filter((p) => p.element_type !== 4).concat(
     [{ id: 900, element_type: 4, minutes: M + 1, expected_goals_per_90: '0.5' }]));
   ok(thin[4] === undefined, 'a group with too few players sets no benchmark');
+  ok(core.OOP_MIN_POOL >= 8, 'and the floor is a real sample (' + core.OOP_MIN_POOL + ')');
+
+  /* The quantile itself, since everything above rests on it. */
+  const q = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  ok(core.oopQuantile(q, 0) === 0 && core.oopQuantile(q, 1) === 10, 'quantile spans the range');
+  ok(core.oopQuantile(q, 0.5) === 5, 'the median is the middle');
+  ok(Math.abs(core.oopQuantile(q, 0.85) - 8.5) < 1e-9, 'and it interpolates between points');
+  ok(core.oopQuantile([], 0.5) === null && core.oopQuantile([4], 0.9) === 4, 'degenerate inputs are safe');
 
   /* Non-penalty threat is preferred when Core Insights has it: penalties are
      a duty, not evidence of where a player plays. */

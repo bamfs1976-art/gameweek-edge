@@ -127,7 +127,7 @@ export const ENGINE_FNS = [
   /* Out-of-position threat: a defender who attacks is scored on a defender's
      tariff, which is the single most exploitable classification in the game
      and the reason a club preview names one full-back over another. */
-  'oopThreat', 'oopBenchmarks', 'oopFlag',
+  'oopThreat', 'oopQuantile', 'oopBenchmarks', 'oopFlag',
 
   /* Distribution helpers used by the simulators. */
   'normCdf', 'pointsDist', 'squadSim',
@@ -149,7 +149,7 @@ export const ENGINE_CONSTS = [
   /* Fixture congestion: how a midweek match suppresses the next start. */
   'CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH',
   /* Out-of-position thresholds. */
-  'OOP_MIN_MINUTES', 'OOP_STRONG',
+  'OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL',
   /* Squad rules and the transfer solver's valuation terms. */
   'RULES_FALLBACK', 'BENCH_W', 'FT_LADDER', 'FT_CAP',
 ];

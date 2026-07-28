@@ -9854,17 +9854,31 @@ function effGoalRate(el){
    defender who plays as a winger, is being paid on the better tariff for the
    job he is doing — the classic OOP bargain the community hunts for by eye.
 
-   It is detectable rather than anecdotal: compare a player's goal threat
-   against the MEDIAN of the position group above his own. Median rather than
-   mean because a handful of elite forwards would drag a mean far out of
-   reach, and the question is "does he threaten like a typical one of those",
-   not "like the best of them".
+   The first version compared a player's goal threat against the MEDIAN of
+   the position group ABOVE his own — a defender against midfielders, a
+   midfielder against forwards. It was wrong, and run against real data it was
+   silent: across two full club previews it flagged nobody, including the two
+   most-cited out-of-position players in the league. The reason is that the
+   median midfielder is a genuinely attacking footballer. A full-back who
+   threatens like one would be extraordinary, so the bar excluded almost every
+   player it was built to find.
+
+   The question is not "does he threaten like a midfielder". It is "does he
+   threaten unlike a defender" — an outlier WITHIN his own classification,
+   which is what the community means by out of position and what actually
+   converts into points, because he is scored on his own tariff either way.
+   So the test is a percentile among players sharing his position: the top
+   OOP_PCTL of defenders for goal threat is a defender being used further
+   forward than defenders are.
 
    Deliberately one-directional on the upside and quiet about the reverse: a
    forward drifting deep is a genuine downgrade, so it is flagged as a caution
    rather than a find. */
 const OOP_MIN_MINUTES=450;     /* five full matches — below this it is noise */
-const OOP_STRONG=1.25;         /* comfortably past the benchmark, not scraping it */
+const OOP_PCTL=0.85;           /* top 15% of his own position — unusual, not merely good */
+const OOP_STRONG_PCTL=0.95;    /* top 5% — the ones worth naming in a headline */
+const OOP_LOW_PCTL=0.15;       /* the caution: bottom 15% of forwards for threat */
+const OOP_MIN_POOL=8;          /* below this a percentile is noise, not a distribution */
 /* Goal threat per 90, preferring the non-penalty rate when Core Insights has
    it: penalties are a duty, not evidence of where a player plays. */
 function oopThreat(el){
@@ -9872,8 +9886,17 @@ function oopThreat(el){
   if(ci&&Number.isFinite(ci.np_xg_per_90)&&ci.np_xg_per_90>0)return ci.np_xg_per_90;
   return parseFloat((el&&el.expected_goals_per_90)||'0')||0;
 }
-/* Median goal threat per position group, over players with enough minutes to
-   mean anything. Returns {} when the season is too young to have any. */
+/* Linear-interpolated quantile of an ASCENDING array. */
+function oopQuantile(sorted,q){
+  if(!sorted||!sorted.length)return null;
+  if(sorted.length===1)return sorted[0];
+  const i=(sorted.length-1)*Math.max(0,Math.min(1,q));
+  const lo=Math.floor(i),hi=Math.ceil(i);
+  return lo===hi?sorted[lo]:sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo);
+}
+/* Goal-threat cut-offs WITHIN each position group, over players with enough
+   minutes to mean anything. Returns {} when the season is too young, or when
+   a group is too thin for a percentile to describe anything. */
 function oopBenchmarks(elements){
   const by={2:[],3:[],4:[]};
   (elements||[]).forEach(e=>{
@@ -9884,7 +9907,9 @@ function oopBenchmarks(elements){
   const out={};
   Object.keys(by).forEach(k=>{
     const v=by[k].sort((a,c)=>a-c);
-    if(v.length>=5)out[k]=v[Math.floor(v.length/2)];
+    if(v.length<OOP_MIN_POOL)return;
+    out[k]={high:oopQuantile(v,OOP_PCTL),top:oopQuantile(v,OOP_STRONG_PCTL),
+      low:oopQuantile(v,OOP_LOW_PCTL),n:v.length};
   });
   return out;
 }
@@ -9895,24 +9920,27 @@ function oopFlag(el,marks){
   if((el.minutes||0)<OOP_MIN_MINUTES)return null;
   const threat=oopThreat(el);
   if(!(threat>0))return null;
-  /* A defender is measured against midfielders, a midfielder against
-     forwards — one rung up, never two. */
-  const above=t===2?3:t===3?4:null;
-  if(above&&marks[above]!=null&&threat>=marks[above]){
-    const strong=threat>=marks[above]*OOP_STRONG;
+  const m=marks[t];
+  if(!m)return null;
+  /* Measured against his OWN position: a defender who threatens unlike a
+     defender is being used further forward than defenders are, and is paid
+     on the defender tariff for it. */
+  if((t===2||t===3)&&m.high!=null&&threat>=m.high){
+    const strong=m.top!=null&&threat>=m.top;
     return {level:strong?2:1,kind:'up',
-      label:t===2?'plays as a midfielder':'plays as a forward',
+      label:t===2?'attacks like a winger, paid like a defender'
+        :'plays as a striker, paid like a midfielder',
       note:t===2
-        ?'Threatens like a midfielder while scoring on the defender tariff — 6 points a goal and a full clean sheet.'
-        :'Threatens like a forward while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
-      threat,bench:marks[above]};
+        ?'Among the most attacking defenders in the league while scoring on the defender tariff — 6 points a goal and a full clean sheet.'
+        :'Among the most goal-threatening midfielders while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
+      threat,bench:m.high,pool:m.n};
   }
-  /* The caution: a forward who threatens less than a typical midfielder is
-     playing away from goal, and forwards are paid worst for it. */
-  if(t===4&&marks[3]!=null&&threat<marks[3]){
+  /* The caution: a forward with less goal threat than almost any other
+     forward is playing away from goal, on the tariff that pays worst for it. */
+  if(t===4&&m.low!=null&&threat<=m.low){
     return {level:-1,kind:'down',label:'playing deep for a forward',
-      note:'Less goal threat than a typical midfielder, on the tariff that pays least for it — 4 points a goal and no clean sheet.',
-      threat,bench:marks[3]};
+      note:'Among the least goal-threatening forwards in the league, on the tariff that pays least for it — 4 points a goal and no clean sheet.',
+      threat,bench:m.low,pool:m.n};
   }
   return null;
 }
