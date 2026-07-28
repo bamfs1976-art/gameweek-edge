@@ -13,6 +13,10 @@
  *
  * Run: node dev/test-content.mjs   (wired into npm test)
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAYS, TIMELINESS }
   from '../scripts/content/stories.mjs';
 import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
@@ -434,6 +438,19 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(angles({ defconRate: 0.7 }).some((a) => a.tag === 'defensive floor'),
     'a reliable defensive-contribution floor is flagged');
   ok(angles({ defconRate: 0.1 }).length === 0, 'an unreliable one is not');
+
+  /* The set-piece angle was unreachable code: angles() looked for p.setPieces
+     and the runner never supplied it, so across every club ever generated the
+     tag printed exactly zero times. A tag nothing can populate is worse than
+     no tag — it reads as "this club has no set-piece story". */
+  ok(angles({ setPieces: 'penalties — 82% confidence on the duty' })
+    .some((a) => a.tag === 'set pieces'), 'a set-piece duty is flagged');
+  ok(angles({ setPieces: null }).length === 0, 'and no duty claims nothing');
+  const spSrc = readFileSync(join(ROOT, 'scripts/content/club-thread.mjs'), 'utf8');
+  ok(/setPieces:\s*setPieceNote\(e\)/.test(spSrc),
+    'the runner actually populates it, so the tag is reachable');
+  ok(/E\.setPieceConfidence\(/.test(spSrc),
+    'and reads the duty from the shared engine rather than re-deriving it');
 
   const P2 = (o) => ({ web_name: 'X', element_type: 2, now_cost: 55, teamGames: 10,
     starts: 10, minutes: 900, goals: 3, assists: 4, avgDifficulty: 2.2, xp: 6.2, ...o });

@@ -129,6 +129,11 @@ export const ENGINE_FNS = [
      and the reason a club preview names one full-back over another. */
   'oopThreat', 'oopQuantile', 'oopBenchmarks', 'oopFlag',
 
+  /* Set-piece duty, straight off the bootstrap's order fields. A club preview
+     names the taker because a penalty is the most reliable goal in the game;
+     confTier comes along because setPieceConfidence calls it. */
+  'confTier', 'setPieceConfidence',
+
   /* Distribution helpers used by the simulators. */
   'normCdf', 'pointsDist', 'squadSim',
 

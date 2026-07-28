@@ -97,6 +97,17 @@ function defconRate(e) {
   return E.dcHitProb(per90, thr);
 }
 
+/* Set-piece duty, phrased for a thread. angles() has always looked for this
+   and nothing ever supplied it, so the tag was unreachable code for as long
+   as it existed — twenty clubs generated, never once printed. The duty is
+   sitting on the bootstrap: penalties first, because it is the most reliable
+   goal in football, then free-kicks, then corners. */
+function setPieceNote(e) {
+  const sp = E.setPieceConfidence(e);
+  if (!sp || !sp.roles.length) return null;
+  return sp.roles.join(' and ') + ' — ' + sp.value + '% confidence on the duty';
+}
+
 function clubData(teamId) {
   const t = idx.teams[teamId];
   const run = (runs[teamId] || []).slice(0, 6);
@@ -117,6 +128,7 @@ function clubData(teamId) {
       xp: nf ? E.nativeXP(e, nf) : null,
       oop: E.oopFlag(e, oopMarks),
       defconRate: defconRate(e),
+      setPieces: setPieceNote(e),
       avgDifficulty, congestion: congestion[teamId] || 0
     }))
     /* Anyone with no football behind them cannot be graded honestly. */
@@ -173,3 +185,39 @@ for (const t of targets) {
   }
 }
 if (ALL) console.log(`✓ ${wrote} club threads → ${OUT}`);
+
+/* Why the defensive-floor angle never fires, answered with numbers instead of
+   arithmetic done in my head. It has printed nothing across every club we have
+   generated, including the two players whose entire case is DEFCON volume, and
+   the threshold in club.mjs (0.45) was picked before anyone had seen the real
+   distribution. Run with --defcon to see what the league actually looks like. */
+if (process.argv.includes('--defcon')) {
+  const q = (arr, p) => {
+    if (!arr.length) return null;
+    const s = arr.slice().sort((a, b) => a - b);
+    const i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
+    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo);
+  };
+  const named = { 2: 'DEF', 3: 'MID', 4: 'FWD' };
+  console.log('\n── defensive contribution, players with 450+ minutes ──');
+  for (const t of [2, 3, 4]) {
+    const pool = idx.elements.filter((e) => e.element_type === t && (e.minutes || 0) >= 450);
+    const per90 = pool.map((e) => parseFloat(e.defensive_contribution_per_90 || '0'));
+    const present = per90.filter((v) => v > 0);
+    const rates = pool.map(defconRate).filter((v) => v != null);
+    const thr = t === 2 ? 10 : 12;
+    console.log(`${named[t]}  n=${pool.length}  with a per-90 figure: ${present.length}`);
+    if (!present.length) { console.log('   field is empty or zero for every player'); continue; }
+    console.log(`   per90  min ${q(present, 0).toFixed(2)}  median ${q(present, 0.5).toFixed(2)}` +
+      `  p75 ${q(present, 0.75).toFixed(2)}  p90 ${q(present, 0.9).toFixed(2)}  max ${q(present, 1).toFixed(2)}` +
+      `   (threshold ${thr})`);
+    console.log(`   dcHitProb  median ${q(rates, 0.5).toFixed(3)}  p75 ${q(rates, 0.75).toFixed(3)}` +
+      `  p90 ${q(rates, 0.9).toFixed(3)}  max ${q(rates, 1).toFixed(3)}`);
+    for (const bar of [0.30, 0.40, 0.45, 0.55]) {
+      console.log(`   clears ${bar.toFixed(2)}: ${rates.filter((r) => r >= bar).length} of ${rates.length}`);
+    }
+    const top = pool.map((e) => ({ n: e.web_name, r: defconRate(e) })).filter((x) => x.r != null)
+      .sort((a, b) => b.r - a.r).slice(0, 5);
+    console.log('   highest: ' + top.map((x) => `${x.n} ${x.r.toFixed(2)}`).join(', '));
+  }
+}

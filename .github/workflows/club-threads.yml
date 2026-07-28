@@ -18,6 +18,10 @@ on:
         description: 'Club short name (ARS, MCI …), or leave blank for all 20'
         type: string
         default: ''
+      defcon:
+        description: 'Also print the league defensive-contribution distribution'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -35,10 +39,12 @@ jobs:
 
       - name: Generate
         run: |
+          EXTRA=""
+          if [ "${{ inputs.defcon }}" = "true" ]; then EXTRA="--defcon"; fi
           if [ -n "${{ inputs.club }}" ]; then
-            node scripts/content/club-thread.mjs --club "${{ inputs.club }}"
+            node scripts/content/club-thread.mjs --club "${{ inputs.club }}" $EXTRA
           else
-            node scripts/content/club-thread.mjs --all
+            node scripts/content/club-thread.mjs --all $EXTRA
           fi
 
       - name: Publish for review
