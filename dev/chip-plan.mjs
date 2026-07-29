@@ -75,8 +75,29 @@ for (const key of ['wildcard', 'benchboost', 'triplecaptain', 'freehit']) {
   if (p.congested) notes.push(p.congested > 1 ? 'midweek both sides' : 'midweek round');
   if (p.el) notes.push(`${p.el.web_name} v ${short[p.opp] || p.opp} (FDR ${p.fdr})`);
   if (p.mean != null) notes.push(`mean FDR ${p.mean.toFixed(2)}`);
+  /* How much better the chosen week actually is than an average one. This is
+     the number that decides whether the pick is a finding or a coin toss, and
+     leaving it out of a printout makes every pick look equally considered. */
+  if (p.edge != null) notes.push(`edge ${p.edge.toFixed(2)}${p.edge < 0.15 ? ' — near-arbitrary' : ''}`);
   if (p.provisional) notes.push('provisional — far out');
   console.log('  ' + pad(key, 14) + pad('GW' + p.gw, 6) + notes.join(' · '));
+}
+
+/* The honest headline. When every gameweek in the half sits within a
+   rounding error of the league mean, the difficulty-ranked chips are not
+   choosing between good and bad weeks — there is nothing to choose between,
+   and a confident-looking pick would be false precision. */
+const means = plan.gws.map((g) => g.mean).filter((m) => m != null);
+if (means.length) {
+  const spread = Math.max(...means) - Math.min(...means);
+  console.log(`\nFDR spread across the half: ${spread.toFixed(2)} ` +
+    `(${Math.min(...means).toFixed(2)}–${Math.max(...means).toFixed(2)})`);
+  if (spread < 0.35) {
+    console.log('  ⚠ Essentially flat. Bench Boost and Free Hit are ranked on');
+    console.log('    differences smaller than the rounding on a single fixture,');
+    console.log('    so those two picks carry no real signal this half. The');
+    console.log('    wildcard swing and the captain fixture do — read those.');
+  }
 }
 
 console.log('\nRANKED ALTERNATIVES (what each chip wanted, before collisions)');
