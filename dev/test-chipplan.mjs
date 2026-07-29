@@ -12,55 +12,15 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { buildChipApi } from '../scripts/chipplan-parts.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
-const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
-/* Some names exist both at top level and shadowed inside a function; anchor to
-   the line start so the sandbox gets the one the app's top-level code sees. */
-const grabTopConst = (n) => { const i = html.indexOf('\nconst ' + n + '=') + 1; return html.slice(i, html.indexOf('\n', i)); };
 
-const API = new Function(
-  grabConst('CHIP_HALF_END') + '\n' + grabConst('MIN_CLUBS_FOR_XI') + '\n' +
-  /* The playable-week threshold is derived from the live club cap now. */
-  grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' + grabFn('minClubsForXi') + '\n' +
-  grabFn('captainEligible') + '\n' +
-  grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
-  /* Break effects scale with how long the break actually is. */
-  grabConst('BREAK_BASE_DAYS') + '\n' + grabConst('WC_BREAK_BONUS_LONG') + '\n' +
-  grabFn('breakSeverity') + '\n' + grabFn('breakScale') + '\n' +
-  grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
-  grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
-  grabConst('CHIP_PROVISIONAL_FROM') + '\n' + grabConst('WC_HORIZON_WEEKS') + '\n' +
-  grabFn('wcHorizonFactor') + '\n' + grabConst('BB_RUNIN_PENALTY') + '\n' +
-  grabConst('FT_CAP') + '\n' + grabConst('CARRY_HORIZON') + '\n' +
-  grabFn('deadWeight') + '\n' + grabFn('transferRunway') + '\n' +
-  grabConst('LEDGER_MAX') + '\n' + grabTopConst('CHIP_LABEL') + '\n' +
-  grabFn('freeTransfersFrom') + '\n' + grabFn('transferLedger') + '\n' +
-  'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
-  grabFn('intlBreakGws') + '\n' +
-  grabConst('CONGEST_GAP_DAYS') + '\n' + grabConst('BB_CONGEST_PENALTY') + '\n' +
-  grabFn('congestedGws') + '\n' +
-  grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,congestedGws,clubFdrRuns,wcHorizonFactor,breakSeverity,breakScale,' +
-  'deadWeight,transferRunway,freeTransfersFrom,transferLedger,minClubsForXi};'
-)();
+/* The extraction lives in scripts/chipplan-parts.mjs so this test and the
+   live-fixture tool both run the app's planner rather than two copies. */
+const API = buildChipApi(html);
 
 const API_FT_CAP = 5;
 let failures = 0, passes = 0;
