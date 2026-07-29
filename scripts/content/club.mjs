@@ -62,12 +62,35 @@ export const CONGESTION_WEIGHT = 0.35;
    season's, so the reference has to be a full season. Dividing by "no matches
    yet" instead — which is what a floor of 1 amounts to — scores one substitute
    appearance as an ever-present, and pre-season is when these threads run. */
+/* WHO ELSE IS AT THE CLUB FOR THAT SHIRT.
+
+   Minutes read off last season describe a squad that no longer exists. When a
+   club sells two centre-backs in a window, the ones who stay are nailed on,
+   and their own history cannot say so — it was compiled while the rivals were
+   still there. That is the entire premise of a good club preview: "with
+   Struijk and Wöber gone, the depth chart is crystal clear".
+
+   The signal is available even though the minutes are historic, because a
+   departed player is simply absent from the squad list. So the correction is
+   a modest adjustment, not a rewrite: the clear leader of a settled position
+   gains, a player in a live contest loses, and everyone else is untouched. */
+export const DEPTH_CLEAR_BONUS = 0.12;
+export const DEPTH_CONTEST_PENALTY = 0.12;
+
+export function shirtAdjust(p) {
+  const s = p.shirt;
+  if (!s) return 0;
+  if (s.settled && s.leader) return DEPTH_CLEAR_BONUS;
+  if (s.contested) return -DEPTH_CONTEST_PENALTY;
+  return 0;
+}
+
 export function minutesScore(p) {
   const games = p.teamGames || 0;
   const starts = clamp01((p.starts || 0) / (games > 0 ? games : FULL_STARTS));
   const played = clamp01((p.minutes || 0) / (games > 0 ? games * 90 : FULL_MINUTES));
   const base = 0.65 * starts + 0.35 * played;
-  return clamp01(base - CONGESTION_WEIGHT * clamp01(p.congestion || 0));
+  return clamp01(base - CONGESTION_WEIGHT * clamp01(p.congestion || 0) + shirtAdjust(p));
 }
 
 /* How much realised output is worth trusting. A per-90 rate off a handful of
@@ -213,6 +236,35 @@ function riskNote(p, congestion = 0) {
   return 'on a player whose returns would otherwise buy him';
 }
 
+/* AVAILABILITY IS NOT A FILTER.
+
+   The runner used to drop anyone whose status was not 'a', which silently
+   removed a club's biggest talking point: a striker who picked up a knock in
+   pre-season is exactly what a preview leads on, and the honest line is "wait
+   for the press conference", not silence. A doubt is information.
+
+   It is a ceiling rather than a weight, for the same reason the minutes veto
+   is: a player who may not be fit cannot be a major target however well he
+   projects, and averaging that away is how a confident recommendation gets
+   made about someone in a walking boot. */
+export const AVAIL = {
+  d: { cap: 'watchlist', label: 'fitness doubt' },
+  i: { cap: 'avoid', label: 'injured' },
+  s: { cap: 'avoid', label: 'suspended' },
+  n: { cap: 'avoid', label: 'not in the squad' }
+};
+export function availability(p) {
+  const st = p.status && p.status !== 'a' ? AVAIL[p.status] : null;
+  if (!st) return null;
+  /* FPL publishes a percentage alongside the flag; a stated 0% is not a
+     doubt, it is an absence, and it outranks the softer 'd'. */
+  const pct = p.chanceOfPlaying;
+  if (st.cap === 'watchlist' && pct != null && pct <= 25) {
+    return { cap: 'avoid', label: st.label + ' (' + pct + '%)' };
+  }
+  return { cap: st.cap, label: st.label + (pct != null ? ' (' + pct + '%)' : '') };
+}
+
 export function grade(p) {
   const minutes = minutesScore(p);
   const returns = returnsScore(p);
@@ -228,16 +280,25 @@ export function grade(p) {
   }
 
   const strong = [returns >= 0.55, minutes >= 0.7, fixtures >= 0.55].filter(Boolean).length;
-  const status = strong === 3 ? STATUS.major
+  let status = strong === 3 ? STATUS.major
     : strong === 2 ? STATUS.watchlist
       : strong === 1 ? STATUS.monitor : STATUS.avoid;
+
+  /* A flag caps the grade rather than adjusting it — see AVAIL. */
+  const avail = availability(p);
+  if (avail) {
+    const order = ['major', 'watchlist', 'monitor', 'avoid'];
+    const capIdx = order.indexOf(avail.cap);
+    if (order.indexOf(status.key) < capIdx) status = STATUS[avail.cap];
+  }
 
   const why = [
     returns >= 0.55 ? 'projects well' : 'modest returns',
     minutes >= 0.7 ? 'nailed on' : 'minutes worth watching',
     fixtures >= 0.55 ? 'kind run' : 'awkward run'
-  ].join(', ');
-  return { status, minutes, returns, fixtures, why };
+  ];
+  if (avail) why.unshift(avail.label);
+  return { status, minutes, returns, fixtures, why: why.join(', '), avail };
 }
 
 /* The club-level verdict the threads end on: is this a team to load up on,
@@ -337,6 +398,20 @@ export function buildThread(club) {
      written versions say "monitor preseason lineups", which is advice to go
      and do the work yourself. */
   const atRisk = rotationRisks(graded);
+  /* Fitness and availability, which the old runner removed from the data
+     entirely. A club whose main striker is a doubt has one story, and it is
+     not the hierarchy. */
+  const flagged = graded.filter((p) => p.grade.avail).slice(0, 4);
+  if (flagged.length) {
+    posts.push({ kind: 'availability', title: 'Fitness and availability',
+      lines: flagged.map((p) =>
+        `${p.web_name} (${money(p.now_cost)} ${POS[p.element_type]}) — ${p.grade.avail.label}` +
+        (p.grade.avail.cap === 'avoid' ? ', so not a starting-squad pick right now'
+          : ', worth the wait if the news is good')),
+      rows: flagged.map((p) => ({ name: p.web_name, flag: p.grade.avail.label,
+        cap: p.grade.avail.cap })) });
+  }
+
   posts.push({ kind: 'rotation-risk', title: 'Rotation risk',
     lines: [
       congestion > 0.15
@@ -356,11 +431,14 @@ export function buildThread(club) {
   posts.push({ kind: 'hierarchy', title: 'Hierarchy',
     lines: hierarchy.slice(0, 6).map((p) =>
       `${p.grade.status.light} ${p.web_name} (${money(p.now_cost)} ${POS[p.element_type]})` +
+      (p.grade.avail ? ` — ${p.grade.avail.label}` : '') +
       (p.angles.length ? ` — ${p.angles.map((a) => a.tag).join(', ')}` : '')),
     rows: hierarchy.slice(0, 6).map((p) => ({
       name: p.web_name, cost: money(p.now_cost), position: POS[p.element_type],
       status: p.grade.status.key, light: p.grade.status.light,
       angles: p.angles.map((a) => a.tag),
+      flag: p.grade.avail ? p.grade.avail.label : null,
+      shirt: p.shirt || null,
       returns: +p.grade.returns.toFixed(2), minutes: +p.grade.minutes.toFixed(2),
       fixtures: +p.grade.fixtures.toFixed(2)
     })) });

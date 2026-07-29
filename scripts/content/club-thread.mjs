@@ -111,6 +111,24 @@ function setPieceNote(e) {
   return sp.roles.join(' and ') + ' — ' + sp.value + '% confidence on the duty';
 }
 
+/* Who is competing for each shirt, from the CURRENT squad. A player sold in
+   the window is simply absent from the list, so this is the one part of the
+   read that is up to date even though the minutes behind it are last
+   season's — which is exactly the "two centre-backs left, the rest are
+   nailed" call a preview is built on. */
+function shirtMap(teamId) {
+  const depth = E.clubDepth(idx.elements, teamId, teamGames[teamId] || 0);
+  const out = {};
+  Object.keys(depth).forEach((pos) => {
+    const d = depth[pos];
+    (d.rows || []).forEach((r, i) => {
+      out[r.e.id] = { leader: i === 0, settled: !!d.settled, contested: !!r.tied,
+        rivals: d.rows.length, waiting: (d.unranked || []).length };
+    });
+  });
+  return out;
+}
+
 function clubData(teamId) {
   const t = idx.teams[teamId];
   const run = (runs[teamId] || []).slice(0, 6);
@@ -119,8 +137,13 @@ function clubData(teamId) {
   const g = goals[teamId] || {};
   const nf = next[teamId];
 
+  const shirts = shirtMap(teamId);
+  /* 'u' means gone from the game — everything else is a story rather than a
+     reason to hide a player. A striker with a pre-season knock is what a
+     preview leads on; dropping him silently is how a thread about a club
+     never mentions its biggest question. */
   const players = idx.elements
-    .filter((e) => e.team === teamId && (e.status === 'a' || !e.status))
+    .filter((e) => e.team === teamId && e.status !== 'u')
     .map((e) => ({
       web_name: e.web_name, element_type: e.element_type, now_cost: e.now_cost,
       minutes: e.minutes || 0, starts: e.starts || 0, goals: e.goals_scored || 0,
@@ -129,6 +152,9 @@ function clubData(teamId) {
          forward, so the grade needs them as well as the attacking numbers. */
       cleanSheets: e.clean_sheets || 0,
       xp: nf ? E.nativeXP(e, nf) : null,
+      status: e.status || 'a',
+      chanceOfPlaying: e.chance_of_playing_next_round ?? null,
+      shirt: shirts[e.id] || null,
       oop: E.oopFlag(e, oopMarks),
       defconRate: defconRate(e),
       setPieces: setPieceNote(e),

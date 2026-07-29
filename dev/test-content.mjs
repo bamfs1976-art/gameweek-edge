@@ -22,7 +22,7 @@ import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAY
 import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
   from '../scripts/content/candidates.mjs';
 import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles,
-  rotationRisks, rotationTension } from '../scripts/content/club.mjs';
+  rotationRisks, rotationTension, availability, shirtAdjust } from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -467,6 +467,80 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(/clean sheet/.test(take), 'a defensive floor is framed as points without a clean sheet');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
+
+  /* SQUAD CHURN. Minutes read off last season describe a squad that may no
+     longer exist: sell two centre-backs and the ones who stay are nailed on,
+     which their own history cannot say because it was compiled while the
+     rivals were still there. A departed player is absent from the squad list,
+     so the depth read is current even when the minutes are not. */
+  {
+    const base = { element_type: 2, xp: null, teamGames: 0, starts: 20, minutes: 1800,
+      goals: 1, assists: 1, cleanSheets: 6, avgDifficulty: 3 };
+    const clear = minutesScore({ ...base, shirt: { leader: true, settled: true, rivals: 2 } });
+    const plain = minutesScore(base);
+    const fight = minutesScore({ ...base, shirt: { leader: false, contested: true, rivals: 4 } });
+    ok(clear > plain, 'the clear leader of a settled position gains minutes security (' +
+      plain.toFixed(2) + ' → ' + clear.toFixed(2) + ')');
+    ok(fight < plain, 'and a live contest costs it (' + fight.toFixed(2) + ')');
+    ok(shirtAdjust({}) === 0 && shirtAdjust({ shirt: null }) === 0,
+      'no depth information changes nothing');
+    ok(shirtAdjust({ shirt: { leader: true, settled: false } }) === 0,
+      'leading a contested position is not a bonus');
+    ok(minutesScore({ ...base, shirt: { leader: true, settled: true }, starts: 30, minutes: 2700 }) <= 1,
+      'the adjustment cannot push security past 1');
+  }
+
+  /* AVAILABILITY. The runner used to drop anyone whose status was not "a",
+     which silently deleted a club's biggest talking point — a striker with a
+     pre-season knock is what a preview leads on. */
+  {
+    ok(availability({ status: 'a' }) === null, 'a fit player carries no flag');
+    ok(availability({}) === null, 'and neither does one with no status at all');
+    const doubt = availability({ status: 'd', chanceOfPlaying: 50 });
+    ok(doubt && doubt.cap === 'watchlist' && /50%/.test(doubt.label),
+      'a doubt caps at watchlist and names the percentage (' + (doubt || {}).label + ')');
+    ok(availability({ status: 'i' }).cap === 'avoid', 'an injury caps at avoid');
+    ok(availability({ status: 's' }).cap === 'avoid', 'so does a suspension');
+    /* A stated 0% is not a doubt, it is an absence. */
+    ok(availability({ status: 'd', chanceOfPlaying: 0 }).cap === 'avoid',
+      'a 0% chance is an absence rather than a doubt');
+    ok(availability({ status: 'd', chanceOfPlaying: 75 }).cap === 'watchlist',
+      'while a likely return stays a doubt');
+
+    const elite = { element_type: 3, xp: 6.5, starts: 30, minutes: 2700, teamGames: 0,
+      avgDifficulty: 2.0 };
+    ok(grade(elite).status.key === 'major', 'the same player fit is a major target');
+    ok(grade({ ...elite, status: 'd', chanceOfPlaying: 50 }).status.key === 'watchlist',
+      'and a doubt caps him rather than being averaged away');
+    ok(grade({ ...elite, status: 'i' }).status.key === 'avoid', 'an injury caps him harder');
+    ok(/fitness doubt/.test(grade({ ...elite, status: 'd', chanceOfPlaying: 50 }).why),
+      'and the reason leads with it');
+    /* A flag must never PROMOTE anyone. */
+    const poor = { element_type: 3, xp: 0.5, starts: 2, minutes: 200, teamGames: 0, avgDifficulty: 4.5 };
+    ok(grade({ ...poor, status: 'd', chanceOfPlaying: 50 }).status.key === 'avoid',
+      'a cap cannot lift a bad player up to it');
+
+    const club = buildThread({ name: 'F', fullName: 'Flags', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: [
+        { web_name: 'Knock', element_type: 4, now_cost: 60, xp: 6.2, starts: 28,
+          minutes: 2500, teamGames: 10, avgDifficulty: 2.5, status: 'd', chanceOfPlaying: 50 },
+        { web_name: 'Fit', element_type: 3, now_cost: 65, xp: 6.0, starts: 30,
+          minutes: 2700, teamGames: 10, avgDifficulty: 2.5 }
+      ] });
+    const av = club.posts.find((x) => x.kind === 'availability');
+    ok(!!av, 'a club with a flagged player gets an availability post');
+    ok(av && av.lines.some((l) => /Knock/.test(l) && /fitness doubt/.test(l)),
+      'naming the player and the doubt (' + (av ? av.lines[0] : '') + ')');
+    const hier = club.posts.find((x) => x.kind === 'hierarchy');
+    ok(hier.rows.some((r) => r.flag && /fitness doubt/.test(r.flag)),
+      'and the hierarchy row carries the flag rather than hiding it');
+    const noFlags = buildThread({ name: 'G', fullName: 'Good', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: [
+        { web_name: 'Fit', element_type: 3, now_cost: 65, xp: 6.0, starts: 30,
+          minutes: 2700, teamGames: 10, avgDifficulty: 2.5 }] });
+    ok(!noFlags.posts.some((x) => x.kind === 'availability'),
+      'a fully fit squad gets no availability post rather than an empty one');
+  }
 
   /* Rotation risk is a tension, not a low number. The first real run filled
      this post with fourth-choice keepers and players on their way out — true,

@@ -117,6 +117,11 @@ export const ENGINE_FNS = [
      by construction — it counts matches, it does not care whose they are. */
   'recentMinutes', 'minutesModel', 'minutesSecurity', 'congestionLoad', 'congestionFactor',
 
+  /* Who else is at the club for that shirt. A club preview lives on this:
+     when two centre-backs leave in a window, the ones who remain are nailed,
+     and no amount of last season's minutes can tell you that on its own. */
+  'clubDepth',
+
   /* Expected points from first principles, and its inputs. `dcHitProb` and
      `savePts` are not called by the app directly — nativeXP calls them — but
      an extraction that omits a callee produces an engine that parses, loads,
@@ -147,6 +152,8 @@ export const ENGINE_FNS = [
    so dev/test-engine.mjs executes the bundle and exercises the model rather
    than only checking that it parses. */
 export const ENGINE_CONSTS = [
+  /* Squad-competition thresholds, used by clubDepth. */
+  'DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX',
   /* Match model coefficients and the score-grid size. */
   'PLSIM', 'PLSIM_PROMOTED', 'PLSIM_ALIAS', 'LG_GRID',
   /* Elo-derived priors for clubs with no offline fit. */
