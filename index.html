@@ -9950,8 +9950,8 @@ function oopFlag(el,marks){
   if(t===2){
     if(!m||m.high==null||!(threat>=m.high))return null;
     return {level:(m.top!=null&&threat>=m.top)?2:1,kind:'up',
-      label:'attacks like a winger, paid like a defender',
-      note:'Among the most attacking defenders in the league while scoring on the defender tariff — 6 points a goal and a full clean sheet.',
+      label:'attacked like a winger last season, paid like a defender',
+      note:'Among the most attacking defenders in the league on last season\u2019s output, while scoring on the defender tariff — 6 points a goal and a full clean sheet. It is a ROLE and not a property: a new manager or a change of shape can take it away, and the numbers behind it were compiled under the old one.',
       threat,bench:m.high,pool:m.n};
   }
   /* A MIDFIELDER is measured against FORWARDS, because his own tariff is
@@ -9961,8 +9961,8 @@ function oopFlag(el,marks){
     const f=marks[4];
     if(!f||f.mid==null||!(threat>=f.mid))return null;
     return {level:(f.fwdStrong!=null&&threat>=f.fwdStrong)?2:1,kind:'up',
-      label:'plays as a striker, paid like a midfielder',
-      note:'Carries a forward\u2019s goal threat while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
+      label:'played as a striker last season, paid like a midfielder',
+      note:'Carried a forward\u2019s goal threat on last season\u2019s output while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point. It is a ROLE and not a property: the shape that put him there can change over a summer.',
       threat,bench:f.mid,pool:f.n};
   }
   /* The caution: a forward with less goal threat than almost any other

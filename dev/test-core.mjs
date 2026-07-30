@@ -1480,6 +1480,24 @@ section('oopFlag: unusual for his own position, paid on his own tariff (Tier 2)'
     'a midfielder in his position\'s top tail is flagged');
   ok(striker && /5 points a goal/.test(striker.note), 'with the midfielder tariff named');
 
+  /* THE TAG IS A MEASUREMENT, NOT A FORECAST. This is derived entirely from
+     last season's output, and a commentator made the cost of forgetting that
+     concrete: Muñoz is flagged here as an attacking full-back on numbers he
+     compiled in a back three under a manager who has since left. The role
+     that produced them may not exist. Nothing in any feed we read carries a
+     manager, so the honest move is to stop the copy claiming the present
+     tense — "attacks like a winger" reads as a property of the player, and
+     it is a property of a job. */
+  ok(/last season/.test(fb.label),
+    'the defender label is past tense (' + fb.label + ')');
+  ok(!/^attacks /.test(fb.label), 'and does not assert a present-tense habit');
+  ok(/ROLE and not a property|role and not a property/.test(fb.note),
+    'the note says it is a role rather than a property');
+  ok(/new manager|change of shape/.test(fb.note),
+    'and names what would take it away (' + fb.note.slice(-90) + ')');
+  ok(/last season/.test(striker.label) && /role and not a property|ROLE and not a property/i.test(striker.note),
+    'the midfielder copy carries the same caveat');
+
   /* The tail is the claim, so the middle of a position must stay silent —
      otherwise the flag means "quite good" and stops being information. */
   ok(core.oopFlag({ element_type: 2, minutes: M + 100, expected_goals_per_90: '0.05' }, marks) === null,
