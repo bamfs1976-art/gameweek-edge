@@ -97,11 +97,50 @@ const WRITERS = {
       `three gameweeks to ${d.after.toFixed(1)} across the three after.`
   }),
 
+  /* Deliberately close in shape to 'purple-patch', because they answer
+     different questions off the same data: the patch is "who starts well",
+     the run is "when is this club at its easiest". Making the run sound
+     grander than the patch would be a presentation trick, not a finding. */
+  'fixture-run': (d) => ({
+    text: [
+      `${d.team}'s best run is GW${d.from}–GW${d.to}.`,
+      '',
+      ...d.fixtures.map((f) => `GW${f.gw}  ${f.home ? 'vs' : 'at'} ${f.opp}  (${f.difficulty.toFixed(1)})`),
+      '',
+      `${d.fixtures.length} fixtures averaging ${d.avgDifficulty.toFixed(1)} out of 5.`,
+      'Every window in the horizon was measured, not just the next few weeks.'
+    ].join('\n'),
+    alt: `${d.team}'s best fixture run, gameweek ${d.from} to ${d.to}: ` +
+      d.fixtures.map((f) => `gameweek ${f.gw} ${f.home ? 'versus' : 'away to'} ${f.opp}, ` +
+        `difficulty ${f.difficulty.toFixed(1)}`).join(', ') +
+      `. The ${d.fixtures.length} fixtures average ${d.avgDifficulty.toFixed(1)} out of 5.`
+  }),
+
   'chip-window': (d) => ({
-    text: [`${d.chip} window: ${d.note}`].join('\n'),
-    alt: `Chip planning card for the ${d.chip}.`
+    text: [
+      `${d.chip}: gameweek ${d.gw}.`,
+      '',
+      chipWhy(d) + '.',
+      d.provisional ? 'The fixture list this far out can still move.' : '',
+      '',
+      'A window, not an instruction — your own squad decides the week.'
+    ].filter(Boolean).join('\n'),
+    alt: `Chip planning card: the ${d.chip} points at gameweek ${d.gw}. ` +
+      chipWhy(d) + '.'
   })
 };
+
+/* Why this week and not another. Rebuilt from the card's own fields rather
+   than read off the story's subtitle, so the post cannot end up asserting a
+   reason the card does not show. Order matters: a blank or a double is a
+   calendar fact and outranks a difficulty edge. */
+function chipWhy(d) {
+  if (d.blank) return `${d.blank} clubs blank that week`;
+  if (d.double) return `${d.double} clubs play twice`;
+  if (d.afterBreak) return 'It falls straight after the international break';
+  if (d.congested) return 'The midweek rounds around it are priced in';
+  return `It rates ${(d.edge || 0).toFixed(2)} clearer than an average week on difficulty`;
+}
 
 /* Hashtags are per-kind rather than a fixed block: the same five tags on
    every post is what a bot looks like. */
@@ -112,6 +151,7 @@ const TAGS = {
   value: ['#FPL', '#FPLValue'],
   'purple-patch': ['#FPL', '#FPLFixtures'],
   'fixture-swing': ['#FPL', '#FPLFixtures'],
+  'fixture-run': ['#FPL', '#FPLFixtures'],
   'chip-window': ['#FPL', '#FPLChips']
 };
 

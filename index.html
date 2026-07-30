@@ -10725,7 +10725,9 @@ function chipPlanCard(b,fixtures){
       : 'The easiest week of the half (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.easy+' fixtures rated 1 or 2). A bench only pays when the fringe players have games worth starting.'+
         (p.early?' <b>This early the bench is thin by design</b> — the budget is in the XI — so it is worth less than the fixtures suggest.':'')+
         (p.runIn?' <b>Run-in rotation risk</b> — sides with nothing to play for rest players, and a bench chip needs fifteen of them to start.':'');
-    if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(p.opp)+
+    /* p.opp is a team ID off the raw fixture, not a name — printed straight
+       it read "away at 14". */
+    if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(teamShort(b,p.opp)||p.opp)+
       ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.'+
       (p.runIn?' Note the run-in: motivation and rotation are unpredictable this late.':'');
     return '<b>'+p.turning+' clubs</b> swing from a hard run to an easy one around this week (total difficulty shed ≈ '+p.gain.toFixed(1)+

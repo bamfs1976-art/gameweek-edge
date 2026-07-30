@@ -24,8 +24,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadEngine, buildIndex, fixtureContext, fetchFpl } from './model.mjs';
 import { selectStory, remember } from './stories.mjs';
-import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
-  from './candidates.mjs';
+import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings,
+  fixtureRuns, chipWindows } from './candidates.mjs';
+import { buildChipApi } from '../chipplan-parts.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const API = (process.env.FPL_API || 'https://fantasy.premierleague.com/api').replace(/\/$/, '');
@@ -52,13 +53,33 @@ idx.elements.forEach((e) => {
   if (v != null && Number.isFinite(v)) xp[e.id] = v;
 });
 
+/* The chip plan comes from the app's own planner, extracted from index.html
+   the same way the engine is. Reading the official FDR off the fixtures
+   endpoint means it needs no model bundle, and it means the card cannot
+   disagree with the Chip Strategy panel. A failure here must not take the
+   whole run down: every other candidate is still valid without it. */
+let plan = null;
+try {
+  const html = readFileSync(join(HERE, '..', '..', 'index.html'), 'utf8');
+  const upcoming = (boot.events || []).find((e) => e.is_next)
+    || (boot.events || []).find((e) => !e.finished) || { id: 1 };
+  plan = buildChipApi(html).chipPlanFdr(
+    { events: boot.events, elements: boot.elements, raw: { teams: boot.teams },
+      upcoming, cur: upcoming, rules: null },
+    fixtures, { startGw: upcoming.id });
+} catch (e) {
+  console.error('chip plan unavailable: ' + (e && e.message));
+}
+
 const candidates = [
   ...priceVerdicts(idx, xp, teamName),
   ...differentials(idx, xp, teamName),
   ...templateRisks(idx, next, teamName),
   ...valuePicks(idx, teamName),
   ...purplePatches(runs, teamName),
-  ...fixtureSwings(runs, teamName)
+  ...fixtureSwings(runs, teamName),
+  ...fixtureRuns(runs, teamName),
+  ...chipWindows(plan, teamName)
 ];
 
 /* Hours until the next deadline, for the timeliness term. */

@@ -151,3 +151,109 @@ export function fixtureSwings(runs, teamName, span = 3) {
     }));
 }
 
+/* ── Best fixture run ────────────────────────────────────────────────
+   The community's pre-season staple: every club's kindest stretch, ranked,
+   with the window named. The distinction from purplePatches is the whole
+   point — that one reads the OPENING five gameweeks, which answers "who
+   starts well". This asks "when is each club at its easiest, anywhere in the
+   horizon", which is the question a transfer plan is actually built on. A
+   club whose best run is GW9-13 is a club to wait for, and nothing that only
+   reads the opening can tell you that.
+
+   Windows of RUN_MIN..RUN_MAX are all considered and the best-scoring one
+   per club wins. Longer is better at equal difficulty, because four kind
+   fixtures is a plan and two is a coincidence — but only mildly, or every
+   club's answer would be "the longest window available". */
+export const RUN_MIN = 3;
+export const RUN_MAX = 6;
+export const RUN_LENGTH_TILT = 0.06;
+
+export function bestRun(run, min = RUN_MIN, max = RUN_MAX) {
+  let best = null;
+  for (let len = min; len <= max; len++) {
+    for (let i = 0; i + len <= run.length; i++) {
+      const slice = run.slice(i, i + len);
+      const avg = slice.reduce((a, r) => a + r.difficulty, 0) / len;
+      /* Score is difficulty with a small bonus per extra fixture, so a
+         genuinely easier short run still beats a mediocre long one. */
+      const scoreV = avg - RUN_LENGTH_TILT * (len - min);
+      if (!best || scoreV < best.score) best = { score: scoreV, avg, slice, len };
+    }
+  }
+  return best;
+}
+
+export function fixtureRuns(runs, teamName, limit = 5) {
+  return Object.entries(runs)
+    .map(([team, run]) => {
+      if (!run || run.length < RUN_MIN) return null;
+      const b = bestRun(run);
+      return b ? { team: Number(team), ...b } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, limit)
+    .map(({ team, avg, slice, len }) => {
+      const from = slice[0].event, to = slice[slice.length - 1].event;
+      return {
+        kind: 'fixture-run', subject: String(team),
+        headline: `${teamName(team)}'s best run is GW${from}–${to}`,
+        sub: `${len} fixtures averaging ${avg.toFixed(1)} out of 5 for difficulty`,
+        effect: { avgDifficulty: avg, weeks: len },
+        data: { team: teamName(team), from, to, avgDifficulty: +avg.toFixed(1),
+          fixtures: slice.map((r) => ({ gw: r.event, opp: teamName(r.opp),
+            home: r.home, difficulty: +r.difficulty.toFixed(1) })) }
+      };
+    });
+}
+
+/* ── Chip windows ────────────────────────────────────────────────────
+   The `chip-window` kind has existed in stories.mjs since the pipeline was
+   written and nothing has ever produced one, so it could never be picked —
+   a declared story type that was unreachable code, exactly like the
+   set-piece tag in the club threads.
+
+   `plan` is the app's own chipPlanFdr output, so the card and the Chip
+   Strategy panel cannot disagree. Only picks carrying a real EDGE are
+   offered: the planner computes how much better the chosen week is than an
+   average one, and a live run showed a whole half where every gameweek sat
+   within 0.1 FDR of the mean. Posting a confident chip week off that would
+   be false precision, so a flat half simply produces no candidate. */
+export const CHIP_MIN_EDGE = 0.15;
+const CHIP_LABELS = { wildcard: 'Wildcard', benchboost: 'Bench Boost',
+  triplecaptain: 'Triple Captain', freehit: 'Free Hit' };
+
+export function chipWindows(plan, teamName) {
+  if (!plan || !plan.picks) return [];
+  return Object.keys(CHIP_LABELS)
+    .map((key) => {
+      const p = plan.picks[key];
+      if (!p || p.gw == null) return null;
+      /* A blank or a double is a hard calendar fact and needs no edge; the
+         difficulty-ranked picks do. */
+      const firm = !!(p.blank || p.double);
+      const edge = p.edge != null ? p.edge : 0;
+      if (!firm && edge < CHIP_MIN_EDGE) return null;
+      /* The subtitle is the caveat rather than the reason. The headline
+         already names the chip and the week and the card body carries the
+         number behind it, so a subtitle repeating either would make the
+         card say one thing three times — and the qualifier is the part a
+         reader is most likely to skip and most needs. */
+      return {
+        kind: 'chip-window', subject: key,
+        headline: `${CHIP_LABELS[key]} looks like GW${p.gw}`,
+        sub: p.provisional
+          ? 'A window, not an instruction — and the fixture list this far out can still move'
+          : 'A window, not an instruction — your own squad decides the week',
+        /* The kind normalises on edge; a firm blank or double is maximal. */
+        effect: { edge: firm ? 15 : edge * 15 },
+        data: { chip: CHIP_LABELS[key], gw: p.gw, edge: +edge.toFixed(2),
+          blank: p.blank || 0, double: p.double || 0,
+          afterBreak: p.afterBreak || 0, congested: p.congested || 0,
+          provisional: !!p.provisional,
+          player: p.el ? p.el.web_name : null,
+          opponent: p.opp != null && teamName ? teamName(p.opp) : null }
+      };
+    })
+    .filter(Boolean);
+}

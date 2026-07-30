@@ -19,8 +19,10 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAYS, TIMELINESS }
   from '../scripts/content/stories.mjs';
-import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
+import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings,
+  bestRun, fixtureRuns, chipWindows, RUN_MIN, RUN_MAX, CHIP_MIN_EDGE }
   from '../scripts/content/candidates.mjs';
+import { draft } from '../scripts/content/copy.mjs';
 import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles,
   rotationRisks, rotationTension, availability, shirtAdjust,
   TALISMAN_SHARE, TALISMAN_MIN_GOALS } from '../scripts/content/club.mjs';
@@ -252,10 +254,120 @@ console.log('• candidate builders produce honest stories, or none');
     ['templateRisks', templateRisks, [{ elements: [] }, {}, teamName]],
     ['valuePicks', valuePicks, [{ elements: [] }, teamName]],
     ['purplePatches', purplePatches, [{}, teamName]],
-    ['fixtureSwings', fixtureSwings, [{}, teamName]]]) {
+    ['fixtureSwings', fixtureSwings, [{}, teamName]],
+    ['fixtureRuns', fixtureRuns, [{}, teamName]],
+    ['chipWindows', chipWindows, [null, teamName]]]) {
     let threw = false;
     try { fn(...args); } catch (_) { threw = true; }
     ok(!threw, name + ' survives an empty league');
+  }
+}
+
+
+console.log('• fixture runs: the best window, not the opening one');
+{
+  const teamName = (id) => 'Team ' + id;
+  /* A hard opening, a genuinely kind middle, a hard close. `purplePatches`
+     reads only the first five gameweeks and would report nothing useful
+     here, which is exactly the gap this kind exists to fill. */
+  const horizon = [4.5, 4.5, 4.5, 4.5, 1.8, 1.9, 1.8, 1.9, 4.5, 4.5]
+    .map((difficulty, i) => ({ event: i + 1, opp: 2, home: i % 2 === 0, difficulty }));
+
+  const b = bestRun(horizon);
+  ok(b.slice[0].event === 5, 'the mid-horizon window is found, not the opening one (GW' +
+    b.slice[0].event + ')');
+  ok(b.len >= RUN_MIN && b.len <= RUN_MAX, 'the window respects its length bounds');
+  ok(b.slice.every((f) => f.difficulty < 3), 'and does not reach into the hard fixtures for length');
+
+  /* The length tilt is a nudge, not a thumb on the scale: a clearly easier
+     short run must still beat a longer mediocre one. */
+  const shortEasy = [1.2, 1.2, 1.2, 3.0, 3.0, 3.0]
+    .map((difficulty, i) => ({ event: i + 1, opp: 2, home: true, difficulty }));
+  ok(bestRun(shortEasy).len === RUN_MIN, 'a much easier three beats a padded six');
+
+  const fr = fixtureRuns({ 7: horizon }, teamName);
+  ok(fr.length === 1 && fr[0].kind === 'fixture-run', 'a run becomes a candidate');
+  ok(fr[0].data.from === 5 && fr[0].data.to === 8, 'the window is named by its gameweeks');
+  ok(/GW5–8/.test(fr[0].headline), 'and the headline says so (' + fr[0].headline + ')');
+  ok(fr[0].data.fixtures.length === fr[0].effect.weeks, 'the card shows every fixture it counted');
+  ok(near(fr[0].effect.avgDifficulty, 1.85, 1e-6), 'the average is the window average, not the horizon');
+  ok(fixtureRuns({ 1: horizon.slice(0, 2) }, teamName).length === 0,
+    'too short a horizon yields no run');
+}
+
+
+console.log('• chip windows: a week only gets named when it earns it');
+{
+  const teamName = (id) => 'Team ' + id;
+  const plan = { picks: {
+    wildcard: { gw: 9, edge: 0.4 },
+    benchboost: { gw: 12, edge: CHIP_MIN_EDGE - 0.05 },
+    triplecaptain: { gw: 15, edge: 0.01, double: 6, el: { web_name: 'Salah' }, opp: 3 },
+    freehit: { gw: 18, edge: 0.01, blank: 4 }
+  } };
+  const cw = chipWindows(plan, teamName);
+  const by = (chip) => cw.find((c) => c.data.chip === chip);
+
+  ok(!by('Bench Boost'), 'a week no better than average produces no card');
+  ok(by('Wildcard') && by('Wildcard').data.gw === 9, 'a real edge does');
+  /* The live chip-plan run that prompted this found a whole half sitting
+     within 0.1 FDR of the mean. Silence is the correct output there. */
+  ok(by('Triple Captain') && by('Free Hit'),
+    'a double or a blank is a calendar fact and bypasses the edge floor');
+  ok(by('Triple Captain').effect.edge === 15, 'and registers as maximal');
+  ok(by('Triple Captain').data.player === 'Salah' && by('Triple Captain').data.opponent === 'Team 3',
+    'the pick carries its player and opponent');
+  /* The card has three text slots and only so much to say. The headline
+     names the week, the body carries the number, so the subtitle must not
+     be a third statement of either. */
+  ok(cw.every((c) => /not an instruction/.test(c.sub)),
+    'the subtitle is the caveat rather than a restatement');
+  ok(by('Free Hit') && !/\b4\b/.test(by('Free Hit').sub), 'and does not repeat the body figure');
+  ok(chipWindows({ picks: {} }, teamName).length === 0, 'no picks means no cards');
+  ok(chipWindows({ picks: { wildcard: { edge: 9 } } }, teamName).length === 0,
+    'a pick with no gameweek is not a window');
+}
+
+
+console.log('• every kind that can be selected can also be published');
+{
+  /* The `chip-window` kind sat in KINDS for the whole life of the pipeline
+     with no builder producing one and a writer reading a field nothing
+     emitted. Both halves were invisible because nothing checked that a
+     selectable kind was renderable end to end. */
+  const tpl = readFileSync(join(ROOT, 'scripts/content/template.html'), 'utf8');
+  const bodies = tpl.slice(tpl.indexOf('const BODIES'), tpl.indexOf('const s = D.story'));
+  ok(bodies.length > 200, 'the card bodies block was located');
+
+  for (const kind of Object.keys(KINDS)) {
+    let missing = false;
+    /* A writer that runs and chokes on empty data still exists; only a
+       null return means there is no writer at all. */
+    try {
+      missing = draft({ story: { kind, headline: 'h', data: {},
+        total: 0.5, magnitude: 0.5, timeliness: 0.5, novelty: 0.5 } }) === null;
+    } catch (_) { missing = false; }
+    ok(!missing, kind + ': has a post writer');
+    /* Hyphenated kinds must be quoted keys, plain ones need not be. */
+    ok(bodies.includes("'" + kind + "':") || new RegExp('\\b' + kind + ':').test(bodies),
+      kind + ': has a card body');
+  }
+
+  /* And the writer must read the fields the builder actually emits. */
+  const teamName = (id) => 'Team ' + id;
+  const runs = { 7: [4.5, 4.5, 1.8, 1.9, 1.8, 1.9]
+    .map((difficulty, i) => ({ event: i + 1, opp: 2, home: i % 2 === 0, difficulty })) };
+  const cards = [
+    fixtureRuns(runs, teamName)[0],
+    chipWindows({ picks: { wildcard: { gw: 9, edge: 0.4 } } }, teamName)[0]
+  ];
+  for (const c of cards) {
+    const post = draft({ story: { ...c, total: 0.5, magnitude: 0.5, timeliness: 0.5, novelty: 0.5 } });
+    ok(post && post.text, c.kind + ': drafts a post');
+    ok(!/undefined|NaN|\[object/.test(post.text),
+      c.kind + ': the post has no placeholder holes (' + post.text.split('\n')[0] + ')');
+    ok(post.alt && post.alt.length > 20 && !/undefined|NaN/.test(post.alt),
+      c.kind + ': and real alt text');
   }
 }
 

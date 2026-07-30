@@ -174,8 +174,22 @@ const BODIES = {
     '<div class="fx ' + band(f.difficulty) + '"><i>GW' + f.gw + '</i><b>' +
     esc(f.opp) + '</b><u>' + (f.home ? 'HOME' : 'AWAY') + '</u></div>').join('') + '</div>',
 
-  'chip-window': (d) => '<div class="big"><b>' + esc(d.chip || '—') + '</b>' +
-    '<span>' + esc(d.note || '') + '</span></div>'
+  'fixture-run': (d) => '<div class="fix">' + d.fixtures.map((f) =>
+    '<div class="fx ' + band(f.difficulty) + '"><i>GW' + f.gw + '</i><b>' +
+    esc(f.opp) + '</b><u>' + (f.home ? 'HOME' : 'AWAY') + '</u></div>').join('') + '</div>',
+
+  /* The evidence, not the headline again: the week is already set 74px at
+     the top of the card, so repeating it as the 150px figure would waste
+     the one slot that can carry something new. */
+  'chip-window': (d) => {
+    const ev = d.double ? [d.double, 'clubs play twice in gameweek ' + d.gw]
+      : d.blank ? [d.blank, 'clubs blank in gameweek ' + d.gw]
+      : [(d.edge || 0).toFixed(2), 'clearer than an average week on our difficulty scale'];
+    return '<div class="big"><b>' + esc(ev[0]) + '</b><span>' + esc(ev[1]) + '</span></div>' +
+      (d.player ? '<table><tbody><tr><td><span class="nm">' + esc(d.player) + '</span>' +
+        '<span class="meta">' + esc(d.chip) + (d.opponent ? ' · ' + esc(d.opponent) : '') +
+        '</span></td></tr></tbody></table>' : '');
+  }
 };
 
 const s = D.story;
