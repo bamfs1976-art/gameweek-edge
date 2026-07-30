@@ -468,6 +468,33 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
 
+  /* SAY WHAT THE READ CANNOT SEE. Four consecutive club previews in the wild
+     made their central case on defensive contribution — the DEFCON frame is
+     how the community is arguing this season — and FPL has published no
+     values for it. A thread that ranks defenders on clean sheets alone while
+     staying silent about that looks most confident about exactly the thing
+     it is blind to. */
+  {
+    const squad = [{ web_name: 'CB', element_type: 2, now_cost: 55, xp: 5.0,
+      starts: 30, minutes: 2700, teamGames: 10, avgDifficulty: 2.5 }];
+    const blind = buildThread({ name: 'D', fullName: 'Dee', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad, defconData: false });
+    const seeing = buildThread({ name: 'D', fullName: 'Dee', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad, defconData: true });
+    const hookOf = (t) => t.posts.find((x) => x.kind === 'hook').lines.join(' ');
+    ok(/Defensive contribution is not in the data/.test(hookOf(blind)),
+      'with no DEFCON data the thread says so up front');
+    ok(/clean sheets alone/.test(hookOf(blind)),
+      'and names what the defensive read actually rests on instead');
+    ok(!/Defensive contribution is not in the data/.test(hookOf(seeing)),
+      'and stays quiet when the data is there');
+    /* Absent flag means the old behaviour, so an existing caller cannot start
+       emitting a caveat it never asked for. */
+    const legacy = buildThread({ name: 'D', fullName: 'Dee', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad });
+    ok(!/not in the data/.test(hookOf(legacy)), 'defaulting to available keeps old callers unchanged');
+  }
+
   /* SQUAD CHURN. Minutes read off last season describe a squad that may no
      longer exist: sell two centre-backs and the ones who stay are nailed on,
      which their own history cannot say because it was compiled while the

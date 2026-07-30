@@ -332,7 +332,8 @@ export function clubVerdict(graded) {
    the reasoning. */
 export function buildThread(club) {
   const { name, fullName, players = [], scored, conceded, avgDifficulty,
-    fixtures = [], congestion = 0, europe = null, manager = null, played = null } = club;
+    fixtures = [], congestion = 0, europe = null, manager = null, played = null,
+    defconData = true } = club;
   /* A baseline needs football behind it. Absent one, say so — a zeroed
      tally reads as a fact rather than as an absence. */
   const hasBaseline = scored != null && conceded != null && (played == null || played > 0);
@@ -357,7 +358,16 @@ export function buildThread(club) {
       manager ? `${manager} in charge.` : null,
       hasBaseline ? `${scored} scored, ${conceded} conceded.` : 'No competitive football yet this season.',
       europe ? `${europe} football means midweek games and rotation to price in.` : null,
-      'Every asset graded on returns, minutes and fixtures.'
+      'Every asset graded on returns, minutes and fixtures.',
+      /* Say what the read cannot see. Defensive contribution is the frame
+         most of the community is using this season — a centre-back's case is
+         routinely made entirely on it — and FPL has published no values yet.
+         A thread that ranks on clean sheets alone while staying silent about
+         that looks confident about the exact thing it is blind to. */
+      defconData ? null
+        : 'Defensive contribution is not in the data yet, so a defender\u2019s ' +
+          'floor is read from clean sheets alone here — the DEFCON case for a ' +
+          'centre-back cannot be checked until FPL publishes it.'
     ].filter(Boolean) });
 
   posts.push({ kind: 'baseline', title: 'Baseline',

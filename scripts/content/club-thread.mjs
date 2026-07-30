@@ -87,6 +87,12 @@ const congestion = await congestionByTeam();
    angle simply goes unmentioned rather than being guessed at. */
 const oopMarks = E.oopBenchmarks(idx.elements);
 
+/* Does the league have ANY defensive-contribution data? Measured rather than
+   assumed: FPL ships the fields for a new season populated with zero, and a
+   thread that reads a defender's floor from clean sheets alone should say so
+   instead of looking confident about the thing it cannot see. */
+const DEFCON_DATA = idx.elements.some((e) => E.dcRate90(e) > 0);
+
 /* How often a player clears the defensive-contribution threshold in a start.
    The same dcHitProb the expected-points model uses, so the thread and the
    app cannot disagree about whether a centre-back has a floor. */
@@ -174,6 +180,7 @@ function clubData(teamId) {
     conceded: played ? (g.conceded ?? null) : null,
     played,
     avgDifficulty, congestion: congestion[teamId] || 0,
+    defconData: DEFCON_DATA,
     europe: (congestion[teamId] || 0) > 0.15 ? 'Midweek European' : null,
     fixtures: run.map((r) => ({ gw: r.event, opp: teamName(r.opp), home: r.home,
       difficulty: +r.difficulty.toFixed(1) })),
