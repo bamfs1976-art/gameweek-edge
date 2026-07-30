@@ -60,7 +60,7 @@ const grabConst = (n) => {
 };
 
 const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules,
-  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP } = new Function(
+  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP, teamSheet, neverStarts } = new Function(
   grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('minClubsForXi') + '\n' +
   /* The two terms the transfer solver's objective gained beyond XI xP. */
   grabConst('FT_CAP') + '\n' + grabConst('BENCH_W') + '\n' + grabConst('FT_LADDER') + '\n' +
@@ -69,8 +69,13 @@ const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules
      rules now; the fallback block is exactly the old hard-coded values. */
   grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' +
   grabFn('squadOptimise') +
+  /* The team sheet is assembly on top of bestXI — which formation, which
+     armband, who never starts. The xP model underneath it has its own
+     suite, so it is stubbed here: a fixture is worth whatever the test
+     plants on it, and the sheet's logic is what gets graded. */
+  '\nconst fixtureXP=(b,el,fx)=>fx.xp;\n' + grabFn('teamSheet') + '\n' + grabFn('neverStarts') +
   '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;},'+
-  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP};'
+  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP,teamSheet,neverStarts};'
 )();
 
 let failures = 0, passes = 0;
@@ -972,6 +977,100 @@ console.log('• benchValue: a substitute is discounted, not worthless');
   ok(benchValue(squad, new Set(squad.map((e) => e.id)), score) === 0,
     'a squad entirely in the XI has an empty bench');
   ok(benchValue([null, undefined].concat(squad), xiIds, score) === v, 'holes in the squad are ignored');
+}
+
+
+console.log('• team sheet: the same fifteen, week by week');
+{
+  /* A legal fifteen: 2 GK, 5 DEF, 5 MID, 3 FWD, no more than three from a
+     club. Teams are spread so the club cap never binds and the sheet's own
+     logic is what is under test. */
+  const squad = [];
+  let id = 1;
+  const add = (type, n) => { for (let i = 0; i < n; i++) squad.push({ id: id++, element_type: type,
+    team: squad.length % 7 + 1, web_name: 'P' + id }); };
+  add(1, 2); add(2, 5); add(3, 5); add(4, 3);
+  ok(squad.length === 15, 'the harness squad is a legal fifteen');
+
+  /* The stub reads fx.xp, so a gameweek's shape is planted directly. Every
+     player is worth their id here, which makes the expected XI obvious. */
+  const flat = (gws) => {
+    const map = {};
+    squad.forEach((e) => { map[e.team] = map[e.team] || {}; });
+    const fx = {};
+    gws.forEach((g) => squad.forEach((e) => {
+      fx[e.team] = fx[e.team] || {};
+      fx[e.team][g] = [{ xp: 3, opp: 20, home: 1 }];
+    }));
+    return fx;
+  };
+
+  const gws = [1, 2, 3];
+  const sheet = teamSheet({}, flat(gws), gws, squad);
+  ok(sheet.length === 3, 'one row per gameweek');
+  ok(sheet.every((w) => w.xi.length === 11 && w.bench.length === 4),
+    'eleven start and four sit, every week');
+  ok(sheet.every((w) => w.formation.reduce((a, n) => a + n, 0) === 10),
+    'the formation is ten outfielders plus the keeper');
+  ok(sheet.every((w) => w.xi.filter((s) => s.el.element_type === 1).length === 1),
+    'exactly one goalkeeper starts');
+  /* The reserve keeper has its own seat and cannot be a first substitute. */
+  ok(sheet.every((w) => w.bench[0].el.element_type === 1),
+    'the reserve keeper is benched in its own slot, first');
+  ok(sheet.every((w) => w.bench.slice(1).every((s, i, a) => i === 0 || a[i - 1].p >= s.p)),
+    'and the outfield substitutes are ordered by who you would rather bring on');
+
+  /* The total is the XI plus the armband again, bench excluded — the thing
+     the squad scores, not the thing it is worth. */
+  const w0 = sheet[0];
+  const xiSum = w0.xi.reduce((a, s) => a + s.p, 0);
+  ok(near(w0.total, xiSum + w0.capPts), 'the total doubles the captain and ignores the bench');
+  ok(w0.cap && w0.xi.every((s) => s.p <= w0.capPts), 'the armband goes to the best projection in the XI');
+
+  /* A player with no fixture that week scores nothing and must not start. */
+  const blank = flat(gws);
+  const lone = squad.find((e) => e.element_type === 3);
+  blank[lone.team] = { 1: [], 2: [{ xp: 3, opp: 20, home: 1 }], 3: [{ xp: 3, opp: 20, home: 1 }] };
+  const blanked = teamSheet({}, blank, gws, squad);
+  const inGw1 = blanked[0].xi.some((s) => s.el.team === lone.team);
+  ok(!inGw1, 'a blanking club supplies nobody to that week’s XI');
+
+  /* A double counts both matches rather than the better one. */
+  const dbl = flat(gws);
+  const star = squad.find((e) => e.element_type === 4);
+  dbl[star.team] = { ...dbl[star.team],
+    1: [{ xp: 3, opp: 20, home: 1 }, { xp: 3, opp: 19, home: 0 }] };
+  const doubled = teamSheet({}, dbl, gws, squad);
+  ok(doubled[0].cap.team === star.team, 'a double gameweek takes the armband');
+  ok(near(doubled[0].xi.find((s) => s.el.id === star.id).p, 6), 'and is worth both fixtures');
+
+  /* Availability is a multiplier, not a veto — a 25% doubt still projects. */
+  const doubt = squad.map((e) => e.id === star.id ? { ...e, chance_of_playing_next_round: 25 } : e);
+  const hurt = teamSheet({}, flat(gws), gws, doubt);
+  ok(near(hurt[0].xi.concat(hurt[0].bench).find((s) => s.el.id === star.id).p, 0.75),
+    'a chance of playing scales the projection');
+
+  /* The signal a static team sheet cannot carry. */
+  ok(neverStarts(sheet, squad).length === 4, 'the four who never start are named');
+  ok(neverStarts(sheet, squad).every((e) => !sheet[0].xi.some((s) => s.el.id === e.id)),
+    'and none of them is in an XI');
+  /* One benched week is rotation, so a player who starts once is not idle. */
+  const idle = neverStarts([sheet[0]], squad)[0];
+  const rotated = [{ ...sheet[0], xi: sheet[0].xi.concat([{ el: idle, p: 1 }]) }];
+  ok(neverStarts(rotated, squad).length === neverStarts([sheet[0]], squad).length - 1,
+    'starting once is enough to clear the idle list');
+  ok(!neverStarts(rotated, squad).some((e) => e.id === idle.id), 'and it is that player who clears');
+
+  /* Degenerate inputs must not throw: the panel renders before a squad
+     loads, and a short squad cannot field an XI at all. */
+  for (const [label, sq] of [['an empty squad', []], ['a missing squad', null],
+    ['too few players', squad.slice(0, 8)]]) {
+    let threw = false, out = null;
+    try { out = teamSheet({}, flat(gws), gws, sq); } catch (_) { threw = true; }
+    ok(!threw && Array.isArray(out), 'the sheet survives ' + label);
+  }
+  ok(teamSheet({}, flat(gws), gws, squad.slice(0, 8)).length === 0,
+    'and reports nothing rather than a partial XI');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

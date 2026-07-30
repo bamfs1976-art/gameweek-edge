@@ -1098,6 +1098,13 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .pp-cell{text-align:center;min-width:56px;vertical-align:middle}
 .pp-cell .pp-opp{display:block;font-size:9px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:1px}
 .pp-cell b{font-size:12px;color:var(--text)}
+/* Team sheet: a benched week is dimmed rather than hidden, so a row that
+   never lights up reads as a row at a glance. */
+.ts-out{opacity:.38}
+.ts-foot td{border-top:1px solid var(--line);font-weight:700;color:var(--text-2);font-size:11px}
+.ts-foot .sb-pl{font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;font-size:10px}
+.ts-tot td{color:var(--text)}
+.ts-tot b{color:var(--green)}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
@@ -8225,16 +8232,115 @@ function buildGwFixtures(b,fixtures,gws){
   const map={};
   fixtures.filter(f=>f.event&&gwSet.has(f.event)&&!f.finished).forEach(f=>{
     const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
-    const push=(team,lam,cs)=>{
+    /* opp/home are carried for LABELLING only — nothing in the xP path reads
+       them. A team sheet that lists a projection without naming the fixture
+       behind it is asking to be taken on faith. */
+    const push=(team,lam,cs,opp,home)=>{
       const byGw=map[team]=map[team]||{};
-      (byGw[f.event]=byGw[f.event]||[]).push({event:f.event,lam,cs,
+      (byGw[f.event]=byGw[f.event]||[]).push({event:f.event,lam,cs,opp,home,
         lamAvg:BM*R.att[team],gp:played[team]||0});
     };
-    push(f.team_h,m.hx,m.csH);
-    push(f.team_a,m.ax,m.csA);
+    push(f.team_h,m.hx,m.csH,f.team_a,1);
+    push(f.team_a,m.ax,m.csA,f.team_h,0);
   });
   return map;
 }
+/* ── Team sheet ───────────────────────────────────────────────────────
+   Your fifteen projected forward week by week: the best legal XI each
+   gameweek, the formation it implies, the armband, and what the whole
+   thing is worth.
+
+   The app could already compute every part of this and showed none of it.
+   The transfer planner said "make this move" and the squad page showed the
+   XI for the week in front of you, so the question in between — what does
+   my team actually look like in three weeks, and who is never in it —
+   had to be assembled in your head.
+
+   The total is the XI plus the captain counted twice, and excludes the
+   bench: that is what the squad scores, not what it is worth. Bench value
+   belongs to the transfer solver, which is a different question. */
+function teamSheet(b,gwFx,gws,squad){
+  const perGw=(e,g)=>{
+    const fxs=(gwFx[e.team]||{})[g]||[];
+    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
+    let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
+    return t*(ch/100);
+  };
+  const posOrder=s=>s.el.element_type;
+  return gws.map((g,i)=>{
+    const scored=(squad||[]).map(e=>({el:e,p:perGw(e,g),fx:(gwFx[e.team]||{})[g]||[]}));
+    const best=bestXI(scored);
+    if(!best)return null;
+    const xiIds=new Set(best.xi.map(s=>s.el.id));
+    /* FPL benches the reserve keeper in its own slot and orders the rest by
+       who you would rather see come on. */
+    const bench=scored.filter(s=>!xiIds.has(s.el.id))
+      .sort((a,c)=>(a.el.element_type===1?0:1)-(c.el.element_type===1?0:1)||c.p-a.p);
+    const cap=best.xi.slice().sort((a,c)=>c.p-a.p)[0]||null;
+    return {gw:g,horizon:i,formation:best.formation,
+      xi:best.xi.slice().sort((a,c)=>posOrder(a)-posOrder(c)||c.p-a.p),
+      bench,cap:cap?cap.el:null,capPts:cap?cap.p:0,
+      total:best.total+(cap?cap.p:0)};
+  }).filter(Boolean);
+}
+
+/* Who never makes an XI across the whole run. This is the transfer signal
+   the sheet carries and a static team sheet does not: a player benched for
+   one awkward week is rotation, a player benched for five is dead money. */
+function neverStarts(sheet,squad){
+  const started=new Set();
+  sheet.forEach(w=>w.xi.forEach(s=>started.add(s.el.id)));
+  return (squad||[]).filter(e=>!started.has(e.id));
+}
+
+/* Rendered in the Points Planner's grid vocabulary on purpose: the two
+   answer the same question — opponent and expected points, week by week —
+   one for the whole game and one for your fifteen, and they should not look
+   like two different tools. A row that stays dim all the way across is a
+   player who never makes an XI, which is the thing to act on. */
+function teamSheetCard(b,gwFx,gws,squad){
+  const sheet=teamSheet(b,gwFx,gws,squad);
+  if(!sheet.length||!(squad||[]).length)return '';
+  const cell={};
+  sheet.forEach(w=>{const m=cell[w.gw]={};
+    w.xi.forEach(s=>{m[s.el.id]={p:s.p,fx:s.fx,xi:1};});
+    w.bench.forEach(s=>{m[s.el.id]={p:s.p,fx:s.fx,xi:0};});});
+  const tot=e=>sheet.reduce((a,w)=>a+(((cell[w.gw]||{})[e.id]||{}).p||0),0);
+  const grand=sheet.reduce((a,w)=>a+w.total,0);
+  const gwHead=sheet.map(w=>'<th class="num">GW'+w.gw+'</th>').join('');
+  const rows=squad.slice().sort((a,c)=>a.element_type-c.element_type||tot(c)-tot(a)).map(e=>{
+    const cells=sheet.map(w=>{
+      const c=(cell[w.gw]||{})[e.id];
+      if(!c||!c.fx.length)return '<td class="pp-cell sb-fx-none">—</td>';
+      const lab=c.fx.map(f=>teamShort(b,f.opp)+(f.home?' (H)':' (A)')).join(' + ');
+      return '<td class="pp-cell'+(c.xi?'':' ts-out')+'" style="'+(c.xi?sbHeat(Math.min(1,c.p/6)):'')+'">'+
+        '<span class="pp-opp">'+esc(lab)+'</span><b>'+c.p.toFixed(1)+'</b></td>';}).join('');
+    return '<tr data-open="'+e.id+'"><td class="sb-pl"><span class="sb-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,12)+esc(posShort(b,e.element_type))+'</span></td>'+
+      '<td class="num"><b>'+tot(e).toFixed(1)+'</b></td>'+cells+'</tr>';}).join('');
+  const foot=
+    '<tr class="ts-foot"><td class="sb-pl">Formation</td><td class="num">—</td>'+
+      sheet.map(w=>'<td class="pp-cell">'+w.formation.join('-')+'</td>').join('')+'</tr>'+
+    '<tr class="ts-foot"><td class="sb-pl">Captain</td><td class="num">—</td>'+
+      sheet.map(w=>'<td class="pp-cell">'+(w.cap?esc(w.cap.web_name):'—')+'</td>').join('')+'</tr>'+
+    '<tr class="ts-foot ts-tot"><td class="sb-pl">Projected</td><td class="num"><b>'+grand.toFixed(0)+'</b></td>'+
+      sheet.map(w=>'<td class="pp-cell"><b>'+w.total.toFixed(1)+'</b></td>').join('')+'</tr>';
+  const idle=neverStarts(sheet,squad);
+  /* The one thing a static team sheet cannot tell you. */
+  const idleNote=idle.length
+    ? '<p class="dl-sub" style="margin-top:8px"><b>'+idle.length+' of your 15</b> '+(idle.length===1?'does':'do')+
+      ' not make the XI in any of these '+sheet.length+' gameweeks — '+
+      idle.map(e=>esc(e.web_name)).join(', ')+'. One benched week is rotation; '+sheet.length+' is money not working.</p>'
+    : '<p class="dl-sub" style="margin-top:8px">Every one of your fifteen starts at least once over the run — no dead money on the bench.</p>';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+
+      ' Team sheet — your XI by gameweek</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Your squad as it stands, projected forward. Lit cells are in the XI that week, dim cells are benched; the projected total is the XI plus the captain counted twice, bench excluded — what the squad scores, not what it is worth.</p>'+
+    '<div class="pl-scroll"><table class="ptable sb-table pp-table">'+
+      '<tr><th>Player</th><th class="num">Next '+sheet.length+'</th>'+gwHead+'</tr>'+rows+foot+'</table></div>'+
+    idleNote+
+    '<p class="dl-sub" style="margin-top:6px"><b>Only the first column is a team sheet.</b> Beyond the next deadline this is a plan, not a prediction: it assumes today’s squad, today’s fitness and no transfers, and it cannot see rotation or a press conference. Treat the later weeks as where your fixtures point, not as a lineup.</p></div>';
+}
+
 function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   const memo=new Map();
   const perGw=(e,g)=>{                       /* one player's xP in one GW (0 on a blank, 2 fixtures on a double) */
@@ -8447,7 +8553,15 @@ async function hydrateTransfers(host){
             : '<p class="dl-sub" style="margin-top:10px">Here the highest-points and highest-rank move agree — a comfortable overlap.</p>')+
           '<div class="dl-sub" style="margin-top:6px">rank-xP = next-GW expected points weighted by how little of the field owns the player. Complements the 5-GW points view above.</div></div>';
       }
-      replacer=recCard+rankCard+solverCard()+solver3Card();
+      /* Five weeks, matching the horizon the recommended move is scored
+         over — a sheet on a different horizon to the advice above it would
+         be two answers to one question. */
+      let sheetCard='';
+      try{
+        const sgws=b.events.filter(e=>!e.finished).slice(0,5).map(e=>e.id);
+        if(sgws.length)sheetCard=teamSheetCard(b,buildGwFixtures(b,fixtures,sgws),sgws,squad);
+      }catch(_){}
+      replacer=recCard+sheetCard+rankCard+solverCard()+solver3Card();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
