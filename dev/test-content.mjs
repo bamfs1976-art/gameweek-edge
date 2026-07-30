@@ -22,7 +22,8 @@ import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAY
 import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
   from '../scripts/content/candidates.mjs';
 import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles,
-  rotationRisks, rotationTension, availability, shirtAdjust } from '../scripts/content/club.mjs';
+  rotationRisks, rotationTension, availability, shirtAdjust,
+  TALISMAN_SHARE, TALISMAN_MIN_GOALS } from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -467,6 +468,40 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(/clean sheet/.test(take), 'a defensive floor is framed as points without a clean sheet');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
+
+  /* THE TALISMAN. Share of a club's goals a player was directly involved in.
+     None of the three axes can see it: a good rate at a club that scores
+     freely is a different asset from the same rate at a club that only
+     scores through one man, and the second is both the way in and the
+     single point of failure. */
+  {
+    ok(angles({ teamShare: 0.45 }).some((a) => a.tag === 'talisman'),
+      'a player involved in 45% of the goals is flagged');
+    ok(!angles({ teamShare: 0.18 }).some((a) => a.tag === 'talisman'),
+      'an ordinary contributor is not');
+    ok(!angles({ teamShare: null }).some((a) => a.tag === 'talisman'),
+      'and a club too thin to divide by claims nothing');
+    ok(angles({ teamShare: TALISMAN_SHARE }).some((a) => a.tag === 'talisman'),
+      'the boundary itself counts');
+    const note = angles({ teamShare: 0.455 }).find((a) => a.tag === 'talisman').note;
+    ok(/46%/.test(note), 'the share is stated (' + note + ')');
+    /* It has to read as a risk as well as a route in, or it is just praise. */
+    ok(/does not play|breaks/.test(note), 'and the downside is named, not only the upside');
+    ok(TALISMAN_MIN_GOALS >= 10, 'the denominator floor is a real one (' + TALISMAN_MIN_GOALS + ')');
+
+    /* The runner must apply that floor rather than dividing by a handful. */
+    const src = readFileSync(join(ROOT, 'scripts/content/club-thread.mjs'), 'utf8');
+    ok(/squadGoals >= TALISMAN_MIN_GOALS/.test(src),
+      'the runner guards the denominator with the shared constant');
+    ok(!/squadGoals >= 20/.test(src), 'and does not carry its own copy of the number');
+
+    const t3 = buildThread({ name: 'T', fullName: 'Tal', played: 10, scored: 40,
+      conceded: 20, avgDifficulty: 2.2, fixtures: [], players: [
+        { web_name: 'Star', element_type: 4, now_cost: 90, xp: 6.4, starts: 30,
+          minutes: 2700, teamGames: 10, avgDifficulty: 2.2, teamShare: 0.45 }] });
+    ok(t3.posts.find((x) => x.kind === 'hierarchy').rows[0].angles.includes('talisman'),
+      'and it reaches the hierarchy row');
+  }
 
   /* THE VERDICT MUST MATCH THE HIERARCHY ABOVE IT. Every rule keyed off
      MAJORS, so a Liverpool thread printed six green lights and then "nothing

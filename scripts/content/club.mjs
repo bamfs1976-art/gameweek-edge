@@ -175,6 +175,15 @@ export function fixtureScore(p) {
                     clears and intercepts enough banks points in games his
                     team concedes in — which is precisely the case for buying
                     a defender whose clean-sheet odds are ordinary. */
+/* Involved in this share of his club's goals and he is carrying the attack.
+   Thirty per cent is where the community draws it and it is a sane line: a
+   fifth of a squad's goals from one of eleven starters is ordinary, a third
+   is dependency. */
+export const TALISMAN_SHARE = 0.30;
+/* Below this the denominator is too small to divide by — two goals from a
+   squad makes everyone who scored a talisman. */
+export const TALISMAN_MIN_GOALS = 20;
+
 export function angles(p) {
   const out = [];
   if (p.oop && p.oop.level > 0) {
@@ -186,6 +195,17 @@ export function angles(p) {
       'in roughly ' + Math.round(p.defconRate * 100) + '% of starts, clean sheet or not' });
   }
   if (p.setPieces) out.push({ tag: 'set pieces', note: p.setPieces });
+  /* THE TALISMAN. Share of the club's goals a player was directly involved
+     in — the thing the rate-based axes cannot see, because a good rate at a
+     club that scores freely is a different asset from a good rate at a club
+     that only scores through one man. It cuts both ways and the note says
+     so: he is the route into the attack, and he is also the single point of
+     failure when he blanks or sits out. */
+  if (p.teamShare != null && p.teamShare >= TALISMAN_SHARE) {
+    out.push({ tag: 'talisman', note: 'involved in ' + Math.round(p.teamShare * 100) +
+      '% of the goals this squad scored — the way into the attack, and the ' +
+      'thing that breaks when he does not play' });
+  }
   return out;
 }
 

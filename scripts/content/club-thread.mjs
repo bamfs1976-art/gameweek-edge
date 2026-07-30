@@ -18,7 +18,7 @@ import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadEngine, buildIndex, fixtureContext, fetchFpl } from './model.mjs';
-import { buildThread } from './club.mjs';
+import { buildThread, TALISMAN_MIN_GOALS } from './club.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, 'threads');
@@ -144,6 +144,14 @@ function clubData(teamId) {
   const nf = next[teamId];
 
   const shirts = shirtMap(teamId);
+  /* Goals scored by the players STILL at the club. A departed scorer is
+     absent from the list, so this is the share of the attack that remains,
+     which is the useful reading of it — but it is also why a floor matters:
+     a squad whose scorers all left would hand a talisman badge to whoever is
+     left holding two goals. */
+  const squadGoals = idx.elements
+    .filter((e) => e.team === teamId && e.status !== 'u')
+    .reduce((n, e) => n + (e.goals_scored || 0), 0);
   /* 'u' means gone from the game — everything else is a story rather than a
      reason to hide a player. A striker with a pre-season knock is what a
      preview leads on; dropping him silently is how a thread about a club
@@ -161,6 +169,8 @@ function clubData(teamId) {
       status: e.status || 'a',
       chanceOfPlaying: e.chance_of_playing_next_round ?? null,
       shirt: shirts[e.id] || null,
+      teamShare: squadGoals >= TALISMAN_MIN_GOALS
+        ? ((e.goals_scored || 0) + (e.assists || 0)) / squadGoals : null,
       oop: E.oopFlag(e, oopMarks),
       defconRate: defconRate(e),
       setPieces: setPieceNote(e),
