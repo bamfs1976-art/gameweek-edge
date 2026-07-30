@@ -319,6 +319,17 @@ export function clubVerdict(graded) {
     return { verdict: 'one-and-cover', text: 'Take the standout and stop there. ' +
       'The supporting cast is watchlist material, not a second slot.' };
   }
+  /* Depth without a standout. Every rule above keys off MAJORS, so a club
+     with six watchlist names and nobody clearing all three counts fell
+     through to "nothing clears the bar" — printed directly under six green
+     lights, which is a thread contradicting itself in the space of two posts.
+     Several credible options and no obvious buy is a real and different
+     verdict: you are choosing on fixtures, not on a name. */
+  if (watch >= 3) {
+    return { verdict: 'deep-no-standout', text: `${watch} names clear two of the three ` +
+      'counts and none clears all three — a squad to take one from on the fixtures, ' +
+      'rather than a club with an obvious buy.' };
+  }
   if (cheap >= 1) {
     return { verdict: 'enabler-source', text: 'Treat this as a budget enabler source ' +
       'rather than a team to load up on — the value is in the cheap end.' };

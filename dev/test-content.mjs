@@ -468,6 +468,51 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
 
+  /* THE VERDICT MUST MATCH THE HIERARCHY ABOVE IT. Every rule keyed off
+     MAJORS, so a Liverpool thread printed six green lights and then "nothing
+     here clears the bar" two posts later. A reader does not need the rule
+     table to see that is nonsense. */
+  {
+    const P3 = (o) => ({ web_name: 'X', element_type: 3, now_cost: 65, teamGames: 10,
+      starts: 10, minutes: 900, avgDifficulty: 2.2, ...o });
+    /* xp 6.0 with a 4.4 run clears returns and minutes but not fixtures —
+       watchlist, never major. */
+    const watchOnly = (n) => Array.from({ length: n }, (_, i) =>
+      P3({ web_name: 'W' + i, xp: 6.0, avgDifficulty: 4.4 }));
+    const deepGraded = watchOnly(6).map((p) => ({ ...p, grade: grade(p) }));
+    ok(deepGraded.every((g) => g.grade.status.key === 'watchlist'),
+      'the setup really is six watchlist players (' +
+      [...new Set(deepGraded.map((g) => g.grade.status.key))].join(', ') + ')');
+    const deep = clubVerdict(deepGraded);
+    ok(deep.verdict === 'deep-no-standout',
+      'a deep squad with no standout gets its own verdict (' + deep.verdict + ')');
+    ok(!/Nothing here clears the bar/.test(deep.text),
+      'and does not read as though the club were empty');
+    ok(/6 names/.test(deep.text), 'the count is stated (' + deep.text + ')');
+
+    /* A genuinely empty club must still say so. */
+    const nothing = clubVerdict(watchOnly(0));
+    ok(nothing.verdict === 'avoid', 'an empty squad is still avoid');
+    const two = clubVerdict(watchOnly(2).map((p) => ({ ...p, grade: grade(p) })));
+    ok(two.verdict === 'avoid', 'and two watchlist names is not yet depth');
+
+    /* The stronger verdicts still outrank it. */
+    const withMajors = watchOnly(4).map((p) => ({ ...p, grade: grade(p) }))
+      .concat([1, 2].map((i) => { const p = P3({ web_name: 'M' + i, xp: 6.5, avgDifficulty: 2.0 });
+        return { ...p, grade: grade(p) }; }));
+    ok(clubVerdict(withMajors).verdict === 'load-up',
+      'two majors still beat depth (' + clubVerdict(withMajors).verdict + ')');
+
+    /* And the thread as a whole must not contradict itself. */
+    const t2 = buildThread({ name: 'L', fullName: 'Deep', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 4.4, fixtures: [], players: watchOnly(6) });
+    const lights = t2.posts.find((x) => x.kind === 'hierarchy').rows
+      .filter((r) => r.status === 'watchlist').length;
+    const take = t2.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+    ok(lights >= 3 && !/Nothing here clears/.test(take),
+      'a hierarchy full of green lights is not followed by "nothing clears the bar"');
+  }
+
   /* SAY WHAT THE READ CANNOT SEE. Four consecutive club previews in the wild
      made their central case on defensive contribution — the DEFCON frame is
      how the community is arguing this season — and FPL has published no
