@@ -961,6 +961,33 @@ console.log('• club threads: a summer signing’s rates belong to his old club
   ok(!moved({ teamShare: 0.5 }).some((a) => a.tag === 'talisman'),
     'but a signing gets no talisman share, because it mixes two squads');
 
+  /* The caveat has to reach the HIERARCHY, which prints tags and never
+     notes. The first version marked a signing's defensive floor in every
+     post except the one a reader screenshots — the tests passed and the
+     live thread still read "Anderson — defensive floor", flat. */
+  const H = (o) => ({ web_name: 'H', element_type: 3, now_cost: 70, minutes: 2400,
+    starts: 27, goals: 10, assists: 6, teamGames: 30, xp: 6.4, avgDifficulty: 2.0, ...o });
+  const hierOf = (t) => t.posts.find((x) => x.kind === 'hierarchy').lines.join('\n');
+  const signed = hierOf(buildThread({ name: 'S', fullName: 'Stown', played: 0,
+    avgDifficulty: 2.0, fixtures: [],
+    players: [H({ web_name: 'Mover', defconRate: 0.7, newClub: true }), H({ web_name: 'Other' })] }));
+  ok(/Mover.*defensive floor\*/.test(signed), 'the hierarchy marks a carried rate (' + signed.split('\n')[0] + ')');
+  ok(/^\* measured at his previous club/m.test(signed), 'and explains the marker once, as a footnote');
+  ok(!/Other.*\*/.test(signed), 'a player who stayed is unmarked');
+
+  const settled = hierOf(buildThread({ name: 'T', fullName: 'Ttown', played: 0,
+    avgDifficulty: 2.0, fixtures: [], players: [H({ web_name: 'Stayer', defconRate: 0.7 })] }));
+  ok(!/\*/.test(settled), 'and a thread with no signings carries no footnote at all');
+
+  /* Set-piece duty is current even for a signing, so it must not be starred
+     — the marker would claim doubt about the one thing we do know. */
+  const sp = hierOf(buildThread({ name: 'U', fullName: 'Utown', played: 0,
+    avgDifficulty: 2.0, fixtures: [],
+    players: [H({ web_name: 'Taker', setPieces: 'penalties — 82% confidence on the duty',
+      defconRate: 0.7, newClub: true })] }));
+  ok(/defensive floor\*/.test(sp) && /set pieces(?!\*)/.test(sp),
+    'the marker lands on the carried rate only, not on set-piece duty (' + sp.split('\n')[0] + ')');
+
   /* And when the feed cannot say who signed, the thread says so once rather
      than marking nobody and sounding certain about everybody. */
   const club = { name: 'Z', fullName: 'Ztown', played: 0, avgDifficulty: 2.4,

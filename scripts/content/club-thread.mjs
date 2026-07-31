@@ -90,19 +90,26 @@ const congestion = await congestionByTeam();
    applied AFTER the squad is ordered by relevance, never to raw feed order. */
 const SQUAD_MAX = 40;
 
-/* FPL publishes the date a player joined his current club. Where it is
-   present a summer signing is identifiable, and the angles that rest on last
-   season's rates can say so; where it is absent nothing downstream may claim
-   to know, and the thread says that instead of quietly guessing. */
+/* FPL publishes the date a player joined his current club — measured at
+   541 of 564 elements on the live feed, with real dates spanning 2016 to
+   this window, so it is a field to rely on rather than hope for. Where it
+   is absent nothing downstream may claim to know, and the thread says that
+   instead of quietly guessing. */
 const JOIN_DATA = idx.elements.some((e) => e.team_join_date);
-/* Anchor the window on the season we are actually in rather than on today's
-   clock, so a thread generated at any point in the season asks the same
-   question: did this player arrive in the summer that opened it? */
+/* The question is not "did he sign this summer", it is "did he compile the
+   stats on file at THIS club" — and the stats on file are last season's. So
+   the anchor is 1 January of the season year, which catches both the summer
+   intake and the January one before it. The first cut used 1 June and let
+   two City players through whose last season was half spent elsewhere.
+
+   The previous summer's signings are correctly NOT flagged: a player who
+   arrived in June 2025 played last season here, so his rates are this
+   club's and a caveat would be false modesty. */
 const firstEvent = (idx.events || []).find((e) => e.deadline_time);
 const WINDOW_OPEN = firstEvent
-  ? Date.UTC(new Date(firstEvent.deadline_time).getUTCFullYear(), 5, 1)   /* 1 June */
+  ? Date.UTC(new Date(firstEvent.deadline_time).getUTCFullYear(), 0, 1)   /* 1 January */
   : null;
-function joinedThisSummer(e) {
+function joinedMidSeasonOrLater(e) {
   if (!JOIN_DATA || !e.team_join_date || WINDOW_OPEN == null) return false;
   const t = Date.parse(e.team_join_date);
   return Number.isFinite(t) && t >= WINDOW_OPEN;
@@ -195,7 +202,7 @@ function clubData(teamId) {
       teamShare: squadGoals >= TALISMAN_MIN_GOALS
         ? ((e.goals_scored || 0) + (e.assists || 0)) / squadGoals : null,
       oop: E.oopFlag(e, oopMarks),
-      newClub: joinedThisSummer(e),
+      newClub: joinedMidSeasonOrLater(e),
       defconRate: defconRate(e),
       setPieces: setPieceNote(e),
       avgDifficulty, congestion: congestion[teamId] || 0
@@ -271,9 +278,9 @@ if (process.argv.includes('--signings')) {
   for (const t of targets) {
     const squad = idx.elements.filter((e) => e.team === t.id && e.status !== 'u');
     const rows = squad.map((e) => `  ${(e.web_name || '').padEnd(16)} ` +
-      `${String(e.team_join_date || '—').padEnd(24)} ${joinedThisSummer(e) ? 'NEW' : ''}`);
+      `${String(e.team_join_date || '—').padEnd(24)} ${joinedMidSeasonOrLater(e) ? 'NEW' : ''}`);
     console.log(`\n${t.short_name} — ${squad.length} players, ` +
-      `${squad.filter(joinedThisSummer).length} flagged as summer signings`);
+      `${squad.filter(joinedMidSeasonOrLater).length} carrying another club's rates`);
     console.log(rows.join('\n'));
   }
 }

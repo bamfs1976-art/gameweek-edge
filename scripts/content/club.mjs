@@ -204,6 +204,11 @@ export const TALISMAN_MIN_GOALS = 20;
 export const MOVED_NOTE = ' — but that was at his previous club, so it is a ' +
   'role that has to survive the move';
 
+/* The angles that describe a ROLE from a rate, and so travel badly. Set-piece
+   duty is deliberately not here: its order fields are set by the club he is
+   at now, making it the one angle that is current for a new signing. */
+export const CARRIED_TAGS = new Set(['defensive floor', 'out of position']);
+
 export function angles(p) {
   const out = [];
   const moved = !!p.newClub;
@@ -515,11 +520,23 @@ export function buildThread(club) {
       position: POS[p.element_type], minutes: +p.grade.minutes.toFixed(2),
       returns: +p.grade.returns.toFixed(2), tension: +rotationTension(p).toFixed(3) })) });
 
+  /* The hierarchy prints TAGS, never notes — which is where the "at his
+     previous club" caveat lives, so on the first run it marked a summer
+     signing's defensive floor everywhere except the one post a reader
+     actually screenshots. A footnote marker carries it without turning six
+     one-line rows into six paragraphs. */
+  const top = hierarchy.slice(0, 6);
+  const carried = (p) => p.newClub && p.angles.some((a) => CARRIED_TAGS.has(a.tag));
   posts.push({ kind: 'hierarchy', title: 'Hierarchy',
-    lines: hierarchy.slice(0, 6).map((p) =>
+    lines: top.map((p) =>
       `${p.grade.status.light} ${p.web_name} (${money(p.now_cost)} ${POS[p.element_type]})` +
       (p.grade.avail ? ` — ${p.grade.avail.label}` : '') +
-      (p.angles.length ? ` — ${p.angles.map((a) => a.tag).join(', ')}` : '')),
+      (p.angles.length ? ` — ${p.angles.map((a) =>
+        a.tag + (carried(p) && CARRIED_TAGS.has(a.tag) ? '*' : '')).join(', ')}` : ''))
+      .concat(top.some(carried)
+        ? ['* measured at his previous club — he signed since last season started, ' +
+           'so that is a role which still has to survive the move.']
+        : []),
     rows: hierarchy.slice(0, 6).map((p) => ({
       name: p.web_name, cost: money(p.now_cost), position: POS[p.element_type],
       status: p.grade.status.key, light: p.grade.status.light,
