@@ -25,7 +25,7 @@ import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches,
 import { draft } from '../scripts/content/copy.mjs';
 import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles,
   rotationRisks, rotationTension, availability, shirtAdjust,
-  TALISMAN_SHARE, TALISMAN_MIN_GOALS } from '../scripts/content/club.mjs';
+  TALISMAN_SHARE, TALISMAN_MIN_GOALS, CLUB_CAP } from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -850,6 +850,80 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
     avgDifficulty: 2.5, players: [], fixtures: [] });
   ok(/Scored 9, conceded 4/.test(withFootball.posts.find((x) => x.kind === 'baseline').lines[0]),
     'a real baseline is still reported');
+}
+
+console.log('• club threads: the squad cap must not decide who gets graded');
+{
+  const P = (o) => ({ web_name: 'X', element_type: 3, now_cost: 60, teamGames: 20,
+    starts: 20, minutes: 1800, goals: 3, assists: 3, avgDifficulty: 2.5, ...o });
+
+  /* The real defect: club-thread.mjs sliced the squad in the bootstrap's own
+     id order, so a club with more players than the cap lost whoever happened
+     to sit late in the feed. On Man City that was Haaland — a club preview
+     with no forward in it. The ordering rule is what stops that, so it is
+     pinned here rather than left to the shape of a live feed. */
+  const order = (squad) => squad.slice()
+    .sort((a, b) => b.minutes - a.minutes || b.now_cost - a.now_cost);
+
+  const fringe = Array.from({ length: 25 }, (_, i) =>
+    P({ web_name: 'Fringe' + i, minutes: 200, now_cost: 45 }));
+  const star = P({ web_name: 'Star', element_type: 4, now_cost: 155, minutes: 2700, goals: 30 });
+  /* Star last, exactly as a late id would place him. */
+  const kept = order(fringe.concat([star])).slice(0, 24);
+  ok(kept.some((p) => p.web_name === 'Star'),
+    'the club’s biggest asset survives the cap wherever the feed put him');
+  ok(kept[0].web_name === 'Star', 'and is graded first');
+
+  /* Pre-season there are no minutes, so price has to carry the ordering —
+     otherwise the cap goes back to being arbitrary in exactly the window
+     these threads run in. */
+  const preseason = fringe.map((p) => ({ ...p, minutes: 0 })).concat([{ ...star, minutes: 0 }]);
+  ok(order(preseason)[0].web_name === 'Star', 'with no minutes yet, price orders the squad');
+
+  /* The three-per-club rule: a shortlist longer than the cap has to say so. */
+  const majors = (n) => Array.from({ length: n }, (_, i) => ({
+    web_name: 'M' + i, now_cost: 60, element_type: 3,
+    grade: { status: { key: 'major' }, returns: 0.8, minutes: 0.9, fixtures: 0.8 } }));
+  const four = clubVerdict(majors(4));
+  ok(four.verdict === 'load-up', 'four majors is still a club to load up on');
+  ok(new RegExp('only own ' + CLUB_CAP).test(four.text),
+    'but the squad cap is stated (' + four.text + ')');
+  const three = clubVerdict(majors(CLUB_CAP));
+  ok(three.verdict === 'load-up' && !/only own/.test(three.text),
+    'at exactly the cap there is nothing to cut, so nothing is said');
+  const two = clubVerdict(majors(2));
+  ok(!/only own/.test(two.text), 'and two names never triggers it');
+
+  /* The takeaway has to name the three, not just mention that there is a
+     limit — the arithmetic is the thing the thread exists to do. */
+  const P2 = (o) => ({ web_name: 'W', element_type: 3, now_cost: 70, minutes: 2400,
+    starts: 27, goals: 12, assists: 8, teamGames: 30, xp: 6.5, avgDifficulty: 2.0, ...o });
+  const loaded = buildThread({ name: 'X', fullName: 'Xtown', played: 20,
+    scored: 40, conceded: 20, avgDifficulty: 2.0, fixtures: [],
+    players: [P2({ web_name: 'Alpha', now_cost: 120 }), P2({ web_name: 'Bravo', now_cost: 95 }),
+      P2({ web_name: 'Chas', now_cost: 80 }), P2({ web_name: 'Delta', now_cost: 70 }),
+      P2({ web_name: 'Echo', now_cost: 60 })] });
+  const take = loaded.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+  if (/only own/.test(loaded.verdict.text)) {
+    ok(/If you want 3:/.test(take), 'the takeaway names the three (' + take + ')');
+    ok((take.match(/£/g) || []).length === CLUB_CAP, 'exactly three, with prices');
+    const named = loaded.posts.find((x) => x.kind === 'hierarchy').rows.slice(0, CLUB_CAP)
+      .map((r) => r.name);
+    ok(named.every((n) => take.includes(n)),
+      'and they are the top three of the hierarchy, not a different order');
+  } else {
+    ok(false, 'the fixture was meant to produce more majors than the cap');
+  }
+
+  /* An unavailable player must never be one of the three: the thread would
+     be telling you to spend a scarce club slot on someone who cannot play. */
+  const hurt = buildThread({ name: 'Y', fullName: 'Ytown', played: 20,
+    scored: 40, conceded: 20, avgDifficulty: 2.0, fixtures: [],
+    players: [P2({ web_name: 'Crocked', now_cost: 130, status: 'i' }),
+      P2({ web_name: 'Alpha', now_cost: 120 }), P2({ web_name: 'Bravo', now_cost: 95 }),
+      P2({ web_name: 'Chas', now_cost: 80 }), P2({ web_name: 'Delta', now_cost: 70 })] });
+  const hurtTake = hurt.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+  ok(!/Crocked/.test(hurtTake), 'an injured player is never one of the three');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

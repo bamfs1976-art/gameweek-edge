@@ -179,6 +179,12 @@ export function fixtureScore(p) {
    Thirty per cent is where the community draws it and it is a sane line: a
    fifth of a squad's goals from one of eleven starters is ordinary, a third
    is dependency. */
+/* FPL lets you own at most three players from any one club. It is the one
+   constraint that turns a club preview from a ranking into a decision, and
+   the threads ignored it entirely — a hierarchy of six with no hint that
+   half of them cannot travel together. */
+export const CLUB_CAP = 3;
+
 export const TALISMAN_SHARE = 0.30;
 /* Below this the denominator is too small to divide by — two goals from a
    squad makes everyone who scored a talisman. */
@@ -332,8 +338,16 @@ export function clubVerdict(graded) {
     ['major', 'watchlist'].includes(g.grade.status.key)).length;
 
   if (majors >= 2) {
+    /* The squad rules cap you at three players from one club, so "5 names
+       clear our bar" is not a shopping list — it is a shortlist you have to
+       cut. Saying the number without saying the cap invites a selection the
+       game will not let you make, and the whole point of ranking a club's
+       assets is deciding which of them you can actually afford a slot for. */
+    const over = majors > CLUB_CAP
+      ? ` You can only own ${CLUB_CAP} from one club, so this is a shortlist to cut, not a list to buy.`
+      : '';
     return { verdict: 'load-up', text: 'A club to take multiple assets from — ' +
-      `${majors} names clear our bar on returns, minutes and fixtures together.` };
+      `${majors} names clear our bar on returns, minutes and fixtures together.${over}` };
   }
   if (majors === 1 && watch >= 1) {
     return { verdict: 'one-and-cover', text: 'Take the standout and stop there. ' +
@@ -499,8 +513,17 @@ export function buildThread(club) {
     : verdict.verdict === 'avoid'
       ? `If that changes, it changes through ${who}${tail}`
       : `The angle is ${who}${tail}`;
+  /* If more clear the bar than you are allowed to own, say which three. A
+     ranking that stops short of the cap leaves the reader to do the one
+     piece of arithmetic the thread exists to do for them. */
+  const ownable = hierarchy.filter((p) =>
+    ['major', 'watchlist'].includes(p.grade.status.key) && !p.grade.avail);
+  const capLine = ownable.length > CLUB_CAP
+    ? `If you want ${CLUB_CAP}: ${ownable.slice(0, CLUB_CAP)
+      .map((p) => `${p.web_name} (${money(p.now_cost)})`).join(', ')}.`
+    : null;
   posts.push({ kind: 'takeaway', title: 'Takeaway',
-    lines: [verdict.text, angleLine].filter(Boolean) });
+    lines: [verdict.text, angleLine, capLine].filter(Boolean) });
 
   return { club: name, fullName, verdict, posts, graded: hierarchy.length };
 }

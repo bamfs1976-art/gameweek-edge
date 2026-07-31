@@ -85,6 +85,11 @@ const congestion = await congestionByTeam();
    once over every player rather than per club. Returns {} when the season is
    too young to have any, and oopFlag then returns null for everyone — the
    angle simply goes unmentioned rather than being guessed at. */
+/* A registered FPL squad is comfortably inside this; the cap only exists so
+   a malformed feed cannot make a thread grade hundreds of players. It is
+   applied AFTER the squad is ordered by relevance, never to raw feed order. */
+const SQUAD_MAX = 40;
+
 const oopMarks = E.oopBenchmarks(idx.elements);
 
 /* Does the league have ANY defensive-contribution data? Measured rather than
@@ -178,7 +183,20 @@ function clubData(teamId) {
     }))
     /* Anyone with no football behind them cannot be graded honestly. */
     .filter((p) => p.minutes > 0 || p.now_cost >= 45)
-    .slice(0, 24);
+    /* Order before capping. The cap is a safety valve against a freak squad
+       size, but `idx.elements` arrives in the bootstrap's own id order, so
+       slicing it raw decided who got graded by an accident of when a player
+       was added to the game's database. On Man City it silently dropped the
+       most expensive striker in the game: a 24-man cap on a 26-man squad
+       produced a club preview with no forward in it at all.
+
+       Minutes first because the thread grades on minutes, price second
+       because pre-season there are no minutes yet and price is the game's
+       own statement of who matters. Anything the cap now removes is a
+       fringe player by both measures, which is the only kind of player a
+       club preview can afford to lose. */
+    .sort((a, b) => b.minutes - a.minutes || b.now_cost - a.now_cost)
+    .slice(0, SQUAD_MAX);
 
   /* Pre-season there are no finished fixtures, so a goals tally would be a
      truthful-looking "0 scored, 0 conceded" — which is worse than saying
