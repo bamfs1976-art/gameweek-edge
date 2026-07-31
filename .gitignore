@@ -23,4 +23,4 @@ scripts/recap/*.json
 scripts/recap/out/
 
 # Raw sweep output from dev/fit-decay.mjs (regenerate rather than review in diffs).
-dev/decay-fit-h*.json
+dev/decay-fit-*.json
