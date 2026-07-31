@@ -24,3 +24,4 @@ scripts/recap/out/
 
 # Raw sweep output from dev/fit-decay.mjs (regenerate rather than review in diffs).
 dev/decay-fit-*.json
+dev/fixtures/vaastav/**/players_raw.csv

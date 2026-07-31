@@ -100,24 +100,55 @@ function rng(seed) {
 }
 
 /* ── one season, loaded into the shape the simulation wants ─────────────── */
-function loadSeason(path) {
+/* TEAM IDENTITY. merged_gw's `team` column is a NAME in recent seasons
+   ("Sunderland") and absent entirely before 2020-21, while `opponent_team` is
+   always a numeric FPL id. Keying team strength by one and looking it up by
+   the other silently yields no match — which is exactly the bug that made the
+   first version of this harness produce a projection with no fixture
+   variation at all, and therefore nothing for the discount to act on.
+
+   Both sides are now resolved to the same numeric id, derived from the data
+   itself: within a fixture, the home rows' opponent_team IS the away side's
+   id and vice versa, so pairing the two halves recovers every team id without
+   needing a lookup table or a per-season special case. */
+function teamIdsByFixture(rows) {
+  const home = new Map(), away = new Map();
+  for (const r of rows) {
+    const f = r.fixture;
+    if (!f) continue;
+    if (String(r.was_home).toLowerCase() === 'true') away.set(f, num(r.opponent_team));
+    else home.set(f, num(r.opponent_team));
+  }
+  return { home, away };
+}
+
+function loadSeason(path, rawPath) {
   const rows = parseCsv(readFileSync(path, 'utf8'));
+  /* Pre-2020-21 merged_gw carries no position; players_raw does. */
+  const raw = rawPath && existsSync(rawPath) ? parseCsv(readFileSync(rawPath, 'utf8')) : [];
+  const rawPos = new Map(raw.map((r) => [num(r.id), num(r.element_type)]));
+
+  const { home, away } = teamIdsByFixture(rows);
   const byGw = new Map();          /* gw -> element -> [row, ...] (2 rows in a double) */
-  const meta = new Map();          /* element -> {name, pos, team} */
-  let maxGw = 0;
+  const meta = new Map();          /* element -> {name, element_type, team: numeric id} */
+  let maxGw = 0, unresolved = 0;
   for (const r of rows) {
     const gw = num(r.GW), el = num(r.element);
     if (!gw || !el) continue;
-    maxGw = Math.max(maxGw, gw);
-    const type = POS[(r.position || '').toUpperCase()];
+    const type = POS[(r.position || '').toUpperCase()] || rawPos.get(el);
     if (!type) continue;
-    if (!meta.has(el)) meta.set(el, { id: el, web_name: r.name, element_type: type, team: r.team });
+    const isHome = String(r.was_home).toLowerCase() === 'true';
+    const tid = isHome ? home.get(r.fixture) : away.get(r.fixture);
+    if (!tid) { unresolved++; continue; }
+    r._team = tid;                 /* canonical, same space as opponent_team */
+    maxGw = Math.max(maxGw, gw);
+    if (!meta.has(el)) meta.set(el, { id: el, web_name: r.name, element_type: type, team: tid });
     if (!byGw.has(gw)) byGw.set(gw, new Map());
     const m = byGw.get(gw);
     if (!m.has(el)) m.set(el, []);
     m.get(el).push(r);
   }
-  return { byGw, meta, maxGw };
+  return { byGw, meta, maxGw, unresolved };
 }
 
 /* ── point-in-time state: everything known BEFORE gameweek `gw` ─────────── */
@@ -135,19 +166,28 @@ function absorbGw(st, gwRows) {
       st.pts.set(el, (st.pts.get(el) || 0) + num(r.total_points));
       if (m > 0) st.apps.set(el, (st.apps.get(el) || 0) + 1);
       /* Team goals for/against, counted once per team-fixture. */
-      const key = r.team + '|' + r.fixture;
+      const key = r._team + '|' + r.fixture;
       if (seen.has(key)) continue;
       seen.add(key);
       const home = String(r.was_home).toLowerCase() === 'true';
       const forGoals = home ? num(r.team_h_score) : num(r.team_a_score);
       const agGoals = home ? num(r.team_a_score) : num(r.team_h_score);
-      st.gf.set(r.team, (st.gf.get(r.team) || 0) + forGoals);
-      st.ga.set(r.team, (st.ga.get(r.team) || 0) + agGoals);
-      st.games.set(r.team, (st.games.get(r.team) || 0) + 1);
+      st.gf.set(r._team, (st.gf.get(r._team) || 0) + forGoals);
+      st.ga.set(r._team, (st.ga.get(r._team) || 0) + agGoals);
+      st.games.set(r._team, (st.games.get(r._team) || 0) + 1);
       st.matches += 1; st.goals += forGoals;
     }
   }
 }
+
+/* THE HARNESS MUST PROVE IT HAS A FIXTURE SIGNAL.
+   The first version keyed team strength by club NAME and looked it up by
+   numeric id, so the opponent term never resolved and every future gameweek
+   for a player projected identically. A discount applied to a flat forecast
+   cannot change a decision, so the sweep dutifully reported "no effect" —
+   a null produced by a bug, not by the data. Counted here and asserted after
+   the run, because that failure is otherwise completely silent. */
+const SIGNAL = { resolved: 0, unresolved: 0, varied: 0 };
 
 const PRIOR_MIN = 270;      /* minutes at which a player's own rate carries half the weight */
 const PRIOR_P90 = 3.2;      /* an unremarkable starter's points per 90 */
@@ -170,7 +210,9 @@ function project(st, el, meta, oppTeam, home) {
   const avgGa = st.matches ? st.goals / st.matches : 1.4;
   const oppGames = st.games.get(oppTeam) || 0;
   const oppLeak = oppGames >= 3 ? (st.ga.get(oppTeam) || 0) / oppGames / (avgGa || 1.4) : 1;
+  if (oppGames >= 3) SIGNAL.resolved++; else SIGNAL.unresolved++;
   const mult = Math.max(0.6, Math.min(1.6, oppLeak * (home ? 1.08 : 0.92)));
+  if (Math.abs(mult - 1) > 1e-9) SIGNAL.varied++;
   return p90 * (expMin / 90) * mult;
 }
 
@@ -245,7 +287,7 @@ function simulate(season, seed, decay) {
       for (const [el, rs] of season.byGw.get(g)) {
         const m = season.meta.get(el);
         if (!m) continue;
-        const fxs = rs.map((r) => ({ xp: project(st, el, m, r.opponent_team,
+        const fxs = rs.map((r) => ({ xp: project(st, el, m, num(r.opponent_team),
           String(r.was_home).toLowerCase() === 'true') }));
         if (!perEl.has(el)) perEl.set(el, {});
         perEl.get(el)[g] = fxs;
@@ -354,7 +396,7 @@ console.log(`Grid: ${GRID.join(', ')}\n`);
 const results = new Map(GRID.map((d) => [d, []]));
 const pairs = [];
 for (const s of seasons) {
-  const season = loadSeason(join(dir, s, 'merged_gw.csv'));
+  const season = loadSeason(join(dir, s, 'merged_gw.csv'), join(dir, s, 'players_raw.csv'));
   for (let seed = 1; seed <= SEEDS; seed++) {
     const row = { season: s, seed, by: new Map() };
     for (const d of GRID) {
@@ -366,6 +408,17 @@ for (const s of seasons) {
     if (row.by.size === GRID.length) pairs.push(row);
     process.stderr.write(`  ${s} seed ${seed} done\n`);
   }
+}
+
+const lookups = SIGNAL.resolved + SIGNAL.unresolved;
+const resolvedPct = lookups ? 100 * SIGNAL.resolved / lookups : 0;
+const variedPct = lookups ? 100 * SIGNAL.varied / lookups : 0;
+console.log(`\nfixture signal: ${resolvedPct.toFixed(1)}% of opponent lookups resolved, ` +
+  `${variedPct.toFixed(1)}% produced a non-neutral multiplier`);
+if (resolvedPct < 80 || variedPct < 50) {
+  console.error('\n✗ the projection has little or no fixture variation, so this sweep ' +
+    'cannot measure a discount on future gameweeks. Fix the harness before reading the table.');
+  process.exit(1);
 }
 
 const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
