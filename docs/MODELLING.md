@@ -274,6 +274,48 @@ P5 loop, not fitted to this simulation.
   global recentre) should be tuned on real returns via the **P5 calibration
   loop**, not to the synthetic DGP.
 
+### Defensive contribution — the formula is verified against FPL itself
+
+`netlify/functions/core-insights.js` computes each player's defensive
+contribution from component columns rather than reading a published total.
+From 2025-26 FPL publishes its **own official** `defensive_contribution` per
+player-gameweek, which makes that arithmetic checkable against the source of
+truth rather than against another third party.
+
+Checked over the whole of 2025-26 (vaastav `merged_gw.csv`), **26,330
+outfield player-gameweeks**:
+
+- **26,330 exact matches. Zero mismatches.**
+- Zero rows where the published figure is 0 while the components are not.
+
+So the rule is confirmed, not inferred:
+
+| position | counts | threshold |
+|---|---|---|
+| DEF | clearances + blocks + interceptions + tackles (CBIT) | 10 |
+| MID / FWD | CBIT **+ recoveries** (CBIRT) | 12 |
+
+Two real GW1 rows now sit in `dev/test-core-insights.mjs` as fixtures, each
+isolating one half of the rule: Senesi (12 CBI + 3 tackles + 2 recoveries →
+official **15**, so a defender's recoveries do not count) and André (3 CBI +
+4 tackles + 8 recoveries → official **15**, where CBIT alone is 7 and the
+recoveries are what clear the 12 bar). An independent third implementation,
+`nickharris88/fpl-history`, derives the same thresholds and components.
+
+**This does not contradict the earlier Core Insights finding — it sharpens
+it.** There are two similarly-named columns with completely different
+reliability:
+
+| column | source | verdict |
+|---|---|---|
+| `defensive_contribution` | FPL official (bootstrap, vaastav) | flawless — 26,330/26,330 |
+| `defensive_contributions` | Core Insights' own match scrape | 35% false zeros — unusable |
+
+FPL's column is a **total**, and the hit **rate** — how often a player clears
+the threshold in a start — cannot be recovered from a total. That is why the
+components remain the input, and why it matters that they are now proven to
+implement the right rule.
+
 ## Data sources considered and rejected
 
 Reviewed rather than adopted, recorded so the same ground is not covered

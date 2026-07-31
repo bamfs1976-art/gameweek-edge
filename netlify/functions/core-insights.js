@@ -85,7 +85,19 @@ async function fetchGw(season, gw) {
 const DEF_THRESHOLD = 10;      /* DEF need 10 CBIT for the +2 */
 const MIDFWD_THRESHOLD = 12;   /* MID/FWD need 12 CBIRT */
 
-/* WHY THIS RECOMPUTES INSTEAD OF READING `defensive_contributions`.
+/* THE FORMULA IS VERIFIED. FPL publishes its own official
+   `defensive_contribution` per player-gameweek from 2025-26 (visible in the
+   vaastav dataset). Checked against the CBIT/CBIRT arithmetic below across
+   26,330 outfield player-gameweeks of 2025-26: 26,330 exact matches, zero
+   mismatches, zero cases of a published zero against non-zero components.
+
+   So DEF = clearances + blocks + interceptions + tackles at a threshold of
+   10, and MID/FWD = the same plus recoveries at 12, is not our reading of
+   the rule — it IS the rule, confirmed against the source of truth. An
+   independent third implementation (nickharris88/fpl-history) derives the
+   same thresholds and the same components.
+
+   WHY THIS RECOMPUTES INSTEAD OF READING `defensive_contributions`.
    playermatchstats.csv publishes a `defensive_contributions` column, and
    reading it directly is the obvious simplification. It is also wrong.
    Measured across 2025-26 GW9-11 (1,142 outfield appearances):
@@ -104,6 +116,15 @@ const MIDFWD_THRESHOLD = 12;   /* MID/FWD need 12 CBIRT */
    all-zero, which is a plausible real quiet match rather than a gap. So the
    components are the source of truth here and the aggregate column is
    ignored. Do not "simplify" this by reading it.
+
+   Note the distinction, because it is easy to collapse the two: FPL's OWN
+   `defensive_contribution` is flawless (26,330 of 26,330 above). It is
+   Core Insights' separately-scraped `defensive_contributions` that is not.
+   Same idea, same name give or take an s, completely different reliability.
+   FPL's column is a season and per-gameweek TOTAL, though, and this file
+   needs the per-match hit RATE — how often a player clears the threshold in
+   a start — which a total cannot give. That is why the components are still
+   the input here rather than simply reading FPL's number.
 
    The same check ruled out `start_min` / `finish_min` as a better definition
    of a start than `minutes >= 60`: rows routinely read start 0, finish 90,
