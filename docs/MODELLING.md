@@ -276,6 +276,66 @@ P5 loop, not fitted to this simulation.
 
 ## Recorded validations
 
+### DECAY_BASE — fitted, and found inert at the horizon we ship
+
+`solvePlanMulti` discounts future gameweeks by `DECAY_BASE^n`. The value
+(0.9) was taken from the public open-fpl-solver's `decay_base`, so it was a
+borrowed default rather than a measured one. `dev/fit-decay.mjs` measures it.
+
+**Method.** A rolling-horizon simulation over four real seasons (2021-22 to
+2024-25, vaastav): start from a random legal squad, and at each gameweek
+build projections from data strictly before that deadline, run the app's own
+`solvePlanMulti`, apply only that week's action (transfers, bank, free
+transfers, hits), pick the XI by projection and score it on **actual**
+points with auto-subs. Every decay value sees the same seasons, the same
+starting squads and the same projections, so the comparison is **paired** —
+which removes most of the variance that would otherwise swamp a season-level
+signal. vaastav's own `xP` column is never read: its README warns it is
+filled in post-match.
+
+**Result — points per season vs no discounting (2 standard errors):**
+
+| horizon | runs | 0.6 | 0.8 | 0.9 | 0.95 |
+|---|---|---|---|---|---|
+| **3 (shipped)** | 96 | −9.8 ± 17.2 | −7.6 ± 14.6 | **−4.4 ± 13.6** | −8.3 ± 12.2 |
+| 4 | 48 | +3.5 ± 21.6 | +1.2 ± 25.7 | **+12.8 ± 20.4** | −0.6 ± 17.8 |
+| 8 | 48 | **+43.1 ± 29.6** | +40.0 ± 24.5 | +25.3 ± 25.8 | +18.7 ± 21.6 |
+
+**At the three-gameweek horizon the app actually runs, the discount does
+nothing measurable.** Every value sits within noise of 1.0 (no discount),
+with a slightly negative point estimate. It is not possible to distinguish
+0.9 from switching the mechanism off.
+
+**Discounting only earns its keep over long horizons.** At horizon 8 every
+discount beats none by 19–43 points a season and most are individually
+significant — which is precisely the regime open-fpl-solver operates in
+(`horizon: 8`), and explains why the parameter exists there.
+
+**A longer horizon is not the answer either.** Undiscounted horizon 8 scores
+~2005 points against ~2044 at horizon 3; even at its best decay it only
+reaches ~2048. Planning further ahead on projections this uncertain loses
+more than the discount recovers.
+
+**Why 0.9 stays.** It costs nothing measurable, it is directionally correct
+(a distant projection genuinely is less certain), and it is the value that
+becomes materially right if the horizon is ever extended. There is also a
+bias worth stating: the harness projects with a simpler model than the app
+ships, and a *worse* forecast warrants *more* discounting. So this experiment
+is tilted toward finding decay useful — and still found no benefit at
+horizon 3. That argues against lowering the value, not for it.
+
+**What it does change.** Decay reduces speculative hits (49 → 44 points of
+hits a season at horizon 3) but the transfers it suppresses were worth about
+what they cost, so the totals net out.
+
+**Limitations.** The harness uses a proxy projection (rolling shrunk points
+per 90 plus an opponent-strength term) rather than the app's full expected
+points model, which cannot be reconstructed point-in-time from this dataset;
+it enforces the three-per-club rule outside the solver rather than inside it;
+and it models neither chips nor price changes. It grades the *sequencing*
+decision, not the projection.
+
+
 ### 2026/27 pre-season — match model vs the betting market (GW1)
 
 Before GW1 the match model has no finished fixtures to fit, so its team

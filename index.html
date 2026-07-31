@@ -8265,10 +8265,27 @@ function solverCard(){
 const BENCH_W={gk:0.03,out:[0.21,0.06,0.002]};   /* sub GK, then subs 1-3 */
 const FT_LADDER=[0,2.0,1.6,1.3,1.1];             /* marginal points for the 2nd..5th banked transfer */
 /* Per-gameweek discount on future expected points inside the plan solver.
-   A point in n gameweeks is worth DECAY_BASE^n of a point this week. 0.9 is
-   the open-fpl-solver default (`decay_base`), and that project's free-
-   transfer values match FT_LADDER above exactly, so the two constants come
-   from a consistent place rather than being separately guessed. */
+   A point in n gameweeks is worth DECAY_BASE^n of a point this week.
+
+   MEASURED, not borrowed — dev/fit-decay.mjs, four real seasons, paired
+   across decay values (see docs/MODELLING.md). The honest result:
+
+     - at the THREE-gameweek horizon this solver actually runs, the discount
+       does nothing measurable. 0.9 scores -4.4 +/- 13.6 points a season
+       against no discount at all, over 96 paired runs. Every other value
+       tested is likewise inside the noise;
+     - it only earns its keep over LONG horizons: at horizon 8 every discount
+       beats none by 19-43 points a season. That is the regime the
+       open-fpl-solver default of 0.9 comes from (`horizon: 8`);
+     - and lengthening our horizon is not the fix — undiscounted horizon 8
+       scores well below horizon 3 on the same seasons.
+
+   It stays at 0.9 because it costs nothing, it is directionally right, and
+   it is what makes a longer horizon safe if one is ever adopted. Note the
+   bias in that conclusion's favour: the harness projects more crudely than
+   the app does, and a worse forecast warrants MORE discounting — so the test
+   was tilted toward finding decay useful and still did not. That argues
+   against lowering this, not for it. */
 const DECAY_BASE=0.9;
 /* Points value of holding `n` free transfers, relative to holding one. */
 function ftValue(n){
