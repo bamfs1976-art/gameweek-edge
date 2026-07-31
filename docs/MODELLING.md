@@ -274,6 +274,63 @@ P5 loop, not fitted to this simulation.
   global recentre) should be tuned on real returns via the **P5 calibration
   loop**, not to the synthetic DGP.
 
+## Data sources considered and rejected
+
+Reviewed rather than adopted, recorded so the same ground is not covered
+twice. The pattern that decides it: prefer the provider whose data actually
+determines FPL scoring, over a second opinion that cannot be adjudicated.
+
+**Understat** (understat.com, and the `amosbastian/understat` wrapper).
+Two metrics genuinely absent from our stack: `xGChain` and `xGBuildup`.
+Neither is adopted.
+
+- `xGBuildup` excludes shots and key passes **by construction** — which is to
+  say it excludes precisely the two things FPL awards points for. It measures
+  involvement in possessions, and a midfielder in a dominant side accumulates
+  it without any of it converting to a return.
+- `xGChain` does include shots and key passes, and is therefore largely
+  redundant with the xG and xA we already carry.
+- Understat's xG is **its own model**. FPL's `expected_goals` is Opta's — the
+  same provider behind the data FPL scores on. Running a second, disagreeing
+  xG model gives two numbers and no way to adjudicate between them.
+- Practically it is also not available: understat.com returns **HTTP 403** to
+  automated requests, publishes no API, and grants no terms for programmatic
+  reuse. Contrast FPL-Core-Insights, which publishes CSVs to a public repo for
+  exactly this purpose and refreshes twice daily.
+
+Shot-level situation splits (set-piece vs open-play xG) are the one part with
+a plausible FPL use. We already have set-piece **order** from the bootstrap,
+which answers the forward-looking question — who has the duty now — rather
+than the backward-looking one.
+
+**`amosbastian/fpl`** — a Python wrapper for the official API, used here as a
+coverage checklist. Diffing its 24 endpoints against ours found no material
+gap. Three are not called, each correctly:
+
+| endpoint | why not |
+|---|---|
+| `entry/{id}/cup` | FPL Cup standings; a mid-season knockout, no modelling value |
+| `entry/{id}/transfers-latest` | convenience subset of `entry/{id}/transfers`, which we do call |
+| `game-settings` | unnecessary — `fplRules()` reads `game_settings` out of bootstrap-static |
+
+`my-team`, `me` and `watchlist` all require an authenticated FPL login, which
+this app deliberately does not take. That is the same constraint behind the
+transfer solver's selling-price caveat.
+
+**`fplbot/fplbot`** — Slack and Discord chatbot (deadline notifications,
+league captain picks, match events). Plumbing, no modelling.
+
+**`antoniaelek/fantasy-premier-league`** — descriptive visualisations over the
+vaastav dataset. No model, no validation, no reported accuracy.
+
+**`Torvaney/fpl-optimiser`** — LP squad picker maximising the total points of
+all fifteen, which pays full price for bench points that rarely score. Our
+`squadOptimise` maximises the best XI with the bench discounted via `BENCH_W`
+and is verified against exhaustive enumeration.
+
+**`wiscostret/fplscrapR`** — R convenience wrappers over the same public JSON
+API we already call directly.
+
 ## Recorded validations
 
 ### DECAY_BASE — fitted, and found inert at the horizon we ship
