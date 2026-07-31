@@ -90,6 +90,24 @@ const congestion = await congestionByTeam();
    applied AFTER the squad is ordered by relevance, never to raw feed order. */
 const SQUAD_MAX = 40;
 
+/* FPL publishes the date a player joined his current club. Where it is
+   present a summer signing is identifiable, and the angles that rest on last
+   season's rates can say so; where it is absent nothing downstream may claim
+   to know, and the thread says that instead of quietly guessing. */
+const JOIN_DATA = idx.elements.some((e) => e.team_join_date);
+/* Anchor the window on the season we are actually in rather than on today's
+   clock, so a thread generated at any point in the season asks the same
+   question: did this player arrive in the summer that opened it? */
+const firstEvent = (idx.events || []).find((e) => e.deadline_time);
+const WINDOW_OPEN = firstEvent
+  ? Date.UTC(new Date(firstEvent.deadline_time).getUTCFullYear(), 5, 1)   /* 1 June */
+  : null;
+function joinedThisSummer(e) {
+  if (!JOIN_DATA || !e.team_join_date || WINDOW_OPEN == null) return false;
+  const t = Date.parse(e.team_join_date);
+  return Number.isFinite(t) && t >= WINDOW_OPEN;
+}
+
 const oopMarks = E.oopBenchmarks(idx.elements);
 
 /* Does the league have ANY defensive-contribution data? Measured rather than
@@ -177,6 +195,7 @@ function clubData(teamId) {
       teamShare: squadGoals >= TALISMAN_MIN_GOALS
         ? ((e.goals_scored || 0) + (e.assists || 0)) / squadGoals : null,
       oop: E.oopFlag(e, oopMarks),
+      newClub: joinedThisSummer(e),
       defconRate: defconRate(e),
       setPieces: setPieceNote(e),
       avgDifficulty, congestion: congestion[teamId] || 0
@@ -209,6 +228,7 @@ function clubData(teamId) {
     played,
     avgDifficulty, congestion: congestion[teamId] || 0,
     defconData: DEFCON_DATA,
+    joinData: JOIN_DATA,
     europe: (congestion[teamId] || 0) > 0.15 ? 'Midweek European' : null,
     fixtures: run.map((r) => ({ gw: r.event, opp: teamName(r.opp), home: r.home,
       difficulty: +r.difficulty.toFixed(1) })),

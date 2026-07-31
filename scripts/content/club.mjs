@@ -190,16 +190,35 @@ export const TALISMAN_SHARE = 0.30;
    squad makes everyone who scored a talisman. */
 export const TALISMAN_MIN_GOALS = 20;
 
+/* Pre-season, last season's totals arrive attached to whichever club a
+   player is at NOW, so a summer signing brings another club's numbers with
+   him. Every angle that rests on a RATE — how often he banked defensive
+   points, whether he attacked from a defender's shirt — then describes a
+   role at a club he has left, and printing it unqualified states it as a
+   present-tense property.
+
+   This is live and contested rather than theoretical: on Elliot Anderson's
+   move to City one analyst reads his defensive contribution as "hard to
+   replicate", another as "a completely different asset at City". We cannot
+   settle that, and we should not sound as though we have. */
+export const MOVED_NOTE = ' — but that was at his previous club, so it is a ' +
+  'role that has to survive the move';
+
 export function angles(p) {
   const out = [];
+  const moved = !!p.newClub;
   if (p.oop && p.oop.level > 0) {
-    out.push({ tag: 'out of position', note: p.oop.label ||
-      'attacking returns on a defender\'s tariff' });
+    out.push({ tag: 'out of position', note: (p.oop.label ||
+      'attacking returns on a defender\'s tariff') + (moved ? MOVED_NOTE : '') });
   }
   if (p.defconRate != null && p.defconRate >= 0.45) {
     out.push({ tag: 'defensive floor', note: 'banks defensive-contribution points ' +
-      'in roughly ' + Math.round(p.defconRate * 100) + '% of starts, clean sheet or not' });
+      'in roughly ' + Math.round(p.defconRate * 100) + '% of starts, clean sheet or not' +
+      (moved ? MOVED_NOTE : '') });
   }
+  /* Set-piece duty is the exception and deliberately carries no caveat: the
+     order fields are set by the club a player is at now, so for a new
+     signing it is the one angle here that is actually current. */
   if (p.setPieces) out.push({ tag: 'set pieces', note: p.setPieces });
   /* THE TALISMAN. Share of the club's goals a player was directly involved
      in — the thing the rate-based axes cannot see, because a good rate at a
@@ -207,7 +226,12 @@ export function angles(p) {
      that only scores through one man. It cuts both ways and the note says
      so: he is the route into the attack, and he is also the single point of
      failure when he blanks or sits out. */
-  if (p.teamShare != null && p.teamShare >= TALISMAN_SHARE) {
+  /* For a signing this one is not merely uncertain, it is arithmetic on two
+     different clubs: his goals sit in both the numerator and the squad total
+     he is measured against, having been scored for somebody else. A caveat
+     cannot rescue a number that was never about this squad, so it is dropped
+     rather than hedged. */
+  if (!moved && p.teamShare != null && p.teamShare >= TALISMAN_SHARE) {
     out.push({ tag: 'talisman', note: 'involved in ' + Math.round(p.teamShare * 100) +
       '% of the goals this squad scored — the way into the attack, and the ' +
       'thing that breaks when he does not play' });
@@ -378,7 +402,7 @@ export function clubVerdict(graded) {
 export function buildThread(club) {
   const { name, fullName, players = [], scored, conceded, avgDifficulty,
     fixtures = [], congestion = 0, europe = null, manager = null, played = null,
-    defconData = true } = club;
+    defconData = true, joinData = true } = club;
   /* A baseline needs football behind it. Absent one, say so — a zeroed
      tally reads as a fact rather than as an absence. */
   const hasBaseline = scored != null && conceded != null && (played == null || played > 0);
@@ -412,7 +436,15 @@ export function buildThread(club) {
       defconData ? null
         : 'Defensive contribution is not in the data yet, so a defender\u2019s ' +
           'floor is read from clean sheets alone here — the DEFCON case for a ' +
-          'centre-back cannot be checked until FPL publishes it.'
+          'centre-back cannot be checked until FPL publishes it.',
+      /* The same discipline for signings. Where join dates are published, a
+         new arrival's rate-based angles are marked individually and this line
+         never appears; where they are not, any rate in the thread might be a
+         different club's, and the reader is owed that once, up front. */
+      joinData ? null
+        : 'Last season’s rates arrive attached to a player’s current club, and this ' +
+          'feed does not say when anyone signed — so where a summer move has happened, ' +
+          'a rate below describes a role at the club he left.'
     ].filter(Boolean) });
 
   posts.push({ kind: 'baseline', title: 'Baseline',

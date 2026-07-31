@@ -926,5 +926,55 @@ console.log('• club threads: the squad cap must not decide who gets graded');
   ok(!/Crocked/.test(hurtTake), 'an injured player is never one of the three');
 }
 
+console.log('• club threads: a summer signing’s rates belong to his old club');
+{
+  const base = { web_name: 'New', element_type: 2, now_cost: 55, minutes: 2700,
+    starts: 30, goals: 2, assists: 3, teamGames: 30, avgDifficulty: 2.5 };
+  const stayed = (o) => angles({ ...base, ...o });
+  const moved = (o) => angles({ ...base, ...o, newClub: true });
+
+  /* A rate is a statement about a role, and a role does not move with the
+     player. Two analysts read Elliot Anderson's defensive contribution at
+     City in opposite directions; the thread must not sound settled. */
+  const dcStay = stayed({ defconRate: 0.7 }).find((a) => a.tag === 'defensive floor');
+  const dcMove = moved({ defconRate: 0.7 }).find((a) => a.tag === 'defensive floor');
+  ok(dcStay && dcMove, 'the defensive floor is still reported after a move');
+  ok(!/previous club/.test(dcStay.note), 'a player who stayed gets no caveat');
+  ok(/previous club/.test(dcMove.note), 'a signing’s defensive floor is marked (' + dcMove.note + ')');
+  ok(dcMove.note.startsWith(dcStay.note), 'and the number itself is unchanged');
+
+  const oopMove = moved({ oop: { level: 2, label: 'attacked like a winger last season' } })
+    .find((a) => a.tag === 'out of position');
+  ok(/previous club/.test(oopMove.note), 'so is an out-of-position read');
+
+  /* Set-piece order is set by the club he is at NOW, so caveating it would
+     be wrong in the other direction — hedging the one angle that is current. */
+  const spMove = moved({ setPieces: 'penalties — 82% confidence on the duty' })
+    .find((a) => a.tag === 'set pieces');
+  ok(spMove && !/previous club/.test(spMove.note),
+    'set-piece duty is current and carries no caveat');
+
+  /* The talisman share divides his goals by a squad total he was not part
+     of. That is not uncertainty, it is arithmetic across two clubs. */
+  ok(stayed({ teamShare: 0.5 }).some((a) => a.tag === 'talisman'),
+    'a talisman who stayed is still named');
+  ok(!moved({ teamShare: 0.5 }).some((a) => a.tag === 'talisman'),
+    'but a signing gets no talisman share, because it mixes two squads');
+
+  /* And when the feed cannot say who signed, the thread says so once rather
+     than marking nobody and sounding certain about everybody. */
+  const club = { name: 'Z', fullName: 'Ztown', played: 0, avgDifficulty: 2.4,
+    fixtures: [], players: [{ ...base, xp: 5 }] };
+  const blind = buildThread({ ...club, joinData: false });
+  const known = buildThread({ ...club, joinData: true });
+  const hookOf = (t) => t.posts.find((x) => x.kind === 'hook').lines.join(' ');
+  ok(/does not say when anyone signed/.test(hookOf(blind)),
+    'the caveat appears when join dates are missing');
+  ok(!/does not say when anyone signed/.test(hookOf(known)),
+    'and not when they are available');
+  ok(!/does not say when anyone signed/.test(hookOf(buildThread(club))),
+    'the default assumes the data is there rather than caveating every thread');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);
