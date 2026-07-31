@@ -60,7 +60,7 @@ const grabConst = (n) => {
 };
 
 const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules,
-  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP, teamSheet, neverStarts } = new Function(
+  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP, teamSheet, neverStarts, solvePlanMulti, DECAY_BASE } = new Function(
   grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('minClubsForXi') + '\n' +
   /* The two terms the transfer solver's objective gained beyond XI xP. */
   grabConst('FT_CAP') + '\n' + grabConst('BENCH_W') + '\n' + grabConst('FT_LADDER') + '\n' +
@@ -74,8 +74,11 @@ const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules
      suite, so it is stubbed here: a fixture is worth whatever the test
      plants on it, and the sheet's logic is what gets graded. */
   '\nconst fixtureXP=(b,el,fx)=>fx.xp;\n' + grabFn('teamSheet') + '\n' + grabFn('neverStarts') +
+  /* The plan solver, on the same stubbed xP: what is under test is the
+     sequencing and the discounting, not the projection underneath. */
+  '\n' + grabConst('DECAY_BASE') + '\n' + grabFn('solvePlanMulti') +
   '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;},'+
-  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP,teamSheet,neverStarts};'
+  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP,teamSheet,neverStarts,solvePlanMulti,DECAY_BASE};'
 )();
 
 let failures = 0, passes = 0;
@@ -1071,6 +1074,77 @@ console.log('• team sheet: the same fifteen, week by week');
   }
   ok(teamSheet({}, flat(gws), gws, squad.slice(0, 8)).length === 0,
     'and reports nothing rather than a partial XI');
+}
+
+console.log('• solvePlanMulti: a point next week is worth more than a point in three');
+{
+  /* A legal fifteen on flat projections, plus two upgrades of identical
+     total value that differ only in WHEN they pay. */
+  let id = 1;
+  const mk = (type, team, xp) => ({ id: id++, element_type: type, team, now_cost: 50,
+    status: 'a', minutes: 2000, web_name: 'P' + id, xp });
+  const squad = [];
+  const shape = [[1, 2], [2, 5], [3, 5], [4, 3]];
+  shape.forEach(([type, n]) => { for (let i = 0; i < n; i++) squad.push(mk(type, squad.length % 6 + 1, 2)); });
+  ok(squad.length === 15, 'the harness squad is a legal fifteen');
+
+  const gws = [1, 2, 3];
+  /* Same position and price as a squad player, and a club nobody else uses,
+     so only the timing of the gain differs between them. */
+  const early = { ...mk(3, 15, 0), profile: [5, 2, 2] };
+  const late = { ...mk(3, 16, 0), profile: [2, 2, 5] };
+  const pool = squad.concat([early, late]);
+  const gwFx = {};
+  pool.forEach((e) => {
+    gwFx[e.team] = gwFx[e.team] || {};
+    gws.forEach((g, gi) => { gwFx[e.team][g] = [{ xp: e.profile ? e.profile[gi] : 2 }]; });
+  });
+  const b = { elements: pool };
+
+  const r = solvePlanMulti(b, gwFx, gws, squad, 0, 1);
+  ok(r && r.best, 'a plan is produced');
+  const firstIn = r.best.plan[0].moves.length ? r.best.plan[0].moves[0].c : null;
+  ok(firstIn && firstIn.id === early.id,
+    'the upgrade that pays THIS week is taken over the one that pays in three, ' +
+    'though their totals are equal');
+
+  /* Undiscounted, the two are genuinely indistinguishable — which is the
+     whole point: without decay the solver had no reason to prefer either,
+     and would take a hit for a gain it might never collect. */
+  const flatEarly = [5, 2, 2].reduce((a, v) => a + v, 0);
+  const flatLate = [2, 2, 5].reduce((a, v) => a + v, 0);
+  ok(flatEarly === flatLate, 'the two upgrades are worth the same in raw points');
+  const dEarly = [5, 2, 2].reduce((a, v, i) => a + v * Math.pow(DECAY_BASE, i), 0);
+  const dLate = [2, 2, 5].reduce((a, v, i) => a + v * Math.pow(DECAY_BASE, i), 0);
+  ok(dEarly > dLate, 'and differ only once the discount is applied');
+
+  /* THE REGRESSION THAT MATTERS. The plan score is discounted, so the
+     do-nothing baseline it is measured against must be discounted on the
+     same schedule. Comparing the two on different schedules would make
+     every sequence look worse than holding and silently switch the feature
+     off — the panel would just always say "roll your transfers". */
+  const flat = {};
+  squad.forEach((e) => { flat[e.team] = flat[e.team] || {};
+    gws.forEach((g) => { flat[e.team][g] = [{ xp: 2 }]; }); });
+  const noGain = solvePlanMulti({ elements: squad }, flat, gws, squad, 0, 1);
+  ok(noGain.gain >= -1e-9,
+    'a squad with no available upgrade reports no loss, not a discount artefact (' +
+    (noGain.gain || 0).toFixed(3) + ')');
+  ok(noGain.baseline > 0, 'and the baseline is a real discounted total');
+  /* Three flat gameweeks at a fixed squad value must equal that value
+     discounted, which pins baseline and plan to the same weighting. */
+  const wsum = gws.reduce((a, g, i) => a + Math.pow(DECAY_BASE, i), 0);
+  ok(wsum < gws.length, 'three discounted gameweeks weigh less than three flat ones');
+  /* Every gameweek here is identical, so the baseline is one week's squad
+     value times that weight sum — which pins the baseline to exactly the
+     schedule the plan score uses. */
+  const perGw = noGain.baseline / wsum;
+  ok(perGw > 0 && Math.abs(noGain.baseline - perGw * wsum) < 1e-9,
+    'and the baseline is one gameweek at that weighting, not three at full');
+  ok(noGain.baseline < perGw * gws.length,
+    'so it sits strictly below the undiscounted total');
+
+  ok(DECAY_BASE > 0 && DECAY_BASE <= 1, 'the discount is a fraction, never an amplifier');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

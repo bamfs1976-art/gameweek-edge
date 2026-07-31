@@ -8264,6 +8264,12 @@ function solverCard(){
    would count the same option three times. */
 const BENCH_W={gk:0.03,out:[0.21,0.06,0.002]};   /* sub GK, then subs 1-3 */
 const FT_LADDER=[0,2.0,1.6,1.3,1.1];             /* marginal points for the 2nd..5th banked transfer */
+/* Per-gameweek discount on future expected points inside the plan solver.
+   A point in n gameweeks is worth DECAY_BASE^n of a point this week. 0.9 is
+   the open-fpl-solver default (`decay_base`), and that project's free-
+   transfer values match FT_LADDER above exactly, so the two constants come
+   from a consistent place rather than being separately guessed. */
+const DECAY_BASE=0.9;
 /* Points value of holding `n` free transfers, relative to holding one. */
 function ftValue(n){
   let v=0;
@@ -8415,8 +8421,23 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
     t*=(ch/100);memo.set(k,t);return t;
   };
   const restMemo=new Map();
+  /* Points further out are worth less TODAY, and the solver has to say so or
+     it will take a hit now to chase a gain landing in three weeks' time as
+     though the two were interchangeable. Two independent reasons, neither of
+     which is pessimism about the model:
+
+       - a GW+3 projection is a forecast of a forecast: lineups, fitness and
+         form all move between now and then, so its error bars are wider;
+       - you keep the OPTION to make the same transfer later, with a free
+         transfer, having seen two more gameweeks of evidence. A move whose
+         entire payoff is distant is a move you do not have to make yet.
+
+     DECAY_BASE matches the value used by the public open-fpl-solver, which
+     is the closest thing this problem has to a reference implementation —
+     the same place our FT_LADDER numbers agree with independently. */
   const restXP=(e,gi)=>{const k=e.id+':'+gi;if(restMemo.has(k))return restMemo.get(k);
-    let t=0;for(let i=gi;i<gws.length;i++)t+=perGw(e,gws[i]);restMemo.set(k,t);return t;};
+    let t=0;for(let i=gi;i<gws.length;i++)t+=perGw(e,gws[i])*Math.pow(DECAY_BASE,i-gi);
+    restMemo.set(k,t);return t;};
   const xiXP=(sq,g)=>{const best=bestXI(sq.map(e=>({el:e,p:perGw(e,g)})));return best?best.total:0;};
   /* XI plus the discounted bench — what the whole squad is worth this week. */
   const squadXP=(sq,g)=>{
@@ -8452,11 +8473,18 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   gws.forEach((g,gi)=>{
     const next=[];
     beam.forEach(st=>{
+      const w=Math.pow(DECAY_BASE,gi);          /* this gameweek's weight, seen from today */
       const add=(sq2,bank2,t,moves)=>{
         const hit=Math.max(0,t-st.ft)*4;
         next.push({squad:sq2,bank:bank2,
           ft:Math.min(FT_CAP,Math.max(0,st.ft-t)+1),   /* free-transfer accrual, capped */
-          hits:st.hits+hit,score:st.score+squadXP(sq2,g)-hit,
+          /* Points and the hit that buys them are discounted TOGETHER: a −4
+             taken in GW+2 is paid in GW+2, so weighting the cost as though
+             it were due today would make distant hits look artificially
+             expensive and simply invert the bias being corrected. `hits`
+             stays undiscounted because it is reported to the reader in real
+             points, not used for ranking. */
+          hits:st.hits+hit,score:st.score+(squadXP(sq2,g)-hit)*w,
           plan:st.plan.concat([{gw:g,moves,hit}])});
       };
       add(st.squad,st.bank,0,[]);                 /* roll */
@@ -8477,7 +8505,11 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
       beam.push(st);if(beam.length>=BEAM)break;
     }
   });
-  let baseline=0;gws.forEach(g=>baseline+=squadXP(squad,g));
+  /* The do-nothing baseline is discounted on the SAME schedule as the plans
+     it is subtracted from. Comparing a discounted plan against an
+     undiscounted baseline would make every sequence look worse than holding
+     and quietly switch the feature off. */
+  let baseline=0;gws.forEach((g,gi)=>{baseline+=squadXP(squad,g)*Math.pow(DECAY_BASE,gi);});
   /* The banked-transfer bonus is a TERMINAL value: score each finished
      state on the free transfers it ends with, relative to where it started,
      then re-rank. Applying it per week would count the same option once for
@@ -8513,11 +8545,14 @@ function renderSolver3(){
   }).join('');
   box.innerHTML=
     '<div class="statgrid mb-14">'+
-      '<div class="stat"><div class="stat-l">Net xP gain</div><div class="stat-v" style="color:var(--green)">+'+r.gain.toFixed(1)+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Net xP gain <span class="dl-sub">(today\u2019s value)</span></div><div class="stat-v" style="color:var(--green)">+'+r.gain.toFixed(1)+'</div></div>'+
       '<div class="stat"><div class="stat-l">Hits taken</div><div class="stat-v">'+(r.best.hits?'−'+r.best.hits:'none')+'</div></div>'+
     '</div>'+rows+
     '<div class="dl-sub" style="margin-top:10px">Beam search (width 8) over transfer sequences for GW'+gws[0]+'–'+gws[gws.length-1]+
     ': per-gameweek best-XI xP (doubles and blanks included), free-transfer accrual and −4 hits. '+
+    'Future gameweeks are discounted at <b>'+DECAY_BASE+'</b> per week, so a point three weeks out counts as '+
+    Math.pow(DECAY_BASE,3).toFixed(2)+' of a point now — partly because a distant projection is less certain, '+
+    'and partly because a move whose payoff is all in the future is one you can still make later, with more information. '+
     '<b>Caveat:</b> selling prices are approximated as current price — your exact selling price needs an FPL login, which the public API doesn’t allow — so budgets can be slightly optimistic on players who rose in price.</div>';
 }
 function solver3Card(){
