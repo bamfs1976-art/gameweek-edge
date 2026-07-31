@@ -41,3 +41,12 @@ jobs:
 
       - name: Shell integrity guard
         run: node scripts/check-shell.mjs
+
+      # Catches the class of bug that broke Daily Content for four days: a
+      # script importing a package that is installed locally but declared
+      # nowhere, so it works on the machine it was written on and dies under
+      # `npm ci`. Deliberately placed in CI rather than only in npm test —
+      # CI installs nothing, so it is the one place a missing declaration
+      # cannot be masked by a node_modules that happens to have it.
+      - name: Declared-dependency guard
+        run: node scripts/check-deps.mjs
