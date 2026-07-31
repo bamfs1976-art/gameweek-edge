@@ -6459,13 +6459,75 @@ function fdrRunTotal(view,cells){
 
 /* Fixture Difficulty 2.0 body: recolour each cell by the chosen lens —
    overall win odds, attack (team xG) or defence (clean-sheet odds). */
+/* A run only counts as a purple patch below this mean grade. Named because
+   the entry-point summary has to apply the identical test — a club listed as
+   an entry point but not underlined in the grid above it would be the panel
+   contradicting itself. */
+const FDR_PATCH_MAX=2.8;
+function fdrGrade(view,c){
+  return view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
+    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
+}
+/* The club's best K-gameweek run under this lens, or null when its best is
+   not actually kind. One implementation, two readers. */
+function fdrPatchFor(view,teamId,gws,byTeamGw,K){
+  const grades=gws.map(g=>{const c=(byTeamGw[teamId]||{})[g];return c?fdrGrade(view,c):6;});
+  const run=bestFixtureRun(grades,K);
+  return (run&&run.sum/run.K<=FDR_PATCH_MAX)?run:null;
+}
+
+/* ENTRY POINTS — the same grid read DOWN the columns instead of across the
+   rows. The grid answers "when is this club kind?", one row per club; a
+   transfer is planned against a deadline, so the question you actually have
+   is "at this gameweek, whose run turns?". The panel was already computing
+   every answer and drawing it as an underline, and never once said it.
+
+   A gameweek with nothing is reported as nothing rather than padded with the
+   least-bad club — the same floor the daily card publishes silence on. */
+function fdrEntryHtml(view){
+  const S=window._fdr;if(!S)return '';const {b,gws,byTeamGw}=S;
+  const teams=(S.hidden&&S.hidden.size)?S.teams.filter(t=>!S.hidden.has(t.id)):S.teams;
+  const K=Math.min(5,gws.length);
+  const byGw={};
+  teams.forEach(t=>{
+    const patch=fdrPatchFor(view,t.id,gws,byTeamGw,K);
+    if(!patch)return;
+    const gw=gws[patch.start];
+    (byGw[gw]=byGw[gw]||[]).push({t,mean:patch.sum/patch.K,to:gws[patch.end]});
+  });
+  /* Only the gameweeks a K-game run can still FIT in are listed. The last
+     K-1 weeks of any window cannot host the start of one, so reporting them
+     as "nothing turns here" would claim an absence of opportunity where the
+     truth is an absence of horizon — a run starting in the final week of a
+     ten-week view is not missing, it is off the end of the table. */
+  const canStart=gws.slice(0,Math.max(1,gws.length-K+1));
+  const rows=canStart.map(g=>{
+    const list=(byGw[g]||[]).sort((a,c)=>a.mean-c.mean);
+    if(!list.length)return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm" style="color:var(--text-3)">GW'+g+'</span>'+
+      '<span class="dl-sub">nothing turns here — roll the transfer</span></span></div>';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">GW'+g+'</span>'+
+      '<span class="dl-sub">'+list.map(x=>crest(b,x.t.id,13)+esc(x.t.short_name)+
+        ' <span style="color:var(--text-3)">to GW'+x.to+'</span>').join(' · ')+'</span></span>'+
+      '<span class="dl-col mono">'+list.length+'</span></div>';
+  }).join('');
+  const total=Object.keys(byGw).reduce((n,g)=>n+byGw[g].length,0);
+  return '<div class="card mb-20"><div class="card-title">Entry points — when each run starts</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">The grid above, read down instead of across: the gameweek each club’s '+
+    K+'-game purple patch <b>begins</b>, which is the deadline you would buy into it. '+
+    (total?'<b>'+total+'</b> runs start inside this window.':'No club has a genuinely kind run in this window.')+
+    ' Listed to GW'+canStart[canStart.length-1]+' only — a '+K+'-game run cannot start later than that '+
+    'and still finish inside the window, so the weeks after it are off the end of the table rather than empty. '+
+    'Follows the lens and the team filter.</p>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Gameweek · clubs whose run starts</span><span class="dl-col">#</span></div>'+
+    rows+'</div></div>';
+}
+
 function fdrBodyHtml(view){
   const S=window._fdr;if(!S)return '';const {b,gws,byTeamGw}=S;
   /* Team filter: hide clubs the user has toggled off (empty set = all shown). */
   const teams=(S.hidden&&S.hidden.size)?S.teams.filter(t=>!S.hidden.has(t.id)):S.teams;
   if(!teams.length)return '<tr><td class="blank" colspan="99" style="text-align:center;padding:16px">No teams selected — tap <b>All</b> to bring them back.</td></tr>';
-  const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
-    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
+  const grade=c=>fdrGrade(view,c);
   /* Rank teams by their total fixture difficulty for the chosen lens — the
      easiest run first, so the best opening-fixture teams sit at the top
      (matches how the community reads an FDR grid). A purple underline marks
@@ -6474,9 +6536,7 @@ function fdrBodyHtml(view){
   const K=Math.min(5,gws.length);
   const rows=teams.map(t=>{
     let lam=0,cs=0,n=0,tot=0;
-    const grades=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?grade(c):6;});
-    const run=bestFixtureRun(grades,K);
-    const patch=(run&&run.sum/run.K<=2.8)?run:null;
+    const patch=fdrPatchFor(view,t.id,gws,byTeamGw,K);
     const rowCells=gws.map(g=>(byTeamGw[t.id]||{})[g]||null);
     const cells=gws.map((g,gi)=>{const c=rowCells[gi];
       if(!c)return '<td class="blank">—</td>';
@@ -6499,6 +6559,9 @@ function fdrBodyHtml(view){
 }
 function renderFdr(view){
   const tb=document.getElementById('fdr-tbody');if(tb)tb.innerHTML=fdrBodyHtml(view);
+  /* The summary is the same data, so it must never lag the grid — it is
+     re-rendered on every lens change and every team toggle, not once. */
+  const ent=document.getElementById('fdr-entry');if(ent)ent.innerHTML=fdrEntryHtml(view);
   document.querySelectorAll('#fdr-view .seg-b').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view));
   const note=document.getElementById('fdr-note');
   if(note)note.innerHTML=view==='attack'
@@ -6765,6 +6828,7 @@ async function hydrateFixtures(host){
         'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
+      '<div id="fdr-entry">'+fdrEntryHtml(curView)+'</div>'+
       planCard+swCard+chainCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});

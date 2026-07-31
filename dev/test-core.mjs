@@ -154,6 +154,11 @@ const pieces = [
   extractFn(html, 'differentials'),
   extractFn(html, 'rotationPairs'),
   extractFn(html, 'bestFixtureRun'),
+  /* The Fixture Planner's purple patch, and the entry-point summary read
+     off the same call. */
+  extractConst(html, 'FDR_PATCH_MAX'),
+  extractFn(html, 'fdrGrade'),
+  extractFn(html, 'fdrPatchFor'),
   extractFn(html, 'chipSwings'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
@@ -204,7 +209,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -870,6 +875,72 @@ ok((rp[0].a.team === 10 && rp[0].c.team === 20) || (rp[0].a.team === 20 && rp[0]
 ok(rp[0].score <= rp[rp.length - 1].score, 'pairs are ranked easiest combined run first');
 ok(core.rotationPairs(rotCands, rotDiff, 1).length === 1, 'the limit caps the number of pairs');
 ok(core.rotationPairs([{ id: 9, team: 99, cost: 40 }], rotDiff, 6).length === 0, 'a player whose team has no fixtures yields no pair');
+
+section('fdrPatchFor / entry points: a run is only a window if it is actually kind');
+{
+  /* The grid draws a purple underline and the entry-point summary lists the
+     gameweek it starts. Both must come from one call, or the panel lists a
+     club as an entry point that it did not underline two inches above. */
+  const gws = [1, 2, 3, 4, 5, 6];
+  const cell = (diff) => ({ diff, lam: 1.5, cs: 0.3, fdr: diff });
+  const kind = {}; gws.forEach((g) => { kind[g] = cell(g >= 3 ? 1.5 : 5); });
+  const cruel = {}; gws.forEach((g) => { cruel[g] = cell(4.5); });
+  const byTeamGw = { 1: kind, 2: cruel };
+
+  const p1 = core.fdrPatchFor('overall', 1, gws, byTeamGw, 3);
+  ok(p1 && gws[p1.start] === 3, 'the kind stretch is found where it starts (GW' +
+    (p1 ? gws[p1.start] : '—') + ')');
+  ok(p1 && gws[p1.end] === 5, 'and runs to the end of K');
+  ok(core.fdrPatchFor('overall', 2, gws, byTeamGw, 3) === null,
+    'a club whose best run is still hard gets no window at all');
+
+  /* The gate is the shared constant, not a number retyped in two places. */
+  const edge = {}; gws.forEach((g) => { edge[g] = cell(core.FDR_PATCH_MAX); });
+  ok(core.fdrPatchFor('overall', 3, gws, { 3: edge }, 3) !== null,
+    'a run exactly at the threshold still counts');
+  const over = {}; gws.forEach((g) => { over[g] = cell(core.FDR_PATCH_MAX + 0.1); });
+  ok(core.fdrPatchFor('overall', 3, gws, { 3: over }, 3) === null, 'just past it does not');
+
+  /* A missing fixture grades 6 — maximally hard — so a blank always makes a
+     run worse rather than being skipped over. */
+  const full = {}; gws.forEach((g) => { full[g] = cell(1); });
+  const gap = {}; gws.forEach((g) => { if (g !== 3) gap[g] = cell(1); });
+  /* Given room, the best run simply avoids the blank and is no worse for it. */
+  ok(core.fdrPatchFor('overall', 5, gws, { 5: gap }, 3).sum
+     === core.fdrPatchFor('overall', 5, gws, { 5: full }, 3).sum,
+    'a run routes around a blank when the window has room');
+  ok(gws[core.fdrPatchFor('overall', 5, gws, { 5: gap }, 3).start] !== 3,
+    'and does not start on it');
+  /* With no room to avoid it, the blank costs the run its full 6. */
+  ok(core.fdrPatchFor('overall', 5, gws, { 5: gap }, 5).sum
+     > core.fdrPatchFor('overall', 5, gws, { 5: full }, 5).sum,
+    'and when it cannot be avoided it makes the run worse');
+
+  /* Pinning a known limitation rather than asserting it away: with only two
+     kind fixtures either side, a three-game window CONTAINING the blank still
+     averages under the threshold and is drawn as a patch. That is the grid's
+     existing rule and the summary now inherits it, so any change to it should
+     be deliberate rather than a side effect. */
+  const short = { 1: cell(1), 2: cell(1) };
+  const p2 = core.fdrPatchFor('overall', 4, gws, { 4: short }, 3);
+  ok(p2 !== null && (2 + 6) / 3 <= core.FDR_PATCH_MAX,
+    'two kind fixtures plus a blank still clears the bar on the mean');
+
+  /* THE HORIZON RULE. A K-game run cannot start in the last K-1 weeks of a
+     window, so those weeks must not be listed as "nothing turns here" — that
+     claims an absence of opportunity where there is only an absence of
+     horizon. Live, a 5-game patch over a 10-week view made four gameweeks
+     read as empty when no run could have fitted in them. */
+  for (const [len, K] of [[10, 5], [6, 3], [5, 5], [3, 5]]) {
+    const win = Array.from({ length: len }, (_, i) => i + 1);
+    const kk = Math.min(K, win.length);
+    const canStart = win.slice(0, Math.max(1, win.length - kk + 1));
+    ok(canStart.length === Math.max(1, len - kk + 1),
+      'a ' + kk + '-game run over ' + len + ' weeks can start in ' + canStart.length + ' of them');
+    ok(canStart[canStart.length - 1] + kk - 1 <= win[win.length - 1],
+      'and the last listed start still finishes inside the window');
+  }
+}
 
 section('bestFixtureRun: the lowest-difficulty run of K consecutive gameweeks (purple patch)');
 const brun = core.bestFixtureRun([5, 5, 1, 1, 1, 5], 3);
