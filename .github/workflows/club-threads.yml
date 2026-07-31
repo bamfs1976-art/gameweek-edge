@@ -22,6 +22,10 @@ on:
         description: 'Also print the league defensive-contribution distribution'
         type: boolean
         default: false
+      signings:
+        description: 'Also print the raw team_join_date values, to check signing detection'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -40,7 +44,8 @@ jobs:
       - name: Generate
         run: |
           EXTRA=""
-          if [ "${{ inputs.defcon }}" = "true" ]; then EXTRA="--defcon"; fi
+          if [ "${{ inputs.defcon }}" = "true" ]; then EXTRA="$EXTRA --defcon"; fi
+          if [ "${{ inputs.signings }}" = "true" ]; then EXTRA="$EXTRA --signings"; fi
           if [ -n "${{ inputs.club }}" ]; then
             node scripts/content/club-thread.mjs --club "${{ inputs.club }}" $EXTRA
           else

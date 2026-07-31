@@ -256,6 +256,28 @@ if (!targets.length) {
   process.exit(1);
 }
 
+/* What the join-date field actually contains. Added because the first run
+   with signing detection marked NOBODY at a club the community was openly
+   discussing as rebuilt — and a detector that silently matches nothing looks
+   exactly like a club with no signings. Prints the raw values so the answer
+   comes from the feed rather than from a guess about its shape. */
+if (process.argv.includes('--signings')) {
+  const withDate = idx.elements.filter((e) => e.team_join_date);
+  console.log(`\njoin dates: ${withDate.length} of ${idx.elements.length} elements carry one`);
+  console.log(`window opens: ${WINDOW_OPEN == null ? '—' : new Date(WINDOW_OPEN).toISOString().slice(0, 10)}` +
+    `  (from first deadline ${firstEvent ? firstEvent.deadline_time : '—'})`);
+  const sample = withDate.slice(0, 5).map((e) => `${e.web_name}=${e.team_join_date}`);
+  console.log('sample raw values: ' + (sample.join('  ') || '(none)'));
+  for (const t of targets) {
+    const squad = idx.elements.filter((e) => e.team === t.id && e.status !== 'u');
+    const rows = squad.map((e) => `  ${(e.web_name || '').padEnd(16)} ` +
+      `${String(e.team_join_date || '—').padEnd(24)} ${joinedThisSummer(e) ? 'NEW' : ''}`);
+    console.log(`\n${t.short_name} — ${squad.length} players, ` +
+      `${squad.filter(joinedThisSummer).length} flagged as summer signings`);
+    console.log(rows.join('\n'));
+  }
+}
+
 let wrote = 0;
 for (const t of targets) {
   const thread = buildThread(clubData(t.id));
