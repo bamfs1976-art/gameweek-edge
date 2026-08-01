@@ -35,7 +35,7 @@ const AREA = {
   home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'methodology', 'accountability',
     'design', 'glossary'],
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
-  live: ['liverank', 'bonus', 'dcwatch', 'defcon', 'autosubs'],
+  live: ['liverank'],
   players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
   planner: ['fixtures', 'seasonsim', 'whatif', 'watchlist', 'alerts'],
   rivals: ['leagues', 'rivals', 'eo', 'template'],

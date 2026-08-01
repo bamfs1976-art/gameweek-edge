@@ -3069,14 +3069,11 @@ const NAV = [
   {
     id:'live', label:'Live', icon:'live',
     panels:[
-      {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'free'},
-      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free', needs:['bps']},
-      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid', needs:['defcon']},
-      /* Nothing to do with defensive contributions, despite the id — this is
-         the rank-threat list, and sitting next to "Your DEFCON" under a
-         near-identical name made two unrelated panels look like a pair. */
-      {id:'defcon', label:'Rank Threats', icon:'shield', tier:'paid', needs:['defcon']},
-      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid', needs:['autosubs']}
+      /* Five boards asking one question — what is happening to my team right
+         now — merged into one panel with a view per board (LV_VIEWS). The id
+         stays `liverank` for the deep links and the `g l` chord. Three of the
+         five views are paid, so the tier lives on the VIEW, not here. */
+      {id:'liverank', label:'Live', icon:'pulse', tier:'free'}
     ]
   },
   {
@@ -3432,23 +3429,7 @@ const PANEL_CONTENT = {
     layout:'cards3'
   },
   liverank:{
-    desc:'Your live gameweek score and an estimated percentile versus all managers, updating through the matchday. A statistical estimate — a true live rank needs the full FPL population.',
-    layout:'standard'
-  },
-  bonus:{
-    desc:'Provisional bonus points projected live from BPS — the 3-2-1 for every match before the FPL API confirms it.',
-    layout:'standard'
-  },
-  dcwatch:{
-    desc:'Your outfield players’ live defensive contributions against the threshold (10 for defenders, 12 for midfielders and forwards) — who has banked the +2 and who is close.',
-    layout:'standard'
-  },
-  defcon:{
-    desc:'High-owned players you do not own who are scoring now, ranked by the damage to your rank. Nothing to do with defensive contributions — for those, see Your DEFCON.',
-    layout:'standard'
-  },
-  autosubs:{
-    desc:'A live projection of which bench players will sub in, and the points swing.',
+    desc:'Your matchday in one place — where you sit, the bonus before it lands, the defensive +2s, the auto-subs, and who is hurting your rank.',
     layout:'standard'
   },
   whatif:{
@@ -3632,18 +3613,28 @@ function closeMoreSheet(){
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
 const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
-  points5:'fixtures',csmatrix:'fixtures'};
-/* A panel that folded into another has to say WHICH view of it. Landing on
-   the raw 28-column table, or on the fixture grid, is not the page the old
-   link promised — so a retired id names its view here and the panel opens on
-   it. Declarative rather than a callback so a test can read it. */
+  points5:'fixtures',csmatrix:'fixtures',
+  bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank'};
+/* Three panels are now hubs, each holding views that used to be their own
+   destinations. A retired id has to name WHICH view: landing on the raw
+   28-column table, on the fixture grid, or on the live percentile is not the
+   page the old link promised.
+
+   Declarative — `{hub, view}` rather than a callback — so a test can read it
+   and check that a route only ever names a view its hub actually has. */
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView};
 const PANEL_VIEW={
-  allplayers:{lens:'all'},
-  diffs:{lens:'diffs'},
-  injuries:{lens:'fitness'},
-  fixtures:{view:'grid'},
-  points5:{view:'points'},
-  csmatrix:{view:'cs'}
+  allplayers:{hub:'allplayers',view:'all'},
+  diffs:{hub:'allplayers',view:'diffs'},
+  injuries:{hub:'allplayers',view:'fitness'},
+  fixtures:{hub:'fixtures',view:'grid'},
+  points5:{hub:'fixtures',view:'points'},
+  csmatrix:{hub:'fixtures',view:'cs'},
+  liverank:{hub:'liverank',view:'rank'},
+  bonus:{hub:'liverank',view:'bonus'},
+  dcwatch:{hub:'liverank',view:'defcon'},
+  defcon:{hub:'liverank',view:'threats'},
+  autosubs:{hub:'liverank',view:'autosubs'}
 };
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
@@ -3653,8 +3644,7 @@ function openPanel(panelId){
      point is that #diffs and #injuries resolve to the same panel and must
      still open on different views of it. */
   const pv=PANEL_VIEW[panelId];
-  if(pv&&pv.lens)plSetLens(pv.lens);
-  if(pv&&pv.view)fxSetView(pv.view);
+  if(pv&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back to the
      dashboard. This is the deep-link guard: typing #social does nothing. */
@@ -3699,6 +3689,18 @@ function syncNav(){
 /* Panels whose own layout wants the full width — the right rail is hidden on
    these (≥1024px) so their two-column workspace is not squeezed. */
 const WIDE_PANELS=new Set(['draft']);
+/* The Pro lock treatment, shared by a locked PANEL and a locked VIEW inside
+   a hub. Merging the Live boards made the second case necessary: three of
+   the five views are paid and two are free, so the gate had to move inside
+   the panel — the same journey the players table's column gate made. */
+function proLockWrap(inner,id){
+  return '<div class="pro-lockwrap">'+
+    '<div'+(id?' id="'+id+'"':'')+' class="ge-host pro-blur" inert aria-hidden="true">'+inner+'</div>'+
+    '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
+      '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
+      '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
+}
+
 /* ── AREA TABS ─────────────────────────────────────────────
    The sidebar used to be the only way sideways: open an area, read a list of
    up to twelve, pick one. That put the whole app in front of you at every
@@ -3749,12 +3751,7 @@ function renderPage(panelId){
      you just can't use it. (Server-side gates still protect the paid
      AI endpoints regardless of anything the client shows.) */
   if(locked){
-    body+='<div class="pro-lockwrap">'+
-      '<div id="ge-data" class="ge-host pro-blur" inert aria-hidden="true">'+
-        (WIRED[panelId]?skel(5):standardLayout(panel,content))+'</div>'+
-      '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
-        '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
-        '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
+    body+=proLockWrap(WIRED[panelId]?skel(5):standardLayout(panel,content),'ge-data');
   } else {
     if(isPaid){
       body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
@@ -3829,13 +3826,18 @@ function renderPage(panelId){
    and the tab is visible, so the numbers stay fresh without a manual
    reload. Each live hydrator calls markLive(true/false); the tick only
    refetches when something is live, and liveStamp() shows the pill. */
-const LIVE_PANELS=new Set(['liverank','bonus','dcwatch','autosubs','defcon','results']);
+const LIVE_PANELS=new Set(['liverank','results']);
+/* A hub refreshes its ACTIVE VIEW in place. Re-running the hub's own
+   hydrator would rebuild the chip row and repaint a skeleton every 45
+   seconds — a live screen that blinks is worse than one that lags. */
+const LIVE_REFRESH={liverank:()=>lvRenderBody({quiet:true})};
 let LIVE_TIMER=null;
 function armLiveRefresh(panelId){
   if(LIVE_TIMER){clearInterval(LIVE_TIMER);LIVE_TIMER=null;}
   if(!panelId||!LIVE_PANELS.has(panelId))return;
   LIVE_TIMER=setInterval(()=>{
     if(currentPanel!==panelId||document.hidden||window._gwLive===false)return;
+    if(LIVE_REFRESH[panelId]){LIVE_REFRESH[panelId]();return;}
     const h=document.getElementById('ge-data');
     if(h&&WIRED[panelId])Promise.resolve().then(()=>WIRED[panelId](h)).catch(()=>{});
   },45000);
@@ -3846,6 +3848,7 @@ function markLive(isLive){window._gwLive=!!isLive;}
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden||!LIVE_TIMER)return;
   if(!LIVE_PANELS.has(currentPanel)||window._gwLive===false)return;
+  if(LIVE_REFRESH[currentPanel]){LIVE_REFRESH[currentPanel]();return;}
   const h=document.getElementById('ge-data');
   if(h&&WIRED[currentPanel])Promise.resolve().then(()=>WIRED[currentPanel](h)).catch(()=>{});
 });
@@ -9407,6 +9410,88 @@ function provBonusPts(b,st,fixtures,picks){
   picks.picks.forEach(p=>{if(p.position<=11)extra+=(prov[p.element]||0)*(p.multiplier||1);});
   return {extra,prov};
 }
+/* ── LIVE: one matchday, five readings ──────────────────────
+   Five destinations all answering "what is happening to my team right now",
+   and the one moment you want them is the one moment you cannot afford to
+   navigate: matches in play, points moving. Choosing between them from the
+   nav meant leaving the number you were watching to go and find another one.
+
+   They are views of one panel now, and the five renderers are untouched.
+
+   Three of the five are paid and two are free, so the gate had to move
+   inside the panel — the same journey the players table's column gate made.
+   renderPage still locks a whole panel when the PANEL is paid; here the
+   panel is free and each view carries its own tier, shown locked rather
+   than hidden.
+
+   `needs` is per view as well: a game pack without a bonus system or without
+   defensive contributions drops those views entirely rather than showing a
+   board that can never fill. */
+const LV_VIEWS=[
+  {id:'rank',label:'Percentile',tier:'free',fn:'hydrateLiveRank',
+   desc:'Your live score and an estimated percentile against the field, updating through the matchday. An estimate — a true live rank needs the full FPL population.'},
+  {id:'bonus',label:'Bonus',tier:'free',needs:['bps'],fn:'hydrateBonus',
+   desc:'The provisional 3-2-1 projected from live BPS, before the FPL API confirms it.'},
+  {id:'defcon',label:'Your DEFCON',tier:'paid',needs:['defcon'],fn:'hydrateDcwatch',
+   desc:'Your outfield starters against the defensive-contribution threshold — who has banked the +2, and who is close.'},
+  {id:'threats',label:'Rank threats',tier:'paid',needs:['defcon'],fn:'hydrateDefcon',
+   desc:'High-owned players you do not own who are scoring now, ranked by the damage to your rank. Nothing to do with defensive contributions, despite where it sits.'},
+  {id:'autosubs',label:'Auto-subs',tier:'paid',needs:['autosubs'],fn:'hydrateAutosubs',
+   desc:'Which bench players are projected to come on, and the points swing when they do.'}
+];
+const LV_HYDRATE={rank:(h)=>hydrateLiveRank(h),bonus:(h)=>hydrateBonus(h),
+  defcon:(h)=>hydrateDcwatch(h),threats:(h)=>hydrateDefcon(h),autosubs:(h)=>hydrateAutosubs(h)};
+let LV_VIEW='rank';
+/* Only the views this game pack actually supports. Everything downstream
+   reads this rather than LV_VIEWS, so a dropped capability cannot leave a
+   chip pointing at a view that will not render. */
+function lvViews(){return LV_VIEWS.filter(v=>capsMet(v.needs));}
+function lvView(id){const a=lvViews();return a.filter(v=>v.id===id)[0]||a[0]||LV_VIEWS[0];}
+function lvLocked(v){return !!(v&&v.tier==='paid')&&!isPro();}
+function lvSetView(id){LV_VIEW=lvView(id).id;track('live_view',{view:LV_VIEW});}
+/* quiet: the 45-second live tick re-runs the active view in place. Painting a
+   skeleton first would flash the whole panel every 45 seconds, which is the
+   opposite of what a live screen is for. */
+function lvRenderBody(opts){
+  const body=document.getElementById('lv-body');if(!body)return;
+  const v=lvView(LV_VIEW);
+  const note=document.getElementById('lv-note');
+  if(note)note.textContent=v.desc;
+  document.querySelectorAll('#lv-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===v.id));
+  if(lvLocked(v)){
+    /* A locked view must not run its hydrator at all — it fetches your picks
+       and the live feed to build a board you are not going to be shown. */
+    body.innerHTML=proLockWrap(skel(5));
+    markLive(false);
+    return;
+  }
+  if(!(opts&&opts.quiet))body.innerHTML=skel(5);
+  const token=(MEM._lvToken=(MEM._lvToken||0)+1);
+  Promise.resolve().then(()=>LV_HYDRATE[v.id](body)).catch(err=>{
+    if(token!==MEM._lvToken)return;
+    body.innerHTML=stateBox('pulse','Could not load this view',
+      (err&&err.message)||'Try again in a moment.');
+  });
+}
+async function hydrateLive(host){
+  const views=lvViews();
+  host.innerHTML=
+    '<div class="lensbar" id="lv-views">'+views.map(v=>{
+      const lk=lvLocked(v);
+      return '<button class="lensbtn'+(v.id===lvView(LV_VIEW).id?' on':'')+(lk?' lk':'')+'" data-view="'+v.id+'">'+
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(v.label)+'</button>';
+    }).join('')+'</div>'+
+    '<p class="dl-sub" id="lv-note" style="margin:0 0 12px"></p>'+
+    '<div id="lv-body"></div>';
+  host.querySelectorAll('#lv-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===LV_VIEW)return;
+    lvSetView(btn.dataset.view);
+    lvRenderBody();
+  }));
+  lvRenderBody();
+}
+
 async function hydrateLiveRank(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
@@ -14858,11 +14943,7 @@ const WIRED={
   price:hydratePrice,
   news:hydrateNews,
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
-  liverank:hydrateLiveRank,
-  bonus:hydrateBonus,
-  dcwatch:hydrateDcwatch,
-  defcon:hydrateDefcon,
-  autosubs:hydrateAutosubs,
+  liverank:hydrateLive,
   whatif:hydrateWhatif,
   eo:hydrateEO,
   template:hydrateTemplate,

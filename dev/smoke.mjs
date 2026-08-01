@@ -25,7 +25,7 @@ const MID = process.env.MID || '101';
 
 const PANELS = [
   'dashboard', 'gw-actions', 'blog', 'squad', 'transfers', 'captain',
-  'liverank', 'bonus', 'defcon', 'autosubs', 'whatif',
+  'liverank', 'whatif',
   'eo', 'template', 'rivals', 'scout',
   'allplayers', 'compare', 'price', 'setpiece', 'rotation',
   'fixtures', 'seasonsim',
@@ -113,6 +113,33 @@ for (const tier of ['pro', 'free']) {
 }
 await page.evaluate(() => setTier('pro'));
 
+/* Every view of the Live hub, in both tiers — three of the five are paid, so
+   the gate lives inside the panel and only one view is on screen at a time. */
+let lvChecks = 0;
+for (const tier of ['pro', 'free']) {
+  await page.evaluate((t) => setTier(t), tier);
+  for (const view of await page.evaluate(() => LV_VIEWS.map((v) => v.id))) {
+    current = `live:${view}:${tier}`; lvChecks++;
+    await page.evaluate((v) => { lvSetView(v); renderPage('liverank'); }, view);
+    await page.waitForTimeout(900);
+    const [sw, vw] = await page.evaluate(() => [document.body.scrollWidth, window.innerWidth]);
+    if (sw > vw + 2) { overflow++; console.error(`  OVERFLOW ${current}: ${sw} > ${vw}`); }
+    const shown = await page.evaluate(() => {
+      const b = document.getElementById('lv-body');
+      return { empty: !b || !b.children.length, locked: !!(b && b.querySelector('.pro-lockstrip')) };
+    });
+    const paid = await page.evaluate((v) => !!LV_VIEWS.find((x) => x.id === v && x.tier === 'paid'), view);
+    if (shown.empty) { overflow++; console.error(`  ! ${current} rendered nothing`); }
+    if (tier === 'free' && paid && !shown.locked) {
+      overflow++; console.error(`  ! ${current} is a paid view that did not lock`);
+    }
+    if (tier === 'pro' && shown.locked) {
+      overflow++; console.error(`  ! ${current} locked for a Pro reader`);
+    }
+  }
+}
+await page.evaluate(() => setTier('pro'));
+
 /* Every view of the fixtures hub. Three renderers share one body, and only
    one of them is on screen at a time — a throw in the Points or Clean Sheet
    view would never appear on the default Grid. */
@@ -137,7 +164,7 @@ for (const view of await page.evaluate(() => FX_VIEWS.map((v) => v.id))) {
 // Ignore network noise from the offline CDN (photos/crests aren't reachable in tests).
 const appErrors = errors.filter((e) => !/Failed to load resource|ERR_|404|501|net::/.test(e));
 
-console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | fixture views: ${fxChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
+console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
 appErrors.forEach((e) => console.error('  ! ' + e));
 
 await browser.close();

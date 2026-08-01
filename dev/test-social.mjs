@@ -588,15 +588,27 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(!NAV.some((a) => a.id === 'intel'), 'the catch-all Pro area is gone');
   const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
   const rehomed = {
-    scout: 'home', gwhistory: 'myteam', dcwatch: 'live', defcon: 'live', autosubs: 'live',
+    scout: 'home', gwhistory: 'myteam', liverank: 'live',
     setpiece: 'players', rotation: 'players', seasonsim: 'planner', whatif: 'planner',
     rivals: 'rivals', eo: 'rivals', template: 'rivals',
   };
   for (const [id, area] of Object.entries(rehomed)) {
     ok(areaOfPanel[id] === area, id + ' now lives in ' + area + ' (found: ' + areaOfPanel[id] + ')');
   }
-  ok(navPanels.filter((p) => p.tier === 'paid').length >= 10,
-    'and they kept their locks — Pro moved with the panel, it was not given away');
+  /* Three of them folded into the Live hub instead of getting their own tab,
+     so their locks moved onto the VIEW. The count has to be checked where
+     the gate now is, or a merge that dropped `tier:'paid'` would read as a
+     panel simply having been retired. */
+  const LV = new Function('return ' + balanced(html, html.indexOf('const LV_VIEWS='), '[', ']'))();
+  for (const id of ['defcon', 'threats', 'autosubs']) {
+    const v = LV.find((x) => x.id === id);
+    ok(v && v.tier === 'paid', 'the ' + id + ' live view is still Pro');
+  }
+  ok(LV.some((v) => v.tier !== 'paid'),
+    'and the Live panel keeps free views, so it is not a paid panel in disguise');
+  ok(navPanels.filter((p) => p.tier === 'paid').length +
+     LV.filter((v) => v.tier === 'paid').length >= 10,
+    'Pro moved with the thing, it was not given away');
 
   /* Two things called "league" two aisles apart: the Premier League and your
      mini-league. The rename is the fix and it must not silently revert. */
@@ -665,29 +677,33 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      the VIEW as well as the destination. An alias alone is not enough:
      landing on the default view is not the page the old link promised. */
   const VIEW_MAP = new Function('return ' + balanced(html, html.indexOf('const PANEL_VIEW='), '{', '}'))();
-  const LENS_IDS = new Set(new Function('return ' + balanced(html, html.indexOf('const PL_LENSES='), '[', ']'))()
-    .map((l) => l.id));
-  const FX_IDS = new Set(new Function('return ' + balanced(html, html.indexOf('const FX_VIEWS='), '[', ']'))()
-    .map((v) => v.id));
-  /* Which hub each kind of view belongs to — a route may only name a view
-     its destination actually has. */
-  const HOST = { lens: { panel: 'allplayers', ids: LENS_IDS }, view: { panel: 'fixtures', ids: FX_IDS } };
+  const viewIds = (n) => new Set(new Function('return ' +
+    balanced(html, html.indexOf('const ' + n + '='), '[', ']'))().map((v) => v.id));
+  /* Each hub panel and the views it actually has. A route may only name a
+     view its hub owns, and every hub must be dispatchable. */
+  const HUB = { allplayers: viewIds('PL_LENSES'), fixtures: viewIds('FX_VIEWS'), liverank: viewIds('LV_VIEWS') };
+  const dispatch = html.slice(html.indexOf('const HUB_SETVIEW='),
+    html.indexOf('\n', html.indexOf('const HUB_SETVIEW=')));
+  for (const hub of Object.keys(HUB)) {
+    ok(dispatch.includes(hub + ':'), hub + ': has a view setter in HUB_SETVIEW');
+    ok(navIds.has(hub), hub + ': is itself a live panel');
+  }
   for (const [from, spec] of Object.entries(VIEW_MAP)) {
-    const kind = Object.keys(spec)[0];
-    ok(!!HOST[kind], from + ": names a known kind of view ('" + kind + "')");
-    if (!HOST[kind]) continue;
-    ok(HOST[kind].ids.has(spec[kind]), from + ' → ' + spec[kind] + ': that view exists');
+    ok(!!HUB[spec.hub], from + ": names a known hub ('" + spec.hub + "')");
+    if (!HUB[spec.hub]) continue;
+    ok(HUB[spec.hub].has(spec.view), from + ' → ' + spec.view + ': that view exists in ' + spec.hub);
     const dest = ALIAS[from] || from;
-    ok(dest === HOST[kind].panel,
-      from + ': routes to ' + HOST[kind].panel + ' (found: ' + dest + ')');
+    ok(dest === spec.hub, from + ': routes to ' + spec.hub + ' (found: ' + dest + ')');
   }
   /* And the other direction: aliasing INTO a hub without naming a view drops
      you on its default, which is the bug this map exists to prevent. */
-  const HUBS = new Set(Object.values(HOST).map((h) => h.panel));
   for (const [from, to] of Object.entries(ALIAS)) {
-    if (HUBS.has(to)) ok(!!VIEW_MAP[from], from + ': aliasing into ' + to + ' also names a view');
+    if (HUB[to]) ok(!!VIEW_MAP[from], from + ': aliasing into ' + to + ' also names a view');
   }
-  for (const id of ['diffs', 'injuries', 'points5', 'csmatrix']) {
+  /* Every hub must also route its OWN id, or opening it from the nav leaves
+     whatever view the last deep link happened to select. */
+  for (const hub of Object.keys(HUB)) ok(!!VIEW_MAP[hub], hub + ': routes its own id to a default view');
+  for (const id of ['diffs', 'injuries', 'points5', 'csmatrix', 'bonus', 'dcwatch', 'defcon', 'autosubs']) {
     ok(!wiredKeys.has(id), id + ': its hydrator is gone rather than left orphaned');
     ok(!navIds.has(id), id + ': and it is off the nav');
   }
@@ -699,23 +715,41 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
     'openPanel picks the view BEFORE resolving the alias');
 
   /* Each hub must still hydrate every renderer it absorbed — a view whose
-     hydrator is not wired to it is a tab that renders an empty box. */
-  const fxMap = html.slice(html.indexOf('const FX_HYDRATE='), html.indexOf('\n', html.indexOf('const FX_HYDRATE=')));
-  for (const v of FX_IDS) ok(fxMap.includes(v + ':'), 'the fixtures hub renders the ' + v + ' view');
-  for (const fn of ['hydrateFixtures', 'hydratePointsPlanner', 'hydrateCsMatrix']) {
-    ok(fxMap.includes(fn), 'and does it with the original ' + fn + ', untouched');
+     hydrator is not wired to it is a tab that renders an empty box — and it
+     must do it with the ORIGINAL function. Merging is a routing change; the
+     moment a renderer gets rewritten to fit the hub, the claim that nothing
+     about the boards changed stops being true. */
+  const hydrateMap = (n) => balanced(html, html.indexOf('const ' + n + '='), '{', '}');
+  const ABSORBED = {
+    fixtures: ['FX_HYDRATE', HUB.fixtures,
+      ['hydrateFixtures', 'hydratePointsPlanner', 'hydrateCsMatrix']],
+    liverank: ['LV_HYDRATE', HUB.liverank,
+      ['hydrateLiveRank', 'hydrateBonus', 'hydrateDcwatch', 'hydrateDefcon', 'hydrateAutosubs']],
+  };
+  for (const [hub, [mapName, ids, fns]] of Object.entries(ABSORBED)) {
+    const src = hydrateMap(mapName);
+    for (const v of ids) ok(src.includes(v + ':'), hub + ' hub renders the ' + v + ' view');
+    for (const fn of fns) {
+      ok(src.includes(fn), hub + ' hub uses the original ' + fn + ', untouched');
+      ok(html.includes('function ' + fn + '('), 'and ' + fn + ' still exists');
+    }
   }
 
-  /* Two panels called DEFCON, one of which had nothing to do with defensive
+  /* Two boards called DEFCON, one of which had nothing to do with defensive
      contributions, sat next to each other in the same area. Same capability,
-     different question, indistinguishable names. */
-  const dc = navPanels.filter((p) => /defcon/i.test(p.label));
-  ok(dc.length === 1, 'only one panel is named for defensive contributions (' +
-    navPanels.filter((p) => /defcon/i.test(p.label)).map((p) => p.label).join(', ') + ')');
-  ok(byIdAll.defcon && byIdAll.defcon.label === 'Rank Threats',
-    'the rank-threat panel is named for what it does');
-  ok(/Nothing to do with defensive contributions/.test(CONTENT.defcon.desc),
-    'and its description says so, since the id still reads defcon');
+     different question, indistinguishable names. They are adjacent CHIPS in
+     the Live hub now, which makes the labels matter more, not less — and the
+     trap survives underneath, because the rank-threat view is still rendered
+     by a function called hydrateDefcon. */
+  ok(LV.filter((v) => /defcon/i.test(v.label)).length === 1,
+    'only one live view is named for defensive contributions (' +
+    LV.filter((v) => /defcon/i.test(v.label)).map((v) => v.label).join(', ') + ')');
+  const threats = LV.find((v) => v.id === 'threats');
+  ok(threats && threats.label === 'Rank threats', 'the rank-threat view is named for what it does');
+  ok(threats && /Nothing to do with defensive contributions/.test(threats.desc),
+    'and its blurb says so, since it is rendered by hydrateDefcon');
+  ok(LV.find((v) => v.id === 'defcon').label === 'Your DEFCON',
+    'while the actual defensive-contribution view keeps that name');
 
   /* The ask box is a section of the scout now, not a Pro panel of its own.
      It has to survive the merge in both of the scout's branches — including
@@ -891,10 +925,18 @@ console.log('• game packs: capabilities decide which panels exist');
      for, or a capability typo would quietly strip panels from the main app. */
   ok(CAPS.every((c) => GAMES.fpl.caps[c] === true), 'FPL retains every capability');
 
-  /* Every capability a panel asks for must be a real one. */
-  const needed = new Set(NAV_ALL.flatMap((p) => p.needs || []));
+  /* Every capability a panel asks for must be a real one. Views inside a hub
+     declare `needs` too, and they are the easier place to typo one: a view
+     whose capability is misspelt is simply never listed, and nothing about
+     the panel it lives in looks wrong. */
+  const HUB_VIEWS = ['PL_LENSES', 'FX_VIEWS', 'LV_VIEWS'].flatMap((n) =>
+    new Function('return ' + balancedFrom(html, html.indexOf('const ' + n + '='), '[', ']'))());
+  const needed = new Set([...NAV_ALL, ...HUB_VIEWS].flatMap((p) => p.needs || []));
   const bogus = [...needed].filter((c) => !CAPS.includes(c));
-  ok(bogus.length === 0, 'no panel depends on an undeclared capability (' + (bogus.join() || 'none') + ')');
+  ok(bogus.length === 0, 'nothing depends on an undeclared capability (' + (bogus.join() || 'none') + ')');
+  const hiddenViews = HUB_VIEWS.filter((v) => (v.needs || []).some((c) => GAMES.fpl.caps[c] !== true));
+  ok(hiddenViews.length === 0,
+    'no hub view is hidden in FPL (' + (hiddenViews.map((v) => v.id).join() || 'none') + ')');
 
   /* With every FPL capability present, nothing may be hidden — a stray `false`
      or a mistyped `needs:` would silently delete a panel from the live app,
@@ -910,9 +952,20 @@ console.log('• game packs: capabilities decide which panels exist');
   const noPrices = { ...GAMES.fpl.caps, prices: false };
   const wouldShow = (id) => needsOf(id).every((c) => noPrices[c] === true);
   ok(!wouldShow('price'), 'a pack without prices would drop the Price Predictor');
-  for (const id of ['squad', 'captain', 'fixtures', 'eo', 'bonus', 'results']) {
+  for (const id of ['squad', 'captain', 'fixtures', 'eo', 'chips', 'results']) {
     ok(wouldShow(id), id + ': survives a capability it does not depend on');
   }
+  /* The same gate on a hub view. The Live panel is free of capabilities
+     itself, so a pack without a bonus system must drop the Bonus VIEW —
+     otherwise the merge quietly un-gated it. */
+  const noBps = { ...GAMES.fpl.caps, bps: false };
+  const viewShows = (id, caps) => {
+    const v = HUB_VIEWS.find((x) => x.id === id) || {};
+    return (v.needs || []).every((c) => caps[c] === true);
+  };
+  ok(!viewShows('bonus', noBps), 'a pack without BPS drops the Bonus view');
+  ok(viewShows('bonus', GAMES.fpl.caps), 'and FPL keeps it');
+  ok(viewShows('rank', noBps), 'while the Percentile view, which needs nothing, survives');
 }
 
 console.log('• fplRules: the squad rules come from the game, not from us');

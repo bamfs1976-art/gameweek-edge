@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is **7 areas** (plus an owner‑only Studio) holding **41 panels**.
+Navigation is **7 areas** (plus an owner‑only Studio) holding **37 panels**.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
@@ -77,11 +77,8 @@ My Team
 └── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
 
 Live
-├── Live Percentile      (free)  Estimated GW percentile, live through the matchday
-├── Bonus Tracker        (free)  Provisional 3-2-1 bonus from live BPS
-├── Your DEFCON          (Pro)   Your players vs the defensive-contribution threshold
-├── Rank Threats         (Pro)   Players you don't own who are scoring now
-└── Auto-Sub Tracker     (Pro)   Live projection of bench substitutions
+└── Live                 (free)  One matchday, five views — Percentile and Bonus
+                                 free, Your DEFCON / Rank threats / Auto-subs Pro
 
 Players
 ├── Players              (free)  One sortable table, ten lenses, Cards view + CSV
@@ -379,29 +376,57 @@ highest‑projected armbands for each upcoming gameweek, from the same
 fixture‑by‑fixture projection the Fixtures panel’s Points view uses. Double gameweeks sum
 both legs and are tagged `DGW`; a club that blanks drops out of that row.
 
-### Live (Pro)
+### Live
 
-**Live Percentile** — your live gameweek score with an estimated percentile
-versus all managers (a normal approximation around the gameweek average,
-sd ≈ 18), plus live match win‑probabilities re‑forecast on the current score.
-Deliberately framed as a statistical estimate: a true live rank requires the
-full FPL population, which no public API exposes. Panel id stays `liverank`.
+**Live** — one matchday, five views. These were five destinations all answering
+"what is happening to my team right now", and the one moment you want them is
+the one moment you cannot afford to navigate: matches in play, points moving.
+Leaving the number you were watching to go and find another one was the whole
+cost of the old shape. They are views of one panel now (`LV_VIEWS`); the five
+renderers are unchanged, and `#bonus`, `#dcwatch`, `#defcon` and `#autosubs`
+still land on the view they always showed. The panel id stays `liverank` for
+the deep links and the `g l` chord.
 
-**Bonus Tracker** — projects the provisional **3‑2‑1 bonus** from live BPS for
-every match in play *before* the API confirms it, using the official tie rule
-(joint winners take consecutive slots → 3,3,1 / 3,2,2). Your players highlighted;
-"Provisional" until confirmed.
+**The gate moved inside the panel.** Three of the five views are Pro and two
+are free, so panel‑level gating could not express it — the same journey the
+players table's column gate made. `renderPage` still locks a whole panel when
+the *panel* is paid; here the panel is free and each view carries its own
+tier, shown locked (blurred, inert, one lock strip) rather than hidden. A
+locked view never runs its hydrator, so it does not fetch your picks and the
+live feed to build a board you will not be shown. `needs` is per view too: a
+game pack without a bonus system or without defensive contributions drops
+those views entirely rather than showing a board that can never fill.
 
-**DefCon Threats** — high‑scoring players you don't own, ranked by damage to your
-rank.
+**Auto‑refresh** polls every 45s while a gameweek is in play and the tab is
+visible. A hub refreshes its **active view in place** (`LIVE_REFRESH`) rather
+than re‑running its own hydrator — rebuilding the chip row and repainting a
+skeleton every 45 seconds would make a live screen blink, which is worse than
+one that lags.
 
-**Auto‑Sub Tracker** — live projection of which bench players sub in and the
-points swing.
+**View 1 — Percentile** *(free)* — your live gameweek score with an estimated
+percentile versus all managers (a normal approximation around the gameweek
+average, sd ≈ 18), plus live match win‑probabilities re‑forecast on the current
+score. Deliberately framed as a statistical estimate: a true live rank requires
+the full FPL population, which no public API exposes.
 
-**What‑If Simulator** — model the rank impact of a goal / assist / clean sheet
-before a match ends.
+**View 2 — Bonus** *(free)* — projects the provisional **3‑2‑1 bonus** from live
+BPS for every match in play *before* the API confirms it, using the official tie
+rule (joint winners take consecutive slots → 3,3,1 / 3,2,2). Your players
+highlighted; "Provisional" until confirmed.
 
-### Intelligence (Pro)
+**View 3 — Your DEFCON** *(Pro)* — your outfield starters against the
+defensive‑contribution threshold (10 for defenders, 12 for midfielders and
+forwards): who has banked the +2, and who is close.
+
+**View 4 — Rank threats** *(Pro)* — high‑scoring players you don't own, ranked by
+damage to your rank. Nothing to do with defensive contributions despite sitting
+next to Your DEFCON — and it is still rendered by a function called
+`hydrateDefcon`, which is exactly why the label matters.
+
+**View 5 — Auto‑subs** *(Pro)* — live projection of which bench players sub in
+and the points swing.
+
+### Rivals
 
 **EO Tracker** — effective ownership, the real measure of rank gain at the top.
 
