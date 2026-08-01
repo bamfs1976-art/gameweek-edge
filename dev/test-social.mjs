@@ -704,6 +704,19 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   /* Every hub must also route its OWN id, or opening it from the nav leaves
      whatever view the last deep link happened to select. */
   for (const hub of Object.keys(HUB)) ok(!!VIEW_MAP[hub], hub + ': routes its own id to a default view');
+  /* ...but that default must not overwrite a view the CALLER just chose. Every
+     "open it in the players table" link and every ⌘K lens entry sets a lens
+     and THEN opens the hub, so without an opt-out the default wins and all of
+     them land on All data. They did, until a browser check on the sibling app
+     caught it. */
+  ok(/function openPanel\(panelId,opts\)/.test(html), 'openPanel takes an options argument');
+  ok(/!\(opts&&opts\.keepView\)&&HUB_SETVIEW/.test(html),
+    'and an explicit view request skips the destination default');
+  const setsThenOpens = [...html.matchAll(/plSetLens\((?:l\.id|id)\);openPanel\('allplayers'([^)]*)\)/g)];
+  ok(setsThenOpens.length >= 2, 'both callers that choose a lens then open the table are present');
+  for (const m of setsThenOpens) {
+    ok(/keepView:\s*true/.test(m[1]), 'a caller that chose a lens keeps it: ' + m[0]);
+  }
   for (const id of ['diffs', 'injuries', 'points5', 'csmatrix', 'bonus', 'dcwatch', 'defcon',
     'autosubs', 'matchforecast', 'lineups']) {
     ok(!wiredKeys.has(id), id + ': its hydrator is gone rather than left orphaned');

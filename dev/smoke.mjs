@@ -133,6 +133,27 @@ for (const tier of ['pro', 'free']) {
 }
 await page.evaluate(() => setTier('pro'));
 
+/* A board that kept its own page links into its column in the players table,
+   and the command palette lists every lens by name. Both choose a lens and
+   THEN open the table, so both are one missing opt-out away from silently
+   landing on All data. */
+for (const lens of ['setpiece', 'rotation', 'eo', 'template', 'price']) {
+  current = `openLens:${lens}`;
+  await page.evaluate((l) => openLens(l), lens);
+  await page.waitForTimeout(500);
+  const landed = await page.evaluate(() => ({ panel: currentPanel, lens: PL_STATE.lens }));
+  if (landed.panel !== 'allplayers' || landed.lens !== lens) {
+    overflow++; console.error(`  ! openLens('${lens}') landed on ${JSON.stringify(landed)}`);
+  }
+}
+/* And a plain open still resets to the default, which is what makes clicking
+   Players in the nav predictable. */
+await page.evaluate(() => { plSetLens('setpiece'); openPanel('allplayers'); });
+await page.waitForTimeout(400);
+if (await page.evaluate(() => PL_STATE.lens) !== 'all') {
+  overflow++; console.error('  ! a plain openPanel did not reset to the default lens');
+}
+
 /* Every view of the Live hub, in both tiers — three of the five are paid, so
    the gate lives inside the panel and only one view is on screen at a time. */
 let lvChecks = 0;

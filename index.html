@@ -3639,12 +3639,20 @@ const PANEL_VIEW={
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
-function openPanel(panelId){
+function openPanel(panelId,opts){
   /* Read the view from the id as typed, not the resolved one — the whole
      point is that #diffs and #injuries resolve to the same panel and must
-     still open on different views of it. */
+     still open on different views of it.
+
+     keepView is for a caller that has ALREADY chosen a view: a ⌘K lens entry,
+     or the "open it in the players table" link on a board that kept its page.
+     Without it the destination's own default wins and every one of those
+     links silently lands on All data — which is exactly what they did until a
+     browser check on the sibling app caught it. A plain open (the nav, a deep
+     link, a bookmark) still resets to the default, which is what makes
+     clicking Players in the nav predictable. */
   const pv=PANEL_VIEW[panelId];
-  if(pv&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
+  if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back to the
      dashboard. This is the deep-link guard: typing #social does nothing. */
@@ -7343,7 +7351,7 @@ function plLensBar(){
 }
 /* Moving to a lens takes its sort with it, but only when the reader can
    actually have it — a free reader on a Pro lens keeps a sort that works. */
-function openLens(id){plSetLens(id);openPanel('allplayers');}
+function openLens(id){plSetLens(id);openPanel('allplayers',{keepView:true});}
 /* The line a board prints to send you to its column in the table. These
    boards kept their own page because each says something a column cannot —
    the official set-piece notes, the midweek congestion, your own cover and
@@ -15171,7 +15179,7 @@ function cmdkItems(q){
   if(canSeePanel(PANELS.allplayers))PL_LENSES.forEach(l=>{
     if(l.id==='all')return;                 /* that IS the panel, already listed */
     out.push({label:l.label,sub:'Players · lens',icon:'grid',
-      run:()=>{plSetLens(l.id);openPanel('allplayers');},
+      run:()=>{plSetLens(l.id);openPanel('allplayers',{keepView:true});},
       score:q?cmdkScore(l.label,q)*2:0.4});
   });
   verbs.forEach(v=>out.push({...v,score:q?cmdkScore(v.label,q)*2:0.5}));
