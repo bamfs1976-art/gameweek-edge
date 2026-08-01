@@ -32,15 +32,14 @@ const AREA = {
   /* `design` and `glossary` are registered straight onto PANELS rather than
      NAV — free tier, areaId home, reachable by hash by anyone who finds them,
      so they record views like any other panel. */
-  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'methodology', 'accountability',
+  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'methodology', 'accountability',
     'design', 'glossary'],
-  'my team': ['draft', 'squad', 'gwreport', 'transfers', 'captain'],
-  live: ['liverank', 'bonus'],
-  players: ['allplayers', 'scoutboard', 'compare', 'price', 'news'],
-  planner: ['fixtures', 'points5', 'csmatrix', 'leagues', 'chips', 'watchlist', 'alerts'],
-  league: ['results', 'titlerace', 'dossier', 'clubform', 'lineups', 'matchforecast'],
-  'the edge': ['scout', 'rivals', 'eo', 'template', 'dcwatch', 'defcon', 'autosubs',
-    'whatif', 'setpiece', 'rotation', 'gwhistory', 'seasonsim'],
+  'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
+  live: ['liverank', 'bonus', 'dcwatch', 'defcon', 'autosubs'],
+  players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
+  planner: ['fixtures', 'points5', 'csmatrix', 'seasonsim', 'whatif', 'watchlist', 'alerts'],
+  rivals: ['leagues', 'rivals', 'eo', 'template'],
+  'match centre': ['results', 'matchforecast', 'lineups', 'titlerace', 'dossier', 'clubform'],
   studio: ['social', 'analytics']
 };
 const AREA_OF = {};

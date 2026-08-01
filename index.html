@@ -68,6 +68,9 @@
      the fill does. Measured: light 5.5:1 and 6.3:1, dark 7.9:1 and 9.6:1. */
   --lock:#8a5410;
   --lock-on:#ffffff;
+  /* Active-tab ink. --green-bright is the brand green but only 3.3:1 on the
+     light canvas, and a tab label is 13px semibold. 5.9:1 here. */
+  --tab-on:#0f6d3d;
   --red:#cc3d39;
   --red-soft:rgba(204,61,57,.10);
   --blue:#2f6dc7;
@@ -137,6 +140,7 @@
   --amber-soft:rgba(245,165,36,.13);
   --lock:#F5A524;
   --lock-on:#0A0C0F;
+  --tab-on:#00D26A;
   --red:#FF4D4F;
   --red-soft:rgba(255,77,79,.12);
   --blue:#3B82F6;
@@ -294,8 +298,7 @@ html.native .topbar,
 html.native .sidebar,
 html.native .bottom-nav,
 html.native .btn,
-html.native .nav-area,
-html.native .nav-sub{
+html.native .nav-area{
   -webkit-user-select:none;user-select:none;
 }
 /* Top safe-area: push the sticky topbar clear of the notch / status bar. */
@@ -746,39 +749,6 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 }
 .nav-area-ic svg{width:18px;height:18px}
 .nav-area-label{flex:1;text-align:left}
-.nav-chevron{
-  width:14px;height:14px;flex-shrink:0;color:var(--text-3);
-  transition:transform .2s var(--ease);
-}
-.nav-area-btn.expanded .nav-chevron{transform:rotate(90deg)}
-.lock-badge{
-  font-size:.58rem;font-weight:800;letter-spacing:.04em;
-  padding:2px 7px;border-radius:var(--r-pill);
-  background:var(--amber-soft);color:var(--amber);
-  display:flex;align-items:center;gap:3px;
-}
-.lock-badge svg{width:9px;height:9px}
-
-/* Sub-panels */
-.nav-sub{
-  overflow:hidden;max-height:0;
-  transition:max-height .28s var(--ease);
-}
-.nav-sub.open{max-height:640px}
-.nav-sub-btn{
-  display:flex;align-items:center;gap:9px;width:100%;
-  padding:8px 12px 8px 43px;border-radius:var(--r-sm);
-  color:var(--text-3);font-size:.81rem;font-weight:500;
-  transition:background .12s var(--ease),color .12s var(--ease);
-  position:relative;
-}
-.nav-sub-btn:hover{background:var(--surface-3);color:var(--text-2)}
-.nav-sub-btn.active{color:var(--green-bright);font-weight:700;background:var(--green-soft)}
-.nav-sub-btn.active::before{
-  content:'';position:absolute;left:24px;top:50%;transform:translateY(-50%);
-  width:5px;height:5px;border-radius:50%;background:var(--green-bright);
-}
-.nav-sub-lock{margin-left:auto;width:11px;height:11px;color:var(--text-4)}
 
 /* Sidebar footer */
 .sb-foot{
@@ -932,7 +902,30 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-.page-head{margin-bottom:22px}
+.page-head{margin-bottom:14px}
+/* Area tabs — the lateral move, on the page rather than in the sidebar.
+   Same chip language as the players lenses, so "another view of this thing"
+   looks the same everywhere in the app. */
+/* Underlined tabs, NOT pills. The players table already stacks a row of
+   lens pills under this strip, and two rows of identical green pills a few
+   pixels apart read as one control with a wrapping bug — you cannot tell
+   that the top row changes the page and the bottom row changes the view of
+   it. An underline is the older, quieter convention and it puts the two
+   levels in an obvious order. */
+.area-tabs{display:flex;gap:2px;overflow-x:auto;margin-bottom:18px;
+  border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.area-tabs::-webkit-scrollbar{display:none}
+.area-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;background:none;
+  border:0;border-bottom:2px solid transparent;color:var(--text-2);padding:9px 12px;
+  font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:color .14s,border-color .14s}
+.area-tab:hover{color:var(--text)}
+.area-tab.on{color:var(--tab-on);border-bottom-color:var(--tab-on)}
+/* --lock rather than --amber: 12–13px semibold needs 4.5:1 and --amber only
+   reaches 3.3:1 on the light canvas. */
+.area-tab.lk{color:var(--lock)}
+.area-tab.lk.on{color:var(--lock);border-bottom-color:var(--lock)}
+.area-tab svg{vertical-align:-1px}
 .page-head h1{
   font-family:var(--font-display);font-size:1.875rem;
   font-weight:800;letter-spacing:-.025em;line-height:1.1;
@@ -970,7 +963,6 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .acct-link{display:block;width:100%;text-align:center;margin-top:14px;
   font-size:.78rem;font-weight:600;color:var(--green-bright)}
 /* When Pro, hide the lock badges in the nav */
-html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 /* ── GRID HELPERS ──────────────────────────────────────── */
 .grid{display:grid;gap:14px}
@@ -1443,11 +1435,8 @@ body{font-size:14px;line-height:1.35}
   .sb-brand{padding:12px 8px 10px}
   .sb-nav{padding:6px 6px 12px}
   .nav-area-btn{padding:8px;gap:12px;white-space:nowrap}
-  .nav-area-label,.nav-chevron,.lock-badge{opacity:0;transition:opacity .12s}
-  .sidebar:hover .nav-area-label,.sidebar:focus-within .nav-area-label,
-  .sidebar:hover .nav-chevron,.sidebar:focus-within .nav-chevron,
-  .sidebar:hover .lock-badge,.sidebar:focus-within .lock-badge{opacity:1}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
+  .nav-area-label{opacity:0;transition:opacity .12s}
+  .sidebar:hover .nav-area-label,.sidebar:focus-within .nav-area-label{opacity:1}
 }
 /* xl (≥1280): pin the rail open with labels — no hover flyout, no overlay. */
 @media(min-width:1280px){
@@ -1458,9 +1447,7 @@ body{font-size:14px;line-height:1.35}
   .sb-brand{padding:16px 16px 12px}
   .sb-nav{padding:8px 10px 14px}
   .nav-area-btn{padding:9px 11px;gap:12px}
-  .nav-area-label,.nav-chevron,.lock-badge{opacity:1}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub.open{max-height:640px}
+  .nav-area-label{opacity:1}
   .main{margin-left:240px}
 }
 @media(max-width:900px){
@@ -1869,12 +1856,6 @@ body{font-size:14px;line-height:1.35}
 .pls-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;font-weight:700;
   color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 8px}
 .pls-txt{font-size:13px;color:var(--text-2)}
-/* No padlocks in nav — a quiet mono tag instead. */
-.lock-badge{background:var(--chip);color:var(--text-2);font-family:var(--font-mono);
-  letter-spacing:.08em}
-.lock-badge svg{display:none}
-[data-theme="dark"] .lock-badge{color:var(--text-2)}
-.nav-sub-lock{display:none}
 
 /* ── /design primitives page ── */
 .ds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
@@ -3065,6 +3046,7 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
+      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'methodology', label:'Methodology', icon:'spark', tier:'free'},
       {id:'accountability', label:'Model Accountability', icon:'target', tier:'free'}
     ]
@@ -3072,18 +3054,26 @@ const NAV = [
   {
     id:'myteam', label:'My Team', icon:'team',
     panels:[
-      {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free', needs:['preseasonDraft']},
       {id:'squad', label:'My Squad', icon:'squad', tier:'free'},
-      {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
       {id:'transfers', label:'Transfer Planner', icon:'swap', tier:'free'},
-      {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'}
+      {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'},
+      {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free', needs:['chips']},
+      {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free', needs:['preseasonDraft']},
+      {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
+      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']}
     ]
   },
   {
     id:'live', label:'Live', icon:'live',
     panels:[
       {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'free'},
-      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free', needs:['bps']}
+      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free', needs:['bps']},
+      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid', needs:['defcon']},
+      /* Nothing to do with defensive contributions, despite the id — this is
+         the rank-threat list, and sitting next to "Your DEFCON" under a
+         near-identical name made two unrelated panels look like a pair. */
+      {id:'defcon', label:'Rank Threats', icon:'shield', tier:'paid', needs:['defcon']},
+      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid', needs:['autosubs']}
     ]
   },
   {
@@ -3097,6 +3087,8 @@ const NAV = [
       {id:'scoutboard', label:'Scout Board', icon:'grid', tier:'free'},
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free', needs:['prices']},
+      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
+      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
       {id:'news', label:'Latest News', icon:'bell', tier:'free'}
     ]
   },
@@ -3106,41 +3098,33 @@ const NAV = [
       {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
       {id:'points5', label:'Points Planner', icon:'target', tier:'free'},
       {id:'csmatrix', label:'Clean Sheet Matrix', icon:'shield', tier:'free'},
-      {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free', needs:['publicEntry']},
-      {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free', needs:['chips']},
+      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
+      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
     ]
   },
+  /* "League" used to mean the Premier League here and your mini-league in
+     the panel called Mini-Leagues, two aisles apart. Rivals is everything
+     about the people you are playing against; Match Centre is the football. */
   {
-    id:'league', label:'League', icon:'trophy',
+    id:'rivals', label:'Rivals', icon:'users',
     panels:[
-      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
-      {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
-      {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
-      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
-      {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
-      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'}
+      {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free', needs:['publicEntry']},
+      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid', needs:['publicEntry']},
+      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid', needs:['ownership']},
+      {id:'template', label:'The Template', icon:'grid', tier:'paid', needs:['ownership']}
     ]
   },
   {
-    id:'intel', label:'The Edge', icon:'intel', tier:'paid',
+    id:'matchcentre', label:'Match Centre', icon:'trophy',
     panels:[
-      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
-      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid', needs:['publicEntry']},
-      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid', needs:['ownership']},
-      {id:'template', label:'The Template', icon:'grid', tier:'paid', needs:['ownership']},
-      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid', needs:['defcon']},
-      /* Nothing to do with defensive contributions, despite the id — this is
-         the rank-threat list, and sitting next to "Your DEFCON" under a
-         near-identical name made two unrelated panels look like a pair. */
-      {id:'defcon', label:'Rank Threats', icon:'shield', tier:'paid', needs:['defcon']},
-      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid', needs:['autosubs']},
-      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
-      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
-      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
-      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']},
-      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'}
+      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
+      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'},
+      {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
+      {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
+      {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
+      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'}
     ]
   },
   /* Owner-only. Hidden from the nav, the command palette and the More sheet
@@ -3542,9 +3526,22 @@ const PANEL_CONTENT = {
 
 /* ── STATE ─────────────────────────────────────────────── */
 let currentPanel='dashboard';
-let expandedArea='home';
 
 /* ── BUILD SIDEBAR NAV ─────────────────────────────────── */
+/* The sidebar is a flat list of areas — seven choices, not forty-one.
+   It used to expand each area into a sub-list, which put the entire app in
+   front of you every time you wanted to move one step sideways. The lateral
+   move now lives on the page (areaTabsHtml), where it is scoped to the thing
+   you are actually reading, so the sidebar only has to answer "which part of
+   the app am I in".
+
+   An area lands on its first VISIBLE panel, not its first declared one: a
+   game pack that removes a capability must not leave the nav pointing at a
+   panel that no longer exists. */
+function areaLanding(area){
+  const first=(area.panels||[]).filter(canSeePanel)[0];
+  return first?first.id:null;
+}
 function buildNav(){
   const nav=document.getElementById('sb-nav');
   nav.innerHTML='';
@@ -3555,31 +3552,21 @@ function buildNav(){
     const btn=document.createElement('button');
     btn.className='nav-area-btn';
     btn.dataset.area=area.id;
-    btn.setAttribute('aria-expanded','false');
+    /* Every visible panel in the area is listed for search and screen
+       readers even though only the area shows — the panel names are how
+       people look for things, and the tabs reveal them on arrival. */
+    btn.setAttribute('aria-label',area.label+' — '+area.panels.filter(canSeePanel).map(p=>p.label).join(', '));
+    /* No Pro badge on an area. There used to be exactly one paid area, so the
+       badge meant something; now that Pro is a property of a panel rather
+       than a place, six of the seven areas contain one and the badge marks
+       everything, which is the same as marking nothing. The lock lives on the
+       tab, where it names the actual thing you cannot open. */
     btn.innerHTML=
       '<span class="nav-area-ic">'+svg(ICON[area.icon])+'</span>'+
-      '<span class="nav-area-label">'+area.label+'</span>'+
-      (area.tier==='paid'
-        ? '<span class="lock-badge">'+svg(ICON.lock,'width="9" height="9"')+'Pro</span>'
-        : '')+
-      '<span class="nav-chevron">'+svg(ICON.chevron)+'</span>';
-    btn.addEventListener('click',()=>toggleArea(area.id));
+      '<span class="nav-area-label">'+area.label+'</span>';
+    const go=areaLanding(area);
+    if(go)btn.addEventListener('click',()=>openPanel(go));
     wrap.appendChild(btn);
-
-    const sub=document.createElement('div');
-    sub.className='nav-sub';
-    sub.dataset.sub=area.id;
-    area.panels.filter(canSeePanel).forEach(p=>{
-      const sb=document.createElement('button');
-      sb.className='nav-sub-btn';
-      sb.dataset.panel=p.id;
-      sb.innerHTML=
-        '<span>'+p.label+'</span>'+
-        (p.tier==='paid'?'<span class="nav-sub-lock">'+svg(ICON.lock,'width="11" height="11"')+'</span>':'');
-      sb.addEventListener('click',()=>openPanel(p.id));
-      sub.appendChild(sb);
-    });
-    wrap.appendChild(sub);
     nav.appendChild(wrap);
   });
 }
@@ -3594,7 +3581,7 @@ const BOTTOM_NAV=[
   {label:'Home',area:'home',icon:'home',go:()=>openPanel(homePanel())},
   {label:'My Squad',area:'myteam',icon:'squad',go:()=>openPanel('squad')},
   {label:'Players',area:'players',icon:'players',go:()=>openPanel('allplayers')},
-  {label:'Match Centre',area:'league',icon:'pulse',go:()=>openPanel('results')},
+  {label:'Match Centre',area:'matchcentre',icon:'pulse',go:()=>openPanel('results')},
   {label:'More',area:'',icon:'more',go:()=>openMoreSheet()}
 ];
 function buildBottomNav(){
@@ -3614,7 +3601,7 @@ function buildBottomNav(){
 /* The More sheet: every area not on the bottom bar, plus the glossary. */
 function openMoreSheet(){
   closeMoreSheet();
-  const items=[['live','Live'],['planner','Planner'],['intel','The Edge'],
+  const items=[['live','Live'],['planner','Planner'],['rivals','Rivals'],
       ...(window.GE_OWNER?[['studio','Studio']]:[]),['glossary','Glossary']]
     /* Skip an area the active game has emptied, and land on its first
        *visible* panel rather than its first declared one. */
@@ -3643,13 +3630,6 @@ function closeMoreSheet(){
   if(r&&document.contains(r)&&typeof r.focus==='function')r.focus();
 }
 
-/* ── TOGGLE AREA EXPANSION ─────────────────────────────── */
-function toggleArea(areaId){
-  const isOpen=(expandedArea===areaId);
-  expandedArea=isOpen?null:areaId;
-  syncNav();
-}
-
 /* ── OPEN A PANEL ──────────────────────────────────────── */
 /* Panels that have been merged into another. A retired id still resolves, so
    an old bookmark or shared link lands on the thing that absorbed it rather
@@ -3672,7 +3652,6 @@ function openPanel(panelId){
      dashboard. This is the deep-link guard: typing #social does nothing. */
   if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';
   currentPanel=panelId;
-  expandedArea=PANELS[panelId].areaId;
   renderPage(panelId);
   syncNav();
   closeSidebar();
@@ -3688,21 +3667,17 @@ function syncNav(){
 
   document.querySelectorAll('.nav-area-btn').forEach(btn=>{
     const a=btn.dataset.area;
-    btn.classList.toggle('expanded',a===expandedArea);
     btn.classList.toggle('active',a===activeArea);
-    btn.setAttribute('aria-expanded',a===expandedArea?'true':'false');
+    if(a===activeArea)btn.setAttribute('aria-current','page');
+    else btn.removeAttribute('aria-current');
   });
-  document.querySelectorAll('.nav-sub').forEach(sub=>{
-    sub.classList.toggle('open',sub.dataset.sub===expandedArea);
-  });
-  document.querySelectorAll('.nav-sub-btn').forEach(btn=>{
-    const isActive=btn.dataset.panel===currentPanel;
-    btn.classList.toggle('active',isActive);
-    if(isActive){btn.setAttribute('aria-current','page');}
-    else{btn.removeAttribute('aria-current');}
-  });
+  /* The strip scrolls sideways, so on a narrow screen the active view can sit
+     off-screen with nothing on show marked current — the page then looks like
+     it belongs to whichever tab happens to be leftmost. */
+  const tab=document.querySelector('#area-tabs .area-tab.on');
+  if(tab&&tab.scrollIntoView)try{tab.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
   /* Highlight the matching bar item; when the current area lives only in the
-     More sheet (Live / Planner / The Edge / Glossary), light up "More" so the
+     More sheet (Live / Planner / Rivals / Glossary), light up "More" so the
      bar never looks like nothing is selected. */
   const barAreas=BOTTOM_NAV.filter(b=>b.area).map(b=>b.area);
   document.querySelectorAll('.bn-item').forEach(item=>{
@@ -3716,6 +3691,35 @@ function syncNav(){
 /* Panels whose own layout wants the full width — the right rail is hidden on
    these (≥1024px) so their two-column workspace is not squeezed. */
 const WIDE_PANELS=new Set(['draft']);
+/* ── AREA TABS ─────────────────────────────────────────────
+   The sidebar used to be the only way sideways: open an area, read a list of
+   up to twelve, pick one. That put the whole app in front of you at every
+   turn and made the nav the main interface. The tabs put the lateral move on
+   the page instead — you see the handful of views that belong with the one
+   you are reading, and nothing else.
+
+   Panels the active game has no capability for are gone rather than shown
+   dead; paid ones are shown locked, because you cannot want what you cannot
+   see. A one-panel area gets no strip at all — a single tab is furniture. */
+function areaTabsHtml(panelId){
+  const panel=PANELS[panelId];if(!panel)return '';
+  const area=NAV.filter(a=>a.id===panel.areaId)[0];
+  if(!area)return '';
+  const sibs=area.panels.filter(canSeePanel);
+  if(sibs.length<2)return '';
+  /* Glossary and Design System carry areaId 'home' but are registered
+     straight onto PANELS, so they are not in any area's panel list. Showing
+     Home's tabs with none of them current would say "you are somewhere in
+     Home" and then fail to say where. */
+  if(!sibs.some(p=>p.id===panelId))return '';
+  return '<nav class="area-tabs" id="area-tabs" aria-label="'+esc(area.label)+' views">'+
+    sibs.map(p=>{
+      const on=p.id===panelId,lk=p.tier==='paid'&&!isPro();
+      return '<button class="area-tab'+(on?' on':'')+(lk?' lk':'')+'" data-panel="'+p.id+'"'+
+        (on?' aria-current="page"':'')+' onclick="openPanel(\''+p.id+'\')">'+
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(p.label)+'</button>';
+    }).join('')+'</nav>';
+}
 function renderPage(panelId){
   const panel=PANELS[panelId];
   const content=PANEL_CONTENT[panelId];
@@ -3764,6 +3768,7 @@ function renderPage(panelId){
           '</div>'+
         '</div>'+
       '</div>'+
+      areaTabsHtml(panelId)+
       body+
     '</main>';
 
@@ -15175,7 +15180,7 @@ function initNative(){
 
   /* Light haptic when changing area or panel, so taps feel native. */
   document.addEventListener('click',e=>{
-    if(e.target.closest('.nav-sub,.bn-item,.nav-area'))N.hapticSelection();
+    if(e.target.closest('.area-tab,.bn-item,.nav-area'))N.hapticSelection();
     else if(e.target.closest('.btn,.theme-toggle,.hamburger'))N.hapticLight();
   },true);
 
@@ -15267,7 +15272,7 @@ function init(){
   buildBottomNav();
   applyTheme(storedTheme()||'dark');
   const home=homePanel();
-  currentPanel=home;expandedArea=PANELS[home].areaId;
+  currentPanel=home;
   renderPage(home);
   syncNav();
 

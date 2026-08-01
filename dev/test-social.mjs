@@ -558,10 +558,91 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   const gate = (fn) => html.includes(fn);
   ok(gate('function canSeePanel('), 'canSeePanel gate exists');
   ok(/NAV\.filter\(canSeeArea\)/.test(html), 'sidebar areas are filtered by the gate');
-  ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'sidebar panels are filtered by the gate');
+  ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'the area tabs are filtered by the gate');
   ok(/if\(!canSeePanel\(p\)\)return;/.test(html), 'command palette is filtered by the gate');
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),
     'openPanel guards deep links');
+
+  /* ── The nav shape ───────────────────────────────────────
+     The sidebar is a flat list of areas and the lateral move happens on the
+     page, so an area is now a real destination rather than a folder. Two
+     things have to hold for that to work: every area must HAVE a landing
+     panel, and no area may be so long that arriving on it puts a wall of
+     tabs in front of you — which is the clutter this restructure exists to
+     remove, relocated rather than fixed. */
+  const areas = NAV.filter((a) => a.tier !== 'owner');
+  ok(areas.length <= 8, 'the sidebar offers at most eight areas (' + areas.length + ')');
+  for (const a of areas) {
+    ok(a.panels.length >= 1, a.id + ': has a landing panel');
+    ok(a.panels.length <= 7, a.id + ': at most seven tabs (' + a.panels.length + ')');
+    ok(a.panels.some((p) => p.tier !== 'paid'),
+      a.id + ': has at least one free panel, so a free user never lands on a wall of locks');
+  }
+  ok(html.includes('function areaTabsHtml('), 'the area tab strip exists');
+  ok(/areaTabsHtml\(panelId\)/.test(html), 'and renderPage emits it');
+  ok(!/toggleArea/.test(html), 'the old expanding sub-list is gone, not merely hidden');
+
+  /* "The Edge" was an area holding twelve unrelated paid tools — the app's
+     single biggest pile. Pro is a property of a panel now, not a place, so
+     every one of those tools has to have found a topical home. */
+  ok(!NAV.some((a) => a.id === 'intel'), 'the catch-all Pro area is gone');
+  const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
+  const rehomed = {
+    scout: 'home', gwhistory: 'myteam', dcwatch: 'live', defcon: 'live', autosubs: 'live',
+    setpiece: 'players', rotation: 'players', seasonsim: 'planner', whatif: 'planner',
+    rivals: 'rivals', eo: 'rivals', template: 'rivals',
+  };
+  for (const [id, area] of Object.entries(rehomed)) {
+    ok(areaOfPanel[id] === area, id + ' now lives in ' + area + ' (found: ' + areaOfPanel[id] + ')');
+  }
+  ok(navPanels.filter((p) => p.tier === 'paid').length >= 10,
+    'and they kept their locks — Pro moved with the panel, it was not given away');
+
+  /* Two things called "league" two aisles apart: the Premier League and your
+     mini-league. The rename is the fix and it must not silently revert. */
+  ok(!NAV.some((a) => a.id === 'league'), 'the ambiguous League area is gone');
+  ok(NAV.some((a) => a.id === 'matchcentre') && NAV.some((a) => a.id === 'rivals'),
+    'replaced by Match Centre (the football) and Rivals (the people)');
+  ok(areaOfPanel.leagues === 'rivals', 'Mini-Leagues sits with the rivals, not the planner');
+
+  /* Every area on the bottom bar and in the More sheet must still exist —
+     a renamed area id here is a bar item that highlights nothing. */
+  const areaIds = new Set(NAV.map((a) => a.id));
+  const barSrc = balanced(html, html.indexOf('const BOTTOM_NAV='), '[', ']');
+  for (const m of barSrc.matchAll(/area:'([a-z]+)'/g)) {
+    ok(areaIds.has(m[1]), 'bottom bar area ' + m[1] + ' exists');
+  }
+  const moreSrc = html.slice(html.indexOf('function openMoreSheet('), html.indexOf('function closeMoreSheet('));
+  for (const m of moreSrc.matchAll(/\['([a-z]+)','[^']+'\]/g)) {
+    ok(m[1] === 'glossary' || areaIds.has(m[1]), 'More sheet area ' + m[1] + ' exists');
+  }
+  /* Between the bar and the sheet, every area must be reachable on a phone —
+     the sidebar is not on screen there. */
+  const barAreas = [...barSrc.matchAll(/area:'([a-z]+)'/g)].map((m) => m[1]);
+  const moreAreas = [...moreSrc.matchAll(/\['([a-z]+)','[^']+'\]/g)].map((m) => m[1]);
+  const reachable = new Set([...barAreas, ...moreAreas]);
+  for (const a of areas) ok(reachable.has(a.id), a.id + ': reachable on mobile (bar or More sheet)');
+
+  /* The site map in docs/FEATURES.md had gone quietly stale — it still listed
+     an "Intelligence (Pro)" area and panels that had not existed for weeks,
+     because nothing checked it. A doc that describes the nav is worth having
+     only if it cannot drift. */
+  {
+    const doc = readFileSync(join(ROOT, 'docs', 'FEATURES.md'), 'utf8');
+    const fence = doc.slice(doc.indexOf('## 2. Site map'), doc.indexOf('## 3.'));
+    const map = fence.slice(fence.indexOf('```') + 3, fence.lastIndexOf('```'));
+    for (const a of NAV) ok(map.includes(a.label), 'site map lists the ' + a.label + ' area');
+    for (const p of navPanels) {
+      /* The Wire's nav label carries a trailing gloss the tree drops. */
+      const label = p.label.split(' — ')[0];
+      ok(map.includes(label), 'site map lists ' + label);
+    }
+    const listed = [...map.matchAll(/^[├└]── (.+?)\s{2,}\(/gm)].map((m) => m[1].trim());
+    const known = new Set(navPanels.map((p) => p.label.split(' — ')[0]));
+    const ghosts = listed.filter((l) => !known.has(l));
+    ok(ghosts.length === 0, 'and lists nothing the app no longer has' +
+      (ghosts.length ? ' — stale: ' + ghosts.join(', ') : ''));
+  }
 
   /* Retired panels. Merging one panel into another silently breaks every
      bookmark and shared link pointing at the old id — openPanel's guard sends

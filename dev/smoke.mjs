@@ -28,7 +28,10 @@ const PANELS = [
   'liverank', 'bonus', 'defcon', 'autosubs', 'whatif',
   'eo', 'template', 'rivals', 'scout',
   'allplayers', 'compare', 'price', 'setpiece', 'rotation',
-  'fixtures', 'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts', 'dossier'
+  'fixtures', 'points5', 'csmatrix', 'seasonsim',
+  'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts',
+  'results', 'matchforecast', 'lineups', 'titlerace', 'dossier', 'clubform',
+  'myweek', 'scoutboard', 'news', 'draft', 'gwreport', 'methodology', 'accountability'
 ];
 
 const pw = await import(process.env.PLAYWRIGHT_PKG || 'playwright');

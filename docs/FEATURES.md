@@ -41,35 +41,47 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **8 areas** and **40 panels** (the Studio area is owner‑only). Free panels are open
-to everyone; **Pro** panels require an upgrade (or owner access, see §9).
+Navigation is **7 areas** (plus an owner‑only Studio) holding **43 panels**.
+The sidebar lists the areas only — an area is a destination, not a folder, and
+lands on its first panel. The lateral move happens on the page: every panel
+carries an **area tab strip** naming the handful of views that belong with it
+(`areaTabsHtml`). Panels the active game has no capability for are absent
+rather than dead; **Pro** panels show as a locked tab, because you cannot want
+what you cannot see.
+
+There is no "The Edge" area any more. It used to hold twelve unrelated paid
+tools — the app's single biggest pile, and the one place a Pro tool could hide
+from the topic it belonged to. Pro is a property of a *panel* now, not a place,
+so each of those tools moved to where someone would look for it and kept its
+lock. "League" (the Premier League) and "Mini‑Leagues" (yours) also sat two
+aisles apart under near‑identical names; that is now **Match Centre** for the
+football and **Rivals** for the people you are playing against.
 
 ```
 Home
-├── Dashboard            (free)  Season snapshot, key actions, live alerts
-├── This Gameweek        (free)  The 4 weekly decisions + crowd moves
-└── The Wire             (free)  Auto-written data briefings + Team of the Week
+├── Dashboard            (free)  Season snapshot, this week's calls, live state
+├── My Week              (free)  Your personalised gameweek brief
+├── Gameweek recap       (free)  What just happened, and what it cost you
+├── The Wire             (free)  Auto-written data briefings + Team of the Week
+├── Scout AI             (Pro)   Model XI, scout report and the ask box
+├── Methodology          (free)  How the model works, in full
+└── Model Accountability (free)  Every published call, graded
 
 My Team
-├── Pre-season Draft     (free)  2026/27 squad builder — real FPL rules, xP6, AI diagnosis
 ├── My Squad             (free)  Live pitch from your picks + live points
-├── Transfer Planner     (free)  Transfer Solver + replacement finder + AI plan
-└── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
+├── Transfer Planner     (free)  Multi-GW beam solver + replacement finder + AI plan
+├── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
+├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
+├── Pre-season Draft     (free)  Squad builder — real FPL rules, xP6, AI diagnosis
+├── GW Debrief           (free)  Your gameweek, scored against the model
+└── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
 
-Live  (Pro)
-├── Live Percentile      (Pro)   Estimated GW percentile, live through the matchday
-├── Bonus Tracker        (Pro)   Provisional 3-2-1 bonus from live BPS
+Live
+├── Live Percentile      (free)  Estimated GW percentile, live through the matchday
+├── Bonus Tracker        (free)  Provisional 3-2-1 bonus from live BPS
 ├── Your DEFCON          (Pro)   Your players vs the defensive-contribution threshold
-├── DefCon Threats       (Pro)   Players you don't own who are scoring now
-├── Auto-Sub Tracker     (Pro)   Live projection of bench substitutions
-└── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
-
-Intelligence  (Pro)
-├── EO Tracker           (Pro)   Effective ownership across the top of the game
-├── Template Meter       (Pro)   How close your squad is to the top-10k template
-├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
-├── Scout AI             (Pro)   Model Team of the Week + AI scout report
-└── Ask the Scout        (Pro)   Hybrid AI coach (local engine + optional LLM)
+├── Rank Threats         (Pro)   Players you don't own who are scoring now
+└── Auto-Sub Tracker     (Pro)   Live projection of bench substitutions
 
 Players
 ├── Players              (free)  One sortable table, ten lenses, Cards view + CSV
@@ -78,33 +90,47 @@ Players
 ├── Player Compare       (free)  Up to 4 players side by side
 ├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
-└── Rotation Risk        (Pro)   Start-rate risk for premium players
+├── Rotation Risk        (Pro)   Midweek congestion, dead rubbers, start-rate risk
+└── Latest News          (free)  Official player news, newest first
 
 Planner
 ├── Fixture Planner      (free)  Model FDR grid — per-cell xG / CS% / win odds
+├── Points Planner       (free)  Projected points over the coming weeks
 ├── Clean Sheet Matrix   (free)  P(clean sheet) per club per GW, 6/10-GW window
-├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
-├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
-├── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
+├── Season Simulator     (Pro)   Full-season Monte Carlo (absorbed Scenario Lab)
+├── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
 ├── Watchlist            (free)  Saved players
 └── Alerts               (free)  Price/injury/deadline + model-watch alerts
 
-League
+Rivals
+├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
+├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
+├── EO Tracker           (Pro)   Effective ownership; your cover, edge and exposure
+└── The Template         (Pro)   The most-owned XI, and how close yours is
+
+Match Centre
+├── Match Centre         (free)  Every match: scorers, cards, saves, the bonus race
+├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
+├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
 ├── Title Race           (free)  Season odds from the backtested model
 ├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
-├── Team Form            (free)  Club form over the last 5/10/20 games
-├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
-├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
-├── Season Simulator     (Pro)   Full-season Monte Carlo
-└── Scenario Lab         (Pro)   Pin results and re-run the season
+└── Team Form            (free)  Club form over the last 5/10/20 games
 
 Studio  (owner only — hidden unless the signed-in email is on the owner allowlist)
-└── Social Studio        (owner) Share-ready PNG cards from the live model
+├── Social Studio        (owner) Share-ready PNG cards from the live model
+└── Analytics            (owner) External visitors and area usage
 ```
 
+Two panels sit outside the areas and are reachable by hash only: **Glossary**
+(`#glossary`, also in the mobile More sheet) and **Design System** (`#design`).
+Both are free; neither shows a tab strip, since neither belongs to an area's
+list.
+
 **Global chrome:** top bar (menu, brand, refresh, My Team), left sidebar
-(area/panel tree), mobile bottom nav (6 areas), theme toggle (light/dark),
-deadline strip, account menu, upgrade modal, player‑detail modal.
+(flat area list), area tab strip on every page, mobile bottom nav (Home · My
+Squad · Players · Match Centre · More) with the remaining areas in the More
+sheet, theme toggle (light/dark), deadline strip, account menu, upgrade modal,
+player‑detail modal.
 
 ---
 

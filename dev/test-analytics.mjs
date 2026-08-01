@@ -117,21 +117,21 @@ console.log('• areas roll up, and an untouched area is reported as a finding')
     ev('a', 'panel_view', 'dashboard', '2026-07-20T10:00:00Z'),
     ev('a', 'panel_view', 'blog', '2026-07-20T10:01:00Z'),
     ev('b', 'panel_view', 'fixtures', '2026-07-20T10:02:00Z'),
-    ev('b', 'panel_view', 'chips', '2026-07-20T10:03:00Z'),
-    ev('c', 'panel_view', 'scout', '2026-07-20T10:04:00Z')
+    ev('b', 'panel_view', 'points5', '2026-07-20T10:03:00Z'),
+    ev('c', 'panel_view', 'eo', '2026-07-20T10:04:00Z')
   ];
   const s = summarise(rows, 14);
   const byArea = Object.fromEntries(s.areas.map((a) => [a.area, a]));
   ok(byArea.home && byArea.home.views === 2 && byArea.home.people === 1, 'home rolls up dashboard + blog');
   ok(byArea.planner && byArea.planner.panels === 2, 'planner counts its distinct panels');
-  ok(byArea['the edge'] && byArea['the edge'].views === 1, 'Pro panels roll into The Edge');
+  ok(byArea.rivals && byArea.rivals.views === 1, 'a Pro panel rolls into the area it now lives in');
   const pct = s.areas.reduce((n, a) => n + a.pct, 0);
   ok(Math.abs(pct - 100) < 0.5, 'area shares total 100% (' + pct.toFixed(1) + ')');
   ok(s.areas[0].views >= s.areas[s.areas.length - 1].views, 'areas are ordered by views');
 
   /* The Planner having zero external views was the sharpest finding in the
      first sample, and an absent row is easy to miss. */
-  ok(s.untouchedAreas.includes('players') && s.untouchedAreas.includes('league'),
+  ok(s.untouchedAreas.includes('players') && s.untouchedAreas.includes('match centre'),
     'areas nobody opened are listed explicitly (' + s.untouchedAreas.join(', ') + ')');
   ok(!s.untouchedAreas.includes('home'), 'and a touched area is not');
   ok(!s.untouchedAreas.includes('studio'), 'studio is owner-only, so it is never a finding');
