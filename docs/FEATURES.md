@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is **7 areas** (plus an owner‑only Studio) holding **43 panels**.
+Navigation is **7 areas** (plus an owner‑only Studio) holding **41 panels**.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
@@ -94,9 +94,8 @@ Players
 └── Latest News          (free)  Official player news, newest first
 
 Planner
-├── Fixture Planner      (free)  Model FDR grid — per-cell xG / CS% / win odds
-├── Points Planner       (free)  Projected points over the coming weeks
-├── Clean Sheet Matrix   (free)  P(clean sheet) per club per GW, 6/10-GW window
+├── Fixtures             (free)  One horizon, three views: grid / points / clean sheets
+│                                (absorbed the Points Planner and Clean Sheet Matrix)
 ├── Season Simulator     (Pro)   Full-season Monte Carlo (absorbed Scenario Lab)
 ├── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
 ├── Watchlist            (free)  Saved players
@@ -377,7 +376,7 @@ objective, and a £100m squad card is judged on the eleven it fields.
 photo cards for the top picks and a ranked list with next‑fixture difficulty.
 Plus a **captain planner** covering the next 7 gameweeks: the three
 highest‑projected armbands for each upcoming gameweek, from the same
-fixture‑by‑fixture projection the Points Planner uses. Double gameweeks sum
+fixture‑by‑fixture projection the Fixtures panel’s Points view uses. Double gameweeks sum
 both legs and are tagged `DGW`; a club that blanks drops out of that row.
 
 ### Live (Pro)
@@ -629,8 +628,25 @@ which is the correct answer in July, not a failure.
 
 ### Planner
 
-**Fixture Planner** — model‑FDR grid (from win odds), expected goals for, and
-clean‑sheet odds; plus the upcoming match outlook.
+**Fixtures** — one horizon, three views. The Fixture Planner, the Points
+Planner and the Clean Sheet Matrix were three destinations asking the same
+question — what do the coming weeks look like — and answering it at three
+levels: the club, the player and the clean sheet. Choosing between them from
+the nav meant deciding which level you wanted before seeing any of them. They
+are views of one panel now (`FX_VIEWS`, and `PANEL_VIEW` keeps `#points5` and
+`#csmatrix` landing on the view they always showed). The three renderers are
+unchanged — the hub only decides which one owns the body.
+
+The Clean Sheet view is **not** the grid's Defence lens, despite both printing
+a clean‑sheet percentage per club per gameweek, and it is kept rather than
+folded in for two reasons: it reads the published model bundle instead of
+ratings fitted in the browser, so it still works before a ball is kicked (the
+grid answers "Between seasons" then); and it stacks **both** fixtures of a
+double gameweek, where the grid's per‑team map keeps one fixture per gameweek
+and drops the other.
+
+**View 1 — Fixture grid** — model‑FDR grid (from win odds), expected goals for,
+and clean‑sheet odds; plus the upcoming match outlook.
 
 **Every cell shows its lens's projection, not just a colour.** The grid used to
 shade a cell by a 1–5 difficulty bucket and print only the opponent — but that
@@ -649,7 +665,12 @@ official FPL rating). Teams re‑rank easiest‑run‑first; a purple underline 
 each club’s best run in the window. **Team filter** chips hide/show any club in
 the grid (with **All** and, when a team is linked, **My teams** shortcuts).
 
-**Clean Sheet Matrix** — for every 2026/27 club (from the shared model bundle),
+**View 2 — Points** — the top assets by projected points over the next 5 or 8
+gameweeks, filtered by position, with a per‑gameweek breakdown: each cell is the
+opponent and the expected points, greener for a bigger projected haul. Ranked
+by the horizon total, availability baked in.
+
+**View 3 — Clean sheets** — for every 2026/27 club (from the shared model bundle),
 the probability of a clean sheet in each of the next 6 or 10 gameweeks'
 fixtures. P(CS) = P(opponent scores 0), read off the same Dixon‑Coles score
 grid the season simulator samples (`lgScoreGrid` → `lgCleanSheets`). Rows sort

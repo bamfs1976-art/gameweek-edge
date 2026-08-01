@@ -601,21 +601,24 @@ html.offline .net-banner{transform:translateY(0)}
 .lg-fc{display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;color:#fff;margin-right:2px}
 .lsc-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border-2);border-radius:var(--r-pill);padding:4px 6px 4px 12px;font-size:.78rem}
 .lsc-chip button{border:0;background:none;color:var(--text-3);cursor:pointer;font-size:15px;line-height:1}
-/* Lens bar — the saved readings of the players table. Scrolls sideways on a
-   phone rather than wrapping to three rows above the data. */
-.pl-lens{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.pl-lens::-webkit-scrollbar{display:none}
-.pl-lb{flex:0 0 auto;background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);
+/* Lens bar — the saved readings of a panel: which columns, which sort, which
+   shortlist. One class for all of them, because "another view of this same
+   thing" should look identical wherever it appears. Sits BELOW the area tabs
+   in the hierarchy, which are underlined rather than pilled for that reason.
+   Scrolls sideways on a phone rather than wrapping to three rows. */
+.lensbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.lensbar::-webkit-scrollbar{display:none}
+.lensbtn{flex:0 0 auto;background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);
   border-radius:var(--r-pill);padding:6px 12px;font-size:.76rem;font-weight:600;cursor:pointer;
   white-space:nowrap;transition:background .14s,color .14s,border-color .14s}
-.pl-lb:hover{color:var(--text)}
+.lensbtn:hover{color:var(--text)}
 /* Dark ink on the bright fill, not white. White on #00D26A is 2.0:1 and on
    the light theme's #1f9d5c it is 3.5:1 — both well under AA at this size.
    #0A0C0F clears it in both (9.7:1 and 5.6:1). */
-.pl-lb.on{background:var(--green-bright);border-color:var(--green-bright);color:#0A0C0F}
-.pl-lb.lk{color:var(--lock)}
-.pl-lb.lk.on{background:var(--lock);border-color:var(--lock);color:var(--lock-on)}
-.pl-lb svg{vertical-align:-1px}
+.lensbtn.on{background:var(--green-bright);border-color:var(--green-bright);color:#0A0C0F}
+.lensbtn.lk{color:var(--lock)}
+.lensbtn.lk.on{background:var(--lock);border-color:var(--lock);color:var(--lock-on)}
+.lensbtn svg{vertical-align:-1px}
 /* A locked column: visible, legible, and plainly not yours yet. The heading
    keeps full text contrast — dimming it would read as "disabled" rather than
    "paid", and the whole point is that you can see what you are missing. */
@@ -3095,9 +3098,11 @@ const NAV = [
   {
     id:'planner', label:'Planner', icon:'planner',
     panels:[
-      {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
-      {id:'points5', label:'Points Planner', icon:'target', tier:'free'},
-      {id:'csmatrix', label:'Clean Sheet Matrix', icon:'shield', tier:'free'},
+      /* The Points Planner and the Clean Sheet Matrix were the same horizon
+         read at the player level and the clean-sheet level. Both are views of
+         this panel now — see PANEL_VIEW, which keeps #points5 and #csmatrix
+         landing on the view they always showed. */
+      {id:'fixtures', label:'Fixtures', icon:'calendar', tier:'free'},
       {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
       {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
@@ -3491,15 +3496,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   fixtures:{
-    desc:'A six-gameweek fixture grid with model-based difficulty, expected goals and clean-sheet odds.',
-    layout:'standard'
-  },
-  points5:{
-    desc:'The top assets by projected points over the next five (or eight) gameweeks, with a per-gameweek breakdown of opponent and expected points.',
-    layout:'standard'
-  },
-  csmatrix:{
-    desc:'Every club’s clean-sheet probability for the coming gameweeks — from our backtested match model, the same engine as the season simulator.',
+    desc:'What the coming weeks look like, read three ways — club by club, player by player, and clean sheet by clean sheet.',
     layout:'standard'
   },
   leagues:{
@@ -3634,19 +3631,30 @@ function closeMoreSheet(){
 /* Panels that have been merged into another. A retired id still resolves, so
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
-const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers'};
-/* A panel that folded into the players table also has to say WHICH view of
-   it — landing on the raw 23-column table is not the same page the old link
-   promised. The lens is set before the panel renders. */
-const PANEL_LENS={diffs:'diffs',injuries:'fitness',allplayers:'all'};
+const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
+  points5:'fixtures',csmatrix:'fixtures'};
+/* A panel that folded into another has to say WHICH view of it. Landing on
+   the raw 28-column table, or on the fixture grid, is not the page the old
+   link promised — so a retired id names its view here and the panel opens on
+   it. Declarative rather than a callback so a test can read it. */
+const PANEL_VIEW={
+  allplayers:{lens:'all'},
+  diffs:{lens:'diffs'},
+  injuries:{lens:'fitness'},
+  fixtures:{view:'grid'},
+  points5:{view:'points'},
+  csmatrix:{view:'cs'}
+};
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
 function openPanel(panelId){
-  /* Read the lens from the id as typed, not the resolved one — the whole
+  /* Read the view from the id as typed, not the resolved one — the whole
      point is that #diffs and #injuries resolve to the same panel and must
      still open on different views of it. */
-  if(PANEL_LENS[panelId])plSetLens(PANEL_LENS[panelId]);
+  const pv=PANEL_VIEW[panelId];
+  if(pv&&pv.lens)plSetLens(pv.lens);
+  if(pv&&pv.view)fxSetView(pv.view);
   panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back to the
      dashboard. This is the deep-link guard: typing #social does nothing. */
@@ -6649,6 +6657,66 @@ function renderFdr(view){
     :'Greener = easier overall — from each fixture’s modelled win odds. ';
 }
 
+/* ── FIXTURES: three readings of one horizon ────────────────
+   The Fixture Planner, the Points Planner and the Clean Sheet Matrix were
+   three destinations asking the same question — what do the coming weeks
+   look like — and answering it at three levels: the club, the player, and
+   the clean sheet. Choosing between them from the nav meant deciding which
+   level you wanted before you had seen any of them.
+
+   They are views of one panel now. The three renderers are untouched: the
+   hub only decides which one owns the body, so nothing about the grid, the
+   projections or the matrix changes.
+
+   The Clean Sheet Matrix is NOT the grid's Defence lens, despite both
+   printing a clean-sheet percentage per club per gameweek, and it is kept
+   rather than folded in for two reasons. It reads the published model bundle
+   instead of ratings fitted in the browser, so it still works before a ball
+   is kicked — the grid answers "Between seasons" then. And it stacks BOTH
+   fixtures of a double gameweek, where the grid's per-team map keeps one
+   fixture per gameweek and silently drops the other. */
+const FX_VIEWS=[
+  {id:'grid',label:'Fixture grid',
+   desc:'Every club’s run, coloured by the lens you pick — win odds, expected goals, clean-sheet odds, or the official FDR for comparison.'},
+  {id:'points',label:'Points',
+   desc:'The same horizon read player-by-player: projected points per gameweek, ranked by the horizon total.'},
+  {id:'cs',label:'Clean sheets',
+   desc:'Clean-sheet probability per club per gameweek, straight from the backtested model bundle — it shows both halves of a double gameweek, and works before the season starts.'}
+];
+let FX_VIEW='grid';
+function fxView(id){return FX_VIEWS.filter(v=>v.id===id)[0]||FX_VIEWS[0];}
+function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});}
+const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(h),cs:(h)=>hydrateCsMatrix(h)};
+function fxRenderBody(){
+  const body=document.getElementById('fx-body');if(!body)return;
+  const note=document.getElementById('fx-note');
+  if(note)note.textContent=fxView(FX_VIEW).desc;
+  document.querySelectorAll('#fx-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===FX_VIEW));
+  body.innerHTML=skel(5);
+  /* Each view owns the whole body, so a slow one cannot paint into a host
+     the user has already switched away from. */
+  const token=(MEM._fxToken=(MEM._fxToken||0)+1);
+  Promise.resolve().then(()=>FX_HYDRATE[FX_VIEW](body)).catch(err=>{
+    if(token!==MEM._fxToken)return;
+    body.innerHTML=stateBox('calendar','Could not load this view',
+      (err&&err.message)||'Try again in a moment.');
+  });
+}
+async function hydrateFixturesHub(host){
+  host.innerHTML=
+    '<div class="lensbar" id="fx-views">'+FX_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===FX_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="fx-note" style="margin:0 0 12px"></p>'+
+    '<div id="fx-body"></div>';
+  host.querySelectorAll('#fx-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===FX_VIEW)return;
+    fxSetView(btn.dataset.view);
+    fxRenderBody();
+  }));
+  fxRenderBody();
+}
+
 async function hydrateFixtures(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const upcoming=b.upcoming;
@@ -7250,16 +7318,16 @@ function renderPlayerTable(){
   /* The bar scrolls sideways, so the selected lens can sit off-screen with
      nothing on show marked active — the table then looks filtered for no
      visible reason. Bring it back into view on every render. */
-  const on=document.querySelector('#pl-lensbar .pl-lb.on');
+  const on=document.querySelector('#pl-lensbar .lensbtn.on');
   if(on&&on.scrollIntoView)try{on.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
 }
 /* The lens bar. A locked lens is shown, not hidden — the same argument as a
    locked column: you cannot want what you cannot see. Selecting one still
    works, and lands on a table where the point of the lens is behind a lock. */
 function plLensBar(){
-  return '<div class="pl-lens" id="pl-lensbar">'+PL_LENSES.map(l=>{
+  return '<div class="lensbar" id="pl-lensbar">'+PL_LENSES.map(l=>{
     const on=l.id===PL_STATE.lens,lk=plLensLocked(l);
-    return '<button class="pl-lb'+(on?' on':'')+(lk?' lk':'')+'" data-lens="'+l.id+'">'+
+    return '<button class="lensbtn'+(on?' on':'')+(lk?' lk':'')+'" data-lens="'+l.id+'">'+
       (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(l.label)+'</button>';
   }).join('')+'</div>';
 }
@@ -7320,9 +7388,9 @@ async function hydrateAllPlayers(host){
     host.querySelectorAll('#pl-viewseg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
     renderPlayerTable();
   }));
-  host.querySelectorAll('#pl-lensbar .pl-lb').forEach(btn=>btn.addEventListener('click',()=>{
+  host.querySelectorAll('#pl-lensbar .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     plSetLens(btn.dataset.lens);
-    host.querySelectorAll('#pl-lensbar .pl-lb').forEach(x=>x.classList.toggle('on',x===btn));
+    host.querySelectorAll('#pl-lensbar .lensbtn').forEach(x=>x.classList.toggle('on',x===btn));
     renderPlayerTable();
   }));
   host.querySelector('#pl-view').addEventListener('click',ev=>{
@@ -7838,7 +7906,10 @@ async function hydratePointsPlanner(host){
     .map(function(o){return '<button class="seg-b'+(PP_N===+o[0]?' on':'')+'" data-n="'+o[0]+'">'+o[1]+'</button>';}).join('');
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Points Planner</div>'+
     preseasonNote(b,'projections lean on last season’s form until GW1')+
-    '<p class="dl-sub" style="margin-bottom:10px">The top assets by our projected points over the horizon, with a per-gameweek breakdown — each cell is the opponent and the expected points, greener for a bigger projected haul. Ranked by the horizon total; availability is baked in. Tap a row for the full profile.</p>'+
+    /* Short, because the view chip above already says what this is and why
+       you would pick it — repeating the framing here was the panel telling
+       you the same thing twice before showing you anything. */
+    '<p class="dl-sub" style="margin-bottom:10px">Each cell is the opponent and the expected points, greener for a bigger projected haul. Availability is baked in. Tap a row for the full profile.</p>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><div class="seg" id="pp-pos">'+posSeg+'</div><div class="seg" id="pp-n">'+nSeg+'</div></div>'+
     '<div id="pp-out"></div></div>';
   renderPointsPlanner();
@@ -13474,7 +13545,7 @@ async function hydrateCsMatrix(host){
     '<div class="card"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Clean Sheet Matrix'+
       (D.live?'':' <span class="badge badge-amber">pre-season</span>')+'</div>'+
     bundleSeasonWarn(m)+
-    '<p class="dl-sub" style="margin-bottom:10px">Each cell is the modelled chance the club keeps a clean sheet in that gameweek’s fixture — from our backtested match model, the same engine as the season simulator.'+
+    '<p class="dl-sub" style="margin-bottom:10px">The same engine as the season simulator.'+
       (D.live?'':' Pre-season, the window is GW1–'+(D.startMd+Math.min(CSM_N,D.horizon)-1)+' of 2026/27.')+'</p>'+
     '<div class="seg" id="csm-seg" style="margin-bottom:12px">'+
       '<button class="seg-b'+(CSM_N===6?' on':'')+'" data-n="6">Next 6</button>'+
@@ -14783,9 +14854,7 @@ const WIRED={
   allplayers:hydrateAllPlayers,
   scoutboard:hydrateScoutBoard,
   compare:hydrateCompare,
-  fixtures:hydrateFixtures,
-  points5:hydratePointsPlanner,
-  csmatrix:hydrateCsMatrix,
+  fixtures:hydrateFixturesHub,
   price:hydratePrice,
   news:hydrateNews,
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */

@@ -661,31 +661,50 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(ALIAS.ask === 'scout', 'Ask the Scout redirects to the scout that absorbed it');
   ok(!wiredKeys.has('ask'), 'and its hydrator is gone too');
 
-  /* Differentials and the Injury Monitor were a filter and a sort over the
-     players table, so they are lenses on it now. An alias alone is not
-     enough for these two: landing on the raw table is not the page the old
-     link promised, so PANEL_LENS has to name the view as well. */
-  const LENS_MAP = new Function('return ' + balanced(html, html.indexOf('const PANEL_LENS='), '{', '}'))();
+  /* Panels that folded into another are routed by PANEL_VIEW, which names
+     the VIEW as well as the destination. An alias alone is not enough:
+     landing on the default view is not the page the old link promised. */
+  const VIEW_MAP = new Function('return ' + balanced(html, html.indexOf('const PANEL_VIEW='), '{', '}'))();
   const LENS_IDS = new Set(new Function('return ' + balanced(html, html.indexOf('const PL_LENSES='), '[', ']'))()
     .map((l) => l.id));
-  ok(ALIAS.diffs === 'allplayers' && ALIAS.injuries === 'allplayers',
-    'both retired boards resolve to the players table');
-  ok(!wiredKeys.has('diffs') && !wiredKeys.has('injuries'),
-    'and their hydrators are gone rather than left orphaned');
-  for (const [from, lens] of Object.entries(LENS_MAP)) {
-    ok(LENS_IDS.has(lens), from + ' → lens ' + lens + ': the lens exists');
-    ok(from === 'allplayers' || ALIAS[from] === 'allplayers',
-      from + ': a lens route is for an id that aliases to the table');
+  const FX_IDS = new Set(new Function('return ' + balanced(html, html.indexOf('const FX_VIEWS='), '[', ']'))()
+    .map((v) => v.id));
+  /* Which hub each kind of view belongs to — a route may only name a view
+     its destination actually has. */
+  const HOST = { lens: { panel: 'allplayers', ids: LENS_IDS }, view: { panel: 'fixtures', ids: FX_IDS } };
+  for (const [from, spec] of Object.entries(VIEW_MAP)) {
+    const kind = Object.keys(spec)[0];
+    ok(!!HOST[kind], from + ": names a known kind of view ('" + kind + "')");
+    if (!HOST[kind]) continue;
+    ok(HOST[kind].ids.has(spec[kind]), from + ' → ' + spec[kind] + ': that view exists');
+    const dest = ALIAS[from] || from;
+    ok(dest === HOST[kind].panel,
+      from + ': routes to ' + HOST[kind].panel + ' (found: ' + dest + ')');
   }
+  /* And the other direction: aliasing INTO a hub without naming a view drops
+     you on its default, which is the bug this map exists to prevent. */
+  const HUBS = new Set(Object.values(HOST).map((h) => h.panel));
   for (const [from, to] of Object.entries(ALIAS)) {
-    if (to === 'allplayers') ok(!!LENS_MAP[from], from + ': aliasing to the table also names a lens');
+    if (HUBS.has(to)) ok(!!VIEW_MAP[from], from + ': aliasing into ' + to + ' also names a view');
   }
-  /* The lens is read from the id AS TYPED. Resolve first and #diffs and
+  for (const id of ['diffs', 'injuries', 'points5', 'csmatrix']) {
+    ok(!wiredKeys.has(id), id + ': its hydrator is gone rather than left orphaned');
+    ok(!navIds.has(id), id + ': and it is off the nav');
+  }
+  /* The view is read from the id AS TYPED. Resolve first and #diffs and
      #injuries both become 'allplayers', so both would open on the same view
      and one of the two old links would silently land on the wrong page. */
   const openSrc = html.slice(html.indexOf('function openPanel('), html.indexOf('function syncNav('));
-  ok(openSrc.indexOf('PANEL_LENS[panelId]') < openSrc.indexOf('panelId=resolvePanel(panelId)'),
-    'openPanel picks the lens BEFORE resolving the alias');
+  ok(openSrc.indexOf('PANEL_VIEW[panelId]') < openSrc.indexOf('panelId=resolvePanel(panelId)'),
+    'openPanel picks the view BEFORE resolving the alias');
+
+  /* Each hub must still hydrate every renderer it absorbed — a view whose
+     hydrator is not wired to it is a tab that renders an empty box. */
+  const fxMap = html.slice(html.indexOf('const FX_HYDRATE='), html.indexOf('\n', html.indexOf('const FX_HYDRATE=')));
+  for (const v of FX_IDS) ok(fxMap.includes(v + ':'), 'the fixtures hub renders the ' + v + ' view');
+  for (const fn of ['hydrateFixtures', 'hydratePointsPlanner', 'hydrateCsMatrix']) {
+    ok(fxMap.includes(fn), 'and does it with the original ' + fn + ', untouched');
+  }
 
   /* Two panels called DEFCON, one of which had nothing to do with defensive
      contributions, sat next to each other in the same area. Same capability,

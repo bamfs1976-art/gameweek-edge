@@ -37,7 +37,7 @@ const AREA = {
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
   live: ['liverank', 'bonus', 'dcwatch', 'defcon', 'autosubs'],
   players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
-  planner: ['fixtures', 'points5', 'csmatrix', 'seasonsim', 'whatif', 'watchlist', 'alerts'],
+  planner: ['fixtures', 'seasonsim', 'whatif', 'watchlist', 'alerts'],
   rivals: ['leagues', 'rivals', 'eo', 'template'],
   'match centre': ['results', 'matchforecast', 'lineups', 'titlerace', 'dossier', 'clubform'],
   studio: ['social', 'analytics']

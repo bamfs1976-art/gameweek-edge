@@ -28,7 +28,7 @@ const PANELS = [
   'liverank', 'bonus', 'defcon', 'autosubs', 'whatif',
   'eo', 'template', 'rivals', 'scout',
   'allplayers', 'compare', 'price', 'setpiece', 'rotation',
-  'fixtures', 'points5', 'csmatrix', 'seasonsim',
+  'fixtures', 'seasonsim',
   'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts',
   'results', 'matchforecast', 'lineups', 'titlerace', 'dossier', 'clubform',
   'myweek', 'scoutboard', 'news', 'draft', 'gwreport', 'methodology', 'accountability'
@@ -45,6 +45,33 @@ const errors = [];
 let current = 'load';
 page.on('pageerror', (e) => errors.push(`[${current}] ${e.message}`));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(`[${current}] console: ${m.text()}`); });
+
+/* The model bundle lives on an external host, so offline every panel that
+   reads it renders an error box — which a smoke test happily accepts as
+   "rendered". Stub it, and those panels are actually exercised: the Clean
+   Sheet view, the Title Race and the season simulator all run their real
+   renderers instead of their failure path. */
+const CLUBS = ['Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton', 'Chelsea',
+  'Coventry', 'Crystal Palace', 'Everton', 'Fulham', 'Hull', 'Ipswich', 'Leeds', 'Liverpool',
+  'Man City', 'Man Utd', 'Newcastle', "Nott'm Forest", 'Sunderland', 'Spurs'];
+const bundleTeams = {};
+CLUBS.forEach((c, i) => {
+  bundleTeams[c] = { attack: 0.8 + i * 0.02, defence: 0.8 + (19 - i) * 0.02, home: 1.15 };
+});
+const bundleFixtures = [];
+for (let md = 0; md < 38; md++) {
+  const row = [];
+  for (let i = 0; i < 20; i += 2) row.push([CLUBS[(i + md) % 20], CLUBS[(i + 1 + md) % 20]]);
+  bundleFixtures.push(row);
+}
+await page.route('**/model.json', (r) => r.fulfill({
+  status: 200, contentType: 'application/json',
+  body: JSON.stringify({
+    constants: { BASE_H: 1.45, BASE_A: 1.15, DC_RHO: -0.05 },
+    teams: bundleTeams, fixtures: bundleFixtures,
+    season_state: { live: false, played_md: 0, label: '2026/27' }
+  })
+}));
 
 await page.addInitScript(([base, mid]) => {
   localStorage.setItem('ge-api-base', base);
@@ -86,10 +113,31 @@ for (const tier of ['pro', 'free']) {
 }
 await page.evaluate(() => setTier('pro'));
 
+/* Every view of the fixtures hub. Three renderers share one body, and only
+   one of them is on screen at a time — a throw in the Points or Clean Sheet
+   view would never appear on the default Grid. */
+let fxChecks = 0;
+for (const view of await page.evaluate(() => FX_VIEWS.map((v) => v.id))) {
+  current = `fixtures:${view}`; fxChecks++;
+  await page.evaluate((v) => { fxSetView(v); renderPage('fixtures'); }, view);
+  await page.waitForTimeout(1200);
+  const [sw, vw] = await page.evaluate(() => [document.body.scrollWidth, window.innerWidth]);
+  if (sw > vw + 2) { overflow++; console.error(`  OVERFLOW ${current}: ${sw} > ${vw}`); }
+  /* The skeleton must have been replaced by real content — a hydrator that
+     silently resolves without painting leaves the loading bones on screen. */
+  const state = await page.evaluate(() => {
+    const b = document.getElementById('fx-body');
+    if (!b || !b.children.length || b.querySelector('.sk')) return 'skeleton';
+    if (b.querySelector('.ge-state')) return 'error';
+    return 'ok';
+  });
+  if (state !== 'ok') { overflow++; console.error(`  ! ${current} rendered ${state}, not content`); }
+}
+
 // Ignore network noise from the offline CDN (photos/crests aren't reachable in tests).
 const appErrors = errors.filter((e) => !/Failed to load resource|ERR_|404|501|net::/.test(e));
 
-console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
+console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | fixture views: ${fxChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
 appErrors.forEach((e) => console.error('  ! ' + e));
 
 await browser.close();
