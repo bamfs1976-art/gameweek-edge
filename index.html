@@ -10729,6 +10729,48 @@ function clubSplit(fixtures,teamId){
     gfpg:v.games?v.gf/v.games:null,gapg:v.games?v.ga/v.games:null,csr:v.games?v.cs/v.games:null});
   return {home:per(home),away:per(away),games:home.games+away.games};
 }
+/* ── Does a kind fixture actually become a clean sheet? ──────
+   "Easy fixture" is a claim about the opponent. Whether a club converts one
+   is a claim about the club, and the two come apart more often than a
+   fixture ticker admits: a side can face the bottom half nine times, keep
+   two clean sheets, and every green cell in its run is still telling you to
+   buy the defence. This is the number that stops that — and it is the
+   difference between "the fixtures are kind" and "the fixtures are kind AND
+   this defence cashes them in".
+
+   Split by the opponent's ATTACK, not by league position. A clean sheet is a
+   question about who you are defending against, and a mid-table side with a
+   good centre-forward is not a kind fixture however the table reads. */
+const OPP_SPLIT_MIN=5;        /* matches against weak attacks before it says anything */
+/* The bottom half of the league by fitted attack strength. Half rather than a
+   threshold, because "weak" is only meaningful relative to the rest of the
+   division in the season being played. */
+function poorAttacks(R){
+  if(!R||!R.att)return null;
+  const ids=Object.keys(R.att).filter(k=>R.att[k]!=null);
+  if(ids.length<8)return null;
+  const sorted=ids.slice().sort((a,c)=>R.att[a]-R.att[c]);
+  return new Set(sorted.slice(0,Math.floor(sorted.length/2)).map(Number));
+}
+function clubVsPoorAttacks(fixtures,teamId,weak){
+  if(!weak||!weak.size)return null;
+  let games=0,cs=0,gf=0,ga=0;
+  (fixtures||[]).forEach(f=>{
+    if(!f||!f.finished||f.team_h_score==null||f.team_a_score==null)return;
+    const home=f.team_h===teamId,away=f.team_a===teamId;
+    if(!home&&!away)return;
+    if(!weak.has(home?f.team_a:f.team_h))return;
+    games++;
+    const conceded=home?f.team_a_score:f.team_h_score;
+    const scored=home?f.team_h_score:f.team_a_score;
+    gf+=scored;ga+=conceded;if(conceded===0)cs++;
+  });
+  /* Below the minimum this returns null rather than a small-sample rate. A
+     clean-sheet percentage off three games is noise wearing a number's
+     clothes, and it would read as evidence. */
+  if(games<OPP_SPLIT_MIN)return null;
+  return {games,cs,gf,ga,csr:cs/games,gfpg:gf/games,gapg:ga/games};
+}
 /* Which venue to target, or null when the sample cannot support a claim.
    Two separate reads, because a club can be a different attacking side at
    home while conceding the same everywhere. */

@@ -122,6 +122,13 @@ export const ENGINE_FNS = [
      and no amount of last season's minutes can tell you that on its own. */
   'clubDepth',
 
+  /* Two reads of a club's record that a fixture ticker cannot give. The venue
+     split says whether this is a different side at home; clubVsPoorAttacks
+     says whether a kind fixture actually becomes a clean sheet — the club
+     thread's answer to "the run looks green, but does this defence cash it
+     in". Both go silent below their sample floor. */
+  'clubSplit', 'clubVenueVerdict', 'poorAttacks', 'clubVsPoorAttacks',
+
   /* Expected points from first principles, and its inputs. `dcHitProb` and
      `savePts` are not called by the app directly — nativeXP calls them — but
      an extraction that omits a callee produces an engine that parses, loads,
@@ -163,6 +170,8 @@ export const ENGINE_CONSTS = [
   /* Out-of-position thresholds. */
   'OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_MID_PCTL',
   'OOP_MID_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL',
+  /* Sample floors for the two club-record splits. */
+  'SPLIT_MIN_GAMES', 'SPLIT_EDGE', 'OPP_SPLIT_MIN',
   /* Squad rules and the transfer solver's valuation terms. */
   'RULES_FALLBACK', 'BENCH_W', 'FT_LADDER', 'FT_CAP',
 ];

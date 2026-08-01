@@ -38,6 +38,11 @@ const E = loadEngine();
 const idx = buildIndex(boot, fixtures);
 E.setRules(E.fplRules(boot));
 const { next, runs } = fixtureContext(E, idx);
+/* The bottom half of the league by fitted attack, computed once. Two reads
+   hang off it: whether a club's kind fixtures actually become clean sheets,
+   and how many of the coming ones are kind in the same sense. */
+const RATINGS = E.plsimRatings(idx, idx.fixtures);
+const WEAK_ATT = E.poorAttacks(RATINGS);
 const teamName = (id) => (idx.teams[id] && (idx.teams[id].short_name || idx.teams[id].name)) || '—';
 
 /* Matches played per club, so minutes security is measured against how much
@@ -228,8 +233,18 @@ function clubData(teamId) {
      truthful-looking "0 scored, 0 conceded" — which is worse than saying
      nothing, and pre-season is exactly when these threads run. */
   const played = teamGames[teamId] || 0;
+  /* Two records a fixture ticker cannot give: whether this is a different
+     side at home, and whether it converts a kind fixture. Both return null
+     below their sample floor, which pre-season is always — and that is the
+     right answer, not a zero. */
+  const split = E.clubSplit(idx.fixtures, teamId);
+  const kind = E.clubVsPoorAttacks(idx.fixtures, teamId, WEAK_ATT);
+  /* How many of the coming six are against a bottom-half attack — the number
+     that turns the record above into a forecast rather than a fact. */
+  const kindAhead = WEAK_ATT ? run.filter((r) => WEAK_ATT.has(r.opp)).length : null;
   return {
     name: t.short_name || t.name, fullName: t.name,
+    venue: E.clubVenueVerdict(split), split, kind, kindAhead,
     scored: played ? (g.scored ?? null) : null,
     conceded: played ? (g.conceded ?? null) : null,
     played,

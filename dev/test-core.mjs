@@ -199,6 +199,9 @@ const pieces = [
   ...['SPLIT_MIN_GAMES', 'SPLIT_EDGE', 'LEAN_EDGE']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'clubSplit'),
+  ...['OPP_SPLIT_MIN'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'poorAttacks'),
+  extractFn(html, 'clubVsPoorAttacks'),
   extractFn(html, 'clubVenueVerdict'),
   extractFn(html, 'clubLean'),
   ...['DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX']
@@ -209,7 +212,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1807,6 +1810,54 @@ section('clubSplit / clubVenueVerdict: is this club a different side at home? (T
   ok(core.clubSplit(withFuture, 1).games === 10, 'unplayed and score-less fixtures are ignored');
   ok(core.clubSplit([null, undefined], 1).games === 0, 'holes in the fixture list are safe');
   ok(core.clubSplit(games, 99).games === 0, 'a club that played none of these games has an empty record');
+}
+
+section('clubVsPoorAttacks: does a kind fixture actually become a clean sheet? (Tier 2)');
+{
+  /* The line this exists for, from a rival's Man Utd thread: "only 2 clean
+     sheets vs weak sides, so if the defenders return nothing at Hull and
+     Ipswich it is not bad luck". A fixture ticker cannot say that — it grades
+     the opponent, not whether this defence converts one. */
+  const R = { att: {}, def: {} };
+  for (let i = 1; i <= 20; i++) { R.att[i] = 0.5 + i * 0.05; R.def[i] = 1; }
+  const weak = core.poorAttacks(R);
+  ok(weak instanceof Set && weak.size === 10, 'the bottom half of attacks is exactly half the league');
+  ok(weak.has(1) && weak.has(10), 'the weakest attacks are in it');
+  ok(!weak.has(11) && !weak.has(20), 'the strongest are not');
+  ok([...weak].every((x) => typeof x === 'number'),
+    'ids come back as numbers — the ratings are keyed by string, the fixtures are not');
+
+  /* Team 1 plays opponents 2..11; it keeps two clean sheets. Only 2..10 are
+     weak, so nine of the ten matches count. */
+  const fx = [];
+  for (let i = 0; i < 10; i++) {
+    fx.push({ finished: true, team_h: 1, team_a: i + 2, team_h_score: 2, team_a_score: i < 2 ? 0 : 1 });
+  }
+  const v = core.clubVsPoorAttacks(fx, 1, weak);
+  ok(v && v.games === 9, 'only matches against weak attacks count (' + (v && v.games) + ')');
+  ok(v.cs === 2, 'two clean sheets, as played');
+  ok(Math.abs(v.csr - 2 / 9) < 1e-9, 'and the rate is over those games, not the whole season');
+  ok(v.gf === 18 && v.ga === 7, 'goals for and against are the club’s own way round');
+
+  const away = [{ finished: true, team_h: 3, team_a: 1, team_h_score: 0, team_a_score: 4 }];
+  const both = core.clubVsPoorAttacks(fx.concat(away), 1, weak);
+  ok(both.games === 10 && both.cs === 3, 'an away clean sheet counts too');
+  ok(both.gf === 22 && both.ga === 7, 'and away goals are not read off the wrong side');
+
+  /* The guard that matters. A clean-sheet percentage off three games is noise
+     wearing a number's clothes, and printed in a thread it reads as evidence. */
+  ok(core.OPP_SPLIT_MIN === 5, 'the minimum sample is five matches');
+  ok(core.clubVsPoorAttacks(fx.slice(0, 4), 1, weak) === null, 'four matches is not a finding');
+  ok(core.clubVsPoorAttacks(fx.slice(0, 5), 1, weak) !== null, 'five is');
+  ok(core.clubVsPoorAttacks(fx, 1, null) === null, 'and no ratings means no claim at all');
+  ok(core.clubVsPoorAttacks(fx, 1, new Set()) === null, 'nor does an empty weak set');
+
+  /* Unplayed fixtures must not dilute the rate — this is read mid-season and
+     the fixture list carries the whole of it. */
+  const withFuture = fx.concat([{ finished: false, team_h: 1, team_a: 2, team_h_score: null, team_a_score: null }]);
+  ok(core.clubVsPoorAttacks(withFuture, 1, weak).games === 9, 'unplayed fixtures are ignored');
+  ok(core.poorAttacks({ att: { 1: 1, 2: 1 } }) === null, 'too few clubs rated means no split');
+  ok(core.poorAttacks(null) === null, 'and no ratings at all is safe');
 }
 
 section('clubLean: which end of this club is worth buying (Tier 2)');
