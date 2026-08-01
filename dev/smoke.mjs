@@ -30,7 +30,7 @@ const PANELS = [
   'allplayers', 'compare', 'price', 'setpiece', 'rotation',
   'fixtures', 'seasonsim',
   'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts',
-  'results', 'matchforecast', 'lineups', 'titlerace', 'dossier', 'clubform',
+  'results', 'titlerace', 'dossier', 'clubform',
   'myweek', 'scoutboard', 'news', 'draft', 'gwreport', 'methodology', 'accountability'
 ];
 
@@ -81,6 +81,26 @@ await page.addInitScript(([base, mid]) => {
 }, [BASE, MID]);
 
 await page.goto(`${BASE}/index.html`, { waitUntil: 'networkidle' });
+
+/* Did a hub view actually paint? Three outcomes worth telling apart:
+     skeleton — the hydrator never resolved, or resolved without painting
+     failed   — it THREW, and the hub caught it (.hub-fail)
+     empty    — the whole body is one state box: nothing to show at all
+   A state box NESTED among real cards is not a failure. The projected XI
+   renders exactly that against pre-season data — three cards, one of which
+   says "Not enough data yet" because projectXI needs starts and minutes the
+   mock has none of. Treating that as an error is how this check first went
+   wrong. */
+await page.addScriptTag({ content: `
+  window.viewState = (id) => {
+    const b = document.getElementById(id);
+    if (!b || !b.children.length || b.querySelector('.sk')) return 'skeleton';
+    if (b.querySelector('.hub-fail')) return 'failed';
+    const cards = b.querySelectorAll('.card');
+    if (cards.length === 1 && cards[0].querySelector('.ge-state')) return 'empty';
+    return 'ok';
+  };
+` });
 
 let overflow = 0;
 for (const p of PANELS) {
@@ -140,6 +160,31 @@ for (const tier of ['pro', 'free']) {
 }
 await page.evaluate(() => setTier('pro'));
 
+/* Every view of the Matchday hub — three readings of one fixture list. */
+let mcChecks = 0;
+for (const view of await page.evaluate(() => MC_VIEWS.map((v) => v.id))) {
+  current = `matchday:${view}`; mcChecks++;
+  await page.evaluate((v) => { mcSetView(v); renderPage('results'); }, view);
+  await page.waitForTimeout(1100);
+  const [sw, vw] = await page.evaluate(() => [document.body.scrollWidth, window.innerWidth]);
+  if (sw > vw + 2) { overflow++; console.error(`  OVERFLOW ${current}: ${sw} > ${vw}`); }
+  const state = await page.evaluate(() => viewState('mc-body'));
+  if (state !== 'ok') { overflow++; console.error(`  ! ${current} rendered ${state}, not content`); }
+}
+/* The results board pages between gameweeks by re-rendering itself. It has to
+   land in the hub's body — into #ge-data it would wipe the view chips and
+   leave the panel with no way back to Forecasts or Line-ups. */
+await page.evaluate(() => { mcSetView('results'); renderPage('results'); });
+await page.waitForTimeout(1100);
+await page.evaluate(() => resNav(-1));
+await page.waitForTimeout(1100);
+const navKept = await page.evaluate(() => {
+  const chips = document.querySelectorAll('#mc-views .lensbtn').length;
+  const body = document.getElementById('mc-body');
+  return chips === 3 && !!body && !!body.children.length;
+});
+if (!navKept) { overflow++; console.error('  ! resNav destroyed the Matchday view chips'); }
+
 /* Every view of the fixtures hub. Three renderers share one body, and only
    one of them is on screen at a time — a throw in the Points or Clean Sheet
    view would never appear on the default Grid. */
@@ -152,19 +197,14 @@ for (const view of await page.evaluate(() => FX_VIEWS.map((v) => v.id))) {
   if (sw > vw + 2) { overflow++; console.error(`  OVERFLOW ${current}: ${sw} > ${vw}`); }
   /* The skeleton must have been replaced by real content — a hydrator that
      silently resolves without painting leaves the loading bones on screen. */
-  const state = await page.evaluate(() => {
-    const b = document.getElementById('fx-body');
-    if (!b || !b.children.length || b.querySelector('.sk')) return 'skeleton';
-    if (b.querySelector('.ge-state')) return 'error';
-    return 'ok';
-  });
+  const state = await page.evaluate(() => viewState('fx-body'));
   if (state !== 'ok') { overflow++; console.error(`  ! ${current} rendered ${state}, not content`); }
 }
 
 // Ignore network noise from the offline CDN (photos/crests aren't reachable in tests).
 const appErrors = errors.filter((e) => !/Failed to load resource|ERR_|404|501|net::/.test(e));
 
-console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
+console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | matchday views: ${mcChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
 appErrors.forEach((e) => console.error('  ! ' + e));
 
 await browser.close();

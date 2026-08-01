@@ -3121,9 +3121,13 @@ const NAV = [
   {
     id:'matchcentre', label:'Match Centre', icon:'trophy',
     panels:[
-      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
-      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'},
-      {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
+      /* Results, Match Forecasts and Projected XI read one fixture list at
+         three points in time, so they are views of one panel (MC_VIEWS).
+         Title Race, Club Dossier and Team Form stay their own panels — they
+         are season reference you browse, not matchday views you flick
+         between. The id stays `results` for the deep links and the bottom
+         bar. */
+      {id:'results', label:'Matchday', icon:'pulse', tier:'free'},
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
       {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
       {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'}
@@ -3384,16 +3388,8 @@ const PANEL_CONTENT = {
     desc:'Every club’s recent form — last 5, 10 and 20 games, overall, home and away — from real results.',
     layout:'standard'
   },
-  lineups:{
-    desc:'A data-driven estimate of each club’s likely starting XI from starts, minutes and availability. An estimate from the numbers — not team news.',
-    layout:'standard'
-  },
-  matchforecast:{
-    desc:'Model win/draw/loss and expected goals for every fixture of a matchday. Pro adds BTTS, over/under 2.5 and the most-likely scorelines.',
-    layout:'standard'
-  },
   results:{
-    desc:'Every match of the gameweek — scorers, cards, saves, defensive contributions and the bonus race, with your players flagged and the model’s pre-match view beside each result.',
+    desc:'One fixture list, three points in time — what the model expected, who was likely to start, and what actually happened.',
     layout:'standard'
   },
   methodology:{
@@ -3614,7 +3610,8 @@ function closeMoreSheet(){
    than silently falling back to the dashboard. */
 const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
   points5:'fixtures',csmatrix:'fixtures',
-  bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank'};
+  bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank',
+  matchforecast:'results',lineups:'results'};
 /* Three panels are now hubs, each holding views that used to be their own
    destinations. A retired id has to name WHICH view: landing on the raw
    28-column table, on the fixture grid, or on the live percentile is not the
@@ -3622,7 +3619,7 @@ const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuri
 
    Declarative — `{hub, view}` rather than a callback — so a test can read it
    and check that a route only ever names a view its hub actually has. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView};
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -3634,7 +3631,10 @@ const PANEL_VIEW={
   bonus:{hub:'liverank',view:'bonus'},
   dcwatch:{hub:'liverank',view:'defcon'},
   defcon:{hub:'liverank',view:'threats'},
-  autosubs:{hub:'liverank',view:'autosubs'}
+  autosubs:{hub:'liverank',view:'autosubs'},
+  results:{hub:'results',view:'results'},
+  matchforecast:{hub:'results',view:'forecasts'},
+  lineups:{hub:'results',view:'lineups'}
 };
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
@@ -3830,7 +3830,12 @@ const LIVE_PANELS=new Set(['liverank','results']);
 /* A hub refreshes its ACTIVE VIEW in place. Re-running the hub's own
    hydrator would rebuild the chip row and repaint a skeleton every 45
    seconds — a live screen that blinks is worse than one that lags. */
-const LIVE_REFRESH={liverank:()=>lvRenderBody({quiet:true})};
+const LIVE_REFRESH={
+  liverank:()=>lvRenderBody({quiet:true}),
+  /* Only the Results view moves during a match. Re-running the forecasts or
+     the projected XI every 45 seconds would be work for nothing. */
+  results:()=>{if(mcView(MC_VIEW).live)mcRenderBody({quiet:true});}
+};
 let LIVE_TIMER=null;
 function armLiveRefresh(panelId){
   if(LIVE_TIMER){clearInterval(LIVE_TIMER);LIVE_TIMER=null;}
@@ -6702,8 +6707,10 @@ function fxRenderBody(){
   const token=(MEM._fxToken=(MEM._fxToken||0)+1);
   Promise.resolve().then(()=>FX_HYDRATE[FX_VIEW](body)).catch(err=>{
     if(token!==MEM._fxToken)return;
-    body.innerHTML=stateBox('calendar','Could not load this view',
-      (err&&err.message)||'Try again in a moment.');
+    /* Marked so a test can tell a HUB failure — the view's hydrator threw —
+       from a view rendering its own legitimate empty state. */
+    body.innerHTML='<div class="hub-fail">'+stateBox('calendar','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
   });
 }
 async function hydrateFixturesHub(host){
@@ -9470,8 +9477,10 @@ function lvRenderBody(opts){
   const token=(MEM._lvToken=(MEM._lvToken||0)+1);
   Promise.resolve().then(()=>LV_HYDRATE[v.id](body)).catch(err=>{
     if(token!==MEM._lvToken)return;
-    body.innerHTML=stateBox('pulse','Could not load this view',
-      (err&&err.message)||'Try again in a moment.');
+    /* Marked so a test can tell a HUB failure — the view's hydrator threw —
+       from a view rendering its own legitimate empty state. */
+    body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
   });
 }
 async function hydrateLive(host){
@@ -13413,6 +13422,61 @@ function lgScFill(host,m){const md=+host.querySelector('#lsc-md').value;const fx
   const sel=host.querySelector('#lsc-fx');sel.innerHTML='';fx.forEach(([h,a])=>{const o=document.createElement('option');o.value=h+'|'+a;o.textContent=h+' v '+a;sel.appendChild(o);});}
 
 /* ── Match Forecasts (free 1X2 + xG; Pro adds goal markets) ──────── */
+/* ── MATCHDAY: the same fixtures, before and after ──────────
+   Results, Match Forecasts and Projected XI were three destinations reading
+   one fixture list at three points in time: what the model expects, who is
+   likely to start it, and what actually happened. You want them within one
+   move of each other — the pre-match view is only interesting next to the
+   result, and the projected XI is the thing you check between the two.
+
+   Title Race, Club Dossier and Team Form are NOT here and were deliberately
+   left as their own panels. They are season-level reference you browse, not
+   matchday views you flick between, and folding six things into one panel
+   because they share an area would be tidying rather than merging. */
+const MC_VIEWS=[
+  {id:'results',label:'Results',live:true,fn:'hydrateResults',
+   desc:'Every match of the gameweek — scorers, cards, saves, defensive contributions and the bonus race, with your players flagged and the model’s pre-match view graded against what happened.'},
+  {id:'forecasts',label:'Forecasts',fn:'hydrateMatchForecast',
+   desc:'Model win/draw/loss and expected goals for every fixture of a matchday. Pro adds BTTS, over/under 2.5 and the most likely scorelines.'},
+  {id:'lineups',label:'Line-ups',fn:'hydrateLineups',
+   desc:'A data-driven estimate of each club’s likely starting XI from starts, minutes and availability. An estimate from the numbers — not team news.'}
+];
+const MC_HYDRATE={results:(h)=>hydrateResults(h),forecasts:(h)=>hydrateMatchForecast(h),
+  lineups:(h)=>hydrateLineups(h)};
+let MC_VIEW='results';
+function mcView(id){return MC_VIEWS.filter(v=>v.id===id)[0]||MC_VIEWS[0];}
+function mcSetView(id){MC_VIEW=mcView(id).id;track('matchday_view',{view:MC_VIEW});}
+function mcRenderBody(opts){
+  const body=document.getElementById('mc-body');if(!body)return;
+  const v=mcView(MC_VIEW);
+  const note=document.getElementById('mc-note');
+  if(note)note.textContent=v.desc;
+  document.querySelectorAll('#mc-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===v.id));
+  if(!(opts&&opts.quiet))body.innerHTML=skel(5);
+  const token=(MEM._mcToken=(MEM._mcToken||0)+1);
+  Promise.resolve().then(()=>MC_HYDRATE[v.id](body)).catch(err=>{
+    if(token!==MEM._mcToken)return;
+    /* Marked so a test can tell a HUB failure — the view's hydrator threw —
+       from a view rendering its own legitimate empty state. */
+    body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
+async function hydrateMatchday(host){
+  host.innerHTML=
+    '<div class="lensbar" id="mc-views">'+MC_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===MC_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="mc-note" style="margin:0 0 12px"></p>'+
+    '<div id="mc-body"></div>';
+  host.querySelectorAll('#mc-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===MC_VIEW)return;
+    mcSetView(btn.dataset.view);
+    mcRenderBody();
+  }));
+  mcRenderBody();
+}
+
 async function hydrateMatchForecast(host){
   host.innerHTML=skel(4);
   let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model — try again shortly.');return;}
@@ -13454,7 +13518,10 @@ function resToggle(id){
 function resNav(step){
   RES_GW=Math.max(1,Math.min(38,(RES_GW||1)+step));
   window._resOpen=new Set();
-  const h=document.getElementById('ge-data');
+  /* The results board owns a VIEW of the Matchday panel, not the panel — so
+     it re-renders into the hub's body. Re-rendering into #ge-data would wipe
+     the view chips and leave the panel showing results with no way back. */
+  const h=document.getElementById('mc-body')||document.getElementById('ge-data');
   if(h)hydrateResults(h);
 }
 async function hydrateResults(host){
@@ -13571,7 +13638,10 @@ async function hydrateResults(host){
     list+=fixCard(f);
   });
   host.innerHTML='<div class="card">'+
-    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Match Centre'+
+    /* "Results", not "Match Centre" — the area is called Match Centre and the
+       panel is Matchday, so a third name for the same thing on the same
+       screen is just noise. This heading exists to anchor the GW pager. */
+    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Results'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
@@ -14920,9 +14990,7 @@ const WIRED={
   titlerace:hydrateTitleRace,
   dossier:hydrateDossier,
   clubform:hydrateClubForm,
-  lineups:hydrateLineups,
-  matchforecast:hydrateMatchForecast,
-  results:hydrateResults,
+  results:hydrateMatchday,
   seasonsim:hydrateSeasonSim,
   blog:hydrateBlog,
   social:hydrateSocial,

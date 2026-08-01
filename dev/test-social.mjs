@@ -588,7 +588,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(!NAV.some((a) => a.id === 'intel'), 'the catch-all Pro area is gone');
   const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
   const rehomed = {
-    scout: 'home', gwhistory: 'myteam', liverank: 'live',
+    scout: 'home', gwhistory: 'myteam', liverank: 'live', results: 'matchcentre',
     setpiece: 'players', rotation: 'players', seasonsim: 'planner', whatif: 'planner',
     rivals: 'rivals', eo: 'rivals', template: 'rivals',
   };
@@ -681,7 +681,8 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
     balanced(html, html.indexOf('const ' + n + '='), '[', ']'))().map((v) => v.id));
   /* Each hub panel and the views it actually has. A route may only name a
      view its hub owns, and every hub must be dispatchable. */
-  const HUB = { allplayers: viewIds('PL_LENSES'), fixtures: viewIds('FX_VIEWS'), liverank: viewIds('LV_VIEWS') };
+  const HUB = { allplayers: viewIds('PL_LENSES'), fixtures: viewIds('FX_VIEWS'),
+    liverank: viewIds('LV_VIEWS'), results: viewIds('MC_VIEWS') };
   const dispatch = html.slice(html.indexOf('const HUB_SETVIEW='),
     html.indexOf('\n', html.indexOf('const HUB_SETVIEW=')));
   for (const hub of Object.keys(HUB)) {
@@ -703,7 +704,8 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   /* Every hub must also route its OWN id, or opening it from the nav leaves
      whatever view the last deep link happened to select. */
   for (const hub of Object.keys(HUB)) ok(!!VIEW_MAP[hub], hub + ': routes its own id to a default view');
-  for (const id of ['diffs', 'injuries', 'points5', 'csmatrix', 'bonus', 'dcwatch', 'defcon', 'autosubs']) {
+  for (const id of ['diffs', 'injuries', 'points5', 'csmatrix', 'bonus', 'dcwatch', 'defcon',
+    'autosubs', 'matchforecast', 'lineups']) {
     ok(!wiredKeys.has(id), id + ': its hydrator is gone rather than left orphaned');
     ok(!navIds.has(id), id + ': and it is off the nav');
   }
@@ -725,6 +727,8 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
       ['hydrateFixtures', 'hydratePointsPlanner', 'hydrateCsMatrix']],
     liverank: ['LV_HYDRATE', HUB.liverank,
       ['hydrateLiveRank', 'hydrateBonus', 'hydrateDcwatch', 'hydrateDefcon', 'hydrateAutosubs']],
+    results: ['MC_HYDRATE', HUB.results,
+      ['hydrateResults', 'hydrateMatchForecast', 'hydrateLineups']],
   };
   for (const [hub, [mapName, ids, fns]] of Object.entries(ABSORBED)) {
     const src = hydrateMap(mapName);
@@ -929,7 +933,7 @@ console.log('• game packs: capabilities decide which panels exist');
      declare `needs` too, and they are the easier place to typo one: a view
      whose capability is misspelt is simply never listed, and nothing about
      the panel it lives in looks wrong. */
-  const HUB_VIEWS = ['PL_LENSES', 'FX_VIEWS', 'LV_VIEWS'].flatMap((n) =>
+  const HUB_VIEWS = ['PL_LENSES', 'FX_VIEWS', 'LV_VIEWS', 'MC_VIEWS'].flatMap((n) =>
     new Function('return ' + balancedFrom(html, html.indexOf('const ' + n + '='), '[', ']'))());
   const needed = new Set([...NAV_ALL, ...HUB_VIEWS].flatMap((p) => p.needs || []));
   const bogus = [...needed].filter((c) => !CAPS.includes(c));

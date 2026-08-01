@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is **7 areas** (plus an owner‑only Studio) holding **37 panels**.
+Navigation is **7 areas** (plus an owner‑only Studio) holding **35 panels**.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
@@ -105,9 +105,8 @@ Rivals
 └── The Template         (Pro)   The most-owned XI, and how close yours is
 
 Match Centre
-├── Match Centre         (free)  Every match: scorers, cards, saves, the bonus race
-├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
-├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
+├── Matchday             (free)  One fixture list, three views: results / forecasts / line-ups
+│                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
 ├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
 └── Team Form            (free)  Club form over the last 5/10/20 games
@@ -924,6 +923,35 @@ so it shows before a team is linked and pre‑season.
 
 **Alerts** — price‑change / injury / deadline reminders and **model‑watch** alerts
 (when the model's view of a player shifts). Optional push notifications.
+
+### Match Centre
+
+**Matchday** — one fixture list, three points in time. Results, Match Forecasts
+and Projected XI were three destinations reading the same fixtures before,
+during and after: what the model expected, who was likely to start it, and what
+actually happened. You want those within one move of each other — the pre‑match
+view is only interesting next to the result, and the projected XI is the thing
+you check between the two. They are views of one panel now (`MC_VIEWS`), the
+three renderers unchanged, and `#matchforecast` and `#lineups` still land on the
+view they always showed. The panel id stays `results` for the deep links, the
+bottom bar and the `g m` chord.
+
+- **Results** — every match of the gameweek: scorers, cards, saves, defensive
+  contributions and the bonus race, with your players flagged and the model's
+  pre‑match view graded against what happened. Pages between gameweeks in
+  place; this is the view the 45s live poll refreshes (`LIVE_REFRESH`), and
+  only this one — re‑running the forecasts or the projected XI every 45 seconds
+  would be work for nothing.
+- **Forecasts** — model win/draw/loss and expected goals per fixture, any
+  matchday. Pro adds BTTS, over/under 2.5 and the most likely scorelines.
+- **Line‑ups** — a data‑driven estimate of each club's likely starting XI from
+  starts, minutes and availability. An estimate from the numbers, not team news.
+
+**Title Race**, **Club Dossier** (documented under Planner above) and **Team
+Form** stay their own panels rather than becoming views here. They are
+season‑level reference you browse, not matchday views you flick between, and
+folding six things into one panel because they share an area would be tidying
+rather than merging.
 
 ---
 
