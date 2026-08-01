@@ -36,7 +36,7 @@ const AREA = {
     'design', 'glossary'],
   'my team': ['draft', 'squad', 'gwreport', 'transfers', 'captain'],
   live: ['liverank', 'bonus'],
-  players: ['allplayers', 'scoutboard', 'compare', 'diffs', 'price', 'injuries', 'news'],
+  players: ['allplayers', 'scoutboard', 'compare', 'price', 'news'],
   planner: ['fixtures', 'points5', 'csmatrix', 'leagues', 'chips', 'watchlist', 'alerts'],
   league: ['results', 'titlerace', 'dossier', 'clubform', 'lineups', 'matchforecast'],
   'the edge': ['scout', 'rivals', 'eo', 'template', 'dcwatch', 'defcon', 'autosubs',

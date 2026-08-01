@@ -72,12 +72,11 @@ Intelligence  (Pro)
 └── Ask the Scout        (Pro)   Hybrid AI coach (local engine + optional LLM)
 
 Players
-├── Player List          (free)  Full sortable table + Cards view + CSV export
+├── Players              (free)  One sortable table, ten lenses, Cards view + CSV
+│                                (absorbed Differentials and the Injury Monitor)
 ├── Scout Board          (free)  Per-90 shortlist + price ladder, DefCon + bonus by club
 ├── Player Compare       (free)  Up to 4 players side by side
-├── Differentials        (free)  <12% owned in form + DefCon leaders
 ├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
-├── Injury Monitor       (free)  Fitness flags by ownership
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
 └── Rotation Risk        (Pro)   Start-rate risk for premium players
 
@@ -394,18 +393,41 @@ differential, value, defence and fixture questions, grounded in the model.
 
 ### Players
 
-**Player List** — every player in one view.
-- **Table view:** 21 sortable columns — Player, Team, Pos, Price, Sel%, Total
+**Players** — every player, every number, one table.
+- **Table view:** 28 sortable columns — Player, Team, Pos, Price, Sel%, Total
   Pts, GW Pts, Form, PPG, **xP**, Mins, Goals, Assists, **xGI/90**,
-  **npxG/90**, **xGC/90**, **DefC/90**, Bonus, BPS, ICT, Season Value. **npxG/90**
+  **npxG/90**, **xGC/90**, **DefC/90**, Bonus, BPS, Baseline BPS/90, ICT,
+  Season Value, **Tonight** (price‑move probability, signed), **Fit%**,
+  **YC** (yellows against the ban cutoff in force), **DC hit%**, **Mins%**,
+  plus three Pro columns — **EO%**, **Tmpl** and **SetP**. **npxG/90**
   (non‑penalty xG per 90 — open‑play threat) comes from the Core Insights mirror
   (§5) and shows a dash where unavailable, sorting below real values. Click any
   header to sort asc/desc; sticky player column; caps at 300 rows per sort.
+- **Lenses** — ten saved readings of the table, each setting its own columns,
+  sort and shortlist: *All data*, *Scout*, *Differentials*, *Price*, *Fitness*,
+  *DefCon*, *Rotation* (free) and *EO*, *Template*, *Set pieces* (Pro). The
+  Differentials and Injury Monitor boards were a filter and a sort over this
+  same data, so they are now lenses rather than destinations; `#diffs` and
+  `#injuries` still resolve, landing on the lens they always showed
+  (`PANEL_ALIAS` + `PANEL_LENS`). Lens names stay searchable in ⌘K.
+- **The column gate** — Pro is enforced per **column**, not per panel, because
+  once the paid boards fold into one table the column is the unit of value. A
+  locked column is shown, not hidden: the heading stays legible and each cell
+  carries a lock, both of which open the upgrade sheet. Three doors are shut,
+  not one — the cell, the **sort** (ordering by a hidden column would hand over
+  the ranking row by row) and the **CSV export**. A locked *lens* also stops
+  filtering, so its shortlist is not free either.
+  Only three columns are Pro, by a deliberate rule: a column is paid only when
+  the paid board is the **only** place that number appears today. DC hit% (already
+  on the Scout Board's defender brackets) and minutes security (already on Player
+  Compare) therefore stayed free — a merge must not take back what was free.
 - **Cards view:** responsive grid of photo cards (headshot + crest + name,
   team/pos/price, pts·xP·ownership).
 - **Filters:** search, position, team.
-- **Export CSV:** downloads exactly the filtered/sorted view — all 23 fields
-  (including `npxG_per90`), quoted/escaped, UTF‑8 BOM for Excel, named per gameweek.
+- **Export CSV:** downloads exactly the filtered/sorted view, quoted/escaped,
+  UTF‑8 BOM for Excel, named per gameweek. Free exports carry every free
+  column including `PriceMoveTonight` and `ChanceOfPlaying`; the three Pro
+  columns are appended only for a Pro reader.
 - Any row/card opens the full **player‑detail modal**.
 
 **Player‑detail modal** (reached from any player anywhere)
@@ -480,8 +502,9 @@ returns.
 **Player Compare** — up to four players side by side on form, xG, price,
 ownership, ICT and **minutes security** (three‑tier badge).
 
-**Differentials** — <12% owned in form, plus a **Defensive‑contribution leaders**
-table (the 2025/26 DefCon scoring category).
+**Differentials** and the **Injury Monitor** are no longer panels — both were a
+filter and a sort over the same player data, so they are lenses on the Players
+table (*Differentials* and *Fitness*). Old links still work.
 
 **Price Predictor** — a threshold model estimates each player's **% likelihood
 of a price rise/fall tonight** (net transfers vs an ownership‑scaled threshold,
@@ -496,8 +519,6 @@ is the gap, so the panel names both the **underpriced** and — rarer, and more
 useful — the **overpriced**. Benchmarking within position is deliberate:
 defenders score fewer points per pound than forwards by design, so one
 league‑wide rate would brand every defender a bargain.
-
-**Injury Monitor** — fitness flags, suspension risk and return chance by ownership.
 
 **Set Piece Register** — official written **taker notes** (from `set-piece-notes`)
 plus confirmed penalty / direct‑FK / corner order.

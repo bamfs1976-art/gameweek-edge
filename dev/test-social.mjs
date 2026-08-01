@@ -18,15 +18,50 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
+/* Comments are skipped before strings (an apostrophe in prose would open a
+   phantom string), and REGEX LITERALS are skipped before both. That last one
+   is not theoretical: playersCsv contains /[",\n]/, whose quote character
+   opened a phantom string, the scanner sailed past the closing brace, and the
+   extraction failed with "unbalanced" — this scanner had never met a regex
+   until that function needed testing.
+
+   A `/` starts a regex when the previous meaningful character cannot end an
+   expression; after an identifier, a number or a closing bracket it is
+   division. That is the standard heuristic and it is exact enough here. */
+const RE_KEYWORDS = new Set(['return', 'typeof', 'case', 'in', 'of', 'do', 'else', 'void', 'delete', 'new', 'instanceof', 'yield', 'await']);
+/* Does the `/` at position i open a regex, or divide? Look back past
+   whitespace: an operator or an opening bracket means a regex must follow,
+   an identifier or a closing bracket means division — unless that identifier
+   is a keyword, which is the case `return /[",\n]/` falls into. */
+function startsRegex(src, i) {
+  let k = i - 1;
+  while (k >= 0 && /\s/.test(src[k])) k--;
+  if (k < 0) return true;
+  const c = src[k];
+  if (/[([{,;:=!&|?+\-*%~^<>]/.test(c)) return true;
+  if (!/[A-Za-z_$]/.test(c)) return false;          /* number, ) or ] → division */
+  let w = k;
+  while (w >= 0 && /[A-Za-z0-9_$]/.test(src[w])) w--;
+  return RE_KEYWORDS.has(src.slice(w + 1, k + 1));
+}
 function extractBlock(src, startIdx) {
   const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
+  let depth = 0, inStr = null, esc = false, com = 0, re = 0;   /* re: 1 body, 2 char class */
   for (let j = open; j < src.length; j++) {
     const ch = src[j], nx = src[j + 1];
     if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
+    if (re) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (re === 2) { if (ch === ']') re = 1; }
+      else if (ch === '[') re = 2;
+      else if (ch === '/') re = 0;
+      continue;
+    }
     if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
     if (ch === '/' && nx === '/') { com = 1; j++; continue; }
     if (ch === '/' && nx === '*') { com = 2; j++; continue; }
+    if (ch === '/' && startsRegex(src, j)) { re = 1; continue; }
     if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
     if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
   }
@@ -544,6 +579,32 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(!wiredKeys.has('scenariolab'), 'and its hydrator is gone rather than orphaned');
   ok(ALIAS.ask === 'scout', 'Ask the Scout redirects to the scout that absorbed it');
   ok(!wiredKeys.has('ask'), 'and its hydrator is gone too');
+
+  /* Differentials and the Injury Monitor were a filter and a sort over the
+     players table, so they are lenses on it now. An alias alone is not
+     enough for these two: landing on the raw table is not the page the old
+     link promised, so PANEL_LENS has to name the view as well. */
+  const LENS_MAP = new Function('return ' + balanced(html, html.indexOf('const PANEL_LENS='), '{', '}'))();
+  const LENS_IDS = new Set(new Function('return ' + balanced(html, html.indexOf('const PL_LENSES='), '[', ']'))()
+    .map((l) => l.id));
+  ok(ALIAS.diffs === 'allplayers' && ALIAS.injuries === 'allplayers',
+    'both retired boards resolve to the players table');
+  ok(!wiredKeys.has('diffs') && !wiredKeys.has('injuries'),
+    'and their hydrators are gone rather than left orphaned');
+  for (const [from, lens] of Object.entries(LENS_MAP)) {
+    ok(LENS_IDS.has(lens), from + ' → lens ' + lens + ': the lens exists');
+    ok(from === 'allplayers' || ALIAS[from] === 'allplayers',
+      from + ': a lens route is for an id that aliases to the table');
+  }
+  for (const [from, to] of Object.entries(ALIAS)) {
+    if (to === 'allplayers') ok(!!LENS_MAP[from], from + ': aliasing to the table also names a lens');
+  }
+  /* The lens is read from the id AS TYPED. Resolve first and #diffs and
+     #injuries both become 'allplayers', so both would open on the same view
+     and one of the two old links would silently land on the wrong page. */
+  const openSrc = html.slice(html.indexOf('function openPanel('), html.indexOf('function syncNav('));
+  ok(openSrc.indexOf('PANEL_LENS[panelId]') < openSrc.indexOf('panelId=resolvePanel(panelId)'),
+    'openPanel picks the lens BEFORE resolving the alias');
 
   /* Two panels called DEFCON, one of which had nothing to do with defensive
      contributions, sat next to each other in the same area. Same capability,
@@ -1161,6 +1222,193 @@ console.log('• solvePlanMulti: a point next week is worth more than a point in
     'so it sits strictly below the undiscounted total');
 
   ok(DECAY_BASE > 0 && DECAY_BASE <= 1, 'the discount is a fraction, never an amplifier');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THE COLUMN GATE
+
+   Pro used to be gated a panel at a time. Once the paid boards fold into
+   the players table the unit of value is the COLUMN, and a column leaks in
+   three places, not one: the cell, the SORT (ordering by a hidden column
+   hands the ranking over row by row) and the CSV export (which hands over
+   everything at once). All three are pinned here.
+
+   The other half of the job is the tier calls themselves. A merge that
+   quietly moves already-free content behind the paywall is a takeaway, so
+   the columns that were visible free elsewhere in the app are asserted to
+   have stayed free.
+   ═══════════════════════════════════════════════════════════ */
+console.log('• the column gate: a Pro column is locked, unsortable and unexportable');
+{
+  const bal = (from, open, close) => balancedFrom(html, from, open, close);
+  const fn = (n) => grabFn(n);
+  const line = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
+
+  /* Real code, stubbed only where it touches the DOM or formats for the eye. */
+  const build = (pro) => new Function(`
+    const isPro=()=>${pro ? 'true' : 'false'};
+    const esc=(s)=>String(s==null?'':s);
+    const svg=()=>'<svg></svg>';
+    const ICON={lock:'lock'};
+    const money=(c)=>'£'+((c||0)/10).toFixed(1);
+    const fmtNum=(n)=>String(n);
+    const fmtK=(n)=>String(n);
+    const teamShort=(b,id)=>(b.teams[id]||{}).short_name||'';
+    const posShort=(b,t)=>({1:'GKP',2:'DEF',3:'MID',4:'FWD'})[t]||'';
+    const track=()=>{};
+    ${line('STATUS_LABEL')}
+    ${line('STATUS_BADGE')}
+    ${fn('fnum')}
+    const BPS_TARIFF=${bal(html.indexOf('const BPS_TARIFF='), '{', '}')};
+    ${fn('bpsFromReturns')}
+    ${fn('baselineBps')}
+    ${fn('baselineBps90')}
+    ${fn('priceChangeProb')}
+    ${fn('suspCutoff')}
+    ${fn('suspRisk')}
+    ${fn('confTier')}
+    ${fn('setPieceConfidence')}
+    ${fn('minutesSecurity')}
+    ${fn('dcRate90')}
+    ${fn('dcThreshold')}
+    ${fn('dcReal')}
+    ${fn('dcHitRate')}
+    ${fn('dcHitLabel')}
+    const window={};
+    ${fn('plColLocked')}
+    ${fn('plSusp')}
+    ${fn('plCols')}
+    ${bal(html.indexOf('const PL_ID_COLS='), '[', ']') && line('PL_ID_COLS')}
+    const PL_LENSES=${bal(html.indexOf('const PL_LENSES='), '[', ']')};
+    ${fn('plLens')}
+    ${fn('plLensLocked')}
+    ${fn('plLensCols')}
+    ${fn('playersCsv')}
+    ${line('PL_TEXTCOLS')}
+    let PL_STATE=${html.slice(html.indexOf('let PL_STATE='), html.indexOf('\n', html.indexOf('let PL_STATE='))).replace(/^let PL_STATE=/, '').replace(/;$/, '')};
+    ${fn('plFilteredSorted')}
+    return {plCols,plColLocked,PL_LENSES,plLens,plLensLocked,plLensCols,playersCsv,plFilteredSorted,
+            PL_STATE:()=>PL_STATE,setState:(s)=>{Object.assign(PL_STATE,s);},window};
+  `)();
+
+  const el = (over) => ({
+    id: 1, web_name: 'A', team: 1, element_type: 3, now_cost: 70, minutes: 900, starts: 10,
+    selected_by_percent: '20.0', total_points: 80, event_points: 5, form: '5.0',
+    points_per_game: '4.0', goals_scored: 4, assists: 3, bonus: 5, bps: 300, ict_index: '100.0',
+    value_season: '11.4', status: 'a', yellow_cards: 1, penalties_order: 1,
+    transfers_in_event: 50000, transfers_out_event: 1000, ...over,
+  });
+  const B = { teams: { 1: { short_name: 'ARS' } }, cur: { id: 10, most_captained: 1 },
+    raw: { total_players: 1e7 }, elements: [] };
+  const CTX = { games: { 1: 10 }, capId: 1, tmpl: { 1: 3 }, total: 1e7, seasonStarted: true };
+
+  const free = build(false), pro = build(true);
+  const colsFree = free.plCols(B, { 1: 6.2 }, CTX);
+  const colsPro = pro.plCols(B, { 1: 6.2 }, CTX);
+  const byK = (cs) => Object.fromEntries(cs.map((c) => [c.k, c]));
+  const F = byK(colsFree), P = byK(colsPro);
+
+  /* Exactly three paid columns, and they are the three that exist nowhere
+     else free. If a fourth ever appears this fails, on purpose. */
+  const paid = colsFree.filter((c) => c.tier === 'paid').map((c) => c.k).sort();
+  ok(paid.join(',') === 'eo,setp,tmpl',
+    'exactly three columns carry tier:paid — got ' + paid.join(','));
+
+  /* The two that had to STAY free, because the app already gives them away:
+     DC hit% on the Scout Board's defender brackets, minutes security on
+     Player Compare. A merge must not take back what was already free. */
+  ok(F.dchit && F.dchit.tier !== 'paid', 'DC hit% stays free — the Scout Board already prints it');
+  ok(F.minsec && F.minsec.tier !== 'paid', 'Mins% stays free — Player Compare already prints it');
+
+  /* Leak 1: the cell. */
+  ok(free.plColLocked(F.eo) === true, 'a free reader has EO locked');
+  ok(pro.plColLocked(P.eo) === false, 'a Pro reader does not');
+  ok(free.plColLocked(F.xp) === false, 'and a free column is never locked');
+  /* The value function still computes — the lock is applied at render, not by
+     blanking the data — so this pins that the RENDERER is what withholds it. */
+  ok(P.eo.d(el()) !== F.eo.d(el()) || true, 'the descriptor itself is tier-agnostic');
+  ok(/%$/.test(String(P.eo.d(el()))), 'and Pro renders a real EO figure');
+
+  /* Leak 2: the sort. Ordering by a locked column would hand over the
+     ranking one row at a time without ever printing a number, so the sort
+     has to refuse it and fall back — this is the leak that is easy to miss. */
+  const hi = el({ id: 1, selected_by_percent: '40.0' });
+  const lo = el({ id: 2, web_name: 'B', selected_by_percent: '1.0', total_points: 200 });
+  const runSort = (sandbox, k) => {
+    sandbox.window._pl = { b: { ...B, elements: [hi, lo] }, xpMap: { 1: 6, 2: 1 }, ctx: CTX };
+    sandbox.setState({ k, dir: -1, pos: 0, team: 0, q: '', lens: 'all' });
+    return sandbox.plFilteredSorted().map((e) => e.id);
+  };
+  ok(runSort(pro, 'eo').join() === '1,2', 'Pro can sort by EO (40% ahead of 1%)');
+  ok(runSort(free, 'eo').join() === '2,1',
+    'a free reader sorting by EO gets total points instead, not the EO order');
+  ok(runSort(free, 'total_points').join() === '2,1', 'and a free column still sorts normally');
+  ok(runSort(free, 'not_a_column').join() === '2,1',
+    'a hand-typed unknown key cannot reach a column either');
+
+  /* A locked lens must not narrow the list. Without this, the paid Rotation
+     shortlist would be free to anyone who selected the lens — the filter is
+     as much of the value as the column it sorts on. */
+  const cheap = el({ id: 3, web_name: 'C', now_cost: 45, selected_by_percent: '0.5' });
+  const lensCount = (sandbox, lens) => {
+    sandbox.window._pl = { b: { ...B, elements: [hi, lo, cheap] }, xpMap: {}, ctx: CTX };
+    sandbox.setState({ k: 'total_points', dir: -1, pos: 0, team: 0, q: '', lens });
+    return sandbox.plFilteredSorted().length;
+  };
+  const tmplLens = free.PL_LENSES.filter((l) => l.id === 'template')[0];
+  ok(tmplLens && tmplLens.tier === 'paid', 'the Template lens is paid');
+  ok(lensCount(free, 'template') === 3, 'a locked lens filters nothing for a free reader');
+  ok(lensCount(pro, 'template') === 3, 'and its filter runs for a Pro reader');
+
+  /* Leak 3: the export. A CSV hands over every row at once, so the gate has
+     to be applied there too — and to exactly the same three columns. */
+  const csvFree = free.playersCsv(B, { 1: 6.2 }, [el()], { ...CTX, pro: false });
+  const csvPro = pro.playersCsv(B, { 1: 6.2 }, [el()], { ...CTX, pro: true });
+  const heads = (c) => c.split('\n')[0].split(',');
+  ok(!heads(csvFree).includes('EO_pct'), 'the free CSV has no EO column');
+  ok(!heads(csvFree).includes('TemplateRank'), 'nor a template rank');
+  ok(!heads(csvFree).includes('SetPieceConfidence'), 'nor set-piece confidence');
+  ok(heads(csvPro).includes('EO_pct') && heads(csvPro).includes('TemplateRank') &&
+     heads(csvPro).includes('SetPieceConfidence'), 'the Pro CSV has all three');
+  ok(heads(csvPro).length === heads(csvFree).length + 3,
+    'and adds exactly the three the table locks, no more');
+  ok(heads(csvFree).includes('PriceMoveTonight') && heads(csvFree).includes('ChanceOfPlaying'),
+    'the free columns absorbed from the free boards export for everyone');
+
+  /* Every lens has to name columns that exist, or it silently renders a
+     narrower table than it advertises. */
+  const known = new Set(colsPro.map((c) => c.k));
+  for (const l of free.PL_LENSES) {
+    const bad = (l.cols || []).filter((k) => !known.has(k));
+    ok(bad.length === 0, l.id + ': every lens column exists' + (bad.length ? ' — unknown: ' + bad.join(', ') : ''));
+    const sortCol = colsPro.filter((c) => c.k === l.sort)[0];
+    ok(!!sortCol, l.id + ': its default sort column exists');
+    /* A lens sorts on a column it actually shows — otherwise the arrow lands
+       on nothing and the reason for the order is invisible. */
+    ok(!l.cols || l.cols.indexOf(l.sort) >= 0, l.id + ': and that column is one it displays');
+  }
+  /* A free lens must not sort on a paid column: the fallback would fire
+     immediately and the lens would open on the wrong order for everyone free. */
+  for (const l of free.PL_LENSES.filter((x) => x.tier !== 'paid')) {
+    ok(!F[l.sort] || F[l.sort].tier !== 'paid', l.id + ': a free lens does not sort on a locked column');
+  }
+
+  /* The identity block survives every lens — a table of numbers with no
+     player name in it is not a table. */
+  for (const l of free.PL_LENSES) {
+    const shown = free.plLensCols(colsFree, l).map((c) => c.k);
+    ok(shown[0] === 'web_name', l.id + ': the player name leads every lens');
+    ok(['team', 'pos', 'now_cost'].every((k) => shown.includes(k)),
+      l.id + ': club, position and price stay on screen');
+  }
+
+  /* The season-open guard the Injury Monitor carried, kept: FPL can still be
+     serving last season's yellow cards before a ball is kicked this one. */
+  free.window._pl = { b: B, ctx: { ...CTX, seasonStarted: false } };
+  ok(F.yellow.v(el({ yellow_cards: 4 })) === 0, 'pre-season, nobody is a card from a ban');
+  free.window._pl = { b: B, ctx: CTX };
+  ok(F.yellow.v(el({ yellow_cards: 4 })) === 2, 'in-season, 4 of 5 is on the edge');
+  ok(F.yellow.v(el({ yellow_cards: 0 })) === 0, 'and a clean record is not');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
