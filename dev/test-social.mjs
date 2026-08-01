@@ -617,8 +617,24 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(/function dashNextSteps\(mid\)/.test(html), 'the next-steps builder exists');
   ok(/canSeePanel\(PANELS\[id\]\)/.test(html), 'and filters through the capability gate');
   ok(/\.slice\(0,\s*6\)/.test(html), 'and is capped rather than listing everything');
-  ok(/host\.innerHTML=hero\+tkStrip\+meta\+dashChipRow\(\)\+.*dashNextSteps\(mid\)/.test(html),
-    'the dashboard actually renders it');
+  /* Assert the PROPERTY, not the exact concatenation. The previous version
+     pinned the literal `hero+tkStrip+meta+...` string, so inserting a band
+     into the dashboard broke a test about next steps — a false failure that
+     says nothing about whether next steps still render. */
+  const dashRender = (html.match(/host\.innerHTML=hero\+[^;]*;/) || [''])[0];
+  ok(dashRender.includes('dashNextSteps(mid)'), 'the dashboard actually renders it');
+
+  /* The proof band is the one claim no competitor can make — that we publish
+     our own error rate. It sat last on the page, in the smallest text, which
+     gave the argument away. It leads now, and this stops it drifting back. */
+  ok(/class="proof-band"/.test(html), 'the accountability band exists');
+  ok(dashRender.indexOf('proof') > -1 && dashRender.indexOf('proof') < dashRender.indexOf('tkStrip'),
+    'and renders above the metrics strip rather than at the foot of the page');
+  /* Anchor on the JS that builds the band, not the first mention of the class
+     — that one is the CSS rule, hundreds of lines earlier. */
+  const proofJs = html.slice(html.indexOf('class="proof-band"'), html.indexOf('class="proof-band"') + 900);
+  ok(/openPanel\(\\?'accountability\\?'\)/.test(proofJs),
+    'and links to Model Accountability, not just the methodology write-up');
   /* Unlinked visitors are the ones who bounce, and the personalised panels
      are dead ends for them, so the two lists must genuinely differ. */
   const nextSrc = balanced(html, html.indexOf('function dashNextSteps(mid)'), '{', '}');
