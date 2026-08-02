@@ -18,18 +18,33 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const aiSrc = readFileSync(join(ROOT, 'netlify/functions/ai.js'), 'utf8');
 
 /* ── extraction helpers ─────────────────────────────────── */
+/* Comments are skipped BEFORE strings, and that ordering is the whole point.
+   Without it an ordinary apostrophe in prose — "a midfielder's tariff" inside
+   an explanatory comment — opens a phantom string, the scanner sails past the
+   closing brace, and the extracted "function" swallows whatever follows it.
+   That is not hypothetical: it is how this file started failing the moment a
+   comment in oopFlag used the word midfielder's. The sibling extractors in
+   extract-engine.mjs and test-chipplan.mjs already did this; this one was the
+   last naive scanner left. */
 function extractBlock(src, startIdx) {
   const open = src.indexOf('{', startIdx);
   if (open < 0) throw new Error('no opening brace');
-  let depth = 0, inStr = null, esc = false;
+  let depth = 0, inStr = null, esc = false, com = 0;
   for (let j = open; j < src.length; j++) {
-    const ch = src[j];
+    const ch = src[j], nx = src[j + 1];
+    if (com) {
+      if (com === 1 && ch === '\n') com = 0;
+      else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; }
+      continue;
+    }
     if (inStr) {
       if (esc) esc = false;
       else if (ch === '\\') esc = true;
       else if (ch === inStr) inStr = null;
       continue;
     }
+    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
+    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
     if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
     if (ch === '{') depth++;
     else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
@@ -139,6 +154,11 @@ const pieces = [
   extractFn(html, 'differentials'),
   extractFn(html, 'rotationPairs'),
   extractFn(html, 'bestFixtureRun'),
+  /* The Fixture Planner's purple patch, and the entry-point summary read
+     off the same call. */
+  extractConst(html, 'FDR_PATCH_MAX'),
+  extractFn(html, 'fdrGrade'),
+  extractFn(html, 'fdrPatchFor'),
   extractFn(html, 'chipSwings'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
@@ -160,9 +180,12 @@ const pieces = [
   extractFn(html, 'fdrCellValue'),
   extractFn(html, 'fdrRunTotal'),
   /* Out-of-position detection. */
-  ...['OOP_MIN_MINUTES', 'OOP_STRONG']
+  ...['OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_MID_PCTL', 'OOP_MID_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'dcRate90'),
+  extractFn(html, 'dcThreshold'),
   extractFn(html, 'oopThreat'),
+  extractFn(html, 'oopQuantile'),
   extractFn(html, 'oopBenchmarks'),
   extractFn(html, 'oopFlag'),
   /* Set pieces pivoted club-first. */
@@ -176,6 +199,13 @@ const pieces = [
   ...['SPLIT_MIN_GAMES', 'SPLIT_EDGE', 'LEAN_EDGE']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'clubSplit'),
+  ...['OPP_SPLIT_MIN'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'poorAttacks'),
+  extractFn(html, 'clubVsPoorAttacks'),
+  extractFn(html, 'venueSplit'),
+  ...['VALUE_MIN_FIT'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'valueFit'),
+  extractFn(html, 'valueResiduals'),
   extractFn(html, 'clubVenueVerdict'),
   extractFn(html, 'clubLean'),
   ...['DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX']
@@ -186,7 +216,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, oopThreat, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -198,6 +228,59 @@ function ok(cond, label) {
 function section(name) { console.log('• ' + name); }
 
 /* ── esc ────────────────────────────────────────────────── */
+section('dcRate90: a zero is not the same as no data');
+{
+  /* Measured against the live bootstrap, not assumed: the per-90 field comes
+     back PRESENT and set to 0 for every player with real minutes, so a
+     fallback keyed on isNaN could never fire against the shape FPL actually
+     sends. This is the assertion that would have caught that. */
+  const F = core.dcRate90;
+  ok(F({ defensive_contribution_per_90: '9.5', defensive_contribution: 0, minutes: 900 }) === 9.5,
+    'a real per-90 figure is used as-is');
+  const derived = F({ defensive_contribution_per_90: '0', defensive_contribution: 100, minutes: 900 });
+  ok(Math.abs(derived - 10) < 1e-9,
+    'a ZERO per-90 with a real season total derives the rate (' + derived + ')');
+  ok(Math.abs(F({ defensive_contribution: 100, minutes: 900 }) - 10) < 1e-9,
+    'and so does an absent field');
+  ok(F({ defensive_contribution_per_90: '0', defensive_contribution: 0, minutes: 900 }) === 0,
+    'no data anywhere still gives zero rather than an invention');
+  ok(Number.isFinite(F({})), 'a bare element does not divide by zero');
+  ok(core.dcThreshold({ element_type: 2 }) === 10 && core.dcThreshold({ element_type: 3 }) === 12,
+    'the threshold follows the position');
+}
+
+section('extractBlock: the harness must not corrupt what it measures');
+{
+  /* Every assertion in this file rests on extractBlock pulling out exactly
+     one function. When it over-captures the tests do not fail honestly —
+     the whole sandbox stops parsing, or worse, silently tests the wrong
+     code. So the scanner is tested against the things that fool it. */
+  const cases = [
+    ["apostrophe in a block comment", "function f(){ /* a midfielder's tariff */ return 1; }"],
+    ["apostrophe in a line comment", "function f(){ // the striker's job\n return 1; }"],
+    ["quote in a block comment", 'function f(){ /* he said "no" */ return 1; }'],
+    ["brace in a line comment", "function f(){ // }\n return 1; }"],
+    ["brace in a block comment", "function f(){ /* } */ return 1; }"],
+    ["brace in a string", 'function f(){ var s = "}"; return 1; }'],
+    ["brace in a template", "function f(){ var s = `}`; return 1; }"],
+    ["escaped quote", "function f(){ var s = 'it\\'s'; return 1; }"],
+    ["comment marker inside a string", 'function f(){ var s = "/*"; return 1; }']
+  ];
+  for (const [label, src] of cases) {
+    let got = null;
+    try { got = extractBlock(src, 0); } catch (_) { /* reported below */ }
+    ok(got === src, 'captures exactly the function: ' + label +
+      (got === src ? '' : ' — got ' + JSON.stringify(got)));
+  }
+  /* And the real thing: the function whose comment broke this. */
+  const flag = extractFn(html, 'oopFlag');
+  ok((flag.match(/^function [A-Za-z0-9_$]+\(/gm) || []).length === 1,
+    'oopFlag extracts as one function, not a run-on');
+  let parsed = true;
+  try { new Function('return (' + flag + ')'); } catch (_) { parsed = false; }
+  ok(parsed, 'and it parses on its own');
+}
+
 section('esc escapes <>&"\'');
 ok(core.esc('<script>') === '&lt;script&gt;', 'angle brackets escaped');
 ok(core.esc('a&b') === 'a&amp;b', 'ampersand escaped');
@@ -800,6 +883,72 @@ ok(rp[0].score <= rp[rp.length - 1].score, 'pairs are ranked easiest combined ru
 ok(core.rotationPairs(rotCands, rotDiff, 1).length === 1, 'the limit caps the number of pairs');
 ok(core.rotationPairs([{ id: 9, team: 99, cost: 40 }], rotDiff, 6).length === 0, 'a player whose team has no fixtures yields no pair');
 
+section('fdrPatchFor / entry points: a run is only a window if it is actually kind');
+{
+  /* The grid draws a purple underline and the entry-point summary lists the
+     gameweek it starts. Both must come from one call, or the panel lists a
+     club as an entry point that it did not underline two inches above. */
+  const gws = [1, 2, 3, 4, 5, 6];
+  const cell = (diff) => ({ diff, lam: 1.5, cs: 0.3, fdr: diff });
+  const kind = {}; gws.forEach((g) => { kind[g] = cell(g >= 3 ? 1.5 : 5); });
+  const cruel = {}; gws.forEach((g) => { cruel[g] = cell(4.5); });
+  const byTeamGw = { 1: kind, 2: cruel };
+
+  const p1 = core.fdrPatchFor('overall', 1, gws, byTeamGw, 3);
+  ok(p1 && gws[p1.start] === 3, 'the kind stretch is found where it starts (GW' +
+    (p1 ? gws[p1.start] : '—') + ')');
+  ok(p1 && gws[p1.end] === 5, 'and runs to the end of K');
+  ok(core.fdrPatchFor('overall', 2, gws, byTeamGw, 3) === null,
+    'a club whose best run is still hard gets no window at all');
+
+  /* The gate is the shared constant, not a number retyped in two places. */
+  const edge = {}; gws.forEach((g) => { edge[g] = cell(core.FDR_PATCH_MAX); });
+  ok(core.fdrPatchFor('overall', 3, gws, { 3: edge }, 3) !== null,
+    'a run exactly at the threshold still counts');
+  const over = {}; gws.forEach((g) => { over[g] = cell(core.FDR_PATCH_MAX + 0.1); });
+  ok(core.fdrPatchFor('overall', 3, gws, { 3: over }, 3) === null, 'just past it does not');
+
+  /* A missing fixture grades 6 — maximally hard — so a blank always makes a
+     run worse rather than being skipped over. */
+  const full = {}; gws.forEach((g) => { full[g] = cell(1); });
+  const gap = {}; gws.forEach((g) => { if (g !== 3) gap[g] = cell(1); });
+  /* Given room, the best run simply avoids the blank and is no worse for it. */
+  ok(core.fdrPatchFor('overall', 5, gws, { 5: gap }, 3).sum
+     === core.fdrPatchFor('overall', 5, gws, { 5: full }, 3).sum,
+    'a run routes around a blank when the window has room');
+  ok(gws[core.fdrPatchFor('overall', 5, gws, { 5: gap }, 3).start] !== 3,
+    'and does not start on it');
+  /* With no room to avoid it, the blank costs the run its full 6. */
+  ok(core.fdrPatchFor('overall', 5, gws, { 5: gap }, 5).sum
+     > core.fdrPatchFor('overall', 5, gws, { 5: full }, 5).sum,
+    'and when it cannot be avoided it makes the run worse');
+
+  /* Pinning a known limitation rather than asserting it away: with only two
+     kind fixtures either side, a three-game window CONTAINING the blank still
+     averages under the threshold and is drawn as a patch. That is the grid's
+     existing rule and the summary now inherits it, so any change to it should
+     be deliberate rather than a side effect. */
+  const short = { 1: cell(1), 2: cell(1) };
+  const p2 = core.fdrPatchFor('overall', 4, gws, { 4: short }, 3);
+  ok(p2 !== null && (2 + 6) / 3 <= core.FDR_PATCH_MAX,
+    'two kind fixtures plus a blank still clears the bar on the mean');
+
+  /* THE HORIZON RULE. A K-game run cannot start in the last K-1 weeks of a
+     window, so those weeks must not be listed as "nothing turns here" — that
+     claims an absence of opportunity where there is only an absence of
+     horizon. Live, a 5-game patch over a 10-week view made four gameweeks
+     read as empty when no run could have fitted in them. */
+  for (const [len, K] of [[10, 5], [6, 3], [5, 5], [3, 5]]) {
+    const win = Array.from({ length: len }, (_, i) => i + 1);
+    const kk = Math.min(K, win.length);
+    const canStart = win.slice(0, Math.max(1, win.length - kk + 1));
+    ok(canStart.length === Math.max(1, len - kk + 1),
+      'a ' + kk + '-game run over ' + len + ' weeks can start in ' + canStart.length + ' of them');
+    ok(canStart[canStart.length - 1] + kk - 1 <= win[win.length - 1],
+      'and the last listed start still finishes inside the window');
+  }
+}
+
 section('bestFixtureRun: the lowest-difficulty run of K consecutive gameweeks (purple patch)');
 const brun = core.bestFixtureRun([5, 5, 1, 1, 1, 5], 3);
 ok(brun.start === 2 && brun.end === 4 && brun.sum === 3, 'finds the easiest 3-gameweek block');
@@ -1361,49 +1510,101 @@ section('fdr lenses: the cell shows the projection, not just a colour (Tier 2)')
     'an impossible official rating reads as average');
 }
 
-section('oopFlag: paid on one tariff, playing another job (Tier 2)');
+section('oopFlag: unusual for his own position, paid on his own tariff (Tier 2)');
 {
   const M = core.OOP_MIN_MINUTES;
-  /* A league where each position group has a clear, separated threat level. */
+  /* A realistic league: within each position most players cluster low and a
+     few sit well clear. That spread is the whole point — the flag is looking
+     for the tail of a position, not for a player who resembles another one. */
   const pool = [];
   let id = 1;
-  const add = (type, n, xg) => { for (let i = 0; i < n; i++) pool.push({
-    id: id++, element_type: type, minutes: M + 100, expected_goals_per_90: String(xg + i * 0.001) }); };
-  add(2, 8, 0.05); add(3, 8, 0.20); add(4, 8, 0.45);
+  const add = (type, xgs) => xgs.forEach((xg) => pool.push({
+    id: id++, element_type: type, minutes: M + 100, expected_goals_per_90: String(xg) }));
+  /* 20 defenders: nearly all negligible, two genuine attacking full-backs. */
+  add(2, [0.02, 0.02, 0.03, 0.03, 0.03, 0.04, 0.04, 0.04, 0.05, 0.05,
+          0.05, 0.06, 0.06, 0.07, 0.07, 0.08, 0.09, 0.10, 0.22, 0.30]);
+  /* 20 midfielders: a spread, with a couple playing as strikers. */
+  add(3, [0.05, 0.06, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.15, 0.16,
+          0.17, 0.18, 0.20, 0.22, 0.25, 0.28, 0.32, 0.36, 0.55, 0.62]);
+  /* 20 forwards, including two who barely threaten at all. */
+  add(4, [0.12, 0.14, 0.20, 0.25, 0.30, 0.33, 0.36, 0.38, 0.40, 0.42,
+          0.45, 0.47, 0.50, 0.52, 0.55, 0.58, 0.62, 0.66, 0.70, 0.80]);
   const marks = core.oopBenchmarks(pool);
-  ok(marks[2] < marks[3] && marks[3] < marks[4], 'benchmarks rise with the position group');
 
-  /* A midfielder threatening like a forward is the find. */
-  const oopMid = { element_type: 3, minutes: M + 100, expected_goals_per_90: '0.50' };
-  const f = core.oopFlag(oopMid, marks);
-  ok(f && f.kind === 'up' && /forward/.test(f.label), 'a midfielder with forward threat is flagged');
-  ok(/5 points a goal/.test(f.note), 'and the note names the tariff that makes it worth points');
+  ok(marks[2] && marks[3] && marks[4], 'every position group gets its own cut-offs');
+  ok(marks[2].high < marks[2].top, 'the strong cut-off sits above the ordinary one');
+  ok(marks[2].n === 20, 'and the pool size is reported (' + marks[2].n + ')');
 
-  /* A defender threatening like a midfielder is the same idea one rung down. */
-  const oopDef = { element_type: 2, minutes: M + 100, expected_goals_per_90: '0.25' };
-  const d = core.oopFlag(oopDef, marks);
-  ok(d && d.kind === 'up' && /midfielder/.test(d.label), 'an attacking defender is flagged');
-  ok(/6 points a goal/.test(d.note), 'with the defender tariff named');
+  /* THE REGRESSION THIS REPLACES. The old rule compared a defender against
+     the MEDIAN MIDFIELDER, which is a genuinely attacking footballer — so it
+     flagged nobody across two real club previews, including the league's
+     most-cited out-of-position players. An attacking full-back must be found
+     by his own position's distribution, and this pool is built so the two
+     rules disagree: 0.12 is a standout among defenders and nowhere near a
+     typical midfielder. */
+  const fullBack = { element_type: 2, minutes: M + 100, expected_goals_per_90: '0.12' };
+  const medianMid = core.oopQuantile(
+    pool.filter((p) => p.element_type === 3).map((p) => parseFloat(p.expected_goals_per_90)).sort((a, b) => a - b), 0.5);
+  ok(0.12 < medianMid, 'the test case would fail the old median-midfielder bar (' + medianMid + ')');
+  ok(0.12 >= marks[2].high, 'while clearing his own position\'s bar (' + marks[2].high.toFixed(3) + ')');
+  const fb = core.oopFlag(fullBack, marks);
+  ok(fb && fb.kind === 'up', 'but an attacking full-back IS flagged now');
+  ok(fb && /defender/.test(fb.label), 'and the label is about his own position (' + (fb || {}).label + ')');
+  ok(fb && /6 points a goal/.test(fb.note), 'with the tariff that makes it worth points');
 
-  /* Only ever one rung: a defender with a striker's threat is still "plays as
-     a midfielder", because that is the comparison that pays. */
-  const wild = core.oopFlag({ element_type: 2, minutes: M + 100, expected_goals_per_90: '0.9' }, marks);
-  ok(wild && /midfielder/.test(wild.label), 'a defender is never compared two groups up');
+  /* Same idea for a midfielder playing as a striker. */
+  const striker = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.55' }, marks);
+  ok(striker && striker.kind === 'up' && /midfielder/.test(striker.label),
+    'a midfielder in his position\'s top tail is flagged');
+  ok(striker && /5 points a goal/.test(striker.note), 'with the midfielder tariff named');
 
-  /* Ordinary players are not flagged. */
-  ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.20' }, marks) === null,
-    'a typical midfielder is not out of position');
+  /* THE TAG IS A MEASUREMENT, NOT A FORECAST. This is derived entirely from
+     last season's output, and a commentator made the cost of forgetting that
+     concrete: Muñoz is flagged here as an attacking full-back on numbers he
+     compiled in a back three under a manager who has since left. The role
+     that produced them may not exist. Nothing in any feed we read carries a
+     manager, so the honest move is to stop the copy claiming the present
+     tense — "attacks like a winger" reads as a property of the player, and
+     it is a property of a job. */
+  ok(/last season/.test(fb.label),
+    'the defender label is past tense (' + fb.label + ')');
+  ok(!/^attacks /.test(fb.label), 'and does not assert a present-tense habit');
+  ok(/ROLE and not a property|role and not a property/.test(fb.note),
+    'the note says it is a role rather than a property');
+  ok(/new manager|change of shape/.test(fb.note),
+    'and names what would take it away (' + fb.note.slice(-90) + ')');
+  ok(/last season/.test(striker.label) && /role and not a property|ROLE and not a property/i.test(striker.note),
+    'the midfielder copy carries the same caveat');
+
+  /* The tail is the claim, so the middle of a position must stay silent —
+     otherwise the flag means "quite good" and stops being information. */
+  ok(core.oopFlag({ element_type: 2, minutes: M + 100, expected_goals_per_90: '0.05' }, marks) === null,
+    'a typical defender is not out of position');
+  ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.15' }, marks) === null,
+    'nor a typical midfielder');
   ok(core.oopFlag({ element_type: 1, minutes: M + 100, expected_goals_per_90: '0' }, marks) === null,
     'a goalkeeper is never flagged');
 
-  /* Strength: comfortably past the benchmark reads differently from scraping it. */
-  const scrape = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: String(marks[4] + 0.001) }, marks);
-  const clear = core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: String(marks[4] * 2) }, marks);
-  ok(scrape.level === 1 && clear.level === 2, 'clearing the benchmark comfortably is a stronger flag');
+  /* No more than the stated share of a position may be flagged, or the
+     percentile has stopped meaning what it says. */
+  const defs = pool.filter((p) => p.element_type === 2);
+  const flagged = defs.filter((p) => core.oopFlag(p, marks));
+  ok(flagged.length <= Math.ceil(defs.length * (1 - core.OOP_PCTL)) + 1,
+    'only the top tail of a position is flagged (' + flagged.length + ' of ' + defs.length + ')');
+  ok(flagged.length >= 1, 'but the tail is not empty');
 
-  /* The caution, and it must be a caution rather than a find. */
-  const deep = core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.05' }, marks);
-  ok(deep && deep.level < 0 && deep.kind === 'down', 'a forward with no goal threat is a caution, not a find');
+  /* Strength: the top of the tail reads differently from its edge. */
+  const edge = core.oopFlag({ element_type: 2, minutes: M + 100,
+    expected_goals_per_90: String(marks[2].high) }, marks);
+  const peak = core.oopFlag({ element_type: 2, minutes: M + 100,
+    expected_goals_per_90: String(marks[2].top + 0.05) }, marks);
+  ok(edge.level === 1 && peak.level === 2, 'the very top of a position is a stronger flag');
+
+  /* The caution, and it must stay a caution rather than a find. */
+  const deep = core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.12' }, marks);
+  ok(deep && deep.level < 0 && deep.kind === 'down', 'a forward with no goal threat is a caution');
+  ok(core.oopFlag({ element_type: 4, minutes: M + 100, expected_goals_per_90: '0.80' }, marks) === null,
+    'and an elite forward is not flagged at all — he is exactly where he should be');
 
   /* Sample size and pre-season: no minutes, no claim. */
   ok(core.oopFlag({ element_type: 3, minutes: M - 1, expected_goals_per_90: '0.9' }, marks) === null,
@@ -1412,14 +1613,23 @@ section('oopFlag: paid on one tariff, playing another job (Tier 2)');
     'a pre-season squad produces no benchmarks at all');
   ok(core.oopFlag({ element_type: 3, minutes: M + 100, expected_goals_per_90: '0.9' }, {}) === null,
     'and with no benchmarks nothing is flagged');
-  ok(core.oopBenchmarks([]).count === undefined && Object.keys(core.oopBenchmarks([])).length === 0, 'an empty league is safe');
+  ok(Object.keys(core.oopBenchmarks([])).length === 0, 'an empty league is safe');
   ok(core.oopFlag(null, marks) === null && core.oopFlag({ element_type: 3, minutes: 9999 }, null) === null,
     'missing inputs do not throw');
 
-  /* A thin group cannot set a benchmark — three forwards is not a distribution. */
+  /* A thin group cannot describe a distribution — a percentile over four
+     players is an ordering, not a tail. */
   const thin = core.oopBenchmarks(pool.filter((p) => p.element_type !== 4).concat(
     [{ id: 900, element_type: 4, minutes: M + 1, expected_goals_per_90: '0.5' }]));
   ok(thin[4] === undefined, 'a group with too few players sets no benchmark');
+  ok(core.OOP_MIN_POOL >= 8, 'and the floor is a real sample (' + core.OOP_MIN_POOL + ')');
+
+  /* The quantile itself, since everything above rests on it. */
+  const q = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  ok(core.oopQuantile(q, 0) === 0 && core.oopQuantile(q, 1) === 10, 'quantile spans the range');
+  ok(core.oopQuantile(q, 0.5) === 5, 'the median is the middle');
+  ok(Math.abs(core.oopQuantile(q, 0.85) - 8.5) < 1e-9, 'and it interpolates between points');
+  ok(core.oopQuantile([], 0.5) === null && core.oopQuantile([4], 0.9) === 4, 'degenerate inputs are safe');
 
   /* Non-penalty threat is preferred when Core Insights has it: penalties are
      a duty, not evidence of where a player plays. */
@@ -1606,6 +1816,54 @@ section('clubSplit / clubVenueVerdict: is this club a different side at home? (T
   ok(core.clubSplit(games, 99).games === 0, 'a club that played none of these games has an empty record');
 }
 
+section('clubVsPoorAttacks: does a kind fixture actually become a clean sheet? (Tier 2)');
+{
+  /* The line this exists for, from a rival's Man Utd thread: "only 2 clean
+     sheets vs weak sides, so if the defenders return nothing at Hull and
+     Ipswich it is not bad luck". A fixture ticker cannot say that — it grades
+     the opponent, not whether this defence converts one. */
+  const R = { att: {}, def: {} };
+  for (let i = 1; i <= 20; i++) { R.att[i] = 0.5 + i * 0.05; R.def[i] = 1; }
+  const weak = core.poorAttacks(R);
+  ok(weak instanceof Set && weak.size === 10, 'the bottom half of attacks is exactly half the league');
+  ok(weak.has(1) && weak.has(10), 'the weakest attacks are in it');
+  ok(!weak.has(11) && !weak.has(20), 'the strongest are not');
+  ok([...weak].every((x) => typeof x === 'number'),
+    'ids come back as numbers — the ratings are keyed by string, the fixtures are not');
+
+  /* Team 1 plays opponents 2..11; it keeps two clean sheets. Only 2..10 are
+     weak, so nine of the ten matches count. */
+  const fx = [];
+  for (let i = 0; i < 10; i++) {
+    fx.push({ finished: true, team_h: 1, team_a: i + 2, team_h_score: 2, team_a_score: i < 2 ? 0 : 1 });
+  }
+  const v = core.clubVsPoorAttacks(fx, 1, weak);
+  ok(v && v.games === 9, 'only matches against weak attacks count (' + (v && v.games) + ')');
+  ok(v.cs === 2, 'two clean sheets, as played');
+  ok(Math.abs(v.csr - 2 / 9) < 1e-9, 'and the rate is over those games, not the whole season');
+  ok(v.gf === 18 && v.ga === 7, 'goals for and against are the club’s own way round');
+
+  const away = [{ finished: true, team_h: 3, team_a: 1, team_h_score: 0, team_a_score: 4 }];
+  const both = core.clubVsPoorAttacks(fx.concat(away), 1, weak);
+  ok(both.games === 10 && both.cs === 3, 'an away clean sheet counts too');
+  ok(both.gf === 22 && both.ga === 7, 'and away goals are not read off the wrong side');
+
+  /* The guard that matters. A clean-sheet percentage off three games is noise
+     wearing a number's clothes, and printed in a thread it reads as evidence. */
+  ok(core.OPP_SPLIT_MIN === 5, 'the minimum sample is five matches');
+  ok(core.clubVsPoorAttacks(fx.slice(0, 4), 1, weak) === null, 'four matches is not a finding');
+  ok(core.clubVsPoorAttacks(fx.slice(0, 5), 1, weak) !== null, 'five is');
+  ok(core.clubVsPoorAttacks(fx, 1, null) === null, 'and no ratings means no claim at all');
+  ok(core.clubVsPoorAttacks(fx, 1, new Set()) === null, 'nor does an empty weak set');
+
+  /* Unplayed fixtures must not dilute the rate — this is read mid-season and
+     the fixture list carries the whole of it. */
+  const withFuture = fx.concat([{ finished: false, team_h: 1, team_a: 2, team_h_score: null, team_a_score: null }]);
+  ok(core.clubVsPoorAttacks(withFuture, 1, weak).games === 9, 'unplayed fixtures are ignored');
+  ok(core.poorAttacks({ att: { 1: 1, 2: 1 } }) === null, 'too few clubs rated means no split');
+  ok(core.poorAttacks(null) === null, 'and no ratings at all is safe');
+}
+
 section('clubLean: which end of this club is worth buying (Tier 2)');
 {
   /* Four clubs: 1 all attack, 2 all defence, 3 good at both, 4 poor at both. */
@@ -1731,6 +1989,147 @@ const bigPool = Array.from({ length: 9 }, (_, i) => mkDepth(i + 1, 2, 10 - i * 0
 ok(core.clubDepth(bigPool, 1, 10)[2].rows.length === core.DEPTH_MAX,
   'the ranking is capped at DEPTH_MAX per position');
 ok(Object.keys(core.clubDepth([], 1, 10)).length === 0, 'an empty squad yields no groups rather than throwing');
+
+/* ── Venue split: what a projection owes to the venue ────────
+   The Players table's home/away lens. Every property here is about NOT
+   overclaiming: it is a per-game rate rather than a total, and a side with no
+   fixtures is unknown rather than zero. */
+{
+  console.log('\n• venue split');
+  /* Pre-season shape — no games played, so nativeXP declines and fixtureXP
+     takes its documented fallback: ep_next scaled by the fixture. That makes
+     the arithmetic below exact rather than approximate. */
+  const b = {};
+  const fwd = { id: 1, team: 1, element_type: 4, ep_next: '5.0' };
+  const fx = (home, lam) => ({ home, lam, cs: 0.3, gp: 0, lamAvg: 1.47 });
+  /* lam 1.47 is the league average, so the fixture factor is exactly 1. */
+  const flat = (home) => fx(home, 1.47);
+
+  /* A total would make four home games look better than one away game at the
+     same quality. A per-game rate must not. */
+  const lopsided = core.venueSplit(b, fwd,
+    { 1: [flat(true), flat(true), flat(true), flat(true), flat(false)] });
+  ok(lopsided.hN === 4 && lopsided.aN === 1, 'the counts are kept (' + lopsided.hN + 'H/' + lopsided.aN + 'A)');
+  ok(Math.abs(lopsided.h - 5) < 1e-9, 'four identical home games average to one game (' + lopsided.h + ')');
+  ok(Math.abs(lopsided.a - 5) < 1e-9, 'and the single away game to the same');
+  ok(Math.abs(lopsided.swing) < 1e-9, 'so four home to one away is a swing of zero, not a home bias');
+
+  /* A real difference still shows. A kinder home fixture raises the home rate
+     and the swing goes positive. */
+  const kind = core.venueSplit(b, fwd, { 1: [fx(true, 2.2), fx(false, 1.0)] });
+  ok(kind.h > kind.a, 'a better home fixture reads as a better home rate');
+  ok(kind.swing > 0, 'and the swing is positive');
+  const harsh = core.venueSplit(b, fwd, { 1: [fx(true, 1.0), fx(false, 2.2)] });
+  ok(harsh.swing < 0, 'reversed, the same player travels better');
+  ok(Math.abs(harsh.swing + kind.swing) < 1e-9, 'and the two are mirror images');
+
+  /* The refusals. A player with no away game has no away rate; a zero there
+     would rank him the worst traveller in the league. */
+  const allHome = core.venueSplit(b, fwd, { 1: [flat(true), flat(true)] });
+  ok(allHome.a === null, 'no away fixture means no away rate — null, not zero');
+  ok(allHome.swing === null, 'and no swing to report');
+  ok(allHome.h != null && allHome.aN === 0, 'while the home side is still given');
+  const allAway = core.venueSplit(b, fwd, { 1: [flat(false)] });
+  ok(allAway.h === null && allAway.swing === null, 'and the same the other way round');
+
+  /* A team with no horizon at all, and a horizon that does not mention this
+     player's team. Both are "unknown", not "zero". */
+  ok(core.venueSplit(b, fwd, {}).h === null, 'an empty horizon yields nothing');
+  ok(core.venueSplit(b, fwd, { 2: [flat(true)] }).swing === null, 'nor does another team’s run');
+  ok(core.venueSplit(b, fwd, null).swing === null, 'a missing horizon does not throw');
+
+  /* A fixture whose expected points cannot be computed is skipped rather than
+     counted as zero, which would drag the rate down and misreport the sample
+     size behind it. */
+  const broken = { id: 2, team: 1, element_type: 4, ep_next: '', form: 'x', points_per_game: 'x' };
+  const skipped = core.venueSplit(b, broken, { 1: [flat(true), flat(false)] });
+  ok(skipped.hN === 0 && skipped.aN === 0, 'an uncomputable fixture is not counted');
+  ok(skipped.h === null && skipped.a === null, 'and contributes no rate');
+
+  /* Defenders take the clean-sheet branch rather than the goals one, so the
+     split has to work for them too — they are the whole point of the lens. */
+  const def = { id: 3, team: 1, element_type: 2, ep_next: '4.0' };
+  const dsplit = core.venueSplit(b, def,
+    { 1: [{ home: true, lam: 1.2, cs: 0.55, gp: 0 }, { home: false, lam: 1.6, cs: 0.18, gp: 0 }] });
+  ok(dsplit.h > dsplit.a, 'a defender with better clean-sheet odds at home reads that way');
+  ok(dsplit.swing > 0, 'and carries a positive swing');
+}
+
+/* ── Value against the price curve ───────────────────────────
+   The Players table's value scatter. The property that carries the whole
+   feature is that the fit is PER POSITION: a single line through defenders and
+   midfielders together measures the position tariff, not value, and would rank
+   every cheap defender as a bargain. */
+{
+  console.log('\n• value curve');
+  const line = (n, m, c, from) => Array.from({ length: n },
+    (_, i) => ({ x: (from || 4) + i * 0.5, y: m * ((from || 4) + i * 0.5) + c }));
+
+  /* Exact recovery on a perfect line — if this drifts, every residual is
+     wrong by a constant nobody would notice. */
+  const f = core.valueFit(line(8, 1.5, 2));
+  ok(f && Math.abs(f.m - 1.5) < 1e-9, 'the slope is recovered exactly (' + (f && f.m) + ')');
+  ok(Math.abs(f.c - 2) < 1e-9, 'and so is the intercept');
+  ok(f.n === 8, 'the sample size is carried');
+
+  /* The refusals. */
+  ok(core.valueFit(line(core.VALUE_MIN_FIT - 1, 1, 0)) === null,
+    'under ' + core.VALUE_MIN_FIT + ' players there is no curve to fit');
+  ok(core.valueFit(line(core.VALUE_MIN_FIT, 1, 0)) !== null, 'at the floor there is');
+  ok(core.valueFit(Array.from({ length: 9 }, (_, i) => ({ x: 5, y: i }))) === null,
+    'a pool all on one price has no slope — null, not infinity');
+  ok(core.valueFit([]) === null && core.valueFit(null) === null, 'and nothing at all is null');
+
+  /* Residual sign. Above the line is positive, which is the direction the
+     chart's whole reading depends on. */
+  const pts = line(8, 1.0, 0);
+  const fit = core.valueFit(pts);
+  const resid = (x, y) => y - (fit.m * x + fit.c);
+  ok(resid(6, 8) > 0, 'a player above the curve reads positive');
+  ok(resid(6, 4) < 0, 'and one below it negative');
+
+  /* ── the per-position property ──
+     Two positions with genuinely different price curves. Defenders here return
+     less per pound than midfielders — the real tariff difference. A defender
+     sitting exactly on the DEFENDER curve is fairly priced, and must read as
+     such; measured against a pooled line he would look like a bargain. */
+  const el = (id, type, cost, y) => ({ id, element_type: type, now_cost: cost * 10, _y: y });
+  const defs = [], mids = [];
+  for (let i = 0; i < 8; i++) {
+    const price = 4 + i * 0.5;
+    defs.push(el(100 + i, 2, price, 1.0 * price));   /* defender curve: y = 1.0x */
+    mids.push(el(200 + i, 3, price, 2.0 * price));   /* midfielder curve: y = 2.0x */
+  }
+  const all = defs.concat(mids);
+  const r = core.valueResiduals(all, (e) => e._y);
+  ok(r.fits[2] && Math.abs(r.fits[2].m - 1.0) < 1e-9, 'the defender curve is fitted alone (' + r.fits[2].m.toFixed(2) + ')');
+  ok(r.fits[3] && Math.abs(r.fits[3].m - 2.0) < 1e-9, 'and the midfielder curve separately (' + r.fits[3].m.toFixed(2) + ')');
+  ok(r.points.length === 16, 'every player is plotted');
+  ok(r.points.every((p) => Math.abs(p.resid) < 1e-9),
+    'a player exactly on his OWN position’s curve has no residual — the whole point');
+  /* And the counterfactual: pooled, the same defenders would look mispriced.
+     This is the bug the split exists to prevent, asserted rather than assumed. */
+  const pooled = core.valueFit(all.map((e) => ({ x: (e.now_cost || 0) / 10, y: e._y })));
+  const pooledResid = (e) => e._y - (pooled.m * ((e.now_cost || 0) / 10) + pooled.c);
+  ok(Math.abs(pooledResid(defs[7])) > 1, 'pooled, a fairly-priced defender reads as badly off the line');
+  ok(pooledResid(defs[7]) < 0 && pooledResid(mids[7]) > 0,
+    'and the pooled reading is a position tariff, not value — every top defender low, every top mid high');
+
+  /* A position too thin to fit still shows its players, with no residual —
+     they are real, and hiding them would misrepresent the pool. */
+  const thin = core.valueResiduals(defs.concat([el(300, 1, 4.5, 3), el(301, 1, 5.0, 4)]), (e) => e._y);
+  ok(thin.fits[1] === null, 'two goalkeepers give no curve');
+  const gks = thin.points.filter((p) => p.pos === 1);
+  ok(gks.length === 2, 'but they are still plotted');
+  ok(gks.every((p) => p.resid === null), 'with a null residual rather than one from a line nobody drew');
+
+  /* A player whose projection cannot be computed is left out entirely, rather
+     than dragging the curve down towards zero. */
+  const withBad = core.valueResiduals(defs.concat([el(400, 2, 6.0, null), el(401, 2, 6.5, NaN)]),
+    (e) => e._y);
+  ok(withBad.points.length === 8, 'an uncomputable projection is not plotted (' + withBad.points.length + ')');
+  ok(Math.abs(withBad.fits[2].m - 1.0) < 1e-9, 'and does not move the curve');
+}
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

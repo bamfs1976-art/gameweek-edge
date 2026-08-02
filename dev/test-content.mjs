@@ -13,12 +13,19 @@
  *
  * Run: node dev/test-content.mjs   (wired into npm test)
  */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 import { selectStory, score, novelty, remember, KINDS, W, MIN_SCORE, NOVELTY_DAYS, TIMELINESS }
   from '../scripts/content/stories.mjs';
-import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings }
+import { priceVerdicts, differentials, templateRisks, valuePicks, purplePatches, fixtureSwings,
+  bestRun, fixtureRuns, chipWindows, RUN_MIN, RUN_MAX, CHIP_MIN_EDGE }
   from '../scripts/content/candidates.mjs';
+import { draft } from '../scripts/content/copy.mjs';
 import { buildThread, grade, minutesScore, returnsScore, fixtureScore, clubVerdict, STATUS, angles,
-  rotationRisks, rotationTension } from '../scripts/content/club.mjs';
+  rotationRisks, rotationTension, availability, shirtAdjust,
+  TALISMAN_SHARE, TALISMAN_MIN_GOALS, CLUB_CAP } from '../scripts/content/club.mjs';
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -247,10 +254,120 @@ console.log('• candidate builders produce honest stories, or none');
     ['templateRisks', templateRisks, [{ elements: [] }, {}, teamName]],
     ['valuePicks', valuePicks, [{ elements: [] }, teamName]],
     ['purplePatches', purplePatches, [{}, teamName]],
-    ['fixtureSwings', fixtureSwings, [{}, teamName]]]) {
+    ['fixtureSwings', fixtureSwings, [{}, teamName]],
+    ['fixtureRuns', fixtureRuns, [{}, teamName]],
+    ['chipWindows', chipWindows, [null, teamName]]]) {
     let threw = false;
     try { fn(...args); } catch (_) { threw = true; }
     ok(!threw, name + ' survives an empty league');
+  }
+}
+
+
+console.log('• fixture runs: the best window, not the opening one');
+{
+  const teamName = (id) => 'Team ' + id;
+  /* A hard opening, a genuinely kind middle, a hard close. `purplePatches`
+     reads only the first five gameweeks and would report nothing useful
+     here, which is exactly the gap this kind exists to fill. */
+  const horizon = [4.5, 4.5, 4.5, 4.5, 1.8, 1.9, 1.8, 1.9, 4.5, 4.5]
+    .map((difficulty, i) => ({ event: i + 1, opp: 2, home: i % 2 === 0, difficulty }));
+
+  const b = bestRun(horizon);
+  ok(b.slice[0].event === 5, 'the mid-horizon window is found, not the opening one (GW' +
+    b.slice[0].event + ')');
+  ok(b.len >= RUN_MIN && b.len <= RUN_MAX, 'the window respects its length bounds');
+  ok(b.slice.every((f) => f.difficulty < 3), 'and does not reach into the hard fixtures for length');
+
+  /* The length tilt is a nudge, not a thumb on the scale: a clearly easier
+     short run must still beat a longer mediocre one. */
+  const shortEasy = [1.2, 1.2, 1.2, 3.0, 3.0, 3.0]
+    .map((difficulty, i) => ({ event: i + 1, opp: 2, home: true, difficulty }));
+  ok(bestRun(shortEasy).len === RUN_MIN, 'a much easier three beats a padded six');
+
+  const fr = fixtureRuns({ 7: horizon }, teamName);
+  ok(fr.length === 1 && fr[0].kind === 'fixture-run', 'a run becomes a candidate');
+  ok(fr[0].data.from === 5 && fr[0].data.to === 8, 'the window is named by its gameweeks');
+  ok(/GW5–8/.test(fr[0].headline), 'and the headline says so (' + fr[0].headline + ')');
+  ok(fr[0].data.fixtures.length === fr[0].effect.weeks, 'the card shows every fixture it counted');
+  ok(near(fr[0].effect.avgDifficulty, 1.85, 1e-6), 'the average is the window average, not the horizon');
+  ok(fixtureRuns({ 1: horizon.slice(0, 2) }, teamName).length === 0,
+    'too short a horizon yields no run');
+}
+
+
+console.log('• chip windows: a week only gets named when it earns it');
+{
+  const teamName = (id) => 'Team ' + id;
+  const plan = { picks: {
+    wildcard: { gw: 9, edge: 0.4 },
+    benchboost: { gw: 12, edge: CHIP_MIN_EDGE - 0.05 },
+    triplecaptain: { gw: 15, edge: 0.01, double: 6, el: { web_name: 'Salah' }, opp: 3 },
+    freehit: { gw: 18, edge: 0.01, blank: 4 }
+  } };
+  const cw = chipWindows(plan, teamName);
+  const by = (chip) => cw.find((c) => c.data.chip === chip);
+
+  ok(!by('Bench Boost'), 'a week no better than average produces no card');
+  ok(by('Wildcard') && by('Wildcard').data.gw === 9, 'a real edge does');
+  /* The live chip-plan run that prompted this found a whole half sitting
+     within 0.1 FDR of the mean. Silence is the correct output there. */
+  ok(by('Triple Captain') && by('Free Hit'),
+    'a double or a blank is a calendar fact and bypasses the edge floor');
+  ok(by('Triple Captain').effect.edge === 15, 'and registers as maximal');
+  ok(by('Triple Captain').data.player === 'Salah' && by('Triple Captain').data.opponent === 'Team 3',
+    'the pick carries its player and opponent');
+  /* The card has three text slots and only so much to say. The headline
+     names the week, the body carries the number, so the subtitle must not
+     be a third statement of either. */
+  ok(cw.every((c) => /not an instruction/.test(c.sub)),
+    'the subtitle is the caveat rather than a restatement');
+  ok(by('Free Hit') && !/\b4\b/.test(by('Free Hit').sub), 'and does not repeat the body figure');
+  ok(chipWindows({ picks: {} }, teamName).length === 0, 'no picks means no cards');
+  ok(chipWindows({ picks: { wildcard: { edge: 9 } } }, teamName).length === 0,
+    'a pick with no gameweek is not a window');
+}
+
+
+console.log('• every kind that can be selected can also be published');
+{
+  /* The `chip-window` kind sat in KINDS for the whole life of the pipeline
+     with no builder producing one and a writer reading a field nothing
+     emitted. Both halves were invisible because nothing checked that a
+     selectable kind was renderable end to end. */
+  const tpl = readFileSync(join(ROOT, 'scripts/content/template.html'), 'utf8');
+  const bodies = tpl.slice(tpl.indexOf('const BODIES'), tpl.indexOf('const s = D.story'));
+  ok(bodies.length > 200, 'the card bodies block was located');
+
+  for (const kind of Object.keys(KINDS)) {
+    let missing = false;
+    /* A writer that runs and chokes on empty data still exists; only a
+       null return means there is no writer at all. */
+    try {
+      missing = draft({ story: { kind, headline: 'h', data: {},
+        total: 0.5, magnitude: 0.5, timeliness: 0.5, novelty: 0.5 } }) === null;
+    } catch (_) { missing = false; }
+    ok(!missing, kind + ': has a post writer');
+    /* Hyphenated kinds must be quoted keys, plain ones need not be. */
+    ok(bodies.includes("'" + kind + "':") || new RegExp('\\b' + kind + ':').test(bodies),
+      kind + ': has a card body');
+  }
+
+  /* And the writer must read the fields the builder actually emits. */
+  const teamName = (id) => 'Team ' + id;
+  const runs = { 7: [4.5, 4.5, 1.8, 1.9, 1.8, 1.9]
+    .map((difficulty, i) => ({ event: i + 1, opp: 2, home: i % 2 === 0, difficulty })) };
+  const cards = [
+    fixtureRuns(runs, teamName)[0],
+    chipWindows({ picks: { wildcard: { gw: 9, edge: 0.4 } } }, teamName)[0]
+  ];
+  for (const c of cards) {
+    const post = draft({ story: { ...c, total: 0.5, magnitude: 0.5, timeliness: 0.5, novelty: 0.5 } });
+    ok(post && post.text, c.kind + ': drafts a post');
+    ok(!/undefined|NaN|\[object/.test(post.text),
+      c.kind + ': the post has no placeholder holes (' + post.text.split('\n')[0] + ')');
+    ok(post.alt && post.alt.length > 20 && !/undefined|NaN/.test(post.alt),
+      c.kind + ': and real alt text');
   }
 }
 
@@ -333,6 +450,51 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(grade({ ...nailed, avgDifficulty: 2.4 }).status.key === 'major',
     'a first-choice player with a kind run is a major target');
 
+  /* THE DEFENDER PROBLEM, from running this against Everton: a centre-back
+     who banks defensive contributions and clean sheets graded last of six,
+     because the returns axis only counted goals and assists. On that axis he
+     scores nothing by construction, so no amount of defensive value could
+     move him and the defensive-floor tag decorated a ranking it could not
+     change. Returns are points per 90 now, on the real tariff. */
+  const cb = { element_type: 2, xp: null, teamGames: 0, starts: 32, minutes: 2900,
+    goals: 1, assists: 1, cleanSheets: 9, defconRate: 0.55, avgDifficulty: 3.0 };
+  const cbNoFloor = { ...cb, cleanSheets: 0, defconRate: 0 };
+  ok(returnsScore(cb) > returnsScore(cbNoFloor),
+    'clean sheets and a defensive floor count as returns (' +
+    returnsScore(cb).toFixed(2) + ' vs ' + returnsScore(cbNoFloor).toFixed(2) + ')');
+  ok(returnsScore(cb) >= 0.55,
+    'a high-volume centre-back clears the returns bar on his own merits (' +
+    returnsScore(cb).toFixed(2) + ')');
+  ok(grade(cb).status.key !== 'avoid' && /projects well/.test(grade(cb).why),
+    'and grades on it (' + grade(cb).why + ')');
+
+  /* A defender must not out-rank a genuinely elite attacker, though — the
+     point is that the floor is visible, not that it wins. */
+  const striker = { element_type: 4, xp: null, teamGames: 0, starts: 30, minutes: 2700,
+    goals: 18, assists: 6, cleanSheets: 0, defconRate: 0, avgDifficulty: 3.0 };
+  ok(returnsScore(striker) > returnsScore(cb),
+    'an elite forward still scores higher than a defensive floor (' +
+    returnsScore(striker).toFixed(2) + ' vs ' + returnsScore(cb).toFixed(2) + ')');
+
+  /* The tariff is position-aware: the same goal is worth more to a defender. */
+  const sameNumbers = { xp: null, teamGames: 0, starts: 30, minutes: 2700,
+    goals: 6, assists: 4, cleanSheets: 0, defconRate: 0 };
+  ok(returnsScore({ ...sameNumbers, element_type: 2 }) >
+     returnsScore({ ...sameNumbers, element_type: 4 }),
+    'identical goals are worth more on the defender tariff');
+  ok(returnsScore({ ...sameNumbers, element_type: 3 }) >
+     returnsScore({ ...sameNumbers, element_type: 4 }),
+    'and more to a midfielder than a forward');
+
+  /* Clean sheets pay a defender, barely pay a midfielder, and never a
+     forward — crediting them flat would invent value up front. */
+  const cs = { xp: null, teamGames: 0, starts: 30, minutes: 2700, goals: 0,
+    assists: 0, cleanSheets: 12, defconRate: 0 };
+  ok(returnsScore({ ...cs, element_type: 2 }) > returnsScore({ ...cs, element_type: 3 }),
+    'a clean sheet is worth more to a defender than a midfielder');
+  ok(returnsScore({ ...cs, element_type: 4 }) === returnsScore({ ...cs, element_type: 4, cleanSheets: 0 }),
+    'and nothing at all to a forward');
+
   const clubOf = (players, extra = {}) => buildThread({ name: 'CLB', fullName: 'Club',
     scored: 60, conceded: 40, avgDifficulty: 2.6,
     fixtures: [{ gw: 1, opp: 'AAA', home: true }, { gw: 2, opp: 'BBB', home: false }],
@@ -390,6 +552,19 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
     'a reliable defensive-contribution floor is flagged');
   ok(angles({ defconRate: 0.1 }).length === 0, 'an unreliable one is not');
 
+  /* The set-piece angle was unreachable code: angles() looked for p.setPieces
+     and the runner never supplied it, so across every club ever generated the
+     tag printed exactly zero times. A tag nothing can populate is worse than
+     no tag — it reads as "this club has no set-piece story". */
+  ok(angles({ setPieces: 'penalties — 82% confidence on the duty' })
+    .some((a) => a.tag === 'set pieces'), 'a set-piece duty is flagged');
+  ok(angles({ setPieces: null }).length === 0, 'and no duty claims nothing');
+  const spSrc = readFileSync(join(ROOT, 'scripts/content/club-thread.mjs'), 'utf8');
+  ok(/setPieces:\s*setPieceNote\(e\)/.test(spSrc),
+    'the runner actually populates it, so the tag is reachable');
+  ok(/E\.setPieceConfidence\(/.test(spSrc),
+    'and reads the duty from the shared engine rather than re-deriving it');
+
   const P2 = (o) => ({ web_name: 'X', element_type: 2, now_cost: 55, teamGames: 10,
     starts: 10, minutes: 900, goals: 3, assists: 4, avgDifficulty: 2.2, xp: 6.2, ...o });
   const palace = buildThread({ name: 'CPFC', fullName: 'Palace', played: 10,
@@ -405,6 +580,186 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
   ok(/clean sheet/.test(take), 'a defensive floor is framed as points without a clean sheet');
   const hrows = palace.posts.find((x) => x.kind === 'hierarchy').rows;
   ok(hrows.some((r) => r.angles.includes('out of position')), 'hierarchy rows carry their angles');
+
+  /* THE TALISMAN. Share of a club's goals a player was directly involved in.
+     None of the three axes can see it: a good rate at a club that scores
+     freely is a different asset from the same rate at a club that only
+     scores through one man, and the second is both the way in and the
+     single point of failure. */
+  {
+    ok(angles({ teamShare: 0.45 }).some((a) => a.tag === 'talisman'),
+      'a player involved in 45% of the goals is flagged');
+    ok(!angles({ teamShare: 0.18 }).some((a) => a.tag === 'talisman'),
+      'an ordinary contributor is not');
+    ok(!angles({ teamShare: null }).some((a) => a.tag === 'talisman'),
+      'and a club too thin to divide by claims nothing');
+    ok(angles({ teamShare: TALISMAN_SHARE }).some((a) => a.tag === 'talisman'),
+      'the boundary itself counts');
+    const note = angles({ teamShare: 0.455 }).find((a) => a.tag === 'talisman').note;
+    ok(/46%/.test(note), 'the share is stated (' + note + ')');
+    /* It has to read as a risk as well as a route in, or it is just praise. */
+    ok(/does not play|breaks/.test(note), 'and the downside is named, not only the upside');
+    ok(TALISMAN_MIN_GOALS >= 10, 'the denominator floor is a real one (' + TALISMAN_MIN_GOALS + ')');
+
+    /* The runner must apply that floor rather than dividing by a handful. */
+    const src = readFileSync(join(ROOT, 'scripts/content/club-thread.mjs'), 'utf8');
+    ok(/squadGoals >= TALISMAN_MIN_GOALS/.test(src),
+      'the runner guards the denominator with the shared constant');
+    ok(!/squadGoals >= 20/.test(src), 'and does not carry its own copy of the number');
+
+    const t3 = buildThread({ name: 'T', fullName: 'Tal', played: 10, scored: 40,
+      conceded: 20, avgDifficulty: 2.2, fixtures: [], players: [
+        { web_name: 'Star', element_type: 4, now_cost: 90, xp: 6.4, starts: 30,
+          minutes: 2700, teamGames: 10, avgDifficulty: 2.2, teamShare: 0.45 }] });
+    ok(t3.posts.find((x) => x.kind === 'hierarchy').rows[0].angles.includes('talisman'),
+      'and it reaches the hierarchy row');
+  }
+
+  /* THE VERDICT MUST MATCH THE HIERARCHY ABOVE IT. Every rule keyed off
+     MAJORS, so a Liverpool thread printed six green lights and then "nothing
+     here clears the bar" two posts later. A reader does not need the rule
+     table to see that is nonsense. */
+  {
+    const P3 = (o) => ({ web_name: 'X', element_type: 3, now_cost: 65, teamGames: 10,
+      starts: 10, minutes: 900, avgDifficulty: 2.2, ...o });
+    /* xp 6.0 with a 4.4 run clears returns and minutes but not fixtures —
+       watchlist, never major. */
+    const watchOnly = (n) => Array.from({ length: n }, (_, i) =>
+      P3({ web_name: 'W' + i, xp: 6.0, avgDifficulty: 4.4 }));
+    const deepGraded = watchOnly(6).map((p) => ({ ...p, grade: grade(p) }));
+    ok(deepGraded.every((g) => g.grade.status.key === 'watchlist'),
+      'the setup really is six watchlist players (' +
+      [...new Set(deepGraded.map((g) => g.grade.status.key))].join(', ') + ')');
+    const deep = clubVerdict(deepGraded);
+    ok(deep.verdict === 'deep-no-standout',
+      'a deep squad with no standout gets its own verdict (' + deep.verdict + ')');
+    ok(!/Nothing here clears the bar/.test(deep.text),
+      'and does not read as though the club were empty');
+    ok(/6 names/.test(deep.text), 'the count is stated (' + deep.text + ')');
+
+    /* A genuinely empty club must still say so. */
+    const nothing = clubVerdict(watchOnly(0));
+    ok(nothing.verdict === 'avoid', 'an empty squad is still avoid');
+    const two = clubVerdict(watchOnly(2).map((p) => ({ ...p, grade: grade(p) })));
+    ok(two.verdict === 'avoid', 'and two watchlist names is not yet depth');
+
+    /* The stronger verdicts still outrank it. */
+    const withMajors = watchOnly(4).map((p) => ({ ...p, grade: grade(p) }))
+      .concat([1, 2].map((i) => { const p = P3({ web_name: 'M' + i, xp: 6.5, avgDifficulty: 2.0 });
+        return { ...p, grade: grade(p) }; }));
+    ok(clubVerdict(withMajors).verdict === 'load-up',
+      'two majors still beat depth (' + clubVerdict(withMajors).verdict + ')');
+
+    /* And the thread as a whole must not contradict itself. */
+    const t2 = buildThread({ name: 'L', fullName: 'Deep', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 4.4, fixtures: [], players: watchOnly(6) });
+    const lights = t2.posts.find((x) => x.kind === 'hierarchy').rows
+      .filter((r) => r.status === 'watchlist').length;
+    const take = t2.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+    ok(lights >= 3 && !/Nothing here clears/.test(take),
+      'a hierarchy full of green lights is not followed by "nothing clears the bar"');
+  }
+
+  /* SAY WHAT THE READ CANNOT SEE. Four consecutive club previews in the wild
+     made their central case on defensive contribution — the DEFCON frame is
+     how the community is arguing this season — and FPL has published no
+     values for it. A thread that ranks defenders on clean sheets alone while
+     staying silent about that looks most confident about exactly the thing
+     it is blind to. */
+  {
+    const squad = [{ web_name: 'CB', element_type: 2, now_cost: 55, xp: 5.0,
+      starts: 30, minutes: 2700, teamGames: 10, avgDifficulty: 2.5 }];
+    const blind = buildThread({ name: 'D', fullName: 'Dee', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad, defconData: false });
+    const seeing = buildThread({ name: 'D', fullName: 'Dee', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad, defconData: true });
+    const hookOf = (t) => t.posts.find((x) => x.kind === 'hook').lines.join(' ');
+    ok(/Defensive contribution is not in the data/.test(hookOf(blind)),
+      'with no DEFCON data the thread says so up front');
+    ok(/clean sheets alone/.test(hookOf(blind)),
+      'and names what the defensive read actually rests on instead');
+    ok(!/Defensive contribution is not in the data/.test(hookOf(seeing)),
+      'and stays quiet when the data is there');
+    /* Absent flag means the old behaviour, so an existing caller cannot start
+       emitting a caveat it never asked for. */
+    const legacy = buildThread({ name: 'D', fullName: 'Dee', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: squad });
+    ok(!/not in the data/.test(hookOf(legacy)), 'defaulting to available keeps old callers unchanged');
+  }
+
+  /* SQUAD CHURN. Minutes read off last season describe a squad that may no
+     longer exist: sell two centre-backs and the ones who stay are nailed on,
+     which their own history cannot say because it was compiled while the
+     rivals were still there. A departed player is absent from the squad list,
+     so the depth read is current even when the minutes are not. */
+  {
+    const base = { element_type: 2, xp: null, teamGames: 0, starts: 20, minutes: 1800,
+      goals: 1, assists: 1, cleanSheets: 6, avgDifficulty: 3 };
+    const clear = minutesScore({ ...base, shirt: { leader: true, settled: true, rivals: 2 } });
+    const plain = minutesScore(base);
+    const fight = minutesScore({ ...base, shirt: { leader: false, contested: true, rivals: 4 } });
+    ok(clear > plain, 'the clear leader of a settled position gains minutes security (' +
+      plain.toFixed(2) + ' → ' + clear.toFixed(2) + ')');
+    ok(fight < plain, 'and a live contest costs it (' + fight.toFixed(2) + ')');
+    ok(shirtAdjust({}) === 0 && shirtAdjust({ shirt: null }) === 0,
+      'no depth information changes nothing');
+    ok(shirtAdjust({ shirt: { leader: true, settled: false } }) === 0,
+      'leading a contested position is not a bonus');
+    ok(minutesScore({ ...base, shirt: { leader: true, settled: true }, starts: 30, minutes: 2700 }) <= 1,
+      'the adjustment cannot push security past 1');
+  }
+
+  /* AVAILABILITY. The runner used to drop anyone whose status was not "a",
+     which silently deleted a club's biggest talking point — a striker with a
+     pre-season knock is what a preview leads on. */
+  {
+    ok(availability({ status: 'a' }) === null, 'a fit player carries no flag');
+    ok(availability({}) === null, 'and neither does one with no status at all');
+    const doubt = availability({ status: 'd', chanceOfPlaying: 50 });
+    ok(doubt && doubt.cap === 'watchlist' && /50%/.test(doubt.label),
+      'a doubt caps at watchlist and names the percentage (' + (doubt || {}).label + ')');
+    ok(availability({ status: 'i' }).cap === 'avoid', 'an injury caps at avoid');
+    ok(availability({ status: 's' }).cap === 'avoid', 'so does a suspension');
+    /* A stated 0% is not a doubt, it is an absence. */
+    ok(availability({ status: 'd', chanceOfPlaying: 0 }).cap === 'avoid',
+      'a 0% chance is an absence rather than a doubt');
+    ok(availability({ status: 'd', chanceOfPlaying: 75 }).cap === 'watchlist',
+      'while a likely return stays a doubt');
+
+    const elite = { element_type: 3, xp: 6.5, starts: 30, minutes: 2700, teamGames: 0,
+      avgDifficulty: 2.0 };
+    ok(grade(elite).status.key === 'major', 'the same player fit is a major target');
+    ok(grade({ ...elite, status: 'd', chanceOfPlaying: 50 }).status.key === 'watchlist',
+      'and a doubt caps him rather than being averaged away');
+    ok(grade({ ...elite, status: 'i' }).status.key === 'avoid', 'an injury caps him harder');
+    ok(/fitness doubt/.test(grade({ ...elite, status: 'd', chanceOfPlaying: 50 }).why),
+      'and the reason leads with it');
+    /* A flag must never PROMOTE anyone. */
+    const poor = { element_type: 3, xp: 0.5, starts: 2, minutes: 200, teamGames: 0, avgDifficulty: 4.5 };
+    ok(grade({ ...poor, status: 'd', chanceOfPlaying: 50 }).status.key === 'avoid',
+      'a cap cannot lift a bad player up to it');
+
+    const club = buildThread({ name: 'F', fullName: 'Flags', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: [
+        { web_name: 'Knock', element_type: 4, now_cost: 60, xp: 6.2, starts: 28,
+          minutes: 2500, teamGames: 10, avgDifficulty: 2.5, status: 'd', chanceOfPlaying: 50 },
+        { web_name: 'Fit', element_type: 3, now_cost: 65, xp: 6.0, starts: 30,
+          minutes: 2700, teamGames: 10, avgDifficulty: 2.5 }
+      ] });
+    const av = club.posts.find((x) => x.kind === 'availability');
+    ok(!!av, 'a club with a flagged player gets an availability post');
+    ok(av && av.lines.some((l) => /Knock/.test(l) && /fitness doubt/.test(l)),
+      'naming the player and the doubt (' + (av ? av.lines[0] : '') + ')');
+    const hier = club.posts.find((x) => x.kind === 'hierarchy');
+    ok(hier.rows.some((r) => r.flag && /fitness doubt/.test(r.flag)),
+      'and the hierarchy row carries the flag rather than hiding it');
+    const noFlags = buildThread({ name: 'G', fullName: 'Good', played: 10, scored: 20,
+      conceded: 20, avgDifficulty: 2.5, fixtures: [], players: [
+        { web_name: 'Fit', element_type: 3, now_cost: 65, xp: 6.0, starts: 30,
+          minutes: 2700, teamGames: 10, avgDifficulty: 2.5 }] });
+    ok(!noFlags.posts.some((x) => x.kind === 'availability'),
+      'a fully fit squad gets no availability post rather than an empty one');
+  }
 
   /* Rotation risk is a tension, not a low number. The first real run filled
      this post with fourth-choice keepers and players on their way out — true,
@@ -495,6 +850,244 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
     avgDifficulty: 2.5, players: [], fixtures: [] });
   ok(/Scored 9, conceded 4/.test(withFootball.posts.find((x) => x.kind === 'baseline').lines[0]),
     'a real baseline is still reported');
+}
+
+console.log('• club threads: the squad cap must not decide who gets graded');
+{
+  const P = (o) => ({ web_name: 'X', element_type: 3, now_cost: 60, teamGames: 20,
+    starts: 20, minutes: 1800, goals: 3, assists: 3, avgDifficulty: 2.5, ...o });
+
+  /* The real defect: club-thread.mjs sliced the squad in the bootstrap's own
+     id order, so a club with more players than the cap lost whoever happened
+     to sit late in the feed. On Man City that was Haaland — a club preview
+     with no forward in it. The ordering rule is what stops that, so it is
+     pinned here rather than left to the shape of a live feed. */
+  const order = (squad) => squad.slice()
+    .sort((a, b) => b.minutes - a.minutes || b.now_cost - a.now_cost);
+
+  const fringe = Array.from({ length: 25 }, (_, i) =>
+    P({ web_name: 'Fringe' + i, minutes: 200, now_cost: 45 }));
+  const star = P({ web_name: 'Star', element_type: 4, now_cost: 155, minutes: 2700, goals: 30 });
+  /* Star last, exactly as a late id would place him. */
+  const kept = order(fringe.concat([star])).slice(0, 24);
+  ok(kept.some((p) => p.web_name === 'Star'),
+    'the club’s biggest asset survives the cap wherever the feed put him');
+  ok(kept[0].web_name === 'Star', 'and is graded first');
+
+  /* Pre-season there are no minutes, so price has to carry the ordering —
+     otherwise the cap goes back to being arbitrary in exactly the window
+     these threads run in. */
+  const preseason = fringe.map((p) => ({ ...p, minutes: 0 })).concat([{ ...star, minutes: 0 }]);
+  ok(order(preseason)[0].web_name === 'Star', 'with no minutes yet, price orders the squad');
+
+  /* The three-per-club rule: a shortlist longer than the cap has to say so. */
+  const majors = (n) => Array.from({ length: n }, (_, i) => ({
+    web_name: 'M' + i, now_cost: 60, element_type: 3,
+    grade: { status: { key: 'major' }, returns: 0.8, minutes: 0.9, fixtures: 0.8 } }));
+  const four = clubVerdict(majors(4));
+  ok(four.verdict === 'load-up', 'four majors is still a club to load up on');
+  ok(new RegExp('only own ' + CLUB_CAP).test(four.text),
+    'but the squad cap is stated (' + four.text + ')');
+  const three = clubVerdict(majors(CLUB_CAP));
+  ok(three.verdict === 'load-up' && !/only own/.test(three.text),
+    'at exactly the cap there is nothing to cut, so nothing is said');
+  const two = clubVerdict(majors(2));
+  ok(!/only own/.test(two.text), 'and two names never triggers it');
+
+  /* The takeaway has to name the three, not just mention that there is a
+     limit — the arithmetic is the thing the thread exists to do. */
+  const P2 = (o) => ({ web_name: 'W', element_type: 3, now_cost: 70, minutes: 2400,
+    starts: 27, goals: 12, assists: 8, teamGames: 30, xp: 6.5, avgDifficulty: 2.0, ...o });
+  const loaded = buildThread({ name: 'X', fullName: 'Xtown', played: 20,
+    scored: 40, conceded: 20, avgDifficulty: 2.0, fixtures: [],
+    players: [P2({ web_name: 'Alpha', now_cost: 120 }), P2({ web_name: 'Bravo', now_cost: 95 }),
+      P2({ web_name: 'Chas', now_cost: 80 }), P2({ web_name: 'Delta', now_cost: 70 }),
+      P2({ web_name: 'Echo', now_cost: 60 })] });
+  const take = loaded.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+  if (/only own/.test(loaded.verdict.text)) {
+    ok(/If you want 3:/.test(take), 'the takeaway names the three (' + take + ')');
+    ok((take.match(/£/g) || []).length === CLUB_CAP, 'exactly three, with prices');
+    const named = loaded.posts.find((x) => x.kind === 'hierarchy').rows.slice(0, CLUB_CAP)
+      .map((r) => r.name);
+    ok(named.every((n) => take.includes(n)),
+      'and they are the top three of the hierarchy, not a different order');
+  } else {
+    ok(false, 'the fixture was meant to produce more majors than the cap');
+  }
+
+  /* An unavailable player must never be one of the three: the thread would
+     be telling you to spend a scarce club slot on someone who cannot play. */
+  const hurt = buildThread({ name: 'Y', fullName: 'Ytown', played: 20,
+    scored: 40, conceded: 20, avgDifficulty: 2.0, fixtures: [],
+    players: [P2({ web_name: 'Crocked', now_cost: 130, status: 'i' }),
+      P2({ web_name: 'Alpha', now_cost: 120 }), P2({ web_name: 'Bravo', now_cost: 95 }),
+      P2({ web_name: 'Chas', now_cost: 80 }), P2({ web_name: 'Delta', now_cost: 70 })] });
+  const hurtTake = hurt.posts.find((x) => x.kind === 'takeaway').lines.join(' ');
+  ok(!/Crocked/.test(hurtTake), 'an injured player is never one of the three');
+}
+
+console.log('• club threads: a summer signing’s rates belong to his old club');
+{
+  const base = { web_name: 'New', element_type: 2, now_cost: 55, minutes: 2700,
+    starts: 30, goals: 2, assists: 3, teamGames: 30, avgDifficulty: 2.5 };
+  const stayed = (o) => angles({ ...base, ...o });
+  const moved = (o) => angles({ ...base, ...o, newClub: true });
+
+  /* A rate is a statement about a role, and a role does not move with the
+     player. Two analysts read Elliot Anderson's defensive contribution at
+     City in opposite directions; the thread must not sound settled. */
+  const dcStay = stayed({ defconRate: 0.7 }).find((a) => a.tag === 'defensive floor');
+  const dcMove = moved({ defconRate: 0.7 }).find((a) => a.tag === 'defensive floor');
+  ok(dcStay && dcMove, 'the defensive floor is still reported after a move');
+  ok(!/previous club/.test(dcStay.note), 'a player who stayed gets no caveat');
+  ok(/previous club/.test(dcMove.note), 'a signing’s defensive floor is marked (' + dcMove.note + ')');
+  ok(dcMove.note.startsWith(dcStay.note), 'and the number itself is unchanged');
+
+  const oopMove = moved({ oop: { level: 2, label: 'attacked like a winger last season' } })
+    .find((a) => a.tag === 'out of position');
+  ok(/previous club/.test(oopMove.note), 'so is an out-of-position read');
+
+  /* Set-piece order is set by the club he is at NOW, so caveating it would
+     be wrong in the other direction — hedging the one angle that is current. */
+  const spMove = moved({ setPieces: 'penalties — 82% confidence on the duty' })
+    .find((a) => a.tag === 'set pieces');
+  ok(spMove && !/previous club/.test(spMove.note),
+    'set-piece duty is current and carries no caveat');
+
+  /* The talisman share divides his goals by a squad total he was not part
+     of. That is not uncertainty, it is arithmetic across two clubs. */
+  ok(stayed({ teamShare: 0.5 }).some((a) => a.tag === 'talisman'),
+    'a talisman who stayed is still named');
+  ok(!moved({ teamShare: 0.5 }).some((a) => a.tag === 'talisman'),
+    'but a signing gets no talisman share, because it mixes two squads');
+
+  /* The caveat has to reach the HIERARCHY, which prints tags and never
+     notes. The first version marked a signing's defensive floor in every
+     post except the one a reader screenshots — the tests passed and the
+     live thread still read "Anderson — defensive floor", flat. */
+  const H = (o) => ({ web_name: 'H', element_type: 3, now_cost: 70, minutes: 2400,
+    starts: 27, goals: 10, assists: 6, teamGames: 30, xp: 6.4, avgDifficulty: 2.0, ...o });
+  const hierOf = (t) => t.posts.find((x) => x.kind === 'hierarchy').lines.join('\n');
+  const signed = hierOf(buildThread({ name: 'S', fullName: 'Stown', played: 0,
+    avgDifficulty: 2.0, fixtures: [],
+    players: [H({ web_name: 'Mover', defconRate: 0.7, newClub: true }), H({ web_name: 'Other' })] }));
+  ok(/Mover.*defensive floor\*/.test(signed), 'the hierarchy marks a carried rate (' + signed.split('\n')[0] + ')');
+  ok(/^\* measured at his previous club/m.test(signed), 'and explains the marker once, as a footnote');
+  ok(!/Other.*\*/.test(signed), 'a player who stayed is unmarked');
+
+  const settled = hierOf(buildThread({ name: 'T', fullName: 'Ttown', played: 0,
+    avgDifficulty: 2.0, fixtures: [], players: [H({ web_name: 'Stayer', defconRate: 0.7 })] }));
+  ok(!/\*/.test(settled), 'and a thread with no signings carries no footnote at all');
+
+  /* Set-piece duty is current even for a signing, so it must not be starred
+     — the marker would claim doubt about the one thing we do know. */
+  const sp = hierOf(buildThread({ name: 'U', fullName: 'Utown', played: 0,
+    avgDifficulty: 2.0, fixtures: [],
+    players: [H({ web_name: 'Taker', setPieces: 'penalties — 82% confidence on the duty',
+      defconRate: 0.7, newClub: true })] }));
+  ok(/defensive floor\*/.test(sp) && /set pieces(?!\*)/.test(sp),
+    'the marker lands on the carried rate only, not on set-piece duty (' + sp.split('\n')[0] + ')');
+
+  /* And when the feed cannot say who signed, the thread says so once rather
+     than marking nobody and sounding certain about everybody. */
+  const club = { name: 'Z', fullName: 'Ztown', played: 0, avgDifficulty: 2.4,
+    fixtures: [], players: [{ ...base, xp: 5 }] };
+  const blind = buildThread({ ...club, joinData: false });
+  const known = buildThread({ ...club, joinData: true });
+  const hookOf = (t) => t.posts.find((x) => x.kind === 'hook').lines.join(' ');
+  ok(/does not say when anyone signed/.test(hookOf(blind)),
+    'the caveat appears when join dates are missing');
+  ok(!/does not say when anyone signed/.test(hookOf(known)),
+    'and not when they are available');
+  ok(!/does not say when anyone signed/.test(hookOf(buildThread(club))),
+    'the default assumes the data is there rather than caveating every thread');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TWO RECORDS THE FIXTURE TICKER CANNOT GIVE
+
+   A rival's Man Utd thread carried the line our threads had no answer to:
+   "only 2 clean sheets vs weak sides, so if Shaw and Maguire return nothing
+   at Hull and Ipswich, it's not bad luck." A run of green cells is a claim
+   about the OPPONENTS. Whether this defence converts one is a claim about
+   the CLUB, and the two come apart — which is exactly when a thread is worth
+   reading. Same for the venue split: scoring more at home while also
+   conceding more at home is a shape a difficulty average cannot express.
+
+   Both lines are held to the same rule: say it only when it disagrees with
+   what the ticker already implies, and say nothing at all below the sample
+   floor.
+   ═══════════════════════════════════════════════════════════ */
+console.log('• club thread: does a kind fixture actually become a clean sheet?');
+{
+  const base = { name: 'CLB', fullName: 'Club', played: 20, scored: 30, conceded: 25,
+    avgDifficulty: 2.6, fixtures: [], players: [] };
+  const baseline = (t) => (t.posts.find((p) => p.kind === 'baseline').lines.join(' \n '));
+
+  const poor = buildThread({ ...base,
+    kind: { games: 9, cs: 2, gf: 15, ga: 11, csr: 2 / 9, gfpg: 15 / 9, gapg: 11 / 9 }, kindAhead: 2 });
+  ok(/Only 2 clean sheets in 9 against bottom-half attacks \(22%\)/.test(baseline(poor)),
+    'the record against weak attacks is stated with its sample');
+  ok(/2 of the next six are against the same kind of attack/.test(baseline(poor)),
+    'and tied to the fixtures it predicts');
+  ok(/not bad luck/.test(baseline(poor)), 'and named as a pattern rather than variance');
+
+  /* The discipline that keeps it worth printing. A club that DOES cash its
+     kind fixtures is what the ticker already implies — repeating it spends a
+     line and tells the reader nothing. */
+  const good = buildThread({ ...base,
+    kind: { games: 10, cs: 6, gf: 20, ga: 5, csr: 0.6, gfpg: 2, gapg: 0.5 }, kindAhead: 3 });
+  ok(!/bottom-half attacks/.test(baseline(good)),
+    'a club that converts its kind fixtures gets no line — that is the assumption already');
+
+  /* Below the floor the engine hands back null, and the thread must not
+     invent a hedge to fill the gap. */
+  const none = buildThread({ ...base, kind: null, kindAhead: null });
+  ok(!/bottom-half/.test(baseline(none)), 'no sample means no line');
+  ok(baseline(none).length > 0, 'and the baseline still says its other things');
+
+  /* Singular/plural on both counts, since a one-of-one reads badly. */
+  const one = buildThread({ ...base,
+    kind: { games: 8, cs: 1, gf: 9, ga: 10, csr: 1 / 8, gfpg: 1.1, gapg: 1.25 }, kindAhead: 1 });
+  ok(/Only 1 clean sheet in 8/.test(baseline(one)), 'one clean sheet, not "1 clean sheets"');
+  ok(/1 of the next six is against/.test(baseline(one)), 'and "is", not "are"');
+
+  const noAhead = buildThread({ ...base,
+    kind: { games: 9, cs: 2, gf: 15, ga: 11, csr: 2 / 9, gfpg: 1.6, gapg: 1.2 }, kindAhead: 0 });
+  ok(/Only 2 clean sheets in 9/.test(baseline(noAhead)) && !/next six/.test(baseline(noAhead)),
+    'with no kind fixtures coming, the record stands alone rather than predicting nothing');
+}
+
+console.log('• club thread: is this a different side at home?');
+{
+  const base = { name: 'CLB', fullName: 'Club', played: 17, scored: 30, conceded: 25,
+    avgDifficulty: 2.6, fixtures: [], players: [] };
+  const baseline = (t) => (t.posts.find((p) => p.kind === 'baseline').lines.join(' \n '));
+  const split = { home: { games: 9, gfpg: 2.11, gapg: 1.22, csr: 0.22 },
+    away: { games: 8, gfpg: 1.63, gapg: 0.88, csr: 0.37 }, games: 17 };
+
+  /* The Man Utd shape exactly: more goals at home, more conceded at home too.
+     A single difficulty average cannot say this, and it changes which of a
+     club's assets you want in which week. */
+  const both = buildThread({ ...base, split,
+    venue: { attack: 'home', defence: 'home', attGap: 0.48, defGap: -0.34 } });
+  ok(/Scores more AND concedes more at home/.test(baseline(both)),
+    'the two-sided shape is named as one thing');
+  ok(/Home 2\.11 for \/ 1\.22 against, away 1\.63 \/ 0\.88/.test(baseline(both)),
+    'with the numbers behind it, both venues, both directions');
+
+  const attOnly = buildThread({ ...base, split,
+    venue: { attack: 'home', defence: 'level', attGap: 0.48, defGap: 0.05 } });
+  ok(/Scores more at home\./.test(attOnly.posts.find((p) => p.kind === 'baseline').lines.join(' ')),
+    'a one-sided split says only the side that moved');
+
+  const level = buildThread({ ...base, split,
+    venue: { attack: 'level', defence: 'level', attGap: 0.05, defGap: 0.02 } });
+  ok(!/Home .* for /.test(baseline(level)),
+    'a club that plays the same everywhere gets no line — which is most clubs');
+  const silent = baseline(buildThread({ ...base, split: null, venue: null }));
+  ok(!/for \//.test(silent), 'and no verdict at all means silence, not a hedge');
+  ok(silent.length > 0, 'while the rest of the baseline is unaffected');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

@@ -137,6 +137,16 @@ export const KINDS = {
     /* Only worth saying when a chip window is actually near. */
     norm: (e) => clamp01(e.edge / 15),
     timeliness: TIMELINESS.deadline
+  },
+  'fixture-run': {
+    label: 'Best fixture run',
+    /* A club's kindest stretch anywhere in the horizon, not merely its
+       opening. Magnitude is how much kinder than an average week, scaled by
+       how long it lasts — the same shape as purple-patch, because they are
+       measuring the same thing on different windows and it would be
+       dishonest for one to look bigger by construction. */
+    norm: (e) => clamp01(((3 - e.avgDifficulty) / 1.5) * clamp01(e.weeks / 5)),
+    timeliness: TIMELINESS.evergreen
   }
 };
 

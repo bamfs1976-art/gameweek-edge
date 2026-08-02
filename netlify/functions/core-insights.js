@@ -84,6 +84,52 @@ async function fetchGw(season, gw) {
    the right defensive-contribution threshold. Returns one record per element. */
 const DEF_THRESHOLD = 10;      /* DEF need 10 CBIT for the +2 */
 const MIDFWD_THRESHOLD = 12;   /* MID/FWD need 12 CBIRT */
+
+/* THE FORMULA IS VERIFIED. FPL publishes its own official
+   `defensive_contribution` per player-gameweek from 2025-26 (visible in the
+   vaastav dataset). Checked against the CBIT/CBIRT arithmetic below across
+   26,330 outfield player-gameweeks of 2025-26: 26,330 exact matches, zero
+   mismatches, zero cases of a published zero against non-zero components.
+
+   So DEF = clearances + blocks + interceptions + tackles at a threshold of
+   10, and MID/FWD = the same plus recoveries at 12, is not our reading of
+   the rule — it IS the rule, confirmed against the source of truth. An
+   independent third implementation (nickharris88/fpl-history) derives the
+   same thresholds and the same components.
+
+   WHY THIS RECOMPUTES INSTEAD OF READING `defensive_contributions`.
+   playermatchstats.csv publishes a `defensive_contributions` column, and
+   reading it directly is the obvious simplification. It is also wrong.
+   Measured across 2025-26 GW9-11 (1,142 outfield appearances):
+
+     - of 291 outfielders who played 60+ minutes in GW10, 102 (35%) carry a
+       published value of ZERO while their own component columns show real
+       clearances, blocks, interceptions and tackles. Those are holes, not
+       goalless defensive shifts, and taking them at face value would deflate
+       every hit rate this file feeds — the xP model's dcHitRate, Rank
+       Threats, and the club threads' "defensive floor";
+     - where the column IS populated, this position-aware formula reproduces
+       it exactly only ~66% of the time, so it is not simply our arithmetic
+       being wrong either.
+
+   The component columns, by contrast, are effectively complete: 4 of 291
+   all-zero, which is a plausible real quiet match rather than a gap. So the
+   components are the source of truth here and the aggregate column is
+   ignored. Do not "simplify" this by reading it.
+
+   Note the distinction, because it is easy to collapse the two: FPL's OWN
+   `defensive_contribution` is flawless (26,330 of 26,330 above). It is
+   Core Insights' separately-scraped `defensive_contributions` that is not.
+   Same idea, same name give or take an s, completely different reliability.
+   FPL's column is a season and per-gameweek TOTAL, though, and this file
+   needs the per-match hit RATE — how often a player clears the threshold in
+   a start — which a total cannot give. That is why the components are still
+   the input here rather than simply reading FPL's number.
+
+   The same check ruled out `start_min` / `finish_min` as a better definition
+   of a start than `minutes >= 60`: rows routinely read start 0, finish 90,
+   minutes 11, so they are match boundaries rather than a player's own on and
+   off times. */
 function aggregate(season, matchRows, positions) {
   positions = positions || {};
   const acc = {};

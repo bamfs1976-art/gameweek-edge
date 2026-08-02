@@ -274,7 +274,190 @@ P5 loop, not fitted to this simulation.
   global recentre) should be tuned on real returns via the **P5 calibration
   loop**, not to the synthetic DGP.
 
+### Defensive contribution — the formula is verified against FPL itself
+
+`netlify/functions/core-insights.js` computes each player's defensive
+contribution from component columns rather than reading a published total.
+From 2025-26 FPL publishes its **own official** `defensive_contribution` per
+player-gameweek, which makes that arithmetic checkable against the source of
+truth rather than against another third party.
+
+Checked over the whole of 2025-26 (vaastav `merged_gw.csv`), **26,330
+outfield player-gameweeks**:
+
+- **26,330 exact matches. Zero mismatches.**
+- Zero rows where the published figure is 0 while the components are not.
+
+So the rule is confirmed, not inferred:
+
+| position | counts | threshold |
+|---|---|---|
+| DEF | clearances + blocks + interceptions + tackles (CBIT) | 10 |
+| MID / FWD | CBIT **+ recoveries** (CBIRT) | 12 |
+
+Two real GW1 rows now sit in `dev/test-core-insights.mjs` as fixtures, each
+isolating one half of the rule: Senesi (12 CBI + 3 tackles + 2 recoveries →
+official **15**, so a defender's recoveries do not count) and André (3 CBI +
+4 tackles + 8 recoveries → official **15**, where CBIT alone is 7 and the
+recoveries are what clear the 12 bar). An independent third implementation,
+`nickharris88/fpl-history`, derives the same thresholds and components.
+
+**This does not contradict the earlier Core Insights finding — it sharpens
+it.** There are two similarly-named columns with completely different
+reliability:
+
+| column | source | verdict |
+|---|---|---|
+| `defensive_contribution` | FPL official (bootstrap, vaastav) | flawless — 26,330/26,330 |
+| `defensive_contributions` | Core Insights' own match scrape | 35% false zeros — unusable |
+
+FPL's column is a **total**, and the hit **rate** — how often a player clears
+the threshold in a start — cannot be recovered from a total. That is why the
+components remain the input, and why it matters that they are now proven to
+implement the right rule.
+
+## Data sources considered and rejected
+
+Reviewed rather than adopted, recorded so the same ground is not covered
+twice. The pattern that decides it: prefer the provider whose data actually
+determines FPL scoring, over a second opinion that cannot be adjudicated.
+
+**Understat** (understat.com, and the `amosbastian/understat` wrapper).
+Two metrics genuinely absent from our stack: `xGChain` and `xGBuildup`.
+Neither is adopted.
+
+- `xGBuildup` excludes shots and key passes **by construction** — which is to
+  say it excludes precisely the two things FPL awards points for. It measures
+  involvement in possessions, and a midfielder in a dominant side accumulates
+  it without any of it converting to a return.
+- `xGChain` does include shots and key passes, and is therefore largely
+  redundant with the xG and xA we already carry.
+- Understat's xG is **its own model**. FPL's `expected_goals` is Opta's — the
+  same provider behind the data FPL scores on. Running a second, disagreeing
+  xG model gives two numbers and no way to adjudicate between them.
+- Practically it is also not available: understat.com returns **HTTP 403** to
+  automated requests, publishes no API, and grants no terms for programmatic
+  reuse. Contrast FPL-Core-Insights, which publishes CSVs to a public repo for
+  exactly this purpose and refreshes twice daily.
+
+Shot-level situation splits (set-piece vs open-play xG) are the one part with
+a plausible FPL use. We already have set-piece **order** from the bootstrap,
+which answers the forward-looking question — who has the duty now — rather
+than the backward-looking one.
+
+**`amosbastian/fpl`** — a Python wrapper for the official API, used here as a
+coverage checklist. Diffing its 24 endpoints against ours found no material
+gap. Three are not called, each correctly:
+
+| endpoint | why not |
+|---|---|
+| `entry/{id}/cup` | FPL Cup standings; a mid-season knockout, no modelling value |
+| `entry/{id}/transfers-latest` | convenience subset of `entry/{id}/transfers`, which we do call |
+| `game-settings` | unnecessary — `fplRules()` reads `game_settings` out of bootstrap-static |
+
+`my-team`, `me` and `watchlist` all require an authenticated FPL login, which
+this app deliberately does not take. That is the same constraint behind the
+transfer solver's selling-price caveat.
+
+**`fplbot/fplbot`** — Slack and Discord chatbot (deadline notifications,
+league captain picks, match events). Plumbing, no modelling.
+
+**`antoniaelek/fantasy-premier-league`** — descriptive visualisations over the
+vaastav dataset. No model, no validation, no reported accuracy.
+
+**`Torvaney/fpl-optimiser`** — LP squad picker maximising the total points of
+all fifteen, which pays full price for bench points that rarely score. Our
+`squadOptimise` maximises the best XI with the bench discounted via `BENCH_W`
+and is verified against exhaustive enumeration.
+
+**`wiscostret/fplscrapR`** — R convenience wrappers over the same public JSON
+API we already call directly.
+
 ## Recorded validations
+
+### DECAY_BASE — fitted (and a first attempt that had to be thrown away)
+
+`solvePlanMulti` discounts future gameweeks by `DECAY_BASE^n`. The value (0.9)
+came from the public open-fpl-solver's `decay_base`, so it was borrowed rather
+than measured. `dev/fit-decay.mjs` measures it.
+
+**Method.** Rolling-horizon simulation over **ten real seasons** (2016-17 to
+2025-26, vaastav): start from a random legal squad, and at each gameweek build
+projections from data strictly before that deadline, run the app's own
+`solvePlanMulti`, apply only that week's action (transfers, bank, free
+transfers, hits), then pick the XI by projection and score it on **actual**
+points with auto-subs. Every decay value sees the same seasons, the same
+starting squads and the same projections, so the comparison is **paired**.
+vaastav's own `xP` column is never read — its README warns it is filled in
+post-match.
+
+#### The first run was invalid
+
+`merged_gw`'s `team` column is a club NAME in recent seasons and absent
+entirely before 2020-21, while `opponent_team` is always a numeric id. The
+harness keyed team strength by one and looked it up by the other, so **no
+opponent lookup ever resolved**: every future gameweek for a player projected
+identically, apart from blanks and doubles. A discount applied to a flat
+forecast cannot change a decision, so the sweep reported "no effect" — a null
+manufactured by a bug rather than measured from the data. Both of its
+headline conclusions were artefacts, and both reversed once fixed.
+
+Team ids are now recovered from the data itself (within a fixture, the home
+rows' `opponent_team` is the away side's id and vice versa), which also
+back-fills the four pre-2020-21 seasons. `dev/fit-decay.mjs` now counts how
+many opponent lookups resolve and **exits non-zero if the fixture signal is
+flat**, because that failure is otherwise completely silent.
+
+#### Corrected results
+
+Points per season vs no discounting, 2 standard errors, 120 paired runs:
+
+| horizon | 0.5 | 0.7 | 0.8 | 0.85 | 0.9 | 0.95 |
+|---|---|---|---|---|---|---|
+| **3 (shipped)** | −2.6 ± 16.3 | +2.8 ± 15.4 | +10.5 ± 12.6 | +3.1 ± 13.8 | +11.8 ± 13.9 | +12.6 ± 10.8 |
+| 8 | −20.2 ± 14.5 | −15.8 ± 13.3 | −15.1 ± 15.8 | −5.6 ± 14.4 | −4.4 ± 13.5 | −10.2 ± 14.0 |
+
+**At the shipped three-gameweek horizon the discount is mildly positive and
+not significant.** A focused re-run of 0.9 against 1.0 over **300** paired
+runs gives **+5.2 ± 8.8** — the estimate shrank as the sample grew, which is
+what an effect near zero does. The honest reading is that this parameter is
+low-stakes at our horizon: 0.9 is defensible, and so would be turning it off.
+
+**Over a long horizon, discounting actively hurts** — the opposite of what the
+broken harness said. That is coherent: you extend the horizon to see further,
+then a heavy discount throws away the very information you extended it for.
+It also means open-fpl-solver's 0.9-at-horizon-8 does not transfer to us.
+
+**The real finding is the horizon, not the discount.** Across the same 120
+paired runs, horizon 8 undiscounted beat our shipped horizon 3 at 0.9 by
+**+16.9 ± 16.8**, and horizon 3 undiscounted by **+28.7 ± 15.0**. That was
+marginal, so it was re-run on its own: over **300** paired runs, horizon 8
+undiscounted versus the shipped configuration is **+15.9 ± 10.5 — it holds
+and tightens**, where the decay effect shrank under the same treatment.
+
+So the ordering is: *how far ahead the solver looks* matters roughly three
+times as much as *how steeply it discounts what it sees*, and the two
+interact — a long horizon only pays if you do not discount it away.
+
+This is a confirmed result, not yet a change. Three things stand between it
+and shipping: the harness projects with a proxy rather than the app's real
+expected-points model, and an 8-week projection is exactly where that
+difference would bite hardest; the beam search runs in the browser on every
+panel open, so 8 gameweeks has a cost this experiment does not pay; and the
+panel is built and labelled around a 3-gameweek plan.
+
+**Why 0.9 stays.** It sits inside the band that measured positive at our
+horizon, it costs nothing detectable, and no tested value beats it by a
+margin this experiment can resolve.
+
+**Limitations.** The harness projects with a proxy (rolling shrunk points per
+90 plus an opponent-strength term) rather than the app's full expected-points
+model, which cannot be reconstructed point-in-time from this dataset; it
+enforces the three-per-club rule outside the solver rather than inside it; and
+it models neither chips nor price changes. It grades the *sequencing*
+decision, not the projection. Note the direction of the resulting bias: a
+weaker forecast warrants *more* discounting, so if anything this overstates
+the case for a discount.
 
 ### 2026/27 pre-season — match model vs the betting market (GW1)
 

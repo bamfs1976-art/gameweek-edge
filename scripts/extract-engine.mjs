@@ -117,17 +117,34 @@ export const ENGINE_FNS = [
      by construction — it counts matches, it does not care whose they are. */
   'recentMinutes', 'minutesModel', 'minutesSecurity', 'congestionLoad', 'congestionFactor',
 
+  /* Who else is at the club for that shirt. A club preview lives on this:
+     when two centre-backs leave in a window, the ones who remain are nailed,
+     and no amount of last season's minutes can tell you that on its own. */
+  'clubDepth',
+
+  /* Two reads of a club's record that a fixture ticker cannot give. The venue
+     split says whether this is a different side at home; clubVsPoorAttacks
+     says whether a kind fixture actually becomes a clean sheet — the club
+     thread's answer to "the run looks green, but does this defence cash it
+     in". Both go silent below their sample floor. */
+  'clubSplit', 'clubVenueVerdict', 'poorAttacks', 'clubVsPoorAttacks',
+
   /* Expected points from first principles, and its inputs. `dcHitProb` and
      `savePts` are not called by the app directly — nativeXP calls them — but
      an extraction that omits a callee produces an engine that parses, loads,
      and then throws the first time a projection is asked for. */
   'nativeXP', 'effGoalRate', 'negRate90', 'concedePts', 'recencyWeight', 'availAttackMult',
-  'dcHitProb', 'savePts',
+  'dcHitProb', 'savePts', 'dcRate90', 'dcThreshold',
 
   /* Out-of-position threat: a defender who attacks is scored on a defender's
      tariff, which is the single most exploitable classification in the game
      and the reason a club preview names one full-back over another. */
-  'oopThreat', 'oopBenchmarks', 'oopFlag',
+  'oopThreat', 'oopQuantile', 'oopBenchmarks', 'oopFlag',
+
+  /* Set-piece duty, straight off the bootstrap's order fields. A club preview
+     names the taker because a penalty is the most reliable goal in the game;
+     confTier comes along because setPieceConfidence calls it. */
+  'confTier', 'setPieceConfidence',
 
   /* Distribution helpers used by the simulators. */
   'normCdf', 'pointsDist', 'squadSim',
@@ -142,6 +159,8 @@ export const ENGINE_FNS = [
    so dev/test-engine.mjs executes the bundle and exercises the model rather
    than only checking that it parses. */
 export const ENGINE_CONSTS = [
+  /* Squad-competition thresholds, used by clubDepth. */
+  'DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX',
   /* Match model coefficients and the score-grid size. */
   'PLSIM', 'PLSIM_PROMOTED', 'PLSIM_ALIAS', 'LG_GRID',
   /* Elo-derived priors for clubs with no offline fit. */
@@ -149,7 +168,10 @@ export const ENGINE_CONSTS = [
   /* Fixture congestion: how a midweek match suppresses the next start. */
   'CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH',
   /* Out-of-position thresholds. */
-  'OOP_MIN_MINUTES', 'OOP_STRONG',
+  'OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_MID_PCTL',
+  'OOP_MID_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL',
+  /* Sample floors for the two club-record splits. */
+  'SPLIT_MIN_GAMES', 'SPLIT_EDGE', 'OPP_SPLIT_MIN',
   /* Squad rules and the transfer solver's valuation terms. */
   'RULES_FALLBACK', 'BENCH_W', 'FT_LADDER', 'FT_CAP',
 ];

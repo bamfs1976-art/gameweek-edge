@@ -88,6 +88,54 @@ ok(d5.defcon_actions === 16 && near(d5.defcon_per_start, 8), 'defender: CBIT act
 ok(dc[6].defcon_hits === 1 && near(dc[6].defcon_hit_rate, 1), 'midfielder: CBIRT (incl. recoveries) clears 12');
 ok(dc[7].defcon_starts === 0 && dc[7].defcon_hit_rate == null, 'goalkeeper: no defensive-contribution category');
 
+/* Two REAL rows from FPL's own 2025-26 data, each isolating one half of the
+   position-dependent rule. FPL began publishing an official
+   `defensive_contribution` per player-gameweek in 2025-26, and the formula
+   below reproduces it on 26,330 of 26,330 outfield player-gameweeks — so
+   these are not our interpretation being checked against itself, they are
+   the rule as the game applies it.
+
+   Senesi, GW1: 12 CBI + 3 tackles + 2 recoveries, official figure 15.
+   A defender's recoveries do NOT count — 17 would be the wrong answer. */
+const senesi = { player_id: '5', minutes_played: '90', clearances: '12', blocks: '0',
+  interceptions: '0', tackles: '3', recoveries: '2' };
+/* André, GW1: 3 CBI + 4 tackles + 8 recoveries, official figure 15. A
+   midfielder's recoveries DO count, and here they decide it: CBIT alone is
+   7, well short of the 12 bar, while CBIRT clears it. */
+const andre = { player_id: '6', minutes_played: '90', clearances: '3', blocks: '0',
+  interceptions: '0', tackles: '4', recoveries: '8' };
+const real = Object.fromEntries(aggregate('2025-2026', [senesi, andre], positions).map((r) => [r.element, r]));
+ok(real[5].defcon_actions === 15, 'defender: CBIT matches FPL’s official 15 (recoveries excluded)');
+ok(real[5].defcon_actions !== 17, 'and is not CBIRT, which would have been 17');
+ok(real[5].defcon_hits === 1, 'defender: 15 clears the 10 bar');
+ok(real[6].defcon_actions === 15, 'midfielder: CBIRT matches FPL’s official 15 (recoveries included)');
+ok(real[6].defcon_hits === 1, 'midfielder: 15 clears the 12 bar');
+ok(3 + 4 < 12, 'and CBIT alone would have missed it — the recoveries are decisive');
+
+/* The feed also publishes its own `defensive_contributions` column, and
+   reading it instead of recomputing is the obvious simplification. Measured
+   over 2025-26 GW9-11 it is unusable: 35% of 60+ minute outfielders carry a
+   published zero while their component columns show real actions. Taking
+   those at face value would deflate every hit rate this file feeds.
+
+   So the components win, always — and this pins it, because the failure mode
+   of "simplifying" to the published column is silent: hit rates would just
+   drift down and every defensive read in the app would get quietly more
+   pessimistic. */
+const contradicted = [
+  /* A defender who plainly cleared the bar (5+2+2+2 = 11 CBIT) while the
+     published aggregate claims nothing happened. */
+  { ...dcRow(5, 90, 5, 2, 2, 2, 0), defensive_contributions: '0' },
+  /* And one where the published figure is populated but disagrees. */
+  { ...dcRow(5, 90, 4, 3, 2, 2, 0), defensive_contributions: '99' },
+];
+const cd = Object.fromEntries(aggregate('2025-2026', contradicted, positions).map((r) => [r.element, r]));
+ok(cd[5].defcon_starts === 2, 'both appearances still count as starts');
+ok(cd[5].defcon_hits === 2, 'a published zero does not erase a start that cleared the threshold');
+ok(cd[5].defcon_actions === 22, 'actions come from the components (11 + 11), never the aggregate column');
+ok(cd[5].defcon_actions !== 99 && cd[5].defcon_actions !== 0,
+  'and a contradictory published value is ignored in both directions');
+
 /* ── season selection ───────────────────────────────────── */
 console.log('• core-insights: season selection');
 ok(deriveSeasonLabel(new Date('2026-07-24T00:00:00Z')) === '2026-2027', 'July belongs to the new season');

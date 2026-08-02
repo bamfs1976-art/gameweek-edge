@@ -12,53 +12,15 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { buildChipApi } from '../scripts/chipplan-parts.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
-const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
-/* Some names exist both at top level and shadowed inside a function; anchor to
-   the line start so the sandbox gets the one the app's top-level code sees. */
-const grabTopConst = (n) => { const i = html.indexOf('\nconst ' + n + '=') + 1; return html.slice(i, html.indexOf('\n', i)); };
 
-const API = new Function(
-  grabConst('CHIP_HALF_END') + '\n' + grabConst('MIN_CLUBS_FOR_XI') + '\n' +
-  /* The playable-week threshold is derived from the live club cap now. */
-  grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' + grabFn('minClubsForXi') + '\n' +
-  grabFn('captainEligible') + '\n' +
-  grabConst('INTL_GAP_DAYS') + '\n' + grabConst('WC_BREAK_BONUS') + '\n' +
-  /* Break effects scale with how long the break actually is. */
-  grabConst('BREAK_BASE_DAYS') + '\n' + grabConst('WC_BREAK_BONUS_LONG') + '\n' +
-  grabFn('breakSeverity') + '\n' + grabFn('breakScale') + '\n' +
-  grabConst('WC_EARLY_PENALTY') + '\n' + grabConst('BB_EARLY_PENALTY') + '\n' +
-  grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
-  grabConst('CHIP_PROVISIONAL_FROM') + '\n' + grabConst('WC_HORIZON_WEEKS') + '\n' +
-  grabFn('wcHorizonFactor') + '\n' + grabConst('BB_RUNIN_PENALTY') + '\n' +
-  grabConst('FT_CAP') + '\n' + grabConst('CARRY_HORIZON') + '\n' +
-  grabFn('deadWeight') + '\n' + grabFn('transferRunway') + '\n' +
-  grabConst('LEDGER_MAX') + '\n' + grabTopConst('CHIP_LABEL') + '\n' +
-  grabFn('freeTransfersFrom') + '\n' + grabFn('transferLedger') + '\n' +
-  'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
-  grabFn('intlBreakGws') + '\n' +
-  grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-  'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,clubFdrRuns,wcHorizonFactor,breakSeverity,breakScale,' +
-  'deadWeight,transferRunway,freeTransfersFrom,transferLedger,minClubsForXi};'
-)();
+/* The extraction lives in scripts/chipplan-parts.mjs so this test and the
+   live-fixture tool both run the app's planner rather than two copies. */
+const API = buildChipApi(html);
 
 const API_FT_CAP = 5;
 let failures = 0, passes = 0;
@@ -879,6 +841,102 @@ console.log('• chipPlanFdr: a longer break shifts the chips further');
     'and the longer break scores the wildcard higher (' +
     wcShort.rankScore.toFixed(2) + ' vs ' + wcLong.rankScore.toFixed(2) + ')');
 }
+
+
+console.log('• congestedGws: midweek rounds read off the same calendar');
+{
+  const F = API.congestedGws;
+  /* A season where GW18 and GW20 are midweek rounds, so GW19 is the weekend
+     sandwiched between them — the exact case FPL Sting put to FPL Marcello,
+     who withdrew his own Bench Boost call when it was pointed out. */
+  const sandwich = () => {
+    const evs = []; let t = Date.parse('2026-08-15T11:00:00Z');
+    for (let gw = 1; gw <= 24; gw++) {
+      evs.push({ id: gw, deadline_time: new Date(t).toISOString() });
+      /* GW18 -> 19 and GW19 -> 20 are both short hops. */
+      t += (gw === 18 || gw === 19 ? 3 : 7) * 86400e3;
+    }
+    return evs;
+  };
+  const c = F(sandwich());
+  ok(c[19] === 2, 'a weekend with a midweek round on each side scores 2 (' + c[19] + ')');
+  ok(c[18] === 1 && c[20] === 1, 'the midweek rounds themselves score 1 each');
+  ok(!c[10] && !c[24], 'an ordinary seven-day week is not congested');
+
+  /* The mirror must not fire on the thing it mirrors. */
+  const withBreak = [];
+  let t = Date.parse('2026-08-15T11:00:00Z');
+  for (let gw = 1; gw <= 12; gw++) {
+    withBreak.push({ id: gw, deadline_time: new Date(t).toISOString() });
+    t += (gw === 6 ? 15 : 7) * 86400e3;
+  }
+  ok(Object.keys(F(withBreak)).length === 0, 'an international break is not congestion');
+  ok(Object.keys(API.intlBreakGws(sandwich())).length === 0, 'and congestion is not a break');
+  ok(Object.keys(F([])).length === 0 && Object.keys(F(null)).length === 0,
+    'no calendar means no congestion rather than a throw');
+}
+
+console.log('• Bench Boost avoids the week flanked by midweek rounds');
+{
+  /* Every week equally easy EXCEPT the congested one, which is made the
+     easiest on fixtures alone — so on difficulty the planner would pick it,
+     and only the congestion penalty can talk it out of that. This is the
+     mistake the chip planner should catch before a human does. */
+  const evs = []; let t = Date.parse('2026-08-15T11:00:00Z');
+  for (let gw = 1; gw <= 19; gw++) {
+    evs.push({ id: gw, deadline_time: new Date(t).toISOString() });
+    t += (gw === 11 || gw === 12 ? 3 : 7) * 86400e3;
+  }
+  /* TWO equally easy weeks: GW7 in a normal calendar, GW12 flanked by
+     midweek rounds. On fixtures alone they are indistinguishable, so the
+     congestion is the only thing that can separate them — which is the real
+     shape of the decision. A week that is a whole FDR point easier probably
+     IS worth boosting despite the midweeks; the penalty is not meant to
+     overrule that, and a test that demanded it would only have bullied the
+     constant upwards. */
+  const fx = makeFixtures(1, 19, (gw) => (gw === 7 || gw === 12 ? 2 : 3));
+  const plan = API.chipPlanFdr(boot({ events: evs }), fx, { startGw: 1 });
+  ok(!!plan, 'the plan builds');
+  ok(plan.congested[12] === 2, 'GW12 is flanked on both sides (' + plan.congested[12] + ')');
+  ok(plan.congestGws.includes(12), 'and is reported so the card can say why');
+
+  const bb = plan.rank.benchboost;
+  const g12 = bb.find((g) => g.gw === 12), g7 = bb.find((g) => g.gw === 7);
+  ok(g12 && g7 && Math.abs(g12.mean - g7.mean) < 1e-9,
+    'the two weeks are identical on fixtures');
+  ok(g12 && g12.adjusted > g12.mean, 'the congested one is marked down');
+  ok(g7 && g7.adjusted === g7.mean, 'the clear one is not');
+  ok(bb[0].gw === 7, 'so Bench Boost prefers the clear week (' + bb[0].gw + ')');
+  ok(plan.picks.benchboost && plan.picks.benchboost.gw !== 12,
+    'and the chip does not land in the sandwich (' + (plan.picks.benchboost || {}).gw + ')');
+
+  /* Control: on a normal calendar the same fixtures pick GW12, because ties
+     go to the later week. Without this the test proves nothing about
+     congestion and everything about tie-breaking. */
+  const flat = []; let u = Date.parse('2026-08-15T11:00:00Z');
+  for (let gw = 1; gw <= 19; gw++) { flat.push({ id: gw, deadline_time: new Date(u).toISOString() }); u += 7 * 86400e3; }
+  const clean = API.chipPlanFdr(boot({ events: flat }), fx, { startGw: 1 });
+  ok(clean.rank.benchboost[0].gw === 12,
+    'the same fixtures on a normal calendar do pick GW12 (' + clean.rank.benchboost[0].gw + ')');
+
+  /* And a genuinely much easier congested week is still allowed to win — the
+     penalty is a thumb on the scale, not a veto. */
+  const strong = API.chipPlanFdr(boot({ events: evs }),
+    makeFixtures(1, 19, (gw) => (gw === 12 ? 1 : 4)), { startGw: 1 });
+  ok(strong.rank.benchboost[0].gw === 12,
+    'a hugely easier week wins despite the midweeks (' + strong.rank.benchboost[0].gw + ')');
+
+  /* One midweek beside the weekend is bad; two is worse. */
+  const one = API.chipPlanFdr(boot({ events: evs }), makeFixtures(1, 19, () => 3), { startGw: 1 });
+  const r = one.rank.benchboost;
+  const a = r.find((g) => g.gw === 11), c2 = r.find((g) => g.gw === 12);
+  ok(a && c2 && (c2.adjusted - c2.mean) > (a.adjusted - a.mean),
+    'both sides is penalised harder than one');
+
+  /* A double gameweek is a hard calendar fact and still wins. */
+  ok(typeof plan.picks.benchboost === 'object', 'Bench Boost still gets a week at all');
+}
+
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

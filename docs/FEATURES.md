@@ -41,71 +41,93 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is organised into **8 areas** and **40 panels** (the Studio area is owner‑only). Free panels are open
-to everyone; **Pro** panels require an upgrade (or owner access, see §9).
+Navigation is **7 areas** (plus an owner‑only Studio) holding **36 panels**.
+The sidebar lists the areas only — an area is a destination, not a folder, and
+lands on its first panel. The lateral move happens on the page: every panel
+carries an **area tab strip** naming the handful of views that belong with it
+(`areaTabsHtml`). Panels the active game has no capability for are absent
+rather than dead; **Pro** panels show as a locked tab, because you cannot want
+what you cannot see.
+
+There is no "The Edge" area any more. It used to hold twelve unrelated paid
+tools — the app's single biggest pile, and the one place a Pro tool could hide
+from the topic it belonged to. Pro is a property of a *panel* now, not a place,
+so each of those tools moved to where someone would look for it and kept its
+lock. "League" (the Premier League) and "Mini‑Leagues" (yours) also sat two
+aisles apart under near‑identical names; that is now **Match Centre** for the
+football and **Rivals** for the people you are playing against.
 
 ```
 Home
-├── Dashboard            (free)  Season snapshot, key actions, live alerts
-├── This Gameweek        (free)  The 4 weekly decisions + crowd moves
-└── The Wire             (free)  Auto-written data briefings + Team of the Week
+├── Dashboard            (free)  Season snapshot, this week's calls, live state
+├── My Week              (free)  Your personalised gameweek brief
+├── Gameweek recap       (free)  What just happened, and what it cost you
+├── The Wire             (free)  Auto-written data briefings + Team of the Week
+├── Scout AI             (Pro)   Model XI, scout report and the ask box
+├── Methodology          (free)  How the model works, in full
+└── Model Accountability (free)  Every published call, graded
 
 My Team
-├── Pre-season Draft     (free)  2026/27 squad builder — real FPL rules, xP6, AI diagnosis
 ├── My Squad             (free)  Live pitch from your picks + live points
-├── Transfer Planner     (free)  Transfer Solver + replacement finder + AI plan
-└── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
+├── Transfer Planner     (free)  Multi-GW beam solver + replacement finder + AI plan
+├── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
+├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
+├── Pre-season Draft     (free)  Squad builder — real FPL rules, xP6, AI diagnosis
+├── GW Debrief           (free)  Your gameweek, scored against the model
+└── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
 
-Live  (Pro)
-├── Live Percentile      (Pro)   Estimated GW percentile, live through the matchday
-├── Bonus Tracker        (Pro)   Provisional 3-2-1 bonus from live BPS
-├── Your DEFCON          (Pro)   Your players vs the defensive-contribution threshold
-├── DefCon Threats       (Pro)   Players you don't own who are scoring now
-├── Auto-Sub Tracker     (Pro)   Live projection of bench substitutions
-└── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
-
-Intelligence  (Pro)
-├── EO Tracker           (Pro)   Effective ownership across the top of the game
-├── Template Meter       (Pro)   How close your squad is to the top-10k template
-├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
-├── Scout AI             (Pro)   Model Team of the Week + AI scout report
-└── Ask the Scout        (Pro)   Hybrid AI coach (local engine + optional LLM)
+Live
+└── Live                 (free)  One matchday, five views — Percentile and Bonus
+                                 free, Your DEFCON / Rank threats / Auto-subs Pro
 
 Players
-├── Player List          (free)  Full sortable table + Cards view + CSV export
+├── Players              (free)  One sortable table, eleven lenses, Cards + Value chart, CSV
+│                                (absorbed Differentials and the Injury Monitor)
 ├── Scout Board          (free)  Per-90 shortlist + price ladder, DefCon + bonus by club
 ├── Player Compare       (free)  Up to 4 players side by side
-├── Differentials        (free)  <12% owned in form + DefCon leaders
 ├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
-├── Injury Monitor       (free)  Fitness flags by ownership
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
-└── Rotation Risk        (Pro)   Start-rate risk for premium players
+├── Rotation Risk        (Pro)   Midweek congestion, dead rubbers, start-rate risk
+└── Latest News          (free)  Official player news, newest first
 
 Planner
-├── Fixture Planner      (free)  Model FDR grid — per-cell xG / CS% / win odds
-├── Clean Sheet Matrix   (free)  P(clean sheet) per club per GW, 6/10-GW window
-├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
-├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
-├── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
+├── Fixtures             (free)  One horizon, three views: grid / points / clean sheets
+│                                (absorbed the Points Planner and Clean Sheet Matrix)
+├── Season Simulator     (Pro)   Full-season Monte Carlo (absorbed Scenario Lab)
+├── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
 ├── Watchlist            (free)  Saved players
 └── Alerts               (free)  Price/injury/deadline + model-watch alerts
 
-League
+Rivals
+├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
+├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
+├── EO Tracker           (Pro)   Effective ownership; your cover, edge and exposure
+└── The Template         (Pro)   The most-owned XI, and how close yours is
+
+Match Centre
+├── Matchday             (free)  One fixture list, three views: results / forecasts / line-ups
+│                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
 ├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
 ├── Team Form            (free)  Club form over the last 5/10/20 games
-├── Projected XI         (free)  Estimated starting lineups (starts/minutes/availability)
-├── Match Forecasts      (free)  Model W/D/L + xG per fixture (Pro adds BTTS/O2.5/scores)
-├── Season Simulator     (Pro)   Full-season Monte Carlo
-└── Scenario Lab         (Pro)   Pin results and re-run the season
+└── Ten Seasons          (free)  2016-17 to 2025-26: all-time records, career
+                                 comparison, and a daily guess-the-player puzzle
 
 Studio  (owner only — hidden unless the signed-in email is on the owner allowlist)
-└── Social Studio        (owner) Share-ready PNG cards from the live model
+├── Social Studio        (owner) Share-ready PNG cards from the live model
+└── Analytics            (owner) External visitors and area usage
 ```
 
+Two panels sit outside the areas and are reachable by hash only: **Glossary**
+(`#glossary`, also in the mobile More sheet) and **Design System** (`#design`).
+Both are free; neither shows a tab strip, since neither belongs to an area's
+list.
+
 **Global chrome:** top bar (menu, brand, refresh, My Team), left sidebar
-(area/panel tree), mobile bottom nav (6 areas), theme toggle (light/dark),
-deadline strip, account menu, upgrade modal, player‑detail modal.
+(flat area list), area tab strip on every page, mobile bottom nav (Home · My
+Squad · Players · Match Centre · More) with the remaining areas in the More
+sheet, theme toggle (light/dark), deadline strip, account menu, upgrade modal,
+player‑detail modal.
 
 ---
 
@@ -352,32 +374,60 @@ objective, and a £100m squad card is judged on the eleven it fields.
 photo cards for the top picks and a ranked list with next‑fixture difficulty.
 Plus a **captain planner** covering the next 7 gameweeks: the three
 highest‑projected armbands for each upcoming gameweek, from the same
-fixture‑by‑fixture projection the Points Planner uses. Double gameweeks sum
+fixture‑by‑fixture projection the Fixtures panel’s Points view uses. Double gameweeks sum
 both legs and are tagged `DGW`; a club that blanks drops out of that row.
 
-### Live (Pro)
+### Live
 
-**Live Percentile** — your live gameweek score with an estimated percentile
-versus all managers (a normal approximation around the gameweek average,
-sd ≈ 18), plus live match win‑probabilities re‑forecast on the current score.
-Deliberately framed as a statistical estimate: a true live rank requires the
-full FPL population, which no public API exposes. Panel id stays `liverank`.
+**Live** — one matchday, five views. These were five destinations all answering
+"what is happening to my team right now", and the one moment you want them is
+the one moment you cannot afford to navigate: matches in play, points moving.
+Leaving the number you were watching to go and find another one was the whole
+cost of the old shape. They are views of one panel now (`LV_VIEWS`); the five
+renderers are unchanged, and `#bonus`, `#dcwatch`, `#defcon` and `#autosubs`
+still land on the view they always showed. The panel id stays `liverank` for
+the deep links and the `g l` chord.
 
-**Bonus Tracker** — projects the provisional **3‑2‑1 bonus** from live BPS for
-every match in play *before* the API confirms it, using the official tie rule
-(joint winners take consecutive slots → 3,3,1 / 3,2,2). Your players highlighted;
-"Provisional" until confirmed.
+**The gate moved inside the panel.** Three of the five views are Pro and two
+are free, so panel‑level gating could not express it — the same journey the
+players table's column gate made. `renderPage` still locks a whole panel when
+the *panel* is paid; here the panel is free and each view carries its own
+tier, shown locked (blurred, inert, one lock strip) rather than hidden. A
+locked view never runs its hydrator, so it does not fetch your picks and the
+live feed to build a board you will not be shown. `needs` is per view too: a
+game pack without a bonus system or without defensive contributions drops
+those views entirely rather than showing a board that can never fill.
 
-**DefCon Threats** — high‑scoring players you don't own, ranked by damage to your
-rank.
+**Auto‑refresh** polls every 45s while a gameweek is in play and the tab is
+visible. A hub refreshes its **active view in place** (`LIVE_REFRESH`) rather
+than re‑running its own hydrator — rebuilding the chip row and repainting a
+skeleton every 45 seconds would make a live screen blink, which is worse than
+one that lags.
 
-**Auto‑Sub Tracker** — live projection of which bench players sub in and the
-points swing.
+**View 1 — Percentile** *(free)* — your live gameweek score with an estimated
+percentile versus all managers (a normal approximation around the gameweek
+average, sd ≈ 18), plus live match win‑probabilities re‑forecast on the current
+score. Deliberately framed as a statistical estimate: a true live rank requires
+the full FPL population, which no public API exposes.
 
-**What‑If Simulator** — model the rank impact of a goal / assist / clean sheet
-before a match ends.
+**View 2 — Bonus** *(free)* — projects the provisional **3‑2‑1 bonus** from live
+BPS for every match in play *before* the API confirms it, using the official tie
+rule (joint winners take consecutive slots → 3,3,1 / 3,2,2). Your players
+highlighted; "Provisional" until confirmed.
 
-### Intelligence (Pro)
+**View 3 — Your DEFCON** *(Pro)* — your outfield starters against the
+defensive‑contribution threshold (10 for defenders, 12 for midfielders and
+forwards): who has banked the +2, and who is close.
+
+**View 4 — Rank threats** *(Pro)* — high‑scoring players you don't own, ranked by
+damage to your rank. Nothing to do with defensive contributions despite sitting
+next to Your DEFCON — and it is still rendered by a function called
+`hydrateDefcon`, which is exactly why the label matters.
+
+**View 5 — Auto‑subs** *(Pro)* — live projection of which bench players sub in
+and the points swing.
+
+### Rivals
 
 **EO Tracker** — effective ownership, the real measure of rank gain at the top.
 
@@ -394,18 +444,41 @@ differential, value, defence and fixture questions, grounded in the model.
 
 ### Players
 
-**Player List** — every player in one view.
-- **Table view:** 21 sortable columns — Player, Team, Pos, Price, Sel%, Total
+**Players** — every player, every number, one table.
+- **Table view:** 28 sortable columns — Player, Team, Pos, Price, Sel%, Total
   Pts, GW Pts, Form, PPG, **xP**, Mins, Goals, Assists, **xGI/90**,
-  **npxG/90**, **xGC/90**, **DefC/90**, Bonus, BPS, ICT, Season Value. **npxG/90**
+  **npxG/90**, **xGC/90**, **DefC/90**, Bonus, BPS, Baseline BPS/90, ICT,
+  Season Value, **Tonight** (price‑move probability, signed), **Fit%**,
+  **YC** (yellows against the ban cutoff in force), **DC hit%**, **Mins%**,
+  plus three Pro columns — **EO%**, **Tmpl** and **SetP**. **npxG/90**
   (non‑penalty xG per 90 — open‑play threat) comes from the Core Insights mirror
   (§5) and shows a dash where unavailable, sorting below real values. Click any
   header to sort asc/desc; sticky player column; caps at 300 rows per sort.
+- **Lenses** — ten saved readings of the table, each setting its own columns,
+  sort and shortlist: *All data*, *Scout*, *Differentials*, *Price*, *Fitness*,
+  *DefCon*, *Rotation* (free) and *EO*, *Template*, *Set pieces* (Pro). The
+  Differentials and Injury Monitor boards were a filter and a sort over this
+  same data, so they are now lenses rather than destinations; `#diffs` and
+  `#injuries` still resolve, landing on the lens they always showed
+  (`PANEL_ALIAS` + `PANEL_LENS`). Lens names stay searchable in ⌘K.
+- **The column gate** — Pro is enforced per **column**, not per panel, because
+  once the paid boards fold into one table the column is the unit of value. A
+  locked column is shown, not hidden: the heading stays legible and each cell
+  carries a lock, both of which open the upgrade sheet. Three doors are shut,
+  not one — the cell, the **sort** (ordering by a hidden column would hand over
+  the ranking row by row) and the **CSV export**. A locked *lens* also stops
+  filtering, so its shortlist is not free either.
+  Only three columns are Pro, by a deliberate rule: a column is paid only when
+  the paid board is the **only** place that number appears today. DC hit% (already
+  on the Scout Board's defender brackets) and minutes security (already on Player
+  Compare) therefore stayed free — a merge must not take back what was free.
 - **Cards view:** responsive grid of photo cards (headshot + crest + name,
   team/pos/price, pts·xP·ownership).
 - **Filters:** search, position, team.
-- **Export CSV:** downloads exactly the filtered/sorted view — all 23 fields
-  (including `npxG_per90`), quoted/escaped, UTF‑8 BOM for Excel, named per gameweek.
+- **Export CSV:** downloads exactly the filtered/sorted view, quoted/escaped,
+  UTF‑8 BOM for Excel, named per gameweek. Free exports carry every free
+  column including `PriceMoveTonight` and `ChanceOfPlaying`; the three Pro
+  columns are appended only for a Pro reader.
 - Any row/card opens the full **player‑detail modal**.
 
 **Player‑detail modal** (reached from any player anywhere)
@@ -480,8 +553,9 @@ returns.
 **Player Compare** — up to four players side by side on form, xG, price,
 ownership, ICT and **minutes security** (three‑tier badge).
 
-**Differentials** — <12% owned in form, plus a **Defensive‑contribution leaders**
-table (the 2025/26 DefCon scoring category).
+**Differentials** and the **Injury Monitor** are no longer panels — both were a
+filter and a sort over the same player data, so they are lenses on the Players
+table (*Differentials* and *Fitness*). Old links still work.
 
 **Price Predictor** — a threshold model estimates each player's **% likelihood
 of a price rise/fall tonight** (net transfers vs an ownership‑scaled threshold,
@@ -496,8 +570,6 @@ is the gap, so the panel names both the **underpriced** and — rarer, and more
 useful — the **overpriced**. Benchmarking within position is deliberate:
 defenders score fewer points per pound than forwards by design, so one
 league‑wide rate would brand every defender a bargain.
-
-**Injury Monitor** — fitness flags, suspension risk and return chance by ownership.
 
 **Set Piece Register** — official written **taker notes** (from `set-piece-notes`)
 plus confirmed penalty / direct‑FK / corner order.
@@ -582,8 +654,25 @@ which is the correct answer in July, not a failure.
 
 ### Planner
 
-**Fixture Planner** — model‑FDR grid (from win odds), expected goals for, and
-clean‑sheet odds; plus the upcoming match outlook.
+**Fixtures** — one horizon, three views. The Fixture Planner, the Points
+Planner and the Clean Sheet Matrix were three destinations asking the same
+question — what do the coming weeks look like — and answering it at three
+levels: the club, the player and the clean sheet. Choosing between them from
+the nav meant deciding which level you wanted before seeing any of them. They
+are views of one panel now (`FX_VIEWS`, and `PANEL_VIEW` keeps `#points5` and
+`#csmatrix` landing on the view they always showed). The three renderers are
+unchanged — the hub only decides which one owns the body.
+
+The Clean Sheet view is **not** the grid's Defence lens, despite both printing
+a clean‑sheet percentage per club per gameweek, and it is kept rather than
+folded in for two reasons: it reads the published model bundle instead of
+ratings fitted in the browser, so it still works before a ball is kicked (the
+grid answers "Between seasons" then); and it stacks **both** fixtures of a
+double gameweek, where the grid's per‑team map keeps one fixture per gameweek
+and drops the other.
+
+**View 1 — Fixture grid** — model‑FDR grid (from win odds), expected goals for,
+and clean‑sheet odds; plus the upcoming match outlook.
 
 **Every cell shows its lens's projection, not just a colour.** The grid used to
 shade a cell by a 1–5 difficulty bucket and print only the opponent — but that
@@ -602,7 +691,12 @@ official FPL rating). Teams re‑rank easiest‑run‑first; a purple underline 
 each club’s best run in the window. **Team filter** chips hide/show any club in
 the grid (with **All** and, when a team is linked, **My teams** shortcuts).
 
-**Clean Sheet Matrix** — for every 2026/27 club (from the shared model bundle),
+**View 2 — Points** — the top assets by projected points over the next 5 or 8
+gameweeks, filtered by position, with a per‑gameweek breakdown: each cell is the
+opponent and the expected points, greener for a bigger projected haul. Ranked
+by the horizon total, availability baked in.
+
+**View 3 — Clean sheets** — for every 2026/27 club (from the shared model bundle),
 the probability of a clean sheet in each of the next 6 or 10 gameweeks'
 fixtures. P(CS) = P(opponent scores 0), read off the same Dixon‑Coles score
 grid the season simulator samples (`lgScoreGrid` → `lgCleanSheets`). Rows sort
@@ -831,6 +925,35 @@ so it shows before a team is linked and pre‑season.
 
 **Alerts** — price‑change / injury / deadline reminders and **model‑watch** alerts
 (when the model's view of a player shifts). Optional push notifications.
+
+### Match Centre
+
+**Matchday** — one fixture list, three points in time. Results, Match Forecasts
+and Projected XI were three destinations reading the same fixtures before,
+during and after: what the model expected, who was likely to start it, and what
+actually happened. You want those within one move of each other — the pre‑match
+view is only interesting next to the result, and the projected XI is the thing
+you check between the two. They are views of one panel now (`MC_VIEWS`), the
+three renderers unchanged, and `#matchforecast` and `#lineups` still land on the
+view they always showed. The panel id stays `results` for the deep links, the
+bottom bar and the `g m` chord.
+
+- **Results** — every match of the gameweek: scorers, cards, saves, defensive
+  contributions and the bonus race, with your players flagged and the model's
+  pre‑match view graded against what happened. Pages between gameweeks in
+  place; this is the view the 45s live poll refreshes (`LIVE_REFRESH`), and
+  only this one — re‑running the forecasts or the projected XI every 45 seconds
+  would be work for nothing.
+- **Forecasts** — model win/draw/loss and expected goals per fixture, any
+  matchday. Pro adds BTTS, over/under 2.5 and the most likely scorelines.
+- **Line‑ups** — a data‑driven estimate of each club's likely starting XI from
+  starts, minutes and availability. An estimate from the numbers, not team news.
+
+**Title Race**, **Club Dossier** (documented under Planner above) and **Team
+Form** stay their own panels rather than becoming views here. They are
+season‑level reference you browse, not matchday views you flick between, and
+folding six things into one panel because they share an area would be tidying
+rather than merging.
 
 ---
 

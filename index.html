@@ -61,6 +61,16 @@
   /* Accents */
   --amber:#b9741a;
   --amber-soft:rgba(185,116,26,.11);
+  /* The paywall accent. Deliberately NOT --amber: a locked column heading and
+     a lens chip are 12px semibold, so they need 4.5:1 against the surface they
+     sit on, and --amber only reaches 3.3:1 on the light canvas. --lock-on is
+     the ink that goes ON a --lock fill, which flips with the theme because
+     the fill does. Measured: light 5.5:1 and 6.3:1, dark 7.9:1 and 9.6:1. */
+  --lock:#8a5410;
+  --lock-on:#ffffff;
+  /* Active-tab ink. --green-bright is the brand green but only 3.3:1 on the
+     light canvas, and a tab label is 13px semibold. 5.9:1 here. */
+  --tab-on:#0f6d3d;
   --red:#cc3d39;
   --red-soft:rgba(204,61,57,.10);
   --blue:#2f6dc7;
@@ -128,6 +138,9 @@
 
   --amber:#F5A524;
   --amber-soft:rgba(245,165,36,.13);
+  --lock:#F5A524;
+  --lock-on:#0A0C0F;
+  --tab-on:#00D26A;
   --red:#FF4D4F;
   --red-soft:rgba(255,77,79,.12);
   --blue:#3B82F6;
@@ -285,8 +298,7 @@ html.native .topbar,
 html.native .sidebar,
 html.native .bottom-nav,
 html.native .btn,
-html.native .nav-area,
-html.native .nav-sub{
+html.native .nav-area{
   -webkit-user-select:none;user-select:none;
 }
 /* Top safe-area: push the sticky topbar clear of the notch / status bar. */
@@ -589,6 +601,40 @@ html.offline .net-banner{transform:translateY(0)}
 .lg-fc{display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;border-radius:4px;font-size:10px;font-weight:700;color:#fff;margin-right:2px}
 .lsc-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface-3);border:1px solid var(--border-2);border-radius:var(--r-pill);padding:4px 6px 4px 12px;font-size:.78rem}
 .lsc-chip button{border:0;background:none;color:var(--text-3);cursor:pointer;font-size:15px;line-height:1}
+/* Lens bar — the saved readings of a panel: which columns, which sort, which
+   shortlist. One class for all of them, because "another view of this same
+   thing" should look identical wherever it appears. Sits BELOW the area tabs
+   in the hierarchy, which are underlined rather than pilled for that reason.
+   Scrolls sideways on a phone rather than wrapping to three rows. */
+.lensbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.lensbar::-webkit-scrollbar{display:none}
+.lensbtn{flex:0 0 auto;background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);
+  border-radius:var(--r-pill);padding:6px 12px;font-size:.76rem;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:background .14s,color .14s,border-color .14s}
+.lensbtn:hover{color:var(--text)}
+/* Dark ink on the bright fill, not white. White on #00D26A is 2.0:1 and on
+   the light theme's #1f9d5c it is 3.5:1 — both well under AA at this size.
+   #0A0C0F clears it in both (9.7:1 and 5.6:1). */
+.lensbtn.on{background:var(--green-bright);border-color:var(--green-bright);color:#0A0C0F}
+.lensbtn.lk{color:var(--lock)}
+.lensbtn.lk.on{background:var(--lock);border-color:var(--lock);color:var(--lock-on)}
+.lensbtn svg{vertical-align:-1px}
+/* A locked column: visible, legible, and plainly not yours yet. The heading
+   keeps full text contrast — dimming it would read as "disabled" rather than
+   "paid", and the whole point is that you can see what you are missing. */
+.ptable th.lk{color:var(--lock);cursor:pointer}
+.ptable th.lk:hover{color:var(--lock);text-decoration:underline}
+.ptable td.lk{text-align:center;background:var(--surface-3)}
+.pl-lk{display:inline-flex;color:var(--lock);cursor:pointer}
+/* Sample count beside a venue rate — present but subordinate: the rate is
+   the number, the count is how much to trust it. */
+.pl-vn{color:var(--text-3);font-size:.82em}
+.pl-chart{padding-top:4px}
+.pl-legend{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 8px;font-size:11px;color:var(--text-2)}
+.pl-leg{display:inline-flex;align-items:center;gap:5px}
+.pl-leg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.dl-sub2{display:block;font-size:11px;color:var(--text-3)}
+.pl-lk:hover{opacity:.75}
 .pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
 .plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
   background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);
@@ -714,39 +760,6 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 }
 .nav-area-ic svg{width:18px;height:18px}
 .nav-area-label{flex:1;text-align:left}
-.nav-chevron{
-  width:14px;height:14px;flex-shrink:0;color:var(--text-3);
-  transition:transform .2s var(--ease);
-}
-.nav-area-btn.expanded .nav-chevron{transform:rotate(90deg)}
-.lock-badge{
-  font-size:.58rem;font-weight:800;letter-spacing:.04em;
-  padding:2px 7px;border-radius:var(--r-pill);
-  background:var(--amber-soft);color:var(--amber);
-  display:flex;align-items:center;gap:3px;
-}
-.lock-badge svg{width:9px;height:9px}
-
-/* Sub-panels */
-.nav-sub{
-  overflow:hidden;max-height:0;
-  transition:max-height .28s var(--ease);
-}
-.nav-sub.open{max-height:640px}
-.nav-sub-btn{
-  display:flex;align-items:center;gap:9px;width:100%;
-  padding:8px 12px 8px 43px;border-radius:var(--r-sm);
-  color:var(--text-3);font-size:.81rem;font-weight:500;
-  transition:background .12s var(--ease),color .12s var(--ease);
-  position:relative;
-}
-.nav-sub-btn:hover{background:var(--surface-3);color:var(--text-2)}
-.nav-sub-btn.active{color:var(--green-bright);font-weight:700;background:var(--green-soft)}
-.nav-sub-btn.active::before{
-  content:'';position:absolute;left:24px;top:50%;transform:translateY(-50%);
-  width:5px;height:5px;border-radius:50%;background:var(--green-bright);
-}
-.nav-sub-lock{margin-left:auto;width:11px;height:11px;color:var(--text-4)}
 
 /* Sidebar footer */
 .sb-foot{
@@ -900,7 +913,30 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-.page-head{margin-bottom:22px}
+.page-head{margin-bottom:14px}
+/* Area tabs — the lateral move, on the page rather than in the sidebar.
+   Same chip language as the players lenses, so "another view of this thing"
+   looks the same everywhere in the app. */
+/* Underlined tabs, NOT pills. The players table already stacks a row of
+   lens pills under this strip, and two rows of identical green pills a few
+   pixels apart read as one control with a wrapping bug — you cannot tell
+   that the top row changes the page and the bottom row changes the view of
+   it. An underline is the older, quieter convention and it puts the two
+   levels in an obvious order. */
+.area-tabs{display:flex;gap:2px;overflow-x:auto;margin-bottom:18px;
+  border-bottom:1px solid var(--border);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.area-tabs::-webkit-scrollbar{display:none}
+.area-tab{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;background:none;
+  border:0;border-bottom:2px solid transparent;color:var(--text-2);padding:9px 12px;
+  font-size:.82rem;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:color .14s,border-color .14s}
+.area-tab:hover{color:var(--text)}
+.area-tab.on{color:var(--tab-on);border-bottom-color:var(--tab-on)}
+/* --lock rather than --amber: 12–13px semibold needs 4.5:1 and --amber only
+   reaches 3.3:1 on the light canvas. */
+.area-tab.lk{color:var(--lock)}
+.area-tab.lk.on{color:var(--lock);border-bottom-color:var(--lock)}
+.area-tab svg{vertical-align:-1px}
 .page-head h1{
   font-family:var(--font-display);font-size:1.875rem;
   font-weight:800;letter-spacing:-.025em;line-height:1.1;
@@ -938,7 +974,6 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .acct-link{display:block;width:100%;text-align:center;margin-top:14px;
   font-size:.78rem;font-weight:600;color:var(--green-bright)}
 /* When Pro, hide the lock badges in the nav */
-html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 
 /* ── GRID HELPERS ──────────────────────────────────────── */
 .grid{display:grid;gap:14px}
@@ -1098,6 +1133,13 @@ html.is-pro .lock-badge,html.is-pro .nav-sub-lock{display:none}
 .pp-cell{text-align:center;min-width:56px;vertical-align:middle}
 .pp-cell .pp-opp{display:block;font-size:9px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.02em;margin-bottom:1px}
 .pp-cell b{font-size:12px;color:var(--text)}
+/* Team sheet: a benched week is dimmed rather than hidden, so a row that
+   never lights up reads as a row at a glance. */
+.ts-out{opacity:.38}
+.ts-foot td{border-top:1px solid var(--line);font-weight:700;color:var(--text-2);font-size:11px}
+.ts-foot .sb-pl{font-weight:800;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;font-size:10px}
+.ts-tot td{color:var(--text)}
+.ts-tot b{color:var(--green)}
 .badge-blue{background:var(--blue-soft);color:var(--blue)}
 .badge-grey{background:var(--surface-3);color:var(--text-3)}
 
@@ -1404,11 +1446,8 @@ body{font-size:14px;line-height:1.35}
   .sb-brand{padding:12px 8px 10px}
   .sb-nav{padding:6px 6px 12px}
   .nav-area-btn{padding:8px;gap:12px;white-space:nowrap}
-  .nav-area-label,.nav-chevron,.lock-badge{opacity:0;transition:opacity .12s}
-  .sidebar:hover .nav-area-label,.sidebar:focus-within .nav-area-label,
-  .sidebar:hover .nav-chevron,.sidebar:focus-within .nav-chevron,
-  .sidebar:hover .lock-badge,.sidebar:focus-within .lock-badge{opacity:1}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
+  .nav-area-label{opacity:0;transition:opacity .12s}
+  .sidebar:hover .nav-area-label,.sidebar:focus-within .nav-area-label{opacity:1}
 }
 /* xl (≥1280): pin the rail open with labels — no hover flyout, no overlay. */
 @media(min-width:1280px){
@@ -1419,9 +1458,7 @@ body{font-size:14px;line-height:1.35}
   .sb-brand{padding:16px 16px 12px}
   .sb-nav{padding:8px 10px 14px}
   .nav-area-btn{padding:9px 11px;gap:12px}
-  .nav-area-label,.nav-chevron,.lock-badge{opacity:1}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub{max-height:0}
-  .sidebar:not(:hover):not(:focus-within) .nav-sub.open{max-height:640px}
+  .nav-area-label{opacity:1}
   .main{margin-left:240px}
 }
 @media(max-width:900px){
@@ -1758,6 +1795,28 @@ body{font-size:14px;line-height:1.35}
 .qd-pitch .pp-nm{max-width:52px;font-size:.55rem}
 .qd-pitch .pp-pt{max-width:52px;font-size:.6rem}
 .qd-pitch .pp-sub{max-width:52px;font-size:.48rem}
+/* PROOF BAND — the one claim no competitor can make, moved from the foot of
+   the page to directly under the hero. Rivals present the official FPL data
+   beautifully; we compute our own numbers and publish our own error rate.
+   Burying that at the bottom in 11px mono was giving away the whole argument. */
+.proof-band{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:13px 16px;margin:0 0 14px;border-radius:var(--r-md);
+  border:1px solid var(--border-2);border-left:3px solid var(--green);
+  background:var(--surface)}
+.proof-claim{font-size:14px;font-weight:600;color:var(--text);line-height:1.35}
+.proof-stat{font-family:var(--font-mono);font-size:12px;color:var(--text-2);letter-spacing:.02em}
+.proof-stat b{color:var(--green);font-weight:700}
+.proof-link{margin-left:auto;font-size:12px;font-weight:600;color:var(--green);
+  white-space:nowrap;text-decoration:none}
+.proof-link:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:4px}
+@media(max-width:520px){.proof-band{gap:7px}.proof-link{margin-left:0}}
+
+/* ONE HERO CARD. The quad grid gave four equal cards, so nothing led and the
+   eye had no entry point. The week's action spans the full width; the other
+   three stay paired beneath it. */
+.quad-grid .qd-hero{grid-column:1/-1}
+@media(max-width:720px){.quad-grid .qd-hero{grid-column:auto}}
+
 .trust-strip{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:center;padding:10px 12px;
   border:1px solid var(--border-2);border-radius:var(--r-md);background:var(--surface);
   font-family:var(--font-mono);font-size:11px;color:var(--text-2);letter-spacing:.02em}
@@ -1808,12 +1867,6 @@ body{font-size:14px;line-height:1.35}
 .pls-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;font-weight:700;
   color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 8px}
 .pls-txt{font-size:13px;color:var(--text-2)}
-/* No padlocks in nav — a quiet mono tag instead. */
-.lock-badge{background:var(--chip);color:var(--text-2);font-family:var(--font-mono);
-  letter-spacing:.08em}
-.lock-badge svg{display:none}
-[data-theme="dark"] .lock-badge{color:var(--text-2)}
-.nav-sub-lock{display:none}
 
 /* ── /design primitives page ── */
 .ds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
@@ -3004,6 +3057,7 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
+      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'methodology', label:'Methodology', icon:'spark', tier:'free'},
       {id:'accountability', label:'Model Accountability', icon:'target', tier:'free'}
     ]
@@ -3011,74 +3065,85 @@ const NAV = [
   {
     id:'myteam', label:'My Team', icon:'team',
     panels:[
-      {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free', needs:['preseasonDraft']},
       {id:'squad', label:'My Squad', icon:'squad', tier:'free'},
-      {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
       {id:'transfers', label:'Transfer Planner', icon:'swap', tier:'free'},
-      {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'}
+      {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'},
+      {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free', needs:['chips']},
+      {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free', needs:['preseasonDraft']},
+      {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
+      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']}
     ]
   },
   {
     id:'live', label:'Live', icon:'live',
     panels:[
-      {id:'liverank', label:'Live Percentile', icon:'pulse', tier:'free'},
-      {id:'bonus', label:'Bonus Tracker', icon:'diamond', tier:'free', needs:['bps']}
+      /* Five boards asking one question — what is happening to my team right
+         now — merged into one panel with a view per board (LV_VIEWS). The id
+         stays `liverank` for the deep links and the `g l` chord. Three of the
+         five views are paid, so the tier lives on the VIEW, not here. */
+      {id:'liverank', label:'Live', icon:'pulse', tier:'free'}
     ]
   },
   {
     id:'players', label:'Players', icon:'players',
     panels:[
-      {id:'allplayers', label:'Player List', icon:'grid', tier:'free'},
+      /* Differentials and the Injury Monitor used to be their own
+         destinations here. Both were a filter and a sort over this same
+         table, so they are now lenses on it — see PANEL_LENS, which keeps
+         #diffs and #injuries landing on the view they always did. */
+      {id:'allplayers', label:'Players', icon:'grid', tier:'free'},
       {id:'scoutboard', label:'Scout Board', icon:'grid', tier:'free'},
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
-      {id:'archive', label:'Ten Seasons', icon:'trophy', tier:'free'},
-      {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free', needs:['prices']},
-      {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
+      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
+      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
       {id:'news', label:'Latest News', icon:'bell', tier:'free'}
     ]
   },
   {
     id:'planner', label:'Planner', icon:'planner',
     panels:[
-      {id:'fixtures', label:'Fixture Planner', icon:'calendar', tier:'free'},
-      {id:'points5', label:'Points Planner', icon:'target', tier:'free'},
-      {id:'csmatrix', label:'Clean Sheet Matrix', icon:'shield', tier:'free'},
-      {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free', needs:['publicEntry']},
-      {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free', needs:['chips']},
+      /* The Points Planner and the Clean Sheet Matrix were the same horizon
+         read at the player level and the clean-sheet level. Both are views of
+         this panel now — see PANEL_VIEW, which keeps #points5 and #csmatrix
+         landing on the view they always showed. */
+      {id:'fixtures', label:'Fixtures', icon:'calendar', tier:'free'},
+      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
+      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
     ]
   },
+  /* "League" used to mean the Premier League here and your mini-league in
+     the panel called Mini-Leagues, two aisles apart. Rivals is everything
+     about the people you are playing against; Match Centre is the football. */
   {
-    id:'league', label:'League', icon:'trophy',
+    id:'rivals', label:'Rivals', icon:'users',
     panels:[
-      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
-      {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
-      {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
-      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
-      {id:'lineups', label:'Projected XI', icon:'squad', tier:'free'},
-      {id:'matchforecast', label:'Match Forecasts', icon:'grid', tier:'free'}
+      {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free', needs:['publicEntry']},
+      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid', needs:['publicEntry']},
+      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid', needs:['ownership']},
+      {id:'template', label:'The Template', icon:'grid', tier:'paid', needs:['ownership']}
     ]
   },
   {
-    id:'intel', label:'The Edge', icon:'intel', tier:'paid',
+    id:'matchcentre', label:'Match Centre', icon:'trophy',
     panels:[
-      {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
-      {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid', needs:['publicEntry']},
-      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid', needs:['ownership']},
-      {id:'template', label:'The Template', icon:'grid', tier:'paid', needs:['ownership']},
-      {id:'dcwatch', label:'Your DEFCON', icon:'shield', tier:'paid', needs:['defcon']},
-      /* Nothing to do with defensive contributions, despite the id — this is
-         the rank-threat list, and sitting next to "Your DEFCON" under a
-         near-identical name made two unrelated panels look like a pair. */
-      {id:'defcon', label:'Rank Threats', icon:'shield', tier:'paid', needs:['defcon']},
-      {id:'autosubs', label:'Auto-Sub Tracker', icon:'rotate', tier:'paid', needs:['autosubs']},
-      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
-      {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
-      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
-      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']},
-      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'}
+      /* Results, Match Forecasts and Projected XI read one fixture list at
+         three points in time, so they are views of one panel (MC_VIEWS).
+         Title Race, Club Dossier and Team Form stay their own panels — they
+         are season reference you browse, not matchday views you flick
+         between. The id stays `results` for the deep links and the bottom
+         bar. */
+      {id:'results', label:'Matchday', icon:'pulse', tier:'free'},
+      {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
+      {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
+      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
+      /* Ten seasons of the competition — records, careers and the daily
+         puzzle. Reference you browse rather than a matchday view, which is
+         the same reason Title Race and Club Dossier sit here; and the
+         Players area is at its seven-tab ceiling. */
+      {id:'archive', label:'Ten Seasons', icon:'trophy', tier:'free'}
     ]
   },
   /* Owner-only. Hidden from the nav, the command palette and the More sheet
@@ -3340,16 +3405,8 @@ const PANEL_CONTENT = {
     desc:'Every club’s recent form — last 5, 10 and 20 games, overall, home and away — from real results.',
     layout:'standard'
   },
-  lineups:{
-    desc:'A data-driven estimate of each club’s likely starting XI from starts, minutes and availability. An estimate from the numbers — not team news.',
-    layout:'standard'
-  },
-  matchforecast:{
-    desc:'Model win/draw/loss and expected goals for every fixture of a matchday. Pro adds BTTS, over/under 2.5 and the most-likely scorelines.',
-    layout:'standard'
-  },
   results:{
-    desc:'Every match of the gameweek — scorers, cards, saves, defensive contributions and the bonus race, with your players flagged and the model’s pre-match view beside each result.',
+    desc:'One fixture list, three points in time — what the model expected, who was likely to start, and what actually happened.',
     layout:'standard'
   },
   methodology:{
@@ -3385,23 +3442,7 @@ const PANEL_CONTENT = {
     layout:'cards3'
   },
   liverank:{
-    desc:'Your live gameweek score and an estimated percentile versus all managers, updating through the matchday. A statistical estimate — a true live rank needs the full FPL population.',
-    layout:'standard'
-  },
-  bonus:{
-    desc:'Provisional bonus points projected live from BPS — the 3-2-1 for every match before the FPL API confirms it.',
-    layout:'standard'
-  },
-  dcwatch:{
-    desc:'Your outfield players’ live defensive contributions against the threshold (10 for defenders, 12 for midfielders and forwards) — who has banked the +2 and who is close.',
-    layout:'standard'
-  },
-  defcon:{
-    desc:'High-owned players you do not own who are scoring now, ranked by the damage to your rank. Nothing to do with defensive contributions — for those, see Your DEFCON.',
-    layout:'standard'
-  },
-  autosubs:{
-    desc:'A live projection of which bench players will sub in, and the points swing.',
+    desc:'Your matchday in one place — where you sit, the bonus before it lands, the defensive +2s, the auto-subs, and who is hurting your rank.',
     layout:'standard'
   },
   whatif:{
@@ -3425,7 +3466,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   allplayers:{
-    desc:'Every player in one table with the full data set — tap any column to sort, tap a row for the full profile.',
+    desc:'Every player, every number, one table — with eleven lenses that jump you to the view you came for.',
     layout:'standard'
   },
   scoutboard:{
@@ -3436,16 +3477,8 @@ const PANEL_CONTENT = {
     desc:'Compare up to four players side by side on form, xG, price and ownership.',
     layout:'standard'
   },
-  diffs:{
-    desc:'Players under 15% owned with strong underlying numbers and rank upside.',
-    layout:'standard'
-  },
   price:{
     desc:'Estimated rise/fall likelihood at the next 00:00 UK price update for every player, from net transfers against an ownership-scaled threshold — plus transfer momentum and value tables.',
-    layout:'standard'
-  },
-  injuries:{
-    desc:'Fitness news, suspension risk and return timelines across the league.',
     layout:'standard'
   },
   setpiece:{
@@ -3457,15 +3490,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   fixtures:{
-    desc:'A six-gameweek fixture grid with model-based difficulty, expected goals and clean-sheet odds.',
-    layout:'standard'
-  },
-  points5:{
-    desc:'The top assets by projected points over the next five (or eight) gameweeks, with a per-gameweek breakdown of opponent and expected points.',
-    layout:'standard'
-  },
-  csmatrix:{
-    desc:'Every club’s clean-sheet probability for the coming gameweeks — from our backtested match model, the same engine as the season simulator.',
+    desc:'What the coming weeks look like, read three ways — club by club, player by player, and clean sheet by clean sheet.',
     layout:'standard'
   },
   leagues:{
@@ -3492,9 +3517,22 @@ const PANEL_CONTENT = {
 
 /* ── STATE ─────────────────────────────────────────────── */
 let currentPanel='dashboard';
-let expandedArea='home';
 
 /* ── BUILD SIDEBAR NAV ─────────────────────────────────── */
+/* The sidebar is a flat list of areas — seven choices, not forty-one.
+   It used to expand each area into a sub-list, which put the entire app in
+   front of you every time you wanted to move one step sideways. The lateral
+   move now lives on the page (areaTabsHtml), where it is scoped to the thing
+   you are actually reading, so the sidebar only has to answer "which part of
+   the app am I in".
+
+   An area lands on its first VISIBLE panel, not its first declared one: a
+   game pack that removes a capability must not leave the nav pointing at a
+   panel that no longer exists. */
+function areaLanding(area){
+  const first=(area.panels||[]).filter(canSeePanel)[0];
+  return first?first.id:null;
+}
 function buildNav(){
   const nav=document.getElementById('sb-nav');
   nav.innerHTML='';
@@ -3505,37 +3543,27 @@ function buildNav(){
     const btn=document.createElement('button');
     btn.className='nav-area-btn';
     btn.dataset.area=area.id;
-    btn.setAttribute('aria-expanded','false');
+    /* Every visible panel in the area is listed for search and screen
+       readers even though only the area shows — the panel names are how
+       people look for things, and the tabs reveal them on arrival. */
+    btn.setAttribute('aria-label',area.label+' — '+area.panels.filter(canSeePanel).map(p=>p.label).join(', '));
+    /* No Pro badge on an area. There used to be exactly one paid area, so the
+       badge meant something; now that Pro is a property of a panel rather
+       than a place, six of the seven areas contain one and the badge marks
+       everything, which is the same as marking nothing. The lock lives on the
+       tab, where it names the actual thing you cannot open. */
     btn.innerHTML=
       '<span class="nav-area-ic">'+svg(ICON[area.icon])+'</span>'+
-      '<span class="nav-area-label">'+area.label+'</span>'+
-      (area.tier==='paid'
-        ? '<span class="lock-badge">'+svg(ICON.lock,'width="9" height="9"')+'Pro</span>'
-        : '')+
-      '<span class="nav-chevron">'+svg(ICON.chevron)+'</span>';
-    btn.addEventListener('click',()=>toggleArea(area.id));
+      '<span class="nav-area-label">'+area.label+'</span>';
+    const go=areaLanding(area);
+    if(go)btn.addEventListener('click',()=>openPanel(go));
     wrap.appendChild(btn);
-
-    const sub=document.createElement('div');
-    sub.className='nav-sub';
-    sub.dataset.sub=area.id;
-    area.panels.filter(canSeePanel).forEach(p=>{
-      const sb=document.createElement('button');
-      sb.className='nav-sub-btn';
-      sb.dataset.panel=p.id;
-      sb.innerHTML=
-        '<span>'+p.label+'</span>'+
-        (p.tier==='paid'?'<span class="nav-sub-lock">'+svg(ICON.lock,'width="11" height="11"')+'</span>':'');
-      sb.addEventListener('click',()=>openPanel(p.id));
-      sub.appendChild(sb);
-    });
-    wrap.appendChild(sub);
     nav.appendChild(wrap);
   });
 }
 
 /* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
-/* Five-item bottom nav (mobile): Home · My Squad · Player list · Match Centre
+/* Five-item bottom nav (mobile): Home · My Squad · Players · Match Centre
    · More. Each item deep-links to the panel a manager most wants under that
    label; the remaining areas live in the More sheet so nothing is orphaned. */
 const MORE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
@@ -3543,8 +3571,8 @@ const areaBy=id=>NAV.find(a=>a.id===id)||null;
 const BOTTOM_NAV=[
   {label:'Home',area:'home',icon:'home',go:()=>openPanel(homePanel())},
   {label:'My Squad',area:'myteam',icon:'squad',go:()=>openPanel('squad')},
-  {label:'Player list',area:'players',icon:'players',go:()=>openPanel('allplayers')},
-  {label:'Match Centre',area:'league',icon:'pulse',go:()=>openPanel('results')},
+  {label:'Players',area:'players',icon:'players',go:()=>openPanel('allplayers')},
+  {label:'Match Centre',area:'matchcentre',icon:'pulse',go:()=>openPanel('results')},
   {label:'More',area:'',icon:'more',go:()=>openMoreSheet()}
 ];
 function buildBottomNav(){
@@ -3564,7 +3592,7 @@ function buildBottomNav(){
 /* The More sheet: every area not on the bottom bar, plus the glossary. */
 function openMoreSheet(){
   closeMoreSheet();
-  const items=[['live','Live'],['planner','Planner'],['intel','The Edge'],
+  const items=[['live','Live'],['planner','Planner'],['rivals','Rivals'],
       ...(window.GE_OWNER?[['studio','Studio']]:[]),['glossary','Glossary']]
     /* Skip an area the active game has emptied, and land on its first
        *visible* panel rather than its first declared one. */
@@ -3593,28 +3621,60 @@ function closeMoreSheet(){
   if(r&&document.contains(r)&&typeof r.focus==='function')r.focus();
 }
 
-/* ── TOGGLE AREA EXPANSION ─────────────────────────────── */
-function toggleArea(areaId){
-  const isOpen=(expandedArea===areaId);
-  expandedArea=isOpen?null:areaId;
-  syncNav();
-}
-
 /* ── OPEN A PANEL ──────────────────────────────────────── */
 /* Panels that have been merged into another. A retired id still resolves, so
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
-const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout'};
+const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
+  points5:'fixtures',csmatrix:'fixtures',
+  bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank',
+  matchforecast:'results',lineups:'results'};
+/* Three panels are now hubs, each holding views that used to be their own
+   destinations. A retired id has to name WHICH view: landing on the raw
+   28-column table, on the fixture grid, or on the live percentile is not the
+   page the old link promised.
+
+   Declarative — `{hub, view}` rather than a callback — so a test can read it
+   and check that a route only ever names a view its hub actually has. */
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView};
+const PANEL_VIEW={
+  allplayers:{hub:'allplayers',view:'all'},
+  diffs:{hub:'allplayers',view:'diffs'},
+  injuries:{hub:'allplayers',view:'fitness'},
+  fixtures:{hub:'fixtures',view:'grid'},
+  points5:{hub:'fixtures',view:'points'},
+  csmatrix:{hub:'fixtures',view:'cs'},
+  liverank:{hub:'liverank',view:'rank'},
+  bonus:{hub:'liverank',view:'bonus'},
+  dcwatch:{hub:'liverank',view:'defcon'},
+  defcon:{hub:'liverank',view:'threats'},
+  autosubs:{hub:'liverank',view:'autosubs'},
+  results:{hub:'results',view:'results'},
+  matchforecast:{hub:'results',view:'forecasts'},
+  lineups:{hub:'results',view:'lineups'}
+};
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
-function openPanel(panelId){
+function openPanel(panelId,opts){
+  /* Read the view from the id as typed, not the resolved one — the whole
+     point is that #diffs and #injuries resolve to the same panel and must
+     still open on different views of it.
+
+     keepView is for a caller that has ALREADY chosen a view: a ⌘K lens entry,
+     or the "open it in the players table" link on a board that kept its page.
+     Without it the destination's own default wins and every one of those
+     links silently lands on All data — which is exactly what they did until a
+     browser check on the sibling app caught it. A plain open (the nav, a deep
+     link, a bookmark) still resets to the default, which is what makes
+     clicking Players in the nav predictable. */
+  const pv=PANEL_VIEW[panelId];
+  if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back to the
      dashboard. This is the deep-link guard: typing #social does nothing. */
   if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';
   currentPanel=panelId;
-  expandedArea=PANELS[panelId].areaId;
   renderPage(panelId);
   syncNav();
   closeSidebar();
@@ -3630,21 +3690,17 @@ function syncNav(){
 
   document.querySelectorAll('.nav-area-btn').forEach(btn=>{
     const a=btn.dataset.area;
-    btn.classList.toggle('expanded',a===expandedArea);
     btn.classList.toggle('active',a===activeArea);
-    btn.setAttribute('aria-expanded',a===expandedArea?'true':'false');
+    if(a===activeArea)btn.setAttribute('aria-current','page');
+    else btn.removeAttribute('aria-current');
   });
-  document.querySelectorAll('.nav-sub').forEach(sub=>{
-    sub.classList.toggle('open',sub.dataset.sub===expandedArea);
-  });
-  document.querySelectorAll('.nav-sub-btn').forEach(btn=>{
-    const isActive=btn.dataset.panel===currentPanel;
-    btn.classList.toggle('active',isActive);
-    if(isActive){btn.setAttribute('aria-current','page');}
-    else{btn.removeAttribute('aria-current');}
-  });
+  /* The strip scrolls sideways, so on a narrow screen the active view can sit
+     off-screen with nothing on show marked current — the page then looks like
+     it belongs to whichever tab happens to be leftmost. */
+  const tab=document.querySelector('#area-tabs .area-tab.on');
+  if(tab&&tab.scrollIntoView)try{tab.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
   /* Highlight the matching bar item; when the current area lives only in the
-     More sheet (Live / Planner / The Edge / Glossary), light up "More" so the
+     More sheet (Live / Planner / Rivals / Glossary), light up "More" so the
      bar never looks like nothing is selected. */
   const barAreas=BOTTOM_NAV.filter(b=>b.area).map(b=>b.area);
   document.querySelectorAll('.bn-item').forEach(item=>{
@@ -3658,6 +3714,47 @@ function syncNav(){
 /* Panels whose own layout wants the full width — the right rail is hidden on
    these (≥1024px) so their two-column workspace is not squeezed. */
 const WIDE_PANELS=new Set(['draft']);
+/* The Pro lock treatment, shared by a locked PANEL and a locked VIEW inside
+   a hub. Merging the Live boards made the second case necessary: three of
+   the five views are paid and two are free, so the gate had to move inside
+   the panel — the same journey the players table's column gate made. */
+function proLockWrap(inner,id){
+  return '<div class="pro-lockwrap">'+
+    '<div'+(id?' id="'+id+'"':'')+' class="ge-host pro-blur" inert aria-hidden="true">'+inner+'</div>'+
+    '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
+      '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
+      '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
+}
+
+/* ── AREA TABS ─────────────────────────────────────────────
+   The sidebar used to be the only way sideways: open an area, read a list of
+   up to twelve, pick one. That put the whole app in front of you at every
+   turn and made the nav the main interface. The tabs put the lateral move on
+   the page instead — you see the handful of views that belong with the one
+   you are reading, and nothing else.
+
+   Panels the active game has no capability for are gone rather than shown
+   dead; paid ones are shown locked, because you cannot want what you cannot
+   see. A one-panel area gets no strip at all — a single tab is furniture. */
+function areaTabsHtml(panelId){
+  const panel=PANELS[panelId];if(!panel)return '';
+  const area=NAV.filter(a=>a.id===panel.areaId)[0];
+  if(!area)return '';
+  const sibs=area.panels.filter(canSeePanel);
+  if(sibs.length<2)return '';
+  /* Glossary and Design System carry areaId 'home' but are registered
+     straight onto PANELS, so they are not in any area's panel list. Showing
+     Home's tabs with none of them current would say "you are somewhere in
+     Home" and then fail to say where. */
+  if(!sibs.some(p=>p.id===panelId))return '';
+  return '<nav class="area-tabs" id="area-tabs" aria-label="'+esc(area.label)+' views">'+
+    sibs.map(p=>{
+      const on=p.id===panelId,lk=p.tier==='paid'&&!isPro();
+      return '<button class="area-tab'+(on?' on':'')+(lk?' lk':'')+'" data-panel="'+p.id+'"'+
+        (on?' aria-current="page"':'')+' onclick="openPanel(\''+p.id+'\')">'+
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(p.label)+'</button>';
+    }).join('')+'</nav>';
+}
 function renderPage(panelId){
   const panel=PANELS[panelId];
   const content=PANEL_CONTENT[panelId];
@@ -3679,12 +3776,7 @@ function renderPage(panelId){
      you just can't use it. (Server-side gates still protect the paid
      AI endpoints regardless of anything the client shows.) */
   if(locked){
-    body+='<div class="pro-lockwrap">'+
-      '<div id="ge-data" class="ge-host pro-blur" inert aria-hidden="true">'+
-        (WIRED[panelId]?skel(5):standardLayout(panel,content))+'</div>'+
-      '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
-        '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
-        '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
+    body+=proLockWrap(WIRED[panelId]?skel(5):standardLayout(panel,content),'ge-data');
   } else {
     if(isPaid){
       body+='<div class="pro-active"><span class="badge badge-green">'+svg(ICON.star,'width="11" height="11"')+' Pro</span> Unlocked</div>';
@@ -3706,6 +3798,7 @@ function renderPage(panelId){
           '</div>'+
         '</div>'+
       '</div>'+
+      areaTabsHtml(panelId)+
       body+
     '</main>';
 
@@ -3758,13 +3851,23 @@ function renderPage(panelId){
    and the tab is visible, so the numbers stay fresh without a manual
    reload. Each live hydrator calls markLive(true/false); the tick only
    refetches when something is live, and liveStamp() shows the pill. */
-const LIVE_PANELS=new Set(['liverank','bonus','dcwatch','autosubs','defcon','results']);
+const LIVE_PANELS=new Set(['liverank','results']);
+/* A hub refreshes its ACTIVE VIEW in place. Re-running the hub's own
+   hydrator would rebuild the chip row and repaint a skeleton every 45
+   seconds — a live screen that blinks is worse than one that lags. */
+const LIVE_REFRESH={
+  liverank:()=>lvRenderBody({quiet:true}),
+  /* Only the Results view moves during a match. Re-running the forecasts or
+     the projected XI every 45 seconds would be work for nothing. */
+  results:()=>{if(mcView(MC_VIEW).live)mcRenderBody({quiet:true});}
+};
 let LIVE_TIMER=null;
 function armLiveRefresh(panelId){
   if(LIVE_TIMER){clearInterval(LIVE_TIMER);LIVE_TIMER=null;}
   if(!panelId||!LIVE_PANELS.has(panelId))return;
   LIVE_TIMER=setInterval(()=>{
     if(currentPanel!==panelId||document.hidden||window._gwLive===false)return;
+    if(LIVE_REFRESH[panelId]){LIVE_REFRESH[panelId]();return;}
     const h=document.getElementById('ge-data');
     if(h&&WIRED[panelId])Promise.resolve().then(()=>WIRED[panelId](h)).catch(()=>{});
   },45000);
@@ -3775,6 +3878,7 @@ function markLive(isLive){window._gwLive=!!isLive;}
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden||!LIVE_TIMER)return;
   if(!LIVE_PANELS.has(currentPanel)||window._gwLive===false)return;
+  if(LIVE_REFRESH[currentPanel]){LIVE_REFRESH[currentPanel]();return;}
   const h=document.getElementById('ge-data');
   if(h&&WIRED[currentPanel])Promise.resolve().then(()=>WIRED[currentPanel](h)).catch(()=>{});
 });
@@ -4226,17 +4330,16 @@ const NEXT_WHY={
   squad:'Your XI, bench order and flags',
   draft:'Build your fifteen before the game opens',
   fixtures:'Who has the kindest run, and when',
-  diffs:'Low-owned players the model rates',
   chips:'When to play each chip',
-  allplayers:'Filter and sort the whole player pool',
+  allplayers:'Every player, one table, eleven lenses',
   price:'Tonight’s likely risers and fallers'
 };
 function dashNextSteps(mid){
   /* Without a linked team the personalised panels are dead ends, so the
      unlinked list is everything that stands on its own. */
   const order=mid
-    ?['transfers','captain','fixtures','diffs','chips','squad']
-    :['draft','fixtures','allplayers','diffs','price','chips'];
+    ?['transfers','captain','fixtures','allplayers','chips','squad']
+    :['draft','fixtures','allplayers','price','chips'];
   const items=order.filter(id=>NEXT_WHY[id]&&PANELS[id]&&canSeePanel(PANELS[id])).slice(0,6);
   if(!items.length)return '';
   return '<div class="dash-next"><div class="dash-next-h">Where to next</div>'+
@@ -4336,7 +4439,7 @@ async function hydrateDashboard(host){
   /* Status chip: PRE-SEASON dominates before GW1 (numbers are provisional,
      for a linked manager too); otherwise DEMO for an unlinked manager. */
   const statusTag=b.preseason?'<span class="demo-chip">PRE-SEASON</span>':(mid?'':'<span class="demo-chip">DEMO</span>');
-  const q1='<div class="card qd'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id+' · CONF '+Math.round(capConf.value||0)+'%',statusTag)+
+  const q1='<div class="card qd qd-hero'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id+' · CONF '+Math.round(capConf.value||0)+'%',statusTag)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
     arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
     arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
@@ -4487,6 +4590,20 @@ async function hydrateDashboard(host){
     if(pred===act){hits++;if(f.event===lastGw){lastHits++;}}
     if(f.event===lastGw)lastN++;
   });
+  /* The claim, stated once and stated first. In season it is the live record;
+     pre-season there is no live record to quote, so it falls back to the
+     held-out backtest rather than to a boast. */
+  const proof='<div class="proof-band">'+
+    '<span class="proof-claim">Our forecasts, graded in public.</span>'+
+    (done.length
+      ? '<span class="proof-stat">favourite correct <b>'+Math.round(100*hits/done.length)+'%</b>'+
+        ' across '+done.length+' matches'+(lastN?' &middot; last GW <b>'+lastHits+'/'+lastN+'</b>':'')+'</span>'
+      : '<span class="proof-stat">held-out backtest <b>'+jt('RPS')+' 0.2126</b> on 25/26 &middot; '+
+        'scoring core beats the form baseline on real actuals</span>')+
+    '<a class="proof-link" href="#" onclick="openPanel(\'accountability\');return false">'+
+      'See every prediction &rarr;</a>'+
+    '</div>';
+
   const trust='<div class="trust-strip"><span class="perf-h">MODEL PERFORMANCE</span>'+
     (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> · '+done.length+' matches</span>'+
       (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started — backtest below</span>')+
@@ -4564,17 +4681,19 @@ async function hydrateDashboard(host){
      Every value is already computed above; horizontally scrollable on mobile. */
   const tkItem=(l,v,cls)=>'<span class="tk-i"><span class="tk-l">'+l+'</span> <span class="tk-vv'+(cls?' '+cls:'')+'">'+v+'</span></span>';
   const rankDStr=rankDelta==null?'':' <span class="'+(rankDelta<0?'pos':rankDelta>0?'neg':'')+'">('+(rankDelta>0?'+':'')+fmtNum(rankDelta)+')</span>';
+  /* Three, not six. Working memory holds about four chunks and the old strip
+     spent all of them before the page had said anything. The three cut were
+     each already on screen: MODEL CONF sits in the action card's header and
+     again in its ministats, TOP DIFF is the entire differentials card, and
+     DATA repeats the provenance line rendered directly beneath. */
   const tkStrip='<div class="tk-strip" role="status" aria-label="Model and team metrics">'+
-    tkItem('MODEL CONF',Math.round(capConf.value||0)+'%')+
     (cap?tkItem('CAPTAIN',esc(cap.el.web_name)+' '+cap.xp.toFixed(1)+' xP'):'')+
     ((mid&&rankNow!=null)
       ? tkItem('YOUR RANK',fmtNum(rankNow)+rankDStr)
       : (totw?tkItem('MODEL XI ΣxP',totw.total.toFixed(1)):''))+
-    (diffs.length?tkItem('TOP DIFF',esc(diffs[0].e.web_name)+' '+diffs[0].p.toFixed(1)+' xP'):'')+
     tkItem('FLAGS',flagsN+' · '+moversN+' price')+
-    tkItem('DATA',stamp)+
     '</div>';
-  host.innerHTML=hero+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+q5+dashNextSteps(mid)+trust;
+  host.innerHTML=hero+proof+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+q5+dashNextSteps(mid)+trust;
   dashApply();
   tickTicker();
   maybeTour();
@@ -6498,13 +6617,75 @@ function fdrRunTotal(view,cells){
 
 /* Fixture Difficulty 2.0 body: recolour each cell by the chosen lens —
    overall win odds, attack (team xG) or defence (clean-sheet odds). */
+/* A run only counts as a purple patch below this mean grade. Named because
+   the entry-point summary has to apply the identical test — a club listed as
+   an entry point but not underlined in the grid above it would be the panel
+   contradicting itself. */
+const FDR_PATCH_MAX=2.8;
+function fdrGrade(view,c){
+  return view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
+    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
+}
+/* The club's best K-gameweek run under this lens, or null when its best is
+   not actually kind. One implementation, two readers. */
+function fdrPatchFor(view,teamId,gws,byTeamGw,K){
+  const grades=gws.map(g=>{const c=(byTeamGw[teamId]||{})[g];return c?fdrGrade(view,c):6;});
+  const run=bestFixtureRun(grades,K);
+  return (run&&run.sum/run.K<=FDR_PATCH_MAX)?run:null;
+}
+
+/* ENTRY POINTS — the same grid read DOWN the columns instead of across the
+   rows. The grid answers "when is this club kind?", one row per club; a
+   transfer is planned against a deadline, so the question you actually have
+   is "at this gameweek, whose run turns?". The panel was already computing
+   every answer and drawing it as an underline, and never once said it.
+
+   A gameweek with nothing is reported as nothing rather than padded with the
+   least-bad club — the same floor the daily card publishes silence on. */
+function fdrEntryHtml(view){
+  const S=window._fdr;if(!S)return '';const {b,gws,byTeamGw}=S;
+  const teams=(S.hidden&&S.hidden.size)?S.teams.filter(t=>!S.hidden.has(t.id)):S.teams;
+  const K=Math.min(5,gws.length);
+  const byGw={};
+  teams.forEach(t=>{
+    const patch=fdrPatchFor(view,t.id,gws,byTeamGw,K);
+    if(!patch)return;
+    const gw=gws[patch.start];
+    (byGw[gw]=byGw[gw]||[]).push({t,mean:patch.sum/patch.K,to:gws[patch.end]});
+  });
+  /* Only the gameweeks a K-game run can still FIT in are listed. The last
+     K-1 weeks of any window cannot host the start of one, so reporting them
+     as "nothing turns here" would claim an absence of opportunity where the
+     truth is an absence of horizon — a run starting in the final week of a
+     ten-week view is not missing, it is off the end of the table. */
+  const canStart=gws.slice(0,Math.max(1,gws.length-K+1));
+  const rows=canStart.map(g=>{
+    const list=(byGw[g]||[]).sort((a,c)=>a.mean-c.mean);
+    if(!list.length)return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm" style="color:var(--text-3)">GW'+g+'</span>'+
+      '<span class="dl-sub">nothing turns here — roll the transfer</span></span></div>';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">GW'+g+'</span>'+
+      '<span class="dl-sub">'+list.map(x=>crest(b,x.t.id,13)+esc(x.t.short_name)+
+        ' <span style="color:var(--text-3)">to GW'+x.to+'</span>').join(' · ')+'</span></span>'+
+      '<span class="dl-col mono">'+list.length+'</span></div>';
+  }).join('');
+  const total=Object.keys(byGw).reduce((n,g)=>n+byGw[g].length,0);
+  return '<div class="card mb-20"><div class="card-title">Entry points — when each run starts</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">The grid above, read down instead of across: the gameweek each club’s '+
+    K+'-game purple patch <b>begins</b>, which is the deadline you would buy into it. '+
+    (total?'<b>'+total+'</b> runs start inside this window.':'No club has a genuinely kind run in this window.')+
+    ' Listed to GW'+canStart[canStart.length-1]+' only — a '+K+'-game run cannot start later than that '+
+    'and still finish inside the window, so the weeks after it are off the end of the table rather than empty. '+
+    'Follows the lens and the team filter.</p>'+
+    '<div class="dl"><div class="dl-row head"><span class="dl-grow">Gameweek · clubs whose run starts</span><span class="dl-col">#</span></div>'+
+    rows+'</div></div>';
+}
+
 function fdrBodyHtml(view){
   const S=window._fdr;if(!S)return '';const {b,gws,byTeamGw}=S;
   /* Team filter: hide clubs the user has toggled off (empty set = all shown). */
   const teams=(S.hidden&&S.hidden.size)?S.teams.filter(t=>!S.hidden.has(t.id)):S.teams;
   if(!teams.length)return '<tr><td class="blank" colspan="99" style="text-align:center;padding:16px">No teams selected — tap <b>All</b> to bring them back.</td></tr>';
-  const grade=c=>view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
-    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
+  const grade=c=>fdrGrade(view,c);
   /* Rank teams by their total fixture difficulty for the chosen lens — the
      easiest run first, so the best opening-fixture teams sit at the top
      (matches how the community reads an FDR grid). A purple underline marks
@@ -6513,9 +6694,7 @@ function fdrBodyHtml(view){
   const K=Math.min(5,gws.length);
   const rows=teams.map(t=>{
     let lam=0,cs=0,n=0,tot=0;
-    const grades=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?grade(c):6;});
-    const run=bestFixtureRun(grades,K);
-    const patch=(run&&run.sum/run.K<=2.8)?run:null;
+    const patch=fdrPatchFor(view,t.id,gws,byTeamGw,K);
     const rowCells=gws.map(g=>(byTeamGw[t.id]||{})[g]||null);
     const cells=gws.map((g,gi)=>{const c=rowCells[gi];
       if(!c)return '<td class="blank">—</td>';
@@ -6538,6 +6717,9 @@ function fdrBodyHtml(view){
 }
 function renderFdr(view){
   const tb=document.getElementById('fdr-tbody');if(tb)tb.innerHTML=fdrBodyHtml(view);
+  /* The summary is the same data, so it must never lag the grid — it is
+     re-rendered on every lens change and every team toggle, not once. */
+  const ent=document.getElementById('fdr-entry');if(ent)ent.innerHTML=fdrEntryHtml(view);
   document.querySelectorAll('#fdr-view .seg-b').forEach(btn=>btn.classList.toggle('on',btn.dataset.view===view));
   const note=document.getElementById('fdr-note');
   if(note)note.innerHTML=view==='attack'
@@ -6547,6 +6729,68 @@ function renderFdr(view){
     :view==='fpl'
     ?'The <b>official FPL</b> Fixture Difficulty Rating (1–5) — shown for comparison with our model’s view. '
     :'Greener = easier overall — from each fixture’s modelled win odds. ';
+}
+
+/* ── FIXTURES: three readings of one horizon ────────────────
+   The Fixture Planner, the Points Planner and the Clean Sheet Matrix were
+   three destinations asking the same question — what do the coming weeks
+   look like — and answering it at three levels: the club, the player, and
+   the clean sheet. Choosing between them from the nav meant deciding which
+   level you wanted before you had seen any of them.
+
+   They are views of one panel now. The three renderers are untouched: the
+   hub only decides which one owns the body, so nothing about the grid, the
+   projections or the matrix changes.
+
+   The Clean Sheet Matrix is NOT the grid's Defence lens, despite both
+   printing a clean-sheet percentage per club per gameweek, and it is kept
+   rather than folded in for two reasons. It reads the published model bundle
+   instead of ratings fitted in the browser, so it still works before a ball
+   is kicked — the grid answers "Between seasons" then. And it stacks BOTH
+   fixtures of a double gameweek, where the grid's per-team map keeps one
+   fixture per gameweek and silently drops the other. */
+const FX_VIEWS=[
+  {id:'grid',label:'Fixture grid',
+   desc:'Every club’s run, coloured by the lens you pick — win odds, expected goals, clean-sheet odds, or the official FDR for comparison.'},
+  {id:'points',label:'Points',
+   desc:'The same horizon read player-by-player: projected points per gameweek, ranked by the horizon total.'},
+  {id:'cs',label:'Clean sheets',
+   desc:'Clean-sheet probability per club per gameweek, straight from the backtested model bundle — it shows both halves of a double gameweek, and works before the season starts.'}
+];
+let FX_VIEW='grid';
+function fxView(id){return FX_VIEWS.filter(v=>v.id===id)[0]||FX_VIEWS[0];}
+function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});}
+const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(h),cs:(h)=>hydrateCsMatrix(h)};
+function fxRenderBody(){
+  const body=document.getElementById('fx-body');if(!body)return;
+  const note=document.getElementById('fx-note');
+  if(note)note.textContent=fxView(FX_VIEW).desc;
+  document.querySelectorAll('#fx-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===FX_VIEW));
+  body.innerHTML=skel(5);
+  /* Each view owns the whole body, so a slow one cannot paint into a host
+     the user has already switched away from. */
+  const token=(MEM._fxToken=(MEM._fxToken||0)+1);
+  Promise.resolve().then(()=>FX_HYDRATE[FX_VIEW](body)).catch(err=>{
+    if(token!==MEM._fxToken)return;
+    /* Marked so a test can tell a HUB failure — the view's hydrator threw —
+       from a view rendering its own legitimate empty state. */
+    body.innerHTML='<div class="hub-fail">'+stateBox('calendar','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
+async function hydrateFixturesHub(host){
+  host.innerHTML=
+    '<div class="lensbar" id="fx-views">'+FX_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===FX_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="fx-note" style="margin:0 0 12px"></p>'+
+    '<div id="fx-body"></div>';
+  host.querySelectorAll('#fx-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===FX_VIEW)return;
+    fxSetView(btn.dataset.view);
+    fxRenderBody();
+  }));
+  fxRenderBody();
 }
 
 async function hydrateFixtures(host){
@@ -6804,6 +7048,7 @@ async function hydrateFixtures(host){
         'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
       '</div>'+
+      '<div id="fdr-entry">'+fdrEntryHtml(curView)+'</div>'+
       planCard+swCard+chainCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
@@ -6834,9 +7079,48 @@ async function hydrateFixtures(host){
    PLAYER LIST — every player, full data set, sort on any column.
    ═══════════════════════════════════════════════════════════ */
 const PL_TEXTCOLS=['web_name','team','pos'];
-let PL_STATE={k:'total_points',dir:-1,pos:0,team:0,q:'',view:'table'};
+let PL_STATE={k:'total_points',dir:-1,pos:0,team:0,q:'',view:'table',lens:'all'};
 function fnum(v){const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);}
-function plCols(b,xpMap){
+
+/* ── The column gate ────────────────────────────────────────
+   Pro used to be gated a whole panel at a time, which only works while Pro
+   data lives in its own panel. Once the paid boards fold into this table the
+   unit of value is the COLUMN, so the gate has to move with it — otherwise
+   every Pro number becomes free the moment the merge lands.
+
+   Lock, don't hide, in the same spirit as proPreview: a free reader sees the
+   column exists, sees its heading, and sees a lock where the number would be.
+   Hiding it would make the upsell invisible; printing it would give it away.
+
+   Two doors have to be shut, not one. The cell is the obvious one. The sort
+   is the leak: order a locked column and the ranking itself hands over the
+   data, one row at a time, without ever rendering a value. */
+function plColLocked(c){return !!(c&&c.tier==='paid')&&!isPro();}
+/* Suspension proximity against the cutoff in force THIS gameweek, with the
+   season-open guard the Injury Monitor carried: disciplinary totals reset
+   each summer, but FPL can still be serving last season's yellow cards
+   before a ball is kicked. Until a minute has been played, nobody is a
+   card away from anything. */
+function plSusp(e){
+  const S=window._pl,b=S&&S.b,gw=(b&&b.cur&&b.cur.id)||1;
+  if(!(S&&S.ctx&&S.ctx.seasonStarted))return {yellows:0,limit:suspCutoff(gw).limit,left:suspCutoff(gw).limit,level:''};
+  return suspRisk(e.yellow_cards,gw);
+}
+/* A cell that says "there is a number here, and it isn't yours yet". */
+function plLockCell(){return '<span class="pl-lk" title="The Edge — unlock to see this column">'+svg(ICON.lock,'width="11" height="11"')+'</span>';}
+
+function plCols(b,xpMap,ctx){
+  ctx=ctx||{};
+  const games=ctx.games||{},capId=ctx.capId,tmpl=ctx.tmpl,total=ctx.total||10e6;
+  /* Both absent when a caller builds columns without a fixture horizon, and
+     the venue columns then print a dash rather than throwing. */
+  const hz=ctx.hz,vsplit=ctx.vsplit;
+  /* Effective ownership: raw ownership plus the same again on the crowd
+     captain, which is the public-API approximation the EO Tracker uses. */
+  const eoOf=e=>{const own=parseFloat(e.selected_by_percent)||0;return Math.round(own+(e.id===capId?own:0));};
+  /* Goalkeepers have no defensive-contribution category at all, so they get
+     a dash rather than a modelled hit rate that could never be earned. */
+  const dcOK=e=>e.element_type===2||e.element_type===3||e.element_type===4;
   return [
     {k:'web_name',l:'Player',v:e=>e.web_name,d:e=>esc(e.web_name)},
     {k:'team',l:'Team',v:e=>teamShort(b,e.team),d:e=>esc(teamShort(b,e.team))},
@@ -6863,28 +7147,200 @@ function plCols(b,xpMap){
     /* Baseline BPS per 90 — bonus potential before any return. */
     {k:'bbps90',l:'Base/90',num:1,v:e=>baselineBps90(e),d:e=>baselineBps90(e).toFixed(1)},
     {k:'ict_index',l:'ICT',num:1,v:e=>parseFloat(e.ict_index)||0,d:e=>esc(e.ict_index)},
-    {k:'value_season',l:'Val',num:1,v:e=>parseFloat(e.value_season)||0,d:e=>esc(e.value_season)}
+    {k:'value_season',l:'Val',num:1,v:e=>parseFloat(e.value_season)||0,d:e=>esc(e.value_season)},
+    /* ── Free columns carried in from the other free boards ──
+       Tonight's price move, signed so one sort separates risers from fallers:
+       a +91 rise and a 91% fall are opposite events, not neighbours. */
+    {k:'pricemove',l:'Tonight',num:1,v:e=>{const pc=priceChangeProb(e,total);return pc.dir==='rise'?pc.prob:pc.dir==='fall'?-pc.prob:0;},
+     d:e=>{const pc=priceChangeProb(e,total);
+       if(pc.dir==='flat')return '—';
+       return '<span style="color:var(--'+(pc.dir==='rise'?'green':'red')+')">'+(pc.dir==='rise'?'▲':'▼')+pc.prob+'%</span>';}},
+    /* Availability. `chance_of_playing_next_round` is null for a fit player
+       and for an unflagged unknown alike, so a fit player reads 100 rather
+       than sorting to the bottom of the list next to the long-term injuries. */
+    {k:'chance',l:'Fit%',num:1,v:e=>{const c=e.chance_of_playing_next_round;return c==null?(e.status==='a'?100:0):c;},
+     d:e=>{const c=e.chance_of_playing_next_round;
+       if(e.status==='a'&&c==null)return '100';
+       if(c==null)return '<span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+esc(STATUS_LABEL[e.status]||e.status)+'</span>';
+       return '<span style="color:var(--'+(c>=75?'green':c>=50?'amber':'red')+')">'+c+'</span>';}},
+    /* Suspension proximity, against the ban cutoff in force this gameweek
+       (5 by GW19, 10 by GW32, 15 across the season) rather than a raw count
+       — 4 yellows means something very different in GW18 and GW21. */
+    {k:'yellow',l:'YC',num:1,v:e=>{const r=plSusp(e);return r.level==='edge'?2:r.level?1:0;},
+     d:e=>{const r=plSusp(e);
+       if(!r.yellows)return '—';
+       const cls=r.level==='edge'?'badge-red':r.level?'badge-amber':'badge-grey';
+       return '<span class="badge '+cls+'" title="'+r.left+' more for a ban">'+r.yellows+'/'+r.limit+'</span>';}},
+    /* Net transfers this gameweek — the momentum behind a price move. */
+    {k:'nettrans',l:'Net',num:1,v:e=>(e.transfers_in_event||0)-(e.transfers_out_event||0),
+     d:e=>{const n=(e.transfers_in_event||0)-(e.transfers_out_event||0);
+       return n?'<span style="color:var(--'+(n>0?'green':'red')+')">'+(n>0?'+':'-')+fmtK(Math.abs(n))+'</span>':'—';}},
+    /* ── Columns absorbed from the paid boards ──────────────
+       Each is the single number that board exists to give you.
+
+       Only three of them carry `tier:'paid'`, and the rule that decided it
+       is worth writing down: a column is Pro only when the paid board is
+       the ONLY place that number appears today. Anything already visible
+       free somewhere else stays free here, because a merge that quietly
+       moves free content behind a paywall is a takeaway dressed up as a
+       feature. Two failed that test on inspection —
+
+         DC hit%  — the Scout Board's defender brackets already print it
+                    league-wide, free, and the Differentials board prints it
+                    for the low-owned pool.
+         Mins%    — Player Compare and the club depth charts already show
+                    minutes security for any player you ask about.
+
+       Which leaves the genuinely paid-only numbers: effective ownership,
+       template rank, and set-piece confidence. */
+    {k:'eo',l:'EO%',num:1,tier:'paid',v:eoOf,d:e=>'~'+eoOf(e)+'%'},
+    {k:'tmpl',l:'Tmpl',num:1,tier:'paid',
+     /* Ownership rank inside its own position — 1 is the most-selected
+        goalkeeper, most-selected defender and so on. Outside the top N it
+        sorts last rather than pretending to a rank it hasn't got. */
+     v:e=>{const r=tmpl&&tmpl[e.id];return r?1000-r:0;},
+     d:e=>{const r=tmpl&&tmpl[e.id];return r?'<span class="badge badge-green">#'+r+'</span>':'—';}},
+    {k:'dchit',l:'DC hit%',num:1,v:e=>dcOK(e)?dcHitRate(e):-1,d:e=>dcOK(e)?dcHitLabel(e):'—'},
+    {k:'setp',l:'SetP',num:1,tier:'paid',v:e=>setPieceConfidence(e).value,
+     d:e=>{const s=setPieceConfidence(e);return s.value?'<span class="badge '+(s.value>=70?'badge-green':s.value>=50?'badge-amber':'badge-grey')+'" title="'+esc(s.roles.join(', '))+'">'+s.value+'</span>':'—';}},
+    {k:'minsec',l:'Mins%',num:1,v:e=>minutesSecurity(e,games[e.team]||0),
+     d:e=>{const v=minutesSecurity(e,games[e.team]||0);
+       return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'</span>';}},
+    /* ── Venue split ────────────────────────────────────────
+       Free, and deliberately so. These are our own match model's numbers, and
+       gating the model's output while giving FPL's raw data away would have
+       the value proposition backwards. */
+    {k:'venue',l:'Next',v:e=>{const n=hz&&hz[e.team]&&hz[e.team][0];return n?(n.home?1:0):-1;},
+     d:e=>{const n=hz&&hz[e.team]&&hz[e.team][0];
+       return n?'<span class="badge '+(n.home?'badge-green':'badge-grey')+'">'+(n.home?'H':'A')+' v '+esc(n.opp)+'</span>':'—';}},
+    /* The count is shown beside each rate because two home games and five are
+       different amounts of evidence for the same number, and a per-game figure
+       hides that on its own. */
+    {k:'xph',l:'xP home',num:1,v:e=>{const s=vsplit&&vsplit[e.id];return s&&s.h!=null?s.h:-1;},
+     d:e=>{const s=vsplit&&vsplit[e.id];
+       return s&&s.h!=null?s.h.toFixed(1)+' <span class="pl-vn">×'+s.hN+'</span>':'—';}},
+    {k:'xpa',l:'xP away',num:1,v:e=>{const s=vsplit&&vsplit[e.id];return s&&s.a!=null?s.a:-1;},
+     d:e=>{const s=vsplit&&vsplit[e.id];
+       return s&&s.a!=null?s.a.toFixed(1)+' <span class="pl-vn">×'+s.aN+'</span>':'—';}},
+    /* Signed, so one sort separates the two opposite cases rather than ranking
+       them by size: a player worth +1.2 at home and one worth -1.2 are not
+       neighbours. Sorted descending this is the home-dependence ladder; sorted
+       ascending it is the list of players who travel best. */
+    {k:'vswing',l:'H−A',num:1,v:e=>{const s=vsplit&&vsplit[e.id];return s&&s.swing!=null?s.swing:-99;},
+     d:e=>{const s=vsplit&&vsplit[e.id];
+       if(!s||s.swing==null)return '—';
+       const c=s.swing>=0.3?'green':s.swing<=-0.3?'red':'';
+       return c?'<span style="color:var(--'+c+')">'+(s.swing>0?'+':'')+s.swing.toFixed(1)+'</span>'
+         :(s.swing>0?'+':'')+s.swing.toFixed(1);}}
   ];
+}
+
+/* ── Lenses ─────────────────────────────────────────────────
+   A lens is a saved reading of this table: which columns matter, what to
+   sort by, and which players are even in scope. Each one is a board that
+   used to be its own destination, so arriving at the table through an old
+   link lands on the same view under a different roof.
+
+   `cols` lists the columns ON TOP of the identity block (player, team,
+   position, price) that every lens keeps. `null` means all of them. */
+const PL_ID_COLS=['web_name','team','pos','now_cost'];
+const PL_LENSES=[
+  {id:'all',label:'All data',tier:'free',cols:null,sort:'total_points',
+   desc:'Every player with the full data set.'},
+  {id:'scout',label:'Scout',tier:'free',sort:'xp',
+   cols:['xp','form','points_per_game','expected_goal_involvements_per_90','ci_npxg90','expected_goals_conceded_per_90','defensive_contribution_per_90','bbps90','minutes'],
+   desc:'Per-90 output and our next-gameweek projection — who is actually producing.'},
+  {id:'diffs',label:'Differentials',tier:'free',sort:'xp',
+   cols:['selected_by_percent','xp','form','expected_goal_involvements_per_90','ci_npxg90','dchit','defensive_contribution_per_90','total_points'],
+   filter:e=>(parseFloat(e.selected_by_percent)||0)<15&&(e.now_cost||0)<100&&e.status==='a',
+   desc:'Under 15% owned and under £10.0m — a premium nobody has got round to buying is not a differential. Sort by DC hit% for the defensive differentials.'},
+  {id:'price',label:'Price',tier:'free',sort:'pricemove',
+   cols:['pricemove','nettrans','selected_by_percent','total_points','value_season','form'],
+   desc:'Chance of a move at tonight’s 00:00 UK update, from net transfers against an ownership-scaled threshold. An estimate — FPL’s algorithm is not public.'},
+  {id:'fitness',label:'Fitness',tier:'free',sort:'selected_by_percent',
+   cols:['chance','yellow','selected_by_percent','minutes','form','total_points'],
+   filter:e=>(e.status&&e.status!=='a')||!!plSusp(e).level,
+   desc:'Everyone carrying a doubt — flagged for fitness, or close enough to a ban for it to matter. Most-owned first, because that is whose news moves most teams.'},
+  {id:'venue',label:'Home / away',tier:'free',sort:'vswing',
+   cols:['venue','xph','xpa','vswing','xp','minsec','total_points'],
+   filter:e=>e.status==='a',
+   desc:'How much of a player’s projection rides on where the game is, over the next five. Sorted by the home−away gap: top of the list are the players you want at home and can drop on the road, bottom are the ones who travel. Our model’s numbers against the fixtures they actually have — not last season’s home record, which cannot know who this season’s home games are against.'},
+  {id:'eo',label:'EO',tier:'paid',sort:'eo',
+   cols:['eo','selected_by_percent','xp','form','total_points'],
+   desc:'Effective ownership — exposure from ownership plus captaincy on the crowd pick. What you carry whether you own it or not.'},
+  {id:'template',label:'Template',tier:'paid',sort:'tmpl',
+   cols:['tmpl','selected_by_percent','eo','xp','total_points'],
+   filter:e=>(parseFloat(e.selected_by_percent)||0)>0,
+   desc:'The most-selected player at each position, in order. Own the template and you move with the field; leave it and you move against it.'},
+  {id:'defcon',label:'DefCon',tier:'free',sort:'dchit',
+   cols:['dchit','defensive_contribution_per_90','minsec','selected_by_percent','xp'],
+   filter:e=>(e.element_type===2||e.element_type===3)&&(e.minutes||0)>=180,
+   desc:'How often a player actually clears the threshold for the +2 — the consistency the official per-90 average cannot show. A ~ marks a model estimate rather than a measured rate.'},
+  {id:'setpiece',label:'Set pieces',tier:'paid',sort:'setp',
+   cols:['setp','xp','selected_by_percent','form','total_points'],
+   filter:e=>e.penalties_order||e.direct_freekicks_order||e.corners_and_indirect_freekicks_order,
+   desc:'Confidence in a set-piece designation, penalties weighted hardest. Hover a rating for the duties behind it.'},
+  /* Free, deliberately: its sort column is free, so gating the lens would
+     buy nothing except the three clicks it takes to rebuild by hand. */
+  {id:'rotation',label:'Rotation',tier:'free',sort:'minsec',dir:1,
+   cols:['minsec','chance','minutes','selected_by_percent','now_cost'],
+   filter:e=>(e.now_cost||0)>=60&&(parseFloat(e.selected_by_percent)||0)>=3,
+   desc:'Minutes security for the players enough managers own to be hurt by — starts share, minutes share and availability. Lowest first.'}
+];
+function plLens(id){return PL_LENSES.filter(l=>l.id===(id||'all'))[0]||PL_LENSES[0];}
+/* A paid lens is locked in exactly the way a paid column is, and for the
+   same reason: its whole point is the Pro column it sorts on. */
+function plLensLocked(l){return !!(l&&l.tier==='paid')&&!isPro();}
+/* The columns a lens shows, in table order — identity block first, then the
+   lens's own picks, both drawn from the single descriptor list so a column
+   can never appear in a lens without its gate coming with it. */
+function plLensCols(all,lens){
+  if(!lens||!lens.cols)return all;
+  const want=PL_ID_COLS.concat(lens.cols);
+  return want.map(k=>all.filter(c=>c.k===k)[0]).filter(Boolean);
 }
 /* Current filtered + sorted list (no display cap) — shared by the table
    and the CSV export so they always match what the user is looking at. */
 function plFilteredSorted(){
   const S=window._pl;if(!S)return [];const {b,xpMap}=S;
-  const cols=plCols(b,xpMap),q=PL_STATE.q;
+  const cols=plCols(b,xpMap,S.ctx),q=PL_STATE.q;
+  const lens=plLens(PL_STATE.lens);
+  /* A locked lens narrows nothing — a free reader looking at the Rotation
+     lens would otherwise get the paid shortlist for free, minus one column. */
+  const nf=(!plLensLocked(lens)&&lens.filter)||null;
   const list=b.elements.filter(e=>{
     if(PL_STATE.pos&&e.element_type!==PL_STATE.pos)return false;
     if(PL_STATE.team&&e.team!==PL_STATE.team)return false;
     if(q&&(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase().indexOf(q)<0)return false;
+    if(nf&&!nf(e))return false;
     return true;
   });
-  const col=cols.find(c=>c.k===PL_STATE.k)||cols[5];
+  /* The second half of the column gate. Rendering a lock in every cell of a
+     Pro column still leaks it if the table will order by it: the ranking IS
+     the data. An unknown key falls back the same way, so a hand-typed sort
+     cannot reach a column either. */
+  let col=cols.filter(c=>c.k===PL_STATE.k)[0];
+  if(!col||plColLocked(col))col=cols.filter(c=>c.k==='total_points')[0]||cols[0];
   list.sort((a,c)=>{const va=col.v(a),vc=col.v(c);
     const base=col.num?(va-vc):String(va).localeCompare(String(vc));
     return base*PL_STATE.dir;});
   return list;
 }
-/* Build a CSV of the given players with the full data set. */
-function playersCsv(b,xpMap,list){
+/* Build a CSV of the given players with the full data set.
+   The export is the third door on the column gate, and the widest one — a
+   CSV hands over every row at once. `ctx.pro` is passed in rather than read
+   from storage so the gate can be tested without a browser. */
+function playersCsv(b,xpMap,list,ctx){
+  ctx=ctx||{};
+  const games=ctx.games||{},capId=ctx.capId,tmpl=ctx.tmpl,total=ctx.total||10e6;
+  const eoOf=e=>{const own=parseFloat(e.selected_by_percent)||0;return Math.round(own+(e.id===capId?own:0));};
+  /* Exactly the three columns the table locks, and no more — the export and
+     the table have to agree on the gate or the CSV becomes the way round it. */
+  const pro=[
+    ['EO_pct',e=>eoOf(e)],
+    ['TemplateRank',e=>(tmpl&&tmpl[e.id])||''],
+    ['SetPieceConfidence',e=>setPieceConfidence(e).value||'']
+  ];
   const cols=[
     ['Player',e=>e.web_name],['Team',e=>teamShort(b,e.team)],['Pos',e=>posShort(b,e.element_type)],
     ['Price',e=>((e.now_cost||0)/10).toFixed(1)],['Sel%',e=>e.selected_by_percent],
@@ -6895,9 +7351,24 @@ function playersCsv(b,xpMap,list){
     ['npxG_per90',e=>(e._ci&&e._ci.npxg90!=null)?e._ci.npxg90:''],
     ['xGC_per90',e=>e.expected_goals_conceded_per_90||''],
     ['DefCon_per90',e=>e.defensive_contribution_per_90||''],['Bonus',e=>e.bonus||0],['BPS',e=>e.bps||0],['BaselineBPS_per90',e=>baselineBps90(e).toFixed(2)],
-    ['ICT',e=>e.ict_index||''],['ValueSeason',e=>e.value_season||''],['Status',e=>e.status||''],
+    ['ICT',e=>e.ict_index||''],['ValueSeason',e=>e.value_season||''],
+    ['PriceMoveTonight',e=>{const pc=priceChangeProb(e,total);return pc.dir==='flat'?'':(pc.dir==='rise'?'+':'-')+pc.prob;}],
+    ['ChanceOfPlaying',e=>{const c=e.chance_of_playing_next_round;return c==null?(e.status==='a'?100:''):c;}],
+    /* The venue split, free in the table and therefore free here. The game
+       counts travel with the rates because a per-game figure over one fixture
+       and over four are not the same claim, and a spreadsheet strips the
+       context the table shows beside them. Empty rather than 0 where a player
+       has no fixture at that venue — the same distinction the table draws. */
+    ['NextFixture',e=>{const n=ctx.hz&&ctx.hz[e.team]&&ctx.hz[e.team][0];
+      return n?(n.home?'H':'A')+' v '+n.opp:'';}],
+    ['xP_home',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s&&s.h!=null?s.h.toFixed(2):'';}],
+    ['HomeGames',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s?s.hN:'';}],
+    ['xP_away',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s&&s.a!=null?s.a.toFixed(2):'';}],
+    ['AwayGames',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s?s.aN:'';}],
+    ['VenueSwing',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s&&s.swing!=null?s.swing.toFixed(2):'';}],
+    ['Status',e=>e.status||''],
     ['News',e=>e.news||'']
-  ];
+  ].concat(ctx.pro?pro:[]);
   const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
   return cols.map(c=>c[0]).join(',')+'\n'+
     list.map(e=>cols.map(c=>q(c[1](e))).join(',')).join('\n');
@@ -6906,7 +7377,7 @@ function exportPlayersCSV(){
   const S=window._pl;if(!S)return;
   const list=plFilteredSorted();
   if(!list.length){toast('No players to export');return;}
-  const csv=playersCsv(S.b,S.xpMap,list);
+  const csv=playersCsv(S.b,S.xpMap,list,{...(S.ctx||{}),pro:isPro()});
   try{
     const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
     const url=URL.createObjectURL(blob);
@@ -6929,43 +7400,193 @@ function plCard(b,xpMap,e){
     '<div class="plc-stats"><b>'+(e.total_points||0)+'</b> pts · <b>'+(xpMap[e.id]||0).toFixed(1)+'</b> xP · '+e.selected_by_percent+'%</div>'+
   '</button>';
 }
+/* Position colours, reused by the dots, the fitted lines and the legend so the
+   three cannot drift apart. All four are existing accent tokens, so they hold
+   their contrast in both themes. */
+const PL_POS_COLOUR={1:'--amber',2:'--blue',3:'--green-bright',4:'--red'};
+/* The value scatter: price across, projected points up, one fitted line per
+   position, and the players furthest above their own position's line listed
+   underneath.
+
+   The list is not decoration. At 390px a scatter of two hundred dots is a
+   texture, not a reading — the chart shows the SHAPE (how steeply points buy
+   points, where the pool clusters) and the list answers the question someone
+   actually came with. */
+function plValueChart(b,list,yOf,yLabel){
+  const {fits,points}=valueResiduals(list,yOf);
+  if(points.length<VALUE_MIN_FIT){
+    return '<div class="ge-state">Not enough players in this filter to fit a price curve. '+
+      'Widen the lens or clear a filter.</div>';
+  }
+  const W=340,H=228,padL=30,padR=10,padT=12,padB=26;
+  const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y1=Math.max(...ys);
+  /* A pool all on one price still has to draw. */
+  const xr=(x1-x0)||1,yr=y1||1;
+  const px=v=>padL+(W-padL-padR)*(v-x0)/xr;
+  const py=v=>H-padB-(H-padT-padB)*v/yr;
+  const grid=[0,0.5,1].map(f=>{const y=py(yr*f);
+    return '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+
+      '" stroke="var(--line)" stroke-width="1"/>'+
+      '<text x="'+(padL-4)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" style="font-size:8px;fill:var(--text-3)">'+
+      (yr*f).toFixed(0)+'</text>';}).join('');
+  const xticks=[0,0.5,1].map(f=>{const v=x0+xr*f,x=px(v);
+    return '<text x="'+x.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" style="font-size:8px;fill:var(--text-3)">£'+
+      v.toFixed(1)+'</text>';}).join('');
+  const lines=Object.keys(fits).map(p=>{const f=fits[p];if(!f)return '';
+    const a=f.m*x0+f.c,z=f.m*x1+f.c;
+    return '<line x1="'+px(x0).toFixed(1)+'" y1="'+py(a).toFixed(1)+'" x2="'+px(x1).toFixed(1)+
+      '" y2="'+py(z).toFixed(1)+'" stroke="var('+PL_POS_COLOUR[p]+')" stroke-width="1.4" '+
+      'stroke-dasharray="4 3" opacity=".65"/>';}).join('');
+  const dots=points.map(p=>'<circle cx="'+px(p.x).toFixed(1)+'" cy="'+py(p.y).toFixed(1)+
+    '" r="2.6" fill="var('+(PL_POS_COLOUR[p.pos]||'--text-3')+')" fill-opacity=".7"><title>'+
+    esc(p.e.web_name)+' · '+money(p.e.now_cost)+' · '+p.y.toFixed(1)+' '+esc(yLabel)+
+    (p.resid!=null?' · '+(p.resid>0?'+':'')+p.resid.toFixed(1)+' vs curve':'')+'</title></circle>').join('');
+  const legend=Object.keys(PL_POS_COLOUR).filter(p=>fits[p]!==undefined).map(p=>
+    '<span class="pl-leg"><i style="background:var('+PL_POS_COLOUR[p]+')"></i>'+posShort(b,+p)+
+    (fits[p]?'':' <span class="pl-vn">no curve</span>')+'</span>').join('');
+  const top=points.filter(p=>p.resid!=null).sort((a,c)=>c.resid-a.resid).slice(0,6);
+  const rows=top.map(p=>'<button class="dl-row" data-id="'+p.e.id+'">'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(p.e.web_name)+'</span>'+
+    '<span class="dl-sub2">'+teamShort(b,p.e.team)+' · '+posShort(b,p.e.element_type)+'</span></span>'+
+    '<span class="dl-col mono">'+money(p.e.now_cost)+'</span>'+
+    '<span class="dl-col mono">'+p.y.toFixed(1)+'</span>'+
+    '<span class="dl-col mono" style="color:var(--green-bright)">+'+p.resid.toFixed(1)+'</span></button>').join('');
+  /* The fitted slope is the headline the chart exists to give: how many
+     projected points a pound actually buys in this pool. */
+  const slopes=Object.keys(fits).filter(p=>fits[p]).map(p=>posShort(b,+p)+' '+fits[p].m.toFixed(2));
+  return '<div class="pl-chart">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="'+
+      esc(yLabel+' against price for '+points.length+' players, with a fitted line per position')+'">'+
+      grid+lines+dots+xticks+'</svg>'+
+    '<div class="pl-legend">'+legend+'</div>'+
+    '<div class="dl-sub">'+esc(yLabel)+' against price, '+points.length+' players. '+
+      'Each dashed line is that position’s own price curve — fitted separately, because a '+
+      'defender and a midfielder at the same price are not in the same market. '+
+      'Points per extra £1.0m: '+esc(slopes.join(' · '))+'.</div>'+
+    (rows?'<div class="card-title" style="margin-top:12px">Furthest above their position’s curve</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span>'+
+      '<span class="dl-col">£</span><span class="dl-col">'+esc(yLabel)+'</span>'+
+      '<span class="dl-col">vs curve</span></div>'+rows+'</div>':'')+
+    '<div class="dl-sub" style="margin-top:8px">Above the line means above what <b>our</b> model '+
+      'expects at that price — not that FPL has mispriced anyone. And a budget is spent across '+
+      'fifteen players, so this ranks value at a price point rather than telling you what to buy.</div>'+
+  '</div>';
+}
 function renderPlayerTable(){
   const S=window._pl;if(!S)return;const {b,xpMap}=S;
   const view=document.getElementById('pl-view');if(!view)return;
   const list=plFilteredSorted();
-  const cards=PL_STATE.view==='cards';
+  const cards=PL_STATE.view==='cards',chart=PL_STATE.view==='chart';
   const cap=cards?120:300,shown=list.slice(0,cap);
-  if(cards){
+  if(chart){
+    /* The whole filtered pool, not the sorted top slice: a scatter cut off at
+       300 rows would fit its curve to whatever the current sort put first,
+       which for "most points" is a straight line through the elite and a
+       finding that the cheap players are all underpriced. */
+    const hz=S.ctx&&S.ctx.hz;
+    view.innerHTML=hz
+      ? plValueChart(b,list,e=>horizonXP(b,e,hz),'xP next 5')
+      : '<div class="ge-state">The fixture horizon has not loaded, so there is no projection to plot.</div>';
+  }else if(cards){
     view.innerHTML='<div class="pl-cards">'+shown.map(e=>plCard(b,xpMap,e)).join('')+'</div>';
   }else{
-    const cols=plCols(b,xpMap);
+    const cols=plLensCols(plCols(b,xpMap,S.ctx),plLens(PL_STATE.lens));
     const head='<thead><tr>'+cols.map(c=>{
-      const active=c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
-      return '<th data-k="'+c.k+'" class="'+(c.num?'num':'')+(active?' active':'')+'">'+esc(c.l)+arrow+'</th>';
+      const lk=plColLocked(c);
+      const active=!lk&&c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
+      /* A locked heading carries no data-k, so the sort handler cannot see
+         it at all — the lock is in the markup, not only in the handler. */
+      return '<th '+(lk?'data-lk="1" title="The Edge — unlock this column"':'data-k="'+c.k+'"')+
+        ' class="'+(c.num?'num':'')+(active?' active':'')+(lk?' lk':'')+'">'+
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(c.l)+arrow+'</th>';
     }).join('')+'</tr></thead>';
     const body='<tbody>'+shown.map(e=>'<tr data-id="'+e.id+'">'+cols.map(c=>
-      '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
+      plColLocked(c)
+        ? '<td class="'+(c.num?'num ':'')+'lk">'+plLockCell()+'</td>'
+        : '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
     view.innerHTML='<div class="pl-scroll"><table class="ptable">'+head+body+'</table></div>';
   }
   const cnt=document.getElementById('pl-count');
-  if(cnt)cnt.textContent=list.length+' players'+(list.length>cap?' · showing the top '+cap+(cards?'':' for this sort')+' — filter to narrow':'');
+  if(cnt)cnt.textContent=list.length+' players'+
+    (!chart&&list.length>cap?' · showing the top '+cap+(cards?'':' for this sort')+' — filter to narrow':
+     chart?' · all of them plotted':'');
+  const note=document.getElementById('pl-lensnote');
+  if(note){
+    const lens=plLens(PL_STATE.lens);
+    note.innerHTML=esc(lens.desc)+
+      (plLensLocked(lens)
+        ? ' <a href="#" onclick="openUpgrade();return false"><b>Part of The Edge — unlock this lens</b></a>.'
+        : '')+
+      (PL_STATE.lens==='all'?' Tap a heading to sort, a row for the full profile.':'');
+  }
+  /* The bar scrolls sideways, so the selected lens can sit off-screen with
+     nothing on show marked active — the table then looks filtered for no
+     visible reason. Bring it back into view on every render. */
+  const on=document.querySelector('#pl-lensbar .lensbtn.on');
+  if(on&&on.scrollIntoView)try{on.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
+}
+/* The lens bar. A locked lens is shown, not hidden — the same argument as a
+   locked column: you cannot want what you cannot see. Selecting one still
+   works, and lands on a table where the point of the lens is behind a lock. */
+function plLensBar(){
+  return '<div class="lensbar" id="pl-lensbar">'+PL_LENSES.map(l=>{
+    const on=l.id===PL_STATE.lens,lk=plLensLocked(l);
+    return '<button class="lensbtn'+(on?' on':'')+(lk?' lk':'')+'" data-lens="'+l.id+'">'+
+      (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(l.label)+'</button>';
+  }).join('')+'</div>';
+}
+/* Moving to a lens takes its sort with it, but only when the reader can
+   actually have it — a free reader on a Pro lens keeps a sort that works. */
+function openLens(id){plSetLens(id);openPanel('allplayers',{keepView:true});}
+/* The line a board prints to send you to its column in the table. These
+   boards kept their own page because each says something a column cannot —
+   the official set-piece notes, the midweek congestion, your own cover and
+   edge — but the ranking itself now lives in one place. */
+function lensLink(id,label){
+  return '<p class="dl-sub" style="margin:0 0 12px">'+esc(label)+' '+
+    '<a href="#allplayers" onclick="openLens(\''+id+'\');return false">Open it in the players table →</a></p>';
+}
+function plSetLens(id){
+  const l=plLens(id);
+  PL_STATE.lens=l.id;
+  const cols=window._pl?plCols(window._pl.b,window._pl.xpMap,window._pl.ctx):[];
+  const target=cols.filter(c=>c.k===l.sort)[0];
+  if(target&&!plColLocked(target)){PL_STATE.k=l.sort;PL_STATE.dir=l.dir===1?1:-1;}
+  else if(plColLocked(target)){PL_STATE.k='total_points';PL_STATE.dir=-1;}
+  track('players_lens',{lens:l.id});
 }
 async function hydrateAllPlayers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
   const xpMap={};b.elements.forEach(e=>{xpMap[e.id]=xP(b,e,nf[e.team]);});
-  window._pl={b,xpMap};
+  /* Everything the merged columns need that a single element cannot supply:
+     games played (minutes security), the crowd captain (effective ownership),
+     the ownership ladder (template rank) and the manager count (price). */
+  const tmpl={};
+  const bypos=topSelectedByPos(b.elements,10);
+  [1,2,3,4].forEach(t=>(bypos[t]||[]).forEach((e,i)=>{tmpl[e.id]=i+1;}));
+  /* The venue lens needs a run of fixtures, not just the next one, and the
+     split is computed once here rather than per render — the table redraws on
+     every keystroke in the search box. */
+  const hz=buildHorizon(b,fixtures,5);
+  const vsplit={};b.elements.forEach(e=>{vsplit[e.id]=venueSplit(b,e,hz);});
+  const ctx={games:teamGamesPlayed(fixtures),capId:b.cur&&b.cur.most_captained,
+    tmpl,total:b.raw.total_players||10e6,hz,vsplit,
+    seasonStarted:b.elements.some(e=>(e.minutes||0)>0)};
+  window._pl={b,xpMap,ctx};
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
-  host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">All players'+
+  host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">Players'+
     '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
-    '<p class="dl-sub" style="margin-bottom:10px">Every player with the full data set. Tap a column heading to sort, tap a row for the full profile. Export CSV downloads exactly what you’re filtered and sorted to. <b>npxG/90</b> is non-penalty expected goals per 90 (open-play threat) from the Core Insights data; a dash means it isn’t available yet.</p>'+
+    plLensBar()+
+    '<p class="dl-sub" id="pl-lensnote" style="margin:0 0 10px"></p>'+
     preseasonNote(b,'the xP column is provisional')+
     '<div class="pl-filters">'+
       '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
       '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
       '<select id="pl-team" class="modal-in" style="flex:1 1 120px">'+teamOpts+'</select>'+
-      '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button></div>'+
+      '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button><button class="seg-b'+(PL_STATE.view==='chart'?' on':'')+'" data-v="chart">Value</button></div>'+
     '</div>'+
     '<div id="pl-view"></div>'+
     '<div class="dl-sub" id="pl-count" style="margin-top:8px"></div></div>';
@@ -6977,12 +7598,21 @@ async function hydrateAllPlayers(host){
     host.querySelectorAll('#pl-viewseg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
     renderPlayerTable();
   }));
+  host.querySelectorAll('#pl-lensbar .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    plSetLens(btn.dataset.lens);
+    host.querySelectorAll('#pl-lensbar .lensbtn').forEach(x=>x.classList.toggle('on',x===btn));
+    renderPlayerTable();
+  }));
   host.querySelector('#pl-view').addEventListener('click',ev=>{
     const th=ev.target.closest('th');
+    /* A locked heading has no data-k, so it can never reach the sort; the
+       tap is spent on the upsell instead of failing silently. */
+    if(th&&th.dataset.lk){openUpgrade();return;}
     if(th&&th.dataset.k){const k=th.dataset.k;
       if(PL_STATE.k===k)PL_STATE.dir*=-1;
       else{PL_STATE.k=k;PL_STATE.dir=PL_TEXTCOLS.indexOf(k)>=0?1:-1;}
       renderPlayerTable();return;}
+    if(ev.target.closest('.pl-lk')){openUpgrade();return;}
     const hit=ev.target.closest('[data-id]');
     if(hit)openPlayer(+hit.dataset.id);
   });
@@ -6997,9 +7627,16 @@ async function hydrateAllPlayers(host){
    Insights mirror when the sample allows (>=5 starts), otherwise a logistic
    estimate from the per-90 rate against the threshold (DEF 10, MID/FWD 12),
    which the label prefixes with a tilde so an estimate never reads as fact. */
+/* The fallback fires on a ZERO as well as on an absent field, and that is not
+   pedantry. A diagnostic run against the live bootstrap found the per-90 field
+   PRESENT and set to 0 for all 288 players with real minutes — not missing.
+   `isNaN` never sees a zero, so the derivation it exists to provide could
+   never run against the shape FPL actually sends. Both zero still gives zero,
+   so nothing changes where there is genuinely no data. */
 function dcRate90(e){
   const v=parseFloat(e.defensive_contribution_per_90);
-  return isNaN(v)?(parseFloat(e.defensive_contribution||0)*90/(e.minutes||1)):v;
+  if(v>0)return v;
+  return parseFloat(e.defensive_contribution||0)*90/(e.minutes||1);
 }
 function dcThreshold(e){return e.element_type===2?10:12;}
 function dcReal(e){const ci=e._ci;return !!(ci&&(ci.dcs||0)>=5&&ci.dchr!=null);}
@@ -7306,61 +7943,6 @@ function differentials(elements,maxOwn,maxCost){
     return (e.now_cost||0)<maxCost;
   });
 }
-async function hydrateDiffs(host){
-  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
-  const nf=buildNextFix(b,fixtures);
-  const xpOf=e=>xP(b,e,nf[e.team])||0;
-  const num=(e,k)=>parseFloat(e[k])||0;
-  const MAXOWN=15;
-  /* 1) filter FIRST on ownership (<15%), then 2) rank by strong data. */
-  const pool=differentials(b.elements,MAXOWN);
-  if(!pool.length){host.innerHTML=stateBox('trend','No differentials yet','Low-owned players (under '+MAXOWN+'% owned) appear here.');return;}
-  /* Default order is our projected points (xP) — the strongest-data low-owned
-     picks lead. The toggle offers other lenses. */
-  const SORT={
-    xp:{l:'Projection',f:(a,c)=>(xpOf(c)-xpOf(a))||((c.now_cost||0)-(a.now_cost||0))},
-    form:{l:'Form',f:(a,c)=>num(c,'form')-num(a,'form')},
-    xgi:{l:'xGI/90',f:(a,c)=>num(c,'expected_goal_involvements_per_90')-num(a,'expected_goal_involvements_per_90')},
-    price:{l:'Price',f:(a,c)=>(c.now_cost||0)-(a.now_cost||0)},
-    owned:{l:'Least owned',f:(a,c)=>num(a,'selected_by_percent')-num(c,'selected_by_percent')},
-  };
-  window._diff={b,pool,xpOf,num,SORT};
-  const seg='<div class="seg" id="diff-sort">'+Object.keys(SORT).map(k=>'<button class="seg-b'+(k==='xp'?' on':'')+'" data-s="'+k+'">'+SORT[k].l+'</button>').join('')+'</div>';
-  /* DefCon leaders — ALSO gated to the differential pool (<15% owned), so the
-     whole page respects the ownership filter. */
-  const dc90=dcRate90,dcHitNum=dcHitRate,dcHitStr=dcHitLabel,dcPerStr=dcPerStartLabel;
-  const dcon=pool.filter(e=>e.minutes>=180&&(e.element_type===2||e.element_type===3)&&dc90(e)>0)
-    .sort((a,c)=>dcHitNum(c)-dcHitNum(a)).slice(0,12);
-  const anyReal=dcon.some(e=>e._ci&&(e._ci.dcs||0)>=5&&e._ci.dchr!=null);
-  const dconCard=dcon.length
-    ? '<div class="card mb-20"><div class="card-title">Differential DefCon picks '+
-        '<span class="badge badge-grey">under '+MAXOWN+'%</span></div>'+
-        '<p class="dl-sub" style="margin-bottom:10px">Low-owned defenders and midfielders ranked by <b>DefCon hit rate</b> — how often they actually clear the threshold for the +2 (tackles, blocks, interceptions, clearances, and recoveries for mids). More predictive than a per-90 average. '+
-        (anyReal?'Real per-match rate from the Core Insights data; ':'')+'a <b>~</b> marks a model estimate. <b>/start</b> is defensive actions per start.</p>'+
-        dlTable(b,dcon,['Hit%','/start','DefC/90'],e=>[dcHitStr(e),dcPerStr(e),dc90(e).toFixed(1)])+'</div>'
-    : '';
-  host.innerHTML=
-    '<div class="card mb-20"><div class="card-title">Differentials — under '+MAXOWN+'% owned</div>'+
-      preseasonNote(b,'ownership is still forming, so the pool is wide')+
-      '<p class="dl-sub" style="margin-bottom:8px">Every available non-premium player (under £10.0m) selected by fewer than '+MAXOWN+'% of managers ('+pool.length+' in all), ranked by strength. Premiums are excluded — a £14m template pick is not a differential, even if its ownership hasn’t caught up at a season open. Default order is our next-gameweek projection (xP); tap a player for the full data.</p>'+
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px"><span class="dl-sub">Order by</span>'+seg+'</div>'+
-      '<div id="diff-list"></div></div>'+
-    dconCard;
-  renderDiffs('xp');
-  setTimeout(()=>{document.querySelectorAll('#diff-sort .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
-    document.querySelectorAll('#diff-sort .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
-    renderDiffs(btn.dataset.s);
-  }));},0);
-}
-function renderDiffs(key){
-  const S=window._diff;if(!S)return;
-  const box=document.getElementById('diff-list');if(!box)return;
-  const sf=(S.SORT[key]||S.SORT.xp).f;
-  const list=S.pool.slice().sort(sf).slice(0,40);
-  const f90=v=>{const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);};
-  box.innerHTML=dlTable(S.b,list,['xP','xGI/90'],e=>[S.xpOf(e).toFixed(1),f90(e.expected_goal_involvements_per_90)]);
-}
-
 /* ═══════════════════════════════════════════════════════════
    SCOUT BOARD — pundit-style per-90 shortlist by position, with
    the next-3 fixture ticker and a per-column heat-map. Attackers
@@ -7534,7 +8116,10 @@ async function hydratePointsPlanner(host){
     .map(function(o){return '<button class="seg-b'+(PP_N===+o[0]?' on':'')+'" data-n="'+o[0]+'">'+o[1]+'</button>';}).join('');
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Points Planner</div>'+
     preseasonNote(b,'projections lean on last season’s form until GW1')+
-    '<p class="dl-sub" style="margin-bottom:10px">The top assets by our projected points over the horizon, with a per-gameweek breakdown — each cell is the opponent and the expected points, greener for a bigger projected haul. Ranked by the horizon total; availability is baked in. Tap a row for the full profile.</p>'+
+    /* Short, because the view chip above already says what this is and why
+       you would pick it — repeating the framing here was the panel telling
+       you the same thing twice before showing you anything. */
+    '<p class="dl-sub" style="margin-bottom:10px">Each cell is the opponent and the expected points, greener for a bigger projected haul. Availability is baked in. Tap a row for the full profile.</p>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><div class="seg" id="pp-pos">'+posSeg+'</div><div class="seg" id="pp-n">'+nSeg+'</div></div>'+
     '<div id="pp-out"></div></div>';
   renderPointsPlanner();
@@ -7619,7 +8204,7 @@ async function hydratePrice(host){
     ? valueList(b,'Best value — points per million',best,'var(--green)')+
       (worst.length?valueList(b,'Worst value — premiums underdelivering',worst,'var(--red)'):'')
     : '');
-  host.innerHTML=
+  host.innerHTML=lensLink('price','Tonight’s move and the net transfers behind it, for every player at once —')+
     '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next <b>00:00 UK time</b> update, from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL’s exact algorithm is not public.</div>'+
     probTbl('Likely risers tonight — estimate',riseP,true)+
     probTbl('Likely fallers tonight — estimate',fallP,false)+
@@ -7630,70 +8215,6 @@ async function hydratePrice(host){
     valueBoardCard(b,fixtures,6)+
     valueCards+
     (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
-}
-
-/* Injury Monitor: flagged players by ownership + card-ban proximity */
-async function hydrateInjuries(host){
-  const b=await boot();
-  /* Own-squad marker, best effort (works without a linked team). */
-  let owned=new Set();
-  const mid=getMid();
-  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
-  const mine=e=>owned.has(e.id)?' <span class="badge badge-blue">yours</span>':'';
-
-  const list=b.elements
-    .filter(e=>e.status&&e.status!=='a')
-    .sort((a,c)=>parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent))
-    .slice(0,30);
-  const rows=list.map(e=>{
-    const chance=e.chance_of_playing_next_round;
-    return '<div class="dl-row">'+
-      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+
-        ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>'+mine(e)+'</span>'+
-        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+
-        (e.news?' · '+esc(e.news):'')+'</span></span>'+
-      '<span class="dl-col">'+(chance==null?'—':chance+'%')+'</span></div>';
-  }).join('');
-  const fitness=list.length
-    ? '<div class="card mb-20"><div class="card-title">Fitness & availability — '+list.length+' flagged</div>'+
-      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Chance</span></div>'+rows+'</div></div>'
-    : '<div class="card mb-20"><div class="ge-state">'+svg(ICON.cross)+'<b>No new injuries reported since your last visit</b><p>Every player is currently available. New flags land here the moment the news feed updates — worth a look the night before the deadline.</p></div></div>';
-
-  /* Suspension watch: who is one (or two) yellows from a ban.
-     Disciplinary totals reset every season. At a season open FPL can still
-     surface last season's yellow_cards before a ball is kicked — so until
-     the season is actually under way (a match has been played this season),
-     treat every count as reset to zero and show nothing at risk. Minutes are
-     the app's pre-season signal: everyone reads 0 until GW1 is played. */
-  const gw=b.cur.id;
-  const cut=suspCutoff(gw);
-  const seasonStarted=b.elements.some(e=>(e.minutes||0)>0);
-  const atRisk=!seasonStarted?[]:b.elements
-    .filter(e=>e.status!=='s'&&suspRisk(e.yellow_cards,gw).level)
-    .sort((a,c)=>{const ra=suspRisk(a.yellow_cards,gw),rc=suspRisk(c.yellow_cards,gw);
-      return ra.left-rc.left||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent);})
-    .slice(0,15);
-  const suspRows=atRisk.map(e=>{
-    const r=suspRisk(e.yellow_cards,gw);
-    const tag=r.level==='edge'
-      ?'<span class="badge badge-red">1 yellow from a ban</span>'
-      :'<span class="badge badge-amber">2 yellows away</span>';
-    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')">'+avatar(b,e,30)+
-      '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(e.web_name)+mine(e)+'</span>'+
-      '<span class="dl-sub">'+crest(b,e.team,13)+posShort(b,e.element_type)+' · '+e.selected_by_percent+'% owned · '+tag+'</span></span>'+
-      '<span class="dl-col mono">'+r.yellows+'/'+r.limit+'</span></div>';
-  }).join('');
-  const suspension='<div class="card mb-20"><div class="card-title">Suspension watch — '+cut.limit+' yellows by GW'+cut.by+'</div>'+
-    (atRisk.length
-      ? '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span><span class="dl-col">Cards</span></div>'+suspRows+'</div>'
-      : '<div class="dl-sub">'+(seasonStarted
-          ? 'Nobody is within two yellows of the '+cut.limit+'-card ban right now.'
-          : 'Card counts reset to zero for the new season — no bookings yet. The watch starts once GW1 is played.')+'</div>')+
-    '<div class="dl-sub" style="margin-top:10px">Bans: 5 yellows by GW19 = 1 match, 10 by GW32 = 2, 15 in a season = 3. '+
-    'For referee tendencies and deeper card analytics, see our companion app '+
-    '<a href="https://bookingsdesk.netlify.app" target="_blank" rel="noopener">Bookings Desk</a>.</div></div>';
-
-  host.innerHTML=suspension+fitness;
 }
 
 /* ── Latest News: official player news, newest first ─────
@@ -8232,6 +8753,29 @@ function solverCard(){
    would count the same option three times. */
 const BENCH_W={gk:0.03,out:[0.21,0.06,0.002]};   /* sub GK, then subs 1-3 */
 const FT_LADDER=[0,2.0,1.6,1.3,1.1];             /* marginal points for the 2nd..5th banked transfer */
+/* Per-gameweek discount on future expected points inside the plan solver.
+   A point in n gameweeks is worth DECAY_BASE^n of a point this week.
+
+   MEASURED — dev/fit-decay.mjs, ten real seasons, paired across decay values
+   (see docs/MODELLING.md). At the THREE-gameweek horizon this solver runs,
+   0.9 is worth +5.2 +/- 8.8 points a season against no discount at all over
+   300 paired runs: mildly positive, not distinguishable from zero. The
+   parameter is low-stakes here. It stays at 0.9 because it sits inside the
+   band that measured positive and nothing tested beats it by a resolvable
+   margin.
+
+   Do NOT raise the discount if the horizon is ever lengthened — the
+   measurement says the opposite of the intuition. Over eight gameweeks every
+   discount tested LOSES points, heavy ones significantly, because a long
+   horizon exists to gather information a steep discount then throws away.
+
+   The horizon matters about three times as much as this constant does:
+   eight gameweeks undiscounted beat the shipped three-at-0.9 by +15.9 +/-
+   10.5 over 300 paired runs. That is a confirmed result and a live lead, held
+   back only by the harness projecting more crudely than the app does, and by
+   the beam search running in the browser. See docs/MODELLING.md before
+   changing either value — they interact. */
+const DECAY_BASE=0.9;
 /* Points value of holding `n` free transfers, relative to holding one. */
 function ftValue(n){
   let v=0;
@@ -8264,16 +8808,115 @@ function buildGwFixtures(b,fixtures,gws){
   const map={};
   fixtures.filter(f=>f.event&&gwSet.has(f.event)&&!f.finished).forEach(f=>{
     const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
-    const push=(team,lam,cs)=>{
+    /* opp/home are carried for LABELLING only — nothing in the xP path reads
+       them. A team sheet that lists a projection without naming the fixture
+       behind it is asking to be taken on faith. */
+    const push=(team,lam,cs,opp,home)=>{
       const byGw=map[team]=map[team]||{};
-      (byGw[f.event]=byGw[f.event]||[]).push({event:f.event,lam,cs,
+      (byGw[f.event]=byGw[f.event]||[]).push({event:f.event,lam,cs,opp,home,
         lamAvg:BM*R.att[team],gp:played[team]||0});
     };
-    push(f.team_h,m.hx,m.csH);
-    push(f.team_a,m.ax,m.csA);
+    push(f.team_h,m.hx,m.csH,f.team_a,1);
+    push(f.team_a,m.ax,m.csA,f.team_h,0);
   });
   return map;
 }
+/* ── Team sheet ───────────────────────────────────────────────────────
+   Your fifteen projected forward week by week: the best legal XI each
+   gameweek, the formation it implies, the armband, and what the whole
+   thing is worth.
+
+   The app could already compute every part of this and showed none of it.
+   The transfer planner said "make this move" and the squad page showed the
+   XI for the week in front of you, so the question in between — what does
+   my team actually look like in three weeks, and who is never in it —
+   had to be assembled in your head.
+
+   The total is the XI plus the captain counted twice, and excludes the
+   bench: that is what the squad scores, not what it is worth. Bench value
+   belongs to the transfer solver, which is a different question. */
+function teamSheet(b,gwFx,gws,squad){
+  const perGw=(e,g)=>{
+    const fxs=(gwFx[e.team]||{})[g]||[];
+    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
+    let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
+    return t*(ch/100);
+  };
+  const posOrder=s=>s.el.element_type;
+  return gws.map((g,i)=>{
+    const scored=(squad||[]).map(e=>({el:e,p:perGw(e,g),fx:(gwFx[e.team]||{})[g]||[]}));
+    const best=bestXI(scored);
+    if(!best)return null;
+    const xiIds=new Set(best.xi.map(s=>s.el.id));
+    /* FPL benches the reserve keeper in its own slot and orders the rest by
+       who you would rather see come on. */
+    const bench=scored.filter(s=>!xiIds.has(s.el.id))
+      .sort((a,c)=>(a.el.element_type===1?0:1)-(c.el.element_type===1?0:1)||c.p-a.p);
+    const cap=best.xi.slice().sort((a,c)=>c.p-a.p)[0]||null;
+    return {gw:g,horizon:i,formation:best.formation,
+      xi:best.xi.slice().sort((a,c)=>posOrder(a)-posOrder(c)||c.p-a.p),
+      bench,cap:cap?cap.el:null,capPts:cap?cap.p:0,
+      total:best.total+(cap?cap.p:0)};
+  }).filter(Boolean);
+}
+
+/* Who never makes an XI across the whole run. This is the transfer signal
+   the sheet carries and a static team sheet does not: a player benched for
+   one awkward week is rotation, a player benched for five is dead money. */
+function neverStarts(sheet,squad){
+  const started=new Set();
+  sheet.forEach(w=>w.xi.forEach(s=>started.add(s.el.id)));
+  return (squad||[]).filter(e=>!started.has(e.id));
+}
+
+/* Rendered in the Points Planner's grid vocabulary on purpose: the two
+   answer the same question — opponent and expected points, week by week —
+   one for the whole game and one for your fifteen, and they should not look
+   like two different tools. A row that stays dim all the way across is a
+   player who never makes an XI, which is the thing to act on. */
+function teamSheetCard(b,gwFx,gws,squad){
+  const sheet=teamSheet(b,gwFx,gws,squad);
+  if(!sheet.length||!(squad||[]).length)return '';
+  const cell={};
+  sheet.forEach(w=>{const m=cell[w.gw]={};
+    w.xi.forEach(s=>{m[s.el.id]={p:s.p,fx:s.fx,xi:1};});
+    w.bench.forEach(s=>{m[s.el.id]={p:s.p,fx:s.fx,xi:0};});});
+  const tot=e=>sheet.reduce((a,w)=>a+(((cell[w.gw]||{})[e.id]||{}).p||0),0);
+  const grand=sheet.reduce((a,w)=>a+w.total,0);
+  const gwHead=sheet.map(w=>'<th class="num">GW'+w.gw+'</th>').join('');
+  const rows=squad.slice().sort((a,c)=>a.element_type-c.element_type||tot(c)-tot(a)).map(e=>{
+    const cells=sheet.map(w=>{
+      const c=(cell[w.gw]||{})[e.id];
+      if(!c||!c.fx.length)return '<td class="pp-cell sb-fx-none">—</td>';
+      const lab=c.fx.map(f=>teamShort(b,f.opp)+(f.home?' (H)':' (A)')).join(' + ');
+      return '<td class="pp-cell'+(c.xi?'':' ts-out')+'" style="'+(c.xi?sbHeat(Math.min(1,c.p/6)):'')+'">'+
+        '<span class="pp-opp">'+esc(lab)+'</span><b>'+c.p.toFixed(1)+'</b></td>';}).join('');
+    return '<tr data-open="'+e.id+'"><td class="sb-pl"><span class="sb-nm">'+esc(e.web_name)+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,12)+esc(posShort(b,e.element_type))+'</span></td>'+
+      '<td class="num"><b>'+tot(e).toFixed(1)+'</b></td>'+cells+'</tr>';}).join('');
+  const foot=
+    '<tr class="ts-foot"><td class="sb-pl">Formation</td><td class="num">—</td>'+
+      sheet.map(w=>'<td class="pp-cell">'+w.formation.join('-')+'</td>').join('')+'</tr>'+
+    '<tr class="ts-foot"><td class="sb-pl">Captain</td><td class="num">—</td>'+
+      sheet.map(w=>'<td class="pp-cell">'+(w.cap?esc(w.cap.web_name):'—')+'</td>').join('')+'</tr>'+
+    '<tr class="ts-foot ts-tot"><td class="sb-pl">Projected</td><td class="num"><b>'+grand.toFixed(0)+'</b></td>'+
+      sheet.map(w=>'<td class="pp-cell"><b>'+w.total.toFixed(1)+'</b></td>').join('')+'</tr>';
+  const idle=neverStarts(sheet,squad);
+  /* The one thing a static team sheet cannot tell you. */
+  const idleNote=idle.length
+    ? '<p class="dl-sub" style="margin-top:8px"><b>'+idle.length+' of your 15</b> '+(idle.length===1?'does':'do')+
+      ' not make the XI in any of these '+sheet.length+' gameweeks — '+
+      idle.map(e=>esc(e.web_name)).join(', ')+'. One benched week is rotation; '+sheet.length+' is money not working.</p>'
+    : '<p class="dl-sub" style="margin-top:8px">Every one of your fifteen starts at least once over the run — no dead money on the bench.</p>';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+
+      ' Team sheet — your XI by gameweek</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Your squad as it stands, projected forward. Lit cells are in the XI that week, dim cells are benched; the projected total is the XI plus the captain counted twice, bench excluded — what the squad scores, not what it is worth.</p>'+
+    '<div class="pl-scroll"><table class="ptable sb-table pp-table">'+
+      '<tr><th>Player</th><th class="num">Next '+sheet.length+'</th>'+gwHead+'</tr>'+rows+foot+'</table></div>'+
+    idleNote+
+    '<p class="dl-sub" style="margin-top:6px"><b>Only the first column is a team sheet.</b> Beyond the next deadline this is a plan, not a prediction: it assumes today’s squad, today’s fitness and no transfers, and it cannot see rotation or a press conference. Treat the later weeks as where your fixtures point, not as a lineup.</p></div>';
+}
+
 function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   const memo=new Map();
   const perGw=(e,g)=>{                       /* one player's xP in one GW (0 on a blank, 2 fixtures on a double) */
@@ -8284,8 +8927,23 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
     t*=(ch/100);memo.set(k,t);return t;
   };
   const restMemo=new Map();
+  /* Points further out are worth less TODAY, and the solver has to say so or
+     it will take a hit now to chase a gain landing in three weeks' time as
+     though the two were interchangeable. Two independent reasons, neither of
+     which is pessimism about the model:
+
+       - a GW+3 projection is a forecast of a forecast: lineups, fitness and
+         form all move between now and then, so its error bars are wider;
+       - you keep the OPTION to make the same transfer later, with a free
+         transfer, having seen two more gameweeks of evidence. A move whose
+         entire payoff is distant is a move you do not have to make yet.
+
+     DECAY_BASE matches the value used by the public open-fpl-solver, which
+     is the closest thing this problem has to a reference implementation —
+     the same place our FT_LADDER numbers agree with independently. */
   const restXP=(e,gi)=>{const k=e.id+':'+gi;if(restMemo.has(k))return restMemo.get(k);
-    let t=0;for(let i=gi;i<gws.length;i++)t+=perGw(e,gws[i]);restMemo.set(k,t);return t;};
+    let t=0;for(let i=gi;i<gws.length;i++)t+=perGw(e,gws[i])*Math.pow(DECAY_BASE,i-gi);
+    restMemo.set(k,t);return t;};
   const xiXP=(sq,g)=>{const best=bestXI(sq.map(e=>({el:e,p:perGw(e,g)})));return best?best.total:0;};
   /* XI plus the discounted bench — what the whole squad is worth this week. */
   const squadXP=(sq,g)=>{
@@ -8321,11 +8979,18 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   gws.forEach((g,gi)=>{
     const next=[];
     beam.forEach(st=>{
+      const w=Math.pow(DECAY_BASE,gi);          /* this gameweek's weight, seen from today */
       const add=(sq2,bank2,t,moves)=>{
         const hit=Math.max(0,t-st.ft)*4;
         next.push({squad:sq2,bank:bank2,
           ft:Math.min(FT_CAP,Math.max(0,st.ft-t)+1),   /* free-transfer accrual, capped */
-          hits:st.hits+hit,score:st.score+squadXP(sq2,g)-hit,
+          /* Points and the hit that buys them are discounted TOGETHER: a −4
+             taken in GW+2 is paid in GW+2, so weighting the cost as though
+             it were due today would make distant hits look artificially
+             expensive and simply invert the bias being corrected. `hits`
+             stays undiscounted because it is reported to the reader in real
+             points, not used for ranking. */
+          hits:st.hits+hit,score:st.score+(squadXP(sq2,g)-hit)*w,
           plan:st.plan.concat([{gw:g,moves,hit}])});
       };
       add(st.squad,st.bank,0,[]);                 /* roll */
@@ -8346,7 +9011,11 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
       beam.push(st);if(beam.length>=BEAM)break;
     }
   });
-  let baseline=0;gws.forEach(g=>baseline+=squadXP(squad,g));
+  /* The do-nothing baseline is discounted on the SAME schedule as the plans
+     it is subtracted from. Comparing a discounted plan against an
+     undiscounted baseline would make every sequence look worse than holding
+     and quietly switch the feature off. */
+  let baseline=0;gws.forEach((g,gi)=>{baseline+=squadXP(squad,g)*Math.pow(DECAY_BASE,gi);});
   /* The banked-transfer bonus is a TERMINAL value: score each finished
      state on the free transfers it ends with, relative to where it started,
      then re-rank. Applying it per week would count the same option once for
@@ -8382,11 +9051,14 @@ function renderSolver3(){
   }).join('');
   box.innerHTML=
     '<div class="statgrid mb-14">'+
-      '<div class="stat"><div class="stat-l">Net xP gain</div><div class="stat-v" style="color:var(--green)">+'+r.gain.toFixed(1)+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Net xP gain <span class="dl-sub">(today\u2019s value)</span></div><div class="stat-v" style="color:var(--green)">+'+r.gain.toFixed(1)+'</div></div>'+
       '<div class="stat"><div class="stat-l">Hits taken</div><div class="stat-v">'+(r.best.hits?'−'+r.best.hits:'none')+'</div></div>'+
     '</div>'+rows+
     '<div class="dl-sub" style="margin-top:10px">Beam search (width 8) over transfer sequences for GW'+gws[0]+'–'+gws[gws.length-1]+
     ': per-gameweek best-XI xP (doubles and blanks included), free-transfer accrual and −4 hits. '+
+    'Future gameweeks are discounted at <b>'+DECAY_BASE+'</b> per week, so a point three weeks out counts as '+
+    Math.pow(DECAY_BASE,3).toFixed(2)+' of a point now — partly because a distant projection is less certain, '+
+    'and partly because a move whose payoff is all in the future is one you can still make later, with more information. '+
     '<b>Caveat:</b> selling prices are approximated as current price — your exact selling price needs an FPL login, which the public API doesn’t allow — so budgets can be slightly optimistic on players who rose in price.</div>';
 }
 function solver3Card(){
@@ -8501,7 +9173,15 @@ async function hydrateTransfers(host){
             : '<p class="dl-sub" style="margin-top:10px">Here the highest-points and highest-rank move agree — a comfortable overlap.</p>')+
           '<div class="dl-sub" style="margin-top:6px">rank-xP = next-GW expected points weighted by how little of the field owns the player. Complements the 5-GW points view above.</div></div>';
       }
-      replacer=recCard+rankCard+solverCard()+solver3Card();
+      /* Five weeks, matching the horizon the recommended move is scored
+         over — a sheet on a different horizon to the advice above it would
+         be two answers to one question. */
+      let sheetCard='';
+      try{
+        const sgws=b.events.filter(e=>!e.finished).slice(0,5).map(e=>e.id);
+        if(sgws.length)sheetCard=teamSheetCard(b,buildGwFixtures(b,fixtures,sgws),sgws,squad);
+      }catch(_){}
+      replacer=recCard+sheetCard+rankCard+solverCard()+solver3Card();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
@@ -8970,6 +9650,90 @@ function provBonusPts(b,st,fixtures,picks){
   picks.picks.forEach(p=>{if(p.position<=11)extra+=(prov[p.element]||0)*(p.multiplier||1);});
   return {extra,prov};
 }
+/* ── LIVE: one matchday, five readings ──────────────────────
+   Five destinations all answering "what is happening to my team right now",
+   and the one moment you want them is the one moment you cannot afford to
+   navigate: matches in play, points moving. Choosing between them from the
+   nav meant leaving the number you were watching to go and find another one.
+
+   They are views of one panel now, and the five renderers are untouched.
+
+   Three of the five are paid and two are free, so the gate had to move
+   inside the panel — the same journey the players table's column gate made.
+   renderPage still locks a whole panel when the PANEL is paid; here the
+   panel is free and each view carries its own tier, shown locked rather
+   than hidden.
+
+   `needs` is per view as well: a game pack without a bonus system or without
+   defensive contributions drops those views entirely rather than showing a
+   board that can never fill. */
+const LV_VIEWS=[
+  {id:'rank',label:'Percentile',tier:'free',fn:'hydrateLiveRank',
+   desc:'Your live score and an estimated percentile against the field, updating through the matchday. An estimate — a true live rank needs the full FPL population.'},
+  {id:'bonus',label:'Bonus',tier:'free',needs:['bps'],fn:'hydrateBonus',
+   desc:'The provisional 3-2-1 projected from live BPS, before the FPL API confirms it.'},
+  {id:'defcon',label:'Your DEFCON',tier:'paid',needs:['defcon'],fn:'hydrateDcwatch',
+   desc:'Your outfield starters against the defensive-contribution threshold — who has banked the +2, and who is close.'},
+  {id:'threats',label:'Rank threats',tier:'paid',needs:['defcon'],fn:'hydrateDefcon',
+   desc:'High-owned players you do not own who are scoring now, ranked by the damage to your rank. Nothing to do with defensive contributions, despite where it sits.'},
+  {id:'autosubs',label:'Auto-subs',tier:'paid',needs:['autosubs'],fn:'hydrateAutosubs',
+   desc:'Which bench players are projected to come on, and the points swing when they do.'}
+];
+const LV_HYDRATE={rank:(h)=>hydrateLiveRank(h),bonus:(h)=>hydrateBonus(h),
+  defcon:(h)=>hydrateDcwatch(h),threats:(h)=>hydrateDefcon(h),autosubs:(h)=>hydrateAutosubs(h)};
+let LV_VIEW='rank';
+/* Only the views this game pack actually supports. Everything downstream
+   reads this rather than LV_VIEWS, so a dropped capability cannot leave a
+   chip pointing at a view that will not render. */
+function lvViews(){return LV_VIEWS.filter(v=>capsMet(v.needs));}
+function lvView(id){const a=lvViews();return a.filter(v=>v.id===id)[0]||a[0]||LV_VIEWS[0];}
+function lvLocked(v){return !!(v&&v.tier==='paid')&&!isPro();}
+function lvSetView(id){LV_VIEW=lvView(id).id;track('live_view',{view:LV_VIEW});}
+/* quiet: the 45-second live tick re-runs the active view in place. Painting a
+   skeleton first would flash the whole panel every 45 seconds, which is the
+   opposite of what a live screen is for. */
+function lvRenderBody(opts){
+  const body=document.getElementById('lv-body');if(!body)return;
+  const v=lvView(LV_VIEW);
+  const note=document.getElementById('lv-note');
+  if(note)note.textContent=v.desc;
+  document.querySelectorAll('#lv-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===v.id));
+  if(lvLocked(v)){
+    /* A locked view must not run its hydrator at all — it fetches your picks
+       and the live feed to build a board you are not going to be shown. */
+    body.innerHTML=proLockWrap(skel(5));
+    markLive(false);
+    return;
+  }
+  if(!(opts&&opts.quiet))body.innerHTML=skel(5);
+  const token=(MEM._lvToken=(MEM._lvToken||0)+1);
+  Promise.resolve().then(()=>LV_HYDRATE[v.id](body)).catch(err=>{
+    if(token!==MEM._lvToken)return;
+    /* Marked so a test can tell a HUB failure — the view's hydrator threw —
+       from a view rendering its own legitimate empty state. */
+    body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
+async function hydrateLive(host){
+  const views=lvViews();
+  host.innerHTML=
+    '<div class="lensbar" id="lv-views">'+views.map(v=>{
+      const lk=lvLocked(v);
+      return '<button class="lensbtn'+(v.id===lvView(LV_VIEW).id?' on':'')+(lk?' lk':'')+'" data-view="'+v.id+'">'+
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(v.label)+'</button>';
+    }).join('')+'</div>'+
+    '<p class="dl-sub" id="lv-note" style="margin:0 0 12px"></p>'+
+    '<div id="lv-body"></div>';
+  host.querySelectorAll('#lv-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===LV_VIEW)return;
+    lvSetView(btn.dataset.view);
+    lvRenderBody();
+  }));
+  lvRenderBody();
+}
+
 async function hydrateLiveRank(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
@@ -9318,7 +10082,7 @@ async function hydrateEO(host){
       '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+'</span></span>'+
       '<span class="dl-col mono">'+e.selected_by_percent+'%</span><span class="dl-col mono">~'+eoOf(e)+'%</span></div>';
   }).join('');
-  host.innerHTML=personal+
+  host.innerHTML=lensLink('eo','Effective ownership for every player, sortable next to price, form and projection —')+personal+
     '<div class="card"><div class="card-title">League-wide EO — most-owned players</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
     '<span class="dl-col">Owned</span><span class="dl-col">EO</span></div>'+rows+'</div>'+
@@ -9384,7 +10148,7 @@ async function hydrateTemplate(host){
       kpi('Your Edge',diffs.length+' diffs','low-owned players you back','var(--green)')+
     '</div>'+(diffs.length?'<div class="card mb-20"><div class="card-title">Where your edge sits</div><div class="dl-sub">'+diffs.join(' · ')+'</div></div>':'');
   }catch(_){}}
-  host.innerHTML=matchCard+xiCard+tables;
+  host.innerHTML=lensLink('template','The full ownership ladder, sortable against everything else you know about a player —')+matchCard+xiCard+tables;
 }
 
 /* ── Rival Scout: track up to five rivals ──────────────── */
@@ -9485,7 +10249,7 @@ async function hydrateSetpiece(host){
       '</table></div>'+
       '<div class="dl-sub" style="margin-top:8px">Set-piece duties change, and the official data lags a manager’s decision — the written notes above are the earlier signal when they disagree.</div></div>'
     : '';
-  host.innerHTML=
+  host.innerHTML=lensLink('setpiece','A confidence rating on every taker in the game, sortable against price, ownership and projection —')+
     '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data, each with a <b>confidence</b> rating — how safe the designation is — and, for penalties, the rough xP it adds. 1st choice is the primary taker.</div>'+
     notesCard+gridCard+
     section('Penalties','penalties_order',true)+
@@ -9583,7 +10347,7 @@ async function hydrateRotation(host){
     ? '<div class="card mb-20" style="border-left:3px solid var(--amber)"><div class="card-title">'+svg(ICON.flag,'width="14" height="14"')+' Dead-rubber watch</div>'+
       '<p class="dl-sub"><b>'+deadClubs.map(esc).join(', ')+'</b> have little left to play for this season — expect heavier rotation, whatever the recent start rate.</p></div>'
     : (ctx&&ctx.live?'':'');
-  host.innerHTML=congestCard+deadNote+
+  host.innerHTML=lensLink('rotation','Minutes security across every owned player, lowest first —')+congestCard+deadNote+
     '<div class="card"><div class="card-title">Rotation risk — premium players by start rate</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · starts</span><span class="dl-col">Owned</span></div>'+rows+'</div>'+
     '<div class="dl-sub" style="margin-top:10px">Start rate flags rotation or fitness risk; the league stakes tag adds motivation context (a club with nothing to play for rotates more, from the season model).</div></div>';
@@ -9668,6 +10432,91 @@ function horizonXP(b,el,hz){
   let total=0;
   fxs.forEach(fx=>total+=fixtureXP(b,el,fx));
   return total;
+}
+/* Expected points at home and away across the horizon, PER GAME rather than
+   as a total. A player with four home games and one away is not "better at
+   home" because the home column is bigger, and a total would say he is. What
+   the split answers is narrower and more useful: how much of this player's
+   projection rides on where the game is, which is the question underneath
+   every "hold him through the home run" decision.
+
+   Modelled, not measured, and the distinction matters. A measured home/away
+   return rate needs per-match history from element-summary — one request per
+   player, which is exactly why the squad builder's consistency columns are
+   confined to hand-picked players and why the player-detail panel is the only
+   place the measured split appears. This is instead what our own match model
+   expects from the fixtures a player actually has, which is the forward-
+   looking question anyway: last season's home record cannot know that this
+   season's home games are against the top three.
+
+   Null on a side with no fixtures in the window. A player whose next five are
+   all at home has no away rate, and a zero there would rank him the worst
+   travelling asset in the league rather than an unknown one. */
+function venueSplit(b,el,hz){
+  const fxs=(hz&&hz[el.team])||[];
+  let hN=0,hT=0,aN=0,aT=0;
+  fxs.forEach(fx=>{
+    const v=fixtureXP(b,el,fx);
+    if(v==null||!isFinite(v))return;
+    if(fx.home){hN++;hT+=v;}else{aN++;aT+=v;}
+  });
+  const h=hN?hT/hN:null,a=aN?aT/aN:null;
+  return {hN,aN,h,a,swing:(h!=null&&a!=null)?h-a:null};
+}
+
+/* ── Value against the price curve ──────────────────────────
+   Least-squares line of expected points against price, and each player's
+   distance from it. Two things this is NOT, both worth stating because the
+   chart is easy to over-read:
+
+   It is not a claim that FPL has mispriced anybody. The line is fitted to OUR
+   projections, so "above the line" means above what our own model expects of
+   that price bracket — a statement about our numbers, not the market's.
+
+   It is not a shopping order. FPL's budget binds across fifteen players, so
+   the useful quantity is marginal points per £m given the rest of a squad,
+   and a residual cannot see the squad. It answers a narrower question:
+   at this price, is this player projected above or below his peers?
+
+   FITTED PER POSITION, always. A £5.0m defender and a £5.0m midfielder are
+   priced in different markets — defenders carry clean sheets, midfielders
+   carry a goal tariff — and a single line through both would rank every
+   defender as underpriced and every forward as a rip-off, which is an
+   artefact of the tariff rather than a finding. */
+const VALUE_MIN_FIT=6;
+function valueFit(pts){
+  const n=(pts||[]).length;
+  if(n<VALUE_MIN_FIT)return null;
+  let sx=0,sy=0;
+  pts.forEach(p=>{sx+=p.x;sy+=p.y;});
+  const mx=sx/n,my=sy/n;
+  let num=0,den=0;
+  pts.forEach(p=>{const dx=p.x-mx;num+=dx*(p.y-my);den+=dx*dx;});
+  /* Every player at the same price gives a vertical scatter with no slope to
+     find. No line rather than an infinite one. */
+  if(!den)return null;
+  const m=num/den;
+  return {m,c:my-m*mx,n};
+}
+/* Points and residuals for a list, grouped by position. A position with too
+   few players to fit still gets its points plotted — they are real players and
+   hiding them would misrepresent the pool — but carries a null residual rather
+   than one derived from a line nobody drew. */
+function valueResiduals(list,yOf){
+  const byPos={};
+  (list||[]).forEach(e=>{
+    const y=yOf(e);
+    if(y==null||!isFinite(y))return;
+    (byPos[e.element_type]=byPos[e.element_type]||[]).push({e,x:(e.now_cost||0)/10,y});
+  });
+  const fits={},points=[];
+  Object.keys(byPos).forEach(p=>{
+    const f=valueFit(byPos[p]);
+    fits[p]=f;
+    byPos[p].forEach(pt=>points.push({e:pt.e,x:pt.x,y:pt.y,pos:+p,
+      resid:f?pt.y-(f.m*pt.x+f.c):null}));
+  });
+  return {fits,points};
 }
 /* The model's top drivers behind a player's xP — the "Explain this pick"
    bullets. Pure list; the string form joins them for legacy callers. */
@@ -9940,17 +10789,46 @@ function effGoalRate(el){
    defender who plays as a winger, is being paid on the better tariff for the
    job he is doing — the classic OOP bargain the community hunts for by eye.
 
-   It is detectable rather than anecdotal: compare a player's goal threat
-   against the MEDIAN of the position group above his own. Median rather than
-   mean because a handful of elite forwards would drag a mean far out of
-   reach, and the question is "does he threaten like a typical one of those",
-   not "like the best of them".
+   The first version compared a player's goal threat against the MEDIAN of
+   the position group ABOVE his own — a defender against midfielders, a
+   midfielder against forwards. It was wrong, and run against real data it was
+   silent: across two full club previews it flagged nobody, including the two
+   most-cited out-of-position players in the league. The reason is that the
+   median midfielder is a genuinely attacking footballer. A full-back who
+   threatens like one would be extraordinary, so the bar excluded almost every
+   player it was built to find.
+
+   The question for a DEFENDER is not "does he threaten like a midfielder".
+   It is "does he threaten unlike a defender" — an outlier WITHIN his own
+   classification. That is what the community means by out of position, and
+   the tariff is why it converts: a defender pushed forward gains goal threat
+   while keeping 6 points a goal, a full clean sheet and the defensive
+   threshold. The absolute level does not have to be high for the edge to be
+   real, so the bar is a percentile among defenders.
+
+   A MIDFIELDER is the opposite case, and reading the first version's output
+   proved it. A percentile among midfielders flagged Saka, Bruno Fernandes,
+   Palmer and Mbeumo — the most template attacking midfielders in the game.
+   Nobody calls those out of position; "top 15% of midfielders for goal
+   threat" only says "is a good attacking midfielder", which is not
+   information. The midfielder tariff is already the best balanced one in the
+   game (5 a goal AND a clean-sheet point), so there is no mismatch to exploit
+   merely by being good. The mismatch exists only when he is genuinely leading
+   the line, so a midfielder keeps the absolute bar: he must threaten like a
+   FORWARD.
+
+   The asymmetry is not a fudge — it falls out of the scoring system.
 
    Deliberately one-directional on the upside and quiet about the reverse: a
    forward drifting deep is a genuine downgrade, so it is flagged as a caution
    rather than a find. */
 const OOP_MIN_MINUTES=450;     /* five full matches — below this it is noise */
-const OOP_STRONG=1.25;         /* comfortably past the benchmark, not scraping it */
+const OOP_PCTL=0.85;           /* a defender in the top 15% of defenders is unusual, not merely good */
+const OOP_STRONG_PCTL=0.95;    /* top 5% — the ones worth naming in a headline */
+const OOP_MID_PCTL=0.50;       /* a midfielder must reach a typical FORWARD's threat */
+const OOP_MID_STRONG_PCTL=0.85;/* and a good one to be called a striker outright */
+const OOP_LOW_PCTL=0.15;       /* the caution: bottom 15% of forwards for threat */
+const OOP_MIN_POOL=8;          /* below this a percentile is noise, not a distribution */
 /* Goal threat per 90, preferring the non-penalty rate when Core Insights has
    it: penalties are a duty, not evidence of where a player plays. */
 function oopThreat(el){
@@ -9958,8 +10836,17 @@ function oopThreat(el){
   if(ci&&Number.isFinite(ci.np_xg_per_90)&&ci.np_xg_per_90>0)return ci.np_xg_per_90;
   return parseFloat((el&&el.expected_goals_per_90)||'0')||0;
 }
-/* Median goal threat per position group, over players with enough minutes to
-   mean anything. Returns {} when the season is too young to have any. */
+/* Linear-interpolated quantile of an ASCENDING array. */
+function oopQuantile(sorted,q){
+  if(!sorted||!sorted.length)return null;
+  if(sorted.length===1)return sorted[0];
+  const i=(sorted.length-1)*Math.max(0,Math.min(1,q));
+  const lo=Math.floor(i),hi=Math.ceil(i);
+  return lo===hi?sorted[lo]:sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo);
+}
+/* Goal-threat cut-offs WITHIN each position group, over players with enough
+   minutes to mean anything. Returns {} when the season is too young, or when
+   a group is too thin for a percentile to describe anything. */
 function oopBenchmarks(elements){
   const by={2:[],3:[],4:[]};
   (elements||[]).forEach(e=>{
@@ -9970,7 +10857,10 @@ function oopBenchmarks(elements){
   const out={};
   Object.keys(by).forEach(k=>{
     const v=by[k].sort((a,c)=>a-c);
-    if(v.length>=5)out[k]=v[Math.floor(v.length/2)];
+    if(v.length<OOP_MIN_POOL)return;
+    out[k]={high:oopQuantile(v,OOP_PCTL),top:oopQuantile(v,OOP_STRONG_PCTL),
+      mid:oopQuantile(v,OOP_MID_PCTL),fwdStrong:oopQuantile(v,OOP_MID_STRONG_PCTL),
+      low:oopQuantile(v,OOP_LOW_PCTL),n:v.length};
   });
   return out;
 }
@@ -9981,24 +10871,34 @@ function oopFlag(el,marks){
   if((el.minutes||0)<OOP_MIN_MINUTES)return null;
   const threat=oopThreat(el);
   if(!(threat>0))return null;
-  /* A defender is measured against midfielders, a midfielder against
-     forwards — one rung up, never two. */
-  const above=t===2?3:t===3?4:null;
-  if(above&&marks[above]!=null&&threat>=marks[above]){
-    const strong=threat>=marks[above]*OOP_STRONG;
-    return {level:strong?2:1,kind:'up',
-      label:t===2?'plays as a midfielder':'plays as a forward',
-      note:t===2
-        ?'Threatens like a midfielder while scoring on the defender tariff — 6 points a goal and a full clean sheet.'
-        :'Threatens like a forward while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point.',
-      threat,bench:marks[above]};
+  const m=marks[t];
+  /* A DEFENDER is measured against his OWN position: one who threatens unlike
+     a defender is being used further forward than defenders are, and keeps
+     the defender tariff while doing it. */
+  if(t===2){
+    if(!m||m.high==null||!(threat>=m.high))return null;
+    return {level:(m.top!=null&&threat>=m.top)?2:1,kind:'up',
+      label:'attacked like a winger last season, paid like a defender',
+      note:'Among the most attacking defenders in the league on last season\u2019s output, while scoring on the defender tariff — 6 points a goal and a full clean sheet. It is a ROLE and not a property: a new manager or a change of shape can take it away, and the numbers behind it were compiled under the old one.',
+      threat,bench:m.high,pool:m.n};
   }
-  /* The caution: a forward who threatens less than a typical midfielder is
-     playing away from goal, and forwards are paid worst for it. */
-  if(t===4&&marks[3]!=null&&threat<marks[3]){
+  /* A MIDFIELDER is measured against FORWARDS, because his own tariff is
+     already the best balanced one — being a good attacking midfielder is not
+     a mismatch to exploit, leading the line on a midfielder's tariff is. */
+  if(t===3){
+    const f=marks[4];
+    if(!f||f.mid==null||!(threat>=f.mid))return null;
+    return {level:(f.fwdStrong!=null&&threat>=f.fwdStrong)?2:1,kind:'up',
+      label:'played as a striker last season, paid like a midfielder',
+      note:'Carried a forward\u2019s goal threat on last season\u2019s output while scoring on the midfielder tariff — 5 points a goal plus a clean-sheet point. It is a ROLE and not a property: the shape that put him there can change over a summer.',
+      threat,bench:f.mid,pool:f.n};
+  }
+  /* The caution: a forward with less goal threat than almost any other
+     forward is playing away from goal, on the tariff that pays worst for it. */
+  if(t===4&&m&&m.low!=null&&threat<=m.low){
     return {level:-1,kind:'down',label:'playing deep for a forward',
-      note:'Less goal threat than a typical midfielder, on the tariff that pays least for it — 4 points a goal and no clean sheet.',
-      threat,bench:marks[3]};
+      note:'Among the least goal-threatening forwards in the league, on the tariff that pays least for it — 4 points a goal and no clean sheet.',
+      threat,bench:m.low,pool:m.n};
   }
   return null;
 }
@@ -10741,6 +11641,48 @@ function clubSplit(fixtures,teamId){
     gfpg:v.games?v.gf/v.games:null,gapg:v.games?v.ga/v.games:null,csr:v.games?v.cs/v.games:null});
   return {home:per(home),away:per(away),games:home.games+away.games};
 }
+/* ── Does a kind fixture actually become a clean sheet? ──────
+   "Easy fixture" is a claim about the opponent. Whether a club converts one
+   is a claim about the club, and the two come apart more often than a
+   fixture ticker admits: a side can face the bottom half nine times, keep
+   two clean sheets, and every green cell in its run is still telling you to
+   buy the defence. This is the number that stops that — and it is the
+   difference between "the fixtures are kind" and "the fixtures are kind AND
+   this defence cashes them in".
+
+   Split by the opponent's ATTACK, not by league position. A clean sheet is a
+   question about who you are defending against, and a mid-table side with a
+   good centre-forward is not a kind fixture however the table reads. */
+const OPP_SPLIT_MIN=5;        /* matches against weak attacks before it says anything */
+/* The bottom half of the league by fitted attack strength. Half rather than a
+   threshold, because "weak" is only meaningful relative to the rest of the
+   division in the season being played. */
+function poorAttacks(R){
+  if(!R||!R.att)return null;
+  const ids=Object.keys(R.att).filter(k=>R.att[k]!=null);
+  if(ids.length<8)return null;
+  const sorted=ids.slice().sort((a,c)=>R.att[a]-R.att[c]);
+  return new Set(sorted.slice(0,Math.floor(sorted.length/2)).map(Number));
+}
+function clubVsPoorAttacks(fixtures,teamId,weak){
+  if(!weak||!weak.size)return null;
+  let games=0,cs=0,gf=0,ga=0;
+  (fixtures||[]).forEach(f=>{
+    if(!f||!f.finished||f.team_h_score==null||f.team_a_score==null)return;
+    const home=f.team_h===teamId,away=f.team_a===teamId;
+    if(!home&&!away)return;
+    if(!weak.has(home?f.team_a:f.team_h))return;
+    games++;
+    const conceded=home?f.team_a_score:f.team_h_score;
+    const scored=home?f.team_h_score:f.team_a_score;
+    gf+=scored;ga+=conceded;if(conceded===0)cs++;
+  });
+  /* Below the minimum this returns null rather than a small-sample rate. A
+     clean-sheet percentage off three games is noise wearing a number's
+     clothes, and it would read as evidence. */
+  if(games<OPP_SPLIT_MIN)return null;
+  return {games,cs,gf,ga,csr:cs/games,gfpg:gf/games,gapg:ga/games};
+}
 /* Which venue to target, or null when the sample cannot support a claim.
    Two separate reads, because a club can be a different attacking side at
    home while conceding the same everywhere. */
@@ -10997,6 +11939,43 @@ const WC_EARLY_PENALTY={2:0.45,3:0.70};
    points and added to the week's mean, since a lower mean is what the chip
    is chasing; a double gameweek still overrides it. */
 const BB_EARLY_PENALTY={1:0.60,2:0.45,3:0.30,4:0.15};
+
+/* ── Midweek congestion, read off the same calendar ───────────────────
+   The mirror image of an international break. intlBreakGws looks for an
+   unusually LONG gap between deadlines; a midweek round makes the gap
+   unusually SHORT — and its own comment already noted that, then threw the
+   information away.
+
+   It is worth keeping, because the argument that penalises a post-break
+   Bench Boost applies harder to a congested one. A squad playing three
+   games in eight days rotates, and the fringe players a Bench Boost depends
+   on are exactly the ones who come out. A weekend with a midweek round on
+   BOTH sides is the worst week of the season to need fifteen players to
+   start, and it is a mistake good managers still make in public.
+
+   Returns {gw: sides}, where sides is 1 or 2 — how many of a gameweek's
+   neighbours sit inside the short-gap window. */
+const CONGEST_GAP_DAYS=5;            /* a normal week is seven */
+function congestedGws(events){
+  const evs=(events||[]).filter(e=>e&&e.id&&e.deadline_time).slice().sort((a,c)=>a.id-c.id);
+  const gap=(a,b)=>{const x=Date.parse(a),y=Date.parse(b);
+    return (isFinite(x)&&isFinite(y))?(y-x)/86400000:null;};
+  const out={};
+  for(let i=0;i<evs.length;i++){
+    let sides=0;
+    if(i>0){const d=gap(evs[i-1].deadline_time,evs[i].deadline_time);
+      if(d!=null&&d<CONGEST_GAP_DAYS)sides++;}
+    if(i<evs.length-1){const d=gap(evs[i].deadline_time,evs[i+1].deadline_time);
+      if(d!=null&&d<CONGEST_GAP_DAYS)sides++;}
+    if(sides)out[evs[i].id]=sides;
+  }
+  return out;
+}
+/* In FDR points, added to the week's mean like the other Bench Boost
+   penalties — so a double gameweek still overrides it. Both sides costs more
+   than twice one side: it is not two independent midweeks, it is a squad
+   playing three times in eight days with the weekend in the middle. */
+const BB_CONGEST_PENALTY={1:0.25,2:0.60};
 /* Each club's next N fixtures on official FDR, best run first. The classic
    pre-season graphic, and the same numbers the chip plan reads. */
 function clubFdrRuns(b,fixtures,n){
@@ -11100,6 +12079,7 @@ function chipPlanFdr(b,fixtures,opts){
   const startGw=opts.startGw||(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
   const win=chipHalfWindow(startGw);
   const breaks=opts.breaks||intlBreakGws(b&&b.events);
+  const congested=opts.congested||congestedGws(b&&b.events);
   /* An FPL XI is eleven players with at most three from any one club, so at
      least FOUR clubs must have a fixture before a gameweek is playable at
      all. Anything below that is not a blank gameweek, it is missing fixture
@@ -11110,7 +12090,7 @@ function chipPlanFdr(b,fixtures,opts){
      missing fixture data. The threshold follows the live club cap. */
   const minClubs=minClubsForXi(b&&b.rules);
   const gws=fdrGameweeks(b,fixtures,win.from,win.to).filter(g=>g.playing>=minClubs);
-  gws.forEach(g=>{g.afterBreak=breaks[g.gw]||0;});
+  gws.forEach(g=>{g.afterBreak=breaks[g.gw]||0;g.congested=congested[g.gw]||0;});
   const played=gws.filter(g=>g.mean!=null);
   if(played.length<3)return null;
 
@@ -11242,7 +12222,7 @@ function chipPlanFdr(b,fixtures,opts){
      fringe of a squad is exactly who gets rested or returns late, so a
      post-break week is treated as effectively harder for this chip only. */
   const bbMean=g=>g.mean+(g.afterBreak?breakScale(BREAK_BB_PENALTY,BREAK_BB_PENALTY_LONG,g.afterBreak):0)+(BB_EARLY_PENALTY[g.gw]||0)
-    +(BB_RUNIN_PENALTY[g.gw]||0);
+    +(BB_RUNIN_PENALTY[g.gw]||0)+(BB_CONGEST_PENALTY[g.congested]||0);
   const easyRank=played.slice().sort((a,c)=>bbMean(a)-bbMean(c)||c.easy-a.easy||c.gw-a.gw);
   const blankRank=played.filter(g=>g.blanks.length>=4).sort((a,c)=>c.blanks.length-a.blanks.length);
   const dblRank=played.filter(g=>g.doubles.length>=4).sort((a,c)=>c.doubles.length-a.doubles.length);
@@ -11261,6 +12241,7 @@ function chipPlanFdr(b,fixtures,opts){
   claim('benchboost',dblRank.map(g=>({gw:g.gw,double:g.doubles.length,afterBreak:g.afterBreak||0,firm:1}))
     .concat(easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,afterBreak:g.afterBreak||0,
       early:BB_EARLY_PENALTY[g.gw]||0,runIn:BB_RUNIN_PENALTY[g.gw]||0,
+      congested:g.congested||0,
       rankScore:-bbMean(g),tol:TIE_FDR}))));
   const wcTol=(wcRank.length?wcRank[0].score:0)*TIE_REL;
   claim('wildcard',wcRank.map(w=>({gw:w.gw,gain:w.gain,turning:w.turning,
@@ -11279,13 +12260,15 @@ function chipPlanFdr(b,fixtures,opts){
     p.provisional=p.horizon>CHIP_PROVISIONAL_FROM&&!p.blank&&!p.double;
     p.edge=p.mean!=null?Math.abs(p.mean-mean0):null;
   });
-  return {window:win,gws:played,picks,breaks,
+  return {window:win,gws:played,picks,breaks,congested,
+    congestGws:Object.keys(congested).map(Number).filter(g=>g>=win.from&&g<=win.to).sort((a,c)=>a-c),
     /* Preference order per chip BEFORE collisions are resolved — what each
        chip wanted, as distinct from what it got. */
     rank:{wildcard:wcRank,
       triplecaptain:tcRank,
       benchboost:easyRank.map(g=>({gw:g.gw,mean:g.mean,easy:g.easy,
-        adjusted:bbMean(g),early:BB_EARLY_PENALTY[g.gw]||0,afterBreak:g.afterBreak||0})),
+        adjusted:bbMean(g),early:BB_EARLY_PENALTY[g.gw]||0,afterBreak:g.afterBreak||0,
+        congested:g.congested||0})),
       freehit:hardRank},
     breakGws:Object.keys(breaks).map(Number).filter(g=>g>=win.from&&g<=win.to).sort((a,c)=>a-c),
     leagueMean:played.reduce((s,g)=>s+g.mean,0)/played.length};
@@ -11307,7 +12290,9 @@ function chipPlanCard(b,fixtures){
       : 'The easiest week of the half (mean <b>'+p.mean.toFixed(2)+'</b> against a '+avg.toFixed(2)+' average, '+p.easy+' fixtures rated 1 or 2). A bench only pays when the fringe players have games worth starting.'+
         (p.early?' <b>This early the bench is thin by design</b> — the budget is in the XI — so it is worth less than the fixtures suggest.':'')+
         (p.runIn?' <b>Run-in rotation risk</b> — sides with nothing to play for rest players, and a bench chip needs fifteen of them to start.':'');
-    if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(p.opp)+
+    /* p.opp is a team ID off the raw fixture, not a name — printed straight
+       it read "away at 14". */
+    if(k==='triplecaptain')return '<b>'+esc(p.el.web_name)+'</b> '+(p.home?'at home to ':'away at ')+esc(teamShort(b,p.opp)||p.opp)+
       ', rated <b>FDR '+p.fdr+'</b> — the softest fixture any premium attacker gets in the half.'+
       (p.runIn?' Note the run-in: motivation and rotation are unpredictable this late.':'');
     return '<b>'+p.turning+' clubs</b> swing from a hard run to an easy one around this week (total difficulty shed ≈ '+p.gain.toFixed(1)+
@@ -11339,10 +12324,22 @@ function chipPlanCard(b,fixtures){
         'It works against <b>Bench Boost</b> and <b>Triple Captain</b>, which both need players to actually start, '+
         'and the fringe of a squad is exactly who gets rested or returns late. A blank or double still outranks all of it.</p>'
       : '')+
+    /* The same calendar, read the other way. A well-known manager called a
+       Bench Boost for a weekend flanked by two midweek rounds and withdrew it
+       when someone pointed that out — the signal was in the fixture list all
+       along, and this is the panel that should have said so first. */
+    (plan.congestGws&&plan.congestGws.length
+      ? '<p class="dl-sub" style="margin-bottom:10px">Midweek rounds crowd <b>GW'+
+        plan.congestGws.join('</b>, <b>GW')+'</b> — short gaps between deadlines, the mirror of a break. '+
+        'These weeks are marked down for <b>Bench Boost</b> for the same reason a post-break week is, only harder: '+
+        'a squad playing three games in eight days rotates, and the fringe players a Bench Boost needs are the first out. '+
+        'A weekend with a midweek round on each side is the worst week of the half to need fifteen starters.</p>'
+      : '')+
     '<div class="dl desc">'+order.map(k=>
       '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+CHIP_LABEL[k]+' — GW'+P[k].gw+
       ' <span class="badge '+badge[k]+'">'+(k==='wildcard'?'reshape':k==='freehit'?'swing':k==='benchboost'?'depth':'ceiling')+'</span>'+
       (P[k].afterBreak?' <span class="badge badge-grey">post-break</span>':'')+
+      (P[k].congested?' <span class="badge badge-amber">'+(P[k].congested>1?'midweek both sides':'midweek round')+'</span>':'')+
       (P[k].provisional?' <span class="badge badge-grey">pencilled in</span>':'')+'</span>'+
       '<span class="dl-sub">'+why(k)+'</span></span></div>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">'+
@@ -13387,6 +14384,61 @@ function lgScFill(host,m){const md=+host.querySelector('#lsc-md').value;const fx
   const sel=host.querySelector('#lsc-fx');sel.innerHTML='';fx.forEach(([h,a])=>{const o=document.createElement('option');o.value=h+'|'+a;o.textContent=h+' v '+a;sel.appendChild(o);});}
 
 /* ── Match Forecasts (free 1X2 + xG; Pro adds goal markets) ──────── */
+/* ── MATCHDAY: the same fixtures, before and after ──────────
+   Results, Match Forecasts and Projected XI were three destinations reading
+   one fixture list at three points in time: what the model expects, who is
+   likely to start it, and what actually happened. You want them within one
+   move of each other — the pre-match view is only interesting next to the
+   result, and the projected XI is the thing you check between the two.
+
+   Title Race, Club Dossier and Team Form are NOT here and were deliberately
+   left as their own panels. They are season-level reference you browse, not
+   matchday views you flick between, and folding six things into one panel
+   because they share an area would be tidying rather than merging. */
+const MC_VIEWS=[
+  {id:'results',label:'Results',live:true,fn:'hydrateResults',
+   desc:'Every match of the gameweek — scorers, cards, saves, defensive contributions and the bonus race, with your players flagged and the model’s pre-match view graded against what happened.'},
+  {id:'forecasts',label:'Forecasts',fn:'hydrateMatchForecast',
+   desc:'Model win/draw/loss and expected goals for every fixture of a matchday. Pro adds BTTS, over/under 2.5 and the most likely scorelines.'},
+  {id:'lineups',label:'Line-ups',fn:'hydrateLineups',
+   desc:'A data-driven estimate of each club’s likely starting XI from starts, minutes and availability. An estimate from the numbers — not team news.'}
+];
+const MC_HYDRATE={results:(h)=>hydrateResults(h),forecasts:(h)=>hydrateMatchForecast(h),
+  lineups:(h)=>hydrateLineups(h)};
+let MC_VIEW='results';
+function mcView(id){return MC_VIEWS.filter(v=>v.id===id)[0]||MC_VIEWS[0];}
+function mcSetView(id){MC_VIEW=mcView(id).id;track('matchday_view',{view:MC_VIEW});}
+function mcRenderBody(opts){
+  const body=document.getElementById('mc-body');if(!body)return;
+  const v=mcView(MC_VIEW);
+  const note=document.getElementById('mc-note');
+  if(note)note.textContent=v.desc;
+  document.querySelectorAll('#mc-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===v.id));
+  if(!(opts&&opts.quiet))body.innerHTML=skel(5);
+  const token=(MEM._mcToken=(MEM._mcToken||0)+1);
+  Promise.resolve().then(()=>MC_HYDRATE[v.id](body)).catch(err=>{
+    if(token!==MEM._mcToken)return;
+    /* Marked so a test can tell a HUB failure — the view's hydrator threw —
+       from a view rendering its own legitimate empty state. */
+    body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
+async function hydrateMatchday(host){
+  host.innerHTML=
+    '<div class="lensbar" id="mc-views">'+MC_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===MC_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="mc-note" style="margin:0 0 12px"></p>'+
+    '<div id="mc-body"></div>';
+  host.querySelectorAll('#mc-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===MC_VIEW)return;
+    mcSetView(btn.dataset.view);
+    mcRenderBody();
+  }));
+  mcRenderBody();
+}
+
 async function hydrateMatchForecast(host){
   host.innerHTML=skel(4);
   let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model — try again shortly.');return;}
@@ -13428,7 +14480,10 @@ function resToggle(id){
 function resNav(step){
   RES_GW=Math.max(1,Math.min(38,(RES_GW||1)+step));
   window._resOpen=new Set();
-  const h=document.getElementById('ge-data');
+  /* The results board owns a VIEW of the Matchday panel, not the panel — so
+     it re-renders into the hub's body. Re-rendering into #ge-data would wipe
+     the view chips and leave the panel showing results with no way back. */
+  const h=document.getElementById('mc-body')||document.getElementById('ge-data');
   if(h)hydrateResults(h);
 }
 async function hydrateResults(host){
@@ -13545,7 +14600,10 @@ async function hydrateResults(host){
     list+=fixCard(f);
   });
   host.innerHTML='<div class="card">'+
-    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Match Centre'+
+    /* "Results", not "Match Centre" — the area is called Match Centre and the
+       panel is Matchday, so a third name for the same thing on the same
+       screen is just noise. This heading exists to anchor the GW pager. */
+    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Results'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
@@ -13604,7 +14662,7 @@ async function hydrateCsMatrix(host){
     '<div class="card"><div class="card-title">'+svg(ICON.shield,'width="15" height="15"')+' Clean Sheet Matrix'+
       (D.live?'':' <span class="badge badge-amber">pre-season</span>')+'</div>'+
     bundleSeasonWarn(m)+
-    '<p class="dl-sub" style="margin-bottom:10px">Each cell is the modelled chance the club keeps a clean sheet in that gameweek’s fixture — from our backtested match model, the same engine as the season simulator.'+
+    '<p class="dl-sub" style="margin-bottom:10px">The same engine as the season simulator.'+
       (D.live?'':' Pre-season, the window is GW1–'+(D.startMd+Math.min(CSM_N,D.horizon)-1)+' of 2026/27.')+'</p>'+
     '<div class="seg" id="csm-seg" style="margin-bottom:12px">'+
       '<button class="seg-b'+(CSM_N===6?' on':'')+'" data-n="6">Next 6</button>'+
@@ -14926,9 +15984,7 @@ const WIRED={
   titlerace:hydrateTitleRace,
   dossier:hydrateDossier,
   clubform:hydrateClubForm,
-  lineups:hydrateLineups,
-  matchforecast:hydrateMatchForecast,
-  results:hydrateResults,
+  results:hydrateMatchday,
   seasonsim:hydrateSeasonSim,
   blog:hydrateBlog,
   social:hydrateSocial,
@@ -14946,19 +16002,11 @@ const WIRED={
   allplayers:hydrateAllPlayers,
   scoutboard:hydrateScoutBoard,
   compare:hydrateCompare,
-  fixtures:hydrateFixtures,
-  points5:hydratePointsPlanner,
-  csmatrix:hydrateCsMatrix,
-  diffs:hydrateDiffs,
+  fixtures:hydrateFixturesHub,
   price:hydratePrice,
-  injuries:hydrateInjuries,
   news:hydrateNews,
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
-  liverank:hydrateLiveRank,
-  bonus:hydrateBonus,
-  dcwatch:hydrateDcwatch,
-  defcon:hydrateDefcon,
-  autosubs:hydrateAutosubs,
+  liverank:hydrateLive,
   whatif:hydrateWhatif,
   eo:hydrateEO,
   template:hydrateTemplate,
@@ -15111,6 +16159,15 @@ function cmdkItems(q){
     if(!canSeePanel(p))return;              /* owner panels stay out of search */
     out.push({label:p.label,sub:p.areaLabel,icon:p.icon,run:()=>openPanel(id),
       score:q?cmdkScore(p.label,q)*2+cmdkScore(p.areaLabel,q):1});
+  });
+  /* Lenses are searchable by name too. Folding a board into the table would
+     otherwise make it unfindable: "Differentials" is what people type, and
+     it stopped being a panel the moment it became a view. */
+  if(canSeePanel(PANELS.allplayers))PL_LENSES.forEach(l=>{
+    if(l.id==='all')return;                 /* that IS the panel, already listed */
+    out.push({label:l.label,sub:'Players · lens',icon:'grid',
+      run:()=>{plSetLens(l.id);openPanel('allplayers',{keepView:true});},
+      score:q?cmdkScore(l.label,q)*2:0.4});
   });
   verbs.forEach(v=>out.push({...v,score:q?cmdkScore(v.label,q)*2:0.5}));
   if(q&&q.length>=2&&MEM._idx){
@@ -15336,7 +16393,7 @@ function initNative(){
 
   /* Light haptic when changing area or panel, so taps feel native. */
   document.addEventListener('click',e=>{
-    if(e.target.closest('.nav-sub,.bn-item,.nav-area'))N.hapticSelection();
+    if(e.target.closest('.area-tab,.bn-item,.nav-area'))N.hapticSelection();
     else if(e.target.closest('.btn,.theme-toggle,.hamburger'))N.hapticLight();
   },true);
 
@@ -15428,7 +16485,7 @@ function init(){
   buildBottomNav();
   applyTheme(storedTheme()||'dark');
   const home=homePanel();
-  currentPanel=home;expandedArea=PANELS[home].areaId;
+  currentPanel=home;
   renderPage(home);
   syncNav();
 

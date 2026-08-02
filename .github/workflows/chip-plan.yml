@@ -1,0 +1,34 @@
+name: Chip Plan
+
+# Runs the app's own chip planner against the live fixture list and prints the
+# result to the run summary. Manual only: the plan changes when the fixtures
+# change, not on a timetable, and this exists to be checked against the
+# windows the community publishes rather than to produce anything.
+#
+# Publishes nothing. The output is the run log.
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'Starting gameweek (blank = the next one)'
+        type: string
+        default: ''
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Plan
+        run: |
+          if [ -n "${{ inputs.from }}" ]; then
+            node dev/chip-plan.mjs --from "${{ inputs.from }}" | tee plan.txt
+          else
+            node dev/chip-plan.mjs | tee plan.txt
+          fi
+          { echo '```'; cat plan.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY

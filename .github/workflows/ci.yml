@@ -11,7 +11,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Matches the workflows that actually run this code (daily-content,
+          # club-threads). Testing on 20 while the scheduled jobs run 22 is
+          # the same class of gap as testing against a node_modules the CI
+          # runner never has.
+          node-version: 22
 
       - name: Syntax-check serverless functions
         run: |
@@ -30,14 +34,30 @@ jobs:
           "
           node --check /tmp/ge-app.js
 
-      - name: Core model unit tests
-        run: node dev/test-core.mjs
-
-      - name: Prediction logger core test
-        run: node dev/test-predictions.mjs
-
-      - name: Prediction health core test
-        run: node dev/test-health.mjs
+      # The whole suite, not a hand-picked three. Every test file imports
+      # only node builtins and reads index.html from the checkout, so this
+      # needs no `npm ci` and costs CI nothing — while the twelve suites
+      # that were not listed here (content, engine, social, chip plan,
+      # analytics and the rest) went unrun on every push.
+      - name: Test suite
+        run: npm test
 
       - name: Shell integrity guard
         run: node scripts/check-shell.mjs
+
+      # The briefing checker itself needs the live FPL API, which CI does not
+      # get. What CI CAN guard is that the shipped briefing still parses into
+      # the shape the checker expects — because a document that has drifted out
+      # of that shape produces a thin, clean-looking report rather than an
+      # error, and thin-and-clean is the result nobody questions.
+      - name: Briefing parses into checkable claims
+        run: node dev/test-briefing.mjs
+
+      # Catches the class of bug that broke Daily Content for four days: a
+      # script importing a package that is installed locally but declared
+      # nowhere, so it works on the machine it was written on and dies under
+      # `npm ci`. Deliberately placed in CI rather than only in npm test —
+      # CI installs nothing, so it is the one place a missing declaration
+      # cannot be masked by a node_modules that happens to have it.
+      - name: Declared-dependency guard
+        run: node scripts/check-deps.mjs

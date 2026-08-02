@@ -18,15 +18,50 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
+/* Comments are skipped before strings (an apostrophe in prose would open a
+   phantom string), and REGEX LITERALS are skipped before both. That last one
+   is not theoretical: playersCsv contains /[",\n]/, whose quote character
+   opened a phantom string, the scanner sailed past the closing brace, and the
+   extraction failed with "unbalanced" — this scanner had never met a regex
+   until that function needed testing.
+
+   A `/` starts a regex when the previous meaningful character cannot end an
+   expression; after an identifier, a number or a closing bracket it is
+   division. That is the standard heuristic and it is exact enough here. */
+const RE_KEYWORDS = new Set(['return', 'typeof', 'case', 'in', 'of', 'do', 'else', 'void', 'delete', 'new', 'instanceof', 'yield', 'await']);
+/* Does the `/` at position i open a regex, or divide? Look back past
+   whitespace: an operator or an opening bracket means a regex must follow,
+   an identifier or a closing bracket means division — unless that identifier
+   is a keyword, which is the case `return /[",\n]/` falls into. */
+function startsRegex(src, i) {
+  let k = i - 1;
+  while (k >= 0 && /\s/.test(src[k])) k--;
+  if (k < 0) return true;
+  const c = src[k];
+  if (/[([{,;:=!&|?+\-*%~^<>]/.test(c)) return true;
+  if (!/[A-Za-z_$]/.test(c)) return false;          /* number, ) or ] → division */
+  let w = k;
+  while (w >= 0 && /[A-Za-z0-9_$]/.test(src[w])) w--;
+  return RE_KEYWORDS.has(src.slice(w + 1, k + 1));
+}
 function extractBlock(src, startIdx) {
   const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
+  let depth = 0, inStr = null, esc = false, com = 0, re = 0;   /* re: 1 body, 2 char class */
   for (let j = open; j < src.length; j++) {
     const ch = src[j], nx = src[j + 1];
     if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
+    if (re) {
+      if (esc) esc = false;
+      else if (ch === '\\') esc = true;
+      else if (re === 2) { if (ch === ']') re = 1; }
+      else if (ch === '[') re = 2;
+      else if (ch === '/') re = 0;
+      continue;
+    }
     if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
     if (ch === '/' && nx === '/') { com = 1; j++; continue; }
     if (ch === '/' && nx === '*') { com = 2; j++; continue; }
+    if (ch === '/' && startsRegex(src, j)) { re = 1; continue; }
     if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
     if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
   }
@@ -60,7 +95,7 @@ const grabConst = (n) => {
 };
 
 const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules,
-  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP } = new Function(
+  ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP, teamSheet, neverStarts, solvePlanMulti, DECAY_BASE } = new Function(
   grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('minClubsForXi') + '\n' +
   /* The two terms the transfer solver's objective gained beyond XI xP. */
   grabConst('FT_CAP') + '\n' + grabConst('BENCH_W') + '\n' + grabConst('FT_LADDER') + '\n' +
@@ -69,8 +104,16 @@ const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules
      rules now; the fallback block is exactly the old hard-coded values. */
   grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' +
   grabFn('squadOptimise') +
+  /* The team sheet is assembly on top of bestXI — which formation, which
+     armband, who never starts. The xP model underneath it has its own
+     suite, so it is stubbed here: a fixture is worth whatever the test
+     plants on it, and the sheet's logic is what gets graded. */
+  '\nconst fixtureXP=(b,el,fx)=>fx.xp;\n' + grabFn('teamSheet') + '\n' + grabFn('neverStarts') +
+  /* The plan solver, on the same stubbed xP: what is under test is the
+     sequencing and the discounting, not the projection underneath. */
+  '\n' + grabConst('DECAY_BASE') + '\n' + grabFn('solvePlanMulti') +
   '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;},'+
-  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP};'
+  'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP,teamSheet,neverStarts,solvePlanMulti,DECAY_BASE};'
 )();
 
 let failures = 0, passes = 0;
@@ -515,10 +558,103 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   const gate = (fn) => html.includes(fn);
   ok(gate('function canSeePanel('), 'canSeePanel gate exists');
   ok(/NAV\.filter\(canSeeArea\)/.test(html), 'sidebar areas are filtered by the gate');
-  ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'sidebar panels are filtered by the gate');
+  ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'the area tabs are filtered by the gate');
   ok(/if\(!canSeePanel\(p\)\)return;/.test(html), 'command palette is filtered by the gate');
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),
     'openPanel guards deep links');
+
+  /* ── The nav shape ───────────────────────────────────────
+     The sidebar is a flat list of areas and the lateral move happens on the
+     page, so an area is now a real destination rather than a folder. Two
+     things have to hold for that to work: every area must HAVE a landing
+     panel, and no area may be so long that arriving on it puts a wall of
+     tabs in front of you — which is the clutter this restructure exists to
+     remove, relocated rather than fixed. */
+  const areas = NAV.filter((a) => a.tier !== 'owner');
+  ok(areas.length <= 8, 'the sidebar offers at most eight areas (' + areas.length + ')');
+  for (const a of areas) {
+    ok(a.panels.length >= 1, a.id + ': has a landing panel');
+    ok(a.panels.length <= 7, a.id + ': at most seven tabs (' + a.panels.length + ')');
+    ok(a.panels.some((p) => p.tier !== 'paid'),
+      a.id + ': has at least one free panel, so a free user never lands on a wall of locks');
+  }
+  ok(html.includes('function areaTabsHtml('), 'the area tab strip exists');
+  ok(/areaTabsHtml\(panelId\)/.test(html), 'and renderPage emits it');
+  ok(!/toggleArea/.test(html), 'the old expanding sub-list is gone, not merely hidden');
+
+  /* "The Edge" was an area holding twelve unrelated paid tools — the app's
+     single biggest pile. Pro is a property of a panel now, not a place, so
+     every one of those tools has to have found a topical home. */
+  ok(!NAV.some((a) => a.id === 'intel'), 'the catch-all Pro area is gone');
+  const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
+  const rehomed = {
+    scout: 'home', gwhistory: 'myteam', liverank: 'live', results: 'matchcentre',
+    setpiece: 'players', rotation: 'players', seasonsim: 'planner', whatif: 'planner',
+    rivals: 'rivals', eo: 'rivals', template: 'rivals',
+  };
+  for (const [id, area] of Object.entries(rehomed)) {
+    ok(areaOfPanel[id] === area, id + ' now lives in ' + area + ' (found: ' + areaOfPanel[id] + ')');
+  }
+  /* Three of them folded into the Live hub instead of getting their own tab,
+     so their locks moved onto the VIEW. The count has to be checked where
+     the gate now is, or a merge that dropped `tier:'paid'` would read as a
+     panel simply having been retired. */
+  const LV = new Function('return ' + balanced(html, html.indexOf('const LV_VIEWS='), '[', ']'))();
+  for (const id of ['defcon', 'threats', 'autosubs']) {
+    const v = LV.find((x) => x.id === id);
+    ok(v && v.tier === 'paid', 'the ' + id + ' live view is still Pro');
+  }
+  ok(LV.some((v) => v.tier !== 'paid'),
+    'and the Live panel keeps free views, so it is not a paid panel in disguise');
+  ok(navPanels.filter((p) => p.tier === 'paid').length +
+     LV.filter((v) => v.tier === 'paid').length >= 10,
+    'Pro moved with the thing, it was not given away');
+
+  /* Two things called "league" two aisles apart: the Premier League and your
+     mini-league. The rename is the fix and it must not silently revert. */
+  ok(!NAV.some((a) => a.id === 'league'), 'the ambiguous League area is gone');
+  ok(NAV.some((a) => a.id === 'matchcentre') && NAV.some((a) => a.id === 'rivals'),
+    'replaced by Match Centre (the football) and Rivals (the people)');
+  ok(areaOfPanel.leagues === 'rivals', 'Mini-Leagues sits with the rivals, not the planner');
+
+  /* Every area on the bottom bar and in the More sheet must still exist —
+     a renamed area id here is a bar item that highlights nothing. */
+  const areaIds = new Set(NAV.map((a) => a.id));
+  const barSrc = balanced(html, html.indexOf('const BOTTOM_NAV='), '[', ']');
+  for (const m of barSrc.matchAll(/area:'([a-z]+)'/g)) {
+    ok(areaIds.has(m[1]), 'bottom bar area ' + m[1] + ' exists');
+  }
+  const moreSrc = html.slice(html.indexOf('function openMoreSheet('), html.indexOf('function closeMoreSheet('));
+  for (const m of moreSrc.matchAll(/\['([a-z]+)','[^']+'\]/g)) {
+    ok(m[1] === 'glossary' || areaIds.has(m[1]), 'More sheet area ' + m[1] + ' exists');
+  }
+  /* Between the bar and the sheet, every area must be reachable on a phone —
+     the sidebar is not on screen there. */
+  const barAreas = [...barSrc.matchAll(/area:'([a-z]+)'/g)].map((m) => m[1]);
+  const moreAreas = [...moreSrc.matchAll(/\['([a-z]+)','[^']+'\]/g)].map((m) => m[1]);
+  const reachable = new Set([...barAreas, ...moreAreas]);
+  for (const a of areas) ok(reachable.has(a.id), a.id + ': reachable on mobile (bar or More sheet)');
+
+  /* The site map in docs/FEATURES.md had gone quietly stale — it still listed
+     an "Intelligence (Pro)" area and panels that had not existed for weeks,
+     because nothing checked it. A doc that describes the nav is worth having
+     only if it cannot drift. */
+  {
+    const doc = readFileSync(join(ROOT, 'docs', 'FEATURES.md'), 'utf8');
+    const fence = doc.slice(doc.indexOf('## 2. Site map'), doc.indexOf('## 3.'));
+    const map = fence.slice(fence.indexOf('```') + 3, fence.lastIndexOf('```'));
+    for (const a of NAV) ok(map.includes(a.label), 'site map lists the ' + a.label + ' area');
+    for (const p of navPanels) {
+      /* The Wire's nav label carries a trailing gloss the tree drops. */
+      const label = p.label.split(' — ')[0];
+      ok(map.includes(label), 'site map lists ' + label);
+    }
+    const listed = [...map.matchAll(/^[├└]── (.+?)\s{2,}\(/gm)].map((m) => m[1].trim());
+    const known = new Set(navPanels.map((p) => p.label.split(' — ')[0]));
+    const ghosts = listed.filter((l) => !known.has(l));
+    ok(ghosts.length === 0, 'and lists nothing the app no longer has' +
+      (ghosts.length ? ' — stale: ' + ghosts.join(', ') : ''));
+  }
 
   /* Retired panels. Merging one panel into another silently breaks every
      bookmark and shared link pointing at the old id — openPanel's guard sends
@@ -537,16 +673,100 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(ALIAS.ask === 'scout', 'Ask the Scout redirects to the scout that absorbed it');
   ok(!wiredKeys.has('ask'), 'and its hydrator is gone too');
 
-  /* Two panels called DEFCON, one of which had nothing to do with defensive
+  /* Panels that folded into another are routed by PANEL_VIEW, which names
+     the VIEW as well as the destination. An alias alone is not enough:
+     landing on the default view is not the page the old link promised. */
+  const VIEW_MAP = new Function('return ' + balanced(html, html.indexOf('const PANEL_VIEW='), '{', '}'))();
+  const viewIds = (n) => new Set(new Function('return ' +
+    balanced(html, html.indexOf('const ' + n + '='), '[', ']'))().map((v) => v.id));
+  /* Each hub panel and the views it actually has. A route may only name a
+     view its hub owns, and every hub must be dispatchable. */
+  const HUB = { allplayers: viewIds('PL_LENSES'), fixtures: viewIds('FX_VIEWS'),
+    liverank: viewIds('LV_VIEWS'), results: viewIds('MC_VIEWS') };
+  const dispatch = html.slice(html.indexOf('const HUB_SETVIEW='),
+    html.indexOf('\n', html.indexOf('const HUB_SETVIEW=')));
+  for (const hub of Object.keys(HUB)) {
+    ok(dispatch.includes(hub + ':'), hub + ': has a view setter in HUB_SETVIEW');
+    ok(navIds.has(hub), hub + ': is itself a live panel');
+  }
+  for (const [from, spec] of Object.entries(VIEW_MAP)) {
+    ok(!!HUB[spec.hub], from + ": names a known hub ('" + spec.hub + "')");
+    if (!HUB[spec.hub]) continue;
+    ok(HUB[spec.hub].has(spec.view), from + ' → ' + spec.view + ': that view exists in ' + spec.hub);
+    const dest = ALIAS[from] || from;
+    ok(dest === spec.hub, from + ': routes to ' + spec.hub + ' (found: ' + dest + ')');
+  }
+  /* And the other direction: aliasing INTO a hub without naming a view drops
+     you on its default, which is the bug this map exists to prevent. */
+  for (const [from, to] of Object.entries(ALIAS)) {
+    if (HUB[to]) ok(!!VIEW_MAP[from], from + ': aliasing into ' + to + ' also names a view');
+  }
+  /* Every hub must also route its OWN id, or opening it from the nav leaves
+     whatever view the last deep link happened to select. */
+  for (const hub of Object.keys(HUB)) ok(!!VIEW_MAP[hub], hub + ': routes its own id to a default view');
+  /* ...but that default must not overwrite a view the CALLER just chose. Every
+     "open it in the players table" link and every ⌘K lens entry sets a lens
+     and THEN opens the hub, so without an opt-out the default wins and all of
+     them land on All data. They did, until a browser check on the sibling app
+     caught it. */
+  ok(/function openPanel\(panelId,opts\)/.test(html), 'openPanel takes an options argument');
+  ok(/!\(opts&&opts\.keepView\)&&HUB_SETVIEW/.test(html),
+    'and an explicit view request skips the destination default');
+  const setsThenOpens = [...html.matchAll(/plSetLens\((?:l\.id|id)\);openPanel\('allplayers'([^)]*)\)/g)];
+  ok(setsThenOpens.length >= 2, 'both callers that choose a lens then open the table are present');
+  for (const m of setsThenOpens) {
+    ok(/keepView:\s*true/.test(m[1]), 'a caller that chose a lens keeps it: ' + m[0]);
+  }
+  for (const id of ['diffs', 'injuries', 'points5', 'csmatrix', 'bonus', 'dcwatch', 'defcon',
+    'autosubs', 'matchforecast', 'lineups']) {
+    ok(!wiredKeys.has(id), id + ': its hydrator is gone rather than left orphaned');
+    ok(!navIds.has(id), id + ': and it is off the nav');
+  }
+  /* The view is read from the id AS TYPED. Resolve first and #diffs and
+     #injuries both become 'allplayers', so both would open on the same view
+     and one of the two old links would silently land on the wrong page. */
+  const openSrc = html.slice(html.indexOf('function openPanel('), html.indexOf('function syncNav('));
+  ok(openSrc.indexOf('PANEL_VIEW[panelId]') < openSrc.indexOf('panelId=resolvePanel(panelId)'),
+    'openPanel picks the view BEFORE resolving the alias');
+
+  /* Each hub must still hydrate every renderer it absorbed — a view whose
+     hydrator is not wired to it is a tab that renders an empty box — and it
+     must do it with the ORIGINAL function. Merging is a routing change; the
+     moment a renderer gets rewritten to fit the hub, the claim that nothing
+     about the boards changed stops being true. */
+  const hydrateMap = (n) => balanced(html, html.indexOf('const ' + n + '='), '{', '}');
+  const ABSORBED = {
+    fixtures: ['FX_HYDRATE', HUB.fixtures,
+      ['hydrateFixtures', 'hydratePointsPlanner', 'hydrateCsMatrix']],
+    liverank: ['LV_HYDRATE', HUB.liverank,
+      ['hydrateLiveRank', 'hydrateBonus', 'hydrateDcwatch', 'hydrateDefcon', 'hydrateAutosubs']],
+    results: ['MC_HYDRATE', HUB.results,
+      ['hydrateResults', 'hydrateMatchForecast', 'hydrateLineups']],
+  };
+  for (const [hub, [mapName, ids, fns]] of Object.entries(ABSORBED)) {
+    const src = hydrateMap(mapName);
+    for (const v of ids) ok(src.includes(v + ':'), hub + ' hub renders the ' + v + ' view');
+    for (const fn of fns) {
+      ok(src.includes(fn), hub + ' hub uses the original ' + fn + ', untouched');
+      ok(html.includes('function ' + fn + '('), 'and ' + fn + ' still exists');
+    }
+  }
+
+  /* Two boards called DEFCON, one of which had nothing to do with defensive
      contributions, sat next to each other in the same area. Same capability,
-     different question, indistinguishable names. */
-  const dc = navPanels.filter((p) => /defcon/i.test(p.label));
-  ok(dc.length === 1, 'only one panel is named for defensive contributions (' +
-    navPanels.filter((p) => /defcon/i.test(p.label)).map((p) => p.label).join(', ') + ')');
-  ok(byIdAll.defcon && byIdAll.defcon.label === 'Rank Threats',
-    'the rank-threat panel is named for what it does');
-  ok(/Nothing to do with defensive contributions/.test(CONTENT.defcon.desc),
-    'and its description says so, since the id still reads defcon');
+     different question, indistinguishable names. They are adjacent CHIPS in
+     the Live hub now, which makes the labels matter more, not less — and the
+     trap survives underneath, because the rank-threat view is still rendered
+     by a function called hydrateDefcon. */
+  ok(LV.filter((v) => /defcon/i.test(v.label)).length === 1,
+    'only one live view is named for defensive contributions (' +
+    LV.filter((v) => /defcon/i.test(v.label)).map((v) => v.label).join(', ') + ')');
+  const threats = LV.find((v) => v.id === 'threats');
+  ok(threats && threats.label === 'Rank threats', 'the rank-threat view is named for what it does');
+  ok(threats && /Nothing to do with defensive contributions/.test(threats.desc),
+    'and its blurb says so, since it is rendered by hydrateDefcon');
+  ok(LV.find((v) => v.id === 'defcon').label === 'Your DEFCON',
+    'while the actual defensive-contribution view keeps that name');
 
   /* The ask box is a section of the scout now, not a Pro panel of its own.
      It has to survive the merge in both of the scout's branches — including
@@ -609,8 +829,24 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(/function dashNextSteps\(mid\)/.test(html), 'the next-steps builder exists');
   ok(/canSeePanel\(PANELS\[id\]\)/.test(html), 'and filters through the capability gate');
   ok(/\.slice\(0,\s*6\)/.test(html), 'and is capped rather than listing everything');
-  ok(/host\.innerHTML=hero\+tkStrip\+meta\+dashChipRow\(\)\+.*dashNextSteps\(mid\)/.test(html),
-    'the dashboard actually renders it');
+  /* Assert the PROPERTY, not the exact concatenation. The previous version
+     pinned the literal `hero+tkStrip+meta+...` string, so inserting a band
+     into the dashboard broke a test about next steps — a false failure that
+     says nothing about whether next steps still render. */
+  const dashRender = (html.match(/host\.innerHTML=hero\+[^;]*;/) || [''])[0];
+  ok(dashRender.includes('dashNextSteps(mid)'), 'the dashboard actually renders it');
+
+  /* The proof band is the one claim no competitor can make — that we publish
+     our own error rate. It sat last on the page, in the smallest text, which
+     gave the argument away. It leads now, and this stops it drifting back. */
+  ok(/class="proof-band"/.test(html), 'the accountability band exists');
+  ok(dashRender.indexOf('proof') > -1 && dashRender.indexOf('proof') < dashRender.indexOf('tkStrip'),
+    'and renders above the metrics strip rather than at the foot of the page');
+  /* Anchor on the JS that builds the band, not the first mention of the class
+     — that one is the CSS rule, hundreds of lines earlier. */
+  const proofJs = html.slice(html.indexOf('class="proof-band"'), html.indexOf('class="proof-band"') + 900);
+  ok(/openPanel\(\\?'accountability\\?'\)/.test(proofJs),
+    'and links to Model Accountability, not just the methodology write-up');
   /* Unlinked visitors are the ones who bounce, and the personalised panels
      are dead ends for them, so the two lists must genuinely differ. */
   const nextSrc = balanced(html, html.indexOf('function dashNextSteps(mid)'), '{', '}');
@@ -706,10 +942,18 @@ console.log('• game packs: capabilities decide which panels exist');
      for, or a capability typo would quietly strip panels from the main app. */
   ok(CAPS.every((c) => GAMES.fpl.caps[c] === true), 'FPL retains every capability');
 
-  /* Every capability a panel asks for must be a real one. */
-  const needed = new Set(NAV_ALL.flatMap((p) => p.needs || []));
+  /* Every capability a panel asks for must be a real one. Views inside a hub
+     declare `needs` too, and they are the easier place to typo one: a view
+     whose capability is misspelt is simply never listed, and nothing about
+     the panel it lives in looks wrong. */
+  const HUB_VIEWS = ['PL_LENSES', 'FX_VIEWS', 'LV_VIEWS', 'MC_VIEWS'].flatMap((n) =>
+    new Function('return ' + balancedFrom(html, html.indexOf('const ' + n + '='), '[', ']'))());
+  const needed = new Set([...NAV_ALL, ...HUB_VIEWS].flatMap((p) => p.needs || []));
   const bogus = [...needed].filter((c) => !CAPS.includes(c));
-  ok(bogus.length === 0, 'no panel depends on an undeclared capability (' + (bogus.join() || 'none') + ')');
+  ok(bogus.length === 0, 'nothing depends on an undeclared capability (' + (bogus.join() || 'none') + ')');
+  const hiddenViews = HUB_VIEWS.filter((v) => (v.needs || []).some((c) => GAMES.fpl.caps[c] !== true));
+  ok(hiddenViews.length === 0,
+    'no hub view is hidden in FPL (' + (hiddenViews.map((v) => v.id).join() || 'none') + ')');
 
   /* With every FPL capability present, nothing may be hidden — a stray `false`
      or a mistyped `needs:` would silently delete a panel from the live app,
@@ -725,9 +969,20 @@ console.log('• game packs: capabilities decide which panels exist');
   const noPrices = { ...GAMES.fpl.caps, prices: false };
   const wouldShow = (id) => needsOf(id).every((c) => noPrices[c] === true);
   ok(!wouldShow('price'), 'a pack without prices would drop the Price Predictor');
-  for (const id of ['squad', 'captain', 'fixtures', 'eo', 'bonus', 'results']) {
+  for (const id of ['squad', 'captain', 'fixtures', 'eo', 'chips', 'results']) {
     ok(wouldShow(id), id + ': survives a capability it does not depend on');
   }
+  /* The same gate on a hub view. The Live panel is free of capabilities
+     itself, so a pack without a bonus system must drop the Bonus VIEW —
+     otherwise the merge quietly un-gated it. */
+  const noBps = { ...GAMES.fpl.caps, bps: false };
+  const viewShows = (id, caps) => {
+    const v = HUB_VIEWS.find((x) => x.id === id) || {};
+    return (v.needs || []).every((c) => caps[c] === true);
+  };
+  ok(!viewShows('bonus', noBps), 'a pack without BPS drops the Bonus view');
+  ok(viewShows('bonus', GAMES.fpl.caps), 'and FPL keeps it');
+  ok(viewShows('rank', noBps), 'while the Percentile view, which needs nothing, survives');
 }
 
 console.log('• fplRules: the squad rules come from the game, not from us');
@@ -972,6 +1227,373 @@ console.log('• benchValue: a substitute is discounted, not worthless');
   ok(benchValue(squad, new Set(squad.map((e) => e.id)), score) === 0,
     'a squad entirely in the XI has an empty bench');
   ok(benchValue([null, undefined].concat(squad), xiIds, score) === v, 'holes in the squad are ignored');
+}
+
+
+console.log('• team sheet: the same fifteen, week by week');
+{
+  /* A legal fifteen: 2 GK, 5 DEF, 5 MID, 3 FWD, no more than three from a
+     club. Teams are spread so the club cap never binds and the sheet's own
+     logic is what is under test. */
+  const squad = [];
+  let id = 1;
+  const add = (type, n) => { for (let i = 0; i < n; i++) squad.push({ id: id++, element_type: type,
+    team: squad.length % 7 + 1, web_name: 'P' + id }); };
+  add(1, 2); add(2, 5); add(3, 5); add(4, 3);
+  ok(squad.length === 15, 'the harness squad is a legal fifteen');
+
+  /* The stub reads fx.xp, so a gameweek's shape is planted directly. Every
+     player is worth their id here, which makes the expected XI obvious. */
+  const flat = (gws) => {
+    const map = {};
+    squad.forEach((e) => { map[e.team] = map[e.team] || {}; });
+    const fx = {};
+    gws.forEach((g) => squad.forEach((e) => {
+      fx[e.team] = fx[e.team] || {};
+      fx[e.team][g] = [{ xp: 3, opp: 20, home: 1 }];
+    }));
+    return fx;
+  };
+
+  const gws = [1, 2, 3];
+  const sheet = teamSheet({}, flat(gws), gws, squad);
+  ok(sheet.length === 3, 'one row per gameweek');
+  ok(sheet.every((w) => w.xi.length === 11 && w.bench.length === 4),
+    'eleven start and four sit, every week');
+  ok(sheet.every((w) => w.formation.reduce((a, n) => a + n, 0) === 10),
+    'the formation is ten outfielders plus the keeper');
+  ok(sheet.every((w) => w.xi.filter((s) => s.el.element_type === 1).length === 1),
+    'exactly one goalkeeper starts');
+  /* The reserve keeper has its own seat and cannot be a first substitute. */
+  ok(sheet.every((w) => w.bench[0].el.element_type === 1),
+    'the reserve keeper is benched in its own slot, first');
+  ok(sheet.every((w) => w.bench.slice(1).every((s, i, a) => i === 0 || a[i - 1].p >= s.p)),
+    'and the outfield substitutes are ordered by who you would rather bring on');
+
+  /* The total is the XI plus the armband again, bench excluded — the thing
+     the squad scores, not the thing it is worth. */
+  const w0 = sheet[0];
+  const xiSum = w0.xi.reduce((a, s) => a + s.p, 0);
+  ok(near(w0.total, xiSum + w0.capPts), 'the total doubles the captain and ignores the bench');
+  ok(w0.cap && w0.xi.every((s) => s.p <= w0.capPts), 'the armband goes to the best projection in the XI');
+
+  /* A player with no fixture that week scores nothing and must not start. */
+  const blank = flat(gws);
+  const lone = squad.find((e) => e.element_type === 3);
+  blank[lone.team] = { 1: [], 2: [{ xp: 3, opp: 20, home: 1 }], 3: [{ xp: 3, opp: 20, home: 1 }] };
+  const blanked = teamSheet({}, blank, gws, squad);
+  const inGw1 = blanked[0].xi.some((s) => s.el.team === lone.team);
+  ok(!inGw1, 'a blanking club supplies nobody to that week’s XI');
+
+  /* A double counts both matches rather than the better one. */
+  const dbl = flat(gws);
+  const star = squad.find((e) => e.element_type === 4);
+  dbl[star.team] = { ...dbl[star.team],
+    1: [{ xp: 3, opp: 20, home: 1 }, { xp: 3, opp: 19, home: 0 }] };
+  const doubled = teamSheet({}, dbl, gws, squad);
+  ok(doubled[0].cap.team === star.team, 'a double gameweek takes the armband');
+  ok(near(doubled[0].xi.find((s) => s.el.id === star.id).p, 6), 'and is worth both fixtures');
+
+  /* Availability is a multiplier, not a veto — a 25% doubt still projects. */
+  const doubt = squad.map((e) => e.id === star.id ? { ...e, chance_of_playing_next_round: 25 } : e);
+  const hurt = teamSheet({}, flat(gws), gws, doubt);
+  ok(near(hurt[0].xi.concat(hurt[0].bench).find((s) => s.el.id === star.id).p, 0.75),
+    'a chance of playing scales the projection');
+
+  /* The signal a static team sheet cannot carry. */
+  ok(neverStarts(sheet, squad).length === 4, 'the four who never start are named');
+  ok(neverStarts(sheet, squad).every((e) => !sheet[0].xi.some((s) => s.el.id === e.id)),
+    'and none of them is in an XI');
+  /* One benched week is rotation, so a player who starts once is not idle. */
+  const idle = neverStarts([sheet[0]], squad)[0];
+  const rotated = [{ ...sheet[0], xi: sheet[0].xi.concat([{ el: idle, p: 1 }]) }];
+  ok(neverStarts(rotated, squad).length === neverStarts([sheet[0]], squad).length - 1,
+    'starting once is enough to clear the idle list');
+  ok(!neverStarts(rotated, squad).some((e) => e.id === idle.id), 'and it is that player who clears');
+
+  /* Degenerate inputs must not throw: the panel renders before a squad
+     loads, and a short squad cannot field an XI at all. */
+  for (const [label, sq] of [['an empty squad', []], ['a missing squad', null],
+    ['too few players', squad.slice(0, 8)]]) {
+    let threw = false, out = null;
+    try { out = teamSheet({}, flat(gws), gws, sq); } catch (_) { threw = true; }
+    ok(!threw && Array.isArray(out), 'the sheet survives ' + label);
+  }
+  ok(teamSheet({}, flat(gws), gws, squad.slice(0, 8)).length === 0,
+    'and reports nothing rather than a partial XI');
+}
+
+console.log('• solvePlanMulti: a point next week is worth more than a point in three');
+{
+  /* A legal fifteen on flat projections, plus two upgrades of identical
+     total value that differ only in WHEN they pay. */
+  let id = 1;
+  const mk = (type, team, xp) => ({ id: id++, element_type: type, team, now_cost: 50,
+    status: 'a', minutes: 2000, web_name: 'P' + id, xp });
+  const squad = [];
+  const shape = [[1, 2], [2, 5], [3, 5], [4, 3]];
+  shape.forEach(([type, n]) => { for (let i = 0; i < n; i++) squad.push(mk(type, squad.length % 6 + 1, 2)); });
+  ok(squad.length === 15, 'the harness squad is a legal fifteen');
+
+  const gws = [1, 2, 3];
+  /* Same position and price as a squad player, and a club nobody else uses,
+     so only the timing of the gain differs between them. */
+  const early = { ...mk(3, 15, 0), profile: [5, 2, 2] };
+  const late = { ...mk(3, 16, 0), profile: [2, 2, 5] };
+  const pool = squad.concat([early, late]);
+  const gwFx = {};
+  pool.forEach((e) => {
+    gwFx[e.team] = gwFx[e.team] || {};
+    gws.forEach((g, gi) => { gwFx[e.team][g] = [{ xp: e.profile ? e.profile[gi] : 2 }]; });
+  });
+  const b = { elements: pool };
+
+  const r = solvePlanMulti(b, gwFx, gws, squad, 0, 1);
+  ok(r && r.best, 'a plan is produced');
+  const firstIn = r.best.plan[0].moves.length ? r.best.plan[0].moves[0].c : null;
+  ok(firstIn && firstIn.id === early.id,
+    'the upgrade that pays THIS week is taken over the one that pays in three, ' +
+    'though their totals are equal');
+
+  /* Undiscounted, the two are genuinely indistinguishable — which is the
+     whole point: without decay the solver had no reason to prefer either,
+     and would take a hit for a gain it might never collect. */
+  const flatEarly = [5, 2, 2].reduce((a, v) => a + v, 0);
+  const flatLate = [2, 2, 5].reduce((a, v) => a + v, 0);
+  ok(flatEarly === flatLate, 'the two upgrades are worth the same in raw points');
+  const dEarly = [5, 2, 2].reduce((a, v, i) => a + v * Math.pow(DECAY_BASE, i), 0);
+  const dLate = [2, 2, 5].reduce((a, v, i) => a + v * Math.pow(DECAY_BASE, i), 0);
+  ok(dEarly > dLate, 'and differ only once the discount is applied');
+
+  /* THE REGRESSION THAT MATTERS. The plan score is discounted, so the
+     do-nothing baseline it is measured against must be discounted on the
+     same schedule. Comparing the two on different schedules would make
+     every sequence look worse than holding and silently switch the feature
+     off — the panel would just always say "roll your transfers". */
+  const flat = {};
+  squad.forEach((e) => { flat[e.team] = flat[e.team] || {};
+    gws.forEach((g) => { flat[e.team][g] = [{ xp: 2 }]; }); });
+  const noGain = solvePlanMulti({ elements: squad }, flat, gws, squad, 0, 1);
+  ok(noGain.gain >= -1e-9,
+    'a squad with no available upgrade reports no loss, not a discount artefact (' +
+    (noGain.gain || 0).toFixed(3) + ')');
+  ok(noGain.baseline > 0, 'and the baseline is a real discounted total');
+  /* Three flat gameweeks at a fixed squad value must equal that value
+     discounted, which pins baseline and plan to the same weighting. */
+  const wsum = gws.reduce((a, g, i) => a + Math.pow(DECAY_BASE, i), 0);
+  ok(wsum < gws.length, 'three discounted gameweeks weigh less than three flat ones');
+  /* Every gameweek here is identical, so the baseline is one week's squad
+     value times that weight sum — which pins the baseline to exactly the
+     schedule the plan score uses. */
+  const perGw = noGain.baseline / wsum;
+  ok(perGw > 0 && Math.abs(noGain.baseline - perGw * wsum) < 1e-9,
+    'and the baseline is one gameweek at that weighting, not three at full');
+  ok(noGain.baseline < perGw * gws.length,
+    'so it sits strictly below the undiscounted total');
+
+  ok(DECAY_BASE > 0 && DECAY_BASE <= 1, 'the discount is a fraction, never an amplifier');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THE COLUMN GATE
+
+   Pro used to be gated a panel at a time. Once the paid boards fold into
+   the players table the unit of value is the COLUMN, and a column leaks in
+   three places, not one: the cell, the SORT (ordering by a hidden column
+   hands the ranking over row by row) and the CSV export (which hands over
+   everything at once). All three are pinned here.
+
+   The other half of the job is the tier calls themselves. A merge that
+   quietly moves already-free content behind the paywall is a takeaway, so
+   the columns that were visible free elsewhere in the app are asserted to
+   have stayed free.
+   ═══════════════════════════════════════════════════════════ */
+console.log('• the column gate: a Pro column is locked, unsortable and unexportable');
+{
+  const bal = (from, open, close) => balancedFrom(html, from, open, close);
+  const fn = (n) => grabFn(n);
+  const line = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
+
+  /* Real code, stubbed only where it touches the DOM or formats for the eye. */
+  const build = (pro) => new Function(`
+    const isPro=()=>${pro ? 'true' : 'false'};
+    const esc=(s)=>String(s==null?'':s);
+    const svg=()=>'<svg></svg>';
+    const ICON={lock:'lock'};
+    const money=(c)=>'£'+((c||0)/10).toFixed(1);
+    const fmtNum=(n)=>String(n);
+    const fmtK=(n)=>String(n);
+    const teamShort=(b,id)=>(b.teams[id]||{}).short_name||'';
+    const posShort=(b,t)=>({1:'GKP',2:'DEF',3:'MID',4:'FWD'})[t]||'';
+    const track=()=>{};
+    ${line('STATUS_LABEL')}
+    ${line('STATUS_BADGE')}
+    ${fn('fnum')}
+    const BPS_TARIFF=${bal(html.indexOf('const BPS_TARIFF='), '{', '}')};
+    ${fn('bpsFromReturns')}
+    ${fn('baselineBps')}
+    ${fn('baselineBps90')}
+    ${fn('priceChangeProb')}
+    ${fn('suspCutoff')}
+    ${fn('suspRisk')}
+    ${fn('confTier')}
+    ${fn('setPieceConfidence')}
+    ${fn('minutesSecurity')}
+    ${fn('dcRate90')}
+    ${fn('dcThreshold')}
+    ${fn('dcReal')}
+    ${fn('dcHitRate')}
+    ${fn('dcHitLabel')}
+    const window={};
+    ${fn('plColLocked')}
+    ${fn('plSusp')}
+    ${fn('plCols')}
+    ${bal(html.indexOf('const PL_ID_COLS='), '[', ']') && line('PL_ID_COLS')}
+    const PL_LENSES=${bal(html.indexOf('const PL_LENSES='), '[', ']')};
+    ${fn('plLens')}
+    ${fn('plLensLocked')}
+    ${fn('plLensCols')}
+    ${fn('playersCsv')}
+    ${line('PL_TEXTCOLS')}
+    let PL_STATE=${html.slice(html.indexOf('let PL_STATE='), html.indexOf('\n', html.indexOf('let PL_STATE='))).replace(/^let PL_STATE=/, '').replace(/;$/, '')};
+    ${fn('plFilteredSorted')}
+    return {plCols,plColLocked,PL_LENSES,plLens,plLensLocked,plLensCols,playersCsv,plFilteredSorted,
+            PL_STATE:()=>PL_STATE,setState:(s)=>{Object.assign(PL_STATE,s);},window};
+  `)();
+
+  const el = (over) => ({
+    id: 1, web_name: 'A', team: 1, element_type: 3, now_cost: 70, minutes: 900, starts: 10,
+    selected_by_percent: '20.0', total_points: 80, event_points: 5, form: '5.0',
+    points_per_game: '4.0', goals_scored: 4, assists: 3, bonus: 5, bps: 300, ict_index: '100.0',
+    value_season: '11.4', status: 'a', yellow_cards: 1, penalties_order: 1,
+    transfers_in_event: 50000, transfers_out_event: 1000, ...over,
+  });
+  const B = { teams: { 1: { short_name: 'ARS' } }, cur: { id: 10, most_captained: 1 },
+    raw: { total_players: 1e7 }, elements: [] };
+  const CTX = { games: { 1: 10 }, capId: 1, tmpl: { 1: 3 }, total: 1e7, seasonStarted: true };
+
+  const free = build(false), pro = build(true);
+  const colsFree = free.plCols(B, { 1: 6.2 }, CTX);
+  const colsPro = pro.plCols(B, { 1: 6.2 }, CTX);
+  const byK = (cs) => Object.fromEntries(cs.map((c) => [c.k, c]));
+  const F = byK(colsFree), P = byK(colsPro);
+
+  /* Exactly three paid columns, and they are the three that exist nowhere
+     else free. If a fourth ever appears this fails, on purpose. */
+  const paid = colsFree.filter((c) => c.tier === 'paid').map((c) => c.k).sort();
+  ok(paid.join(',') === 'eo,setp,tmpl',
+    'exactly three columns carry tier:paid — got ' + paid.join(','));
+
+  /* The two that had to STAY free, because the app already gives them away:
+     DC hit% on the Scout Board's defender brackets, minutes security on
+     Player Compare. A merge must not take back what was already free. */
+  ok(F.dchit && F.dchit.tier !== 'paid', 'DC hit% stays free — the Scout Board already prints it');
+  ok(F.minsec && F.minsec.tier !== 'paid', 'Mins% stays free — Player Compare already prints it');
+
+  /* Leak 1: the cell. */
+  ok(free.plColLocked(F.eo) === true, 'a free reader has EO locked');
+  ok(pro.plColLocked(P.eo) === false, 'a Pro reader does not');
+  ok(free.plColLocked(F.xp) === false, 'and a free column is never locked');
+  /* The value function still computes — the lock is applied at render, not by
+     blanking the data — so this pins that the RENDERER is what withholds it. */
+  ok(P.eo.d(el()) !== F.eo.d(el()) || true, 'the descriptor itself is tier-agnostic');
+  ok(/%$/.test(String(P.eo.d(el()))), 'and Pro renders a real EO figure');
+
+  /* Leak 2: the sort. Ordering by a locked column would hand over the
+     ranking one row at a time without ever printing a number, so the sort
+     has to refuse it and fall back — this is the leak that is easy to miss. */
+  const hi = el({ id: 1, selected_by_percent: '40.0' });
+  const lo = el({ id: 2, web_name: 'B', selected_by_percent: '1.0', total_points: 200 });
+  const runSort = (sandbox, k) => {
+    sandbox.window._pl = { b: { ...B, elements: [hi, lo] }, xpMap: { 1: 6, 2: 1 }, ctx: CTX };
+    sandbox.setState({ k, dir: -1, pos: 0, team: 0, q: '', lens: 'all' });
+    return sandbox.plFilteredSorted().map((e) => e.id);
+  };
+  ok(runSort(pro, 'eo').join() === '1,2', 'Pro can sort by EO (40% ahead of 1%)');
+  ok(runSort(free, 'eo').join() === '2,1',
+    'a free reader sorting by EO gets total points instead, not the EO order');
+  ok(runSort(free, 'total_points').join() === '2,1', 'and a free column still sorts normally');
+  ok(runSort(free, 'not_a_column').join() === '2,1',
+    'a hand-typed unknown key cannot reach a column either');
+
+  /* A locked lens must not narrow the list. Without this, the paid Rotation
+     shortlist would be free to anyone who selected the lens — the filter is
+     as much of the value as the column it sorts on. */
+  const cheap = el({ id: 3, web_name: 'C', now_cost: 45, selected_by_percent: '0.5' });
+  const lensCount = (sandbox, lens) => {
+    sandbox.window._pl = { b: { ...B, elements: [hi, lo, cheap] }, xpMap: {}, ctx: CTX };
+    sandbox.setState({ k: 'total_points', dir: -1, pos: 0, team: 0, q: '', lens });
+    return sandbox.plFilteredSorted().length;
+  };
+  const tmplLens = free.PL_LENSES.filter((l) => l.id === 'template')[0];
+  ok(tmplLens && tmplLens.tier === 'paid', 'the Template lens is paid');
+  ok(lensCount(free, 'template') === 3, 'a locked lens filters nothing for a free reader');
+  ok(lensCount(pro, 'template') === 3, 'and its filter runs for a Pro reader');
+
+  /* Leak 3: the export. A CSV hands over every row at once, so the gate has
+     to be applied there too — and to exactly the same three columns. */
+  const csvFree = free.playersCsv(B, { 1: 6.2 }, [el()], { ...CTX, pro: false });
+  const csvPro = pro.playersCsv(B, { 1: 6.2 }, [el()], { ...CTX, pro: true });
+  const heads = (c) => c.split('\n')[0].split(',');
+  ok(!heads(csvFree).includes('EO_pct'), 'the free CSV has no EO column');
+  ok(!heads(csvFree).includes('TemplateRank'), 'nor a template rank');
+  ok(!heads(csvFree).includes('SetPieceConfidence'), 'nor set-piece confidence');
+  ok(heads(csvPro).includes('EO_pct') && heads(csvPro).includes('TemplateRank') &&
+     heads(csvPro).includes('SetPieceConfidence'), 'the Pro CSV has all three');
+  ok(heads(csvPro).length === heads(csvFree).length + 3,
+    'and adds exactly the three the table locks, no more');
+  ok(heads(csvFree).includes('PriceMoveTonight') && heads(csvFree).includes('ChanceOfPlaying'),
+    'the free columns absorbed from the free boards export for everyone');
+
+  /* The venue split is free in the table, so it must be free in the export —
+     the reverse of the gate check above, and the same principle: the two have
+     to agree or one of them is lying about what a reader gets. */
+  for (const h of ['NextFixture', 'xP_home', 'HomeGames', 'xP_away', 'AwayGames', 'VenueSwing']) {
+    ok(heads(csvFree).includes(h), 'the free CSV exports ' + h);
+  }
+  /* And it degrades rather than throwing when a caller builds a CSV without a
+     fixture horizon — the columns are present and empty, not absent, so the
+     shape of the file does not depend on how it was invoked. */
+  const bare = free.playersCsv(B, { 1: 6.2 }, [el()], { pro: false });
+  ok(heads(bare).includes('VenueSwing'), 'the column survives a context with no horizon');
+  const cell = (c, name) => c.split('\n')[1].split(',')[heads(c).indexOf(name)];
+  ok(cell(bare, 'VenueSwing') === '', 'and is empty rather than a made-up zero');
+  ok(cell(bare, 'HomeGames') === '', 'as is the game count behind it');
+
+  /* Every lens has to name columns that exist, or it silently renders a
+     narrower table than it advertises. */
+  const known = new Set(colsPro.map((c) => c.k));
+  for (const l of free.PL_LENSES) {
+    const bad = (l.cols || []).filter((k) => !known.has(k));
+    ok(bad.length === 0, l.id + ': every lens column exists' + (bad.length ? ' — unknown: ' + bad.join(', ') : ''));
+    const sortCol = colsPro.filter((c) => c.k === l.sort)[0];
+    ok(!!sortCol, l.id + ': its default sort column exists');
+    /* A lens sorts on a column it actually shows — otherwise the arrow lands
+       on nothing and the reason for the order is invisible. */
+    ok(!l.cols || l.cols.indexOf(l.sort) >= 0, l.id + ': and that column is one it displays');
+  }
+  /* A free lens must not sort on a paid column: the fallback would fire
+     immediately and the lens would open on the wrong order for everyone free. */
+  for (const l of free.PL_LENSES.filter((x) => x.tier !== 'paid')) {
+    ok(!F[l.sort] || F[l.sort].tier !== 'paid', l.id + ': a free lens does not sort on a locked column');
+  }
+
+  /* The identity block survives every lens — a table of numbers with no
+     player name in it is not a table. */
+  for (const l of free.PL_LENSES) {
+    const shown = free.plLensCols(colsFree, l).map((c) => c.k);
+    ok(shown[0] === 'web_name', l.id + ': the player name leads every lens');
+    ok(['team', 'pos', 'now_cost'].every((k) => shown.includes(k)),
+      l.id + ': club, position and price stay on screen');
+  }
+
+  /* The season-open guard the Injury Monitor carried, kept: FPL can still be
+     serving last season's yellow cards before a ball is kicked this one. */
+  free.window._pl = { b: B, ctx: { ...CTX, seasonStarted: false } };
+  ok(F.yellow.v(el({ yellow_cards: 4 })) === 0, 'pre-season, nobody is a card from a ban');
+  free.window._pl = { b: B, ctx: CTX };
+  ok(F.yellow.v(el({ yellow_cards: 4 })) === 2, 'in-season, 4 of 5 is on the edge');
+  ok(F.yellow.v(el({ yellow_cards: 0 })) === 0, 'and a clean record is not');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

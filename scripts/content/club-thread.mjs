@@ -18,7 +18,7 @@ import { writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { loadEngine, buildIndex, fixtureContext, fetchFpl } from './model.mjs';
-import { buildThread } from './club.mjs';
+import { buildThread, TALISMAN_MIN_GOALS } from './club.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, 'threads');
@@ -38,6 +38,11 @@ const E = loadEngine();
 const idx = buildIndex(boot, fixtures);
 E.setRules(E.fplRules(boot));
 const { next, runs } = fixtureContext(E, idx);
+/* The bottom half of the league by fitted attack, computed once. Two reads
+   hang off it: whether a club's kind fixtures actually become clean sheets,
+   and how many of the coming ones are kind in the same sense. */
+const RATINGS = E.plsimRatings(idx, idx.fixtures);
+const WEAK_ATT = E.poorAttacks(RATINGS);
 const teamName = (id) => (idx.teams[id] && (idx.teams[id].short_name || idx.teams[id].name)) || '—';
 
 /* Matches played per club, so minutes security is measured against how much
@@ -85,16 +90,84 @@ const congestion = await congestionByTeam();
    once over every player rather than per club. Returns {} when the season is
    too young to have any, and oopFlag then returns null for everyone — the
    angle simply goes unmentioned rather than being guessed at. */
+/* A registered FPL squad is comfortably inside this; the cap only exists so
+   a malformed feed cannot make a thread grade hundreds of players. It is
+   applied AFTER the squad is ordered by relevance, never to raw feed order. */
+const SQUAD_MAX = 40;
+
+/* FPL publishes the date a player joined his current club — measured at
+   541 of 564 elements on the live feed, with real dates spanning 2016 to
+   this window, so it is a field to rely on rather than hope for. Where it
+   is absent nothing downstream may claim to know, and the thread says that
+   instead of quietly guessing. */
+const JOIN_DATA = idx.elements.some((e) => e.team_join_date);
+/* The question is not "did he sign this summer", it is "did he compile the
+   stats on file at THIS club" — and the stats on file are last season's. So
+   the anchor is 1 January of the season year, which catches both the summer
+   intake and the January one before it. The first cut used 1 June and let
+   two City players through whose last season was half spent elsewhere.
+
+   The previous summer's signings are correctly NOT flagged: a player who
+   arrived in June 2025 played last season here, so his rates are this
+   club's and a caveat would be false modesty. */
+const firstEvent = (idx.events || []).find((e) => e.deadline_time);
+const WINDOW_OPEN = firstEvent
+  ? Date.UTC(new Date(firstEvent.deadline_time).getUTCFullYear(), 0, 1)   /* 1 January */
+  : null;
+function joinedMidSeasonOrLater(e) {
+  if (!JOIN_DATA || !e.team_join_date || WINDOW_OPEN == null) return false;
+  const t = Date.parse(e.team_join_date);
+  return Number.isFinite(t) && t >= WINDOW_OPEN;
+}
+
 const oopMarks = E.oopBenchmarks(idx.elements);
+
+/* Does the league have ANY defensive-contribution data? Measured rather than
+   assumed: FPL ships the fields for a new season populated with zero, and a
+   thread that reads a defender's floor from clean sheets alone should say so
+   instead of looking confident about the thing it cannot see. */
+const DEFCON_DATA = idx.elements.some((e) => E.dcRate90(e) > 0);
 
 /* How often a player clears the defensive-contribution threshold in a start.
    The same dcHitProb the expected-points model uses, so the thread and the
    app cannot disagree about whether a centre-back has a floor. */
 function defconRate(e) {
-  const per90 = parseFloat(e.defensive_contribution_per_90 || '0');
+  /* Via the engine's dcRate90, so the thread and the app derive the rate the
+     same way — including its fallback to the season total, which matters
+     because FPL ships the per-90 field populated with zero rather than
+     absent. */
+  const per90 = E.dcRate90(e);
   if (!(per90 > 0)) return null;
-  const thr = e.element_type === 2 ? 10 : 12;      /* DEF 10, MID/FWD 12 */
-  return E.dcHitProb(per90, thr);
+  return E.dcHitProb(per90, E.dcThreshold(e));
+}
+
+/* Set-piece duty, phrased for a thread. angles() has always looked for this
+   and nothing ever supplied it, so the tag was unreachable code for as long
+   as it existed — twenty clubs generated, never once printed. The duty is
+   sitting on the bootstrap: penalties first, because it is the most reliable
+   goal in football, then free-kicks, then corners. */
+function setPieceNote(e) {
+  const sp = E.setPieceConfidence(e);
+  if (!sp || !sp.roles.length) return null;
+  return sp.roles.join(' and ') + ' — ' + sp.value + '% confidence on the duty';
+}
+
+/* Who is competing for each shirt, from the CURRENT squad. A player sold in
+   the window is simply absent from the list, so this is the one part of the
+   read that is up to date even though the minutes behind it are last
+   season's — which is exactly the "two centre-backs left, the rest are
+   nailed" call a preview is built on. */
+function shirtMap(teamId) {
+  const depth = E.clubDepth(idx.elements, teamId, teamGames[teamId] || 0);
+  const out = {};
+  Object.keys(depth).forEach((pos) => {
+    const d = depth[pos];
+    (d.rows || []).forEach((r, i) => {
+      out[r.e.id] = { leader: i === 0, settled: !!d.settled, contested: !!r.tied,
+        rivals: d.rows.length, waiting: (d.unranked || []).length };
+    });
+  });
+  return out;
 }
 
 function clubData(teamId) {
@@ -105,31 +178,79 @@ function clubData(teamId) {
   const g = goals[teamId] || {};
   const nf = next[teamId];
 
+  const shirts = shirtMap(teamId);
+  /* Goals scored by the players STILL at the club. A departed scorer is
+     absent from the list, so this is the share of the attack that remains,
+     which is the useful reading of it — but it is also why a floor matters:
+     a squad whose scorers all left would hand a talisman badge to whoever is
+     left holding two goals. */
+  const squadGoals = idx.elements
+    .filter((e) => e.team === teamId && e.status !== 'u')
+    .reduce((n, e) => n + (e.goals_scored || 0), 0);
+  /* 'u' means gone from the game — everything else is a story rather than a
+     reason to hide a player. A striker with a pre-season knock is what a
+     preview leads on; dropping him silently is how a thread about a club
+     never mentions its biggest question. */
   const players = idx.elements
-    .filter((e) => e.team === teamId && (e.status === 'a' || !e.status))
+    .filter((e) => e.team === teamId && e.status !== 'u')
     .map((e) => ({
       web_name: e.web_name, element_type: e.element_type, now_cost: e.now_cost,
       minutes: e.minutes || 0, starts: e.starts || 0, goals: e.goals_scored || 0,
       assists: e.assists || 0, teamGames: teamGames[teamId] || 0,
+      /* Clean sheets are a return for a defender the way a goal is for a
+         forward, so the grade needs them as well as the attacking numbers. */
+      cleanSheets: e.clean_sheets || 0,
       xp: nf ? E.nativeXP(e, nf) : null,
+      status: e.status || 'a',
+      chanceOfPlaying: e.chance_of_playing_next_round ?? null,
+      shirt: shirts[e.id] || null,
+      teamShare: squadGoals >= TALISMAN_MIN_GOALS
+        ? ((e.goals_scored || 0) + (e.assists || 0)) / squadGoals : null,
       oop: E.oopFlag(e, oopMarks),
+      newClub: joinedMidSeasonOrLater(e),
       defconRate: defconRate(e),
+      setPieces: setPieceNote(e),
       avgDifficulty, congestion: congestion[teamId] || 0
     }))
     /* Anyone with no football behind them cannot be graded honestly. */
     .filter((p) => p.minutes > 0 || p.now_cost >= 45)
-    .slice(0, 24);
+    /* Order before capping. The cap is a safety valve against a freak squad
+       size, but `idx.elements` arrives in the bootstrap's own id order, so
+       slicing it raw decided who got graded by an accident of when a player
+       was added to the game's database. On Man City it silently dropped the
+       most expensive striker in the game: a 24-man cap on a 26-man squad
+       produced a club preview with no forward in it at all.
+
+       Minutes first because the thread grades on minutes, price second
+       because pre-season there are no minutes yet and price is the game's
+       own statement of who matters. Anything the cap now removes is a
+       fringe player by both measures, which is the only kind of player a
+       club preview can afford to lose. */
+    .sort((a, b) => b.minutes - a.minutes || b.now_cost - a.now_cost)
+    .slice(0, SQUAD_MAX);
 
   /* Pre-season there are no finished fixtures, so a goals tally would be a
      truthful-looking "0 scored, 0 conceded" — which is worse than saying
      nothing, and pre-season is exactly when these threads run. */
   const played = teamGames[teamId] || 0;
+  /* Two records a fixture ticker cannot give: whether this is a different
+     side at home, and whether it converts a kind fixture. Both return null
+     below their sample floor, which pre-season is always — and that is the
+     right answer, not a zero. */
+  const split = E.clubSplit(idx.fixtures, teamId);
+  const kind = E.clubVsPoorAttacks(idx.fixtures, teamId, WEAK_ATT);
+  /* How many of the coming six are against a bottom-half attack — the number
+     that turns the record above into a forecast rather than a fact. */
+  const kindAhead = WEAK_ATT ? run.filter((r) => WEAK_ATT.has(r.opp)).length : null;
   return {
     name: t.short_name || t.name, fullName: t.name,
+    venue: E.clubVenueVerdict(split), split, kind, kindAhead,
     scored: played ? (g.scored ?? null) : null,
     conceded: played ? (g.conceded ?? null) : null,
     played,
     avgDifficulty, congestion: congestion[teamId] || 0,
+    defconData: DEFCON_DATA,
+    joinData: JOIN_DATA,
     europe: (congestion[teamId] || 0) > 0.15 ? 'Midweek European' : null,
     fixtures: run.map((r) => ({ gw: r.event, opp: teamName(r.opp), home: r.home,
       difficulty: +r.difficulty.toFixed(1) })),
@@ -157,6 +278,28 @@ if (!targets.length) {
   process.exit(1);
 }
 
+/* What the join-date field actually contains. Added because the first run
+   with signing detection marked NOBODY at a club the community was openly
+   discussing as rebuilt — and a detector that silently matches nothing looks
+   exactly like a club with no signings. Prints the raw values so the answer
+   comes from the feed rather than from a guess about its shape. */
+if (process.argv.includes('--signings')) {
+  const withDate = idx.elements.filter((e) => e.team_join_date);
+  console.log(`\njoin dates: ${withDate.length} of ${idx.elements.length} elements carry one`);
+  console.log(`window opens: ${WINDOW_OPEN == null ? '—' : new Date(WINDOW_OPEN).toISOString().slice(0, 10)}` +
+    `  (from first deadline ${firstEvent ? firstEvent.deadline_time : '—'})`);
+  const sample = withDate.slice(0, 5).map((e) => `${e.web_name}=${e.team_join_date}`);
+  console.log('sample raw values: ' + (sample.join('  ') || '(none)'));
+  for (const t of targets) {
+    const squad = idx.elements.filter((e) => e.team === t.id && e.status !== 'u');
+    const rows = squad.map((e) => `  ${(e.web_name || '').padEnd(16)} ` +
+      `${String(e.team_join_date || '—').padEnd(24)} ${joinedMidSeasonOrLater(e) ? 'NEW' : ''}`);
+    console.log(`\n${t.short_name} — ${squad.length} players, ` +
+      `${squad.filter(joinedMidSeasonOrLater).length} carrying another club's rates`);
+    console.log(rows.join('\n'));
+  }
+}
+
 let wrote = 0;
 for (const t of targets) {
   const thread = buildThread(clubData(t.id));
@@ -170,3 +313,58 @@ for (const t of targets) {
   }
 }
 if (ALL) console.log(`✓ ${wrote} club threads → ${OUT}`);
+
+/* Why the defensive-floor angle never fires, answered with numbers instead of
+   arithmetic done in my head. It has printed nothing across every club we have
+   generated, including the two players whose entire case is DEFCON volume, and
+   the threshold in club.mjs (0.45) was picked before anyone had seen the real
+   distribution. Run with --defcon to see what the league actually looks like. */
+if (process.argv.includes('--defcon')) {
+  const q = (arr, p) => {
+    if (!arr.length) return null;
+    const s = arr.slice().sort((a, b) => a - b);
+    const i = (s.length - 1) * p, lo = Math.floor(i), hi = Math.ceil(i);
+    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo);
+  };
+  const named = { 2: 'DEF', 3: 'MID', 4: 'FWD' };
+  console.log('\n── defensive contribution, players with 450+ minutes ──');
+  for (const t of [2, 3, 4]) {
+    const pool = idx.elements.filter((e) => e.element_type === t && (e.minutes || 0) >= 450);
+    const per90 = pool.map((e) => parseFloat(e.defensive_contribution_per_90 || '0'));
+    const present = per90.filter((v) => v > 0);
+    const rates = pool.map(defconRate).filter((v) => v != null);
+    const thr = t === 2 ? 10 : 12;
+    /* "Empty" and "zero" are different diagnoses with different fixes, and
+       dcRate90's fallback only fires on the first — parseFloat('0') is 0, not
+       NaN, so a populated zero silently defeats it. */
+    const absent = pool.filter((e) => e.defensive_contribution_per_90 == null).length;
+    const literalZero = pool.filter((e) => e.defensive_contribution_per_90 != null &&
+      parseFloat(e.defensive_contribution_per_90) === 0).length;
+    const totals = pool.map((e) => parseInt(e.defensive_contribution, 10) || 0).filter((v) => v > 0);
+    console.log(`${named[t]}  n=${pool.length}  with a per-90 figure: ${present.length}`);
+    console.log(`   per90 field: absent ${absent}, present-but-zero ${literalZero}`);
+    console.log(`   season TOTAL defensive_contribution > 0: ${totals.length}` +
+      (totals.length ? `  median ${q(totals, 0.5)}  max ${q(totals, 1)}` : ''));
+    if (totals.length) {
+      const derived = pool.map((e) => ((parseInt(e.defensive_contribution, 10) || 0) * 90) / (e.minutes || 1))
+        .filter((v) => v > 0);
+      console.log(`   derived per90 (total*90/mins)  median ${q(derived, 0.5).toFixed(2)}` +
+        `  p75 ${q(derived, 0.75).toFixed(2)}  p90 ${q(derived, 0.9).toFixed(2)}  max ${q(derived, 1).toFixed(2)}`);
+      const dr = derived.map((v) => E.dcHitProb(v, thr));
+      console.log(`   derived dcHitProb  median ${q(dr, 0.5).toFixed(3)}  p90 ${q(dr, 0.9).toFixed(3)}` +
+        `  max ${q(dr, 1).toFixed(3)}   clears 0.45: ${dr.filter((r) => r >= 0.45).length}`);
+    }
+    if (!present.length) { console.log('   no usable per-90 field'); continue; }
+    console.log(`   per90  min ${q(present, 0).toFixed(2)}  median ${q(present, 0.5).toFixed(2)}` +
+      `  p75 ${q(present, 0.75).toFixed(2)}  p90 ${q(present, 0.9).toFixed(2)}  max ${q(present, 1).toFixed(2)}` +
+      `   (threshold ${thr})`);
+    console.log(`   dcHitProb  median ${q(rates, 0.5).toFixed(3)}  p75 ${q(rates, 0.75).toFixed(3)}` +
+      `  p90 ${q(rates, 0.9).toFixed(3)}  max ${q(rates, 1).toFixed(3)}`);
+    for (const bar of [0.30, 0.40, 0.45, 0.55]) {
+      console.log(`   clears ${bar.toFixed(2)}: ${rates.filter((r) => r >= bar).length} of ${rates.length}`);
+    }
+    const top = pool.map((e) => ({ n: e.web_name, r: defconRate(e) })).filter((x) => x.r != null)
+      .sort((a, b) => b.r - a.r).slice(0, 5);
+    console.log('   highest: ' + top.map((x) => `${x.n} ${x.r.toFixed(2)}`).join(', '));
+  }
+}
