@@ -168,6 +168,35 @@ The Anthropic key stays server-side — set `ANTHROPIC_API_KEY` on the Netlify s
 
 **Pro paywall:** free users see a value preview and an upgrade prompt on each Pro panel; Pro users get the live tools (lock badges disappear). The tier is real and gated end to end. Card/in-app payment is wired in Phase M4 — for now an honest in-app "Preview Pro" unlock lets the Pro experience be used and tested on the device.
 
+## Ten seasons of history
+
+Alongside the live API, the app reads a **reduced ten-season archive**
+(2016-17 to 2025-26) built offline from the open
+[vaastav dataset](https://github.com/vaastav/Fantasy-Premier-League) — ~250k
+gameweek rows shrunk to ~1,600 careers (540kB, 173kB gzipped) and served as a
+static file at `/api/history`. The browser never sees a gameweek row.
+
+It answers the one question live data cannot, because before gameweek one there
+is no live data: **who is worth picking?** Measured on the pre-season board, it
+takes the Draft from *0 of 120 players ranked* to *120 of 120*.
+
+- **Pre-season Draft** — minutes- and recency-weighted career priors, with a
+  visible confidence badge and an explicit *"No PL record"* fallback for
+  promoted-club and overseas players.
+- **Model Accountability** — every season graded separately. The model beat the
+  form baseline in all ten; the four seasons with expected-goals data are
+  labelled *as shipped* and the six before them *proxy*, and the two are never
+  pooled.
+- **Captaincy / Transfers / Rank Threats** — career haul and blank rates next to
+  the simulated ones, and a regression flag when a player is scoring above or
+  below his underlying chances.
+- **Ten Seasons panel** — all-time records, career comparison, and a daily
+  guess-the-player puzzle.
+
+Rebuild with `npm run history`; `.github/workflows/history.yml` does it weekly
+and commits only when the reduced output changes. Full notes, including the era
+caveats and known limitations, in **`docs/HISTORY.md`**.
+
 ## Project layout
 
 ```

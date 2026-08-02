@@ -188,6 +188,32 @@
   status = 200
   force = true
 
+# Ten seasons of reduced FPL history (data/fpl-history.json, built offline by
+# scripts/history/build-history.mjs from the open vaastav dataset). A static
+# file rather than a function — it changes once a season, not once a request.
+# Served under /api/ so the app has exactly one base URL to configure, which
+# is what makes the packaged iOS build work without a second setting.
+[[redirects]]
+  from = "/api/history"
+  to = "/data/fpl-history.json"
+  status = 200
+  force = true
+
+# The ten-season walk-forward backtest result, published so the Model
+# Accountability panel can show every season rather than a chosen one.
+[[redirects]]
+  from = "/api/backtest-history"
+  to = "/data/backtest-history.json"
+  status = 200
+  force = true
+
+# History is immutable between rebuilds, so cache it hard. stale-while-
+# revalidate means a new season's data rolls out without anyone waiting on it.
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
 # Scheduled push sender (hourly).
 [functions."push-cron"]
   schedule = "@hourly"

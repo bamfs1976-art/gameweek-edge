@@ -39,7 +39,7 @@ const AREA = {
   players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
   planner: ['fixtures', 'seasonsim', 'whatif', 'watchlist', 'alerts'],
   rivals: ['leagues', 'rivals', 'eo', 'template'],
-  'match centre': ['results', 'titlerace', 'dossier', 'clubform'],
+  'match centre': ['results', 'titlerace', 'dossier', 'clubform', 'archive'],
   studio: ['social', 'analytics']
 };
 const AREA_OF = {};

@@ -68,6 +68,28 @@ game_settings = {"squad_squadsize": 15, "squad_squadplay": 11, "squad_team_limit
 SQUAD = [(1, "Gkp", "4.5"), (2, "Def", "4.5"), (2, "Dfn", "5.0"),
          (3, "Mid", "6.0"), (3, "Wng", "7.0"), (4, "Fwd", "6.5")]
 
+# Real FPL player `code`s, borrowed from the history artefact when it has been
+# built. Synthetic codes would match no career at all, so every mock player
+# would take the "no PL record" fallback and the prior path would go untested.
+# Cycling real codes in gives the board a realistic spread of career depth.
+def _hist_codes():
+    hp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                      "data", "fpl-history.json")
+    if not os.path.exists(hp):
+        return []
+    try:
+        with open(hp, "r", encoding="utf-8") as fh:
+            H = json.load(fh)
+        ci = H["cols"].index("pts")
+        ranked = sorted(H["players"],
+                        key=lambda p: -sum(s[ci] for s in p["s"].values()))
+        return [p["c"] for p in ranked]
+    except Exception:
+        return []
+
+
+HIST_CODES = _hist_codes()
+
 elements = []
 eid = 0
 for t in teams:
@@ -75,6 +97,11 @@ for t in teams:
         eid += 1
         elements.append({
             "id": eid, "web_name": f"{t['short_name']}{nm}", "team": t["id"],
+            # `code` is FPL's PERMANENT player id — stable across seasons,
+            # unlike `id`. It is how the app joins a player to their career in
+            # data/fpl-history.json, so the mock has to carry one or the
+            # pre-season priors silently fall back for every player.
+            "code": HIST_CODES[eid % len(HIST_CODES)] if HIST_CODES else 200000 + eid,
             "element_type": et, "status": "a", "ep_next": ep, "ep_this": ep,
             "form": str(round(2 + (eid % 7) * 0.5, 1)), "points_per_game": "4.2",
             "selected_by_percent": str(round(2 + (eid % 40) * 0.7, 1)),
@@ -320,6 +347,19 @@ def route(path):
 # synthetic: club Elo spread evenly across the league, and a midweek European
 # tie three days before the next fixture for the first four clubs.
 def own_api(path):
+    # The ten-season history artefact. Netlify serves this via a redirect to
+    # the static file; here we read the real file off disk, so the pre-season
+    # priors exercise the same code path the deployed app does. If it has not
+    # been built, return None and let the app degrade exactly as it would.
+    if path in ("/api/history", "/api/backtest-history"):
+        name = ("fpl-history.json" if path == "/api/history"
+                else "backtest-history.json")
+        hp = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "data", name)
+        if not os.path.exists(hp):
+            return None
+        with open(hp, "r", encoding="utf-8") as fh:
+            return json.load(fh)
     if path == "/api/team-elo":
         return {"season": "mock", "elo": {str(t["id"]): 1650 + 22 * i
                                           for i, t in enumerate(teams)}}

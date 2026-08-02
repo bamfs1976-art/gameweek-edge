@@ -41,7 +41,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is **7 areas** (plus an owner‑only Studio) holding **35 panels**.
+Navigation is **7 areas** (plus an owner‑only Studio) holding **36 panels**.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
@@ -109,7 +109,9 @@ Match Centre
 │                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
 ├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
-└── Team Form            (free)  Club form over the last 5/10/20 games
+├── Team Form            (free)  Club form over the last 5/10/20 games
+└── Ten Seasons          (free)  2016-17 to 2025-26: all-time records, career
+                                 comparison, and a daily guess-the-player puzzle
 
 Studio  (owner only — hidden unless the signed-in email is on the owner allowlist)
 ├── Social Studio        (owner) Share-ready PNG cards from the live model

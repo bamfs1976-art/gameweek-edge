@@ -1,0 +1,64 @@
+name: FPL History
+
+# Rebuilds data/fpl-history.json — ten seasons of the open vaastav dataset
+# reduced to one compact artefact the app fetches at /api/history.
+#
+# Weekly during the season rather than daily: the upstream dataset updates
+# after each gameweek settles, and the derived artefact is career-scale data
+# where one gameweek moves almost nothing. A commit only happens when the
+# reduced output actually changed, so a quiet week produces no commit and no
+# deploy.
+#
+# This is also the job that makes the pipeline work at all in CI: the app
+# itself never reaches raw.githubusercontent.com, because this workflow has
+# already turned the CSV into a static file by the time anyone loads the page.
+
+on:
+  schedule:
+    - cron: '0 4 * * 2' # Tuesdays 04:00 UTC — after a gameweek has settled
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Re-download every season instead of using the cache'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fpl-history
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fetch seasons
+        run: node scripts/history/fetch-seasons.mjs ${{ inputs.force && '--force' || '' }}
+
+      - name: Build the reduced artefact
+        run: node scripts/history/build-history.mjs
+
+      - name: Re-grade the model across every season
+        run: node dev/backtest-history.mjs
+
+      - name: Verify it is well formed
+        run: node dev/test-history.mjs
+
+      - name: Commit only if the derived data changed
+        run: |
+          if git diff --quiet -- data/; then
+            echo "No change under data/ — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "History: rebuild the ten-season artefact and backtest"
+          git push
