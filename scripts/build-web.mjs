@@ -23,7 +23,7 @@ const EURO_OUT = join(OUT, 'euro');
 /* Static web assets to copy verbatim into www/. Add to this list as
    the app grows. */
 const STATIC_FILES = ['index.html', 'landing.html', 'privacy.html', 'manifest.webmanifest', 'sw.js'];
-const STATIC_DIRS = ['icons'];
+const STATIC_DIRS = ['icons', 'data'];
 
 async function clean() {
   if (existsSync(OUT)) await rm(OUT, { recursive: true, force: true });

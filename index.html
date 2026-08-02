@@ -3031,6 +3031,7 @@ const NAV = [
       {id:'allplayers', label:'Player List', icon:'grid', tier:'free'},
       {id:'scoutboard', label:'Scout Board', icon:'grid', tier:'free'},
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
+      {id:'archive', label:'Ten Seasons', icon:'trophy', tier:'free'},
       {id:'diffs', label:'Differentials', icon:'trend', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free', needs:['prices']},
       {id:'injuries', label:'Injury Monitor', icon:'cross', tier:'free'},
@@ -3291,6 +3292,10 @@ async function buildRightRail(){
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
+  archive:{
+    desc:'Ten seasons of Fantasy Premier League, 2016-17 to 2025-26 — the all-time records, any two careers side by side, and a new player to guess every day.',
+    layout:'standard'
+  },
   social:{
     desc:'Share-ready graphics built from the live model — squad cards, price ladders and captain picks, ready to post.',
     layout:'standard'
@@ -4155,10 +4160,51 @@ async function hydrateAccountability(host){
       }
     }catch(_){}
   }
+  /* Ten seasons of walk-forward backtest, built offline by
+     dev/backtest-history.mjs. The point of showing every season rather than a
+     single pooled figure is that one good season proves nothing — and that
+     where the model CANNOT be graded honestly, saying so is worth more than a
+     bigger number. Seasons before 2022-23 have no expected-goals columns, so
+     the run there is a proxy and is labelled as one, in the table and in the
+     note beneath it. */
+  let btCard='';
+  try{
+    const bt=await loadBacktest();
+    if(bt&&bt.seasons&&bt.seasons.length){
+      const rows=bt.seasons.slice().reverse().map(s=>{
+        const beat=s.appear.beatsForm;
+        return '<div class="dl-row">'+
+          '<span class="dl-grow"><span class="dl-nm">'+esc(s.season)+'</span> '+
+            (s.mode==='shipping'
+              ?'<span class="badge badge-green" title="The model as it ships, on the expected-goals inputs it actually reads.">as shipped</span>'
+              :'<span class="badge badge-amber" title="Expected-goals columns do not exist for this season. The same model structure was fed realised rates instead — a different, noisier model, shown for shape only and never pooled into a headline.">proxy</span>')+
+          '</span>'+
+          '<span class="dl-col mono">'+s.appear.model.toFixed(3)+'</span>'+
+          '<span class="dl-col mono" style="opacity:.7">'+s.appear.form.toFixed(3)+'</span>'+
+          '<span class="dl-col">'+(beat?'<span class="badge badge-green">beats form</span>':'<span class="badge badge-red">no</span>')+'</span>'+
+        '</div>';
+      }).join('');
+      const p=bt.pooled&&bt.pooled.appear;
+      btCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Ten seasons, graded one at a time</div>'+
+        '<div class="statgrid" style="margin-bottom:12px">'+
+          '<div class="stat"><div class="stat-l">Seasons tested</div><div class="stat-v">'+bt.seasons.length+'</div></div>'+
+          '<div class="stat"><div class="stat-l">Beat form baseline</div><div class="stat-v">'+
+            bt.seasons.filter(s=>s.appear.beatsForm).length+'/'+bt.seasons.length+'</div></div>'+
+          (p?'<div class="stat"><div class="stat-l">Pooled MAE (as shipped)</div><div class="stat-v">'+p.model.toFixed(3)+'</div></div>':'')+
+          (p?'<div class="stat"><div class="stat-l">Player-gameweeks</div><div class="stat-v">'+fmtNum(p.n)+'</div></div>':'')+
+        '</div>'+
+        '<div class="dl"><div class="dl-row head"><span class="dl-grow">Season</span>'+
+          '<span class="dl-col">Model</span><span class="dl-col">Form</span><span class="dl-col"></span></div>'+rows+'</div>'+
+        '<div class="dl-sub" style="margin-top:10px">Mean absolute error against real points, appearance-conditional, walk-forward with no lookahead — each gameweek is forecast using only the gameweeks before it. Lower is better, and the comparison that matters is against the <b>form</b> column (a three-gameweek average), because that is what a manager does by eye.'+
+        ' <b>Expected goals and assists only enter the data in 2022-23.</b> The four seasons from then are the model as it actually ships; the six before are the same structure fed realised rates instead, which is a noisier model and is why those rows are marked <i>proxy</i> and excluded from the pooled figure.</div></div>';
+    }
+  }catch(_){}
+
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Model scorecard</div>'+scoreGrid+
       '<div class="dl-sub" style="margin-top:10px">The match model is scored on <b>held-out</b> 2025/26 results — a ranked probability score of <b>0.2126</b> (lower is better; a coin-flip is ~0.25). '+
       '“Favourite correct” is how often the higher-probability side actually won or drew as modelled, recomputed live as fixtures finish. Every number here moves with real results — no cherry-picking.</div></div>'+
+    btCard+
     calCard+
     healthCard+
     youCard+
@@ -8375,6 +8421,10 @@ function renderTargets(sortKey){
 
 async function hydrateTransfers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  /* Career context for the move itself. The single most expensive transfer
+     mistake is buying the back of a hot streak — and the streak is visible in
+     the form table, while the reason it will end is not. */
+  const hIdx=histPriorIndex(await loadArchive().catch(()=>null));
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,6);
   const hzN=(hz[Object.keys(hz)[0]]||[]).length;
@@ -8412,7 +8462,18 @@ async function hydrateTransfers(host){
             '<div class="stat"><div class="stat-l">Free transfer</div><div class="stat-v pos">+'+best.gain.toFixed(1)+' xP</div></div>'+
             '<div class="stat"><div class="stat-l">If a −4 hit</div><div class="stat-v '+(fr.netXP-4>=0?'pos':'neg')+'">'+((fr.netXP-4>=0?'+':'')+(fr.netXP-4).toFixed(1))+' xP</div></div>'+
             '<div class="stat"><div class="stat-l">−4 breakeven</div><div class="stat-v">'+beTxt+'</div></div></div>'+
-          '<p class="dl-sub" style="margin-top:10px"><b>Hold alternative:</b> keep your XI for a 0 xP change — take this move only if you rate the +'+best.gain.toFixed(1)+' over 5 GW (≈'+fr.perGw.toFixed(1)+'/GW) above banking the transfer.</p></div>';
+          '<p class="dl-sub" style="margin-top:10px"><b>Hold alternative:</b> keep your XI for a 0 xP change — take this move only if you rate the +'+best.gain.toFixed(1)+' over 5 GW (≈'+fr.perGw.toFixed(1)+'/GW) above banking the transfer.</p>'+
+          /* Two career reads that cut against the move, shown only when they
+             actually disagree with it: buying a player scoring above his
+             chances, or selling one scoring below them. Both are the same
+             mistake in opposite directions. */
+          (()=>{const si=histShape(hIdx,best.cand.code),so=histShape(hIdx,best.out.code);
+            const warn=[];
+            if(si&&si.regress==='over')warn.push('<b>'+esc(best.cand.web_name)+'</b> is scoring above his underlying chances ('+si.xgRatio+'× expected). Runs like that historically fade, so treat his recent rate as a ceiling.');
+            if(so&&so.regress==='under')warn.push('<b>'+esc(best.out.web_name)+'</b> is scoring below his chances ('+so.xgRatio+'× expected) — the openings are still there, and that historically corrects. Selling now sells the dip.');
+            if(si&&si.apps>=20&&si.haulRate<0.08&&si.blankRate>0.5)warn.push('<b>'+esc(best.cand.web_name)+'</b> has hauled in only '+Math.round(si.haulRate*100)+'% of his career appearances and blanked in '+Math.round(si.blankRate*100)+'% — a floor pick rather than a rank-mover.');
+            return warn.length?'<p class="dl-sub" style="margin-top:8px;border-left:2px solid var(--amber);padding-left:10px">'+warn.join('<br><br>')+'</p>':'';})()+
+          '</div>';
       }else{
         const marg=b.elements.filter(e=>e.status==='a'&&e.now_cost&&e.now_cost<=bank+Math.max.apply(null,squad.map(s=>s.now_cost||0)))
           .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
@@ -8499,6 +8560,10 @@ function genTransferPlan(){
 /* ── Captaincy Lab: rank by predicted points (xP) ──────── */
 async function hydrateCaptain(host){
   const [b,fixtures,lgctx]=await Promise.all([boot(),loadFixtures(),loadLeagueCtx().catch(()=>null)]);
+  /* Career shape, for the one question the simulation cannot answer: is this
+     player's expected score built on a floor or on a lottery? The armband
+     doubles whichever it is. */
+  const hIdx=histPriorIndex(await loadArchive().catch(()=>null));
   const nf=buildNextFix(b,fixtures);
   const epn=e=>xP(b,e,nf[e.team]);
   /* Eligible captains only: MID/FWD, ≥60% to play, not out/suspended. */
@@ -8536,6 +8601,20 @@ async function hydrateCaptain(host){
         '<div class="stat"><div class="stat-l">EV vs field</div><div class="stat-v '+evCls+'">'+(p.ev>=0?'+':'')+p.ev.toFixed(1)+'</div></div></div>'+
       '<div class="dl-sub" style="margin-top:8px">Outcome band (as captain): <b>'+p.band.p10+'</b> · <b>'+p.band.p50+'</b> · <b>'+p.band.p90+'</b> <span style="opacity:.7">P10/P50/P90</span></div>'+
       (p.haul!=null?'<div class="dl-sub" style="margin-top:4px"><span class="pos">'+Math.round(p.haul*100)+'% haul</span> · <span class="neg">'+Math.round(p.blank*100)+'% blank</span> <span style="opacity:.7">(simulated)</span></div>':'')+
+      /* The same two numbers as they have actually happened, over a career.
+         Where the simulation and the record disagree, that gap is the story —
+         a model saying 25% haul about a man who has hauled 9% of the time is
+         telling you about the fixture, not about the player. */
+      (()=>{const sh=histShape(hIdx,e.code);
+        if(!sh||sh.apps<20)return '';
+        return '<div class="dl-sub" style="margin-top:4px">'+
+          '<span class="pos">'+Math.round(sh.haulRate*100)+'% haul</span> · '+
+          '<span class="neg">'+Math.round(sh.blankRate*100)+'% blank</span> '+
+          '<span style="opacity:.7">(career, '+sh.apps+' apps)</span>'+
+          (sh.home!=null&&sh.away!=null&&Math.abs(sh.home-sh.away)>=1
+            ?' · <span title="Points per appearance at home versus away, weighted toward recent seasons.">'+
+              (sh.home>sh.away?'stronger at home':'stronger away')+' ('+sh.home+' v '+sh.away+')</span>':'')+
+          ' '+histRegressChip(sh)+'</div>';})()+
       '<div class="dl-sub" style="margin-top:6px">Next: '+nextFixLabel(nf[e.team])+
       (ceiling?'<br>'+ceiling:'')+'</div>'+
     '</div>';}).join('');
@@ -9078,6 +9157,10 @@ async function hydrateDefcon(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
   const b=await boot();
+  /* A threat that is out-scoring its underlying chances is a different
+     problem from one that is not: the first tends to stop, and chasing it
+     costs a transfer for nothing. */
+  const hIdx=histPriorIndex(await loadArchive().catch(()=>null));
   const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
   const owned=new Set(picks.picks.map(p=>p.element));
   const st=statsById(live);
@@ -9087,10 +9170,13 @@ async function hydrateDefcon(host){
     .sort((a,c)=>(c.pts*c.own)-(a.pts*a.own))
     .slice(0,12);
   if(!threats.length){host.innerHTML=stateBox('shield','No threats yet','Once matches kick off, high-owned players you don’t have who are scoring will appear here, ranked by the damage to your rank.');return;}
-  const rows=threats.map(t=>'<div class="dl-row">'+
+  const rows=threats.map(t=>{
+    const sh=histShape(hIdx,t.e.code);
+    return '<div class="dl-row">'+
     '<span class="dl-grow"><span class="dl-nm">'+esc(t.e.web_name)+'</span>'+
-    '<span class="dl-sub">'+teamShort(b,t.e.team)+' · '+posShort(b,t.e.element_type)+' · owned by '+t.e.selected_by_percent+'%</span></span>'+
-    '<span class="dl-col neg">'+t.pts+' pts</span></div>').join('');
+    '<span class="dl-sub">'+teamShort(b,t.e.team)+' · '+posShort(b,t.e.element_type)+' · owned by '+t.e.selected_by_percent+'%'+
+      (sh?' '+histRegressChip(sh):'')+'</span></span>'+
+    '<span class="dl-col neg">'+t.pts+' pts</span></div>';}).join('');
   host.innerHTML='<div class="card"><div class="card-title">Threats to your rank — owned players you’re missing</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · ownership</span><span class="dl-col">Live</span></div>'+rows+'</div></div>';
 }
@@ -10000,6 +10086,601 @@ function nativeXP(el,nf){
   /* Expected deductions for cards, own goals and penalty misses (P-fix 4). */
   pts-=negRate90(el)*m.minFrac;
   return Math.max(0,pts);
+}
+
+/* ── Ten-season history ─────────────────────────────────────
+   Everything above this line reasons about the CURRENT season. That works
+   from about gameweek five onward and fails completely before gameweek one,
+   when there is no current season to reason about: nativeXP refuses to answer
+   below five games played, which is correct and also leaves the Pre-season
+   Draft with nothing but last season's raw totals — the noisiest possible
+   input, and the one every rival tool uses.
+
+   These functions read data/fpl-history.json (ten seasons of the open vaastav
+   dataset, reduced offline by scripts/history/build-history.mjs) and turn a
+   career into a prior. Three rules make that honest rather than decorative:
+
+     1. MINUTES-WEIGHT everything. A 0.9 goal involvement per 90 from 180
+        minutes is not evidence; from 3,000 minutes it is. Weighting by
+        minutes rather than counting seasons equally is what stops a cameo
+        season out-ranking a real one.
+     2. RECENCY-WEIGHT, but never to zero. A player is more like himself last
+        season than five years ago, so seasons decay — with a floor, because
+        an eight-year record of durability is genuinely information about a
+        thirty-year-old.
+     3. RESPECT THE ERA. xG and xA only exist from 2022-23 and defensive
+        contribution only from 2025-26. Reading them from a season that never
+        had them yields a confident zero, which is worse than no answer, so
+        every read is gated on the era flags the artefact publishes.
+
+   Confidence is returned alongside every prior and is not cosmetic: the Draft
+   panel uses it to decide whether to show a number at all. A promoted club's
+   striker with no Premier League minutes gets a positional baseline flagged
+   as a fallback, never a silent zero — ranking an unknown last is a bug
+   dressed as an opinion. */
+const HIST_PRIOR_VERSION='1.0.0';
+
+/* Strips diacritics so search and the daily puzzle behave the way a user
+   expects: typing "Ordonez" finds "Ordóñez". Display always keeps the real
+   spelling — this is only ever used for matching. */
+function foldAccents(s){
+  return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+
+/* Career-scale data, fetched once and cached hard. Same best-effort contract
+   as Core Insights: a short timeout and a null on any failure, so a missing
+   artefact costs the pre-season panels their priors and nothing else. */
+const loadArchive=()=>cached('archive',24*3600e3,async()=>{
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),9000);
+  try{
+    const r=await fetch(apiBase()+'/api/history',{signal:ctrl.signal,headers:{'Accept':'application/json'}});
+    if(!r.ok)return null;
+    const H=await r.json();
+    return (H&&Array.isArray(H.players)&&Array.isArray(H.cols))?H:null;
+  }catch(_){return null;}finally{clearTimeout(timer);}
+});
+
+/* The ten-season backtest result, built offline by dev/backtest-history.mjs.
+   Static like the archive, and best-effort for the same reason: the panel has
+   plenty else to show if it is missing. */
+const loadBacktest=()=>cached('backtest-history',24*3600e3,async()=>{
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),8000);
+  try{
+    const r=await fetch(apiBase()+'/api/backtest-history',{signal:ctrl.signal,headers:{'Accept':'application/json'}});
+    if(!r.ok)return null;
+    const j=await r.json();
+    return (j&&Array.isArray(j.seasons))?j:null;
+  }catch(_){return null;}finally{clearTimeout(timer);}
+});
+
+/* The artefact publishes its own column order so this never hardcodes one. */
+function histCols(H){const o={};(H&&H.cols||[]).forEach((c,i)=>{o[c]=i;});return o;}
+
+const histYear=s=>parseInt(String(s).slice(0,4),10)||0;
+function histLatestSeason(H){
+  const ks=Object.keys(H&&H.seasons||{});
+  return ks.sort()[ks.length-1]||'';
+}
+
+/* Exponential recency decay with a floor. 0.72 per season puts last season at
+   roughly three times the weight of one four years ago, which matches how
+   quickly FPL scoring rates actually turn over; the 0.05 floor keeps a long
+   record contributing rather than vanishing. */
+function histSeasonWeight(season,latest){
+  const age=histYear(latest)-histYear(season);
+  if(!(age>=0))return 0;
+  return Math.max(0.05,Math.pow(0.72,age));
+}
+
+/* Positional baselines for players with no Premier League record at all —
+   promoted-club players, and summer signings from abroad. Derived from the
+   data rather than invented: the median per-90 goal involvement of genuine
+   regulars in recent seasons, discounted, because an unknown quantity is more
+   likely below that median than above it. */
+function histFallbacks(H){
+  const C=histCols(H),latest=histLatestSeason(H),cut=histYear(latest)-2;
+  const mk=()=>({gi:[],cs:[],sv:[],pts:[],share:[]});
+  const byPos={1:mk(),2:mk(),3:mk(),4:mk()};
+  for(const p of H.players){
+    for(const season in p.s){
+      if(histYear(season)<cut)continue;
+      const s=p.s[season],m=s[C.m];
+      if(m<900)continue;                       /* regulars only, not cameos */
+      const pos=s[C.pos]||p.p,b=byPos[pos];
+      if(!b)continue;
+      b.gi.push(((s[C.g]+s[C.a])/m)*90);
+      b.cs.push((s[C.cs]/m)*90);
+      b.sv.push((s[C.sv]/m)*90);
+      b.pts.push((s[C.pts]/m)*90);
+      b.share.push(Math.min(1,m/(((H.seasons[season]||{}).gws||38)*90)));
+    }
+  }
+  /* Goal involvement is the wrong yardstick for a goalkeeper — his baseline
+     has to be saves and clean sheets, or an unknown keeper scores zero on
+     every axis and sorts to the bottom, which is the exact failure this
+     fallback exists to prevent. */
+  const med=a=>{const x=a.slice().sort((p,q)=>p-q);return x.length?x[Math.floor(x.length/2)]:0;};
+  const r=n=>Math.round(n*1000)/1000;
+  const out={};
+  for(const pos in byPos){
+    const b=byPos[pos];
+    out[pos]={
+      gi:r(med(b.gi)*0.8),cs:r(med(b.cs)*0.8),sv:r(med(b.sv)*0.8),
+      pts90:r(med(b.pts)*0.8),
+      /* A player nobody has Premier League data for is, far more often than
+         not, a squad player rather than a nailed starter. Half the median
+         regular's share is the honest starting assumption. */
+      minShare:r(med(b.share)*0.5),
+    };
+  }
+  return out;
+}
+
+/* One prior per career. Returns a Map keyed by the stable FPL player `code`
+   (never by name — see scripts/history/lib.mjs for why). */
+function histBuildPriors(H){
+  const out=new Map();
+  if(!H||!Array.isArray(H.players))return out;
+  const C=histCols(H),latest=histLatestSeason(H);
+
+  for(const p of H.players){
+    let wm=0,wg=0,wa=0,wxg=0,wxa=0,wxm=0,wcs=0,wsv=0,wdc=0,wdcm=0;
+    let rawM=0,rawAp=0,r10=0,seasons=0,wStarts=0,wStartAp=0,wPts=0,wPoss=0;
+    for(const season in p.s){
+      const s=p.s[season],m=s[C.m];
+      if(m<=0)continue;
+      const era=(H.seasons[season]||{}).era||{};
+      const w=histSeasonWeight(season,latest);
+      seasons++;
+      rawM+=m;rawAp+=s[C.ap];r10+=s[C.r10];
+      wPts+=w*s[C.pts];
+      /* The minutes a season MADE AVAILABLE, so playing time can be expressed
+         as a share rather than a raw total — the only form of it that
+         transfers to a season that has not started. */
+      wPoss+=w*((H.seasons[season]||{}).gws||38)*90;
+      wm+=w*m;wg+=w*s[C.g];wa+=w*s[C.a];wcs+=w*s[C.cs];wsv+=w*s[C.sv];
+      if(era.xg){wxg+=w*s[C.xg];wxa+=w*s[C.xa];wxm+=w*m;}
+      if(era.defcon){wdc+=w*s[C.dc];wdcm+=w*m;}
+      if(era.starts){wStarts+=w*s[C.st];wStartAp+=w*s[C.ap];}
+    }
+    if(wm<=0)continue;
+
+    const per90=k=>Math.round((k/wm)*90*1000)/1000;
+    let gi=per90(wg+wa),usedXg=false;
+    /* Prefer expected over realised when the covered minutes are a real
+       majority — xGI is the better predictor, but a thin xG window spliced
+       onto a long career would misrepresent both. */
+    if(wxm>0.4*wm){gi=Math.round(((wxg+wxa)/wxm)*90*1000)/1000;usedXg=true;}
+
+    out.set(p.c,{
+      code:p.c,name:p.n,pos:p.p,
+      per90:{
+        g:per90(wg),a:per90(wa),gi,
+        cs:per90(wcs),sv:per90(wsv),
+        dc:wdcm>0?Math.round((wdc/wdcm)*90*1000)/1000:0,
+      },
+      /* FPL points per 90, in the same unit the Draft panel's rate already
+         uses, so a prior can stand in for a current-season rate that does not
+         exist yet. Recency weighting does useful work here: 2025-26 carries
+         the most weight, so the scoring rules currently in force dominate
+         and the pre-DefCon era contributes without setting the level. */
+      pts90:per90(wPts),
+      /* Expected share of available minutes — the pre-season answer to "will
+         he actually play", which raw totals cannot give at all. */
+      minShare:wPoss>0?Math.round(Math.min(1,wm/wPoss)*1000)/1000:0,
+      /* Durability: how often this player STARTED when involved at all. Only
+         meaningful from 2022-23, when `starts` began being recorded. */
+      startRate:wStartAp>0?Math.round((wStarts/wStartAp)*100)/100:null,
+      haulRate:rawAp>0?Math.round((r10/rawAp)*1000)/1000:0,
+      conf:Math.round((1-Math.exp(-wm/1500))*100)/100,
+      basis:{minutes:rawM,apps:rawAp,seasons,xg:usedXg,weighted:Math.round(wm)},
+    });
+  }
+  return out;
+}
+
+/* How much evidence sits behind a pre-season number, in one glance. This is
+   not decoration: a projection built from nine seasons and one built from a
+   positional baseline look identical on screen otherwise, and the second is
+   the one that will embarrass you in gameweek three. */
+function histConfChip(pr){
+  if(!pr)return '';
+  if(pr.fallback)return '<span class="badge badge-amber" title="No Premier League record — ranked on a positional baseline, not on this player. Promoted-club players and overseas signings land here.">No PL record</span>';
+  const n=pr.basis.seasons,s=n===1?'1 season':n+' seasons';
+  const cls=pr.conf>=0.75?'badge-green':pr.conf>=0.45?'badge-grey':'badge-amber';
+  const src=pr.basis.xg?'expected goals and assists':'realised goals and assists';
+  return '<span class="badge '+cls+'" title="Built from '+s+' and '+
+    Math.round(pr.basis.minutes).toLocaleString()+' minutes, weighted toward recent seasons and '+
+    src+'. Confidence '+Math.round(pr.conf*100)+'/100.">'+s+'</span>';
+}
+
+/* Priors and baselines for one archive, built once. Rebuilding them per render
+   would walk 1,600 careers on every keystroke in the Draft filter. */
+function histPriorIndex(H){
+  if(!H)return null;
+  if(MEM._histIdxSrc===H)return MEM._histIdx;
+  const byCode=new Map();
+  for(const p of H.players)byCode.set(p.c,p);
+  const idx={H,byCode,priors:histBuildPriors(H),fallbacks:histFallbacks(H),
+             cols:histCols(H),seasons:Object.keys(H.seasons||{}).sort(),
+             latest:histLatestSeason(H),shape:new Map()};
+  MEM._histIdxSrc=H;MEM._histIdx=idx;
+  return idx;
+}
+
+/* ── Career shape ────────────────────────────────────────────
+   Expected points is an average, and an average hides the only thing that
+   distinguishes two players projected at 5.5: whether that comes from a
+   steady four every week or from blanking three times and hauling once.
+   For a captaincy call those are opposite propositions — the armband
+   doubles variance, so a high floor and a high ceiling are different buys.
+
+   So this returns the distribution rather than the mean: how often a player
+   hauls, how often he blanks, how far his returns scatter, and whether home
+   and away are actually different players. Recency-weighted like the priors,
+   because a player's shape changes with role.
+
+   It also returns a REGRESSION read — realised goals and assists against
+   expected — which is the one number that reliably says "this run is not
+   going to continue". Only computable from 2022-23, so it is absent rather
+   than guessed for players whose record predates that. */
+function histShape(idx,code){
+  if(!idx||!code)return null;
+  if(idx.shape.has(code))return idx.shape.get(code);
+  const p=idx.byCode.get(code);
+  if(!p){idx.shape.set(code,null);return null;}
+  const C=idx.cols,H=idx.H,latest=idx.latest;
+
+  let wAp=0,wPts=0,wP2=0,wR10=0,wR5=0,wBl=0;
+  let wHp=0,wHap=0,wAwp=0,wAwap=0;
+  let wGa=0,wXgi=0,rawAp=0,best=0,seasons=0;
+  for(const season in p.s){
+    const s=p.s[season];
+    if(s[C.ap]<=0)continue;
+    const era=(H.seasons[season]||{}).era||{};
+    const w=histSeasonWeight(season,latest);
+    seasons++;rawAp+=s[C.ap];
+    if(s[C.mx]>best)best=s[C.mx];
+    wAp+=w*s[C.ap];wPts+=w*s[C.pts];wP2+=w*s[C.p2];
+    wR10+=w*s[C.r10];wR5+=w*s[C.r5];wBl+=w*s[C.bl];
+    wHp+=w*s[C.hp];wHap+=w*s[C.hap];wAwp+=w*s[C.awp];wAwap+=w*s[C.awap];
+    if(era.xg){wGa+=w*(s[C.g]+s[C.a]);wXgi+=w*(s[C.xg]+s[C.xa]);}
+  }
+  if(wAp<=0){idx.shape.set(code,null);return null;}
+
+  const mean=wPts/wAp;
+  /* Var(X) = E[X²] − E[X]², both taken over appearances only. */
+  const varr=Math.max(0,wP2/wAp-mean*mean);
+  const r2=n=>Math.round(n*100)/100;
+  const r3=n=>Math.round(n*1000)/1000;
+
+  /* A ratio needs enough expected goal involvement behind it to mean
+     anything — over a handful of chances everyone looks streaky. */
+  const ratio=wXgi>=3?wGa/wXgi:null;
+  const out={
+    apps:rawAp,seasons,best,
+    ppa:r2(mean),sd:r2(Math.sqrt(varr)),
+    haulRate:r3(wR10/wAp),returnRate:r3(wR5/wAp),blankRate:r3(wBl/wAp),
+    home:wHap>0?r2(wHp/wHap):null,
+    away:wAwap>0?r2(wAwp/wAwap):null,
+    /* Positive means he has scored more than the chances warranted. */
+    xgRatio:ratio==null?null:r2(ratio),
+    regress:ratio==null?null:(ratio>=1.2?'over':ratio<=0.82?'under':'inline'),
+  };
+  idx.shape.set(code,out);
+  return out;
+}
+
+/* ── The archive as something to read ────────────────────────
+   Everything else built on this dataset is decision support, used once a week
+   for ten minutes before a deadline. This part is not: records, comparisons
+   and a daily puzzle are the reason to open the app on a Wednesday in
+   November when there is nothing to decide. The data is already paid for. */
+
+/* Career totals, computed once per archive. */
+function histCareers(idx){
+  if(!idx)return [];
+  if(idx._careers)return idx._careers;
+  const C=idx.cols,out=[];
+  for(const p of idx.H.players){
+    let pts=0,ap=0,m=0,g=0,a=0,cs=0,r10=0,best=0,seasons=0,sv=0;
+    const clubs=new Set();
+    for(const season in p.s){
+      const s=p.s[season];
+      seasons++;pts+=s[C.pts];ap+=s[C.ap];m+=s[C.m];g+=s[C.g];a+=s[C.a];
+      cs+=s[C.cs];r10+=s[C.r10];sv+=s[C.sv];
+      if(s[C.mx]>best)best=s[C.mx];
+      if(s[C.tm])clubs.add(season+':'+s[C.tm]);
+    }
+    out.push({c:p.c,n:p.n,pos:p.p,pts,ap,m,g,a,cs,r10,sv,best,seasons,
+      ppa:ap>0?pts/ap:0,clubs:clubs.size,
+      seasonKeys:Object.keys(p.s).sort()});
+  }
+  idx._careers=out;
+  return out;
+}
+
+const HIST_RECORDS=[
+  {key:'pts',   label:'Career points',      fmt:v=>fmtNum(v.pts),  sort:(a,b)=>b.pts-a.pts},
+  {key:'r10',   label:'Hauls (10+ in a gameweek)', fmt:v=>fmtNum(v.r10), sort:(a,b)=>b.r10-a.r10},
+  {key:'best',  label:'Best single gameweek', fmt:v=>v.best+' pts', sort:(a,b)=>b.best-a.best},
+  {key:'g',     label:'Goals',              fmt:v=>fmtNum(v.g),    sort:(a,b)=>b.g-a.g},
+  {key:'a',     label:'Assists',            fmt:v=>fmtNum(v.a),    sort:(a,b)=>b.a-a.a},
+  {key:'ap',    label:'Appearances',        fmt:v=>fmtNum(v.ap),   sort:(a,b)=>b.ap-a.ap},
+  /* Rate records need a floor or they are won by someone with four games. */
+  {key:'ppa',   label:'Points per appearance (100+ apps)', fmt:v=>v.ppa.toFixed(2),
+   filter:v=>v.ap>=100, sort:(a,b)=>b.ppa-a.ppa},
+  {key:'sv',    label:'Saves',              fmt:v=>fmtNum(v.sv),   sort:(a,b)=>b.sv-a.sv},
+];
+
+function histRecordTable(idx,key,pos){
+  const rec=HIST_RECORDS.find(r=>r.key===key)||HIST_RECORDS[0];
+  let list=histCareers(idx);
+  if(rec.filter)list=list.filter(rec.filter);
+  if(pos)list=list.filter(v=>v.pos===pos);
+  return list.slice().sort(rec.sort).slice(0,15).map((v,i)=>
+    '<div class="dl-row"><span class="dl-col mono" style="opacity:.6;min-width:26px">'+(i+1)+'</span>'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(v.n)+'</span>'+
+    '<span class="dl-sub">'+(POS_SHORT[v.pos]||'')+' · '+v.seasons+(v.seasons===1?' season':' seasons')+' · '+
+      v.seasonKeys[0]+'–'+v.seasonKeys[v.seasonKeys.length-1]+'</span></span>'+
+    '<span class="dl-col mono">'+rec.fmt(v)+'</span></div>').join('');
+}
+
+const POS_SHORT={1:'GKP',2:'DEF',3:'MID',4:'FWD',5:'MNG'};
+
+/* ── Daily mystery player ───────────────────────────────────
+   Deterministic from the date, so everyone gets the same player on the same
+   day and it can be talked about — which is the entire point of a daily
+   puzzle. No server, no state to keep: the date IS the seed. */
+function histDayKey(d){
+  const t=d||new Date();
+  return t.getUTCFullYear()+'-'+String(t.getUTCMonth()+1).padStart(2,'0')+'-'+String(t.getUTCDate()).padStart(2,'0');
+}
+function histDaySeed(key){
+  /* FNV-1a — small, dependency-free and well spread for short strings. */
+  let h=2166136261;
+  for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}
+  return h>>>0;
+}
+/* The puzzle pool is deliberately the famous end of the dataset. A guessing
+   game whose answer is a player nobody has heard of is not a game. */
+function histMysteryPool(idx){
+  if(idx._mysteryPool)return idx._mysteryPool;
+  const pool=histCareers(idx).filter(v=>v.pts>=600&&v.ap>=80)
+    .sort((a,b)=>a.c-b.c);          /* stable order, independent of build */
+  idx._mysteryPool=pool;
+  return pool;
+}
+function histMystery(idx,dayKey){
+  const pool=histMysteryPool(idx);
+  if(!pool.length)return null;
+  const key=dayKey||histDayKey();
+  const v=pool[histDaySeed(key)%pool.length];
+  /* Clues from vague to nearly-giving-it-away, revealed one per wrong guess. */
+  const clues=[
+    'Position: '+(POS_SHORT[v.pos]||'—'),
+    'Active across '+v.seasons+' of the last ten seasons ('+v.seasonKeys[0]+' to '+v.seasonKeys[v.seasonKeys.length-1]+')',
+    fmtNum(v.ap)+' appearances, '+fmtNum(v.pts)+' points',
+    v.g+' goals and '+v.a+' assists',
+    'Hauled '+v.r10+' times · best gameweek '+v.best+' points',
+    'Initials: '+v.n.split(' ').map(w=>w[0]).join('.')+'.',
+  ];
+  return {answer:v,clues,dayKey:key};
+}
+
+const MYSTERY_KEY='ge-mystery-v1';
+function histMysteryState(dayKey){
+  try{
+    const o=JSON.parse(localStorage.getItem(MYSTERY_KEY)||'null');
+    if(o&&o.day===dayKey)return o;
+  }catch(_){}
+  return {day:dayKey,guesses:[],solved:false,gaveUp:false};
+}
+function histMysterySave(st){
+  try{localStorage.setItem(MYSTERY_KEY,JSON.stringify(st));}catch(_){}
+}
+
+/* ── Ten Seasons panel ──────────────────────────────────── */
+async function hydrateArchive(host){
+  const A=await loadArchive().catch(()=>null);
+  const idx=histPriorIndex(A);
+  if(!idx){
+    host.innerHTML=stateBox('trophy','The archive is not available',
+      'Ten seasons of historical data load from our own store. It looks unreachable right now — everything else in the app is unaffected. Try again shortly.');
+    return;
+  }
+  const seasons=idx.seasons,careers=histCareers(idx);
+  const S=window._arch={idx,recKey:'pts',recPos:0,cmpA:null,cmpB:null};
+
+  const totals=careers.reduce((t,v)=>{t.ap+=v.ap;t.pts+=v.pts;return t;},{ap:0,pts:0});
+  const posOpts=[[0,'All positions'],[1,'Goalkeepers'],[2,'Defenders'],[3,'Midfielders'],[4,'Forwards']]
+    .map(([v,l])=>'<option value="'+v+'">'+l+'</option>').join('');
+  const recOpts=HIST_RECORDS.map(r=>'<option value="'+r.key+'">'+esc(r.label)+'</option>').join('');
+  const nameOpts=careers.slice().sort((a,b)=>b.pts-a.pts).slice(0,600)
+    .map(v=>'<option value="'+esc(v.n)+'"></option>').join('');
+
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Ten seasons of Fantasy Premier League</div>'+
+      '<div class="statgrid">'+
+        '<div class="stat"><div class="stat-l">Seasons</div><div class="stat-v">'+seasons.length+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Careers</div><div class="stat-v">'+fmtNum(careers.length)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Appearances</div><div class="stat-v">'+fmtNum(totals.ap)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Points scored</div><div class="stat-v">'+fmtNum(totals.pts)+'</div></div>'+
+      '</div>'+
+      '<div class="dl-sub" style="margin-top:10px">'+seasons[0]+' to '+seasons[seasons.length-1]+
+      ', from the open vaastav dataset. The same numbers behind the pre-season priors and the model backtest — here to be read rather than acted on.</div></div>'+
+
+    '<div class="card mb-20"><div class="card-title">Guess the player</div>'+
+      '<div id="arch-mystery"></div></div>'+
+
+    '<div class="card mb-20"><div class="card-title">All-time records</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+        '<select class="modal-in" id="arch-rec" style="flex:1 1 200px">'+recOpts+'</select>'+
+        '<select class="modal-in" id="arch-pos" style="flex:1 1 140px">'+posOpts+'</select>'+
+      '</div><div class="dl" id="arch-recs"></div></div>'+
+
+    '<div class="card"><div class="card-title">Compare two careers</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Any two players who appeared in the last ten seasons, season by season.</p>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+        '<input class="modal-in" id="arch-a" list="arch-names" placeholder="First player" style="flex:1 1 160px">'+
+        '<input class="modal-in" id="arch-b" list="arch-names" placeholder="Second player" style="flex:1 1 160px">'+
+      '</div><datalist id="arch-names">'+nameOpts+'</datalist>'+
+      '<div id="arch-cmp"></div></div>';
+
+  const rec=host.querySelector('#arch-rec'),pos=host.querySelector('#arch-pos');
+  const draw=()=>{host.querySelector('#arch-recs').innerHTML=histRecordTable(idx,S.recKey,S.recPos);};
+  if(rec)rec.addEventListener('change',()=>{S.recKey=rec.value;draw();});
+  if(pos)pos.addEventListener('change',()=>{S.recPos=+pos.value;draw();});
+  draw();
+
+  const a=host.querySelector('#arch-a'),bEl=host.querySelector('#arch-b');
+  const cmp=()=>archCompare(a?a.value:'',bEl?bEl.value:'');
+  if(a)a.addEventListener('change',cmp);
+  if(bEl)bEl.addEventListener('change',cmp);
+
+  archMysteryRender();
+}
+
+/* Season-by-season, two careers side by side. Matched on the folded name the
+   datalist offers, so accents and case do not decide whether it works. */
+function archCompare(nameA,nameB){
+  const S=window._arch,box=document.getElementById('arch-cmp');
+  if(!S||!box)return;
+  const careers=histCareers(S.idx);
+  const find=n=>{const k=foldAccents(String(n||'')).toLowerCase().trim();
+    if(!k)return null;
+    return careers.find(v=>foldAccents(v.n).toLowerCase()===k)||
+           careers.find(v=>foldAccents(v.n).toLowerCase().indexOf(k)>=0)||null;};
+  const A=find(nameA),B=find(nameB);
+  if(!A||!B){
+    box.innerHTML='<div class="dl-sub">'+(nameA||nameB?'Pick two players from the list to compare them.':'')+'</div>';
+    return;
+  }
+  const C=S.idx.cols;
+  const pa=S.idx.byCode.get(A.c),pb=S.idx.byCode.get(B.c);
+  const all=[...new Set([...Object.keys(pa.s),...Object.keys(pb.s)])].sort();
+  const cell=(p,season)=>{const s=p.s[season];return s?s[C.pts]:null;};
+  const rows=all.map(season=>{
+    const x=cell(pa,season),y=cell(pb,season);
+    const hi=(v,o)=>v!=null&&o!=null&&v>o?' class="dl-col mono pos"':' class="dl-col mono"';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+season+'</span></span>'+
+      '<span'+hi(x,y)+'>'+(x==null?'—':x)+'</span>'+
+      '<span'+hi(y,x)+'>'+(y==null?'—':y)+'</span></div>';
+  }).join('');
+  const shA=histShape(S.idx,A.c),shB=histShape(S.idx,B.c);
+  const line=(label,va,vb)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+label+'</span></span>'+
+    '<span class="dl-col mono">'+va+'</span><span class="dl-col mono">'+vb+'</span></div>';
+  box.innerHTML='<div class="dl">'+
+    '<div class="dl-row head"><span class="dl-grow">Season</span>'+
+      '<span class="dl-col">'+esc(A.n.split(' ').slice(-1)[0])+'</span>'+
+      '<span class="dl-col">'+esc(B.n.split(' ').slice(-1)[0])+'</span></div>'+
+    rows+
+    line('<b>Total</b>',fmtNum(A.pts),fmtNum(B.pts))+
+    line('Appearances',fmtNum(A.ap),fmtNum(B.ap))+
+    line('Per appearance',A.ppa.toFixed(2),B.ppa.toFixed(2))+
+    line('Goals',A.g,B.g)+
+    line('Assists',A.a,B.a)+
+    line('Hauls (10+)',A.r10,B.r10)+
+    line('Best gameweek',A.best,B.best)+
+    (shA&&shB?line('Haul rate',Math.round(shA.haulRate*100)+'%',Math.round(shB.haulRate*100)+'%'):'')+
+  '</div>'+
+  '<div class="dl-sub" style="margin-top:8px">Season totals are raw points. Haul rate is weighted toward recent seasons, which is why it can disagree with the raw counts for a player whose role changed.</div>';
+}
+
+function archMysteryRender(){
+  const S=window._arch,box=document.getElementById('arch-mystery');
+  if(!S||!box)return;
+  const m=histMystery(S.idx);
+  if(!m){box.innerHTML='<div class="dl-sub">No puzzle available.</div>';return;}
+  const st=histMysteryState(m.dayKey);
+  const wrong=st.guesses.filter(g=>!g.hit).length;
+  const shown=Math.min(m.clues.length,1+wrong);
+  const done=st.solved||st.gaveUp||shown>=m.clues.length&&wrong>=m.clues.length;
+
+  const clues=m.clues.slice(0,shown).map((c,i)=>
+    '<div class="dl-row"><span class="dl-col mono" style="opacity:.6;min-width:26px">'+(i+1)+'</span>'+
+    '<span class="dl-grow"><span class="dl-nm" style="font-weight:400">'+esc(c)+'</span></span></div>').join('');
+  const guesses=st.guesses.length
+    ?'<div class="dl-sub" style="margin-top:8px">Guesses: '+st.guesses.map(g=>
+      '<span class="badge '+(g.hit?'badge-green':'badge-grey')+'">'+esc(g.name)+'</span>').join(' ')+'</div>'
+    :'';
+
+  let foot;
+  if(st.solved){
+    foot='<div class="dl-sub" style="margin-top:10px"><b class="pos">Correct — '+esc(m.answer.n)+'.</b> '+
+      'Solved in '+st.guesses.length+(st.guesses.length===1?' guess':' guesses')+'. A new player tomorrow.</div>';
+  }else if(st.gaveUp){
+    foot='<div class="dl-sub" style="margin-top:10px">It was <b>'+esc(m.answer.n)+'</b>. A new player tomorrow.</div>';
+  }else{
+    foot='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
+      '<input class="modal-in" id="arch-guess" list="arch-names" placeholder="Name the player" style="flex:1 1 180px">'+
+      '<button class="btn btn-primary btn-sm" onclick="archMysteryGuess()">Guess</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="archMysteryReveal()">Give up</button></div>'+
+      '<div class="dl-sub" style="margin-top:8px">A new clue after every wrong guess. Same player for everyone, changes at midnight UTC.</div>';
+  }
+  box.innerHTML='<div class="dl">'+clues+'</div>'+guesses+foot;
+}
+
+function archMysteryGuess(){
+  const S=window._arch;if(!S)return;
+  const inp=document.getElementById('arch-guess');
+  const raw=inp?inp.value.trim():'';
+  if(!raw)return;
+  const m=histMystery(S.idx);
+  const st=histMysteryState(m.dayKey);
+  const fold=s=>foldAccents(String(s)).toLowerCase().replace(/\s+/g,' ').trim();
+  const hit=fold(raw)===fold(m.answer.n)||
+    (fold(raw).length>3&&fold(m.answer.n).indexOf(fold(raw))>=0);
+  st.guesses.push({name:raw,hit});
+  if(hit)st.solved=true;
+  histMysterySave(st);
+  if(hit)toast('Correct — '+m.answer.n);
+  archMysteryRender();
+}
+function archMysteryReveal(){
+  const S=window._arch;if(!S)return;
+  const m=histMystery(S.idx);
+  const st=histMysteryState(m.dayKey);
+  st.gaveUp=true;histMysterySave(st);
+  archMysteryRender();
+}
+
+/* Floor-versus-ceiling in one chip, for panels where the decision is about
+   risk rather than expectation. */
+function histShapeChip(sh){
+  if(!sh||sh.apps<20)return '';
+  const h=Math.round(sh.haulRate*100),b=Math.round(sh.blankRate*100);
+  const cls=h>=18?'badge-green':h>=10?'badge-grey':'badge-amber';
+  return '<span class="badge '+cls+'" title="Over '+sh.apps.toLocaleString()+' career appearances, weighted toward recent seasons: hauled (10+) '+h+
+    '% of the time, blanked (2 or fewer) '+b+'%. Mean '+sh.ppa+' per appearance, spread '+sh.sd+'. Best gameweek '+sh.best+'.">'+
+    'Haul '+h+'% · Blank '+b+'%</span>';
+}
+
+/* The regression read, shown only when it is actually saying something. */
+function histRegressChip(sh){
+  if(!sh||!sh.regress||sh.regress==='inline')return '';
+  const over=sh.regress==='over';
+  return '<span class="badge '+(over?'badge-red':'badge-green')+'" title="'+
+    (over
+      ?'Scoring above the underlying chances — realised goals and assists are '+sh.xgRatio+'x expected. Runs like this historically fade, so treat the recent return rate as a ceiling rather than a baseline.'
+      :'Scoring below the underlying chances — realised goals and assists are only '+sh.xgRatio+'x expected. The chances are being created; the finishing has lagged, which historically corrects.')+
+    '">'+(over?'Above xG':'Below xG')+'</span>';
+}
+
+/* Look a player up, falling back to a positional baseline that is explicitly
+   flagged rather than passed off as a real reading. */
+function histPriorFor(priors,fallbacks,code,opts){
+  const hit=priors&&priors.get(code);
+  if(hit)return hit;
+  const pos=(opts&&opts.pos)||3;
+  const base=(fallbacks&&fallbacks[pos])||{gi:0.05,cs:0,sv:0,pts90:2,minShare:0.3};
+  return{
+    code,name:(opts&&opts.name)||'',pos,
+    per90:{g:0,a:0,gi:base.gi,cs:base.cs||0,sv:base.sv||0,dc:0},
+    pts90:base.pts90||0,minShare:base.minShare||0,
+    startRate:null,haulRate:0,conf:0,fallback:true,
+    basis:{minutes:0,apps:0,seasons:0,xg:false,weighted:0},
+  };
 }
 
 /* Best rotating enabler pairs: two cheap players (defenders, or keepers)
@@ -13751,11 +14432,31 @@ function loadDraftIds(){
    would crown super-subs), scaled by availability (soft floor —
    pre-season flags are often stale) and the club's fixture-ease
    factor. A rough estimate, labelled everywhere it is shown. */
-function draftXP6(el,ease,clubGames){
+function draftXP6(el,ease,clubGames,prior){
   const mins=el.minutes||0,pts=el.total_points||0;
-  if(pts<=0)return 0;
-  const rate=90*pts/Math.max(mins,450);
-  const share=clubGames>0?Math.min(1,mins/(clubGames*90)):1;
+
+  /* How much of THIS season there is to reason about. Before gameweek one
+     the answer is none — FPL zeroes totals at rollover — so the old version
+     of this function returned 0 for all 700 players and the Draft ranked on
+     nothing. The historical prior covers exactly that window, and hands back
+     over to live data as minutes accumulate. */
+  const live=Math.max(0,Math.min(1,mins/900));
+  const liveRate=pts>0?90*pts/Math.max(mins,450):0;
+  const liveShare=clubGames>0?Math.min(1,mins/(clubGames*90)):1;
+
+  let rate=liveRate,share=liveShare;
+  if(prior&&live<1){
+    /* A prior is only worth as much as the evidence behind it, so it is
+       discounted by its own confidence toward the positional baseline rather
+       than asserted flat. A fallback (conf 0) therefore contributes its
+       baseline and nothing more. */
+    const pr=(prior.pts90||0)*(0.35+0.65*(prior.conf||0));
+    const ps=prior.minShare||0;
+    rate=live*liveRate+(1-live)*pr;
+    share=live*liveShare+(1-live)*ps;
+  }
+  if(rate<=0)return 0;
+
   let avail=1;
   if(el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n')avail=0.3;
   else if(el.chance_of_playing_next_round!=null)avail=Math.max(0.3,el.chance_of_playing_next_round/100);
@@ -13924,13 +14625,15 @@ function renderDraftPool(){
     const can=draftCanAdd(players,e);
     return '<div class="dl-row"><span data-draft-open="'+e.id+'" style="cursor:pointer">'+avatar(b,e,30)+'</span>'+
       '<span class="dl-grow" style="display:flex;flex-direction:column;align-items:flex-start;min-width:0;cursor:pointer" data-draft-open="'+e.id+'"><span class="dl-nm" style="max-width:100%">'+esc(e.web_name)+'</span>'+
-      '<span class="dl-sub">'+crest(b,e.team,13)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+minsBadge(e,S.gp(e.team))+'</span></span>'+
+      '<span class="dl-sub">'+crest(b,e.team,13)+posShort(b,e.element_type)+' · '+money(e.now_cost)+' · '+minsBadge(e,S.gp(e.team))+
+        (S.prior&&S.prior[e.id]?' '+histConfChip(S.prior[e.id]):'')+'</span></span>'+
       '<span class="dl-col mono">'+(S.xp6[e.id]||0).toFixed(1)+'</span>'+
       '<span class="dl-col"><button class="btn btn-primary btn-sm" style="padding:3px 10px" data-draft-add="'+e.id+'"'+(can?'':' disabled')+'>Add</button></span></div>';
   }).join('');
   box.innerHTML='<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · predicted price · minutes</span><span class="dl-col">xP6</span><span class="dl-col"></span></div>'+
     (rows||'<div class="dl-sub" style="padding:8px 0">No players match.</div>')+'</div>'+
-    '<div class="dl-sub" style="margin-top:8px">'+list.length+' available · sorted by xP6 (pre-season estimate) · showing the top '+shown.length+'.</div>';
+    '<div class="dl-sub" style="margin-top:8px">'+list.length+' available · sorted by xP6 (pre-season estimate) · showing the top '+shown.length+'.'+
+    (S.hIdx?' Before a ball is kicked, xP6 comes from up to ten seasons of career data, weighted toward recent ones; the badge on each player says how much there is.':'')+'</div>';
 }
 function renderDraft(){
   const S=window._draft;if(!S)return;
@@ -14097,6 +14800,12 @@ async function hydrateDraft(host){
   }
   let fixtures=[];try{fixtures=await loadFixtures();}catch(_){}
   let m=null;try{m=await loadModelBundle();}catch(_){}
+  /* Ten seasons of career data — what makes the board rankable before a ball
+     is kicked. Best-effort: without it draftXP6 falls back to current-season
+     rates, which pre-season means everyone scores zero and the board is
+     alphabetical. That is the old behaviour, not a crash. */
+  let A=null;try{A=await loadArchive();}catch(_){}
+  const hIdx=histPriorIndex(A);
   if(DRAFT_IDS==null)DRAFT_IDS=loadDraftIds();
   /* 2026/27 club filter: bootstrap clubs are kept only if they map into
      the model bundle's team list (FPL_TO_LG carries the 20 new-season
@@ -14114,12 +14823,16 @@ async function hydrateDraft(host){
   const pool=b.elements.filter(e=>okTeams.has(e.team));
   const gp=minutesBasis(b,fixtures);
   const ctx=m?draftBundleCtx(m,6):null;
-  const xp6={};
+  const xp6={},prior={};
   pool.forEach(e=>{const club=lgClubOf(b,e.team);
-    xp6[e.id]=draftXP6(e,ctx&&club?ctx.ease[club]:1,gp(e.team));});
+    /* Joined on `code`, FPL's permanent player id — never on name, which
+       changes spelling between the FPL API and the historical dataset. */
+    if(hIdx)prior[e.id]=histPriorFor(hIdx.priors,hIdx.fallbacks,e.code,
+      {pos:e.element_type,name:e.web_name});
+    xp6[e.id]=draftXP6(e,ctx&&club?ctx.ease[club]:1,gp(e.team),prior[e.id]);});
   const tmpl=draftTemplate(pool.filter(e=>e.status==='a'),xp6);
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
-  const S=window._draft={b,m,ctx,pool,xp6,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,nf:buildNextFix(b,fixtures)};
+  const S=window._draft={b,m,ctx,pool,xp6,prior,hIdx,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,nf:buildNextFix(b,fixtures)};
   const importBtn=(getMid()&&b.liveSeason)
     ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
@@ -14222,6 +14935,7 @@ const WIRED={
   analytics:hydrateAnalytics,
   gwhistory:hydrateGwhistory,
   gwreport:hydrateGwreport,
+  archive:hydrateArchive,
   draft:hydrateDraft,
   squad:hydrateSquad,
   transfers:hydrateTransfers,
