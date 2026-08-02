@@ -629,6 +629,11 @@ html.offline .net-banner{transform:translateY(0)}
 /* Sample count beside a venue rate — present but subordinate: the rate is
    the number, the count is how much to trust it. */
 .pl-vn{color:var(--text-3);font-size:.82em}
+.pl-chart{padding-top:4px}
+.pl-legend{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 8px;font-size:11px;color:var(--text-2)}
+.pl-leg{display:inline-flex;align-items:center;gap:5px}
+.pl-leg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.dl-sub2{display:block;font-size:11px;color:var(--text-3)}
 .pl-lk:hover{opacity:.75}
 .pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
 .plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -7345,13 +7350,95 @@ function plCard(b,xpMap,e){
     '<div class="plc-stats"><b>'+(e.total_points||0)+'</b> pts · <b>'+(xpMap[e.id]||0).toFixed(1)+'</b> xP · '+e.selected_by_percent+'%</div>'+
   '</button>';
 }
+/* Position colours, reused by the dots, the fitted lines and the legend so the
+   three cannot drift apart. All four are existing accent tokens, so they hold
+   their contrast in both themes. */
+const PL_POS_COLOUR={1:'--amber',2:'--blue',3:'--green-bright',4:'--red'};
+/* The value scatter: price across, projected points up, one fitted line per
+   position, and the players furthest above their own position's line listed
+   underneath.
+
+   The list is not decoration. At 390px a scatter of two hundred dots is a
+   texture, not a reading — the chart shows the SHAPE (how steeply points buy
+   points, where the pool clusters) and the list answers the question someone
+   actually came with. */
+function plValueChart(b,list,yOf,yLabel){
+  const {fits,points}=valueResiduals(list,yOf);
+  if(points.length<VALUE_MIN_FIT){
+    return '<div class="ge-state">Not enough players in this filter to fit a price curve. '+
+      'Widen the lens or clear a filter.</div>';
+  }
+  const W=340,H=228,padL=30,padR=10,padT=12,padB=26;
+  const xs=points.map(p=>p.x),ys=points.map(p=>p.y);
+  const x0=Math.min(...xs),x1=Math.max(...xs),y1=Math.max(...ys);
+  /* A pool all on one price still has to draw. */
+  const xr=(x1-x0)||1,yr=y1||1;
+  const px=v=>padL+(W-padL-padR)*(v-x0)/xr;
+  const py=v=>H-padB-(H-padT-padB)*v/yr;
+  const grid=[0,0.5,1].map(f=>{const y=py(yr*f);
+    return '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+
+      '" stroke="var(--line)" stroke-width="1"/>'+
+      '<text x="'+(padL-4)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" style="font-size:8px;fill:var(--text-3)">'+
+      (yr*f).toFixed(0)+'</text>';}).join('');
+  const xticks=[0,0.5,1].map(f=>{const v=x0+xr*f,x=px(v);
+    return '<text x="'+x.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" style="font-size:8px;fill:var(--text-3)">£'+
+      v.toFixed(1)+'</text>';}).join('');
+  const lines=Object.keys(fits).map(p=>{const f=fits[p];if(!f)return '';
+    const a=f.m*x0+f.c,z=f.m*x1+f.c;
+    return '<line x1="'+px(x0).toFixed(1)+'" y1="'+py(a).toFixed(1)+'" x2="'+px(x1).toFixed(1)+
+      '" y2="'+py(z).toFixed(1)+'" stroke="var('+PL_POS_COLOUR[p]+')" stroke-width="1.4" '+
+      'stroke-dasharray="4 3" opacity=".65"/>';}).join('');
+  const dots=points.map(p=>'<circle cx="'+px(p.x).toFixed(1)+'" cy="'+py(p.y).toFixed(1)+
+    '" r="2.6" fill="var('+(PL_POS_COLOUR[p.pos]||'--text-3')+')" fill-opacity=".7"><title>'+
+    esc(p.e.web_name)+' · '+money(p.e.now_cost)+' · '+p.y.toFixed(1)+' '+esc(yLabel)+
+    (p.resid!=null?' · '+(p.resid>0?'+':'')+p.resid.toFixed(1)+' vs curve':'')+'</title></circle>').join('');
+  const legend=Object.keys(PL_POS_COLOUR).filter(p=>fits[p]!==undefined).map(p=>
+    '<span class="pl-leg"><i style="background:var('+PL_POS_COLOUR[p]+')"></i>'+posShort(b,+p)+
+    (fits[p]?'':' <span class="pl-vn">no curve</span>')+'</span>').join('');
+  const top=points.filter(p=>p.resid!=null).sort((a,c)=>c.resid-a.resid).slice(0,6);
+  const rows=top.map(p=>'<button class="dl-row" data-id="'+p.e.id+'">'+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(p.e.web_name)+'</span>'+
+    '<span class="dl-sub2">'+teamShort(b,p.e.team)+' · '+posShort(b,p.e.element_type)+'</span></span>'+
+    '<span class="dl-col mono">'+money(p.e.now_cost)+'</span>'+
+    '<span class="dl-col mono">'+p.y.toFixed(1)+'</span>'+
+    '<span class="dl-col mono" style="color:var(--green-bright)">+'+p.resid.toFixed(1)+'</span></button>').join('');
+  /* The fitted slope is the headline the chart exists to give: how many
+     projected points a pound actually buys in this pool. */
+  const slopes=Object.keys(fits).filter(p=>fits[p]).map(p=>posShort(b,+p)+' '+fits[p].m.toFixed(2));
+  return '<div class="pl-chart">'+
+    '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="'+
+      esc(yLabel+' against price for '+points.length+' players, with a fitted line per position')+'">'+
+      grid+lines+dots+xticks+'</svg>'+
+    '<div class="pl-legend">'+legend+'</div>'+
+    '<div class="dl-sub">'+esc(yLabel)+' against price, '+points.length+' players. '+
+      'Each dashed line is that position’s own price curve — fitted separately, because a '+
+      'defender and a midfielder at the same price are not in the same market. '+
+      'Points per extra £1.0m: '+esc(slopes.join(' · '))+'.</div>'+
+    (rows?'<div class="card-title" style="margin-top:12px">Furthest above their position’s curve</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span>'+
+      '<span class="dl-col">£</span><span class="dl-col">'+esc(yLabel)+'</span>'+
+      '<span class="dl-col">vs curve</span></div>'+rows+'</div>':'')+
+    '<div class="dl-sub" style="margin-top:8px">Above the line means above what <b>our</b> model '+
+      'expects at that price — not that FPL has mispriced anyone. And a budget is spent across '+
+      'fifteen players, so this ranks value at a price point rather than telling you what to buy.</div>'+
+  '</div>';
+}
 function renderPlayerTable(){
   const S=window._pl;if(!S)return;const {b,xpMap}=S;
   const view=document.getElementById('pl-view');if(!view)return;
   const list=plFilteredSorted();
-  const cards=PL_STATE.view==='cards';
+  const cards=PL_STATE.view==='cards',chart=PL_STATE.view==='chart';
   const cap=cards?120:300,shown=list.slice(0,cap);
-  if(cards){
+  if(chart){
+    /* The whole filtered pool, not the sorted top slice: a scatter cut off at
+       300 rows would fit its curve to whatever the current sort put first,
+       which for "most points" is a straight line through the elite and a
+       finding that the cheap players are all underpriced. */
+    const hz=S.ctx&&S.ctx.hz;
+    view.innerHTML=hz
+      ? plValueChart(b,list,e=>horizonXP(b,e,hz),'xP next 5')
+      : '<div class="ge-state">The fixture horizon has not loaded, so there is no projection to plot.</div>';
+  }else if(cards){
     view.innerHTML='<div class="pl-cards">'+shown.map(e=>plCard(b,xpMap,e)).join('')+'</div>';
   }else{
     const cols=plLensCols(plCols(b,xpMap,S.ctx),plLens(PL_STATE.lens));
@@ -7371,7 +7458,9 @@ function renderPlayerTable(){
     view.innerHTML='<div class="pl-scroll"><table class="ptable">'+head+body+'</table></div>';
   }
   const cnt=document.getElementById('pl-count');
-  if(cnt)cnt.textContent=list.length+' players'+(list.length>cap?' · showing the top '+cap+(cards?'':' for this sort')+' — filter to narrow':'');
+  if(cnt)cnt.textContent=list.length+' players'+
+    (!chart&&list.length>cap?' · showing the top '+cap+(cards?'':' for this sort')+' — filter to narrow':
+     chart?' · all of them plotted':'');
   const note=document.getElementById('pl-lensnote');
   if(note){
     const lens=plLens(PL_STATE.lens);
@@ -7447,7 +7536,7 @@ async function hydrateAllPlayers(host){
       '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
       '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
       '<select id="pl-team" class="modal-in" style="flex:1 1 120px">'+teamOpts+'</select>'+
-      '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button></div>'+
+      '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button><button class="seg-b'+(PL_STATE.view==='chart'?' on':'')+'" data-v="chart">Value</button></div>'+
     '</div>'+
     '<div id="pl-view"></div>'+
     '<div class="dl-sub" id="pl-count" style="margin-top:8px"></div></div>';
@@ -10283,6 +10372,61 @@ function venueSplit(b,el,hz){
   });
   const h=hN?hT/hN:null,a=aN?aT/aN:null;
   return {hN,aN,h,a,swing:(h!=null&&a!=null)?h-a:null};
+}
+
+/* ── Value against the price curve ──────────────────────────
+   Least-squares line of expected points against price, and each player's
+   distance from it. Two things this is NOT, both worth stating because the
+   chart is easy to over-read:
+
+   It is not a claim that FPL has mispriced anybody. The line is fitted to OUR
+   projections, so "above the line" means above what our own model expects of
+   that price bracket — a statement about our numbers, not the market's.
+
+   It is not a shopping order. FPL's budget binds across fifteen players, so
+   the useful quantity is marginal points per £m given the rest of a squad,
+   and a residual cannot see the squad. It answers a narrower question:
+   at this price, is this player projected above or below his peers?
+
+   FITTED PER POSITION, always. A £5.0m defender and a £5.0m midfielder are
+   priced in different markets — defenders carry clean sheets, midfielders
+   carry a goal tariff — and a single line through both would rank every
+   defender as underpriced and every forward as a rip-off, which is an
+   artefact of the tariff rather than a finding. */
+const VALUE_MIN_FIT=6;
+function valueFit(pts){
+  const n=(pts||[]).length;
+  if(n<VALUE_MIN_FIT)return null;
+  let sx=0,sy=0;
+  pts.forEach(p=>{sx+=p.x;sy+=p.y;});
+  const mx=sx/n,my=sy/n;
+  let num=0,den=0;
+  pts.forEach(p=>{const dx=p.x-mx;num+=dx*(p.y-my);den+=dx*dx;});
+  /* Every player at the same price gives a vertical scatter with no slope to
+     find. No line rather than an infinite one. */
+  if(!den)return null;
+  const m=num/den;
+  return {m,c:my-m*mx,n};
+}
+/* Points and residuals for a list, grouped by position. A position with too
+   few players to fit still gets its points plotted — they are real players and
+   hiding them would misrepresent the pool — but carries a null residual rather
+   than one derived from a line nobody drew. */
+function valueResiduals(list,yOf){
+  const byPos={};
+  (list||[]).forEach(e=>{
+    const y=yOf(e);
+    if(y==null||!isFinite(y))return;
+    (byPos[e.element_type]=byPos[e.element_type]||[]).push({e,x:(e.now_cost||0)/10,y});
+  });
+  const fits={},points=[];
+  Object.keys(byPos).forEach(p=>{
+    const f=valueFit(byPos[p]);
+    fits[p]=f;
+    byPos[p].forEach(pt=>points.push({e:pt.e,x:pt.x,y:pt.y,pos:+p,
+      resid:f?pt.y-(f.m*pt.x+f.c):null}));
+  });
+  return {fits,points};
 }
 /* The model's top drivers behind a player's xP — the "Explain this pick"
    bullets. Pure list; the string form joins them for legacy callers. */

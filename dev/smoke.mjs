@@ -133,6 +133,31 @@ for (const tier of ['pro', 'free']) {
 }
 await page.evaluate(() => setTier('pro'));
 
+/* The value scatter is a third render mode, not a lens, so the loop above
+   never reaches it — it renders every lens in the TABLE view. A chart that
+   throws or overflows would ship unnoticed otherwise. Checked on two lenses
+   with very different pool sizes, because the fit needs a minimum and the
+   empty-state path is the one that only fires on a narrow filter. */
+let chartChecks = 0;
+for (const lens of ['all', 'diffs']) {
+  current = `players:chart:${lens}`; chartChecks++;
+  await page.evaluate((l) => {
+    plSetLens(l); PL_STATE.view = 'chart'; renderPage('allplayers');
+  }, lens);
+  await page.waitForTimeout(500);
+  const [sw, vw] = await page.evaluate(() => [document.body.scrollWidth, window.innerWidth]);
+  if (sw > vw + 2) { overflow++; console.error(`  OVERFLOW ${current}: ${sw} > ${vw}`); }
+  /* Either a plotted chart or the honest "not enough players" state — but not
+     an empty container, which is what a silent throw leaves behind. */
+  const ok = await page.evaluate(() => {
+    const v = document.getElementById('pl-view');
+    if (!v) return false;
+    return !!(v.querySelector('svg circle') || v.querySelector('.ge-state'));
+  });
+  if (!ok) { overflow++; console.error(`  ! ${current} drew neither a chart nor a state`); }
+}
+await page.evaluate(() => { PL_STATE.view = 'table'; });
+
 /* A board that kept its own page links into its column in the players table,
    and the command palette lists every lens by name. Both choose a lens and
    THEN open the table, so both are one missing opt-out away from silently
@@ -225,7 +250,7 @@ for (const view of await page.evaluate(() => FX_VIEWS.map((v) => v.id))) {
 // Ignore network noise from the offline CDN (photos/crests aren't reachable in tests).
 const appErrors = errors.filter((e) => !/Failed to load resource|ERR_|404|501|net::/.test(e));
 
-console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | matchday views: ${mcChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
+console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | value charts: ${chartChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | matchday views: ${mcChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
 appErrors.forEach((e) => console.error('  ! ' + e));
 
 await browser.close();
