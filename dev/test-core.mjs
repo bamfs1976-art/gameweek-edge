@@ -202,6 +202,7 @@ const pieces = [
   ...['OPP_SPLIT_MIN'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'poorAttacks'),
   extractFn(html, 'clubVsPoorAttacks'),
+  extractFn(html, 'venueSplit'),
   extractFn(html, 'clubVenueVerdict'),
   extractFn(html, 'clubLean'),
   ...['DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX']
@@ -212,7 +213,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1985,6 +1986,71 @@ const bigPool = Array.from({ length: 9 }, (_, i) => mkDepth(i + 1, 2, 10 - i * 0
 ok(core.clubDepth(bigPool, 1, 10)[2].rows.length === core.DEPTH_MAX,
   'the ranking is capped at DEPTH_MAX per position');
 ok(Object.keys(core.clubDepth([], 1, 10)).length === 0, 'an empty squad yields no groups rather than throwing');
+
+/* ── Venue split: what a projection owes to the venue ────────
+   The Players table's home/away lens. Every property here is about NOT
+   overclaiming: it is a per-game rate rather than a total, and a side with no
+   fixtures is unknown rather than zero. */
+{
+  console.log('\n• venue split');
+  /* Pre-season shape — no games played, so nativeXP declines and fixtureXP
+     takes its documented fallback: ep_next scaled by the fixture. That makes
+     the arithmetic below exact rather than approximate. */
+  const b = {};
+  const fwd = { id: 1, team: 1, element_type: 4, ep_next: '5.0' };
+  const fx = (home, lam) => ({ home, lam, cs: 0.3, gp: 0, lamAvg: 1.47 });
+  /* lam 1.47 is the league average, so the fixture factor is exactly 1. */
+  const flat = (home) => fx(home, 1.47);
+
+  /* A total would make four home games look better than one away game at the
+     same quality. A per-game rate must not. */
+  const lopsided = core.venueSplit(b, fwd,
+    { 1: [flat(true), flat(true), flat(true), flat(true), flat(false)] });
+  ok(lopsided.hN === 4 && lopsided.aN === 1, 'the counts are kept (' + lopsided.hN + 'H/' + lopsided.aN + 'A)');
+  ok(Math.abs(lopsided.h - 5) < 1e-9, 'four identical home games average to one game (' + lopsided.h + ')');
+  ok(Math.abs(lopsided.a - 5) < 1e-9, 'and the single away game to the same');
+  ok(Math.abs(lopsided.swing) < 1e-9, 'so four home to one away is a swing of zero, not a home bias');
+
+  /* A real difference still shows. A kinder home fixture raises the home rate
+     and the swing goes positive. */
+  const kind = core.venueSplit(b, fwd, { 1: [fx(true, 2.2), fx(false, 1.0)] });
+  ok(kind.h > kind.a, 'a better home fixture reads as a better home rate');
+  ok(kind.swing > 0, 'and the swing is positive');
+  const harsh = core.venueSplit(b, fwd, { 1: [fx(true, 1.0), fx(false, 2.2)] });
+  ok(harsh.swing < 0, 'reversed, the same player travels better');
+  ok(Math.abs(harsh.swing + kind.swing) < 1e-9, 'and the two are mirror images');
+
+  /* The refusals. A player with no away game has no away rate; a zero there
+     would rank him the worst traveller in the league. */
+  const allHome = core.venueSplit(b, fwd, { 1: [flat(true), flat(true)] });
+  ok(allHome.a === null, 'no away fixture means no away rate — null, not zero');
+  ok(allHome.swing === null, 'and no swing to report');
+  ok(allHome.h != null && allHome.aN === 0, 'while the home side is still given');
+  const allAway = core.venueSplit(b, fwd, { 1: [flat(false)] });
+  ok(allAway.h === null && allAway.swing === null, 'and the same the other way round');
+
+  /* A team with no horizon at all, and a horizon that does not mention this
+     player's team. Both are "unknown", not "zero". */
+  ok(core.venueSplit(b, fwd, {}).h === null, 'an empty horizon yields nothing');
+  ok(core.venueSplit(b, fwd, { 2: [flat(true)] }).swing === null, 'nor does another team’s run');
+  ok(core.venueSplit(b, fwd, null).swing === null, 'a missing horizon does not throw');
+
+  /* A fixture whose expected points cannot be computed is skipped rather than
+     counted as zero, which would drag the rate down and misreport the sample
+     size behind it. */
+  const broken = { id: 2, team: 1, element_type: 4, ep_next: '', form: 'x', points_per_game: 'x' };
+  const skipped = core.venueSplit(b, broken, { 1: [flat(true), flat(false)] });
+  ok(skipped.hN === 0 && skipped.aN === 0, 'an uncomputable fixture is not counted');
+  ok(skipped.h === null && skipped.a === null, 'and contributes no rate');
+
+  /* Defenders take the clean-sheet branch rather than the goals one, so the
+     split has to work for them too — they are the whole point of the lens. */
+  const def = { id: 3, team: 1, element_type: 2, ep_next: '4.0' };
+  const dsplit = core.venueSplit(b, def,
+    { 1: [{ home: true, lam: 1.2, cs: 0.55, gp: 0 }, { home: false, lam: 1.6, cs: 0.18, gp: 0 }] });
+  ok(dsplit.h > dsplit.a, 'a defender with better clean-sheet odds at home reads that way');
+  ok(dsplit.swing > 0, 'and carries a positive swing');
+}
 
 /* ── summary ────────────────────────────────────────────── */
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

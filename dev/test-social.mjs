@@ -1545,6 +1545,21 @@ console.log('• the column gate: a Pro column is locked, unsortable and unexpor
   ok(heads(csvFree).includes('PriceMoveTonight') && heads(csvFree).includes('ChanceOfPlaying'),
     'the free columns absorbed from the free boards export for everyone');
 
+  /* The venue split is free in the table, so it must be free in the export —
+     the reverse of the gate check above, and the same principle: the two have
+     to agree or one of them is lying about what a reader gets. */
+  for (const h of ['NextFixture', 'xP_home', 'HomeGames', 'xP_away', 'AwayGames', 'VenueSwing']) {
+    ok(heads(csvFree).includes(h), 'the free CSV exports ' + h);
+  }
+  /* And it degrades rather than throwing when a caller builds a CSV without a
+     fixture horizon — the columns are present and empty, not absent, so the
+     shape of the file does not depend on how it was invoked. */
+  const bare = free.playersCsv(B, { 1: 6.2 }, [el()], { pro: false });
+  ok(heads(bare).includes('VenueSwing'), 'the column survives a context with no horizon');
+  const cell = (c, name) => c.split('\n')[1].split(',')[heads(c).indexOf(name)];
+  ok(cell(bare, 'VenueSwing') === '', 'and is empty rather than a made-up zero');
+  ok(cell(bare, 'HomeGames') === '', 'as is the game count behind it');
+
   /* Every lens has to name columns that exist, or it silently renders a
      narrower table than it advertises. */
   const known = new Set(colsPro.map((c) => c.k));

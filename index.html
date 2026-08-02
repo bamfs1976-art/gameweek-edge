@@ -626,6 +626,9 @@ html.offline .net-banner{transform:translateY(0)}
 .ptable th.lk:hover{color:var(--lock);text-decoration:underline}
 .ptable td.lk{text-align:center;background:var(--surface-3)}
 .pl-lk{display:inline-flex;color:var(--lock);cursor:pointer}
+/* Sample count beside a venue rate — present but subordinate: the rate is
+   the number, the count is how much to trust it. */
+.pl-vn{color:var(--text-3);font-size:.82em}
 .pl-lk:hover{opacity:.75}
 .pl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:10px}
 .plc{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -3449,7 +3452,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   allplayers:{
-    desc:'Every player, every number, one table — with ten lenses that jump you to the view you came for.',
+    desc:'Every player, every number, one table — with eleven lenses that jump you to the view you came for.',
     layout:'standard'
   },
   scoutboard:{
@@ -4273,7 +4276,7 @@ const NEXT_WHY={
   draft:'Build your fifteen before the game opens',
   fixtures:'Who has the kindest run, and when',
   chips:'When to play each chip',
-  allplayers:'Every player, one table, ten lenses',
+  allplayers:'Every player, one table, eleven lenses',
   price:'Tonight’s likely risers and fallers'
 };
 function dashNextSteps(mid){
@@ -7054,6 +7057,9 @@ function plLockCell(){return '<span class="pl-lk" title="The Edge — unlock to 
 function plCols(b,xpMap,ctx){
   ctx=ctx||{};
   const games=ctx.games||{},capId=ctx.capId,tmpl=ctx.tmpl,total=ctx.total||10e6;
+  /* Both absent when a caller builds columns without a fixture horizon, and
+     the venue columns then print a dash rather than throwing. */
+  const hz=ctx.hz,vsplit=ctx.vsplit;
   /* Effective ownership: raw ownership plus the same again on the crowd
      captain, which is the public-API approximation the EO Tracker uses. */
   const eoOf=e=>{const own=parseFloat(e.selected_by_percent)||0;return Math.round(own+(e.id===capId?own:0));};
@@ -7144,7 +7150,33 @@ function plCols(b,xpMap,ctx){
      d:e=>{const s=setPieceConfidence(e);return s.value?'<span class="badge '+(s.value>=70?'badge-green':s.value>=50?'badge-amber':'badge-grey')+'" title="'+esc(s.roles.join(', '))+'">'+s.value+'</span>':'—';}},
     {k:'minsec',l:'Mins%',num:1,v:e=>minutesSecurity(e,games[e.team]||0),
      d:e=>{const v=minutesSecurity(e,games[e.team]||0);
-       return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'</span>';}}
+       return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'</span>';}},
+    /* ── Venue split ────────────────────────────────────────
+       Free, and deliberately so. These are our own match model's numbers, and
+       gating the model's output while giving FPL's raw data away would have
+       the value proposition backwards. */
+    {k:'venue',l:'Next',v:e=>{const n=hz&&hz[e.team]&&hz[e.team][0];return n?(n.home?1:0):-1;},
+     d:e=>{const n=hz&&hz[e.team]&&hz[e.team][0];
+       return n?'<span class="badge '+(n.home?'badge-green':'badge-grey')+'">'+(n.home?'H':'A')+' v '+esc(n.opp)+'</span>':'—';}},
+    /* The count is shown beside each rate because two home games and five are
+       different amounts of evidence for the same number, and a per-game figure
+       hides that on its own. */
+    {k:'xph',l:'xP home',num:1,v:e=>{const s=vsplit&&vsplit[e.id];return s&&s.h!=null?s.h:-1;},
+     d:e=>{const s=vsplit&&vsplit[e.id];
+       return s&&s.h!=null?s.h.toFixed(1)+' <span class="pl-vn">×'+s.hN+'</span>':'—';}},
+    {k:'xpa',l:'xP away',num:1,v:e=>{const s=vsplit&&vsplit[e.id];return s&&s.a!=null?s.a:-1;},
+     d:e=>{const s=vsplit&&vsplit[e.id];
+       return s&&s.a!=null?s.a.toFixed(1)+' <span class="pl-vn">×'+s.aN+'</span>':'—';}},
+    /* Signed, so one sort separates the two opposite cases rather than ranking
+       them by size: a player worth +1.2 at home and one worth -1.2 are not
+       neighbours. Sorted descending this is the home-dependence ladder; sorted
+       ascending it is the list of players who travel best. */
+    {k:'vswing',l:'H−A',num:1,v:e=>{const s=vsplit&&vsplit[e.id];return s&&s.swing!=null?s.swing:-99;},
+     d:e=>{const s=vsplit&&vsplit[e.id];
+       if(!s||s.swing==null)return '—';
+       const c=s.swing>=0.3?'green':s.swing<=-0.3?'red':'';
+       return c?'<span style="color:var(--'+c+')">'+(s.swing>0?'+':'')+s.swing.toFixed(1)+'</span>'
+         :(s.swing>0?'+':'')+s.swing.toFixed(1);}}
   ];
 }
 
@@ -7174,6 +7206,10 @@ const PL_LENSES=[
    cols:['chance','yellow','selected_by_percent','minutes','form','total_points'],
    filter:e=>(e.status&&e.status!=='a')||!!plSusp(e).level,
    desc:'Everyone carrying a doubt — flagged for fitness, or close enough to a ban for it to matter. Most-owned first, because that is whose news moves most teams.'},
+  {id:'venue',label:'Home / away',tier:'free',sort:'vswing',
+   cols:['venue','xph','xpa','vswing','xp','minsec','total_points'],
+   filter:e=>e.status==='a',
+   desc:'How much of a player’s projection rides on where the game is, over the next five. Sorted by the home−away gap: top of the list are the players you want at home and can drop on the road, bottom are the ones who travel. Our model’s numbers against the fixtures they actually have — not last season’s home record, which cannot know who this season’s home games are against.'},
   {id:'eo',label:'EO',tier:'paid',sort:'eo',
    cols:['eo','selected_by_percent','xp','form','total_points'],
    desc:'Effective ownership — exposure from ownership plus captaincy on the crowd pick. What you carry whether you own it or not.'},
@@ -7263,6 +7299,18 @@ function playersCsv(b,xpMap,list,ctx){
     ['ICT',e=>e.ict_index||''],['ValueSeason',e=>e.value_season||''],
     ['PriceMoveTonight',e=>{const pc=priceChangeProb(e,total);return pc.dir==='flat'?'':(pc.dir==='rise'?'+':'-')+pc.prob;}],
     ['ChanceOfPlaying',e=>{const c=e.chance_of_playing_next_round;return c==null?(e.status==='a'?100:''):c;}],
+    /* The venue split, free in the table and therefore free here. The game
+       counts travel with the rates because a per-game figure over one fixture
+       and over four are not the same claim, and a spreadsheet strips the
+       context the table shows beside them. Empty rather than 0 where a player
+       has no fixture at that venue — the same distinction the table draws. */
+    ['NextFixture',e=>{const n=ctx.hz&&ctx.hz[e.team]&&ctx.hz[e.team][0];
+      return n?(n.home?'H':'A')+' v '+n.opp:'';}],
+    ['xP_home',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s&&s.h!=null?s.h.toFixed(2):'';}],
+    ['HomeGames',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s?s.hN:'';}],
+    ['xP_away',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s&&s.a!=null?s.a.toFixed(2):'';}],
+    ['AwayGames',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s?s.aN:'';}],
+    ['VenueSwing',e=>{const s=ctx.vsplit&&ctx.vsplit[e.id];return s&&s.swing!=null?s.swing.toFixed(2):'';}],
     ['Status',e=>e.status||''],
     ['News',e=>e.news||'']
   ].concat(ctx.pro?pro:[]);
@@ -7379,8 +7427,13 @@ async function hydrateAllPlayers(host){
   const tmpl={};
   const bypos=topSelectedByPos(b.elements,10);
   [1,2,3,4].forEach(t=>(bypos[t]||[]).forEach((e,i)=>{tmpl[e.id]=i+1;}));
+  /* The venue lens needs a run of fixtures, not just the next one, and the
+     split is computed once here rather than per render — the table redraws on
+     every keystroke in the search box. */
+  const hz=buildHorizon(b,fixtures,5);
+  const vsplit={};b.elements.forEach(e=>{vsplit[e.id]=venueSplit(b,e,hz);});
   const ctx={games:teamGamesPlayed(fixtures),capId:b.cur&&b.cur.most_captained,
-    tmpl,total:b.raw.total_players||10e6,
+    tmpl,total:b.raw.total_players||10e6,hz,vsplit,
     seasonStarted:b.elements.some(e=>(e.minutes||0)>0)};
   window._pl={b,xpMap,ctx};
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
@@ -10200,6 +10253,36 @@ function horizonXP(b,el,hz){
   let total=0;
   fxs.forEach(fx=>total+=fixtureXP(b,el,fx));
   return total;
+}
+/* Expected points at home and away across the horizon, PER GAME rather than
+   as a total. A player with four home games and one away is not "better at
+   home" because the home column is bigger, and a total would say he is. What
+   the split answers is narrower and more useful: how much of this player's
+   projection rides on where the game is, which is the question underneath
+   every "hold him through the home run" decision.
+
+   Modelled, not measured, and the distinction matters. A measured home/away
+   return rate needs per-match history from element-summary — one request per
+   player, which is exactly why the squad builder's consistency columns are
+   confined to hand-picked players and why the player-detail panel is the only
+   place the measured split appears. This is instead what our own match model
+   expects from the fixtures a player actually has, which is the forward-
+   looking question anyway: last season's home record cannot know that this
+   season's home games are against the top three.
+
+   Null on a side with no fixtures in the window. A player whose next five are
+   all at home has no away rate, and a zero there would rank him the worst
+   travelling asset in the league rather than an unknown one. */
+function venueSplit(b,el,hz){
+  const fxs=(hz&&hz[el.team])||[];
+  let hN=0,hT=0,aN=0,aT=0;
+  fxs.forEach(fx=>{
+    const v=fixtureXP(b,el,fx);
+    if(v==null||!isFinite(v))return;
+    if(fx.home){hN++;hT+=v;}else{aN++;aT+=v;}
+  });
+  const h=hN?hT/hN:null,a=aN?aT/aN:null;
+  return {hN,aN,h,a,swing:(h!=null&&a!=null)?h-a:null};
 }
 /* The model's top drivers behind a player's xP — the "Explain this pick"
    bullets. Pure list; the string form joins them for legacy callers. */
