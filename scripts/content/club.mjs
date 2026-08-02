@@ -404,9 +404,44 @@ export function clubVerdict(graded) {
 /* Build the thread. Returns posts as structured data — the runner turns them
    into text — so the same thread can later become a card without rewriting
    the reasoning. */
+/* ── Two records the fixture ticker cannot give ──────────────
+   Both go silent rather than guess: below their sample floor the engine
+   returns null, and a thread saying nothing about a club's home form is
+   better than one saying it off four games. */
+const VENUE_WORD = { home: 'at home', away: 'on the road' };
+function venueLine(venue, split) {
+  if (!venue || !split) return null;
+  /* Only worth a line when the two halves disagree. "Scores more at home and
+     concedes more at home" is the interesting shape — a club that is simply
+     better at home is every club. */
+  const att = venue.attack, def = venue.defence;
+  if (att === 'level' && def === 'level') return null;
+  const h = split.home, a = split.away;
+  const num = (v) => (v == null ? '—' : v.toFixed(2));
+  const shape = (att !== 'level' && def !== 'level' && att === def)
+    ? `Scores more AND concedes more ${VENUE_WORD[att]}.`
+    : att !== 'level'
+      ? `Scores more ${VENUE_WORD[att]}.`
+      : `Tighter ${VENUE_WORD[def === 'home' ? 'home' : 'away']}.`;
+  return `${shape} Home ${num(h.gfpg)} for / ${num(h.gapg)} against, away ${num(a.gfpg)} / ${num(a.gapg)}.`;
+}
+/* Does a kind fixture become a clean sheet? Said only when the answer is no —
+   a side that converts its easy games is what the ticker already implies, so
+   confirming it adds a line and no information. */
+const KIND_CS_POOR = 0.3;
+function kindLine(kind, ahead) {
+  if (!kind || kind.csr >= KIND_CS_POOR) return null;
+  const pct = Math.round(kind.csr * 100);
+  const tail = ahead
+    ? ` ${ahead} of the next six ${ahead === 1 ? 'is' : 'are'} against the same kind of attack, so a blank there is the pattern, not bad luck.`
+    : '';
+  return `Only ${plural(kind.cs, 'clean sheet')} in ${kind.games} against bottom-half attacks (${pct}%).${tail}`;
+}
+
 export function buildThread(club) {
   const { name, fullName, players = [], scored, conceded, avgDifficulty,
     fixtures = [], congestion = 0, europe = null, manager = null, played = null,
+    venue = null, split = null, kind = null, kindAhead = null,
     defconData = true, joinData = true } = club;
   /* A baseline needs football behind it. Absent one, say so — a zeroed
      tally reads as a fact rather than as an absence. */
@@ -458,6 +493,13 @@ export function buildThread(club) {
         : 'No results yet — the read below is fixtures, minutes and last season\'s rates.',
       avgDifficulty != null
         ? `Opening run averages ${avgDifficulty.toFixed(1)} of 5 on our difficulty scale.` : null,
+      venueLine(venue, split),
+      /* The line a fixture ticker cannot write. A run of green cells is a
+         claim about the opponents; whether this defence converts one is a
+         claim about this club, and the two come apart. Printed only when it
+         disagrees with the ticker — a side that cashes its kind fixtures is
+         what everyone already assumes, and saying it adds nothing. */
+      kindLine(kind, kindAhead),
       fixtures.length
         ? fixtures.slice(0, 5).map((f) => `GW${f.gw} ${f.home ? 'vs' : 'at'} ${f.opp}`).join('  ·  ')
         : null

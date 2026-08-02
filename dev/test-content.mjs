@@ -1003,5 +1003,92 @@ console.log('• club threads: a summer signing’s rates belong to his old club
     'the default assumes the data is there rather than caveating every thread');
 }
 
+/* ═══════════════════════════════════════════════════════════
+   TWO RECORDS THE FIXTURE TICKER CANNOT GIVE
+
+   A rival's Man Utd thread carried the line our threads had no answer to:
+   "only 2 clean sheets vs weak sides, so if Shaw and Maguire return nothing
+   at Hull and Ipswich, it's not bad luck." A run of green cells is a claim
+   about the OPPONENTS. Whether this defence converts one is a claim about
+   the CLUB, and the two come apart — which is exactly when a thread is worth
+   reading. Same for the venue split: scoring more at home while also
+   conceding more at home is a shape a difficulty average cannot express.
+
+   Both lines are held to the same rule: say it only when it disagrees with
+   what the ticker already implies, and say nothing at all below the sample
+   floor.
+   ═══════════════════════════════════════════════════════════ */
+console.log('• club thread: does a kind fixture actually become a clean sheet?');
+{
+  const base = { name: 'CLB', fullName: 'Club', played: 20, scored: 30, conceded: 25,
+    avgDifficulty: 2.6, fixtures: [], players: [] };
+  const baseline = (t) => (t.posts.find((p) => p.kind === 'baseline').lines.join(' \n '));
+
+  const poor = buildThread({ ...base,
+    kind: { games: 9, cs: 2, gf: 15, ga: 11, csr: 2 / 9, gfpg: 15 / 9, gapg: 11 / 9 }, kindAhead: 2 });
+  ok(/Only 2 clean sheets in 9 against bottom-half attacks \(22%\)/.test(baseline(poor)),
+    'the record against weak attacks is stated with its sample');
+  ok(/2 of the next six are against the same kind of attack/.test(baseline(poor)),
+    'and tied to the fixtures it predicts');
+  ok(/not bad luck/.test(baseline(poor)), 'and named as a pattern rather than variance');
+
+  /* The discipline that keeps it worth printing. A club that DOES cash its
+     kind fixtures is what the ticker already implies — repeating it spends a
+     line and tells the reader nothing. */
+  const good = buildThread({ ...base,
+    kind: { games: 10, cs: 6, gf: 20, ga: 5, csr: 0.6, gfpg: 2, gapg: 0.5 }, kindAhead: 3 });
+  ok(!/bottom-half attacks/.test(baseline(good)),
+    'a club that converts its kind fixtures gets no line — that is the assumption already');
+
+  /* Below the floor the engine hands back null, and the thread must not
+     invent a hedge to fill the gap. */
+  const none = buildThread({ ...base, kind: null, kindAhead: null });
+  ok(!/bottom-half/.test(baseline(none)), 'no sample means no line');
+  ok(baseline(none).length > 0, 'and the baseline still says its other things');
+
+  /* Singular/plural on both counts, since a one-of-one reads badly. */
+  const one = buildThread({ ...base,
+    kind: { games: 8, cs: 1, gf: 9, ga: 10, csr: 1 / 8, gfpg: 1.1, gapg: 1.25 }, kindAhead: 1 });
+  ok(/Only 1 clean sheet in 8/.test(baseline(one)), 'one clean sheet, not "1 clean sheets"');
+  ok(/1 of the next six is against/.test(baseline(one)), 'and "is", not "are"');
+
+  const noAhead = buildThread({ ...base,
+    kind: { games: 9, cs: 2, gf: 15, ga: 11, csr: 2 / 9, gfpg: 1.6, gapg: 1.2 }, kindAhead: 0 });
+  ok(/Only 2 clean sheets in 9/.test(baseline(noAhead)) && !/next six/.test(baseline(noAhead)),
+    'with no kind fixtures coming, the record stands alone rather than predicting nothing');
+}
+
+console.log('• club thread: is this a different side at home?');
+{
+  const base = { name: 'CLB', fullName: 'Club', played: 17, scored: 30, conceded: 25,
+    avgDifficulty: 2.6, fixtures: [], players: [] };
+  const baseline = (t) => (t.posts.find((p) => p.kind === 'baseline').lines.join(' \n '));
+  const split = { home: { games: 9, gfpg: 2.11, gapg: 1.22, csr: 0.22 },
+    away: { games: 8, gfpg: 1.63, gapg: 0.88, csr: 0.37 }, games: 17 };
+
+  /* The Man Utd shape exactly: more goals at home, more conceded at home too.
+     A single difficulty average cannot say this, and it changes which of a
+     club's assets you want in which week. */
+  const both = buildThread({ ...base, split,
+    venue: { attack: 'home', defence: 'home', attGap: 0.48, defGap: -0.34 } });
+  ok(/Scores more AND concedes more at home/.test(baseline(both)),
+    'the two-sided shape is named as one thing');
+  ok(/Home 2\.11 for \/ 1\.22 against, away 1\.63 \/ 0\.88/.test(baseline(both)),
+    'with the numbers behind it, both venues, both directions');
+
+  const attOnly = buildThread({ ...base, split,
+    venue: { attack: 'home', defence: 'level', attGap: 0.48, defGap: 0.05 } });
+  ok(/Scores more at home\./.test(attOnly.posts.find((p) => p.kind === 'baseline').lines.join(' ')),
+    'a one-sided split says only the side that moved');
+
+  const level = buildThread({ ...base, split,
+    venue: { attack: 'level', defence: 'level', attGap: 0.05, defGap: 0.02 } });
+  ok(!/Home .* for /.test(baseline(level)),
+    'a club that plays the same everywhere gets no line — which is most clubs');
+  const silent = baseline(buildThread({ ...base, split: null, venue: null }));
+  ok(!/for \//.test(silent), 'and no verdict at all means silence, not a hedge');
+  ok(silent.length > 0, 'while the rest of the baseline is unaffected');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);
