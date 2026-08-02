@@ -45,6 +45,14 @@ jobs:
       - name: Shell integrity guard
         run: node scripts/check-shell.mjs
 
+      # The briefing checker itself needs the live FPL API, which CI does not
+      # get. What CI CAN guard is that the shipped briefing still parses into
+      # the shape the checker expects — because a document that has drifted out
+      # of that shape produces a thin, clean-looking report rather than an
+      # error, and thin-and-clean is the result nobody questions.
+      - name: Briefing parses into checkable claims
+        run: node dev/test-briefing.mjs
+
       # Catches the class of bug that broke Daily Content for four days: a
       # script importing a package that is installed locally but declared
       # nowhere, so it works on the machine it was written on and dies under
