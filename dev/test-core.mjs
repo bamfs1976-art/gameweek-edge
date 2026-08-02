@@ -203,6 +203,9 @@ const pieces = [
   extractFn(html, 'poorAttacks'),
   extractFn(html, 'clubVsPoorAttacks'),
   extractFn(html, 'venueSplit'),
+  ...['VALUE_MIN_FIT'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'valueFit'),
+  extractFn(html, 'valueResiduals'),
   extractFn(html, 'clubVenueVerdict'),
   extractFn(html, 'clubLean'),
   ...['DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX']
@@ -213,7 +216,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2050,6 +2053,82 @@ ok(Object.keys(core.clubDepth([], 1, 10)).length === 0, 'an empty squad yields n
     { 1: [{ home: true, lam: 1.2, cs: 0.55, gp: 0 }, { home: false, lam: 1.6, cs: 0.18, gp: 0 }] });
   ok(dsplit.h > dsplit.a, 'a defender with better clean-sheet odds at home reads that way');
   ok(dsplit.swing > 0, 'and carries a positive swing');
+}
+
+/* ── Value against the price curve ───────────────────────────
+   The Players table's value scatter. The property that carries the whole
+   feature is that the fit is PER POSITION: a single line through defenders and
+   midfielders together measures the position tariff, not value, and would rank
+   every cheap defender as a bargain. */
+{
+  console.log('\n• value curve');
+  const line = (n, m, c, from) => Array.from({ length: n },
+    (_, i) => ({ x: (from || 4) + i * 0.5, y: m * ((from || 4) + i * 0.5) + c }));
+
+  /* Exact recovery on a perfect line — if this drifts, every residual is
+     wrong by a constant nobody would notice. */
+  const f = core.valueFit(line(8, 1.5, 2));
+  ok(f && Math.abs(f.m - 1.5) < 1e-9, 'the slope is recovered exactly (' + (f && f.m) + ')');
+  ok(Math.abs(f.c - 2) < 1e-9, 'and so is the intercept');
+  ok(f.n === 8, 'the sample size is carried');
+
+  /* The refusals. */
+  ok(core.valueFit(line(core.VALUE_MIN_FIT - 1, 1, 0)) === null,
+    'under ' + core.VALUE_MIN_FIT + ' players there is no curve to fit');
+  ok(core.valueFit(line(core.VALUE_MIN_FIT, 1, 0)) !== null, 'at the floor there is');
+  ok(core.valueFit(Array.from({ length: 9 }, (_, i) => ({ x: 5, y: i }))) === null,
+    'a pool all on one price has no slope — null, not infinity');
+  ok(core.valueFit([]) === null && core.valueFit(null) === null, 'and nothing at all is null');
+
+  /* Residual sign. Above the line is positive, which is the direction the
+     chart's whole reading depends on. */
+  const pts = line(8, 1.0, 0);
+  const fit = core.valueFit(pts);
+  const resid = (x, y) => y - (fit.m * x + fit.c);
+  ok(resid(6, 8) > 0, 'a player above the curve reads positive');
+  ok(resid(6, 4) < 0, 'and one below it negative');
+
+  /* ── the per-position property ──
+     Two positions with genuinely different price curves. Defenders here return
+     less per pound than midfielders — the real tariff difference. A defender
+     sitting exactly on the DEFENDER curve is fairly priced, and must read as
+     such; measured against a pooled line he would look like a bargain. */
+  const el = (id, type, cost, y) => ({ id, element_type: type, now_cost: cost * 10, _y: y });
+  const defs = [], mids = [];
+  for (let i = 0; i < 8; i++) {
+    const price = 4 + i * 0.5;
+    defs.push(el(100 + i, 2, price, 1.0 * price));   /* defender curve: y = 1.0x */
+    mids.push(el(200 + i, 3, price, 2.0 * price));   /* midfielder curve: y = 2.0x */
+  }
+  const all = defs.concat(mids);
+  const r = core.valueResiduals(all, (e) => e._y);
+  ok(r.fits[2] && Math.abs(r.fits[2].m - 1.0) < 1e-9, 'the defender curve is fitted alone (' + r.fits[2].m.toFixed(2) + ')');
+  ok(r.fits[3] && Math.abs(r.fits[3].m - 2.0) < 1e-9, 'and the midfielder curve separately (' + r.fits[3].m.toFixed(2) + ')');
+  ok(r.points.length === 16, 'every player is plotted');
+  ok(r.points.every((p) => Math.abs(p.resid) < 1e-9),
+    'a player exactly on his OWN position’s curve has no residual — the whole point');
+  /* And the counterfactual: pooled, the same defenders would look mispriced.
+     This is the bug the split exists to prevent, asserted rather than assumed. */
+  const pooled = core.valueFit(all.map((e) => ({ x: (e.now_cost || 0) / 10, y: e._y })));
+  const pooledResid = (e) => e._y - (pooled.m * ((e.now_cost || 0) / 10) + pooled.c);
+  ok(Math.abs(pooledResid(defs[7])) > 1, 'pooled, a fairly-priced defender reads as badly off the line');
+  ok(pooledResid(defs[7]) < 0 && pooledResid(mids[7]) > 0,
+    'and the pooled reading is a position tariff, not value — every top defender low, every top mid high');
+
+  /* A position too thin to fit still shows its players, with no residual —
+     they are real, and hiding them would misrepresent the pool. */
+  const thin = core.valueResiduals(defs.concat([el(300, 1, 4.5, 3), el(301, 1, 5.0, 4)]), (e) => e._y);
+  ok(thin.fits[1] === null, 'two goalkeepers give no curve');
+  const gks = thin.points.filter((p) => p.pos === 1);
+  ok(gks.length === 2, 'but they are still plotted');
+  ok(gks.every((p) => p.resid === null), 'with a null residual rather than one from a line nobody drew');
+
+  /* A player whose projection cannot be computed is left out entirely, rather
+     than dragging the curve down towards zero. */
+  const withBad = core.valueResiduals(defs.concat([el(400, 2, 6.0, null), el(401, 2, 6.5, NaN)]),
+    (e) => e._y);
+  ok(withBad.points.length === 8, 'an uncomputable projection is not plotted (' + withBad.points.length + ')');
+  ok(Math.abs(withBad.fits[2].m - 1.0) < 1e-9, 'and does not move the curve');
 }
 
 /* ── summary ────────────────────────────────────────────── */

@@ -81,7 +81,7 @@ Live
                                  free, Your DEFCON / Rank threats / Auto-subs Pro
 
 Players
-├── Players              (free)  One sortable table, eleven lenses, Cards view + CSV
+├── Players              (free)  One sortable table, eleven lenses, Cards + Value chart, CSV
 │                                (absorbed Differentials and the Injury Monitor)
 ├── Scout Board          (free)  Per-90 shortlist + price ladder, DefCon + bonus by club
 ├── Player Compare       (free)  Up to 4 players side by side
