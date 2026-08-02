@@ -104,7 +104,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Matty Cash (attacking RB, corners, defensive points). Leon Bailey if he nails a starting wide role after Rogers.
 - Premium / captaincy: Ollie Watkins, nailed striker and penalty taker, the reliable armband here.
 - Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder.
-- Set-piece & penalties: Penalties Watkins (Buendia distant second, Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash, Bailey. Output is a real question mark after losing coach MacPhee (watch).
+- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash, Bailey. Output is a real question mark after losing coach MacPhee (watch).
 
 **Opening fixtures:** GW1 Arsenal (H) hard, GW2 Nottingham Forest (A) moderate, GW3 Man Utd (A) hard, GW4 Fulham (A) moderate, GW5 Man City (H) hard. A brutal run plus European load. Avoid Villa defence early and be patient with their assets.
 
@@ -140,7 +140,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Justin Kluivert (MID, ~£6.0m), main creative outlet now Semenyo has gone, on set-pieces. Marcus Tavernier (MID), cheap, shares pens and set-pieces.
 - Premium / captaincy: No true premium remains. Evanilson is the nearest, but the brutal opener makes early captaincy unwise.
 - Differentials: Alvaro Rodriguez if he starts centrally. Junior Kroupi if he stays and Rose trusts youth.
-- Set-piece & penalties: Penalties Tavernier and Kluivert share. Corners Tavernier, Scott, Cook. Free-kicks Unal, Tavernier, Brooks.
+- Set-piece & penalties: Penalties Kroupi.Jr (FPL order 1; Tavernier third). Corners Tavernier, Scott, Cook. Free-kicks Unal, Tavernier, Brooks.
 
 **Opening fixtures:** GW1 Man City (A) very hard, then Everton (A), Brentford (A), Liverpool (H). A punishing schedule, actively avoid Bournemouth assets for the first few weeks.
 
@@ -158,7 +158,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Enzo Le Fee (MID, ~£5.5m), creative hub on pens and free-kicks. Wilson Isidor (~£5.5-6.0m), clear number nine after Mayenda.
 - Premium / captaincy: None. Sunderland are cheap enablers and defensive punts. Granit Xhaka (~£5.5m) is the most nailed midfield points source via set-pieces.
 - Differentials: Wilson Isidor, very low-owned lead striker. Enzo Le Fee, the pick if you want a cheap Sunderland midfielder on pens.
-- Set-piece & penalties: Penalties Le Fee primary, Habib Diarra backup. Free-kicks Xhaka and Le Fee. Corners Xhaka, Le Fee, Trai Hume.
+- Set-piece & penalties: Penalties Diarra primary, Le Fee second. Free-kicks Xhaka and Le Fee. Corners Xhaka, Le Fee, Trai Hume.
 
 **Opening fixtures:** GW1 Ipswich (A) moderate/good, GW2 Fulham (H) moderate, GW3 Brentford (A) moderate, then Arsenal (H) and Man City (A) both very hard. Target Sunderland defence early for clean-sheet potential, then plan transfers out for GW4-5.
 
@@ -320,7 +320,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Morgan Gibbs-White (~£7.0m), talisman on pens and free-kicks, central to everything. Neco Williams (~£5.0m DEF), attacking full-back on corners.
 - Premium / captaincy: Chris Wood (~£7.0m), proven scorer the past two seasons and Glasner will want a focal point, though form dipped late last term. Gibbs-White the alternative on-ball captain. Kalimuendo, if signed, complicates Wood's minutes.
 - Differentials: Omari Hutchinson and James McAtee, new arrivals at low ownership in a reshaped attack. Dan Ndoye.
-- Set-piece & penalties: Penalties Gibbs-White (Wood alternative, uncertain under a new manager). Free-kicks Gibbs-White and Murillo. Corners Hutchinson and Neco Williams.
+- Set-piece & penalties: Penalties Wood (FPL order 1; Gibbs-White second, and the order may move under a new manager). Free-kicks Gibbs-White and Murillo. Corners Hutchinson and Neco Williams.
 
 **Opening fixtures:** GW1 Leeds (H) moderate/good, GW2 Liverpool (A) very hard, GW3 Spurs (H) hard, GW4 Aston Villa (A) hard, GW5 Coventry (H) moderate. A rough run, only Leeds and Coventry look inviting. Avoid over-investing before GW5.
 
@@ -374,7 +374,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Jaden Philogene and Jack Clarke, cheap, minutes-secure wide attackers with the highest ceiling here. Leif Davis, attacking LB on corners, a classic cheap-defender assist source.
 - Premium / captaincy: None obvious.
 - Differentials: Chuba Akpom, fresh signing and likely under-owned lead striker. George Hirst.
-- Set-piece & penalties: Penalties Clarke primary, Philogene/Hirst secondary. Corners Leif Davis. Free-kicks the same pair. New manager O'Neil could reshuffle, treat as provisional until GW1.
+- Set-piece & penalties: Penalties Hirst primary, Clarke second. Corners Leif Davis. Free-kicks the same pair. New manager O'Neil could reshuffle, treat as provisional until GW1.
 
 **Opening fixtures:** GW1 Sunderland (H), a friendly opener against a fellow promoted side, one of the better GW1 fixtures for a promoted team. Later opponents were not fully confirmed in sources, but the home start softens early risk.
 
@@ -392,7 +392,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Oli McBurnie (~£5.5m), main striker and penalty taker, the clear pick here. Joe Gelhardt (~£5.0m) if his stay is confirmed.
 - Premium / captaincy: None obvious.
 - Differentials: Liam Millar (~£5.0m, led the squad for expected assists) and Yu Hirakawa, both likely well under 10% owned.
-- Set-piece & penalties: Penalties McBurnie primary, Gelhardt secondary. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
+- Set-piece & penalties: Penalties Crooks primary, McBurnie second. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
 
 **Opening fixtures:** GW1 Man Utd (venue reported as home 12:30 Sat 22 Aug, one source said away, confirm) hard, GW2 Coventry (A) winnable. Analysts flag a tough GW1-5 stretch, with fixtures improving from around GW6. Delay investment.
 

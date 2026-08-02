@@ -456,33 +456,45 @@ console.log('\n• briefing: penalty duty asserted in the pick fields');
     'no set-piece claim, no contradiction');
 }
 
-console.log('\n• briefing: the real document, before and after the penalty fix');
+console.log('\n• briefing: the shipped document, and the regression that broke it');
 {
   const teams = teamsFromHtml(readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8'));
   const c = claimsFromTeams(teams);
   ok(c.pensProse.length >= 12, 'the pick fields assert penalties for most clubs (' + c.pensProse.length + ')');
-  /* As written, the document agrees with itself here — the two halves name the
-     same taker, they are just both wrong. That is the baseline the check has to
-     hold, or it reports noise on a file with nothing wrong in it. */
+  /* The shipped state. Both halves now name the API's order-1 taker, so this
+     has to read clean — a check that cried wolf on a corrected file would get
+     switched off within a week. */
   ok(pensSelfContradictions(c.pens, c.pensProse).length === 0,
-    'the briefing as written is internally consistent about who takes penalties');
+    'the briefing agrees with itself about who takes penalties');
+  /* And every club that was corrected names the right player, so the two halves
+     being consistent is not them being consistently wrong again. */
+  const spOf = {};
+  for (const p of c.pens) spOf[p.club] = p.name;
+  for (const [club, taker] of [['Aston Villa', 'Buendía'], ['Bournemouth', 'Kroupi.Jr'],
+    ['Sunderland', 'Diarra'], ['Nottingham Forest', 'Wood'], ['Ipswich Town', 'Hirst'],
+    ['Hull City', 'Crooks']]) {
+    ok(spOf[club] === taker, club + ' set-piece line names ' + taker + ' (' + spOf[club] + ')');
+  }
 
-  /* Correcting the set-piece line alone is what breaks it, and that is exactly
-     what --fix does. These six are the work it cannot do. */
-  const corrected = { 'Aston Villa': 'Buendía', Bournemouth: 'Kroupi.Jr', Sunderland: 'Diarra',
-    'Nottingham Forest': 'Wood', 'Ipswich Town': 'Hirst', 'Hull City': 'Crooks' };
-  const after = pensSelfContradictions(
-    c.pens.map((p) => (corrected[p.club] ? { ...p, name: corrected[p.club] } : p)), c.pensProse);
-  ok(after.length === 6, 'correcting the set-piece lines strands 6 picks (' + after.length + ')');
-  const clubs = after.map((s) => s.club);
+  /* The regression this check exists to catch, reproduced: put the old takers
+     back in the set-piece lines only — which is the half --fix used to rewrite
+     — and the picks that lean on those penalties must light up. Asserted as the
+     historical six, so a parser that silently stops reading a pick field cannot
+     pass by finding fewer. */
+  const was = { 'Aston Villa': 'Watkins', Bournemouth: 'Tavernier', Sunderland: 'Le Fee',
+    'Nottingham Forest': 'Gibbs-White', 'Ipswich Town': 'Clarke', 'Hull City': 'McBurnie' };
+  const broken = pensSelfContradictions(
+    c.pens.map((p) => (was[p.club] ? { ...p, name: was[p.club] } : p)), c.pensProse);
+  ok(broken.length === 6, 'reverting the set-piece lines alone strands 6 picks (' + broken.length + ')');
+  const clubs = broken.map((s) => s.club);
   for (const club of ['Aston Villa', 'Bournemouth', 'Sunderland', 'Nottingham Forest', 'Hull City']) {
     ok(clubs.indexOf(club) > -1, club + ' is reported');
   }
   ok(clubs.filter((x) => x === 'Sunderland').length === 2, 'Sunderland twice — it makes the claim in two fields');
-  /* Ipswich corrects Clarke to Hirst, and its pick fields never claimed the
-     penalties, so it must NOT appear. A check that flagged every corrected
-     club would be counting rewrites, not reading the document. */
-  ok(clubs.indexOf('Ipswich Town') < 0, 'a corrected club whose picks made no penalty claim is not reported');
+  /* Ipswich's takers changed too, but its pick fields never claimed the
+     penalties, so it must NOT appear. A check that flagged every corrected club
+     would be counting rewrites rather than reading the document. */
+  ok(clubs.indexOf('Ipswich Town') < 0, 'a club whose picks make no penalty claim is not reported');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
