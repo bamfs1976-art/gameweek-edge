@@ -14,7 +14,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
-  teamsFromHtml, claimsFromTeams, fixtureContradictions } from '../scripts/briefing-parse.mjs';
+  teamsFromHtml, claimsFromTeams, fixtureContradictions,
+  clubMatcher, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 let failures = 0, passes = 0;
@@ -236,6 +237,91 @@ console.log('• briefing: the shipped fixture claims, as they stand');
   ok(bad.length > 0, 'the shipped briefing currently contradicts itself (' + bad.length + ')');
   ok(bad.some((b) => /Chelsea/.test(b.msg) && /Fulham/.test(b.msg)),
     'including Chelsea and Fulham both away to each other in GW1');
+}
+
+console.log('• briefing: one club-name matcher, not three');
+{
+  /* There were three matchers here with three separate bugs. One had its
+     `includes` arguments the wrong way round, so "Brighton & Hove Albion"
+     matched nothing — and the --fix pass silently left that club's fixtures
+     uncorrected while rewriting everything around it, which is the worst kind
+     of failure: a document that looks fixed and is not. */
+  const api = [
+    { name: 'Arsenal', short: 'ARS', id: 1 }, { name: 'Man Utd', short: 'MUN', id: 2 },
+    { name: 'Manchester City', short: 'MCI', id: 3 }, { name: 'Spurs', short: 'TOT', id: 4 },
+    { name: "Nott'm Forest", short: 'NFO', id: 5 }, { name: 'Brighton', short: 'BHA', id: 6 },
+    { name: 'Newcastle', short: 'NEW', id: 7 }, { name: 'Leeds', short: 'LEE', id: 8 },
+  ];
+  const m = clubMatcher(api);
+  const id = (label) => (m(label) || {}).id;
+  ok(id('Arsenal') === 1, 'exact name');
+  ok(id('ARS') === 1, 'short code');
+  ok(id('Brighton & Hove Albion') === 6, 'the long form finds the short one');
+  const palace = clubMatcher([{ name: 'Palace', short: 'CRY', id: 9 }]);
+  ok((palace('Crystal Palace') || {}).id === 9, 'Crystal Palace → Palace');
+  const long = clubMatcher([{ name: 'Wolverhampton Wanderers', short: 'WOL', id: 10 }]);
+  ok((long('Wolverhampton') || {}).id === 10, 'and the long form the other way');
+  ok(id('Manchester United') === 2, 'Manchester United → Man Utd');
+  ok(id('Tottenham Hotspur') === 4, 'Tottenham Hotspur → Spurs (no word in common at all)');
+  ok(id('Nottingham Forest') === 5, "Nottingham Forest → Nott'm Forest");
+  ok(id('Forest') === 5, 'and the everyday shorthand too');
+  ok(id('Newcastle United') === 7, 'Newcastle United → Newcastle');
+  ok(id('Leeds United') === 8, 'Leeds United → Leeds');
+  /* The ambiguity that must NOT resolve. "Manchester" alone is two clubs, and
+     guessing between them would put a fixture on the wrong side of the city. */
+  ok(id('Manchester') !== 2 || id('Manchester') !== 3, 'a bare "Manchester" is not silently assigned');
+  ok(m('Barcelona') === null, 'a club not in the league returns null rather than a near miss');
+  ok(m('') === null && m(null) === null, 'and empty input is safe');
+}
+
+console.log('• briefing: every club in the briefing resolves to a real one');
+{
+  /* THE regression guard, and the one that would have caught the bug. The
+     failure was not a wrong match — it was two clubs matching NOTHING, so
+     --fix rewrote eighteen fixture blocks and silently left two as they were.
+     A document that looks fixed and is not is worse than one that is plainly
+     broken, so this asserts total coverage rather than spot-checking names.
+
+     The API's own names, verbatim, including the awkward ones. */
+  const api = [['Arsenal','ARS'],['Aston Villa','AVL'],['Bournemouth','BOU'],['Brentford','BRE'],
+    ['Brighton','BHA'],['Chelsea','CHE'],['Coventry','COV'],['Crystal Palace','CRY'],
+    ['Everton','EVE'],['Fulham','FUL'],['Hull','HUL'],['Ipswich','IPS'],['Leeds','LEE'],
+    ['Liverpool','LIV'],['Man City','MCI'],['Man Utd','MUN'],['Newcastle','NEW'],
+    ["Nott'm Forest",'NFO'],['Sunderland','SUN'],['Spurs','TOT']]
+    .map(([name, short], i) => ({ name, short, id: i + 1 }));
+  const m = clubMatcher(api);
+  const teams = teamsFromHtml(readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8'));
+
+  const unmatchedClubs = teams.map((t) => t.name).filter((n) => !m(n));
+  ok(unmatchedClubs.length === 0,
+    'every club heading resolves' + (unmatchedClubs.length ? ' — ' + unmatchedClubs.join(', ') : ''));
+
+  /* And the opponent labels inside the fixture text, which are written more
+     loosely still ("Forest", "Man Utd", "Spurs"). */
+  const opps = [...new Set(claimsFromTeams(teams).fixtures.map((f) => f.opp))];
+  const unmatchedOpps = opps.filter((o) => !m(o));
+  ok(unmatchedOpps.length === 0,
+    'every opponent named in a fixture resolves' +
+    (unmatchedOpps.length ? ' — ' + unmatchedOpps.join(', ') : ''));
+  ok(opps.length >= 18, 'and there were enough distinct opponents to be worth checking (' + opps.length + ')');
+}
+
+console.log('• briefing: the alias table has not drifted from the app\'s');
+{
+  /* The same handful of clubs, for the same reason, kept in two places: the
+     match model needs it (PLSIM_ALIAS) and this file must stay
+     dependency-free. Two copies of a lookup are fine; two copies that
+     disagree are a bug that only shows up on one club. */
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const i = html.indexOf('const PLSIM_ALIAS=');
+  const src = html.slice(i, html.indexOf('};', i) + 2).replace('const PLSIM_ALIAS=', '');
+  const app = new Function('return ' + src)();
+  const disagree = Object.keys(app).filter((k) => CLUB_ALIAS[k] && CLUB_ALIAS[k] !== app[k]);
+  ok(disagree.length === 0, 'no alias resolves differently in the two tables' +
+    (disagree.length ? ' — ' + disagree.map((k) => k + ': ' + app[k] + ' vs ' + CLUB_ALIAS[k]).join(', ') : ''));
+  const missing = Object.keys(app).filter((k) => !CLUB_ALIAS[k]);
+  ok(missing.length === 0, 'every club the app aliases is aliased here too' +
+    (missing.length ? ' — missing: ' + missing.join(', ') : ''));
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

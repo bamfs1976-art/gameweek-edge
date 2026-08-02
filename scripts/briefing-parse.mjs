@@ -200,22 +200,7 @@ export function claimsFromTeams(teams) {
    `nameOf` maps a briefing label ("Forest", "Man Utd", "Spurs") to the club
    whose block it is, since the two are written differently. */
 export function fixtureContradictions(fixtures, clubNames) {
-  const norm = (x) => String(x || '').toLowerCase().replace(/[^a-z]/g, '');
-  const canon = (label) => {
-    const n = norm(label);
-    let best = null;
-    for (const c of clubNames) {
-      const cn = norm(c);
-      if (cn === n) return c;
-      /* "Forest" ⊂ "nottinghamforest", "Man Utd" ⊄ anything by substring, so
-         also try the distinctive word. */
-      if (cn.includes(n) || n.includes(cn)) { if (!best || c.length < best.length) best = c; }
-    }
-    if (best) return best;
-    const words = n.match(/[a-z]{3,}/g) || [];
-    for (const c of clubNames) { if (words.some((w) => norm(c).includes(w))) return c; }
-    return null;
-  };
+  const canon = clubMatcher(clubNames);
   const out = [];
   const byGw = {};
   for (const f of fixtures) {
@@ -246,4 +231,66 @@ export function fixtureContradictions(fixtures, clubNames) {
     }
   }
   return out;
+}
+
+/* ── One club-name matcher ──────────────────────────────────
+   The briefing, the fixture text and the API each write club names
+   differently: "Nottingham Forest" / "Forest" / "Nott'm Forest", "Brighton &
+   Hove Albion" / "Brighton" / "BHA". There were three separate matchers here
+   with three separate bugs — one had its `includes` arguments the wrong way
+   round, so "Brighton & Hove Albion" matched nothing and that club's fixtures
+   were silently left uncorrected while everything around them was rewritten.
+
+   One matcher, four rules in order of confidence: exact, short code, either
+   string containing the other, then a distinctive word in common. */
+/* The clubs whose everyday name shares no word with the API's. The app has
+   carried this table since the match model was fitted (PLSIM_ALIAS in
+   index.html) — the same handful, for the same reason. Duplicated rather than
+   imported because this file must stay dependency-free, and a test asserts
+   the two agree so they cannot drift apart. */
+export const CLUB_ALIAS = {
+  manchesterunited: 'manutd', manutd: 'manutd', manchestercity: 'mancity', mancity: 'mancity',
+  tottenham: 'spurs', tottenhamhotspur: 'spurs', spurs: 'spurs',
+  nottinghamforest: 'nottmforest', nottmforest: 'nottmforest', forest: 'nottmforest',
+  newcastleunited: 'newcastle', newcastle: 'newcastle',
+  brightonandhovealbion: 'brighton', brightonhovealbion: 'brighton', brighton: 'brighton',
+  afcbournemouth: 'bournemouth', bournemouth: 'bournemouth',
+  ipswichtown: 'ipswich', ipswich: 'ipswich', hullcity: 'hull', hull: 'hull',
+  coventrycity: 'coventry', coventry: 'coventry', leedsunited: 'leeds', leeds: 'leeds',
+  wolverhamptonwanderers: 'wolves', wolves: 'wolves',
+};
+export function clubMatcher(labels) {
+  const norm = (x) => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z]/g, '');
+  const STOP = new Set(['city', 'united', 'town', 'albion', 'hove', 'and', 'the', 'fc', 'hotspur', 'wanderers']);
+  const rows = labels.map((l) => {
+    const full = typeof l === 'string' ? l : l.name;
+    const short = typeof l === 'string' ? '' : (l.short || '');
+    const n = norm(full);
+    const words = (String(full).toLowerCase().match(/[a-z]{3,}/g) || [])
+      .filter((w) => !STOP.has(w));
+    return { value: l, full, short, n, sn: norm(short), words };
+  });
+  return (label) => {
+    const n = norm(label);
+    if (!n) return null;
+    let hit = rows.find((r) => r.n === n);
+    if (hit) return hit.value;
+    /* Aliases first after an exact hit: "Tottenham Hotspur" and "Spurs" share
+       no word at all, so no amount of substring cleverness will bridge them. */
+    const a = CLUB_ALIAS[n];
+    if (a) { hit = rows.find((r) => CLUB_ALIAS[r.n] === a || r.n === a); if (hit) return hit.value; }
+    hit = rows.find((r) => r.sn && r.sn === n);
+    if (hit) return hit.value;
+    /* Either direction — "Brighton" ⊂ "brightonhovealbion" AND the reverse. */
+    const both = rows.filter((r) => r.n.includes(n) || n.includes(r.n));
+    if (both.length === 1) return both[0].value;
+    if (both.length > 1) return both.sort((a, b) => a.n.length - b.n.length)[0].value;
+    /* "Nott'm Forest" vs "Nottingham Forest": no substring, one shared word
+       once the generic ones are dropped. */
+    const words = (String(label).toLowerCase().match(/[a-z]{3,}/g) || []).filter((w) => !STOP.has(w));
+    const byWord = rows.filter((r) => r.words.some((w) => words.includes(w) ||
+      words.some((x) => w.startsWith(x) || x.startsWith(w))));
+    return byWord.length === 1 ? byWord[0].value : null;
+  };
 }

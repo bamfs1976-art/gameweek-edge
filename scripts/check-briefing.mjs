@@ -28,7 +28,7 @@
  * extracted, prints it, and exits non-zero if the shape of the document is
  * not what it expected.
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -39,10 +39,17 @@ const arg = (n) => { const i = process.argv.indexOf('--' + n); return i > -1 ? p
    fixtures gameweek by gameweek — the one claim type the API settles
    outright. Pass --file to check the markdown instead. */
 const FILE = arg('file') || 'docs/briefings/2026-27-preseason.html';
+/* --fix rewrites the one section the API can regenerate outright: the opening
+   fixtures. It is where the errors are (7 wrong venues, 19 pairings that do
+   not exist, and 20 claims contradicting each other), and it is pure data —
+   opponent, venue, difficulty — with no judgement in it that a human wrote.
+   Everything else is left alone, because a penalty order is one word inside a
+   prose sentence and a fee is not in the feed at all. */
+const FIX = process.argv.includes('--fix');
 const API = (process.env.FPL_API || 'https://fantasy.premierleague.com/api').replace(/\/$/, '');
 
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
-  teamsFromHtml, claimsFromTeams, fixtureContradictions } from './briefing-parse.mjs';
+  teamsFromHtml, claimsFromTeams, fixtureContradictions, clubMatcher } from './briefing-parse.mjs';
 
 const md = readFileSync(join(ROOT, FILE), 'utf8');
 
@@ -219,21 +226,12 @@ say('·', mvOk + ' consistent, ' + mvWrong + ' contradicted, ' + mvHedged +
 if (fxClaims.length) {
   console.log('\nOPENING FIXTURES');
   let fxOk = 0, fxOpp = 0, fxVenue = 0, fxNone = 0, fxHedged = 0;
-  const shortOf = {};
-  for (const t of boot.teams || []) {
-    shortOf[norm(t.name)] = t.id; shortOf[norm(t.short_name)] = t.id;
-  }
   /* The briefing uses everyday club names — "Forest", "Man Utd", "Spurs" —
-     which are neither the API's `name` nor its `short_name`. Matching on the
-     longest common form keeps a naming difference from reading as a wrong
-     fixture, which would drown the real ones. */
-  const teamId = (label) => {
-    const n = norm(label);
-    if (shortOf[n] != null) return shortOf[n];
-    const hit = (boot.teams || []).find((t) => norm(t.name).includes(n) || n.includes(norm(t.short_name)) ||
-      norm(t.name).split(' ').some((w) => w.length > 3 && n.includes(w)));
-    return hit ? hit.id : null;
-  };
+     which are neither the API's `name` nor its `short_name`. One shared
+     matcher, so a naming difference cannot read as a wrong fixture here while
+     reading fine everywhere else. */
+  const match = clubMatcher((boot.teams || []).map((t) => ({ name: t.name, short: t.short_name, id: t.id })));
+  const teamId = (label) => { const t = match(label); return t ? t.id : null; };
   for (const c of fxClaims) {
     const me = teamId(c.club), them = teamId(c.opp);
     if (me == null || them == null) { fxNone++; continue; }
@@ -274,6 +272,65 @@ const gw1 = (fixtures || []).filter((f) => f.event === 1);
 say('·', gw1.length + ' fixtures in GW1' + (gw1.length
   ? ': ' + gw1.map((f) => (teams[f.team_h] || {}).short_name + ' v ' + (teams[f.team_a] || {}).short_name).join(', ')
   : ''));
+
+/* ── --fix: regenerate the fixture block from the real list ── */
+if (FIX && HTML && briefTeams) {
+  const { loadEngine } = await import('./content/model.mjs');
+  let out = md, rewritten = 0;
+  let E = null;
+  try { E = loadEngine(); } catch (_) { /* bands fall back to the briefing's own */ }
+  /* Our own difficulty rather than a hand-assigned band: the same Poisson
+     model the app grades fixtures with, so the corrected document says what
+     the product says. Without the engine the band is left as written. */
+  let band = () => null;
+  if (E) {
+    const R = E.plsimRatings({ teams, elements: els, raw: boot }, fixtures);
+    band = (me, f) => {
+      const m = E.plsimMatch(R, f.team_h, f.team_a);
+      if (!m) return null;
+      const home = f.team_h === me;
+      const d = (E.fdrAttack(home ? m.hx : m.ax) + E.fdrDefence(home ? m.csH : m.csA)) / 2;
+      return d <= 2 ? 'easy' : d <= 3 ? 'mod' : d <= 4 ? 'hard' : 'vhard';
+    };
+  }
+  const matchFix = clubMatcher((boot.teams || []).map((t) => ({ name: t.name, short: t.short_name, id: t.id })));
+  const idOf = (label) => { const t = matchFix(label); return t ? t.id : null; };
+  for (const t of briefTeams) {
+    const me = idOf(t.name);
+    if (me == null) continue;
+    const want = (t.fx || []).length || 3;
+    const mine = (fixtures || []).filter((f) => (f.team_h === me || f.team_a === me) && f.event)
+      .sort((a, b) => a.event - b.event).slice(0, want);
+    if (!mine.length) continue;
+    const rows = mine.map((f) => {
+      const home = f.team_h === me;
+      const opp = teams[home ? f.team_a : f.team_h];
+      const old = (t.fx || []).find((x) => +x[0] === f.event);
+      const b = band(me, f) || (old ? old[2] : 'mod');
+      return '["' + f.event + '","' + (opp ? opp.name : '?') + ' (' + (home ? 'H' : 'A') + ')","' + b + '"]';
+    }).join(',');
+    /* Replace this club's fx array only. Anchored on the club's own name so a
+       shared opponent name cannot rewrite the wrong block. */
+    const at = out.indexOf('name:"' + t.name + '"');
+    if (at < 0) continue;
+    const fxAt = out.indexOf('fx:[', at);
+    if (fxAt < 0) continue;
+    let depth = 0, end = fxAt + 3;
+    for (let i = fxAt + 3; i < out.length; i++) {
+      if (out[i] === '[') depth++;
+      else if (out[i] === ']') { depth--; if (!depth) { end = i + 1; break; } }
+    }
+    out = out.slice(0, fxAt) + 'fx:[' + rows + ']' + out.slice(end);
+    rewritten++;
+  }
+  const dest = FILE.replace(/\.html?$/i, '.fixed.html');
+  writeFileSync(join(ROOT, dest), out);
+  console.log('\n' + '─'.repeat(60));
+  console.log('--fix: rewrote the opening fixtures for ' + rewritten + ' clubs from the real list');
+  console.log('       → ' + dest + (E ? '  (difficulty from our own match model)'
+    : '  (difficulty left as written — the engine did not load)'));
+  console.log('       Nothing else was touched. Diff it before replacing the original.');
+}
 
 /* ── the report ───────────────────────────────────────────── */
 console.log('\n' + '─'.repeat(60));
