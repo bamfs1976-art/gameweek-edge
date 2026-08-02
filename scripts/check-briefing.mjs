@@ -34,10 +34,15 @@ import { dirname, join } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (n) => { const i = process.argv.indexOf('--' + n); return i > -1 ? process.argv[i + 1] : null; };
-const FILE = arg('file') || 'docs/briefings/2026-27-preseason.md';
+/* The HTML edition carries the same briefing as a structured TEAMS array, so
+   it is the default: nothing is guessed from prose, and it states the opening
+   fixtures gameweek by gameweek — the one claim type the API settles
+   outright. Pass --file to check the markdown instead. */
+const FILE = arg('file') || 'docs/briefings/2026-27-preseason.html';
 const API = (process.env.FPL_API || 'https://fantasy.premierleague.com/api').replace(/\/$/, '');
 
-import { clubBlocks, priceClaims, penaltyClaims, moveClaims } from './briefing-parse.mjs';
+import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
+  teamsFromHtml, claimsFromTeams, fixtureContradictions } from './briefing-parse.mjs';
 
 const md = readFileSync(join(ROOT, FILE), 'utf8');
 
@@ -70,17 +75,23 @@ function findPlayer(els, name) {
 
 const say = (icon, s) => console.log('  ' + icon + ' ' + s);
 const R = { agree: 0, conflict: 0, missing: 0, ambiguous: 0 };
+let selfBad = 0;
 const conflicts = [];   /* {key, msg} — key is the fact, so one fact reports once */
 const unresolved = [];   /* the briefing hedged and the API has not settled it yet */
 
-const blocks = clubBlocks(md);
-const prices = priceClaims(md);
-const pens = penaltyClaims(blocks);
-const moves = moveClaims(blocks);
+const HTML = /\.html?$/i.test(FILE);
+const briefTeams = HTML ? teamsFromHtml(md) : null;
+const structured = briefTeams ? claimsFromTeams(briefTeams) : null;
+const blocks = briefTeams ? briefTeams.map((t) => ({ name: t.name, body: '' })) : clubBlocks(md);
+const prices = structured ? structured.prices : priceClaims(md);
+const pens = structured ? structured.pens : penaltyClaims(blocks);
+const moves = structured ? structured.moves : moveClaims(blocks);
+const fxClaims = structured ? structured.fixtures : [];
 
-console.log('Briefing: ' + FILE);
-console.log('Parsed: ' + blocks.length + ' club blocks · ' + prices.length + ' price claims · ' +
-  pens.length + ' penalty claims · ' + moves.length + ' squad moves\n');
+console.log('Briefing: ' + FILE + (HTML ? '  (structured)' : '  (prose)'));
+console.log('Parsed: ' + blocks.length + ' clubs · ' + prices.length + ' price claims · ' +
+  pens.length + ' penalty claims · ' + moves.length + ' squad moves' +
+  (fxClaims.length ? ' · ' + fxClaims.length + ' fixture claims' : '') + '\n');
 
 /* The shape guard. If the document is reorganised and the parser silently
    stops finding club blocks, this must fail loudly rather than report a clean
@@ -88,7 +99,8 @@ console.log('Parsed: ' + blocks.length + ' club blocks · ' + prices.length + ' 
    check in this repo useless for weeks. */
 let shapeBad = false;
 const shape = (cond, msg) => { if (!cond) { shapeBad = true; console.error('  ✗ SHAPE: ' + msg); } };
-shape(blocks.length === 20, 'expected 20 club blocks, found ' + blocks.length);
+shape(blocks.length === 20, 'expected 20 clubs, found ' + blocks.length);
+shape(!HTML || fxClaims.length >= 50, 'expected opening fixtures per club, found ' + fxClaims.length);
 shape(prices.length >= 10, 'expected at least 10 price claims, found ' + prices.length);
 shape(pens.length >= 15, 'expected a penalty claim for most clubs, found ' + pens.length);
 shape(moves.length >= 40, 'expected a squad-move list per club, found ' + moves.length);
@@ -96,6 +108,25 @@ if (shapeBad) {
   console.error('\nThe briefing is not the shape this parser understands. Fix the parser ' +
     'before trusting a clean result — a partial parse that reports "all clear" is the bug.');
   process.exit(2);
+}
+
+/* ── the briefing against itself ──────────────────────────── */
+/* Needs no network, so it runs first. Every fixture is stated twice — once by
+   each club — and the two statements can disagree. A document that contradicts
+   itself should be caught the moment it lands, not the next time someone has
+   an internet connection. */
+if (fxClaims.length) {
+  const bad = fixtureContradictions(fxClaims, briefTeams.map((t) => t.name));
+  console.log('INTERNAL CONSISTENCY (no API needed)');
+  if (!bad.length) say('·', 'every fixture claim agrees with the opponent\'s own claim');
+  else {
+    say('✗', bad.length + ' of the fixture claims contradict another claim in the same document');
+    for (const b of bad) console.log('      • ' + b.msg);
+    say('·', 'the API cannot settle these — one of the two claims is simply wrong, ' +
+      'and until the fixture list is read directly neither can be trusted');
+  }
+  console.log('');
+  selfBad = bad.length;
 }
 
 let boot, fixtures;
@@ -180,6 +211,56 @@ for (const c of moves) {
 say('·', mvOk + ' consistent, ' + mvWrong + ' contradicted, ' + mvHedged +
   ' still-open rumours, ' + mvUnknown + ' unresolvable');
 
+/* ── opening fixtures ─────────────────────────────────────── */
+/* The claims the API settles outright: who a club plays in a given gameweek,
+   and whether it is home. The briefing itself flags one of these as unsure —
+   Hull's GW1 is written "Man Utd (H?)" — and this is the check that answers
+   it rather than leaving it on a to-do list. */
+if (fxClaims.length) {
+  console.log('\nOPENING FIXTURES');
+  let fxOk = 0, fxOpp = 0, fxVenue = 0, fxNone = 0, fxHedged = 0;
+  const shortOf = {};
+  for (const t of boot.teams || []) {
+    shortOf[norm(t.name)] = t.id; shortOf[norm(t.short_name)] = t.id;
+  }
+  /* The briefing uses everyday club names — "Forest", "Man Utd", "Spurs" —
+     which are neither the API's `name` nor its `short_name`. Matching on the
+     longest common form keeps a naming difference from reading as a wrong
+     fixture, which would drown the real ones. */
+  const teamId = (label) => {
+    const n = norm(label);
+    if (shortOf[n] != null) return shortOf[n];
+    const hit = (boot.teams || []).find((t) => norm(t.name).includes(n) || n.includes(norm(t.short_name)) ||
+      norm(t.name).split(' ').some((w) => w.length > 3 && n.includes(w)));
+    return hit ? hit.id : null;
+  };
+  for (const c of fxClaims) {
+    const me = teamId(c.club), them = teamId(c.opp);
+    if (me == null || them == null) { fxNone++; continue; }
+    const f = (fixtures || []).find((x) => x.event === c.gw &&
+      ((x.team_h === me && x.team_a === them) || (x.team_a === me && x.team_h === them)));
+    if (!f) { fxNone++; continue; }
+    const reallyHome = f.team_h === me;
+    if (reallyHome === c.home) fxOk++;
+    else if (c.hedged) {
+      fxHedged++;
+      unresolved.push(c.club + ' GW' + c.gw + ': briefing was unsure of the venue and it is ' +
+        (reallyHome ? 'HOME' : 'AWAY'));
+    } else {
+      fxVenue++;
+      conflicts.push({ key: 'fx:' + me + ':' + c.gw, msg: 'fixture · ' + c.club + ' GW' + c.gw +
+        ' v ' + c.opp + ': briefing says ' + (c.home ? 'home' : 'away') + ', API says ' +
+        (reallyHome ? 'home' : 'away') });
+    }
+  }
+  say('·', fxOk + ' exact, ' + fxVenue + ' wrong venue, ' + fxHedged + ' venue the briefing flagged, ' +
+    fxNone + ' opponent not found in that gameweek');
+  /* A club the briefing pairs with the wrong opponent shows up here rather
+     than as a venue error, and it is the more serious of the two. */
+  if (fxNone) say('·', 'an unfound pairing is either a naming difference or a wrong opponent — ' +
+    'check a sample before dismissing it');
+}
+
 /* ── GW1 ──────────────────────────────────────────────────── */
 console.log('\nGAMEWEEK 1');
 const ev1 = (boot.events || []).find((e) => e.id === 1);
@@ -228,6 +309,10 @@ if (conflicts.length) {
 } else {
   console.log('No conflicts on the checkable claims.');
 }
+if (selfBad) {
+  console.log('\nPlus ' + selfBad + ' internal contradiction' + (selfBad === 1 ? '' : 's') +
+    ' listed above — the briefing disagreeing with itself, which no feed can fix.');
+}
 if (unresolved.length) {
   console.log('\n' + unresolved.length + ' STILL OPEN — the briefing flagged these itself:\n');
   for (const u of unresolved) console.log('  ? ' + u);
@@ -235,4 +320,4 @@ if (unresolved.length) {
 console.log('\nNOT CHECKABLE, and this is the briefing\'s real value: managers,');
 console.log('transfer fees, set-piece coaching changes, and the narrative behind');
 console.log('a squad. None of it is in the API. None of it was verified here.');
-process.exit(conflicts.length ? 1 : 0);
+process.exit(conflicts.length || selfBad ? 1 : 0);

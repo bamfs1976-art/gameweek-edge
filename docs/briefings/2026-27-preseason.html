@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GWE · PL 2026/27 Pre-Season Scout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0C0F; --surface:#111418; --surface2:#171B21; --line:#22272E;
+    --text:#E6EAF0; --dim:#8A93A0; --faint:#5A626E;
+    --green:#00D26A; --red:#FF4D4F; --amber:#F5A524; --blue:#3B82F6; --hot:#B6FF3C;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --disp:'Inter',system-ui,-apple-system,sans-serif;
+    --r:4px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:var(--disp);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* Topbar */
+  .topbar{position:sticky;top:0;z-index:50;background:rgba(10,12,15,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-weight:700;letter-spacing:.5px;font-size:14px}
+  .logo .dot{width:11px;height:11px;border-radius:2px;background:var(--hot);box-shadow:0 0 10px var(--hot)}
+  .logo small{color:var(--dim);font-weight:500}
+  .ticker{font-family:var(--mono);font-size:11px;color:var(--amber);border:1px solid var(--line);border-radius:99px;padding:3px 10px;background:var(--surface)}
+  .search{margin-left:auto;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:7px 11px;min-width:210px}
+  .search input{background:transparent;border:0;outline:0;color:var(--text);font-family:var(--mono);font-size:13px;width:100%}
+  .search svg{flex:0 0 auto}
+
+  /* Filter chips */
+  .filters{display:flex;gap:7px;flex-wrap:wrap;padding:12px 18px 4px}
+  .chip{font-family:var(--mono);font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--dim);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 12px;cursor:pointer;transition:.15s}
+  .chip:hover{color:var(--text);border-color:var(--faint)}
+  .chip.active{color:var(--bg);background:var(--hot);border-color:var(--hot);font-weight:700}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:14px 18px 70px}
+
+  /* Intro panel */
+  .intro{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin:10px 0 20px}
+  .intro h1{font-size:21px;margin:0 0 4px;letter-spacing:-.3px}
+  .intro p{margin:6px 0;color:var(--dim);font-size:14px}
+  .intro .promptbox{margin-top:12px;background:var(--bg);border:1px dashed var(--line);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:12.5px;color:var(--text);white-space:pre-wrap;position:relative}
+  .copybtn{position:absolute;top:8px;right:8px;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:4px 8px;cursor:pointer}
+  .copybtn:hover{color:var(--hot);border-color:var(--hot)}
+
+  /* Headline strip */
+  .headlines{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:22px}
+  .hl{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:var(--r);padding:11px 13px}
+  .hl b{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--amber);margin-bottom:3px}
+  .hl span{font-size:13px;color:var(--dim)}
+
+  /* Team card */
+  .team{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+  .thead{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none;border-bottom:1px solid transparent}
+  .team.open .thead{border-bottom-color:var(--line)}
+  .pos{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--faint);width:26px;text-align:center;flex:0 0 auto}
+  .tname{font-weight:700;font-size:16px;letter-spacing:-.2px}
+  .tmeta{font-family:var(--mono);font-size:11px;color:var(--dim);margin-left:2px}
+  .badge{font-family:var(--mono);font-size:9.5px;letter-spacing:.5px;text-transform:uppercase;padding:3px 7px;border-radius:99px;font-weight:600}
+  .b-champ{background:rgba(182,255,60,.14);color:var(--hot);border:1px solid rgba(182,255,60,.35)}
+  .b-promo{background:rgba(59,130,246,.14);color:var(--blue);border:1px solid rgba(59,130,246,.35)}
+  .b-ucl{background:rgba(245,165,36,.12);color:var(--amber);border:1px solid rgba(245,165,36,.3)}
+  .caret{margin-left:auto;color:var(--faint);font-family:var(--mono);transition:.2s;flex:0 0 auto}
+  .team.open .caret{transform:rotate(90deg);color:var(--hot)}
+
+  .tbody{display:none;padding:6px 16px 18px}
+  .team.open .tbody{display:block}
+
+  .summary{font-size:14px;color:var(--text);margin:10px 0 14px;padding-left:11px;border-left:2px solid var(--line)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:680px){.grid2{grid-template-columns:1fr}}
+
+  .block h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim);margin:0 0 7px;display:flex;align-items:center;gap:6px}
+  .block h4::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--faint)}
+  .block.ins h4::before{background:var(--green)}
+  .block.outs h4::before{background:var(--red)}
+  ul.mv{list-style:none;margin:0;padding:0}
+  ul.mv li{font-family:var(--mono);font-size:12.5px;padding:3px 0;color:var(--text);border-bottom:1px dotted var(--line)}
+  ul.mv li:last-child{border-bottom:0}
+  .rumour{color:var(--amber)}
+
+  .picks{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  .picks-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:680px){.picks-grid{grid-template-columns:1fr}}
+  .pick{background:var(--surface2);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px}
+  .pick .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px;font-weight:600}
+  .pick.value .lab{color:var(--green)}
+  .pick.prem .lab{color:var(--hot)}
+  .pick.diff .lab{color:var(--blue)}
+  .pick.sp .lab{color:var(--amber)}
+  .pick p{margin:0;font-size:13px;color:var(--text)}
+
+  .fixtures{margin-top:14px}
+  .fixtures h4{font-family:var(--mono);font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--dim);margin:0 0 8px}
+  .fxrow{display:flex;gap:6px;flex-wrap:wrap}
+  .fx{font-family:var(--mono);font-size:11px;padding:5px 9px;border-radius:var(--r);border:1px solid var(--line);display:flex;flex-direction:column;gap:1px;min-width:70px}
+  .fx .gw{font-size:9px;color:var(--faint);letter-spacing:.5px}
+  .fx .op{font-weight:600}
+  .fx.easy{background:rgba(0,210,106,.10);border-color:rgba(0,210,106,.35)}
+  .fx.easy .op{color:var(--green)}
+  .fx.mod{background:rgba(245,165,36,.09);border-color:rgba(245,165,36,.3)}
+  .fx.mod .op{color:var(--amber)}
+  .fx.hard{background:rgba(255,77,79,.10);border-color:rgba(255,77,79,.32)}
+  .fx.hard .op{color:var(--red)}
+  .fx.vhard{background:rgba(255,77,79,.20);border-color:rgba(255,77,79,.5)}
+  .fx.vhard .op{color:#ff9a9b}
+
+  /* Shortlist + caveats */
+  .section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-top:22px}
+  .section h2{font-size:16px;margin:0 0 12px;font-family:var(--mono);letter-spacing:.3px}
+  .slrow{margin-bottom:11px}
+  .slrow b{font-family:var(--mono);font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--hot);display:block;margin-bottom:3px}
+  .slrow span{font-size:13.5px;color:var(--dim)}
+  .caveats li{font-size:13px;color:var(--dim);margin-bottom:6px}
+  .noresult{text-align:center;color:var(--dim);font-family:var(--mono);padding:40px 0;display:none}
+
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:16px 18px;color:var(--faint);font-family:var(--mono);font-size:11px;text-align:center}
+  footer a{color:var(--dim)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:2px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo"><span class="dot"></span>GAMEWEEK&nbsp;EDGE <small>· scout terminal</small></div>
+  <span class="ticker">PL 2026/27 · pre-season · compiled 02 Aug 2026</span>
+  <div class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A93A0" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="q" type="text" placeholder="filter team or player…" autocomplete="off">
+  </div>
+</div>
+
+<div class="filters" id="filters">
+  <span class="chip active" data-f="all">All 20</span>
+  <span class="chip" data-f="big">Top 6</span>
+  <span class="chip" data-f="promo">Promoted</span>
+  <span class="chip" data-f="easy">Easy openers</span>
+  <span class="chip" data-f="tough">Tough openers</span>
+</div>
+
+<div class="wrap">
+
+  <div class="intro">
+    <h1>Premier League 2026/27 — Pre-Season Scout Report</h1>
+    <p>All 20 clubs, ordered by last season's finish. Each card: pre-season summary, transfers in/out, and FPL picks across value, premium/captaincy, differentials and set-piece/penalty duty, plus opening fixtures colour-coded by difficulty. Tap any club to expand.</p>
+    <p style="color:var(--faint);font-size:13px">Window open until ~1 Sep 2026 · prices marked "est." pending official reveal · penalty/set-piece order fluid after 10 managerial changes.</p>
+    <div class="promptbox" id="prompt"><button class="copybtn" onclick="copyPrompt()">copy</button>You are the Gameweek Edge FPL scout. Use ONLY the pre-season briefing below plus live FPL API data for prices, ownership and form. Do not invent transfers or prices. When set-piece or penalty duty is marked "watch", flag it as unconfirmed. Question: [your question]. BRIEFING: [paste the team blocks]</div>
+  </div>
+
+  <div class="headlines">
+    <div class="hl"><b>Champions</b><span>Arsenal (85 pts), squad kept largely intact under Arteta.</span></div>
+    <div class="hl"><b>Manager churn</b><span>10 new bosses inc. Maresca (City), Iraola (LFC), Alonso (CFC), De Zerbi (Spurs).</span></div>
+    <div class="hl"><b>Ownership reset</b><span>Salah leaving Liverpool. Isak is the new premium call there.</span></div>
+    <div class="hl"><b>Record prices</b><span>Haaland £15.5m, Bruno £12.0m and owns all United set-pieces.</span></div>
+    <div class="hl"><b>Best value FWD</b><span>Igor Thiago (Brentford): nailed, on pens, 21 goals, soft openers.</span></div>
+    <div class="hl"><b>Avoid early</b><span>Bournemouth, Villa, Forest and all 3 promoted sides: brutal runs.</span></div>
+  </div>
+
+  <div id="teams"></div>
+  <div class="noresult" id="noresult">// no clubs match that filter</div>
+
+  <div class="section" id="shortlist">
+    <h2>&gt; quick FPL shortlist</h2>
+    <div class="slrow"><b>Premium anchors</b><span>Haaland £15.5m · Bruno Fernandes £12.0m · Saka ~£10.0m · Palmer £9.5m · Isak ~£9.0m</span></div>
+    <div class="slrow"><b>Best value strikers</b><span>Igor Thiago (BRE) · Gyokeres (ARS) · Ekitike (LIV) · Haji Wright (COV) · Rodrigo Muniz (FUL)</span></div>
+    <div class="slrow"><b>Cheap defender enablers</b><span>Gabriel (ARS) · Munoz (CRY) · Robinson (FUL) · van Ewijk (COV) · Leif Davis (IPS) · De Cuyper (BHA) · Neco Williams (NFO)</span></div>
+    <div class="slrow"><b>Set-piece & penalty magnets</b><span>Bruno (pens/FK/cnr) · Gibbs-White · Palmer · Igor Thiago · Watkins · Woltemade · Ndiaye · Le Fee · McBurnie · Haji Wright</span></div>
+    <div class="slrow"><b>Early differentials</b><span>Toure (NEW) · Pino (CRY) · A. Santos (MUN) · Tzolis (ARS) · Tel (TOT)</span></div>
+  </div>
+
+  <div class="section">
+    <h2>&gt; data caveats</h2>
+    <ul class="caveats">
+      <li>Window open to ~1 Sep 2026. Late deals (Everton striker, Forest's Kalimuendo, Palace's Mateta, Brighton's Baleba links) can still change squads.</li>
+      <li>Prices marked "est." are predictions — confirm against the official reveal and the FPL API at launch.</li>
+      <li>Penalty and set-piece order is the most fluid data here after 10 managerial changes. Re-check after friendlies and GW1.</li>
+      <li>Minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, Joe Gelhardt's Hull status.</li>
+    </ul>
+  </div>
+
+</div>
+
+<footer>
+  <div class="legend">
+    <span><i style="background:var(--green)"></i>easy</span>
+    <span><i style="background:var(--amber)"></i>moderate</span>
+    <span><i style="background:var(--red)"></i>hard</span>
+    <span><i style="background:#ff9a9b"></i>very hard</span>
+  </div>
+  GAMEWEEK EDGE · gameweekedge.co.uk · sources: Premier League, Sky Sports, ESPN, Fantasy Football Scout, Full90. Not affiliated with the Premier League or FPL.
+</footer>
+
+<script>
+const TEAMS = [
+ {pos:1,name:"Arsenal",meta:"85 pts",tag:"big",badge:{t:"Champions",c:"b-champ"},
+  summary:"Reigning champions under Mikel Arteta, who stays and calls the squad only \"tweaked\". Continuity plus depth: Hincapie made permanent, attacking cover added, no rebuild. Storyline: can an almost-unchanged champion go back-to-back while carrying a heavy Champions League load.",
+  ins:["Piero Hincapie (DEF, Leverkusen, ~£34.5m loan→perm)","Christos Tzolis (FWD/W, Club Brugge, ~£35m)","Illan Meslier (GK, Leeds, free)"],
+  outs:["Leandro Trossard (W, Besiktas, ~£15.3m)","Jakub Kiwior (DEF, Porto, ~£14.7m)","Karl Hein (GK, Werder Bremen, ~£2.5m)"],
+  value:"Gabriel Magalhaes (DEF ~£8.0m) clean sheets + aerial threat. Gyokeres (FWD ~£7.5m) starting striker below premium.",
+  prem:"Bukayo Saka (~£10.0m) reliable armband. Gyokeres for premium ceiling up top.",
+  diff:"Tzolis if he forces into the wide rotation (sub-5%). Madueke as a rotation punt.",
+  sp:"Pens Saka primary (Gyokeres, Odegaard in mix — watch). FK Rice/Saka. Corners Rice, Saka, Madueke, Odegaard.",
+  fx:[["1","Coventry (H)","easy"],["2","Chelsea (A)","hard"],["3","Hull (H)","easy"]]},
+
+ {pos:2,name:"Manchester City",meta:"78 pts",tag:"big",badge:null,
+  summary:"End of the Guardiola era — Enzo Maresca confirmed on a 3-year deal. Enormous spend: ~£116m on Elliot Anderson (British record) and £64m on Semenyo, while ageing defenders and Bernardo Silva moved on. A younger, possession-first rebuild with real early transition risk.",
+  ins:["Elliot Anderson (CM, Nott'm Forest, ~£116m)","Antoine Semenyo (FWD/W, Bournemouth, ~£64m)","Jeremy Monga (W, Leicester, ~£10m)","Mathys Detourbet (LW, Troyes, ~£21.4m, loaned out)"],
+  outs:["Bernardo Silva (CM, Real Madrid, free)","Manuel Akanji (CB, Inter, ~£13m)","Nathan Ake (CB, Fenerbahce, ~£7m)","John Stones (CB, released)"],
+  value:"Rayan Cherki (MID) if mid-priced — FK + corners, high assists. Reijnders as a nailed attacking mid.",
+  prem:"Erling Haaland (FWD £15.5m, record price) — default captain and penalty taker.",
+  diff:"Semenyo in a new City role (backup pens/FK, soft openers). Cherki as a low-owned creator.",
+  sp:"Pens Haaland (Semenyo backup). FK Cherki (Semenyo/Reijnders/Marmoush). Corners Cherki, Foden. Hierarchy may shift under Maresca — watch.",
+  fx:[["1","Bournemouth (H)","mod"],["2","Coventry (A)","easy"],["3","Sunderland (H)","easy"]]},
+
+ {pos:3,name:"Manchester United",meta:"71 pts",tag:"big",badge:null,
+  summary:"A dramatic turnaround: Amorim sacked in Jan 2026, and Michael Carrick appointed permanent (confirmed May 2026), steering United to a surprise 3rd. Midfield and defence reinforced. Can a young, Carrick-built side back up an over-achieving year plus a Champions League return.",
+  ins:["Andrey Santos (MID, Chelsea, ~£48m)","Youri Tielemans (MID, Aston Villa, ~£35m)","Tynan Thompson (DEF, Tottenham, ~£4m)","Karl Darlow (GK, Leeds, free)"],
+  outs:["Rasmus Hojlund (FWD, Napoli, ~£43m)","Casemiro (MID, released)","Jadon Sancho (FWD, released)","Andre Onana (GK, Trabzonspor, loan)"],
+  value:"Mbeumo and Cunha both strong mid-price returns behind Bruno. A United defender is a budget clean-sheet punt (conceded <50).",
+  prem:"Bruno Fernandes (£12.0m) — pens, direct FKs AND corners. A set-and-forget captain differential.",
+  diff:"Andrey Santos — nailed new midfielder at low ownership. Cunha for early attacking upside.",
+  sp:"Pens Bruno. FK Bruno (Mbeumo backup). Corners Bruno (Mbeumo backup). His set-piece monopoly is the standout asset.",
+  fx:[["1","Hull (A)","easy"],["2","Ipswich (H)","easy"],["3","Everton (A)","mod"]]},
+
+ {pos:4,name:"Aston Villa",meta:"65 pts",tag:"big",badge:{t:"UCL",c:"b-ucl"},
+  summary:"4th and back in the Champions League, Emery firmly in charge. Cashing in on Morgan Rogers (~£117m to Chelsea) funds a younger refresh, with Garnacho on loan to replace his creativity. FPL caveat: set-piece coach Austin MacPhee has followed the money to Chelsea.",
+  ins:["Alejandro Garnacho (W, Chelsea, loan ~£40m option)","Johan Manzambi (CM, Freiburg, ~£50m)","Joao Gomes (CM, Wolves, ~£35m)","Modou Keba Cisse (CB, LASK, ~£4m)"],
+  outs:["Morgan Rogers (W/AM, Chelsea, ~£117m)","Youri Tielemans (CM, Man Utd, ~£35m)","Donyell Malen (FWD, Roma, ~£21.6m)","Lucas Digne (LB, PSG, ~£8m)"],
+  value:"Matty Cash (attacking RB, corners, defensive pts). Leon Bailey if he nails a starting wide role.",
+  prem:"Ollie Watkins — nailed striker and penalty taker, the reliable armband.",
+  diff:"Garnacho — direct threat at low ownership (must earn Emery's trust). Joao Gomes as a tackles/bookings budget mid.",
+  sp:"Pens Watkins (Buendia distant 2nd). FK Buendia. Corners Cash, Bailey. Output a question mark after losing coach MacPhee — watch.",
+  fx:[["1","Arsenal (H)","hard"],["2","Forest (A)","mod"],["3","Man Utd (A)","hard"],["4","Fulham (A)","mod"],["5","Man City (H)","hard"]]},
+
+ {pos:5,name:"Liverpool",meta:"60 pts",tag:"big",badge:null,
+  summary:"A poor title defence to 5th. Slot out, Andoni Iraola in (2-year deal) — high pressing and transition. Brutal for continuity: Salah departing (Saudi Pro League reported), Konate and Robertson gone on frees. A major reset with real early uncertainty over goals and set-piece order.",
+  ins:["Jeremy Jacquet (DEF, Rennes, ~£60m)","Victor Munoz (ATT, Osasuna, ~£35m)","Ifeanyi Ndukwe (DEF, Austria Wien, ~£2.6m)"],
+  outs:["Mohamed Salah (FWD, leaving — Saudi Pro League reported)","Ibrahima Konate (DEF, Real Madrid, free)","Andy Robertson (DEF, Tottenham, free)"],
+  value:"Hugo Ekitike (FWD ~£7.5m) leads the line below premium. Wirtz (MID) as a creative hub if fairly priced.",
+  prem:"Alexander Isak (FWD ~£9.0m) — now the focal striker and likely new penalty taker. Key captain call post-Salah.",
+  diff:"Szoboszlai for set-piece volume at low ownership. Wirtz as an under-owned creator suiting Iraola.",
+  sp:"Pens Isak likely, Szoboszlai alternative (post-Salah uncertainty — watch). FK Szoboszlai/Wirtz. Corners Szoboszlai, Wirtz, Gakpo.",
+  fx:[["1","Newcastle (A)","hard"],["2","Forest (H)","mod"],["3","Ipswich (A)","easy"],["4","Fulham (H)","mod"],["5","Bournemouth (A)","mod"]]},
+
+ {pos:6,name:"Bournemouth",meta:"57 pts",tag:"",badge:null,
+  summary:"An excellent 6th followed by upheaval. Iraola left for Liverpool, Marco Rose confirmed (3-year deal, Bundesliga press). Semenyo sold to City (~£64m) and Senesi left free to Spurs, so the spine is weaker. A transitional summer that dampens their FPL appeal.",
+  ins:["Alvaro Rodriguez (ST, Elche, ~£25.7m)","Rumours: Tel, Lucumi, Theate (unconfirmed)"],
+  outs:["Antoine Semenyo (W, Man City, ~£64m)","Marcos Senesi (CB, Tottenham, free)","Rumoured: Kroupi, Scott"],
+  value:"Justin Kluivert (MID ~£6.0m) main creative outlet now, on set-pieces. Tavernier (MID) cheap, shares pens.",
+  prem:"No true premium remains. Evanilson nearest, but the brutal opener makes early captaincy unwise.",
+  diff:"Alvaro Rodriguez if he starts centrally. Junior Kroupi if he stays and Rose trusts youth.",
+  sp:"Pens Tavernier/Kluivert share. Corners Tavernier, Scott, Cook. FK Unal, Tavernier, Brooks.",
+  fx:[["1","Man City (A)","vhard"],["2","Everton (A)","mod"],["3","Brentford (A)","mod"],["4","Liverpool (H)","hard"]]},
+
+ {pos:7,name:"Sunderland",meta:"54 pts",tag:"",badge:null,
+  summary:"The surprise package — 7th in their first season back, Regis Le Bris staying. Continuity is the theme, but breakout striker Mayenda left (~£21.5m to Rennes) and incomings have been slow. Classic second-season risk with a thinner attack.",
+  ins:["Thomas Meunier (RB, Lille, free)","More expected before deadline"],
+  outs:["Eliezer Mayenda (ST, Rennes, ~£21.5m)","Dan Neil (MID, departed)","Cirkin, Traore, Huggins (released)"],
+  value:"Enzo Le Fee (MID ~£5.5m) creative hub on pens/FK. Wilson Isidor (~£5.5-6.0m) clear No.9 now.",
+  prem:"None — cheap enablers and defensive punts. Xhaka (~£5.5m) most nailed midfield points via set-pieces.",
+  diff:"Isidor, very low-owned lead striker. Le Fee, the cheap Sunderland mid on pens.",
+  sp:"Pens Le Fee (Diarra backup). FK Xhaka/Le Fee. Corners Xhaka, Le Fee, Hume.",
+  fx:[["1","Ipswich (A)","mod"],["2","Fulham (H)","mod"],["3","Brentford (A)","mod"],["4","Arsenal (H)","vhard"],["5","Man City (A)","vhard"]]},
+
+ {pos:8,name:"Brighton & Hove Albion",meta:"53 pts",tag:"",badge:null,
+  summary:"8th, Fabian Hurzeler continues. A near-total defensive rebuild funded by van Hecke's £52m sale to Spurs. The usual model: recycle a big sale into younger, cheaper talent. Watch the Carlos Baleba exit links — a rumour, and a key pre-deadline monitor.",
+  ins:["Luka Vuskovic (CB, Tottenham, ~£46m)","Pascal Struijk (CB, Leeds, ~£20m)","Zadok Yohanna (FWD/W, AIK, ~£21.5m)","Costinha (RB/MID, Olympiacos, ~£11m)"],
+  outs:["Jan Paul van Hecke (CB, Tottenham, ~£52m)","Webster, Veltman, March (released)","Milner (retired)","Rumour: Baleba exit"],
+  value:"Yankuba Minteh (MID ~£6.0-6.5m est.) on corners, high involvement. De Cuyper (LB ~£4.5-5.0m est.) set-piece value.",
+  prem:"No nailed premium post-Welbeck. Minteh or O'Riley best captaincy-adjacent, but rotation risk.",
+  diff:"Yohanna (new, sub-5%). De Cuyper.",
+  sp:"Corners Gross, Boscagli, Minteh. FK De Cuyper, Ayari. Pens uncertain — O'Riley likeliest (1/1) — watch.",
+  fx:[["1","Aston Villa (H)","mod"],["2","Chelsea (A)","hard"],["3","Leeds (H)","easy"],["4","Coventry (A)","mod"],["5","Arsenal (A)","hard"]]},
+
+ {pos:9,name:"Brentford",meta:"53 pts",tag:"",badge:null,
+  summary:"9th, Keith Andrews continues for a 2nd season targeting Europe. With Wissa and Mbeumo gone, the goal burden sits firmly on Igor Thiago (club-record 21 PL goals, established penalty taker). Pragmatic additions. A settled, well-run side with a genuine focal point.",
+  ins:["Jannik Schuster (CB, RB Salzburg, ~£12m)","Jaidon Anthony (W, Burnley, ~£15m)","Callum Wilson (ST, West Ham, free)"],
+  outs:["Frank Onyeka (CM, Coventry, ~£6.8m)","Ryan Trevitt (released)","Donovan, Krauhaus (loans)"],
+  value:"Kevin Schade (MID ~£6.0m est.) backup pens + strong minutes. Jaidon Anthony (~£5.5m est.) differential wing threat.",
+  prem:"Igor Thiago (FWD ~£7.0-7.5m est.) — standout pick. Nailed, on pens, 21 goals, soft openers = early captaincy.",
+  diff:"Jaidon Anthony. Damsgaard, creator on direct FKs.",
+  sp:"Pens Thiago (Schade backup). Corners Jensen, Janelt, Damsgaard. FK Lewis-Potter, Jensen, Damsgaard.",
+  fx:[["1","Tottenham (H)","mod"],["2","Leeds (A)","easy"],["3","Sunderland (H)","easy"],["4","Bournemouth (A)","mod"],["5","Chelsea (H)","hard"]]},
+
+ {pos:10,name:"Chelsea",meta:"52 pts",tag:"big",badge:null,
+  summary:"A disappointing 10th saw Maresca sacked. Xabi Alonso confirmed (4-year deal), driving another heavy, youth-led window around a rebuilt spine. Marquee ~£117m for Morgan Rogers plus Lacroix at CB. Expect possession-based, high-line football and a deep squad.",
+  ins:["Morgan Rogers (AM/W, Aston Villa, ~£117m)","Maxence Lacroix (CB, Crystal Palace, ~£52m)","Marco Palestra (RB, Atalanta, ~£47m)","Geovany Quenda (W, Sporting, ~£43m)","Emmanuel Emegha (ST, Strasbourg, ~£22m)"],
+  outs:["Marc Cucurella (LB, Real Madrid, ~£51.8m)","Andrey Santos (CM, Man Utd, ~£48m)","Tyrique George (W, Everton, ~£18m)","Alejandro Garnacho (W, Aston Villa, loan)"],
+  value:"Pedro Neto — attacking returns + corners at mid-price. Morgan Rogers if his new price settles below output.",
+  prem:"Cole Palmer (£9.5m, down from £10.5m) — primary penalty taker and the standout captaincy asset.",
+  diff:"Emegha if he starts ahead of an unsettled front line. Quenda, dynamic and likely sub-10%.",
+  sp:"Pens Palmer (Enzo backup). FK Reece James, Enzo, Palmer. Corners James, Neto, Enzo.",
+  fx:[["1","Fulham (A)","mod"],["2","Brighton (H)","mod"],["3","Arsenal (H)","hard"],["4","Brentford (A)","mod"],["5","Everton (A)","mod"]]},
+
+ {pos:11,name:"Fulham",meta:"52 pts",tag:"",badge:null,
+  summary:"11th, and a new era. Silva left after 5 seasons, Alvaro Arbeloa confirmed (3-year deal, first senior top-flight job). A quiet window: only Kusi-Asare in, while Jimenez, Wilson and Diop left. Losing Jimenez removes their penalty taker and goals. Real uncertainty over system and set-piece roles.",
+  ins:["Jonah Kusi-Asare (ST, Bayern Munich, ~£5.2m)"],
+  outs:["Raul Jimenez (ST, Wolves, free)","Harry Wilson (AM, Leeds, free)","Issa Diop (CB, Ipswich, ~£8.5m)"],
+  value:"Rodrigo Muniz (FWD ~£5.5-6.0m est.) likely lead striker. Antonee Robinson (LB ~£5.0m est.) high crossing volume.",
+  prem:"No premium tier. Alex Iwobi (MID) most reliable minutes-and-returns — captain only vs soft opponents.",
+  diff:"Kusi-Asare (new, low ownership). Smith Rowe if Arbeloa gets him firing.",
+  sp:"Highly uncertain post-Jimenez + new manager. Corners Iwobi, Lukic. Pens unresolved (Robinson tentatively 1/1). Treat as provisional.",
+  fx:[["1","Chelsea (A)","hard"],["2","Sunderland (A)","mod"],["3","Crystal Palace (H)","mod"],["4","Coventry (H)","easy"],["5","Man Utd (A)","hard"]]},
+
+ {pos:12,name:"Newcastle United",meta:"49 pts",tag:"",badge:null,
+  summary:"Underwhelmed to 12th, Eddie Howe continues. A selling summer: Tonali (~£100m to Spurs) and Gordon (~£69m to Barcelona) left, reinvested in younger talent. Nick Woltemade leads the line as main striker and penalty taker. Can Howe knit a reshaped attack together quickly.",
+  ins:["Bazoumana Toure (LW, Hoffenheim, ~£43m)","Ewen Jaouen (GK, Reims, ~£24m)","Sean Steur (CM, Ajax, ~£23m)","Aladji Bamba (CM, Monaco)"],
+  outs:["Sandro Tonali (CM, Tottenham, ~£100m)","Anthony Gordon (LW, Barcelona, ~£69m)","Kieran Trippier (RB, Wolves, free)"],
+  value:"Anthony Elanga (pace + end product, corners). Lewis Hall (attacking LB, set-piece duty + defensive upside). Both strong PPM if fit.",
+  prem:"Nick Woltemade — nailed striker and penalty taker, main goal threat. Bruno Guimaraes the reliable alternative.",
+  diff:"Bazoumana Toure into Gordon's vacated role (very low ownership). Elanga vs softer early fixtures.",
+  sp:"Pens Woltemade (Bruno G 2nd). FK Hall, Bruno G, Botman/Schar. Corners Hall, Bruno G, Elanga.",
+  fx:[["1","Liverpool (H)","hard"],["2","Tottenham (A)","hard"],["3","Hull (H)","easy"]]},
+
+ {pos:13,name:"Everton",meta:"49 pts",tag:"",badge:null,
+  summary:"13th in their first season at the new Hill Dickinson Stadium, David Moyes continuing. Steady mid-table consolidation, but the squad urgently needs a striker (Moyes chasing options, none confirmed). Goals remain the concern — chances created outstrip a light forward line.",
+  ins:["Merlin Rohl (CM, Freiburg, ~£18m)","Rumours: a striker target, possible Grealish loan"],
+  outs:["Seamus Coleman (RB, released)","Isaac Heath (LW, Cambridge, free)","Rumoured interest in Ndiaye, Branthwaite"],
+  value:"Iliman Ndiaye (~£6.5m) main outlet + penalty taker if he stays. James Garner (~£5.0m) corners and FKs.",
+  prem:"No true premium. Branthwaite (~£5.5m DEF) best reliable clean-sheet+aerial pick if fit. Ndiaye nearest captain on pens.",
+  diff:"Ndiaye — pens + central role, likely sub-15%. Whichever striker arrives — monitor.",
+  sp:"Pens Ndiaye (Garner, Beto backups). FK Garner. Corners Garner, Dewsbury-Hall, McNeil. Watch Ndiaye exit rumours.",
+  fx:[["1","Crystal Palace (H)","mod"],["2","Bournemouth (A)","mod"],["3","Man Utd (H)","hard"],["4","Tottenham (A)","hard"],["5","Ipswich (H)","easy"]]},
+
+ {pos:14,name:"Leeds United",meta:"47 pts",tag:"",badge:null,
+  summary:"14th, comfortable survival, Daniel Farke continues. Clear consolidation: sell high-value fringe assets, reinvest in PL-ready bodies, rebuild the strike force. Calvert-Lewin already reported carrying a pre-season injury, pushing Nmecha forward. Among the league's best set-piece scorers last term.",
+  ins:["Tarik Muharemovic (CB, Sassuolo, ~£34.1m)","Lukas Nmecha (ST, Wolfsburg)","Dominic Calvert-Lewin (ST, free — confirm fitness)","Harry Wilson (AM/W, Fulham, free)"],
+  outs:["Pascal Struijk (CB, Brighton, ~£18m)","Jack Harrison (LW, New England Revolution)","Meslier (released)","Darlow (Man Utd, free)"],
+  value:"Harry Wilson — cheap attacking mid on FK/corners, strong enabler. Nmecha as a likely nailed cheap-ish striker given the DCL cloud.",
+  prem:"None obvious. Calvert-Lewin nearest but injury-flagged — monitor, don't commit.",
+  diff:"Nmecha (sub-10%, set for minutes). Wilson for set-piece points.",
+  sp:"Pens Calvert-Lewin (Nmecha 2nd). Corners/FK shared: Stach, Longstaff, Wilson. Genuine dead-ball threat.",
+  fx:[["1","Forest (A)","mod"],["2","Brentford (H)","easy"],["3","Brighton (A)","hard"],["4","Newcastle (H)","hard"],["5","Crystal Palace (H)","mod"]]},
+
+ {pos:15,name:"Crystal Palace",meta:"45 pts",tag:"",badge:{t:"Conf League winners",c:"b-ucl"},
+  summary:"15th, but they won the UEFA Conference League. Glasner left (to Forest), Pierre Sage confirmed (ex-Lyon, June 2026). A gutted spine: Guehi to City (Jan), Eze sold (Pino signed as direct replacement, took his shirt), Mateta agitating to leave. A rebuild — treat the squad with caution until the window shuts.",
+  ins:["Yeremy Pino (RW, Villarreal, ~£26m)","Brennan Johnson (W, Tottenham, ~£35m, Jan 2026)"],
+  outs:["Eberechi Eze (AM, sold, destination unconfirmed)","Marc Guehi (CB, Man City, £20m+, Jan)","Mateta (ST, rumoured exit)"],
+  value:"Daniel Munoz (RWB ~£5.5m) — best-value defender for attacking returns. Ismaila Sarr (~£6.0-6.5m) carries the goal threat now.",
+  prem:"Thin post-Eze/Guehi. Mateta (~£7.5m) the pick IF he stays (striker, pens) — his future is the caveat. No reliable elite captain.",
+  diff:"Pino — well under 10%, on FK, in Eze's role. Wharton, deep-lying creator, if he stays and starts.",
+  sp:"Pens Mateta (Sarr backup) — uncertain if Mateta leaves (Sarr inherits). FK Pino. Corners Pino, Hughes.",
+  fx:[["1","Everton (A)","mod"],["2","Man City (H)","hard"],["3","Fulham (A)","mod"]]},
+
+ {pos:16,name:"Nottingham Forest",meta:"44 pts",tag:"",badge:null,
+  summary:"16th after a chaotic year of manager churn. Oliver Glasner confirmed (6 Jul 2026), the 5th manager in under 12 months, bringing a high-energy front-foot system. Backed heavily (~£90m in) but cashed in on Elanga (~£55m to Newcastle). A big rebuild and new identity — expect volatility early.",
+  ins:["Omari Hutchinson (W, Ipswich, ~£37.5m)","James McAtee (AM, Man City, ~£30m)","Dan Ndoye (W, Bologna)","Kalimuendo (ST, Rennes) — advanced talks, not done"],
+  outs:["Anthony Elanga (W, Newcastle, ~£55m, record sale)","Willy Boly (released)","Ortega, Gunn (GKs, released)"],
+  value:"Morgan Gibbs-White (~£7.0m) talisman on pens/FK, central to all. Neco Williams (~£5.0m DEF) full-back on corners.",
+  prem:"Chris Wood (~£7.0m) proven scorer, Glasner wants a focal point (form dipped late). Gibbs-White the on-ball alternative. Kalimuendo, if signed, complicates Wood's minutes.",
+  diff:"Hutchinson and McAtee — new arrivals, low ownership, reshaped attack. Ndoye.",
+  sp:"Pens Gibbs-White (Wood alt, uncertain under new boss). FK Gibbs-White, Murillo. Corners Hutchinson, Neco Williams.",
+  fx:[["1","Leeds (H)","mod"],["2","Liverpool (A)","vhard"],["3","Tottenham (H)","hard"],["4","Aston Villa (A)","hard"],["5","Coventry (H)","mod"]]},
+
+ {pos:17,name:"Tottenham Hotspur",meta:"41 pts",tag:"big",badge:null,
+  summary:"A dismal 17th triggered a full rebuild under Roberto De Zerbi. The window's biggest spenders (~£237m gross), headlined by Tonali (~£100m) and Mateus Fernandes (~£85m). Two free veterans add defensive experience. Can De Zerbi's possession style lift a talented but fragile squad quickly.",
+  ins:["Sandro Tonali (CM, Newcastle, ~£100m)","Mateus Fernandes (CM, West Ham, ~£85m)","Jan Paul van Hecke (CB, Brighton, ~£52m)","Andy Robertson (LB, Liverpool, free)","Marcos Senesi (CB, Bournemouth, free)"],
+  outs:["Luka Vuskovic (CB, Brighton, ~£46m)","Will Lankshear (CF, Middlesbrough, ~£10m)","Yves Bissouma (DM, released)","Radu Dragusin (CB, loan)"],
+  value:"Pedro Porro — attacking full-back on corners and FKs. Antonin Kinsky (GK ~£4.5m) cheap starting keeper.",
+  prem:"Kudus most reliable attacking route. Solanke nominal striker + pens. Neither locked-in — treat Spurs as a rotation source, not a captaincy home.",
+  diff:"Mathys Tel (corners, low ownership, favourable opener). Mateus Fernandes if played advanced.",
+  sp:"Pens Solanke, then Kudus/Richarlison (uncertain — no pens scored last season). FK Porro, Kudus. Corners Porro, Tel.",
+  fx:[["1","Brentford (H)","mod"],["2","Newcastle (A)","hard"],["3","Forest (A)","mod"],["4","Everton (H)","mod"],["5","Aston Villa (H)","mod"]]},
+
+ {pos:18,name:"Coventry City",meta:"Championship winners",tag:"promo",badge:{t:"Promoted",c:"b-promo"},
+  summary:"Champions by an 11-point margin, back in the top flight for the first time since 2001. Frank Lampard stays (new 3-year deal) after building a slick possession side. Measured, defence-first recruitment backed by owner Doug King. Can top-scorer Haji Wright (18 goals) translate as the main man.",
+  ins:["Aurele Amenda (CB, Eintracht Frankfurt, ~£17m)","CB from Bologna (reported)","Frank Onyeka (CM, loan→perm)","Rumour: Ross Barkley (free)","Retained: Wright, Simms, Rudoni, Grimes, Torp, Mason-Clark, van Ewijk"],
+  outs:["Jamie Allen (released)","Bradley Collins (GK, released)","Rumour: Simms to Wolves"],
+  value:"Haji Wright — main striker and penalty taker, standout cheap forward. Milan van Ewijk — attacking RB, cheap-defender assist upside.",
+  prem:"None obvious for a promoted club. Wright closest ownable goal threat but not a captaincy pick.",
+  diff:"Rudoni and Torp (under-10%, creation + set-pieces). Mason-Clark for pace and output.",
+  sp:"Pens Haji Wright (Torp/Grimes 2nd). Corners Grimes, Torp. FK Torp.",
+  fx:[["1","Arsenal (A)","vhard"],["2","Hull (H)","easy"]]},
+
+ {pos:19,name:"Ipswich Town",meta:"Championship runners-up",tag:"promo",badge:{t:"Promoted",c:"b-promo"},
+  summary:"Straight back up as runners-up, an immediate return after 2024/25 relegation. Big storyline: Kieran McKenna stepped down (Jun 2026) and Gary O'Neil appointed — a significant change of approach. Targeted recruitment, a collection of established second-tier stars.",
+  ins:["Chuba Akpom (ST, Ajax, ~£8m)","Cedric Kipre (CB, Reims, ~£3.9m)","Issa Diop (CB, Fulham, ~£8.5m)","Retained: Clarke, Philogene, Hirst, Leif Davis, Matusiwa"],
+  outs:["Arijanet Muric (GK, Sassuolo, ~£6m)","Ashley Young (retired)","Chaplin, Townsend (released)"],
+  value:"Philogene and Clarke — cheap, minutes-secure wide attackers, highest ceiling here. Leif Davis — attacking LB on corners, classic cheap-defender assists.",
+  prem:"None obvious.",
+  diff:"Chuba Akpom — fresh signing, likely under-owned lead striker. George Hirst.",
+  sp:"Pens Clarke (Philogene/Hirst 2nd). Corners Leif Davis. FK same pair. New boss O'Neil could reshuffle — provisional.",
+  fx:[["1","Sunderland (H)","mod"]]},
+
+ {pos:20,name:"Hull City",meta:"Play-off winners",tag:"promo",badge:{t:"Promoted",c:"b-promo"},
+  summary:"Up via the play-offs, beating Middlesbrough 1-0 in the final (McBurnie, 95th min). First top flight since 2017 — done a year after surviving relegation to League One on goal difference, and while under a transfer embargo. Sergej Jakirovic stays (pragmatic, defence-first). Owner Ilicali signalling heavy investment now the embargo has lifted.",
+  ins:["Jack Butland (GK, Rangers, ~£3.5m)","Hidemasa Morita (CM, Sporting, free)","Matt Targett (LB, free)","Retained: McBurnie, Millar, Slater, Crooks, Hirakawa, Giles","Gelhardt status TBC"],
+  outs:["Ivor Pandur (GK, Rangers, ~£7m)"],
+  value:"Oli McBurnie (~£5.5m) — main striker and penalty taker, the clear pick. Joe Gelhardt (~£5.0m) if his stay is confirmed.",
+  prem:"None obvious.",
+  diff:"Liam Millar (~£5.0m, led squad for xA) and Yu Hirakawa — both likely well under 10%.",
+  sp:"Pens McBurnie (Gelhardt 2nd). Corners Slater, Giles. FK Giles.",
+  fx:[["1","Man Utd (H?)","hard"],["2","Coventry (A)","easy"]]}
+];
+
+const teamsEl = document.getElementById('teams');
+function render(list){
+  teamsEl.innerHTML = list.map((t,i)=>{
+    const badge = t.badge?`<span class="badge ${t.badge.c}">${t.badge.t}</span>`:'';
+    const ins = t.ins.map(x=>`<li class="${/rumour|reported|TBC|advanced talks/i.test(x)?'rumour':''}">${x}</li>`).join('');
+    const outs = t.outs.map(x=>`<li class="${/rumour|reported/i.test(x)?'rumour':''}">${x}</li>`).join('');
+    const fx = t.fx.map(f=>`<div class="fx ${f[2]}"><span class="gw">GW${f[0]}</span><span class="op">${f[1]}</span></div>`).join('');
+    return `<div class="team" data-name="${t.name.toLowerCase()}" data-tag="${t.tag}" data-fx="${t.fx.map(f=>f[2]).join(' ')}" data-blob="${(t.name+' '+t.summary+' '+t.ins.join(' ')+' '+t.outs.join(' ')+' '+t.value+' '+t.prem+' '+t.diff+' '+t.sp).toLowerCase().replace(/"/g,'')}">
+      <div class="thead" onclick="this.parentNode.classList.toggle('open')">
+        <span class="pos">${t.pos}</span>
+        <span><span class="tname">${t.name}</span> <span class="tmeta">${t.meta}</span></span>
+        ${badge}
+        <span class="caret">▶</span>
+      </div>
+      <div class="tbody">
+        <div class="summary">${t.summary}</div>
+        <div class="grid2">
+          <div class="block ins"><h4>Transfers In</h4><ul class="mv">${ins}</ul></div>
+          <div class="block outs"><h4>Transfers Out</h4><ul class="mv">${outs}</ul></div>
+        </div>
+        <div class="picks">
+          <div class="picks-grid">
+            <div class="pick value"><div class="lab">Value picks</div><p>${t.value}</p></div>
+            <div class="pick prem"><div class="lab">Premium / captaincy</div><p>${t.prem}</p></div>
+            <div class="pick diff"><div class="lab">Early differentials</div><p>${t.diff}</p></div>
+            <div class="pick sp"><div class="lab">Set-piece &amp; penalties</div><p>${t.sp}</p></div>
+          </div>
+        </div>
+        <div class="fixtures"><h4>Opening fixtures</h4><div class="fxrow">${fx}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+render(TEAMS);
+
+let activeFilter='all';
+const q=document.getElementById('q');
+const nores=document.getElementById('noresult');
+function apply(){
+  const term=q.value.trim().toLowerCase();
+  let shown=0;
+  document.querySelectorAll('.team').forEach(el=>{
+    const tag=el.dataset.tag, fx=el.dataset.fx, blob=el.dataset.blob;
+    let okF=true;
+    if(activeFilter==='big') okF = tag==='big';
+    else if(activeFilter==='promo') okF = tag==='promo';
+    else if(activeFilter==='easy') okF = (fx.split(' ')[0]==='easy');
+    else if(activeFilter==='tough') okF = (fx.split(' ')[0]==='hard'||fx.split(' ')[0]==='vhard');
+    const okQ = !term || blob.includes(term);
+    const show = okF && okQ;
+    el.style.display = show?'':'none';
+    if(show){shown++; if(term) el.classList.add('open');}
+  });
+  nores.style.display = shown?'none':'block';
+}
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+  document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active'); activeFilter=c.dataset.f; apply();
+}));
+q.addEventListener('input',apply);
+
+function copyPrompt(){
+  const txt=document.getElementById('prompt').innerText.replace(/^copy/,'').trim();
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b=document.querySelector('.copybtn'); b.textContent='copied'; setTimeout(()=>b.textContent='copy',1400);
+  });
+}
+</script>
+</body>
+</html>

@@ -13,7 +13,8 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { clubBlocks, priceClaims, penaltyClaims, moveClaims } from '../scripts/briefing-parse.mjs';
+import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
+  teamsFromHtml, claimsFromTeams, fixtureContradictions } from '../scripts/briefing-parse.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 let failures = 0, passes = 0;
@@ -139,6 +140,102 @@ console.log('• briefing: the shipped document still parses');
   ok(moves.some((m) => /Salah/.test(m.name) && m.dir === 'Out' && /Liverpool/.test(m.club)),
     'Salah listed out of Liverpool');
   ok(!prices.some((p) => p.price > 20), 'nothing priced above the game\'s ceiling leaked in as a price');
+}
+
+console.log('• briefing: a name must stop at the sentence boundary');
+{
+  /* The bug this caught. The name class has to allow a dot — initials,
+     "B.Fernandes" — which means a greedy match runs straight through
+     "Penalties Bruno. Direct free-kicks Bruno primary" and returns a player
+     called "Bruno. Direct". It did, on United, in both editions. A loose
+     /Bruno/ assertion in this file passed happily over it. */
+  const blocks = clubBlocks([
+    '## 1. Manchester United (x)',
+    '- Set-piece & penalties: Penalties Bruno. Direct free-kicks Bruno primary, Mbeumo backup. Corners Bruno primary.',
+  ].join('\n'));
+  const p = penaltyClaims(blocks);
+  ok(p.length === 1 && p[0].name === 'Bruno', 'prose: exactly "Bruno" (' + JSON.stringify(p[0] && p[0].name) + ')');
+  const { pens } = claimsFromTeams([{ name: 'Man Utd', sp: 'Pens Bruno. FK Bruno (Mbeumo backup). Corners Bruno.' }]);
+  ok(pens.length === 1 && pens[0].name === 'Bruno', 'structured: the same (' + JSON.stringify(pens[0] && pens[0].name) + ')');
+}
+
+console.log('• briefing: the structured edition');
+{
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const teams = teamsFromHtml(html);
+  ok(Array.isArray(teams) && teams.length === 20, 'TEAMS lifts out of the page (' + (teams || []).length + ')');
+  const c = claimsFromTeams(teams);
+  ok(c.prices.length >= 20, 'price claims (' + c.prices.length + ')');
+  ok(c.pens.length >= 15, 'penalty claims (' + c.pens.length + ')');
+  ok(c.moves.length >= 80, 'squad moves (' + c.moves.length + ')');
+  /* The claim type only this edition states machine-readably, and the one the
+     API can settle outright. */
+  ok(c.fixtures.length >= 50, 'fixture claims (' + c.fixtures.length + ')');
+  ok(c.fixtures.every((f) => f.gw > 0 && f.opp && typeof f.home === 'boolean'),
+    'each carries a gameweek, an opponent and a venue');
+
+  /* Both editions must agree on the penalty takers, or one of the two parsers
+     is reading the document wrong and there is no way to tell which. */
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const fromProse = penaltyClaims(clubBlocks(md)).map((x) => x.name).sort();
+  const fromHtml = c.pens.map((x) => x.name).sort();
+  ok(JSON.stringify(fromProse) === JSON.stringify(fromHtml),
+    'the prose and structured editions extract the same penalty takers');
+
+  /* "(H?)" is the briefing saying it does not know the venue — Hull's GW1 is
+     written exactly that way, and it is one of the document's own open
+     questions. Losing that mark would turn a flagged unknown into a claim. */
+  const unsure = c.fixtures.filter((f) => f.hedged);
+  ok(unsure.length >= 1 && unsure.some((f) => /Hull/.test(f.club) && f.gw === 1),
+    'a "(H?)" venue is carried as unsure, not as a claim');
+}
+
+console.log('• briefing: fixture claims are checked against each other');
+{
+  const names = ['Chelsea', 'Fulham', 'Brentford', 'Tottenham Hotspur', 'Arsenal', 'Coventry City'];
+  const fx = [
+    /* Both away to each other — impossible, and in the shipped document. */
+    { club: 'Chelsea', gw: 1, opp: 'Fulham', home: false },
+    { club: 'Fulham', gw: 1, opp: 'Chelsea', home: false },
+    /* Both at home — likewise. */
+    { club: 'Brentford', gw: 1, opp: 'Tottenham', home: true },
+    { club: 'Tottenham Hotspur', gw: 1, opp: 'Brentford', home: true },
+    /* And a pair that simply name different opponents. */
+    { club: 'Arsenal', gw: 1, opp: 'Coventry', home: true },
+    { club: 'Coventry City', gw: 1, opp: 'Arsenal', home: false },
+  ];
+  const bad = fixtureContradictions(fx, names);
+  const msgs = bad.map((b) => b.msg).join(' | ');
+  ok(bad.some((b) => b.kind === 'venue' && /Chelsea/.test(b.msg)), 'both-away is caught');
+  ok(bad.some((b) => b.kind === 'venue' && /Brentford/.test(b.msg)), 'both-home is caught');
+  ok(!/Arsenal/.test(msgs), 'and a consistent pair is not reported (' + msgs + ')');
+  ok(bad.length === 2, 'each contradiction is reported once, not once per side (' + bad.length + ')');
+
+  /* Club labels differ between the block heading and the fixture text —
+     "Forest" vs "Nottingham Forest", "Man Utd" vs "Manchester United". If the
+     matcher cannot bridge that, every fixture reads as a contradiction and
+     the check is worse than useless. */
+  const shorthand = fixtureContradictions([
+    { club: 'Nottingham Forest', gw: 1, opp: 'Leeds', home: true },
+    { club: 'Leeds United', gw: 1, opp: 'Forest', home: false },
+  ], ['Nottingham Forest', 'Leeds United']);
+  ok(shorthand.length === 0, 'everyday club names resolve to the club (' +
+    shorthand.map((b) => b.msg).join('; ') + ')');
+}
+
+console.log('• briefing: the shipped fixture claims, as they stand');
+{
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const teams = teamsFromHtml(html);
+  const c = claimsFromTeams(teams);
+  const bad = fixtureContradictions(c.fixtures, teams.map((t) => t.name));
+  /* This is a FINDING, pinned rather than fixed: the opening-fixtures section
+     contradicts itself in roughly a quarter of its claims, and the fix is to
+     read the real fixture list, not to edit the parser. The assertion exists
+     so that if someone corrects the document, this test tells them it worked. */
+  ok(bad.length > 0, 'the shipped briefing currently contradicts itself (' + bad.length + ')');
+  ok(bad.some((b) => /Chelsea/.test(b.msg) && /Fulham/.test(b.msg)),
+    'including Chelsea and Fulham both away to each other in GW1');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
