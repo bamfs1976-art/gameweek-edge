@@ -185,6 +185,30 @@ export function pensProseClaims(teams) {
   return out;
 }
 
+/* The markdown edition states its opening fixtures as prose — "GW1 Coventry
+   City (H) easy, GW2 Aston Villa (A) moderate" — where the HTML edition states
+   the same thing as data. Only the HTML one was ever parsed, so for a while the
+   markdown narrated a fixture list nobody was checking and it drifted a whole
+   season out of date without a single test going red.
+
+   Bands are spelled out in the prose and abbreviated in the data; gameweek,
+   opponent and venue are the parts that must match exactly. */
+const MD_FX_LINE = /^\*\*Opening fixtures:\*\*.*$/m;
+const MD_FX = /GW(\d) ([A-Za-z'’ .&-]+?) \((H|A)\) (very hard|moderate|hard|easy)/g;
+const MD_BAND = { easy: 'easy', moderate: 'mod', hard: 'hard', 'very hard': 'vhard' };
+export function mdFixtureClaims(blocks) {
+  const out = [];
+  for (const b of blocks) {
+    const line = (b.body.match(MD_FX_LINE) || [])[0];
+    if (!line) continue;
+    for (const m of line.matchAll(MD_FX)) {
+      out.push({ club: b.name, gw: +m[1], opp: m[2].trim(), home: m[3] === 'H',
+        band: MD_BAND[m[4]] });
+    }
+  }
+  return out;
+}
+
 /* One claim extractor over the structured teams. Deliberately mirrors what the
    prose parsers return, so the checker does not care which edition it was
    handed. */

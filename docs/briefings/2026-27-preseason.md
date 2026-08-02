@@ -52,7 +52,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Christos Tzolis if he forces into the wide rotation, likely sub-5% owned. Noni Madueke as a rotation punt.
 - Set-piece & penalties: Penalties Saka primary, with Gyokeres and Odegaard in the mix (watch the order after Gyokeres beds in). Direct free-kicks Rice and Saka. Corners Rice, Saka, Madueke, Odegaard.
 
-**Opening fixtures:** GW1 Coventry (H) easy, GW2 Chelsea (A) hard, GW3 Hull (H) easy. Two winnable homes around a tough London derby. Strong for Arsenal defence early.
+**Opening fixtures:** GW1 Coventry City (H) easy, GW2 Aston Villa (A) moderate, GW3 Chelsea (H) moderate. One soft opener then two step-ups, with the Chelsea game at home rather than away. Back the Arsenal defence for GW1 and reassess before GW2 rather than committing to the whole run.
 
 ---
 
@@ -70,7 +70,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Antoine Semenyo in a new City role, backup penalties and free-kicks, soft openers. Cherki as a low-owned creator.
 - Set-piece & penalties: Penalties Haaland primary, Semenyo backup. Direct free-kicks Cherki, with Semenyo, Reijnders, Marmoush as alternatives. Corners Cherki primary, Foden backup. Hierarchy may shift as Maresca settles (watch).
 
-**Opening fixtures:** GW1 Bournemouth (H) moderate, GW2 Coventry (A) easy, GW3 Sunderland (H) easy. Soft opening trio, ideal for backing Haaland early despite the new manager.
+**Opening fixtures:** GW1 Bournemouth (H) easy, GW2 Crystal Palace (A) moderate, GW3 Coventry City (H) easy. Two easy home games either side of a moderate trip — the softest opening trio in the division, and ideal for backing Haaland early despite the new manager.
 
 ---
 
@@ -88,7 +88,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Andrey Santos, nailed new midfielder at low ownership. Cunha for early attacking upside.
 - Set-piece & penalties: Penalties Bruno. Direct free-kicks Bruno primary, Mbeumo backup. Corners Bruno primary, Mbeumo backup. Bruno's set-piece monopoly is the standout asset here.
 
-**Opening fixtures:** GW1 Hull (A) easy, GW2 Ipswich (H) easy, GW3 Everton (A) moderate. A friendly promoted-heavy start. Good early window to own Bruno.
+**Opening fixtures:** GW1 Hull City (A) easy, GW2 Ipswich Town (H) easy, GW3 Everton (A) hard. Two promoted sides first, then a hard trip to Everton. A good early window to own Bruno, with GW3 the first real test.
 
 ---
 
@@ -106,7 +106,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder.
 - Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash, Bailey. Output is a real question mark after losing coach MacPhee (watch).
 
-**Opening fixtures:** GW1 Arsenal (H) hard, GW2 Nottingham Forest (A) moderate, GW3 Man Utd (A) hard, GW4 Fulham (A) moderate, GW5 Man City (H) hard. A brutal run plus European load. Avoid Villa defence early and be patient with their assets.
+**Opening fixtures:** GW1 Brighton (A) hard, GW2 Arsenal (H) hard, GW3 Hull City (A) moderate, GW4 Nottingham Forest (H) moderate, GW5 Spurs (A) hard. Two hard games to open, a softer middle, then Spurs away — plus European load. Avoid the Villa defence in GW1-2; the window for their assets is GW3-4.
 
 ---
 
@@ -124,7 +124,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Dominik Szoboszlai for set-piece volume at low ownership. Wirtz as an under-owned creator who suits Iraola's system.
 - Set-piece & penalties: Penalties Isak likely, Szoboszlai the alternative (genuine post-Salah uncertainty, watch pre-season). Free-kicks Szoboszlai and Wirtz. Corners Szoboszlai primary, Wirtz and Gakpo alternatives.
 
-**Opening fixtures:** GW1 Newcastle (A) hard, GW2 Nottingham Forest (H) moderate/hard, GW3 Ipswich (A) easy, GW4 Fulham (H) moderate, GW5 Bournemouth (A) moderate. A daunting opener plus a new manager and squad overhaul make Liverpool assets higher-risk for the first few weeks.
+**Opening fixtures:** GW1 Newcastle (A) hard, GW2 Nottingham Forest (H) moderate, GW3 Ipswich Town (A) easy, GW4 Fulham (H) moderate, GW5 Bournemouth (A) hard. A daunting opener, an inviting middle, then a hard trip to Bournemouth. The new manager and squad overhaul make Liverpool assets higher-risk for the first few weeks whatever the run says.
 
 ---
 
@@ -142,7 +142,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Alvaro Rodriguez if he starts centrally. Junior Kroupi if he stays and Rose trusts youth.
 - Set-piece & penalties: Penalties Kroupi.Jr (FPL order 1; Tavernier third). Corners Tavernier, Scott, Cook. Free-kicks Unal, Tavernier, Brooks.
 
-**Opening fixtures:** GW1 Man City (A) very hard, then Everton (A), Brentford (A), Liverpool (H). A punishing schedule, actively avoid Bournemouth assets for the first few weeks.
+**Opening fixtures:** GW1 Man City (A) very hard, GW2 Everton (H) moderate, GW3 Newcastle (A) hard, GW4 Brentford (H) moderate. Not the all-away run reported here before, but punishing regardless — one of the six hardest opening fives on our model. Actively avoid Bournemouth assets for the first few weeks.
 
 ---
 
@@ -160,7 +160,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Wilson Isidor, very low-owned lead striker. Enzo Le Fee, the pick if you want a cheap Sunderland midfielder on pens.
 - Set-piece & penalties: Penalties Diarra primary, Le Fee second. Free-kicks Xhaka and Le Fee. Corners Xhaka, Le Fee, Trai Hume.
 
-**Opening fixtures:** GW1 Ipswich (A) moderate/good, GW2 Fulham (H) moderate, GW3 Brentford (A) moderate, then Arsenal (H) and Man City (A) both very hard. Target Sunderland defence early for clean-sheet potential, then plan transfers out for GW4-5.
+**Opening fixtures:** GW1 Ipswich Town (A) hard, GW2 Fulham (H) hard, GW3 Brentford (A) hard, GW4 Arsenal (H) very hard, GW5 Man City (A) very hard. Every one of the five rates hard or worse — the second-toughest opening run in the league on our model. "Target the Sunderland defence early" does not survive the real fixture list: leave them alone until GW6.
 
 ---
 
@@ -178,7 +178,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Yohanna, new signing likely sub-5% owned. De Cuyper.
 - Set-piece & penalties: Corners Gross, Boscagli, Minteh. Free-kicks De Cuyper, Ayari. Penalties uncertain after summer changes, O'Riley the likeliest (1/1 last season), watch pre-season.
 
-**Opening fixtures:** Aston Villa (H) moderate, Chelsea (A) hard, Leeds (H) easy, Coventry (A) moderate/easy, Arsenal (A) hard. Mixed, but two winnable homes early.
+**Opening fixtures:** GW1 Aston Villa (H) moderate, GW2 Chelsea (A) hard, GW3 Leeds (H) moderate, GW4 Coventry City (A) moderate, GW5 Arsenal (H) hard. Mixed, with no genuinely easy game and Arsenal at home rather than away. The Leeds and Coventry weeks are the ones to target.
 
 ---
 
@@ -196,7 +196,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Jaidon Anthony. Mikkel Damsgaard, creator on direct free-kicks.
 - Set-piece & penalties: Penalties Thiago primary, Schade backup. Corners Jensen, Janelt, Damsgaard. Free-kicks Lewis-Potter, Jensen, Damsgaard.
 
-**Opening fixtures:** Tottenham (H) moderate, Leeds (A) easy, Sunderland (H) easy, Bournemouth (A) moderate, Chelsea (H) hard. An inviting early run. Strong for backing Thiago from GW1.
+**Opening fixtures:** GW1 Spurs (H) moderate, GW2 Leeds (A) hard, GW3 Sunderland (H) easy, GW4 Bournemouth (A) hard, GW5 Chelsea (H) moderate. Less inviting than it first read — both away games are hard. Thiago is still the pick, but GW3 at home to Sunderland is the standout week rather than GW1.
 
 ---
 
@@ -214,7 +214,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Emmanuel Emegha if he starts ahead of an unsettled front line. Geovany Quenda, dynamic and likely sub-10% owned.
 - Set-piece & penalties: Penalties Palmer (Enzo backup). Free-kicks Reece James, Enzo, Palmer. Corners James, Neto, Enzo.
 
-**Opening fixtures:** Fulham (A) moderate, Brighton (H) moderate/tricky, Arsenal (H) hard, Brentford (A) moderate, Everton (A) moderate. A mixed rather than explosive start, with Arsenal early.
+**Opening fixtures:** GW1 Fulham (A) hard, GW2 Brighton (H) moderate, GW3 Arsenal (A) very hard, GW4 Hull City (H) easy, GW5 Brentford (A) hard. Harder than it read: the derby and Arsenal away inside three weeks. GW4 at home to Hull is the one clear green light.
 
 ---
 
@@ -232,7 +232,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Kusi-Asare, new striker at low ownership. Emile Smith Rowe if Arbeloa gets him firing.
 - Set-piece & penalties: Highly uncertain after Jimenez and the manager change. Corners Iwobi, Lukic. Penalties unresolved, Robinson tentatively (1/1 last season). Free-kicks no established taker. Treat all Fulham set-piece assumptions as provisional until GW1.
 
-**Opening fixtures:** Chelsea (A) hard, Sunderland (A) moderate, Crystal Palace (H) moderate/hard, Coventry (H) easy, Man Utd (A) hard. A tough, away-heavy opening for a new manager. Hold off until the picture clears.
+**Opening fixtures:** GW1 Chelsea (H) hard, GW2 Sunderland (A) hard, GW3 Crystal Palace (H) moderate, GW4 Liverpool (A) very hard, GW5 Man Utd (H) hard. Not away-heavy after all — three of the five are at home — but brutal either way, and one of the six hardest opening runs on our model. Hold off until the picture clears.
 
 ---
 
@@ -250,7 +250,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Bazoumana Toure, stepping into Gordon's vacated role at likely very low ownership. Elanga against the softer early fixtures.
 - Set-piece & penalties: Penalties Woltemade (Bruno G secondary). Free-kicks Hall, Bruno G, Botman/Schar. Corners Hall, Bruno G, Elanga.
 
-**Opening fixtures:** GW1 Liverpool (H) hard, GW2 Tottenham (A) moderate/hard, GW3 Hull (H) easy. A tough pair before an inviting home game. Hold Newcastle attackers for the Hull match rather than GW1.
+**Opening fixtures:** GW1 Liverpool (H) moderate, GW2 Spurs (A) hard, GW3 Bournemouth (H) moderate. The inviting Hull home game is not on this list. No gimme in the first three — a steady rather than explosive start, and no single week worth timing an entry around.
 
 ---
 
@@ -268,7 +268,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Iliman Ndiaye, penalties plus a central role at likely sub-15% owned. Whichever new striker arrives, monitor before locking in.
 - Set-piece & penalties: Penalties Ndiaye primary, Garner and Beto backups. Free-kicks Garner. Corners Garner, Dewsbury-Hall, McNeil. Watch the Ndiaye exit rumours, he owns the pens.
 
-**Opening fixtures:** GW1 Crystal Palace (H) moderate, GW2 Bournemouth (A) moderate, GW3 Man Utd (H) moderate/hard, GW4 Spurs (A) hard, GW5 Ipswich (H) easy. A navigable opening, bookended by winnable homes.
+**Opening fixtures:** GW1 Crystal Palace (H) moderate, GW2 Bournemouth (A) hard, GW3 Man Utd (H) hard, GW4 Spurs (A) hard, GW5 Ipswich Town (H) moderate. Tougher through the middle than it looked — three hard games in a row. The moderate home games at either end are the target weeks.
 
 ---
 
@@ -286,7 +286,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Nmecha (sub-10% likely, set for minutes). Wilson for set-piece points.
 - Set-piece & penalties: Penalties Calvert-Lewin primary, Nmecha secondary. Corners and free-kicks shared between Anton Stach, Sean Longstaff, Harry Wilson. Genuine dead-ball threat.
 
-**Opening fixtures:** GW1 Nottingham Forest (A) tricky, GW2 Brentford (H) winnable, GW3 Brighton (A) hard, GW4 Newcastle (H) hard, GW5 Crystal Palace (H) moderate. Mixed-to-tough, the home games are where points are likeliest.
+**Opening fixtures:** GW1 Nottingham Forest (A) hard, GW2 Brentford (H) moderate, GW3 Brighton (A) hard, GW4 Newcastle (H) moderate, GW5 Crystal Palace (H) moderate. Mixed-to-tough, and the pattern is clean: every away game rates hard, every home game moderate. The home weeks are where the points are.
 
 ---
 
@@ -304,7 +304,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Yeremy Pino, well under 10% owned, on free-kicks and in Eze's role. Adam Wharton, deep-lying creator, if he stays and starts.
 - Set-piece & penalties: Penalties Mateta primary, Sarr backup, genuinely uncertain if Mateta leaves (Sarr would likely inherit). Free-kicks Pino. Corners Pino and Will Hughes (Wharton if still at club).
 
-**Opening fixtures:** GW1 Everton (A) moderate, GW2 Man City (H) hard, GW3 Fulham (A) moderate. Middling-to-tricky, no gimme in the first three.
+**Opening fixtures:** GW1 Everton (A) hard, GW2 Man City (H) hard, GW3 Fulham (A) hard. All three rate hard — worse than the middling read suggested, and no gimme anywhere in the opening month.
 
 ---
 
@@ -322,7 +322,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Omari Hutchinson and James McAtee, new arrivals at low ownership in a reshaped attack. Dan Ndoye.
 - Set-piece & penalties: Penalties Wood (FPL order 1; Gibbs-White second, and the order may move under a new manager). Free-kicks Gibbs-White and Murillo. Corners Hutchinson and Neco Williams.
 
-**Opening fixtures:** GW1 Leeds (H) moderate/good, GW2 Liverpool (A) very hard, GW3 Spurs (H) hard, GW4 Aston Villa (A) hard, GW5 Coventry (H) moderate. A rough run, only Leeds and Coventry look inviting. Avoid over-investing before GW5.
+**Opening fixtures:** GW1 Leeds (H) moderate, GW2 Liverpool (A) hard, GW3 Spurs (H) moderate, GW4 Aston Villa (A) hard, GW5 Coventry City (H) moderate. Better than it first read: three moderate home games, and both hard ones are away. Worth investing before GW5 rather than waiting it out.
 
 ---
 
@@ -340,7 +340,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Mathys Tel (on corners, low ownership, favourable opener). Mateus Fernandes if De Zerbi plays him advanced.
 - Set-piece & penalties: Penalties Solanke, then Kudus/Richarlison (genuinely uncertain, Spurs scored no penalties last season). Free-kicks Porro, Kudus. Corners Porro, Tel.
 
-**Opening fixtures:** GW1 Brentford (H) easy/moderate, GW2 Newcastle (A) hard, GW3 Nottingham Forest (A) moderate, GW4 Everton (H) moderate, GW5 Aston Villa (H) moderate. A friendly home opener makes early Spurs attackers worth a look.
+**Opening fixtures:** GW1 Brentford (A) hard, GW2 Newcastle (H) hard, GW3 Nottingham Forest (A) hard, GW4 Everton (H) moderate, GW5 Aston Villa (H) hard. There is no friendly home opener — GW1 is away and hard, and four of the five rate hard. Treat early Spurs attackers as a rotation source, not a set-and-forget.
 
 ---
 
@@ -358,7 +358,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Jack Rudoni and Victor Torp (under-10%, in creation and set-pieces). Ephron Mason-Clark for pace and output.
 - Set-piece & penalties: Penalties Haji Wright primary, Torp/Grimes secondary. Corners Grimes and Torp. Free-kicks Torp.
 
-**Opening fixtures:** GW1 Arsenal (A) very hard (Friday opener), GW2 Hull (H) one of the best early fixtures. Tickers flag Coventry with around the third-toughest opening six. Hold off heavy investment until the schedule eases.
+**Opening fixtures:** GW1 Arsenal (A) very hard, GW2 Hull City (H) moderate. Even the Hull home game only rates moderate, and our model puts Coventry in the hardest opening five in the league. Hold off heavy investment until the schedule eases.
 
 ---
 
@@ -376,7 +376,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Chuba Akpom, fresh signing and likely under-owned lead striker. George Hirst.
 - Set-piece & penalties: Penalties Hirst primary, Clarke second. Corners Leif Davis. Free-kicks the same pair. New manager O'Neil could reshuffle, treat as provisional until GW1.
 
-**Opening fixtures:** GW1 Sunderland (H), a friendly opener against a fellow promoted side, one of the better GW1 fixtures for a promoted team. Later opponents were not fully confirmed in sources, but the home start softens early risk.
+**Opening fixtures:** GW1 Sunderland (H) moderate — a home start against a fellow promoted side, but only moderate on our model. Ipswich sit inside the hardest opening five overall, so the home opener softens less early risk than it appears.
 
 ---
 
@@ -394,7 +394,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Differentials: Liam Millar (~£5.0m, led the squad for expected assists) and Yu Hirakawa, both likely well under 10% owned.
 - Set-piece & penalties: Penalties Crooks primary, McBurnie second. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
 
-**Opening fixtures:** GW1 Man Utd (venue reported as home 12:30 Sat 22 Aug, one source said away, confirm) hard, GW2 Coventry (A) winnable. Analysts flag a tough GW1-5 stretch, with fixtures improving from around GW6. Delay investment.
+**Opening fixtures:** GW1 Man Utd (H) very hard, GW2 Coventry City (A) very hard. The venue is confirmed home, and neither game is winnable on our model — Hull have the hardest opening five in the league. Delay investment until the schedule eases from around GW6.
 
 ---
 
@@ -410,7 +410,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 **Early differentials (fixtures-led):** Bazoumana Toure (Newcastle), Yeremy Pino (Palace), Andrey Santos (Man Utd), Christos Tzolis (Arsenal), Mathys Tel (Spurs).
 
-**Avoid early (brutal openers):** Bournemouth, Aston Villa, Nottingham Forest, all three promoted clubs.
+**Avoid early (brutal openers):** Hull City, Sunderland, Coventry City, Ipswich Town, Fulham, Bournemouth — the hardest opening five on our own match model.
 
 ---
 

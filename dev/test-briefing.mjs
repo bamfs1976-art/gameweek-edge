@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
   teamsFromHtml, claimsFromTeams, fixtureContradictions,
-  pensProseClaims, pensSelfContradictions,
+  pensProseClaims, pensSelfContradictions, mdFixtureClaims,
   clubMatcher, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -184,12 +184,18 @@ console.log('• briefing: the structured edition');
   ok(JSON.stringify(fromProse) === JSON.stringify(fromHtml),
     'the prose and structured editions extract the same penalty takers');
 
-  /* "(H?)" is the briefing saying it does not know the venue — Hull's GW1 is
-     written exactly that way, and it is one of the document's own open
-     questions. Losing that mark would turn a flagged unknown into a claim. */
-  const unsure = c.fixtures.filter((f) => f.hedged);
-  ok(unsure.length >= 1 && unsure.some((f) => /Hull/.test(f.club) && f.gw === 1),
-    'a "(H?)" venue is carried as unsure, not as a claim');
+  /* "(H?)" is the briefing saying it does not know the venue. The shipped
+     document no longer has one — Hull's GW1 was written that way until the API
+     settled it as home — so the capability is tested on its own rather than on
+     the document. Losing the mark would turn a flagged unknown into a claim,
+     which is the failure worth guarding whether or not one is in the file
+     today. */
+  const marked = claimsFromTeams([{ name: 'X', fx: [['1', 'Man Utd (H?)', 'hard'],
+    ['2', 'Coventry City (A)', 'vhard']] }]).fixtures;
+  ok(marked.length === 2, 'both fixtures parse');
+  ok(marked[0].hedged && marked[0].home, 'a "(H?)" venue is carried as unsure, not as a claim');
+  ok(!marked[1].hedged, 'and a plain venue is not marked unsure');
+  ok(!c.fixtures.some((f) => f.hedged), 'the shipped document has no unsure venues left');
 }
 
 console.log('• briefing: fixture claims are checked against each other');
@@ -231,13 +237,20 @@ console.log('• briefing: the shipped fixture claims, as they stand');
   const teams = teamsFromHtml(html);
   const c = claimsFromTeams(teams);
   const bad = fixtureContradictions(c.fixtures, teams.map((t) => t.name));
-  /* This is a FINDING, pinned rather than fixed: the opening-fixtures section
-     contradicts itself in roughly a quarter of its claims, and the fix is to
-     read the real fixture list, not to edit the parser. The assertion exists
-     so that if someone corrects the document, this test tells them it worked. */
-  ok(bad.length > 0, 'the shipped briefing currently contradicts itself (' + bad.length + ')');
-  ok(bad.some((b) => /Chelsea/.test(b.msg) && /Fulham/.test(b.msg)),
-    'including Chelsea and Fulham both away to each other in GW1');
+  /* This assertion used to be inverted. The opening-fixtures section
+     contradicted itself in 23 of its claims — Chelsea and Fulham both away to
+     each other in GW1, Brentford and Spurs both at home — and the finding was
+     pinned here rather than fixed, because fixing it meant reading the real
+     fixture list rather than editing the parser. That has now happened, so the
+     assertion is the right way round and this is a regression guard. */
+  ok(bad.length === 0, 'the shipped briefing agrees with itself (' +
+    bad.map((b) => b.msg).slice(0, 3).join('; ') + ')');
+  /* The guard is only worth anything if the comparison ran over real claims. */
+  ok(c.fixtures.length >= 50, 'over a full set of fixture claims (' + c.fixtures.length + ')');
+  /* Every fixture is stated twice, once by each club, and both statements are
+     in the set — so a mutual pair must exist for the check to have teeth. */
+  const gw1 = c.fixtures.filter((f) => f.gw === 1);
+  ok(gw1.length === 20, 'all 20 clubs state a GW1 fixture (' + gw1.length + ')');
 }
 
 console.log('• briefing: one club-name matcher, not three');
@@ -495,6 +508,46 @@ console.log('\n• briefing: the shipped document, and the regression that broke
      penalties, so it must NOT appear. A check that flagged every corrected club
      would be counting rewrites rather than reading the document. */
   ok(clubs.indexOf('Ipswich Town') < 0, 'a club whose picks make no penalty claim is not reported');
+}
+
+/* ── the two editions must state the same fixtures ───────────
+   The HTML edition holds the fixtures as data and gets checked against the API
+   on every run. The markdown edition holds the same fixtures as prose and was
+   checked by nothing at all, so it drifted a season out of date in silence
+   while every test stayed green. This is the guard that makes that loud. */
+console.log('\n• briefing: both editions state the same opening fixtures');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const teams = teamsFromHtml(readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8'));
+  const prose = mdFixtureClaims(clubBlocks(md));
+  ok(prose.length >= 50, 'the prose edition states opening fixtures per club (' + prose.length + ')');
+
+  /* The two editions abbreviate club names differently — "Nottingham Forest"
+     reads better in a sentence than in a fixture chip — so the comparison goes
+     through the same alias table the checker uses. */
+  const short = { 'Nottingham Forest': 'Nott\'m Forest', Tottenham: 'Spurs' };
+  const key = (c) => c.club + '|' + c.gw;
+  const htmlBy = {};
+  for (const t of teams) {
+    for (const f of t.fx || []) {
+      const m = String(f[1]).match(/^(.*?)\s*\((H|A)\)\s*$/);
+      if (m) htmlBy[t.name + '|' + f[0]] = { opp: m[1].trim(), home: m[2] === 'H', band: f[2] };
+    }
+  }
+  let matched = 0, missing = 0;
+  const drift = [];
+  for (const c of prose) {
+    const h = htmlBy[key(c)];
+    if (!h) { missing++; continue; }
+    const opp = short[c.opp] || c.opp;
+    if (opp === h.opp && c.home === h.home && c.band === h.band) matched++;
+    else drift.push(c.club + ' GW' + c.gw + ': prose "' + opp + (c.home ? ' (H) ' : ' (A) ') +
+      c.band + '" vs data "' + h.opp + (h.home ? ' (H) ' : ' (A) ') + h.band + '"');
+  }
+  for (const d of drift.slice(0, 6)) ok(false, d);
+  ok(!drift.length, 'every prose fixture matches the structured one (' + drift.length + ' drifted)');
+  ok(!missing, 'every prose fixture has a structured counterpart (' + missing + ' orphaned)');
+  ok(matched >= 50, 'and the comparison actually ran (' + matched + ' matched)');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
