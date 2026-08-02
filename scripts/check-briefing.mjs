@@ -49,7 +49,8 @@ const FIX = process.argv.includes('--fix');
 const API = (process.env.FPL_API || 'https://fantasy.premierleague.com/api').replace(/\/$/, '');
 
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
-  teamsFromHtml, claimsFromTeams, fixtureContradictions, clubMatcher } from './briefing-parse.mjs';
+  teamsFromHtml, claimsFromTeams, fixtureContradictions, pensSelfContradictions,
+  clubMatcher } from './briefing-parse.mjs';
 
 const md = readFileSync(join(ROOT, FILE), 'utf8');
 
@@ -134,6 +135,29 @@ if (fxClaims.length) {
   }
   console.log('');
   selfBad = bad.length;
+}
+
+/* The second way the document disagrees with itself: a club's set-piece line
+   names one penalty taker and its pick rationale names another. Reported apart
+   from the fixture pass because the consequence is different — a wrong fixture
+   is a wrong fact, whereas this is a RECOMMENDATION resting on a duty the same
+   document assigns elsewhere, and the pick may not survive losing it. */
+const penSelf = structured ? pensSelfContradictions(pens, structured.pensProse) : [];
+if (structured) {
+  console.log('PENALTY DUTY vs THE PICK RATIONALE (no API needed)');
+  if (!penSelf.length) say('·', 'every pick that leans on penalties names the same taker as its club\'s set-piece line');
+  else {
+    say('✗', penSelf.length + ' picks rest on penalties the same document gives to someone else');
+    for (const s of penSelf) {
+      console.log('      • ' + s.club + ' ' + s.field + ': "' + s.text + '"');
+      console.log('        set-piece line says the taker is ' + s.sp + ', not ' + s.prose);
+    }
+    say('·', 'not auto-fixable — each is an argument, not a fact. "Watkins, nailed ' +
+      'striker and penalty taker, the reliable armband" does not become true by ' +
+      'swapping in the real taker\'s name, and the pick itself may not hold without the pens');
+  }
+  console.log('');
+  selfBad += penSelf.length;
 }
 
 let boot, fixtures;
@@ -435,6 +459,22 @@ if (FIX && HTML && briefTeams) {
     console.log('       penalties: ' + penRewrites + ' primary taker' + (penRewrites === 1 ? '' : 's') +
       ' corrected' + (penSkipped ? ', ' + penSkipped + ' left alone (no single order-1 taker)' : '') +
       (listFixed ? ', and ' + listFixed + ' in the shortlist row' : ''));
+  }
+  /* Correcting the set-piece line is not the whole job. Where a PICK was
+     argued on those penalties, the argument is still standing on the old fact,
+     and no rewrite makes it true — so say so here rather than let a clean
+     "penalties corrected" line imply the club is done. */
+  const stranded = pensSelfContradictions(
+    penFix.filter((f) => f.now).map((f) => ({ club: f.club, name: f.now.web_name })),
+    (structured && structured.pensProse) || []);
+  if (stranded.length) {
+    console.log('       LEFT FOR YOU — ' + stranded.length + ' pick' +
+      (stranded.length === 1 ? '' : 's') + ' still argued on the penalties that just moved:');
+    for (const s of stranded) {
+      console.log('         ' + s.club + ' ' + s.field + ': "' + s.text + '"  (pens are ' + s.sp + '\'s)');
+    }
+    console.log('       These are recommendations, not facts. Rewrite or drop them — a name ' +
+      'swap would only make the sentence wrong in a new way.');
   }
   if (avoidNote) {
     console.log('       "avoid early" recomputed — it was a judgement read off the wrong fixtures:');

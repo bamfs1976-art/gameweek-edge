@@ -133,6 +133,58 @@ export function teamsFromHtml(src) {
   return null;
 }
 
+/* A club states its penalty taker TWICE: once in the set-piece line, and again
+   inside the reason a player is a pick ("Watkins — nailed striker and penalty
+   taker, the reliable armband"). Reading only the set-piece line was a real
+   hole: correcting it left five clubs recommending a player on the strength of
+   a penalty duty the same document had just reassigned to somebody else.
+
+   Restricted to the three PICK fields. They have a reliable shape — "Name
+   (price) — claim" — so the subject of a sentence is its opening name. The
+   summary field is narrative and does not ("Losing Jimenez removes their
+   penalty taker" has no pick subject at all), so scanning it would invent
+   players rather than find claims. */
+const PENS_FIELDS = ['value', 'prem', 'diff'];
+const PENS_MARK = /\bpens?\b|\bpenalt/gi;
+/* "backup pens" is not a claim to be the taker — it is the opposite, and it is
+   compatible with whoever the set-piece line names. Semenyo's City entry says
+   exactly that. Looking back a short way covers "backup pens/FK" and "2nd on
+   pens" without swallowing the next clause. */
+const PENS_NOT = /(?:backup|deputy|alt|2nd|second|behind)\W{0,12}$/i;
+const LEAD_NAME = /^\s*([A-ZÀ-Ý][\p{L}'’.-]*(?:\s+[A-ZÀ-Ý][\p{L}'’.-]*){0,2})/u;
+/* Capitalised sentence openers that are English, not players. Sweeping every
+   lead word in the three pick fields across all 20 clubs turns up exactly
+   these — the vocabulary of a pick blurb is small. A missed one is not silent:
+   it falls through to the antecedent below, and only becomes a claim if that
+   antecedent disagrees with the set-piece line. */
+const NOT_A_NAME = /^(a|an|the|both|neither|either|no|none|nailed|key|thin|whichever|watch|expect|if|his|her|their|treat)\b/i;
+export function pensProseClaims(teams) {
+  const out = [];
+  for (const t of teams || []) {
+    for (const field of PENS_FIELDS) {
+      const text = String(t[field] || '');
+      /* The subject carries across sentences, because the writing does:
+         "Igor Thiago (FWD ~£7.0m) — standout pick. Nailed, on pens, 21 goals."
+         The pens claim is in the second sentence and its subject is in the
+         first. Reading the sentence alone attributes the penalties to a player
+         called "Nailed". */
+      let subject = null;
+      for (const sentence of text.split(/\.(?:\s|$)/)) {
+        const nm = sentence.match(LEAD_NAME);
+        if (nm && !NOT_A_NAME.test(nm[1])) subject = nm[1].trim();
+        let claims = false;
+        for (const m of sentence.matchAll(PENS_MARK)) {
+          if (!PENS_NOT.test(sentence.slice(0, m.index))) { claims = true; break; }
+        }
+        if (!claims || !subject) continue;
+        out.push({ club: t.name, field, name: subject, text: sentence.trim(),
+          hedged: /\bif\b|uncertain|unresolved|watch|likely|shares?\b/i.test(sentence) });
+      }
+    }
+  }
+  return out;
+}
+
 /* One claim extractor over the structured teams. Deliberately mirrors what the
    prose parsers return, so the checker does not care which edition it was
    handed. */
@@ -183,7 +235,40 @@ export function claimsFromTeams(teams) {
         hedged: /\?/.test(mm[2]) });
     }
   }
-  return { prices, pens, moves, fixtures };
+  return { prices, pens, moves, fixtures, pensProse: pensProseClaims(teams) };
+}
+
+/* The set-piece line and the pick rationale, disagreeing with each other. No
+   API needed — this is the document contradicting itself, so it is worth
+   catching offline and it stays a finding even if the set-piece line turns out
+   to be the wrong half.
+
+   The two halves rarely write a player the same way, so a strict comparison
+   invents contradictions. "Enzo Le Fee" in the pick is "Le Fee" in the
+   set-piece line — same last token — but "Bruno Fernandes" is just "Bruno",
+   where the shared token is the FIRST. So: equal last tokens, or one name is a
+   single token that appears anywhere in the other. */
+const toks = (n) => String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .toLowerCase().replace(/[.'’]/g, '').trim().split(/\s+/).filter(Boolean);
+function samePlayer(a, b) {
+  const x = toks(a), y = toks(b);
+  if (!x.length || !y.length) return false;
+  if (x[x.length - 1] === y[y.length - 1]) return true;
+  if (x.length === 1) return y.indexOf(x[0]) > -1;
+  if (y.length === 1) return x.indexOf(y[0]) > -1;
+  return false;
+}
+export function pensSelfContradictions(pens, pensProse) {
+  const spOf = {};
+  for (const c of pens || []) spOf[c.club] = c;
+  const out = [];
+  for (const c of pensProse || []) {
+    const sp = spOf[c.club];
+    if (!sp || samePlayer(sp.name, c.name)) continue;
+    out.push({ club: c.club, field: c.field, prose: c.name, sp: sp.name,
+      text: c.text, hedged: c.hedged });
+  }
+  return out;
 }
 
 /* ── Internal consistency ───────────────────────────────────

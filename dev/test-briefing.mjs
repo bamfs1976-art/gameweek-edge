@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
   teamsFromHtml, claimsFromTeams, fixtureContradictions,
+  pensProseClaims, pensSelfContradictions,
   clubMatcher, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -408,6 +409,80 @@ console.log('• briefing: the shortlist row is corrected with the club blocks')
   /* And a name that is a substring of another must not be caught by accident. */
   const near = swap('Wilson · Harry Wilson', [{ was: 'Wilson', now: 'X' }]);
   ok(/^X · Harry Wilson$/.test(near.row), 'a bare name does not match inside a longer one (' + near.row + ')');
+}
+
+/* ── penalties claimed inside the pick rationale ─────────────
+   A club names its penalty taker twice — in the set-piece line, and again as
+   the reason a player is worth picking. Correcting only the first left five
+   clubs recommending someone on the strength of a duty the same document had
+   just given to another player, and nothing caught it. */
+console.log('\n• briefing: penalty duty asserted in the pick fields');
+{
+  const T = (o) => Object.assign({ name: 'X', value: '', prem: '', diff: '', sp: '' }, o);
+
+  const one = pensProseClaims([T({ prem: 'Ollie Watkins — nailed striker and penalty taker, the reliable armband.' })]);
+  ok(one.length === 1 && one[0].name === 'Ollie Watkins', 'the subject of the sentence is the claimed taker');
+  ok(one[0].field === 'prem', 'the field is reported, because that is where the rewrite has to happen');
+
+  /* The subject carries across a sentence break. Reading each sentence alone
+     attributed Brentford's penalties to a player called "Nailed". */
+  const carry = pensProseClaims([T({ prem: 'Igor Thiago (FWD ~£7.0m) — standout pick. Nailed, on pens, 21 goals.' })]);
+  ok(carry.length === 1 && carry[0].name === 'Igor Thiago', 'the antecedent subject is used, not the opening word (' +
+    (carry[0] || {}).name + ')');
+
+  /* "backup pens" asserts the opposite of being the taker, so it agrees with
+     any set-piece line rather than contradicting it. */
+  ok(pensProseClaims([T({ diff: 'Semenyo in a new City role (backup pens/FK, soft openers).' })]).length === 0,
+    'a backup claim is not a claim to be the taker');
+  ok(pensProseClaims([T({ diff: 'Pino — well under 10%, on FK, in Eze\'s role.' })]).length === 0,
+    'free-kicks are not penalties');
+  ok(pensProseClaims([T({ prem: 'None obvious. Calvert-Lewin nearest but injury-flagged.' })]).length === 0,
+    'a field with no penalty claim yields nothing');
+
+  /* Matching the two halves. They almost never spell a player identically. */
+  const contra = (sp, prose) => pensSelfContradictions(
+    [{ club: 'X', name: sp }], [{ club: 'X', field: 'prem', name: prose, text: '' }]).length;
+  ok(contra('Le Fee', 'Enzo Le Fee') === 0, 'a shared last token is the same player');
+  ok(contra('Bruno', 'Bruno Fernandes') === 0, 'so is a single token matching the FIRST name');
+  ok(contra('Thiago', 'Igor Thiago') === 0, 'and a single token matching the last');
+  ok(contra('Buendía', 'Ollie Watkins') === 1, 'two different players contradict');
+  ok(contra('Wood', 'Morgan Gibbs-White') === 1, 'and so do these');
+  /* Not a free pass for any shared word: two full names that share only a
+     forename are different players. */
+  ok(contra('Harry Wilson', 'Wilson Isidor') === 1, 'a shared forename between two full names is not a match');
+
+  /* A club whose set-piece line is silent cannot be contradicted by its picks. */
+  ok(pensSelfContradictions([], [{ club: 'X', field: 'prem', name: 'A', text: '' }]).length === 0,
+    'no set-piece claim, no contradiction');
+}
+
+console.log('\n• briefing: the real document, before and after the penalty fix');
+{
+  const teams = teamsFromHtml(readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8'));
+  const c = claimsFromTeams(teams);
+  ok(c.pensProse.length >= 12, 'the pick fields assert penalties for most clubs (' + c.pensProse.length + ')');
+  /* As written, the document agrees with itself here — the two halves name the
+     same taker, they are just both wrong. That is the baseline the check has to
+     hold, or it reports noise on a file with nothing wrong in it. */
+  ok(pensSelfContradictions(c.pens, c.pensProse).length === 0,
+    'the briefing as written is internally consistent about who takes penalties');
+
+  /* Correcting the set-piece line alone is what breaks it, and that is exactly
+     what --fix does. These six are the work it cannot do. */
+  const corrected = { 'Aston Villa': 'Buendía', Bournemouth: 'Kroupi.Jr', Sunderland: 'Diarra',
+    'Nottingham Forest': 'Wood', 'Ipswich Town': 'Hirst', 'Hull City': 'Crooks' };
+  const after = pensSelfContradictions(
+    c.pens.map((p) => (corrected[p.club] ? { ...p, name: corrected[p.club] } : p)), c.pensProse);
+  ok(after.length === 6, 'correcting the set-piece lines strands 6 picks (' + after.length + ')');
+  const clubs = after.map((s) => s.club);
+  for (const club of ['Aston Villa', 'Bournemouth', 'Sunderland', 'Nottingham Forest', 'Hull City']) {
+    ok(clubs.indexOf(club) > -1, club + ' is reported');
+  }
+  ok(clubs.filter((x) => x === 'Sunderland').length === 2, 'Sunderland twice — it makes the claim in two fields');
+  /* Ipswich corrects Clarke to Hirst, and its pick fields never claimed the
+     penalties, so it must NOT appear. A check that flagged every corrected
+     club would be counting rewrites, not reading the document. */
+  ok(clubs.indexOf('Ipswich Town') < 0, 'a corrected club whose picks made no penalty claim is not reported');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
