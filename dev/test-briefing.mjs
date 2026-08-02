@@ -368,5 +368,47 @@ console.log('• briefing: a corrected penalty line replaces the clause, not the
     'Corners Grimes. Pens uncertain', 'a clause that never named the player is untouched');
 }
 
+console.log('• briefing: the shortlist row is corrected with the club blocks');
+{
+  /* The row most likely to be read on its own, and quoted. Correcting every
+     club block while leaving the summary naming the old takers would leave the
+     document contradicting itself in the one place a reader skims.
+
+     A bare bullet list, so a name swap is safe here in a way it was not inside
+     the club sentences — there is no surrounding clause written around the old
+     fact. Mirrors what --fix does, as a pure function. */
+  const swap = (row, fixes) => {
+    let out = row, n = 0;
+    for (const f of fixes) {
+      if (!f.now) continue;
+      const re = new RegExp('(^|·\\s*)' + f.was.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '(?=\\s*(·|$))');
+      if (!re.test(out)) continue;
+      out = out.replace(re, '$1' + f.now); n++;
+    }
+    return { row: out, n };
+  };
+  const row = 'Bruno (pens/FK/cnr) · Gibbs-White · Palmer · Igor Thiago · Watkins · Woltemade · Ndiaye · Le Fee · McBurnie · Haji Wright';
+  const r = swap(row, [
+    { was: 'Watkins', now: 'Buendía' }, { was: 'Gibbs-White', now: 'Wood' },
+    { was: 'Le Fee', now: 'Diarra' }, { was: 'McBurnie', now: 'Crooks' },
+  ]);
+  ok(r.n === 4, 'all four contradicted takers are swapped (' + r.n + ')');
+  ok(/· Buendía ·/.test(r.row) && /· Wood ·/.test(r.row), 'by name, in place');
+  ok(/· Diarra ·/.test(r.row) && /Crooks ·/.test(r.row), 'including the last two');
+  ok(!/Watkins|Gibbs-White|Le Fee|McBurnie/.test(r.row), 'and none of the old names survive');
+  /* The ones the API confirmed must be left exactly as they are. */
+  ok(/^Bruno \(pens\/FK\/cnr\)/.test(r.row), 'a confirmed taker with a parenthetical is untouched');
+  ok(/Palmer/.test(r.row) && /Igor Thiago/.test(r.row) && /Woltemade/.test(r.row) &&
+     /Ndiaye/.test(r.row) && /Haji Wright/.test(r.row), 'and every other confirmed name stays');
+  ok(r.row.split('·').length === row.split('·').length, 'the row keeps its length — a swap, not an insert');
+
+  /* A club with no single order-1 taker contributes no swap, in the row as in
+     the club block, so the two cannot disagree about who was corrected. */
+  ok(swap(row, [{ was: 'Watkins', now: null }]).n === 0, 'a club left alone is left alone here too');
+  /* And a name that is a substring of another must not be caught by accident. */
+  const near = swap('Wilson · Harry Wilson', [{ was: 'Wilson', now: 'X' }]);
+  ok(/^X · Harry Wilson$/.test(near.row), 'a bare name does not match inside a longer one (' + near.row + ')');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

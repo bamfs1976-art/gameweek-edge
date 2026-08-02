@@ -370,6 +370,27 @@ if (FIX && HTML && briefTeams) {
     penRewrites++;
   }
 
+  /* The shortlist row names the same takers again, and --fix would otherwise
+     correct every club block while leaving the summary saying the opposite —
+     the one line most likely to be read on its own, and quoted. Safe to swap
+     here in a way it was not inside the club sentences: this is a bare
+     bullet list with no surrounding clause to contradict. */
+  let listFixed = 0;
+  const rowAt = out.search(/<b>Set-piece[^<]*<\/b><span>/i);
+  if (rowAt > -1) {
+    const openAt = out.indexOf('<span>', rowAt) + 6;
+    const closeAt = out.indexOf('</span>', openAt);
+    let row = out.slice(openAt, closeAt);
+    for (const f of penFix) {
+      if (!f.now) continue;
+      const re = new RegExp('(^|·\\s*)' + f.was.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=\\s*(·|$))');
+      if (!re.test(row)) continue;
+      row = row.replace(re, '$1' + f.now.web_name);
+      listFixed++;
+    }
+    if (listFixed) out = out.slice(0, openAt) + row + out.slice(closeAt);
+  }
+
   const dest = FILE.replace(/\.html?$/i, '.fixed.html');
   writeFileSync(join(ROOT, dest), out);
   console.log('\n' + '─'.repeat(60));
@@ -378,7 +399,8 @@ if (FIX && HTML && briefTeams) {
     : '  (difficulty left as written — the engine did not load)'));
   if (penRewrites || penSkipped) {
     console.log('       penalties: ' + penRewrites + ' primary taker' + (penRewrites === 1 ? '' : 's') +
-      ' corrected' + (penSkipped ? ', ' + penSkipped + ' left alone (no single order-1 taker)' : ''));
+      ' corrected' + (penSkipped ? ', ' + penSkipped + ' left alone (no single order-1 taker)' : '') +
+      (listFixed ? ', and ' + listFixed + ' in the shortlist row' : ''));
   }
   console.log('       Nothing else was touched. Diff it before replacing the original.');
 }
