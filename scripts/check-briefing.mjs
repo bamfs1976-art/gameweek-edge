@@ -39,6 +39,11 @@ const arg = (n) => { const i = process.argv.indexOf('--' + n); return i > -1 ? p
    fixtures gameweek by gameweek — the one claim type the API settles
    outright. Pass --file to check the markdown instead. */
 const FILE = arg('file') || 'docs/briefings/2026-27-preseason.html';
+/* The opening window the briefing reasons about. Every club gets the same one:
+   comparing a club with five stated fixtures against one with a single stated
+   fixture is not a comparison, and the clubs written about least were the
+   promoted three — exactly the ones a reader most needs the fixtures for. */
+const OPENING_GWS = 5;
 /* --fix rewrites the one section the API can regenerate outright: the opening
    fixtures. It is where the errors are (7 wrong venues, 19 pairings that do
    not exist, and 20 claims contradicting each other), and it is pure data —
@@ -132,6 +137,22 @@ if (fxClaims.length) {
     for (const b of bad) console.log('      • ' + b.msg);
     say('·', 'the API cannot settle these — one of the two claims is simply wrong, ' +
       'and until the fixture list is read directly neither can be trusted');
+  }
+  /* Uneven coverage is a finding in its own right, and it needs no API. A club
+     with one stated fixture is not agreeing with anybody — it simply is not in
+     the comparison, so it cannot contradict and cannot be contradicted. Left
+     unreported, a clean consistency result reads as "all twenty checked". */
+  const depth = {};
+  for (const f of fxClaims) depth[f.club] = (depth[f.club] || 0) + 1;
+  const short = briefTeams.map((t) => t.name).filter((n) => (depth[n] || 0) < OPENING_GWS)
+    .map((n) => n + ' (' + (depth[n] || 0) + ')');
+  if (short.length) {
+    say('·', short.length + ' of 20 clubs state fewer than ' + OPENING_GWS +
+      ' opening fixtures, so they are judged on less: ' + short.join(', '));
+    say('·', '--fix fills these from the real list; until then "hardest opening five" ' +
+      'compares clubs on unequal evidence');
+  } else {
+    say('·', 'all 20 clubs state a full ' + OPENING_GWS + '-gameweek opening');
   }
   console.log('');
   selfBad = bad.length;
@@ -312,6 +333,7 @@ say('·', gw1.length + ' fixtures in GW1' + (gw1.length
 if (FIX && HTML && briefTeams) {
   const { loadEngine } = await import('./content/model.mjs');
   let out = md, rewritten = 0;
+  const extended = [];
   let E = null;
   try { E = loadEngine(); } catch (_) { /* bands fall back to the briefing's own */ }
   /* Our own difficulty rather than a hand-assigned band: the same Poisson
@@ -333,9 +355,15 @@ if (FIX && HTML && briefTeams) {
   for (const t of briefTeams) {
     const me = idOf(t.name);
     if (me == null) continue;
-    const want = (t.fx || []).length || 3;
-    const mine = (fixtures || []).filter((f) => (f.team_h === me || f.team_a === me) && f.event)
-      .sort((a, b) => a.event - b.event).slice(0, want);
+    /* The whole opening window, not however many the briefing happened to
+       list. Rewriting only as far as the author got left eight clubs short —
+       Ipswich had one fixture, Hull and Coventry two — while twelve had five,
+       so "hardest opening five" was being judged on unequal evidence and the
+       clubs with the least written about them were the promoted ones nobody
+       had researched. Taken by gameweek rather than by count, so a club with a
+       blank in the window truthfully shows fewer than five. */
+    const mine = (fixtures || []).filter((f) => (f.team_h === me || f.team_a === me) &&
+      f.event && f.event <= OPENING_GWS).sort((a, b) => a.event - b.event);
     if (!mine.length) continue;
     const rows = mine.map((f) => {
       const home = f.team_h === me;
@@ -357,6 +385,9 @@ if (FIX && HTML && briefTeams) {
     }
     out = out.slice(0, fxAt) + 'fx:[' + rows + ']' + out.slice(end);
     rewritten++;
+    if (mine.length > (t.fx || []).length) {
+      extended.push(t.name + ' ' + (t.fx || []).length + '→' + mine.length);
+    }
   }
   /* The penalty half — and it replaces the whole first CLAUSE, not one word.
      Swapping the name alone produced "Pens Buendia (Buendia distant 2nd)":
@@ -431,8 +462,8 @@ if (FIX && HTML && briefTeams) {
     for (const t of briefTeams) {
       const me = idOf(t.name);
       if (me == null) continue;
-      const mine = (fixtures || []).filter((f) => (f.team_h === me || f.team_a === me) && f.event)
-        .sort((a, b) => a.event - b.event).slice(0, 5);
+      const mine = (fixtures || []).filter((f) => (f.team_h === me || f.team_a === me) &&
+        f.event && f.event <= OPENING_GWS).sort((a, b) => a.event - b.event);
       if (mine.length < 3) continue;
       const bands = { easy: 1.5, mod: 2.5, hard: 3.5, vhard: 4.5 };
       const d = mine.map((f) => bands[band(me, f) || 'mod']);
@@ -453,6 +484,10 @@ if (FIX && HTML && briefTeams) {
   writeFileSync(join(ROOT, dest), out);
   console.log('\n' + '─'.repeat(60));
   console.log('--fix: rewrote the opening fixtures for ' + rewritten + ' clubs from the real list');
+  if (extended.length) {
+    console.log('       filled out ' + extended.length + ' club' + (extended.length === 1 ? '' : 's') +
+      ' that stopped short of GW' + OPENING_GWS + ': ' + extended.join(', '));
+  }
   console.log('       → ' + dest + (E ? '  (difficulty from our own match model)'
     : '  (difficulty left as written — the engine did not load)'));
   if (penRewrites || penSkipped) {
