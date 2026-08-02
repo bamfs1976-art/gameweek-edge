@@ -548,6 +548,21 @@ console.log('\n• briefing: both editions state the same opening fixtures');
   ok(!drift.length, 'every prose fixture matches the structured one (' + drift.length + ' drifted)');
   ok(!missing, 'every prose fixture has a structured counterpart (' + missing + ' orphaned)');
   ok(matched >= 50, 'and the comparison actually ran (' + matched + ' matched)');
+
+  /* And the other direction, which the check above cannot see. Comparing only
+     prose→data passes cleanly when the DATA gains fixtures the prose never
+     mentions — which is exactly what happens the next time --fix fills a club
+     out to a full opening window. One-way drift detection is how the markdown
+     edition got a season out of date in the first place. */
+  const proseKeys = new Set(prose.map(key));
+  const orphanData = Object.keys(htmlBy).filter((k) => !proseKeys.has(k));
+  for (const k of orphanData.slice(0, 6)) {
+    ok(false, 'structured fixture with no prose counterpart: ' + k + ' ' + htmlBy[k].opp);
+  }
+  ok(!orphanData.length, 'every structured fixture is narrated in the prose too (' +
+    orphanData.length + ' unnarrated)');
+  ok(prose.length === Object.keys(htmlBy).length, 'the two editions state the same NUMBER of ' +
+    'fixtures (prose ' + prose.length + ', data ' + Object.keys(htmlBy).length + ')');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
