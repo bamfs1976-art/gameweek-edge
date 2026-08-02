@@ -391,6 +391,40 @@ if (FIX && HTML && briefTeams) {
     if (listFixed) out = out.slice(0, openAt) + row + out.slice(closeAt);
   }
 
+  /* The one DERIVED claim in the document: "avoid early — brutal runs". It was
+     a judgement made by reading the fixture blocks, and a quarter of those were
+     wrong, so correcting the data leaves the conclusion stale and now
+     unsupported by the very table it was drawn from.
+
+     Recomputed from the corrected fixtures with our own difficulty model, which
+     is the honest version of that claim anyway — it is the number the app grades
+     fixtures with, rather than an eye judgement over a list. Reported rather
+     than silently swapped, because a headline changing under you is worth
+     seeing. */
+  let avoidNote = null;
+  if (E) {
+    const mean = [];
+    for (const t of briefTeams) {
+      const me = idOf(t.name);
+      if (me == null) continue;
+      const mine = (fixtures || []).filter((f) => (f.team_h === me || f.team_a === me) && f.event)
+        .sort((a, b) => a.event - b.event).slice(0, 5);
+      if (mine.length < 3) continue;
+      const bands = { easy: 1.5, mod: 2.5, hard: 3.5, vhard: 4.5 };
+      const d = mine.map((f) => bands[band(me, f) || 'mod']);
+      mean.push({ name: t.name, d: d.reduce((a, b) => a + b, 0) / d.length });
+    }
+    mean.sort((a, b) => b.d - a.d);
+    const worst = mean.slice(0, 6).map((x) => x.name);
+    const rowIdx = out.search(/<b>Avoid early<\/b><span>/i);
+    if (rowIdx > -1 && worst.length) {
+      const o = out.indexOf('<span>', rowIdx) + 6, c = out.indexOf('</span>', o);
+      const was = out.slice(o, c);
+      const now = worst.join(', ') + ' — hardest opening five on our model.';
+      if (was !== now) { out = out.slice(0, o) + now + out.slice(c); avoidNote = { was, now }; }
+    }
+  }
+
   const dest = FILE.replace(/\.html?$/i, '.fixed.html');
   writeFileSync(join(ROOT, dest), out);
   console.log('\n' + '─'.repeat(60));
@@ -401,6 +435,11 @@ if (FIX && HTML && briefTeams) {
     console.log('       penalties: ' + penRewrites + ' primary taker' + (penRewrites === 1 ? '' : 's') +
       ' corrected' + (penSkipped ? ', ' + penSkipped + ' left alone (no single order-1 taker)' : '') +
       (listFixed ? ', and ' + listFixed + ' in the shortlist row' : ''));
+  }
+  if (avoidNote) {
+    console.log('       "avoid early" recomputed — it was a judgement read off the wrong fixtures:');
+    console.log('         was: ' + avoidNote.was);
+    console.log('         now: ' + avoidNote.now);
   }
   console.log('       Nothing else was touched. Diff it before replacing the original.');
 }
