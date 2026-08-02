@@ -170,6 +170,7 @@ say('·', R.agree + ' agree, ' + R.conflict + ' conflict, ' + R.missing + ' not 
 /* ── penalties ────────────────────────────────────────────── */
 console.log('\nPENALTIES (API field: penalties_order)');
 let penAgree = 0, penWrong = 0, penUnset = 0, penGone = 0;
+const penFix = [];
 for (const c of pens) {
   const p = findPlayer(els, c.name);
   if (!p || p.ambiguous) { penGone++; continue; }
@@ -178,8 +179,18 @@ for (const c of pens) {
   if (order === 1) penAgree++;
   else {
     penWrong++;
+    /* Who the API says actually takes them, so the correction is available
+       rather than left as "look it up". A club can list more than one at
+       order 1 (it happens when a taker is flagged), and picking one of two
+       silently would be a guess wearing a fact's clothes. */
+    const primaries = els.filter((e) => e.team === p.team && e.penalties_order === 1);
+    penFix.push({ club: c.club, was: c.name, order,
+      now: primaries.length === 1 ? primaries[0] : null, ambiguous: primaries.length });
     conflicts.push({ key: 'pen:' + p.id, msg: 'penalties · ' + c.club + ': briefing says ' +
-      c.name + ' primary, API has him at order ' + order });
+      c.name + ' primary, API has him at order ' + order +
+      (primaries.length === 1 ? ' — ' + primaries[0].web_name + ' is order 1'
+        : primaries.length ? ' — ' + primaries.length + ' players share order 1'
+        : ' — and nobody at the club is order 1') });
   }
 }
 say('·', penAgree + ' confirmed primary, ' + penWrong + ' contradicted, ' +
@@ -323,12 +334,52 @@ if (FIX && HTML && briefTeams) {
     out = out.slice(0, fxAt) + 'fx:[' + rows + ']' + out.slice(end);
     rewritten++;
   }
+  /* The penalty half — and it replaces the whole first CLAUSE, not one word.
+     Swapping the name alone produced "Pens Buendia (Buendia distant 2nd)":
+     the parenthetical was written around the old fact and contradicts the new
+     one. Everything from the second sentence on (free-kicks, corners, the
+     caveats) is the author's and stays untouched.
+
+     The replacement says where it came from, because a corrected line that
+     reads like the original leaves nobody able to tell which claims were
+     researched and which were patched by a script.
+
+     A club with two players at order 1 is left alone and reported — choosing
+     between them would be a guess wearing a fact's clothes. */
+  let penRewrites = 0, penSkipped = 0;
+  for (const f of penFix) {
+    if (!f.now) { penSkipped++; continue; }
+    const at = out.indexOf('name:"' + f.club + '"');
+    if (at < 0) { penSkipped++; continue; }
+    const spAt = out.indexOf('sp:"', at);
+    if (spAt < 0) { penSkipped++; continue; }
+    let end = spAt + 4;
+    while (end < out.length && !(out[end] === '"' && out[end - 1] !== '\\')) end++;
+    const sp = out.slice(spAt + 4, end);
+    /* From "Pens" to the end of that sentence, exclusive of the full stop. */
+    const from = sp.search(/\bPens?(?:alt(?:ies|y))?\b/i);
+    if (from < 0) { penSkipped++; continue; }
+    const rest = sp.slice(from);
+    const stop = rest.search(/\.(?:\s|$)/);
+    const clause = stop < 0 ? rest : rest.slice(0, stop);
+    if (!new RegExp(f.was.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).test(clause)) { penSkipped++; continue; }
+    const replacement = 'Pens ' + f.now.web_name +
+      ' (FPL order 1; this briefing said ' + f.was + ', who is order ' + f.order + ')';
+    out = out.slice(0, spAt + 4) + sp.slice(0, from) + replacement +
+      (stop < 0 ? '' : rest.slice(stop)) + out.slice(end);
+    penRewrites++;
+  }
+
   const dest = FILE.replace(/\.html?$/i, '.fixed.html');
   writeFileSync(join(ROOT, dest), out);
   console.log('\n' + '─'.repeat(60));
   console.log('--fix: rewrote the opening fixtures for ' + rewritten + ' clubs from the real list');
   console.log('       → ' + dest + (E ? '  (difficulty from our own match model)'
     : '  (difficulty left as written — the engine did not load)'));
+  if (penRewrites || penSkipped) {
+    console.log('       penalties: ' + penRewrites + ' primary taker' + (penRewrites === 1 ? '' : 's') +
+      ' corrected' + (penSkipped ? ', ' + penSkipped + ' left alone (no single order-1 taker)' : ''));
+  }
   console.log('       Nothing else was touched. Diff it before replacing the original.');
 }
 

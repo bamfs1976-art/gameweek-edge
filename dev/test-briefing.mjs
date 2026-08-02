@@ -324,5 +324,49 @@ console.log('• briefing: the alias table has not drifted from the app\'s');
     (missing.length ? ' — missing: ' + missing.join(', ') : ''));
 }
 
+console.log('• briefing: a corrected penalty line replaces the clause, not the name');
+{
+  /* The bug this is here for, found by looking at --fix's own output. Villa's
+     line was "Pens Watkins (Buendia distant 2nd)". Swapping the one word after
+     "Pens" produced "Pens Buendia (Buendia distant 2nd)" — the parenthetical
+     was written around the old fact and now contradicts the new one. A patch
+     that produces a self-contradicting sentence is worse than no patch: it
+     reads as researched.
+
+     This mirrors the transformation --fix performs, as a pure function, so it
+     can be tested without an API. */
+  const rewrite = (sp, was, now, order) => {
+    const from = sp.search(/\bPens?(?:alt(?:ies|y))?\b/i);
+    if (from < 0) return sp;
+    const rest = sp.slice(from);
+    const stop = rest.search(/\.(?:\s|$)/);
+    const clause = stop < 0 ? rest : rest.slice(0, stop);
+    if (!new RegExp(was).test(clause)) return sp;
+    return sp.slice(0, from) + 'Pens ' + now +
+      ' (FPL order 1; this briefing said ' + was + ', who is order ' + order + ')' +
+      (stop < 0 ? '' : rest.slice(stop));
+  };
+  const before = 'Pens Watkins (Buendia distant 2nd). FK Buendia. Corners Cash, Bailey. Output a question mark — watch.';
+  const after = rewrite(before, 'Watkins', 'Buendia', 2);
+  ok(/^Pens Buendia \(FPL order 1; this briefing said Watkins, who is order 2\)\./.test(after),
+    'the whole first clause is replaced (' + after.slice(0, 60) + '…)');
+  ok(!/distant 2nd/.test(after), 'the stale parenthetical goes with it');
+  ok(/FK Buendia\. Corners Cash, Bailey\. Output a question mark — watch\.$/.test(after),
+    'and everything after the first sentence is the author\'s, untouched');
+  ok(/FPL order 1/.test(after),
+    'the line says where the correction came from, so a patched claim cannot pass as researched');
+
+  /* A clause with no full stop after it must not lose the rest of the string
+     or gain a stray one. */
+  const noStop = rewrite('Pens Tavernier/Kluivert share', 'Tavernier', 'Cook', 3);
+  ok(noStop === 'Pens Cook (FPL order 1; this briefing said Tavernier, who is order 3)',
+    'a sentence with no trailing full stop is handled (' + noStop + ')');
+
+  /* And the case that must be refused: the name is not in the clause at all,
+     so there is nothing to correct and the line is left alone. */
+  ok(rewrite('Corners Grimes. Pens uncertain', 'Watkins', 'Buendia', 2) ===
+    'Corners Grimes. Pens uncertain', 'a clause that never named the player is untouched');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);
