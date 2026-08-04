@@ -670,7 +670,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   }
   ok(ALIAS.scenariolab === 'seasonsim', 'Scenario Lab redirects to the simulator that absorbed it');
   ok(!wiredKeys.has('scenariolab'), 'and its hydrator is gone rather than orphaned');
-  ok(ALIAS.ask === 'scout', 'Ask the Scout redirects to the scout that absorbed it');
+  ok(ALIAS.ask === 'scout', 'Ask the Scout is gone, but its old link still lands on the scout');
   ok(!wiredKeys.has('ask'), 'and its hydrator is gone too');
 
   /* Panels that folded into another are routed by PANEL_VIEW, which names
@@ -768,22 +768,39 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(LV.find((v) => v.id === 'defcon').label === 'Your DEFCON',
     'while the actual defensive-contribution view keeps that name');
 
-  /* The ask box is a section of the scout now, not a Pro panel of its own.
-     It has to survive the merge in both of the scout's branches — including
-     "predictions not ready", which it does not depend on. */
+  /* The ask box is gone. It was a free-text chat over a thin slice of the
+     data — squad, top xP, fixtures — so it answered like any other FPL
+     chatbot while the price, DefCon and suspension models it should have
+     been citing sat in panels it never saw. Both surfaces went: the Scout
+     chat and the canned right-rail "Ask the model" stub. */
   ok(!navPanels.some((p) => p.id === 'ask'), 'Ask is no longer its own nav entry');
-  ok(/function askCardHtml\(\)/.test(html) && /function wireAsk\(host\)/.test(html),
-    'the ask box is split into markup and wiring so the scout can place it');
-  const scoutSrc = balanced(html, html.indexOf('async function hydrateScout('), '{', '}');
-  ok((scoutSrc.match(/askCardHtml\(\)/g) || []).length === 2,
-    'the scout renders the ask box on both paths (' +
-    (scoutSrc.match(/askCardHtml\(\)/g) || []).length + ')');
-  ok((scoutSrc.match(/wireAsk\(host\)/g) || []).length === 2, 'and wires it on both');
-  ok(/Predictions not ready[\s\S]{0,120}askCardHtml\(\)/.test(scoutSrc),
-    'including the empty state, which the ask box does not depend on');
-  ok(/ask-thread/.test(html) && /ask-send/.test(html), 'the ask controls still exist');
-  ok(/(scout|ask)/.test(CONTENT.scout.desc) && /ask box/.test(CONTENT.scout.desc),
-    'and the scout description mentions what it absorbed');
+  const goneFromBundle = ['askCardHtml', 'wireAsk', 'ASK_MSGS', 'ASK_PENDING',
+    'localAnswer', 'renderAskThread', 'ask-thread', 'ask-send', 'rr-ask', 'public/ask'];
+  goneFromBundle.forEach((sym) =>
+    ok(!html.includes(sym), 'the chat left nothing behind: ' + sym));
+  ok(!/ask box|Ask the Scout/i.test(CONTENT.scout.desc),
+    'and the scout description no longer promises a chat');
+
+  /* Removing the chat only pays off if the reports that survived actually
+     see the intelligence the chat never got. Every payload the AI reasons
+     over has to carry the per-player intel block — otherwise we have just
+     deleted a feature and kept the shallowness. */
+  ok(/function playerIntel\(el,gw,total\)/.test(html),
+    'there is one place that gathers what we know about a player');
+  ['defcon', 'price', 'suspension', 'setPieces', 'npxG90'].forEach((k) =>
+    ok(new RegExp('out\\.' + k + '|' + k + ':').test(html),
+      'and it carries ' + k));
+  const payloads = ['buildScoutPayload', 'squadContext', 'playerContext'];
+  payloads.forEach((fn) => {
+    const src = balanced(html, html.indexOf('async function ' + fn), '{', '}');
+    ok(/withIntel\(/.test(src), fn + ' attaches intel to the players it sends');
+  });
+  /* squadContext is shared — the transfer planner and the digest both run on
+     it, so a rename that misses a call site breaks two features silently. */
+  ok(!/askContext/.test(html), 'askContext is fully renamed, not half-renamed');
+  ok((html.match(/squadContext/g) || []).length >= 3,
+    'and the planner and digest still point at it');
+
   ok(/function resolvePanel\(id\)\{return PANEL_ALIAS\[id\]\|\|id;\}/.test(html),
     'there is one resolver rather than the lookup inlined per call site');
   ok(/panelId=resolvePanel\(panelId\);/.test(html), 'openPanel resolves the alias');

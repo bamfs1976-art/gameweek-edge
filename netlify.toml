@@ -84,13 +84,6 @@
   status = 200
   force = true
 
-# Public "Ask the model" (right-rail stub — canned, no auth).
-[[redirects]]
-  from = "/api/public/ask"
-  to = "/.netlify/functions/ask"
-  status = 200
-  force = true
-
 # Same-origin image proxy for the Social Studio canvas (see img.js — a
 # cross-origin image would taint the canvas and break the PNG export).
 [[redirects]]

@@ -254,10 +254,6 @@ body[data-density="beginner"] .qd-why{color:var(--text-2)}
 .right-rail{display:none}
 .rr-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px}
 .rr-h{font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
-.rr-ask-in{display:flex;gap:6px}
-.rr-ask-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border-2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px}
-.rr-ask-in input:focus{outline:none;border-color:var(--green-bright)}
-.rr-ask-out{margin-top:8px;font-size:12px;line-height:1.5;color:var(--text-2)}
 .rr-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .rr-col{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px}
 .rr-nm{font-weight:700;font-size:12.5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -510,21 +506,6 @@ html.offline .net-banner{transform:translateY(0)}
 .alert-tog:last-of-type{border-bottom:none}
 .alert-tog input{width:20px;height:20px;accent-color:var(--green-bright)}
 
-/* Ask the Scout (chat) */
-.ask-thread{max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 10px}
-.ask-empty{color:var(--text-3);font-size:.82rem;text-align:center;padding:18px}
-.ask-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:.86rem;line-height:1.5}
-.ask-msg p{margin:0 0 6px}.ask-msg p:last-child{margin:0}
-.ask-msg ul{margin:4px 0;padding-left:18px}.ask-msg h4{margin:4px 0;font-size:.9rem}
-.ask-user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
-.ask-assistant{align-self:flex-start;background:var(--surface-3);color:var(--text);border-bottom-left-radius:4px}
-.ask-typing{color:var(--text-3);font-style:italic}
-.ask-src{display:block;margin-top:6px;font-size:.66rem;letter-spacing:.03em;text-transform:uppercase;color:var(--text-3);opacity:.8}
-.ask-suggest{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 12px}
-.ask-chip{padding:7px 11px;border-radius:var(--r-pill);background:var(--surface-3);border:1px solid var(--border-2);
-  font-size:.76rem;font-weight:600;color:var(--text-2)}
-.ask-chip:hover{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
-.ask-input{display:flex;gap:8px}
 /* The Wire — auto blog */
 .blog-intro{margin-bottom:16px}
 .blog-list{display:flex;flex-direction:column;gap:14px}
@@ -638,9 +619,6 @@ html.offline .net-banner{transform:translateY(0)}
 .plc-nm{font-weight:700;font-size:.82rem;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .plc-sub{font-size:.68rem;color:var(--text-3)}
 .plc-stats{font-size:.7rem;color:var(--text-2);margin-top:3px}.plc-stats b{color:var(--text)}
-.ask-input input{flex:1;padding:11px 13px;border:1.5px solid var(--border-2);border-radius:var(--r-md);
-  font-size:.9rem;background:var(--surface-3);color:var(--text)}
-.ask-input input:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
 
 /* Toast (action feedback) */
 .toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);
@@ -2191,7 +2169,6 @@ const ICON = {
   eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>',
   whistle:'<circle cx="9" cy="14" r="6"/><path d="M13 10 21 6v5l-7 3"/><path d="M9 8V5h4"/>',
   spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>',
-  chat:'<path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>',
   news:'<path d="M4 5h13v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v10a2 2 0 0 1-2 2M7 9h7M7 12.5h7M7 16h4"/>',
   trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 18h6M12 13v5M9 21h6"/>'
 };
@@ -2678,7 +2655,7 @@ function linkBox(){
    ═══════════════════════════════════════════════════════════ */
 const PRICE={monthly:'£3.99',season:'£24.99'};
 const PRO_BENEFITS=[
-  ['spark','AI Scout','Ask the Scout about your squad — transfer, captaincy and chip calls, reasoned from the model.'],
+  ['spark','Scout reports','Captaincy, transfer and chip calls on your squad — written from the model, with the DefCon, price and set-piece reads behind them.'],
   ['users','Rival intelligence','Scout rivals, effective ownership and the top template — your edge in every mini-league.'],
   ['question','Simulators & depth','What-If and season simulators, plus set-piece order and rotation risk on every player.']
 ];
@@ -2709,7 +2686,7 @@ function openUpgrade(){
   /* Free users see exactly what The Edge adds over the standard app. */
   const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
     '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
-    ['AI Scout &amp; Ask the Scout','Rival Scout — overtake your league','EO Tracker &amp; Template Meter',
+    ['Scout report &amp; transfer plans','Rival Scout — overtake your league','EO Tracker &amp; Template Meter',
      'Season &amp; What-If simulators','Your DEFCON &amp; set-piece register']
       .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">—</span><span class="y">✓</span></div>').join('')+
     '</div>';
@@ -3293,24 +3270,17 @@ function wireUXButtons(){
   window.addEventListener('resize',function(){if(!_railBuilt&&railWanted())buildRightRail();});})();
 
 /* ── Section 7: persistent right rail (>=1024px, iPad landscape / desktop) ──
-   Ask-the-model stub, a captain-leverage comparator and recent model calls. */
+   A captain-leverage comparator and recent model calls. Both read straight
+   from the model; there is no free-text box here on purpose. */
 let _railBuilt=false;
 function railWanted(){return !!(window.matchMedia&&matchMedia('(min-width:1024px)').matches);}
 async function buildRightRail(){
   if(_railBuilt||!railWanted())return;_railBuilt=true;
   const rail=document.createElement('aside');rail.className='right-rail';rail.id='right-rail';rail.setAttribute('aria-label','Model tools');
   rail.innerHTML=
-    '<div class="rr-card"><div class="rr-h">Ask the model</div>'+
-      '<div class="rr-ask-in"><input id="rr-ask-q" type="text" placeholder="captain? transfer? fixtures?" aria-label="Ask the model"><button class="btn btn-cta btn-sm" id="rr-ask-go">Ask</button></div>'+
-      '<div class="rr-ask-out" id="rr-ask-out">Ask about captaincy, transfers, differentials, fixtures or prices.</div></div>'+
     '<div class="rr-card" id="rr-cap"><div class="rr-h">Captain leverage</div><div class="dl-sub">Loading…</div></div>'+
     '<div class="rr-card" id="rr-recent"><div class="rr-h">Recent model calls</div><div class="dl-sub">Loading…</div></div>';
   document.body.appendChild(rail);
-  const go=document.getElementById('rr-ask-go'),q=document.getElementById('rr-ask-q'),out=document.getElementById('rr-ask-out');
-  const ask=async function(){const text=(q.value||'').trim();if(!text)return;out.textContent='…';
-    try{const r=await fetch(apiBase()+'/api/public/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:text})});
-      const j=await r.json();out.textContent=j.answer||'—';}catch(_){out.textContent='Could not reach the model right now.';}};
-  go.addEventListener('click',ask);q.addEventListener('keydown',function(e){if(e.key==='Enter')ask();});
   try{
     const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
     const nf=buildNextFix(b,fixtures);
@@ -3445,7 +3415,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   scout:{
-    desc:'A predicted-points model picks the optimal team and captain for the gameweek, with an AI scout report — and an ask box for anything else about your team, captaincy, transfers, differentials, value or fixtures.',
+    desc:'A predicted-points model picks the optimal team and captain for the gameweek, with a scout report that reads your squad against the DefCon, price, suspension and set-piece models behind it.',
     layout:'standard'
   },
   allplayers:{
@@ -9025,7 +8995,7 @@ async function hydrateTransfers(host){
 }
 function genTransferPlan(){
   if(!getMid())return;
-  return runAI('transfers',askContext,'transfer-ai',
+  return runAI('transfers',squadContext,'transfer-ai',
     {busy:'Planning your transfers…',retryName:'genTransferPlan',
      cacheKey:'ge-ai-trans-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+getMid()});
 }
@@ -12095,10 +12065,7 @@ async function hydrateScout(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
   const team=bestXI(scoutScored(b,nf));
-  /* No predictions yet is not a reason to withhold the ask box — it answers
-     from the model directly and does not need this week's XI. */
-  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.')+askCardHtml();
-    wireAsk(host);return;}
+  if(!team){host.innerHTML=stateBox('spark','Predictions not ready','Expected points appear once the gameweek’s fixtures are set.');return;}
   const capP=Math.max.apply(null,team.xi.map(s=>s.p));
   const cell=(s)=>{const isCap=s.p===capP;const el=s.el;
     return '<div class="pp'+(isCap?' is-cap':'')+'">'+(isCap?'<span class="pp-badge">C</span>':'')+
@@ -12127,22 +12094,58 @@ async function hydrateScout(host){
       '<p class="dl-sub" style="margin-bottom:12px">Claude analyses the gameweek and'+(getMid()?' your squad,':'')+' explains the picks, captain and transfer angles.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="genScoutReport()">Generate AI scout report</button>'+
       '<div id="scout-report" style="margin-top:14px"></div>'+
-    '</div>'+
-    askCardHtml();
-  wireAsk(host);
+    '</div>';
+}
+
+/* ── What we know about a player, travelling with the player ──────
+   The reports used to see a name, a price and an xP, which is why they
+   read like any other FPL chatbot: the DefCon rate, the price risk, the
+   booking count and the set-piece order all sat in panels the model
+   never saw. This gathers them into one compact block so a report can
+   say "one yellow from a ban, 61% DefCon rate" instead of generalising.
+   Keys are omitted when there is nothing to say — the context is capped
+   server-side, so every field has to earn its place. */
+function playerIntel(el,gw,total){
+  if(!el||!el.id)return null;
+  const out={};
+  /* DefCon: only meaningful for outfielders, and only worth sending when
+     the player actually contributes defensively. */
+  if(el.element_type===2||el.element_type===3||el.element_type===4){
+    const hit=dcHitRate(el);
+    if(hit>=0.15)out.defcon={rate:dcHitLabel(el),perStart:dcPerStartLabel(el),threshold:dcThreshold(el)};
+  }
+  const pc=priceChangeProb(el,total);
+  if(pc.dir!=='flat'&&pc.prob>=60)out.price={dir:pc.dir,prob:pc.prob};
+  const sr=suspRisk(el.yellow_cards,gw);
+  if(sr.level)out.suspension={yellows:sr.yellows,toBan:sr.left,by:'GW'+sr.by,level:sr.level};
+  const sp=setPieceConfidence(el);
+  if(sp.roles.length)out.setPieces=sp.roles.join(', ');
+  if(el._ci&&el._ci.npxg90!=null)out.npxG90=Math.round(el._ci.npxg90*100)/100;
+  if(el.status&&el.status!=='a')out.flag=el.news||el.status;
+  return Object.keys(out).length?out:null;
+}
+/* Attach intel to a player row, dropping the key entirely when empty. */
+function withIntel(row,el,gw,total){
+  const i=playerIntel(el,gw,total);
+  if(i)row.intel=i;
+  return row;
 }
 
 /* Build the compact payload Claude reasons over. */
 async function buildScoutPayload(){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
+  const gw=b.cur.id,total=(b.raw&&b.raw.total_players)||10e6;
   const team=bestXI(scoutScored(b,nf));
-  const payload={gameweek:b.cur.id,deadline:b.cur.deadline_time,
-    scoutTeam:team?team.xi.map(s=>({name:s.el.web_name,team:teamShort(b,s.el.team),pos:posShort(b,s.el.element_type),xP:s.p})):[]};
+  const payload={gameweek:gw,deadline:b.cur.deadline_time,
+    scoutTeam:team?team.xi.map(s=>withIntel(
+      {name:s.el.web_name,team:teamShort(b,s.el.team),pos:posShort(b,s.el.element_type),xP:s.p,
+       owned:s.el.selected_by_percent+'%'},s.el,gw,total)):[]};
   const mid=getMid();
   if(mid){try{const picks=await loadPicks(mid,b.cur.id);
     payload.myTeam=picks.picks.filter(p=>p.position<=11).map(p=>{const el=b.els[p.element]||{};
-      return {name:el.web_name,pos:posShort(b,el.element_type),xP:xP(b,el,nf[el.team]),captain:!!p.is_captain};});
+      return withIntel({name:el.web_name,pos:posShort(b,el.element_type),xP:xP(b,el,nf[el.team]),
+        captain:!!p.is_captain,owned:el.selected_by_percent+'%'},el,gw,total);});
     payload.bank=((picks.entry_history&&picks.entry_history.bank)||0)/10;
   }catch(_){}}
   return payload;
@@ -12212,7 +12215,7 @@ async function reviewContext(){
   }catch(_){}}
   return ctx;
 }
-function genDigest(){return runAI('digest',askContext,'digest-ai',
+function genDigest(){return runAI('digest',squadContext,'digest-ai',
   {busy:'Writing your digest…',retryName:'genDigest',cacheKey:'ge-ai-digest-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+(getMid()||'x')});}
 function genReview(){return runAI('review',reviewContext,'review-ai',
   {busy:'Reviewing your gameweek…',retryName:'genReview',cacheKey:'ge-ai-review-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+(getMid()||'x')});}
@@ -12222,13 +12225,15 @@ async function playerContext(id){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);const e=b.els[id]||{};
   const n=nf[e.team];
-  return {player:{name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),
+  /* Set-piece order arrives via intel.setPieces, so the raw *_order fields
+     are left out here — the same fact twice invites double-counting. */
+  return {player:withIntel({name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),
     price:(e.now_cost||0)/10,form:e.form,xP:xP(b,e,nf[e.team]),owned:e.selected_by_percent+'%',
     ppg:e.points_per_game,xG:e.expected_goals,xA:e.expected_assists,status:e.status,news:e.news||'',
-    penaltiesOrder:e.penalties_order,freekicksOrder:e.direct_freekicks_order,
     next:n?n.opp+(n.home?' (H)':' (A)')+' [diff '+n.diff+']':'',
     teamExpectedGoals:n&&n.lam!=null?Math.round(n.lam*100)/100:undefined,
-    teamCleanSheetProb:n&&n.cs!=null?Math.round(n.cs*100)+'%':undefined}};
+    teamCleanSheetProb:n&&n.cs!=null?Math.round(n.cs*100)+'%':undefined},
+    e,b.cur.id,(b.raw&&b.raw.total_players)||10e6)};
 }
 function genPlayer(id){return runAI('player',()=>playerContext(id),'pcard-'+id,
   {busy:'Scouting…',cacheKey:'ge-ai-player-'+(MEM._idx?MEM._idx.cur.id:'x')+'-'+id});}
@@ -12278,221 +12283,35 @@ function genScoutReport(){
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ASK THE SCOUT — conversational AI coach (Claude)
-   Grounded in the user's squad + our xP/fixtures data. Numbers come
-   from us; Claude reasons and explains. Pro feature.
+   SQUAD CONTEXT — the data every AI report reasons over
+   Shared by the transfer planner, the digest and the scout report.
+   The rule is the same everywhere: the numbers are ours, computed by
+   the model; the LLM only explains them. Anything we know about a
+   player travels with him here, so a report can cite a DefCon rate or
+   a price risk instead of talking in generalities.
    ═══════════════════════════════════════════════════════════ */
-let ASK_MSGS=[],ASK_PENDING=false;
-
-function renderAskThread(){
-  const t=document.getElementById('ask-thread');if(!t)return;
-  const body=ASK_MSGS.map(m=>'<div class="ask-msg ask-'+m.role+'">'+
-    (m.role==='assistant'?mdLite(m.content)+(m.local?'<span class="ask-src">grounded in the model</span>':''):esc(m.content))+'</div>').join('');
-  t.innerHTML=(body||'<div class="ask-empty">Ask a question to get started.</div>')+
-    (ASK_PENDING?'<div class="ask-msg ask-assistant ask-typing">Thinking…</div>':'');
-  t.scrollTop=t.scrollHeight;
-}
-
-/* Compact, grounded context sent with each question. */
-async function askContext(){
+async function squadContext(){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const nf=buildNextFix(b,fixtures);
   const fx=t=>{const n=nf[t];return n?n.opp+(n.home?' (H)':' (A)')+' [diff '+n.diff+']':'';};
-  const ctx={gameweek:b.cur.id,deadline:b.cur.deadline_time};
+  const gw=b.cur.id,total=(b.raw&&b.raw.total_players)||10e6;
+  const ctx={gameweek:gw,deadline:b.cur.deadline_time};
   const mid=getMid();
   if(mid){try{
     const picks=await loadPicks(mid,b.cur.id);
     ctx.bank=((picks.entry_history&&picks.entry_history.bank)||0)/10;
     ctx.teamValue=((picks.entry_history&&picks.entry_history.value)||0)/10;
     ctx.squad=picks.picks.map(p=>{const el=b.els[p.element]||{};
-      return {name:el.web_name,team:teamShort(b,el.team),pos:posShort(b,el.element_type),
+      return withIntel({name:el.web_name,team:teamShort(b,el.team),pos:posShort(b,el.element_type),
         price:(el.now_cost||0)/10,xP:xP(b,el,nf[el.team]),starting:p.position<=11,
-        captain:!!p.is_captain,status:el.status,next:fx(el.team)};});
+        captain:!!p.is_captain,status:el.status,owned:el.selected_by_percent+'%',
+        next:fx(el.team)},el,gw,total);});
   }catch(_){}}
-  ctx.topByXP=b.elements.filter(e=>e.status==='a').map(e=>({name:e.web_name,team:teamShort(b,e.team),
-    pos:posShort(b,e.element_type),price:(e.now_cost||0)/10,xP:xP(b,e,nf[e.team]),owned:e.selected_by_percent+'%',next:fx(e.team)}))
+  ctx.topByXP=b.elements.filter(e=>e.status==='a').map(e=>withIntel({name:e.web_name,team:teamShort(b,e.team),
+    pos:posShort(b,e.element_type),price:(e.now_cost||0)/10,xP:xP(b,e,nf[e.team]),owned:e.selected_by_percent+'%',next:fx(e.team)},e,gw,total))
     .sort((a,c)=>c.xP-a.xP).slice(0,24);
   const w=loadWatch();if(w.length)ctx.watchlist=w.map(id=>b.els[id]).filter(Boolean).map(e=>e.web_name);
   return ctx;
-}
-
-/* ─── LOCAL GROUNDING ENGINE ────────────────────────────────
-   Answers the common FPL questions straight from our own model
-   outputs (xP, fixtures, value, ownership). It is the hybrid
-   assistant's free floor: it runs when no ANTHROPIC_API_KEY is set
-   or the network is down, so the Scout always answers — grounded in
-   OUR numbers, not a generic chatbot. When a key is present the LLM
-   layer takes over and phrases things conversationally. */
-function fxDiff(next){const m=String(next||'').match(/diff\s*(\d+)/);return m?parseInt(m[1],10):null;}
-function pMoney(p){return '£'+Number(p.price).toFixed(1)+'m';}
-function pLabel(p){return '**'+p.name+'** ('+p.team+' '+p.pos+', '+pMoney(p)+') — '+p.xP+' xP';}
-function pLine(p){return '- '+pLabel(p)+(p.next?' · next '+p.next:'');}
-function findNamed(q,ctx){
-  const all=(ctx.squad||[]).concat(ctx.topByXP||[]);let best=null;
-  all.forEach(p=>{const nm=(p.name||'').toLowerCase();
-    if(nm.length>2&&q.indexOf(nm)>=0&&(!best||nm.length>best.name.length))best=p;});
-  return best;
-}
-function localAnswer(q,ctx){
-  q=(q||'').toLowerCase();
-  const sq=ctx.squad||[],pool=(ctx.topByXP||[]).slice();
-  const start=sq.filter(p=>p.starting);
-  const byXP=a=>a.slice().sort((x,y)=>y.xP-x.xP);
-  const inSquad=nm=>sq.some(p=>p.name===nm);
-  const foot='\n\n_xP is our validated projection (minutes × xGI/90 × fixture strength). Add an `ANTHROPIC_API_KEY` in Netlify to turn on conversational answers._';
-
-  /* Player-specific verdict (sell / keep / is X good). */
-  const named=findNamed(q,ctx);
-  if(named&&/\b(sell|keep|hold|drop|buy|bring|start|bench|good|worth|captain|transfer)\b/.test(q)&&
-     !/\b(differential|value|defen|fixtures?)\b/.test(q)){
-    const rankPool=byXP(pool);const idx=rankPool.findIndex(p=>p.name===named.name);
-    const posPool=byXP(pool.filter(p=>p.pos===named.pos));
-    const posRank=posPool.findIndex(p=>p.name===named.name);
-    const own=named.owned?(' · '+named.owned+' owned'):'';
-    let verdict;
-    if(named.xP>=5.5)verdict='a strong hold — one of the top projections this week';
-    else if(named.xP>=3.8)verdict='a solid starter on the numbers';
-    else verdict='a weak spot — the model sees better points elsewhere';
-    let out='**'+named.name+'** — '+named.xP+' xP'+own+(named.next?' · next '+named.next:'')+
-      '\n\nOn our model that is '+verdict+'.';
-    if(posRank>=0&&posRank<8)out+=' Ranks #'+(posRank+1)+' among '+named.pos+'s in the top pool.';
-    if(named.xP<3.8){const up=posPool.filter(p=>!inSquad(p.name)&&p.xP>named.xP).slice(0,3);
-      if(up.length)out+='\n\nHigher-projected '+named.pos+'s to consider:\n\n'+up.map(pLine).join('\n');}
-    return out+foot;
-  }
-
-  /* Captain / armband. */
-  if(/captain|armband|triple\s*cap/.test(q)){
-    const cand=byXP((start.length?start:pool).filter(p=>p.pos!=='GKP')).slice(0,3);
-    if(!cand.length)return null;
-    return '**Captain — '+cand[0].name+'**\n\n'+cand[0].name+' has the highest projection in '+
-      (start.length?'your XI':'the pool')+' this gameweek'+(cand[0].next?' ('+cand[0].next+')':'')+
-      '. Top options:\n\n'+cand.map(pLine).join('\n')+foot;
-  }
-
-  /* Differential. */
-  if(/differential|diff\b|under\s*\d|low.?owned|template.?breaker/.test(q)){
-    const th=(q.match(/under\s*(\d+)/)||q.match(/(\d+)\s*%/)||[])[1];
-    const cap=th?parseFloat(th):15;
-    const diffs=byXP(pool.filter(p=>{const o=parseFloat(p.owned);return o>0&&o<cap;})).slice(0,5);
-    if(!diffs.length)return 'No strong differentials under '+cap+'% in the top pool right now — the best projections are all well owned.'+foot;
-    return '**Differentials under '+cap+'% owned**\n\nStrong projections the crowd is light on:\n\n'+
-      diffs.map(p=>pLine(p)+' · '+p.owned+' owned').join('\n')+foot;
-  }
-
-  /* Value / budget picks. */
-  if(/\bvalue\b|cheap|budget|points?\s*per|enabler|bargain/.test(q)){
-    const val=pool.filter(p=>p.price>0).map(p=>Object.assign({ppm:p.xP/p.price},p))
-      .sort((a,c)=>c.ppm-a.ppm).slice(0,5);
-    return '**Best value on xP per £m**\n\n'+val.map(p=>pLine(p)+' · '+p.ppm.toFixed(2)+' xP/£m').join('\n')+foot;
-  }
-
-  /* Defence / clean sheets. */
-  if(/defen|clean\s*sheet|back\s*line|\bgk\b|keeper/.test(q)){
-    const def=byXP((start.length?start:pool).filter(p=>p.pos==='DEF'||p.pos==='GKP'));
-    if(!def.length)return null;
-    const easy=def.filter(p=>{const d=fxDiff(p.next);return d!=null&&d<=2;});
-    const tot=def.slice(0,5).reduce((s,p)=>s+p.xP,0);
-    let out=start.length?'**Your defence**\n\nYour back line projects '+tot.toFixed(1)+
-      ' xP from its top five. Ranked:\n\n':'**Top defensive picks**\n\n';
-    out+=def.slice(0,5).map(pLine).join('\n');
-    if(easy.length)out+='\n\nKindest fixtures: '+easy.slice(0,3).map(p=>p.name+' ('+p.next+')').join(', ')+'.';
-    return out+foot;
-  }
-
-  /* Fixtures. */
-  if(/fixtures?|who.*(easy|good).*game|schedule|run of games/.test(q)){
-    const scope=(start.length?start:pool).filter(p=>fxDiff(p.next)!=null);
-    const easy=scope.slice().sort((a,c)=>fxDiff(a.next)-fxDiff(c.next)).slice(0,5);
-    if(!easy.length)return null;
-    return '**Kindest fixtures**\n\nLowest model difficulty '+(start.length?'in your squad':'in the pool')+
-      ':\n\n'+easy.map(p=>'- **'+p.name+'** ('+p.team+') — '+p.next+', '+p.xP+' xP').join('\n')+foot;
-  }
-
-  /* Transfer suggestion. */
-  if(/transfer|swap|replace|who.*(buy|bring)|move|sign/.test(q)){
-    if(!start.length)return 'Link your team (top-right) and I’ll suggest a transfer grounded in your squad. Meanwhile, the top projected players are:\n\n'+
-      byXP(pool).slice(0,5).map(pLine).join('\n')+foot;
-    const weak=byXP(start.filter(p=>p.status==='a'||!p.status)).slice(-1)[0]||byXP(start).slice(-1)[0];
-    const bank=ctx.bank||0;
-    const repl=byXP(pool.filter(p=>p.pos===weak.pos&&!inSquad(p.name)&&p.price<=weak.price+bank)).slice(0,3);
-    let out='**Transfer idea**\n\nYour lowest-projected starter is '+pLabel(weak)+'.';
-    if(repl.length)out+=' Within budget ('+pMoney(weak)+' + '+('£'+bank.toFixed(1))+'m bank) the model prefers:\n\n'+
-      repl.map(pLine).join('\n');
-    else out+=' Nothing clearly better is affordable at '+weak.pos+' right now — hold.';
-    return out+foot;
-  }
-
-  /* General digest fallback. */
-  const cap=byXP(start.length?start:pool)[0];
-  const diff=byXP(pool.filter(p=>parseFloat(p.owned)<15))[0];
-  if(!cap)return null;
-  let out='**Gameweek '+(ctx.gameweek||'')+' — the model’s read**\n\n';
-  out+='- **Captain:** '+cap.name+' ('+cap.xP+' xP'+(cap.next?', '+cap.next:'')+')\n';
-  if(diff)out+='- **Differential:** '+diff.name+' ('+diff.xP+' xP, '+diff.owned+' owned)\n';
-  if(start.length){const weak=byXP(start).slice(-1)[0];out+='- **Weak spot:** '+weak.name+' ('+weak.xP+' xP) — a transfer candidate\n';}
-  out+='\nAsk me about captaincy, transfers, differentials, value, defence or fixtures.'+foot;
-  return out;
-}
-
-async function sendAsk(text){
-  text=(text||'').trim();if(!text||ASK_PENDING)return;
-  const inp=document.getElementById('ask-text');if(inp)inp.value='';
-  ASK_MSGS.push({role:'user',content:text});
-  if(ASK_MSGS.length>20)ASK_MSGS=ASK_MSGS.slice(-20);
-  ASK_PENDING=true;renderAskThread();
-  let context=null;
-  const local=()=>{try{const a=localAnswer(text,context);
-    if(a)ASK_MSGS.push({role:'assistant',content:a,local:true});
-    else ASK_MSGS.push({role:'assistant',content:'I can help with captaincy, transfers, differentials, value, defence and fixtures — try one of those.',local:true});
-  }catch(_){ASK_MSGS.push({role:'assistant',content:'Sorry — I couldn’t answer just then. Please try again in a moment.'});}};
-  try{
-    context=await askContext();
-    const token=aiToken();
-    if(!token){                                      /* signed out: the local engine still answers */
-      local();
-      ASK_MSGS.push({role:'assistant',content:'_Sign in to use AI features — conversational answers run on your account. The reply above comes from the free on-device model._',local:true});
-    }else{
-    track('ai_call',{task:'ask'});
-    const r=await fetch(apiBase()+'/api/ai',{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({task:'ask',messages:ASK_MSGS.slice(-10),context})});
-    if(r.status===503||r.status===401)local();       /* no key / session expired: fall back to our own engine */
-    else if(r.status===403||r.status===429){
-      const msg=await aiErrText(r);local();
-      if(msg)ASK_MSGS.push({role:'assistant',content:'_'+msg+'_',local:true});
-    }
-    else if(!r.ok)throw new Error('HTTP '+r.status);
-    else{const data=await r.json();ASK_MSGS.push({role:'assistant',content:data.text||'(no answer)'});window.GENative&&GENative.hapticLight();}
-    }
-  }catch(e){
-    if(context)local();                              /* network hiccup: still answer locally */
-    else ASK_MSGS.push({role:'assistant',content:'Sorry — I couldn’t answer just then. Please try again in a moment.'});
-  }
-  finally{ASK_PENDING=false;renderAskThread();}
-}
-
-/* The ask box used to be its own Pro panel sitting next to Scout AI — same
-   subject, same tier, adjacent in the nav, and nothing of its own but a chat
-   shell. It is a section of the scout now. Split into markup and wiring so
-   the scout panel can place it after its report. */
-function askCardHtml(){
-  const chips=['Who should I captain this week?','Suggest one transfer for my team','Best differential under 10% owned?','Best value picks right now?','Is my defence strong enough?','Who has the kindest fixtures?'];
-  return '<div class="card"><div class="card-title">'+svg(ICON.chat,'width="15" height="15"')+' Ask the Scout</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">Ask anything about '+(getMid()?'your team, ':'')+'captaincy, transfers, differentials, value or fixtures — answered straight from our projection model, free. '+(getMid()?'':'<b>Link your team</b> for personalised advice. ')+'Add an API key in Netlify to upgrade to conversational replies.</p>'+
-      '<div class="ask-thread" id="ask-thread" role="log" aria-live="polite"></div>'+
-      '<div class="ask-suggest">'+chips.map(q=>'<button class="ask-chip" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
-      '<div class="ask-input"><input id="ask-text" placeholder="Ask the scout…" autocomplete="off" aria-label="Ask the scout a question">'+
-        '<button class="btn btn-primary btn-sm" id="ask-send">Send</button></div>'+
-    '</div>';
-}
-function wireAsk(host){
-  renderAskThread();
-  const inp=host.querySelector('#ask-text');
-  if(!inp)return;
-  host.querySelector('#ask-send').addEventListener('click',()=>sendAsk(inp.value));
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter')sendAsk(inp.value);});
-  Array.prototype.forEach.call(host.querySelectorAll('[data-q]'),btn=>btn.addEventListener('click',()=>sendAsk(btn.dataset.q)));
 }
 
 /* ── Mini-League Tracker ───────────────────────────────── */

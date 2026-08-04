@@ -30,26 +30,32 @@ const BASE =
   "Reason ONLY over the JSON data provided — never invent players, fixtures, prices or statistics not in it. " +
   "'xP' is our predicted points for the upcoming gameweek; prefer it when comparing players. Only recommend " +
   "players that appear in the data. Use British English and GitHub-flavoured markdown. Be concise and practical. " +
-  "Never claim any affiliation with the Premier League or the official Fantasy Premier League game. No preamble, no disclaimers.";
+  "Never claim any affiliation with the Premier League or the official Fantasy Premier League game. No preamble, no disclaimers.\n\n" +
+  "A player may carry an `intel` block. It is our own modelling, not public stats, and it is the reason a manager " +
+  "pays for this — cite it by name rather than talking in generalities:\n" +
+  "- `defcon` — Defensive Contribution: `rate` is how often he hits the threshold (a `~` prefix means it is estimated " +
+  "from rate-per-90 rather than observed), `perStart` the actions per start, `threshold` 10 for defenders or 12 for mids/forwards.\n" +
+  "- `price` — our price model: `dir` rise or fall, `prob` the percentage chance tonight.\n" +
+  "- `suspension` — `toBan` is how many more yellows trigger a ban, `by` the gameweek the count resets.\n" +
+  "- `setPieces` — the set-piece duties he takes.\n" +
+  "- `npxG90` — non-penalty expected goals per 90.\n" +
+  "- `flag` — an injury or availability note.\n" +
+  "Prefer a specific intel figure over a vague claim, but never pad: if a player's intel says nothing useful, say nothing.";
 
 /* task -> { sys, instruction, model, max, pro }. `pro` mirrors the client
    gating: every AI button in the app is Pro-gated, so the server enforces
    the same rule authoritatively. */
 const TASKS = {
-  ask: {
-    sys: "Answer the manager's question as a knowledgeable FPL coach. Use their squad and the candidate list to give a specific, grounded answer. If they have no squad in the data, give general gameweek advice. Keep answers tight (usually under 180 words) unless asked for depth.",
-    model: 'claude-sonnet-5', max: 800, pro: true
-  },
   scout: {
-    instruction: "Write a scout report.\n## Captain\nBest captain from the data + one sentence why.\n## Gameweek picks\n3-4 bullets on standout players in scoutTeam and why.\n## Your team\nOnly if myTeam exists: an honest read on their XI, the captain call vs the model, at most one transfer angle.",
+    instruction: "Write a scout report.\n## Captain\nBest captain from the data + one sentence why.\n## Gameweek picks\n3-4 bullets on standout players in scoutTeam and why — where a pick is justified by its intel (a DefCon rate, set-piece duty, npxG90), say so with the number.\n## Watch out for\nOnly if the data supports it: any player in scoutTeam or myTeam carrying a suspension risk, an availability flag or a price fall. Skip the section entirely if there is nothing real to flag.\n## Your team\nOnly if myTeam exists: an honest read on their XI, the captain call vs the model, at most one transfer angle.",
     model: 'claude-haiku-4-5-20251001', max: 900, pro: true
   },
   transfers: {
-    instruction: "Recommend transfers for myTeam using xP, fixtures (next) and bank. Propose at most TWO moves. For each: **OUT → IN**, the net cost vs bank, and whether a -4 points hit is justified. Consider only players in the data. If the team is already strong, say so and recommend holding. End with a one-line bottom line.",
+    instruction: "Recommend transfers for myTeam using xP, fixtures (next), bank and each player's intel. Propose at most TWO moves. For each: **OUT → IN**, the net cost vs bank, and whether a -4 points hit is justified. Weigh the intel properly — a suspension one yellow away, an availability flag or a likely price fall strengthens a sell; a strong DefCon rate or set-piece duty strengthens a buy, and is worth naming. Consider only players in the data. If the team is already strong, say so and recommend holding. End with a one-line bottom line.",
     model: 'claude-sonnet-5', max: 700, pro: true
   },
   digest: {
-    instruction: "Write a tight pre-deadline digest (about 140 words): the captain pick, one transfer thought, one risk to watch in the squad, and a one-line chip note if relevant. Skimmable bullets.",
+    instruction: "Write a tight pre-deadline digest (about 140 words): the captain pick, one transfer thought, one risk to watch in the squad, and a one-line chip note if relevant. Take the risk from the squad's intel where there is one — a suspension on the edge, an availability flag or a price fall — and name the figure. Skimmable bullets.",
     model: 'claude-haiku-4-5-20251001', max: 500, pro: true
   },
   review: {
@@ -57,7 +63,7 @@ const TASKS = {
     model: 'claude-haiku-4-5-20251001', max: 500, pro: true
   },
   player: {
-    instruction: "Give a concise scouting verdict on the player in the data: form and xP, fixture, role/set-pieces if present, ownership and value. End with a one-word call in bold: **Buy**, **Hold**, **Watch** or **Avoid**. About 90 words.",
+    instruction: "Give a concise scouting verdict on the player in the data: form and xP, fixture, ownership and value, plus whatever the intel block gives you — DefCon rate, set-piece duty, npxG90, price pressure, suspension risk. End with a one-word call in bold: **Buy**, **Hold**, **Watch** or **Avoid**. About 90 words.",
     model: 'claude-haiku-4-5-20251001', max: 350, pro: true
   },
   chips: {
@@ -181,22 +187,16 @@ exports.handler = async (event) => {
     return json(429, { error: 'You have reached today’s AI limit (' + DAILY_QUOTA + ' calls). It resets at midnight UTC — the model tools keep working in the meantime.' });
   }
 
-  const ctxJson = fitJSON(body.context || {}, 9000);
+  /* 9000 was sized for name/price/xP rows. Each player now carries an intel
+     block (DefCon, price, suspension, set-pieces), which roughly doubles a
+     row — at the old budget fitJSON would have quietly trimmed the candidate
+     list from 24 to 16 and thrown away the very data this is for. */
+  const ctxJson = fitJSON(body.context || {}, 18000);
   const system = BASE + "\n\n" + (t.sys || "") + "\n\nData context (JSON):\n```json\n" + ctxJson + "\n```";
 
-  let messages;
-  if (body.task === 'ask') {
-    const turns = Array.isArray(body.messages) ? body.messages.slice(-10)
-      .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-      .map(m => ({ role: m.role, content: m.content.slice(0, 2000) })) : [];
-    /* The Messages API requires the first turn to be the user's — drop any
-       leading assistant turns the -10 slice may have started on. */
-    while (turns.length && turns[0].role !== 'user') turns.shift();
-    if (!turns.length) return json(400, { error: 'No question' });
-    messages = turns;
-  } else {
-    messages = [{ role: 'user', content: t.instruction }];
-  }
+  /* Every task is a single instruction over the data context — there is no
+     conversational turn-taking here since the chat box was removed. */
+  const messages = [{ role: 'user', content: t.instruction }];
 
   /* Call Claude, retrying once on a model-not-found 404 with the pinned
      Haiku fallback so a retired/unknown model id never dead-ends a user. */
