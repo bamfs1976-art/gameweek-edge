@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — DefCon explainer card</title>
+<!--
+  Source for gwe-defcon-explainer.png (1200x1200).
+  Fonts are deliberately system-only (no webfont link) so this renders
+  identically offline and matches gwe-standard-vs-edge.png, which was
+  rendered with the same fallback stack.
+  Regenerate: open in a headless browser at 1200x1200 and screenshot #card.
+-->
+<style>
+:root{
+  --bg:#0a0c0f;
+  --surface:#12161a;
+  --surface2:#0e1116;
+  --text:#e6e9ef;
+  --text2:#c7cdd4;
+  --dim:#6b7280;
+  /* small mono labels sit a notch brighter than --dim so 13-15px text still
+     clears WCAG AA (4.5:1) against the near-black card */
+  --dim-small:#8b95a1;
+  --green:#00d26a;
+  --green-deep:#0e1512;
+  --line:#1a1f26;
+  --sans:'Liberation Sans','DejaVu Sans',Arial,Helvetica,sans-serif;
+  --mono:'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000}
+
+#card{
+  width:1200px;height:1200px;background:var(--bg);color:var(--text);
+  font-family:var(--sans);position:relative;overflow:hidden;
+  display:flex;flex-direction:column;padding:70px;
+}
+/* the same soft green wash the other cards carry, top-right */
+#card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(820px 520px at 92% -10%, rgba(0,210,106,.10), transparent 62%),
+    radial-gradient(620px 460px at -10% 106%, rgba(59,130,246,.055), transparent 60%);
+}
+#card>*{position:relative;z-index:2}
+
+.kicker{
+  font-family:var(--mono);font-size:15px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--green);margin-bottom:20px;
+}
+h1{font-size:78px;line-height:1.02;letter-spacing:-.028em;font-weight:700}
+h1 span{color:var(--dim)}
+.sub{font-size:26px;line-height:1.45;color:var(--dim);margin-top:20px;max-width:56ch}
+.sub b{color:var(--text2);font-weight:400;white-space:nowrap}
+/* keeps the trailing clause together so "— and" can't dangle at a line end */
+.sub i{font-style:normal;white-space:nowrap}
+
+/* ---- the two thresholds ---- */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:56px}
+.panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  padding:32px 34px 34px;display:flex;flex-direction:column;min-height:395px;
+}
+.panel h2{
+  font-family:var(--mono);font-size:14px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim-small);font-weight:400;display:flex;align-items:center;gap:11px;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:0 0 7px}
+.dot.b{background:#3b82f6}
+
+.num{
+  font-family:var(--mono);font-weight:700;font-size:104px;line-height:1;
+  color:var(--green);letter-spacing:-.03em;margin:22px 0 4px;
+}
+.numlab{font-family:var(--mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim-small)}
+.acts{font-size:21px;line-height:1.5;color:var(--dim-small);margin-top:22px;flex:1}
+.acts em{font-style:normal;color:var(--text);display:block;margin-bottom:8px}
+
+.award{
+  margin-top:24px;display:inline-flex;align-self:flex-start;align-items:center;gap:10px;
+  font-family:var(--mono);font-size:19px;font-weight:700;color:var(--green);
+  background:var(--green-deep);border:1px solid rgba(0,210,106,.32);
+  border-radius:5px;padding:11px 18px;letter-spacing:.02em;
+}
+
+/* ---- the cap ---- */
+.cap{
+  margin-top:26px;background:var(--surface2);border:1px solid var(--line);border-radius:6px;
+  padding:30px 32px;display:flex;align-items:center;gap:20px;
+}
+.cap .badge{
+  font-family:var(--mono);font-size:14px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim-small);border:1px solid var(--line);border-radius:4px;padding:8px 13px;flex:0 0 auto;
+}
+.cap p{font-size:23px;line-height:1.4;color:var(--text2)}
+.cap p b{color:var(--text);font-weight:700}
+
+/* ---- payoff ---- */
+.payoff{margin-top:42px;font-size:30px;line-height:1.36;color:var(--text);max-width:34ch;font-weight:400}
+.payoff em{font-style:normal;color:var(--green)}
+
+/* ---- footer ---- */
+.foot{margin-top:auto;padding-top:42px;border-top:1px solid var(--line)}
+.footrow{display:flex;align-items:baseline;justify-content:space-between;gap:24px}
+.url{font-family:var(--mono);font-size:25px;font-weight:700;color:var(--green);letter-spacing:.01em}
+.note{font-family:var(--mono);font-size:20px;color:var(--text2)}
+.disc{font-family:var(--mono);font-size:13px;color:var(--dim-small);margin-top:16px;letter-spacing:.01em}
+</style>
+</head>
+<body>
+
+<div id="card">
+  <div class="kicker">Gameweek Edge · 2026/27</div>
+  <h1>DefCon,<span> explained</span></h1>
+  <p class="sub">Defensive Contribution points are <b>the cheapest edge in FPL</b> <i>— and they're back for 2026/27.</i></p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2><span class="dot"></span>Defenders</h2>
+      <div class="num">10</div>
+      <div class="numlab">actions in a match</div>
+      <p class="acts"><em>Clearances, blocks, interceptions &amp; tackles.</em> Recoveries don't count for defenders.</p>
+      <div class="award">→ +2 pts</div>
+    </div>
+    <div class="panel">
+      <h2><span class="dot b"></span>Midfielders &amp; forwards</h2>
+      <div class="num">12</div>
+      <div class="numlab">actions in a match</div>
+      <p class="acts"><em>The same four, plus ball recoveries.</em> A higher bar, but far more ways to clear it.</p>
+      <div class="award">→ +2 pts</div>
+    </div>
+  </div>
+
+  <div class="cap">
+    <span class="badge">The cap</span>
+    <p>Hit the threshold once and that's the lot — <b>a maximum of +2 per player, per match.</b></p>
+  </div>
+
+  <p class="payoff">Which is why a defensive mid can be a <em>near-nailed cheap returner</em>.</p>
+
+  <div class="foot">
+    <div class="footrow">
+      <div class="url">gameweekedge.co.uk</div>
+      <div class="note">Tracked live in the Match Centre</div>
+    </div>
+    <div class="disc">Ad-free. Not affiliated with the Premier League or the official Fantasy Premier League game.</div>
+  </div>
+</div>
+
+</body>
+</html>
