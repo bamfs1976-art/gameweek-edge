@@ -14,8 +14,8 @@ the moment the deadline passes on the 21st.
 
 | # | Job | Why it blocks | Done |
 |---|---|---|---|
-| 1 | **Render the DefCon explainer card.** `assets/social/` holds `gwe-standard-vs-edge.png` but **not** `gwe-defcon-explainer.png`, which every earlier pack assumed existed. | Post 1 (Wed 5 Aug) can't ship without it. | ☐ |
-| 2 | **Batch-render the Social Studio cards** listed in §2 and drop them in `assets/social/`. | Nine of the fourteen posts attach one. | ☐ |
+| 1 | ~~Render the DefCon explainer card.~~ **Done** — `assets/social/gwe-defcon-explainer.png`, built by `npm run social` from `scripts/social/defcon-explainer.html`. | Post 1 (Wed 5 Aug) needed it. | ☑ |
+| 2 | **Batch-render the Social Studio cards** listed in §2 and drop them in `assets/social/`. | Eight of the fourteen posts attach one. | ☐ |
 | 3 | **Bio + pin, both platforms.** Unofficial-status line in the bio (not on every post); pin the Standard vs The Edge post once it's up on the 14th. | Keeps individual posts clean and legally covered. | ☐ |
 
 ---
@@ -56,7 +56,7 @@ switches on during GW1 weekend; see the weekend plan.
 
 | Card | Studio preset | Used by |
 |---|---|---|
-| `gwe-defcon-explainer.png` | *(hand-built — see §0)* | Post 1 |
+| `gwe-defcon-explainer.png` | *(already in repo — `npm run social`)* | Post 1 |
 | `gwe-underpriced.png` | **Underpriced** | Post 2 |
 | `gwe-chip-plan.png` | **Chip plan** | Post 3 |
 | `gwe-fixture-runs.png` | **Best fixture runs** | Post 6 |

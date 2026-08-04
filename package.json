@@ -16,6 +16,7 @@
     "history:build": "node scripts/history/build-history.mjs",
     "history": "npm run history:fetch && npm run history:build",
     "content": "node scripts/content/fetch-data.mjs && node scripts/content/render.mjs",
+    "social": "node scripts/social/render.mjs",
     "threads": "node scripts/content/club-thread.mjs",
     "check:briefing": "node scripts/check-briefing.mjs",
     "compare:projections": "node scripts/compare-projections.mjs"
