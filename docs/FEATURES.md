@@ -961,12 +961,12 @@ rather than merging.
 
 ### Team‑strength engine (`plsim*` in `index.html`, mirrors the Plsimulator repo)
 - **Poisson** goal model with a **Dixon‑Coles** low‑score correction.
-- Constants: home base **1.62**, away base **1.32** goals; DC **rho ≈ −0.074**;
+- Constants: home base **1.62**, away base **1.32** goals; DC **rho ≈ −0.0855**;
   Bayesian prior weight 8; 24 fitting iterations; per‑club home advantage.
 - On every load it re‑fits attack/defence multipliers on the season's finished
   fixtures from the live API (falls back to offline‑fitted priors early season).
-- Offline calibration (Plsimulator repo) fits on ~2,796 PL + Championship
-  results 2023‑26 with exponential date‑decay (250‑day half‑life) and an
+- Offline calibration (Plsimulator repo) fits on ~1,864 PL + Championship
+  results 2024‑27 with exponential date‑decay (250‑day half‑life) and an
   xG‑blended target (α·xG + (1−α)·goals). A promoted‑team prior is estimated from
   history. Outputs: per‑fixture expected goals, clean‑sheet odds, 3+‑goal odds,
   win probability, and a 1–5 model FDR.
