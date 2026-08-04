@@ -21,7 +21,7 @@ const og=`
   <text x="250" y="258" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#bff0d4" letter-spacing="3">FPL, WITH AN EDGE</text>
   <text x="98" y="350" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" fill="#ffffff">The calm, clear edge for Fantasy</text>
   <text x="98" y="404" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" fill="#ffffff">Premier League managers.</text>
-  <text x="98" y="476" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="500" fill="#d9f3e4">AI scout · predicted points · live rank · mini-leagues · alerts</text>
+  <text x="98" y="476" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="500" fill="#d9f3e4">predicted points · graded in public · live rank · rival intelligence</text>
 </svg>`;
 await sharp(Buffer.from(og)).png().toFile('icons/og.png');
 console.log('✓ og.png generated (1200x630)');

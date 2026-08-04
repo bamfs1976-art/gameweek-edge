@@ -38,7 +38,7 @@ League managers.*
 **50-word blurb:** Gameweek Edge is a fast, ad-free companion for Fantasy
 Premier League managers. Live points and bonus, a full Match Centre, price
 predictions, set-piece and suspension intel, transfer planning and captaincy
-from a backtested model, per-gameweek debriefs and an AI scout. Free to use;
+from a model graded in public, per-gameweek debriefs and rival intelligence. Free to use;
 Pro unlocks the deep tools.
 
 ---
@@ -147,7 +147,7 @@ posts from the EO tracker, "the model's GW1 forecasts" thread.
 > No ads anywhere, including the free tier. Works as a web app on any phone
 > — add it to your home screen and it does push alerts (price changes,
 > deadline, your players scoring). There's a Pro tier for the deepest tools
-> (AI scout, live rank percentile, season simulator) — cancel is one tap,
+> (rival intelligence, scout reports, season simulator) — cancel is one tap,
 > no tricks.
 >
 > It's a solo project — I'd genuinely value feedback, feature requests and

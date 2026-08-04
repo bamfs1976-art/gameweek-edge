@@ -1,9 +1,10 @@
 /* Gameweek Edge — unified AI endpoint (Claude, Netlify Function)
-   POST { task, context, messages? } -> { text }.
+   POST { task, context } -> { text }.
    The numbers come from our own models; Claude reasons over the JSON we
-   pass and must not invent data. One function serves every AI feature
-   (scout report, chat, transfer plan, digest, review, player, chips,
-   rival).
+   pass and must not invent data. One function serves every AI report
+   (scout, transfer plan, digest, review, player, chips, rival, draft).
+   Each is a single instruction over a data context — there is no chat
+   here, so no conversational turns are accepted.
 
    Auth: requires an `Authorization: Bearer <Supabase access token>`
    header. The token is verified against Supabase (`/auth/v1/user`) and
@@ -42,7 +43,7 @@ const BASE =
   "- `flag` — an injury or availability note.\n" +
   "Prefer a specific intel figure over a vague claim, but never pad: if a player's intel says nothing useful, say nothing.";
 
-/* task -> { sys, instruction, model, max, pro }. `pro` mirrors the client
+/* task -> { instruction, model, max, pro }. `pro` mirrors the client
    gating: every AI button in the app is Pro-gated, so the server enforces
    the same rule authoritatively. */
 const TASKS = {
@@ -192,7 +193,7 @@ exports.handler = async (event) => {
      row — at the old budget fitJSON would have quietly trimmed the candidate
      list from 24 to 16 and thrown away the very data this is for. */
   const ctxJson = fitJSON(body.context || {}, 18000);
-  const system = BASE + "\n\n" + (t.sys || "") + "\n\nData context (JSON):\n```json\n" + ctxJson + "\n```";
+  const system = BASE + "\n\nData context (JSON):\n```json\n" + ctxJson + "\n```";
 
   /* Every task is a single instruction over the data context — there is no
      conversational turn-taking here since the chat box was removed. */

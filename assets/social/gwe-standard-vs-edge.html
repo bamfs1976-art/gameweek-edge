@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — Standard vs The Edge</title>
+<!--
+  Source for gwe-standard-vs-edge.png (1200x1200).
+  Rebuilt when Ask the Scout was removed: the old graphic had a row reading
+  "AI Scout & Ask the Scout" for a feature that no longer exists, and no
+  source survived to edit. Matches gwe-defcon-explainer.html — same palette,
+  same system-font stack, so the pair renders identically offline.
+  Regenerate: serve this folder, screenshot #card at 1200x1200.
+-->
+<style>
+:root{
+  --bg:#0a0c0f;
+  --surface:#12161a;
+  --surface2:#0e1116;
+  --text:#e6e9ef;
+  --text2:#c7cdd4;
+  --dim:#6b7280;
+  --dim-small:#8b95a1;
+  --green:#00d26a;
+  --green-deep:#0e1512;
+  --line:#1a1f26;
+  --sans:'Liberation Sans','DejaVu Sans',Arial,Helvetica,sans-serif;
+  --mono:'DejaVu Sans Mono','Liberation Mono','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#000}
+
+#card{
+  width:1200px;height:1200px;background:var(--bg);color:var(--text);
+  font-family:var(--sans);position:relative;overflow:hidden;
+  display:flex;flex-direction:column;padding:70px;
+}
+#card::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(820px 520px at 92% -10%, rgba(0,210,106,.10), transparent 62%),
+    radial-gradient(620px 460px at -10% 106%, rgba(59,130,246,.055), transparent 60%);
+}
+#card>*{position:relative;z-index:2}
+
+.kicker{
+  font-family:var(--mono);font-size:15px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--green);margin-bottom:20px;
+}
+h1{font-size:78px;line-height:1.02;letter-spacing:-.028em;font-weight:700}
+h1 span{color:var(--dim)}
+.sub{font-size:26px;line-height:1.45;color:var(--dim);margin-top:20px;max-width:56ch}
+
+/* ---- the table ---- */
+.tbl{margin-top:52px;flex:1;display:flex;flex-direction:column}
+.head{display:flex;align-items:flex-end;gap:0;padding-bottom:16px}
+.head .spacer{flex:1}
+.col{width:190px;flex:0 0 190px;text-align:center}
+.col .tier{
+  font-family:var(--mono);font-size:13px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--dim-small);margin-bottom:10px;
+}
+.col .badge{
+  font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.06em;
+  border-radius:5px;padding:13px 0;
+}
+.col .badge.std{background:var(--surface2);border:1px solid var(--line);color:var(--text)}
+.col .badge.edge{background:var(--green-deep);border:1px solid rgba(0,210,106,.32);color:var(--green)}
+
+.row{display:flex;align-items:center;padding:0;border-top:1px solid var(--line);flex:1}
+.row .lbl{flex:1;font-size:23px;color:var(--text);padding-right:24px}
+.row .cell{width:190px;flex:0 0 190px;text-align:center;font-size:26px;line-height:1}
+.tick{color:var(--green);font-weight:700}
+.dash{color:var(--dim-small)}
+
+/* ---- footer ---- */
+.foot{margin-top:auto;padding-top:34px;border-top:1px solid var(--line)}
+.footrow{display:flex;align-items:baseline;justify-content:space-between;gap:24px}
+.url{font-family:var(--mono);font-size:25px;font-weight:700;color:var(--green);letter-spacing:.01em}
+.note{font-family:var(--mono);font-size:20px;color:var(--text2)}
+.disc{font-family:var(--mono);font-size:13px;color:var(--dim-small);margin-top:16px;letter-spacing:.01em}
+</style>
+</head>
+<body>
+
+<div id="card">
+  <div class="kicker">Gameweek Edge</div>
+  <h1>Standard <span>vs</span> The Edge</h1>
+  <p class="sub">Standard tells you what to do this week. The Edge tells you how to win your league.</p>
+
+  <div class="tbl">
+    <div class="head">
+      <span class="spacer"></span>
+      <div class="col"><div class="tier">Free</div><div class="badge std">STANDARD</div></div>
+      <div class="col"><div class="tier">Pro</div><div class="badge edge">THE EDGE</div></div>
+    </div>
+
+    <div class="row"><span class="lbl">Predicted points &amp; Model XI</span><span class="cell tick">&#10004;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Model graded in public — misses shown</span><span class="cell tick">&#10004;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Match Centre, live rank &amp; bonus race</span><span class="cell tick">&#10004;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">GW Debrief — what your captain cost you</span><span class="cell tick">&#10004;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Price &amp; suspension model</span><span class="cell tick">&#10004;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Differentials &amp; clean-sheet matrix</span><span class="cell tick">&#10004;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Rival Scout — overtake your league</span><span class="cell dash">&mdash;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">EO Tracker &amp; Template Meter</span><span class="cell dash">&mdash;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Scout reports &amp; transfer plans</span><span class="cell dash">&mdash;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">Season &amp; What-If simulators</span><span class="cell dash">&mdash;</span><span class="cell tick">&#10004;</span></div>
+    <div class="row"><span class="lbl">DefCon threats &amp; set-piece register</span><span class="cell dash">&mdash;</span><span class="cell tick">&#10004;</span></div>
+  </div>
+
+  <div class="foot">
+    <div class="footrow">
+      <div class="url">gameweekedge.co.uk</div>
+      <div class="note">The Edge — £3.99/mo · £24.99 season</div>
+    </div>
+    <div class="disc">Ad-free. Not affiliated with the Premier League or the official Fantasy Premier League game.</div>
+  </div>
+</div>
+
+</body>
+</html>

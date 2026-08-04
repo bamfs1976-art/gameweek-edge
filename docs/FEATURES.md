@@ -21,7 +21,8 @@ A single‑page web app (also packaged as an iOS app via Capacitor) that layers 
 official Fantasy Premier League data. Where most FPL tools are broad stat
 dashboards, Gameweek Edge is *opinionated*: it produces a model captain, a
 best‑value pick, an expected‑points (xP) pool, a model Team of the Week, a
-transfer solver, and a hybrid AI scout — all grounded in its own numbers.
+transfer solver, and scout reports written over its own intelligence — all
+grounded in its own numbers, and graded in public against the real results.
 
 Everything runs from the live official FPL API through a serverless proxy. When
 the 2026/27 season opens, the app populates automatically — no manual update.
@@ -34,7 +35,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 | Gameweek snapshot | Dashboard, This Gameweek |
 | Live matchday | Live Percentile, Bonus Tracker, DefCon Threats, Auto‑Sub Tracker, What‑If |
 | Team linking | Squad, Transfers, Captaincy, Live Percentile, Manager Report, Mini‑Leagues |
-| Intelligence & AI | Scout AI, Ask the Scout, EO/Template/Rival tools |
+| Intelligence & AI | Scout AI, EO/Template/Rival tools |
 | Content | The Wire (auto blog), Team of the Week |
 
 ---
@@ -63,7 +64,7 @@ Home
 ├── My Week              (free)  Your personalised gameweek brief
 ├── Gameweek recap       (free)  What just happened, and what it cost you
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
-├── Scout AI             (Pro)   Model XI, scout report and the ask box
+├── Scout AI             (Pro)   Model XI and the scout report
 ├── Methodology          (free)  How the model works, in full
 └── Model Accountability (free)  Every published call, graded
 
@@ -435,10 +436,9 @@ and the points swing.
 points gaps; AI rival brief.
 
 **Scout AI** — the model's **Team of the Week** on a pitch + top predicted by
-position + an on‑demand AI scout report.
-
-**Ask the Scout** — the hybrid AI coach (see §6). Answers captaincy, transfer,
-differential, value, defence and fixture questions, grounded in the model.
+position + an on‑demand scout report. The report reasons over the same intel the
+panels show: DefCon hit rate against the 10/12 threshold, price probability,
+yellows to a ban, set-piece duties and npxG90 (see §6).
 
 ### Players
 
@@ -1073,18 +1073,14 @@ dataset (used freely with attribution), aligned by the official FPL element id:
 
 ## 6. AI assistant (hybrid)
 
-- **Local grounding engine** (free, no key): answers captaincy, transfer,
-  differential, value, defence and fixture questions **from the app's own model
-  outputs** (xP, fixtures, value, ownership, style). Deterministic, private,
-  ships out of the box. It is the floor for **Ask the Scout** and runs whenever
-  no LLM key is set or the network drops.
 - **LLM layer** (optional): a serverless function `functions/ai.js` calls an LLM
-  when `ANTHROPIC_API_KEY` is set in the Netlify environment, for conversational
-  replies and richer reports. Without a key, features degrade to the local engine
-  / a "needs setup" state rather than breaking.
+  when `ANTHROPIC_API_KEY` is set in the Netlify environment, for the written
+  reports. Without a key those panels show a "needs setup" state rather than
+  breaking; every deterministic tool is unaffected.
 - **AI tasks** routed through the shared `runAI` runner and `/api/ai`:
-  `digest`, `review`, `scout`, `player`, `chips`, `rival`, `transfers`, `draft`
-  (pre‑season squad diagnosis), and the conversational `ask`. Results are cached
+  `digest`, `review`, `scout`, `player`, `chips`, `rival`, `transfers` and
+  `draft` (pre‑season squad diagnosis). Every task is a single instruction over
+  a data context — there is no conversational turn-taking. Results are cached
   per gameweek where sensible; Pro‑gated buttons control cost on free panels.
 
 ---
@@ -1147,7 +1143,7 @@ dataset (used freely with attribution), aligned by the official FPL element id:
 From the competitive review (FPL Core, fplreview, fpl.team, FPL Pulse, LiveFPL,
 Premier Fantasy Tools, Fantasy Football Hub/Fix):
 
-- **Shipped differentiators:** fitted model xP, hybrid AI scout, deep player
+- **Shipped differentiators:** fitted model xP, a model graded in public, deep player
   stats + full sortable list, transfer solver, live bonus projector, DefCon,
   auto blog, Team of the Week, H2H.
 - **Possible next steps:**

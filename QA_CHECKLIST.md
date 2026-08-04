@@ -44,8 +44,8 @@ Run this before each release. Test on a real iPhone (Safari) and an Android phon
 - [ ] As Pro: Pro panels show live tools; lock badges hidden; "Pro · Unlocked" marker
 
 ## 5. AI features (key set)
-- [ ] Ask the Scout: question returns a grounded answer; suggested chips work; thread scrolls
-- [ ] Scout AI: Team of the Week pitch + AI scout report
+- [ ] No ask box anywhere: not in the Scout panel, not in the desktop right rail
+- [ ] Scout AI: Team of the Week pitch + scout report; the report cites at least one intel figure (DefCon rate, price risk, set-piece duty)
 - [ ] Transfer plan / digest / review / chip adviser / rival brief / player verdict each generate and cache per gameweek
 - [ ] With no key: each shows a tidy "AI needs setup" note (no crash)
 

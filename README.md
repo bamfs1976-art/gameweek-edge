@@ -156,10 +156,9 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 
 ### Claude AI features
 
-All Claude calls go through **one** server function, `netlify/functions/ai.js` (per-task prompts). The **numbers come from our own models**; Claude reasons over the JSON we pass and is told not to invent data. Models are chosen per task (Haiku 4.5 for high-volume, Sonnet 4.6 for chat/reasoning).
+All Claude calls go through **one** server function, `netlify/functions/ai.js` (per-task prompts). The **numbers come from our own models**; Claude reasons over the JSON we pass and is told not to invent data. Models are chosen per task (Haiku 4.5 for high-volume, Sonnet for the heavier reasoning). Every player in the payload carries an `intel` block — DefCon hit rate, price probability, yellows to a ban, set-piece duties, npxG90 — so a report cites our own modelling rather than generalising.
 
-- **Ask the Scout** — a chat coach grounded in your squad, xP, fixtures and candidates.
-- **AI Scout Report** — captain, gameweek picks and a read on your team.
+- **AI Scout Report** — captain, gameweek picks and a read on your team, citing the DefCon, price, suspension and set-piece models behind each call.
 - **AI Transfer Planner** — concrete moves (out → in, cost, hit y/n) from your squad and fixtures.
 - **Weekly Digest** & **Last Gameweek Review** — Dashboard cards.
 - **Player verdicts** (Watchlist), **Chip Adviser** (Chip Strategy), **Rival Brief** (Rival Scout).

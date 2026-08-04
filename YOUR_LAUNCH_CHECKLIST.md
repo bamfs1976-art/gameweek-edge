@@ -34,7 +34,7 @@ season starts the weekend of 15–16 August.
 
 **2. Phone QA (~20 min).** Work down `QA_CHECKLIST.md`: add to home
    screen, link your team, buy Pro with Stripe test card 4242 4242 4242
-   4242, enable push, ask the Scout a question. Tell me anything that
+   4242, enable push, generate a scout report. Tell me anything that
    misbehaves — I fix, you re-test.
 
 **3. Set up the X profile (10 min).** Create/claim **@gameweekedge**,

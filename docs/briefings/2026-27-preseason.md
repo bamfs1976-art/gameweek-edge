@@ -11,7 +11,7 @@ Season starts Saturday 22 August 2026. The summer window is still open until rou
 This file works two ways.
 
 - As reference data: drop each team block into a squad-builder note, watchlist tag, or fixture planner.
-- As an AI Scout prompt: paste the section below into the GWE AI Scout as grounding context, then ask your question.
+- As reference for your own notes: the section below is the same data the scout report reasons over.
 
 **Suggested prompt wrapper:**
 

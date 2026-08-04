@@ -70,7 +70,7 @@ Work down **`QA_CHECKLIST.md`**. The essentials:
 - Link your team → squad/points load.
 - Open a Pro panel → upgrade → pay with Stripe **test card 4242 4242 4242 4242** (any future date/CVC) → you become Pro.
 - Alerts → enable push → accept the prompt.
-- Ask the Scout → ask a question → get an answer.
+- Scout AI → generate a scout report → it cites the model's own reads.
 
 > Use Stripe **test mode** first; flip to live keys when you're happy.
 

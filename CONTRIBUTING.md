@@ -158,7 +158,7 @@ Set these in the Netlify site environment (Site settings → Environment):
 
 | Variable | Enables |
 |---|---|
-| `ANTHROPIC_API_KEY` | the LLM layer for Ask the Scout + AI reports (`functions/ai.js`). Without it, AI falls back to the free local engine. |
+| `ANTHROPIC_API_KEY` | the LLM layer for the AI reports (`functions/ai.js`). Without it the AI panels show an unavailable state; every other tool is unaffected. |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY` | optional accounts / cross-device sync (`auth.js`). |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, price ids | Pro billing (`functions/checkout.js`, `portal.js`, `stripe-webhook.js`). |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | web push (`functions/push-*.js`). |
