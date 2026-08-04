@@ -4755,7 +4755,7 @@ async function hydrateMethodology(host){
   const p=t=>'<p class="dl-sub" style="margin:0 0 8px;font-size:13px;line-height:1.55">'+t+'</p>';
   host.innerHTML=
     sec('Team-strength engine',
-      p('Every club carries an attack and a defence multiplier around the league’s average scoring rates (1.62 home / 1.32 away goals). The starting values are a joint Poisson maximum-likelihood fit over <b>2,796 Premier League and Championship results (2023–26)</b>; on every load the same fit re-runs on this season’s finished fixtures, so the offline numbers fade as real results accumulate.')+
+      p('Every club carries an attack and a defence multiplier around the league’s average scoring rates (1.62 home / 1.32 away goals). The starting values are a joint Poisson maximum-likelihood fit over <b>1,864 Premier League and Championship results (2024–27)</b>, refreshed by the simulator’s weekly recalibration; on every load the same fit re-runs on this season’s finished fixtures, so the offline numbers fade as real results accumulate.')+
       p('Scorelines come off a Dixon–Coles-corrected grid (the plain Poisson model misbehaves on 0–0 and 1–1). Win, draw, clean-sheet and 3+-goal probabilities are read straight off that grid — the same engine drives fixture difficulty, the Clean Sheet Matrix, Match Forecasts and the Season Simulator.'))+
     sec('Backtest',
       p('The fit is validated on held-out 2025/26 results: ranked probability score <b>0.2126</b> against 0.2133 for the unweighted fit — small edges, honestly reported. The full method and code live in the open PL Simulator repository.')+
@@ -6483,27 +6483,30 @@ async function hydrateGwreport(host){
    Every club gets an attack and a defence multiplier around the
    league-average scoring baselines (1.62 home / 1.32 away goals per
    match). The priors below are model coefficients fitted offline on
-   2,796 Premier League + Championship results, 2023-26 (a joint
-   two-division Poisson maximum-likelihood fit — see
-   github.com/bamfs1976-art/Plsimulator). On every load the same fit
+   1,864 Premier League + Championship results, 2024-27 (a joint
+   two-division Poisson maximum-likelihood fit over the simulator's
+   rolling three-season window, date-decayed on a 250-day half-life —
+   see github.com/bamfs1976-art/Plsimulator). On every load the same fit
    re-runs right here on the season's finished fixtures from the live
    FPL API, each prior counting as PRIOR_W matches of evidence, so
    the offline numbers fade as real results accumulate. */
 function poisson(k,l){let p=Math.exp(-l);for(let i=1;i<=k;i++)p*=l/i;return p;}
-/* Priors are [attack, defence, home-advantage]; rho and the decay/home
-   choices are backtest-validated on held-out 2025/26 (RPS 0.2126 vs
-   0.2133 for the plain fit — see the Plsimulator repo's README). */
-const PLSIM={BASE_H:1.62,BASE_A:1.32,RHO:-0.074,PRIOR_W:8,ITER:24,priors:{
-  arsenal:[1.224,0.701,0.992],mancity:[1.262,0.793,1.081],
-  liverpool:[1.247,0.96,0.963],manutd:[1.104,0.961,1.025],
-  chelsea:[1.102,0.975,0.919],astonvilla:[1.034,0.966,1.076],
-  newcastle:[1.003,1.006,1.192],spurs:[0.995,1.083,0.93],
-  crystalpalace:[0.9,0.984,0.93],brighton:[1.012,0.951,0.987],
-  nottmforest:[1.074,0.948,0.791],bournemouth:[1.092,0.961,0.893],
-  brentford:[1.008,0.99,1.075],fulham:[0.884,0.964,1.076],
-  everton:[0.865,0.933,1.041],sunderland:[0.724,0.987,0.996],
-  leeds:[0.88,0.971,1.119],coventry:[0.85,1.199,1.002],
-  ipswich:[0.816,1.244,0.966],hull:[0.693,1.423,0.946]}};
+/* Priors are [attack, defence, home-advantage]; RHO is the value the same
+   recalibration fitted (it is what model.json publishes as DC_RHO, so the
+   live refit here and the shared bundle agree). Fitting rho at all, with
+   the decay and per-club home advantage, is backtest-validated on held-out
+   2025/26 (RPS 0.2126 vs 0.2133 for the plain fit — Plsimulator's README). */
+const PLSIM={BASE_H:1.62,BASE_A:1.32,RHO:-0.0855,PRIOR_W:8,ITER:24,priors:{
+  arsenal:[1.178,0.721,0.981],mancity:[1.242,0.845,1.033],
+  liverpool:[1.205,0.949,0.969],manutd:[1.09,0.951,1.046],
+  chelsea:[1.114,0.965,0.939],astonvilla:[1.002,0.965,1.048],
+  newcastle:[0.995,0.984,1.168],spurs:[0.934,1.045,0.961],
+  crystalpalace:[0.962,0.984,0.95],brighton:[1.048,0.946,0.965],
+  nottmforest:[1.005,0.96,0.865],bournemouth:[1.13,0.972,0.9],
+  brentford:[1.018,0.99,1.111],fulham:[0.904,0.959,1.034],
+  everton:[0.881,0.953,1.021],sunderland:[0.742,0.988,0.991],
+  leeds:[0.914,0.973,1.103],coventry:[0.849,1.19,1.009],
+  ipswich:[0.802,1.225,0.957],hull:[0.684,1.436,0.948]}};
 const PLSIM_ALIAS={manchestercity:'mancity',manchesterunited:'manutd',
   tottenham:'spurs',tottenhamhotspur:'spurs',nottinghamforest:'nottmforest',
   newcastleunited:'newcastle',ipswichtown:'ipswich',hullcity:'hull',
@@ -6525,17 +6528,19 @@ const PLSIM_PROMOTED=[0.8,1.28,0.97];
 
    Club Elo (from /api/team-elo, keyed by the official FPL team id so there is
    no name matching) closes that. The mapping below is a log-linear fit of our
-   own offline priors against Elo across the 2026/27 clubs — correlation +0.86
+   own offline priors against Elo across the 2026/27 clubs — correlation +0.88
    on attack and -0.93 on defence — so it reproduces the priors we trust, and
-   is then used only where we have none.
+   is then used only where we have none. Refit whenever the priors are
+   refreshed from the simulator, against dev/fixtures/team-elo-2026-2027.json
+   (the same snapshot the test grades it on), or the two drift apart.
 
-   Leave-one-out, an Elo-derived prior is 67% closer on attack and 82% closer
+   Leave-one-out, an Elo-derived prior is 71% closer on attack and 84% closer
    on defence than the generic promoted prior it replaces. It is deliberately
    NOT allowed to override a prior we already fitted: the residual is around
-   8%, so replacing a real fit with it would be trading down. */
+   6%, so replacing a real fit with it would be trading down. */
 const ELO_SCALE=400;            /* Elo points per unit of the fitted slope */
-const ELO_ATT=[-0.0247,0.4946]; /* log(att) = a + b * (elo - leagueMean)/400 */
-const ELO_DEF=[-0.0104,-0.4636];
+const ELO_ATT=[-0.0269,0.4773]; /* log(att) = a + b * (elo - leagueMean)/400 */
+const ELO_DEF=[-0.0092,-0.4382];
 const ELO_CLAMP=[0.55,1.60];    /* no single rating may produce an absurd side */
 /* League mean Elo across the clubs we have a rating for — the fit is relative
    to the league, so the mean has to come from the same league. */

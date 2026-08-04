@@ -8,7 +8,7 @@ here are in `dev/`.
 
 ### 1. Match model (`plsim*`)
 A Poisson attack/defence model with the **Dixon–Coles** low-score
-correction (`RHO −0.074`), which fixes plain-Poisson bias on 0-0/1-0/0-1/
+correction (`RHO −0.0855`), which fixes plain-Poisson bias on 0-0/1-0/0-1/
 1-1 — exactly the scorelines clean sheets hinge on.
 
 - Each team carries an **attack** and **defence** multiplier plus a
