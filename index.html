@@ -3108,8 +3108,7 @@ const NAV = [
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
-      {id:'methodology', label:'Methodology', icon:'spark', tier:'free'},
-      {id:'accountability', label:'Model Accountability', icon:'target', tier:'free'}
+      {id:'accountability', label:'The Model', icon:'target', tier:'free'}
     ]
   },
   {
@@ -3158,8 +3157,7 @@ const NAV = [
          this panel now — see PANEL_VIEW, which keeps #points5 and #csmatrix
          landing on the view they always showed. */
       {id:'fixtures', label:'Fixtures', icon:'calendar', tier:'free'},
-      {id:'seasonsim', label:'Season Simulator', icon:'target', tier:'paid'},
-      {id:'whatif', label:'What-If Simulator', icon:'question', tier:'paid'},
+      {id:'seasonsim', label:'Simulators', icon:'target', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
     ]
@@ -3172,8 +3170,7 @@ const NAV = [
     panels:[
       {id:'leagues', label:'Mini-Leagues', icon:'trophy', tier:'free', needs:['publicEntry']},
       {id:'rivals', label:'Rival Scout', icon:'users', tier:'paid', needs:['publicEntry']},
-      {id:'eo', label:'EO Tracker', icon:'target', tier:'paid', needs:['ownership']},
-      {id:'template', label:'The Template', icon:'grid', tier:'paid', needs:['ownership']}
+      {id:'eo', label:'Ownership', icon:'target', tier:'paid', needs:['ownership']}
     ]
   },
   {
@@ -3187,8 +3184,7 @@ const NAV = [
          bar. */
       {id:'results', label:'Matchday', icon:'pulse', tier:'free'},
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
-      {id:'dossier', label:'Club Dossier', icon:'shield', tier:'free'},
-      {id:'clubform', label:'Team Form', icon:'pulse', tier:'free'},
+      {id:'dossier', label:'Clubs', icon:'shield', tier:'free'},
       /* Ten seasons of the competition — records, careers and the daily
          puzzle. Reference you browse rather than a matchday view, which is
          the same reason Title Race and Club Dossier sit here; and the
@@ -3424,7 +3420,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   accountability:{
-    desc:'The model graded in public — how often it calls the right result, its held-out score, and (when you link your team) your rank percentile.',
+    desc:'The model graded in public, and how it is built — track record first, then the engine behind it.',
     layout:'standard'
   },
   news:{
@@ -3448,7 +3444,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   dossier:{
-    desc:'One club at a time: whether its attack or its defence is the thing worth buying, how different it is at home, every asset ranked with the role that earns the points, and the run ahead.',
+    desc:'One club at a time — what it is, and what it has been doing lately.',
     layout:'standard'
   },
   clubform:{
@@ -3468,7 +3464,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   seasonsim:{
-    desc:'Run the full season Monte Carlo: title, European and relegation odds, the finish-position grid, run-in difficulty and next-5/10/20 projections. Pin results — a win, draw or exact score — and re-run to see how the odds shift against that baseline.',
+    desc:'What happens next, at two scales — the full season Monte Carlo, and how a goal or clean sheet would move your rank in a match still playing.',
     layout:'standard'
   },
   draft:{
@@ -3500,7 +3496,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   eo:{
-    desc:'Your squad split into cover (high-EO, protect your rank) and edge (your differentials, climb the field) — plus the high-EO players you don’t own. Effective ownership, made actionable.',
+    desc:'Both halves of the ownership question — what the field owns, and how much of it you own.',
     layout:'standard'
   },
   template:{
@@ -3678,15 +3674,25 @@ function closeMoreSheet(){
 const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
   points5:'fixtures',csmatrix:'fixtures',
   bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank',
-  matchforecast:'results',lineups:'results'};
+  matchforecast:'results',lineups:'results',
+  methodology:'accountability',
+  whatif:'seasonsim',template:'eo',clubform:'dossier'};
 /* Three panels are now hubs, each holding views that used to be their own
    destinations. A retired id has to name WHICH view: landing on the raw
    28-column table, on the fixture grid, or on the live percentile is not the
    page the old link promised.
 
    Declarative — `{hub, view}` rather than a callback — so a test can read it
-   and check that a route only ever names a view its hub actually has. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView};
+   and check that a route only ever names a view its hub actually has.
+
+   The makeHub-built hubs are wrapped in arrows rather than named directly.
+   The hand-rolled setters are function declarations and so are hoisted, but
+   SM_HUB/OW_HUB/CL_HUB are consts declared ~3k lines below this map: naming
+   `SM_HUB.setView` here dereferences it in the temporal dead zone and throws
+   at parse time, taking the whole script — and the whole page — down with it.
+   The arrow defers the lookup to call time, long after the consts exist.
+   KEEP ON ONE LINE — dev/test-social.mjs reads only to the first newline. */
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v)};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -3699,6 +3705,17 @@ const PANEL_VIEW={
   dcwatch:{hub:'liverank',view:'defcon'},
   defcon:{hub:'liverank',view:'threats'},
   autosubs:{hub:'liverank',view:'autosubs'},
+  accountability:{hub:'accountability',view:'record'},
+  seasonsim:{hub:'seasonsim',view:'season'},
+  /* Scenario Lab folded into Season Simulator before it became a hub; now the
+     hub exists, that old link has to name a view like every other. */
+  scenariolab:{hub:'seasonsim',view:'season'},
+  whatif:{hub:'seasonsim',view:'whatif'},
+  eo:{hub:'eo',view:'yours'},
+  template:{hub:'eo',view:'template'},
+  dossier:{hub:'dossier',view:'dossier'},
+  clubform:{hub:'dossier',view:'form'},
+  methodology:{hub:'accountability',view:'method'},
   results:{hub:'results',view:'results'},
   matchforecast:{hub:'results',view:'forecasts'},
   lineups:{hub:'results',view:'lineups'}
@@ -6816,6 +6833,123 @@ let FX_VIEW='grid';
 function fxView(id){return FX_VIEWS.filter(v=>v.id===id)[0]||FX_VIEWS[0];}
 function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});}
 const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(h),cs:(h)=>hydrateCsMatrix(h)};
+/* ── HUB FACTORY ───────────────────────────────────────────
+   The four hubs above each hand-rolled this shape. Three more would be a
+   hundred lines of the same thing, so from here it is a function. The
+   originals are deliberately left alone: churning working code to satisfy a
+   pattern is how you turn a tidy-up into an outage.
+
+   Each hub still declares its views as a plain `const XX_VIEWS=[...]`, because
+   the route test reads those arrays out of the source to check that a retired
+   link only ever names a view its hub actually owns. */
+function makeHub(key,views,hydrate,icon){
+  let cur=views[0].id;
+  const view=id=>views.filter(v=>v.id===id)[0]||views[0];
+  const setView=id=>{cur=view(id).id;track(key+'_view',{view:cur});};
+  const renderBody=()=>{
+    const body=document.getElementById(key+'-body');if(!body)return;
+    const note=document.getElementById(key+'-note');
+    if(note)note.textContent=view(cur).desc;
+    document.querySelectorAll('#'+key+'-views .lensbtn').forEach(btn=>
+      btn.classList.toggle('on',btn.dataset.view===cur));
+    body.innerHTML=skel(5);
+    /* Each view owns the whole body, so a slow one cannot paint into a host
+       the user has already switched away from. */
+    const tk=(MEM['_'+key+'Token']=(MEM['_'+key+'Token']||0)+1);
+    Promise.resolve().then(()=>hydrate[cur](body)).catch(err=>{
+      if(tk!==MEM['_'+key+'Token'])return;
+      body.innerHTML='<div class="hub-fail">'+stateBox(icon,'Could not load this view',
+        (err&&err.message)||'Try again in a moment.')+'</div>';
+    });
+  };
+  return {setView,hydrate:async host=>{
+    host.innerHTML=
+      '<div class="lensbar" id="'+key+'-views">'+views.map(v=>
+        '<button class="lensbtn'+(v.id===cur?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+      '<p class="dl-sub" id="'+key+'-note" style="margin:0 0 12px"></p>'+
+      '<div id="'+key+'-body"></div>';
+    host.querySelectorAll('#'+key+'-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+      if(btn.dataset.view===cur)return;
+      setView(btn.dataset.view);renderBody();
+    }));
+    renderBody();
+  }};
+}
+
+/* Two simulators asking the same question at two scales — what happens next
+   over a season, and what happens next in the ninety minutes still playing. */
+const SM_VIEWS=[
+  {id:'season',label:'Season',
+   desc:'The full season Monte Carlo: title, European and relegation odds, the finish grid, run-in difficulty and next-5/10/20 projections. Pin a result and re-run to see the odds shift.'},
+  {id:'whatif',label:'What-if',
+   desc:'Test how a goal, assist or clean sheet would move your rank before the match ends.'}
+];
+const SM_HUB=makeHub('sm',SM_VIEWS,{season:h=>hydrateSeasonSim(h),whatif:h=>hydrateWhatif(h)},'target');
+
+/* Both halves of the ownership question: what the field owns, and how much of
+   it you own. Apart they were two lists; together they are a position. */
+const OW_VIEWS=[
+  {id:'yours',label:'Your EO',
+   desc:'Your squad split into cover (high-EO, protect your rank) and edge (your differentials, climb the field) — plus the high-EO players you do not own.'},
+  {id:'template',label:'The template',
+   desc:'The most-selected players in each position, the optimal legal XI built from them, and how closely your own squad matches.'}
+];
+const OW_HUB=makeHub('ow',OW_VIEWS,{yours:h=>hydrateEO(h),template:h=>hydrateTemplate(h)},'target');
+
+/* One club, two timeframes — what it is, and what it has been doing lately. */
+const CL_VIEWS=[
+  {id:'dossier',label:'Dossier',
+   desc:'One club at a time: whether its attack or its defence is the thing worth buying, how different it is at home, every asset ranked with the role that earns the points, and the run ahead.'},
+  {id:'form',label:'Recent form',
+   desc:'Every club\u2019s recent form \u2014 last 5, 10 and 20 games, overall, home and away \u2014 from real results.'}
+];
+const CL_HUB=makeHub('cl',CL_VIEWS,{dossier:h=>hydrateDossier(h),form:h=>hydrateClubForm(h)},'shield');
+
+/* ── THE MODEL hub ─────────────────────────────────────────
+   Methodology and Model Accountability were two destinations answering one
+   question — is this thing any good, and how does it work. Split across the
+   nav they read as documentation; together they read as the argument for the
+   product, which is the only thing here a rival cannot copy by shipping a
+   nicer fixture ticker. Track record leads because the claim is worth more
+   than the explanation. */
+const MD_VIEWS=[
+  {id:'record',label:'Track record',
+   desc:'The model graded in public — how often it calls the right result, its held-out score, and (when you link your team) your rank percentile.'},
+  {id:'method',label:'How it works',
+   desc:'How the numbers are made: the team-strength engine, the xP model and the price estimate.'}
+];
+let MD_VIEW='record';
+function mdView(id){return MD_VIEWS.filter(v=>v.id===id)[0]||MD_VIEWS[0];}
+function mdSetView(id){MD_VIEW=mdView(id).id;track('model_view',{view:MD_VIEW});}
+const MD_HYDRATE={record:(h)=>hydrateAccountability(h),method:(h)=>hydrateMethodology(h)};
+function mdRenderBody(){
+  const body=document.getElementById('md-body');if(!body)return;
+  const note=document.getElementById('md-note');
+  if(note)note.textContent=mdView(MD_VIEW).desc;
+  document.querySelectorAll('#md-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===MD_VIEW));
+  body.innerHTML=skel(5);
+  const token=(MEM._mdToken=(MEM._mdToken||0)+1);
+  Promise.resolve().then(()=>MD_HYDRATE[MD_VIEW](body)).catch(err=>{
+    if(token!==MEM._mdToken)return;
+    body.innerHTML='<div class="hub-fail">'+stateBox('target','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
+async function hydrateModelHub(host){
+  host.innerHTML=
+    '<div class="lensbar" id="md-views">'+MD_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===MD_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="md-note" style="margin:0 0 12px"></p>'+
+    '<div id="md-body"></div>';
+  host.querySelectorAll('#md-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===MD_VIEW)return;
+    mdSetView(btn.dataset.view);
+    mdRenderBody();
+  }));
+  mdRenderBody();
+}
+
 function fxRenderBody(){
   const body=document.getElementById('fx-body');if(!body)return;
   const note=document.getElementById('fx-note');
@@ -7769,7 +7903,14 @@ const BPS_TARIFF={
   goal:{1:12,2:12,3:18,4:24},      /* by element_type: GK, DEF, MID, FWD */
   assist:9,
   cleanSheet:{1:12,2:12,3:0,4:0},  /* BPS for a clean sheet is GK and DEF only */
-  savesPer:3,savesBps:2,           /* 2 BPS per 3 saves */
+  /* 2 BPS PER SAVE — not per three. The 1-in-3 rule is the POINTS rule
+     (1 FPL point per 3 saves); BPS is a separate tariff and pays every save.
+     Conflating them under-subtracted a keeper's save BPS threefold, which
+     inflated his baseline and put keepers top of the bonus-magnet board for
+     the wrong reason. Solved from 745 real goalkeeper matches: 2.05 BPS per
+     save, and the residual then lands on the regression's own intercept.
+     dev/test-bps-tariff.mjs re-derives this from real data on every run. */
+  savesBps:2,
   penSave:15,penMiss:-6,ownGoal:-6,yellow:-3,red:-9,
 };
 function bpsFromReturns(e){
@@ -7778,7 +7919,7 @@ function bpsFromReturns(e){
   return n('goals_scored')*(BPS_TARIFF.goal[t]||0)
     +n('assists')*BPS_TARIFF.assist
     +n('clean_sheets')*(BPS_TARIFF.cleanSheet[t]||0)
-    +Math.floor(n('saves')/BPS_TARIFF.savesPer)*BPS_TARIFF.savesBps
+    +n('saves')*BPS_TARIFF.savesBps
     +n('penalties_saved')*BPS_TARIFF.penSave
     +n('penalties_missed')*BPS_TARIFF.penMiss
     +n('own_goals')*BPS_TARIFF.ownGoal
@@ -16030,17 +16171,17 @@ async function hydrateDraft(host){
 /* Panels wired to live FPL data. */
 const WIRED={
   myweek:hydrateMyWeek,
-  accountability:hydrateAccountability,
+  accountability:hydrateModelHub,
   dashboard:hydrateDashboard,
   glossary:hydrateGlossary,
   methodology:hydrateMethodology,
   design:hydrateDesign,
   'gw-actions':hydrateGwActions,
   titlerace:hydrateTitleRace,
-  dossier:hydrateDossier,
+  dossier:CL_HUB.hydrate,
   clubform:hydrateClubForm,
   results:hydrateMatchday,
-  seasonsim:hydrateSeasonSim,
+  seasonsim:SM_HUB.hydrate,
   blog:hydrateBlog,
   social:hydrateSocial,
   analytics:hydrateAnalytics,
@@ -16063,7 +16204,7 @@ const WIRED={
   /* Pro tier — fully functional, gated behind the paywall in Phase M4. */
   liverank:hydrateLive,
   whatif:hydrateWhatif,
-  eo:hydrateEO,
+  eo:OW_HUB.hydrate,
   template:hydrateTemplate,
   rivals:hydrateRivals,
   setpiece:hydrateSetpiece,

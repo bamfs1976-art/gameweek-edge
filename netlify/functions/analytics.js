@@ -32,14 +32,14 @@ const AREA = {
   /* `design` and `glossary` are registered straight onto PANELS rather than
      NAV — free tier, areaId home, reachable by hash by anyone who finds them,
      so they record views like any other panel. */
-  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'methodology', 'accountability',
+  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'accountability',
     'design', 'glossary'],
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
   live: ['liverank'],
   players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
-  planner: ['fixtures', 'seasonsim', 'whatif', 'watchlist', 'alerts'],
-  rivals: ['leagues', 'rivals', 'eo', 'template'],
-  'match centre': ['results', 'titlerace', 'dossier', 'clubform', 'archive'],
+  planner: ['fixtures', 'seasonsim', 'watchlist', 'alerts'],
+  rivals: ['leagues', 'rivals', 'eo'],
+  'match centre': ['results', 'titlerace', 'dossier', 'archive'],
   studio: ['social', 'analytics']
 };
 const AREA_OF = {};
