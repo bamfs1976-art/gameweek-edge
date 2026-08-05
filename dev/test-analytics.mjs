@@ -117,7 +117,9 @@ console.log('• areas roll up, and an untouched area is reported as a finding')
     ev('a', 'panel_view', 'dashboard', '2026-07-20T10:00:00Z'),
     ev('a', 'panel_view', 'blog', '2026-07-20T10:01:00Z'),
     ev('b', 'panel_view', 'fixtures', '2026-07-20T10:02:00Z'),
-    ev('b', 'panel_view', 'whatif', '2026-07-20T10:03:00Z'),
+    /* whatif is a VIEW of the Simulators hub now, not a panel of its own, so
+       the second planner panel here has to be one that still exists. */
+    ev('b', 'panel_view', 'watchlist', '2026-07-20T10:03:00Z'),
     ev('c', 'panel_view', 'eo', '2026-07-20T10:04:00Z')
   ];
   const s = summarise(rows, 14);

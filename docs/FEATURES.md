@@ -94,23 +94,26 @@ Players
 Planner
 ├── Fixtures             (free)  One horizon, three views: grid / points / clean sheets
 │                                (absorbed the Points Planner and Clean Sheet Matrix)
-├── Season Simulator     (Pro)   Full-season Monte Carlo (absorbed Scenario Lab)
-├── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
+├── Simulators           (Pro)   What happens next, at two scales
+│   ├── Season                   Full-season Monte Carlo (absorbed Scenario Lab)
+│   └── What-if                  Rank impact of a goal / assist / clean sheet
 ├── Watchlist            (free)  Saved players
 └── Alerts               (free)  Price/injury/deadline + model-watch alerts
 
 Rivals
 ├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
 ├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
-├── EO Tracker           (Pro)   Effective ownership; your cover, edge and exposure
-└── The Template         (Pro)   The most-owned XI, and how close yours is
+└── Ownership            (Pro)   What the field owns, and how much you own
+    ├── Your EO                  Effective ownership; your cover, edge and exposure
+    └── The template             The most-owned XI, and how close yours is
 
 Match Centre
 ├── Matchday             (free)  One fixture list, three views: results / forecasts / line-ups
 │                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
-├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
-├── Team Form            (free)  Club form over the last 5/10/20 games
+├── Clubs                (free)  One club: what it is, and its recent form
+│   ├── Dossier                  Attack-or-defence, home/away, board, depth
+│   └── Recent form              Club form over the last 5/10/20 games
 └── Ten Seasons          (free)  2016-17 to 2025-26: all-time records, career
                                  comparison, and a daily guess-the-player puzzle
 

@@ -589,8 +589,8 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
   const rehomed = {
     scout: 'home', gwhistory: 'myteam', liverank: 'live', results: 'matchcentre',
-    setpiece: 'players', rotation: 'players', seasonsim: 'planner', whatif: 'planner',
-    rivals: 'rivals', eo: 'rivals', template: 'rivals',
+    setpiece: 'players', rotation: 'players', seasonsim: 'planner',
+    rivals: 'rivals', eo: 'rivals',
   };
   for (const [id, area] of Object.entries(rehomed)) {
     ok(areaOfPanel[id] === area, id + ' now lives in ' + area + ' (found: ' + areaOfPanel[id] + ')');
@@ -683,7 +683,8 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      view its hub owns, and every hub must be dispatchable. */
   const HUB = { allplayers: viewIds('PL_LENSES'), fixtures: viewIds('FX_VIEWS'),
     liverank: viewIds('LV_VIEWS'), results: viewIds('MC_VIEWS'),
-    accountability: viewIds('MD_VIEWS') };
+    accountability: viewIds('MD_VIEWS'), seasonsim: viewIds('SM_VIEWS'),
+    eo: viewIds('OW_VIEWS'), dossier: viewIds('CL_VIEWS') };
   const dispatch = html.slice(html.indexOf('const HUB_SETVIEW='),
     html.indexOf('\n', html.indexOf('const HUB_SETVIEW=')));
   for (const hub of Object.keys(HUB)) {
