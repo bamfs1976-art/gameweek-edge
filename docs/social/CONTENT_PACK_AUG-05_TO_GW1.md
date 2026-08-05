@@ -15,7 +15,7 @@ the moment the deadline passes on the 21st.
 | # | Job | Why it blocks | Done |
 |---|---|---|---|
 | 1 | ~~Render the DefCon explainer card.~~ **Done** — `assets/social/gwe-defcon-explainer.png`, built by `npm run social` from `scripts/social/defcon-explainer.html`. | Post 1 (Wed 5 Aug) needed it. | ☑ |
-| 2 | **Batch-render the Social Studio cards** listed in §2 and drop them in `assets/social/`. | Eight of the fourteen posts attach one. | ☐ |
+| 2 | **Batch-render the Social Studio cards** listed in §2 and drop them in `assets/social/`. Must be done **in the app, signed in as owner** — the Studio draws from the live FPL API, so these cannot be generated from the repo. | Seven of the fourteen posts attach one. | ☐ |
 | 3 | **Bio + pin, both platforms.** Unofficial-status line in the bio (not on every post); pin the Standard vs The Edge post once it's up on the 14th. | Keeps individual posts clean and legally covered. | ☐ |
 
 ---
@@ -64,7 +64,7 @@ switches on during GW1 weekend; see the weekend plan.
 | `gwe-data-xi.png` | **The Data XI** | Post 9 ⭐ |
 | `gwe-best-captains.png` | **Best captains** | Post 11 |
 | `gwe-defcon-budget.png` | **DefCon by budget** | Post 12 |
-| `gwe-standard-vs-edge.png` | *(already in repo)* | Post 7 |
+| `gwe-standard-vs-edge.png` | *(already in repo — `npm run social`)* | Post 7 |
 
 Two posts carry a **phone screenshot** instead (no card exists): Post 5 (Model
 Performance strip) and Post 10 (Price Predictor). Three carry no image at all by

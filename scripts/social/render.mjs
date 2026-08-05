@@ -25,7 +25,8 @@ const OUT = join(HERE, '..', '..', 'assets', 'social');
 /* filename stem → output name and canvas. 1200² matches the comparison card
    already in assets/social/, which is the one these sit beside in a feed. */
 const CARDS = [
-  { stem: 'defcon-explainer', out: 'gwe-defcon-explainer.png', width: 1200, height: 1200 },
+  { stem: 'defcon-explainer',  out: 'gwe-defcon-explainer.png',  width: 1200, height: 1200 },
+  { stem: 'standard-vs-edge',  out: 'gwe-standard-vs-edge.png',  width: 1200, height: 1200 },
 ];
 
 const only = process.argv[2];
