@@ -32,7 +32,7 @@ const AREA = {
   /* `design` and `glossary` are registered straight onto PANELS rather than
      NAV — free tier, areaId home, reachable by hash by anyone who finds them,
      so they record views like any other panel. */
-  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'methodology', 'accountability',
+  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'accountability',
     'design', 'glossary'],
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
   live: ['liverank'],

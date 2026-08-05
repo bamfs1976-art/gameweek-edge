@@ -64,8 +64,9 @@ Home
 ├── Gameweek recap       (free)  What just happened, and what it cost you
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
-├── Methodology          (free)  How the model works, in full
-└── Model Accountability (free)  Every published call, graded
+└── The Model            (free)  Track record first, then how it works
+    ├── Track record             Every published call, graded
+    └── How it works             The engine, the xP model, the price estimate
 
 My Team
 ├── My Squad             (free)  Live pitch from your picks + live points
