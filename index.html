@@ -7769,7 +7769,14 @@ const BPS_TARIFF={
   goal:{1:12,2:12,3:18,4:24},      /* by element_type: GK, DEF, MID, FWD */
   assist:9,
   cleanSheet:{1:12,2:12,3:0,4:0},  /* BPS for a clean sheet is GK and DEF only */
-  savesPer:3,savesBps:2,           /* 2 BPS per 3 saves */
+  /* 2 BPS PER SAVE — not per three. The 1-in-3 rule is the POINTS rule
+     (1 FPL point per 3 saves); BPS is a separate tariff and pays every save.
+     Conflating them under-subtracted a keeper's save BPS threefold, which
+     inflated his baseline and put keepers top of the bonus-magnet board for
+     the wrong reason. Solved from 745 real goalkeeper matches: 2.05 BPS per
+     save, and the residual then lands on the regression's own intercept.
+     dev/test-bps-tariff.mjs re-derives this from real data on every run. */
+  savesBps:2,
   penSave:15,penMiss:-6,ownGoal:-6,yellow:-3,red:-9,
 };
 function bpsFromReturns(e){
@@ -7778,7 +7785,7 @@ function bpsFromReturns(e){
   return n('goals_scored')*(BPS_TARIFF.goal[t]||0)
     +n('assists')*BPS_TARIFF.assist
     +n('clean_sheets')*(BPS_TARIFF.cleanSheet[t]||0)
-    +Math.floor(n('saves')/BPS_TARIFF.savesPer)*BPS_TARIFF.savesBps
+    +n('saves')*BPS_TARIFF.savesBps
     +n('penalties_saved')*BPS_TARIFF.penSave
     +n('penalties_missed')*BPS_TARIFF.penMiss
     +n('own_goals')*BPS_TARIFF.ownGoal

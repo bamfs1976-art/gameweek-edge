@@ -31,10 +31,15 @@ const URL = `https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/ma
 /* Columns the backtest consumes (see backtest-vaastav.mjs). We deliberately
    DROP vaastav's own `xP` column — its README warns it is filled post-match
    and carries lookahead bias, so it must not leak into a pre-deadline test. */
+/* bps, clean_sheets and penalties_saved are here for dev/test-bps-tariff.mjs,
+   which re-derives the BPS tariff from these rows rather than trusting a
+   published table. That test found the saves constant was three times out,
+   so the columns earn their place in the committed sample. */
 const KEEP = [
   'element', 'name', 'position', 'GW', 'minutes', 'total_points', 'starts',
   'goals_scored', 'assists', 'bonus', 'saves', 'expected_goals', 'expected_assists',
   'expected_goals_conceded', 'yellow_cards', 'red_cards', 'own_goals', 'penalties_missed',
+  'bps', 'clean_sheets', 'penalties_saved',
 ];
 const SAMPLE_MODULO = 5;   /* keep elements where id % 5 === 0 */
 
