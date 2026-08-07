@@ -2,7 +2,7 @@
 
 **Built for Gameweek Edge (gameweekedge.co.uk). Compiled 2 August 2026.**
 
-Season starts Saturday 22 August 2026. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
+Season starts Friday 21 August 2026, per the Premier League's own pre-season page. An earlier version of this file said Saturday 22 August, which was a day late; the correction is recorded here rather than made silently. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
 
 ---
 
@@ -29,6 +29,26 @@ This file works two ways.
 - **Ownership resets.** Mohamed Salah is leaving Liverpool (Saudi Pro League reported, exact club not yet officially announced). That frees up huge budget and reshapes the premium midfield field. Alexander Isak now leads the Liverpool line and is the key premium call there.
 - **Promoted trio.** Coventry (champions, Frank Lampard), Ipswich (runners-up, now Gary O'Neil), Hull (play-off winners, Sergej Jakirovic). All three carry tough opening runs, so cheap enablers over early starters is the safer route.
 - **Relegated (gone from the pool).** West Ham, Burnley, Wolves.
+
+---
+
+## Pre-season role watch
+
+Dead-ball signals seen in pre-season friendlies. Source: the Premier League's pre-season fixtures and results page, 7 August 2026 — a highlights reel, not a team sheet.
+
+**None of these change the club register below, deliberately.** A penalty or a free-kick in a friendly shows who was on the pitch and fancied it, not who the manager has designated. They are logged so that when GW1 settles a duty we can see whether the signal called it, rather than quietly absorbing the evidence and claiming afterwards that we knew. Where a signal contradicts the register, the register is what we still believe; this is the case against it.
+
+| Club | Signal | Register says | Read |
+|---|---|---|---|
+| Man Utd | Mbeumo scored a penalty | "Penalties Bruno", stated flat with no hedge | The missing hedge is the weak part, not the name. Bruno may simply have been off the pitch. Note Opta also has Mbeumo on United's right-side corners. |
+| Spurs | Tel scored a direct free-kick, in Sydney | Free-kicks Porro, Kudus. Tel appears on corners only | Tel sits higher in the dead-ball order than we have him |
+| Arsenal | Tzolis delivered the corner for Hincapie's goal | Corners Rice, Saka, Madueke, Odegaard | A summer signing already in the corner rotation; we carried him only as a wide-rotation differential |
+| Sunderland | Le Fee scored from distance | Free-kicks Xhaka and Le Fee | Consistent. No change |
+| Liverpool | Szoboszlai scored from outside the box | Free-kicks Szoboszlai and Wirtz | Consistent. No change |
+
+One trap in the same source: the clip captioned "Fernandes volley goal on debut" is Mateus Fernandes at Spurs, not Bruno Fernandes at United — a debut rules Bruno out. Anyone reading that list for United signals gets the wrong answer.
+
+Pre-season **results** are deliberately used nowhere. The match model fits only finished competitive fixtures from the FPL feed, which carries no friendlies, so they cannot reach it even by accident. Genoa 1-10 Bournemouth, Man Utd 0-1 Wrexham and Newcastle 1-4 Bristol City are why that is the right call: reserve XIs and 60-minute intensity against wildly uneven opposition would poison the priors, not sharpen them.
 
 ---
 
@@ -420,6 +440,8 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - FPL prices marked "est." are estimates. Confirm every price against the official price reveal and the FPL API at launch.
 - Penalty and set-piece order is the most fluid data here because of the ten managerial changes. Re-check duties after pre-season friendlies and GW1.
 - Two minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, and Joe Gelhardt's Hull status.
+- The 21 August start date is taken from the Premier League's pre-season page and has NOT been confirmed against the FPL API — `npm run check:briefing` settles it from the GW1 deadline, and could not reach the API when the correction was made. Re-run it before relying on the date.
+- The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.
 
 ---
 

@@ -565,5 +565,65 @@ console.log('\n• briefing: both editions state the same opening fixtures');
     'fixtures (prose ' + prose.length + ', data ' + Object.keys(htmlBy).length + ')');
 }
 
+/* The pre-season role watch records dead-ball evidence that CONTRADICTS the
+   club register — "Mbeumo took a penalty" sits a few lines from a register
+   that says Manchester United's penalties are Bruno's. That is the point of
+   it: the register is what we believe, the watch is the case against it.
+
+   It only works while the two stay apart. clubBlocks runs its last block to
+   the end of the file, so a section moved below the club list is absorbed
+   into Hull City's body — the watch's contradicting names become Hull's
+   prose as far as every parser is concerned.
+
+   Today that stops short of a wrong penalty claim only because penaltyClaims
+   takes the FIRST "Set-piece & penalties" line in a block and Hull's own line
+   comes first. That is luck, not design: it depends on ordering inside a
+   function that has no idea this section exists, and priceClaims and
+   moveClaims read the block body with no such protection. So the guard is on
+   the arrangement rather than on one symptom of breaking it. */
+console.log('\n• briefing: the role watch stays out of the club register');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const watchAt = md.indexOf('## Pre-season role watch');
+  const firstClub = md.search(/^## 1\.\s/m);
+  ok(watchAt > -1, 'the role watch section is present');
+  ok(firstClub > -1 && watchAt < firstClub,
+    'and sits ABOVE the first club, where no club block can swallow it');
+
+  /* Proved rather than reasoned: the names it names must not surface as
+     claims about any club. */
+  const blocks = clubBlocks(md);
+  const pens = penaltyClaims(blocks);
+  const strays = pens.filter((p) => /^(Tel|Tzolis|Mbeumo)$/.test(p.name));
+  ok(!strays.length, 'no watch name is read as a penalty taker (' + JSON.stringify(strays) + ')');
+  ok(!blocks.some((b) => /role watch/i.test(b.name)), 'and the watch is not read as a club');
+
+  /* The register is deliberately NOT rewritten from a highlights reel. If a
+     future edit does change it, that is a decision worth making on purpose —
+     this fails so it cannot happen by drift. */
+  const mu = pens.find((p) => /United/.test(p.club));
+  ok(mu && mu.name === 'Bruno',
+    'the United penalty claim still names Bruno despite the Mbeumo signal (' + JSON.stringify(mu) + ')');
+}
+
+/* The start date was wrong by a day and only one edition stated it, so the
+   error had nowhere to be caught. Both state it now, and they must agree. */
+console.log('\n• briefing: both editions state the same start date');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const dateOf = (s) => (s.match(/Season starts (\w+ \d{1,2} August 2026)/) || [])[1];
+  const a = dateOf(md), b = dateOf(html);
+  ok(a, 'the markdown edition states a start date (' + a + ')');
+  ok(b, 'the html edition states one too (' + b + ')');
+  ok(a === b, 'and they agree (' + a + ' vs ' + b + ')');
+  /* 21 August 2026 is a Friday. A date that names the wrong weekday is the
+     exact error being corrected here, so the pairing is checked, not assumed. */
+  const [wd, dd] = String(a || '').split(' ');
+  const actual = new Date(Date.UTC(2026, 7, Number(dd)))
+    .toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
+  ok(wd === actual, 'the weekday matches the date (' + wd + ' ' + dd + ' August 2026 is a ' + actual + ')');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);
