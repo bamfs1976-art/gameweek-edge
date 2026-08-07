@@ -10394,7 +10394,13 @@ async function hydrateRivals(host){
 
 /* ── Set Piece Register: takers from official order fields ─ */
 async function hydrateSetpiece(host){
-  const [b,notesData]=await Promise.all([boot(),loadSetPieceNotes().catch(()=>null)]);
+  const [b,fixtures,notesData]=await Promise.all([boot(),loadFixtures().catch(()=>null),
+    loadSetPieceNotes().catch(()=>null)]);
+  /* Ratings drive the penalty-volume multiplier. If the fixture list is not
+     available the multiplier is 1 for everyone, which is the old behaviour —
+     a missing feed must not silently re-rank the register. */
+  const R=fixtures?plsimRatings(b,fixtures):null;
+  const spOpts=e=>({penMult:penRateMult(R,e.team),side:cornerSide(b,e)});
   const withNotes=((notesData&&notesData.teams)||[]).filter(t=>t.notes&&t.notes.length);
   let notesCard='';
   if(withNotes.length){
@@ -10416,9 +10422,11 @@ async function hydrateSetpiece(host){
       .sort((a,c)=>a[key]-c[key]||parseFloat(c.selected_by_percent)-parseFloat(a.selected_by_percent));
     const byTeam={};list.forEach(e=>{(byTeam[e.team]=byTeam[e.team]||[]).push(e);});
     const rows=Object.keys(byTeam).sort((x,y)=>teamShort(b,x).localeCompare(teamShort(b,y))).map(tid=>
-      byTeam[tid].map(e=>{const spc=setPieceConfidence(e);
+      byTeam[tid].map(e=>{const spc=setPieceConfidence(e,spOpts(e));
+        const sideNote=key==='corners_and_indirect_freekicks_order'&&spc.side
+          ?' · '+(spc.side==='LR'?'both sides':spc.side==='L'?'left side':'right side'):'';
         return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
-        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+e.selected_by_percent+'% owned'+
+        '<span class="dl-sub">'+teamShort(b,e.team)+' · '+e.selected_by_percent+'% owned'+sideNote+
         (valueLine&&spc.addXp?' · ≈+'+spc.addXp.toFixed(2)+' xP/gw from set-pieces':'')+'</span></span>'+
         confChip(roleConf(key,e[key]),'')+ordBadge(e[key])+'</div>';}).join('')
     ).join('');
@@ -10431,8 +10439,12 @@ async function hydrateSetpiece(host){
      second and third names are exactly what you need when the first is
      injured or sold. */
   const spRows=setPieceClubRows(b,4);
-  const spName=(list)=>list.length
-    ? list.map((x,i)=>(i===0?'<b>'+esc(x.el.web_name)+'</b>':esc(x.el.web_name))).join(', ')
+  const spName=(list,withSide)=>list.length
+    ? list.map((x,i)=>{
+        const nm=i===0?'<b>'+esc(x.el.web_name)+'</b>':esc(x.el.web_name);
+        const s=withSide?cornerSide(b,x.el):null;
+        return nm+(s?'<span style="color:var(--text-4)"> '+(s==='LR'?'L+R':s)+'</span>':'');
+      }).join(', ')
     : '<span style="color:var(--text-4)">—</span>';
   const gridCard=spRows.length
     ? '<div class="card mb-20"><div class="card-title">Set-piece takers by club</div>'+
@@ -10441,12 +10453,13 @@ async function hydrateSetpiece(host){
       spRows.map(c=>'<tr><td class="tm">'+crest(b,c.team,15)+esc(teamShort(b,c.team))+'</td>'+
         '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.pen)+'</td>'+
         '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.fk)+'</td>'+
-        '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.ck)+'</td></tr>').join('')+
+        '<td style="text-align:left;padding:5px 8px;white-space:normal">'+spName(c.ck,true)+'</td></tr>').join('')+
       '</table></div>'+
-      '<div class="dl-sub" style="margin-top:8px">Set-piece duties change, and the official data lags a manager’s decision — the written notes above are the earlier signal when they disagree.</div></div>'
+      '<div class="dl-sub" style="margin-top:8px"><b>L</b>, <b>R</b> and <b>L+R</b> mark which side a player takes corners from — not in the FPL feed, so it is our own register. It matters because inswingers have taken over (2,643 last season to 541 outswingers), so clubs put a left-footer on the right and a right-footer on the left, and a taker who owns one side gets about half the deliveries of one who takes both.</div>'+
+      '<div class="dl-sub" style="margin-top:6px">Set-piece duties change, and the official data lags a manager’s decision — the written notes above are the earlier signal when they disagree.</div></div>'
     : '';
   host.innerHTML=lensLink('setpiece','A confidence rating on every taker in the game, sortable against price, ownership and projection —')+
-    '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data, each with a <b>confidence</b> rating — how safe the designation is — and, for penalties, the rough xP it adds. 1st choice is the primary taker.</div>'+
+    '<div class="dl-sub" style="margin-bottom:12px">Confirmed set-piece order from the official data, each with a <b>confidence</b> rating — how safe the designation is — and, for penalties, the rough xP it adds. 1st choice is the primary taker. The penalty figure is scaled by how many spot-kicks our match model expects the club to win, so a nailed taker at a side that rarely gets them is not rated alongside one at a side that does.</div>'+
     notesCard+gridCard+
     section('Penalties','penalties_order',true)+
     section('Direct free-kicks','direct_freekicks_order',true)+
@@ -15422,17 +15435,133 @@ function fdrDefence(cs){
   if(cs>=0.5)return 1;if(cs>=0.38)return 2;if(cs>=0.26)return 3;if(cs>=0.16)return 4;return 5;
 }
 
+/* ── Corner side: the volume term the FPL feed does not carry ──────
+   FPL publishes corners_and_indirect_freekicks_order but not WHICH SIDE a
+   player takes, and side is most of the volume. Inswinging corners have
+   taken over — 2,643 of them last season against 541 outswingers (Opta) —
+   so most clubs put a left-footer on the right and a right-footer on the
+   left, and a taker who owns one side gets roughly half the deliveries of
+   one who takes both.
+
+   Without it we were rating Bruno Fernandes, who takes United's LEFT corners
+   with Mbeumo and Shaw on the right, exactly the same as Szoboszlai, who
+   takes both for Liverpool. Garner is the sharper case: 110 corners last
+   season, 10 of them from the right, because Dewsbury-Hall took all 43 from
+   that side.
+
+   Hand-maintained, because no feed carries it. Ordered per club, first name
+   first — the same ordering the FPL duty fields use. */
+const CORNER_SIDES={
+  arsenal:{Rice:'L',Saka:'R',Madueke:'R'},
+  villa:{Cash:'L',Digne:'R',McGinn:'R'},
+  bournemouth:{Scott:'L',Kluivert:'L',Tavernier:'R',Brooks:'R'},
+  brentford:{Jensen:'L',Damsgaard:'L',Janelt:'R',Ouattara:'R'},
+  brighton:{'Gross':'L','Kadioglu':'L','De Cuyper':'R',Minteh:'R'},
+  chelsea:{James:'L','Fernandez':'L',Neto:'R','Estevao':'R'},
+  coventry:{Grimes:'LR',Torp:'L',Rudoni:'R'},
+  palace:{Yeremy:'L',Johnson:'L',Wharton:'R',Hughes:'R'},
+  everton:{Garner:'L','Dewsbury-Hall':'R'},
+  fulham:{'Lukic':'LR',Iwobi:'L',Bobb:'R'},
+  hull:{Slater:'L',Giles:'LR',Belloumi:'R'},
+  ipswich:{'Nunez':'LR',Clarke:'L',Davis:'R'},
+  leeds:{Stach:'LR',Wilson:'R'},
+  liverpool:{Szoboszlai:'LR',Gakpo:'L',Wirtz:'R'},
+  mancity:{Cherki:'LR',Anderson:'L',Foden:'R'},
+  manutd:{Fernandes:'L',Mbeumo:'R',Shaw:'R'},
+  newcastle:{'Guimaraes':'L',Murphy:'L',Hall:'R'},
+  forest:{Williams:'L',Ndoye:'L',Hutchinson:'R','Hudson-Odoi':'R'},
+  sunderland:{'Le Fee':'L',Hume:'L',Xhaka:'R'},
+  tottenham:{Porro:'LR',Tel:'L',Kudus:'R'},
+};
+/* Club names arrive from the API in several shapes and the register uses one
+   key per club, so the mapping is written out rather than guessed at. A club
+   that does not resolve returns no side at all — the same discipline the
+   projection comparer uses, where a wrong pairing is worse than no pairing
+   because it produces a number instead of a gap. */
+const CORNER_CLUB_KEYS={
+  arsenal:'arsenal',astonvilla:'villa',villa:'villa',bournemouth:'bournemouth',
+  afcbournemouth:'bournemouth',brentford:'brentford',brighton:'brighton',
+  brightonhovealbion:'brighton',brightonandhovealbion:'brighton',chelsea:'chelsea',
+  coventry:'coventry',coventrycity:'coventry',crystalpalace:'palace',palace:'palace',
+  everton:'everton',fulham:'fulham',hull:'hull',hullcity:'hull',ipswich:'ipswich',
+  ipswichtown:'ipswich',leeds:'leeds',leedsunited:'leeds',liverpool:'liverpool',
+  mancity:'mancity',manchestercity:'mancity',manutd:'manutd',
+  manchesterunited:'manutd',newcastle:'newcastle',newcastleunited:'newcastle',
+  nottmforest:'forest',nottinghamforest:'forest',forest:'forest',notts:'forest',
+  sunderland:'sunderland',spurs:'tottenham',tottenham:'tottenham',
+  tottenhamhotspur:'tottenham',
+};
+const cornerKey=(s)=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+  .toLowerCase().replace(/[^a-z]/g,'');
+/* The side for one player, or null. Scoped to the club: surnames like Wilson,
+   Anderson, Johnson and Davis appear at more than one club, and a league-wide
+   surname match would silently hand a player the wrong side. */
+function cornerSide(b,el){
+  if(!b||!el)return null;
+  const t=(b.teams&&b.teams[el.team])||null;
+  if(!t)return null;
+  const club=CORNER_CLUB_KEYS[cornerKey(t.short_name)]||CORNER_CLUB_KEYS[cornerKey(t.name)];
+  const reg=club&&CORNER_SIDES[club];
+  if(!reg)return null;
+  const nm=cornerKey(el.web_name);
+  const hit=Object.keys(reg).filter(k=>{const r=cornerKey(k);return r===nm||nm.endsWith(r)||r.endsWith(nm);});
+  /* Two candidates inside one club is a register defect, not a coin toss. */
+  return hit.length===1?reg[hit[0]]:null;
+}
+/* Mean-preserving by construction. 0.12 was calibrated across primary corner
+   takers as a population, and that population is a mix: 7 of the 20 clubs
+   above put their first-choice on both sides, 13 on one. Splitting it as
+   0.18 / 0.09 keeps the register-weighted mean at 0.12 (7·0.18 + 13·0.09,
+   over 20, is 0.1215) while moving individuals to where they belong. A club
+   we have no entry for keeps the population figure rather than being marked
+   down for our missing data. dev/test-setpiece.mjs re-derives this on every
+   run, so a future edit cannot quietly inflate every corner taker at once. */
+const CORNER_XP={LR:0.18,L:0.09,R:0.09,_:0.12};
+
+/* ── How many penalties the side actually wins ─────────────────────
+   The primary penalty taker was worth a flat +0.6 regardless of club, which
+   says Igor Thiago and Erling Haaland carry the same penalty value. They do
+   not: Thiago took nine last season and only eight players in Premier League
+   history have taken more than nine in a season, so that rate regresses hard
+   — Solio project Haaland, Fernandes, Palmer and Gross all ahead of him over
+   GW1-10.
+
+   Penalties are won by getting into the box, so the model's own attack
+   rating is the proxy and no new feed is needed. Shrunk halfway to the mean
+   because the link is real but loose, and clamped, because this is a
+   presentation figure and no plausible attack rating should swing it wildly.
+   R.att is normalised around 1 by plsimRatings. */
+const PEN_RATE={SHRINK:0.5,MIN:0.7,MAX:1.35};
+function penRateMult(R,team){
+  const a=R&&R.att&&R.att[team];
+  if(!(a>0))return 1;
+  return Math.max(PEN_RATE.MIN,Math.min(PEN_RATE.MAX,1+PEN_RATE.SHRINK*(a-1)));
+}
+
 /* Set-piece confidence + rough xP value: how reliable a taker
    designation is, and how much it adds. Penalties dominate (primary
    takers convert ~0.6 pts/gw of extra expectation), then direct
-   free-kicks, then corners (assist upside). Pure for testing. */
-function setPieceConfidence(el){
+   free-kicks, then corners (assist upside). Pure for testing.
+
+   opts is optional and additive: {penMult, side}. Called bare, this returns
+   exactly what it always did, which is what keeps the players-table column
+   and the club dossier working unchanged.
+
+   CONFIDENCE IS NOT SCALED BY EITHER. Confidence answers "is this really his
+   job", and that is just as certain at Brentford as at City — only the value
+   of the job differs. Scaling it would report a settled duty as doubtful. */
+function setPieceConfidence(el,opts){
+  const o=opts||{};
+  const penMult=o.penMult>0?o.penMult:1;
+  const side=o.side||null;
   let value=0,addXp=0;const roles=[];
-  if(el.penalties_order===1){value=Math.max(value,82);roles.push('penalties');addXp+=0.6;}
-  else if(el.penalties_order===2){value=Math.max(value,52);roles.push('pens (2nd)');addXp+=0.15;}
+  if(el.penalties_order===1){value=Math.max(value,82);roles.push('penalties');addXp+=0.6*penMult;}
+  else if(el.penalties_order===2){value=Math.max(value,52);roles.push('pens (2nd)');addXp+=0.15*penMult;}
   if(el.direct_freekicks_order===1){value=Math.max(value,70);roles.push('free-kicks');addXp+=0.18;}
-  if(el.corners_and_indirect_freekicks_order===1){value=Math.max(value,64);roles.push('corners');addXp+=0.12;}
-  return {value,tier:confTier(value),roles,addXp:Math.round(addXp*100)/100};
+  if(el.corners_and_indirect_freekicks_order===1){value=Math.max(value,64);
+    roles.push(side==='LR'?'corners (both sides)':side==='L'?'corners (left)':side==='R'?'corners (right)':'corners');
+    addXp+=CORNER_XP[side]||CORNER_XP._;}
+  return {value,tier:confTier(value),roles,addXp:Math.round(addXp*100)/100,side};
 }
 
 /* ── Section 4 (6-13): readiness, lineup and community models ─ */
