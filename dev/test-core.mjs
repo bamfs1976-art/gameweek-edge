@@ -145,6 +145,10 @@ const pieces = [
   /* Section 4: Fixture Difficulty 2.0 + set-piece confidence. */
   extractFn(html, 'fdrAttack'),
   extractFn(html, 'fdrDefence'),
+  /* setPieceConfidence reads the corner-side tariff, so the constant has to
+     come with it. dev/test-setpiece.mjs owns the side and penalty-volume
+     behaviour; these cases only assert the duty stacking is unchanged. */
+  ...['CORNER_XP'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'setPieceConfidence'),
   /* Section 4 (6-13): readiness, lineup, community. */
   extractFn(html, 'benchBoostReadiness'),

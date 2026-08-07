@@ -104,7 +104,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Matty Cash (attacking RB, corners, defensive points). Leon Bailey if he nails a starting wide role after Rogers.
 - Premium / captaincy: Ollie Watkins, nailed striker and penalty taker, the reliable armband here.
 - Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder.
-- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash, Bailey. Output is a real question mark after losing coach MacPhee (watch).
+- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash from the left, Digne and McGinn from the right (Opta's projected order; Bailey, previously listed here, does not feature in it). Output is a real question mark after losing coach MacPhee (watch).
 
 **Opening fixtures:** GW1 Brighton (A) hard, GW2 Arsenal (H) hard, GW3 Hull City (A) moderate, GW4 Nottingham Forest (H) moderate, GW5 Spurs (A) hard. Two hard games to open, a softer middle, then Spurs away — plus European load. Avoid the Villa defence in GW1-2; the window for their assets is GW3-4.
 
@@ -176,7 +176,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Yankuba Minteh (MID, ~£6.0-6.5m est.), on corners, high involvement. Maxim De Cuyper (attacking LB, ~£4.5-5.0m est.), set-piece involvement, strong cheap-defender value.
 - Premium / captaincy: No nailed premium post-Welbeck. Minteh or Matt O'Riley are the best captaincy-adjacent options but carry rotation risk.
 - Differentials: Yohanna, new signing likely sub-5% owned. De Cuyper.
-- Set-piece & penalties: Corners Gross, Boscagli, Minteh. Free-kicks De Cuyper, Ayari. Penalties uncertain after summer changes, O'Riley the likeliest (1/1 last season), watch pre-season.
+- Set-piece & penalties: Penalties Gross primary, O'Riley the alternative (Opta/Solio project Gross among the four highest-volume takers in the league over GW1-10 with Welbeck gone; our earlier read had this unresolved, watch pre-season). Corners Gross and Kadioglu from the left, De Cuyper and Minteh from the right. Free-kicks De Cuyper, Ayari.
 
 **Opening fixtures:** GW1 Aston Villa (H) moderate, GW2 Chelsea (A) hard, GW3 Leeds (H) moderate, GW4 Coventry City (A) moderate, GW5 Arsenal (H) hard. Mixed, with no genuinely easy game and Arsenal at home rather than away. The Leeds and Coventry weeks are the ones to target.
 
@@ -202,7 +202,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 ## 10. Chelsea (52 pts)
 
-**Pre-season summary:** A disappointing tenth saw Maresca sacked in January (Rosenior interim). Xabi Alonso is confirmed on a four-year deal and has driven another heavy, youth-led window built around a rebuilt spine. The marquee move is ~£117m for Morgan Rogers, plus a new senior centre-back in Lacroix. Expect a possession-based, high-line system and a deep, expensively assembled squad.
+**Pre-season summary:** A disappointing tenth saw Maresca sacked in January (Rosenior interim). Xabi Alonso is confirmed on a four-year deal and has driven another heavy, youth-led window built around a rebuilt spine. The marquee move is ~£117m for Morgan Rogers, plus a new senior centre-back in Lacroix. Expect a possession-based, high-line system and a deep, expensively assembled squad. FPL note: they also signed Austin MacPhee from Villa, paying a release clause for a set-piece coach against Premier League and Saudi competition — the other half of the transfer that carries Villa's dead-ball warning, and a reason to rate James, Palmer and Chelsea's aerial defenders on set plays rather than only in open play.
 
 **In:** Morgan Rogers (AM/W, Aston Villa, ~£117m), Maxence Lacroix (CB, Crystal Palace, ~£52m), Marco Palestra (RB, Atalanta, ~£47m), Geovany Quenda (W, Sporting, ~£43m), Emmanuel Emegha (ST, Strasbourg, ~£22m), Denner (Corinthians, ~£8m), Dastan Satpaev (ST, Kairat, ~£3m).
 
