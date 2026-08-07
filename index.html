@@ -14045,11 +14045,52 @@ function squadViewsArticle(){
     accent:'a-cyan',mins:2,body};
 }
 
+/* Chip strategy for 26/27. Written against the official Scout column of
+   7 Aug 2026 rather than reproducing it: the rules half is theirs and is
+   attributed, the fixture reads are our own match model, and where the two
+   disagree the disagreement is the article. */
+function chipStrategyArticle(){
+  let body='<p>FPL runs <b>two sets of chips</b> again in 2026/27. Eight in total: a Wildcard, Bench Boost, Triple Captain and Free Hit for the first half of the season, expiring at the end of <b>Gameweek 19</b>, and a second set from <b>Gameweek 20</b> that runs to GW38. One chip per gameweek, and an unplayed chip is simply lost at the halfway line.</p>';
+
+  body+='<p>The official Scout column set out its own windows on 7 August. We agree on two of them and think a third is a trap.</p>';
+
+  body+='<h4>Triple Captain — we agree, and got there separately</h4>';
+  body+='<p>The Scout points at <b>Haaland</b>, who is home to all three promoted sides before GW19, Coventry first in GW3. Our own match model reached the same place from the fixture list alone: Manchester City have <b>the softest opening trio in the division</b> — Bournemouth (H), Crystal Palace (A), Coventry (H). Two independent routes to one answer is about as good as pre-season reasoning gets.</p>';
+  body+='<p>The same holds for <b>Bruno Fernandes</b> at home to Ipswich in GW2. United open Hull (A) then Ipswich (H) before a hard trip to Everton, so the armband case and the ownership case land in the same fortnight.</p>';
+
+  body+='<h4>Bench Boost in GW1 or GW2 — this is the one to skip</h4>';
+  body+='<p>Bench Boost pays only if all fifteen of your players start. Early in a season that is not a fixture question, it is a <b>minutes</b> question, and the minutes are exactly what nobody has yet: no starts, no rotation pattern, no evidence of what a new manager does with a squad he has just been handed.</p>';
+  body+='<p>The argument usually made <i>for</i> an early boost — that the managerial churn creates opportunity — is the argument against it. Role certainty is worth more points than usual this August precisely <b>because</b> it is scarce. A GW1 or GW2 Bench Boost spends a chip on fifteen unknowns to buy four bench returns.</p>';
+  body+='<p class="muted">Our chip planner holds Bench Boost until it can see a double gameweek, where a strong bench plays twice, and only falls back to a plain easiest-FDR week when no double exists in the half. That is a deliberately patient default, and August is when it earns its keep.</p>';
+
+  body+='<h4>One nuance on the budget-enabler route</h4>';
+  body+='<p>The suggested GW2 filler is Coventry’s cheap end at home to Hull, and for that single fixture it is a fair pick. Worth knowing what comes with it: our model has <b>Coventry among the six hardest opening fives in the league</b>, alongside Hull, Sunderland, Ipswich, Fulham and Bournemouth. Buying into that club for one green fixture means holding through a bad run, or planning the exit at the same time you plan the entry.</p>';
+
+  body+='<h4>Wildcard — the international break has the better case</h4>';
+  body+='<p>Two windows are floated: an early GW3–4 reaction, or GW6 after the three-week international break. The second is stronger, and not only for the reason usually given. A break gives you price changes, injury news <i>and</i> five gameweeks of real minutes data — the thing an August squad is missing. Wildcarding into a settled picture and boosting a bench you have actually watched play is a far better sequence than doing either blind.</p>';
+
+  body+='<h4>Free Hit — a fixture dodge, not a rescue</h4>';
+  body+='<p>The shape is right: GW4 and GW12 both put two heavily-owned clubs against each other, and a Free Hit lets you field eleven players who are not in that game. Keep it for a week the calendar makes awkward rather than a week your squad makes awkward — a Free Hit spent on injuries is a Wildcard you did not play.</p>';
+
+  body+='<h4>What the planner adds</h4>';
+  body+='<ul>'+
+    '<li><b>The half boundary is enforced.</b> Every window is scored inside its own half, because a chip you plan for GW21 is worthless if it is a first-half chip.</li>'+
+    '<li><b>Chips are kept apart.</b> Two chips in consecutive weeks usually means one of them was played on a mediocre week.</li>'+
+    '<li><b>The run-in is discounted.</b> A Wildcard buys the gameweeks that follow it, so its value tapers as GW38 approaches, and Bench Boost and Triple Captain are marked down in the final two weeks where sides with nothing to play for rotate.</li>'+
+    '</ul>';
+
+  body+='<p class="muted">Chip windows, the reasoning behind each and a shareable plan card are in the <b>Chip Planner</b>. Rules and the official windows discussed here are from the Premier League’s Scout column, 7 August 2026; the fixture reads, the Bench Boost case and the opening-five difficulty are ours, and are graded in Model Accountability like every other call we publish.</p>';
+
+  return {kick:'Strategy',title:'Chips in 2026/27: Two Halves, and the One Window We’d Skip',
+    dek:'Eight chips, split at GW19. The official advice is right about Haaland and, we think, wrong about an early Bench Boost — here is the case for each.',
+    accent:'a-violet',mins:4,body};
+}
+
 /* Pinned pre-season briefings for 26/27, newest first. Returned as a list so
    more can be added over the summer; hydrateBlog unshifts them to the top of
    the Wire regardless of season state. */
 function preseasonArticles(){
-  return [squadViewsArticle(), priceChangePredictorArticle(), positionChangesArticle()];
+  return [chipStrategyArticle(), squadViewsArticle(), priceChangePredictorArticle(), positionChangesArticle()];
 }
 
 function articleCard(a,i,gw){
