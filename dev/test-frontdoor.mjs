@@ -80,15 +80,25 @@ const run = async (steps) => {
   await ctx.close();
   return out;
 };
-const go = async (page, url) => { await page.goto(BASE + url); await page.waitForTimeout(300); };
+/* referer matters now: the gate only fires for someone who followed a link
+   in, so an inbound social visit has to be simulated as one. */
+const go = async (page, url, referer) => {
+  await page.goto(BASE + url, referer ? { referer } : undefined);
+  await page.waitForTimeout(300);
+};
+const SOCIAL = 'https://bsky.app/';
 
-check('cold visitor lands on the pitch', await run(async (page) => {
-  await go(page, '/'); return where(page);
+check('cold visitor from a link lands on the pitch', await run(async (page) => {
+  await go(page, '/', SOCIAL); return where(page);
 }), 'landing @ /welcome');
 
+check('direct traffic (no referrer) goes straight to the app', await run(async (page) => {
+  await go(page, '/'); return where(page);
+}), 'app @ /');
+
 check('second visit goes straight to the app', await run(async (page) => {
-  await go(page, '/');                     // bounced to /welcome
-  await go(page, '/');                     // back to the root
+  await go(page, '/', SOCIAL);             // bounced to /welcome
+  await go(page, '/', SOCIAL);             // back again from another post
   return where(page);
 }), 'app @ /');
 
@@ -99,7 +109,7 @@ check('returning from /welcome into the app does not bounce back', await run(asy
 }), 'app @ /');
 
 check('Stripe return never hits the pitch', await run(async (page) => {
-  await go(page, '/?upgrade=success'); return where(page);
+  await go(page, '/?upgrade=success', 'https://checkout.stripe.com/'); return where(page);
 }), 'app @ /');
 
 check('push deep link never hits the pitch', await run(async (page) => {
@@ -108,27 +118,37 @@ check('push deep link never hits the pitch', await run(async (page) => {
 
 check('a linked team skips the pitch', await run(async (page, ctx) => {
   await ctx.addInitScript(() => { try{ localStorage.setItem('ge-mid','12345'); }catch(_){} });
-  await go(page, '/'); return where(page);
+  await go(page, '/', SOCIAL); return where(page);
 }), 'app @ /');
 
 check('bookmarked #players reaches the app', await run(async (page) => {
   await go(page, '/#players'); return where(page);
 }), 'app @ /');
 
-check('blocked storage fails open into the app', await run(async (page, ctx) => {
+check('a same-origin referrer never triggers the pitch', await run(async (page, ctx) => {
+  /* Belt and braces: ge-visited already covers the landing -> app trip, but
+     an internal link must not be able to bounce someone to the pitch even
+     with storage empty. */
   await ctx.addInitScript(() => {
-    Object.defineProperty(window, 'localStorage', { get(){ throw new Error('blocked'); } });
+    Object.defineProperty(document, 'referrer', { get(){ return location.origin + '/privacy.html'; } });
   });
   await go(page, '/'); return where(page);
 }), 'app @ /');
 
+check('blocked storage fails open into the app', await run(async (page, ctx) => {
+  await ctx.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', { get(){ throw new Error('blocked'); } });
+  });
+  await go(page, '/', SOCIAL); return where(page);
+}), 'app @ /');
+
 check('utm tags are not intent — tagged link still gets the pitch', await run(async (page) => {
-  await go(page, '/?utm_source=bluesky'); return where(page);
+  await go(page, '/?utm_source=bluesky', SOCIAL); return where(page);
 }), 'landing @ /welcome');
 
 check('the pitch is shown once even if never clicked through', await run(async (page) => {
-  await go(page, '/');                     // sees /welcome, closes the tab
-  await go(page, '/?utm_source=x');        // comes back from another post
+  await go(page, '/', SOCIAL);             // sees /welcome, closes the tab
+  await go(page, '/?utm_source=x', SOCIAL);// comes back from another post
   return where(page);
 }), 'app @ /');
 

@@ -20,9 +20,10 @@
    first thing in the head, before a stylesheet is even fetched — a
    redirect that paints nothing.
 
-   Shown once, ever. Landing sets the same flag on load, so the trip back
-   into the app can't bounce, and a returning manager never sees the pitch
-   twice. See docs/FIRST_RUN_UX.md §4.1. */
+   Shown once, ever, and only to someone who followed a link in. Landing sets
+   the same flag on load, so the trip back into the app can't bounce, and a
+   returning manager never sees the pitch twice. See docs/FIRST_RUN_UX.md
+   §4.1 and §5.1. */
 (function(){
   var ls;
   /* Private mode and blocked storage: bail into the app. Landing could not
@@ -41,6 +42,25 @@
     /* Only the bare root. Any deeper URL was chosen deliberately. */
     var path = location.pathname;
     if(path !== '/' && !/\/index\.html$/.test(path)) return false;
+
+    /* Followed a link in from somewhere else — that is the visitor the pitch
+       is for. Typing the domain, or opening a bookmark, leaves no referrer,
+       and someone who knows the address well enough to type it does not need
+       selling to; they go straight in.
+
+       The cost of this rule is real and worth stating: browsers strip the
+       referrer on plenty of legitimate journeys — an in-app browser on iOS,
+       a QR code, a pasted link, anything behind a stricter Referrer-Policy.
+       Those newcomers now land in the app rather than on the pitch. That is
+       the trade the rule buys: it protects the returning manager who typed
+       the domain, at the price of missing some of the traffic it was built
+       for. If the social campaign needs certainty, link to /welcome directly
+       rather than loosening this. */
+    var ref = '';
+    try{ ref = document.referrer || ''; }catch(_){}
+    if(!ref) return false;
+    try{ if(new URL(ref).origin === location.origin) return false; }
+    catch(_){ return false; }
 
     /* Arriving with an intent already: a bookmarked #panel, a push
        notification's ?panel=, an explicit ?app=1 — and, above all, the
