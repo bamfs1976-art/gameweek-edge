@@ -68,8 +68,9 @@ Home
 ├── Gameweek recap       (free)  What just happened, and what it cost you
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
-├── Methodology          (free)  How the model works, in full
-└── Model Accountability (free)  Every published call, graded
+└── The Model            (free)  Track record first, then how it works
+    ├── Track record             Every published call, graded
+    └── How it works             The engine, the xP model, the price estimate
 
 My Team
 ├── My Squad             (free)  Live pitch from your picks + live points
@@ -97,23 +98,26 @@ Players
 Planner
 ├── Fixtures             (free)  One horizon, three views: grid / points / clean sheets
 │                                (absorbed the Points Planner and Clean Sheet Matrix)
-├── Season Simulator     (Pro)   Full-season Monte Carlo (absorbed Scenario Lab)
-├── What-If Simulator    (Pro)   Rank impact of a goal / assist / clean sheet
+├── Simulators           (Pro)   What happens next, at two scales
+│   ├── Season                   Full-season Monte Carlo (absorbed Scenario Lab)
+│   └── What-if                  Rank impact of a goal / assist / clean sheet
 ├── Watchlist            (free)  Saved players
 └── Alerts               (free)  Price/injury/deadline + model-watch alerts
 
 Rivals
 ├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
 ├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
-├── EO Tracker           (Pro)   Effective ownership; your cover, edge and exposure
-└── The Template         (Pro)   The most-owned XI, and how close yours is
+└── Ownership            (Pro)   What the field owns, and how much you own
+    ├── Your EO                  Effective ownership; your cover, edge and exposure
+    └── The template             The most-owned XI, and how close yours is
 
 Match Centre
 ├── Matchday             (free)  One fixture list, three views: results / forecasts / line-ups
 │                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
-├── Club Dossier         (free)  One club: attack-or-defence, home/away, board, depth
-├── Team Form            (free)  Club form over the last 5/10/20 games
+├── Clubs                (free)  One club: what it is, and its recent form
+│   ├── Dossier                  Attack-or-defence, home/away, board, depth
+│   └── Recent form              Club form over the last 5/10/20 games
 └── Ten Seasons          (free)  2016-17 to 2025-26: all-time records, career
                                  comparison, and a daily guess-the-player puzzle
 
@@ -965,12 +969,12 @@ rather than merging.
 
 ### Team‑strength engine (`plsim*` in `index.html`, mirrors the Plsimulator repo)
 - **Poisson** goal model with a **Dixon‑Coles** low‑score correction.
-- Constants: home base **1.62**, away base **1.32** goals; DC **rho ≈ −0.074**;
+- Constants: home base **1.62**, away base **1.32** goals; DC **rho ≈ −0.0855**;
   Bayesian prior weight 8; 24 fitting iterations; per‑club home advantage.
 - On every load it re‑fits attack/defence multipliers on the season's finished
   fixtures from the live API (falls back to offline‑fitted priors early season).
-- Offline calibration (Plsimulator repo) fits on ~2,796 PL + Championship
-  results 2023‑26 with exponential date‑decay (250‑day half‑life) and an
+- Offline calibration (Plsimulator repo) fits on ~1,864 PL + Championship
+  results 2024‑27 with exponential date‑decay (250‑day half‑life) and an
   xG‑blended target (α·xG + (1−α)·goals). A promoted‑team prior is estimated from
   history. Outputs: per‑fixture expected goals, clean‑sheet odds, 3+‑goal odds,
   win probability, and a 1–5 model FDR.

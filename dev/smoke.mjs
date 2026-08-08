@@ -23,16 +23,16 @@
 const BASE = process.env.BASE || 'http://127.0.0.1:8700';
 const MID = process.env.MID || '101';
 
-const PANELS = [
-  'dashboard', 'gw-actions', 'blog', 'squad', 'transfers', 'captain',
-  'liverank', 'whatif',
-  'eo', 'template', 'rivals', 'scout',
-  'allplayers', 'compare', 'price', 'setpiece', 'rotation',
-  'fixtures', 'seasonsim',
-  'leagues', 'chips', 'gwhistory', 'watchlist', 'alerts',
-  'results', 'titlerace', 'dossier', 'clubform',
-  'myweek', 'scoutboard', 'news', 'draft', 'gwreport', 'methodology', 'accountability'
-];
+/* The panel list is read out of the running app rather than kept here by
+   hand. It used to be a literal, and consolidating destinations into hubs
+   left it naming ids that are now aliases — renderPage takes a real panel,
+   so the smoke test crashed on the first retired name instead of testing
+   anything. A list that has to be edited in step with a refactor is a list
+   that will be out of step with it. Retired ids are covered properly below,
+   through openPanel, which is what actually resolves an alias.
+   MIN_PANELS is the floor that a derived list still needs: it fails if a
+   registry ever comes back near-empty and every check silently passes. */
+const MIN_PANELS = 30;
 
 const pw = await import(process.env.PLAYWRIGHT_PKG || 'playwright');
 const chromium = pw.chromium || (pw.default && pw.default.chromium);
@@ -64,11 +64,26 @@ for (let md = 0; md < 38; md++) {
   for (let i = 0; i < 20; i += 2) row.push([CLUBS[(i + md) % 20], CLUBS[(i + 1 + md) % 20]]);
   bundleFixtures.push(row);
 }
+/* Recent form is keyed club → venue → window, and the renderer skips any club
+   with no games played, so a bundle without it leaves the Clubs hub's second
+   view on its "No form yet" state — which reads as passing. Stub it with real
+   arithmetic (pts = 3w + d, ppg = pts / p) so the table, the PPG bar and the
+   form chips all render off numbers that hang together. */
+const RESULTS = 'WWDLW';
+const formWindow = (p) => {
+  const w = Math.round(p * 0.5), d = Math.round(p * 0.25), l = p - w - d;
+  return { p, w, d, l, gf: w * 2 + d, ga: l * 2 + d, pts: w * 3 + d, ppg: p ? (w * 3 + d) / p : 0 };
+};
+const bundleForm = {};
+CLUBS.forEach((c) => {
+  const venue = (n) => ({ 5: formWindow(n), 10: formWindow(n * 2), 20: formWindow(n * 4) });
+  bundleForm[c] = { overall: venue(5), home: venue(3), away: venue(2), recent: [...RESULTS] };
+});
 await page.route('**/model.json', (r) => r.fulfill({
   status: 200, contentType: 'application/json',
   body: JSON.stringify({
     constants: { BASE_H: 1.45, BASE_A: 1.15, DC_RHO: -0.05 },
-    teams: bundleTeams, fixtures: bundleFixtures,
+    teams: bundleTeams, fixtures: bundleFixtures, form: bundleForm,
     season_state: { live: false, played_md: 0, label: '2026/27' }
   })
 }));
@@ -103,6 +118,11 @@ await page.addScriptTag({ content: `
 ` });
 
 let overflow = 0;
+const PANELS = await page.evaluate(() => Object.keys(PANELS));
+if (PANELS.length < MIN_PANELS) {
+  console.error(`  ! only ${PANELS.length} panels in the registry, expected at least ${MIN_PANELS}`);
+  overflow++;
+}
 for (const p of PANELS) {
   current = p;
   await page.evaluate((pn) => window.renderPage(pn), p);
@@ -247,10 +267,46 @@ for (const view of await page.evaluate(() => FX_VIEWS.map((v) => v.id))) {
   if (state !== 'ok') { overflow++; console.error(`  ! ${current} rendered ${state}, not content`); }
 }
 
+/* The three makeHub hubs, and the deep links they retired. Each merge folded
+   a whole destination into a view, so two things have to hold: the second
+   view still renders (it is no longer reachable from the nav, so nothing else
+   would exercise it), and the old id still lands on THAT view rather than on
+   the hub default — a bookmark to Recent form that quietly opens the Dossier
+   is a broken link that looks like a working one. */
+let hubChecks = 0;
+for (const [panel, key, retired, retiredView] of [
+  ['seasonsim', 'sm', 'whatif', 'whatif'],
+  ['eo', 'ow', 'template', 'template'],
+  ['dossier', 'cl', 'clubform', 'form'],
+]) {
+  /* Named bare, not off window: these are top-level `const`s, which live in
+     the global lexical environment and never become window properties. */
+  const ids = await page.evaluate((k) => ({ sm: SM_VIEWS, ow: OW_VIEWS, cl: CL_VIEWS }[k]).map((v) => v.id), key);
+  for (const view of ids) {
+    current = `${panel}:${view}`; hubChecks++;
+    await page.evaluate(([p, v]) => { HUB_SETVIEW[p](v); renderPage(p); }, [panel, view]);
+    await page.waitForTimeout(1200);
+    const [sw, vw] = await page.evaluate(() => [document.body.scrollWidth, window.innerWidth]);
+    if (sw > vw + 2) { overflow++; console.error(`  OVERFLOW ${current}: ${sw} > ${vw}`); }
+    const state = await page.evaluate((k) => viewState(k + '-body'), key);
+    if (state !== 'ok') { overflow++; console.error(`  ! ${current} rendered ${state}, not content`); }
+  }
+  current = `${panel}:retired:${retired}`;
+  await page.evaluate((i) => openPanel(i), retired);
+  await page.waitForTimeout(1200);
+  const landed = await page.evaluate((k) => {
+    const on = document.querySelector('#' + k + '-views .lensbtn.on');
+    return on ? on.dataset.view : null;
+  }, key);
+  if (landed !== retiredView) {
+    overflow++; console.error(`  ! ${retired} landed on view ${JSON.stringify(landed)}, expected ${retiredView}`);
+  }
+}
+
 // Ignore network noise from the offline CDN (photos/crests aren't reachable in tests).
 const appErrors = errors.filter((e) => !/Failed to load resource|ERR_|404|501|net::/.test(e));
 
-console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | value charts: ${chartChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | matchday views: ${mcChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
+console.log(`panels: ${PANELS.length} | lens renders: ${lensChecks} | value charts: ${chartChecks} | fixture views: ${fxChecks} | live views: ${lvChecks} | matchday views: ${mcChecks} | hub views: ${hubChecks} | overflow: ${overflow || 'none'} | app errors: ${appErrors.length}`);
 appErrors.forEach((e) => console.error('  ! ' + e));
 
 await browser.close();

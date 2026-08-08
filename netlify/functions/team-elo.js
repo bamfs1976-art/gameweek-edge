@@ -11,10 +11,10 @@
    no name matching, and it is a live rating rather than a fixed guess.
 
    Measured against our own offline-fitted priors on the 2026-27 clubs, Elo
-   correlates +0.86 with attack and -0.93 with defence, and in a leave-one-out
-   test an Elo-derived prior is 67% closer on attack and 82% closer on defence
+   correlates +0.88 with attack and -0.93 with defence, and in a leave-one-out
+   test an Elo-derived prior is 71% closer on attack and 84% closer on defence
    than the generic promoted prior it replaces. It is NOT used to override a
-   prior we already fitted — an 8% residual is worse than the real thing.
+   prior we already fitted — a 6% residual is worse than the real thing.
 
    Source: https://github.com/olbauday/FPL-Core-Insights (used freely with a
    link back, per its README). */

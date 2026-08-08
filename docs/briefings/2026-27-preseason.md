@@ -2,7 +2,7 @@
 
 **Built for Gameweek Edge (gameweekedge.co.uk). Compiled 2 August 2026.**
 
-Season starts Saturday 22 August 2026. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
+Season starts Friday 21 August 2026, per the Premier League's own pre-season page. An earlier version of this file said Saturday 22 August, which was a day late; the correction is recorded here rather than made silently. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
 
 ---
 
@@ -29,6 +29,26 @@ This file works two ways.
 - **Ownership resets.** Mohamed Salah is leaving Liverpool (Saudi Pro League reported, exact club not yet officially announced). That frees up huge budget and reshapes the premium midfield field. Alexander Isak now leads the Liverpool line and is the key premium call there.
 - **Promoted trio.** Coventry (champions, Frank Lampard), Ipswich (runners-up, now Gary O'Neil), Hull (play-off winners, Sergej Jakirovic). All three carry tough opening runs, so cheap enablers over early starters is the safer route.
 - **Relegated (gone from the pool).** West Ham, Burnley, Wolves.
+
+---
+
+## Pre-season role watch
+
+Dead-ball signals seen in pre-season friendlies. Source: the Premier League's pre-season fixtures and results page, 7 August 2026 — a highlights reel, not a team sheet.
+
+**None of these change the club register below, deliberately.** A penalty or a free-kick in a friendly shows who was on the pitch and fancied it, not who the manager has designated. They are logged so that when GW1 settles a duty we can see whether the signal called it, rather than quietly absorbing the evidence and claiming afterwards that we knew. Where a signal contradicts the register, the register is what we still believe; this is the case against it.
+
+| Club | Signal | Register says | Read |
+|---|---|---|---|
+| Man Utd | Mbeumo scored a penalty | "Penalties Bruno", stated flat with no hedge | The missing hedge is the weak part, not the name. Bruno may simply have been off the pitch. Note Opta also has Mbeumo on United's right-side corners. |
+| Spurs | Tel scored a direct free-kick, in Sydney | Free-kicks Porro, Kudus. Tel appears on corners only | Tel sits higher in the dead-ball order than we have him |
+| Arsenal | Tzolis delivered the corner for Hincapie's goal | Corners Rice, Saka, Madueke, Odegaard | A summer signing already in the corner rotation; we carried him only as a wide-rotation differential |
+| Sunderland | Le Fee scored from distance | Free-kicks Xhaka and Le Fee | Consistent. No change |
+| Liverpool | Szoboszlai scored from outside the box | Free-kicks Szoboszlai and Wirtz | Consistent. No change |
+
+One trap in the same source: the clip captioned "Fernandes volley goal on debut" is Mateus Fernandes at Spurs, not Bruno Fernandes at United — a debut rules Bruno out. Anyone reading that list for United signals gets the wrong answer.
+
+Pre-season **results** are deliberately used nowhere. The match model fits only finished competitive fixtures from the FPL feed, which carries no friendlies, so they cannot reach it even by accident. Genoa 1-10 Bournemouth, Man Utd 0-1 Wrexham and Newcastle 1-4 Bristol City are why that is the right call: reserve XIs and 60-minute intensity against wildly uneven opposition would poison the priors, not sharpen them.
 
 ---
 
@@ -104,7 +124,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Matty Cash (attacking RB, corners, defensive points). Leon Bailey if he nails a starting wide role after Rogers.
 - Premium / captaincy: Ollie Watkins, nailed striker and penalty taker, the reliable armband here.
 - Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder.
-- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash, Bailey. Output is a real question mark after losing coach MacPhee (watch).
+- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash from the left, Digne and McGinn from the right (Opta's projected order; Bailey, previously listed here, does not feature in it). Output is a real question mark after losing coach MacPhee (watch).
 
 **Opening fixtures:** GW1 Brighton (A) hard, GW2 Arsenal (H) hard, GW3 Hull City (A) moderate, GW4 Nottingham Forest (H) moderate, GW5 Spurs (A) hard. Two hard games to open, a softer middle, then Spurs away — plus European load. Avoid the Villa defence in GW1-2; the window for their assets is GW3-4.
 
@@ -176,7 +196,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - Value: Yankuba Minteh (MID, ~£6.0-6.5m est.), on corners, high involvement. Maxim De Cuyper (attacking LB, ~£4.5-5.0m est.), set-piece involvement, strong cheap-defender value.
 - Premium / captaincy: No nailed premium post-Welbeck. Minteh or Matt O'Riley are the best captaincy-adjacent options but carry rotation risk.
 - Differentials: Yohanna, new signing likely sub-5% owned. De Cuyper.
-- Set-piece & penalties: Corners Gross, Boscagli, Minteh. Free-kicks De Cuyper, Ayari. Penalties uncertain after summer changes, O'Riley the likeliest (1/1 last season), watch pre-season.
+- Set-piece & penalties: Penalties Gross primary, O'Riley the alternative (Opta/Solio project Gross among the four highest-volume takers in the league over GW1-10 with Welbeck gone; our earlier read had this unresolved, watch pre-season). Corners Gross and Kadioglu from the left, De Cuyper and Minteh from the right. Free-kicks De Cuyper, Ayari.
 
 **Opening fixtures:** GW1 Aston Villa (H) moderate, GW2 Chelsea (A) hard, GW3 Leeds (H) moderate, GW4 Coventry City (A) moderate, GW5 Arsenal (H) hard. Mixed, with no genuinely easy game and Arsenal at home rather than away. The Leeds and Coventry weeks are the ones to target.
 
@@ -202,7 +222,7 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 ## 10. Chelsea (52 pts)
 
-**Pre-season summary:** A disappointing tenth saw Maresca sacked in January (Rosenior interim). Xabi Alonso is confirmed on a four-year deal and has driven another heavy, youth-led window built around a rebuilt spine. The marquee move is ~£117m for Morgan Rogers, plus a new senior centre-back in Lacroix. Expect a possession-based, high-line system and a deep, expensively assembled squad.
+**Pre-season summary:** A disappointing tenth saw Maresca sacked in January (Rosenior interim). Xabi Alonso is confirmed on a four-year deal and has driven another heavy, youth-led window built around a rebuilt spine. The marquee move is ~£117m for Morgan Rogers, plus a new senior centre-back in Lacroix. Expect a possession-based, high-line system and a deep, expensively assembled squad. FPL note: they also signed Austin MacPhee from Villa, paying a release clause for a set-piece coach against Premier League and Saudi competition — the other half of the transfer that carries Villa's dead-ball warning, and a reason to rate James, Palmer and Chelsea's aerial defenders on set plays rather than only in open play.
 
 **In:** Morgan Rogers (AM/W, Aston Villa, ~£117m), Maxence Lacroix (CB, Crystal Palace, ~£52m), Marco Palestra (RB, Atalanta, ~£47m), Geovany Quenda (W, Sporting, ~£43m), Emmanuel Emegha (ST, Strasbourg, ~£22m), Denner (Corinthians, ~£8m), Dastan Satpaev (ST, Kairat, ~£3m).
 
@@ -420,6 +440,8 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 - FPL prices marked "est." are estimates. Confirm every price against the official price reveal and the FPL API at launch.
 - Penalty and set-piece order is the most fluid data here because of the ten managerial changes. Re-check duties after pre-season friendlies and GW1.
 - Two minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, and Joe Gelhardt's Hull status.
+- The 21 August start date is taken from the Premier League's pre-season page and has NOT been confirmed against the FPL API — `npm run check:briefing` settles it from the GW1 deadline, and could not reach the API when the correction was made. Re-run it before relying on the date.
+- The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.
 
 ---
 

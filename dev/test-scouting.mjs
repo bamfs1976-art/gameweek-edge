@@ -375,8 +375,13 @@ console.log('• baselineBps: BPS left once the returns are stripped out');
   ok(B.bpsFromReturns(p({ assists: 3 })) === 27, 'an assist is 9 BPS');
   ok(B.bpsFromReturns(p({ element_type: 2, clean_sheets: 4 })) === 48, 'a defender clean sheet is 12 BPS');
   ok(B.bpsFromReturns(p({ element_type: 3, clean_sheets: 4 })) === 0, 'a midfielder clean sheet earns no BPS');
-  ok(B.bpsFromReturns(p({ element_type: 1, saves: 10 })) === 6, 'saves score 2 BPS per completed three');
-  ok(B.bpsFromReturns(p({ element_type: 1, saves: 2 })) === 0, 'a part-completed set of saves scores nothing');
+  /* These two asserted 2 BPS per completed THREE saves, and so pinned a bug
+     rather than a rule: the 1-in-3 rate is the POINTS rule, and BPS pays every
+     save. dev/test-bps-tariff.mjs solves it out of 745 real goalkeeper matches
+     at 2.05 per save, so the expectations are re-aimed at the real tariff.
+     A part-completed set now scores too — there are no sets. */
+  ok(B.bpsFromReturns(p({ element_type: 1, saves: 10 })) === 20, 'saves score 2 BPS each');
+  ok(B.bpsFromReturns(p({ element_type: 1, saves: 2 })) === 4, 'every save counts, including the first');
   ok(B.bpsFromReturns(p({ yellow_cards: 2 })) === -6, 'a yellow card costs 3 BPS');
   ok(B.bpsFromReturns(p({ red_cards: 1 })) === -9, 'a red card costs 9 BPS');
   ok(B.bpsFromReturns(p({ own_goals: 1 })) === -6, 'an own goal costs 6 BPS');

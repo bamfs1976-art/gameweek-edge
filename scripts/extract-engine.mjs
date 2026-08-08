@@ -161,6 +161,13 @@ export const ENGINE_FNS = [
 export const ENGINE_CONSTS = [
   /* Squad-competition thresholds, used by clubDepth. */
   'DEPTH_TIE', 'DEPTH_FRINGE', 'DEPTH_MAX',
+  /* Corner-side tariff, read by setPieceConfidence. The register and club
+     name map stay behind — they are Premier League research, and the second
+     app is a different competition, so shipping them would be dead weight
+     that reads as coverage. Without a side the tariff falls back to the
+     population figure, which is the right answer for a league we have no
+     corner research for. */
+  'CORNER_XP',
   /* Match model coefficients and the score-grid size. */
   'PLSIM', 'PLSIM_PROMOTED', 'PLSIM_ALIAS', 'LG_GRID',
   /* Elo-derived priors for clubs with no offline fit. */
