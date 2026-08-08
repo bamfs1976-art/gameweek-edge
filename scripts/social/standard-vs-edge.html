@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — Standard vs The Edge</title>
+<link rel="stylesheet" href="./fonts/fonts.css">
+<style>
+/* Evergreen social card — 1200×1200, the tier comparison.
+
+   Rebuilt as a template. The PNG shipped in assets/social/ for months with
+   no source, which meant the one card carrying the prices couldn't be
+   corrected when the prices changed — the exact card you least want to be
+   un-editable.
+
+   Feature rows track docs/social/STANDARD_VS_THE_EDGE.md and §9 of
+   docs/FEATURES.md. Keep the free list first and the paid list second: the
+   argument is that Standard is genuinely useful, so it has to be read
+   first. */
+:root{
+  --bg:#080b0f; --panel:#101820; --line:rgba(147,162,174,.18);
+  --green:#1f9d5c; --green-lit:#2ecf73;
+  --ink:#eef3f7; --ink2:#93a2ae; --ink3:#5f6d78;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --body:'Public Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1200px;height:1200px;background:var(--bg);color:var(--ink);font-family:var(--body)}
+.card{
+  width:1200px;height:1200px;padding:64px 72px;display:flex;flex-direction:column;
+  background:
+    radial-gradient(900px 560px at 84% -10%,rgba(31,157,92,.20),transparent 62%),
+    radial-gradient(760px 620px at -10% 112%,rgba(31,157,92,.10),transparent 62%),
+    linear-gradient(168deg,#0b1016 0%,#080b0f 58%);
+}
+
+/* Header */
+.hd{display:flex;align-items:center;gap:16px}
+.mark{width:52px;height:52px;flex:none}
+.brand{font-family:var(--display);font-size:27px;font-weight:800;letter-spacing:-.02em}
+.brand span{font-weight:600;color:var(--ink2)}
+.kind{
+  margin-left:auto;font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--green);border:1px solid rgba(31,157,92,.45);
+  border-radius:999px;padding:9px 18px;background:rgba(31,157,92,.10);
+}
+
+/* Headline */
+.head{margin-top:30px}
+h1{font-family:var(--display);font-size:70px;line-height:.96;font-weight:800;letter-spacing:-.035em}
+h1 em{font-style:normal;color:var(--ink2)}
+.sub{margin-top:14px;font-size:25px;font-weight:600;color:var(--ink2);line-height:1.32;max-width:940px}
+.sub b{color:var(--ink);font-weight:700}
+
+/* Comparison table */
+table{width:100%;border-collapse:collapse;margin-top:22px}
+col.feat{width:auto}
+col.tier{width:186px}
+thead th{padding:0 0 12px;vertical-align:bottom}
+.cap{
+  display:block;font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ink3);margin-bottom:9px;
+}
+.cap.pro{color:var(--green)}
+.chip{
+  display:block;font-family:var(--mono);font-size:19px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;border:1px solid var(--line);border-radius:12px;padding:13px 0;
+  background:var(--panel);color:var(--ink2);
+}
+.chip.pro{border-color:rgba(31,157,92,.55);background:rgba(31,157,92,.12);color:var(--green-lit)}
+
+tbody td{border-top:1px solid var(--line);padding:13px 0;font-size:25px;font-weight:600;color:var(--ink)}
+tbody td.mark-cell{text-align:center}
+/* The paid-only block reads as one run rather than five unrelated rows. */
+tbody tr.pro-row td:first-child{color:var(--ink)}
+.tick{display:inline-block;width:26px;height:26px}
+.dash{display:inline-block;width:22px;height:3px;border-radius:2px;background:var(--ink3);opacity:.75;vertical-align:middle}
+
+/* Footer */
+.ft{margin-top:auto;display:flex;align-items:flex-end;gap:20px;border-top:1px solid var(--line);padding-top:22px}
+.ft-l{font-family:var(--display);font-size:24px;font-weight:800;color:var(--green)}
+.ft-l em{display:block;font-style:normal;font-family:var(--body);font-size:15px;font-weight:600;
+  color:var(--ink3);margin-top:8px;max-width:640px;line-height:1.45}
+.ft-r{margin-left:auto;text-align:right;font-family:var(--mono);font-size:18px;font-weight:500;color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="hd">
+    <svg class="mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+      <rect x="1" y="1" width="36" height="36" rx="10" fill="#15824a"/>
+      <rect x="1" y="1" width="36" height="36" rx="10" stroke="#1f9d5c" stroke-width="1.5" opacity=".55"/>
+      <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+    </svg>
+    <div class="brand"><span>Gameweek</span> Edge</div>
+    <div class="kind">Compare</div>
+  </div>
+
+  <div class="head">
+    <h1>Standard <em>vs</em> The Edge</h1>
+    <p class="sub">Standard tells you what to do this week.
+      <b>The Edge tells you how to win your league.</b></p>
+  </div>
+
+  <table>
+    <colgroup><col class="feat"><col class="tier"><col class="tier"></colgroup>
+    <thead>
+      <tr>
+        <th></th>
+        <th><span class="cap">Free</span><span class="chip">Standard</span></th>
+        <th><span class="cap pro">Pro</span><span class="chip pro">The Edge</span></th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <div class="ft">
+    <div class="ft-l">gameweekedge.co.uk
+      <em>Ad-free. Not affiliated with, endorsed by or associated with the Premier
+        League or the official Fantasy Premier League game.</em>
+    </div>
+    <div class="ft-r">The Edge — £3.99/mo · £24.99 season</div>
+  </div>
+</div>
+
+<script>
+/* Rows as data, so a feature moving tier is a one-word edit rather than a
+   hand-patched pair of table cells. */
+const ROWS = [
+  ['Predicted points & Model XI',            true],
+  ['Match Centre & live rank',               true],
+  ['GW Debrief — what your captain cost you', true],
+  ['Price & suspension model',               true],
+  ['Differentials & clean-sheet matrix',     true],
+  ['AI Scout & Ask the Scout',               false],
+  ['Rival Scout — overtake your league',     false],
+  ['EO Tracker & Template Meter',            false],
+  ['Season & What-If simulators',            false],
+  ['DefCon tools & set-piece register',      false],
+];
+
+const TICK = '<svg class="tick" viewBox="0 0 24 24" fill="none" aria-label="included">'
+  + '<path d="M4 12.5 L9.5 18 L20 6.5" stroke="#2ecf73" stroke-width="3.2" '
+  + 'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const DASH = '<span class="dash" aria-label="not included"></span>';
+
+document.getElementById('rows').innerHTML = ROWS.map(([label, free]) =>
+  `<tr class="${free ? '' : 'pro-row'}"><td>${label}</td>`
+  + `<td class="mark-cell">${free ? TICK : DASH}</td>`
+  + `<td class="mark-cell">${TICK}</td></tr>`).join('');
+
+/* Explicit face loading, then publish the count — document.fonts.ready alone
+   resolves against an empty set when the files can't be reached, which ships
+   a fallback-face card that looks almost right. See defcon-explainer.html. */
+const FACES = [
+  '800 70px "Bricolage Grotesque"',
+  '600 25px "Public Sans"',
+  '700 25px "Public Sans"',
+  '700 19px "JetBrains Mono"',
+  '500 18px "JetBrains Mono"',
+];
+Promise.all(FACES.map((f) => document.fonts.load(f)))
+  .then(() => document.fonts.ready)
+  .then(() => { window.__FACES__ = document.fonts.size; window.__READY__ = true; });
+</script>
+</body>
+</html>

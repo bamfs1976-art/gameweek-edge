@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>Gameweek Edge — DefCon explainer</title>
+<link rel="stylesheet" href="./fonts/fonts.css">
+<style>
+/* Evergreen social card — 1200×1200, the DefCon rules explained.
+
+   Same palette and faces as scripts/content/template.html so the evergreen
+   cards and the daily ones read as one account. Three differences, all
+   deliberate: 1200 rather than 1080, to sit beside gwe-standard-vs-edge.png
+   in assets/social/; a monospace face for the labels, which is the "terminal"
+   register the paired comparison card already uses; and vendored fonts rather
+   than a Google Fonts link, so a re-render with no network still produces the
+   committed PNG rather than a fallback-face lookalike.
+
+   No data source. The thresholds are the game's published rules, so this
+   card is hard-coded and evergreen — it is the one social asset that does
+   not go stale between seasons, and it should not gain a live dependency. */
+:root{
+  --bg:#080b0f; --panel:#101820; --line:rgba(147,162,174,.18);
+  --green:#1f9d5c; --green-lit:#2ecf73; --green2:#15824a;
+  --ink:#eef3f7; --ink2:#93a2ae; --ink3:#5f6d78;
+  --display:'Bricolage Grotesque',system-ui,sans-serif;
+  --body:'Public Sans',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1200px;height:1200px;background:var(--bg);color:var(--ink);font-family:var(--body)}
+.card{
+  width:1200px;height:1200px;padding:64px 72px;display:flex;flex-direction:column;
+  background:
+    radial-gradient(900px 560px at 84% -10%,rgba(31,157,92,.20),transparent 62%),
+    radial-gradient(760px 620px at -10% 112%,rgba(31,157,92,.10),transparent 62%),
+    linear-gradient(168deg,#0b1016 0%,#080b0f 58%);
+}
+
+/* Header */
+.hd{display:flex;align-items:center;gap:16px}
+.mark{width:52px;height:52px;flex:none}
+.brand{font-family:var(--display);font-size:27px;font-weight:800;letter-spacing:-.02em}
+.brand span{font-weight:600;color:var(--ink2)}
+.kind{
+  margin-left:auto;font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--green);border:1px solid rgba(31,157,92,.45);
+  border-radius:999px;padding:9px 18px;background:rgba(31,157,92,.10);
+}
+
+/* Headline */
+.head{margin-top:38px}
+h1{font-family:var(--display);font-size:78px;line-height:.96;font-weight:800;letter-spacing:-.035em}
+h1 em{font-style:normal;color:var(--ink2)}
+.sub{margin-top:16px;font-size:27px;font-weight:600;color:var(--ink2);line-height:1.34;max-width:900px}
+.sub b{color:var(--ink);font-weight:700}
+
+/* The two thresholds */
+.body{margin-top:28px}
+.pair{display:flex;gap:26px}
+.th{
+  flex:1;border:1px solid var(--line);border-radius:22px;background:var(--panel);
+  padding:28px 28px 26px;position:relative;overflow:hidden;
+}
+.th::after{content:'';position:absolute;inset:0 0 auto;height:3px;background:var(--green);opacity:.55}
+.th .who{
+  font-family:var(--mono);font-size:17px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--green);display:flex;align-items:center;gap:11px;
+}
+.th .who i{width:9px;height:9px;border-radius:50%;background:var(--green);flex:none}
+.th .n{
+  font-family:var(--display);font-size:104px;font-weight:800;letter-spacing:-.05em;line-height:.9;
+  color:var(--green-lit);margin-top:18px;
+}
+.th .unit{
+  font-family:var(--mono);font-size:16px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--ink3);margin-top:13px;
+}
+.th .what{font-size:24px;font-weight:600;color:var(--ink2);line-height:1.34;margin-top:16px;min-height:100px}
+.th .what b{color:var(--ink);font-weight:700}
+.th .pts{
+  display:inline-block;font-family:var(--mono);font-size:21px;font-weight:700;color:var(--green);
+  border:1px solid rgba(31,157,92,.45);border-radius:12px;padding:10px 18px;
+  background:rgba(31,157,92,.10);
+}
+
+/* The cap */
+.cap{
+  margin-top:20px;display:flex;align-items:center;gap:24px;
+  border:1px solid var(--line);border-radius:20px;background:rgba(16,24,32,.6);padding:22px 30px;
+}
+.cap .tag{
+  font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink3);border:1px solid var(--line);border-radius:10px;padding:10px 16px;flex:none;
+}
+.cap p{font-size:25px;font-weight:600;color:var(--ink2);line-height:1.34}
+.cap p b{color:var(--ink);font-weight:800}
+
+/* The payoff */
+.pay{margin-top:26px;font-family:var(--display);font-size:38px;font-weight:800;
+  letter-spacing:-.025em;line-height:1.14;max-width:980px}
+.pay span{color:var(--green-lit)}
+
+/* Footer */
+.ft{margin-top:auto;display:flex;align-items:flex-end;gap:20px;border-top:1px solid var(--line);padding-top:24px}
+.ft-l{font-family:var(--display);font-size:24px;font-weight:800;color:var(--green)}
+.ft-l em{display:block;font-style:normal;font-family:var(--body);font-size:15px;font-weight:600;
+  color:var(--ink3);margin-top:8px;max-width:660px;line-height:1.45}
+.ft-r{margin-left:auto;text-align:right;font-family:var(--mono);font-size:19px;font-weight:500;color:var(--ink2)}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="hd">
+    <svg class="mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+      <rect x="1" y="1" width="36" height="36" rx="10" fill="#15824a"/>
+      <rect x="1" y="1" width="36" height="36" rx="10" stroke="#1f9d5c" stroke-width="1.5" opacity=".55"/>
+      <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+    </svg>
+    <div class="brand"><span>Gameweek</span> Edge</div>
+    <div class="kind">Explainer</div>
+  </div>
+
+  <div class="head">
+    <h1>DefCon, <em>explained</em></h1>
+    <p class="sub">Defensive Contribution points — <b>the cheapest edge in FPL</b>, and
+      they're back for 2026/27.</p>
+  </div>
+
+  <div class="body">
+    <div class="pair">
+      <div class="th">
+        <div class="who"><i></i>Defenders</div>
+        <div class="n">10</div>
+        <div class="unit">actions in a match</div>
+        <p class="what">Clearances, blocks, interceptions &amp; tackles.
+          <b>Recoveries don't count</b> for defenders.</p>
+        <span class="pts">→ +2 pts</span>
+      </div>
+      <div class="th">
+        <div class="who"><i></i>Midfielders &amp; forwards</div>
+        <div class="n">12</div>
+        <div class="unit">actions in a match</div>
+        <p class="what">The same four, <b>plus ball recoveries</b>. A higher bar,
+          but far more ways to clear it.</p>
+        <span class="pts">→ +2 pts</span>
+      </div>
+    </div>
+
+    <div class="cap">
+      <span class="tag">The cap</span>
+      <p>Hit the threshold once and that's the lot — <b>a maximum of +2 per player,
+        per match.</b></p>
+    </div>
+
+    <p class="pay">Which is why a defensive mid can be a<br><span>near-nailed cheap returner.</span></p>
+  </div>
+
+  <div class="ft">
+    <div class="ft-l">gameweekedge.co.uk
+      <em>Ad-free. Not affiliated with, endorsed by or associated with the Premier
+        League or the official Fantasy Premier League game.</em>
+    </div>
+    <div class="ft-r">Tracked live in the Match Centre</div>
+  </div>
+</div>
+
+<script>
+/* The renderer waits on this rather than on networkidle: the display face
+   decides the line breaks, so screenshotting before it loads captures the
+   fallback layout.
+
+   document.fonts.ready alone is not that guard. With no route to the font
+   files it resolves immediately against an empty face set, and the render
+   silently ships a card set in system-ui — which is how the first version of
+   this card went out. So load the faces explicitly, then publish the count
+   for the renderer to assert on. */
+const FACES = [
+  '800 82px "Bricolage Grotesque"',
+  '600 27px "Public Sans"',
+  '700 24px "Public Sans"',
+  '700 17px "JetBrains Mono"',
+  '500 16px "JetBrains Mono"',
+];
+Promise.all(FACES.map((f) => document.fonts.load(f)))
+  .then(() => document.fonts.ready)
+  .then(() => { window.__FACES__ = document.fonts.size; window.__READY__ = true; });
+</script>
+</body>
+</html>

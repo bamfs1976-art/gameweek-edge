@@ -557,7 +557,15 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   /* The gate must actually be applied at each exposure point. */
   const gate = (fn) => html.includes(fn);
   ok(gate('function canSeePanel('), 'canSeePanel gate exists');
-  ok(/NAV\.filter\(canSeeArea\)/.test(html), 'sidebar areas are filtered by the gate');
+  /* The sidebar filters through navVisibleArea now, because the Simple view
+     narrows the nav as well as the detail. That must NARROW the owner and
+     capability gate, never replace it — so assert both the call site and the
+     delegation, or a Simple view could quietly expose an owner area. */
+  ok(/NAV\.filter\(navVisibleArea\)/.test(html), 'sidebar areas are filtered by the gate');
+  ok(/function navVisibleArea\(a\)\{\s*if\(!canSeeArea\(a\)\)return false;/.test(html),
+    'and the simple-view filter still defers to canSeeArea');
+  ok(/function navVisible\(p\)\{\s*if\(!canSeePanel\(p\)\)return false;/.test(html),
+    'the panel-level simple filter still defers to canSeePanel');
   ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'the area tabs are filtered by the gate');
   ok(/if\(!canSeePanel\(p\)\)return;/.test(html), 'command palette is filtered by the gate');
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),

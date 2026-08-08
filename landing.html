@@ -3,6 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+/* Record the visit, so the front door in index.html lets this device
+   straight through from now on. Two jobs in one line: it stops the trip
+   back into the app bouncing here again (every CTA below points at "/"),
+   and it keeps the promise that the pitch is shown once, not on every
+   visit. See docs/FIRST_RUN_UX.md §4.1. */
+try{ localStorage.setItem('ge-visited','1'); }catch(_){}
+</script>
 <title>Gameweek Edge — the calm, clear edge for FPL managers</title>
 <meta name="description" content="Gameweek Edge is the smart companion for Fantasy Premier League managers: predicted points, an AI scout, a Match Centre and a per-gameweek debrief that tells you what your captain cost you — the app that tells you what to do next. Ad-free, from the official data.">
 <link rel="canonical" href="https://gameweekedge.co.uk/">
