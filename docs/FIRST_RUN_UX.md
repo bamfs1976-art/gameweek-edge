@@ -240,12 +240,65 @@ Ordered by impact ÷ effort. The first two are bug fixes and could ship today.
 |---|---|---|---|
 | ~~1~~ | ~~Route `/` to the landing page for cold visitors~~ — **done**, see §5.1 | XS | Every launch link currently opens the deep end. Nothing else matters until this is true |
 | ~~2~~ | ~~Delete or revive `maybeOnboard()`~~ — **done**, deleted | XS | Dead code that reads as an intentional feature. Decide which, don't leave it |
-| 3 | Trim the beginner dashboard to the three calls | S | Turns a status board into a decision board on the one screen everyone sees |
-| 4 | Hide CSV/refresh on first run; one CTA at a time | S | Removes the two loudest distractions from the primary action |
-| 5 | Expand jargon on first use in beginner density | S | Fixes "I don't know what this means" without another tooltip |
-| 6 | Extend density to the nav — 4 destinations | M | The big structural win, reusing a mechanism that already exists |
-| 7 | The "I'm new to FPL" explainer | M | The genuinely missing content, not just a rearrangement |
-| 8 | Rewrite the tour around the job, not the furniture | M | Only worth doing after 3 and 6, or it captions the wrong thing |
+| ~~3~~ | ~~Trim the beginner dashboard to the three calls~~ — **done** | S | Turns a status board into a decision board on the one screen everyone sees |
+| ~~4~~ | ~~Hide CSV/refresh on first run; one CTA at a time~~ — **done** | S | Removes the two loudest distractions from the primary action |
+| ~~5~~ | ~~Expand jargon on first use in beginner density~~ — **done** | S | Fixes "I don't know what this means" without another tooltip |
+| ~~6~~ | ~~Extend density to the nav~~ — **done**, 5 areas / 12 panels | M | The big structural win, reusing a mechanism that already exists |
+| ~~7~~ | ~~The "I'm new to FPL" explainer~~ — **done**, `#fplbasics` | M | The genuinely missing content, not just a rearrangement |
+| ~~8~~ | ~~Rewrite the tour around the job, not the furniture~~ — **done** | M | Only worth doing after 3 and 6, or it captions the wrong thing |
+
+### 5.2 What shipped for 3–8
+
+**The toggle is now called Simple / Everything**, not Beginner / Expert. Nobody
+enjoys clicking a button that calls them a beginner. The stored values are
+unchanged (`beginner` / `expert`), so nothing else had to move.
+
+**Simple is now a navigation filter as well as a detail filter** — the single
+biggest change, and it reuses the mechanism that was already there rather than
+inventing a second one. `SIMPLE_PANELS` lists twelve panels across five areas
+(Home, My Team, Players, Planner, Live); Rivals, Match Centre and every
+Pro-locked panel drop out of the nav until the user asks for Everything.
+
+The rule that makes it safe: **this filters navigation only.** `openPanel` still
+uses `canSeePanel`, so every deep link, bookmark, push notification and command
+palette result reaches its panel exactly as before — a hidden panel is unlisted,
+never unreachable. And if you arrive on one from outside, the area tab strip
+falls back to the full list so you can still move sideways rather than being
+stranded. `dev/test-simplenav.mjs` guards both.
+
+**The dashboard opens on one card.** `dashHidden()` defaults simple mode to
+hiding Model XI, Differentials, Live state and Signals, leaving the "this week ·
+action" card — the captain, the transfer and the chip. A "Show everything +"
+chip reveals the rest in one tap and remembers the choice.
+
+**Terminal furniture waits for Everything.** CSV export and refresh leave the
+top bar; so do the market and fitness counters and the ⌘K chip in the ticker
+(the gameweek and the deadline stay — they are the two facts a new manager
+actually needs). On the dashboard the metrics strip and the `DATA / SRC` line go
+too: both restate what the action card and the "graded in public" strip already
+say, and the strip's Model XI figure pointed at a panel simple mode no longer
+shows.
+
+**Jargon expands on first use.** `jt()` now appends a terse gloss the first time
+a term appears in a render — *xP (predicted points)*, *EO (effective
+ownership)* — with the full definition still in the tooltip. Once per panel
+render, not once per session: a term explained three panels ago is not explained
+on the page you are reading.
+
+**`#fplbasics` explains the game, not the app.** Eight cards — the squad, the
+bench, scoring, the captain, transfers and the −4, chips, the deadline, DefCon —
+then what the app does with them. Entirely static, so it renders before a single
+request lands, which matters because the person reading it is the least likely
+to wait. Signposted from the simple dashboard, the tour and the glossary.
+
+**The tour answers the question people arrive with:** your three calls → make it
+yours → where everything else lives. The old middle step pointed at Model XI,
+which simple mode no longer shows on arrival.
+
+**Not done, deliberately:** hiding the Live area outside a live gameweek. The
+signal (`window._gwLive`) is set after the nav is built, and a nav item that
+appears a second later is worse than one that is always there. It needs the
+gameweek state known before first paint.
 
 ### 5.1 What shipped for 1 and 2
 

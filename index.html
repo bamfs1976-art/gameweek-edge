@@ -330,6 +330,26 @@ a{color:inherit;text-decoration:none}
 #help-btn{font-weight:800;font-size:15px;line-height:1}
 #density-btn{font-family:var(--font-mono,monospace);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 body[data-density="beginner"] .expert-only{display:none}
+/* Simple mode hides the two topbar power tools. Both are expert reflexes and
+   both drew the eye at the same weight as the only button that matters on a
+   first visit — see docs/FIRST_RUN_UX.md §4.6. Linking a team flips density to
+   expert, so they come back the moment they are wanted. */
+body[data-density="beginner"] #export-btn,
+body[data-density="beginner"] #refresh-btn{display:none}
+/* First-use expansion of a jargon term, beginner density only. */
+.jt-gloss{color:var(--text-3);font-weight:400;font-size:.92em}
+/* Terminal furniture that reads as noise before you know the product. The
+   deadline and the gameweek stay — they are the two facts a new manager
+   actually needs — while the market counters, the fitness counter and the
+   command-palette chip wait for Everything. On the dashboard the metrics
+   strip and the provenance line go the same way: both restate what the
+   action card and the "graded in public" strip already say, and the strip's
+   MODEL XI figure points at a panel simple mode does not show. */
+body[data-density="beginner"] #tk-prices,
+body[data-density="beginner"] #tk-flags,
+body[data-density="beginner"] #tk-cmdk-btn,
+body[data-density="beginner"] .tk-strip,
+body[data-density="beginner"] .dash-meta{display:none}
 .beginner-only{display:none}
 body[data-density="beginner"] .beginner-only{display:block}
 .tour{position:fixed;inset:0;z-index:200;pointer-events:none}
@@ -2143,7 +2163,7 @@ body{font-size:14px;line-height:1.35}
             <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
           </svg>
         </button>
-        <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Toggle beginner or expert detail" title="Beginner / Expert detail">Beginner</button>
+        <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Switch between the simple view and every tool" title="Simple / Everything">Simple</button>
         <button class="btn btn-ghost btn-icon" id="help-btn" aria-label="Help, tour and glossary" title="Help &amp; glossary">?</button>
         <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -3284,6 +3304,45 @@ function canSeeArea(a){
   return (a.panels||[]).some(canSeePanel);
 }
 
+/* ── SIMPLE NAVIGATION ─────────────────────────────────────
+   Thirty-six panels is why the app read as confusing on first viewing. The
+   fix reuses the mechanism already here: density defaults to beginner until
+   a team is linked, so let it decide how many DESTINATIONS there are, not
+   only how much detail each one prints.
+
+   Twelve panels across five areas, chosen to answer the questions a first
+   season actually asks — what do I do, who is in my team, who should I buy,
+   who plays whom, what is happening right now.
+
+   This is a NAVIGATION filter and nothing more. openPanel still uses
+   canSeePanel, so every deep link, bookmark, push notification and command
+   palette result works exactly as before — a hidden panel is unlisted, never
+   unreachable. Getting that the wrong way round would turn a decluttered nav
+   into a broken one. */
+const SIMPLE_PANELS=new Set([
+  'dashboard','myweek','gw-actions',              /* Home — what do I do this week */
+  'squad','captain','transfers','gwreport',       /* My Team */
+  'allplayers','price','news',                    /* Players */
+  'fixtures',                                     /* Planner */
+  'liverank'                                      /* Live */
+]);
+function simpleNav(){return getDensity()==='beginner';}
+/* Visible in the NAV — a narrower question than canSeePanel's "does this
+   exist for you". Pro panels drop out of simple mode entirely: a lock is a
+   good advertisement to someone who has found their feet, and a wall to
+   someone who has not. */
+function navVisible(p){
+  if(!canSeePanel(p))return false;
+  if(!simpleNav())return true;
+  if(p&&p.tier==='paid')return false;
+  return SIMPLE_PANELS.has(p&&p.id);
+}
+function navVisibleArea(a){
+  if(!canSeeArea(a))return false;
+  if(!simpleNav())return true;
+  return (a.panels||[]).some(navVisible);
+}
+
 /* Flat lookup of every panel */
 const PANELS = {};
 NAV.forEach(area=>area.panels.forEach(p=>{
@@ -3295,6 +3354,11 @@ PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:
 /* Hidden panel: plain-English glossary at /glossary (reachable from the ? menu,
    the tour, and inline jargon). */
 PANELS.glossary={id:'glossary',label:'Glossary',icon:'question',tier:'free',areaId:'home',areaLabel:'Home'};
+/* Hidden panel: how Fantasy Premier League itself works. The glossary answers
+   "what does this word mean" for someone who already has the word; this
+   answers "how does this game work" for someone who does not. Reachable from
+   the ? menu, the tour and the simple dashboard. */
+PANELS.fplbasics={id:'fplbasics',label:'New to FPL',icon:'question',tier:'free',areaId:'home',areaLabel:'Home'};
 
 /* ── Onboarding, jargon tooltips and beginner/expert density ──────
    Plain-English definitions for every term a first-time manager meets. */
@@ -3312,16 +3376,42 @@ const GLOSSARY={
   'held-out backtest':'Testing the model on gameweeks it never saw while being fitted — the honest measure of accuracy.',
   'chip':'A one-off booster (Wildcard, Free Hit, Bench Boost, Triple Captain) you play once per half-season.'
 };
+/* Terse inline expansions. The GLOSSARY entries are definitions — right for
+   the glossary panel, far too long to sit mid-sentence — so first use in
+   simple mode gets one of these instead, and the tooltip carries the rest. */
+const JT_SHORT={
+  'xP':'predicted points',
+  'EO':'effective ownership',
+  'ΔP':'price change',
+  'RPS':'forecast accuracy',
+  'bBPS/90':'baseline bonus score',
+  'differential':'a low-owned player',
+  'template':'what almost everyone owns',
+  'threshold':'the level that moves a price',
+  'chip':'a one-off booster'
+};
+/* Once per panel render, not once per session: a term explained three panels
+   ago is not explained on the page you are reading. renderPage clears it. */
+let JT_SEEN=new Set();
 /* An inline jargon term with a tap- and hover-friendly tooltip. */
 function jt(term,label){const def=GLOSSARY[term]||'';
-  return '<span class="jargon" tabindex="0" role="note" aria-label="'+esc(term)+': '+esc(def)+'" data-tip="'+esc(def)+'">'+esc(label||term)+'</span>';}
+  let body=esc(label||term);
+  if(getDensity()==='beginner'&&JT_SHORT[term]&&!JT_SEEN.has(term)){
+    JT_SEEN.add(term);
+    body+=' <span class="jt-gloss">('+esc(JT_SHORT[term])+')</span>';
+  }
+  return '<span class="jargon" tabindex="0" role="note" aria-label="'+esc(term)+': '+esc(def)+'" data-tip="'+esc(def)+'">'+body+'</span>';}
 
 /* Beginner shows plain-English one-liners and hides RPS / ΔP / held-out
    labels; expert shows everything. Default beginner until a team is linked. */
 function getDensity(){try{return localStorage.getItem('ge-density')||(getMid()?'expert':'beginner');}catch(_){return 'beginner';}}
 function applyDensity(d){if(document.body)document.body.setAttribute('data-density',d);}
+function densityLabel(d){return d==='beginner'?'Simple':'Everything';}
 function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}applyDensity(d);
-  const b=document.getElementById('density-btn');if(b)b.textContent=d==='beginner'?'Beginner':'Expert';}
+  const b=document.getElementById('density-btn');if(b)b.textContent=densityLabel(d);
+  /* Density now decides how many destinations the nav offers, not just how
+     much detail a panel prints, so the shell has to be rebuilt with it. */
+  try{buildNav();buildBottomNav();if(typeof openPanel==='function')openPanel(currentPanel);}catch(_){}}
 
 /* ── Dashboard panel curation ──────────────────────────────
    The density toggle controls detail *inside* a panel; this controls which
@@ -3333,15 +3423,16 @@ const DASH_PANELS=[['action','This week'],['xi','Model XI'],['diffs','Differenti
 function dashHidden(){
   try{const raw=localStorage.getItem('ge-dash-hidden');
     if(raw)return new Set(JSON.parse(raw)||[]);}catch(_){}
-  /* No stored choice: beginners start without Differentials (the most
-     advanced of the four); anyone in expert detail sees the full set. */
-  return new Set(getDensity()==='beginner'?['diffs']:[]);
+  /* No stored choice: simple mode opens on the one panel that answers "what
+     do I do this week" and nothing else. The rest are a chip away and stay
+     put once chosen. Expert opens on the full set. See §4.3. */
+  return new Set(getDensity()==='beginner'?['xi','diffs','live','feed']:[]);
 }
 function dashApply(){
   const hid=dashHidden();
   document.querySelectorAll('#ge-data [data-dash]').forEach(el=>{
     el.hidden=hid.has(el.getAttribute('data-dash'));});
-  document.querySelectorAll('#ge-data .dash-chip').forEach(c=>{
+  document.querySelectorAll('#ge-data .dash-chip[data-chip]').forEach(c=>{
     const on=!hid.has(c.getAttribute('data-chip'));
     c.classList.toggle('on',on);c.setAttribute('aria-pressed',on?'true':'false');});
 }
@@ -3351,19 +3442,36 @@ function dashToggle(k){
   try{localStorage.setItem('ge-dash-hidden',JSON.stringify([...hid]));}catch(_){}
   dashApply();
 }
+/* Reveal the whole board and remember it, so the chip row is a one-way door
+   out of the simple default rather than five separate decisions. */
+function dashShowAll(){
+  try{localStorage.setItem('ge-dash-hidden','[]');}catch(_){}
+  dashApply();
+  const row=document.querySelector('#ge-data .dash-chips');
+  if(row)row.outerHTML=dashChipRow();
+}
 function dashChipRow(){
   const hid=dashHidden();
   return '<div class="dash-chips" role="group" aria-label="Show or hide dashboard panels">'+
     DASH_PANELS.map(([k,l])=>'<button type="button" class="dash-chip'+(hid.has(k)?'':' on')+'" data-chip="'+k+'"'+
       ' aria-pressed="'+(hid.has(k)?'false':'true')+'" onclick="dashToggle(\''+k+'\')">'+esc(l)+'</button>').join('')+
+    /* One tap to the whole board, so the simple default is a starting point
+       rather than a wall of off switches to work through. */
+    (hid.size?'<button type="button" class="dash-chip" onclick="dashShowAll()">Show everything +</button>':'')+
     '</div>';
 }
 
-/* Three-step spotlight tour — non-blocking, skippable, shown once. */
+/* Three-step spotlight tour — non-blocking, skippable, shown once.
+
+   It used to name the furniture: "This Week · Action", "Model XI", "Link your
+   team". That is a caption on a page the reader has already decided is too
+   much. These three answer what they came to find out — what do I do, how do
+   I make it mine, where is everything else — in that order. The Model XI step
+   went because simple mode no longer shows it on arrival. */
 const TOUR=[
-  {sel:'#tour-q1',title:'This Week · Action',body:'Your captain, transfer and chip call for this gameweek, in one glance.'},
-  {sel:'#tour-q2',title:'Model XI',body:'The 11 players our model would pick this week.'},
-  {sel:'#signin-btn',title:'Link your team',body:'Personalise all of this to your own squad.'}
+  {sel:'#tour-q1',title:'Your three calls',body:'Who to captain, whether to make a transfer, and whether to play a chip. Decide those and your gameweek is done.'},
+  {sel:'#signin-btn',title:'Make it yours',body:'Link your FPL team and these become calls about your squad, not the model\u2019s generic one. Nothing to sign up for.'},
+  {sel:'#density-btn',title:'When you want more',body:'You are on the simple view. Switch to Everything for the other thirty tools — prices, rivals, simulators — whenever you are ready.'}
 ];
 let TOUR_I=0;
 function tourSeen(){try{return localStorage.getItem('ge-tour-seen')==='1';}catch(_){return true;}}
@@ -3384,7 +3492,7 @@ function tourShow(){const o=document.getElementById('tour');if(!o)return;const s
 function startTour(){endTour();try{localStorage.removeItem('ge-tour-seen');}catch(_){}TOUR_I=0;
   const o=document.createElement('div');o.id='tour';o.className='tour';
   o.innerHTML='<div class="tour-spot"></div><div class="tour-pop"><div class="tour-step"></div><h4 class="tour-title"></h4>'+
-    '<p class="tour-body"></p><div class="tour-actions"><a href="#" class="tour-gloss" onclick="endTour();openPanel(\'glossary\');return false">Glossary</a>'+
+    '<p class="tour-body"></p><div class="tour-actions"><a href="#" class="tour-gloss" onclick="endTour();openPanel(\'fplbasics\');return false">New to FPL?</a>'+
     '<button class="btn btn-ghost btn-sm" id="tour-skip">Skip</button><button class="btn btn-cta btn-sm" id="tour-next">Next</button></div></div>';
   document.body.appendChild(o);
   o.querySelector('#tour-skip').onclick=endTour;
@@ -3397,11 +3505,45 @@ async function hydrateGlossary(host){
     '<div class="dl-nm mono" style="text-transform:none;color:var(--green-bright)">'+esc(k)+'</div>'+
     '<div class="dl-sub" style="margin-top:3px;line-height:1.5;font-size:12.5px">'+esc(GLOSSARY[k])+'</div></div>').join('');
   host.innerHTML='<div class="card mb-20"><div class="card-title">FPL &amp; model terms</div><div class="dl">'+rows+'</div></div>'+
-    '<div class="dl-sub">New to FPL? <a href="#" onclick="startTour();return false">Replay the 3-step tour →</a></div>';
+    '<div class="dl-sub">New to FPL? <a href="#" onclick="openPanel(\'fplbasics\');return false">Start with how the game works →</a>'+
+    ' · <a href="#" onclick="startTour();return false">Replay the 3-step tour →</a></div>';
+}
+/* The rules of the game, not of the app. Deliberately static: nothing here
+   depends on live data, so it renders in full before a single request lands —
+   which matters, because the person reading it is the least likely to wait. */
+const FPL_BASICS=[
+  ['Pick fifteen players','£100.0m to spend, two goalkeepers, five defenders, five midfielders and three forwards. No more than three from any one club.'],
+  ['Eleven start, four sit','Only your starting eleven score. If a starter doesn\u2019t play, a substitute is swapped in automatically — so bench order matters before you have even watched a match.'],
+  ['How points are scored','Playing earns 1–2. Goals earn 4–6 depending on position, assists 3, a clean sheet 4 for a defender or goalkeeper. Defensive work now scores too — see DefCon below.'],
+  ['Your captain scores double','The single biggest call you make each week. Pick the wrong one and a good gameweek becomes an average one. The vice-captain takes over if your captain doesn\u2019t play.'],
+  ['One free transfer a week','Unused ones roll up, to a limit. Any transfer beyond your free ones costs 4 points, which is roughly a goal — so a \u201cminus 4\u201d has to pay for itself.'],
+  ['Four chips, one-off boosts','Wildcard rebuilds the squad for free, Free Hit does it for one week only, Bench Boost scores your bench too, Triple Captain trebles instead of doubles. They reset at the halfway point.'],
+  ['The deadline is absolute','Ninety minutes before the first match of the gameweek. Nothing can be changed after it — not your captain, not your bench, nothing.'],
+  ['Defensive Contribution (DefCon)','New-ish, and the cheapest points in the game. A defender making 10 clearances, blocks, interceptions and tackles in a match earns +2; a midfielder or forward needs 12 of those plus ball recoveries. Capped at +2 each.']
+];
+async function hydrateFplBasics(host){
+  const rows=FPL_BASICS.map(([h,b],i)=>
+    '<div class="dl-row" style="display:block;padding:13px 0">'+
+      '<div class="dl-nm" style="text-transform:none;font-size:14px">'+(i+1)+'. '+esc(h)+'</div>'+
+      '<div class="dl-sub" style="margin-top:4px;line-height:1.55;font-size:12.5px">'+esc(b)+'</div>'+
+    '</div>').join('');
+  host.innerHTML=
+    '<div class="card mb-20"><div class="card-title">Fantasy Premier League, in two minutes</div>'+
+      '<p class="dl-sub" style="margin:0 0 6px">Everything below is the official game\u2019s rules, not ours. If you already play, skip it.</p>'+
+      '<div class="dl">'+rows+'</div></div>'+
+    '<div class="card mb-20"><div class="card-title">What this app does with that</div>'+
+      '<p class="dl-sub" style="line-height:1.6">Every player gets a <b>predicted points</b> score for the coming week, from a model that is graded against real results in public — you can check its record before you trust a pick. '+
+      'The app then answers the three questions that decide your week: <b>who to captain</b>, <b>whether a transfer is worth it</b>, and <b>whether to play a chip</b>. Everything else is evidence for those three.</p>'+
+      '<p class="dl-sub" style="margin-top:10px">You are in the <b>Simple</b> view, which shows the tools a first season needs. '+
+      'Switch to <b>Everything</b> in the top bar when you want the other thirty.</p>'+
+      '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">'+
+        '<button class="btn btn-cta btn-sm" onclick="openMidModal()">Link my team</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="openPanel(\'glossary\')">Glossary of terms</button>'+
+      '</div></div>';
 }
 function wireUXButtons(){
   const h=document.getElementById('help-btn');if(h&&!h._w){h._w=1;h.addEventListener('click',startTour);}
-  const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent=getDensity()==='beginner'?'Beginner':'Expert';
+  const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent=densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
 (function(){function ux(){applyDensity(getDensity());wireUXButtons();buildRightRail();}
@@ -3460,6 +3602,7 @@ async function buildRightRail(){
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
+  fplbasics:{desc:'How Fantasy Premier League works — the whole game in two minutes.',layout:'standard'},
   archive:{
     desc:'Ten seasons of Fantasy Premier League, 2016-17 to 2025-26 — the all-time records, any two careers side by side, and a new player to guess every day.',
     layout:'standard'
@@ -3633,13 +3776,14 @@ let currentPanel='dashboard';
    game pack that removes a capability must not leave the nav pointing at a
    panel that no longer exists. */
 function areaLanding(area){
-  const first=(area.panels||[]).filter(canSeePanel)[0];
+  const first=(area.panels||[]).filter(navVisible)[0]
+    ||(area.panels||[]).filter(canSeePanel)[0];
   return first?first.id:null;
 }
 function buildNav(){
   const nav=document.getElementById('sb-nav');
   nav.innerHTML='';
-  NAV.filter(canSeeArea).forEach(area=>{
+  NAV.filter(navVisibleArea).forEach(area=>{
     const wrap=document.createElement('div');
     wrap.className='nav-area';
 
@@ -3649,7 +3793,7 @@ function buildNav(){
     /* Every visible panel in the area is listed for search and screen
        readers even though only the area shows — the panel names are how
        people look for things, and the tabs reveal them on arrival. */
-    btn.setAttribute('aria-label',area.label+' — '+area.panels.filter(canSeePanel).map(p=>p.label).join(', '));
+    btn.setAttribute('aria-label',area.label+' — '+area.panels.filter(navVisible).map(p=>p.label).join(', '));
     /* No Pro badge on an area. There used to be exactly one paid area, so the
        badge meant something; now that Pro is a property of a panel rather
        than a place, six of the seven areas contain one and the badge marks
@@ -3681,7 +3825,9 @@ const BOTTOM_NAV=[
 function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   bn.innerHTML='';
-  BOTTOM_NAV.forEach(it=>{
+  /* Drop a bar item whose area the current view doesn't offer; More always
+     stays, because it carries the escape hatch to the other view. */
+  BOTTOM_NAV.filter(it=>!it.area||navVisibleArea(areaBy(it.area)||{})).forEach(it=>{
     const item=document.createElement('button');
     item.className='bn-item';
     if(it.area)item.dataset.area=it.area;
@@ -3699,15 +3845,15 @@ function openMoreSheet(){
       ...(window.GE_OWNER?[['studio','Studio']]:[]),['glossary','Glossary']]
     /* Skip an area the active game has emptied, and land on its first
        *visible* panel rather than its first declared one. */
-    .filter(([id])=>id==='glossary'||canSeeArea(areaBy(id)||{}))
+    .filter(([id])=>id==='glossary'||navVisibleArea(areaBy(id)||{}))
     .map(([id,label])=>{
       const a=areaBy(id);
-      const target=id==='glossary'?'glossary':(a?(a.panels.filter(canSeePanel)[0]||{}).id:id);
+      const target=id==='glossary'?'glossary':(a?areaLanding(a):id);
       const icon=id==='glossary'?'question':(a?a.icon:'grid');
       return '<button class="more-row" onclick="closeMoreSheet();openPanel(\''+target+'\')"><span class="bn-ic">'+svg(ICON[icon]||'')+'</span>'+esc(label)+'</button>';
     }).join('');
   const dens=getDensity()==='beginner'?'expert':'beginner';
-  const densRow='<button class="more-row" onclick="setDensity(\''+dens+'\');closeMoreSheet()"><span class="bn-ic">'+svg(ICON.spark||'')+'</span>Detail: '+(getDensity()==='beginner'?'Beginner':'Expert')+' — tap for '+dens+'</button>';
+  const densRow='<button class="more-row" onclick="setDensity(\''+dens+'\');closeMoreSheet()"><span class="bn-ic">'+svg(ICON.spark||'')+'</span>View: '+densityLabel(getDensity())+' — tap for '+densityLabel(dens)+'</button>';
   const s=document.createElement('div');s.id='more-sheet';s.className='more-sheet';
   s.innerHTML='<div class="more-backdrop" onclick="closeMoreSheet()"></div>'+
     '<div class="more-panel" role="dialog" aria-modal="true" aria-label="More navigation"><div class="more-grab"></div>'+items+densRow+'</div>';
@@ -3843,7 +3989,12 @@ function areaTabsHtml(panelId){
   const panel=PANELS[panelId];if(!panel)return '';
   const area=NAV.filter(a=>a.id===panel.areaId)[0];
   if(!area)return '';
-  const sibs=area.panels.filter(canSeePanel);
+  /* Simple mode shows the shortlist — unless the panel you are on is not on
+     it, which happens on a deep link from outside. Falling back to the full
+     strip there keeps the lateral move available rather than stranding you
+     on a page with no siblings. */
+  let sibs=area.panels.filter(navVisible);
+  if(!sibs.some(p=>p.id===panelId))sibs=area.panels.filter(canSeePanel);
   if(sibs.length<2)return '';
   /* Glossary and Design System carry areaId 'home' but are registered
      straight onto PANELS, so they are not in any area's panel list. Showing
@@ -4543,7 +4694,11 @@ async function hydrateDashboard(host){
      for a linked manager too); otherwise DEMO for an unlinked manager. */
   const statusTag=b.preseason?'<span class="demo-chip">PRE-SEASON</span>':(mid?'':'<span class="demo-chip">DEMO</span>');
   const q1='<div class="card qd qd-hero'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id+' · CONF '+Math.round(capConf.value||0)+'%',statusTag)+
-    '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance.</p>'+
+    '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance. '+
+      /* The one signpost for someone who does not yet know the game itself.
+         Simple mode only: an experienced manager does not need offering a
+         primer every time they open the dashboard. */
+      '<a href="#" onclick="openPanel(\'fplbasics\');return false">New to FPL? Start here \u2192</a></p>'+
     arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
     arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
     arow('TRANSFER',trBody,trVal,trCls,trWhy,squad?trTier:'',cLabel(trTier),'')+
@@ -16081,6 +16236,7 @@ const WIRED={
   accountability:hydrateAccountability,
   dashboard:hydrateDashboard,
   glossary:hydrateGlossary,
+  fplbasics:hydrateFplBasics,
   methodology:hydrateMethodology,
   design:hydrateDesign,
   'gw-actions':hydrateGwActions,

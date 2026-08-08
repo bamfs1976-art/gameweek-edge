@@ -29,11 +29,13 @@ const OWNER_HASHES = (process.env.OWNER_EMAIL_HASHES ||
    endpoint has no dependency on the bundle; a test reads NAV out of
    index.html and fails if the two ever drift apart. */
 const AREA = {
-  /* `design` and `glossary` are registered straight onto PANELS rather than
-     NAV — free tier, areaId home, reachable by hash by anyone who finds them,
-     so they record views like any other panel. */
+  /* `design`, `glossary` and `fplbasics` are registered straight onto PANELS
+     rather than NAV — free tier, areaId home, reachable by hash by anyone who
+     finds them, so they record views like any other panel. fplbasics is worth
+     watching on its own: it is the one panel whose view count says something
+     about how many arrivals are new to the game, not just new to the app. */
   home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'methodology', 'accountability',
-    'design', 'glossary'],
+    'design', 'glossary', 'fplbasics'],
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
   live: ['liverank'],
   players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],

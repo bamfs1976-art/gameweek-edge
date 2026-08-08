@@ -41,7 +41,11 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 ## 2. Site map
 
-Navigation is **7 areas** (plus an owner‑only Studio) holding **36 panels**.
+Navigation is **7 areas** (plus an owner‑only Studio) holding **36 panels** —
+in the **Everything** view. The **Simple** view, which is the default until a
+team is linked, narrows the nav to **5 areas and 12 panels** (`SIMPLE_PANELS`)
+and drops every Pro‑locked entry; it filters navigation only, so deep links and
+the command palette still reach everything. See `docs/FIRST_RUN_UX.md`.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
