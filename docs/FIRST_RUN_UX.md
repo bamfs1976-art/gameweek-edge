@@ -238,14 +238,48 @@ Ordered by impact ÷ effort. The first two are bug fixes and could ship today.
 
 | # | Change | Effort | Why it's first |
 |---|---|---|---|
-| 1 | Route `/` to the landing page for cold visitors | XS | Every launch link currently opens the deep end. Nothing else matters until this is true |
-| 2 | Delete or revive `maybeOnboard()` | XS | Dead code that reads as an intentional feature. Decide which, don't leave it |
+| ~~1~~ | ~~Route `/` to the landing page for cold visitors~~ — **done**, see §5.1 | XS | Every launch link currently opens the deep end. Nothing else matters until this is true |
+| ~~2~~ | ~~Delete or revive `maybeOnboard()`~~ — **done**, deleted | XS | Dead code that reads as an intentional feature. Decide which, don't leave it |
 | 3 | Trim the beginner dashboard to the three calls | S | Turns a status board into a decision board on the one screen everyone sees |
 | 4 | Hide CSV/refresh on first run; one CTA at a time | S | Removes the two loudest distractions from the primary action |
 | 5 | Expand jargon on first use in beginner density | S | Fixes "I don't know what this means" without another tooltip |
 | 6 | Extend density to the nav — 4 destinations | M | The big structural win, reusing a mechanism that already exists |
 | 7 | The "I'm new to FPL" explainer | M | The genuinely missing content, not just a rearrangement |
 | 8 | Rewrite the tour around the job, not the furniture | M | Only worth doing after 3 and 6, or it captions the wrong thing |
+
+### 5.1 What shipped for 1 and 2
+
+**The front door** is a gate at the top of `<head>` in `index.html`, ahead of
+the stylesheet, so it redirects without painting. Netlify cannot make this call
+— whether someone has been here before lives in localStorage, not in the
+request — so it has to be client-side, and it has to be early.
+
+It sends a visitor to `/welcome` only when *every* one of these holds: the URL
+is the bare root, there is no `#hash` and no `?panel=` / `?upgrade=` / `?app=`,
+this is not an installed PWA or the native shell, and localStorage carries no
+trace of a previous visit (`ge-visited`, `ge-mid`, `ge-tier`, the retired
+`ge-onboarded`, or a Supabase auth token). Otherwise it marks the device seen
+and gets out of the way. `utm_*` is deliberately *not* treated as intent, so a
+tagged link from the content pack still gets the pitch.
+
+**Shown once, ever.** `landing.html` sets `ge-visited` on load, which does two
+jobs: it stops the trip back into the app bouncing to the pitch again — every
+landing CTA points at `/` — and it keeps the promise that a returning manager
+never sees the pitch twice, even if they never clicked through the first time.
+
+**Two failure modes are guarded explicitly**, both covered by
+`dev/test-frontdoor.mjs`:
+
+- *Blocked storage fails open.* In private mode the landing page cannot record
+  the visit, so a gate that failed closed would bounce forever with no escape.
+  It bails into the app instead: the cost is one confusing first screen, not a
+  lost product.
+- *The Stripe return never hits the pitch.* Answering a completed payment with a
+  marketing page would be the worst moment in the funnel to get this wrong.
+
+**The onboarding modal is gone** — function, markup, CSS, listeners and the
+`ge-onboarded` key. The landing page now does that job properly, so reviving a
+modal that duplicates it would have been the wrong half of the decision.
 
 ---
 

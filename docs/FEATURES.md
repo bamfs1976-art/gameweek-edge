@@ -1179,7 +1179,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
 | `ge-mid` | linked FPL Manager ID |
 | `ge-tier` | `free` / `pro` |
 | `ge-theme` | light / dark preference |
-| `ge-onboarded` | first‑run flag |
+| `ge-visited` | this device has seen the app; the front door in the head of `index.html` sends anyone without it to `/welcome`, once |
 | `ge-watch` | watchlist player ids |
 | `ge-draft-v1` | saved pre‑season draft (player ids) |
 | `ge-rivals` | rival manager ids |

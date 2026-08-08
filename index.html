@@ -9,6 +9,66 @@
 <meta name="apple-mobile-web-app-title" content="Gameweek Edge">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
+<script>
+/* ── FRONT DOOR ───────────────────────────────────────────────────
+   gameweekedge.co.uk serves this file, so a first-time visitor used to
+   land in the 36-panel app with no idea what it was — which is what the
+   "too confusing on first viewing" feedback was describing. landing.html
+   exists to explain the product and had no traffic, because nothing routed
+   to it. Netlify can't make this decision: whether someone has been here
+   before lives in localStorage, not in the request. So it happens here,
+   first thing in the head, before a stylesheet is even fetched — a
+   redirect that paints nothing.
+
+   Shown once, ever. Landing sets the same flag on load, so the trip back
+   into the app can't bounce, and a returning manager never sees the pitch
+   twice. See docs/FIRST_RUN_UX.md §4.1. */
+(function(){
+  var ls;
+  /* Private mode and blocked storage: bail into the app. Landing could not
+     record the visit either, so gating here would loop forever. Failing
+     open costs a confusing first screen; failing closed costs the app. */
+  try{ ls = window.localStorage; ls.setItem('ge-probe','1'); ls.removeItem('ge-probe'); }
+  catch(_){ return; }
+
+  function isNewcomer(){
+    /* An installed PWA or the native shell is by definition a return visit. */
+    try{
+      if(navigator.standalone) return false;
+      if(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return false;
+    }catch(_){}
+
+    /* Only the bare root. Any deeper URL was chosen deliberately. */
+    var path = location.pathname;
+    if(path !== '/' && !/\/index\.html$/.test(path)) return false;
+
+    /* Arriving with an intent already: a bookmarked #panel, a push
+       notification's ?panel=, an explicit ?app=1 — and, above all, the
+       ?upgrade=success return from Stripe checkout, which must never be
+       answered with a marketing page. utm_* tags are not intent and are
+       deliberately not listed. */
+    if(location.hash.length > 1) return false;
+    if(/[?&](panel|upgrade|app)=/.test(location.search)) return false;
+
+    /* Any trace of a previous visit. ge-onboarded is the retired first-run
+       flag — anyone still carrying one is emphatically not new. */
+    if(ls.getItem('ge-visited') || ls.getItem('ge-mid')
+       || ls.getItem('ge-onboarded') || ls.getItem('ge-tier')) return false;
+    /* Signed in here: Supabase parks a token under sb-<ref>-auth-token. */
+    for(var i = 0; i < ls.length; i++){
+      var k = ls.key(i);
+      if(k && k.slice(0,3) === 'sb-' && k.indexOf('-auth-token') > 0) return false;
+    }
+    return true;
+  }
+
+  if(isNewcomer()){ location.replace('/welcome'); return; }
+  /* Got through, so this device has now seen the app. Marking it here (rather
+     than only on landing) means the deep links and the Stripe return above
+     also count as a visit — none of them should route to the pitch later. */
+  try{ ls.setItem('ge-visited','1'); }catch(_){}
+})();
+</script>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
@@ -709,7 +769,6 @@ html.offline .net-banner{transform:translateY(0)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(min-width:901px){.toast{bottom:calc(env(safe-area-inset-bottom) + 24px)}}
 /* Onboarding hero */
-.onb-mark{width:52px;height:52px;margin:0 auto 12px;display:block}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 /* Mini-league: highlight the user's row */
 .dl-row.league-me{background:var(--green-soft)}
@@ -2183,22 +2242,6 @@ body{font-size:14px;line-height:1.35}
   <div class="modal-card" id="acct-body"></div>
 </div>
 
-<!-- First-run onboarding -->
-<div class="modal" id="onb-modal" role="dialog" aria-modal="true" aria-labelledby="onb-title">
-  <div class="modal-bg" data-onb-close></div>
-  <div class="modal-card" style="text-align:center">
-    <svg class="onb-mark" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--green)"/>
-      <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="30" cy="11" r="3.4" fill="#fff"/>
-    </svg>
-    <h3 id="onb-title">Welcome to Gameweek Edge</h3>
-    <p style="color:var(--text-2);font-size:.88rem;margin-bottom:18px;line-height:1.5">Link your FPL team to unlock your squad, captaincy, transfers, live percentile and AI scout — all from the official data. You can always explore first.</p>
-    <button class="btn btn-cta" style="width:100%;justify-content:center" id="onb-link">Link my team</button>
-    <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px" data-onb-close>Look around first</button>
-  </div>
-</div>
-
 <div class="modal" id="player-modal" role="dialog" aria-modal="true" aria-labelledby="player-title">
   <div class="modal-bg" data-player-close></div>
   <div class="modal-card modal-card-lg" id="player-body"></div>
@@ -3084,18 +3127,8 @@ function toast(msg){
 /* Move focus into a just-opened dialog for keyboard/screen-reader users. */
 function focusModal(id){
   const m=document.getElementById(id);if(!m)return;
-  setTimeout(()=>{const f=m.querySelector('input:not([disabled]),button:not([data-mid-close]):not([data-pro-close]):not([data-acct-close]):not([data-onb-close])');if(f)f.focus();},60);
+  setTimeout(()=>{const f=m.querySelector('input:not([disabled]),button:not([data-mid-close]):not([data-pro-close]):not([data-acct-close])');if(f)f.focus();},60);
 }
-/* First-run onboarding: nudge new visitors to link their team. */
-function maybeOnboard(){
-  if(getMid()||SESSION)return;
-  let done=null;try{done=localStorage.getItem('ge-onboarded');}catch(_){}
-  if(done)return;
-  setTimeout(()=>{if(!getMid()&&!SESSION){document.getElementById('onb-modal').classList.add('show');focusModal('onb-modal');}},700);
-}
-function closeOnboard(){document.getElementById('onb-modal').classList.remove('show');
-  try{localStorage.setItem('ge-onboarded','1');}catch(_){}}
-
 /* ── NAVIGATION MODEL — 7 areas: six free, one paid ("The Edge") ──
    Every Pro tool lives under a single, obviously-paid "The Edge" area so
    free users see one clear upgrade, not Pro locks scattered everywhere. */
@@ -16574,10 +16607,6 @@ function init(){
   document.getElementById('acct-btn').addEventListener('click',openAccount);
   document.addEventListener('click',e=>{if(e.target.closest('[data-acct-close]'))closeAccount();});
 
-  /* First-run onboarding. */
-  document.getElementById('onb-link').addEventListener('click',()=>{closeOnboard();openMidModal();});
-  document.addEventListener('click',e=>{if(e.target.closest('[data-onb-close]'))closeOnboard();});
-
   document.getElementById('tb-logo').addEventListener('click',function(e){
     e.preventDefault();
     openPanel(homePanel());
@@ -16615,15 +16644,16 @@ function init(){
   hydrateGwStrip();
   reflectTier();
   if(getMid()){refreshIdentity();loadEntry(getMid()).then(refreshIdentity).catch(()=>{});}
-  /* Terminal shell: no blocking first-run modal — the persistent Link
-     Team CTA in the topbar carries onboarding instead. */
+  /* No first-run modal here. A newcomer is routed to /welcome by the front
+     door in the head before this file ever renders, so anyone reaching init()
+     has either seen the pitch or asked for the app by name. */
   initCmdk();
   initKeys();
   setInterval(tickTicker,1000);
 
   /* Close drawer / modals on Escape */
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();closeAccount();closeOnboard();closePlayer();closeXpDrawer();closeMoreSheet();}
+    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();closeAccount();closePlayer();closeXpDrawer();closeMoreSheet();}
   });
 }
 
