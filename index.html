@@ -2408,6 +2408,109 @@ function apiBase(){
   return GE_CONFIG.apiBase;
 }
 
+/* ── football-data.org readers ─────────────────────────────
+   Two things the FPL feed does not carry: who is refereeing, and who is
+   playing midweek in another competition. Both come through our own proxy at
+   /api/football-data (the key stays server-side; see the function's header
+   for why this cannot be a direct browser call).
+
+   Every field below is picked DEFENSIVELY and falls back to null. The shapes
+   come from football-data's published v4 docs, not from a response anyone
+   here has seen — the API was unreachable from the machine this was written
+   on. A field that does not resolve leaves its property null and the caller
+   renders nothing, rather than substituting a zero and quietly poisoning a
+   panel. Same stance, and same reason, as netlify/functions/ucl.js. */
+const FD_TTL = 30 * 60 * 1000;
+const _fdCache = new Map();
+async function fdGet(route, params){
+  const qs = new URLSearchParams(params || {}).toString();
+  const url = apiBase() + '/api/football-data/' + route + (qs ? '?' + qs : '');
+  const hit = _fdCache.get(url);
+  if(hit && Date.now() - hit.t < FD_TTL) return hit.v;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return null;                    /* 429 and 503 both land here */
+    const v = await r.json();
+    _fdCache.set(url, { t: Date.now(), v });
+    return v;
+  }catch(_){ return null; }
+}
+
+/* The match list, whatever the envelope turns out to be called. */
+function fdMatches(payload){
+  const m = payload && (payload.matches || payload.match || null);
+  return Array.isArray(m) ? m : [];
+}
+
+/* The referee. v4 publishes an array with a type per official; we want the
+   one in the middle. Falls back to the first entry rather than to nothing,
+   because a name with the wrong role label still beats a blank. */
+function fdReferee(match){
+  const rs = match && Array.isArray(match.referees) ? match.referees : [];
+  if(!rs.length) return null;
+  const main = rs.find(r => /^(REFEREE|MAIN_REFEREE)$/i.test(String(r && r.type || ''))) || rs[0];
+  const name = main && (main.name || main.fullName);
+  return name ? String(name) : null;
+}
+
+/* Club names do not match between the two feeds — "Manchester City FC" here,
+   "Man City" in FPL — and squashing both to one string does not fix it:
+   "manchestercity" and "mancity" are still different strings. So matching is
+   done on TOKENS, where a shorter token may be a prefix of a longer one:
+   man -> manchester, city -> city. That reconciles the abbreviations without
+   reconciling Leeds to Leicester, which share only "le".
+
+   Corporate suffixes are dropped; "City" and "United" are NOT, because they
+   are load-bearing — dropping them leaves "Man", which is too short to match
+   safely and would collide with Manchester United. */
+const FD_NOISE = new Set(['fc','afc','cf','sc','ac','the']);
+function fdClubTokens(name){
+  const t = String(name || '').toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !FD_NOISE.has(w));
+  return t.length ? t : null;
+}
+/* True when every token of the shorter name prefixes some token of the other.
+   Deliberately asymmetric-tolerant and deliberately strict about length: a
+   two-character token would match half the league. A club that fails to
+   match simply shows no congestion, which is the safe direction to be wrong
+   in — a missing badge beats a wrong one. */
+function fdSameClub(a, b){
+  const x = fdClubTokens(a), y = fdClubTokens(b);
+  if(!x || !y) return false;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  return short.every(s => long.some(l => l === s || l.startsWith(s) || s.startsWith(l)));
+}
+
+/* Fixtures inside the window that are NOT the given competition — i.e. the
+   midweek European football the FPL feed cannot see. Returns a flat list;
+   callers match it to their own club names with fdSameClub, because no single
+   canonical key exists across the two feeds.
+
+   Coverage caveat, and the UI must repeat it: the free tier carries the
+   Champions League but not the domestic cups, so this is European congestion,
+   not all of it. Saying "midweek football" when the FA Cup is invisible would
+   be a claim the data cannot support. */
+function fdCongestion(payload, exclude){
+  const skip = String(exclude || 'PL').toUpperCase();
+  const out = [];
+  for(const m of fdMatches(payload)){
+    const comp = m && m.competition && (m.competition.code || m.competition.name);
+    if(!comp || String(comp).toUpperCase() === skip) continue;
+    for(const side of ['homeTeam','awayTeam']){
+      const club = m[side] && (m[side].shortName || m[side].name);
+      if(!fdClubTokens(club)) continue;
+      out.push({ club: String(club), competition: String(comp), utcDate: m.utcDate || null });
+    }
+  }
+  return out;
+}
+/* Entries for one club, by the fuzzy match above. */
+function fdCongestionFor(list, clubName){
+  return (Array.isArray(list) ? list : []).filter(e => fdSameClub(e.club, clubName));
+}
+
 /* ── First-party analytics ─────────────────────────────────
    A tiny fire-and-forget event ping to our own /api/track function
    (no third-party scripts, no cookies). anon_id is a random id kept
