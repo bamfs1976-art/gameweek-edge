@@ -62,6 +62,16 @@
   to = "/?panel=design"
   status = 301
 
+# football-data.org proxy: referees and cross-competition (midweek) fixtures,
+# neither of which the FPL feed carries. The API key stays in the function's
+# environment (FOOTBALL_DATA_KEY) and never reaches the browser — which is also
+# why the CSP's connect-src does not need a new host: the app only ever talks
+# to /api/*, same origin.
+[[redirects]]
+  from = "/api/football-data/*"
+  to = "/.netlify/functions/football-data/:splat"
+  status = 200
+
 # Route the app's API calls to the proxy function, preserving the path.
 [[redirects]]
   from = "/api/fpl/*"

@@ -51,6 +51,7 @@ You already connected the repo. Check: Netlify → your site → **Deploys** sho
 | `VAPID_PUBLIC_KEY` | your freshly generated public key |
 | `VAPID_PRIVATE_KEY` | your freshly generated private key (never commit it) |
 | `VAPID_SUBJECT` | `mailto:` your email |
+| `FOOTBALL_DATA_KEY` | your football-data.org key (optional — referees and midweek fixtures; everything else works without it) |
 
 **b) Add the Stripe webhook:** Stripe → **Developers → Webhooks → Add endpoint** → URL = `https://YOUR-SITE/api/stripe-webhook` → select events **checkout.session.completed**, **customer.subscription.updated**, **customer.subscription.deleted** → save → copy the **Signing secret** (`whsec_…`) into `STRIPE_WEBHOOK_SECRET`.
 

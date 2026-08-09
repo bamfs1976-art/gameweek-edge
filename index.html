@@ -515,6 +515,20 @@ html.offline .net-banner{transform:translateY(0)}
   letter-spacing:.07em;color:var(--text-3);font-weight:700}
 .dl-rank{width:20px;text-align:right;color:var(--text-3);font-weight:700;font-size:.74rem;flex-shrink:0}
 .dl-grow{flex:1;min-width:0;display:flex;flex-direction:column}
+/* A nowrap sub-line inside .dl-grow is an INLINE box, so the overflow:hidden
+   it already carries does nothing: an inline box has no box to clip. It kept
+   its natural width — 190px inside a 110px column on a phone — and drew
+   straight across the value beside it, which is the overlapping, half-hidden
+   text this row style was reported for. Clip at the container and make the
+   two lines real blocks so they ellipse against it.
+   The .desc variant is excluded: its sub-line is a paragraph meant to wrap,
+   and nowrap there would truncate the description to one line. */
+.dl-grow{overflow:hidden}
+.dl:not(.desc) .dl-grow > .dl-nm,
+.dl:not(.desc) .dl-grow > .dl-sub{
+  display:block;max-width:100%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
 .dl-nm{font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* Base .dl-sub wraps — it's used for descriptive captions as well as row meta.
    Inside a list row it must stay a compact single line (ellipsis), so the
@@ -525,7 +539,11 @@ html.offline .net-banner{transform:translateY(0)}
    instead of the centred, single-line row-meta treatment. */
 .dl-row.diag-row{align-items:flex-start}
 .diag-txt{flex:1;min-width:0;font-size:.72rem;line-height:1.5}
-.dl-col{width:50px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
+/* min-width, not width. A fixed 50px column holding "+18.4xP / 5 GW" is 61px
+   of content in a 50px box that refuses to shrink OR grow, so the surplus was
+   drawn over the neighbouring column. Growing is the harmless direction: the
+   row is a flex line with a flexible label beside it. */
+.dl-col{min-width:50px;text-align:right;font-variant-numeric:tabular-nums;flex-shrink:0;
   font-weight:700;color:var(--text-2)}
 .dl-col.mono{font-family:var(--font-mono);font-weight:600}
 .dl-col.pos{color:var(--green-bright)}
@@ -973,7 +991,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;
 }
-.tb-left{display:flex;align-items:center;gap:13px;min-width:0}
+.tb-left{display:flex;align-items:center;gap:13px;min-width:0;flex:1 1 auto;overflow:hidden}
 .hamburger{
   display:none;width:38px;height:38px;
   align-items:center;justify-content:center;
@@ -985,7 +1003,11 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 /* Topbar logo */
 .tb-logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .tb-logo-mark{width:30px;height:30px;flex-shrink:0}
-.tb-logo-text{display:flex;flex-direction:column;line-height:1.04;white-space:nowrap}
+/* The sidebar already carries the wordmark and the tagline, directly above
+   this, so repeating it here bought nothing and cost ~140px of a bar that had
+   none to spare — the breadcrumb was being squeezed to 28px and ellipsing
+   "Dashboard" on a 1440px desktop. The mark stays as the home button. */
+.tb-logo-text{display:none;flex-direction:column;line-height:1.04;white-space:nowrap}
 .tb-name{font-family:var(--font-display);font-size:.96rem;letter-spacing:-.02em}
 .tb-logo-text .light{font-weight:500;color:var(--text-2)}
 .tb-logo-text .bold{font-weight:800;color:var(--text)}
@@ -997,17 +1019,26 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   width:1px;height:24px;background:var(--border-2);flex-shrink:0;
 }
 
-.tb-crumb{display:flex;flex-direction:column;min-width:0}
+.tb-crumb{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}
 .tb-area{
   font-size:.64rem;font-weight:700;letter-spacing:.09em;
   text-transform:uppercase;color:var(--text-3);
+  /* Was the only line in the crumb without truncation, so it clipped mid-word
+     at every width instead of ellipsing. */
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .tb-title{
   font-family:var(--font-display);font-size:1.04rem;
   font-weight:700;letter-spacing:-.02em;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.tb-right{display:flex;align-items:center;gap:9px}
+/* Never shrinks. Everything in here is interactive and mostly nowrap, so a
+   shrinking .tb-right does not get narrower — its contents overflow the box
+   and spill leftwards over the brand and the breadcrumb. That was the iPad
+   overlap: at 1024 the topbar had ~780px of room for ~940px of controls, and
+   flexbox resolved it by drawing them on top of each other. The left side
+   flexes and truncates instead; the actions keep their size. */
+.tb-right{display:flex;align-items:center;gap:9px;flex-shrink:0}
 .tb-updated{display:inline-flex;align-items:center;gap:6px;font-size:.66rem;font-weight:600;color:var(--text-3);font-variant-numeric:tabular-nums;white-space:nowrap}
 /* Freshness pulse: a soft green heartbeat that a panel is on live data. */
 .tb-updated::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);
@@ -1018,9 +1049,13 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 @media(prefers-reduced-motion:reduce){.tb-updated::before{animation:none}}
 @media(max-width:560px){.tb-updated{display:none}}
 
-/* Persistent search launcher — desktop only (≥1024px). Opens ⌘K. */
+/* Persistent search launcher — wide screens only. Opens ⌘K.
+   Was ≥1024px, which is precisely where an iPad in landscape sits: the bar
+   gained a 210px box at the one width with nothing to spare. ⌘K itself still
+   works everywhere, and the tickbar carries a visible ⌘K chip, so nothing is
+   lost below this breakpoint. */
 .tb-search{display:none}
-@media(min-width:1024px){
+@media(min-width:1280px){
   .tb-search{display:inline-flex;align-items:center;gap:8px;cursor:text;
     width:210px;height:36px;padding:0 12px;border-radius:var(--r-md);
     background:var(--surface-3);border:1px solid var(--border-2);
@@ -2406,6 +2441,109 @@ const GE_CONFIG = {
 function apiBase(){
   try{const o=localStorage.getItem('ge-api-base'); if(o) return o.replace(/\/$/,'');}catch(_){}
   return GE_CONFIG.apiBase;
+}
+
+/* ── football-data.org readers ─────────────────────────────
+   Two things the FPL feed does not carry: who is refereeing, and who is
+   playing midweek in another competition. Both come through our own proxy at
+   /api/football-data (the key stays server-side; see the function's header
+   for why this cannot be a direct browser call).
+
+   Every field below is picked DEFENSIVELY and falls back to null. The shapes
+   come from football-data's published v4 docs, not from a response anyone
+   here has seen — the API was unreachable from the machine this was written
+   on. A field that does not resolve leaves its property null and the caller
+   renders nothing, rather than substituting a zero and quietly poisoning a
+   panel. Same stance, and same reason, as netlify/functions/ucl.js. */
+const FD_TTL = 30 * 60 * 1000;
+const _fdCache = new Map();
+async function fdGet(route, params){
+  const qs = new URLSearchParams(params || {}).toString();
+  const url = apiBase() + '/api/football-data/' + route + (qs ? '?' + qs : '');
+  const hit = _fdCache.get(url);
+  if(hit && Date.now() - hit.t < FD_TTL) return hit.v;
+  try{
+    const r = await fetch(url);
+    if(!r.ok) return null;                    /* 429 and 503 both land here */
+    const v = await r.json();
+    _fdCache.set(url, { t: Date.now(), v });
+    return v;
+  }catch(_){ return null; }
+}
+
+/* The match list, whatever the envelope turns out to be called. */
+function fdMatches(payload){
+  const m = payload && (payload.matches || payload.match || null);
+  return Array.isArray(m) ? m : [];
+}
+
+/* The referee. v4 publishes an array with a type per official; we want the
+   one in the middle. Falls back to the first entry rather than to nothing,
+   because a name with the wrong role label still beats a blank. */
+function fdReferee(match){
+  const rs = match && Array.isArray(match.referees) ? match.referees : [];
+  if(!rs.length) return null;
+  const main = rs.find(r => /^(REFEREE|MAIN_REFEREE)$/i.test(String(r && r.type || ''))) || rs[0];
+  const name = main && (main.name || main.fullName);
+  return name ? String(name) : null;
+}
+
+/* Club names do not match between the two feeds — "Manchester City FC" here,
+   "Man City" in FPL — and squashing both to one string does not fix it:
+   "manchestercity" and "mancity" are still different strings. So matching is
+   done on TOKENS, where a shorter token may be a prefix of a longer one:
+   man -> manchester, city -> city. That reconciles the abbreviations without
+   reconciling Leeds to Leicester, which share only "le".
+
+   Corporate suffixes are dropped; "City" and "United" are NOT, because they
+   are load-bearing — dropping them leaves "Man", which is too short to match
+   safely and would collide with Manchester United. */
+const FD_NOISE = new Set(['fc','afc','cf','sc','ac','the']);
+function fdClubTokens(name){
+  const t = String(name || '').toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 3 && !FD_NOISE.has(w));
+  return t.length ? t : null;
+}
+/* True when every token of the shorter name prefixes some token of the other.
+   Deliberately asymmetric-tolerant and deliberately strict about length: a
+   two-character token would match half the league. A club that fails to
+   match simply shows no congestion, which is the safe direction to be wrong
+   in — a missing badge beats a wrong one. */
+function fdSameClub(a, b){
+  const x = fdClubTokens(a), y = fdClubTokens(b);
+  if(!x || !y) return false;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+  return short.every(s => long.some(l => l === s || l.startsWith(s) || s.startsWith(l)));
+}
+
+/* Fixtures inside the window that are NOT the given competition — i.e. the
+   midweek European football the FPL feed cannot see. Returns a flat list;
+   callers match it to their own club names with fdSameClub, because no single
+   canonical key exists across the two feeds.
+
+   Coverage caveat, and the UI must repeat it: the free tier carries the
+   Champions League but not the domestic cups, so this is European congestion,
+   not all of it. Saying "midweek football" when the FA Cup is invisible would
+   be a claim the data cannot support. */
+function fdCongestion(payload, exclude){
+  const skip = String(exclude || 'PL').toUpperCase();
+  const out = [];
+  for(const m of fdMatches(payload)){
+    const comp = m && m.competition && (m.competition.code || m.competition.name);
+    if(!comp || String(comp).toUpperCase() === skip) continue;
+    for(const side of ['homeTeam','awayTeam']){
+      const club = m[side] && (m[side].shortName || m[side].name);
+      if(!fdClubTokens(club)) continue;
+      out.push({ club: String(club), competition: String(comp), utcDate: m.utcDate || null });
+    }
+  }
+  return out;
+}
+/* Entries for one club, by the fuzzy match above. */
+function fdCongestionFor(list, clubName){
+  return (Array.isArray(list) ? list : []).filter(e => fdSameClub(e.club, clubName));
 }
 
 /* ── First-party analytics ─────────────────────────────────
@@ -3815,7 +3953,10 @@ const BOTTOM_NAV=[
   {label:'Home',area:'home',icon:'home',go:()=>openPanel(homePanel())},
   {label:'My Squad',area:'myteam',icon:'squad',go:()=>openPanel('squad')},
   {label:'Players',area:'players',icon:'players',go:()=>openPanel('allplayers')},
-  {label:'Match Centre',area:'matchcentre',icon:'pulse',go:()=>openPanel('results')},
+  /* Shown as "Matches": the full name ellipsed to "Match Cent…" on a 390px
+     phone, which is the width most of these taps happen at. The accessible
+     name keeps the real label. */
+  {label:'Match Centre',short:'Matches',area:'matchcentre',icon:'pulse',go:()=>openPanel('results')},
   {label:'More',area:'',icon:'more',go:()=>openMoreSheet()}
 ];
 function buildBottomNav(){
@@ -3829,7 +3970,7 @@ function buildBottomNav(){
     if(it.area)item.dataset.area=it.area;
     item.setAttribute('aria-label',it.label);
     item.innerHTML='<span class="bn-ic">'+(it.icon==='more'?MORE_ICON:svg(ICON[it.icon]))+'</span>'+
-      '<span class="bn-label">'+it.label+'</span>';
+      '<span class="bn-label">'+(it.short||it.label)+'</span>';
     item.addEventListener('click',it.go);
     bn.appendChild(item);
   });
