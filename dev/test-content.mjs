@@ -500,6 +500,37 @@ console.log('• club threads: the grade is the payload, so it needs a rule');
     fixtures: [{ gw: 1, opp: 'AAA', home: true }, { gw: 2, opp: 'BBB', home: false }],
     players, ...extra });
 
+  /* ── "Same job, less money" ──────────────────────────────────────
+     The post modelled on the hand-written threads' best one. It has to be
+     stingier than they are: it fires only when the saving is real AND the
+     cheaper player is genuinely close, or it becomes the "value pick" spam
+     that recommends the cheap option at every club. */
+  const valuePost = (t) => (t.posts.find((x) => x.kind === 'value') || {}).lines?.[0] || null;
+
+  const twin = (o) => P({ element_type: 2, minutes: 2800, starts: 31, teamGames: 32, ...o });
+  const pair = clubOf([twin({ web_name: 'DEAR', now_cost: 55 }),
+    twin({ web_name: 'CHEAP', now_cost: 50 })]);
+  ok(valuePost(pair), 'two near-identical defenders £0.5m apart produce the value post');
+  ok(/CHEAP/.test(valuePost(pair) || '') && /DEAR/.test(valuePost(pair) || ''),
+    'and it names both, not just the bargain');
+  ok(/£0\.5m less/.test(valuePost(pair) || ''), 'and states the saving');
+
+  ok(!valuePost(clubOf([twin({ web_name: 'DEAR', now_cost: 52 }),
+    twin({ web_name: 'CHEAP', now_cost: 50 })])),
+    'a £0.2m gap is not worth a post — the saving buys nothing');
+
+  ok(!valuePost(clubOf([twin({ web_name: 'DEAR', now_cost: 55 }),
+    twin({ web_name: 'WORSE', now_cost: 45, minutes: 400, starts: 3 })])),
+    'a much worse player is not a bargain, however cheap');
+
+  ok(!valuePost(clubOf([twin({ web_name: 'DEF', now_cost: 55 }),
+    twin({ web_name: 'MID', now_cost: 45, element_type: 3 })])),
+    'a cheaper player in another position frees no money for the same job');
+
+  const many = clubOf([twin({ web_name: 'TOP', now_cost: 60 }),
+    twin({ web_name: 'MID1', now_cost: 55 }), twin({ web_name: 'FLOOR', now_cost: 45 })]);
+  ok(/FLOOR/.test(valuePost(many) || ''), 'with several candidates it reports the biggest saving');
+
   const strongSquad = [P({ web_name: 'A', xp: 6.5 }), P({ web_name: 'B', xp: 6.2 }),
     P({ web_name: 'C', xp: 3.0, element_type: 4 })];
   const t = clubOf(strongSquad);
