@@ -5,7 +5,9 @@
    from the same roundPicks() the finder and the club picker use. */
 
 import { loadSnapshot } from './provider.js';
-import { buildContext, roundPicks, runSummary, ordinal } from './model.js';
+import {
+  buildContext, roundPicks, runSummary, ordinal, buildSquad, squadRationale, playerScore
+} from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
   divisionBadge, homeAwayBadge, availabilityBadge, formStrip, fmtDay, DIVISION_LABELS
@@ -14,6 +16,11 @@ import {
 initTheme();
 
 const DIVISIONS = ['championship', 'league-one', 'league-two'];
+/* Scoring every player is the expensive step and three sections want it, so
+   it happens once and is passed around. */
+let scoredPlayers = null;
+let context = null;
+let oneClubChip = false;
 
 start();
 
@@ -28,10 +35,14 @@ async function start() {
         + 'All ratings and scores on this site are modelled.';
     }
     const ctx = buildContext(snapshot);
+    context = ctx;
+    scoredPlayers = ctx.players.map((p) => playerScore(ctx, p));
     renderPicks(ctx);
+    renderSquad();
     renderSnapshot(ctx);
   } catch (err) {
     mount('picks-grid', errorState(err, 'retry-picks'));
+    mount('squad-body', '');
     mount('snapshot-body', '');
     const retry = document.getElementById('retry-picks');
     if (retry) retry.addEventListener('click', () => window.location.reload());
@@ -41,7 +52,7 @@ async function start() {
 /* ── This round's picks ─────────────────────────────────── */
 
 function renderPicks(ctx) {
-  const picks = roundPicks(ctx);
+  const picks = roundPicks(ctx, { scored: scoredPlayers });
   const cards = [
     playerCard('Best goalkeeper', picks.goalkeeper, ctx),
     playerCard('Best defender', picks.defender, ctx),
@@ -126,8 +137,9 @@ function differentialCard(rec, ctx) {
     <p class="pick-why">${esc(rec.summary)}</p>
     <p class="pick-why" style="color:var(--text-3)"><b>Form differential ${rec.differential.score.toFixed(0)}</b>
       — a modelled, editorial measure of good recent output at a club that gets less attention.
-      It is <b>not</b> an ownership figure: no public Fantasy EFL ownership feed exists, so none
-      is shown anywhere on this site.</p>
+      It is <b>not</b> an ownership figure: the official game publishes ownership for clubs (see
+      the <a href="/fantasy-efl/clubs/" style="color:var(--efl)">club picker</a>) but not for
+      players, so this stands in for it and says so.</p>
     <div class="pick-foot">
       <span>${esc(club ? `${ordinal(club.position)} in ${DIVISION_LABELS[club.division]}` : '')}</span>
       <span class="pick-score">${rec.score.toFixed(1)}</span>
@@ -168,6 +180,78 @@ function fixtureLine(rated, ctx) {
 
 function card(role, body) {
   return `<article class="pick"><p class="pick-role">${esc(role)}</p>${body}</article>`;
+}
+
+/* ── Build your seven ───────────────────────────────────── */
+
+function renderSquad() {
+  const ctx = context;
+  const squad = buildSquad(ctx, { scored: scoredPlayers, oneClubChip });
+
+  if (!squad) {
+    mount('squad-body', emptyState('No legal seven can be built',
+      'Every formation needs a goalkeeper and six outfielders from at least four clubs, '
+      + 'all available and all with a fixture this round. The data does not currently '
+      + 'support one.'));
+    return;
+  }
+
+  const order = { GK: 0, DEF: 1, MID: 2, FWD: 3 };
+  const cards = squad.picks.slice()
+    .sort((a, b) => order[a.player.position] - order[b.player.position] || b.score - a.score)
+    .map((r) => squadCard(r, r === squad.captain))
+    .join('');
+
+  const clubsUsed = Object.keys(squad.clubCounts).length;
+  const divisions = new Set(squad.picks.map((r) => r.player.division)).size;
+
+  mount('squad-body', `
+    <div class="squad-bar">
+      <span class="sb-stat">Formation <b>${esc(squad.formation.id)}</b></span>
+      <span class="sb-stat">Combined rating <b>${squad.total.toFixed(1)}</b></span>
+      <span class="sb-stat"><b>${clubsUsed}</b> clubs · <b>${divisions}</b> of 3 divisions</span>
+      <label class="squad-toggle">
+        <input type="checkbox" id="one-club-chip" ${oneClubChip ? 'checked' : ''}>
+        One-club chip
+        <span class="sr-only">lifts the two-players-per-club limit</span>
+      </label>
+    </div>
+    <div class="squad">${cards}</div>
+    <p class="sec-note" style="margin-top:11px">${esc(squadRationale(ctx, squad))}
+      ${oneClubChip
+    ? 'The two-per-club limit is lifted, so this is the side to play a one-club chip on.'
+    : 'Limited to two players per club, as the game requires.'}
+      Ratings are modelled; the shape and the club limit are the game's rules.</p>`);
+
+  const toggle = document.getElementById('one-club-chip');
+  if (toggle) {
+    toggle.addEventListener('change', (e) => {
+      oneClubChip = e.target.checked;
+      renderSquad();
+      /* Focus survives the re-render, so a keyboard user is not thrown back
+         to the top of the page by their own checkbox. */
+      const again = document.getElementById('one-club-chip');
+      if (again) again.focus();
+    });
+  }
+}
+
+function squadCard(rec, isCaptain) {
+  const p = rec.player;
+  const club = context.clubById[p.clubId];
+  const next = rec.next;
+  const opp = next && context.clubById[next.opponentId];
+  return `<article class="sq-card sq-${esc(p.position)} ${isCaptain ? 'is-captain' : ''}">
+    <p class="sq-pos"><span>${esc(p.position)}</span>
+      ${isCaptain ? '<span class="sq-armband" title="Captain — points doubled">C</span>' : ''}</p>
+    <p class="sq-name">${esc(p.name)}</p>
+    <p class="sq-meta">${esc(club ? club.name : '—')} · ${esc(DIVISION_LABELS[p.division])}</p>
+    <div class="sq-foot">
+      <span>${next ? fdrCell(next.rating) : fdrCell(null)}
+        <span class="sq-meta">${next ? esc((opp ? opp.short : '???') + (next.home ? ' (H)' : ' (A)')) : 'Blank'}</span></span>
+      <span class="sq-score" title="Modelled pick rating out of 100">${rec.score.toFixed(1)}</span>
+    </div>
+  </article>`;
 }
 
 /* ── Fixture snapshot ───────────────────────────────────── */

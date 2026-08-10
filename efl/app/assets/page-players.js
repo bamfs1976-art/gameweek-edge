@@ -11,15 +11,18 @@
    phone without hiding the interesting tail behind an infinite scroll. */
 
 import { loadSnapshot } from './provider.js';
-import { buildContext, playerScore, differentialScore, POSITION_NAMES, ordinal } from './model.js';
+import { buildContext, playerScore, differentialScore, POSITION_NAMES, ordinal, PLAYER_WEIGHTS } from './model.js';
+import { POSITION_COLUMNS, TARIFF, statPoints } from './tariff.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
-  methodNote, divisionBadge, homeAwayBadge, availabilityBadge, meter, fmtDay, DIVISION_LABELS
+  methodNote, divisionBadge, homeAwayBadge, availabilityBadge, meter, statCell, fmtDay,
+  DIVISION_LABELS
 } from './ui.js';
 
 initTheme();
 
 const PAGE_SIZE = 25;
+const pc = (key) => `${Math.round(PLAYER_WEIGHTS[key] * 100)}%`;
 const state = {
   search: '', division: 'all', position: 'all', club: 'all',
   availability: 'all', sort: 'score', page: 1
@@ -42,10 +45,14 @@ async function start() {
     ctx = buildContext(snapshot);
     mount('legend', fdrLegend());
     mount('method', methodNote(
-      'A player\'s modelled pick rating combines recent form (30%), starts and minutes (22%), '
-      + 'goals, assists and clean sheets weighted by position (20%), the next fixture (20%) and '
-      + 'home advantage (8%). Availability is then applied as a multiplier, so an injured player '
-      + 'is not merely marked down — he drops out of contention.'));
+      `A player's modelled pick rating combines starts and minutes (${pc('minutes')}), recent `
+      + `form (${pc('form')}), the tariff value of his output (${pc('output')}), the next fixture `
+      + `(${pc('fixture')}) and home advantage (${pc('home')}) — then scales the fixture and home `
+      + 'weights by position, because a goalkeeper barely notices where he is playing and a '
+      + 'forward notices a lot. Availability is applied as a multiplier, so an injured player '
+      + 'is not merely marked down; he drops out of contention. The weights are set from '
+      + 'measured correlations on 83,698 real Fantasy EFL appearances rather than picked by '
+      + 'feel — see the guide for the numbers.'));
 
     rows = ctx.players.map((p) => {
       const rec = playerScore(ctx, p);
@@ -172,29 +179,35 @@ function render() {
     return;
   }
 
+  const columns = activeColumns();
   mount('table', `
     <div class="tscroll">
       <table class="stack-sm">
-        <caption class="sr-only">Players ranked by ${esc(SORT_LABELS[state.sort])}. Fixture
-          difficulty runs 1 (most favourable) to 5 (toughest).</caption>
+        <caption class="sr-only">Players ranked by ${esc(SORT_LABELS[state.sort])}. Each stat
+          shows what it was worth in Fantasy EFL points in brackets. Fixture difficulty runs
+          1 (most favourable) to 5 (toughest).</caption>
         <thead>
           <tr>
             <th scope="col">Player</th>
             <th scope="col">Club</th>
             <th scope="col">Last 5</th>
             <th scope="col" class="num">Starts</th>
-            <th scope="col" class="num">Mins</th>
-            <th scope="col" class="num">G</th>
-            <th scope="col" class="num">A</th>
-            <th scope="col" class="num">CS</th>
+            ${columns.map((key) => `<th scope="col" class="num" title="${esc(columnTitle(key))}">`
+    + `${esc(TARIFF[key].short)}</th>`).join('')}
             <th scope="col">Next</th>
             <th scope="col">Status</th>
             <th scope="col" class="num">Rating</th>
           </tr>
         </thead>
-        <tbody>${slice.map(row).join('')}</tbody>
+        <tbody>${slice.map((r) => row(r, columns)).join('')}</tbody>
       </table>
-    </div>`);
+    </div>
+    <p class="sec-note" style="margin-top:9px">${state.position === 'all'
+    ? 'Showing the stats every position is paid for. <b>Filter to a single position</b> to see '
+      + 'what that position actually scores from — a defender\'s clearances, blocks and tackles, '
+      + 'or a midfielder\'s interceptions.'
+    : `Showing the stats a ${esc(POSITION_NAMES[state.position].toLowerCase())} is paid for. `
+      + 'The bracket after each number is what it was worth in points.'}</p>`);
 
   mount('pager', pages > 1 ? `
     <div class="pager">
@@ -214,7 +227,52 @@ function scrollToTable() {
   if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
 }
 
-function row(r) {
+/* ── Position-aware columns ─────────────────────────────
+   A defender is paid for clearances, blocks and tackles; a midfielder for
+   interceptions; a forward for neither. Showing every column to every row
+   makes a forty-column table in which most cells mean "not applicable" and
+   look exactly like "none".
+
+   So the column set follows the position filter. With no filter, only the
+   stats every position is paid for are shown — because a column that means
+   "zero" on one row and "not applicable" on the next is worse than no
+   column at all. */
+function activeColumns() {
+  return POSITION_COLUMNS[state.position] || POSITION_COLUMNS.ALL;
+}
+
+function columnTitle(key) {
+  const rule = TARIFF[key];
+  return rule ? `${rule.label} — ${rule.describe}` : key;
+}
+
+/** The raw season value behind a tariff key, or null where unpublished. */
+function statValue(p, key) {
+  if (key === 'minutes') return p.minutes;
+  if (key === 'goals') return p.goals;
+  if (key === 'assists') return p.assists;
+  if (key === 'cleanSheets') return p.cleanSheets;
+  return p.stats ? p.stats[key] : null;
+}
+
+/**
+ * Minutes are the one stat whose season total cannot be run through the
+ * tariff directly: the rule is per appearance (under 60 pays 1, 60+ pays 2),
+ * so 2,700 minutes is not "one appearance worth 2". Appearance points are
+ * counted from starts and substitute outings instead.
+ */
+function minutesCell(p) {
+  const appearancePoints = p.starts * 2 + Math.max(0, p.appearances - p.starts);
+  if (!p.minutes) return '<span class="mono">0</span>';
+  const title = `${p.minutes} minutes across ${p.appearances} appearance`
+    + `${p.appearances === 1 ? '' : 's'} — ${appearancePoints} appearance points `
+    + '(60 minutes or more pays 2, less pays 1)';
+  return `<span class="mono" title="${esc(title)}">${p.minutes} `
+    + `<span class="attr-pos" aria-label="worth plus ${appearancePoints} appearance points">`
+    + `(+${appearancePoints})</span></span>`;
+}
+
+function row(r, columns) {
   const p = r.player;
   const rec = r.rec;
   const club = r.club;
@@ -224,8 +282,15 @@ function row(r) {
      means the same thing on every row. */
   const formLabel = r.formApps
     ? `${r.formPoints} points from ${r.formApps} appearance${r.formApps === 1 ? '' : 's'} in the last five rounds`
-    : 'No minutes in the last five rounds';
-  const showCS = p.position === 'GK' || p.position === 'DEF';
+    : 'No per-match history published for this player';
+
+  const statCells = columns.map((key) => {
+    const label = TARIFF[key].label;
+    const inner = key === 'minutes'
+      ? minutesCell(p)
+      : statCell(key, statValue(p, key), p.position);
+    return `<td class="num" data-label="${esc(label)}">${inner}</td>`;
+  }).join('');
 
   return `<tr>
     <td data-label="Player">
@@ -236,10 +301,7 @@ function row(r) {
       <span class="t-sub">${club ? esc(ordinal(club.position)) : ''}</span></td>
     <td data-label="Last 5">${meter(Math.min(1, perApp / 12), r.formApps ? perApp.toFixed(1) : '—', formLabel)}</td>
     <td class="num" data-label="Starts">${p.starts}</td>
-    <td class="num" data-label="Minutes">${p.minutes}</td>
-    <td class="num" data-label="Goals">${p.goals}</td>
-    <td class="num" data-label="Assists">${p.assists}</td>
-    <td class="num" data-label="Clean sheets">${showCS ? p.cleanSheets : '<span class="muted">—</span>'}</td>
+    ${statCells}
     <td data-label="Next fixture">${nextCell(rec.next)}</td>
     <td data-label="Status">${availabilityBadge(p.availability)}
       ${r.differential.score >= 55 ? `<span class="t-sub" title="${esc(r.differential.note)}">${esc(r.differential.label)} ${r.differential.score.toFixed(0)}</span>` : ''}</td>

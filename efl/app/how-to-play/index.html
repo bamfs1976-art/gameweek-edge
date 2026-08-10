@@ -70,22 +70,36 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       fantasy game, played across the Championship, League One and League Two. It asks you for
       three things every round: <strong>seven players</strong>, <strong>two clubs</strong> and
       <strong>one captain</strong>. This page is a short guide to those decisions and how the
-      tools on this site help with them. It is not the official rulebook — for the current
-      scoring table, deadlines and any rule changes, always check the official game.</p>
+      tools on this site help with them. It is not the official rulebook — for deadlines,
+      eligibility and any rule changes, always check the official game.</p>
 
     <h2 id="seven">The seven-player selection</h2>
     <p>You pick a small team, and "small" is the whole character of the game. Seven starters
       means every single pick is roughly a seventh of your score, so there is nowhere to hide a
       passenger. In a fifteen-man Premier League squad a bad fourth defender costs you a couple
       of points a week. Here, it costs you a seventh of the round.</p>
-    <p>Two consequences follow, and both run against the instincts a Premier League fantasy game
+    <p>The seven are <strong>one goalkeeper and six outfielders</strong>, in one of three
+      formations:</p>
+    <ul>
+      <li><strong>1-2-2-2</strong> — two defenders, two midfielders, two forwards</li>
+      <li><strong>1-2-3-1</strong> — two defenders, three midfielders, one forward</li>
+      <li><strong>1-3-2-1</strong> — three defenders, two midfielders, one forward</li>
+    </ul>
+    <p>You may also take <strong>no more than two players from any one club</strong>. That limit
+      is the part people underestimate. The top of any form-driven list clusters into the two or
+      three clubs having a good month, so the seven best players are usually an illegal team, and
+      the real question is which of them to give up. That is what
+      <a href="/fantasy-efl/">Build your seven</a> on the dashboard solves — it searches the
+      legal combinations rather than taking the best player at each position and hoping.</p>
+    <p>Two more consequences, and both run against the instincts a Premier League fantasy game
       teaches you:</p>
     <ul>
-      <li><strong>Minutes matter more than upside.</strong> A player who might get you eight
-        points but might not start is a much worse pick than one who will certainly play and
-        will probably get four. Check starts before you check goals — the
-        <a href="/fantasy-efl/players/">player finder</a> shows starts and minutes on every row
-        for exactly this reason.</li>
+      <li><strong>Minutes matter more than form.</strong> Not a little more —
+        <em>measurably</em> more. Across 83,698 real appearances, a player's average minutes over
+        his last five rounds predicts his next round's points better than any points-based
+        measure of form does. A player averaging under 30 minutes in his last five returns
+        <strong>0.59</strong> points the following week; one averaging 75 or more returns
+        <strong>4.25</strong>. Check minutes before you check goals.</li>
       <li><strong>Spreading risk is harder.</strong> With seven players you cannot cover every
         outcome, so a coherent squad — players from clubs with genuinely good fixtures — usually
         beats a scattering of individually clever picks.</li>
@@ -113,6 +127,69 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       game does not score you half of nothing — he scores you nothing, twice. Check the
       <a href="/fantasy-efl/fixtures/">fixture ticker</a> for short turnarounds before you
       commit the armband.</p>
+    <p><strong>Do not assume the armband belongs to a forward.</strong> That is a Premier League
+      habit and this game does not reward it. Measured across those same 83,698 appearances, mean
+      points per appearance run <strong>defenders 4.19, goalkeepers 4.08, midfielders 3.88,
+      forwards 3.14</strong>. The forward is the <em>worst</em>-scoring position in Fantasy EFL,
+      because defenders are paid for clean sheets, clearances, blocks and tackles, and a
+      goalkeeper's goal is worth ten points. A defender at home to the bottom of the division is
+      very often the right captain.</p>
+
+    <h2 id="scoring">How points are scored</h2>
+    <p>This page used to decline to print the scoring table, on the grounds that guessing at
+      another game's rules in public is worse than saying "look it up". It is no longer a guess.
+      The table below was checked by recomputing the score of <strong>83,698 real player-round
+      records</strong> — 35 rounds of a completed season, published by the official game — from
+      their raw statistics and comparing with the official points figure. <strong>83,688 of them
+      reproduce exactly: 99.99%.</strong> The ten misses are all off by one, which is what
+      post-match statistical corrections look like.</p>
+    <p>Tariffs can change between seasons, and the official game is the authority. But this is
+      accurate enough to plan with, and accurate enough that the models on this site score
+      players in the game's real currency rather than an approximation of it.</p>
+
+    <div class="tscroll" style="margin:14px 0">
+      <table>
+        <caption class="sr-only">Fantasy EFL scoring, by statistic and position</caption>
+        <thead><tr><th scope="col">For</th><th scope="col">Points</th><th scope="col">Who</th></tr></thead>
+        <tbody>
+          <tr><td>Playing up to 60 minutes</td><td class="num">+1</td><td>All</td></tr>
+          <tr><td>Playing 60 minutes or more</td><td class="num">+2</td><td>All</td></tr>
+          <tr><td>A goal</td><td class="num">+10 / +7 / +6 / +5</td><td>GK / DEF / MID / FWD</td></tr>
+          <tr><td>A hat-trick</td><td class="num">+5</td><td>All, on top of the goals</td></tr>
+          <tr><td>An assist</td><td class="num">+3</td><td>All</td></tr>
+          <tr><td>A clean sheet (60 minutes or more)</td><td class="num">+5</td><td>GK, DEF</td></tr>
+          <tr><td>Every 2 goals conceded</td><td class="num">−1</td><td>GK, DEF</td></tr>
+          <tr><td>Every 3 saves</td><td class="num">+2</td><td>GK</td></tr>
+          <tr><td>A penalty save</td><td class="num">+5</td><td>GK</td></tr>
+          <tr><td>Every 4 clearances</td><td class="num">+1</td><td>DEF</td></tr>
+          <tr><td>Every 2 blocks</td><td class="num">+1</td><td>DEF</td></tr>
+          <tr><td>Every 2 tackles</td><td class="num">+1</td><td>DEF</td></tr>
+          <tr><td><strong>An interception</strong></td><td class="num"><strong>+2</strong></td><td>MID</td></tr>
+          <tr><td>Every 2 key passes</td><td class="num">+1</td><td>MID, FWD</td></tr>
+          <tr><td>A shot on target</td><td class="num">+1</td><td>MID, FWD</td></tr>
+          <tr><td>A missed penalty</td><td class="num">−3</td><td>All</td></tr>
+          <tr><td>An own goal</td><td class="num">−3</td><td>All</td></tr>
+          <tr><td>A yellow card</td><td class="num">−1</td><td>All</td></tr>
+          <tr><td>A red card</td><td class="num">−3</td><td>All</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Three things in that table do most of the work, and none of them is a goal.</p>
+    <ul>
+      <li><strong>Interceptions pay two points each, and only midfielders get them.</strong> It
+        is the most valuable repeatable statistic in the game. A midfielder making four
+        interceptions has out-scored a forward's shot on target eight times over, in a way that
+        never shows up in a highlights package.</li>
+      <li><strong>Defenders get paid for defending</strong> — clearances, blocks and tackles on
+        top of the clean sheet. That, plus a goal being worth seven, is why they out-score
+        everyone.</li>
+      <li><strong>A goalkeeper's goal is worth ten points</strong>, which will almost never
+        happen and is worth knowing anyway.</li>
+    </ul>
+    <p>The <a href="/fantasy-efl/players/">player finder</a> shows what each statistic was worth
+      next to the statistic itself, and switches its columns to match the position you filter
+      to — a defender's clearances, a midfielder's interceptions.</p>
 
     <h2 id="fixtures">Fixture difficulty</h2>
     <p>Every fixture on this site carries a rating from <strong>1 (most favourable)</strong> to
@@ -156,28 +233,61 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       numbers.</p>
 
     <h2 id="differentials">Differentials</h2>
-    <p>A differential normally means a player few other managers own. Fantasy EFL does not
-      publish ownership publicly, so this site cannot tell you that, and does not pretend to —
-      there is no ownership column anywhere, and there will not be one until there is a feed
-      behind it.</p>
-    <p>What the finder offers instead is a <strong>form differential</strong>: an editorial,
-      modelled score combining strong recent output with how much attention a player's club tends
-      to get — its division, and how near the top of it the club sits. It is a prompt to go and
-      look at someone, not evidence that they are lightly owned. It is labelled as modelled
-      wherever it appears.</p>
+    <p>A differential normally means a pick few other managers own, and Fantasy EFL splits neatly
+      in two on this.</p>
+    <p><strong>For clubs, ownership is real and published.</strong> The official game states what
+      percentage of managers has picked each club, and where the data source in use supplies it,
+      the <a href="/fantasy-efl/clubs/">club picker</a> shows it as a column and lets you sort by
+      it. A strong club that few managers have taken is the closest thing to a genuine
+      differential this game offers, and it is the easier of the two club picks to get an edge
+      on precisely because most managers set theirs in August and forget.</p>
+    <p><strong>For players, nothing public publishes it</strong> — so this site shows no player
+      ownership column and does not invent one. What the finder offers instead is a
+      <strong>form differential</strong>: an editorial, modelled score combining strong recent
+      output with how much attention a player's club tends to get — its division, and how near
+      the top of it the club sits. It is a prompt to go and look at someone, not evidence that
+      they are lightly owned, and it is labelled as modelled wherever it appears.</p>
 
     <h2 id="model">How the recommendations are built</h2>
     <p>Nothing on this site is a black box. Two weighted models do all the work, and both are in
       one file with the weights at the top of it.</p>
     <h3>Player rating</h3>
+    <p>These weights are not picked by feel. They come from a walk-forward test on the same
+      83,698-appearance dataset: for each of 52,158 player-rounds, build a predictor from earlier
+      rounds only and see how well it correlates with the points actually scored in the
+      <em>next</em> round.</p>
+    <div class="tscroll" style="margin:12px 0">
+      <table>
+        <caption class="sr-only">Correlation of each predictor with next-round points</caption>
+        <thead><tr><th scope="col">Predictor</th><th scope="col" class="num">Correlation</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Average minutes, last 5 rounds</strong></td><td class="num"><strong>+0.515</strong></td></tr>
+          <tr><td>Total points, last 5 rounds</td><td class="num">+0.494</td></tr>
+          <tr><td>Season start rate</td><td class="num">+0.461</td></tr>
+          <tr><td>Points per appearance, last 5 rounds</td><td class="num">+0.447</td></tr>
+          <tr><td>Points per appearance, season</td><td class="num">+0.408</td></tr>
+          <tr><td>Points <em>per 90 minutes</em>, last 5 rounds</td><td class="num">+0.065</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>That last row is worth a sentence. Points per 90 is a natural-looking measure and it is
+      very nearly useless for picking, because it flatters a substitute who scores in a
+      twenty-minute cameo. Form on this site is always points per <em>appearance</em>.</p>
     <ul>
-      <li><strong>Recent form (30%)</strong> — fantasy points per appearance in the last five rounds</li>
-      <li><strong>Starts and minutes (22%)</strong> — the floor under everything else</li>
-      <li><strong>Output (20%)</strong> — goals, assists and clean sheets, weighted by position</li>
-      <li><strong>Next fixture (20%)</strong> — the 1-5 rating above</li>
+      <li><strong>Starts and minutes (34%)</strong> — the strongest single signal there is</li>
+      <li><strong>Recent form (26%)</strong> — points per appearance in the last five rounds</li>
+      <li><strong>Output (16%)</strong> — everything the player has been paid for, valued at the
+        real tariff above and expressed per 90 minutes</li>
+      <li><strong>Next fixture (16%)</strong> — the 1-5 rating above</li>
       <li><strong>Home advantage (8%)</strong></li>
       <li><strong>Availability</strong> — applied as a multiplier over the total, not as another slice</li>
     </ul>
+    <p>The last two are then <strong>scaled by position</strong>, because a flat number is wrong
+      for both. Home advantage is worth +0.7% to a goalkeeper and +14.3% to a forward. Fixture
+      difficulty runs the other way: across all positions, points move about 17% between the
+      easiest and hardest fixture bands, but a goalkeeper's or defender's clean-sheet rate moves
+      from <strong>36.3% to 19.0%</strong> — nearly half, and a clean sheet is five points. The
+      fixture <em>is</em> the pick for a defender; for a forward it is one input among several.</p>
     <h3>Club rating</h3>
     <ul>
       <li><strong>Recent form (28%)</strong> — league points in the last five</li>
@@ -204,7 +314,8 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
 
     <h2>Start here</h2>
     <ul>
-      <li><a href="/fantasy-efl/">This round's picks</a> — seven cards, one per decision</li>
+      <li><a href="/fantasy-efl/">This round's picks</a> — seven cards, one per decision, and a
+        legal seven built for you</li>
       <li><a href="/fantasy-efl/fixtures/">Fixture ticker</a> — six rounds ahead for all 72 clubs</li>
       <li><a href="/fantasy-efl/players/">Player finder</a> — filter and rank every player</li>
       <li><a href="/fantasy-efl/clubs/">Club picker</a> — compare the two club selections</li>

@@ -19,6 +19,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import { RATING_LABELS, AVAILABILITY_LABELS, POSITION_NAMES, divisionName } from './model.js';
+import { TARIFF, statPoints } from './tariff.js';
 
 export const DIVISION_LABELS = {
   championship: 'Championship',
@@ -162,6 +163,42 @@ export function meter(value, text, label) {
     + `<span class="meter-val" aria-hidden="true">${esc(text)}</span></span>`;
 }
 
+/* ── Points attribution ─────────────────────────────────
+   A stats table tells you a defender made 61 clearances. It does not tell
+   you that was worth 15 points, which is the only reason a Fantasy EFL
+   manager cares about clearances at all. Every stat cell therefore carries
+   what it was worth, in the game's own currency.
+
+   Three states, and they are deliberately different:
+     null   the source does not publish this  → "—", nothing implied
+     0 pts  it happened and paid nothing      → the value, no bracket
+     n pts  it paid                           → "61 (+15)", signed and coloured
+*/
+export function statCell(stat, value, position, minutes) {
+  if (value == null) {
+    return '<span class="muted" title="Not published by this data source">—</span>';
+  }
+  const points = statPoints(stat, value, position, minutes);
+  if (!points) return `<span class="mono">${esc(value)}</span>`;
+  const cls = points > 0 ? 'attr-pos' : 'attr-neg';
+  const rule = TARIFF[stat];
+  const title = `${value} ${rule ? rule.label.toLowerCase() : stat} — `
+    + `${points > 0 ? '+' : ''}${points} point${Math.abs(points) === 1 ? '' : 's'}`
+    + (rule && rule.describe ? ` (${rule.describe})` : '');
+  return `<span class="mono" title="${esc(title)}">${esc(value)} `
+    + `<span class="${cls}" aria-label="worth ${points > 0 ? 'plus' : 'minus'} `
+    + `${Math.abs(points)} point${Math.abs(points) === 1 ? '' : 's'}">`
+    + `(${points > 0 ? '+' : ''}${points})</span></span>`;
+}
+
+/** Ownership, but only where a source actually publishes it. */
+export function ownershipCell(value) {
+  if (value == null) {
+    return '<span class="muted" title="This data source does not publish ownership">—</span>';
+  }
+  return `<span class="mono">${Number(value).toFixed(1)}%</span>`;
+}
+
 export function availabilityBadge(availability) {
   const a = availability || { status: 'available', note: '' };
   const word = AVAILABILITY_LABELS[a.status] || a.status;
@@ -211,14 +248,33 @@ export function sourceBanner(source) {
   if (!source) return '';
   if (source.live) {
     return `<p class="note" role="note"><b>${esc(source.label)}.</b> ${esc(source.description)} `
-      + `Ratings and scores on this page are modelled, not official.</p>`;
+      + `Ratings and scores on this page are modelled, not official.</p>`
+      + coverageNote(source.coverage);
   }
   return '<div class="note note-sample" role="note">'
     + `<b>${esc(source.label)} — not live Fantasy EFL data.</b> ${esc(source.description)} `
     + 'Club names are real; results, tables, players and availability are generated for '
     + 'demonstration. Swap in a real provider and this banner changes with it — see '
     + '<code>efl/app/assets/provider.js</code>.'
-    + '</div>';
+    + '</div>'
+    + coverageNote(source.coverage);
+}
+
+/**
+ * What the active source could NOT answer.
+ *
+ * A source that fills some fields and not others is the normal case, and
+ * the failure worth designing against is not an error — it is a form meter
+ * built from nothing that looks exactly like a form meter built from five
+ * rounds. So the gaps are stated where the numbers are, rather than in a
+ * changelog nobody reads.
+ */
+export function coverageNote(coverage) {
+  if (!coverage || !Array.isArray(coverage.notes) || !coverage.notes.length) return '';
+  return '<details class="note note-method coverage"><summary>What this data source '
+    + `does and does not cover (${coverage.notes.length})</summary><ul>`
+    + coverage.notes.map((n) => `<li>${esc(n)}</li>`).join('')
+    + '</ul></details>';
 }
 
 /** The one-line method note that has to sit under anything rated 1-5. */

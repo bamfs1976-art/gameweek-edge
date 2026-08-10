@@ -33,6 +33,8 @@
 
 /** @typedef {import('./types.js')} */
 
+import { scoreAppearance } from './tariff.js';
+
 export const DIVISIONS = [
   { id: 'championship', name: 'Championship', short: 'CHA', tier: 2 },
   { id: 'league-one', name: 'League One', short: 'LG1', tier: 3 },
@@ -151,16 +153,24 @@ const AVAILABILITY_NOTES = {
     'Recalled by parent club']
 };
 
-/* Fantasy EFL's exact scoring tariff is published by the official game and
-   changes between seasons, so this app does not restate it as fact. The
-   sample points below are a DEMONSTRATION tariff of the usual shape
-   (appearance, goals by position, assists, clean sheets) purely so the
-   sample players have a plausible points column to sort. Nothing in the
-   recommendation model reads it. */
-const DEMO_TARIFF = {
-  goal: { GK: 6, DEF: 6, MID: 5, FWD: 4 },
-  cleanSheet: { GK: 4, DEF: 4, MID: 1, FWD: 0 },
-  assist: 3
+/* The sample data used to carry its own invented "demonstration tariff",
+   because the real one was unknown. It is known now and verified (see
+   tariff.js), so the sample players are scored by the SAME rules the real
+   game uses. The stats are still invented; the arithmetic over them is not.
+
+   That is worth more than tidiness: it means the sample dataset exercises
+   the real scoring shape — a keeper's goal worth ten, a midfielder's
+   interceptions worth two apiece — so the models and the points-attribution
+   cells are being developed against the right incentives rather than
+   against FPL's. */
+
+/* Per-90 rates for the tariff stats, by position and by how nailed-on the
+   player is. Loose approximations of a real distribution, not measurements. */
+const STAT_RATES = {
+  GK: { saves: 3.1, penaltySaves: 0.03, clearances: 0.9, blocks: 0.1, tackles: 0.15, interceptions: 0.2, keyPasses: 0.05, shotsOnTarget: 0.01, yellowCards: 0.06 },
+  DEF: { saves: 0, penaltySaves: 0, clearances: 4.4, blocks: 1.3, tackles: 2.3, interceptions: 1.6, keyPasses: 0.5, shotsOnTarget: 0.25, yellowCards: 0.19 },
+  MID: { saves: 0, penaltySaves: 0, clearances: 1.1, blocks: 0.5, tackles: 2.1, interceptions: 1.4, keyPasses: 1.4, shotsOnTarget: 0.7, yellowCards: 0.17 },
+  FWD: { saves: 0, penaltySaves: 0, clearances: 0.5, blocks: 0.2, tackles: 0.9, interceptions: 0.5, keyPasses: 1.1, shotsOnTarget: 1.25, yellowCards: 0.13 }
 };
 
 /* The Saturday at, or just after, `now` — 15:00 UTC, the EFL's default. */
@@ -243,6 +253,20 @@ export function buildSampleSnapshot(opts = {}) {
         home: { played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0 },
         away: { played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0 },
         last5: { played: 0, points: 0, goalsFor: 0, goalsAgainst: 0, cleanSheets: 0 },
+        /* ── A RULE THIS FILE FOLLOWS DELIBERATELY ──────────────
+           Simulated football gets generated. Third-party ASSERTIONS do not.
+
+           Goals, minutes, league positions and injuries are simulated
+           football: inventing them is the point of sample data, and the
+           banner says so. Ownership and the official 1-5 fixture ratings
+           are different in kind — they are the official game's statements
+           about what real managers picked and how hard it rates a fixture.
+           Generating those would be putting words in someone's mouth, so
+           they stay null here and the UI hides the columns until a source
+           that actually publishes them is connected. */
+        ownership: null,
+        fdrHome: null,
+        fdrAway: null,
         _results: []
       };
       clubs.push(club);
@@ -392,6 +416,20 @@ export function buildSampleSnapshot(opts = {}) {
       const availability = drawAvailability(rng, slot.depth);
       const last5 = buildLast5(rng, club, slot, startRate, availability);
 
+      /* Season totals for the tariff stats, drawn from the per-90 rates and
+         scaled by minutes actually played. */
+      const rates = STAT_RATES[slot.position];
+      const nineties = minutes / 90;
+      const stats = {};
+      for (const [key, rate] of Object.entries(rates)) {
+        stats[key] = Math.round(rate * nineties * (0.75 + rng() * 0.5));
+      }
+      stats.redCards = rng() < 0.04 ? 1 : 0;
+      /* A club's goals conceded, shared out over the matches this player
+         actually started — the only tariff stat that is a team outcome. */
+      stats.goalsConceded = slot.position === 'GK' || slot.position === 'DEF'
+        ? Math.round(club.goalsAgainst * safeShare(starts, club.played)) : null;
+
       players.push({
         id: `${club.id}-${i + 1}`,
         name,
@@ -404,12 +442,16 @@ export function buildSampleSnapshot(opts = {}) {
         goals,
         assists,
         cleanSheets,
-        points: seasonPoints(slot.position, { appearances, starts, goals, assists, cleanSheets }),
+        stats,
+        points: seasonPoints(slot.position, {
+          appearances, starts, goals, assists, cleanSheets, minutes, stats
+        }),
         last5,
         availability,
-        /* No feed publishes Fantasy EFL ownership, so the field is null and
-           the UI hides the column rather than inventing a percentage. The
-           finder offers a modelled "form differential" in its place. */
+        /* The official game publishes ownership for CLUBS but not, as far as
+           any public endpoint shows, for players — so this stays null and
+           the finder offers a modelled "form differential" in its place,
+           clearly labelled as the editorial thing it is. */
         ownership: null
       });
     });
@@ -443,30 +485,53 @@ export function buildSampleSnapshot(opts = {}) {
       const goals = rng2() < attack * r.scored ? 1 : 0;
       const assists = rng2() < attack * 0.7 * r.scored ? 1 : 0;
       const cleanSheet = r.conceded === 0 && minutes >= 60;
-      const points = minutes === 0 ? 0
-        : (minutes >= 60 ? 2 : 1)
-          + goals * DEMO_TARIFF.goal[slot.position]
-          + assists * DEMO_TARIFF.assist
-          + (cleanSheet ? DEMO_TARIFF.cleanSheet[slot.position] : 0);
+      /* Scored by the real tariff, including the per-match defensive and
+         creative stats — which is what makes a midfielder's quiet
+         three-interception afternoon worth something, as it is in the
+         actual game. */
+      const rates = STAT_RATES[slot.position];
+      const nineties = minutes / 90;
+      const matchStats = { minutes, goals, assists, cleanSheets: cleanSheet ? 1 : 0 };
+      for (const [key, rate] of Object.entries(rates)) {
+        matchStats[key] = Math.round(rate * nineties * (0.5 + rng()));
+      }
+      matchStats.goalsConceded = r.conceded;
+      /* The match keeps the stats it was scored from. That is what makes an
+         appearance AUDITABLE — dev/test-efl.mjs recomputes every sample
+         appearance from its own row and requires the arithmetic to match,
+         which is the only way to be sure the demo has not quietly drifted
+         back to an FPL-shaped tariff. */
+      const points = scoreAppearance(matchStats, slot.position);
+      const injuredThisRound = availability.status === 'injured'
+        && r.round === recent[recent.length - 1].round;
       return {
         round: r.round,
-        minutes: availability.status === 'injured' && r.round === recent[recent.length - 1].round
-          ? 0 : minutes,
-        started,
-        goals,
-        assists,
-        cleanSheet,
-        points
+        minutes: injuredThisRound ? 0 : minutes,
+        started: injuredThisRound ? false : started,
+        goals: injuredThisRound ? 0 : goals,
+        assists: injuredThisRound ? 0 : assists,
+        cleanSheet: injuredThisRound ? false : cleanSheet,
+        stats: injuredThisRound ? { minutes: 0 } : matchStats,
+        points: injuredThisRound ? 0 : points
       };
     });
   }
 
+  /* Season points, by the real tariff. Appearance points are the one line
+     that cannot come from a season total — 60+ minutes pays 2 and anything
+     less pays 1 — so starts and substitute outings are charged separately. */
   function seasonPoints(position, s) {
-    return s.appearances + s.starts
-      + s.goals * DEMO_TARIFF.goal[position]
-      + s.assists * DEMO_TARIFF.assist
-      + s.cleanSheets * DEMO_TARIFF.cleanSheet[position];
+    const appearancePoints = s.starts * 2 + Math.max(0, s.appearances - s.starts);
+    return appearancePoints + scoreAppearance({
+      minutes: 90,           // already charged above; keeps the CS rule satisfied
+      goals: s.goals,
+      assists: s.assists,
+      cleanSheets: s.cleanSheets,
+      ...s.stats
+    }, position) - 2;        // remove the single appearance the call above adds
   }
+
+  function safeShare(a, b) { return b ? a / b : 0; }
 
   /* `strength` and `_results` are generator internals — the app's types do
      not declare them, so they do not leave this file. */
@@ -479,7 +544,20 @@ export function buildSampleSnapshot(opts = {}) {
       label: 'Sample data',
       description: 'Generated demonstration data — real club names, invented results, '
         + 'invented players. Nothing here is a live Fantasy EFL feed.',
-      generatedAt: new Date(now).toISOString()
+      generatedAt: new Date(now).toISOString(),
+      coverage: {
+        playerMatchHistory: true,
+        playerDetailedStats: true,
+        clubGoals: true,
+        /* Null on purpose, not missing by accident — see the rule above. */
+        clubOwnership: false,
+        officialFdr: false,
+        notes: [
+          'Ownership and the official 1-5 fixture ratings are statements by the '
+          + 'official game, so the sample data leaves them empty rather than '
+          + 'inventing them. Connect the official source to fill them in.'
+        ]
+      }
     },
     clubs: publicClubs,
     players,

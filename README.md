@@ -39,15 +39,26 @@ instead. It is also **five real HTML pages** rather than one shell, so each
 route has a genuine title, description, canonical URL and set of internal
 links before any JavaScript runs.
 
-> ⚠️ **Fantasy EFL runs on sample data.** No free, reliable feed covers
-> player-level data for all three EFL divisions, so the app ships with a
-> generated dataset and says so on every page — the banner is rendered from
-> `source.live`, not written into the markup, so it disappears by itself when
-> a real provider is configured. Club names are real; results, tables, players
-> and injuries are invented, and every player *name* is generated. All data
-> enters through one file, `efl/app/assets/provider.js`; see
-> [`efl/README.md`](efl/README.md) for the models, the weights, and how to
-> swap the provider.
+Fantasy EFL can read the **official game's own public feed** — clubs, players,
+fixtures, real club ownership and the game's own difficulty ratings, with no
+API key and no account, proxied at `/api/efl/*` by
+`netlify/functions/efl.js`. Its scoring tariff is implemented and **verified
+against 83,698 real player-round records** (99.99% exact), and the model's
+weights come from measured correlations on that dataset rather than from
+intuition — minutes outweigh form, and the forward is the worst-scoring
+position in the game.
+
+> ⚠️ **It still ships on sample data by default.** `fantasy.efl.com` was
+> unreachable from the machine the provider was written on, so the shapes it
+> maps have never been seen in a live response — and an unverified source must
+> not be the one a visitor meets first. Run `npx netlify dev`, check
+> `/api/efl/squads`, then flip one line. Until then the app generates its
+> dataset and says so on every page: the banner is rendered from `source.live`,
+> not written into the markup, so it disappears by itself. Club names are real;
+> results, tables, players and injuries are invented, and every player *name*
+> is generated. All data enters through one file,
+> `efl/app/assets/provider.js` — see [`efl/README.md`](efl/README.md) for the
+> models, the weights, the tariff and how to swap the provider.
 
 ### Game packs
 

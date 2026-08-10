@@ -86,19 +86,22 @@
 # same-origin apart from Google Fonts, which is already allowed, and it makes
 # no fetch at all while it runs on its bundled sample data.
 #
-# WHEN A REAL EFL FEED ARRIVES, this is where its route goes, following the
-# same shape as the proxies below:
+# The official Fantasy EFL feed. Three documents — squads, players, rounds —
+# that need no API key and no account, proxied so the browser only ever talks
+# to this origin: connect-src in the CSP above is 'self' and nothing else, and
+# the function's cache TTLs are what keep us a polite client of somebody's
+# front end rather than a load on it. See netlify/functions/efl.js.
 #
-#   [[redirects]]
-#     from = "/api/efl/*"
-#     to = "/.netlify/functions/efl/:splat"
-#     status = 200
-#     force = true
-#
-# Same-origin is load-bearing rather than tidy: connect-src in the CSP above
-# is 'self' and nothing else, and any upstream API key belongs in the
-# function's environment where the browser can never see it. The app-side
-# switch is one config object — see efl/app/assets/provider.js.
+# The app still defaults to its bundled sample data, because fantasy.efl.com
+# was unreachable from the machine this was written on and an unverified
+# provider must not be the one a visitor meets first. Flip it in
+# efl/app/assets/provider.js, or add ?provider=official to any Fantasy EFL URL
+# to try it against a real deploy without changing what anyone else sees.
+[[redirects]]
+  from = "/api/efl/*"
+  to = "/.netlify/functions/efl/:splat"
+  status = 200
+  force = true
 
 # UEFA Champions League Fantasy, normalised into the FPL vocabulary the shared
 # model engine speaks. Serves Euro Matchday Edge at /euro/.

@@ -38,17 +38,40 @@ const VALID_POSITIONS = new Set(['GK', 'DEF', 'MID', 'FWD']);
 const VALID_DIVISIONS = new Set(['championship', 'league-one', 'league-two']);
 
 export const DEFAULT_CONFIG = {
+  /* ── WHY THE DEFAULT IS STILL 'sample' ────────────────────
+     The official provider below is written and unit-tested, and it has
+     never been run against the live host: this project's egress proxy
+     refuses fantasy.efl.com, exactly as it refuses football-data.org for
+     the dormant proxy in netlify/functions/football-data.js. The field
+     names it maps come from the official game's own published responses as
+     used by a working third-party site, not from a response anyone here has
+     seen.
+
+     Shipping an unverified provider as the default would mean the first
+     person to find out it is wrong is a visitor. So it is opt-in until
+     someone runs `npx netlify dev` and confirms the shapes — flip
+     `provider` to 'official' here, or add ?provider=official to any URL to
+     try it without editing anything. See efl/README.md. */
   provider: 'sample',
+  /* Same-origin proxy paths. The browser never talks to fantasy.efl.com
+     directly: connect-src in the site CSP is 'self', and the proxy is what
+     enforces the cache TTLs that keep us a polite client. */
+  base: '/api/efl',
   endpoint: '/api/efl/snapshot',
-  /* Sample data is generated per page load; there is nothing to cache
-     across a session that regenerating does not give back in ~10ms. A real
-     provider will want this. */
   cacheMs: 5 * 60 * 1000
 };
 
 export function readConfig(win) {
   const w = win || (typeof window === 'undefined' ? {} : window);
-  return { ...DEFAULT_CONFIG, ...(w.EFL_CONFIG || {}) };
+  const config = { ...DEFAULT_CONFIG, ...(w.EFL_CONFIG || {}) };
+  /* ?provider=official is a testing affordance, not a feature: it lets the
+     unverified provider be exercised on a real deploy without a code change
+     and without changing what anyone else sees. */
+  try {
+    const override = new URLSearchParams(w.location ? w.location.search : '').get('provider');
+    if (override) config.provider = override;
+  } catch (_) { /* no location, e.g. under Node */ }
+  return config;
 }
 
 /* ── Normalisation ────────────────────────────────────────
@@ -94,8 +117,29 @@ export function normaliseClub(raw) {
     last5: {
       played: num(last5.played), points: num(last5.points), goalsFor: num(last5.goalsFor),
       goalsAgainst: num(last5.goalsAgainst), cleanSheets: num(last5.cleanSheets)
-    }
+    },
+    /* Real when the source publishes it, null otherwise — never zero. A
+       club nobody has picked and a club we have no figure for are different
+       things, and the UI renders them differently. */
+    ownership: statOrNull(src.ownership),
+    fdrHome: statOrNull(src.fdrHome),
+    fdrAway: statOrNull(src.fdrAway)
   };
+}
+
+/* Nullable stat: absent stays absent. `num()` would turn "not published"
+   into 0, and a defender credited with zero tackles he did not fail to make
+   is a lie the scoring model would then act on. */
+const statOrNull = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+
+const STAT_KEYS = ['saves', 'penaltySaves', 'goalsConceded', 'clearances', 'blocks',
+  'tackles', 'interceptions', 'keyPasses', 'shotsOnTarget', 'yellowCards', 'redCards'];
+
+export function normaliseStats(raw) {
+  const src = raw || {};
+  const out = {};
+  for (const key of STAT_KEYS) out[key] = statOrNull(src[key]);
+  return out;
 }
 
 export function normalisePlayer(raw) {
@@ -113,6 +157,7 @@ export function normalisePlayer(raw) {
     assists: num(src.assists),
     cleanSheets: num(src.cleanSheets),
     points: num(src.points),
+    stats: normaliseStats(src.stats),
     last5: Array.isArray(src.last5) ? src.last5.map((m) => ({
       round: num(m && m.round),
       minutes: num(m && m.minutes),
@@ -120,6 +165,9 @@ export function normalisePlayer(raw) {
       goals: num(m && m.goals),
       assists: num(m && m.assists),
       cleanSheet: Boolean(m && m.cleanSheet),
+      /* The raw stats behind the score, where the source carries them. Kept
+         so an appearance can be re-derived rather than taken on trust. */
+      stats: m && m.stats ? { ...m.stats } : null,
       points: num(m && m.points)
     })) : [],
     availability: normaliseAvailability(src.availability),
@@ -169,7 +217,8 @@ export function normaliseSnapshot(payload, sourceOverride) {
       live: Boolean(source.live),
       label: str(source.label, 'Unknown source'),
       description: str(source.description, ''),
-      generatedAt: str(source.generatedAt, new Date().toISOString())
+      generatedAt: str(source.generatedAt, new Date().toISOString()),
+      coverage: source.coverage || null
     },
     clubs,
     /* Orphans are dropped rather than rendered as "—": a player whose club
@@ -179,6 +228,211 @@ export function normaliseSnapshot(payload, sourceOverride) {
     fixtures: fixtures.filter((f) => knownClubs.has(f.homeId) && knownClubs.has(f.awayId)),
     currentRound: num(src.currentRound, 1)
   };
+}
+
+/* ═══════════════════════════════════════════════════════════
+   THE OFFICIAL FANTASY EFL FEED
+
+   The official game publishes three JSON documents that need no key and no
+   account:
+
+     /json/fantasy/squads.json    72 clubs across all three divisions
+     /json/fantasy/players.json   every player, season totals, injury note
+     /json/fantasy/rounds.json    every round, its games and its lockout
+
+   A fourth — /json/fantasy/player_profiles/{id}.json — carries per-match
+   history and requires a logged-in Fantasy EFL account. This app does not
+   use it and should not: it would mean holding somebody's game credentials
+   and making about eleven hundred requests to refresh one page. The cost of
+   that decision is stated honestly in `coverage` below and shown in the UI,
+   rather than papered over.
+
+   ── WHAT THAT COSTS, PRECISELY ─────────────────────────────
+   Without per-match history there is no five-round form window and no
+   per-club goals-for/against. So:
+     · Player form falls back to season points per appearance. That is a
+       real predictor (+0.408 correlation with next-round points, measured)
+       and a weaker one than the five-round window (+0.447).
+     · Club attack/defence inputs go flat, which normalise() answers with
+       0.5 for everyone — the honest response to "nothing separates them".
+   Both are reported in `coverage.notes` and surfaced by the UI.
+
+   ── DIVISIONS ──────────────────────────────────────────────
+   The feed identifies divisions by `competitionId`. Which integer means
+   which division is NOT documented and is not guessable, so it is derived
+   at runtime instead: three competitions of 24 clubs, ranked by the mean
+   fantasy points their clubs have scored. That is a heuristic and it is
+   labelled as one — but it is self-correcting across seasons, which a
+   hard-coded {10:'championship'} map would not be.
+   ═══════════════════════════════════════════════════════════ */
+
+const OFFICIAL_POSITIONS = { GK: 'GK', GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD', FOR: 'FWD' };
+
+/**
+ * Work out which competitionId is which division.
+ * @param {Object[]} squads raw official squads
+ * @returns {Object} competitionId → DivisionId
+ */
+export function mapCompetitions(squads) {
+  const byCompetition = {};
+  for (const s of squads || []) {
+    const key = String(s && s.competitionId);
+    (byCompetition[key] || (byCompetition[key] = [])).push(s);
+  }
+  const ranked = Object.entries(byCompetition)
+    .map(([id, list]) => ({
+      id,
+      strength: list.reduce((sum, s) => sum + (Number(s.averagePoints) || 0), 0) / (list.length || 1)
+    }))
+    .sort((a, b) => b.strength - a.strength);
+  const order = ['championship', 'league-one', 'league-two'];
+  const out = {};
+  ranked.forEach((c, i) => { out[c.id] = order[i] || 'league-two'; });
+  return out;
+}
+
+/** Official squad → our Club. */
+export function mapOfficialSquads(squads, competitions) {
+  return (squads || []).map((s) => {
+    const form = Array.isArray(s.last3Form)
+      ? s.last3Form.filter((r) => r === 'W' || r === 'D' || r === 'L') : [];
+    const points = form.reduce((n, r) => n + (r === 'W' ? 3 : r === 'D' ? 1 : 0), 0);
+    return normaliseClub({
+      id: String(s.id),
+      name: str(s.name, str(s.shortName)),
+      short: str(s.abbreviation, str(s.shortName).slice(0, 3).toUpperCase()),
+      division: competitions[String(s.competitionId)] || 'championship',
+      position: s.leaguePosition,
+      /* The feed gives a league position and a recent-form string but no
+         played/won/drawn/lost and no goals. Those stay zero, which the model
+         reads as "no separation" rather than as "nil". */
+      form,
+      last5: { played: form.length, points, goalsFor: 0, goalsAgainst: 0, cleanSheets: 0 },
+      ownership: s.percentSelected,
+      fdrHome: s.fdrHome,
+      fdrAway: s.fdrAway
+    });
+  });
+}
+
+/** Official player → our Player. */
+export function mapOfficialPlayers(players, clubsById) {
+  return (players || []).map((p) => {
+    const club = clubsById[String(p.squadId)];
+    const appearances = num(p.appearances);
+    const injury = str(p.injuryDetails).trim();
+    return normalisePlayer({
+      id: String(p.id),
+      name: str(p.displayName, `${str(p.firstName)} ${str(p.lastName)}`.trim()),
+      clubId: String(p.squadId),
+      division: club ? club.division : 'championship',
+      position: OFFICIAL_POSITIONS[String(p.position).toUpperCase()] || 'MID',
+      appearances,
+      /* The feed publishes appearances, not starts or minutes. Treating an
+         appearance as a start would overstate the strongest signal in the
+         whole model, so starts mirrors appearances and minutes is left at
+         zero — and coverage.playerMatchHistory says why. */
+      starts: appearances,
+      minutes: 0,
+      goals: p.goalsScored,
+      assists: p.assists,
+      cleanSheets: p.cleanSheets,
+      points: p.totalPoints,
+      stats: {
+        saves: p.saves,
+        tackles: p.tackles,
+        interceptions: p.interceptions,
+        shotsOnTarget: p.shotsOnTarget,
+        keyPasses: p.keyPasses,
+        clearances: p.clearances,
+        blocks: p.blocks,
+        penaltySaves: p.penaltySaves,
+        goalsConceded: p.goalsConceded,
+        yellowCards: p.yellowCards,
+        redCards: p.redCards
+      },
+      last5: [],
+      availability: injury
+        ? { status: 'injured', note: injury, chancePlaying: 0 }
+        : { status: 'available', note: 'No reported issue', chancePlaying: 100 },
+      ownership: null
+    });
+  });
+}
+
+/** Official rounds → our Fixtures, plus the round being picked for. */
+export function mapOfficialRounds(rounds, clubsById, now) {
+  const fixtures = [];
+  let currentRound = 1;
+  let earliestOpen = Infinity;
+  const at = now == null ? Date.now() : now;
+
+  for (const round of rounds || []) {
+    const roundNumber = num(round.roundNumber);
+    const lockout = Date.parse(round.lockoutDate);
+    const finished = round.status === 'completed';
+    if (!finished && Number.isFinite(lockout) && lockout > at && lockout < earliestOpen) {
+      earliestOpen = lockout;
+      currentRound = roundNumber;
+    }
+    for (const game of round.games || []) {
+      const home = clubsById[String(game.homeId)];
+      fixtures.push(normaliseFixture({
+        id: String(game.id),
+        division: home ? home.division : 'championship',
+        round: roundNumber,
+        homeId: String(game.homeId),
+        awayId: String(game.awayId),
+        kickoff: game.kickoffDate || game.date || round.lockoutDate || '',
+        finished,
+        status: 'scheduled'
+      }));
+    }
+  }
+  /* Every round already played and no open lockout: the season is over, so
+     the round being picked for is one past the last completed one. */
+  if (earliestOpen === Infinity) {
+    currentRound = fixtures.reduce((m, f) => Math.max(m, f.round), 0) + 1;
+  }
+  return { fixtures, currentRound };
+}
+
+/**
+ * Join the three official documents into one snapshot.
+ * Exported and pure so dev/test-efl.mjs can hold a payload against it
+ * without a network, which is the only way this stays honest while the live
+ * host is unreachable from here.
+ */
+export function buildOfficialSnapshot({ squads, players, rounds }, opts = {}) {
+  const competitions = mapCompetitions(squads);
+  const clubs = mapOfficialSquads(squads, competitions);
+  const clubsById = Object.fromEntries(clubs.map((c) => [c.id, c]));
+  const mappedPlayers = mapOfficialPlayers(players, clubsById);
+  const { fixtures, currentRound } = mapOfficialRounds(rounds, clubsById, opts.now);
+
+  return normaliseSnapshot({
+    clubs, players: mappedPlayers, fixtures, currentRound
+  }, {
+    id: 'efl-official',
+    live: true,
+    label: 'Official Fantasy EFL data',
+    description: 'Clubs, players and fixtures from the official game\'s public feed. '
+      + 'All ratings and scores on this site are still modelled here, not official.',
+    generatedAt: new Date(opts.now == null ? Date.now() : opts.now).toISOString(),
+    coverage: {
+      playerMatchHistory: false,
+      playerDetailedStats: true,
+      clubGoals: false,
+      clubOwnership: true,
+      officialFdr: true,
+      notes: [
+        'Per-match player history is behind a Fantasy EFL account, so form is '
+        + 'measured from season points per appearance rather than a five-round window.',
+        'The public feed carries no goals scored or conceded per club, so those inputs '
+        + 'to the club rating are flat and the rating leans on form and fixtures.'
+      ]
+    }
+  });
 }
 
 /* ── Providers ────────────────────────────────────────── */
@@ -220,8 +474,38 @@ export function remoteProvider(config, fetchImpl) {
   };
 }
 
+/**
+ * The official Fantasy EFL feed, via the same-origin proxy. Three requests
+ * in parallel; any one of them failing fails the load, because a snapshot
+ * missing its clubs, its players or its fixtures is not a partial answer,
+ * it is a broken page pretending otherwise.
+ */
+export function officialProvider(config, fetchImpl) {
+  const doFetch = fetchImpl || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
+  const base = config.base || DEFAULT_CONFIG.base;
+  return {
+    id: 'efl-official',
+    async load() {
+      if (!doFetch) throw new Error('No fetch available for the official EFL provider');
+      const get = async (name) => {
+        const res = await doFetch(`${base}/${name}`, { headers: { Accept: 'application/json' } });
+        if (!res.ok) {
+          throw Object.assign(new Error(`The official Fantasy EFL feed returned ${res.status} for ${name}`),
+            { status: res.status });
+        }
+        return res.json();
+      };
+      const [squads, players, rounds] = await Promise.all([
+        get('squads'), get('players'), get('rounds')
+      ]);
+      return buildOfficialSnapshot({ squads, players, rounds }, { now: config.now });
+    }
+  };
+}
+
 export function createProvider(config, deps = {}) {
   const cfg = config || DEFAULT_CONFIG;
+  if (cfg.provider === 'official') return officialProvider(cfg, deps.fetch);
   if (cfg.provider === 'remote') return remoteProvider(cfg, deps.fetch);
   if (cfg.provider && deps.providers && deps.providers[cfg.provider]) {
     return deps.providers[cfg.provider](cfg);

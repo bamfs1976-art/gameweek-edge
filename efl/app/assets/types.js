@@ -52,10 +52,21 @@
  * @property {number} goalsFor
  * @property {number} goalsAgainst
  * @property {number} cleanSheets
- * @property {('W'|'D'|'L')[]} form     Last five league results, oldest first.
+ * @property {('W'|'D'|'L')[]} form     Recent league results, oldest first. Five
+ *                                     where the source publishes five; the
+ *                                     official feed publishes three.
  * @property {SplitForm} home           Home-only record.
  * @property {SplitForm} away           Away-only record.
- * @property {Last5} last5              The five-match window the club views use.
+ * @property {Last5} last5              The recent-form window the club views use.
+ * @property {number|null} ownership    Percentage of managers who have picked this
+ *                                      club. UNLIKE players, this one is real: the
+ *                                      official game publishes it per club. Null
+ *                                      when the active source does not carry it.
+ * @property {number|null} fdrHome      The official game's own 1-5 difficulty for
+ *                                      playing this club at their place, where
+ *                                      published. Shown beside our modelled rating,
+ *                                      never used in place of it.
+ * @property {number|null} fdrAway      As above, away.
  */
 
 /**
@@ -98,6 +109,9 @@
  * @property {number} goals
  * @property {number} assists
  * @property {boolean} cleanSheet
+ * @property {Object|null} stats       The raw stats this appearance was scored from,
+ *                                     where the source carries them — so a score can
+ *                                     be re-derived rather than taken on trust.
  * @property {number} points           Fantasy EFL points scored in that round.
  */
 
@@ -115,10 +129,39 @@
  * @property {number} assists
  * @property {number} cleanSheets
  * @property {number} points           Season Fantasy EFL points.
- * @property {PlayerForm[]} last5      Oldest first. Shorter than five early in a season.
+ * @property {PlayerStats} stats       Season totals for the stats the tariff pays
+ *                                     for. Every field is nullable and null means
+ *                                     NOT PUBLISHED, never zero — a defender with
+ *                                     null tackles has not had none, we just do not
+ *                                     know. The UI renders those as "—".
+ * @property {PlayerForm[]} last5      Oldest first. Empty when the source publishes
+ *                                     no per-match history — the official feed's
+ *                                     free tier is season aggregates only.
  * @property {Availability} availability
- * @property {number|null} ownership   Percentage, or null when no feed publishes it.
- *                                     Null is the normal case — see README.
+ * @property {number|null} ownership   Percentage, or null when nothing publishes it.
+ *                                     Null is the normal case for PLAYERS: the
+ *                                     official game publishes ownership for clubs
+ *                                     but not, as far as any public endpoint shows,
+ *                                     for players. See README.
+ */
+
+/**
+ * Season totals in the currency the game actually pays in. Keys match the
+ * rule names in tariff.js exactly, so a column, a score and a sentence can
+ * all be produced from the same key.
+ *
+ * @typedef {Object} PlayerStats
+ * @property {number|null} saves
+ * @property {number|null} penaltySaves
+ * @property {number|null} goalsConceded
+ * @property {number|null} clearances
+ * @property {number|null} blocks
+ * @property {number|null} tackles
+ * @property {number|null} interceptions
+ * @property {number|null} keyPasses
+ * @property {number|null} shotsOnTarget
+ * @property {number|null} yellowCards
+ * @property {number|null} redCards
  */
 
 /**
@@ -158,11 +201,28 @@
 
 /**
  * @typedef {Object} DataSource
- * @property {string} id               'sample' | 'remote' | provider-defined.
+ * @property {string} id               'sample' | 'efl-official' | 'remote' | provider-defined.
  * @property {boolean} live            False for anything generated locally.
  * @property {string} label            Shown in the data badge, e.g. "Sample data".
  * @property {string} description      One sentence for the footer note.
  * @property {string} generatedAt      ISO timestamp of the snapshot.
+ * @property {Coverage} [coverage]     What this source could and could not fill in.
+ */
+
+/**
+ * A source that answers some questions and not others is the normal case,
+ * not the broken one — the official game's unauthenticated endpoints carry
+ * season totals but no per-match history. The UI reads this to say which
+ * numbers are thinner than they look, instead of quietly showing a form
+ * meter built from nothing.
+ *
+ * @typedef {Object} Coverage
+ * @property {boolean} playerMatchHistory  Per-round player results (drives form).
+ * @property {boolean} playerDetailedStats Tackles, interceptions, key passes…
+ * @property {boolean} clubGoals           Goals scored/conceded per club.
+ * @property {boolean} clubOwnership       Percentage of managers picking each club.
+ * @property {boolean} officialFdr         The game's own 1-5 fixture ratings.
+ * @property {string[]} notes              Human sentences for anything false above.
  */
 
 export {};

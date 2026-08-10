@@ -13,7 +13,7 @@ import { loadSnapshot } from './provider.js';
 import { buildContext, clubScore, runSummary, ordinal, CLUB_WEIGHTS } from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
-  methodNote, divisionBadge, formStrip, fmtDay, DIVISION_LABELS
+  methodNote, divisionBadge, formStrip, ownershipCell, fmtDay, DIVISION_LABELS
 } from './ui.js';
 
 initTheme();
@@ -21,6 +21,13 @@ initTheme();
 const state = { search: '', division: 'all', sort: 'score' };
 let ctx = null;
 let rows = [];
+/* Ownership and the official 1-5 ratings are the official game's own
+   figures. Some sources publish them and some do not, so the columns appear
+   when there is something to put in them and are absent otherwise — an
+   empty column of dashes reads as a broken feature rather than an honest
+   gap. `sourceBanner` already explains which source is in play. */
+let hasOwnership = false;
+let hasOfficialFdr = false;
 
 start();
 
@@ -49,6 +56,15 @@ async function start() {
       r5: runSummary(ctx, club.id, 5),
       r6: runSummary(ctx, club.id, 6)
     }));
+    hasOwnership = ctx.clubs.some((c) => c.ownership != null);
+    hasOfficialFdr = ctx.clubs.some((c) => c.fdrHome != null || c.fdrAway != null);
+    if (hasOwnership) {
+      const sel = document.getElementById('f-sort');
+      const opt = document.createElement('option');
+      opt.value = 'ownership';
+      opt.textContent = 'Ownership (most picked)';
+      sel.appendChild(opt);
+    }
 
     setupFilters();
     renderBest();
@@ -138,7 +154,8 @@ const SORTS = {
   r3: (r) => r.r3.quality,
   r5: (r) => r.r5.quality,
   r6: (r) => r.r6.quality,
-  position: (r) => -r.club.position
+  position: (r) => -r.club.position,
+  ownership: (r) => (r.club.ownership == null ? -1 : r.club.ownership)
 };
 
 function render() {
@@ -181,6 +198,10 @@ function render() {
             <th scope="col" class="num">N3</th>
             <th scope="col" class="num">N5</th>
             <th scope="col" class="num">N6</th>
+            ${hasOfficialFdr ? '<th scope="col" class="num" title="The official game\'s own '
+    + 'difficulty rating for playing this club, home and away">Official H/A</th>' : ''}
+            ${hasOwnership ? '<th scope="col" class="num" title="Percentage of managers who '
+    + 'have picked this club — published by the official game">Picked</th>' : ''}
             <th scope="col" class="num">Rating</th>
           </tr>
         </thead>
@@ -189,7 +210,13 @@ function render() {
     </div>
     <p class="sec-note" style="margin-top:9px">GF, GA and CS are goals scored, goals conceded and
       clean sheets over the club's last five league matches. N3, N5 and N6 are the mean fixture
-      difficulty of the next three, five and six rounds — lower is friendlier.</p>`);
+      difficulty of the next three, five and six rounds — lower is friendlier.
+      ${hasOfficialFdr ? '<b>Official H/A</b> is the game\'s own 1-5 rating for playing this club '
+    + 'at home and away, shown alongside our modelled rating rather than in place of it — the two '
+    + 'disagreeing is information, not an error. ' : ''}
+      ${hasOwnership ? '<b>Picked</b> is real ownership, published by the official game. A strong '
+    + 'club that few managers have picked is the closest thing to a genuine differential this '
+    + 'game offers.' : ''}</p>`);
 }
 
 function row(r) {
@@ -219,9 +246,21 @@ function row(r) {
     <td class="num" data-label="Next 3">${r3.meanRating.toFixed(1)}</td>
     <td class="num" data-label="Next 5">${r5.meanRating.toFixed(1)}</td>
     <td class="num" data-label="Next 6">${r6.meanRating.toFixed(1)}</td>
+    ${hasOfficialFdr ? `<td class="num" data-label="Official rating">${officialFdrCell(club)}</td>` : ''}
+    ${hasOwnership ? `<td class="num" data-label="Picked by">${ownershipCell(club.ownership)}</td>` : ''}
     <td class="num" data-label="Modelled rating"><b>${rec.score.toFixed(1)}</b>
       <span class="t-sub">${esc(rec.summary)}</span></td>
   </tr>`;
+}
+
+/** The official game's own 1-5 rating for playing this club, home and away. */
+function officialFdrCell(club) {
+  const part = (v, where) => (v == null
+    ? '<span class="muted">—</span>'
+    : `<span class="fdr fdr-${Math.max(1, Math.min(5, Math.round(v)))}" `
+      + `title="The official game rates playing ${esc(club.name)} ${where} as ${v} of 5" `
+      + `aria-label="Official rating ${where}: ${v} of 5">${v}</span>`);
+  return `${part(club.fdrHome, 'at home')} ${part(club.fdrAway, 'away')}`;
 }
 
 function splitText(split) {

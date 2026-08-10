@@ -33,6 +33,8 @@
 
 /** @typedef {import('./types.js')} */
 
+import { statPoints } from './tariff.js';
+
 /* ── Weight tables ────────────────────────────────────────
    Change a number here and the whole app changes with it. Each table sums
    to 1 so a score stays inside 0-100 and a factor's contribution is
@@ -53,13 +55,82 @@ export const FIXTURE_WEIGHTS = {
    home advantage moves a borderline fixture by one band and never more. */
 export const HOME_ADVANTAGE = 0.10;
 
+/* ── Player weights, and where these numbers came from ─────
+   These were guesses once. They are not any more.
+
+   Measured on 83,698 real Fantasy EFL player-gameweek records (35 rounds
+   of a completed season, published by the official game), walk-forward
+   over rounds 6-35: for each of 52,158 player-rounds, build a predictor
+   from prior rounds only and correlate it with the points actually scored
+   in the NEXT round.
+
+       last-5 mean MINUTES        +0.515   ← the strongest thing there is
+       last-5 total points        +0.494
+       season start rate          +0.461
+       last-5 points/appearance   +0.447
+       season points/appearance   +0.408
+       last-5 points PER 90       +0.065   ← very nearly worthless
+
+   Two conclusions are written into the table below.
+
+   MINUTES OUTWEIGH FORM. This model previously had form at 0.30 and
+   minutes at 0.22, which is the FPL habit and the wrong way round for this
+   game. A player averaging under 30 minutes across his last five returns
+   0.59 points the following round; one averaging 75+ returns 4.25. Nothing
+   else in the dataset separates players like that.
+
+   PER-90 IS A TRAP, and the app was already right to avoid it: it flatters
+   a substitute who scores in a twenty-minute cameo. Form here is points per
+   APPEARANCE (+0.447), never per 90 (+0.065). */
 export const PLAYER_WEIGHTS = {
-  form: 0.30,        // Fantasy points in the last five rounds
-  minutes: 0.22,     // starts and minutes — the floor under everything else
-  output: 0.20,      // goals, assists, clean sheets, weighted by position
-  fixture: 0.20,     // next fixture's modelled difficulty
+  minutes: 0.34,     // starts and minutes — the floor, and the best single signal
+  form: 0.26,        // fantasy points per appearance in the last five rounds
+  output: 0.16,      // the tariff value of a player's output, per 90
+  fixture: 0.16,     // next fixture's modelled difficulty
   home: 0.08         // playing at home
 };
+
+/* ── Position emphasis ────────────────────────────────────
+   A flat fixture weight and a flat home weight are both wrong, and the same
+   dataset says by how much.
+
+   HOME ADVANTAGE is not one number. Mean points per appearance, home vs
+   away:  GK +0.7%   DEF +6.0%   MID +8.9%   FWD +14.3%.
+   A goalkeeper barely notices where he is playing. A forward notices a lot.
+
+   FIXTURE DIFFICULTY matters roughly twice as much at the back. Across all
+   positions, mean points move 4.10 → 3.49 from the easiest band to the
+   hardest — about 17%. But clean-sheet rate for goalkeepers and defenders
+   moves 36.3% → 19.0%, which is nearly half, and a clean sheet is five
+   points. The fixture IS the pick for a defender; for a forward it is one
+   input among several.
+
+   These are multipliers on the base weights above. Applied, the result is
+   renormalised so each position's weights still sum to 1 and a score stays
+   comparable across positions — see positionWeights(). */
+export const POSITION_EMPHASIS = {
+  GK: { fixture: 1.70, home: 0.10 },
+  DEF: { fixture: 1.60, home: 0.65 },
+  MID: { fixture: 0.85, home: 1.00 },
+  FWD: { fixture: 0.70, home: 1.60 }
+};
+
+/**
+ * The weight table for one position: base weights, emphasis applied,
+ * renormalised to sum to 1.
+ * @param {'GK'|'DEF'|'MID'|'FWD'} position
+ */
+export function positionWeights(position) {
+  const emphasis = POSITION_EMPHASIS[position] || {};
+  const scaled = {};
+  let total = 0;
+  for (const [key, weight] of Object.entries(PLAYER_WEIGHTS)) {
+    scaled[key] = weight * (emphasis[key] == null ? 1 : emphasis[key]);
+    total += scaled[key];
+  }
+  for (const key of Object.keys(scaled)) scaled[key] /= total;
+  return scaled;
+}
 /* Availability is a MULTIPLIER, not another weighted input. An injured
    player with perfect form is not "slightly worse" — he is not a pick. */
 export const AVAILABILITY_MULTIPLIER = {
@@ -78,10 +149,11 @@ export const CLUB_WEIGHTS = {
   home: 0.07         // how many of the next three are at home
 };
 
-/* The "form differential" model. There is no Fantasy EFL ownership feed, so
-   this is explicitly NOT a differential in the ownership sense — it is an
-   editorial one: strong recent output at a club that gets less attention.
-   The interface labels it as modelled every time it appears. */
+/* The "form differential" model. The official game publishes ownership for
+   CLUBS but not for players, so at player level this is explicitly NOT a
+   differential in the ownership sense — it is an editorial one: strong
+   recent output at a club that gets less attention. The interface labels it
+   as modelled every time it appears. */
 export const DIFFERENTIAL_WEIGHTS = { output: 0.6, obscurity: 0.4 };
 /* How much of the football conversation each division gets. Not a quality
    judgement — a visibility one, and the only place in this file where the
@@ -206,6 +278,29 @@ export function buildContext(snapshot, opts = {}) {
   const playersByClub = {};
   for (const p of players) (playersByClub[p.clubId] || (playersByClub[p.clubId] = [])).push(p);
 
+  /* How many matches a club has actually played, which is the denominator
+     under every "share of available minutes" in the model.
+
+     It cannot just be `club.played`. The official feed's public documents
+     carry a league position and a form string but no played count, so
+     `club.played` is 0 there — and dividing by that turns the single
+     strongest signal in the whole model into either a divide-by-one (every
+     player looks ever-present) or a zero (nobody does). Both are wrong in a
+     way that is invisible until someone notices the squad builder returning
+     nothing.
+
+     So it is the largest of what we know: the club's own count, the number
+     of finished fixtures we hold for it, and the busiest player's
+     appearances. Taking the max keeps every share inside 0-1 and degrades
+     to something sensible on a source that publishes only one of the three. */
+  const playedByClub = {};
+  for (const c of clubs) {
+    const finished = fixtures.filter((f) => f.finished && (f.homeId === c.id || f.awayId === c.id)).length;
+    const squad = playersByClub[c.id] || [];
+    const busiest = squad.reduce((m, p) => Math.max(m, p.appearances || 0), 0);
+    playedByClub[c.id] = Math.max(1, c.played || 0, finished, busiest);
+  }
+
   const ctx = {
     snapshot,
     clubs,
@@ -218,6 +313,7 @@ export function buildContext(snapshot, opts = {}) {
     divisionStats,
     upcomingByClub,
     playersByClub,
+    playedByClub,
     fixtureWeights
   };
 
@@ -250,17 +346,41 @@ function buildPlayerNorms(ctx) {
   return { form, output };
 }
 
-/** Per-90 attacking and defensive return, weighted the way the position is
- *  actually scored: a defender's clean sheets matter, a forward's do not. */
+/**
+ * A player's output, measured in the currency the game actually pays in.
+ *
+ * This used to be a hand-tuned blend — clean sheets worth 0.7 of a goal for
+ * a defender, and so on. There is no need to guess at those ratios now that
+ * the tariff is known and verified: the answer to "how much is this
+ * player's output worth" is the arithmetic the game itself does. So this
+ * runs every season total through statPoints() and returns the result per
+ * 90 minutes.
+ *
+ * That change matters most for midfielders, whose interceptions are worth
+ * two points each — the most valuable repeatable stat in the game, and one
+ * the old hand-tuned blend could not see at all because it only knew about
+ * goals, assists and clean sheets.
+ *
+ * Stats the active source does not publish are `null` and are skipped, not
+ * counted as zero. A source with no tackles data must not make every
+ * defender look like one who never tackles.
+ */
 function rawOutput(p) {
-  const per90 = (v) => safeDiv(v, Math.max(90, p.minutes)) * 90;
-  const g = per90(p.goals);
-  const a = per90(p.assists);
-  const cs = safeDiv(p.cleanSheets, Math.max(1, p.starts));
-  if (p.position === 'GK') return cs * 1.0 + a * 0.3;
-  if (p.position === 'DEF') return cs * 0.7 + g * 0.9 + a * 0.6;
-  if (p.position === 'MID') return g * 1.0 + a * 0.8 + cs * 0.15;
-  return g * 1.0 + a * 0.55;
+  const minutes = Math.max(90, p.minutes);
+  const stats = p.stats || {};
+  let points = 0;
+  points += statPoints('goals', p.goals, p.position);
+  points += statPoints('assists', p.assists, p.position);
+  points += statPoints('cleanSheets', p.cleanSheets, p.position);
+  for (const [key, value] of Object.entries(stats)) {
+    /* Cards and goals conceded are real tariff lines, but they are noise in
+       a "how good is his output" measure: they scale with playing time, and
+       a defender is not a worse pick for having conceded goals his team
+       conceded. Availability and the fixture rating already carry that. */
+    if (value == null || key === 'yellowCards' || key === 'redCards' || key === 'goalsConceded') continue;
+    points += statPoints(key, value, p.position);
+  }
+  return safeDiv(points, minutes) * 90;
 }
 
 /* ── Fixture rating ──────────────────────────────────────── */
@@ -363,24 +483,24 @@ export function playerScore(ctx, player) {
   const next = nextFixture(ctx, player.clubId);
   const norms = ctx.playerNorms;
 
-  const played = club ? Math.max(1, club.played) : 1;
-  const startShare = clamp01(safeDiv(player.starts, played));
-  const minuteShare = clamp01(safeDiv(player.minutes, played * 90));
   const values = {
     form: norms.form[player.id] == null ? 0.5 : norms.form[player.id],
-    minutes: clamp01(startShare * 0.65 + minuteShare * 0.35),
+    minutes: playingShare(ctx, player).value,
     output: norms.output[player.id] == null ? 0.5 : norms.output[player.id],
     /* A blank round is not a neutral fixture. Nothing to play in scores 0. */
     fixture: next ? clamp01(1 - next.difficulty) : 0,
     home: next && next.home ? 1 : 0
   };
 
-  const factors = Object.entries(PLAYER_WEIGHTS).map(([key, weight]) => ({
+  /* Weights are per-position: a goalkeeper's score leans on his fixture and
+     barely notices home advantage, a forward's does the reverse. */
+  const weights = positionWeights(player.position);
+  const factors = Object.entries(weights).map(([key, weight]) => ({
     key,
     label: PLAYER_FACTOR_LABELS[key],
     value: values[key],
     weight,
-    note: playerFactorNote(key, values[key], player, club, next)
+    note: playerFactorNote(key, values[key], player, club, next, ctx)
   }));
 
   const weighted = factors.reduce((s, f) => s + f.value * f.weight, 0);
@@ -401,6 +521,34 @@ export function playerScore(ctx, player) {
   };
 }
 
+/**
+ * How much of his club's football a player has been on the pitch for, 0-1.
+ *
+ * This is the model's strongest input (+0.515 against next-round points),
+ * so it has to survive a source that publishes less than the sample data
+ * does. Minutes are the better measure and the official feed's public
+ * documents do not carry them, so the fallback is appearance share —
+ * weaker, but honest, and vastly better than reading "no minutes field" as
+ * "this player never plays".
+ *
+ * @returns {{value:number, hasMinutes:boolean, startShare:number, minuteShare:number|null}}
+ */
+export function playingShare(ctx, player) {
+  const played = (ctx.playedByClub && ctx.playedByClub[player.clubId])
+    || Math.max(1, player.appearances || 1);
+  const startShare = clamp01(safeDiv(player.starts, played));
+  if (!player.minutes) {
+    return { value: startShare, hasMinutes: false, startShare, minuteShare: null };
+  }
+  const minuteShare = clamp01(safeDiv(player.minutes, played * 90));
+  return {
+    value: clamp01(startShare * 0.65 + minuteShare * 0.35),
+    hasMinutes: true,
+    startShare,
+    minuteShare
+  };
+}
+
 const PLAYER_FACTOR_LABELS = {
   form: 'Recent form',
   minutes: 'Starts and minutes',
@@ -409,11 +557,15 @@ const PLAYER_FACTOR_LABELS = {
   home: 'Home advantage'
 };
 
-function playerFactorNote(key, value, player, club, next) {
-  const played = club ? Math.max(1, club.played) : 1;
+function playerFactorNote(key, value, player, club, next, ctx) {
+  const played = ctx && ctx.playedByClub ? ctx.playedByClub[player.clubId] : Math.max(1, (club && club.played) || 1);
   if (key === 'form') {
     const apps = player.last5.filter((m) => m.minutes > 0).length;
     const pts = player.last5.reduce((s, m) => s + m.points, 0);
+    /* No per-match history at all is a property of the SOURCE, not of the
+       player — saying "no minutes in the last five" about a regular starter
+       because the feed does not publish rounds would be a straight lie. */
+    if (!player.last5.length) return `${player.points} points across the season so far`;
     if (!apps) return 'no minutes in the last five rounds';
     return value > 0.7 ? `strong recent form (${pts} points in ${apps} appearances)`
       : value > 0.4 ? `steady recent form (${pts} points in ${apps} appearances)`
@@ -464,11 +616,17 @@ function buildSummary(factors, availability, next) {
 /**
  * A MODELLED, EDITORIAL differential — not an ownership one.
  *
- * No public feed publishes Fantasy EFL ownership, and inventing a
- * percentage would be worse than having none, so this ranks players on
- * strong recent output at clubs that get less of the attention: lower
- * division, lower down the table. It is labelled as modelled everywhere it
- * is shown, and `ownership` stays null in the data.
+ * ── A CORRECTION THIS FUNCTION USED TO GET WRONG ───────────
+ * It used to say "no public feed publishes Fantasy EFL ownership". That is
+ * true of PLAYERS and false of CLUBS: the official game publishes a
+ * `percentSelected` figure per club, which the club picker now shows as a
+ * real number. Nothing public appears to publish it per player.
+ *
+ * So this stays modelled, because for players there is still nothing to
+ * read: it ranks strong recent output at clubs that get less of the
+ * attention — lower division, lower down the table. `Player.ownership`
+ * stays null unless a source fills it, and the day one does, the finder can
+ * show the real figure and retire this.
  */
 export function differentialScore(ctx, player) {
   const club = ctx.clubById[player.clubId];
@@ -491,7 +649,8 @@ export function differentialScore(ctx, player) {
     label: score >= 70 ? 'Strong differential' : score >= 55 ? 'Differential' : 'Well covered',
     note: `Modelled from recent output and how much attention the club gets — `
       + `${club ? club.name : 'the club'} sit ${club ? ordinal(club.position) : 'mid-table'} in `
-      + `${divisionName(div)}. Not an ownership figure; no Fantasy EFL ownership feed exists.`
+      + `${divisionName(div)}. Not an ownership figure: the official game publishes `
+      + `ownership for clubs but not for players, so this is an editorial stand-in.`
   };
 }
 
@@ -572,28 +731,30 @@ function clubFactorNote(key, value, club, run, homeCount) {
  */
 export function roundPicks(ctx, opts = {}) {
   const minMinutesShare = opts.minMinutesShare == null ? 0.35 : opts.minMinutesShare;
-  const scored = ctx.players
-    .map((p) => playerScore(ctx, p))
+  const scored = (opts.scored || ctx.players.map((p) => playerScore(ctx, p)))
     .filter((r) => r.next)              // a player with no fixture is not a pick
+    .slice()
     .sort((a, b) => b.score - a.score);
 
-  const eligible = scored.filter((r) => {
-    const club = ctx.clubById[r.player.clubId];
-    const played = club ? Math.max(1, club.played) : 1;
-    return r.player.availability.status === 'available'
-      && r.player.minutes / (played * 90) >= minMinutesShare;
-  });
+  const eligible = scored.filter((r) => r.player.availability.status === 'available'
+    && playingShare(ctx, r.player).value >= minMinutesShare);
 
   const byPosition = (pos) => eligible.find((r) => r.player.position === pos) || null;
 
   /* Captain: the strongest available pick with a fixture that is not
      stacked against them. The band cut is explicit rather than a tie-break
      hidden inside the sort — a captain in a rated-5 fixture is a different
-     decision, and the model should not make it quietly. */
-  const captain = eligible.find((r) => r.next.rating <= 3
-    && (r.player.position === 'MID' || r.player.position === 'FWD'))
-    || eligible.find((r) => r.next.rating <= 3)
-    || eligible[0] || null;
+     decision, and the model should not make it quietly.
+
+     THIS USED TO PREFER MIDFIELDERS AND FORWARDS, and that was an FPL
+     reflex imported into a game that does not reward it. Measured over
+     83,698 real appearances, mean points per appearance run DEF 4.19 >
+     GK 4.08 > MID 3.88 > FWD 3.14: the forward is the WORST-scoring
+     position in Fantasy EFL, because defenders are paid for clean sheets,
+     clearances, blocks and tackles, and a keeper's goal is worth ten. The
+     armband now goes to the best-rated available player in a reasonable
+     fixture, whatever position that turns out to be. */
+  const captain = eligible.find((r) => r.next.rating <= 3) || eligible[0] || null;
 
   const differentials = eligible
     .map((r) => ({ ...r, differential: differentialScore(ctx, r.player) }))
@@ -615,6 +776,160 @@ export function roundPicks(ctx, opts = {}) {
     allPlayers: scored,
     allClubs: clubs
   };
+}
+
+/* ── Building a legal seven ──────────────────────────────
+   The dashboard's "best goalkeeper, best defender, best midfielder, best
+   forward" cards are useful, and they are not a team: they ignore the shape
+   the game actually asks for. Fantasy EFL takes seven players in one of
+   three formations, with at most two from any one club.
+
+   Those constraints are the whole difficulty of the pick. Without them the
+   answer is "the seven highest-rated players", which is usually illegal —
+   the top of any form-driven list clusters into two or three clubs having a
+   good month. */
+
+/** One goalkeeper and six outfielders, in one of three legal shapes. */
+export const FORMATIONS = [
+  { id: '1-2-2-2', GK: 1, DEF: 2, MID: 2, FWD: 2 },
+  { id: '1-2-3-1', GK: 1, DEF: 2, MID: 3, FWD: 1 },
+  { id: '1-3-2-1', GK: 1, DEF: 3, MID: 2, FWD: 1 }
+];
+
+/** Two players from any one club, unless the one-club chip is played. */
+export const MAX_PER_CLUB = 2;
+export const SQUAD_SIZE = 7;
+
+/**
+ * Build the best legal seven the model can find.
+ *
+ * A greedy pass down a sorted list is what most tools do here and it is
+ * measurably not optimal: taking the best midfielder can lock you out of
+ * two better defenders at the same club. So this is a depth-first search
+ * with branch-and-bound over the top candidates in each position — the club
+ * cap is the only thing coupling the positions together, so the bound
+ * (best-possible remaining, ignoring the cap) is tight and prunes hard.
+ *
+ * The candidate pool is capped and the node count is capped, both to keep
+ * this comfortably inside a frame on a phone. With three formations and a
+ * pool of 12 per position it settles in single-digit milliseconds.
+ *
+ * @param {Object} ctx
+ * @param {{oneClubChip?:boolean, exclude?:string[], minMinutesShare?:number,
+ *          poolSize?:number, scored?:Object[]}} [opts]
+ * @returns {{formation:Object, picks:Object[], captain:Object, total:number,
+ *            clubCounts:Object, legal:boolean}|null}
+ */
+export function buildSquad(ctx, opts = {}) {
+  const maxPerClub = opts.oneClubChip ? SQUAD_SIZE : MAX_PER_CLUB;
+  const exclude = new Set(opts.exclude || []);
+  const minMinutesShare = opts.minMinutesShare == null ? 0.35 : opts.minMinutesShare;
+  const poolSize = opts.poolSize == null ? 12 : opts.poolSize;
+
+  const scored = (opts.scored || ctx.players.map((p) => playerScore(ctx, p)))
+    .filter((r) => r.next)
+    .filter((r) => !exclude.has(r.player.id))
+    .filter((r) => r.player.availability.status === 'available')
+    .filter((r) => playingShare(ctx, r.player).value >= minMinutesShare)
+    .sort((a, b) => b.score - a.score);
+
+  const pools = {};
+  for (const pos of ['GK', 'DEF', 'MID', 'FWD']) {
+    pools[pos] = scored.filter((r) => r.player.position === pos).slice(0, poolSize);
+  }
+
+  let best = null;
+  for (const formation of FORMATIONS) {
+    const result = searchFormation(pools, formation, maxPerClub);
+    if (result && (!best || result.total > best.total)) best = { ...result, formation };
+  }
+  if (!best) return null;
+
+  /* The armband goes to the best-rated player IN the built seven, which is
+     not always the best-rated player overall — the club cap may have kept
+     him out. Captaining someone you have not picked is not a suggestion. */
+  const captain = best.picks.reduce((a, b) => (b.score > a.score ? b : a));
+  const clubCounts = {};
+  for (const r of best.picks) {
+    clubCounts[r.player.clubId] = (clubCounts[r.player.clubId] || 0) + 1;
+  }
+  return {
+    formation: best.formation,
+    picks: best.picks,
+    captain,
+    total: Math.round(best.total * 10) / 10,
+    clubCounts,
+    legal: best.picks.length === SQUAD_SIZE
+  };
+}
+
+function searchFormation(pools, formation, maxPerClub) {
+  /* Slots as a flat list, hardest position first. Filling the scarce
+     positions early makes the bound bite sooner. */
+  const slots = [];
+  for (const pos of ['GK', 'FWD', 'DEF', 'MID']) {
+    for (let i = 0; i < formation[pos]; i += 1) slots.push(pos);
+  }
+  if (slots.some((pos) => pools[pos].length < formation[pos])) return null;
+
+  /* Best-possible remaining score from slot i onwards, ignoring the club
+     cap. An upper bound, so pruning against it is safe. */
+  const bound = new Array(slots.length + 1).fill(0);
+  for (let i = slots.length - 1; i >= 0; i -= 1) {
+    const pos = slots[i];
+    const rank = slots.slice(0, i).filter((s) => s === pos).length;
+    bound[i] = bound[i + 1] + (pools[pos][rank] ? pools[pos][rank].score : 0);
+  }
+
+  let bestTotal = -Infinity;
+  let bestPicks = null;
+  let nodes = 0;
+  const NODE_BUDGET = 200000;
+  const counts = {};
+  const chosen = [];
+
+  (function descend(slotIndex, startAt, total) {
+    if (nodes > NODE_BUDGET) return;
+    nodes += 1;
+    if (slotIndex === slots.length) {
+      if (total > bestTotal) { bestTotal = total; bestPicks = chosen.slice(); }
+      return;
+    }
+    if (total + bound[slotIndex] <= bestTotal) return;    // cannot catch up
+
+    const pos = slots[slotIndex];
+    const pool = pools[pos];
+    /* Same position twice in a row: only consider candidates after the one
+       already taken, so {A,B} is not also explored as {B,A}. */
+    const from = (slotIndex > 0 && slots[slotIndex - 1] === pos) ? startAt : 0;
+    for (let i = from; i < pool.length; i += 1) {
+      const candidate = pool[i];
+      const clubId = candidate.player.clubId;
+      if ((counts[clubId] || 0) >= maxPerClub) continue;
+      counts[clubId] = (counts[clubId] || 0) + 1;
+      chosen.push(candidate);
+      descend(slotIndex + 1, i + 1, total + candidate.score);
+      chosen.pop();
+      counts[clubId] -= 1;
+    }
+  }(0, 0, 0));
+
+  return bestPicks ? { picks: bestPicks, total: bestTotal, nodes } : null;
+}
+
+/** Plain-English account of why this seven and not another. */
+export function squadRationale(ctx, squad) {
+  if (!squad) return '';
+  const shared = Object.entries(squad.clubCounts).filter(([, n]) => n > 1)
+    .map(([id]) => (ctx.clubById[id] || {}).name).filter(Boolean);
+  const divisions = new Set(squad.picks.map((r) => r.player.division));
+  const parts = [
+    `${squad.formation.id} is the shape that scores highest on this round's ratings`,
+    `${divisions.size} of the three divisions represented`
+  ];
+  if (shared.length) parts.push(`doubling up on ${shared.join(' and ')}`);
+  parts.push(`${squad.captain.player.name} takes the armband as the highest-rated player in the seven`);
+  return parts.join(', ') + '.';
 }
 
 /* ── formatting helpers shared by the views ─────────────── */
