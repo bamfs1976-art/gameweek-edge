@@ -79,6 +79,27 @@
   status = 200
   force = true
 
+# Fantasy EFL ships at /fantasy-efl/ as five ordinary static pages
+# (efl/app/ → www/fantasy-efl/, copied by scripts/build-web.mjs), so it needs
+# no redirect: Netlify's pretty URLs already serve /fantasy-efl/fixtures from
+# fixtures/index.html. It needs no CSP change either — everything it loads is
+# same-origin apart from Google Fonts, which is already allowed, and it makes
+# no fetch at all while it runs on its bundled sample data.
+#
+# WHEN A REAL EFL FEED ARRIVES, this is where its route goes, following the
+# same shape as the proxies below:
+#
+#   [[redirects]]
+#     from = "/api/efl/*"
+#     to = "/.netlify/functions/efl/:splat"
+#     status = 200
+#     force = true
+#
+# Same-origin is load-bearing rather than tidy: connect-src in the CSP above
+# is 'self' and nothing else, and any upstream API key belongs in the
+# function's environment where the browser can never see it. The app-side
+# switch is one config object — see efl/app/assets/provider.js.
+
 # UEFA Champions League Fantasy, normalised into the FPL vocabulary the shared
 # model engine speaks. Serves Euro Matchday Edge at /euro/.
 [[redirects]]

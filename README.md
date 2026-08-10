@@ -6,24 +6,48 @@ The calm, clear companion that gives fantasy managers a measurable edge. A singl
 - **iOS app** — the same app wrapped natively with Capacitor (see [`README_MOBILE.md`](README_MOBILE.md)).
 - **Live data** — pulled from the official game APIs through Netlify serverless proxies.
 
-## Two games, one site
+## Three games, one site
 
-Gameweek Edge covers **Fantasy Premier League** at `/`. **Euro Matchday
-Edge** — a separate app with its own name and its own night-blue identity —
-covers UEFA Champions League Fantasy at **`/euro/`**, from the same
-deployment. Source in [`euro/`](euro/README.md).
+| App | Route | Game | Source |
+|---|---|---|---|
+| Gameweek Edge | `/` | Fantasy Premier League | `index.html` |
+| Euro Matchday Edge | `/euro/` | UEFA Champions League Fantasy | [`euro/`](euro/README.md) |
+| Fantasy EFL | `/fantasy-efl/` | Official Fantasy EFL — Championship, League One, League Two | [`efl/`](efl/README.md) |
+
+Each has its own name and its own identity — Gameweek Edge is pitch green and
+daytime, Euro Matchday Edge is floodlit navy, Fantasy EFL is indigo with a
+three-stripe division motif — and all three ship from one deployment.
 
 They are one Netlify site on purpose, not for tidiness. Supabase persists the
 session in `localStorage`, which is **scoped per origin** — so on two domains
 a user would sign in twice, and a Pro subscription bought on one would look
-absent on the other. Same origin makes *one account, one subscription, both
-games* true in the browser rather than only in the database.
+absent on the other. Same origin makes *one account, one subscription, every
+game* true in the browser rather than only in the database.
 
-The two apps share the model, not the code: `scripts/build-web.mjs` lifts the
-league-agnostic engine out of `index.html` at build time (see
+Euro Matchday Edge shares the model, not the code: `scripts/build-web.mjs`
+lifts the league-agnostic engine out of `index.html` at build time (see
 `scripts/extract-engine.mjs`) and writes it to `www/euro/engine.js`. A fix to
 the minutes model reaches both on the next deploy with nobody porting
 anything.
+
+**Fantasy EFL deliberately does not share it.** That game has no budget, no
+player prices, no transfers and no price changes, so the FPL optimiser and its
+cost-aware projections have nothing to say about it; extracting them would
+mean shipping 45kB of code to answer questions the game does not ask. It
+carries its own three small weighted models in `efl/app/assets/model.js`
+instead. It is also **five real HTML pages** rather than one shell, so each
+route has a genuine title, description, canonical URL and set of internal
+links before any JavaScript runs.
+
+> ⚠️ **Fantasy EFL runs on sample data.** No free, reliable feed covers
+> player-level data for all three EFL divisions, so the app ships with a
+> generated dataset and says so on every page — the banner is rendered from
+> `source.live`, not written into the markup, so it disappears by itself when
+> a real provider is configured. Club names are real; results, tables, players
+> and injuries are invented, and every player *name* is generated. All data
+> enters through one file, `efl/app/assets/provider.js`; see
+> [`efl/README.md`](efl/README.md) for the models, the weights, and how to
+> swap the provider.
 
 ### Game packs
 
@@ -202,6 +226,7 @@ caveats and known limitations, in **`docs/HISTORY.md`**.
 ```
 index.html              the app AND the model (single source of truth)
 euro/                   Euro Matchday Edge — the UCL app, served at /euro/
+efl/                    Fantasy EFL — five pages, served at /fantasy-efl/
 scripts/extract-engine.mjs  lifts the shared model out of index.html at build time
 src/native/index.js      native bridge (Capacitor) → bundled to www/native.js
 manifest.webmanifest     PWA manifest        sw.js  PWA service worker
