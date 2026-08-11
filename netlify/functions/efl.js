@@ -69,6 +69,17 @@ const ROUTES = {
   rounds: { path: 'rounds.json', ttl: 3600 }
 };
 
+/* The fields the app actually depends on, per document. `health` reports
+   which of them are present so a shape change is a one-request diagnosis
+   rather than an afternoon. Keep this list in step with
+   assertOfficialShape() in efl/app/assets/provider.js — they are the same
+   claim, made once for a human and once for the code. */
+const EXPECTED = {
+  squads: ['id', 'competitionId', 'name', 'leaguePosition', 'percentSelected', 'fdrHome', 'fdrAway', 'last3Form'],
+  players: ['id', 'squadId', 'position', 'appearances', 'totalPoints', 'goalsScored', 'injuryDetails'],
+  rounds: ['roundNumber', 'status', 'lockoutDate', 'games']
+};
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -98,11 +109,63 @@ exports.handler = async (event) => {
     .replace(/^.*\/(?:api\/efl|efl)\/?/, '')
     .replace(/\/+$/, '')
     .toLowerCase();
+  /* ── /api/efl/health ───────────────────────────────────────
+     The app defaults to a feed whose responses were never observed from the
+     machine it was written on. This is the answer to "did that gamble pay
+     off", and it is deliberately a URL a person can open rather than a test
+     only CI can run: it fetches all three documents and reports, per
+     document, the HTTP status, how many records came back, and which of the
+     fields this app depends on are actually present.
+
+     Not cached. A health check that can answer from ten minutes ago is not
+     a health check. */
+  if (requested === 'health') {
+    const report = {};
+    let ok = true;
+    for (const [name, spec] of Object.entries(ROUTES)) {
+      try {
+        const res = await fetch(`${UPSTREAM}/${spec.path}`, { headers: UPSTREAM_HEADERS });
+        const entry = { status: res.status };
+        if (!res.ok) { ok = false; report[name] = entry; continue; }
+        let data;
+        try { data = await res.json(); }
+        catch (err) {
+          ok = false;
+          report[name] = { ...entry, error: 'response was not JSON (a login wall or error page?)' };
+          continue;
+        }
+        entry.isArray = Array.isArray(data);
+        entry.count = Array.isArray(data) ? data.length : null;
+        if (!entry.isArray) { ok = false; report[name] = entry; continue; }
+        const sample = data[0] && typeof data[0] === 'object' ? data[0] : {};
+        entry.fieldsPresent = EXPECTED[name].filter((f) => sample[f] !== undefined);
+        entry.fieldsMissing = EXPECTED[name].filter((f) => sample[f] === undefined);
+        entry.sampleKeys = Object.keys(sample).slice(0, 30);
+        if (entry.fieldsMissing.length) ok = false;
+        report[name] = entry;
+      } catch (err) {
+        ok = false;
+        report[name] = { status: null, error: String(err && err.message ? err.message : err) };
+      }
+    }
+    /* Divisions are derived by ranking competitionId, so "three of them" is
+       the single assumption most likely to break quietly across a season. */
+    return json(ok ? 200 : 503, {
+      ok,
+      checkedAt: new Date().toISOString(),
+      summary: ok
+        ? 'The official Fantasy EFL feed is answering in the shape this app expects.'
+        : 'The official feed did not answer in the expected shape — see the per-document detail. '
+          + 'The app will show an error rather than wrong numbers; ?provider=sample still works.',
+      documents: report
+    }, { 'Cache-Control': 'no-store' });
+  }
+
   const route = ROUTES[requested];
   if (!route) {
     return json(404, {
       error: `Unknown Fantasy EFL route "${requested}"`,
-      available: Object.keys(ROUTES)
+      available: [...Object.keys(ROUTES), 'health']
     });
   }
 

@@ -83,8 +83,8 @@
 # (efl/app/ → www/fantasy-efl/, copied by scripts/build-web.mjs), so it needs
 # no redirect: Netlify's pretty URLs already serve /fantasy-efl/fixtures from
 # fixtures/index.html. It needs no CSP change either — everything it loads is
-# same-origin apart from Google Fonts, which is already allowed, and it makes
-# no fetch at all while it runs on its bundled sample data.
+# same-origin apart from Google Fonts, which is already allowed, and its only
+# data request goes to /api/efl/* below.
 #
 # The official Fantasy EFL feed. Three documents — squads, players, rounds —
 # that need no API key and no account, proxied so the browser only ever talks
@@ -92,11 +92,12 @@
 # the function's cache TTLs are what keep us a polite client of somebody's
 # front end rather than a load on it. See netlify/functions/efl.js.
 #
-# The app still defaults to its bundled sample data, because fantasy.efl.com
-# was unreachable from the machine this was written on and an unverified
-# provider must not be the one a visitor meets first. Flip it in
-# efl/app/assets/provider.js, or add ?provider=official to any Fantasy EFL URL
-# to try it against a real deploy without changing what anyone else sees.
+# The app reads this feed by default. fantasy.efl.com was unreachable from the
+# machine the provider was written on, so a shape change is guarded rather than
+# assumed away: /api/efl/health reports whether each document is the shape the
+# app expects, a mismatch produces a named error instead of wrong numbers, and
+# ?provider=sample on any Fantasy EFL URL falls back to the clearly-labelled
+# generated dataset without a deploy.
 [[redirects]]
   from = "/api/efl/*"
   to = "/.netlify/functions/efl/:splat"

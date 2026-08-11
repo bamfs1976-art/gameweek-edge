@@ -38,21 +38,30 @@ const VALID_POSITIONS = new Set(['GK', 'DEF', 'MID', 'FWD']);
 const VALID_DIVISIONS = new Set(['championship', 'league-one', 'league-two']);
 
 export const DEFAULT_CONFIG = {
-  /* ── WHY THE DEFAULT IS STILL 'sample' ────────────────────
-     The official provider below is written and unit-tested, and it has
-     never been run against the live host: this project's egress proxy
-     refuses fantasy.efl.com, exactly as it refuses football-data.org for
-     the dormant proxy in netlify/functions/football-data.js. The field
-     names it maps come from the official game's own published responses as
-     used by a working third-party site, not from a response anyone here has
-     seen.
+  /* ── THE DEFAULT IS THE OFFICIAL FEED ─────────────────────
+     The app reads the official Fantasy EFL game's own public documents.
+     They need no API key and no account, and they carry the three things
+     the generated dataset could only imitate: real clubs, real fixtures and
+     real ownership.
 
-     Shipping an unverified provider as the default would mean the first
-     person to find out it is wrong is a visitor. So it is opt-in until
-     someone runs `npx netlify dev` and confirms the shapes — flip
-     `provider` to 'official' here, or add ?provider=official to any URL to
-     try it without editing anything. See efl/README.md. */
-  provider: 'sample',
+     ── THE HONEST CAVEAT, WHICH HAS NOT GONE AWAY ────────────
+     fantasy.efl.com is unreachable from the machine this was written on —
+     the egress proxy refuses it, exactly as it refuses football-data.org
+     for the sibling proxy. The field names below come from the official
+     game's own front end as used by a working public site, not from a
+     response anyone here has seen. The mappers are unit-tested against a
+     synthetic payload in that shape, which catches a mapping bug and cannot
+     catch a WRONG shape.
+
+     What that risk is allowed to cost is therefore bounded deliberately:
+     a shape that does not match produces a specific, named error naming the
+     document and what it actually contained — never a page of plausible
+     wrong numbers. `assertOfficialShape()` below is where that happens, and
+     /api/efl/health answers "is the feed the shape we think" in one request.
+
+     ?provider=sample still works, so the generated dataset is one URL away
+     for a demo or a comparison. */
+  provider: 'official',
   /* Same-origin proxy paths. The browser never talks to fantasy.efl.com
      directly: connect-src in the site CSP is 'self', and the proxy is what
      enforces the cache TTLs that keep us a polite client. */
@@ -61,16 +70,39 @@ export const DEFAULT_CONFIG = {
   cacheMs: 5 * 60 * 1000
 };
 
+/**
+ * Where /api lives. On the web that is this origin and a relative path is
+ * right. In the packaged iOS build the page is served from the app bundle,
+ * where a relative /api/efl resolves to a file that is not there — so the
+ * same `ge-api-base` override the FPL app uses (GE_CONFIG.apiBase in
+ * index.html) is honoured here.
+ *
+ * This did not matter while the app ran on generated data, because it made
+ * no requests at all. It matters now, and it is the kind of thing that is
+ * only ever discovered on a device.
+ */
+export function resolveBase(config, win) {
+  const w = win || (typeof window === 'undefined' ? {} : window);
+  if (config.base && /^https?:/i.test(config.base)) return config.base;
+  let override = '';
+  try { override = (w.localStorage && w.localStorage.getItem('ge-api-base')) || ''; }
+  catch (_) { /* private mode */ }
+  if (!override && w.GE_CONFIG && w.GE_CONFIG.apiBase) override = w.GE_CONFIG.apiBase;
+  return override ? override.replace(/\/$/, '') + (config.base || DEFAULT_CONFIG.base)
+    : (config.base || DEFAULT_CONFIG.base);
+}
+
 export function readConfig(win) {
   const w = win || (typeof window === 'undefined' ? {} : window);
   const config = { ...DEFAULT_CONFIG, ...(w.EFL_CONFIG || {}) };
-  /* ?provider=official is a testing affordance, not a feature: it lets the
-     unverified provider be exercised on a real deploy without a code change
-     and without changing what anyone else sees. */
+  /* ?provider=sample is the escape hatch in both directions: it shows the
+     generated dataset on a real deploy without a code change, and without
+     changing what anyone else sees. */
   try {
     const override = new URLSearchParams(w.location ? w.location.search : '').get('provider');
     if (override) config.provider = override;
   } catch (_) { /* no location, e.g. under Node */ }
+  config.base = resolveBase(config, w);
   return config;
 }
 
@@ -268,6 +300,103 @@ export function normaliseSnapshot(payload, sourceOverride) {
 
 const OFFICIAL_POSITIONS = { GK: 'GK', GKP: 'GK', DEF: 'DEF', MID: 'MID', FWD: 'FWD', FOR: 'FWD' };
 
+/** A short, safe description of what a value actually is, for error text. */
+export function describeShape(value) {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) {
+    if (!value.length) return 'an empty array';
+    const keys = value[0] && typeof value[0] === 'object' ? Object.keys(value[0]) : [];
+    return `an array of ${value.length}, first item ${keys.length
+      ? `has keys: ${keys.slice(0, 12).join(', ')}` : `is ${typeof value[0]}`}`;
+  }
+  if (typeof value === 'object') {
+    const keys = Object.keys(value);
+    return `an object with keys: ${keys.slice(0, 12).join(', ') || '(none)'}`;
+  }
+  return typeof value;
+}
+
+/**
+ * Fail loudly, specifically, and BEFORE anything is rendered.
+ *
+ * This is the whole safety argument for defaulting to a feed nobody here
+ * has seen respond. A shape change has exactly two possible outcomes: this
+ * function names it — which document, which field, and what actually
+ * arrived — or the data really is the shape we expect. What must never
+ * happen is the third outcome, where a renamed field becomes a column of
+ * zeroes and the app confidently shows numbers that mean nothing.
+ *
+ * The checks are deliberately about STRUCTURE, not values. `percentSelected`
+ * being absent is a coverage gap the UI already handles by hiding a column;
+ * `squads` not being a list of clubs is a broken integration.
+ *
+ * @throws {Error} with `.diagnosis` — the sentence a human needs, and the
+ *   one the error state puts on screen.
+ */
+export function assertOfficialShape({ squads, players, rounds }) {
+  const fail = (message) => {
+    throw Object.assign(new Error(message), { diagnosis: message, shapeError: true });
+  };
+
+  if (!Array.isArray(squads)) {
+    fail(`The official feed's squads document was not a list of clubs — it was ${describeShape(squads)}.`);
+  }
+  if (!squads.length) fail('The official feed returned no clubs at all.');
+  if (!Array.isArray(players)) {
+    fail(`The official feed's players document was not a list — it was ${describeShape(players)}.`);
+  }
+  if (!Array.isArray(rounds)) {
+    fail(`The official feed's rounds document was not a list — it was ${describeShape(rounds)}.`);
+  }
+
+  const club = squads[0];
+  for (const field of ['id', 'competitionId']) {
+    if (club[field] == null) {
+      fail(`Clubs in the official feed no longer carry "${field}", which this app needs to `
+        + `group them into divisions. A club now looks like: ${describeShape(club)}.`);
+    }
+  }
+  /* Divisions are derived from competitionId by ranking, so the count is a
+     real structural expectation: three EFL divisions. */
+  const competitions = new Set(squads.map((s) => String(s.competitionId)));
+  if (competitions.size < 3) {
+    fail(`The official feed grouped ${squads.length} clubs into ${competitions.size} competition(s); `
+      + 'Fantasy EFL has three divisions, so the feed is not carrying what this app assumes.');
+  }
+
+  if (players.length && players[0].squadId == null) {
+    fail('Players in the official feed no longer carry "squadId", so they cannot be attached to a '
+      + `club. A player now looks like: ${describeShape(players[0])}.`);
+  }
+  const round = rounds.find((r) => r && r.games);
+  if (rounds.length && !round) {
+    fail(`No round in the official feed carries a "games" list, so there are no fixtures to read. `
+      + `A round looks like: ${describeShape(rounds[0])}.`);
+  }
+  if (round && round.games.length && (round.games[0].homeId == null || round.games[0].awayId == null)) {
+    fail('Fixtures in the official feed no longer carry "homeId"/"awayId". A game looks like: '
+      + `${describeShape(round.games[0])}.`);
+  }
+
+  /* Non-fatal observations. Returned rather than thrown, because a feed
+     that answers most of the question is usable and the gaps belong in the
+     coverage disclosure, not in an error. */
+  const warnings = [];
+  if (competitions.size > 3) {
+    warnings.push(`The feed carries ${competitions.size} competitions rather than three; the three `
+      + 'with the strongest scoring are treated as the Championship, League One and League Two.');
+  }
+  if (!squads.some((s) => s.percentSelected != null)) {
+    warnings.push('This feed is not currently publishing club ownership, so that column is hidden.');
+  }
+  if (!squads.some((s) => s.fdrHome != null)) {
+    warnings.push('This feed is not currently publishing the official 1-5 fixture ratings, so only '
+      + 'the modelled rating is shown.');
+  }
+  if (!players.length) warnings.push('The feed returned no players, so only club tools will work.');
+  return warnings;
+}
+
 /**
  * Work out which competitionId is which division.
  * @param {Object[]} squads raw official squads
@@ -404,6 +533,10 @@ export function mapOfficialRounds(rounds, clubsById, now) {
  * host is unreachable from here.
  */
 export function buildOfficialSnapshot({ squads, players, rounds }, opts = {}) {
+  /* Structure first, always. Everything below assumes shapes that this
+     confirms, and a named failure here is the difference between "the feed
+     changed and here is how" and a page of plausible nonsense. */
+  const warnings = assertOfficialShape({ squads, players, rounds });
   const competitions = mapCompetitions(squads);
   const clubs = mapOfficialSquads(squads, competitions);
   const clubsById = Object.fromEntries(clubs.map((c) => [c.id, c]));
@@ -423,13 +556,16 @@ export function buildOfficialSnapshot({ squads, players, rounds }, opts = {}) {
       playerMatchHistory: false,
       playerDetailedStats: true,
       clubGoals: false,
-      clubOwnership: true,
-      officialFdr: true,
+      clubOwnership: clubs.some((c) => c.ownership != null),
+      officialFdr: clubs.some((c) => c.fdrHome != null || c.fdrAway != null),
       notes: [
         'Per-match player history is behind a Fantasy EFL account, so form is '
         + 'measured from season points per appearance rather than a five-round window.',
         'The public feed carries no goals scored or conceded per club, so those inputs '
-        + 'to the club rating are flat and the rating leans on form and fixtures.'
+        + 'to the club rating are flat and the rating leans on form and fixtures.',
+        /* Anything the shape check noticed but did not consider fatal. It
+           belongs here, in front of the reader, rather than in a console. */
+        ...warnings
       ]
     }
   });
@@ -490,8 +626,18 @@ export function officialProvider(config, fetchImpl) {
       const get = async (name) => {
         const res = await doFetch(`${base}/${name}`, { headers: { Accept: 'application/json' } });
         if (!res.ok) {
-          throw Object.assign(new Error(`The official Fantasy EFL feed returned ${res.status} for ${name}`),
-            { status: res.status });
+          /* The proxy answers failures as JSON carrying what the upstream
+             actually said. Reading it turns "500" into a sentence, which is
+             the difference between a diagnosable outage and a shrug. */
+          let detail = '';
+          try {
+            const body = await res.json();
+            detail = body && (body.error || body.details) ? ` — ${body.error || body.details}` : '';
+          } catch (_) { /* not JSON; the status is all we have */ }
+          throw Object.assign(
+            new Error(`The official Fantasy EFL feed returned ${res.status} for ${name}${detail}`),
+            { status: res.status, document: name }
+          );
         }
         return res.json();
       };

@@ -227,12 +227,25 @@ export function loadingBlock(message) {
 
 export function errorState(err, retryId) {
   const msg = err && err.message ? err.message : 'Something went wrong loading the data.';
+  /* A shape error is a different event from an outage and deserves
+     different words. The app reads the official game's feed, which can be
+     changed without notice by people who owe us nothing — so when the shape
+     moves, the page says which document and what arrived, rather than
+     leaving someone to guess from a 500. */
+  const isShape = Boolean(err && err.shapeError);
   return '<div class="note note-err" role="alert">'
-    + '<b>The Fantasy EFL data could not be loaded.</b><br>'
+    + `<b>${isShape
+      ? 'The official Fantasy EFL feed has changed shape.'
+      : 'The Fantasy EFL data could not be loaded.'}</b><br>`
     + esc(msg)
-    + '<br><br>Nothing on this page is shown from a stale copy — an out-of-date pick '
-    + 'is worse than no pick. Try again, and if it keeps failing the data source is down.'
-    + (retryId ? ` <button class="btn btn-ghost btn-sm" id="${esc(retryId)}" style="margin-top:8px">Try again</button>` : '')
+    + '<br><br>Nothing here is shown from a stale copy, and nothing falls back to sample data '
+    + 'pretending to be live — an out-of-date pick is worse than no pick, and an invented one '
+    + 'is worse still.'
+    + '<br><br><b>What to check:</b> <a href="/api/efl/health" style="color:inherit;text-decoration:underline">'
+    + '/api/efl/health</a> reports each document\'s status and which expected fields are present. '
+    + 'To carry on meanwhile, <a href="?provider=sample" style="color:inherit;text-decoration:underline">'
+    + 'switch to the sample dataset</a> — clearly labelled, and not live.'
+    + (retryId ? ` <br><button class="btn btn-ghost btn-sm" id="${esc(retryId)}" style="margin-top:10px">Try again</button>` : '')
     + '</div>';
 }
 
