@@ -25,6 +25,10 @@ on:
         description: 'Grade settled rounds even when a later round has started (marks them ambiguous)'
         type: boolean
         default: false
+      health:
+        description: 'Print the /api/efl/health report even if nothing failed'
+        type: boolean
+        default: false
 
 permissions:
   contents: write # commit the ledger
@@ -55,6 +59,36 @@ jobs:
         # the feed happened to be down on Tuesday.
         if: always()
         run: node scripts/efl/grade-round.mjs ${{ github.event.inputs.grade_ambiguous == 'true' && '--force' || '' }}
+
+      # The per-document diagnosis, in the log of the run that needed it.
+      # Deliberately NOT on every run: /api/efl/health skips every cache and
+      # fans out to all three upstream documents, and the steps above have
+      # already fetched them once. On failure that second opinion is worth
+      # the request, because it names the document and the missing field
+      # rather than leaving a stack trace to interpret.
+      - name: Ask the feed what is wrong
+        if: failure() || github.event.inputs.health == 'true'
+        run: |
+          echo "GET /api/efl/health"
+          CODE=$(curl -sS -m 60 -o health.json -w '%{http_code}' \
+            https://gameweekedge.co.uk/api/efl/health || echo 000)
+          echo "HTTP $CODE"
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync('health.json', 'utf8'));
+            console.log(r.ok ? '✓ ' + r.summary : '✗ ' + r.summary);
+            for (const [name, d] of Object.entries(r.documents || {})) {
+              const problems = [
+                d.error,
+                d.status && d.status !== 200 ? 'HTTP ' + d.status : null,
+                d.isArray === false ? 'not a list' : null,
+                (d.fieldsMissing || []).length ? 'missing ' + d.fieldsMissing.join(', ') : null
+              ].filter(Boolean);
+              console.log('  ' + name.padEnd(8) + (problems.length ? '✗ ' + problems.join('; ')
+                : '✓ ' + d.count + ' records, all expected fields present'));
+              if (problems.length) console.log('    keys: ' + (d.sampleKeys || []).join(', '));
+            }
+          "
+          rm -f health.json
 
       - name: Commit whatever changed
         if: always()
