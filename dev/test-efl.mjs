@@ -572,6 +572,103 @@ ok('the guide renders the ladder from the rule, not from prose', () => {
     'the cumulative rule is the easy thing to get wrong, so the guide must state it');
 });
 
+/* ── 3b3. The feed health summary ─────────────────────── */
+
+/* A report in exactly the shape netlify/functions/efl.js produces. The two
+   are kept in step by the assertion below that every document name the
+   function fetches is one this renderer can draw. */
+const healthyReport = {
+  ok: true,
+  checkedAt: '2026-08-11T09:00:00.000Z',
+  summary: 'The official Fantasy EFL feed is answering in the shape this app expects.',
+  documents: {
+    squads: { status: 200, isArray: true, count: 72, fieldsPresent: ['id'], fieldsMissing: [] },
+    players: { status: 200, isArray: true, count: 1840, fieldsPresent: ['id'], fieldsMissing: [] },
+    rounds: { status: 200, isArray: true, count: 46, fieldsPresent: ['roundNumber'], fieldsMissing: [] }
+  }
+};
+
+ok('a healthy feed reads as healthy, with the counts that prove it', () => {
+  const html = ui.healthSummary(healthyReport);
+  assert.match(html, /healthy/i, 'the verdict must be a sentence, not a green dot');
+  assert.match(html, /72/, 'the club count is the evidence — show it');
+  assert.match(html, /1840/, 'and the player count');
+  assert.ok(!/health-bad/.test(html), 'nothing should be marked as a problem');
+  assert.ok(!/provider=sample/.test(html),
+    'a working feed must not push people at the generated dataset');
+});
+
+ok('a broken document is named, not summarised away', () => {
+  const html = ui.healthSummary({
+    ok: false,
+    checkedAt: '2026-08-11T09:00:00.000Z',
+    summary: 'The official feed did not answer in the expected shape.',
+    documents: {
+      squads: healthyReport.documents.squads,
+      players: { status: 200, isArray: true, count: 1840, fieldsMissing: ['squadId', 'position'] },
+      rounds: { status: 503, error: 'upstream refused the connection' }
+    }
+  });
+  assert.match(html, /players/, 'the failing document must be named');
+  assert.match(html, /squadId/, 'and the missing field named — "broken" is not actionable');
+  assert.match(html, /position/, 'every missing field, not just the first');
+  assert.match(html, /HTTP 503/, 'and an HTTP failure reported as itself');
+  assert.match(html, /upstream refused the connection/, 'including the upstream message');
+  assert.match(html, /note-err/, 'a failure must not look like a success');
+  assert.match(html, /provider=sample/,
+    'and must offer the escape hatch, because the tools still work on sample data');
+});
+
+ok('the health renderer covers every document the proxy actually checks', () => {
+  /* If someone adds a fourth document to the function, this fails until the
+     renderer has seen one — which is the point. */
+  const fn = readFileSync(join(ROOT, 'netlify', 'functions', 'efl.js'), 'utf8');
+  const names = [...fn.matchAll(/^\s{2}(\w+):\s*\{\s*path:/gm)].map((m) => m[1]);
+  assert.ok(names.length >= 3, 'expected to find the proxy routes');
+  const html = ui.healthSummary({
+    ok: true,
+    documents: Object.fromEntries(names.map((n) => [n, { status: 200, isArray: true, count: 1, fieldsMissing: [] }]))
+  });
+  for (const name of names) {
+    assert.ok(html.includes(name), `the health table has no row for ${name}`);
+  }
+});
+
+ok('a check that could not run says so, rather than blaming the feed', () => {
+  const html = ui.healthUnavailable(new Error('the route is not deployed'));
+  assert.match(html, /could not be run/i);
+  assert.match(html, /the route is not deployed/, 'the real reason, not a shrug');
+  assert.ok(!/note-err/.test(html),
+    'a broken check is not a broken feed and must not be dressed as one');
+});
+
+ok('the health renderers escape whatever the endpoint sends them', () => {
+  const html = ui.healthSummary({
+    ok: false,
+    summary: '<img src=x onerror=alert(1)>',
+    documents: { '<script>': { status: 200, isArray: true, count: 1, fieldsMissing: ['<b>'] } }
+  });
+  assert.ok(!html.includes('<script>'), 'a document name is text, not markup');
+  assert.ok(!html.includes('<img src=x'), 'and so is the summary');
+  assert.ok(ui.healthUnavailable(new Error('<script>x</script>')).includes('&lt;script&gt;'));
+});
+
+ok('the guide page runs the check on demand, never on load', () => {
+  /* The endpoint is uncached and fans out to three upstream documents.
+     Firing it on every page view would make this site exactly the impolite
+     client the proxy's cache TTLs exist to prevent. */
+  const js = readFileSync(join(APP, 'assets', 'page-guide.js'), 'utf8');
+  const html = readFileSync(join(APP, 'how-to-play', 'index.html'), 'utf8');
+  assert.ok(html.includes('id="health-run"'), 'the guide has no button to run the check');
+  assert.ok(html.includes('id="health-result"'), 'and nowhere to put the answer');
+  assert.match(js, /addEventListener\('click'/, 'the fetch must hang off the click');
+  const clickAt = js.indexOf("addEventListener('click'");
+  const fetches = [...js.matchAll(/\bfetch\(/g)].map((m) => m.index);
+  assert.equal(fetches.length, 1, 'the guide should make exactly one direct fetch — the check');
+  assert.ok(clickAt > -1 && fetches[0] > clickAt,
+    'the health fetch must be inside the click handler, not at module scope');
+});
+
 /* ── 3c. Building a legal seven ───────────────────────── */
 
 ok('the squad builder returns a legal seven', () => {
@@ -1123,7 +1220,8 @@ ok('the error state tells a reader what to do next', () => {
   const html = ui.errorState(shapeErr, 'retry');
   assert.match(html, /changed shape/, 'a shape change is not the same event as an outage');
   assert.match(html, /competitionId/, 'the diagnosis must reach the screen');
-  assert.match(html, /\/api\/efl\/health/, 'the reader needs somewhere to look');
+  assert.match(html, /how-to-play\/#health/, 'the reader needs somewhere readable to look');
+  assert.match(html, /\/api\/efl\/health/, 'and the raw report for someone who wants it');
   assert.match(html, /\?provider=sample/, 'and a way to carry on meanwhile');
   const outage = ui.errorState(new Error('returned 503 for squads'));
   assert.match(outage, /could not be loaded/);

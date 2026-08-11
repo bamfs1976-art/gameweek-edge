@@ -132,6 +132,33 @@ Its `EXPECTED` table and `assertOfficialShape()` are the same claim made
 twice, once for a human opening a URL and once for the code; a test asserts
 they do not drift apart.
 
+### The same report, in words, on the guide page
+
+`/fantasy-efl/how-to-play/#health` says the same thing to someone who is not
+going to read JSON, in two layers:
+
+* **Free.** The data-source paragraph reports what the page's own load
+  already returned — the source, the snapshot time, and how many clubs,
+  players and fixtures came back. It costs nothing, because that fetch has
+  already happened by the time the sentence is written.
+* **On demand.** A **Check the feed now** button fetches `/api/efl/health`
+  and renders it as a table: one row per document, a word (`OK` /
+  `Problem`) before a colour, the record count, and — when something is
+  wrong — the named field or HTTP status that is wrong, plus a link to
+  `?provider=sample`.
+
+It is a button, not an on-load fetch, and that is a rule rather than a
+preference: the endpoint deliberately skips every cache and fans out to all
+three upstream documents, so running it on every page view would make this
+site precisely the impolite client the proxy's TTLs exist to prevent. A test
+asserts the only `fetch()` in `page-guide.js` sits inside the click handler.
+
+A 503 from the health route is a **result**, not an error — that body is the
+report, and it gets rendered. Only a response that is not a report at all
+(no route, no network, not JSON) produces "the health check could not be
+run", which is a different sentence because it is a different fault: it says
+so plainly rather than blaming the feed.
+
 ### If it is wrong
 
 Nothing needs a deploy to recover. Append **`?provider=sample`** to any
