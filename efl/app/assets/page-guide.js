@@ -7,9 +7,15 @@
    is running on sample data, the guide has to say so too. */
 
 import { loadSnapshot } from './provider.js';
-import { initTheme, esc } from './ui.js';
+import { initTheme, esc, suspensionLadder } from './ui.js';
 
 initTheme();
+
+/* The ladder is rendered from the rule in suspension.js rather than typed
+   into the page, so the guide and the badges can never disagree about what
+   earns a ban. */
+const ladder = document.getElementById('ladder');
+if (ladder) ladder.innerHTML = suspensionLadder();
 
 const el = document.getElementById('data-status');
 

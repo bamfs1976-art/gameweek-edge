@@ -342,6 +342,13 @@ th[aria-sort] button{color:var(--efl)}
 .attr-pos{color:var(--green);font-weight:700;font-size:var(--fs-min)}
 .attr-neg{color:var(--red);font-weight:700;font-size:var(--fs-min)}
 
+/* Suspension risk. A word first, then a colour — and only the levels that
+   would change a decision get a badge at all. */
+.badge-susp{border:1px solid currentColor;background:transparent;margin-left:4px}
+.susp-onEdge{color:var(--red)}
+.susp-watch{color:var(--amber)}
+.susp-suspended{color:var(--red)}
+
 details.coverage{margin-top:9px}
 details.coverage summary{cursor:pointer;font-weight:600;color:var(--text-2)}
 details.coverage summary:hover{color:var(--text)}

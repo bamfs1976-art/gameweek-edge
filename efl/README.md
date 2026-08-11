@@ -180,6 +180,39 @@ change:
                                               12: 'league-two' } };</script>
 ```
 
+### Suspension risk
+
+`app/assets/suspension.js` carries the EFL's yellow-card accumulation ladder —
+five bookings by the club's 19th league match is a one-match ban, ten by the
+37th is two, fifteen at any point is three, and the count is **cumulative and
+does not reset when a ban is served**.
+
+The rule comes from the sibling Bookings Desk project (`data/leagues.py`,
+which documents its evidence in `docs/suspension-rules.md`). It is a league
+rule rather than anybody's data, and it applies to all three divisions — which
+is why this app can use it while using **none** of that project's
+Championship-only, last-season numbers. The input is the official feed's own
+`yellowCards`, so this needs no new data source: live, current, all 72 clubs.
+
+**It deliberately changes no score.** A ban costs the round *after* the
+booking, not the round you are picking, so marking a player down today for a
+match he will miss next week would be scoring the wrong week — and the
+availability multiplier already handles a player suspended *now*. A test pins
+this: two identical players, one on four bookings, must score exactly the
+same. What the risk does instead is appear beside him, in the summary
+sentence, on the pick cards, and as a filter in the finder.
+
+Two things it refuses to do: guess (a source that publishes no yellow cards
+yields `known: false`, not a confident all-clear) and predict (it reports how
+many bookings a player is from a ban, never his chance of getting one).
+
+The sample generator draws bookings as a **Poisson count around a per-player
+proneness**, with per-90 rates measured from a real season (GK 0.050, DEF
+0.180, MID 0.206, FWD 0.153). That is not fussiness: drawing them the way
+everything else is drawn — a mean times a narrow jitter — produced a season in
+which no player in seventy-two squads was ever on four yellows, so the feature
+had nothing to display. A test now fails if the demo stops exercising it.
+
 ### What the free tier cannot answer
 
 Every source declares a `coverage` object, and the UI renders it as a

@@ -16,7 +16,7 @@ import { POSITION_COLUMNS, TARIFF, statPoints } from './tariff.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
   methodNote, divisionBadge, homeAwayBadge, availabilityBadge, meter, statCell, fmtDay,
-  DIVISION_LABELS
+  suspensionBadge, DIVISION_LABELS
 } from './ui.js';
 
 initTheme();
@@ -25,7 +25,7 @@ const PAGE_SIZE = 25;
 const pc = (key) => `${Math.round(PLAYER_WEIGHTS[key] * 100)}%`;
 const state = {
   search: '', division: 'all', position: 'all', club: 'all',
-  availability: 'all', sort: 'score', page: 1
+  availability: 'all', banRisk: 'all', sort: 'score', page: 1
 };
 let ctx = null;
 let rows = [];       // every player, scored once
@@ -89,13 +89,14 @@ function setupFilters() {
   on('f-position', 'change', (e) => { state.position = e.target.value; state.page = 1; render(); });
   on('f-club', 'change', (e) => { state.club = e.target.value; state.page = 1; render(); });
   on('f-availability', 'change', (e) => { state.availability = e.target.value; state.page = 1; render(); });
+  on('f-ban', 'change', (e) => { state.banRisk = e.target.value; state.page = 1; render(); });
   on('f-sort', 'change', (e) => { state.sort = e.target.value; state.page = 1; render(); });
   on('f-reset', 'click', () => {
     Object.assign(state, {
       search: '', division: 'all', position: 'all', club: 'all',
-      availability: 'all', sort: 'score', page: 1
+      availability: 'all', banRisk: 'all', sort: 'score', page: 1
     });
-    ['f-search', 'f-division', 'f-position', 'f-club', 'f-availability', 'f-sort']
+    ['f-search', 'f-division', 'f-position', 'f-club', 'f-availability', 'f-ban', 'f-sort']
       .forEach((id) => {
         const el = document.getElementById(id);
         el.value = id === 'f-search' ? '' : (id === 'f-sort' ? 'score' : 'all');
@@ -129,13 +130,17 @@ const SORTS = {
      answer to "sort by fixture", so it is inverted here rather than making
      the user reason about direction. A blank round sorts last. */
   fixture: (r) => (r.rec.next ? 6 - r.rec.next.rating : -1),
-  differential: (r) => r.differential.score
+  differential: (r) => r.differential.score,
+  /* Most bookings first — the players a manager is most likely to lose. */
+  bookings: (r) => (r.player.stats && r.player.stats.yellowCards != null
+    ? r.player.stats.yellowCards : -1)
 };
 
 const SORT_LABELS = {
   score: 'modelled pick rating', form: 'form over the last five', goals: 'goals',
   assists: 'assists', cleanSheets: 'clean sheets', minutes: 'minutes', starts: 'starts',
-  fixture: 'next fixture difficulty (easiest first)', differential: 'differential score'
+  fixture: 'next fixture difficulty (easiest first)', differential: 'differential score',
+  bookings: 'yellow cards, most first'
 };
 
 function filtered() {
@@ -149,6 +154,10 @@ function filtered() {
     if (state.availability === 'available' && status !== 'available') return false;
     if (state.availability === 'risk' && status !== 'available' && status !== 'doubtful') return false;
     if (state.availability === 'out' && (status === 'available' || status === 'doubtful')) return false;
+    /* Ban risk is a separate axis from availability on purpose: a player one
+       booking away is available THIS round and may not be next. */
+    if (state.banRisk === 'safe' && r.rec.suspension.level === 'onEdge') return false;
+    if (state.banRisk === 'edge' && r.rec.suspension.level !== 'onEdge') return false;
     if (q) {
       const hay = `${p.name} ${r.club ? r.club.name : ''} ${r.club ? r.club.short : ''}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -303,7 +312,7 @@ function row(r, columns) {
     <td class="num" data-label="Starts">${p.starts}</td>
     ${statCells}
     <td data-label="Next fixture">${nextCell(rec.next)}</td>
-    <td data-label="Status">${availabilityBadge(p.availability)}
+    <td data-label="Status">${availabilityBadge(p.availability)}${suspensionBadge(rec.suspension)}
       ${r.differential.score >= 55 ? `<span class="t-sub" title="${esc(r.differential.note)}">${esc(r.differential.label)} ${r.differential.score.toFixed(0)}</span>` : ''}</td>
     <td class="num" data-label="Modelled rating"><b>${rec.score.toFixed(1)}</b>
       <span class="t-sub">${esc(rec.summary)}</span></td>

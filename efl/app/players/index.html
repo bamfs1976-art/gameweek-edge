@@ -113,6 +113,14 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       </select>
     </div>
     <div class="field">
+      <label for="f-ban">Ban risk</label>
+      <select id="f-ban">
+        <option value="all">Any ban risk</option>
+        <option value="safe">Hide players one booking from a ban</option>
+        <option value="edge">Only players one booking from a ban</option>
+      </select>
+    </div>
+    <div class="field">
       <label for="f-sort">Sort by</label>
       <select id="f-sort">
         <option value="score">Modelled pick rating</option>
@@ -124,6 +132,7 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
         <option value="starts">Starts</option>
         <option value="fixture">Fixture rating</option>
         <option value="differential">Differential score</option>
+        <option value="bookings">Yellow cards</option>
       </select>
     </div>
     <div class="filter-actions">
@@ -139,6 +148,14 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
   <section aria-labelledby="method-title" style="margin-top:24px">
     <div class="sec-head"><h2 class="sec-title" id="method-title">Method</h2></div>
     <div id="method"></div>
+    <p class="note note-method" style="margin-top:10px"><b>On ban risk.</b> The EFL
+      suspends a player for accumulating bookings — five by his club's 19th league match
+      is a one-match ban, ten by the 37th is two, fifteen at any point is three, and the
+      count does <b>not</b> reset when a ban is served. A player one booking away is
+      flagged here. It does <b>not</b> change his rating: a ban costs the round
+      <em>after</em> the booking, not the one you are picking, so this is a planning
+      signal rather than a mark against him.
+      <a href="/fantasy-efl/how-to-play/#bans" style="color:var(--efl)">How the ladder works →</a></p>
     <p class="note note-method" style="margin-top:10px"><b>On differentials.</b> The official
       game publishes ownership for <b>clubs</b> — you will find it in the
       <a href="/fantasy-efl/clubs/">club picker</a> whenever the data source in use supplies it.
