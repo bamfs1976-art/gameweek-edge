@@ -73,10 +73,10 @@ how a content policy stops meaning anything.
 
 # Data sources
 
-There are two, and the app ships on the second one until somebody verifies the
-first.
+Two of them. **The app reads the official feed by default**; the generated
+dataset is one query string away.
 
-## 1. The official Fantasy EFL feed (`provider: 'official'`)
+## 1. The official Fantasy EFL feed — the default (`provider: 'official'`)
 
 The official game publishes three JSON documents that need **no API key and no
 account**:
@@ -94,29 +94,50 @@ project will not use it. Holding somebody's game credentials and making ~1,100
 requests to refresh one page is a bad trade, and the gap is stated in the UI
 rather than hidden.
 
-### ⚠️ It has never been run against the live host
+### ⚠️ It has not been observed responding
 
-`fantasy.efl.com` was unreachable from the machine this was written on — the
+`fantasy.efl.com` is unreachable from the machine this was written on — the
 egress proxy refuses it, exactly as it refuses `api.football-data.org` for the
 sibling function. The paths and field names come from the official game's own
 front end as used by a working public site, not from a response anyone here
 has seen. The mappers are unit-tested against a synthetic payload in that
-shape, which catches a mapping bug but cannot catch a *wrong shape*.
+shape, which catches a mapping bug and **cannot catch a wrong shape**.
 
-**So the default provider is still `sample`.** Shipping an unverified source as
-the default means the first person to discover it is wrong is a visitor. To
-verify it:
+That risk is real, so what it is allowed to *cost* is bounded rather than
+hoped away. A shape that does not match has exactly two possible outcomes:
 
-```bash
-npx netlify dev
-# then hit /api/efl/squads, /api/efl/players, /api/efl/rounds
-# check _meta.upstreamStatus, and that a squad carries competitionId,
-# leaguePosition, percentSelected, fdrHome and fdrAway
+1. `assertOfficialShape()` names it — which document, which field, and what
+   actually arrived — and the page shows that sentence.
+2. The data really is the shape expected.
+
+The third outcome, where a renamed field becomes a column of zeroes and the
+app confidently shows numbers that mean nothing, is what the guard exists to
+make impossible. There is **no fallback to sample data**: substituting
+invented numbers for a feed that changed is the failure this whole design
+exists to prevent.
+
+### `/api/efl/health` — the one-request diagnosis
+
+```
+https://gameweekedge.co.uk/api/efl/health
 ```
 
-Then either flip `DEFAULT_CONFIG.provider` to `'official'` in `provider.js`, or
-try it on a real deploy without changing what anyone else sees by appending
-`?provider=official` to any Fantasy EFL URL.
+Fetches all three documents and reports, per document: the HTTP status, how
+many records came back, and which of the fields this app depends on are
+actually present (`fieldsPresent` / `fieldsMissing`, plus the first record's
+keys). `ok: true` means the feed is the shape the app expects. Never cached —
+a health check that can answer from ten minutes ago is not a health check.
+
+Its `EXPECTED` table and `assertOfficialShape()` are the same claim made
+twice, once for a human opening a URL and once for the code; a test asserts
+they do not drift apart.
+
+### If it is wrong
+
+Nothing needs a deploy to recover. Append **`?provider=sample`** to any
+Fantasy EFL URL for the clearly-labelled generated dataset, and the error
+state links to both that and the health check. To change it for everyone,
+flip `DEFAULT_CONFIG.provider` back to `'sample'` in `provider.js`.
 
 ### What the free tier cannot answer
 
@@ -136,12 +157,13 @@ built from nothing that looks exactly like one built from five rounds.
   `normalise()` answers a flat input with 0.5 for everyone, which is the honest
   response to "nothing separates them".
 
-## 2. Sample data (`provider: 'sample'`, the default)
+## 2. Sample data (`provider: 'sample'`)
 
-The app ships with a generated dataset and **says so on every page**. The
-banner is not a footnote someone can forget to update: it is rendered from
-`snapshot.source.live`, so it appears while that flag is false and disappears
-by itself the day a real provider is configured.
+Still here, still one query string away, and it **says so on every page** when
+it is in use. The banner is not a footnote someone can forget to update: it is
+rendered from `snapshot.source.live`, so it appears whenever that flag is false
+and is absent otherwise. It is the fallback a human chooses, never one the app
+substitutes.
 
 What is real and what is not:
 

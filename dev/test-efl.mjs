@@ -39,6 +39,9 @@ const { buildSampleSnapshot } = await import(join(APP, 'assets/sample-data.js'))
 const provider = await import(join(APP, 'assets/provider.js'));
 const model = await import(join(APP, 'assets/model.js'));
 const tariff = await import(join(APP, 'assets/tariff.js'));
+/* ui.js touches the DOM only inside its render helpers, and errorState()
+   is a pure string builder — importable here without a browser. */
+const ui = await import(join(APP, 'assets/ui.js'));
 
 /* A fixed `now` so kickoff-derived assertions cannot drift with the clock. */
 const NOW = Date.parse('2026-08-10T12:00:00Z');
@@ -598,6 +601,104 @@ function officialFixture() {
   return { squads, players, rounds };
 }
 
+ok('the app defaults to the official feed, with sample one query string away', () => {
+  assert.equal(provider.DEFAULT_CONFIG.provider, 'official',
+    'the app reads the official Fantasy EFL feed by default');
+  assert.equal(provider.readConfig({}).provider, 'official');
+  assert.equal(provider.readConfig({ location: { search: '?provider=sample' } }).provider, 'sample',
+    'the sample dataset must stay reachable without a code change');
+  assert.equal(provider.readConfig({ EFL_CONFIG: { provider: 'sample' } }).provider, 'sample');
+});
+
+ok('the API base honours the packaged-app override', () => {
+  /* The EFL app made no requests while it ran on generated data, so a
+     relative /api path was free. It is not free now: in the packaged iOS
+     build a relative path resolves inside the app bundle. `ge-api-base` is
+     the key the FPL app already uses for exactly this. */
+  assert.equal(provider.resolveBase({ base: '/api/efl' }, {}), '/api/efl',
+    'on the web a relative path is correct');
+  assert.equal(
+    provider.resolveBase({ base: '/api/efl' },
+      { localStorage: { getItem: () => 'https://gameweekedge.co.uk/' } }),
+    'https://gameweekedge.co.uk/api/efl'
+  );
+  assert.equal(
+    provider.resolveBase({ base: '/api/efl' }, { GE_CONFIG: { apiBase: 'https://example.test' } }),
+    'https://example.test/api/efl'
+  );
+  assert.equal(provider.resolveBase({ base: 'https://already.absolute/api/efl' }, {}),
+    'https://already.absolute/api/efl', 'an absolute base is left alone');
+});
+
+/* ── The shape guard ──────────────────────────────────────
+   This is the safety argument for defaulting to a feed nobody here has seen
+   respond: a shape change must produce a NAMED error, never a page of
+   plausible wrong numbers. Each case below is a way the official game could
+   change its documents without telling anybody. */
+
+ok('a structurally wrong feed fails with a diagnosis, not a shrug', () => {
+  const base = {
+    squads: [{ id: 1, competitionId: 1 }, { id: 2, competitionId: 2 }, { id: 3, competitionId: 3 }],
+    players: [],
+    rounds: []
+  };
+  const cases = [
+    ['squads is not a list', { ...base, squads: { clubs: [] } }, /was not a list of clubs/],
+    ['squads is empty', { ...base, squads: [] }, /no clubs at all/],
+    ['players is not a list', { ...base, players: 'nope' }, /players document was not a list/],
+    ['rounds is not a list', { ...base, rounds: { a: 1 } }, /rounds document was not a list/],
+    ['a club lost competitionId', { ...base, squads: [{ id: 1, name: 'A' }] }, /competitionId/],
+    ['everything is one competition',
+      { ...base, squads: [{ id: 1, competitionId: 9 }, { id: 2, competitionId: 9 }] },
+      /three divisions/],
+    ['a player lost squadId', { ...base, players: [{ id: 9 }] }, /squadId/],
+    ['a round lost its games', { ...base, rounds: [{ roundNumber: 1 }] }, /no fixtures to read/],
+    ['a game lost homeId', { ...base, rounds: [{ roundNumber: 1, games: [{ id: 1 }] }] }, /homeId/]
+  ];
+  for (const [label, payload, pattern] of cases) {
+    assert.throws(() => provider.assertOfficialShape(payload), pattern, `${label}: no useful error`);
+    try { provider.assertOfficialShape(payload); } catch (err) {
+      assert.equal(err.shapeError, true, `${label}: not flagged as a shape error`);
+      assert.ok(err.diagnosis && err.diagnosis.length > 30,
+        `${label}: the diagnosis must be a sentence someone can act on`);
+    }
+  }
+});
+
+ok('a feed that answers most of the question warns rather than fails', () => {
+  /* Missing ownership is a coverage gap the UI already handles by hiding a
+     column. Treating it as fatal would take the whole section down over a
+     field nothing depends on. */
+  const warnings = provider.assertOfficialShape({
+    squads: [{ id: 1, competitionId: 1 }, { id: 2, competitionId: 2 },
+      { id: 3, competitionId: 3 }, { id: 4, competitionId: 4 }],
+    players: [],
+    rounds: []
+  });
+  assert.ok(warnings.some((w) => /four|4 competitions/i.test(w)), 'an extra competition is worth saying');
+  assert.ok(warnings.some((w) => /ownership/i.test(w)));
+  assert.ok(warnings.some((w) => /1-5 fixture ratings/i.test(w)));
+  assert.ok(warnings.some((w) => /no players/i.test(w)));
+});
+
+ok('warnings reach the reader instead of a console', () => {
+  const fixture = officialFixture();
+  for (const s of fixture.squads) { delete s.percentSelected; delete s.fdrHome; delete s.fdrAway; }
+  const out = provider.buildOfficialSnapshot(fixture, { now: NOW });
+  assert.equal(out.source.coverage.clubOwnership, false,
+    'coverage must reflect what actually arrived, not what was hoped for');
+  assert.equal(out.source.coverage.officialFdr, false);
+  assert.ok(out.source.coverage.notes.some((n) => /ownership/i.test(n)),
+    'the gap must appear in the disclosure the UI renders');
+});
+
+ok('describeShape says what actually arrived, briefly', () => {
+  assert.match(provider.describeShape([{ a: 1, b: 2 }]), /array of 1.*keys: a, b/);
+  assert.match(provider.describeShape({ x: 1 }), /object with keys: x/);
+  assert.equal(provider.describeShape([]), 'an empty array');
+  assert.equal(provider.describeShape(null), 'null');
+});
+
 ok('the official mapper works out which competition is which division', () => {
   const { squads } = officialFixture();
   const map = provider.mapCompetitions(squads);
@@ -804,6 +905,42 @@ ok('the FPL app and the Euro app both link into Fantasy EFL', () => {
      still FPL-current, and its own wording is unchanged. */
   assert.match(fpl, /<span class="sb-game-btn active" aria-current="page">FPL<\/span>/,
     'the FPL app is no longer marked as the current competition');
+});
+
+ok('the proxy exposes a health check that agrees with the app about what matters', () => {
+  /* EXPECTED in the function and assertOfficialShape in the app are the
+     same claim made twice — once for a human opening a URL, once for the
+     code. They are allowed to be written separately; they are not allowed
+     to disagree about the fields the app cannot work without. */
+  const fn = readFileSync(join(ROOT, 'netlify', 'functions', 'efl.js'), 'utf8');
+  assert.match(fn, /requested === 'health'/, 'no health route');
+  assert.match(fn, /'Cache-Control': 'no-store'/,
+    'a health check that can answer from ten minutes ago is not a health check');
+  const block = fn.slice(fn.indexOf('const EXPECTED'), fn.indexOf('const CORS'));
+  for (const field of ['id', 'competitionId', 'leaguePosition']) {
+    assert.ok(block.includes(`'${field}'`), `health does not check squads.${field}`);
+  }
+  for (const field of ['squadId', 'position', 'totalPoints']) {
+    assert.ok(block.includes(`'${field}'`), `health does not check players.${field}`);
+  }
+  for (const field of ['roundNumber', 'games', 'lockoutDate']) {
+    assert.ok(block.includes(`'${field}'`), `health does not check rounds.${field}`);
+  }
+  /* The proxy must never grow a route that forwards credentials. */
+  assert.ok(!/Authorization|Cognito|password/i.test(fn),
+    'the EFL proxy must not authenticate as a user');
+});
+
+ok('the error state tells a reader what to do next', () => {
+  const shapeErr = Object.assign(new Error('Clubs no longer carry "competitionId".'), { shapeError: true });
+  const html = ui.errorState(shapeErr, 'retry');
+  assert.match(html, /changed shape/, 'a shape change is not the same event as an outage');
+  assert.match(html, /competitionId/, 'the diagnosis must reach the screen');
+  assert.match(html, /\/api\/efl\/health/, 'the reader needs somewhere to look');
+  assert.match(html, /\?provider=sample/, 'and a way to carry on meanwhile');
+  const outage = ui.errorState(new Error('returned 503 for squads'));
+  assert.match(outage, /could not be loaded/);
+  assert.doesNotMatch(outage, /changed shape/, 'an outage must not be reported as a shape change');
 });
 
 ok('the UI never ships a hard-coded ownership column', () => {
