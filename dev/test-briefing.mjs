@@ -483,7 +483,10 @@ console.log('\n• briefing: the shipped document, and the regression that broke
      being consistent is not them being consistently wrong again. */
   const spOf = {};
   for (const p of c.pens) spOf[p.club] = p.name;
-  for (const [club, taker] of [['Aston Villa', 'Buendía'], ['Bournemouth', 'Kroupi.Jr'],
+  /* Bournemouth was on this list until 11 Aug 2026, when Kroupi.Jr — the
+     API's order-1 taker — was ruled out for about three months. It is
+     asserted separately below as naming nobody. */
+  for (const [club, taker] of [['Aston Villa', 'Buendía'],
     ['Sunderland', 'Diarra'], ['Nottingham Forest', 'Wood'], ['Ipswich Town', 'Hirst'],
     ['Hull City', 'Crooks']]) {
     ok(spOf[club] === taker, club + ' set-piece line names ' + taker + ' (' + spOf[club] + ')');
@@ -498,11 +501,30 @@ console.log('\n• briefing: the shipped document, and the regression that broke
     'Nottingham Forest': 'Gibbs-White', 'Ipswich Town': 'Clarke', 'Hull City': 'McBurnie' };
   const broken = pensSelfContradictions(
     c.pens.map((p) => (was[p.club] ? { ...p, name: was[p.club] } : p)), c.pensProse);
-  ok(broken.length === 6, 'reverting the set-piece lines alone strands 6 picks (' + broken.length + ')');
+  /* Five, not the historical six: Bournemouth's set-piece line no longer
+     asserts a taker at all (see below), so there is nothing there to revert. */
+  ok(broken.length === 5, 'reverting the set-piece lines alone strands 5 picks (' + broken.length + ')');
+
+  /* Kroupi.Jr was FPL order 1 and is out roughly three months from 11 Aug
+     2026. The briefing therefore names NOBODY as Bournemouth's penalty
+     taker, which is the honest state and the one the parser is built to
+     accept — `unresolved` is in its skip list precisely so a document can
+     say "we do not know" without a checker inventing a claim from it.
+     Pinned so that a future edit cannot quietly reinstate a taker who is
+     injured, nor leave the club asserting one when the order is open. */
+  ok(!c.pens.some((p) => p.club === 'Bournemouth'),
+    'Bournemouth asserts no penalty taker while its order-1 man is injured');
+  ok(c.pensProse.some((p) => p.club === 'Bournemouth' && p.hedged),
+    'and the pick text that mentions the promotion is hedged rather than stated');
   const clubs = broken.map((s) => s.club);
-  for (const club of ['Aston Villa', 'Bournemouth', 'Sunderland', 'Nottingham Forest', 'Hull City']) {
+  /* Bournemouth dropped out of this list on 11 Aug 2026 for the same reason
+     as above: with no taker asserted in its set-piece line there is nothing
+     for the revert to strand. */
+  for (const club of ['Aston Villa', 'Sunderland', 'Nottingham Forest', 'Hull City']) {
     ok(clubs.indexOf(club) > -1, club + ' is reported');
   }
+  ok(clubs.indexOf('Bournemouth') < 0,
+    'and Bournemouth is not, because it now claims no taker to revert');
   ok(clubs.filter((x) => x === 'Sunderland').length === 2, 'Sunderland twice — it makes the claim in two fields');
   /* Ipswich's takers changed too, but its pick fields never claimed the
      penalties, so it must NOT appear. A check that flagged every corrected club

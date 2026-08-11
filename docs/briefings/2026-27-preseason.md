@@ -1,6 +1,6 @@
 # Premier League 2026/27 Pre-Season Scout Report
 
-**Built for Gameweek Edge (gameweekedge.co.uk). Compiled 2 August 2026.**
+**Built for Gameweek Edge (gameweekedge.co.uk). Compiled 2 August 2026. Four club blocks updated 11 August 2026 — see the update log.**
 
 Season starts Friday 21 August 2026, per the Premier League's own pre-season page. An earlier version of this file said Saturday 22 August, which was a day late; the correction is recorded here rather than made silently. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
 
@@ -58,19 +58,56 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 ---
 
+## Update log — 11 August 2026
+
+The register below was compiled on 2 August. The Guardian began publishing its
+club-by-club season previews on 10 August, and four have appeared so far
+(Arsenal, Aston Villa, Bournemouth, Brentford). Their **facts** — signings,
+injuries, fees, published match statistics — have been read into the blocks
+for those four clubs. None of their **wording** is reproduced here: this file
+is a working document for a public product, and someone else's prose is not
+ours to ship. Where a number here now differs from what it said on 2 August,
+the old value is shown next to the new one rather than replaced.
+
+**What actually moved, in order of how much it should change a squad:**
+
+1. **William Saliba (Arsenal) is out with a back injury, duration unstated.** Every Arsenal defensive asset is priced off a defence that conceded 27 league goals. That defence does not currently exist, and the intended replacement (Konsa) is unsigned.
+2. **Eli Junior Kroupi (Bournemouth) is out roughly three months** with a pre-season foot injury, and he was the club's first-choice penalty taker in our own order.
+3. **Amadou Onana (Villa) ruptured an ACL** at the World Cup; Manzambi hurt a knee there too.
+4. **Bruno Guimaraes has joined Arsenal from Newcastle** — absent from this file entirely until now.
+5. **Rice, Saka and Madueke are all being eased back** after long World Cups, Saka through an achilles problem. The armband line in the Arsenal block assumed a fit, starting Saka in GW1.
+6. **Bournemouth are in the Europa League** for the first time — a Thursday-Sunday schedule they have never managed, and rotation risk this file did not previously carry.
+
+**Two errors in this document, found while reading the previews and fixed:**
+
+- **Villa's corner order named Lucas Digne**, in the same block that lists him as sold to PSG. An Opta projected order was carried across without being checked against our own Out list.
+- **Bournemouth's ~£25.7m was attached to Alvaro Rodriguez.** It is Antonio Silva's fee; two separate arrivals were conflated when only one was known.
+
+**One conflict left open, deliberately:** we say Igor Thiago scored 21 league
+goals last season, the preview says 22. Both cannot be right and the FPL API
+settles it — `npm run check:briefing` is where that gets resolved, not here.
+
+**Sixteen clubs still to come.** Their blocks are as of 2 August and should be
+read that way until a preview lands and this log grows.
+
+---
+
 ## 1. Arsenal (Champions, 85 pts)
 
-**Pre-season summary:** Reigning champions under Mikel Arteta, who stays and describes the squad as only "tweaked". Direction is continuity plus depth: Hincapie's loan made permanent, attacking cover added, no rebuild. The storyline is whether an almost-unchanged champion side can go back-to-back while carrying a heavy Champions League load.
+**Pre-season summary:** Reigning champions under Mikel Arteta, who stays and describes the squad as only "tweaked". Direction is continuity plus depth: Hincapie's loan made permanent, attacking cover added, no rebuild. The storyline is whether an almost-unchanged champion side can go back-to-back while carrying a heavy Champions League load. **Updated 11 Aug:** the summer is no longer only "tweaks" — Bruno Guimaraes has arrived from Newcastle, and the reason matters more than the signing. Declan Rice has been playing through neural pain in a hamstring and lower back since December and his workload is being managed; Guimaraes is insurance against that, not a luxury.
 
-**In:** Piero Hincapie (DEF, Bayer Leverkusen, ~£34.5m, loan made permanent), Christos Tzolis (FWD/W, Club Brugge, ~£35m), Illan Meslier (GK, Leeds, free).
+**In:** Piero Hincapie (DEF, Bayer Leverkusen, ~£34.5m, loan made permanent), Bruno Guimaraes (CM, Newcastle, fee not confirmed here), Christos Tzolis (FWD/W, Club Brugge, ~£35m), Illan Meslier (GK, Leeds, free).
 
 **Out:** Leandro Trossard (W, Besiktas, ~£15.3m), Jakub Kiwior (DEF, Porto, ~£14.7m), Karl Hein (GK, Werder Bremen, ~£2.5m), academy releases.
 
+**Fitness watch (11 Aug):** William Saliba is out with a back injury for an unstated period — the single most important line in this block, because the defence that conceded 27 league goals is what the value picks below are built on. Ezri Konsa (Villa) is the hoped replacement and is not signed. Rice and Bukayo Saka both played deep into the World Cup through injury — Saka with an achilles problem — and are to be given as long a break as Arsenal can afford; Noni Madueke is also being eased back. Vinicius Junior stayed at Real Madrid, so the heavyweight attacking signing some expected has not happened, with the window open to roughly 1 September.
+
 **FPL picks:**
-- Value: Gabriel Magalhaes (DEF, ~£8.0m), clean sheets plus aerial set-piece threat. Viktor Gyokeres (FWD, ~£7.5m), starting striker at a title side below premium.
-- Premium / captaincy: Bukayo Saka (MID, ~£10.0m) is the reliable armband. Gyokeres gives premium ceiling up top.
-- Differentials: Christos Tzolis if he forces into the wide rotation, likely sub-5% owned. Noni Madueke as a rotation punt.
-- Set-piece & penalties: Penalties Saka primary, with Gyokeres and Odegaard in the mix (watch the order after Gyokeres beds in). Direct free-kicks Rice and Saka. Corners Rice, Saka, Madueke, Odegaard.
+- Value: Gabriel Magalhaes (DEF, ~£8.0m), clean sheets plus aerial set-piece threat. Viktor Gyokeres (FWD, ~£7.5m), starting striker at a title side below premium. **Caveat (11 Aug): Saliba's absence is a live discount on every Arsenal defensive asset.** A back four without him is not the one that conceded 27, and the replacement is unsigned.
+- Premium / captaincy: Bukayo Saka (MID, ~£10.0m) is the reliable armband **once he is actually starting** — he is returning from a World Cup played through an achilles problem and is being eased in, so the GW1 armband is a real question rather than a formality. Gyokeres gives premium ceiling up top and is the safer opening-weeks captain of the two.
+- Differentials: Christos Tzolis if he forces into the wide rotation, likely sub-5% owned. Noni Madueke as a rotation punt, though he is also being eased back.
+- Set-piece & penalties: Penalties Saka primary, with Gyokeres and Odegaard in the mix (watch the order after Gyokeres beds in). Direct free-kicks Rice and Saka. Corners Rice, Saka, Madueke, Odegaard. **Watch (11 Aug):** referees have been instructed to police grappling at set plays more closely this season. Only three clubs bettered Arsenal's non-penalty expected-goal difference from set plays alone, so a stricter reading is a threat to one of their biggest edges — and to the aerial half of the Gabriel case.
+- Watch: Max Dowman (16) impressed again in pre-season after one league start last season. A cup-and-cameo prospect rather than an FPL pick, but the kind of name to know before it is priced in.
 
 **Opening fixtures:** GW1 Coventry City (H) easy, GW2 Aston Villa (A) moderate, GW3 Chelsea (H) moderate. One soft opener then two step-ups, with the Chelsea game at home rather than away. Back the Arsenal defence for GW1 and reassess before GW2 rather than committing to the whole run.
 
@@ -116,15 +153,17 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 **Pre-season summary:** Best placed of the chasing pack, fourth and back in the Champions League, Unai Emery firmly in charge. The defining event is cashing in on Morgan Rogers (~£117m to Chelsea) to fund a younger refresh. Incomings are midfield-heavy, with Garnacho on loan to replace Rogers' creativity. FPL caveat: set-piece coach Austin MacPhee has followed the money to Chelsea, so Villa's usually strong dead-ball threat carries uncertainty.
 
-**In:** Alejandro Garnacho (W, Chelsea, loan, option around £40m), Johan Manzambi (CM, Freiburg, ~£50m), Joao Gomes (CM, Wolves, ~£35m), Modou Keba Cisse (CB, LASK, ~£4m).
+**In:** Alejandro Garnacho (W, Chelsea, season-long loan, option around £40m), Johan Manzambi (CM, Freiburg, ~£51m club record — was listed here as ~£50m), Joao Gomes (CM, Wolves, ~£38m — was listed here as ~£35m), Modou Keba Cisse (CB, LASK, ~£4m).
 
 **Out:** Morgan Rogers (W/AM, Chelsea, ~£117m), Youri Tielemans (CM, Man Utd, ~£35m), Donyell Malen (FWD, Roma, ~£21.6m), Enzo Barrenechea (CM, Benfica, ~£10.3m), Lewis Dobbin (Southampton, ~£9m), Lucas Digne (LB, PSG, ~£8m), Louie Barry (Sheffield Wednesday), Andres Garcia (loan), Oliwier Zych (GK, loan).
+
+**Fitness and exits watch (11 Aug):** Amadou Onana ruptured the anterior cruciate ligament in his right knee at the World Cup — a long-term absence. Manzambi also picked up a knee injury there, delaying his debut, so the two midfield additions meant to replace Rogers and cover Tielemans are one out and one late. Boubacar Kamara returns from injury this month, which partly offsets it. Ezri Konsa is an Arsenal target; if he goes, the defence loses its most dependable starter and every Villa defensive asset below should be re-rated. Two more coaching departures beyond MacPhee: assistant manager Pako Ayestaran and individual coach Antonio Rodriguez Saravia.
 
 **FPL picks:**
 - Value: Matty Cash (attacking RB, corners, defensive points). Leon Bailey if he nails a starting wide role after Rogers.
 - Premium / captaincy: Ollie Watkins, nailed striker and penalty taker, the reliable armband here.
-- Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder.
-- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash from the left, Digne and McGinn from the right (Opta's projected order; Bailey, previously listed here, does not feature in it). Output is a real question mark after losing coach MacPhee (watch).
+- Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder — and the case is now measured rather than asserted: third in the division for tackles (107) and fourth for ball recoveries (194) last season, which is the profile the defensive-contribution points reward.
+- Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash from the left and McGinn from the right. **Correction (11 Aug): this line previously named Digne on corners while the same block listed him as sold to PSG.** That was our error, not a source conflict — an Opta projected order was carried over without being checked against our own Out list. Output is a real question mark after losing coach MacPhee (watch).
 
 **Opening fixtures:** GW1 Brighton (A) hard, GW2 Arsenal (H) hard, GW3 Hull City (A) moderate, GW4 Nottingham Forest (H) moderate, GW5 Spurs (A) hard. Two hard games to open, a softer middle, then Spurs away — plus European load. Avoid the Villa defence in GW1-2; the window for their assets is GW3-4.
 
@@ -152,15 +191,18 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 **Pre-season summary:** An excellent sixth has been followed by upheaval. Andoni Iraola left for Liverpool and Marco Rose is confirmed head coach on a three-year deal, bringing a Bundesliga pressing identity. Talisman Semenyo was sold to Man City (~£64m, January 2026) and Senesi left free to Spurs, so the spine that drove the over-achievement is weaker. Incoming business centres on striker Alvaro Rodriguez. A transitional summer that dampens their FPL appeal versus last term.
 
-**In:** Alvaro Rodriguez (ST, Elche, ~£25.7m). Rumours: Mathys Tel, Jhon Lucumi, Arthur Theate (all unconfirmed).
+**In:** Alvaro Rodriguez (ST, Elche, fee not confirmed here), Antonio Silva (CB, Benfica, ~£25.7m), Juanlu Sanchez (RB, Sevilla, fee not confirmed here). **Correction (11 Aug): the ~£25.7m in this line previously sat against Rodriguez.** It is Silva's fee; the two arrivals were conflated when only one of them was known.
 
-**Out:** Antoine Semenyo (W, Man City, ~£64m, Jan 2026), Marcos Senesi (CB, Tottenham, free). Rumoured exits: Junior Kroupi, Alex Scott.
+**Out:** Antoine Semenyo (W, Man City, ~£64m, Jan 2026), Marcos Senesi (CB, Tottenham, free), Alex Jimenez (RB, Fiorentina, loan with option — he remains suspended in England while under FA investigation). **Resolved (11 Aug): the rumoured exits of Junior Kroupi and Alex Scott did not happen.** Both stay; Kroupi attracted interest from PSG among others.
+
+**Fitness and schedule watch (11 Aug):** Eli Junior Kroupi is out for at least three months with a foot injury picked up in a pre-season drill. He reached double figures in his first Premier League season at 20 and is the club's designated penalty taker, so this removes both a differential and a dead-ball route in one go. Bournemouth also play in the Europa League for the first time, which means a Thursday-Sunday rhythm they have never had to manage — treat every Bournemouth asset as carrying rotation risk from the group stage onward, and note that the club deliberately asked Palace and Forest how they coped. Two new coaches worth logging for dead balls: set-piece coach Nicolas Gagnon and goalkeeping coach Frederic de Boever.
 
 **FPL picks:**
-- Value: Justin Kluivert (MID, ~£6.0m), main creative outlet now Semenyo has gone, on set-pieces. Marcus Tavernier (MID), cheap, shares pens and set-pieces.
+- Value: Justin Kluivert (MID, ~£6.0m), main creative outlet now Semenyo has gone, on set-pieces. Marcus Tavernier (MID), cheap, shares pens and set-pieces — **and is the likely beneficiary of Kroupi's absence from penalties.**
 - Premium / captaincy: No true premium remains. Evanilson is the nearest, but the brutal opener makes early captaincy unwise.
-- Differentials: Alvaro Rodriguez if he starts centrally. Junior Kroupi if he stays and Rose trusts youth.
-- Set-piece & penalties: Penalties Kroupi.Jr (FPL order 1; Tavernier third). Corners Tavernier, Scott, Cook. Free-kicks Unal, Tavernier, Brooks.
+- Differentials: Alvaro Rodriguez if he starts centrally — a clearer route to minutes now Kroupi is injured. Antonio Silva is a 22-year-old Portugal international with 20 caps arriving as a direct Senesi replacement, and a starting centre-back at a mid-table price is the kind of thing that goes unowned in August.
+- Set-piece & penalties: Penalties unresolved — Kroupi.Jr was FPL order 1 and is out until roughly November; Tavernier was third and is the likely promotion, unconfirmed until someone actually takes one (watch). Corners Tavernier, Scott, Cook. Free-kicks Unal, Tavernier, Brooks.
+- Watch: Ben Gannon-Doak, a £25m arrival from Liverpool last August limited to 113 minutes across eight substitute appearances, has impressed in pre-season and started for Scotland at the World Cup.
 
 **Opening fixtures:** GW1 Man City (A) very hard, GW2 Everton (H) moderate, GW3 Newcastle (A) hard, GW4 Brentford (H) moderate. Not the all-away run reported here before, but punishing regardless — one of the six hardest opening fives on our model. Actively avoid Bournemouth assets for the first few weeks.
 
@@ -204,17 +246,19 @@ Ordered by 2025/26 finishing position, promoted clubs last.
 
 ## 9. Brentford (53 pts)
 
-**Pre-season summary:** Ninth, Keith Andrews continues for a second season targeting another European push. With Wissa gone to Newcastle (2025) following Mbeumo's exit, the goal burden sits firmly on Igor Thiago, who scored a club-record 21 PL goals and is the established penalty taker. Summer additions are pragmatic: Callum Wilson adds savvy depth on a free, Anthony adds wing threat, Schuster reinforces central defence. A settled, well-run side with a genuine focal point.
+**Pre-season summary:** Ninth — and ninth by the width of a goal difference, having drawn at Anfield on the final day when a win would have taken the Europa League place that went to Brighton. Keith Andrews continues for a second season targeting another European push. With Wissa gone to Newcastle (2025) following Mbeumo's exit, the goal burden sits firmly on Igor Thiago, who scored a club-record 21 PL goals and is the established penalty taker. Summer additions are pragmatic: Callum Wilson adds savvy depth on a free, Anthony adds wing threat, Schuster reinforces central defence. A settled, well-run side with a genuine focal point.
 
-**In:** Jannik Schuster (CB, RB Salzburg, ~£12m), Jaidon Anthony (W, Burnley, ~£15m), Callum Wilson (ST, West Ham, free).
+**In:** Mamadou Sangare (CM, Lens, ~£35m club record), Jannik Schuster (CB, RB Salzburg, ~£12m), Jaidon Anthony (W, Burnley, ~£15m), Callum Wilson (ST, free agent — this block previously said "West Ham, free", which is where he was, and the move is a free transfer either way).
 
-**Out:** Frank Onyeka (CM, Coventry, ~£6.8m), Ryan Trevitt (released), Romelle Donovan (loan), Ben Krauhaus (loan).
+**Out:** Jordan Henderson (CM, Chelsea), Frank Onyeka (CM, Coventry, ~£6.8m), Ryan Trevitt (released), Romelle Donovan (loan), Ben Krauhaus (loan).
 
 **FPL picks:**
 - Value: Kevin Schade (MID, ~£6.0m est.), backup pens and strong minutes. Jaidon Anthony (~£5.5m est.), differential wing threat.
 - Premium / captaincy: Igor Thiago (FWD, ~£7.0-7.5m est.), the standout pick here. Nailed, on penalties, 21 goals last term, friendly openers make him an early captaincy option.
 - Differentials: Jaidon Anthony. Mikkel Damsgaard, creator on direct free-kicks.
-- Set-piece & penalties: Penalties Thiago primary, Schade backup. Corners Jensen, Janelt, Damsgaard. Free-kicks Lewis-Potter, Jensen, Damsgaard.
+- Set-piece & penalties: Penalties Thiago primary, Schade backup. Corners Jensen, Janelt, Damsgaard. Free-kicks Lewis-Potter, Jensen, Damsgaard. **Watch (11 Aug):** Brentford scored 10 set-play goals last season, their joint-fewest in a Premier League season and bettered by all but three clubs — yet no side in the division relied more on free-kicks, corners and throw-ins to generate shots at all. High volume, low conversion: the dead-ball names above are worth less than the corner count suggests until that gap closes.
+- Watch: Mamadou Sangare was in Ligue 1's team of the season as Lens pushed PSG to the title, and only two players in Europe's top five leagues averaged more possession regains. On the defensive-contribution scoring that is a budget-midfielder profile worth pricing up before it is obvious.
+- Conflict to verify: this block says Igor Thiago scored a **club-record 21** Premier League goals last season; the Guardian's 11 Aug preview says **22**, second only to Haaland. One of the two is wrong and the FPL API settles it. Recorded rather than quietly overwritten.
 
 **Opening fixtures:** GW1 Spurs (H) moderate, GW2 Leeds (A) hard, GW3 Sunderland (H) easy, GW4 Bournemouth (A) hard, GW5 Chelsea (H) moderate. Less inviting than it first read — both away games are hard. Thiago is still the pick, but GW3 at home to Sunderland is the standout week rather than GW1.
 
