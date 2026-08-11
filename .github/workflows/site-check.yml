@@ -18,10 +18,6 @@ on:
         description: 'Origin to check (default: the production site)'
         type: string
         default: ''
-      referees:
-        description: 'Also probe whether the Championship feed carries referees before kickoff'
-        type: boolean
-        default: false
   schedule:
     - cron: '25 7 * * *' # once a day, after any overnight deploy
 
@@ -42,11 +38,3 @@ jobs:
           node-version: '22'
       - name: Check the live site
         run: node dev/site-check.mjs ${{ github.event.inputs.origin }}
-
-      # Asked here rather than in its own workflow because it is the same
-      # question in a different direction: what does the deployed site
-      # actually serve? This one goes through /api/football-data, so it needs
-      # no key of its own — the function holds it.
-      - name: Can Fantasy EFL see referees?
-        if: github.event.inputs.referees == 'true'
-        run: node dev/probe-referees.mjs ${{ github.event.inputs.origin }}
