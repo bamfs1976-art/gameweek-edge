@@ -18,17 +18,41 @@
       property null and the app degrades to what it can still compute — it
       does not silently substitute a zero and quietly poison a projection.
 
-   ── VERIFY BEFORE TRUSTING THE NUMBERS ────────────────────────────────
-   Run `npx netlify dev` and hit:
-       /api/ucl/bootstrap-static
-       /api/ucl/fixtures
-   Then compare `_unmapped` in the response (a list of upstream keys this
-   function did not recognise) against `MAP` below. Anything important
-   sitting in `_unmapped` is a field to add. Until that pass is done, treat
-   Euro Matchday Edge's projections as unvalidated.
+   ── WHAT WAS MEASURED, 11 AUGUST 2026 ─────────────────────────────────
+   This function shipped unverified: gaming.uefa.com is refused by the
+   sandbox it was written in, so its paths and field names were inferences.
+   dev/probe-ucl.mjs finally asked, from a machine with open internet, and
+   the answer reshaped this file:
 
-   Sources: UEFA's public gaming feeds. If the host or path is wrong, FEEDS
-   below is the only block to edit. */
+     gaming.uefa.com fantasy feeds     403 — every path, every season, under
+                                       a plain client, a client sending the
+                                       game's own Referer, and a browser
+                                       User-Agent alike.
+     gamingapi.uefa.com                does not resolve.
+     comp.uefa.com/v2/...              200 to a plain server-side client.
+     match.uefa.com/v5/matches         200 — but only in the offset+order
+                                       form below; without them it is a 404.
+
+   Two conclusions follow, and both are load-bearing.
+
+   1. THE FANTASY GAME'S OWN FEEDS ARE NOT READABLE FROM A SERVER. A 403
+      that does not move under any ordinary header is the host declining,
+      and a Netlify function is a datacentre client exactly as a GitHub
+      runner is. So this function no longer pretends it might work: player
+      prices, fantasy points, ownership and the fantasy availability flag
+      are NOT AVAILABLE, `elements` comes back empty, and the reason is
+      stated in the payload rather than looking like an outage. Inventing a
+      squad list to fill the hole is not on the table.
+
+   2. UEFA'S FOOTBALL DATA IS READABLE, and it is most of what the model
+      actually needs: the real clubs, the real calendar, real kickoff times
+      and real results, which is what the match model fits on. That is
+      where this function now reads from.
+
+   Re-run `node dev/probe-ucl.mjs` (or the "UCL feed probe" workflow) when
+   anything here starts returning blanks. It reports what answers and what
+   the records contain, which is the difference between a diagnosis and a
+   guess. */
 
 const UA = 'Mozilla/5.0 (compatible; EuroMatchdayEdge/1.0; +https://gameweekedge.co.uk/euro/)';
 
@@ -40,6 +64,92 @@ const FEEDS = {
   fixtures: '/fixtures/fixtures_{season}.json',
   teams: '/teams/teams_{season}.json'
 };
+
+/* ── The endpoints that actually answer ───────────────────────────────
+   Kept as data for the same reason FEEDS is: a path change should be a
+   one-line edit. `{cid}`, `{season}`, `{offset}` and `{limit}` substitute.
+
+   The matches URL keeps `offset` and `order` because they are not optional
+   — the same query without them returns 404, which is the kind of fact only
+   asking can produce. */
+const COMPETITION_ID = '1';               /* UEFA Champions League */
+const SOURCES = {
+  seasons: 'https://comp.uefa.com/v2/competitions/{cid}/seasons?limit=100',
+  matches: 'https://match.uefa.com/v5/matches?competitionId={cid}&seasonYear={season}'
+    + '&offset={offset}&limit={limit}&order=ASC'
+};
+const PAGE = 100;        /* the feed served 90 for a 500 request; page anyway */
+const MAX_PAGES = 8;     /* a hard stop, so a paging bug cannot walk forever */
+
+const fill = (tpl, vars) => Object.entries(vars)
+  .reduce((u, [k, v]) => u.replace(`{${k}}`, encodeURIComponent(String(v))), tpl);
+
+/* ── UEFA's football shapes → the FPL vocabulary ──────────────────────
+   Different feed, different shapes, same destination: the shared engine
+   reads elements/teams/fixtures and nothing else. */
+
+/* A name in the caller's language, falling back through what UEFA sends. */
+const enName = (obj, key) => (obj && obj.translations && obj.translations[key]
+  && (obj.translations[key].EN || Object.values(obj.translations[key])[0])) || null;
+
+function normMatchTeam(t) {
+  if (!t) return null;
+  return {
+    id: pick(t, ['id'], 'num'),
+    name: enName(t, 'displayName') || pick(t, ['internationalName'], null),
+    short_name: pick(t, ['teamCode'], null)
+      || (enName(t, 'displayName') || '').slice(0, 3).toUpperCase() || null,
+    country: pick(t, ['countryCode'], null),
+    /* Placeholders are real records in this feed — "Winner of qualifying
+       path B" is a row with a team id. Marked rather than dropped, because
+       the fixture is real even when the team is not yet known. */
+    placeholder: t.isPlaceHolder === true,
+    logo: pick(t, ['logoUrl', 'mediumLogoUrl', 'bigLogoUrl'], null)
+  };
+}
+
+function normMatch(m) {
+  const home = normMatchTeam(m && m.homeTeam);
+  const away = normMatchTeam(m && m.awayTeam);
+  const score = (m && m.score) || {};
+  const total = score.total || score.regular || {};
+  /* A score of 0-0 is a real result, so presence is tested rather than
+     truthiness — the whole point of pick()'s null discipline. */
+  const hs = total.home == null ? null : Number(total.home);
+  const as = total.away == null ? null : Number(total.away);
+  const md = (m && m.matchday) || {};
+  return {
+    id: pick(m, ['id'], 'num'),
+    /* The engine's "event" is a gameweek number. UEFA's sequenceNumber
+       counts matchdays inside a phase, which is the closest true thing. */
+    event: pick(md, ['sequenceNumber'], 'num'),
+    matchday_name: pick(md, ['name', 'longName'], null),
+    phase: pick(m, ['competitionPhase'], null),
+    team_h: home ? home.id : null,
+    team_a: away ? away.id : null,
+    team_h_score: hs,
+    team_a_score: as,
+    kickoff_time: (m && m.kickOffTime && (m.kickOffTime.dateTime || m.kickOffTime.date)) || null,
+    /* UEFA states it, so believe the state rather than inferring it from
+       two scores being present — a postponed match can carry neither. */
+    finished: String(m && m.status).toUpperCase() === 'FINISHED',
+    status: pick(m, ['status'], null)
+  };
+}
+
+/* Teams come out of the matches, because no team endpoint answered. Every
+   club in the competition appears in the calendar, so the calendar IS the
+   team list — deduplicated, with placeholders left out of the squad-picking
+   universe but kept in the fixtures they appear in. */
+function teamsFromMatches(matches) {
+  const byId = new Map();
+  for (const m of matches || []) {
+    for (const t of [normMatchTeam(m.homeTeam), normMatchTeam(m.awayTeam)]) {
+      if (t && t.id != null && !t.placeholder && !byId.has(t.id)) byId.set(t.id, t);
+    }
+  }
+  return [...byId.values()].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+}
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -207,6 +317,63 @@ async function getJson(url) {
 const feed = (tpl, season, md) =>
   FEEDS.base + tpl.replace('{season}', season).replace('{md}', md);
 
+/* Which season is live, according to UEFA rather than according to us.
+   The old code hard-coded a guess ("2026"); the seasons feed states it, and
+   it states 2026/27 as seasonYear 2027 with status ACTIVE. Cached in module
+   scope because a warm function should not re-ask a question whose answer
+   changes once a year. */
+let seasonCache = null;
+async function resolveSeason(override) {
+  if (override) return { season: override, source: 'query' };
+  if (seasonCache && Date.now() - seasonCache.at < 6 * 3600 * 1000) return seasonCache.value;
+
+  const rows = rowsOf(await getJson(fill(SOURCES.seasons, { cid: COMPETITION_ID })));
+  const active = rows.find((r) => String(r.status).toUpperCase() === 'ACTIVE')
+    /* If nothing is flagged active — between seasons — take the one whose
+       window contains today, and failing that the latest published. */
+    || rows.find((r) => Date.parse(r.startDate) <= Date.now() && Date.now() <= Date.parse(r.endDate))
+    || rows.slice().sort((a, b) => Number(b.seasonYear) - Number(a.seasonYear))[0];
+  if (!active) throw new Error('The seasons feed named no season for this competition.');
+
+  const value = {
+    season: String(active.seasonYear),
+    name: active.name || null,
+    startDate: active.startDate || null,
+    endDate: active.endDate || null,
+    source: 'comp.uefa.com'
+  };
+  seasonCache = { at: Date.now(), value };
+  return value;
+}
+
+/* Every match in the season, paged. The feed caps a page well below the
+   size of a Champions League calendar, so asking once and trusting the
+   answer would silently lose the back half of the competition. */
+async function allMatches(season) {
+  const out = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const url = fill(SOURCES.matches, {
+      cid: COMPETITION_ID, season, offset: page * PAGE, limit: PAGE
+    });
+    const rows = rowsOf(await getJson(url));
+    out.push(...rows);
+    if (rows.length < PAGE) return { matches: out, pages: page + 1, truncated: false };
+  }
+  return { matches: out, pages: MAX_PAGES, truncated: true };
+}
+
+/* Why `elements` is empty, said once, in the payload. The app renders this
+   rather than showing a blank table that looks like a bug. */
+const PLAYERS_UNAVAILABLE = {
+  available: false,
+  reason: 'UEFA\'s Fantasy feeds (gaming.uefa.com) refuse server-side clients — every path '
+    + 'returns 403 to a datacentre address regardless of headers, and a serverless function is '
+    + 'a datacentre address. Player prices, fantasy points, ownership and fantasy availability '
+    + 'are therefore unavailable to this site, and nothing here invents them.',
+  affects: ['player prices', 'fantasy points', 'ownership', 'fantasy availability', 'projected points'],
+  unaffected: ['clubs', 'fixtures', 'kickoff times', 'results', 'the match model']
+};
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'GET') return { statusCode: 405, headers: CORS, body: 'Method Not Allowed' };
@@ -215,11 +382,7 @@ exports.handler = async (event) => {
     .replace(/^\/(\.netlify\/functions\/ucl|api\/ucl)\/?/, '')
     .replace(/\/+$/, '');
   const qs = new URLSearchParams(event.rawQuery || '');
-  /* UEFA numbers its seasons; the caller may pin one, otherwise use the
-     current default. Both are validated so neither can be used to reach a
-     path outside the feeds above. */
-  const season = /^\d{1,4}$/.test(qs.get('season') || '') ? qs.get('season') : '2026';
-  const md = /^\d{1,2}$/.test(qs.get('md') || '') ? qs.get('md') : '1';
+  const override = /^\d{4}$/.test(qs.get('season') || '') ? qs.get('season') : null;
 
   const json = (status, body, cache) => ({
     statusCode: status,
@@ -229,19 +392,24 @@ exports.handler = async (event) => {
   });
 
   try {
-    if (sub === 'bootstrap-static') {
-      const [praw, traw] = await Promise.all([
-        getJson(feed(FEEDS.players, season, md)),
-        getJson(feed(FEEDS.teams, season, md)).catch(() => null)
-      ]);
-      const prows = rowsOf(praw), trows = traw ? rowsOf(traw) : [];
-      const elements = prows.map(normPlayer).filter((e) => e.id != null && e.element_type != null);
-      const teams = trows.map(normTeam).filter((t) => t.id != null);
+    if (sub === 'bootstrap-static' || sub === 'fixtures') {
+      const season = await resolveSeason(override);
+      const { matches, pages, truncated } = await allMatches(season.season);
+      const fixtures = matches.map(normMatch).filter((f) => f.team_h != null && f.team_a != null);
+      const teams = teamsFromMatches(matches);
+
+      /* The matchday to show: the earliest with an unfinished fixture. */
+      const upcoming = fixtures.filter((f) => !f.finished && f.event != null);
+      const matchday = upcoming.length ? Math.min(...upcoming.map((f) => f.event)) : null;
+
+      if (sub === 'fixtures') {
+        return json(200, { fixtures, season: season.season,
+          _counts: { upstream: matches.length, mapped: fixtures.length, pages, truncated } });
+      }
 
       return json(200, {
-        /* The engine reads squad rules from this block exactly as it does for
-           FPL. UCL Fantasy is 15 players, 100.0m, max 3 per club — declared
-           here so the app never hard-codes a second rulebook. */
+        /* Unchanged: the squad rules are the game's, not the feed's, and
+           the probe found nothing that contradicts them. */
         game_settings: {
           squad_squadsize: 15, squad_squadplay: 11, squad_team_limit: 3,
           squad_total_spend: 1000, ui_currency_multiplier: 10, transfers_sell_on_fee: 0
@@ -252,51 +420,81 @@ exports.handler = async (event) => {
           { id: 3, singular_name_short: 'MID', squad_select: 5, squad_min_play: 2, squad_max_play: 5 },
           { id: 4, singular_name_short: 'FWD', squad_select: 3, squad_min_play: 1, squad_max_play: 3 }
         ],
-        elements,
+        /* Empty, and explicitly so. See PLAYERS_UNAVAILABLE. */
+        elements: [],
+        players: PLAYERS_UNAVAILABLE,
         teams,
+        fixtures,
         events: [],
-        season,
-        matchday: Number(md),
-        /* Verification aids — see the header. */
-        _counts: { players: prows.length, mapped: elements.length, teams: teams.length },
-        _unmapped: { player: unmapped(prows, 'player'), team: unmapped(trows, 'team') }
+        season: season.season,
+        seasonName: season.name,
+        matchday,
+        note: `Real clubs, fixtures and results for ${season.name || season.season}. `
+          + 'Player-level Fantasy data is not available to this site — see `players.reason`.',
+        _counts: {
+          matches: matches.length, fixtures: fixtures.length, teams: teams.length,
+          pages, truncated, players: 0
+        },
+        _sources: { season: season.source, matches: 'match.uefa.com/v5' }
       });
     }
 
-    if (sub === 'fixtures') {
-      const raw = await getJson(feed(FEEDS.fixtures, season, md));
-      const rows = rowsOf(raw);
-      const fixtures = rows.map(normFixture).filter((f) => f.team_h != null && f.team_a != null);
-      return json(200, { fixtures, season,
-        _counts: { upstream: rows.length, mapped: fixtures.length },
-        _unmapped: { fixture: unmapped(rows, 'fixture') } });
-    }
-
     if (sub === 'health') {
-      /* A single call that says whether the mapping is working, for the
-         verification pass described at the top of this file. */
-      const raw = await getJson(feed(FEEDS.players, season, md));
-      const rows = rowsOf(raw);
-      const mapped = rows.map(normPlayer).filter((e) => e.id != null && e.element_type != null);
-      return json(200, {
-        ok: mapped.length > 0,
-        upstream: rows.length,
-        mapped: mapped.length,
-        unmappedKeys: unmapped(rows, 'player'),
-        sampleUpstream: rows[0] || null,
-        sampleMapped: mapped[0] || null
+      const report = {};
+      let ok = true;
+      const season = await resolveSeason(override).catch((e) => {
+        ok = false; report.seasons = { error: e.message }; return null;
+      });
+      if (season) report.seasons = { season: season.season, name: season.name };
+
+      if (season) {
+        try {
+          const rows = rowsOf(await getJson(fill(SOURCES.matches, {
+            cid: COMPETITION_ID, season: season.season, offset: 0, limit: 5
+          })));
+          const mapped = rows.map(normMatch).filter((f) => f.team_h != null);
+          report.matches = { upstream: rows.length, mapped: mapped.length, sample: mapped[0] || null };
+          if (!mapped.length) ok = false;
+        } catch (e) {
+          ok = false;
+          report.matches = { error: e.message };
+        }
+      }
+
+      /* The fantasy feed is checked too, and expected to fail. If it ever
+         stops failing, that is worth knowing — it would mean player data
+         became available and this function should grow it back. */
+      try {
+        const r = await fetch(feed(FEEDS.players, season ? season.season : '2027', 1),
+          { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+        report.fantasy = { status: r.status, readable: r.ok };
+      } catch (e) {
+        report.fantasy = { status: null, readable: false, error: e.message };
+      }
+
+      return json(ok ? 200 : 503, {
+        ok,
+        summary: ok
+          ? 'UEFA\'s football data is answering. Fantasy player data remains unavailable by design.'
+          : 'A source this app depends on did not answer as expected.',
+        players: PLAYERS_UNAVAILABLE,
+        documents: report,
+        checkedAt: new Date().toISOString()
       }, 'no-store');
     }
 
     return json(400, { error: 'Endpoint not allowed', endpoint: sub });
   } catch (e) {
-    /* A 404 upstream before a competition starts is not an error — it is the
-       correct answer in July. Say so rather than looking broken. */
     if (e && e.status === 404) {
-      return json(200, { elements: [], teams: [], fixtures: [], events: [], season,
-        note: 'No published feed for this season/matchday yet.' }, 'public, max-age=900');
+      return json(200, { elements: [], teams: [], fixtures: [], events: [],
+        players: PLAYERS_UNAVAILABLE,
+        note: 'No published data for this season yet.' }, 'public, max-age=900');
     }
-    return json(502, { error: 'Upstream fetch failed' }, 'no-store');
+    return json(502, {
+      error: 'Upstream fetch failed',
+      details: String(e && e.message ? e.message : e),
+      players: PLAYERS_UNAVAILABLE
+    }, 'no-store');
   }
 };
 
@@ -305,4 +503,5 @@ exports.handler = async (event) => {
    could not be observed while writing them — so they are unit-tested against
    synthetic payloads in several plausible UEFA shapes. Not part of the
    function's HTTP surface. */
-exports._internal = { pick, toPos, rowsOf, normPlayer, normTeam, normFixture, unmapped, POS, FEEDS };
+exports._internal = { pick, toPos, rowsOf, normPlayer, normTeam, normFixture, unmapped, POS, FEEDS,
+  normMatch, normMatchTeam, teamsFromMatches, enName, fill, SOURCES, PLAYERS_UNAVAILABLE };

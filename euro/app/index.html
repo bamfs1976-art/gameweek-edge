@@ -462,7 +462,17 @@ function table(head, rows, numCols){
 const XP_MIN_GAMES = 5;
 function emptyState(idx, title, why){
   let kind = 'err', body;
-  if(idx.note || !idx.elements.length){
+  /* The most common reason a player view is empty is now a specific,
+     permanent one rather than a transient outage, and saying "nothing
+     published yet" about it would be wrong in a way that makes the app look
+     broken instead of constrained. The proxy states the reason; render it. */
+  const pu = idx.raw && idx.raw.players;
+  if(pu && pu.available === false){
+    kind = 'warn';
+    body = '<b>Player data is not available for this competition.</b> ' + esc(pu.reason) +
+      '<br><br><b>What still works:</b> ' + esc((pu.unaffected || []).join(', ')) + '. ' +
+      '<b>What does not:</b> ' + esc((pu.affects || []).join(', ')) + '.';
+  }else if(idx.note || !idx.elements.length){
     kind = 'warn';
     body = '<b>Nothing published yet.</b> ' +
       esc(idx.note || 'The competition feed has no players for this season and matchday.');
@@ -511,9 +521,15 @@ async function show(){
     host.innerHTML = VIEWS[current].render(idx);
     const note = document.getElementById('data-note');
     if(idx.counts){
-      note.textContent = 'Data: ' + idx.counts.mapped + ' of ' + idx.counts.players +
-        ' players mapped' + (idx.season ? ' · season ' + idx.season : '') +
-        (idx.matchday ? ' · matchday ' + idx.matchday : '') + '.';
+      const c = idx.counts;
+      note.textContent = 'Data: ' +
+        (c.teams != null ? c.teams + ' clubs · ' + c.fixtures + ' fixtures'
+          : c.mapped + ' of ' + c.players + ' players mapped') +
+        (idx.raw && idx.raw.seasonName ? ' · ' + idx.raw.seasonName
+          : idx.season ? ' · season ' + idx.season : '') +
+        (idx.matchday ? ' · matchday ' + idx.matchday : '') +
+        (idx.raw && idx.raw.players && idx.raw.players.available === false
+          ? ' · no player data (see any player view)' : '') + '.';
     }
   }catch(err){
     host.innerHTML = '<div class="card"><div class="card-title">Could not load the competition data</div>' +

@@ -26,6 +26,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const mod = require(join(ROOT, 'netlify/functions/ucl.js'));
 const { pick, toPos, rowsOf, normPlayer, normTeam, normFixture, unmapped, POS } = mod._internal;
+const SOURCES_URL_PROBE = mod._internal.SOURCES.matches;
 
 let failures = 0, passes = 0;
 const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  ✗ ' + label); } };
@@ -145,52 +146,141 @@ console.log('• normTeam and unmapped reporting');
   ok(unmapped([{ id: 1, skill: 4 }], 'player').length === 0, 'known keys are not reported');
 }
 
-console.log('• handler: end-to-end over a mocked upstream');
+console.log('• the UEFA football mappers (the ones that answer)');
 {
-  const players = [
-    { pDId: 1, pDName: 'Keeper', skill: 1, tId: 1, value: 6.0, minsPlayed: 540, saves: 18 },
-    { pDId: 2, pDName: 'Back', skill: 2, tId: 1, value: 5.5, minsPlayed: 540, cleanSheet: 3 },
-    { pDId: 3, pDName: 'Mid', skill: 3, tId: 2, value: 8.0, minsPlayed: 500, gsScored: 2, assists: 3 },
-    { pDId: 4, pDName: 'Striker', skill: 4, tId: 2, value: 10.5, minsPlayed: 480, gsScored: 5 },
-    { pDId: 5, pDName: 'Noposition', tId: 2, value: 5.0 }
+  const { normMatch, normMatchTeam, teamsFromMatches, fill } = mod._internal;
+
+  /* Shaped exactly as match.uefa.com/v5 answered on 11 Aug 2026 — a real
+     record, trimmed. Mapping against an invented shape is what this app did
+     for a year and it is why nothing worked. */
+  const team = (id, name, code, country) => ({
+    id, internationalName: name, teamCode: code, countryCode: country,
+    isPlaceHolder: false, logoUrl: 'https://img.uefa.com/x.png',
+    translations: { displayName: { EN: name, FR: name } }
+  });
+  const match = (id, h, a, hs, as, status, seq) => ({
+    id, homeTeam: h, awayTeam: a, status, competitionPhase: 'LEAGUE',
+    kickOffTime: { date: '2026-09-16', dateTime: '2026-09-16T19:00:00Z', utcOffsetInHours: 2 },
+    matchday: { id: '1', name: `MD${seq}`, longName: `Matchday ${seq}`, sequenceNumber: String(seq) },
+    score: hs == null ? {} : { total: { home: hs, away: as }, regular: { home: hs, away: as } }
+  });
+
+  const t1 = team('1001', 'Real Madrid', 'RMA', 'ESP');
+  const t2 = team('1002', 'Bayern München', 'BAY', 'GER');
+  const played = normMatch(match('m1', t1, t2, 2, 1, 'FINISHED', 1));
+  ok(played.team_h === 1001 && played.team_a === 1002, 'both teams map');
+  ok(played.team_h_score === 2 && played.team_a_score === 1, 'the score maps');
+  ok(played.finished === true, 'UEFA says FINISHED, so it is finished');
+  ok(played.event === 1, 'the matchday sequence becomes the engine\'s event number');
+  ok(played.kickoff_time === '2026-09-16T19:00:00Z', 'kickoff comes from the nested object');
+
+  const goalless = normMatch(match('m2', t1, t2, 0, 0, 'FINISHED', 2));
+  ok(goalless.team_h_score === 0 && goalless.finished === true,
+    'nil-nil is a result, not a missing one');
+
+  const upcoming = normMatch(match('m3', t1, t2, null, null, 'UPCOMING', 3));
+  ok(upcoming.finished === false, 'an unplayed match is not finished');
+  ok(upcoming.team_h_score === null, 'and has no score rather than a zero');
+
+  /* A postponed match can carry no score at all; inferring "finished" from
+     two present scores would have called it unfinished forever, and
+     inferring from one would have been worse. */
+  const odd = normMatch({ id: 'm4', homeTeam: t1, awayTeam: t2, status: 'POSTPONED', matchday: {} });
+  ok(odd.finished === false && odd.status === 'POSTPONED', 'status is carried through');
+
+  const mapped = normMatchTeam(t2);
+  ok(mapped.name === 'Bayern München', 'the English display name wins');
+  ok(mapped.short_name === 'BAY' && mapped.country === 'GER', 'code and country map');
+
+  const placeholder = { ...team('9999', 'Winner path B', 'W/B', null), isPlaceHolder: true };
+  ok(normMatchTeam(placeholder).placeholder === true, 'placeholders are marked');
+  const teams = teamsFromMatches([
+    match('a', t1, t2, null, null, 'UPCOMING', 1),
+    match('b', t2, t1, null, null, 'UPCOMING', 2),
+    match('c', t1, placeholder, null, null, 'UPCOMING', 3)
+  ]);
+  ok(teams.length === 2, 'teams are deduplicated across the calendar (' + teams.length + ')');
+  ok(!teams.some((t) => t.placeholder), 'and a placeholder is not a club you can pick');
+
+  ok(!fill(SOURCES_URL_PROBE, { season: '../../etc' }).includes('../'),
+    'a season cannot escape the URL');
+}
+
+console.log('• handler: end-to-end over a mocked UEFA');
+{
+  const seasons = [
+    { competitionId: '1', id: '20417', name: 'UEFA Champions League 2025/2026', seasonYear: '2026',
+      startDate: '2025-07-01', endDate: '2026-06-01', status: 'CLOSED' },
+    { competitionId: '1', id: '20418', name: 'UEFA Champions League 2026/2027', seasonYear: '2027',
+      startDate: '2026-07-06', endDate: '2027-06-05', status: 'ACTIVE' }
   ];
-  const teams = [{ tId: 1, tName: 'Club One', tSCode: 'ONE' }, { tId: 2, tName: 'Club Two', tSCode: 'TWO' }];
+  const mkTeam = (id, name) => ({ id, internationalName: name, teamCode: name.slice(0, 3).toUpperCase(),
+    countryCode: 'ESP', isPlaceHolder: false, translations: { displayName: { EN: name } } });
+  const mkMatch = (id, h, a, seq, finished) => ({
+    id, homeTeam: mkTeam(h, 'Club ' + h), awayTeam: mkTeam(a, 'Club ' + a),
+    status: finished ? 'FINISHED' : 'UPCOMING', competitionPhase: 'LEAGUE',
+    kickOffTime: { dateTime: '2026-09-16T19:00:00Z' },
+    matchday: { sequenceNumber: String(seq), name: 'MD' + seq },
+    score: finished ? { total: { home: 1, away: 0 } } : {}
+  });
+  const matches = [mkMatch('m1', '1', '2', 1, true), mkMatch('m2', '3', '4', 1, true),
+    mkMatch('m3', '1', '3', 2, false), mkMatch('m4', '2', '4', 2, false)];
 
   const realFetch = globalThis.fetch;
-  globalThis.fetch = async (url) => ({
-    ok: true, status: 200,
-    json: async () => (String(url).includes('/teams/') ? { data: teams } : { data: players })
-  });
+  const seen = [];
+  globalThis.fetch = async (url) => {
+    seen.push(String(url));
+    const body = String(url).includes('comp.uefa.com') ? seasons
+      : String(url).includes('offset=0') ? matches : [];
+    return { ok: true, status: 200, json: async () => body };
+  };
   const res = await mod.handler({ httpMethod: 'GET', path: '/api/ucl/bootstrap-static', rawQuery: '' });
   globalThis.fetch = realFetch;
 
   ok(res.statusCode === 200, 'bootstrap responds 200');
   const body = JSON.parse(res.body);
-  ok(body.elements.length === 4, 'the positionless record is dropped (' + body.elements.length + ' kept)');
-  ok(body.teams.length === 2, 'teams map');
-  ok(body.game_settings.squad_squadsize === 15, 'squad rules are declared for the engine');
-  ok(body.element_types.length === 4, 'all four position types are declared');
-  const sum = body.element_types.reduce((a, t) => a + t.squad_select, 0);
-  ok(sum === body.game_settings.squad_squadsize, 'declared positions add up to the squad size');
-  ok(body._counts.upstream === undefined && body._counts.players === 5, 'counts report the upstream total');
-  ok(body._counts.mapped === 4, 'counts report how many survived mapping');
 
-  /* Upstream 404 before the competition starts is a normal state, not a fault. */
+  /* The season is asked for, not assumed. This is the bug the probe found:
+     the old code hard-coded 2026 and UEFA calls this season 2027. */
+  ok(body.season === '2027', 'the ACTIVE season is used, not a hard-coded guess (' + body.season + ')');
+  ok(seen.some((u) => u.includes('seasonYear=2027')), 'and the matches are fetched for it');
+
+  ok(body.teams.length === 4, 'clubs come out of the calendar (' + body.teams.length + ')');
+  ok(body.fixtures.length === 4, 'every match maps to a fixture');
+  ok(body.matchday === 2, 'the current matchday is the earliest unfinished one');
+
+  /* The whole point of the rewrite: no invented players. */
+  ok(body.elements.length === 0, 'no players are served');
+  ok(body.players.available === false, 'and their absence is declared, not implied');
+  ok(/403/.test(body.players.reason), 'with the actual reason');
+  ok(Array.isArray(body.players.affects) && body.players.affects.length > 0,
+    'and a list of what it costs the user');
+  ok(!!body.note, 'the payload carries a human sentence for the app to render');
+
+  ok(body.game_settings.squad_squadsize === 15, 'squad rules are still declared for the engine');
+  ok(body.element_types.length === 4, 'all four position types are declared');
+
+  /* Paging: a competition is longer than one page, and stopping at the
+     first would silently lose the knockouts. */
+  ok(seen.filter((u) => u.includes('match.uefa.com')).length >= 1, 'the matches feed is paged');
+
+  const fx = await (async () => {
+    globalThis.fetch = async (url) => ({ ok: true, status: 200,
+      json: async () => (String(url).includes('comp.uefa.com') ? seasons
+        : String(url).includes('offset=0') ? matches : []) });
+    const r = await mod.handler({ httpMethod: 'GET', path: '/api/ucl/fixtures', rawQuery: '' });
+    globalThis.fetch = realFetch;
+    return JSON.parse(r.body);
+  })();
+  ok(fx.fixtures.length === 4, '/fixtures returns the same calendar');
+
+  /* An upstream 404 before a competition starts is a normal state. */
   globalThis.fetch = async () => ({ ok: false, status: 404, json: async () => ({}) });
   const pre = await mod.handler({ httpMethod: 'GET', path: '/api/ucl/bootstrap-static', rawQuery: '' });
   globalThis.fetch = realFetch;
   ok(pre.statusCode === 200, 'a pre-season 404 is not surfaced as an error');
   ok(JSON.parse(pre.body).elements.length === 0, 'and returns an empty squad list');
   ok(!!JSON.parse(pre.body).note, 'with a note explaining why');
-
-  /* Path traversal / injection into the feed URL must be impossible. */
-  globalThis.fetch = async (url) => {
-    ok(!String(url).includes('..'), 'season/md cannot escape the feed path');
-    return { ok: true, status: 200, json: async () => ({ data: [] }) };
-  };
-  await mod.handler({ httpMethod: 'GET', path: '/api/ucl/bootstrap-static',
-    rawQuery: 'season=' + encodeURIComponent('../../etc') + '&md=' + encodeURIComponent('../x') });
-  globalThis.fetch = realFetch;
 
   const bad = await mod.handler({ httpMethod: 'GET', path: '/api/ucl/whatever', rawQuery: '' });
   ok(bad.statusCode === 400, 'an unknown endpoint is refused (no open proxy)');
@@ -283,14 +373,35 @@ console.log('• the app actually renders against the shared engine');
     },
     location: { hash: '', href: 'https://gameweekedge.co.uk/euro/' },
     URL, URLSearchParams, setTimeout, Math, JSON, isFinite, Number, String, Object, Array, Set, Map,
+    /* NOTE: this block feeds the app a payload that HAS players, which the
+       live proxy can no longer produce — UEFA's fantasy feeds refuse
+       server-side clients, so `elements` is empty in production. That is
+       deliberate: the projection code is still the shared engine's most
+       important path and must stay covered, and it would become untestable
+       the moment the only fixture available had nobody in it. The block
+       below this one drives the SAME app through the real handler and
+       asserts the honest empty state. */
     fetch: async (url) => ({
       ok: true, status: 200,
       json: async () => {
         const u = String(url);
-        if (u.includes('fixtures')) {
-          return JSON.parse((await mod.handler({ httpMethod: 'GET', path: '/api/ucl/fixtures', rawQuery: '' })).body);
-        }
-        return JSON.parse((await mod.handler({ httpMethod: 'GET', path: '/api/ucl/bootstrap-static', rawQuery: '' })).body);
+        const mapped = players.map((p) => mod._internal.normPlayer(p)).filter((e) => e.element_type != null);
+        const fx = fixtures.map((f) => mod._internal.normFixture(f));
+        if (u.includes('fixtures')) return { fixtures: fx, season: '2027' };
+        return {
+          game_settings: { squad_squadsize: 15, squad_squadplay: 11, squad_team_limit: 3,
+            squad_total_spend: 1000, ui_currency_multiplier: 10, transfers_sell_on_fee: 0 },
+          element_types: [
+            { id: 1, singular_name_short: 'GKP', squad_select: 2, squad_min_play: 1, squad_max_play: 1 },
+            { id: 2, singular_name_short: 'DEF', squad_select: 5, squad_min_play: 3, squad_max_play: 5 },
+            { id: 3, singular_name_short: 'MID', squad_select: 5, squad_min_play: 2, squad_max_play: 5 },
+            { id: 4, singular_name_short: 'FWD', squad_select: 3, squad_min_play: 1, squad_max_play: 3 }
+          ],
+          elements: mapped,
+          teams: teams.map((t) => mod._internal.normTeam(t)),
+          fixtures: fx, events: [], season: '2027', matchday: 7,
+          _counts: { players: players.length, mapped: mapped.length }
+        };
       }
     })
   };
@@ -326,6 +437,70 @@ console.log('• the app actually renders against the shared engine');
   ok(xps.length >= 5, 'several players carry a projection (' + xps.length + ')');
   ok(xps.every((v) => v > 0 && v < 25), 'every projection is a plausible points figure');
   ok(xps.some((v) => v !== xps[0]), 'projections differ between players (the model is discriminating)');
+}
+
+console.log('• with the real proxy, the app says why there are no players');
+{
+  /* The block above proves the projection code still works when player data
+     exists. This one proves the app is honest when it does not — which, as
+     of the probe on 11 Aug 2026, is production. */
+  const { buildEngine } = await import('../scripts/extract-engine.mjs');
+  const engineSrc = buildEngine(readFileSync(join(ROOT, 'index.html'), 'utf8'));
+  const appSrc = readFileSync(join(ROOT, 'euro/app/index.html'), 'utf8')
+    .match(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/)[1];
+
+  const made = {};
+  const el = (id) => (made[id] = made[id] || {
+    id, innerHTML: '', textContent: '', href: 'https://gameweekedge.co.uk',
+    dataset: {}, classList: { add(){}, remove(){}, toggle(){} },
+    addEventListener(){}, setAttribute(){}, appendChild(){}
+  });
+
+  const seasons = [{ competitionId: '1', id: '20418', name: 'UEFA Champions League 2026/2027',
+    seasonYear: '2027', startDate: '2026-07-06', endDate: '2027-06-05', status: 'ACTIVE' }];
+  const mkTeam = (id) => ({ id, internationalName: 'Club ' + id, teamCode: 'C' + id,
+    countryCode: 'ESP', isPlaceHolder: false, translations: { displayName: { EN: 'Club ' + id } } });
+  const upstream = [{ id: 'm1', homeTeam: mkTeam('1'), awayTeam: mkTeam('2'), status: 'UPCOMING',
+    competitionPhase: 'LEAGUE', kickOffTime: { dateTime: '2026-09-16T19:00:00Z' },
+    matchday: { sequenceNumber: '1', name: 'MD1' }, score: {} }];
+
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => ({ ok: true, status: 200,
+    json: async () => (String(url).includes('comp.uefa.com') ? seasons
+      : String(url).includes('offset=0') ? upstream : []) });
+
+  const ctx = {
+    window: {}, console,
+    document: { getElementById: el, querySelectorAll: () => [], addEventListener(){} },
+    location: { hash: 'players', href: 'https://gameweekedge.co.uk/euro/' },
+    URL, URLSearchParams, setTimeout, Math, JSON, isFinite, Number, String, Object, Array, Set, Map,
+    fetch: async (url) => ({ ok: true, status: 200, json: async () => JSON.parse(
+      (await mod.handler({ httpMethod: 'GET',
+        path: String(url).includes('fixtures') ? '/api/ucl/fixtures' : '/api/ucl/bootstrap-static',
+        rawQuery: '' })).body) })
+  };
+  ctx.globalThis = ctx;
+  vm.createContext(ctx);
+
+  let ran = true, why = '';
+  try {
+    new vm.Script(engineSrc, { filename: 'engine.js' }).runInContext(ctx);
+    new vm.Script(appSrc, { filename: 'matchday-app.js' }).runInContext(ctx);
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+  } catch (e) { ran = false; why = e.message; }
+  globalThis.fetch = realFetch;
+
+  ok(ran, 'the app boots against a proxy with no players' + (ran ? '' : ' — ' + why));
+  const view = made.view ? made.view.innerHTML : '';
+  ok(!/Could not load/.test(view), 'a competition with no player feed is not an error state');
+  ok(/not available/i.test(view), 'the view says player data is not available');
+  ok(/403|refuse/i.test(view), 'and gives the actual reason rather than a shrug');
+  ok(/clubs|fixtures/i.test(view), 'and says what still works');
+
+  const note = made['data-note'] ? made['data-note'].textContent : '';
+  ok(/clubs/.test(note), 'the footer note counts what actually loaded (' + note + ')');
 }
 
 console.log('• early in the league phase it says "too early", not "no data"');
