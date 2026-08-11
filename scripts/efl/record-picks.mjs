@@ -44,7 +44,23 @@ const verdict = canRecord({ round, existing, now });
 
 if (!verdict.ok) {
   console.log(`· Nothing to record: ${verdict.reason}`);
-  process.exit(0);
+  /* ── The canary ───────────────────────────────────────
+     Build the snapshot anyway. Nothing is written, and the point is the
+     shape guard: if the feed has renamed a field, this is how we find out
+     on a quiet Tuesday rather than in the ninety minutes before a deadline
+     with a round about to go unrecorded. Every run outside the window is a
+     free rehearsal of the one that matters, so it costs nothing to take it. */
+  try {
+    const check = buildOfficialSnapshot(raw, { now });
+    console.log(`· Feed rehearsal passed: ${check.clubs.length} clubs, ${check.players.length} `
+      + `players, ${check.fixtures.length} fixtures, next round ${check.currentRound}.`);
+    process.exit(0);
+  } catch (err) {
+    console.error(`✗ The feed no longer has the shape this app expects: ${err.message}`);
+    console.error('  Nothing was due to be recorded right now, so nothing has been lost yet —');
+    console.error('  but the next round would have gone unrecorded. Fix the mapping before it does.');
+    process.exit(1);
+  }
 }
 
 /* ── The picks ────────────────────────────────────────────

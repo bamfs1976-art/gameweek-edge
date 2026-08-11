@@ -518,6 +518,19 @@ ok('the recorder imports the website\'s own model rather than a copy of it', () 
   assert.ok(!/buildSampleSnapshot/.test(src), 'the ledger must never record generated data');
 });
 
+ok('the recorder rehearses the shape guard on every run, not just the ones that write', () => {
+  /* A feed that renames a field between rounds must be found out on a quiet
+     Tuesday, not in the ninety minutes before a deadline. Every run outside
+     the recording window builds the snapshot and throws away the result. */
+  const src = readFileSync(join(ROOT, 'scripts/efl/record-picks.mjs'), 'utf8');
+  const skip = src.indexOf('Nothing to record');
+  const build = src.indexOf('buildOfficialSnapshot(raw');
+  assert.ok(skip > -1 && build > skip,
+    'the no-op path must still exercise buildOfficialSnapshot');
+  assert.match(src.slice(skip), /process\.exit\(1\)/,
+    'and a shape failure there must fail the job rather than log and shrug');
+});
+
 ok('the recorder cannot be talked into writing after the deadline', () => {
   const src = readFileSync(join(ROOT, 'scripts/efl/record-picks.mjs'), 'utf8');
   assert.match(src, /canRecord\(/, 'the gate is applied');
