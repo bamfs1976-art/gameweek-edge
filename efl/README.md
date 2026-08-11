@@ -99,14 +99,28 @@ project will not use it. Holding somebody's game credentials and making ~1,100
 requests to refresh one page is a bad trade, and the gap is stated in the UI
 rather than hidden.
 
-### ⚠️ It has not been observed responding
+### ✅ Observed responding, 11 August 2026
 
-`fantasy.efl.com` is unreachable from the machine this was written on — the
-egress proxy refuses it, exactly as it refuses `api.football-data.org` for the
-sibling function. The paths and field names come from the official game's own
-front end as used by a working public site, not from a response anyone here
-has seen. The mappers are unit-tested against a synthetic payload in that
-shape, which catches a mapping bug and **cannot catch a wrong shape**.
+This shipped without anyone having seen the feed answer. `fantasy.efl.com` is
+refused by the egress proxy of the machine it was written on — exactly as
+`api.football-data.org` is for the sibling function — so the paths and field
+names came from the official game's own front end rather than from a response.
+
+A CI run finally asked, from a machine that can reach it:
+
+```
+GET /api/efl/health → HTTP 200
+✓ The official Fantasy EFL feed is answering in the shape this app expects.
+  squads  ✓ 72 records, all expected fields present
+  players ✓ 3432 records, all expected fields present
+  rounds  ✓ 42 records, all expected fields present
+```
+
+**The guard below stays exactly as it was**, and this is the important part: a
+feed that answered correctly this morning can be changed this afternoon by
+people who owe this project nothing. Verification moved the odds; it did not
+change what a mismatch would cost, and designing as though it had would be the
+same mistake as never checking.
 
 That risk is real, so what it is allowed to *cost* is bounded rather than
 hoped away. A shape that does not match has exactly two possible outcomes:

@@ -44,14 +44,20 @@ export const DEFAULT_CONFIG = {
      the generated dataset could only imitate: real clubs, real fixtures and
      real ownership.
 
-     ── THE HONEST CAVEAT, WHICH HAS NOT GONE AWAY ────────────
-     fantasy.efl.com is unreachable from the machine this was written on —
-     the egress proxy refuses it, exactly as it refuses football-data.org
-     for the sibling proxy. The field names below come from the official
-     game's own front end as used by a working public site, not from a
-     response anyone here has seen. The mappers are unit-tested against a
-     synthetic payload in that shape, which catches a mapping bug and cannot
-     catch a WRONG shape.
+     ── OBSERVED, AT LAST — AND THE GUARD STAYS ───────────────
+     This shipped without anyone having seen the feed answer: fantasy.efl.com
+     is refused by the egress proxy of the machine it was written on, exactly
+     as football-data.org is for the sibling proxy, so the field names below
+     came from the official game's own front end rather than from a response.
+
+     On 11 August 2026 a CI run finally asked. /api/efl/health returned 200
+     with every expected field present on all three documents — 72 clubs,
+     3,432 players, 42 rounds. The shapes below are no longer an inference.
+
+     The guard stays exactly as it was. A feed that answered correctly this
+     morning can be changed by people who owe us nothing this afternoon, and
+     the only difference verification makes is to the odds, not to what a
+     mismatch would cost.
 
      What that risk is allowed to cost is therefore bounded deliberately:
      a shape that does not match produces a specific, named error naming the

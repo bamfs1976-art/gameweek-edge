@@ -47,13 +47,15 @@ player-round records** (99.99% exact), and the model's weights come from
 measured correlations on that dataset rather than from intuition — minutes
 outweigh form, and the forward is the worst-scoring position in the game.
 
-> ⚠️ **That feed has never been observed responding from here.**
-> `fantasy.efl.com` is blocked by this environment's egress proxy, so the
-> shapes the provider maps come from the official game's front end rather than
-> from a response anyone has seen. The risk is bounded rather than hoped away:
-> a shape that does not match produces a **named error saying which document
+> ✅ **Verified answering on 11 August 2026** — `/api/efl/health` returned
+> HTTP 200 with every expected field present on all three documents: 72 clubs,
+> 3,432 players, 42 rounds. It shipped before that was known, because
+> `fantasy.efl.com` is blocked by this environment's egress proxy; a CI run
+> from a machine that can reach it settled the question. **The shape guard
+> stays regardless** — a feed that answers correctly today can change
+> tomorrow, so a mismatch still produces a **named error saying which document
 > and what actually arrived**, never a page of plausible wrong numbers, and
-> there is no silent fallback to invented data.
+> there is still no silent fallback to invented data.
 > **[`/api/efl/health`](https://gameweekedge.co.uk/api/efl/health) answers "is
 > the feed the shape we expect" in one request.** If it is not,
 > `?provider=sample` on any Fantasy EFL URL switches to the clearly-labelled
