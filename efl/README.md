@@ -14,6 +14,7 @@ efl/
     fixtures/index.html      /fantasy-efl/fixtures/   fixture ticker
     players/index.html       /fantasy-efl/players/    player finder
     clubs/index.html         /fantasy-efl/clubs/      club picker
+    record/index.html        /fantasy-efl/record/     the model's record
     how-to-play/index.html   /fantasy-efl/how-to-play/ guide
     assets/
       types.js         the shapes everything agrees on (JSDoc typedefs)
@@ -25,9 +26,13 @@ efl/
       ui.js            shared render helpers (badges, states, a11y rules)
       efl.css          the stylesheet
       page-*.js        one module per route
+  data/            THE SEASON LEDGER — one file per round, committed. See
+                   efl/data/README.md
   README.md        this file
 
 ../netlify/functions/efl.js   proxy for the official game's public feed
+../scripts/efl/               the ledger's jobs: record, grade, publish
+../.github/workflows/efl-ledger.yml   runs them every three hours
 ```
 
 ## Why it lives here, and on this URL
@@ -48,8 +53,8 @@ answer questions the game does not ask. This app carries its own small models
 in `app/assets/model.js` instead — three weighted sums, all of them readable
 in one sitting.
 
-It is also **multi-page** where the other two are single-shell apps: five
-routes, five real HTML files. That is a deliberate cost. Each page pays for
+It is also **multi-page** where the other two are single-shell apps: six
+routes, six real HTML files. That is a deliberate cost. Each page pays for
 its own header markup, and in exchange each has a genuine `<title>`, meta
 description, canonical URL and set of internal links that exist before any
 JavaScript runs — which is what a search engine and a text browser can
@@ -506,6 +511,51 @@ appearances), started 14 of 16 (88%)."* The sentence is a readout of the
 arithmetic, not a caption written over it. Wherever a score is shown in the
 interface, the reasoning is shown with it.
 
+## Does any of it work? (`efl/data`, `/fantasy-efl/record/`)
+
+A model that explains itself and is never graded is just a confident essay.
+Every round, **before the deadline**, a scheduled job writes down the seven
+players, the captain and the two clubs this site's model picked, and after the
+round it grades them. The files live in `efl/data/rounds/`, one per round, and
+are committed — so git's history, not this paragraph, is the evidence that a
+pick existed before the football did.
+
+The job imports **the same `model.js` the dashboard runs**, not a copy, so the
+record grades what visitors were actually shown.
+
+Three refusals hold it up, and none of them has an override:
+
+| Refusal | Why |
+|---|---|
+| Never write after a lockout | A pick recorded after the deadline is a memory wearing a prediction's clothes |
+| Never overwrite an existing round | An edited pick is not evidence |
+| Never grade across two rounds silently | Points come from a subtraction of season totals; a window that spans two rounds is marked `ambiguous` and left out of the season figures |
+
+**What it is graded against.** "Our seven scored 41" is not a result. Three
+alternatives someone could actually have picked instead:
+
+- **Random** — the mean of 2,000 legal random sevens. The floor.
+- **Naive** — the legal seven with the best points per appearance at the time,
+  chosen *before* the round. The bar that matters: a model that cannot beat
+  "pick whoever has been scoring" has earned nothing.
+- **Ceiling** — the best legal seven in hindsight, found exactly (not greedily
+  — the two-per-club cap makes greedy provably wrong).
+
+The headline is the **percentile against random**, because it survives a round
+in which nobody scored. Alongside it, the measure that ignores the squad rules
+entirely: the **Spearman correlation** between the rating given to every player
+before the round and what they actually scored — roughly 1,800 data points a
+week against the squad's seven.
+
+**The captain is graded without a multiplier**, because this app has never
+verified what the official one is. What is measured is where the armband landed
+inside our own seven and what a perfect armband would have added per extra
+multiple. **Clubs** are graded on official points when the feed publishes such
+a column and on the match result when it does not — and which basis was used is
+recorded per round, because averaging the two would be meaningless.
+
+Full format: `efl/data/README.md`. Jobs: `scripts/efl/`.
+
 ## What these models are not
 
 They are not predictions and they carry no claim of accuracy. They rank the
@@ -571,7 +621,7 @@ covering and skips the one that is not:
 7. **The division mapping**, which shipped wrong once and now has four tests
    holding it down. See below.
 
-Plus a static pass over the five routes: unique title, unique description,
+Plus a static pass over the six routes: unique title, unique description,
 correct canonical, Open Graph tags, links to every sibling route, exactly one
 tab marked `aria-current`, and the independence notice on each. That contract
 rots silently, so it is asserted rather than remembered.

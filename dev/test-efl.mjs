@@ -1120,13 +1120,14 @@ ok('detailed stats normalise with null preserved as null', () => {
   assert.equal(stats.blocks, null, 'an empty string is not a zero');
 });
 
-/* ── 4. The five routes ───────────────────────────────── */
+/* ── 4. The six routes ────────────────────────────────── */
 
 const ROUTES = [
   { path: 'index.html', url: '/fantasy-efl/', module: 'page-home.js' },
   { path: 'fixtures/index.html', url: '/fantasy-efl/fixtures/', module: 'page-fixtures.js' },
   { path: 'players/index.html', url: '/fantasy-efl/players/', module: 'page-players.js' },
   { path: 'clubs/index.html', url: '/fantasy-efl/clubs/', module: 'page-clubs.js' },
+  { path: 'record/index.html', url: '/fantasy-efl/record/', module: 'page-record.js' },
   { path: 'how-to-play/index.html', url: '/fantasy-efl/how-to-play/', module: 'page-guide.js' }
 ];
 

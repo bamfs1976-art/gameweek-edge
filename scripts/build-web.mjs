@@ -8,6 +8,7 @@ import { mkdir, copyFile, rm, readdir, stat, writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { extractEngine, unresolvedReferences } from './extract-engine.mjs';
+import { publishRecord } from './efl/publish-record.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
@@ -108,7 +109,7 @@ async function buildEuro() {
    expected-points model have nothing to say about it; it carries its own
    small, separate scoring models in efl/app/assets/model.js.
 
-   It is also a MULTI-PAGE app rather than a single shell: five routes, five
+   It is also a MULTI-PAGE app rather than a single shell: six routes, six
    real HTML files, each with its own title, description and canonical URL.
    That is a copy of a directory tree, not a bundle — which is why this is
    `copyDir` and not an esbuild call. `efl/package.json` marks the source as
@@ -116,7 +117,12 @@ async function buildEuro() {
    lives OUTSIDE efl/app, so it is never copied into the deploy. */
 async function buildEfl() {
   await copyDir(join(ROOT, 'efl/app'), EFL_OUT);
-  return countFiles(join(ROOT, 'efl/app'));
+  /* The season ledger lives in efl/data as one file per round, carrying
+     everything needed to re-grade a round years later. The site gets a
+     projection of it — picks, points, baselines — built here so the page
+     and the ledger can never disagree: the page has no second source. */
+  const record = await publishRecord(join(EFL_OUT, 'data'));
+  return { files: await countFiles(join(ROOT, 'efl/app')) + 1, record };
 }
 
 async function countFiles(dir) {
@@ -133,7 +139,8 @@ await copyStatic();
 await bundleNative();
 await bundleAuth();
 const engineBytes = await buildEuro();
-const eflFiles = await buildEfl();
+const efl = await buildEfl();
 console.log('✓ Built www/ (index.html + native.js + auth.js)');
 console.log(`✓ Built www/euro/ (Euro Matchday Edge + ${(engineBytes / 1024).toFixed(0)}kB shared engine)`);
-console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${eflFiles} files, 5 routes)`);
+console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${efl.files} files, 6 routes, `
+  + `${efl.record.rounds} recorded round(s), ${efl.record.graded} graded)`);

@@ -61,6 +61,15 @@ outweigh form, and the forward is the worst-scoring position in the game.
 > `efl/app/assets/provider.js` — see [`efl/README.md`](efl/README.md) for the
 > models, the weights, the tariff and the shape guard.
 
+**The model is graded in public.** Every Fantasy EFL round, before the
+deadline, a scheduled job records the seven players, the captain and the two
+clubs the model picked, and after the round it grades them against a random
+legal seven, a naive "pick whoever has been scoring" seven, and the best seven
+possible in hindsight. The picks are committed to this repository before the
+football happens, the job cannot write after a lockout or overwrite an entry,
+and the whole record — good weeks and bad — is at
+**[`/fantasy-efl/record/`](https://gameweekedge.co.uk/fantasy-efl/record/)**.
+
 ### Game packs
 
 A *game pack* (`GAMES` in `index.html`) says where the data comes from, what
@@ -238,7 +247,9 @@ caveats and known limitations, in **`docs/HISTORY.md`**.
 ```
 index.html              the app AND the model (single source of truth)
 euro/                   Euro Matchday Edge — the UCL app, served at /euro/
-efl/                    Fantasy EFL — five pages, served at /fantasy-efl/
+efl/app/                Fantasy EFL — six pages, served at /fantasy-efl/
+efl/data/               the Fantasy EFL season ledger — picks, recorded weekly
+scripts/efl/            records those picks before each round and grades them after
 scripts/extract-engine.mjs  lifts the shared model out of index.html at build time
 src/native/index.js      native bridge (Capacitor) → bundled to www/native.js
 manifest.webmanifest     PWA manifest        sw.js  PWA service worker
