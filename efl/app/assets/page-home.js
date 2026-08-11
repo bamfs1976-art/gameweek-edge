@@ -10,7 +10,8 @@ import {
 } from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
-  divisionBadge, homeAwayBadge, availabilityBadge, formStrip, fmtDay, DIVISION_LABELS
+  divisionBadge, homeAwayBadge, availabilityBadge, formStrip, fmtDay, suspensionBadge,
+  DIVISION_LABELS
 } from './ui.js';
 
 initTheme();
@@ -89,7 +90,7 @@ function playerCard(role, rec, ctx) {
       <span class="badge">${esc(p.position)}</span>
       ${divisionBadge(p.division)}
       <span>${esc(club ? club.name : '—')}</span>
-      ${availabilityBadge(p.availability)}
+      ${availabilityBadge(p.availability)}${suspensionBadge(rec.suspension)}
     </div>
     ${fixtureLine(rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)}</p>
@@ -246,6 +247,7 @@ function squadCard(rec, isCaptain) {
       ${isCaptain ? '<span class="sq-armband" title="Captain — points doubled">C</span>' : ''}</p>
     <p class="sq-name">${esc(p.name)}</p>
     <p class="sq-meta">${esc(club ? club.name : '—')} · ${esc(DIVISION_LABELS[p.division])}</p>
+    ${rec.suspension.level === 'onEdge' ? `<p class="sq-meta" style="color:var(--red)">${esc(rec.suspension.note)}</p>` : ''}
     <div class="sq-foot">
       <span>${next ? fdrCell(next.rating) : fdrCell(null)}
         <span class="sq-meta">${next ? esc((opp ? opp.short : '???') + (next.home ? ' (H)' : ' (A)')) : 'Blank'}</span></span>

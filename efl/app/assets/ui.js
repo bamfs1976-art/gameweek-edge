@@ -20,6 +20,7 @@
 
 import { RATING_LABELS, AVAILABILITY_LABELS, POSITION_NAMES, divisionName } from './model.js';
 import { TARIFF, statPoints } from './tariff.js';
+import { riskBadgeText, ladderRows, SUSPENSION_LADDER } from './suspension.js';
 
 export const DIVISION_LABELS = {
   championship: 'Championship',
@@ -197,6 +198,32 @@ export function ownershipCell(value) {
     return '<span class="muted" title="This data source does not publish ownership">—</span>';
   }
   return `<span class="mono">${Number(value).toFixed(1)}%</span>`;
+}
+
+/* ── Suspension risk ───────────────────────────────────
+   Shown, never scored. A ban costs the round AFTER the booking, so this is
+   a planning signal beside the player rather than a mark against him — see
+   suspension.js for the argument. Only levels that would change a decision
+   get a badge; "four from a ban" is noise. */
+export function suspensionBadge(risk) {
+  const text = riskBadgeText(risk);
+  if (!text) return '';
+  return `<span class="badge badge-susp susp-${esc(risk.level)}" title="${esc(risk.note)}">`
+    + `${esc(text)}</span>`;
+}
+
+/** The ladder as a table, for the guide. */
+export function suspensionLadder() {
+  return '<div class="tscroll"><table>'
+    + '<caption class="sr-only">EFL yellow-card accumulation ladder</caption>'
+    + '<thead><tr><th scope="col">Reach</th><th scope="col" class="num">Ban</th></tr></thead><tbody>'
+    + ladderRows().map((r) => `<tr><td>${esc(r.text)}</td>`
+      + `<td class="num">${r.ban} match${r.ban === 1 ? '' : 'es'}</td></tr>`).join('')
+    + '</tbody></table></div>'
+    + `<p class="sec-note" style="margin-top:8px">The count is cumulative and does `
+    + `<b>not</b> reset when a ban is served — a player who sat out at `
+    + `${SUSPENSION_LADDER.rungs[0].at} is next in trouble at `
+    + `${SUSPENSION_LADDER.rungs[1].at}, not at ${SUSPENSION_LADDER.rungs[0].at} again.</p>`;
 }
 
 export function availabilityBadge(availability) {

@@ -164,13 +164,17 @@ const AVAILABILITY_NOTES = {
    cells are being developed against the right incentives rather than
    against FPL's. */
 
-/* Per-90 rates for the tariff stats, by position and by how nailed-on the
-   player is. Loose approximations of a real distribution, not measurements. */
+/* Per-90 rates for the tariff stats, by position. Loose approximations,
+   with one exception: the YELLOW-CARD rates are measured, not guessed —
+   per-90 bookings for regulars across a real published Championship season
+   are GK 0.050, DEF 0.180, MID 0.206, FWD 0.153. They are measured because
+   the suspension feature reads them, and a made-up card rate would make a
+   made-up ban risk. */
 const STAT_RATES = {
-  GK: { saves: 3.1, penaltySaves: 0.03, clearances: 0.9, blocks: 0.1, tackles: 0.15, interceptions: 0.2, keyPasses: 0.05, shotsOnTarget: 0.01, yellowCards: 0.06 },
-  DEF: { saves: 0, penaltySaves: 0, clearances: 4.4, blocks: 1.3, tackles: 2.3, interceptions: 1.6, keyPasses: 0.5, shotsOnTarget: 0.25, yellowCards: 0.19 },
-  MID: { saves: 0, penaltySaves: 0, clearances: 1.1, blocks: 0.5, tackles: 2.1, interceptions: 1.4, keyPasses: 1.4, shotsOnTarget: 0.7, yellowCards: 0.17 },
-  FWD: { saves: 0, penaltySaves: 0, clearances: 0.5, blocks: 0.2, tackles: 0.9, interceptions: 0.5, keyPasses: 1.1, shotsOnTarget: 1.25, yellowCards: 0.13 }
+  GK: { saves: 3.1, penaltySaves: 0.03, clearances: 0.9, blocks: 0.1, tackles: 0.15, interceptions: 0.2, keyPasses: 0.05, shotsOnTarget: 0.01, yellowCards: 0.050 },
+  DEF: { saves: 0, penaltySaves: 0, clearances: 4.4, blocks: 1.3, tackles: 2.3, interceptions: 1.6, keyPasses: 0.5, shotsOnTarget: 0.25, yellowCards: 0.180 },
+  MID: { saves: 0, penaltySaves: 0, clearances: 1.1, blocks: 0.5, tackles: 2.1, interceptions: 1.4, keyPasses: 1.4, shotsOnTarget: 0.7, yellowCards: 0.206 },
+  FWD: { saves: 0, penaltySaves: 0, clearances: 0.5, blocks: 0.2, tackles: 0.9, interceptions: 0.5, keyPasses: 1.1, shotsOnTarget: 1.25, yellowCards: 0.153 }
 };
 
 /* The Saturday at, or just after, `now` — 15:00 UTC, the EFL's default. */
@@ -414,7 +418,12 @@ export function buildSampleSnapshot(opts = {}) {
         : 0;
 
       const availability = drawAvailability(rng, slot.depth);
-      const last5 = buildLast5(rng, club, slot, startRate, availability);
+      /* Some players are booked five times a season and some are never
+         booked at all, and that spread is the whole point of a suspension
+         feature — so each player gets a personal card-proneness, used for
+         both his season total and his individual matches. */
+      const cardProneness = 0.25 + rng() * 1.9;
+      const last5 = buildLast5(rng, club, slot, startRate, availability, cardProneness);
 
       /* Season totals for the tariff stats, drawn from the per-90 rates and
          scaled by minutes actually played. */
@@ -422,8 +431,19 @@ export function buildSampleSnapshot(opts = {}) {
       const nineties = minutes / 90;
       const stats = {};
       for (const [key, rate] of Object.entries(rates)) {
+        if (key === 'yellowCards') continue;
         stats[key] = Math.round(rate * nineties * (0.75 + rng() * 0.5));
       }
+      /* Bookings are a COUNT, not a smooth rate, and drawing them the way
+         everything else here is drawn — a mean times a narrow jitter —
+         produced a whole season in which no player in seventy-two squads was
+         ever on four yellows. That is not a rounding quirk; it is the
+         suspension feature having nothing to show. Real regulars average 4.1
+         cards, reach 13, and about one in six sits exactly one booking from
+         a rung at any moment. A Poisson draw around a per-player rate
+         reproduces that spread; a jittered mean cannot. */
+      stats.yellowCards = poisson(rng,
+        Math.max(0.02, rates.yellowCards * nineties * cardProneness));
       stats.redCards = rng() < 0.04 ? 1 : 0;
       /* A club's goals conceded, shared out over the matches this player
          actually started — the only tariff stat that is a team outcome. */
@@ -472,7 +492,7 @@ export function buildSampleSnapshot(opts = {}) {
     return { status, note: notes[Math.floor(rng2() * notes.length)], chancePlaying: chance };
   }
 
-  function buildLast5(rng2, club, slot, startRate, availability) {
+  function buildLast5(rng2, club, slot, startRate, availability, cardProneness) {
     const recent = club._results.slice(-5);
     return recent.map((r) => {
       const started = rng2() < startRate;
@@ -493,8 +513,14 @@ export function buildSampleSnapshot(opts = {}) {
       const nineties = minutes / 90;
       const matchStats = { minutes, goals, assists, cleanSheets: cleanSheet ? 1 : 0 };
       for (const [key, rate] of Object.entries(rates)) {
-        matchStats[key] = Math.round(rate * nineties * (0.5 + rng()));
+        if (key === 'yellowCards') continue;
+        matchStats[key] = Math.round(rate * nineties * (0.5 + rng2()));
       }
+      /* A booking in one match is a coin flip, not a rounded rate — rounding
+         a 0.2-per-90 rate over a single match gives zero every time, so no
+         sample appearance ever cost a card. */
+      matchStats.yellowCards =
+        rng2() < rates.yellowCards * nineties * cardProneness ? 1 : 0;
       matchStats.goalsConceded = r.conceded;
       /* The match keeps the stats it was scored from. That is what makes an
          appearance AUDITABLE — dev/test-efl.mjs recomputes every sample

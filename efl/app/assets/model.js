@@ -34,6 +34,7 @@
 /** @typedef {import('./types.js')} */
 
 import { statPoints } from './tariff.js';
+import { suspensionRisk } from './suspension.js';
 
 /* ── Weight tables ────────────────────────────────────────
    Change a number here and the whole app changes with it. Each table sums
@@ -509,6 +510,14 @@ export function playerScore(ctx, player) {
     ? 1 : AVAILABILITY_MULTIPLIER[availability.status];
   const score = Math.round(clamp01(weighted) * multiplier * 1000) / 10;
 
+  /* Attached, never weighted. A ban costs the round AFTER the booking, and
+     marking a player down today for a match he will miss next week would be
+     scoring the wrong week. `suspension.js` argues this at length; the short
+     version is that the availability multiplier already covers a player who
+     is suspended NOW, and this covers one who might be next round. */
+  const suspension = suspensionRisk(player, ctx.playedByClub
+    ? ctx.playedByClub[player.clubId] : null);
+
   return {
     kind: 'player',
     id: player.id,
@@ -516,8 +525,9 @@ export function playerScore(ctx, player) {
     next,
     score,
     factors,
+    suspension,
     availabilityMultiplier: multiplier,
-    summary: buildSummary(factors, availability, next)
+    summary: buildSummary(factors, availability, next, suspension)
   };
 }
 
@@ -596,7 +606,7 @@ function playerFactorNote(key, value, player, club, next, ctx) {
 
 /** Turn the factor table into one sentence: the two strongest contributors,
  *  plus anything the manager must be told regardless of its weight. */
-function buildSummary(factors, availability, next) {
+function buildSummary(factors, availability, next, suspension) {
   const ranked = factors.slice()
     .filter((f) => f.value > 0.5 || f.key === 'fixture')
     .sort((a, b) => (b.value * b.weight) - (a.value * a.weight));
@@ -607,6 +617,11 @@ function buildSummary(factors, availability, next) {
   sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
   if (availability.status && availability.status !== 'available') {
     sentence += ` ${AVAILABILITY_LABELS[availability.status]} — ${availability.note}.`;
+  }
+  /* Only the one that changes a decision goes in the sentence. "Three from a
+     ban" is a table fact; "one from a ban" is something to say out loud. */
+  if (suspension && suspension.level === 'onEdge') {
+    sentence += ` One booking from a ${suspension.banMatches}-match ban.`;
   }
   return sentence;
 }

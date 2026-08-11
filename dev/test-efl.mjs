@@ -42,6 +42,7 @@ const tariff = await import(join(APP, 'assets/tariff.js'));
 /* ui.js touches the DOM only inside its render helpers, and errorState()
    is a pure string builder — importable here without a browser. */
 const ui = await import(join(APP, 'assets/ui.js'));
+const suspension = await import(join(APP, 'assets/suspension.js'));
 
 /* A fixed `now` so kickoff-derived assertions cannot drift with the clock. */
 const NOW = Date.parse('2026-08-10T12:00:00Z');
@@ -443,6 +444,132 @@ ok('a position only gets columns for stats it is actually paid for', () => {
       assert.ok(tariff.scoresFor(key, pos), `${key} is in the all-positions view but ${pos} is not paid for it`);
     }
   }
+});
+
+/* ── 3b2. Suspension risk ─────────────────────────────── */
+
+const carded = (yellows, status) => ({
+  name: 'Test', stats: { yellowCards: yellows },
+  availability: { status: status || 'available', note: '' }
+});
+
+ok('the ladder counts up to the next rung it can still reach', () => {
+  assert.equal(suspension.suspensionRisk(carded(0), 5).level, 'clear');
+  assert.equal(suspension.suspensionRisk(carded(2), 5).level, 'watch');
+  assert.equal(suspension.suspensionRisk(carded(4), 10).level, 'onEdge');
+  assert.equal(suspension.suspensionRisk(carded(4), 10).banMatches, 1);
+  assert.equal(suspension.suspensionRisk(carded(9), 30).level, 'onEdge');
+  assert.equal(suspension.suspensionRisk(carded(9), 30).banMatches, 2, 'the second rung is a two-match ban');
+  assert.equal(suspension.suspensionRisk(carded(14), 40).banMatches, 3);
+});
+
+ok('a rung whose deadline has passed can no longer catch anybody', () => {
+  /* Four bookings at match 10 is one away from a ban. The same four at
+     match 22 is not: the five-rung had to be reached by match 19, so the
+     next thing that can bite is ten. Getting this wrong would warn a
+     manager about a ban that cannot happen. */
+  const early = suspension.suspensionRisk(carded(4), 10);
+  const late = suspension.suspensionRisk(carded(4), 22);
+  assert.equal(early.level, 'onEdge');
+  assert.equal(early.nextRung.at, 5);
+  assert.equal(late.nextRung.at, 10, 'the passed rung must be skipped');
+  assert.equal(late.level, 'clear', 'six away from a ban is not a warning');
+});
+
+ok('the count does not reset when a ban is served', () => {
+  /* A player who sat out at five is next in trouble at ten, not at five
+     again — so five bookings is FURTHER from the next ban than four is. */
+  const served = suspension.suspensionRisk(carded(5), 22);
+  assert.equal(served.nextRung.at, 10);
+  assert.equal(served.awayFromBan, 5);
+  assert.equal(suspension.suspensionRisk(carded(4), 10).awayFromBan, 1);
+});
+
+ok('past every rung, and unknown, are different from clear', () => {
+  const past = suspension.suspensionRisk(carded(15), 40);
+  assert.equal(past.level, 'clear');
+  assert.equal(past.known, true);
+  assert.match(past.note, /past every accumulation rung/);
+
+  /* A source that does not publish yellow cards must not produce a
+     confident all-clear — no data is not zero cards. */
+  const unknown = suspension.suspensionRisk({ stats: { yellowCards: null }, availability: {} }, 10);
+  assert.equal(unknown.known, false);
+  assert.match(unknown.note, /does not publish yellow cards/);
+  assert.equal(suspension.riskBadgeText(unknown), null, 'unknown must not render a badge');
+});
+
+ok('an unknown match count over-warns rather than under-warns', () => {
+  /* Without the club's match count no deadline can be checked, so every
+     rung is treated as live. Wrong in the safe direction. */
+  const r = suspension.suspensionRisk(carded(4), null);
+  assert.equal(r.level, 'onEdge');
+});
+
+ok('a player already suspended is reported as such, not as a risk', () => {
+  const r = suspension.suspensionRisk(carded(4, 'suspended'), 10);
+  assert.equal(r.level, 'suspended');
+  assert.equal(suspension.riskBadgeText(r), 'Suspended');
+  assert.match(r.note, /unavailable this round/);
+});
+
+ok('suspension risk never moves a score', () => {
+  /* THE DESIGN CLAIM THIS PINS: a ban costs the round AFTER the booking, so
+     it is shown and never weighted. Two identical players, one on the edge
+     of a ban, must score exactly the same. */
+  const base = snap.players.find((p) => p.availability.status === 'available' && p.starts > 5);
+  const onEdge = { ...base, stats: { ...base.stats, yellowCards: 4 } };
+  const clean = { ...base, stats: { ...base.stats, yellowCards: 0 } };
+  const a = model.playerScore(ctx, onEdge);
+  const b = model.playerScore(ctx, clean);
+  assert.equal(a.suspension.level, 'onEdge');
+  assert.equal(b.suspension.level, 'clear');
+  assert.equal(a.score, b.score, 'ban risk must not change the rating');
+  assert.match(a.summary, /One booking from a 1-match ban\./,
+    'but it must be said out loud in the summary');
+  assert.doesNotMatch(b.summary, /booking/);
+});
+
+ok('every scored player carries a risk verdict', () => {
+  for (const p of snap.players.slice(0, 300)) {
+    const rec = model.playerScore(ctx, p);
+    assert.ok(rec.suspension, `${p.name}: no suspension verdict`);
+    assert.ok(['clear', 'watch', 'onEdge', 'suspended'].includes(rec.suspension.level));
+  }
+});
+
+ok('the sample data actually exercises the on-the-edge state', () => {
+  /* The bug this pins: the generator drew cards as a jittered mean, which
+     produced a whole season in which nobody was ever on four yellows — the
+     feature had nothing to display. Real regulars average 4.1 bookings and
+     about one in six sits exactly one away from a rung. */
+  const levels = {};
+  for (const p of snap.players) {
+    const level = model.playerScore(ctx, p).suspension.level;
+    levels[level] = (levels[level] || 0) + 1;
+  }
+  assert.ok(levels.onEdge > 10,
+    `only ${levels.onEdge || 0} players one booking from a ban — the demo cannot show the feature`);
+  const maxYellows = Math.max(...snap.players.map((p) => p.stats.yellowCards));
+  assert.ok(maxYellows >= 6, `sample cards top out at ${maxYellows}; real seasons reach 13`);
+});
+
+ok('the badge is a word before it is a colour', () => {
+  const html = ui.suspensionBadge(suspension.suspensionRisk(carded(4), 10));
+  assert.match(html, /1 from a ban/, 'the badge must say what it means in text');
+  assert.match(html, /title="/, 'and carry the full sentence for a hover or a reader');
+  assert.equal(ui.suspensionBadge(suspension.suspensionRisk(carded(0), 5)), '',
+    'no badge for a player who is nowhere near a ban');
+});
+
+ok('the guide renders the ladder from the rule, not from prose', () => {
+  /* The badges and the guide must never disagree about what earns a ban. */
+  const html = ui.suspensionLadder();
+  for (const rung of suspension.SUSPENSION_LADDER.rungs) {
+    assert.ok(html.includes(String(rung.at)), `the ladder table omits the ${rung.at} rung`);
+  }
+  assert.match(html, /does\s*(?:<[^>]+>)?\s*not\s*(?:<[^>]+>)?\s*reset/i,
+    'the cumulative rule is the easy thing to get wrong, so the guide must state it');
 });
 
 /* ── 3c. Building a legal seven ───────────────────────── */
