@@ -330,6 +330,20 @@ if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
       here, by the models described above. They are never supplied by anyone else and are never
       official.</p>
 
+    <h3 id="health">Is the feed actually working?</h3>
+    <p>The paragraph above reports what this page's own data load returned a moment ago. For a
+      deeper answer — every document the app depends on, fetched fresh, with the fields it needs
+      checked one by one — run the check below. It is a button rather than something that happens
+      automatically because it deliberately skips every cache and asks the official game's servers
+      for all three documents; firing that on every page view would make this site the impolite
+      client the caching exists to prevent.</p>
+    <p class="sec-note">It reads three public documents and sends no account, cookie or key of
+      any kind. The same report is available as JSON at
+      <a href="/api/efl/health"><code>/api/efl/health</code></a>.</p>
+    <p><button type="button" class="btn btn-ghost" id="health-run"
+        aria-controls="health-result">Check the feed now</button></p>
+    <div id="health-result" aria-live="polite"></div>
+
     <h2>Start here</h2>
     <ul>
       <li><a href="/fantasy-efl/">This round's picks</a> — seven cards, one per decision, and a

@@ -349,6 +349,19 @@ th[aria-sort] button{color:var(--efl)}
 .susp-watch{color:var(--amber)}
 .susp-suspended{color:var(--red)}
 
+/* Health check. The dot is decoration; the word beside it carries the
+   meaning, as everywhere else in this app. */
+.health-dot{
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  margin-right:6px;vertical-align:middle;
+}
+.health-ok{background:var(--green)}
+.health-bad{background:var(--red)}
+/* The dot and its word are one thing and must not be split across two
+   lines by a narrow column on a phone. */
+.health-status{white-space:nowrap}
+#health-result{margin-top:12px}
+
 details.coverage{margin-top:9px}
 details.coverage summary{cursor:pointer;font-weight:600;color:var(--text-2)}
 details.coverage summary:hover{color:var(--text)}

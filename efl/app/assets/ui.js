@@ -233,6 +233,70 @@ export function availabilityBadge(availability) {
   return `<span class="badge badge-avail av-${esc(a.status)}" title="${esc(detail)}">${esc(word)}</span>`;
 }
 
+/* ── Feed health ─────────────────────────────────────────
+   /api/efl/health in words rather than JSON. Two rules shape this:
+
+   1. It is rendered ON DEMAND, never on page load. The endpoint is
+      deliberately uncached and fetches all three upstream documents, so
+      wiring it to every page view would turn a diagnostic into a load on
+      somebody else's front end — the exact thing the proxy's cache TTLs
+      exist to prevent.
+   2. A failure is reported per document, because "the feed is broken" is
+      not actionable and "players.json answered 200 but no longer carries
+      squadId" is.
+*/
+export function healthSummary(report) {
+  const r = report || {};
+  const documents = r.documents || {};
+  const names = Object.keys(documents);
+
+  const rows = names.map((name) => {
+    const d = documents[name] || {};
+    const problems = [];
+    if (d.error) problems.push(esc(d.error));
+    if (d.status != null && d.status !== 200) problems.push(`HTTP ${esc(d.status)}`);
+    if (d.isArray === false) problems.push('not a list of records');
+    if (Array.isArray(d.fieldsMissing) && d.fieldsMissing.length) {
+      problems.push(`missing ${d.fieldsMissing.map(esc).join(', ')}`);
+    }
+    const good = !problems.length;
+    return `<tr>
+      <th scope="row">${esc(name)}</th>
+      <td class="health-status"><span class="health-dot health-${good ? 'ok' : 'bad'}" aria-hidden="true"></span>`
+      + `${good ? 'OK' : 'Problem'}</td>
+      <td class="num">${d.count == null ? '<span class="muted">—</span>' : esc(d.count)}</td>
+      <td>${good
+    ? `<span class="muted">all expected fields present</span>`
+    : problems.join('; ')}</td>
+    </tr>`;
+  }).join('');
+
+  const ok = r.ok === true;
+  return `<div class="note ${ok ? '' : 'note-err'}" role="status">`
+    + `<b>${ok ? 'The official Fantasy EFL feed is healthy.' : 'The official feed is not answering as expected.'}</b> `
+    + esc(r.summary || '')
+    + (r.checkedAt ? ` <span class="muted">Checked ${esc(fmtKickoff(r.checkedAt))}.</span>` : '')
+    + '</div>'
+    + (names.length ? `<div class="tscroll" style="margin-top:10px"><table>
+        <caption class="sr-only">Per-document result of the Fantasy EFL feed health check</caption>
+        <thead><tr><th scope="col">Document</th><th scope="col">Status</th>
+          <th scope="col" class="num">Records</th><th scope="col">Detail</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>` : '')
+    + (ok ? '' : '<p class="sec-note" style="margin-top:9px">While it is wrong, every Fantasy EFL '
+      + 'page shows a named error rather than wrong numbers. '
+      + '<a href="/fantasy-efl/?provider=sample" style="color:var(--efl)">Switch to the sample '
+      + 'dataset</a> to keep using the tools meanwhile — clearly labelled, and not live.</p>');
+}
+
+/** When the check itself could not run. Distinct from a failing feed. */
+export function healthUnavailable(err) {
+  const msg = err && err.message ? err.message : String(err || 'unknown error');
+  return '<div class="note note-method" role="status">'
+    + '<b>The health check could not be run.</b> ' + esc(msg)
+    + ' That is a fault in the check, not necessarily in the feed — this page still loaded '
+    + 'its data, and what that data was is reported above.</div>';
+}
+
 /* ── States ─────────────────────────────────────────────── */
 
 export function skeletonCards(count = 6) {
@@ -268,8 +332,10 @@ export function errorState(err, retryId) {
     + '<br><br>Nothing here is shown from a stale copy, and nothing falls back to sample data '
     + 'pretending to be live — an out-of-date pick is worse than no pick, and an invented one '
     + 'is worse still.'
-    + '<br><br><b>What to check:</b> <a href="/api/efl/health" style="color:inherit;text-decoration:underline">'
-    + '/api/efl/health</a> reports each document\'s status and which expected fields are present. '
+    + '<br><br><b>What to check:</b> <a href="/fantasy-efl/how-to-play/#health" style="color:inherit;text-decoration:underline">'
+    + 'run the feed health check</a> — it reports each document\'s status and which expected '
+    + 'fields are present, in words. The same report is at '
+    + '<a href="/api/efl/health" style="color:inherit;text-decoration:underline">/api/efl/health</a> as JSON. '
     + 'To carry on meanwhile, <a href="?provider=sample" style="color:inherit;text-decoration:underline">'
     + 'switch to the sample dataset</a> — clearly labelled, and not live.'
     + (retryId ? ` <br><button class="btn btn-ghost btn-sm" id="${esc(retryId)}" style="margin-top:10px">Try again</button>` : '')
