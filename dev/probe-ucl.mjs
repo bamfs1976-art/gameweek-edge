@@ -70,18 +70,36 @@ const PROFILES = {
 };
 
 /* ── Endpoints to try ────────────────────────────────────
-   The first is what the proxy uses today. The rest are the other public
-   UEFA gaming/match endpoints the official front ends are built on. Each is
-   a guess until it answers; that is the entire point of asking. */
+   The first two are what the proxy uses today. The rest are UEFA's other
+   public football APIs, which are a different estate from the fantasy game
+   and — as the first sweep found — behave completely differently: the
+   fantasy feeds decline server-side clients outright, while comp.uefa.com
+   answers a plain one. So the sweep is broad on purpose. Each entry is a
+   guess until it answers; asking is the whole point.
+
+   UEFA's `seasonYear` in these APIs is the year the season ENDS, so a
+   2026-27 competition is 2027. Both are tried rather than assumed. */
 const endpoints = (season, md = 1) => [
-  ['feeds/players (current)', `${FEEDS.base}${FEEDS.players}`.replace('{season}', season).replace('{md}', md)],
-  ['feeds/teams (current)', `${FEEDS.base}${FEEDS.teams}`.replace('{season}', season).replace('{md}', md)],
-  ['gamingapi players', `https://gamingapi.uefa.com/v2/feeds/players?competitionId=1&seasonYear=${season}&phaseId=1&language=en`],
-  ['gamingapi teams', `https://gamingapi.uefa.com/v2/feeds/teams?competitionId=1&seasonYear=${season}&language=en`],
-  ['gamingapi fixtures', `https://gamingapi.uefa.com/v2/feeds/fixtures?competitionId=1&seasonYear=${season}&language=en`],
-  ['gamingapi matchdays', `https://gamingapi.uefa.com/v2/feeds/matchdays?competitionId=1&seasonYear=${season}&language=en`],
-  ['match.uefa matches', `https://match.uefa.com/v5/matches?competitionId=1&seasonYear=${season}&limit=5`],
-  ['comp.uefa competitions', 'https://comp.uefa.com/v2/competitions?offset=0&limit=5']
+  ['fantasy players (current)', `${FEEDS.base}${FEEDS.players}`.replace('{season}', season).replace('{md}', md)],
+  ['fantasy teams (current)', `${FEEDS.base}${FEEDS.teams}`.replace('{season}', season).replace('{md}', md)],
+  ['fantasy fixtures (current)', `${FEEDS.base}${FEEDS.fixtures}`.replace('{season}', season).replace('{md}', md)],
+
+  ['comp competitions', 'https://comp.uefa.com/v2/competitions?offset=0&limit=5'],
+  ['comp seasons', 'https://comp.uefa.com/v2/seasons?competitionId=1&limit=5'],
+  ['comp seasons (nested)', 'https://comp.uefa.com/v2/competitions/1/seasons?limit=5'],
+  ['comp teams', `https://comp.uefa.com/v2/teams?competitionId=1&seasonYear=${season}&limit=5`],
+  ['comp standings', `https://comp.uefa.com/v2/standings?competitionId=1&seasonYear=${season}`],
+  ['comp players', `https://comp.uefa.com/v2/players?competitionId=1&seasonYear=${season}&limit=5`],
+  ['comp squads', `https://comp.uefa.com/v2/squads?competitionId=1&seasonYear=${season}&limit=5`],
+
+  ['match v5 (seasonYear)', `https://match.uefa.com/v5/matches?competitionId=1&seasonYear=${season}&limit=5`],
+  ['match v5 (no season)', 'https://match.uefa.com/v5/matches?competitionId=1&limit=5'],
+  ['match v5 (date range)', 'https://match.uefa.com/v5/matches?competitionId=1&fromDate=2026-09-01&toDate=2026-10-01&limit=5'],
+  ['match v2', `https://match.uefa.com/v2/matches?competitionId=1&seasonYear=${season}&limit=5`],
+  ['match v5 (offset form)', `https://match.uefa.com/v5/matches?competitionId=1&seasonYear=${season}&offset=0&limit=5&order=ASC`],
+
+  ['stats players', `https://compstats.uefa.com/v1/players?competitionId=1&seasonYear=${season}&limit=5`],
+  ['stats teams', `https://compstats.uefa.com/v1/teams?competitionId=1&seasonYear=${season}&limit=5`]
 ];
 
 async function get(u, headers) {
@@ -102,67 +120,64 @@ async function get(u, headers) {
   }
 }
 
-/* ── Stage 0: can anything be read at all? ─────────────── */
-console.log('STAGE 0 — reachability. Which endpoint answers, and to whom?\n');
+/* ── Stage 0: what is reachable, and to whom? ──────────── */
+console.log('STAGE 0 — reachability matrix.\n');
 
-const season0 = CANDIDATE_SEASONS[0];
 const working = [];
-for (const [label, u] of endpoints(season0)) {
-  const results = [];
-  for (const [name, headers] of Object.entries(PROFILES)) {
-    const res = await get(u, headers);
-    results.push(`${name}=${res.status == null ? 'ERR' : res.status}`);
-    if (res.status === 200 && res.json) working.push({ label, url: u, profile: name, res });
+for (const season of CANDIDATE_SEASONS) {
+  console.log(`  season ${season}`);
+  for (const [label, u] of endpoints(season)) {
+    /* Only the first profile for the bulk sweep — the first run established
+       that the header profile changes nothing anywhere. The fantasy feeds
+       are re-tested under all three because they are the ones that 403. */
+    const profiles = /fantasy/.test(label) ? Object.entries(PROFILES) : [['plain', PROFILES.plain]];
+    const cells = [];
+    for (const [name, headers] of profiles) {
+      const res = await get(u, headers);
+      const rows = res.status === 200 && res.json ? rowsOf(res.json) : [];
+      cells.push(`${name}=${res.status == null ? 'ERR' : res.status}`
+        + (rows.length ? `(${rows.length} rows)` : ''));
+      if (res.status === 200 && res.json) working.push({ label, url: u, profile: name, res, rows, season });
+    }
+    console.log(`    ${label.padEnd(28)} ${cells.join('  ')}`);
   }
-  console.log(`  ${label.padEnd(26)} ${results.join('  ')}`);
+  console.log('');
 }
 
 if (!working.length) {
-  console.log('\n✗ Nothing answered 200 to any ordinary client.');
-  console.log('  Read this carefully before "fixing" anything:');
-  console.log('  · A uniform 403 across unrelated hosts and paths is the host declining,');
-  console.log('    not a wrong path and not a season that has yet to start.');
-  console.log('  · A Netlify function runs from a datacentre too, so it will be declined');
-  console.log('    in the same way. /api/ucl/* cannot serve live data from this source.');
-  console.log('  · The fix is a source that permits server-side reads, not a disguise.');
+  console.log('✗ Nothing answered 200 to any ordinary client.');
+  console.log('  A uniform refusal across unrelated hosts is the host declining, not a wrong');
+  console.log('  path — and a Netlify function is a datacentre client too, so it will be');
+  console.log('  declined the same way. The fix is a source that permits server-side reads.');
   process.exit(1);
 }
 
-console.log(`\n✓ ${working.length} endpoint/profile combination(s) answered with JSON.\n`);
-for (const w of working.slice(0, 6)) {
-  const rows = rowsOf(w.res.json);
-  console.log(`  ${w.label} [${w.profile}] — ${w.res.bytes} bytes, ${rows.length} rows, `
-    + `envelope: ${Array.isArray(w.res.json) ? '(array)' : Object.keys(w.res.json).slice(0, 8).join(', ')}`);
+console.log(`✓ ${working.length} endpoint/season combination(s) returned JSON.\n`);
+for (const w of working) {
+  const sample = w.rows[0] || (Array.isArray(w.res.json) ? null : w.res.json);
+  console.log(`  ${w.label} [season ${w.season}] — ${w.rows.length} rows, ${w.res.bytes} bytes`);
+  console.log(`     keys: ${sample ? Object.keys(sample).slice(0, 14).join(', ') : '(none)'}`);
+  if (sample) console.log(`     first: ${JSON.stringify(sample).slice(0, 260)}`);
 }
 
-/* ── Stage 1: which season, on whichever endpoint works? ── */
-const best = working.find((w) => /players/i.test(w.label)) || working[0];
-const headers = PROFILES[best.profile];
-console.log(`\nSTAGE 1 — season, using "${best.label}" with the "${best.profile}" profile.\n`);
+/* Anything that looks like a player or a fixture is worth a closer look,
+   because those are the two the app actually needs. */
+const players = working.find((w) => /player|squad/i.test(w.label) && w.rows.length);
+const matches = working.find((w) => /match|fixture/i.test(w.label) && w.rows.length);
+console.log(`\nPlayer-shaped source: ${players ? players.label : 'NONE FOUND'}`);
+console.log(`Fixture-shaped source: ${matches ? matches.label : 'NONE FOUND'}`);
 
-const seasonUrl = (season, md) => best.url
-  .replace(/(seasonYear=)\d+/, `$1${season}`)
-  .replace(new RegExp(`_${season0}_`), `_${season}_`)
-  .replace(new RegExp(`_${season0}\\.`), `_${season}.`)
-  .replace(/(_)\d+(_\d+\.json)/, `$1${season}$2`)
-  .replace(/(_\d+_)\d+(\.json)/, `$1${md}$2`);
-
-let live = null;
-for (const season of CANDIDATE_SEASONS) {
-  const res = await get(seasonUrl(season, 1), headers);
-  const rows = res.status === 200 && res.json ? rowsOf(res.json) : [];
-  console.log(`  season ${String(season).padEnd(8)} ${String(res.status).padEnd(4)} ${rows.length} rows`);
-  if (rows.length && !live) live = { season, rows, res };
+if (!players) {
+  console.log('\nNo player source answered. Without one, the app cannot list "the latest');
+  console.log('players" from this estate at all — and inventing them is not an option.');
+  process.exit(0);
 }
 
-if (!live) {
-  console.log('\n✗ The endpoint answers but no candidate season returned rows.');
-  process.exit(1);
-}
-
-console.log(`\n→ season ${live.season} is publishing ${live.rows.length} records.`);
+const live = { season: players.season, rows: players.rows, res: players.res };
+const best = players;
 
 /* ── Stage 2: what does the mapping miss? ──────────────── */
+void best;
 const mapped = live.rows.map(normPlayer).filter((e) => e.id != null && e.element_type != null);
 console.log(`\nSTAGE 2 — mapping. ${mapped.length} of ${live.rows.length} records map to a player.`);
 console.log('\nEvery key upstream sends:');
