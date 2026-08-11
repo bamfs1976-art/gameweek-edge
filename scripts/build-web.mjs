@@ -19,6 +19,11 @@ const OUT = join(ROOT, 'www');
    one subscription, both games" true in the browser and not just in the
    database. */
 const EURO_OUT = join(OUT, 'euro');
+/* Fantasy EFL is a third app on this same origin, for the same
+   session-and-subscription reason as Euro Matchday Edge above. It ships at
+   /fantasy-efl/ rather than /efl/ because the path is also the page's URL
+   in a search result, and "fantasy-efl" says what it is. */
+const EFL_OUT = join(OUT, 'fantasy-efl');
 
 /* Static web assets to copy verbatim into www/. Add to this list as
    the app grows. */
@@ -95,10 +100,40 @@ async function buildEuro() {
   return engine.length;
 }
 
+/* Fantasy EFL: a third app on the same origin, for the same reason the
+   second one is here — one session, one subscription, one domain.
+
+   Unlike Euro Matchday Edge it borrows no code from index.html. Fantasy EFL
+   has no prices, no budget and no transfers, so the FPL optimiser and the
+   expected-points model have nothing to say about it; it carries its own
+   small, separate scoring models in efl/app/assets/model.js.
+
+   It is also a MULTI-PAGE app rather than a single shell: five routes, five
+   real HTML files, each with its own title, description and canonical URL.
+   That is a copy of a directory tree, not a bundle — which is why this is
+   `copyDir` and not an esbuild call. `efl/package.json` marks the source as
+   ESM for Node (so dev/test-efl.mjs can import the models directly) and
+   lives OUTSIDE efl/app, so it is never copied into the deploy. */
+async function buildEfl() {
+  await copyDir(join(ROOT, 'efl/app'), EFL_OUT);
+  return countFiles(join(ROOT, 'efl/app'));
+}
+
+async function countFiles(dir) {
+  let n = 0;
+  for (const entry of await readdir(dir)) {
+    const p = join(dir, entry);
+    n += (await stat(p)).isDirectory() ? await countFiles(p) : 1;
+  }
+  return n;
+}
+
 await clean();
 await copyStatic();
 await bundleNative();
 await bundleAuth();
 const engineBytes = await buildEuro();
+const eflFiles = await buildEfl();
 console.log('✓ Built www/ (index.html + native.js + auth.js)');
 console.log(`✓ Built www/euro/ (Euro Matchday Edge + ${(engineBytes / 1024).toFixed(0)}kB shared engine)`);
+console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${eflFiles} files, 5 routes)`);

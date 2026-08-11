@@ -956,6 +956,12 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .sb-sib-t{flex:1;font-size:.63rem;line-height:1.35;color:var(--text-3)}
 .sb-sib-t b{display:block;font-size:.74rem;color:var(--text-2);font-weight:650}
 .sb-sib-go{font-size:.7rem;color:var(--text-3)}
+/* Fantasy EFL — the third game on this origin. Same card, EFL indigo, so
+   the two siblings read as a set rather than as one feature and one
+   afterthought. */
+.sb-sibling.efl{background:linear-gradient(150deg,rgba(85,102,216,.12),transparent 75%)}
+.sb-sibling.efl:hover{border-color:#8f9dff;background:rgba(85,102,216,.16)}
+.sb-sibling.efl .sb-sib-mark{background:#3f4fb8;box-shadow:inset 0 0 0 1px rgba(143,157,255,.6)}
 .acct-btn{
   display:flex;align-items:center;gap:9px;width:100%;
   padding:9px 11px;border-radius:var(--r-md);
@@ -2095,13 +2101,16 @@ body{font-size:14px;line-height:1.35}
       </div>
     </div>
 
-    <!-- Competition switcher. UCL is a separate app on the same origin, so
-         this is an ordinary link — and because the origin is shared, the
-         signed-in session and Pro tier follow the user across it. -->
+    <!-- Competition switcher. UCL and EFL are separate apps on the same
+         origin, so these are ordinary links — and because the origin is
+         shared, the signed-in session and Pro tier follow the user across
+         them. -->
     <div class="sb-game" role="group" aria-label="Choose competition">
       <span class="sb-game-btn active" aria-current="page">FPL</span>
       <a class="sb-game-btn" href="/euro/"
          title="Euro Matchday Edge — UEFA Champions League Fantasy. Your account and Pro come with you.">UCL</a>
+      <a class="sb-game-btn" href="/fantasy-efl/"
+         title="Fantasy EFL — picks, fixtures and form across the Championship, League One and League Two.">EFL</a>
     </div>
 
     <!-- Gameweek strip -->
@@ -2135,6 +2144,11 @@ body{font-size:14px;line-height:1.35}
       <a class="sb-sibling" href="/euro/">
         <span class="sb-sib-mark" aria-hidden="true"></span>
         <span class="sb-sib-t"><b>Euro Matchday Edge</b>Champions League Fantasy — your Pro covers it</span>
+        <span class="sb-sib-go" aria-hidden="true">↗</span>
+      </a>
+      <a class="sb-sibling efl" href="/fantasy-efl/">
+        <span class="sb-sib-mark" aria-hidden="true"></span>
+        <span class="sb-sib-t"><b>Fantasy EFL</b>Picks, fixtures and form across the Championship, League One and League Two</span>
         <span class="sb-sib-go" aria-hidden="true">↗</span>
       </a>
       <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>How Fantasy EFL Works — Seven Players, Two Clubs, One Captain | GameweekEdge</title>
+<meta name="description" content="A short guide to Fantasy EFL: picking seven players and two clubs each round, choosing a captain, and how form, fixtures and minutes should shape those decisions.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/how-to-play/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="How Fantasy EFL works">
+<meta property="og:description" content="Seven players, two clubs and a captain, every round, across three divisions — and which of those decisions is worth the most attention.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/how-to-play/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="How Fantasy EFL works">
+<meta name="twitter:description" content="A short, plain guide to the weekly Fantasy EFL decisions.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge — home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge — Fantasy Premier League">FPL</a>
+      <a class="sw-btn" href="/euro/" title="Euro Matchday Edge — Champions League Fantasy">UCL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/" aria-current="page">How to play</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <article class="prose" style="padding:6px 0 0">
+    <h1 style="font-size:var(--fs-xl);margin-bottom:9px">How Fantasy EFL works</h1>
+    <p style="font-size:var(--fs-md)">Fantasy EFL is the English Football League's official
+      fantasy game, played across the Championship, League One and League Two. It asks you for
+      three things every round: <strong>seven players</strong>, <strong>two clubs</strong> and
+      <strong>one captain</strong>. This page is a short guide to those decisions and how the
+      tools on this site help with them. It is not the official rulebook — for deadlines,
+      eligibility and any rule changes, always check the official game.</p>
+
+    <h2 id="seven">The seven-player selection</h2>
+    <p>You pick a small team, and "small" is the whole character of the game. Seven starters
+      means every single pick is roughly a seventh of your score, so there is nowhere to hide a
+      passenger. In a fifteen-man Premier League squad a bad fourth defender costs you a couple
+      of points a week. Here, it costs you a seventh of the round.</p>
+    <p>The seven are <strong>one goalkeeper and six outfielders</strong>, in one of three
+      formations:</p>
+    <ul>
+      <li><strong>1-2-2-2</strong> — two defenders, two midfielders, two forwards</li>
+      <li><strong>1-2-3-1</strong> — two defenders, three midfielders, one forward</li>
+      <li><strong>1-3-2-1</strong> — three defenders, two midfielders, one forward</li>
+    </ul>
+    <p>You may also take <strong>no more than two players from any one club</strong>. That limit
+      is the part people underestimate. The top of any form-driven list clusters into the two or
+      three clubs having a good month, so the seven best players are usually an illegal team, and
+      the real question is which of them to give up. That is what
+      <a href="/fantasy-efl/">Build your seven</a> on the dashboard solves — it searches the
+      legal combinations rather than taking the best player at each position and hoping.</p>
+    <p>Two more consequences, and both run against the instincts a Premier League fantasy game
+      teaches you:</p>
+    <ul>
+      <li><strong>Minutes matter more than form.</strong> Not a little more —
+        <em>measurably</em> more. Across 83,698 real appearances, a player's average minutes over
+        his last five rounds predicts his next round's points better than any points-based
+        measure of form does. A player averaging under 30 minutes in his last five returns
+        <strong>0.59</strong> points the following week; one averaging 75 or more returns
+        <strong>4.25</strong>. Check minutes before you check goals.</li>
+      <li><strong>Spreading risk is harder.</strong> With seven players you cannot cover every
+        outcome, so a coherent squad — players from clubs with genuinely good fixtures — usually
+        beats a scattering of individually clever picks.</li>
+    </ul>
+
+    <h2 id="clubs">The two club picks</h2>
+    <p>Alongside your players you choose two clubs, and this is where most managers leave points
+      behind. Club picks are quietly a fixture bet: you are backing a team's whole performance
+      rather than an individual's, which means the things that decide them are more predictable
+      than the things that decide a player's return. Form, defensive record and the difficulty of
+      the next match do most of the work.</p>
+    <p>They are also the easiest part of the game to set once in August and never look at again.
+      Don't. A club with three straight home games against the bottom of its division is a
+      different proposition from the same club a month later. The
+      <a href="/fantasy-efl/clubs/">club picker</a> ranks all 72 on form, goals scored and
+      conceded, clean sheets, home and away records and the fixtures ahead — and shows the
+      reasoning, so you can override it when you know something it does not.</p>
+
+    <h2 id="captain">The captain</h2>
+    <p>Your captain's return counts for more than anyone else's, which makes it the single
+      highest-variance decision you make each round. The instinct is to captain the best player
+      you own. The better habit is to captain the best <em>situation</em> you own: a strong
+      player, at home, against a side conceding regularly, who is certain to start.</p>
+    <p>That last clause does more work than any other. A captain who is rested after a midweek
+      game does not score you half of nothing — he scores you nothing, twice. Check the
+      <a href="/fantasy-efl/fixtures/">fixture ticker</a> for short turnarounds before you
+      commit the armband.</p>
+    <p><strong>Do not assume the armband belongs to a forward.</strong> That is a Premier League
+      habit and this game does not reward it. Measured across those same 83,698 appearances, mean
+      points per appearance run <strong>defenders 4.19, goalkeepers 4.08, midfielders 3.88,
+      forwards 3.14</strong>. The forward is the <em>worst</em>-scoring position in Fantasy EFL,
+      because defenders are paid for clean sheets, clearances, blocks and tackles, and a
+      goalkeeper's goal is worth ten points. A defender at home to the bottom of the division is
+      very often the right captain.</p>
+
+    <h2 id="scoring">How points are scored</h2>
+    <p>This page used to decline to print the scoring table, on the grounds that guessing at
+      another game's rules in public is worse than saying "look it up". It is no longer a guess.
+      The table below was checked by recomputing the score of <strong>83,698 real player-round
+      records</strong> — 35 rounds of a completed season, published by the official game — from
+      their raw statistics and comparing with the official points figure. <strong>83,688 of them
+      reproduce exactly: 99.99%.</strong> The ten misses are all off by one, which is what
+      post-match statistical corrections look like.</p>
+    <p>Tariffs can change between seasons, and the official game is the authority. But this is
+      accurate enough to plan with, and accurate enough that the models on this site score
+      players in the game's real currency rather than an approximation of it.</p>
+
+    <div class="tscroll" style="margin:14px 0">
+      <table>
+        <caption class="sr-only">Fantasy EFL scoring, by statistic and position</caption>
+        <thead><tr><th scope="col">For</th><th scope="col">Points</th><th scope="col">Who</th></tr></thead>
+        <tbody>
+          <tr><td>Playing up to 60 minutes</td><td class="num">+1</td><td>All</td></tr>
+          <tr><td>Playing 60 minutes or more</td><td class="num">+2</td><td>All</td></tr>
+          <tr><td>A goal</td><td class="num">+10 / +7 / +6 / +5</td><td>GK / DEF / MID / FWD</td></tr>
+          <tr><td>A hat-trick</td><td class="num">+5</td><td>All, on top of the goals</td></tr>
+          <tr><td>An assist</td><td class="num">+3</td><td>All</td></tr>
+          <tr><td>A clean sheet (60 minutes or more)</td><td class="num">+5</td><td>GK, DEF</td></tr>
+          <tr><td>Every 2 goals conceded</td><td class="num">−1</td><td>GK, DEF</td></tr>
+          <tr><td>Every 3 saves</td><td class="num">+2</td><td>GK</td></tr>
+          <tr><td>A penalty save</td><td class="num">+5</td><td>GK</td></tr>
+          <tr><td>Every 4 clearances</td><td class="num">+1</td><td>DEF</td></tr>
+          <tr><td>Every 2 blocks</td><td class="num">+1</td><td>DEF</td></tr>
+          <tr><td>Every 2 tackles</td><td class="num">+1</td><td>DEF</td></tr>
+          <tr><td><strong>An interception</strong></td><td class="num"><strong>+2</strong></td><td>MID</td></tr>
+          <tr><td>Every 2 key passes</td><td class="num">+1</td><td>MID, FWD</td></tr>
+          <tr><td>A shot on target</td><td class="num">+1</td><td>MID, FWD</td></tr>
+          <tr><td>A missed penalty</td><td class="num">−3</td><td>All</td></tr>
+          <tr><td>An own goal</td><td class="num">−3</td><td>All</td></tr>
+          <tr><td>A yellow card</td><td class="num">−1</td><td>All</td></tr>
+          <tr><td>A red card</td><td class="num">−3</td><td>All</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Three things in that table do most of the work, and none of them is a goal.</p>
+    <ul>
+      <li><strong>Interceptions pay two points each, and only midfielders get them.</strong> It
+        is the most valuable repeatable statistic in the game. A midfielder making four
+        interceptions has out-scored a forward's shot on target eight times over, in a way that
+        never shows up in a highlights package.</li>
+      <li><strong>Defenders get paid for defending</strong> — clearances, blocks and tackles on
+        top of the clean sheet. That, plus a goal being worth seven, is why they out-score
+        everyone.</li>
+      <li><strong>A goalkeeper's goal is worth ten points</strong>, which will almost never
+        happen and is worth knowing anyway.</li>
+    </ul>
+    <p>The <a href="/fantasy-efl/players/">player finder</a> shows what each statistic was worth
+      next to the statistic itself, and switches its columns to match the position you filter
+      to — a defender's clearances, a midfielder's interceptions.</p>
+
+    <h2 id="fixtures">Fixture difficulty</h2>
+    <p>Every fixture on this site carries a rating from <strong>1 (most favourable)</strong> to
+      <strong>5 (toughest)</strong>. It is built from the opponent's points per game, their
+      defensive record and their attacking record, adjusted for home advantage — and it is
+      calculated <em>within a division</em>. A rating of 2 in League Two means "comfortably
+      easier than average for League Two", not "easier than a Championship fixture".</p>
+    <p>That division-local approach is deliberate, and it is what makes cross-division comparison
+      possible at all. If ratings were calculated across all 72 clubs at once, every League Two
+      fixture would look easy, every Championship fixture would look hard, and the ticker would
+      just be telling you which division you were reading.</p>
+    <p>Fixture ratings are a modelled guide, not a guarantee. They are built from results so far
+      and cannot see a manager change, an injury crisis, a cup replay or a club that has quietly
+      been much better than its table position for a month.</p>
+
+    <h2 id="form">Short-term form, starts and minutes</h2>
+    <p>Form on this site means the last five rounds, and nothing longer. Over a 46-game season a
+      player's total points tell you who has been good since August; the last five tell you who is
+      good now, and only one of those is a reason to pick someone this weekend.</p>
+    <p>Form is read alongside minutes rather than instead of them. Twelve points in two
+      appearances is a different signal from twelve in five, and a player averaging 60 minutes is
+      a different proposition from one who plays 90 every week. The finder shows points per
+      appearance, starts, minutes and availability side by side so the three can be read
+      together.</p>
+
+    <h2 id="availability">Availability</h2>
+    <p>The cheapest points in any fantasy game are the ones you don't lose to a player who was
+      never going to play. Every player on this site carries a status —
+      available, doubtful, injured, suspended or unavailable — and the modelled rating treats it
+      as a multiplier rather than a minor deduction. An injured player with perfect form is not a
+      slightly worse pick; he is not a pick.</p>
+
+    <h2 id="cross">Comparing across three divisions</h2>
+    <p>This is the skill Fantasy EFL asks for that no single-division game does. A forward
+      scoring freely in League Two and a Championship midfielder with three assists in four are
+      genuinely hard to compare, and the honest answer is that raw totals cannot do it.</p>
+    <p>So every input in the models here is normalised within a player's own division before
+      anything is ranked: form against players in the same division and position, fixture
+      difficulty against clubs in the same division, club form against the same twenty-four
+      teams. What is compared across divisions is a player's <em>standing</em>, not their raw
+      numbers.</p>
+
+    <h2 id="differentials">Differentials</h2>
+    <p>A differential normally means a pick few other managers own, and Fantasy EFL splits neatly
+      in two on this.</p>
+    <p><strong>For clubs, ownership is real and published.</strong> The official game states what
+      percentage of managers has picked each club, and where the data source in use supplies it,
+      the <a href="/fantasy-efl/clubs/">club picker</a> shows it as a column and lets you sort by
+      it. A strong club that few managers have taken is the closest thing to a genuine
+      differential this game offers, and it is the easier of the two club picks to get an edge
+      on precisely because most managers set theirs in August and forget.</p>
+    <p><strong>For players, nothing public publishes it</strong> — so this site shows no player
+      ownership column and does not invent one. What the finder offers instead is a
+      <strong>form differential</strong>: an editorial, modelled score combining strong recent
+      output with how much attention a player's club tends to get — its division, and how near
+      the top of it the club sits. It is a prompt to go and look at someone, not evidence that
+      they are lightly owned, and it is labelled as modelled wherever it appears.</p>
+
+    <h2 id="model">How the recommendations are built</h2>
+    <p>Nothing on this site is a black box. Two weighted models do all the work, and both are in
+      one file with the weights at the top of it.</p>
+    <h3>Player rating</h3>
+    <p>These weights are not picked by feel. They come from a walk-forward test on the same
+      83,698-appearance dataset: for each of 52,158 player-rounds, build a predictor from earlier
+      rounds only and see how well it correlates with the points actually scored in the
+      <em>next</em> round.</p>
+    <div class="tscroll" style="margin:12px 0">
+      <table>
+        <caption class="sr-only">Correlation of each predictor with next-round points</caption>
+        <thead><tr><th scope="col">Predictor</th><th scope="col" class="num">Correlation</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Average minutes, last 5 rounds</strong></td><td class="num"><strong>+0.515</strong></td></tr>
+          <tr><td>Total points, last 5 rounds</td><td class="num">+0.494</td></tr>
+          <tr><td>Season start rate</td><td class="num">+0.461</td></tr>
+          <tr><td>Points per appearance, last 5 rounds</td><td class="num">+0.447</td></tr>
+          <tr><td>Points per appearance, season</td><td class="num">+0.408</td></tr>
+          <tr><td>Points <em>per 90 minutes</em>, last 5 rounds</td><td class="num">+0.065</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>That last row is worth a sentence. Points per 90 is a natural-looking measure and it is
+      very nearly useless for picking, because it flatters a substitute who scores in a
+      twenty-minute cameo. Form on this site is always points per <em>appearance</em>.</p>
+    <ul>
+      <li><strong>Starts and minutes (34%)</strong> — the strongest single signal there is</li>
+      <li><strong>Recent form (26%)</strong> — points per appearance in the last five rounds</li>
+      <li><strong>Output (16%)</strong> — everything the player has been paid for, valued at the
+        real tariff above and expressed per 90 minutes</li>
+      <li><strong>Next fixture (16%)</strong> — the 1-5 rating above</li>
+      <li><strong>Home advantage (8%)</strong></li>
+      <li><strong>Availability</strong> — applied as a multiplier over the total, not as another slice</li>
+    </ul>
+    <p>The last two are then <strong>scaled by position</strong>, because a flat number is wrong
+      for both. Home advantage is worth +0.7% to a goalkeeper and +14.3% to a forward. Fixture
+      difficulty runs the other way: across all positions, points move about 17% between the
+      easiest and hardest fixture bands, but a goalkeeper's or defender's clean-sheet rate moves
+      from <strong>36.3% to 19.0%</strong> — nearly half, and a clean sheet is five points. The
+      fixture <em>is</em> the pick for a defender; for a forward it is one input among several.</p>
+    <h3>Club rating</h3>
+    <ul>
+      <li><strong>Recent form (28%)</strong> — league points in the last five</li>
+      <li><strong>Upcoming fixtures (28%)</strong> — mean difficulty of the next three</li>
+      <li><strong>Goals conceded (20%)</strong> — in the last five</li>
+      <li><strong>Goals scored (17%)</strong> — in the last five</li>
+      <li><strong>Home matches (7%)</strong> — how many of the next three are at home</li>
+    </ul>
+    <p>Both produce a score out of 100 and a plain-English sentence assembled from whichever
+      factors contributed most — "strong recent form, a favourable home fixture and three
+      consecutive starts" is a summary of the arithmetic, not a caption written over it. Where a
+      score is shown, the reasoning is shown with it.</p>
+    <p>These are ratings, not predictions. They rank the options in front of you against stated
+      criteria using results that have already happened. They cannot see team news, weather, a
+      dressing-room row or a manager who has decided to rest half a side before a cup tie —
+      which is exactly the sort of thing you know and they do not. Use them as a shortlist and
+      then apply what you know.</p>
+
+    <h2 id="data">Where the numbers come from</h2>
+    <p id="data-status" class="note">Loading data source…</p>
+    <p>Whatever the source, the fixture ratings, player ratings and club ratings are calculated
+      here, by the models described above. They are never supplied by anyone else and are never
+      official.</p>
+
+    <h2>Start here</h2>
+    <ul>
+      <li><a href="/fantasy-efl/">This round's picks</a> — seven cards, one per decision, and a
+        legal seven built for you</li>
+      <li><a href="/fantasy-efl/fixtures/">Fixture ticker</a> — six rounds ahead for all 72 clubs</li>
+      <li><a href="/fantasy-efl/players/">Player finder</a> — filter and rank every player</li>
+      <li><a href="/fantasy-efl/clubs/">Club picker</a> — compare the two club selections</li>
+    </ul>
+  </article>
+</main>
+
+<footer class="foot wrap">
+  <div class="cross">
+    <div class="cross-t">
+      <b>Play Fantasy Premier League too?</b>
+      Gameweek Edge is the same approach built for FPL, and it is part of this site.
+    </div>
+    <a class="btn btn-ghost" href="/">Open Gameweek Edge</a>
+  </div>
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League, the Championship, League One, League Two or the official Fantasy EFL game.
+    Those names, and the club names used throughout, are trademarks of their respective owners
+    and are used descriptively only. Nothing on this page reproduces the official rules; for
+    scoring, deadlines and eligibility, read the official game.</p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a> ·
+    <a href="/euro/">Euro Matchday Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-guide.js"></script>
+</body>
+</html>

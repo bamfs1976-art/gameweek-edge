@@ -364,8 +364,15 @@ console.log('• the service worker serves the right app at /euro/');
   const sw = readFileSync(join(ROOT, 'sw.js'), 'utf8');
 
   ok(/const EURO = '\/euro\/'/.test(sw), 'the worker knows about the second app');
-  ok(/startsWith\(EURO\) \? '\/euro\/index\.html' : '\/index\.html'/.test(sw),
+  /* Written as "the EURO branch resolves to the euro shell" rather than as
+     the whole ternary: Fantasy EFL added a third branch to the same
+     expression, and pinning the literal text would make every future app on
+     this origin break a test about Euro Matchday Edge. The claim being
+     guarded is unchanged — a /euro/ navigation must not fall back to
+     Gameweek Edge's page. */
+  ok(/startsWith\(EURO\)\s*\?\s*'\/euro\/index\.html'/.test(sw),
     'offline, a /euro/ navigation falls back to the euro shell, not Gameweek Edge');
+  ok(/: '\/index\.html'/.test(sw), 'everything else still falls back to Gameweek Edge');
 
   const codeBlock = sw.slice(sw.indexOf('const CODE'), sw.indexOf('self.addEventListener'));
   for (const p of ['/euro/engine.js', '/euro/index.html', '/euro/']) {
