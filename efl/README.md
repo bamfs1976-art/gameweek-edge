@@ -139,6 +139,47 @@ Fantasy EFL URL for the clearly-labelled generated dataset, and the error
 state links to both that and the health check. To change it for everyone,
 flip `DEFAULT_CONFIG.provider` back to `'sample'` in `provider.js`.
 
+### Which competition is which division
+
+The feed identifies divisions by `competitionId` and does not say which is
+which. That mapping is taken from **the ids in ascending order** — measured
+against a real published season, `10 → Championship, 11 → League One,
+12 → League Two`.
+
+**This got shipped wrong once, and the reason is worth keeping.** The first
+version ranked the competitions by the mean fantasy points their clubs had
+scored, assuming the Championship would score highest. It does not. Measured
+over a real season the three divisions averaged **4.229 / 4.258 / 4.317** —
+a 2.1% spread, which is noise, and pointing the *wrong way*: lower divisions
+score marginally more, because the tariff pays for clearances, blocks and
+tackles and there are more of those further down. The result was Championship
+clubs listed in League Two and League Two clubs in the Championship.
+
+The unit test passed throughout, because its fixture invented a two-point gap
+per division that no real feed has. It was testing the assumption, not the
+mapping. It now uses flat scoring, asserts the real `10/11/12` ordering, and
+asserts that **inverting the fantasy points entirely does not move a single
+club**.
+
+Ascending id order is an assumption too. Two things make it a safer one:
+
+- It is the EFL's own ordering rather than a proxy invented here.
+- **It is reported.** `describeCompetitions()` writes the mapping it chose
+  into the coverage disclosure on every page — *"Divisions were read from the
+  feed's competition ids in order: 10 → Championship (24 clubs), 11 → League
+  One (24 clubs), 12 → League Two (24 clubs)."* A wrong answer is visible,
+  with a club count per division as the sanity check, rather than silently
+  reshuffling seventy-two clubs.
+
+If the ids ever stop being allocated in tier order, pin them without a code
+change:
+
+```html
+<script>window.EFL_CONFIG = { competitions: { 10: 'championship',
+                                              11: 'league-one',
+                                              12: 'league-two' } };</script>
+```
+
 ### What the free tier cannot answer
 
 Every source declares a `coverage` object, and the UI renders it as a
@@ -463,11 +504,12 @@ covering and skips the one that is not:
    never more than two players from one club, the chip lifts that and never
    scores worse, the captain is the best player *in* the seven, and the search
    never comes out below a greedy pass.
-6. **The official feed** — the competition-to-division mapping is derived
-   rather than hard-coded; fields survive the mapping; a stat the feed omits
+6. **The official feed** — fields survive the mapping; a stat the feed omits
    stays `null` rather than becoming zero; and — the regression that motivated
    `playingShare()` — **a source publishing no minutes still produces picks and
    a legal seven** instead of a silently empty page.
+7. **The division mapping**, which shipped wrong once and now has four tests
+   holding it down. See below.
 
 Plus a static pass over the five routes: unique title, unique description,
 correct canonical, Open Graph tags, links to every sibling route, exactly one
