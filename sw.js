@@ -21,7 +21,7 @@
       point of extracting the engine from one source of truth. Fantasy
       EFL's modules are the same kind of thing for the same reason. */
 
-const VERSION = 'ge-v7';
+const VERSION = 'ge-v8';
 const EURO = '/euro/';
 const EFL = '/fantasy-efl/';
 /* Fantasy EFL's five routes and the modules behind them. Listed here rather
@@ -33,6 +33,7 @@ const EFL_SHELL = [
   '/fantasy-efl/fixtures/',
   '/fantasy-efl/players/',
   '/fantasy-efl/clubs/',
+  '/fantasy-efl/record/',
   '/fantasy-efl/how-to-play/',
   '/fantasy-efl/assets/efl.css',
   '/fantasy-efl/assets/ui.js',
@@ -43,6 +44,7 @@ const EFL_SHELL = [
   '/fantasy-efl/assets/page-fixtures.js',
   '/fantasy-efl/assets/page-players.js',
   '/fantasy-efl/assets/page-clubs.js',
+  '/fantasy-efl/assets/page-record.js',
   '/fantasy-efl/assets/page-guide.js'
 ];
 const SHELL = [
