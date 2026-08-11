@@ -538,9 +538,13 @@ function officialFixture() {
         fdrHome: (i % 5) + 1,
         fdrAway: ((i + 2) % 5) + 1,
         last3Form: ['W', 'D', 'L'],
-        /* competitionId 7 is strongest here, so it must come out as the
-           Championship — the mapper ranks rather than hard-codes. */
-        averagePoints: 9 - (competitionId - 7) * 2 - i * 0.05,
+        /* Fantasy points are DELIBERATELY flat across the three competitions
+           here, because that is what a real feed looks like: measured over a
+           real season, the three divisions averaged 4.229 / 4.258 / 4.317 —
+           a 2.1% spread, pointing the wrong way. The old fixture invented a
+           two-point gap per division, which is why the old test passed while
+           the shipped mapping put Championship clubs in League Two. */
+        averagePoints: 4.3 - i * 0.05,
         totalPoints: 120
       });
     }
@@ -699,12 +703,68 @@ ok('describeShape says what actually arrived, briefly', () => {
   assert.equal(provider.describeShape(null), 'null');
 });
 
-ok('the official mapper works out which competition is which division', () => {
+ok('divisions come from the competition id order, not from fantasy points', () => {
+  /* THE REGRESSION THIS PINS: the first version of this mapper ranked the
+     competitions by mean fantasy points, shipped, and put Championship
+     clubs in League Two. Fantasy points do not measure division quality —
+     they barely vary, and lower divisions score slightly MORE because the
+     tariff pays for clearances, blocks and tackles. */
   const { squads } = officialFixture();
   const map = provider.mapCompetitions(squads);
-  assert.equal(map['7'], 'championship', 'the strongest competition is the Championship');
+  assert.equal(map['7'], 'championship', 'the lowest competition id is the Championship');
   assert.equal(map['8'], 'league-one');
   assert.equal(map['9'], 'league-two');
+
+  /* Invert the scoring entirely: the mapping must not move a single club. */
+  const inverted = squads.map((s) => ({ ...s, averagePoints: 20 - s.averagePoints }));
+  assert.deepEqual(provider.mapCompetitions(inverted), map,
+    'the division mapping must not depend on fantasy points in any way');
+
+  /* Nor on the order the feed happens to list clubs in. */
+  const shuffled = squads.slice().reverse();
+  assert.deepEqual(provider.mapCompetitions(shuffled), map,
+    'the mapping must not depend on the order clubs arrive in');
+});
+
+ok('the real competition ids map the way the real feed does', () => {
+  /* The ids and the division each belongs to, taken from a real published
+     season: 10 → Championship, 11 → League One, 12 → League Two. */
+  const squads = [];
+  for (const competitionId of [10, 11, 12]) {
+    for (let i = 0; i < 24; i += 1) squads.push({ id: competitionId * 100 + i, competitionId });
+  }
+  const map = provider.mapCompetitions(squads);
+  assert.equal(map['10'], 'championship');
+  assert.equal(map['11'], 'league-one');
+  assert.equal(map['12'], 'league-two');
+});
+
+ok('a human can pin the mapping without a code change', () => {
+  const { squads } = officialFixture();
+  const pinned = provider.mapCompetitions(squads,
+    { 7: 'league-two', 9: 'championship' });
+  assert.equal(pinned['7'], 'league-two', 'an explicit override wins');
+  assert.equal(pinned['9'], 'championship');
+  assert.equal(pinned['8'], 'league-one', 'and leaves the rest alone');
+  assert.equal(provider.mapCompetitions(squads, { 7: 'nonsense' })['7'], 'championship',
+    'an invalid override is ignored rather than obeyed');
+});
+
+ok('the mapping it chose is stated on the page', () => {
+  /* Getting this wrong reshuffles seventy-two clubs silently. It must be
+     visible, not discovered by someone noticing Norwich in League Two. */
+  const out = provider.buildOfficialSnapshot(officialFixture(), { now: NOW });
+  const note = out.source.coverage.notes.find((n) => /competition ids/i.test(n));
+  assert.ok(note, 'the division mapping is not reported anywhere');
+  assert.match(note, /7 → Championship/);
+  assert.match(note, /24 clubs/, 'the club count per division is the sanity check');
+});
+
+ok('a config override reaches the snapshot', () => {
+  const out = provider.buildOfficialSnapshot(officialFixture(),
+    { now: NOW, competitions: { 7: 'league-two', 9: 'championship' } });
+  const champ = out.clubs.filter((c) => c.division === 'championship');
+  assert.ok(champ.every((c) => c.id.startsWith('9')), 'the override did not reach the clubs');
 });
 
 ok('the official feed maps into our types', () => {
