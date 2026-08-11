@@ -1,0 +1,34 @@
+name: UCL feed probe
+
+# Asks UEFA what it is actually publishing, and prints the answer.
+#
+# Euro Matchday Edge's proxy was written without anyone being able to reach
+# gaming.uefa.com — the sandbox it was written in refuses the host — so its
+# feed paths, its season numbering and its field names are inferences. This
+# is how they get checked, from a runner that can reach the host.
+#
+# Dispatch only. It hits an upstream that owes this project nothing, so it
+# runs when someone asks a question, not on a timer: at the start of a
+# competition, or when the app starts showing blanks.
+
+on:
+  workflow_dispatch:
+    inputs:
+      seasons:
+        description: 'Season numbers to try, space-separated (blank = the built-in candidates)'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe
+        run: node dev/probe-ucl.mjs ${{ github.event.inputs.seasons }}
