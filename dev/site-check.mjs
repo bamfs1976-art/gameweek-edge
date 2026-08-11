@@ -35,6 +35,16 @@ const CHECKS = [
   { path: '/api/ucl/bootstrap-static', redirect: '/', why: 'retired UCL proxy → front door' },
 
   { path: '/api/efl/health', status: [200, 503], json: true, why: 'the EFL feed health check' },
+
+  /* Added 11 Aug 2026, and expected to FAIL until someone acts. A probe for
+     something else found this endpoint answering 503 "FOOTBALL_DATA_KEY is
+     not configured" — the key is not set on the deployed site, so the whole
+     function has never been able to succeed there. It is checked here rather
+     than noted somewhere, because the reason it went unnoticed is that
+     nothing looked. Either set the key or delete the feature; do not add an
+     exception here to make the red go away. */
+  { path: '/api/football-data/matchday?competition=PL', status: 200, json: true,
+    why: 'referees + midweek fixtures (503 = key not configured)' },
   { path: '/privacy.html', status: 200, why: 'privacy policy' }
 ];
 
