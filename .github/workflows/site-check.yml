@@ -1,0 +1,40 @@
+name: Site check
+
+# Grades the DEPLOYED site rather than the source: routes that must serve,
+# retired URLs that must redirect rather than 404, the API health route, and
+# whether the service worker on the CDN is the new one.
+#
+# It exists because the sandbox this project is developed in cannot reach
+# gameweekedge.co.uk — the egress proxy refuses it — so nobody working here
+# could honestly say "I checked the live site". A runner can.
+#
+# Dispatch, plus a nudge after a push to main: Netlify builds on its own
+# schedule, so the scheduled run gives the deploy time to land before asking.
+
+on:
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: 'Origin to check (default: the production site)'
+        type: string
+        default: ''
+  schedule:
+    - cron: '25 7 * * *' # once a day, after any overnight deploy
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check the live site
+        run: node dev/site-check.mjs ${{ github.event.inputs.origin }}
