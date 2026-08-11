@@ -167,6 +167,26 @@ const matches = working.find((w) => /match|fixture/i.test(w.label) && w.rows.len
 console.log(`\nPlayer-shaped source: ${players ? players.label : 'NONE FOUND'}`);
 console.log(`Fixture-shaped source: ${matches ? matches.label : 'NONE FOUND'}`);
 
+/* A fixture source is the one that matters most — it carries the teams, the
+   calendar and the results the match model fits on — so when one answers,
+   dump a whole record. Mapping a feed from a truncated sample is how this
+   codebase ended up with an unverified normaliser in the first place. */
+if (matches) {
+  const m = matches.rows[0];
+  console.log(`\n── One complete ${matches.label} record ──`);
+  console.log(JSON.stringify(m, null, 1).slice(0, 3500));
+  console.log('\nHome team object:');
+  console.log(JSON.stringify(m.homeTeam, null, 1).slice(0, 900));
+  console.log('\nMatchday / phase / status fields:');
+  for (const k of ['matchday', 'competitionPhase', 'status', 'matchStatus', 'lineupStatus',
+    'kickOffTime', 'fullTimeAt', 'score', 'winner', 'round', 'group', 'leg']) {
+    if (m[k] !== undefined) console.log(`  ${k}: ${JSON.stringify(m[k]).slice(0, 300)}`);
+  }
+  console.log(`\nTotal matches available: fetching count…`);
+  const all = await get(matches.url.replace(/limit=\d+/, 'limit=500'), PROFILES.plain);
+  console.log(`  limit=500 → ${all.status}, ${all.status === 200 && all.json ? rowsOf(all.json).length : 0} rows`);
+}
+
 if (!players) {
   console.log('\nNo player source answered. Without one, the app cannot list "the latest');
   console.log('players" from this estate at all — and inventing them is not an option.');
