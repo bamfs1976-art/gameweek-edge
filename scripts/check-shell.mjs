@@ -36,8 +36,7 @@ for (const name of ['SHELL', 'EFL_SHELL']) {
 }
 const shellPaths = [...new Set(shell)].filter((p) => p !== '/');
 // Produced by scripts/build-web.mjs, so they exist in www/ but not in the repo.
-const BUILT = new Set(['/native.js', '/auth.js',
-  '/euro/', '/euro/index.html', '/euro/engine.js', '/euro/manifest.webmanifest']);
+const BUILT = new Set(['/native.js', '/auth.js']);
 /* Fantasy EFL is copied verbatim from efl/app/ into www/fantasy-efl/, so
    every precached path DOES have a source file — it just lives at a
    different prefix. Check it there rather than exempting it: a renamed

@@ -869,8 +869,8 @@ html.offline .net-banner{transform:translateY(0)}
   text-transform:uppercase;color:var(--green-bright);margin-top:3px;
 }
 
-/* Competition switcher — FPL / UCL. Both games live on this origin now
-   (UCL at /euro/), so this is navigation rather than a cross-promo: a
+/* Competition switcher — FPL / EFL. Both games live on this origin, so
+   this is navigation rather than a cross-promo: a
    segmented control where the inactive half is a plain link. Deliberately
    above the gameweek strip, because which competition you are in changes
    every number below it. */
@@ -939,9 +939,9 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
    which is reserved for decorative glyphs. */
 .sb-foot-v{font-size:.66rem;color:var(--text-3)}
 .sb-foot-legal{font-size:var(--fs-min);line-height:1.45;color:var(--text-3);margin:0}
-/* Sibling app card. Euro Matchday Edge is the same model on a different
-   competition, so it gets a real card rather than another footer link —
-   but a quiet one, below the account button, not competing with the nav. */
+/* Sibling app card. Fantasy EFL is a different competition on the same
+   account, so it gets a real card rather than another footer link — but a
+   quiet one, below the account button, not competing with the nav. */
 .sb-sibling{
   display:flex;align-items:center;gap:9px;margin:9px 0 4px;padding:8px 10px;
   border:1px solid var(--border);border-radius:var(--r-md);
@@ -2101,14 +2101,11 @@ body{font-size:14px;line-height:1.35}
       </div>
     </div>
 
-    <!-- Competition switcher. UCL and EFL are separate apps on the same
-         origin, so these are ordinary links — and because the origin is
-         shared, the signed-in session and Pro tier follow the user across
-         them. -->
+    <!-- Competition switcher. EFL is a separate app on the same origin, so
+         this is an ordinary link — and because the origin is shared, the
+         signed-in session and Pro tier follow the user across it. -->
     <div class="sb-game" role="group" aria-label="Choose competition">
       <span class="sb-game-btn active" aria-current="page">FPL</span>
-      <a class="sb-game-btn" href="/euro/"
-         title="Euro Matchday Edge — UEFA Champions League Fantasy. Your account and Pro come with you.">UCL</a>
       <a class="sb-game-btn" href="/fantasy-efl/"
          title="Fantasy EFL — picks, fixtures and form across the Championship, League One and League Two.">EFL</a>
     </div>
@@ -2141,11 +2138,6 @@ body{font-size:14px;line-height:1.35}
       <!-- The switcher above is the quick route; this explains what is at the
            other end of it for anyone who has not been. Same origin, so the
            session travels; tier lives on the shared gwedge_profiles row. -->
-      <a class="sb-sibling" href="/euro/">
-        <span class="sb-sib-mark" aria-hidden="true"></span>
-        <span class="sb-sib-t"><b>Euro Matchday Edge</b>Champions League Fantasy — your Pro covers it</span>
-        <span class="sb-sib-go" aria-hidden="true">↗</span>
-      </a>
       <a class="sb-sibling efl" href="/fantasy-efl/">
         <span class="sb-sib-mark" aria-hidden="true"></span>
         <span class="sb-sib-t"><b>Fantasy EFL</b>Picks, fixtures and form across the Championship, League One and League Two</span>

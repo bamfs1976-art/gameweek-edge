@@ -3,7 +3,7 @@
 The Gameweek Edge companion for the **official Fantasy EFL game** — weekly
 player, club and captain picks across the Championship, League One and League
 Two. Ships at `/fantasy-efl/` on this same origin, alongside Gameweek Edge at
-`/` and Euro Matchday Edge at `/euro/`.
+`/`.
 
 ```
 efl/
@@ -37,18 +37,16 @@ efl/
 
 ## Why it lives here, and on this URL
 
-The same reason Euro Matchday Edge does: **the session is per-origin.**
+**The session is per-origin.**
 Supabase persists the auth session in `localStorage`, so a separate domain
 would mean signing in again and a Pro tier that looks absent on whichever app
-you did not buy it from. One origin makes "one account, all three games" true
+you did not buy it from. One origin makes "one account, both games" true
 in the browser and not just in the database.
 
-What it does **not** share with the other two apps is the model. Euro Matchday
-Edge lifts the expected-points engine out of `../index.html` at build time,
-because it plays the same game with the same currency. Fantasy EFL does not:
-there is no budget, no player price, no transfer market and no price change in
-this game, so the FPL optimiser and its cost-aware projections have nothing to
-say about it. Extracting them would have meant shipping 45kB of code to
+What it does **not** share with Gameweek Edge is the model. There is no
+budget, no player price, no transfer market and no price change in this game,
+so the FPL optimiser and its cost-aware projections have nothing to say about
+it. Extracting them would have meant shipping 45kB of code to
 answer questions the game does not ask. This app carries its own small models
 in `app/assets/model.js` instead — three weighted sums, all of them readable
 in one sitting.

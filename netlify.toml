@@ -104,12 +104,20 @@
   status = 200
   force = true
 
-# UEFA Champions League Fantasy, normalised into the FPL vocabulary the shared
-# model engine speaks. Serves Euro Matchday Edge at /euro/.
+# Euro Matchday Edge (/euro/) and its UCL proxy (/api/ucl/*) were removed.
+# Those URLs were public and are in browser histories, home screens and
+# search indexes, so they redirect permanently to the front door rather than
+# 404ing at someone who bookmarked them.
+[[redirects]]
+  from = "/euro/*"
+  to = "/"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/api/ucl/*"
-  to = "/.netlify/functions/ucl/:splat"
-  status = 200
+  to = "/"
+  status = 301
   force = true
 
 # AI features (Claude) — scout report, chat, transfers, digest, etc.

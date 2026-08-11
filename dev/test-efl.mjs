@@ -1181,15 +1181,13 @@ ok('every route carries the independence notice and links back to the FPL app', 
   }
 });
 
-ok('the FPL app and the Euro app both link into Fantasy EFL', () => {
+ok('the FPL app links into Fantasy EFL', () => {
+  /* Euro Matchday Edge used to be checked here too. It was removed, and so
+     was its half of this assertion — a test that reads a deleted file is a
+     test that fails for a reason nobody has to fix. */
   const fpl = readFileSync(join(ROOT, 'index.html'), 'utf8');
-  const euro = readFileSync(join(ROOT, 'euro', 'app', 'index.html'), 'utf8');
   assert.ok(fpl.includes('href="/fantasy-efl/"'), 'the FPL app does not link to Fantasy EFL');
-  assert.ok(euro.includes('href="/fantasy-efl/"'), 'the Euro app does not link to Fantasy EFL');
-  /* The FPL pages must be otherwise untouched: the competition switcher is
-     still FPL-current, and its own wording is unchanged. */
-  assert.match(fpl, /<span class="sb-game-btn active" aria-current="page">FPL<\/span>/,
-    'the FPL app is no longer marked as the current competition');
+  assert.ok(!fpl.includes('href="/euro/"'), 'the retired Euro app must not be linked');
 });
 
 ok('the proxy exposes a health check that agrees with the app about what matters', () => {
