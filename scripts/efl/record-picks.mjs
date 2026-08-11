@@ -116,9 +116,17 @@ const naiveRows = universe
     id: row[0], clubId: row[1], position: row[2],
     ppa: (appearancesById[row[0]] || 0) >= 3 ? row[4] / appearancesById[row[0]] : 0
   }));
-const naive = bestLegalSeven(naiveRows, (r) => r.ppa, {
-  squadSize: SQUAD_SIZE, maxPerClub: MAX_PER_CLUB, formations: FORMATIONS, clubPicks: 2
-});
+/* In round one nobody has an appearance, so every candidate scores 0 and
+   the "best" seven would be whichever seven the search happened to reach
+   first. That is not a baseline, it is a coin toss wearing one — and it
+   would be printed on the page as the bar our picks had to clear. When
+   there is nothing to rank on, the baseline is recorded as absent, which
+   the grader already reports as no figure rather than as a zero. */
+const naive = naiveRows.some((r) => r.ppa > 0)
+  ? bestLegalSeven(naiveRows, (r) => r.ppa, {
+    squadSize: SQUAD_SIZE, maxPerClub: MAX_PER_CLUB, formations: FORMATIONS, clubPicks: 2
+  })
+  : null;
 
 const clubPointsField = pointsFieldFor(raw.squads);
 const clubTotalsAtLock = clubPointsField ? totalsById(raw.squads, clubPointsField) : null;

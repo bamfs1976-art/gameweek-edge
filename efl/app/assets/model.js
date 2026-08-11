@@ -295,10 +295,17 @@ export function buildContext(snapshot, opts = {}) {
      appearances. Taking the max keeps every share inside 0-1 and degrades
      to something sensible on a source that publishes only one of the three. */
   const playedByClub = {};
+  /* The same three numbers WITHOUT the floor of one. The floor above is
+     there so nothing divides by zero, and it is also what makes "no
+     football has been played yet" indistinguishable from "one match has" —
+     which cost the first round of a season before anyone noticed. Keeping
+     the unfloored maximum costs one variable and answers the question. */
+  let playedEvidence = 0;
   for (const c of clubs) {
     const finished = fixtures.filter((f) => f.finished && (f.homeId === c.id || f.awayId === c.id)).length;
     const squad = playersByClub[c.id] || [];
     const busiest = squad.reduce((m, p) => Math.max(m, p.appearances || 0), 0);
+    playedEvidence = Math.max(playedEvidence, c.played || 0, finished, busiest);
     playedByClub[c.id] = Math.max(1, c.played || 0, finished, busiest);
   }
 
@@ -315,6 +322,8 @@ export function buildContext(snapshot, opts = {}) {
     upcomingByClub,
     playersByClub,
     playedByClub,
+    /* False only before a ball has been kicked all season. */
+    seasonStarted: playedEvidence > 0,
     fixtureWeights
   };
 
@@ -737,6 +746,32 @@ function clubFactorNote(key, value, club, run, homeCount) {
   return '';
 }
 
+/**
+ * Has any football been played yet this season?
+ *
+ * This exists because of a bug that would have cost the season's first
+ * round. `playingShare()` measures a player against how much of his club's
+ * football he has been on the pitch for, and before a ball is kicked that
+ * is 0/0 for everyone. The rotation filters below then read 0 as "never
+ * plays" and excluded EVERY player in the game, so the squad builder could
+ * not assemble a legal seven and the dashboard had no picks at all.
+ *
+ * Zero and unknown are different, which is the rule this file applies
+ * everywhere else. Before the first whistle the minutes gate has nothing to
+ * measure, so it is switched off rather than applied to a column of zeroes.
+ * The ranking is unaffected: with no minutes, no form and no output, every
+ * player's score is driven by his fixture, which is genuinely the only
+ * information anyone has in round one.
+ */
+export function hasPlayedFootball(ctx) {
+  /* buildContext() measures this properly. A context assembled by hand —
+     a test, a caller predating the flag — is assumed to be mid-season,
+     because that is the state the gate was designed for and defaulting the
+     other way would silently switch the rotation filter off in production. */
+  if (ctx && typeof ctx.seasonStarted === 'boolean') return ctx.seasonStarted;
+  return true;
+}
+
 /* ── Round picks ─────────────────────────────────────────── */
 
 /**
@@ -745,7 +780,9 @@ function clubFactorNote(key, value, club, run, homeCount) {
  * the club picker show, so the dashboard can never disagree with them.
  */
 export function roundPicks(ctx, opts = {}) {
-  const minMinutesShare = opts.minMinutesShare == null ? 0.35 : opts.minMinutesShare;
+  /* Off before the season starts — see hasPlayedFootball(). */
+  const minMinutesShare = hasPlayedFootball(ctx)
+    ? (opts.minMinutesShare == null ? 0.35 : opts.minMinutesShare) : 0;
   const scored = (opts.scored || ctx.players.map((p) => playerScore(ctx, p)))
     .filter((r) => r.next)              // a player with no fixture is not a pick
     .slice()
@@ -838,7 +875,9 @@ export const SQUAD_SIZE = 7;
 export function buildSquad(ctx, opts = {}) {
   const maxPerClub = opts.oneClubChip ? SQUAD_SIZE : MAX_PER_CLUB;
   const exclude = new Set(opts.exclude || []);
-  const minMinutesShare = opts.minMinutesShare == null ? 0.35 : opts.minMinutesShare;
+  /* Off before the season starts — see hasPlayedFootball(). */
+  const minMinutesShare = hasPlayedFootball(ctx)
+    ? (opts.minMinutesShare == null ? 0.35 : opts.minMinutesShare) : 0;
   const poolSize = opts.poolSize == null ? 12 : opts.poolSize;
 
   const scored = (opts.scored || ctx.players.map((p) => playerScore(ctx, p)))

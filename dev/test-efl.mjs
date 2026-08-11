@@ -669,6 +669,68 @@ ok('the guide page runs the check on demand, never on load', () => {
     'the health fetch must be inside the click handler, not at module scope');
 });
 
+/* ── 3b4. Round one, before a ball is kicked ──────────── */
+
+/* A snapshot in the state the season actually starts in: real clubs, real
+   fixtures, nobody with an appearance, nothing finished. This is not an
+   edge case — it is every August, and it is the one week the app cannot
+   ask for a second chance at, because the ledger is append-only. */
+const preSeason = provider.normaliseSnapshot({
+  clubs: snap.clubs.map((c) => ({
+    ...c, played: 0, won: 0, drawn: 0, lost: 0, points: 0,
+    goalsFor: 0, goalsAgainst: 0, cleanSheets: 0, form: [],
+    last5: { played: 0, points: 0, goalsFor: 0, goalsAgainst: 0, cleanSheets: 0 }
+  })),
+  players: snap.players.map((p) => ({
+    ...p, appearances: 0, starts: 0, minutes: 0, goals: 0, assists: 0,
+    cleanSheets: 0, points: 0, last5: []
+  })),
+  fixtures: snap.fixtures.map((f) => ({ ...f, finished: false })),
+  currentRound: 1
+}, { ...snap.source });
+const preCtx = model.buildContext(preSeason);
+
+ok('a season that has not started is recognised as not started', () => {
+  assert.equal(preCtx.seasonStarted, false, 'no football played');
+  assert.equal(ctx.seasonStarted, true, 'a mid-season context is unaffected');
+  assert.equal(model.hasPlayedFootball(preCtx), false);
+  assert.equal(model.hasPlayedFootball(ctx), true);
+  /* A hand-built context has no flag and must keep the mid-season default,
+     or the rotation filter would switch itself off in production. */
+  assert.equal(model.hasPlayedFootball({}), true);
+});
+
+ok('the squad builder still returns a legal seven in round one', () => {
+  /* THE BUG THIS TEST EXISTS FOR: playingShare() divides appearances by
+     matches played, so before the season every player scores 0 and the
+     0.35 rotation gate excluded ALL of them. buildSquad() returned null,
+     the recorder refused to write, and round one would have been missing
+     from the season table for ever. */
+  const squad = model.buildSquad(preCtx);
+  assert.ok(squad, 'a seven must be buildable with no minutes data at all');
+  assert.equal(squad.legal, true);
+  assert.equal(squad.picks.length, model.SQUAD_SIZE);
+  const perClub = {};
+  for (const r of squad.picks) perClub[r.player.clubId] = (perClub[r.player.clubId] || 0) + 1;
+  assert.ok(Object.values(perClub).every((n) => n <= model.MAX_PER_CLUB), 'and still legal');
+});
+
+ok('the dashboard has picks in round one', () => {
+  const picks = model.roundPicks(preCtx);
+  for (const slot of ['goalkeeper', 'defender', 'midfielder', 'forward', 'club', 'captain']) {
+    assert.ok(picks[slot], `no ${slot} pick before the season starts`);
+  }
+});
+
+ok('the rotation gate is still applied once football has been played', () => {
+  /* The fix must not quietly disable the filter for the other 45 weeks. */
+  const bench = ctx.players.find((p) => model.playingShare(ctx, p).value < 0.35);
+  assert.ok(bench, 'the sample has at least one fringe player to exclude');
+  const squad = model.buildSquad(ctx);
+  assert.ok(!squad.picks.some((r) => r.player.id === bench.id),
+    'a fringe player must not reach the seven mid-season');
+});
+
 /* ── 3c. Building a legal seven ───────────────────────── */
 
 ok('the squad builder returns a legal seven', () => {

@@ -531,6 +531,30 @@ ok('the recorder rehearses the shape guard on every run, not just the ones that 
     'and a shape failure there must fail the job rather than log and shrug');
 });
 
+ok('the recorder does not invent a baseline it has no basis for', () => {
+  /* In round one nobody has an appearance, so every candidate for the
+     "pick whoever has been scoring" seven scores zero and the winner would
+     be whichever seven the search reached first — a coin toss printed on
+     the page as the bar our picks had to clear. */
+  const src = readFileSync(join(ROOT, 'scripts/efl/record-picks.mjs'), 'utf8');
+  assert.match(src, /naiveRows\.some\(\(r\) => r\.ppa > 0\)/,
+    'the naive seven is only built when something can be ranked');
+  const seasonSummaryOfNoBaseline = metrics.seasonSummary([{
+    round: 1,
+    result: {
+      attribution: 'clean',
+      squad: { total: 40, players: [], unresolved: 0 },
+      captain: null,
+      clubs: null,
+      baselines: { randomMean: 30, naive: null, ceiling: 60, percentile: 0.7 },
+      model: { n: 900, rho: 0.3, topDecileLift: 1.4, byPosition: {} }
+    }
+  }]);
+  assert.equal(seasonSummaryOfNoBaseline.beatNaive, 0,
+    'a round with no naive baseline cannot be counted as beating it');
+  assert.equal(seasonSummaryOfNoBaseline.naive.total, 0, 'and contributes no total');
+});
+
 ok('the recorder cannot be talked into writing after the deadline', () => {
   const src = readFileSync(join(ROOT, 'scripts/efl/record-picks.mjs'), 'utf8');
   assert.match(src, /canRecord\(/, 'the gate is applied');
