@@ -80,6 +80,82 @@ Pre-season **results** are deliberately used nowhere. The match model fits only 
 
 ---
 
+## Outside view — an independent attack and defence ranking, 11 August 2026
+
+Source: a fixture grid posted by @PremierFPLTools on X, 11 August 2026 — all
+38 gameweeks for all 20 clubs, coloured by difficulty, with attacking and
+defending runs marked separately and a stated definition (*a good run is
+three or more easy games in a row*). Read from a screenshot.
+
+**What is taken from it, and what is not.** Not the cells. Three-letter club
+codes at screenshot resolution do not reliably separate home from away, and a
+mis-read venue is precisely the error this document has already made once —
+Chelsea and Fulham each recorded as away to the other in GW1. Nothing in the
+fixture blocks below is rewritten from this image. Opening fixtures are
+settled against the FPL API by `npm run check:briefing` and nowhere else.
+What *is* taken is the two rank columns, which are legible, and the headline.
+
+**The ranks, as posted.** These are the source's view of each club's
+attacking and defensive strength, not ours, and not a fixture-difficulty
+score.
+
+| Club | Attack | Defence |  | Club | Attack | Defence |
+|---|---|---|---|---|---|---|
+| Man City | 1 | 2 |  | Leeds | 11 | 17 |
+| Man Utd | 2 | 3 |  | Everton | 12 | 9 |
+| Arsenal | 3 | 1 |  | Fulham | 13\* | 11 |
+| Liverpool | 4 | 8 |  | Nott'm Forest | 13\* | 14 |
+| Chelsea | 5 | 6\* |  | Tottenham | 15 | 13 |
+| Bournemouth | 6 | 15 |  | Sunderland | 16 | 5 |
+| Aston Villa | 7 | 4 |  | Crystal Palace | 17 | 6\* |
+| Newcastle | 8 | 16 |  | Coventry | 18 | 19 |
+| Brentford | 9 | 12 |  | Ipswich | 19 | 18 |
+| Brighton | 10 | 10 |  | Hull City | 20 | 20 |
+
+\* Two pairs could not be read cleanly and are recorded as unread rather than
+guessed: the attack column shows 13 twice with no 14, and the defence column
+shows 6 twice with no 7. One of each pair is a screenshot artefact, not a
+claim the source made.
+
+**Where it agrees with us.** Hull last in both columns, Coventry and Ipswich
+18th-19th — the same three sides this file already says to avoid early.
+Bournemouth's defence at 15th matches a block that says the spine was
+weakened by Senesi's exit. Arsenal's defence at 1st *is* the 27-goals-conceded
+season every Arsenal defender here is priced off, which is also why the
+Saliba injury logged on 11 August matters as much as this file says it does.
+
+**Where it argues with a row we ship.** The shortlist's cheap defender
+enablers are Gabriel (ARS), Muñoz (CRY), Robinson (FUL), van Ewijk (COV),
+Leif Davis (IPS), De Cuyper (BHA) and Neco Williams (NFO). On this source's
+ranking those sit behind defences ranked 1st, 6th, 11th, 19th, 18th, 10th and
+14th. Three of the seven are bottom-seven defences and two of those are
+bottom-three. That is not automatically wrong — an enabler is bought for
+price and minutes, and a £4.0m defender who plays 38 games earns the slot
+without a single clean sheet — but the row does not say which half is a
+clean-sheet bet and which half is a minutes bet, and a reader picking from it
+is entitled to know. **Muñoz** is the one the outside view actively endorses:
+6th-ranked defence, 17th-ranked attack, which is the shape of a cheap
+clean-sheet asset. **Chelsea** at 5th and 6th is the best-rated defence
+outside the top four, which sits beside rather than against today's Chelsea
+note: the personnel are rated, the back four or five they line up in is not
+yet knowable.
+
+**On the headline.** The post flags Liverpool, Man City and Man Utd for early
+runs. Our own bands cover only GW1-3 for all three and support two of them —
+City easy/moderate/easy, United easy/easy/hard — while Liverpool open away at
+Newcastle, which we band hard. We cannot see the run the grid can see,
+because we do not state it.
+
+**Which is the finding worth recording.** This file states 79 of a possible
+100 opening fixtures: nine clubs have fewer than five, Ipswich has one,
+Coventry and Hull two. Four of the six clubs in the "hardest opening five"
+highlight are among them. `npm run check:briefing` already reports this on
+every run and `--fix` fills it from the real list — so the gap is known, and
+the right response to an outside grid that has all 38 gameweeks is to go and
+run that, not to hand-copy a screenshot into the blocks below.
+
+---
+
 # The 20 clubs
 
 Ordered by 2025/26 finishing position, promoted clubs last.
@@ -641,6 +717,8 @@ is partly a list of who played the weakest opposition.
 - Two minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, and Joe Gelhardt's Hull status.
 - The 21 August start date is taken from the Premier League's pre-season page and has NOT been confirmed against the FPL API — `npm run check:briefing` settles it from the GW1 deadline, and could not reach the API when the correction was made. Re-run it before relying on the date.
 - The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.
+- The outside attack/defence ranking above is a third party's view, read from a screenshot. Its per-gameweek cells are used for nothing — only the rank columns and the headline. Two ranks in it were unreadable and are marked, not guessed.
+- This file states 79 of a possible 100 opening fixtures. Nine clubs have fewer than five, so "hardest opening five" compares clubs on unequal evidence, and a fixture nobody writes down is a fixture the self-contradiction check cannot catch. `npm run check:briefing --fix` fills them from the real list.
 
 ---
 
@@ -655,3 +733,4 @@ is partly a list of who played the weakest opposition.
 - Liverpool: [Sky (Iraola)](https://www.skysports.com/football/news/11669/13550174/andoni-iraola-liverpool-appoint-former-bournemouth-boss-as-arne-slots-successor-on-two-year-deal), [Sky (Salah leaving)](https://www.skysports.com/football/news/11669/13523995/mohamed-salah-liverpool-forward-to-leave-premier-league-club-at-the-end-of-the-season)
 - FPL prices and set-pieces: [Fantasy Football Scout price reveals](https://www.fantasyfootballscout.co.uk/2026/07/22/fpl-2026-27-price-reveals-live-haaland-rises-to-record-high), [Premier League Scout prices](https://www.premierleague.com/en/news/4680821/the-scouts-analysis-of-15-key-player-prices-in-202627-fantasy), [Full90 set-piece takers](https://full90fpl.com/fpl-set-piece-takers/), [OneFPL set-piece takers](https://onefpl.com/blog/fpl-penalty-set-piece-takers-2026-27)
 - Promoted clubs: [Coventry](https://www.premierleague.com/en/news/4625396/all-you-need-to-know-as-coventry-city-make-premier-league-return), [Hull](https://www.premierleague.com/en/news/4664386/all-you-need-to-know-as-hull-city-are-promoted-to-premier-league), [Ipswich O'Neil](https://www.skysports.com/football/news/11707/13556081/ipswich-town-gary-oneil-appointed-new-tractor-boys-manager-ahead-of-premier-league-return)
+- Outside attack/defence ranking (rank columns only, cells used for nothing): @PremierFPLTools on X, 11 August 2026, read from a screenshot

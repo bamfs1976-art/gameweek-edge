@@ -175,6 +175,17 @@
     <div class="slrow"><b>Early differentials</b><span>Toure (NEW) · Pino (CRY) · A. Santos (MUN) · Tzolis (ARS) · Tel (TOT)</span></div>
   </div>
 
+  <div class="section" id="outside">
+    <h2>&gt; outside view &mdash; an independent attack/defence ranking</h2>
+    <div class="slrow"><b>Source</b><span>@PremierFPLTools on X, 11 Aug 2026 &mdash; all 38 gameweeks for all 20 clubs, attacking and defending runs marked separately, a good run defined as 3+ easy games in a row. Read from a screenshot.</span></div>
+    <div class="slrow"><b>Attack rank</b><span>MCI 1 · MUN 2 · ARS 3 · LIV 4 · CHE 5 · BOU 6 · AVL 7 · NEW 8 · BRE 9 · BHA 10 · LEE 11 · EVE 12 · FUL 13* · NFO 13* · TOT 15 · SUN 16 · CRY 17 · COV 18 · IPS 19 · HUL 20</span></div>
+    <div class="slrow"><b>Defence rank</b><span>ARS 1 · MCI 2 · MUN 3 · AVL 4 · SUN 5 · CHE 6* · CRY 6* · LIV 8 · EVE 9 · BHA 10 · FUL 11 · BRE 12 · TOT 13 · NFO 14 · BOU 15 · NEW 16 · LEE 17 · IPS 18 · COV 19 · HUL 20</span></div>
+    <div class="slrow"><b>* unread, not guessed</b><span>The attack column shows 13 twice with no 14, the defence column 6 twice with no 7. A screenshot artefact, not a claim the source made.</span></div>
+    <div class="slrow"><b>Cells used for nothing</b><span>Three-letter codes at that resolution do not separate home from away, and a mis-read venue is the error this file already made once (Chelsea and Fulham each away to the other). No fixture below is rewritten from it &mdash; <code>npm run check:briefing</code> settles fixtures.</span></div>
+    <div class="slrow"><b>Argues with one row</b><span>Cheap defender enablers sit behind defences ranked 1st (Gabriel), 6th (Munoz), 11th (Robinson), 19th (van Ewijk), 18th (Leif Davis), 10th (De Cuyper), 14th (Neco Williams). Three are bottom-seven defences. Not wrong &mdash; an enabler is bought for price and minutes &mdash; but the row does not say which half is a clean-sheet bet. Munoz is the one this view endorses outright: 6th defence, 17th attack.</span></div>
+    <div class="slrow"><b>The gap it exposes</b><span>This file states 79 of a possible 100 opening fixtures; nine clubs have fewer than five, Ipswich one. Four of the six clubs in "avoid early" are among them, so that comparison runs on unequal evidence. <code>npm run check:briefing --fix</code> fills them from the real list.</span></div>
+  </div>
+
   <div class="section">
     <h2>&gt; data caveats</h2>
     <ul class="caveats">
@@ -197,7 +208,7 @@
     <span><i style="background:var(--red)"></i>hard</span>
     <span><i style="background:#ff9a9b"></i>very hard</span>
   </div>
-  GAMEWEEK EDGE · gameweekedge.co.uk · sources: Premier League, Sky Sports, ESPN, Fantasy Football Scout, Full90. Not affiliated with the Premier League or FPL.
+  GAMEWEEK EDGE · gameweekedge.co.uk · sources: Premier League, Sky Sports, ESPN, Fantasy Football Scout, Full90, Premier FPL Tools (outside ranking only). Not affiliated with the Premier League or FPL.
 </footer>
 
 <script>

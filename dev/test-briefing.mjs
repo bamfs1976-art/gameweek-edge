@@ -628,6 +628,68 @@ console.log('\n• briefing: the role watch stays out of the club register');
     'the United penalty claim still names Bruno despite the Mbeumo signal (' + JSON.stringify(mu) + ')');
 }
 
+/* ── the outside ranking ────────────────────────────────────
+   A third party's attack/defence ranks for all 20 clubs, added 12 Aug. It is
+   NOT ours, and the risk it carries is the same one the role watch carries:
+   it names twenty clubs a few lines from a register that ranks them
+   differently, and clubBlocks runs its last block to the end of the file. Put
+   below the register, every one of those names becomes Hull City's prose.
+
+   The second guard is on what the section is FOR. The source is a
+   38-gameweek fixture grid read from a screenshot, and the one thing this
+   project must never do with it is copy a cell: three-letter codes at that
+   resolution do not separate home from away, and both editions already
+   promise in writing that no fixture comes from it. That promise is only
+   worth something if breaking it fails. So the fixture count is pinned —
+   if a hand-copied fixture appears, the number moves and this goes red
+   before anybody has to notice the venue is wrong. --fix moving it is
+   equally worth a deliberate look, which is why the assertion is on the
+   exact figure rather than on a floor. */
+console.log('\n• briefing: the outside ranking is quarantined from the register');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const outsideAt = md.indexOf('## Outside view');
+  const firstClub = md.search(/^## 1\.\s/m);
+  ok(outsideAt > -1, 'the outside view section is present');
+  ok(firstClub > -1 && outsideAt < firstClub,
+    'and sits ABOVE the first club, where no club block can swallow its twenty club names');
+
+  /* Proved, not reasoned: none of it reaches a club claim. */
+  const blocks = clubBlocks(md);
+  ok(!blocks.some((b) => /Outside view/i.test(b.name)), 'the section is not read as a club');
+  /* Hull's body runs to the end of the FILE — the caveats and the source list
+     are already inside it, and that is long-standing. So the assertion is on
+     the twenty-club table specifically, which is the part that would put
+     nineteen other clubs' names into Hull's prose. */
+  const hull = blocks.find((b) => /Hull/.test(b.name));
+  ok(hull && !/\|\s*Man City\s*\|\s*1\s*\|/.test(hull.body),
+    'and the twenty-club rank table has not landed inside the last club block');
+
+  /* Both editions must carry the same ranks, or the two disagree about
+     somebody else's numbers — which is worse than not carrying them. */
+  for (const [club, atk, def] of [['Man City', 1, 2], ['Arsenal', 3, 1], ['Hull City', 20, 20]]) {
+    const short = { 'Man City': 'MCI', Arsenal: 'ARS', 'Hull City': 'HUL' }[club];
+    ok(new RegExp('\\|\\s*' + club + '\\s*\\|\\s*' + atk + '\\s*\\|\\s*' + def + '\\s*\\|').test(md),
+      'the markdown states ' + club + ' ' + atk + '/' + def);
+    ok(html.includes(short + ' ' + atk + ' ·') || html.includes(short + ' ' + atk + '</span>'),
+      'and the html edition agrees on ' + short + '\'s attack rank');
+  }
+
+  /* The unread pairs stay marked. Guessing one to tidy the column is the
+     failure mode this asterisk exists to prevent. */
+  ok(/unread rather than\s*\n?guessed/.test(md) || /unread rather than guessed/.test(md),
+    'the two unreadable ranks are still recorded as unread rather than guessed');
+
+  /* No fixture may be hand-copied out of the grid. */
+  const teams = teamsFromHtml(html);
+  const stated = teams.reduce((n, t) => n + (t.fx || []).length, 0);
+  ok(stated === 79, 'the document still states 79 opening fixtures — a hand-copied cell, or ' +
+    '--fix filling the gaps, would move this and both are worth looking at (' + stated + ')');
+  ok(/no fixture below is rewritten from it|Nothing in the\s*\n?fixture blocks below is rewritten from this image/i.test(md),
+    'and the markdown still promises no fixture comes from the image');
+}
+
 /* The start date was wrong by a day and only one edition stated it, so the
    error had nowhere to be caught. Both state it now, and they must agree. */
 console.log('\n• briefing: both editions state the same start date');
