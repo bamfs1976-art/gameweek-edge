@@ -115,8 +115,58 @@ the old value is shown next to the new one rather than replaced.
 goals last season, the preview says 22. Both cannot be right and the FPL API
 settles it — `npm run check:briefing` is where that gets resolved, not here.
 
-**Fifteen clubs still to come.** Their blocks are as of 2 August and should be
+**Fourteen clubs still to come.** Their blocks are as of 2 August and should be
 read that way until a preview lands and this log grows.
+
+---
+
+### 12 August 2026 — Chelsea (preview No 6)
+
+Two omissions, one of them the same kind of internal contradiction the
+Brighton entry above records, plus the first genuinely *good* scheduling news
+this log has had to report.
+
+**Welbeck and Henderson were not in the In list.** This document already had
+both of them leaving — Welbeck in Brighton's Out list (added earlier today),
+Henderson in Brentford's — and neither ever arrived anywhere. Two ready-made
+senior signings were therefore missing from a window this file described as
+"youth-led", which is a description they change.
+
+**No European football.** Every European qualification this log has added so
+far arrived as a warning — Bournemouth's first campaign, Brighton's
+Conference League, both carrying a Thursday-Sunday rotation tax. Chelsea have
+none, and are the only side near the top of this file that does not. That is
+worth stating explicitly rather than leaving as an absence, because an
+absence is not something a reader can notice.
+
+**Cole Palmer arrives rested, and that strengthens a line already in the
+block rather than qualifying it.** England left Palmer out of the World Cup
+squad, so the summer ran to a seven-week break plus specialist advice on the
+groin problem that hampered last season. Read against the Arsenal entry from
+yesterday — Saka, Rice and Madueke all being eased back after long
+tournaments — the standout captaincy asset in this document is also one of
+the few premiums who is fresh. João Pedro was rested too.
+
+The rest is uncertainty, recorded as such. Alonso was appointed **manager**
+rather than head coach, and has used both a back four and a back three in
+pre-season; Palestra is a specialist wing-back, which is a hint but not an
+answer. Until the shape settles, Chelsea's defenders are not buyable on the
+clean sheets their fixtures imply. **Mike Penders** (21, from Genk, last
+season on loan at Strasbourg) may challenge Robert Sánchez in goal, so the
+cheapest route into that defence is unsettled at the same time. And **Enzo
+Fernández** is a pre-deadline monitor twice over: Manchester City links, and
+two yellow cards in the World Cup final for a midfielder this block lists on
+free-kicks and corners.
+
+Off the pitch, a **£10m fine and a suspended transfer ban**, with a six-point
+deduction avoided on appeal. No effect on the table, which is what a briefing
+about points cares about first — but a suspended ban is a live risk to the
+January window, and mid-season reinforcement should be treated as less
+certain here than at any other big club.
+
+Unchanged by any of this: João Pedro topped the 12 Aug friendly scoring chart
+with five goals and an assist, Delap scored two, Caicedo one and one. Friendly
+output is used nowhere in this file, and Genoa 1-10 Bournemouth is why.
 
 ---
 
@@ -350,19 +400,20 @@ is partly a list of who played the weakest opposition.
 
 ## 10. Chelsea (52 pts)
 
-**Pre-season summary:** A disappointing tenth saw Maresca sacked in January (Rosenior interim). Xabi Alonso is confirmed on a four-year deal and has driven another heavy, youth-led window built around a rebuilt spine. The marquee move is ~£117m for Morgan Rogers, plus a new senior centre-back in Lacroix. Expect a possession-based, high-line system and a deep, expensively assembled squad. FPL note: they also signed Austin MacPhee from Villa, paying a release clause for a set-piece coach against Premier League and Saudi competition — the other half of the transfer that carries Villa's dead-ball warning, and a reason to rate James, Palmer and Chelsea's aerial defenders on set plays rather than only in open play.
+**Pre-season summary:** A disappointing tenth saw Maresca sacked in January (Rosenior interim). Xabi Alonso is confirmed on a four-year deal — as **manager** rather than head coach, a wider remit than either predecessor held — and has driven another heavy window built around a rebuilt spine, over £300m spent. The marquee move is ~£117m for Morgan Rogers, plus a new senior centre-back in Lacroix. **12 Aug: no European football this season**, which in this document is a rare positive — Bournemouth and Brighton both carry a Thursday-Sunday rotation warning from their qualification and Chelsea carry none. Expect a possession-based, high-line system and a deep, expensively assembled squad — but **Alonso has used both a back four and a back three in pre-season**, and Palestra is a specialist wing-back rather than an orthodox full-back, so the shape that decides which defenders are assets is genuinely unsettled. Off the pitch, a **£10m fine and a suspended transfer ban**, with a six-point deduction avoided on appeal: no effect on the table, but a live risk to the January window, so treat mid-season reinforcement as less certain here than at any other big club. They may also start the season with no front-of-shirt sponsor. FPL note: they also signed Austin MacPhee from Villa, paying a release clause for a set-piece coach against Premier League and Saudi competition — the other half of the transfer that carries Villa's dead-ball warning, and a reason to rate James, Palmer and Chelsea's aerial defenders on set plays rather than only in open play.
 
-**In:** Morgan Rogers (AM/W, Aston Villa, ~£117m), Maxence Lacroix (CB, Crystal Palace, ~£52m), Marco Palestra (RB, Atalanta, ~£47m), Geovany Quenda (W, Sporting, ~£43m), Emmanuel Emegha (ST, Strasbourg, ~£22m), Denner (Corinthians, ~£8m), Dastan Satpaev (ST, Kairat, ~£3m).
+**In:** Danny Welbeck (FWD, Brighton), Jordan Henderson (CM, Brentford) — **both were missing from this line until 12 Aug**, though this document already lists both in their old clubs' Out lists (Brighton's and Brentford's). Two ready-made senior additions in a window otherwise described here as youth-led, which is a description they change. Morgan Rogers (AM/W, Aston Villa, ~£117m), Maxence Lacroix (CB, Crystal Palace, ~£52m), Marco Palestra (RB/wing-back, Atalanta, ~£47m), Geovany Quenda (W, Sporting, ~£43m), Emmanuel Emegha (ST, Strasbourg, ~£22m), Denner (Corinthians, ~£8m), Dastan Satpaev (ST, Kairat, ~£3m).
 
 **Out:** Marc Cucurella (LB, Real Madrid, ~£51.8m), Andrey Santos (CM, Man Utd, ~£48m), Tyrique George (W, Everton, ~£18m), Alejandro Garnacho (W, Aston Villa, loan), Jesse Derry (loan), youth releases.
 
 **FPL picks:**
 - Value: Pedro Neto, attacking returns plus corner duty at mid-price. Morgan Rogers if his new price settles below his output, monitor his role under Alonso.
-- Premium / captaincy: Cole Palmer (MID, £9.5m, down from £10.5m). Still the primary penalty taker and the standout captaincy asset.
+- Premium / captaincy: Cole Palmer (MID, £9.5m, down from £10.5m). Still the primary penalty taker and the standout captaincy asset. **12 Aug strengthens that rather than qualifying it:** England left Palmer out of the World Cup squad, so the summer ran to a seven-week break plus specialist advice on the groin problem that hampered last season. Set against the Arsenal block, where Saka, Rice and Madueke are all being eased back after long tournaments, this is a rested premium priced among tired ones — an argument for the GW1 armband rather than for waiting. João Pedro was rested too.
 - Differentials: Emmanuel Emegha if he starts ahead of an unsettled front line. Geovany Quenda, dynamic and likely sub-10% owned.
-- Set-piece & penalties: Penalties Palmer (Enzo backup). Free-kicks Reece James, Enzo, Palmer. Corners James, Neto, Enzo.
+- Watch, not picks: **Mike Penders** (GK, 21, signed from Genk, last season on loan at Strasbourg) is the breakthrough candidate and may challenge Robert Sánchez. A Chelsea keeper is otherwise the obvious cheap route into a defence with no European fixtures behind it — but not in GW1, with both the number one and the back four or five unsettled. **Enzo Fernández** is a pre-deadline monitor twice over: Manchester City links, and two yellow cards in the World Cup final for a midfielder this block lists on free-kicks, corners and as the backup from the spot.
+- Set-piece & penalties: Penalties Palmer (Enzo backup). Free-kicks Reece James, Enzo, Palmer. Corners James, Neto, Enzo. Austin MacPhee arrives from Villa as set-piece coach, so read this order as coached rather than incidental — and as one that a new coach could re-teach in pre-season.
 
-**Opening fixtures:** GW1 Fulham (A) hard, GW2 Brighton (H) moderate, GW3 Arsenal (A) very hard, GW4 Hull City (H) easy, GW5 Brentford (A) hard. Harder than it read: the derby and Arsenal away inside three weeks. GW4 at home to Hull is the one clear green light.
+**Opening fixtures:** GW1 Fulham (A) hard, GW2 Brighton (H) moderate, GW3 Arsenal (A) very hard, GW4 Hull City (H) easy, GW5 Brentford (A) hard. Harder than it read: the derby and Arsenal away inside three weeks. GW4 at home to Hull is the one clear green light. Nothing European sits behind any of it, which against a start this hard is worth more than the fixture bands show.
 
 ---
 
