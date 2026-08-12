@@ -690,6 +690,71 @@ console.log('\n• briefing: the outside ranking is quarantined from the registe
     'and the markdown still promises no fixture comes from the image');
 }
 
+/* ── the season calendar ────────────────────────────────────
+   Thirty-eight dates, carried twice. The fixture prose already drifted a
+   whole season out of date in one edition while the other stayed right, and
+   nothing caught it — this is the same shape of data with the same failure
+   available, so it gets the same treatment.
+
+   The third guard is the one that matters most. The calendar's blank and
+   double gameweeks are a third party's FORECAST. The document says in both
+   editions that nothing in the app reads them, and that promise is only
+   worth something if breaking it fails: the source must stay inside docs/.
+   Wiring a projected blank into the chip planner would change live advice
+   on the strength of results that have not happened. */
+console.log('\n• briefing: the season calendar agrees with itself and stays out of the app');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const shapeAt = md.indexOf('## Season shape');
+  const firstClub = md.search(/^## 1\.\s/m);
+  ok(shapeAt > -1 && firstClub > -1 && shapeAt < firstClub,
+    'the season shape section sits above the club register');
+
+  const dates = (s) => {
+    const out = {};
+    for (const m of s.matchAll(/GW(\d+) ([A-Z][a-z]{2}) (\d+)/g)) out[+m[1]] = m[2] + ' ' + m[3];
+    return out;
+  };
+  const a = dates(md), b = dates(html);
+  const gws = Object.keys(a).map(Number).sort((x, y) => x - y);
+  ok(gws.length === 38 && gws[0] === 1 && gws[37] === 38,
+    'the markdown states all 38 gameweeks (' + gws.length + ')');
+  const drift = gws.filter((g) => a[g] !== b[g]);
+  for (const g of drift.slice(0, 5)) {
+    ok(false, 'GW' + g + ': markdown "' + a[g] + '" vs html "' + b[g] + '"');
+  }
+  ok(!drift.length, 'and the html edition states the same date for every one of them');
+
+  /* A calendar that runs backwards is the signature of a mis-read date, and
+     it is the one error a reader would not spot in a wall of them. Months
+     Aug-Dec are 2026, Jan-May 2027. */
+  const MON = { Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11, Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4 };
+  let last = -Infinity, backwards = null;
+  for (const g of gws) {
+    const [mon, day] = a[g].split(' ');
+    const t = Date.UTC(MON[mon] >= 7 ? 2026 : 2027, MON[mon], +day);
+    if (t <= last) { backwards = 'GW' + g + ' (' + a[g] + ') does not come after GW' + (g - 1); break; }
+    last = t;
+  }
+  ok(!backwards, 'the dates run forwards from August to May (' + (backwards || 'they do') + ')');
+
+  /* GW1's date must be the same day the rest of the document names as the
+     season start, or the file states two start dates in two places. */
+  const start = (md.match(/Season starts (\w+) (\d{1,2}) August 2026/) || [])[2];
+  ok(start && a[1] === 'Aug ' + start,
+    'GW1 in the calendar is the same day as the stated season start (' + a[1] + ' vs Aug ' + start + ')');
+
+  /* The forecast stays in the briefing. */
+  const leaked = ['index.html', 'scripts/chipplan-parts.mjs', 'netlify/functions/euro-fixtures.js']
+    .filter((f) => /BenCrellin/i.test(readFileSync(join(ROOT, f), 'utf8')));
+  ok(!leaked.length, 'the blank/double forecast has not reached app code (' + leaked.join(', ') + ')');
+  for (const [ed, src] of [['markdown', md], ['html', html]]) {
+    ok(/forecast, not a schedule|is a forecast|Forecast, not schedule/i.test(src),
+      'the ' + ed + ' edition still labels the blank/double weeks a forecast');
+  }
+}
+
 /* The start date was wrong by a day and only one edition stated it, so the
    error had nowhere to be caught. Both state it now, and they must agree. */
 console.log('\n• briefing: both editions state the same start date');

@@ -156,6 +156,75 @@ run that, not to hand-copy a screenshot into the blocks below.
 
 ---
 
+## Season shape — the 2026-27 calendar, 12 August 2026
+
+Source: the season planner by @BenCrellin in partnership with Fantasy
+Football Hub. Read from a screenshot; the linked Google Sheet could not be
+opened from here, because the egress proxy this project is developed behind
+refuses `docs.google.com`. It carries all 38 gameweeks with dates, the
+European matchdays and domestic cup rounds that fall between them, the
+international breaks, and the author's own forecast of which weeks blank and
+which double.
+
+**It corroborates the start date without settling it.** This file says Friday
+21 August 2026, taken from the Premier League's pre-season page; the planner
+independently has GW1 on 21 August. Two sources now agree, and the caveat
+below stands unchanged — the FPL API is what settles it, because the GW1
+deadline is the thing managers are actually bound by, and
+`npm run check:briefing` has not yet been able to reach it.
+
+**The gameweeks, as the planner has them.**
+
+| | Gameweeks |
+|---|---|
+| 1st quarter | GW1 Aug 21 · GW2 Aug 28 · GW3 Sep 4 · GW4 Sep 12 · GW5 Sep 18 · *3-week international break* · GW6 Oct 10 · GW7 Oct 17 · GW8 Oct 24 · GW9 Oct 31 · GW10 Nov 7 · *2-week break* |
+| 2nd quarter | GW11 Nov 21 · GW12 Nov 28 · GW13 Dec 1 · GW14 Dec 5 · GW15 Dec 12 · GW16 Dec 19 · GW17 Dec 26 · GW18 Dec 29 · GW19 Jan 2 · GW20 Jan 5 · GW21 Jan 16 · GW22 Jan 23 |
+| 3rd quarter | GW23 Jan 30 · GW24 Feb 6 · GW25 Feb 9 · GW26 Feb 20 · GW27 Feb 27 · GW28 Mar 2 · GW29 Mar 13 · GW30 Mar 20 · *2-week break* · GW31 Apr 10 |
+| 4th quarter | GW32 Apr 17 · GW33 Apr 24 · GW34 May 1 · GW35 May 8 · GW36 May 15 · GW37 May 22 · GW38 May 30 |
+
+**Three structural facts, all from the published schedule rather than from
+anyone's forecast:**
+
+1. **The three-week international break after GW5** — 18 September to 10
+   October, the longest of the season, with two-week breaks after GW10 and
+   GW30. The app's chip planner already scales its post-break Bench Boost
+   penalty by how long the break actually was, so this is the week that
+   penalty bites hardest.
+2. **December is the pile-up.** GW12 on 28 November through GW20 on 5 January
+   is nine gameweeks in thirty-nine days, with four pairs three or four days
+   apart (Nov 28/Dec 1, Dec 1/Dec 5, Dec 26/Dec 29, Dec 29/Jan 2/Jan 5).
+   Those the planner can already see, because they are Premier League
+   deadlines and `congestedGws` measures the gap between them.
+3. **The midweeks it cannot see from deadlines** sit between weekend
+   gameweeks that are a normal seven days apart: European matchdays on Oct
+   13, Oct 20, Nov 3, Nov 24, Dec 8, Dec 15, Jan 19, Jan 26, Feb 16, Feb 23,
+   Mar 9, Mar 16, Apr 6, Apr 13, Apr 27 and May 4, with cup rounds beside
+   them. Nothing is read from this image to fix that. `/api/euro-fixtures`
+   already files those five competitions by gameweek from an open dataset,
+   and returns nothing until each one starts — which in August is the correct
+   answer rather than a gap.
+
+**The blank and double forecast, which is a forecast.** The planner flags
+**GW30 and GW33 as blanks**, **GW32 and GW35 as likely doubles**, and **GW36
+onward as possible doubles**. The exact shade separating "likely" from
+"possible" does not survive a screenshot, so those are recorded as a band and
+not pinned.
+
+It is worth taking seriously, because it is internally coherent with the cup
+calendar printed beside it: GW30 falls on the EFL Cup final weekend, GW33 on
+the FA Cup semi-finals — both of which take clubs out of a round — and GW32
+is the catch-up midweek that follows. That is a reason to respect the
+forecast, and not a reason to treat it as data.
+
+**Nothing in the app moves for it.** The chips page plans from scheduled
+fixtures. A blank gameweek exists once a cup round removes named clubs from a
+named weekend, and which clubs those are is decided by results that have not
+happened. Writing GW33 into a planner as a blank would be presenting
+somebody's projection as a fixture list, which is the one thing this project
+does not do.
+
+---
+
 # The 20 clubs
 
 Ordered by 2025/26 finishing position, promoted clubs last.
@@ -715,7 +784,8 @@ is partly a list of who played the weakest opposition.
 - FPL prices marked "est." are estimates. Confirm every price against the official price reveal and the FPL API at launch.
 - Penalty and set-piece order is the most fluid data here because of the ten managerial changes. Re-check duties after pre-season friendlies and GW1.
 - Two minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, and Joe Gelhardt's Hull status.
-- The 21 August start date is taken from the Premier League's pre-season page and has NOT been confirmed against the FPL API — `npm run check:briefing` settles it from the GW1 deadline, and could not reach the API when the correction was made. Re-run it before relying on the date.
+- The 21 August start date is taken from the Premier League's pre-season page and is now corroborated by a second source (the @BenCrellin season planner, 12 Aug), but has still NOT been confirmed against the FPL API — `npm run check:briefing` settles it from the GW1 deadline, and could not reach the API when the correction was made. Two sources agreeing is not the deadline managers are bound by. Re-run it before relying on the date.
+- The blank and double gameweeks in the season shape above are a third party's FORECAST, not a schedule. Nothing in the app reads them. A blank exists once a cup round removes named clubs from a named weekend, and those results have not happened.
 - The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.
 - The outside attack/defence ranking above is a third party's view, read from a screenshot. Its per-gameweek cells are used for nothing — only the rank columns and the headline. Two ranks in it were unreadable and are marked, not guessed.
 - This file states 79 of a possible 100 opening fixtures. Nine clubs have fewer than five, so "hardest opening five" compares clubs on unequal evidence, and a fixture nobody writes down is a fixture the self-contradiction check cannot catch. `npm run check:briefing --fix` fills them from the real list.
@@ -734,3 +804,4 @@ is partly a list of who played the weakest opposition.
 - FPL prices and set-pieces: [Fantasy Football Scout price reveals](https://www.fantasyfootballscout.co.uk/2026/07/22/fpl-2026-27-price-reveals-live-haaland-rises-to-record-high), [Premier League Scout prices](https://www.premierleague.com/en/news/4680821/the-scouts-analysis-of-15-key-player-prices-in-202627-fantasy), [Full90 set-piece takers](https://full90fpl.com/fpl-set-piece-takers/), [OneFPL set-piece takers](https://onefpl.com/blog/fpl-penalty-set-piece-takers-2026-27)
 - Promoted clubs: [Coventry](https://www.premierleague.com/en/news/4625396/all-you-need-to-know-as-coventry-city-make-premier-league-return), [Hull](https://www.premierleague.com/en/news/4664386/all-you-need-to-know-as-hull-city-are-promoted-to-premier-league), [Ipswich O'Neil](https://www.skysports.com/football/news/11707/13556081/ipswich-town-gary-oneil-appointed-new-tractor-boys-manager-ahead-of-premier-league-return)
 - Outside attack/defence ranking (rank columns only, cells used for nothing): @PremierFPLTools on X, 11 August 2026, read from a screenshot
+- Season calendar and blank/double forecast (dates recorded, forecast recorded as a forecast, neither wired into the app): @BenCrellin with Fantasy Football Hub, [season planner](https://docs.google.com/spreadsheets/d/1HjW_ljcHKkKyjKln8seA-bCwTrUmHJ-UTc3dbEbGJoY/edit?gid=118560510), read from a screenshot
