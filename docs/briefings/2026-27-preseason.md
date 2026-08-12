@@ -115,8 +115,37 @@ the old value is shown next to the new one rather than replaced.
 goals last season, the preview says 22. Both cannot be right and the FPL API
 settles it — `npm run check:briefing` is where that gets resolved, not here.
 
-**Sixteen clubs still to come.** Their blocks are as of 2 August and should be
+**Fifteen clubs still to come.** Their blocks are as of 2 August and should be
 read that way until a preview lands and this log grows.
+
+---
+
+### 12 August 2026 — Brighton (preview No 5)
+
+Two things this block had wrong rather than merely missing, which is why the
+preview was worth reading past the new names.
+
+**Danny Welbeck was not in the Out list.** The FPL picks underneath already
+reasoned "post-Welbeck" and "with Welbeck gone", so the document knew — the
+line simply never got him, and the Out list therefore read as a defensive
+rebuild when the largest hole is at the other end. He is at Chelsea.
+
+**Brighton are in the Conference League and this block did not say so.**
+That is a Thursday-Sunday schedule and the precedent is poor: their Europa
+League run three seasons ago stretched the squad and coincided with an
+eleventh-place finish. Every Brighton asset now carries the same rotation
+warning as Bournemouth's.
+
+The rest is upside. Only the two Manchester clubs scored more open-play
+Premier League goals last season, and Brighton's open-play expected goals
+per game matched Arsenal's exactly — so "no nailed premium post-Welbeck"
+undersells it. The chances are there and the finisher is unnamed, which
+makes that vacancy the highest-value unknown in this file, settled cheaply
+in the first two or three gameweeks. **Kostoulas** is the in-house candidate
+and now has a second independent signal, the same bar Tzolis and Madjo
+cleared this week. Against that: the 12 Aug preview discusses the vacancy at
+length and never mentions Zadok Yohanna, whom this block carries as a
+£21.5m differential — a silence, not a contradiction, but one worth weighing.
 
 ---
 
@@ -282,16 +311,17 @@ is partly a list of who played the weakest opposition.
 
 ## 8. Brighton & Hove Albion (53 pts)
 
-**Pre-season summary:** Eighth, with Fabian Hurzeler confirmed to continue. Their window is a near-total defensive rebuild funded by van Hecke's £52m sale to Spurs, with Vuskovic, Struijk, Svoboda and Costinha in and the veterans cleared out. The usual Brighton model: recycle a big sale into younger, cheaper talent. Watch the Carlos Baleba links (Galatasaray, Man Utd), a rumour not a done deal, and a key pre-deadline monitor.
+**Pre-season summary:** Eighth, with Fabian Hurzeler confirmed to continue (new three-year deal, May). **They also qualified for the Europa Conference League, which this block did not say** — a Thursday-Sunday schedule, and the precedent is not encouraging: their Europa League run three seasons ago stretched the squad and coincided with an eleventh-place finish. Treat every Brighton asset as carrying rotation risk from the group stage, the same as Bournemouth. Their window is a near-total defensive rebuild funded by van Hecke's £52m sale to Spurs, with Vuskovic, Struijk, Svoboda and Costinha in and the veterans cleared out. The usual Brighton model: recycle a big sale into younger, cheaper talent. Watch the Carlos Baleba links (Galatasaray, Man Utd), a rumour not a done deal, and a key pre-deadline monitor.
 
 **In:** Luka Vuskovic (CB, Tottenham, ~£46m), Pascal Struijk (CB, Leeds, ~£20m), Zadok Yohanna (FWD/W, AIK, ~£21.5m), Costinha (RB/MID, Olympiacos, ~£11m), Michael Svoboda (DEF, Venezia, ~£4.3m).
 
-**Out:** Jan Paul van Hecke (CB, Tottenham, ~£52m), Jeremy Sarmiento (W, Middlesbrough, ~£3m), Adam Webster, Joel Veltman, Solly March (released), James Milner (retired). Rumour: Carlos Baleba exit (unconfirmed).
+**Out:** **Danny Welbeck (FWD, Chelsea)** — omitted from this line until 12 Aug, though the FPL picks below already reasoned "post-Welbeck". He was the club's outstanding forward last season and the omission made the Out list read as a defensive rebuild when the biggest hole is at the other end. Jan Paul van Hecke (CB, Tottenham, ~£52m), Jeremy Sarmiento (W, Middlesbrough, ~£3m), Adam Webster, Joel Veltman, Solly March (released), James Milner (retired). Rumour: Carlos Baleba exit (unconfirmed).
 
 **FPL picks:**
 - Value: Yankuba Minteh (MID, ~£6.0-6.5m est.), on corners, high involvement. Maxim De Cuyper (attacking LB, ~£4.5-5.0m est.), set-piece involvement, strong cheap-defender value.
-- Premium / captaincy: No nailed premium post-Welbeck. Minteh or Matt O'Riley are the best captaincy-adjacent options but carry rotation risk.
-- Differentials: Yohanna, new signing likely sub-5% owned. De Cuyper.
+- Premium / captaincy: No nailed premium post-Welbeck. Minteh or Matt O'Riley are the best captaincy-adjacent options but carry rotation risk. **The vacancy is the story, and it is worth more than "no premium" makes it sound.** Only the two Manchester clubs scored more Premier League goals in open play last season, and Brighton's open-play expected goals per game matched Arsenal's exactly. The chances are there; the finisher is unnamed. Whoever takes that job is the highest-value unknown in this document, and the first two or three gameweeks are when it gets settled cheaply.
+- Watch, and now on a second source: **Charalampos Kostoulas** (19, Greece, signed from Olympiakos last summer) is the in-house candidate for the vacancy — two league starts last season, and two goals in the 12 Aug friendly round-up logged in the role-watch section. Stefanos Tzimas is back in training after an ACL rupture and is either competition or a partner. Neither is a pick yet; both are names to hold before they are priced.
+- Differentials: Yohanna, new signing likely sub-5% owned — though note the 12 Aug preview discusses the striker vacancy at length and does not mention him, which is not a contradiction but is a silence worth weighing against a £21.5m fee. De Cuyper, who went to the World Cup quarter-finals with Belgium.
 - Set-piece & penalties: Penalties Gross primary, O'Riley the alternative (Opta/Solio project Gross among the four highest-volume takers in the league over GW1-10 with Welbeck gone; our earlier read had this unresolved, watch pre-season). Corners Gross and Kadioglu from the left, De Cuyper and Minteh from the right. Free-kicks De Cuyper, Ayari.
 
 **Opening fixtures:** GW1 Aston Villa (H) moderate, GW2 Chelsea (A) hard, GW3 Leeds (H) moderate, GW4 Coventry City (A) moderate, GW5 Arsenal (H) hard. Mixed, with no genuinely easy game and Arsenal at home rather than away. The Leeds and Coventry weeks are the ones to target.
