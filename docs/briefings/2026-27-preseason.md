@@ -34,7 +34,7 @@ This file works two ways.
 
 ## Pre-season role watch
 
-Dead-ball signals seen in pre-season friendlies. Source: the Premier League's pre-season fixtures and results page, 7 August 2026 — a highlights reel, not a team sheet.
+Dead-ball signals seen in pre-season friendlies. Source: the Premier League's pre-season fixtures and results page, 7 August 2026 — a highlights reel, not a team sheet. A second, later source is logged after the table.
 
 **None of these change the club register below, deliberately.** A penalty or a free-kick in a friendly shows who was on the pitch and fancied it, not who the manager has designated. They are logged so that when GW1 settles a duty we can see whether the signal called it, rather than quietly absorbing the evidence and claiming afterwards that we knew. Where a signal contradicts the register, the register is what we still believe; this is the case against it.
 
@@ -47,6 +47,34 @@ Dead-ball signals seen in pre-season friendlies. Source: the Premier League's pr
 | Liverpool | Szoboszlai scored from outside the box | Free-kicks Szoboszlai and Wirtz | Consistent. No change |
 
 One trap in the same source: the clip captioned "Fernandes volley goal on debut" is Mateus Fernandes at Spurs, not Bruno Fernandes at United — a debut rules Bruno out. Anyone reading that list for United signals gets the wrong answer.
+
+### Output round-up, 12 August 2026 — logged, and used for nothing
+
+A second signal source: a pre-season goals-and-assists round-up posted by
+@FPL_S7S on X, 12 August 2026 (read from a screenshot). It is logged under
+the same rule as the table above, and the rule bites harder here, because
+this is not dead-ball evidence at all — it is friendly OUTPUT, which the
+paragraph below says this project uses nowhere. Nothing in the register
+moved for it. What follows is the case against the register, not a revision
+of it.
+
+Four entries actually bear on a claim this file makes:
+
+| Signal | Register says | Read |
+|---|---|---|
+| **Christos Tzolis (ARS)** 2 goals, 3 assists — among the most productive in the list | Carried as a differential "if he forces into the wide rotation", sub-5% owned | The second Tzolis signal in a week; he also delivered the corner for Hincapie's goal on 7 Aug. Two signals is still not a team sheet, but this is now the strongest single case in the document for a name we hold at arm's length — and Arsenal's wide rotation is short while Saka and Madueke are eased back |
+| **Brian Madjo (AVL)** 4 goals | Not in the register at all; added 11 Aug as a Guardian "set for a breakthrough" name | Two independent sources now put a 17-year-old on the edge of Villa's XI. Still not an FPL pick — a friendly hat-trick is what pre-season is for — but he is no longer a name only one source has |
+| **Buendía (AVL)** 2 goals, 3 assists | Penalties and free-kicks Buendía (FPL order 1) | Consistent. No change |
+| **Tavernier (BOU)** 2 goals, 1 assist | Named 11 Aug as the likely penalty promotion with Kroupi.Jr injured | Consistent with him being on the pitch and involved. It says nothing about who takes the penalty, which is the part still unresolved |
+
+**And one that is a warning about the source, not about a player.** The list
+credits **Semenyo to Man City** and **Ünal, Jebbison, Evanilson, Doak,
+Scott, Kluivert, Truffert and Brooks to Bournemouth** — nine of the top
+performers from two clubs, which is what happens when one team plays a 10-1
+friendly. Genoa 1-10 Bournemouth is named below as a reason not to use
+pre-season results, and it is the same fixture generating half of this
+list. A round-up ranked by raw goals is a ranking of who played weak
+opposition.
 
 Pre-season **results** are deliberately used nowhere. The match model fits only finished competitive fixtures from the FPL feed, which carries no friendlies, so they cannot reach it even by accident. Genoa 1-10 Bournemouth, Man Utd 0-1 Wrexham and Newcastle 1-4 Bristol City are why that is the right call: reserve XIs and 60-minute intensity against wildly uneven opposition would poison the priors, not sharpen them.
 
@@ -89,6 +117,32 @@ settles it — `npm run check:briefing` is where that gets resolved, not here.
 
 **Sixteen clubs still to come.** Their blocks are as of 2 August and should be
 read that way until a preview lands and this log grows.
+
+---
+
+### 12 August 2026 — Hull City's treatment room, and a second friendly round-up
+
+Two more sources, both read from screenshots of X posts and neither
+club-confirmed, treated very differently because they are different kinds of
+evidence.
+
+**Hull City injuries (@KurtJohansson_, 8 Aug) went into the register.**
+Availability is a fact about who can play, not a signal about form, and this
+one is severe: twelve names, of whom **Jack Butland (12 weeks, arm surgery),
+Eliot Matazo (ACL, likely the season) and Darko Gyabi (3 months)** miss the
+opening stretch outright, and **Charlie Hughes is stated to miss the Man Utd
+game — which is GW1**. Butland is the one that moves money: he arrived as the
+first-choice goalkeeper and Pandur was sold, so a promoted side opens the
+season with a keeper this file cannot name. The Hull block now says so.
+
+**A pre-season goals-and-assists round-up (@FPL_S7S, 12 Aug) changed nothing,
+deliberately.** It is logged in the role-watch section under the rule that was
+already there: friendly output is not evidence this project acts on. Reading
+it did produce two things worth having — Tzolis (Arsenal) now has a second
+independent signal in a week, and Madjo (Villa) has a second source — plus one
+warning about the source itself: nine of its top performers come from two
+clubs, and one of those clubs won a friendly 10-1. A list ranked by raw goals
+is partly a list of who played the weakest opposition.
 
 ---
 
@@ -452,13 +506,33 @@ read that way until a preview lands and this log grows.
 
 **Out:** Ivor Pandur (GK, Rangers, ~£7m).
 
+**Treatment room (reported 8 Aug 2026 by @KurtJohansson_ on X; read from a screenshot, not club-confirmed):** the single biggest change to this block since compilation, and it is a lot of a squad for a promoted side with the hardest opening five in the league.
+
+| Player | Reported | Reaches GW1? |
+|---|---|---|
+| Eliot Matazo | ACL, "probably the season" | No |
+| Jack Butland | 12 weeks, surgery on his arm | No — roughly November |
+| Darko Gyabi | 3 months, thigh | No |
+| Óscar Zambrano | Quad, 1 month | No |
+| Cody Drameh | Hamstring, 2-3 weeks | Doubt |
+| Charlie Hughes | Groin — **stated to miss the Man Utd game**, which is GW1 | No |
+| Hidemasa Morita | Back on grass but "some way from full fitness" | Doubt |
+| John Egan | Did not travel, ankle | Doubt |
+| Enis Destan | Did not travel, knee — reported MCL issue | Doubt |
+| Paddy McNair | Injured that day, behind the knee | Doubt |
+| Liam Millar | Knee knock, described as a dead leg | Likely |
+| Jens Hjertø-Dahl | Groin complaint | Likely |
+
+**Butland is the one that moves money.** He arrived as the first-choice goalkeeper and Ivor Pandur was sold to the same club he came from, so Hull open the season with a keeper this file has never named. Do not buy a Hull goalkeeper on the strength of the In list above.
+
 **FPL picks:**
 - Value: Oli McBurnie (~£5.5m), main striker and penalty taker, the clear pick here. Joe Gelhardt (~£5.0m) if his stay is confirmed.
 - Premium / captaincy: None obvious.
-- Differentials: Liam Millar (~£5.0m, led the squad for expected assists) and Yu Hirakawa, both likely well under 10% owned.
+- Differentials: Liam Millar (~£5.0m, led the squad for expected assists) and Yu Hirakawa, both likely well under 10% owned. **Millar picked up a knock on 8 Aug described as a dead leg — likely nothing, but he is the differential this block leans on, so confirm he starts before buying.**
 - Set-piece & penalties: Penalties Crooks primary, McBurnie second. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
+- Goalkeeper: **unresolved.** Butland is out roughly three months and Pandur has been sold. Whoever plays is not named in this file, and a promoted side's opening five is the wrong place to guess.
 
-**Opening fixtures:** GW1 Man Utd (H) very hard, GW2 Coventry City (A) very hard. The venue is confirmed home, and neither game is winnable on our model — Hull have the hardest opening five in the league. Delay investment until the schedule eases from around GW6.
+**Opening fixtures:** GW1 Man Utd (H) very hard, GW2 Coventry City (A) very hard. The venue is confirmed home, and neither game is winnable on our model — Hull have the hardest opening five in the league. Delay investment until the schedule eases from around GW6. **The treatment room above sharpens that rather than changing it:** the advice was already "wait", and a side missing its goalkeeper, a centre-back for GW1 specifically, and three players until autumn is not the side to make an exception for.
 
 ---
 
