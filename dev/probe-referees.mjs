@@ -70,6 +70,7 @@ for (const comp of ['ELC', 'PL']) {
 
   console.log(`${comp} — ${list.length} matches in the feed`);
   const rows = list.map((m) => ({
+    id: m.id,
     days: (Date.parse(m.utcDate) - NOW) / 86400000,
     status: m.status,
     ref: mainRef(m)
@@ -108,6 +109,39 @@ for (const comp of ['ELC', 'PL']) {
   if (played.length) {
     console.log(`  (control: ${playedNamed} of ${played.length} finished matches name one, `
       + `which says whether the field exists on this plan at all)`);
+  } else {
+    /* ── The control, when the season has not started ──────────────
+       On 13 Aug 2026 both feeds held nothing but future fixtures — 552 for
+       the Championship, 380 for the Premier League, not one of them played.
+       So "no referee anywhere" was ambiguous in the one way that matters:
+       it could mean the field fills closer to kick-off, or that this plan
+       never carries it at all. Those imply opposite decisions and the probe
+       could not separate them.
+
+       head2head returns PAST meetings for a fixture, and past means
+       finished. It is the only route here that can reach a completed match
+       before a ball is kicked this season, so it settles the question
+       today rather than in a fortnight. */
+    const seed = rows.length ? list[rows.findIndex((r) => r.days > 0)] : null;
+    if (seed && seed.id) {
+      const url = `${ORIGIN}/api/football-data/h2h?id=${seed.id}&limit=10`;
+      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
+      const body = await res.json().catch(() => null);
+      const past = ((body && body.matches) || []).filter((m) => m.status === 'FINISHED');
+      if (res.status !== 200) {
+        console.log(`  (control unavailable: head2head answered ${res.status})`);
+      } else if (!past.length) {
+        console.log('  (control inconclusive: head2head returned no finished match either)');
+      } else {
+        const named = past.filter((m) => mainRef(m));
+        console.log(`  (control, via head2head on a past meeting: ${named.length} of ${past.length} `
+          + `FINISHED matches name a referee)`);
+        verdictLines.push(named.length
+          ? `${comp}: and the field DOES populate once a match is over — `
+            + `${named.length}/${past.length} finished, e.g. ${mainRef(named[0]).name}`
+          : `${comp}: and no FINISHED match names one either — the field is absent on this plan`);
+      }
+    }
   }
   console.log('');
 }
