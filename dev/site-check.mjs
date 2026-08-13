@@ -36,17 +36,24 @@ const CHECKS = [
 
   { path: '/api/efl/health', status: [200, 503], json: true, why: 'the EFL feed health check' },
 
-  /* Added 11 Aug 2026, and expected to FAIL until someone acts. Found by
+  /* Added 11 Aug 2026, and it failed for three mornings running. Found by
      accident — a probe chasing something unrelated got a 503 back from this
-     endpoint saying "FOOTBALL_DATA_KEY is not configured". The key is not
-     set on the deployed site, so this function has never been able to
+     endpoint saying "FOOTBALL_DATA_KEY is not configured". The key was not
+     set on the deployed site, so this function had never once been able to
      succeed there, and it is the FPL app's only referee source and one of
      its two midweek-fixture sources.
 
      It is checked here rather than written down somewhere, because the
-     reason it went unnoticed for so long is that nothing looked. Either set
-     the key or delete the feature; adding an exception here to make the red
-     go away would recreate exactly the blind spot that hid it. */
+     reason it went unnoticed for so long is that nothing looked. Adding an
+     exception to make the red go away would have recreated exactly the blind
+     spot that hid it, so the red was left alone until the owner decided.
+
+     13 Aug 2026: decided — the key is being set rather than the feature
+     retired. Nothing here changes. What DOES change is how to read a future
+     failure on this line: it is no longer the known one. Once the key is in
+     place, a 503 here means the key was revoked, expired or rate-limited, or
+     the upstream shape moved — a real regression in a feature that is now
+     expected to work, not a note about something nobody had configured. */
   { path: '/api/football-data/matchday?competition=PL', status: 200, json: true,
     why: 'referees + midweek fixtures (503 = key not configured)' },
   { path: '/privacy.html', status: 200, why: 'privacy policy' }
