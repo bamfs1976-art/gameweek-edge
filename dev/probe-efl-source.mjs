@@ -28,6 +28,27 @@
  * Run:  node dev/probe-efl-source.mjs
  * CI:   the "Site check" workflow, `referees` input.
  */
+/* ── STOPPED, 13 Aug 2026 ─────────────────────────────────────────────
+   The owner's instruction: do not proceed with reading the EFL website for
+   referees without permission. This file FETCHES that site, so leaving it
+   runnable would not have honoured that — a probe behind a workflow input is
+   one accidental click from making the requests anyway.
+
+   It is gated rather than deleted because the scope it produced is worth
+   keeping (docs/scope-referee-source.md), and because deleting the evidence
+   would make the decision harder to revisit than it needs to be.
+
+   To re-enable: set EFL_SOURCE_OK=1, and only once permission actually
+   exists. The gate is not the permission. */
+if (process.env.EFL_SOURCE_OK !== '1') {
+  console.log('EFL source probe — NOT RUN.\n');
+  console.log('  This probe reads www.efl.com. On 13 Aug 2026 the owner asked that the site');
+  console.log('  not be read for referee appointments without permission, so it is gated off.');
+  console.log('  Findings so far are in docs/scope-referee-source.md; nothing has been built.');
+  console.log('\n  Re-enable with EFL_SOURCE_OK=1 once permission exists.');
+  process.exit(0);
+}
+
 const UA = 'Mozilla/5.0 (compatible; GameweekEdgeRefProbe/1.0; +https://gameweekedge.co.uk)';
 const BASE = 'https://www.efl.com';
 const SPECIMEN = `${BASE}/news/2026/august/11/referee-appointments--14-20-august/`;

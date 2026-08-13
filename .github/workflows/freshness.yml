@@ -1,0 +1,41 @@
+name: Freshness
+
+# Does the live site serve CURRENT data, as opposed to serving 200s?
+#
+# Separate from "Site check" on purpose. That one grades routes and redirects
+# and is about deploys; this one grades the upstream feeds and is about the
+# world moving on without us. They fail for different reasons and want
+# different responses, and a single red light for both would tell you which
+# only after you had opened the log.
+#
+# Runs early, before the day's deadlines matter.
+
+on:
+  workflow_dispatch:
+    inputs:
+      origin:
+        description: 'Origin to check (default: the production site)'
+        type: string
+        default: ''
+  schedule:
+    - cron: '10 6 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: freshness
+  cancel-in-progress: true
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check data freshness
+        run: |
+          node dev/freshness-check.mjs ${{ github.event.inputs.origin }} | tee fresh.txt
+          { echo '```'; cat fresh.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY

@@ -135,7 +135,16 @@ for (const comp of ['ELC', 'PL']) {
 const EFL_SPECIMEN = 'https://www.efl.com/news/2026/august/11/referee-appointments--14-20-august/';
 
 console.log('PART 2 — the EFL\'s own appointments page\n');
-try {
+/* Gated on the owner's instruction of 13 Aug 2026: do not read the EFL site
+   for referees without permission. Part 1 stays live because it reads our
+   own proxy and costs the EFL nothing. Its finding is unaffected — the
+   football-data plan carries no referees either way. */
+if (process.env.EFL_SOURCE_OK !== '1') {
+  console.log('  SKIPPED — this fetches www.efl.com, and reading that site for referee');
+  console.log('  appointments is on hold pending permission. Set EFL_SOURCE_OK=1 to resume.');
+  console.log('  What it found before being stopped is in docs/scope-referee-source.md.');
+  verdict.push('EFL site: not checked — reading it is on hold pending permission');
+} else try {
   const res = await fetch(EFL_SPECIMEN, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
   console.log(`  ${EFL_SPECIMEN}`);
   console.log(`  HTTP ${res.status}`);
