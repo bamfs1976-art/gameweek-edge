@@ -1,0 +1,52 @@
+{
+  "round": 1,
+  "kind": "outside-tips",
+  "capturedAt": "2026-08-13T21:30:00.000Z",
+  "roundLockoutAt": "2026-08-14T19:00:00.000Z",
+  "note": "Captured BEFORE the lockout stated above, which is the only reason this file is worth anything. Committed now so git history is the evidence it predates the football, exactly as the round entries are.",
+
+  "source": {
+    "name": "FEFL Tipsters",
+    "handle": "@EFLFantasyTips",
+    "title": "GW1 MEGA THREAD — Tipsters' Top Three",
+    "postedAt": "2026-08-13T16:28:00.000Z",
+    "readFrom": "screenshots of the X thread",
+    "capturedSections": ["teams", "goalkeepers", "defenders", "midfielders"],
+    "missingSections": ["strikers"]
+  },
+
+  "whatThisIsNot": [
+    "NOT a squad. It is a top-three-per-position tip list, so it names no formation, no captain and no legal seven. It cannot be scored against our entry as a rival team without inventing selections its author never made, and doing that would be putting words in somebody's mouth and then marking them.",
+    "NOT complete. The strikers post exists in the thread and was not captured, so any 'their picks scored X' figure computed from this file is missing a position.",
+    "NOT resolved to feed IDs. Names are recorded as published. Matching them to Fantasy EFL player ids needs a run against the official feed, which this sandbox cannot reach."
+  ],
+
+  "gradeableAs": "Individual named players with a stated rank within their position, and three named team tips. Per-player scoring and rank quality are fair; squad-level comparison is not.",
+
+  "teams": [
+    { "rank": 1, "club": "Middlesbrough", "fixture": "v Lincoln (H)", "claim": "75% to win, big win in EFL Cup, drew with Celtic and Espanyol in pre-season" },
+    { "rank": 2, "club": "Leicester City", "fixture": "v NOT (A)", "claim": "49% to win, victory in EFL Cup, 4 of 6 pre-season wins", "unresolved": "the opponent is printed as the three-letter code NOT, which is not resolved here; recording a guess would be inventing a fixture" },
+    { "rank": 3, "club": "Huddersfield Town", "fixture": "v Wimbledon (H)", "claim": "62% to win, unbeaten in final 3 pre-season games" }
+  ],
+
+  "players": [
+    { "rank": 1, "position": "GK", "name": "R. Vitek", "claim": "53% clean sheet odds, 4.4 point average, 12 shutouts last season" },
+    { "rank": 2, "position": "GK", "name": "D. Bentley", "claim": "46% clean sheet odds, 4 shutouts across 5 games over the summer" },
+    { "rank": 3, "position": "GK", "name": "M. Young", "claim": "42% clean sheet odds, 4.7 point average, 15 shutouts in 25/26" },
+
+    { "rank": 1, "position": "DEF", "name": "Y. Mosquera", "claim": "goal and assist in the past 2, second-highest clearances per 90 for Wolves in 25/26" },
+    { "rank": 2, "position": "DEF", "name": "J. Whatmough", "claim": "52% clean sheet odds, 6.8 point average, 22 clearances in the EFL Cup" },
+    { "rank": 3, "position": "DEF", "name": "A. Baldwin", "claim": "centre-back, most clearances in an EFL Cup game, 4.8 point average in 25/26" },
+
+    { "rank": 1, "position": "MID", "name": "K. Green", "claim": "6.5 point average, 14 goals and 9 assists last year, Exeter (H) first up" },
+    { "rank": 2, "position": "MID", "name": "J. Clarke", "claim": "6.2 point average, 15 goal contributions, 24 interceptions, 39 key passes, 25 shots on target last season" },
+    { "rank": 3, "position": "MID", "name": "F. Azaz", "claim": "5.5 point average, 20 goal contributions last year" }
+  ],
+
+  "againstOurEntry": {
+    "ourRecordedAt": "2026-08-13T07:54:09.273Z",
+    "overlapWithOurSeven": 0,
+    "overlapWithOurTwoClubs": 0,
+    "observation": "No shared name in either list. Our seven leans on League One and League Two (Oldham, Bradford, Grimsby, Cambridge, Reading) with two Championship midfielders; every tip here that can be placed is Championship. Whether that is our model finding value below the top division or simply preferring players nobody watches is the question round-by-round grading is meant to answer, and it is not answered by either side asserting it now."
+  }
+}
