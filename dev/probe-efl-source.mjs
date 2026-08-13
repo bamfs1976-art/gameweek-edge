@@ -48,19 +48,20 @@ console.log('1. robots.txt');
   console.log(`   HTTP ${r.status}${r.err ? ` (${r.err})` : ''}`);
   if (r.ok) {
     const lines = r.body.split('\n').map((l) => l.trim()).filter(Boolean);
-    /* The star group is the one that applies to us. Quoted rather than
-       summarised — "it looked fine" is not a record of permission. */
-    let inStar = false;
-    const rules = [];
-    for (const l of lines) {
-      if (/^user-agent:/i.test(l)) inStar = /\*\s*$/.test(l);
-      else if (inStar && /^(dis)?allow:|^crawl-delay:/i.test(l)) rules.push(l);
-      if (/^sitemap:/i.test(l)) rules.push(l);
-    }
-    console.log(`   ${lines.length} lines; rules that apply to a generic client:`);
-    for (const l of rules.slice(0, 14)) console.log(`     ${l}`);
-    const blocksNews = rules.some((l) => /^disallow:\s*\/(news)?\/?$/i.test(l));
-    console.log(`   → /news/ ${blocksNews ? 'IS' : 'is not'} disallowed for a generic client`);
+    /* PRINTED IN FULL, not filtered. The first version of this walked the
+       file looking for a `User-agent: *` group, matched nothing, printed
+       nothing, and still concluded "/news/ is not disallowed" — which was
+       the absence of a matched rule dressed up as a permission. That is the
+       third time in this investigation that an extractor has reported a
+       measurement of itself as a measurement of the world, and the first two
+       reached a user before being caught.
+
+       Permission is exactly the wrong place to be clever. The file is nine
+       lines. Quote it and let a human read it. */
+    console.log(`   ${lines.length} non-empty lines, verbatim:`);
+    for (const l of lines.slice(0, 40)) console.log(`     ${l}`);
+    if (lines.length > 40) console.log(`     … ${lines.length - 40} more`);
+    console.log('   → read the above; this probe deliberately draws no conclusion from it');
   }
 }
 
