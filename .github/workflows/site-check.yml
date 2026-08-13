@@ -18,6 +18,10 @@ on:
         description: 'Origin to check (default: the production site)'
         type: string
         default: ''
+      referees:
+        description: 'Also probe whether referees are published before kick-off'
+        type: boolean
+        default: false
   schedule:
     - cron: '25 7 * * *' # once a day, after any overnight deploy
 
@@ -38,3 +42,14 @@ jobs:
           node-version: '22'
       - name: Check the live site
         run: node dev/site-check.mjs ${{ github.event.inputs.origin }}
+
+      # Same question in a different direction — what the deployed site really
+      # serves — so it lives here rather than in a file of its own. Opt-in,
+      # because it spends football-data quota and the answer changes only when
+      # the upstream plan does. `always()` so a red site check still lets the
+      # probe report; the two findings are independent.
+      - name: Probe referees
+        if: ${{ always() && github.event.inputs.referees == 'true' }}
+        run: |
+          node dev/probe-referees.mjs ${{ github.event.inputs.origin }} | tee ref.txt
+          { echo '```'; cat ref.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY
