@@ -410,6 +410,60 @@ which the same runner that produced the chip plan can now be shown to reach.
 
 ---
 
+## Bonus off a single return — 13 August 2026
+
+Source: "Who hit bonus with just one return?" by @FPL_TomHadley, on Fantasy
+Football Scout data. Per player: games with exactly one attacking return, the
+share of those that still produced bonus, and total bonus across games with
+fewer than two returns. Last season's numbers.
+
+**Why it earns a place in a document about picks.** Everything else in this
+file reasons about *returns* — goals, assists, clean sheets. Bonus is a
+meaningful share of what a good asset scores and it is decided by BPS rather
+than by returns, so two players with identical goal involvement can finish a
+season well apart. This is the floor, and the register has never once
+mentioned it.
+
+**It argues with the pick this document leads on.** The league-wide headline
+calls **Igor Thiago** the best value forward, and the shortlist puts him first
+among value strikers and among the set-piece and penalty magnets. On this data
+he converts a single return into bonus **40% of the time — the lowest of the
+ten forwards listed**, for 5 bonus in total. Against Calvert-Lewin 70%,
+Haaland 67%, Watkins 63%, and Joao Pedro 89% for 16. The goals case for Thiago
+is unchanged and it is a good one; the *floor* case is weaker than a headline
+slot implies, and nothing in this file said so.
+
+**Where it supports what we already hold.**
+
+| Player | 1-return games | Bonus rate | Total | Against our register |
+|---|---|---|---|---|
+| Le Fee (SUN) | 7 | 86% | 10 | Our cheap Sunderland creator — the floor backs the pick |
+| Tavernier (BOU) | 9 | 78% | 14 | Named as the likely penalty promotion; this strengthens him independently of that duty |
+| Rice (ARS) | 11 | 64% | 20 | The highest bonus total in the whole graphic |
+| Gabriel (ARS) | 20 | 50% | 18 | The most one-return games of any defender, and our first-named cheap enabler |
+| N. Williams (NFO) | 9 | 56% | 10 | Also on our cheap-enabler row |
+| Gibbs-White (NFO) | 14 | 64% | 15 | The name our set-piece line is now undecided about |
+| Brobbey (SUN) | 9 | 56% | 12 | Yesterday's thread built its Sunderland case on him; our block names Isidor, who is absent from this list |
+
+**And a defender the register does not carry at all.** **Truffert
+(Bournemouth)**: 18 one-return games, 50%, 17 bonus in total — second only to
+Gabriel among the sixteen defenders here, ahead of Saliba, Pedro Porro and
+Reece James. He appears in no pick list in this file.
+
+**Two cautions, both against reading it too hard.** **Ampadu** tops the
+midfielders at 100%, from five games — a rate off a sample that small is noise
+wearing a percentage. And the "one return" for a goalkeeper is a clean sheet,
+which makes that column a saves-and-BPS table rather than an attacking one:
+**Raya** converts 21% from nineteen such games while **Leno** converts 78%
+from nine, and that is a statement about save volume behind a good defence
+versus a leaky one, not about who keeps more clean sheets.
+
+Nothing in the register has been rewritten from this. It is recorded as a
+dimension the register does not model, and the Thiago line above is the one
+place it should change how a reader weighs a pick this file already makes.
+
+---
+
 ## Outside set-piece projection — 13 August 2026
 
 A "Projected Set-Piece Takers 26/27" table covering all 20 clubs: penalties,
