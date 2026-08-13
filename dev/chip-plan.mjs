@@ -113,3 +113,58 @@ for (const key of ['wildcard', 'benchboost', 'triplecaptain', 'freehit']) {
   console.log('  ' + pad(key, 14) + cells.join('  '));
 }
 console.log('  ✱ = marked down for midweek congestion\n');
+
+/* ── The ownership-weighted view ──────────────────────────────────
+   Everything above ranks a gameweek on raw fixture difficulty, which asks
+   "when are the fixtures good?". The community argues a different question —
+   "when is my squad furthest from everybody else's?" — and the answer moves,
+   because a week where the MOST-OWNED clubs are stuck is a week a bespoke XI
+   gains on the field even if the league's mean difficulty is ordinary.
+
+   The app has always shown both, on separate pages. This tool showed only the
+   first, so it answered the fixture question while looking like it had
+   answered the chip question. That is how a disagreement with a human plan
+   gets reported as our planner disagreeing, when in fact the two were not
+   discussing the same thing. */
+const swWindow = plan.gws.map((g) => g.gw);
+const ownByTeam = {};
+for (const el of boot.elements || []) {
+  const own = parseFloat(el.selected_by_percent);
+  if (Number.isFinite(own)) ownByTeam[el.team] = (ownByTeam[el.team] || 0) + own;
+}
+/* Official FDR per club per gameweek. A club with no fixture that week gets
+   6 — worse than the worst real fixture — which is what the app does, and is
+   right: a blank is not an easy week, it is no week. */
+const diffByTeam = {};
+for (const f of fixtures || []) {
+  if (!f || !swWindow.includes(f.event)) continue;
+  (diffByTeam[f.team_h] = diffByTeam[f.team_h] || {})[f.event] = f.team_h_difficulty;
+  (diffByTeam[f.team_a] = diffByTeam[f.team_a] || {})[f.event] = f.team_a_difficulty;
+}
+const runs = (boot.teams || []).map((t) => ({
+  team: t.id, name: t.short_name, own: ownByTeam[t.id] || 0,
+  diff: swWindow.map((g) => (diffByTeam[t.id] || {})[g] ?? 6)
+}));
+const sw = API.chipSwings(runs, Math.min(5, Math.max(1, swWindow.length - 3)), 6);
+
+console.log('OWNERSHIP-WEIGHTED SWING (the other question: when is the field stuck?)');
+const totalOwn = runs.reduce((a, r) => a + r.own, 0);
+if (sw.fh) {
+  console.log(`  freehit       GW${swWindow[sw.fh.idx]}  weighted difficulty ` +
+    `${sw.fh.score.toFixed(2)} vs ${sw.fh.base.toFixed(2)} average` +
+    `${sw.fh.clear ? '' : ' — does NOT clear the 12% margin, so the app would not show it'}`);
+}
+if (sw.wc) {
+  console.log(`  wildcard      GW${swWindow[sw.wc.idx]}  difficulty shed by reshaping ` +
+    `≈ ${sw.wc.gain.toFixed(0)}${sw.wc.gain > 2 ? '' : ' — under the threshold the app shows'}`);
+}
+/* The caveat has to be printed, not remembered. Ownership in August is a
+   record of who drafted what before a ball was kicked; the plans this is
+   being read against are about December, by which time the field has moved.
+   A weighting that stale is an input worth seeing and not worth trusting. */
+const top = runs.slice().sort((a, c) => c.own - a.own).slice(0, 5)
+  .map((r) => `${r.name} ${(r.own / totalOwn * 100).toFixed(1)}%`).join(', ');
+console.log(`  weighting: ${top} (share of all ownership, today)`);
+console.log('  ⚠ Ownership is TODAY\'S. Read against a plan for December it is the');
+console.log('    weakest input here — the field will have moved by then, and this');
+console.log('    cannot see that. The fixtures above are fixed; this is not.\n');
