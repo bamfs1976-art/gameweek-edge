@@ -48,7 +48,13 @@ export function gradeBootstrap({ status, body }, now) {
       'this is what a feed stuck on last season looks like, and a route check cannot see it');
   }
   const days = (Date.parse(next.deadline_time) - now) / DAY;
-  return ok(`${players} players · next deadline GW${next.id} in ${days.toFixed(1)}d`);
+  /* The deadline is printed in full, not just as a countdown. "in 8.2d" is
+     enough to prove the feed is live, but the briefing states a season start
+     date and cites this API as the thing that settles it — and a rounded day
+     count is an inference, not a citation. Reading the timestamp back means
+     the document can quote a fact instead of arithmetic. */
+  return ok(`${players} players · next deadline GW${next.id} `
+    + `${next.deadline_time} (in ${days.toFixed(1)}d)`);
 }
 
 /* ── FPL fixtures ─────────────────────────────────────────────────────── */
