@@ -28,6 +28,31 @@
  *   demonstrably has the data. Reachability and parseability only; this
  *   builds no scraper and commits us to nothing.
  *
+ * ── WHAT IT FOUND, 13 Aug 2026 ────────────────────────────────────────
+ * football-data.org: the `referees` key is present on all 552 Championship
+ *   and 380 Premier League matches and populated on NONE of them. Present
+ *   but never filled is a tier limit, not a schema gap — this plan will not
+ *   start carrying them, so no amount of waiting helps.
+ * The EFL's own page: HTTP 200 from CI, and the appointments are in the
+ *   payload — "Referee" appears 56 times in the raw HTML against 3 in the
+ *   visible text, with a __NUXT__ marker, so the content is embedded JSON
+ *   rather than fetched after load. No headless browser needed to read it.
+ *
+ * Which answers the original question: referees ARE published before
+ * kick-off, three to nine days ahead, just not by the feed we were asking.
+ *
+ * Three things this does NOT establish, and none of them is a detail:
+ *   · "Readable" is a count, not a parser. Nothing here has extracted a
+ *     single referee-to-fixture pairing.
+ *   · "Assistant Referee" appears 0 times, so the page may name only the
+ *     main official, or name them some other way. Fine for our purpose,
+ *     unknown as a fact.
+ *   · The specimen URL was handed to us. Finding NEXT week's article is
+ *     unsolved and is the actual engineering problem.
+ * And before any of that: reading a site's pages on a schedule is a
+ * different proposition from consuming an API, and that is a decision for
+ * the project's owner, not a consequence of this probe passing.
+ *
  * Run:  node dev/probe-referees.mjs [https://origin]
  * CI:   the "Site check" workflow, `referees` input — the sandbox this is
  *       written in can reach neither gameweekedge.co.uk nor www.efl.com.
