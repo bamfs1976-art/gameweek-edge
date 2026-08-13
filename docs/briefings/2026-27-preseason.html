@@ -159,7 +159,7 @@
     <div class="hl"><b>Manager churn</b><span>10 new bosses inc. Maresca (City), Iraola (LFC), Alonso (CFC), De Zerbi (Spurs).</span></div>
     <div class="hl"><b>Ownership reset</b><span>Salah leaving Liverpool. Isak is the new premium call there.</span></div>
     <div class="hl"><b>Record prices</b><span>Haaland £15.5m, Bruno £12.0m and owns all United set-pieces.</span></div>
-    <div class="hl"><b>Best value FWD</b><span>Igor Thiago (Brentford): nailed, on pens, 21 goals, soft openers.</span></div>
+    <div class="hl"><b>Best value FWD</b><span>Igor Thiago (Brentford): nailed, on pens, <b>22 goals</b> (corrected from 21, 13 Aug), soft openers.</span></div>
     <div class="hl"><b>Avoid early</b><span>Hull City, Sunderland, Coventry City, Ipswich Town, Fulham, Bournemouth &mdash; hardest opening five on our model.</span></div>
   </div>
 
@@ -216,6 +216,7 @@
     <div class="slrow"><b>2nd quarter</b><span>GW11 Nov 21 · GW12 Nov 28 · GW13 Dec 1 · GW14 Dec 5 · GW15 Dec 12 · GW16 Dec 19 · GW17 Dec 26 · GW18 Dec 29 · GW19 Jan 2 · GW20 Jan 5 · GW21 Jan 16 · GW22 Jan 23</span></div>
     <div class="slrow"><b>3rd quarter</b><span>GW23 Jan 30 · GW24 Feb 6 · GW25 Feb 9 · GW26 Feb 20 · GW27 Feb 27 · GW28 Mar 2 · GW29 Mar 13 · GW30 Mar 20 · <i>2-week break</i> · GW31 Apr 10</span></div>
     <div class="slrow"><b>4th quarter</b><span>GW32 Apr 17 · GW33 Apr 24 · GW34 May 1 · GW35 May 8 · GW36 May 15 · GW37 May 22 · GW38 May 30</span></div>
+    <div class="slrow"><b>GW1 runs Fri&ndash;Mon</b><span>21 Aug Arsenal v Coventry · 22 Aug six matches · 23 Aug three · 24 Aug Fulham v Chelsea. The calendar lists one date per gameweek &mdash; that is the START. Deadline 18:30 BST Friday, so the squad is locked three days while points accrue. All ten fixtures agree with the register, home and away (13 Aug).</span></div>
     <div class="slrow"><b>Start date</b><span>GW1 on 21 August agrees with the Premier League pre-season page. Two sources, still not the FPL API &mdash; the GW1 deadline is what managers are bound by.</span></div>
     <div class="slrow"><b>December pile-up</b><span>GW12 (28 Nov) to GW20 (5 Jan) is nine gameweeks in 39 days, four pairs 3&ndash;4 days apart. These the chip planner already sees: they are PL deadlines.</span></div>
     <div class="slrow"><b>Midweeks it can't see</b><span>European matchdays on Oct 13, Oct 20, Nov 3, Nov 24, Dec 8, Dec 15, Jan 19, Jan 26, Feb 16, Feb 23, Mar 9, Mar 16, Apr 6, Apr 13, Apr 27, May 4, plus cup rounds &mdash; all between weekends a normal 7 days apart. Nothing is read from the image to fix that; <code>/api/euro-fixtures</code> already files those five competitions by gameweek and returns nothing until each starts.</span></div>
@@ -228,7 +229,7 @@
       <li>Window open to ~1 Sep 2026. Late deals (Everton striker, Forest's Kalimuendo, Palace's Mateta, Brighton's Baleba links) can still change squads.</li>
       <li>Prices marked "est." are predictions — confirm against the official reveal and the FPL API at launch.</li>
       <li>Penalty and set-piece order is the most fluid data here after 10 managerial changes. Re-check after friendlies and GW1.</li>
-      <li>Minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, Joe Gelhardt's Hull status.</li>
+      <li>Source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Joe Gelhardt's Hull status. <b>Hull's GW1 venue is settled (13 Aug)</b> — a published opening-weekend card has Hull at HOME to Man Utd, MKM Stadium, Sat 22 Aug, agreeing with the register.</li>
       <li>Season starts Friday 21 August 2026 &mdash; <b>settled against the FPL API on 13 Aug</b>, GW1 deadline <code>2026-08-21T17:30:00Z</code> (18:30 BST, 20:00 first kick-off). Four sources agreed the DATE beforehand; none of them was the deadline, which is the only version a manager is bound by. Now read from the live API by the daily Freshness check. The markdown edition previously said Saturday the 22nd.</li>
       <li><b>Pre-season role watch</b> — dead-ball signals from friendlies (PL pre-season page, 7 Aug 2026). A highlights reel, not a team sheet, so NONE of it is written into the club register: Mbeumo took a penalty for Man Utd (our line says "Penalties Bruno" with no hedge); Tel scored a direct free-kick for Spurs (we have him on corners only); Tzolis delivered the corner for Hincapie's Arsenal goal (not in our corner order). Le Fee and Szoboszlai scoring from distance both match what we already hold. The clip "Fernandes volley goal on debut" is Mateus Fernandes at Spurs, not Bruno.</li>
       <li>Pre-season RESULTS are used nowhere. The match model fits only finished competitive fixtures from the FPL feed, which carries no friendlies — Genoa 1-10 Bournemouth is why that is right.</li>
@@ -250,7 +251,7 @@
 <script>
 const TEAMS = [
  {pos:1,name:"Arsenal",meta:"85 pts",tag:"big",badge:{t:"Champions",c:"b-champ"},
-  summary:"Reigning champions under Mikel Arteta. 11 Aug: no longer just tweaks — Bruno Guimaraes in from Newcastle, and the reason matters more than the signing: Rice has played through neural pain in a hamstring and lower back since December and is being managed. Saliba is out with a back injury, Konsa is the hoped replacement and is unsigned, and Rice, Saka and Madueke are all being eased back after long World Cups.",
+  summary:"13 Aug — the number under the set-piece line: a LEAGUE-HIGH 29 goals from set-plays last season and a LEAGUE-LOW 8 conceded from them, the widest dead-ball margin in the division. Reigning champions under Mikel Arteta. 11 Aug: no longer just tweaks — Bruno Guimaraes in from Newcastle, and the reason matters more than the signing: Rice has played through neural pain in a hamstring and lower back since December and is being managed. Saliba is out with a back injury, Konsa is the hoped replacement and is unsigned, and Rice, Saka and Madueke are all being eased back after long World Cups.",
   ins:["Piero Hincapie (DEF, Leverkusen, ~£34.5m loan→perm)","Bruno Guimaraes (CM, Newcastle)","Christos Tzolis (FWD/W, Club Brugge, ~£35m)","Illan Meslier (GK, Leeds, free)"],
   outs:["Leandro Trossard (W, Besiktas, ~£15.3m)","Jakub Kiwior (DEF, Porto, ~£14.7m)","Karl Hein (GK, Werder Bremen, ~£2.5m)"],
   value:"Gabriel Magalhaes (DEF ~£8.0m) clean sheets + aerial threat. Gyokeres (FWD ~£7.5m) starting striker below premium. 11 Aug: Saliba out (back, no return date) — discount every Arsenal defensive asset until the replacement is signed.",
@@ -260,7 +261,7 @@ const TEAMS = [
   fx:[["1","Coventry City (H)","easy"],["2","Aston Villa (A)","mod"],["3","Chelsea (H)","mod"]]},
 
  {pos:2,name:"Manchester City",meta:"78 pts",tag:"big",badge:null,
-  summary:"End of the Guardiola era — Enzo Maresca confirmed on a 3-year deal. Enormous spend: ~£116m on Elliot Anderson (British record) and £64m on Semenyo, while ageing defenders and Bernardo Silva moved on. A younger, possession-first rebuild with real early transition risk.",
+  summary:"13 Aug: 35 conceded from an xGA of 49.2 — fourteen better than the underlying numbers, which is a goalkeeper rather than a defence (Donnarumma). Same shape as Sunderland's overperformance at the other end of the table: a regression risk on clean sheets, not a defensive rating. End of the Guardiola era — Enzo Maresca confirmed on a 3-year deal. Enormous spend: ~£116m on Elliot Anderson (British record) and £64m on Semenyo, while ageing defenders and Bernardo Silva moved on. A younger, possession-first rebuild with real early transition risk.",
   ins:["Marc Guehi (CB, Crystal Palace, £20m+, Jan) — missing from this list until 13 Aug","Elliot Anderson (CM, Nott'm Forest, ~£116m)","Antoine Semenyo (FWD/W, Bournemouth, ~£64m)","Jeremy Monga (W, Leicester, ~£10m)","Mathys Detourbet (LW, Troyes, ~£21.4m, loaned out)"],
   outs:["James McAtee (AM, Nott'm Forest, ~£30m) — missing from this list until 13 Aug","Bernardo Silva (CM, Real Madrid, free)","Manuel Akanji (CB, Inter, ~£13m)","Nathan Ake (CB, Fenerbahce, ~£7m)","John Stones (CB, released)"],
   value:"Rayan Cherki (MID) if mid-priced — FK + corners, high assists. Reijnders as a nailed attacking mid.",
@@ -270,7 +271,7 @@ const TEAMS = [
   fx:[["1","Bournemouth (H)","easy"],["2","Crystal Palace (A)","mod"],["3","Coventry City (H)","easy"]]},
 
  {pos:3,name:"Manchester United",meta:"71 pts",tag:"big",badge:null,
-  summary:"A dramatic turnaround: Amorim sacked in Jan 2026, and Michael Carrick appointed permanent (confirmed May 2026), steering United to a surprise 3rd. Midfield and defence reinforced. Can a young, Carrick-built side back up an over-achieving year plus a Champions League return.",
+  summary:"13 Aug: a 21% CLEAN-SHEET RATE last season, only three sides lower — hold that against any United defender here, whatever the fixture. A dramatic turnaround: Amorim sacked in Jan 2026, and Michael Carrick appointed permanent (confirmed May 2026), steering United to a surprise 3rd. Midfield and defence reinforced. Can a young, Carrick-built side back up an over-achieving year plus a Champions League return.",
   ins:["Andrey Santos (MID, Chelsea, ~£48m)","Youri Tielemans (MID, Aston Villa, ~£35m)","Tynan Thompson (DEF, Tottenham, ~£4m)","Karl Darlow (GK, Leeds, free)"],
   outs:["Rasmus Hojlund (FWD, Napoli, ~£43m)","Casemiro (MID, released)","Jadon Sancho (FWD, released)","Andre Onana (GK, Trabzonspor, loan)"],
   value:"Mbeumo and Cunha both strong mid-price returns behind Bruno. A United defender is a budget clean-sheet punt (conceded <50).",
@@ -290,7 +291,7 @@ const TEAMS = [
   fx:[["1","Brighton (A)","hard"],["2","Arsenal (H)","hard"],["3","Hull City (A)","mod"],["4","Nott'm Forest (H)","mod"],["5","Spurs (A)","hard"]]},
 
  {pos:5,name:"Liverpool",meta:"60 pts",tag:"big",badge:null,
-  summary:"A poor title defence to 5th. Slot out, Andoni Iraola in (2-year deal) — high pressing and transition. Brutal for continuity: Salah departing (Saudi Pro League reported), Konate and Robertson gone on frees. A major reset with real early uncertainty over goals and set-piece order.",
+  summary:"13 Aug, a specific weakness to price: FIVE first-half goals away from home all season, and a half-time lead on the road just twice. Fix it and the away fixtures re-rate; until then treat Liverpool travel days as second-half assets. A poor title defence to 5th. Slot out, Andoni Iraola in (2-year deal) — high pressing and transition. Brutal for continuity: Salah departing (Saudi Pro League reported), Konate and Robertson gone on frees. A major reset with real early uncertainty over goals and set-piece order.",
   ins:["Jeremy Jacquet (DEF, Rennes, ~£60m)","Victor Munoz (ATT, Osasuna, ~£35m)","Ifeanyi Ndukwe (DEF, Austria Wien, ~£2.6m)"],
   outs:["Mohamed Salah (FWD, leaving — Saudi Pro League reported)","Ibrahima Konate (DEF, Real Madrid, free)","Andy Robertson (DEF, Tottenham, free)"],
   value:"Hugo Ekitike (FWD ~£7.5m) leads the line below premium. Wirtz (MID) as a creative hub if fairly priced.",
@@ -334,7 +335,7 @@ const TEAMS = [
   ins:["Mamadou Sangare (CM, Lens, ~£35m club record)","Jannik Schuster (CB, RB Salzburg, ~£12m)","Jaidon Anthony (W, Burnley, ~£15m)","Callum Wilson (ST, free)"],
   outs:["Jordan Henderson (CM, Chelsea)","Frank Onyeka (CM, Coventry, ~£6.8m)","Ryan Trevitt (released)","Donovan, Krauhaus (loans)"],
   value:"Kevin Schade (MID ~£6.0m est.) backup pens + strong minutes. Jaidon Anthony (~£5.5m est.) differential wing threat.",
-  prem:"Igor Thiago (FWD ~£7.0-7.5m est.) — standout pick. Nailed, on pens, 21 goals, soft openers = early captaincy.",
+  prem:"Igor Thiago (FWD ~£7.0-7.5m est.) — standout pick. Nailed, on pens, 22 GOALS (corrected from 21 on 13 Aug: our own shipped history bundle has 22 in 38 apps, 3,282 mins, 181 pts — two previews said 22 and we had 21). Soft openers = early captaincy, but see the bonus section: he converts a single return into bonus less often than any forward in that table.",
   diff:"Jaidon Anthony. Damsgaard, creator on direct FKs. Mamadou Sangare — Ligue 1 team of the season, and only two players in Europe's top five leagues averaged more possession regains: a defensive-contribution profile worth pricing before it is obvious.",
   sp:"Pens Thiago (Schade backup). Corners Jensen, Janelt, Damsgaard. FK Lewis-Potter, Jensen, Damsgaard. 11 Aug: only 10 set-play goals last season (joint-fewest, bettered by all but three) yet no club relied more on set plays to generate shots — high volume, low conversion, so these names are worth less than the corner count suggests.",
   fx:[["1","Spurs (H)","mod"],["2","Leeds (A)","hard"],["3","Sunderland (H)","easy"],["4","Bournemouth (A)","hard"],["5","Chelsea (H)","mod"]]},

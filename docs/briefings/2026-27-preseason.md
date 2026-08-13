@@ -182,6 +182,14 @@ deadline is the thing managers are actually bound by, and
 | 3rd quarter | GW23 Jan 30 · GW24 Feb 6 · GW25 Feb 9 · GW26 Feb 20 · GW27 Feb 27 · GW28 Mar 2 · GW29 Mar 13 · GW30 Mar 20 · *2-week break* · GW31 Apr 10 |
 | 4th quarter | GW32 Apr 17 · GW33 Apr 24 · GW34 May 1 · GW35 May 8 · GW36 May 15 · GW37 May 22 · GW38 May 30 |
 
+**GW1 runs Friday 21 to Monday 24 August, not one day.** The calendar above
+lists a single date per gameweek, which is the round's START. A published
+opening-weekend card confirmed on 13 Aug: Arsenal v Coventry on Friday the
+21st, six matches on Saturday the 22nd, three on Sunday the 23rd, and
+Fulham v Chelsea on Monday the 24th. The deadline is 18:30 BST on the
+Friday, so a squad is locked for three days while points keep accruing —
+and all ten fixtures agree with the register, home side and away.
+
 **Three structural facts, all from the published schedule rather than from
 anyone's forecast:**
 
@@ -552,8 +560,13 @@ the old value is shown next to the new one rather than replaced.
 - **Bournemouth's ~£25.7m was attached to Alvaro Rodriguez.** It is Antonio Silva's fee; two separate arrivals were conflated when only one was known.
 
 **One conflict left open, deliberately:** we say Igor Thiago scored 21 league
-goals last season, the preview says 22. Both cannot be right and the FPL API
-settles it — `npm run check:briefing` is where that gets resolved, not here.
+goals last season, the preview says 22. **Settled 13 August: it is 22, and we
+could have settled it on day one.** Our own `www/data/fpl-history.json`, built
+from vaastav's FPL dataset, has him on 22 goals in 38 appearances, 3,282
+minutes and 181 points. The conflict sat open for two days as "the FPL API
+settles it, and we cannot reach the API" while a bundle derived from that very
+API was already shipping on the site. Check what you hold before you record
+something as unresolvable.
 
 **Fourteen clubs still to come.** Their blocks are as of 2 August and should be
 read that way until a preview lands and this log grows.
@@ -667,7 +680,7 @@ is partly a list of who played the weakest opposition.
 
 ## 1. Arsenal (Champions, 85 pts)
 
-**Pre-season summary:** Reigning champions under Mikel Arteta, who stays and describes the squad as only "tweaked". Direction is continuity plus depth: Hincapie's loan made permanent, attacking cover added, no rebuild. The storyline is whether an almost-unchanged champion side can go back-to-back while carrying a heavy Champions League load. **Updated 11 Aug:** the summer is no longer only "tweaks" — Bruno Guimaraes has arrived from Newcastle, and the reason matters more than the signing. Declan Rice has been playing through neural pain in a hamstring and lower back since December and his workload is being managed; Guimaraes is insurance against that, not a luxury.
+**Pre-season summary:** **13 Aug, the number that sits under the set-piece line below: a league-high 29 goals from set-plays last season, and a league-low 8 conceded from them** — the widest dead-ball margin in the division, and the reason Rice on corners is a pick rather than a footnote. Whether it survives being the thing every opponent now plans for is the open question. Reigning champions under Mikel Arteta, who stays and describes the squad as only "tweaked". Direction is continuity plus depth: Hincapie's loan made permanent, attacking cover added, no rebuild. The storyline is whether an almost-unchanged champion side can go back-to-back while carrying a heavy Champions League load. **Updated 11 Aug:** the summer is no longer only "tweaks" — Bruno Guimaraes has arrived from Newcastle, and the reason matters more than the signing. Declan Rice has been playing through neural pain in a hamstring and lower back since December and his workload is being managed; Guimaraes is insurance against that, not a luxury.
 
 **In:** Piero Hincapie (DEF, Bayer Leverkusen, ~£34.5m, loan made permanent), Bruno Guimaraes (CM, Newcastle, fee not confirmed here), Christos Tzolis (FWD/W, Club Brugge, ~£35m), Illan Meslier (GK, Leeds, free).
 
@@ -688,7 +701,7 @@ is partly a list of who played the weakest opposition.
 
 ## 2. Manchester City (78 pts)
 
-**Pre-season summary:** End of the Guardiola era. Enzo Maresca is confirmed head coach on a three-year deal. Enormous spend: a British record around £116m on Elliot Anderson and £64m on Antoine Semenyo, while ageing defenders (Stones, Akanji, Ake) and Bernardo Silva moved on. A younger, possession-first rebuild with real transition risk early.
+**Pre-season summary:** **13 Aug: 35 conceded from an xGA of 49.2** — fourteen goals better than the underlying numbers, which is a goalkeeper doing something rather than a defence, and Donnarumma is the name attached to it. The same shape as the Sunderland overperformance recorded above, at the other end of the table: a regression risk on clean-sheet assets rather than a defensive rating. End of the Guardiola era. Enzo Maresca is confirmed head coach on a three-year deal. Enormous spend: a British record around £116m on Elliot Anderson and £64m on Antoine Semenyo, while ageing defenders (Stones, Akanji, Ake) and Bernardo Silva moved on. A younger, possession-first rebuild with real transition risk early.
 
 **In:** Elliot Anderson (CM, Nottingham Forest, ~£116m), Antoine Semenyo (FWD/W, Bournemouth, ~£64m), Mathys Detourbet (LW, Troyes, ~£21.4m, then loaned out), Jeremy Monga (W, Leicester, ~£10m), Pierce Charles (GK, Sheffield Wednesday, ~£3m, loaned out). Added 13 Aug, having been recorded only by the club at the other end: Marc Guehi (CB, Crystal Palace, £20m+, Jan).
 
@@ -706,7 +719,7 @@ is partly a list of who played the weakest opposition.
 
 ## 3. Manchester United (71 pts)
 
-**Pre-season summary:** A dramatic turnaround. Ruben Amorim was sacked in January 2026, Darren Fletcher took interim charge, and Michael Carrick was appointed permanent head coach (confirmed May 2026), steering United to a surprise third. Midfield and defence reinforced. The question is whether a young, Carrick-built side can back up an over-achieving season plus a Champions League return.
+**Pre-season summary:** **13 Aug: a 21% clean-sheet rate last season, with only three sides lower** — worth holding against any United defender here, whatever the fixture says. A dramatic turnaround. Ruben Amorim was sacked in January 2026, Darren Fletcher took interim charge, and Michael Carrick was appointed permanent head coach (confirmed May 2026), steering United to a surprise third. Midfield and defence reinforced. The question is whether a young, Carrick-built side can back up an over-achieving season plus a Champions League return.
 
 **In:** Andrey Santos (MID, Chelsea, ~£48m), Youri Tielemans (MID, Aston Villa, ~£35m), Tynan Thompson (DEF, Tottenham, ~£4m), Karl Darlow (GK, Leeds, free).
 
@@ -744,7 +757,7 @@ is partly a list of who played the weakest opposition.
 
 ## 5. Liverpool (60 pts)
 
-**Pre-season summary:** After a poor title defence Liverpool slumped to fifth. Arne Slot has gone and Andoni Iraola is confirmed as head coach on a two-year deal, expect high pressing and transition. A brutal window for continuity: Salah is departing (Saudi Pro League reported), with Konate (Real Madrid) and Robertson (Tottenham) gone on frees. A major reset with real early uncertainty over goals and set-piece order.
+**Pre-season summary:** After a poor title defence Liverpool slumped to fifth. **13 Aug, a specific weakness to price: five first-half goals away from home all season, and a half-time lead on the road just twice.** If Iraola fixes it the away fixtures re-rate; until he does, treat Liverpool travel days as second-half assets. Arne Slot has gone and Andoni Iraola is confirmed as head coach on a two-year deal, expect high pressing and transition. A brutal window for continuity: Salah is departing (Saudi Pro League reported), with Konate (Real Madrid) and Robertson (Tottenham) gone on frees. A major reset with real early uncertainty over goals and set-piece order.
 
 **In:** Jeremy Jacquet (DEF, Rennes, ~£60m), Victor Munoz (ATT, Osasuna, ~£35m), Ifeanyi Ndukwe (DEF, Austria Wien, ~£2.6m).
 
@@ -829,11 +842,11 @@ is partly a list of who played the weakest opposition.
 
 **FPL picks:**
 - Value: Kevin Schade (MID, ~£6.0m est.), backup pens and strong minutes. Jaidon Anthony (~£5.5m est.), differential wing threat.
-- Premium / captaincy: Igor Thiago (FWD, ~£7.0-7.5m est.), the standout pick here. Nailed, on penalties, 21 goals last term, friendly openers make him an early captaincy option.
+- Premium / captaincy: Igor Thiago (FWD, ~£7.0-7.5m est.), the standout pick here. Nailed, on penalties, **22 goals last term** (corrected from 21 on 13 Aug — see below), friendly openers make him an early captaincy option. Weigh it against the bonus finding above: he converts a single return into bonus less often than any forward in that table.
 - Differentials: Jaidon Anthony. Mikkel Damsgaard, creator on direct free-kicks.
 - Set-piece & penalties: Penalties Thiago primary, Schade backup. Corners Jensen, Janelt, Damsgaard. Free-kicks Lewis-Potter, Jensen, Damsgaard. **Watch (11 Aug):** Brentford scored 10 set-play goals last season, their joint-fewest in a Premier League season and bettered by all but three clubs — yet no side in the division relied more on free-kicks, corners and throw-ins to generate shots at all. High volume, low conversion: the dead-ball names above are worth less than the corner count suggests until that gap closes.
 - Watch: Mamadou Sangare was in Ligue 1's team of the season as Lens pushed PSG to the title, and only two players in Europe's top five leagues averaged more possession regains. On the defensive-contribution scoring that is a budget-midfielder profile worth pricing up before it is obvious.
-- Conflict to verify: this block says Igor Thiago scored a **club-record 21** Premier League goals last season; the Guardian's 11 Aug preview says **22**, second only to Haaland. One of the two is wrong and the FPL API settles it. Recorded rather than quietly overwritten.
+- Resolved 13 Aug: this block said Igor Thiago scored a **club-record 21** Premier League goals last season; the Guardian's 11 Aug preview and a second preview on 12 Aug both said **22**. Our own shipped history bundle (`www/data/fpl-history.json`, from vaastav's FPL dataset) settles it at **22** — 38 appearances, 3,282 minutes, 181 points. Corrected above and in the shortlist. Whether 22 is a club record is a separate claim and is not asserted here.
 
 **Opening fixtures:** GW1 Spurs (H) moderate, GW2 Leeds (A) hard, GW3 Sunderland (H) easy, GW4 Bournemouth (A) hard, GW5 Chelsea (H) moderate. Less inviting than it first read — both away games are hard. Thiago is still the pick, but GW3 at home to Sunderland is the standout week rather than GW1.
 
@@ -1081,7 +1094,7 @@ is partly a list of who played the weakest opposition.
 - The window is open until roughly 1 September 2026. Late deals, especially Everton's striker hunt, Forest's Kalimuendo pursuit, Palace's Mateta situation and Brighton's Baleba links, can still change squads.
 - FPL prices marked "est." are estimates. Confirm every price against the official price reveal and the FPL API at launch.
 - Penalty and set-piece order is the most fluid data here because of the ten managerial changes. Re-check duties after pre-season friendlies and GW1.
-- Two minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, and Joe Gelhardt's Hull status.
+- Source conflicts to verify: Garnacho's origin (Chelsea loan best supported) and Joe Gelhardt's Hull status. **Hull's GW1 venue left this list on 13 Aug** — a published opening-weekend card has Hull at HOME to Man Utd at the MKM Stadium on Sat 22 Aug, agreeing with our register.
 - ~~The 21 August start date has not been confirmed against the FPL API.~~ **Resolved 13 August 2026.** The API gives the GW1 deadline as `2026-08-21T17:30:00Z` — 18:30 BST on Friday 21 August. Four sources agreed on the date beforehand (the Premier League pre-season page, the @BenCrellin planner, the Guardian's Coventry preview and the fixture list), but none of them was the deadline itself, which is the only version of this fact a manager is bound by. Read from the live API by the daily Freshness check, which prints the deadline rather than a countdown so the figure can be quoted rather than inferred.
 - The blank and double gameweeks in the season shape above are a third party's FORECAST, not a schedule. Nothing in the app reads them. A blank exists once a cup round removes named clubs from a named weekend, and those results have not happened.
 - The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.
