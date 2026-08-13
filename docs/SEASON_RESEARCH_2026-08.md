@@ -27,6 +27,36 @@ is the one that is fully verified.
 
 ---
 
+## 0. Corrections, after acting on this file
+
+Two claims below were wrong when written and are corrected here rather than
+quietly edited out.
+
+**"You read one column."** `team-elo.js` does. But `netlify/functions/core-insights.js`
+is a full Core Insights aggregator that has been running twice daily for two
+seasons — `goals_prevented`, xGoT, non-penalty xG, chances created, touches in
+the box, and a DefCon **hit rate** rather than an average, upserted to Supabase
+and served to the client by `core-insights-data.js`. Three of the six things
+§1 proposes were already shipped. §1 is left standing for the parts that are
+still true (per-match xG history, cross-competition rotation, set-piece xG).
+
+**"A dead `assistant` chip string."** There is no such thing. Every `assistant`
+in `index.html` is the AI chat role or a CSS class. The grep that produced that
+claim was mine and it was bad.
+
+**What the audit did find**, by reading the aggregator rather than the README:
+it was reading `By Gameweek/`, which carries every competition. Measured on
+2025-26, 2,586 of 15,340 appearance rows were cup and European ties; 30 of 291
+regular starters had a DefCon hit rate out by five points or more, worst 16;
+league-wide `goals_prevented` read 17.4 against a true 13.4. The errors ran
+*downward* on hit rate, because a Europa League start is a start FPL pays
+nothing for — so the app understated the defensive reliability of the
+most-owned players in the game. Fixed: it now reads
+`By Tournament/Premier League/` and refuses to write if a non-league match id
+appears. That bug was worth more than everything else in this document.
+
+---
+
 ## 1. The headline: you already proxy the dataset that fixes both apps
 
 `netlify/functions/team-elo.js` reads **one column** — `teams.csv.elo` — from
@@ -295,9 +325,9 @@ because in each case the win is *removing* hand-rolled code.
 
 | # | Action | Why now |
 |---|---|---|
-| 1 | Verify `BPS_TARIFF.penSave` against the official 2026/27 table before GW1 grades anything | It is subtracted, so a wrong value silently corrupts every keeper's baseline |
-| 2 | Grep out the dead `assistant` chip string | It is a chip that no longer exists |
-| 3 | Widen `team-elo.js` into a general Core Insights reader, behind one shape-guarded module | Everything in §1 is downstream of this one file |
+| 1 | ~~Verify `BPS_TARIFF.penSave`~~ **Done — no change needed.** `dev/test-bps-tariff.mjs` already treats it as underdetermined (one penalty-save row in the sample, 16.3 solved against a tariff of 15) and says in its own header that published summaries contradict each other and the code. The shipped 15 stands | The test was already right; the reported "8 to 7" is about something else |
+| 2 | ~~Dead `assistant` chip~~ **Withdrawn — it does not exist.** See §0 | — |
+| 3 | ~~Widen `team-elo.js`~~ **Superseded.** The aggregator existed; its competition scope was the actual defect, now fixed | See §0 |
 | 4 | Plot `plsimLiveProbs` across the match as a momentum timeline | The compute is already paid for; it is the single most-loved feature in comparable apps |
 | 5 | Re-scope the Live panel around auto-subs, rival EO and conditional rank | FPL's native live rank has taken the old positioning |
 | 6 | `goals_prevented` into the goalkeeper view | Free, unique among free sources, and genuinely better than save count |
