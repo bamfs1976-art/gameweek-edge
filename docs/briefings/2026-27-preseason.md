@@ -269,6 +269,19 @@ our planner independently flags **GW17 as midweek-crowded**, which is an
 argument against needing fifteen players to start that week, not against
 wildcarding into it.
 
+**They agree on the single most specific call either one makes.** The thread's
+free-hit target in GW16 is *"x3 MCI vs HUL(H)"*. Our planner's triple captain
+is GW16, Haaland v HUL, FDR 2. Same fixture, same week, reached independently
+— a human reading a grid by eye and a program reading the official FDR off the
+API landing on one of 380 fixtures.
+
+**They also agree that the bench boost is not worth planning around**, from
+opposite directions. The thread: *"BB is a very overrated chip… I'm one of
+those just-play-it-whenever-you-have-a-good-bench dudes"*, and BB15 is offered
+as a dead end rather than a target. Our planner: the bench-boost pick wins its
+week by 0.05 of FDR and is flagged near-arbitrary. One argues it from
+experience, the other from a spread too flat to rank on.
+
 **And the part that is about us, not the thread.** Our planner says in its own
 output that two of its four picks carry no signal here. Across GW1-19 the
 league's mean difficulty moves 0.10 — from 3.00 to 3.10, flatter than the
@@ -280,6 +293,55 @@ is arguing squad value and transfer runway ("you want to invest all your money
 in your starting XI"), which our planner scores in separate terms and does not
 print. Two chips ranked on 0.05 of FDR is a planner being honest about a flat
 half, not a planner disagreeing.
+
+### The wildcard disagreement was a difference of subject, and half of it was ours
+
+The paragraph above is what this section said on first writing, and it was
+incomplete about our own app. The chip plan quoted there ranks weeks on raw
+fixture difficulty. The app has **a second chip view** — `chipSwings`, on the
+Fixture Difficulty page — which weights the same difficulty by **ownership**,
+asking when the field is stuck rather than when the fixtures are good. The
+offline tool never ran it, because `scripts/chipplan-parts.mjs` had only ever
+extracted the first one. So a tool that could not represent the thread's
+argument was used to report that we disagreed with it.
+
+The thread's case for GW17 is almost entirely an ownership case: *"most
+managers will own ZERO CHE/LIV/BRE players pre GW16/17 · many won't own Bruno
+· many will own MCI, this is where you jump off."* That is not a claim about
+fixtures at all.
+
+`chipSwings` is now extracted and the tool prints it. Same runner, commit
+`655af24`:
+
+```
+OWNERSHIP-WEIGHTED SWING (the other question: when is the field stuck?)
+  freehit    GW12  weighted difficulty 3.35 vs 3.02 average — does NOT clear the 12% margin
+  wildcard   GW5   difficulty shed by reshaping ≈ 20
+  weighting: MCI 14.3%, ARS 11.3%, MUN 10.6%, CHE 9.4%, TOT 8.3% (share of all ownership, today)
+```
+
+It still does not reach GW17 — both of our views want an early wildcard, GW5
+or GW6 — but the reason the two sides differ is now visible rather than
+assumed, and it is **which ownership**. Ours is measured, today, and today
+Chelsea are the fourth most-owned club in the game at 9.4% of all ownership.
+The thread's premise is that almost nobody will hold them by GW16, which is a
+forecast of how the field moves over four months. Both cannot be tested in
+August. Only one of them is labelled as a forecast, and it is not the
+thread's.
+
+That is the honest read: our planner cannot see the future distribution the
+thread is planning against, and the thread's headline rests on it entirely.
+
+### One source, not two
+
+The author closes by crediting **@FPLNightmare** — *"literally the only other
+guy who I've seen talk about this chip strategy… I was strongly in favour of
+FH3/4 – BB15 – WC16 but he opened my eyes to FH16 WC17."* So the two public
+advocates of this plan are one line of thinking, not two independent reads of
+the fixture list, and a reply in the same thread makes the point unprompted:
+*"seems like one content creator does something and all the others blindly
+follow."* Logged here as **one** source. Counting it twice is how a
+community's consensus gets mistaken for its evidence.
 
 ### The unexpected result: this thread verified yesterday's calendar
 
@@ -304,6 +366,15 @@ re-runs that check against the table below so a later typo fails rather than
 ships. Five cells are confirmed a second time by the planner's captain picks
 off the live list: Man City at home to Hull in GW16, to Leeds in GW13 and to
 Brighton in GW9; Man Utd at home to Coventry in GW14 and Sunderland in GW18.
+
+**And a fourth check arrived with the rest of the thread.** It posts the GW15
+round as a dated fixture card — *Sat Dec 12 2026*, ten kick-offs at 17:00.
+All ten agree with the GW15 column below, home side and away side, and the
+date agrees with the calendar transcribed from a different source the day
+before: our GW15 is 12 December, and 12 December 2026 is a Saturday. A
+transcription that survives its own pairing check, five cells from the live
+API, ten cells from an independent card and a date from a third source is
+about as verified as a screenshot can get.
 
 **Capitals are home, lower case away.** These are the source's difficulty
 bands, not ours, and are not reproduced — only the fixtures.

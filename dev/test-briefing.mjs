@@ -821,6 +821,27 @@ console.log('\n• briefing: the GW9-18 grid pairs cleanly, or it is a mis-read'
       club + ' GW' + gw + ' is ' + cell + ' at home, as the live list had it (' +
       ((rows[club] || [])[gw - 9] || 'missing') + ')');
   }
+
+  /* The whole GW15 round, from a dated fixture card posted alongside the
+     grid — an independent statement of one entire column, home side listed
+     first. Pinned as a block rather than as five more samples, because a
+     column is the unit a mis-read would move. */
+  const CARD15 = [['ARS', 'BOU'], ['BHA', 'EVE'], ['COV', 'AVL'], ['CRY', 'MUN'], ['FUL', 'BRE'],
+    ['HUL', 'TOT'], ['IPS', 'NEW'], ['LIV', 'LEE'], ['MCI', 'CHE'], ['SUN', 'NFO']];
+  const off = CARD15.filter(([h, a]) =>
+    !(rows[h] && rows[h][6] === a.toUpperCase() && rows[a] && rows[a][6] === h.toLowerCase()));
+  for (const [h, a] of off.slice(0, 4)) {
+    ok(false, 'GW15 card says ' + h + ' v ' + a + ', grid has ' + h + '→' +
+      ((rows[h] || [])[6] || '?') + ', ' + a + '→' + ((rows[a] || [])[6] || '?'));
+  }
+  ok(!off.length, 'all ten GW15 fixtures match the dated card (' + off.length + ' off)');
+
+  /* The card is dated Sat 12 Dec 2026, which is also a claim about the
+     calendar section above. The two were transcribed from different sources
+     on different days, so they can disagree. */
+  const gw15 = (md.match(/GW15 ([A-Z][a-z]{2} \d+)/) || [])[1];
+  ok(gw15 === 'Dec 12', 'the calendar puts GW15 on the card\'s date (' + gw15 + ' vs Dec 12)');
+  ok(new Date(Date.UTC(2026, 11, 12)).getUTCDay() === 6, 'and 12 Dec 2026 is the Saturday the card names');
 }
 
 /* The start date was wrong by a day and only one edition stated it, so the
