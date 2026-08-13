@@ -74,13 +74,20 @@ add('Congestion dataset',
   gradeCongestion(await get('/api/euro-fixtures?from=1&n=6'), await cupsStarted()));
 add('football-data', gradeFootballData(await get('/api/football-data/matchday?competition=PL'), NOW));
 
-for (const [label, path, staleDays, why] of [
+/* stampKeys names the field that reflects the THING, not the file. See the
+   note in gradePublished: record.json's generatedAt is stamped on every site
+   build, so watching it measured how recently we deployed and would never
+   have gone stale. ledgerUpdatedAt is when a round was last recorded or
+   graded, which is what this is meant to notice stopping. */
+for (const [label, path, staleDays, why, stampKeys] of [
   ['EFL model record', '/fantasy-efl/data/record.json', 21,
-    'the ledger publishes after each round is graded; three weeks quiet means the job stopped'],
+    'the ledger records before each round and grades after it; three weeks quiet means the job stopped',
+    ['ledgerUpdatedAt']],
   ['FPL history bundle', '/data/fpl-history.json', 60,
-    'rebuilt occasionally, so this is a loose backstop rather than a heartbeat']
+    'rebuilt occasionally, so this is a loose backstop rather than a heartbeat',
+    ['built', 'generatedAt']]
 ]) {
-  add(label, gradePublished(await get(path), { staleDays, why }, NOW));
+  add(label, gradePublished(await get(path), { staleDays, why, stampKeys }, NOW));
 }
 
 console.log(`Freshness — ${ORIGIN}\n`);

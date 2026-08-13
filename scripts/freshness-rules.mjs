@@ -130,9 +130,18 @@ export function gradeFootballData({ status, body }, now) {
    A scheduled job that quietly stops leaves a page that looks fine and is
    months out of date. Thresholds are loose on purpose: the ledger only moves
    when a round is graded, so a tight limit would cry wolf every off-week. */
-export function gradePublished({ status, body }, { staleDays, why }, now) {
+export function gradePublished({ status, body }, { staleDays, why, stampKeys }, now) {
   if (status !== 200 || !body) return fail(`HTTP ${status}`, why);
-  const stamp = body.generatedAt || body.built;
+  /* WHICH timestamp is the whole question. record.json carries a
+     `generatedAt` that is stamped on every site build, so watching it
+     measured deploy recency and reported a ledger with one round in it as
+     "0h old" — a heartbeat that beats whether or not the patient is alive.
+     Callers name the field that actually reflects the thing being watched,
+     and a file whose real timestamp is null is a failure rather than a pass,
+     because "nothing has happened yet" is exactly what staleness looks
+     like. */
+  const keys = stampKeys || ['generatedAt', 'built'];
+  const stamp = keys.map((k) => body[k]).find((v) => v);
   const t = Date.parse(stamp);
   if (!stamp || !isFinite(t)) {
     return fail('no generatedAt/built timestamp', 'cannot tell how old it is');

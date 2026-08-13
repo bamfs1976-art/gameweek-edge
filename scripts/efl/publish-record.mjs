@@ -98,8 +98,28 @@ export function buildPublicRecord(entries, generatedAt = new Date().toISOString(
      Correlations keep three places because the third one moves. */
   const season = roundNumbers(seasonSummary(entries || []));
 
+  /* When the LEDGER last moved, as distinct from when this file was built.
+     They are not the same thing and conflating them cost a check its meaning:
+     the freshness monitor watched generatedAt and reported the record "0h
+     old" on 13 Aug, when what it had actually measured was that the site had
+     just been deployed. publishRecord runs on every build, so generatedAt can
+     never go stale while anything at all is being pushed — a heartbeat that
+     beats whether or not the patient is alive.
+
+     This is the timestamp a staleness check wants: the most recent thing that
+     happened to the ledger itself, whether a round was recorded or graded.
+     Null when there are no rounds, which is honest — a ledger with nothing in
+     it has no last-updated date, and inventing one would restate the same
+     bug in a new field. */
+  const ledgerUpdatedAt = (entries || [])
+    .flatMap((e) => [e.recordedAt, e.result && e.result.gradedAt])
+    .filter((t) => t && isFinite(Date.parse(t)))
+    .sort()
+    .pop() || null;
+
   return {
     generatedAt,
+    ledgerUpdatedAt,
     /* Stated in the file rather than assumed by the page: a reader who
        downloads this should not have to read our source to know that the
        season figures deliberately exclude rounds whose points could not be

@@ -103,6 +103,23 @@ console.log('\n• freshness: football-data');
 console.log('\n• freshness: files we publish ourselves');
 {
   const spec = { staleDays: 21, why: 'the job stopped' };
+
+  /* The defect this argument exists to prevent. record.json is rebuilt on
+     every site deploy, so its generatedAt is always minutes old regardless of
+     whether the ledger has moved — watching it reported a check as healthy
+     when it was measuring nothing. A caller must be able to name the field
+     that tracks the thing, and a missing value must FAIL rather than fall
+     back to the one that always looks fresh. */
+  const justDeployed = { status: 200, body: {
+    generatedAt: iso(-0.01), ledgerUpdatedAt: iso(-40)
+  } };
+  ok(gradePublished(justDeployed, { ...spec, stampKeys: ['ledgerUpdatedAt'] }, NOW).verdict === 'fail',
+    'a freshly-built file whose LEDGER is 40 days stale fails');
+  ok(gradePublished(justDeployed, spec, NOW).verdict === 'ok',
+    'and watching the build stamp instead would have called it healthy — the bug, pinned');
+  ok(gradePublished({ status: 200, body: { generatedAt: iso(-0.01) } },
+    { ...spec, stampKeys: ['ledgerUpdatedAt'] }, NOW).verdict === 'fail',
+    'a null ledger timestamp fails rather than falling back to the build stamp');
   ok(gradePublished({ status: 200, body: { generatedAt: iso(-2) } }, spec, NOW).verdict === 'ok',
     'two days old is fine');
   ok(gradePublished({ status: 200, body: { generatedAt: iso(-30) } }, spec, NOW).verdict === 'fail',
