@@ -147,8 +147,26 @@ exports.handler = async (event) => {
   const key = process.env.FOOTBALL_DATA_KEY;
   /* Fail loudly. A silent empty body here would surface as "no referee this
      week" and look like upstream having nothing, which is the kind of quiet
-     wrong that survives for months. */
-  if (!key) return json(503, { error: 'FOOTBALL_DATA_KEY is not configured' });
+     wrong that survives for months.
+
+     The message says what to CHECK, not just what is wrong. When the key was
+     first set in the Netlify UI this endpoint kept 503-ing, and "not
+     configured" is ambiguous between the three reasons it can be missing —
+     the variable was never set, it was set but no deploy has happened since
+     (Netlify snapshots the environment per deploy), or it was set with a
+     scope that excludes Functions or a deploy context that excludes
+     production. All three look identical from here, and only the first is
+     what the old wording implied. Names only; never the value. */
+  if (!key) {
+    return json(503, {
+      error: 'FOOTBALL_DATA_KEY is not visible to this function',
+      check: [
+        'the variable exists on this Netlify site',
+        'a deploy has run SINCE it was set — env changes need a new deploy',
+        'its scope includes Functions, and its context includes Production'
+      ]
+    });
+  }
 
   let r, text;
   try {
