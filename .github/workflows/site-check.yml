@@ -53,3 +53,12 @@ jobs:
         run: |
           node dev/probe-referees.mjs ${{ github.event.inputs.origin }} | tee ref.txt
           { echo '```'; cat ref.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY
+
+      # How the data would be READ, as opposed to whether it is there. Runs
+      # under the same input because the two questions are only useful
+      # together — "it exists" and "here is what parsing it would cost".
+      - name: Probe the EFL source
+        if: ${{ always() && github.event.inputs.referees == 'true' }}
+        run: |
+          node dev/probe-efl-source.mjs | tee efl.txt
+          { echo '```'; cat efl.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY
