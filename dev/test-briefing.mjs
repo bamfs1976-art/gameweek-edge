@@ -755,6 +755,74 @@ console.log('\n• briefing: the season calendar agrees with itself and stays ou
   }
 }
 
+/* ── the GW9-18 grid ────────────────────────────────────────
+   Transcribed from a screenshot, which is the one thing this file has said
+   twice it will not do — so it is checked rather than trusted, and the check
+   ships instead of the claim that it passed once.
+
+   Every gameweek is ten fixtures. Each pair is stated twice, by both clubs,
+   and exactly one of the two must be home. A mis-read three-letter code
+   breaks the mirror; a mis-read CASE puts both clubs at home. That is the
+   same property the fixture-contradiction pass uses on the club register,
+   applied to a table the register does not own — and it is what separates
+   this grid from the 11 August one, whose cells were used for nothing
+   precisely because nothing could check them. */
+console.log('\n• briefing: the GW9-18 grid pairs cleanly, or it is a mis-read');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const rows = {};
+  /* Only the grid's own rows: three capitals, then ten short cells. */
+  for (const m of md.matchAll(/^\| ([A-Z]{3}) \| ((?:[A-Za-z]{3} \| ){9}[A-Za-z]{3}) \|$/gm)) {
+    rows[m[1]] = m[2].split(' | ').map((s) => s.trim());
+  }
+  const clubs = Object.keys(rows);
+  ok(clubs.length === 20, 'the grid states twenty clubs (' + clubs.length + ')');
+
+  let broken = 0, fixtures = 0;
+  for (let i = 0; i < 10; i++) {
+    const gw = i + 9, seen = new Set();
+    for (const club of clubs) {
+      const cell = rows[club][i], opp = cell.toUpperCase(), home = cell === opp;
+      const mirror = rows[opp] && rows[opp][i];
+      if (!mirror) {
+        if (broken++ < 4) ok(false, 'GW' + gw + ': ' + club + ' names ' + opp + ', which has no row');
+        continue;
+      }
+      if (mirror.toUpperCase() !== club) {
+        if (broken++ < 4) {
+          ok(false, 'GW' + gw + ': ' + club + ' plays ' + opp + ' but ' + opp +
+            ' plays ' + mirror.toUpperCase());
+        }
+        continue;
+      }
+      /* Both upper case, or both lower case, means both claim the same venue. */
+      if ((mirror === mirror.toUpperCase()) === home) {
+        if (broken++ < 4) {
+          ok(false, 'GW' + gw + ': ' + club + ' and ' + opp + ' BOTH claim ' +
+            (home ? 'home' : 'away'));
+        }
+        continue;
+      }
+      seen.add([club, opp].sort().join(' v '));
+    }
+    if (seen.size !== 10) { broken++; ok(false, 'GW' + gw + ' resolves to ' + seen.size + ' fixtures, not 10'); }
+    fixtures += seen.size;
+  }
+  ok(!broken, 'every pair mirrors with one home and one away (' + broken + ' broken)');
+  ok(fixtures === 100, 'and the grid states 100 fixtures across GW9-18 (' + fixtures + ')');
+
+  /* Five cells the live fixture list confirmed independently, through the
+     captain weeks our own chip planner picked off the API. If a future edit
+     moves one of these, the grid has drifted from the real season and not
+     merely from itself — which the pairing check above cannot see. */
+  for (const [club, gw, cell] of [['MCI', 16, 'HUL'], ['MCI', 13, 'LEE'], ['MCI', 9, 'BHA'],
+    ['MUN', 14, 'COV'], ['MUN', 18, 'SUN']]) {
+    ok(rows[club] && rows[club][gw - 9] === cell,
+      club + ' GW' + gw + ' is ' + cell + ' at home, as the live list had it (' +
+      ((rows[club] || [])[gw - 9] || 'missing') + ')');
+  }
+}
+
 /* The start date was wrong by a day and only one edition stated it, so the
    error had nowhere to be caught. Both state it now, and they must agree. */
 console.log('\n• briefing: both editions state the same start date');

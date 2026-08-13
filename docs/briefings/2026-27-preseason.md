@@ -225,6 +225,120 @@ does not do.
 
 ---
 
+## Outside chip plan — and what ours says instead, 13 August 2026
+
+Source: a chip-strategy thread by FPL Agha (@TheFatGoalie) on X, 12 August
+2026, with a GW9-18 fixture grid. Its claim: *"WC is by far the most powerful
+one, and the best window for this chip is GW17."* Two sequences are offered
+and the second argued for — **Option A** free hit in GW3 or GW4, a dead-end
+bench boost in GW15, wildcard GW16; **Option B** dead-end bench boost GW15,
+free hit GW16, wildcard GW17. It also holds that GW3-4 can be navigated
+without a free hit if you own Haaland, João Pedro, Bruno and a Liverpool
+midfielder, and it starts its fixture reading at GW9 because GW7-10 contain
+too many swings.
+
+This is the first outside source in this file that contests something the app
+itself **produces**, so it was answered by running the app rather than by
+reasoning about it. `dev/chip-plan.mjs` was run against the live FPL fixture
+list on a GitHub runner — the sandbox this project is written in cannot reach
+the FPL API — at commit `f3f55c5`:
+
+```
+league mean FDR 3.05 over 19 playable gameweeks
+international breaks before: GW6, GW11
+midweek-crowded: GW12, GW13 (both sides), GW14, GW17, GW18 (both sides), GW19 (both sides)
+
+  wildcard      GW6   post-break (22d)
+  benchboost    GW9   mean FDR 3.00 · edge 0.05 — near-arbitrary · provisional
+  triplecaptain GW16  Haaland v HUL (FDR 2) · provisional
+  freehit       GW19  mean FDR 3.10 · edge 0.05 — near-arbitrary · provisional
+
+FDR spread across the half: 0.10 (3.00–3.10)
+```
+
+**Where the two agree.** Free hit in GW16 is our second-ranked free-hit week
+(GW19, **GW16**, GW15, GW12, GW10). Bench boost in GW15 is inside our top five
+(GW9, GW8, GW16, **GW15**, GW10). Neither is our first choice, but neither is
+a week our planner would argue against.
+
+**Where they disagree, and it is not close.** GW17 does not appear in our top
+five wildcard weeks at all. Ours wants GW6 — the week after the three-week
+international break, a 22-day gap — then GW11 and GW16, each of which moves
+nine clubs onto better fixtures. Worth noting against the thread's own case:
+our planner independently flags **GW17 as midweek-crowded**, which is an
+argument against needing fifteen players to start that week, not against
+wildcarding into it.
+
+**And the part that is about us, not the thread.** Our planner says in its own
+output that two of its four picks carry no signal here. Across GW1-19 the
+league's mean difficulty moves 0.10 — from 3.00 to 3.10, flatter than the
+rounding on a single fixture — and the bench-boost pick wins its week by 0.05.
+So on *fixture difficulty alone*, the argument between Option A and Option B is
+below our noise floor, and we should not pretend otherwise by quoting a
+first-choice week at somebody. The thread is not arguing fixture difficulty: it
+is arguing squad value and transfer runway ("you want to invest all your money
+in your starting XI"), which our planner scores in separate terms and does not
+print. Two chips ranked on 0.05 of FDR is a planner being honest about a flat
+half, not a planner disagreeing.
+
+### The unexpected result: this thread verified yesterday's calendar
+
+Our planner's congestion flags are derived from the **live FPL deadlines** and
+know nothing about the @BenCrellin screenshot transcribed into the section
+above. They agree on every point. GW12 (28 Nov) → GW13 (1 Dec) → GW14 (5 Dec)
+is three days then four, which is exactly "GW12, GW13 both sides, GW14";
+GW17 (26 Dec) → GW18 (29 Dec) → GW19 (2 Jan) → GW20 (5 Jan) is three, four,
+three, which is exactly "GW17, GW18 both sides, GW19 both sides". The
+international breaks land before GW6 and GW11 in both. Nine derived facts, two
+independent sources, no disagreement — better evidence for those dates than
+either one alone.
+
+### The GW9-18 grid, verified rather than trusted
+
+The 11 August grid's cells were used for nothing because a screenshot at that
+resolution could not separate home from away. This one is legible, and it was
+**checked instead of believed**: every gameweek must resolve to exactly ten
+fixtures with each pair mirrored, one home and one away, and a mis-read code
+or case breaks a pair. All 100 pair cleanly, and a test in `dev/test-briefing.mjs`
+re-runs that check against the table below so a later typo fails rather than
+ships. Five cells are confirmed a second time by the planner's captain picks
+off the live list: Man City at home to Hull in GW16, to Leeds in GW13 and to
+Brighton in GW9; Man Utd at home to Coventry in GW14 and Sunderland in GW18.
+
+**Capitals are home, lower case away.** These are the source's difficulty
+bands, not ours, and are not reproduced — only the fixtures.
+
+| Club | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| ARS | liv | HUL | new | MCI | bre | tot | BOU | MUN | cry | ful |
+| AVL | FUL | mun | SUN | ips | EVE | CRY | cov | che | LEE | LIV |
+| BOU | LEE | ips | NFO | ful | BHA | HUL | ars | COV | tot | cry |
+| BRE | NFO | bha | EVE | mun | ARS | MCI | ful | NEW | ips | cov |
+| BHA | mci | BRE | hul | NEW | bou | nfo | EVE | IPS | ful | tot |
+| CHE | MUN | sun | LEE | nfo | CRY | LIV | mci | AVL | cov | ips |
+| COV | SUN | eve | CRY | lee | IPS | mun | AVL | bou | CHE | BRE |
+| CRY | tot | LIV | cov | HUL | che | avl | MUN | sun | ARS | BOU |
+| EVE | new | COV | bre | LIV | avl | FUL | bha | nfo | SUN | MCI |
+| FUL | avl | NEW | mci | BOU | tot | eve | BRE | lee | BHA | ARS |
+| HUL | IPS | ars | BHA | cry | NFO | bou | TOT | mci | LIV | LEE |
+| IPS | hul | BOU | tot | AVL | cov | lee | NEW | bha | BRE | CHE |
+| LEE | bou | TOT | che | COV | mci | IPS | liv | FUL | avl | hul |
+| LIV | ARS | cry | MUN | eve | SUN | che | LEE | TOT | hul | avl |
+| MCI | BHA | nfo | FUL | ars | LEE | bre | CHE | HUL | new | eve |
+| MUN | che | AVL | liv | BRE | new | COV | cry | ars | NFO | SUN |
+| NEW | EVE | ful | ARS | bha | MUN | SUN | ips | bre | MCI | NFO |
+| NFO | bre | MCI | bou | CHE | hul | BHA | sun | EVE | mun | new |
+| TOT | CRY | lee | IPS | sun | FUL | ARS | hul | liv | BOU | BHA |
+| SUN | cov | CHE | avl | TOT | liv | new | NFO | CRY | eve | mun |
+
+This does **not** close the gap named in the section above. The club register
+still states 79 of a possible 100 *opening* fixtures, GW1-5, and this table is
+a different window in a different section with different provenance. That gap
+is closed by running `npm run check:briefing --fix` against the real list —
+which the same runner that produced the chip plan can now be shown to reach.
+
+---
+
 # The 20 clubs
 
 Ordered by 2025/26 finishing position, promoted clubs last.
