@@ -35,9 +35,10 @@
     {
       "rank": 2,
       "club": "Leicester City",
-      "fixture": "v NOT (A)",
+      "fixture": "v Notts County (A)",
       "claim": "49% to win, victory in EFL Cup, 4 of 6 pre-season wins",
-      "unresolved": "the opponent is printed as the three-letter code NOT, which is not resolved here; recording a guess would be inventing a fixture"
+      "opponent": "Notts County",
+      "resolution": "The code NOT was printed without expansion; resolved to Notts County by the project's owner on 13 Aug. Recorded as their resolution rather than as a feed confirmation: our round-1 entry stores fixtures only for the seven players it picked, so nothing on hand could check it. The grader will have the full round from the official feed and can confirm or correct it then."
     },
     {
       "rank": 3,
@@ -127,5 +128,9 @@
     "observation": "No shared name in either list, now that all five sections are captured. Our seven leans on League One and League Two (Oldham, Bradford, Grimsby, Cambridge, Reading) with two Championship midfielders; every tip here that can be placed is Championship — our forward is Beesley of Bradford, theirs is Lankshear of Middlesbrough. Whether that is our model finding value below the top division or simply preferring players nobody watches is the question round-by-round grading is meant to answer, and it is not answered by either side asserting it now."
   },
   "internalConsistency": "Their number-one striker and their number-one team tip are the same fixture: W. Lankshear is listed with \"Lincoln (H)\" and the top team tip is Middlesbrough v Lincoln at home. The thread agrees with itself, which is worth noting because it is the cheapest test available and not every tip list passes it.",
-  "crossReference": "W. Lankshear also appears in this project's Premier League briefing, in Tottenham's Out list as \"Will Lankshear (CF, Middlesbrough, ~£10m)\". Two documents built for different competitions from different sources agreeing on where a player went is a small check that costs nothing and was free to make."
+  "crossReference": "W. Lankshear also appears in this project's Premier League briefing, in Tottenham's Out list as \"Will Lankshear (CF, Middlesbrough, ~£10m)\". Two documents built for different competitions from different sources agreeing on where a player went is a small check that costs nothing and was free to make.",
+  "observations": [
+    "All seven of our picks are at HOME — Oldham v Port Vale, Bradford v Peterborough, Grimsby v Exeter, Cambridge v Wigan, Reading v Luton, Bristol City v Millwall, Stoke v Swansea. Home advantage is in the club rating, so a tilt is expected; seven from seven is a strong one and is noted here so that grading can speak to it rather than it being noticed later and explained after the fact.",
+    "Their three team tips are two home and one away, and their top tip and top striker are the same fixture."
+  ]
 }
