@@ -131,7 +131,16 @@ for (const comp of ['ELC', 'PL']) {
       if (res.status !== 200) {
         console.log(`  (control unavailable: head2head answered ${res.status})`);
       } else if (!past.length) {
-        console.log('  (control inconclusive: head2head returned no finished match either)');
+        /* Tried on 13 Aug and it came back empty for both competitions. The
+           free tier serves the CURRENT SEASON only, and on 13 Aug 2026 the
+           current season had not begun — so head2head has no past meeting it
+           is allowed to return, and no completed match is reachable on this
+           plan by any route. The control is not merely missing, it is
+           unobtainable until football is played. */
+        console.log('  (control unobtainable: head2head returned no finished match either — the free');
+        console.log('   tier serves the current season only, and no match in it has been played yet.');
+        console.log('   Re-run this probe once the first round has finished; until then "absent" and');
+        console.log('   "not yet published" cannot be told apart.)');
       } else {
         const named = past.filter((m) => mainRef(m));
         console.log(`  (control, via head2head on a past meeting: ${named.length} of ${past.length} `

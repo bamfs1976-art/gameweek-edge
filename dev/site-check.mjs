@@ -61,15 +61,49 @@ const CHECKS = [
 
 const UA = 'Mozilla/5.0 (compatible; GameweekEdgeSiteCheck/1.0; +https://gameweekedge.co.uk)';
 
+/* A thrown fetch is not the same finding as a wrong status code, and treating
+   them alike made this check lie once. On 13 Aug /fantasy-efl/ came back
+   "fetch failed" — one dropped connection, on a route that had served 200
+   forty minutes earlier and served 200 again straight after — and the whole
+   run went red and mailed a failure.
+
+   That matters more than it used to. The football-data line was red on
+   purpose for three days, and the argument for leaving it red was that a red
+   here should mean something. A check that cries wolf on a single lost packet
+   spends exactly the credibility that argument depends on.
+
+   So: retry, but only a THROWN request. A 404 or a 500 is the site's answer
+   and is reported first time, every time — retrying those would be the kind
+   of exception this file has refused to add. And a route that only passes on
+   a retry says so in the output, because "flaky" is a finding too. */
+const RETRIES = 2;
+const BACKOFF_MS = 1500;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function request(url) {
+  let last;
+  for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    if (attempt) await sleep(BACKOFF_MS * attempt);
+    try {
+      return {
+        res: await fetch(url, {
+          headers: { 'User-Agent': UA, Accept: '*/*' },
+          /* Manual, because "it redirects" and "it serves the same page" are
+             different promises and only one of them was made. */
+          redirect: 'manual'
+        }),
+        attempts: attempt + 1
+      };
+    } catch (err) { last = err; }
+  }
+  throw last;
+}
+
 async function probe({ path, status, redirect, json }) {
   const url = ORIGIN + path;
   try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': UA, Accept: '*/*' },
-      /* Manual, because "it redirects" and "it serves the same page" are
-         different promises and only one of them was made. */
-      redirect: 'manual'
-    });
+    const { res, attempts } = await request(url);
+    const flaky = attempts > 1 ? ` [after ${attempts} attempts]` : '';
     const location = res.headers.get('location');
     const out = { status: res.status, location };
     if (json) {
@@ -78,17 +112,17 @@ async function probe({ path, status, redirect, json }) {
     if (redirect != null) {
       const target = location ? new URL(location, ORIGIN).pathname : null;
       out.ok = res.status >= 300 && res.status < 400 && target === redirect;
-      out.detail = out.ok ? `${res.status} → ${target}`
-        : `expected 3xx → ${redirect}, got ${res.status}${target ? ' → ' + target : ''}`;
+      out.detail = (out.ok ? `${res.status} → ${target}`
+        : `expected 3xx → ${redirect}, got ${res.status}${target ? ' → ' + target : ''}`) + flaky;
       return out;
     }
     const allowed = Array.isArray(status) ? status : [status];
     out.ok = allowed.includes(res.status) && !out.notJson;
-    out.detail = out.notJson ? `${res.status} but the body was not JSON`
-      : `${res.status}${allowed.length > 1 ? ` (allowed: ${allowed.join('/')})` : ''}`;
+    out.detail = (out.notJson ? `${res.status} but the body was not JSON`
+      : `${res.status}${allowed.length > 1 ? ` (allowed: ${allowed.join('/')})` : ''}`) + flaky;
     return out;
   } catch (err) {
-    return { ok: false, detail: `request failed: ${err.message}` };
+    return { ok: false, detail: `request failed after ${RETRIES + 1} attempts: ${err.message}` };
   }
 }
 
@@ -109,7 +143,9 @@ for (const check of CHECKS) {
    /euro/ would keep launching from someone's home screen. */
 console.log('');
 try {
-  const res = await fetch(`${ORIGIN}/sw.js`, { headers: { 'User-Agent': UA } });
+  /* Same retry as every other request — this one was fetched raw, so a
+     dropped connection here would have gone red for the same wrong reason. */
+  const { res } = await request(`${ORIGIN}/sw.js`);
   const src = await res.text();
   const version = (src.match(/const VERSION = '([^']+)'/) || [])[1] || '(none)';
   const euro = /'\/euro\//.test(src);

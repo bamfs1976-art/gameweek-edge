@@ -99,8 +99,23 @@ const ROUTES = {
     if (md != null && md !== '' && !/^[1-9]\d?$/.test(String(md))) return null;
     return {
       path: `/competitions/${comp}/matches` + (md ? `?matchday=${md}` : ''),
-      /* Referees are published a couple of days out and then do not move.
-         Half an hour is short enough to pick that up the same afternoon. */
+      /* This used to read "referees are published a couple of days out and
+         then do not move", and the half-hour cache was justified by it. It
+         was never checked. On 13 Aug 2026 it was, through this very endpoint:
+         across 12 Championship matches inside four days of kick-off — one of
+         them inside two — not a single referee was named, and the same held
+         for all 380 Premier League fixtures. So the claim is unsupported as
+         written, and nothing should be built on it.
+
+         What is still unknown is whether the field EVER fills, because the
+         free tier serves only the current season and no match in it had been
+         played, so no completed match was reachable to compare against. See
+         dev/probe-referees.mjs; re-run it after the first round.
+
+         The half hour stays, on different grounds: kick-off times and match
+         status do move, and half an hour is a reasonable staleness for a
+         fixture list. If referees ever do appear, revisit this deliberately
+         rather than inheriting a number that once meant something else. */
       ttl: 1800
     };
   },
