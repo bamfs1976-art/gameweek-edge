@@ -2,7 +2,7 @@
 
 **Built for Gameweek Edge (gameweekedge.co.uk). Compiled 2 August 2026. Four club blocks updated 11 August 2026 — see the update log.**
 
-Season starts Friday 21 August 2026, per the Premier League's own pre-season page. An earlier version of this file said Saturday 22 August, which was a day late; the correction is recorded here rather than made silently. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
+Season starts Friday 21 August 2026 — **settled against the FPL API on 13 August**, which puts the GW1 deadline at `2026-08-21T17:30:00Z` (18:30 BST, so a 20:00 first kick-off). That is the time managers are actually bound by, and it is what this file now cites. An earlier version said Saturday 22 August, which was a day late; the correction is recorded here rather than made silently. The summer window is still open until roughly 1 September 2026, so treat late business, and any set-piece or penalty order marked "watch", as provisional until pre-season friendlies and GW1 confirm roles.
 
 ---
 
@@ -1082,7 +1082,7 @@ is partly a list of who played the weakest opposition.
 - FPL prices marked "est." are estimates. Confirm every price against the official price reveal and the FPL API at launch.
 - Penalty and set-piece order is the most fluid data here because of the ten managerial changes. Re-check duties after pre-season friendlies and GW1.
 - Two minor source conflicts to verify: Garnacho's origin (Chelsea loan best supported), Hull's GW1 venue, and Joe Gelhardt's Hull status.
-- The 21 August start date is taken from the Premier League's pre-season page and is now corroborated by a second source (the @BenCrellin season planner, 12 Aug), but has still NOT been confirmed against the FPL API — `npm run check:briefing` settles it from the GW1 deadline, and could not reach the API when the correction was made. Two sources agreeing is not the deadline managers are bound by. Re-run it before relying on the date.
+- ~~The 21 August start date has not been confirmed against the FPL API.~~ **Resolved 13 August 2026.** The API gives the GW1 deadline as `2026-08-21T17:30:00Z` — 18:30 BST on Friday 21 August. Four sources agreed on the date beforehand (the Premier League pre-season page, the @BenCrellin planner, the Guardian's Coventry preview and the fixture list), but none of them was the deadline itself, which is the only version of this fact a manager is bound by. Read from the live API by the daily Freshness check, which prints the deadline rather than a countdown so the figure can be quoted rather than inferred.
 - The blank and double gameweeks in the season shape above are a third party's FORECAST, not a schedule. Nothing in the app reads them. A blank exists once a cup round removes named clubs from a named weekend, and those results have not happened.
 - The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.
 - The outside attack/defence ranking above is a third party's view, read from a screenshot. Its per-gameweek cells are used for nothing — only the rank columns and the headline. Two ranks in it were unreadable and are marked, not guessed.

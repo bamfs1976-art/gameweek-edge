@@ -1033,6 +1033,24 @@ console.log('\n• briefing: both editions state the same start date');
   const actual = new Date(Date.UTC(2026, 7, Number(dd)))
     .toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
   ok(wd === actual, 'the weekday matches the date (' + wd + ' ' + dd + ' August 2026 is a ' + actual + ')');
+
+  /* The deadline, added 13 Aug once the API settled it. This is now the
+     load-bearing half of the claim — four sources agreed the DATE while none
+     of them was the deadline, and the deadline is the only version a manager
+     is bound by. Both editions quote it, so both can drift. */
+  const dl = (s) => (s.match(/2026-08-\d{2}T\d{2}:\d{2}:\d{2}Z/) || [])[0];
+  const x = dl(md), y = dl(html);
+  ok(x, 'the markdown quotes the GW1 deadline (' + x + ')');
+  ok(x === y, 'and the html edition quotes the same one (' + x + ' vs ' + y + ')');
+  /* The deadline must fall on the day the file names as the start, or the
+     document is quoting a timestamp that contradicts its own headline. */
+  const day = new Date(x).toISOString().slice(8, 10);
+  ok(Number(day) === Number(dd),
+    'the deadline falls on the stated start date (' + day + ' vs ' + dd + ')');
+  /* And it must still be a real deadline rather than a stale copy from a
+     season already gone — the same rollover trap the freshness check exists
+     for, applied to the number this document hard-codes. */
+  ok(new Date(x).getUTCFullYear() === 2026, 'and it is this season\'s, not last season\'s');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
