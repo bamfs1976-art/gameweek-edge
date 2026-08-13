@@ -119,21 +119,56 @@ try {
     const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ')
       .replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')
       .replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
-    /* Three independent signals that the page really carries appointments,
-       rather than that some page answered 200. */
-    const refWord = (text.match(/\bReferee\b/gi) || []).length;
-    const assistants = (text.match(/\bAssistant Referee\b/gi) || []).length;
-    const versus = (text.match(/\bv\b/g) || []).length;
-    console.log(`  ${html.length} bytes · "Referee" ${refWord}× · "Assistant Referee" ${assistants}× `
-      + `· fixture "v" separators ${versus}×`);
-    const usable = refWord > 5 && versus > 5;
+    /* Counted in BOTH the visible text and the raw HTML, because the first
+       run counted only the text and concluded the page did not carry
+       appointments. That strip removes <script> blocks — and a modern site
+       ships its content as JSON inside exactly those. The extraction had
+       deleted the evidence before looking at it, which is the same mistake
+       as the verdict this probe is here to correct, one level down. */
+    const count = (s, re) => (s.match(re) || []).length;
+    const REF = /\bReferee\b/gi, ASSIST = /Assistant\s+Referee/gi;
+    console.log(`  ${html.length} bytes`);
+    console.log(`  visible text: "Referee" ${count(text, REF)}× · `
+      + `"Assistant Referee" ${count(text, ASSIST)}×`);
+    console.log(`  raw html:     "Referee" ${count(html, REF)}× · `
+      + `"Assistant Referee" ${count(html, ASSIST)}×`);
+
+    /* If the data is embedded, one of these markers says where. If none of
+       them appears, the page fetches it after load and the endpoint — not
+       this URL — is what a real implementation would have to read. */
+    const MARKERS = [
+      ['__NEXT_DATA__', /__NEXT_DATA__/],
+      ['ld+json', /application\/ld\+json/i],
+      ['__NUXT__', /__NUXT__/],
+      ['__INITIAL_STATE__', /__INITIAL_STATE__/i],
+      ['inline JSON array of objects', /\[\s*\{\s*"/]
+    ];
+    const found = MARKERS.filter(([, re]) => re.test(html)).map(([n]) => n);
+    console.log(`  embedded-data markers: ${found.length ? found.join(', ') : 'none'}`);
+
+    /* Any JSON or API URL the page references, which is where the content
+       would be if it is not embedded. Reported, not followed. */
+    const endpoints = [...new Set((html.match(/https?:\/\/[^\s"'<>]+?(?:\.json|\/api\/[^\s"'<>]*)/gi) || [])
+      .map((u) => u.replace(/[),.]+$/, '')))].slice(0, 6);
+    if (endpoints.length) {
+      console.log('  JSON/API URLs referenced:');
+      for (const e of endpoints) console.log(`    ${e.slice(0, 120)}`);
+    }
+
+    const inRaw = count(html, REF);
+    const usable = count(text, REF) > 5 || inRaw > 15;
     console.log(usable
-      ? '  → the page carries appointments in readable text'
-      : '  → 200, but the text does not look like an appointments list (JS-rendered?)');
+      ? '  → appointments look readable from this page'
+      : inRaw > count(text, REF)
+        ? '  → not in the visible text, but the raw HTML mentions referees more often — '
+          + 'embedded or templated, worth a parser'
+        : '  → the page does not appear to carry the appointments at all');
     verdict.push(usable
-      ? 'EFL site: appointments ARE published ahead — this specimen went up 11 Aug for 14-20 Aug, '
+      ? 'EFL site: appointments ARE readable — and this specimen went up 11 Aug for 14-20 Aug, '
         + 'i.e. 3 to 9 days before kick-off'
-      : 'EFL site: reachable, but the appointments were not readable from the raw HTML');
+      : `EFL site: reachable (200) but not parseable from raw HTML — `
+        + `${found.length ? 'embedded via ' + found.join('/') : 'no embedded-data marker'}, `
+        + 'so the content is fetched after load');
   } else {
     verdict.push(`EFL site: the specimen URL answered ${res.status} — reachable but not this page`);
   }
