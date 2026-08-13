@@ -55,7 +55,7 @@ const CHECKS = [
      the upstream shape moved — a real regression in a feature that is now
      expected to work, not a note about something nobody had configured. */
   { path: '/api/football-data/matchday?competition=PL', status: 200, json: true,
-    why: 'referees + midweek fixtures (503 = key not configured)' },
+    why: 'referees + midweek fixtures (green since 13 Aug)' },
   { path: '/privacy.html', status: 200, why: 'privacy policy' }
 ];
 
