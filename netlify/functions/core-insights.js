@@ -13,7 +13,9 @@
 
    Source: https://github.com/olbauday/FPL-Core-Insights (used freely with a
    link back, per its README). Per-match files live at
-   data/{season}/By Gameweek/GW{n}/playermatchstats.csv.
+   data/{season}/By Tournament/Premier League/GW{n}/playermatchstats.csv —
+   the LEAGUE only. See the note above gwUrl for what reading the all-competitions
+   directory was costing.
 
    Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY. No-ops if unconfigured, so
    the feature degrades to "official data only" exactly like the app's other
@@ -68,7 +70,53 @@ function seasonCandidates(d) {
   return [cur, (s - 1) + '-' + s];                        // current, then previous
 }
 
-const gwUrl = (season, gw) => RAW + '/data/' + season + '/By%20Gameweek/GW' + gw + '/playermatchstats.csv';
+/* ── READ THE LEAGUE DIRECTORY, NOT THE GAMEWEEK ONE ──────────────────────
+   `By Gameweek/GW<n>/` is every match a player played that week in EVERY
+   competition. This file used to read it, and everything downstream — the xP
+   model's goalkeeper term, dcHitRate, Rank Threats, the club threads'
+   defensive floor — was quietly part European.
+
+   Measured on the full 2025-26 season, mixed against league-only:
+
+     - 15,340 appearance rows become 12,754. 2,586 of them (17%) were cup and
+       European ties.
+     - Of 291 players with ten or more league starts, 30 (10%) have a
+       defensive-contribution hit rate that moves by five percentage points
+       or more. The largest move is 16 points.
+     - The moves are mostly DOWNWARD in the mixed version, because a Thursday
+       in the Europa League adds a start that FPL pays nothing for. So the
+       app was understating the DefCon reliability of exactly the players at
+       the clubs in Europe — the most-owned players in the game.
+     - League-wide goals_prevented reads 17.4 mixed against 13.4 league-only,
+       a 30% inflation of a number the goalkeeper term leans on.
+
+   None of that is a bug you can see. Every value stayed a plausible value.
+
+   This is a SCOPE question, not a sample-size one: more matches are not more
+   evidence when FPL scores none of them. `By Tournament/Premier League/`
+   carries the same file filtered to the competition the game is about. */
+const gwUrl = (season, gw) =>
+  RAW + '/data/' + season + '/By%20Tournament/Premier%20League/GW' + gw + '/playermatchstats.csv';
+
+/* Every match id under that path carries this marker. Checked on every row
+   rather than trusted, because the failure mode being guarded here is
+   precisely a directory that keeps working while quietly meaning something
+   else. If the upstream reorganises, this goes loud and the job declines to
+   write — yesterday's correct aggregate is worth more than today's mixed one. */
+const LEAGUE_MATCH = /-prem-/;
+
+/* Splits rows by that marker. Pure and exported so the rule is unit-tested
+   rather than buried in the fetch path. Rows with no match_id at all are
+   treated as league rows: the column is not load-bearing for the aggregate,
+   and a feed that stopped publishing it should not empty the database. */
+function splitLeagueRows(rows) {
+  const league = [], foreign = [];
+  for (const r of rows || []) {
+    const id = r && r.match_id;
+    if (id && !LEAGUE_MATCH.test(id)) foreign.push(r); else league.push(r);
+  }
+  return { league, foreign };
+}
 
 async function fetchGw(season, gw) {
   const r = await fetch(gwUrl(season, gw), { headers: { 'User-Agent': UA, Accept: 'text/csv' } });
@@ -207,16 +255,23 @@ function positionMap(playersCsv) {
    rather than return an empty set. Returns { season, rows } or null. */
 async function collectSeason(season) {
   const rows = [];
+  let foreign = 0;
   for (let base = 1; base <= MAX_GW; base += 4) {
     const gws = [base, base + 1, base + 2, base + 3].filter((g) => g <= MAX_GW);
     let batch;
     try { batch = await Promise.all(gws.map((g) => fetchGw(season, g))); }
     catch (_) { break; }                                   // upstream hiccup — use what we have
     let any = false;
-    for (const b of batch) if (b && b.length) { rows.push(...b); any = true; }   // header-only → skip
+    for (const b of batch) {
+      if (!b || !b.length) continue;                       // header-only → skip
+      const split = splitLeagueRows(b);
+      foreign += split.foreign.length;
+      rows.push(...split.league);
+      any = true;
+    }
     if (!any) break;                                       // whole batch 404 / empty → season not yet playing
   }
-  return rows.length ? { season, rows } : null;
+  return rows.length ? { season, rows, foreign } : null;
 }
 
 exports.config = { schedule: '30 6,17 * * *' };            /* ~1h after the upstream 07:30 / 17:30 UTC refreshes */
@@ -233,6 +288,18 @@ exports.handler = async () => {
     }
   } catch (_) { return { statusCode: 200, body: 'upstream unavailable' }; }
   if (!picked) return { statusCode: 200, body: 'no season data' };
+
+  /* We asked for the league directory. A single non-league match id in the
+     answer means that path no longer means what it meant, and the whole
+     aggregate is back to being part European without saying so. Decline the
+     run: the previous rows stay, and this reads as stale rather than wrong. */
+  if (picked.foreign) {
+    return { statusCode: 200, body: JSON.stringify({
+      season: picked.season, wrote: 0,
+      refused: picked.foreign + ' non-league match id(s) under By Tournament/Premier League — ' +
+        'the upstream layout has changed. Fix gwUrl/LEAGUE_MATCH in this file; ' +
+        'the existing aggregate is left in place.' }) };
+  }
 
   /* Player positions (for the DEF 10 vs MID/FWD 12 defensive-contribution
      threshold). Best-effort: without it the defcon fields stay null. */
@@ -259,5 +326,6 @@ exports.handler = async () => {
 module.exports.parseCsv = parseCsv;
 module.exports.aggregate = aggregate;
 module.exports.positionMap = positionMap;
+module.exports.splitLeagueRows = splitLeagueRows;
 module.exports.deriveSeasonLabel = deriveSeasonLabel;
 module.exports.seasonCandidates = seasonCandidates;
