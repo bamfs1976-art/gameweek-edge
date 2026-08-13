@@ -18,10 +18,6 @@ on:
         description: 'Origin to check (default: the production site)'
         type: string
         default: ''
-      referees:
-        description: 'Also probe whether referees are published before kick-off'
-        type: boolean
-        default: false
   schedule:
     - cron: '25 7 * * *' # once a day, after any overnight deploy
 
@@ -43,22 +39,3 @@ jobs:
       - name: Check the live site
         run: node dev/site-check.mjs ${{ github.event.inputs.origin }}
 
-      # Same question in a different direction — what the deployed site really
-      # serves — so it lives here rather than in a file of its own. Opt-in,
-      # because it spends football-data quota and the answer changes only when
-      # the upstream plan does. `always()` so a red site check still lets the
-      # probe report; the two findings are independent.
-      - name: Probe referees
-        if: ${{ always() && github.event.inputs.referees == 'true' }}
-        run: |
-          node dev/probe-referees.mjs ${{ github.event.inputs.origin }} | tee ref.txt
-          { echo '```'; cat ref.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY
-
-      # How the data would be READ, as opposed to whether it is there. Runs
-      # under the same input because the two questions are only useful
-      # together — "it exists" and "here is what parsing it would cost".
-      - name: Probe the EFL source
-        if: ${{ always() && github.event.inputs.referees == 'true' }}
-        run: |
-          node dev/probe-efl-source.mjs | tee efl.txt
-          { echo '```'; cat efl.txt; echo '```'; } >> $GITHUB_STEP_SUMMARY

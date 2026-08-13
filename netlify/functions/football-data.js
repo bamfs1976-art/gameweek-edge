@@ -113,9 +113,12 @@ const ROUTES = {
          to nine days ahead on its own site. The feed's silence was a fact
          about the feed, and it got told as a fact about football.
 
-         So: no referee data here, and that says nothing about whether the
-         suspension panel is buildable. See dev/probe-referees.mjs, which now
-         tests both sources and names which one it is talking about.
+         So: no referee data here. 13 Aug 2026: the referee panel was
+         investigated and DECLINED — the site reads feeds it is offered, not
+         pages it takes — so this is a closed question, not a pending one.
+         See docs/scope-referee-source.md. If this plan ever starts filling
+         the array, that would be the thing that reopens it, and it is
+         checked by looking rather than by a scheduled job.
 
          The half hour stays, on different grounds: kick-off times and match
          status do move, and half an hour is a reasonable staleness for a
