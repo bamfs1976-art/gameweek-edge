@@ -1,31 +1,36 @@
 /*
- * Are referees published BEFORE kick-off, or only after?
+ * Where can referee appointments actually be read from, and how far ahead?
  *
  * The Fantasy EFL app knows who is one booking from a suspension. It does not
  * know who is refereeing them, and a player on four yellows in front of a
  * strict official is a different risk from the same player in front of a
  * lenient one. That is the feature this probe exists to justify or kill.
  *
- * It turns on ONE fact. football-data.js asserts, in a comment, that
- * "referees are published a couple of days out and then do not move" — and
- * sets a 30-minute cache on that basis. If the comment is wrong, and the
- * array only fills in once a match is over, then the feed can only tell us
- * who refereed a booking that already happened. That is history, not a
- * warning, and the feature is worthless. Nobody has ever checked, because
- * until 13 Aug 2026 the endpoint had never once answered in production.
+ * ── A CORRECTION, 13 Aug 2026 ─────────────────────────────────────────
+ * The first version of this probe asked only "does football-data.org carry
+ * referees before kick-off", found empty arrays, and reported the answer as
+ * "referees are not published before kick-off". That conclusion was wrong,
+ * and wrong in the way that matters: it turned a fact about ONE FEED into a
+ * claim about the world. The EFL publishes its appointments days ahead —
+ * three to nine days ahead, on its own site — which is exactly the horizon
+ * the suspension panel needs.
  *
- * Two competitions, for two different reasons:
- *   ELC — the Championship, the one Fantasy EFL division this project has a
- *         licensed route to. League One and Two are not on the plan, so a
- *         yes here is a partial yes for that app.
- *   PL  — the FPL app, where the same panel would live.
+ * So the question was never "are they published". It is "which source do we
+ * read them from", and a probe that tests one source can only answer for
+ * that source. This version tests two, and says which it is talking about
+ * every time it prints a verdict.
  *
- * Goes through our own deployed proxy, so it needs no key and exercises the
- * path production actually takes.
+ * Part 1 — football-data.org, through our own proxy. Reports whether the
+ *   `referees` key is even present in the payload, because "present but
+ *   empty" (a tier or timing limit) and "absent from the schema" (this plan
+ *   never carries it) point at different fixes and looked identical before.
+ * Part 2 — the EFL's own appointments page, which is the source that
+ *   demonstrably has the data. Reachability and parseability only; this
+ *   builds no scraper and commits us to nothing.
  *
  * Run:  node dev/probe-referees.mjs [https://origin]
  * CI:   the "Site check" workflow, `referees` input — the sandbox this is
- *       written in cannot reach gameweekedge.co.uk.
+ *       written in can reach neither gameweekedge.co.uk nor www.efl.com.
  */
 const ORIGIN = (process.argv[2] || process.env.SITE_ORIGIN || 'https://gameweekedge.co.uk')
   .replace(/\/$/, '');
@@ -38,6 +43,8 @@ const NOW = Date.now();
 const mainRef = (m) => ((m && m.referees) || [])
   .find((r) => !r.type || String(r.type).toUpperCase() === 'REFEREE');
 
+/* ═══ Part 1 — what football-data.org's feed carries ═══════════════════ */
+
 async function matches(comp) {
   const url = `${ORIGIN}/api/football-data/matchday?competition=${comp}`;
   const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
@@ -45,120 +52,99 @@ async function matches(comp) {
   if (res.status !== 200) {
     return { error: `${res.status} ${body ? JSON.stringify(body).slice(0, 200) : '(no body)'}` };
   }
-  return { list: (body && body.matches) || [], count: (body && body.count) || 0 };
+  return { list: (body && body.matches) || [] };
 }
 
-/* Buckets by how far from kick-off the match is, because "before kick-off" is
-   not one question. A referee that appears two hours out is useless for a
-   transfer deadline; one that appears three days out is exactly what the
-   suspension panel needs. */
 const BUCKETS = [
-  { label: 'finished', test: (d) => d < 0, note: 'after the fact — no use for a warning' },
+  { label: 'finished', test: (d) => d < 0 },
   { label: 'in the next 2 days', test: (d) => d >= 0 && d < 2 },
   { label: '2 to 4 days out', test: (d) => d >= 2 && d < 5, note: 'the deadline window' },
   { label: '5 to 7 days out', test: (d) => d >= 5 && d < 8 },
   { label: 'more than a week out', test: (d) => d >= 8 }
 ];
 
-console.log(`Referee probe — ${ORIGIN}\n`);
+console.log(`Referee source probe — ${ORIGIN}\n`);
+console.log('PART 1 — football-data.org, via our proxy\n');
 
-let verdictLines = [];
+const verdict = [];
 for (const comp of ['ELC', 'PL']) {
   const { list, error } = await matches(comp);
   if (error) { console.log(`${comp}: the proxy did not answer — ${error}\n`); continue; }
   if (!list.length) { console.log(`${comp}: no matches returned at all\n`); continue; }
 
-  console.log(`${comp} — ${list.length} matches in the feed`);
-  const rows = list.map((m) => ({
-    id: m.id,
-    days: (Date.parse(m.utcDate) - NOW) / 86400000,
-    status: m.status,
-    ref: mainRef(m)
-  }));
+  /* The distinction the first run could not make. A key that is present and
+     empty is a plan or timing limit and might fill; a key that is absent
+     from every match is not part of what this plan serves at all. */
+  const withKey = list.filter((m) => Object.prototype.hasOwnProperty.call(m, 'referees')).length;
+  const nonEmpty = list.filter((m) => (m.referees || []).length).length;
 
-  let firstAhead = null;
+  console.log(`${comp} — ${list.length} matches`);
+  console.log(`  the "referees" key is present on ${withKey} of them, non-empty on ${nonEmpty}`);
+
+  const rows = list.map((m) => ({ days: (Date.parse(m.utcDate) - NOW) / 86400000, ref: mainRef(m) }));
   for (const b of BUCKETS) {
     const inB = rows.filter((r) => b.test(r.days));
     if (!inB.length) continue;
-    const withRef = inB.filter((r) => r.ref);
-    const pct = Math.round((withRef.length / inB.length) * 100);
+    const named = inB.filter((r) => r.ref).length;
     console.log(`  ${String(b.label).padEnd(22)} ${String(inB.length).padStart(4)} matches · `
-      + `${String(withRef.length).padStart(4)} named (${String(pct).padStart(3)}%)`
-      + (b.note ? `  — ${b.note}` : ''));
-    if (b.label !== 'finished' && withRef.length && !firstAhead) firstAhead = b.label;
+      + `${String(named).padStart(4)} named` + (b.note ? `  — ${b.note}` : ''));
   }
 
-  /* The single number that decides it: the furthest-out match that already
-     has a referee. Percentages hide this — one named match a week out is the
-     difference between a usable panel and a post-mortem. */
-  const ahead = rows.filter((r) => r.days > 0 && r.ref).sort((a, b) => b.days - a.days)[0];
-  const played = rows.filter((r) => r.days < 0);
-  const playedNamed = played.filter((r) => r.ref).length;
-
-  if (ahead) {
-    console.log(`  → furthest-out named referee: ${ahead.ref.name} `
-      + `${ahead.days.toFixed(1)} days before kick-off (${ahead.status})`);
-    verdictLines.push(`${comp}: YES — named up to ${ahead.days.toFixed(1)} days ahead`);
-  } else {
-    const why = played.length && playedNamed
-      ? 'referees appear only AFTER the match'
-      : 'no referee is named anywhere in this feed, before or after';
-    console.log(`  → no upcoming match has a referee. ${why}`);
-    verdictLines.push(`${comp}: NO — ${why}`);
-  }
-  if (played.length) {
-    console.log(`  (control: ${playedNamed} of ${played.length} finished matches name one, `
-      + `which says whether the field exists on this plan at all)`);
-  } else {
-    /* ── The control, when the season has not started ──────────────
-       On 13 Aug 2026 both feeds held nothing but future fixtures — 552 for
-       the Championship, 380 for the Premier League, not one of them played.
-       So "no referee anywhere" was ambiguous in the one way that matters:
-       it could mean the field fills closer to kick-off, or that this plan
-       never carries it at all. Those imply opposite decisions and the probe
-       could not separate them.
-
-       head2head returns PAST meetings for a fixture, and past means
-       finished. It is the only route here that can reach a completed match
-       before a ball is kicked this season, so it settles the question
-       today rather than in a fortnight. */
-    const seed = rows.length ? list[rows.findIndex((r) => r.days > 0)] : null;
-    if (seed && seed.id) {
-      const url = `${ORIGIN}/api/football-data/h2h?id=${seed.id}&limit=10`;
-      const res = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json' } });
-      const body = await res.json().catch(() => null);
-      const past = ((body && body.matches) || []).filter((m) => m.status === 'FINISHED');
-      if (res.status !== 200) {
-        console.log(`  (control unavailable: head2head answered ${res.status})`);
-      } else if (!past.length) {
-        /* Tried on 13 Aug and it came back empty for both competitions. The
-           free tier serves the CURRENT SEASON only, and on 13 Aug 2026 the
-           current season had not begun — so head2head has no past meeting it
-           is allowed to return, and no completed match is reachable on this
-           plan by any route. The control is not merely missing, it is
-           unobtainable until football is played. */
-        console.log('  (control unobtainable: head2head returned no finished match either — the free');
-        console.log('   tier serves the current season only, and no match in it has been played yet.');
-        console.log('   Re-run this probe once the first round has finished; until then "absent" and');
-        console.log('   "not yet published" cannot be told apart.)');
-      } else {
-        const named = past.filter((m) => mainRef(m));
-        console.log(`  (control, via head2head on a past meeting: ${named.length} of ${past.length} `
-          + `FINISHED matches name a referee)`);
-        verdictLines.push(named.length
-          ? `${comp}: and the field DOES populate once a match is over — `
-            + `${named.length}/${past.length} finished, e.g. ${mainRef(named[0]).name}`
-          : `${comp}: and no FINISHED match names one either — the field is absent on this plan`);
-      }
-    }
-  }
+  verdict.push(nonEmpty
+    ? `${comp}: football-data DOES carry referees (${nonEmpty} matches)`
+    : withKey
+      ? `${comp}: football-data returns the key but never fills it — a plan or timing limit, not a schema gap`
+      : `${comp}: football-data omits the field entirely on this plan`);
   console.log('');
 }
 
-console.log('VERDICT');
-for (const v of verdictLines) console.log(`  ${v}`);
+/* ═══ Part 2 — the source that demonstrably has the data ═══════════════ */
+
+/* The EFL publishes appointments as a dated news article covering the week
+   ahead. This is the exact URL that prompted the question on 11 Aug, and it
+   is used as a fixed, known-good specimen rather than a guess at a pattern:
+   the point is to find out whether the page is reachable from CI and whether
+   officials and fixtures can be read out of it, not to pretend we have a
+   feed. A real implementation would need to discover the weekly URL, which
+   is a separate problem and not one to hand-wave. */
+const EFL_SPECIMEN = 'https://www.efl.com/news/2026/august/11/referee-appointments--14-20-august/';
+
+console.log('PART 2 — the EFL\'s own appointments page\n');
+try {
+  const res = await fetch(EFL_SPECIMEN, { headers: { 'User-Agent': UA, Accept: 'text/html' } });
+  console.log(`  ${EFL_SPECIMEN}`);
+  console.log(`  HTTP ${res.status}`);
+  if (res.ok) {
+    const html = await res.text();
+    const text = html.replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+    /* Three independent signals that the page really carries appointments,
+       rather than that some page answered 200. */
+    const refWord = (text.match(/\bReferee\b/gi) || []).length;
+    const assistants = (text.match(/\bAssistant Referee\b/gi) || []).length;
+    const versus = (text.match(/\bv\b/g) || []).length;
+    console.log(`  ${html.length} bytes · "Referee" ${refWord}× · "Assistant Referee" ${assistants}× `
+      + `· fixture "v" separators ${versus}×`);
+    const usable = refWord > 5 && versus > 5;
+    console.log(usable
+      ? '  → the page carries appointments in readable text'
+      : '  → 200, but the text does not look like an appointments list (JS-rendered?)');
+    verdict.push(usable
+      ? 'EFL site: appointments ARE published ahead — this specimen went up 11 Aug for 14-20 Aug, '
+        + 'i.e. 3 to 9 days before kick-off'
+      : 'EFL site: reachable, but the appointments were not readable from the raw HTML');
+  } else {
+    verdict.push(`EFL site: the specimen URL answered ${res.status} — reachable but not this page`);
+  }
+} catch (err) {
+  console.log(`  request failed: ${err.message}`);
+  verdict.push(`EFL site: unreachable from CI — ${err.message}`);
+}
+
+console.log('\nVERDICT');
+for (const v of verdict) console.log(`  ${v}`);
 console.log('');
-console.log('  A "no" for ELC kills the Fantasy EFL referee panel outright — the app would be');
-console.log('  telling you who refereed a booking you already took. A "yes" only two days out');
-console.log('  is still narrower than the comment in football-data.js claims, and the 30-minute');
-console.log('  cache set on that claim would need revisiting either way.');
+console.log('  The question is WHICH SOURCE, not whether referees exist. A "no" from');
+console.log('  football-data says nothing about the EFL, and the first version of this');
+console.log('  probe reported one as if it were the other.');

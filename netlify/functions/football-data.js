@@ -100,22 +100,28 @@ const ROUTES = {
     return {
       path: `/competitions/${comp}/matches` + (md ? `?matchday=${md}` : ''),
       /* This used to read "referees are published a couple of days out and
-         then do not move", and the half-hour cache was justified by it. It
-         was never checked. On 13 Aug 2026 it was, through this very endpoint:
-         across 12 Championship matches inside four days of kick-off — one of
-         them inside two — not a single referee was named, and the same held
-         for all 380 Premier League fixtures. So the claim is unsupported as
-         written, and nothing should be built on it.
+         then do not move", and the half-hour cache was justified by it.
 
-         What is still unknown is whether the field EVER fills, because the
-         free tier serves only the current season and no match in it had been
-         played, so no completed match was reachable to compare against. See
-         dev/probe-referees.mjs; re-run it after the first round.
+         Two things were wrong with that. First, THIS FEED does not carry
+         them: probed on 13 Aug 2026 through this very endpoint, not one of
+         552 Championship or 380 Premier League matches had a referee named,
+         including twelve inside four days of kick-off.
+
+         Second — and this is the part worth remembering — the probe's own
+         write-up then reported that as "referees are not published before
+         kick-off", which is false. The EFL publishes its appointments three
+         to nine days ahead on its own site. The feed's silence was a fact
+         about the feed, and it got told as a fact about football.
+
+         So: no referee data here, and that says nothing about whether the
+         suspension panel is buildable. See dev/probe-referees.mjs, which now
+         tests both sources and names which one it is talking about.
 
          The half hour stays, on different grounds: kick-off times and match
          status do move, and half an hour is a reasonable staleness for a
-         fixture list. If referees ever do appear, revisit this deliberately
-         rather than inheriting a number that once meant something else. */
+         fixture list. If referees ever do appear here, revisit this
+         deliberately rather than inheriting a number that meant something
+         else. */
       ttl: 1800
     };
   },
