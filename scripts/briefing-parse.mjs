@@ -100,7 +100,7 @@ export function moveClaims(blocks) {
         if (!m) continue;
         const at = line.indexOf(seg);
         const after = cut > -1 && at >= cut;
-        out.push({ club: b.name, dir, name: m[1].trim(),
+        out.push({ club: b.name, dir, name: m[1].trim(), text: seg,
           hedged: after || /rumou?r|unconfirmed|reported|not confirmed|needs confirming|loan/i.test(seg) });
       }
     }
@@ -245,7 +245,10 @@ export function claimsFromTeams(teams) {
         /* "Retained: …" and "Rumours: …" are group headers, not one player. */
         if (/^(retained|rumours?|more expected|cb from)/i.test(entry)) continue;
         const m = String(entry).match(moveRe);
-        if (m) moves.push({ club: t.name, dir, name: m[1].trim(), hedged: HEDGE.test(entry) });
+        if (m) {
+          moves.push({ club: t.name, dir, name: m[1].trim(), text: String(entry),
+            hedged: HEDGE.test(entry) });
+        }
       }
     }
     for (const f of t.fx || []) {
@@ -291,6 +294,56 @@ export function pensSelfContradictions(pens, pensProse) {
     if (!sp || samePlayer(sp.name, c.name)) continue;
     out.push({ club: c.club, field: c.field, prose: c.name, sp: sp.name,
       text: c.text, hedged: c.hedged });
+  }
+  return out;
+}
+
+/* ── Transfers, checked against each other ──────────────────
+   A transfer between two clubs in this document is TWO claims: it is in one
+   club's Out list and the other's In list. So one can exist without the
+   other, and three times in three days it did — Welbeck left Brighton and
+   never arrived at Chelsea, Henderson left Brentford and never arrived at
+   Chelsea, Rushworth left Brighton and never arrived at Coventry. Each was
+   caught by a human reading a newspaper, which is not a system.
+
+   The consequence is not cosmetic. A missing arrival makes a squad look
+   thinner than it is and hides a signing from the pick lists underneath —
+   Rushworth is a first-choice goalkeeper the block simply did not have.
+
+   Rumours are excluded: an unconfirmed exit has no counterpart by
+   definition, and reporting one would train a reader to skip the output.
+   Loans are NOT excluded — a completed loan has two ends like any other
+   move, and the phrase "loan made permanent" carrying the word "loan" is
+   what would have let Rushworth through a lazier filter. */
+const RUMOUR = /rumou?r|unconfirmed|not confirmed|needs confirming|tbc|advanced talks|approach reported|links?\b/i;
+export function moveContradictions(moves, clubNames) {
+  const canon = clubMatcher(clubNames);
+  const key = (v) => String(typeof v === 'string' ? v : (v && v.name) || '');
+  const out = [];
+  for (const m of moves || []) {
+    if (!m.text || RUMOUR.test(m.text)) continue;
+    /* The counterparty is named inside the first bracket, beside the
+       position and the fee. Only a club that is itself in this document can
+       be expected to carry the other half — a sale to Real Madrid has no
+       counterpart here, and that is not an error. */
+    const paren = (String(m.text).match(/\(([^)]*)\)/) || [])[1];
+    if (!paren) continue;
+    let other = null;
+    for (const part of paren.split(/[,;]/)) {
+      const t = part.trim().replace(/^~?£.*$/, '');
+      if (!t || t.length < 3 || /^\d/.test(t)) continue;
+      const hit = canon(t);
+      if (hit && key(hit) !== key(m.club)) { other = key(hit); break; }
+    }
+    if (!other) continue;
+    const want = m.dir === 'Out' ? 'In' : 'Out';
+    const found = (moves || []).some((n) =>
+      key(n.club) === other && n.dir === want && samePlayer(n.name, m.name));
+    if (!found) {
+      out.push({ club: key(m.club), dir: m.dir, name: m.name, other, want,
+        msg: `${m.name}: ${key(m.club)} lists ${m.dir === 'Out' ? 'an exit to' : 'an arrival from'} ` +
+          `${other}, but ${other} has no matching ${want} entry` });
+    }
   }
   return out;
 }
@@ -396,10 +449,23 @@ export function clubMatcher(labels) {
     if (both.length === 1) return both[0].value;
     if (both.length > 1) return both.sort((a, b) => a.n.length - b.n.length)[0].value;
     /* "Nott'm Forest" vs "Nottingham Forest": no substring, one shared word
-       once the generic ones are dropped. */
+       once the generic ones are dropped — "forest" is in both.
+
+       This used to accept a PREFIX relationship between words as well, and
+       that was wrong in a way nothing looked at until transfers began being
+       checked against each other. Every label this matcher was fed used to
+       be a Premier League club, so a rule that also matched "Villarreal" to
+       Aston Villa and "New England Revolution" to Newcastle never met a
+       foreign club and never misfired. Fed the selling club out of a
+       transfer line, it did both immediately.
+
+       The prefix rule turns out to buy nothing: the cases it was written
+       for are already caught earlier. "Nott'm Forest" shares the whole word
+       "forest"; "Wolves", "Spurs" and "Man Utd" go through CLUB_ALIAS;
+       "Brighton" inside "Brighton & Hove Albion" is a substring. A whole
+       shared word is the rule, and a prefix is not a word. */
     const words = (String(label).toLowerCase().match(/[a-z]{3,}/g) || []).filter((w) => !STOP.has(w));
-    const byWord = rows.filter((r) => r.words.some((w) => words.includes(w) ||
-      words.some((x) => w.startsWith(x) || x.startsWith(w))));
+    const byWord = rows.filter((r) => r.words.some((w) => words.includes(w)));
     return byWord.length === 1 ? byWord[0].value : null;
   };
 }

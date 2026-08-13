@@ -580,9 +580,9 @@ is partly a list of who played the weakest opposition.
 
 **Pre-season summary:** End of the Guardiola era. Enzo Maresca is confirmed head coach on a three-year deal. Enormous spend: a British record around £116m on Elliot Anderson and £64m on Antoine Semenyo, while ageing defenders (Stones, Akanji, Ake) and Bernardo Silva moved on. A younger, possession-first rebuild with real transition risk early.
 
-**In:** Elliot Anderson (CM, Nottingham Forest, ~£116m), Antoine Semenyo (FWD/W, Bournemouth, ~£64m), Mathys Detourbet (LW, Troyes, ~£21.4m, then loaned out), Jeremy Monga (W, Leicester, ~£10m), Pierce Charles (GK, Sheffield Wednesday, ~£3m, loaned out).
+**In:** Elliot Anderson (CM, Nottingham Forest, ~£116m), Antoine Semenyo (FWD/W, Bournemouth, ~£64m), Mathys Detourbet (LW, Troyes, ~£21.4m, then loaned out), Jeremy Monga (W, Leicester, ~£10m), Pierce Charles (GK, Sheffield Wednesday, ~£3m, loaned out). Added 13 Aug, having been recorded only by the club at the other end: Marc Guehi (CB, Crystal Palace, £20m+, Jan).
 
-**Out:** Bernardo Silva (CM, Real Madrid, free), Manuel Akanji (CB, Inter, ~£13m), Nathan Ake (CB, Fenerbahce, ~£7m), John Stones (CB, released), Reigan Heskey (W, Koln, ~£8m), Jahmai Simpson-Pusey (CB, Koln, ~£4.75m).
+**Out:** Bernardo Silva (CM, Real Madrid, free), Manuel Akanji (CB, Inter, ~£13m), Nathan Ake (CB, Fenerbahce, ~£7m), John Stones (CB, released), Reigan Heskey (W, Koln, ~£8m), Jahmai Simpson-Pusey (CB, Koln, ~£4.75m). Added 13 Aug, having been recorded only by the club at the other end: James McAtee (AM, Nott'm Forest, ~£30m).
 
 **FPL picks:**
 - Value: Rayan Cherki (MID) if mid-priced, on free-kicks and corners with high assist potential. Tijjani Reijnders as a nailed attacking midfielder.
@@ -695,7 +695,7 @@ is partly a list of who played the weakest opposition.
 
 **In:** Luka Vuskovic (CB, Tottenham, ~£46m), Pascal Struijk (CB, Leeds, ~£20m), Zadok Yohanna (FWD/W, AIK, ~£21.5m), Costinha (RB/MID, Olympiacos, ~£11m), Michael Svoboda (DEF, Venezia, ~£4.3m).
 
-**Out:** **Danny Welbeck (FWD, Chelsea)** — omitted from this line until 12 Aug, though the FPL picks below already reasoned "post-Welbeck". He was the club's outstanding forward last season and the omission made the Out list read as a defensive rebuild when the biggest hole is at the other end. Jan Paul van Hecke (CB, Tottenham, ~£52m), Jeremy Sarmiento (W, Middlesbrough, ~£3m), Adam Webster, Joel Veltman, Solly March (released), James Milner (retired). Rumour: Carlos Baleba exit (unconfirmed).
+**Out:** **Danny Welbeck (FWD, Chelsea)** — omitted from this line until 12 Aug, though the FPL picks below already reasoned "post-Welbeck". He was the club's outstanding forward last season and the omission made the Out list read as a defensive rebuild when the biggest hole is at the other end. Jan Paul van Hecke (CB, Tottenham, ~£52m), **Carl Rushworth (GK, Coventry, ~£22.5m, loan made permanent — added 13 Aug, with a buyback clause retained)**, Jeremy Sarmiento (W, Middlesbrough, ~£3m), Adam Webster, Joel Veltman, Solly March (released), James Milner (retired). Rumour: Carlos Baleba exit (unconfirmed).
 
 **FPL picks:**
 - Value: Yankuba Minteh (MID, ~£6.0-6.5m est.), on corners, high involvement. Maxim De Cuyper (attacking LB, ~£4.5-5.0m est.), set-piece involvement, strong cheap-defender value.
@@ -769,9 +769,9 @@ is partly a list of who played the weakest opposition.
 
 **Pre-season summary:** Underwhelmed to twelfth, but Eddie Howe continues. A selling summer: Tonali (~£100m to Spurs) and Gordon (~£69m to Barcelona) left for big fees, reinvested in younger, cheaper talent rather than a like-for-like marquee. Nick Woltemade leads the line as main striker and penalty taker. The question is whether Howe can knit a reshaped attack together quickly.
 
-**In:** Bazoumana Toure (LW, Hoffenheim, ~£43m), Ewen Jaouen (GK, Reims, ~£24m), Sean Steur (CM, Ajax, ~£23m), Aladji Bamba (CM, Monaco, undisclosed).
+**In:** Bazoumana Toure (LW, Hoffenheim, ~£43m), Ewen Jaouen (GK, Reims, ~£24m), Sean Steur (CM, Ajax, ~£23m), Aladji Bamba (CM, Monaco, undisclosed). Added 13 Aug, having been recorded only by the club at the other end: Anthony Elanga (W, Nott'm Forest, ~£55m).
 
-**Out:** Sandro Tonali (CM, Tottenham, ~£100m), Anthony Gordon (LW, Barcelona, ~£69m), Kieran Trippier (RB, Wolves, free), Emil Krafth, John Ruddy, Matt Targett (released), Harrison Ashby (loan), Travis Hernes (Groningen).
+**Out:** Sandro Tonali (CM, Tottenham, ~£100m), Anthony Gordon (LW, Barcelona, ~£69m), Kieran Trippier (RB, Wolves, free), Emil Krafth, John Ruddy, Matt Targett (released), Harrison Ashby (loan), Travis Hernes (Groningen). Added 13 Aug, having been recorded only by the club at the other end: Bruno Guimaraes (CM, Arsenal).
 
 **FPL picks:**
 - Value: Anthony Elanga (pace and end product, corner involvement). Lewis Hall (attacking LB, set-piece duty and defensive upside). Both strong points-per-million if fit.
@@ -787,7 +787,7 @@ is partly a list of who played the weakest opposition.
 
 **Pre-season summary:** Thirteenth in their first season at the new Hill Dickinson Stadium, with David Moyes continuing. Direction is steady mid-table consolidation, but the squad urgently needs a striker and Moyes is actively chasing forward options (none confirmed yet). Goals remain the concern, chances created outstrip a light forward line.
 
-**In:** Merlin Rohl (CM, Freiburg, ~£18m). Rumours only: a striker target, a possible Grealish loan.
+**In:** Merlin Rohl (CM, Freiburg, ~£18m). Rumours only: a striker target, a possible Grealish loan. Added 13 Aug, having been recorded only by the club at the other end: Tyrique George (W, Chelsea, ~£18m).
 
 **Out:** Seamus Coleman (RB, released), Isaac Heath (LW, Cambridge, free). Rumoured sale interest in Ndiaye and Branthwaite.
 
@@ -825,7 +825,7 @@ is partly a list of who played the weakest opposition.
 
 **In:** Yeremy Pino (RW, Villarreal, ~£26m), Brennan Johnson (W, Tottenham, ~£35m, completed January 2026).
 
-**Out:** Eberechi Eze (AM, sold, destination not confirmed in sources), Marc Guehi (CB, Man City, £20m+, January), Jean-Philippe Mateta (ST, rumoured exit, unconfirmed), Hindolo Mustapha (loan).
+**Out:** Eberechi Eze (AM, sold, destination not confirmed in sources), Marc Guehi (CB, Man City, £20m+, January), Jean-Philippe Mateta (ST, rumoured exit, unconfirmed), Hindolo Mustapha (loan). Added 13 Aug, having been recorded only by the club at the other end: Maxence Lacroix (CB, Chelsea, ~£52m).
 
 **FPL picks:**
 - Value: Daniel Munoz (attacking RWB, ~£5.5m), one of the best-value defenders for attacking returns. Ismaila Sarr (~£6.0-6.5m), carries more of the goal threat now Eze has gone.
@@ -843,7 +843,7 @@ is partly a list of who played the weakest opposition.
 
 **In:** Omari Hutchinson (W, Ipswich, ~£37.5m), James McAtee (AM, Man City, ~£30m), Dan Ndoye (W, Bologna). Arnaud Kalimuendo (ST, Rennes) reported in advanced talks, not yet done. (Some completion dates unverified, re-check.)
 
-**Out:** Anthony Elanga (W, Newcastle, ~£55m, club-record sale), Willy Boly (released), Stefan Ortega and Angus Gunn (GKs, released).
+**Out:** Anthony Elanga (W, Newcastle, ~£55m, was the club-record sale until Anderson), Willy Boly (released), Stefan Ortega and Angus Gunn (GKs, released). Added 13 Aug, having been recorded only by the club at the other end: Elliot Anderson (CM, Man City, ~£116m).
 
 **FPL picks:**
 - Value: Morgan Gibbs-White (~£7.0m), talisman on pens and free-kicks, central to everything. Neco Williams (~£5.0m DEF), attacking full-back on corners.
@@ -861,7 +861,7 @@ is partly a list of who played the weakest opposition.
 
 **In:** Sandro Tonali (CM, Newcastle, ~£100m), Mateus Fernandes (CM, West Ham, ~£85m), Jan Paul van Hecke (CB, Brighton, ~£52m), Andy Robertson (LB, Liverpool, free), Marcos Senesi (CB, Bournemouth, free), Martin Dubravka (GK, Burnley, free).
 
-**Out:** Luka Vuskovic (CB, Brighton, ~£46m), Will Lankshear (CF, Middlesbrough, ~£10m), Tynan Thompson (W, Man Utd, ~£8m), Yves Bissouma (DM, released), Radu Dragusin (CB, Fiorentina, loan), Alfie Devine (AM, Preston).
+**Out:** Luka Vuskovic (CB, Brighton, ~£46m), Will Lankshear (CF, Middlesbrough, ~£10m), Tynan Thompson (W, Man Utd, ~£8m), Yves Bissouma (DM, released), Radu Dragusin (CB, Fiorentina, loan), Alfie Devine (AM, Preston). Added 13 Aug, having been recorded only by the club at the other end: Brennan Johnson (W, Crystal Palace, ~£35m, Jan 2026), Tynan Thompson (DEF, Man Utd, ~£4m).
 
 **FPL picks:**
 - Value: Pedro Porro (attacking full-back on corners and free-kicks). Antonin Kinsky (GK, ~£4.5m), cheap starting keeper enabler.
@@ -875,19 +875,21 @@ is partly a list of who played the weakest opposition.
 
 ## 18. Coventry City (Promoted, Championship winners)
 
-**Pre-season summary:** Champions by an 11-point margin, back in the top flight for the first time since 2001. Frank Lampard stays on a new three-year deal after building a slick possession side. Direction is measured, targeted recruitment (defence first) backed by owner Doug King. Key storyline: can top-scorer Haji Wright (18 Championship goals) translate as the main man.
+**Pre-season summary:** Champions by an 11-point margin, back in the top flight for the first time since 2001. Frank Lampard stays on fresh terms to 2029 (the earlier line said "a new three-year deal" — the same thing said two ways) after building a slick possession side; LMA manager of the year, in charge since succeeding Mark Robins in November 2024 and now the longest-serving of the division's three English managers. Direction is measured, targeted recruitment backed by owner Doug King. **13 Aug, and it reframes the block below: only seven of the squad have any Premier League experience at all**, the most starts among them being Gus Hamer's 34 with Sheffield United — so every projection here is an extrapolation from a division down, with no top-flight sample to check it against. Key storyline: can top-scorer Haji Wright (18 Championship goals) translate as the main man. They were the highest scorers in the top four tiers of English football with 97, and lost seven league games all season, only two at home.
 
-**In:** Aurele Amenda (CB, Eintracht Frankfurt, ~£17m), a centre-back from Bologna (reported, confirm name/fee), Loum Tchaouna (W), Frank Onyeka (CM, loan made permanent). Rumour: Ross Barkley (free, approach reported, unconfirmed). Retained: Haji Wright, Ellis Simms, Jack Rudoni, Matt Grimes, Victor Torp, Ephron Mason-Clark, Brandon Thomas-Asante, Milan van Ewijk, Bobby Thomas.
+**In:** Caleb Yirenkyi (CM, FC Nordsjaelland, ~£23m), Carl Rushworth (GK, Brighton, ~£22.5m, loan made permanent), Gus Hamer (MID, returning) — **all three missing from this line until 13 Aug**, and between them the club's record signing, its first-choice goalkeeper and its only player with a Premier League season behind him. Note the two record fees: the preview calls Yirenkyi's ~£23m the club record and captions Rushworth's ~£22.5m the same way, which cannot both be current — recorded as stated rather than reconciled by guessing, and Brighton hold a buyback on Rushworth. Aurele Amenda (CB, Eintracht Frankfurt, ~£17m), a centre-back from Bologna (reported, confirm name/fee), Loum Tchaouna (W), Frank Onyeka (CM, loan made permanent). Rumour: Ross Barkley (free, approach reported, unconfirmed). Retained: Haji Wright, Ellis Simms, Jack Rudoni, Matt Grimes, Victor Torp, Ephron Mason-Clark, Brandon Thomas-Asante, Milan van Ewijk, Bobby Thomas.
 
 **Out:** Jamie Allen (released), Bradley Collins (GK, released). Rumour: Ellis Simms to Wolves (unconfirmed).
 
 **FPL picks:**
-- Value: Haji Wright, main striker and penalty taker, the standout cheap forward here. Milan van Ewijk, attacking RB, a cheap-defender candidate with assist upside.
+- Value: Haji Wright, main striker and penalty taker, the standout cheap forward here — and the World Cup left the legs intact, two late substitute appearances for the USA and nothing more, which against the premiums being eased back is worth something in the first fortnight. Milan van Ewijk, attacking RB, a cheap-defender candidate with assist upside, and now with a set-piece case underneath it (below).
 - Premium / captaincy: None obvious for a promoted club. Wright is the closest ownable goal threat but not a captaincy pick.
-- Differentials: Jack Rudoni and Victor Torp (under-10%, in creation and set-pieces). Ephron Mason-Clark for pace and output.
-- Set-piece & penalties: Penalties Haji Wright primary, Torp/Grimes secondary. Corners Grimes and Torp. Free-kicks Torp.
+- Differentials: Jack Rudoni and Victor Torp (under-10%, in creation and set-pieces). Ephron Mason-Clark for pace and output. Brandon Thomas-Asante, one of five players here to reach double figures last season.
+- Goalkeeper, which this block did not previously name: **Carl Rushworth** (25) took the Championship golden glove with 17 clean sheets as an ever-present and has signed permanently. A cheap keeper behind a defence that lost twice at home all season is the shape of an enabler — but the division changes, an outside model ranks this defence 19th of 20, and the opening five are the hardest in the league. A candidate to note, not to buy in GW1.
+- Watch, not a pick: **Kai Andrews** (20, debut at 17, seven substitute appearances last season, then a Hibernian loan, a Wales call-up at 18 under Bellamy). The same bar as Madjo and Kostoulas: a name to hold before it is priced.
+- Set-piece & penalties: Penalties Haji Wright primary, Torp/Grimes secondary. Corners Grimes and Torp. Free-kicks Torp. **This is the block's most under-rated line, and 13 Aug promotes it above the differentials it sits under.** Coventry scored 29 set-piece goals last season, most in the Championship, at 0.63 a game — a rate bettered in the top divisions of England, France, Germany, Italy and Spain only by Bayern Munich's 0.65. Carry the caveat the source raises itself, because it is the right one: a side that will see less of the ball wins fewer corners and free-kicks, and an outside model ranks this attack 18th of 20. The delivery is proven; the volume it needs is not.
 
-**Opening fixtures:** GW1 Arsenal (A) very hard, GW2 Hull City (H) moderate. Even the Hull home game only rates moderate, and our model puts Coventry in the hardest opening five in the league. Hold off heavy investment until the schedule eases.
+**Opening fixtures:** GW1 Arsenal (A) very hard, GW2 Hull City (H) moderate. Even the Hull home game only rates moderate, and our model puts Coventry in the hardest opening five in the league. Hold off heavy investment until the schedule eases. The Arsenal game is the season's curtain-raiser, which is also this document's third independent statement of the start date — the preview places it "a week on Friday" from Thursday 13 August, i.e. Friday 21 August.
 
 ---
 
@@ -897,7 +899,7 @@ is partly a list of who played the weakest opposition.
 
 **In:** Chuba Akpom (ST, Ajax, ~£8m), Cedric Kipre (CB, Reims, ~£3.9m), Issa Diop (CB, Fulham, ~£8.5m). Retained: Jack Clarke, Jaden Philogene, George Hirst, Leif Davis, Azor Matusiwa (Player of the Year).
 
-**Out:** Arijanet Muric (GK, Sassuolo, ~£6m), Ashley Young (retired), Conor Chaplin (released), Conor Townsend (released).
+**Out:** Arijanet Muric (GK, Sassuolo, ~£6m), Ashley Young (retired), Conor Chaplin (released), Conor Townsend (released). Added 13 Aug, having been recorded only by the club at the other end: Omari Hutchinson (W, Nott'm Forest, ~£37.5m).
 
 **FPL picks:**
 - Value: Jaden Philogene and Jack Clarke, cheap, minutes-secure wide attackers with the highest ceiling here. Leif Davis, attacking LB on corners, a classic cheap-defender assist source.

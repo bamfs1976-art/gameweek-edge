@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
-  teamsFromHtml, claimsFromTeams, fixtureContradictions,
+  teamsFromHtml, claimsFromTeams, fixtureContradictions, moveContradictions,
   pensProseClaims, pensSelfContradictions, mdFixtureClaims,
   clubMatcher, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
 
@@ -842,6 +842,83 @@ console.log('\n• briefing: the GW9-18 grid pairs cleanly, or it is a mis-read'
   const gw15 = (md.match(/GW15 ([A-Z][a-z]{2} \d+)/) || [])[1];
   ok(gw15 === 'Dec 12', 'the calendar puts GW15 on the card\'s date (' + gw15 + ' vs Dec 12)');
   ok(new Date(Date.UTC(2026, 11, 12)).getUTCDay() === 6, 'and 12 Dec 2026 is the Saturday the card names');
+}
+
+/* ── transfers, checked against each other ──────────────────
+   Three previews in three days each turned up a signing this document had
+   recorded at one end and not the other: Welbeck out of Brighton but never
+   into Chelsea, Henderson out of Brentford but never into Chelsea, Rushworth
+   out of Brighton but never into Coventry. Every one was caught by somebody
+   reading a newspaper, which is not a system, and the sweep that followed
+   found ten more — a £116m club-record sale and a promoted club's
+   first-choice goalkeeper among them.
+
+   A contradicted FIXTURE is visibly wrong: two clubs say different things.
+   A missing transfer half is invisible — the block simply reads as a thinner
+   squad and the pick list underneath never mentions the player. That is why
+   it lasted. */
+console.log('\n• briefing: a transfer is recorded by both clubs, or by neither');
+{
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const teams = teamsFromHtml(html);
+  const structured = claimsFromTeams(teams);
+  const names = teams.map((t) => t.name);
+
+  const badHtml = moveContradictions(structured.moves, names);
+  for (const b of badHtml.slice(0, 6)) ok(false, 'html: ' + b.msg);
+  ok(!badHtml.length, 'the structured edition has no one-sided transfer (' + badHtml.length + ')');
+
+  const blocks = clubBlocks(md);
+  const badMd = moveContradictions(moveClaims(blocks), blocks.map((b) => b.name));
+  for (const b of badMd.slice(0, 6)) ok(false, 'markdown: ' + b.msg);
+  ok(!badMd.length, 'and neither does the prose edition (' + badMd.length + ')');
+
+  /* Proved rather than assumed: plant one and it must be caught. */
+  const planted = [
+    { club: 'Arsenal', dir: 'In', name: 'Nobody Atall', text: 'Nobody Atall (CM, Everton, ~£1m)' },
+    { club: 'Everton', dir: 'Out', name: 'Someone Else', text: 'Someone Else (CM, Arsenal, ~£1m)' }
+  ];
+  const caught = moveContradictions(planted, names);
+  ok(caught.length === 2, 'a planted one-sided move is caught from both ends (' + caught.length + ')');
+
+  /* And the exclusions hold, or the check becomes noise nobody reads. */
+  const quiet = moveContradictions([
+    { club: 'Arsenal', dir: 'Out', name: 'A Player', text: 'A Player (CM, Real Madrid, ~£1m)' },
+    { club: 'Arsenal', dir: 'Out', name: 'B Player', text: 'Rumour: B Player (CM, Everton) unconfirmed' },
+    { club: 'Arsenal', dir: 'Out', name: 'C Player', text: 'C Player (released)' }
+  ], names);
+  ok(!quiet.length, 'a sale abroad, a rumour and a release raise nothing (' + quiet.length + ')');
+
+  /* A completed LOAN has two ends like any other move, and must NOT be
+     excluded — "loan made permanent" carries the word "loan", and a filter
+     that skipped it is exactly what let Rushworth through. */
+  const loan = moveContradictions([
+    { club: 'Chelsea', dir: 'Out', name: 'D Player', text: 'D Player (W, Aston Villa, season loan)' }
+  ], names);
+  ok(loan.length === 1, 'a loan is still checked (' + loan.length + ')');
+}
+
+/* The club matcher used to accept a PREFIX between words as its last resort.
+   Every label it had ever been given was a Premier League club, so nothing
+   met a foreign one and the rule never misfired. Fed the selling club out of
+   a transfer line it did so at once, turning Villarreal into Aston Villa and
+   New England Revolution into Newcastle — which would have invented two
+   contradictions and, worse, could mis-assign a real claim. */
+console.log('\n• briefing: the club matcher does not turn Villarreal into Aston Villa');
+{
+  const teams = teamsFromHtml(readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8'));
+  const match = clubMatcher(teams.map((t) => t.name));
+  for (const [label, want] of [["Nott'm Forest", 'Nottingham Forest'], ['Forest', 'Nottingham Forest'],
+    ['Spurs', 'Tottenham Hotspur'], ['Man Utd', 'Manchester United'],
+    ['Brighton', 'Brighton & Hove Albion'], ['Villa', 'Aston Villa']]) {
+    const got = match(label);
+    ok(got === want, '"' + label + '" still resolves to ' + want + ' (' + got + ')');
+  }
+  for (const label of ['Villarreal', 'New England Revolution', 'Nordsjaelland', 'Eintracht Frankfurt']) {
+    const got = match(label);
+    ok(!got, '"' + label + '" resolves to no Premier League club (' + (got || 'none') + ')');
+  }
 }
 
 /* The start date was wrong by a day and only one edition stated it, so the
