@@ -1258,6 +1258,39 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   box-shadow:inset 0 0 60px rgba(0,20,8,.22);
 }
 .pitch-lines{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+/* An empty slot is a control, so it looks like one you can press: a dashed
+   outline reads as "something goes here" where a faded player reads as a
+   player who failed to load. Kept dim enough that a half-built squad still
+   leads with the players in it. */
+.pp-slot{cursor:pointer;opacity:.72;transition:opacity .12s,transform .12s}
+.pp-slot .pp-fig{border:1.5px dashed rgba(255,255,255,.55);border-radius:10px;background:rgba(255,255,255,.06)}
+/* .pp-pt is a WHITE pill — the price chip. Recolouring the text white here
+   made "Add" invisible on it; the default dark ink is what that pill is
+   designed for. */
+.pp-slot .pp-pt{letter-spacing:.04em;text-transform:uppercase}
+.pp-slot:hover,.pp-slot:focus-visible{opacity:1;transform:translateY(-2px)}
+/* The focus ring is on the pitch, which is mid-green — a themed ring can
+   vanish into it, so this one is white with a dark backing and does not
+   depend on the palette. */
+.pp-slot:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:8px}
+@media(prefers-reduced-motion:reduce){ .pp-slot{transition:none} .pp-slot:hover,.pp-slot:focus-visible{transform:none} }
+/* The one line an empty pitch owes the reader. Sits above the grass rather
+   than on it: over the green it competes with the slots it is pointing at. */
+.draft-start{
+  /* NOT flex. A flex container makes every text node its own item, so the
+     sentence broke into chunks that wrapped independently — "Tap any [+ GK]"
+     then a line break, then "slot on the pitch". It is one sentence and it
+     should wrap like one, so the chip and the button are inline-block inside
+     normal flow instead. */
+  background:var(--surface-2);border:1px solid var(--surface-3);border-radius:var(--r-md);
+  padding:10px 12px;margin-bottom:10px;font-size:var(--fs-sm);line-height:1.7;color:var(--text-2);
+}
+.draft-start .btn{vertical-align:baseline}
+.draft-start b{color:var(--text)}
+.draft-start-chip{
+  display:inline-block;font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-min);font-weight:700;
+  background:var(--surface-3);color:var(--text);border-radius:5px;padding:1px 6px;white-space:nowrap;
+}
 .pitch-row{
   display:flex;justify-content:center;gap:12px;
   margin-bottom:16px;position:relative;z-index:2;
@@ -16444,13 +16477,35 @@ function renderDraft(){
       '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span>'+fx+'</div>';
   };
   const lbl={1:'GK',2:'DEF',3:'MID',4:'FWD'};
-  const ghost=t=>'<div class="pp" style="opacity:.35" aria-hidden="true"><span class="pp-fig no-photo" style="--kit:var(--surface-3);--kit2:var(--surface-3)"></span>'+
-    '<span class="pp-nm">+ '+lbl[t]+'</span><span class="pp-pt">—</span></div>';
+  /* THE EMPTY SLOT IS THE CONTROL, not a placeholder for one.
+     It used to be aria-hidden decoration at 35% opacity, so the pitch showed
+     you exactly what was missing and gave you no way to act on it — the only
+     route in was to notice the pool below and work out its position filter for
+     yourself. On a phone that pool is off the bottom of the screen entirely.
+     Borrowed from a competitor that gets this right: tap the hole, and the
+     pool is already filtered to what goes in it. */
+  const need={1:'goalkeeper',2:'defender',3:'midfielder',4:'forward'};
+  const ghost=(t,miss)=>'<div class="pp pp-slot" data-draft-slot="'+t+'" role="button" tabindex="0"'+
+    ' aria-label="Add a '+need[t]+' — '+miss+' still needed">'+
+    '<span class="pp-fig no-photo" style="--kit:var(--surface-3);--kit2:var(--surface-3)"></span>'+
+    '<span class="pp-nm">+ '+lbl[t]+'</span><span class="pp-pt">Add</span></div>';
   const row=t=>{const got=players.filter(e=>e.element_type===t);
     const miss=Math.max(0,DRAFT_QUOTA[t]-got.length);
-    return '<div class="pitch-row">'+got.map(cell).join('')+Array.from({length:miss},()=>ghost(t)).join('')+'</div>';};
+    return '<div class="pitch-row">'+got.map(cell).join('')+Array.from({length:miss},(_,i)=>ghost(t,miss-i)).join('')+'</div>';};
   const pit=document.getElementById('draft-pitch');
-  if(pit)pit.innerHTML=pitchWrap(row(1)+row(2)+row(3)+row(4));
+  /* AN EMPTY PITCH HAS TO SAY WHAT TO DO WITH IT. Fifteen dashed circles is a
+     picture of a problem, not an instruction, and the first-run review found
+     this app is not short of onboarding — it is short of an obvious next
+     action. Two routes offered, because they suit different people and the
+     app already has both: pick your own, or have one built. Shown only while
+     the draft is genuinely empty; one player in and it is out of the way. */
+  if(pit)pit.innerHTML=(players.length?'':
+      '<div class="draft-start">'+
+      '<b>Build your 15.</b> Tap any <span class="draft-start-chip">+ GK</span> '+
+      'slot on the pitch and the player pool filters to that position'+
+      (document.getElementById('wiz-club')?', or <button class="btn btn-primary btn-sm" style="padding:2px 10px" onclick="draftGenerate()">generate a squad</button> and tweak it':'')+
+      '.</div>')
+    +pitchWrap(row(1)+row(2)+row(3)+row(4));
   renderDraftPool();
   const diag=document.getElementById('draft-diag');
   if(diag)diag.innerHTML=draftDiagnosis(S,players,v);
@@ -16668,6 +16723,24 @@ async function hydrateDraft(host){
         '<p class="dl-sub" style="margin-bottom:10px">'+svg(ICON.spark,'width="13" height="13"')+' Claude reads the whole draft — balance, risks and the most valuable swaps.</p>'+
         aiGate('<button class="btn btn-primary btn-sm" onclick="genDraft()">AI diagnosis</button>')+
         '<div id="draft-ai" style="margin-top:12px"></div></div></div>';
+  /* Tapping an empty slot filters the pool to that position and puts it in
+     front of you. The <select> is moved with it rather than around it, so the
+     control and the list never disagree about what is being shown — a filter
+     that says "All positions" over a goalkeeper-only list is worse than no
+     filter at all. */
+  function draftSlot(t){
+    S.posF=t;
+    const sel=host.querySelector('#draft-pos');
+    if(sel)sel.value=String(t);
+    renderDraftPool();
+    const pool=host.querySelector('#draft-pool');
+    /* scrollIntoView, because on a phone the pool is a full screen below the
+       pitch and a silently-filtered list you cannot see reads as nothing
+       having happened. Guarded: jsdom and older Safari lack the options form. */
+    if(pool&&pool.scrollIntoView){ try{ pool.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ pool.scrollIntoView(); } }
+    const q=host.querySelector('#draft-q');
+    if(q&&window.matchMedia&&window.matchMedia('(min-width:900px)').matches) q.focus();
+  }
   host.addEventListener('click',ev=>{
     const add=ev.target.closest('[data-draft-add]');
     if(add){
@@ -16677,8 +16750,20 @@ async function hydrateDraft(host){
       if(el&&draftCanAdd(players,el)){DRAFT_IDS.push(el.id);renderDraft();}
       return;
     }
+    const slot=ev.target.closest('[data-draft-slot]');
+    if(slot){draftSlot(parseInt(slot.dataset.draftSlot,10));return;}
     const open=ev.target.closest('[data-draft-open]');
     if(open)openDraftPlayer(parseInt(open.dataset.draftOpen,10));
+  });
+  /* role="button" without this is a lie to a keyboard: it takes focus and does
+     nothing on Enter. Space is preventDefaulted or the page scrolls under the
+     press. */
+  host.addEventListener('keydown',ev=>{
+    if(ev.key!=='Enter'&&ev.key!==' ')return;
+    const slot=ev.target.closest&&ev.target.closest('[data-draft-slot]');
+    if(!slot)return;
+    ev.preventDefault();
+    draftSlot(parseInt(slot.dataset.draftSlot,10));
   });
   const q=host.querySelector('#draft-q');
   if(q)q.addEventListener('input',()=>{S.q=q.value.trim().toLowerCase();renderDraftPool();});
