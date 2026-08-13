@@ -277,7 +277,7 @@ export function claimsFromTeams(teams) {
    single token that appears anywhere in the other. */
 const toks = (n) => String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
   .toLowerCase().replace(/[.'’]/g, '').trim().split(/\s+/).filter(Boolean);
-function samePlayer(a, b) {
+export function samePlayer(a, b) {
   const x = toks(a), y = toks(b);
   if (!x.length || !y.length) return false;
   if (x[x.length - 1] === y[y.length - 1]) return true;

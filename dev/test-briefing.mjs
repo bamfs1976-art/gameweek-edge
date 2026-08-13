@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
   teamsFromHtml, claimsFromTeams, fixtureContradictions, moveContradictions,
   pensProseClaims, pensSelfContradictions, mdFixtureClaims,
-  clubMatcher, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
+  clubMatcher, samePlayer, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 let failures = 0, passes = 0;
@@ -486,9 +486,11 @@ console.log('\n• briefing: the shipped document, and the regression that broke
   /* Bournemouth was on this list until 11 Aug 2026, when Kroupi.Jr — the
      API's order-1 taker — was ruled out for about three months. It is
      asserted separately below as naming nobody. */
+  /* Forest and Hull left this list on 13 Aug, deliberately and for the same
+     reason Bournemouth did: their set-piece lines asserted a taker their own
+     pick bullets contradicted, so both now assert nobody. Asserted below. */
   for (const [club, taker] of [['Aston Villa', 'Buendía'],
-    ['Sunderland', 'Diarra'], ['Nottingham Forest', 'Wood'], ['Ipswich Town', 'Hirst'],
-    ['Hull City', 'Crooks']]) {
+    ['Sunderland', 'Diarra'], ['Ipswich Town', 'Hirst']]) {
     ok(spOf[club] === taker, club + ' set-piece line names ' + taker + ' (' + spOf[club] + ')');
   }
 
@@ -503,7 +505,9 @@ console.log('\n• briefing: the shipped document, and the regression that broke
     c.pens.map((p) => (was[p.club] ? { ...p, name: was[p.club] } : p)), c.pensProse);
   /* Five, not the historical six: Bournemouth's set-piece line no longer
      asserts a taker at all (see below), so there is nothing there to revert. */
-  ok(broken.length === 5, 'reverting the set-piece lines alone strands 5 picks (' + broken.length + ')');
+  /* Three now, not five: Forest and Hull joined Bournemouth in asserting no
+     taker on 13 Aug, so there is nothing in their set-piece lines to revert. */
+  ok(broken.length === 3, 'reverting the set-piece lines alone strands 3 picks (' + broken.length + ')');
 
   /* Kroupi.Jr was FPL order 1 and is out roughly three months from 11 Aug
      2026. The briefing therefore names NOBODY as Bournemouth's penalty
@@ -520,11 +524,16 @@ console.log('\n• briefing: the shipped document, and the regression that broke
   /* Bournemouth dropped out of this list on 11 Aug 2026 for the same reason
      as above: with no taker asserted in its set-piece line there is nothing
      for the revert to strand. */
-  for (const club of ['Aston Villa', 'Sunderland', 'Nottingham Forest', 'Hull City']) {
+  for (const club of ['Aston Villa', 'Sunderland']) {
     ok(clubs.indexOf(club) > -1, club + ' is reported');
   }
-  ok(clubs.indexOf('Bournemouth') < 0,
-    'and Bournemouth is not, because it now claims no taker to revert');
+  /* The three clubs that now claim no taker cannot be stranded by a revert,
+     and each is asserted as claiming none rather than merely being absent —
+     absence would also be what a broken parser produced. */
+  for (const club of ['Bournemouth', 'Nottingham Forest', 'Hull City']) {
+    ok(clubs.indexOf(club) < 0, club + ' is not, because it now claims no taker to revert');
+    ok(!c.pens.some((p) => p.club === club), 'and ' + club + ' really does assert none');
+  }
   ok(clubs.filter((x) => x === 'Sunderland').length === 2, 'Sunderland twice — it makes the claim in two fields');
   /* Ipswich's takers changed too, but its pick fields never claimed the
      penalties, so it must NOT appear. A check that flagged every corrected club
@@ -919,6 +928,92 @@ console.log('\n• briefing: the club matcher does not turn Villarreal into Asto
     const got = match(label);
     ok(!got, '"' + label + '" resolves to no Premier League club (' + (got || 'none') + ')');
   }
+}
+
+/* ── European qualification ─────────────────────────────────
+   Four of the five European qualifiers were missing from this file, and all
+   four were found by an outside source rather than by us: Bournemouth on 11
+   Aug, Brighton on the 12th, Sunderland on the 13th. Each is a
+   Thursday-Sunday schedule and therefore a rotation warning on every asset
+   at that club — the single biggest thing a pre-season register can omit
+   without looking wrong, because an absent fact reads exactly like a fact
+   that does not apply.
+
+   Pinned so the knowledge cannot be lost again in an edit. Chelsea is in the
+   list too, for the opposite reason: having NO European football is a real
+   scheduling advantage, and it is only visible if somebody writes it down. */
+console.log('\n• briefing: every European qualifier says so in its own block');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const blocks = clubBlocks(md);
+  const EUROPE = [
+    ['Aston Villa', /champions league|\bUCL\b/i],
+    ['Bournemouth', /europa|european campaign/i],
+    ['Brighton', /conference league/i],
+    ['Sunderland', /europa/i],
+    ['Crystal Palace', /conference league/i],
+    ['Chelsea', /no european football/i]
+  ];
+  for (const [club, re] of EUROPE) {
+    const b = blocks.find((x) => x.name.indexOf(club) === 0);
+    ok(b && re.test(b.body), club + ' states its European situation in its own block');
+    /* Naming the competition is not enough — the schedule is the FPL fact. */
+    if (b && ['Bournemouth', 'Brighton', 'Sunderland'].includes(club)) {
+      ok(/rotation/i.test(b.body), club + ' also carries the rotation warning that follows from it');
+    }
+  }
+}
+
+/* pensSelfContradictions reads the STRUCTURED edition only. The prose edition
+   carries the same two claims — a set-piece line and a pick rationale — and
+   nothing was comparing them, which is how Sunderland's value bullet came to
+   say Le Fee was "on pens and free-kicks" four rows above a set-piece line
+   giving the penalties to Diarra. The HTML edition had been corrected; the
+   markdown had not, so the two editions disagreed as well. */
+console.log('\n• briefing: the prose edition does not contradict its own set-piece line');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const blocks = clubBlocks(md);
+  const sp = {};
+  for (const p of penaltyClaims(blocks)) sp[p.club] = p.name;
+  const NOT_NAME = /^(a|an|the|no|none|nailed|thin|both|neither|watch|expect|if|on|his|her|their|treat|every|this|that|these|those|still|now|one|two|three|read|set|against|watkins is)\b/i;
+  const bad = [];
+  for (const b of blocks) {
+    const primary = sp[b.name];
+    if (!primary) continue;
+    for (const line of b.body.split('\n')) {
+      if (!/^-\s*(Value|Premium|Differentials)/i.test(line.trim())) continue;
+      /* Only a claim to TAKE them; "not on penalties" and "backup pens" are
+         agreements with the set-piece line, not challenges to it. */
+      let subject = null;
+      for (const sentence of line.replace(/^-\s*\w+[^:]*:\s*/i, '').split(/\.(?:\s|$)/)) {
+        const nm = sentence.match(/^\s*\*{0,2}([A-ZÀ-Ý][\p{L}'’.-]*(?:\s+[A-ZÀ-Ý][\p{L}'’.-]*){0,2})/u);
+        if (nm && !NOT_NAME.test(nm[1])) subject = nm[1].trim();
+        if (!/\bpens?\b|\bpenalt/i.test(sentence)) continue;
+        if (/\bnot\b|backup|second|2nd|deputy|behind|unresolved|whatever|used to/i.test(sentence)) continue;
+        if (!subject) continue;
+        if (!samePlayer(subject, primary)) {
+          bad.push(`${b.name}: the set-piece line says ${primary}, a pick bullet says ${subject}`);
+        }
+      }
+    }
+  }
+  for (const b of bad.slice(0, 5)) ok(false, b);
+  ok(!bad.length, 'no prose pick claims a penalty duty the same block assigns elsewhere (' + bad.length + ')');
+}
+
+/* "Thin post-Eze/Guehi. Mateta (~£7.5m)" made the price parser read a player
+   called "Guehi. Mateta" — the name class has to allow a dot for B.Fernandes,
+   and a slash-joined surname ran straight into the next sentence. Harmless
+   until a price check quotes the name back at somebody. */
+console.log('\n• briefing: the Palace price claim names a real player');
+{
+  const teams = teamsFromHtml(readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8'));
+  const prices = claimsFromTeams(teams).prices.filter((p) => p.club === 'Crystal Palace');
+  ok(prices.length > 0, 'Palace states prices at all (' + prices.length + ')');
+  const junk = prices.filter((p) => /\./.test(p.name) && !/^[A-Z]\.[A-Z]/.test(p.name));
+  for (const j of junk) ok(false, 'price claim for a non-name: "' + j.name + '"');
+  ok(!junk.length, 'and none of them ran two sentences together (' + junk.length + ')');
 }
 
 /* The start date was wrong by a day and only one edition stated it, so the

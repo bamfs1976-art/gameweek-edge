@@ -186,6 +186,19 @@
     <div class="slrow"><b>The gap it exposes</b><span>This file states 79 of a possible 100 opening fixtures; nine clubs have fewer than five, Ipswich one. Four of the six clubs in "avoid early" are among them, so that comparison runs on unequal evidence. <code>npm run check:briefing --fix</code> fills them from the real list.</span></div>
   </div>
 
+  <div class="section" id="setpiece">
+    <h2>&gt; outside set-piece projection &mdash; 13 Aug</h2>
+    <div class="slrow"><b>Source</b><span>A "Projected Set-Piece Takers 26/27" table: all 20 clubs &times; penalties, free kicks, corners left and right, with prices. A PROJECTION, not a team sheet &mdash; nothing in the register below is rewritten from it. This is the case against what we hold, like the role watch.</span></div>
+    <div class="slrow"><b>Penalties: 13 of 20 agree</b><span>Once "B.Fernandes" and "Bruno" are read as one player. Seven differ, and penalties are the duty worth most.</span></div>
+    <div class="slrow"><b>ARS</b><span>They: <b>Gyokeres</b> (Saka 2nd). Us: Saka, hedged. The biggest gap in the table &mdash; and the 11 Aug Saka injury makes a striker taking them more plausible, not less.</span></div>
+    <div class="slrow"><b>BOU · FUL</b><span>Holes, not contradictions. They name <b>Kluivert</b> (Tavernier 2nd) and <b>Garcia</b> (Robinson 2nd); we name nobody at either. Bournemouth has read "unresolved" since Kroupi's injury, and a projection does not resolve it.</span></div>
+    <div class="slrow"><b>HUL · IPS</b><span>They: <b>McBurnie</b>, <b>Clarke</b> (Philogene 2nd). Us: Crooks, Hirst.</span></div>
+    <div class="slrow"><b>NFO</b><span>They: <b>Gibbs-White</b> (Wood, Igor Jesus behind). Us: Wood &mdash; while our own shortlist lists Gibbs-White among the penalty magnets. The two halves of this document lean different ways and the table sides with the shortlist.</span></div>
+    <div class="slrow"><b>SUN</b><span>They: <b>Le Fee</b> (Diarra 2nd). Us: Diarra. Backed by a second independent Sunderland thread saying to monitor the duty &mdash; two sources against our one.</span></div>
+    <div class="slrow"><b>Prices (ours est.)</b><span>Saka 10.0/9.5 · Gibbs-White 7.0/8.0 · Wood 7.0/6.0 · Ndiaye 6.5/6.0 · Garner 5.0/6.0 · Le Fee 5.5/6.0 · Mateta 7.5/6.5 · Robinson 5.0/4.5. The FPL API settles every one of them at launch, not either of us.</span></div>
+    <div class="slrow"><b>Caution on the table</b><span>Its shorthand is ambiguous twice: "Fernandes £6.0m" in Spurs' free-kick cell is Mateus, not Bruno, and "Enzo £7.0m" in Chelsea's corners is Fernandez, not Le Fee. Matching on surname alone invented two price conflicts before the diff was scoped per club.</span></div>
+  </div>
+
   <div class="section" id="shape">
     <h2>&gt; season shape &mdash; the 2026-27 calendar</h2>
     <div class="slrow"><b>Source</b><span>Season planner by @BenCrellin with Fantasy Football Hub, read from a screenshot (the linked Google Sheet is unreachable from the dev sandbox). All 38 gameweeks with dates, the European matchdays and cup rounds between them, the international breaks, and the author's own blank/double forecast.</span></div>
@@ -287,12 +300,12 @@ const TEAMS = [
   fx:[["1","Man City (A)","vhard"],["2","Everton (H)","mod"],["3","Newcastle (A)","hard"],["4","Brentford (H)","mod"]]},
 
  {pos:7,name:"Sunderland",meta:"54 pts",tag:"",badge:null,
-  summary:"The surprise package — 7th in their first season back, Regis Le Bris staying. Continuity is the theme, but breakout striker Mayenda left (~£21.5m to Rennes) and incomings have been slow. Classic second-season risk with a thinner attack.",
+  summary:"The surprise package — 7th in their first season back, Regis Le Bris staying. 13 Aug: they QUALIFIED FOR THE EUROPA LEAGUE and this block did not say so — the fourth European qualifier in this file found missing by an outside source, after Bournemouth and Brighton. Thursday-Sunday, so every asset here carries rotation risk. Le Bris plays a compact 4-3-3 / 4-2-3-1 low block on direct transitions (3rd in the league for counter-attack goals), protecting the central corridor and breaking through Le Fee and the wide channels. AND THE UNDERLYING NUMBERS SAY IT WAS FLATTERING: 42 scored against 38.89 xG, 48 conceded against 52.1 xGA, and 396 shots — 19th in the division. Overperformance at BOTH ends, so regression is the base case, not the risk case. Continuity is the theme, but breakout striker Mayenda left (~£21.5m to Rennes) and incomings have been slow. Classic second-season risk with a thinner attack.",
   ins:["Thomas Meunier (RB, Lille, free)","More expected before deadline"],
   outs:["Eliezer Mayenda (ST, Rennes, ~£21.5m)","Dan Neil (MID, departed)","Cirkin, Traore, Huggins (released)"],
-  value:"Enzo Le Fee (MID ~£5.5m) creative hub on free-kicks. Diarra has the penalties, not him. Wilson Isidor (~£5.5-6.0m) clear No.9 now.",
+  value:"Enzo Le Fee (MID ~£5.5m, an outside table says £6.0m) creative hub on free-kicks — 147 pts last season, 5G 6A, 62 key passes, 16 bonus. Diarra has the penalties in this register, but TWO outside sources now put Le Fee first and one says to monitor the duty; see the set-piece section above. Wilson Isidor (~£5.5-6.0m) clear No.9 here — though an outside thread builds its whole Sunderland case around Brian Brobbey (~£6.0m, 7 goals from 6.0 xG, 2.6 shots/90, 22 starts, 112 pts) and does not mention Isidor at all. One of the two is wrong about who leads the line.",
   prem:"None — cheap enablers and defensive punts. Xhaka (~£5.5m) most nailed midfield points via set-pieces.",
-  diff:"Isidor, very low-owned lead striker. Le Fee, the cheap Sunderland creator. Diarra takes the penalties, and the opening five (Ipswich A, Fulham H, Brentford A, Arsenal H, Man City A) is one of the worst in the league.",
+  diff:"Isidor, very low-owned lead striker. Le Fee, the cheap Sunderland creator. Diarra takes the penalties in this register, and the opening five (Ipswich A, Fulham H, Brentford A, Arsenal H, Man City A) is one of the worst in the league. DEFENDERS, 13 Aug: the home/away split is stark — 1.05 goals against per 90 and 7 clean sheets at home (37%, 1.74 PPG) against 1.47 and 4 away (21%, 1.11 PPG), so these are home-fixture assets, not season-long ones. Mukiele (~£5.5m) was the top scorer at 151 pts (3G, 3A, 19 bonus); Ballard (~£5.0m) is the same clean sheet for £0.5m less with a set-piece aerial threat. Trai Hume (~£4.5m, 110 pts, 2G 1A 10 CS) has been used as a RIGHT WINGER in pre-season to let Mukiele overlap — a defender playing out of position is a points risk, not a bonus, and it is unconfirmed for GW1.",
   sp:"Pens Diarra (Le Fee 2nd). FK Xhaka/Le Fee. Corners Xhaka, Le Fee, Hume.",
   fx:[["1","Ipswich Town (A)","hard"],["2","Fulham (H)","hard"],["3","Brentford (A)","hard"],["4","Arsenal (H)","vhard"],["5","Man City (A)","vhard"]]},
 
@@ -371,7 +384,7 @@ const TEAMS = [
   ins:["Yeremy Pino (RW, Villarreal, ~£26m)","Brennan Johnson (W, Tottenham, ~£35m, Jan 2026)"],
   outs:["Maxence Lacroix (CB, Chelsea, ~£52m) — missing from this list until 13 Aug","Eberechi Eze (AM, sold, destination unconfirmed)","Marc Guehi (CB, Man City, £20m+, Jan)","Mateta (ST, rumoured exit)"],
   value:"Daniel Munoz (RWB ~£5.5m) — best-value defender for attacking returns. Ismaila Sarr (~£6.0-6.5m) carries the goal threat now.",
-  prem:"Thin post-Eze/Guehi. Mateta (~£7.5m) the pick IF he stays (striker, pens) — his future is the caveat. No reliable elite captain.",
+  prem:"Thin after Eze and Guehi both left. Mateta (~£7.5m) the pick IF he stays (striker, pens) — his future is the caveat. No reliable elite captain.",
   diff:"Pino — well under 10%, on FK, in Eze's role. Wharton, deep-lying creator, if he stays and starts.",
   sp:"Pens Mateta (Sarr backup) — uncertain if Mateta leaves (Sarr inherits). FK Pino. Corners Pino, Hughes.",
   fx:[["1","Everton (A)","hard"],["2","Man City (H)","hard"],["3","Fulham (A)","hard"]]},
@@ -383,7 +396,7 @@ const TEAMS = [
   value:"Morgan Gibbs-White (~£7.0m) talisman on free-kicks and central to everything. Wood is FPL order 1 on penalties, so the premium sits with the striker. Neco Williams (~£5.0m DEF) full-back on corners.",
   prem:"Chris Wood (~£7.0m) proven scorer, Glasner wants a focal point (form dipped late). Gibbs-White the on-ball alternative. Kalimuendo, if signed, complicates Wood's minutes.",
   diff:"Hutchinson and McAtee — new arrivals, low ownership, reshaped attack. Ndoye.",
-  sp:"Pens Wood (Gibbs-White 2nd, and the order may move under a new boss). FK Gibbs-White, Murillo. Corners Hutchinson, Neco Williams.",
+  sp:"Pens UNRESOLVED — this said 'Wood (Gibbs-White 2nd)' until 13 Aug while the value line calls Gibbs-White the talisman on pens and the shortlist lists him among the penalty magnets. Two of our three signals say Gibbs-White, and an outside projection agrees (Gibbs-White, then Wood, then Igor Jesus). Undecided under a new manager is the honest state; watch GW1. FK Gibbs-White, Murillo. Corners Hutchinson, Neco Williams.",
   fx:[["1","Leeds (H)","mod"],["2","Liverpool (A)","hard"],["3","Spurs (H)","mod"],["4","Aston Villa (A)","hard"],["5","Coventry City (H)","mod"]]},
 
  {pos:17,name:"Tottenham Hotspur",meta:"41 pts",tag:"big",badge:null,
@@ -423,7 +436,7 @@ const TEAMS = [
   value:"Oli McBurnie (~£5.5m) — main striker, but not the clear pick he read as. Crooks has the penalties, and the opening two are the hardest in the league. Joe Gelhardt (~£5.0m) if his stay is confirmed.",
   prem:"None obvious.",
   diff:"Liam Millar (~£5.0m, led squad for xA) and Yu Hirakawa — both likely well under 10%. Millar took a knock on 8 Aug (called a dead leg); confirm he starts before buying the differential this block leans on.",
-  sp:"Pens Crooks (McBurnie 2nd). Corners Slater, Giles. FK Giles. GOALKEEPER UNRESOLVED: Butland out ~3 months and Pandur sold, so whoever starts is not named in this file — do not buy a Hull keeper off the In list.",
+  sp:"Pens UNRESOLVED — this said 'Crooks (McBurnie 2nd)' until 13 Aug while the value line calls McBurnie the main striker and penalty taker, and an outside projection names McBurnie alone. Undecided until someone takes one; watch GW1. Corners Slater, Giles. FK Giles. GOALKEEPER UNRESOLVED: Butland out ~3 months and Pandur sold, so whoever starts is not named in this file — do not buy a Hull keeper off the In list.",
   fx:[["1","Man Utd (H)","vhard"],["2","Coventry City (A)","vhard"]]}
 ];
 

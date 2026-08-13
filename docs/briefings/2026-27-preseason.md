@@ -410,6 +410,62 @@ which the same runner that produced the chip plan can now be shown to reach.
 
 ---
 
+## Outside set-piece projection — 13 August 2026
+
+A "Projected Set-Piece Takers 26/27" table covering all 20 clubs: penalties,
+free kicks, left corners and right corners, each with an FPL price. This
+file's own caveats call set-piece order "the most fluid data here after ten
+managerial changes", so a complete outside projection is the single most
+useful thing that can be held against the register — and unlike a fixture
+grid, it can be diffed on names rather than eyeballed.
+
+It is a **projection**, not a team sheet, and nothing below has been rewritten
+from it. What follows is the case against the register, in the same way the
+pre-season role watch is.
+
+**Penalties — the duty worth most, and where we differ.** Thirteen of twenty
+agree once "B.Fernandes" and "Bruno" are recognised as one player. The other
+seven:
+
+| Club | Their primary | Ours | Read |
+|---|---|---|---|
+| Arsenal | **Gyokeres** (Saka second) | Saka, hedged | The biggest single disagreement in the table. Our own line already hedged it, and the Saka injury logged on 11 August makes a striker taking them more plausible, not less |
+| Bournemouth | **Kluivert** (Tavernier second) | *unresolved* | Our line has said "unresolved" since Kroupi's injury and named Tavernier as the likely promotion. This names Kluivert first and Tavernier second — a candidate we had not considered, and it does not confirm anything |
+| Fulham | **Garcia** (Robinson second) | *we name nobody* | A gap in the register, filled by nobody until now |
+| Hull City | **McBurnie** | Crooks | McBurnie scored the 95th-minute play-off final winner; Crooks is our line's name |
+| Ipswich | **Clarke** (Philogene second) | Hirst | |
+| Nott'm Forest | **Gibbs-White** (Wood, Igor Jesus behind) | Wood | Our own shortlist already lists Gibbs-White among the set-piece and penalty magnets while the Forest block gives penalties to Wood — the two halves of this document lean different ways, and the outside table sides with the shortlist |
+| Sunderland | **Le Fee** (Diarra second) | Diarra | Now backed by a second, independent Sunderland thread that says to monitor the duty. Two sources against our one |
+
+Neither Bournemouth nor Fulham is a contradiction — those are holes. The other
+five are real disagreements about a duty worth roughly five points a
+conversion, and none of them is settled until somebody takes one.
+
+**Prices, where ours differ.** Every figure below is marked "est." in this
+file, so these are our estimates against their table, and the FPL API settles
+all of them at launch rather than either of us:
+
+| Player | Ours | Theirs |
+|---|---|---|
+| Saka (ARS) | ~£10.0m | £9.5m |
+| Gibbs-White (NFO) | ~£7.0m | £8.0m |
+| Wood (NFO) | ~£7.0m | £6.0m |
+| Ndiaye (EVE) | ~£6.5m | £6.0m |
+| Garner (EVE) | ~£5.0m | £6.0m |
+| Le Fee (SUN) | ~£5.5m | £6.0m |
+| Mateta (CRY) | ~£7.5m | £6.5m |
+| Robinson (FUL) | ~£5.0m | £4.5m |
+
+**Two cautions about the diff itself, both found while running it.** Matching
+on the last name alone made "Fernandes £6.0m" in Tottenham's free-kick cell —
+Mateus — collide with Bruno Fernandes, and "Enzo £7.0m" in Chelsea's corners
+collide with Enzo Le Fee at Sunderland, inventing two price conflicts out of
+nothing. The comparison is scoped per club for that reason. And the table's
+own shorthand is ambiguous in exactly those two places, which is worth knowing
+before quoting a single cell from it.
+
+---
+
 # The 20 clubs
 
 Ordered by 2025/26 finishing position, promoted clubs last.
@@ -624,7 +680,7 @@ is partly a list of who played the weakest opposition.
 
 **FPL picks:**
 - Value: Matty Cash (attacking RB, corners, defensive points). Leon Bailey if he nails a starting wide role after Rogers.
-- Premium / captaincy: Ollie Watkins, nailed striker and penalty taker, the reliable armband here.
+- Premium / captaincy: Ollie Watkins, nailed striker and the reliable armband here. **13 Aug: this bullet used to call him "nailed striker and penalty taker", which the set-piece line four rows below contradicts — Buendia is FPL order 1 and Watkins second.** An outside projection agrees with the set-piece line, so the claim has been removed from the bullet rather than the name changed below. Watkins is a pick on minutes and shots, not on the spot.
 - Differentials: Garnacho, fresh start and direct threat at low ownership (must earn Emery's trust first). Joao Gomes as a tackles-and-bookings budget midfielder — and the case is now measured rather than asserted: third in the division for tackles (107) and fourth for ball recoveries (194) last season, which is the profile the defensive-contribution points reward.
 - Set-piece & penalties: Penalties Buendía (FPL order 1; Watkins second, and Villa scored no open-play PL penalties last term). Free-kicks Buendia. Corners Cash from the left and McGinn from the right. **Correction (11 Aug): this line previously named Digne on corners while the same block listed him as sold to PSG.** That was our error, not a source conflict — an Opta projected order was carried over without being checked against our own Out list. Output is a real question mark after losing coach MacPhee (watch).
 
@@ -673,16 +729,17 @@ is partly a list of who played the weakest opposition.
 
 ## 7. Sunderland (54 pts)
 
-**Pre-season summary:** The surprise package of 2025/26, seventh in their first season back, with Regis Le Bris staying on. Continuity is the theme, but they lost breakout striker Mayenda (~£21.5m to Rennes), so replacing goals is the priority and incomings have been slow. Classic second-season risk with a thinner attack, expect organised rather than a repeat top-seven push.
+**Pre-season summary:** The surprise package of 2025/26, seventh in their first season back, with Regis Le Bris staying on. **13 Aug: they qualified for the Europa League and this block did not say so** — the fourth European qualifier in this file found missing by an outside source rather than by us, after Bournemouth and Brighton. Thursday-Sunday football, so every Sunderland asset now carries the same rotation warning as theirs. Le Bris plays a compact 4-3-3 or 4-2-3-1 low block built on direct transitions — third in the league for counter-attack goals — protecting the central corridor and breaking through Le Fee and the wide channels. **And the underlying numbers say seventh flattered them:** 42 goals scored against 38.89 xG, 48 conceded against 52.1 xGA, and 396 shots, nineteenth in the division. Overperformance at both ends at once, which makes regression the base case rather than the risk case. Continuity is the theme, but they lost breakout striker Mayenda (~£21.5m to Rennes), so replacing goals is the priority and incomings have been slow. Classic second-season risk with a thinner attack, expect organised rather than a repeat top-seven push.
 
 **In:** Thomas Meunier (RB, Lille, free). More expected before the deadline.
 
 **Out:** Eliezer Mayenda (ST, Rennes, ~£21.5m), Dan Neil (MID, departed, destination uncertain), Dennis Cirkin, Bertrand Traore, Niall Huggins (all released), Milan Aleksic (loan).
 
 **FPL picks:**
-- Value: Enzo Le Fee (MID, ~£5.5m), creative hub on pens and free-kicks. Wilson Isidor (~£5.5-6.0m), clear number nine after Mayenda.
+- Value: Enzo Le Fee (MID, ~£5.5m; an outside table prices him £6.0m), creative hub on free-kicks — 147 points last season, 5 goals and 6 assists, 62 key passes, 16 bonus. **This line used to say "on pens and free-kicks", which contradicted the set-piece line four rows below it**; the penalties belong to Diarra in this register, and the case against that is now two independent outside sources — see the set-piece section above the club list. Wilson Isidor (~£5.5-6.0m), clear number nine after Mayenda — though an outside Sunderland thread builds its entire case around Brian Brobbey (~£6.0m, 7 goals from 6.0 xG, 2.6 shots per 90, 22 starts, 112 points) and never mentions Isidor. One of the two of us is wrong about who leads this line.
 - Premium / captaincy: None. Sunderland are cheap enablers and defensive punts. Granit Xhaka (~£5.5m) is the most nailed midfield points source via set-pieces.
-- Differentials: Wilson Isidor, very low-owned lead striker. Enzo Le Fee, the pick if you want a cheap Sunderland midfielder on pens.
+- Differentials: Wilson Isidor, very low-owned lead striker. Enzo Le Fee, the pick if you want a cheap Sunderland midfielder — on free-kicks and creation, not on penalties, whatever the earlier wording implied.
+- Defenders, and the split matters more than the price: at home Sunderland conceded 1.05 per 90 with 7 clean sheets (a 37% rate, 1.74 points per game); away, 1.47 and 4 (21%, 1.11). These are home-fixture assets rather than season-long ones. **Nordi Mukiele** (~£5.5m) was the club's top FPL scorer on 151 points (3 goals, 3 assists, 19 bonus); **Dan Ballard** (~£5.0m) offers the same clean sheet for £0.5m less with a set-piece aerial threat. **Trai Hume** (~£4.5m, 110 points, 2 goals, 1 assist, 10 clean sheets) has been deployed as a right winger in pre-season so Mukiele can overlap — for a defender that is a points risk rather than a bonus, since clean sheets pay a defender and not a winger, and it is unconfirmed for GW1.
 - Set-piece & penalties: Penalties Diarra primary, Le Fee second. Free-kicks Xhaka and Le Fee. Corners Xhaka, Le Fee, Trai Hume.
 
 **Opening fixtures:** GW1 Ipswich Town (A) hard, GW2 Fulham (H) hard, GW3 Brentford (A) hard, GW4 Arsenal (H) very hard, GW5 Man City (A) very hard. Every one of the five rates hard or worse — the second-toughest opening run in the league on our model. "Target the Sunderland defence early" does not survive the real fixture list: leave them alone until GW6.
@@ -821,7 +878,7 @@ is partly a list of who played the weakest opposition.
 
 ## 15. Crystal Palace (45 pts)
 
-**Pre-season summary:** Fifteenth, but they won the UEFA Conference League and are listed as its holders in the fixture release. Oliver Glasner has left (to Nottingham Forest) and Pierre Sage, ex-Lyon, is confirmed head coach (appointed June 2026). A gutted spine is the story: Guehi sold to Man City (January), Eze sold this summer (Pino signed as his direct replacement, took his shirt number), and Mateta agitating to leave. A rebuild under a new manager, treat the whole squad with caution until the window shuts.
+**Pre-season summary:** Fifteenth, but they won the UEFA Conference League and are listed as its holders in the fixture release. **Which European competition that puts them in this season is not stated here, and this block does not assert one** — the other four qualifiers in this file each carry a Thursday-Sunday rotation warning, and Palace should either carry the same or say plainly that they do not. Oliver Glasner has left (to Nottingham Forest) and Pierre Sage, ex-Lyon, is confirmed head coach (appointed June 2026). A gutted spine is the story: Guehi sold to Man City (January), Eze sold this summer (Pino signed as his direct replacement, took his shirt number), and Mateta agitating to leave. A rebuild under a new manager, treat the whole squad with caution until the window shuts.
 
 **In:** Yeremy Pino (RW, Villarreal, ~£26m), Brennan Johnson (W, Tottenham, ~£35m, completed January 2026).
 
@@ -849,7 +906,7 @@ is partly a list of who played the weakest opposition.
 - Value: Morgan Gibbs-White (~£7.0m), talisman on pens and free-kicks, central to everything. Neco Williams (~£5.0m DEF), attacking full-back on corners.
 - Premium / captaincy: Chris Wood (~£7.0m), proven scorer the past two seasons and Glasner will want a focal point, though form dipped late last term. Gibbs-White the alternative on-ball captain. Kalimuendo, if signed, complicates Wood's minutes.
 - Differentials: Omari Hutchinson and James McAtee, new arrivals at low ownership in a reshaped attack. Dan Ndoye.
-- Set-piece & penalties: Penalties Wood (FPL order 1; Gibbs-White second, and the order may move under a new manager). Free-kicks Gibbs-White and Murillo. Corners Hutchinson and Neco Williams.
+- Set-piece & penalties: Pens unresolved — **this line said "Wood (FPL order 1; Gibbs-White second)" until 13 Aug while the value bullet above called Gibbs-White the talisman "on pens", and the shortlist lists Gibbs-White among the penalty magnets.** Three parts of this document, two of them saying Gibbs-White, and an outside projection agreeing with those two (Gibbs-White first, then Wood, then Igor Jesus). The honest state is undecided under a new manager, not a flat claim for either. Watch GW1. Free-kicks Gibbs-White and Murillo. Corners Hutchinson and Neco Williams.
 
 **Opening fixtures:** GW1 Leeds (H) moderate, GW2 Liverpool (A) hard, GW3 Spurs (H) moderate, GW4 Aston Villa (A) hard, GW5 Coventry City (H) moderate. Better than it first read: three moderate home games, and both hard ones are away. Worth investing before GW5 rather than waiting it out.
 
@@ -942,7 +999,7 @@ is partly a list of who played the weakest opposition.
 - Value: Oli McBurnie (~£5.5m), main striker and penalty taker, the clear pick here. Joe Gelhardt (~£5.0m) if his stay is confirmed.
 - Premium / captaincy: None obvious.
 - Differentials: Liam Millar (~£5.0m, led the squad for expected assists) and Yu Hirakawa, both likely well under 10% owned. **Millar picked up a knock on 8 Aug described as a dead leg — likely nothing, but he is the differential this block leans on, so confirm he starts before buying.**
-- Set-piece & penalties: Penalties Crooks primary, McBurnie second. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
+- Set-piece & penalties: Pens unresolved — **this line said "Crooks primary, McBurnie second" until 13 Aug while the value bullet above called McBurnie "main striker and penalty taker, the clear pick here".** An outside projection names McBurnie alone. Two of our own three signals and the outside one point the same way, but the line below them said otherwise, so it is recorded as undecided until someone takes one. Watch GW1. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
 - Goalkeeper: **unresolved.** Butland is out roughly three months and Pandur has been sold. Whoever plays is not named in this file, and a promoted side's opening five is the wrong place to guess.
 
 **Opening fixtures:** GW1 Man Utd (H) very hard, GW2 Coventry City (A) very hard. The venue is confirmed home, and neither game is winnable on our model — Hull have the hardest opening five in the league. Delay investment until the schedule eases from around GW6. **The treatment room above sharpens that rather than changing it:** the advice was already "wait", and a side missing its goalkeeper, a centre-back for GW1 specifically, and three players until autumn is not the side to make an exception for.
