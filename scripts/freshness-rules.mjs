@@ -80,6 +80,25 @@ export function gradeEfl({ status, body }) {
   if (status === 200 && body && body.ok) {
     const counts = Object.entries(docs)
       .map(([n, d]) => `${n} ${d && d.count != null ? d.count : '?'}`).join(' · ');
+    /* The feed can be perfectly healthy by every structural measure and still
+       have started sending position labels we do not recognise. provider.js
+       turns those into midfielders, and midfielders are the only position
+       paid for interceptions — so this is a scoring error wearing the costume
+       of a healthy response, which is exactly the class of failure this file
+       exists for.
+
+       A NOTE and not a failure: the app still works, the numbers are wrong
+       only for the affected players, and taking the EFL app down over one odd
+       label would be the wolf-crying this grader was built to avoid. The note
+       carries the count and the labels so the repair is obvious. */
+    const up = (docs.players && docs.players.unknownPositions) || null;
+    if (up && up.count) {
+      const shown = (up.labels || []).map((l) => `${l.label}×${l.n}`).join(', ');
+      return note(`${counts} · ${up.count} player(s) with an unrecognised position`,
+        `${shown || 'labels not reported'} — these silently become MID, and MID is the `
+        + 'only position paid for interceptions (+2 each). Add the label to '
+        + 'OFFICIAL_POSITIONS in provider.js and to KNOWN_POSITIONS in the health function');
+    }
     return ok(counts || 'answering in the expected shape');
   }
   const missing = Object.entries(docs)

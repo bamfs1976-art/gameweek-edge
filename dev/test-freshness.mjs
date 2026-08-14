@@ -87,6 +87,39 @@ console.log('\n• freshness: the EFL health verdict is surfaced, not second-gue
   ok(/points/.test(bad.detail), 'and names the fields that went missing, since that is the repair');
 }
 
+/* ── a healthy feed that is quietly mis-scoring ───────────────────────
+   The case this pair of tests exists for: every structural check passes,
+   the feed answers 200 with ok:true, and it has started sending a position
+   label provider.js does not recognise. Those players silently become
+   midfielders, and midfielders are the only position paid +2 for an
+   interception. A response can be perfectly well-formed and still be
+   wrong about the thing the app is for. */
+console.log('\n• freshness: an unrecognised position is surfaced without crying wolf');
+{
+  const healthy = { status: 200, body: { ok: true, documents: {
+    clubs: { count: 72 },
+    players: { count: 1008, unknownPositions: { count: 0, labels: [] } }
+  } } };
+  ok(gradeEfl(healthy).verdict === 'ok', 'no unknown positions stays ok');
+
+  const drifted = { status: 200, body: { ok: true, documents: {
+    clubs: { count: 72 },
+    players: { count: 1008, unknownPositions: {
+      count: 37, labels: [{ label: 'ST', n: 30 }, { label: 'AM', n: 7 }]
+    } }
+  } } };
+  const g = gradeEfl(drifted);
+  ok(g.verdict === 'note', 'unknown positions is a NOTE, not a failure (' + g.verdict + ')');
+  ok(failures([g]).length === 0, 'so it never takes the EFL app down over one odd label');
+  ok(/37/.test(g.detail), 'the detail carries how many players are affected');
+  ok(/ST/.test(g.why) && /AM/.test(g.why), 'and the why names the labels, since that is the repair');
+  ok(/interception/i.test(g.why), 'and says what it costs, rather than just that it happened');
+
+  /* A broken feed is still a failure — the note must not swallow it. */
+  ok(gradeEfl({ status: 503, body: { ok: false, documents: {} } }).verdict === 'fail',
+    'and a genuinely broken feed still fails');
+}
+
 /* ── football-data, newly proven and therefore worth distrusting ─────── */
 console.log('\n• freshness: football-data');
 {

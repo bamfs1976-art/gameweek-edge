@@ -101,6 +101,13 @@ const UPSTREAM_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.co.uk)'
 };
 
+/* The position vocabulary provider.js recognises. Duplicated here rather
+   than imported because that file is an ES module and this one is CommonJS,
+   and a build step to cross that boundary would cost more than it saves.
+   dev/test-efl.mjs asserts the two lists stay identical, so the duplication
+   is checked rather than hoped for. */
+const KNOWN_POSITIONS = new Set(['GK', 'GKP', 'DEF', 'MID', 'FWD', 'FOR']);
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'GET') return json(405, { error: 'Method not allowed' });
@@ -142,6 +149,37 @@ exports.handler = async (event) => {
         entry.fieldsMissing = EXPECTED[name].filter((f) => sample[f] === undefined);
         entry.sampleKeys = Object.keys(sample).slice(0, 30);
         if (entry.fieldsMissing.length) ok = false;
+        /* ── unrecognised POSITION values ─────────────────────
+           Everything above checks that a field is PRESENT. Nothing checked
+           what was in it, and for one field that gap is expensive.
+
+           provider.js maps the feed's position onto GK/DEF/MID/FWD and falls
+           back to 'MID' for anything it does not recognise. The fallback is
+           silent, and MID is the one position paid +2 for every interception
+           — the highest per-event rate in the tariff outside goals, clean
+           sheets and saves. So a feed that starts sending "ST" or "AM" would
+           not error, would not 503, and would quietly turn those players into
+           midfielders earning the game's most valuable defensive stat.
+
+           This does NOT flip ok. One odd label out of a thousand players is
+           not a reason to take the EFL app down, and a check that goes red
+           for something survivable gets muted. It is reported, and the
+           freshness grader raises it as a note that says what it costs. */
+        if (name === 'players') {
+          const unknown = new Map();
+          for (const p of data) {
+            const raw = p && p.position;
+            const key = String(raw == null ? '' : raw).toUpperCase();
+            if (!KNOWN_POSITIONS.has(key)) unknown.set(key, (unknown.get(key) || 0) + 1);
+          }
+          entry.unknownPositions = {
+            count: [...unknown.values()].reduce((a, c) => a + c, 0),
+            labels: [...unknown.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
+              .map(([label, n]) => ({ label: label || '(empty)', n })),
+            consequence: 'these become MID in provider.js, and MID is the only '
+              + 'position paid for interceptions'
+          };
+        }
         report[name] = entry;
       } catch (err) {
         ok = false;

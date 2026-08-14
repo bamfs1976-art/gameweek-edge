@@ -1298,6 +1298,42 @@ ok('the UI never ships a hard-coded ownership column', () => {
 
 await Promise.all(pending);
 
+/* The health function knows the position vocabulary so it can report labels
+   provider.js would silently turn into midfielders. It is a CommonJS file and
+   provider.js is an ES module, so the list is duplicated rather than imported.
+   Duplication is only safe while something checks it, so this does. */
+ok('the health function knows exactly the positions provider.js accepts', () => {
+  const provider = readFileSync(join(ROOT, 'efl/app/assets/provider.js'), 'utf8');
+  const fn = readFileSync(join(ROOT, 'netlify/functions/efl.js'), 'utf8');
+  const pick = (src, re) => {
+    const m = src.match(re);
+    assert.ok(m, 'the vocabulary is where the test expects it');
+    return m[1];
+  };
+  /* provider.js states it as the KEYS of a map from feed label to our label. */
+  const official = pick(provider, /const OFFICIAL_POSITIONS = \{([^}]*)\}/);
+  const fromProvider = [...official.matchAll(/(\w+)\s*:/g)].map((m) => m[1].toUpperCase()).sort();
+  const known = pick(fn, /const KNOWN_POSITIONS = new Set\(\[([^\]]*)\]/);
+  const fromFn = [...known.matchAll(/'([^']+)'/g)].map((m) => m[1].toUpperCase()).sort();
+  assert.deepEqual(fromFn, fromProvider,
+    'the two lists are identical, so the health check cannot report a label as '
+    + 'unknown that the provider accepts, or miss one it silently rewrites');
+  assert.ok(fromProvider.length >= 4, 'and the vocabulary is not empty');
+});
+
+/* The fallback itself. This is the line that makes an unrecognised label
+   expensive rather than merely untidy. */
+ok('an unrecognised position becomes MID, which is why the health check reports it', () => {
+  const provider = readFileSync(join(ROOT, 'efl/app/assets/provider.js'), 'utf8');
+  assert.match(provider, /OFFICIAL_POSITIONS\[String\(p\.position\)\.toUpperCase\(\)\] \|\| 'MID'/,
+    'the feed adapter falls back to MID');
+  const tariff = readFileSync(join(ROOT, 'efl/app/assets/tariff.js'), 'utf8');
+  const int = (tariff.match(/interceptions:\s*\{[\s\S]*?\}/) || [])[0] || '';
+  assert.match(int, /positions:\s*\['MID'\]/,
+    'and MID is the only position paid for interceptions, which is what the '
+    + 'silent fallback would hand out for free');
+});
+
 console.log(`✓ Fantasy EFL: ${checks} checks passed `
   + `(${snap.clubs.length} clubs, ${snap.players.length} players, ${snap.fixtures.length} fixtures, `
   + `${ROUTES.length} routes)`);
