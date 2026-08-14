@@ -52,6 +52,8 @@ const SHELL = [
   '/index.html',
   '/native.js',
   '/auth.js',
+  '/vendor.js',
+  '/vendor.css',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

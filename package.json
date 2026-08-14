@@ -37,7 +37,10 @@
     "@capacitor/splash-screen": "^6.0.4",
     "@capacitor/status-bar": "^6.0.3",
     "@supabase/supabase-js": "^2.108.2",
+    "fuse.js": "^7.5.0",
     "stripe": "^17.7.0",
+    "tinykeys": "^4.0.0",
+    "uplot": "^1.6.32",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
