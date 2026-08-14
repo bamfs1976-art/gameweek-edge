@@ -13,9 +13,10 @@
     "amplifiedBy": "Reposted by FPLLad — noted only because reach affects how many managers see a pick, which is the mechanism by which a tip becomes ownership.",
     "readFrom": "screenshots of the X thread",
     "statedContents": ["Best Team Picks and opinion on strategy", "3 favourite player picks and reasoning", "Differentials", "Current Draft"],
-    "capturedSections": ["team picks", "differential team picks", "defenders"],
-    "missingSections": ["midfielders", "forwards", "the current draft"],
-    "completeness": "PARTIAL. The thread's own header promises picks by position plus a current draft; only the defenders section was captured, and its third entry is cut off by X's 'Show more'. Recorded as partial rather than presented as a whole thread."
+    "capturedSections": ["team picks", "differential team picks", "defenders", "midfielders", "forwards", "player differentials"],
+    "missingSections": ["goalkeepers", "the current draft"],
+    "completeness": "Near-complete after a second pass. Every outfield position is captured with its three picks plus a six-name differential list. No goalkeeper section appeared in the screenshots, and the author's own current draft was never shown, so those are absent rather than empty. One entry (Toure) is still cut off by X's 'Show more'.",
+    "referencesAnEarlierThread": "Segecic is introduced as 'already been mentioned in my last thread'. That earlier thread is not held here, so any claim it made is outside this capture."
   },
   "ownershipCaveat": "The percentages below are as REPORTED BY THIS AUTHOR, not read from the official feed. This project holds official ownership only for the clubs in its own entry (Reading and Blackburn, both 0.5% at the time of recording, from the feed's percentSelected). The standing rule on this repo is that unavailable official ownership is not fabricated — so these are stored as one person's published figures and labelled as such, and the two kinds of number are never averaged or compared as if they were the same measurement.",
   "headToHead": {
@@ -43,11 +44,39 @@
   "defenders": [
     { "rank": 1, "name": "Rodrigo Gomes", "club": "Wolves", "listedPosition": "RWB", "reportedOwnership": 3.7, "fixture": "Blackburn Rovers (H)", "claim": "Plays right wing but is listed as a defender; 5 goals in all competitions last season and 0.20 xG per 90 in the Premier League alone. Wolves 'look way too good' for this division; Blackburn 'set for a rough season'." },
     { "rank": 2, "name": "Aden Baldwin", "club": "Bradford City", "listedPosition": "CB", "reportedOwnership": 0.4, "fixture": "Peterborough United (H)", "claim": "Bradford were strong defensively, especially at home." },
-    { "rank": 3, "name": "Jack Whatmough", "club": "Huddersfield Town", "listedPosition": "CCB", "reportedOwnership": 1.5, "fixture": "AFC Wimbledon (H)", "claim": "Central defender in a formation that normally means more bonuses; a good historical goal record. Predicts a 1-0 or 2-0 Huddersfield win.", "truncated": "This entry is cut off by X's 'Show more' and may say more than is recorded here." }
+    { "rank": 3, "name": "Jack Whatmough", "club": "Huddersfield Town", "listedPosition": "CCB", "reportedOwnership": 1.5, "fixture": "AFC Wimbledon (H)", "claim": "Central defender in a formation that normally means more bonuses; a good historical goal record. Predicts a 1-0 or 2-0 Huddersfield win.", "caveat": "START NOT GUARANTEED — the author's stated reason for ranking him third rather than higher, and he offers Murray Wallace, Joe Low or the wing-backs as alternatives. This was the part hidden behind 'Show more' in the first capture. It matters because the other source that names Whatmough carries no such warning, so two lists rating the same player are not making the same claim about him." }
   ],
+  "midfielders": [
+    { "rank": 1, "name": "Lewis Wing", "club": "Reading", "listedPosition": "CM", "reportedOwnership": 28.3, "fixture": "Luton Town (H)", "claim": "'The undisputed GOAT of FEFL last year' and 'easily the best all around asset in this game' — the author says not to be put off by the fixture, and calls 28.3% ownership with under a day to go 'genuinely mental'. Cited: a 7.8 points-per-round average and 357 total points last season; 22 goals and assists in League One, and 123 interceptions and key passes combined." },
+    { "rank": 2, "name": "Sebastian Berhalter", "club": "Middlesbrough", "listedPosition": "AM", "reportedOwnership": 5.6, "fixture": "Lincoln City (H)", "claim": "Man of the match in the cup against Wrexham with the winning assist; a fixture the author would double or triple up on." },
+    { "rank": 3, "name": "Adrian Segecic", "club": "Portsmouth", "listedPosition": "AM", "reportedOwnership": 1.8, "fixture": "Queens Park Rangers (H)", "claim": "Minutes look good and he scored in the cup last weekend. Carried over from an earlier thread not held here." }
+  ],
+  "forwards": [
+    { "rank": 1, "name": "Will Lankshear", "club": "Middlesbrough", "listedPosition": "ST", "reportedOwnership": 21.6, "fixture": "Lincoln City (H)", "claim": "A good signing in for a big season; expects the game to get ugly and Lankshear to profit." },
+    { "rank": 2, "name": "Andy Cook", "club": "Grimsby Town", "listedPosition": "ST", "reportedOwnership": 1.4, "fixture": "Exeter City (H)", "claim": "Firing early in pre-season against an Exeter side the author expects to struggle. Penalties are raised as a possibility with Kabia leaving, and explicitly hedged — 'but I'm not sure' — so it is recorded as a maybe, not a duty." },
+    { "rank": 3, "name": "Mohamed Toure", "club": "Norwich City", "listedPosition": "ST", "reportedOwnership": 8, "fixture": "West Bromwich Albion (H)", "claim": "A brace against MK Dons in the cup last week.", "truncated": "Cut off by 'Show more'; the entry may say more than is recorded here." }
+  ],
+  "playerDifferentials": [
+    { "name": "Jack Tucker", "position": "DEF", "club": "Colchester", "reportedOwnership": 0.7 },
+    { "name": "Murray Wallace", "position": "DEF", "club": "Huddersfield", "reportedOwnership": 0.1 },
+    { "name": "Jack Payne", "position": "MID", "club": "Colchester", "reportedOwnership": 1.7 },
+    { "name": "Ben Knight", "position": "MID", "club": "Cambridge", "reportedOwnership": 0.4 },
+    { "name": "Ollie Pearce", "position": "FWD", "club": "York", "reportedOwnership": 1 },
+    { "name": "Yousef Salech", "position": "FWD", "club": "Cardiff", "reportedOwnership": 0.8 }
+  ],
+  "internalConsistency": "Murray Wallace appears twice — as the suggested alternative to Whatmough and again in the differentials at 0.1% — with the same club both times. The thread agrees with itself, which is the cheapest test available and not every list passes it.",
   "crossSourceAgreement": {
     "method": "Diffed against round-01-tipsters.json, which was captured a day earlier from a different account.",
     "defenders": "TWO OF THEIR THREE are also in the tipsters' top three defenders: Aden Baldwin (their 2, tipsters' 3) and Jack Whatmough (their 3, tipsters' 2). Only Rodrigo Gomes and Y. Mosquera are unique to one source each. Two independent lists converging on the same two centre-backs is the strongest community consensus visible for this round — and WE HOLD NEITHER. Our defenders are McJannet (Grimsby) and Watts (Cambridge).",
+    "byPositionOnceTheWholeThreadIsIn": {
+      "DEF": "2 of 3 shared — Whatmough and Baldwin",
+      "FWD": "2 of 3 shared — Lankshear (BOTH sources' number one) and Toure",
+      "MID": "ZERO of 3 shared. The tipsters name Green, Clarke and Azaz; this author names Wing, Berhalter and Segecic. Not one player in common.",
+      "GK": "no comparison possible — this thread's screenshots contain no goalkeeper section",
+      "whyThatShapeIsInteresting": "Two independent lists agreeing strongly on who defends and who scores, and agreeing on NOTHING in midfield, is a pattern rather than noise. Midfield is also where the scoring tariff is least like a normal fantasy game — interceptions at +2 are paid to midfielders alone — so it is the position where a ranking depends most on which stat you think matters. That is a hypothesis about why, and it is not tested by one round.",
+      "measuredNotEyeballed": "Compared on surnames scoped within a position, with accents normalised so 'M. Toure' and 'Mohamed Touré' resolve to one player."
+    },
+    "againstOurSeven": "Exactly ONE of our seven appears anywhere in this thread: LEWIS WING, their number-one midfielder and our captain. The other six are absent — though the author separately likes several of the same fixtures our players come from (Grimsby at home to Exeter, Bradford at home to Peterborough), and lists Ben Knight of Cambridge among his differentials while our defender Watts is a Cambridge player. So we are drawing on overlapping fixtures and disagreeing about which asset inside them to own.",
     "teams": "ALL THREE of the tipsters' team tips appear in this author's favourites: Middlesbrough v Lincoln (H), Leicester v Notts County (A) and Huddersfield v Wimbledon (H). Complete overlap on the team side, from two sources that did not co-ordinate.",
     "whereWeAgreeWithThem": "Grimsby at home to Exeter and Bradford at home to Peterborough are both in their favourites, and both are fixtures our own seven draws from — our McJannet is a Grimsby defender and our Beesley a Bradford forward. So the disagreement is not that we dislike their fixtures; it is which asset in them to own, and at the club level whether to back Blackburn against Wolves."
   },

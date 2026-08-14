@@ -47,6 +47,13 @@
         "readCarefully": "Their thread is NINE DAYS OLDER than our entry. This is therefore not independent corroboration in the strong sense, and calling it that would be flattering ourselves: a public thread naming Wing existed before we recorded him. What can honestly be said is narrower and still useful — our model does not read X, so two different methods reached the same player, and theirs was published first."
       },
       "consequenceForOurRecord": "Our captain is a CONSENSUS pick, not a differential. That is the opposite of what this project inferred yesterday from a single tip list, and the inference has been corrected in round-01-tipsters.json rather than left standing.",
+      "correctionSameDay": {
+        "on": "2026-08-14, hours after the sentence above was written",
+        "what": "'Consensus pick' is too strong and was reached by skipping a step. Being named as the meta is a statement about how a player is RATED. It is not a statement about how many managers OWN him, and this file slid from one to the other without noticing there was a gap.",
+        "evidence": "round-01-natethegreat.json reports Wing at 28.3% ownership — meaning roughly seven managers in ten do NOT have him — and that author's own comment is that 28.3% with under a day to go is 'genuinely mental', i.e. surprisingly LOW. A third source, the FEFL Tipsters, does not name Wing among its top three midfielders at all.",
+        "theAccurateStatement": "Wing is rated top by two of three community sources, omitted by the third, and owned by 28.3% on one reported figure. He is widely TIPPED and moderately OWNED. Those are different measurements and only the second one says whether a pick is a differential.",
+        "whyItMattersBeyondWording": "The whole point of grading this ledger is to find out whether the model beats the field. 'Consensus' and 'differential' are how that question gets framed after the fact, so getting them wrong before the round would let any result be explained away. Two corrections to the same paragraph in one day, both in the direction of claiming less."
+      },
       "namedButNotPicked": ["Oliver Norwood (Stockport)", "Cameron Brannagan"],
       "againstOurTariff": "Interceptions at +2 for midfielders only is already what our tariff pays (efl/app/assets/tariff.js) and what our model weights. Checked rather than assumed. So this tip identifies a scoring rule we already act on, and our 1-2-3-1 with three midfielders is consistent with the meta it describes."
     },

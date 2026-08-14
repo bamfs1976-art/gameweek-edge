@@ -698,6 +698,61 @@ ok('the cross-source defender overlap is measured, not asserted', () => {
   }
 });
 
+ok('the per-position overlap is measured across the whole thread', () => {
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const tips = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
+  /* Accents normalised so "M. Toure" and "Mohamed Touré" resolve to one
+     player. Without this the forwards would read as one shared name instead
+     of two, and the whole shape of the finding would change. */
+  const sn = (s) => String(s).trim().split(/\s+/).pop().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const mine = { DEF: nate.defenders, MID: nate.midfielders, FWD: nate.forwards };
+  const shared = {};
+  for (const [pos, list] of Object.entries(mine)) {
+    const theirs = new Set(list.map((p) => sn(p.name)));
+    shared[pos] = tips.players.filter((p) => p.position === pos)
+      .map((p) => sn(p.name)).filter((s) => theirs.has(s)).sort();
+  }
+  assert.deepEqual(shared.DEF, ['baldwin', 'whatmough'], 'defenders share exactly two');
+  assert.deepEqual(shared.FWD, ['lankshear', 'toure'], 'forwards share exactly two');
+  assert.deepEqual(shared.MID, [], 'and midfielders share NOTHING — the finding worth keeping');
+
+  /* Both sources' number-one forward being the same player is a stronger
+     statement than merely appearing on both lists. */
+  const nate1 = nate.forwards.find((p) => p.rank === 1);
+  const tip1 = tips.players.find((p) => p.position === 'FWD' && p.rank === 1);
+  assert.equal(sn(nate1.name), sn(tip1.name), 'and Lankshear is the number-one forward on both');
+});
+
+ok('exactly one of our seven appears in the thread, and it is the captain', () => {
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  const sn = (s) => String(s).trim().split(/\s+/).pop().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const named = [...nate.defenders, ...nate.midfielders, ...nate.forwards,
+    ...nate.playerDifferentials].map((p) => sn(p.name));
+  const ourOverlap = entry.picks.players.filter((p) => named.includes(sn(p.name)));
+  assert.equal(ourOverlap.length, 1, 'one overlap with our seven');
+  assert.equal(ourOverlap[0].id, entry.picks.captain, 'and it is our captain');
+});
+
+ok('the "consensus pick" claim was corrected once ownership was known', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-scottyfefl.json'), 'utf8'));
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const meta = s.claims.find((c) => c.n === 3);
+  /* Being named as the meta says how a player is RATED. Ownership says how
+     many managers HOLD him. This file slid from one to the other, and the
+     correction exists because the ledger is graded on exactly that
+     distinction — "was the model contrarian or did it follow the crowd"
+     cannot be answered afterwards if the terms were wrong beforehand. */
+  assert.ok(meta.correctionSameDay, 'the correction sits on the claim it corrects');
+  const wing = nate.midfielders.find((p) => /Wing/.test(p.name));
+  assert.ok(wing.reportedOwnership < 50,
+    'and the ownership figure that forced it really is a minority (' + wing.reportedOwnership + '%)');
+  assert.match(meta.correctionSameDay.theAccurateStatement, /tipped/i,
+    'the corrected statement separates being tipped from being owned');
+});
+
 ok('the Notts County resolution was confirmed by a second source', () => {
   const tips = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
   const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
