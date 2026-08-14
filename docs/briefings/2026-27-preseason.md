@@ -493,7 +493,7 @@ seven:
 |---|---|---|---|
 | Arsenal | **Gyokeres** (Saka second) | Saka, hedged | The biggest single disagreement in the table. Our own line already hedged it, and the Saka injury logged on 11 August makes a striker taking them more plausible, not less |
 | Bournemouth | **Kluivert** (Tavernier second) | *unresolved* | Our line has said "unresolved" since Kroupi's injury and named Tavernier as the likely promotion. This names Kluivert first and Tavernier second — a candidate we had not considered, and it does not confirm anything |
-| Fulham | **Garcia** (Robinson second) | *we name nobody* | A gap in the register, filled by nobody until now |
+| Fulham | **Garcia** (Robinson second) | *we name nobody* | **Re-read 14 August, and it was our gap, not theirs — see below** |
 | Hull City | **McBurnie** | Crooks | McBurnie scored the 95th-minute play-off final winner; Crooks is our line's name |
 | Ipswich | **Clarke** (Philogene second) | Hirst | |
 | Nott'm Forest | **Gibbs-White** (Wood, Igor Jesus behind) | Wood | Our own shortlist already lists Gibbs-White among the set-piece and penalty magnets while the Forest block gives penalties to Wood — the two halves of this document lean different ways, and the outside table sides with the shortlist |
@@ -502,6 +502,18 @@ seven:
 Neither Bournemouth nor Fulham is a contradiction — those are holes. The other
 five are real disagreements about a duty worth roughly five points a
 conversion, and none of them is settled until somebody takes one.
+
+**The Fulham row was read wrong, and the correction is worth more than the
+row.** "Garcia" was a name that matched nobody in our Fulham squad, and it
+went down as *their* vagueness — a gap "filled by nobody until now". It was
+our gap. **Gonzalo Garcia signed from Real Madrid**, and this register did
+not have him at all; the preview on 14 August is what surfaced it. An outside
+source naming a player you cannot find is evidence about your own list before
+it is evidence about theirs, and the same reflex has now cost this project
+three times: the referee probe that reported a source silent when the
+extractor had stripped the answer, the robots.txt read that printed nothing
+and concluded permission, and this. When a check finds nothing, the first
+question is whether it could have found anything.
 
 **Prices, where ours differ.** Every figure below is marked "est." in this
 file, so these are our estimates against their table, and the FPL API settles
@@ -570,6 +582,50 @@ something as unresolvable.
 
 **Fourteen clubs still to come.** Their blocks are as of 2 August and should be
 read that way until a preview lands and this log grows.
+
+---
+
+### 14 August 2026 — Fulham (preview No 10)
+
+**A signing was missing, and this document had already been told so.** The
+"quiet window: only Kusi-Asare in" line was wrong — **Gonzalo Garcia has
+signed from Real Madrid**, along with Cesar Palacios, with Arbeloa's Madrid
+connection the reason for both. That is a Club World Cup Golden Boot winner
+absent from an In list.
+
+**The part worth keeping is how it was missed.** The outside set-piece table
+read on 13 August named "Garcia" as Fulham's penalty taker. No such player
+existed in our Fulham squad, and the table was therefore filed as *their*
+vagueness: a hole, "a gap in the register, filled by nobody until now". The
+name matched nothing because **we did not have the player**, and one line of
+that thought would have found it a day earlier. An outside source naming
+somebody you cannot place is evidence about your own list before it is
+evidence about theirs. This is the third time the same reflex has cost this
+project in a week — the referee probe that called a source silent when the
+extractor had stripped the answer, the robots.txt read that printed nothing
+and concluded permission, and now this — so it is written into the set-piece
+section rather than just fixed.
+
+**A pick was demoted as a direct consequence.** "Rodrigo Muniz, likely lead
+striker with Jimenez gone" was reasonable when the In list held no forward.
+It holds one now, and Muniz's injuries are the reason Jimenez carried the
+line last season in the first place.
+
+**The stat that should frame every Fulham asset:** oldest side in the league
+last season, and the **fewest high turnovers** of any team — the least
+intense press in the division. Arbeloa is not a noted presser either, and his
+Real Madrid still comfortably outperformed Fulham on the metric, so treat a
+change of intensity as a hope rather than a plan.
+
+**Kusi-Asare has been carried as a differential on his fee and his club of
+origin.** The numbers underneath it, now recorded: seven substitute
+appearances, no goals, a loan since made permanent with a Bayern buy-back.
+The under-21 scoring record is genuinely good. He is a prospect, and the
+block now says so instead of implying a starter.
+
+Four Fulham players went deep into the World Cup (Robinson, Castagne, Berge,
+De Fougerolles). Garcia did not make Spain's squad, which is the one piece of
+freshness in the block.
 
 ---
 
@@ -924,17 +980,19 @@ is partly a list of who played the weakest opposition.
 
 ## 11. Fulham (52 pts)
 
-**Pre-season summary:** Eleventh, and a new era. Marco Silva left after five seasons and Alvaro Arbeloa is confirmed head coach on a three-year deal, his first senior top-flight job after Real Madrid's academy. A quiet window: only Kusi-Asare in, while Jimenez (free to Wolves), Wilson (free to Leeds) and Diop (Ipswich) left. Losing Jimenez removes their penalty taker and a chunk of goals. With an untested manager and thin recruitment, real uncertainty over system and set-piece roles.
+**Pre-season summary:** Eleventh, and a new era. Marco Silva left after five seasons — to Benfica — and Alvaro Arbeloa is confirmed head coach on a three-year deal, his first senior job away from Madrid after a well-regarded spell in Real's academy. **14 August kills the "quiet window" line this block opened with.** It said "only Kusi-Asare in", and that was wrong: **Gonzalo Garcia has arrived from Real Madrid**, and so has Cesar Palacios. Arbeloa coached both through the Madrid ranks and all three share the same agency; Endrick and Thiago Pitarch are linked as well, which are rumours rather than deals. **The stat that should frame every Fulham pick:** they had the **oldest side in the Premier League** last season and recorded the **fewest high turnovers** — the least intense press in the division, by the measure of balls recovered to start a possession in the final 40 metres. Arbeloa's Real Madrid were not noted pressers either and comfortably outperformed Fulham on it, so a change of intensity is a hope rather than a plan. Losing Jimenez still removes their penalty taker and a chunk of goals, and with an untested manager, real uncertainty over system and set-piece roles remains.
 
-**In:** Jonah Kusi-Asare (ST, Bayern Munich, ~£5.2m).
+**In:** Gonzalo Garcia (ST, Real Madrid), Cesar Palacios (Real Madrid), Jonah Kusi-Asare (ST, Bayern Munich, ~£5.2m). The first two were missing from this list until 14 Aug — and the outside set-piece table above named "Garcia" as Fulham's penalty taker while this register held no player of that name. The source does not say whether Palacios arrives as a player or as staff, so this line does not say either. Rumoured only: Endrick, Thiago Pitarch.
 
 **Out:** Raul Jimenez (ST, Wolves, free), Harry Wilson (AM, Leeds, free), Issa Diop (CB, Ipswich, ~£8.5m), Steven Benda (released), Alfie McNally (loan).
 
 **FPL picks:**
-- Value: Rodrigo Muniz (FWD, ~£5.5-6.0m est.), likely lead striker with Jimenez gone. Antonee Robinson (attacking LB, ~£5.0m est.), high crossing volume, reliable cheap defender.
+- Value: Rodrigo Muniz (FWD, ~£5.5-6.0m est.). **14 Aug demotes this line:** "likely lead striker with Jimenez gone" was written when the In list above held no striker at all. It holds one now, and the reason Jimenez carried the line last season was Muniz's injuries. Antonee Robinson (attacking LB, ~£5.0m est.), high crossing volume and a reliable cheap defender — but he went to the last 16 with the USA, so his pre-season load is not light.
 - Premium / captaincy: No premium tier. Alex Iwobi (MID) is the most reliable minutes-and-returns pick, a captaincy option only versus soft opponents.
-- Differentials: Kusi-Asare, new striker at low ownership. Emile Smith Rowe if Arbeloa gets him firing.
-- Set-piece & penalties: Highly uncertain after Jimenez and the manager change. Corners Iwobi, Lukic. Penalties unresolved, Robinson tentatively (1/1 last season). Free-kicks no established taker. Treat all Fulham set-piece assumptions as provisional until GW1.
+- Differentials: **Gonzalo Garcia** — Club World Cup Golden Boot, Champions League goals against Juventus and Borussia Dortmund, compared to Raul at the Bernabeu, then squeezed out by Vinicius Junior and Mbappe. He did **not** make Spain's World Cup squad after a pre-tournament debut against Iraq, so unlike four team-mates he arrives fresh. His reputation in Spain is as a hard worker off the ball, which travels. The hype is the risk here, not the pedigree. Kusi-Asare, still low ownership — but read the numbers before buying: seven substitute appearances last season with **no goals**, an initial loan since made permanent with a Bayern buy-back clause, 6ft5 and an Isak comparison, five goals in six for the under-21s. A prospect rather than a starter, and a different profile to Garcia. Emile Smith Rowe if Arbeloa gets him firing.
+- Set-piece & penalties: Highly uncertain after Jimenez and the manager change. Corners Iwobi, Lukic. Penalties: this line has read "unresolved, Robinson tentatively (1/1 last season)", and the outside projection's "Garcia" now has a name — but a projection naming a signing who has taken no penalty for this club settles nothing. **Penalties stay unresolved, with Garcia the leading candidate.** Free-kicks no established taker. Treat all Fulham set-piece assumptions as provisional until GW1.
+
+**World Cup load:** four Fulham players went deep — Robinson (USA, last 16), Timothy Castagne (Belgium, who knocked them out), Sander Berge (Norway, quarter-finals) and Luc De Fougerolles (Canada, knockouts, and still without a Premier League appearance). Garcia is the notable exception, and that cuts in his favour for the opening weeks.
 
 **Opening fixtures:** GW1 Chelsea (H) hard, GW2 Sunderland (A) hard, GW3 Crystal Palace (H) moderate, GW4 Liverpool (A) very hard, GW5 Man Utd (H) hard. Not away-heavy after all — three of the five are at home — but brutal either way, and one of the six hardest opening runs on our model. Hold off until the picture clears.
 
