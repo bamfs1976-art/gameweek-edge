@@ -568,4 +568,70 @@ ok('the grader never edits the picks it is grading', () => {
   assert.ok(!/entry\.picks\s*=|entry\.universe\s*=/.test(src), 'and mutates nothing that was recorded');
 });
 
+/* ── 6. Outside benchmarks ────────────────────────────────
+   Community captures stored beside the ledger so that git history is the
+   evidence they predate the football, exactly as the round entries are.
+
+   The point of testing them is narrow and worth stating. A benchmark file
+   that says "their meta player is our captain" is worth nothing if nobody
+   ever resolves that against the ledger — it is a sentence about the
+   ledger stored next to the ledger, free to drift from it. So the claim is
+   checked, not read. */
+ok('a benchmark is captured before the lockout it refers to', () => {
+  for (const f of ['round-01-tipsters.json', 'round-01-scottyfefl.json']) {
+    const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks', f), 'utf8'));
+    assert.ok(Date.parse(b.capturedAt) < Date.parse(b.roundLockoutAt),
+      `${f} was captured before the round locked`);
+    assert.equal(b.round, 1, `${f} names the round it belongs to`);
+  }
+});
+
+ok('the Lewis Wing overlap is resolved against the ledger, not asserted', () => {
+  const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-scottyfefl.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  const meta = b.claims.find((c) => c.n === 3);
+  assert.ok(meta.namesPlayers.includes('Lewis Wing'), 'the thread names Lewis Wing among the meta');
+
+  const captain = entry.picks.players.find((p) => p.id === entry.picks.captain);
+  assert.ok(captain, 'the entry has a captain that resolves to a picked player');
+  assert.match(captain.name, /Wing/, 'and the captain is Wing, as the benchmark claims');
+  assert.ok(meta.theOverlap.ourPick.includes(captain.id), "the benchmark quotes the captain's real feed id");
+
+  /* Wing being the HIGHEST-scored pick is what makes the overlap
+     interesting rather than incidental, so it is asserted too. */
+  const top = entry.picks.players.reduce((a, c) => (c.score > a.score ? c : a));
+  assert.equal(top.id, captain.id, 'the captain is also our highest-scored player');
+});
+
+ok('and the overlap is not dressed up as independent corroboration', () => {
+  const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-scottyfefl.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  /* Their thread is nine days older than our entry. That ordering is the
+     whole reason the claim has to be hedged, so the ordering is checked and
+     the hedge is required to be present. Two sources agreeing is only
+     evidence when neither could have seen the other. */
+  assert.ok(Date.parse(b.source.postedAt) < Date.parse(entry.recordedAt),
+    'their thread really is older than our entry, as the file says');
+  const meta = b.claims.find((c) => c.n === 3);
+  assert.match(meta.theOverlap.readCarefully, /not independent corroboration/i,
+    'and the file says so instead of claiming two methods agreed independently');
+});
+
+ok('interceptions really are +2 and midfielders only', () => {
+  /* The thread calls interceptions "MASSIVE" and the benchmark says we
+     already pay them. Read the tariff rather than believing the note. */
+  const tariff = readFileSync(join(ROOT, 'efl/app/assets/tariff.js'), 'utf8');
+  const block = (tariff.match(/interceptions:\s*\{[\s\S]*?\}/) || [])[0] || '';
+  assert.match(block, /per:\s*2\b/, 'interceptions pay 2');
+  assert.match(block, /positions:\s*\['MID'\]/, 'and only to midfielders');
+});
+
+ok('the tipsters inference was narrowed, and the measured number left alone', () => {
+  const t = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
+  assert.ok(t.againstOurEntry.correction, 'the corrected reading is recorded on the file it corrects');
+  assert.equal(t.againstOurEntry.overlapWithOurSeven, 0,
+    'and the count is untouched — a wrong inference from a right number is fixed '
+    + 'by narrowing the inference, not by editing the number');
+});
+
 console.log(`✓ Fantasy EFL ledger: ${checks} checks passed`);

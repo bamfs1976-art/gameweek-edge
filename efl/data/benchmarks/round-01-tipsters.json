@@ -125,7 +125,14 @@
     "ourRecordedAt": "2026-08-13T07:54:09.273Z",
     "overlapWithOurSeven": 0,
     "overlapWithOurTwoClubs": 0,
-    "observation": "No shared name in either list, now that all five sections are captured. Our seven leans on League One and League Two (Oldham, Bradford, Grimsby, Cambridge, Reading) with two Championship midfielders; every tip here that can be placed is Championship — our forward is Beesley of Bradford, theirs is Lankshear of Middlesbrough. Whether that is our model finding value below the top division or simply preferring players nobody watches is the question round-by-round grading is meant to answer, and it is not answered by either side asserting it now."
+    "observation": "No shared name in either list, now that all five sections are captured. Our seven leans on League One and League Two (Oldham, Bradford, Grimsby, Cambridge, Reading) with two Championship midfielders; every tip here that can be placed is Championship — our forward is Beesley of Bradford, theirs is Lankshear of Middlesbrough. Whether that is our model finding value below the top division or simply preferring players nobody watches is the question round-by-round grading is meant to answer, and it is not answered by either side asserting it now.",
+    "correction": {
+      "on": "2026-08-14",
+      "what": "The sentence above offers 'preferring players nobody watches' as one of two readings of zero overlap. A SECOND community source captured the same day makes that half of the dichotomy wrong for at least one player, and it happens to be the most important one.",
+      "evidence": "round-01-scottyfefl.json — a thread posted 2026-08-04 names LEWIS WING first among the midfield all-rounders it calls 'the meta'. Wing is our round-1 CAPTAIN and our highest-scored pick at 81.1.",
+      "whatItChanges": "Zero overlap with ONE top-three-per-position list is not zero overlap with community consensus, and this file quietly treated the two as the same thing. Our captain is a consensus pick. Wing being absent from the tipsters' top three midfielders is a disagreement between two outside sources, not evidence that we are alone on him.",
+      "whatItDoesNotChange": "The zero-overlap count itself, which is measured and correct, and the plan to grade every named player individually after the round. A wrong inference drawn from a right number is fixed by narrowing the inference, not by editing the number."
+    }
   },
   "internalConsistency": "Their number-one striker and their number-one team tip are the same fixture: W. Lankshear is listed with \"Lincoln (H)\" and the top team tip is Middlesbrough v Lincoln at home. The thread agrees with itself, which is worth noting because it is the cheapest test available and not every tip list passes it.",
   "crossReference": "W. Lankshear also appears in this project's Premier League briefing, in Tottenham's Out list as \"Will Lankshear (CF, Middlesbrough, ~£10m)\". Two documents built for different competitions from different sources agreeing on where a player went is a small check that costs nothing and was free to make.",

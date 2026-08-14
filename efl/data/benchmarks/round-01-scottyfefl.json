@@ -1,0 +1,77 @@
+{
+  "round": 1,
+  "kind": "outside-guidance",
+  "capturedAt": "2026-08-14T15:02:00.000Z",
+  "roundLockoutAt": "2026-08-14T19:00:00.000Z",
+  "note": "Captured before the lockout stated above. Unlike the tipsters thread, this is not a tip list — it is a beginner's guide to how the game rewards points, and its value here is that one of its claims lands directly on our own captain.",
+  "source": {
+    "name": "ScottyFEFL",
+    "handle": "@ScottyFEFL",
+    "postedAt": "2026-08-04T00:00:00.000Z",
+    "postedAtPrecision": "date-only — the thread shows 04/08/2026 with no time",
+    "readFrom": "screenshots of the X thread",
+    "kind": "five numbered tips for new Fantasy EFL managers",
+    "capturedPoints": [1, 2, 3, 4, 5],
+    "completeness": "All five numbered points captured, including the continuation posts under 3 and 4."
+  },
+  "staleThirdPartyContent": "The screenshot under point 1 contains a Google result reading 'Fantasy EFL is live for the 2025/26 season!'. That is a cached search snippet, not a claim by the author and not a claim about this season. Recorded so nobody later reads this capture as a 2025/26 document.",
+  "claims": [
+    {
+      "n": 1,
+      "topic": "use the web version",
+      "claim": "The official Fantasy EFL app is poor on both Android and Apple; sign up through a web browser instead. 'A lot of people turn away from the game not because of the scoring system but because of the app.'",
+      "gradeable": false,
+      "whyItMattersHere": "Product context rather than a football claim, and the most directly relevant thing in the thread to why this project exists. A companion built for a game whose own client drives people away is aimed at a real gap. No action taken on it — an opinion about someone else's app is not evidence about ours."
+    },
+    {
+      "n": 2,
+      "topic": "do not ignore League One and League Two, especially double gameweeks",
+      "claim": "New managers and Championship fans avoid the lower divisions even in double gameweeks, and it costs a lot of points. Having options across all three leagues is the point of the format.",
+      "gradeable": false,
+      "againstOurEntry": "Our round-1 seven is Oldham, Bradford, Grimsby, Cambridge, Reading, Bristol City and Stoke — five of the seven from League One and League Two. If this tip is right, our model is already on the correct side of the most common beginner error. That is not a claim that the model is right, only that it is not making THIS mistake."
+    },
+    {
+      "n": 3,
+      "topic": "the meta",
+      "claim": "Midfield all-rounders are the meta with the rules unchanged, because they score from interceptions, assists and goals — a good floor with a high ceiling. Interceptions are worth +2 and are 'MASSIVE in this game'. Explicitly credited to a thread by @FeflThomas.",
+      "namesPlayers": ["Lewis Wing", "Oliver Norwood", "Cameron Brannagan"],
+      "alsoWarns": "Do not just pick Bowen or a Langstaff every week when they face tough opposition, 'like GW1'.",
+      "gradeable": true,
+      "theOverlap": {
+        "player": "Lewis Wing",
+        "ourPick": "L. Wing, id 432647, MID, Reading, League One, model score 81.1 — the HIGHEST of our seven, and our CAPTAIN for round 1",
+        "ourFixture": "Reading v Luton Town (H), 2026-08-15T12:30:00+01:00",
+        "ourRecordedAt": "2026-08-13T07:54:09.273Z",
+        "theirPostedAt": "2026-08-04",
+        "readCarefully": "Their thread is NINE DAYS OLDER than our entry. This is therefore not independent corroboration in the strong sense, and calling it that would be flattering ourselves: a public thread naming Wing existed before we recorded him. What can honestly be said is narrower and still useful — our model does not read X, so two different methods reached the same player, and theirs was published first."
+      },
+      "consequenceForOurRecord": "Our captain is a CONSENSUS pick, not a differential. That is the opposite of what this project inferred yesterday from a single tip list, and the inference has been corrected in round-01-tipsters.json rather than left standing.",
+      "namedButNotPicked": ["Oliver Norwood (Stockport)", "Cameron Brannagan"],
+      "againstOurTariff": "Interceptions at +2 for midfielders only is already what our tariff pays (efl/app/assets/tariff.js) and what our model weights. Checked rather than assumed. So this tip identifies a scoring rule we already act on, and our 1-2-3-1 with three midfielders is consistent with the meta it describes."
+    },
+    {
+      "n": 4,
+      "topic": "do your research, it is a free-hit format",
+      "claim": "A new team every week with options from all three leagues, unlike FPL formats. Recommends Sofascore, FotMob and Opta Analyst for xG maps, heatmaps and set-piece data.",
+      "gradeable": false,
+      "whyItMattersHere": "Independent confirmation of the FORMAT this project models: a weekly free hit, no transfers, no budget carried between rounds. That is the standing instruction on this repo — 'not an FPL clone, no budget, player-price or transfer functionality' — and it reads here as a correct description of the game rather than only a scoping preference.",
+      "onTheToolsNamed": "Three third-party stats products. Not adopted: this project does not scrape sites and does not take paid APIs, which is the same rule that closed the EFL referee question."
+    },
+    {
+      "n": 5,
+      "topic": "prizes",
+      "claim": "Winning your club league can win a free season ticket at that club; the author says several community members including himself have won one.",
+      "gradeable": false,
+      "screenshotShows": "A 'My leagues' panel: Overall rankings 84, Barnsley club league 1/1,000, League One public league 29. Recorded as what the screenshot shows, and it is the author's own account rather than a general statistic."
+    }
+  ],
+  "whatThisIsNot": [
+    "NOT a squad, a tip list or a rival entry. It names three players as archetypes of a scoring meta and warns against two others in a specific week. It cannot be scored as a team.",
+    "NOT resolved to feed IDs, except Lewis Wing, who is resolved because he is our own pick and carries our id 432647. Norwood, Brannagan, Bowen and Langstaff are recorded as published."
+  ],
+  "gradeableAfterRound": [
+    "Lewis Wing's actual round-1 return, which is both their meta example and our captain — one result settling two claims at once.",
+    "Whether midfielders out-scored other positions in round 1 overall, which is the testable core of the meta claim.",
+    "Whether the two players warned against (Bowen, Langstaff) underperformed in round 1 as the tip predicts."
+  ]
+}
