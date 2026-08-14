@@ -106,7 +106,24 @@
       "doesItChangeTheEntry": "No. The entry was recorded on 13 August and is append-only; the blob hash pinned above is the proof. Nothing about a team sheet can or should move it.",
       "whichOfOurPicksCouldBeInvolved": {
         "derivedNotGuessed": "None of our seven plays tonight. Every one of them kicks off on 15 August — four at 15:00 BST and two at 12:30 BST, per the fixtures stored in the entry itself. Reading, our captain's club, also plays on the 15th. So the only selection that a fixture tonight could involve is our other club pick, BLACKBURN ROVERS.",
-        "andThatIsAsFarAsItGoes": "Which fixture is actually first has not been established here. This sandbox cannot reach the feed, and the deduction above rests only on kick-off times already in the entry."
+        "andThatIsAsFarAsItGoes": "Which fixture is actually first has not been established here. This sandbox cannot reach the feed, and the deduction above rests only on kick-off times already in the entry.",
+        "confirmed": "WOLVES v BLACKBURN, confirmed by the project owner at 16:50Z. The deduction was right, and it is our club pick."
+      },
+      "theHeadToHeadGoesFirst": {
+        "what": "Of everything gathered today — four sources and dozens of claims — exactly one is an outright disagreement rather than a difference of emphasis: we hold BLACKBURN, and NatetheGreat holds WOLVES at home in the same match at a reported 46.4%, with his number-one defender a Wolves player in that fixture. It is the first match of the round.",
+        "whyThatIsWorthWriting": "The single claim in this whole set that ninety minutes can settle outright is also the one that settles soonest — before any of our seven has kicked a ball, and before most of the round's evidence exists. Nothing else resolves this cleanly: the tipsters' twelve players, the season previews' promotion and relegation calls and the top-scorer bets all need weeks or a season.",
+        "whatCountsAsWhat": "Our club pick scores on Blackburn's performance. Theirs scores on Wolves'. There is no reading of the result that flatters both, which is precisely why it was worth recording before kick-off.",
+        "andTheThirdSource": "O'Haire's recommended relegation selection at 11/2 is about Blackburn's SEASON, not this match, and one result neither confirms nor refutes it. Recorded so that a good night at Molineux is not later waved at a season-long claim it does not touch."
+      },
+      "aTimingPointThatCutsAgainstTheOneAbove": {
+        "observation": "If this fixture kicks off before the 19:00Z lockout, a manager still to pick could know part or all of a result that our entry, recorded 35 hours out, could not.",
+        "notAComplaint": "It is a property of the game's own scheduling and applies to everyone equally. It is recorded because it is the exact mirror of the limitation logged above — we picked with less information than a deadline picker, and on this fixture a deadline picker may have had more than usual.",
+        "notEstablished": "The kick-off time is not held here and has not been assumed. If it is after the lockout, this note is moot and can be struck."
+      },
+      "whatLineUpsWouldBeUsedFor": {
+        "notForOurEntry": "Nothing. It is recorded and append-only.",
+        "butWorthCapturing": "Whether RODRIGO GOMES starts for Wolves. He is NatetheGreat's number-one defender at a reported 3.7%, in this exact fixture, and his thread flags a start risk for its THIRD defender (Whatmough) while flagging none for its first. A team sheet captured before kick-off would let the grader score that pick on the same footing as the one that was hedged.",
+        "status": "Not captured — the line-ups themselves were not supplied and this sandbox cannot fetch them."
       },
       "theRealPointThisRaises": {
         "observation": "Our picks were recorded 35.1 hours before the lockout. The rule that permits that is RECORD_WINDOW_HOURS = 36 in scripts/efl/lib.mjs, and its refusal message for anything earlier reads 'too early, team news is still to come'. So the rule already acknowledges that team news matters — and we recorded 0.9 hours inside the boundary, which is as early as the rule allows and therefore the moment with the LEAST team news available.",

@@ -897,6 +897,33 @@ ok('the recording window the entry used is quoted correctly', () => {
     'the minutes weight quoted matches the entry');
 });
 
+ok('the head-to-head named in the status is the one the benchmarks describe', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const u = (s.updates || []).find((x) => x.theHeadToHeadGoesFirst);
+  if (!u) return;
+
+  /* Both sides of the claim must be real: our club, their club, one match. */
+  const ours = (entry.picks.clubs || []).map((c) => c.name);
+  assert.ok(ours.includes('Blackburn Rovers'), 'Blackburn is genuinely our pick');
+  const theirs = nate.teamPicks.find((t) => /Wolver/.test(t.club));
+  assert.match(theirs.opponent, /Blackburn/, 'and their Wolves pick is genuinely against Blackburn');
+
+  /* The claim that this is the ONLY outright disagreement. If a second one
+     is ever recorded, this sentence stops being true and should fail rather
+     than quietly overstate how clean the test is. */
+  const opposed = (entry.picks.clubs || []).filter((c) =>
+    nate.teamPicks.some((t) => new RegExp(c.name.split(' ')[0], 'i').test(t.opponent)));
+  assert.equal(opposed.length, 1,
+    'exactly one of our clubs is on the opposite side of one of theirs');
+
+  /* And the separation of a match result from a season claim, which is the
+     easiest thing to blur afterwards. */
+  assert.match(u.theHeadToHeadGoesFirst.andTheThirdSource, /SEASON, not this match/,
+    'the season-long relegation claim is kept separate from tonight');
+});
+
 ok('the status records no prediction it could later be graded kindly against', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
   assert.ok(s.predictionsDeliberatelyNotMade,
