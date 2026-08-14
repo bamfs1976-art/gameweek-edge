@@ -98,7 +98,9 @@
   "openQuestionRaised": {
     "question": "Leicester City are described here as a LEAGUE ONE club. Two community sources printed a round-1 fixture of 'Leicester City v Notts County (A)', and Notts County are referred to in the League Two preview only in a historical aside about 2009/10 and about Langstaff's old club.",
     "whyItMatters": "If the two clubs are in different divisions, that fixture is not a league game and the confirmation recorded in round-01-tipsters.json needs re-reading. If Notts County were promoted to League One, everything is consistent.",
-    "status": "UNRESOLVED and not guessed. Nothing in these three documents states Notts County's current division, and this sandbox cannot reach the feed that would.",
+    "status": "RESOLVED 14 Aug — NOTTS COUNTY ARE IN LEAGUE ONE. Leicester v Notts County is therefore a straightforward League One fixture and every source agrees.",
+    "resolvedBy": "The project's owner, as with the 'NOT' abbreviation on 13 August. Recorded as their resolution rather than as a feed confirmation, which is the same standard applied to the earlier one — and that earlier one was subsequently printed in full by an unrelated account, so the standard is not costing us anything.",
+    "whatItDoesNotRestOn": "It is tempting to add that Notts County are absent from the League Two preview's discussion, and that this corroborates the promotion. IT DOES NOT. This file states plainly that absence from these documents means nothing, and that rule cannot be suspended the moment absence would agree with us. The resolution rests on the owner's knowledge alone, and the feed can still overturn it.",
     "howToSettleIt": "The official Fantasy EFL club list carries a division per club and the round-1 fixture list carries the tie. The grader has both."
   },
   "recommendedBetsAsPublished": {

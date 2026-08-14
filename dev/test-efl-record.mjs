@@ -830,8 +830,19 @@ ok('a betting source is stored as analysis, and says so', () => {
   assert.ok(p.whatThisIsNot.some((s) => /ABSENCE FROM THESE DOCUMENTS MEANS NOTHING/.test(s)),
     'and refuses to read absence as evidence');
 
-  assert.match(p.openQuestionRaised.status, /UNRESOLVED/,
-    'the division question is left open rather than guessed');
+  /* The division question was opened, then resolved by the owner the same
+     day. What the test guards now is the SHAPE of the resolution: it must
+     name who resolved it, and it must not lean on Notts County's absence
+     from the League Two preview — because this same file declares that
+     absence proves nothing, and that rule cannot be suspended the moment
+     absence would happen to agree with us. */
+  assert.match(p.openQuestionRaised.status, /RESOLVED/,
+    'the division question has been settled');
+  assert.ok(p.openQuestionRaised.resolvedBy, 'and the resolution names its source');
+  assert.match(p.openQuestionRaised.resolvedBy, /rather than as a feed confirmation/i,
+    'and does not dress an owner resolution up as a feed one');
+  assert.match(p.openQuestionRaised.whatItDoesNotRestOn, /absence/i,
+    'and refuses the convenient absence argument by name');
 });
 
 ok('the tipsters inference was narrowed, and the measured number left alone', () => {
