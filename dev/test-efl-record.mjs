@@ -578,7 +578,8 @@ ok('the grader never edits the picks it is grading', () => {
    ledger stored next to the ledger, free to drift from it. So the claim is
    checked, not read. */
 ok('a benchmark is captured before the lockout it refers to', () => {
-  for (const f of ['round-01-tipsters.json', 'round-01-scottyfefl.json']) {
+  for (const f of ['round-01-tipsters.json', 'round-01-scottyfefl.json',
+    'round-01-natethegreat.json']) {
     const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks', f), 'utf8'));
     assert.ok(Date.parse(b.capturedAt) < Date.parse(b.roundLockoutAt),
       `${f} was captured before the round locked`);
@@ -624,6 +625,102 @@ ok('interceptions really are +2 and midfielders only', () => {
   const block = (tariff.match(/interceptions:\s*\{[\s\S]*?\}/) || [])[0] || '';
   assert.match(block, /per:\s*2\b/, 'interceptions pay 2');
   assert.match(block, /positions:\s*\['MID'\]/, 'and only to midfielders');
+});
+
+ok('the Blackburn head-to-head is a real opposition, resolved against the entry', () => {
+  const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+
+  /* The file claims we took one side of a match and they took the other.
+     That is the most valuable thing in any of these benchmarks — a
+     disagreement that ninety minutes settles with nothing left to argue
+     about — so it is the one most worth checking is actually true. */
+  const ours = (entry.picks.clubs || []).map((c) => c.name);
+  assert.ok(ours.includes('Blackburn Rovers'), 'Blackburn really is one of our club picks');
+
+  const theirs = b.teamPicks.find((t) => /Wolver/.test(t.club));
+  assert.ok(theirs, 'they really do pick Wolves');
+  assert.match(theirs.opponent, /Blackburn/, 'and Wolves\' opponent really is Blackburn');
+  assert.equal(theirs.venue, 'H', 'at home, as the head-to-head note says');
+
+  /* Their number-one defender is in the same fixture, which is what makes it
+     an opposition rather than a coincidence of scheduling. */
+  const gomes = b.defenders.find((d) => d.rank === 1);
+  assert.match(gomes.fixture, /Blackburn/, 'their top defender is in the same match');
+
+  /* The asymmetry claim: our side is a differential, theirs is consensus. */
+  const blackburn = (entry.picks.clubs || []).find((c) => c.name === 'Blackburn Rovers');
+  assert.ok(blackburn.percentSelected != null, 'we hold official ownership for our own pick');
+  assert.ok(blackburn.percentSelected < theirs.reportedOwnership,
+    'and our side really is the less-owned one, as the file claims');
+});
+
+ok('reported ownership is never presented as official', () => {
+  const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  /* The standing rule on this repo is that unavailable official ownership is
+     not fabricated. A third party's published percentages are a different
+     measurement wearing the same units, and the danger is not that they are
+     wrong but that they are quietly promoted. Every one of them is stored
+     under a key that says whose number it is. */
+  assert.match(b.ownershipCaveat, /not read from the official feed/i,
+    'the file says plainly where these numbers come from');
+  for (const t of [...b.teamPicks, ...b.differentialTeamPicks, ...b.defenders]) {
+    assert.ok(Object.prototype.hasOwnProperty.call(t, 'reportedOwnership'),
+      `${t.club || t.name} stores its percentage as reportedOwnership`);
+    assert.ok(!Object.prototype.hasOwnProperty.call(t, 'ownership')
+      && !Object.prototype.hasOwnProperty.call(t, 'percentSelected'),
+      `${t.club || t.name} does not use the field names the official feed uses`);
+  }
+});
+
+ok('the cross-source defender overlap is measured, not asserted', () => {
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const tips = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
+  /* Two accounts, captured a day apart, converging on the same two
+     centre-backs. Surnames are compared rather than full names because the
+     two sources write them differently ("A. Baldwin" against "Aden
+     Baldwin") — and the comparison is scoped to defenders for the same
+     reason the Premier League price diff is scoped per club: matching on a
+     surname across a whole player pool is how you invent an agreement. */
+  const surname = (s) => String(s).trim().split(/\s+/).pop().toLowerCase();
+  const theirs = new Set(nate.defenders.map((d) => surname(d.name)));
+  const tipDefs = tips.players.filter((p) => p.position === 'DEF').map((p) => surname(p.name));
+  const shared = tipDefs.filter((s) => theirs.has(s)).sort();
+  assert.deepEqual(shared, ['baldwin', 'whatmough'],
+    'exactly Baldwin and Whatmough are named by both sources');
+
+  /* And the claim that we hold neither, which is what makes the overlap
+     worth grading rather than merely noting. */
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  const ourSurnames = new Set(entry.picks.players.map((p) => surname(p.name)));
+  for (const s of shared) {
+    assert.ok(!ourSurnames.has(s), `we do not hold ${s}, as the benchmark says`);
+  }
+});
+
+ok('the Notts County resolution was confirmed by a second source', () => {
+  const tips = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const leicesterTip = tips.teams.find((t) => /Leicester/.test(t.club));
+  const leicesterNate = nate.teamPicks.find((t) => /Leicester/.test(t.club));
+  assert.ok(leicesterTip.confirmedBy, 'the confirmation is recorded on the line it confirms');
+  /* Both sources must actually agree, or the "confirmed" note is decoration. */
+  assert.match(leicesterTip.fixture, /Notts County \(A\)/, 'the tipsters line reads Notts County away');
+  assert.match(leicesterNate.opponent, /Notts County/, 'and so does the second source');
+  assert.equal(leicesterNate.venue, 'A', 'on the same venue, which is the half most easily wrong');
+});
+
+ok('an unresolved rule question is stored as unresolved', () => {
+  const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const q = b.openQuestionRaised;
+  /* "Saving team picks for double gameweeks" could mean a season-long usage
+     cap or nothing more than opportunity cost. Our model knows only
+     per-round rules. The file must keep both readings and must not have
+     quietly picked one — inventing a season-long constraint from one phrase
+     in a tip thread is the failure this project keeps catching. */
+  assert.equal(q.twoReadings.length, 2, 'both readings are kept');
+  assert.match(q.status, /UNRESOLVED/, 'and it is labelled unresolved');
+  assert.match(q.actionTaken, /None beyond recording it/i, 'and nothing was built on the guess');
 });
 
 ok('the tipsters inference was narrowed, and the measured number left alone', () => {

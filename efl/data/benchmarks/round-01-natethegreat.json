@@ -1,0 +1,80 @@
+{
+  "round": 1,
+  "kind": "outside-tips",
+  "capturedAt": "2026-08-14T15:13:00.000Z",
+  "roundLockoutAt": "2026-08-14T19:00:00.000Z",
+  "note": "Captured before the lockout, with about four hours to spare. This is the third community source for round 1 and the first that disagrees with our entry head-on rather than merely differing from it.",
+  "source": {
+    "name": "NatetheGreat Fantasy",
+    "handle": "@NateThegFantasy",
+    "title": "My #FantasyEFL GW1 Thread",
+    "postedAt": "2026-08-14T08:13:00.000Z",
+    "postedAtPrecision": "DERIVED, not read. X showed a relative '7h' against a screenshot clock of 16:13 local, so this is approximate and could be out by up to an hour either way. Recorded as derived so nobody later treats it as a stamp.",
+    "amplifiedBy": "Reposted by FPLLad — noted only because reach affects how many managers see a pick, which is the mechanism by which a tip becomes ownership.",
+    "readFrom": "screenshots of the X thread",
+    "statedContents": ["Best Team Picks and opinion on strategy", "3 favourite player picks and reasoning", "Differentials", "Current Draft"],
+    "capturedSections": ["team picks", "differential team picks", "defenders"],
+    "missingSections": ["midfielders", "forwards", "the current draft"],
+    "completeness": "PARTIAL. The thread's own header promises picks by position plus a current draft; only the defenders section was captured, and its third entry is cut off by X's 'Show more'. Recorded as partial rather than presented as a whole thread."
+  },
+  "ownershipCaveat": "The percentages below are as REPORTED BY THIS AUTHOR, not read from the official feed. This project holds official ownership only for the clubs in its own entry (Reading and Blackburn, both 0.5% at the time of recording, from the feed's percentSelected). The standing rule on this repo is that unavailable official ownership is not fabricated — so these are stored as one person's published figures and labelled as such, and the two kinds of number are never averaged or compared as if they were the same measurement.",
+  "headToHead": {
+    "summary": "THE FIRST DIRECT CONTRADICTION OF OUR ENTRY. Not a different pick — the opposite side of the same match.",
+    "ourPick": "Blackburn Rovers, one of our two club picks, model score 50.0, official ownership 0.5%",
+    "theirPick": "Wolverhampton Wanderers at home to Blackburn, listed among their favourite team picks at a reported 46.4% — the highest-owned pick in their list",
+    "theirStatedReason": "Their number-one defender is Rodrigo Gomes, Wolves' right wing-back, in the same fixture, on the reasoning that 'Wolves are one of those relegated teams that look way too good' and 'Blackburn look set for a rough season'.",
+    "whyThisIsWorthRecording": "Two of the three community sources captured for this round barely intersect with our seven, which leaves the question of whether we are finding value or just being odd unanswerable. This one is answerable. One match, both sides taken, and 90 minutes settles it. If Blackburn keep a clean sheet at Molineux our club pick was right and a heavily-backed consensus was wrong; if Wolves win comfortably the reverse. There is no interpretation to argue about afterwards.",
+    "theAsymmetryIsTheRealPoint": "Our side of this fixture is owned by 0.5% and theirs by a reported 46.4%. Whatever else is true, our club pick is a genuine differential rather than a consensus one — which is the opposite of what round-01-scottyfefl.json established about our CAPTAIN. Our entry is consensus at the top and contrarian at the club, and neither fact was visible before today.",
+    "notAnEdge": "None of this makes our pick right. A 0.5%-owned side of a fixture is unusual, and unusual is not the same as correct. It is recorded now precisely so that the result reads as evidence rather than as hindsight."
+  },
+  "teamPicks": [
+    { "club": "Huddersfield Town", "opponent": "AFC Wimbledon", "venue": "H", "reportedOwnership": 11.2 },
+    { "club": "Grimsby Town", "opponent": "Exeter City", "venue": "H", "reportedOwnership": 2.5 },
+    { "club": "Bradford City", "opponent": "Peterborough United", "venue": "H", "reportedOwnership": 4.8 },
+    { "club": "Leicester City", "opponent": "Notts County", "venue": "A", "reportedOwnership": 15.4 },
+    { "club": "Wolverhampton Wanderers", "opponent": "Blackburn Rovers", "venue": "H", "reportedOwnership": 46.4 },
+    { "club": "Middlesbrough", "opponent": "Lincoln City", "venue": "H", "reportedOwnership": 36.7 }
+  ],
+  "differentialTeamPicks": [
+    { "club": "Chesterfield", "opponent": "Fleetwood Town", "venue": "H", "reportedOwnership": 0.9, "theirFavourite": true, "reason": "Back at home after losing to Fleetwood away; expects a more polished performance and says the odds support it. In their current draft." },
+    { "club": "Plymouth Argyle", "opponent": "Stockport County", "venue": "H", "reportedOwnership": 1.2 },
+    { "club": "Derby County", "opponent": "Charlton Athletic", "venue": "A", "reportedOwnership": 2.5 }
+  ],
+  "defenders": [
+    { "rank": 1, "name": "Rodrigo Gomes", "club": "Wolves", "listedPosition": "RWB", "reportedOwnership": 3.7, "fixture": "Blackburn Rovers (H)", "claim": "Plays right wing but is listed as a defender; 5 goals in all competitions last season and 0.20 xG per 90 in the Premier League alone. Wolves 'look way too good' for this division; Blackburn 'set for a rough season'." },
+    { "rank": 2, "name": "Aden Baldwin", "club": "Bradford City", "listedPosition": "CB", "reportedOwnership": 0.4, "fixture": "Peterborough United (H)", "claim": "Bradford were strong defensively, especially at home." },
+    { "rank": 3, "name": "Jack Whatmough", "club": "Huddersfield Town", "listedPosition": "CCB", "reportedOwnership": 1.5, "fixture": "AFC Wimbledon (H)", "claim": "Central defender in a formation that normally means more bonuses; a good historical goal record. Predicts a 1-0 or 2-0 Huddersfield win.", "truncated": "This entry is cut off by X's 'Show more' and may say more than is recorded here." }
+  ],
+  "crossSourceAgreement": {
+    "method": "Diffed against round-01-tipsters.json, which was captured a day earlier from a different account.",
+    "defenders": "TWO OF THEIR THREE are also in the tipsters' top three defenders: Aden Baldwin (their 2, tipsters' 3) and Jack Whatmough (their 3, tipsters' 2). Only Rodrigo Gomes and Y. Mosquera are unique to one source each. Two independent lists converging on the same two centre-backs is the strongest community consensus visible for this round — and WE HOLD NEITHER. Our defenders are McJannet (Grimsby) and Watts (Cambridge).",
+    "teams": "ALL THREE of the tipsters' team tips appear in this author's favourites: Middlesbrough v Lincoln (H), Leicester v Notts County (A) and Huddersfield v Wimbledon (H). Complete overlap on the team side, from two sources that did not co-ordinate.",
+    "whereWeAgreeWithThem": "Grimsby at home to Exeter and Bradford at home to Peterborough are both in their favourites, and both are fixtures our own seven draws from — our McJannet is a Grimsby defender and our Beesley a Bradford forward. So the disagreement is not that we dislike their fixtures; it is which asset in them to own, and at the club level whether to back Blackburn against Wolves."
+  },
+  "confirmsAnOpenItem": {
+    "item": "round-01-tipsters.json recorded 'Leicester City v NOT (A)' with the opponent code unexpanded, resolved to Notts County by this project's owner on 13 Aug, and flagged as their resolution rather than a feed confirmation because nothing on hand could check it.",
+    "confirmation": "This thread independently prints 'Leicester City vs Notts County (A)' in full — the same opponent AND the same away venue.",
+    "status": "Closed by a second source. Still not a feed confirmation, and the grader will have the official round and can correct it if both sources are somehow wrong together."
+  },
+  "openQuestionRaised": {
+    "theirAdvice": "'With saving team picks I'd be cautious with picking teams like Wolves, West Ham and Middlesbrough as they will be needed in the DGWs.'",
+    "twoReadings": [
+      "A HARD RULE: clubs can only be used a limited number of times across the season, so spending a strong one now removes it later.",
+      "OPPORTUNITY COST ONLY: no cap at all, but a club with two fixtures in a double gameweek returns more from the same slot, so using it in a single week wastes the better opportunity."
+    ],
+    "whatWeHold": "Our documentation and model know only a per-round rule — two clubs each round, and no more than two players from any one club. Neither the how-to-play page nor scripts/efl/metrics.mjs has any notion of season-long club usage.",
+    "status": "UNRESOLVED, and deliberately not guessed. The second reading needs no rule to be true and is therefore the cheaper explanation, but 'cheaper explanation' is not evidence. The official rules settle it. If the first reading is correct, our round-1 club picks are a resource-allocation decision the model does not know it is making, which would be a real modelling gap rather than a tuning one.",
+    "actionTaken": "None beyond recording it. Inventing a season-long constraint on the strength of one phrase in a tip thread would be exactly the kind of guess this project keeps catching itself making."
+  },
+  "whatThisIsNot": [
+    "NOT a squad. Team picks and a partial per-position list, with the author's own draft not captured. It cannot be scored as a rival entry.",
+    "NOT official ownership. Every percentage here is this author's published figure.",
+    "NOT complete. Midfielders, forwards and the current draft were not captured, so absence from this file says nothing about whether they were named."
+  ],
+  "gradeableAfterRound": [
+    "Wolves v Blackburn — the head-to-head, and the one result this round that settles a disagreement outright.",
+    "Baldwin and Whatmough, named by two independent sources and held by us in neither case.",
+    "Their three differential team picks (Chesterfield, Plymouth, Derby), all under 2.5% reported.",
+    "Whether the reported ownership figures resemble the official ones, which the grader can check for any club once the feed is readable."
+  ]
+}
