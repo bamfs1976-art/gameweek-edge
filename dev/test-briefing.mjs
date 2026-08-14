@@ -951,14 +951,21 @@ console.log('\n• briefing: every European qualifier says so in its own block')
     ['Bournemouth', /europa|european campaign/i],
     ['Brighton', /conference league/i],
     ['Sunderland', /europa/i],
-    ['Crystal Palace', /conference league/i],
+    /* Palace was the one qualifier whose competition this file would not
+       name: it held the Conference League trophy, which does not by itself
+       say what it enters next. The block said so in bold rather than
+       guessing, and the 13 Aug preview settled it as the EUROPA LEAGUE — so
+       the assertion tightens from "mentions the trophy" to "names the
+       competition", and Palace joins the clubs that must also carry the
+       rotation tax. A flag that closes should cost the test something. */
+    ['Crystal Palace', /europa league/i],
     ['Chelsea', /no european football/i]
   ];
   for (const [club, re] of EUROPE) {
     const b = blocks.find((x) => x.name.indexOf(club) === 0);
     ok(b && re.test(b.body), club + ' states its European situation in its own block');
     /* Naming the competition is not enough — the schedule is the FPL fact. */
-    if (b && ['Bournemouth', 'Brighton', 'Sunderland'].includes(club)) {
+    if (b && ['Bournemouth', 'Brighton', 'Sunderland', 'Crystal Palace'].includes(club)) {
       ok(/rotation/i.test(b.body), club + ' also carries the rotation warning that follows from it');
     }
   }

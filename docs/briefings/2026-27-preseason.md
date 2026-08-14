@@ -573,6 +573,57 @@ read that way until a preview lands and this log grows.
 
 ---
 
+### 13 August 2026 — Crystal Palace (No 8) and Everton (No 9)
+
+These two arrived together and are logged together, because the biggest
+single fact in either is the same transfer read from both ends: **Dwight
+McNeil and Brennan Johnson have swapped clubs.** This file had neither half.
+It did have Johnson arriving at Palace in January, so the document was
+carrying a player at a club he had already left — the exact failure mode the
+one-sided-transfer check exists to catch, and the check could not catch it
+because *neither* end was recorded.
+
+**Palace's European question is answered, and the answer is Europa League.**
+The block written on 11 August refused to guess, and said so in bold: four
+other clubs in this file carry a Thursday-Sunday rotation warning, and Palace
+should either carry the same or state plainly that they do not. It now
+carries it. That is the flag closing the way a flag is supposed to — left
+open, then settled by a source, rather than quietly filled in.
+
+**Pierre Sage came from Lens, not Lyon.** This file said Lyon for eleven
+days. He was at Lyon before, so the error is the kind that survives a
+skim: second in Ligue 1 and a Coupe de France with Lens is a much better
+recent record than the one we implied, and with fewer than 100 professional
+matches as a manager the appointment is a bet either way.
+
+**Two things that should move a Palace squad in opposite directions.** For:
+only seven sides generated more open-play xG last season and only *Wolves*
+scored fewer — 0.31 a game short, second-worst in the big five leagues. An
+attack that underperformed that badly is more likely to correct than to
+repeat, and that is the strongest case in this file for a cheap Palace
+forward. Against: **Pino broke a collarbone at the World Cup**, and this
+block has him on free-kicks *and* corners. His GW1 fitness is not stated in
+the source, so it is not stated here either.
+
+**Everton's "steady" was doing a lot of work.** Thirteenth is the average of
+two different seasons: three points off fifth on 21 March, then not a single
+win for the rest of the campaign. The block said "steady mid-table
+consolidation" off the final position alone. It now says which half to read.
+
+**And the Everton fact with the most FPL value is a boring one:** they made
+the fewest starting-XI changes of any team last season, and the squad is
+largely unchanged. Predictable minutes are worth more than they read on
+paper. The counterweight is in the same block — Tyler Dibling, the most
+expensive signing of Moyes's second spell, started four league games and
+played no minutes at all after 3 March. A fee is not a route to minutes.
+
+**One line was silently wrong and is now fixed:** Everton's corner order
+still named McNeil, who is a Palace player. Set-piece orders are the part of
+this document most likely to rot, because they are copied forward and a
+departed player looks exactly like a present one in a comma-separated list.
+
+---
+
 ### 12 August 2026 — Chelsea (preview No 6)
 
 Two omissions, one of them the same kind of internal contradiction the
@@ -909,17 +960,17 @@ is partly a list of who played the weakest opposition.
 
 ## 13. Everton (49 pts)
 
-**Pre-season summary:** Thirteenth in their first season at the new Hill Dickinson Stadium, with David Moyes continuing. Direction is steady mid-table consolidation, but the squad urgently needs a striker and Moyes is actively chasing forward options (none confirmed yet). Goals remain the concern, chances created outstrip a light forward line.
+**Pre-season summary:** Thirteenth in their first season at the new Hill Dickinson Stadium, with David Moyes continuing. **13 August reframes the word "steady":** they were three points off fifth on 21 March after dismantling Chelsea, then did not win another game all season and finished thirteenth — the same position as the year before, one point better, a worse goal difference. Read the second half of last season rather than the average of it. And the FPL fact that matters most here: **Everton made the fewest changes to their starting XI of any team in 2025-26**, and the squad looks much the same, so minutes are about as predictable as this league offers — until injuries bite a thin group. Direction is steady mid-table consolidation, but the squad urgently needs a striker and Moyes is actively chasing forward options (none confirmed yet). Goals remain the concern, chances created outstrip a light forward line.
 
-**In:** Merlin Rohl (CM, Freiburg, ~£18m). Rumours only: a striker target, a possible Grealish loan. Added 13 Aug, having been recorded only by the club at the other end: Tyrique George (W, Chelsea, ~£18m).
+**In:** Brennan Johnson (W, Crystal Palace, swap for McNeil), Christian Norgaard (CM, ~£7m, replacing Gueye), Merlin Rohl (CM, Freiburg, ~£18m). The first two were added 13 Aug: Johnson scored 18 for Spurs in 2024-25 and was flat at Palace, and the move addresses a thin frontline if he recaptures any of it. Rumours only: a striker target, a possible Grealish loan. Added 13 Aug, having been recorded only by the club at the other end: Tyrique George (W, Chelsea, ~£18m).
 
-**Out:** Seamus Coleman (RB, released), Isaac Heath (LW, Cambridge, free). Rumoured sale interest in Ndiaye and Branthwaite.
+**Out:** Dwight McNeil (W, Crystal Palace, swap for Johnson), Idrissa Gana Gueye (CM, departed), Seamus Coleman (RB, released), Isaac Heath (LW, Cambridge, free). The first two were added 13 Aug. Rumoured sale interest in Ndiaye and Branthwaite.
 
 **FPL picks:**
 - Value: Iliman Ndiaye (~£6.5m), main attacking outlet and penalty taker if he stays. James Garner (~£5.0m), corners and free-kicks.
 - Premium / captaincy: No true premium. Jarrad Branthwaite (~£5.5m DEF) is the best reliable clean-sheet-plus-aerial pick if fit and not sold. Ndiaye is the nearest captaincy shout on pens.
-- Differentials: Iliman Ndiaye, penalties plus a central role at likely sub-15% owned. Whichever new striker arrives, monitor before locking in.
-- Set-piece & penalties: Penalties Ndiaye primary, Garner and Beto backups. Free-kicks Garner. Corners Garner, Dewsbury-Hall, McNeil. Watch the Ndiaye exit rumours, he owns the pens.
+- Differentials: Iliman Ndiaye, penalties plus a central role at likely sub-15% owned. Whichever new striker arrives, monitor before locking in — as of 13 Aug the incumbents are Beto and Thierno Barry, with Barry the one showing in pre-season. **Avoid, and this is a warning rather than a tip:** Tyler Dibling, still the most expensive signing of Moyes's second spell at an initial ~£35m, started four league games last season and played no minutes at all after 3 March. A big fee is not a route to minutes. World Cup load is light — only three Everton players went and only Pickford featured after 1 July.
+- Set-piece & penalties: Penalties Ndiaye primary, Garner and Beto backups. Free-kicks Garner. Corners Garner and Dewsbury-Hall — **McNeil removed 13 Aug**, he has gone to Palace in the Johnson swap and this line was still naming him. Watch the Ndiaye exit rumours, he owns the pens.
 
 **Opening fixtures:** GW1 Crystal Palace (H) moderate, GW2 Bournemouth (A) hard, GW3 Man Utd (H) hard, GW4 Spurs (A) hard, GW5 Ipswich Town (H) moderate. Tougher through the middle than it looked — three hard games in a row. The moderate home games at either end are the target weeks.
 
@@ -945,16 +996,16 @@ is partly a list of who played the weakest opposition.
 
 ## 15. Crystal Palace (45 pts)
 
-**Pre-season summary:** Fifteenth, but they won the UEFA Conference League and are listed as its holders in the fixture release. **Which European competition that puts them in this season is not stated here, and this block does not assert one** — the other four qualifiers in this file each carry a Thursday-Sunday rotation warning, and Palace should either carry the same or say plainly that they do not. Oliver Glasner has left (to Nottingham Forest) and Pierre Sage, ex-Lyon, is confirmed head coach (appointed June 2026). A gutted spine is the story: Guehi sold to Man City (January), Eze sold this summer (Pino signed as his direct replacement, took his shirt number), and Mateta agitating to leave. A rebuild under a new manager, treat the whole squad with caution until the window shuts.
+**Pre-season summary:** Fifteenth, but they won the UEFA Conference League and are listed as its holders in the fixture release. **13 August answers the question this block left open on 11 August: it puts them in the Europa League this season**, so the Thursday-Sunday rotation warning applies here exactly as it does at Bournemouth, Brighton and Sunderland. Oliver Glasner has left (to Nottingham Forest) and Pierre Sage is confirmed head coach (appointed June 2026) — and he came from **Lens, not Lyon** as this line said until 13 Aug: second in Ligue 1 and the Coupe de France last season, after a short spell at Lyon before that. Fewer than 100 professional matches as a manager, so the appointment is a bet on a rising coach rather than a safe pair of hands. A gutted spine is the story: Guehi sold to Man City (January), Eze sold this summer (Pino signed as his direct replacement, took his shirt number), and Mateta agitating to leave. A rebuild under a new manager, treat the whole squad with caution until the window shuts.
 
-**In:** Yeremy Pino (RW, Villarreal, ~£26m), Brennan Johnson (W, Tottenham, ~£35m, completed January 2026).
+**In:** Yeremy Pino (RW, Villarreal, ~£26m), Brennan Johnson (W, Tottenham, ~£35m, completed January 2026 — and gone again in August; both ends of that are in this file deliberately), Oscar Mingueza (RWB/CB, Celta Vigo, free), Jorgen Strand Larsen (ST, part of the ~£80m deal that also brought Johnson, January 2026), Dwight McNeil (W, Everton, swap for Johnson). The last three were missing from this list until 13 Aug. Mingueza can play the right of a back three but prefers wing-back and has four Spain caps. Retained: Daichi Kamada (new one-year deal).
 
-**Out:** Eberechi Eze (AM, sold, destination not confirmed in sources), Marc Guehi (CB, Man City, £20m+, January), Jean-Philippe Mateta (ST, rumoured exit, unconfirmed), Hindolo Mustapha (loan). Added 13 Aug, having been recorded only by the club at the other end: Maxence Lacroix (CB, Chelsea, ~£52m).
+**Out:** Eberechi Eze (AM, sold, destination not confirmed in sources), Marc Guehi (CB, Man City, £20m+, January), Jean-Philippe Mateta (ST, rumoured exit, unconfirmed), Brennan Johnson (W, Everton, swap for McNeil), Hindolo Mustapha (loan). Added 13 Aug, having been recorded only by the club at the other end: Maxence Lacroix (CB, Chelsea, ~£52m). Palace took a significant loss on Johnson, a ~£35m January buy sold seven months later.
 
 **FPL picks:**
-- Value: Daniel Munoz (attacking RWB, ~£5.5m), one of the best-value defenders for attacking returns. Ismaila Sarr (~£6.0-6.5m), carries more of the goal threat now Eze has gone.
+- Value: Daniel Munoz (attacking RWB, ~£5.5m), one of the best-value defenders for attacking returns — but 13 Aug adds a live exit risk, with Saudi interest reported and Palace needing to hold him, Wharton and Sarr to the deadline. Ismaila Sarr (~£6.0-6.5m), carries more of the goal threat now Eze has gone, and scored four for Senegal at the World Cup. The stat that should move both: only seven sides generated more open-play xG last season and only **Wolves** scored fewer — a gap of 0.31 a game, the second-worst in the big five leagues behind a Serie A side that finished bottom. That is an attack due positive regression rather than a bad attack, and it is the strongest argument in this block for owning a Palace forward cheaply.
 - Premium / captaincy: Thin at the top after the Eze and Guehi sales. Jean-Philippe Mateta (~£7.5m) is the pick if he stays (main striker, pens), but his future is the key caveat. No reliable elite captain.
-- Differentials: Yeremy Pino, well under 10% owned, on free-kicks and in Eze's role. Adam Wharton, deep-lying creator, if he stays and starts.
+- Differentials: Yeremy Pino, well under 10% owned, on free-kicks and in Eze's role, and the first Palace player to win a World Cup. **But 13 Aug: he broke a collarbone at the tournament** after 69 minutes across two substitute appearances, and missed the rest of it. His fitness for GW1 is not stated in the sources here, and this block has him on both free-kicks and corners — check before buying. Adam Wharton, deep-lying creator, if he stays and starts. Watch: Joel Drakes-Thomas (16), Palace's youngest-ever Premier League player.
 - Set-piece & penalties: Penalties Mateta primary, Sarr backup, genuinely uncertain if Mateta leaves (Sarr would likely inherit). Free-kicks Pino. Corners Pino and Will Hughes (Wharton if still at club).
 
 **Opening fixtures:** GW1 Everton (A) hard, GW2 Man City (H) hard, GW3 Fulham (A) hard. All three rate hard — worse than the middling read suggested, and no gimme anywhere in the opening month.
