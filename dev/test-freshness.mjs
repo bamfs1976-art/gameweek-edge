@@ -78,8 +78,13 @@ console.log('\n• freshness: empty-but-correct is a note, empty-and-wrong is a 
 /* ── the EFL feed grades itself; we only surface it ──────────────────── */
 console.log('\n• freshness: the EFL health verdict is surfaced, not second-guessed');
 {
-  ok(gradeEfl({ status: 200, body: { ok: true, documents: { clubs: { count: 72 } } } })
-    .verdict === 'ok', 'ok:true passes');
+  /* ok:true alone is no longer a plain pass. Since 14 Aug the grader also
+     wants to know whether the position check RAN, because a health payload
+     that never looked and one that looked and found nothing used to print
+     identically. A clean feed that reports its coverage passes. */
+  ok(gradeEfl({ status: 200, body: { ok: true, documents: {
+    clubs: { count: 72 }, players: { count: 1008, unknownPositions: { count: 0, labels: [] } }
+  } } }).verdict === 'ok', 'ok:true with the position check reporting passes');
   const bad = gradeEfl({ status: 503, body: {
     ok: false, documents: { players: { fieldsMissing: ['points', 'position'] } }
   } });
@@ -118,6 +123,27 @@ console.log('\n• freshness: an unrecognised position is surfaced without cryin
   /* A broken feed is still a failure — the note must not swallow it. */
   ok(gradeEfl({ status: 503, body: { ok: false, documents: {} } }).verdict === 'fail',
     'and a genuinely broken feed still fails');
+
+  /* ── the bug in the check itself ────────────────────────────────
+     The first run after shipping the position check came back a clean tick
+     while Netlify was still building — so the field was absent, not zero,
+     and the output could not tell the two apart. Silence from a check that
+     was never deployed must not read the same as silence from a check that
+     ran and found nothing. */
+  const checked = gradeEfl(healthy);
+  ok(checked.verdict === 'ok', 'a feed that WAS checked and is clean is a plain ok');
+  ok(/positions checked/.test(checked.detail),
+    'and the detail says so, so a reader knows coverage rather than assuming it');
+
+  const notReporting = { status: 200, body: { ok: true, documents: {
+    clubs: { count: 72 }, players: { count: 1008 }
+  } } };
+  const g2 = gradeEfl(notReporting);
+  ok(g2.verdict === 'note', 'a health payload with NO unknownPositions field is a note, not a tick');
+  ok(/NOT REPORTING/.test(g2.detail), 'and it is obvious in the one-line detail');
+  ok(/look identical from here/.test(g2.why || ''),
+    'and the why names the ambiguity rather than guessing which cause it was');
+  ok(failures([g2]).length === 0, 'still never fails a run — it is a coverage gap, not an outage');
 }
 
 /* ── football-data, newly proven and therefore worth distrusting ─────── */

@@ -99,7 +99,26 @@ export function gradeEfl({ status, body }) {
         + 'only position paid for interceptions (+2 each). Add the label to '
         + 'OFFICIAL_POSITIONS in provider.js and to KNOWN_POSITIONS in the health function');
     }
-    return ok(counts || 'answering in the expected shape');
+    /* ── silence has two causes, and they must not print the same ──
+       Written the same morning as the check above, and wrong in the same way
+       the check was built to catch. If the health function has not been
+       deployed yet, or a later refactor drops the field, `up` is null and
+       this returned a clean ok — indistinguishable from "checked every
+       player and found none".
+
+       It bit immediately: the first run after shipping the position check
+       came back green while Netlify was still building, and the output gave
+       no way to tell whether the check had run at all. So the detail now
+       says which of the two happened. A checker that cannot report its own
+       coverage is measuring the instrument, which is the failure this whole
+       file exists to stop. */
+    const coverage = up ? 'positions checked' : 'POSITION CHECK NOT REPORTING';
+    const detail = `${counts || 'answering in the expected shape'} · ${coverage}`;
+    return up ? ok(detail) : note(detail,
+      'the health endpoint returned no unknownPositions field, so nothing confirmed the '
+      + 'feed is still using position labels we recognise. Either the function predates '
+      + 'that check or a deploy has not landed. Zero unknown labels and no check at all '
+      + 'look identical from here, which is why this is not a plain tick');
   }
   const missing = Object.entries(docs)
     .filter(([, d]) => d && (d.fieldsMissing || []).length)
