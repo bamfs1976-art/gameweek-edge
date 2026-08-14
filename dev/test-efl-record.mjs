@@ -27,6 +27,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -776,6 +777,98 @@ ok('an unresolved rule question is stored as unresolved', () => {
   assert.equal(q.twoReadings.length, 2, 'both readings are kept');
   assert.match(q.status, /UNRESOLVED/, 'and it is labelled unresolved');
   assert.match(q.actionTaken, /None beyond recording it/i, 'and nothing was built on the guess');
+});
+
+/* ── the pre-lockout status record ────────────────────────
+   A dated statement of where the entry stood with the lockout still ahead.
+   It is the kind of document that rots fastest: written beside the ledger,
+   describing the ledger, and free to drift from it the moment either
+   changes. So it is checked against the entry field by field, and the
+   entry's own bytes are pinned. */
+ok('the pre-lockout status was written BEFORE the lockout it describes', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  assert.ok(Date.parse(s.writtenAt) < Date.parse(s.lockoutAt),
+    'written before the lockout, which is the only thing that makes it evidence');
+  assert.equal(s.lockoutAt, entry.lockoutAt, 'and it quotes the entry\'s own lockout');
+  assert.ok(Date.parse(entry.recordedAt) < Date.parse(s.writtenAt),
+    'and the entry predates the status, not the other way round');
+});
+
+ok('the status describes the entry exactly, or it is not describing the entry', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+
+  assert.equal(s.theEntry.formation, entry.picks.formation, 'formation matches');
+  assert.equal(s.theEntry.captainId, entry.picks.captain, 'captain id matches');
+  assert.equal(s.theEntry.players.length, entry.picks.players.length, 'seven players');
+
+  const byName = Object.fromEntries(entry.picks.players.map((p) => [p.name, p]));
+  for (const p of s.theEntry.players) {
+    const real = byName[p.name];
+    assert.ok(real, `${p.name} is actually in the entry`);
+    assert.equal(p.position, real.position, `${p.name} position matches`);
+    assert.equal(p.club, real.club, `${p.name} club matches`);
+    assert.equal(p.score, real.score, `${p.name} score matches`);
+    /* The fixture is where a status file would most plausibly drift, since
+       it is the part a human would retype. */
+    const f = real.fixture || {};
+    assert.equal(p.fixture, `${f.opponent} (${f.home ? 'H' : 'A'})`, `${p.name} fixture matches`);
+    assert.equal(!!p.captain, real.id === entry.picks.captain, `${p.name} captaincy matches`);
+  }
+  /* And the claim that all seven are at home, which is asserted in prose. */
+  assert.equal(s.theEntry.allSevenAtHome,
+    entry.picks.players.every((p) => p.fixture && p.fixture.home),
+    'the all-at-home claim is measured, not remembered');
+
+  const clubByName = Object.fromEntries((entry.picks.clubs || []).map((c) => [c.name, c]));
+  for (const c of s.theEntry.clubs) {
+    assert.ok(clubByName[c.name], `${c.name} is actually a club pick`);
+    assert.equal(c.officialOwnership, clubByName[c.name].percentSelected,
+      `${c.name} ownership matches the feed value recorded in the entry`);
+  }
+});
+
+ok('the entry itself is byte-identical to what the status vouches for', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  const raw = readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'));
+  /* Git's blob hash, computed here rather than shelled out, so the test runs
+     anywhere. If anyone ever edits the recorded entry — to tidy it, to fix a
+     name, to quietly improve a pick — this fails and says so. That is the
+     whole point of an append-only ledger, expressed as a check rather than
+     as a promise. */
+  const header = Buffer.from(`blob ${raw.length}\0`, 'utf8');
+  const sha = createHash('sha1').update(Buffer.concat([header, raw])).digest('hex');
+  assert.equal(sha, s.entryIntegrity.blobSha,
+    'the recorded entry has not changed since the pre-lockout status vouched for it');
+  assert.equal(s.entryIntegrity.commits, 1, 'and the status claims exactly one commit');
+});
+
+ok('the status is not mistaken for a round by the ledger loader', () => {
+  /* It lives in the rounds directory, which is convenient and dangerous.
+     The loader's filter is strict, and this asserts that it stays strict —
+     a looser pattern would read the status file as round NaN and corrupt
+     the season record. */
+  const src = readFileSync(join(ROOT, 'scripts/efl/lib.mjs'), 'utf8');
+  const m = src.match(/\/\^round-[^/]*\/\.test\(n\)/);
+  assert.ok(m, 'the loader still filters round files by pattern');
+  const re = new RegExp(m[0].slice(1, m[0].indexOf('/.test')));
+  assert.ok(re.test('round-01.json'), 'a real round entry is loaded');
+  assert.ok(!re.test('round-01-prelock-status.json'),
+    'and the pre-lockout status is not');
+});
+
+ok('the status records no prediction it could later be graded kindly against', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  assert.ok(s.predictionsDeliberatelyNotMade,
+    'the refusal to forecast a points total is stated, not just practised');
+  assert.ok(s.whatThisIsNot.some((x) => /NOT a second entry|records no pick/i.test(x)),
+    'and it disclaims being an entry');
+  /* Silence recorded as silence. Two of our seven have no outside coverage
+     at all, and the file must not dress that up as either support or doubt. */
+  const quiet = s.outsideEvidenceGathered.perPick.find((p) => /Twine/.test(p.pick));
+  assert.match(quiet.note, /silence, not endorsement and not criticism/i,
+    'an unmentioned pick is recorded as unmentioned');
 });
 
 ok('the season previews are resolved against our own seven, not just filed', () => {
