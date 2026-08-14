@@ -1186,5 +1186,69 @@ console.log('\n• briefing: the market snapshot agrees with our GW1 fixtures');
     'the metric hypothesis is still labelled unconfirmed, not quietly promoted to a fact');
 }
 
+/* ── published prices settle what "est." could not ────────────────────
+   Every price in this briefing carried an "est." until 14 August, on the
+   stated grounds that the FPL API would settle them. A BBC experts piece
+   quoting the live game settled four of them, and all four went against us.
+
+   The test asserts the CORRECTIONS reached the club blocks. A resolution
+   recorded only in a benchmark file and not in the document it corrects is
+   how two editions of the same claim drift apart, which this project has
+   already had to fix once this week. */
+console.log('\n• briefing: published prices reached the blocks, not just the notes');
+{
+  const bbc = JSON.parse(readFileSync(join(ROOT, 'docs/benchmarks/pl-gw1-bbc-experts.json'), 'utf8'));
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const blocks = clubBlocks(md);
+  const claims = priceClaims(md);
+
+  const res = bbc.theResolution;
+  ok(res.disagreements === res.disagreementDetail.length,
+    'the disagreement count matches the list it summarises');
+  ok(res.checkable === res.exactAgreements + res.disagreements,
+    'checkable really is agreements plus disagreements ('
+    + res.checkable + ' vs ' + (res.exactAgreements + res.disagreements) + ')');
+
+  /* The four corrected players must now be quoted at the PUBLISHED price
+     somewhere in the prose, and the old estimate must not be left standing
+     as if it were current. */
+  const surname = (s) => String(s).trim().split(/\s+/).pop().toLowerCase();
+  for (const d of res.disagreementDetail) {
+    const key = surname(d.player);
+    const said = claims.filter((c) => surname(c.name) === key).map((c) => c.price);
+    ok(said.includes(d.published),
+      d.player + ' is quoted at the published £' + d.published + 'm (' + said.join(', ') + ')');
+    ok(!said.includes(d.ours) || /published/i.test(md),
+      d.player + ': the superseded estimate is not left as a bare current claim');
+  }
+
+  /* And the reason, kept where it will be read. A scoreline of 0-4 against
+     our own estimates is the kind of thing a document quietly loses. */
+  ok(/theirs right four times and ours none/i.test(md),
+    'the briefing states the scoreline rather than only listing the corrections');
+  /* Tolerant of line wrapping: this prose is hard-wrapped at ~78 columns, so
+     a fixed phrase can straddle a newline and a naive regex silently fails. */
+  ok(/better\s+prior\s+until\s+it\s+earns\s+a\s+losing\s+record/i.test(md),
+    'and states what it changes about how outside sources are weighed');
+
+  /* Confirmations that cost nothing to check and would be embarrassing to
+     get wrong: the two signings surfaced only today, both now named by a
+     second source, must actually be in the blocks. */
+  const fulham = blocks.find((b) => b.name.indexOf('Fulham') === 0);
+  const palace = blocks.find((b) => b.name.indexOf('Crystal Palace') === 0);
+  ok(/Gonzalo Garcia/.test(fulham.body), 'Gonzalo Garcia is in the Fulham block');
+  ok(/Strand Larsen/.test(palace.body), 'Strand Larsen is in the Palace block');
+  ok(bbc.picks.Fulham.talisman[0] === 'Rodrigo Muniz'
+    && bbc.picks['Crystal Palace'].avoid[0] === 'Jorgen Strand Larsen',
+    'and the source really does name them, rather than the file only saying so');
+
+  /* The source's own defect, recorded so a later mechanical parse does not
+     read it as two talismen. */
+  ok(bbc.picks['Coventry City'].sourceLabelledBothAsTalisman === true,
+    'the malformed Coventry section is flagged on the data, not just in prose');
+  ok(bbc.reportedOwnership.values.every((v) => typeof v.reported === 'string'),
+    'quoted ownership stays a quoted string, never a number to be computed with');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

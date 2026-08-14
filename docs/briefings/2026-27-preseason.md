@@ -530,6 +530,32 @@ all of them at launch rather than either of us:
 | Mateta (CRY) | ~£7.5m | £6.5m |
 | Robinson (FUL) | ~£5.0m | £4.5m |
 
+**Settled 14 August, and it is a clean sweep against us.** The FPL prices are
+published, and a BBC Sport experts piece quotes them for four of the eight
+rows above:
+
+| Player | Ours | Theirs | Published | Right |
+|---|---|---|---|---|
+| Gibbs-White (NFO) | ~£7.0m | £8.0m | **£8.0m** | theirs |
+| Wood (NFO) | ~£7.0m | £6.0m | **£6.0m** | theirs |
+| Le Fee (SUN) | ~£5.5m | £6.0m | **£6.0m** | theirs |
+| Robinson (FUL) | ~£5.0m | £4.5m | **£4.5m** | theirs |
+
+Four settled, **theirs right four times and ours none**. Saka, Ndiaye, Garner
+and Mateta are still unpriced by any source we hold. Across the wider diff, 13
+of our price claims can now be checked and 9 are exactly right — so the
+estimates are not bad in general. They are wrong precisely where somebody had
+already told us they were wrong.
+
+**The line above this table said the API "settles all of them at launch rather
+than either of us."** That reads as even-handed and is not. Between a
+published projection and our own unsourced estimate, treating the two as
+equally likely put a thumb on our own side of the scale, and the scoreline for
+that posture is 0-4. Where an outside source and this document disagree about
+a fact somebody else has already published, the outside source is the better
+prior until it earns a losing record. Corrected in the club blocks, not only
+noted here.
+
 **Two cautions about the diff itself, both found while running it.** Matching
 on the last name alone made "Fernandes £6.0m" in Tottenham's free-kick cell —
 Mateus — collide with Bruno Fernandes, and "Enzo £7.0m" in Chelsea's corners
@@ -1026,7 +1052,7 @@ is partly a list of who played the weakest opposition.
 **Out:** Eliezer Mayenda (ST, Rennes, ~£21.5m), Dan Neil (MID, departed, destination uncertain), Dennis Cirkin, Bertrand Traore, Niall Huggins (all released), Milan Aleksic (loan).
 
 **FPL picks:**
-- Value: Enzo Le Fee (MID, ~£5.5m; an outside table prices him £6.0m), creative hub on free-kicks — 147 points last season, 5 goals and 6 assists, 62 key passes, 16 bonus. **This line used to say "on pens and free-kicks", which contradicted the set-piece line four rows below it**; the penalties belong to Diarra in this register, and the case against that is now two independent outside sources — see the set-piece section above the club list. Wilson Isidor (~£5.5-6.0m), clear number nine after Mayenda — though an outside Sunderland thread builds its entire case around Brian Brobbey (~£6.0m, 7 goals from 6.0 xG, 2.6 shots per 90, 22 starts, 112 points) and never mentions Isidor. One of the two of us is wrong about who leads this line.
+- Value: Enzo Le Fee (MID, **£6.0m, published 14 Aug** — our estimate said ~£5.5m and the outside table said £6.0m; the table was right), creative hub on free-kicks — 147 points last season, 5 goals and 6 assists, 62 key passes, 16 bonus. **This line used to say "on pens and free-kicks", which contradicted the set-piece line four rows below it**; the penalties belong to Diarra in this register, and the case against that is now two independent outside sources — see the set-piece section above the club list. Wilson Isidor (~£5.5-6.0m), clear number nine after Mayenda — though an outside Sunderland thread builds its entire case around Brian Brobbey (~£6.0m, 7 goals from 6.0 xG, 2.6 shots per 90, 22 starts, 112 points) and never mentions Isidor. One of the two of us is wrong about who leads this line.
 - Premium / captaincy: None. Sunderland are cheap enablers and defensive punts. Granit Xhaka (~£5.5m) is the most nailed midfield points source via set-pieces.
 - Differentials: Wilson Isidor, very low-owned lead striker. Enzo Le Fee, the pick if you want a cheap Sunderland midfielder — on free-kicks and creation, not on penalties, whatever the earlier wording implied.
 - Defenders, and the split matters more than the price: at home Sunderland conceded 1.05 per 90 with 7 clean sheets (a 37% rate, 1.74 points per game); away, 1.47 and 4 (21%, 1.11). These are home-fixture assets rather than season-long ones. **Nordi Mukiele** (~£5.5m) was the club's top FPL scorer on 151 points (3 goals, 3 assists, 19 bonus); **Dan Ballard** (~£5.0m) offers the same clean sheet for £0.5m less with a set-piece aerial threat. **Trai Hume** (~£4.5m, 110 points, 2 goals, 1 assist, 10 clean sheets) has been deployed as a right winger in pre-season so Mukiele can overlap — for a defender that is a points risk rather than a bonus, since clean sheets pay a defender and not a winger, and it is unconfirmed for GW1.
@@ -1103,7 +1129,7 @@ is partly a list of who played the weakest opposition.
 **Out:** Raul Jimenez (ST, Wolves, free), Harry Wilson (AM, Leeds, free), Issa Diop (CB, Ipswich, ~£8.5m), Steven Benda (released), Alfie McNally (loan).
 
 **FPL picks:**
-- Value: Rodrigo Muniz (FWD, ~£5.5-6.0m est.). **14 Aug demotes this line:** "likely lead striker with Jimenez gone" was written when the In list above held no striker at all. It holds one now, and the reason Jimenez carried the line last season was Muniz's injuries. Antonee Robinson (attacking LB, ~£5.0m est.), high crossing volume and a reliable cheap defender — but he went to the last 16 with the USA, so his pre-season load is not light.
+- Value: Rodrigo Muniz (FWD, ~£5.5-6.0m est.). **14 Aug demotes this line:** "likely lead striker with Jimenez gone" was written when the In list above held no striker at all. It holds one now, and the reason Jimenez carried the line last season was Muniz's injuries. Antonee Robinson (attacking LB, **£4.5m, published 14 Aug** — our estimate said ~£5.0m), high crossing volume and a reliable cheap defender — but he went to the last 16 with the USA, so his pre-season load is not light.
 - Premium / captaincy: No premium tier. Alex Iwobi (MID) is the most reliable minutes-and-returns pick, a captaincy option only versus soft opponents.
 - Differentials: **Gonzalo Garcia** — Club World Cup Golden Boot, Champions League goals against Juventus and Borussia Dortmund, compared to Raul at the Bernabeu, then squeezed out by Vinicius Junior and Mbappe. He did **not** make Spain's World Cup squad after a pre-tournament debut against Iraq, so unlike four team-mates he arrives fresh. His reputation in Spain is as a hard worker off the ball, which travels. The hype is the risk here, not the pedigree. Kusi-Asare, still low ownership — but read the numbers before buying: seven substitute appearances last season with **no goals**, an initial loan since made permanent with a Bayern buy-back clause, 6ft5 and an Isak comparison, five goals in six for the under-21s. A prospect rather than a starter, and a different profile to Garcia. Emile Smith Rowe if Arbeloa gets him firing.
 - Set-piece & penalties: Highly uncertain after Jimenez and the manager change. Corners Iwobi, Lukic. Penalties: this line has read "unresolved, Robinson tentatively (1/1 last season)", and the outside projection's "Garcia" now has a name — but a projection naming a signing who has taken no penalty for this club settles nothing. **Penalties stay unresolved, with Garcia the leading candidate.** Free-kicks no established taker. Treat all Fulham set-piece assumptions as provisional until GW1.
@@ -1195,8 +1221,8 @@ is partly a list of who played the weakest opposition.
 **Out:** Anthony Elanga (W, Newcastle, ~£55m, was the club-record sale until Anderson), Willy Boly (released), Stefan Ortega and Angus Gunn (GKs, released). Added 13 Aug, having been recorded only by the club at the other end: Elliot Anderson (CM, Man City, ~£116m).
 
 **FPL picks:**
-- Value: Morgan Gibbs-White (~£7.0m), talisman on pens and free-kicks, central to everything. Neco Williams (~£5.0m DEF), attacking full-back on corners.
-- Premium / captaincy: Chris Wood (~£7.0m), proven scorer the past two seasons and Glasner will want a focal point, though form dipped late last term. Gibbs-White the alternative on-ball captain. Kalimuendo, if signed, complicates Wood's minutes.
+- Value: Morgan Gibbs-White (**£8.0m, published 14 Aug** — our estimate said ~£7.0m), talisman on pens and free-kicks, central to everything. Neco Williams (~£5.0m DEF), attacking full-back on corners.
+- Premium / captaincy: Chris Wood (**£6.0m, published 14 Aug** — our estimate said ~£7.0m), proven scorer the past two seasons and Glasner will want a focal point, though form dipped late last term. Gibbs-White the alternative on-ball captain. Kalimuendo, if signed, complicates Wood's minutes.
 - Differentials: Omari Hutchinson and James McAtee, new arrivals at low ownership in a reshaped attack. Dan Ndoye.
 - Set-piece & penalties: Pens unresolved — **this line said "Wood (FPL order 1; Gibbs-White second)" until 13 Aug while the value bullet above called Gibbs-White the talisman "on pens", and the shortlist lists Gibbs-White among the penalty magnets.** Three parts of this document, two of them saying Gibbs-White, and an outside projection agreeing with those two (Gibbs-White first, then Wood, then Igor Jesus). The honest state is undecided under a new manager, not a flat claim for either. Watch GW1. Free-kicks Gibbs-White and Murillo. Corners Hutchinson and Neco Williams.
 
