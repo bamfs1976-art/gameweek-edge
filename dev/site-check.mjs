@@ -56,7 +56,14 @@ const CHECKS = [
      expected to work, not a note about something nobody had configured. */
   { path: '/api/football-data/matchday?competition=PL', status: 200, json: true,
     why: 'referees + midweek fixtures (green since 13 Aug)' },
-  { path: '/privacy.html', status: 200, why: 'privacy policy' }
+  { path: '/privacy.html', status: 200, why: 'privacy policy' },
+  /* The vendor bundle is built by Netlify rather than committed, so its
+     absence is a BUILD failure, not a missing file — and it fails quietly:
+     the app degrades to inline-SVG sparklines, substring palette search and
+     no keyboard shortcuts, all of which look like a working site. Checking
+     it here is the only place that difference shows up in production. */
+  { path: '/vendor.js', status: 200, why: 'uPlot + Fuse.js + tinykeys bundle' },
+  { path: '/vendor.css', status: 200, why: 'uPlot stylesheet' }
 ];
 
 const UA = 'Mozilla/5.0 (compatible; GameweekEdgeSiteCheck/1.0; +https://gameweekedge.co.uk)';
