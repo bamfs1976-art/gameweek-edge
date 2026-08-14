@@ -4579,7 +4579,16 @@ function sparkHydrate(root){
       padding:[2,2,2,2],
       scales:{x:{time:false}},
       axes:[{show:false},{show:false}],
-      series:[{},{stroke:col,width:1.5,points:{show:false}}]
+      /* The SVG this replaced ended in a dot marking where the series is
+         NOW, which is the whole reading of a sparkline in a table. uPlot
+         hides points on short series by default, so the last index is
+         drawn explicitly rather than losing that. */
+      series:[{},{stroke:col,width:1.5,
+        /* `show` is a boolean; WHICH points get drawn is `filter`, which
+           returns the indices. Passing an array to `show` silently drew a
+           dot on every point instead of just the last one — visible only
+           in a screenshot, which is where it was caught. */
+        points:{show:true,filter:u=>[u.data[0].length-1],size:3.6,stroke:col,fill:col}}]
     },[v.map((_,i)=>i),v],el);
     n++;
   });
@@ -4637,6 +4646,27 @@ function sparkWatch(){
    tick: that is the whole reason the live match centre stopped
    re-serialising SVG on every poll. */
 const CHART_H=180;
+/* Axis and legend formatters, looked up BY NAME.
+
+   chartHost() serialises its spec into a data attribute, and a function
+   cannot survive JSON. So a chart that needs a custom axis names one here
+   instead of passing a closure. The rank chart is why this exists: its
+   series is the NEGATED log of overall rank (uPlot has no reverse-axis
+   flag, and a smaller rank has to draw higher), which puts "-6" and "-5.5"
+   on the axis unless something turns them back into ranks. An earlier
+   version of this file claimed in a comment that a formatter undid it and
+   did not have one — the axis shipped reading -5.5 until a screenshot
+   showed it.
+
+   Each formatter also declares the axis GUTTER it needs. uPlot sizes the
+   y-axis for plain numbers, so "1,000,000" arrived clipped to "00,000" —
+   the label was right and the space for it was not. */
+const CHART_FMT={
+  rank:{fmt:v=>v==null?'--':fmtNum(Math.round(Math.pow(10,-v))),size:74},
+  price:{fmt:v=>v==null?'--':'£'+Number(v).toFixed(1)+'m',size:60},
+  int:{fmt:v=>v==null?'--':String(Math.round(v)),size:46}
+};
+function chartFmt(name){return name&&CHART_FMT[name]?CHART_FMT[name]:null;}
 function chartTheme(){
   return {
     grid:chartVar('--border-2','#1B2026'),
@@ -4650,6 +4680,11 @@ function uchart(el,x,series,opts){
   const t=chartTheme();
   const w=opts.width||el.clientWidth||el.parentElement&&el.parentElement.clientWidth||520;
   const axis={stroke:t.text,grid:{stroke:t.grid,width:1},ticks:{stroke:t.grid,width:1},font:t.font};
+  /* A named formatter drives BOTH the axis ticks and the legend read-out,
+     so the crosshair never disagrees with the scale beside it. */
+  const yspec=chartFmt(opts.yFmt);
+  const yf=yspec&&yspec.fmt;
+  const yAxisFmt=yf?{values:(u,vals)=>vals.map(yf),size:yspec.size}:{};
   const u=new window.uPlot({
     width:w,height:opts.height||CHART_H,
     class:'ge-chart',
@@ -4662,7 +4697,7 @@ function uchart(el,x,series,opts){
     scales:{x:{time:!!opts.time}},
     axes:[
       {...axis,...(opts.xAxis||{})},
-      {...axis,...(opts.yAxis||{})}
+      {...axis,...yAxisFmt,...(opts.yAxis||{})}
     ],
     series:[{label:opts.xLabel||'GW',value:opts.xValue}].concat(
       series.map(sr=>({
@@ -4671,7 +4706,7 @@ function uchart(el,x,series,opts){
         fill:sr.fill?chartColor(sr.fill):undefined,
         width:sr.width==null?1.6:sr.width,
         dash:sr.dash,
-        value:sr.value,
+        value:yf?((u,v)=>yf(v)):sr.value,
         points:{show:sr.points!==false,size:4}
       }))
     )
@@ -5486,9 +5521,7 @@ async function hydrateGwhistory(host){
         x:ranks.map(c=>c.event),
         series:[{label:'Overall rank',color:'var(--green-bright)',fill:'var(--green-soft)',
           data:logs.map(v=>-v),width:2}],
-        opts:{height:150,legend:true,xLabel:'GW',
-          yAxis:{},
-          yFmt:'rank'}
+        opts:{height:150,legend:true,xLabel:'GW',yFmt:'rank'}
       },svgFallback)+
       '<div class="dl-sub" style="margin-top:8px">Higher is better — the line climbs as your rank improves. Season high '+fmtNum(bestRank)+', now '+fmtNum(nowRank)+(hist.chips&&hist.chips.length?'. Amber dots mark chips played.':'.')+'</div></div>';
   }
@@ -9298,7 +9331,7 @@ function summarySections(b,sum,id){
           x:priced.map(h=>h.round),
           series:[{label:'Price £m',color:'var(--amber)',
             data:priced.map(h=>h.value/10),width:2}],
-          opts:{height:110,legend:true,xLabel:'GW'}
+          opts:{height:110,legend:true,xLabel:'GW',yFmt:'price'}
         },'')+
         '<div class="dl-sub" style="margin-top:6px">Every price change this season. Moves happen once a day at 00:00 UK time.</div></div>';
     }

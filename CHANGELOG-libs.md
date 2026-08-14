@@ -125,6 +125,33 @@ uPlot draws a canvas and the crosshair reads a value. It sits outside
 
 ---
 
+## Four defects the screenshots caught
+
+Worth recording, because all four passed every unit test and the browser
+test suite, and only became visible in a rendered image.
+
+1. **The rank axis read `-6, -5.5`.** The series is the negated log of
+   overall rank (uPlot has no reverse-axis flag), and a comment in the code
+   claimed a tick formatter undid it. There was no formatter. Added
+   `CHART_FMT`, a registry looked up **by name** — `chartHost` serialises its
+   spec into a data attribute and a function cannot survive JSON, so a chart
+   that needs a custom axis names one instead of passing a closure.
+2. **`1,000,000` was clipped to `00,000`.** uPlot sizes the y-axis gutter for
+   plain numbers. Each formatter now declares the width it needs.
+3. **Sparklines rendered as filled blobs.** `fill` on a uPlot series is an
+   area fill; it belonged on the point, not the series.
+4. **A dot on every point instead of just the last.** `points.show` is a
+   boolean — choosing *which* points is `points.filter`. The end dot marks
+   where the series is now, which is the whole reading of a sparkline in a
+   table row.
+
+The first two were shipping wrong. The lesson is the same one
+`dev/test-ui.mjs` was written for, one level further out: a browser test can
+assert that a canvas exists and that a crosshair returns a value — it cannot
+see that the number on the axis is nonsense.
+
+---
+
 ## Guard suite
 
 | check | result |
