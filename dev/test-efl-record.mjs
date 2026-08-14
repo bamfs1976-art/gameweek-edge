@@ -858,6 +858,45 @@ ok('the status is not mistaken for a round by the ledger loader', () => {
     'and the pre-lockout status is not');
 });
 
+ok('an update to the status is still bounded by the lockout', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  /* The status may gain updates while the round is still open — that is the
+     point of it. What must not happen is an "update" written after the
+     lockout quietly joining a document whose whole claim is that it predates
+     the football. */
+  for (const u of s.updates || []) {
+    assert.ok(Date.parse(u.at) < Date.parse(s.lockoutAt),
+      `update at ${u.at} was written before the lockout`);
+    assert.ok(Date.parse(u.at) >= Date.parse(s.writtenAt),
+      `update at ${u.at} is not backdated before the document itself`);
+    assert.match(u.doesItChangeTheEntry, /^No\./,
+      'and every update states plainly that the entry is unmoved');
+  }
+});
+
+ok('the recording window the entry used is quoted correctly', () => {
+  const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  const u = (s.updates || []).find((x) => x.theRealPointThisRaises);
+  if (!u) return;
+  /* The limitation only means anything if the numbers behind it are real:
+     the window is what lib.mjs actually says, and we really did record near
+     its edge. Both are read rather than restated. */
+  assert.match(u.theRealPointThisRaises.observation,
+    new RegExp(`RECORD_WINDOW_HOURS = ${lib.RECORD_WINDOW_HOURS}\\b`),
+    'the window quoted is the window the code enforces');
+  assert.ok(entry.hoursBeforeLock < lib.RECORD_WINDOW_HOURS,
+    'the entry was inside the window');
+  assert.ok(lib.RECORD_WINDOW_HOURS - entry.hoursBeforeLock < 2,
+    'and near its edge, as the update claims — recorded '
+    + entry.hoursBeforeLock + 'h out against a ' + lib.RECORD_WINDOW_HOURS + 'h limit');
+  /* The largest model weight is quoted too; if it is retuned this fails
+     rather than leaving a stale number in a document about honesty. */
+  assert.match(u.theRealPointThisRaises.whatItMeans,
+    new RegExp(String(entry.weights.player.minutes)),
+    'the minutes weight quoted matches the entry');
+});
+
 ok('the status records no prediction it could later be graded kindly against', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
   assert.ok(s.predictionsDeliberatelyNotMade,
