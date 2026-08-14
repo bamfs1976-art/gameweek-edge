@@ -2101,6 +2101,29 @@ body{font-size:14px;line-height:1.35}
 /* ── Sparkline + keyboard row selection ── */
 .sparkline{vertical-align:middle}
 .qd-foot .sparkline{vertical-align:-3px}
+/* ── uPlot, dressed in the terminal palette ──
+   vendor.css is uPlot's own stylesheet, bundled from node_modules. These
+   rules sit on top of it and are the ONLY place chart chrome is coloured,
+   so a theme change moves the charts with the rest of the app rather than
+   leaving a light-mode chart on a dark page. */
+.spark-host{display:inline-block;vertical-align:middle;line-height:0}
+.spark-host .u-wrap,.spark-host .uplot{background:none}
+.chart-host{width:100%;min-height:1px}
+.ge-chart{font-family:var(--font-mono);font-size:10px;color:var(--text-3)}
+.ge-chart .u-wrap{background:none}
+.ge-chart .u-legend{font-family:var(--font-mono);font-size:10px;color:var(--text-3);
+  margin-top:4px;text-align:left}
+.ge-chart .u-legend .u-marker{width:8px;height:2px;border-radius:0}
+.ge-chart .u-legend th{font-weight:600;color:var(--text-2)}
+.ge-chart .u-legend .u-value{color:var(--text);font-variant-numeric:tabular-nums}
+/* The crosshair is the reason these are canvases and not pictures: it must
+   read clearly on #0A0C0F without becoming the loudest thing on screen. */
+.ge-chart .u-cursor-x,.ge-chart .u-cursor-y{border-color:var(--border-3)}
+.ge-chart .u-cursor-pt{border-color:var(--surface-2)}
+.ge-chart .u-select{background:color-mix(in srgb,var(--blue) 18%,transparent)}
+/* Touch: uPlot listens to pointer events, but the browser will steal a
+   vertical drag for scrolling unless the canvas claims the horizontal axis. */
+.ge-chart .u-over{touch-action:pan-y}
 .row-sel{outline:2px solid var(--green);outline-offset:-2px;background:var(--green-soft)}
 .pl-scroll{max-height:72vh;overflow:auto}
 
@@ -2365,6 +2388,13 @@ body{font-size:14px;line-height:1.35}
 <script src="native.js"></script>
 <!-- Supabase client factory: defines window.GE_SUPABASE. -->
 <script src="auth.js"></script>
+<!-- Charting, fuzzy search and keybindings: defines window.uPlot, window.Fuse,
+     window.tinykeys. Bundled from node_modules by scripts/build-web.mjs, never
+     a CDN, so the shell still works offline and the versions are pinned. The
+     inline script degrades gracefully if this fails to load: sparklines fall
+     back to inline SVG and the palette to substring matching. -->
+<link rel="stylesheet" href="vendor.css">
+<script src="vendor.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Shell logic
@@ -4469,21 +4499,193 @@ async function seasonProjection(b,fixtures,mid,hist){
   }catch(_){return '';}
 }
 
-/* ── Sparkline primitive: inline 60×16 trend, terminal-coloured ──
+/* ── Sparkline primitive: compact trend, terminal-coloured ──
    Green when the series ends higher than it starts, red otherwise.
-   Pure SVG string — usable inside any row template. */
-function spark(values,opts){
-  opts=opts||{};const w=opts.w||60,h=opts.h||16;
-  const v=(values||[]).filter(x=>x!=null&&isFinite(x));
-  if(v.length<2)return '';
+
+   Drawn by uPlot (MIT, leeoniya/uPlot) on a canvas rather than by the
+   inline SVG this used to emit. The contract had to change to get there:
+   uPlot needs a live element, and every caller here builds HTML as a
+   string. So `spark()` now returns a PLACEHOLDER carrying its own data,
+   and sparkHydrate() turns placeholders into charts once they are in the
+   document.
+
+   Hydration is driven by a MutationObserver rather than by calls after
+   each render. There are five call sites today across four panels and
+   several render paths; a hydrate call per path is a regression waiting
+   for the sixth. Watching the container means a placeholder cannot be
+   inserted anywhere in the app without being picked up.
+
+   The SVG path is kept as the fallback for when the vendor bundle has not
+   loaded. It is also the honest answer to a fair question about this
+   change: for a 56×14 trend in a table row, three lines of SVG were
+   cheaper than a canvas and a chart object. uPlot earns its place on the
+   full charts below — crosshair, touch, live updates — and the sparklines
+   follow it so the app has ONE charting library rather than two. */
+function sparkPoints(values){
+  return (values||[]).filter(x=>x!=null&&isFinite(x));
+}
+function sparkColor(v,opts){
+  return (opts&&opts.color)||(v[v.length-1]>=v[0]?'var(--green)':'var(--red)');
+}
+function sparkSvg(v,w,h,col){
   const mn=Math.min(...v),mx=Math.max(...v),sp=(mx-mn)||1;
   const X=i=>1+(i/(v.length-1))*(w-2);
   const Y=x=>h-2-((x-mn)/sp)*(h-4);
   const d=v.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x).toFixed(1)).join(' ');
-  const col=opts.color||(v[v.length-1]>=v[0]?'var(--green)':'var(--red)');
   return '<svg class="sparkline" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'+
     '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'+
     '<circle cx="'+X(v.length-1).toFixed(1)+'" cy="'+Y(v[v.length-1]).toFixed(1)+'" r="1.8" fill="'+col+'"/></svg>';
+}
+function spark(values,opts){
+  opts=opts||{};const w=opts.w||60,h=opts.h||16;
+  const v=sparkPoints(values);
+  if(v.length<2)return '';
+  const col=sparkColor(v,opts);
+  if(!window.uPlot)return sparkSvg(v,w,h,col);
+  return '<span class="sparkline spark-host" data-spark="'+esc(JSON.stringify(v))+
+    '" data-spark-col="'+esc(col)+'" style="width:'+w+'px;height:'+h+'px" aria-hidden="true"></span>';
+}
+/* Terminal palette, read from the CSS custom properties rather than
+   duplicated here, so a theme change moves the charts with everything
+   else. Resolved lazily: the variables are on :root and the first chart
+   may be built before a stylesheet recalc. */
+function chartVar(name,fallback){
+  try{
+    const v=getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v||fallback;
+  }catch(_){return fallback;}
+}
+function chartColor(col){
+  const m=/^var\((--[a-z0-9-]+)\)$/i.exec(col||'');
+  return m?chartVar(m[1],'#00D26A'):(col||'#00D26A');
+}
+function sparkHydrate(root){
+  if(!window.uPlot)return 0;
+  const hosts=(root||document).querySelectorAll('.spark-host:not([data-spark-done])');
+  let n=0;
+  hosts.forEach(el=>{
+    let v;
+    try{v=JSON.parse(el.getAttribute('data-spark')||'[]');}catch(_){return;}
+    if(!v||v.length<2)return;
+    el.setAttribute('data-spark-done','1');
+    const w=el.clientWidth||parseInt(el.style.width,10)||60;
+    const h=el.clientHeight||parseInt(el.style.height,10)||16;
+    const col=chartColor(el.getAttribute('data-spark-col'));
+    /* No axes, no legend, no cursor: a sparkline is a shape, not a chart
+       you interrogate. Those all cost DOM per instance, which is what
+       keeps twenty of them in a table cheap. */
+    new window.uPlot({width:w,height:h,class:'spark-u',
+      cursor:{show:false},legend:{show:false},
+      padding:[2,2,2,2],
+      scales:{x:{time:false}},
+      axes:[{show:false},{show:false}],
+      series:[{},{stroke:col,width:1.5,points:{show:false}}]
+    },[v.map((_,i)=>i),v],el);
+    n++;
+  });
+  return n;
+}
+/* Full charts use the same placeholder trick as sparklines, for the same
+   reason: every panel in this file builds HTML as a string, and a chart
+   library needs an element. `chartHost` writes the spec into the markup,
+   `chartHydrate` builds the uPlot once it is in the document, and the
+   caller keeps its one-line return.
+
+   `fallback` is the SVG the panel used to emit. It is rendered inside the
+   host immediately, so a browser that never loads the vendor bundle still
+   sees the chart it saw before — and so does a scraper or a print. */
+function chartHost(spec,fallback){
+  return '<div class="chart-host" data-chart="'+esc(JSON.stringify(spec))+'">'+(fallback||'')+'</div>';
+}
+function chartHydrate(root){
+  if(!window.uPlot)return 0;
+  const hosts=(root||document).querySelectorAll('.chart-host:not([data-chart-done])');
+  let n=0;
+  hosts.forEach(el=>{
+    let spec;
+    try{spec=JSON.parse(el.getAttribute('data-chart')||'null');}catch(_){return;}
+    if(!spec||!spec.x||!spec.x.length)return;
+    el.setAttribute('data-chart-done','1');
+    el.innerHTML='';
+    const u=uchart(el,spec.x,spec.series||[],spec.opts||{});
+    if(u)el._u=u;else el.innerHTML=spec.fallbackHtml||'';
+    n++;
+  });
+  return n;
+}
+
+/* One observer for the whole app. Started after first paint so it never
+   competes with the initial render. */
+let _sparkObs=null;
+function sparkWatch(){
+  if(_sparkObs||!window.MutationObserver)return;
+  sparkHydrate(document);chartHydrate(document);
+  _sparkObs=new MutationObserver(muts=>{
+    for(const m of muts){if(m.addedNodes&&m.addedNodes.length){sparkHydrate(document);chartHydrate(document);return;}}
+  });
+  _sparkObs.observe(document.body,{childList:true,subtree:true});
+}
+
+/* ── Full time-series chart ──────────────────────────────
+   The shared uPlot builder behind the price predictor, the player detail
+   view and anything else that plots a real series over gameweeks. One
+   place so the crosshair, the touch handling and the palette are
+   identical everywhere, and so a live panel can push new data into an
+   existing chart instead of re-rendering a string.
+
+   Returns the uPlot instance. Keep it and call `.setData()` on the next
+   tick: that is the whole reason the live match centre stopped
+   re-serialising SVG on every poll. */
+const CHART_H=180;
+function chartTheme(){
+  return {
+    grid:chartVar('--border-2','#1B2026'),
+    text:chartVar('--text-3','#6B7683'),
+    font:'10px '+chartVar('--font-mono','ui-monospace,monospace')
+  };
+}
+function uchart(el,x,series,opts){
+  if(!window.uPlot||!el)return null;
+  opts=opts||{};
+  const t=chartTheme();
+  const w=opts.width||el.clientWidth||el.parentElement&&el.parentElement.clientWidth||520;
+  const axis={stroke:t.text,grid:{stroke:t.grid,width:1},ticks:{stroke:t.grid,width:1},font:t.font};
+  const u=new window.uPlot({
+    width:w,height:opts.height||CHART_H,
+    class:'ge-chart',
+    /* Touch: uPlot's cursor follows pointer events, so a tap on a phone
+       moves the crosshair and the legend without a drag handler of ours.
+       Locking the y-scale to the data range stops a stray pinch from
+       zooming a fixed-scale chart into nothing. */
+    cursor:{x:true,y:true,drag:{x:!!opts.zoom,y:false},points:{size:6}},
+    legend:{show:opts.legend!==false,live:true},
+    scales:{x:{time:!!opts.time}},
+    axes:[
+      {...axis,...(opts.xAxis||{})},
+      {...axis,...(opts.yAxis||{})}
+    ],
+    series:[{label:opts.xLabel||'GW',value:opts.xValue}].concat(
+      series.map(sr=>({
+        label:sr.label,
+        stroke:chartColor(sr.color||'var(--green)'),
+        fill:sr.fill?chartColor(sr.fill):undefined,
+        width:sr.width==null?1.6:sr.width,
+        dash:sr.dash,
+        value:sr.value,
+        points:{show:sr.points!==false,size:4}
+      }))
+    )
+  },[x].concat(series.map(sr=>sr.data)),el);
+  /* Charts live inside panels that resize with the sidebar and on
+     rotation. One observer per chart, cleaned up with the element. */
+  if(window.ResizeObserver&&opts.responsive!==false){
+    const ro=new ResizeObserver(()=>{
+      const nw=el.clientWidth||w;
+      if(nw>0&&Math.abs(nw-u.width)>1)u.setSize({width:nw,height:opts.height||CHART_H});
+    });
+    ro.observe(el);
+  }
+  return u;
 }
 
 /* ── HOME — the terminal view ────────────────────────────
@@ -5272,10 +5474,22 @@ async function hydrateGwhistory(host){
     const area=line+' L'+X(ranks.length-1).toFixed(1)+' '+(RH-bp)+' L'+lp+' '+(RH-bp)+' Z';
     const chipDots=(hist.chips||[]).map(ch=>{const idx=ranks.findIndex(c=>c.event===ch.event);if(idx<0)return '';
       return '<circle cx="'+X(idx).toFixed(1)+'" cy="'+Y(logs[idx]).toFixed(1)+'" r="3.6" fill="var(--amber)" stroke="var(--surface-2)" stroke-width="1.4"><title>'+(CHIP_LABEL[ch.name]||ch.name)+' · GW'+ch.event+'</title></circle>';}).join('');
-    rankChart='<div class="card mb-20"><div class="card-title">Overall rank trajectory</div>'+
-      '<div class="scroll"><svg viewBox="0 0 '+RW+' '+RH+'" style="min-width:'+Math.min(RW,640)+'px;width:100%;height:auto" role="img" aria-label="overall rank over the season">'+
+    /* uPlot, so the crosshair reads the exact rank at any gameweek and a
+       tap does the same on a phone. The y-axis is inverted because a
+       smaller rank is a better one: uPlot has no "reverse" flag, so the
+       series is the negated log and the tick formatter undoes it. */
+    const svgFallback='<div class="scroll"><svg viewBox="0 0 '+RW+' '+RH+'" style="min-width:'+Math.min(RW,640)+'px;width:100%;height:auto" role="img" aria-label="overall rank over the season">'+
       '<path d="'+area+'" fill="var(--green-soft)" opacity="0.55"/>'+
-      '<path d="'+line+'" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linejoin="round"/>'+chipDots+'</svg></div>'+
+      '<path d="'+line+'" fill="none" stroke="var(--green-bright)" stroke-width="2" stroke-linejoin="round"/>'+chipDots+'</svg></div>';
+    rankChart='<div class="card mb-20"><div class="card-title">Overall rank trajectory</div>'+
+      chartHost({
+        x:ranks.map(c=>c.event),
+        series:[{label:'Overall rank',color:'var(--green-bright)',fill:'var(--green-soft)',
+          data:logs.map(v=>-v),width:2}],
+        opts:{height:150,legend:true,xLabel:'GW',
+          yAxis:{},
+          yFmt:'rank'}
+      },svgFallback)+
       '<div class="dl-sub" style="margin-top:8px">Higher is better — the line climbs as your rank improves. Season high '+fmtNum(bestRank)+', now '+fmtNum(nowRank)+(hist.chips&&hist.chips.length?'. Amber dots mark chips played.':'.')+'</div></div>';
   }
 
@@ -9058,9 +9272,36 @@ function summarySections(b,sum,id){
       const op=h.minutes>=60?0.9:h.minutes>0?0.5:0.22;
       return '<rect x="'+(x+2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-4).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="var(--green-bright)" fill-opacity="'+op+'"><title>GW'+h.round+': '+(h.total_points||0)+' pts · '+(h.minutes||0)+' mins</title></rect>'+
         '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(CH-5)+'" text-anchor="middle" style="font-size:var(--fs-min);fill:var(--text-3)">'+h.round+'</text>';}).join('');
+    /* Player detail gets a real chart: crosshair, touch, and a second
+       series for minutes so the "why was that a blank" question is
+       answerable without hovering every bar. */
+    const formFallback='<div class="scroll"><svg viewBox="0 0 '+W+' '+CH+'" style="min-width:'+Math.min(W,520)+'px;width:100%;height:auto" role="img" aria-label="points per gameweek">'+bars+'</svg></div>';
     out+='<div class="card pd-sec"><div class="card-title">Form — last '+H.length+' gameweeks</div>'+
-      '<div class="scroll"><svg viewBox="0 0 '+W+' '+CH+'" style="min-width:'+Math.min(W,520)+'px;width:100%;height:auto" role="img" aria-label="points per gameweek">'+bars+'</svg></div>'+
+      chartHost({
+        x:H.map(h=>h.round),
+        series:[
+          {label:'Points',color:'var(--green-bright)',data:H.map(h=>h.total_points||0),width:2},
+          {label:'Minutes',color:'var(--text-3)',data:H.map(h=>h.minutes||0),width:1,dash:[3,3],points:false}
+        ],
+        opts:{height:120,legend:true,xLabel:'GW'}
+      },formFallback)+
       '<div class="dl-sub" style="margin-top:6px">Bar height = points; faded bars flag limited minutes (rotation or a cameo).</div></div>';
+    /* Price over the season — the price predictor's own series, at the only
+       level the API actually carries one. The panel itself is a nightly
+       cross-section (tonight's probability for every player) with no time
+       axis to plot, so inventing one there would have been a chart about
+       nothing. Here `value` is a real observation per gameweek. */
+    const priced=hist.filter(h=>h.value!=null);
+    if(priced.length>1){
+      out+='<div class="card pd-sec"><div class="card-title">Price this season</div>'+
+        chartHost({
+          x:priced.map(h=>h.round),
+          series:[{label:'Price £m',color:'var(--amber)',
+            data:priced.map(h=>h.value/10),width:2}],
+          opts:{height:110,legend:true,xLabel:'GW'}
+        },'')+
+        '<div class="dl-sub" style="margin-top:6px">Every price change this season. Moves happen once a day at 00:00 UK time.</div></div>';
+    }
     const agg=f=>{const g=hist.filter(f),p=g.reduce((s,h)=>s+(h.total_points||0),0);
       return {n:g.length,ppg:g.length?(p/g.length).toFixed(1):'0.0'};};
     const home=agg(h=>h.was_home),away=agg(h=>!h.was_home);
@@ -16945,48 +17186,102 @@ function cmdkOpen(){
   boot().catch(()=>{});   /* warm the player index for search */
 }
 function cmdkClose(){document.getElementById('cmdk').hidden=true;}
-function cmdkScore(label,q){
-  const l=label.toLowerCase();
-  if(l.startsWith(q))return 3;
-  if(l.includes(q))return 2;
-  let i=0;for(const ch of l){if(ch===q[i])i++;if(i===q.length)return 1;}
-  return 0;
+/* ── Palette search: Fuse.js, weighted ───────────────────
+   Fuse.js (Apache-2.0, krisk/Fuse) replaced a three-tier scorer that
+   ranked prefix > substring > subsequence. That scorer could not handle a
+   typo: "captian" scored zero against "Captain", and so did every
+   misspelt player surname, which is the search people actually run.
+
+   THE WEIGHTS ARE THE POINT, and they are ordered as the brief says —
+   name highest, aliases next, description lowest. Without them a
+   description match ranks level with a name match, and typing "captain"
+   surfaces every panel whose blurb mentions captaincy above the Captain
+   panel itself.
+
+   Fuse returns 0 for a perfect match and 1 for nothing, so scores are
+   inverted into a "higher is better" weight the existing sort already
+   understands. That keeps the call sites, the tie-breakers (a player's
+   season points, a lens's 0.4 floor) and the UI untouched. */
+const CMDK_KEYS=[
+  {name:'name',weight:0.6},
+  {name:'aliases',weight:0.3},
+  {name:'desc',weight:0.1}
+];
+/* threshold 0.4 is loose enough for one or two transposed letters and
+   tight enough that a three-letter query does not match everything;
+   ignoreLocation because a surname can sit anywhere in "first second". */
+const CMDK_FUSE={keys:CMDK_KEYS,includeScore:true,threshold:0.4,ignoreLocation:true,minMatchCharLength:1};
+/* Pure so dev/test-core.mjs can exercise the ranking without a DOM: takes
+   the constructor rather than reaching for window.Fuse. */
+function cmdkSearch(entries,q,FuseCtor){
+  if(!q)return entries.map(e=>({...e,score:e.base==null?1:e.base}));
+  if(!FuseCtor)return cmdkSearchFallback(entries,q);
+  const res=new FuseCtor(entries,CMDK_FUSE).search(q);
+  return res.map(r=>({...r.item,score:(1-(r.score==null?0:r.score))*(r.item.mult==null?1:r.item.mult)}));
 }
-function cmdkItems(q){
+/* Used when the vendor bundle has not loaded. Substring only — worse than
+   Fuse, better than a palette that returns nothing. */
+function cmdkSearchFallback(entries,q){
+  const out=[];
+  for(const e of entries){
+    const hay=((e.name||'')+' '+((e.aliases||[]).join(' '))+' '+(e.desc||'')).toLowerCase();
+    const i=hay.indexOf(q);
+    if(i>=0)out.push({...e,score:(i===0?1:0.6)*(e.mult==null?1:e.mult)});
+  }
+  return out;
+}
+/* Everything the palette can reach, as Fuse documents.
+
+   `name` / `aliases` / `desc` are the weighted search keys; `base` is the
+   resting order with an empty query, and `mult` is the tie-breaker applied
+   to a match (a heavily-scoring player outranks a fringe one on an equal
+   text match). Splitting this out from the ranking is what lets
+   dev/test-core.mjs test the ranking with fixtures instead of the FPL API. */
+function cmdkEntries(q){
   const out=[];
   const verbs=[
-    {label:'Link your FPL team',sub:'action',icon:'squad',run:()=>openMidModal()},
-    {label:'Toggle light / dark theme',sub:'action',icon:'sun',run:()=>toggleTheme()},
-    {label:'Refresh data',sub:'action',icon:'rotate',run:()=>location.reload()},
-    {label:'Export current view as CSV',sub:'action',icon:'arrows',run:()=>{const b=document.getElementById('export-btn');b&&b.click();}},
-    {label:'Keyboard shortcuts',sub:'action',icon:'spark',run:()=>{document.getElementById('kbd-overlay').hidden=false;}}
+    {label:'Link your FPL team',sub:'action',icon:'squad',aliases:['connect','manager id','team id','sign in'],run:()=>openMidModal()},
+    {label:'Toggle light / dark theme',sub:'action',icon:'sun',aliases:['dark mode','light mode','appearance'],run:()=>toggleTheme()},
+    {label:'Refresh data',sub:'action',icon:'rotate',aliases:['reload','update'],run:()=>location.reload()},
+    {label:'Export current view as CSV',sub:'action',icon:'arrows',aliases:['download','csv','spreadsheet'],run:()=>{const b=document.getElementById('export-btn');b&&b.click();}},
+    {label:'Keyboard shortcuts',sub:'action',icon:'spark',aliases:['keys','hotkeys','cheatsheet'],run:()=>{document.getElementById('kbd-overlay').hidden=false;}}
   ];
   Object.keys(PANELS).forEach(id=>{
     const p=PANELS[id];
     if(!canSeePanel(p))return;              /* owner panels stay out of search */
-    out.push({label:p.label,sub:p.areaLabel,icon:p.icon,run:()=>openPanel(id),
-      score:q?cmdkScore(p.label,q)*2+cmdkScore(p.areaLabel,q):1});
+    out.push({name:p.label,aliases:[id],desc:p.areaLabel,
+      label:p.label,sub:p.areaLabel,icon:p.icon,base:1,run:()=>openPanel(id)});
   });
   /* Lenses are searchable by name too. Folding a board into the table would
      otherwise make it unfindable: "Differentials" is what people type, and
      it stopped being a panel the moment it became a view. */
   if(canSeePanel(PANELS.allplayers))PL_LENSES.forEach(l=>{
     if(l.id==='all')return;                 /* that IS the panel, already listed */
-    out.push({label:l.label,sub:'Players · lens',icon:'grid',
-      run:()=>{plSetLens(l.id);openPanel('allplayers',{keepView:true});},
-      score:q?cmdkScore(l.label,q)*2:0.4});
+    out.push({name:l.label,aliases:[l.id],desc:'Players lens',
+      label:l.label,sub:'Players · lens',icon:'grid',base:0.4,
+      run:()=>{plSetLens(l.id);openPanel('allplayers',{keepView:true});}});
   });
-  verbs.forEach(v=>out.push({...v,score:q?cmdkScore(v.label,q)*2:0.5}));
+  verbs.forEach(v=>out.push({name:v.label,aliases:v.aliases||[],desc:'action',
+    label:v.label,sub:v.sub,icon:v.icon,base:0.5,run:v.run}));
+  /* Players join the index only once there is something to match them on.
+     Their surname is the name key and the full name an alias, so "sonny"
+     finds Son without every player whose club blurb contains an S. */
   if(q&&q.length>=2&&MEM._idx){
     MEM._idx.elements.forEach(e=>{
-      const name=(e.web_name+' '+(e.first_name||'')+' '+(e.second_name||'')).toLowerCase();
-      const s=cmdkScore(name,q);
-      if(s)out.push({label:e.web_name,icon:'players',
+      const full=((e.first_name||'')+' '+(e.second_name||'')).trim();
+      out.push({name:e.web_name,aliases:full?[full]:[],
+        desc:(MEM._idx.teams[e.team]?MEM._idx.teams[e.team].name:'')||'',
+        label:e.web_name,icon:'players',base:0,
+        mult:1+Math.min(1,(e.total_points||0)/200),
         sub:teamShort(MEM._idx,e.team)+' · '+posShort(MEM._idx,e.element_type)+' · '+money(e.now_cost),
-        run:()=>openPlayer(e.id),score:s*2+Math.min(1,(e.total_points||0)/200)});
+        run:()=>openPlayer(e.id)});
     });
   }
-  return out.filter(x=>x.score>0).sort((a,c)=>c.score-a.score).slice(0,12);
+  return out;
+}
+function cmdkItems(q){
+  return cmdkSearch(cmdkEntries(q),q,window.Fuse)
+    .filter(x=>x.score>0).sort((a,c)=>c.score-a.score).slice(0,12);
 }
 function cmdkRender(q){
   CMDK.items=cmdkItems(q.trim().toLowerCase());
@@ -17034,40 +17329,100 @@ function rowNav(dir){
 
 /* ── KEYBOARD LAYER ──────────────────────────────────────
    ⌘K palette, `g <key>` navigation chords, j/k row-walking, `?`
-   cheatsheet. All suppressed while typing or while a dialog is open. */
+   cheatsheet. All suppressed while typing or while a dialog is open.
+
+   Matching is tinykeys (MIT, jamiebuilds/tinykeys, ~1.5kB). What it
+   replaced was a single keydown listener with nine ordered `if`s and a
+   hand-rolled `_pendingG` timestamp for the chord. The library owns the
+   parsing, the modifier rules and the sequence timer; what stays here is
+   the part that is ours — which app state suppresses which key.
+
+   Three things about this file's behaviour are load-bearing and are
+   preserved deliberately rather than by accident:
+
+   1. ⌘K WORKS INSIDE TEXT FIELDS. It always has, and closing the palette
+      from its own input needs the same keys that opened it. So the palette
+      binding gets its own handler with `ignore:()=>false`, while every
+      other shortcut goes through kbdIgnore.
+
+   2. A MODIFIER PRESS DOES NOT BREAK AN ARMED CHORD. The old handler
+      returned early on meta/ctrl/alt without clearing `_pendingG`, so
+      `g` → ⌘A → `d` still reached the dashboard. Returning true from
+      `ignore` reproduces that exactly, because tinykeys skips the event
+      before touching its pending map. Filtering the modifiers inside the
+      bindings instead would have reset the sequence.
+
+   3. `g` SWALLOWS THE NEXT CHARACTER. `g` then `j` did nothing before —
+      the chord branch consumed the key and returned. That is why the
+      chords are ONE binding with a regex second press rather than eleven
+      bindings plus a catch-all: the handler looks the key up in G_CHORDS
+      itself, exactly as the old branch did, and swallows anything it does
+      not recognise.
+
+      The eleven-plus-catch-all shape was written first and is wrong in a
+      way only a browser shows. tinykeys stops at the first complete match,
+      so when `g d` fired, the catch-all's own pending state was left
+      half-consumed; the next plain `j` inside the timeout then matched the
+      catch-all's second press and was eaten. Registration order was
+      perfect and the runtime was broken — a unit test on the binding map
+      could not have seen it.
+
+   The one intentional change: a NON-character key after `g` (Escape, an
+   arrow) now reaches its own binding instead of being swallowed. Escape
+   closing the cheatsheet is better than Escape doing nothing because a
+   `g` was pressed a moment earlier. */
 const G_CHORDS={d:'dashboard',s:'squad',t:'transfers',c:'captain',p:'price',
   f:'fixtures',m:'results',i:'injuries',w:'watchlist',r:'gwreport',l:'liverank'};
-let _pendingG=0;
+const CHORD_MS=900;
+/* Shortcuts are an enhancement over a UI that is fully usable with a mouse,
+   so a missing bundle degrades to "no shortcuts" rather than to a thrown
+   error that would abandon the rest of this script. */
+function kbdBind(map,opts){
+  if(!window.tinykeys){console.warn('tinykeys unavailable — keyboard shortcuts are off');return;}
+  return window.tinykeys(document,map,opts);
+}
+/* True when a key event must not reach a shortcut. Order matches the
+   handler this replaced; see note 2 above for why modifiers are filtered
+   here rather than in the bindings. */
+function kbdIgnore(e){
+  if(e.metaKey||e.ctrlKey||e.altKey)return true;
+  const t=e.target;
+  if(t&&((t.matches&&t.matches('input,textarea,select'))||t.isContentEditable))return true;
+  return !document.getElementById('cmdk').hidden;
+}
 function initKeys(){
-  document.addEventListener('keydown',e=>{
-    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){
-      e.preventDefault();
-      const el=document.getElementById('cmdk');
-      el.hidden?cmdkOpen():cmdkClose();
-      return;
-    }
-    if(e.metaKey||e.ctrlKey||e.altKey)return;
-    const t=e.target;
-    if(t&&(t.matches('input,textarea,select')||t.isContentEditable))return;
-    if(!document.getElementById('cmdk').hidden)return;
-    const kbd=document.getElementById('kbd-overlay');
-    if(e.key==='Escape'&&!kbd.hidden){kbd.hidden=true;return;}
-    if(e.key==='?'){kbd.hidden=!kbd.hidden;return;}
-    if(!kbd.hidden)return;
-    if(_pendingG&&Date.now()-_pendingG<900){
-      const id=G_CHORDS[e.key.toLowerCase()];
-      _pendingG=0;
-      if(id&&PANELS[id]){e.preventDefault();openPanel(id);}
-      return;
-    }
-    if(e.key.toLowerCase()==='g'){_pendingG=Date.now();return;}
-    if(e.key==='j'){e.preventDefault();rowNav(1);return;}
-    if(e.key==='k'){e.preventDefault();rowNav(-1);return;}
-    if(e.key==='Enter'){
-      const sel=document.querySelector('.row-sel');
-      if(sel){e.preventDefault();sel.click();}
-    }
-  });
+  const byId=id=>document.getElementById(id);
+  const sheetOpen=()=>!byId('kbd-overlay').hidden;
+  /* ⌘K / Ctrl+K. Both modifiers on every platform, because the old test was
+     `metaKey||ctrlKey` rather than tinykeys' platform-specific `$mod`; each
+     binding marks the other modifier optional so holding both still works. */
+  const togglePalette=e=>{
+    e.preventDefault();
+    const el=byId('cmdk');
+    el.hidden?cmdkOpen():cmdkClose();
+  };
+  kbdBind({'[Control]+Meta+k':togglePalette,'[Meta]+Control+k':togglePalette},{ignore:()=>false});
+
+  const binds={};
+  /* One sequence for all eleven chords. The second press matches any single
+     character so the binding always completes, which both keeps `g` from
+     leaking a key through to `j`/`k`/`Enter` and leaves tinykeys with no
+     half-finished sequence to carry into the next keystroke. */
+  binds['[Shift]+g [Shift]+(.)']=e=>{
+    if(sheetOpen())return;
+    const id=G_CHORDS[(e.key||'').toLowerCase()];
+    if(id&&PANELS[id]){e.preventDefault();openPanel(id);}
+  };
+  binds.Escape=()=>{if(sheetOpen())byId('kbd-overlay').hidden=true;};
+  binds['[Shift]+?']=()=>{const k=byId('kbd-overlay');k.hidden=!k.hidden;};
+  binds.j=e=>{if(sheetOpen())return;e.preventDefault();rowNav(1);};
+  binds.k=e=>{if(sheetOpen())return;e.preventDefault();rowNav(-1);};
+  binds.Enter=e=>{
+    if(sheetOpen())return;
+    const sel=document.querySelector('.row-sel');
+    if(sel){e.preventDefault();sel.click();}
+  };
+  kbdBind(binds,{ignore:kbdIgnore,timeout:CHORD_MS});
   document.getElementById('kbd-overlay').addEventListener('click',e=>{
     if(e.target.id==='kbd-overlay')e.target.hidden=true;
   });
@@ -17290,6 +17645,7 @@ function homePanel(){return 'dashboard';}
 function init(){
   buildNav();
   buildBottomNav();
+  sparkWatch();
   applyTheme(storedTheme()||'dark');
   const home=homePanel();
   currentPanel=home;
@@ -17376,9 +17732,12 @@ function init(){
   setInterval(tickTicker,1000);
 
   /* Close drawer / modals on Escape */
-  document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'){closeSidebar();closeMidModal();closeUpgrade();closeAccount();closePlayer();closeXpDrawer();closeMoreSheet();}
-  });
+  /* Escape dismisses every overlay, and unlike the shortcuts above it must
+     fire from inside a text field too — the manager-id modal is a form, and
+     Escape has always closed it. Hence `ignore:()=>false` rather than
+     kbdIgnore. */
+  kbdBind({Escape:()=>{closeSidebar();closeMidModal();closeUpgrade();closeAccount();closePlayer();closeXpDrawer();closeMoreSheet();}},
+    {ignore:()=>false});
 }
 
 document.addEventListener('DOMContentLoaded',init);

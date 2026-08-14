@@ -54,6 +54,28 @@ async function bundleNative() {
   });
 }
 
+/* Third-party runtime libraries — uPlot, Fuse.js and tinykeys.
+
+   index.html is copied verbatim rather than bundled, so the inline script
+   cannot import anything. This is the seam: one esbuild pass turns
+   src/vendor/index.js into www/vendor.js (globals on `window`) and, because
+   the entry imports uPlot's stylesheet, www/vendor.css alongside it.
+
+   Bundled rather than pulled from a CDN so the shell keeps working offline,
+   the service worker can precache it, and the exact versions are pinned by
+   package-lock.json instead of by somebody else's edge cache. */
+async function bundleVendor() {
+  await build({
+    entryPoints: [join(ROOT, 'src/vendor/index.js')],
+    bundle: true,
+    minify: true,
+    format: 'iife',
+    target: ['es2019'],
+    loader: { '.css': 'css' },
+    outfile: join(OUT, 'vendor.js')
+  });
+}
+
 async function bundleAuth() {
   await build({
     entryPoints: [join(ROOT, 'src/auth/index.js')],
@@ -102,7 +124,8 @@ await clean();
 await copyStatic();
 await bundleNative();
 await bundleAuth();
+await bundleVendor();
 const efl = await buildEfl();
-console.log('✓ Built www/ (index.html + native.js + auth.js)');
+console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');
 console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${efl.files} files, 6 routes, `
   + `${efl.record.rounds} recorded round(s), ${efl.record.graded} graded)`);

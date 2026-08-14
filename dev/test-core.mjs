@@ -12,6 +12,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+/* The palette ranks through Fuse.js in the browser. Importing the same
+   package here means the test exercises the real matcher rather than a
+   mock of it — the whole point of the change was typo tolerance, and a
+   mock would happily "tolerate" whatever we told it to. */
+import Fuse from 'fuse.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -60,6 +65,21 @@ function extractConst(src, name) {
   const idx = src.indexOf('const ' + name + '=');
   if (idx < 0) throw new Error('const not found: ' + name);
   return extractBlock(src, idx) + ';';
+}
+/* extractConst brace-matches from the first `{`, which is right for an
+   object literal and wrong for an array of them: `const X=[{a},{b}]` gives
+   back just `{a}`. Array constants get their own extractor rather than a
+   reshaped source, because the source should read the way it wants to. */
+function extractArrayConst(src, name) {
+  const idx = src.indexOf('const ' + name + '=[');
+  if (idx < 0) throw new Error('array const not found: ' + name);
+  const open = src.indexOf('[', idx);
+  let depth = 0;
+  for (let j = open; j < src.length; j++) {
+    if (src[j] === '[') depth++;
+    else if (src[j] === ']' && --depth === 0) return src.slice(idx, j + 1) + ';';
+  }
+  throw new Error('unterminated array const: ' + name);
 }
 function extractLine(src, re) {
   const m = src.match(re);
@@ -113,6 +133,16 @@ const pieces = [
   extractFn(html, 'draftReserveAdd'),
   extractFn(html, 'draftBuild'),
   extractFn(html, 'draftFillGaps'),
+  /* Palette search: pure, and takes the Fuse constructor as an argument
+     precisely so it can be tested without a DOM or a window. */
+  extractArrayConst(html, 'CMDK_KEYS'),
+  extractConst(html, 'CMDK_FUSE'),
+  extractFn(html, 'cmdkSearchFallback'),
+  extractFn(html, 'cmdkSearch'),
+  /* Sparkline geometry — the SVG fallback still has to be right, because it
+     is what renders when the vendor bundle has not loaded. */
+  extractFn(html, 'sparkPoints'),
+  extractFn(html, 'sparkColor'),
   extractFn(aiSrc, 'fitJSON'),
   /* bestTransfer drives the dashboard/debrief suggestion; stub its only
      dependency (horizonXP) so we test the logic, not the xP maths. */
@@ -220,7 +250,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2141,6 +2171,189 @@ ok(Object.keys(core.clubDepth([], 1, 10)).length === 0, 'an empty squad yields n
     (e) => e._y);
   ok(withBad.points.length === 8, 'an uncomputable projection is not plotted (' + withBad.points.length + ')');
   ok(Math.abs(withBad.fits[2].m - 1.0) < 1e-9, 'and does not move the curve');
+}
+
+/* ── palette search ranking (Fuse.js) ───────────────────── */
+section('palette: the weights put a name match above a description match');
+{
+  /* The ordering the brief asks for and the reason it matters. "captain"
+     appears in the Captain panel's NAME and in several other panels'
+     descriptions. Before the weights, those ranked together. */
+  const entries = [
+    { name: 'Captain', aliases: ['captain'], desc: 'Decisions', base: 1, label: 'Captain' },
+    { name: 'Transfers', aliases: ['transfers'], desc: 'Captain and transfer planning', base: 1, label: 'Transfers' },
+    { name: 'Chips', aliases: ['chips'], desc: 'When to play your captain chip', base: 1, label: 'Chips' }
+  ];
+  const r = core.cmdkSearch(entries, 'captain', Fuse);
+  ok(r.length > 0, 'a query returns matches');
+  const ranked = r.slice().sort((a, b) => b.score - a.score);
+  ok(ranked[0].name === 'Captain', 'the panel NAMED Captain ranks first (' + ranked[0].name + ')');
+  const cap = r.find((x) => x.name === 'Captain');
+  const desc = r.find((x) => x.name === 'Chips');
+  ok(!desc || cap.score > desc.score, 'and outranks a panel that only mentions it in its description');
+
+  /* The weights themselves, asserted rather than assumed: a later edit that
+     reorders them would still pass the ranking test above by luck. */
+  const byKey = Object.fromEntries(core.CMDK_KEYS.map((k) => [k.name, k.weight]));
+  ok(byKey.name > byKey.aliases, 'name outweighs aliases');
+  ok(byKey.aliases > byKey.desc, 'aliases outweigh description');
+}
+
+section('palette: a typo still finds the command');
+{
+  /* The reason Fuse is here at all. The scorer it replaced was
+     prefix / substring / subsequence, and "captian" is none of those
+     against "Captain" — it scored zero and the palette said "No matches". */
+  const entries = [
+    { name: 'Captain', aliases: [], desc: 'Decisions', base: 1 },
+    { name: 'Fixtures', aliases: [], desc: 'Planning', base: 1 }
+  ];
+  const typo = core.cmdkSearch(entries, 'captian', Fuse);
+  ok(typo.some((x) => x.name === 'Captain'), 'transposed letters still match');
+  /* And a misspelt surname, which is the search people actually run. */
+  const players = [
+    { name: 'Haaland', aliases: ['Erling Haaland'], desc: 'Manchester City', base: 0 },
+    { name: 'Saka', aliases: ['Bukayo Saka'], desc: 'Arsenal', base: 0 }
+  ];
+  ok(core.cmdkSearch(players, 'halland', Fuse).some((x) => x.name === 'Haaland'),
+    'a misspelt player name still matches');
+  /* Tolerance has a limit — otherwise every query matches everything and
+     the ranking is noise. */
+  ok(!core.cmdkSearch(players, 'zzzzzz', Fuse).some((x) => x.name === 'Haaland'),
+    'but an unrelated query does not match');
+}
+
+section('palette: an empty query keeps the resting order, and mult breaks ties');
+{
+  const entries = [
+    { name: 'Squad', aliases: [], desc: 'x', base: 1 },
+    { name: 'Diffs', aliases: [], desc: 'x', base: 0.4 },
+    { name: 'Theme', aliases: [], desc: 'x', base: 0.5 }
+  ];
+  const r = core.cmdkSearch(entries, '', Fuse).sort((a, b) => b.score - a.score);
+  ok(r.length === 3, 'everything is offered with no query');
+  ok(r[0].name === 'Squad' && r[2].name === 'Diffs',
+    'panels above verbs above lenses, as before (' + r.map((x) => x.name).join(',') + ')');
+
+  /* Two players matching a query equally well are separated by season
+     points, which is what `mult` carries. */
+  const two = [
+    { name: 'Smith', aliases: [], desc: 'Club', base: 0, mult: 2 },
+    { name: 'Smith', aliases: [], desc: 'Other', base: 0, mult: 1 }
+  ];
+  const s2 = core.cmdkSearch(two, 'smith', Fuse).sort((a, b) => b.score - a.score);
+  ok(s2[0].mult === 2, 'the higher-scoring player wins an equal text match');
+}
+
+section('palette: the no-Fuse fallback still returns something usable');
+{
+  /* If vendor.js fails to load the palette must degrade to substring
+     matching, not to an empty list. */
+  const entries = [
+    { name: 'Captain', aliases: [], desc: 'Decisions', base: 1 },
+    { name: 'Fixtures', aliases: [], desc: 'Planning', base: 1 }
+  ];
+  const r = core.cmdkSearch(entries, 'capt', null);
+  ok(r.some((x) => x.name === 'Captain'), 'a substring match survives with no Fuse');
+  ok(!r.some((x) => x.name === 'Fixtures'), 'and an unrelated entry does not');
+  ok(core.cmdkSearch(entries, 'captian', null).length === 0,
+    'the fallback cannot do typos — which is exactly why Fuse is the default');
+}
+
+/* ── keyboard shortcut registration (tinykeys) ───────────── */
+section('shortcuts: every chord is registered, and in an order that matters');
+{
+  /* These are read out of the shipped source rather than restated, so a
+     chord deleted from index.html fails here instead of silently
+     disappearing from the app. */
+  const chords = html.match(/const G_CHORDS=\{[\s\S]*?\};/)[0];
+  const keys = [...chords.matchAll(/(\w):'(\w+)'/g)].map((m) => m[1]);
+  ok(keys.length === 11, 'eleven chords defined (' + keys.length + ')');
+
+  const init = html.slice(html.indexOf('function initKeys()'));
+  const body = init.slice(0, init.indexOf('\nfunction '));
+  ok(/kbdBind\(\{'\[Control\]\+Meta\+k'/.test(body), 'Ctrl+K is bound');
+  ok(/'\[Meta\]\+Control\+k'/.test(body), 'and Meta+K, so both work on every platform');
+  ok(/ignore:\(\)=>false/.test(body), 'the palette binding opts out of the ignore rule');
+  /* All eleven chords are ONE sequence whose second press is a regex, and
+     that is a correctness requirement rather than a tidiness one.
+
+     Registering them as eleven separate sequences plus a catch-all looked
+     right and ran wrong: tinykeys stops at the first complete match, so a
+     fired chord left the catch-all's pending state half-consumed and the
+     next plain `j` inside the timeout matched it and was swallowed. A
+     single always-completing binding cannot strand a sibling. This asserts
+     the shape because the bug it prevents is invisible in a binding map —
+     it took a real browser to see. */
+  const gBinds = [...body.matchAll(/binds\[?'?\[Shift\]\+g /g)].length;
+  ok(gBinds === 1, 'exactly one `g` sequence is registered (' + gBinds + ')');
+  ok(/binds\['\[Shift\]\+g \[Shift\]\+\(\.\)'\]/.test(body),
+    'and its second press is a regex, so it always completes');
+  ok(/G_CHORDS\[\(e\.key\|\|''\)\.toLowerCase\(\)\]/.test(body),
+    'with the lookup inside the handler, exactly as the old branch did');
+  const iCatch = body.indexOf("binds['[Shift]+g [Shift]+(.)']");
+  const iJ = body.indexOf('binds.j=');
+  ok(iCatch > -1 && iJ > iCatch, 'and it is registered before j/k/Enter');
+
+  ok(/timeout:CHORD_MS/.test(body), 'the chord timeout is passed to tinykeys');
+  ok(/const CHORD_MS=900;/.test(html), 'and is still 900ms, as the hand-rolled one was');
+}
+
+section('shortcuts: the suppression rules survive the move to tinykeys');
+{
+  const fn = html.slice(html.indexOf('function kbdIgnore('));
+  const body = fn.slice(0, fn.indexOf('\nfunction '));
+  ok(/e\.metaKey\|\|e\.ctrlKey\|\|e\.altKey/.test(body), 'modifier combos are ignored');
+  ok(/input,textarea,select/.test(body), 'typing in a field suppresses shortcuts');
+  ok(/isContentEditable/.test(body), 'and so does a contenteditable');
+  ok(/cmdk/.test(body), 'and an open palette owns the keyboard');
+
+  /* The modifier check must come FIRST. It is what preserves an armed chord
+     across a modifier press: returning true from ignore makes tinykeys skip
+     the event before it touches its pending map, exactly as the old handler
+     returned without clearing _pendingG. */
+  ok(body.indexOf('metaKey') < body.indexOf('input,textarea'),
+    'modifiers are checked before the focus rule, which is what keeps a chord armed');
+  /* The binding is gone; the comments explaining what it used to do are
+     deliberately still there, so this looks for an assignment rather than a
+     mention. A test that forbade the NAME would have quietly punished the
+     documentation. */
+  ok(!/_pendingG\s*=/.test(html) && !/let _pendingG/.test(html),
+    'the hand-rolled chord timer is gone from the code');
+}
+
+section('shortcuts: the library is the one we think it is');
+{
+  /* There is an unrelated GPL "tinykeys" P5.js project. Taking it by
+     mistake would put a copyleft licence into a closed shell, and the
+     mistake is one `npm install` away, so it is asserted rather than
+     trusted to a code review. */
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'node_modules/tinykeys/package.json'), 'utf8'));
+  ok(pkg.license === 'MIT', 'tinykeys is MIT (' + pkg.license + ')');
+  ok(JSON.stringify(pkg.repository).includes('jamiebuilds/tinykeys'),
+    'and is jamiebuilds/tinykeys, not the P5.js project of the same name');
+  const up = JSON.parse(readFileSync(join(ROOT, 'node_modules/uplot/package.json'), 'utf8'));
+  ok(up.license === 'MIT', 'uPlot is MIT');
+  ok(JSON.stringify(up.repository).includes('leeoniya/uPlot'), 'and is leeoniya/uPlot');
+  const fu = JSON.parse(readFileSync(join(ROOT, 'node_modules/fuse.js/package.json'), 'utf8'));
+  ok(fu.license === 'Apache-2.0', 'Fuse.js is Apache-2.0');
+  ok(JSON.stringify(fu.repository).includes('krisk/Fuse'), 'and is krisk/Fuse');
+
+  /* Every bundled library needs a LICENSES.md entry — the rule is only
+     real if something enforces it. */
+  const lic = readFileSync(join(ROOT, 'LICENSES.md'), 'utf8');
+  for (const name of ['uPlot', 'Fuse.js', 'tinykeys']) {
+    ok(lic.includes(name), 'LICENSES.md documents ' + name);
+  }
+}
+
+section('sparklines: the SVG fallback geometry is unchanged');
+{
+  ok(core.sparkPoints([1, null, 2, NaN, 3]).length === 3, 'non-finite values are dropped');
+  ok(core.sparkColor([1, 5]) === 'var(--green)', 'a rising series is green');
+  ok(core.sparkColor([5, 1]) === 'var(--red)', 'a falling series is red');
+  ok(core.sparkColor([5, 5]) === 'var(--green)', 'a flat series reads as not-falling, as before');
+  ok(core.sparkColor([5, 1], { color: 'var(--blue)' }) === 'var(--blue)', 'an explicit colour wins');
 }
 
 /* ── summary ────────────────────────────────────────────── */
