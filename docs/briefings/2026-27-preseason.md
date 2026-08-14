@@ -538,6 +538,73 @@ nothing. The comparison is scoped per club for that reason. And the table's
 own shorthand is ambiguous in exactly those two places, which is worth knowing
 before quoting a single cell from it.
 
+## Outside market read — GW1 odds, 14 August 2026
+
+A third-party page converting bookmaker odds into clean-sheet, goal and assist
+probabilities for gameweek one, captured a week before the deadline and stored
+in full at `docs/benchmarks/pl-gw1-market-odds.json` so that git history proves
+it predates the football. It is **not our numbers**, nothing here is rewritten
+from it, and the percentages are a snapshot of a moving market — they are in
+the data file and deliberately not asserted by any test.
+
+**All twenty rows agree with our GW1 fixture list on opponent and venue.**
+Diffed mechanically against the structured edition rather than by eye. Two
+documents built for different purposes, from different upstreams, matching on
+every row is the cheapest check available and it passed outright. Twenty rows
+resolve to ten games, both halves present, no pair over 100%.
+
+**The useful result is about our scale, not theirs.** Mean clean-sheet
+probability grouped by *our own* difficulty label:
+
+| Our label | n | Mean any-CS | Range |
+|---|---|---|---|
+| easy | 3 | 46.7% | 34.4–60.3 |
+| moderate | 6 | 25.8% | 16.9–31.9 |
+| hard | 8 | 23.6% | 19.8–28.3 |
+| very hard | 3 | 11.8% | 9.6–14.6 |
+
+Easy and very hard are cleanly apart and do not overlap at all. **Moderate and
+hard are 2.2 points apart on the mean and overlap almost completely** — the
+hardest fixture we call moderate (Newcastle, 16.9%) is worse than every single
+fixture we call hard. On this evidence our scale is three bands wearing four
+labels. That is a finding about our model rather than about the market, it is
+one gameweek of evidence and not a verdict, and it is written here rather than
+quietly acted on.
+
+**The one row where we differ by more than a quartile is Newcastle at home to
+Liverpool.** We call it moderate; the market ranks it seventeenth of twenty at
+16.9%. Same fixture, incidentally, with the lowest combined clean-sheet
+probability of the ten (41.4, against 69.9 for Arsenal v Coventry) — the game
+it expects most goals from. Those two facts are the same statement seen twice,
+not two pieces of evidence, which is worth saying because a briefing that
+counted them separately would sound twice as confident as it should.
+
+**Where it touches open questions in this file:**
+
+- **Gyokeres has the second-highest goal probability on the page.** The outside
+  set-piece table already put him on Arsenal's penalties over our hedged Saka.
+  Two independent outside sources now lean the same way against our line. Still
+  not settled — neither of them is a team sheet.
+- **Saka reads 66.0% to return, the best of any Arsenal player here.** Read it
+  against the page's own subtitle: *"(Assuming player starts)"*. Our 11 August
+  log has him eased back after a long World Cup with an achilles problem. This
+  source is least useful exactly where our uncertainty is greatest, and that is
+  a property of odds-derived projections generally rather than a complaint
+  about this one.
+- **Four Manchester United attackers sit in the top fourteen**, all at Hull,
+  alongside the second-best clean-sheet number in the division. The market's
+  single strongest opinion this week is about Manchester United away.
+- **Joao Pedro at 57.7% to return**, against a Fulham side logged the same day
+  as the oldest in the league with the fewest high turnovers, and rested
+  through the World Cup. Three facts from three sources pointing one way.
+
+**Two cautions on the source itself.** The fixture label names the *game*, not
+the side — Semenyo reads "MCI–BOU" and our register has him joining Manchester
+City *from* Bournemouth, which the label cannot distinguish from the reverse.
+And the player table is page 1 of 16, so **absence proves nothing**: Gonzalo
+Garcia, added to the Fulham block on this same day, is not on page one and no
+inference is available from that.
+
 ---
 
 # The 20 clubs

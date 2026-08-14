@@ -37,7 +37,18 @@ console.log('• briefing: club blocks');
   /* The shortlist is not a club. Anchoring on "## <n>." rather than on any
      heading is what keeps the league-wide sections out of a per-club parse. */
   ok(!b.some((x) => /shortlist/i.test(x.name)), 'the shortlist is not read as a club');
-  ok(/Haaland/.test(b[1].body), 'the last block runs to the end of the document');
+  /* This assertion used to read the other way — "the last block runs to the
+     end of the document" — and it PINNED A BUG. Not being read as a club is
+     not the same as being kept out of the club bodies: club 20 was absorbing
+     the shortlist, the caveats and the sources, so Hull City's block came
+     back for Haaland, Gyokeres, Watkins, Saka and Fernandes, none of whom it
+     mentions. A test can hold a defect in place by describing it accurately.
+     The question to ask of an assertion is not "is this what the code does"
+     but "is this what the code should do". */
+  ok(!/Haaland/.test(b[1].body),
+    'the last block stops at the next top-level heading, so the shortlist is '
+    + 'out of the per-club parse at BOTH ends');
+  ok(/body two/.test(b[1].body), 'and the last club still keeps its own body');
 }
 
 console.log('• briefing: a transfer fee is not an FPL price');
@@ -1058,6 +1069,90 @@ console.log('\n• briefing: both editions state the same start date');
      season already gone — the same rollover trap the freshness check exists
      for, applied to the number this document hard-codes. */
   ok(new Date(x).getUTCFullYear() === 2026, 'and it is this season\'s, not last season\'s');
+}
+
+/* ── the market snapshot, and what is safe to assert about it ─────────
+   docs/benchmarks/pl-gw1-market-odds.json is a dated capture of a
+   betting-odds-derived projection, taken a week before the GW1 deadline so
+   that git history proves it predates the football.
+
+   The PROBABILITIES are not asserted here and must not be. They are a
+   snapshot of a moving market; a test that pinned 60.3% would fail the next
+   time somebody re-read the page and would be recording a moment rather than
+   a rule. What IS durable is the fixture list underneath them — an
+   independent source's opponent-and-venue pairs, which cannot drift — and
+   the internal consistency of the file itself. */
+console.log('\n• briefing: the market snapshot agrees with our GW1 fixtures');
+{
+  const snap = JSON.parse(readFileSync(join(ROOT, 'docs/benchmarks/pl-gw1-market-odds.json'), 'utf8'));
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const teams = teamsFromHtml(html);
+
+  ok(Date.parse(snap.capturedAt) < Date.parse(snap.deadlineAt),
+    'the capture predates the deadline, which is the only reason it is worth keeping');
+  ok(snap.cleanSheets.length === 20, '20 rows, one per club (' + snap.cleanSheets.length + ')');
+
+  /* Every row against our own GW1 line. This is the assertion that earns the
+     file: two documents built for different purposes, from different
+     upstreams, agreeing on all twenty opponent-and-venue pairs. */
+  const SHORT = { Brighton: 'Brighton & Hove Albion', Leeds: 'Leeds United',
+    Newcastle: 'Newcastle United', Spurs: 'Tottenham Hotspur',
+    'Man Utd': 'Manchester United', 'Man City': 'Manchester City',
+    "Nott'm Forest": 'Nottingham Forest' };
+  let matched = 0;
+  for (const row of snap.cleanSheets) {
+    const t = teams.find((x) => x.name === row.team);
+    if (!t) { ok(false, 'no block for ' + row.team); continue; }
+    const gw1 = (t.fx || []).find((f) => String(f[0]) === '1');
+    if (!gw1) { ok(false, 'no GW1 fixture for ' + row.team); continue; }
+    const m = String(gw1[1]).match(/^(.*)\s\((H|A)\)$/);
+    /* Our fx cells use display shorthand ("Man Utd", "Nott'm Forest"); the
+       snapshot stores full block names. Compare on the resolved name. */
+    const oursOpp = m && (SHORT[m[1]] || m[1]);
+    const theirs = row.opp;
+    const same = oursOpp && (oursOpp === theirs
+      || theirs.indexOf(oursOpp) === 0 || oursOpp.indexOf(theirs) === 0);
+    ok(same && m[2] === row.venue,
+      row.team + ' GW1: ours ' + gw1[1] + ' vs theirs ' + theirs + ' (' + row.venue + ')');
+    if (same && m[2] === row.venue) matched++;
+    /* The difficulty stored beside each row must be the one our register
+       actually holds, or the band comparison in the briefing is comparing
+       against a copy that has since drifted. */
+    ok(row.ourDifficulty === gw1[2],
+      row.team + ' carries our CURRENT difficulty label (' + row.ourDifficulty + ' vs ' + gw1[2] + ')');
+  }
+  ok(matched === 20, 'all 20 opponent-and-venue pairs agree (' + matched + ')');
+  ok(snap.verifiedAgainstOurRegister.fixturesAgreeing === matched,
+    'and the count recorded in the file is the count the test just measured');
+
+  /* 20 rows are 10 games seen twice. Both halves present, and two clean
+     sheets in one match is a 0-0 — possible, so the pair may sum high, but
+     never above 100 unless the conversion is broken. */
+  const by = Object.fromEntries(snap.cleanSheets.map((r) => [r.team, r]));
+  const games = new Set();
+  for (const r of snap.cleanSheets) {
+    const other = snap.cleanSheets.find((x) => x.team.indexOf(r.opp) === 0 || r.opp.indexOf(x.team) === 0);
+    ok(!!other, r.team + "'s opponent " + r.opp + ' has its own row');
+    if (!other) continue;
+    ok(other.venue !== r.venue, r.team + ' v ' + other.team + ': exactly one side is at home');
+    ok(r.anyCS + other.anyCS <= 100,
+      r.team + ' v ' + other.team + ' clean-sheet pair sums to ' + (r.anyCS + other.anyCS).toFixed(1));
+    games.add([r.team, other.team].sort().join('|'));
+  }
+  ok(games.size === 10, '20 rows resolve to 10 games (' + games.size + ')');
+  ok(by['Arsenal'].anyCS > by['Coventry City'].anyCS,
+    'and the direction is sane: the champions at home are likelier to shut out the promoted side');
+
+  /* The player rows only make sense against the ten games in the same file. */
+  const codes = new Set();
+  for (const r of snap.cleanSheets) codes.add(r.team);
+  for (const p of snap.players) {
+    ok(/^[A-Z]{3}-[A-Z]{3}$/.test(p.fixture), p.name + ' has a well-formed fixture code');
+    ok(p.anyReturn >= Math.max(p.goal, p.assist),
+      p.name + ': any-return is at least as likely as either leg alone');
+  }
+  ok(snap.whatThisIsNot.some((s) => /Assuming player starts/i.test(s)),
+    'the minutes caveat is on the file, not just in the prose that quotes it');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

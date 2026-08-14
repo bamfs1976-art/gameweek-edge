@@ -13,14 +13,33 @@
 
 /* Club blocks are "## <n>. <Club> (...)" under "# The 20 clubs". Anchoring on
    the numbering rather than on any heading keeps the league-wide headlines and
-   the shortlist out of the per-club parse. */
+   the shortlist out of the per-club parse.
+
+   That was only half true until 14 August. Every block ended where the next
+   one began, but the LAST one ended at end-of-file — so club 20 (Hull City)
+   silently absorbed the quick shortlist, the data caveats and the sources: a
+   1.5k block reading as 10.5k. Nothing had noticed because nothing had asked
+   a question the extra text could answer wrongly. The moment one did — "which
+   blocks name Haaland?" — Hull came back for Haaland, Gyokeres, Watkins, Saka
+   and Fernandes, none of whom it has ever mentioned.
+
+   Same shape as the clubMatcher bug that turned Villarreal into Aston Villa:
+   a rule that is wrong in general and correct on every input tried so far.
+   The last block now ends at the next top-level heading, so "the shortlist is
+   out of the per-club parse" is true at both ends rather than one. */
 export function clubBlocks(src) {
   const out = [];
   const re = /^## (\d+)\.\s+(.+)$/gm;
   const heads = [...src.matchAll(re)];
   heads.forEach((h, i) => {
     const start = h.index + h[0].length;
-    const end = i + 1 < heads.length ? heads[i + 1].index : src.length;
+    let end;
+    if (i + 1 < heads.length) {
+      end = heads[i + 1].index;
+    } else {
+      const after = src.slice(start).search(/^# \S/m);
+      end = after < 0 ? src.length : start + after;
+    }
     out.push({ n: +h[1], name: h[2].replace(/\s*\(.*$/, '').trim(), body: src.slice(start, end) });
   });
   return out;
