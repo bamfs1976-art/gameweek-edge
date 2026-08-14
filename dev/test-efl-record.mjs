@@ -924,6 +924,51 @@ ok('the head-to-head named in the status is the one the benchmarks describe', ()
     'the season-long relegation claim is kept separate from tonight');
 });
 
+ok('the team sheets were captured before the lockout, and settle what they claim', () => {
+  const l = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-wolves-blackburn-lineups.json'), 'utf8'));
+  const nate = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-natethegreat.json'), 'utf8'));
+  const tips = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
+
+  /* A line-up read after kick-off proves nothing about what was knowable,
+     so the timestamp is the whole licence for this file to exist. */
+  assert.ok(Date.parse(l.capturedAt) < Date.parse(l.roundLockoutAt),
+    'captured before the lockout');
+  assert.equal(l.lineups['Wolverhampton Wanderers'].xi.length, 11, 'eleven Wolves players');
+  assert.equal(l.lineups['Blackburn Rovers'].xi.length, 11, 'eleven Blackburn players');
+
+  /* Every player the file says was "settled" must actually appear in a
+     starting XI here, and must actually have been picked by the source it
+     credits. Either half being wrong would turn this into corroboration of
+     something nobody claimed. */
+  const surname = (x) => String(x).trim().split(/\s+/).pop().toLowerCase();
+  const starters = new Set(Object.values(l.lineups)
+    .filter((t) => t && t.xi).flatMap((t) => t.xi.map((p) => surname(p.name))));
+  for (const s of l.outsidePicksSettledByThisSheet) {
+    assert.match(s.verdict, /^STARTS/, `${s.player} verdict is a start`);
+    assert.ok(starters.has(surname(s.player)), `${s.player} is really in an XI`);
+  }
+  const named = [
+    ...nate.defenders.map((d) => surname(d.name)),
+    ...tips.players.map((p) => surname(p.name))
+  ];
+  for (const s of l.outsidePicksSettledByThisSheet) {
+    assert.ok(named.includes(surname(s.player)),
+      `${s.player} was really picked by an outside source we hold`);
+  }
+
+  /* The correlation warning. Two of the three pay out on the same clean
+     sheet, and the file must say so — counting them as independent would
+     inflate the outside case against our own club pick. */
+  assert.match(l.theShapeThisRevealsInTheHeadToHead.guardAgainstDoubleCounting,
+    /correlated/i, 'the double-counting guard is stated');
+
+  /* Krejci is absent from the squad and the file must refuse to conclude
+     anything from that — the week's recurring lesson, applied where it
+     would be convenient to forget it. */
+  assert.match(l.observedNotConcluded.whyNoConclusionIsDrawn, /not the same as a finding/i,
+    'absence from one squad is not read as a departure');
+});
+
 ok('the status records no prediction it could later be graded kindly against', () => {
   const s = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01-prelock-status.json'), 'utf8'));
   assert.ok(s.predictionsDeliberatelyNotMade,

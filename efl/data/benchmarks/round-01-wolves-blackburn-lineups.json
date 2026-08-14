@@ -1,0 +1,81 @@
+{
+  "round": 1,
+  "kind": "team-sheets",
+  "fixture": "Wolverhampton Wanderers v Blackburn Rovers",
+  "venue": "Molineux Stadium",
+  "competition": "Sky Bet Championship",
+  "capturedAt": "2026-08-14T18:20:00.000Z",
+  "roundLockoutAt": "2026-08-14T19:00:00.000Z",
+  "minutesBeforeLockout": 40,
+  "note": "The round's first fixture, and the one match in which this project holds a pick opposed by outside sources. Team sheets captured BEFORE the lockout and before kick-off, which is the only reason they can settle anything — a line-up read afterwards proves nothing about what was knowable.",
+  "readFrom": "the two clubs' published starting-XI graphics",
+  "whyThisIsHere": "Not for our own entry, which was recorded on 13 August and cannot move. It is here because three separately-named outside selections turn out to be in the same XI, and whether they STARTED is the fact that stops being checkable the moment the whistle goes.",
+  "lineups": {
+    "Wolverhampton Wanderers": {
+      "captain": "Toti",
+      "xi": [
+        { "no": 25, "name": "Bentley" }, { "no": 2, "name": "Trippier" },
+        { "no": 15, "name": "Mosquera" }, { "no": 24, "name": "Toti" },
+        { "no": 6, "name": "Wolfe" }, { "no": 5, "name": "Munetsi" },
+        { "no": 7, "name": "Andre" }, { "no": 28, "name": "Lopez" },
+        { "no": 21, "name": "R. Gomes" }, { "no": 36, "name": "Mane" },
+        { "no": 10, "name": "Armstrong" }
+      ],
+      "subs": ["Sa", "S. Bueno", "Jimenez", "Lima", "Doyle", "Chirewa", "Djiga", "Tchatchoua", "Edozie"]
+    },
+    "Blackburn Rovers": {
+      "captain": "Cantwell",
+      "xi": [
+        { "no": 22, "name": "Toth" }, { "no": 2, "name": "Alebiosu" },
+        { "no": 6, "name": "Atcheson" }, { "no": 15, "name": "McLoughlin" },
+        { "no": 3, "name": "Pickering" }, { "no": 28, "name": "Forshaw" },
+        { "no": 31, "name": "Montgomery" }, { "no": 25, "name": "Morishita" },
+        { "no": 10, "name": "Cantwell" }, { "no": 21, "name": "Afolayan" },
+        { "no": 9, "name": "Gudjohnsen" }
+      ],
+      "subs": ["Pears", "Ribeiro", "Carter", "Garrett", "Tavares", "Morsy", "Henriksson", "Fevrier", "Ohashi"]
+    },
+    "notAsserted": "No formation is recorded. A team sheet is a list of eleven names, not a shape, and inferring a back three from shirt numbers would be a guess dressed as data."
+  },
+  "outsidePicksSettledByThisSheet": [
+    {
+      "player": "Rodrigo Gomes",
+      "whoPickedHim": "NatetheGreat, number-one defender, reported 3.7% ownership",
+      "verdict": "STARTS — shirt 21",
+      "whyItMattered": "His thread flagged a start risk for its THIRD defender, Whatmough, and none for its first. That asymmetry is now testable rather than assumed: the unhedged pick did start, so it can be graded on returns alone."
+    },
+    {
+      "player": "Y. Mosquera",
+      "whoPickedHim": "FEFL Tipsters, number-one defender",
+      "verdict": "STARTS — shirt 15",
+      "whyItMattered": "Their claim described him as having the 'second-highest clearances per 90 for Wolves in 25/26', which named his club without our capture resolving it. The sheet confirms both the club and the start."
+    },
+    {
+      "player": "D. Bentley",
+      "whoPickedHim": "FEFL Tipsters, number-two goalkeeper, on '46% clean sheet odds'",
+      "verdict": "STARTS — shirt 25",
+      "whyItMattered": "His club was unresolved in our capture. He is Wolves' goalkeeper, which means their number-two goalkeeper tip is a clean-sheet bet against the club WE picked."
+    }
+  ],
+  "theShapeThisRevealsInTheHeadToHead": {
+    "before": "Recorded earlier today as one disagreement: our club pick Blackburn against NatetheGreat's Wolves at a reported 46.4%.",
+    "after": "It is sharper than that. THREE separately-named outside selections, from TWO unrelated sources, are all in the Wolves XI — a number-one defender from one thread and a number-one defender plus number-two goalkeeper from another. Every one of them scores if Wolves keep Blackburn out. Our club pick scores if Blackburn perform.",
+    "whatThatDoesAndDoesNotMean": "It does NOT make the outside view more likely to be right; three tips drawn toward the same strong home side is what you would expect whether or not they are correct, and two of the three are defenders whose value comes from the same clean sheet. It DOES mean the match grades an unusual amount at once, and that our 0.5%-owned side of it is the lonelier position than the earlier note implied.",
+    "guardAgainstDoubleCounting": "Mosquera and Bentley both pay out on a Wolves clean sheet. Counting them as two independent confirmations of anything would be counting one event twice, and the grader should treat them as correlated."
+  },
+  "confirmsFromTheSeasonPreviews": [
+    { "claim": "'Kieran Trippier and Raul Jimenez have arrived to add proven pedigree alongside January recruit Adam Armstrong'", "verdict": "All three are Wolves players. TRIPPIER STARTS (2), ARMSTRONG STARTS (10), JIMENEZ IS A SUBSTITUTE." },
+    { "claim": "'Teenage prospect Mateus Mane and Fer Lopez can provide the craft around Jimenez'", "verdict": "MANE STARTS (36) and LOPEZ STARTS (28) — but around ARMSTRONG rather than Jimenez, who begins on the bench. The players were right; the arrangement described was not tonight's." },
+    { "claim": "Joao Gomes' £38m switch to Aston Villa was 'the only significant departure'", "verdict": "Not in the squad, consistent with having left. Note that R. GOMES in this XI is Rodrigo Gomes and a different player — the surname collision is exactly the kind that has already cost this project two invented price conflicts in the Premier League diff." }
+  ],
+  "observedNotConcluded": {
+    "player": "Ladislav Krejci",
+    "what": "O'Haire's preview said he 'could conceivably be the division's outstanding centre-back if Wolves keep hold of him'. He is in neither the XI nor the nine substitutes.",
+    "whyNoConclusionIsDrawn": "Absence from one matchday squad has many causes — injury, suspension, rotation, a transfer, or simply a selection call. This project has spent the week learning that a check finding nothing is not the same as a finding, and one team sheet is not evidence that a player has left a club."
+  },
+  "againstOurOwnEntry": {
+    "playersAffected": "None. All seven of our players are in other fixtures on 15 August.",
+    "clubAffected": "Blackburn Rovers, one of our two club picks, at 0.5% official ownership.",
+    "andNothingChanges": "The entry was recorded on 13 August and is append-only. These sheets are stored to make the round gradeable, not to inform a selection that can no longer be made."
+  }
+}

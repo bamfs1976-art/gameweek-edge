@@ -26,17 +26,75 @@
     "modelTotal": 554.8,
     "captainId": "432647",
     "players": [
-      { "name": "M. Hudson", "position": "GK", "club": "Oldham Athletic", "score": 77, "fixture": "Port Vale (H)", "kickoff": "2026-08-15T12:30:00+01:00" },
-      { "name": "C. McJannet", "position": "DEF", "club": "Grimsby Town", "score": 78.2, "fixture": "Exeter City (H)", "kickoff": "2026-08-15T15:00:00+01:00" },
-      { "name": "K. Watts", "position": "DEF", "club": "Cambridge United", "score": 78, "fixture": "Wigan Athletic (H)", "kickoff": "2026-08-15T15:00:00+01:00" },
-      { "name": "L. Wing", "position": "MID", "club": "Reading", "score": 81.1, "fixture": "Luton Town (H)", "kickoff": "2026-08-15T12:30:00+01:00", "captain": true },
-      { "name": "S. Twine", "position": "MID", "club": "Bristol City", "score": 80.3, "fixture": "Millwall (H)", "kickoff": "2026-08-15T15:00:00+01:00" },
-      { "name": "S. Thomas", "position": "MID", "club": "Stoke City", "score": 80.1, "fixture": "Swansea City (H)", "kickoff": "2026-08-15T15:00:00+01:00" },
-      { "name": "J. Beesley", "position": "FWD", "club": "Bradford City", "score": 80.1, "fixture": "Peterborough United (H)", "kickoff": "2026-08-15T15:00:00+01:00" }
+      {
+        "name": "M. Hudson",
+        "position": "GK",
+        "club": "Oldham Athletic",
+        "score": 77,
+        "fixture": "Port Vale (H)",
+        "kickoff": "2026-08-15T12:30:00+01:00"
+      },
+      {
+        "name": "C. McJannet",
+        "position": "DEF",
+        "club": "Grimsby Town",
+        "score": 78.2,
+        "fixture": "Exeter City (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "K. Watts",
+        "position": "DEF",
+        "club": "Cambridge United",
+        "score": 78,
+        "fixture": "Wigan Athletic (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "L. Wing",
+        "position": "MID",
+        "club": "Reading",
+        "score": 81.1,
+        "fixture": "Luton Town (H)",
+        "kickoff": "2026-08-15T12:30:00+01:00",
+        "captain": true
+      },
+      {
+        "name": "S. Twine",
+        "position": "MID",
+        "club": "Bristol City",
+        "score": 80.3,
+        "fixture": "Millwall (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "S. Thomas",
+        "position": "MID",
+        "club": "Stoke City",
+        "score": 80.1,
+        "fixture": "Swansea City (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "J. Beesley",
+        "position": "FWD",
+        "club": "Bradford City",
+        "score": 80.1,
+        "fixture": "Peterborough United (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      }
     ],
     "clubs": [
-      { "name": "Reading", "score": 52.1, "officialOwnership": 0.5 },
-      { "name": "Blackburn Rovers", "score": 50, "officialOwnership": 0.5 }
+      {
+        "name": "Reading",
+        "score": 52.1,
+        "officialOwnership": 0.5
+      },
+      {
+        "name": "Blackburn Rovers",
+        "score": 50,
+        "officialOwnership": 0.5
+      }
     ],
     "allSevenAtHome": true,
     "noteOnThat": "Seven from seven at home was flagged when the entry was recorded, before anyone knew whether it would look clever. Home advantage is in the club rating so a tilt is expected; seven of seven is a strong one and remains the single most likely explanation of any result in either direction."
@@ -123,7 +181,8 @@
       "whatLineUpsWouldBeUsedFor": {
         "notForOurEntry": "Nothing. It is recorded and append-only.",
         "butWorthCapturing": "Whether RODRIGO GOMES starts for Wolves. He is NatetheGreat's number-one defender at a reported 3.7%, in this exact fixture, and his thread flags a start risk for its THIRD defender (Whatmough) while flagging none for its first. A team sheet captured before kick-off would let the grader score that pick on the same footing as the one that was hedged.",
-        "status": "Not captured — the line-ups themselves were not supplied and this sandbox cannot fetch them."
+        "status": "CAPTURED at 18:20Z, 40 minutes before the lockout. RODRIGO GOMES STARTS (shirt 21), so the unhedged number-one defender pick can be graded on returns alone. Two further outside picks turn out to be in the same XI: Y. Mosquera (the tipsters' number-one defender) and D. Bentley (their number-two goalkeeper) both start for Wolves. Full sheets in efl/data/benchmarks/round-01-wolves-blackburn-lineups.json.",
+        "andTheHeadToHeadIsSharperThanRecorded": "Three separately-named outside selections from two unrelated sources are all in the Wolves XI, every one of them scoring if Wolves keep Blackburn out, against our 0.5%-owned club pick on the other side. That does not make the outside view likelier to be right — tips cluster on strong home sides whether or not they are correct, and two of the three are defenders paying out on the SAME clean sheet, so they must not be counted as independent. It does mean our side of this match is a lonelier position than the earlier note implied, and it is being said before kick-off."
       },
       "theRealPointThisRaises": {
         "observation": "Our picks were recorded 35.1 hours before the lockout. The rule that permits that is RECORD_WINDOW_HOURS = 36 in scripts/efl/lib.mjs, and its refusal message for anything earlier reads 'too early, team news is still to come'. So the rule already acknowledges that team news matters — and we recorded 0.9 hours inside the boundary, which is as early as the rule allows and therefore the moment with the LEAST team news available.",
