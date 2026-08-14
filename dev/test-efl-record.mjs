@@ -778,6 +778,62 @@ ok('an unresolved rule question is stored as unresolved', () => {
   assert.match(q.actionTaken, /None beyond recording it/i, 'and nothing was built on the guess');
 });
 
+ok('the season previews are resolved against our own seven, not just filed', () => {
+  const p = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/season-ohaire-division-previews.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-01.json'), 'utf8'));
+  const a = p.againstOurRoundOneEntry;
+
+  /* Every player the file claims is one of ours must actually be one of ours.
+     A benchmark that says "our forward" about somebody we never picked is
+     worse than no benchmark, because it reads as corroboration. */
+  const surname = (s) => String(s).trim().split(/\s+/).pop().toLowerCase();
+  const ourSurnames = new Set(entry.picks.players.map((x) => surname(x.name)));
+  const claimed = [...a.supportive, ...a.cautionary].map((x) => x.ourPick);
+  assert.ok(claimed.length >= 5, 'several of our picks are covered');
+  for (const c of claimed) {
+    const name = c.split('(')[0].trim();
+    assert.ok(ourSurnames.has(surname(name)), `${name} really is one of our seven`);
+  }
+
+  /* The captain caution must be attached to the actual captain, and the
+     goalkeeper caution to an actual goalkeeper. */
+  const captain = entry.picks.players.find((x) => x.id === entry.picks.captain);
+  const capNote = a.cautionary.find((x) => /CAPTAIN/.test(x.ourPick));
+  assert.ok(capNote, 'the captain caution exists');
+  assert.ok(surname(capNote.ourPick.split('(')[0].trim()) === surname(captain.name),
+    'and it names the player who is actually captained');
+  const gkNote = a.cautionary.find((x) => /goalkeeper/i.test(x.ourPick));
+  const gk = entry.picks.players.find((x) => x.position === 'GK');
+  assert.ok(surname(gkNote.ourPick.split('(')[0].trim()) === surname(gk.name),
+    'and the goalkeeper caution names our goalkeeper');
+
+  /* The club claim, which is the heaviest thing in the file. */
+  const clubs = (entry.picks.clubs || []).map((c) => c.name);
+  assert.ok(clubs.some((c) => a.againstOurClubPick.ourPick.indexOf(c) === 0),
+    'the relegation claim is about a club we actually picked');
+});
+
+ok('a betting source is stored as analysis, and says so', () => {
+  const p = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/season-ohaire-division-previews.json'), 'utf8'));
+  /* Every headline claim in these documents carries a price. The rule this
+     project has applied all day to odds-derived material is that it is held
+     as forecast analysis and never as advice, and the file has to carry that
+     itself rather than rely on a commit message nobody will re-read. */
+  assert.ok(p.whatThisIsNot.some((s) => /offers no betting advice/i.test(s)),
+    'the file states its own stance on the betting content');
+  assert.ok(p.recommendedBetsAsPublished.storedWhy,
+    'and explains why the selections are stored verbatim at all');
+
+  /* The absence trap, which this project has walked into four times this
+     week. Reading is our captain's club and is not in the League One
+     preview; the file must say that proves nothing. */
+  assert.ok(p.whatThisIsNot.some((s) => /ABSENCE FROM THESE DOCUMENTS MEANS NOTHING/.test(s)),
+    'and refuses to read absence as evidence');
+
+  assert.match(p.openQuestionRaised.status, /UNRESOLVED/,
+    'the division question is left open rather than guessed');
+});
+
 ok('the tipsters inference was narrowed, and the measured number left alone', () => {
   const t = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-tipsters.json'), 'utf8'));
   assert.ok(t.againstOurEntry.correction, 'the corrected reading is recorded on the file it corrects');
