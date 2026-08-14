@@ -605,6 +605,55 @@ And the player table is page 1 of 16, so **absence proves nothing**: Gonzalo
 Garcia, added to the Fulham block on this same day, is not on page one and no
 inference is available from that.
 
+### The fixture-swing grid, and a conflict that did not exist
+
+The same site publishes a GW1–GW10 grid: seven crests a week under a header
+reading **"Easiest"**, each carrying a number between 2.00 and 2.80. Read the
+obvious way — the number rates this week's fixture — it says Arsenal's home
+game with promoted Coventry is only the **sixth**-easiest fixture of GW1,
+behind Leeds away at Forest and Liverpool away at Newcastle.
+
+That contradicts our register, which calls Arsenal's opener easy and both of
+those hard. It also contradicts **the odds page of the same website**, three
+sections above: Arsenal 60.3% to keep a clean sheet, the best in the league by
+fifteen points, against Leeds 23.8% and Liverpool 24.5%.
+
+**Two pages of one site at opposite ends of the same fixture is not a finding
+about football.** It is a signal that the reader has guessed at a definition.
+So the grid was checked before it was believed, and the naive reading is wrong:
+
+- **Every value across all seventy cells is a multiple of 0.20**, and none is
+  below 2.00 — even though these are the seven *easiest* of twenty each week.
+  A single-gameweek scale would show a 1 or a 2 for the easiest fixture on the
+  board. Averages regress toward the middle, and these do. A mean of five
+  integers in 1–5 produces exactly 0.20 steps.
+- **GW10 ranks Arsenal eleventh while Arsenal are at home to Hull.** No
+  difficulty scale says that. Resolved through our own verified GW9–18 grid,
+  Arsenal's GW10–14 is Hull (H), Newcastle (a), Man City (H), Brentford (a),
+  Spurs (a) — a hard run that starts with an easy game.
+- **GW10 ranks Aston Villa third-easiest while Villa are away at Old
+  Trafford.** Their GW10–14 is Man Utd (a), Sunderland (H), Ipswich (a),
+  Everton (H), Palace (H): one hard game, then four soft ones.
+- **GW9's best cell is Spurs at exactly 2.00**, and their GW9–13 is Palace (H),
+  Leeds (a), Ipswich (H), Sunderland (a), Fulham (H). Five fixtures that would
+  each plausibly rate 2. Five twos average 2.00.
+
+**So it is almost certainly a forward-looking five-gameweek rolling average,
+which is exactly what a rotation planner should show** — you pick a team for a
+run of fixtures, not for one. It fits every case tested and nothing
+contradicts it. It is still **unconfirmed**: the page does not state its own
+definition, and reading the site directly is not something this project does.
+The grid is stored with the hypothesis marked as such, and no test asserts it —
+a guess put somewhere that goes green is a guess promoted to a fact.
+
+**The reason this is written up at length is that it is a near miss.** One
+step from being recorded as a three-way conflict between our model, the
+market and a fixture grid, and the entire conflict was manufactured by
+assuming what a column header meant. Same failure as the referee probe, the
+robots.txt read and the "Garcia" row — with the difference that this time the
+check ran first. That is the whole value of checking before believing, and it
+is worth noting that the check cost about five minutes.
+
 ---
 
 # The 20 clubs

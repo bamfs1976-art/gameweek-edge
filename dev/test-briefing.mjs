@@ -1153,6 +1153,37 @@ console.log('\n• briefing: the market snapshot agrees with our GW1 fixtures');
   }
   ok(snap.whatThisIsNot.some((s) => /Assuming player starts/i.test(s)),
     'the minutes caveat is on the file, not just in the prose that quotes it');
+
+  /* ── the fixture-swing grid ────────────────────────────────────────
+     The internal checks are asserted because they are what established how
+     to READ the grid, and a later re-capture that broke them would mean the
+     transcription is wrong. The metric's meaning is NOT asserted: it is an
+     unconfirmed hypothesis and the file says so. A test that pinned "this is
+     a 5-gameweek mean" would be promoting a guess to a fact by putting it
+     somewhere that goes green. */
+  const sw = snap.fixtureSwing;
+  ok(sw.grid.length === 10, 'ten gameweeks captured (' + sw.grid.length + ')');
+  let badge = 0, sorted = 0;
+  for (const row of sw.grid) {
+    const at = row.easiest.findIndex((c) => c[0] === 'Arsenal');
+    /* Arsenal's printed rank must equal where Arsenal sits, or exceed the
+       seven shown when absent. This is the check that proves the row is
+       ordered easiest-first, which everything else about the grid rests on. */
+    if (at >= 0 ? at + 1 === row.arsenalRank : row.arsenalRank > row.easiest.length) badge++;
+    const v = row.easiest.map((c) => c[1]);
+    if (v.every((x, i) => i === 0 || x >= v[i - 1])) sorted++;
+  }
+  ok(badge === 10, "Arsenal's printed rank matches its position in every row (" + badge + '/10)');
+  ok(sorted === 10, 'every row is ordered easiest-first (' + sorted + '/10)');
+  const cells = sw.grid.flatMap((r) => r.easiest.map((c) => c[1]));
+  ok(cells.length === 70, 'seventy cells (' + cells.length + ')');
+  ok(cells.every((v) => Math.abs(v * 5 - Math.round(v * 5)) < 1e-9),
+    'every cell is a multiple of 0.20 — the shape a mean of five integers makes');
+  ok(Math.min(...cells) >= 2,
+    'and no cell drops below 2.00 even though these are the seven EASIEST of twenty, '
+    + 'which is what stops the single-gameweek reading');
+  ok(/UNCONFIRMED/.test(sw.metricHypothesis.status),
+    'the metric hypothesis is still labelled unconfirmed, not quietly promoted to a fact');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
