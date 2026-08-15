@@ -59,7 +59,15 @@ export function buildChipApi(html) {
     grabConst('CONGEST_GAP_DAYS') + '\n' + grabConst('BB_CONGEST_PENALTY') + '\n' +
     grabFn('congestedGws') + '\n' +
     grabFn('chipHalfWindow') + '\n' + grabFn('fdrGameweeks') + '\n' + grabFn('chipPlanFdr') + '\n' +
-    'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,intlBreakGws,congestedGws,clubFdrRuns,wcHorizonFactor,breakSeverity,breakScale,' +
+    /* The OTHER chip view the app ships. chipPlanFdr ranks weeks on raw
+       difficulty and knows nothing about who owns whom; chipSwings weights
+       the same difficulty by ownership, which is a different question and
+       gives different answers. The app shows both, on separate pages. This
+       extraction shipped only the first, so the offline tool answered the
+       fixture question and looked like it had answered the chip question. */
+    grabFn('chipSwings') + '\n' +
+    'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,chipSwings,intlBreakGws,congestedGws,clubFdrRuns,' +
+    'wcHorizonFactor,breakSeverity,breakScale,' +
     'deadWeight,transferRunway,freeTransfersFrom,transferLedger,minClubsForXi};'
   )();
 }

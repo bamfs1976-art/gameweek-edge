@@ -99,8 +99,32 @@ const ROUTES = {
     if (md != null && md !== '' && !/^[1-9]\d?$/.test(String(md))) return null;
     return {
       path: `/competitions/${comp}/matches` + (md ? `?matchday=${md}` : ''),
-      /* Referees are published a couple of days out and then do not move.
-         Half an hour is short enough to pick that up the same afternoon. */
+      /* This used to read "referees are published a couple of days out and
+         then do not move", and the half-hour cache was justified by it.
+
+         Two things were wrong with that. First, THIS FEED does not carry
+         them: probed on 13 Aug 2026 through this very endpoint, not one of
+         552 Championship or 380 Premier League matches had a referee named,
+         including twelve inside four days of kick-off.
+
+         Second — and this is the part worth remembering — the probe's own
+         write-up then reported that as "referees are not published before
+         kick-off", which is false. The EFL publishes its appointments three
+         to nine days ahead on its own site. The feed's silence was a fact
+         about the feed, and it got told as a fact about football.
+
+         So: no referee data here. 13 Aug 2026: the referee panel was
+         investigated and DECLINED — the site reads feeds it is offered, not
+         pages it takes — so this is a closed question, not a pending one.
+         See docs/scope-referee-source.md. If this plan ever starts filling
+         the array, that would be the thing that reopens it, and it is
+         checked by looking rather than by a scheduled job.
+
+         The half hour stays, on different grounds: kick-off times and match
+         status do move, and half an hour is a reasonable staleness for a
+         fixture list. If referees ever do appear here, revisit this
+         deliberately rather than inheriting a number that meant something
+         else. */
       ttl: 1800
     };
   },
@@ -147,8 +171,26 @@ exports.handler = async (event) => {
   const key = process.env.FOOTBALL_DATA_KEY;
   /* Fail loudly. A silent empty body here would surface as "no referee this
      week" and look like upstream having nothing, which is the kind of quiet
-     wrong that survives for months. */
-  if (!key) return json(503, { error: 'FOOTBALL_DATA_KEY is not configured' });
+     wrong that survives for months.
+
+     The message says what to CHECK, not just what is wrong. When the key was
+     first set in the Netlify UI this endpoint kept 503-ing, and "not
+     configured" is ambiguous between the three reasons it can be missing —
+     the variable was never set, it was set but no deploy has happened since
+     (Netlify snapshots the environment per deploy), or it was set with a
+     scope that excludes Functions or a deploy context that excludes
+     production. All three look identical from here, and only the first is
+     what the old wording implied. Names only; never the value. */
+  if (!key) {
+    return json(503, {
+      error: 'FOOTBALL_DATA_KEY is not visible to this function',
+      check: [
+        'the variable exists on this Netlify site',
+        'a deploy has run SINCE it was set — env changes need a new deploy',
+        'its scope includes Functions, and its context includes Production'
+      ]
+    });
+  }
 
   let r, text;
   try {

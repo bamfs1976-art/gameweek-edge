@@ -16,6 +16,25 @@ jobs:
           # the same class of gap as testing against a node_modules the CI
           # runner never has.
           node-version: 22
+          cache: npm
+
+      # The suite USED to need no install, and that was worth having. It
+      # stopped being true when the palette moved to Fuse.js: dev/test-core.mjs
+      # imports the real matcher rather than a mock, because the whole point of
+      # the change was typo tolerance and a mock would tolerate whatever it was
+      # told to. That import made CI fail with ERR_MODULE_NOT_FOUND on a
+      # checkout with no node_modules.
+      #
+      # --omit=dev is the narrow fix. npm test needs exactly one package,
+      # fuse.js, and it is a runtime dependency; the heavy devDependencies
+      # (playwright, sharp, ffmpeg-static) stay uninstalled, so this costs
+      # seconds rather than minutes.
+      #
+      # It also buys something the old arrangement could not: CI now proves
+      # `npm ci` resolves from the lockfile on a clean machine, which is the
+      # exact failure the declared-dependency guard below was written after.
+      - name: Install runtime dependencies
+        run: npm ci --omit=dev
 
       - name: Syntax-check serverless functions
         run: |
@@ -34,11 +53,11 @@ jobs:
           "
           node --check /tmp/ge-app.js
 
-      # The whole suite, not a hand-picked three. Every test file imports
-      # only node builtins and reads index.html from the checkout, so this
-      # needs no `npm ci` and costs CI nothing — while the twelve suites
-      # that were not listed here (content, engine, social, chip plan,
-      # analytics and the rest) went unrun on every push.
+      # The whole suite, not a hand-picked three — the twelve suites that
+      # were once not listed here (content, engine, social, chip plan,
+      # analytics and the rest) went unrun on every push. It reads
+      # index.html from the checkout and needs only the runtime
+      # dependencies installed above.
       - name: Test suite
         run: npm test
 
@@ -56,8 +75,8 @@ jobs:
       # Catches the class of bug that broke Daily Content for four days: a
       # script importing a package that is installed locally but declared
       # nowhere, so it works on the machine it was written on and dies under
-      # `npm ci`. Deliberately placed in CI rather than only in npm test —
-      # CI installs nothing, so it is the one place a missing declaration
-      # cannot be masked by a node_modules that happens to have it.
+      # `npm ci`. It reads package.json and never node_modules, so installing
+      # above cannot mask anything from it — and it stays last so a
+      # declaration added to satisfy the installer still has to be real.
       - name: Declared-dependency guard
         run: node scripts/check-deps.mjs

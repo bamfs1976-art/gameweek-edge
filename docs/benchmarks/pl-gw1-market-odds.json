@@ -1,0 +1,122 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-projection",
+  "capturedAt": "2026-08-14T14:47:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured a week BEFORE the deadline stated above. Committed now so git history is the evidence it predates the football, exactly as the round entries and the EFL tipster benchmark are. A week out is early: these are thinner markets than they will be on deadline day, and the numbers will move.",
+  "source": {
+    "name": "FPL Rotation Planner",
+    "url": "https://www.fplrotationplanner.com/",
+    "readFrom": "screenshots of the mobile site, timestamped 15:46-15:47 local",
+    "selfDescription": "Real-time betting odds converted to goal, assist and clean sheet probabilities for Fantasy Premier League",
+    "derivation": "bookmaker odds, converted — NOT a model of ours and not an official feed"
+  },
+  "whatThisIsNot": [
+    "NOT our numbers. Nothing in the briefing or the app is rewritten from this. It is held against the register the same way the outside attack/defence ranking, the outside chip plan and the outside set-piece projection are.",
+    "NOT a minutes forecast. The player table says '(Assuming player starts)' in its own subtitle, which is the single most important caveat on the page: it assumes away precisely the uncertainty the briefing flags for Saka (eased back, achilles) and for the five European qualifiers carrying Thursday-Sunday rotation risk.",
+    "NOT a full player list. The player rows below are page 1 of 16, so a player's ABSENCE here means nothing at all. Gonzalo Garcia, added to the Fulham block on the same day, is not on page 1 and no inference is available from that."
+  ],
+  "gradeableAs": "Per-fixture clean-sheet probabilities and per-player goal/assist/return probabilities, both resolvable against the GW1 result. The clean-sheet column is the more useful of the two because all 20 teams are present, so it can be scored as a calibration set rather than a top-N list.",
+  "verifiedAgainstOurRegister": {
+    "method": "Each row's opponent and venue diffed against the GW1 entry in the briefing's structured TEAMS array, mechanically rather than by eye.",
+    "fixturesAgreeing": 20,
+    "fixturesTotal": 20,
+    "resolvesToGames": 10,
+    "pairsOverOneHundredPercent": 0,
+    "observation": "Full agreement on all 20 opponent-and-venue pairs, from a source built for a different purpose and with no shared upstream. That is the strongest independent confirmation the GW1 fixture list has had."
+  },
+  "cleanSheets": [
+    { "team": "Arsenal", "opp": "Coventry City", "venue": "H", "anyCS": 60.3, "ourDifficulty": "easy" },
+    { "team": "Manchester United", "opp": "Hull City", "venue": "A", "anyCS": 45.4, "ourDifficulty": "easy" },
+    { "team": "Manchester City", "opp": "Bournemouth", "venue": "H", "anyCS": 34.4, "ourDifficulty": "easy" },
+    { "team": "Everton", "opp": "Crystal Palace", "venue": "H", "anyCS": 31.9, "ourDifficulty": "mod" },
+    { "team": "Nottingham Forest", "opp": "Leeds", "venue": "H", "anyCS": 30.3, "ourDifficulty": "mod" },
+    { "team": "Sunderland", "opp": "Ipswich Town", "venue": "A", "anyCS": 28.3, "ourDifficulty": "hard" },
+    { "team": "Ipswich Town", "opp": "Sunderland", "venue": "H", "anyCS": 27.4, "ourDifficulty": "mod" },
+    { "team": "Chelsea", "opp": "Fulham", "venue": "A", "anyCS": 26.4, "ourDifficulty": "hard" },
+    { "team": "Brighton & Hove Albion", "opp": "Aston Villa", "venue": "H", "anyCS": 24.5, "ourDifficulty": "mod" },
+    { "team": "Liverpool", "opp": "Newcastle", "venue": "A", "anyCS": 24.5, "ourDifficulty": "hard" },
+    { "team": "Brentford", "opp": "Tottenham Hotspur", "venue": "H", "anyCS": 24.1, "ourDifficulty": "mod" },
+    { "team": "Leeds United", "opp": "Nottingham Forest", "venue": "A", "anyCS": 23.8, "ourDifficulty": "hard" },
+    { "team": "Crystal Palace", "opp": "Everton", "venue": "A", "anyCS": 22.9, "ourDifficulty": "hard" },
+    { "team": "Tottenham Hotspur", "opp": "Brentford", "venue": "A", "anyCS": 22.2, "ourDifficulty": "hard" },
+    { "team": "Aston Villa", "opp": "Brighton", "venue": "A", "anyCS": 20.6, "ourDifficulty": "hard" },
+    { "team": "Fulham", "opp": "Chelsea", "venue": "H", "anyCS": 19.8, "ourDifficulty": "hard" },
+    { "team": "Newcastle United", "opp": "Liverpool", "venue": "H", "anyCS": 16.9, "ourDifficulty": "mod" },
+    { "team": "Hull City", "opp": "Manchester United", "venue": "H", "anyCS": 14.6, "ourDifficulty": "vhard" },
+    { "team": "Bournemouth", "opp": "Manchester City", "venue": "A", "anyCS": 11.2, "ourDifficulty": "vhard" },
+    { "team": "Coventry City", "opp": "Arsenal", "venue": "A", "anyCS": 9.6, "ourDifficulty": "vhard" }
+  ],
+  "players": [
+    { "name": "Erling Braut Haaland", "fixture": "MCI-BOU", "goal": 58.8, "assist": 22.2, "anyReturn": 67.9 },
+    { "name": "Viktor Gyokeres", "fixture": "ARS-COV", "goal": 53.2, "assist": 31.2, "anyReturn": 67.8 },
+    { "name": "Antoine Semenyo", "fixture": "MCI-BOU", "goal": 46.5, "assist": 35.7, "anyReturn": 65.6 },
+    { "name": "Alexander Isak", "fixture": "NEW-LIV", "goal": 44.4, "assist": 28.6, "anyReturn": 60.3 },
+    { "name": "Igor Thiago Nascimento Rodrigues", "fixture": "BRE-TOT", "goal": 43.5, "assist": 25.0, "anyReturn": 57.6 },
+    { "name": "Benjamin Sesko", "fixture": "HUL-MUN", "goal": 42.6, "assist": 21.3, "anyReturn": 54.8 },
+    { "name": "Ollie Watkins", "fixture": "BHA-AVL", "goal": 41.7, "assist": 19.2, "anyReturn": 52.9 },
+    { "name": "Bukayo Saka", "fixture": "ARS-COV", "goal": 40.8, "assist": 42.6, "anyReturn": 66.0 },
+    { "name": "Joao Pedro Junqueira de Jesus", "fixture": "FUL-CHE", "goal": 40.8, "assist": 28.6, "anyReturn": 57.7 },
+    { "name": "Kai Havertz", "fixture": "ARS-COV", "goal": 40.8, "assist": 31.2, "anyReturn": 59.3 },
+    { "name": "Bryan Mbeumo", "fixture": "HUL-MUN", "goal": 38.5, "assist": 26.3, "anyReturn": 54.7 },
+    { "name": "Matheus Cunha", "fixture": "HUL-MUN", "goal": 38.5, "assist": 25.0, "anyReturn": 53.9 },
+    { "name": "Bruno Fernandes", "fixture": "HUL-MUN", "goal": 37.7, "assist": 44.4, "anyReturn": 65.4 },
+    { "name": "Gabriel Martinelli", "fixture": "ARS-COV", "goal": 37.7, "assist": 35.7, "anyReturn": 59.9 }
+  ],
+  "playersNote": "Page 1 of 16, sorted by goal probability. The fixture label names the GAME, not the side, so it does not by itself say which team a player is on — Semenyo reads 'MCI-BOU' and this project's register has him joining Manchester City FROM Bournemouth for ~£64m, which the label cannot distinguish from the reverse.",
+  "opponentPointsConceded": {
+    "whatItIs": "A separate historical FPL signal on the same page, explicitly NOT bookmaker odds: average points conceded to opponents per match, plus the team's own average points.",
+    "captured": [
+      { "team": "Arsenal", "avgOppPts": 34.17, "avgTeamPts": 56.67 },
+      { "team": "Chelsea", "avgOppPts": 36.21, "avgTeamPts": 50.96 }
+    ],
+    "completeness": "Only two rows were visible in the screenshots. Recorded as partial rather than padded out."
+  },
+  "fixtureSwing": {
+    "capturedAt": "2026-08-14T14:48:00.000Z",
+    "page": "https://www.fplrotationplanner.com/fixtureSwing",
+    "whatIsShown": "A GW1-GW10 grid, seven crests per gameweek under an 'Easiest' header, each with a number between 2.00 and 2.80. Arsenal was pinned via the page's own 'Following ARS through every GW' control, which prints Arsenal's rank of 20 beside each gameweek label.",
+    "scaleMeaning": "NOT STATED ON THE PAGE, and this is the whole story of this capture. See metricHypothesis below. Nothing in the register is rewritten from it.",
+    "internalChecksPassed": {
+      "badgeMatchesPosition": "10 of 10. Where Arsenal appears in the row, its position equals the printed badge (#6, #6, #1, #7, #1, #5); where the badge is 11 or 14 it is absent from the seven. This confirms the row is sorted ascending and that LOWER IS EASIER.",
+      "rowsSortedAscending": "10 of 10.",
+      "valuesEvenlySpaced": "All 70 cells are one of 2.00, 2.20, 2.40, 2.60, 2.80 — exactly 0.20 apart, and every value multiplied by five is a whole number."
+    },
+    "metricHypothesis": {
+      "claim": "A forward-looking FIVE-GAMEWEEK ROLLING MEAN of fixture difficulty, not a rating of that gameweek's fixture.",
+      "status": "UNCONFIRMED. It fits every case tested and nothing contradicts it, which is not the same as being verified. The page does not say, and this project does not scrape it.",
+      "evidenceFor": [
+        "A mean of five integers in 1-5 produces exactly 0.20 steps, which is what all 70 cells show.",
+        "These are the SEVEN EASIEST teams of twenty each week, and not one cell is below 2.00. A single-gameweek scale would show a 1 or a 2 for the easiest fixture on the board; averages regress toward the middle and these do.",
+        "GW9's best cell is Spurs at exactly 2.00, and Spurs' GW9-13 run resolves through our own verified grid to CRY(H) LEE(a) IPS(H) SUN(a) FUL(H) — five fixtures that would each plausibly rate 2. Five twos average 2.00.",
+        "GW10 ranks Arsenal 11th while Arsenal are AT HOME TO HULL. Read as a single gameweek that is absurd. Read as a window it is obviously right: Arsenal's GW10-14 is HUL(H) NEW(a) MCI(H) BRE(a) TOT(a), a hard run beginning with an easy game.",
+        "GW10 ranks Aston Villa 3rd-easiest while Villa are AWAY AT MANCHESTER UNITED. Same resolution: their GW10-14 is MUN(a) SUN(H) IPS(a) EVE(H) CRY(H), one hard game then four soft ones."
+      ],
+      "whatWouldConfirmIt": "The site stating its own definition, or a cell whose exact component ratings we hold. Neither is available from a screenshot, and reading the site directly is not something this project does."
+    },
+    "theNearMiss": "This capture was one step away from being written up as a CONFLICT. Under the naive read — column header says 'Easiest', so the number rates this week's fixture — the grid says Arsenal's home game with promoted Coventry is only the 6th-easiest fixture of GW1, while Leeds away at Forest and Liverpool away at Newcastle are joint-first. That would have contradicted our register AND the odds page of the SAME WEBSITE, which has Arsenal at 60.3% to keep a clean sheet, best in the league by fifteen points, against Leeds 23.8% and Liverpool 24.5%. Two pages of one site apparently at opposite ends on the same fixture is not a finding about football. It is a signal that the reader has guessed at a definition. The conflict does not exist; it was manufactured by assuming what a column header meant.",
+    "grid": [
+      { "gw": 1, "arsenalRank": 6, "easiest": [["Leeds", 2.40], ["Liverpool", 2.40], ["Man Utd", 2.40], ["Man City", 2.60], ["Spurs", 2.60], ["Arsenal", 2.80], ["Aston Villa", 2.80]] },
+      { "gw": 2, "arsenalRank": 11, "easiest": [["Aston Villa", 2.60], ["Crystal Palace", 2.60], ["Everton", 2.60], ["Liverpool", 2.60], ["Newcastle", 2.60], ["Brighton", 2.80], ["Coventry City", 2.80]] },
+      { "gw": 3, "arsenalRank": 6, "easiest": [["Aston Villa", 2.40], ["Brighton", 2.40], ["Crystal Palace", 2.40], ["Newcastle", 2.40], ["Spurs", 2.40], ["Arsenal", 2.60], ["Man City", 2.60]] },
+      { "gw": 4, "arsenalRank": 1, "easiest": [["Arsenal", 2.20], ["Crystal Palace", 2.40], ["Newcastle", 2.40], ["Chelsea", 2.60], ["Coventry City", 2.80], ["Fulham", 2.80], ["Hull City", 2.80]] },
+      { "gw": 5, "arsenalRank": 7, "easiest": [["Hull City", 2.20], ["Newcastle", 2.20], ["Coventry City", 2.60], ["Fulham", 2.60], ["Ipswich Town", 2.60], ["Nott'm Forest", 2.60], ["Arsenal", 2.80]] },
+      { "gw": 6, "arsenalRank": 1, "easiest": [["Arsenal", 2.40], ["Fulham", 2.40], ["Hull City", 2.60], ["Ipswich Town", 2.60], ["Newcastle", 2.60], ["Bournemouth", 2.80], ["Brentford", 2.80]] },
+      { "gw": 7, "arsenalRank": 5, "easiest": [["Spurs", 2.20], ["Bournemouth", 2.40], ["Brentford", 2.40], ["Man City", 2.40], ["Arsenal", 2.60], ["Coventry City", 2.60], ["Chelsea", 2.80]] },
+      { "gw": 8, "arsenalRank": 11, "easiest": [["Brentford", 2.40], ["Coventry City", 2.40], ["Spurs", 2.40], ["Bournemouth", 2.60], ["Chelsea", 2.60], ["Ipswich Town", 2.60], ["Leeds", 2.60]] },
+      { "gw": 9, "arsenalRank": 14, "easiest": [["Spurs", 2.00], ["Coventry City", 2.20], ["Aston Villa", 2.40], ["Bournemouth", 2.40], ["Chelsea", 2.40], ["Ipswich Town", 2.60], ["Brighton", 2.80]] },
+      { "gw": 10, "arsenalRank": 11, "easiest": [["Bournemouth", 2.20], ["Brighton", 2.20], ["Aston Villa", 2.40], ["Chelsea", 2.40], ["Spurs", 2.40], ["Coventry City", 2.60], ["Everton", 2.80]] }
+    ]
+  },
+  "observations": [
+    "All 20 opponent-and-venue pairs agree with our register. Two documents built for different purposes from different upstreams matching on every row is the cheapest check available here and it passed outright.",
+    "Our four-band difficulty scale separates the ENDS and not the MIDDLE. Mean any-CS by our own label: easy 46.7% (range 34.4-60.3), mod 25.8% (16.9-31.9), hard 23.6% (19.8-28.3), vhard 11.8% (9.6-14.6). Easy and very hard are cleanly apart with no overlap; moderate and hard are 2.2 points apart on means and overlap almost completely. On this evidence the scale is really three bands wearing four labels, and that is a finding about our model rather than about theirs.",
+    "The one row where we differ by more than a quartile is NEWCASTLE AT HOME TO LIVERPOOL. We call it moderate; the market ranks it 17th of 20 for a clean sheet at 16.9%, below every fixture we call hard. If our rating is a read on Newcastle's defence it is a bet against this source.",
+    "Liverpool v Newcastle also has the LOWEST combined clean-sheet probability of the ten games (41.4 against 69.9 for Arsenal v Coventry), so the same fixture the market rates hardest to keep a clean sheet in is the one it expects most goals from. Those are the same statement seen twice, not two pieces of evidence.",
+    "Four Manchester United attackers sit in the top fourteen goal probabilities, all at HUL-MUN, alongside the second-best clean-sheet number in the league. The market's single strongest opinion this week is about Manchester United away at Hull.",
+    "Gyokeres has the second-highest goal probability of anyone on page 1. That does not settle the Arsenal penalty question, but it is now the second independent outside source this week leaning toward a striker over Saka, against our hedged line.",
+    "Saka carries the highest return probability of any Arsenal player here at 66.0% and the highest assist figure on the page but one. Read it next to the subtitle: '(Assuming player starts)'. The 11 August log has him eased back after a long World Cup with an achilles problem, so this source is at its least useful exactly where our own uncertainty is greatest.",
+    "Joao Pedro is at 57.7% to return against a Fulham side logged the same day as the oldest in the league with the fewest high turnovers, and he did not go to the World Cup. Three facts from three sources pointing one way is worth more than any one of them."
+  ]
+}

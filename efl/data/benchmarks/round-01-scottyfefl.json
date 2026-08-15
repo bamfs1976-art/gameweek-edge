@@ -1,0 +1,104 @@
+{
+  "round": 1,
+  "kind": "outside-guidance",
+  "capturedAt": "2026-08-14T15:02:00.000Z",
+  "roundLockoutAt": "2026-08-14T19:00:00.000Z",
+  "note": "Captured before the lockout stated above. Unlike the tipsters thread, this is not a tip list — it is a beginner's guide to how the game rewards points, and its value here is that one of its claims lands directly on our own captain.",
+  "source": {
+    "name": "ScottyFEFL",
+    "handle": "@ScottyFEFL",
+    "postedAt": "2026-08-04T00:00:00.000Z",
+    "postedAtPrecision": "date-only — the thread shows 04/08/2026 with no time",
+    "readFrom": "screenshots of the X thread",
+    "kind": "five numbered tips for new Fantasy EFL managers",
+    "capturedPoints": [1, 2, 3, 4, 5, 6],
+    "completeness": "All SIX numbered points captured plus the must-follow list and the sign-off. The thread was captured in two passes; the second added point 6, the continuation of point 5, and the announcement of a follow-up thread.",
+    "knownTruncation": "The must-follow list ends with X's 'Show more' control, so the four handles recorded below are the visible prefix of a longer list, not the whole of it. Recorded as a prefix rather than presented as complete."
+  },
+  "staleThirdPartyContent": "The screenshot under point 1 contains a Google result reading 'Fantasy EFL is live for the 2025/26 season!'. That is a cached search snippet, not a claim by the author and not a claim about this season. Recorded so nobody later reads this capture as a 2025/26 document.",
+  "claims": [
+    {
+      "n": 1,
+      "topic": "use the web version",
+      "claim": "The official Fantasy EFL app is poor on both Android and Apple; sign up through a web browser instead. 'A lot of people turn away from the game not because of the scoring system but because of the app.'",
+      "gradeable": false,
+      "whyItMattersHere": "Product context rather than a football claim, and the most directly relevant thing in the thread to why this project exists. A companion built for a game whose own client drives people away is aimed at a real gap. No action taken on it — an opinion about someone else's app is not evidence about ours."
+    },
+    {
+      "n": 2,
+      "topic": "do not ignore League One and League Two, especially double gameweeks",
+      "claim": "New managers and Championship fans avoid the lower divisions even in double gameweeks, and it costs a lot of points. Having options across all three leagues is the point of the format.",
+      "gradeable": false,
+      "againstOurEntry": "Our round-1 seven is Oldham, Bradford, Grimsby, Cambridge, Reading, Bristol City and Stoke — five of the seven from League One and League Two. If this tip is right, our model is already on the correct side of the most common beginner error. That is not a claim that the model is right, only that it is not making THIS mistake."
+    },
+    {
+      "n": 3,
+      "topic": "the meta",
+      "claim": "Midfield all-rounders are the meta with the rules unchanged, because they score from interceptions, assists and goals — a good floor with a high ceiling. Interceptions are worth +2 and are 'MASSIVE in this game'. Explicitly credited to a thread by @FeflThomas.",
+      "namesPlayers": ["Lewis Wing", "Oliver Norwood", "Cameron Brannagan"],
+      "alsoWarns": "Do not just pick Bowen or a Langstaff every week when they face tough opposition, 'like GW1'.",
+      "gradeable": true,
+      "theOverlap": {
+        "player": "Lewis Wing",
+        "ourPick": "L. Wing, id 432647, MID, Reading, League One, model score 81.1 — the HIGHEST of our seven, and our CAPTAIN for round 1",
+        "ourFixture": "Reading v Luton Town (H), 2026-08-15T12:30:00+01:00",
+        "ourRecordedAt": "2026-08-13T07:54:09.273Z",
+        "theirPostedAt": "2026-08-04",
+        "readCarefully": "Their thread is NINE DAYS OLDER than our entry. This is therefore not independent corroboration in the strong sense, and calling it that would be flattering ourselves: a public thread naming Wing existed before we recorded him. What can honestly be said is narrower and still useful — our model does not read X, so two different methods reached the same player, and theirs was published first."
+      },
+      "consequenceForOurRecord": "Our captain is a CONSENSUS pick, not a differential. That is the opposite of what this project inferred yesterday from a single tip list, and the inference has been corrected in round-01-tipsters.json rather than left standing.",
+      "correctionSameDay": {
+        "on": "2026-08-14, hours after the sentence above was written",
+        "what": "'Consensus pick' is too strong and was reached by skipping a step. Being named as the meta is a statement about how a player is RATED. It is not a statement about how many managers OWN him, and this file slid from one to the other without noticing there was a gap.",
+        "evidence": "round-01-natethegreat.json reports Wing at 28.3% ownership — meaning roughly seven managers in ten do NOT have him — and that author's own comment is that 28.3% with under a day to go is 'genuinely mental', i.e. surprisingly LOW. A third source, the FEFL Tipsters, does not name Wing among its top three midfielders at all.",
+        "theAccurateStatement": "Wing is rated top by two of three community sources, omitted by the third, and owned by 28.3% on one reported figure. He is widely TIPPED and moderately OWNED. Those are different measurements and only the second one says whether a pick is a differential.",
+        "whyItMattersBeyondWording": "The whole point of grading this ledger is to find out whether the model beats the field. 'Consensus' and 'differential' are how that question gets framed after the fact, so getting them wrong before the round would let any result be explained away. Two corrections to the same paragraph in one day, both in the direction of claiming less."
+      },
+      "namedButNotPicked": ["Oliver Norwood (Stockport)", "Cameron Brannagan"],
+      "againstOurTariff": "Interceptions at +2 for midfielders only is already what our tariff pays (efl/app/assets/tariff.js) and what our model weights. Checked rather than assumed. So this tip identifies a scoring rule we already act on, and our 1-2-3-1 with three midfielders is consistent with the meta it describes."
+    },
+    {
+      "n": 4,
+      "topic": "do your research, it is a free-hit format",
+      "claim": "A new team every week with options from all three leagues, unlike FPL formats. Recommends Sofascore, FotMob and Opta Analyst for xG maps, heatmaps and set-piece data.",
+      "gradeable": false,
+      "whyItMattersHere": "Independent confirmation of the FORMAT this project models: a weekly free hit, no transfers, no budget carried between rounds. That is the standing instruction on this repo — 'not an FPL clone, no budget, player-price or transfer functionality' — and it reads here as a correct description of the game rather than only a scoping preference.",
+      "onTheToolsNamed": "Three third-party stats products. Not adopted: this project does not scrape sites and does not take paid APIs, which is the same rule that closed the EFL referee question."
+    },
+    {
+      "n": 5,
+      "topic": "prizes",
+      "claim": "Winning your club league can win a free season ticket at that club; the author says several community members including himself have won one.",
+      "gradeable": false,
+      "screenshotShows": "A 'My leagues' panel: Overall rankings 84, Barnsley club league 1/1,000, League One public league 29. Recorded as what the screenshot shows, and it is the author's own account rather than a general statistic.",
+      "alsoSays": "That the game is 'the perfect game for punters as an addition/alternative to gambling'.",
+      "notedBecauseItTouchesThisProject": "This repository ingested bookmaker-derived probabilities into the Premier League briefing on the same day (docs/benchmarks/pl-gw1-market-odds.json). Those numbers are held as a FORECAST BENCHMARK to check our fixture ratings against, and nothing in this project offers, recommends or links to a bet. Worth stating once, plainly, now that odds-derived figures appear in our documents at all."
+    },
+    {
+      "n": 6,
+      "topic": "the community",
+      "claim": "The best part of the game is the free-hit format and the people in it, especially on X. Urges new managers to join leagues, competitions and chats set up before the season.",
+      "gradeable": false,
+      "mustFollows": ["@DanDave1989", "@FEFLTips", "@FeflThomas", "@FEFLsam"],
+      "mustFollowsIsPrefix": true,
+      "identityCaution": "@FEFLTips here is NOT the same handle as @EFLFantasyTips, the account behind round-01-tipsters.json. Two similar names for two accounts, and treating them as one would have merged an unrelated source into a benchmark we intend to grade. The same shape of error as matching a player on surname alone — which cost this project two invented price conflicts in the Premier League set-piece diff.",
+      "alreadySeenHere": "@FeflThomas is credited in point 3 as the origin of the meta thread, so he is named twice in the same thread from two directions."
+    }
+  ],
+  "announcedFollowUp": {
+    "topic": "out-of-position players",
+    "statedAs": "The author signs off saying he will return 'in the coming days with a thread on out of position players'.",
+    "whyThisMattersMoreThanTheRestOfTheThread": "Position is the single most load-bearing field in this app's scoring. Eight of the seventeen tariff rules are gated on it: clean sheets and goals conceded are GK/DEF only, saves and penalty saves GK only, clearances, blocks and tackles DEF only, and interceptions MID only at +2 each. A player whose listed position differs from where he actually plays is therefore paid from the wrong column, and the community calls interceptions the meta precisely because that column pays best.",
+    "ourGap": "This project has NO concept of out-of-position play. It takes the feed's position label verbatim. That is recorded here as a known gap rather than fixed, because deciding whether to model it is a product decision and not a defect.",
+    "thedefectItDidSurface": "Looking for out-of-position handling found something worse and genuinely broken: provider.js maps the feed's position through OFFICIAL_POSITIONS and falls back to 'MID' for anything unrecognised, SILENTLY. MID is the only position paid for interceptions. A feed that started sending 'ST' or 'AM' would not error and would not 503 — it would quietly mint midfielders earning the game's most valuable defensive stat. Fixed on 14 Aug: /api/efl/health now counts unrecognised position labels across every player and reports them, and the freshness grader raises them as a NOTE with the labels and the consequence. It is a note rather than a failure because one odd label among a thousand players is not a reason to take the app down."
+  },
+  "whatThisIsNot": [
+    "NOT a squad, a tip list or a rival entry. It names three players as archetypes of a scoring meta and warns against two others in a specific week. It cannot be scored as a team.",
+    "NOT resolved to feed IDs, except Lewis Wing, who is resolved because he is our own pick and carries our id 432647. Norwood, Brannagan, Bowen and Langstaff are recorded as published."
+  ],
+  "gradeableAfterRound": [
+    "Lewis Wing's actual round-1 return, which is both their meta example and our captain — one result settling two claims at once.",
+    "Whether midfielders out-scored other positions in round 1 overall, which is the testable core of the meta claim.",
+    "Whether the two players warned against (Bowen, Langstaff) underperformed in round 1 as the tip predicts."
+  ]
+}

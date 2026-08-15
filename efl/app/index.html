@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fantasy EFL Picks, Fixtures &amp; Player Form | GameweekEdge</title>
+<meta name="description" content="Fantasy EFL tools for weekly player picks, club selections, captaincy, fixtures and form across the Championship, League One and League Two.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="Fantasy EFL picks, fixtures and form">
+<meta property="og:description" content="Compare player form, fixtures, availability and club options across all three EFL divisions before your Fantasy EFL deadline.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fantasy EFL picks, fixtures and form">
+<meta name="twitter:description" content="Weekly player, club and captain picks across the Championship, League One and League Two.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+/* Applied before the first paint so the theme does not flash. `ge-theme` is
+   the key Gameweek Edge itself writes — one site, one preference. */
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge — home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge — Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/" aria-current="page">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/record/">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+  <!-- ── HERO ─────────────────────────────────────────── -->
+  <section class="hero" aria-labelledby="hero-title">
+    <p class="hero-eyebrow">Championship · League One · League Two</p>
+    <h1 id="hero-title">Fantasy EFL picks, fixtures and form</h1>
+    <p class="lede">Find the best player, club and captain picks across the Championship,
+      League One and League Two.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="#picks">View this round’s picks</a>
+      <a class="btn btn-ghost" href="/fantasy-efl/fixtures/">Explore fixtures</a>
+    </div>
+  </section>
+
+  <div id="source-banner" style="margin:14px 0"></div>
+
+  <!-- ── THIS ROUND'S PICKS ───────────────────────────── -->
+  <section id="picks" aria-labelledby="picks-title">
+    <div class="sec-head">
+      <h2 class="sec-title" id="picks-title">This round’s picks</h2>
+      <p class="sec-note">Seven decisions, one card each: a player in every position, a
+        differential, one of your two club picks and a captain. Every card shows the reasoning
+        behind it — these are modelled ratings, not predictions.</p>
+    </div>
+    <div id="picks-grid">
+      <div role="status" aria-live="polite">
+        <span class="sr-only">Loading this round’s picks</span>
+        <div class="grid g-auto">
+          <div class="skel skel-card"></div><div class="skel skel-card"></div>
+          <div class="skel skel-card"></div><div class="skel skel-card"></div>
+          <div class="skel skel-card"></div><div class="skel skel-card"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── BUILD YOUR SEVEN ─────────────────────────────── -->
+  <section id="squad" aria-labelledby="squad-title">
+    <div class="sec-head">
+      <h2 class="sec-title" id="squad-title">Build your seven</h2>
+      <p class="sec-note">The cards above pick the best player in each position. This picks a
+        <em>team</em> — seven players in one of the game's three legal formations, no more than
+        two from any one club, with the armband on the highest-rated player in the side. Those
+        constraints are the hard part: the top of any form list clusters into two or three clubs
+        having a good month, and that side cannot be entered.</p>
+    </div>
+    <div id="squad-body">
+      <div role="status" aria-live="polite">
+        <span class="sr-only">Building a squad</span>
+        <div class="grid g-4"><div class="skel skel-card"></div><div class="skel skel-card"></div>
+          <div class="skel skel-card"></div><div class="skel skel-card"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FIXTURE SNAPSHOT ─────────────────────────────── -->
+  <section id="snapshot" aria-labelledby="snapshot-title">
+    <div class="sec-head">
+      <h2 class="sec-title" id="snapshot-title">Fixture snapshot</h2>
+      <p class="sec-note">The next three rounds for the best-rated clubs in each division.
+        Blank and double rounds are marked, because both change what a squad should look like.
+        <a href="/fantasy-efl/fixtures/" style="color:var(--efl)">See all fixtures →</a></p>
+    </div>
+    <div id="snapshot-body"></div>
+  </section>
+
+  <!-- ── QUICK LINKS ──────────────────────────────────── -->
+  <section aria-labelledby="links-title">
+    <div class="sec-head"><h2 class="sec-title" id="links-title">Tools</h2></div>
+    <div class="grid g-4">
+      <a class="linkcard" href="/fantasy-efl/fixtures/">
+        <b>Fixture ticker</b>
+        <span>Six rounds ahead for all 72 clubs, with difficulty ratings, congestion,
+          blanks and doubles.</span>
+        <span class="go">Plan your fixtures →</span>
+      </a>
+      <a class="linkcard" href="/fantasy-efl/players/">
+        <b>Player finder</b>
+        <span>Search, filter and sort every player by form, minutes, output, fixture and
+          differential score.</span>
+        <span class="go">Find a player →</span>
+      </a>
+      <a class="linkcard" href="/fantasy-efl/clubs/">
+        <b>Club picker</b>
+        <span>Compare clubs on form, goals, clean sheets and the next three, five and six
+          fixtures.</span>
+        <span class="go">Compare clubs →</span>
+      </a>
+      <a class="linkcard" href="/fantasy-efl/record/">
+        <b>The model's record</b>
+        <span>Every round's picks, written down before the deadline and graded after it
+          against a random seven, a naive seven and the best seven possible.</span>
+        <span class="go">See how it has done →</span>
+      </a>
+      <a class="linkcard" href="/fantasy-efl/how-to-play/">
+        <b>How Fantasy EFL works</b>
+        <span>Seven players, two clubs, one captain — and which of those decisions is
+          worth the most attention.</span>
+        <span class="go">Read the guide →</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ── EDITORIAL ────────────────────────────────────── -->
+  <section aria-labelledby="about-title">
+    <div class="sec-head"><h2 class="sec-title" id="about-title">About these tools</h2></div>
+    <div class="card prose">
+      <h2 id="about-heading" style="margin-top:0;font-size:var(--fs-lg)">Fantasy EFL tools for weekly picks</h2>
+      <p>Fantasy EFL asks a different question from a Premier League fantasy game. You are
+        picking seven players and two clubs from three divisions at once, which means holding
+        seventy-two teams and several hundred plausible players in your head every week. Nobody
+        does that from memory. These tools do the comparing so you can spend your time on the
+        judgement calls.</p>
+      <p>Everything here is built on the same four things that actually decide a Fantasy EFL
+        round: <strong>recent form</strong>, <strong>the fixture in front of a player</strong>,
+        <strong>whether they are starting and finishing matches</strong>, and
+        <strong>whether they are fit to play at all</strong>. The
+        <a href="/fantasy-efl/players/">player finder</a> ranks on all four at once and lets you
+        cut by division, position, club and availability. The
+        <a href="/fantasy-efl/fixtures/">fixture ticker</a> shows six rounds ahead so you can see
+        a good run coming rather than reacting to it a week late. The
+        <a href="/fantasy-efl/clubs/">club picker</a> does the same job for the two club
+        selections, which are the part of the game most managers set once and forget.</p>
+      <p>Cross-division comparison is the hard part, and it is where a tool earns its place. A
+        forward on a hot run in League Two and a Championship midfielder with three assists in
+        four are not obviously comparable — so every input in the model is normalised within a
+        player's own division before anything is ranked. A fixture rated 2 in League One means
+        the same thing as a fixture rated 2 in the Championship: comfortably better than average
+        <em>for that division</em>.</p>
+      <p>There is no budget here, no player prices and no transfer market, because Fantasy EFL
+        does not have them. What it has instead is a weekly selection problem, and that is the
+        only thing these pages try to help with. Ratings are modelled from results to date and
+        described as such throughout — they are a starting point for a decision, not a
+        forecast of one.</p>
+      <p><a href="/fantasy-efl/how-to-play/">Read how Fantasy EFL works →</a></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot wrap">
+  <div class="cross">
+    <div class="cross-t">
+      <b>Play Fantasy Premier League too?</b>
+      Gameweek Edge is the same approach built for FPL — projected points, live matchday
+      tracking and an AI scout. It is part of this site, and your account comes with you.
+    </div>
+    <a class="btn btn-ghost" href="/">Open Gameweek Edge</a>
+  </div>
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League, the Championship, League One, League Two or the official Fantasy EFL game.
+    Those names, and the club names used throughout, are trademarks of their respective owners
+    and are used descriptively only. No official logos, crests or imagery are used.</p>
+  <p id="data-note"></p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-home.js"></script>
+</body>
+</html>

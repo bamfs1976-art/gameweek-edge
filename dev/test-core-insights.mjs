@@ -12,7 +12,7 @@ import { createRequire } from 'node:module';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const { parseCsv, aggregate, deriveSeasonLabel, seasonCandidates } =
+const { parseCsv, aggregate, deriveSeasonLabel, seasonCandidates, splitLeagueRows } =
   require(join(ROOT, 'netlify', 'functions', 'core-insights.js'));
 
 let failures = 0, passes = 0;
@@ -20,6 +20,39 @@ const ok = (c, label) => { if (c) passes++; else { failures++; console.error('  
 const near = (a, b, e = 1e-6) => Math.abs(a - b) <= e;
 
 console.log('• core-insights: CSV parse + aggregate');
+
+/* ── competition scope ──────────────────────────────────────
+   The aggregator asks for By Tournament/Premier League. This is the guard on
+   that path continuing to mean what it means. It matters because reading the
+   all-competitions directory cost real accuracy without ever looking wrong:
+   on the full 2025-26 season, 2,586 of 15,340 appearance rows were cup and
+   European ties, 30 of 291 regular starters had a defensive-contribution hit
+   rate out by five points or more (worst 16), and league-wide goals_prevented
+   read 17.4 against a true 13.4. */
+{
+  const mixed = [
+    { player_id: '1', match_id: '25-26-prem-arsenal-vs-chelsea', minutes_played: '90' },
+    { player_id: '1', match_id: '25-26-europa-roma-vs-arsenal', minutes_played: '90' },
+    { player_id: '2', match_id: '25-26-fa-cup-luton-vs-arsenal', minutes_played: '90' },
+    { player_id: '2', match_id: '25-26-prem-spurs-vs-arsenal', minutes_played: '45' },
+  ];
+  const split = splitLeagueRows(mixed);
+  ok(split.league.length === 2, 'keeps only league fixtures');
+  ok(split.foreign.length === 2, 'reports the non-league ones rather than dropping them silently');
+  ok(split.foreign.every((r) => !/-prem-/.test(r.match_id)), 'nothing with the league marker is discarded');
+
+  /* A European tie is an extra START that FPL pays nothing for, so leaving it
+     in drags a hit rate down. This is the shape of the error, in miniature. */
+  const both = aggregate('2025-2026', mixed, { 1: 'Defender' });
+  const league = aggregate('2025-2026', split.league, { 1: 'Defender' });
+  ok(both.find((r) => r.element === 1).defcon_starts === 2, 'mixed rows count the European start');
+  ok(league.find((r) => r.element === 1).defcon_starts === 1, 'league-only counts only the league start');
+
+  /* A feed that stops publishing match_id must not empty the database. */
+  const noIds = splitLeagueRows([{ player_id: '3', minutes_played: '90' }]);
+  ok(noIds.league.length === 1 && noIds.foreign.length === 0, 'rows with no match_id are kept, not refused');
+  ok(splitLeagueRows(null).league.length === 0, 'handles no rows at all');
+}
 
 /* ── CSV parser ─────────────────────────────────────────── */
 const csv = 'player_id,minutes_played,goals_prevented,"quoted"\n7,90,0.5,"a,b"\n7,45,-0.2,c\n';

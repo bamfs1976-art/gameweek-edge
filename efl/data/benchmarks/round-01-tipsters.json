@@ -1,0 +1,145 @@
+{
+  "round": 1,
+  "kind": "outside-tips",
+  "capturedAt": "2026-08-13T21:45:00.000Z",
+  "roundLockoutAt": "2026-08-14T19:00:00.000Z",
+  "note": "Captured BEFORE the lockout stated above, which is the only reason this file is worth anything. Committed now so git history is the evidence it predates the football, exactly as the round entries are.",
+  "source": {
+    "name": "FEFL Tipsters",
+    "handle": "@EFLFantasyTips",
+    "title": "GW1 MEGA THREAD — Tipsters' Top Three",
+    "postedAt": "2026-08-13T16:28:00.000Z",
+    "readFrom": "screenshots of the X thread",
+    "capturedSections": [
+      "teams",
+      "goalkeepers",
+      "defenders",
+      "midfielders",
+      "strikers"
+    ],
+    "missingSections": [],
+    "completeness": "All five sections of the thread are now captured. The strikers post was added on a second pass, still before the lockout."
+  },
+  "whatThisIsNot": [
+    "NOT a squad. It is a top-three-per-position tip list, so it names no formation, no captain and no legal seven. It cannot be scored against our entry as a rival team without inventing selections its author never made, and doing that would be putting words in somebody's mouth and then marking them.",
+    "NOT resolved to feed IDs. Names are recorded as published. Matching them to Fantasy EFL player ids needs a run against the official feed, which this sandbox cannot reach."
+  ],
+  "gradeableAs": "Individual named players with a stated rank within their position, and three named team tips. Per-player scoring and rank quality are fair; squad-level comparison is not.",
+  "teams": [
+    {
+      "rank": 1,
+      "club": "Middlesbrough",
+      "fixture": "v Lincoln (H)",
+      "claim": "75% to win, big win in EFL Cup, drew with Celtic and Espanyol in pre-season"
+    },
+    {
+      "rank": 2,
+      "club": "Leicester City",
+      "fixture": "v Notts County (A)",
+      "claim": "49% to win, victory in EFL Cup, 4 of 6 pre-season wins",
+      "opponent": "Notts County",
+      "resolution": "The code NOT was printed without expansion; resolved to Notts County by the project's owner on 13 Aug. Recorded as their resolution rather than as a feed confirmation: our round-1 entry stores fixtures only for the seven players it picked, so nothing on hand could check it. The grader will have the full round from the official feed and can confirm or correct it then.",
+      "confirmedBy": "round-01-natethegreat.json, captured 14 Aug from an unrelated account, prints 'Leicester City vs Notts County (A)' in full — the same opponent and the same away venue. The resolution was correct. Still not a feed confirmation, and the grader can still overturn both sources together, but a second independent printing is what this line was waiting for.",
+      "divisionSettled": "A season preview captured later the same day describes Leicester as a LEAGUE ONE club, which briefly made this fixture look impossible — Notts County having last been recorded here as League Two. Notts County are in League One this season (resolved by the project's owner, 14 Aug), so the fixture is an ordinary league game and the three sources agree. Logged because for about an hour a correctly-recorded fixture looked like an error, purely because a fact about a THIRD club was missing."
+    },
+    {
+      "rank": 3,
+      "club": "Huddersfield Town",
+      "fixture": "v Wimbledon (H)",
+      "claim": "62% to win, unbeaten in final 3 pre-season games"
+    }
+  ],
+  "players": [
+    {
+      "rank": 1,
+      "position": "GK",
+      "name": "R. Vitek",
+      "claim": "53% clean sheet odds, 4.4 point average, 12 shutouts last season"
+    },
+    {
+      "rank": 2,
+      "position": "GK",
+      "name": "D. Bentley",
+      "claim": "46% clean sheet odds, 4 shutouts across 5 games over the summer"
+    },
+    {
+      "rank": 3,
+      "position": "GK",
+      "name": "M. Young",
+      "claim": "42% clean sheet odds, 4.7 point average, 15 shutouts in 25/26"
+    },
+    {
+      "rank": 1,
+      "position": "DEF",
+      "name": "Y. Mosquera",
+      "claim": "goal and assist in the past 2, second-highest clearances per 90 for Wolves in 25/26"
+    },
+    {
+      "rank": 2,
+      "position": "DEF",
+      "name": "J. Whatmough",
+      "claim": "52% clean sheet odds, 6.8 point average, 22 clearances in the EFL Cup"
+    },
+    {
+      "rank": 3,
+      "position": "DEF",
+      "name": "A. Baldwin",
+      "claim": "centre-back, most clearances in an EFL Cup game, 4.8 point average in 25/26"
+    },
+    {
+      "rank": 1,
+      "position": "MID",
+      "name": "K. Green",
+      "claim": "6.5 point average, 14 goals and 9 assists last year, Exeter (H) first up"
+    },
+    {
+      "rank": 2,
+      "position": "MID",
+      "name": "J. Clarke",
+      "claim": "6.2 point average, 15 goal contributions, 24 interceptions, 39 key passes, 25 shots on target last season"
+    },
+    {
+      "rank": 3,
+      "position": "MID",
+      "name": "F. Azaz",
+      "claim": "5.5 point average, 20 goal contributions last year"
+    },
+    {
+      "rank": 1,
+      "position": "FWD",
+      "name": "W. Lankshear",
+      "claim": "50% odds to score, 11 goals and 4 assists last season, Lincoln (H)"
+    },
+    {
+      "rank": 2,
+      "position": "FWD",
+      "name": "M. Toure",
+      "claim": "38.5% odds to score, 12 goal contributions in 11 games last season, 1 goal and 1 assist in the EFL Cup"
+    },
+    {
+      "rank": 3,
+      "position": "FWD",
+      "name": "M. Cheek",
+      "claim": "34.8% odds to score, 20 goal contributions last season"
+    }
+  ],
+  "againstOurEntry": {
+    "ourRecordedAt": "2026-08-13T07:54:09.273Z",
+    "overlapWithOurSeven": 0,
+    "overlapWithOurTwoClubs": 0,
+    "observation": "No shared name in either list, now that all five sections are captured. Our seven leans on League One and League Two (Oldham, Bradford, Grimsby, Cambridge, Reading) with two Championship midfielders; every tip here that can be placed is Championship — our forward is Beesley of Bradford, theirs is Lankshear of Middlesbrough. Whether that is our model finding value below the top division or simply preferring players nobody watches is the question round-by-round grading is meant to answer, and it is not answered by either side asserting it now.",
+    "correction": {
+      "on": "2026-08-14",
+      "what": "The sentence above offers 'preferring players nobody watches' as one of two readings of zero overlap. A SECOND community source captured the same day makes that half of the dichotomy wrong for at least one player, and it happens to be the most important one.",
+      "evidence": "round-01-scottyfefl.json — a thread posted 2026-08-04 names LEWIS WING first among the midfield all-rounders it calls 'the meta'. Wing is our round-1 CAPTAIN and our highest-scored pick at 81.1.",
+      "whatItChanges": "Zero overlap with ONE top-three-per-position list is not zero overlap with community consensus, and this file quietly treated the two as the same thing. Our captain is a consensus pick. Wing being absent from the tipsters' top three midfielders is a disagreement between two outside sources, not evidence that we are alone on him.",
+      "whatItDoesNotChange": "The zero-overlap count itself, which is measured and correct, and the plan to grade every named player individually after the round. A wrong inference drawn from a right number is fixed by narrowing the inference, not by editing the number."
+    }
+  },
+  "internalConsistency": "Their number-one striker and their number-one team tip are the same fixture: W. Lankshear is listed with \"Lincoln (H)\" and the top team tip is Middlesbrough v Lincoln at home. The thread agrees with itself, which is worth noting because it is the cheapest test available and not every tip list passes it.",
+  "crossReference": "W. Lankshear also appears in this project's Premier League briefing, in Tottenham's Out list as \"Will Lankshear (CF, Middlesbrough, ~£10m)\". Two documents built for different competitions from different sources agreeing on where a player went is a small check that costs nothing and was free to make.",
+  "observations": [
+    "All seven of our picks are at HOME — Oldham v Port Vale, Bradford v Peterborough, Grimsby v Exeter, Cambridge v Wigan, Reading v Luton, Bristol City v Millwall, Stoke v Swansea. Home advantage is in the club rating, so a tilt is expected; seven from seven is a strong one and is noted here so that grading can speak to it rather than it being noticed later and explained after the fact.",
+    "Their three team tips are two home and one away, and their top tip and top striker are the same fixture."
+  ]
+}

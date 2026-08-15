@@ -86,7 +86,21 @@ ok(!/FOOTBALL_DATA_KEY[^\n]*body/.test(src), 'the key is never put in a response
 const errPaths = src.slice(src.indexOf('if (!r.ok)'));
 ok(!/body:\s*text/.test(errPaths),
   'the upstream error body is not echoed — their payloads can quote the request, and the request carries the key');
-ok(/if \(!key\) return json\(503/.test(src), 'a missing key fails loudly rather than returning empty');
+/* Asserted on the SHAPE rather than on one line of it: the guard used to be a
+   single statement and became a block when the message grew into something a
+   reader could act on. What must not change is that a missing key returns 503
+   from inside the `!key` branch, before anything is fetched — the failure mode
+   this guards is a silent empty body that reads as "no referee this week". */
+const guard = src.slice(src.indexOf('if (!key)'), src.indexOf('let r, text'));
+ok(/if \(!key\)/.test(guard) && /json\(503/.test(guard),
+  'a missing key fails loudly rather than returning empty');
+ok(src.indexOf('if (!key)') < src.indexOf('await fetch('),
+  'and it does so before any upstream request is attempted');
+/* The message has to name the three reasons the variable can be invisible,
+   because it took a live incident to learn that "not configured" covers a
+   variable that IS set but predates the last deploy. */
+ok(/deploy/i.test(guard) && /scope/i.test(guard),
+  'and it points at the deploy and scope causes, not just at the name');
 
 /* ── 7. the competition allowlist is closed ───────────────────────── */
 ok(COMPS instanceof Set && COMPS.size > 0, 'competitions are an allowlist');

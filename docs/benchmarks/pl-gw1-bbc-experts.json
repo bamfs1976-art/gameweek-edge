@@ -1,0 +1,108 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-tips",
+  "capturedAt": "2026-08-14T16:00:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured a week before the deadline. Its lasting value is not the tips — it is that it quotes PUBLISHED FPL PRICES, which settles claims this project had been carrying as estimates since 2 August.",
+  "source": {
+    "name": "BBC Sport",
+    "title": "Who to pick, who to avoid — your team's FPL assets analysed",
+    "publishedAt": "2026-08-14T08:00:00.000Z",
+    "publishedAtPrecision": "derived from '8 hours ago' against a capture around 16:00, so approximate",
+    "experts": ["Pras", "FPL Heisenberg", "Gianni Buttice", "Holly Shand"],
+    "format": "All 20 clubs, each given a talisman, a differential and a player to avoid, by one of four named writers.",
+    "confirmsSeasonStart": "States the season begins Friday 21 August, matching the GW1 deadline of 2026-08-21T17:30:00Z this project took from the FPL API."
+  },
+  "whyThisOneIsDifferent": "The three community EFL sources captured today are opinion. This is opinion too, but it is opinion wrapped around published facts — every pick carries the player's actual FPL price. Our briefing has marked every price 'est.' since 2 August and said the API would settle them. It has.",
+  "theResolution": {
+    "method": "Our price claims were extracted from both editions of the briefing with the existing parser and diffed against every price quoted in the article, matched on surname with accents normalised.",
+    "checkable": 13,
+    "exactAgreements": 9,
+    "disagreements": 4,
+    "disagreementDetail": [
+      { "player": "Morgan Gibbs-White", "ours": 7.0, "published": 8.0 },
+      { "player": "Chris Wood", "ours": 7.0, "published": 6.0 },
+      { "player": "Enzo le Fee", "ours": 5.5, "published": 6.0 },
+      { "player": "Antonee Robinson", "ours": 5.0, "published": 4.5 }
+    ],
+    "theUncomfortablePart": "Those four are EXACTLY four of the eight rows the outside set-piece projection flagged on 13 August as disagreeing with us — and on every one of them the projection's number was the published one. Four settled, theirs right four times, ours none.",
+    "stillOpen": ["Saka", "Ndiaye", "Garner", "Mateta"],
+    "whatItSaysAboutTheEstimates": "Nine of thirteen exactly right means the estimates are not bad in general. They are wrong precisely where an outside source had already said they were wrong, which is the least comfortable possible distribution of errors.",
+    "theProcessLesson": "The briefing's own words were that the API 'settles all of them at launch rather than either of us'. That reads as even-handed and is not: between a published projection and our own unsourced estimate, treating the two as equally likely was a thumb on our side of the scale. The scoreline for that posture is 0-4. Where an outside source and this document disagree about a fact somebody else has already published, the outside source is the better prior until it earns a losing record."
+  },
+  "independentConfirmations": [
+    {
+      "claim": "Gonzalo Garcia is a Fulham player, priced £6.0m",
+      "matters": "He was missing from our Fulham In list entirely until earlier today, when a Guardian preview surfaced him. A second, unrelated source naming him — with a price — confirms the correction rather than leaving it resting on one preview."
+    },
+    {
+      "claim": "Jorgen Strand Larsen is a Crystal Palace forward, priced £6.0m",
+      "matters": "Added to Palace's In list yesterday from the Guardian preview. Confirmed."
+    },
+    {
+      "claim": "Igor Thiago scored 22 league goals and finished on 181 FPL points",
+      "matters": "BOTH numbers match exactly what this project derived from its own www/data/fpl-history.json when it closed the 21-versus-22 conflict on 13 August. A conflict that sat open for two days as 'needs the API' is now confirmed twice over, by a bundle we already shipped and by the BBC."
+    },
+    {
+      "claim": "Justin Kluivert is set to be Bournemouth's penalty taker",
+      "matters": "Our Bournemouth line has read 'unresolved' since Kroupi's injury, and the outside set-piece projection named Kluivert first with Tavernier second. This is a second independent source for Kluivert. Still not a team sheet, but the hole is closing and it is closing toward the projection rather than toward our silence."
+    },
+    {
+      "claim": "Managers: Maresca at Man City, Iraola at Liverpool, Sage at Palace, Glasner at Forest, De Zerbi at Spurs, O'Neil at Ipswich",
+      "matters": "Six of the ten managerial changes this briefing lists, confirmed by a second source. None contradicted."
+    },
+    {
+      "claim": "Morgan Rogers to Chelsea, Tielemans to Man Utd, Garnacho to Villa on loan from Chelsea, Harry Wilson to Leeds, Vuskovic to Brighton for £46m, Guehi to Man City",
+      "matters": "Six transfers, all matching both ends as this file records them. The one-sided-transfer check has been finding these all week; here an outside source agrees with every one."
+    }
+  ],
+  "notesOnTheSourceItself": [
+    "COVENTRY'S SECTION IS MALFORMED: it prints 'Talisman' twice — for Haji Wright and again for Carl Rushworth — where the second is plainly the differential, since it discusses a 1%-owned rotation goalkeeper. Recorded because a mechanical parse of this article would give Coventry two talismen and no differential, and because it is a reminder that a well-edited source is still a source with typos in it.",
+    "Enzo Fernandez is described as receiving 'a red card in the final'. Our Chelsea block says 'two yellow cards in the World Cup final'. Those are the same event described two ways, not a contradiction — two yellows produce a red — and both are left standing.",
+    "The article mentions a companion piece on 2026-27 rule changes which is NOT held here. Defensive contribution scoring is described in passing (a defender needs 10 defensive actions for +2; a midfielder or forward 12) and matches the thresholds already implemented in this project's FPL app, checked rather than assumed."
+  ],
+  "picks": {
+    "Arsenal": { "talisman": ["Gabriel", "DEF", 8.0], "differential": ["Ben White", "DEF", 5.5], "avoid": ["Christos Tzolis", "MID", 6.5] },
+    "Aston Villa": { "talisman": ["Ollie Watkins", "FWD", 8.0], "differential": ["Matty Cash", "DEF", 4.5], "avoid": ["Alejandro Garnacho", "MID", 6.0] },
+    "Bournemouth": { "talisman": ["Marcus Tavernier", "MID", 6.0], "differential": ["Adrien Truffert", "DEF", 5.5], "avoid": ["Evanilson", "FWD", 6.0] },
+    "Brentford": { "talisman": ["Igor Thiago", "FWD", 8.0], "differential": ["Dango Ouattara", "MID", 6.5], "avoid": ["Callum Wilson", "FWD", 5.5] },
+    "Brighton": { "talisman": ["Pascal Gross", "MID", 5.5], "differential": ["Luka Vuskovic", "DEF", 5.0], "avoid": ["Georginio Rutter", "FWD", 5.5] },
+    "Chelsea": { "talisman": ["Joao Pedro", "FWD", 7.5], "differential": ["Levi Colwill", "DEF", 5.0], "avoid": ["Enzo Fernandez", "MID", 7.0] },
+    "Coventry City": { "talisman": ["Haji Wright", "FWD", 5.5], "differential": ["Carl Rushworth", "GK", 4.5], "avoid": ["Milan van Ewijk", "DEF", 4.0], "sourceLabelledBothAsTalisman": true },
+    "Crystal Palace": { "talisman": ["Ismaila Sarr", "MID", 6.5], "differential": ["Daniel Munoz", "DEF", 5.5], "avoid": ["Jorgen Strand Larsen", "FWD", 6.0] },
+    "Everton": { "talisman": ["James Tarkowski", "DEF", 6.0], "differential": ["Kiernan Dewsbury-Hall", "MID", 6.5], "avoid": ["Beto", "FWD", 5.5] },
+    "Fulham": { "talisman": ["Rodrigo Muniz", "FWD", 5.5], "differential": ["Antonee Robinson", "DEF", 4.5], "avoid": ["Sander Berge", "MID", 5.0] },
+    "Hull City": { "talisman": ["Oli McBurnie", "FWD", 5.5], "differential": ["Ryan Giles", "DEF", 4.0], "avoid": ["Liam Millar", "MID", 5.0] },
+    "Ipswich Town": { "talisman": ["Emersonn", "FWD", 5.5], "differential": ["Daizen Maeda", "MID", 5.5], "avoid": ["Chuba Akpom", "FWD", 5.0] },
+    "Leeds United": { "talisman": ["Dominic Calvert-Lewin", "FWD", 6.0], "differential": ["Harry Wilson", "MID", 6.5], "avoid": ["Jaka Bijol", "DEF", 5.0] },
+    "Liverpool": { "talisman": ["Dominik Szoboszlai", "MID", 7.0], "differential": ["Florian Wirtz", "MID", 7.5], "avoid": ["Jeremy Jacquet", "DEF", 5.0] },
+    "Manchester City": { "talisman": ["Erling Haaland", "FWD", 15.5], "differential": ["Phil Foden", "MID", 7.0], "avoid": ["Marc Guehi", "DEF", 6.0] },
+    "Manchester United": { "talisman": ["Bruno Fernandes", "MID", 12.0], "differential": ["Matheus Cunha", "MID", 8.0], "avoid": ["Benjamin Sesko", "FWD", 7.0] },
+    "Newcastle United": { "talisman": ["Nick Woltemade", "FWD", 6.0], "differential": ["Malick Thiaw", "DEF", 5.0], "avoid": ["Lewis Hall", "DEF", 5.0] },
+    "Nottingham Forest": { "talisman": ["Morgan Gibbs-White", "MID", 8.0], "differential": ["Neco Williams", "DEF", 5.0], "avoid": ["Chris Wood", "FWD", 6.0] },
+    "Sunderland": { "talisman": ["Enzo le Fee", "MID", 6.0], "differential": ["Granit Xhaka", "MID", 5.5], "avoid": ["Wilson Isidor", "FWD", 5.5] },
+    "Tottenham Hotspur": { "talisman": ["Pedro Porro", "DEF", 5.5], "differential": ["Mathys Tel", "MID", 6.0], "avoid": ["Marcos Senesi", "DEF", 6.0] }
+  },
+  "reportedOwnership": {
+    "caveat": "As quoted in the article, not read from the API. Stored under a name that says so, the same rule applied to the community EFL captures.",
+    "values": [
+      { "player": "Joao Pedro", "reported": "over 50%" },
+      { "player": "Dominik Szoboszlai", "reported": "nearly 50%" },
+      { "player": "Dominic Calvert-Lewin", "reported": "around 25%" },
+      { "player": "Bryan Mbeumo", "reported": "23.9%" },
+      { "player": "Milan van Ewijk", "reported": "15%" },
+      { "player": "Matheus Cunha", "reported": "12.7%" },
+      { "player": "Matty Cash", "reported": "8%" },
+      { "player": "Phil Foden", "reported": "7%" },
+      { "player": "Adrien Truffert", "reported": "5%" },
+      { "player": "Carl Rushworth", "reported": "1%" },
+      { "player": "Mathys Tel", "reported": "under 0.5%" },
+      { "player": "Daizen Maeda", "reported": "0.4%" }
+    ]
+  },
+  "whatThisIsNot": [
+    "NOT our picks. Nothing in the briefing or the app is rewritten from the tips; only the PRICES are taken, because those are published facts rather than opinion.",
+    "NOT an official price source. It is a newspaper quoting the game. The FPL API remains the authority, and the four corrections made today should be re-checked against it when the sandbox can reach it."
+  ]
+}

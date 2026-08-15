@@ -1,0 +1,195 @@
+{
+  "round": 1,
+  "kind": "pre-lockout-status",
+  "writtenAt": "2026-08-14T16:37:32.000Z",
+  "lockoutAt": "2026-08-14T19:00:00.000Z",
+  "hoursRemainingWhenWritten": 2.37,
+  "whatThisIs": "A statement of where the round-1 entry stands with the lockout still ahead, and of every outside claim gathered about it during the day. It exists so that after the football there is a dated record of what was known BEFORE, rather than a reconstruction assembled afterwards.",
+  "whatThisIsNot": [
+    "NOT part of the entry, and NOT a second entry. It records no pick, changes no pick, and the grader reads round-01.json alone.",
+    "NOT a revision. Nothing in the four outside sources captured today altered a single selection, and the verification below is the proof rather than the assurance."
+  ],
+  "entryIntegrity": {
+    "claim": "The entry has been recorded once and never touched since.",
+    "file": "efl/data/rounds/round-01.json",
+    "recordedAt": "2026-08-13T07:54:09.273Z",
+    "hoursBeforeLockAtRecording": 35.1,
+    "commits": 1,
+    "commitSha": "518078fb",
+    "commitDate": "2026-08-13T07:54:13+00:00",
+    "blobSha": "5d6400948d22d2043cbb369012942636c882447e",
+    "diffSinceFirstCommit": "empty",
+    "whyThisIsTheImportantPart": "A track record is only worth keeping if the picks provably predate the results. One commit, thirteen minutes after the picks were generated, and a byte-identical file thirty-three hours later is a stronger statement than any promise in a README. Anyone can re-run: git log -- efl/data/rounds/round-01.json"
+  },
+  "theEntry": {
+    "formation": "1-2-3-1",
+    "modelTotal": 554.8,
+    "captainId": "432647",
+    "players": [
+      {
+        "name": "M. Hudson",
+        "position": "GK",
+        "club": "Oldham Athletic",
+        "score": 77,
+        "fixture": "Port Vale (H)",
+        "kickoff": "2026-08-15T12:30:00+01:00"
+      },
+      {
+        "name": "C. McJannet",
+        "position": "DEF",
+        "club": "Grimsby Town",
+        "score": 78.2,
+        "fixture": "Exeter City (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "K. Watts",
+        "position": "DEF",
+        "club": "Cambridge United",
+        "score": 78,
+        "fixture": "Wigan Athletic (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "L. Wing",
+        "position": "MID",
+        "club": "Reading",
+        "score": 81.1,
+        "fixture": "Luton Town (H)",
+        "kickoff": "2026-08-15T12:30:00+01:00",
+        "captain": true
+      },
+      {
+        "name": "S. Twine",
+        "position": "MID",
+        "club": "Bristol City",
+        "score": 80.3,
+        "fixture": "Millwall (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "S. Thomas",
+        "position": "MID",
+        "club": "Stoke City",
+        "score": 80.1,
+        "fixture": "Swansea City (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      },
+      {
+        "name": "J. Beesley",
+        "position": "FWD",
+        "club": "Bradford City",
+        "score": 80.1,
+        "fixture": "Peterborough United (H)",
+        "kickoff": "2026-08-15T15:00:00+01:00"
+      }
+    ],
+    "clubs": [
+      {
+        "name": "Reading",
+        "score": 52.1,
+        "officialOwnership": 0.5
+      },
+      {
+        "name": "Blackburn Rovers",
+        "score": 50,
+        "officialOwnership": 0.5
+      }
+    ],
+    "allSevenAtHome": true,
+    "noteOnThat": "Seven from seven at home was flagged when the entry was recorded, before anyone knew whether it would look clever. Home advantage is in the club rating so a tilt is expected; seven of seven is a strong one and remains the single most likely explanation of any result in either direction."
+  },
+  "outsideEvidenceGathered": {
+    "sources": 4,
+    "allCapturedBeforeThisLockout": true,
+    "perPick": [
+      {
+        "pick": "L. Wing (C)",
+        "for": "Named 'the meta' by ScottyFEFL (4 Aug) and ranked number-one midfielder by NatetheGreat (14 Aug), who cites 7.8 points per round and 357 points last season, 22 goals and assists in League One and 123 interceptions plus key passes.",
+        "against": "His opponent Luton is O'Haire's most-trusted League One promotion selection — unbeaten final eleven, 2.45 xG per game, third-best shot ratio, and only two sides allowed fewer shots. NatetheGreat's 'do not put be off with the fixture' was a warning we initially filed as an aside.",
+        "ownership": "28.3% reported. Widely tipped, moderately owned — and this project wrongly called him a 'consensus pick' this morning before that number was known."
+      },
+      {
+        "pick": "M. Hudson (GK)",
+        "for": "Oldham are an O'Haire promotion selection at 4/1, with 110 big chances created against 82 conceded and a manager with six promotions. Round-1 opponent Port Vale scored 36 goals from almost 50 xG last season.",
+        "against": "The same paragraph: 'their defensive record probably flatters them — only 44 conceded from around 58 xGA.' Fourteen goals of defensive over-performance is exactly what regresses, and a goalkeeper pick is a bet on clean sheets."
+      },
+      {
+        "pick": "J. Beesley (FWD)",
+        "for": "An O'Haire Top Goalscorer selection at 33/1 on a fit argument — Bradford were the second-lowest scorers in last season's top half despite finishing fourth, producing crossing volume with no natural centre-forward. His opponent Peterborough is a relegation selection with the second-most shots conceded in League One. NatetheGreat separately picks Bradford at home to Peterborough as a team.",
+        "against": "Nothing recorded."
+      },
+      {
+        "pick": "K. Watts (DEF)",
+        "for": "Cambridge's promotion is credited to 'only 8.1 opposition shots per game alongside a 0.59 shot ratio and 0.66 big-chance ratio' — a defensive case, and we own the defender.",
+        "against": "Nothing directly. Both other sources that like Cambridge take its forward, Ben Knight, instead."
+      },
+      {
+        "pick": "C. McJannet (DEF)",
+        "for": "Grimsby 'created more big chances than anybody' with one of League Two's strongest shot and big-chance ratios, and are named a chief danger to the favourite.",
+        "against": "Nothing recorded."
+      },
+      {
+        "pick": "S. Twine (MID) and S. Thomas (MID)",
+        "for": "Nothing recorded.",
+        "against": "Nothing recorded.",
+        "note": "Neither Bristol City nor Stoke is discussed in any of the four sources. That is silence, not endorsement and not criticism — these documents cover the clubs their authors have opinions about."
+      },
+      {
+        "pick": "Blackburn Rovers (club)",
+        "for": "Nothing recorded.",
+        "against": "THREE independent sources. O'Haire makes Blackburn a recommended relegation selection at 11/2, on 42 goals from 55.4 xG — 'the biggest attacking underperformance in the Championship' — plus a 20th-place finish, O'Neill's departure and 'precious little summer strengthening'. NatetheGreat picks Wolves at home to Blackburn at a reported 46.4% and says Blackburn 'look set for a rough season'. His number-one defender is a Wolves player in that same fixture.",
+        "ourSide": "0.5% owned on the official feed, against a reported 46.4% on the other side of the same match."
+      },
+      {
+        "pick": "Reading (club)",
+        "for": "Nothing recorded.",
+        "against": "Nothing recorded.",
+        "note": "Reading is not mentioned once in O'Haire's League One preview. Absence proves nothing and no inference is drawn from it."
+      }
+    ]
+  },
+  "whatTonightAndTomorrowSettle": [
+    "Wolves v Blackburn is the only outright disagreement in the set: we hold one side of a match and a well-backed outside pick holds the other. Ninety minutes decides it with nothing left to interpret.",
+    "Lewis Wing's return grades two claims at once — the community's 'best all-round asset in this game' and our own decision to captain him into the division's best-trending opponent.",
+    "Whether seven home picks was a model finding a real edge or a tilt nobody had checked.",
+    "Individually gradeable outside claims, none of which is a squad and none of which will be scored as one: twelve tipster players and three team tips, three defenders, three midfielders, three forwards, six named differentials and six team picks."
+  ],
+  "predictionsDeliberatelyNotMade": "No score, no points total and no expected finish is recorded here. The model produced a ranking, not a forecast of returns, and inventing a number now to be graded against later would be inventing the standard as well as the result.",
+  "updates": [
+    {
+      "at": "2026-08-14T16:45:00.000Z",
+      "hoursBeforeLockout": 2.25,
+      "event": "Starting line-ups published for the first fixture of the round, with the lockout still ahead.",
+      "doesItChangeTheEntry": "No. The entry was recorded on 13 August and is append-only; the blob hash pinned above is the proof. Nothing about a team sheet can or should move it.",
+      "whichOfOurPicksCouldBeInvolved": {
+        "derivedNotGuessed": "None of our seven plays tonight. Every one of them kicks off on 15 August — four at 15:00 BST and two at 12:30 BST, per the fixtures stored in the entry itself. Reading, our captain's club, also plays on the 15th. So the only selection that a fixture tonight could involve is our other club pick, BLACKBURN ROVERS.",
+        "andThatIsAsFarAsItGoes": "Which fixture is actually first has not been established here. This sandbox cannot reach the feed, and the deduction above rests only on kick-off times already in the entry.",
+        "confirmed": "WOLVES v BLACKBURN, confirmed by the project owner at 16:50Z. The deduction was right, and it is our club pick."
+      },
+      "theHeadToHeadGoesFirst": {
+        "what": "Of everything gathered today — four sources and dozens of claims — exactly one is an outright disagreement rather than a difference of emphasis: we hold BLACKBURN, and NatetheGreat holds WOLVES at home in the same match at a reported 46.4%, with his number-one defender a Wolves player in that fixture. It is the first match of the round.",
+        "whyThatIsWorthWriting": "The single claim in this whole set that ninety minutes can settle outright is also the one that settles soonest — before any of our seven has kicked a ball, and before most of the round's evidence exists. Nothing else resolves this cleanly: the tipsters' twelve players, the season previews' promotion and relegation calls and the top-scorer bets all need weeks or a season.",
+        "whatCountsAsWhat": "Our club pick scores on Blackburn's performance. Theirs scores on Wolves'. There is no reading of the result that flatters both, which is precisely why it was worth recording before kick-off.",
+        "andTheThirdSource": "O'Haire's recommended relegation selection at 11/2 is about Blackburn's SEASON, not this match, and one result neither confirms nor refutes it. Recorded so that a good night at Molineux is not later waved at a season-long claim it does not touch."
+      },
+      "aTimingPointThatCutsAgainstTheOneAbove": {
+        "observation": "If this fixture kicks off before the 19:00Z lockout, a manager still to pick could know part or all of a result that our entry, recorded 35 hours out, could not.",
+        "notAComplaint": "It is a property of the game's own scheduling and applies to everyone equally. It is recorded because it is the exact mirror of the limitation logged above — we picked with less information than a deadline picker, and on this fixture a deadline picker may have had more than usual.",
+        "notEstablished": "The kick-off time is not held here and has not been assumed. If it is after the lockout, this note is moot and can be struck."
+      },
+      "whatLineUpsWouldBeUsedFor": {
+        "notForOurEntry": "Nothing. It is recorded and append-only.",
+        "butWorthCapturing": "Whether RODRIGO GOMES starts for Wolves. He is NatetheGreat's number-one defender at a reported 3.7%, in this exact fixture, and his thread flags a start risk for its THIRD defender (Whatmough) while flagging none for its first. A team sheet captured before kick-off would let the grader score that pick on the same footing as the one that was hedged.",
+        "status": "CAPTURED at 18:20Z, 40 minutes before the lockout. RODRIGO GOMES STARTS (shirt 21), so the unhedged number-one defender pick can be graded on returns alone. Two further outside picks turn out to be in the same XI: Y. Mosquera (the tipsters' number-one defender) and D. Bentley (their number-two goalkeeper) both start for Wolves. Full sheets in efl/data/benchmarks/round-01-wolves-blackburn-lineups.json.",
+        "andTheHeadToHeadIsSharperThanRecorded": "Three separately-named outside selections from two unrelated sources are all in the Wolves XI, every one of them scoring if Wolves keep Blackburn out, against our 0.5%-owned club pick on the other side. That does not make the outside view likelier to be right — tips cluster on strong home sides whether or not they are correct, and two of the three are defenders paying out on the SAME clean sheet, so they must not be counted as independent. It does mean our side of this match is a lonelier position than the earlier note implied, and it is being said before kick-off."
+      },
+      "theRealPointThisRaises": {
+        "observation": "Our picks were recorded 35.1 hours before the lockout. The rule that permits that is RECORD_WINDOW_HOURS = 36 in scripts/efl/lib.mjs, and its refusal message for anything earlier reads 'too early, team news is still to come'. So the rule already acknowledges that team news matters — and we recorded 0.9 hours inside the boundary, which is as early as the rule allows and therefore the moment with the LEAST team news available.",
+        "whatItMeans": "A manager picking at the deadline has strictly more information than this model had: line-ups for the early fixtures, late injury news, and a day and a half of press conferences. Our minutes weight is the largest single term in the model at 0.34, but it is computed from historical minutes rather than from a team sheet.",
+        "whyItIsWrittenNowRatherThanAfter": "If one of our seven does not start tomorrow, that outcome was foreseeable in KIND — not in specifics — from the moment we recorded 35 hours out. Logging that before the round is the difference between a known limitation and an excuse.",
+        "whatIsNotBeingDone": "The window is not being changed, and the entry is certainly not being re-recorded. Whether to record closer to the deadline in future rounds is a real question with a real trade-off — later picks are better informed, earlier picks are harder to fudge — and it is the project owner's call, to be made between rounds rather than during one."
+      }
+    }
+  ]
+}

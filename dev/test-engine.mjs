@@ -1,9 +1,9 @@
 /*
  * Tests for the shared-engine extraction (scripts/extract-engine.mjs).
  *
- * Euro Matchday Edge runs on model code lifted out of Gameweek Edge's index.html
- * at build time. If that lift is wrong, the second app is wrong in ways no
- * panel test would catch — so the extraction itself is tested here:
+ * The daily-content renderer runs on model code lifted out of index.html
+ * at render time. If that lift is wrong, the published content is wrong in
+ * ways no panel test would catch — so the extraction itself is tested here:
  *
  *  1. the scanner respects regex literals (the bug that makes the older
  *     extractors swallow half the file when they hit `esc`);

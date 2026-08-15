@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Fantasy EFL Club Picks — Compare Form &amp; Fixtures | GameweekEdge</title>
+<meta name="description" content="Compare Fantasy EFL club picks on recent form, goals scored and conceded, clean sheets, home and away form and the next three, five and six fixtures.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/clubs/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="Fantasy EFL club picker">
+<meta property="og:description" content="Rank and compare clubs for your two Fantasy EFL club selections on form, goals, clean sheets and fixtures.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/clubs/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Fantasy EFL club picker">
+<meta name="twitter:description" content="Compare clubs for your two Fantasy EFL club selections.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge — home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge — Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/clubs/" aria-current="page">Clubs</a>
+      <a class="tab" href="/fantasy-efl/record/">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1 style="font-size:var(--fs-xl);margin-bottom:7px">Fantasy EFL club picker</h1>
+    <p class="sec-note" style="margin-bottom:14px">Fantasy EFL asks you for two clubs as well as
+      seven players, and the club picks are the part most managers set once and forget. This
+      compares all 72 on recent form, goals scored and conceded, clean sheets, home and away
+      records and the fixtures ahead — with the reasoning shown, so you can disagree with it.
+      Player-level picks are in the
+      <a href="/fantasy-efl/players/" style="color:var(--efl)">player finder</a>.</p>
+  </section>
+
+  <div id="source-banner" style="margin-bottom:14px"></div>
+
+  <section aria-labelledby="best-title">
+    <div class="sec-head">
+      <h2 class="sec-title" id="best-title">Best club picks this round</h2>
+      <p class="sec-note">The five highest-rated clubs, with the reasoning behind each.</p>
+    </div>
+    <div id="best"></div>
+  </section>
+
+  <form class="filters" id="filters" aria-label="Filter clubs" hidden>
+    <div class="field" style="grid-column:span 2;min-width:200px">
+      <label for="f-search">Search club</label>
+      <input type="search" id="f-search" placeholder="Club name" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="f-division">Division</label>
+      <select id="f-division">
+        <option value="all">All divisions</option>
+        <option value="championship">Championship</option>
+        <option value="league-one">League One</option>
+        <option value="league-two">League Two</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-sort">Sort by</label>
+      <select id="f-sort">
+        <option value="score">Modelled club rating</option>
+        <option value="form">Recent form</option>
+        <option value="attack">Goals scored (last 5)</option>
+        <option value="defence">Goals conceded (last 5)</option>
+        <option value="cleanSheets">Clean sheets (last 5)</option>
+        <option value="r3">Next 3 fixtures</option>
+        <option value="r5">Next 5 fixtures</option>
+        <option value="r6">Next 6 fixtures</option>
+        <option value="position">League position</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="f-reset">Reset filters</button>
+    </div>
+  </form>
+
+  <section aria-labelledby="table-title">
+    <div class="sec-head">
+      <h2 class="sec-title" id="table-title">All clubs</h2>
+      <div id="legend"></div>
+    </div>
+    <p class="result-count" id="result-count" aria-live="polite"></p>
+    <div id="table"></div>
+  </section>
+
+  <section aria-labelledby="method-title" style="margin-top:24px">
+    <div class="sec-head"><h2 class="sec-title" id="method-title">Method</h2></div>
+    <div id="method"></div>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League or the official Fantasy EFL game. Competition and club names are used
+    descriptively only.</p>
+  <p id="data-note"></p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-clubs.js"></script>
+</body>
+</html>

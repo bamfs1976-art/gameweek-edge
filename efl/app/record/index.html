@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Model's Record — Fantasy EFL Picks Graded Every Round | GameweekEdge</title>
+<meta name="description" content="Every Fantasy EFL round, the seven players and two clubs this site picked before the deadline, and how they scored against a random seven, a naive seven and the best possible seven.">
+<link rel="canonical" href="https://gameweekedge.co.uk/fantasy-efl/record/">
+<meta name="theme-color" content="#0A0C0F">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="The Fantasy EFL model's record">
+<meta property="og:description" content="Picks recorded before every deadline and graded after every round, against baselines anyone could have picked instead.">
+<meta property="og:url" content="https://gameweekedge.co.uk/fantasy-efl/record/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="The Fantasy EFL model's record">
+<meta name="twitter:description" content="Does the model beat picking at random, and does it beat picking whoever has been scoring? Graded every round, in public.">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/fantasy-efl/assets/efl.css">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/fantasy-efl/" aria-label="Fantasy EFL on Gameweek Edge — home" style="display:flex;align-items:center;gap:11px;min-width:0">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="var(--efl)"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="var(--efl-bright)" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand">
+        <span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span>
+        <span class="brand-tag">Fantasy EFL</span>
+      </span>
+    </a>
+    <div class="hdr-sp"></div>
+    <nav class="sw" aria-label="Choose competition">
+      <a class="sw-btn" href="/" title="Gameweek Edge — Fantasy Premier League">FPL</a>
+      <span class="sw-btn active" aria-current="page">EFL</span>
+    </nav>
+    <button class="theme-btn" id="theme-toggle" aria-label="Switch colour theme">Light</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Fantasy EFL sections">
+      <a class="tab" href="/fantasy-efl/">Dashboard</a>
+      <a class="tab" href="/fantasy-efl/fixtures/">Fixtures</a>
+      <a class="tab" href="/fantasy-efl/players/">Players</a>
+      <a class="tab" href="/fantasy-efl/clubs/">Clubs</a>
+      <a class="tab" href="/fantasy-efl/record/" aria-current="page">The record</a>
+      <a class="tab" href="/fantasy-efl/how-to-play/">How to play</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1 style="font-size:var(--fs-xl);margin-bottom:7px">The model's record</h1>
+    <p class="sec-note" style="margin-bottom:6px">Every round, before the deadline, this site's
+      model picks a legal seven, a captain and two clubs. They are written down. After the round
+      settles they are graded against what a random seven scored, what "just pick whoever has been
+      scoring" scored, and what the best possible seven scored. Everything below is that record,
+      including the weeks it went badly.</p>
+    <p class="sec-note" id="record-meta"></p>
+  </section>
+
+  <section aria-labelledby="season-title" style="margin-top:18px">
+    <div class="sec-head"><h2 class="sec-title" id="season-title">The season so far</h2></div>
+    <div id="season"></div>
+  </section>
+
+  <section aria-labelledby="latest-title" style="margin-top:24px">
+    <h2 class="sr-only" id="latest-title">The most recent round</h2>
+    <div id="latest"></div>
+  </section>
+
+  <section aria-labelledby="rounds-title" style="margin-top:24px">
+    <div class="sec-head"><h2 class="sec-title" id="rounds-title">Round by round</h2></div>
+    <div id="rounds"></div>
+  </section>
+
+  <section aria-labelledby="method-title" style="margin-top:24px" class="prose">
+    <div class="sec-head"><h2 class="sec-title" id="method-title">How this is kept honest</h2></div>
+
+    <p><b>Picks are recorded before the deadline, or not at all.</b> A scheduled job writes the
+      round's file inside the day and a half before the lockout, and stores both times — when the
+      picks were written and when the round locked — so the gap is on the page. The job refuses to
+      write after a lockout has passed and refuses to overwrite a round that already exists. There
+      is no flag that turns either refusal off. A missing round therefore means the job did not
+      run or the feed was down; it can never be filled in later.</p>
+
+    <p><b>The picks are the ones the site showed.</b> The job imports the same model the dashboard
+      runs — the same file, not a copy — so the record grades what visitors were actually told.</p>
+
+    <p><b>Points come from a subtraction.</b> The official game publishes a player's season total,
+      not a per-round figure. A round's points are the difference between the total stored at its
+      lockout and the total after it finished. That difference is only this round if nothing else
+      was played in between, so the window closes the moment a later round kicks off. A round
+      graded outside it is marked <b>ambiguous</b> and left out of the season figures — a number
+      that might be two rounds added together is worse than a gap, because a gap is visibly a gap.</p>
+
+    <p><b>The captain is graded without a multiplier.</b> This app has never verified what the
+      official captain multiplier is, so nothing here assumes one. What is measured instead: where
+      the armband landed inside our own seven, and how many points a perfect armband would have
+      added per extra multiple. Whatever the multiplier turns out to be, that gap is what the
+      decision cost.</p>
+
+    <p><b>Clubs are graded on official points when the feed publishes them</b>, and on the match
+      result — win, draw, loss, goals, clean sheet — when it does not. Which basis was used is
+      recorded per round and shown, because averaging the two would be meaningless. The official
+      club scoring tariff is not published to this app and this page will not invent one.</p>
+
+    <p><b>The baselines are decisions somebody could have made.</b> "Our seven scored 41" says
+      nothing on its own. The random seven is the floor; the naive seven — best points per
+      appearance at the time, chosen before the round, never in hindsight — is the bar that
+      actually matters; the best possible seven is the ceiling nobody reaches. The headline figure
+      is the share of random sevens ours beat, because it survives a week in which nobody scored.</p>
+
+    <p><b>The rank correlation is the model's real exam.</b> Seven picks is seven data points a
+      week. The correlation between the rating this site gave <em>every</em> player before the
+      round and what they actually scored is about 1,800 data points a week, and it grades the
+      model rather than the squad rules wrapped around it. It is a correlation, not an accuracy:
+      the rating is a 0-100 ranking, not a points forecast, so only the order it puts players in
+      can be right or wrong.</p>
+
+    <p>None of this makes a rating a prediction. A model that beats these baselines over a season
+      is a model worth listening to alongside what you know; it is not one that knows what is
+      going to happen on Saturday.</p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <nav class="foot-links" aria-label="Fantasy EFL pages">
+    <a href="/fantasy-efl/">Dashboard</a>
+    <a href="/fantasy-efl/fixtures/">Fixture ticker</a>
+    <a href="/fantasy-efl/players/">Player finder</a>
+    <a href="/fantasy-efl/clubs/">Club picker</a>
+    <a href="/fantasy-efl/record/">The record</a>
+    <a href="/fantasy-efl/how-to-play/">How to play</a>
+  </nav>
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the English
+    Football League or the official Fantasy EFL game. Competition and club names are used
+    descriptively only.</p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a></p>
+</footer>
+
+<script type="module" src="/fantasy-efl/assets/page-record.js"></script>
+</body>
+</html>

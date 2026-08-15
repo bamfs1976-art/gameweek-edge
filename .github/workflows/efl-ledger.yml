@@ -1,0 +1,112 @@
+name: Fantasy EFL ledger
+
+# Records the model's picks before each round locks, and grades them after
+# each round settles. The committed files under efl/data/rounds are the
+# whole point: a git history is timestamped evidence that a pick existed
+# before the football did, which no page of prose can be.
+#
+# Every three hours rather than once a day. EFL rounds do not lock at a
+# civilised weekly hour — midweek rounds, Friday nights and Bank Holiday
+# Mondays all happen — and the recorder only writes inside the 36 hours
+# before a lockout, so the schedule has to be finer than the thing it is
+# trying to catch. Runs outside a window do nothing and say so.
+#
+# A failure here is worth an email. It means either the feed was down (in
+# which case a round may have gone unrecorded, and the gap will be visible
+# on the page forever) or the feed changed shape. Both are things to know
+# about on the day, not in May.
+
+on:
+  schedule:
+    - cron: '20 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      grade_ambiguous:
+        description: 'Grade settled rounds even when a later round has started (marks them ambiguous)'
+        type: boolean
+        default: false
+      health:
+        description: 'Print the /api/efl/health report even if nothing failed'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # commit the ledger
+
+concurrency:
+  group: efl-ledger
+  cancel-in-progress: false
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm install: both scripts import only node builtins and the
+      # app's own ES modules, which is also why they cannot drift from what
+      # the website runs.
+      - name: Record this round's picks
+        run: node scripts/efl/record-picks.mjs
+
+      - name: Grade rounds that have settled
+        # Runs even if recording failed: the two are independent, and a
+        # round that finished on Saturday should not go ungraded because
+        # the feed happened to be down on Tuesday.
+        if: always()
+        run: node scripts/efl/grade-round.mjs ${{ github.event.inputs.grade_ambiguous == 'true' && '--force' || '' }}
+
+      # The per-document diagnosis, in the log of the run that needed it.
+      # Deliberately NOT on every run: /api/efl/health skips every cache and
+      # fans out to all three upstream documents, and the steps above have
+      # already fetched them once. On failure that second opinion is worth
+      # the request, because it names the document and the missing field
+      # rather than leaving a stack trace to interpret.
+      - name: Ask the feed what is wrong
+        if: failure() || github.event.inputs.health == 'true'
+        run: |
+          echo "GET /api/efl/health"
+          CODE=$(curl -sS -m 60 -o health.json -w '%{http_code}' \
+            https://gameweekedge.co.uk/api/efl/health || echo 000)
+          echo "HTTP $CODE"
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync('health.json', 'utf8'));
+            console.log(r.ok ? '✓ ' + r.summary : '✗ ' + r.summary);
+            for (const [name, d] of Object.entries(r.documents || {})) {
+              const problems = [
+                d.error,
+                d.status && d.status !== 200 ? 'HTTP ' + d.status : null,
+                d.isArray === false ? 'not a list' : null,
+                (d.fieldsMissing || []).length ? 'missing ' + d.fieldsMissing.join(', ') : null
+              ].filter(Boolean);
+              console.log('  ' + name.padEnd(8) + (problems.length ? '✗ ' + problems.join('; ')
+                : '✓ ' + d.count + ' records, all expected fields present'));
+              if (problems.length) console.log('    keys: ' + (d.sampleKeys || []).join(', '));
+            }
+          "
+          rm -f health.json
+
+      - name: Commit whatever changed
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add efl/data
+          if git diff --staged --quiet; then
+            echo "Nothing to commit — no round was in its window and none had settled."
+            exit 0
+          fi
+          FILES=$(git diff --staged --name-only | sed 's#.*/round-##; s#\.json##' | paste -sd, -)
+          git commit -m "Fantasy EFL ledger: round(s) ${FILES}"
+          # The scheduled job races nothing but itself; a rebase keeps it
+          # behind any human commit that landed while it was running.
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            echo "push failed, retrying in $((2 ** i))s"
+            sleep $((2 ** i))
+          done
+          exit 1

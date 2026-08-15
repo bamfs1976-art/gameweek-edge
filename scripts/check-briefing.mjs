@@ -54,7 +54,7 @@ const FIX = process.argv.includes('--fix');
 const API = (process.env.FPL_API || 'https://fantasy.premierleague.com/api').replace(/\/$/, '');
 
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
-  teamsFromHtml, claimsFromTeams, fixtureContradictions, pensSelfContradictions,
+  teamsFromHtml, claimsFromTeams, fixtureContradictions, moveContradictions, pensSelfContradictions,
   clubMatcher } from './briefing-parse.mjs';
 
 const md = readFileSync(join(ROOT, FILE), 'utf8');
@@ -138,6 +138,21 @@ if (fxClaims.length) {
     say('·', 'the API cannot settle these — one of the two claims is simply wrong, ' +
       'and until the fixture list is read directly neither can be trusted');
   }
+  /* The same trick, on transfers. A move between two clubs in this document
+     is two claims, and one can exist without the other — which it did ten
+     times, including a £116m club-record sale and a promoted side's
+     first-choice goalkeeper. Unlike a contradicted fixture, a missing half
+     is not visibly wrong: the block just reads as a thinner squad, and the
+     pick lists underneath quietly never mention the player. */
+  const oneSided = moveContradictions(moves, briefTeams.map((t) => t.name));
+  if (!oneSided.length) {
+    say('·', 'every transfer between two clubs here is recorded by both of them');
+  } else {
+    say('✗', oneSided.length + ' transfer(s) recorded by only one of the two clubs involved');
+    for (const b of oneSided) console.log('      • ' + b.msg);
+    say('·', 'no API needed and none would help — the document simply has one half of a move');
+  }
+
   /* Uneven coverage is a finding in its own right, and it needs no API. A club
      with one stated fixture is not agreeing with anybody — it simply is not in
      the comparison, so it cannot contradict and cannot be contradicted. Left

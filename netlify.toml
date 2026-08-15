@@ -79,12 +79,45 @@
   status = 200
   force = true
 
-# UEFA Champions League Fantasy, normalised into the FPL vocabulary the shared
-# model engine speaks. Serves Euro Matchday Edge at /euro/.
+# Fantasy EFL ships at /fantasy-efl/ as five ordinary static pages
+# (efl/app/ → www/fantasy-efl/, copied by scripts/build-web.mjs), so it needs
+# no redirect: Netlify's pretty URLs already serve /fantasy-efl/fixtures from
+# fixtures/index.html. It needs no CSP change either — everything it loads is
+# same-origin apart from Google Fonts, which is already allowed, and its only
+# data request goes to /api/efl/* below.
+#
+# The official Fantasy EFL feed. Three documents — squads, players, rounds —
+# that need no API key and no account, proxied so the browser only ever talks
+# to this origin: connect-src in the CSP above is 'self' and nothing else, and
+# the function's cache TTLs are what keep us a polite client of somebody's
+# front end rather than a load on it. See netlify/functions/efl.js.
+#
+# The app reads this feed by default. fantasy.efl.com was unreachable from the
+# machine the provider was written on, so a shape change is guarded rather than
+# assumed away: /api/efl/health reports whether each document is the shape the
+# app expects, a mismatch produces a named error instead of wrong numbers, and
+# ?provider=sample on any Fantasy EFL URL falls back to the clearly-labelled
+# generated dataset without a deploy.
+[[redirects]]
+  from = "/api/efl/*"
+  to = "/.netlify/functions/efl/:splat"
+  status = 200
+  force = true
+
+# Euro Matchday Edge (/euro/) and its UCL proxy (/api/ucl/*) were removed.
+# Those URLs were public and are in browser histories, home screens and
+# search indexes, so they redirect permanently to the front door rather than
+# 404ing at someone who bookmarked them.
+[[redirects]]
+  from = "/euro/*"
+  to = "/"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/api/ucl/*"
-  to = "/.netlify/functions/ucl/:splat"
-  status = 200
+  to = "/"
+  status = 301
   force = true
 
 # AI features (Claude) — scout report, chat, transfers, digest, etc.

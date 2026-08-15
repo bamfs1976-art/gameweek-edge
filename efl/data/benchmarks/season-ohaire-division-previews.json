@@ -1,0 +1,118 @@
+{
+  "kind": "outside-season-preview",
+  "scope": "season 2026-27, all three EFL divisions",
+  "capturedAt": "2026-08-14T16:30:00.000Z",
+  "roundOneLockoutAt": "2026-08-14T19:00:00.000Z",
+  "note": "Captured before round 1 locked. Unlike the three community captures from today, this is a SEASON-LONG view rather than a gameweek one, so almost none of it is settled tonight. It is stored now because it makes dated claims about clubs we have already picked, and because a season preview read after the season starts is worth nothing.",
+  "source": {
+    "name": "Mark O'Haire",
+    "documents": [
+      "Championship 2026/27 Outright Preview",
+      "League One 2026/27 Outright Preview",
+      "League Two 2026/27 Outright Preview"
+    ],
+    "readFrom": "three PDFs supplied by the project owner",
+    "extraction": "pypdf, pdfminer and poppler are all unavailable in this sandbox, so the text was pulled with a purpose-written extractor (scratch only, not committed): inflate the FlateDecode streams, read the ToUnicode CMaps, map font resource names to them and decode the hex CID strings. Recorded because the transcription route is part of the evidence — the numbers below are machine-extracted, not retyped."
+  },
+  "whatThisIsNot": [
+    "NOT a tip sheet we are following. These are BETTING previews and every headline claim carries a price. This project holds them as forecast analysis to check our own club and player ratings against; it offers no betting advice, publishes no odds, and nothing here is or becomes a recommendation.",
+    "NOT a full survey of 72 clubs. Each preview discusses the clubs its author has an opinion on. ABSENCE FROM THESE DOCUMENTS MEANS NOTHING — Reading, our captain's club, is not mentioned once in the League One preview, and no inference of any kind is available from that.",
+    "NOT settled by round 1. Promotion, relegation and top-scorer markets resolve in May. Only the fixture-level facts touch tonight."
+  ],
+  "againstOurRoundOneEntry": {
+    "summary": "Six of our seven players and one of our two clubs are touched by these previews. The picture is genuinely mixed, which is the reason to write it down before the football rather than after.",
+    "supportive": [
+      {
+        "ourPick": "J. Beesley (FWD, Bradford City) — our forward",
+        "theirClaim": "Named as a Top Goalscorer selection for League One at 33/1, and the FIRST outside source of the four captured today to mention him at all.",
+        "theirReasoning": "Bradford were the second-lowest scorers in last season's top half despite finishing fourth, and regularly produced crossing opportunities without a natural centre-forward to finish them. Beesley is described as a genuine aerial target arriving from Burton having turned good underlying numbers into goals. The argument is explicitly about FIT rather than quality: 'not simply a good player, but one whose new environment could materially increase the chances he receives.'",
+        "andHisRoundOneOpponent": "Bradford face Peterborough at home, and the same author makes Peterborough a relegation selection at 3/1 — second-most shots conceded per game in League One last season and more big chances allowed than anybody."
+      },
+      {
+        "ourPick": "K. Watts (DEF, Cambridge United) — our defender",
+        "theirClaim": "Cambridge's promotion is described as 'founded on exceptional process: only 8.1 opposition shots per game alongside a 0.59 shot ratio and 0.66 big-chance ratio.'",
+        "whyItSupportsUs": "That is a defensive case, and we own a Cambridge DEFENDER. The author's own bet on the club is its attacker (Ben Knight, 80/1) — the same Ben Knight another source lists as a 0.4% differential today. Two sources like Cambridge and both take the forward; we took the back."
+      },
+      {
+        "ourPick": "C. McJannet (DEF, Grimsby Town) — our defender",
+        "theirClaim": "Grimsby's underlying figures 'were excellent last season: David Artell's team created more big chances than anybody and finished with one of the division's strongest shot and big-chance ratios.' Named as one of two chief dangers to the League Two favourite."
+      }
+    ],
+    "cautionary": [
+      {
+        "ourPick": "L. Wing (MID, Reading) — OUR CAPTAIN",
+        "theirClaim": "Our captain's round-1 opponent, Luton, is this author's most-trusted League One promotion selection at 11/4: eight wins from an unbeaten final eleven, 23 goals, 2.45 expected goals per game, third-best shot ratio in the division, and only two sides allowed fewer shots per game.",
+        "whyThisMatters": "We captained a player at home to what an independent analyst rates the division's best-trending side. It also EXPLAINS a line we recorded this morning without understanding it: the source that ranked Wing the number-one midfielder added 'do not put be off with the fixture'. We logged that as an aside. It was a warning, and here is the reasoning behind it.",
+        "notAReasonToChange": "The round locks tonight and the entry is already recorded; the ledger is append-only and this changes nothing about it. It is written down so that if Wing returns nothing, the fixture was a known risk BEFORE the game rather than an excuse after it."
+      },
+      {
+        "ourPick": "M. Hudson (GK, Oldham Athletic) — our goalkeeper",
+        "theirClaim": "Oldham are a promotion selection at 4/1 — but the same paragraph says 'their defensive record probably flatters them – only 44 conceded from around 58 xGA.'",
+        "whyThisIsTheSharpestNoteHere": "A source can back a club and undercut the exact reason to own its goalkeeper in the same breath. Fourteen goals of defensive over-performance is precisely the thing that regresses, and a goalkeeper pick is a bet on clean sheets rather than on promotion.",
+        "partialOffset": "Our GK's round-1 opponent is Port Vale, of whom the same preview says their 'failure in front of goal effectively relegated them last season: just 36 goals despite producing almost 50 xG.' A weak-finishing opponent is the best possible fixture for a defence due negative regression."
+      }
+    ],
+    "againstOurClubPick": {
+      "ourPick": "Blackburn Rovers — one of our two club picks, 0.5% owned on the official feed",
+      "theirClaim": "A RECOMMENDED RELEGATION SELECTION at 11/2.",
+      "theirReasoning": "Survived in 20th last term; Michael O'Neill left for Northern Ireland full-time, which 'hardly screams confidence in the project'; Tony Mowbray begins an uncertain second spell with 'precious little summer strengthening'; and 42 goals last season, their lowest since 2010, from 55.4 expected goals — 'the biggest attacking underperformance in the Championship'.",
+      "howManySourcesNowOppose": "THREE. This preview recommends relegation; a GW1 thread captured today picks Wolves at home to Blackburn at a reported 46.4% and says Blackburn 'look set for a rough season'; and the same thread's number-one defender is a Wolves player in that fixture.",
+      "theHonestReading": "A season-long relegation view and a single-round club pick are different questions, and one does not refute the other — a bad team can keep a clean sheet in August. But this is now a substantial body of independent analysis against a club we backed at 0.5% ownership, and recording it before kick-off is the only way the result means anything either way.",
+      "whatWouldVindicateUs": "Blackburn taking points at Molineux tonight. What would not vindicate us is any amount of arguing about it tomorrow."
+    },
+    "untouched": ["S. Twine (MID, Bristol City)", "S. Thomas (MID, Stoke City)", "Reading as a club"]
+  },
+  "resolvesOpenItems": [
+    {
+      "item": "'Don't just pick Bowen or a Langstaff every week' — an unresolved surname in round-01-scottyfefl.json",
+      "resolution": "MACAULAY LANGSTAFF, now at Salford City. Previously Millwall, where 'his spell didn't work out', and before that Notts County, where he scored 28 in 46 at this level. He is the League Two Top Goalscorer favourite at 5/2, a price this author declines as too short.",
+      "confidence": "High but not certain — the surname is resolved by context rather than by a feed. The grader can confirm from the official player list."
+    },
+    {
+      "item": "Andy Cook's penalties at Grimsby, hedged in round-01-natethegreat.json as 'could be on pens with Kabia leaving too but I'm not sure'",
+      "resolution": "The PREMISE is confirmed: 'losing 24-goal top scorer Jaze Kabia to Leyton Orient'. Kabia has left. The penalty inference that was drawn from it remains unconfirmed, and is still stored as a maybe."
+    },
+    {
+      "item": "R. Vitek, the FEFL Tipsters' number-one goalkeeper, whose club our capture did not resolve",
+      "resolution": "RADEK VITEK, who 'arrives following an outstanding season with Bristol City to upgrade the goalkeeping department' at MIDDLESBROUGH. That makes their number-one goalkeeper and their number-one team tip the same club, since Middlesbrough v Lincoln (H) was their top team pick — another instance of that thread agreeing with itself."
+    },
+    {
+      "item": "Will Lankshear to Middlesbrough",
+      "resolution": "Confirmed a THIRD time — 'Will Lankshear supplies the penalty-box presence and finishing quality too often absent last term.' Our Premier League briefing has him in Tottenham's Out list at ~£10m; two community threads made him their number-one forward."
+    },
+    {
+      "item": "Mohamed Toure, named by two community sources today",
+      "resolution": "A third, with a minutes fact neither had: 'With Jovon Makama expected to miss the start of the campaign, Toure should get first crack at leading the line.' Also a divisional-best 1.06 expected goals per 90 and nine goals in eleven Championship appearances after a January arrival."
+    },
+    {
+      "item": "Plymouth Argyle v Stockport (H), a 1.2% differential team pick in round-01-natethegreat.json",
+      "resolution": "Not confirmed as a fixture, but the club is a promotion selection at 9/2: bottom in November on 13 points from 15, then 60 points from the remaining 31 games, and 130 big chances created against 101 conceded."
+    }
+  ],
+  "structuralFactsWorthHolding": [
+    "The Championship play-offs expand from SIX teams to EIGHT this season. That changes what a mid-table finish is worth and is a rule this project holds nowhere.",
+    "SOUTHAMPTON START ON MINUS FOUR POINTS following the 'Spygate' fallout, with an individual punishment still unresolved. Any club model that reads league position or points will see a Southampton distorted by a deduction rather than by form.",
+    "League One relegates FOUR clubs; League Two relegates only TWO from twenty-four, which the author notes makes its middle 'extremely congested'.",
+    "Historical base rates the author cites, recorded as his figures rather than ours: parachute clubs have won five of the last ten Championship titles; 31% of clubs relegated from the Premier League since 2000/01 returned immediately; only 19% of clubs promoted from League One are relegated straight back; 16% of League Two promotees go straight back down; 8% of League Two promotees win a second successive promotion; and League One's worst defence has been relegated in 70% of seasons this century."
+  ],
+  "openQuestionRaised": {
+    "question": "Leicester City are described here as a LEAGUE ONE club. Two community sources printed a round-1 fixture of 'Leicester City v Notts County (A)', and Notts County are referred to in the League Two preview only in a historical aside about 2009/10 and about Langstaff's old club.",
+    "whyItMatters": "If the two clubs are in different divisions, that fixture is not a league game and the confirmation recorded in round-01-tipsters.json needs re-reading. If Notts County were promoted to League One, everything is consistent.",
+    "status": "RESOLVED 14 Aug — NOTTS COUNTY ARE IN LEAGUE ONE. Leicester v Notts County is therefore a straightforward League One fixture and every source agrees.",
+    "resolvedBy": "The project's owner, as with the 'NOT' abbreviation on 13 August. Recorded as their resolution rather than as a feed confirmation, which is the same standard applied to the earlier one — and that earlier one was subsequently printed in full by an unrelated account, so the standard is not costing us anything.",
+    "whatItDoesNotRestOn": "It is tempting to add that Notts County are absent from the League Two preview's discussion, and that this corroborates the promotion. IT DOES NOT. This file states plainly that absence from these documents means nothing, and that rule cannot be suspended the moment absence would agree with us. The resolution rests on the owner's knowledge alone, and the feed can still overturn it.",
+    "howToSettleIt": "The official Fantasy EFL club list carries a division per club and the round-1 fixture list carries the tie. The grader has both."
+  },
+  "recommendedBetsAsPublished": {
+    "storedWhy": "Recorded verbatim so the season can be graded against what the author actually said, rather than against a summary of it. Storing them is not endorsing them and this project places no bets.",
+    "championship": ["Wolves to win the Championship 13/2", "Southampton to be promoted 5/1", "Middlesbrough to be promoted 7/2", "Blackburn to be relegated 11/2", "Mohamed Toure top goalscorer 20/1"],
+    "leagueOne": ["Luton to be promoted 11/4", "Plymouth to be promoted 9/2", "MK Dons to be promoted 5/1", "Peterborough to be relegated 3/1", "Barnsley to be relegated 4/1", "Jake Beesley top goalscorer 33/1", "Ben Knight top goalscorer 80/1"],
+    "leagueTwo": ["Salford City to win League Two 3/1", "Oldham Athletic to be promoted 4/1", "Accrington Stanley to be relegated 7/2", "Northampton Town to be relegated 14/1", "Kabongo Tshimanga top goalscorer 12/1", "Max Watters top goalscorer 50/1"]
+  },
+  "gradeableAtSeasonEnd": [
+    "Every selection above, since each names a club or player and an outcome.",
+    "Whether Blackburn were relegated — the claim that three sources made against our own club pick.",
+    "Whether Oldham's defence regressed toward its expected goals against, which is the specific caution attached to our goalkeeper.",
+    "Whether Beesley's move to Bradford produced the goals the fit argument predicts, which is the specific support attached to our forward."
+  ]
+}

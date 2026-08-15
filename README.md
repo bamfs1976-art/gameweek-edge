@@ -8,22 +8,70 @@ The calm, clear companion that gives fantasy managers a measurable edge. A singl
 
 ## Two games, one site
 
-Gameweek Edge covers **Fantasy Premier League** at `/`. **Euro Matchday
-Edge** — a separate app with its own name and its own night-blue identity —
-covers UEFA Champions League Fantasy at **`/euro/`**, from the same
-deployment. Source in [`euro/`](euro/README.md).
+| App | Route | Game | Source |
+|---|---|---|---|
+| Gameweek Edge | `/` | Fantasy Premier League | `index.html` |
+| Fantasy EFL | `/fantasy-efl/` | Official Fantasy EFL — Championship, League One, League Two | [`efl/`](efl/README.md) |
+
+Each has its own name and its own identity — Gameweek Edge is pitch green and
+daytime, Fantasy EFL is indigo with a three-stripe division motif — and both
+ship from one deployment.
 
 They are one Netlify site on purpose, not for tidiness. Supabase persists the
 session in `localStorage`, which is **scoped per origin** — so on two domains
 a user would sign in twice, and a Pro subscription bought on one would look
-absent on the other. Same origin makes *one account, one subscription, both
-games* true in the browser rather than only in the database.
+absent on the other. Same origin makes *one account, one subscription, every
+game* true in the browser rather than only in the database.
 
-The two apps share the model, not the code: `scripts/build-web.mjs` lifts the
-league-agnostic engine out of `index.html` at build time (see
-`scripts/extract-engine.mjs`) and writes it to `www/euro/engine.js`. A fix to
-the minutes model reaches both on the next deploy with nobody porting
-anything.
+> **Euro Matchday Edge (`/euro/`) has been removed.** It played UEFA
+> Champions League Fantasy on the same model. UEFA's Fantasy feeds return
+> **403 to any server-side client** — measured from two independent networks,
+> under a plain client, the game's own `Referer` and a browser User-Agent
+> alike — so the one thing that app existed to do, project player points,
+> could not be fed without inventing the players. `/euro/*` and `/api/ucl/*`
+> now redirect to `/`.
+
+**Fantasy EFL does not share the FPL model.** That game has no budget, no
+player prices, no transfers and no price changes, so the FPL optimiser and its
+cost-aware projections have nothing to say about it; extracting them would
+mean shipping 45kB of code to answer questions the game does not ask. It
+carries its own three small weighted models in `efl/app/assets/model.js`
+instead. It is also **six real HTML pages** rather than one shell, so each
+route has a genuine title, description, canonical URL and set of internal
+links before any JavaScript runs.
+
+Fantasy EFL reads the **official game's own public feed** — clubs, players,
+fixtures, real club ownership and the game's own difficulty ratings, with no
+API key and no account, proxied at `/api/efl/*` by `netlify/functions/efl.js`.
+Its scoring tariff is implemented and **verified against 83,698 real
+player-round records** (99.99% exact), and the model's weights come from
+measured correlations on that dataset rather than from intuition — minutes
+outweigh form, and the forward is the worst-scoring position in the game.
+
+> ✅ **Verified answering on 11 August 2026** — `/api/efl/health` returned
+> HTTP 200 with every expected field present on all three documents: 72 clubs,
+> 3,432 players, 42 rounds. It shipped before that was known, because
+> `fantasy.efl.com` is blocked by this environment's egress proxy; a CI run
+> from a machine that can reach it settled the question. **The shape guard
+> stays regardless** — a feed that answers correctly today can change
+> tomorrow, so a mismatch still produces a **named error saying which document
+> and what actually arrived**, never a page of plausible wrong numbers, and
+> there is still no silent fallback to invented data.
+> **[`/api/efl/health`](https://gameweekedge.co.uk/api/efl/health) answers "is
+> the feed the shape we expect" in one request.** If it is not,
+> `?provider=sample` on any Fantasy EFL URL switches to the clearly-labelled
+> generated dataset with no deploy. All data enters through one file,
+> `efl/app/assets/provider.js` — see [`efl/README.md`](efl/README.md) for the
+> models, the weights, the tariff and the shape guard.
+
+**The model is graded in public.** Every Fantasy EFL round, before the
+deadline, a scheduled job records the seven players, the captain and the two
+clubs the model picked, and after the round it grades them against a random
+legal seven, a naive "pick whoever has been scoring" seven, and the best seven
+possible in hindsight. The picks are committed to this repository before the
+football happens, the job cannot write after a lockout or overwrite an entry,
+and the whole record — good weeks and bad — is at
+**[`/fantasy-efl/record/`](https://gameweekedge.co.uk/fantasy-efl/record/)**.
 
 ### Game packs
 
@@ -201,7 +249,9 @@ caveats and known limitations, in **`docs/HISTORY.md`**.
 
 ```
 index.html              the app AND the model (single source of truth)
-euro/                   Euro Matchday Edge — the UCL app, served at /euro/
+efl/app/                Fantasy EFL — six pages, served at /fantasy-efl/
+efl/data/               the Fantasy EFL season ledger — picks, recorded weekly
+scripts/efl/            records those picks before each round and grades them after
 scripts/extract-engine.mjs  lifts the shared model out of index.html at build time
 src/native/index.js      native bridge (Capacitor) → bundled to www/native.js
 manifest.webmanifest     PWA manifest        sw.js  PWA service worker

@@ -1,11 +1,14 @@
 /* Gameweek Edge — shared engine extraction.
  *
- * Two apps now run on this model: Gameweek Edge (Fantasy Premier League) and
- * Euro Matchday Edge (UEFA Champions League Fantasy). The model
- * itself — the Poisson/Dixon-Coles match layer, the expected-points layer and
- * the squad optimiser — is the same code in both, and it must stay that way:
- * a fix to the minutes model should land in both apps or the second one is a
- * slowly-rotting copy.
+ * The model — the Poisson/Dixon-Coles match layer, the expected-points layer
+ * and the squad optimiser — lives in index.html, and things outside the app
+ * need to run it: the daily-content renderer publishes numbers from it, and
+ * the engine tests grade it. Every one of them must run the SAME code, or
+ * what gets published is a slowly-rotting copy of what ships.
+ *
+ * Euro Matchday Edge was the original reason this existed — a second app on
+ * the same model. That app has been removed; the extraction outlived it,
+ * because sharing the model with a renderer poses the identical problem.
  *
  * The obvious way to share it would be to move the model into modules and
  * import it. That is exactly what we must NOT do, and the reason is the test
@@ -16,9 +19,11 @@
  * So index.html stays the single source of truth, and this script does at
  * build time what the tests do at test time: pull the named, league-agnostic
  * functions out and emit them as a plain script that assigns them to
- * `window.GEEngine`. Euro Matchday Edge (served at /euro/) loads that.
+ * `window.GEEngine`, which a consumer evaluates in its own context.
  *
- * Run via scripts/build-web.mjs. Emits www/euro/engine.js.
+ * Consumers: scripts/content/model.mjs (the daily-content renderer) and
+ * dev/test-engine.mjs, which asserts the emitted bundle produces the same
+ * answers as the model inside the app.
  */
 import { readFileSync } from 'node:fs';
 
