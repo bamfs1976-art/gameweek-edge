@@ -1,3 +1,11 @@
+> ⚠️ **Superseded — do not post from this file.**
+> It plans a seventeen-day run-in from 5 Aug, and that window has passed. The
+> live pack is **`CONTENT_PACK_16-21_AUG.md`**: six days to the deadline, one
+> post a day, every caption copy-paste with nothing to fill in.
+> Kept for the asset list in §2 and the two evergreen posts that were never
+> date-bound — the DefCon explainer and the "how the model grades itself" trust
+> post.
+
 # Gameweek Edge — content pack
 
 ### Wed 5 Aug → GW1 deadline (Fri 21 Aug, early evening) · **X + Bluesky, one pack**

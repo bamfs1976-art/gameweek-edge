@@ -1,6 +1,6 @@
 # Gameweek Edge — GW1 weekend plan
 
-### Fri 21 Aug (early evening) → Tue 25 Aug · **X + Bluesky** · picks up where `CONTENT_PACK_AUG-05_TO_GW1.md` ends
+### Fri 21 Aug (early evening) → Tue 25 Aug · **X + Bluesky** · picks up where `CONTENT_PACK_16-21_AUG.md` ends
 
 The seventeen-day run-in sold a promise. This weekend the product has to keep
 it, in public, with real numbers, for the first time. Everything here is built

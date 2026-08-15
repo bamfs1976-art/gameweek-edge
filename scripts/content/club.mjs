@@ -428,6 +428,37 @@ function venueLine(venue, split) {
 /* Does a kind fixture become a clean sheet? Said only when the answer is no —
    a side that converts its easy games is what the ticker already implies, so
    confirming it adds a line and no information. */
+/* How far behind the cheaper player may sit and still be worth the saving.
+   Deliberately tight: the grade's scores are 0-1, so 0.12 is about a tenth of
+   the whole scale. Loosen it and the thread starts recommending the cheap
+   player at every club, which is the failure mode of every "value pick" post. */
+const CLOSE_ENOUGH = 0.12;
+const MIN_SAVING = 3;               /* tenths of a million */
+function cheaperAlternative(graded) {
+  const own = graded.filter((g) => g.grade.status.key !== 'avoid' && g.now_cost != null);
+  let best = null;
+  for (const dear of own) {
+    for (const cheap of own) {
+      if (cheap.element_type !== dear.element_type) continue;
+      const saving = dear.now_cost - cheap.now_cost;
+      if (saving < MIN_SAVING) continue;
+      const d = dear.grade.returns + dear.grade.minutes;
+      const c = cheap.grade.returns + cheap.grade.minutes;
+      if (c < d - CLOSE_ENOUGH) continue;
+      if (!best || saving > best.saving) best = { dear, cheap, saving, gap: d - c };
+    }
+  }
+  if (!best) return null;
+  const { dear, cheap, saving, gap } = best;
+  const pos = POS[dear.element_type];
+  const shortfall = gap <= 0
+    ? 'and grades no worse on returns or minutes'
+    : `and gives up ${(gap * 50).toFixed(0)}% of a band on returns and minutes`;
+  return `${cheap.web_name} (${money(cheap.now_cost)} ${pos}) does ${dear.web_name}'s `
+    + `(${money(dear.now_cost)}) job for ${money(saving)} less, ${shortfall}. `
+    + `The saving is only worth taking if you have somewhere better to spend it.`;
+}
+
 const KIND_CS_POOR = 0.3;
 function kindLine(kind, ahead) {
   if (!kind || kind.csr >= KIND_CS_POOR) return null;
@@ -613,6 +644,24 @@ export function buildThread(club) {
     ? `If you want ${CLUB_CAP}: ${ownable.slice(0, CLUB_CAP)
       .map((p) => `${p.web_name} (${money(p.now_cost)})`).join(', ')}.`
     : null;
+  /* The one post the hand-written threads do best: two players doing the same
+     job at the same club, and whether the dearer one is worth the money. The
+     versions doing the rounds assert it — "same clean sheet potential for
+     £0.5m less" — where the grade already holds the comparison, so ours can
+     show the gap rather than claim there isn't one.
+
+     Silent unless the case is real, which is the house rule everywhere else
+     in this file. Three conditions, and all of them must hold:
+       · same position, because a defender does not free money for a forward;
+       · at least £0.3m apart, below which the saving buys nothing anyway;
+       · the cheaper one within CLOSE_ENOUGH of the dearer on returns and
+         minutes combined — a genuinely worse player is not a bargain.
+     The line reports the shortfall rather than hiding it. "As good for less"
+     is the claim that gets a manager burned; "nearly as good, and here is
+     how much nearly" is the one they can act on. */
+  const alt = cheaperAlternative(graded);
+  if (alt) posts.push({ kind: 'value', title: 'Same job, less money', lines: [alt] });
+
   posts.push({ kind: 'takeaway', title: 'Takeaway',
     lines: [verdict.text, angleLine, capLine].filter(Boolean) });
 
