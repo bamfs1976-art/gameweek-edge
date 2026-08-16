@@ -188,6 +188,73 @@ ok('rich() still escapes a stray angle bracket', richT('5 < 6 > 4').includes('&l
 ok('no card would print a literal tag',
   DECK_CARDS.every((c) => !/&lt;\/?(b|em)&gt;/.test(richT(c.h1) + richT(c.lead) + richT(c.risk))));
 
+/* ---- the @BigManBakar capture ---------------------------------------------
+   That benchmark states counts ABOUT our register — ten fixture claims, nine
+   agreeing, no conflicts — and the GW4 card now leans on one of them. A stated
+   count is only worth anything while it is still true, so it is re-derived here
+   rather than trusted: if the register changes, this fails. */
+const BAKAR = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-chips-bigmanbakar.json`, 'utf8'));
+const FXALIAS = { Spurs: 'Tottenham Hotspur', 'Man City': 'Manchester City', 'Man Utd': 'Manchester United',
+  "Nott'm Forest": 'Nottingham Forest', Newcastle: 'Newcastle United',
+  Brighton: 'Brighton & Hove Albion', Leeds: 'Leeds United' };
+const fxRows = [];
+for (const b of html.split(/\n(?=\s*\{pos:)/)) {
+  const nm = /name:"([^"]+)"/.exec(b); const fx = /fx:\[(.*?)\]\}/s.exec(b);
+  if (!nm || !fx) continue;
+  for (const m of fx[1].matchAll(/\["(\d+)","([^"]+?)\s*\((H|A)\)"/g))
+    fxRows.push({ gw: +m[1], club: FXALIAS[nm[1]] || nm[1], opp: FXALIAS[m[2]] || m[2], home: m[3] === 'H' });
+}
+/* A fixture is a pair, so a club's row and its opponent's row are two witnesses
+   to the same fact. Taking whichever answered FIRST made this check pass a
+   mutation that rewrote Leeds' own GW2 row: Brentford's intact row still
+   answered, and the corruption was invisible. Worse, the same shortcut would
+   hide a register that genuinely disagrees with itself — which the Hadley
+   benchmark already records happening twice in a rotation grid.
+   So: collect every witness, and treat disagreement as a failure rather than
+   silently picking one. */
+const both = fxRows.flatMap((r) => [r, { gw: r.gw, club: r.opp, opp: r.club, home: !r.home }]);
+const at = (club, gw) => {
+  const seen = both.filter((r) => r.club === club && r.gw === gw);
+  if (!seen.length) return null;
+  const agreed = seen.every((r) => r.opp === seen[0].opp && r.home === seen[0].home);
+  return agreed ? seen[0] : { ...seen[0], DISAGREE: seen };
+};
+const firm = (r) => r && !r.DISAGREE;
+
+/* his densest claim: five consecutive Calvert-Lewin fixtures, venues included */
+const DCL = [['Nottingham Forest', false], ['Brentford', true], ['Brighton & Hove Albion', false],
+  ['Newcastle United', true], ['Crystal Palace', true]];
+let dcl = 0;
+DCL.forEach(([opp, home], i) => { const r = at('Leeds United', i + 1); if (firm(r) && r.opp === opp && r.home === home) dcl++; });
+ok('all five Calvert-Lewin fixtures still reproduce against the register', dcl === 5);
+ok('the benchmark claims exactly that', /AGREES on all five/.test(JSON.stringify(BAKAR)));
+
+/* the two GW4 fixtures — one we hold, one we do not */
+const che4 = at('Chelsea', 4);
+ok('Chelsea host Hull in GW4, as he says', firm(che4) && che4.opp === 'Hull City' && che4.home === true);
+ok('every GW1-5 row in the register agrees with its own reciprocal',
+  [1,2,3,4,5].every((gw) => [...new Set(fxRows.map((r) => r.club))].every((c) => !at(c, gw)?.DISAGREE)));
+ok('the register STILL holds no GW4 row for Man City — the gap is real, not stale',
+  !at('Manchester City', 4));
+ok('the benchmark does not claim the derby is confirmed',
+  /corroborated, not confirmed/i.test(JSON.stringify(BAKAR)));
+ok('the Challenge record records the corroboration without changing the picks',
+  !!PICKS.fixtureDerivation.theGW4Question.corroboratedLaterTheSameDay
+  && /picksUnchanged/.test(JSON.stringify(PICKS)));
+
+/* the GW4 card must state the venue and must NOT claim it is settled */
+const derby = DECK_CARDS.find((c) => c.id === 'challenge-gw4-derby-day');
+ok('the GW4 card says corroborated, not confirmed', /[Cc]orroborated, not confirmed/.test(derby.risk));
+ok('the GW4 card still calls it an inference', /INFERENCE/.test(derby.risk));
+
+/* the Szoboszlai tension, which is only interesting if the figure is right */
+const sz = allMid.find((r) => r.n === 'Szoboszlai');
+ok('Szoboszlai is 28% in the Hadley table', sz && sz.hit === 28);
+ok('the benchmark quotes 28% and the median it is compared against',
+  /28% hit rate/.test(JSON.stringify(BAKAR)) && /median of 36%/.test(JSON.stringify(BAKAR)));
+const median = allMid.map((r) => r.hit).sort((a, b) => b - a)[Math.floor(allMid.length / 2)];
+ok('that median is what the table actually gives', median === 36);
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);

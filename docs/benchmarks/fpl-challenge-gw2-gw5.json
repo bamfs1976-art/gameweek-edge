@@ -51,7 +51,16 @@
         "Man Utd v Crystal Palace, and Man City v Ipswich"
       ],
       "whatChoosesBetweenThem": "The Challenge tile itself. 'Derby Day' doubles points for exactly Manchester United and Manchester City players, which is what the game would do if GW4 contained the Manchester derby.",
-      "status": "INFERENCE, not a fixture we hold. The venue is not determined either way. Settled outright by reading the fixtures endpoint from CI, which this sandbox cannot reach."
+      "status": "INFERENCE, not a fixture we hold. Settled outright by reading the fixtures endpoint from CI, which this sandbox cannot reach.",
+      "corroboratedLaterTheSameDay": {
+        "by": "docs/benchmarks/pl-preseason-chips-bigmanbakar.json — an X thread captured at 19:45Z on 16 August, after this file was written.",
+        "theLine": "'Chelsea host Hull in GW4 when City play United away.'",
+        "whatItAdds": "It states the pairing outright, and it states the VENUE — Manchester United at home — which elimination could never have produced.",
+        "whyItIsIndependent": "He reaches it as an aside while arguing for Palmer's captaincy, not by reasoning about which clubs are unpaired. A different route to the same answer rather than an echo of this one.",
+        "howMuchWeightItCarries": "That same thread listed five consecutive Calvert-Lewin fixtures with venues, and all five reproduced exactly against our register. His fixture data is sound where we can check it.",
+        "andStill": "One line, one screenshot, one person. Corroborated, not confirmed. The fixtures endpoint remains the only thing that closes it.",
+        "picksUnchanged": "Haaland and Bruno were already the two doubled anchors, and nothing about the shape moves."
+      }
     }
   },
 

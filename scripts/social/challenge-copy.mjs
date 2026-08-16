@@ -113,9 +113,10 @@ export const CARDS = [
     ],
     avoid: 'Doubled defenders from this fixture — the two defences cancel. Six doubled players '
       + 'riding one ninety minutes is variance, not edge.',
-    risk: 'This rests on an INFERENCE that GW4 contains the Manchester derby. Our register does '
-      + 'not hold that fixture; it was narrowed to two possibilities and settled by the '
-      + 'challenge tile naming exactly those two clubs. If it is wrong, this card is wrong.',
+    risk: 'This rests on an INFERENCE that GW4 is the Manchester derby, at Old Trafford. Our '
+      + 'register does not hold that fixture — it was narrowed to two possibilities, settled by '
+      + 'the tile naming exactly these two clubs, and later corroborated by an outside thread '
+      + 'that also gave the venue. Corroborated, not confirmed.',
   },
 
   {

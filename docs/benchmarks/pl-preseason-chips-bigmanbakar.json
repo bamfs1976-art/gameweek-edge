@@ -1,0 +1,131 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-guidance",
+  "capturedAt": "2026-08-16T19:45:00.000Z",
+  "capturedAtPrecision": "Screenshots carry a device clock of 20:45 local (BST, UTC+1), recorded as UTC. Every post is stamped '3h', so the thread was composed around 16:45Z on 16 August — an inference from a relative timestamp, not a published one.",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured five days before the deadline. Committed now so git history is the evidence it predates the football.",
+  "source": {
+    "name": "AbuBakar Siddiq",
+    "handle": "@BigManBakar",
+    "platform": "X",
+    "verified": "the handle carries a blue verification badge on every captured post",
+    "readFrom": "screenshots of the X thread",
+    "engagement": "4-11 likes and 5.2K-6.5K views per post across the fourteen captured",
+    "provenanceContrast": "A named human account with no AI-content label, unlike the fpltips__ capture held alongside it. Its claims are therefore weighted as a person's opinion that can be held to a record, not as generated text."
+  },
+  "completeness": {
+    "postsCaptured": 14,
+    "screenshots": 5,
+    "threadStartReached": "no — the first captured post opens mid-argument ('I'm actively looking for reasons NOT to Bench Boost GW1'), which reads like a thread opener but cannot be confirmed as the first post from the capture alone.",
+    "threadEndReached": "no — the final captured post (Foden) is followed by a further post cut off at the screen edge. The thread continues beyond this capture.",
+    "consequence": "Absence of a claim from this file means NOT CAPTURED, not not-said. The same rule the fpltips capture needed when its slide 6 arrived late and turned out to carry the most consequential claim in the carousel."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "scratch script; every fixture claim diffed against the briefing's TEAMS fx register, using reciprocity so a club's stated row also states its opponent's. Prices diffed against the settled price table, set-piece claims against the club blocks.",
+    "fixtureClaims": { "checked": 10, "agreeing": 9, "conflicts": 0, "notInRegister": 1 },
+    "theDetail": [
+      {
+        "claim": "Calvert-Lewin 'NFO (A) BRE (H) BHA (A) NEW (H) CRY (H) to start the season'",
+        "readAs": "Leeds United, which is where our register has him",
+        "verdict": "AGREES on all five, venues included",
+        "whyItIsWorthMore": "Five consecutive fixtures with venues is the densest single checkable claim any capture has produced this pre-season, and it reproduced exactly. It is real evidence this author's fixture data is sound — which matters for the GW4 claim below."
+      },
+      { "claim": "Bruno Fernandes 'opens against Hull and Ipswich'", "verdict": "AGREES (no venue asserted, so none checked)" },
+      { "claim": "'Gross/Verbruggen have che in GW2'", "verdict": "AGREES — Brighton away at Chelsea in GW2" },
+      { "claim": "'Chelsea host Hull in GW4'", "verdict": "AGREES with our register" },
+      {
+        "claim": "'when City play United away' — Manchester City AWAY at Manchester United in GW4",
+        "verdict": "NOT IN OUR REGISTER, and this is the single most useful line in the capture",
+        "seeBelow": "theGW4Fixture"
+      }
+    ],
+    "prices": {
+      "Palmer": "he says £9.5m; our register's settled price is £9.5m — AGREE, and a third independent statement of that figure",
+      "Calvert-Lewin": "he says £6.0m; we hold no settled price, so nothing to check against. fpltips also read £6.0m, so two captures now agree on a figure our register still has not settled."
+    },
+    "setPieces": {
+      "checked": 2,
+      "agreeing": 2,
+      "detail": "Calvert-Lewin on penalties at Leeds and Palmer on penalties at Chelsea both match our set-piece lines."
+    }
+  },
+
+  "theGW4Fixture": {
+    "why": "Four commits ago this project derived GW4 by elimination for the FPL Challenge deck. Our register stops at GW3 for six clubs, so eight of the ten GW4 fixtures resolved and four clubs were left over: Crystal Palace, Ipswich, Manchester City, Manchester United. Three pairings were possible; one was excluded because both its fixtures had been played in GW2. TWO survived, and what chose between them was the Challenge tile's own wording — 'Derby Day' doubling exactly the two Manchester clubs. That was recorded explicitly as an inference, not a fixture we hold, with the venue undetermined.",
+    "whatThisSourceAdds": "'Chelsea host Hull in GW4 when City play United away' states the Manchester derby in GW4 outright, AND states the venue: United at home, City away.",
+    "whyItIsGenuinelyIndependent": "He reaches it as an aside while arguing for Palmer's captaincy — a week to swerve both Haaland and Bruno. He is not reasoning about which clubs are unpaired; he is reading a fixture list. That is a different route to the same answer, not an echo of ours.",
+    "howMuchThisSettles": {
+      "raised": "The pairing now has outside support from a source whose other five-fixture claim reproduced exactly against our register.",
+      "andTheVenue": "Elimination could never have produced the venue. That part is new information, not confirmation.",
+      "butNotSettled": "It remains ONE line in one screenshot from one person, against a fixture list neither of us has published here. It is not the fixtures endpoint. Recorded as corroborated, not confirmed — the distinction this project has been holding all season.",
+      "howToSettleIt": "The fixtures endpoint, unreachable from this sandbox and trivial from CI. Still the only thing that closes it."
+    },
+    "whatWasChanged": "docs/benchmarks/fpl-challenge-gw2-gw5.json and the GW4 share card now record the corroboration and the stated venue. The picks did not change — Haaland and Bruno were already the two doubled anchors."
+  },
+
+  "aTensionWorthGrading": {
+    "claim": "On Szoboszlai: 'Set pieces, defensive contribution points, nailed for 90 minutes. Too many routes to points to ignore.'",
+    "againstWhatWeHold": "Tom Hadley's midfield DEFCON table puts Szoboszlai at a 28% hit rate and 9.4 defensive contributions per start. That ranks him 27th of the 39 midfielders in that table, against a median of 36%.",
+    "soWhatIsInTension": "Only the DEFCON leg. Set pieces and minutes are not disputed by anything we hold, and his 13 attacking returns are among the higher figures in that same table. What the table contradicts is DEFCON being one of the reasons to own him.",
+    "andItMayStillBeRight": "The table is LAST season's, and Liverpool are one of the eleven clubs Hadley's own caveat marks for a summer manager change. A shape change could move a midfielder's defensive volume a long way. This is recorded as a disagreement to grade, not as an error.",
+    "howToGradeIt": "Szoboszlai's DEFCON hit rate over GW1-6 against the 28% baseline."
+  },
+
+  "theThreeWayPalmerDisagreement": {
+    "what": "Palmer is now the subject of a genuine three-way split across sources this project holds, all captured within two days.",
+    "positions": [
+      { "who": "Tom Hadley (thread, 16 Aug)", "says": "38% 4+ points hit rate last season — the weakest per pound of the premium group, against Bruno Fernandes 71% and Gabriel 77%" },
+      { "who": "fpltips__ (carousel, 15-16 Aug)", "says": "'still a strong pick, but right now he is not where I want to spend' — prefers Morgan Rogers" },
+      { "who": "@BigManBakar (this capture, 16 Aug)", "says": "'being overlooked after a poor season' — £9.5m, 10% ownership, on pens, decent early fixtures, 'not a bad deal at all'" }
+    ],
+    "whyItIsWorthKeeping": "Three sources, three routes, one player, and a clean split: one negative on consistency data, one negative on preference, one positive on price and ownership. Palmer's GW1-6 return grades all three at once. That is a better calibration set than any of them alone.",
+    "ourOwnPositionIsNotAmongThem": "Our register does not take a side on Palmer, and none is being adopted here."
+  },
+
+  "whatItSaysAboutChipStrategy": {
+    "hisArgument": "Bench Boost in GW1, Wildcard somewhere GW4-8. His reasons: no second goalkeeper and no eighth attacker draining the bench; doing it the other way round burns transfers moving money off the bench and back; and a Wildcard held loose lets him react to trends and buy players returning late from the World Cup.",
+    "hisOwnCaveats": "He states them himself, which is worth recording: GW1 'probably won't be' a scorefest, and 'minutes are unpredictable with no trends to lean on'. He is not claiming the risks away.",
+    "whyBB1OverBB2": "'BB2 highly reliant on Coventry players'; loading up on Coventry could force an early Wildcard; an injury in GW1 could force a transfer before GW2; and Gross/Verbruggen face Chelsea in GW2.",
+    "notAdopted": "No chip advice in this project changes. We publish no chip plan for the main game, and nothing here is adopted into one."
+  },
+
+  "whereItTouchesOurOwnChallengePicks": {
+    "what": "His 'BB2 is highly reliant on Coventry players, and loading up on Coventry could force an early Wildcard' is the same observation that drove our GW2 Challenge card — Coventry are the promoted club with the one soft fixture — but it is aimed at the opposite conclusion.",
+    "whyBothCanHold": "He is arguing about the MAIN game, where a Coventry block is a lasting squad commitment that has to be unwound with transfers. The Challenge card is about a game whose squad rules we could not read off the tiles: whether the squad resets each week is one of the unknowns that file states explicitly. If it resets, his cost does not carry and the objection does not transfer. If it does not reset, it lands squarely.",
+    "consequence": "The GW2 Challenge card is NOT changed, but this dependency is now named. The unknown was already recorded; this capture shows it has a real consequence rather than being a formality.",
+    "whatWouldSettleIt": "The Challenge rules themselves, which the four screenshots do not show."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Bench Boost in GW1 outscores holding it", "gradeable": true, "note": "scoreable against the mean bench score in GW1" },
+    { "claim": "Bruno Fernandes is 'first name on the team sheet' and returns as he did under Carrick", "gradeable": true, "note": "'returned in 14 of 17 starts' is his figure from his source; we hold no equivalent and have not checked it" },
+    { "claim": "Calvert-Lewin at £6.0m is 'a steal' and 'no brainer'", "gradeable": true, "note": "returns per million over the five fixtures he lists — and those five verified exactly against our register" },
+    { "claim": "Palmer is underrated at 10% ownership", "gradeable": true, "note": "see theThreeWayPalmerDisagreement; grades three sources at once" },
+    { "claim": "Szoboszlai's defensive contributions are a real route to points", "gradeable": true, "note": "directly against the 28% baseline in the Hadley table" },
+    { "claim": "Foden is a 'wait-and-watch' whose minutes are unclear under the new manager", "gradeable": true, "note": "settles on starts, not points" },
+    { "claim": "Joao Pedro is Chelsea's 'undisputed number nine'", "gradeable": true, "note": "a minutes claim; converges with the fpltips capture calling him 'close to essential'" },
+    { "claim": "'Midfield is going to be so tough to pick'", "gradeable": false, "note": "an assessment of difficulty, not a forecast" }
+  ],
+
+  "ownershipFiguresWeDoNotHold": {
+    "stated": { "Szoboszlai": "41%", "Joao Pedro": "over 57%", "Palmer": "10%" },
+    "status": "UNCHECKED. This project holds no ownership data at all — it is in the FPL bootstrap and unreachable from this sandbox. Recorded verbatim so they can be diffed later, not treated as facts now.",
+    "andTheyAreTimeSensitive": "Ownership moves daily before a deadline. Even once checkable, these are only comparable against a reading taken at the same time."
+  },
+
+  "positionLabelsWorthNoting": {
+    "what": "His midfield shortlist includes Semenyo, Mbeumo and Tzolis, whom our register files as forwards or wide forwards.",
+    "whyItIsNotAConflict": "FPL assigns its own position to every player and it frequently differs from how a club lists them. His labels are most likely the game's; ours are the club's. Recorded so a later diff does not read this as a disagreement.",
+    "unresolved": "Verbruggen appears nowhere in our register. Not a conflict — our club blocks list signings, departures and pick candidates rather than full squads."
+  },
+
+  "whatThisChangesInOurDocuments": [
+    "The GW4 Manchester derby moves from 'inference, venue undetermined' to 'inference with independent outside support, venue stated as United at home' — in the Challenge benchmark and on the GW4 share card. The picks do not move.",
+    "Nothing else is rewritten. No price, rating or model weight changes.",
+    "Calvert-Lewin at £6.0m now has two independent readings and still no settled price in our register. That row stays open.",
+    "A three-way Palmer split is recorded, with our own register deliberately not taking a side."
+  ]
+}
