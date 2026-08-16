@@ -136,6 +136,13 @@ const line = (r) => {
     await sleep(400);
   }
 
+  /* Raw shapes, printed BEFORE the conclusions. Reading a run means reading
+     its end: `tail` is how anyone actually looks at a CI log, and burying the
+     findings under four hundred lines of JSON meant the answer was the part
+     you could not see. The dump is still here, just not last. */
+  console.log('\n=== DETAIL (JSON) ===');
+  console.log(JSON.stringify(results, null, 2));
+
   /* ── the part that makes the run interpretable ─────────────────── */
   const ok = (r) => r.status === 200 && /json/i.test(r.contentType || '');
   const liveNew = results.candidates.filter(ok);
@@ -219,7 +226,4 @@ const line = (r) => {
       : '  (every top-level key is mentioned somewhere)');
   }
 
-  /* Full detail last, so the shapes are greppable from the run log. */
-  console.log('\n=== DETAIL (JSON) ===');
-  console.log(JSON.stringify(results, null, 2));
 })();
