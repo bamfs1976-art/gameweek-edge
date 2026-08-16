@@ -165,5 +165,35 @@ try {
   console.log(`  ✗ /sw.js  could not be fetched: ${err.message}`);
 }
 
+/* ── WHICH BUILD IS ACTUALLY OUT THERE ─────────────────────
+   Every check above passes against the PREVIOUS deploy just as happily as
+   against the new one. Netlify builds on its own schedule, so a green run two
+   minutes after a push proves the site is healthy and proves nothing about
+   whether the change shipped — and reporting "deployed and verified" off the
+   back of it would be the instrument being read as the world, which is the
+   failure this repository keeps writing down.
+
+   So: name a marker that only exists in the newer build and look for it.
+   MARKER is deliberately a feature string rather than a commit hash, because
+   index.html is copied verbatim into www/ and carries no build stamp. It has
+   to be updated when it stops being new — and a stale marker fails loudly
+   here rather than silently passing, because the string will still be
+   present and the check will simply stop being informative. Hence the date. */
+const MARKER = { text: "['strength','Strength']", since: '2026-08-16',
+  what: 'the Strength fixture-difficulty lens' };
+console.log('');
+try {
+  const { res } = await request(ORIGIN + '/');
+  const html = await res.text();
+  const there = html.includes(MARKER.text);
+  if (!there) failed++;
+  console.log(`  ${there ? '✓' : '✗'} deployed build  ${there
+    ? 'carries ' + MARKER.what + ' (added ' + MARKER.since + ')'
+    : 'does NOT carry ' + MARKER.what + ' — the push has not deployed yet, or the build failed'}`);
+} catch (err) {
+  failed++;
+  console.log(`  ✗ deployed build  could not be read: ${err.message}`);
+}
+
 console.log(failed ? `\n✗ ${failed} check(s) failed.` : '\n✓ Every check passed.');
 process.exit(failed ? 1 : 0);
