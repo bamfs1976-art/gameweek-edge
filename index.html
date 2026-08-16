@@ -8024,7 +8024,11 @@ function plCols(b,xpMap,ctx){
         sorts last rather than pretending to a rank it hasn't got. */
      v:e=>{const r=tmpl&&tmpl[e.id];return r?1000-r:0;},
      d:e=>{const r=tmpl&&tmpl[e.id];return r?'<span class="badge badge-green">#'+r+'</span>':'—';}},
-    {k:'dchit',l:'DC hit%',num:1,v:e=>dcOK(e)?dcHitRate(e):-1,d:e=>dcOK(e)?dcHitLabel(e):'—'},
+    /* Sorts unrateable with the goalkeepers rather than at the bottom of the
+       rated players: a defender we have never seen play here is not the worst
+       defender in the league, and -1 says "no answer" where 0.0001 says "last". */
+    {k:'dchit',l:'DC hit%',num:1,v:e=>dcOK(e)&&dcHasBasis(e)?dcHitRate(e):-1,
+     d:e=>dcOK(e)?dcHitLabel(e):'—'},
     {k:'setp',l:'SetP',num:1,tier:'paid',v:e=>setPieceConfidence(e).value,
      d:e=>{const s=setPieceConfidence(e);return s.value?'<span class="badge '+(s.value>=70?'badge-green':s.value>=50?'badge-amber':'badge-grey')+'" title="'+esc(s.roles.join(', '))+'">'+s.value+'</span>':'—';}},
     {k:'minsec',l:'Mins%',num:1,v:e=>minutesSecurity(e,games[e.team]||0),
@@ -8467,7 +8471,28 @@ function dcReal(e){const ci=e._ci;return !!(ci&&(ci.dcs||0)>=5&&ci.dchr!=null);}
 function dcHitRate(e){
   return dcReal(e)?e._ci.dchr:1/(1+Math.exp(-1.1*(dcRate90(e)-dcThreshold(e))));
 }
+/* ── the difference between "never clears it" and "never seen him" ──
+   Both paths above always return a NUMBER. For a defender arriving from a
+   foreign league there is no _ci history (it is keyed on FPL element ids) and
+   no per-90 (he has no Premier League minutes), so the logistic falls through
+   to ~0% — a figure that reads as "this player does not hit the threshold"
+   when it means "we have never watched him play here". A defender with 2,000
+   minutes and genuinely no defensive returns shows the same ~0%, and those two
+   are not the same claim.
+
+   Surfaced by a creator DEFCON table whose headline advice was to gamble on
+   Vuskovic (Bundesliga), Muharemovic (Serie A) and Jacquet (Ligue 1) —
+   precisely the three players this rated ~0%, i.e. the tool was most confident
+   and most wrong about exactly the players the question was about.
+
+   The floor is zero minutes rather than a threshold, deliberately: any real
+   Premier League minutes give the estimate some basis, and the leading `~`
+   already marks it as an estimate. Only the never-observed case changes.
+   dcByBracket already filtered these out of the budget ladder, and the player
+   card is gated on _ci — this closes the two places that were not. */
+function dcHasBasis(e){return dcReal(e)||(e&&(e.minutes||0)>0);}
 function dcHitLabel(e){
+  if(!dcHasBasis(e))return '—';
   return dcReal(e)?Math.round(e._ci.dchr*100)+'%':'~'+Math.round(dcHitRate(e)*100)+'%';
 }
 function dcPerStartLabel(e){

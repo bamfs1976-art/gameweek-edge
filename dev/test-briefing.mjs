@@ -1250,5 +1250,85 @@ console.log('\n• briefing: published prices reached the blocks, not just the n
     'quoted ownership stays a quoted string, never a number to be computed with');
 }
 
+console.log('\n• briefing: a settled price reaches BOTH editions, not just the prose one');
+{
+  /* The test below this one, and the BBC one above it, both read the MARKDOWN.
+     The HTML is the edition that ships as the standalone scout terminal — the
+     one a reader actually opens — and nothing was checking it.
+
+     It had been wrong since 14 August. Three of the four prices settled that
+     day reached the prose blocks and the HTML summary row but never the HTML
+     CLUB blocks: Wood and Gibbs-White still read ~£7.0m and Robinson ~£5.0m,
+     while the same document's summary row said they were settled. A test that
+     verifies one edition and gets read as verifying the document is the same
+     failure this file keeps recording in other forms. */
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const teams = teamsFromHtml(html);
+  /* every price this project has settled against an outside source, and the
+     published figure that won. Add a row here whenever another one settles. */
+  const SETTLED = [
+    ['Gibbs-White', '8.0'], ['Wood', '6.0'], ['Le Fee', '6.0'], ['Robinson', '4.5'],
+    ['Saka', '9.5'], ['Ndiaye', '6.0'], ['Garner', '6.0']
+  ];
+  for (const [name, price] of SETTLED) {
+    const re = new RegExp(name.replace('-', '\\-') + '[^)]{0,80}?£'
+      + price.replace('.', '\\.') + 'm', 'i');
+    const inBlocks = teams.some((t) => ['value', 'prem', 'diff'].some((f) => re.test(t[f] || '')));
+    ok(inBlocks, name + ' is quoted at £' + price + 'm inside an HTML CLUB block');
+    ok(re.test(md), name + ' is quoted at £' + price + 'm in the prose edition');
+  }
+  /* And the superseded estimate must not still be the leading figure for the
+     same player in the HTML, which is exactly how Wood read for two days. */
+  const STALE = [['Gibbs-White', '~£7.0m'], ['Wood', '~£7.0m'], ['Robinson', '~£5.0m']];
+  for (const [name, old] of STALE) {
+    const bad = teams.some((t) => ['value', 'prem', 'diff'].some((f) =>
+      new RegExp(name.replace('-', '\\-') + '\\s*\\((?:[A-Z]{2,3}\\s*)?'
+        + old.replace(/[~£.]/g, (c) => '\\' + c), 'i').test(t[f] || '')));
+    ok(!bad, name + ' no longer leads with the superseded ' + old + ' in the HTML');
+  }
+}
+
+console.log('\n• briefing: the second wave of settled prices reached the blocks too');
+{
+  /* The test above holds the BBC four to the standard that a settled price
+     must reach the CLUB BLOCK and not sit only in a notes table, because a
+     reader picking a squad reads the block. Three more rows were settled on
+     16 August from a different source, and nothing was enforcing the same
+     standard on them — so a correction could land in the summary table and
+     leave the block quoting a superseded estimate, which is exactly the
+     failure the original test was written to stop. */
+  const hadley = JSON.parse(readFileSync(
+    join(ROOT, 'docs/benchmarks/pl-tomhadley-preseason-thread.json'), 'utf8'));
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const html = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.html'), 'utf8');
+  const settled = hadley.priceColumnSettlesThreeOpenRowsInOurBriefing.settledHere;
+
+  ok(settled.length === 3, 'three rows are claimed settled (' + settled.length + ')');
+  for (const row of settled) {
+    const surname = row.player.replace(/\s*\(.*\)$/, '').trim();
+    const price = row.hisColumn.replace(/[£M]/gi, '');
+    /* the published figure must appear next to the name in BOTH editions */
+    const near = (src) => {
+      const re = new RegExp(surname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        + '[^\\n]{0,120}?£?' + price.replace('.', '\\.') + 'm', 'i');
+      return re.test(src);
+    };
+    ok(near(md), surname + ' is quoted at the published £' + price + 'm in the prose edition');
+    ok(near(html), surname + ' is quoted at the published £' + price + 'm in the HTML edition');
+  }
+  /* And the running score, which is the part a document loses first. */
+  ok(/seven times from seven/i.test(md) || /right seven from seven/i.test(md),
+    'the briefing states the updated scoreline, not just the three new rows');
+  ok(/Mateta/.test(md), 'the one row still open is still named as open');
+
+  /* The source file must not overstate what it settled: Mateta is a forward
+     and the graphic carrying prices covers midfielders only. */
+  ok(hadley.priceColumnSettlesThreeOpenRowsInOurBriefing.stillOpen.length === 1,
+    'exactly one row is recorded as still open');
+  ok(settled.every((r) => r.right === 'theirs'),
+    'every newly settled row went the same way, which is the finding');
+}
+
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

@@ -1,0 +1,363 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-guidance",
+  "capturedAt": "2026-08-16T09:41:00.000Z",
+  "capturedAtPrecision": "the screenshots carry a device clock reading 10:40-10:41 local (BST, UTC+1); recorded as UTC. The posts are stamped '2h', so composed around 07:40Z, which is an inference from a relative timestamp and not a published one.",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured five days BEFORE the deadline stated above. Committed now so git history is the evidence it predates the football, the same footing as the round entries, the EFL tipster benchmarks and the market-odds capture.",
+  "source": {
+    "name": "Tom Hadley FPL",
+    "handle": "@FPL_TomHadley",
+    "verified": "the account shows a blue verification badge in the capture",
+    "readFrom": "screenshots of the X thread, captured in two passes",
+    "kind": "a ten-graphic pre-season thread: fixture difficulty, chip windows, and defensive-contribution (DEFCON) leaderboards",
+    "statedMethod": "'All the fixture ratings in this thread have been made using a custom FDR. It combines both the bookies seasonal odds + each team's home and away record last season.'",
+    "attribution": "the bonus graphic carries a 'POWERED BY FANTASY FOOTBALL SCOUT' mark; the rest are unattributed"
+  },
+  "completeness": {
+    "graphicsCaptured": 10,
+    "graphics": [
+      "Best fixture rotations (GW1-10)",
+      "Best fixture runs on paper (GW1-19)",
+      "Possible wildcard + bench boost windows",
+      "DEFCON leaders (defence)",
+      "Who hit 4+ points the most (defenders)",
+      "Clean sheet + DEFCON leaders",
+      "DEFCON leaders (midfield)",
+      "Who hit 4+ points the most (midfielders)",
+      "Opponent DEFCON against (CB and CM/DM)",
+      "Who hit bonus with just one return"
+    ],
+    "threadEndReached": "yes — the capture includes the author's sign-off ('If you made it all this way then well done and thanks for reading along!'), so this is the whole thread rather than a prefix.",
+    "knownReadingLimit": "Every figure here was read off a phone screenshot by eye. Where a number below disagrees with a register, the cause may be his error OR a misreading here. The re-transcription test below bears on that, but does not settle it.",
+    "notANewSource": "This author is ALREADY in the briefing. The 'Bonus off a single return — 13 August 2026' section is his graphic, ingested three days ago. Today's thread reposts that same graphic among the ten, which is what made the test below possible.",
+    "reTranscriptionTest": {
+      "what": "The bonus graphic was read today without reference to the 13 August capture, then diffed against every figure that section states.",
+      "figuresComparable": 37,
+      "agreeing": 37,
+      "whatItSupports": "The reading process reproduced 37 of 37 values across four position groups three days apart. That is real evidence the transcriptions in this file are faithful, and it shifts the four fixture disagreements below toward being his errors rather than ours.",
+      "whatItDoesNotSupport": "It does not settle them. The bonus graphic prints large numerals in a sparse table; the rotation grid prints three-letter codes with an H/A suffix at a fraction of the size, and a venue letter is exactly the kind of glyph this test does not exercise. A clean result on the easy graphic is not a clean bill for the hard one.",
+      "method": "scratch script, diffed mechanically against the section text rather than by eye"
+    }
+  },
+
+  "whatThisIsNot": [
+    "NOT our numbers, and nothing in the app or the model is rewritten from it. Held against the register the same way the market odds, the BBC experts piece and the outside set-piece projection are.",
+    "NOT a squad or an entry. It is a set of leaderboards and fixture views. It cannot be scored as a team, and grading it means grading individual claims.",
+    "NOT last season's official data in our hands. Every 'last season' figure below is HIS calculation from HIS source. We hold our own equivalents (see fieldsWeAlreadyCompute) and the two have not been diffed, because this sandbox has no route to the FPL API."
+  ],
+
+  "verifiedAgainstOurRegisters": {
+    "method": "The thread states fixtures four separate times — a GW1-10 rotation grid, a GW1-19 best-runs table, a wildcard-window table and a bench-boost table. Every cell was diffed mechanically against (a) the other graphics in the thread, (b) our own TEAMS fx register in the briefing HTML, and (c) the fplrotationplanner GW9-18 grid already in the briefing. No comparison was made by eye.",
+    "cellsChecked": 265,
+    "cellsAgreeing": 259,
+    "distinctDisagreements": 4,
+    "checks": [
+      { "name": "rotation grid against itself (pairing, needs no outside source)", "checked": 56, "agreeing": 53 },
+      { "name": "rotation grid vs our TEAMS fx register", "checked": 58, "agreeing": 57 },
+      { "name": "rotation grid vs the fplrotationplanner GW9-18 grid", "checked": 28, "agreeing": 27 },
+      { "name": "'best fixture runs' graphic vs any register held", "checked": 41, "agreeing": 41 },
+      { "name": "'wildcard windows' graphic vs any register held", "checked": 66, "agreeing": 65 },
+      { "name": "'bench boost' rows vs any register held", "checked": 16, "agreeing": 16 }
+    ],
+    "observation": "97.7% agreement across four internal graphics and two unrelated outside registers. The GW1-3 agreement matters most: those are the cells the app will act on this week, and they now carry a third independent confirmation.",
+    "aBugFoundInOurOwnChecker": "The first run reported 13 further mismatches and one 'undefined'. Every one was ours: our register writes 'Spurs', 'Man City', 'Man Utd' and \"Nott'm Forest\" where he writes the full names, and the planner grid writes MUN where he writes MNU. A name table that does not normalise turns a parse failure into a data conflict — the same shape as the surname collisions that invented two price conflicts in the set-piece diff. Fixed before any of the numbers above were recorded."
+  },
+
+  "disagreements": [
+    {
+      "cell": "GW8 — Ipswich Town v Nottingham Forest",
+      "what": "The rotation grid puts BOTH clubs away: the Forest row says IPS (A) and the Ipswich row says NFO (A). One of them must be home.",
+      "tieBreak": "His own wildcard graphic prints Forest's GW5-8 run as COV (H), CRY (A), ARS (H), IPS (A) — four consecutive cells that all match his Forest row. So the Forest reading has two sightings and the Ipswich cell has one.",
+      "settled": "Within his thread only, 2:1 in favour of Forest away at Ipswich. Neither of our registers reaches GW8, so nothing outside his own material bears on it.",
+      "orItIsOurs": "Equally consistent with a misreading of the Ipswich row here. Not distinguishable from a screenshot."
+    },
+    {
+      "cell": "GW9 — Everton v Newcastle United",
+      "what": "Everton and Fulham are each printed TWICE in the rotation grid, as members of two different rotation pairs. The second Everton row says NEW (H) at GW9 where the first says NEW (A).",
+      "tieBreak": "Everton away is carried by the first Everton row, the Newcastle row, his wildcard graphic and the fplrotationplanner grid in our briefing. Everton home is carried by the duplicate row alone.",
+      "settled": "Everton are AWAY at Newcastle in GW9, on four sightings to one, including one source unrelated to him.",
+      "whyItIsWorthRecording": "A duplicated row that disagrees with its own first printing is the cheapest possible internal check and it is only available because the graphic repeats two clubs. The Fulham duplicate is identical across all ten cells, so the repetition is normally faithful."
+    },
+    {
+      "cell": "GW4 — Sunderland v Arsenal",
+      "what": "His grid says Sunderland are AWAY at Arsenal. Our own TEAMS register says Sunderland are at HOME to Arsenal, rated vhard.",
+      "tieBreak": "None available. One sighting each, from sources with no shared upstream. Arsenal's GW4 fixture does not appear in any register we hold, so the pairing check cannot reach it.",
+      "settled": "UNRESOLVED — and it is the only cell in the whole capture where the thread contradicts our own data with nothing to break the tie.",
+      "howToSettleIt": "The FPL fixtures endpoint answers this outright. It is unreachable from this sandbox (the egress proxy refuses fantasy.premierleague.com) but reachable from the GitHub Actions runner that already runs the site check.",
+      "doNotOverReadTheDirection": "Our register is a hand transcription into a document, not an API read. It is not the senior source here merely because it is ours."
+    },
+    {
+      "cell": "GW18 — Brentford v Coventry City",
+      "what": "His wildcard graphic prints Brentford's GW17-19 as IPS (A), COV (H), CRY (H). His own best-runs graphic prints Brentford GW16-19 as NEW (H), IPS (A), COV (A), CRY (H).",
+      "tieBreak": "Two of his graphics disagree with each other on the venue of one fixture. The fplrotationplanner grid in our briefing says Coventry away, agreeing with the best-runs graphic.",
+      "settled": "Brentford AWAY at Coventry in GW18, 2:1, with the outside grid agreeing.",
+      "note": "Far enough out to be irrelevant to selection, and recorded only because a source that contradicts itself twice in one thread is worth characterising before its other claims are graded."
+    }
+  ],
+
+  "claimsCheckableWithoutWaitingForFootball": [
+    {
+      "claim": "'Everton play both the best opponents for midfield DEFCON (Man United + Spurs) in GW3 + GW4'",
+      "testedAgainst": "his own OPPONENT DEFCON AGAINST table, whose top two central-midfield rows are Tottenham (10.1 average, 39% hit rate) and Man United (9.4, 33%), plus his own rotation grid",
+      "result": "HOLDS. Everton GW3 is Manchester United (H) and GW4 is Tottenham (A); both are the top two of seventeen in the table he published alongside it.",
+      "whyItIsWorthTesting": "A claim that is self-contained — the evidence and the assertion ship in the same thread — can be falsified today rather than in May. Most tipster claims cannot."
+    },
+    {
+      "claim": "'every Brighton home game until GW15 is against one of the top DEFCON opponents for CBs'",
+      "testedAgainst": "the same table, ranked, against Brighton's home fixtures",
+      "result": "HOLDS for every home game in the range HE PUBLISHED, and fails once outside it.",
+      "detail": [
+        "GW1 v Aston Villa — rank 5/17 (46%)",
+        "GW3 v Leeds — rank 3/17 (50%)",
+        "GW5 v Arsenal — rank 6/17 (44%)",
+        "GW7 v Crystal Palace — rank 1/17 (62%)",
+        "GW10 v Brentford — rank 7/17 (43%)",
+        "GW12 v Newcastle — rank 9/17 (40%)  <-- the exception",
+        "GW15 v Everton — rank 2/17 (53%)"
+      ],
+      "theCarefulReading": "His own grid stops at GW10, and across GW1-10 every Brighton home game is a top-7 CB-DEFCON opponent — the claim is clean there. The single counterexample sits at GW12, a fixture supplied by the fplrotationplanner grid rather than by him, and at rank 9 of 17 it is the exact median rather than a bad draw. Reporting this as 'the claim fails' would be crediting our own patched-in fixture with breaking his argument.",
+      "verdict": "SUBSTANTIALLY HOLDS, with one median-ranked exception outside his published range."
+    }
+  ],
+
+  "priceColumnSettlesThreeOpenRowsInOurBriefing": {
+    "why": "The 'who hit 4+ points the most (midfielders)' graphic carries an FPL PRICE column. The briefing holds a price table of eight rows where our estimates differed from an outside table; four were settled on 14 August by a BBC Sport piece, and four were left open for want of a source.",
+    "settledHere": [
+      { "player": "Saka (ARS)", "ourEstimate": "~£10.0m", "theOutsideTable": "£9.5m", "hisColumn": "£9.5M", "right": "theirs" },
+      { "player": "Ndiaye (EVE)", "ourEstimate": "~£6.5m", "theOutsideTable": "£6.0m", "hisColumn": "£6.0M", "right": "theirs" },
+      { "player": "Garner (EVE)", "ourEstimate": "~£5.0m", "theOutsideTable": "£6.0m", "hisColumn": "£6.0M", "right": "theirs" }
+    ],
+    "stillOpen": [
+      { "player": "Mateta (CRY)", "ourEstimate": "~£7.5m", "theOutsideTable": "£6.5m", "why": "a forward; he appears in the bonus graphic, which carries no price column" }
+    ],
+    "reConfirmed": [
+      { "player": "Gibbs-White (NFO)", "published": "£8.0m", "hisColumn": "£8.0M" },
+      { "player": "Le Fee (SUN)", "published": "£6.0m", "hisColumn": "£6.0M" }
+    ],
+    "theRunningScore": "Seven of the eight rows are now settled and the outside table is right SEVEN times out of seven. Ours is right none.",
+    "whatThatMeans": "Not that our estimates are bad in general — the briefing already records 9 of 13 wider price claims exactly right. It means they were wrong precisely on the rows where somebody had already published a different figure, which is the same lesson recorded on 14 August and is now twice as well evidenced. Treating our own unsourced estimate as equal to a published projection was a thumb on our own side of the scale.",
+    "creditWhereDue": "This is a third author confirming figures a second author had already published. It is corroboration of the price, not new evidence about our method."
+  },
+
+  "defconLeaderboards": {
+    "whatDefconIs": "The +2 awarded for reaching a defensive-contribution threshold: 10 for defenders, 12 for midfielders and forwards. Our own scoring model carries the same thresholds (defconThreshold {2:10, 3:12, 4:12} in index.html).",
+    "fieldsWeAlreadyCompute": {
+      "hisDefconHitRate": "our dcHitLabel / _ci.dchr — the share of starts clearing the threshold",
+      "hisDefconPerStart": "our dcPerStartLabel / _ci.dcps — mean defensive contributions per start",
+      "hisPriceBrackets": "our dcByBracket, which pools everything at £6.0m and above into a top band and steps down in half-millions — the same bracketing scheme, arrived at independently. The code comment on that function reads 'Creator graphics rank DefCon leaders inside price brackets, because the real question is never who is best but who is best at the money I have left'. This thread is that graphic, and it brackets exactly that way.",
+      "notADiff": "These are the same QUANTITIES, not verified to be the same NUMBERS. Diffing them needs the FPL bootstrap, which this sandbox cannot reach."
+    },
+    "defence": {
+      "columns": ["totalStarts", "defconHitRate", "defconPerStart", "attackingReturns"],
+      "£6m+": [
+        { "n": "Senesi", "starts": 37, "hit": 70, "perStart": 11.3, "att": 6 },
+        { "n": "Lacroix", "starts": 35, "hit": 60, "perStart": 10.7, "att": 3 },
+        { "n": "Tarkowski", "starts": 37, "hit": 60, "perStart": 10.2, "att": 5 },
+        { "n": "Van Dijk", "starts": 38, "hit": 42, "perStart": 9.2, "att": 7 },
+        { "n": "Gabriel", "starts": 30, "hit": 37, "perStart": 9.1, "att": 8 },
+        { "n": "Guehi", "starts": 15, "hit": 20, "perStart": 7.7, "att": 2, "note": "at Man City" }
+      ],
+      "£5.5m": [
+        { "n": "Hill", "starts": 22, "hit": 68, "perStart": 10.9, "att": 3 },
+        { "n": "Collins", "starts": 32, "hit": 50, "perStart": 9.7, "att": 3 },
+        { "n": "Mukiele", "starts": 32, "hit": 41, "perStart": 9.6, "att": 8 },
+        { "n": "Murillo", "starts": 25, "hit": 40, "perStart": 8.9, "att": 1 },
+        { "n": "Milenkovic", "starts": 37, "hit": 35, "perStart": 8.4, "att": 1 },
+        { "n": "Hincapie", "starts": 20, "hit": 35, "perStart": 8.4, "att": 3 },
+        { "n": "Truffert", "starts": 38, "hit": 34, "perStart": 8.0, "att": 7 },
+        { "n": "Khusanov", "starts": 15, "hit": 33, "perStart": 7.4, "att": 0 },
+        { "n": "Pedro Porro", "starts": 32, "hit": 25, "perStart": 6.8, "att": 4 },
+        { "n": "Munoz", "starts": 29, "hit": 24, "perStart": 6.8, "att": 8 }
+      ],
+      "£5m": [
+        { "n": "Danso", "starts": 17, "hit": 71, "perStart": 11.1, "att": 0 },
+        { "n": "Canvot", "starts": 14, "hit": 64, "perStart": 10.6, "att": 0 },
+        { "n": "Vuskovic", "starts": 27, "hit": 63, "perStart": 12.4, "att": 6, "note": "Bundesliga" },
+        { "n": "Andersen", "starts": 33, "hit": 61, "perStart": 10.0, "att": 1 },
+        { "n": "Ballard", "starts": 24, "hit": 54, "perStart": 9.6, "att": 4 },
+        { "n": "Muharemovic", "starts": 32, "hit": 53, "perStart": 10.7, "att": 4, "note": "Serie A" },
+        { "n": "Bijol", "starts": 21, "hit": 52, "perStart": 10.3, "att": 4 },
+        { "n": "Keane", "starts": 29, "hit": 52, "perStart": 10.1, "att": 4 },
+        { "n": "Richards", "starts": 31, "hit": 48, "perStart": 10.0, "att": 1 },
+        { "n": "Botman", "starts": 21, "hit": 48, "perStart": 9.9, "att": 2 },
+        { "n": "Maguire", "starts": 19, "hit": 42, "perStart": 7.7, "att": 3 },
+        { "n": "Alderete", "starts": 32, "hit": 41, "perStart": 9.7, "att": 2 },
+        { "n": "Burn", "starts": 25, "hit": 40, "perStart": 8.6, "att": 4 },
+        { "n": "Van den Berg", "starts": 30, "hit": 40, "perStart": 8.6, "att": 3 },
+        { "n": "Thiaw", "starts": 33, "hit": 36, "perStart": 8.7, "att": 4 },
+        { "n": "Van Hecke", "starts": 36, "hit": 36, "perStart": 8.8, "att": 6 },
+        { "n": "Wieffer", "starts": 23, "hit": 35, "perStart": 6.9, "att": 6 },
+        { "n": "Jacquet", "starts": 19, "hit": 26, "perStart": 8.1, "att": 0, "note": "Ligue 1" }
+      ],
+      "£4.5m": [
+        { "n": "Cuenca", "starts": 11, "hit": 64, "perStart": 9.7, "att": 0 },
+        { "n": "Ajer", "starts": 20, "hit": 45, "perStart": 8.8, "att": 2 },
+        { "n": "Tete", "starts": 21, "hit": 33, "perStart": 7.9, "att": 1 },
+        { "n": "Rodon", "starts": 33, "hit": 30, "perStart": 8.1, "att": 2 },
+        { "n": "Bassey", "starts": 28, "hit": 29, "perStart": 7.1, "att": 2 },
+        { "n": "Dunk", "starts": 31, "hit": 26, "perStart": 7.5, "att": 2 },
+        { "n": "Justin", "starts": 21, "hit": 24, "perStart": 8.2, "att": 3 }
+      ],
+      "£4m": [
+        { "n": "Hughes", "starts": 39, "hit": 64, "perStart": 11.5, "att": 2, "note": "Championship" },
+        { "n": "Greaves", "starts": 23, "hit": 52, "perStart": 9.4, "att": 3, "note": "Championship" },
+        { "n": "Egan", "starts": 42, "hit": 45, "perStart": 10.0, "att": 3, "note": "Championship" },
+        { "n": "Ajayi", "starts": 19, "hit": 42, "perStart": 9.9, "att": 2, "note": "Championship" },
+        { "n": "O'Shea", "starts": 46, "hit": 41, "perStart": 8.7, "att": 2, "note": "Championship" },
+        { "n": "Kitching", "starts": 37, "hit": 38, "perStart": 8.7, "att": 2, "note": "Championship" },
+        { "n": "Thomas", "starts": 33, "hit": 36, "perStart": 8.4, "att": 7, "note": "Championship" },
+        { "n": "Kipre", "starts": 29, "hit": 28, "perStart": 8.3, "att": 5, "note": "Championship" },
+        { "n": "Van Ewijk", "starts": 42, "hit": 17, "perStart": 6.3, "att": 8, "note": "Championship" }
+      ]
+    },
+    "midfield": {
+      "£6.5m+": [
+        { "n": "Anderson", "starts": 37, "hit": 70, "perStart": 13.8, "att": 9, "note": "at Forest" },
+        { "n": "Rodri", "starts": 17, "hit": 47, "perStart": 11.4, "att": 2 },
+        { "n": "Rice", "starts": 35, "hit": 40, "perStart": 10.7, "att": 13 },
+        { "n": "Szoboszlai", "starts": 36, "hit": 28, "perStart": 9.4, "att": 13 },
+        { "n": "B. Guimaraes", "starts": 27, "hit": 22, "perStart": 9.1, "att": 16 },
+        { "n": "Saka", "starts": 25, "hit": 20, "perStart": 7.0, "att": 17 },
+        { "n": "Dewsbury-Hall", "starts": 30, "hit": 17, "perStart": 7.5, "att": 15 }
+      ],
+      "£6m": [
+        { "n": "Garner", "starts": 38, "hit": 53, "perStart": 12.1, "att": 9 },
+        { "n": "Scott", "starts": 34, "hit": 47, "perStart": 11.0, "att": 5 },
+        { "n": "M. Fernandes", "starts": 35, "hit": 43, "perStart": 10.5, "att": 7, "note": "at West Ham" },
+        { "n": "Stach", "starts": 28, "hit": 36, "perStart": 9.4, "att": 11 },
+        { "n": "Le Fee", "starts": 33, "hit": 24, "perStart": 9.2, "att": 10 },
+        { "n": "Gravenberch", "starts": 34, "hit": 21, "perStart": 8.6, "att": 10 },
+        { "n": "Ndiaye", "starts": 32, "hit": 19, "perStart": 8.9, "att": 9 }
+      ],
+      "£5.5m": [
+        { "n": "Bentancur", "starts": 23, "hit": 57, "perStart": 11.7, "att": 2 },
+        { "n": "Ampadu", "starts": 35, "hit": 54, "perStart": 11.8, "att": 5 },
+        { "n": "Palhinha", "starts": 23, "hit": 52, "perStart": 11.4, "att": 8 },
+        { "n": "Joao Gomes", "starts": 32, "hit": 47, "perStart": 11.7, "att": 3, "note": "at Wolves — see theJoaoGomesFlag" },
+        { "n": "N. Gonzalez", "starts": 17, "hit": 41, "perStart": 9.9, "att": 1 },
+        { "n": "Xhaka", "starts": 32, "hit": 41, "perStart": 11.0, "att": 7 },
+        { "n": "Caicedo", "starts": 32, "hit": 41, "perStart": 11.3, "att": 4 },
+        { "n": "Mainoo", "starts": 16, "hit": 38, "perStart": 9.9, "att": 3 },
+        { "n": "Joelinton", "starts": 23, "hit": 35, "perStart": 9.8, "att": 3 },
+        { "n": "Miley", "starts": 15, "hit": 33, "perStart": 9.3, "att": 5 },
+        { "n": "Wharton", "starts": 29, "hit": 31, "perStart": 10.0, "att": 7 },
+        { "n": "Damsgaard", "starts": 24, "hit": 25, "perStart": 8.6, "att": 8 },
+        { "n": "Ayari", "starts": 20, "hit": 25, "perStart": 10.1, "att": 7 },
+        { "n": "Hackney", "starts": 38, "hit": 21, "perStart": 8.6, "att": 12, "note": "at Middlesbrough" }
+      ],
+      "£5m": [
+        { "n": "Matusiwa", "starts": 45, "hit": 42, "perStart": 11.2, "att": 4, "note": "Championship" },
+        { "n": "Iroegbunam", "starts": 17, "hit": 41, "perStart": 9.8, "att": 3 },
+        { "n": "Janelt", "starts": 15, "hit": 40, "perStart": 10.3, "att": 5 },
+        { "n": "Adams", "starts": 21, "hit": 38, "perStart": 10.2, "att": 4 },
+        { "n": "Yarmoliuk", "starts": 30, "hit": 37, "perStart": 10.4, "att": 4 },
+        { "n": "Sangare", "starts": 25, "hit": 36, "perStart": 10.4, "att": 4 },
+        { "n": "P. Sarr", "starts": 13, "hit": 31, "perStart": 11.5, "att": 6 },
+        { "n": "Grimes", "starts": 45, "hit": 29, "perStart": 9.5, "att": 4, "note": "Championship" },
+        { "n": "Lerma", "starts": 18, "hit": 28, "perStart": 9.9, "att": 5 },
+        { "n": "Schlager", "starts": 20, "hit": 20, "perStart": 8.9, "att": 4, "note": "Bundesliga" }
+      ],
+      "£4.5m": [
+        { "n": "Slater", "starts": 37, "hit": 27, "perStart": 9.7, "att": 4, "note": "Championship" }
+      ]
+    },
+    "opponentDefconAgainst": {
+      "whatItIs": "How well opposing centre-backs and central midfielders score DEFCON when playing AGAINST each club — i.e. which fixtures feed a DEFCON pick.",
+      "coverage": "17 clubs, not 20. Coventry, Ipswich and Hull are absent because they were not in the division last season, which is the same reason the £4m defenders above are all Championship rows.",
+      "centreBacks": [
+        { "vs": "Crystal Palace", "aveDc": 10.0, "hit": 62, "mgrChanged": true },
+        { "vs": "Everton", "aveDc": 9.4, "hit": 53 },
+        { "vs": "Leeds", "aveDc": 9.5, "hit": 50 },
+        { "vs": "Liverpool", "aveDc": 9.0, "hit": 48, "mgrChanged": true },
+        { "vs": "Aston Villa", "aveDc": 8.3, "hit": 46 },
+        { "vs": "Arsenal", "aveDc": 9.3, "hit": 44 },
+        { "vs": "Brentford", "aveDc": 9.1, "hit": 43 },
+        { "vs": "Bournemouth", "aveDc": 9.3, "hit": 41, "mgrChanged": true },
+        { "vs": "Newcastle", "aveDc": 8.3, "hit": 40, "mgrChanged": true },
+        { "vs": "Man City", "aveDc": 8.2, "hit": 38, "mgrChanged": true },
+        { "vs": "Brighton", "aveDc": 8.5, "hit": 37 },
+        { "vs": "Tottenham", "aveDc": 8.5, "hit": 33 },
+        { "vs": "Sunderland", "aveDc": 8.6, "hit": 33 },
+        { "vs": "Man United", "aveDc": 8.4, "hit": 33 },
+        { "vs": "Nottm Forest", "aveDc": 8.1, "hit": 33, "mgrChanged": true },
+        { "vs": "Chelsea", "aveDc": 7.2, "hit": 25, "mgrChanged": true },
+        { "vs": "Fulham", "aveDc": 7.2, "hit": 23, "mgrChanged": true }
+      ],
+      "centralMidfielders": [
+        { "vs": "Tottenham", "aveDc": 10.1, "hit": 39 },
+        { "vs": "Man United", "aveDc": 9.4, "hit": 33 },
+        { "vs": "Everton", "aveDc": 9.0, "hit": 31 },
+        { "vs": "Aston Villa", "aveDc": 9.7, "hit": 30 },
+        { "vs": "Liverpool", "aveDc": 9.2, "hit": 30, "mgrChanged": true },
+        { "vs": "Newcastle", "aveDc": 9.4, "hit": 29, "mgrChanged": true },
+        { "vs": "Crystal Palace", "aveDc": 9.4, "hit": 28, "mgrChanged": true },
+        { "vs": "Brentford", "aveDc": 9.2, "hit": 28 },
+        { "vs": "Nottm Forest", "aveDc": 9.2, "hit": 25, "mgrChanged": true },
+        { "vs": "Chelsea", "aveDc": 9.0, "hit": 25, "mgrChanged": true },
+        { "vs": "Leeds", "aveDc": 8.3, "hit": 24 },
+        { "vs": "Sunderland", "aveDc": 8.5, "hit": 23 },
+        { "vs": "Fulham", "aveDc": 8.5, "hit": 23, "mgrChanged": true },
+        { "vs": "Man City", "aveDc": 9.2, "hit": 22, "mgrChanged": true },
+        { "vs": "Bournemouth", "aveDc": 9.2, "hit": 22, "mgrChanged": true },
+        { "vs": "Brighton", "aveDc": 8.8, "hit": 22 },
+        { "vs": "Arsenal", "aveDc": 8.2, "hit": 20 }
+      ],
+      "hisOwnCaveat": "'A good number of teams have changed managers in the summer' — he marks eleven of the seventeen CB rows and eight of the CM rows with an asterisk. That is the author telling you his own table's shelf life, and it should be quoted whenever the table is."
+    }
+  },
+
+  "theDefectThisSurfacedInOurApp": {
+    "found": "2026-08-16, while checking whether our DEFCON fields matched his",
+    "what": "dcHitRate() always returns a number. For a defender with no Premier League history there is no _ci record (it is keyed on FPL element ids) and no per-90, so the logistic fell through to ~0% — rendered in the scouting table's 'DC hit%' column and in the DefCon lens as though it were a measurement.",
+    "whyItMatters": "~0% reads as 'this player never clears the threshold'. It actually meant 'we have never seen him play here'. A defender with 2,000 minutes and genuinely no defensive returns rendered identically, and those are not the same claim.",
+    "howThisThreadFoundIt": "His entire cheapest defensive bracket (£4m) is nine Championship players, and his headline recommendation was to gamble on Vuskovic (Bundesliga), Muharemovic (Serie A) and Jacquet (Ligue 1). Every one of those twelve is a player our tool rated ~0%. The instrument was most confident exactly where it knew least, and the cheapest bracket is where enablers come from, so the blind spot sat on the most-used part of the table.",
+    "fixed": "dcHasBasis() now gates the label: no Premier League minutes at all gives '—' rather than a percentage, and the column sorts those with the unrateable rows instead of below the worst rated defender. The floor is any real minutes rather than a threshold, so a genuine ~0% from a real season survives — that one is a true finding.",
+    "alreadySafe": "dcByBracket already excluded zero-minute players from the budget ladder, and the player card was already gated on _ci. This closed the two places that were not.",
+    "testedBy": "dev/test-core.mjs, section 'dcHitLabel: \"never clears it\" and \"never seen him\" are different claims' — seven assertions including the regression that the two cases must not render identically.",
+    "theRecurringShape": "This is the fourth time in a fortnight the same failure has been recorded: a check reporting its own coverage as a finding about the world. The others were the silent MID fallback in provider.js, gradeEfl unable to tell 'checked' from 'not deployed', and the briefing parser's last club block swallowing three sections. When a check finds nothing, the first question is whether it could have found anything."
+  },
+
+  "flagsRaisedNotResolved": [
+    {
+      "id": "theJoaoGomesFlag",
+      "what": "His £5.5m midfield row reads 'JOAO GOMES (at Wolves)'. Elsewhere in the same thread the parenthetical marks a player's CURRENT club — 'ANDERSON (at Forest)', 'M. FERNANDES (at West Ham)', 'HACKNEY (at M'boro)' — which would place Joao Gomes at Wolves now.",
+      "againstWhatWeHold": "efl/data/benchmarks/round-01-wolves-blackburn-lineups.json records O'Haire's claim that Joao Gomes left Wolves for Aston Villa for £38m, and notes he was absent from the Wolves matchday squad on 15 August, consistent with having gone.",
+      "whyNoConclusionIsDrawn": "The parenthetical could equally mark the club where the statistics were EARNED, which for last season's numbers would be Wolves under either story. Two readings, no way to choose from the screenshot. The same file already warns that R. Gomes in that XI is Rodrigo Gomes and a different player, and surname collisions have cost this project two invented price conflicts already.",
+      "howToSettleIt": "The FPL bootstrap lists every player's current team. Unreachable from this sandbox; trivially reachable from CI.",
+      "RESOLVED": {
+        "on": "2026-08-16, hours after the flag was raised",
+        "by": "docs/benchmarks/pl-preseason-friendlies-s7s.json, an unrelated capture",
+        "theArgument": "Three of the four '(at X)' annotations in this thread name clubs that are NOT in the 2026-27 Premier League — West Ham, Middlesbrough and Wolverhampton Wanderers — checked mechanically against our own twenty-club register. A table of FPL-priced assets cannot be listing three players outside the division, so the parenthetical marks WHERE THE STATISTICS WERE EARNED, not where the player is now.",
+        "andIndependently": "The S7S round-up places Mateus Fernandes at Tottenham with a pre-season goal, where this thread writes '(at West Ham)' — a second source contradicting the current-club reading of that exact annotation.",
+        "conclusion": "'JOAO GOMES (at Wolves)' asserts nothing about his current club and does NOT conflict with the £38m Aston Villa move recorded in the EFL benchmark, nor with his absence from the Wolves team sheet on 15 August. Flag closed in favour of the EFL benchmark's reading.",
+        "theProcessPoint": "Raised without guessing, and settled inside a day by a source that had nothing to do with the question. Had it been resolved by assertion when it was raised, there was a coin-flip chance of writing a contradiction into two benchmark files at once."
+      }
+    },
+    {
+      "id": "twoSangares",
+      "what": "Three separate rows reference a Sangare: 'SANGARE*' at £5m with a 36% DEFCON hit rate, 'M. SANGARE (Ligue 1)' at £5.5m with a 67% 4+ hit rate, and 'I. SANGARE' at £5.0m with 40%. The prose adds 'Sangare (£5.5m) who recently joined Brentford, had a whopping 65% DEFCON hit rate at his previous club Lens'.",
+      "resolution": "The thread disambiguates itself: the £5.5m Ligue 1 Sangare who joined Brentford from Lens is a different player from the £5.0m I. Sangare. Recorded because reading the surname alone would have merged two players and credited one with the other's numbers.",
+      "residual": "The 65% figure quoted in prose does not appear in any graphic captured here, so it is a text claim without a published table behind it."
+    },
+    {
+      "id": "hisMetricIsNotOurMetric",
+      "what": "'DEFCON hit rate' and 'DEFCON p/start' are computed by him from a source he does not name (the bonus graphic credits Fantasy Football Scout; the DEFCON ones are unattributed).",
+      "why": "We hold our own dchr and dcps. They have NOT been diffed against his, because that needs the FPL bootstrap. Until they are, agreement between his figures and ours is assumed, not shown — and this file must not be read as confirming our numbers."
+    }
+  ],
+
+  "gradeableAfterTheSeasonStarts": [
+    "Whether the £5m defensive bracket is the 'sweet spot' he calls it, measured as points per million against the £4.5m and £5.5m brackets.",
+    "Whether the three foreign-league gambles (Vuskovic, Muharemovic, Jacquet) reproduce their DEFCON rates in the Premier League — the explicit bet of the thread, and the one our model structurally cannot make.",
+    "Whether Man United's GW1-3 and Liverpool's GW2-4 runs, which he ranks 2nd and 4th best in the whole first half of the season, actually return above average.",
+    "The custom FDR itself: bookmaker odds plus last season's home/away record, against outcomes. We hold two other fixture-difficulty scales — our own four-band labels and the fplrotationplanner grid — so round-by-round this is a three-way calibration set rather than a single opinion.",
+    "The Sunderland GW4 venue, which settles outright the moment the fixtures endpoint is read."
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "The briefing price table gains three settled rows (Saka, Ndiaye, Garner), taking the outside table to 7 right from 7 and ours to 0.",
+    "Nothing else. No pick, no rating and no model weight is changed by this file. It is a benchmark to be graded, not an input."
+  ]
+}
