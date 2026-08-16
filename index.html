@@ -7314,6 +7314,63 @@ function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
    So each lens now prints its own number in the cell, and the run total is in
    the same unit rather than a sum of difficulty buckets. Pure, so the
    formatting and the totals are unit-tested. */
+/* ── FPL's own team strength, venue-split ──────────────────
+   bootstrap-static ships six strength numbers per club — overall, attack and
+   defence, each split home and away — and this app read none of them until
+   16 Aug 2026. It is the one lens here that is not our model: everything else
+   on this grid is derived from our fitted Poisson, so a column from the game
+   itself is an outside opinion to plan against and, later, to grade.
+
+   DIRECTION WAS MEASURED, NOT ASSUMED. The field name does not say whether a
+   bigger number is a stronger club or a harder fixture, and inverting it
+   would invert every rating on the lens. Probed from a runner against all 380
+   fixtures: strength_overall correlates r=0.818 with the OPPONENT's
+   team_*_difficulty (1-5, higher = harder). So a higher number is a stronger
+   club, and difficulty is the opponent's strength relative to yours.
+
+   ZERO MEANS ABSENT, NOT WEAKEST. As of 16 Aug 2026 FPL ships
+   strength_attack_* and strength_defence_* as 0 for all twenty clubs, and
+   `strength` itself as null; only strength_overall_home/away carry values, on
+   a coarse 2-5 scale with four distinct levels in play. A zero read as a real
+   strength would make every club maximally weak and every ratio a division by
+   zero, so zero is treated as missing. */
+const STRENGTH_KEYS={
+  overall:['strength_overall_home','strength_overall_away'],
+  attack:['strength_attack_home','strength_attack_away'],
+  defence:['strength_defence_home','strength_defence_away']
+};
+function teamStrength(team,home,kind){
+  if(!team)return null;
+  const k=STRENGTH_KEYS[kind]||STRENGTH_KEYS.overall;
+  const v=Number(team[home?k[0]:k[1]]);
+  return Number.isFinite(v)&&v>0?v:null;
+}
+/* My strength over theirs, each at the venue they are actually playing at.
+   1.00 is parity; above 1 favours me.
+
+   Prefers the attack-versus-defence matchup and falls back to
+   overall-versus-overall, so the lens upgrades itself the moment FPL fills
+   those fields in — but it REPORTS which basis it used, because a number
+   whose meaning changes underneath the reader is worse than no number. */
+function strengthEdge(me,myHome,opp){
+  const oppHome=!myHome;
+  const a=teamStrength(me,myHome,'attack'),d=teamStrength(opp,oppHome,'defence');
+  if(a!=null&&d!=null)return {edge:a/d,basis:'attack'};
+  const mo=teamStrength(me,myHome,'overall'),oo=teamStrength(opp,oppHome,'overall');
+  if(mo!=null&&oo!=null)return {edge:mo/oo,basis:'overall'};
+  return null;
+}
+/* Bands mirror around parity in log space — 1.15 against 1/1.15, 1.5 against
+   1/1.5 — so "half a band better than even" means the same thing whichever
+   side of the fixture you are on. A missing edge grades 3 (neutral) rather
+   than 1: an absent number must never manufacture an easy run, and 3 sits
+   above FDR_PATCH_MAX so it cannot pull a purple patch into existence. */
+const STRENGTH_BANDS=[1.5,1.15,0.87,0.67];
+function strengthGrade(s){
+  if(!s||!Number.isFinite(s.edge))return 3;
+  const r=s.edge,B=STRENGTH_BANDS;
+  return r>=B[0]?1:r>=B[1]?2:r>=B[2]?3:r>=B[3]?4:5;
+}
 const FDR_LENS={
   overall:{unit:'WIN',cell:c=>Math.round((c.win||0)*100)+'%',
     total:cs=>cs.length?Math.round(100*cs.reduce((s,c)=>s+(c.win||0),0)/cs.length)+'%':'—'},
@@ -7323,6 +7380,11 @@ const FDR_LENS={
     total:cs=>cs.reduce((s,c)=>s+(c.cs||0),0).toFixed(2)},
   fpl:{unit:'FDR',cell:c=>String(c.fdr>=1&&c.fdr<=5?c.fdr:3),
     total:cs=>String(cs.reduce((s,c)=>s+(c.fdr>=1&&c.fdr<=5?c.fdr:3),0))},
+  /* AVERAGED, not summed. It is a ratio, so a total would be meaningless —
+     the same reason the overall lens averages win probability. */
+  strength:{unit:'STR',cell:c=>c.s?c.s.edge.toFixed(2):'—',
+    total:cs=>{const v=cs.filter(c=>c.s);
+      return v.length?(v.reduce((s,c)=>s+c.s.edge,0)/v.length).toFixed(2):'—';}},
 };
 function fdrLens(view){return FDR_LENS[view]||FDR_LENS.overall;}
 /* The cell's headline number for a lens, and the run total beneath it. Both
@@ -7342,7 +7404,8 @@ function fdrRunTotal(view,cells){
 const FDR_PATCH_MAX=2.8;
 function fdrGrade(view,c){
   return view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
-    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
+    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3)
+    :view==='strength'?strengthGrade(c.s):c.diff;
 }
 /* The club's best K-gameweek run under this lens, or null when its best is
    not actually kind. One implementation, two readers. */
@@ -7657,7 +7720,8 @@ async function hydrateFixtures(host){
   const REM=39-startGw;
   const WINS=[[6,'6 GW'],[10,'10 GW'],[15,'15 GW']].filter(p=>p[0]<REM);
   WINS.push([Math.min(REM,38),'Season']);
-  const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],['fpl','FPL']];
+  const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],
+    ['fpl','FPL'],['strength','Strength']];
   /* The window has a START as well as a length. Fixed horizons counting from
      today answer "what is coming", but not "how does GW12-17 look" — which is
      the question you have when you are planning a wildcard or reading someone
@@ -7694,15 +7758,21 @@ async function hydrateFixtures(host){
     const winN=curWin;
     const gws=[];for(let g=from;g<from+winN&&g<=38;g++)gws.push(g);
     const byTeamGw={};
+    /* Club records by id, for the strength lens. Built once rather than
+       searched per fixture: 380 fixtures times a linear scan of 20 clubs is
+       work nobody needs to do twice a rebuild. */
+    const TBY={};(b.teams||[]).forEach(t=>{TBY[t.id]=t;});
     fixtures.forEach(f=>{
       if(!f.event||f.event<from||f.event>=from+winN)return;
       const m=matchModel(b,f,R);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
         diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
-        lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0};
+        lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0,
+        s:strengthEdge(TBY[f.team_h],true,TBY[f.team_a])};
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
         diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,
-        lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0};
+        lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0,
+        s:strengthEdge(TBY[f.team_a],false,TBY[f.team_h])};
     });
     window._fdr={b,teams,gws,byTeamGw,hidden};
     /* One summary column, in the active lens's own unit — the old FDR / xGF /
