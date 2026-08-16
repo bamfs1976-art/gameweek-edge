@@ -126,7 +126,16 @@ Grouped by what they would actually buy us:
 
 ### `teams[]` — 22 fields, 9 never mentioned
 
-**This is the one worth acting on.**
+> **Correction, same day.** This section originally read "this is the one
+> worth acting on" and recommended all six strength fields. That was written
+> from the field NAMES. Dumping the actual values showed
+> **`strength_attack_*` and `strength_defence_*` are 0 for all twenty clubs**,
+> and `strength` itself is `null` — only `strength_overall_home/away` carry
+> anything, on a coarse 2-5 scale.
+>
+> Checking a field exists is not checking it has data, and this page spent two
+> sections warning about exactly that before doing it. The recommendation
+> below is rewritten to what the numbers support.
 
 ```
 strength_overall_home  strength_overall_away
@@ -151,6 +160,34 @@ This session already established that our four-band difficulty scale is
 probability. A venue-split strength model from the game itself is a third
 independent scale to calibrate against, alongside the fplrotationplanner grid
 and Tom Hadley's custom FDR already held as benchmarks.
+
+**What the numbers actually are, 16 Aug 2026:**
+
+| Field | Populated? | Range |
+|---|---|---|
+| `strength_overall_home` | yes | 2–4, median 3, mean 2.9 |
+| `strength_overall_away` | yes | 2–5, median 3, mean 3.3 |
+| `strength_attack_home` / `_away` | **no — 0 for all 20** | — |
+| `strength_defence_home` / `_away` | **no — 0 for all 20** | — |
+| `strength` | **no — null** | — |
+
+**Direction, measured rather than assumed.** The name does not say whether a
+bigger number is a stronger club or a harder fixture, and inverting it would
+invert every rating built on it. Correlated against each fixture's
+`team_*_difficulty` (1–5, higher = harder) over all 380 fixtures:
+
+```
+home strength vs away difficulty   n=380  r=0.818
+away strength vs home difficulty   n=380  r=0.818
+```
+
+**Higher means a stronger club.** Settled.
+
+That r also sets expectations honestly: at 0.82 against the FDR we already
+read, `strength_overall` largely *reproduces* the existing `fpl` lens rather
+than replacing it. Four distinct values are in play, so it separates fixtures,
+but not finely. The residual — and the venue-split attack-vs-defence matchup
+once FPL populates it — is the part that is genuinely new.
 
 Also unused: `team_division`, `link_url`, `pulse_id`.
 
@@ -203,24 +240,52 @@ month-by-month ranking periods.
 
 ## 3. What was actually changed
 
-Only the defect. Everything else on this page is a finding, not a decision —
-adding a field to the app is a product call, and the standing rule on this
-repository is that outside data is held and graded before it is adopted.
-
-- `loadSetPieceNotes` now requests `team/set-piece-notes`
-- the proxy allowlist gains `^team\/set-piece-notes$`; the old path stays
+- `loadSetPieceNotes` now requests `team/set-piece-notes` (the defect above);
+  the proxy allowlist gains `^team\/set-piece-notes$` and the old path stays
   allowed so a rollback is a one-line app change
+- **a fifth Fixture Difficulty lens, `Strength`**, built on
+  `teams[].strength_*` — see below
 
-## 4. If any of it is taken further, the order I would take it
+Everything else on this page is a finding, not a decision. Adding a field to
+the app is a product call, and the standing rule here is that outside data is
+held and graded before it is adopted.
 
-1. **`teams[].strength_*`** — six numbers, venue-split, from the game itself,
-   against a difficulty scale we already know is coarser than its labels claim
-2. **`scout_risks` / `scout_news_link`** — an editorial layer the app has none of
-3. **`can_select` / `can_transact`** — the game's own answer to a question the
+### The Strength lens
+
+`STR` shows **your strength over theirs**, each club taken at the venue it is
+actually playing at. 1.00 is parity; above 1 favours you. The run total
+**averages** rather than sums, because a ratio does not add up — the same
+reason the overall lens averages win probability.
+
+It prefers the **attack-versus-defence** matchup and falls back to
+overall-versus-overall, so it upgrades itself the day FPL populates those
+fields, with no code change. It reports which basis it used, because a number
+whose meaning changes underneath the reader is worse than no number.
+
+Three things it deliberately refuses to do:
+
+- **Zero is treated as absent, not as the weakest possible club.** FPL ships 0
+  for every attack and defence field today. Read as a real strength it would
+  make every club maximally weak; used as a divisor it is a division by zero
+- **A missing edge grades 3, never 1.** Absent data must not manufacture an
+  easy fixture, and 3 sits above `FDR_PATCH_MAX` so it cannot pull a purple
+  patch into existence
+- **Bands mirror around parity in log space** (1.5 against 1/1.5, 1.15 against
+  1/1.15), so "one band better than even" means the same thing whichever side
+  of a fixture you are reading
+
+Tested in `dev/test-core.mjs` — 26 assertions, including the one that catches
+the direction being inverted. Verified to fail: flipping the grade order turns
+it red on three assertions.
+
+## 4. If any of the rest is taken further, the order I would take it
+
+1. **`scout_risks` / `scout_news_link`** — an editorial layer the app has none of
+2. **`can_select` / `can_transact`** — the game's own answer to a question the
    draft builder currently infers
-4. **`ep_this`** — a second outside projection, held and graded like the rest
-5. **the `*_rank` family** — percentile context for no computation
-6. **`fixtures/?event=N`** — payload only, and we cache; do it if a
+3. **`ep_this`** — a second outside projection, held and graded like the rest
+4. **the `*_rank` family** — percentile context for no computation
+5. **`fixtures/?event=N`** — payload only, and we cache; do it if a
    single-gameweek view ever loads cold
 
 Nothing above needs an API key, a login, or a paid service.
