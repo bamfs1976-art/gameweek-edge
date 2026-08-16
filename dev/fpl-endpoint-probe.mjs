@@ -243,6 +243,59 @@ const line = (r) => {
       }
     }
 
+    /* ── which DIRECTION does strength_overall point? ───────────────
+       The field name does not say whether a bigger number means a stronger
+       club or a harder fixture, and getting it backwards inverts every
+       difficulty rating built on it — the worst available failure for this
+       feature. `strength` is null and attack/defence are zeroed, so there is
+       no internal cross-check.
+
+       There is an external one. Each fixture carries FPL's own
+       team_h_difficulty / team_a_difficulty on a 1-5 scale where HIGHER IS
+       HARDER. If strength_overall means "stronger club", the away side's
+       difficulty should RISE with the home club's strength_overall_home.
+       Correlate and read the sign. */
+    const fx = await (await fetch(`${BASE}/fixtures/`,
+      { headers: { 'User-Agent': UA, Accept: 'application/json' } })).json();
+    const byId = new Map(boot.teams.map((t) => [t.id, t]));
+    const pairs = [];
+    for (const f of Array.isArray(fx) ? fx : []) {
+      const h = byId.get(f.team_h), a = byId.get(f.team_a);
+      if (!h || !a) continue;
+      if (typeof f.team_a_difficulty === 'number')
+        pairs.push({ x: h.strength_overall_home, y: f.team_a_difficulty, what: 'home strength vs away difficulty' });
+      if (typeof f.team_h_difficulty === 'number')
+        pairs.push({ x: a.strength_overall_away, y: f.team_h_difficulty, what: 'away strength vs home difficulty' });
+    }
+    const corr = (rows) => {
+      const n = rows.length; if (n < 3) return null;
+      const mx = rows.reduce((s, p) => s + p.x, 0) / n, my = rows.reduce((s, p) => s + p.y, 0) / n;
+      let sxy = 0, sxx = 0, syy = 0;
+      for (const p of rows) { const dx = p.x - mx, dy = p.y - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
+      return (sxx && syy) ? sxy / Math.sqrt(sxx * syy) : null;
+    };
+    console.log('\n=== does strength_overall mean STRONGER or HARDER? ===');
+    console.log('reference: fixtures[].team_*_difficulty, 1-5, higher = harder');
+    for (const what of ['home strength vs away difficulty', 'away strength vs home difficulty']) {
+      const rows = pairs.filter((p) => p.what === what && typeof p.x === 'number');
+      const r = corr(rows);
+      console.log(`  ${what.padEnd(34)} n=${rows.length}  r=${r === null ? 'n/a' : r.toFixed(3)}`);
+    }
+    const all = pairs.filter((p) => typeof p.x === 'number');
+    const r = corr(all);
+    console.log(`  combined                           n=${all.length}  r=${r === null ? 'n/a' : r.toFixed(3)}`);
+    console.log(r === null ? '  -> NO ANSWER: not enough variation to read a direction'
+      : r > 0.3 ? '  -> POSITIVE: a higher strength_overall means a HARDER fixture for the opponent,'
+        + '\n     i.e. the number describes club STRENGTH. Difficulty = opponent strength.'
+      : r < -0.3 ? '  -> NEGATIVE: higher strength_overall goes with an EASIER opponent fixture,'
+        + '\n     i.e. the field is NOT club strength in the obvious sense. Do not build on it.'
+      : '  -> INCONCLUSIVE (|r| <= 0.3): the two do not track each other. Building a '
+        + 'difficulty\n     scale on this field would be asserting a meaning the data does not show.');
+    /* How much NEW information, if any, over the FDR we already read. */
+    const uniq = new Set(all.map((p) => p.x)).size;
+    console.log(`  distinct strength_overall values in play: ${uniq}`
+      + (uniq <= 2 ? '  <-- too few to separate fixtures' : ''));
+
     /* Top-level keys are the cheapest place a whole new dataset appears. */
     console.log(`\nbootstrap-static top-level keys: ${Object.keys(boot).join(', ')}`);
     const unusedTop = Object.keys(boot).filter((k) => !mentions(k));
