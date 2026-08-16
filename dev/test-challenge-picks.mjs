@@ -255,6 +255,58 @@ ok('the benchmark quotes 28% and the median it is compared against',
 const median = allMid.map((r) => r.hit).sort((a, b) => b - a)[Math.floor(allMid.length / 2)];
 ok('that median is what the table actually gives', median === 36);
 
+/* The second half of that thread turns on DEFCON judgements, and the benchmark
+   states ranks inside the Hadley table. A stated rank is a claim about our own
+   data, so it is re-derived rather than trusted — and the "led last season"
+   check exists because reading that claim on the wrong metric produced a
+   confident wrong answer that was very nearly written up. */
+const bkS = JSON.stringify(BAKAR);
+const rankOf = (pool, n) => pool.slice().sort((a, b) => b.hit - a.hit).findIndex((x) => x.n === n) + 1;
+for (const [who, pool, hit, rank, size] of [
+  ['Ndiaye', allMid, 19, 38, 39], ['Szoboszlai', allMid, 28, 27, 39],
+  ['Guehi', allDef, 20, 49, 50], ['Maguire', allDef, 42, 22, 50],
+]) {
+  const r = pool.find((x) => x.n === who);
+  ok(`${who} is ${hit}% in the table`, r && r.hit === hit);
+  ok(`${who} ranks ${rank} of ${size}`, rankOf(pool, who) === rank && pool.length === size);
+  ok(`the benchmark states ${who}'s rank correctly`,
+    new RegExp(`rank ${rank} of ${size}`).test(bkS));
+}
+ok('the benchmark records the negative-right / positive-wrong shape',
+  /negative-?\s*DEFCON judgements land/i.test(bkS) || /NEGATIVE DEFCON judgements land/.test(bkS));
+
+/* "led last season" — five of six on TOTAL hits, Premier League rows only */
+const tot = (r) => Math.round(r.starts * r.hit / 100);
+const plDef = allDef.filter((r) => !r.note);
+const byTot = plDef.slice().sort((a, b) => tot(b) - tot(a)).map((r) => r.n);
+const HIS = ['Senesi', 'Lacroix', 'Tarkowski', 'Van Dijk', 'Andersen', 'Van Hecke'];
+ok('five of his six are the top five by total DEFCON hits',
+  HIS.filter((n) => byTot.slice(0, 5).includes(n)).length === 5);
+ok('by HIT RATE only one of them would be in the top six — the wrong instrument',
+  HIS.filter((n) => allDef.slice().sort((a, b) => b.hit - a.hit).slice(0, 6).map((r) => r.n).includes(n)).length === 1);
+ok('the benchmark records that the wrong metric was caught, not shipped',
+  /theMistakeThisAlmostBecame/.test(bkS) && /the instrument decided the finding/.test(bkS));
+
+/* the conflict with our OWN register must be recorded without quietly resolving it */
+const ars = block('Arsenal');
+ok('our register still says discount every Arsenal defensive asset',
+  /discount every Arsenal defensive asset/.test(ars));
+ok('the benchmark records the Arsenal conflict', /theArsenalDefenceConflict/.test(bkS));
+ok('the benchmark does NOT change our position', /register's line is NOT changed/.test(bkS));
+ok('our register independently holds the facts he reasons from',
+  /Saliba/.test(ars) && /Rice/.test(ars));
+
+/* provenance: a disclosed commercial interest is part of what the source IS */
+ok('the commercial interest is recorded', !!BAKAR.source.commercialInterest);
+ok('it is recorded as weight, not as a reason to discount',
+  /does not make any claim here wrong/i.test(bkS));
+
+/* the completeness miscount must leave a trace */
+ok('the corrected post count is stated', BAKAR.completeness.postsCaptured === 22);
+ok('the miscount is recorded rather than silently fixed',
+  !!BAKAR.completeness.aCountThatWasWrongWhenFirstWritten);
+ok('no stale reference to the old count survives', !/fourteen captured/.test(bkS));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
