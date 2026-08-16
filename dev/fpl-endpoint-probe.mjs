@@ -219,6 +219,30 @@ const line = (r) => {
     if (Array.isArray(boot.chips)) {
       console.log(`\nchips: ${boot.chips.map((c) => c && (c.name || c.id)).join(', ')}`);
     }
+    /* ── the actual strength numbers ────────────────────────────────
+       Printed in full because thresholds cannot be designed against a field
+       NAME. Six venue-split numbers per club, and the spread between the best
+       and worst is the whole question: if FPL's model barely separates the
+       clubs, a difficulty scale built on it inherits that flatness, which is
+       exactly the defect already recorded against our own four-band scale. */
+    if (Array.isArray(boot.teams) && boot.teams[0] && 'strength_attack_home' in boot.teams[0]) {
+      const S = ['strength_overall_home', 'strength_overall_away', 'strength_attack_home',
+        'strength_attack_away', 'strength_defence_home', 'strength_defence_away'];
+      console.log('\n=== teams[].strength_* (all 20, for threshold design) ===');
+      console.log('name'.padEnd(26) + 'str ' + S.map((k) => k.replace('strength_', '').replace('_', '-').padStart(11)).join(''));
+      for (const t of boot.teams) {
+        console.log(String(t.name).padEnd(26) + String(t.strength).padEnd(4)
+          + S.map((k) => String(t[k]).padStart(11)).join(''));
+      }
+      for (const k of S) {
+        const v = boot.teams.map((t) => t[k]).filter((n) => typeof n === 'number').sort((a, c) => a - c);
+        if (!v.length) continue;
+        const mean = v.reduce((a, c) => a + c, 0) / v.length;
+        console.log(`${k.padEnd(24)} min ${v[0]}  median ${v[Math.floor(v.length / 2)]}  max ${v[v.length - 1]}`
+          + `  mean ${mean.toFixed(1)}  spread ${(v[v.length - 1] / v[0]).toFixed(3)}x`);
+      }
+    }
+
     /* Top-level keys are the cheapest place a whole new dataset appears. */
     console.log(`\nbootstrap-static top-level keys: ${Object.keys(boot).join(', ')}`);
     const unusedTop = Object.keys(boot).filter((k) => !mentions(k));
