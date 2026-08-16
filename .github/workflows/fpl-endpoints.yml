@@ -1,0 +1,31 @@
+name: FPL endpoint probe
+
+# Asks the live FPL API which endpoints it actually serves, and prints the
+# shape of each answer.
+#
+# It is a workflow rather than a local script for the same reason the site
+# check is: the sandbox this project is developed in cannot reach
+# fantasy.premierleague.com (the egress proxy answers 403), so nobody working
+# there can honestly say what the API serves today. A runner can.
+#
+# Manual only. This is a survey to run when somebody asks "what else is
+# available?", not a monitor — the freshness check already watches the
+# endpoints the app depends on, and a second scheduled job hitting somebody
+# else's API to re-learn the same answer would be rude for no benefit.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe the FPL API
+        run: node dev/fpl-endpoint-probe.mjs
