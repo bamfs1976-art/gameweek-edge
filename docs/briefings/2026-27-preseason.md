@@ -809,6 +809,68 @@ makes to this document.
 
 ---
 
+## Pre-season friendly returns — and what they are not, 16 August 2026
+
+Source: a "Pre-Season Round-Up" by **FPL S7S (@FPL_S7S)**, held at
+`docs/benchmarks/pl-preseason-friendlies-s7s.json`. Eighty-three players with
+cumulative friendly goals and assists, plus a fixture card for today.
+
+**Read the ceiling before the list.** Pre-season returns predict league returns
+poorly, and this list is weaker than most because it has **no denominator** —
+no minutes, no match counts, no opponents. A hat-trick against a lower-division
+side and a hat-trick against Bologna are three identical footballs here. The
+same account's earlier card shows Leeds beating Augsburg 4-0 and Brentford
+winning 7-0, alongside Hull drawing 0-0 with Nice and two one-goal defeats.
+Nothing in this register is reweighted from it.
+
+**It is worth having for something else entirely: it is 83 assertions about
+who plays for whom.** That is the one thing this document can check in bulk
+without the FPL API, and every club block names its own signings and
+departures. **Fifty of the eighty-three resolve against our register and 48
+agree outright, with no hard conflicts.** The other thirty-three are simply
+absent from our document, which is a pick list rather than a squad list — it
+has no reason to name Havertz, Caicedo, Maguire or Dorgu.
+
+**Do not mine it for confirmations it cannot give.** This is a list of scorers
+and assisters only. Saliba, Onana and Kroupi are all absent, and so are Saka
+and Rice — consistent with the injury and eased-back flags above, and evidence
+of precisely nothing, because a fit player who did not score is absent too.
+
+**Two attribution flags, both about time rather than fact.** S7S credits an
+assist to "Robertson (LIV)" where our register records Andy Robertson out of
+Liverpool and in at Tottenham on a free, stated by both clubs. A cumulative
+list spanning weeks can legitimately credit a player under the club he was at
+when he played, so this is probably not an error by anyone. And Forest's
+Kalimuendo, whom this file records as "advanced talks, not done", is credited
+with 2 goals *for Forest* — evidence he has joined, but a friendly appearance
+is not an announcement, so the note now carries the counter-evidence beside it
+rather than being rewritten.
+
+**It closed yesterday's open flag.** The Hadley thread annotates
+"JOAO GOMES (at Wolves)", and it was unclear whether that meant his current
+club — which would contradict the EFL benchmark recording his £38m move to
+Villa. Three of that thread's four "(at X)" notes name clubs **not in this
+division** (West Ham, Middlesbrough, Wolves), so the parenthetical marks where
+the statistics were earned. S7S independently puts Mateus Fernandes at
+Tottenham where Hadley writes "(at West Ham)". Flag closed, in favour of the
+EFL benchmark. Raised without guessing yesterday, settled today by a source
+with nothing to do with the question.
+
+**And chasing one line of it found a two-day-old defect in this document.**
+Our two editions disagreed about where Wissa went, which led to checking what
+else they disagreed about. **Three of the four prices settled on 14 August had
+never reached the HTML club blocks** — Wood and Gibbs-White still read ~£7.0m
+and Robinson ~£5.0m in the standalone terminal, the edition a reader actually
+opens, while the summary row in the same file said all three were settled. The
+test written to prevent exactly this reads the markdown. It passed every run.
+
+All four are now corrected in both editions, and the test checks both. Fifth
+time in a fortnight: **when a check finds nothing, the first question is
+whether it could have found anything** — and here it could not, because it was
+not looking at the file the defect was in.
+
+---
+
 # The 20 clubs
 
 Ordered by 2025/26 finishing position, promoted clubs last.
@@ -1343,7 +1405,7 @@ is partly a list of who played the weakest opposition.
 
 **Pre-season summary:** Sixteenth after a chaotic year of managerial turnover. Oliver Glasner is confirmed head coach (appointed 6 July 2026), the fifth manager in under 12 months, bringing a high-energy front-foot system. Backed heavily (around £90m of incomings) but they cashed in on Elanga (~£55m to Newcastle). A big rebuild and a new identity, expect volatility early.
 
-**In:** Omari Hutchinson (W, Ipswich, ~£37.5m), James McAtee (AM, Man City, ~£30m), Dan Ndoye (W, Bologna). Arnaud Kalimuendo (ST, Rennes) reported in advanced talks, not yet done. (Some completion dates unverified, re-check.)
+**In:** Omari Hutchinson (W, Ipswich, ~£37.5m), James McAtee (AM, Man City, ~£30m), Dan Ndoye (W, Bologna). Arnaud Kalimuendo (ST, Rennes) reported in advanced talks, not yet done — **16 Aug: an outside pre-season round-up credits him with 2 goals *for Forest*.** Playing in a club's friendlies is evidence of having joined it, not an announcement, and pre-season squads carry trialists. Status left unresolved rather than rewritten. (Some completion dates unverified, re-check.)
 
 **Out:** Anthony Elanga (W, Newcastle, ~£55m, was the club-record sale until Anderson), Willy Boly (released), Stefan Ortega and Angus Gunn (GKs, released). Added 13 Aug, having been recorded only by the club at the other end: Elliot Anderson (CM, Man City, ~£116m).
 

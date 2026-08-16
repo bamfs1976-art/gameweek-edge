@@ -325,7 +325,15 @@
       "what": "His £5.5m midfield row reads 'JOAO GOMES (at Wolves)'. Elsewhere in the same thread the parenthetical marks a player's CURRENT club — 'ANDERSON (at Forest)', 'M. FERNANDES (at West Ham)', 'HACKNEY (at M'boro)' — which would place Joao Gomes at Wolves now.",
       "againstWhatWeHold": "efl/data/benchmarks/round-01-wolves-blackburn-lineups.json records O'Haire's claim that Joao Gomes left Wolves for Aston Villa for £38m, and notes he was absent from the Wolves matchday squad on 15 August, consistent with having gone.",
       "whyNoConclusionIsDrawn": "The parenthetical could equally mark the club where the statistics were EARNED, which for last season's numbers would be Wolves under either story. Two readings, no way to choose from the screenshot. The same file already warns that R. Gomes in that XI is Rodrigo Gomes and a different player, and surname collisions have cost this project two invented price conflicts already.",
-      "howToSettleIt": "The FPL bootstrap lists every player's current team. Unreachable from this sandbox; trivially reachable from CI."
+      "howToSettleIt": "The FPL bootstrap lists every player's current team. Unreachable from this sandbox; trivially reachable from CI.",
+      "RESOLVED": {
+        "on": "2026-08-16, hours after the flag was raised",
+        "by": "docs/benchmarks/pl-preseason-friendlies-s7s.json, an unrelated capture",
+        "theArgument": "Three of the four '(at X)' annotations in this thread name clubs that are NOT in the 2026-27 Premier League — West Ham, Middlesbrough and Wolverhampton Wanderers — checked mechanically against our own twenty-club register. A table of FPL-priced assets cannot be listing three players outside the division, so the parenthetical marks WHERE THE STATISTICS WERE EARNED, not where the player is now.",
+        "andIndependently": "The S7S round-up places Mateus Fernandes at Tottenham with a pre-season goal, where this thread writes '(at West Ham)' — a second source contradicting the current-club reading of that exact annotation.",
+        "conclusion": "'JOAO GOMES (at Wolves)' asserts nothing about his current club and does NOT conflict with the £38m Aston Villa move recorded in the EFL benchmark, nor with his absence from the Wolves team sheet on 15 August. Flag closed in favour of the EFL benchmark's reading.",
+        "theProcessPoint": "Raised without guessing, and settled inside a day by a source that had nothing to do with the question. Had it been resolved by assertion when it was raised, there was a coin-flip chance of writing a contradiction into two benchmark files at once."
+      }
     },
     {
       "id": "twoSangares",
