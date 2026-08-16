@@ -1,0 +1,83 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-guidance",
+  "capturedAt": "2026-08-16T13:52:00.000Z",
+  "capturedAtPrecision": "screenshots carry a device clock of 14:51-14:52 local (BST, UTC+1), recorded as UTC. The post is stamped '15 hours ago', so published around 22:50Z on 15 August — an inference from a relative timestamp, not a published one.",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured five days before the deadline. Committed now so git history is the evidence it predates the football.",
+
+  "source": {
+    "name": "fpltips__",
+    "platform": "Instagram",
+    "verified": "the handle carries a blue verification badge",
+    "title": "FPL Friendlies — Notes",
+    "caption": "'Notes from all highlights I watched…' (truncated in the capture)",
+    "engagement": { "likes": 2059, "comments": 50, "reposts": 16, "shares": 350 },
+    "readFrom": "screenshots of the Instagram carousel"
+  },
+
+  "provenanceIsTheHeadlineHere": {
+    "what": "Instagram itself labels this account **AI content**. The label appears under the handle on the captured slides, applied by the platform rather than claimed by us.",
+    "theTension": "The caption is written in the first person and says the notes come from highlights the author WATCHED. An AI-content label and a first-hand viewing claim cannot both be taken at face value. This file does not attempt to adjudicate which is true — it records that the two are in tension, because a reader coming to this capture later needs that before they weigh anything in it.",
+    "whyItChangesTheWeightAndNotTheFacts": "It does NOT make the content wrong; the checks below found it accurate wherever it was checkable. What it changes is what the source IS. Tom Hadley publishes a stated method (bookmaker odds plus last season's home/away record) under a named identity and can be held to it. An account the platform marks as AI-generated offers assertions with no method behind them and no one accountable for them, and its agreement with our register is therefore weak evidence about the world — it may simply be reproducing the same public inputs we read.",
+    "consequenceForGrading": "Graded SEPARATELY from the human-authored captures. Pooling its calls with Hadley's or the tipsters' would let a generated opinion count as a second witness, which is exactly the double-counting the EFL round-1 file already warns about for correlated picks."
+  },
+
+  "completeness": {
+    "slidesCaptured": 5,
+    "slidesTotal": 6,
+    "knownTruncation": "Slide 6 of 6 was NOT captured, and the caption is cut off at 'more'. Any club covered only on slide 6 is absent from this file because it was never seen, not because the source omitted it.",
+    "clubsCovered": ["Brighton", "Chelsea", "Leeds", "Manchester United", "Fulham", "Everton", "Tottenham"]
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "Every club attribution and every stated price diffed mechanically against the briefing's structured club blocks, the settled price table, and the two captures already held from today.",
+    "clubAttributions": { "claims": 20, "resolvableAgainstOurRegister": 14, "agreeing": 14, "conflicts": 0,
+      "notInOurRegister": 6,
+      "theSix": "Hinshelwood, De Cuyper, Palestra, Wilson, Lammens, Patterson — absent from a document that lists signings, departures and pick candidates rather than full squads. A gap in our scope, not an error in theirs." },
+    "prices": { "stated": 12, "checkableAgainstAnFplPriceWeHold": 2, "agreeing": 2, "conflicts": 0 },
+    "setPieceAndPenaltyClaims": {
+      "checked": 3, "agreeing": 3,
+      "detail": [
+        { "claim": "'DCL is still my preferred route because of penalties' (Leeds)", "ourRegister": "Pens Calvert-Lewin (Nmecha 2nd)", "verdict": "agrees" },
+        { "claim": "'If penalties stay with him, that only makes the case stronger' (Ndiaye, Everton)", "ourRegister": "Pens Ndiaye (Garner, Beto backups)", "verdict": "agrees" },
+        { "claim": "'Pascal Gross looks decent on set pieces' (Brighton)", "ourRegister": "Pens Gross (O'Riley the alternative)", "verdict": "agrees" }
+      ]
+    },
+    "aBugInOurOwnChecker": {
+      "what": "The first price pass reported Vuskovic at '£5m vs ours £21.5m' and Van Hecke at '£5m vs ours £22.5m'. Both were TRANSFER FEES read out of the signing lines, not FPL prices.",
+      "why": "A fee and a game price are both a number in pounds beside a player's name, and nothing but surrounding context separates them. A regex that scans for the nearest pound figure will find whichever comes first.",
+      "fixed": "The pattern now requires the marker the register puts on a settled price. Two manufactured conflicts avoided — the same failure shape as the surname collisions in the set-piece diff and the departure-in-prose miscount in the S7S capture.",
+      "andItMattersHere": "Had those two been recorded, this file would open by accusing an AI-labelled source of inventing prices, on evidence that was entirely our own parsing error. The provenance note above would have made that accusation look plausible, which is precisely why it needed checking rather than assuming."
+    }
+  },
+
+  "convergesWithOurOwnReadOnPalmer": {
+    "theirClaim": "'Morgan Rogers is the attacker I would rather back over Palmer because the value feels much stronger' and 'Palmer (£9.5m) is still a strong pick, but right now he is not where I want to spend.'",
+    "ourIndependentRead": "From Tom Hadley's consistency table, captured earlier today: Palmer at £9.5m had a 38% 4+ points hit rate last season, the weakest per pound of the premium group — against Bruno Fernandes 71%, Gabriel 77% and Joao Pedro's 89% bonus-from-one-return.",
+    "whatThatIsWorth": "Two sources reaching the same conclusion by different routes — one from a stated last-season consistency table, one from watching (or claiming to watch) pre-season. It is NOT two independent confirmations in the strong sense: an AI-authored account may well be reading the same public tables. Recorded as convergence, not corroboration.",
+    "andItIsGradeable": "Palmer's actual GW1-6 return against Rogers' settles it."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Joao Pedro is 'close to essential' for Chelsea", "gradeable": true },
+    { "claim": "Morgan Rogers outscores Palmer", "gradeable": true, "note": "a direct head-to-head, which is rarer and more scoreable than a shortlist" },
+    { "claim": "Muharemovic is 'more nailed' than Vuskovic", "gradeable": true, "note": "a minutes claim, settled by starts rather than points" },
+    { "claim": "Calvert-Lewin over Wilson at Leeds, on penalties", "gradeable": true },
+    { "claim": "Mbeumo 'should start next weekend'", "gradeable": true, "note": "settles on the GW1 team sheet" },
+    { "claim": "Man United's back line is not worth starting the season with", "gradeable": true, "note": "clean sheets kept in GW1-6" },
+    { "claim": "Ndiaye is 'very close to sealing a spot'", "gradeable": false, "note": "a statement about the author's own squad, not about football" }
+  ],
+
+  "touchesSomethingTheAppModels": {
+    "claim": "'De Cuyper (£4.5m) stands out because the left-sided OOP appeal could make him a useful option.'",
+    "whyItIsNoted": "Out-of-position is a dimension the FPL side of this app DOES model — oopFlag, oopThreat, oopQuantile and OOP_MIN_MINUTES in index.html — while the Fantasy EFL side explicitly does not, a gap recorded in round-01-scottyfefl.json. The same concept therefore lands on a modelled dimension in one app and an unmodelled one in the other, which is worth knowing before either is graded against an outside OOP call.",
+    "notAdopted": "No player is added or reweighted from this."
+  },
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing. No pick, price, rating or model weight moves.",
+    "It adds a third independent statement of Ndiaye at £6.0m, a price settled this morning against our own ~£6.5m estimate — but see the provenance note: a generated source agreeing with a published figure is not the same as a third witness."
+  ]
+}
