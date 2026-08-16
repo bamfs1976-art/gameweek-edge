@@ -7758,21 +7758,23 @@ async function hydrateFixtures(host){
     const winN=curWin;
     const gws=[];for(let g=from;g<from+winN&&g<=38;g++)gws.push(g);
     const byTeamGw={};
-    /* Club records by id, for the strength lens. Built once rather than
-       searched per fixture: 380 fixtures times a linear scan of 20 clubs is
-       work nobody needs to do twice a rebuild. */
-    const TBY={};(b.teams||[]).forEach(t=>{TBY[t.id]=t;});
+    /* b.teams is ALREADY an id-keyed map of the full club records — boot()
+       builds it as `b.teams.forEach(t=>teams[t.id]=t)` and teamShort() reads
+       it as b.teams[id]. This originally built its own lookup with
+       `(b.teams||[]).forEach`, which throws on an object and took the whole
+       panel down with "Could not load this view". The local `teams` in this
+       function is the array; b.teams is the map. */
     fixtures.forEach(f=>{
       if(!f.event||f.event<from||f.event>=from+winN)return;
       const m=matchModel(b,f,R);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
         diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
         lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0,
-        s:strengthEdge(TBY[f.team_h],true,TBY[f.team_a])};
+        s:strengthEdge(b.teams[f.team_h],true,b.teams[f.team_a])};
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
         diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,
         lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0,
-        s:strengthEdge(TBY[f.team_a],false,TBY[f.team_h])};
+        s:strengthEdge(b.teams[f.team_a],false,b.teams[f.team_h])};
     });
     window._fdr={b,teams,gws,byTeamGw,hidden};
     /* One summary column, in the active lens's own unit — the old FDR / xGF /
