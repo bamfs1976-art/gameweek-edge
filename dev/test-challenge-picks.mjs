@@ -1,0 +1,126 @@
+/* Every number quoted in the Challenge picks file came out of the Hadley
+   benchmark or the briefing register by hand, and hand-copying is where this
+   project keeps introducing errors.
+
+   The FIRST version of this script passed 41/41 and then passed two of three
+   deliberate corruptions, because it checked Hadley against Hadley and only
+   asked whether a figure appeared ANYWHERE in the picks file. "53%" appears in
+   several places, so changing Muharemovic's rate to 58% went undetected.
+   Each assertion below is therefore scoped: a figure must appear inside the
+   sentence about THAT player, and a superlative must name the club the source
+   actually puts at the top. */
+import fs from 'node:fs';
+const R = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
+const H = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-tomhadley-preseason-thread.json`, 'utf8'));
+const PICKS = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-challenge-gw2-gw5.json`, 'utf8'));
+const P = fs.readFileSync(`${R}/docs/benchmarks/fpl-challenge-gw2-gw5.json`, 'utf8');
+const D = H.defconLeaderboards;
+
+const allDef = Object.entries(D.defence).filter(([k]) => k.startsWith('£')).flatMap(([b, rs]) => rs.map(r => ({ ...r, b })));
+const allMid = Object.entries(D.midfield).flatMap(([b, rs]) => rs.map(r => ({ ...r, b })));
+const cb = Object.fromEntries(D.opponentDefconAgainst.centreBacks.map(r => [r.vs, r]));
+const cm = Object.fromEntries(D.opponentDefconAgainst.centralMidfielders.map(r => [r.vs, r]));
+
+let pass = 0; const fail = [];
+const ok = (label, cond) => { if (cond) pass++; else fail.push(label); };
+
+/* the Shield entries, as objects, so a figure can be tied to ITS player */
+const shield = PICKS.picks.gw5TheShield.priority;
+const entryFor = (name) => shield.find(e => e.p.includes(name));
+
+for (const [name, pool, hit, ps] of [
+  ['Muharemovic', allDef, 53, 10.7], ['Vuskovic', allDef, 63, 12.4],
+  ['Lacroix', allDef, 60, 10.7], ['Ballard', allDef, 54, null],
+  ['Joao Gomes', allMid, 47, 11.7],
+]) {
+  const r = pool.find(x => x.n === name);
+  const e = entryFor(name);
+  ok(`${name}: is in Hadley`, !!r);
+  ok(`${name}: has a Shield entry`, !!e);
+  if (!r || !e) continue;
+  /* the rate quoted IN THIS PLAYER'S OWN why-string must be Hadley's rate */
+  const quoted = [...e.why.matchAll(/(\d+)%/g)].map(m => +m[1]);
+  ok(`${name}: ${hit}% appears in his own entry`, r.hit === hit && quoted.includes(hit));
+  /* A first attempt here flagged "no OTHER rate is attributed to him" whenever a
+     second percentage in the entry happened to match some player's hit rate.
+     Ballard's entry quotes 38% for Man City, and a Championship defender named
+     Kitching also sits at 38% — a false positive from a heuristic that cannot
+     tell a player rate from an opponent rate. The precise version: the FIRST
+     percentage in an entry is the player's own rate, and every later one must
+     be the opponent-table row of a club that entry actually names. */
+  ok(`${name}: the first rate quoted IS his own`, quoted[0] === hit);
+  const others = quoted.slice(1);
+  const named = [...Object.keys(cb), ...Object.keys(cm)].filter(c => e.why.includes(c) || e.p.includes(c));
+  ok(`${name}: every later rate belongs to a club the entry names`,
+    others.every(q => named.some(c => (cb[c] && cb[c].hit === q) || (cm[c] && cm[c].hit === q))));
+  if (ps != null) ok(`${name}: per-start ${ps} in his own entry`, r.perStart === ps && new RegExp(String(ps).replace('.', '\\.')).test(e.why));
+}
+
+/* Anderson must be ABSENT from the picks and named in the avoid list */
+ok('Anderson is not a Shield pick', !shield.some(e => /Anderson/.test(e.p)));
+ok('Anderson is named in the avoid list', PICKS.picks.gw5TheShield.avoid.some(a => /Anderson/.test(a)));
+
+/* opponent-table rows: the figure must sit in an entry whose fixture names that club */
+for (const [club, tbl, hit, whoFaces] of [
+  ['Crystal Palace', cb, 62, 'Muharemovic'], ['Arsenal', cb, 44, 'Vuskovic'],
+  ['Brentford', cb, 43, 'Lacroix'], ['Man City', cb, 38, 'Ballard'], ['Tottenham', cm, 39, 'Joao Gomes'],
+]) {
+  ok(`opponent ${club} = ${hit}% in Hadley`, tbl[club] && tbl[club].hit === hit);
+  const e = entryFor(whoFaces);
+  ok(`${whoFaces}'s entry quotes ${hit}% for ${club}`, e && [...e.why.matchAll(/(\d+)%/g)].map(m => +m[1]).includes(hit));
+}
+
+/* superlatives must name the club the source actually puts at the top/bottom */
+const topCB = D.opponentDefconAgainst.centreBacks.reduce((a, b) => b.hit > a.hit ? b : a);
+const topCM = D.opponentDefconAgainst.centralMidfielders.reduce((a, b) => b.hit > a.hit ? b : a);
+const lowCB = D.opponentDefconAgainst.centreBacks.reduce((a, b) => b.hit < a.hit ? b : a);
+ok('the "single highest row" claim names the actual top club',
+  new RegExp(`${topCB.vs} is the single highest row`).test(P));
+ok('the "top row" midfield claim names the actual top club',
+  new RegExp(`${topCM.vs} is the top row of the central-midfield opponent table`).test(P));
+ok('the "lowest row" claim names the actual lowest club',
+  new RegExp(`${lowCB.vs} is the LOWEST row`).test(P));
+ok('the lowest row is unique', D.opponentDefconAgainst.centreBacks.filter(r => r.hit <= lowCB.hit).length === 1);
+const five = allDef.filter(r => r.b === '£5m');
+const topFive = five.reduce((a, b) => b.perStart > a.perStart ? b : a);
+ok('the "highest per-start in the £5m bracket" claim names the right player',
+  new RegExp(`${topFive.n}[^"]*highest in the entire £5\\.0m bracket|highest in the entire £5\\.0m bracket`).test(P)
+  && entryFor(topFive.n) && /highest in the entire/.test(entryFor(topFive.n).why));
+
+/* the manager-change count, and the discrepancy it exposed */
+const mCB = D.opponentDefconAgainst.centreBacks.filter(r => r.mgrChanged).map(r => r.vs).sort();
+const mCM = D.opponentDefconAgainst.centralMidfielders.filter(r => r.mgrChanged).map(r => r.vs).sort();
+ok('the marked club sets are identical across both tables', JSON.stringify(mCB) === JSON.stringify(mCM));
+ok('the picks file quotes the count the DATA supports', P.includes(`Eight of the seventeen centre-back rows`) && mCB.length === 8);
+ok('the picks file does NOT repeat the prose count', !/eleven of the seventeen centre-back rows/.test(P));
+ok('the discrepancy is recorded in the Hadley file', !!D.opponentDefconAgainst.theManagerChangeCountDoesNotReconcile);
+ok('the top-pick club is one of the manager-changed ones', mCB.includes(topCB.vs));
+
+/* club attributions — each of these flips a recommendation if wrong */
+const html = fs.readFileSync(`${R}/docs/briefings/2026-27-preseason.html`, 'utf8');
+const block = (club) => { const i = html.indexOf(`name:"${club}"`); return html.slice(i, html.indexOf('fx:[', i)); };
+for (const [who, club] of [['Elliot Anderson', 'Manchester City'], ['Muharemovic', 'Leeds United'],
+  ['Vuskovic', 'Brighton & Hove Albion'], ['Lacroix', 'Chelsea'], ['Gomes', 'Aston Villa']])
+  ok(`register has ${who} signing for ${club}`, new RegExp(`ins:\\[[^\\]]*${who}`, 'i').test(block(club)));
+ok('register has Anderson leaving Forest', /outs:\[[^\]]*Anderson/.test(block('Nottingham Forest')));
+
+/* Coventry, which the whole GW2 plan rests on */
+/* These two originally read the REGISTER and never the picks file, so changing
+   "17 clean sheets" to "21" in the picks file passed. Read the figure OUT of the
+   register, then require the picks file to carry that same figure. */
+const cov = block('Coventry City');
+const spGoals = /(\d+) set-piece goals/.exec(cov), spRate = /(\d+\.\d+) a game/.exec(cov);
+const cs = /Carl Rushworth[^"]*?(\d+) clean sheets/.exec(cov);
+ok('register states a set-piece goal count and rate', !!spGoals && !!spRate);
+ok('register states Rushworth clean sheets', !!cs);
+ok(`picks file quotes the register's set-piece count (${spGoals && spGoals[1]})`,
+  spGoals && new RegExp(`${spGoals[1]} set-piece goals`).test(P));
+ok(`picks file quotes the register's set-piece rate (${spRate && spRate[1]})`,
+  spRate && new RegExp(`${spRate[1].replace('.', '\\.')} a game`).test(P));
+ok(`picks file quotes the register's clean-sheet count (${cs && cs[1]})`,
+  cs && new RegExp(`${cs[1]} clean sheets`).test(P));
+ok('the picks file repeats the 19th-of-20 defence warning', /19th of 20/.test(P) && /19th of 20/.test(block('Coventry City')));
+
+console.log(`checks passed ${pass}/${pass + fail.length}`);
+fail.forEach(f => console.log('  FAIL ' + f));
+process.exit(fail.length ? 1 : 0);

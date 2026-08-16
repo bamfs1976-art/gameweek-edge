@@ -1,0 +1,145 @@
+{
+  "competition": "FPL Challenge 2026-27",
+  "gameweeks": [2, 3, 4, 5],
+  "kind": "our-own-picks",
+  "capturedAt": "2026-08-16T00:00:00.000Z",
+  "capturedAtPrecision": "Written on 16 August 2026, before any of the four challenges opened for team selection — every tile in the capture reads 'Pick team soon'. The date is the commit date; no finer precision is claimed.",
+  "note": "This file is OUR picks, not an outside source. Committed before the football so git history is the evidence they predate it — the same rule the outside captures are held to, applied to ourselves.",
+  "manager": {
+    "team": "Real Treforys",
+    "name": "Anthony Bamford",
+    "rank": "Unranked",
+    "since": 2026
+  },
+  "source": {
+    "what": "Four screenshots of the FPL Challenge tab, supplied by the account holder",
+    "readFrom": "screenshots"
+  },
+
+  "theRulesWeActuallyHold": {
+    "whatTheTilesState": [
+      { "gw": 2, "name": "Welcome Back", "scoring": "Double Points for players from the promoted clubs", "squadRule": "Up to three players per club" },
+      { "gw": 3, "name": "All Out Attack", "scoring": "Goals and assists are worth double points", "squadRule": "One player per club" },
+      { "gw": 4, "name": "Derby Day", "scoring": "Double Points for Manchester United and Manchester City players", "squadRule": "Up to three players per club" },
+      { "gw": 5, "name": "The Shield", "scoring": "Defensive Contributions score 10 points", "squadRule": "One player per club" }
+    ],
+    "whatTheTilesDoNotState": [
+      "squad size — whether the Challenge team is 11 or 15",
+      "budget",
+      "formation constraints",
+      "whether a captain is picked, and at what multiplier",
+      "whether transfers carry between gameweeks or the squad resets each week"
+    ],
+    "consequence": "Every pick below is a SHAPE and a priority order, not a locked XI. Nothing here assumes a budget or a squad size, because neither is in evidence. Where the tiles DO state a rule — the per-club cap — it is used, because that is the one constraint we can actually read."
+  },
+
+  "fixtureDerivation": {
+    "why": "The briefing register stores each club's next few fixtures, but not the same number for every club: six clubs stop at GW3, so GW4 and GW5 are partly absent. A fixture is a pair, so every row stated by one club also states its opponent's row.",
+    "method": "scratch script, reciprocity then elimination — no fixture is remembered, every one is derived from lines already in docs/briefings/2026-27-preseason.html",
+    "result": {
+      "GW2": "complete from stated rows — 10/10 fixtures",
+      "GW3": "complete from stated rows — 10/10 fixtures",
+      "GW4": "8/10 from stated rows; four clubs unplaced",
+      "GW5": "9/10 from stated rows; Hull City v Newcastle United by elimination, venue NOT determined"
+    },
+    "theGW4Question": {
+      "unplaced": ["Crystal Palace", "Ipswich Town", "Manchester City", "Manchester United"],
+      "threePairingsPossible": "reciprocity and elimination alone do not choose between them",
+      "oneExcludedFromOurOwnRegister": "Crystal Palace v Man City and Ipswich v Man Utd were both played in GW2, and a reverse leg is not scheduled two gameweeks later. That pairing is out.",
+      "twoSurvive": [
+        "Man Utd v Man City, and Crystal Palace v Ipswich",
+        "Man Utd v Crystal Palace, and Man City v Ipswich"
+      ],
+      "whatChoosesBetweenThem": "The Challenge tile itself. 'Derby Day' doubles points for exactly Manchester United and Manchester City players, which is what the game would do if GW4 contained the Manchester derby.",
+      "status": "INFERENCE, not a fixture we hold. The venue is not determined either way. Settled outright by reading the fixtures endpoint from CI, which this sandbox cannot reach."
+    }
+  },
+
+  "picks": {
+    "gw2WelcomeBack": {
+      "theFixtureThatDecidesIt": "Coventry City v Hull City — the only promoted-versus-promoted fixture in the round, and therefore the only one where doubled points are not being asked to survive a Premier League defence. Ipswich are away at Manchester United, the worst of the three by some distance.",
+      "independentAgreement": "Tom Hadley's bench-boost graphic flags 'COV vs HUL (H)' as a GW2 target, reached from bookmaker odds rather than from this reasoning.",
+      "priority": [
+        { "p": "Carl Rushworth (GK, Coventry)", "why": "Championship golden glove, 17 clean sheets, ever-present, now permanent. A doubled clean sheet is the highest-PROBABILITY doubled event available in this round, and it is at home to the other promoted side.", "ourRegisterSays": "'do not buy in GW1' — that warning was about Arsenal away in GW1, and GW2 at home to Hull is the fixture the note was reserving him for" },
+        { "p": "Milan van Ewijk (DEF, Coventry)", "why": "attacking right-back with cheap-defender assist upside and a set-piece case underneath it — doubles on the clean sheet AND on an assist" },
+        { "p": "Haji Wright (FWD, Coventry)", "why": "main striker and penalty taker; a doubled penalty is the cleanest 8 points in the round" }
+      ],
+      "thenIfBodiesAreNeeded": "Hull's Giles (corners and free kicks) or Liam Millar (led the squad for xA). Both carry live flags in our register: Hull's penalty taker is UNRESOLVED between Crooks and McBurnie, and Millar took a dead leg on 8 August.",
+      "avoid": "Ipswich, away at Old Trafford. Double points on a blank is a blank.",
+      "theCoventrySetPieceCase": "29 set-piece goals last season, most in the Championship at 0.63 a game — bettered across the top divisions of England, France, Germany, Italy and Spain only by Bayern Munich. The right caveat is our register's own: a side seeing less of the ball wins fewer corners, and an outside model ranks this attack 18th of 20. Against Hull is the fixture where they will actually have the ball.",
+      "theHonestRisk": "An outside model ranks Coventry's defence 19th of 20. Three Coventry players is a concentrated bet on one match."
+    },
+
+    "gw3AllOutAttack": {
+      "whatTheRuleDoes": "Goals and assists double; clean sheets and defensive contributions do not. This is the one week where defenders are close to worthless and the whole budget belongs to attackers.",
+      "theConstraintThatShapesIt": "One player per club — so eleven different clubs, and no stacking a soft fixture.",
+      "priority": [
+        { "p": "Erling Haaland (Man City, home to Coventry)", "why": "penalty taker, and the softest attacking fixture in the round" },
+        { "p": "Bruno Fernandes (Man Utd, away at Everton)", "why": "our register calls his set-piece monopoly the standout asset in the squad — penalties, direct free kicks AND corners. Every route to a doubled assist runs through him." },
+        { "p": "a Liverpool attacker, away at Ipswich", "why": "the second-softest fixture in the round; which asset is a live-price question this sandbox cannot answer" },
+        { "p": "an Aston Villa attacker, away at Hull", "why": "third-softest" }
+      ],
+      "avoid": "Arsenal v Chelsea. Two strong defences cancelling each other is the wrong shape entirely for a week that only pays goals and assists — take at most one player from it, and probably neither."
+    },
+
+    "gw4DerbyDay": {
+      "restsOn": "the inference above that GW4 contains Manchester United v Manchester City. If that is wrong, this whole section is wrong, and it is checkable the moment the fixture list is read.",
+      "theStructuralPoint": "Doubling BOTH sides of one match is a hedge and an anti-correlation at the same time. Whatever happens, half the doubled block is on the right side of it — but a clean sheet for one club is a blank for the other, so doubled DEFENDERS from this fixture cancel in a way doubled attackers do not.",
+      "priority": [
+        { "p": "Erling Haaland (Man City)", "why": "doubled, and the penalty taker" },
+        { "p": "Bruno Fernandes (Man Utd)", "why": "doubled, and takes everything — pens, direct free kicks, corners" },
+        { "p": "one more United attacker — Mbeumo or Cunha", "why": "our register rates both as strong mid-price returns behind Bruno" },
+        { "p": "one more City creator — Cherki", "why": "free kicks and corners, high assists" }
+      ],
+      "whyFourAndNotSix": "The cap allows three per club, so six doubled players from a single ninety minutes is available. That is variance, not edge. Four keeps the doubling and leaves room for players in the other nine fixtures.",
+      "avoid": "doubled defenders from this fixture — see the anti-correlation above; and fpltips' read that Manchester United's back line is not worth starting the season with.",
+      "liveCaveat": "Maresca is new at City and our register flags that the set-piece hierarchy may shift under him. Semenyo is listed as backup penalties and free kicks, not first choice."
+    },
+
+    "gw5TheShield": {
+      "whatTheRuleDoes": "Defensive contributions score 10 instead of 2. A defender who clears the threshold outscores a goalscorer. The entire XI should be DEFCON hitters — and one per club, so eleven different clubs.",
+      "theDataThisLeansOn": "Tom Hadley's DEFCON leaderboards (hit rate and per-start) and his opponent-DEFCON-against table — how often opposing centre-backs and central midfielders clear the threshold when playing against each club. That second table is what turns a hit rate into a fixture.",
+      "gw5Fixtures": "Spurs v Villa · Bournemouth v Liverpool · Man City v Sunderland · Brighton v Arsenal · Brentford v Chelsea · Fulham v Man Utd · Everton v Ipswich · Leeds v Palace · Forest v Coventry · Hull v Newcastle (venue undetermined)",
+      "priority": [
+        { "p": "Muharemovic (DEF, Leeds — home to Crystal Palace)", "why": "53% hit rate at 10.7 per start in Serie A, and Crystal Palace is the single highest row in the opponent table: opposing centre-backs clear the threshold 62% of the time against them, at 10.0 average. fpltips independently call him more nailed than Vuskovic.", "rank": 1 },
+        { "p": "Joao Gomes (MID, Aston Villa — away at Tottenham)", "why": "47% at 11.7 per start, and Tottenham is the top row of the central-midfield opponent table at 39%. The best fixture-and-player overlap in the midfield.", "rank": 2 },
+        { "p": "Vuskovic (DEF, Brighton — home to Arsenal)", "why": "12.4 defensive contributions per start, the highest in the entire £5.0m bracket, at a 63% hit rate. Opposing centre-backs hit 44% against Arsenal.", "rank": 3 },
+        { "p": "Lacroix (DEF, Chelsea — away at Brentford)", "why": "60% at 10.7 per start; 43% against Brentford", "rank": 4 },
+        { "p": "Ballard (DEF, Sunderland — away at Man City)", "why": "54%; the opponent table only puts Man City at 38%, but a Sunderland defender at the Etihad will not be short of defending to do", "rank": 5 }
+      ],
+      "avoid": [
+        "Manchester United defenders at Fulham — Fulham is the LOWEST row in the opponent table at 23%. The fixture actively suppresses the thing being scored at 10 points.",
+        "Manchester City players. City will dominate the ball against Sunderland, so their own defenders and midfielders do almost no defensive work. This is also why Elliot Anderson is NOT on the list despite a 70% hit rate: our register has him signing for Manchester City, and that 70% was earned at Nottingham Forest.",
+        "Nottingham Forest at home to Coventry, for the same reason."
+      ],
+      "theCaveatThatMattersMost": "Eight of the seventeen centre-back rows and the same eight midfield rows are marked as clubs that changed manager over the summer, and Hadley says so himself: 'a good number of teams have changed managers in the summer'. Crystal Palace — the 62% row the top pick leans hardest on — is one of the marked ones. That is the author telling you his own table's shelf life, on precisely the row being used hardest.",
+      "andACountThatDidNotAddUp": "The Hadley benchmark's PROSE says eleven centre-back rows are marked; its structured data marks eight. Checking that discrepancy is what produced the figure above — see theManagerChangeCountDoesNotReconcile in pl-tomhadley-preseason-thread.json. Eight is used here because eight is what the data supports."
+    }
+  },
+
+  "whatIsBeingBetOnAndWhereItCouldGoWrong": {
+    "minutesRiskDominates": "Three of the five Shield picks changed club this summer. A DEFCON rate is worthless if the player does not start.",
+    "foreignLeagueRates": "Vuskovic's 63% is a Bundesliga number and Muharemovic's 53% is a Serie A number. Neither has a Premier League minute. Our own app now REFUSES to print a hit rate for a player in that position — the dcHasBasis fix shipped this week exists precisely so a player with no Premier League basis renders as an em dash rather than a confident percentage. These picks are made off numbers our own product declines to show.",
+    "lastSeasonIsNotThisSeason": "Every rate here is last season's, most of them under a different manager, and Hadley flags the manager changes himself.",
+    "theGW4Inference": "The Derby Day section rests on a fixture we do not hold, derived from elimination plus the wording of the challenge tile.",
+    "noCertaintyIsClaimed": "These are priorities under stated assumptions. None of it is a prediction that anything will happen."
+  },
+
+  "gradeableAfterTheFootball": [
+    "Whether the Coventry block outscores the Hull and Ipswich blocks in GW2",
+    "Whether Rushworth keeps the GW2 clean sheet the pick is built on",
+    "Whether Muharemovic and Vuskovic reproduce their foreign-league DEFCON rates in the Premier League — the explicit bet of the Shield picks, and the same bet Hadley's thread makes",
+    "Whether the opponent-DEFCON table survives the summer's manager changes, measured on the Crystal Palace row specifically",
+    "Whether GW4 is in fact the Manchester derby — settled the moment the fixture list is read, and settled against this file either way"
+  ],
+
+  "theProductGap": {
+    "what": "This app does not model FPL Challenge at all.",
+    "specifically": [
+      "no per-gameweek scoring overrides — the model has one scoring function, not a different one each week",
+      "no per-club squad constraint, so 'one player per club' cannot be solved for",
+      "no way to weight a lens by a doubled category, which is exactly the shape of the fixture-difficulty lenses already shipped"
+    ],
+    "whyItIsRecordedHere": "Every pick above was assembled by hand from benchmark files and a scratch script. The app contributed the DEFCON quantities and nothing else. That is the gap, stated plainly rather than left implicit."
+  }
+}
