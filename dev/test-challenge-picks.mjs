@@ -121,6 +121,73 @@ ok(`picks file quotes the register's clean-sheet count (${cs && cs[1]})`,
   cs && new RegExp(`${cs[1]} clean sheets`).test(P));
 ok('the picks file repeats the 19th-of-20 defence warning', /19th of 20/.test(P) && /19th of 20/.test(block('Coventry City')));
 
+/* ---- the share cards ------------------------------------------------------
+   scripts/social/challenge-copy.mjs restates these picks in short form for a
+   1200×1200 card. Two files stating the same picks is a drift risk, so the card
+   copy is held to the record: every name must appear in the matching priority
+   list, and every percentage on a card must be the figure the source carries. */
+const { CARDS: DECK_CARDS } = await import(`${R}/scripts/social/challenge-copy.mjs`);
+
+const flat = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const CLUB_ALIAS = { Spurs: 'Tottenham', 'Man Utd': 'Man United' };
+const CARD_TO_KEY = {
+  'challenge-gw2-welcome-back': 'gw2WelcomeBack', 'challenge-gw3-all-out-attack': 'gw3AllOutAttack',
+  'challenge-gw4-derby-day': 'gw4DerbyDay', 'challenge-gw5-the-shield': 'gw5TheShield',
+};
+
+ok('the deck has a card for every challenge in the record',
+  Object.keys(CARD_TO_KEY).every((id) => DECK_CARDS.some((c) => c.id === id)));
+ok('every card carries a risk line', DECK_CARDS.every((c) => c.risk && c.risk.length > 40));
+
+for (const [id, key] of Object.entries(CARD_TO_KEY)) {
+  const card = DECK_CARDS.find((c) => c.id === id);
+  const rec = PICKS.picks[key];
+  if (!card || !rec) { fail.push(`${id}: no card or no record`); continue; }
+  ok(`${id}: pick count matches the record`, card.picks.length === rec.priority.length);
+  for (const p of card.picks)
+    ok(`${id}: "${p.n}" is in the record's priority list`,
+      rec.priority.some((r) => flat(r.p).includes(flat(p.n))));
+}
+
+/* the Shield chips are the only hard numbers on any card */
+const shieldCard = DECK_CARDS.find((c) => c.id === 'challenge-gw5-the-shield');
+for (const p of shieldCard.picks) {
+  const src = [...allDef, ...allMid].find((r) => flat(r.n) === flat(p.n));
+  ok(`card chip: ${p.n} is a real row in Hadley`, !!src);
+  if (!src) continue;
+  const rate = p.chips.find((c) => /^\d+%$/.test(c));
+  const per = p.chips.find((c) => /\/start$/.test(c));
+  const opp = p.chips.find((c) => /^opp \d+%$/.test(c));
+  ok(`card chip: ${p.n} hit rate matches Hadley`, rate && parseInt(rate) === src.hit);
+  if (per) ok(`card chip: ${p.n} per-start matches Hadley`, parseFloat(per) === src.perStart);
+  /* "DEF · Leeds — v Crystal Palace" → the club after "v " or "at " */
+  const om = /—\s*(?:v|at)\s+(.+)$/.exec(p.m);
+  ok(`card chip: ${p.n} names an opponent`, !!om);
+  if (om && opp) {
+    const club = CLUB_ALIAS[om[1].trim()] || om[1].trim();
+    /* The opponent table has a centre-back half and a central-midfield half, and
+       the same club sits in both with DIFFERENT figures — Tottenham is 33% for
+       centre-backs and 39% for midfielders. Picking whichever table answers
+       first read Joao Gomes, a midfielder, against the centre-back row. The
+       player's own position chooses the table. */
+    const isMid = /^MID/.test(p.m);
+    const row = isMid ? cm[club] : cb[club];
+    ok(`card chip: ${p.n} opponent ${club} is in the table`, !!row);
+    ok(`card chip: ${p.n} opp figure matches the table`, row && parseInt(opp.replace('opp ', '')) === row.hit);
+  }
+}
+
+/* the literal-tag regression: <b>/<em> in copy must survive escaping as MARKUP.
+   The first render printed "<em>" as visible text in every headline, and
+   neither the font guard nor the overflow guard could see it. */
+const escT = (s) => String(s).replace(/&(?![a-z]+;|#)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const richT = (s) => escT(s).replace(/&lt;(\/?)(b|em)&gt;/g, '<$1$2>');
+ok('rich() turns <em> back into markup, not visible text', richT('a <em>b</em> c') === 'a <em>b</em> c');
+ok('rich() turns <b> back into markup', richT('a <b>b</b> c') === 'a <b>b</b> c');
+ok('rich() still escapes a stray angle bracket', richT('5 < 6 > 4').includes('&lt;') && richT('5 < 6 > 4').includes('&gt;'));
+ok('no card would print a literal tag',
+  DECK_CARDS.every((c) => !/&lt;\/?(b|em)&gt;/.test(richT(c.h1) + richT(c.lead) + richT(c.risk))));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
-fail.forEach(f => console.log('  FAIL ' + f));
+fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
