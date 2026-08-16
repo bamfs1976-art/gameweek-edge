@@ -2700,7 +2700,18 @@ const loadLive     =gw=>api('event/'+gw+'/live');
 const loadSummary  =id=>cached('sum-'+id,10*60e3,()=>api('element-summary/'+id));
 const loadTransfers=id=>cached('tr-'+id,3*60e3,()=>api('entry/'+id+'/transfers'));
 const loadEventStatus=()=>api('event-status');
-const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('set-piece-notes'));
+/* MOVED. The official path was /api/set-piece-notes/, and on 16 Aug 2026 a
+   probe from a runner found it answering 404 with an HTML error page while
+   /api/team/set-piece-notes/ answered 200 with {last_updated, teams[20]}.
+   An HTML 404 is the web server saying "no such route"; the JSON 404s the
+   same run saw elsewhere are the API saying "nothing here yet". Different
+   answers, and the difference is what identified this as a move.
+
+   It had been failing silently: the one call site is wrapped in
+   .catch(()=>null), so the set-piece register just quietly had no official
+   data behind it. Nothing was watching the endpoint, which is why a feed
+   this document leans on could rot without anyone noticing. */
+const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('team/set-piece-notes'));
 /* FPL Core Insights — aggregated Opta-like stats (goalkeeper goals-prevented,
    open-play xG, finishing quality) our own Netlify function serves from the
    open dataset. Best-effort: a short timeout and a graceful null so a missing

@@ -157,6 +157,68 @@ const line = (r) => {
     + 'hand-written list. An endpoint absent from this output was NOT PROBED, which is '
     + 'not evidence it does not exist.');
 
+  /* ── which FIELDS are served, and which we never read ──────────────
+     "Has anything been added?" is not only a question about routes. Most of
+     what FPL ships arrives inside bootstrap-static, and a new column on
+     `elements` is a new capability with no new URL to notice. So: pull the
+     real field lists, and grep the app for each name.
+
+     A name appearing in index.html is weak evidence we USE it — it could be
+     in a comment — but a name appearing NOWHERE is strong evidence we do not.
+     This is run for the negative, and the output says so. */
+  console.log('\n=== FIELDS SERVED vs FIELDS THE APP MENTIONS ===');
+  let appSrc = '';
+  try {
+    const { readFileSync } = await import('node:fs');
+    const { fileURLToPath } = await import('node:url');
+    const { dirname, join } = await import('node:path');
+    const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+    appSrc = readFileSync(join(root, 'index.html'), 'utf8');
+  } catch (e) {
+    console.log('could not read index.html: ' + e.message);
+  }
+
+  if (appSrc) {
+    const boot = await (await fetch(`${BASE}/bootstrap-static/`,
+      { headers: { 'User-Agent': UA, Accept: 'application/json' } })).json();
+
+    const mentions = (name) => appSrc.includes(name);
+    const report = (label, names) => {
+      const unused = names.filter((n) => !mentions(n));
+      console.log(`\n${label}: ${names.length} fields, ${names.length - unused.length} mentioned in index.html`);
+      if (unused.length) console.log('  NEVER MENTIONED: ' + unused.join(', '));
+      else console.log('  (every field is mentioned somewhere)');
+    };
+
+    if (Array.isArray(boot.elements) && boot.elements[0]) {
+      report('elements[] (players)', Object.keys(boot.elements[0]));
+    }
+    if (Array.isArray(boot.teams) && boot.teams[0]) {
+      report('teams[]', Object.keys(boot.teams[0]));
+    }
+    if (Array.isArray(boot.events) && boot.events[0]) {
+      report('events[] (gameweeks)', Object.keys(boot.events[0]));
+    }
+    if (Array.isArray(boot.element_stats)) {
+      /* element_stats is FPL's own list of the stat identifiers it scores.
+         A new entry here is the loudest possible signal of a rule change. */
+      const ids = boot.element_stats.map((s) => s && s.name).filter(Boolean);
+      console.log(`\nelement_stats (FPL's own list of scored stats): ${ids.length}`);
+      console.log('  ' + ids.join(', '));
+      const unused = ids.filter((n) => !mentions(n));
+      console.log(unused.length ? '  NEVER MENTIONED: ' + unused.join(', ')
+        : '  (every scored stat is mentioned somewhere)');
+    }
+    if (Array.isArray(boot.chips)) {
+      console.log(`\nchips: ${boot.chips.map((c) => c && (c.name || c.id)).join(', ')}`);
+    }
+    /* Top-level keys are the cheapest place a whole new dataset appears. */
+    console.log(`\nbootstrap-static top-level keys: ${Object.keys(boot).join(', ')}`);
+    const unusedTop = Object.keys(boot).filter((k) => !mentions(k));
+    console.log(unusedTop.length ? '  NEVER MENTIONED: ' + unusedTop.join(', ')
+      : '  (every top-level key is mentioned somewhere)');
+  }
+
   /* Full detail last, so the shapes are greppable from the run log. */
   console.log('\n=== DETAIL (JSON) ===');
   console.log(JSON.stringify(results, null, 2));
