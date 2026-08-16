@@ -547,6 +547,28 @@ of our price claims can now be checked and 9 are exactly right — so the
 estimates are not bad in general. They are wrong precisely where somebody had
 already told us they were wrong.
 
+**Three more settled, 16 August, and the sweep continues.** A pre-season thread
+by Tom Hadley (@FPL_TomHadley) carries an FPL price column on its midfielder
+consistency graphic, which prices three of the four rows left open above:
+
+| Player | Ours | Theirs | Published | Right |
+|---|---|---|---|---|
+| Saka (ARS) | ~£10.0m | £9.5m | **£9.5m** | theirs |
+| Ndiaye (EVE) | ~£6.5m | £6.0m | **£6.0m** | theirs |
+| Garner (EVE) | ~£5.0m | £6.0m | **£6.0m** | theirs |
+
+The same column re-states Gibbs-White at £8.0m and Le Fée at £6.0m, agreeing
+with the BBC piece. **Seven of the eight rows are now settled, and the outside
+table is right seven times from seven while ours is right none.** Only Mateta
+remains open, because he is a forward and the graphic carrying prices covers
+midfielders.
+
+This is a third author confirming a second author's figures, so it is
+corroboration of the prices rather than new evidence about our method. The
+lesson is the one already recorded above, now with twice the evidence behind
+it: the estimates are sound in general and wrong exactly where a published
+number already existed and we weighted our own guess level with it.
+
 **The line above this table said the API "settles all of them at launch rather
 than either of us."** That reads as even-handed and is not. Between a
 published projection and our own unsourced estimate, treating the two as
@@ -679,6 +701,111 @@ assuming what a column header meant. Same failure as the referee probe, the
 robots.txt read and the "Garcia" row — with the difference that this time the
 check ran first. That is the whole value of checking before believing, and it
 is worth noting that the check cost about five minutes.
+
+---
+
+## Outside DEFCON read — a ten-graphic thread, 16 August 2026
+
+Source: a pre-season thread by **Tom Hadley (@FPL_TomHadley)**, captured five
+days before the GW1 deadline and held in full at
+`docs/benchmarks/pl-tomhadley-preseason-thread.json`. Ten graphics: fixture
+rotations GW1–10, best fixture runs GW1–19, wildcard and bench-boost windows,
+DEFCON leaderboards for defence and midfield, two "who hit 4+ points the most"
+consistency tables, clean-sheet-plus-DEFCON leaders, an opponent-DEFCON table,
+and the bonus graphic **this file already ingested on 13 August**. He states
+his own method: a custom FDR combining bookmakers' seasonal odds with each
+team's home and away record last season.
+
+**Not a new source.** The bonus section above is his. That matters twice: it
+means the register already leans on this author, and it meant the same graphic
+could be re-read today without looking at what was written three days ago.
+**Thirty-seven figures were comparable and thirty-seven agreed.** That is
+evidence the transcriptions here are faithful — though the bonus table prints
+large numerals in a sparse grid, and the rotation grid prints three-letter
+codes with a venue letter at a fraction of the size, so a clean result on the
+easy graphic is not a clean bill for the hard one.
+
+**The fixtures were checked, not read.** The thread states fixtures four
+separate times, which makes it checkable against itself as well as against us.
+Every cell was diffed mechanically against the other graphics, against our own
+structured `TEAMS` register, and against the fplrotationplanner GW9–18 grid
+already in this file. **265 cells checked, 259 agree — 97.7%.** The GW1–3
+cells are the ones that matter this week, and they now carry a third
+independent confirmation.
+
+The first run of that check reported thirteen further mismatches. Every one was
+ours: our register writes "Spurs", "Man City" and "Nott'm Forest" where he
+writes the full names, and the planner grid writes MUN where he writes MNU. A
+name table that does not normalise turns a parse failure into a data conflict —
+the same shape as the surname collisions that invented two price conflicts in
+the set-piece diff.
+
+**Four real disagreements, three of them settled:**
+
+| Cell | The problem | Settled? |
+|---|---|---|
+| GW8 Ipswich v Forest | His grid puts *both* clubs away | His own wildcard graphic backs the Forest row, 2:1 |
+| GW9 Everton v Newcastle | Everton is printed twice and the copies disagree | Everton away, on four sightings to one |
+| GW18 Brentford v Coventry | Two of his graphics disagree with each other | Coventry away, 2:1, planner grid agreeing |
+| **GW4 Sunderland v Arsenal** | **He says Sunderland away; we say Sunderland home** | **No. One sighting each, nothing to break the tie** |
+
+The last one is the only cell in the capture where the thread contradicts our
+own data with no third source available. Our register is a hand transcription
+into a document, not an API read, so it is not the senior source merely because
+it is ours. The FPL fixtures endpoint answers it outright and is reachable from
+CI even though it is not reachable from here.
+
+**Two claims that can be falsified today.** Most tipster claims need the season
+to play out. Two of his ship their own evidence:
+
+- *"Everton play both the best opponents for midfield DEFCON (Man United +
+  Spurs) in GW3 + GW4."* **Holds.** His own table's top two central-midfield
+  rows are Tottenham (39%) and Man United (33%), and his own grid has Everton
+  playing exactly those in GW3 and GW4.
+- *"Every Brighton home game until GW15 is against one of the top DEFCON
+  opponents for CBs."* **Substantially holds.** Across GW1–10 — the range he
+  published — every Brighton home game is a top-7 opponent of 17: Palace (1st),
+  Everton (2nd), Leeds (3rd), Villa (5th), Arsenal (6th), Brentford (7th). The
+  single exception is GW12 against Newcastle at rank 9 of 17, which is the exact
+  median, and that fixture comes from *our* patched-in grid rather than from
+  him. Calling the claim false on the strength of a cell he never published
+  would be crediting our own source with breaking his argument.
+
+**What it says that our register does not model.** The whole DEFCON half of the
+thread rests on a bet our tool structurally cannot make: that a defender's
+defensive-contribution rate in the Bundesliga, Serie A or the Championship
+carries into the Premier League. His cheapest defensive bracket is nine
+Championship players, and his headline advice is to gamble on Vuskovic
+(Bundesliga), Muharemovic (Serie A) and Jacquet (Ligue 1). We hold the same
+quantities he does — `dchr` and `dcps`, bracketed in the same half-million
+bands — but only for players with Premier League history.
+
+**Checking that turned up a defect in the app, and it is the same defect as
+last week's.** Our DEFCON hit rate always returned a number, so a defender with
+no Premier League history came back as `~0%` — visually identical to a defender
+with two thousand minutes who never once cleared the threshold. Those are not
+the same claim. Every one of the twelve players named above rendered as `~0%`:
+the instrument was loudest exactly where it knew least, and it was doing it in
+the cheapest bracket, which is where enablers come from. Fixed — no Premier
+League minutes now prints `—` and sorts with the unrateable rows, while a
+genuine `~0%` off a real season survives, because that one is a true finding.
+
+That is the fourth time in a fortnight: the silent `MID` fallback in
+`provider.js`, `gradeEfl` unable to tell "checked" from "not deployed", the
+briefing parser swallowing three sections, and now this. **When a check finds
+nothing, the first question is whether it could have found anything.**
+
+**Two flags raised and deliberately not resolved.** His £5.5m midfield row
+reads "JOAO GOMES (at Wolves)", and elsewhere in the thread that parenthetical
+marks a player's *current* club — which would contradict the EFL benchmark
+recording his £38m move to Aston Villa. It could equally mark where the
+statistics were earned, which is Wolves under either story. And three rows
+reference a Sangare at three different prices; the thread disambiguates itself,
+but reading the surname alone would have merged two players.
+
+Nothing in the register is rewritten from this thread. Three price rows are
+settled by it — see the price table above — and that is the only change it
+makes to this document.
 
 ---
 
@@ -1167,7 +1294,7 @@ is partly a list of who played the weakest opposition.
 **Out:** Dwight McNeil (W, Crystal Palace, swap for Johnson), Idrissa Gana Gueye (CM, departed), Seamus Coleman (RB, released), Isaac Heath (LW, Cambridge, free). The first two were added 13 Aug. Rumoured sale interest in Ndiaye and Branthwaite.
 
 **FPL picks:**
-- Value: Iliman Ndiaye (~£6.5m), main attacking outlet and penalty taker if he stays. James Garner (~£5.0m), corners and free-kicks.
+- Value: Iliman Ndiaye (**£6.0m, published 16 Aug** — our estimate said ~£6.5m), main attacking outlet and penalty taker if he stays. James Garner (**£6.0m, published 16 Aug** — our estimate said ~£5.0m, so he is a full million dearer than this file assumed and is no longer a cheap enabler), corners and free-kicks.
 - Premium / captaincy: No true premium. Jarrad Branthwaite (~£5.5m DEF) is the best reliable clean-sheet-plus-aerial pick if fit and not sold. Ndiaye is the nearest captaincy shout on pens.
 - Differentials: Iliman Ndiaye, penalties plus a central role at likely sub-15% owned. Whichever new striker arrives, monitor before locking in — as of 13 Aug the incumbents are Beto and Thierno Barry, with Barry the one showing in pre-season. **Avoid, and this is a warning rather than a tip:** Tyler Dibling, still the most expensive signing of Moyes's second spell at an initial ~£35m, started four league games last season and played no minutes at all after 3 March. A big fee is not a route to minutes. World Cup load is light — only three Everton players went and only Pickford featured after 1 July.
 - Set-piece & penalties: Penalties Ndiaye primary, Garner and Beto backups. Free-kicks Garner. Corners Garner and Dewsbury-Hall — **McNeil removed 13 Aug**, he has gone to Palace in the Johnson swap and this line was still naming him. Watch the Ndiaye exit rumours, he owns the pens.
@@ -1326,7 +1453,7 @@ is partly a list of who played the weakest opposition.
 
 # Quick FPL shortlist (starting points, verify prices at launch)
 
-**Premium anchors:** Haaland (£15.5m), Bruno Fernandes (£12.0m), Isak (~£9.0m), Palmer (£9.5m), Saka (~£10.0m).
+**Premium anchors:** Haaland (£15.5m), Bruno Fernandes (£12.0m), Isak (~£9.0m), Palmer (£9.5m), Saka (**£9.5m, published 16 Aug** — our estimate said ~£10.0m).
 
 **Best value strikers:** Igor Thiago (Brentford), Gyokeres (Arsenal), Ekitike (Liverpool), Haji Wright (Coventry), Rodrigo Muniz (Fulham).
 

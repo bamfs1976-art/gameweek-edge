@@ -112,9 +112,10 @@ console.log('• dcByBracket: best defensive returner at each price point');
 {
   const mk = new Function(
     grabFn('dcRate90') + '\n' + grabFn('dcThreshold') + '\n' + grabFn('dcReal') + '\n' +
+    grabFn('dcHasBasis') + '\n' +
     grabFn('dcHitRate') + '\n' + grabFn('dcHitLabel') + '\n' + grabFn('dcPerStartLabel') + '\n' +
     grabConst('DC_BRACKETS') + '\n' + grabFn('dcByBracket') + '\n' +
-    'return {dcByBracket,dcHitRate,dcHitLabel,dcReal,dcPerStartLabel,dcRate90};'
+    'return {dcByBracket,dcHitRate,dcHitLabel,dcReal,dcHasBasis,dcPerStartLabel,dcRate90};'
   )();
 
   const d = (id, cost, dc90, extra) => Object.assign({

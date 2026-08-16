@@ -218,6 +218,10 @@ const pieces = [
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'dcRate90'),
   extractFn(html, 'dcThreshold'),
+  extractFn(html, 'dcReal'),
+  extractFn(html, 'dcHasBasis'),
+  extractFn(html, 'dcHitRate'),
+  extractFn(html, 'dcHitLabel'),
   extractFn(html, 'oopThreat'),
   extractFn(html, 'oopQuantile'),
   extractFn(html, 'oopBenchmarks'),
@@ -250,7 +254,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -281,6 +285,38 @@ section('dcRate90: a zero is not the same as no data');
   ok(Number.isFinite(F({})), 'a bare element does not divide by zero');
   ok(core.dcThreshold({ element_type: 2 }) === 10 && core.dcThreshold({ element_type: 3 }) === 12,
     'the threshold follows the position');
+}
+
+section('dcHitLabel: "never clears it" and "never seen him" are different claims');
+{
+  /* The logistic in dcHitRate always returns a number, so a defender with no
+     Premier League history at all came out as ~0% — visually identical to a
+     defender with a full season of minutes who never hit the threshold.
+
+     Not hypothetical. The creator DEFCON table ingested on 16 Aug had an
+     entire cheapest bracket of Championship players and singled out three
+     foreign-league arrivals as the season's best gambles; every one of them
+     is a player this returned ~0% for, i.e. the tool was loudest exactly
+     where it knew least. */
+  const L = core.dcHitLabel;
+  ok(L({ element_type: 2, minutes: 0, starts: 0 }) === '—',
+    'a defender with no PL minutes gets no figure at all, not ~0%');
+  ok(L({ element_type: 2, minutes: 0, defensive_contribution_per_90: '12.4' }) === '—',
+    'and a per-90 carried over from another league does not create a basis either');
+  ok(L({ element_type: 2, minutes: 2000, defensive_contribution: 0 }) === '~0%',
+    'but a real season with genuinely no defensive returns still reports ~0% — '
+    + 'that is a true finding and must survive');
+  ok(L({ element_type: 2, minutes: 900, defensive_contribution: 100 }) === '~50%',
+    'an estimate from real minutes keeps its ~ marker');
+  ok(L({ element_type: 2, minutes: 2700, _ci: { dcs: 30, dchr: 0.6, dcps: 10.7 } }) === '60%',
+    'a measured rate prints without the ~');
+  ok(core.dcHasBasis({ element_type: 2, minutes: 1 }) === true
+    && core.dcHasBasis({ element_type: 2, minutes: 0 }) === false,
+    'the floor is any real minutes at all, not a threshold');
+  /* The regression that motivated the whole change: these two must not look
+     the same to a reader scanning the DC hit% column. */
+  ok(L({ element_type: 2, minutes: 0 }) !== L({ element_type: 2, minutes: 2000, defensive_contribution: 0 }),
+    'no-history and never-hit render differently');
 }
 
 section('extractBlock: the harness must not corrupt what it measures');
