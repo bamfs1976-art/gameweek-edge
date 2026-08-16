@@ -6,43 +6,78 @@
   "capturedAtPrecision": "screenshots carry a device clock of 14:51-14:52 local (BST, UTC+1), recorded as UTC. The post is stamped '15 hours ago', so published around 22:50Z on 15 August — an inference from a relative timestamp, not a published one.",
   "deadlineAt": "2026-08-21T17:30:00.000Z",
   "note": "Captured five days before the deadline. Committed now so git history is the evidence it predates the football.",
-
   "source": {
     "name": "fpltips__",
     "platform": "Instagram",
     "verified": "the handle carries a blue verification badge",
     "title": "FPL Friendlies — Notes",
     "caption": "'Notes from all highlights I watched…' (truncated in the capture)",
-    "engagement": { "likes": 2059, "comments": 50, "reposts": 16, "shares": 350 },
+    "engagement": {
+      "likes": 2059,
+      "comments": 50,
+      "reposts": 16,
+      "shares": 350
+    },
     "readFrom": "screenshots of the Instagram carousel"
   },
-
   "provenanceIsTheHeadlineHere": {
     "what": "Instagram itself labels this account **AI content**. The label appears under the handle on the captured slides, applied by the platform rather than claimed by us.",
     "theTension": "The caption is written in the first person and says the notes come from highlights the author WATCHED. An AI-content label and a first-hand viewing claim cannot both be taken at face value. This file does not attempt to adjudicate which is true — it records that the two are in tension, because a reader coming to this capture later needs that before they weigh anything in it.",
     "whyItChangesTheWeightAndNotTheFacts": "It does NOT make the content wrong; the checks below found it accurate wherever it was checkable. What it changes is what the source IS. Tom Hadley publishes a stated method (bookmaker odds plus last season's home/away record) under a named identity and can be held to it. An account the platform marks as AI-generated offers assertions with no method behind them and no one accountable for them, and its agreement with our register is therefore weak evidence about the world — it may simply be reproducing the same public inputs we read.",
     "consequenceForGrading": "Graded SEPARATELY from the human-authored captures. Pooling its calls with Hadley's or the tipsters' would let a generated opinion count as a second witness, which is exactly the double-counting the EFL round-1 file already warns about for correlated picks."
   },
-
   "completeness": {
-    "slidesCaptured": 5,
+    "slidesCaptured": 6,
     "slidesTotal": 6,
-    "knownTruncation": "Slide 6 of 6 was NOT captured, and the caption is cut off at 'more'. Any club covered only on slide 6 is absent from this file because it was never seen, not because the source omitted it.",
-    "clubsCovered": ["Brighton", "Chelsea", "Leeds", "Manchester United", "Fulham", "Everton", "Tottenham"]
+    "knownTruncation": "None. Slide 6 of 6 arrived separately and the capture is now complete. The caption remains truncated at 'more' in every screenshot.",
+    "clubsCovered": [
+      "Brighton",
+      "Chelsea",
+      "Leeds",
+      "Manchester United",
+      "Fulham",
+      "Everton",
+      "Tottenham",
+      "Newcastle",
+      "Brentford"
+    ],
+    "slideSixAddedLater": "Slides 1-5 were ingested first and this file recorded slide 6 as never seen. It arrived afterwards and is folded in below. The earlier note was correct when written — absence from the capture meant not seen, not omitted by the source — and slide 6 turned out to carry the single most consequential claim in the whole carousel."
   },
-
   "verifiedAgainstOurRegister": {
     "method": "Every club attribution and every stated price diffed mechanically against the briefing's structured club blocks, the settled price table, and the two captures already held from today.",
-    "clubAttributions": { "claims": 20, "resolvableAgainstOurRegister": 14, "agreeing": 14, "conflicts": 0,
+    "clubAttributions": {
+      "claims": 20,
+      "resolvableAgainstOurRegister": 14,
+      "agreeing": 14,
+      "conflicts": 0,
       "notInOurRegister": 6,
-      "theSix": "Hinshelwood, De Cuyper, Palestra, Wilson, Lammens, Patterson — absent from a document that lists signings, departures and pick candidates rather than full squads. A gap in our scope, not an error in theirs." },
-    "prices": { "stated": 12, "checkableAgainstAnFplPriceWeHold": 2, "agreeing": 2, "conflicts": 0 },
+      "theSix": "Hinshelwood, De Cuyper, Palestra, Wilson, Lammens, Patterson — absent from a document that lists signings, departures and pick candidates rather than full squads. A gap in our scope, not an error in theirs."
+    },
+    "prices": {
+      "stated": 12,
+      "checkableAgainstAnFplPriceWeHold": 2,
+      "agreeing": 2,
+      "conflicts": 0
+    },
     "setPieceAndPenaltyClaims": {
-      "checked": 3, "agreeing": 3,
+      "checked": 3,
+      "agreeing": 3,
       "detail": [
-        { "claim": "'DCL is still my preferred route because of penalties' (Leeds)", "ourRegister": "Pens Calvert-Lewin (Nmecha 2nd)", "verdict": "agrees" },
-        { "claim": "'If penalties stay with him, that only makes the case stronger' (Ndiaye, Everton)", "ourRegister": "Pens Ndiaye (Garner, Beto backups)", "verdict": "agrees" },
-        { "claim": "'Pascal Gross looks decent on set pieces' (Brighton)", "ourRegister": "Pens Gross (O'Riley the alternative)", "verdict": "agrees" }
+        {
+          "claim": "'DCL is still my preferred route because of penalties' (Leeds)",
+          "ourRegister": "Pens Calvert-Lewin (Nmecha 2nd)",
+          "verdict": "agrees"
+        },
+        {
+          "claim": "'If penalties stay with him, that only makes the case stronger' (Ndiaye, Everton)",
+          "ourRegister": "Pens Ndiaye (Garner, Beto backups)",
+          "verdict": "agrees"
+        },
+        {
+          "claim": "'Pascal Gross looks decent on set pieces' (Brighton)",
+          "ourRegister": "Pens Gross (O'Riley the alternative)",
+          "verdict": "agrees"
+        }
       ]
     },
     "aBugInOurOwnChecker": {
@@ -52,32 +87,96 @@
       "andItMattersHere": "Had those two been recorded, this file would open by accusing an AI-labelled source of inventing prices, on evidence that was entirely our own parsing error. The provenance note above would have made that accusation look plausible, which is precisely why it needed checking rather than assuming."
     }
   },
-
   "convergesWithOurOwnReadOnPalmer": {
     "theirClaim": "'Morgan Rogers is the attacker I would rather back over Palmer because the value feels much stronger' and 'Palmer (£9.5m) is still a strong pick, but right now he is not where I want to spend.'",
     "ourIndependentRead": "From Tom Hadley's consistency table, captured earlier today: Palmer at £9.5m had a 38% 4+ points hit rate last season, the weakest per pound of the premium group — against Bruno Fernandes 71%, Gabriel 77% and Joao Pedro's 89% bonus-from-one-return.",
     "whatThatIsWorth": "Two sources reaching the same conclusion by different routes — one from a stated last-season consistency table, one from watching (or claiming to watch) pre-season. It is NOT two independent confirmations in the strong sense: an AI-authored account may well be reading the same public tables. Recorded as convergence, not corroboration.",
     "andItIsGradeable": "Palmer's actual GW1-6 return against Rogers' settles it."
   },
-
   "claimsWorthGrading": [
-    { "claim": "Joao Pedro is 'close to essential' for Chelsea", "gradeable": true },
-    { "claim": "Morgan Rogers outscores Palmer", "gradeable": true, "note": "a direct head-to-head, which is rarer and more scoreable than a shortlist" },
-    { "claim": "Muharemovic is 'more nailed' than Vuskovic", "gradeable": true, "note": "a minutes claim, settled by starts rather than points" },
-    { "claim": "Calvert-Lewin over Wilson at Leeds, on penalties", "gradeable": true },
-    { "claim": "Mbeumo 'should start next weekend'", "gradeable": true, "note": "settles on the GW1 team sheet" },
-    { "claim": "Man United's back line is not worth starting the season with", "gradeable": true, "note": "clean sheets kept in GW1-6" },
-    { "claim": "Ndiaye is 'very close to sealing a spot'", "gradeable": false, "note": "a statement about the author's own squad, not about football" }
+    {
+      "claim": "Joao Pedro is 'close to essential' for Chelsea",
+      "gradeable": true
+    },
+    {
+      "claim": "Morgan Rogers outscores Palmer",
+      "gradeable": true,
+      "note": "a direct head-to-head, which is rarer and more scoreable than a shortlist"
+    },
+    {
+      "claim": "Muharemovic is 'more nailed' than Vuskovic",
+      "gradeable": true,
+      "note": "a minutes claim, settled by starts rather than points"
+    },
+    {
+      "claim": "Calvert-Lewin over Wilson at Leeds, on penalties",
+      "gradeable": true
+    },
+    {
+      "claim": "Mbeumo 'should start next weekend'",
+      "gradeable": true,
+      "note": "settles on the GW1 team sheet"
+    },
+    {
+      "claim": "Man United's back line is not worth starting the season with",
+      "gradeable": true,
+      "note": "clean sheets kept in GW1-6"
+    },
+    {
+      "claim": "Ndiaye is 'very close to sealing a spot'",
+      "gradeable": false,
+      "note": "a statement about the author's own squad, not about football"
+    },
+    {
+      "claim": "Igor Thiago is 'an easy skip' because cheaper forwards cover the slot better",
+      "gradeable": true,
+      "note": "directly opposed to this project's own register, which calls Thiago the best value forward and puts him first among value strikers. A real disagreement with our published view, and scoreable on returns per million."
+    },
+    {
+      "claim": "Schade made the strongest impression of the Brentford side",
+      "gradeable": false,
+      "note": "an impression, not a forecast"
+    },
+    {
+      "claim": "Newcastle offer nothing worth owning at the start",
+      "gradeable": true,
+      "note": "scoreable as whether any Newcastle asset returns above its price bracket over GW1-6"
+    }
   ],
-
   "touchesSomethingTheAppModels": {
     "claim": "'De Cuyper (£4.5m) stands out because the left-sided OOP appeal could make him a useful option.'",
     "whyItIsNoted": "Out-of-position is a dimension the FPL side of this app DOES model — oopFlag, oopThreat, oopQuantile and OOP_MIN_MINUTES in index.html — while the Fantasy EFL side explicitly does not, a gap recorded in round-01-scottyfefl.json. The same concept therefore lands on a modelled dimension in one app and an unmodelled one in the other, which is worth knowing before either is graded against an outside OOP call.",
     "notAdopted": "No player is added or reweighted from this."
   },
-
   "whatThisChangesInOurDocuments": [
-    "Nothing. No pick, price, rating or model weight moves.",
-    "It adds a third independent statement of Ndiaye at £6.0m, a price settled this morning against our own ~£6.5m estimate — but see the provenance note: a generated source agreeing with a published figure is not the same as a third witness."
-  ]
+    "Nothing is rewritten. No pick, price, rating or model weight moves.",
+    "It opens a NEW unresolved price row: Igor Thiago, ours ~£7.0-7.5m est. against their £8.0m. Recorded as a conflict pending a source that can be held to it.",
+    "It adds a third independent statement of Ndiaye at £6.0m — but see the provenance note: a generated source agreeing with a published figure is not a third witness.",
+    "It contradicts our own register head-on about Igor Thiago's worth, which is the most gradeable thing in the capture."
+  ],
+  "slideSix": {
+    "Newcastle": [
+      "Nothing from Newcastle interests me right now, so I am happy to avoid them for the start.",
+      "Nothing from the friendly changed that view, so I am still staying away for now."
+    ],
+    "Brentford": [
+      "Brentford are still not a priority for me, even though a few individuals did catch the eye.",
+      "Schade (£6.0m) looked really good and probably made the strongest impression from their side.",
+      "Sangare is another one to note if you are scanning for cheaper DEFCON-type options.",
+      "Igor Thiago (£8.0m) is an easy skip for me because cheaper forwards cover that slot better."
+    ],
+    "consistencyWithWhatWeHold": {
+      "Sangare": "Agrees with the Hadley capture, which records in prose that 'Sangare (£5.5m) who recently joined Brentford, had a whopping 65% DEFCON hit rate at his previous club Lens'. Both sources point at the same player for the same reason. Note the two-Sangare collision already flagged in that file — the Brentford one is M. Sangare, not the £5.0m I. Sangare.",
+      "Schade": "£6.0m matches the figure read off Hadley's midfielder consistency table at capture time, but that table was NOT transcribed into pl-tomhadley-preseason-thread.json, so this cannot be re-verified mechanically from what we hold. Recorded as consistent-on-reading rather than checked."
+    }
+  },
+  "theIgorThiagoPriceConflict": {
+    "theirClaim": "Igor Thiago £8.0m",
+    "ourRegister": "'Igor Thiago (FWD, ~£7.0-7.5m est.)' — an ESTIMATE, explicitly marked est., never settled against a published price",
+    "status": "UNRESOLVED, and deliberately not settled here.",
+    "whyNotSettled": "Every previous price row settled this season went the same way: seven of eight resolved rows had the outside figure right and ours wrong, so the base rate says an outside number beats our estimate. But this source is the one carrying an AI-content label, and 'our estimates usually lose' is not a reason to accept a figure from a source with no stated method and nobody accountable for it. A price is exactly the kind of hard, checkable number a generated account could get wrong without any tell.",
+    "howToSettleIt": "The FPL bootstrap prices every player. Unreachable from this sandbox, trivially reachable from CI — and the app itself shows the live price.",
+    "whyItMattersBeyondTheRegister": "It travels. Advice given in this session said that swapping Igor Thiago for Calvert-Lewin at £6.0m 'costs you the same £6.0m'. That was asserted without a source. Our own register had Thiago at ~£7.0-7.5m est. and this slide says £8.0m, so on either figure the swap FREES money rather than being neutral — between £1.0m and £2.0m, which is the difference between a thin defence and a workable one in a squad built around six premiums.",
+    "theProcessPoint": "The number was stated confidently, was not in the register at the price claimed, and nothing checked it because nothing was looking at prices quoted in conversation. Same shape as the rest of the fortnight."
+  }
 }
