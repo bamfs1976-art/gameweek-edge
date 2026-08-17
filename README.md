@@ -6,6 +6,30 @@ The calm, clear companion that gives fantasy managers a measurable edge. A singl
 - **iOS app** — the same app wrapped natively with Capacitor (see [`README_MOBILE.md`](README_MOBILE.md)).
 - **Live data** — pulled from the official game APIs through Netlify serverless proxies.
 
+## Data-integration (enrichment) layer
+
+`GET /api/enrich` combines the official FPL feed with external providers into
+one canonical response — availability and injury flags, predicted-line-up
+signals, fixture context, news and optional third-party recommendations, each
+with its own provenance, timestamp and staleness. It is **read-only**.
+
+It works with **no credentials**: the official FPL feed and football-data.org
+are already proxied by this site. Five further providers (LetLetMe, an
+unofficial FPL GraphQL/REST wrapper, two Apify actors and World News) ship as
+complete adapters that stay switched off until their settings are supplied,
+and are **not verified against a live endpoint** from this repository.
+
+```bash
+npm run enrich -- --health                       # what is configured
+npm run enrich -- --gameweek 1 --include-news    # a read-only enrichment
+```
+
+Official FPL values are authoritative and never overwritten; external
+disagreements are recorded, not applied. Predicted line-ups and third-party
+recommendations are informational and uncertain.
+
+Full documentation, configuration and licensing notes: **[docs/ENRICHMENT.md](docs/ENRICHMENT.md)**.
+
 ## Two games, one site
 
 | App | Route | Game | Source |

@@ -1,0 +1,21 @@
+{
+  "news": [
+    { "id": "n1", "title": "Gabriel a doubt for Arsenal after training knock",
+      "url": "https://www.bbc.co.uk/sport/football/12345?utm_source=x",
+      "publish_date": "2026-08-16 09:00:00", "summary": "Arsenal defender Gabriel faces a late fitness test.",
+      "image": "https://img.bbc.co.uk/a.jpg", "author": "BBC Sport" },
+    { "id": "n2", "title": "Gabriel a doubt for Arsenal after training knock",
+      "url": "https://bbc.co.uk/sport/football/12345",
+      "publish_date": "2026-08-16 09:05:00", "summary": "Duplicate of the same story.", "author": "BBC Sport" },
+    { "id": "n3", "title": "Transfer gossip: clubs circle for unnamed striker",
+      "url": "https://www.dailyrumour.example/gossip/1",
+      "publish_date": "2026-08-16 08:00:00", "summary": "Rumour mill.", "author": "Daily Rumour" },
+    { "id": "n4", "title": "Nottingham Forest team news ahead of the weekend",
+      "url": "https://www.skysports.com/football/news/999",
+      "publish_date": "2026-08-15 18:00:00", "summary": "Forest injury update and press conference lines.",
+      "author": "Sky Sports" },
+    { "id": "n5", "title": "Archive: a season in review",
+      "url": "https://www.theguardian.com/football/archive/1",
+      "publish_date": null, "summary": "No date supplied by the API." }
+  ]
+}

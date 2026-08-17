@@ -1,0 +1,38 @@
+{
+  "teams": [
+    { "id": 1, "name": "Arsenal", "short_name": "ARS" },
+    { "id": 2, "name": "Brighton & Hove Albion", "short_name": "BHA" },
+    { "id": 3, "name": "Nottingham Forest", "short_name": "NFO" },
+    { "id": 4, "name": "Tottenham Hotspur", "short_name": "TOT" }
+  ],
+  "elements": [
+    { "id": 101, "first_name": "Bukayo", "second_name": "Saka", "web_name": "Saka", "team": 1,
+      "element_type": 3, "status": "a", "chance_of_playing_next_round": 100, "news": "",
+      "news_added": null, "now_cost": 95, "selected_by_percent": "31.2", "form": "5.1",
+      "total_points": 12, "minutes": 180 },
+    { "id": 102, "first_name": "Gabriel", "second_name": "Magalhaes", "web_name": "Gabriel", "team": 1,
+      "element_type": 2, "status": "d", "chance_of_playing_next_round": 50,
+      "news": "Knock - 50% chance of playing", "news_added": "2026-08-15T09:00:00Z",
+      "now_cost": 80, "selected_by_percent": "22.0", "form": "4.0", "total_points": 8, "minutes": 180 },
+    { "id": 103, "first_name": "Pascal", "second_name": "Gross", "web_name": "Gross", "team": 2,
+      "element_type": 3, "status": "a", "chance_of_playing_next_round": null, "news": "",
+      "news_added": null, "now_cost": 55, "selected_by_percent": "8.4", "form": "3.2",
+      "total_points": 6, "minutes": 160 },
+    { "id": 104, "first_name": "Danilo", "second_name": "Santos", "web_name": "Danilo", "team": 3,
+      "element_type": 3, "status": "i", "chance_of_playing_next_round": 0,
+      "news": "Hamstring injury - expected back 30 Sep", "news_added": "2026-08-10T10:00:00Z",
+      "now_cost": 50, "selected_by_percent": "1.1", "form": "0.0", "total_points": 0, "minutes": 0 },
+    { "id": 105, "first_name": "Morgan", "second_name": "Gibbs-White", "web_name": "Gibbs-White", "team": 3,
+      "element_type": 3, "status": "a", "chance_of_playing_next_round": 100, "news": "",
+      "news_added": null, "now_cost": 65, "selected_by_percent": "12.0", "form": "4.4",
+      "total_points": 9, "minutes": 175 },
+    { "id": 106, "first_name": "Jose", "second_name": "Sa", "web_name": "Sa", "team": 4,
+      "element_type": 1, "status": "a", "chance_of_playing_next_round": 100, "news": "",
+      "news_added": null, "now_cost": 45, "selected_by_percent": "3.0", "form": "3.0",
+      "total_points": 5, "minutes": 180 },
+    { "id": 107, "first_name": "Joao", "second_name": "Sa", "web_name": "J.Sa", "team": 4,
+      "element_type": 2, "status": "a", "chance_of_playing_next_round": 100, "news": "",
+      "news_added": null, "now_cost": 44, "selected_by_percent": "0.4", "form": "1.0",
+      "total_points": 1, "minutes": 20 }
+  ]
+}
