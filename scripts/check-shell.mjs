@@ -15,7 +15,11 @@ const html = readFileSync(join(root, 'index.html'), 'utf8');
 const REQUIRED_IDS = [
   'sb-nav', 'bottom-nav', 'pages', 'hamburger', 'overlay',
   'refresh-btn', 'export-btn', 'tb-updated', 'signin-btn', 'acct-btn',
-  'theme-toggle', 'gw-num', 'gw-deadline', 'net-banner', 'ptr-spinner'
+  'theme-toggle', 'gw-num', 'gw-deadline', 'net-banner', 'ptr-spinner',
+  /* Feedback: the button, the dialog, and the three elements the submit path
+     writes into. #fb-err is the one that carries a failure the user must see,
+     so losing it would turn a failed send into a silent one. */
+  'feedback-btn', 'fb-modal', 'fb-text', 'fb-err', 'fb-send'
 ];
 for (const id of REQUIRED_IDS) {
   assert.ok(new RegExp(`id=["']${id}["']`).test(html), `index.html is missing #${id}`);

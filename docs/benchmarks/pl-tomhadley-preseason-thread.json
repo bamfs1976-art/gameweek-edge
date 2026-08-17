@@ -304,7 +304,15 @@
         { "vs": "Brighton", "aveDc": 8.8, "hit": 22 },
         { "vs": "Arsenal", "aveDc": 8.2, "hit": 20 }
       ],
-      "hisOwnCaveat": "'A good number of teams have changed managers in the summer' — he marks eleven of the seventeen CB rows and eight of the CM rows with an asterisk. That is the author telling you his own table's shelf life, and it should be quoted whenever the table is."
+      "hisOwnCaveat": "'A good number of teams have changed managers in the summer' — he marks eleven of the seventeen CB rows and eight of the CM rows with an asterisk. That is the author telling you his own table's shelf life, and it should be quoted whenever the table is.",
+      "theManagerChangeCountDoesNotReconcile": {
+        "found": "2026-08-16, while this table was being used to build the FPL Challenge GW5 picks.",
+        "what": "hisOwnCaveat above says he marks ELEVEN of the seventeen CB rows. The mgrChanged flags in the data above mark EIGHT. The CM count agrees at eight.",
+        "whichIsProbablyRight": "Eight. The asterisk denotes a CLUB that changed manager, so the same clubs must be marked in both tables — and the two marked sets here are identical: Crystal Palace, Liverpool, Bournemouth, Newcastle, Man City, Nottm Forest, Chelsea, Fulham. Eleven CB marks against eight CM marks would mean three clubs changed manager for one table and not the other, which the meaning of the mark forbids.",
+        "whyItIsNotSimplyCorrected": "That argument establishes the two counts must MATCH, not that both are eight. Three asterisks dropped while transcribing would produce exactly this, and so would a miscount in the prose. The screenshot is the only arbiter and it is not re-readable here. The prose sentence is left standing with this note beside it rather than edited into agreement, because editing it would destroy the evidence that the two ever disagreed.",
+        "whatWasDoneAboutIt": "docs/benchmarks/fpl-challenge-gw2-gw5.json quotes eight, the figure the data supports, and points here.",
+        "theProcessPoint": "This file's own re-transcription test passed 37 of 37 figures and was cited as evidence the transcriptions are faithful. It exercised the bonus graphic only. This is a transcribed figure that test never touched, and it did not reconcile — the limit that test explicitly warned about, showing up in practice."
+      }
     }
   },
 
