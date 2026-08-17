@@ -136,12 +136,23 @@ async function probe({ path, status, redirect, json }) {
 console.log(`Site check — ${ORIGIN}\n`);
 
 let failed = 0;
+/* Every observed status, so the summary can tell two very different things
+   apart: the site answering wrongly, and never having reached the site. */
+const seenStatus = [];
 for (const check of CHECKS) {
   const res = await probe(check);
+  if (res.status != null) seenStatus.push(res.status);
   if (!res.ok) failed++;
   console.log(`  ${res.ok ? '✓' : '✗'} ${check.path.padEnd(32)} ${String(res.detail).padEnd(34)} ${check.why}`);
   if (!res.ok && res.body) console.log(`      body: ${JSON.stringify(res.body).slice(0, 240)}`);
 }
+
+/* Tally from the CHECKS loop ALONE. The first version of the unreachable
+   detector below compared `failed` against CHECKS.length, but /sw.js runs in
+   between and increments it first, so the counts never matched and the
+   detector never fired — a guard that could not fire, which is the exact
+   thing it was written to stop happening elsewhere. */
+const failedInChecks = failed;
 
 /* The service worker is the one deployed file that keeps working after the
    deploy that removed it — it lives in caches on installed devices. So the
@@ -163,6 +174,65 @@ try {
 } catch (err) {
   failed++;
   console.log(`  ✗ /sw.js  could not be fetched: ${err.message}`);
+}
+
+/* ── WHICH BUILD IS ACTUALLY OUT THERE ─────────────────────
+   Every check above passes against the PREVIOUS deploy just as happily as
+   against the new one. Netlify builds on its own schedule, so a green run two
+   minutes after a push proves the site is healthy and proves nothing about
+   whether the change shipped — and reporting "deployed and verified" off the
+   back of it would be the instrument being read as the world, which is the
+   failure this repository keeps writing down.
+
+   So: name a marker that only exists in the newer build and look for it.
+   MARKER is deliberately a feature string rather than a commit hash, because
+   index.html is copied verbatim into www/ and carries no build stamp. It has
+   to be updated when it stops being new — and a stale marker fails loudly
+   here rather than silently passing, because the string will still be
+   present and the check will simply stop being informative. Hence the date. */
+const MARKER = { text: 'id="feedback-btn"', since: '2026-08-16',
+  what: 'the feedback button in the topbar' };
+
+/* Are we even talking to the site?
+
+   This ran from a sandbox whose egress proxy refuses gameweekedge.co.uk, and
+   the refusal arrives as a perfectly ordinary HTTP 403 from the gateway. So
+   every check above went red with a status mismatch, and the marker check
+   then announced "the push has not deployed yet, or the build failed" — a
+   claim about a deploy it had no evidence about at all. The instrument was
+   being reported as the world, again.
+
+   The tell is that EVERY check failed with the SAME status, including static
+   files like /privacy.html and /vendor.css that no working origin answers 403
+   to and no check expected. One status across every path means something in
+   front of the site is answering, not the site. When that happens the run
+   says so and withholds any verdict on the deploy, because "cannot verify"
+   and "did not ship" are different findings and only one of them is true. */
+const allFailed = failedInChecks === CHECKS.length;
+const oneStatus = new Set(seenStatus).size === 1 && seenStatus.length === CHECKS.length;
+const unreachable = allFailed && oneStatus;
+if (unreachable) {
+  console.log('');
+  console.log(`  ! Every check returned ${seenStatus[0]}, including paths no origin answers that way.`);
+  console.log('    Something in front of the site is answering — a proxy, a WAF, or blocked egress.');
+  console.log('    This run therefore says NOTHING about whether the deploy shipped.');
+  console.log(`    Re-run where ${ORIGIN} is reachable (the "Site check" workflow does).`);
+  console.log(`\n✗ Could not reach ${ORIGIN} — ${failed} check(s) failed, none of them informative.`);
+  process.exit(2);
+}
+
+console.log('');
+try {
+  const { res } = await request(ORIGIN + '/');
+  const html = await res.text();
+  const there = html.includes(MARKER.text);
+  if (!there) failed++;
+  console.log(`  ${there ? '✓' : '✗'} deployed build  ${there
+    ? 'carries ' + MARKER.what + ' (added ' + MARKER.since + ')'
+    : 'does NOT carry ' + MARKER.what + ' — the push has not deployed yet, or the build failed'}`);
+} catch (err) {
+  failed++;
+  console.log(`  ✗ deployed build  could not be read: ${err.message}`);
 }
 
 console.log(failed ? `\n✗ ${failed} check(s) failed.` : '\n✓ Every check passed.');

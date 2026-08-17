@@ -1,0 +1,204 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-observation",
+  "capturedAt": "2026-08-16T10:09:00.000Z",
+  "capturedAtPrecision": "screenshots carry a device clock of 11:08-11:09 local (BST, UTC+1), recorded as UTC. The post is stamped '29m', so composed around 09:39Z — an inference from a relative timestamp, not a published one.",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured five days before the deadline. Committed now so git history is the evidence it predates the football.",
+  "source": {
+    "name": "FPL S7S",
+    "handle": "@FPL_S7S",
+    "verified": "the account shows a blue verification badge in the capture",
+    "title": "Pre-Season Round-Up | 16 August",
+    "readFrom": "screenshots of the X thread",
+    "kind": "a cumulative list of pre-season friendly goals and assists, plus a fixture card for 16 August"
+  },
+
+  "whatThisIsWorth": {
+    "theHonestCeiling": "Pre-season friendly returns are a famously poor predictor of league returns, and this list is weaker than most because it has NO DENOMINATOR. There are no minutes, no match counts and no opponent names. A hat-trick against a lower-division side and a hat-trick against Bologna are three identical footballs here. Nothing in the register is reweighted from it and nothing should be.",
+    "whatItIsActuallyGoodFor": [
+      "CLUB ATTRIBUTION. Every entry is a player plus the club he played for. That is 83 assertions about who is where, and it is the one thing this register can check in bulk without the FPL API.",
+      "EVIDENCE OF FITNESS AND MATCH INVOLVEMENT. A player who scored in a friendly was fit enough to play in it. That is a genuine signal for a document carrying several injury flags."
+    ],
+    "theAbsenceTrap": "This is a list of SCORERS AND ASSISTERS ONLY. A player's absence means he did not score or assist. It does NOT mean he did not play, was not fit, or is not first choice. The players our register flags as unavailable — Saliba (back), Onana (ACL), Kroupi (foot, ~3 months) — are all absent from this list, and so are Saka and Rice, who the register says are being eased back. That pattern is CONSISTENT with the flags and is evidence of nothing, because a fit player who did not score is absent too. Recorded explicitly so a later reader does not mine this list for confirmations it cannot give."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "Every club attribution was diffed mechanically against the briefing's structured TEAMS blocks — the ins and outs lists plus the value, premium, differential, set-piece and summary prose — with accents stripped so Buendía and Nedeljković match their unaccented spellings.",
+    "namesInCapture": 83,
+    "resolvableAgainstOurRegister": 50,
+    "attributionAgrees": 48,
+    "hardConflicts": 0,
+    "notMentionedAnywhereInOurRegister": 33,
+    "whatTheNonMentionsMean": "Our register is a pick-oriented document, not a squad list. It names signings, departures and candidates, so a squad player who is none of those — Havertz, Caicedo, Maguire, Rodon, O'Shea, Dorgu — is simply not in it. Thirty-three unmatched names is a statement about our document's scope, not about the source's accuracy.",
+    "threeBugsInOurOwnChecker": [
+      "surnameOf() split on whitespace WITHOUT trimming. The ins-list regex captures 'Piero Hincapie ' with a trailing space, so split() yielded a final empty element and .pop() returned ''. Ten players the register does name were reported as absent from it.",
+      "A departure recorded in PROSE rather than in the outs array read as a contradiction. Our Brentford summary says 'With Wissa and Mbeumo gone' — the register knows Wissa left, it just never says where to. Calling that a conflict manufactures a disagreement out of our own gap.",
+      "Any non-outs mention counted as confirmation of membership. Andy Robertson appears in Liverpool's outs, Liverpool's summary AND Tottenham's ins; the Liverpool prose mentions made a transfer we already hold look like agreement with a source that disagrees with us."
+    ],
+    "whyThoseAreListed": "All three inflated the agreement figure or invented a conflict, and all three were ours. Same lesson as the name-normalisation bug found in the Hadley capture yesterday and the surname collisions in the set-piece diff: a checker that has not been checked is reporting itself."
+  },
+
+  "flagsAndUpdates": [
+    {
+      "id": "robertson",
+      "what": "S7S credits an assist to 'Robertson (LIV)'. Our register records Andy Robertson OUT of Liverpool and IN at Tottenham on a free — stated by both clubs, which is the form check-briefing.mjs verifies.",
+      "notNecessarilyAnError": "A cumulative pre-season list spans several weeks, and a free transfer completing mid-window means a player can legitimately be credited under the club he was at when he played. Club attribution in a pre-season list carries a TIME dimension that a season-long table does not.",
+      "sameShapeAsYesterday": "This is the second attribution-timing question in two days, after the '(at Wolves)' parenthetical in the Hadley thread. Both come from reading a club label as a statement about now when it is a statement about when.",
+      "changesNothing": "Robertson's GW1 fixture follows his current club either way, and our register and the live game agree on which that is."
+    },
+    {
+      "id": "wissa",
+      "what": "S7S puts Yoane Wissa at Newcastle with 3 pre-season goals.",
+      "correctionToTheFirstReadingOfThis": "This was first written up as our register knowing he left Brentford without naming a destination. That was wrong, and wrong because the check ran against the HTML edition only: the PROSE edition already said 'With Wissa gone to Newcastle (2025) following Mbeumo's exit', while the HTML summary said merely 'With Wissa and Mbeumo gone'. So S7S CONFIRMS our markdown rather than filling a gap.",
+      "whatItActuallyExposed": "An inconsistency between our own two editions — which turned out to be the smaller half of a bigger one, see theEditionParityDefect below. Both editions now name Newcastle.",
+      "status": "CONFIRMS the register. Nothing added."
+    },
+    {
+      "id": "kalimuendo",
+      "what": "Our Nottingham Forest ins list reads 'Kalimuendo (ST, Rennes) — advanced talks, not done'. S7S credits Arnaud Kalimuendo with 2 pre-season goals FOR Forest.",
+      "whyItMatters": "The Forest premium line says 'Kalimuendo, if signed, complicates Wood's minutes'. If he is signed and scoring, that conditional has resolved, and Chris Wood is our named Forest premium at a published £6.0m.",
+      "status": "STATUS UPDATE RAISED, NOT APPLIED. Playing in a club's pre-season friendly is good evidence of having joined it, but it is not an announcement, and pre-season squads carry trialists. The 'not done' note now carries the counter-evidence beside it rather than being rewritten.",
+      "howToSettleIt": "The FPL bootstrap lists him against a club or not at all."
+    }
+  ],
+
+  "theEditionParityDefect": {
+    "found": "2026-08-16, while chasing why our two editions disagreed about where Wissa went",
+    "what": "The briefing ships as two editions: a prose markdown file and an HTML standalone scout terminal. THREE of the four prices settled on 14 August had reached the prose club blocks and the HTML summary row, but never the HTML CLUB BLOCKS. Wood and Gibbs-White still read '~£7.0m' and Robinson '~£5.0m est.' in the edition a reader actually opens, while the summary row two hundred lines above said all three were settled.",
+    "howItSurvivedTwoDays": "The test written to stop exactly this — 'published prices reached the blocks, not just the notes' — reads priceClaims(md). The markdown. It passed every run while the HTML shipped superseded figures, and it was read as verifying the document because nobody asked which edition it opened.",
+    "whyItMattered": "The HTML edition is the product. Wood at ~£7.0m instead of £6.0m is a full million on a named premium captaincy option, and Gibbs-White the same in the other direction. A reader building a squad from the terminal was working from prices this project had already recorded as wrong.",
+    "fixed": "All four corrected in the HTML club blocks, plus the three settled today, plus the Wissa destination so both editions state it.",
+    "testedBy": "dev/test-briefing.mjs, 'a settled price reaches BOTH editions, not just the prose one' — seventeen assertions covering all seven settled rows in both editions, plus three that the superseded estimate no longer LEADS in the HTML. Verified to fail: reintroducing the Wood defect turns it red on two assertions, and reverting turns it green.",
+    "theRecurringShape": "Fifth in a fortnight, and the purest example yet — the check could not have found the defect, because it was not looking at the file the defect was in. When a check finds nothing, the first question is whether it could have found anything."
+  },
+
+  "settlesAnOpenFlagInTheHadleyCapture": {
+    "theFlag": "pl-tomhadley-preseason-thread.json raised 'theJoaoGomesFlag': his DEFCON table annotates 'JOAO GOMES (at Wolves)', and it was unclear whether that parenthetical marked a player's CURRENT club or the club where the statistics were earned. Under the current-club reading it would contradict the EFL benchmark recording his £38m move to Aston Villa and his absence from the Wolves team sheet on 15 August.",
+    "howItIsSettled": "Three of the four '(at X)' annotations in that thread name clubs that are NOT in the 2026-27 Premier League — West Ham, Middlesbrough and Wolverhampton Wanderers — checked against our own twenty-club register. A table of FPL-priced assets cannot be listing three players outside the division, so the parenthetical marks WHERE THE STATISTICS WERE EARNED.",
+    "andIndependently": "S7S places Mateus Fernandes at Tottenham with a pre-season goal, where Hadley writes '(at West Ham)'. A second source contradicting the current-club reading of that exact annotation.",
+    "conclusion": "'JOAO GOMES (at Wolves)' asserts nothing about where he is now, and does not conflict with the Aston Villa move. THE FLAG IS CLOSED. It was worth raising and it was worth not guessing: one day and one unrelated source resolved it."
+  },
+
+  "topPerformers": {
+    "columns": ["player", "club", "goals", "assists"],
+    "note": "Transcribed as published, including the source's own spellings. Club codes expanded. 'KDH' is how the source writes Dewsbury-Hall. The Bruno Fernandes row is truncated mid-code in the capture ('MA') and is read as Manchester United, which our register and the Hadley thread both support.",
+    "rows": [
+      { "p": "Joao Pedro", "c": "Chelsea", "g": 7, "a": 2 },
+      { "p": "Brian Madjo", "c": "Aston Villa", "g": 5, "a": 0, "sourceNote": "listed with '5.5' beside the name, read as a price rather than a stat" },
+      { "p": "Igor Jesus", "c": "Nottingham Forest", "g": 4, "a": 0 },
+      { "p": "Matheus Franca", "c": "Crystal Palace", "g": 4, "a": 0 },
+      { "p": "Enes Unal", "c": "Bournemouth", "g": 3, "a": 0 },
+      { "p": "Enzo Le Fee", "c": "Sunderland", "g": 3, "a": 0 },
+      { "p": "Yoane Wissa", "c": "Newcastle United", "g": 3, "a": 0 },
+      { "p": "Eddie Nketiah", "c": "Crystal Palace", "g": 3, "a": 0 },
+      { "p": "Yasin Ayari", "c": "Brighton & Hove Albion", "g": 3, "a": 0 },
+      { "p": "Evanilson", "c": "Bournemouth", "g": 3, "a": 0 },
+      { "p": "Richarlison", "c": "Tottenham Hotspur", "g": 3, "a": 0 },
+      { "p": "Jebbison", "c": "Bournemouth", "g": 3, "a": 3 },
+      { "p": "Calvert-Lewin", "c": "Leeds United", "g": 3, "a": 2 },
+      { "p": "Bryan Mbeumo", "c": "Manchester United", "g": 3, "a": 1 },
+      { "p": "Sean Longstaff", "c": "Leeds United", "g": 3, "a": 1 },
+      { "p": "Thierno Barry", "c": "Everton", "g": 3, "a": 1 },
+      { "p": "Igor Thiago", "c": "Brentford", "g": 3, "a": 1 },
+      { "p": "Harvey Barnes", "c": "Newcastle United", "g": 2, "a": 0 },
+      { "p": "Wirtz", "c": "Liverpool", "g": 2, "a": 0 },
+      { "p": "Marmoush", "c": "Manchester City", "g": 2, "a": 0 },
+      { "p": "Leif Davis", "c": "Ipswich Town", "g": 2, "a": 0 },
+      { "p": "Delap", "c": "Chelsea", "g": 2, "a": 0 },
+      { "p": "Ben Doak", "c": "Bournemouth", "g": 2, "a": 0 },
+      { "p": "Arnaud Kalimuendo", "c": "Nottingham Forest", "g": 2, "a": 0 },
+      { "p": "Charalampos Kostoulas", "c": "Brighton & Hove Albion", "g": 2, "a": 0 },
+      { "p": "Oliver McBurnie", "c": "Hull City", "g": 2, "a": 0 },
+      { "p": "Rayan Ait Nouri", "c": "Manchester City", "g": 2, "a": 0 },
+      { "p": "Ryan Sessegnon", "c": "Fulham", "g": 2, "a": 0 },
+      { "p": "Joshua Zirkzee", "c": "Manchester United", "g": 2, "a": 0 },
+      { "p": "Hume", "c": "Sunderland", "g": 2, "a": 0 },
+      { "p": "Iliman Ndiaye", "c": "Everton", "g": 2, "a": 0 },
+      { "p": "Mikey Moore", "c": "Tottenham Hotspur", "g": 2, "a": 0 },
+      { "p": "Buendia", "c": "Aston Villa", "g": 2, "a": 4 },
+      { "p": "Christos Tzolis", "c": "Arsenal", "g": 2, "a": 3 },
+      { "p": "Schade", "c": "Brentford", "g": 2, "a": 2 },
+      { "p": "Luka Lynch", "c": "Aston Villa", "g": 2, "a": 2 },
+      { "p": "Tavernier", "c": "Bournemouth", "g": 2, "a": 1 },
+      { "p": "Timur Tuterov", "c": "Sunderland", "g": 2, "a": 1 },
+      { "p": "Alex Scott", "c": "Bournemouth", "g": 2, "a": 1 },
+      { "p": "Justin Kluivert", "c": "Bournemouth", "g": 2, "a": 1 },
+      { "p": "Mubama", "c": "Manchester City", "g": 2, "a": 1 },
+      { "p": "Dominik Szoboszlai", "c": "Liverpool", "g": 1, "a": 2 },
+      { "p": "Tel", "c": "Tottenham Hotspur", "g": 1, "a": 2 },
+      { "p": "Isak", "c": "Liverpool", "g": 1, "a": 1 },
+      { "p": "Beto", "c": "Everton", "g": 1, "a": 1 },
+      { "p": "Aaronson", "c": "Leeds United", "g": 1, "a": 1 },
+      { "p": "Caicedo", "c": "Chelsea", "g": 1, "a": 1 },
+      { "p": "Rodon", "c": "Leeds United", "g": 1, "a": 1 },
+      { "p": "Georginio Rutter", "c": "Brighton & Hove Albion", "g": 1, "a": 1 },
+      { "p": "Brobbey", "c": "Sunderland", "g": 1, "a": 1 },
+      { "p": "Rogers", "c": "Chelsea", "g": 1, "a": 0 },
+      { "p": "Mukiele", "c": "Sunderland", "g": 1, "a": 0 },
+      { "p": "William Osula", "c": "Newcastle United", "g": 1, "a": 0 },
+      { "p": "Mateus Fernandes", "c": "Tottenham Hotspur", "g": 1, "a": 0 },
+      { "p": "Jaidon Anthony", "c": "Brentford", "g": 1, "a": 0 },
+      { "p": "Rio Ngumoha", "c": "Liverpool", "g": 1, "a": 0 },
+      { "p": "Canvot", "c": "Crystal Palace", "g": 1, "a": 0 },
+      { "p": "Havertz", "c": "Arsenal", "g": 1, "a": 0 },
+      { "p": "Adrien Truffert", "c": "Bournemouth", "g": 1, "a": 0 },
+      { "p": "Brooks", "c": "Bournemouth", "g": 1, "a": 0 },
+      { "p": "Hincapie", "c": "Arsenal", "g": 1, "a": 0 },
+      { "p": "Sarr", "c": "Crystal Palace", "g": 1, "a": 0 },
+      { "p": "Robinson", "c": "Fulham", "g": 1, "a": 0 },
+      { "p": "Isidor", "c": "Sunderland", "g": 1, "a": 0 },
+      { "p": "Maguire", "c": "Manchester United", "g": 1, "a": 0 },
+      { "p": "Dorgu", "c": "Manchester United", "g": 1, "a": 0 },
+      { "p": "Gyokeres", "c": "Arsenal", "g": 1, "a": 0 },
+      { "p": "Dan Ndoye", "c": "Nottingham Forest", "g": 1, "a": 0 },
+      { "p": "Muharemovic", "c": "Leeds United", "g": 1, "a": 0 },
+      { "p": "Stach", "c": "Leeds United", "g": 1, "a": 0 },
+      { "p": "O'Shea", "c": "Ipswich Town", "g": 1, "a": 0 },
+      { "p": "Sangare", "c": "Brentford", "g": 1, "a": 0 },
+      { "p": "Semenyo", "c": "Manchester City", "g": 0, "a": 5 },
+      { "p": "Boscagli", "c": "Brighton & Hove Albion", "g": 0, "a": 2 },
+      { "p": "Nedeljkovic", "c": "Aston Villa", "g": 0, "a": 2 },
+      { "p": "KDH", "c": "Everton", "g": 0, "a": 2 },
+      { "p": "Cole Palmer", "c": "Chelsea", "g": 0, "a": 1 },
+      { "p": "Bruno Fernandes", "c": "Manchester United", "g": 0, "a": 1 },
+      { "p": "Chris Wood", "c": "Nottingham Forest", "g": 0, "a": 1 },
+      { "p": "Milan van Ewijk", "c": "Coventry City", "g": 0, "a": 1 },
+      { "p": "Frimpong", "c": "Liverpool", "g": 0, "a": 1 },
+      { "p": "Gomez", "c": "Brighton & Hove Albion", "g": 0, "a": 1 },
+      { "p": "Robertson", "c": "Liverpool", "g": 0, "a": 1, "sourceNote": "see the robertson flag — our register has him at Tottenham" }
+    ]
+  },
+
+  "fixturesOn16August": {
+    "note": "A dated card, so it is checkable the moment the day ends, unlike everything above.",
+    "clubFriendlies": [
+      { "home": "Liverpool", "away": "Como", "kickOff": "13:30" },
+      { "home": "Tottenham Hotspur", "away": "Hoffenheim", "kickOff": "14:00" },
+      { "home": "Nottingham Forest", "away": "Brest", "kickOff": "16:00" },
+      { "home": "Newcastle United", "away": "Strasbourg", "kickOff": "18:00" }
+    ],
+    "communityShield": { "home": "Arsenal", "away": "Manchester City", "kickOff": "17:00" },
+    "whyItIsRecorded": "Five days before the GW1 deadline, four Premier League clubs are still playing friendlies and two are playing a competitive final. That is minutes and injury risk for Arsenal and Man City assets in particular, and the briefing already flags Saka and Rice as being eased back after long World Cups."
+  },
+
+  "quotedEarlierPost": {
+    "what": "The capture includes a partially visible quote of the same account's round-up from 13 hours earlier, showing friendly results: Mainz 05 2-1 Bournemouth, Borussia Monchengladbach 2-1 Aston Villa, Hull City 0-0 OGC Nice, Leeds United 4-0 FC Augsburg, Brighton 1-0 Bologna, Brentford 7-0 (opponent not legible).",
+    "recordedAsPartial": "The panel is cut off in the screenshot and the last row's opponent cannot be read. Listed as a partial capture rather than presented as the full card.",
+    "whyItSharpensTheCaveatAbove": "Leeds 4-0 and Brentford 7-0 against continental opposition, alongside Hull 0-0 and two one-goal defeats, is exactly the spread that makes an undenominated goal tally unusable as a rating. The same three footballs mean different things in different rows."
+  },
+
+  "gradeableAfterTheSeasonStarts": [
+    "Whether pre-season goal volume predicts anything at all across GW1-5 — this list is a ready-made cohort and the register holds no view on it either way.",
+    "Whether the top four (Joao Pedro 7, Madjo 5, Igor Jesus 4, Franca 4) return above the list median.",
+    "Kalimuendo's actual club, which settles the Forest premium question our register left conditional."
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Closes theJoaoGomesFlag in the Hadley capture, in favour of the EFL benchmark's reading.",
+    "Adds counter-evidence beside the 'Kalimuendo — advanced talks, not done' note in the Forest block, without rewriting it.",
+    "Records Newcastle as the reported destination for Wissa, whose departure our Brentford summary already stated without one.",
+    "No pick, price, rating or model weight changes."
+  ]
+}

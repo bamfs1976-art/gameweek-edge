@@ -32,7 +32,7 @@ import { dirname, join, extname } from 'node:path';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WWW = join(ROOT, 'www');
-const PORT = 8094;
+const PORT = 8094, API_PORT = 8095;
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.json': 'application/json', '.webmanifest': 'application/manifest+json' };
 
@@ -45,15 +45,46 @@ let passes = 0, failures = 0;
 const ok = (cond, label) => { if (cond) passes++; else { failures++; console.error('  ✗ ' + label); } };
 const section = (n) => console.log('• ' + n);
 
-const server = createServer((req, res) => {
+/* ── two servers, on purpose ────────────────────────────────
+   PORT serves static files only, exactly as this suite always did. Every
+   assertion below the shell section was written against that world and stays
+   in it: feeding the page data changes which charts render, and a harness
+   that alters what it measures is not worth the tidiness. An early version of
+   this change served the API to everyone and broke a crosshair assertion that
+   had nothing to do with the work.
+
+   API_PORT serves the same files PLUS a canned bootstrap and fixture list, for
+   the panel checks at the end. Those need data by definition: a panel with no
+   data renders its error state, and telling that apart from a working one is
+   the entire point.
+
+   The payloads are snapshots of dev/mock_fpl.py, committed so this needs no
+   Python and no network. They keep the API's OWN shape — teams as an ARRAY,
+   the way bootstrap-static really sends it — because the reshaping boot() does
+   on the way in is exactly where the bug that prompted this lived. */
+const staticHandler = (req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/') p = '/index.html';
   const f = join(WWW, p);
   if (!existsSync(f) || !extname(f)) { res.writeHead(404); return res.end('not found'); }
   res.writeHead(200, { 'Content-Type': TYPES[extname(f)] || 'text/plain' });
   res.end(readFileSync(f));
+};
+const API = {
+  '/api/fpl/bootstrap-static': 'fpl-mock-bootstrap.json',
+  '/api/fpl/fixtures': 'fpl-mock-fixtures.json'
+};
+const server = createServer(staticHandler);
+const apiServer = createServer((req, res) => {
+  const p = decodeURIComponent(req.url.split('?')[0]);
+  if (API[p]) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p])));
+  }
+  return staticHandler(req, res);
 });
 await new Promise((r) => server.listen(PORT, r));
+await new Promise((r) => apiServer.listen(API_PORT, r));
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
   .catch(() => chromium.launch());
@@ -185,10 +216,192 @@ section('charts: uPlot actually draws');
   ok(val !== '' && val !== '--', 'moving the pointer moves the crosshair and reads a value (' + val + ')');
 }
 
+/* ── panels must RENDER, not just fail politely ─────────────
+   The app wraps each panel in a try/catch that prints "Could not load this
+   view" and carries on. That is the right behaviour, and it is also why a
+   broken panel looks like a working app from the outside: nothing crashes,
+   nothing goes red, the page just quietly has a hole in it.
+
+   The Fixture Difficulty grid shipped that way on 16 Aug 2026. A call site did
+   `(b.teams||[]).forEach` where b.teams is an id-keyed OBJECT — boot() builds
+   it as `b.teams.forEach(t=>teams[t.id]=t)` — so it threw on every rebuild.
+   It passed 3,451 unit assertions, because the pure functions it called were
+   all correct, and a green browser suite, because that suite served no data
+   and so never ran the call site at all.
+
+   Runs on its own page against the API server, so nothing above is affected. */
+section('panels render with data behind them, rather than their error state');
+{
+  const dataPage = await browser.newPage();
+  const dataErrors = [];
+  dataPage.on('pageerror', (e) => dataErrors.push(e.message));
+  await dataPage.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await dataPage.waitForTimeout(1200);
+
+  const grid = await dataPage.evaluate(async () => {
+    try { openPanel('fixtures'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2500));
+    const host = document.querySelector('#pages') || document.body;
+    return { txt: (host.innerText || '').slice(0, 3000),
+      rows: document.querySelectorAll('table tr').length,
+      lenses: [...document.querySelectorAll('#fdr-view .seg-b')].map((b) => b.textContent.trim()) };
+  });
+  ok(!grid.err, 'opening the fixtures panel did not throw (' + (grid.err || '') + ')');
+  ok(!/Could not load this view/i.test(grid.txt || ''),
+    'the grid rendered rather than falling back to "Could not load this view"');
+  ok(/FIXTURE DIFFICULTY/i.test(grid.txt || ''), 'it drew its own heading');
+  ok(grid.rows > 5, 'it drew a table with rows (' + grid.rows + ')');
+
+  /* Every lens in FDR_LENS has a button — asserted in test-core against the
+     source, and here against the DOM the user actually gets. */
+  ok((grid.lenses || []).length === 5,
+    'all five lenses are offered (' + (grid.lenses || []).join(', ') + ')');
+
+  /* The lens that prompted all this must produce numbers, not a column of
+     dashes — which is what an absent b.teams lookup would have left behind
+     even if it had failed quietly instead of throwing. */
+  const strength = await dataPage.evaluate(async () => {
+    /* Scope to the grid's OWN table. The panel draws fifteen tables and a
+       first pass counted cells across all of them, which found 102 dashes
+       belonging to other panels and reported the lens as empty when it was
+       working. #fdr-tot-h is the grid's total header, so its table is the
+       grid. */
+    const grid = () => {
+      const h = document.getElementById('fdr-tot-h');
+      return h ? h.closest('table') : null;
+    };
+    const texts = () => grid() ? [...grid().querySelectorAll('td')].map((t) => t.textContent.trim()) : [];
+    const before = texts();
+    const btn = [...document.querySelectorAll('#fdr-view .seg-b')]
+      .find((b) => /strength/i.test(b.textContent));
+    if (!btn) return { found: false };
+    btn.click();
+    await new Promise((r) => setTimeout(r, 900));
+    const after = texts();
+    /* A cell reads "1.00FUL (a)" — the lens number then the opponent — so the
+       ratio is matched anywhere in the cell, not anchored to the whole of it. */
+    return { found: true,
+      active: [...document.querySelectorAll('#fdr-view .seg-b')]
+        .filter((b) => b.classList.contains('on')).map((b) => b.textContent.trim()).join(','),
+      ratios: after.filter((c) => /\d\.\d\d/.test(c)).length,
+      dashes: after.filter((c) => c === '—').length,
+      changed: before.join('|') !== after.join('|') };
+  });
+  ok(strength.found, 'the Strength lens button is in the rendered grid');
+  ok(strength.active === 'Strength', 'clicking it actually selects it (' + strength.active + ')');
+  ok(strength.changed, 'and the grid redrew rather than keeping the previous lens');
+  ok(strength.found && strength.ratios > 0,
+    'the cells carry ratios (' + (strength.ratios || 0) + ' with a ratio, '
+    + (strength.dashes || 0) + ' dashes)');
+  ok(dataErrors.length === 0,
+    'the data-backed page threw nothing (' + dataErrors.slice(0, 2).join(' | ') + ')');
+  await dataPage.close();
+}
+
+/* Feedback: the one flow where the app could lie to a user. The vm test in
+   dev/test-feedback.mjs stubs the DOM, so it proves the control flow but not
+   that the button is reachable or the dialog opens. This does that part in a
+   real browser, and then makes the send FAIL to check the app says so. */
+section('feedback: the button opens, and a failed send is never called success');
+{
+  const fp = await browser.newPage();
+  const fErrors = [];
+  fp.on('pageerror', (e) => fErrors.push(e.message));
+  await fp.goto(`http://localhost:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await fp.waitForTimeout(900);
+
+  const opened = await fp.evaluate(() => {
+    const b = document.getElementById('feedback-btn');
+    if (!b) return { err: 'no #feedback-btn' };
+    b.click();
+    const m = document.getElementById('fb-modal');
+    return { shown: !!m && m.classList.contains('show'),
+      label: b.getAttribute('aria-label') || '',
+      kinds: [...document.querySelectorAll('#fb-kinds .fb-kind')].length };
+  });
+  ok(!opened.err, 'the feedback button exists (' + (opened.err || '') + ')');
+  ok(opened.shown === true, 'clicking it opens the dialog');
+  ok(opened.kinds >= 3, 'the dialog offers feedback kinds (' + opened.kinds + ')');
+  ok(/feedback/i.test(opened.label), 'the button is labelled for screen readers');
+
+  /* Force the send to fail the way an unconfigured server would. */
+  const failed = await fp.evaluate(async () => {
+    window.fetch = async () => ({ ok: false, status: 503,
+      json: async () => ({ error: 'Feedback storage is not configured on the server, so this was not saved.' }) });
+    let toasted = null; window.toast = (m) => { toasted = m; };
+    document.getElementById('fb-text').value = 'the fixture grid is empty for me';
+    await submitFeedback();
+    return {
+      toasted,
+      err: (document.getElementById('fb-err').textContent || ''),
+      kept: document.getElementById('fb-text').value,
+      stillOpen: document.getElementById('fb-modal').classList.contains('show')
+    };
+  });
+  ok(failed.toasted === null, 'a failed send shows NO success toast');
+  ok(/not sent/i.test(failed.err), 'it says plainly that it was not sent');
+  ok(failed.kept === 'the fixture grid is empty for me', "the user's typed message is still in the box");
+  ok(failed.stillOpen === true, 'and the dialog stays open so they can retry or copy');
+
+  /* Escape must dismiss an aria-modal dialog. */
+  const esc = await fp.evaluate(() => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    return document.getElementById('fb-modal').classList.contains('show');
+  });
+  ok(esc === false, 'Escape closes the dialog');
+  ok(fErrors.length === 0, 'the feedback flow threw nothing (' + fErrors.slice(0, 2).join(' | ') + ')');
+  await fp.close();
+}
+
+/* The feedback inbox renders text a STRANGER typed, inside the owner's own
+   session. That is the highest-severity path in the app: a payload in a
+   message would execute with the owner signed in. dev/test-feedback.mjs
+   checks the escaping by reading the source, which proves esc() is written
+   but not that it works. This fires a real payload through a real browser. */
+section('feedback inbox: a hostile message renders as text, not as markup');
+{
+  const ip = await browser.newPage();
+  const ipErrors = [];
+  ip.on('pageerror', (e) => ipErrors.push(e.message));
+  await ip.goto(`http://localhost:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await ip.waitForTimeout(900);
+
+  const res = await ip.evaluate(async () => {
+    window.__XSS__ = false;
+    window.GE_OWNER = true;
+    window.aiToken = () => 'fake-owner-token';
+    const PAYLOAD = '<img src=x onerror="window.__XSS__=true"><script>window.__XSS__=true<\/script>';
+    const canned = { windowDays: 90, truncated: false,
+      totals: { all: 1, last7: 1, awaitingReply: 0, unusableEmail: 0, distinctPanels: 1 },
+      byKind: [{ kind: 'bug', n: 1 }], byPanel: [{ panel: '<b>evil</b>', n: 1 }], byDay: [],
+      items: [{ message: PAYLOAD, kind: 'bug', email: null, emailUnusable: false,
+        panel: '<b>evil</b>', app: '<i>ua</i>', ts: new Date().toISOString() }] };
+    window.fetch = async (u) => String(u).includes('/api/feedback-inbox')
+      ? { ok: true, status: 200, json: async () => canned }
+      : { ok: false, status: 404, json: async () => ({}) };
+    try { buildNav(); openPanel('feedback'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 800));
+    const el = document.querySelector('.fbi-msg');
+    return {
+      xss: window.__XSS__,
+      injectedImg: !!document.querySelector('.fbi-msg img'),
+      text: el ? el.textContent : null,
+      literal: el ? el.textContent.includes('<img src=x') : false
+    };
+  });
+  ok(!res.err, 'the feedback panel opened (' + (res.err || '') + ')');
+  ok(res.xss === false, 'the payload did NOT execute');
+  ok(res.injectedImg === false, 'no element was injected from the message');
+  ok(res.literal === true, 'the markup is shown to the owner as literal text');
+  ok(ipErrors.length === 0, 'the inbox threw nothing (' + ipErrors.slice(0, 2).join(' | ') + ')');
+  await ip.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 
 await browser.close();
 server.close();
+apiServer.close();
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

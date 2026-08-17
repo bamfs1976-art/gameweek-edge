@@ -19,7 +19,10 @@ const ALLOW = [
   /^event\/\d+\/live$/,
   /^event-status$/,
   /^dream-team\/\d+$/,
+  /* The old path. Kept allowed so a rollback is a one-line app change, but
+     it 404s as of 16 Aug 2026 — see the note on loadSetPieceNotes. */
   /^set-piece-notes$/,
+  /^team\/set-piece-notes$/,
   /^leagues-classic\/\d+\/standings$/,
   /^leagues-h2h\/\d+\/standings$/,
   /^leagues-h2h\/\d+\/matches$/

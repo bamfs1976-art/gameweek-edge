@@ -175,6 +175,11 @@ const pieces = [
   /* Section 4: Fixture Difficulty 2.0 + set-piece confidence. */
   extractFn(html, 'fdrAttack'),
   extractFn(html, 'fdrDefence'),
+  extractConst(html, 'STRENGTH_KEYS'),
+  extractConst(html, 'STRENGTH_BANDS'),
+  extractFn(html, 'teamStrength'),
+  extractFn(html, 'strengthEdge'),
+  extractFn(html, 'strengthGrade'),
   /* setPieceConfidence reads the corner-side tariff, so the constant has to
      come with it. dev/test-setpiece.mjs owns the side and penalty-volume
      behaviour; these cases only assert the duty stacking is unchanged. */
@@ -218,6 +223,10 @@ const pieces = [
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'dcRate90'),
   extractFn(html, 'dcThreshold'),
+  extractFn(html, 'dcReal'),
+  extractFn(html, 'dcHasBasis'),
+  extractFn(html, 'dcHitRate'),
+  extractFn(html, 'dcHitLabel'),
   extractFn(html, 'oopThreat'),
   extractFn(html, 'oopQuantile'),
   extractFn(html, 'oopBenchmarks'),
@@ -250,7 +259,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, dcRate90, dcThreshold, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -281,6 +290,38 @@ section('dcRate90: a zero is not the same as no data');
   ok(Number.isFinite(F({})), 'a bare element does not divide by zero');
   ok(core.dcThreshold({ element_type: 2 }) === 10 && core.dcThreshold({ element_type: 3 }) === 12,
     'the threshold follows the position');
+}
+
+section('dcHitLabel: "never clears it" and "never seen him" are different claims');
+{
+  /* The logistic in dcHitRate always returns a number, so a defender with no
+     Premier League history at all came out as ~0% — visually identical to a
+     defender with a full season of minutes who never hit the threshold.
+
+     Not hypothetical. The creator DEFCON table ingested on 16 Aug had an
+     entire cheapest bracket of Championship players and singled out three
+     foreign-league arrivals as the season's best gambles; every one of them
+     is a player this returned ~0% for, i.e. the tool was loudest exactly
+     where it knew least. */
+  const L = core.dcHitLabel;
+  ok(L({ element_type: 2, minutes: 0, starts: 0 }) === '—',
+    'a defender with no PL minutes gets no figure at all, not ~0%');
+  ok(L({ element_type: 2, minutes: 0, defensive_contribution_per_90: '12.4' }) === '—',
+    'and a per-90 carried over from another league does not create a basis either');
+  ok(L({ element_type: 2, minutes: 2000, defensive_contribution: 0 }) === '~0%',
+    'but a real season with genuinely no defensive returns still reports ~0% — '
+    + 'that is a true finding and must survive');
+  ok(L({ element_type: 2, minutes: 900, defensive_contribution: 100 }) === '~50%',
+    'an estimate from real minutes keeps its ~ marker');
+  ok(L({ element_type: 2, minutes: 2700, _ci: { dcs: 30, dchr: 0.6, dcps: 10.7 } }) === '60%',
+    'a measured rate prints without the ~');
+  ok(core.dcHasBasis({ element_type: 2, minutes: 1 }) === true
+    && core.dcHasBasis({ element_type: 2, minutes: 0 }) === false,
+    'the floor is any real minutes at all, not a threshold');
+  /* The regression that motivated the whole change: these two must not look
+     the same to a reader scanning the DC hit% column. */
+  ok(L({ element_type: 2, minutes: 0 }) !== L({ element_type: 2, minutes: 2000, defensive_contribution: 0 }),
+    'no-history and never-hit render differently');
 }
 
 section('extractBlock: the harness must not corrupt what it measures');
@@ -1501,6 +1542,123 @@ section('eloPrior: held-out, it beats the generic prior it replaces (Tier 2)');
     const ratio = sd(pred) / sd(act);
     ok(ratio > 0.6 && ratio < 1.4,
       'the mapping spreads clubs like the priors do on ' + label + ' (sd ratio ' + ratio.toFixed(2) + ')');
+  }
+}
+
+section('team strength: FPL\'s own venue-split rating, and the ways it lies');
+{
+  /* The direction is the whole ballgame. It was established empirically —
+     r=0.818 against the opponent's team_*_difficulty over 380 fixtures — and
+     if it is ever flipped, every rating on the lens inverts silently. These
+     assertions are what would catch that. */
+  const club = (o) => Object.assign({
+    strength_overall_home: 3, strength_overall_away: 3,
+    strength_attack_home: 0, strength_attack_away: 0,
+    strength_defence_home: 0, strength_defence_away: 0
+  }, o || {});
+
+  /* ── zero is absent, not weakest ─────────────────────────
+     FPL ships 0 for every attack and defence field as of 16 Aug 2026. Read as
+     a real strength it would make every club maximally weak, and as a divisor
+     it is a division by zero. */
+  ok(core.teamStrength(club(), true, 'attack') === null,
+    'a zero attack strength reads as ABSENT, not as the weakest possible attack');
+  ok(core.teamStrength(club(), true, 'overall') === 3, 'a real value is returned as-is');
+  ok(core.teamStrength(null, true, 'overall') === null, 'a missing club is null, not a throw');
+  ok(core.teamStrength(club(), true, 'nonsense-kind') === 3,
+    'an unknown kind falls back to overall rather than undefined');
+
+  /* ── venue ─────────────────────────────────────────────── */
+  const lopsided = club({ strength_overall_home: 5, strength_overall_away: 2 });
+  ok(core.teamStrength(lopsided, true, 'overall') === 5
+    && core.teamStrength(lopsided, false, 'overall') === 2,
+    'home and away are read from the right field');
+
+  /* ── DIRECTION: stronger club, easier fixture ──────────── */
+  const strong = club({ strength_overall_home: 5, strength_overall_away: 5 });
+  const weak = club({ strength_overall_home: 2, strength_overall_away: 2 });
+  const vsWeak = core.strengthEdge(strong, true, weak);
+  const vsStrong = core.strengthEdge(weak, true, strong);
+  ok(vsWeak.edge > 1 && vsStrong.edge < 1,
+    'a strong club facing a weak one is above parity, and the reverse below');
+  ok(core.strengthGrade(vsWeak) < core.strengthGrade(vsStrong),
+    'and the strong club gets the EASIER grade — this is the assertion that '
+    + 'catches the direction being inverted');
+  ok(core.strengthGrade(vsWeak) === 1 && core.strengthGrade(vsStrong) === 5,
+    'the extremes of a 2-5 scale reach both ends of the 1-5 grade');
+
+  /* Parity must land in the middle, from either side. */
+  const even = core.strengthEdge(club(), true, club());
+  ok(Math.abs(even.edge - 1) < 1e-9 && core.strengthGrade(even) === 3,
+    'an even matchup is 1.00 and grades 3');
+
+  /* ── the bands mirror around parity ────────────────────── */
+  const B = core.STRENGTH_BANDS;
+  ok(Math.abs(B[0] * B[3] - 1) < 0.02 && Math.abs(B[1] * B[2] - 1) < 0.02,
+    'the bands are symmetric in log space, so "one band better" means the same '
+    + 'thing on both sides of a fixture (' + B.join(', ') + ')');
+  ok(B[0] > B[1] && B[1] > B[2] && B[2] > B[3], 'the bands descend');
+
+  /* ── basis: attack/defence when populated, overall otherwise ── */
+  ok(even.basis === 'overall',
+    'with attack and defence zeroed the edge falls back to overall — which is '
+    + 'what FPL actually serves today');
+  const withAtt = club({ strength_attack_home: 1300, strength_defence_away: 1000 });
+  const opp = club({ strength_defence_away: 1000, strength_attack_home: 1100 });
+  const rich = core.strengthEdge(withAtt, true, opp);
+  ok(rich.basis === 'attack' && Math.abs(rich.edge - 1.3) < 1e-9,
+    'once FPL populates them, the lens uses attack-vs-defence without a code change');
+  /* The basis must be REPORTED, not silently swapped. */
+  ok(even.basis !== rich.basis && typeof even.basis === 'string',
+    'and it says which basis it used, because a number whose meaning changes '
+    + 'underneath the reader is worse than no number');
+
+  /* ── a missing edge must not manufacture an easy fixture ── */
+  ok(core.strengthEdge(club({ strength_overall_home: 0 }), true, club()) === null,
+    'no usable numbers on either side gives null, not a guess');
+  ok(core.strengthGrade(null) === 3, 'a null edge grades NEUTRAL, never easy');
+  ok(core.strengthGrade({ edge: NaN }) === 3, 'and a NaN edge does too');
+  ok(core.strengthGrade(null) > core.FDR_PATCH_MAX,
+    'a missing edge sits above the purple-patch threshold, so absent data can '
+    + 'never pull a run into existence');
+
+  /* ── the grid contract ─────────────────────────────────── */
+  const cell = (o) => Object.assign({ opp: 'BOU', home: true, diff: 2, fdr: 2,
+    lam: 2.21, cs: 0.33, win: 0.62, s: { edge: 1.25, basis: 'overall' } }, o || {});
+  ok(core.fdrCellValue('strength', cell()) === '1.25', 'the strength lens prints the ratio');
+  ok(core.fdrCellValue('strength', cell({ s: null })) === '—',
+    'a fixture with no strength data shows a dash rather than a number');
+  ok(core.fdrLens('strength').unit === 'STR', 'the lens names its own unit');
+  ok(core.fdrGrade('strength', cell()) === 2, 'fdrGrade routes the strength view');
+  /* Averaged, not summed — it is a ratio. */
+  const run = [cell({ s: { edge: 1.0, basis: 'overall' } }),
+    cell({ s: { edge: 2.0, basis: 'overall' } })];
+  ok(core.fdrRunTotal('strength', run) === '1.50',
+    'the run total AVERAGES the ratio — summing ratios would be meaningless');
+  ok(core.fdrRunTotal('strength', [cell({ s: null }), cell({ s: { edge: 2, basis: 'overall' } })]) === '2.00',
+    'and a partial run averages only the fixtures that have data');
+  ok(core.fdrRunTotal('strength', [cell({ s: null })]) === '—',
+    'an all-missing run has no total');
+
+  /* Adding a lens must not disturb the others. */
+  ok(core.fdrCellValue('attack', cell()) === '2.21'
+    && core.fdrCellValue('fpl', cell()) === '2',
+    'the existing lenses are unchanged by the new one');
+
+  /* ── and it has to be REACHABLE ─────────────────────────
+     Everything above tests a lens the user cannot select unless it is also in
+     the VIEWS list that draws the buttons. VIEWS is built inside a closure so
+     it cannot be extracted and evaluated; the source line is checked instead.
+
+     Worth the crudeness: the defect found earlier today was a correction that
+     reached one edition of a document and not the other, passing every test
+     because the test read the edition that was right. A lens that exists in
+     FDR_LENS and nowhere in the UI would fail exactly the same way. */
+  const viewsLine = /const VIEWS=\[[^;]*\];/.exec(html);
+  ok(!!viewsLine, 'the lens button list is still where this test looks for it');
+  for (const id of Object.keys(core.FDR_LENS)) {
+    ok(viewsLine && viewsLine[0].includes("'" + id + "'"),
+      'the ' + id + ' lens is offered as a button, not just implemented');
   }
 }
 

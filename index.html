@@ -661,6 +661,47 @@ html.offline .net-banner{transform:translateY(0)}
 .modal-in:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
 .modal-err{color:var(--red);font-size:.78rem;margin-top:8px;min-height:1.1em}
 .modal-row{display:flex;gap:10px;margin-top:8px}
+/* Feedback modal. Reuses .modal-* for the shell; only the parts the other
+   modals have no equivalent of are defined here. */
+.fb-kinds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.fb-kind{font:inherit;font-size:.74rem;font-weight:700;padding:6px 11px;cursor:pointer;
+  border:1.5px solid var(--border-2);border-radius:999px;background:transparent;color:var(--text-2)}
+.fb-kind:hover{border-color:var(--green-bright);color:var(--text-1)}
+.fb-kind[aria-checked="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.fb-text{min-height:104px;resize:vertical;font:inherit;font-size:.86rem;line-height:1.5}
+.fb-email{margin-top:10px}
+.fb-meta{display:flex;align-items:center;gap:10px;margin-top:6px;
+  font-size:.71rem;color:var(--text-3)}
+.fb-ctx{margin-left:auto;text-align:right;opacity:.85}
+.fb-count.over{color:var(--red);font-weight:700}
+/* A failure here must not read like a toast that will disappear. */
+.modal-err.fb-fail{padding:9px 11px;margin-top:10px;border-radius:var(--r-sm);
+  border:1px solid var(--red);background:rgba(220,60,60,.09);line-height:1.45}
+.fb-retry{display:inline-block;margin-top:7px;font-weight:800;text-decoration:underline;
+  cursor:pointer;background:none;border:0;color:var(--red);font-size:.78rem;padding:0}
+/* Feedback inbox (owner panel) */
+.fb-kindseg{flex-wrap:wrap}
+.fb-kindseg .seg-b b{font-weight:800;opacity:.75;margin-left:2px}
+.fbi-list{display:flex;flex-direction:column;gap:10px}
+.fbi{border:1px solid var(--border-2);border-radius:var(--r-md);padding:12px 14px;background:var(--surface-2)}
+.fbi-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.fbi-kind{font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;border:1px solid var(--border-2);color:var(--text-2)}
+.fbi-kind.k-bug{color:var(--red);border-color:var(--red)}
+.fbi-kind.k-data{color:var(--amber);border-color:var(--amber)}
+.fbi-kind.k-idea{color:var(--blue);border-color:var(--blue)}
+.fbi-kind.k-praise{color:var(--green);border-color:var(--green)}
+.fbi-panel{font-size:.7rem;font-weight:700;color:var(--text-3)}
+.fbi-when{margin-left:auto;font-size:.7rem;color:var(--text-3)}
+/* pre-wrap: people write in paragraphs and flattening them loses the sense */
+.fbi-msg{font-size:.86rem;line-height:1.5;color:var(--text-1);white-space:pre-wrap;
+  overflow-wrap:anywhere;margin:0}
+.fbi-foot{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:.72rem}
+.fbi-mail{font-weight:700;color:var(--green)}
+.fbi-mail.none{color:var(--text-3);font-weight:600}
+.fbi-mail.bad{color:var(--amber);font-weight:700}
+.fbi-app{margin-left:auto;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;max-width:45%}
 .modal-row .btn{flex:1;justify-content:center}
 .modal-hint{font-size:.72rem;color:var(--text-3);margin-top:14px;line-height:1.5}
 
@@ -2262,6 +2303,11 @@ body{font-size:14px;line-height:1.35}
         </button>
         <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Switch between the simple view and every tool" title="Simple / Everything">Simple</button>
         <button class="btn btn-ghost btn-icon" id="help-btn" aria-label="Help, tour and glossary" title="Help &amp; glossary">?</button>
+        <button class="btn btn-ghost btn-icon" id="feedback-btn" aria-label="Send feedback about this app" title="Send feedback">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/>
+          </svg>
+        </button>
         <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
@@ -2364,6 +2410,37 @@ body{font-size:14px;line-height:1.35}
       <button class="btn btn-cta" id="mid-save">Link team</button>
     </div>
     <div class="modal-hint" id="mid-hint">Find it at fantasy.premierleague.com → Points → the number after <b>/entry/</b> in the address bar.</div>
+  </div>
+</div>
+
+<!-- Feedback modal. The send button reports honest failure and keeps the
+     user's text on screen — see submitFeedback(). -->
+<div class="modal" id="fb-modal" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+  <div class="modal-bg" data-fb-close></div>
+  <div class="modal-card">
+    <h3 id="fb-title">Send feedback</h3>
+    <p id="fb-lead">Found a bug, spotted a number that looks wrong, or want something added? This goes straight to the person who builds it.</p>
+    <div class="fb-kinds" id="fb-kinds" role="radiogroup" aria-label="What kind of feedback is this?">
+      <button type="button" class="fb-kind" data-kind="bug" role="radio" aria-checked="false">Bug</button>
+      <button type="button" class="fb-kind" data-kind="idea" role="radio" aria-checked="false">Idea</button>
+      <button type="button" class="fb-kind" data-kind="data" role="radio" aria-checked="false">Wrong number</button>
+      <button type="button" class="fb-kind" data-kind="praise" role="radio" aria-checked="false">Praise</button>
+      <button type="button" class="fb-kind" data-kind="other" role="radio" aria-checked="true">Other</button>
+    </div>
+    <textarea class="modal-in fb-text" id="fb-text" rows="5" maxlength="4000"
+      placeholder="What happened, and what did you expect instead?" aria-label="Your feedback"></textarea>
+    <div class="fb-meta">
+      <span id="fb-count" class="fb-count" aria-live="polite">0 / 4000</span>
+      <span class="fb-ctx" id="fb-ctx"></span>
+    </div>
+    <input class="modal-in fb-email" id="fb-email" type="email" autocomplete="email"
+      placeholder="Email (optional, only if you want a reply)" aria-label="Your email, optional">
+    <div class="modal-err" id="fb-err" role="alert"></div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" id="fb-cancel" data-fb-close>Cancel</button>
+      <button class="btn btn-cta" id="fb-send">Send feedback</button>
+    </div>
+    <div class="modal-hint" id="fb-hint">We attach the panel you were on and your browser version so a bug can be traced. Nothing else — no name, no team, no email unless you type one.</div>
   </div>
 </div>
 
@@ -2700,7 +2777,18 @@ const loadLive     =gw=>api('event/'+gw+'/live');
 const loadSummary  =id=>cached('sum-'+id,10*60e3,()=>api('element-summary/'+id));
 const loadTransfers=id=>cached('tr-'+id,3*60e3,()=>api('entry/'+id+'/transfers'));
 const loadEventStatus=()=>api('event-status');
-const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('set-piece-notes'));
+/* MOVED. The official path was /api/set-piece-notes/, and on 16 Aug 2026 a
+   probe from a runner found it answering 404 with an HTML error page while
+   /api/team/set-piece-notes/ answered 200 with {last_updated, teams[20]}.
+   An HTML 404 is the web server saying "no such route"; the JSON 404s the
+   same run saw elsewhere are the API saying "nothing here yet". Different
+   answers, and the difference is what identified this as a move.
+
+   It had been failing silently: the one call site is wrapped in
+   .catch(()=>null), so the set-piece register just quietly had no official
+   data behind it. Nothing was watching the endpoint, which is why a feed
+   this document leans on could rot without anyone noticing. */
+const loadSetPieceNotes=()=>cached('spn',6*3600e3,()=>api('team/set-piece-notes'));
 /* FPL Core Insights — aggregated Opta-like stats (goalkeeper goals-prevented,
    open-play xG, finishing quality) our own Netlify function serves from the
    open dataset. Best-effort: a short timeout and a graceful null so a missing
@@ -3480,7 +3568,8 @@ const NAV = [
     id:'studio', label:'Studio', icon:'grid', tier:'owner',
     panels:[
       {id:'social', label:'Social Studio', icon:'grid', tier:'owner'},
-      {id:'analytics', label:'Analytics', icon:'pulse', tier:'owner'}
+      {id:'analytics', label:'Analytics', icon:'pulse', tier:'owner'},
+      {id:'feedback', label:'Feedback', icon:'pulse', tier:'owner'}
     ]
   }
 ];
@@ -3746,6 +3835,27 @@ async function hydrateFplBasics(host){
 }
 function wireUXButtons(){
   const h=document.getElementById('help-btn');if(h&&!h._w){h._w=1;h.addEventListener('click',startTour);}
+  const fb=document.getElementById('feedback-btn');
+  if(fb&&!fb._w){fb._w=1;fb.addEventListener('click',openFeedbackModal);}
+  const fbs=document.getElementById('fb-send');
+  if(fbs&&!fbs._w){fbs._w=1;fbs.addEventListener('click',submitFeedback);}
+  const fbt=document.getElementById('fb-text');
+  if(fbt&&!fbt._w){fbt._w=1;fbt.addEventListener('input',fbCount);
+    /* Ctrl/Cmd+Enter sends, the convention for a textarea in a dialog. */
+    fbt.addEventListener('keydown',function(e){
+      if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();submitFeedback();}});}
+  const fbk=document.getElementById('fb-kinds');
+  if(fbk&&!fbk._w){fbk._w=1;fbk.addEventListener('click',function(e){
+    const b=e.target.closest('.fb-kind');if(b)fbSetKind(b.dataset.kind);});}
+  document.querySelectorAll('[data-fb-close]').forEach(function(el){
+    if(el._w)return;el._w=1;el.addEventListener('click',closeFeedbackModal);});
+  /* Escape closes it. The app has no global handler for the other modals and
+     this does not add one — a dialog marked aria-modal that a keyboard user
+     cannot dismiss is a defect, but fixing the other four is not this change. */
+  if(!document._fbEsc){document._fbEsc=1;document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    const m=document.getElementById('fb-modal');
+    if(m&&m.classList.contains('show'))closeFeedbackModal();});}
   const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent=densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
@@ -3816,6 +3926,10 @@ const PANEL_CONTENT = {
   },
   analytics:{
     desc:'Who is actually using the app: daily external visitors with bots and your own devices removed, which areas they reach, and how many come back.',
+    layout:'standard'
+  },
+  feedback:{
+    desc:'Everything people have written from the in-app feedback button, grouped by kind and by the panel they were on, newest first.',
     layout:'standard'
   },
   myweek:{
@@ -6860,6 +6974,122 @@ function socCustomDownload(share){
   },'image/png');
 }
 
+/* ── Feedback inbox (owner) ──────────────────────────────────
+   Everything submitted from the feedback button, collated server-side by
+   /api/feedback-inbox so the panel cannot drift from the numbers.
+
+   The states below are kept apart on purpose. "Nobody has written in",
+   "the table does not exist yet" and "this account is not the owner" all
+   produce an empty screen, and showing the same empty screen for all three
+   is how a broken inbox gets mistaken for a quiet one. */
+let FEEDBACK_DAYS=90, FEEDBACK_KIND='all';
+const FB_KIND_LABEL={bug:'Bug',data:'Wrong number',idea:'Idea',praise:'Praise',other:'Other'};
+
+function fbWhen(ts){
+  const t=Date.parse(ts);if(!isFinite(t))return esc(String(ts||''));
+  const mins=Math.floor((Date.now()-t)/60000);
+  if(mins<60)return mins<=1?'just now':mins+' min ago';
+  const hrs=Math.floor(mins/60); if(hrs<24)return hrs+'h ago';
+  const days=Math.floor(hrs/24); if(days<8)return days+'d ago';
+  return esc(String(ts).slice(0,10));
+}
+function fbItemCard(it){
+  const mail=it.email
+    ? '<a class="fbi-mail" href="mailto:'+esc(it.email)+'">'+esc(it.email)+'</a>'
+    : (it.emailUnusable
+      ? '<span class="fbi-mail bad" title="They typed an address that cannot be emailed">unusable address</span>'
+      : '<span class="fbi-mail none">no reply address</span>');
+  return '<div class="fbi">'+
+    '<div class="fbi-top">'+
+      '<span class="fbi-kind k-'+esc(it.kind)+'">'+esc(FB_KIND_LABEL[it.kind]||it.kind)+'</span>'+
+      (it.panel?'<span class="fbi-panel">'+esc(it.panel)+'</span>':'')+
+      '<span class="fbi-when">'+fbWhen(it.ts)+'</span>'+
+    '</div>'+
+    /* The message is the only free text in this app that a stranger wrote.
+       esc() is not optional here and there is a test that says so. */
+    '<p class="fbi-msg">'+esc(it.message)+'</p>'+
+    '<div class="fbi-foot">'+mail+(it.app?'<span class="fbi-app">'+esc(it.app)+'</span>':'')+'</div>'+
+  '</div>';
+}
+
+async function hydrateFeedback(host){
+  const seg=[[7,'7 days'],[30,'30 days'],[90,'90 days'],[365,'A year']].map(o=>
+    '<button class="seg-b'+(FEEDBACK_DAYS===o[0]?' on':'')+'" data-d="'+o[0]+'">'+o[1]+'</button>').join('');
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' What people have told you</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Everything sent from the feedback button, newest first. Grouped by kind and by the panel they were on — nothing is scored or ranked, because a count is all this data honestly supports.</p>'+
+    '<div class="seg" id="fb-range">'+seg+'</div></div>'+
+    '<div id="fb-out">'+skel(4)+'</div>';
+  host.querySelector('#fb-range').addEventListener('click',ev=>{
+    const btn=ev.target.closest('.seg-b');if(!btn)return;
+    FEEDBACK_DAYS=+btn.dataset.d;FEEDBACK_KIND='all';renderPage('feedback');});
+
+  const out=host.querySelector('#fb-out');
+  const tok=aiToken();
+  if(!tok){out.innerHTML=stateBox('users','Sign in required','The inbox reads your feedback table, so it needs a signed-in owner session.');return;}
+  let d;
+  try{
+    const r=await fetch(apiBase()+'/api/feedback-inbox?days='+FEEDBACK_DAYS,
+      {headers:{Authorization:'Bearer '+tok}});
+    if(r.status===401){out.innerHTML=stateBox('users','Sign in required','That session is not valid any more. Sign in again.');return;}
+    if(r.status===403){out.innerHTML=stateBox('users','Owner only','This account is not on the owner allowlist.');return;}
+    if(r.status===503){
+      let why='';try{why=(await r.json()).error||'';}catch(_){}
+      out.innerHTML=stateBox('pulse','Inbox not set up',why||'Feedback storage is not configured on the server.');return;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    d=await r.json();
+  }catch(e){out.innerHTML=stateBox('pulse','Inbox unavailable',String(e.message||e));return;}
+
+  const t=d.totals||{};
+  if(!t.all){
+    /* Reached the table, read it, and it was empty. Distinct from every
+       failure above — this one is good news, not a broken panel. */
+    out.innerHTML=stateBox('pulse','No feedback yet',
+      'Nobody has used the feedback button in the last '+d.windowDays+' days. The inbox is working — there is just nothing in it.');
+    return;
+  }
+
+  const kpis='<div class="grid g-sb mb-20">'+
+    kpi('Messages',t.all,'in the last '+d.windowDays+' days','var(--blue)')+
+    kpi('Last 7 days',t.last7,t.last7?'still coming in':'nothing this week','var(--'+(t.last7?'green':'amber')+')')+
+    kpi('Awaiting a reply',t.awaitingReply,t.awaitingReply?'left an email address':'nobody asked for one','var(--green)')+
+    kpi('From panels',t.distinctPanels,'distinct panels','var(--amber)')+
+  '</div>';
+
+  const kindRows=(d.byKind||[]).map(k=>
+    '<button class="seg-b'+(FEEDBACK_KIND===k.kind?' on':'')+'" data-k="'+esc(k.kind)+'">'+
+    esc(FB_KIND_LABEL[k.kind]||k.kind)+' <b>'+k.n+'</b></button>').join('');
+  const kinds='<div class="card mb-20"><div class="card-title">By kind</div>'+
+    '<div class="seg fb-kindseg" id="fb-kindseg">'+
+    '<button class="seg-b'+(FEEDBACK_KIND==='all'?' on':'')+'" data-k="all">All <b>'+t.all+'</b></button>'+
+    kindRows+'</div></div>';
+
+  const panelRows=(d.byPanel||[]).slice(0,12).map(p=>'<tr><td>'+esc(p.panel)+'</td>'+
+    '<td class="num">'+p.n+'</td></tr>').join('');
+  const panels='<div class="card mb-20"><div class="card-title">Where they were</div><div class="pl-scroll">'+
+    '<table class="ptable"><thead><tr><th>Panel</th><th class="num">Messages</th></tr></thead>'+
+    '<tbody>'+panelRows+'</tbody></table></div>'+
+    '<p class="dl-sub" style="margin-top:8px">The panel open when they hit send — a hint about where they were, not necessarily what they are writing about.</p></div>';
+
+  const unusable=t.unusableEmail
+    ? '<p class="dl-sub" style="margin-bottom:10px">'+t.unusableEmail+' '+
+      (t.unusableEmail===1?'person':'people')+' typed something in the email box that cannot be emailed, so '+
+      (t.unusableEmail===1?'that reply':'those replies')+' cannot be sent.</p>' : '';
+
+  const shown=(d.items||[]).filter(it=>FEEDBACK_KIND==='all'||it.kind===FEEDBACK_KIND);
+  const list='<div class="card"><div class="card-title">Messages</div>'+unusable+
+    (d.truncated?'<p class="dl-sub" style="color:var(--amber);margin-bottom:10px">More than '+
+      (d.items||[]).length+' messages matched — this is the newest page, not all of them.</p>':'')+
+    '<div class="fbi-list">'+(shown.length?shown.map(fbItemCard).join(''):
+      '<p class="dl-sub">No '+esc(FB_KIND_LABEL[FEEDBACK_KIND]||FEEDBACK_KIND).toLowerCase()+' messages in this window.</p>')+
+    '</div></div>';
+
+  out.innerHTML=kpis+kinds+panels+list;
+  const ks=out.querySelector('#fb-kindseg');
+  if(ks)ks.addEventListener('click',ev=>{
+    const b=ev.target.closest('.seg-b');if(!b)return;
+    FEEDBACK_KIND=b.dataset.k;renderPage('feedback');});
+}
+
 /* ── Analytics (owner) ───────────────────────────────────────
    Reads /api/analytics, which does the filtering server-side: crawlers were
    82% of the first sample, and the owner's own devices are another chunk, so
@@ -7303,6 +7533,63 @@ function matchModel(b,f,r){return plsimMatch(r,f.team_h,f.team_a);}
    So each lens now prints its own number in the cell, and the run total is in
    the same unit rather than a sum of difficulty buckets. Pure, so the
    formatting and the totals are unit-tested. */
+/* ── FPL's own team strength, venue-split ──────────────────
+   bootstrap-static ships six strength numbers per club — overall, attack and
+   defence, each split home and away — and this app read none of them until
+   16 Aug 2026. It is the one lens here that is not our model: everything else
+   on this grid is derived from our fitted Poisson, so a column from the game
+   itself is an outside opinion to plan against and, later, to grade.
+
+   DIRECTION WAS MEASURED, NOT ASSUMED. The field name does not say whether a
+   bigger number is a stronger club or a harder fixture, and inverting it
+   would invert every rating on the lens. Probed from a runner against all 380
+   fixtures: strength_overall correlates r=0.818 with the OPPONENT's
+   team_*_difficulty (1-5, higher = harder). So a higher number is a stronger
+   club, and difficulty is the opponent's strength relative to yours.
+
+   ZERO MEANS ABSENT, NOT WEAKEST. As of 16 Aug 2026 FPL ships
+   strength_attack_* and strength_defence_* as 0 for all twenty clubs, and
+   `strength` itself as null; only strength_overall_home/away carry values, on
+   a coarse 2-5 scale with four distinct levels in play. A zero read as a real
+   strength would make every club maximally weak and every ratio a division by
+   zero, so zero is treated as missing. */
+const STRENGTH_KEYS={
+  overall:['strength_overall_home','strength_overall_away'],
+  attack:['strength_attack_home','strength_attack_away'],
+  defence:['strength_defence_home','strength_defence_away']
+};
+function teamStrength(team,home,kind){
+  if(!team)return null;
+  const k=STRENGTH_KEYS[kind]||STRENGTH_KEYS.overall;
+  const v=Number(team[home?k[0]:k[1]]);
+  return Number.isFinite(v)&&v>0?v:null;
+}
+/* My strength over theirs, each at the venue they are actually playing at.
+   1.00 is parity; above 1 favours me.
+
+   Prefers the attack-versus-defence matchup and falls back to
+   overall-versus-overall, so the lens upgrades itself the moment FPL fills
+   those fields in — but it REPORTS which basis it used, because a number
+   whose meaning changes underneath the reader is worse than no number. */
+function strengthEdge(me,myHome,opp){
+  const oppHome=!myHome;
+  const a=teamStrength(me,myHome,'attack'),d=teamStrength(opp,oppHome,'defence');
+  if(a!=null&&d!=null)return {edge:a/d,basis:'attack'};
+  const mo=teamStrength(me,myHome,'overall'),oo=teamStrength(opp,oppHome,'overall');
+  if(mo!=null&&oo!=null)return {edge:mo/oo,basis:'overall'};
+  return null;
+}
+/* Bands mirror around parity in log space — 1.15 against 1/1.15, 1.5 against
+   1/1.5 — so "half a band better than even" means the same thing whichever
+   side of the fixture you are on. A missing edge grades 3 (neutral) rather
+   than 1: an absent number must never manufacture an easy run, and 3 sits
+   above FDR_PATCH_MAX so it cannot pull a purple patch into existence. */
+const STRENGTH_BANDS=[1.5,1.15,0.87,0.67];
+function strengthGrade(s){
+  if(!s||!Number.isFinite(s.edge))return 3;
+  const r=s.edge,B=STRENGTH_BANDS;
+  return r>=B[0]?1:r>=B[1]?2:r>=B[2]?3:r>=B[3]?4:5;
+}
 const FDR_LENS={
   overall:{unit:'WIN',cell:c=>Math.round((c.win||0)*100)+'%',
     total:cs=>cs.length?Math.round(100*cs.reduce((s,c)=>s+(c.win||0),0)/cs.length)+'%':'—'},
@@ -7312,6 +7599,11 @@ const FDR_LENS={
     total:cs=>cs.reduce((s,c)=>s+(c.cs||0),0).toFixed(2)},
   fpl:{unit:'FDR',cell:c=>String(c.fdr>=1&&c.fdr<=5?c.fdr:3),
     total:cs=>String(cs.reduce((s,c)=>s+(c.fdr>=1&&c.fdr<=5?c.fdr:3),0))},
+  /* AVERAGED, not summed. It is a ratio, so a total would be meaningless —
+     the same reason the overall lens averages win probability. */
+  strength:{unit:'STR',cell:c=>c.s?c.s.edge.toFixed(2):'—',
+    total:cs=>{const v=cs.filter(c=>c.s);
+      return v.length?(v.reduce((s,c)=>s+c.s.edge,0)/v.length).toFixed(2):'—';}},
 };
 function fdrLens(view){return FDR_LENS[view]||FDR_LENS.overall;}
 /* The cell's headline number for a lens, and the run total beneath it. Both
@@ -7331,7 +7623,8 @@ function fdrRunTotal(view,cells){
 const FDR_PATCH_MAX=2.8;
 function fdrGrade(view,c){
   return view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
-    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3):c.diff;
+    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3)
+    :view==='strength'?strengthGrade(c.s):c.diff;
 }
 /* The club's best K-gameweek run under this lens, or null when its best is
    not actually kind. One implementation, two readers. */
@@ -7646,7 +7939,8 @@ async function hydrateFixtures(host){
   const REM=39-startGw;
   const WINS=[[6,'6 GW'],[10,'10 GW'],[15,'15 GW']].filter(p=>p[0]<REM);
   WINS.push([Math.min(REM,38),'Season']);
-  const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],['fpl','FPL']];
+  const VIEWS=[['overall','Overall'],['attack','Attack'],['defence','Defence'],
+    ['fpl','FPL'],['strength','Strength']];
   /* The window has a START as well as a length. Fixed horizons counting from
      today answer "what is coming", but not "how does GW12-17 look" — which is
      the question you have when you are planning a wildcard or reading someone
@@ -7683,15 +7977,23 @@ async function hydrateFixtures(host){
     const winN=curWin;
     const gws=[];for(let g=from;g<from+winN&&g<=38;g++)gws.push(g);
     const byTeamGw={};
+    /* b.teams is ALREADY an id-keyed map of the full club records — boot()
+       builds it as `b.teams.forEach(t=>teams[t.id]=t)` and teamShort() reads
+       it as b.teams[id]. This originally built its own lookup with
+       `(b.teams||[]).forEach`, which throws on an object and took the whole
+       panel down with "Could not load this view". The local `teams` in this
+       function is the array; b.teams is the map. */
     fixtures.forEach(f=>{
       if(!f.event||f.event<from||f.event>=from+winN)return;
       const m=matchModel(b,f,R);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
         diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
-        lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0};
+        lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0,
+        s:strengthEdge(b.teams[f.team_h],true,b.teams[f.team_a])};
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
         diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,
-        lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0};
+        lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0,
+        s:strengthEdge(b.teams[f.team_a],false,b.teams[f.team_h])};
     });
     window._fdr={b,teams,gws,byTeamGw,hidden};
     /* One summary column, in the active lens's own unit — the old FDR / xGF /
@@ -8024,7 +8326,11 @@ function plCols(b,xpMap,ctx){
         sorts last rather than pretending to a rank it hasn't got. */
      v:e=>{const r=tmpl&&tmpl[e.id];return r?1000-r:0;},
      d:e=>{const r=tmpl&&tmpl[e.id];return r?'<span class="badge badge-green">#'+r+'</span>':'—';}},
-    {k:'dchit',l:'DC hit%',num:1,v:e=>dcOK(e)?dcHitRate(e):-1,d:e=>dcOK(e)?dcHitLabel(e):'—'},
+    /* Sorts unrateable with the goalkeepers rather than at the bottom of the
+       rated players: a defender we have never seen play here is not the worst
+       defender in the league, and -1 says "no answer" where 0.0001 says "last". */
+    {k:'dchit',l:'DC hit%',num:1,v:e=>dcOK(e)&&dcHasBasis(e)?dcHitRate(e):-1,
+     d:e=>dcOK(e)?dcHitLabel(e):'—'},
     {k:'setp',l:'SetP',num:1,tier:'paid',v:e=>setPieceConfidence(e).value,
      d:e=>{const s=setPieceConfidence(e);return s.value?'<span class="badge '+(s.value>=70?'badge-green':s.value>=50?'badge-amber':'badge-grey')+'" title="'+esc(s.roles.join(', '))+'">'+s.value+'</span>':'—';}},
     {k:'minsec',l:'Mins%',num:1,v:e=>minutesSecurity(e,games[e.team]||0),
@@ -8467,7 +8773,28 @@ function dcReal(e){const ci=e._ci;return !!(ci&&(ci.dcs||0)>=5&&ci.dchr!=null);}
 function dcHitRate(e){
   return dcReal(e)?e._ci.dchr:1/(1+Math.exp(-1.1*(dcRate90(e)-dcThreshold(e))));
 }
+/* ── the difference between "never clears it" and "never seen him" ──
+   Both paths above always return a NUMBER. For a defender arriving from a
+   foreign league there is no _ci history (it is keyed on FPL element ids) and
+   no per-90 (he has no Premier League minutes), so the logistic falls through
+   to ~0% — a figure that reads as "this player does not hit the threshold"
+   when it means "we have never watched him play here". A defender with 2,000
+   minutes and genuinely no defensive returns shows the same ~0%, and those two
+   are not the same claim.
+
+   Surfaced by a creator DEFCON table whose headline advice was to gamble on
+   Vuskovic (Bundesliga), Muharemovic (Serie A) and Jacquet (Ligue 1) —
+   precisely the three players this rated ~0%, i.e. the tool was most confident
+   and most wrong about exactly the players the question was about.
+
+   The floor is zero minutes rather than a threshold, deliberately: any real
+   Premier League minutes give the estimate some basis, and the leading `~`
+   already marks it as an estimate. Only the never-observed case changes.
+   dcByBracket already filtered these out of the budget ladder, and the player
+   card is gated on _ci — this closes the two places that were not. */
+function dcHasBasis(e){return dcReal(e)||(e&&(e.minutes||0)>0);}
 function dcHitLabel(e){
+  if(!dcHasBasis(e))return '—';
   return dcReal(e)?Math.round(e._ci.dchr*100)+'%':'~'+Math.round(dcHitRate(e)*100)+'%';
 }
 function dcPerStartLabel(e){
@@ -17070,6 +17397,7 @@ const WIRED={
   blog:hydrateBlog,
   social:hydrateSocial,
   analytics:hydrateAnalytics,
+  feedback:hydrateFeedback,
   gwhistory:hydrateGwhistory,
   gwreport:hydrateGwreport,
   archive:hydrateArchive,
@@ -17530,6 +17858,123 @@ function openMidModal(){
   setTimeout(()=>inp.focus(),60);
 }
 function closeMidModal(){document.getElementById('mid-modal').classList.remove('show');}
+
+/* ── FEEDBACK ──────────────────────────────────────────────
+   The rule this whole flow is built around: never tell someone their message
+   was sent unless a row exists. /api/feedback reports its failures instead of
+   no-opping like /api/track, so the only path to "Thanks" is a 204. On any
+   failure the text stays in the box, the reason is shown in full, and a copy
+   button gets it out of the app so the work is not lost. */
+let fbKind='other', fbSending=false;
+
+function fbSetKind(k){
+  fbKind=k;
+  document.querySelectorAll('#fb-kinds .fb-kind').forEach(b=>
+    b.setAttribute('aria-checked', b.dataset.kind===k ? 'true':'false'));
+}
+function fbCount(){
+  const t=document.getElementById('fb-text'),c=document.getElementById('fb-count');
+  if(!t||!c)return;
+  const n=t.value.length;
+  c.textContent=n+' / 4000';
+  c.classList.toggle('over',n>=4000);
+}
+/* Shown to the user before they send, because it is what gets attached. */
+function fbContext(){
+  let panel='';
+  try{panel=currentPanel||'';}catch(_){}
+  return panel?('Panel: '+panel):'';
+}
+function fbErr(html,retry){
+  const e=document.getElementById('fb-err');if(!e)return;
+  e.classList.toggle('fb-fail',!!html);
+  e.innerHTML=html||'';
+  if(html&&retry){
+    const b=document.createElement('button');
+    b.type='button';b.className='fb-retry';b.textContent='Copy my message instead';
+    b.addEventListener('click',fbCopy);
+    e.appendChild(document.createElement('br'));e.appendChild(b);
+  }
+}
+function fbCopy(){
+  const t=document.getElementById('fb-text');if(!t)return;
+  const body='['+fbKind+'] '+t.value+'\n\n'+fbContext();
+  const done=()=>toast('Copied — paste it wherever suits you');
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(body).then(done,()=>{t.select();done();});
+    }else{t.select();done();}
+  }catch(_){t.select();}
+}
+
+function openFeedbackModal(){
+  const m=document.getElementById('fb-modal');if(!m)return;
+  const t=document.getElementById('fb-text');
+  fbErr('');fbSetKind('other');
+  if(t)t.value='';
+  const em=document.getElementById('fb-email');if(em)em.value='';
+  const ctx=document.getElementById('fb-ctx');if(ctx)ctx.textContent=fbContext();
+  fbCount();
+  const btn=document.getElementById('fb-send');
+  if(btn){btn.disabled=false;btn.textContent='Send feedback';}
+  fbSending=false;
+  m.classList.add('show');
+  setTimeout(()=>{if(t)t.focus();},60);
+  track('feedback_open',{panel:(function(){try{return currentPanel;}catch(_){return null;}})()});
+}
+function closeFeedbackModal(){
+  const m=document.getElementById('fb-modal');if(m)m.classList.remove('show');
+}
+
+async function submitFeedback(){
+  if(fbSending)return;
+  const t=document.getElementById('fb-text'),btn=document.getElementById('fb-send');
+  const msg=(t&&t.value||'').trim();
+  if(msg.length<2){fbErr('Add a little more detail before sending.');if(t)t.focus();return;}
+
+  fbSending=true;
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  fbErr('');
+
+  const payload={
+    message:msg, kind:fbKind,
+    email:(document.getElementById('fb-email')||{}).value||'',
+    page:fbContext(),
+    app:(navigator.userAgent||'').slice(0,40),
+    anon_id:anonId()
+  };
+
+  let r=null,netErr=false;
+  try{
+    r=await fetch(apiBase()+'/api/feedback',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  }catch(_){netErr=true;}
+
+  if(btn){btn.disabled=false;btn.textContent='Send feedback';}
+  fbSending=false;
+
+  if(netErr){
+    fbErr('<b>Not sent.</b> Your device could not reach the server — check your connection. Your message is still here.',true);
+    return;
+  }
+  if(!r.ok){
+    /* The server tells us WHY, and the user gets that reason rather than a
+       generic failure. A 503 is not the user's fault and should not read as
+       though retrying will help. */
+    let why='';
+    try{const j=await r.json();why=j&&j.error||'';}catch(_){}
+    const notConfigured=r.status===503;
+    fbErr('<b>Not sent.</b> '+(why||'The server could not save this.')+
+      (notConfigured?' Nothing you did — feedback storage is not switched on yet.':' You can try again.')+
+      ' Your message is still here.',true);
+    track('feedback_fail',{status:r.status});
+    return;
+  }
+
+  track('feedback_sent',{kind:fbKind,len:msg.length});
+  closeFeedbackModal();
+  toast('Thanks — your feedback was sent');
+}
 async function saveMid(){
   const inp=document.getElementById('mid-input');
   const err=document.getElementById('mid-err');
