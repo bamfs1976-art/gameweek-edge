@@ -123,7 +123,8 @@ Match Centre
 
 Studio  (owner only — hidden unless the signed-in email is on the owner allowlist)
 ├── Social Studio        (owner) Share-ready PNG cards from the live model
-└── Analytics            (owner) External visitors and area usage
+├── Analytics            (owner) External visitors and area usage
+└── Feedback             (owner) What people sent from the feedback button
 ```
 
 Two panels sit outside the areas and are reachable by hash only: **Glossary**

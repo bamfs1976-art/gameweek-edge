@@ -679,6 +679,29 @@ html.offline .net-banner{transform:translateY(0)}
   border:1px solid var(--red);background:rgba(220,60,60,.09);line-height:1.45}
 .fb-retry{display:inline-block;margin-top:7px;font-weight:800;text-decoration:underline;
   cursor:pointer;background:none;border:0;color:var(--red);font-size:.78rem;padding:0}
+/* Feedback inbox (owner panel) */
+.fb-kindseg{flex-wrap:wrap}
+.fb-kindseg .seg-b b{font-weight:800;opacity:.75;margin-left:2px}
+.fbi-list{display:flex;flex-direction:column;gap:10px}
+.fbi{border:1px solid var(--border-2);border-radius:var(--r-md);padding:12px 14px;background:var(--surface-2)}
+.fbi-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:7px}
+.fbi-kind{font-size:.68rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 8px;border-radius:999px;border:1px solid var(--border-2);color:var(--text-2)}
+.fbi-kind.k-bug{color:var(--red);border-color:var(--red)}
+.fbi-kind.k-data{color:var(--amber);border-color:var(--amber)}
+.fbi-kind.k-idea{color:var(--blue);border-color:var(--blue)}
+.fbi-kind.k-praise{color:var(--green);border-color:var(--green)}
+.fbi-panel{font-size:.7rem;font-weight:700;color:var(--text-3)}
+.fbi-when{margin-left:auto;font-size:.7rem;color:var(--text-3)}
+/* pre-wrap: people write in paragraphs and flattening them loses the sense */
+.fbi-msg{font-size:.86rem;line-height:1.5;color:var(--text-1);white-space:pre-wrap;
+  overflow-wrap:anywhere;margin:0}
+.fbi-foot{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:.72rem}
+.fbi-mail{font-weight:700;color:var(--green)}
+.fbi-mail.none{color:var(--text-3);font-weight:600}
+.fbi-mail.bad{color:var(--amber);font-weight:700}
+.fbi-app{margin-left:auto;color:var(--text-3);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;max-width:45%}
 .modal-row .btn{flex:1;justify-content:center}
 .modal-hint{font-size:.72rem;color:var(--text-3);margin-top:14px;line-height:1.5}
 
@@ -3545,7 +3568,8 @@ const NAV = [
     id:'studio', label:'Studio', icon:'grid', tier:'owner',
     panels:[
       {id:'social', label:'Social Studio', icon:'grid', tier:'owner'},
-      {id:'analytics', label:'Analytics', icon:'pulse', tier:'owner'}
+      {id:'analytics', label:'Analytics', icon:'pulse', tier:'owner'},
+      {id:'feedback', label:'Feedback', icon:'pulse', tier:'owner'}
     ]
   }
 ];
@@ -3902,6 +3926,10 @@ const PANEL_CONTENT = {
   },
   analytics:{
     desc:'Who is actually using the app: daily external visitors with bots and your own devices removed, which areas they reach, and how many come back.',
+    layout:'standard'
+  },
+  feedback:{
+    desc:'Everything people have written from the in-app feedback button, grouped by kind and by the panel they were on, newest first.',
     layout:'standard'
   },
   myweek:{
@@ -6944,6 +6972,122 @@ function socCustomDownload(share){
     setTimeout(()=>URL.revokeObjectURL(a.href),5000);
     toast('Card downloaded');
   },'image/png');
+}
+
+/* ── Feedback inbox (owner) ──────────────────────────────────
+   Everything submitted from the feedback button, collated server-side by
+   /api/feedback-inbox so the panel cannot drift from the numbers.
+
+   The states below are kept apart on purpose. "Nobody has written in",
+   "the table does not exist yet" and "this account is not the owner" all
+   produce an empty screen, and showing the same empty screen for all three
+   is how a broken inbox gets mistaken for a quiet one. */
+let FEEDBACK_DAYS=90, FEEDBACK_KIND='all';
+const FB_KIND_LABEL={bug:'Bug',data:'Wrong number',idea:'Idea',praise:'Praise',other:'Other'};
+
+function fbWhen(ts){
+  const t=Date.parse(ts);if(!isFinite(t))return esc(String(ts||''));
+  const mins=Math.floor((Date.now()-t)/60000);
+  if(mins<60)return mins<=1?'just now':mins+' min ago';
+  const hrs=Math.floor(mins/60); if(hrs<24)return hrs+'h ago';
+  const days=Math.floor(hrs/24); if(days<8)return days+'d ago';
+  return esc(String(ts).slice(0,10));
+}
+function fbItemCard(it){
+  const mail=it.email
+    ? '<a class="fbi-mail" href="mailto:'+esc(it.email)+'">'+esc(it.email)+'</a>'
+    : (it.emailUnusable
+      ? '<span class="fbi-mail bad" title="They typed an address that cannot be emailed">unusable address</span>'
+      : '<span class="fbi-mail none">no reply address</span>');
+  return '<div class="fbi">'+
+    '<div class="fbi-top">'+
+      '<span class="fbi-kind k-'+esc(it.kind)+'">'+esc(FB_KIND_LABEL[it.kind]||it.kind)+'</span>'+
+      (it.panel?'<span class="fbi-panel">'+esc(it.panel)+'</span>':'')+
+      '<span class="fbi-when">'+fbWhen(it.ts)+'</span>'+
+    '</div>'+
+    /* The message is the only free text in this app that a stranger wrote.
+       esc() is not optional here and there is a test that says so. */
+    '<p class="fbi-msg">'+esc(it.message)+'</p>'+
+    '<div class="fbi-foot">'+mail+(it.app?'<span class="fbi-app">'+esc(it.app)+'</span>':'')+'</div>'+
+  '</div>';
+}
+
+async function hydrateFeedback(host){
+  const seg=[[7,'7 days'],[30,'30 days'],[90,'90 days'],[365,'A year']].map(o=>
+    '<button class="seg-b'+(FEEDBACK_DAYS===o[0]?' on':'')+'" data-d="'+o[0]+'">'+o[1]+'</button>').join('');
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' What people have told you</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Everything sent from the feedback button, newest first. Grouped by kind and by the panel they were on — nothing is scored or ranked, because a count is all this data honestly supports.</p>'+
+    '<div class="seg" id="fb-range">'+seg+'</div></div>'+
+    '<div id="fb-out">'+skel(4)+'</div>';
+  host.querySelector('#fb-range').addEventListener('click',ev=>{
+    const btn=ev.target.closest('.seg-b');if(!btn)return;
+    FEEDBACK_DAYS=+btn.dataset.d;FEEDBACK_KIND='all';renderPage('feedback');});
+
+  const out=host.querySelector('#fb-out');
+  const tok=aiToken();
+  if(!tok){out.innerHTML=stateBox('users','Sign in required','The inbox reads your feedback table, so it needs a signed-in owner session.');return;}
+  let d;
+  try{
+    const r=await fetch(apiBase()+'/api/feedback-inbox?days='+FEEDBACK_DAYS,
+      {headers:{Authorization:'Bearer '+tok}});
+    if(r.status===401){out.innerHTML=stateBox('users','Sign in required','That session is not valid any more. Sign in again.');return;}
+    if(r.status===403){out.innerHTML=stateBox('users','Owner only','This account is not on the owner allowlist.');return;}
+    if(r.status===503){
+      let why='';try{why=(await r.json()).error||'';}catch(_){}
+      out.innerHTML=stateBox('pulse','Inbox not set up',why||'Feedback storage is not configured on the server.');return;}
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    d=await r.json();
+  }catch(e){out.innerHTML=stateBox('pulse','Inbox unavailable',String(e.message||e));return;}
+
+  const t=d.totals||{};
+  if(!t.all){
+    /* Reached the table, read it, and it was empty. Distinct from every
+       failure above — this one is good news, not a broken panel. */
+    out.innerHTML=stateBox('pulse','No feedback yet',
+      'Nobody has used the feedback button in the last '+d.windowDays+' days. The inbox is working — there is just nothing in it.');
+    return;
+  }
+
+  const kpis='<div class="grid g-sb mb-20">'+
+    kpi('Messages',t.all,'in the last '+d.windowDays+' days','var(--blue)')+
+    kpi('Last 7 days',t.last7,t.last7?'still coming in':'nothing this week','var(--'+(t.last7?'green':'amber')+')')+
+    kpi('Awaiting a reply',t.awaitingReply,t.awaitingReply?'left an email address':'nobody asked for one','var(--green)')+
+    kpi('From panels',t.distinctPanels,'distinct panels','var(--amber)')+
+  '</div>';
+
+  const kindRows=(d.byKind||[]).map(k=>
+    '<button class="seg-b'+(FEEDBACK_KIND===k.kind?' on':'')+'" data-k="'+esc(k.kind)+'">'+
+    esc(FB_KIND_LABEL[k.kind]||k.kind)+' <b>'+k.n+'</b></button>').join('');
+  const kinds='<div class="card mb-20"><div class="card-title">By kind</div>'+
+    '<div class="seg fb-kindseg" id="fb-kindseg">'+
+    '<button class="seg-b'+(FEEDBACK_KIND==='all'?' on':'')+'" data-k="all">All <b>'+t.all+'</b></button>'+
+    kindRows+'</div></div>';
+
+  const panelRows=(d.byPanel||[]).slice(0,12).map(p=>'<tr><td>'+esc(p.panel)+'</td>'+
+    '<td class="num">'+p.n+'</td></tr>').join('');
+  const panels='<div class="card mb-20"><div class="card-title">Where they were</div><div class="pl-scroll">'+
+    '<table class="ptable"><thead><tr><th>Panel</th><th class="num">Messages</th></tr></thead>'+
+    '<tbody>'+panelRows+'</tbody></table></div>'+
+    '<p class="dl-sub" style="margin-top:8px">The panel open when they hit send — a hint about where they were, not necessarily what they are writing about.</p></div>';
+
+  const unusable=t.unusableEmail
+    ? '<p class="dl-sub" style="margin-bottom:10px">'+t.unusableEmail+' '+
+      (t.unusableEmail===1?'person':'people')+' typed something in the email box that cannot be emailed, so '+
+      (t.unusableEmail===1?'that reply':'those replies')+' cannot be sent.</p>' : '';
+
+  const shown=(d.items||[]).filter(it=>FEEDBACK_KIND==='all'||it.kind===FEEDBACK_KIND);
+  const list='<div class="card"><div class="card-title">Messages</div>'+unusable+
+    (d.truncated?'<p class="dl-sub" style="color:var(--amber);margin-bottom:10px">More than '+
+      (d.items||[]).length+' messages matched — this is the newest page, not all of them.</p>':'')+
+    '<div class="fbi-list">'+(shown.length?shown.map(fbItemCard).join(''):
+      '<p class="dl-sub">No '+esc(FB_KIND_LABEL[FEEDBACK_KIND]||FEEDBACK_KIND).toLowerCase()+' messages in this window.</p>')+
+    '</div></div>';
+
+  out.innerHTML=kpis+kinds+panels+list;
+  const ks=out.querySelector('#fb-kindseg');
+  if(ks)ks.addEventListener('click',ev=>{
+    const b=ev.target.closest('.seg-b');if(!b)return;
+    FEEDBACK_KIND=b.dataset.k;renderPage('feedback');});
 }
 
 /* ── Analytics (owner) ───────────────────────────────────────
@@ -17253,6 +17397,7 @@ const WIRED={
   blog:hydrateBlog,
   social:hydrateSocial,
   analytics:hydrateAnalytics,
+  feedback:hydrateFeedback,
   gwhistory:hydrateGwhistory,
   gwreport:hydrateGwreport,
   archive:hydrateArchive,

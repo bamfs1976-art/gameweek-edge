@@ -142,6 +142,14 @@
   status = 200
   force = true
 
+# Owner-only feedback inbox. Separate function from the public write above:
+# one handler doing both means a single wrong branch exposes every message.
+[[redirects]]
+  from = "/api/feedback-inbox"
+  to = "/.netlify/functions/feedback-inbox"
+  status = 200
+  force = true
+
 # User feedback. Unlike /api/track this one reports its failures rather than
 # no-opping: somebody is watching for confirmation, so a silent 204 would tell
 # them a message was received when it was dropped. See netlify/functions/feedback.js.

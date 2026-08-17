@@ -42,7 +42,7 @@ const AREA = {
   planner: ['fixtures', 'seasonsim', 'watchlist', 'alerts'],
   rivals: ['leagues', 'rivals', 'eo'],
   'match centre': ['results', 'titlerace', 'dossier', 'archive'],
-  studio: ['social', 'analytics']
+  studio: ['social', 'analytics', 'feedback']
 };
 const AREA_OF = {};
 for (const a of Object.keys(AREA)) for (const p of AREA[a]) AREA_OF[p] = a;
@@ -52,7 +52,7 @@ const BOT = /bot|crawl|spider|headless|preview|slurp|python|curl|monitor|lightho
    owner-tier panels in the app. `design` is NOT one of them despite living
    outside the nav: it is free, so treating it as an owner signal would drop a
    real visitor who deep-linked to it. */
-const OWNER_PANELS = new Set(['social', 'analytics']);
+const OWNER_PANELS = new Set(['social', 'analytics', 'feedback']);
 
 const json = (code, body) => ({
   statusCode: code,

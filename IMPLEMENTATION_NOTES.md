@@ -31,16 +31,25 @@ why, and what the operator must still do by hand.
 
 ## Deferred (documented, not attempted)
 
-- **An in-app inbox for feedback.** Submissions land in
-  `public.gwedge_feedback` and are read from the Supabase dashboard. An owner
-  panel would follow the pattern `netlify/functions/analytics.js` already
-  sets (verify the caller's Supabase token against the owner allowlist before
-  answering), but it is a separate change and was not attempted here.
+- ~~An in-app inbox for feedback.~~ **Done** — Studio → Feedback, backed by
+  `/api/feedback-inbox`. Owner-gated server-side with the same token-verify +
+  allowlist gate as `/api/analytics`; `window.GE_OWNER` only hides the panel.
+  The inbox returns the message, kind, panel, client hint and reply-to email,
+  and deliberately withholds `anon_id` and the raw user agent so it cannot be
+  used to follow one person's session around the app.
 - **Server-side rate limiting on `/api/feedback`.** Netlify Functions are
   stateless, so the current protection is size caps and a client-side guard
   against double-sends — neither of which stops a determined scripted flood.
   Worth adding a per-IP or per-anon-id counter if it is ever abused; stated
   plainly rather than implied to be handled.
+- **Replying from inside the app.** The inbox links a reply-to address as a
+  `mailto:`, which hands off to the mail client. Sending from the app would
+  need an email provider and an API key, which this project does not have and
+  did not add.
+- **Marking feedback as read or actioned.** The table is insert-only and the
+  panel is a view over it; there is no state to track triage. Adding one means
+  a writable column and an authenticated write path, which is a larger change
+  than collating what is already there.
 
 - **Git-history purge of the leaked key.** Rewriting history
   (`git filter-repo` / BFG) invalidates every clone and needs a

@@ -237,5 +237,172 @@ console.log('• wiring, routing and disclosure');
   ok(/only if you want a reply/.test(html), 'and that the email is optional and why');
 }
 
+/* ══ THE INBOX (netlify/functions/feedback-inbox.js) ══════════════════════
+   Reading feedback is a different risk from writing it. The write endpoint is
+   public and holds nothing; the inbox returns everything anybody ever typed,
+   including whatever they chose to say about themselves. So the gate is the
+   thing under test here, and it is tested from the outside — no token, a
+   token Supabase rejects, and a valid token whose email is not the owner. */
+const inbox = require(join(ROOT, 'netlify/functions/feedback-inbox.js'));
+const { collate } = inbox._internal;
+
+const withEnv = async (fn, url = 'https://x.test', key = 'k') => {
+  const s = { u: process.env.SUPABASE_URL, k: process.env.SUPABASE_SERVICE_ROLE_KEY };
+  process.env.SUPABASE_URL = url; process.env.SUPABASE_SERVICE_ROLE_KEY = key;
+  try { return await fn(); } finally {
+    if (s.u === undefined) delete process.env.SUPABASE_URL; else process.env.SUPABASE_URL = s.u;
+    if (s.k === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY; else process.env.SUPABASE_SERVICE_ROLE_KEY = s.k;
+  }
+};
+const get = (headers = {}, qs = {}) =>
+  inbox.handler({ httpMethod: 'GET', headers, queryStringParameters: qs });
+
+/* The owner allowlist ships a default hash; this is the email behind it. */
+const OWNER = 'bamfs1976@gmail.com';
+
+console.log('• the inbox is owner-gated, and the gate is server-side');
+{
+  const real = global.fetch;
+  const asUser = (email) => async (u) => {
+    if (String(u).includes('/auth/v1/user')) {
+      return email ? { ok: true, json: async () => ({ email }) } : { ok: false, status: 401 };
+    }
+    return { ok: true, json: async () => [] };
+  };
+
+  await withEnv(async () => {
+    global.fetch = asUser(OWNER);
+    let r = await get({});
+    ok(r.statusCode === 401, `no token is refused, got ${r.statusCode}`);
+
+    global.fetch = asUser(null);           /* Supabase rejects the token */
+    r = await get({ authorization: 'Bearer forged' });
+    ok(r.statusCode === 401, `a token Supabase rejects is refused, got ${r.statusCode}`);
+
+    global.fetch = asUser('someone.else@example.com');
+    r = await get({ authorization: 'Bearer valid-but-not-owner' });
+    ok(r.statusCode === 403, `a valid NON-owner session is refused, got ${r.statusCode}`);
+    ok(!/message/i.test(r.body), 'and no feedback is in that response');
+
+    global.fetch = asUser(OWNER);
+    r = await get({ authorization: 'Bearer valid-owner' });
+    ok(r.statusCode === 200, `the owner is allowed, got ${r.statusCode}`);
+  });
+  global.fetch = real;
+}
+
+console.log('• a missing table reads as "not set up", not as "no feedback"');
+{
+  const real = global.fetch;
+  await withEnv(async () => {
+    global.fetch = async (u) => String(u).includes('/auth/v1/user')
+      ? { ok: true, json: async () => ({ email: OWNER }) }
+      : { ok: false, status: 404 };
+    const r = await get({ authorization: 'Bearer owner' });
+    ok(r.statusCode === 503, `a missing table returns 503, got ${r.statusCode}`);
+    ok(/gwedge_feedback\.sql/.test(r.body), 'and names the SQL file that fixes it');
+  });
+  global.fetch = real;
+}
+
+console.log('• an unconfigured server does not look like an empty inbox');
+{
+  const s = { u: process.env.SUPABASE_URL, k: process.env.SUPABASE_SERVICE_ROLE_KEY };
+  delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const r = await get({ authorization: 'Bearer owner' });
+  if (s.u !== undefined) process.env.SUPABASE_URL = s.u;
+  if (s.k !== undefined) process.env.SUPABASE_SERVICE_ROLE_KEY = s.k;
+  ok(r.statusCode === 503, `unconfigured returns 503, got ${r.statusCode}`);
+  ok(r.statusCode !== 200, 'never a 200 with an empty list, which would read as "nobody wrote in"');
+}
+
+console.log('• what the inbox returns, and what it withholds');
+{
+  const real = global.fetch;
+  await withEnv(async () => {
+    global.fetch = async (u) => String(u).includes('/auth/v1/user')
+      ? { ok: true, json: async () => ({ email: OWNER }) }
+      : { ok: true, json: async () => [{ message: 'the grid is empty', kind: 'bug',
+        email: 'a@b.co', email_given_but_unusable: false, page: 'Panel: fixtures',
+        app: 'Mozilla/5.0', ts: new Date().toISOString(), anon_id: 'SECRET_ANON', ua: 'SECRET_UA' }] };
+    const r = await get({ authorization: 'Bearer owner' });
+    const d = JSON.parse(r.body);
+    ok(d.items[0].message === 'the grid is empty', 'the message is returned — that is the point');
+    ok(d.items[0].email === 'a@b.co', 'the reply-to address is returned, so a reply can be sent');
+    ok(d.items[0].panel === 'fixtures', 'the "Panel: " prefix is stripped for grouping');
+    ok(!r.body.includes('SECRET_ANON'), 'anon_id is withheld — the inbox is not a session tracker');
+    ok(!r.body.includes('SECRET_UA'), 'the raw user agent is withheld');
+  });
+  global.fetch = real;
+}
+
+console.log('• the collation is arithmetic, not judgement');
+{
+  const now = '2026-08-20T12:00:00.000Z';
+  const at = (d) => new Date(Date.parse(now) - d * 86400e3).toISOString();
+  const rows = [
+    { message: 'a', kind: 'bug', page: 'Panel: fixtures', ts: at(1) },
+    { message: 'b', kind: 'bug', page: 'Panel: fixtures', ts: at(2), email: 'x@y.co' },
+    { message: 'c', kind: 'idea', page: 'Panel: squad', ts: at(3) },
+    { message: 'd', kind: 'nonsense', page: '', ts: at(30) },
+    { message: 'e', kind: 'praise', page: 'Panel: squad', ts: at(40), email_given_but_unusable: true }
+  ];
+  const c = collate(rows, 90, now);
+  ok(c.totals.all === 5, 'every row is counted');
+  ok(c.totals.last7 === 3, `three inside seven days, got ${c.totals.last7}`);
+  ok(c.totals.awaitingReply === 1, 'one left a usable address');
+  ok(c.totals.unusableEmail === 1, 'one left an unusable one, counted separately');
+  ok(c.byKind.find((k) => k.kind === 'bug').n === 2, 'bugs are grouped');
+  ok(c.byKind.find((k) => k.kind === 'other').n === 1, 'an unknown kind falls back to other');
+  ok(!c.byKind.some((k) => k.n === 0), 'kinds with no messages are not listed as zero rows');
+  ok(c.byPanel[0].panel === 'fixtures' || c.byPanel[0].panel === 'squad', 'panels are ranked by volume');
+  ok(c.byPanel.find((p) => p.panel === 'unknown').n === 1, 'a missing panel is named, not dropped');
+  ok(c.totals.distinctPanels === 3, `three distinct panels, got ${c.totals.distinctPanels}`);
+  ok(c.byDay.length === 5 && c.byDay[0].date > c.byDay[4].date, 'days are newest first');
+  ok(!('score' in c) && !('sentiment' in c) && !('priority' in c),
+    'nothing is scored or ranked — a count is all this data supports');
+  ok(collate([], 90, now).totals.all === 0, 'an empty window collates to zero rather than throwing');
+}
+
+console.log('• the panel keeps its empty states apart');
+{
+  const fnSrc = html.slice(html.indexOf('async function hydrateFeedback'),
+    html.indexOf('/* ── Analytics (owner)'));
+  ok(/status===401/.test(fnSrc), 'a dead session is handled');
+  ok(/status===403/.test(fnSrc) && /Owner only/.test(fnSrc), 'a non-owner is told so');
+  ok(/status===503/.test(fnSrc) && /Inbox not set up/.test(fnSrc), 'an unconfigured server is told apart');
+  ok(/No feedback yet/.test(fnSrc), 'and a genuinely empty inbox says so');
+  ok(/The inbox is working/.test(fnSrc), 'and says the panel is working, so empty is not read as broken');
+  /* the four must be different strings, or the distinction is cosmetic */
+  const states = ['Sign in required', 'Owner only', 'Inbox not set up', 'No feedback yet'];
+  ok(new Set(states.filter((s) => fnSrc.includes(s))).size === 4, 'all four states are distinct');
+  ok(/fbItemCard/.test(fnSrc), 'messages are rendered');
+  ok(/truncated/.test(fnSrc), 'a truncated page says it is truncated');
+}
+
+console.log('• a stranger wrote the message, so it must be escaped');
+{
+  const card = html.slice(html.indexOf('function fbItemCard'), html.indexOf('async function hydrateFeedback'));
+  ok(/esc\(it\.message\)/.test(card), 'the message is escaped before it reaches innerHTML');
+  ok(/esc\(it\.email\)/.test(card), 'so is the email');
+  ok(/esc\(it\.app\)/.test(card), 'and the client hint');
+  ok(!/\+it\.message/.test(card) && !/\$\{it\.message\}/.test(card),
+    'the raw message is never concatenated in');
+  ok(/esc\(it\.panel\)/.test(card), 'and the panel name');
+}
+
+console.log('• the panel is registered as owner-only and routed');
+{
+  ok(/\{id:'feedback', label:'Feedback', icon:'[a-z]+', tier:'owner'\}/.test(html),
+    'the panel is owner tier in NAV');
+  ok(/feedback:hydrateFeedback/.test(html), 'and wired to its renderer');
+  ok(/from = "\/api\/feedback-inbox"/.test(toml), 'the inbox route exists');
+  const an = readFileSync(join(ROOT, 'netlify/functions/analytics.js'), 'utf8');
+  ok(/studio: \['social', 'analytics', 'feedback'\]/.test(an),
+    'analytics knows the panel exists, so its area map does not drift');
+  ok(/OWNER_PANELS = new Set\(\['social', 'analytics', 'feedback'\]\)/.test(an),
+    'and opening it counts as proof of the owner, like the other owner panels');
+}
+
 console.log(`\n${pass} passed, ${fails.length} failed`);
 if (fails.length) process.exit(1);
