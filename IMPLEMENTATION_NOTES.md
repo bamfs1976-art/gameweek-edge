@@ -17,11 +17,30 @@ why, and what the operator must still do by hand.
    `supabase/gwedge_ai_usage.sql` (AI quota) and
    `supabase/gwedge_events.sql` (analytics). Both are idempotent and
    RLS-locked to the service role.
+2b. **Run `supabase/gwedge_feedback.sql`** — the in-app feedback button
+   writes here. Until it exists the button is live but every send fails:
+   `/api/feedback` returns 503 and the app tells the user their message was
+   NOT saved, keeps their text on screen and offers to copy it out. That is
+   deliberate — a feedback form that silently swallows messages is worse
+   than none — but it does mean the feature is inert until the SQL is run.
+   Read the feedback from the Supabase dashboard; there is no in-app inbox
+   yet (see Deferred).
 3. **Set `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`** on Netlify if not
    already set — `/api/ai` now requires them to authenticate callers (it
    returns a 503 setup note until they exist).
 
 ## Deferred (documented, not attempted)
+
+- **An in-app inbox for feedback.** Submissions land in
+  `public.gwedge_feedback` and are read from the Supabase dashboard. An owner
+  panel would follow the pattern `netlify/functions/analytics.js` already
+  sets (verify the caller's Supabase token against the owner allowlist before
+  answering), but it is a separate change and was not attempted here.
+- **Server-side rate limiting on `/api/feedback`.** Netlify Functions are
+  stateless, so the current protection is size caps and a client-side guard
+  against double-sends — neither of which stops a determined scripted flood.
+  Worth adding a per-IP or per-anon-id counter if it is ever abused; stated
+  plainly rather than implied to be handled.
 
 - **Git-history purge of the leaked key.** Rewriting history
   (`git filter-repo` / BFG) invalidates every clone and needs a

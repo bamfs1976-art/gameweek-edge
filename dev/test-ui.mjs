@@ -298,6 +298,61 @@ section('panels render with data behind them, rather than their error state');
   await dataPage.close();
 }
 
+/* Feedback: the one flow where the app could lie to a user. The vm test in
+   dev/test-feedback.mjs stubs the DOM, so it proves the control flow but not
+   that the button is reachable or the dialog opens. This does that part in a
+   real browser, and then makes the send FAIL to check the app says so. */
+section('feedback: the button opens, and a failed send is never called success');
+{
+  const fp = await browser.newPage();
+  const fErrors = [];
+  fp.on('pageerror', (e) => fErrors.push(e.message));
+  await fp.goto(`http://localhost:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await fp.waitForTimeout(900);
+
+  const opened = await fp.evaluate(() => {
+    const b = document.getElementById('feedback-btn');
+    if (!b) return { err: 'no #feedback-btn' };
+    b.click();
+    const m = document.getElementById('fb-modal');
+    return { shown: !!m && m.classList.contains('show'),
+      label: b.getAttribute('aria-label') || '',
+      kinds: [...document.querySelectorAll('#fb-kinds .fb-kind')].length };
+  });
+  ok(!opened.err, 'the feedback button exists (' + (opened.err || '') + ')');
+  ok(opened.shown === true, 'clicking it opens the dialog');
+  ok(opened.kinds >= 3, 'the dialog offers feedback kinds (' + opened.kinds + ')');
+  ok(/feedback/i.test(opened.label), 'the button is labelled for screen readers');
+
+  /* Force the send to fail the way an unconfigured server would. */
+  const failed = await fp.evaluate(async () => {
+    window.fetch = async () => ({ ok: false, status: 503,
+      json: async () => ({ error: 'Feedback storage is not configured on the server, so this was not saved.' }) });
+    let toasted = null; window.toast = (m) => { toasted = m; };
+    document.getElementById('fb-text').value = 'the fixture grid is empty for me';
+    await submitFeedback();
+    return {
+      toasted,
+      err: (document.getElementById('fb-err').textContent || ''),
+      kept: document.getElementById('fb-text').value,
+      stillOpen: document.getElementById('fb-modal').classList.contains('show')
+    };
+  });
+  ok(failed.toasted === null, 'a failed send shows NO success toast');
+  ok(/not sent/i.test(failed.err), 'it says plainly that it was not sent');
+  ok(failed.kept === 'the fixture grid is empty for me', "the user's typed message is still in the box");
+  ok(failed.stillOpen === true, 'and the dialog stays open so they can retry or copy');
+
+  /* Escape must dismiss an aria-modal dialog. */
+  const esc = await fp.evaluate(() => {
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    return document.getElementById('fb-modal').classList.contains('show');
+  });
+  ok(esc === false, 'Escape closes the dialog');
+  ok(fErrors.length === 0, 'the feedback flow threw nothing (' + fErrors.slice(0, 2).join(' | ') + ')');
+  await fp.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 

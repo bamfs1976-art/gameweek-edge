@@ -661,6 +661,24 @@ html.offline .net-banner{transform:translateY(0)}
 .modal-in:focus{outline:none;border-color:var(--green-bright);background:var(--surface)}
 .modal-err{color:var(--red);font-size:.78rem;margin-top:8px;min-height:1.1em}
 .modal-row{display:flex;gap:10px;margin-top:8px}
+/* Feedback modal. Reuses .modal-* for the shell; only the parts the other
+   modals have no equivalent of are defined here. */
+.fb-kinds{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.fb-kind{font:inherit;font-size:.74rem;font-weight:700;padding:6px 11px;cursor:pointer;
+  border:1.5px solid var(--border-2);border-radius:999px;background:transparent;color:var(--text-2)}
+.fb-kind:hover{border-color:var(--green-bright);color:var(--text-1)}
+.fb-kind[aria-checked="true"]{background:var(--green);border-color:var(--green);color:#fff}
+.fb-text{min-height:104px;resize:vertical;font:inherit;font-size:.86rem;line-height:1.5}
+.fb-email{margin-top:10px}
+.fb-meta{display:flex;align-items:center;gap:10px;margin-top:6px;
+  font-size:.71rem;color:var(--text-3)}
+.fb-ctx{margin-left:auto;text-align:right;opacity:.85}
+.fb-count.over{color:var(--red);font-weight:700}
+/* A failure here must not read like a toast that will disappear. */
+.modal-err.fb-fail{padding:9px 11px;margin-top:10px;border-radius:var(--r-sm);
+  border:1px solid var(--red);background:rgba(220,60,60,.09);line-height:1.45}
+.fb-retry{display:inline-block;margin-top:7px;font-weight:800;text-decoration:underline;
+  cursor:pointer;background:none;border:0;color:var(--red);font-size:.78rem;padding:0}
 .modal-row .btn{flex:1;justify-content:center}
 .modal-hint{font-size:.72rem;color:var(--text-3);margin-top:14px;line-height:1.5}
 
@@ -2262,6 +2280,11 @@ body{font-size:14px;line-height:1.35}
         </button>
         <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Switch between the simple view and every tool" title="Simple / Everything">Simple</button>
         <button class="btn btn-ghost btn-icon" id="help-btn" aria-label="Help, tour and glossary" title="Help &amp; glossary">?</button>
+        <button class="btn btn-ghost btn-icon" id="feedback-btn" aria-label="Send feedback about this app" title="Send feedback">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/>
+          </svg>
+        </button>
         <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
@@ -2364,6 +2387,37 @@ body{font-size:14px;line-height:1.35}
       <button class="btn btn-cta" id="mid-save">Link team</button>
     </div>
     <div class="modal-hint" id="mid-hint">Find it at fantasy.premierleague.com → Points → the number after <b>/entry/</b> in the address bar.</div>
+  </div>
+</div>
+
+<!-- Feedback modal. The send button reports honest failure and keeps the
+     user's text on screen — see submitFeedback(). -->
+<div class="modal" id="fb-modal" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+  <div class="modal-bg" data-fb-close></div>
+  <div class="modal-card">
+    <h3 id="fb-title">Send feedback</h3>
+    <p id="fb-lead">Found a bug, spotted a number that looks wrong, or want something added? This goes straight to the person who builds it.</p>
+    <div class="fb-kinds" id="fb-kinds" role="radiogroup" aria-label="What kind of feedback is this?">
+      <button type="button" class="fb-kind" data-kind="bug" role="radio" aria-checked="false">Bug</button>
+      <button type="button" class="fb-kind" data-kind="idea" role="radio" aria-checked="false">Idea</button>
+      <button type="button" class="fb-kind" data-kind="data" role="radio" aria-checked="false">Wrong number</button>
+      <button type="button" class="fb-kind" data-kind="praise" role="radio" aria-checked="false">Praise</button>
+      <button type="button" class="fb-kind" data-kind="other" role="radio" aria-checked="true">Other</button>
+    </div>
+    <textarea class="modal-in fb-text" id="fb-text" rows="5" maxlength="4000"
+      placeholder="What happened, and what did you expect instead?" aria-label="Your feedback"></textarea>
+    <div class="fb-meta">
+      <span id="fb-count" class="fb-count" aria-live="polite">0 / 4000</span>
+      <span class="fb-ctx" id="fb-ctx"></span>
+    </div>
+    <input class="modal-in fb-email" id="fb-email" type="email" autocomplete="email"
+      placeholder="Email (optional, only if you want a reply)" aria-label="Your email, optional">
+    <div class="modal-err" id="fb-err" role="alert"></div>
+    <div class="modal-row">
+      <button class="btn btn-ghost" id="fb-cancel" data-fb-close>Cancel</button>
+      <button class="btn btn-cta" id="fb-send">Send feedback</button>
+    </div>
+    <div class="modal-hint" id="fb-hint">We attach the panel you were on and your browser version so a bug can be traced. Nothing else — no name, no team, no email unless you type one.</div>
   </div>
 </div>
 
@@ -3757,6 +3811,27 @@ async function hydrateFplBasics(host){
 }
 function wireUXButtons(){
   const h=document.getElementById('help-btn');if(h&&!h._w){h._w=1;h.addEventListener('click',startTour);}
+  const fb=document.getElementById('feedback-btn');
+  if(fb&&!fb._w){fb._w=1;fb.addEventListener('click',openFeedbackModal);}
+  const fbs=document.getElementById('fb-send');
+  if(fbs&&!fbs._w){fbs._w=1;fbs.addEventListener('click',submitFeedback);}
+  const fbt=document.getElementById('fb-text');
+  if(fbt&&!fbt._w){fbt._w=1;fbt.addEventListener('input',fbCount);
+    /* Ctrl/Cmd+Enter sends, the convention for a textarea in a dialog. */
+    fbt.addEventListener('keydown',function(e){
+      if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){e.preventDefault();submitFeedback();}});}
+  const fbk=document.getElementById('fb-kinds');
+  if(fbk&&!fbk._w){fbk._w=1;fbk.addEventListener('click',function(e){
+    const b=e.target.closest('.fb-kind');if(b)fbSetKind(b.dataset.kind);});}
+  document.querySelectorAll('[data-fb-close]').forEach(function(el){
+    if(el._w)return;el._w=1;el.addEventListener('click',closeFeedbackModal);});
+  /* Escape closes it. The app has no global handler for the other modals and
+     this does not add one — a dialog marked aria-modal that a keyboard user
+     cannot dismiss is a defect, but fixing the other four is not this change. */
+  if(!document._fbEsc){document._fbEsc=1;document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    const m=document.getElementById('fb-modal');
+    if(m&&m.classList.contains('show'))closeFeedbackModal();});}
   const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent=densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
@@ -17638,6 +17713,123 @@ function openMidModal(){
   setTimeout(()=>inp.focus(),60);
 }
 function closeMidModal(){document.getElementById('mid-modal').classList.remove('show');}
+
+/* ── FEEDBACK ──────────────────────────────────────────────
+   The rule this whole flow is built around: never tell someone their message
+   was sent unless a row exists. /api/feedback reports its failures instead of
+   no-opping like /api/track, so the only path to "Thanks" is a 204. On any
+   failure the text stays in the box, the reason is shown in full, and a copy
+   button gets it out of the app so the work is not lost. */
+let fbKind='other', fbSending=false;
+
+function fbSetKind(k){
+  fbKind=k;
+  document.querySelectorAll('#fb-kinds .fb-kind').forEach(b=>
+    b.setAttribute('aria-checked', b.dataset.kind===k ? 'true':'false'));
+}
+function fbCount(){
+  const t=document.getElementById('fb-text'),c=document.getElementById('fb-count');
+  if(!t||!c)return;
+  const n=t.value.length;
+  c.textContent=n+' / 4000';
+  c.classList.toggle('over',n>=4000);
+}
+/* Shown to the user before they send, because it is what gets attached. */
+function fbContext(){
+  let panel='';
+  try{panel=currentPanel||'';}catch(_){}
+  return panel?('Panel: '+panel):'';
+}
+function fbErr(html,retry){
+  const e=document.getElementById('fb-err');if(!e)return;
+  e.classList.toggle('fb-fail',!!html);
+  e.innerHTML=html||'';
+  if(html&&retry){
+    const b=document.createElement('button');
+    b.type='button';b.className='fb-retry';b.textContent='Copy my message instead';
+    b.addEventListener('click',fbCopy);
+    e.appendChild(document.createElement('br'));e.appendChild(b);
+  }
+}
+function fbCopy(){
+  const t=document.getElementById('fb-text');if(!t)return;
+  const body='['+fbKind+'] '+t.value+'\n\n'+fbContext();
+  const done=()=>toast('Copied — paste it wherever suits you');
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(body).then(done,()=>{t.select();done();});
+    }else{t.select();done();}
+  }catch(_){t.select();}
+}
+
+function openFeedbackModal(){
+  const m=document.getElementById('fb-modal');if(!m)return;
+  const t=document.getElementById('fb-text');
+  fbErr('');fbSetKind('other');
+  if(t)t.value='';
+  const em=document.getElementById('fb-email');if(em)em.value='';
+  const ctx=document.getElementById('fb-ctx');if(ctx)ctx.textContent=fbContext();
+  fbCount();
+  const btn=document.getElementById('fb-send');
+  if(btn){btn.disabled=false;btn.textContent='Send feedback';}
+  fbSending=false;
+  m.classList.add('show');
+  setTimeout(()=>{if(t)t.focus();},60);
+  track('feedback_open',{panel:(function(){try{return currentPanel;}catch(_){return null;}})()});
+}
+function closeFeedbackModal(){
+  const m=document.getElementById('fb-modal');if(m)m.classList.remove('show');
+}
+
+async function submitFeedback(){
+  if(fbSending)return;
+  const t=document.getElementById('fb-text'),btn=document.getElementById('fb-send');
+  const msg=(t&&t.value||'').trim();
+  if(msg.length<2){fbErr('Add a little more detail before sending.');if(t)t.focus();return;}
+
+  fbSending=true;
+  if(btn){btn.disabled=true;btn.textContent='Sending…';}
+  fbErr('');
+
+  const payload={
+    message:msg, kind:fbKind,
+    email:(document.getElementById('fb-email')||{}).value||'',
+    page:fbContext(),
+    app:(navigator.userAgent||'').slice(0,40),
+    anon_id:anonId()
+  };
+
+  let r=null,netErr=false;
+  try{
+    r=await fetch(apiBase()+'/api/feedback',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  }catch(_){netErr=true;}
+
+  if(btn){btn.disabled=false;btn.textContent='Send feedback';}
+  fbSending=false;
+
+  if(netErr){
+    fbErr('<b>Not sent.</b> Your device could not reach the server — check your connection. Your message is still here.',true);
+    return;
+  }
+  if(!r.ok){
+    /* The server tells us WHY, and the user gets that reason rather than a
+       generic failure. A 503 is not the user's fault and should not read as
+       though retrying will help. */
+    let why='';
+    try{const j=await r.json();why=j&&j.error||'';}catch(_){}
+    const notConfigured=r.status===503;
+    fbErr('<b>Not sent.</b> '+(why||'The server could not save this.')+
+      (notConfigured?' Nothing you did — feedback storage is not switched on yet.':' You can try again.')+
+      ' Your message is still here.',true);
+    track('feedback_fail',{status:r.status});
+    return;
+  }
+
+  track('feedback_sent',{kind:fbKind,len:msg.length});
+  closeFeedbackModal();
+  toast('Thanks — your feedback was sent');
+}
 async function saveMid(){
   const inp=document.getElementById('mid-input');
   const err=document.getElementById('mid-err');
