@@ -17,14 +17,18 @@ why, and what the operator must still do by hand.
    `supabase/gwedge_ai_usage.sql` (AI quota) and
    `supabase/gwedge_events.sql` (analytics). Both are idempotent and
    RLS-locked to the service role.
-2b. **Run `supabase/gwedge_feedback.sql`** — the in-app feedback button
-   writes here. Until it exists the button is live but every send fails:
-   `/api/feedback` returns 503 and the app tells the user their message was
-   NOT saved, keeps their text on screen and offers to copy it out. That is
-   deliberate — a feedback form that silently swallows messages is worse
-   than none — but it does mean the feature is inert until the SQL is run.
-   Read the feedback from the Supabase dashboard; there is no in-app inbox
-   yet (see Deferred).
+2b. ~~Run `supabase/gwedge_feedback.sql`~~ — **DONE**, applied to project
+   `knodunjnsxelmpziupwk` as migration `create_gwedge_feedback` on
+   16 Aug 2026. Verified after applying: 10 columns, RLS enabled, zero
+   policies, zero grants to `anon`/`authenticated`, three indexes, zero rows.
+   `has_table_privilege` confirms neither browser role can SELECT or INSERT
+   and `service_role` can do both — the same posture as `gwedge_events`.
+   Read it in the app at Studio → Feedback, or from the Supabase dashboard.
+
+   NOTE: the table existing does NOT make the feature live. The button, the
+   endpoints and the inbox panel are on `claude/fantasy-efl-companion-srui7c`
+   and are not merged or deployed, so production has the storage but not yet
+   the code.
 3. **Set `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`** on Netlify if not
    already set — `/api/ai` now requires them to authenticate callers (it
    returns a 503 setup note until they exist).

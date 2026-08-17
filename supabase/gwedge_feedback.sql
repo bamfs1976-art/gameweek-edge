@@ -6,6 +6,10 @@
 --
 -- Run in the Supabase SQL editor (idempotent).
 --
+-- APPLIED 16 Aug 2026 to project knodunjnsxelmpziupwk, as the migration
+-- `create_gwedge_feedback`. Kept here as the source of truth: the file is what
+-- was run, so a fresh environment can be brought up from it.
+--
 -- UNTIL THIS RUNS, the feedback button does not work — and it says so rather
 -- than pretending. /api/feedback returns 503 when the table is missing and
 -- the app tells the user their message was NOT saved, keeps their text on
