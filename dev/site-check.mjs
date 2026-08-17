@@ -179,8 +179,8 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: "['strength','Strength']", since: '2026-08-16',
-  what: 'the Strength fixture-difficulty lens' };
+const MARKER = { text: 'id="feedback-btn"', since: '2026-08-16',
+  what: 'the feedback button in the topbar' };
 console.log('');
 try {
   const { res } = await request(ORIGIN + '/');
