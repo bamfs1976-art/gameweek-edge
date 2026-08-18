@@ -19,7 +19,21 @@
     "commitDate": "2026-08-13T07:54:13+00:00",
     "blobSha": "5d6400948d22d2043cbb369012942636c882447e",
     "diffSinceFirstCommit": "empty",
-    "whyThisIsTheImportantPart": "A track record is only worth keeping if the picks provably predate the results. One commit, thirteen minutes after the picks were generated, and a byte-identical file thirty-three hours later is a stronger statement than any promise in a README. Anyone can re-run: git log -- efl/data/rounds/round-01.json"
+    "whyThisIsTheImportantPart": "A track record is only worth keeping if the picks provably predate the results. One commit, thirteen minutes after the picks were generated, and a byte-identical file thirty-three hours later is a stronger statement than any promise in a README. Anyone can re-run: git log -- efl/data/rounds/round-01.json",
+    "picksSha256": "b999e5121c3cdcdda3ac02b3da3ad7ed97c3f3a98ee6fdae89308170d68fff1a",
+    "picksShaCovers": [
+      "round",
+      "recordedAt",
+      "lockoutAt",
+      "hoursBeforeLock",
+      "source",
+      "rules",
+      "weights",
+      "picks",
+      "universe",
+      "clubUniverse"
+    ],
+    "whyTheBlobShaWasSuperseded": "blobSha vouched for the WHOLE FILE, and the whole file is designed to receive a `result` when the round settles. So the first grading that ran — 17 Aug 2026 — broke the check by doing exactly what it is supposed to do, and npm test went red on main without anyone noticing. The blobSha is kept because it is still true of the file as recorded, and removing it would erase the evidence that the entry was vouched for at all. picksSha256 replaces it operationally: it covers everything that must NEVER change and deliberately excludes `result` and `voidedGrading`, which are the two fields a settled round is allowed to gain. Verified byte-stable across both the grading and the voiding."
   },
   "theEntry": {
     "formation": "1-2-3-1",

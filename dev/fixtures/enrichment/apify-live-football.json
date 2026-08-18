@@ -1,0 +1,11 @@
+[
+  { "id": "af-1", "player": "Gabriel Magalhaes", "team": "Arsenal", "position": "Defender",
+    "injury": "Knock picked up in training, doubtful", "predictedStart": false,
+    "confidence": 65, "updatedAt": "2026-08-16T11:00:00Z" },
+  { "id": "af-2", "player": "Bukayo Saka", "team": "Arsenal", "predictedStart": true,
+    "probability": 0.92, "updatedAt": "2026-08-16T11:00:00Z" },
+  { "id": "af-3", "player": "Morgan Gibbs-White", "team": "Nottm Forest",
+    "injury": "Suspended after red card", "updatedAt": "2026-08-16T11:00:00Z" },
+  { "id": "af-4", "player": "Someone Unknown", "team": "Arsenal", "predictedStart": true },
+  { "id": "af-5", "player": "Pascal Gross", "team": "Brighton" }
+]

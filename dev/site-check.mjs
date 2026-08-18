@@ -36,6 +36,15 @@ const CHECKS = [
 
   { path: '/api/efl/health', status: [200, 503], json: true, why: 'the EFL feed health check' },
 
+  /* The enrichment layer, added 18 Aug 2026. Also THIS deploy's proof: the
+     MARKER below lives in index.html, and index.html did not change in this
+     release, so a marker check cannot tell this build from the last one. A
+     new ROUTE can. 503 is allowed because it is the endpoint's honest answer
+     when the official FPL feed is unreachable — that is a working endpoint
+     reporting a bad upstream, not a broken deploy. */
+  { path: '/api/enrich?players=1&news=0', status: [200, 503], json: true,
+    why: 'the enrichment endpoint (new 18 Aug)' },
+
   /* Added 11 Aug 2026, and it failed for three mornings running. Found by
      accident — a probe chasing something unrelated got a 503 back from this
      endpoint saying "FOOTBALL_DATA_KEY is not configured". The key was not

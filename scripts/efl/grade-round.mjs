@@ -99,6 +99,47 @@ for (const { entry, settlement } of ready) {
     actual[id] = after - before;
   }
 
+  /* ── DOES THIS SUBTRACTION DESCRIBE A ROUND OF FOOTBALL? ──────────────
+     Round 1 of 2026-27 was graded and published with every one of 3,442
+     players on roughly minus two hundred and fifty points, our squad on
+     -1899, and a rank correlation of -0.72 that was identical in all four
+     positions. None of that is a bad model; it is the wrong quantity.
+
+     What happened: pointsAtLock was captured on 13 August while the feed
+     still published the PREVIOUS season's cumulative totals (median 19,
+     max 357, when a new season should read 0). By grading time the feed had
+     rolled over, so `after - before` computed newSeasonSoFar minus
+     lastSeasonFinal. Every established player "scored" minus their last
+     campaign, and the model — which ranks by expected quality, and so
+     correlates with last season's total — came out neatly inverted.
+
+     The guard above only catches the points COLUMN being renamed. Here the
+     name never changed; its MEANING did. A rollover is invisible to a name
+     check and visible immediately in the numbers, so check the numbers.
+
+     The old comment on the subtraction said a total going down is a small
+     upstream correction "and the number is small". That was true when it
+     was written and is what made this publishable. An assumption that has
+     stopped holding is worse than no assumption, so it is now enforced
+     rather than asserted. */
+  {
+    const deltas = Object.values(actual);
+    const negatives = deltas.filter((d) => d < 0).length;
+    const share = deltas.length ? negatives / deltas.length : 0;
+    const worst = deltas.length ? Math.min(...deltas) : 0;
+    /* A real round has a few small negatives from upstream corrections.
+       A rollover has almost every player negative and by a season's worth. */
+    if (deltas.length >= 50 && (share > 0.5 || worst < -60)) {
+      console.error(`✗ Round ${entry.round}: refusing to grade. ${negatives} of ${deltas.length} `
+        + `players (${Math.round(share * 100)}%) have NEGATIVE round points, worst ${worst}. `
+        + 'That is the signature of the points field being reset between the lock snapshot and '
+        + 'now — a season rollover — not of a round of football. The subtraction would publish '
+        + 'a graded round, and a model correlation, that describe nothing. '
+        + 'Re-record the lock baseline against the current season before grading.');
+      continue;
+    }
+  }
+
   const results = clubResults(raw.rounds, entry.round);
   const clubOutcomes = {};
   for (const [clubId, fixtures] of Object.entries(results)) clubOutcomes[clubId] = clubOutcome(fixtures);

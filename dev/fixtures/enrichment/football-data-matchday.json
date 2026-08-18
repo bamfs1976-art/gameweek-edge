@@ -1,0 +1,12 @@
+{
+  "matches": [
+    { "id": 501, "utcDate": "2026-08-21T19:00:00Z", "status": "SCHEDULED",
+      "competition": { "name": "Premier League" },
+      "homeTeam": { "name": "Arsenal FC" }, "awayTeam": { "name": "Brighton & Hove Albion FC" },
+      "score": { "fullTime": { "home": null, "away": null } }, "lastUpdated": "2026-08-16T08:00:00Z" },
+    { "id": 502, "utcDate": "2026-08-22T16:30:00Z", "status": "SCHEDULED",
+      "competition": { "name": "Premier League" },
+      "homeTeam": { "name": "Nottingham Forest FC" }, "awayTeam": { "name": "Tottenham Hotspur FC" },
+      "score": { "fullTime": { "home": null, "away": null } }, "lastUpdated": "2026-08-16T08:00:00Z" }
+  ]
+}
