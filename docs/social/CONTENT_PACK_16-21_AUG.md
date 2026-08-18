@@ -51,8 +51,43 @@ The XI is the most shareable thing you'll post all pre-season, the captaincy
 call is the one people act on, and the deadline post catches the highest
 intent of the year. The other three are upside.
 
-Best times: **6–8pm** on weekdays, **late morning** at the weekend, and
-**early afternoon** on deadline day.
+### When to post
+
+No Premier League football until Friday night, so the usual "avoid the 3pm
+block" rule is off this week — the evenings are clear.
+
+| Day | X | Bluesky |
+|---|---|---|
+| **Sun 16** | 19:00–20:30 | 19:30–21:00 |
+| **Mon 17** | 18:30–20:00 | 20:00–21:30 |
+| **Tue 18** | 18:30–20:00 | 20:00–21:30 |
+| **Wed 19** | 19:00–20:30 | 20:00–21:30 |
+| **Thu 20** | 18:30–20:00 | 20:00–21:30 |
+| **Fri 21** | ~13:00, live | ~13:00, live |
+
+**Sunday evening is the best slot of the week.** No football on, and it's when
+managers sit down to plan — which is exactly what the Data XI is for.
+
+**Bluesky runs later than X, and timing matters more there.** X's algorithm can
+surface a post hours after you publish; Bluesky's custom feeds are far closer to
+chronological, so a mistimed post is mostly lost rather than merely delayed. The
+later slot also catches the US afternoon, and the userbase skews American.
+
+**If an evening is not going to happen**, the commute window — 07:30–08:30 on X
+— works for the utility posts (DefCon, Underpriced). People bookmark those and
+come back.
+
+**Better still, split the job:** render the card in the morning while you have
+the app open, then schedule the post for the evening (Typefully for X, Buffer
+for Bluesky). The card still carries that day's prices, and the evening stops
+being something you have to be free for.
+
+One caution on all of the above: these are reasonable defaults for a UK-majority
+FPL audience, not measurements. **Your own Analytics panel will beat them inside
+a week** — it already tracks referrers, so the social traffic can be read
+separately. And consistency beats optimisation by a distance: a post at 21:40
+because that was when you had ten minutes is worth far more than a post you
+skipped waiting for 19:00.
 
 ---
 
