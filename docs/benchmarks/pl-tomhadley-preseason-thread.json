@@ -367,5 +367,679 @@
   "whatThisChangesInOurDocuments": [
     "The briefing price table gains three settled rows (Saka, Ndiaye, Garner), taking the outside table to 7 right from 7 and ours to 0.",
     "Nothing else. No pick, no rating and no model weight is changed by this file. It is a benchmark to be graded, not an input."
-  ]
+  ],
+
+  "sourceStatedPrices": {
+    "sourceId": "hadley",
+    "whatCountsAsStatedHere": "Only the FPL PRICE COLUMN on the midfielder consistency graphic, plus one prose price. The DEFCON tables group players under bracket labels, which is a band and not a price — those are in bands below.",
+    "statedTotal": 7,
+    "exact": [
+      {
+        "player": "Saka",
+        "price": 9.5,
+        "from": "price column"
+      },
+      {
+        "player": "Ndiaye",
+        "price": 6,
+        "from": "price column"
+      },
+      {
+        "player": "Garner",
+        "price": 6,
+        "from": "price column"
+      },
+      {
+        "player": "Gibbs-White",
+        "price": 8,
+        "from": "price column"
+      },
+      {
+        "player": "Le Fee",
+        "price": 6,
+        "from": "price column"
+      },
+      {
+        "player": "Mateta",
+        "price": 6.5,
+        "from": "price column"
+      },
+      {
+        "player": "M. Sangare",
+        "price": 5.5,
+        "from": "prose",
+        "note": "'Sangare (£5.5m) who recently joined Brentford' — the Brentford Sangare, NOT the £5.0m I. Sangare. See theSangareCollision in this file."
+      }
+    ],
+    "bands": [
+      {
+        "player": "Senesi",
+        "label": "£6m+",
+        "floor": 6,
+        "ceiling": null,
+        "table": "defence"
+      },
+      {
+        "player": "Lacroix",
+        "label": "£6m+",
+        "floor": 6,
+        "ceiling": null,
+        "table": "defence"
+      },
+      {
+        "player": "Tarkowski",
+        "label": "£6m+",
+        "floor": 6,
+        "ceiling": null,
+        "table": "defence"
+      },
+      {
+        "player": "Van Dijk",
+        "label": "£6m+",
+        "floor": 6,
+        "ceiling": null,
+        "table": "defence"
+      },
+      {
+        "player": "Gabriel",
+        "label": "£6m+",
+        "floor": 6,
+        "ceiling": null,
+        "table": "defence"
+      },
+      {
+        "player": "Guehi",
+        "label": "£6m+",
+        "floor": 6,
+        "ceiling": null,
+        "table": "defence"
+      },
+      {
+        "player": "Hill",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Collins",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Mukiele",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Murillo",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Milenkovic",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Hincapie",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Truffert",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Khusanov",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Pedro Porro",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Munoz",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "defence"
+      },
+      {
+        "player": "Danso",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Canvot",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Vuskovic",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Andersen",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Ballard",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Muharemovic",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Bijol",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Keane",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Richards",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Botman",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Maguire",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Alderete",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Burn",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Van den Berg",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Thiaw",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Van Hecke",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Wieffer",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Jacquet",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "defence"
+      },
+      {
+        "player": "Cuenca",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Ajer",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Tete",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Rodon",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Bassey",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Dunk",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Justin",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "defence"
+      },
+      {
+        "player": "Hughes",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Greaves",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Egan",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Ajayi",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "O'Shea",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Kitching",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Thomas",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Kipre",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Van Ewijk",
+        "label": "£4m",
+        "floor": 4,
+        "ceiling": 4.4,
+        "table": "defence"
+      },
+      {
+        "player": "Anderson",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield"
+      },
+      {
+        "player": "Rodri",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield"
+      },
+      {
+        "player": "Rice",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield"
+      },
+      {
+        "player": "Szoboszlai",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield"
+      },
+      {
+        "player": "B. Guimaraes",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield",
+        "canonical": "Bruno Guimaraes"
+      },
+      {
+        "player": "Saka",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield"
+      },
+      {
+        "player": "Dewsbury-Hall",
+        "label": "£6.5m+",
+        "floor": 6.5,
+        "ceiling": null,
+        "table": "midfield"
+      },
+      {
+        "player": "Garner",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Scott",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "M. Fernandes",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Stach",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Le Fee",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Gravenberch",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Ndiaye",
+        "label": "£6m",
+        "floor": 6,
+        "ceiling": 6.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Bentancur",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Ampadu",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Palhinha",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Joao Gomes",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "N. Gonzalez",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Xhaka",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Caicedo",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Mainoo",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Joelinton",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Miley",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Wharton",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Damsgaard",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Ayari",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Hackney",
+        "label": "£5.5m",
+        "floor": 5.5,
+        "ceiling": 5.9,
+        "table": "midfield"
+      },
+      {
+        "player": "Matusiwa",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Iroegbunam",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Janelt",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Adams",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Yarmoliuk",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Sangare",
+        "canonical": "Sangare (unidentified, DEFCON midfield table)",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield",
+        "note": "The thread carries THREE Sangare rows — this bare one at £5m with a 36% DEFCON rate, M. SANGARE (Ligue 1) at £5.5m, and I. SANGARE at £5.0m. Only this one was transcribed as a table row. Pinned to its own key because the automatic surname alias merged it with M. Sangare and reported a conflict that is really the collision this file already records."
+      },
+      {
+        "player": "P. Sarr",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Grimes",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Lerma",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Schlager",
+        "label": "£5m",
+        "floor": 5,
+        "ceiling": 5.4,
+        "table": "midfield"
+      },
+      {
+        "player": "Slater",
+        "label": "£4.5m",
+        "floor": 4.5,
+        "ceiling": 4.9,
+        "table": "midfield"
+      }
+    ],
+    "bandsAreNotPrices": "A row under a '£5.5m' heading says the player sits in that bracket. It does not say he costs exactly £5.50m, and FPL prices move in £0.1m steps. These are recorded with a floor and a ceiling and are never counted as a statement of a figure. A ceiling of null means the label was open-ended (£6m+).",
+    "independence": "Already in the briefing as a named source before this capture, so agreement with the briefing is not always independent."
+  }
 }

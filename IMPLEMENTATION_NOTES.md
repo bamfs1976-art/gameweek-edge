@@ -33,6 +33,30 @@ why, and what the operator must still do by hand.
    already set — `/api/ai` now requires them to authenticate callers (it
    returns a 503 setup note until they exist).
 
+## Open conflicts in the register, waiting on a source (18 Aug 2026)
+
+Two outside captures now disagree with the briefing register on facts the
+register builds reasoning on. Neither is applied, because a benchmark records
+what a source said and does not edit the register; the correction belongs
+there as a dated update with a source attached, made by someone who can reach
+one. Both are reachable from CI, none from this sandbox.
+
+- **Newcastle's manager.** The register says *"Underwhelmed to twelfth, but
+  Eddie Howe continues"* and conditions the whole club block on it — *"whether
+  Howe can knit a reshaped attack together"*. Two independent outside sources
+  (LazyFPL, 17 Aug; Daily Mail / Fantasy Football Hub, 17 Aug) say he has left.
+  If they are right the paragraph is not slightly wrong, it is about a
+  situation that does not exist. This is the largest single exposure the four
+  outside captures have surfaced. Settles on the GW1 team sheet at the latest.
+- **Thiaw's appearance base.** Hadley's DEFCON table says 33 starts at a 36%
+  hit rate; the Daily Mail says 12 hits from 28 appearances. Both put him on
+  twelve hits and only the denominator differs, and 33 starts from 28
+  appearances is impossible. Needs a season appearance record.
+- **Six corroborated prices the register does not hold** — Calvert-Lewin
+  £6.0m (three sources), Igor Thiago £8.0m, Bruno Guimaraes £7.0m, Gvardiol
+  £5.5m, Gross £5.5m, De Cuyper £4.5m. `npm run prices` lists them. The FPL
+  bootstrap prices every player and settles all six in one call.
+
 ## Deferred (documented, not attempted)
 
 - ~~An in-app inbox for feedback.~~ **Done** — Studio → Feedback, backed by

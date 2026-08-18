@@ -178,5 +178,39 @@
     "howToSettleIt": "The FPL bootstrap prices every player. Unreachable from this sandbox, trivially reachable from CI — and the app itself shows the live price.",
     "whyItMattersBeyondTheRegister": "It travels. Advice given in this session said that swapping Igor Thiago for Calvert-Lewin at £6.0m 'costs you the same £6.0m'. That was asserted without a source. Our own register had Thiago at ~£7.0-7.5m est. and this slide says £8.0m, so on either figure the swap FREES money rather than being neutral — between £1.0m and £2.0m, which is the difference between a thin defence and a workable one in a squad built around six premiums.",
     "theProcessPoint": "The number was stated confidently, was not in the register at the price claimed, and nothing checked it because nothing was looking at prices quoted in conversation. Same shape as the rest of the fortnight."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "fpltips",
+    "statedTotal": 12,
+    "exact": [
+      {
+        "player": "Palmer",
+        "price": 9.5
+      },
+      {
+        "player": "De Cuyper",
+        "price": 4.5
+      },
+      {
+        "player": "Schade",
+        "price": 6
+      },
+      {
+        "player": "Igor Thiago",
+        "price": 8
+      },
+      {
+        "player": "Ndiaye",
+        "price": 6
+      },
+      {
+        "player": "Calvert-Lewin",
+        "price": 6
+      }
+    ],
+    "bands": [],
+    "notEnumerated": "This capture recorded 12 stated prices as a COUNT but transcribed only these six individually. The other six are not recoverable from what we hold, so the absence of a player from this list is not evidence the source was silent about him.",
+    "independence": "Carries a platform AI-content label. This file's own note stands: a generated source agreeing with a published figure is not a third witness."
   }
 }

@@ -304,5 +304,30 @@
     "Calvert-Lewin at £6.0m now has two independent readings and still no settled price in our register. Gross at £5.5m opens a second such row. Both stay open.",
     "Ndiaye at £6.0m gains a fourth independent statement, agreeing with our settled price.",
     "A three-way Palmer split and two clean head-to-heads against the fpltips capture are recorded, with our own register deliberately not taking a side on any of them."
-  ]
+  ],
+
+  "sourceStatedPrices": {
+    "sourceId": "bigmanbakar",
+    "statedTotal": null,
+    "exact": [
+      {
+        "player": "Palmer",
+        "price": 9.5
+      },
+      {
+        "player": "Calvert-Lewin",
+        "price": 6
+      },
+      {
+        "player": "Ndiaye",
+        "price": 6
+      },
+      {
+        "player": "Gross",
+        "price": 5.5
+      }
+    ],
+    "bands": [],
+    "notEnumerated": "No total was recorded for this thread, so there is no way to tell from here how many prices it stated in all. Two figures in the file that LOOK like prices are not: a '£6m bracket' quoted from Hadley's table, and 'Maguire for £0.5m more', which is a difference."
+  }
 }

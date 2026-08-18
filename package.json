@@ -23,7 +23,8 @@
     "efl:record": "node scripts/efl/record-picks.mjs",
     "efl:grade": "node scripts/efl/grade-round.mjs",
     "efl:publish": "node scripts/efl/publish-record.mjs",
-    "enrich": "node dev/enrich-cli.mjs"
+    "enrich": "node dev/enrich-cli.mjs",
+    "prices": "node dev/cross-source-prices.mjs"
   },
   "dependencies": {
     "@capacitor/app": "^6.0.3",

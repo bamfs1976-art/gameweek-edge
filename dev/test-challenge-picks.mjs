@@ -375,6 +375,102 @@ ok('and our register still holds no settled price for him',
 ok('the newsletter\'s commercial interest is recorded', !!SHIELD.source.commercialInterest);
 ok('and its unverifiable member claims are marked as such', !!SHIELD.source.unverifiedMemberClaims);
 
+/* ------------------------------------------------------------------------ */
+/* The Daily Mail / Fantasy Football Hub capture, and the price checker it
+   broke. The point of these checks is not that the file exists — it is that
+   the specific faults recorded in it cannot come back. */
+
+const MAIL = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-gw1-guide-dailymail-ffh.json`, 'utf8'));
+const mailS = JSON.stringify(MAIL);
+const { readRegister, readCaptures, collate, normName, buildAliases } =
+  await import(`${R}/dev/cross-source-prices.mjs`);
+const REG = readRegister(fs.readFileSync(ROOT_MD, 'utf8'));
+const CAPS = readCaptures(`${R}/docs/benchmarks`);
+const ROWS = collate(CAPS.declared, REG);
+const rowFor = (n) => ROWS.find((r) => r.key === normName(n) || r.display === n);
+
+/* --- the false corroboration that started this. Both must stay dead. --- */
+ok('LazyFPL is NOT counted as a source for Igor Thiago',
+  !(rowFor('Igor Thiago')?.exact || []).some((e) => e.source === 'lazyfpl'));
+ok('LazyFPL is NOT counted as a source for Haaland',
+  !(rowFor('Haaland')?.exact || []).some((e) => e.source === 'lazyfpl'));
+ok('and the LazyFPL capture says in terms why neither figure is its own',
+  /NEITHER is a LazyFPL statement/.test(
+    JSON.stringify(JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-community-shield-lazyfpl.json`, 'utf8')))));
+
+/* --- the diacritic miss --- */
+ok('Guimaraes and Guimarães fold to one key', normName('Bruno Guimarães') === normName('Bruno Guimaraes'));
+ok('and Bruno Guimaraes carries two independent statements',
+  rowFor('Bruno Guimaraes')?.independentStatements === 2);
+
+/* --- fees must never be read as prices --- */
+ok('the register parser excludes signing-line figures', REG.excluded.onSigningLines > 50);
+ok('and Guehi is not held at his transfer fee', !REG.has(normName('Guehi')) || REG.get(normName('Guehi')).price < 16);
+ok('nothing in the parsed register is priced above the game ceiling',
+  [...REG.values()].every((r) => r.price <= 16));
+ok('the £100m Tonali fee is excluded by the ceiling, not adopted',
+  REG.excluded.aboveCeiling.some((s) => /Tonali/.test(s)));
+
+/* --- silence and never-being-asked must not look alike --- */
+ok('captures with no declared prices are named, not skipped', CAPS.silent.length >= 3);
+ok('fpltips records that it enumerates fewer prices than it stated',
+  CAPS.declared.find((c) => c.sourceId === 'fpltips').statedTotal === 12
+  && CAPS.declared.find((c) => c.sourceId === 'fpltips').exact.length === 6);
+
+/* --- a band is not a price --- */
+const hadleyCap = CAPS.declared.find((c) => c.sourceId === 'hadley');
+ok('Hadley contributes bands, not prices, from the DEFCON tables', hadleyCap.bands.length > 50);
+ok('and an open-ended bracket has no ceiling',
+  hadleyCap.bands.some((b) => b.label.endsWith('+') && b.ceiling === null));
+ok('a banded player alone never counts as an independent statement',
+  ROWS.filter((r) => !r.exact.length).every((r) => r.independentStatements === 0));
+
+/* --- the two Sangare rows must stay two players --- */
+ok('the unidentified Sangare band is pinned away from M. Sangare',
+  hadleyCap.bands.some((b) => /unidentified/.test(b.canonical || '')));
+ok('so M. Sangare carries no band conflict', !(rowFor('M. Sangare')?.bandConflicts || []).length);
+ok('and the automatic alias refuses an ambiguous surname',
+  !buildAliases(['sangare', 'm sangare', 'i sangare']).has('sangare'));
+
+/* --- Thiaw: the conflict that is real, and the one that was not --- */
+const thiaw = allDef.find((r) => r.n === 'Thiaw');
+ok('Hadley puts Thiaw on 33 starts', thiaw.starts === 33);
+ok('which is incompatible with the article\'s 28 appearances',
+  /cannot start 33 matches and appear in only 28/.test(mailS));
+ok('but both sources put him on twelve hits', Math.round(thiaw.hit * thiaw.starts / 100) === 12);
+ok('and the withdrawn second sign is recorded, not deleted',
+  /HadToWithdraw|HADTOWITHDRAW/i.test(mailS) && /It is false|itIsFalse/.test(mailS));
+ok('because Thiaw is in the £5m bracket, agreeing with the article', thiaw.b === '£5m');
+ok('so the checker reports no band conflict for him', !(rowFor('Thiaw')?.bandConflicts || []).length);
+
+/* --- Lacroix: the exact corroboration, on the same denominator --- */
+const lac = allDef.find((r) => r.n === 'Lacroix');
+ok('Lacroix 60% from 35 starts is 21 hits', Math.round(lac.hit * lac.starts / 100) === 21);
+ok('which is what the article states', /21 of 35 = 60%/.test(mailS));
+
+/* --- the GW4 derby, and what it is NOT --- */
+ok('three statements of the GW4 Manchester derby are recorded',
+  MAIL.theGW4ManchesterDerby.theRunningCount.statementsThatTheFixtureIsAGW4ManchesterDerby === 3);
+ok('two of the venue', MAIL.theGW4ManchesterDerby.theRunningCount.statementsOfTheVENUE === 2);
+ok('and our register still holds no GW4 row for either club',
+  !/\["4","(Manchester United|Manchester City)/.test(fs.readFileSync(`${R}/index.html`, 'utf8')));
+ok('recorded as corroboration of a derivation, not a settled fixture',
+  /recorded, not adopted/i.test(JSON.stringify(MAIL.theGW4ManchesterDerby)));
+
+/* --- Newcastle: an open conflict against our own register --- */
+ok('the Newcastle manager conflict is recorded', !!MAIL.managerClaims.theNewcastleConflict);
+ok('with a second outside source on the same side',
+  /LazyFPL/.test(JSON.stringify(MAIL.managerClaims.theNewcastleConflict)));
+ok('and the register is deliberately NOT amended here',
+  /Eddie Howe continues/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+ok('which the capture says explicitly rather than leaving implicit',
+  /whyTheRegisterIsNOTAMENDEDHERE/.test(mailS));
+
+/* --- commercial interest, as for every paid source --- */
+ok('the article\'s commercial interest is recorded first', !!MAIL.commercialInterest);
+ok('and names the projections as the product being sold',
+  /ARE the product being sold/.test(JSON.stringify(MAIL.commercialInterest)));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
