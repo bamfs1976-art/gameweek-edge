@@ -52,10 +52,24 @@ one. Both are reachable from CI, none from this sandbox.
   hit rate; the Daily Mail says 12 hits from 28 appearances. Both put him on
   twelve hits and only the denominator differs, and 33 starts from 28
   appearances is impossible. Needs a season appearance record.
-- **Six corroborated prices the register does not hold** — Calvert-Lewin
-  £6.0m (three sources), Igor Thiago £8.0m, Bruno Guimaraes £7.0m, Gvardiol
-  £5.5m, Gross £5.5m, De Cuyper £4.5m. `npm run prices` lists them. The FPL
-  bootstrap prices every player and settles all six in one call.
+- **Twenty corroborated prices the register does not hold** — Calvert-Lewin
+  £6.0m now carries four independent statements, and Bruno Guimaraes, Gross,
+  Gvardiol and Igor Thiago three each. `npm run prices` lists them all with
+  their sources. The FPL bootstrap prices every player and settles the lot in
+  one call.
+- **The briefing's eight-row price table can be closed.** Seven rows were
+  settled by 16 August and only Mateta was left open — our estimate ~£7.5m
+  against the outside table's £6.5m. A second independent source (Michał,
+  31 July) states £6.5m. On the standard the other seven were settled by,
+  that is eight from eight for the outside table and none from eight for our
+  estimates. The row should be closed in `docs/briefings/2026-27-preseason.md`
+  with the capture cited — a benchmark must not edit the register silently.
+- **Wider estimate scoreboard, for context on that.** Across every estimate
+  the register holds that an outside source has now priced, ours is right 8
+  and wrong 2 (Igor Thiago and Mateta). The tabulated eight were wrong
+  precisely because they were the rows where somebody had already published a
+  figure; the register already says so, and this is the larger sample that
+  supports it.
 
 ## Deferred (documented, not attempted)
 

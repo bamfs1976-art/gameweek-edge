@@ -51,6 +51,16 @@
       "agreeing": 14,
       "conflicts": 0,
       "notInOurRegister": 6,
+    "CORRECTION_18_AUG": {
+      "what": "That count of six is wrong. Two of the named six ARE in our register.",
+      "theEvidence": "De Cuyper appears five times, including the Brighton block's own FPL picks line — 'Maxim De Cuyper (attacking LB, ~£4.5-5.0m est.), set-piece involvement, strong cheap-defender value' — and in the briefing's cheap-defender enabler list. Palestra appears three times, including 'Palestra is a specialist wing-back rather than an orthodox full-back'.",
+      "whichThreeAreGenuinelyAbsent": "Hinshelwood, Lammens and Patterson — zero occurrences each. Wilson is left unresolved because the surname is ambiguous and this project has already merged two players by guessing at one.",
+      "soTheRealCount": "three absent, one unresolved, two present — not six absent.",
+      "howItWasFound": "Not by re-running the checker. A later capture (Sam FPL, 18 Aug) named Palestra, and checking whether our register held him turned up both.",
+      "whyItHappened": "The check asked whether each player could be CLUB-ATTRIBUTED from the structured club blocks, and reported everything it could not attribute as absent from the register. Those are different questions. A player named in a value line or a thematic list is in the register and is not attributable by that method, so the method could only ever have produced this answer.",
+      "theFamilyItBelongsTo": "The same shape as every other fault on file this fortnight: an instrument was measured and the reading was reported as the world. It also had the same direction as the worst of them — it manufactured a gap in our own coverage that was not there.",
+      "whatItCostUs": "One real consequence: De Cuyper was recorded as a price row our register did not hold, when the register holds ~£4.5-5.0m est. for him. Three outside sources now state £4.5m, which CONFIRMS that estimate rather than filling a gap."
+    },
       "theSix": "Hinshelwood, De Cuyper, Palestra, Wilson, Lammens, Patterson — absent from a document that lists signings, departures and pick candidates rather than full squads. A gap in our scope, not an error in theirs."
     },
     "prices": {

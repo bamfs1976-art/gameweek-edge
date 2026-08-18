@@ -400,8 +400,8 @@ ok('and the LazyFPL capture says in terms why neither figure is its own',
 
 /* --- the diacritic miss --- */
 ok('Guimaraes and Guimarães fold to one key', normName('Bruno Guimarães') === normName('Bruno Guimaraes'));
-ok('and Bruno Guimaraes carries two independent statements',
-  rowFor('Bruno Guimaraes')?.independentStatements === 2);
+ok('and Bruno Guimaraes carries at least two independent statements',
+  rowFor('Bruno Guimaraes')?.independentStatements >= 2);
 
 /* --- fees must never be read as prices --- */
 ok('the register parser excludes signing-line figures', REG.excluded.onSigningLines > 50);
@@ -470,6 +470,112 @@ ok('which the capture says explicitly rather than leaving implicit',
 ok('the article\'s commercial interest is recorded first', !!MAIL.commercialInterest);
 ok('and names the projections as the product being sold',
   /ARE the product being sold/.test(JSON.stringify(MAIL.commercialInterest)));
+
+/* ------------------------------------------------------------------------ */
+/* The 18 August pair: a Polish table series carrying 100 stated prices, and a
+   70K-view tips card carrying none. Between them they exercise the price
+   checker harder than everything before them combined. */
+
+const MICHAL = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-tables-lesniczak.json`, 'utf8'));
+const SAM = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-tips-samfpl.json`, 'utf8'));
+const michalS = JSON.stringify(MICHAL);
+const samS = JSON.stringify(SAM);
+const REG2 = readRegister(fs.readFileSync(ROOT_MD, 'utf8'));
+const CAPS2 = readCaptures(`${R}/docs/benchmarks`);
+const ROWS2 = collate(CAPS2.declared, REG2);
+const row2 = (n) => ROWS2.find((r) => r.key === normName(n) || r.display === n);
+
+/* --- range estimates must be visible to the parser --- */
+ok('the register parser reads range estimates like ~£4.5-5.0m',
+  [...REG2.values()].some((r) => r.isRange));
+ok('and De Cuyper is one of them, not a gap in the register',
+  REG2.get(normName('Maxim De Cuyper'))?.isRange === true);
+ok('so the checker no longer says we hold no De Cuyper price',
+  !!row2('De Cuyper')?.register);
+ok('a range estimate counts as right when the stated price falls inside it',
+  row2('De Cuyper')?.estimateConfirmed === true);
+
+/* --- the estimate scoreboard the briefing keeps --- */
+const confirmed = ROWS2.filter((r) => r.estimateConfirmed).length;
+const missed = ROWS2.filter((r) => r.estimateMissed);
+ok('our register estimates are scored against the stated figures', confirmed >= 6);
+ok('and Igor Thiago is scored WRONG, at £8.0m against ~£7.0-7.5m',
+  missed.some((r) => r.display === 'Igor Thiago'));
+ok('as is Mateta, at £6.5m against ~£7.5m',
+  missed.some((r) => r.display === 'Mateta'));
+
+/* --- Mateta closes the briefing's eight-row price table --- */
+ok('the briefing still records Mateta as the one open row',
+  /\| Mateta \(CRY\) \| ~£7\.5m \| £6\.5m \|/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+ok('two independent sources now state the outside figure',
+  row2('Mateta')?.independentStatements === 2 && row2('Mateta')?.agreedPrice === 6.5);
+ok('and the capture says the briefing edit is owed, not done here',
+  /whyItIsNotWrittenIntoTheBriefingHere/.test(michalS));
+
+/* --- silence is recorded as silence --- */
+const samCap = CAPS2.declared.find((c) => c.sourceId === 'samfpl');
+ok('the tips card declares zero prices rather than being unexamined',
+  samCap && samCap.statedTotal === 0 && samCap.exact.length === 0);
+
+/* --- four surnames pinned rather than resolved --- */
+for (const n of ['Sarr', 'Wilson', 'Anthony', 'Rayan']) {
+  ok(`${n} is pinned away from an automatic surname match`,
+    MICHAL.sourceStatedPrices.exact.some((e) => e.player === n && /unidentified/.test(e.canonical || '')));
+}
+ok('P. Sarr stays a different player from the £6.5m Sarr',
+  !(row2('P. Sarr')?.bandConflicts || []).length);
+
+/* --- the unread rows are named as unread --- */
+ok('the fixture row is recorded as unread, not as agreeing',
+  /soItIsRecordedAsUnread/.test(michalS) && /Not as agreeing, and not as disagreeing/.test(michalS));
+ok('and the nine untranscribed stat rows are counted, not glossed',
+  /roughly nine hundred figures/.test(michalS));
+ok('the one transcribed stat row carries its own internal check',
+  /The reading survives its own test/.test(michalS));
+ok('and the tension it leaves is not blamed on the source',
+  /my reading is the weaker link/.test(michalS));
+
+/* --- shared provenance is a limit on independence --- */
+ok('the FFH footnote is recorded as a limit on independence',
+  /source: FFH \/ Fbref/.test(michalS) && /NOT independent/.test(michalS));
+ok('and the honest framing of price agreement is stated',
+  /several people reading the same public number/.test(michalS));
+
+/* --- the Arsenal line: a second voice is not more evidence --- */
+ok('a second source against our Arsenal line is recorded', !!SAM.theSecondSourceAgainstOurArsenalLine);
+ok('and is explicitly NOT counted as new evidence',
+  /Two assertions are not twice the evidence of one/.test(samS));
+/* The line lives in the STRUCTURED html register's Arsenal value field, not
+   in the markdown. Three benchmark files quote it; the first version of this
+   assertion looked in the markdown, failed, and would have been "fixed" by
+   weakening it had the quote not been checked against the right file. */
+ok('our register\'s Arsenal discount line still stands, where it actually lives',
+  /discount every Arsenal defensive asset until the replacement is signed/
+    .test(fs.readFileSync(`${R}/docs/briefings/2026-27-preseason.html`, 'utf8')));
+
+/* --- the one checkable fact on the tips card --- */
+ok('Le Fee\'s stated fixtures agree with our register',
+  /Sunderland GW1 Ipswich Town \(A\), GW2 Fulham \(H\)/.test(samS));
+ok('and three short names are left unresolved rather than guessed',
+  SAM.verifiedAgainstOurRegister.threeNamesLEFTUNRESOLVED.the.length === 3);
+
+/* --- the correction this pair forced on an earlier capture --- */
+const FPLTIPS = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-notes-fpltips.json`, 'utf8'));
+const corr = FPLTIPS.verifiedAgainstOurRegister.clubAttributions.CORRECTION_18_AUG;
+ok('the fpltips "six absent" count is corrected in place', !!corr);
+ok('with the original count left standing beside it',
+  FPLTIPS.verifiedAgainstOurRegister.clubAttributions.notInOurRegister === 6);
+ok('De Cuyper is demonstrably in the register', /Maxim De Cuyper/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+ok('and so is Palestra', /Palestra is a specialist wing-back/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+ok('while Hinshelwood, Lammens and Patterson genuinely are not',
+  ['Hinshelwood', 'Lammens', 'Patterson'].every((n) => !fs.readFileSync(ROOT_MD, 'utf8').includes(n)));
+ok('and the correction names why the method could only give that answer',
+  /could only ever have produced this answer/.test(JSON.stringify(corr)));
+
+/* --- zero disagreements is a real result only if a disagreement can show --- */
+ok('no two sources disagree on any price', ROWS2.every((r) => !r.sourceConflict));
+ok('across at least a hundred and fifty stated prices',
+  CAPS2.declared.reduce((n, c) => n + c.exact.length, 0) >= 150);
 
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));

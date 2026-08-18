@@ -69,7 +69,14 @@ export function normName(s) {
 
 /**
  * Link a short name to a longer one when the short name is a trailing word
- * sequence of exactly one longer name — "thiago" to "igor thiago".
+ * sequence of exactly one longer name — "thiago" to "igor thiago", and
+ * "le fee" to "enzo le fee".
+ *
+ * The two-word case is not decoration. The first version only aliased single
+ * tokens, so "Le Fee" never reached the register's "Enzo Le Fee" and the
+ * report said "register holds no price" for a row the register settles at
+ * £6.0m with a publication date on it. A checker that cannot see our own
+ * answer will keep reporting open rows that are already closed.
  *
  * Ambiguity is refused, not guessed. If two long names end the same way the
  * short name stays its own key, so the report shows two rows rather than
@@ -78,11 +85,22 @@ export function normName(s) {
  */
 export function buildAliases(keys) {
   const alias = new Map();
-  const longs = keys.filter((k) => k.includes(' '));
+  const tokens = new Map(keys.map((k) => [k, k.split(' ')]));
   for (const short of keys) {
-    if (short.includes(' ')) continue;
-    const hits = longs.filter((l) => l.split(' ').slice(-1)[0] === short);
+    const s = tokens.get(short);
+    const hits = keys.filter((l) => {
+      const t = tokens.get(l);
+      return t.length > s.length && t.slice(-s.length).join(' ') === short;
+    });
     if (hits.length === 1) alias.set(short, hits[0]);
+  }
+  /* An alias may point at a name that is itself aliased ("thiago" ->
+     "igor thiago" -> something longer). Follow the chain to its end, with a
+     bound, so no pair of entries can point at each other. */
+  for (const [k] of alias) {
+    let target = alias.get(k);
+    for (let i = 0; i < 8 && alias.has(target) && alias.get(target) !== target; i++) target = alias.get(target);
+    alias.set(k, target);
   }
   return alias;
 }
@@ -123,19 +141,29 @@ export function readRegister(md) {
       excluded.onSigningLines += (line.match(/£\d/g) || []).length;
       continue;
     }
-    /* Name, then an optional parenthetical qualifier, then the price. */
-    const re = /([A-Z][\p{L}'’.-]*(?: [A-Z][\p{L}'’.-]*)*)\s*\((?:[^()£]{0,40}?,\s*)?(\*\*)?(~)?£(\d+(?:\.\d)?)m(?:,\s*published ([^*)]+))?/gu;
+    /* Name, then an optional parenthetical qualifier, then the price.
+       The price may be a RANGE — the register writes soft estimates as
+       "~£4.5-5.0m est.". The first version of this regex required "m"
+       immediately after the number, so every range was invisible and the
+       report told us we held no price for De Cuyper when the Brighton block
+       has carried "~£4.5-5.0m est." all along. A parser that cannot see half
+       our own estimates cannot tell us which ones an outside source has
+       confirmed, which is the whole job. */
+    const re = /([A-Z][\p{L}'’.-]*(?: [A-Z][\p{L}'’.-]*)*)\s*\((?:[^()£]{0,40}?,\s*)?(\*\*)?(~)?£(\d+(?:\.\d)?)(?:-(\d+(?:\.\d)?))?m(?:,\s*published ([^*)]+))?/gu;
     let m;
     while ((m = re.exec(line))) {
-      const [, name, , tilde, price, published] = m;
+      const [, name, , tilde, price, priceHigh, published] = m;
       const key = normName(name);
       if (!key || key.length < 3) continue;
       const value = parseFloat(price);
+      const high = priceHigh === undefined ? value : parseFloat(priceHigh);
       if (value > FPL_PRICE_CEILING_M) { excluded.aboveCeiling.push(`${name} £${value}m`); continue; }
       const row = {
         name,
         price: value,
-        estimate: Boolean(tilde),
+        priceHigh: high,
+        isRange: high > value,
+        estimate: Boolean(tilde) || high > value,
         settled: Boolean(published),
         publishedOn: published ? published.trim() : null
       };
@@ -229,7 +257,17 @@ export function collate(captures, register) {
       sourceConflict: prices.length > 1,
       bandConflicts,
       registerConflict: r.register && prices.length === 1 && !r.register.estimate
-        && Math.abs(r.register.price - prices[0]) > 1e-9
+        && Math.abs(r.register.price - prices[0]) > 1e-9,
+      /* The briefing keeps a running score of its own price estimates against
+         outside figures — "the outside table is right seven from seven and
+         ours is right none". These two flags extend that scoreboard to every
+         estimate the register holds, not only the eight rows it tabulates.
+         An estimate written as a RANGE counts as right if the stated price
+         falls anywhere inside it, because that is what a range claims. */
+      estimateConfirmed: r.register && r.register.estimate && prices.length === 1
+        && prices[0] >= r.register.price - 1e-9 && prices[0] <= r.register.priceHigh + 1e-9,
+      estimateMissed: r.register && r.register.estimate && prices.length === 1
+        && (prices[0] < r.register.price - 1e-9 || prices[0] > r.register.priceHigh + 1e-9)
     });
   }
   out.sort((a, b) => b.independentStatements - a.independentStatements || a.key.localeCompare(b.key));
@@ -237,6 +275,10 @@ export function collate(captures, register) {
 }
 
 /* ----------------------------------------------------------------- main --- */
+
+const regStr = (r) => `${r.estimate && !r.isRange ? '~' : ''}`
+  + (r.isRange ? `~£${r.price.toFixed(1)}-${r.priceHigh.toFixed(1)}m` : `£${r.price.toFixed(1)}m`)
+  + (r.settled ? ' (settled)' : r.estimate ? ' (est.)' : '');
 
 function main() {
   const md = fs.readFileSync(BRIEFING, 'utf8');
@@ -266,9 +308,7 @@ function main() {
   const corroborated = rows.filter((r) => r.independentStatements >= 2 && !r.sourceConflict);
   console.log(`\n=== ${corroborated.length} figures carrying two or more INDEPENDENT statements ===`);
   for (const r of corroborated) {
-    const reg = r.register
-      ? `  register ${r.register.estimate ? '~' : ''}£${r.register.price.toFixed(1)}m${r.register.settled ? ' (settled)' : ''}`
-      : '  register holds no price';
+    const reg = r.register ? `  register ${regStr(r.register)}` : '  register holds no price';
     console.log(`  ${r.display.padEnd(20)} £${r.agreedPrice.toFixed(1)}m  <- ${r.exact.map((e) => e.source).join(' + ')}${reg}`);
   }
 
@@ -285,6 +325,12 @@ function main() {
       + (r.register.settled ? ` (settled ${r.register.publishedOn})` : ''));
   }
 
+  const conf = rows.filter((r) => r.estimateConfirmed);
+  const miss = rows.filter((r) => r.estimateMissed);
+  console.log(`\n=== our own ESTIMATES against the stated figures: ${conf.length} right, ${miss.length} wrong ===`);
+  for (const r of conf) console.log(`  right  ${r.display.padEnd(20)} ${regStr(r.register)} vs stated £${r.agreedPrice.toFixed(1)}m`);
+  for (const r of miss) console.log(`  WRONG  ${r.display.padEnd(20)} ${regStr(r.register)} vs stated £${r.agreedPrice.toFixed(1)}m`);
+
   const bandConf = rows.filter((r) => r.bandConflicts.length);
   console.log(`\n=== ${bandConf.length} figures outside a band another source put them in ===`);
   for (const r of bandConf) {
@@ -294,10 +340,24 @@ function main() {
     }
   }
 
+  /* "The register holds no price" is a claim ABOUT THE REGISTER, and it is
+     false whenever the two documents simply spell a player differently. The
+     alias rule matches trailing words only — it links "Le Fee" to "Enzo Le
+     Fee" but never "Gabriel" to "Gabriel Magalhaes", because matching on a
+     first name would also merge Michal's Reece James with the register's
+     James Garner. Rather than guess, near misses are printed for a human to
+     confirm, so the blind spot is visible instead of being reported as a gap
+     in the register. */
+  const registerTokens = new Map();
+  for (const [k, v] of register) for (const t of k.split(' ')) {
+    if (t.length > 2) registerTokens.set(t, (registerTokens.get(t) || []).concat(v.name));
+  }
   const openRows = corroborated.filter((r) => !r.register);
   console.log(`\n=== ${openRows.length} corroborated figures our register still does not hold ===`);
   for (const r of openRows) {
-    console.log(`  ${r.display.padEnd(20)} £${r.agreedPrice.toFixed(1)}m from ${r.independentStatements} sources`);
+    const near = [...new Set(r.key.split(' ').flatMap((t) => registerTokens.get(t) || []))];
+    console.log(`  ${r.display.padEnd(20)} £${r.agreedPrice.toFixed(1)}m from ${r.independentStatements} sources`
+      + (near.length ? `   [not matched, but the register has: ${near.join(', ')}]` : ''));
   }
 
   const bad = conflicts.length + regConf.length;
