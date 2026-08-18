@@ -33,6 +33,26 @@ why, and what the operator must still do by hand.
    already set — `/api/ai` now requires them to authenticate callers (it
    returns a 503 setup note until they exist).
 
+## Register edits owed, with a source attached (18 Aug 2026)
+
+Named by the Guardian previews 11-14 capture. Each needs an edit to
+`docs/briefings/2026-27-preseason.md` and `.html` citing
+`docs/benchmarks/pl-guardian-previews-11-14.json`. A benchmark must not edit
+the register, so these are listed rather than applied.
+
+- **Sasa Lukic is still taking Fulham's corners.** The Guardian says he
+  joined Ipswich from Fulham alongside Issa Diop. Our register has Diop's
+  move on both sides and Lukic on neither — and Fulham's set-piece line
+  still reads "Corners Iwobi, Lukic". A missing signing is a gap; a departed
+  player holding a set-piece duty is a wrong answer the app will serve.
+- **Joe Gelhardt's Hull presence can come off the source-conflict flag.**
+  The Guardian lists him among eleven arrivals. The loan-or-permanent half
+  of the flag stays open, as does Garnacho's origin.
+- **Ipswich's In list holds three of ten arrivals.** The Guardian says more
+  than £100m on ten players. Coverage gap, not an error — but the two most
+  FPL-relevant absentees, Dara O'Shea (£4.0m, two captures) and Milos
+  Kerkez (£5.5m, one), are cheap defenders at clubs we cover.
+
 ## Open conflicts in the register, waiting on a source (18 Aug 2026)
 
 Two outside captures now disagree with the briefing register on facts the
@@ -48,6 +68,11 @@ one. Both are reachable from CI, none from this sandbox.
   If they are right the paragraph is not slightly wrong, it is about a
   situation that does not exist. This is the largest single exposure the four
   outside captures have surfaced. Settles on the GW1 team sheet at the latest.
+- **Jack Butland's return date.** Our register says "12 weeks, arm surgery"
+  — roughly mid-November. The Guardian says "out until Christmas". About six
+  weeks apart, on a player our own Hull block calls "the one that moves
+  money". Neither figure is sourced in what we hold. Settles on his first
+  Premier League appearance.
 - **Thiaw's appearance base.** Hadley's DEFCON table says 33 starts at a 36%
   hit rate; the Daily Mail says 12 hits from 28 appearances. Both put him on
   twelve hits and only the denominator differs, and 33 starts from 28

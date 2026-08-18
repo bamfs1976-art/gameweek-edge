@@ -577,6 +577,127 @@ ok('no two sources disagree on any price', ROWS2.every((r) => !r.sourceConflict)
 ok('across at least a hundred and fifty stated prices',
   CAPS2.declared.reduce((n, c) => n + c.exact.length, 0) >= 150);
 
+/* ------------------------------------------------------------------------ */
+/* Guardian previews 11-14. The first non-FPL source captured, and the first
+   whose value is entirely facts about football clubs rather than opinions
+   about players. Two register errors and one false positive of my own. */
+
+const GDN = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-guardian-previews-11-14.json`, 'utf8'));
+const gdnS = JSON.stringify(GDN);
+const MD = fs.readFileSync(ROOT_MD, 'utf8');
+const HTML = fs.readFileSync(`${R}/docs/briefings/2026-27-preseason.html`, 'utf8');
+
+/* --- the Lukic error must stay visible until it is actually fixed --- */
+ok('Fulham still has Lukic on corners in the register', /Corners Iwobi, Lukic/.test(HTML));
+ok('and Fulham\'s out list still does not name him',
+  !/"Sasa Lukic[^"]*Ipswich|Lukic \(.*Ipswich/.test(HTML));
+ok('the capture records it as an owed edit, not an applied one',
+  /Not made here — a benchmark records what a source said/.test(gdnS));
+ok('and says why a wrong set-piece duty is worse than a missing name',
+  /A departed player holding a set-piece duty is a WRONG ANSWER/.test(gdnS));
+
+/* --- the Gelhardt flag: half closed, and only half --- */
+ok('the register still carries the Gelhardt source-conflict flag',
+  /Joe Gelhardt's Hull status/.test(MD));
+ok('the capture settles his presence at Hull', /The flag can close on presence/.test(gdnS));
+ok('and explicitly does NOT settle loan versus permanent',
+  /Half a flag closed is recorded as half a flag closed/.test(gdnS));
+
+/* --- Butland: a real conflict, left open --- */
+ok('our register says twelve weeks', /Jack Butland \(12 weeks, arm surgery\)/.test(MD));
+ok('the Guardian says Christmas, and the gap is recorded',
+  /out until Christmas/.test(gdnS) && /Around six weeks/.test(gdnS));
+ok('and neither side is adopted', /Recorded as open/.test(gdnS) && /The register is not changed/.test(gdnS));
+
+/* --- Hughes: NOT recorded as a conflict, deliberately --- */
+ok('the register has Hughes missing the Man Utd game',
+  /Charlie Hughes \| Groin/.test(MD));
+ok('groin versus hernia is refused as a conflict',
+  /this is NOT recorded as a conflict/.test(gdnS)
+  && /inventing a disagreement out of vocabulary/.test(gdnS));
+
+/* --- interest is not a transfer --- */
+/* Checking that the KEY exists proves nothing about what it says — a mutation
+   that flipped the sentence to "Isidor is moving to Hull" left this green. */
+const notMoves = GDN.verifiedAgainstOurRegister.transfersAndClubAttributions.notATransferAndNOTRecordedAsOne;
+ok('Isidor stays at Sunderland despite Hull coveting him',
+  /Wilson Isidor/.test(MD)
+  && notMoves.the.some((x) => /Isidor stays at Sunderland/.test(x))
+  && !notMoves.the.some((x) => /Isidor is moving/.test(x)));
+ok('and the Barcola pursuit is recorded as unconsummated',
+  /An unconsummated pursuit/.test(gdnS));
+
+/* --- the Old Trafford false positive --- */
+ok('James Trafford appears nowhere in either register file',
+  !MD.includes('James Trafford') && !HTML.includes('James Trafford'));
+/* The register wraps "Old Trafford" across a line break, so the full stadium
+   name is not findable as one string in the markdown — which is exactly why a
+   bare surname search matched it and nothing else did. */
+ok('but "Trafford" does, as a stadium wrapped across a line break',
+  /Old\s*\n?\s*Trafford/.test(MD) && /away at Old/.test(MD));
+ok('and the false positive is recorded rather than quietly fixed',
+  /aFalsePositiveInMYOWNCHECKThisTurn/.test(gdnS)
+  && /the right word in the right document about entirely the wrong thing/.test(gdnS));
+
+/* --- absence must mean checked-and-zero, not lookup-failed --- */
+ok('the capture defines absent as zero occurrences, checked',
+  /Absent means ZERO occurrences, checked/.test(gdnS));
+/* Verify the WHOLE list, not a sample. A list of names claimed absent is a
+   claim about our register, and spot-checking three of twenty-one leaves room
+   for a name that is plainly present — a mutation that added Calvert-Lewin to
+   the absent list passed the sampled version of this check. */
+const claimedAbsent = GDN.whatOurRegisterDOESNOTHOLD.absent;
+const wronglyAbsent = claimedAbsent.filter((n) => MD.includes(n) || HTML.includes(n));
+ok('every name claimed absent really is absent from both register files',
+  wronglyAbsent.length === 0);
+ok('and the list is the size the capture says it checked', claimedAbsent.length >= 20);
+for (const n of ["Dara O'Shea", 'Milos Kerkez']) {
+  ok(`${n} is on that list, and is priced by another capture`, claimedAbsent.includes(n));
+}
+ok('and two of the absent names are priced by other captures',
+  /Both are cheap defenders at clubs our register covers/.test(gdnS));
+
+/* --- fees are quarantined from prices --- */
+const gdnCap = CAPS2 && null; // placeholder to keep lint-free; recomputed below
+const CAPS3 = readCaptures(`${R}/docs/benchmarks`);
+const g = CAPS3.declared.find((c) => c.sourceId === 'guardian-previews');
+ok('the Guardian capture declares zero FPL prices', g && g.statedTotal === 0 && g.exact.length === 0);
+ok('while carrying transfer fees in a separate field', Object.keys(GDN.feesStatedAndWHYTHEYAREKEPTSEPARATE).length >= 5);
+ok('and names the two times we read a fee as a price',
+  /Vuskovic and Van Hecke/.test(gdnS) && /Guehi/.test(gdnS));
+
+/* --- agreements that matter --- */
+ok('Liverpool GW1 at Newcastle agrees with our register',
+  /Liverpool GW1 Newcastle United \(A\)/.test(gdnS));
+/* Assert on the VERDICT FIELD, not on the whole file. The file quotes the
+   withdrawn phrase "the fee matches exactly" while explaining why it was
+   withdrawn, so a whole-file "must not contain" check fires on the record of
+   the correction rather than on the claim. Scope the assertion to the claim. */
+const muha = GDN.verifiedAgainstOurRegister.transfersAndClubAttributions.agreeing
+  .find((c) => /Muharemovic/.test(c.claim));
+ok('Muharemovic at Leeds agrees to the nearest million, and is claimed that way',
+  /Muharemovic \(CB, Sassuolo, ~£34\.1m\)/.test(MD)
+  && /agrees to the nearest million/.test(muha.verdict)
+  && /NOT an exact match/.test(muha.verdict));
+ok('which grades one of our OWN Challenge picks',
+  /one of THIS project's own FPL Challenge GW5 Shield picks/.test(gdnS));
+ok('Jacquet at Liverpool is confirmed by a second source',
+  /that reading is now settled/.test(gdnS));
+ok('and our ~£60m is recorded as the ceiling of a structured deal',
+  /the ceiling of a structured deal, not the fee paid/.test(gdnS));
+
+/* --- the panel prediction is a poll, not the author's view --- */
+ok('the predicted positions are recorded as a panel average',
+  /It is a panel average, not the correspondent's view/.test(gdnS));
+ok('and the weak convergence with our own model is claimed weakly',
+  /Little, honestly, and it is recorded at that weight/.test(gdnS));
+
+/* --- the Guardian's own erratum --- */
+ok('the source\'s published correction is recorded',
+  /An earlier version showed the progress chart for Ipswich Town rather than for Hull/.test(gdnS));
+ok('and is named as the same error class we have made',
+  /one club's data attached to another club/.test(gdnS));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
