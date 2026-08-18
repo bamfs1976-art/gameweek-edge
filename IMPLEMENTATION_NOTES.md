@@ -35,66 +35,77 @@ why, and what the operator must still do by hand.
 
 ## Register edits owed, with a source attached (18 Aug 2026)
 
-Named by the Guardian previews 11-14 capture. Each needs an edit to
-`docs/briefings/2026-27-preseason.md` and `.html` citing
-`docs/benchmarks/pl-guardian-previews-11-14.json`. A benchmark must not edit
-the register, so these are listed rather than applied.
+The official FPL Scout pre-season round-up (all 20 clubs, 172 stated prices)
+is captured in `docs/benchmarks/pl-gw1-scout-official.json`. It is the game's
+own publisher, so on prices and squads it settles rather than corroborates.
+A benchmark must not edit the register, so these are listed rather than
+applied. Each needs an edit to `docs/briefings/2026-27-preseason.md` and
+`.html` citing the capture.
 
-- **Sasa Lukic is still taking Fulham's corners.** The Guardian says he
-  joined Ipswich from Fulham alongside Issa Diop. Our register has Diop's
-  move on both sides and Lukic on neither — and Fulham's set-piece line
-  still reads "Corners Iwobi, Lukic". A missing signing is a gap; a departed
-  player holding a set-piece duty is a wrong answer the app will serve.
-- **Joe Gelhardt's Hull presence can come off the source-conflict flag.**
-  The Guardian lists him among eleven arrivals. The loan-or-permanent half
-  of the flag stays open, as does Garnacho's origin.
-- **Ipswich's In list holds three of ten arrivals.** The Guardian says more
-  than £100m on ten players. Coverage gap, not an error — but the two most
-  FPL-relevant absentees, Dara O'Shea (£4.0m, two captures) and Milos
-  Kerkez (£5.5m, one), are cheap defenders at clubs we cover.
+**Overdue — two sources, one of them official:**
+
+- **Newcastle's manager is not Eddie Howe.** The register's confirmed-new-
+  bosses list names ten clubs and omits Newcastle; the club block reads
+  "Underwhelmed to twelfth, but Eddie Howe continues" and builds a paragraph
+  on it. LazyFPL and the Daily Mail both said he had left; the official Scout
+  names the successor — "the first under Jaissle". Three sources. The largest
+  single error the eight captures have surfaced. Note that one passing clause
+  establishes Howe is gone but is *not* enough to write a full manager line.
+- **Sasa Lukic still takes Fulham's corners.** He joined Ipswich from Fulham
+  (Guardian, then the official Scout, which prices him as an Ipswich player).
+  Our register names him in neither club's transfer list and still assigns him
+  half of Fulham's set pieces — a wrong answer the app will serve.
+
+**Price rows the official source closes:**
+
+- **Mateta £6.5m** — the last open row of the briefing's eight-row table. It
+  now reads: the outside figure right 8 from 8, our estimate right 0 from 8.
+- **Igor Thiago £8.0m** — closes the row opened by the fpltips capture
+  against our ~£7.0–7.5m est.
+- **56 corroborated prices the register does not hold at all**, every one now
+  with the official source behind it. `npm run prices` lists them.
+- Wider scoreboard: of the estimates an outside source has now priced, ours is
+  **right 14, wrong 3**. The tabulated eight were wrong precisely because they
+  were the rows where somebody had already published a figure — which is what
+  the briefing already said.
+
+**Smaller, all sourced:**
+
+- John Egan's ankle doubt can come off; he started the final friendly.
+- Two FPL position changes: Ryan Sessegnon MID→DEF, Patrick Dorgu DEF→MID.
+- Yankuba Minteh is reported out two to three months. **Our register lists him
+  as a value pick and a captaincy-adjacent option.**
+- Joe Gelhardt's Hull presence can come off the source-conflict flag; the
+  loan-or-permanent half stays, as does Garnacho's origin.
+- Ipswich's In list holds three of ten arrivals.
 
 ## Open conflicts in the register, waiting on a source (18 Aug 2026)
 
-Two outside captures now disagree with the briefing register on facts the
-register builds reasoning on. Neither is applied, because a benchmark records
-what a source said and does not edit the register; the correction belongs
-there as a dated update with a source attached, made by someone who can reach
-one. Both are reachable from CI, none from this sandbox.
+> **Closed 18 Aug: Jack Butland.** Our register said "12 weeks, arm surgery";
+> the Guardian said "out until Christmas"; the official Scout says "at least
+> three months", which is twelve weeks. Our register was right and the
+> Guardian is the outlier of three. Recorded because every other item this
+> fortnight went the other way, and reporting only the losses would be a
+> biased sample.
 
-- **Newcastle's manager.** The register says *"Underwhelmed to twelfth, but
-  Eddie Howe continues"* and conditions the whole club block on it — *"whether
-  Howe can knit a reshaped attack together"*. Two independent outside sources
-  (LazyFPL, 17 Aug; Daily Mail / Fantasy Football Hub, 17 Aug) say he has left.
-  If they are right the paragraph is not slightly wrong, it is about a
-  situation that does not exist. This is the largest single exposure the four
-  outside captures have surfaced. Settles on the GW1 team sheet at the latest.
-- **Jack Butland's return date.** Our register says "12 weeks, arm surgery"
-  — roughly mid-November. The Guardian says "out until Christmas". About six
-  weeks apart, on a player our own Hull block calls "the one that moves
-  money". Neither figure is sourced in what we hold. Settles on his first
-  Premier League appearance.
+> **Superseded 18 Aug:** the Newcastle manager conflict, the Mateta price row
+> and the corroborated-prices list have all moved to the section above, where
+> the official source settles them. What follows is what is still genuinely
+> open.
+
 - **Thiaw's appearance base.** Hadley's DEFCON table says 33 starts at a 36%
   hit rate; the Daily Mail says 12 hits from 28 appearances. Both put him on
   twelve hits and only the denominator differs, and 33 starts from 28
-  appearances is impossible. Needs a season appearance record.
-- **Twenty corroborated prices the register does not hold** — Calvert-Lewin
-  £6.0m now carries four independent statements, and Bruno Guimaraes, Gross,
-  Gvardiol and Igor Thiago three each. `npm run prices` lists them all with
-  their sources. The FPL bootstrap prices every player and settles the lot in
-  one call.
-- **The briefing's eight-row price table can be closed.** Seven rows were
-  settled by 16 August and only Mateta was left open — our estimate ~£7.5m
-  against the outside table's £6.5m. A second independent source (Michał,
-  31 July) states £6.5m. On the standard the other seven were settled by,
-  that is eight from eight for the outside table and none from eight for our
-  estimates. The row should be closed in `docs/briefings/2026-27-preseason.md`
-  with the capture cited — a benchmark must not edit the register silently.
-- **Wider estimate scoreboard, for context on that.** Across every estimate
-  the register holds that an outside source has now priced, ours is right 8
-  and wrong 2 (Igor Thiago and Mateta). The tabulated eight were wrong
-  precisely because they were the rows where somebody had already published a
-  figure; the register already says so, and this is the larger sample that
-  supports it.
+  appearances is impossible. Needs a season appearance record, which is not
+  reachable from this sandbox.
+- **The Arsenal defensive discount.** Our register says discount every Arsenal
+  defensive asset until Saliba's replacement is signed; BigManBakar and Sam FPL
+  both say the opposite. The official Scout confirms the premises — Saliba out
+  for "an extended period", Timber out for "weeks", Konsa still at Villa — and
+  takes no side on the conclusion. Settles on Arsenal's GW1–6 clean sheets.
+- **Whether Isidor or Brobbey leads the Sunderland line.** The official Scout's
+  Sunderland section names Brobbey and does not mention Isidor at all. That is
+  an omission, not a statement, and the register's disagreement stays open.
 
 ## Deferred (documented, not attempted)
 

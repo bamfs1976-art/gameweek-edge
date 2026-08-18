@@ -65,7 +65,7 @@
       { "player": "Palmer", "price": 9.5, "table": "assistants" },
       { "player": "Saka", "price": 9.5, "table": "assistants" },
       { "player": "Semenyo", "price": 8.5, "table": "assistants" },
-      { "player": "Cunha", "price": 8.0, "table": "assistants" },
+      { "player": "Cunha", "canonical": "Matheus Cunha", "price": 8.0, "table": "assistants", "resolvedOn": "18 Aug, by the official Scout round-up: it names Matheus Cunha (Man Utd) at £8.0m and Jair Cunha (Forest) at £4.5m. The automatic surname rule correctly REFUSED to merge a bare Cunha with either, and the checker reported a disagreement inside the official source itself until the fuller name was used. Pinned by price and table position, not by guess." },
       { "player": "Mbeumo", "price": 8.0, "table": "assistants" },
       { "player": "MGW", "canonical": "Gibbs-White", "price": 8.0, "table": "assistants" },
       { "player": "Cherki", "price": 7.5, "table": "assistants" },
