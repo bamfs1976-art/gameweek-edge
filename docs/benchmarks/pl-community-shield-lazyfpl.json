@@ -1,0 +1,153 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "observed-results-and-guidance",
+  "capturedAt": "2026-08-18T08:04:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00.000Z",
+  "note": "Captured three days before the GW1 deadline. Committed now so git history is the evidence it predates the football that has not yet been played.",
+
+  "whyThisCaptureIsDifferentFromTheOthers": {
+    "what": "Every previous capture this pre-season was FORECAST — leaderboards, shortlists, opinions about who will start. Most of this one is OBSERVATION: a competitive fixture that was played, with both full starting elevens, the used substitutes, the scorers and the assists.",
+    "consequence": "It is largely not gradeable in the predict-and-score sense, because it is not a prediction. It is EVIDENCE, and its main value is that it bears on claims other captures already made and on positions this project has already published.",
+    "theSourcesOwnCaveat": "The newsletter says it itself, and says it well: 'The common wisdom is that the last friendly before Gameweek 1 tends to most closely reflect how a team might actually line up' — followed by 'take everything in this email with a pinch of salt large enough to season a corpse.' A source that discounts its own reliability unprompted is doing something the other three did not."
+  },
+
+  "source": {
+    "name": "LazyFPL",
+    "kind": "email newsletter",
+    "publisher": "LazyFPL Limited, Norwich, United Kingdom",
+    "readFrom": "the newsletter body, pasted in full",
+    "commercialInterest": {
+      "what": "The newsletter sells LazyFPL Premium and carries a 7-day free trial call to action, plus stated pundit credentials (Hall of Fame ranks, career averages) and a '92% of our members improved' claim.",
+      "disclosedByThem": "Yes — the promotional section is labelled and unmissable.",
+      "whyItIsRecorded": "Same principle as the AI-content label on the fpltips capture and the paid-advice post in the BigManBakar thread: what the source IS gets stated separately from whether it is right. A newsletter that sells subscriptions has an incentive to be interesting.",
+      "whatItDoesNotDo": "It does not make the reported line-ups wrong. Team sheets are checkable facts and the checks below found no conflict with anything we hold."
+    },
+    "unverifiedMemberClaims": "The '92% of our members improved' and the pundits' finishing ranks are not checkable from here and are not treated as evidence of anything."
+  },
+
+  "theMatch": {
+    "fixture": "FA Community Shield — Arsenal 3-0 Manchester City",
+    "goals": ["Calafiori", "Havertz", "Odegaard"],
+    "assists": ["Tzolis (2)", "Lewis-Skelly"],
+    "arsenalXI": ["Raya", "Calafiori", "White", "Gabriel", "Mosquera", "Odegaard", "Guimaraes", "Lewis-Skelly", "Tzolis", "Madueke", "Havertz"],
+    "arsenalSubsUsed": ["Eze", "Gyokeres", "Zubimendi", "Saka", "Hincapie", "Rice"],
+    "manCityXI": ["Donnarumma", "Gvardiol", "Dias", "Khusanov", "O'Reilly", "Kovacic", "Anderson", "Foden", "Doku", "Semenyo", "Haaland"],
+    "manCitySubsUsed": ["Gonzalez", "Cherki", "Lewis", "Guehi", "Marmoush", "Grealish"]
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "scratch script. Word-boundary matching, and transfer-list membership kept strictly apart from a prose mention — only a transfer-list disagreement can be a conflict.",
+    "clubClaims": { "checked": 68, "agreeing": 52, "conflicts": 0, "notInRegister": 16 },
+    "notInRegisterMeans": "Our club blocks list signings, departures and pick candidates rather than full squads, so sixteen players in these two elevens simply are not in it — Calafiori, Mosquera, Havertz, Lewis-Skelly, White, Raya, Zubimendi, Eze, Doku, Gvardiol, Grealish, Frimpong, Wissa, Joelinton, Rodon, Nketiah. A gap in our scope, not a disagreement.",
+    "whatItConfirms": [
+      "Elliot Anderson started for MANCHESTER CITY. Our register already had him signing there and Hadley's '(at Forest)' annotation was settled as meaning where his statistics were earned. A starting eleven is the strongest possible confirmation of that reading.",
+      "Bruno Guimaraes started for ARSENAL, as our register records.",
+      "Semenyo, Guehi and Cherki all appeared for Manchester City, all three as our register has them.",
+      "Jeremy Jacquet is a Liverpool centre-back and scored. Hadley's DEFCON table carried him only as 'Jacquet (Ligue 1)' at £5.0m with a 26% hit rate; his club is now observed.",
+      "Iliman Ndiaye took and scored another Everton penalty — the fourth independent statement of our set-piece line 'Pens Ndiaye (Garner, Beto backups)'.",
+      "Marcos Senesi and Jan Paul van Hecke started for Tottenham, as our register has them."
+    ]
+  },
+
+  "twoMistakesOfOursThisCaptureCaught": {
+    "rumoursReadAsCompletedTransfers": {
+      "what": "The first verification run reported three conflicts: Grealish playing for Manchester City while our register 'signs him for Everton', and Ndiaye and Mateta playing for clubs our register lists them as leaving.",
+      "whyAllThreeWereWrong": "Our ins/outs arrays carry RUMOUR lines beside completed deals — 'Rumours: a striker target, possible Grealish loan', 'Rumoured interest in Ndiaye, Branthwaite', 'Mateta (ST, rumoured exit)'. Reading a rumour as a completed move turns a source that agrees with us into a source that contradicts us.",
+      "andTheRegisterAgreedAllAlong": "Everton's own prose has Ndiaye on penalties, as nearest captain, and as a differential. The newsletter and the register never disagreed about him at all.",
+      "fixed": "Rumour entries are stripped before anything is compared. Conflicts fell from three to zero.",
+      "theFamilyThisBelongsTo": "Transfer fees read as FPL prices; prose mentions read as squad membership; and now rumours read as completed transfers. Three different ways of letting the parser decide the finding."
+    },
+    "aPriceMismatchThatWasARegexJump": {
+      "what": "The price check reported 'Haaland: newsletter £500m vs settled £9.5m'.",
+      "whyItWasWrong": "The £9.5m marker belongs to SAKA. The pattern matched the name Haaland and then reached across a list of four players to the nearest settled-price marker. Our register actually has Haaland at £15.5m.",
+      "andTheOtherHalf": "The newsletter's '£500.0m FWD' is a joke, in a newsletter that also contains 'Joe Salah' and 'a pinch of salt large enough to season a corpse'. Recording it as a factual error would have misread the source as well as the register."
+    }
+  },
+
+  "pricesStated": {
+    "count": 22,
+    "settledPricesWeCouldCheckAgainst": 0,
+    "carryingASecondIndependentStatement": [
+      { "player": "Calvert-Lewin", "price": "£6.0m", "alsoStatedBy": ["fpltips", "BigManBakar"], "status": "THREE independent statements now, and our register still holds no settled price. The strongest-supported open row we have." },
+      { "player": "De Cuyper", "price": "£4.5m", "alsoStatedBy": ["fpltips"], "status": "two statements" }
+    ],
+    "firstSightings": "The other twenty — Tzolis £6.5m, Calafiori £5.5m, Mosquera £5.5m, Rice £7.5m, Guimaraes £7.0m, Havertz and Gyokeres £7.5m, Anderson £6.5m, Foden £7.0m, Doku £7.5m, O'Reilly £6.5m, Gvardiol £5.5m, Guehi £6.0m, O'Shea and Egan £4.0m, Ajer and Hume £4.5m, Rutter and Madjo £5.5m, Moore £5.0m — are recorded, not adopted. One source is one source.",
+    "oneAgreementWithAnEstimate": "Gyokeres £7.5m matches our register's ~£7.5m estimate, and Hume £4.5m matches ours."
+  },
+
+  "whatItBearsOnInOurOwnPublishedWork": [
+    {
+      "ours": "Our register's Arsenal line: '11 Aug: Saliba out (back, no return date) — discount every Arsenal defensive asset until the replacement is signed.'",
+      "against": "BigManBakar's 'double Arsenal defence is a must to begin with... leaving them out is an unnecessary risk', recorded yesterday as the first head-on disagreement with our own position.",
+      "whatTheFootballSaid": "Arsenal kept a clean sheet against Manchester City, won 3-0, and did it with Saliba still absent. Calafiori scored inside thirty seconds; the newsletter calls Mosquera 'robust' and notes the side looked 'impressively sturdy at the back, which is all the more notable given William Saliba's prolonged absence.'",
+      "howMuchThisSettles": "It is one match, it is the Community Shield, and the newsletter itself observes the game was played at low intensity — only one player in twenty-two reached the DEFCON threshold. That is not enough to overturn a published position. But it is the first actual football to bear on the disagreement and it leans against us.",
+      "decision": "Our register's line is NOT changed on one fixture. This is recorded so that if GW1-6 confirms it, the record shows the evidence was in hand and what was done with it."
+    },
+    {
+      "ours": "The GW5 'Shield' Challenge card excludes Elliot Anderson because Manchester City will dominate the ball against Sunderland, so their own midfielders do little defending.",
+      "whatTheFootballSaid": "Anderson started and the newsletter counts 'eight attacking contributions in 60 minutes, putting him on course for would-be DefCon points.'",
+      "whyThisIsNotTheRefutationItLooksLike": "City did not dominate — they lost 3-0 and were, in the newsletter's words, troublesome viewing. The premise of the exclusion (City have the ball, so their midfielders do not defend) did not hold in this match, so the observation is CONSISTENT with the reasoning rather than counter to it. Stated carefully because the surface reading is the opposite.",
+      "whatWouldActuallyRefuteIt": "Anderson clearing the DEFCON threshold in a match City control."
+    },
+    {
+      "ours": "The GW5 Shield picks lean on DEFCON hit rates of 47-63%.",
+      "whatTheFootballSaid": "'Only one player hit the DefCon threshold (it was, of all people, Ben White).' One in twenty-two.",
+      "read": "The newsletter attributes this to intensity, not to the threshold being unreachable, and a Community Shield is exactly the fixture where that explanation is plausible. Recorded as a caution about reading pre-season DEFCON, not as evidence the thresholds are wrong."
+    },
+    {
+      "ours": "The GW3 and GW4 Challenge cards lean on Bruno Fernandes's set-piece monopoly — 'every route to a doubled assist runs through him'.",
+      "whatTheFootballSaid": "Bruno missed a penalty, his SECOND miss in successive games. He did also get an assist.",
+      "read": "Missing penalties is not losing the duty, and nothing here says the duty has moved. But two in a row is a real flag against a pick whose case is built on penalties, and it is recorded rather than left out because it is inconvenient."
+    },
+    {
+      "ours": "Our register lists Tzolis only as an Arsenal differential — 'Tzolis if he forces into the wide rotation (sub-5%)'.",
+      "whatTheFootballSaid": "Tzolis started the Community Shield, got two assists, leads the whole pre-season assist chart with six, and his stated minutes rival Gabriel Martinelli was not in the squad.",
+      "read": "This is the largest movement against our own published view in the capture. 'If he forces into the rotation' is now considerably more likely than when it was written. The newsletter's own read — 'excellent value at £6.5m if he can pin down that starting berth' — keeps the same conditional, which is the honest framing.",
+      "notAdopted": "No rating or pick is rewritten from one team sheet. Recorded as a position that has moved and should be revisited when GW1 names an eleven."
+    },
+    {
+      "ours": "The unresolved Igor Thiago price row (ours ~£7.0-7.5m est. against fpltips' £8.0m), and fpltips' gradeable claim that he is 'an easy skip because cheaper forwards cover that slot better'.",
+      "whatTheFootballSaid": "Igor Thiago scored twice and assisted in Brentford's 7-0 win over Frankfurt.",
+      "read": "Counter-evidence to the 'easy skip' claim, in a friendly against opposition that conceded seven. The price row remains open — no source here states his price at all."
+    },
+    {
+      "ours": "fpltips' gradeable claim that 'Mbeumo should start next weekend'.",
+      "whatTheFootballSaid": "Mbeumo started on the BENCH in Manchester United's last friendly, with the newsletter's read that he was rested precisely because his pre-season work is done and he is expected to start GW1.",
+      "read": "Not settled. It settles on the GW1 team sheet, as that claim always did."
+    },
+    {
+      "ours": "Muharemovic is the number one GW5 Shield pick, made off a Serie A DEFCON rate with no Premier League minutes.",
+      "whatTheFootballSaid": "He scored an overhead kick for Leeds against Augsburg.",
+      "read": "Evidence about minutes and involvement, not about defensive contributions. The pick's actual risk — that a Serie A rate does not reproduce here — is untouched by a goal in a friendly."
+    }
+  ],
+
+  "newInformationNotHeldAnywhereElse": [
+    { "item": "Jeremy Doku was substituted at half-time with what looked like a calf injury; severity unknown.", "status": "unresolved, and the only fresh injury in the capture" },
+    { "item": "Maresca stated after the match that he always planned to substitute players who went deep in the World Cup.", "status": "a manager's stated rotation policy, which bears on minutes risk for every City World Cup player" },
+    { "item": "Diego Gomez limped off for Brighton.", "status": "unresolved" },
+    { "item": "Joelinton will miss a couple of weeks through injury.", "status": "reported, no source given" },
+    { "item": "Villa's Brian Madjo (£5.5m) is expected out until September.", "status": "relevant because he is second on the pre-season goal chart with five, which would otherwise look like a signal" },
+    { "item": "Ruben Amorim now manages Milan; Manchester United played his side.", "status": "consistent with BigManBakar's 'since Carrick took over' at Manchester United" },
+    { "item": "Vicario is set for a loan to Juventus.", "status": "bears on who keeps for Tottenham" }
+  ],
+
+  "claimsWorthGrading": [
+    { "claim": "Tzolis pins down a starting berth and is excellent value at £6.5m", "gradeable": true, "note": "the headline call of the capture; settles on GW1-6 starts and returns" },
+    { "claim": "'Leeds look good' — three clean sheets in five friendlies", "gradeable": true },
+    { "claim": "'Concern for Newcastle' — three losses and a draw in five, including 4-1 to Bristol City", "gradeable": true },
+    { "claim": "Semenyo's assist potential rises and his goal threat falls under Maresca's wider role", "gradeable": true, "note": "a shape claim, scoreable as the goal/assist split over GW1-6" },
+    { "claim": "'World Cup involvement may not be an issue for long'", "gradeable": true, "note": "scoreable as minutes for the named returnees in GW1-3" },
+    { "claim": "Man City's defence is 'all currently a minutes risk'", "gradeable": true },
+    { "claim": "Arsenal 'looked slick going forward and impressively sturdy at the back'", "gradeable": false, "note": "an impression of a match already played, not a forecast" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing is rewritten. No price, rating, pick or model weight moves.",
+    "Our register's Arsenal 'discount every defensive asset' line STANDS, with the counter-evidence recorded against it rather than applied. One Community Shield does not overturn a published position.",
+    "Calvert-Lewin at £6.0m now has three independent statements and no settled price in our register. It is the best-supported open price row we hold.",
+    "Tzolis moves from 'a differential if he forces in' toward 'he is in' — recorded, not adopted, pending the GW1 eleven.",
+    "The rumour-parsing bug is fixed in the verification script and recorded here, because it manufactured three conflicts that did not exist."
+  ]
+}

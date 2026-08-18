@@ -98,6 +98,7 @@ ok('the top-pick club is one of the manager-changed ones', mCB.includes(topCB.vs
 
 /* club attributions — each of these flips a recommendation if wrong */
 const html = fs.readFileSync(`${R}/docs/briefings/2026-27-preseason.html`, 'utf8');
+const ROOT_MD = `${R}/docs/briefings/2026-27-preseason.md`;
 const block = (club) => { const i = html.indexOf(`name:"${club}"`); return html.slice(i, html.indexOf('fx:[', i)); };
 for (const [who, club] of [['Elliot Anderson', 'Manchester City'], ['Muharemovic', 'Leeds United'],
   ['Vuskovic', 'Brighton & Hove Albion'], ['Lacroix', 'Chelsea'], ['Gomes', 'Aston Villa']])
@@ -306,6 +307,73 @@ ok('the corrected post count is stated', BAKAR.completeness.postsCaptured === 22
 ok('the miscount is recorded rather than silently fixed',
   !!BAKAR.completeness.aCountThatWasWrongWhenFirstWritten);
 ok('no stale reference to the old count survives', !/fourteen captured/.test(bkS));
+
+/* ---- the LazyFPL Community Shield capture -------------------------------
+   The first capture reporting football that was PLAYED. Its value is that it
+   bears on positions this project has already published, so what is guarded
+   here is that the evidence was recorded WITHOUT the positions being quietly
+   changed to match it — and that the two parsing bugs it exposed stay fixed. */
+const SHIELD = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-community-shield-lazyfpl.json`, 'utf8'));
+const shieldS = JSON.stringify(SHIELD);
+
+ok('the Community Shield capture records both full elevens',
+  SHIELD.theMatch.arsenalXI.length === 11 && SHIELD.theMatch.manCityXI.length === 11);
+ok('and reports zero conflicts against our register',
+  SHIELD.verifiedAgainstOurRegister.clubClaims.conflicts === 0);
+
+/* The rumour bug: our ins/outs arrays mix rumours with completed transfers.
+   Re-derived here, because a checker that reads a rumour as a transfer turns
+   an agreeing source into a contradicting one. */
+const rumourLines = [];
+for (const club of ['Everton', 'Crystal Palace']) {
+  const b = block(club);
+  for (const field of ['ins', 'outs']) {
+    const arr = (new RegExp(field + ':\\[(.*?)\\]', 's').exec(b) || [, ''])[1];
+    for (const entry of arr.split('","')) if (/rumour/i.test(entry)) rumourLines.push(entry);
+  }
+}
+ok('the register really does mix rumour lines into ins/outs', rumourLines.length >= 3);
+ok('and Ndiaye is only RUMOURED out of Everton, never transferred',
+  rumourLines.some((l) => /Ndiaye/.test(l)));
+ok('while the register itself still puts Ndiaye on Everton penalties',
+  /Pens Ndiaye/.test(block('Everton')));
+ok('the capture records the rumour-parsing bug rather than hiding it',
+  /rumoursReadAsCompletedTransfers/.test(shieldS));
+
+/* Haaland: the price "mismatch" was a regex reaching to Saka's marker. */
+ok('our register prices Haaland at £15.5m', /Erling Haaland \(FWD £15\.5m/.test(html));
+ok('the £9.5m settled marker belongs to Saka, not Haaland',
+  /Saka \(\*\*£9\.5m, published/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+ok('the capture records that the mismatch was ours', /aPriceMismatchThatWasARegexJump/.test(shieldS));
+
+/* THE ONE THAT MATTERS: counter-evidence recorded, position NOT flipped. */
+ok('our register STILL says discount every Arsenal defensive asset',
+  /discount every Arsenal defensive asset/.test(block('Arsenal')));
+ok('the capture records the clean sheet as counter-evidence',
+  /clean sheet against Manchester City/.test(shieldS));
+ok('and states plainly that our line was not changed',
+  /line is NOT changed on one fixture/.test(shieldS));
+ok('the capture does not overclaim from one match',
+  /it is one match, it is the Community Shield/i.test(shieldS));
+
+/* Elliot Anderson: a starting eleven is the strongest confirmation of the club. */
+ok('Anderson started for Manchester City in the captured XI',
+  SHIELD.theMatch.manCityXI.includes('Anderson'));
+ok('which confirms the register, not Hadley\'s "(at Forest)" annotation',
+  /ins:\[[^\]]*Elliot Anderson/.test(block('Manchester City')));
+ok('and the capture explains why this is not a refutation of the Shield card',
+  /whyThisIsNotTheRefutationItLooksLike/.test(shieldS)
+  && /premise of the exclusion .* did not hold/i.test(shieldS));
+
+/* Calvert-Lewin now has three statements and still no settled price. */
+ok('Calvert-Lewin £6.0m carries three independent statements',
+  /THREE independent statements/.test(shieldS));
+ok('and our register still holds no settled price for him',
+  !/Calvert-Lewin[^\n]{0,80}\*\*£\d+\.\dm, published/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+
+/* Commercial interest recorded, as for the other two paid sources. */
+ok('the newsletter\'s commercial interest is recorded', !!SHIELD.source.commercialInterest);
+ok('and its unverifiable member claims are marked as such', !!SHIELD.source.unverifiedMemberClaims);
 
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
