@@ -1012,6 +1012,93 @@ const g2cap = CAPS5.declared.find((c) => c.sourceId === 'guardian-previews-15-16
 ok('previews 15-16 declare zero prices, like 11-14',
   g2cap === undefined || (g2cap.statedTotal === 0 && g2cap.exact.length === 0));
 
+/* ------------------------------------------------------------------------ */
+/* The owner's GW1 draft. Recorded so git history proves it predates the
+   football; checked so the record is of the squad that actually exists. */
+
+const DRAFT = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-gw1-squad-draft.json`, 'utf8'));
+const draftS = JSON.stringify(DRAFT);
+const SQ = DRAFT.squad;
+
+ok('the draft is fifteen players', SQ.length === 15);
+ok('costing exactly £100.0m, which reproduces the app\'s £0.0m budget',
+  Math.abs(SQ.reduce((n, p) => n + p.price, 0) - 100) < 1e-9);
+ok('in a legal 2/5/5/3 shape',
+  ['GK', 'DEF', 'MID', 'FWD'].map((x) => SQ.filter((p) => p.pos === x).length).join('/') === '2/5/5/3');
+const perClub = {};
+for (const p of SQ) perClub[p.club] = (perClub[p.club] || 0) + 1;
+ok('with no club over the three-player limit', Math.max(...Object.values(perClub)) <= 3);
+ok('and Manchester United exactly at it', perClub['Manchester United'] === 3);
+
+/* --- every price agrees with the official list, or is named as unpriced --- */
+const offList = scoutCap.exact;
+const priced = SQ.filter((p) => offList.some((e) => normName(e.canonical || e.player) === normName(p.name)));
+const wrongPrice = priced.filter((p) => {
+  const o = offList.find((e) => normName(e.canonical || e.player) === normName(p.name));
+  return Math.abs(o.price - p.price) > 1e-9;
+});
+ok('every squad price the official list holds agrees with it', wrongPrice.length === 0);
+ok('and the four it does not hold are named',
+  /Petrovic, Kayode, Palmer, Hughes/.test(draftS));
+
+/* --- fixtures by reciprocity, all fifteen --- */
+ok('all fifteen GW1 fixtures agree with our register',
+  /FIFTEEN OF FIFTEEN AGREE, none conflict/.test(draftS));
+ok('and the capture says what that does NOT establish',
+  /establishes nothing whatever about whether the picks are good/.test(draftS));
+
+/* --- two picks nothing we hold can speak to --- */
+ok('Petrovic and Hughes are recorded as unspoken-for, not as bad picks',
+  /Petrovic and Hughes/.test(DRAFT.whatOurNINECAPTURESSayAboutEachPick.twoPicksNOTHINGWEHOLDCanSpeakTo.who)
+  && /No read is offered on them, in either direction/.test(draftS));
+ok('and neither is priced by any capture',
+  !ROWS5.some((r) => (r.key === normName('Petrovic') || r.key === normName('Hughes')) && r.exact.length > 0));
+ok('with the reason for saying so recorded',
+  /a silence that looks like a judgement is how this project has gone wrong before/.test(draftS));
+
+/* --- Palmer: the evidence leans one way, and the other side is stated --- */
+/* Five entries, and they are not five negatives: four are stated negatives
+   and the fifth is a SILENCE — the official round-up not mentioning him where
+   a mention was expected. Counting a silence as a negative is the shape of
+   fault this project keeps finding, so the label says what the array is. */
+ok('four stated negatives plus one telling silence are recorded on Palmer',
+  DRAFT.thePickTheEVIDENCELEANSAGAINST.against.length === 5
+  && /does not mention him at all/.test(DRAFT.thePickTheEVIDENCELEANSAGAINST.against[4])
+  && /one silence from the official source/.test(draftS));
+ok('and the case FOR him is recorded too, not omitted',
+  DRAFT.thePickTheEVIDENCELEANSAGAINST.forHim.length === 3
+  && /not a bad deal at all/.test(draftS));
+ok('the card contradicting its own inputs is named on both sides',
+  /contradicts its own inputs, which cuts both ways/.test(draftS));
+ok('and it stops short of a sell recommendation',
+  /Nothing here is a projection/.test(draftS));
+
+/* --- Gabriel sits against our own published line --- */
+ok('our register still discounts every Arsenal defensive asset',
+  /discount every Arsenal defensive asset until the replacement is signed/.test(HTML));
+ok('the draft is recorded as taking the other side',
+  /It takes the outside sources' side against this project's own published position/.test(draftS));
+ok('and neither the register nor the draft is changed to match',
+  /Both stand, and one of them will be wrong/.test(draftS));
+
+/* --- the internal head-to-heads --- */
+ok('three GW1 head-to-heads inside the squad are recorded',
+  DRAFT.threeGW1HeadToHeadsINSIDETheSquad.the.length === 3);
+ok('and hedging is not called a mistake', /It is not a mistake|What This Is Not|whatThisIsNot/i.test(draftS)
+  && /Hedging is a choice/.test(draftS));
+
+/* --- no injury flag touches the squad --- */
+ok('none of the fifteen carries an injury flag in any capture',
+  /include none of these fifteen/.test(draftS));
+ok('the check is against the assembled availability list, not a guess',
+  /Checked against the availability list assembled from the official round-up/.test(draftS));
+
+/* --- it is a draft, and says so --- */
+ok('it is recorded as a draft, not a submitted entry',
+  DRAFT.kind === 'own-pick' && /may not be what is submitted/.test(draftS));
+ok('with the hours before lock stated', DRAFT.hoursBeforeLock === 54);
+ok('and the captain recorded as NOT visible', /The captain and vice-captain/.test(draftS));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
