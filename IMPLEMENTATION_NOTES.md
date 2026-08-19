@@ -69,6 +69,14 @@ applied. Each needs an edit to `docs/briefings/2026-27-preseason.md` and
   were the rows where somebody had already published a figure — which is what
   the briefing already said.
 
+**The GW4 Manchester rows (19 Aug):** our register holds no GW4 row for
+either Manchester club. Four sources now say it is a Manchester derby and
+three say the venue is Old Trafford — and the newest, FPL Mate's expert-draft
+grid, is the first that is a **structured fixture grid** rather than prose:
+Man Utd GW4 `MCI (H)`, Man City GW4 `MUN (A)`, reciprocally consistent, in a
+grid whose other 30 cells all agree with our register. Adding the two rows is
+now the best-supported outstanding edit.
+
 **Smaller, all sourced:**
 
 - John Egan's ankle doubt can come off; he started the final friendly.
@@ -88,11 +96,23 @@ applied. Each needs an edit to `docs/briefings/2026-27-preseason.md` and
 > fortnight went the other way, and reporting only the losses would be a
 > biased sample.
 
+> **Closed 19 Aug: the Sunderland GW4 venue.** The note asking whether
+> Sunderland's GW4 is home or away against Arsenal was never a source
+> conflict. Hadley said "Arsenal away"; our register says "Sunderland,
+> Arsenal (H)". Those are the same fixture stated from opposite ends, and
+> FPL Mate's grid confirms it as Arsenal `SUN (A)`. The open question was
+> our own confusion.
+
 > **Superseded 18 Aug:** the Newcastle manager conflict, the Mateta price row
 > and the corroborated-prices list have all moved to the section above, where
 > the official source settles them. What follows is what is still genuinely
 > open.
 
+- **Grealish's club.** Our register carries "Rumours only: ... a possible
+  Grealish loan". FPL_Marcello's sheet lists him at Everton, £6.5m — but that
+  sheet's Team column is demonstrably stale elsewhere (it still has Lukic at
+  Fulham), the official Scout's Everton section does not mention him, and no
+  other capture carries him. One unreliable column is not a transfer.
 - **Thiaw's appearance base.** Hadley's DEFCON table says 33 starts at a 36%
   hit rate; the Daily Mail says 12 hits from 28 appearances. Both put him on
   twelve hits and only the denominator differs, and 33 starts from 28

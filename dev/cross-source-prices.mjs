@@ -193,6 +193,11 @@ export function readCaptures(dir = BENCH) {
       exact: Array.isArray(sp.exact) ? sp.exact : [],
       bands: Array.isArray(sp.bands) ? sp.bands : [],
       notEnumerated: sp.notEnumerated || null,
+      /* The game's own publisher. A disagreement with an authoritative source
+         is not an open question needing another witness — it is the other
+         sources being wrong, and the report has to say so rather than filing
+         it alongside genuine disputes. */
+      authoritative: sp.authoritative === true,
       /* "Two sources" is a count of files, not a measure of independence. One
          of these captures carries a platform AI-content label; another is the
          same author quoted twice. Where a capture knows something that
@@ -229,7 +234,7 @@ export function collate(captures, register) {
   };
 
   for (const c of captures) {
-    for (const e of c.exact) row(nameOf(e)).exact.push({ source: c.sourceId, price: Number(e.price) });
+    for (const e of c.exact) row(nameOf(e)).exact.push({ source: c.sourceId, price: Number(e.price), authoritative: c.authoritative });
     for (const b of c.bands) {
       row(nameOf(b)).bands.push({
         source: c.sourceId, floor: Number(b.floor),
@@ -255,6 +260,15 @@ export function collate(captures, register) {
       independentStatements: sources.length,
       agreedPrice: prices.length === 1 ? prices[0] : null,
       sourceConflict: prices.length > 1,
+      /* When an authoritative source is in the disagreement, the answer is
+         known: its figure stands and every source stating a different one is
+         wrong. Naming them is the point — an unattributed "sources disagree"
+         invites the reader to average them. */
+      authoritativePrice: (r.exact.find((e) => e.authoritative) || {}).price ?? null,
+      wrongSources: prices.length > 1 && r.exact.some((e) => e.authoritative)
+        ? [...new Set(r.exact.filter((e) => e.price !== r.exact.find((x) => x.authoritative).price)
+            .map((e) => `${e.source} £${e.price.toFixed(1)}m`))]
+        : [],
       bandConflicts,
       registerConflict: r.register && prices.length === 1 && !r.register.estimate
         && Math.abs(r.register.price - prices[0]) > 1e-9,
@@ -313,9 +327,15 @@ function main() {
   }
 
   const conflicts = rows.filter((r) => r.sourceConflict);
-  console.log(`\n=== ${conflicts.length} figures where SOURCES DISAGREE ===`);
-  for (const r of conflicts) {
-    console.log(`  ${r.display.padEnd(20)} ${r.exact.map((e) => `${e.source} £${e.price.toFixed(1)}m`).join(' vs ')}`);
+  const settled = conflicts.filter((r) => r.wrongSources.length);
+  const open = conflicts.filter((r) => !r.wrongSources.length);
+  console.log(`\n=== ${conflicts.length} figures where SOURCES DISAGREE `
+    + `(${settled.length} settled by the authoritative source, ${open.length} open) ===`);
+  for (const r of settled) {
+    console.log(`  SETTLED ${r.display.padEnd(18)} £${r.authoritativePrice.toFixed(1)}m is official; WRONG: ${r.wrongSources.join(', ')}`);
+  }
+  for (const r of open) {
+    console.log(`  OPEN    ${r.display.padEnd(18)} ${r.exact.map((e) => `${e.source} £${e.price.toFixed(1)}m`).join(' vs ')}`);
   }
 
   const regConf = rows.filter((r) => r.registerConflict);
@@ -360,8 +380,13 @@ function main() {
       + (near.length ? `   [not matched, but the register has: ${near.join(', ')}]` : ''));
   }
 
-  const bad = conflicts.length + regConf.length;
-  console.log(`\n${bad === 0 ? 'No conflicts.' : `${bad} conflict(s) above need a source that can be held to them.`}`);
+  /* A conflict the authoritative source settles is a finding, not a failure:
+     nothing further can be done about it and the wrong figure is named. Only
+     an OPEN disagreement, or a clash with a settled register price, still
+     needs a source that can be held to it. */
+  const bad = open.length + regConf.length;
+  console.log(`\n${settled.length ? `${settled.length} disagreement(s) settled by the official source — the wrong figures are named above.` : ''}`);
+  console.log(bad === 0 ? 'Nothing open.' : `${bad} open conflict(s) need a source that can be held to them.`);
   process.exitCode = bad === 0 ? 0 : 1;
 }
 

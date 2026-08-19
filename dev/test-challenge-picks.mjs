@@ -522,9 +522,15 @@ ok('the tips card declares zero prices rather than being unexamined',
   samCap && samCap.statedTotal === 0 && samCap.exact.length === 0);
 
 /* --- four surnames pinned rather than resolved --- */
+/* These four were pinned to their own keys on 18 Aug rather than surname-
+   matched. All four have since resolved. The guard therefore checks the
+   RESOLUTION IS RECORDED — a pin that quietly becomes a canonical with no
+   account of what resolved it is indistinguishable from the guess the pin
+   existed to prevent. */
 for (const n of ['Sarr', 'Wilson', 'Anthony', 'Rayan']) {
-  ok(`${n} is pinned away from an automatic surname match`,
-    MICHAL.sourceStatedPrices.exact.some((e) => e.player === n && /unidentified/.test(e.canonical || '')));
+  const e = MICHAL.sourceStatedPrices.exact.find((x) => x.player === n);
+  ok(`${n} carries a canonical AND a record of what resolved it`,
+    e && e.canonical && !/unidentified/.test(e.canonical) && typeof e.resolvedOn === 'string' && e.resolvedOn.length > 40);
 }
 ok('P. Sarr stays a different player from the £6.5m Sarr',
   !(row2('P. Sarr')?.bandConflicts || []).length);
@@ -577,7 +583,12 @@ ok('and the correction names why the method could only give that answer',
   /could only ever have produced this answer/.test(JSON.stringify(corr)));
 
 /* --- zero disagreements is a real result only if a disagreement can show --- */
-ok('no two sources disagree on any price', ROWS2.every((r) => !r.sourceConflict));
+/* Was "no two sources disagree", which held until an authoritative source
+   arrived and one graphic was found to be wrong. The durable invariant is
+   that nothing is left OPEN: a disagreement the official list settles is a
+   finding, and the wrong figure is named. */
+ok('no price disagreement is left open',
+  ROWS2.every((r) => !r.sourceConflict || r.wrongSources.length > 0));
 ok('across at least a hundred and fifty stated prices',
   CAPS2.declared.reduce((n, c) => n + c.exact.length, 0) >= 150);
 
@@ -723,7 +734,8 @@ ok('and the article-versus-bootstrap distinction is kept',
   /not the official BOOTSTRAP API/.test(scoutS) && /an article can/.test(scoutS));
 
 /* --- with an authority in the room, disagreement is decisive --- */
-ok('no source disagrees with any other on any price', ROWS4.every((r) => !r.sourceConflict));
+ok('no price disagreement is left open after the official ingest',
+  ROWS4.every((r) => !r.sourceConflict || r.wrongSources.length > 0));
 ok('nor with a non-estimate register price', ROWS4.every((r) => !r.registerConflict));
 ok('and no band is contradicted', ROWS4.every((r) => !r.bandConflicts.length));
 
@@ -756,8 +768,11 @@ ok('the capture stops short of writing a manager line from one clause',
 /* --- three of four pinned surnames resolve, one does not --- */
 const MICH = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-tables-lesniczak.json`, 'utf8'));
 const pinned = MICH.sourceStatedPrices.exact.filter((e) => /unidentified/.test(e.canonical || ''));
-ok('Rayan is still pinned, because nothing resolves him',
-  pinned.some((e) => e.player === 'Rayan') && /The official round-up names no Rayan/.test(scoutS));
+/* True OF THE SCOUT, and still true: its round-up names no Rayan. He was
+   resolved a day later by two other sources. The claim under test is what
+   this capture could settle, not what has been settled since. */
+ok('the official round-up could not resolve Rayan, and says so',
+  /The official round-up names no Rayan/.test(scoutS));
 ok('and the capture says four from four resolving would have been suspicious',
   /four of four resolving would have been the suspicious one/.test(scoutS));
 for (const [pin, who] of [['Sarr', 'Ismaila Sarr'], ['Anthony', 'Jaidon Anthony'], ['James', 'Reece James']]) {
@@ -804,6 +819,122 @@ ok('and still settles on Arsenal\'s GW1-6 clean sheets, as first recorded',
 ok('Konsa is confirmed still at Villa, which our Arsenal line depends on',
   scoutCap.exact.some((e) => e.player === 'Konsa' && e.club === 'Aston Villa')
   && /\(Konsa\) is unsigned/.test(MD));
+
+/* ------------------------------------------------------------------------ */
+/* 19 August: three community sources at once. The first price disagreement in
+   eight captures, the GW4 rows our register has never held, and a fabricated
+   row of my own that the fixture check surfaced. */
+
+const MATE = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-gw1-expert-drafts-fplmate.json`, 'utf8'));
+const FRAN = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-gw1-cards-fplfran.json`, 'utf8'));
+const MARC = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-gw1-points-analysis-marcello.json`, 'utf8'));
+const mateS = JSON.stringify(MATE); const franS = JSON.stringify(FRAN); const marcS = JSON.stringify(MARC);
+const CAPS5 = readCaptures(`${R}/docs/benchmarks`);
+const ROWS5 = collate(CAPS5.declared, readRegister(MD));
+const row5 = (n) => ROWS5.find((r) => r.key === normName(n) || r.display === n);
+
+/* --- an authority makes a disagreement decidable --- */
+const haaland = row5('Haaland');
+ok('the Haaland disagreement is detected', haaland?.sourceConflict === true);
+ok('the official figure is identified as the answer', haaland?.authoritativePrice === 15.5);
+ok('and the wrong source is NAMED, not averaged with the rest',
+  haaland?.wrongSources.length === 1 && /fplmate £15\.0m/.test(haaland.wrongSources[0]));
+ok('no disagreement is left open', ROWS5.filter((r) => r.sourceConflict && !r.wrongSources.length).length === 0);
+/* "Nothing open" is satisfied by an authority that settles everything, so it
+   cannot tell one bad row from fifty. Name the only capture the official list
+   contradicts: if a second one ever disagrees, this goes red even though the
+   authority still settles it. */
+const contradicted = [...new Set(ROWS5.flatMap((r) => r.wrongSources).map((w) => w.split(' ')[0]))].sort();
+ok('exactly one capture is contradicted by the official list, and it is fplmate',
+  contradicted.length === 1 && contradicted[0] === 'fplmate');
+ok('the capture says why one wrong row is worth having',
+  /the evidence the instrument works/.test(mateS));
+ok('and refuses to discount the survey because of a price typo',
+  /that would be the reverse of the fault this project keeps finding/.test(mateS));
+
+/* --- the GW4 rows, from a structured grid --- */
+ok('the grid checks 30 of 32 cells against our register',
+  MATE.theGW1To4Grid.checkedAgainstOurRegister.agree === 30
+  && MATE.theGW1To4Grid.checkedAgainstOurRegister.conflict === 0);
+ok('and the two it cannot check are exactly the Manchester GW4 rows',
+  MATE.theGW1To4Grid.checkedAgainstOurRegister.unheld === 2
+  && /Manchester United GW4 and Manchester City GW4/.test(mateS));
+ok('our register still holds no GW4 row for either club',
+  !/\["4","(Manchester United|Manchester City)/.test(HTML));
+ok('the derby now has four statements and three of the venue',
+  MATE.theGW1To4Grid.theRunningCountOnTheGW4Derby.statementsThatGW4IsAManchesterDerby === 4
+  && MATE.theGW1To4Grid.theRunningCountOnTheGW4Derby.statementsOfTheVENUE === 3);
+ok('and it is still not written into the register',
+  /It IS STILL Not Written Into The Register|andItIsSTILLNotWrittenIntoTheRegister/i.test(mateS));
+
+/* --- an "open question" that was our own confusion --- */
+ok('Arsenal GW4 away at Sunderland is our register\'s Sunderland GW4 at home',
+  /Arsenal away IS Sunderland at home/.test(mateS));
+ok('and it is recorded as our confusion, not a source conflict',
+  /the open question was our own confusion rather than a disagreement between sources/.test(mateS));
+
+/* --- FPL Fran: a clean grid, and a row I invented --- */
+ok('all 57 of Fran\'s fixture cells agree with our register',
+  FRAN.theFixtureGridCHECKSCOMPLETELY.checkedAgainstOurRegister.agree === 57
+  && FRAN.theFixtureGridCHECKSCOMPLETELY.checkedAgainstOurRegister.conflict === 0);
+ok('the three "conflicts" the first run reported are recorded as MY fabrication',
+  /aFabricationOfMYOWNThatThisCheckSURFACED/.test(franS)
+  && /three fixture cells that no source ever stated/.test(franS));
+ok('and it is named as worse than a misreading', /Worse than a misreading/.test(franS));
+ok('the real observation underneath is that Fran names no Newcastle player',
+  /NOT ONE of them is a Newcastle player/.test(franS));
+ok('which agrees with what fpltips said about Newcastle',
+  /Nothing from Newcastle interests me right now/.test(franS));
+
+/* --- the last pinned surname resolves --- */
+const stillPinned = MICH.sourceStatedPrices.exact.filter((e) => /unidentified/.test(e.canonical || ''));
+ok('no Michal surname is left unidentified', stillPinned.length === 0);
+ok('Rayan resolved to Bournemouth, two ways',
+  /Resolved, two ways, one of them structural/.test(marcS));
+ok('and one of the two is a fixture run rather than a team label',
+  /which are Bournemouth's fixtures in our own register/.test(marcS));
+
+/* --- the third Sangare --- */
+ok('a £5.0m Sangare is placed at Nottingham Forest',
+  MARC.sourceStatedPrices.exact.some((e) => /Sangare \(Nottingham Forest\)/.test(e.canonical || ''))
+  && FRAN.sourceStatedPrices.exact.some((e) => /Sangare \(Nottingham Forest\)/.test(e.canonical || '')));
+ok('the club is settled and the forename is not',
+  /the club is settled and the forename is not/.test(marcS));
+ok('and Mamadou Sangare stays a separate £5.5m player at Brentford',
+  row5('Mamadou Sangare')?.agreedPrice === 5.5);
+
+/* --- a source whose team column cannot be trusted --- */
+ok('Marcello\'s team column is flagged unreliable before anything is taken from it',
+  /theTEAMColumnIsNotReliable/.test(marcS));
+ok('with the proof named', /Lukic is listed at FULHAM/.test(marcS));
+ok('yet its Lukic PRICE agrees with the official list',
+  MARC.sourceStatedPrices.exact.some((e) => e.canonical === 'Sasa Lukic' && e.price === 5.0));
+ok('Bruno Guimaraes at Arsenal is corroborated four ways and was already ours',
+  /Bruno Guimaraes has joined Arsenal from Newcastle/.test(MD));
+ok('while Grealish at Everton is left OPEN on one unreliable column',
+  /recordedAs["\s:]+An open row/.test(marcS) && /a possible Grealish loan/.test(MD));
+
+/* --- the only numeric forecast in eight captures --- */
+ok('the next-five-gameweek predictions are recorded as gradeable',
+  MARC.thePREDICTIONColumnIsTheGradeableThing.someOfTheFigures.length >= 12);
+ok('with the grading method named and matched to our own',
+  /Rank correlation between predicted GW1-5 points and actual/.test(marcS));
+ok('and the inference about how it was built flagged as an inference',
+  /is NOT what the sheet says about itself/.test(marcS));
+ok('the unexplained Value column is recorded and not used',
+  /A number whose definition we do not have cannot check anything/.test(marcS));
+
+/* --- Fran's verdicts touch two of our own picks --- */
+ok('Muharemovic is marked a Great option, supporting our own Challenge pick',
+  /one of THIS project's own FPL Challenge GW5 Shield picks/.test(franS));
+ok('and the card\'s own inputs contradicting its verdict is named, not smoothed',
+  /publishes the inputs and the verdict but not the function between them/.test(franS));
+
+/* --- ownership, cross-checked once --- */
+ok('the one checkable ownership figure agrees with the official source',
+  /26\.8% global/.test(mateS) && /above 25 per cent/.test(mateS));
+ok('and the other nine are recorded as unverifiable',
+  /Unverifiable from anything we hold/.test(mateS));
 
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
