@@ -1125,6 +1125,69 @@ ok('Triple Captain is offered as a comparison, not a recommendation',
 ok('the Haaland price footnote explains the checker\'s null',
   /noted only so the tool's output is not misread/.test(revS));
 
+/* --- the 14:21 revision: a rebuild, a new captain, zero internal clashes --- */
+const REV2 = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-gw1-squad-draft.json`, 'utf8')).revisions[1];
+const rev2S = JSON.stringify(REV2);
+ok('both earlier drafts are preserved beside the third',
+  DRAFT.squad.some((p) => p.name === 'Palmer') && /Tonali/.test(JSON.stringify(REV)) && REV2.recordedAt.includes('14:21'));
+
+/* A COUNT STATED IN PROSE MUST MATCH THE LISTS BESIDE IT. The 14:21 entry
+   said "nine of fifteen changed" while its own out/in arrays held seven names
+   each — a figure asserted in prose that the structured data beside it
+   contradicted, which is this project's recurring fault at its smallest
+   possible scale. This guard compares every revision's stated count to its
+   own lists, so the next one cannot drift. */
+const REVS = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-gw1-squad-draft.json`, 'utf8')).revisions;
+for (const r of REVS) {
+  if (!Array.isArray(r.out)) continue;
+  ok(`${r.recordedAt.slice(11, 16)}: the stated change count matches the out list`,
+    r.countedChanges === r.out.length && r.out.length === r.in.length);
+}
+ok('the miscount is corrected in place, not erased',
+  /CORRECTION/.test(JSON.stringify(REV2)) && /It is SEVEN/.test(JSON.stringify(REV2)));
+ok('and named as the fault it belongs to',
+  /a figure asserted in prose that the structured data beside it contradicts/.test(JSON.stringify(REV2)));
+
+/* --- the 14:22 draft --- */
+const REV3 = REVS[2];
+const rev3S = JSON.stringify(REV3);
+ok('the fourth draft is recorded', REV3.recordedAt.includes('14:22') && REV3.countedChanges === 2);
+ok('Manchester City is full AND all three start',
+  /MANCHESTER CITY 3 — FULL, and all three START/.test(rev3S));
+ok('with the concentration named against the earlier drafts',
+  /The 14:21 draft's biggest block was three Spurs; that is now two/.test(rev3S));
+ok('and the fixture quality allowed to cut the other way',
+  /Concentration and fixture quality point opposite ways here/.test(rev3S));
+ok('the spread fell from nine matches to eight', /down from nine/.test(rev3S));
+ok('the bench-boost read is revisited and unchanged',
+  /better, and not enough to change the answer/.test(rev3S));
+ok('and Gomez resolves an ambiguity WITHOUT resolving Sam FPL\'s sentence',
+  /identifies the priced player rather than the sentence/.test(rev3S));
+ok('internal clashes are now zero, and the trend is recorded',
+  /ZERO/.test(rev2S) && /The first draft had three clashes, the second had one, this has none/.test(rev2S));
+ok('the two Fernandes in one eleven are named as the collision family',
+  /theTwoFernandesInTheSameEleven/.test(rev2S) && /REFUSES to merge/.test(rev2S));
+ok('and it is explicitly NOT called a mistake', /They are two real players in two different matches/.test(rev2S));
+ok('the captaincy case carries the official source AGAINST it',
+  REV2.theCaptaincy.againstIt.length === 2 && /missed his second penalty in two matches/.test(rev2S));
+ok('with the sharpest point attributed to the publisher, not a tipster',
+  /it comes from the game's own publisher rather than a tipster/.test(rev2S));
+ok('and no captaincy recommendation is made', /none of it says captain him or do not/.test(rev2S));
+ok('M. Fernandes is thinly priced but not thinly evidenced',
+  /THIRD OF SEVEN/.test(rev2S) && /NOBODY has said he starts for Spurs/.test(rev2S));
+ok('and the West Ham caveat on those numbers is kept',
+  /earned somewhere else, under a different manager, in a different role/.test(rev2S));
+ok('Mac Allister is recorded as the one new pick the evidence points down on',
+  /theWeakestOfTheNewOnes/.test(rev2S) && /13\.4/.test(rev2S));
+ok('what was given up is listed, not glossed', REV2.whatWasGivenUp.what.includes('Mbeumo'));
+ok('and the trade is called a choice rather than an error',
+  /not a fact either way/.test(rev2S));
+ok('the Spurs concentration growing is recorded alongside the offsetting gain',
+  /theConcentrationThatGREW/.test(rev2S) && /Concentration went up in one place and down in another/.test(rev2S));
+ok('Verbruggen and Hughes are still the two nothing prices',
+  /the same two as in the previous draft/.test(rev2S)
+  && !ROWS5.some((r) => r.key === normName('Verbruggen') && r.exact.length > 0));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
