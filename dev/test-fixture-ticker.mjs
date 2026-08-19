@@ -97,7 +97,8 @@ vm.runInContext([
   extractFn(html, 'fdrGrade'),
   extractFn(html, 'fdrOppLabel'),
   extractFn(html, 'fdrCombine'),
-  extractFn(html, 'fdrSquadOrder')
+  extractFn(html, 'fdrSquadOrder'),
+  extractFn(html, 'fdrDraftPicks')
 ].join('\n'), ctx);
 
 const { fdrCombine, fdrOppLabel, fdrGrade, fdrCellValue, fdrRunTotal, fdrSquadOrder } = ctx;
@@ -303,6 +304,54 @@ const cell = (o) => Object.assign({
   eq(withGhost.length, 15, 'a pick with no element behind it is dropped rather than drawn empty');
   eq(fdrSquadOrder(null, els), [], 'no picks at all is an empty list, not a throw');
   eq(fdrSquadOrder(picks, null), [], 'and neither is a missing element map');
+}
+
+/* ── the saved draft, before any picks exist ────────────────
+   The squad rows shipped unusable in the one week they were most wanted.
+   They render from loadPicks(mid, b.cur.id), and before the first deadline of
+   a season b.cur is GW1 and the FPL API does not publish picks for a
+   gameweek whose deadline has not passed — it 404s. The catch swallowed it,
+   squadPicks stayed null, and the toggle never appeared. Nothing caught it
+   because the mock had GW1 finished and GW2 next, so picks always existed:
+   the harness could not have found this, which is the same fault as the mock
+   having no double gameweek in it.
+
+   The app already stores the user's own draft under ge-draft-v1, so that is
+   the fallback. It is fifteen element IDs and nothing else — no XI, no bench
+   order, no captain — so it must NOT be dressed up as a submitted squad. */
+{
+  const els = {};
+  const shape = [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4];
+  shape.forEach((t, i) => { els[200 + i] = { id: 200 + i, web_name: 'D' + i, team: (i % 8) + 1, now_cost: 40 + i, element_type: t }; });
+  /* Saved in whatever order the draft builder happened to hold them. */
+  const ids = [212, 200, 207, 203, 214, 209, 201, 205, 210, 202, 213, 206, 211, 204, 208];
+
+  const picks = ctx.fdrDraftPicks(ids, els);
+  eq(picks.length, 15, 'a saved draft becomes fifteen pseudo-picks');
+  eq(picks.map((p) => els[p.element].element_type), [1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4],
+    'ordered by position — keepers, defenders, midfielders, forwards');
+  eq(picks.map((p) => p.position), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    'numbered 1-15 so the row builder has something to sort on');
+  ok(picks.every((p) => !p.is_captain && !p.is_vice_captain),
+    'and NO captain — a draft has not named one, and inventing an armband would be fabricating the plan');
+
+  /* The rule that keeps a draft honest: fifteen drafted players are not an
+     XI plus a bench. Claiming the last four are benched would be this app
+     telling the user a team-sheet decision they have not made. */
+  const rows = fdrSquadOrder(picks, els, false);
+  eq(rows.length, 15, 'all fifteen draft rows render');
+  eq(rows.filter((r) => r.bench).length, 0, 'none of them is marked benched');
+  const submitted = fdrSquadOrder(picks, els, true);
+  eq(submitted.filter((r) => r.bench).length, 4,
+    'while a real submitted squad still splits eleven and four');
+  eq(fdrSquadOrder(picks, els).filter((r) => r.bench).length, 4,
+    'and the default stays the submitted behaviour, so nothing already shipped moves');
+
+  /* Ids the bootstrap no longer knows — a draft saved before a player left
+     the game. Dropped, not drawn blank, same as a stale pick. */
+  eq(ctx.fdrDraftPicks([9999, 200], els).length, 1, 'an unknown draft id is dropped');
+  eq(ctx.fdrDraftPicks([], els).length, 0, 'an empty draft is no rows');
+  eq(ctx.fdrDraftPicks(null, els).length, 0, 'and a missing one does not throw');
 }
 
 /* ── the source itself ──────────────────────────────────────

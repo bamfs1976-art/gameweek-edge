@@ -79,6 +79,13 @@ const API = {
    this harness has exactly one squad and the point is the rendering, not the
    lookup. */
 const PICKS_RE = /^\/api\/fpl\/entry\/\d+\/event\/\d+\/picks$/;
+/* A third server, reproducing the state the app shipped broken into: a
+   linked team whose picks the API refuses because the gameweek deadline has
+   not passed. Real FPL answers 404 there, and the squad rows disappeared for
+   the entire week before GW1 as a result — invisible to this suite, because
+   the mock had GW1 finished and GW2 next so picks always existed. A harness
+   that can only produce the working case cannot find the broken one. */
+const NOPICKS_PORT = 8096;
 const server = createServer(staticHandler);
 const apiServer = createServer((req, res) => {
   const p = decodeURIComponent(req.url.split('?')[0]);
@@ -88,8 +95,19 @@ const apiServer = createServer((req, res) => {
   }
   return staticHandler(req, res);
 });
+const noPicksServer = createServer((req, res) => {
+  const p = decodeURIComponent(req.url.split('?')[0]);
+  if (PICKS_RE.test(p)) { res.writeHead(404, { 'Content-Type': 'application/json' });
+    return res.end('{"detail":"Not found."}'); }
+  if (API[p]) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p])));
+  }
+  return staticHandler(req, res);
+});
 await new Promise((r) => server.listen(PORT, r));
 await new Promise((r) => apiServer.listen(API_PORT, r));
+await new Promise((r) => noPicksServer.listen(NOPICKS_PORT, r));
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
   .catch(() => chromium.launch());
@@ -496,6 +514,78 @@ section('my squad rows, and a double gameweek that is visible as one');
   await sp.close();
 }
 
+/* ── before the first deadline, when there are no picks to have ──
+   The state the squad rows shipped broken into, and the one the owner was
+   actually in: a linked team, a gameweek whose deadline has not passed, and
+   an API that answers 404 for picks until it does. The toggle vanished, and
+   so did the pre-existing "My teams" chip that reads the same payload.
+
+   The fallback is the draft the user saved in this app. It is their own
+   squad, so showing it is not fabrication — but a draft has no XI and no
+   captain, so the assertions below are mostly about what must NOT appear. */
+section('a saved draft stands in when the deadline has not passed');
+{
+  /* #fdr-tot-h is the grid's own total header, so its table is the grid —
+     the panel draws fifteen tables and an unscoped selector finds the wrong
+     one. Same helper as the section above, redeclared because that one is
+     block-scoped to it. */
+  const gridTable = () => {
+    const h = document.getElementById('fdr-tot-h');
+    return h ? h.closest('table') : null;
+  };
+  const dp = await browser.newPage();
+  const dErrors = [];
+  dp.on('pageerror', (e) => dErrors.push(e.message));
+  await dp.addInitScript(() => {
+    try {
+      localStorage.setItem('ge-mid', '1234567');
+      /* Fifteen ids in the mock's own element range, in no useful order —
+         2 GKP, 5 DEF, 5 MID, 3 FWD, saved the way the draft builder saves. */
+      localStorage.setItem('ge-draft-v1', JSON.stringify({
+        ids: [16, 1, 24, 3, 28, 9, 2, 22, 7, 17, 36, 8, 14, 30, 23], t: 1 }));
+    } catch (_) {}
+  });
+  await dp.goto(`http://localhost:${NOPICKS_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await dp.waitForTimeout(1300);
+
+  const draft = await dp.evaluate(async (fnSrc) => {
+    const grid = eval(fnSrc);
+    try { openPanel('fixtures'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2500));
+    const labels = [...document.querySelectorAll('#fdr-rows .seg-b')].map((b) => b.textContent.trim());
+    const btn = [...document.querySelectorAll('#fdr-rows .seg-b')].find((b) => /draft|squad/i.test(b.textContent));
+    if (btn) btn.click();
+    await new Promise((r) => setTimeout(r, 1400));
+    const t = grid();
+    const rows = [...document.querySelectorAll('#fdr-tbody tr')];
+    const playerRows = rows.filter((r) => r.querySelector('td.tm-px'));
+    return {
+      labels,
+      playerRows: playerRows.length,
+      benchDividers: rows.filter((r) => /^bench$/i.test(r.textContent.trim())).length,
+      dimmed: playerRows.filter((r) => (r.getAttribute('style') || '').includes('opacity')).length,
+      captains: playerRows.filter((r) => /\bC\b/.test(r.querySelector('td.tm-nm').textContent)).length,
+      heads: t ? [...t.querySelectorAll('th')].slice(0, 2).map((h) => h.textContent.trim()) : [],
+      explains: /draft saved on this device/i.test(document.body.innerText),
+      says404: /could not load this view/i.test(document.body.innerText)
+    };
+  }, gridTable.toString());
+
+  ok(!draft.err, 'the panel opened with picks 404ing (' + (draft.err || '') + ')');
+  ok(!draft.says404, 'a refused picks call does not take the panel down');
+  ok(draft.labels.join(',') === 'Clubs,My draft',
+    'the toggle appears, and calls it a DRAFT rather than a squad (' + draft.labels.join(',') + ')');
+  ok(draft.playerRows === 15, 'all fifteen drafted players get a row (' + draft.playerRows + ')');
+  ok(JSON.stringify(draft.heads) === '["Price","Player"]', 'with price and player columns');
+  /* The three things a draft must not claim. */
+  ok(draft.benchDividers === 0, 'no bench divider — a draft has not picked an XI');
+  ok(draft.dimmed === 0, 'and no row is dimmed as benched');
+  ok(draft.captains === 0, 'no captain armband — the draft never named one');
+  ok(draft.explains, 'and the panel says in words that this is the saved draft, and why');
+  ok(dErrors.length === 0, 'nothing threw (' + dErrors.slice(0, 2).join(' | ') + ')');
+  await dp.close();
+}
+
 /* Feedback: the one flow where the app could lie to a user. The vm test in
    dev/test-feedback.mjs stubs the DOM, so it proves the control flow but not
    that the button is reachable or the dialog opens. This does that part in a
@@ -601,5 +691,6 @@ ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join
 await browser.close();
 server.close();
 apiServer.close();
+noPicksServer.close();
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

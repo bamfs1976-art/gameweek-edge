@@ -7700,12 +7700,33 @@ function fdrOppLabel(c,tight){
    is not guaranteed and the club grid never had to care. A pick with no
    element behind it — a player removed from the game since the payload was
    written — is dropped rather than drawn as a blank row. */
-function fdrSquadOrder(picks,els){
+function fdrSquadOrder(picks,els,hasXI){
   if(!picks||!els)return [];
+  const xi=hasXI===undefined?true:!!hasXI;
   return picks.map(p=>({pick:p,el:els[p.element]||null}))
     .filter(r=>r.el)
     .sort((a,c)=>a.pick.position-c.pick.position)
-    .map(r=>({pick:r.pick,el:r.el,bench:r.pick.position>11}));
+    .map(r=>({pick:r.pick,el:r.el,bench:xi&&r.pick.position>11}));
+}
+/* The saved draft, turned into the same shape the squad rows read.
+   Needed because the squad rows are least usable exactly when they are most
+   wanted: they render from loadPicks(mid, b.cur.id), and before the first
+   deadline of a season b.cur is GW1 and the FPL API does not publish picks
+   for a gameweek whose deadline has not passed. So in the week everyone is
+   planning, there was no squad to plan with and the control did not appear.
+
+   A draft is fifteen element IDs and nothing else. It is ordered by position
+   here so the rows read like a team sheet, but it names NO captain and marks
+   NO bench: fifteen drafted players are not an XI plus four, and saying they
+   were would be the app telling the user a team-sheet decision they have not
+   made. The caller labels these rows as the draft, not as the squad. */
+function fdrDraftPicks(ids,els){
+  if(!ids||!els)return [];
+  return ids.map(id=>els[id]).filter(Boolean)
+    .sort((a,b)=>(a.element_type-b.element_type)||((b.now_cost||0)-(a.now_cost||0))
+      ||String(a.web_name).localeCompare(String(b.web_name)))
+    .map((el,i)=>({element:el.id,position:i+1,multiplier:1,
+      is_captain:false,is_vice_captain:false}));
 }
 
 function fdrGrade(view,c){
@@ -7818,7 +7839,10 @@ function fdrBodyHtml(view){
      manager reading the league wants it sorted. Different questions, so the
      two row sources sort differently on purpose. */
   if(S.rows==='squad'){
-    const sq=fdrSquadOrder(S.picks,b.els);
+    /* A draft has no XI and no captain, so it gets neither a bench divider
+       nor an armband. See fdrDraftPicks. */
+    const isDraft=S.from==='draft';
+    const sq=fdrSquadOrder(S.picks,b.els,!isDraft);
     if(!sq.length)return '<tr><td class="blank" colspan="99" style="text-align:center;padding:16px">'+
       'No squad to show — link a team ID in Settings, or switch back to <b>Clubs</b>.</td></tr>';
     let benched=false;
@@ -8070,11 +8094,21 @@ async function hydrateFixtures(host){
      fetched and then thrown away after the club set was derived, which is
      why a player-row grid needs no new request. */
   const hidden=new Set();
-  let ownedClubs=null,squadPicks=null;
+  let ownedClubs=null,squadPicks=null,squadFrom='';
   const _mid=getMid();
   if(_mid){try{const _pk=await loadPicks(_mid,b.cur&&b.cur.id);
-    if(_pk&&_pk.picks){squadPicks=_pk.picks;
+    if(_pk&&_pk.picks){squadPicks=_pk.picks;squadFrom='team';
       ownedClubs=new Set(_pk.picks.map(p=>(b.els[p.element]||{}).team).filter(Boolean));}}catch(_){}}
+  /* Before the first deadline of a season there ARE no picks — the API does
+     not publish them for a gameweek that has not locked — so the rows were
+     missing for the whole week they are most wanted. Fall back to the draft
+     saved on this device. It is the user's own squad either way; the
+     difference is that a draft has no XI and no captain, so it is labelled
+     as a draft rather than dressed up as a submitted team. */
+  if(!squadPicks){try{const _d=fdrDraftPicks(loadDraftIds(),b.els);
+    if(_d.length){squadPicks=_d;squadFrom='draft';
+      ownedClubs=new Set(_d.map(p=>(b.els[p.element]||{}).team).filter(Boolean));}}catch(_){}}
+  const squadLabel=squadFrom==='draft'?'My draft':'My squad';
   /* Rows are clubs unless the user has a linked squad AND asks for it. Never
      defaults to the squad: the grid's job is the whole league, and a manager
      who has not linked a team must not see an empty table where the league
@@ -8158,7 +8192,7 @@ async function hydrateFixtures(host){
     Object.keys(byTeamGw).forEach(t=>{const row=byTeamGw[t];
       Object.keys(row).forEach(g=>{
         row[g]=fdrCombine(row[g].sort((a,c)=>String(a.ko).localeCompare(String(c.ko))));});});
-    window._fdr={b,teams,gws,byTeamGw,hidden,picks:squadPicks,rows:curRows};
+    window._fdr={b,teams,gws,byTeamGw,hidden,picks:squadPicks,rows:curRows,from:squadFrom};
     /* One summary column, in the active lens's own unit — the old FDR / xGF /
        CS% trio was those same three totals shown at once, only one of which
        matched what you were looking at. */
@@ -8339,7 +8373,7 @@ async function hydrateFixtures(host){
                row is. */
             '<label class="dl-sub" for="fdr-rows">Rows</label>'+
             '<div class="seg" id="fdr-rows">'+
-            [['clubs','Clubs'],['squad','My squad']].map(r=>'<button class="seg-b'+(r[0]===curRows?' on':'')+
+            [['clubs','Clubs'],['squad',squadLabel]].map(r=>'<button class="seg-b'+(r[0]===curRows?' on':'')+
               '" data-rows="'+r[0]+'">'+r[1]+'</button>').join('')+'</div></div>'
           : '')+
         /* The club filter belongs to the club rows. In squad mode the rows
@@ -8354,7 +8388,12 @@ async function hydrateFixtures(host){
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
         'Choose where the window <b>starts</b> and how long it runs (6 / 10 / 15 GWs, or the whole <b>Season</b>), and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. '+
-        (squadPicks&&squadPicks.length?'<b>Clubs</b> shows all twenty, re-ranked <b>easiest run first</b>; <b>My squad</b> shows your fifteen in team order, with price, so you can read your own run the way you read the league. ':'Teams re-rank <b>easiest run first</b>. ')+
+        (squadPicks&&squadPicks.length
+          ?'<b>Clubs</b> shows all twenty, re-ranked <b>easiest run first</b>; <b>'+squadLabel+'</b> shows your fifteen in position order, with price, so you can read your own run the way you read the league. '+
+           (squadFrom==='draft'
+             ?'Those fifteen are the <b>draft saved on this device</b> — the FPL API does not publish a squad until the gameweek deadline passes, so before the first deadline there is nothing else to read. A draft names no captain and no bench, and none is shown. '
+             :'')
+          :'Teams re-rank <b>easiest run first</b>. ')+
         'A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
         'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
         (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'. '+
