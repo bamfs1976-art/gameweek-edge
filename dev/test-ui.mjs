@@ -288,10 +288,13 @@ section('panels render with data behind them, rather than their error state');
      asked whether the check could fail at all. */
   const noSquad = await dataPage.evaluate(() => ({
     toggle: !!document.getElementById('fdr-rows'),
-    priceCols: document.querySelectorAll('#fdr-tbody td.tm-px').length
+    priceCols: document.querySelectorAll('#fdr-tbody td.tm-px').length,
+    explains: /save a team in/i.test(document.body.innerText)
   }));
   ok(!noSquad.toggle, 'with no team linked, the row-source toggle is not offered');
   ok(noSquad.priceCols === 0, 'and no player rows are drawn');
+  ok(!noSquad.explains,
+    'and with no team linked it does not nag about a draft — nothing has been asked for yet');
 
   /* The lens that prompted all this must produce numbers, not a column of
      dashes — which is what an absent b.teams lookup would have left behind
@@ -584,6 +587,38 @@ section('a saved draft stands in when the deadline has not passed');
   ok(draft.explains, 'and the panel says in words that this is the saved draft, and why');
   ok(dErrors.length === 0, 'nothing threw (' + dErrors.slice(0, 2).join(' | ') + ')');
   await dp.close();
+
+  /* The state the owner was actually in: team linked, deadline not passed,
+     and no draft saved in THIS app either — their drafts lived on the FPL
+     site. The rows genuinely cannot be filled, so the control stays hidden.
+     But hiding it silently is what made a new feature look broken rather
+     than empty, so the panel has to say what would fill it. */
+  const np = await browser.newPage();
+  const npErrors = [];
+  np.on('pageerror', (e) => npErrors.push(e.message));
+  await np.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await np.goto(`http://localhost:${NOPICKS_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await np.waitForTimeout(1300);
+  const bare = await np.evaluate(async () => {
+    try { openPanel('fixtures'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2500));
+    const txt = document.body.innerText;
+    return { err: null,
+      toggle: !!document.getElementById('fdr-rows'),
+      rows: document.querySelectorAll('#fdr-tbody tr').length,
+      explains: /save a team in/i.test(txt),
+      namesTheDraft: /Pre-season Draft/i.test(txt),
+      saysDeadline: /deadline passes/i.test(txt),
+      down: /could not load this view/i.test(txt) };
+  });
+  ok(!bare.err && !bare.down, 'the grid still renders with neither picks nor a draft');
+  ok(bare.rows >= 20, 'and still shows every club (' + bare.rows + ')');
+  ok(!bare.toggle, 'the toggle stays hidden — it would switch to an empty table');
+  ok(bare.explains, 'but the panel now says what would fill those rows');
+  ok(bare.saysDeadline, 'naming the deadline as the reason there is no squad yet');
+  ok(bare.namesTheDraft, 'and naming the panel that can fill them today');
+  ok(npErrors.length === 0, 'nothing threw (' + npErrors.slice(0, 2).join(' | ') + ')');
+  await np.close();
 }
 
 /* Feedback: the one flow where the app could lie to a user. The vm test in

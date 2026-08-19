@@ -8364,6 +8364,17 @@ async function hydrateFixtures(host){
         /* Row source. Offered only when there is a squad to show, on the same
            condition as the "My teams" chip — a control that switches to an
            empty table is worse than no control. */
+        /* A team is linked but there is nothing to put in the rows: the
+           deadline has not passed, so the API publishes no squad, and no
+           draft has been saved on this device either. Say so. The control
+           stays hidden — switching to an empty table is worse than no
+           control — but hiding it with no explanation is how this looked
+           like a broken feature rather than an empty one. */
+        (!squadPicks&&_mid
+          ? '<div class="dl-sub" style="margin-bottom:10px">Your own players can fill these rows. '+
+            'FPL does not publish a squad until the gameweek deadline passes, so until then '+
+            'save a team in <b>Pre-season Draft</b> and it appears here as <b>My draft</b>.</div>'
+          : '')+
         (squadPicks&&squadPicks.length
           ? '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
             /* Labelled and on its own line. Both controls are segmented and
