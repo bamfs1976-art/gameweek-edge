@@ -357,7 +357,19 @@ section('my squad rows, and a double gameweek that is visible as one');
   sp.on('pageerror', (e) => spErrors.push(e.message));
   /* The row source is offered only to a linked team, so link one before the
      page script runs. */
-  await sp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  /* A linked team AND a saved draft, both present. Which one wins is the
+     whole question once the deadline passes: the live squad must, and the
+     draft must go back to being a draft. Nothing tested this until a
+     mutation run flipped `if(!squadPicks)` to `if(true)` and every check
+     stayed green — because no page in this suite had both at once. A
+     harness that cannot produce the conflict cannot adjudicate it. The
+     fifteen below share no player with dev/fixtures/fpl-mock-picks.json,
+     so the two sources are told apart by name, not by count. */
+  await sp.addInitScript(() => { try {
+    localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-draft-v1', JSON.stringify({
+      ids: [67, 73, 68, 74, 80, 86, 92, 70, 76, 82, 88, 94, 84, 90, 96], t: 1 }));
+  } catch (_) {} });
   await sp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
   await sp.waitForTimeout(1200);
 
@@ -448,6 +460,14 @@ section('my squad rows, and a double gameweek that is visible as one');
   ok(squad.benchIndex === 11,
     'and it sits after the eleventh player, where the bench actually starts (index ' + squad.benchIndex + ')');
   ok(squad.captains === 1, 'the captain is marked, exactly once (' + squad.captains + ')');
+  /* The live squad wins over the saved draft, and says so. */
+  ok(squad.on === 'My squad',
+    'with picks available the toggle reads My squad, not My draft (' + squad.on + ')');
+  ok(!(squad.names || []).some((n) => /IPS|LEE|LIV|MCI|MUN/.test(n)),
+    'and the rows are the LIVE squad — no player from the saved draft appears ('
+    + JSON.stringify((squad.names || []).slice(0, 3)) + ')');
+  ok(squad.benchDivider === 1,
+    'the bench divider is back, because a submitted squad does have an XI');
   ok(!squad.teamFilter, 'the club filter is withdrawn — it would delete players from your own squad');
 
   /* Six of the fifteen play in the double: three ARS and three AVL. This is
