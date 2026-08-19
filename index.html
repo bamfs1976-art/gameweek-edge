@@ -565,6 +565,16 @@ html.offline .net-banner{transform:translateY(0)}
 .fdr .fdr-opp{display:block;font-size:.63rem;font-weight:700;opacity:.72;line-height:1.15;margin-top:1px}
 .fdr td.fdr-tot{background:var(--surface-3);color:var(--text)}
 .fdr td.fdr-tot .fdr-opp{opacity:.6}
+/* Squad rows carry two sticky label columns instead of one, so the second
+   needs its own offset — both at left:0 would stack the name on the price. */
+.fdr .tm-px{left:0;width:56px;min-width:56px}
+.fdr .tm-nm{left:56px}
+/* A double gameweek. The badge is the count, not the difficulty: the cell is
+   still coloured by how hard the opponents are, and ×2 says how many there
+   are. The dotted edge makes it findable when scanning a wide grid. */
+.fdr .fdr-mult{display:inline-block;margin-left:3px;font-size:var(--fs-min);font-weight:900;
+  vertical-align:super;opacity:.8}
+.fdr td.fdr-dgw{box-shadow:inset 0 0 0 2px rgba(12,16,20,.45)}
 .fdr-1{background:#2ecf73}.fdr-2{background:#8fd9a6}.fdr-3{background:#d9dee3;color:#3a4650}
 .fdr-4{background:#f0a3a0}.fdr-5{background:#e05a55;color:#fff}
 .fdr td.blank{background:var(--surface-3);color:var(--text-4);font-weight:600}
@@ -7621,10 +7631,74 @@ function fdrRunTotal(view,cells){
    an entry point but not underlined in the grid above it would be the panel
    contradicting itself. */
 const FDR_PATCH_MAX=2.8;
+
+/* ── DOUBLE GAMEWEEKS: one cell, both fixtures ──────────────
+   The per-team map used to write one cell per gameweek with a plain
+   assignment, so a club playing twice in a week had its first fixture
+   overwritten and gone — not shown, not totalled, not visible anywhere. Eight
+   call sites read that map, so the loss was silent in all eight.
+
+   Each gameweek now collects its fixtures and combines them here. The rule is
+   one sentence: a cell's number combines the way its own RUN TOTAL already
+   combines. Attack, defence and the official FDR sum across gameweeks, so
+   they sum within one; overall win odds and Strength average across
+   gameweeks, so they average within one — a probability that summed would
+   stop being a probability.
+
+   The COLOUR is deliberately not the combined figure. It grades the
+   per-match means (`g` below), so a cell answers "how hard are these
+   opponents" and the ×2 badge answers "how many games". Grading the sum
+   would paint two awkward fixtures green for no reason but their number, and
+   would push the FPL lens off its own 1-5 scale and out of the CSS classes
+   that colour it. A single fixture has no `g` and is graded exactly as it
+   always was. */
+function fdrCombine(list){
+  const fx=(list||[]).filter(Boolean);
+  if(!fx.length)return null;
+  const fdrOf=c=>(c.fdr>=1&&c.fdr<=5?c.fdr:3);
+  if(fx.length===1){const c=fx[0];c.n=1;c.each=fx;c.label=fdrOppLabel(c);return c;}
+  const sum=k=>fx.reduce((s,c)=>s+(c[k]||0),0);
+  const mean=k=>sum(k)/fx.length;
+  const g={lam:mean('lam'),cs:mean('cs'),win:mean('win'),s:fx[0].s,
+    fdr:Math.max(1,Math.min(5,Math.round(fx.reduce((s,c)=>s+fdrOf(c),0)/fx.length)))};
+  g.diff=plsimDiff(g.win);
+  const c={opp:fx[0].opp,home:fx[0].home,s:fx[0].s,diff:g.diff,
+    lam:sum('lam'),cs:sum('cs'),win:mean('win'),
+    fdr:fx.reduce((s,x)=>s+fdrOf(x),0),
+    n:fx.length,each:fx,g};
+  c.label=fdrOppLabel(c);
+  return c;
+}
+/* Every fixture in the cell, each with its own venue — a club can play away
+   then home in the same week, and one (a) covering both would be a false
+   statement about a real match. `tight` drops the space for the narrow
+   rotation strips, which is the only reason they wrote it that way. */
+function fdrOppLabel(c,tight){
+  if(!c)return '—';
+  const fx=(c.each&&c.each.length)?c.each:[c];
+  return fx.map(f=>f.opp+(f.home?'':(tight?'(a)':' (a)'))).join(' + ');
+}
+/* Squad rows in the order the manager's own team page reads: FPL sends picks
+   with `position` 1-15, the XI in formation order then the bench in
+   substitution order. Sorted rather than trusted, because the payload's order
+   is not guaranteed and the club grid never had to care. A pick with no
+   element behind it — a player removed from the game since the payload was
+   written — is dropped rather than drawn as a blank row. */
+function fdrSquadOrder(picks,els){
+  if(!picks||!els)return [];
+  return picks.map(p=>({pick:p,el:els[p.element]||null}))
+    .filter(r=>r.el)
+    .sort((a,c)=>a.pick.position-c.pick.position)
+    .map(r=>({pick:r.pick,el:r.el,bench:r.pick.position>11}));
+}
+
 function fdrGrade(view,c){
-  return view==='attack'?fdrAttack(c.lam):view==='defence'?fdrDefence(c.cs)
-    :view==='fpl'?(c.fdr>=1&&c.fdr<=5?c.fdr:3)
-    :view==='strength'?strengthGrade(c.s):c.diff;
+  /* c.g is present only on a double: grade the per-match means, never the
+     combined figure. See fdrCombine above for why. */
+  const m=(c&&c.g)||c;
+  return view==='attack'?fdrAttack(m.lam):view==='defence'?fdrDefence(m.cs)
+    :view==='fpl'?(m.fdr>=1&&m.fdr<=5?m.fdr:3)
+    :view==='strength'?strengthGrade(m.s):m.diff;
 }
 /* The club's best K-gameweek run under this lens, or null when its best is
    not actually kind. One implementation, two readers. */
@@ -7680,37 +7754,79 @@ function fdrEntryHtml(view){
     rows+'</div></div>';
 }
 
+/* One club's run of cells, plus the total column, for whichever lens is on.
+   Shared by the club rows and the squad rows: a player's fixtures ARE his
+   club's fixtures, so the two row sources differ only in what sits in front
+   of the strip. Written out once so a change to how a cell reads — the
+   double-gameweek badge, say — cannot reach one and miss the other. */
+function fdrRunCells(view,teamId,gws,byTeamGw,K){
+  const patch=fdrPatchFor(view,teamId,gws,byTeamGw,K);
+  const rowCells=gws.map(g=>(byTeamGw[teamId]||{})[g]||null);
+  let n=0,tot=0;
+  const cells=gws.map((g,gi)=>{const c=rowCells[gi];
+    if(!c)return '<td class="blank">—</td>';
+    n++;const gr=fdrGrade(view,c);tot+=gr;
+    const inPatch=patch&&gi>=patch.start&&gi<=patch.end;
+    /* A double gets a count badge rather than a different colour. The colour
+       still answers "how hard are these opponents"; ×2 answers "how many
+       games", and the two questions have different answers often enough that
+       merging them would lose one. */
+    const badge=c.n>1?'<span class="fdr-mult">×'+c.n+'</span>':'';
+    /* The projection first, the opponent underneath: the number is what you
+       plan around, the fixture is the context for it. */
+    return '<td class="cell fdr-'+gr+(c.n>1?' fdr-dgw':'')+'"'+
+      (inPatch?' style="box-shadow:inset 0 -3px 0 #a855f7"':'')+'>'+
+      '<span class="fdr-val">'+esc(fdrCellValue(view,c))+badge+'</span>'+
+      '<span class="fdr-opp">'+esc(fdrOppLabel(c))+'</span></td>';
+  }).join('');
+  const L=fdrLens(view);
+  const sums=n?'<td class="cell fdr-tot"><span class="fdr-val">'+esc(fdrRunTotal(view,rowCells))+'</span>'+
+    '<span class="fdr-opp">'+L.unit+'</span></td>'
+    :'<td class="blank">—</td>';
+  return {cells,sums,n,mean:n?tot/n:99};
+}
+
 function fdrBodyHtml(view){
   const S=window._fdr;if(!S)return '';const {b,gws,byTeamGw}=S;
+  const K=Math.min(5,gws.length);
+  /* ── MY SQUAD: the same grid, one row per player ───────────
+     The rows stay in squad order — the XI in formation order, then the bench
+     in substitution order — rather than re-ranking by difficulty the way the
+     club rows do. A manager reading their own team wants to recognise it; a
+     manager reading the league wants it sorted. Different questions, so the
+     two row sources sort differently on purpose. */
+  if(S.rows==='squad'){
+    const sq=fdrSquadOrder(S.picks,b.els);
+    if(!sq.length)return '<tr><td class="blank" colspan="99" style="text-align:center;padding:16px">'+
+      'No squad to show — link a team ID in Settings, or switch back to <b>Clubs</b>.</td></tr>';
+    let benched=false;
+    return sq.map(r=>{
+      const el=r.el,run=fdrRunCells(view,el.team,gws,byTeamGw,K);
+      const cap=r.pick.is_captain?' <span class="badge badge-green">C</span>'
+        :r.pick.is_vice_captain?' <span class="badge">V</span>':'';
+      /* One divider, drawn where the bench starts, so eleven and four are
+         readable without counting rows. */
+      const split=(!benched&&r.bench)?(benched=true,
+        '<tr><td class="tm" colspan="99" style="padding:4px 8px;font-size:10px;letter-spacing:.08em;'+
+        'text-transform:uppercase;color:var(--text-3)">Bench</td></tr>'):'';
+      return split+'<tr'+(r.bench?' style="opacity:.62"':'')+'>'+
+        '<td class="tm tm-px mono">'+esc(money(el.now_cost))+'</td>'+
+        '<td class="tm tm-nm">'+crest(b,el.team,16)+esc(el.web_name)+cap+'</td>'+
+        run.cells+run.sums+'</tr>';
+    }).join('');
+  }
   /* Team filter: hide clubs the user has toggled off (empty set = all shown). */
   const teams=(S.hidden&&S.hidden.size)?S.teams.filter(t=>!S.hidden.has(t.id)):S.teams;
   if(!teams.length)return '<tr><td class="blank" colspan="99" style="text-align:center;padding:16px">No teams selected — tap <b>All</b> to bring them back.</td></tr>';
-  const grade=c=>fdrGrade(view,c);
   /* Rank teams by their total fixture difficulty for the chosen lens — the
      easiest run first, so the best opening-fixture teams sit at the top
      (matches how the community reads an FDR grid). A purple underline marks
      each team best K-gameweek run in the window (its fixture purple patch),
      only when that run is genuinely favourable. */
-  const K=Math.min(5,gws.length);
   const rows=teams.map(t=>{
-    let lam=0,cs=0,n=0,tot=0;
-    const patch=fdrPatchFor(view,t.id,gws,byTeamGw,K);
-    const rowCells=gws.map(g=>(byTeamGw[t.id]||{})[g]||null);
-    const cells=gws.map((g,gi)=>{const c=rowCells[gi];
-      if(!c)return '<td class="blank">—</td>';
-      lam+=c.lam;cs+=c.cs;n++;const gr=grade(c);tot+=gr;
-      const inPatch=patch&&gi>=patch.start&&gi<=patch.end;
-      /* The projection first, the opponent underneath: the number is what you
-         plan around, the fixture is the context for it. */
-      return '<td class="cell fdr-'+gr+'"'+(inPatch?' style="box-shadow:inset 0 -3px 0 #a855f7"':'')+'>'+
-        '<span class="fdr-val">'+esc(fdrCellValue(view,c))+'</span>'+
-        '<span class="fdr-opp">'+esc(c.opp)+(c.home?'':' (a)')+'</span></td>';
-    }).join('');
-    const L=fdrLens(view);
-    const sums=n?'<td class="cell fdr-tot"><span class="fdr-val">'+esc(fdrRunTotal(view,rowCells))+'</span>'+
-      '<span class="fdr-opp">'+L.unit+'</span></td>'
-      :'<td class="blank">—</td>';
-    return {html:'<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+cells+sums+'</tr>',key:n?tot/n:99};
+    const run=fdrRunCells(view,t.id,gws,byTeamGw,K);
+    return {html:'<tr><td class="tm">'+crest(b,t.id,16)+esc(t.short_name)+'</td>'+run.cells+run.sums+'</tr>',
+      key:run.mean};
   });
   rows.sort((a,c)=>a.key-c.key);
   return rows.map(r=>r.html).join('');
@@ -7744,11 +7860,14 @@ function renderFdr(view){
 
    The Clean Sheet Matrix is NOT the grid's Defence lens, despite both
    printing a clean-sheet percentage per club per gameweek, and it is kept
-   rather than folded in for two reasons. It reads the published model bundle
-   instead of ratings fitted in the browser, so it still works before a ball
-   is kicked — the grid answers "Between seasons" then. And it stacks BOTH
-   fixtures of a double gameweek, where the grid's per-team map keeps one
-   fixture per gameweek and silently drops the other. */
+   rather than folded in because it reads the published model bundle instead
+   of ratings fitted in the browser, so it still works before a ball is
+   kicked — the grid answers "Between seasons" then.
+
+   The second reason is gone. It used to be that the matrix stacked both
+   fixtures of a double gameweek while the grid's per-team map kept one and
+   dropped the other; the grid collects its fixtures and folds them through
+   fdrCombine() now, so both panels show a double as a double. */
 const FX_VIEWS=[
   {id:'grid',label:'Fixture grid',
    desc:'Every club’s run, coloured by the lens you pick — win odds, expected goals, clean-sheet odds, or the official FDR for comparison.'},
@@ -7923,12 +8042,22 @@ async function hydrateFixtures(host){
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   /* Team filter state: clubs toggled off in the grid. Optional "My teams"
      shortcut needs the linked squad, so fetch its clubs when a team is linked
-     (best-effort — the filter still works without it). */
+     (best-effort — the filter still works without it).
+
+     The same payload feeds the My squad row source. It was already being
+     fetched and then thrown away after the club set was derived, which is
+     why a player-row grid needs no new request. */
   const hidden=new Set();
-  let ownedClubs=null;
+  let ownedClubs=null,squadPicks=null;
   const _mid=getMid();
   if(_mid){try{const _pk=await loadPicks(_mid,b.cur&&b.cur.id);
-    if(_pk&&_pk.picks)ownedClubs=new Set(_pk.picks.map(p=>(b.els[p.element]||{}).team).filter(Boolean));}catch(_){}}
+    if(_pk&&_pk.picks){squadPicks=_pk.picks;
+      ownedClubs=new Set(_pk.picks.map(p=>(b.els[p.element]||{}).team).filter(Boolean));}}catch(_){}}
+  /* Rows are clubs unless the user has a linked squad AND asks for it. Never
+     defaults to the squad: the grid's job is the whole league, and a manager
+     who has not linked a team must not see an empty table where the league
+     used to be. */
+  let curRows='clubs';
   const R=plsimRatings(b,fixtures);
   const pc=x=>Math.round(x*100);
   const POSN=['','GKP','DEF','MID','FWD'];
@@ -7983,27 +8112,40 @@ async function hydrateFixtures(host){
        `(b.teams||[]).forEach`, which throws on an object and took the whole
        panel down with "Could not load this view". The local `teams` in this
        function is the array; b.teams is the map. */
+    /* COLLECT, then combine. This was a plain assignment per gameweek, which
+       meant a club playing twice in one week kept whichever fixture the API
+       happened to list second and lost the other with no marker anywhere.
+       Every fixture is pushed here and fdrCombine() folds the list into the
+       same cell shape the eight readers below already expect. */
+    const put=(team,gw,cell)=>{const row=byTeamGw[team]=byTeamGw[team]||{};
+      (row[gw]=row[gw]||[]).push(cell);};
     fixtures.forEach(f=>{
       if(!f.event||f.event<from||f.event>=from+winN)return;
       const m=matchModel(b,f,R);
-      (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]={opp:teamShort(b,f.team_a),
+      put(f.team_h,f.event,{opp:teamShort(b,f.team_a),ko:f.kickoff_time||'',
         diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
         lam:m?m.hx:0,cs:m?m.csH:0,win:m?m.pH:0,
-        s:strengthEdge(b.teams[f.team_h],true,b.teams[f.team_a])};
-      (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]={opp:teamShort(b,f.team_h),
+        s:strengthEdge(b.teams[f.team_h],true,b.teams[f.team_a])});
+      put(f.team_a,f.event,{opp:teamShort(b,f.team_h),ko:f.kickoff_time||'',
         diff:m?plsimDiff(m.pA):f.team_a_difficulty,fdr:f.team_a_difficulty,home:false,
         lam:m?m.ax:0,cs:m?m.csA:0,win:m?m.pA:0,
-        s:strengthEdge(b.teams[f.team_a],false,b.teams[f.team_h])};
+        s:strengthEdge(b.teams[f.team_a],false,b.teams[f.team_h])});
     });
-    window._fdr={b,teams,gws,byTeamGw,hidden};
+    /* Kickoff order, not API order — "IPS (a) + FUL" has to be the order the
+       games are actually played, or the label reads as a different week. */
+    Object.keys(byTeamGw).forEach(t=>{const row=byTeamGw[t];
+      Object.keys(row).forEach(g=>{
+        row[g]=fdrCombine(row[g].sort((a,c)=>String(a.ko).localeCompare(String(c.ko))));});});
+    window._fdr={b,teams,gws,byTeamGw,hidden,picks:squadPicks,rows:curRows};
     /* One summary column, in the active lens's own unit — the old FDR / xGF /
        CS% trio was those same three totals shown at once, only one of which
        matched what you were looking at. */
-    const head='<tr><th class="tm">Team</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th id="fdr-tot-h">Total</th></tr>';
+    const head='<tr>'+(curRows==='squad'?'<th class="tm tm-px">Price</th><th class="tm tm-nm">Player</th>':'<th class="tm">Team</th>')+
+      gws.map(g=>'<th>GW'+g+'</th>').join('')+'<th id="fdr-tot-h">Total</th></tr>';
 
     /* Defensive rotation pairs — cheap defenders whose easy fixtures alternate. */
     const teamDiff={};
-    teams.forEach(t=>{teamDiff[t.id]=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?fdrDefence(c.cs):5;});});
+    teams.forEach(t=>{teamDiff[t.id]=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?fdrGrade('defence',c):5;});});
     const enablers=b.elements.filter(e=>e.status==='a'&&e.element_type===2&&(e.now_cost||0)<=60
         &&((parseFloat(e.selected_by_percent)||0)>=0.3||parseFloat(e.ep_next||'0')>=2))
       .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
@@ -8019,7 +8161,7 @@ async function hydrateFixtures(host){
        attacking fixtures alternate, so each week you start whichever faces the
        kinder defence. Different lens from the clean-sheet one above. */
     const teamDiffAtt={};
-    teams.forEach(t=>{teamDiffAtt[t.id]=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?fdrAttack(c.lam):5;});});
+    teams.forEach(t=>{teamDiffAtt[t.id]=gws.map(g=>{const c=(byTeamGw[t.id]||{})[g];return c?fdrGrade('attack',c):5;});});
     const midEnablers=b.elements.filter(e=>e.status==='a'&&e.element_type===3&&(e.now_cost||0)<=65
         &&((parseFloat(e.selected_by_percent)||0)>=0.3||parseFloat(e.ep_next||'0')>=2))
       .map(e=>({id:e.id,team:e.team,name:e.web_name,cost:e.now_cost,own:parseFloat(e.selected_by_percent)||0}))
@@ -8031,7 +8173,7 @@ async function hydrateFixtures(host){
     const rotStrip=(p,dm)=>gws.map((g,gi)=>{
       const da=dm[p.a.team][gi],dc=dm[p.c.team][gi],d=Math.min(da,dc);
       const t=da<=dc?p.a:p.c,c=(byTeamGw[t.team]||{})[g];
-      return '<td class="cell fdr-'+d+'" style="font-size:10px">'+(c?esc(c.opp)+(c.home?'':'(a)'):'—')+'</td>';
+      return '<td class="cell fdr-'+d+'" style="font-size:10px">'+esc(fdrOppLabel(c,true))+'</td>';
     }).join('');
     const pairRows=(arr,dm)=>arr.map(p=>
       '<div style="padding:8px 0;border-top:1px solid var(--border)">'+
@@ -8060,7 +8202,7 @@ async function hydrateFixtures(host){
       const strip=gws.map((g,gi)=>{const t=ch.path[gi],d=dm[t][gi],c=(byTeamGw[t]||{})[g];
         const edge=gi>0&&ch.path[gi-1]!==t;
         return '<td class="cell fdr-'+d+'" style="font-size:10px'+(edge?';box-shadow:inset 3px 0 0 var(--purple,#a855f7)':'')+'">'+
-          (c?esc(c.opp)+(c.home?'':'(a)'):'—')+'</td>';}).join('');
+          esc(fdrOppLabel(c,true))+'</td>';}).join('');
       const plan=ch.blocks.map(bk=>'<b>'+esc(bk.player.name)+'</b> <span class="dl-sub">'+
         teamShort(b,bk.team)+' · GW'+gws[bk.from]+(bk.weeks>1?'–'+gws[bk.to]:'')+'</span>').join(
         ' <span style="color:var(--text-3)">→</span> ');
@@ -8122,7 +8264,7 @@ async function hydrateFixtures(host){
         '<p class="dl-sub" style="margin-bottom:6px">Our Model XI projected forward fixture-by-fixture, with the best captain each week (armband doubled). <b>'+grand.toFixed(0)+'</b> projected points over the next '+gws.length+' gameweeks.</p>'+
         '<div class="dl"><div class="dl-row head"><span class="dl-grow">GW</span><span class="dl-grow">Captain</span><span class="dl-col">Pts</span></div>'+
         prows.map(r=>'<div class="dl-row"><span class="dl-grow">GW'+r.g+'</span>'+
-          '<span class="dl-grow">'+(r.cap?esc(r.cap.web_name)+(r.opp?' <span class="dl-sub">'+esc(r.opp.opp)+(r.opp.home?' (H)':' (A)')+'</span>':''):'—')+'</span>'+
+          '<span class="dl-grow">'+(r.cap?esc(r.cap.web_name)+(r.opp?' <span class="dl-sub">'+r.opp.each.map(f=>esc(f.opp)+(f.home?' (H)':' (A)')).join(' + ')+'</span>':''):'—')+'</span>'+
           '<span class="dl-col mono" style="font-weight:800">'+r.tot.toFixed(1)+'</span></div>').join('')+
         '</div></div>';
     }
@@ -8163,21 +8305,42 @@ async function hydrateFixtures(host){
           (from!==startGw?'<button class="btn btn-ghost btn-sm" id="fdr-now">Back to now</button>':'')+
         '</div>'+
         '<div class="seg" id="fdr-view" style="margin-bottom:10px">'+VIEWS.map(v=>'<button class="seg-b'+(v[0]===curView?' on':'')+'" data-view="'+v[0]+'">'+v[1]+'</button>').join('')+'</div>'+
+        /* Row source. Offered only when there is a squad to show, on the same
+           condition as the "My teams" chip — a control that switches to an
+           empty table is worse than no control. */
+        (squadPicks&&squadPicks.length
+          ? '<div class="seg" id="fdr-rows" style="margin-bottom:10px">'+
+            [['clubs','Clubs'],['squad','My squad']].map(r=>'<button class="seg-b'+(r[0]===curRows?' on':'')+
+              '" data-rows="'+r[0]+'">'+r[1]+'</button>').join('')+'</div>'
+          : '')+
+        /* The club filter belongs to the club rows. In squad mode the rows
+           are the squad, so hiding clubs would silently drop players from a
+           table headed "My squad" — a filter that edits your own team. */
+        (curRows==='squad'?'':
         '<div class="fdr-teams" id="fdr-teams">'+
           '<button class="tchip tchip-act" data-tf="all">All</button>'+
           (ownedClubs&&ownedClubs.size?'<button class="tchip tchip-act" data-tf="mine">My teams</button>':'')+
           teams.map(t=>'<button class="tchip'+(hidden.has(t.id)?' off':'')+'" data-team="'+t.id+'">'+crest(b,t.id,14)+esc(t.short_name)+'</button>').join('')+
-        '</div>'+
+        '</div>')+
         '<div class="fdr"><table>'+head+'<tbody id="fdr-tbody">'+fdrBodyHtml(curView)+'</tbody></table></div>'+
         '<div class="dl-sub" style="margin-top:10px"><span id="fdr-note">Greener is easier overall — from each fixture’s modelled win odds. </span>'+
-        'Choose where the window <b>starts</b> and how long it runs (6 / 10 / 15 GWs, or the whole <b>Season</b>), and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. Teams re-rank <b>easiest run first</b>. A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
+        'Choose where the window <b>starts</b> and how long it runs (6 / 10 / 15 GWs, or the whole <b>Season</b>), and toggle the lens — Overall, Attack, Defence, or the <b>official FPL</b> rating for comparison. '+
+        (squadPicks&&squadPicks.length?'<b>Clubs</b> shows all twenty, re-ranked <b>easiest run first</b>; <b>My squad</b> shows your fifteen in team order, with price, so you can read your own run the way you read the league. ':'Teams re-rank <b>easiest run first</b>. ')+
+        'A <b style="color:#a855f7">purple underline</b> marks each team’s best '+Math.min(5,gws.length)+'-gameweek stretch in the window (its fixture <b>purple patch</b>) — the window to buy that team’s players. '+
         'Each cell shows the <b>projection for that lens</b> — win chance, expected goals, clean-sheet odds or the official 1–5 rating — with the fixture underneath, and <b>(a)</b> marking an away game. Two fixtures shaded the same can be 1.6 and 2.5 expected goals, which is the difference between a fixture worth planning around and one that is not. <b>Total</b> is the run in that same unit'+
-        (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'.</div>'+
+        (R.fitted?' (model refitted on '+R.fitted+' finished fixtures)':'')+'. '+
+        'A <b>double gameweek</b> shows both fixtures in one cell and is marked <b>×2</b>. Its expected goals, clean sheets and FDR count <b>both</b> games in the Total; the colour grades the opponents themselves, so two hard fixtures stay hard however many of them there are.</div>'+
       '</div>'+
       '<div id="fdr-entry">'+fdrEntryHtml(curView)+'</div>'+
       planCard+swCard+chainCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
     if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
+    /* Rows rebuild rather than re-render: the header row and the club filter
+       both change with the row source, and they live outside #fdr-tbody. */
+    const rseg=host.querySelector('#fdr-rows');
+    if(rseg)rseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');
+      if(btn&&btn.dataset.rows!==curRows){curRows=btn.dataset.rows;
+        track('fixtures_rows',{rows:curRows});build();}});
     const wseg=host.querySelector('#fdr-win');
     if(wseg)wseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){const w=+btn.dataset.win;if(w!==curWin){curWin=w;build();}}});
     const fsel=host.querySelector('#fdr-from');

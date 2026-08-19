@@ -33,6 +33,76 @@ why, and what the operator must still do by hand.
    already set — `/api/ai` now requires them to authenticate callers (it
    returns a 503 setup note until they exist).
 
+## The fixture grid drops half of a double gameweek — fixed (19 Aug 2026)
+
+**What it was.** `hydrateFixtures` built its per-club map with a plain
+assignment, `(byTeamGw[f.team_h] = … )[f.event] = { … }`. A club playing twice
+in one gameweek kept whichever fixture the API listed second and lost the
+other with no marker anywhere — not in the cell, not in the run total, not in
+the rotation pairs, the rotation chains, the opener planner or the chip-swing
+card, all of which read the same map. Eight readers, one silent loss.
+
+The source had known this for as long as the map existed. The comment above
+`FX_VIEWS` gave it as one of the two reasons the Clean Sheet Matrix was kept
+as a separate panel: *"it stacks BOTH fixtures of a double gameweek, where the
+grid's per-team map keeps one fixture per gameweek and silently drops the
+other."* It was written down and left standing.
+
+**What changed.** Each gameweek collects its fixtures now and `fdrCombine()`
+folds the list into the same cell shape the eight readers already expect, so
+none of them needed rewriting. The rule is one sentence: **a cell's number
+combines the way its own run total already combines.** Attack, defence and the
+official FDR sum across gameweeks, so they sum within one; overall win odds
+and Strength average across gameweeks, so they average within one — a
+probability that summed would stop being a probability.
+
+The **colour** is deliberately not the combined figure. It grades the
+per-match means, so the cell answers "how hard are these opponents" and a
+`×2` badge answers "how many games". Grading the sum would paint two awkward
+fixtures green for no reason but their number, and would push the FPL lens off
+its own 1–5 scale and out of the CSS classes that colour it. Two hard fixtures
+in one week are still two hard fixtures.
+
+Fixtures within a cell are ordered by **kickoff**, not by the order the API
+listed them: "AVL + BRE" for a week played the other way round describes a
+week that does not happen.
+
+**What could have caught it.** Nothing did, for the same reason the bug
+survived being written down: `dev/fixtures/fpl-mock-fixtures.json` contained
+no double gameweek at all, so every check that could have looked for one had
+nothing to find and would have passed by measuring itself. Fixture 81 (ARS v
+AVL in GW4, on top of the fixtures both clubs already had that week) exists so
+the guard has something to see.
+
+## Fixture grid: My squad rows (19 Aug 2026)
+
+The same grid, one row per player instead of one per club, with price and name
+in front of the strip — the layout people share as a "fixture ticker".
+
+It is a row source on the existing grid rather than a new panel, so it reuses
+the window control, the five lenses, the purple-patch underline and the
+per-club map unchanged; a player's fixtures are his club's fixtures. The picks
+payload it needs was already being fetched for the "My teams" chip and thrown
+away afterwards, so it costs no new request.
+
+Two rules that are not obvious from the screenshot it came from:
+
+* **Club rows re-rank easiest-first; squad rows stay in squad order.** A
+  manager reading the league wants it sorted. A manager reading their own team
+  wants to recognise it — the XI in formation order, then the bench, with one
+  divider where the bench starts.
+* **The club filter is withdrawn in squad mode.** Hiding clubs would silently
+  drop players from a table headed "My squad", which is a filter that edits
+  your own team.
+
+It never opens on the squad, and the toggle is offered only when a team is
+linked: a control that switches to an empty table is worse than no control.
+
+Guards: `dev/test-fixture-ticker.mjs` (73 checks, in `npm test`) for the
+combination and ordering rules as arithmetic; `dev/test-ui.mjs` (79
+assertions, outside `npm test` — needs Chromium) for whether any of it reaches
+the screen. Both mutation-tested.
+
 ## Register edits owed, with a source attached (18 Aug 2026)
 
 The official FPL Scout pre-season round-up (all 20 clubs, 172 stated prices)

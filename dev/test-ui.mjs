@@ -74,12 +74,17 @@ const API = {
   '/api/fpl/bootstrap-static': 'fpl-mock-bootstrap.json',
   '/api/fpl/fixtures': 'fpl-mock-fixtures.json'
 };
+/* The picks endpoint carries the manager id and gameweek in the path, so it
+   is matched by shape rather than by string. Served to whichever id asks:
+   this harness has exactly one squad and the point is the rendering, not the
+   lookup. */
+const PICKS_RE = /^\/api\/fpl\/entry\/\d+\/event\/\d+\/picks$/;
 const server = createServer(staticHandler);
 const apiServer = createServer((req, res) => {
   const p = decodeURIComponent(req.url.split('?')[0]);
-  if (API[p]) {
+  if (API[p] || PICKS_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p])));
+    return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p] || 'fpl-mock-picks.json')));
   }
   return staticHandler(req, res);
 });
@@ -257,6 +262,19 @@ section('panels render with data behind them, rather than their error state');
   ok((grid.lenses || []).length === 5,
     'all five lenses are offered (' + (grid.lenses || []).join(', ') + ')');
 
+  /* No team is linked on this page, so there is no squad to put in the rows.
+     The toggle must not appear: a control that switches to an empty table is
+     worse than no control. Asserted HERE rather than in the squad section
+     below, because that page always has a squad and so could never see this
+     go wrong — which is exactly what it did, silently, until a mutation run
+     asked whether the check could fail at all. */
+  const noSquad = await dataPage.evaluate(() => ({
+    toggle: !!document.getElementById('fdr-rows'),
+    priceCols: document.querySelectorAll('#fdr-tbody td.tm-px').length
+  }));
+  ok(!noSquad.toggle, 'with no team linked, the row-source toggle is not offered');
+  ok(noSquad.priceCols === 0, 'and no player rows are drawn');
+
   /* The lens that prompted all this must produce numbers, not a column of
      dashes — which is what an absent b.teams lookup would have left behind
      even if it had failed quietly instead of throwing. */
@@ -296,6 +314,145 @@ section('panels render with data behind them, rather than their error state');
   ok(dataErrors.length === 0,
     'the data-backed page threw nothing (' + dataErrors.slice(0, 2).join(' | ') + ')');
   await dataPage.close();
+}
+
+/* ── the squad ticker, and the double gameweek it exists to show ──
+   dev/test-fixture-ticker.mjs proves the combination and ordering rules as
+   arithmetic. Neither of them is worth anything if the rows never reach the
+   screen, and "reaches the screen" is not a question a string of HTML can
+   answer — the grid is built by a hydrate function behind a try/catch that
+   prints "Could not load this view" and carries on, which is exactly how the
+   FDR grid shipped broken on 16 Aug 2026 with a green unit suite behind it.
+
+   The mock carries a real double: fixture 81 puts ARS v AVL into GW4 on top
+   of the fixtures both clubs already have that week, and both clubs are in
+   the mock squad. Before it was added there was no double anywhere in this
+   harness, so a "doubles render" check had nothing it could possibly find —
+   it would have passed by measuring itself. */
+section('my squad rows, and a double gameweek that is visible as one');
+{
+  const sp = await browser.newPage();
+  const spErrors = [];
+  sp.on('pageerror', (e) => spErrors.push(e.message));
+  /* The row source is offered only to a linked team, so link one before the
+     page script runs. */
+  await sp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await sp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await sp.waitForTimeout(1200);
+
+  const gridTable = () => {
+    const h = document.getElementById('fdr-tot-h');
+    return h ? h.closest('table') : null;
+  };
+
+  const clubs = await sp.evaluate(async (fnSrc) => {
+    window.__grid = eval(fnSrc);
+    try { openPanel('fixtures'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2500));
+    const t = window.__grid();
+    return {
+      hasToggle: !!document.getElementById('fdr-rows'),
+      labels: [...document.querySelectorAll('#fdr-rows .seg-b')].map((b) => b.textContent.trim()),
+      on: [...document.querySelectorAll('#fdr-rows .seg-b.on')].map((b) => b.textContent.trim()).join(','),
+      firstHead: t ? (t.querySelector('th') || {}).textContent : null,
+      teamFilter: !!document.getElementById('fdr-teams'),
+      /* #fdr-tbody, not 'tbody tr': the header row is emitted as a bare
+         <tr> and the browser wraps it in an implicit tbody of its own, so a
+         table-wide selector counts it as a row. */
+      rows: document.querySelectorAll('#fdr-tbody tr').length,
+      /* The double, in the CLUB rows — the fix is not squad-only. */
+      dgwCells: t ? [...t.querySelectorAll('td.fdr-dgw')].length : 0,
+      dgwText: t ? [...t.querySelectorAll('td.fdr-dgw .fdr-opp')].map((s) => s.textContent.trim()) : []
+    };
+  }, gridTable.toString());
+
+  ok(!clubs.err, 'the fixtures panel opened with a linked team (' + (clubs.err || '') + ')');
+  ok(clubs.hasToggle, 'a linked team is offered the row-source toggle');
+  ok(clubs.labels.join(',') === 'Clubs,My squad', 'it offers both sources (' + clubs.labels.join(',') + ')');
+  ok(clubs.on === 'Clubs', 'and it opens on Clubs, never on the squad (' + clubs.on + ')');
+  ok(clubs.rows >= 20, 'the club grid still draws every club (' + clubs.rows + ' rows)');
+  ok(/team/i.test(clubs.firstHead || ''), 'its first column is still Team (' + clubs.firstHead + ')');
+  ok(clubs.teamFilter, 'and the club filter is present in club mode');
+
+  /* The regression the whole exercise turns on. */
+  ok(clubs.dgwCells === 2, 'the GW4 double renders as a double for BOTH clubs in it ('
+    + clubs.dgwCells + ' marked cells)');
+  ok(clubs.dgwText.length === 2 && clubs.dgwText.every((s) => s.includes('+')),
+    'and each marked cell names two opponents (' + JSON.stringify(clubs.dgwText) + ')');
+  ok(clubs.dgwText.every((s) => /AVL|ARS/.test(s)),
+    'including the rearranged tie that was previously overwritten');
+  /* Kickoff order, not API order. ARS play BRE on the Saturday and AVL on the
+     Wednesday; a cell reading "AVL + BRE" is describing a week that does not
+     happen. The label is the only place this is checkable, because the
+     combined numbers are order-free. */
+  ok(clubs.dgwText.includes('BRE + AVL'),
+    'the double is listed in kickoff order (' + JSON.stringify(clubs.dgwText) + ')');
+  ok(clubs.dgwText.includes('NEW + ARS (a)'),
+    'and from the other club\'s side, with its own venue on the away leg');
+
+  const squad = await sp.evaluate(async (fnSrc) => {
+    const grid = eval(fnSrc);
+    const btn = [...document.querySelectorAll('#fdr-rows .seg-b')].find((b) => /squad/i.test(b.textContent));
+    if (!btn) return { found: false };
+    btn.click();
+    await new Promise((r) => setTimeout(r, 1400));
+    const t = grid();
+    const rows = [...document.querySelectorAll('#fdr-tbody tr')];
+    const playerRows = rows.filter((r) => r.querySelector('td.tm-px'));
+    return {
+      found: true,
+      on: [...document.querySelectorAll('#fdr-rows .seg-b.on')].map((b) => b.textContent.trim()).join(','),
+      heads: t ? [...t.querySelectorAll('th')].slice(0, 2).map((h) => h.textContent.trim()) : [],
+      playerRows: playerRows.length,
+      prices: playerRows.map((r) => r.querySelector('td.tm-px').textContent.trim()),
+      names: playerRows.map((r) => r.querySelector('td.tm-nm').textContent.trim()),
+      benchDivider: rows.filter((r) => /^bench$/i.test(r.textContent.trim())).length,
+      benchIndex: rows.findIndex((r) => /^bench$/i.test(r.textContent.trim())),
+      captains: playerRows.filter((r) => /\bC\b/.test(r.querySelector('td.tm-nm').textContent)).length,
+      teamFilter: !!document.getElementById('fdr-teams'),
+      dgwCells: t ? [...t.querySelectorAll('td.fdr-dgw')].length : 0,
+      mult: t ? [...t.querySelectorAll('.fdr-mult')].map((s) => s.textContent.trim())[0] : null
+    };
+  }, gridTable.toString());
+
+  ok(squad.found, 'the My squad button is in the rendered grid');
+  ok(squad.on === 'My squad', 'clicking it selects it (' + squad.on + ')');
+  ok(squad.playerRows === 15, 'it draws one row per pick, all fifteen (' + squad.playerRows + ')');
+  ok(JSON.stringify(squad.heads) === '["Price","Player"]',
+    'the header becomes Price then Player (' + JSON.stringify(squad.heads) + ')');
+  ok((squad.prices || []).every((p) => /^£\d+\.\d$/.test(p)),
+    'every row carries a real price (' + JSON.stringify((squad.prices || []).slice(0, 3)) + ')');
+  ok(new Set(squad.names || []).size === 15, 'fifteen distinct players, so no row is drawn twice');
+  ok(squad.benchDivider === 1, 'one bench divider, not none and not one per player');
+  ok(squad.benchIndex === 11,
+    'and it sits after the eleventh player, where the bench actually starts (index ' + squad.benchIndex + ')');
+  ok(squad.captains === 1, 'the captain is marked, exactly once (' + squad.captains + ')');
+  ok(!squad.teamFilter, 'the club filter is withdrawn — it would delete players from your own squad');
+
+  /* Six of the fifteen play in the double: three ARS and three AVL. This is
+     the assertion the panel exists for. */
+  ok(squad.dgwCells === 6,
+    'every squad member in the double gets a marked cell (' + squad.dgwCells + ' of an expected 6)');
+  ok(squad.mult === '×2', 'and the badge reads ×2 (' + squad.mult + ')');
+
+  /* Back again: a toggle that only goes one way is half a control. */
+  const back = await sp.evaluate(async (fnSrc) => {
+    const grid = eval(fnSrc);
+    [...document.querySelectorAll('#fdr-rows .seg-b')].find((b) => /clubs/i.test(b.textContent)).click();
+    await new Promise((r) => setTimeout(r, 1400));
+    const t = grid();
+    return { head: t ? (t.querySelector('th') || {}).textContent : null,
+      rows: document.querySelectorAll('#fdr-tbody tr').length,
+      priceCols: t ? t.querySelectorAll('td.tm-px').length : 0,
+      teamFilter: !!document.getElementById('fdr-teams') };
+  }, gridTable.toString());
+  ok(/team/i.test(back.head || ''), 'switching back restores the Team column (' + back.head + ')');
+  ok(back.rows >= 20, 'and every club (' + back.rows + ')');
+  ok(back.priceCols === 0, 'with no price column left behind');
+  ok(back.teamFilter, 'and the club filter comes back with them');
+
+  ok(spErrors.length === 0, 'the squad ticker threw nothing (' + spErrors.slice(0, 2).join(' | ') + ')');
+  await sp.close();
 }
 
 /* Feedback: the one flow where the app could lie to a user. The vm test in
