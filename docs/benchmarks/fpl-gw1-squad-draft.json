@@ -285,6 +285,90 @@
         "whatWouldChangeIt": "Confirmed GW1 line-ups naming Tonali and Verbruggen as starters. Those land after the deadline, which is the whole problem."
       },
       "onePriceFootnote": "The cross-source checker will not state a single agreed price for Haaland, because FPL Mate's graphic says £15.0m against £15.5m from the official list and three other captures. The official figure stands and the FPL app itself is the authority; noted only so the tool's output is not misread."
+    },
+    {
+      "recordedAt": "2026-08-19T14:21:00+01:00",
+      "hoursBeforeLock": 52,
+      "why": "Append-only. A substantial rebuild — nine of fifteen changed since 13:55 — with a new captain and a new shape.",
+      "startingXI": "4-3-3. Kinsky; Maguire, Gabriel, Andy Robertson, Gvardiol; Bruno Fernandes (C), M. Fernandes, Tzolis; Joao Pedro, Haaland (V), Calvert-Lewin.",
+      "bench": "Verbruggen (GK), Mitchell, Hughes, Mac Allister.",
+      "out": [
+        "Van Dijk",
+        "Tielemans",
+        "Mbeumo",
+        "Elliot Anderson",
+        "Tonali",
+        "Van Hecke",
+        "Neco Williams"
+      ],
+      "in": [
+        "Andy Robertson",
+        "Gvardiol",
+        "Bruno Fernandes",
+        "M. Fernandes",
+        "Mitchell",
+        "Hughes (returns)",
+        "Mac Allister"
+      ],
+      "checkedMechanically": {
+        "shape": "2/5/5/3 squad, legal 4-3-3 eleven.",
+        "clubLimits": "Tottenham 3 — FULL. Manchester United, Arsenal, Manchester City and Crystal Palace 2 each.",
+        "fixtures": "Fifteen GW1 fixtures checked by reciprocity against our register. FIFTEEN OF FIFTEEN AGREE.",
+        "internalClashes": "ZERO. Every pair of your players who share a GW1 match is on the SAME side. The first draft had three clashes, the second had one, this has none.",
+        "spread": "Fifteen players across nine matches, up from eight."
+      },
+      "theTwoFernandesInTheSameEleven": {
+        "what": "Bruno Fernandes (Manchester United, £12.0m, captain) and M. Fernandes (Tottenham, £6.0m) both start, and the app labels them 'B.Fernandes' and 'Fernandes'.",
+        "whyItIsWorthNaming": "This is the collision family this project has spent the week on — two Sangares, two Cunhas, Reece James against James Garner, Charlie Hughes against a Palace Hughes. Our own price checker REFUSES to merge 'M. Fernandes' with 'Bruno Fernandes' precisely because a surname match there would be wrong.",
+        "itIsNotAMistake": "They are two real players in two different matches. It is recorded because a team sheet with two near-identical labels is exactly where a fast read goes wrong."
+      },
+      "theCaptaincy": {
+        "pick": "Bruno Fernandes (C), Haaland (V).",
+        "forIt": [
+          "Six captures price him at £12.0m — more than any other player in the squad.",
+          "FPL_Marcello's highest-forecast midfielder: 29.4 predicted points over five gameweeks, from 6.7 points per game last season, the highest in the visible sheet.",
+          "Tom Hadley's table: a 71% four-plus-points hit rate, bettered in the premium group only by Gabriel's 77%.",
+          "89% of a hundred expert drafts and 48.7% of the field — the second most-picked player anywhere.",
+          "Away at Hull: the Guardian panel's predicted twentieth, second-bottom for expected points last season, first-choice centre-back Charlie Hughes ruled out of THIS fixture and first-choice goalkeeper Butland out at least three months.",
+          "United led the league for shots with 596, and he created at least 89 chances more than any other member of the squad."
+        ],
+        "againstIt": [
+          "The OFFICIAL Scout: he 'missed his second penalty in two matches' against Milan, and 'along with Youri Tielemans and Matheus Cunha, Fernandes was making his first start of pre-season and looked short of match fitness'.",
+          "The Guardian: 'Fernandes turns 32 in early September; can he outrun age for another season?' — the only age risk any capture attaches to him."
+        ],
+        "theSharpestPoint": "Two missed penalties in two matches is the strongest thing said against him, and it comes from the game's own publisher rather than a tipster. Penalties are a large share of what a £12.0m midfielder is bought for.",
+        "theViceIsSound": "If Bruno does not start, the armband moves to a player five captures price, at home to Bournemouth. That is the right shape for a vice.",
+        "notARecommendation": "Nothing here is a projection and none of it says captain him or do not."
+      },
+      "theNewPicksByHowWellEvidenced": {
+        "strong": [
+          "Gvardiol £5.5m — five captures. The official Scout: 'started all four friendlies... Gvardiol looks the most secure route into the Man City defence for the moment, with a degree of uncertainty elsewhere.'",
+          "Andy Robertson £4.5m — only one capture prices him, but it is the official one, and it says he and Van Hecke 'look likely to start the season with fellow Spurs defenders either injured or late returnees'. Porro, Udogie and Van de Ven have not featured at all in pre-season. He also assisted against Hoffenheim, and he is the resolution of Sam FPL's 'Robbo should start for Spurs'.",
+          "Mitchell £4.5m — two captures, and the official Scout says Sage's back three makes him and Munoz 'the favourites to start as wing-backs in that system'."
+        ],
+        "betterThanItsOneSourceSuggests": {
+          "who": "M. Fernandes £6.0m at Tottenham.",
+          "thePriceIsThinlyHeld": "Only FPL_Marcello prices him, and the official Scout's Tottenham section names eight players without him — so NOBODY has said he starts for Spurs.",
+          "butTheUnderlyingIsNot": "Hadley's £6m midfield DEFCON bracket ranks him THIRD OF SEVEN — 43% hit rate from 35 starts, 10.5 defensive actions per start, 7 attacking returns — ahead of Le Fee, Gravenberch and Ndiaye. Marcello has him at 135 points from 3,017 minutes, which is a nailed season.",
+          "theGap": "Hadley marks him 'at West Ham', which was last season's club. The underlying numbers are real and they were earned somewhere else, under a different manager, in a different role."
+        },
+        "theWeakestOfTheNewOnes": {
+          "who": "Mac Allister £5.5m.",
+          "what": "Marcello prices him and forecasts 13.4 over five gameweeks — one of the lowest figures in the visible sheet, against 20.6 for Stach at £6.0m. The Guardian says he 'was not alone in struggling last season, but showed this summer just how influential he can be'.",
+          "soWhat": "A bench midfielder, so it costs little. Recorded because it is the one new pick where the evidence points down rather than up."
+        },
+        "stillUnknown": "Verbruggen and Hughes — priced by zero of nine captures, the same two as in the previous draft."
+      },
+      "whatWasGivenUp": {
+        "what": "Mbeumo (five captures, FPL Fran GREAT), Elliot Anderson (five captures, Fran GREAT, the highest CBRIT/90 on the midfielders card at 13.88), Van Dijk (four captures), Van Hecke (three, an evidenced starter) and Neco Williams (three, an evidenced wing-back).",
+        "theTrade": "Five well-observed players out for a squad built around the single most-observed player in it. The eleven is now MORE concentrated on one premium and LESS broadly evidenced than the 13:55 version.",
+        "notAJudgement": "Which of those matters more is a choice about squad shape, not a fact either way."
+      },
+      "theConcentrationThatGREW": {
+        "what": "Three Tottenham players now START together away at Brentford — Kinsky, Robertson and M. Fernandes. In the previous draft the Spurs block was one starter and two bench.",
+        "whyItMatters": "A goalkeeper, a defender and a midfielder all riding one result. A Brentford win takes the clean sheet, the defensive contribution points and the save points together.",
+        "theOffsettingGain": "Internal clashes fell to zero, and the squad now spreads across nine matches rather than eight. Concentration went up in one place and down in another."
+      }
     }
   ]
 }

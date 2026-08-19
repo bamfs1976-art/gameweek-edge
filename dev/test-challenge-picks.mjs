@@ -1125,6 +1125,36 @@ ok('Triple Captain is offered as a comparison, not a recommendation',
 ok('the Haaland price footnote explains the checker\'s null',
   /noted only so the tool's output is not misread/.test(revS));
 
+/* --- the 14:21 revision: a rebuild, a new captain, zero internal clashes --- */
+const REV2 = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-gw1-squad-draft.json`, 'utf8')).revisions[1];
+const rev2S = JSON.stringify(REV2);
+ok('both earlier drafts are preserved beside the third',
+  DRAFT.squad.some((p) => p.name === 'Palmer') && /Tonali/.test(JSON.stringify(REV)) && REV2.recordedAt.includes('14:21'));
+ok('internal clashes are now zero, and the trend is recorded',
+  /ZERO/.test(rev2S) && /The first draft had three clashes, the second had one, this has none/.test(rev2S));
+ok('the two Fernandes in one eleven are named as the collision family',
+  /theTwoFernandesInTheSameEleven/.test(rev2S) && /REFUSES to merge/.test(rev2S));
+ok('and it is explicitly NOT called a mistake', /They are two real players in two different matches/.test(rev2S));
+ok('the captaincy case carries the official source AGAINST it',
+  REV2.theCaptaincy.againstIt.length === 2 && /missed his second penalty in two matches/.test(rev2S));
+ok('with the sharpest point attributed to the publisher, not a tipster',
+  /it comes from the game's own publisher rather than a tipster/.test(rev2S));
+ok('and no captaincy recommendation is made', /none of it says captain him or do not/.test(rev2S));
+ok('M. Fernandes is thinly priced but not thinly evidenced',
+  /THIRD OF SEVEN/.test(rev2S) && /NOBODY has said he starts for Spurs/.test(rev2S));
+ok('and the West Ham caveat on those numbers is kept',
+  /earned somewhere else, under a different manager, in a different role/.test(rev2S));
+ok('Mac Allister is recorded as the one new pick the evidence points down on',
+  /theWeakestOfTheNewOnes/.test(rev2S) && /13\.4/.test(rev2S));
+ok('what was given up is listed, not glossed', REV2.whatWasGivenUp.what.includes('Mbeumo'));
+ok('and the trade is called a choice rather than an error',
+  /not a fact either way/.test(rev2S));
+ok('the Spurs concentration growing is recorded alongside the offsetting gain',
+  /theConcentrationThatGREW/.test(rev2S) && /Concentration went up in one place and down in another/.test(rev2S));
+ok('Verbruggen and Hughes are still the two nothing prices',
+  /the same two as in the previous draft/.test(rev2S)
+  && !ROWS5.some((r) => r.key === normName('Verbruggen') && r.exact.length > 0));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
