@@ -199,8 +199,16 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'id="feedback-btn"', since: '2026-08-16',
-  what: 'the feedback button in the topbar' };
+const MARKER = { text: 'id="fdr-rows"', since: '2026-08-19',
+  what: 'the Clubs / My squad row toggle on the fixture grid' };
+/* Rotated from 'id="feedback-btn"' (2026-08-16), which had done its job and
+   stopped: by 19 Aug it was three deploys old, so it was present in the
+   previous build too and a green run proved only that the site was healthy.
+   The comment above predicted exactly that, and the run it happened on was
+   reported as "deployed and verified" for about a minute before anybody
+   checked which build the marker belonged to. Rotate this on the next
+   user-visible change; a marker older than the deploy it is asked about is
+   not a check. */
 
 /* Are we even talking to the site?
 
