@@ -86,6 +86,8 @@ now the best-supported outstanding edit.
 - Joe Gelhardt's Hull presence can come off the source-conflict flag; the
   loan-or-permanent half stays, as does Garnacho's origin.
 - Ipswich's In list holds three of ten arrivals.
+- No line for **Mateo Kovacic**, who started the Community Shield in
+  Manchester City's midfield — our own capture records the XI.
 
 ## Open conflicts in the register, waiting on a source (18 Aug 2026)
 
@@ -108,6 +110,15 @@ now the best-supported outstanding edit.
 > the official source settles them. What follows is what is still genuinely
 > open.
 
+- **Rodri: in the league or not?** The official Scout (18 Aug) prices him at
+  **£6.5m as a Manchester City player** and calls the Barcelona move "heavily
+  linked"; the Guardian's City preview (19 Aug) states three times that he has
+  **departed** for Barcelona. A player who has left cannot be priced in the
+  game, so one of the two is describing a squad that does not exist. **Our
+  register mentions Rodri nowhere at all** — a gap regardless of who is right.
+  His absence from the Community Shield XI settles nothing: the official
+  source says he has had back surgery, which explains it equally well. Resolves
+  on the FPL bootstrap — he is either in the game or he is not.
 - **Grealish's club.** Our register carries "Rumours only: ... a possible
   Grealish loan". FPL_Marcello's sheet lists him at Everton, £6.5m — but that
   sheet's Team column is demonstrably stale elsewhere (it still has Lukic at

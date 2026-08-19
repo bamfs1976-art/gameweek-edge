@@ -661,8 +661,16 @@ ok('the capture defines absent as zero occurrences, checked',
    claim about our register, and spot-checking three of twenty-one leaves room
    for a name that is plainly present — a mutation that added Calvert-Lewin to
    the absent list passed the sampled version of this check. */
+/* Absence must be tested on WORD BOUNDARIES. `.includes('Rodri')` matches
+   "Alvaro Rodriguez" and reported a name as present that the register does
+   not hold — the same shape as "Trafford" matching "Old Trafford". Every
+   absent-list guard below uses this. */
+const heldByRegister = (n) => {
+  const re = new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+  return re.test(MD) || re.test(HTML);
+};
 const claimedAbsent = GDN.whatOurRegisterDOESNOTHOLD.absent;
-const wronglyAbsent = claimedAbsent.filter((n) => MD.includes(n) || HTML.includes(n));
+const wronglyAbsent = claimedAbsent.filter(heldByRegister);
 ok('every name claimed absent really is absent from both register files',
   wronglyAbsent.length === 0);
 ok('and the list is the size the capture says it checked', claimedAbsent.length >= 20);
@@ -935,6 +943,74 @@ ok('the one checkable ownership figure agrees with the official source',
   /26\.8% global/.test(mateS) && /above 25 per cent/.test(mateS));
 ok('and the other nine are recorded as unverifiable',
   /Unverifiable from anything we hold/.test(mateS));
+
+/* ------------------------------------------------------------------------ */
+/* Guardian previews 15-16. The first time an outside source and the OFFICIAL
+   source contradict each other on a fact rather than a price. */
+
+const GDN2 = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-guardian-previews-15-16.json`, 'utf8'));
+const g2 = JSON.stringify(GDN2);
+const SHIELD_XI = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-community-shield-lazyfpl.json`, 'utf8'));
+
+/* --- Rodri: official says priced at City, Guardian says departed --- */
+ok('the official source prices Rodri as a Manchester City player',
+  scoutCap.exact.some((e) => e.player === 'Rodri' && e.price === 6.5 && e.club === 'Manchester City'));
+ok('the Guardian says he has left for Barcelona', /The departed Rodri/.test(g2));
+ok('the conflict is recorded rather than resolved by preference',
+  /theRODRICONFLICT/.test(g2) && /No register line is written either way/.test(g2));
+ok('our register mentions Rodri nowhere at all',
+  !/\bRodri\b/.test(MD.replace(/Rodrigu?ez/g, '')) && !/\bRodri\b/.test(HTML.replace(/Rodrigu?ez/g, '')));
+ok('and that gap is recorded as a gap independent of who is right',
+  /a gap independent of who is right/.test(g2));
+ok('his Community Shield absence is stated NOT to settle it',
+  !SHIELD_XI.theMatch.manCityXI.includes('Rodri')
+  && /consistent with BOTH readings/.test(g2));
+ok('citing our own enrichment rule about absence', /is not a prediction of benching/.test(g2));
+ok('and the resolution path is the bootstrap, not another article',
+  /priced in the game or he is not/.test(g2));
+
+/* --- three fees agree exactly --- */
+ok('Elliot Anderson £116m agrees', /around £116m \(a British record\)/.test(MD));
+ok('Tielemans ~£35m agrees', /Youri Tielemans \(MID, Aston Villa, ~£35m\)/.test(MD));
+ok('Andrey Santos ~£48m agrees', /Andrey Santos \(MID, Chelsea, ~£48m\)/.test(MD));
+ok('and the previews close on each other arithmetically',
+  /£32m more than Tielemans' and Santos's combined fee/.test(g2));
+
+/* --- a rumour that gains a fee is still a rumour --- */
+ok('our register still calls Baleba a rumour', /a rumour not a done deal/.test(MD));
+ok('and the capture refuses to upgrade it on "set to sign"',
+  /'Set to sign' is not signed/.test(g2)
+  && /would be repeating the rumour-as-transfer fault/.test(g2));
+ok('four further items are separated from transfers',
+  GDN2.verifiedAgainstOurRegister.andFourMoreThingsThatAreNOTTransfers.length === 4);
+
+/* --- absence measured, not assumed --- */
+const gap = GDN2.whatOurRegisterDOESNOTHOLD.absent;
+ok('every name claimed absent really is absent, on word boundaries',
+  gap.filter(heldByRegister).length === 0);
+ok('and the substring test that got this wrong is not used',
+  gap.some((n) => MD.includes(n)) && gap.filter(heldByRegister).length === 0);
+ok('and Kovacic is absent despite being in our own Community Shield XI',
+  gap.includes('Mateo Kovacic') && SHIELD_XI.theMatch.manCityXI.includes('Kovacic'));
+
+/* --- the World Cup consistency check across six previews --- */
+ok('eight passing tournament references across six previews are assembled',
+  GDN2.aSOURCEThatCanBeCheckedAgainstITSELF.theWorldCupCrossCheck.theAssembly.length === 8);
+ok('and the check is claimed for what it is, not more',
+  /It is not a check of anything we hold/.test(g2));
+
+/* --- the set-piece stat lands on priced assets --- */
+ok('City\'s set-piece weakness is tied to five priced City defenders',
+  /Gvardiol £5\.5m, Dias £5\.5m, Guehi £6\.0m, O'Reilly £6\.5m, Khusanov £5\.5m/.test(g2));
+ok('and the phrasing is recorded as stated rather than recomputed',
+  /Recorded as stated/.test(g2));
+ok('the Bruno Fernandes age risk is tied to his expert ownership',
+  /89%/.test(g2) && /the only risk anybody has attached to him/.test(g2));
+
+/* --- still no FPL prices in a Guardian preview --- */
+const g2cap = CAPS5.declared.find((c) => c.sourceId === 'guardian-previews-15-16');
+ok('previews 15-16 declare zero prices, like 11-14',
+  g2cap === undefined || (g2cap.statedTotal === 0 && g2cap.exact.length === 0));
 
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));

@@ -1,0 +1,126 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-19T10:30:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "Guardian previews 15 and 16 — Manchester City and Manchester United, both by Jamie Jackson, published 19 August. Continues docs/benchmarks/pl-guardian-previews-11-14.json.",
+
+  "sources": [
+    { "no": 15, "club": "Manchester City", "author": "Jamie Jackson", "publishedAt": "2026-08-19T00:01+01:00", "panelPrediction": 2, "lastSeason": "2nd", "comments": 662 },
+    { "no": 16, "club": "Manchester United", "author": "Jamie Jackson", "publishedAt": "2026-08-19T12:00+01:00", "panelPrediction": 5, "lastSeason": "3rd", "comments": 45 }
+  ],
+
+  "sourceStatedPrices": {
+    "sourceId": "guardian-previews-15-16",
+    "statedTotal": 0,
+    "exact": [],
+    "bands": [],
+    "notEnumerated": "No FPL prices. Every pound figure is a transfer fee, a stadium cost or a debt, held in feesStated below. Declared as zero so the checker records silence rather than absence of examination."
+  },
+
+  "theRODRICONFLICT": {
+    "why": "The first time an outside source and the OFFICIAL source contradict each other on a matter of fact, one day apart, about one of the most valuable assets in the game.",
+    "theGuardian_19Aug": "'before Rodri decided to leave the club and join Barcelona', 'the loss of a midfielder capable of moulding games' and 'The departed Rodri'. Stated three times, as settled background rather than news.",
+    "theOfficialScout_captured18Aug": "'The club have confirmed that Rodri (£6.5m) has had back surgery, while the midfielder is being heavily linked with a move to Barcelona.' He is PRICED, at £6.5m, as a Manchester City player.",
+    "whyThisIsSharperThanATenseDisagreement": "A player who has left the Premier League cannot be priced in the game. One of these two is describing a squad that does not exist: either the official round-up is stale on a completed transfer, or the Guardian has written a pursuit up as a departure.",
+    "whatOurRegisterSays": "NOTHING. Rodri does not appear in the briefing at all — not in Manchester City's block, not in the transfer lines, nowhere. A World Cup-winning captain named player of the tournament and a possible second Ballon d'Or, and our register is silent about which club he is at.",
+    "theOneCheckWeCouldRun": "He did not play in the Community Shield on 16 August. The Manchester City XI recorded in pl-community-shield-lazyfpl.json is Donnarumma, Gvardiol, Dias, Khusanov, O'Reilly, Kovacic, Anderson, Foden, Doku, Semenyo, Haaland.",
+    "andWhyThatSettlesNothing": "Absence from one XI is consistent with BOTH readings — the official source says he has had back surgery, which explains it just as well as having left. This is the 'a missing line-up prediction is not a prediction of benching' rule from our own enrichment layer, applied to a transfer.",
+    "howItResolves": "The FPL bootstrap. A player who has left the league disappears from it. One call from CI answers this and nothing reachable from here does.",
+    "notApplied": "No register line is written either way. What IS recorded is that we hold no Rodri line at all, which is a gap independent of who is right."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "Every fee and club attribution checked with word boundaries against both register files. Interest, targets and 'set to sign' separated from completed transfers before counting.",
+    "feesThatAGREEEXACTLY": [
+      { "claim": "Elliot Anderson joined Manchester City for £116m from Nottingham Forest", "ourRegister": "'Elliot Anderson to Man City for around £116m (a British record)'", "verdict": "agrees, on fee and origin" },
+      { "claim": "Youri Tielemans, £35m release clause from Aston Villa", "ourRegister": "Man Utd in: 'Youri Tielemans (MID, Aston Villa, ~£35m)'", "verdict": "agrees, and the Guardian adds that it was a release clause with no competing bidder" },
+      { "claim": "Andrey Santos, £48m (+£2m) from Chelsea", "ourRegister": "Man Utd in: 'Andrey Santos (MID, Chelsea, ~£48m)'", "verdict": "agrees on the base fee; the £2m add-on is new" }
+    ],
+    "departuresThatAgree": {
+      "claim": "John Stones, Nathan Ake and Bernardo Silva are no longer at City",
+      "ourRegister": "'ageing defenders (Stones, Akanji, Ake) and Bernardo Silva moved on'",
+      "verdict": "agrees, and our register additionally names Akanji, whom the Guardian does not"
+    },
+    "managers": "Enzo Maresca at Manchester City and Michael Carrick permanent at Manchester United — both in our register's confirmed-new-bosses list. Two more manager lines agree, taking the running total across six Guardian previews to ten.",
+    "aCAUTIONOfOursTheGuardianSTRENGTHENSWithoutSettling": {
+      "ourRegister": "'Watch the Carlos Baleba links (Galatasaray, Man Utd), a rumour not a done deal.'",
+      "theGuardian": "'United are also set to sign another midfielder in Carlos Baleba from Brighton for around £75m.'",
+      "whatChanges": "A fee appears, Brighton is named as the selling club, and Galatasaray drops out of the picture.",
+      "whatDoesNOT": "'Set to sign' is not signed. Our register's line was written as a rumour and stays one — the caution is vindicated rather than overturned, and a benchmark that upgraded it on the strength of 'set to' would be repeating the rumour-as-transfer fault this project recorded three conflicts ago."
+    },
+    "andFourMoreThingsThatAreNOTTransfers": [
+      "Lewis Hall is United's 'prime target' at left-back and 'Newcastle's resistance to a sale' is stated. Our register holds him as a Newcastle attacking left-back with set-piece duty. Unchanged.",
+      "Myles Lewis-Skelly 'had drawn interest' from United. He started for Arsenal in the Community Shield. Unchanged.",
+      "Marcus Rashford 'wants to leave' and the club 'desires him off the wage bill'. A wish on both sides is not a move.",
+      "Rodri is dealt with above and is a conflict, not a rumour — one source states it as completed."
+    ]
+  },
+
+  "whatOurRegisterDOESNOTHOLD": {
+    "method": "Zero occurrences, checked with word boundaries in both register files — not a lookup that failed to attribute them.",
+    "absent": ["Rodri", "Mateo Kovacic", "Vitor Reis", "Marcus Rashford", "Matthijs De Ligt", "Myles Lewis-Skelly", "Shea Lacey"],
+    "twoThatMatterMoreThanTheRest": "Rodri, for the reason above. And Kovacic, who started the Community Shield in Manchester City's midfield — our own capture records the XI and our register still has no line for him.",
+    "whatThisIsAndIsNot": "A coverage gap. The briefing lists signings, departures and pick candidates rather than full squads, and says so. Recorded because a measured gap is a different thing from an assumed one."
+  },
+
+  "aSOURCEThatCanBeCheckedAgainstITSELF": {
+    "theArithmetic": "The Manchester United preview says Elliot Anderson 'went to City for around £32m more than Tielemans' and Santos's combined fee'. Tielemans £35m plus Santos £48m (+£2m) is £83–85m; add £32m and you get £115–117m. The Manchester City preview, by the same author, states £116m.",
+    "andOurRegisterSaysTheSameThing": "'around £116m (a British record)'.",
+    "whyItIsWorthRecording": "Three figures stated separately in two articles close on each other and on a number our register already held. Most sources cannot be checked against themselves at all; this one can, and it passes.",
+    "theWorldCupCrossCheck": {
+      "what": "Six Guardian previews by four authors describe the same tournament in passing. Assembled, they have to be consistent, and they are.",
+      "theAssembly": [
+        "Spain won it — 'Spain's triumphant World Cup campaign', with Rodri captain and player of the tournament (No 15)",
+        "France lost to Spain in a semi-final (No 15)",
+        "Argentina beat England 2-1 in the other semi-final, Gordon having put England 1-0 up (No 16)",
+        "Argentina reached 'a second successive final' (No 14)",
+        "Switzerland reached the quarter-finals, bowing out to Argentina (No 13)",
+        "Belgium reached the quarter-finals under Tielemans' captaincy (No 16)",
+        "Canada reached the last 16, losing to Morocco (No 11)",
+        "Ghana went out at the group stage having scored twice (No 12)"
+      ],
+      "verdict": "No contradiction anywhere — one bracket, four authors, eight passing references. It is not a check of anything we hold, and it is the cheapest available measure of whether a source's incidental facts hang together. They do."
+    }
+  },
+
+  "statAttack": {
+    "manCitySetPieces": {
+      "theClaim": "City conceded more league goals from set pieces last season than in the previous two campaigns combined. The winning goals in their defeats at Aston Villa and Newcastle both came from corners. Maresca's Chelsea conceded from a set play every three league games — 'a shade worse than City's in 2025-26'.",
+      "whyItIsTheUsefulOne": "Set pieces are modelled by this project, and five Manchester City defenders carry an official price (Gvardiol £5.5m, Dias £5.5m, Guehi £6.0m, O'Reilly £6.5m, Khusanov £5.5m). The official Scout calls Gvardiol 'the most secure route into the Man City defence'. This is the first outside statement that the thing those picks are bought for — clean sheets — has a named, quantified weakness, and that the new manager's record on it is worse.",
+      "theCaution": "'Every three league games' and 'more than the previous two combined' are the article's phrasing, not figures we can recompute. Recorded as stated."
+    },
+    "manUtdShots": {
+      "theClaim": "United led the Premier League for shots last season with 596. Bruno Fernandes created at least 89 chances more than any other member of the squad and fell six shy of taking the most shots. He turns 32 in early September.",
+      "whyItMatters": "Bruno Fernandes is £12.0m, the second most-picked player among the hundred expert drafts at 89%, and 48.7% owned globally. 'Can he outrun age for another season' is the only risk anybody has attached to him in nine captures, and it is attached by the correspondent who covers the club."
+    }
+  },
+
+  "feesStated": {
+    "why": "Kept separate from prices, as in the previous Guardian capture. These previews contain no FPL prices at all.",
+    "manCity": ["Elliot Anderson £116m from Nottingham Forest", "Etihad capacity 61,000, up from 53,400, after the new Pep Guardiola Stand", "130 Premier League charges outstanding for more than three years"],
+    "manUnited": ["Youri Tielemans £35m release clause from Aston Villa", "Andrey Santos £48m (+£2m) from Chelsea", "Carlos Baleba around £75m from Brighton — NOT COMPLETED", "a proposed 100,000-seat stadium about 350 metres north-west of Old Trafford, £2bn stated cost, projected completion 2035", "the club £1.3bn in debt"]
+  },
+
+  "thePanelPredictionsSoFar": {
+    "note": "A writers' poll, not the correspondent's view — the same caveat as previews 11-14.",
+    "table": [{ "club": "Manchester City", "predicted": 2 }, { "club": "Liverpool", "predicted": 4 }, { "club": "Manchester United", "predicted": 5 }, { "club": "Leeds United", "predicted": 12 }, { "club": "Ipswich Town", "predicted": 19 }, { "club": "Hull City", "predicted": 20 }],
+    "whatItIsGoodFor": "Six of twenty so far. Nothing can be graded from a partial table, and it is recorded to be completed as the remaining previews arrive."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Manchester City finish 2nd, Manchester United 5th", "gradeable": true, "settlesOn": "the final table", "note": "a panel average" },
+    { "claim": "Rodri is a Barcelona player", "gradeable": true, "settlesOn": "the FPL bootstrap — he is either priced in the game or he is not", "note": "against the official source, which prices him at £6.5m as a Manchester City player" },
+    { "claim": "Elliot Anderson runs City's midfield in Rodri's absence", "gradeable": true, "settlesOn": "his GW1-10 starts and returns", "note": "he is £6.5m and started the Community Shield" },
+    { "claim": "City's set-piece weakness persists under Maresca", "gradeable": true, "settlesOn": "goals conceded from set plays over GW1-10, against five priced City defenders" },
+    { "claim": "Bruno Fernandes repeats last season's chance creation at 32", "gradeable": true, "settlesOn": "his GW1-10 chances created and shots", "note": "the only age risk any capture has attached to the second most-owned expert pick" },
+    { "claim": "United sign Carlos Baleba for around £75m before 1 September", "gradeable": true, "settlesOn": "the window closing", "note": "our register calls it a rumour; the Guardian calls it 'set to'" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing automatically. The Rodri conflict is recorded as OPEN against the official source and no register line is written either way.",
+    "Our register holds no Rodri line at all, which is a gap regardless of how the conflict resolves, and is now on the record as one.",
+    "Three fees agree exactly, two manager lines agree, and our 'rumour not a done deal' framing of Baleba is vindicated rather than overturned."
+  ]
+}
