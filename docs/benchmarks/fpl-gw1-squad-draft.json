@@ -289,7 +289,7 @@
     {
       "recordedAt": "2026-08-19T14:21:00+01:00",
       "hoursBeforeLock": 52,
-      "why": "Append-only. A substantial rebuild — nine of fifteen changed since 13:55 — with a new captain and a new shape.",
+      "why": "Append-only. A substantial rebuild, with a new captain and a new shape.",
       "startingXI": "4-3-3. Kinsky; Maguire, Gabriel, Andy Robertson, Gvardiol; Bruno Fernandes (C), M. Fernandes, Tzolis; Joao Pedro, Haaland (V), Calvert-Lewin.",
       "bench": "Verbruggen (GK), Mitchell, Hughes, Mac Allister.",
       "out": [
@@ -368,6 +368,53 @@
         "what": "Three Tottenham players now START together away at Brentford — Kinsky, Robertson and M. Fernandes. In the previous draft the Spurs block was one starter and two bench.",
         "whyItMatters": "A goalkeeper, a defender and a midfielder all riding one result. A Brentford win takes the clean sheet, the defensive contribution points and the save points together.",
         "theOffsettingGain": "Internal clashes fell to zero, and the squad now spreads across nine matches rather than eight. Concentration went up in one place and down in another."
+      },
+      "CORRECTION": {
+        "what": "This entry said 'nine of fifteen changed since 13:55'. It is SEVEN.",
+        "theSeven": "Out: Van Dijk, Van Hecke, Neco Williams, Tielemans, Mbeumo, Elliot Anderson, Tonali. In: Andy Robertson, Gvardiol, Mitchell, Bruno Fernandes, M. Fernandes, Hughes, Mac Allister.",
+        "howItHappened": "Counted by hand while writing prose, in a file whose own out/in lists — seven names each — were sitting directly below the sentence. Nothing checked the number against the lists.",
+        "howItWasCaught": "By computing the diffs from the four squads instead of counting them, when asked for a full change log.",
+        "whyItIsRecorded": "It is the smallest possible instance of the fault this project keeps finding: a figure asserted in prose that the structured data beside it contradicts. A guard now compares the stated count to the lists."
+      },
+      "countedChanges": 7
+    },
+    {
+      "recordedAt": "2026-08-19T14:22:00+01:00",
+      "hoursBeforeLock": 52,
+      "why": "One minute after the previous draft. Two changes.",
+      "countedChanges": 2,
+      "out": [
+        "M. Fernandes",
+        "Mac Allister"
+      ],
+      "in": [
+        "Elliot Anderson (returns)",
+        "Gomez (Brighton)"
+      ],
+      "startingXI": "4-3-3, unchanged in shape. Kinsky; Maguire, Gabriel, Andy Robertson, Gvardiol; Bruno Fernandes (C), Elliot Anderson, Tzolis; Joao Pedro, Haaland (V), Calvert-Lewin.",
+      "bench": "Verbruggen (GK), Mitchell, Hughes, Gomez.",
+      "checkedMechanically": {
+        "shape": "2/5/5/3 squad, legal 4-3-3 eleven.",
+        "clubLimits": "MANCHESTER CITY 3 — FULL, and all three START: Gvardiol, Elliot Anderson and Haaland. Six clubs at two.",
+        "fixtures": "Fifteen GW1 fixtures checked by reciprocity. FIFTEEN OF FIFTEEN AGREE.",
+        "internalClashes": "Still zero.",
+        "spread": "Fifteen players across EIGHT matches, down from nine — Liverpool left the squad with Mac Allister."
+      },
+      "theConcentrationIsNowInTheELEVEN": {
+        "what": "Three Manchester City players start together at home to Bournemouth: a defender, a midfielder and the vice-captain.",
+        "againstTheEarlierDrafts": "The 14:21 draft's biggest block was three Spurs; that is now two. The City block moved from two to three and all three are in the eleven.",
+        "whatItMeans": "A clean sheet, defensive contributions and the striker's return all ride one result — and if Bruno Fernandes does not start, the armband moves INTO that same fixture.",
+        "notAJudgement": "Bournemouth at the Etihad is the softest opener any of these players has. Concentration and fixture quality point opposite ways here and the trade is the owner's."
+      },
+      "theBenchIsNowTwoMatches": {
+        "what": "Verbruggen and Gomez are both Brighton at home to Villa; Mitchell and Hughes are both Palace away at Everton.",
+        "whyItMattersOnlyIfBoosted": "Without Bench Boost this is irrelevant — the bench is insurance. With it, four bench points ride two results instead of four.",
+        "andTheBenchBoostReadIsUnchanged": "Hughes and Verbruggen are still priced by zero of nine captures. Gomez is priced by two (FPL_Marcello and FPL Fran, both £5.0m, Fran marking him a Great Option); Mitchell by two, with the official Scout calling him a favourite to start as a wing-back. Half the bench is now evidenced rather than a quarter — better, and not enough to change the answer."
+      },
+      "gomezResolvesAnOldAmBIGUITY": {
+        "what": "Sam FPL's tips card said 'Gomez limped'. Joe Gomez is a Liverpool defender and the card named no club.",
+        "now": "The Gomez in this squad is Brighton's £5.0m MIDFIELDER — FPL_Marcello lists him as 'Gomez BHA' and FPL Fran's midfielders card has 'Gomez*' at £5m with Brighton's fixture run.",
+        "whatIsStillNotEstablished": "Whether Sam FPL meant HIM. That card names no club either, and this identifies the priced player rather than the sentence."
       }
     }
   ]
