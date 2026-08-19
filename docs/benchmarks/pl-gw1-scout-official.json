@@ -1,0 +1,252 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "official-source-capture",
+  "capturedAt": "2026-08-18T11:00:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "The Scout's pre-season round-up on the official Fantasy Premier League site, covering all twenty clubs with a price against almost every player named. This is not another outside opinion. It is the game's own publisher, and on prices it is the answer rather than a witness.",
+
+  "source": {
+    "publisher": "Fantasy Premier League (fantasy.premierleague.com), 'The Scout'",
+    "kind": "official",
+    "readFrom": "full text, pasted by the user with no instruction",
+    "coverage": "all 20 clubs",
+    "commercialInterest": "It promotes the game it is part of, and the page carries FPL's own launch, features and Scout Selection promos. That is not the same as a third party selling tips: there is no paywall, no affiliate link and nothing to buy.",
+    "whyItOUTRANKSTheOtherSeven": "Every price the other captures state is a reading of this game. Where they agree with this, they were reading correctly; where our register disagrees, our register is wrong. This project's own enrichment layer already encodes the rule — official FPL is authoritative for prices and nothing overwrites it."
+  },
+
+  "theOneCautionWorthKEEPING": {
+    "what": "This is the official site's ARTICLE, not the official BOOTSTRAP API.",
+    "whyItMatters": "A human wrote these figures into prose. The bootstrap is machine-readable and cannot mistype; an article can. The two are not the same artefact even though they come from the same organisation.",
+    "whyItIsUsedAnyway": "The bootstrap is unreachable from this sandbox — the egress proxy refuses fantasy.premierleague.com — and this is the closest thing to it that has reached us. It is treated as authoritative and the distinction is kept on the record so that a single odd figure can be re-checked against the API from CI rather than assumed correct because it was official.",
+    "andOneFigureIsWorthReChecking": "Igor Thiago is priced £8.0m here, £8.0m by three outside sources, and ~£7.0-7.5m by our register. Our register loses either way, so nothing turns on it — but it is the row with the longest history and it should be confirmed against the API when CI can reach it."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "fpl-official-scout",
+    "statedTotal": 172,
+    "authoritative": true,
+    "exact": [
+      { "player": "Tzolis", "price": 6.5, "club": "Arsenal" }, { "player": "Saliba", "price": 6.0, "club": "Arsenal" },
+      { "player": "Timber", "price": 6.5, "club": "Arsenal" }, { "player": "Calafiori", "price": 5.5, "club": "Arsenal" },
+      { "player": "Ben White", "price": 5.5, "club": "Arsenal" }, { "player": "Gabriel", "price": 8.0, "club": "Arsenal" },
+      { "player": "Rice", "price": 7.5, "club": "Arsenal" }, { "player": "Saka", "price": 9.5, "club": "Arsenal" },
+      { "player": "Madueke", "price": 6.5, "club": "Arsenal" },
+
+      { "player": "Watkins", "price": 8.0, "club": "Aston Villa" }, { "player": "Konsa", "price": 4.5, "club": "Aston Villa" },
+      { "player": "Emi Martinez", "price": 5.0, "club": "Aston Villa" }, { "player": "Madjo", "price": 5.5, "club": "Aston Villa" },
+      { "player": "Abraham", "price": 5.5, "club": "Aston Villa" }, { "player": "Garnacho", "price": 6.0, "club": "Aston Villa" },
+      { "player": "Manzambi", "price": 6.0, "club": "Aston Villa" }, { "player": "Onana", "price": 5.0, "club": "Aston Villa" },
+      { "player": "Buendia", "price": 6.0, "club": "Aston Villa" }, { "player": "Maatsen", "price": 4.5, "club": "Aston Villa" },
+
+      { "player": "Kroupi", "price": 7.5, "club": "Bournemouth" }, { "player": "Kluivert", "price": 6.0, "club": "Bournemouth" },
+      { "player": "Tavernier", "price": 6.0, "club": "Bournemouth" }, { "player": "Evanilson", "price": 6.0, "club": "Bournemouth" },
+      { "player": "Alvaro Rodriguez", "price": 6.0, "club": "Bournemouth" }, { "player": "Antonio Silva", "price": 5.0, "club": "Bournemouth" },
+      { "player": "Diakite", "price": 5.0, "club": "Bournemouth" },
+
+      { "player": "Igor Thiago", "price": 8.0, "club": "Brentford" }, { "player": "Schade", "price": 6.0, "club": "Brentford" },
+      { "player": "Dango Ouattara", "price": 6.5, "club": "Brentford" }, { "player": "Jaidon Anthony", "price": 6.0, "club": "Brentford" },
+      { "player": "Mamadou Sangare", "price": 5.5, "club": "Brentford" }, { "player": "Van den Berg", "price": 5.0, "club": "Brentford" },
+
+      { "player": "De Cuyper", "price": 4.5, "club": "Brighton" }, { "player": "Minteh", "price": 6.0, "club": "Brighton" },
+      { "player": "Rutter", "price": 5.5, "club": "Brighton" }, { "player": "Welbeck", "price": 6.0, "club": "Chelsea" },
+      { "player": "Gross", "price": 5.5, "club": "Brighton" }, { "player": "Vuskovic", "price": 5.0, "club": "Brighton" },
+      { "player": "Dunk", "price": 4.5, "club": "Brighton" }, { "player": "Struijk", "price": 5.0, "club": "Brighton" },
+      { "player": "Boscagli", "price": 4.5, "club": "Brighton" },
+
+      { "player": "Joao Pedro", "price": 7.5, "club": "Chelsea" }, { "player": "Morgan Rogers", "price": 7.5, "club": "Chelsea" },
+      { "player": "Lacroix", "price": 6.0, "club": "Chelsea" }, { "player": "Colwill", "price": 5.0, "club": "Chelsea" },
+      { "player": "Fofana", "price": 5.0, "club": "Chelsea" }, { "player": "Reece James", "price": 5.5, "club": "Chelsea" },
+      { "player": "Caicedo", "price": 5.5, "club": "Chelsea" }, { "player": "Palestra", "price": 5.5, "club": "Chelsea" },
+
+      { "player": "Bobby Thomas", "price": 4.0, "club": "Coventry City" }, { "player": "Amenda", "price": 4.0, "club": "Coventry City" },
+      { "player": "Kitching", "price": 4.0, "club": "Coventry City" }, { "player": "Van Ewijk", "price": 4.0, "club": "Coventry City" },
+      { "player": "Dasilva", "price": 4.0, "club": "Coventry City" }, { "player": "Ellis Simms", "price": 5.0, "club": "Coventry City" },
+      { "player": "Haji Wright", "price": 5.5, "club": "Coventry City" }, { "player": "Awoniyi", "price": 5.5, "club": "Coventry City" },
+      { "player": "Rushworth", "price": 4.5, "club": "Coventry City" }, { "player": "Tchaouna", "price": 5.5, "club": "Coventry City" },
+
+      { "player": "Munoz", "price": 5.5, "club": "Crystal Palace" }, { "player": "Mitchell", "price": 4.5, "club": "Crystal Palace" },
+      { "player": "Mingueza", "price": 4.5, "club": "Crystal Palace" }, { "player": "Mateta", "price": 6.5, "club": "Crystal Palace" },
+      { "player": "Strand Larsen", "price": 6.0, "club": "Crystal Palace" }, { "player": "Ismaila Sarr", "price": 6.5, "club": "Crystal Palace" },
+      { "player": "Guessand", "price": 5.5, "club": "Crystal Palace" }, { "player": "McNeil", "price": 5.5, "club": "Crystal Palace" },
+      { "player": "Nketiah", "price": 5.5, "club": "Crystal Palace" }, { "player": "Franca", "price": 5.0, "club": "Crystal Palace" },
+
+      { "player": "Norgaard", "price": 5.0, "club": "Everton" }, { "player": "Pickford", "price": 5.5, "club": "Everton" },
+      { "player": "Ndiaye", "price": 6.0, "club": "Everton" }, { "player": "Barry", "price": 5.5, "club": "Everton" },
+      { "player": "Branthwaite", "price": 5.5, "club": "Everton" }, { "player": "Garner", "price": 6.0, "club": "Everton" },
+      { "player": "Dewsbury-Hall", "price": 6.5, "club": "Everton" }, { "player": "Rohl", "price": 5.0, "club": "Everton" },
+
+      { "player": "Gonzalo Garcia", "price": 6.0, "club": "Fulham" }, { "player": "Muniz", "price": 5.5, "club": "Fulham" },
+      { "player": "Bobb", "price": 5.5, "club": "Fulham" }, { "player": "Josh King", "price": 5.5, "club": "Fulham" },
+      { "player": "Cesar Palacios", "price": 5.5, "club": "Fulham" }, { "player": "Smith Rowe", "price": 5.5, "club": "Fulham" },
+      { "player": "Kevin", "price": 5.5, "club": "Fulham" }, { "player": "Iwobi", "price": 5.5, "club": "Fulham" },
+      { "player": "Castagne", "price": 4.5, "club": "Fulham" }, { "player": "Antonee Robinson", "price": 4.5, "club": "Fulham" },
+      { "player": "Sessegnon", "price": 4.5, "club": "Fulham" }, { "player": "Andersen", "price": 5.0, "club": "Fulham" },
+      { "player": "Cuenca", "price": 4.5, "club": "Fulham" },
+
+      { "player": "Tzolakis", "price": 4.5, "club": "Hull City" }, { "player": "Butland", "price": 4.5, "club": "Hull City" },
+      { "player": "McBurnie", "price": 5.5, "club": "Hull City" }, { "player": "Nobel Mendy", "price": 4.0, "club": "Hull City" },
+      { "player": "John Egan", "price": 4.0, "club": "Hull City" }, { "player": "Ajayi", "price": 4.0, "club": "Hull City" },
+      { "player": "Herrington", "price": 4.0, "club": "Hull City" }, { "player": "Charlie Hughes", "price": 4.0, "club": "Hull City" },
+      { "player": "Giles", "price": 4.0, "club": "Hull City" }, { "player": "Targett", "price": 4.0, "club": "Hull City" },
+      { "player": "Coyle", "price": 4.0, "club": "Hull City" },
+
+      { "player": "Jack Clarke", "price": 5.5, "club": "Ipswich Town" }, { "player": "Emersonn", "price": 5.5, "club": "Ipswich Town" },
+      { "player": "Dara O'Shea", "price": 4.0, "club": "Ipswich Town" }, { "player": "McAteer", "price": 4.5, "club": "Ipswich Town" },
+      { "player": "Issa Diop", "price": 4.0, "club": "Ipswich Town" }, { "player": "Jacob Greaves", "price": 4.0, "club": "Ipswich Town" },
+      { "player": "Leif Davis", "price": 4.0, "club": "Ipswich Town" }, { "player": "Scherpen", "price": 4.5, "club": "Ipswich Town" },
+      { "player": "Florentino", "price": 5.0, "club": "Ipswich Town" }, { "player": "Sasa Lukic", "price": 5.0, "club": "Ipswich Town" },
+
+      { "player": "Muharemovic", "price": 5.0, "club": "Leeds United" }, { "player": "Harry Wilson", "price": 6.5, "club": "Leeds United" },
+      { "player": "Calvert-Lewin", "price": 6.0, "club": "Leeds United" }, { "player": "James Trafford", "price": 5.0, "club": "Leeds United" },
+
+      { "player": "Gakpo", "price": 7.0, "club": "Liverpool" }, { "player": "Szoboszlai", "price": 7.0, "club": "Liverpool" },
+      { "player": "Gravenberch", "price": 6.0, "club": "Liverpool" }, { "player": "Wirtz", "price": 7.5, "club": "Liverpool" },
+      { "player": "Isak", "price": 9.0, "club": "Liverpool" }, { "player": "Jacquet", "price": 5.0, "club": "Liverpool" },
+      { "player": "Araujo", "price": 5.5, "club": "Liverpool" }, { "player": "Van Dijk", "price": 6.5, "club": "Liverpool" },
+      { "player": "Frimpong", "price": 5.5, "club": "Liverpool" }, { "player": "Kerkez", "price": 5.5, "club": "Liverpool" },
+
+      { "player": "Haaland", "price": 15.5, "club": "Manchester City" }, { "player": "Marmoush", "price": 7.0, "club": "Manchester City" },
+      { "player": "Semenyo", "price": 8.5, "club": "Manchester City" }, { "player": "Foden", "price": 7.0, "club": "Manchester City" },
+      { "player": "Gvardiol", "price": 5.5, "club": "Manchester City" }, { "player": "Dias", "price": 5.5, "club": "Manchester City" },
+      { "player": "Guehi", "price": 6.0, "club": "Manchester City" }, { "player": "O'Reilly", "price": 6.5, "club": "Manchester City" },
+      { "player": "Nunes", "price": 6.0, "club": "Manchester City" }, { "player": "Khusanov", "price": 5.5, "club": "Manchester City" },
+      { "player": "Rodri", "price": 6.5, "club": "Manchester City" }, { "player": "Elliot Anderson", "price": 6.5, "club": "Manchester City" },
+
+      { "player": "Bruno Fernandes", "price": 12.0, "club": "Manchester United" }, { "player": "Tielemans", "price": 6.0, "club": "Manchester United" },
+      { "player": "Matheus Cunha", "price": 8.0, "club": "Manchester United" }, { "player": "Mbeumo", "price": 8.0, "club": "Manchester United" },
+      { "player": "Sesko", "price": 7.0, "club": "Manchester United" }, { "player": "Shaw", "price": 4.5, "club": "Manchester United" },
+      { "player": "Maguire", "price": 5.0, "club": "Manchester United" }, { "player": "Dorgu", "price": 6.0, "club": "Manchester United" },
+
+      { "player": "Barnes", "price": 6.0, "club": "Newcastle United" }, { "player": "Sean Steur", "price": 5.0, "club": "Newcastle United" },
+      { "player": "Osula", "price": 6.0, "club": "Newcastle United" }, { "player": "Wissa", "price": 6.0, "club": "Newcastle United" },
+
+      { "player": "Neco Williams", "price": 5.0, "club": "Nottingham Forest" }, { "player": "Aina", "price": 4.5, "club": "Nottingham Forest" },
+      { "player": "Igor Jesus", "price": 6.0, "club": "Nottingham Forest" }, { "player": "Chris Wood", "price": 6.0, "club": "Nottingham Forest" },
+      { "player": "Kalimuendo", "price": 5.5, "club": "Nottingham Forest" }, { "player": "Jair Cunha", "price": 4.5, "club": "Nottingham Forest" },
+      { "player": "Diomande", "price": 5.5, "club": "Nottingham Forest" },
+
+      { "player": "Le Fee", "price": 6.0, "club": "Sunderland" }, { "player": "Diarra", "price": 5.5, "club": "Sunderland" },
+      { "player": "Brobbey", "price": 6.0, "club": "Sunderland" }, { "player": "Hume", "price": 4.5, "club": "Sunderland" },
+      { "player": "Meunier", "price": 4.5, "club": "Sunderland" }, { "player": "Mukiele", "price": 5.5, "club": "Sunderland" },
+      { "player": "O'Nien", "price": 4.0, "club": "Sunderland" }, { "player": "Alderete", "price": 5.0, "club": "Sunderland" },
+
+      { "player": "Kinsky", "price": 4.5, "club": "Tottenham Hotspur" }, { "player": "Van Hecke", "price": 5.0, "club": "Tottenham Hotspur" },
+      { "player": "Andy Robertson", "price": 4.5, "club": "Tottenham Hotspur" }, { "player": "Pedro Porro", "price": 5.5, "club": "Tottenham Hotspur" },
+      { "player": "Udogie", "price": 4.5, "club": "Tottenham Hotspur" }, { "player": "Van de Ven", "price": 5.0, "club": "Tottenham Hotspur" },
+      { "player": "Richarlison", "price": 6.0, "club": "Tottenham Hotspur" }, { "player": "Solanke", "price": 6.0, "club": "Tottenham Hotspur" }
+    ],
+    "bands": [],
+    "independence": "None, and that is the point. This is not a seventh independent witness to a price; it is the thing the other six were looking at. Counting it as 'one more source' would be the same error as counting our own register quoted inside a benchmark."
+  },
+
+  "whatThisSettles": {
+    "theEightRowPriceTable": {
+      "history": "The briefing kept a table of eight rows where our price estimates differed from an outside table. Four were settled by BBC Sport on 14 August, three by Hadley's price column on 16 August, and the last — Mateta, our ~£7.5m against their £6.5m — was corroborated by Michal yesterday.",
+      "now": "The official site prices Mateta at £6.5m. The table closes: the outside figure was right EIGHT times from eight and our estimate was right none.",
+      "theLessonTheBriefingAlreadyDrew": "'They were wrong precisely on the rows where somebody had already published a figure.' That reading survives contact with the official source."
+    },
+    "theIgorThiagoRow": {
+      "history": "Opened by the fpltips capture as ~£7.0-7.5m est. against their £8.0m, and deliberately NOT settled because fpltips carries an AI-content label. The Daily Mail and Michal then both stated £8.0m.",
+      "now": "£8.0m, officially. The row closes against our estimate, and the fpltips figure — held at arm's length for a fortnight on provenance grounds — was right all along.",
+      "worthSaying": "Refusing to adopt a figure from a source with no stated method was still the correct call. Being right by luck is not a method, and the row closed on evidence rather than on deference."
+    },
+    "fourPinnedSurnamesResolve": {
+      "why": "Michal's tables carried four surnames that a matcher would happily have merged with the wrong player, and they were pinned to their own keys rather than guessed.",
+      "resolved": [
+        { "pinned": "Sarr, £6.5m", "resolvesTo": "Ismaila Sarr, Crystal Palace, £6.5m", "how": "the official list has exactly one Sarr at £6.5m, and Hadley's P. Sarr is £5.0m — two different players, as the pin assumed" },
+        { "pinned": "Anthony, £6.0m", "resolvesTo": "Jaidon Anthony, Brentford, £6.0m", "how": "exact price and position match" },
+        { "pinned": "James, £5.5m", "resolvesTo": "Reece James, Chelsea, £5.5m", "how": "exact price match, and the register's James Garner is £6.0m — the collision the pin was protecting against" },
+        { "pinned": "Wilson, £6.5m", "resolvesTo": "Harry Wilson, Leeds, £6.5m", "how": "the only £6.5m Wilson in the official list, and a midfielder, which is what Michal's table was", "confidence": "high but INFERRED — no source says Michal meant Harry Wilson, and this is recorded as a resolution by elimination rather than a statement" }
+      ],
+      "stillPinned": "Rayan, £6.5m. The official round-up names no Rayan at all, so there is nothing to resolve it against. One of four staying unresolved is the honest outcome; four of four resolving would have been the suspicious one.",
+      "andTheSangareCollision": "'Mamadou Sangare (£5.5m)' at Brentford, officially. That matches Hadley's prose exactly and confirms he is a different player from the £5.0m I. Sangare — the collision recorded in the Hadley capture, and the reason a bare 'Sangare' band was pinned away from him."
+    },
+    "twoOfSamFPLsThreeUNRESOLVEDNames": {
+      "robbo": "'Richa & Robbo should start for Spurs' — Robbo is ANDY ROBERTSON, £4.5m, at Tottenham, and the official round-up says he and Van Hecke 'look likely to start the season'. Our register already had Robertson leaving Liverpool for Tottenham. It is NOT Antonee Robinson, which is exactly the reading the Sam FPL capture refused to record.",
+      "richa": "Richarlison, £6.0m, and the official round-up says he 'looks set to start up front in Gameweek 1'. Both halves of that line now check out.",
+      "williamsAndIgor": {
+        "theLine": "'Williams & Igor will be popular from GW4 onwards'",
+        "bestReading": "Neco Williams (£5.0m) and Igor Jesus (£6.0m), both Nottingham Forest. The official round-up names both in the same paragraph as Glasner's 3-4-3 wing-back system, and Forest is the only club fielding a Williams and an Igor.",
+        "whyItIsSTILLNotRecordedAsSettled": "It is an inference from a coincidence of club, not a statement by anybody. The card itself uses 'Thiago' for Igor Thiago one line below, which was the original reason for doubt, and that reason has not gone away — it has only been outweighed."
+      }
+    },
+    "theNewcastleManagerConflict": {
+      "theStanding": "Our register's confirmed-new-bosses list names ten clubs and Newcastle is not one of them; the club block reads 'Underwhelmed to twelfth, but Eddie Howe continues' and builds a paragraph of reasoning on it.",
+      "theEvidenceBefore": "LazyFPL (17 Aug) and the Daily Mail (17 Aug) both said Howe had left. Two outside sources, neither naming a successor.",
+      "now": "The official site names the successor. Its Newcastle section says Wissa scored both goals in the 2-1 win over Valencia on 8 August, 'the first under Jaissle'.",
+      "verdict": "Three sources, one of them the game's own publisher, and now a name attached. Our register is wrong. This is the largest single error the eight captures have surfaced and it should be corrected in the briefing with this capture cited.",
+      "whatIsSTILLNotEstablished": "Jaissle's first name, his full title, or when he arrived. The article mentions him once, in passing, in a subordinate clause. Enough to establish that Howe is not the manager; not enough to write a manager line from."
+    },
+    "theButlandConflict": {
+      "yesterday": "The Guardian said Butland is out 'until Christmas'. Our register said '12 weeks, arm surgery'. Recorded as an open conflict, six weeks apart, on the Hull player our own block calls 'the one that moves money'.",
+      "now": "The official site says the injury 'will keep him out for at least three months' — which is twelve weeks.",
+      "verdict": "OUR REGISTER AGREES WITH THE OFFICIAL SOURCE and the Guardian is the outlier of three. The conflict closes in our favour.",
+      "whyThisIsWorthAsMuchAsAnyCorrection": "Every other item in this fortnight's captures went the other way. Recording only the times an outside source beat us would be a biased sample of exactly the kind this project keeps warning itself about."
+    },
+    "twoPositionChangesTheAppShouldKnowAbout": [
+      "Ryan Sessegnon (Fulham, £4.5m) has changed from MIDFIELDER to DEFENDER for 2026/27.",
+      "Patrick Dorgu (Man Utd, £6.0m) has changed from DEFENDER to MIDFIELDER, and is set to start on the left of the attack."
+    ],
+    "otherRegisterLinesConfirmed": [
+      "Ndiaye is Everton's first-choice penalty taker — 'scored a penalty for the second successive match'. Our register: 'Ndiaye (pens)'.",
+      "Gross is Brighton's new first-choice penalty taker. Our register: 'Pens Gross'.",
+      "Le Fee is on penalties at Sunderland, 'between him and Habib Diarra'. Our register: 'Le Fee (Diarra second)'.",
+      "Ezri Konsa is still at Aston Villa. Our register's Arsenal line depends on it: 'the intended replacement (Konsa) is unsigned'.",
+      "Alvaro Arbeloa manages Fulham; Pierre Sage manages Palace; Glasner is at Forest playing the 3-4-3 he used at Palace; Xabi Alonso at Chelsea; De Zerbi at Tottenham; Iraola at Liverpool; O'Neil at Ipswich; Jakirovic at Hull. Eight manager lines agree.",
+      "Charlie Hughes is 'ruled out of the Tigers' Gameweek 1 fixture against Manchester United through injury' — word for word what our register says.",
+      "Antoine Semenyo is a Manchester City player; Elliot Anderson is a Manchester City player; Morgan Rogers is a Chelsea player; Christos Tzolis is an Arsenal player. Four club attributions our register already held.",
+      "Gonzalo Garcia is starting for Fulham ahead of Muniz — our register flagged him as 'MISSING FROM THIS LIST UNTIL 14 AUG' after an outside table named him as Fulham's penalty taker."
+    ]
+  },
+
+  "theLukicErrorCONFIRMEDBYASECONDSOURCE": {
+    "yesterday": "The Guardian said Sasa Lukic joined Ipswich from Fulham, while our register still has him taking Fulham's corners and names him in neither club's transfer list.",
+    "now": "The official site says it too — 'Florentino and Sasa Lukic (both £5.0m) have joined from Burnley and Fulham respectively' — and prices him as an Ipswich player. Fulham's own section names eight midfielders and he is not among them.",
+    "verdict": "Two sources, one official. Our Fulham set-piece line is serving a wrong answer about a player who has left, and the edit is now overdue rather than merely owed."
+  },
+
+  "availabilityNewsOurRegisterMayNotHold": {
+    "why": "Recorded as a list rather than written up, because none of it is checked against our register line by line and pretending otherwise would be the fault this project keeps finding.",
+    "items": [
+      "Saliba (Arsenal) out for 'an extended period' with a back issue; Timber out for 'weeks'.",
+      "Minteh (Brighton) reported out two to three months. OUR REGISTER LISTS HIM AS A VALUE PICK AND A CAPTAINCY-ADJACENT OPTION.",
+      "Rodri (Man City) has had back surgery and is linked with Barcelona.",
+      "Matheus Nunes (Man City) injured in the warm-up before the Community Shield.",
+      "Fofana (Chelsea) suspended for the first two matches; Andersen (Fulham) suspended for Gameweek 1, with Cuenca to deputise.",
+      "Kroupi (Bournemouth) out after foot surgery. Onana (Villa) long-term with a knee injury from the World Cup.",
+      "Madjo (Villa) reportedly injured after five pre-season goals; Abraham went off injured in the final friendly; Garnacho missed three matches with a head injury; Manzambi has not trained with the club.",
+      "Van den Berg (Brentford) likely to miss the start; Nobel Mendy (Hull) has played 29 minutes; Norgaard (Everton) has not played for his new club.",
+      "Garner (Everton) has had groin surgery, expected back in training around GW1, availability uncertain.",
+      "Porro, Udogie and Van de Ven (Tottenham) have not featured at all in pre-season.",
+      "Haji Wright (Coventry) injured — he is in our register's best-value strikers list."
+    ],
+    "andONEThatCLEARSAFlag": "Our register has 'John Egan | Did not travel, ankle | Doubt'. The official round-up says Egan started the final friendly against Nice. The doubt can come off."
+  },
+
+  "theArsenalDefenceQUESTIONISNOTSETTLED": {
+    "theDispute": "Our register says discount every Arsenal defensive asset until Saliba's replacement is signed. BigManBakar and Sam FPL both say the opposite.",
+    "whatTheOfficialSourceAdds": "The facts, not a verdict. It confirms Saliba out for an extended period and Timber out for weeks — both premises of our line — and then points at who benefits: Calafiori scored in the Community Shield, Ben White assisted against Girona, and Gabriel completed 90 minutes on Sunday after a career-best 209 points from only 30 starts.",
+    "soWhichWay": "Neither. It is a round-up, not an argument, and it takes no side. Our line stands, with the injuries it rests on confirmed by the game's own publisher and the counter-case strengthened by the same paragraph.",
+    "howItSettles": "Arsenal's GW1-6 clean sheets, as recorded when the dispute was opened. Unchanged."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Tzolis starts GW1 on the left of the Arsenal attack", "gradeable": true, "settlesOn": "the GW1 team sheet", "note": "he is our register's own early differential and LazyFPL's headline call — three documents on the same player" },
+    { "claim": "Madueke starts against Coventry despite Saka's return", "gradeable": true, "settlesOn": "the GW1 team sheet" },
+    { "claim": "Richarlison starts up front for Spurs in GW1; Robertson and Van Hecke start", "gradeable": true, "settlesOn": "the GW1 team sheet", "note": "grades Sam FPL's card as well" },
+    { "claim": "Bobby Thomas and Amenda are Coventry's GW1 centre-back pairing, Kitching missing out", "gradeable": true, "settlesOn": "the GW1 team sheet" },
+    { "claim": "Ellis Simms is a starting £5.0m forward in GW1", "gradeable": true, "settlesOn": "the GW1 team sheet" },
+    { "claim": "Wirtz occupies the number ten with Isak ahead of him", "gradeable": true, "settlesOn": "Liverpool's GW1 shape", "note": "now stated by three sources — Sam FPL, the Guardian and the official site" },
+    { "claim": "Szoboszlai has dropped deeper, denting his appeal", "gradeable": true, "settlesOn": "Liverpool's GW1-3 shape and his returns", "note": "Sam FPL said 'Szobo deeper with set pieces' from a screenshot; the official site says the same" },
+    { "claim": "Gvardiol is the most secure route into the Man City defence", "gradeable": true, "settlesOn": "his GW1-6 starts against Dias, Guehi, O'Reilly and Khusanov" },
+    { "claim": "Hume gets pushed forward if Meunier or Mukiele are fit", "gradeable": true, "settlesOn": "Sunderland's GW1 shape and Hume's position" },
+    { "claim": "Calvert-Lewin's ownership is above 25 per cent", "gradeable": true, "settlesOn": "the official ownership figure at the deadline", "note": "the only ownership number in the piece, and one we hold no data for" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing automatically. The register edits this makes overdue are listed in IMPLEMENTATION_NOTES.md: the Newcastle manager, Sasa Lukic's move and Fulham's corners, John Egan's ankle doubt, and the Mateta and Igor Thiago price rows.",
+    "The price checker now has an authoritative source. Rows that were 'corroborated but not held' are settled, and any capture that disagrees with this one is wrong rather than in dispute.",
+    "No pick, weight, rating or model parameter moves."
+  ]
+}

@@ -33,6 +33,111 @@ why, and what the operator must still do by hand.
    already set — `/api/ai` now requires them to authenticate callers (it
    returns a 503 setup note until they exist).
 
+## Register edits owed, with a source attached (18 Aug 2026)
+
+The official FPL Scout pre-season round-up (all 20 clubs, 172 stated prices)
+is captured in `docs/benchmarks/pl-gw1-scout-official.json`. It is the game's
+own publisher, so on prices and squads it settles rather than corroborates.
+A benchmark must not edit the register, so these are listed rather than
+applied. Each needs an edit to `docs/briefings/2026-27-preseason.md` and
+`.html` citing the capture.
+
+**Overdue — two sources, one of them official:**
+
+- **Newcastle's manager is not Eddie Howe.** The register's confirmed-new-
+  bosses list names ten clubs and omits Newcastle; the club block reads
+  "Underwhelmed to twelfth, but Eddie Howe continues" and builds a paragraph
+  on it. LazyFPL and the Daily Mail both said he had left; the official Scout
+  names the successor — "the first under Jaissle". Three sources. The largest
+  single error the eight captures have surfaced. Note that one passing clause
+  establishes Howe is gone but is *not* enough to write a full manager line.
+- **Sasa Lukic still takes Fulham's corners.** He joined Ipswich from Fulham
+  (Guardian, then the official Scout, which prices him as an Ipswich player).
+  Our register names him in neither club's transfer list and still assigns him
+  half of Fulham's set pieces — a wrong answer the app will serve.
+
+**Price rows the official source closes:**
+
+- **Mateta £6.5m** — the last open row of the briefing's eight-row table. It
+  now reads: the outside figure right 8 from 8, our estimate right 0 from 8.
+- **Igor Thiago £8.0m** — closes the row opened by the fpltips capture
+  against our ~£7.0–7.5m est.
+- **56 corroborated prices the register does not hold at all**, every one now
+  with the official source behind it. `npm run prices` lists them.
+- Wider scoreboard: of the estimates an outside source has now priced, ours is
+  **right 14, wrong 3**. The tabulated eight were wrong precisely because they
+  were the rows where somebody had already published a figure — which is what
+  the briefing already said.
+
+**The GW4 Manchester rows (19 Aug):** our register holds no GW4 row for
+either Manchester club. Four sources now say it is a Manchester derby and
+three say the venue is Old Trafford — and the newest, FPL Mate's expert-draft
+grid, is the first that is a **structured fixture grid** rather than prose:
+Man Utd GW4 `MCI (H)`, Man City GW4 `MUN (A)`, reciprocally consistent, in a
+grid whose other 30 cells all agree with our register. Adding the two rows is
+now the best-supported outstanding edit.
+
+**Smaller, all sourced:**
+
+- John Egan's ankle doubt can come off; he started the final friendly.
+- Two FPL position changes: Ryan Sessegnon MID→DEF, Patrick Dorgu DEF→MID.
+- Yankuba Minteh is reported out two to three months. **Our register lists him
+  as a value pick and a captaincy-adjacent option.**
+- Joe Gelhardt's Hull presence can come off the source-conflict flag; the
+  loan-or-permanent half stays, as does Garnacho's origin.
+- Ipswich's In list holds three of ten arrivals.
+- No line for **Mateo Kovacic**, who started the Community Shield in
+  Manchester City's midfield — our own capture records the XI.
+
+## Open conflicts in the register, waiting on a source (18 Aug 2026)
+
+> **Closed 18 Aug: Jack Butland.** Our register said "12 weeks, arm surgery";
+> the Guardian said "out until Christmas"; the official Scout says "at least
+> three months", which is twelve weeks. Our register was right and the
+> Guardian is the outlier of three. Recorded because every other item this
+> fortnight went the other way, and reporting only the losses would be a
+> biased sample.
+
+> **Closed 19 Aug: the Sunderland GW4 venue.** The note asking whether
+> Sunderland's GW4 is home or away against Arsenal was never a source
+> conflict. Hadley said "Arsenal away"; our register says "Sunderland,
+> Arsenal (H)". Those are the same fixture stated from opposite ends, and
+> FPL Mate's grid confirms it as Arsenal `SUN (A)`. The open question was
+> our own confusion.
+
+> **Superseded 18 Aug:** the Newcastle manager conflict, the Mateta price row
+> and the corroborated-prices list have all moved to the section above, where
+> the official source settles them. What follows is what is still genuinely
+> open.
+
+- **Rodri: in the league or not?** The official Scout (18 Aug) prices him at
+  **£6.5m as a Manchester City player** and calls the Barcelona move "heavily
+  linked"; the Guardian's City preview (19 Aug) states three times that he has
+  **departed** for Barcelona. A player who has left cannot be priced in the
+  game, so one of the two is describing a squad that does not exist. **Our
+  register mentions Rodri nowhere at all** — a gap regardless of who is right.
+  His absence from the Community Shield XI settles nothing: the official
+  source says he has had back surgery, which explains it equally well. Resolves
+  on the FPL bootstrap — he is either in the game or he is not.
+- **Grealish's club.** Our register carries "Rumours only: ... a possible
+  Grealish loan". FPL_Marcello's sheet lists him at Everton, £6.5m — but that
+  sheet's Team column is demonstrably stale elsewhere (it still has Lukic at
+  Fulham), the official Scout's Everton section does not mention him, and no
+  other capture carries him. One unreliable column is not a transfer.
+- **Thiaw's appearance base.** Hadley's DEFCON table says 33 starts at a 36%
+  hit rate; the Daily Mail says 12 hits from 28 appearances. Both put him on
+  twelve hits and only the denominator differs, and 33 starts from 28
+  appearances is impossible. Needs a season appearance record, which is not
+  reachable from this sandbox.
+- **The Arsenal defensive discount.** Our register says discount every Arsenal
+  defensive asset until Saliba's replacement is signed; BigManBakar and Sam FPL
+  both say the opposite. The official Scout confirms the premises — Saliba out
+  for "an extended period", Timber out for "weeks", Konsa still at Villa — and
+  takes no side on the conclusion. Settles on Arsenal's GW1–6 clean sheets.
+- **Whether Isidor or Brobbey leads the Sunderland line.** The official Scout's
+  Sunderland section names Brobbey and does not mention Isidor at all. That is
+  an omission, not a statement, and the register's disagreement stays open.
+
 ## Deferred (documented, not attempted)
 
 - ~~An in-app inbox for feedback.~~ **Done** — Studio → Feedback, backed by

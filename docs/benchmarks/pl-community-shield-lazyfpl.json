@@ -149,5 +149,103 @@
     "Calvert-Lewin at £6.0m now has three independent statements and no settled price in our register. It is the best-supported open price row we hold.",
     "Tzolis moves from 'a differential if he forces in' toward 'he is in' — recorded, not adopted, pending the GW1 eleven.",
     "The rumour-parsing bug is fixed in the verification script and recorded here, because it manufactured three conflicts that did not exist."
-  ]
+  ],
+
+  "sourceStatedPrices": {
+    "sourceId": "lazyfpl",
+    "statedTotal": 22,
+    "exact": [
+      {
+        "player": "Calvert-Lewin",
+        "price": 6
+      },
+      {
+        "player": "De Cuyper",
+        "price": 4.5
+      },
+      {
+        "player": "Tzolis",
+        "price": 6.5
+      },
+      {
+        "player": "Calafiori",
+        "price": 5.5
+      },
+      {
+        "player": "Mosquera",
+        "price": 5.5
+      },
+      {
+        "player": "Rice",
+        "price": 7.5
+      },
+      {
+        "player": "Guimaraes",
+        "price": 7,
+        "canonical": "Bruno Guimaraes"
+      },
+      {
+        "player": "Havertz",
+        "price": 7.5
+      },
+      {
+        "player": "Gyokeres",
+        "price": 7.5
+      },
+      {
+        "player": "Anderson",
+        "price": 6.5
+      },
+      {
+        "player": "Foden",
+        "price": 7
+      },
+      {
+        "player": "Doku",
+        "price": 7.5
+      },
+      {
+        "player": "O'Reilly",
+        "price": 6.5
+      },
+      {
+        "player": "Gvardiol",
+        "price": 5.5
+      },
+      {
+        "player": "Guehi",
+        "price": 6
+      },
+      {
+        "player": "O'Shea",
+        "price": 4
+      },
+      {
+        "player": "Egan",
+        "price": 4
+      },
+      {
+        "player": "Ajer",
+        "price": 4.5
+      },
+      {
+        "player": "Hume",
+        "price": 4.5
+      },
+      {
+        "player": "Rutter",
+        "price": 5.5
+      },
+      {
+        "player": "Madjo",
+        "price": 5.5
+      },
+      {
+        "player": "Moore",
+        "price": 5
+      }
+    ],
+    "bands": [],
+    "whatIsDeliberatelyNotHere": "Igor Thiago at £8.0m and Haaland at £15.5m both appear in this file and NEITHER is a LazyFPL statement. The first is fpltips' figure, quoted while recording an unresolved conflict; the second is our own register, quoted while recording a bug in an earlier price pass. An earlier version of the cross-source check searched this file end to end and reported both as LazyFPL corroboration. That is why this field is a list and not a search."
+  }
 }

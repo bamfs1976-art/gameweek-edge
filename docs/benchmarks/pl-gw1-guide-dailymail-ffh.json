@@ -1,0 +1,174 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-18T09:40:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "A Daily Mail FPL gameweek-one guide by Holly Shand of Fantasy Football Hub, pasted in full and checked against our own registers before the season starts. Git history is the evidence this predates the football.",
+
+  "source": {
+    "publication": "Daily Mail",
+    "author": "Holly Shand",
+    "affiliation": "Fantasy Football Hub",
+    "publishedAt": "2026-08-17T16:55:00+01:00 (as stamped on the article)",
+    "readFrom": "full text, pasted by the user with no instruction",
+    "whatItIs": "A pre-gameweek-one guide: fixtures, price-tagged pick suggestions, defensive-contribution rates and manager context."
+  },
+
+  "commercialInterest": {
+    "why": "Recorded first, because it is the heaviest of the four outside sources captured this fortnight and it bears on how the numbers should be read.",
+    "theOpeningLine": "'Join Fantasy Football Hub today with 50 per cent off and if you don't win your mini league you'll get your money back'",
+    "throughout": "The article repeatedly directs the reader to the Fantasy Football Hub AI tools.",
+    "theSharpEdge": "The predicted-points figures are not incidental to the piece — they ARE the product being sold. That is not a reason to discount the checkable facts below, all of which were checked, but it is a reason not to treat the projections as neutral analysis.",
+    "howItComparesWithTheOthers": "fpltips carries a platform AI-content label; BigManBakar promotes his own content; LazyFPL is a free newsletter with no product attached. This is the only one where the figures and the product are the same thing."
+  },
+
+  "completeness": {
+    "fullArticle": "yes — pasted in full",
+    "whatThisFileHolds": "the claims that could be CHECKED against something we already hold, plus the two conflicts and the corroboration they produced. It is not a transcription of the article and does not attempt to be one.",
+    "whatThatMeans": "The absence of a claim from this file means it was not checkable here, not that the article did not make it."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "Fixtures resolved by reciprocity across the register's own club blocks — every fixture appears twice, once from each side, and a claim is only counted as agreeing when both halves say the same thing. Prices anchored on the register's settled marker, scanning backwards from the price to the name that owns it.",
+    "fixtures": {
+      "checked": 6,
+      "agreeing": 6,
+      "conflicts": 0,
+      "unheld": 0,
+      "theSix": [
+        "Arsenal host Coventry in the opener (GW1, H) — agrees",
+        "Manchester United travel to Hull (GW1, A) — agrees",
+        "Manchester United entertain Ipswich (GW2, H) — agrees",
+        "Manchester City host Coventry (GW3, H) — agrees",
+        "Brentford open at home to Spurs (GW1, H) — agrees",
+        "Coventry host Hull (GW2, H) — agrees"
+      ],
+      "read": "Six for six with no disagreement, on a register whose GW1 card has already been settled against the published schedule. This is the cleanest fixture agreement of the four captures."
+    }
+  },
+
+  "theGW4ManchesterDerby": {
+    "whatTheArticleSays": "'a huge Manchester derby in Gameweek 4, with Old Trafford providing the backdrop'",
+    "whatOurRegisterHolds": "NOTHING. There is still no GW4 row for either Manchester club in the briefing's fixture blocks. The gap is unchanged.",
+    "whyThisMatters": "The FPL Challenge GW4 pick in docs/benchmarks/fpl-challenge-gw2-gw5.json was derived by ELIMINATION — the surviving pairings left two candidates and the tile's wording chose between them. Nothing in our own documents ever asserted the fixture.",
+    "theRunningCount": {
+      "statementsThatTheFixtureIsAGW4ManchesterDerby": 3,
+      "byWhom": ["the FPL Challenge tile wording (our own derivation)", "BigManBakar ('City play United away')", "Daily Mail / Holly Shand"],
+      "statementsOfTheVENUE": 2,
+      "venueByWhom": ["BigManBakar — City AWAY implies Old Trafford", "Daily Mail — 'Old Trafford providing the backdrop', stated directly"],
+      "verdict": "Two independent sources now put the same fixture at the same ground, and they agree with a pick this project derived without either of them. The register still does not hold the row, so this is corroboration of a derivation, NOT a settled fixture. It is recorded, not adopted."
+    }
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "dailymail-ffh",
+    "statedTotal": 14,
+    "exact": [
+      { "player": "Raya", "price": 6.0 },
+      { "player": "Maguire", "price": 5.0 },
+      { "player": "Ndiaye", "price": 6.0 },
+      { "player": "Gross", "price": 5.5 },
+      { "player": "Gvardiol", "price": 5.5 },
+      { "player": "Thiaw", "price": 5.0 },
+      { "player": "Lacroix", "price": 6.0 },
+      { "player": "Van Dijk", "price": 6.5 },
+      { "player": "Gabriel", "price": 8.0 },
+      { "player": "Igor Thiago", "price": 8.0 },
+      { "player": "Semenyo", "price": 8.5 },
+      { "player": "Bruno Guimaraes", "price": 7.0 },
+      { "player": "Bruno Fernandes", "price": 12.0 },
+      { "player": "Haaland", "price": 15.5 }
+    ],
+    "bands": [],
+    "checkableAgainstOurRegister": "Few. Our register settles seven prices in all, and Ndiaye is the only one of the fourteen that overlaps. It agrees, at £6.0m. The rest are recorded as open rows.",
+    "independence": "Commercially entangled — see commercialInterest above. Independent of the other three captures in authorship, which is what the agreement counts below rest on."
+  },
+
+  "aFaultInOURTOOLThisCaptureExposed": {
+    "what": "The first cross-source price pass reported 'Igor Thiago £8m <- fpltips + LazyFPL' and 'Haaland £15.5m <- LazyFPL'. Both were false.",
+    "why": "It searched the benchmark FILES. A benchmark file is not a transcript of its source — it holds the source's claims, our register's figures, other sources' figures, and the post-mortems of our own parsing errors, all in the same prose. LazyFPL never stated Igor Thiago's price; the £8.0m in that file is fpltips' figure, quoted while recording the conflict as unresolved. The £15.5m is OUR OWN REGISTER, quoted while recording an earlier bug.",
+    "andOneItMissed": "Bruno Guimaraes, because the register spells him with the diacritic and the capture without it.",
+    "whyThisIsTheWorseDirection": "Manufacturing a conflict gets the conflict investigated. Manufacturing corroboration gets it believed. Every earlier instance of this failure mode in this project invented a disagreement; this one invented agreement, and would have published two figures as twice-witnessed on the strength of our own words.",
+    "fixed": "dev/cross-source-prices.mjs searches no prose at all. Each capture declares sourceStatedPrices — an explicit list of what that source said — and a capture without the field contributes nothing and is NAMED in the output, so silence and never-being-asked do not look alike.",
+    "andTheFixHadTheSameBugInIt": "The first run of the new register parser reported 'Guehi: sources £6.0m vs register £20.0m'. The £20m is the transfer fee in 'Marc Guehi (CB, Crystal Palace, £20m+, Jan)' — the Vuskovic/Van Hecke fee-versus-price fault, reproduced by the tool written to prevent it. Signing lines are now skipped wholesale and anything above the game's price ceiling is excluded, with both exclusion counts printed. 105 fees were being read as prices."
+  },
+
+  "defconRatesCrossCheckedAgainstHadley": {
+    "why": "The single most valuable thing in the article. It states defensive-contribution rates as raw counts — hits out of appearances — for four defenders. Tom Hadley's thread, captured six days earlier and already in our benchmarks, states rates as percentages from stated start counts. Two sources, two different presentations, same underlying quantity, neither derived from the other.",
+    "rows": [
+      { "player": "Lacroix", "article": "21 of 35 = 60%", "hadley": "60% from 35 starts", "verdict": "AGREE — exactly, and on the same denominator" },
+      { "player": "Van Dijk", "article": "15 of 38 = 39%", "hadley": "42% from 38 starts", "verdict": "AGREE within rounding — same denominator, 3 points apart" },
+      { "player": "Thiaw", "article": "12 of 28 = 43%", "hadley": "36% from 33 starts", "verdict": "CONFLICT" },
+      { "player": "Gvardiol", "article": "3 of 17 = 18%", "hadley": "not in the table", "verdict": "unheld — nothing to check against" }
+    ],
+    "theThiawConflict": {
+      "whatIsWrongWithIt": "The rates differ by 7 points, but that is the smaller problem. The DENOMINATORS are incompatible: a player cannot start 33 matches and appear in only 28. One of the two sources has the wrong appearance base, and no amount of arithmetic on what we hold can say which.",
+      "andTheNUMERATORSAGREE": "36% of 33 starts is 11.9, and the article states 12 hits out of 28. Both sources put Thiaw on twelve defensive-contribution hits. They disagree ONLY about how many matches those twelve came in — which is what makes it a clean conflict about one quantity rather than two sources describing different things.",
+      "whyItIsNotResolvedHere": "Settling it needs a season appearance record for Thiaw, which is not reachable from this sandbox. Recorded as an open conflict.",
+      "aSecondSignThatIWROTEDOWNANDTHENHADTOWITHDRAW": {
+        "whatThisFileSaidInDraft": "'The two sources also disagree on Thiaw's price band. Hadley's table puts him in the £5.5m defensive bracket; the article prices him at £5.0m.' It went on to argue that two independent disagreements about the same player were worth more than either alone.",
+        "itIsFalse": "Hadley's table puts Thiaw in the £5m defensive bracket, not £5.5m. The article's £5.0m sits INSIDE that band. The two sources agree about Thiaw's price.",
+        "howItWasCaught": "The band check in dev/cross-source-prices.mjs reported zero band conflicts, which contradicted the sentence sitting in this file. Checking the table settled it in one line.",
+        "whyItIsRecordedRatherThanDeleted": "Because it is the same failure as the one this capture is otherwise about, committed while writing the file that documents it. A conflict was manufactured to buttress a conflict — a corroborating detail invented because it made the argument tidier. That is worth keeping on the record more than a clean file is."
+      },
+      "whatItDoesNotEstablish": "Which source is wrong. Two agreements and one disagreement is not a hit rate, and Hadley's own capture already records that every figure in it was read off a phone screenshot by eye — so a transcription error on our side is live as an explanation too."
+    },
+    "whatTheAgreementIsWorth": "Lacroix at 21/35 = 60% against 60% from 35 starts is the strongest independent corroboration this project holds of any outside figure. It is exact, on the same denominator, from two unconnected sources, and it was checked before a ball was kicked."
+  },
+
+  "managerClaims": {
+    "checked": 4,
+    "agreeing": 3,
+    "conflicts": 1,
+    "theThree": [
+      "Chelsea — Xabi Alonso: agrees with our register",
+      "Nottingham Forest — Oliver Glasner: agrees with our register",
+      "Manchester City — Enzo Maresca: agrees with our register"
+    ],
+    "theNewcastleConflict": {
+      "theArticle": "'It's all change at Newcastle United following Eddie Howe's departure'",
+      "ourRegister": "'Underwhelmed to twelfth, but Eddie Howe continues. A selling summer: Tonali (~£100m to Spurs) and Gordon (~£69m to Barcelona) left for big fees... The question is whether Howe can knit a reshaped attack together quickly.'",
+      "aSecondSourceOnTheirSide": "The LazyFPL newsletter, captured yesterday, says 'Having lost Eddie Howe, Tonali, Gordon and Guimaraes this summer'.",
+      "theStandingCount": "Two independent outside sources say Howe has gone. Our register says he continues, and builds a paragraph of pre-season reasoning on top of that.",
+      "whyTheRegisterIsNOTAMENDEDHERE": "Because a benchmark records what a source said; it does not edit the register. The register is a published document and the correction belongs in it as a dated update with a source attached, made by someone who can reach one. Two outside statements agreeing is strong, and it is still not a confirmation.",
+      "whyItMattersMoreThanOneLine": "The Newcastle block's whole read — 'whether Howe can knit a reshaped attack together' — is conditioned on the manager. If he has left, the paragraph is not slightly wrong, it is about a situation that does not exist. This is the largest single exposure in the register that these four captures have surfaced.",
+      "theAgreementInsideTheDisagreement": "Both outside sources also name Tonali and Gordon as departures, which our register already holds. They disagree with us on one fact out of three in the same sentence."
+    }
+  },
+
+  "crossSourcePriceAgreementAfterTheFix": {
+    "whatTheCorrectedCheckReports": "Eight figures now carry two or more independent statements, up from four before this capture. Six of the eight are prices our register does not hold at all.",
+    "theEight": [
+      "Ndiaye £6.0m — dailymail-ffh + bigmanbakar + fpltips + hadley, and our register's settled £6.0m agrees. Four statements.",
+      "Calvert-Lewin £6.0m — lazyfpl + bigmanbakar + fpltips. Three statements, no register price. Still the best-supported open row.",
+      "Igor Thiago £8.0m — dailymail-ffh + fpltips",
+      "Bruno Guimaraes £7.0m — lazyfpl + dailymail-ffh",
+      "Gvardiol £5.5m — lazyfpl + dailymail-ffh",
+      "Gross £5.5m — dailymail-ffh + bigmanbakar",
+      "Palmer £9.5m — bigmanbakar + fpltips, agreeing with our register",
+      "De Cuyper £4.5m — lazyfpl + fpltips"
+    ],
+    "theIgorThiagoRowIsNowDIFFERENT": {
+      "before": "The fpltips capture opened this row as a conflict — our register's '~£7.0-7.5m est.' against their £8.0m — and declined to settle it because fpltips carries a platform AI-content label and 'our estimates usually lose' is not a reason to accept a figure from a source with no stated method.",
+      "now": "A named human author at a national publication states the same £8.0m, independently. That is the second statement the row was waiting for, and it is not the kind of source the earlier objection was about.",
+      "whatIsStillNotDone": "The register is NOT amended. Our figure there is marked 'est.' and has never been settled against a published price, and this file does not edit the register. What has changed is that the row now has a source that can be held to it — which is exactly the condition the fpltips capture set for settling it.",
+      "theCleanWayToFinishIt": "The FPL bootstrap prices every player. It is unreachable from this sandbox and trivially reachable from CI."
+    },
+    "whatTheseCountsDoNOTMean": "Distinct capture files, not distinct minds. fpltips carries an AI-content label and Hadley was already a named source in the briefing before his thread was captured, so a four-statement row is not four independent witnesses. Each capture's own independence caveat is printed in the report beside its name for that reason.",
+    "zeroDisagreements": "No two sources state different prices for the same player, and no stated price conflicts with a non-estimate register price. That is a real result and not a null one: the same tool reports 105 transfer fees excluded, so it is looking at the right numbers."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "The GW4 Manchester derby is played at Old Trafford", "gradeable": true, "settlesOn": "the published GW4 card, or the match itself" },
+    { "claim": "Eddie Howe is no longer Newcastle's manager", "gradeable": true, "settlesOn": "the GW1 team sheet at the latest" },
+    { "claim": "Thiaw made 28 appearances last season, not 33 starts", "gradeable": true, "settlesOn": "a season appearance record; unreachable from this sandbox" },
+    { "claim": "The fourteen stated prices", "gradeable": true, "settlesOn": "the FPL bootstrap, which prices every player and is trivially reachable from CI" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "dev/cross-source-prices.mjs is added, and four existing captures gain a sourceStatedPrices field, because the old check manufactured corroboration out of our own words.",
+    "Nothing in the register moves. The Newcastle manager conflict is recorded as open, not applied — including the price rows, the DEFCON figures and the Thiaw denominators.",
+    "The FPL Challenge GW4 pick is unchanged. It gains a third statement of the fixture and a second of the venue, neither of which it depended on."
+  ]
+}

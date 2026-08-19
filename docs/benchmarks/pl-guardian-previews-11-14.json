@@ -1,0 +1,174 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-18T10:15:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "The Guardian's numbered club previews 11 to 14 — Hull City, Ipswich, Leeds and Liverpool — pasted in full three days before the GW1 deadline. The first Guardian preview capture this project holds, and the first source of the six that is not an FPL source at all.",
+
+  "sources": [
+    { "no": 11, "club": "Hull City", "author": "Louise Taylor", "publishedAt": "2026-08-17T00:01+01:00", "panelPrediction": 20, "lastSeason": "6th (Championship)", "comments": 268 },
+    { "no": 12, "club": "Ipswich Town", "author": "Will Unwin", "publishedAt": "2026-08-17T12:00+01:00", "panelPrediction": 19, "lastSeason": "2nd (Championship)", "comments": 156 },
+    { "no": 13, "club": "Leeds United", "author": "Louise Taylor", "publishedAt": "2026-08-18T00:01+01:00", "panelPrediction": 12, "lastSeason": "14th", "comments": 341 },
+    { "no": 14, "club": "Liverpool", "author": "Andy Hunter", "publishedAt": "2026-08-18T12:00+01:00", "panelPrediction": 4, "lastSeason": "5th", "comments": 30 }
+  ],
+
+  "whatKindOfSourceThisIs": {
+    "notAnFplSource": "Nothing in these four pieces is about Fantasy Football. There is no price, no projection, no captaincy call and no pick. Everything useful here is a FACT ABOUT A FOOTBALL CLUB, which is precisely what our register is made of and what the other five captures mostly are not.",
+    "commercialInterest": "The lowest of any source captured. The Guardian runs a reader-funding appeal in the page furniture and sells nothing here; it has no FPL product, no affiliate link and no tips to gate. LazyFPL is free but promotes itself; this does not even do that.",
+    "thePredictedPositionsAreAPOLL": "Each preview states 'Guardian writers' predicted position' and says in terms that it is 'not necessarily [the author's] prediction but the average of our writers' tips'. It is a panel average, not the correspondent's view, and it is recorded as such rather than as the article's own forecast.",
+    "andItPublishesItsOwnCorrections": {
+      "what": "The Hull preview carries a footer: 'This article was amended on 17 August 2026. An earlier version showed the progress chart for Ipswich Town rather than for Hull.'",
+      "whyItIsRecorded": "It is the same class of error this project has made repeatedly — one club's data attached to another club — found, corrected and disclosed in public. A source that publishes its own errata is a different kind of source from one that does not, and that is worth more than any single fact in the four pieces."
+    }
+  },
+
+  "verifiedAgainstOurRegister": {
+    "method": "Fixtures by reciprocity across the register's own club blocks. Every player name checked with word boundaries against both the markdown briefing and the structured HTML blocks, and checked against THE CLUB THE GUARDIAN NAMES rather than looked up loose. Transfer interest was separated from completed transfers before anything was counted.",
+    "fixtures": {
+      "checked": 1,
+      "agreeing": 1,
+      "detail": "Liverpool 'start the season at Newcastle' — our register has Liverpool GW1 Newcastle United (A). Agrees.",
+      "whyOnlyOne": "These are season previews, not fixture guides. Three of the four never name an opponent."
+    },
+    "transfersAndClubAttributions": {
+      "agreeing": [
+        { "claim": "Harry Wilson, free transfer from Fulham to Leeds", "ourRegister": "held on BOTH sides — Fulham's out list has 'Harry Wilson (AM, Leeds, free)' and Leeds' in list has 'Harry Wilson (AM/W, Fulham, free)'", "verdict": "three-way agreement, and our register is internally reciprocal on it" },
+        { "claim": "Issa Diop, Fulham to Ipswich", "ourRegister": "Fulham out: 'Issa Diop (CB, Ipswich, ~£8.5m)'; Ipswich in: 'Issa Diop (CB, Fulham, ~£8.5m)'", "verdict": "agrees, reciprocally" },
+        { "claim": "Tarik Muharemovic, £34m from Sassuolo to Leeds, 23, left-sided centre-back", "ourRegister": "Leeds in: 'Muharemovic (CB, Sassuolo, ~£34.1m)'", "verdict": "agrees to the nearest million — theirs is £34m, ours is ~£34.1m. NOT an exact match: this file said 'the fee matches exactly' in draft until a check on the literal string failed, and £34m against ~£34.1m is agreement by rounding, which is a weaker thing and has to be written as the weaker thing" },
+        { "claim": "Jeremy Jacquet, Rennes to Liverpool, deal completed in February", "ourRegister": "Liverpool in: 'Jacquet (DEF, Rennes, ~£60m)'", "verdict": "agrees on club and origin; see theJacquetFeeRefinement below" },
+        { "claim": "Andoni Iraola is Liverpool head coach, Arne Slot gone", "ourRegister": "'Slot has gone and Andoni Iraola is confirmed as head coach on a two-year deal'", "verdict": "agrees" },
+        { "claim": "Mohamed Salah gone, no replacement installed", "ourRegister": "'Mohamed Salah is leaving Liverpool (Saudi Pro League reported, exact club not yet officially announced)'", "verdict": "agrees, and hardens our tense from leaving to gone — though the Guardian does not name a destination either" },
+        { "claim": "Gary O'Neil replaced Kieran McKenna at Ipswich after McKenna resigned", "ourRegister": "both named; the Ipswich set-piece line already reads 'New boss O'Neil could reshuffle — provisional'", "verdict": "agrees" },
+        { "claim": "Sergej Jakirovic manages Hull; Daniel Farke manages Leeds", "ourRegister": "both held", "verdict": "agrees" },
+        { "claim": "Calvert-Lewin is Farke's centre-forward; Lukas Nmecha at Leeds", "ourRegister": "Leeds pens 'Calvert-Lewin (Nmecha 2nd)'", "verdict": "agrees" },
+        { "claim": "Oli McBurnie scored 19 goals last season", "ourRegister": "'Up via the play-offs, beating Middlesbrough 1-0 in the final (McBurnie, 95th minute)' and 'Hull City | McBurnie | Crooks' in the penalty table", "verdict": "consistent — our register records the winner and the penalty duty, not a season total, so the 19 is new and unchecked" },
+        { "claim": "Brian Brobbey is Sunderland's centre-forward", "ourRegister": "held, at ~£6.0m", "verdict": "agrees — and the Guardian calls him 'formidable' without saying he starts, so the Isidor-or-Brobbey line-leader dispute in our register stays open" }
+      ],
+      "notATransferAndNOTRecordedAsOne": {
+        "why": "This project manufactured three conflicts once by reading rumour lines as completed moves. The rule since then is that interest is interest.",
+        "the": [
+          "Hull's manager 'covets the Sunderland striker Wilson Isidor' and Swansea's Zan Vipotnik. Isidor stays at Sunderland in our register, unchanged.",
+          "'Liverpool would love the answer to be Bradley Barcola (and for Paris Saint-Germain to lower their asking price)'. An unconsummated pursuit."
+        ]
+      }
+    }
+  },
+
+  "theOpenFlagThisSettles": {
+    "theFlag": "Our register's Hull block carries: 'Source conflicts to verify: Garnacho's origin (Chelsea loan best supported) and Joe Gelhardt's Hull status.' It has stood since 13 August.",
+    "whatTheGuardianSays": "Gelhardt is named as one of eleven players who have 'arrived' at Hull this summer, in a list of the club's new signings.",
+    "whatThatSettles": "That he is at Hull. The flag can close on presence.",
+    "whatItDoesNOTSettle": "Permanent or loan. Our register says 'Joe Gelhardt (15 goals on loan) status needs confirming', and the Guardian's sentence — 'Hull intend following Sunderland's template by making 14 new signings. So far 11 have arrived' — reads as new business but does not use the word permanent. Half a flag closed is recorded as half a flag closed.",
+    "theOtherHalfOfTheFlag": "Garnacho's origin is untouched by these four previews."
+  },
+
+  "conflictsWithOurRegister": {
+    "butlandsReturnDate": {
+      "ourRegister": "'Jack Butland (12 weeks, arm surgery)' — from mid-August that is roughly mid-November.",
+      "theGuardian": "'an arm problem suffered by Butland. It threatens to keep the former Rangers goalkeeper, who had impressed in friendlies, out until Christmas.'",
+      "theGap": "Around six weeks. Both agree on the injury and on it being severe; they disagree on how long.",
+      "whyItMatters": "Our register does not treat this as a minor line. It says of Hull's injury list that 'Butland is the one that moves money: he arrived as the first-choice goalkeeper'. A six-week difference is the difference between a GW12 return and a GW17 one, which is most of the window in which a cheap Hull keeper would be a punt.",
+      "whichIsRight": "Unresolved. 'Twelve weeks' has the shape of a club statement and 'until Christmas' the shape of a journalist's read of one; neither is sourced in what we hold. Recorded as open.",
+      "notApplied": "The register is not changed."
+    },
+    "lukicIsSTILLTAKINGFULHAMSCORNERS": {
+      "what": "The most actionable error these previews expose in our own documents.",
+      "theGuardian": "'Issa Diop and Sasa Lukic joined from Fulham' — to Ipswich.",
+      "ourRegister": "Fulham's set-piece line reads 'Corners Iwobi, Lukic.' Fulham's out list names Jimenez, Harry Wilson and Issa Diop — and NOT Lukic. Ipswich's in list names Akpom, Kipre and Diop — and NOT Lukic.",
+      "soTheRegisterIsWrongInTwoPlaces": "It has him neither leaving Fulham nor arriving at Ipswich, and it still assigns him half of Fulham's corners.",
+      "whyThisIsWorseThanAMissingName": "A missing signing is a gap. A departed player holding a set-piece duty is a WRONG ANSWER that the app will serve: set-piece duty is one of the things this project models, and the Diop half of the same transfer IS recorded, so the register was demonstrably looking at this deal and took only one player out of it.",
+      "whatIsOwed": "An edit to the Fulham and Ipswich blocks with this capture cited. Not made here — a benchmark records what a source said."
+    },
+    "hughesInjuryDESCRIPTION": {
+      "ourRegister": "'| Charlie Hughes | Groin — **stated to miss the Man Utd game**, which is GW1 | No |'",
+      "theGuardian": "'a defender also comfortable in central midfield will miss the start of the season after hernia surgery... Hughes is expected back by early autumn at the latest.'",
+      "verdict": "AGREE on what matters — he misses GW1 — and this is NOT recorded as a conflict. A sports hernia and a groin injury are routinely the same complaint under two names, and picking a fight between them would be inventing a disagreement out of vocabulary.",
+      "whatTheGuardianADDS": "A return window. Our register has no return date for him at all; 'early autumn at the latest' is new information, and it is the kind our register is weakest on."
+    },
+    "egansAnkle": {
+      "ourRegister": "'| John Egan | Did not travel, ankle | Doubt |'",
+      "theGuardian": "Presents Egan as an active leader — 'exemplary on-field leaders, including the veteran central defender John Egan' — with no injury mentioned.",
+      "verdict": "NOT a conflict. A season preview is not an injury table and silence is not denial. Recorded because our register holds a doubt on a player two other captures price at £4.0m, and nothing outside has confirmed or cleared it."
+    }
+  },
+
+  "theJacquetFeeRefinement": {
+    "ourRegister": "'Jacquet (DEF, Rennes, ~£60m)'",
+    "theGuardian": "'A £55m deal rising to £60m was completed with Rennes in February'",
+    "whatChanges": "Our figure is the ceiling of a structured deal, not the fee paid. Both numbers in the Guardian's sentence are ours already; we recorded only the larger one.",
+    "andWhatItConfirms": "The LazyFPL capture recorded that 'Jeremy Jacquet is a Liverpool centre-back and scored', against Hadley's table which carried him only as 'Jacquet (Ligue 1)'. A second independent source now places him at Liverpool with a fee and a date. Hadley's annotation was a stale league label, not a club claim, and that reading is now settled."
+  },
+
+  "whatOurRegisterDOESNOTHOLD": {
+    "method": "Twenty-nine named players checked with word boundaries across both register files. Absent means ZERO occurrences, checked — not that a lookup method failed to attribute them. That distinction is the whole content of the correction recorded in pl-preseason-notes-fpltips.json.",
+    "absent": ["Nobel Mendy", "Konstantinos Tzolakis", "Lucas Gourna-Douath", "Elliot Stroud", "Lucas Herrington",
+      "Kjell Scherpen", "Emersonn", "Sindre Walle Egeli", "Julio Enciso", "Abdul Fatawu", "Florentino Luis", "Sasa Lukic",
+      "James Trafford", "Noah Okafor", "Brenden Aaronson", "Trey Nyoni", "Rio Ngumoha", "Bradley Barcola", "Alexis Mac Allister",
+      "Milos Kerkez", "Dara O'Shea"],
+    "twoOfThemAreFplRelevantRIGHTNOW": "Dara O'Shea is named as Ipswich's captain, and LazyFPL and Hadley both price an O'Shea at £4.0m. Milos Kerkez is pictured as a Liverpool player, and Michal prices a Kerkez at £5.5m. Both are cheap defenders at clubs our register covers, and our register holds neither name.",
+    "theIpswichHoleIsTheBiggest": "The Guardian says Ipswich made ten new arrivals for more than £100m and are the league's fourth-biggest net spenders. Our register's Ipswich in list holds three of them.",
+    "whatThisIsAndIsNot": "It is a coverage gap, not an error. The briefing lists signings, departures and pick candidates rather than full squads, and it says so. It is recorded because a gap that is measured is a different thing from one that is assumed."
+  },
+
+  "aFalsePositiveInMYOWNCHECKThisTurn": {
+    "what": "The verification script reported 'Trafford — PRESENT in register'.",
+    "whatItActuallyMatched": "'Old Trafford', the stadium, inside a fixture note. 'James Trafford' occurs zero times in either register file.",
+    "theShape": "A surname that is also a place, matched on a word boundary and counted as a player. The same family as the two Sangares, the two Fernandeses, and Michal's Reece James against the register's James Garner — a string that resolves to more than one thing, resolved to the wrong one.",
+    "whatMakesItSharperThanUsual": "The stadium it matched is Old Trafford, which is the subject of the GW4 Manchester derby thread this project spent yesterday corroborating. The check found the right word in the right document about entirely the wrong thing.", "andTheSTRINGIsSplitToo": "The register wraps the name across a line break — 'away at Old' then 'Trafford.' — so even a search for the full stadium name misses it in the markdown. That is why the surname matched alone: the only thing on that line was Trafford.",
+    "howItWasCaught": "By reading the match context rather than the match count — the same discipline that caught the Guehi transfer fee and the withdrawn Thiaw band claim. The count said one; the context said stadium.",
+    "recordedBecause": "It was caught before it reached a file, which is where these are supposed to be caught, and the only evidence that the discipline works is the cases where it fires."
+  },
+
+  "feesStatedAndWHYTHEYAREKEPTSEPARATE": {
+    "why": "This project has twice read a transfer fee as an FPL price — Vuskovic and Van Hecke in the fpltips capture, Guehi in the price checker's first run. These previews are full of fees and contain no FPL prices whatsoever. Keeping them in their own field, away from sourceStatedPrices, is the structural version of that lesson.",
+    "hull": ["Nobel Mendy, club record, just over £20m from Rayo Vallecano", "around £78m invested in new players at the time of writing", "Ivor Pandur and Aidon Shehu sold for a combined £8.5m, which is what avoided a near-certain six-point deduction"],
+    "ipswich": ["more than £100m on ten arrivals", "Emersonn, record signing, £24m from Toulouse", "Sindre Walle Egeli £17.5m at nineteen", "£30m training-ground upgrade"],
+    "leeds": ["James Trafford, club record £40m from Manchester City", "Tarik Muharemovic £34m from Sassuolo", "Elland Road capacity 37,792 rising to 53,000"],
+    "liverpool": ["Jeremy Jacquet £55m rising to £60m from Rennes", "a consortium including Jeff Bezos, Eduardo Saverin and Amit Bhatia bought 30% of Liverpool for £1.65bn", "FSG bought the club for £300m in 2010"]
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "guardian-previews",
+    "statedTotal": 0,
+    "exact": [],
+    "bands": [],
+    "notEnumerated": "These previews state no FPL prices at all. The many pound figures in them are TRANSFER FEES, stadium costs and an equity valuation, and are held in feesStated above. Declaring zero here records the source as silent on prices rather than unexamined."
+  },
+
+  "statAttack": {
+    "why": "Each preview carries a 'Stat attack' box. Three of the four are about last season and are not checkable from anything we hold; one is directly relevant to what this app models.",
+    "leedsSetPieces": {
+      "theStat": "16 goals from set-piece situations and 6 from the penalty spot — 22 from dead balls — while scoring no more than 26 in open play, which the Guardian says had not happened since 2014-15.",
+      "whyItIsTheUsefulOne": "Set-piece and penalty duty is modelled by this project, and our register already assigns Leeds penalties to Calvert-Lewin with Nmecha second. A side that took 22 of its goals from dead balls concentrates FPL value in whoever takes them, and the Guardian independently says that is where Leeds' goals come from.",
+      "theCaution": "It is last season's distribution under the same manager, not a forecast, and 22 dead-ball goals is explicitly described as a mark hit about twice a season. It is a prior, not a projection."
+    },
+    "hull": "Second-bottom for expected points at 53.1, and 'would have been relegated if underlying performances determined results'. Also 66 league goals conceded, the fourth-highest.",
+    "ipswich": "Generated shots from 22.2% of high turnovers against a Championship average of 10.4%.",
+    "liverpool": "An erratic 2025-26 — a long win run and a bad losing streak in the same season, and a four-draw stretch in January. Iraola was unbeaten in his final 18 league matches at Bournemouth."
+  },
+
+  "aConvergenceWithOURModel": {
+    "theirs": "The Guardian panel puts Hull 20th and Ipswich 19th — the bottom two.",
+    "ours": "Our briefing's 'Avoid early (brutal openers)' list names Hull City, Sunderland, Coventry City, Ipswich Town, Fulham and Bournemouth as the hardest opening five on our own match model.",
+    "theOverlap": "Both of the panel's bottom two are on our list.",
+    "howMuchThatIsWorth": "Little, honestly, and it is recorded at that weight. The two measure different things — a season-long finishing position against the difficulty of five fixtures — and both would put a newly promoted side low for reasons that need no model at all. It is noted because a convergence claimed at its real strength is more use later than one inflated now."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Hull finish 20th and Ipswich 19th", "gradeable": true, "settlesOn": "the final table", "note": "a panel average, not either author's forecast" },
+    { "claim": "Leeds finish 12th, Liverpool 4th", "gradeable": true, "settlesOn": "the final table" },
+    { "claim": "Butland is out until Christmas", "gradeable": true, "settlesOn": "his first Premier League appearance", "note": "directly against our register's twelve weeks" },
+    { "claim": "Charlie Hughes is back by early autumn at the latest", "gradeable": true, "settlesOn": "his first appearance" },
+    { "claim": "Oli McBurnie retains his scoring touch in the top tier", "gradeable": "partly", "settlesOn": "his GW1-19 goals against 19 in the Championship", "note": "the article itself frames this as the thing Hull's season hinges on" },
+    { "claim": "Muharemovic is an inspired reinforcement, comfortable in a back three or four", "gradeable": true, "settlesOn": "his GW1-10 starts and clean sheets", "note": "he is one of THIS project's own FPL Challenge GW5 Shield picks, so it grades our pick as well as their claim" },
+    { "claim": "Wirtz deployed just behind Isak", "gradeable": true, "settlesOn": "Liverpool's GW1-3 line-ups", "note": "agrees with Sam FPL's 'Wirtz advanced' from the same morning, a second source on the same role" },
+    { "claim": "Trafford's distribution wins Leeds extra points", "gradeable": "weakly", "settlesOn": "nothing crisp; recorded as an opinion" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing is changed automatically. Two register edits are OWED and named here: Sasa Lukic must come off Fulham's corners and onto Ipswich's in list, and Joe Gelhardt's Hull presence can come off the source-conflict flag while the loan-or-permanent question stays on it.",
+    "Butland's return date is an open conflict, not a correction. Our twelve weeks and their Christmas are both unsourced in what we hold.",
+    "No price, pick, weight or rating moves. These previews state no FPL prices at all."
+  ]
+}
