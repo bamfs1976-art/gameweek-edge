@@ -74,6 +74,24 @@ nothing to find and would have passed by measuring itself. Fixture 81 (ARS v
 AVL in GW4, on top of the fixtures both clubs already had that week) exists so
 the guard has something to see.
 
+**A second bug, found in a screenshot rather than by the suite.** The FPL lens
+sanity-checks its rating against 1–5 and substitutes a neutral 3 outside that
+range. That check is correct for one raw rating from the API and wrong for a
+cell holding several of them summed: a double rated 2 and 4 sums to 6, fell
+outside the range, and printed as **3** — in the cell and in the run total
+alike. The wrong number, in exactly the cell the `×2` badge was drawing
+attention to.
+
+The unit suite passed throughout, because the case chosen to read nicely used
+3 + 2 = 5 — the one sum that sits on the boundary and hides it. The bug was
+visible in a screenshot of the FPL lens (Aston Villa reading 3 where the
+fixtures say 6) and nowhere else. `fdrOfficial()` now validates against the
+number of fixtures behind the cell — the legitimate range is n..5n — and both
+suites carry cases above the single-fixture ceiling.
+
+The same review found the strength edge keeping only the first fixture's
+ratio, which is the original bug one field further down. It averages now.
+
 ## Fixture grid: My squad rows (19 Aug 2026)
 
 The same grid, one row per player instead of one per club, with price and name
@@ -98,10 +116,13 @@ Two rules that are not obvious from the screenshot it came from:
 It never opens on the squad, and the toggle is offered only when a team is
 linked: a control that switches to an empty table is worse than no control.
 
-Guards: `dev/test-fixture-ticker.mjs` (73 checks, in `npm test`) for the
-combination and ordering rules as arithmetic; `dev/test-ui.mjs` (79
+Guards: `dev/test-fixture-ticker.mjs` (86 checks, in `npm test`) for the
+combination and ordering rules as arithmetic; `dev/test-ui.mjs` (48 -> 83
 assertions, outside `npm test` — needs Chromium) for whether any of it reaches
-the screen. Both mutation-tested.
+the screen. Both mutation-tested; the mutation runs found two holes in the
+guards themselves — nothing asserted the ORDER of a double's two fixtures, and
+the squad page always had a squad so nothing checked that the toggle stays
+away when there is not one.
 
 ## Register edits owed, with a source attached (18 Aug 2026)
 

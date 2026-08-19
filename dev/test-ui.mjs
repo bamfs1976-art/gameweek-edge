@@ -435,6 +435,47 @@ section('my squad rows, and a double gameweek that is visible as one');
     'every squad member in the double gets a marked cell (' + squad.dgwCells + ' of an expected 6)');
   ok(squad.mult === '×2', 'and the badge reads ×2 (' + squad.mult + ')');
 
+  /* The FPL lens, on the double. Found by looking at a screenshot: the lens
+     sanity-checks its rating against 1-5, which is right for one raw rating
+     from the API and wrong for a cell holding two of them summed. AVL's 2 + 4
+     fell outside the range and printed as the neutral fallback 3 — the wrong
+     number, in the one cell the ×2 badge was pointing at. Asserted against
+     the mock's real arithmetic: ARS 3 + 2 = 5, AVL 2 + 4 = 6. */
+  const fpl = await sp.evaluate(async (fnSrc) => {
+    const grid = eval(fnSrc);
+    [...document.querySelectorAll('#fdr-view .seg-b')].find((b) => /FPL/i.test(b.textContent)).click();
+    await new Promise((r) => setTimeout(r, 1000));
+    const t = grid();
+    const cells = [...t.querySelectorAll('td.fdr-dgw')];
+    const byOpp = {};
+    for (const c of cells) byOpp[c.querySelector('.fdr-opp').textContent.trim()] =
+      c.querySelector('.fdr-val').textContent.trim();
+    /* The run total for one ARS row, checked against its own cells rather
+       than a number copied off a screenshot — the window is adjustable, so a
+       hardcoded total would be asserting the default window, not the
+       arithmetic. The two come from different code paths (the lens's `cell`
+       and its `total`), so agreeing is a real check and not a tautology. */
+    const arsRow = [...document.querySelectorAll('#fdr-tbody tr')]
+      .find((r) => /ARSGkp/.test(r.textContent));
+    const vals = arsRow ? [...arsRow.querySelectorAll('td.cell:not(.fdr-tot) .fdr-val')]
+      .map((s) => parseInt(s.textContent, 10)) : [];
+    return { byOpp,
+      total: arsRow ? parseInt(arsRow.querySelector('td.fdr-tot .fdr-val').textContent, 10) : null,
+      cellSum: vals.reduce((a, c) => a + c, 0),
+      cells: vals.length,
+      doubles: arsRow ? arsRow.querySelectorAll('td.fdr-dgw').length : 0 };
+  }, gridTable.toString());
+
+  ok(fpl.byOpp['BRE + AVL'] === '5×2',
+    'the FPL lens sums both halves of ARS\'s double (' + fpl.byOpp['BRE + AVL'] + ')');
+  ok(fpl.byOpp['NEW + ARS (a)'] === '6×2',
+    'and AVL\'s, whose 2 + 4 lands outside the single-fixture 1-5 range ('
+    + fpl.byOpp['NEW + ARS (a)'] + ')');
+  ok(fpl.doubles === 1, 'the row being totalled actually contains a double (' + fpl.doubles + ')');
+  ok(fpl.cells > 1 && fpl.total === fpl.cellSum,
+    'the run total equals the sum of its own cells, doubles included (total '
+    + fpl.total + ' vs ' + fpl.cellSum + ' over ' + fpl.cells + ' cells)');
+
   /* Back again: a toggle that only goes one way is half a control. */
   const back = await sp.evaluate(async (fnSrc) => {
     const grid = eval(fnSrc);

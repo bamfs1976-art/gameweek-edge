@@ -89,6 +89,7 @@ vm.runInContext([
   extractLine(html, /function plsimDiff\(pWin\)\{[^}]*\}/),
   extractFn(html, 'fdrAttack'),
   extractFn(html, 'fdrDefence'),
+  extractFn(html, 'fdrOfficial'),
   extractConst(html, 'FDR_LENS'),
   extractFn(html, 'fdrLens'),
   extractFn(html, 'fdrCellValue'),
@@ -142,8 +143,8 @@ const cell = (o) => Object.assign({
    Overall and Strength average across gameweeks, so they average within one.
    A probability that summed would stop being a probability. */
 {
-  const a = cell({ opp: 'IPS', home: true, lam: 1.4, cs: 0.30, win: 0.42, fdr: 3 });
-  const b = cell({ opp: 'FUL', home: false, lam: 1.0, cs: 0.20, win: 0.30, fdr: 2 });
+  const a = cell({ opp: 'IPS', home: true, lam: 1.4, cs: 0.30, win: 0.42, fdr: 3, s: { edge: 1.2 } });
+  const b = cell({ opp: 'FUL', home: false, lam: 1.0, cs: 0.20, win: 0.30, fdr: 2, s: { edge: 0.8 } });
   const d = fdrCombine([a, b]);
 
   eq(d.n, 2, 'a double reports two fixtures');
@@ -155,10 +156,58 @@ const cell = (o) => Object.assign({
   eq(d.fdr, 5, 'the official FDR sums, because its run total sums (3 + 2)');
 
   /* The reason a grade cell exists at all. */
+  /* The strength edge is a per-fixture ratio and there are two of them.
+     Keeping the first fixture's and calling it the cell's would be the same
+     class of loss this whole change is about, one field further down. */
+  ok(d.s && Math.abs(d.s.edge - 1.0) < 1e-9, 'the strength edge averages both fixtures');
+
   ok(d.g, 'a double carries a per-match grade cell');
   ok(Math.abs(d.g.lam - 1.2) < 1e-9, 'the grade cell holds MEAN expected goals');
   ok(Math.abs(d.g.cs - 0.25) < 1e-9, 'and mean clean-sheet odds');
   eq(d.g.fdr, 3, 'and a mean FDR, rounded back onto the 1-5 scale');
+}
+
+/* ── a summed FDR above 5 must survive the lens ─────────────
+   The block above uses 3 + 2 = 5, which is the one sum that hides this: the
+   FPL lens sanity-checks its rating against 1-5 and falls back to 3 outside
+   it, because that check was written for a single raw rating from the API. A
+   double summing to 6 was printed as 3, and counted as 3 in the run total —
+   the number was wrong in exactly the cell the ×2 badge was drawing
+   attention to. Found in a screenshot, not by this file, because the case
+   chosen to read nicely sat on the boundary.
+
+   Most real doubles sum above 5. These use 2 + 4 and 5 + 5. */
+{
+  const a = cell({ opp: 'NEW', home: true, fdr: 2, lam: 1.5, cs: 0.3, win: 0.4 });
+  const b = cell({ opp: 'ARS', home: false, fdr: 4, lam: 0.9, cs: 0.15, win: 0.2 });
+  const d = fdrCombine([a, b]);
+  eq(d.fdr, 6, 'the raw combined rating is the sum (2 + 4)');
+  eq(fdrCellValue('fpl', d), '6', 'and the lens PRINTS 6, not the out-of-range fallback');
+  eq(fdrGrade('fpl', d), 3, 'while the colour stays on the 1-5 scale (mean of 2 and 4)');
+  eq(fdrRunTotal('fpl', [fdrCombine([cell({ fdr: 3 })]), d]), '9',
+    'and the run total counts all three fixtures (3 + 2 + 4)');
+
+  /* The ceiling: two 5s is a 10, and 10 is a legitimate reading for a cell
+     holding two fixtures. Only a value outside n..5n is garbage. */
+  const worst = fdrCombine([cell({ fdr: 5 }), cell({ opp: 'LIV', fdr: 5 })]);
+  eq(fdrCellValue('fpl', worst), '10', 'two 5s print as 10, the worst a double can be');
+  eq(fdrGrade('fpl', worst), 5, 'and still grade 5, because the scale is per match');
+
+  /* A genuinely corrupt rating still falls back, per fixture. */
+  const junk = fdrCombine([cell({ fdr: 0 }), cell({ opp: 'LIV', fdr: 99 })]);
+  eq(fdrCellValue('fpl', junk), '6', 'two unusable ratings fall back to 3 each, not to 3 in total');
+
+  /* fdrOfficial's own contract, tested directly rather than through
+     fdrCombine. Every cell fdrCombine produces sums n values already forced
+     into 1-5, so its result is always inside n..5n and the out-of-range
+     branch is unreachable from the app — a mutation run proved it by
+     changing that branch and breaking nothing. Reached here on purpose,
+     because a defensive branch nothing can test is not a safeguard. */
+  eq(ctx.fdrOfficial({ n: 2, fdr: 99 }), 6, 'an out-of-range combined rating falls back to 3 per fixture');
+  eq(ctx.fdrOfficial({ n: 2, fdr: 1 }), 6, 'and so does one below the floor for two fixtures');
+  eq(ctx.fdrOfficial({ n: 1, fdr: 0 }), 3, 'a single keeps the plain neutral fallback');
+  eq(ctx.fdrOfficial({ n: 2, fdr: 2 }), 2, 'two 1s are a legitimate 2, not a fallback');
+  eq(ctx.fdrOfficial(null), 3, 'and a missing cell is neutral rather than a throw');
 }
 
 /* ── the grade must stay on its scale, for every lens ───────

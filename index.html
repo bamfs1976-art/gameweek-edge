@@ -7600,6 +7600,18 @@ function strengthGrade(s){
   const r=s.edge,B=STRENGTH_BANDS;
   return r>=B[0]?1:r>=B[1]?2:r>=B[2]?3:r>=B[3]?4:5;
 }
+/* The official rating, sanity-checked against the number of fixtures behind
+   it. The 1-5 test is on a RAW rating from the API, and a cell holding n
+   fixtures carries n of them summed — its legitimate range is n..5n. Clamping
+   a double's 6 to the 1-5 test turned it into the neutral fallback, printed
+   as 3 in the cell and counted as 3 in the run total: wrong in exactly the
+   cell the ×2 badge was drawing attention to. A genuinely unusable rating
+   still falls back, at 3 per fixture rather than 3 in total. */
+function fdrOfficial(c){
+  if(!c)return 3;
+  const n=c.n||1;
+  return (c.fdr>=n&&c.fdr<=5*n)?c.fdr:3*n;
+}
 const FDR_LENS={
   overall:{unit:'WIN',cell:c=>Math.round((c.win||0)*100)+'%',
     total:cs=>cs.length?Math.round(100*cs.reduce((s,c)=>s+(c.win||0),0)/cs.length)+'%':'—'},
@@ -7607,8 +7619,8 @@ const FDR_LENS={
     total:cs=>cs.reduce((s,c)=>s+(c.lam||0),0).toFixed(2)},
   defence:{unit:'xCS',cell:c=>Math.round((c.cs||0)*100)+'%',
     total:cs=>cs.reduce((s,c)=>s+(c.cs||0),0).toFixed(2)},
-  fpl:{unit:'FDR',cell:c=>String(c.fdr>=1&&c.fdr<=5?c.fdr:3),
-    total:cs=>String(cs.reduce((s,c)=>s+(c.fdr>=1&&c.fdr<=5?c.fdr:3),0))},
+  fpl:{unit:'FDR',cell:c=>String(fdrOfficial(c)),
+    total:cs=>String(cs.reduce((s,c)=>s+fdrOfficial(c),0))},
   /* AVERAGED, not summed. It is a ratio, so a total would be meaningless —
      the same reason the overall lens averages win probability. */
   strength:{unit:'STR',cell:c=>c.s?c.s.edge.toFixed(2):'—',
@@ -7655,16 +7667,20 @@ const FDR_PATCH_MAX=2.8;
 function fdrCombine(list){
   const fx=(list||[]).filter(Boolean);
   if(!fx.length)return null;
-  const fdrOf=c=>(c.fdr>=1&&c.fdr<=5?c.fdr:3);
   if(fx.length===1){const c=fx[0];c.n=1;c.each=fx;c.label=fdrOppLabel(c);return c;}
   const sum=k=>fx.reduce((s,c)=>s+(c[k]||0),0);
   const mean=k=>sum(k)/fx.length;
-  const g={lam:mean('lam'),cs:mean('cs'),win:mean('win'),s:fx[0].s,
-    fdr:Math.max(1,Math.min(5,Math.round(fx.reduce((s,c)=>s+fdrOf(c),0)/fx.length)))};
+  const fdrSum=fx.reduce((s,x)=>s+fdrOfficial(x),0);
+  /* The strength edge is a per-fixture ratio, so it averages like the win
+     odds. Carrying the first fixture's and calling it the cell's would be
+     this same bug one field further down. */
+  const edges=fx.map(x=>x.s).filter(Boolean);
+  const s=edges.length?{edge:edges.reduce((n,e)=>n+e.edge,0)/edges.length,basis:edges[0].basis}:null;
+  const g={lam:mean('lam'),cs:mean('cs'),win:mean('win'),s,
+    fdr:Math.max(1,Math.min(5,Math.round(fdrSum/fx.length)))};
   g.diff=plsimDiff(g.win);
-  const c={opp:fx[0].opp,home:fx[0].home,s:fx[0].s,diff:g.diff,
-    lam:sum('lam'),cs:sum('cs'),win:mean('win'),
-    fdr:fx.reduce((s,x)=>s+fdrOf(x),0),
+  const c={opp:fx[0].opp,home:fx[0].home,s,diff:g.diff,
+    lam:sum('lam'),cs:sum('cs'),win:mean('win'),fdr:fdrSum,
     n:fx.length,each:fx,g};
   c.label=fdrOppLabel(c);
   return c;
@@ -7697,6 +7713,12 @@ function fdrGrade(view,c){
      combined figure. See fdrCombine above for why. */
   const m=(c&&c.g)||c;
   return view==='attack'?fdrAttack(m.lam):view==='defence'?fdrDefence(m.cs)
+    /* The raw 1-5 clamp rather than fdrOfficial(), because this value becomes
+       a `fdr-N` CSS class and must stay on the scale. For every cell the app
+       builds the two are identical — m is either a grade cell (already a
+       1-5 mean) or a single fixture — so this is belt and braces, not a
+       behavioural difference, and a mutation run swapping them changed
+       nothing. */
     :view==='fpl'?(m.fdr>=1&&m.fdr<=5?m.fdr:3)
     :view==='strength'?strengthGrade(m.s):m.diff;
 }
@@ -8309,9 +8331,16 @@ async function hydrateFixtures(host){
            condition as the "My teams" chip — a control that switches to an
            empty table is worse than no control. */
         (squadPicks&&squadPicks.length
-          ? '<div class="seg" id="fdr-rows" style="margin-bottom:10px">'+
+          ? '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
+            /* Labelled and on its own line. Both controls are segmented and
+               .seg is inline-flex, so unlabelled and adjacent they read as one
+               row of seven and "Clubs" looks like a sixth lens. It is a
+               different axis: the lens is what a cell means, this is what a
+               row is. */
+            '<label class="dl-sub" for="fdr-rows">Rows</label>'+
+            '<div class="seg" id="fdr-rows">'+
             [['clubs','Clubs'],['squad','My squad']].map(r=>'<button class="seg-b'+(r[0]===curRows?' on':'')+
-              '" data-rows="'+r[0]+'">'+r[1]+'</button>').join('')+'</div>'
+              '" data-rows="'+r[0]+'">'+r[1]+'</button>').join('')+'</div></div>'
           : '')+
         /* The club filter belongs to the club rows. In squad mode the rows
            are the squad, so hiding clubs would silently drop players from a
