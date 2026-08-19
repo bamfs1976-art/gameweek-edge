@@ -1099,6 +1099,32 @@ ok('it is recorded as a draft, not a submitted entry',
 ok('with the hours before lock stated', DRAFT.hoursBeforeLock === 54);
 ok('and the captain recorded as NOT visible', /The captain and vice-captain/.test(draftS));
 
+/* --- the 13:55 revision of the draft, appended not overwritten --- */
+const REV = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-gw1-squad-draft.json`, 'utf8')).revisions[0];
+const revS = JSON.stringify(REV);
+ok('the first draft is preserved beside the revision',
+  DRAFT.squad.some((p) => p.name === 'Palmer') && /Palmer \(CHE, £9\.5m\)/.test(revS));
+ok('four changes are recorded', REV.fourChanges.length === 4);
+ok('and the Hughes-to-Tonali swap is called what it is',
+  /SWAPPED ONE PLAYER NOTHING WE HOLD PRICES FOR ANOTHER/.test(revS));
+ok('Tonali really is priced by no capture',
+  !ROWS5.some((r) => r.key === normName('Tonali') && r.exact.length > 0));
+ok('while Van Hecke and Neco Williams are evidenced starters',
+  REV.theBenchBoostQuestion.one_halfTheBenchIsUnKNOWNToEverythingWeHold.wellEvidenced.length === 2
+  && /look likely to start the season/.test(revS));
+ok('two clubs are now at the three-player limit', /BOTH FULL/.test(revS));
+ok('and the internal clashes fell from three to one', /The first draft had three, two of them inside the eleven/.test(revS));
+ok('the bench-boost answer is no, with reasons ordered by weight',
+  /theReadIsNo/.test(revS) && /ordered by weight, not by rhetoric/.test(revS));
+ok('including that the chip removes auto-substitutions',
+  /there are no automatic substitutions/.test(revS));
+ok('and that GW1 is where that risk is highest, not lowest',
+  /at its HIGHEST here, not its lowest/.test(revS));
+ok('Triple Captain is offered as a comparison, not a recommendation',
+  /notARecommendation/.test(revS) && /53 minutes in the Community Shield/.test(revS));
+ok('the Haaland price footnote explains the checker\'s null',
+  /noted only so the tool's output is not misread/.test(revS));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
