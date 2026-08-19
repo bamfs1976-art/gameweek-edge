@@ -131,6 +131,97 @@ section('the bundle loads and the shell renders');
   ok(r.nav > 0, 'navigation built (' + r.nav + ' items)');
 }
 
+/* ── the two sticky bars must not land on the same pixel ────
+   .tickbar and .topbar are siblings, both position:sticky, and both were
+   pinned at top:0 — so once the page scrolled they occupied the same strip
+   and the ticker (z-index 150) covered the topbar (z-index 100). The
+   hamburger, the panel title, refresh, export and the account button all
+   went behind it, on every panel, with no way to reach the navigation on a
+   narrow screen. The source said what it wanted — "Slimmer topbar under the
+   ticker" — and never gave it an offset to sit at.
+
+   Reported from a phone. Nothing here could have caught it, because every
+   assertion in this file ran at scroll position 0, where sticky elements sit
+   in normal flow and the collision does not exist yet. So this one scrolls
+   first, then asks the document what is actually on top.
+
+   Not asserted, deliberately: the ticker's z-index. It mattered only while
+   the two bars shared a strip — the ticker won at 150 and buried the topbar
+   at 100. Now that they occupy different pixels their relative order changes
+   nothing, and a mutation run dropping the ticker to 50 confirmed it: every
+   check stayed green because there is nothing left for the z-index to
+   decide. A check that cannot fail is not worth adding to make the count
+   look better. */
+section('the topbar survives scrolling, and stays clickable');
+{
+  /* A phone viewport, because that is where it was reported and because the
+     hamburger only exists below 1024px — at desktop width it is display:none,
+     so "is the hamburger reachable" is not even a question there. An earlier
+     version asked it on the shared 1280px page and got a meaningless answer:
+     elementFromPoint landed on the sidebar, through a zero-sized button. */
+  const mp = await browser.newPage({ viewport: { width: 430, height: 900 } });
+  await mp.goto(`http://localhost:${PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await mp.waitForTimeout(900);
+  const r = await mp.evaluate(async () => {
+    /* Ask the document which element scrolls rather than assuming. Two
+       earlier versions of this check assumed wrongly — first the window,
+       then body (whose overflow-y computes to auto but never overflows,
+       because its height is auto) — and both "ran" without scrolling a
+       pixel. A scroll test that does not scroll measures the harness. The
+       assertion below that scrollTop actually moved is what makes the
+       difference visible instead of silent. */
+    const scroller = document.scrollingElement || document.documentElement;
+    const spacer = document.createElement('div');
+    spacer.style.height = '3000px';
+    document.getElementById('pages').appendChild(spacer);
+    scroller.scrollTop = 900;
+    await new Promise((res) => setTimeout(res, 250));
+    const rect = (s) => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
+    const tick = rect('.tickbar'), top = rect('.topbar'), burger = rect('#hamburger');
+    /* elementFromPoint answers the only question that matters: if the user
+       taps the hamburger, what receives the tap? */
+    const hit = burger
+      ? document.elementFromPoint(burger.left + burger.width / 2, burger.top + burger.height / 2)
+      : null;
+    const out = {
+      scrolled: scroller.scrollTop,
+      tickTop: tick && Math.round(tick.top), tickBottom: tick && Math.round(tick.bottom),
+      topTop: top && Math.round(top.top), topBottom: top && Math.round(top.bottom),
+      burgerVisible: !!(burger && burger.top >= 0 && burger.height > 0),
+      strip: (() => { const e = document.getElementById('link-ribbon');
+        if (!e) return null;
+        e.classList.remove('hidden');            /* only rendered when unlinked */
+        const t = Math.round(e.getBoundingClientRect().top);
+        e.classList.add('hidden');
+        return t; })(),
+      hitsBurger: !!(hit && hit.closest('#hamburger')),
+      hitTag: hit ? (hit.id || hit.className || hit.tagName) : null
+    };
+    spacer.remove();
+    scroller.scrollTop = 0;
+    return out;
+  });
+  ok(r.scrolled > 0, 'the page actually scrolled (' + r.scrolled + 'px) — otherwise this proves nothing');
+  /* Flush, not merely clear of it. `>=` also passes when the topbar pins too
+     LOW — offset by the wrong variable, say — which leaves a gap with page
+     content scrolling visibly through it between the two bars. A mutation
+     run proved that: swapping --tickbar-h for --topbar-h changed nothing
+     here. Equality is the actual requirement. */
+  ok(r.topTop !== null && r.topTop === r.tickBottom,
+    'the topbar pins flush under the ticker (ticker ends '
+    + r.tickBottom + ', topbar starts ' + r.topTop + ')');
+  /* The not-linked strip is the third sticky in the same column and has to
+     clear BOTH bars. Nothing tested it, so its offset could silently go back
+     to sitting under the ticker. */
+  ok(r.strip === null || r.strip >= r.topBottom,
+    'the not-linked strip clears both bars (topbar ends ' + r.topBottom
+    + ', strip starts ' + r.strip + ')');
+  ok(r.burgerVisible, 'the hamburger is still on screen after scrolling');
+  ok(r.hitsBurger,
+    'and a tap on it reaches the hamburger, not whatever is covering it (hit: ' + r.hitTag + ')');
+  await mp.close();
+}
+
 section('keyboard: chords, and the state they must not leak');
 {
   const out = await page.evaluate(() => {

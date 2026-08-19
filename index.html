@@ -374,7 +374,7 @@ body[data-density="beginner"] .qd-why{color:var(--text-2)}
 .qd-ministat .m-v{font-family:var(--font-mono);font-size:20px;font-weight:600;line-height:1;color:var(--text)}
 .qd-ministat .m-l{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
 /* Slim not-linked educational strip (replaces the ribbon banner) */
-.link-strip{position:sticky;top:var(--topbar-h);z-index:95;
+.link-strip{position:sticky;top:calc(var(--tickbar-h) + var(--topbar-h));z-index:95;
   display:flex;align-items:center;gap:10px;padding:7px 14px;font-size:12px;color:var(--text-2);
   background:var(--surface);border-bottom:1px solid var(--border)}
 .link-strip.hidden{display:none}
@@ -451,10 +451,17 @@ html.native .btn,
 html.native .nav-area{
   -webkit-user-select:none;user-select:none;
 }
-/* Top safe-area: push the sticky topbar clear of the notch / status bar. */
-html.native .topbar{
-  height:calc(var(--topbar-h) + env(safe-area-inset-top));
+/* Top safe-area: the inset belongs to whichever bar is topmost, and that is
+   the TICKER, not the topbar. It was on the topbar, which sits underneath —
+   so on a notched device the ticker ran under the status bar while the
+   topbar reserved space for a notch it was nowhere near. The topbar's sticky
+   offset then has to clear the ticker's new height as well. */
+html.native .tickbar{
+  height:calc(var(--tickbar-h) + env(safe-area-inset-top));
   padding-top:env(safe-area-inset-top);
+}
+html.native .topbar{
+  top:calc(var(--tickbar-h) + env(safe-area-inset-top));
 }
 /* Drawer header sits under the status bar too when opened. */
 html.native .sb-brand{
@@ -1039,9 +1046,14 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   min-width:0;
 }
 
-/* Topbar */
+/* Topbar. Sticks BELOW the ticker, which is its sibling and also sticky.
+   Both sat at top:0, so the moment the page scrolled they pinned to the same
+   strip and the ticker (z-index 150) covered the topbar (z-index 100) — the
+   hamburger, the title, refresh, export and the account button all went
+   behind it, on every panel. At rest they stacked correctly, which is why it
+   only showed up once you scrolled. */
 .topbar{
-  position:sticky;top:0;z-index:100;
+  position:sticky;top:var(--tickbar-h);z-index:100;
   height:var(--topbar-h);padding:0 26px;
   background:color-mix(in srgb,var(--bg) 88%,transparent);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
