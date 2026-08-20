@@ -579,13 +579,77 @@ ok('the grader never edits the picks it is grading', () => {
    ledger stored next to the ledger, free to drift from it. So the claim is
    checked, not read. */
 ok('a benchmark is captured before the lockout it refers to', () => {
-  for (const f of ['round-01-tipsters.json', 'round-01-scottyfefl.json',
-    'round-01-natethegreat.json']) {
+  const BENCHMARKS = [
+    ['round-01-tipsters.json', 1],
+    ['round-01-scottyfefl.json', 1],
+    ['round-01-natethegreat.json', 1],
+    ['round-02-efl-official.json', 2],
+  ];
+  for (const [f, round] of BENCHMARKS) {
     const b = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks', f), 'utf8'));
     assert.ok(Date.parse(b.capturedAt) < Date.parse(b.roundLockoutAt),
       `${f} was captured before the round locked`);
-    assert.equal(b.round, 1, `${f} names the round it belongs to`);
+    assert.equal(b.round, round, `${f} names the round it belongs to`);
+    /* And the lockout it claims is the one the ledger recorded, not a time
+       typed in by hand. A benchmark that predates the wrong lockout proves
+       nothing about the football it is supposed to predate. */
+    const entry = JSON.parse(readFileSync(
+      join(ROOT, `efl/data/rounds/round-0${round}.json`), 'utf8'));
+    assert.equal(b.roundLockoutAt, entry.lockoutAt,
+      `${f} quotes the lockout the round entry recorded`);
   }
+});
+
+/* ── The EFL's own GW2 article ─────────────────────────────
+   Two things about this one are easy to get wrong later, so they are pinned
+   here rather than left to whoever writes the grader. */
+ok('the official GW2 tips keep their two directions apart', () => {
+  const b = JSON.parse(readFileSync(
+    join(ROOT, 'efl/data/benchmarks/round-02-efl-official.json'), 'utf8'));
+  assert.equal(b.avoid.length, 4, 'four trap picks');
+  assert.equal(b.target.length, 3, 'three hidden gems');
+  /* A player cannot be both, and a grader that flattened the two lists would
+     mark the author wrong for exactly the players he told readers to swap
+     out. The direction is the claim. */
+  const a = new Set(b.avoid.map((p) => p.name));
+  assert.ok(!b.target.some((p) => a.has(p.name)), 'no player is both a trap and a gem');
+  assert.match(b.gradeableAs, /direction/i, 'the file says the direction is what gets graded');
+});
+
+ok('an unknown club is left unknown, not quietly guessed', () => {
+  const b = JSON.parse(readFileSync(
+    join(ROOT, 'efl/data/benchmarks/round-02-efl-official.json'), 'utf8'));
+  /* The article names no club for two of the seven. One is inferable off a
+     second source and is marked as inferred; the other is not, and stays
+     null. Both must carry their reasoning, because a club that appears from
+     nowhere is graded as though somebody checked it. */
+  for (const p of [...b.avoid, ...b.target]) {
+    if (p.club === null) {
+      assert.ok('clubInferred' in p && p.clubInferredFrom,
+        `${p.name} has no club, so the file has to say what was and was not inferred`);
+    }
+  }
+  const prowse = b.avoid.find((p) => p.name === 'James Ward-Prowse');
+  assert.equal(prowse.club, null, 'Ward-Prowse has no club stated in the article');
+  assert.equal(prowse.clubInferred, 'West Ham United', 'and the inference is recorded as one');
+  const caton = b.target.find((p) => p.name === 'Charlie Caton');
+  assert.equal(caton.clubInferred, null, 'Caton is not guessed at from two fixtures');
+});
+
+ok('the empty overlap with our entry is not dressed up as agreement', () => {
+  const b = JSON.parse(readFileSync(
+    join(ROOT, 'efl/data/benchmarks/round-02-efl-official.json'), 'utf8'));
+  const entry = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds/round-02.json'), 'utf8'));
+  /* Resolved against the ledger rather than asserted — the claim is that no
+     named player appears in our entry, so it is checked against the entry. */
+  const ours = entry.picks.players.map((p) => (p.name || '').toLowerCase());
+  const theirs = [...b.avoid, ...b.target].map((p) => p.name.toLowerCase());
+  const surname = (n) => n.split(/[\s.]+/).pop();
+  const shared = theirs.filter((t) => ours.some((o) => surname(o) === surname(t)));
+  assert.deepEqual(shared, [], 'no player in the article appears in our round-2 entry');
+  assert.deepEqual(b.overlapWithOurEntry.shared, shared, 'and the file records that truthfully');
+  assert.match(b.overlapWithOurEntry.notCorroboration, /not a considered rejection/i,
+    'and refuses to read an empty overlap as our model agreeing with him');
 });
 
 ok('the Lewis Wing overlap is resolved against the ledger, not asserted', () => {

@@ -1,0 +1,117 @@
+{
+  "round": 2,
+  "kind": "outside-tips",
+  "capturedAt": "2026-08-20T11:10:00.000Z",
+  "roundLockoutAt": "2026-08-20T19:00:00.000Z",
+  "hoursBeforeLock": 7.83,
+  "note": "Captured BEFORE the lockout stated above, which is the only reason this file is worth anything. Committed now so git history is the evidence it predates the football, exactly as the round entries are.",
+  "source": {
+    "name": "The English Football League (official site)",
+    "author": "Lewis Peers",
+    "title": "Fantasy EFL: Trap picks and hidden gems - Gameweek 2",
+    "published": "2026-08-20",
+    "readFrom": "article text pasted by the project owner into the session",
+    "completeness": "Both sections complete as published: four trap picks and three hidden gems, seven named players in total."
+  },
+  "whatThisIsNot": [
+    "NOT a squad. Seven named players across two OPPOSING recommendations. It names no formation, no captain and no legal seven, so it cannot be scored against our entry as a rival team without inventing selections its author never made.",
+    "NOT resolved to feed IDs. Names are recorded as published. The round entries store the universe by id only — columns are id, clubId, position, score, pointsAtLock, available — so nothing on hand maps a name to an id. That needs a run against the official feed, which this sandbox cannot reach.",
+    "NOT a set of point predictions. No projected score is given for any player. The calls are directional — avoid, or target — and that is all they can be graded as."
+  ],
+  "gradeableAs": "Seven directional calls, and the DIRECTION is the whole thing. A trap pick that hauls is a MISS; a hidden gem that hauls is a HIT. Scoring all seven as though they were picks would mark the author wrong for players he told readers to avoid, which is the opposite of what he said.",
+  "howToGradeTheTraps": "Every trap is a STARTING-RISK call, not a claim about ability — three of the four say in terms that the player may not start. So the fair test is did he start, resolved off the team sheet, with points as secondary colour. A benched player returning two points vindicates the call; a benched player is not a failed points prediction because no points prediction was made.",
+  "avoid": [
+    {
+      "name": "Sol Brynn",
+      "position": "GK",
+      "club": "Middlesbrough",
+      "ownership": 14.0,
+      "fixture": "Blackburn Rovers (A)",
+      "case": "Benched in GW1 for the 2-1 home win over Lincoln City; Radek Vitek played and returned two points for 5.5% of managers. Expected to remain on the bench, and a hard fixture even if restored.",
+      "call": "likely to stay benched"
+    },
+    {
+      "name": "Jose Sa",
+      "nameAsPublished": "José Sá",
+      "position": "GK",
+      "club": "Wolves",
+      "ownership": 8.0,
+      "fixture": "Preston North End (A)",
+      "case": "Wolves started Daniel Bentley in GW1, leaving Sa's 8% with nothing. An inactive keeper is a guaranteed zero in a slot that otherwise has a reliable floor.",
+      "call": "likely to stay benched"
+    },
+    {
+      "name": "Finn Azaz",
+      "position": "MID",
+      "club": "Southampton",
+      "ownership": 7.0,
+      "fixture": "Stoke City (H)",
+      "case": "Benched at Watford in GW1 by Tonda Eckert, 33 minutes off the bench, two key passes, three points. In line to push for a start but not nailed.",
+      "call": "start not guaranteed — check the team sheet"
+    },
+    {
+      "name": "James Ward-Prowse",
+      "position": "MID",
+      "club": null,
+      "clubInferred": "West Ham United",
+      "clubInferredFrom": "The article never names his club. It gives a home fixture against Charlton Athletic, and @FEFLFinny's GW2 teams-to-target post, captured the same day, prints 'West Ham United — Charlton (H)'. Recorded as an inference off a second outside source, NOT as a feed confirmation. The grader has the full round and can confirm or correct it.",
+      "ownership": 4.0,
+      "fixture": "Charlton Athletic (H)",
+      "case": "Left out of the XI against Burnley, on at half-time, three points from a late interception. Nuno leaned toward Lewis Orford and Mahamadou Kante in midfield.",
+      "call": "start not guaranteed — check the team sheet"
+    }
+  ],
+  "target": [
+    {
+      "name": "Bobby Faulkner",
+      "position": "DEF",
+      "club": "Tranmere Rovers",
+      "ownership": 1.0,
+      "fixture": "Port Vale (A)",
+      "gw1Claimed": {
+        "points": 15,
+        "detail": "assist, clean sheet, 16 clearances, 3 blocks"
+      },
+      "case": "Port Vale managed two shots on target in their opening defeat.",
+      "call": "differential with a route to contribution points and a clean-sheet chance"
+    },
+    {
+      "name": "Pelle Mattsson",
+      "position": "MID",
+      "club": "Norwich City",
+      "ownership": 0.4,
+      "fixture": "Millwall (A)",
+      "gw1Claimed": {
+        "points": 10,
+        "detail": "86 minutes v WBA, 3 interceptions, 2 key passes, 1 shot on target"
+      },
+      "case": "All-action role gives several routes to points.",
+      "call": "differential"
+    },
+    {
+      "name": "Charlie Caton",
+      "position": "FWD",
+      "club": null,
+      "clubInferred": null,
+      "clubInferredFrom": "Not named in the article and NOT inferred here. All that is given is a 2-2 home draw with Colchester United in GW1 and an away trip to Exeter City in GW2. Two fixtures narrow it but do not settle it, and a guessed club would be graded as though somebody had checked it.",
+      "ownership": 0.6,
+      "fixture": "Exeter City (A)",
+      "gw1Claimed": {
+        "points": 17,
+        "detail": "scored twice, 5 of the team's 9 shots on target, 2-2 home draw v Colchester United"
+      },
+      "case": "Exeter conceded 42 penalty-box touches on opening day.",
+      "call": "differential"
+    }
+  ],
+  "claimsThisRepoCannotCheck": [
+    "THE GW1 RETURNS. Faulkner 15, Caton 17, Mattsson 10, Vitek 2, Azaz 3, Ward-Prowse 3. Round 1's grading in this ledger is VOID — pointsAtLock was captured while the feed still published the previous season's totals — so there is nothing here to check them against. They are recorded as the author's claims, attributed, and not treated as facts.",
+    "THE OWNERSHIP FIGURES. A snapshot at the time of writing, roughly eight hours before the lockout. They will have moved by the deadline, partly BECAUSE this article was published. Do not grade the article against ownership measured after it ran."
+  ],
+  "overlapWithOurEntry": {
+    "shared": [],
+    "finding": "None. Our round-2 entry is S. George, J. Coburn, S. McLoughlin, J. Connolly, K. Palmer, I. Chair and J. Richards; not one of the seven players in this article appears in it, in either direction.",
+    "notCorroboration": "This is recorded because it is true, not because it means anything. Not picking four players out of a 3,442-player universe is not a considered rejection of them, and must never be published as our model agreeing with his trap calls. The only honest reading is that the two selections do not touch."
+  },
+  "outOfScope": "The rotation signal shipped in this repo is fitted on 740 PREMIER LEAGUE team-fixtures of 2025-26 and its club baselines are twenty PL clubs. Three of these four traps are rotation calls, which makes the temptation obvious and wrong: nothing in that model has seen a Championship or League One squad, and pointing it at one would be inventing a fit that was never made."
+}
