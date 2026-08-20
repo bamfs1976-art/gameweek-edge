@@ -49,7 +49,11 @@ const WIN = rival.window || { from: 1, to: 5 };
 const say = (icon, s) => console.log('  ' + icon + ' ' + s);
 console.log('Rival: ' + rival.source);
 console.log('Window: GW' + WIN.from + '-' + WIN.to + ' · ' + rival.players.length +
-  ' ' + (rival.position || 'player') + ' projections · published ' + rival.posted + '\n');
+  ' ' + (rival.position || 'player') + ' projections · ' +
+  /* A sheet with no visible publication date says so. Printing "null" would
+     read as a bug; printing today's date would be a lie. */
+  (rival.posted ? 'published ' + rival.posted : 'no publication date recorded') +
+  (rival.windowInferred ? ' · WINDOW INFERRED, not stated by the source' : '') + '\n');
 
 /* Same shape guard as the briefing checker, for the same reason: a file that
    silently loses half its rows produces a confident comparison over nothing. */

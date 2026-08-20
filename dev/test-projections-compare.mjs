@@ -189,29 +189,58 @@ console.log('• projections: matching a rival name to a real player');
     'two players of the same name at one club is a refusal, not a coin toss');
 }
 
-console.log('• projections: the shipped rival file');
-{
-  const f = JSON.parse(readFileSync(join(ROOT, 'data/projections/2026-27-gw1-5-marcello.json'), 'utf8'));
-  ok(f.players.length >= 30, 'enough rows to be worth scoring (' + f.players.length + ')');
+console.log('• projections: the shipped rival files');
+/* A club label that matches nothing would silently drop that row from every
+   comparison, so the vocabulary is pinned here rather than discovered live. */
+const CLUBS = new Set(['Arsenal', 'Man City', 'Man Utd', 'Aston Villa', 'Liverpool',
+  'Bournemouth', 'Sunderland', 'Brighton', 'Brentford', 'Chelsea', 'Fulham', 'Newcastle',
+  'Everton', 'Leeds', 'Crystal Palace', "Nott'm Forest", 'Spurs', 'Coventry City',
+  'Ipswich Town', 'Hull City']);
+
+for (const file of ['2026-27-gw1-5-marcello.json', '2026-27-gw1-5-marcello-points-analysis.json']) {
+  const f = JSON.parse(readFileSync(join(ROOT, 'data/projections', file), 'utf8'));
+  const at = ' [' + file + ']';
+  ok(f.players.length >= 30, 'enough rows to be worth scoring (' + f.players.length + ')' + at);
   ok(f.players.every((p) => p.name && p.team && typeof p.proj === 'number'),
-    'every row has a name, a club and a projection');
-  ok(f.players.every((p) => p.proj > 0 && p.proj < 200), 'and a projection in a plausible range');
+    'every row has a name, a club and a projection' + at);
+  ok(f.players.every((p) => p.proj > 0 && p.proj < 200), 'and a projection in a plausible range' + at);
   /* Provenance is not decoration. These numbers were transcribed from images
-     by hand and will be quoted in public if we ever publish the comparison. */
-  ok(f.source && f.posted && f.capturedFrom, 'the file records where the numbers came from');
-  ok(f.window && f.window.from === 1 && f.window.to === 5, 'and the window they cover');
-  /* A club label that matches nothing would silently drop that row from every
-     comparison, so the vocabulary is pinned here rather than discovered live. */
-  const CLUBS = new Set(['Arsenal', 'Man City', 'Man Utd', 'Aston Villa', 'Liverpool',
-    'Bournemouth', 'Sunderland', 'Brighton', 'Brentford', 'Chelsea', 'Fulham', 'Newcastle',
-    'Everton', 'Leeds', 'Crystal Palace', "Nott'm Forest", 'Spurs', 'Coventry City',
-    'Ipswich Town', 'Hull City']);
+     by hand and will be quoted in public if we ever publish the comparison.
+     `posted` may legitimately be null — one of these sheets carries no visible
+     publication date and inventing one would be worse than admitting it — but
+     the source and the capture method are never optional. */
+  ok(f.source && f.capturedFrom, 'the file records where the numbers came from' + at);
+  ok('posted' in f, 'and states a publication date even if that state is "unknown"' + at);
+  ok(f.window && f.window.from === 1 && f.window.to === 5, 'and the window they cover' + at);
+  /* A window nobody published has to say so, or it reads as a fact somebody
+     checked. --score decides a winner off this window; a silently assumed one
+     would decide it off the wrong five gameweeks. */
+  if (f.windowInferred) {
+    ok(/inferred/i.test(f.note || ''), 'an inferred window is explained in the note' + at);
+  }
   const odd = [...new Set(f.players.map((p) => p.team))].filter((t) => !CLUBS.has(t));
   ok(odd.length === 0, 'every club label is one the matcher knows' +
-    (odd.length ? ' — unknown: ' + odd.join(', ') : ''));
+    (odd.length ? ' — unknown: ' + odd.join(', ') : '') + at);
   /* Duplicates would double-weight a player in every average. */
   const names = f.players.map((p) => p.name + '|' + p.team);
-  ok(new Set(names).size === names.length, 'no player appears twice');
+  ok(new Set(names).size === names.length, 'no player appears twice' + at);
+}
+
+/* The two sheets overlap on two forwards. They are separate transcriptions of
+   (apparently) the same projection, so disagreement means one of them was read
+   wrong — the only independent check on hand-typed numbers this repo has. */
+{
+  const a = JSON.parse(readFileSync(join(ROOT, 'data/projections/2026-27-gw1-5-marcello.json'), 'utf8'));
+  const b = JSON.parse(readFileSync(join(ROOT, 'data/projections/2026-27-gw1-5-marcello-points-analysis.json'), 'utf8'));
+  const byName = new Map(a.players.map((p) => [p.name, p]));
+  const shared = b.players.filter((p) => byName.has(p.name));
+  ok(shared.length > 0, 'the two transcriptions still overlap on at least one player');
+  for (const p of shared) {
+    const q = byName.get(p.name);
+    ok(Math.abs(Math.round(q.proj * 10) / 10 - p.proj) < 0.05,
+      `${p.name}: ${q.proj} and ${p.proj} agree to rounding across the two sheets`);
+    ok(q.price === p.price, `${p.name}: both sheets price him at ${p.price}`);
+  }
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
