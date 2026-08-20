@@ -60,6 +60,16 @@ jobs:
       - name: Rotation guard
         run: node scripts/check-rotation.mjs
 
+      # A refresh that finds nothing new writes nothing at all, so on a quiet
+      # day this is a genuine no-op rather than a dated re-stamp. That matters
+      # because a commit here is a deploy: re-stamping would rebuild the site
+      # every day of the season for a calendar that had not moved, and churn
+      # that size is churn nobody reads.
+      #
+      # THE JOB'S OWN RUN HISTORY IS THE LIVENESS SIGNAL. Because a quiet day
+      # leaves no trace in the repo, "is this still running?" is answered here,
+      # in the Actions tab, and not by an assertion in CI that would fail every
+      # quiet fortnight.
       - name: Commit only if the calendar changed
         run: |
           if git diff --quiet -- vendor/ scripts/vendor-rotation.sha256.json; then

@@ -255,28 +255,24 @@ async function doCheck() {
   const days = horizonDays(cal);
   const n = countFixtures(cal);
   const rec = (man.files || {})['other-fixtures'] || {};
-  const age = rec.fetched
-    ? Math.round((Date.now() - Date.parse(rec.fetched)) / 86400000) : null;
+  /* Days since the snapshot's bytes last MOVED. Not "since we last checked" —
+     an unchanged pull writes nothing, so the repo cannot know that. */
+  const age = rec.changed || rec.fetched
+    ? Math.round((Date.now() - Date.parse(rec.changed || rec.fetched)) / 86400000) : null;
 
   if (days == null || n === 0) {
     console.error('vendor/pl_other_fixtures.js contains no parseable fixture dates at all — ' +
       'the calendar this signal rests on is empty, and every club would read as well rested');
     bad++;
   }
-  if (age == null) {
-    console.error('the manifest does not record when the calendar was last fetched, so there is ' +
-      'no way to tell a thin calendar from an abandoned one. Run: node scripts/vendor-rotation.mjs --refresh');
-    bad++;
-  } else if (age > STALE_DAYS) {
-    console.error('vendor/pl_other_fixtures.js was last pulled ' + age + ' days ago.\n' +
-      '  This is the live input and it is meant to be pulled daily. Left alone it decays ' +
-      'silently: fewer and fewer clubs read as congested until every side looks rested, which ' +
-      'is the most misleading thing this signal can do.\n' +
-      '  Refresh with: node scripts/vendor-rotation.mjs --refresh\n' +
-      '  If that returns identical bytes, the upstream harvest has stopped — see the note on ' +
-      'SOURCE in this file.');
-    bad++;
-  } else if (days != null && days < 0) {
+  /* WHY THERE IS NO "LAST PULLED" ASSERTION HERE. A refresh that finds nothing
+     new writes nothing at all (see doVendor), so the repo genuinely cannot say
+     when it was last checked — only when the bytes last moved. Asserting on the
+     latter would fail every quiet fortnight of a season. The question this check
+     cannot answer, "is the refresh job still running", is answered where the
+     answer actually lives: the workflow's own run history. What IS checkable
+     from the repo alone is below. */
+  if (days != null && days < 0) {
     /* Every fixture in the file is in the past. Whatever the reason, the
        calendar can no longer answer the question for anybody: every club falls
        back to known:false, and a signal that is unknown for all twenty clubs
@@ -288,20 +284,18 @@ async function doCheck() {
     bad++;
   } else if (days != null && days < THIN_DAYS) {
     /* Reported, deliberately not failed. */
-    console.log('note: the calendar reaches only ' + days + ' days out (' + n + ' fixtures, pulled ' +
-      age + ' days ago). Expected while cup and European rounds are still being drawn — clubs with ' +
-      'no previous competitive match report known:false and must be shown as unknown, not as rested.');
+    console.log('note: the calendar reaches only ' + days + ' days out (' + n + ' fixtures, last ' +
+      'moved ' + age + ' days ago). Expected while cup and European rounds are still being drawn — ' +
+      'clubs beyond it report restProvisional and must be shown as provisionally rested, not rested.');
     /* A thin calendar that has ALSO not moved in a long time is a different
        story: not a season waiting on its draws, but a harvest that has stopped.
        Reported rather than failed because it is a condition upstream, not a
        fault in this repo — but reported loudly, because from inside this repo
        the two look identical and only this line tells them apart. */
-    const upstreamAge = rec.changed
-      ? Math.round((Date.now() - Date.parse(rec.changed)) / 86400000) : null;
-    if (upstreamAge != null && upstreamAge > STALE_UPSTREAM_DAYS) {
-      console.log('WARNING: those bytes have not changed in ' + upstreamAge + ' days despite being ' +
-        'pulled ' + age + ' days ago. A thin calendar that never moves is an upstream harvest that ' +
-        'has stopped, not a season waiting on its draws — and from here the two look identical.\n' +
+    if (age != null && age > STALE_UPSTREAM_DAYS) {
+      console.log('WARNING: the calendar is thin AND has not moved in ' + age + ' days. A thin ' +
+        'calendar that never moves is an upstream harvest that has stopped, not a season waiting ' +
+        'on its draws — and from inside this repo the two look identical.\n' +
         '  The harvest step for this file lives on ' + SOURCE.branch + ', which is not merged to ' +
         'main upstream, so nothing is refreshing it. Until it merges this calendar is frozen and ' +
         'the signal will read known:false for more and more clubs as the season moves past it.');
@@ -361,17 +355,26 @@ async function doVendor(only) {
     const ref = f.pinned ? SOURCE.commit : SOURCE.branch;
     const body = await fetchSource(f, ref);
     const hash = sha256(body);
-    /* `fetched` is when WE last pulled; `changed` is when the bytes last
-       actually moved. Keeping both is what separates "our refresh job died"
-       from "the upstream harvest died" — a daily pull that keeps returning
-       identical bytes would otherwise look perfectly healthy from here, which
-       is exactly the state this vendoring is in today. */
     const prev = files[f.id];
-    const changed = (prev && prev.sha256 === hash && prev.changed) ? prev.changed : fetched;
-    writeFileSync(localPath(f), header(f, hash, fetched) + body);
-    files[f.id] = { path: f.from, sha256: hash, pinned: f.pinned, fetched, changed, ref };
     const kb = (body.length / 1024).toFixed(1);
-    console.log('  ' + f.id.padEnd(16) + kb.padStart(6) + ' KB  ' + hash.slice(0, 16) + '…');
+
+    /* NOTHING IS REWRITTEN WHEN NOTHING CHANGED — not even the fetched date.
+       This looks like a nicety and is not. The daily workflow commits whatever
+       this leaves dirty, and a commit is a deploy; stamping today's date into
+       the header on every run would push a commit and rebuild the site every
+       single day of the season for a calendar that had not moved. Churn that
+       size stops being read, and a deploy nobody reads is where real changes
+       hide. So an unchanged payload is a genuine no-op. */
+    if (prev && prev.sha256 === hash && existsSync(localPath(f))) {
+      console.log('  ' + f.id.padEnd(16) + kb.padStart(6) + ' KB  unchanged since ' + prev.fetched);
+      continue;
+    }
+
+    /* `fetched` is when this snapshot was pulled; `changed` is the same thing
+       for the bytes, and stays put across a re-vendor that moved nothing else. */
+    writeFileSync(localPath(f), header(f, hash, fetched) + body);
+    files[f.id] = { path: f.from, sha256: hash, pinned: f.pinned, fetched, changed: fetched, ref };
+    console.log('  ' + f.id.padEnd(16) + kb.padStart(6) + ' KB  ' + hash.slice(0, 16) + '… updated');
   }
 
   writeFileSync(MANIFEST, JSON.stringify({
@@ -382,12 +385,6 @@ async function doVendor(only) {
   }, null, 2) + '\n');
   console.log('vendor/ written; scripts/vendor-rotation.sha256.json updated');
 }
-
-/* How many days a copy of the live calendar may go unpulled before it counts
-   as abandoned rather than merely quiet. The upstream harvest runs daily, so a
-   week of silence is already a broken pipeline; three days keeps the failure
-   close enough to the cause to be diagnosable. */
-const STALE_DAYS = 3;
 
 /* How long the upstream bytes may stay identical before a thin calendar is
    better explained by a stopped harvest than by an undrawn cup round. */
