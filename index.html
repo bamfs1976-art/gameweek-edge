@@ -2494,6 +2494,23 @@ body{font-size:14px;line-height:1.35}
      back to inline SVG and the palette to substring matching. -->
 <link rel="stylesheet" href="vendor.css">
 <script src="vendor.js"></script>
+<!-- Rotation risk, vendored verbatim from the Bookings Desk (pl-bookings)
+     at 5ab0bfc: how many changes a manager is likely to make to his starting
+     eleven, from the fixture calendar alone. Knowable days before team news,
+     which is the point of it.
+
+     rotation.js FIRST — it defines PLDRotation, and the desk's core.js
+     re-exports it, so anything else from that repo has to come after.
+
+     These three are precached by sw.js. A <script src> the installed shell
+     does not know about 404s for everyone who already added the app to their
+     home screen, and that failure is invisible in a browser.
+
+     It predicts SELECTION and nothing else: on the same season, rest days do
+     not move a team's yellow count. scripts/check-rotation.mjs holds the line. -->
+<script src="vendor/rotation.js"></script>
+<script src="vendor/rotation_model.js"></script>
+<script src="vendor/pl_other_fixtures.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Shell logic
@@ -11759,6 +11776,59 @@ async function hydrateRotation(host){
      unlike start rate, which needs games in the bank before it says anything.
      Built first, and shown even when the start-rate list is empty. */
   const nf=buildNextFix(b,fixtures);
+  /* Team-level rotation risk: the same forward-looking argument as the card
+     below, but counting CHANGES TO THE ELEVEN rather than load on a player. */
+  const rot=rotationClubs(b,fixtures,nf);
+  const rotKnown=rot.filter(r=>r.known);
+  const rotUnknown=rot.filter(r=>!r.known);
+  const rotBadge={high:'badge-red',raised:'badge-amber',settled:'badge-grey',normal:'badge-grey'};
+  const rotWord={high:'heavy rotation',raised:'raised',settled:'settled',normal:'as usual'};
+  const signed=n=>(n>0?'+':'')+n.toFixed(2);
+  const rotRow=r=>{
+    const nm=(b.teams[r.teamId]||{}).name||teamShort(b,r.teamId);
+    const prevComp=r.prev?(ROT_COMP[r.prev.comp]||r.prev.comp):null;
+    const gap=r.days==null?'':(r.days===0?'same day':r.days===1?'1 day':r.days+' days');
+    const why=r.prev
+      ? esc(prevComp)+(r.prev.v==='A'?' away':' at home')+' · '+gap+' rest'
+      : 'no previous competitive match';
+    return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(nm)+
+      ' <span class="badge '+(rotBadge[r.band]||'badge-grey')+'">'+esc(rotWord[r.band]||r.band)+'</span>'+
+      (r.euroAway72h?' <span class="badge badge-red">Euro away</span>':'')+
+      (r.restProvisional?' <span class="badge badge-grey">provisional</span>':'')+
+      (r.ownBaseline?'':' <span class="badge badge-grey">league average</span>')+'</span>'+
+      '<span class="dl-sub">'+crest(b,r.teamId,13)+why+' · GW'+r.event+' v '+esc(r.opp||'')+
+      ' ('+(r.home?'H':'A')+')'+
+      (r.restProvisional?' · cup and European rounds not yet drawn this far out':'')+
+      '</span></span>'+
+      '<span class="dl-col mono">'+signed(r.lift)+'</span></div>';
+  };
+  const rotCard=rot.length
+    ? '<div class="card mb-20" style="border-left:3px solid var(--amber)"><div class="card-title">'+
+      svg(ICON.flag,'width="14" height="14"')+' Rotation risk — changes to the starting eleven</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">How many changes a manager is likely to make, '+
+      'from the fixture calendar alone — so it is knowable days before team news, which is the '+
+      'point of it. The figure is the lift against <b>that club\'s own average</b>, not the raw '+
+      'count: habit spans 1.6 changes a match to 3.3, so a heavy rotator reading "3.4" is '+
+      'unremarkable and "+0.4 on their own average" is the signal. '+
+      '<span style="opacity:.8">Fitted on 740 team-fixtures of 2025-26; +0.35 above club habit '+
+      '(95% CI 0.11–0.58). It predicts selection only — rest days do not move a card count.</span></p>'+
+      (rotKnown.length?'<div class="dl">'+rotKnown.slice(0,12).map(rotRow).join('')+'</div>':'')+
+      (rotKnown.some(r=>r.restProvisional)
+        ? '<div class="dl-sub" style="margin-top:10px">'+
+          '<b>Provisional</b> — beyond the drawn cup and European calendar we know the league '+
+          'football and nothing else, so these clubs can only look <b>more</b> rested than they '+
+          'turn out to be, never less. A tie drawn into that midweek moves them the other way.</div>'
+        : '')+
+      (rotUnknown.length
+        ? '<div class="dl-sub" style="margin-top:'+(rotKnown.length?'10px':'0')+'">'+
+          '<b>Not yet known for '+rotUnknown.length+' club'+(rotUnknown.length===1?'':'s')+':</b> '+
+          esc(rotUnknown.map(r=>teamShort(b,r.teamId)).filter(Boolean).join(', '))+
+          ' — no previous competitive match on file. Cup and European rounds are drawn '+
+          'progressively, so early in a season the calendar only reaches a few weeks out. '+
+          'That is <b>unknown, not rested</b>, and it is left blank rather than guessed.</div>'
+        : '')+
+      '</div>'
+    : '';
   const congested=congestionClubs(b,nf);
   const congestOf=t=>{const c=congested.filter(x=>x.team===t)[0];return c||null;};
   const congestBadge=t=>{const c=congestOf(t);if(!c)return '';
@@ -11784,7 +11854,7 @@ async function hydrateRotation(host){
       'not the chance of an appearance — a rested player is on the bench, not out of the squad. '+
       'A certain starter is barely touched; the squad players below take most of it.</div></div>'
     : '';
-  if(!list.length){host.innerHTML=congestCard+stateBox('flag','No clear rotation risks','Premium players are starting regularly. Risk rises with fixture congestion later in the season.');return;}
+  if(!list.length){host.innerHTML=rotCard+congestCard+stateBox('flag','No clear rotation risks','Premium players are starting regularly. Risk rises with fixture congestion later in the season.');return;}
   const rows=list.map(x=>{const e=x.e;const pctv=Math.round(x.rate*100);
     const band=pctv<55?'badge-red':pctv<75?'badge-amber':'badge-grey';
     const mot=motOf(e),dead=mot==='Little to play for';
@@ -11799,7 +11869,7 @@ async function hydrateRotation(host){
     ? '<div class="card mb-20" style="border-left:3px solid var(--amber)"><div class="card-title">'+svg(ICON.flag,'width="14" height="14"')+' Dead-rubber watch</div>'+
       '<p class="dl-sub"><b>'+deadClubs.map(esc).join(', ')+'</b> have little left to play for this season — expect heavier rotation, whatever the recent start rate.</p></div>'
     : (ctx&&ctx.live?'':'');
-  host.innerHTML=lensLink('rotation','Minutes security across every owned player, lowest first —')+congestCard+deadNote+
+  host.innerHTML=lensLink('rotation','Minutes security across every owned player, lowest first —')+rotCard+congestCard+deadNote+
     '<div class="card"><div class="card-title">Rotation risk — premium players by start rate</div>'+
     '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player · starts</span><span class="dl-col">Owned</span></div>'+rows+'</div>'+
     '<div class="dl-sub" style="margin-top:10px">Start rate flags rotation or fitness risk; the league stakes tag adds motivation context (a club with nothing to play for rotates more, from the season model).</div></div>';
@@ -12080,7 +12150,11 @@ function euroIndex(feed){
   ((feed&&feed.rows)||[]).forEach(r=>{
     const t=parseInt(r.team,10),ms=Date.parse(r.kickoff);
     if(!Number.isFinite(t)||!Number.isFinite(ms))return;
-    (idx[t]=idx[t]||[]).push({gw:r.gw,comp:r.comp,ms});
+    /* Venue is carried through because the rotation model's 72-hour European
+       flag reads it: a Thursday away leg is the tiring one, and a missing
+       venue silently becomes "not an away trip" rather than an error. The
+       congestion load below ignores it, so this costs nothing there. */
+    (idx[t]=idx[t]||[]).push({gw:r.gw,comp:r.comp,ms,v:r.home?'H':'A'});
   });
   Object.keys(idx).forEach(k=>idx[k].sort((a,c)=>a.ms-c.ms));
   return idx;
@@ -12117,6 +12191,163 @@ function congestionGames(idx,teamId,kickMs){
 /* Clubs carrying extra football into their next fixture, worst first. Pure,
    so the wording is testable without a browser. */
 const CONGEST_COMP={UCL:'Champions League',UEL:'Europa League',UECL:'Conference League',EFL:'EFL Cup',FA:'FA Cup'};
+/* ── Team rotation risk (vendored model) ────────────────────
+   HOW MANY CHANGES a manager is likely to make to his starting eleven, from
+   the fixture calendar alone. Vendored from the Bookings Desk; see
+   vendor/rotation.js and scripts/check-rotation.mjs.
+
+   THIS IS NOT THE CONGESTION LOAD ABOVE and the two must not be blurred.
+   `congestionLoad` is a per-player minutes multiplier fitted here; this is a
+   per-CLUB count of changes fitted there, on 740 team-fixtures of 2025-26.
+   They answer different questions and only one of them feeds a projection.
+
+   IT PREDICTS SELECTION AND NOTHING ELSE. Rest days do not move a team's
+   yellow count — measured on the same season, the interval excludes an effect
+   the size of the desk's 0.2 gate. Nothing here may reach the points model.
+
+   THE CLUB BASELINE IS THE BIG TERM. Habit spans 1.57 changes a match to 3.27,
+   far more than rest does, so the number a reader wants is the LIFT against
+   the club's own average rather than the absolute — a Chelsea line saying
+   "3.4 changes" is unremarkable, "+0.4 on their own average" is the signal. */
+const ROT_COMP={UCL:'Champions League',UEL:'Europa League',UECL:'Conference League',
+  FAC:'FA Cup',LCUP:'League Cup',PL:'Premier League'};
+/* The euro endpoint spells the domestic cups its own way; the vendored model's
+   vocabulary is PL/UCL/UEL/UECL/FAC/LCUP. Normalised so the entries genuinely
+   match the documented contract rather than nearly matching it. */
+const ROT_COMP_ALIAS={EFL:'LCUP',FA:'FAC'};
+
+/* ── ONE COMPETITIVE CALENDAR ───────────────────────────────
+   THE SINGLE PLACE league, cup and European football are merged for a club.
+   Everything that needs to know when a club played reads THIS, so there is one
+   merge, one comp vocabulary, one de-duplication rule and one answer — rather
+   than each consumer assembling its own and drifting from the others.
+
+   REST MUST NOT BE COMPUTED FROM LEAGUE FIXTURES ALONE. On league dates only,
+   74% of a season buckets as "fresh", and the mislabelling lands on exactly
+   the European clubs this signal is about.
+
+   EACH ENTRY CARRIES ITS PROVENANCE, because the consumers legitimately want
+   different slices and the difference has to be visible rather than implied:
+
+     league  true for the Premier League, false for cup and Europe
+     src     'fpl'    the FPL fixture list — the league season, known in June
+             'euro'   /api/euro-fixtures — the live cup and European feed
+             'vendor' vendor/pl_other_fixtures.js — the offline snapshot, used
+                      only where the live feed has nothing
+
+   WHAT READS WHICH, and why they are not the same slice:
+
+     rotationEntries   EVERYTHING. Rest is days since the last competitive
+                       match in any competition, which is the whole point.
+     congestionLoad    the live non-league feed ONLY, unchanged — see the note
+                       on it below. It is a graded term in the points model and
+                       widening its input is a measurement, not a tidy-up. */
+function competitiveCalendar(b,fixtures,teamId){
+  const out=[],seen={};
+  /* The league season. A fixture with no confirmed kick-off time yet (FPL
+     leaves `kickoff_time` null until a round is scheduled) is skipped rather
+     than guessed — and it is one of the two reasons a rest reading can be
+     provisional. See calendarHorizon. */
+  (fixtures||[]).forEach(f=>{
+    const ms=Date.parse(f.kickoff_time);
+    if(!Number.isFinite(ms))return;
+    const v=f.team_h===teamId?'H':(f.team_a===teamId?'A':null);
+    if(!v)return;
+    out.push({ms,comp:'PL',v,league:true,src:'fpl'});
+  });
+  /* Cup and Europe, live feed first. */
+  ((b&&b.euro&&b.euro[teamId])||[]).forEach(m=>{
+    if(!Number.isFinite(m.ms))return;
+    seen[m.ms]=1;
+    out.push({ms:m.ms,comp:ROT_COMP_ALIAS[m.comp]||m.comp,v:m.v||'H',league:false,src:'euro'});
+  });
+  /* The vendored snapshot fills only what the feed has not got — keyed by club
+     short code, and matched on kick-off so the same tie from both sources is
+     counted once. */
+  const code=teamShort(b,teamId);
+  if(code&&typeof PL_OTHER_FIXTURES!=='undefined'){
+    PL_OTHER_FIXTURES.forEach(r=>{
+      if(r.c!==code)return;
+      const ms=Date.parse(r.d);
+      if(!Number.isFinite(ms)||seen[ms])return;
+      seen[ms]=1;
+      out.push({ms,comp:ROT_COMP_ALIAS[r.comp]||r.comp,v:r.v||'H',league:false,src:'vendor'});
+    });
+  }
+  return out.sort((a,c)=>a.ms-c.ms);
+}
+
+/* How far ahead the NON-LEAGUE calendar reaches, as epoch ms, or null when
+   nothing is known at all.
+
+   WHY THIS NUMBER MATTERS ALL SEASON. The league fixture list is published in
+   June, so from GW2 every club has a previous league match and rest is always
+   computable. What is NOT known in June is the cup and European calendar: those
+   rounds are drawn progressively, a few weeks at a time. A club whose midweek
+   tie has not been drawn yet therefore reads FRESH — confidently, and wrongly.
+
+   That is a worse failure than the opening-weekend `known:false`, because it
+   renders as an answer rather than as a blank. Past this horizon a rest reading
+   is provisional: right about the league football, silent about the rest. */
+function calendarHorizon(b){
+  let last=null;
+  const bump=ms=>{if(Number.isFinite(ms)&&(last==null||ms>last))last=ms;};
+  Object.keys((b&&b.euro)||{}).forEach(k=>(b.euro[k]||[]).forEach(m=>bump(m.ms)));
+  if(typeof PL_OTHER_FIXTURES!=='undefined')
+    PL_OTHER_FIXTURES.forEach(r=>bump(Date.parse(r.d)));
+  return last;
+}
+
+/* The rotation model's contract: every competitive date as [{d,comp,v}], ISO
+   8601 with offset. A view over the calendar above, never a second merge. */
+function rotationEntries(b,fixtures,teamId){
+  return competitiveCalendar(b,fixtures,teamId)
+    .map(e=>({d:new Date(e.ms).toISOString(),comp:e.comp,v:e.v}));
+}
+
+/* One club's read for its next fixture, or null when the model is not loaded.
+   Adds `ownBaseline:false` for a club the fit has never seen (a promoted side),
+   where the module falls back to the league mean — worth saying out loud,
+   because "against their own average" is then not what is being shown. */
+function teamRotationRisk(b,fixtures,teamId,kickMs,horizon){
+  if(typeof PLDRotation==='undefined'||typeof PL_ROTATION_MODEL==='undefined')return null;
+  if(!Number.isFinite(kickMs))return null;
+  const code=teamShort(b,teamId);
+  if(!code)return null;
+  const when=new Date(kickMs).toISOString();
+  const entries=rotationEntries(b,fixtures,teamId);
+  const r=PLDRotation.rotationRisk(PL_ROTATION_MODEL,code,entries,when);
+  if(!r)return null;
+  r.teamId=teamId;
+  r.ownBaseline=Object.prototype.hasOwnProperty.call(PL_ROTATION_MODEL.clubBaseline||{},code);
+  /* The match that set the bucket, so the card can name the tie rather than
+     assert a number at the reader. */
+  r.prev=PLDRotation.previousMatch(entries,when);
+  /* PROVISIONAL REST. Past the end of the cup and European calendar we know
+     the league football and nothing else, so a club can only ever look MORE
+     rested than it will turn out to be — never less. Flagged only where that
+     could still change the answer: a side already reading congested is not
+     going to be talked out of it by another midweek tie. */
+  const h=horizon===undefined?calendarHorizon(b):horizon;
+  r.restProvisional=!!(r.known&&r.bucket!=='congested'&&h!=null&&kickMs>h);
+  return r;
+}
+
+/* Every club with a next fixture, heaviest lift first. Clubs with no previous
+   competitive match keep `known:false` and are NOT sorted among the rest —
+   they have not earned a position in a ranking of lifts. */
+function rotationClubs(b,fixtures,nf){
+  const out=[];
+  const horizon=calendarHorizon(b);   /* one scan of the calendar, not twenty */
+  Object.keys(nf||{}).forEach(k=>{
+    const t=parseInt(k,10),f=nf[k];
+    if(!f||!Number.isFinite(f.kickoff))return;
+    const r=teamRotationRisk(b,fixtures,t,f.kickoff,horizon);
+    if(r){r.event=f.event;r.opp=f.opp;r.home=f.home;out.push(r);}
+  });
+  return out.sort((a,c)=>(c.known-a.known)||(c.lift-a.lift)||(a.teamId-c.teamId));
+}
+
 function congestionClubs(b,nf){
   if(!b||!b.euro)return [];
   const out=[];

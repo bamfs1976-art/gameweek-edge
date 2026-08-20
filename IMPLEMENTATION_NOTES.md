@@ -229,6 +229,64 @@ now the best-supported outstanding edit.
   Sunderland section names Brobbey and does not mention Isidor at all. That is
   an omission, not a statement, and the register's disagreement stays open.
 
+## Two congestion measures, one calendar (20 Aug 2026)
+
+The repo had **two notions of congestion fed by two different calendars**, and
+they disagreed on the case that matters most.
+
+| Scenario | `congestionLoad` / factor | rotation: days / bucket / band |
+|---|---|---|
+| **Midweek *league* game (Wed→Sun)** | **0.00 / 1.000** | **3 / congested / raised** |
+| Europa away (Thu→Sun) | 1.00 / 0.851 | 2 / congested / high |
+| Normal week (7 days) | 0.00 / 1.000 | 7 / fresh / settled |
+| Cup tie 5 days out | 0.41 / 0.939 | 4 / normal / normal |
+| **Cup tie + league midweek** | **0.41 / 0.939** | **2 / congested / raised** |
+
+`/api/euro-fixtures` deliberately excludes the Premier League, so
+`congestionLoad` is **structurally blind to midweek league football** — the most
+common congestion in FPL (rearranged rounds, double gameweeks). Rows 1 and 5 are
+that blindness.
+
+**What was done.** The *data* was converged, not the models. `competitiveCalendar()`
+is now the single place league, cup and European football are merged, normalised
+to one comp vocabulary, de-duplicated and tagged with provenance (`league`,
+`src: fpl|euro|vendor`). `rotationEntries()` is a thin view over it.
+`congestionLoad` was **not touched** — the backtest is byte-identical to before.
+
+**Why not converge the models.** The rotation model is a team-level count of
+*changes to the eleven*. It is not calibrated as a per-player minutes multiplier,
+and `congestionLoad` is a graded term in the points path. Sharing coefficients
+between them would be a category error and would silently un-test a backtested
+model. `scripts/check-rotation.mjs` fails the build if the shared calendar or the
+rotation model reaches the extracted engine.
+
+**`restProvisional`.** The league fixture list is published in June, so from GW2
+rest is always computable — meaning the season-long failure is *not* the
+opening-weekend `known:false`. It is **false-fresh**: a club reads "settled"
+because the cup tie that will land in that midweek has not been drawn yet. Past
+`calendarHorizon()` a club can only look *more* rested than it turns out to be,
+never less, so those rows are now badged `provisional` with the reason. Two feeds
+of it: undrawn cup/European rounds, and PL fixtures with `kickoff_time: null`.
+
+### Open — the measurement this deliberately did not make
+
+Including the Premier League in `congestionLoad`'s input is probably correct and
+was **not** adopted, because it changes every projection.
+
+The endpoint's stated reason for the exclusion — that counting league fixtures
+"would make every club permanently congested" — does not hold under the current
+constants: a normal Sat→Sat gap is 7.0 days, past `CONGEST_FADE = 6`, and
+contributes zero load. Only genuine sub-6-day gaps would count, which is the
+intent. But Fri→Mon and Sun→Sat gaps from TV picks are common enough that the
+frequency needs measuring rather than assuming.
+
+**To close it:** feed the non-league *and* league slices of `competitiveCalendar`
+into `congestionLoad`, re-grade through `dev/backtest-vaastav.mjs` and
+`dev/model-validate.mjs`, and adopt only if minutes prediction improves. Until
+then `check-rotation.mjs` asserts the exclusion is still documented in
+`netlify/functions/euro-fixtures.js`, so the question cannot be silently closed
+in either direction.
+
 ## Deferred (documented, not attempted)
 
 - ~~An in-app inbox for feedback.~~ **Done** — Studio → Feedback, backed by
