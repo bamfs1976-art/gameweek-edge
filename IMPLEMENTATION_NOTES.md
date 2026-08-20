@@ -135,13 +135,20 @@ applied. Each needs an edit to `docs/briefings/2026-27-preseason.md` and
 
 **Overdue — two sources, one of them official:**
 
-- **Newcastle's manager is not Eddie Howe.** The register's confirmed-new-
-  bosses list names ten clubs and omits Newcastle; the club block reads
-  "Underwhelmed to twelfth, but Eddie Howe continues" and builds a paragraph
-  on it. LazyFPL and the Daily Mail both said he had left; the official Scout
-  names the successor — "the first under Jaissle". Three sources. The largest
-  single error the eight captures have surfaced. Note that one passing clause
-  establishes Howe is gone but is *not* enough to write a full manager line.
+- ~~**Newcastle's manager is not Eddie Howe.**~~ **WRITTEN 20 Aug.** The
+  register's confirmed-new-bosses list named ten clubs and omitted Newcastle;
+  the club block read "Underwhelmed to twelfth, but Eddie Howe continues" and
+  built a paragraph on it. LazyFPL and the Daily Mail both said he had left;
+  the official Scout named the successor — "the first under Jaissle" — but one
+  passing clause is not a manager line, which is why this sat unwritten for two
+  weeks as the largest single error the captures had surfaced.
+  The Guardian's season preview (Louise Taylor, 20 Aug) is the fourth source
+  and the first to carry the successor, the tenure and the style together, so
+  the line is now written: Howe stepped down after almost five years, Matthias
+  Jaissle is head coach, and Newcastle is in the new-bosses list. The block says
+  in its own text that it had this wrong for a fortnight, and the two tests that
+  used to assert "Eddie Howe continues" now assert the opposite — a test that
+  demanded the old error would have kept it alive.
 - **Sasa Lukic still takes Fulham's corners.** He joined Ipswich from Fulham
   (Guardian, then the official Scout, which prices him as an Ipswich player).
   Our register names him in neither club's transfer list and still assigns him
@@ -201,6 +208,32 @@ now the best-supported outstanding edit.
 > the official source settles them. What follows is what is still genuinely
 > open.
 
+- **Which goalkeeper did Newcastle sign?** Our register holds **Ewen Jaouen
+  (GK, Reims, ~£24m)**; the Guardian's preview makes **Lukas Hornicek, 24,
+  Czech Republic, ~£26m from Braga** its star signing and does not mention
+  Jaouen. Similar fee, similar age, different name and different selling club.
+  Either they bought two keepers or one entry is wrong. Nothing on hand settles
+  it and neither was swapped for the other. Resolves on the FPL bootstrap, which
+  will price whichever of them exists.
+- **Which summer do Forest's midfield arrivals belong to?** The register lists
+  Hutchinson, McAtee and Ndoye as 2026 incomings. The Guardian's Forest preview
+  describes McAtee's "first season in Nottingham" as already behind him and a
+  "difficult first year" for Ndoye, which reads as 2025 business. It also names
+  **Ousmane Diomande (DEF, Sporting, ~£34m)** as the only signing to have cost
+  Forest a fee this summer, and the register does not hold him at all. The
+  missing signing is recorded as owed; the window each of the other three
+  belongs to is open.
+- **Newcastle's creative supply is unmodelled.** The Guardian's stat attack:
+  Newcastle lost their leading four chance creators in one window — Guimaraes,
+  Tonali, Gordon, Trippier. The register's set-piece line for the club is now
+  deliberately short of a free-kick and corner taker rather than carrying a
+  guess. Resolves on GW1–3 team sheets.
+- **Tino Livramento's return date.** The Guardian has him back from "minor"
+  surgery in "early autumn" after a calf injury in England training. He is
+  priced and projected in the Marcello sheet captured beside this file at 14.2
+  over GW1–5, which is a projection for a player who may not feature in the
+  window. Not corrected on either side; flagged so the comparison is read with
+  it in mind.
 - **Rodri: in the league or not?** The official Scout (18 Aug) prices him at
   **£6.5m as a Manchester City player** and calls the Barcelona move "heavily
   linked"; the Guardian's City preview (19 Aug) states three times that he has

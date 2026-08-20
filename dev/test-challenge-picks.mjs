@@ -457,12 +457,18 @@ ok('and our register still holds no GW4 row for either club',
 ok('recorded as corroboration of a derivation, not a settled fixture',
   /recorded, not adopted/i.test(JSON.stringify(MAIL.theGW4ManchesterDerby)));
 
-/* --- Newcastle: an open conflict against our own register --- */
+/* --- Newcastle: a conflict this capture opened and the Guardian closed --- */
 ok('the Newcastle manager conflict is recorded', !!MAIL.managerClaims.theNewcastleConflict);
 ok('with a second outside source on the same side',
   /LazyFPL/.test(JSON.stringify(MAIL.managerClaims.theNewcastleConflict)));
-ok('and the register is deliberately NOT amended here',
-  /Eddie Howe continues/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+/* This capture was right and the register was wrong for a fortnight. What the
+   capture could not supply was a whole manager line, so the register was left
+   alone rather than rewritten off a passing clause. The Guardian's 20 Aug
+   preview supplied it and the edit was made; the assertion flips with it,
+   because a test that still demanded the old error would keep it alive. */
+ok('and the register has since been amended, Howe gone and named successor in',
+  !/Eddie Howe continues/.test(fs.readFileSync(ROOT_MD, 'utf8')) &&
+  /Jaissle/.test(fs.readFileSync(ROOT_MD, 'utf8')));
 ok('which the capture says explicitly rather than leaving implicit',
   /whyTheRegisterIsNOTAMENDEDHERE/.test(mailS));
 
@@ -766,12 +772,24 @@ ok('the official source says at least three months, agreeing with us',
 ok('and the Guardian capture still records what it said',
   /out until Christmas/.test(JSON.stringify(GDN)));
 
-/* --- Newcastle: three sources and now a name --- */
+/* --- Newcastle: three sources, then a name, then a fourth that closed it --- */
 ok('the official source names Jaissle', /the first under Jaissle/.test(scoutS));
-ok('our register still does not', !MD.includes('Jaissle') && !HTML.includes('Jaissle'));
-ok('and still says Howe continues', /Eddie Howe continues/.test(MD));
 ok('the capture stops short of writing a manager line from one clause',
   /not enough to write a manager line from/.test(scoutS));
+/* Closed 20 Aug. Four sources now: LazyFPL, the Daily Mail, the official
+   Scout's passing clause, and the Guardian preview that finally carried the
+   successor, the tenure and the style in one place. */
+ok('the register now carries the successor', /Jaissle/.test(MD));
+ok('and no longer has Howe in post', !/Eddie Howe continues/.test(MD));
+/* The correction has to say it IS one. A register that quietly grows a right
+   answer teaches nobody that it held a wrong one for a fortnight. */
+ok('and says plainly that it was wrong, rather than editing in silence',
+  /said otherwise for a fortnight/.test(MD));
+/* The same block recommended a player its own Out list had at Arsenal since
+   13 Aug. That is the error a reader acts on, so it is pinned too. */
+ok('and no longer recommends a player it records as sold',
+  !/Bruno Guimaraes the reliable minutes-and-creativity alternative/.test(MD) &&
+  !/Penalties Woltemade \(Bruno G secondary\)/.test(MD));
 
 /* --- three of four pinned surnames resolve, one does not --- */
 const MICH = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-tables-lesniczak.json`, 'utf8'));
