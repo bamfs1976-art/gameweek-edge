@@ -54,7 +54,7 @@ import { dirname, join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import vm from 'node:vm';
 import assert from 'node:assert';
-import { extractEngine, ENGINE_FNS } from './extract-engine.mjs';
+import { extractEngine, ENGINE_FNS, sliceBalanced } from './extract-engine.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(root, p), 'utf8');
@@ -70,6 +70,26 @@ for (const f of ['vendor/rotation.js', 'vendor/rotation_model.js', 'vendor/pl_ot
 const R = vm.runInContext('PLDRotation', ctx);
 const M = vm.runInContext('PL_ROTATION_MODEL', ctx);
 const CAL = vm.runInContext('PL_OTHER_FIXTURES', ctx);
+
+/* The shell's side of the convergence: one calendar, and the horizon that says
+   how far it can be trusted. Lifted out of index.html the same way the other
+   suites do it, so what is graded is what ships. */
+const html = read('index.html');
+function lift(name) {
+  const i = html.indexOf('function ' + name + '(');
+  assert.ok(i > 0, `index.html no longer defines ${name}() — the shared calendar has been ` +
+    'renamed or removed, and with it the single place league, cup and European football meet');
+  return sliceBalanced(html, i);
+}
+vm.runInContext('function teamShort(b,id){return b.teams[id]?b.teams[id].short_name:"";}', ctx);
+vm.runInContext(/const ROT_COMP_ALIAS=\{[^}]*\};/.exec(html)[0], ctx);
+for (const n of ['competitiveCalendar', 'calendarHorizon', 'rotationEntries', 'teamRotationRisk']) {
+  vm.runInContext(lift(n), ctx);
+}
+const call = (expr, vars) => {
+  Object.assign(ctx, vars || {});
+  return vm.runInContext(expr, ctx);
+};
 
 /* ---- 0. the contract is the contract ------------------------------------ */
 for (const fn of ['rotationRisk', 'rotationBand', 'restDays', 'restBucket',
@@ -231,12 +251,118 @@ for (const p of ['scripts/content/model.mjs', 'scripts/extract-engine.mjs']) {
     'team selection and must not become an input to a points or card projection');
 }
 
+/* ---- 8. one calendar, and one place it is merged ------------------------- */
+/* THE CONVERGENCE THIS PINS. There were two notions of congestion in this repo
+   fed by two different calendars: `congestionLoad`, a per-player minutes term
+   reading the live cup/European feed, and this, a per-club count of changes
+   reading league football as well. They disagreed on exactly the case that
+   matters most — a midweek LEAGUE fixture, which the minutes term cannot see at
+   all because /api/euro-fixtures deliberately excludes the Premier League.
+
+   The fix was to merge once, in competitiveCalendar(), and let each consumer
+   take the slice it is calibrated for. What must not happen now is a second
+   merge growing back somewhere else. */
+/* MCI deliberately: it has no tie in the vendored snapshot, so this case
+   isolates the live feed + league merge. The snapshot's own contribution is
+   asserted separately below, with a club that does. */
+const TEAMS = { 1: { short_name: 'MCI', name: 'Manchester City' } };
+const bLive = { teams: TEAMS, euro: { 1: [{ gw: 5, comp: 'EFL', ms: Date.parse('2026-09-16T19:00:00Z'), v: 'A' }] } };
+assert.equal(CAL.filter((r) => r.c === 'MCI').length, 0,
+  'MCI now has a tie in the vendored snapshot, so it no longer isolates the live-feed merge — ' +
+  'pick another club with no snapshot entry for the case below');
+const league = [
+  { team_h: 1, team_a: 2, kickoff_time: '2026-09-13T14:00:00Z', event: 4 },
+  { team_h: 2, team_a: 1, kickoff_time: '2026-09-20T15:30:00Z', event: 5 },
+  /* A fixture FPL has not scheduled yet. It must be skipped, not guessed. */
+  { team_h: 1, team_a: 3, kickoff_time: null, event: 6 },
+];
+const cal = call('competitiveCalendar(b,f,1)', { b: bLive, f: league });
+assert.equal(cal.length, 3, `the calendar merged ${cal.length} entries, expected 3 — two dated ` +
+  'league fixtures plus one cup tie, with the unscheduled fixture skipped');
+assert.ok(cal.every((e) => Number.isFinite(e.ms)), 'a calendar entry has no usable kick-off time');
+assert.deepEqual(cal.map((e) => e.ms), cal.map((e) => e.ms).slice().sort((a, b) => a - b),
+  'the calendar is not in kick-off order, so "the previous match" is not well defined');
+assert.deepEqual(cal.map((e) => e.src), ['fpl', 'euro', 'fpl'],
+  'calendar entries have lost their provenance — which source an entry came from is what lets ' +
+  'the minutes term and the rotation model take different slices of one calendar');
+assert.deepEqual(cal.map((e) => e.league), [true, false, true], 'the league flag is wrong');
+/* The domestic cup arrives from the feed spelled the endpoint's way and must
+   be normalised into the model's vocabulary, or it silently stops matching. */
+assert.equal(cal[1].comp, 'LCUP',
+  `the League Cup reached the model as "${cal[1].comp}" rather than LCUP — the feed's spelling ` +
+  'is not being normalised, and the vendored contract documents PL/UCL/UEL/UECL/FAC/LCUP');
+
+/* THE SNAPSHOT FILLS WHAT THE FEED HAS NOT GOT. This is the offline half of
+   the calendar and the reason the signal still works when /api/euro-fixtures is
+   unreachable — so it has to be reached when the feed is silent... */
+const snap = CAL.filter((r) => r.c === 'CHE')[0];
+assert.ok(snap, 'the vendored snapshot has no CHE tie to test the fallback with');
+const bNoFeed = { teams: { 1: { short_name: 'CHE', name: 'Chelsea' } } };
+const filled = call('competitiveCalendar(b,f,1)', { b: bNoFeed, f: [] });
+assert.equal(filled.length, 1,
+  'with no live feed the vendored snapshot is not filling the calendar, so an app that cannot ' +
+  'reach /api/euro-fixtures would read every club as rested');
+assert.equal(filled[0].src, 'vendor', 'the snapshot entry is not tagged as vendored');
+
+/* ...and NOT counted twice when the feed has the same tie. */
+const bDup = { teams: bNoFeed.teams, euro: { 1: [{ gw: 2, comp: 'LCUP', ms: Date.parse(snap.d), v: snap.v }] } };
+const merged = call('competitiveCalendar(b,f,1)', { b: bDup, f: [] });
+assert.equal(merged.length, 1,
+  'a tie present in both the live feed and the vendored snapshot is being counted twice, which ' +
+  'would shorten the apparent rest gap and invent congestion out of a de-duplication bug');
+assert.equal(merged[0].src, 'euro', 'the live feed must win over the snapshot, not the other way round');
+
+/* rotationEntries must be a VIEW over that calendar, not a second merge. */
+const view = call('rotationEntries(b,f,1)', { b: bLive, f: league });
+assert.deepEqual(view.map((e) => Date.parse(e.d)), cal.map((e) => e.ms),
+  'rotationEntries no longer matches competitiveCalendar — a second merge has grown back, and ' +
+  'the two will drift the way the minutes term and this model already did once');
+assert.ok(view.every((e) => e.d && e.comp && (e.v === 'H' || e.v === 'A')),
+  'a rotation entry is missing the {d,comp,v} the vendored contract requires');
+
+/* ---- 9. rest past the drawn calendar is flagged, not asserted ------------ */
+/* The season-long failure this catches. The league fixture list is published in
+   June, so from GW2 rest is always computable — and a club whose midweek cup
+   tie has not been DRAWN yet therefore reads "fresh" confidently and wrongly.
+   That is worse than the opening-weekend known:false, because it renders as an
+   answer rather than as a blank. */
+const horizon = call('calendarHorizon(b)', { b: bLive });
+assert.equal(horizon, Date.parse('2026-09-16T19:00:00Z'),
+  'calendarHorizon is not reporting the last known cup or European date');
+
+const beyond = call('teamRotationRisk(b,f,1,Date.parse("2027-05-01T15:00:00Z"))', { b: bLive, f: league });
+assert.equal(beyond.restProvisional, true,
+  'a fixture beyond the drawn cup and European calendar is not flagged provisional. Past that ' +
+  'horizon a club can only look MORE rested than it will turn out to be, and an unflagged ' +
+  '"settled" is the confident wrong answer this signal exists to avoid');
+const within = call('teamRotationRisk(b,f,1,Date.parse("2026-09-20T15:30:00Z"))', { b: bLive, f: league });
+assert.equal(within.restProvisional, false,
+  'a fixture inside the drawn calendar is being flagged provisional, which would put a caveat on ' +
+  'every row and train people to ignore it');
+assert.equal(within.bucket, 'congested',
+  'the midweek League Cup tie four days out is not reaching the rest bucket');
+
+/* ---- 10. the minutes term keeps its own, narrower input ------------------ */
+/* congestionLoad is a GRADED term in the points model. Widening its input to
+   the merged calendar — which is the obvious next move, and probably the right
+   one — changes every projection, so it is a measurement to be backtested and
+   not a tidy-up to be slipped in. Until that measurement happens, this fails if
+   the merged calendar reaches the points path. */
+assert.ok(!/competitiveCalendar|calendarHorizon|rotationEntries/.test(engine),
+  'the shared calendar has reached the extracted points engine. congestionLoad is fitted against ' +
+  'the live non-league feed alone; feeding it league football changes every projection and must ' +
+  'be graded through dev/backtest-vaastav.mjs first, not adopted as a refactor');
+assert.ok(/deliberately absent/.test(read('netlify/functions/euro-fixtures.js')),
+  'netlify/functions/euro-fixtures.js no longer documents that the Premier League is excluded. ' +
+  'That exclusion is why congestionLoad cannot see midweek league football, and it is the open ' +
+  'question this convergence deliberately left measured-but-unclosed');
+
 /* ---- report ------------------------------------------------------------- */
-const horizon = Math.round(
+const calDays = Math.round(
   (Math.max(...CAL.map((r) => Date.parse(r.d))) - Date.now()) / 86400000);
 console.log(`check-rotation OK: fitted on ${M.fitted} team-fixtures of ${M.season}; ` +
   `rest fresh ${M.rest.fresh}, normal ${M.rest.normal}, congested ${M.rest.congested}, ` +
   `European away extra ${M.euroAwayExtra}; lift ${M.lift} above club habit ` +
   `(CI ${M.liftCi95[0]} to ${M.liftCi95[1]}, z ${M.liftZ}); club habit spans ` +
   `${spread.toFixed(2)}; bands cut on lift; ${CAL.length} cup/European dates reaching ` +
-  `${horizon} days out; no points path reads it`);
+  `${calDays} days out; one calendar feeds it; no points path reads it`);

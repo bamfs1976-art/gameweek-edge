@@ -11794,9 +11794,12 @@ async function hydrateRotation(host){
     return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(nm)+
       ' <span class="badge '+(rotBadge[r.band]||'badge-grey')+'">'+esc(rotWord[r.band]||r.band)+'</span>'+
       (r.euroAway72h?' <span class="badge badge-red">Euro away</span>':'')+
+      (r.restProvisional?' <span class="badge badge-grey">provisional</span>':'')+
       (r.ownBaseline?'':' <span class="badge badge-grey">league average</span>')+'</span>'+
       '<span class="dl-sub">'+crest(b,r.teamId,13)+why+' · GW'+r.event+' v '+esc(r.opp||'')+
-      ' ('+(r.home?'H':'A')+')</span></span>'+
+      ' ('+(r.home?'H':'A')+')'+
+      (r.restProvisional?' · cup and European rounds not yet drawn this far out':'')+
+      '</span></span>'+
       '<span class="dl-col mono">'+signed(r.lift)+'</span></div>';
   };
   const rotCard=rot.length
@@ -11810,6 +11813,12 @@ async function hydrateRotation(host){
       '<span style="opacity:.8">Fitted on 740 team-fixtures of 2025-26; +0.35 above club habit '+
       '(95% CI 0.11–0.58). It predicts selection only — rest days do not move a card count.</span></p>'+
       (rotKnown.length?'<div class="dl">'+rotKnown.slice(0,12).map(rotRow).join('')+'</div>':'')+
+      (rotKnown.some(r=>r.restProvisional)
+        ? '<div class="dl-sub" style="margin-top:10px">'+
+          '<b>Provisional</b> — beyond the drawn cup and European calendar we know the league '+
+          'football and nothing else, so these clubs can only look <b>more</b> rested than they '+
+          'turn out to be, never less. A tie drawn into that midweek moves them the other way.</div>'
+        : '')+
       (rotUnknown.length
         ? '<div class="dl-sub" style="margin-top:'+(rotKnown.length?'10px':'0')+'">'+
           '<b>Not yet known for '+rotUnknown.length+' club'+(rotUnknown.length===1?'':'s')+':</b> '+
@@ -12207,63 +12216,120 @@ const ROT_COMP={UCL:'Champions League',UEL:'Europa League',UECL:'Conference Leag
    match the documented contract rather than nearly matching it. */
 const ROT_COMP_ALIAS={EFL:'LCUP',FA:'FAC'};
 
-/* Every COMPETITIVE date for one club as [{d,comp,v}] — league fixtures plus
-   cups plus Europe.
+/* ── ONE COMPETITIVE CALENDAR ───────────────────────────────
+   THE SINGLE PLACE league, cup and European football are merged for a club.
+   Everything that needs to know when a club played reads THIS, so there is one
+   merge, one comp vocabulary, one de-duplication rule and one answer — rather
+   than each consumer assembling its own and drifting from the others.
 
    REST MUST NOT BE COMPUTED FROM LEAGUE FIXTURES ALONE. On league dates only,
    74% of a season buckets as "fresh", and the mislabelling lands on exactly
-   the European clubs this signal is about. So the cup and European calendar is
-   merged in: the live /api/euro-fixtures feed first, and the vendored snapshot
-   for anything it does not cover. */
-function rotationEntries(b,fixtures,teamId){
-  const out=[];
+   the European clubs this signal is about.
+
+   EACH ENTRY CARRIES ITS PROVENANCE, because the consumers legitimately want
+   different slices and the difference has to be visible rather than implied:
+
+     league  true for the Premier League, false for cup and Europe
+     src     'fpl'    the FPL fixture list — the league season, known in June
+             'euro'   /api/euro-fixtures — the live cup and European feed
+             'vendor' vendor/pl_other_fixtures.js — the offline snapshot, used
+                      only where the live feed has nothing
+
+   WHAT READS WHICH, and why they are not the same slice:
+
+     rotationEntries   EVERYTHING. Rest is days since the last competitive
+                       match in any competition, which is the whole point.
+     congestionLoad    the live non-league feed ONLY, unchanged — see the note
+                       on it below. It is a graded term in the points model and
+                       widening its input is a measurement, not a tidy-up. */
+function competitiveCalendar(b,fixtures,teamId){
+  const out=[],seen={};
+  /* The league season. A fixture with no confirmed kick-off time yet (FPL
+     leaves `kickoff_time` null until a round is scheduled) is skipped rather
+     than guessed — and it is one of the two reasons a rest reading can be
+     provisional. See calendarHorizon. */
   (fixtures||[]).forEach(f=>{
     const ms=Date.parse(f.kickoff_time);
     if(!Number.isFinite(ms))return;
-    if(f.team_h===teamId)out.push({d:new Date(ms).toISOString(),comp:'PL',v:'H'});
-    else if(f.team_a===teamId)out.push({d:new Date(ms).toISOString(),comp:'PL',v:'A'});
+    const v=f.team_h===teamId?'H':(f.team_a===teamId?'A':null);
+    if(!v)return;
+    out.push({ms,comp:'PL',v,league:true,src:'fpl'});
   });
-  const seen={};
+  /* Cup and Europe, live feed first. */
   ((b&&b.euro&&b.euro[teamId])||[]).forEach(m=>{
-    const comp=ROT_COMP_ALIAS[m.comp]||m.comp;
-    const d=new Date(m.ms).toISOString();
-    seen[d]=1;
-    out.push({d,comp,v:m.v||'H'});
+    if(!Number.isFinite(m.ms))return;
+    seen[m.ms]=1;
+    out.push({ms:m.ms,comp:ROT_COMP_ALIAS[m.comp]||m.comp,v:m.v||'H',league:false,src:'euro'});
   });
-  /* The vendored calendar keys clubs by short code, and covers ties the live
-     feed has not picked up. Skipped silently when the file is absent. */
+  /* The vendored snapshot fills only what the feed has not got — keyed by club
+     short code, and matched on kick-off so the same tie from both sources is
+     counted once. */
   const code=teamShort(b,teamId);
   if(code&&typeof PL_OTHER_FIXTURES!=='undefined'){
     PL_OTHER_FIXTURES.forEach(r=>{
       if(r.c!==code)return;
       const ms=Date.parse(r.d);
-      if(!Number.isFinite(ms))return;
-      const d=new Date(ms).toISOString();
-      if(seen[d])return;
-      out.push({d,comp:ROT_COMP_ALIAS[r.comp]||r.comp,v:r.v||'H'});
+      if(!Number.isFinite(ms)||seen[ms])return;
+      seen[ms]=1;
+      out.push({ms,comp:ROT_COMP_ALIAS[r.comp]||r.comp,v:r.v||'H',league:false,src:'vendor'});
     });
   }
-  return out.sort((a,c)=>Date.parse(a.d)-Date.parse(c.d));
+  return out.sort((a,c)=>a.ms-c.ms);
+}
+
+/* How far ahead the NON-LEAGUE calendar reaches, as epoch ms, or null when
+   nothing is known at all.
+
+   WHY THIS NUMBER MATTERS ALL SEASON. The league fixture list is published in
+   June, so from GW2 every club has a previous league match and rest is always
+   computable. What is NOT known in June is the cup and European calendar: those
+   rounds are drawn progressively, a few weeks at a time. A club whose midweek
+   tie has not been drawn yet therefore reads FRESH — confidently, and wrongly.
+
+   That is a worse failure than the opening-weekend `known:false`, because it
+   renders as an answer rather than as a blank. Past this horizon a rest reading
+   is provisional: right about the league football, silent about the rest. */
+function calendarHorizon(b){
+  let last=null;
+  const bump=ms=>{if(Number.isFinite(ms)&&(last==null||ms>last))last=ms;};
+  Object.keys((b&&b.euro)||{}).forEach(k=>(b.euro[k]||[]).forEach(m=>bump(m.ms)));
+  if(typeof PL_OTHER_FIXTURES!=='undefined')
+    PL_OTHER_FIXTURES.forEach(r=>bump(Date.parse(r.d)));
+  return last;
+}
+
+/* The rotation model's contract: every competitive date as [{d,comp,v}], ISO
+   8601 with offset. A view over the calendar above, never a second merge. */
+function rotationEntries(b,fixtures,teamId){
+  return competitiveCalendar(b,fixtures,teamId)
+    .map(e=>({d:new Date(e.ms).toISOString(),comp:e.comp,v:e.v}));
 }
 
 /* One club's read for its next fixture, or null when the model is not loaded.
    Adds `ownBaseline:false` for a club the fit has never seen (a promoted side),
    where the module falls back to the league mean — worth saying out loud,
    because "against their own average" is then not what is being shown. */
-function teamRotationRisk(b,fixtures,teamId,kickMs){
+function teamRotationRisk(b,fixtures,teamId,kickMs,horizon){
   if(typeof PLDRotation==='undefined'||typeof PL_ROTATION_MODEL==='undefined')return null;
   if(!Number.isFinite(kickMs))return null;
   const code=teamShort(b,teamId);
   if(!code)return null;
-  const r=PLDRotation.rotationRisk(PL_ROTATION_MODEL,code,
-    rotationEntries(b,fixtures,teamId),new Date(kickMs).toISOString());
+  const when=new Date(kickMs).toISOString();
+  const entries=rotationEntries(b,fixtures,teamId);
+  const r=PLDRotation.rotationRisk(PL_ROTATION_MODEL,code,entries,when);
   if(!r)return null;
   r.teamId=teamId;
   r.ownBaseline=Object.prototype.hasOwnProperty.call(PL_ROTATION_MODEL.clubBaseline||{},code);
   /* The match that set the bucket, so the card can name the tie rather than
      assert a number at the reader. */
-  r.prev=PLDRotation.previousMatch(rotationEntries(b,fixtures,teamId),
-    new Date(kickMs).toISOString());
+  r.prev=PLDRotation.previousMatch(entries,when);
+  /* PROVISIONAL REST. Past the end of the cup and European calendar we know
+     the league football and nothing else, so a club can only ever look MORE
+     rested than it will turn out to be — never less. Flagged only where that
+     could still change the answer: a side already reading congested is not
+     going to be talked out of it by another midweek tie. */
+  const h=horizon===undefined?calendarHorizon(b):horizon;
+  r.restProvisional=!!(r.known&&r.bucket!=='congested'&&h!=null&&kickMs>h);
   return r;
 }
 
@@ -12272,10 +12338,11 @@ function teamRotationRisk(b,fixtures,teamId,kickMs){
    they have not earned a position in a ranking of lifts. */
 function rotationClubs(b,fixtures,nf){
   const out=[];
+  const horizon=calendarHorizon(b);   /* one scan of the calendar, not twenty */
   Object.keys(nf||{}).forEach(k=>{
     const t=parseInt(k,10),f=nf[k];
     if(!f||!Number.isFinite(f.kickoff))return;
-    const r=teamRotationRisk(b,fixtures,t,f.kickoff);
+    const r=teamRotationRisk(b,fixtures,t,f.kickoff,horizon);
     if(r){r.event=f.event;r.opp=f.opp;r.home=f.home;out.push(r);}
   });
   return out.sort((a,c)=>(c.known-a.known)||(c.lift-a.lift)||(a.teamId-c.teamId));
