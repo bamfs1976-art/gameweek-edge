@@ -122,3 +122,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+---
+
+## Rotation signal — vendored from the Bookings Desk (first-party)
+
+Not a third-party library: the same author's other repository,
+`bamfs1976-art/pl-bookings`, which fitted the model. Recorded here because
+this file's promise is to account for **everything bundled into the shipped
+app and where the code came from**, and three files under `vendor/` are
+shipped source that `package-lock.json` knows nothing about.
+
+- **Source** https://github.com/bamfs1976-art/pl-bookings
+- **Commit** `5ab0bfcbfb437b98755f7469bd9533d59220c792`
+- **Branch** `claude/la-liga-booking-research-x5h55f` — the files do not exist
+  on `main` upstream; see the note in `scripts/vendor-rotation.mjs`.
+- **Files**
+  - `vendor/rotation.js` ← `assets/rotation.js` — the module (`PLDRotation`).
+    No dependencies, no DOM, no fetch, no state.
+  - `vendor/rotation_model.js` ← `data/rotation_model.js` — the coefficients,
+    fitted on 740 team-fixtures of 2025-26.
+  - `vendor/pl_other_fixtures.js` ← `data/pl_other_fixtures.js` — cup and
+    European dates. **Live data**, pulled daily by
+    `.github/workflows/rotation-refresh.yml`.
+- **Used for** team-level rotation risk on the Rotation Risk page: how many
+  changes a manager is likely to make to his starting eleven, from the fixture
+  calendar alone. It predicts **selection only** — rest days do not move a card
+  or points projection, and `scripts/check-rotation.mjs` fails the build if
+  anything on the points path starts reading it.
+
+Provenance is proved rather than asserted. Each file carries a generated header
+naming the source commit and its payload SHA-256; `scripts/vendor-rotation.mjs
+--check` verifies the committed bytes offline, and `--check --remote` re-fetches
+from the source and fails if the pinned copies have drifted. Both run in CI.

@@ -1,0 +1,79 @@
+name: Rotation calendar
+
+# Pull the cup and European calendar the rotation signal rests on.
+#
+# WHY THIS IS A DAILY JOB AND NOT A ONE-OFF VENDORING. Two of the three
+# vendored files are pinned to a commit and never move on their own — the
+# module and the fitted coefficients. The third, vendor/pl_other_fixtures.js,
+# is live data: cup rounds and European group stages are DRAWN PROGRESSIVELY,
+# so the calendar is only ever known two to six weeks out and is rewritten
+# upstream as each round is made.
+#
+# WHAT GOES WRONG IF IT IS NOT PULLED. Nothing visible, which is the problem.
+# The signal does not error; it decays. Clubs whose next fixture has no
+# previous competitive match on file report known:false, and as the season
+# moves past the end of a frozen calendar that is more and more of them —
+# until a page that is supposed to say "three games in seven days" is quietly
+# saying "no evidence" about everybody. scripts/vendor-rotation.mjs --check is
+# what notices; this workflow is what prevents it.
+#
+# It cannot silently vendor something different: the pinned files are verified
+# against their source commit on every run, and only the calendar is written.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Early, before the day's deadlines matter — and after the upstream
+    # harvest's own 04:10 run has had time to finish and push.
+    - cron: '40 5 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rotation-refresh
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # Only the calendar. --refresh deliberately does not touch the pinned
+      # module or coefficients, so a bad day upstream cannot silently move the
+      # model out from under the evidence that describes it.
+      - name: Pull the cup and European calendar
+        run: node scripts/vendor-rotation.mjs --refresh
+
+      # Proves the pinned pair still match their source commit and that what
+      # was just pulled is a calendar rather than an empty file. Runs before
+      # the commit so a bad pull is never what gets committed.
+      - name: Verify the vendored copy against its source
+        run: node scripts/vendor-rotation.mjs --check --remote | tee rot.txt
+
+      # The model still has to say what the data says, with the new calendar in
+      # place — including that nothing on the points path has started reading it.
+      - name: Rotation guard
+        run: node scripts/check-rotation.mjs
+
+      - name: Commit only if the calendar changed
+        run: |
+          if git diff --quiet -- vendor/ scripts/vendor-rotation.sha256.json; then
+            echo "No change to the calendar — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add vendor/ scripts/vendor-rotation.sha256.json
+          git commit -m "Rotation: refresh the cup and European calendar"
+          git push
+
+      - name: Summary
+        if: always()
+        run: |
+          { echo '```'; cat rot.txt 2>/dev/null || echo 'no output'; echo '```'; } \
+            >> $GITHUB_STEP_SUMMARY

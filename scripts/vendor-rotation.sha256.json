@@ -1,0 +1,29 @@
+{
+  "source": "bamfs1976-art/pl-bookings",
+  "commit": "5ab0bfcbfb437b98755f7469bd9533d59220c792",
+  "branch": "claude/la-liga-booking-research-x5h55f",
+  "files": {
+    "rotation": {
+      "path": "assets/rotation.js",
+      "sha256": "4f02a1daf8187ca41b2df776818eff6f031925bcd20b44b4dce839331eb06049",
+      "pinned": true,
+      "fetched": "2026-08-20",
+      "ref": "5ab0bfcbfb437b98755f7469bd9533d59220c792"
+    },
+    "model": {
+      "path": "data/rotation_model.js",
+      "sha256": "b5fc616123c6aa73cdd810b8591d2fa39d7b97353fb4f9ae725a90002653e508",
+      "pinned": true,
+      "fetched": "2026-08-20",
+      "ref": "5ab0bfcbfb437b98755f7469bd9533d59220c792"
+    },
+    "other-fixtures": {
+      "path": "data/pl_other_fixtures.js",
+      "sha256": "823df6ca9246a56a04b40859d36fc37ec75c2b682c6435d21dc5932e26d3074a",
+      "pinned": false,
+      "fetched": "2026-08-20",
+      "changed": "2026-08-20",
+      "ref": "claude/la-liga-booking-research-x5h55f"
+    }
+  }
+}

@@ -22,7 +22,7 @@
    removed; its shell is deliberately NOT listed below, and bumping VERSION
    is what evicts it from the caches of everyone who already had it. */
 
-const VERSION = 'ge-v9';
+const VERSION = 'ge-v10';
 const EFL = '/fantasy-efl/';
 /* Fantasy EFL's six routes and the modules behind them. Listed here rather
    than derived, because addAll() rejects the whole install if a single URL
@@ -47,6 +47,16 @@ const EFL_SHELL = [
   '/fantasy-efl/assets/page-record.js',
   '/fantasy-efl/assets/page-guide.js'
 ];
+/* The rotation signal, vendored from the Bookings Desk. Precached because it
+   is loaded by a <script src> the installed PWA shell would otherwise know
+   nothing about: a new script tag that is not in this list 404s for everyone
+   who already installed the app — invisible in a browser, total for them.
+   rotation.js is listed first for the same reason it is loaded first. */
+const ROTATION = [
+  '/vendor/rotation.js',
+  '/vendor/rotation_model.js',
+  '/vendor/pl_other_fixtures.js'
+];
 const SHELL = [
   '/',
   '/index.html',
@@ -54,6 +64,7 @@ const SHELL = [
   '/auth.js',
   '/vendor.js',
   '/vendor.css',
+  ...ROTATION,
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
@@ -62,7 +73,7 @@ const SHELL = [
 ];
 /* Code, not assets: always revalidated so a deploy reaches both apps. */
 const CODE = new Set(['/', '/index.html', '/native.js', '/auth.js', '/manifest.webmanifest',
-  ...EFL_SHELL]);
+  ...ROTATION, ...EFL_SHELL]);
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));

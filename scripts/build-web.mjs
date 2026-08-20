@@ -16,7 +16,11 @@ const EFL_OUT = join(OUT, 'fantasy-efl');
 /* Static web assets to copy verbatim into www/. Add to this list as
    the app grows. */
 const STATIC_FILES = ['index.html', 'landing.html', 'privacy.html', 'manifest.webmanifest', 'sw.js'];
-const STATIC_DIRS = ['icons', 'data'];
+/* `vendor/` is the rotation signal copied verbatim from the Bookings Desk —
+   distinct from www/vendor.js, which is the esbuild bundle below. It is a
+   directory of committed source with recorded hashes, so it is copied rather
+   than built; scripts/vendor-rotation.mjs owns proving it has not drifted. */
+const STATIC_DIRS = ['icons', 'data', 'vendor'];
 
 async function clean() {
   if (existsSync(OUT)) await rm(OUT, { recursive: true, force: true });
