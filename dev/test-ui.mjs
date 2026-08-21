@@ -90,6 +90,21 @@ const PICKS_RE = /^\/api\/fpl\/entry\/\d+\/event\/\d+\/picks$/;
    missing one, which is the bug this card is most likely to grow. */
 const ENTRY_RE = /^\/api\/fpl\/entry\/\d+$/;
 const LIVE_RE = /^\/api\/fpl\/event\/\d+\/live$/;
+const HISTORY_RE = /^\/api\/fpl\/entry\/\d+\/history$/;
+const STANDINGS_RE = /^\/api\/fpl\/leagues-classic\/\d+\/standings$/;
+const historyBody = () => JSON.stringify({
+  current: [], past: [], chips: [{ name: '3xc', event: 1, time: '2026-08-15T10:00:00Z' }]
+});
+/* Three managers, so a click can land on a row that is NOT the signed-in
+   one — the interesting case is opening somebody else's team. */
+const standingsBody = () => JSON.stringify({
+  league: { id: 555, name: 'The Office League' },
+  standings: { has_next: false, results: [
+    { rank: 1, last_rank: 2, entry: 7654321, entry_name: 'Rival FC', player_name: 'Sam Rivers', event_total: 62, total: 120 },
+    { rank: 2, last_rank: 1, entry: 1234567, entry_name: 'My Team', player_name: 'Me Myself', event_total: 55, total: 118 },
+    { rank: 3, last_rank: 3, entry: 9998887, entry_name: 'Third Wheel', player_name: 'Pat Third', event_total: 40, total: 90 }
+  ] }
+});
 const picksFixture = () => JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json'), 'utf8'));
 const LIVE_MISSING = picksFixture().picks.find((p) => p.position === 3).element;
 const liveBody = () => JSON.stringify({
@@ -118,6 +133,14 @@ const apiServer = createServer((req, res) => {
   if (LIVE_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(liveBody());
+  }
+  if (HISTORY_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(historyBody());
+  }
+  if (STANDINGS_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(standingsBody());
   }
   if (API[p] || PICKS_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -884,20 +907,90 @@ section('a rival opens, on a pitch, marked against my own XI');
   const rp = await browser.newPage();
   const rErrors = [];
   rp.on('pageerror', (e) => rErrors.push(e.message));
+  /* ge-tier MUST be seeded. Rivals is a Pro panel — "Rival intelligence" is
+     one of the three listed PRO_BENEFITS — so a free tier gets the real panel
+     rendered blurred and `inert` behind the unlock strip. Without this line
+     the harness was testing the LOCKED panel and calling it working, because
+     element.click() fires through `inert` and `pointer-events:none` exactly
+     as if neither existed. The locked state is asserted separately below. */
   await rp.addInitScript(() => { try {
     localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-tier', 'pro');
     localStorage.setItem('ge-rivals', JSON.stringify(['7654321']));
   } catch (_) {} });
   await rp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
   await rp.waitForTimeout(1200);
 
+  /* A REAL click, at real coordinates, through Playwright's actionability
+     checks — not element.click(). The synthetic version fires the handler
+     regardless of whether anything is on top of the button, whether an
+     ancestor is inert, or whether pointer-events is off, so it can pass on a
+     button no human can press. That is exactly the gap that let "clicking a
+     rival does nothing" ship green. */
+  /* FIRST, the state the owner actually reported from: signed out. Rivals is
+     a paid panel and Pro rides on the account — renderPage's own comment
+     says "no session means no Pro on this device" — so the real panel is
+     rendered blurred and inert behind the unlock strip, and NOTHING in it is
+     clickable. That is correct, and it is pinned here so nobody "fixes"
+     a future report of this by deleting the inert attribute. */
+  await rp.evaluate(() => { try { openPanel('rivals'); } catch (_) {} });
+  await rp.waitForTimeout(1800);
+  const locked = await rp.evaluate(() => {
+    const b = document.querySelector('[data-rival]');
+    if (!b) return { err: 'no rival row rendered even locked' };
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    let n = b, inertAncestor = null;
+    while (n) { if (n.inert) { inertAncestor = n.className; break; } n = n.parentElement; }
+    return { inertAncestor, topEl: top ? top.className : null,
+      strip: !!document.querySelector('.pro-lockstrip') };
+  });
+  ok(!locked.err, 'the locked panel still renders the real rows (' + (locked.err || '') + ')');
+  ok(/pro-blur/.test(locked.inertAncestor || ''), 'signed out, the rivals panel is inert');
+  ok(locked.strip === true, 'and shows the unlock strip that explains why');
+  ok(/pro-lockstrip/.test(locked.topEl || ''),
+    'so a click lands on the unlock strip, not the rival — this is the reported behaviour');
+
+  /* NOW unlock it. The tier is set after load rather than seeded, because the
+     auth check strips a stored 'pro' when there is no Supabase session and
+     this harness has none. */
+  await rp.evaluate(() => {
+    try { localStorage.setItem('ge-tier', 'pro'); } catch (_) {}
+    try { reflectTier(); } catch (_) {}
+    try { renderPage('rivals'); } catch (_) {}
+  });
+  await rp.waitForTimeout(1800);
+
+  /* What is actually under the pointer at the button's centre? If it is not
+     the button or one of its own children, something is intercepting and the
+     name of that something is the bug. */
+  const hitTest = await rp.evaluate(() => {
+    const b = document.querySelector('[data-rival]');
+    if (!b) return { err: 'no rival row rendered' };
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    const inertAncestor = (() => { let n = b; while (n) { if (n.inert) return n.className || n.tagName; n = n.parentElement; } return null; })();
+    const cs = getComputedStyle(b);
+    return {
+      w: Math.round(r.width), h: Math.round(r.height),
+      pointerEvents: cs.pointerEvents, visibility: cs.visibility, display: cs.display,
+      topEl: top ? (top.tagName + '.' + (top.className || '')) : null,
+      topIsButtonOrChild: !!(top && (top === b || b.contains(top))),
+      inertAncestor
+    };
+  });
+  ok(!hitTest.err, 'a rival row rendered (' + (hitTest.err || '') + ')');
+  ok(hitTest.w > 0 && hitTest.h > 0, `the opener has a real box (${hitTest.w}x${hitTest.h})`);
+  ok(hitTest.pointerEvents !== 'none', 'the opener is not pointer-events:none');
+  ok(hitTest.inertAncestor === null, 'no inert ancestor swallows the click (' + hitTest.inertAncestor + ')');
+  ok(hitTest.topIsButtonOrChild === true,
+    'the element under the pointer IS the opener, not something covering it (' + hitTest.topEl + ')');
+
+  await rp.locator('[data-rival]').first().click({ timeout: 5000 })
+    .catch((e) => { ok(false, 'a real click on the rival reached it (' + e.message.split('\n')[0] + ')'); });
+  await rp.waitForTimeout(2200);
+
   const res = await rp.evaluate(async () => {
-    try { openPanel('rivals'); } catch (e) { return { err: e.message }; }
-    await new Promise((r) => setTimeout(r, 1800));
-    const opener = document.querySelector('[data-rival]');
-    if (!opener) return { err: 'no rival row rendered' };
-    opener.click();
-    await new Promise((r) => setTimeout(r, 2200));
     const m = document.getElementById('rival-modal');
     const body = document.getElementById('rival-body');
     const cells = [...body.querySelectorAll('.qd-pitch .pp')];
@@ -934,6 +1027,7 @@ section('a rival opens, on a pitch, marked against my own XI');
   const np2 = await browser.newPage();
   await np2.addInitScript(() => { try {
     localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-tier', 'pro');
     localStorage.setItem('ge-rivals', JSON.stringify(['7654321']));
   } catch (_) {} });
   await np2.goto(`http://localhost:${NOPICKS_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
@@ -953,6 +1047,72 @@ section('a rival opens, on a pitch, marked against my own XI');
   ok(!/Couldn.t load/i.test(nr.text), 'and is not reported as a load error');
   await np2.close();
   await rp.close();
+}
+
+section('a mini-league standing opens that manager\u2019s team');
+{
+  /* THE ONE THAT WAS ACTUALLY ASKED FOR. Mini-Leagues is tier:'free' and
+     Rival Scout is tier:'paid' — two different panels. The card was built in
+     the paid one, so a Pro user looking at their mini-league table clicked a
+     rival and nothing happened, because there was nothing there to click.
+     No tier is seeded here on purpose: this table is free, and if it ever
+     stops being reachable without Pro this check goes red. */
+  const lp = await browser.newPage();
+  const lErrors = [];
+  lp.on('pageerror', (e) => lErrors.push(e.message));
+  await lp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await lp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await lp.waitForTimeout(1200);
+
+  const opened = await lp.evaluate(async () => {
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 1800));
+    const rows = [...document.querySelectorAll('[data-rival]')];
+    return { rows: rows.length, ids: rows.map((b) => b.dataset.rival) };
+  });
+  ok(!opened.err, 'the league standings rendered (' + (opened.err || '') + ')');
+  ok(opened.rows === 3, 'every standing is an opener, got ' + opened.rows);
+  ok((opened.ids || []).includes('7654321'), 'and carries the entry id, not the rank');
+
+  /* A real click, on a manager who is NOT the signed-in one. */
+  const target = lp.locator('[data-rival="7654321"]').first();
+  const hit = await lp.evaluate(() => {
+    const b = document.querySelector('[data-rival="7654321"]');
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    let n = b, inertAncestor = null;
+    while (n) { if (n.inert) { inertAncestor = n.className; break; } n = n.parentElement; }
+    return { inertAncestor, reachable: !!(top && (top === b || b.contains(top))),
+      topEl: top ? top.className : null, pe: getComputedStyle(b).pointerEvents };
+  });
+  ok(hit.inertAncestor === null, 'the free league table is not inert (' + hit.inertAncestor + ')');
+  ok(hit.pe !== 'none', 'and not pointer-events:none');
+  ok(hit.reachable === true, 'the row is what the pointer hits (' + hit.topEl + ')');
+
+  await target.click({ timeout: 5000 })
+    .catch((e) => { ok(false, 'a real click reached the standing (' + e.message.split('\n')[0] + ')'); });
+  await lp.waitForTimeout(2200);
+
+  const card = await lp.evaluate(() => {
+    const body = document.getElementById('rival-body');
+    return {
+      shown: (document.getElementById('rival-modal') || {}).className || '',
+      name: (body.querySelector('#rival-title') || {}).textContent || '',
+      xi: body.querySelectorAll('.qd-pitch .pp').length,
+      bench: body.querySelectorAll('.rv-bench .pp').length,
+      text: (body.textContent || '').slice(0, 500)
+    };
+  });
+  ok(/show/.test(card.shown), 'the card opens from the league table');
+  ok(/Rival FC/.test(card.name), 'and names the manager clicked (' + card.name + ')');
+  ok(card.xi === 11, 'eleven on the pitch, got ' + card.xi);
+  ok(card.bench === 4, 'four on the bench, got ' + card.bench);
+  ok(/Triple Captain/.test(card.text), 'and the chip ledger reaches it from history');
+  ok(lErrors.length === 0, 'the league table threw nothing (' + lErrors.slice(0, 2).join(' | ') + ')');
+  await lp.close();
 }
 
 section('no uncaught errors');
