@@ -1159,12 +1159,12 @@ is partly a list of who played the weakest opposition.
 **Out:** Bernardo Silva (CM, Real Madrid, free), Manuel Akanji (CB, Inter, ~£13m), Nathan Ake (CB, Fenerbahce, ~£7m), John Stones (CB, released), Reigan Heskey (W, Koln, ~£8m), Jahmai Simpson-Pusey (CB, Koln, ~£4.75m). Added 13 Aug, having been recorded only by the club at the other end: James McAtee (AM, Nott'm Forest, ~£30m).
 
 **FPL picks:**
-- Value: Rayan Cherki (MID) if mid-priced, on free-kicks and corners with high assist potential. Tijjani Reijnders as a nailed attacking midfielder.
+- Value: Rayan Cherki (MID) if mid-priced, on free-kicks and corners with high assist potential. **Mateo Kovacic — added 21 Aug; this file named no City central midfielder at all while our own Community Shield capture records him starting there.** No price and no projection is attached: he is here because a starting midfielder being absent from a club block is a hole, and filling it with an estimate would repeat the fault the price table above scores eight from eight against us. Tijjani Reijnders as a nailed attacking midfielder.
 - Premium / captaincy: Erling Haaland (FWD, £15.5m, record price), default captain and penalty taker.
 - Differentials: Antoine Semenyo in a new City role, backup penalties and free-kicks, soft openers. Cherki as a low-owned creator.
 - Set-piece & penalties: Penalties Haaland primary, Semenyo backup. Direct free-kicks Cherki, with Semenyo, Reijnders, Marmoush as alternatives. Corners Cherki primary, Foden backup. Hierarchy may shift as Maresca settles (watch).
 
-**Opening fixtures:** GW1 Bournemouth (H) easy, GW2 Crystal Palace (A) moderate, GW3 Coventry City (H) easy. Two easy home games either side of a moderate trip — the softest opening trio in the division, and ideal for backing Haaland early despite the new manager.
+**Opening fixtures:** GW1 Bournemouth (H) easy, GW2 Crystal Palace (A) moderate, GW3 Coventry City (H) easy, **GW4 Man Utd (A) hard — added 21 Aug.** This block held no GW4 row at all. Four sources say GW4 is the derby and three put it at Old Trafford; the newest is FPL Mate's expert-draft grid, a structured fixture table rather than prose, reciprocally consistent with the United row below and agreeing with our register in its other thirty cells. Two easy home games either side of a moderate trip — the softest opening trio in the division, and ideal for backing Haaland early despite the new manager.
 
 ---
 
@@ -1182,7 +1182,7 @@ is partly a list of who played the weakest opposition.
 - Differentials: Andrey Santos, nailed new midfielder at low ownership. Cunha for early attacking upside.
 - Set-piece & penalties: Penalties Bruno. Direct free-kicks Bruno primary, Mbeumo backup. Corners Bruno primary, Mbeumo backup. Bruno's set-piece monopoly is the standout asset here.
 
-**Opening fixtures:** GW1 Hull City (A) easy, GW2 Ipswich Town (H) easy, GW3 Everton (A) hard. Two promoted sides first, then a hard trip to Everton. A good early window to own Bruno, with GW3 the first real test.
+**Opening fixtures:** GW1 Hull City (A) easy, GW2 Ipswich Town (H) easy, GW3 Everton (A) hard, **GW4 Man City (H) hard — added 21 Aug**, the other half of the derby row added to the City block above. Two promoted sides first, then a hard trip to Everton. A good early window to own Bruno, with GW3 the first real test.
 
 ---
 
@@ -1441,7 +1441,7 @@ is partly a list of who played the weakest opposition.
 **Out:** Luka Vuskovic (CB, Brighton, ~£46m), Will Lankshear (CF, Middlesbrough, ~£10m), Tynan Thompson (W, Man Utd, ~£8m), Yves Bissouma (DM, released), Radu Dragusin (CB, Fiorentina, loan), Alfie Devine (AM, Preston). Added 13 Aug, having been recorded only by the club at the other end: Brennan Johnson (W, Crystal Palace, ~£35m, Jan 2026), Tynan Thompson (DEF, Man Utd, ~£4m).
 
 **FPL picks:**
-- Value: Pedro Porro (attacking full-back on corners and free-kicks). Antonin Kinsky (GK, ~£4.5m), cheap starting keeper enabler.
+- Value: Pedro Porro (attacking full-back on corners and free-kicks). Antonin Kinsky (GK, ~£4.5m), cheap starting keeper enabler — **and 21 Aug supplies the reason this works, which was missing from this file: Guglielmo Vicario has left, and the Guardian names Kinsky first choice because of it.** Weigh it against our own In list, which contains Martin Dubravka on a free; a veteran keeper is what unseats a cheap enabler, and the preview does not mention him.
 - Premium / captaincy: Mohammed Kudus is the most reliable attacking route. Dominic Solanke the nominal striker and penalty option. Neither is a locked-in elite armband, treat Spurs as a rotation source rather than a captaincy home.
 - Differentials: Mathys Tel (on corners, low ownership, favourable opener). Mateus Fernandes if De Zerbi plays him advanced.
 - Set-piece & penalties: Penalties Solanke, then Kudus/Richarlison (genuinely uncertain, Spurs scored no penalties last season). Free-kicks Porro, Kudus. Corners Porro, Tel.
@@ -1492,7 +1492,7 @@ is partly a list of who played the weakest opposition.
 
 **Pre-season summary:** Up via the play-offs, beating Middlesbrough 1-0 in the final (McBurnie, 95th minute) after finishing sixth. Their first top-flight season since 2017, and they did it having survived relegation to League One on goal difference a year earlier and while under a transfer embargo. Sergej Jakirovic stays (pragmatic, defence-first, dangerous on set-pieces and counters). Owner Acun Ilicali is signalling heavy investment now the embargo has lifted (a ~£200m figure floated, treat as ambition not spend).
 
-**In:** Jack Butland (GK, Rangers, ~£3.5m), Hidemasa Morita (CM, Sporting, free), Matt Targett (LB, free), Oscar Zambrano (loan made permanent). Retained: Oli McBurnie, Liam Millar, Regan Slater, Matt Crooks, Yu Hirakawa, Ryan Giles. Joe Gelhardt (15 goals on loan) status needs confirming.
+**In:** Jack Butland (GK, Rangers, ~£3.5m), Hidemasa Morita (CM, Sporting, free), Matt Targett (LB, free), Oscar Zambrano (loan made permanent). Retained: Oli McBurnie, Liam Millar, Regan Slater, Matt Crooks, Yu Hirakawa, Ryan Giles. Joe Gelhardt (15 goals on loan) — **at Hull, confirmed 21 Aug by the Guardian's preview; permanent-or-loan still unconfirmed.**
 
 **Out:** Ivor Pandur (GK, Rangers, ~£7m).
 
@@ -1507,7 +1507,7 @@ is partly a list of who played the weakest opposition.
 | Cody Drameh | Hamstring, 2-3 weeks | Doubt |
 | Charlie Hughes | Groin — **stated to miss the Man Utd game**, which is GW1 | No |
 | Hidemasa Morita | Back on grass but "some way from full fitness" | Doubt |
-| John Egan | Did not travel, ankle | Doubt |
+| John Egan | Did not travel, ankle — **started the final friendly v Nice (official round-up)** | **Cleared 21 Aug** |
 | Enis Destan | Did not travel, knee — reported MCL issue | Doubt |
 | Paddy McNair | Injured that day, behind the knee | Doubt |
 | Liam Millar | Knee knock, described as a dead leg | Likely |
@@ -1516,7 +1516,7 @@ is partly a list of who played the weakest opposition.
 **Butland is the one that moves money.** He arrived as the first-choice goalkeeper and Ivor Pandur was sold to the same club he came from, so Hull open the season with a keeper this file has never named. Do not buy a Hull goalkeeper on the strength of the In list above.
 
 **FPL picks:**
-- Value: Oli McBurnie (~£5.5m), main striker and penalty taker, the clear pick here. Joe Gelhardt (~£5.0m) if his stay is confirmed.
+- Value: Oli McBurnie (~£5.5m), main striker and penalty taker, the clear pick here. Joe Gelhardt (~£5.0m) — **his presence is confirmed (21 Aug); the terms are not, so this is a pick with a squad-status caveat rather than a conditional one.**
 - Premium / captaincy: None obvious.
 - Differentials: Liam Millar (~£5.0m, led the squad for expected assists) and Yu Hirakawa, both likely well under 10% owned. **Millar picked up a knock on 8 Aug described as a dead leg — likely nothing, but he is the differential this block leans on, so confirm he starts before buying.**
 - Set-piece & penalties: Pens unresolved — **this line said "Crooks primary, McBurnie second" until 13 Aug while the value bullet above called McBurnie "main striker and penalty taker, the clear pick here".** An outside projection names McBurnie alone. Two of our own three signals and the outside one point the same way, but the line below them said otherwise, so it is recorded as undecided until someone takes one. Watch GW1. Corners Regan Slater and Ryan Giles. Free-kicks Giles.
@@ -1547,7 +1547,7 @@ is partly a list of who played the weakest opposition.
 - The window is open until roughly 1 September 2026. Late deals, especially Everton's striker hunt, Forest's Kalimuendo pursuit, Palace's Mateta situation and Brighton's Baleba links, can still change squads.
 - FPL prices marked "est." are estimates. Confirm every price against the official price reveal and the FPL API at launch.
 - Penalty and set-piece order is the most fluid data here because of the ten managerial changes. Re-check duties after pre-season friendlies and GW1.
-- Source conflicts to verify: Garnacho's origin (Chelsea loan best supported) and Joe Gelhardt's Hull status. **Hull's GW1 venue left this list on 13 Aug** — a published opening-weekend card has Hull at HOME to Man Utd at the MKM Stadium on Sat 22 Aug, agreeing with our register.
+- Source conflicts to verify: Garnacho's origin (Chelsea loan best supported). **Joe Gelhardt's PRESENCE at Hull closed 21 Aug** — the Guardian's preview names him among eleven players who have arrived. **Permanent or loan stays open:** the same sentence reads as new business without using the word permanent, and half a flag closed is recorded as half a flag closed. **Hull's GW1 venue left this list on 13 Aug** — a published opening-weekend card has Hull at HOME to Man Utd at the MKM Stadium on Sat 22 Aug, agreeing with our register.
 - ~~The 21 August start date has not been confirmed against the FPL API.~~ **Resolved 13 August 2026.** The API gives the GW1 deadline as `2026-08-21T17:30:00Z` — 18:30 BST on Friday 21 August. Four sources agreed on the date beforehand (the Premier League pre-season page, the @BenCrellin planner, the Guardian's Coventry preview and the fixture list), but none of them was the deadline itself, which is the only version of this fact a manager is bound by. Read from the live API by the daily Freshness check, which prints the deadline rather than a countdown so the figure can be quoted rather than inferred.
 - The blank and double gameweeks in the season shape above are a third party's FORECAST, not a schedule. Nothing in the app reads them. A blank exists once a cup round removes named clubs from a named weekend, and those results have not happened.
 - The pre-season role watch above is unconfirmed evidence, not duty. Nothing in it has been written into a club's set-piece line.

@@ -58,6 +58,15 @@
     ]
   },
 
+  "absencesResolvedSince": {
+    "why": "A capture records what was true when it was taken. When a later edit adds one of these names, the entry is annotated rather than deleted — deleting it would erase the evidence that the gap existed, which is the only thing that makes the list worth keeping.",
+    "resolved": [
+      { "name": "Mateo Kovacic", "on": "2026-08-21",
+        "what": "Added to Manchester City's value line. The block had named no City central midfielder at all. No price and no projection was attached — the gap is filled by naming him, not by estimating him.",
+        "sources": "this capture, plus our own Community Shield XI in pl-community-shield-lazyfpl.json which records him starting" }
+    ]
+  },
+
   "whatOurRegisterDOESNOTHOLD": {
     "method": "Zero occurrences, checked with word boundaries in both register files — not a lookup that failed to attribute them.",
     "absent": ["Rodri", "Mateo Kovacic", "Vitor Reis", "Marcus Rashford", "Matthijs De Ligt", "Myles Lewis-Skelly", "Shea Lacey"],

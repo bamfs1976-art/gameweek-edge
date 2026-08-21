@@ -114,6 +114,15 @@
       "recordedAs": "an unresolved difference in emphasis, with our line left standing and its 'unconfirmed for GW1' caveat now doing more work than it was"
     },
 
+    "absencesResolvedSince": {
+      "why": "Annotated rather than deleted, so the evidence the gap existed survives the fix.",
+      "resolved": [
+        { "name": "Guglielmo Vicario", "on": "2026-08-21",
+          "what": "His departure is now recorded on Tottenham's value line, where our Kinsky pick sits. The pick's own justification had been missing from our file, while our In list carried Dubravka on a free — the thing that would unseat a cheap enabler.",
+          "sources": "this capture" }
+      ]
+    },
+
     "playersTheseArticlesNameThatOurRegisterDoesNOTHold": {
       "method": "Word-boundary match against both editions of the register, not substring. The substring form is what once matched 'Trafford' inside 'Old Trafford' and reported a stadium as a player.",
       "sunderland": ["Chris Rigg", "Robin Roefs", "Noah Sadiki", "Tom Proctor"],

@@ -705,8 +705,14 @@ console.log('\n• briefing: the outside ranking is quarantined from the registe
   /* No fixture may be hand-copied out of the grid. */
   const teams = teamsFromHtml(html);
   const stated = teams.reduce((n, t) => n + (t.fx || []).length, 0);
-  ok(stated === 79, 'the document still states 79 opening fixtures — a hand-copied cell, or ' +
-    '--fix filling the gaps, would move this and both are worth looking at (' + stated + ')');
+  /* 79 until 21 Aug, when the two GW4 Manchester rows were added — the derby,
+     from four sources with three on the venue, into two blocks that held no
+     GW4 row at all. The tripwire did its job: it moved the moment the count
+     changed, which is the only way a hand-copied cell gets noticed. Moving
+     the number is only allowed alongside the reason. */
+  ok(stated === 81, 'the document states 81 opening fixtures — 79 plus the two GW4 ' +
+    'Manchester rows added 21 Aug. A hand-copied cell, or --fix filling the gaps, ' +
+    'would move this again and both are worth looking at (' + stated + ')');
   ok(/no fixture below is rewritten from it|Nothing in the\s*\n?fixture blocks below is rewritten from this image/i.test(md),
     'and the markdown still promises no fixture comes from the image');
 }

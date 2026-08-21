@@ -236,8 +236,26 @@ const che4 = at('Chelsea', 4);
 ok('Chelsea host Hull in GW4, as he says', firm(che4) && che4.opp === 'Hull City' && che4.home === true);
 ok('every GW1-5 row in the register agrees with its own reciprocal',
   [1,2,3,4,5].every((gw) => [...new Set(fxRows.map((r) => r.club))].every((c) => !at(c, gw)?.DISAGREE)));
-ok('the register STILL holds no GW4 row for Man City — the gap is real, not stale',
-  !at('Manchester City', 4));
+/* This asserted the OPPOSITE until 21 Aug: that the register still held no
+   GW4 row for Manchester City, so that the recorded gap could not go stale
+   while the app kept serving nothing. The row was added on 21 Aug against
+   four sources, three of them naming the venue, so the requirement inverts —
+   and the reciprocal now has to hold, because half a derby is worse than
+   none. */
+const mci4 = at('Manchester City', 4), mun4 = at('Manchester United', 4);
+ok('the GW4 derby row exists for Manchester City now — added 21 Aug', !!mci4);
+ok('and for Manchester United', !!mun4);
+ok('they name each other', /Man Utd|Manchester United/.test(mci4?.opp || '')
+  && /Man City|Manchester City/.test(mun4?.opp || ''));
+ok('with reciprocal venues — City away, United home',
+  mci4?.home === false && mun4?.home === true);
+ok('and neither row contradicts its own reciprocal',
+  !mci4?.DISAGREE && !mun4?.DISAGREE);
+/* Read here rather than using the MD binding, which is declared 350 lines
+   below this and is in its temporal dead zone at this point. */
+ok('the addition cites the grid that made it the best-supported edit',
+  /FPL Mate's expert-draft grid, a structured fixture table rather than prose/
+    .test(fs.readFileSync(ROOT_MD, 'utf8')));
 ok('the benchmark does not claim the derby is confirmed',
   /corroborated, not confirmed/i.test(JSON.stringify(BAKAR)));
 ok('the Challenge record records the corroboration without changing the picks',
@@ -637,9 +655,14 @@ ok('the capture records it as an owed edit, not an applied one',
 ok('and says why a wrong set-piece duty is worse than a missing name',
   /A departed player holding a set-piece duty is a WRONG ANSWER/.test(gdnS));
 
-/* --- the Gelhardt flag: half closed, and only half --- */
-ok('the register still carries the Gelhardt source-conflict flag',
-  /Joe Gelhardt's Hull status/.test(MD));
+/* --- the Gelhardt flag: half closed, and only half ---
+   This required the flag to still be on the register, so the recorded
+   half-closure could not go stale. Applied 21 Aug, so the requirement
+   inverts — and the half that is NOT closed has to stay visible, which is
+   the whole point of the item. */
+ok('the presence half of the Gelhardt flag is closed in the register',
+  !/Joe Gelhardt's Hull status/.test(MD)
+  && /Gelhardt's PRESENCE at Hull closed 21 Aug/.test(MD));
 ok('the capture settles his presence at Hull', /The flag can close on presence/.test(gdnS));
 ok('and explicitly does NOT settle loan versus permanent',
   /Half a flag closed is recorded as half a flag closed/.test(gdnS));
@@ -890,6 +913,23 @@ ok('nor left on Brighton\'s right-side corner',
 ok('and nobody was promoted into the vacancy to fill the hole',
   /Nobody is promoted in his place/.test(MD) && /nobody is promoted in his place/.test(HTML));
 ok('Egan\'s ankle doubt can come off', /The doubt can come off/.test(scoutS));
+/* Applied 21 Aug. These four assertions exist because the edits were made in
+   a batch that aborted halfway on a bad anchor: the two GW4 rows landed, Egan
+   and Gelhardt did not, and nothing noticed until a mutation run could not
+   find its anchor to break. A half-applied batch is invisible without a
+   check on each half. */
+ok('and it HAS come off in the register', /\*\*Cleared 21 Aug\*\*/.test(MD)
+  && !/\| John Egan \| Did not travel, ankle \| Doubt \|/.test(MD));
+ok('with the reason on the row rather than a bare status change',
+  /started the final friendly v Nice/.test(MD));
+ok('Gelhardt\'s PRESENCE at Hull is closed', /Gelhardt's PRESENCE at Hull closed 21 Aug/.test(MD));
+ok('but the permanent-or-loan half stays open, and says so',
+  /Permanent or loan stays open/.test(MD)
+  && /half a flag closed is recorded as half a flag closed/.test(MD));
+ok('and Garnacho\'s origin is untouched, still on the conflict list',
+  /Garnacho's origin \(Chelsea loan best supported\)/.test(MD));
+ok('Kovacic reached BOTH editions, not just one',
+  /Mateo Kovacic/.test(MD) && /Mateo Kovacic/.test(HTML));
 ok('and both position changes are recorded',
   /Sessegnon[^"]*MIDFIELDER to DEFENDER/.test(scoutS) && /Dorgu[^"]*DEFENDER to MIDFIELDER/.test(scoutS));
 
@@ -1060,12 +1100,24 @@ ok('four further items are separated from transfers',
 
 /* --- absence measured, not assumed --- */
 const gap = GDN2.whatOurRegisterDOESNOTHOLD.absent;
-ok('every name claimed absent really is absent, on word boundaries',
-  gap.filter(heldByRegister).length === 0);
+const gapResolved = new Set((GDN2.absencesResolvedSince?.resolved || []).map((r) => r.name));
+const stillGap = gap.filter((n) => !gapResolved.has(n));
+ok('every name still claimed absent really is absent, on word boundaries',
+  stillGap.filter(heldByRegister).length === 0);
 ok('and the substring test that got this wrong is not used',
-  gap.some((n) => MD.includes(n)) && gap.filter(heldByRegister).length === 0);
-ok('and Kovacic is absent despite being in our own Community Shield XI',
-  gap.includes('Mateo Kovacic') && SHIELD_XI.theMatch.manCityXI.includes('Kovacic'));
+  stillGap.some((n) => MD.includes(n)) && stillGap.filter(heldByRegister).length === 0);
+/* Kovacic used to be asserted ABSENT — a starting City midfielder our own
+   Community Shield capture recorded and our register did not name. Added
+   21 Aug, so the assertion inverts: he is in the register, the capture
+   records when and why, and the Shield XI that made the gap visible is
+   still the thing that made it visible. */
+ok('Kovacic was on that list and has since been added to the register',
+  gap.includes('Mateo Kovacic') && gapResolved.has('Mateo Kovacic')
+  && heldByRegister('Mateo Kovacic'));
+ok('the Shield XI that exposed the gap still records him starting',
+  SHIELD_XI.theMatch.manCityXI.includes('Kovacic'));
+ok('and he was added without an invented price or projection',
+  /No price and no projection is attached/.test(MD));
 
 /* --- the World Cup consistency check across six previews --- */
 ok('eight passing tournament references across six previews are assembled',
@@ -1325,8 +1377,17 @@ const g3gaps = [].concat(
   GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.sunderland,
   GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.tottenham,
   GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.offField);
-ok('every name claimed absent really is absent from both editions',
-  g3gaps.length >= 15 && g3gaps.filter(heldByRegister).length === 0);
+const g3resolved = new Set(
+  (GDN3.verifiedAgainstOurRegister.absencesResolvedSince?.resolved || []).map((r) => r.name));
+const g3still = g3gaps.filter((n) => !g3resolved.has(n));
+ok('every name still claimed absent really is absent from both editions',
+  g3gaps.length >= 15 && g3still.filter(heldByRegister).length === 0);
+ok('Vicario was on that list and has since been added, with the reason recorded',
+  g3resolved.has('Guglielmo Vicario') && heldByRegister('Guglielmo Vicario'));
+ok('and the register now carries why the Kinsky pick works',
+  /Guglielmo Vicario has left, and the Guardian names Kinsky first choice/.test(MD));
+ok('while still flagging the Dubravka risk our own In list creates',
+  /a veteran keeper is what unseats a cheap enabler/.test(MD));
 /* A gap list that could not have been wrong is not a check. This asserts the
    list is non-trivial AND that the register genuinely holds the players the
    same previews name that are NOT on it. */

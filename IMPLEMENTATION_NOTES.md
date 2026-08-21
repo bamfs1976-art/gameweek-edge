@@ -309,6 +309,66 @@ absence, which would move our Spurs picks off Solanke.
 Guards: 32 checks in `dev/test-challenge-picks.mjs` (473 total), mutation-tested
 16/16 against both the capture's claims and the register's facts.
 
+## Owed register edits — WORKED THROUGH (21 Aug 2026)
+
+The list below this section had been accumulating since 18 Aug while the app
+served the answers it describes. Applied on 21 Aug, highest harm first —
+wrong answers before missing names:
+
+| Edit | Was | Now |
+|---|---|---|
+| **Minteh** | Value pick, captaincy-adjacent option, on Brighton's right corner | All three withdrawn; out 2–3 months per the official round-up |
+| **Lukic** | Taking half of Fulham's corners, in neither club's transfer list | Off the corners, on Ipswich's In list AND Fulham's Out list |
+| **Newcastle manager** | "Eddie Howe continues", both editions, a paragraph built on it | Matthias Jaissle, both editions, and Newcastle added to the new-bosses list |
+| **Mateta** | ~£7.5m estimate | £6.5m published — closes the eight-row table |
+| **Igor Thiago** | ~£7.0–7.5m estimate | £8.0m published |
+| **GW4 Manchester rows** | No GW4 row for either club | Derby added to both, reciprocal venues |
+| **Egan** | "Did not travel, ankle — Doubt" | Cleared; started the final friendly |
+| **Gelhardt** | Whole source-conflict flag | Presence closed; permanent-or-loan still open |
+| **Kovacic** | No City central midfielder named at all | Named, with no invented price |
+| **Vicario** | Absent, while our Kinsky pick rested on his exit | Recorded, with the Dubravka risk flagged beside it |
+
+**Two things worth keeping from how it went.**
+
+*The owed guards earned their keep.* Roughly twenty checks asserted each error
+was still present, so each failed the moment it was fixed and none could be
+half-done. Two attempts were caught mid-edit doing exactly that: a correction
+note that quoted "Eddie Howe continues" verbatim, and an earlier commit that
+slipped the successor's name into a set-piece aside while the manager line was
+still owed. The briefing's own one-sided-transfer check then caught Lukic
+being added to Ipswich's In list without reaching Fulham's Out list.
+
+*A batch aborted halfway and nothing noticed.* The GW4/Egan/Gelhardt edits
+went in as one script; it failed on a bad HTML anchor after the two GW4 rows
+had been written, so Egan and Gelhardt were silently skipped. It surfaced only
+because a later mutation run could not find an anchor to break — the missing
+edit was invisible, the missing *guard* was not. Each of the four now has its
+own assertion.
+
+*A parser bug, not a document bug.* `departedStillPicked` treated punctuation
+inside brackets as a sentence boundary, so "Mateta (£6.5m, published; our
+estimate said ~£7.5m) is the pick if he stays" was cut between the name and
+its cue and reported as a fault. The register was reworded twice to suit the
+checker before it was clear the checker was wrong. It is bracket-aware now.
+
+**Still open, and not applied:**
+
+- **The 56 corroborated prices** the register does not hold. `npm run prices`
+  lists them; they are additions rather than corrections, and adding fifty-six
+  price lines by hand is a different kind of job from fixing ten wrong ones.
+- **Two position changes** — Sessegnon MID→DEF, Dorgu DEF→MID. The register
+  names neither player anywhere, so there is no line to correct; they belong
+  with the price additions above.
+- **Ipswich's In list holds three of ten arrivals.**
+- Everything in the two conflict sections below, which need a source rather
+  than an edit.
+- The gaps from previews 17–20: **Diomande, Livramento, Hornicek, Romero,
+  Roefs, Osula** and the smaller names. Livramento is the one that matters —
+  an injured first-choice full-back our file has never mentioned.
+
+Mutation-tested 17/17 against the applied edits: revert any one of them and
+the suite goes red.
+
 ## Register edits owed, with a source attached (18 Aug 2026)
 
 The official FPL Scout pre-season round-up (all 20 clubs, 172 stated prices)
