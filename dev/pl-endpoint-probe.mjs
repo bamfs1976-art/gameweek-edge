@@ -245,6 +245,37 @@ function describe(r) {
   } else {
     console.log('  So none of them is gated on looking like the PL front end.');
   }
+  /* DECISIVE TEST, and the reason the previous run's CORS numbers could not
+     be read as they stood. Every Pulselive endpoint answered
+     Access-Control-Allow-Origin: https://www.premierleague.com — but that
+     probe SENT Origin: https://www.premierleague.com, so the value is equally
+     consistent with a fixed allowlist and with a server that echoes whatever
+     origin it is given. Those have opposite consequences for us. The only way
+     to tell them apart is to ask from OUR origin and see what comes back. */
+  console.log('\n=== CORS, ASKED FROM OUR OWN ORIGIN ===');
+  console.log('(the previous run sent the PL origin and got it echoed back, which');
+  console.log(' proves nothing on its own)');
+  for (const u of usable) {
+    try {
+      const r = await fetch(u.url, { headers: {
+        'User-Agent': UA, Accept: 'application/json',
+        Origin: 'https://gameweekedge.co.uk', Referer: 'https://gameweekedge.co.uk/' } });
+      const a2 = r.headers.get('access-control-allow-origin');
+      const verdict = !a2 ? 'NO header — browser blocked'
+        : a2 === '*' ? 'wildcard — any browser may call it'
+        : /gameweekedge/.test(a2) ? 'ECHOES our origin — browser may call it'
+        : 'fixed to ' + a2 + ' — our browser is BLOCKED, needs a proxy';
+      console.log(`  ${String(r.status).padEnd(4)} ${verdict}\n       ${short(u.url)}`);
+      u.browserCallable = a2 === '*' || /gameweekedge/.test(a2 || '');
+    } catch (e) { console.log('  ERR  ' + (e && e.message) + '\n       ' + short(u.url)); }
+    await sleep(400);
+  }
+  const browsable = usable.filter((s) => s.browserCallable);
+  console.log(`\n${browsable.length} of ${usable.length} are callable from a browser on our domain.`);
+  console.log(`${usable.length - browsable.length} would need a Netlify function in front,`);
+  console.log('  which is what fpl.js and football-data.js already are, so it is a');
+  console.log('  known shape rather than a new one.');
+
   const cors = usable.filter((s) => s.acao);
   console.log(`\n${cors.length} of ${usable.length} send an Access-Control-Allow-Origin header.`);
   console.log('  This, not the Origin request header, is what decides whether the');
