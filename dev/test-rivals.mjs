@@ -230,6 +230,41 @@ const allTwo = () => { const m = {}; for (let i = 0; i < 15; i++) m[100 + i] = 2
   eq(rivalLivePts({ elements: [{ id: 7, stats: {} }] }, 7), null, 'a row with no total_points is null, not zero');
 }
 
+/* ── the ring versus the count ─────────────────────────────────────
+   A screenshot of the owner's OWN team showed four bench players ringed as
+   "theirs only" — players he certainly owns. The ring was comparing the whole
+   squad against my ELEVEN, so anyone on a bench was a differential by
+   construction. Two questions, two sets: the ring asks whether I own him at
+   all, the header asks how much of their XI is in mine. */
+{
+  const mineXi = new Set([100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110]);
+  const mineAll = new Set([...mineXi, 111, 112, 113, 114]);
+  const r = rivalSquadRows(mkPicks(), mkLive(allTwo()), mineXi, mineAll);
+  ok(r.bench.every((x) => x.shared === true),
+    'bench players I own are ringed as owned, not as differentials');
+  eq(r.shared, 11, 'and the header still counts XI against XI');
+  eq(r.differentials, 0, 'so an identical XI has no differentials');
+}
+{
+  /* A player of theirs who is in my squad but on my bench: I own him, so the
+     ring says so, but he is not in my XI, so he is still a differential in
+     the header's sense. Both statements are true at once. */
+  const mineXi = new Set([200]);
+  const mineAll = new Set([200, 100]);
+  const r = rivalSquadRows(mkPicks(), mkLive(allTwo()), mineXi, mineAll);
+  ok(r.xi[0].shared === true, 'owned-but-benched still rings as owned');
+  eq(r.shared, 0, 'and does not count toward the shared XI');
+  eq(r.differentials, 11, 'so he is a differential by the header\u2019s measure');
+}
+{
+  /* Omitting the fourth argument must behave exactly as before — one set for
+     both questions — so nothing that calls it the old way silently changes. */
+  const one = new Set([100, 101]);
+  const r = rivalSquadRows(mkPicks(), mkLive(allTwo()), one);
+  ok(r.xi[0].shared === true, 'with no squad set, the XI set answers both');
+  eq(r.shared, 2, 'and the count is unchanged');
+}
+
 /* ── shared versus differential ───────────────────────────────────── */
 {
   const mine = new Set([100, 101, 102]);

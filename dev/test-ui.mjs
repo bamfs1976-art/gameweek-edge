@@ -1019,7 +1019,11 @@ section('a rival opens, on a pitch, marked against my own XI');
      read as unknown, not as a blank gameweek. */
   ok(res.dashes === 1, 'the player missing from the live feed shows a dash, got ' + res.dashes);
   ok(res.zeroes === 0, 'and nothing invents a zero, got ' + res.zeroes);
-  ok(/shared/.test(res.head), 'the header states the shared count');
+  ok(/of their XI in yours/.test(res.head), 'the header states how much of their XI is in mine');
+  /* The count used to clip to "0 different…" in a modal heading, because
+     .dl-row .dl-sub is nowrap+ellipsis for dense list rows. */
+  ok(/differential/.test(res.head) && !/different\u2026|different\.\.\./.test(res.head),
+    'and prints the word "differentials" in full rather than clipping it');
   ok(rErrors.length === 0, 'the rival card threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
 
   /* Before the deadline FPL 404s picks. That is not an error and must not be
