@@ -2086,6 +2086,7 @@ body{font-size:14px;line-height:1.35}
    figures already use, and on a green pitch two tints are indistinguishable
    at this size. Colour is never the only signal — the key below the pitch
    names both states in words. */
+.rv-wrap{white-space:normal;overflow:visible;text-overflow:clip}
 .rv-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 .rv-open:hover .dl-nm{text-decoration:underline}
 .rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
@@ -11764,8 +11765,17 @@ function rivalGwTotal(entryHistory,squad,finished){
   return {value:(squad&&squad.live)||0,label:'Live total, summed as the gameweek runs',live:true};
 }
 
-function rivalSquadRows(picks,live,myXi){
+function rivalSquadRows(picks,live,myXi,myAll){
   const mine=myXi instanceof Set?myXi:new Set(myXi||[]);
+  /* Two different questions, and they were being answered with one set.
+     The RING asks "do I own this player at all" — so it reads the whole
+     fifteen. The header count asks "how much of their XI is in my XI",
+     which is what the rivals list has always said and must keep saying.
+
+     With only the XI to compare against, every bench player came back a
+     differential — including on your OWN team, where four players you
+     certainly own were ringed as theirs-only. */
+  const owned=myAll?(myAll instanceof Set?myAll:new Set(myAll)):mine;
   const list=((picks&&picks.picks)||[]).slice().sort((a,c)=>a.position-c.position);
   const rows=list.map(p=>{
     const base=rivalLivePts(live,p.element);
@@ -11773,7 +11783,8 @@ function rivalSquadRows(picks,live,myXi){
     return {id:p.element,position:p.position,mult,
       captain:!!p.is_captain,vice:!!p.is_vice_captain,
       base,pts:base==null?null:base*mult,
-      shared:mine.has(p.element)};
+      shared:owned.has(p.element),
+      sharedXi:mine.has(p.element)};
   });
   const xi=rows.filter(r=>r.position<=11);
   const bench=rows.filter(r=>r.position>11);
@@ -11786,8 +11797,8 @@ function rivalSquadRows(picks,live,myXi){
   const counting=rows.filter(r=>r.mult>0);
   const known=counting.filter(r=>r.pts!=null);
   return {xi,bench,
-    shared:xi.filter(r=>r.shared).length,
-    differentials:xi.filter(r=>!r.shared).length,
+    shared:xi.filter(r=>r.sharedXi).length,
+    differentials:xi.filter(r=>!r.sharedXi).length,
     /* Sums only the rows the feed actually reported, and says how many that
        was. A total over eight of eleven players is not this rival's score,
        and the caller has to be able to tell. */
@@ -11888,8 +11899,8 @@ async function hydrateRivals(host){
    every player is marked shared or differential, because the question a rival
    card is opened to answer is not "what did they score" but "what do they
    have that I do not". */
-function rivalDetailHTML(b,entry,picks,live,mine,gw,history){
-  const S=rivalSquadRows(picks,live,mine);
+function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
+  const S=rivalSquadRows(picks,live,mine,mineAll);
   const C=rivalChipSummary(history,picks);
   const els=b.els||{};
   const eh=(picks&&picks.entry_history)||{};
@@ -11924,8 +11935,11 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history){
       ' starters so far — the rest have no row in the feed yet, so they show as —.</div>':'';
   const head='<div class="dl-row"><span class="dl-grow">'+
       '<span class="dl-nm" id="rival-title">'+esc(entry.name||('Entry '+entry.id))+'</span>'+
-      '<span class="dl-sub">'+esc(((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim())+
-      ' · GW'+gw+' · '+S.shared+'/11 shared, '+S.differentials+' differential'+(S.differentials===1?'':'s')+'</span></span>'+
+      /* rv-wrap because .dl-row .dl-sub is nowrap+ellipsis for dense list
+         rows, and this is a modal heading: it clipped to "0 different…",
+         which reads as a truncated word rather than a number. */
+      '<span class="dl-sub rv-wrap">'+esc(((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim())+
+      ' · GW'+gw+' · '+S.shared+'/11 of their XI in yours, '+S.differentials+' differential'+(S.differentials===1?'':'s')+'</span></span>'+
       '<span class="dl-col" id="rival-total">'+T.value+'</span></div>';
   const meta='<div class="dl-sub" style="margin-top:2px">'+
     T.label+
@@ -11946,19 +11960,29 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history){
       '<div class="dl-sub" style="margin-top:6px">What they have spent. Chips remaining are not shown —'+
       ' the two-half rules make that a calculation we have not verified.</div>'
     :'<div class="dl-sub" style="margin-top:12px">No chips played yet this season.</div>';
-  return '<div class="modal-head"><div class="dl">'+head+'</div>'+meta+activeBadge+partial+'</div>'+
+  /* When the card is opened from a league table we already know what FPL's
+     own standings say this manager scored. Ours is summed from the live feed
+     and theirs is their accounting; the two run at different cadences and can
+     differ by several points mid-gameweek. Showing one of them silently, six
+     inches from a table showing the other, reads as a bug in whichever the
+     reader trusts less. So when they disagree, both appear, each named. */
+  const disagree=(typeof fplTotal==='number'&&T.live&&fplTotal!==T.value)
+    ?'<div class="dl-sub" id="rival-fpl-note" style="margin-top:4px">FPL\u2019s own standings currently read <b>'+fplTotal+
+      '</b> for this gameweek. Live feeds and FPL\u2019s totals update on different clocks, so the two'+
+      ' can disagree while a gameweek is running.</div>':'';
+  return '<div class="modal-head"><div class="dl">'+head+'</div>'+meta+activeBadge+partial+disagree+'</div>'+
     pitch+
     '<div class="card-title" style="margin-top:10px">Bench</div>'+bench+
     chipHist+
     '<div class="dl-sub" style="margin-top:10px">'+
-      '<span class="rv-key rv-shared"></span> you own too &nbsp; '+
-      '<span class="rv-key rv-diff"></span> theirs only</div>'+
+      '<span class="rv-key rv-shared"></span> in your squad &nbsp; '+
+      '<span class="rv-key rv-diff"></span> not in your squad</div>'+
     '<div class="modal-row"><button class="btn btn-ghost" data-rival-close>Close</button></div>';
 }
 
 function closeRival(){const m=document.getElementById('rival-modal');if(m)m.classList.remove('show');}
 
-async function openRival(rid){
+async function openRival(rid,fplTotal){
   const m=document.getElementById('rival-modal'),body=document.getElementById('rival-body');
   if(!m||!body)return;
   body.innerHTML='<div style="padding:6px">'+skel(5)+'</div>';
@@ -11984,11 +12008,13 @@ async function openRival(rid){
     const [live,history]=await Promise.all([
       loadLive(gw).catch(()=>null),
       loadHistory(rid).catch(()=>null)]);
-    let mine=new Set();
+    let mine=new Set(),mineAll=new Set();
     const mid=getMid();
     if(mid){try{const mp=await loadPicks(mid,gw);
-      mine=new Set(mp.picks.filter(p=>p.position<=11).map(p=>p.element));}catch(_){}}
-    body.innerHTML=rivalDetailHTML(b,entry,picks,live,mine,gw,history);
+      mine=new Set(mp.picks.filter(p=>p.position<=11).map(p=>p.element));
+      mineAll=new Set(mp.picks.map(p=>p.element));}catch(_){}}
+    body.innerHTML=rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,
+      typeof fplTotal==='number'?fplTotal:null);
   }catch(_){
     body.innerHTML='<p class="dl-sub" style="padding:8px">Couldn’t load that team.</p>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-rival-close>Close</button></div>';
@@ -15519,13 +15545,13 @@ async function renderLeagueStandings(host,leagueId,mid,type){
     const me=r.entry===meId;
     const mv=(r.last_rank&&r.rank)?r.last_rank-r.rank:0;
     if(h2h)return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
-      '<span class="dl-grow"><button class="rv-open" data-rival="'+esc(r.entry)+'" aria-label="View '+esc(r.entry_name)+'\u2019s team">'+
+      '<span class="dl-grow"><button class="rv-open" data-rival="'+esc(r.entry)+'" data-gwtotal="'+esc(r.event_total==null?'':r.event_total)+'" aria-label="View '+esc(r.entry_name)+'\u2019s team">'+
       '<span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
       '<span class="dl-sub">'+esc(r.player_name)+' · '+(r.matches_won||0)+'-'+(r.matches_drawn||0)+'-'+(r.matches_lost||0)+
       ' · '+fmtNum(r.points_for)+' pts for'+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
     return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
-      '<span class="dl-grow"><button class="rv-open" data-rival="'+esc(r.entry)+'" aria-label="View '+esc(r.entry_name)+'\u2019s team">'+
+      '<span class="dl-grow"><button class="rv-open" data-rival="'+esc(r.entry)+'" data-gwtotal="'+esc(r.event_total==null?'':r.event_total)+'" aria-label="View '+esc(r.entry_name)+'\u2019s team">'+
       '<span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
       '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
@@ -15558,7 +15584,8 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      every page change and pagination would otherwise leave dead buttons. */
   host.addEventListener('click',ev=>{
     const btn=ev.target.closest('[data-rival]');
-    if(btn)openRival(btn.dataset.rival);
+    if(btn)openRival(btn.dataset.rival,
+      btn.dataset.gwtotal===''||btn.dataset.gwtotal==null?undefined:Number(btn.dataset.gwtotal));
   });
 }
 
