@@ -114,8 +114,8 @@ policy; the second is the project's standing rule.
 
 | Candidate | Result | CORS from our origin | Terms |
 |---|---|---|---|
-| ~~Open-Meteo forecast~~ | 200 | wildcard | **FREE TIER IS NON-COMMERCIAL ONLY — see below** |
-| ~~Open-Meteo archive~~ | 200 | wildcard | **as above** |
+| ~~Open-Meteo forecast~~ | 200 | wildcard | free tier is **non-commercial only** — and weather is out of scope; **no longer probed** |
+| ~~Open-Meteo archive~~ | 200 | wildcard | as above |
 | REST Countries v3.1 | **200 with an error envelope** — *"This API version has been deprecated"* | wildcard | no licence wording matched |
 | Wikidata entity | 200 `{entities}` | wildcard | CC0 wording found |
 | Club Elo | **unreachable** — 15s timeout on http, `fetch failed` on https | — | terms page never answered |
@@ -149,11 +149,29 @@ a paragraph that also contains the inconvenient one.
 Open-Meteo sells a commercial tier. Taking it would break the project's
 standing rule against paid APIs, so it is not a decision this file makes.
 
-**Which leaves the weather gap open.** `grep -riE
-'weather|rain|wind|temperature'` across `index.html` and `netlify/functions/`
-still returns 0, and nothing surveyed can currently fill it. A weather source
-with commercially-usable free terms has **not been probed** and may exist;
-absence from this survey means not asked.
+### Weather is out of scope — decision, 21 August 2026
+
+Closed by the site's owner, and closed on the subject rather than on the
+vendor. Open-Meteo's non-commercial restriction would have ended that one
+source; the decision goes further, so a weather API with friendlier terms is
+**not wanted either** and looking for one is not a pending task.
+
+`grep -riE 'weather|rain|wind|temperature'` across `index.html` and
+`netlify/functions/` returns 0, and it is meant to stay that way. The gap is
+real and is being declined, which is a different thing from being unfillable.
+
+The two Open-Meteo candidates have been **removed** from
+`dev/open-api-probe.mjs` rather than commented out — the same reasoning that
+deleted the referee probes rather than gating them. A candidate that still
+runs is an invitation, and "200, wildcard CORS" scrolling past a future run
+is exactly the shape of thing somebody picks up and builds on.
+`dev/test-open-api-probe.mjs` now fails if any weather source returns to the
+list, matched on the subject and not just the host, so swapping in a
+different vendor does not slip past. If weather is ever back in scope, that
+check is deleted deliberately.
+
+The measurements above stay as a record of why the call was easy, not as a
+lead to follow.
 
 Everything else on this list either duplicates something we have (Elo via
 FPL-Core-Insights, nationality via football-data) or fills no gap anyone has

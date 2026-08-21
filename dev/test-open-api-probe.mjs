@@ -156,5 +156,17 @@ ok(CANDIDATES.every((c) => c.gap), 'every candidate must state the gap it fills,
 ok(!CANDIDATES.some((c) => /pulselive|premier-league-prod/i.test(c.url)),
   'declined site backends must not reappear in the candidate list');
 
+/* Weather is out of scope by the owner's decision, 21 Aug 2026 — not merely
+   blocked by Open-Meteo's non-commercial terms. So the guard is on the
+   SUBJECT, not just the vendor: swapping in a weather API with friendlier
+   terms would satisfy a host-name check and still be the thing that was
+   declined. A survey candidate that runs is a candidate somebody builds on.
+   If weather is ever back in scope, delete this check deliberately. */
+const weatherish = CANDIDATES.filter((c) =>
+  /open-meteo|openweather|weatherapi|met\.no|meteo|forecast/i.test(c.url + ' ' + c.name) ||
+  /\bweather\b|\brain\b|\bwind\b|\btemperature\b/i.test(c.gap));
+ok(weatherish.length === 0,
+  `weather is out of scope; ${weatherish.map((c) => c.name).join(', ') || 'none'} must not be a candidate`);
+
 console.log(`${checks - fails}/${checks} checks passed`);
 if (fails) process.exit(1);

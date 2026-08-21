@@ -60,19 +60,26 @@ const PACE_MS = Number(process.env.GWE_PACE_MS) || 1200;
 /* `gap` is the honest reason a candidate is here: which measured hole in the
    app it would fill. A candidate with no gap is decoration, and saying so in
    the row is cheaper than discovering it after a proxy is written. */
+/* WEATHER IS OUT OF SCOPE — owner's decision, 21 Aug 2026.
+ *
+ * Open-Meteo's two routes used to head this list, and they measured well:
+ * 200, wildcard CORS, clean payloads. They are gone, and their absence is
+ * deliberate. Two reasons, and the second is the load-bearing one.
+ *
+ * Their free API is non-commercial only ("You may only use the free API
+ * services for non-commercial purposes"), and this site sells subscriptions.
+ * That alone would end it. But the decision here is broader than one vendor:
+ * weather is not a direction this project is taking, so a replacement source
+ * with friendlier terms is not wanted either.
+ *
+ * They are removed rather than commented out for the reason the referee
+ * probes were deleted rather than gated — a candidate that still runs is an
+ * invitation, and "200, wildcard CORS" scrolling past in a future run is
+ * exactly the shape of thing that gets picked up and built. The measurement
+ * survives in docs/data-sources.md, where it is a record rather than a lead,
+ * and dev/test-open-api-probe.mjs fails if either host returns to this list.
+ */
 const CANDIDATES = [
-  {
-    name: 'Open-Meteo forecast',
-    url: 'https://api.open-meteo.com/v1/forecast?latitude=51.55&longitude=-0.11&hourly=temperature_2m,precipitation,wind_speed_10m&forecast_days=3',
-    gap: 'WEATHER — the app has none. grep for weather/rain/wind/temperature in index.html returns 0.',
-    terms: 'https://open-meteo.com/en/terms'
-  },
-  {
-    name: 'Open-Meteo archive',
-    url: 'https://archive-api.open-meteo.com/v1/archive?latitude=51.55&longitude=-0.11&start_date=2026-08-01&end_date=2026-08-07&hourly=precipitation',
-    gap: 'Historical weather, so any weather effect can be BACKTESTED rather than asserted.',
-    terms: 'https://open-meteo.com/en/terms'
-  },
   {
     name: 'REST Countries',
     url: 'https://restcountries.com/v3.1/all?fields=name,cca3,region,subregion',
