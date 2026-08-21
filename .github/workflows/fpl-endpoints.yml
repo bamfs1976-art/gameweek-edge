@@ -15,6 +15,11 @@ name: FPL endpoint probe
 
 on:
   workflow_dispatch:
+    inputs:
+      base:
+        description: 'Site whose /api/fpl proxy to probe (defaults to production)'
+        required: false
+        default: 'https://gameweekedge.co.uk'
 
 permissions:
   contents: read
@@ -27,5 +32,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Probe the FPL API
+      - name: Prove the probe covers the whole allowlist
+        # First, because the report's headline is a coverage count. A probe
+        # that silently skips an endpoint prints the same thing as one that
+        # finds it healthy, and that is how three routes went unchecked.
+        run: node dev/test-fpl-probe-coverage.mjs
+      - name: Probe the FPL API, upstream and through our proxy
+        env:
+          GWE_BASE: ${{ inputs.base || 'https://gameweekedge.co.uk' }}
         run: node dev/fpl-endpoint-probe.mjs

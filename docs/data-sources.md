@@ -84,6 +84,37 @@ it is deliberately not encoded in an exit code.
 absent from the output was *not probed*, which is not the same as not
 existing.
 
+## CORRECTION (21 Aug 2026, evening): FPL's elements DO carry `region`
+
+Earlier in the day this file's neighbouring work stated flatly that FPL
+elements carry 59 fields and none of them is nationality — *"no `nation`, no
+`country`, no `region`, no `birth`"* — and that claim was used to justify
+going looking for a nationality source at all.
+
+**It was measured against `dev/fixtures/fpl-mock-bootstrap.json`, not against
+the live API.** The mock carries 59 element fields. The live bootstrap,
+probed from a runner on 21 Aug 2026, carries **109**, and among the 37 the app
+never mentions are **`region`** and **`birth_date`**.
+
+That is the house failure in its purest form: measuring the instrument and
+reporting it as the world. A committed fixture is a snapshot of one moment,
+and the confident sentence "FPL does not have this" needed the live feed to
+support it.
+
+What this does and does not change:
+
+- It does **not** overturn the Pulselive decision. That rested on more than
+  one field — football-data supplies nationality on every player asked, has
+  published terms and a key we already hold, and the kick-off `status` finding
+  stands untouched.
+- It **does** mean a cheaper option was never evaluated. If `region` encodes
+  what its name suggests, the nationality input may have been sitting in a
+  feed the app already downloads on every load.
+- It is **not** yet established what `region` contains. The probe reports the
+  field's existence, not its values. Reading "it's nationality" off the name
+  would repeat the original mistake in the opposite direction — that is the
+  next measurement, not a conclusion.
+
 ## What the source we already have turned out to carry
 
 Measured 21 Aug 2026 by `dev/probe-squad-nationality.mjs`, run through our own
