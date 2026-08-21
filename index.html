@@ -11967,7 +11967,7 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
      inches from a table showing the other, reads as a bug in whichever the
      reader trusts less. So when they disagree, both appear, each named. */
   const disagree=(typeof fplTotal==='number'&&T.live&&fplTotal!==T.value)
-    ?'<div class="dl-sub" style="margin-top:4px">FPL\u2019s own standings currently read <b>'+fplTotal+
+    ?'<div class="dl-sub" id="rival-fpl-note" style="margin-top:4px">FPL\u2019s own standings currently read <b>'+fplTotal+
       '</b> for this gameweek. Live feeds and FPL\u2019s totals update on different clocks, so the two'+
       ' can disagree while a gameweek is running.</div>':'';
   return '<div class="modal-head"><div class="dl">'+head+'</div>'+meta+activeBadge+partial+disagree+'</div>'+
