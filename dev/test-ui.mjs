@@ -884,20 +884,90 @@ section('a rival opens, on a pitch, marked against my own XI');
   const rp = await browser.newPage();
   const rErrors = [];
   rp.on('pageerror', (e) => rErrors.push(e.message));
+  /* ge-tier MUST be seeded. Rivals is a Pro panel — "Rival intelligence" is
+     one of the three listed PRO_BENEFITS — so a free tier gets the real panel
+     rendered blurred and `inert` behind the unlock strip. Without this line
+     the harness was testing the LOCKED panel and calling it working, because
+     element.click() fires through `inert` and `pointer-events:none` exactly
+     as if neither existed. The locked state is asserted separately below. */
   await rp.addInitScript(() => { try {
     localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-tier', 'pro');
     localStorage.setItem('ge-rivals', JSON.stringify(['7654321']));
   } catch (_) {} });
   await rp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
   await rp.waitForTimeout(1200);
 
+  /* A REAL click, at real coordinates, through Playwright's actionability
+     checks — not element.click(). The synthetic version fires the handler
+     regardless of whether anything is on top of the button, whether an
+     ancestor is inert, or whether pointer-events is off, so it can pass on a
+     button no human can press. That is exactly the gap that let "clicking a
+     rival does nothing" ship green. */
+  /* FIRST, the state the owner actually reported from: signed out. Rivals is
+     a paid panel and Pro rides on the account — renderPage's own comment
+     says "no session means no Pro on this device" — so the real panel is
+     rendered blurred and inert behind the unlock strip, and NOTHING in it is
+     clickable. That is correct, and it is pinned here so nobody "fixes"
+     a future report of this by deleting the inert attribute. */
+  await rp.evaluate(() => { try { openPanel('rivals'); } catch (_) {} });
+  await rp.waitForTimeout(1800);
+  const locked = await rp.evaluate(() => {
+    const b = document.querySelector('[data-rival]');
+    if (!b) return { err: 'no rival row rendered even locked' };
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    let n = b, inertAncestor = null;
+    while (n) { if (n.inert) { inertAncestor = n.className; break; } n = n.parentElement; }
+    return { inertAncestor, topEl: top ? top.className : null,
+      strip: !!document.querySelector('.pro-lockstrip') };
+  });
+  ok(!locked.err, 'the locked panel still renders the real rows (' + (locked.err || '') + ')');
+  ok(/pro-blur/.test(locked.inertAncestor || ''), 'signed out, the rivals panel is inert');
+  ok(locked.strip === true, 'and shows the unlock strip that explains why');
+  ok(/pro-lockstrip/.test(locked.topEl || ''),
+    'so a click lands on the unlock strip, not the rival — this is the reported behaviour');
+
+  /* NOW unlock it. The tier is set after load rather than seeded, because the
+     auth check strips a stored 'pro' when there is no Supabase session and
+     this harness has none. */
+  await rp.evaluate(() => {
+    try { localStorage.setItem('ge-tier', 'pro'); } catch (_) {}
+    try { reflectTier(); } catch (_) {}
+    try { renderPage('rivals'); } catch (_) {}
+  });
+  await rp.waitForTimeout(1800);
+
+  /* What is actually under the pointer at the button's centre? If it is not
+     the button or one of its own children, something is intercepting and the
+     name of that something is the bug. */
+  const hitTest = await rp.evaluate(() => {
+    const b = document.querySelector('[data-rival]');
+    if (!b) return { err: 'no rival row rendered' };
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    const inertAncestor = (() => { let n = b; while (n) { if (n.inert) return n.className || n.tagName; n = n.parentElement; } return null; })();
+    const cs = getComputedStyle(b);
+    return {
+      w: Math.round(r.width), h: Math.round(r.height),
+      pointerEvents: cs.pointerEvents, visibility: cs.visibility, display: cs.display,
+      topEl: top ? (top.tagName + '.' + (top.className || '')) : null,
+      topIsButtonOrChild: !!(top && (top === b || b.contains(top))),
+      inertAncestor
+    };
+  });
+  ok(!hitTest.err, 'a rival row rendered (' + (hitTest.err || '') + ')');
+  ok(hitTest.w > 0 && hitTest.h > 0, `the opener has a real box (${hitTest.w}x${hitTest.h})`);
+  ok(hitTest.pointerEvents !== 'none', 'the opener is not pointer-events:none');
+  ok(hitTest.inertAncestor === null, 'no inert ancestor swallows the click (' + hitTest.inertAncestor + ')');
+  ok(hitTest.topIsButtonOrChild === true,
+    'the element under the pointer IS the opener, not something covering it (' + hitTest.topEl + ')');
+
+  await rp.locator('[data-rival]').first().click({ timeout: 5000 })
+    .catch((e) => { ok(false, 'a real click on the rival reached it (' + e.message.split('\n')[0] + ')'); });
+  await rp.waitForTimeout(2200);
+
   const res = await rp.evaluate(async () => {
-    try { openPanel('rivals'); } catch (e) { return { err: e.message }; }
-    await new Promise((r) => setTimeout(r, 1800));
-    const opener = document.querySelector('[data-rival]');
-    if (!opener) return { err: 'no rival row rendered' };
-    opener.click();
-    await new Promise((r) => setTimeout(r, 2200));
     const m = document.getElementById('rival-modal');
     const body = document.getElementById('rival-body');
     const cells = [...body.querySelectorAll('.qd-pitch .pp')];
@@ -934,6 +1004,7 @@ section('a rival opens, on a pitch, marked against my own XI');
   const np2 = await browser.newPage();
   await np2.addInitScript(() => { try {
     localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-tier', 'pro');
     localStorage.setItem('ge-rivals', JSON.stringify(['7654321']));
   } catch (_) {} });
   await np2.goto(`http://localhost:${NOPICKS_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
