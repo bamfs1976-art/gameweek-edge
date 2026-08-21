@@ -199,16 +199,20 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'id="fdr-rows"', since: '2026-08-19',
-  what: 'the Clubs / My squad row toggle on the fixture grid' };
-/* Rotated from 'id="feedback-btn"' (2026-08-16), which had done its job and
-   stopped: by 19 Aug it was three deploys old, so it was present in the
-   previous build too and a green run proved only that the site was healthy.
-   The comment above predicted exactly that, and the run it happened on was
-   reported as "deployed and verified" for about a minute before anybody
-   checked which build the marker belonged to. Rotate this on the next
-   user-visible change; a marker older than the deploy it is asked about is
-   not a check. */
+const MARKER = { text: 'id="rival-modal"', since: '2026-08-21',
+  what: 'the rival team card opened from the Rivals list' };
+/* Rotated from 'id="fdr-rows"' (2026-08-19), which had done its job and
+   stopped: by 21 Aug it was live in the previous build, so a green run proved
+   the site was healthy and said nothing about whether the newest deploy had
+   landed. That is the second time this marker has aged out, and the second
+   time it was noticed only because somebody asked which build it belonged
+   to — before that, 'fdr-rows' was rotated in from 'id="feedback-btn"'
+   (2026-08-16) for exactly the same reason.
+
+   The pattern is the point: this string has to be rotated on every
+   user-visible change, and the failure mode is silent. It does not go red
+   when it goes stale; it goes green for the wrong reason. Anyone shipping a
+   change to index.html should assume this line is their job. */
 
 /* Are we even talking to the site?
 
