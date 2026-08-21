@@ -1372,6 +1372,18 @@ console.log('• briefing: nobody is recommended at a club this file says they l
   ok(departedStillPicked(doc(
     'Marcus Quintance is the pick. The club has sold half the squad.')).length === 1,
     'and neither does a cue in a NEIGHBOURING sentence about somebody else');
+  /* Punctuation inside brackets is not a sentence break. The register writes
+     "Mateta (£6.5m, published; our estimate said ~£7.5m) is the pick if he
+     stays" — the aside sits between the name and the cue, and a
+     bracket-blind splitter reported that correct line as a fault. The
+     document was reworded twice to suit the checker before it was clear the
+     checker was wrong. */
+  ok(departedStillPicked(doc(
+    'Marcus Quintance (£6.5m, published; est ~£7.5m) is the pick if he stays.')).length === 0,
+    'a bracketed aside between the name and its cue does not split the sentence');
+  ok(departedStillPicked(doc(
+    'Marcus Quintance (£6.5m, published; est ~£7.5m) is the pick.')).length === 1,
+    'but a bracketed aside is not itself a cue');
 
   /* The abbreviation the real picks used. Newcastle's set-piece line named
      "Bruno G" three times and a surname search could not see it — a mutation

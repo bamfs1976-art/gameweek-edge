@@ -100,6 +100,15 @@
     "andWhatItConfirms": "The LazyFPL capture recorded that 'Jeremy Jacquet is a Liverpool centre-back and scored', against Hadley's table which carried him only as 'Jacquet (Ligue 1)'. A second independent source now places him at Liverpool with a fee and a date. Hadley's annotation was a stale league label, not a club claim, and that reading is now settled."
   },
 
+  "absencesResolvedSince": {
+    "why": "A capture records what was true when it was taken. When a later edit adds one of these names to the register, the entry is annotated rather than deleted — deleting it would erase the evidence that the gap existed, which is the only thing that makes the list worth keeping.",
+    "resolved": [
+      { "name": "Sasa Lukic", "on": "2026-08-21",
+        "what": "Added to Ipswich's In list and Fulham's Out list, and removed from Fulham's corners, where this file had him taking half the set pieces for a club he had left.",
+        "sources": "this capture, then the official FPL round-up which prices him as an Ipswich player" }
+    ]
+  },
+
   "whatOurRegisterDOESNOTHOLD": {
     "method": "Twenty-nine named players checked with word boundaries across both register files. Absent means ZERO occurrences, checked — not that a lookup method failed to attribute them. That distinction is the whole content of the correction recorded in pl-preseason-notes-fpltips.json.",
     "absent": ["Nobel Mendy", "Konstantinos Tzolakis", "Lucas Gourna-Douath", "Elliot Stroud", "Lucas Herrington",

@@ -462,10 +462,17 @@ ok('recorded as corroboration of a derivation, not a settled fixture',
 ok('the Newcastle manager conflict is recorded', !!MAIL.managerClaims.theNewcastleConflict);
 ok('with a second outside source on the same side',
   /LazyFPL/.test(JSON.stringify(MAIL.managerClaims.theNewcastleConflict)));
-ok('and the register is deliberately NOT amended here',
-  /Eddie Howe continues/.test(fs.readFileSync(ROOT_MD, 'utf8')));
-ok('which the capture says explicitly rather than leaving implicit',
+/* This used to assert the register STILL said Howe continues — the point
+   being that a benchmark does not amend the register. That discipline held:
+   the capture recorded the conflict on 18 Aug and changed nothing, and the
+   edit was made three days later against four sources, in a commit of its
+   own. So the assertion becomes: the capture still refuses to amend, and the
+   register no longer carries the error. */
+ok('the capture still declines to amend the register itself',
   /whyTheRegisterIsNOTAMENDEDHERE/.test(mailS));
+ok('and the register was corrected later, by an edit rather than by a capture',
+  !/Eddie Howe continues/.test(fs.readFileSync(ROOT_MD, 'utf8'))
+  && /Matthias Jaissle/.test(fs.readFileSync(ROOT_MD, 'utf8')));
 
 /* --- commercial interest, as for every paid source --- */
 ok('the article\'s commercial interest is recorded first', !!MAIL.commercialInterest);
@@ -500,14 +507,24 @@ ok('a range estimate counts as right when the stated price falls inside it',
 const confirmed = ROWS2.filter((r) => r.estimateConfirmed).length;
 const missed = ROWS2.filter((r) => r.estimateMissed);
 ok('our register estimates are scored against the stated figures', confirmed >= 6);
-ok('and Igor Thiago is scored WRONG, at £8.0m against ~£7.0-7.5m',
-  missed.some((r) => r.display === 'Igor Thiago'));
-ok('as is Mateta, at £6.5m against ~£7.5m',
-  missed.some((r) => r.display === 'Mateta'));
+/* Both of these used to assert the register held a WRONG estimate. The edits
+   were applied on 21 Aug, so there is no estimate left to be wrong — the
+   register carries the published figure. The historical scoreline lives in
+   the briefing's own table, asserted below, which is the right place for it:
+   a record of how we did, not a live price. */
+ok('Igor Thiago no longer sits in the register as a missed estimate',
+  !missed.some((r) => r.display === 'Igor Thiago'));
+ok('nor Mateta', !missed.some((r) => r.display === 'Mateta'));
+ok('because both now carry the published price instead',
+  /Igor Thiago \(FWD, \*\*£8\.0m, published/.test(fs.readFileSync(ROOT_MD, 'utf8'))
+  && /Mateta \(\*\*£6\.5m, published/.test(fs.readFileSync(ROOT_MD, 'utf8')));
 
-/* --- Mateta closes the briefing's eight-row price table --- */
-ok('the briefing still records Mateta as the one open row',
+/* --- Mateta closed the briefing's eight-row price table on 21 Aug --- */
+ok('the briefing still shows Mateta in the original eight-row table',
   /\| Mateta \(CRY\) \| ~£7\.5m \| £6\.5m \|/.test(fs.readFileSync(ROOT_MD, 'utf8')));
+ok('and now also in the settled table, as the eighth and last row',
+  /\| Mateta \(CRY\) \| ~£7\.5m \| £6\.5m \| \*\*£6\.5m\*\* \| theirs \|/
+    .test(fs.readFileSync(ROOT_MD, 'utf8')));
 /* Not `=== 2`. A count of sources only grows as captures arrive, so exact
    equality on it is a brittle assertion that fails on the next ingest for no
    reason connected to what it is testing — which is what happened here when
@@ -603,10 +620,18 @@ const gdnS = JSON.stringify(GDN);
 const MD = fs.readFileSync(ROOT_MD, 'utf8');
 const HTML = fs.readFileSync(`${R}/docs/briefings/2026-27-preseason.html`, 'utf8');
 
-/* --- the Lukic error must stay visible until it is actually fixed --- */
-ok('Fulham still has Lukic on corners in the register', /Corners Iwobi, Lukic/.test(HTML));
-ok('and Fulham\'s out list still does not name him',
-  !/"Sasa Lukic[^"]*Ipswich|Lukic \(.*Ipswich/.test(HTML));
+/* --- the Lukic edit, APPLIED 21 Aug (was: "must stay visible until fixed") --- */
+ok('Fulham no longer has Lukic on corners, in either edition',
+  !/Corners Iwobi, Lukic/.test(HTML) && !/Corners Iwobi, Lukic/.test(MD));
+ok('the vacated corner is left unresolved rather than reassigned to somebody',
+  /second corner is unresolved, not reassigned/i.test(MD)
+  && /Second corner UNRESOLVED, not reassigned/i.test(HTML));
+ok('he is on Ipswich\'s in list now, in both editions',
+  /Sasa Lukic \(MID, Fulham\)/.test(MD) && /Sasa Lukic \(MID, Fulham\)/.test(HTML));
+ok('AND on Fulham\'s out list — the half a one-sided transfer would have left off',
+  /Sasa Lukic \(MID, Ipswich\)/.test(MD) && /Sasa Lukic \(MID, Ipswich\)/.test(HTML));
+ok('which is how the briefing parser caught the first attempt at this edit',
+  /the one-sided-transfer check in `dev\/test-briefing\.mjs` caught this list still missing him/.test(MD));
 ok('the capture records it as an owed edit, not an applied one',
   /Not made here — a benchmark records what a source said/.test(gdnS));
 ok('and says why a wrong set-piece duty is worse than a missing name',
@@ -671,9 +696,23 @@ const heldByRegister = (n) => {
   return re.test(MD) || re.test(HTML);
 };
 const claimedAbsent = GDN.whatOurRegisterDOESNOTHOLD.absent;
-const wronglyAbsent = claimedAbsent.filter(heldByRegister);
-ok('every name claimed absent really is absent from both register files',
+/* A capture records what was true when it was taken, so a name can stop being
+   absent because we ACTED on it. Those are annotated in the capture rather
+   than deleted — deleting would erase the evidence the gap existed — and this
+   check exempts exactly the annotated ones, no more. */
+const resolvedSince = new Set(
+  (GDN.absencesResolvedSince?.resolved || []).map((r) => r.name));
+const wronglyAbsent = claimedAbsent.filter((n) => heldByRegister(n) && !resolvedSince.has(n));
+ok('every name claimed absent is still absent, or is recorded as since resolved',
   wronglyAbsent.length === 0);
+ok('and each exemption says what was done and when',
+  (GDN.absencesResolvedSince?.resolved || []).every((r) => r.name && r.on && r.what && r.sources));
+ok('Lukic is the one that moved, because we acted on it',
+  resolvedSince.has('Sasa Lukic') && heldByRegister('Sasa Lukic'));
+/* The exemption must not become a blanket. Every other claimed-absent name is
+   still genuinely absent. */
+ok('the other twenty are still absent from the register',
+  claimedAbsent.filter((n) => !resolvedSince.has(n)).filter(heldByRegister).length === 0);
 ok('and the list is the size the capture says it checked', claimedAbsent.length >= 20);
 for (const n of ["Dara O'Shea", 'Milos Kerkez']) {
   ok(`${n} is on that list, and is priced by another capture`, claimedAbsent.includes(n));
@@ -748,10 +787,26 @@ ok('no price disagreement is left open after the official ingest',
 ok('nor with a non-estimate register price', ROWS4.every((r) => !r.registerConflict));
 ok('and no band is contradicted', ROWS4.every((r) => !r.bandConflicts.length));
 
-/* --- the eight-row table closes, and our estimates are graded --- */
+/* --- the eight-row table closes, and our estimates are graded ---
+   These two used to assert estimateMissed === true, meaning our register held
+   an estimate that the official price contradicted. Both edits were applied on
+   21 Aug, so the register carries the published figure now and there is no
+   estimate left to miss — the flag flips to false BECAUSE we acted. What must
+   not be lost is the scoreline, so that moves to where it belongs: the price
+   table and the capture, which are records rather than live advice. */
 ok('Mateta is settled at the outside figure by the official source',
-  row4('Mateta')?.agreedPrice === 6.5 && row4('Mateta')?.estimateMissed === true);
-ok('Igor Thiago too', row4('Igor Thiago')?.agreedPrice === 8.0 && row4('Igor Thiago')?.estimateMissed === true);
+  row4('Mateta')?.agreedPrice === 6.5);
+ok('Igor Thiago too', row4('Igor Thiago')?.agreedPrice === 8.0);
+ok('and our register carries the published price for both, not the old estimate',
+  /Jean-Philippe Mateta \(\*\*£6\.5m, published/.test(MD)
+  && /Igor Thiago \(FWD, \*\*£8\.0m, published/.test(MD)
+  && !/Igor Thiago \(FWD, ~£7\.0-7\.5m est\.\)/.test(MD));
+ok('so neither row is a live wrong estimate any more',
+  row4('Mateta')?.estimateMissed !== true && row4('Igor Thiago')?.estimateMissed !== true);
+ok('but the scoreline against us survives in the table, which is a record',
+  /the outside figure right eight from eight, ours right none from\s+eight/i.test(MD));
+ok('and the HTML edition records the close too',
+  /CLOSED 21 AUG by the official round-up/.test(HTML) && /eight from eight/.test(HTML));
 ok('the table is recorded as eight from eight against us',
   /right EIGHT times from eight and our estimate was right none/.test(scoutS));
 const rightNow = ROWS4.filter((r) => r.estimateConfirmed).length;
@@ -769,8 +824,16 @@ ok('and the Guardian capture still records what it said',
 
 /* --- Newcastle: three sources and now a name --- */
 ok('the official source names Jaissle', /the first under Jaissle/.test(scoutS));
-ok('our register still does not', !MD.includes('Jaissle') && !HTML.includes('Jaissle'));
-ok('and still says Howe continues', /Eddie Howe continues/.test(MD));
+ok('and our register names him now, in both editions — applied 21 Aug',
+  MD.includes('Matthias Jaissle') && HTML.includes('Matthias Jaissle'));
+ok('and no longer says Howe continues',
+  !/Eddie Howe continues/.test(MD) && !/Eddie Howe continues/.test(HTML));
+ok('the paragraph built on the old line went with it',
+  !/whether Howe can knit a reshaped attack/.test(MD));
+ok('Newcastle is in the confirmed-new-bosses list that used to omit it',
+  /Matthias Jaissle \(Newcastle, replacing Eddie Howe/.test(MD));
+ok('and the consequence is carried, not just the name',
+  /treat every Newcastle dead-ball line as unconfirmed for GW1/.test(MD));
 ok('the capture stops short of writing a manager line from one clause',
   /not enough to write a manager line from/.test(scoutS));
 
@@ -810,12 +873,22 @@ ok('and Williams-and-Igor is still NOT recorded as settled',
 /* --- the Lukic error now has an official source behind it --- */
 ok('the official source also puts Lukic at Ipswich',
   scoutCap.exact.some((e) => e.player === 'Sasa Lukic' && e.club === 'Ipswich Town'));
-ok('and our register still has him on Fulham\'s corners', /Corners Iwobi, Lukic/.test(HTML));
+ok('and our register no longer has him on Fulham\'s corners', !/Corners Iwobi, Lukic/.test(HTML));
 ok('the capture calls the edit overdue rather than owed', /overdue rather than merely owed/.test(scoutS));
 
 /* --- availability that touches our own picks --- */
-ok('Minteh is out 2-3 months and is one of our register\'s value picks',
-  /Yankuba Minteh \(MID, ~£6\.0-6\.5m est\.\)/.test(MD) && /two to three months/.test(scoutS));
+ok('Minteh is out 2-3 months per the official round-up', /two to three months/.test(scoutS));
+ok('and he is no longer recommended as a value pick — withdrawn 21 Aug',
+  !/- Value: Yankuba Minteh/.test(MD)
+  && /Yankuba Minteh WITHDRAWN from this line/.test(MD)
+  && /Yankuba Minteh WITHDRAWN from this line/.test(HTML));
+ok('nor named as a captaincy-adjacent option',
+  !/Minteh or Matt O'Riley are the best captaincy-adjacent/.test(MD)
+  && !/Minteh or O'Riley best captaincy-adjacent/.test(HTML));
+ok('nor left on Brighton\'s right-side corner',
+  !/De Cuyper and Minteh from the right/.test(MD) && !/De Cuyper and Minteh \(right\)/.test(HTML));
+ok('and nobody was promoted into the vacancy to fill the hole',
+  /Nobody is promoted in his place/.test(MD) && /nobody is promoted in his place/.test(HTML));
 ok('Egan\'s ankle doubt can come off', /The doubt can come off/.test(scoutS));
 ok('and both position changes are recorded',
   /Sessegnon[^"]*MIDFIELDER to DEFENDER/.test(scoutS) && /Dorgu[^"]*DEFENDER to MIDFIELDER/.test(scoutS));
@@ -1305,15 +1378,20 @@ ok('and the fill is credited to the source, not to the guess being right',
   /Not that the guess would have been right/.test(g4));
 
 /* --- the manager error, settled --- */
-ok('our register still says Eddie Howe continues, in BOTH editions',
-  /Eddie Howe continues/.test(MD) && /Eddie Howe continues/.test(HTML));
-/* The successor's name must NOT be in the register yet: the edit is owed, not
-   applied, and half-applying it in a set-piece aside is how a file ends up
-   naming two managers. An earlier version of this very commit did exactly
-   that and tripped the guard at line 771. */
-ok('and the successor is still not named in the register — the edit is owed',
-  !MD.includes('Jaissle') && !HTML.includes('Jaissle')
-  && /under an owed correction/.test(MD));
+ok('our register no longer says Howe continues, in either edition',
+  !/Eddie Howe continues/.test(MD) && !/Eddie Howe continues/.test(HTML));
+ok('and the correction records that the old line was held against four sources',
+  /four sources against, one of them the game's own publisher/.test(MD));
+/* Applied 21 Aug. This assertion used to require the OPPOSITE — that the
+   successor was absent, because the edit was owed and half-applying it in a
+   set-piece aside is how a file ends up naming two managers. An earlier
+   commit did exactly that and this guard caught it. Now the edit is made, so
+   the requirement inverts: the name must be present in both editions, and the
+   holding note that stood in for it must be gone. */
+ok('the successor is named in both editions — the owed edit is applied',
+  MD.includes('Matthias Jaissle') && HTML.includes('Matthias Jaissle'));
+ok('and the placeholder that marked it as pending has been removed',
+  !/under an owed correction/.test(MD));
 ok('the capture names the successor fully, which the official three-word clause could not',
   /Matthias Jaissle/.test(g4) && /38-year-old German/.test(g4));
 ok('four sources are counted, not three, and each names itself and its claim',

@@ -530,14 +530,32 @@ export const DEPARTURE_CUES =
    safeguard, it is a decoration that makes the mutation score look worse
    than the code is. */
 export function sentenceAround(text, i) {
-  /* Split on . ; or an em dash FOLLOWED BY WHITESPACE, so decimal prices
-     (£7.5m) and initials do not cut a sentence in half. */
-  const before = text.slice(0, i);
-  const start = Math.max(before.lastIndexOf('. '), before.lastIndexOf('; '),
-    before.lastIndexOf('— '), before.lastIndexOf('.**'));
-  const rest = text.slice(i);
-  const cut = rest.search(/[.;]\s|—\s/);
-  return text.slice(start < 0 ? 0 : start + 1, cut < 0 ? text.length : i + cut + 1);
+  /* Separators are . ; and an em dash, each FOLLOWED BY WHITESPACE, so decimal
+     prices (£7.5m) and initials do not cut a sentence in half.
+
+     Separators inside brackets do not count. This file writes prices as
+     "Mateta (£6.5m, published; our estimate said ~£7.5m) is the pick if he
+     stays" — a parenthetical aside with its own punctuation, sitting between
+     a name and the cue that explains it. A bracket-blind splitter cut the
+     sentence at that semicolon and reported the line as a fault. The document
+     was reworded twice to suit the checker before it was clear the checker
+     was wrong: the register uses bracketed asides everywhere and is entitled
+     to. */
+  const seps = [];
+  let depth = 0;
+  for (let j = 0; j < text.length; j++) {
+    const c = text[j];
+    if (c === '(' || c === '[') depth++;
+    else if (c === ')' || c === ']') depth = Math.max(0, depth - 1);
+    else if (depth === 0 && (c === '.' || c === ';' || c === '—')
+      && /\s/.test(text[j + 1] || ' ')) seps.push(j);
+  }
+  let start = 0, end = text.length;
+  for (const j of seps) {
+    if (j < i) start = j + 1;
+    else { end = j + 1; break; }
+  }
+  return text.slice(start, end);
 }
 
 /* Names in an Out: line — a capitalised run immediately before a bracket. */
