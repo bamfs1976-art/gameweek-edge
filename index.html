@@ -15515,7 +15515,7 @@ async function renderLeagueStandings(host,leagueId,mid,type){
   host.innerHTML=back+oppCard+
     '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
-    '<div class="dl">'+head+rows+'</div>'+pager+'</div>'+
+    '<div class="dl" id="league-standings">'+head+rows+'</div>'+pager+'</div>'+
     awards;
   /* Every standing is a manager, and a manager has a squad. Same card the
      Rivals panel opens — a mini-league table is where people actually look
