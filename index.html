@@ -15311,6 +15311,84 @@ async function refreshPushUI(){
    (xP, fixture strength, ownership). No human writer, refreshes
    itself every gameweek. Deterministic, self-contained.
    ═══════════════════════════════════════════════════════════ */
+/* ── Availability briefing: the official flags before a deadline ─────
+   The FPL API has no news feed, no club-news and no press-conference endpoint;
+   player news lives in the bootstrap's `news`, `news_added`, `status` and
+   `chance_of_playing_next_round`, written by FPL staff and in practice updated
+   AFTER a manager's press conference. The Wire carried five briefings and not
+   one read those fields, so the first thing every manager checks before a
+   deadline was the one thing it did not say.
+
+   NOT A TEAM SHEET, and the article says so in its own body. A 75% player
+   starts most weeks; an unflagged player is rested every week of the season.
+   The flag is the club's official word on FITNESS. Whether a fit player starts
+   is a rotation question — a different model, a different panel, and
+   deliberately not mixed in here.
+
+   Pure: takes the bootstrap and the current event, returns an article or null. */
+function availabilityArticle(b,cur,now){
+  now=now||Date.now();
+  const els=(b&&b.elements)||[];
+  const flagged=els.filter(e=>e.status&&e.status!=='a');
+  if(!flagged.length||!cur)return null;
+  const gw=cur.id;
+  const nm=e=>esc(e.web_name),tm=e=>teamShort(b,e.team),ps=e=>posShort(b,e.element_type),
+        pr=e=>'£'+((e.now_cost||0)/10).toFixed(1)+'m';
+  const li=rows=>'<ul>'+rows.join('')+'</ul>';
+  const own=e=>parseFloat(e.selected_by_percent||0);
+  /* Ownership-first inside each tier: a flagged player nobody owns is a fact,
+     a flagged player a third of the game owns is the news. */
+  const byOwn=(a,c)=>own(c)-own(a);
+  const susp=flagged.filter(e=>e.status==='s').sort(byOwn);
+  const out=flagged.filter(e=>e.status==='i'||e.status==='u'||e.status==='n').sort(byOwn);
+  const doubt=flagged.filter(e=>e.status==='d').sort(byOwn);
+  /* "New" is measured off news_added, the only timestamp the API gives. A row
+     with no parseable stamp is NEVER called new — it is undated, because
+     inventing recency is the one thing this article must not do. */
+  const stamped=e=>{const t=e.news_added?new Date(e.news_added).getTime():NaN;return isNaN(t)?null:t;};
+  const fresh=flagged.filter(e=>{const t=stamped(e);return t!==null&&now-t<=72*3600e3;})
+    .sort((a,c)=>stamped(c)-stamped(a));
+  const undated=flagged.filter(e=>stamped(e)===null).length;
+
+  const row=e=>{const t=stamped(e);
+    return '<li><b>'+nm(e)+'</b> <span class="muted">('+tm(e)+' · '+ps(e)+' · '+pr(e)+' · '+
+      own(e).toFixed(1)+'% owned)</span>'+
+      (e.status==='d'&&e.chance_of_playing_next_round!=null?' — <b>'+e.chance_of_playing_next_round+'%</b> to play':'')+
+      (e.news?' — '+esc(e.news):'')+
+      (t!==null?' <span class="muted">('+timeAgo(e.news_added,now)+')</span>':'')+'</li>';};
+
+  let body='<p>'+(cur.finished
+    ? 'Gameweek '+gw+' is done. This is where the squad list stands now — the official word on who is fit, carried straight from the club flags.'
+    : 'Deadline '+fmtDeadline(cur.deadline_time)+'. <b>'+flagged.length+'</b> player'+(flagged.length===1?' carries':'s carry')+
+      ' an official flag going into it'+(fresh.length?', '+fresh.length+' of them updated in the last 72 hours':'')+'.')+'</p>';
+  /* Suspensions first and separately, because they are the only certain tier.
+     An injury is a probability; a ban is arithmetic. */
+  if(susp.length){
+    body+='<h4>Suspended — certain misses</h4>'+li(susp.slice(0,8).map(row));
+    body+='<p class="muted">A ban is the only line here that is not a forecast. These players cannot play.</p>';
+  }
+  if(out.length)body+='<h4>Ruled out</h4>'+li(out.slice(0,10).map(row));
+  if(doubt.length)body+='<h4>Doubtful — the ones that decide your bench order</h4>'+li(doubt.slice(0,10).map(row));
+  if(fresh.length)body+='<h4>Changed in the last 72 hours</h4>'+li(fresh.slice(0,8).map(row));
+  body+='<h4>How to read this</h4>';
+  body+='<p>These are the official club flags as FPL publishes them. The game has no news feed, no club-news '+
+    'and no press-conference endpoint; every line above comes from the player record itself, updated by FPL '+
+    'after a manager speaks. That makes it the earliest official signal there is, and it is still '+
+    '<b>a fitness note, not a team sheet</b>. A player at 75% starts most weeks. An unflagged player gets '+
+    'rested every week of the season. Whether a fit player actually starts is a rotation question, which is '+
+    'a different panel and is deliberately not mixed in here.</p>';
+  if(undated)body+='<p class="muted">'+undated+' flagged player'+(undated===1?' carries':'s carry')+
+    ' no update timestamp, so '+(undated===1?'it is':'they are')+' left out of the 72-hour list rather than '+
+    'guessed at as new.</p>';
+
+  return {kick:'Team news',
+    title:cur.finished?'Availability: Who Is Fit After Gameweek '+gw:'Team News: The Flags Before Gameweek '+gw,
+    dek:susp.length
+      ? susp.length+' suspended, '+out.length+' ruled out and '+doubt.length+' in the balance.'
+      : out.length+' ruled out and '+doubt.length+' in the balance, straight from the official flags.',
+    accent:'a-rose',mins:2,body:body};
+}
+
 function blogArticles(b,fixtures){
   const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5),els=b.elements,cur=b.cur,gw=cur.id;
   const av=e=>e.status==='a'&&(e.chance_of_playing_next_round==null||e.chance_of_playing_next_round>=75);
@@ -15340,6 +15418,10 @@ function blogArticles(b,fixtures){
   arts.push({kick:'Gameweek briefing',title:'Gameweek '+gw+': The Talking Points',
     dek:cur.finished?'Who hauled, who flopped, and where the crowd is heading next.':'Form, momentum and the players setting up for a big one.',
     accent:'a-emerald',mins:2,body:tp});
+
+  /* 2 — The availability briefing. Built by a named function so it can be
+     run for real in dev/test-wire.mjs rather than eyeballed. */
+  {const av2=availabilityArticle(b,cur);if(av2)arts.push(av2);}
 
   /* 2 — Differentials */
   const diffs=top(els.filter(av).map(e=>({e,x:xP(b,e,nf[e.team]),o:parseFloat(e.selected_by_percent||0)}))
