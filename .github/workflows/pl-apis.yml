@@ -1,0 +1,29 @@
+name: Premier League API probe
+
+# Asks which OTHER Premier League data sources answer without credentials —
+# the sibling of the FPL endpoint probe, and a workflow for the same reason:
+# the sandbox this project is developed in cannot reach these hosts (the
+# egress proxy answers 403), so the question cannot be answered honestly from
+# there. A runner can.
+#
+# Manual only. This is a survey to run when somebody asks "what else can we
+# use?", not a monitor. Nothing here is scheduled: repeatedly hitting somebody
+# else's undocumented API to re-learn the same answer would be rude for no
+# benefit.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Probe non-FPL Premier League endpoints
+        run: node dev/pl-endpoint-probe.mjs
