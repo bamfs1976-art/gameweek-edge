@@ -79,6 +79,28 @@ const API = {
    this harness has exactly one squad and the point is the rendering, not the
    lookup. */
 const PICKS_RE = /^\/api\/fpl\/entry\/\d+\/event\/\d+\/picks$/;
+/* Two more routes the rival card needs. Neither existed here, which is why
+   the card could not be exercised at all until now.
+
+   The live payload is DERIVED from the picks fixture rather than written out
+   beside it, so the two cannot drift into disagreement — and one starter is
+   deliberately left out of it, because the interesting case is the player the
+   feed has not mentioned yet. He must print as a dash and stay out of the
+   total; a fixture where every row exists cannot tell a real zero from a
+   missing one, which is the bug this card is most likely to grow. */
+const ENTRY_RE = /^\/api\/fpl\/entry\/\d+$/;
+const LIVE_RE = /^\/api\/fpl\/event\/\d+\/live$/;
+const picksFixture = () => JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json'), 'utf8'));
+const LIVE_MISSING = picksFixture().picks.find((p) => p.position === 3).element;
+const liveBody = () => JSON.stringify({
+  elements: picksFixture().picks
+    .filter((p) => p.element !== LIVE_MISSING)
+    .map((p) => ({ id: p.element, stats: { total_points: 2 } }))
+});
+const entryBody = (id) => JSON.stringify({
+  id: Number(id), name: 'Rival FC', player_first_name: 'Sam', player_last_name: 'Rivers',
+  summary_overall_points: 120
+});
 /* A third server, reproducing the state the app shipped broken into: a
    linked team whose picks the API refuses because the gameweek deadline has
    not passed. Real FPL answers 404 there, and the squad rows disappeared for
@@ -89,6 +111,14 @@ const NOPICKS_PORT = 8096;
 const server = createServer(staticHandler);
 const apiServer = createServer((req, res) => {
   const p = decodeURIComponent(req.url.split('?')[0]);
+  if (ENTRY_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(entryBody(p.split('/').pop()));
+  }
+  if (LIVE_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(liveBody());
+  }
   if (API[p] || PICKS_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p] || 'fpl-mock-picks.json')));
@@ -99,6 +129,18 @@ const noPicksServer = createServer((req, res) => {
   const p = decodeURIComponent(req.url.split('?')[0]);
   if (PICKS_RE.test(p)) { res.writeHead(404, { 'Content-Type': 'application/json' });
     return res.end('{"detail":"Not found."}'); }
+  /* Entry and live still answer here. Only picks are private before a
+     deadline, and a harness where the whole manager disappears cannot tell
+     "their XI is not public yet" from "this rival is broken" — which is
+     precisely the distinction the row has to make. */
+  if (ENTRY_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(entryBody(p.split('/').pop()));
+  }
+  if (LIVE_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(liveBody());
+  }
   if (API[p]) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p])));
@@ -829,6 +871,88 @@ section('feedback inbox: a hostile message renders as text, not as markup');
   ok(res.literal === true, 'the markup is shown to the owner as literal text');
   ok(ipErrors.length === 0, 'the inbox threw nothing (' + ipErrors.slice(0, 2).join(' | ') + ')');
   await ip.close();
+}
+
+section('a rival opens, on a pitch, marked against my own XI');
+{
+  /* The rival is a DIFFERENT id from the linked manager, but this harness
+     serves one squad to whoever asks — so every player comes back shared.
+     That is fine for the rendering, and the differential path is covered by
+     the unit suite where two squads can actually differ. What only a browser
+     can show is that the card opens at all, that eleven and four land in the
+     right places, and that the missing live row prints as a dash. */
+  const rp = await browser.newPage();
+  const rErrors = [];
+  rp.on('pageerror', (e) => rErrors.push(e.message));
+  await rp.addInitScript(() => { try {
+    localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-rivals', JSON.stringify(['7654321']));
+  } catch (_) {} });
+  await rp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await rp.waitForTimeout(1200);
+
+  const res = await rp.evaluate(async () => {
+    try { openPanel('rivals'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 1800));
+    const opener = document.querySelector('[data-rival]');
+    if (!opener) return { err: 'no rival row rendered' };
+    opener.click();
+    await new Promise((r) => setTimeout(r, 2200));
+    const m = document.getElementById('rival-modal');
+    const body = document.getElementById('rival-body');
+    const cells = [...body.querySelectorAll('.qd-pitch .pp')];
+    const pts = cells.map((c) => (c.querySelector('.pp-pt') || {}).textContent);
+    return {
+      shown: !!m && m.classList.contains('show'),
+      name: (body.querySelector('#rival-title') || {}).textContent || '',
+      xi: cells.length,
+      bench: body.querySelectorAll('.rv-bench .pp').length,
+      caps: body.querySelectorAll('.rv-cap').length,
+      ringed: body.querySelectorAll('.qd-pitch .pp.rv-shared, .qd-pitch .pp.rv-diff').length,
+      dashes: pts.filter((t) => t === '—').length,
+      zeroes: pts.filter((t) => t === '0').length,
+      head: (body.textContent || '').slice(0, 400)
+    };
+  });
+
+  ok(!res.err, 'the rivals panel opened and a rival was clickable (' + (res.err || '') + ')');
+  ok(res.shown === true, 'the rival modal is showing');
+  ok(/Rival FC/.test(res.name), 'it names the rival (' + res.name + ')');
+  ok(res.xi === 11, 'eleven players on the pitch, got ' + res.xi);
+  ok(res.bench === 4, 'four on the bench, got ' + res.bench);
+  ok(res.ringed === 11, 'every starter is marked shared or differential, got ' + res.ringed);
+  ok(res.caps >= 1, 'the captain is badged, got ' + res.caps);
+  /* The one that matters. One starter is absent from the live feed and must
+     read as unknown, not as a blank gameweek. */
+  ok(res.dashes === 1, 'the player missing from the live feed shows a dash, got ' + res.dashes);
+  ok(res.zeroes === 0, 'and nothing invents a zero, got ' + res.zeroes);
+  ok(/shared/.test(res.head), 'the header states the shared count');
+  ok(rErrors.length === 0, 'the rival card threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
+
+  /* Before the deadline FPL 404s picks. That is not an error and must not be
+     dressed as one — the harness on 8096 reproduces exactly that. */
+  const np2 = await browser.newPage();
+  await np2.addInitScript(() => { try {
+    localStorage.setItem('ge-mid', '1234567');
+    localStorage.setItem('ge-rivals', JSON.stringify(['7654321']));
+  } catch (_) {} });
+  await np2.goto(`http://localhost:${NOPICKS_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await np2.waitForTimeout(1200);
+  const nr = await np2.evaluate(async () => {
+    try { openPanel('rivals'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 1600));
+    const opener = document.querySelector('[data-rival]');
+    if (!opener) return { err: 'no rival row' };
+    opener.click();
+    await new Promise((r) => setTimeout(r, 1800));
+    return { text: (document.getElementById('rival-body').textContent || '') };
+  });
+  ok(!nr.err, 'the pre-deadline page rendered a rival row (' + (nr.err || '') + ')');
+  ok(/hidden until the deadline/i.test(nr.text),
+    'a 404 on picks reads as "not yet", not as a failure (' + (nr.text || '').slice(0, 120) + ')');
+  ok(!/Couldn.t load/i.test(nr.text), 'and is not reported as a load error');
+  await np2.close();
+  await rp.close();
 }
 
 section('no uncaught errors');

@@ -2081,6 +2081,27 @@ body{font-size:14px;line-height:1.35}
 .qd-pitch .pp-nm{max-width:52px;font-size:var(--fs-min)}
 .qd-pitch .pp-pt{max-width:52px;font-size:var(--fs-min)}
 .qd-pitch .pp-sub{max-width:52px;font-size:var(--fs-min)}
+/* Rival card. The shared/differential ring is the whole point of the view, so
+   it is a ring and not a tint: a tint competes with the kit colours the
+   figures already use, and on a green pitch two tints are indistinguishable
+   at this size. Colour is never the only signal — the key below the pitch
+   names both states in words. */
+.rv-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.rv-open:hover .dl-nm{text-decoration:underline}
+.rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.rv-shared .pp-fig{box-shadow:0 0 0 2px var(--accent)}
+.rv-diff .pp-fig{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+.rv-cap{position:absolute;top:-2px;right:-2px;min-width:14px;height:14px;line-height:14px;
+  border-radius:50%;background:var(--accent);color:#0c1014;font-size:var(--fs-min);text-align:center;font-weight:700}
+.rv-cap.rv-vc{background:rgba(255,255,255,.55);color:#0c1014}
+.qd-pitch .pp{position:relative;cursor:pointer}
+.rv-bench{display:flex;gap:8px;flex-wrap:wrap;padding:10px 4px}
+.rv-bench .pp{flex-basis:54px;min-width:38px;position:relative;cursor:pointer}
+.rv-bench .pp-fig{width:32px;height:36px}
+.rv-bench .pp-nm,.rv-bench .pp-pt{max-width:52px;font-size:var(--fs-min)}
+.rv-key{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:2px}
+.rv-key.rv-shared{box-shadow:0 0 0 2px var(--accent)}
+.rv-key.rv-diff{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
 /* PROOF BAND — the one claim no competitor can make, moved from the foot of
    the page to directly under the hero. Rivals present the official FPL data
    beautifully; we compute our own numbers and publish our own error rate.
@@ -2481,6 +2502,11 @@ body{font-size:14px;line-height:1.35}
 <div class="modal" id="player-modal" role="dialog" aria-modal="true" aria-labelledby="player-title">
   <div class="modal-bg" data-player-close></div>
   <div class="modal-card modal-card-lg" id="player-body"></div>
+</div>
+
+<div class="modal" id="rival-modal" role="dialog" aria-modal="true" aria-labelledby="rival-title">
+  <div class="modal-bg" data-rival-close></div>
+  <div class="modal-card modal-card-lg" id="rival-body"></div>
 </div>
 
 <!-- Native bridge: defines window.GENative. No-op on the web build. -->
@@ -11608,6 +11634,55 @@ async function hydrateTemplate(host){
 }
 
 /* ── Rival Scout: track up to five rivals ──────────────── */
+/* ── One rival's squad, as it stands this gameweek ──────────────────
+   Pure, and named, so dev/test-rivals.mjs can reach it. Everything below is
+   arithmetic on two feeds; the rendering is separate and dumb. */
+
+/* Live points for one element from event/{gw}/live.
+
+   Returns NULL, not 0, when the feed has no row for the player. A player who
+   has genuinely scored nothing and a player the feed has not mentioned are
+   the same number and completely different facts, and printing the second as
+   "0" is the quiet kind of wrong: it looks like information. The caller
+   decides how to show an unknown; it must never be added into a total. */
+function rivalLivePts(live,elId){
+  const els=live&&live.elements;
+  const row=!els?null:(Array.isArray(els)?els.find(e=>e&&e.id===elId):els[elId]);
+  const s=row&&row.stats;
+  return s&&typeof s.total_points==='number'?s.total_points:null;
+}
+
+/* Split one rival's picks into XI and bench, with what each player is worth
+   TO THEM (so the captain's multiplier is applied) and whether we own him.
+
+   The multiplier comes off the pick, never inferred from is_captain: a triple
+   captain is 3, a benched captain is 0, and after auto-subs a bench player
+   can be 1. Reconstructing that from flags would be wrong in exactly the
+   weeks anyone cares. */
+function rivalSquadRows(picks,live,myXi){
+  const mine=myXi instanceof Set?myXi:new Set(myXi||[]);
+  const list=((picks&&picks.picks)||[]).slice().sort((a,c)=>a.position-c.position);
+  const rows=list.map(p=>{
+    const base=rivalLivePts(live,p.element);
+    const mult=typeof p.multiplier==='number'?p.multiplier:(p.position<=11?1:0);
+    return {id:p.element,position:p.position,mult,
+      captain:!!p.is_captain,vice:!!p.is_vice_captain,
+      base,pts:base==null?null:base*mult,
+      shared:mine.has(p.element)};
+  });
+  const xi=rows.filter(r=>r.position<=11);
+  const bench=rows.filter(r=>r.position>11);
+  const known=xi.filter(r=>r.pts!=null);
+  return {xi,bench,
+    shared:xi.filter(r=>r.shared).length,
+    differentials:xi.filter(r=>!r.shared).length,
+    /* Sums only the rows the feed actually reported, and says how many that
+       was. A total over eight of eleven players is not this rival's score,
+       and the caller has to be able to tell. */
+    live:known.reduce((s,r)=>s+r.pts,0),
+    liveKnown:known.length,liveOf:xi.length};
+}
+
 function loadRivals(){try{return JSON.parse(localStorage.getItem('ge-rivals')||'[]');}catch(_){return [];}}
 function saveRivals(a){try{localStorage.setItem('ge-rivals',JSON.stringify(a));}catch(_){}}
 async function hydrateRivals(host){
@@ -11620,12 +11695,27 @@ async function hydrateRivals(host){
   try{const mp=await loadPicks(mid,b.cur.id);mine=new Set(mp.picks.filter(p=>p.position<=11).map(p=>p.element));}catch(_){}
   const cards=await Promise.all(rivals.map(async rid=>{
     try{
-      const [re,rp]=await Promise.all([loadEntry(rid),loadPicks(rid,b.cur.id)]);
-      const rxi=rp.picks.filter(p=>p.position<=11).map(p=>p.element);
-      const overlap=rxi.filter(id=>mine.has(id)).length;
+      /* Fetched separately on purpose. These used to be one Promise.all, so a
+         404 on picks — which is what FPL answers for every squad before a
+         deadline — took the whole row down to "Could not load", losing the
+         name and the points gap that were perfectly available, and leaving
+         nothing to click. A rival is still a rival before the deadline; only
+         their XI is private. */
+      const re=await loadEntry(rid);
+      let rxi=null;
+      try{const rp=await loadPicks(rid,b.cur.id);
+        rxi=rp.picks.filter(p=>p.position<=11).map(p=>p.element);}catch(_){}
+      const overlap=rxi?rxi.filter(id=>mine.has(id)).length:null;
       const gap=me.summary_overall_points-re.summary_overall_points;
-      return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(re.name)+'</span>'+
-        '<span class="dl-sub">'+esc((re.player_first_name||'')+' '+(re.player_last_name||''))+' · '+overlap+'/11 shared</span></span>'+
+      /* The name is the control, not the row: the row also carries the remove
+         button, and a row-wide handler would open a team every time somebody
+         reached for ×. */
+      return '<div class="dl-row"><span class="dl-grow">'+
+        '<button class="rv-open" data-rival="'+esc(rid)+'" aria-label="View '+esc(re.name)+'’s team">'+
+        '<span class="dl-nm">'+esc(re.name)+'</span>'+
+        '<span class="dl-sub">'+esc((re.player_first_name||'')+' '+(re.player_last_name||''))+' · '+
+        (overlap==null?'squad hidden until the deadline':overlap+'/11 shared')+' · View team</span>'+
+        '</button></span>'+
         '<span class="dl-col '+(gap>=0?'pos':'neg')+'">'+(gap>=0?'+':'')+fmtNum(gap)+'</span>'+
         '<button class="btn btn-ghost btn-sm" data-rmrival="'+rid+'">×</button></div>';
     }catch(_){
@@ -11650,6 +11740,103 @@ async function hydrateRivals(host){
       if(/^[0-9]{1,9}$/.test(v)&&!rivals.includes(v)){const a=loadRivals();a.push(v);saveRivals(a);cloudRivalAdd(v);toast('Rival added');renderPage('rivals');}}});
   Array.prototype.forEach.call(host.querySelectorAll('[data-rmrival]'),btn=>
     btn.addEventListener('click',()=>{saveRivals(loadRivals().filter(x=>x!==btn.dataset.rmrival));cloudRivalDel(btn.dataset.rmrival);renderPage('rivals');}));
+  Array.prototype.forEach.call(host.querySelectorAll('[data-rival]'),btn=>
+    btn.addEventListener('click',()=>openRival(btn.dataset.rival)));
+}
+
+/* ── A rival's team, on a pitch ─────────────────────────────────────
+   The panel already fetched these picks to count the shared XI and then threw
+   the squad away. This shows it.
+
+   The framing is deliberately comparative rather than a plain team viewer:
+   every player is marked shared or differential, because the question a rival
+   card is opened to answer is not "what did they score" but "what do they
+   have that I do not". */
+function rivalDetailHTML(b,entry,picks,live,mine,gw){
+  const S=rivalSquadRows(picks,live,mine);
+  const els=b.els||{};
+  const eh=(picks&&picks.entry_history)||{};
+  const cell=r=>{
+    const el=els[r.id];
+    if(!el)return '';
+    const badge=r.captain?'<span class="rv-cap">C</span>':r.vice?'<span class="rv-cap rv-vc">V</span>':'';
+    /* An unknown is a dash, never a nought. The whole point of carrying null
+       this far is that it survives to the screen. */
+    const pts=r.pts==null?'—':String(r.pts);
+    return '<div class="pp'+(r.shared?' rv-shared':' rv-diff')+'" onclick="openPlayer('+el.id+')">'+
+      ppFigure(b,el)+badge+
+      '<span class="pp-nm">'+esc(el.web_name)+'</span>'+
+      '<span class="pp-pt">'+pts+'</span></div>';
+  };
+  const byT=t=>S.xi.filter(r=>(els[r.id]||{}).element_type===t);
+  const pitch='<div class="qd-pitch">'+pitchWrap(
+    '<div class="pitch-row">'+byT(1).map(cell).join('')+'</div>'+
+    '<div class="pitch-row">'+byT(2).map(cell).join('')+'</div>'+
+    '<div class="pitch-row">'+byT(3).map(cell).join('')+'</div>'+
+    '<div class="pitch-row">'+byT(4).map(cell).join('')+'</div>')+'</div>';
+  const benchPts=S.bench.filter(r=>r.pts!=null).reduce((s,r)=>s+r.pts,0);
+  const bench='<div class="rv-bench">'+S.bench.map(cell).join('')+'</div>';
+  /* Two separate honesty notes, because they are different problems. The
+     first says the live feed is incomplete for THIS squad; the second says
+     the number came from FPL's own tally rather than ours. Where the official
+     figure exists it is the one shown — our sum is a fallback, not a rival
+     source of truth. */
+  const official=typeof eh.points==='number'?eh.points:null;
+  const partial=S.liveKnown<S.liveOf
+    ?'<div class="dl-sub" style="margin-top:6px">Live points cover '+S.liveKnown+' of '+S.liveOf+
+      ' starters so far — the rest have no row in the feed yet, so they show as —.</div>':'';
+  const head='<div class="dl-row"><span class="dl-grow">'+
+      '<span class="dl-nm" id="rival-title">'+esc(entry.name||('Entry '+entry.id))+'</span>'+
+      '<span class="dl-sub">'+esc(((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim())+
+      ' · GW'+gw+' · '+S.shared+'/11 shared, '+S.differentials+' differential'+(S.differentials===1?'':'s')+'</span></span>'+
+      '<span class="dl-col">'+(official!=null?official:S.live)+'</span></div>';
+  const meta='<div class="dl-sub" style="margin-top:2px">'+
+    (official!=null?'Gameweek points from FPL':'Gameweek points summed from the live feed')+
+    (typeof eh.event_transfers==='number'?' · '+eh.event_transfers+' transfer'+(eh.event_transfers===1?'':'s')+
+      (eh.event_transfers_cost?' (−'+eh.event_transfers_cost+')':''):'')+
+    ' · bench '+benchPts+'</div>';
+  return '<div class="modal-head"><div class="dl">'+head+'</div>'+meta+partial+'</div>'+
+    pitch+
+    '<div class="card-title" style="margin-top:10px">Bench</div>'+bench+
+    '<div class="dl-sub" style="margin-top:10px">'+
+      '<span class="rv-key rv-shared"></span> you own too &nbsp; '+
+      '<span class="rv-key rv-diff"></span> theirs only</div>'+
+    '<div class="modal-row"><button class="btn btn-ghost" data-rival-close>Close</button></div>';
+}
+
+function closeRival(){const m=document.getElementById('rival-modal');if(m)m.classList.remove('show');}
+
+async function openRival(rid){
+  const m=document.getElementById('rival-modal'),body=document.getElementById('rival-body');
+  if(!m||!body)return;
+  body.innerHTML='<div style="padding:6px">'+skel(5)+'</div>';
+  m.classList.add('show');
+  try{
+    const b=await boot();
+    const gw=b.cur&&b.cur.id;
+    const entry=await loadEntry(rid);
+    let picks=null;
+    try{picks=await loadPicks(rid,gw);}catch(_){picks=null;}
+    /* Picks 404 before a gameweek's first deadline, and that is not an
+       error — it is FPL declining to show a team nobody has locked in yet.
+       Saying "couldn't load" there would send someone hunting a bug that
+       does not exist. */
+    if(!picks||!picks.picks){
+      body.innerHTML='<div class="modal-head"><div class="dl-nm">'+esc(entry.name||('Entry '+rid))+'</div></div>'+
+        '<p class="dl-sub" style="padding:8px">No team to show for GW'+gw+' yet. Squads are hidden until the deadline passes.</p>'+
+        '<div class="modal-row"><button class="btn btn-ghost" data-rival-close>Close</button></div>';
+      return;
+    }
+    const live=await loadLive(gw).catch(()=>null);
+    let mine=new Set();
+    const mid=getMid();
+    if(mid){try{const mp=await loadPicks(mid,gw);
+      mine=new Set(mp.picks.filter(p=>p.position<=11).map(p=>p.element));}catch(_){}}
+    body.innerHTML=rivalDetailHTML(b,entry,picks,live,mine,gw);
+  }catch(_){
+    body.innerHTML='<p class="dl-sub" style="padding:8px">Couldn’t load that team.</p>'+
+      '<div class="modal-row"><button class="btn btn-ghost" data-rival-close>Close</button></div>';
+  }
 }
 
 /* ── Set Piece Register: takers from official order fields ─ */
@@ -18644,6 +18831,7 @@ function init(){
 
   /* Player detail modal. */
   document.addEventListener('click',e=>{if(e.target.closest('[data-player-close]'))closePlayer();});
+  document.addEventListener('click',e=>{if(e.target.closest('[data-rival-close]'))closeRival();});
 
   /* Accounts. */
   initAuth();
