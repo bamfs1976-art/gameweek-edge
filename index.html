@@ -2089,8 +2089,13 @@ body{font-size:14px;line-height:1.35}
 .rv-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 .rv-open:hover .dl-nm{text-decoration:underline}
 .rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
-.rv-shared .pp-fig{box-shadow:0 0 0 2px var(--accent)}
-.rv-diff .pp-fig{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+/* White and amber, not accent-on-green. The first version ringed shared
+   players in the accent colour and differentials in translucent white, which
+   was designed against a dark surface — on the actual green pitch, in the
+   light theme, neither ring was visible at all and the two states were
+   indistinguishable. Both of these read on grass. */
+.rv-shared .pp-fig{box-shadow:0 0 0 2px #fff}
+.rv-diff .pp-fig{box-shadow:0 0 0 2px var(--amber)}
 .rv-cap{position:absolute;top:-2px;right:-2px;min-width:14px;height:14px;line-height:14px;
   border-radius:50%;background:var(--accent);color:#0c1014;font-size:var(--fs-min);text-align:center;font-weight:700}
 .rv-cap.rv-vc{background:rgba(255,255,255,.55);color:#0c1014}
@@ -2099,9 +2104,12 @@ body{font-size:14px;line-height:1.35}
 .rv-bench .pp{flex-basis:54px;min-width:38px;position:relative;cursor:pointer}
 .rv-bench .pp-fig{width:32px;height:36px}
 .rv-bench .pp-nm,.rv-bench .pp-pt{max-width:52px;font-size:var(--fs-min)}
-.rv-key{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:2px}
-.rv-key.rv-shared{box-shadow:0 0 0 2px var(--accent)}
-.rv-key.rv-diff{box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+/* The key dots had a ring and no fill, so on a white card they were two
+   invisible gaps in front of the words. Solid, with a hairline so white still
+   shows against white. */
+.rv-key{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:3px}
+.rv-key.rv-shared{background:#fff;border:1px solid var(--border-2)}
+.rv-key.rv-diff{background:var(--amber);border:1px solid var(--amber)}
 /* PROOF BAND — the one claim no competitor can make, moved from the foot of
    the page to directly under the hero. Rivals present the official FPL data
    beautifully; we compute our own numbers and publish our own error rate.
@@ -11739,6 +11747,23 @@ function rivalLivePts(live,elId){
    captain is 3, a benched captain is 0, and after auto-subs a bench player
    can be 1. Reconstructing that from flags would be wrong in exactly the
    weeks anyone cares. */
+/* Which number IS a rival's gameweek score, and what to call it.
+
+   Pulled out of the rendering on purpose: it was three inline ternaries and a
+   mutation that always trusted entry_history went unnoticed by every unit
+   check, because none of them could reach it.
+
+   entry_history.points is authoritative only once the gameweek is done. While
+   it is in play FPL leaves it at 0, so a rival on nine points showed a
+   confident 0 here while their own players below read 4 and 5 and the league
+   table beside it said 9. A total that disagrees with its own rows is worse
+   than no total. */
+function rivalGwTotal(entryHistory,squad,finished){
+  const official=(entryHistory&&typeof entryHistory.points==='number')?entryHistory.points:null;
+  if(finished&&official!=null)return {value:official,label:'Gameweek points from FPL',live:false};
+  return {value:(squad&&squad.live)||0,label:'Live total, summed as the gameweek runs',live:true};
+}
+
 function rivalSquadRows(picks,live,myXi){
   const mine=myXi instanceof Set?myXi:new Set(myXi||[]);
   const list=((picks&&picks.picks)||[]).slice().sort((a,c)=>a.position-c.position);
@@ -11752,7 +11777,14 @@ function rivalSquadRows(picks,live,myXi){
   });
   const xi=rows.filter(r=>r.position<=11);
   const bench=rows.filter(r=>r.position>11);
-  const known=xi.filter(r=>r.pts!=null);
+  /* COUNTING rows, not starters. Under a Bench Boost every bench player has
+     multiplier 1 and scores, and after auto-subs a substitute does too — so
+     totalling the XI would quietly drop four players' points in the exact
+     week a rival spent a chip to get them. The multiplier already zeroes
+     whoever does not count, so summing everything with mult > 0 is right in
+     all three cases and needs no chip flag to know which it is. */
+  const counting=rows.filter(r=>r.mult>0);
+  const known=counting.filter(r=>r.pts!=null);
   return {xi,bench,
     shared:xi.filter(r=>r.shared).length,
     differentials:xi.filter(r=>!r.shared).length,
@@ -11760,7 +11792,7 @@ function rivalSquadRows(picks,live,myXi){
        was. A total over eight of eleven players is not this rival's score,
        and the caller has to be able to tell. */
     live:known.reduce((s,r)=>s+r.pts,0),
-    liveKnown:known.length,liveOf:xi.length};
+    liveKnown:known.length,liveOf:counting.length};
 }
 
 /* What a rival has spent, and what they are spending this week.
@@ -11886,7 +11918,7 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history){
      the number came from FPL's own tally rather than ours. Where the official
      figure exists it is the one shown — our sum is a fallback, not a rival
      source of truth. */
-  const official=typeof eh.points==='number'?eh.points:null;
+  const T=rivalGwTotal(eh,S,!!(b.cur&&b.cur.finished));
   const partial=S.liveKnown<S.liveOf
     ?'<div class="dl-sub" style="margin-top:6px">Live points cover '+S.liveKnown+' of '+S.liveOf+
       ' starters so far — the rest have no row in the feed yet, so they show as —.</div>':'';
@@ -11894,9 +11926,9 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history){
       '<span class="dl-nm" id="rival-title">'+esc(entry.name||('Entry '+entry.id))+'</span>'+
       '<span class="dl-sub">'+esc(((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim())+
       ' · GW'+gw+' · '+S.shared+'/11 shared, '+S.differentials+' differential'+(S.differentials===1?'':'s')+'</span></span>'+
-      '<span class="dl-col">'+(official!=null?official:S.live)+'</span></div>';
+      '<span class="dl-col">'+T.value+'</span></div>';
   const meta='<div class="dl-sub" style="margin-top:2px">'+
-    (official!=null?'Gameweek points from FPL':'Gameweek points summed from the live feed')+
+    T.label+
     (typeof eh.event_transfers==='number'?' · '+eh.event_transfers+' transfer'+(eh.event_transfers===1?'':'s')+
       (eh.event_transfers_cost?' (−'+eh.event_transfers_cost+')':''):'')+
     ' · bench '+benchPts+'</div>';

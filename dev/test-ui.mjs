@@ -1103,9 +1103,20 @@ section('a mini-league standing opens that manager\u2019s team');
       name: (body.querySelector('#rival-title') || {}).textContent || '',
       xi: body.querySelectorAll('.qd-pitch .pp').length,
       bench: body.querySelectorAll('.rv-bench .pp').length,
+      total: ((body.querySelector('.dl-col') || {}).textContent || '').trim(),
       text: (body.textContent || '').slice(0, 500)
     };
   });
+  /* The total's PROVENANCE has to match the number. This harness's gameweek
+     is finished, so the official figure is correct here even though it is 0 —
+     the live-versus-finished rule itself is unit-tested in dev/test-rivals.mjs,
+     where both states can actually be produced. What a browser adds is that
+     the label and the figure come from the same decision rather than drifting
+     apart in the markup. */
+  ok(/Gameweek points from FPL|Live total/.test(card.text), 'the total says where it came from');
+  ok(!(/Gameweek points from FPL/.test(card.text) && /Live total/.test(card.text)),
+     'and says it once, not both ways at the same time');
+
   ok(/show/.test(card.shown), 'the card opens from the league table');
   ok(/Rival FC/.test(card.name), 'and names the manager clicked (' + card.name + ')');
   ok(card.xi === 11, 'eleven on the pitch, got ' + card.xi);
