@@ -222,13 +222,27 @@ function corsVerdict(cors) {
   return { ok: false, why: `fixed to ${cors} — needs a proxy` };
 }
 
-const LICENCE_WORDS = /(licen[cs]e|attribution|non-commercial|noncommercial|commercial use|free to use|terms of use|CC[ -]?BY|public domain|CC0)/i;
+/* TWO TIERS, and the distinction is the whole point.
+ *
+ * The first version had one flat list with "terms of use" and "licence" in
+ * it, took the FIRST match, and returned the text around it. On every page
+ * probed, that first match was navigation furniture — a header, a footer
+ * link, a table of contents entry — so the survey reported an excerpt for
+ * Open-Meteo that was liability boilerplate and left the actual licence
+ * unread. It looked like an answer. It was a heading.
+ *
+ * STRONG wording states a permission or a licence. WEAK wording only tells
+ * you the page is about permissions, which is not the same thing and must
+ * never be printed as though it were.
+ */
+const STRONG_WORDS = /(CC[ -]?BY(?:[ -]?(?:SA|NC|ND))*(?:[ -]?\d(?:\.\d)?)?|CC0|creative commons|public domain|non-?commercial|commercial use|free to use|free for|may be used|you may use|attribution (?:is )?(?:required|requested)|requires? attribution|open (?:data )?licen[cs]e|ODbL|MIT licen[cs]e|Apache)/i;
+const WEAK_WORDS = /(licen[cs]e|terms of use|attribution|terms and conditions)/i;
 
 /* An excerpt, labelled as an excerpt. The temptation is to grep for a word
    and print "permitted"; that is the robots.txt failure this repo already
    wrote down — an absence of a matched rule dressed up as permission. So this
    prints WHAT IT FOUND and the URL, and draws no conclusion whatever. */
-function licenceExcerpt(text) {
+function licenceExcerpt(text, max = 3) {
   if (!text) return null;
   const plain = text
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -237,10 +251,40 @@ function licenceExcerpt(text) {
     .replace(/&[a-z]+;/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  const m = plain.match(LICENCE_WORDS);
-  if (!m) return { found: false, len: plain.length };
-  const i = Math.max(0, m.index - 90);
-  return { found: true, len: plain.length, text: plain.slice(i, i + 260) };
+  if (!plain) return { found: false, strong: false, len: 0, hits: [] };
+
+  /* Every strong match, not the first — a licence clause is rarely the first
+     thing on a page, and taking the first is how the heading won last time. */
+  const hits = [];
+  const seen = new Set();
+  const re = new RegExp(STRONG_WORDS.source, 'gi');
+  let m;
+  while ((m = re.exec(plain)) !== null && hits.length < max) {
+    const i = Math.max(0, m.index - 110);
+    const slice = plain.slice(i, i + 300);
+    /* Overlapping windows around adjacent matches say the same thing twice. */
+    const fingerprint = slice.slice(0, 60);
+    if (seen.has(fingerprint)) continue;
+    seen.add(fingerprint);
+    hits.push({ term: m[0], text: slice });
+  }
+  if (hits.length) return { found: true, strong: true, len: plain.length, hits };
+
+  /* Weak only. Report it as weak, loudly. The page is ABOUT permissions and
+     this survey did not find any stated. That is a prompt to read the URL,
+     not a finding, and it is the difference between "no licence clause was
+     matched" and "there is no licence". */
+  const w = plain.match(WEAK_WORDS);
+  if (w) {
+    const i = Math.max(0, w.index - 110);
+    return {
+      found: true,
+      strong: false,
+      len: plain.length,
+      hits: [{ term: w[0], text: plain.slice(i, i + 300) }]
+    };
+  }
+  return { found: false, strong: false, len: plain.length, hits: [] };
 }
 
 const short = (u) => u.replace(/^https?:\/\//, '').slice(0, 64);
@@ -298,10 +342,16 @@ for (const c of CANDIDATES) {
   const t = await get(c.terms, { Accept: 'text/html' });
   console.log(`  terms: ${short(c.terms)} → HTTP ${t.status || 'unreachable'}`);
   const ex = t.status === 200 ? licenceExcerpt(t.text) : null;
-  if (ex && ex.found) {
-    console.log(`     EXCERPT (not a verdict — read the URL): "…${ex.text}…"`);
+  if (ex && ex.strong) {
+    console.log(`     STATED PERMISSIONS found (${ex.hits.length}). Excerpts, not a verdict:`);
+    ex.hits.forEach((h) => console.log(`       [${h.term}] "…${h.text}…"`));
+  } else if (ex && ex.found) {
+    console.log(`     ONLY GENERIC WORDING matched ("${ex.hits[0].term}") in ${ex.len} chars.`);
+    console.log(`     This page is ABOUT permissions; no stated permission was found in it.`);
+    console.log(`     That is a fact about this fetch, NOT about the terms. Read the URL.`);
+    console.log(`       "…${ex.hits[0].text}…"`);
   } else if (ex) {
-    console.log(`     no licence wording matched in ${ex.len} chars of text.`);
+    console.log(`     no licence wording matched at all in ${ex.len} chars of text.`);
     console.log(`     That is a fact about this fetch, NOT about the terms. Read the URL.`);
   } else if (t.status) {
     console.log(`     terms page did not answer 200; nothing read.`);
@@ -316,7 +366,7 @@ for (const c of CANDIDATES) {
     json: !/HTML|unparseable|empty/.test(shape),
     envelope,
     termsStatus: t.status,
-    termsExcerpt: !!(ex && ex.found)
+    termsStrong: !!(ex && ex.strong)
   });
 }
 
@@ -335,6 +385,16 @@ const noTerms = rows.filter((x) => x.termsStatus !== 200);
 if (noTerms.length) {
   console.log(`${noTerms.length} terms page(s) did not answer: ${noTerms.map((x) => x.name).join(', ')}.`);
   console.log(`  Unreachable terms is not permissive terms. Treat those as unanswered.`);
+}
+/* The count that actually matters for "free to USE". Reachability was never
+   the hard part. */
+const stated = rows.filter((x) => x.termsStrong);
+console.log(`${stated.length} of ${rows.length} had a STATED permission this survey could quote:` +
+  (stated.length ? ` ${stated.map((x) => x.name).join(', ')}.` : ' none.'));
+const vague = rows.filter((x) => x.termsStatus === 200 && !x.termsStrong);
+if (vague.length) {
+  console.log(`${vague.length} answered with only generic wording: ${vague.map((x) => x.name).join(', ')}.`);
+  console.log(`  Those are UNANSWERED, not permissive. A human reads the URL or nothing is built.`);
 }
 
 /* THE INSTRUMENT CHECK. Run this from the development sandbox and every

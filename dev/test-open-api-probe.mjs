@@ -61,24 +61,56 @@ ok(shapeOf('', 'application/json') === 'empty', 'an empty body should say empty'
 ok(/unparseable/.test(shapeOf('not json at all', 'application/json')),
   'a non-JSON body claiming JSON should be called unparseable, not accepted');
 
-/* ── licence excerpt: the robots.txt lesson ── */
+/* ── licence excerpt: the robots.txt lesson, and the heading problem ──
+   The first version had one flat word list, took the FIRST match, and on
+   every real page that match was navigation furniture. Open-Meteo's licence
+   went unread for a whole survey because "Terms of Use" appears in the header
+   and won. Strong wording states a permission; weak wording only says the
+   page is about permissions. Conflating them is how a heading gets reported
+   as an answer. */
 const found = licenceExcerpt('<p>Some preamble here. This data is licensed under CC BY 4.0 and may be reused.</p>');
-ok(found && found.found, 'licence wording present should be found');
-ok(/CC BY 4.0/.test(found.text), 'the excerpt should carry the actual wording through');
-ok(!/verdict|permitted|allowed/i.test(found.text), 'the excerpt should be text, not a judgement');
+ok(found && found.strong, 'a stated licence should be found as STRONG');
+ok(/CC BY 4.0/.test(found.hits[0].text), 'the excerpt should carry the actual wording through');
+ok(!/verdict|permitted|allowed/i.test(found.hits[0].text), 'the excerpt should be text, not a judgement');
+
+/* THE REGRESSION THAT MOTIVATED ALL OF THIS. Nav furniture first, real
+   clause much later — the shape of every terms page probed. */
+const buried = licenceExcerpt(
+  '<nav>Home Features Pricing Terms of Use Privacy</nav>' +
+  '<p>' + 'filler text. '.repeat(40) + '</p>' +
+  '<p>All data is free to use for commercial purposes under CC BY 4.0.</p>');
+ok(buried.strong, 'a clause buried under nav furniture must still be found');
+ok(/free to use for commercial/.test(buried.hits.map((h) => h.text).join(' ')),
+  'the buried clause, not the heading, is what should be quoted');
+
+/* Weak-only: the page talks about licensing and states nothing. This must be
+   visibly different from a stated permission, and from silence. */
+const weak = licenceExcerpt('<nav>Terms of Use</nav><p>We accept no responsibility for outages.</p>');
+ok(weak && weak.found, 'generic wording should still register as found');
+ok(weak.strong === false, 'generic wording must NOT be reported as a stated permission');
 
 const missing = licenceExcerpt('<p>Welcome to our website. Here is some news about cats.</p>');
 ok(missing && missing.found === false, 'absent licence wording should report found:false');
+ok(missing.strong === false, 'absent wording is certainly not strong');
 ok(typeof missing.len === 'number' && missing.len > 0,
   'a no-match result must still report how much text was actually read — a zero-length');
 ok(licenceExcerpt('') === null, 'no document at all should be null, distinct from "no match"');
 
+/* Several clauses: a real terms page states more than one thing, and the one
+   that matters may not be first. */
+const many = licenceExcerpt(
+  '<p>Data is CC BY 4.0.</p>' + '<p>' + 'x '.repeat(200) + '</p>' +
+  '<p>Attribution is required.</p>' + '<p>' + 'y '.repeat(200) + '</p>' +
+  '<p>Commercial use is permitted.</p>');
+ok(many.hits.length >= 2, 'multiple distinct clauses should produce multiple excerpts');
+ok(many.hits.length <= 3, 'excerpts should be capped so the report stays readable');
+
 /* Tags are stripped so wording inside markup is still found, and scripts are
    dropped so a JS string does not masquerade as the terms. */
-ok(licenceExcerpt('<div><span>Creative</span> Commons <b>CC0</b> dedication</div>').found,
+ok(licenceExcerpt('<div><span>Creative</span> Commons <b>CC0</b> dedication</div>').strong,
   'wording split across tags should still match');
-const scripted = licenceExcerpt('<script>var t="licence";</script><p>Nothing relevant here.</p>');
-ok(scripted && scripted.found === false, 'wording inside a <script> must not count as terms');
+const scripted = licenceExcerpt('<script>var t="CC BY 4.0";</script><p>Nothing relevant here.</p>');
+ok(scripted && scripted.strong === false, 'wording inside a <script> must not count as a permission');
 
 /* ── error bodies: the diagnosis, not the key names ──
    The first live run came back 503 from the one candidate that filled a real
