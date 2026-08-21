@@ -366,7 +366,8 @@ for (const c of CANDIDATES) {
     json: !/HTML|unparseable|empty/.test(shape),
     envelope,
     termsStatus: t.status,
-    termsStrong: !!(ex && ex.strong)
+    termsStrong: !!(ex && ex.strong),
+    termsHits: (ex && ex.hits) || []
   });
 }
 
@@ -412,6 +413,22 @@ if (bad.length === rows.length && rows.length > 1) {
   console.log(`   survey looks like when run somewhere without open egress — the`);
   console.log(`   development sandbox answers 403 to all of them. Run it from the`);
   console.log(`   Data source surveys workflow and compare.`);
+}
+
+/* THE DIGEST. The per-candidate detail above is 250 lines by the time eight
+   candidates have each printed three excerpts, and the thing a reader came
+   for — what am I actually permitted to do — is at the top, scrolled away.
+   So it is repeated here, at the bottom, next to the URL it came from. Same
+   evidence, placed where somebody will read it. */
+if (stated.length) {
+  console.log(`\n${'='.repeat(74)}\nSTATED PERMISSIONS — the digest\n${'='.repeat(74)}`);
+  stated.forEach((x) => {
+    console.log(`\n${x.name}`);
+    console.log(`  ${x.terms}`);
+    x.termsHits.forEach((h) => console.log(`  [${h.term}] …${h.text.slice(0, 230)}…`));
+  });
+  console.log(`\nStill excerpts. Still not a verdict. But these are the sentences a`);
+  console.log(`human has to read and decide on, and now they are in one place.`);
 }
 
 console.log(`\nWhat this survey does NOT tell you:`);
