@@ -103,6 +103,53 @@ distinction exists.
 Neither of these is wired into the app yet. This records that the input is
 available, not that anything reads it.
 
+## Free to USE — the successor survey (21 Aug 2026)
+
+`dev/open-api-probe.mjs`, run from the **Data source surveys** workflow. This
+one puts licensing first, because the survey above could not, and that gap is
+what made Pulselive expensive to close. Two filters applied **before** any
+request: the candidate must publish terms somewhere citable, and it must need
+no key. The first excludes every undocumented site backend as a matter of
+policy; the second is the project's standing rule.
+
+| Candidate | Result | CORS from our origin | Terms |
+|---|---|---|---|
+| **Open-Meteo forecast** | 200 | wildcard | read; excerpt was liability boilerplate — **licence not captured, read the URL** |
+| **Open-Meteo archive** | 200 | wildcard | as above |
+| REST Countries v3.1 | **200 with an error envelope** — *"This API version has been deprecated"* | wildcard | no licence wording matched |
+| Wikidata entity | 200 `{entities}` | wildcard | CC0 wording found |
+| Club Elo | **unreachable** — 15s timeout on http, `fetch failed` on https | — | terms page never answered |
+| Sunrise-Sunset | 200 | wildcard | *"The API is free to use: no sign up or API key required. We do require attribution: display a visible link to sunrise-sunset.org"* |
+| TheSportsDB | 200 — but the `/3/` in the path **is their public test key**, so it fails the no-key filter | wildcard | no licence wording matched |
+| FPL Draft API | 200, full bootstrap shape | **none — needs a proxy** | PL terms page answered; excerpt was site navigation |
+
+**The one gap with nothing filling it is weather.** `grep -riE
+'weather|rain|wind|temperature'` across `index.html` and `netlify/functions/`
+returns 0. Everything else on this list either duplicates something we have
+(Elo via FPL-Core-Insights, nationality via football-data) or fills no gap
+anyone has named.
+
+Three things this run corrected about itself, each caught by reading output:
+
+1. **A 503 with the reason thrown away.** Open-Meteo's forecast route answered
+   503 on the first run and the output printed `{reason, error}` — the key
+   names, not the values. Key names cannot separate a bad parameter from a
+   rate limit from an outage. The body is printed now, and the re-run answered
+   200, so that 503 was transient. Reporting it as "Open-Meteo refuses us"
+   would have been the natural, wrong reading.
+2. **A 200 that was not a success.** REST Countries was counted among "6 of 8
+   answered 200 with parseable JSON" while returning a deprecation notice and
+   no countries. Error envelopes are excluded from the usable count now, and
+   the deprecation only became visible once bodies were printed.
+3. **A candidate mislabelled as keyless.** TheSportsDB was described as
+   "probed WITHOUT a key". The `/3/` path segment *is* the key — a shared demo
+   credential that can be rate-limited or revoked for everyone at once. It
+   fails the filter, and failing it is the finding.
+
+**Nothing here is wired in.** This records what is available and under what
+stated terms. Every licence judgement remains a human one; the excerpts above
+are excerpts, and the URLs are in `dev/open-api-probe.mjs`.
+
 ## The one that touches an open question
 
 `/teams/{id}/compseasons/{s}/staff` returns an `officials` array. Referee
