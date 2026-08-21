@@ -21,7 +21,7 @@
  * functions directly.
  */
 
-import { corsVerdict, shapeOf, licenceExcerpt, CANDIDATES, OUR_ORIGIN }
+import { corsVerdict, shapeOf, licenceExcerpt, errorBody, isErrorEnvelope, CANDIDATES, OUR_ORIGIN }
   from './open-api-probe.mjs';
 
 let fails = 0, checks = 0;
@@ -79,6 +79,43 @@ ok(licenceExcerpt('<div><span>Creative</span> Commons <b>CC0</b> dedication</div
   'wording split across tags should still match');
 const scripted = licenceExcerpt('<script>var t="licence";</script><p>Nothing relevant here.</p>');
 ok(scripted && scripted.found === false, 'wording inside a <script> must not count as terms');
+
+/* ── error bodies: the diagnosis, not the key names ──
+   The first live run came back 503 from the one candidate that filled a real
+   gap, and the output printed `{reason, error}` and discarded both values.
+   Key names cannot distinguish a bad parameter from a rate limit from an
+   outage, and those have completely different consequences. */
+ok(/reason: Hourly API request limit exceeded/.test(
+  errorBody('{"error":true,"reason":"Hourly API request limit exceeded"}') || ''),
+  'an error body should surface the upstream reason verbatim');
+ok(/error: true/.test(errorBody('{"error":true,"reason":"x"}') || ''),
+  'an error flag should be reported alongside the reason');
+ok(errorBody('{"latitude":51.5,"hourly":{}}') === null,
+  'a healthy payload should produce no error line at all');
+ok(/not json/i.test(errorBody('not json, a plain string') || ''),
+  'a non-JSON error body should still be shown, truncated');
+ok(errorBody('') === null, 'no body should produce no error line');
+
+/* ── a 200 is not a success ──
+   REST Countries answered 200 with {success, data, errors} and the first
+   summary counted it among "6 of 8 answered 200 with parseable JSON". */
+ok(isErrorEnvelope('{"success":false,"data":null,"errors":["bad fields"]}'),
+  'success:false should be an error envelope');
+ok(isErrorEnvelope('{"error":true,"reason":"whatever"}'),
+  'error:true should be an error envelope');
+ok(isErrorEnvelope('{"reason":"x","error":"y"}'),
+  'reason plus error should be an error envelope');
+ok(isErrorEnvelope('{"data":[],"errors":["one"]}'),
+  'a non-empty errors array should be an error envelope');
+ok(!isErrorEnvelope('{"data":[1,2],"errors":[]}'),
+  'an EMPTY errors array is not an error — that must not be a false positive');
+ok(!isErrorEnvelope('{"data":[1,2],"errors":null}'),
+  'a null errors field is not an error either');
+ok(!isErrorEnvelope('{"latitude":51.5,"hourly":{}}'),
+  'a healthy payload is not an error envelope');
+ok(!isErrorEnvelope('[{"name":"Brazil"}]'),
+  'an array payload is not an error envelope');
+ok(!isErrorEnvelope('not json'), 'unparseable text is not an error envelope by this test');
 
 /* ── the candidate list itself ── */
 ok(CANDIDATES.length > 0, 'there should be candidates');

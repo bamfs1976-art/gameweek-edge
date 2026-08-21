@@ -86,8 +86,12 @@ const CANDIDATES = [
     terms: 'https://www.wikidata.org/wiki/Wikidata:Licensing'
   },
   {
-    name: 'Club Elo',
-    url: 'http://api.clubelo.com/Fixtures',
+    /* http:// is not a typo — the documented host is plain HTTP, which is a
+       finding in itself for a site whose CSP would have to allow it. The
+       first run timed out at 15s here; https is tried too so the report can
+       say which, rather than filing the whole service as gone. */
+    name: 'Club Elo (https)',
+    url: 'https://api.clubelo.com/Fixtures',
     gap: 'NONE — Elo already arrives via FPL-Core-Insights (netlify/functions/team-elo.js). Probed to confirm it is a duplicate.',
     terms: 'http://clubelo.com/API'
   },
@@ -98,9 +102,14 @@ const CANDIDATES = [
     terms: 'https://sunrise-sunset.org/api'
   },
   {
-    name: 'TheSportsDB (free tier)',
+    /* CORRECTION. This was labelled "probed WITHOUT a key" and that was
+       false: the `/3/` path segment IS TheSportsDB's public test key. It
+       therefore does not meet the no-key filter — it meets it the way a
+       shared password meets "no password". Kept in the list, relabelled, and
+       failing the filter is the finding. */
+    name: 'TheSportsDB (public test key /3/ — FAILS the no-key filter)',
     url: 'https://www.thesportsdb.com/api/v1/json/3/search_all_teams.php?l=English%20Premier%20League',
-    gap: 'Squad and venue metadata. Probed WITHOUT a key to record whether the free tier is open or gated.',
+    gap: 'Squad and venue metadata — but gated behind a shared demo key that can be revoked or rate-limited at any time, for everyone using it.',
     terms: 'https://www.thesportsdb.com/free_sports_api'
   },
   {
@@ -160,6 +169,48 @@ function shapeOf(text, ct) {
   return typeof data;
 }
 
+/* An API that answers 200 with {success, data, errors} has not given us data,
+   and one that answers 503 with {reason, error} is TELLING US WHY. The first
+   version of this survey printed the key names and threw both bodies away —
+   so the single most valuable candidate came back 503 and the output could
+   not say whether that was a bad parameter, a rate limit, or the service
+   being down. Key names are not a diagnosis. The body is. */
+const ERROR_KEYS = /^(error|errors|reason|message|detail|status_message)$/i;
+
+function errorBody(text) {
+  if (!text) return null;
+  let data;
+  try { data = JSON.parse(text); } catch (_) { return text.slice(0, 200).replace(/\s+/g, ' ').trim(); }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return null;
+  const keys = Object.keys(data);
+  const hit = keys.filter((k) => ERROR_KEYS.test(k));
+  if (!hit.length) return null;
+  const parts = hit.map((k) => {
+    const v = data[k];
+    const s = typeof v === 'string' ? v : JSON.stringify(v);
+    return `${k}: ${String(s).slice(0, 160)}`;
+  });
+  return parts.join(' | ');
+}
+
+/* A 200 carrying an error envelope is not a success, and counting it as one
+   is how "6 of 8 answered 200" becomes a misleading headline. */
+function isErrorEnvelope(text) {
+  if (!text) return false;
+  let data;
+  try { data = JSON.parse(text); } catch (_) { return false; }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+  const keys = Object.keys(data);
+  /* `errors` present AND non-empty, or an explicit error flag. A payload that
+     merely HAS an `errors` key set to null or [] is fine. */
+  if (data.error === true || (typeof data.error === 'string' && data.error)) return true;
+  if (data.success === false) return true;
+  const errs = data.errors;
+  if (Array.isArray(errs) ? errs.length > 0 : (errs && typeof errs === 'object')) return true;
+  if (keys.includes('reason') && keys.includes('error')) return true;
+  return false;
+}
+
 /* Three outcomes, named. A browser on our domain can call a wildcard; it can
    call one that echoes us; it cannot call one fixed to somebody else; and an
    absent header is the same "cannot" as the last. Anything other than
@@ -199,7 +250,7 @@ const short = (u) => u.replace(/^https?:\/\//, '').slice(0, 64);
    and without running the survey. Everything above this line is a decision
    about what an answer MEANS, which is the part worth testing; everything
    below is fetching and printing. */
-export { corsVerdict, shapeOf, licenceExcerpt, CANDIDATES, OUR_ORIGIN };
+export { corsVerdict, shapeOf, licenceExcerpt, errorBody, isErrorEnvelope, CANDIDATES, OUR_ORIGIN };
 
 /* Only survey when run directly. Imported, this file must stay inert —
    otherwise the test that checks its judgement calls would itself go to the
@@ -235,8 +286,12 @@ for (const c of CANDIDATES) {
   }
   const shape = shapeOf(r.text, r.ct);
   const cv = corsVerdict(r.cors);
-  console.log(`  → HTTP ${r.status}  ${r.ct || 'no content-type'}  ${r.ms}ms`);
+  const envelope = r.status === 200 && isErrorEnvelope(r.text);
+  console.log(`  → HTTP ${r.status}  ${r.ct || 'no content-type'}  ${r.ms}ms` +
+    (envelope ? '   ← 200, but an ERROR ENVELOPE' : ''));
   console.log(`     shape: ${shape}`);
+  const why = errorBody(r.text);
+  if (why && (r.status !== 200 || envelope)) console.log(`     upstream says: ${why}`);
   console.log(`     CORS:  ${cv.why}`);
 
   await sleep(PACE_MS);
@@ -259,14 +314,20 @@ for (const c of CANDIDATES) {
     shape,
     cors: cv,
     json: !/HTML|unparseable|empty/.test(shape),
+    envelope,
     termsStatus: t.status,
     termsExcerpt: !!(ex && ex.found)
   });
 }
 
 console.log(`\n${'='.repeat(74)}\nSUMMARY\n${'='.repeat(74)}`);
-const usable = rows.filter((x) => x.reachable && x.status === 200 && x.json);
-console.log(`${usable.length} of ${rows.length} answered 200 with parseable JSON, keyless.`);
+const usable = rows.filter((x) => x.reachable && x.status === 200 && x.json && !x.envelope);
+console.log(`${usable.length} of ${rows.length} returned usable JSON.`);
+const envelopes = rows.filter((x) => x.envelope);
+if (envelopes.length) {
+  console.log(`${envelopes.length} answered 200 with an error envelope and are NOT counted as usable:`);
+  console.log(`  ${envelopes.map((x) => x.name).join(', ')}. A 200 is not a success.`);
+}
 const direct = usable.filter((x) => x.cors.ok);
 console.log(`${direct.length} of those ${direct.length === 1 ? 'is' : 'are'} browser-callable; ` +
   `${usable.length - direct.length} would need a Netlify function.`);
