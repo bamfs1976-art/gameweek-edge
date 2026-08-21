@@ -9,12 +9,19 @@ knowledge as verification.
 
 Re-run the workflow before trusting any of this. Endpoints rot.
 
+> **The Pulselive question below is closed.** 21 Aug 2026: investigated and
+> **declined** — everything we wanted from it turned out to be available from
+> `api.football-data.org`, which we already hold a key for under published
+> terms. See **`docs/scope-pulselive-source.md`** for the measurements and
+> what would reopen it. The survey below is left as written, because it is
+> the evidence that decision was made on.
+
 ## In use today
 
 | Source | Key | How it reaches the browser |
 |---|---|---|
 | `fantasy.premierleague.com/api` | none | `netlify/functions/fpl.js`, with an ALLOW list |
-| `api.football-data.org` v4 | free key, configured | `netlify/functions/football-data.js` — referees, midweek fixtures |
+| `api.football-data.org` v4 | free key, configured | `netlify/functions/football-data.js` — midweek fixtures, and (measured 21 Aug 2026) squad **nationality** and confirmed-vs-provisional kick-offs |
 | `resources.premierleague.com` | none | direct — crests and player photos |
 | `raw.githubusercontent.com` (vaastav) | none | build-time, historical seasons |
 
@@ -76,6 +83,25 @@ it is deliberately not encoded in an exit code.
 **Coverage.** The candidate list is hand-written and finite. An endpoint
 absent from the output was *not probed*, which is not the same as not
 existing.
+
+## What the source we already have turned out to carry
+
+Measured 21 Aug 2026 by `dev/probe-squad-nationality.mjs`, run through our own
+deployed proxy so no key left the Netlify function. Both of these were reasons
+to want Pulselive, and both are answered here instead:
+
+| Route | Finding |
+|---|---|
+| `/teams/{id}` → `squad[].nationality` | Filled on **97/97** Premier League and **66/66** Championship players asked. No gaps. |
+| `/competitions/{c}/matches` → `status` | `SCHEDULED` (date known, time not fixed) and `TIMED` (confirmed) are **both real on this plan** — Championship returned `SCHEDULED 264, TIMED 276, FINISHED 12`. |
+
+The Premier League returned `TIMED 380` — every fixture confirmed — which on
+its own proves nothing either way, and the probe says so rather than reporting
+it as a finding. It is the Championship split that establishes the
+distinction exists.
+
+Neither of these is wired into the app yet. This records that the input is
+available, not that anything reads it.
 
 ## The one that touches an open question
 
