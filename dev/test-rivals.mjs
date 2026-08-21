@@ -64,13 +64,23 @@ function extractFn(src, name) {
   return extractBlock(src, idx);
 }
 
-const ctx = vm.createContext({ console });
+function extractLine(src, re) {
+  const m = src.match(re);
+  if (!m) throw new Error('line not found: ' + re);
+  return m[0];
+}
+
+const ctx = vm.createContext({ console, Date, isNaN, parseFloat, Math });
 vm.runInContext([
+  extractLine(html, /const CHIP_API_LABEL=\{[^}]*\};/),
+  extractLine(html, /const POS_PLURAL=\{[^}]*\};/),
   extractFn(html, 'rivalLivePts'),
-  extractFn(html, 'rivalSquadRows')
+  extractFn(html, 'rivalSquadRows'),
+  extractFn(html, 'rivalChipSummary'),
+  extractFn(html, 'elementExtras')
 ].join('\n'), ctx);
 
-const { rivalLivePts, rivalSquadRows } = ctx;
+const { rivalLivePts, rivalSquadRows, rivalChipSummary, elementExtras } = ctx;
 
 let pass = 0; const fail = [];
 const ok = (cond, label) => { if (cond) pass++; else fail.push(label); };
@@ -190,6 +200,87 @@ const allTwo = () => { const m = {}; for (let i = 0; i < 15; i++) m[100 + i] = 2
   const r = rivalSquadRows(shuffled, mkLive(allTwo()), []);
   eq(r.xi.map((x) => x.position), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], 'picks are sorted by position');
 }
+
+/* ── chips: what they are spending, and what they have spent ──────── */
+{
+  const h = { chips: [{ name: 'wildcard', event: 3 }, { name: '3xc', event: 1 }] };
+  const r = rivalChipSummary(h, { active_chip: 'bboost' });
+  eq(r.active, 'bboost', 'the live chip comes off the picks');
+  eq(r.activeLabel, 'Bench Boost', 'and is shown in English, not as an API code');
+  eq(r.played.map((c) => c.event), [1, 3], 'history is ordered by gameweek, not by feed order');
+  eq(r.played.map((c) => c.label), ['Triple Captain', 'Wildcard'], 'and labelled');
+}
+{
+  /* The two feeds answer different questions and must not be conflated: a
+     chip played THIS week is in both, one played in GW3 only in history. */
+  const r = rivalChipSummary({ chips: [{ name: 'freehit', event: 7 }] }, { active_chip: 'freehit' });
+  eq(r.active, 'freehit', 'active is still reported');
+  eq(r.played.length, 1, 'and the same chip appears once in the history, not twice');
+}
+{
+  const r = rivalChipSummary(null, null);
+  eq(r.active, null, 'no picks means no active chip');
+  eq(r.played, [], 'no history means no played chips');
+  eq(r.activeLabel, null, 'and nothing to label');
+}
+{
+  const r = rivalChipSummary({ chips: [{ name: 'wildcard' }] }, { active_chip: 'mystery' });
+  eq(r.activeLabel, 'mystery', 'an unknown chip code falls back to the code rather than blanking');
+  eq(r.played[0].event, null, 'a chip with no gameweek keeps a null rather than inventing one');
+}
+
+/* ── fields the feed sends that the app never read ────────────────── */
+const POOL = { elements: Array.from({ length: 7 }, (_, i) => ({ element_type: i < 4 ? 3 : 2 })) };
+const find = (rows, label) => rows.find((r) => r.label === label);
+{
+  const e = { element_type: 3, ep_this: '4.6', value_form: '1.2', starts_per_90: '0.94',
+    clean_sheets_per_90: '0.21', threat_rank_type: 2, influence_rank_type: 5,
+    now_cost_rank_type: 1, squad_number: 7, birth_date: '2000-01-01' };
+  const rows = elementExtras(POOL, e, Date.parse('2026-08-21'));
+  eq(find(rows, 'FPL expected points, this GW').value, '4.6', 'ep_this is surfaced');
+  ok(/their model/.test(find(rows, 'FPL expected points, this GW').note),
+    'and attributed, so it is not mistaken for ours');
+  eq(find(rows, 'Starts per 90').value, '0.94', 'the per-90 FPL computes is shown');
+  eq(find(rows, 'Threat rank').value, '2 of 4', 'ranks are positional, counted against the real pool');
+  ok(/midfielders/.test(find(rows, 'Threat rank').note), 'and say which position');
+  eq(find(rows, 'Squad number').value, 7, 'squad number is shown');
+  eq(find(rows, 'Age').value, 26, 'birth_date becomes an age, not a date');
+  ok(!find(rows, 'Saves per 90'), 'an outfielder gets no saves rate');
+}
+{
+  const e = { element_type: 1, saves_per_90: '3.10', clean_sheets_per_90: '0.40' };
+  const rows = elementExtras(POOL, e, Date.parse('2026-08-21'));
+  eq(find(rows, 'Saves per 90').value, '3.10', 'a keeper does');
+}
+{
+  /* Absent is absent. A missing field must not become a zero, a dash or an
+     empty row — the card should simply not carry it. */
+  const rows = elementExtras(POOL, { element_type: 3 }, Date.parse('2026-08-21'));
+  eq(rows.length, 0, 'an element with none of these fields yields no rows');
+}
+{
+  const rows = elementExtras(POOL, { element_type: 3, ep_this: '0.0', threat_rank_type: 0 },
+    Date.parse('2026-08-21'));
+  eq(find(rows, 'FPL expected points, this GW').value, '0.0', 'a genuine zero xP is shown');
+  ok(!find(rows, 'Threat rank'), 'but a zero rank is not a rank, so it is omitted');
+}
+{
+  /* The two deliberate omissions. Both are present on the element and must
+     stay off the card until their meaning or framing is settled. */
+  const e = { element_type: 3, region: 15, price_change_percent: '12.4',
+    price_change_projections: [1, 2], birth_date: 'not-a-date' };
+  const rows = elementExtras(POOL, e, Date.parse('2026-08-21'));
+  ok(!rows.some((r) => /region/i.test(r.label)), 'region is not surfaced — its meaning is unmeasured');
+  ok(!rows.some((r) => /price change|projection/i.test(r.label)),
+    'projected price changes are not surfaced bare');
+  ok(!find(rows, 'Age'), 'an unparseable birth date yields no age rather than NaN');
+}
+{
+  const rows = elementExtras(POOL, { element_type: 3, birth_date: '1900-01-01' },
+    Date.parse('2026-08-21'));
+  ok(!find(rows, 'Age'), 'an implausible age is dropped rather than printed');
+}
+eq(elementExtras(null, null, 0), [], 'no element yields no rows rather than throwing');
 
 console.log(`rivals — ${pass}/${pass + fail.length} checks passed`);
 if (fail.length) { fail.forEach((f) => console.log('  FAIL  ' + f)); process.exit(1); }
