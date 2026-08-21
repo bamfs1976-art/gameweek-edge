@@ -1,5 +1,5 @@
 /*
- * Proves dev/probe-squad-nationality.mjs can tell its six answers apart.
+ * Proves dev/probe-squad-nationality.mjs can tell its answers apart.
  *
  * A probe whose gates have never been made to fire is a probe you are
  * trusting on its own word. This one's whole claim is that it distinguishes
@@ -7,7 +7,7 @@
  * distinction is worth exactly nothing until something has driven it down
  * both paths and watched it say different things.
  *
- * So: a mock of our own proxy, six scenarios, and an assertion on what the
+ * So: a mock of our own proxy, nine scenarios, and an assertion on what the
  * probe SAYS about each. The scenarios include the two failure shapes this
  * repository has actually met — a key present but never filled (`referees`)
  * and a chain that broke upstream of the question (the guessed fixture id) —
@@ -65,10 +65,19 @@ const server = http.createServer((req, res) => {
   if (url.pathname.endsWith('/matchday')) {
     if (matchdayMode === 'empty') return send(200, { matches: [], _meta: meta });
     if (matchdayMode === 'error') return send(503, { error: 'FOOTBALL_DATA_KEY is not visible to this function' });
+    /* Match `status` decides whether a confirmed kick-off can be told from a
+       provisional one, which is the second thing Pulselive was wanted for. */
+    const st = { both: ['TIMED', 'SCHEDULED'], onlyTimed: ['TIMED', 'TIMED'], none: [undefined, undefined] }[matchdayMode]
+      || ['TIMED', 'SCHEDULED'];
+    const m = (id, h, hn, a, an, s) => {
+      const row = { id, homeTeam: { id: h, name: hn }, awayTeam: { id: a, name: an } };
+      if (s !== undefined) row.status = s;
+      return row;
+    };
     return send(200, {
       matches: [
-        { id: 1, homeTeam: { id: 57, name: 'Arsenal' }, awayTeam: { id: 64, name: 'Liverpool' } },
-        { id: 2, homeTeam: { id: 65, name: 'Man City' }, awayTeam: { id: 57, name: 'Arsenal' } }
+        m(1, 57, 'Arsenal', 64, 'Liverpool', st[0]),
+        m(2, 65, 'Man City', 57, 'Arsenal', st[1])
       ],
       _meta: meta
     });
@@ -149,9 +158,30 @@ ok(/no team ids/.test(r.out), 'no matches should name the broken link');
 ok(!/FILLED ON EVERY PLAYER/.test(r.out), 'no matches must not inherit the squad verdict');
 ok(r.code === 1, `no matches should exit 1 (got ${r.code})`);
 
-/* 8. The proxy itself refusing — the 503 the function returns when the key is
+/* 8. Confirmed vs provisional kick-off. The claim is only allowed when both
+      values are actually in the response — one alone is ambiguous between
+      "the plan collapses them" and "the season has not started". */
+scenario = 'filled'; matchdayMode = 'both';
+r = await run();
+ok(/status: SCHEDULED 1, TIMED 1/.test(r.out), 'both statuses should be counted and printed');
+ok(/ARE distinguishable on this plan/.test(r.out), 'both statuses should support the claim');
+
+matchdayMode = 'onlyTimed';
+r = await run();
+ok(/only TIMED seen/.test(r.out), 'one status should be named as one status');
+ok(/cannot/.test(r.out) && /Not evidence they are not/.test(r.out),
+  'one status should refuse the claim without turning it into a negative finding');
+ok(!/ARE distinguishable/.test(r.out), 'one status must not support the claim');
+
+matchdayMode = 'none';
+r = await run();
+ok(/status: absent from every match/.test(r.out), 'missing status should be reported as absent');
+ok(!/ARE distinguishable|only TIMED|only SCHEDULED/.test(r.out),
+  'missing status must not produce a partial claim');
+
+/* 9. The proxy itself refusing — the 503 the function returns when the key is
       not visible to it. Distinct from every data answer above. */
-matchdayMode = 'error';
+scenario = 'filled'; matchdayMode = 'error';
 r = await run();
 ok(/COULD NOT ASK/.test(r.out), 'proxy 503 should report COULD NOT ASK');
 ok(/HTTP 503/.test(r.out), 'proxy 503 should name the status');

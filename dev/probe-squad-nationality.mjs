@@ -81,19 +81,61 @@ const COMPS = [
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* A timeout and an elapsed figure, both for the same reason: on the first
+   real run I watched the job sit at "in progress" and concluded it had hung.
+   It had not — it finished in 63 seconds, on schedule, and the status I was
+   reading was stale. But I could not tell slow from stuck from the outside,
+   and neither could the log, because nothing here printed how long anything
+   took. Without a deadline a probe against an unresponsive host really would
+   sit there until the runner's six-hour limit, and it would look exactly the
+   same as this did. So: bound it, and show the number. */
+const TIMEOUT_MS = 20000;
+
 let calls = 0;
 async function hit(path) {
   if (calls++) await sleep(PACE_MS);
   const url = `${BASE}/api/football-data/${path}`;
+  const t0 = Date.now();
   try {
-    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    const r = await fetch(url, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    });
     const text = await r.text();
     let body = null;
     try { body = JSON.parse(text); } catch (_) { /* recorded below as non-JSON */ }
-    return { ok: r.ok, status: r.status, body, raw: text.slice(0, 200), url };
+    return { ok: r.ok, status: r.status, body, raw: text.slice(0, 200), url, ms: Date.now() - t0 };
   } catch (e) {
-    return { ok: false, status: 0, body: null, raw: String(e && e.message), url };
+    /* A timeout arrives here as an AbortError. Named explicitly, because
+       "status 0" covers DNS failure, connection refused and giving up
+       waiting, and those are three different things to act on. */
+    const timedOut = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
+    return {
+      ok: false,
+      status: 0,
+      body: null,
+      raw: timedOut ? `no answer within ${TIMEOUT_MS}ms` : String(e && e.message),
+      url,
+      ms: Date.now() - t0
+    };
   }
+}
+
+/* football-data distinguishes SCHEDULED (date known, kick-off time not yet
+   fixed) from TIMED (time confirmed). If that holds on our plan it is the
+   same distinction Pulselive offers as provisionalKickoff vs kickoff — the
+   second reason anyone wanted Pulselive — so it is counted rather than
+   assumed. An empty histogram means the key was absent, and says so. */
+function statusHistogram(body) {
+  const matches = (body && Array.isArray(body.matches)) ? body.matches : [];
+  const h = {};
+  let missing = 0;
+  matches.forEach((m) => {
+    const s = m && m.status;
+    if (typeof s !== 'string' || !s) { missing++; return; }
+    h[s] = (h[s] || 0) + 1;
+  });
+  return { h, missing, total: matches.length };
 }
 
 /* Distinct team ids in kickoff order, from whatever the matchday call gave
@@ -134,7 +176,7 @@ async function probeComp(comp) {
 
   const md = await hit(`matchday?competition=${comp.code}`);
   const meta = (md.body && md.body._meta) || {};
-  console.log(`matchday        → HTTP ${md.status}` +
+  console.log(`matchday        → HTTP ${md.status}  ${md.ms}ms` +
     (meta.requestsAvailableMinute ? `  (budget left this minute: ${meta.requestsAvailableMinute})` : ''));
 
   if (!md.ok) {
@@ -145,6 +187,26 @@ async function probeComp(comp) {
   const ids = teamIdsFrom(md.body);
   const matchCount = (md.body && Array.isArray(md.body.matches)) ? md.body.matches.length : 0;
   console.log(`                  ${matchCount} matches, ${ids.length} distinct clubs`);
+
+  const st = statusHistogram(md.body);
+  if (st.total && st.missing === st.total) {
+    console.log(`                  status: absent from every match on this plan`);
+  } else if (st.total) {
+    const parts = Object.keys(st.h).sort().map((k) => `${k} ${st.h[k]}`);
+    console.log(`                  status: ${parts.join(', ')}` +
+      (st.missing ? `, missing ${st.missing}` : ''));
+    /* Only claim the distinction when BOTH sides of it are present. One
+       value alone could mean the plan collapses them, or simply that the
+       season has not started — and those look identical from here. */
+    const timed = st.h.TIMED || 0, sched = st.h.SCHEDULED || 0;
+    if (timed && sched) {
+      console.log(`                  → TIMED and SCHEDULED both present: confirmed vs provisional`);
+      console.log(`                    kick-offs ARE distinguishable on this plan.`);
+    } else if (timed || sched) {
+      console.log(`                  → only ${timed ? 'TIMED' : 'SCHEDULED'} seen, so this run cannot`);
+      console.log(`                    show the two are distinguished. Not evidence they are not.`);
+    }
+  }
 
   /* GATE: no ids means nothing downstream can mean anything. Say so as a
      broken chain, not as a finding about nationality. */
