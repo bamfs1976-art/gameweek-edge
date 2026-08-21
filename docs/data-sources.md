@@ -114,8 +114,8 @@ policy; the second is the project's standing rule.
 
 | Candidate | Result | CORS from our origin | Terms |
 |---|---|---|---|
-| **Open-Meteo forecast** | 200 | wildcard | read; excerpt was liability boilerplate — **licence not captured, read the URL** |
-| **Open-Meteo archive** | 200 | wildcard | as above |
+| ~~Open-Meteo forecast~~ | 200 | wildcard | **FREE TIER IS NON-COMMERCIAL ONLY — see below** |
+| ~~Open-Meteo archive~~ | 200 | wildcard | **as above** |
 | REST Countries v3.1 | **200 with an error envelope** — *"This API version has been deprecated"* | wildcard | no licence wording matched |
 | Wikidata entity | 200 `{entities}` | wildcard | CC0 wording found |
 | Club Elo | **unreachable** — 15s timeout on http, `fetch failed` on https | — | terms page never answered |
@@ -123,11 +123,53 @@ policy; the second is the project's standing rule.
 | TheSportsDB | 200 — but the `/3/` in the path **is their public test key**, so it fails the no-key filter | wildcard | no licence wording matched |
 | FPL Draft API | 200, full bootstrap shape | **none — needs a proxy** | PL terms page answered; excerpt was site navigation |
 
-**The one gap with nothing filling it is weather.** `grep -riE
+### Open-Meteo: reachable, well-shaped, and not available to us
+
+**The free API is non-commercial only.** Quoted from
+`open-meteo.com/en/terms`, captured 21 Aug 2026:
+
+> **Non-Commercial Use.** By using the Free API for non-commercial use you
+> agree to following terms: Less than 10'000 API calls per day, 5'000 per
+> hour and 600 per minute. **You may only use the free API services for
+> non-commercial purposes.** You accept to the CC-BY 4.0 licence, as
+> specified in the licence conditions.
+
+Gameweek Edge sells subscriptions. Stripe webhook code is in this repo. That
+makes it a commercial use of the free service, and the sentence above is not
+ambiguous.
+
+**Do not be misled by the CC-BY 4.0 in that same paragraph** — it is the
+easiest mistake available here, and it would be a real one. CC-BY 4.0 governs
+the DATA and does permit commercial use. The non-commercial restriction is on
+the free API SERVICE. Both sentences are true at once: the data is freely
+licensed, and we are not permitted to obtain it from that endpoint. Quoting
+the licence half to justify the call is picking the convenient clause out of
+a paragraph that also contains the inconvenient one.
+
+Open-Meteo sells a commercial tier. Taking it would break the project's
+standing rule against paid APIs, so it is not a decision this file makes.
+
+**Which leaves the weather gap open.** `grep -riE
 'weather|rain|wind|temperature'` across `index.html` and `netlify/functions/`
-returns 0. Everything else on this list either duplicates something we have
-(Elo via FPL-Core-Insights, nationality via football-data) or fills no gap
-anyone has named.
+still returns 0, and nothing surveyed can currently fill it. A weather source
+with commercially-usable free terms has **not been probed** and may exist;
+absence from this survey means not asked.
+
+Everything else on this list either duplicates something we have (Elo via
+FPL-Core-Insights, nationality via football-data) or fills no gap anyone has
+named.
+
+### The two that are cleanly usable, and what they cost
+
+- **Wikidata** — *"All structured data in the main, property and lexeme
+  namespaces is made available under the Creative Commons CC0 License (Public
+  domain); text in other namespaces is made available under the Creative
+  Commons Attribution-ShareAlike…"*. CC0 on the structured data, so no
+  attribution obligation on that half. Fills no current gap.
+- **Sunrise-Sunset** — *"The API is free to use: no sign up or API key
+  required. We do require attribution: display a visible link to
+  sunrise-sunset.org in the app or page where you show the data."* Clean and
+  quotable, attached to the most marginal gap on the list.
 
 Three things this run corrected about itself, each caught by reading output:
 
@@ -145,6 +187,19 @@ Three things this run corrected about itself, each caught by reading output:
    "probed WITHOUT a key". The `/3/` path segment *is* the key — a shared demo
    credential that can be rate-limited or revoked for everyone at once. It
    fails the filter, and failing it is the finding.
+4. **A heading reported as a licence.** The excerpt grabber had one flat word
+   list including "terms of use", took the FIRST match, and on every real page
+   that match is navigation furniture. Open-Meteo's terms went unread for two
+   whole surveys, and the summary said so honestly but weakly — "licence not
+   captured, read the URL". Strong wording (states a permission) is now
+   separated from weak wording (says the page is about permissions), every
+   strong match is collected rather than the first, and the stated permissions
+   are repeated in a digest at the end of the run.
+
+   **This is the correction that mattered.** With the heading winning, the
+   report read as "reachable, wildcard CORS, terms unread" — an invitation to
+   build. With the clause found, it reads "not available to us". The two
+   outputs differ by one regex tier and point in opposite directions.
 
 **Nothing here is wired in.** This records what is available and under what
 stated terms. Every licence judgement remains a human one; the excerpts above
