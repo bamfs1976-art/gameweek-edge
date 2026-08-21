@@ -90,6 +90,21 @@ const PICKS_RE = /^\/api\/fpl\/entry\/\d+\/event\/\d+\/picks$/;
    missing one, which is the bug this card is most likely to grow. */
 const ENTRY_RE = /^\/api\/fpl\/entry\/\d+$/;
 const LIVE_RE = /^\/api\/fpl\/event\/\d+\/live$/;
+const HISTORY_RE = /^\/api\/fpl\/entry\/\d+\/history$/;
+const STANDINGS_RE = /^\/api\/fpl\/leagues-classic\/\d+\/standings$/;
+const historyBody = () => JSON.stringify({
+  current: [], past: [], chips: [{ name: '3xc', event: 1, time: '2026-08-15T10:00:00Z' }]
+});
+/* Three managers, so a click can land on a row that is NOT the signed-in
+   one — the interesting case is opening somebody else's team. */
+const standingsBody = () => JSON.stringify({
+  league: { id: 555, name: 'The Office League' },
+  standings: { has_next: false, results: [
+    { rank: 1, last_rank: 2, entry: 7654321, entry_name: 'Rival FC', player_name: 'Sam Rivers', event_total: 62, total: 120 },
+    { rank: 2, last_rank: 1, entry: 1234567, entry_name: 'My Team', player_name: 'Me Myself', event_total: 55, total: 118 },
+    { rank: 3, last_rank: 3, entry: 9998887, entry_name: 'Third Wheel', player_name: 'Pat Third', event_total: 40, total: 90 }
+  ] }
+});
 const picksFixture = () => JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json'), 'utf8'));
 const LIVE_MISSING = picksFixture().picks.find((p) => p.position === 3).element;
 const liveBody = () => JSON.stringify({
@@ -118,6 +133,14 @@ const apiServer = createServer((req, res) => {
   if (LIVE_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(liveBody());
+  }
+  if (HISTORY_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(historyBody());
+  }
+  if (STANDINGS_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(standingsBody());
   }
   if (API[p] || PICKS_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1024,6 +1047,72 @@ section('a rival opens, on a pitch, marked against my own XI');
   ok(!/Couldn.t load/i.test(nr.text), 'and is not reported as a load error');
   await np2.close();
   await rp.close();
+}
+
+section('a mini-league standing opens that manager\u2019s team');
+{
+  /* THE ONE THAT WAS ACTUALLY ASKED FOR. Mini-Leagues is tier:'free' and
+     Rival Scout is tier:'paid' — two different panels. The card was built in
+     the paid one, so a Pro user looking at their mini-league table clicked a
+     rival and nothing happened, because there was nothing there to click.
+     No tier is seeded here on purpose: this table is free, and if it ever
+     stops being reachable without Pro this check goes red. */
+  const lp = await browser.newPage();
+  const lErrors = [];
+  lp.on('pageerror', (e) => lErrors.push(e.message));
+  await lp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await lp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await lp.waitForTimeout(1200);
+
+  const opened = await lp.evaluate(async () => {
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 1800));
+    const rows = [...document.querySelectorAll('[data-rival]')];
+    return { rows: rows.length, ids: rows.map((b) => b.dataset.rival) };
+  });
+  ok(!opened.err, 'the league standings rendered (' + (opened.err || '') + ')');
+  ok(opened.rows === 3, 'every standing is an opener, got ' + opened.rows);
+  ok((opened.ids || []).includes('7654321'), 'and carries the entry id, not the rank');
+
+  /* A real click, on a manager who is NOT the signed-in one. */
+  const target = lp.locator('[data-rival="7654321"]').first();
+  const hit = await lp.evaluate(() => {
+    const b = document.querySelector('[data-rival="7654321"]');
+    const r = b.getBoundingClientRect();
+    const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    let n = b, inertAncestor = null;
+    while (n) { if (n.inert) { inertAncestor = n.className; break; } n = n.parentElement; }
+    return { inertAncestor, reachable: !!(top && (top === b || b.contains(top))),
+      topEl: top ? top.className : null, pe: getComputedStyle(b).pointerEvents };
+  });
+  ok(hit.inertAncestor === null, 'the free league table is not inert (' + hit.inertAncestor + ')');
+  ok(hit.pe !== 'none', 'and not pointer-events:none');
+  ok(hit.reachable === true, 'the row is what the pointer hits (' + hit.topEl + ')');
+
+  await target.click({ timeout: 5000 })
+    .catch((e) => { ok(false, 'a real click reached the standing (' + e.message.split('\n')[0] + ')'); });
+  await lp.waitForTimeout(2200);
+
+  const card = await lp.evaluate(() => {
+    const body = document.getElementById('rival-body');
+    return {
+      shown: (document.getElementById('rival-modal') || {}).className || '',
+      name: (body.querySelector('#rival-title') || {}).textContent || '',
+      xi: body.querySelectorAll('.qd-pitch .pp').length,
+      bench: body.querySelectorAll('.rv-bench .pp').length,
+      text: (body.textContent || '').slice(0, 500)
+    };
+  });
+  ok(/show/.test(card.shown), 'the card opens from the league table');
+  ok(/Rival FC/.test(card.name), 'and names the manager clicked (' + card.name + ')');
+  ok(card.xi === 11, 'eleven on the pitch, got ' + card.xi);
+  ok(card.bench === 4, 'four on the bench, got ' + card.bench);
+  ok(/Triple Captain/.test(card.text), 'and the chip ledger reaches it from history');
+  ok(lErrors.length === 0, 'the league table threw nothing (' + lErrors.slice(0, 2).join(' | ') + ')');
+  await lp.close();
 }
 
 section('no uncaught errors');

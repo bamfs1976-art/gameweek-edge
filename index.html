@@ -15487,13 +15487,15 @@ async function renderLeagueStandings(host,leagueId,mid,type){
     const me=r.entry===meId;
     const mv=(r.last_rank&&r.rank)?r.last_rank-r.rank:0;
     if(h2h)return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
-      '<span class="dl-grow"><span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
+      '<span class="dl-grow"><button class="rv-open" data-rival="'+esc(r.entry)+'" aria-label="View '+esc(r.entry_name)+'\u2019s team">'+
+      '<span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
       '<span class="dl-sub">'+esc(r.player_name)+' · '+(r.matches_won||0)+'-'+(r.matches_drawn||0)+'-'+(r.matches_lost||0)+
-      ' · '+fmtNum(r.points_for)+' pts for'+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></span>'+
+      ' · '+fmtNum(r.points_for)+' pts for'+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
     return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
-      '<span class="dl-grow"><span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
-      '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></span>'+
+      '<span class="dl-grow"><button class="rv-open" data-rival="'+esc(r.entry)+'" aria-label="View '+esc(r.entry_name)+'\u2019s team">'+
+      '<span class="dl-nm">'+esc(r.entry_name)+(me?' · you':'')+'</span>'+
+      '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
   }).join('');
   const awards=h2h?'':'<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
@@ -15515,6 +15517,17 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
     '<div class="dl">'+head+rows+'</div>'+pager+'</div>'+
     awards;
+  /* Every standing is a manager, and a manager has a squad. Same card the
+     Rivals panel opens — a mini-league table is where people actually look
+     their rivals up, and having to add somebody to a separate list first in
+     order to see the team already listed in front of them was silly.
+
+     Delegated rather than one listener per row, because the table repaints on
+     every page change and pagination would otherwise leave dead buttons. */
+  host.addEventListener('click',ev=>{
+    const btn=ev.target.closest('[data-rival]');
+    if(btn)openRival(btn.dataset.rival);
+  });
 }
 
 /* ── Gameweek awards across a mini-league's top managers ── */
