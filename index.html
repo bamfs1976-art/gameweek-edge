@@ -11926,7 +11926,7 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history){
       '<span class="dl-nm" id="rival-title">'+esc(entry.name||('Entry '+entry.id))+'</span>'+
       '<span class="dl-sub">'+esc(((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim())+
       ' · GW'+gw+' · '+S.shared+'/11 shared, '+S.differentials+' differential'+(S.differentials===1?'':'s')+'</span></span>'+
-      '<span class="dl-col">'+T.value+'</span></div>';
+      '<span class="dl-col" id="rival-total">'+T.value+'</span></div>';
   const meta='<div class="dl-sub" style="margin-top:2px">'+
     T.label+
     (typeof eh.event_transfers==='number'?' · '+eh.event_transfers+' transfer'+(eh.event_transfers===1?'':'s')+

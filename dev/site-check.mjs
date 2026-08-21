@@ -199,8 +199,8 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'id="league-standings"', since: '2026-08-21',
-  what: 'the mini-league table whose rows open a manager\u2019s team' };
+const MARKER = { text: 'id="rival-total"', since: '2026-08-21',
+  what: 'the rival card\u2019s gameweek total, which now follows the live feed mid-week' };
 /* Rotated from 'id="rival-modal"' (2026-08-21 morning), and from
    'id="fdr-rows"' (2026-08-19) before that, each of which had done its job and
    stopped: by 21 Aug it was live in the previous build, so a green run proved
