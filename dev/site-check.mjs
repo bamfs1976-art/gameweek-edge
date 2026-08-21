@@ -94,6 +94,17 @@ const UA = 'Mozilla/5.0 (compatible; GameweekEdgeSiteCheck/1.0; +https://gamewee
    a retry says so in the output, because "flaky" is a finding too. */
 const RETRIES = 2;
 const BACKOFF_MS = 1500;
+/* Every request gets a deadline. Without one this script hung for a quarter
+   of an hour on a check that normally takes fifteen seconds, and would have
+   sat there until GitHub's six-hour job limit — a deploy verification that
+   never returns is indistinguishable from one that has not been run, and it
+   holds the answer hostage either way. The retry loop makes it worse, not
+   better: a hang never throws, so it never retries.
+
+   The same fix went into dev/probe-squad-nationality.mjs and
+   dev/open-api-probe.mjs when it bit there. It should have come here at the
+   same time. */
+const TIMEOUT_MS = 15000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function request(url) {
@@ -104,6 +115,7 @@ async function request(url) {
       return {
         res: await fetch(url, {
           headers: { 'User-Agent': UA, Accept: '*/*' },
+          signal: AbortSignal.timeout(TIMEOUT_MS),
           /* Manual, because "it redirects" and "it serves the same page" are
              different promises and only one of them was made. */
           redirect: 'manual'

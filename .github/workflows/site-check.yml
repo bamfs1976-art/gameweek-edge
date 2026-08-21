@@ -31,6 +31,11 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # A belt for the braces. The script now bounds each request, but a job
+    # with no ceiling can still sit for six hours on something the script did
+    # not anticipate, and a verification that never returns tells you nothing
+    # while looking like it is working.
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
