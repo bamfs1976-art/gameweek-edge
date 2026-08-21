@@ -76,11 +76,12 @@ vm.runInContext([
   extractLine(html, /const POS_PLURAL=\{[^}]*\};/),
   extractFn(html, 'rivalLivePts'),
   extractFn(html, 'rivalSquadRows'),
+  extractFn(html, 'rivalGwTotal'),
   extractFn(html, 'rivalChipSummary'),
   extractFn(html, 'elementExtras')
 ].join('\n'), ctx);
 
-const { rivalLivePts, rivalSquadRows, rivalChipSummary, elementExtras } = ctx;
+const { rivalLivePts, rivalSquadRows, rivalGwTotal, rivalChipSummary, elementExtras } = ctx;
 
 let pass = 0; const fail = [];
 const ok = (cond, label) => { if (cond) pass++; else fail.push(label); };
@@ -133,11 +134,67 @@ const allTwo = () => { const m = {}; for (let i = 0; i < 15; i++) m[100 + i] = 2
   ok(r.bench[0].captain === true, 'and is still shown as their captain');
 }
 {
-  /* Auto-subbed bench player: position 12, multiplier 1. */
+  /* Auto-subbed bench player: position 12, multiplier 1.
+
+     This assertion used to read "the XI total is the XI" and expected 22.
+     That was wrong, and a screenshot of a real rival proved it: totalling
+     starters drops whoever actually came on. A substitute who played is worth
+     points to them, and the multiplier already says so. */
   const picks = mkPicks({ 12: { multiplier: 1 } });
   const r = rivalSquadRows(picks, mkLive(allTwo()), []);
   eq(r.bench[0].pts, 2, 'an auto-subbed bench player scores');
-  eq(r.live, 22, 'but the XI total is the XI — bench points are reported separately');
+  eq(r.live, 24, 'and his points are IN the total — eleven at 2 plus the sub at 2');
+  eq(r.liveOf, 12, 'twelve players counted, not eleven');
+}
+{
+  /* BENCH BOOST. Every bench player has multiplier 1, so all fifteen score.
+     Totalling the XI would have dropped four players' points in the exact
+     week a rival spent a chip to get them — which is what the card did, in
+     front of a Bench Boost, while the league table beside it disagreed. */
+  const picks = mkPicks({ 12: { multiplier: 1 }, 13: { multiplier: 1 },
+    14: { multiplier: 1 }, 15: { multiplier: 1 } });
+  const r = rivalSquadRows(picks, mkLive(allTwo()), []);
+  eq(r.live, 30, 'a bench boost counts all fifteen');
+  eq(r.liveOf, 15, 'and says fifteen were counted');
+  eq(r.xi.length, 11, 'while the pitch is still the eleven');
+  eq(r.bench.length, 4, 'and the bench is still the bench');
+}
+{
+  /* Normal week: bench multiplier 0 contributes nothing, so the same rule
+     gives the old answer. The fix must not inflate an ordinary gameweek. */
+  const r = rivalSquadRows(mkPicks(), mkLive(allTwo()), []);
+  eq(r.live, 22, 'without a chip the bench still adds nothing');
+  eq(r.liveOf, 11, 'and only eleven count');
+}
+
+/* ── which number is their gameweek score ─────────────────────────
+   The reported bug: a rival on nine points showed 0, because FPL leaves
+   entry_history.points at 0 until a gameweek finishes and the card believed
+   it over its own rows. */
+{
+  const squad = { live: 9 };
+  const running = rivalGwTotal({ points: 0 }, squad, false);
+  eq(running.value, 9, 'mid-gameweek, the live sum wins over a zero from FPL');
+  ok(running.live === true, 'and it is flagged as a running number');
+  ok(/Live total/.test(running.label), 'and labelled as one, not as FPL\u2019s figure');
+}
+{
+  /* Once the gameweek is done FPL's number is the authority — it includes
+     auto-subs and bonus we may not have summed. */
+  const done = rivalGwTotal({ points: 63 }, { live: 58 }, true);
+  eq(done.value, 63, 'a finished gameweek takes the official total');
+  ok(done.live === false, 'and is not flagged live');
+  ok(/from FPL/.test(done.label), 'and says where it came from');
+}
+{
+  /* A finished gameweek that genuinely scored nothing must still show 0 —
+     the fix must not turn "prefer live when running" into "never show 0". */
+  eq(rivalGwTotal({ points: 0 }, { live: 0 }, true).value, 0, 'a real zero survives');
+}
+{
+  /* No entry_history at all: fall back rather than render undefined. */
+  eq(rivalGwTotal(null, { live: 12 }, true).value, 12, 'missing history falls back to the live sum');
+  eq(rivalGwTotal(null, null, false).value, 0, 'and missing everything is 0, not NaN');
 }
 
 /* ── the missing row ──────────────────────────────────────────────── */
