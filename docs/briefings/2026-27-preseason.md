@@ -1339,9 +1339,9 @@ is partly a list of who played the weakest opposition.
 
 **FPL picks:**
 - Value: Anthony Elanga (pace and end product, corner involvement). Lewis Hall (attacking LB, set-piece duty and defensive upside). Both strong points-per-million if fit.
-- Premium / captaincy: Nick Woltemade, nailed striker and penalty taker, main goal threat. Bruno Guimaraes the reliable minutes-and-creativity alternative.
+- Premium / captaincy: Nick Woltemade, nailed striker and penalty taker, main goal threat. **21 Aug: Bruno Guimaraes had already left for Arsenal and was still named here as the alternative — the transfer reached the Out list four lines above on 13 Aug and the picks under it were never touched.** No replacement alternative is named. Newcastle have sold their leading chance creators and inventing a substitute for them would be a worse answer than saying so.
 - Differentials: Bazoumana Toure, stepping into Gordon's vacated role at likely very low ownership. Elanga against the softer early fixtures.
-- Set-piece & penalties: Penalties Woltemade (Bruno G secondary). Free-kicks Hall, Bruno G, Botman/Schar. Corners Hall, Bruno G, Elanga.
+- Set-piece & penalties: Penalties Woltemade; **the secondary is unknown — Bruno G was named here and has left for Arsenal.** Free-kicks Hall, Botman/Schar. Corners Hall, Elanga. **The manager line in this block is under an owed correction (four sources say the incumbent named above has gone), and a new manager reshuffles dead-ball order — so treat all three as unconfirmed for GW1.**
 
 **Opening fixtures:** GW1 Liverpool (H) moderate, GW2 Spurs (A) hard, GW3 Bournemouth (H) moderate. The inviting Hull home game is not on this list. No gimme in the first three — a steady rather than explosive start, and no single week worth timing an entry around.
 

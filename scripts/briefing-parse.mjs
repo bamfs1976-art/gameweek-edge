@@ -488,3 +488,104 @@ export function clubMatcher(labels) {
     return byWord.length === 1 ? byWord[0].value : null;
   };
 }
+
+/* ── A DEPARTED PLAYER MUST NOT BE A PICK AT THE CLUB HE LEFT ──────────────
+   The document records transfers in an **Out:** line and recommendations in
+   the pick bullets underneath, and nothing tied the two together. So a
+   transfer added late could leave the picks above it untouched, and the file
+   would go on recommending a player at a club it had just recorded him
+   leaving — including on set pieces he cannot take.
+
+   That is not hypothetical twice over. The Everton block still carries the
+   note "McNeil removed 13 Aug, he has gone to Palace", and the Aston Villa
+   block carries "Correction (11 Aug): this line previously named Digne on
+   corners while the same block listed him as sold to PSG." The fault has
+   happened, been found by hand, and been fixed one player at a time. This is
+   the check that was never written.
+
+   The hard part is that most mentions of a departed player are CORRECT and
+   necessary: "the key Liverpool captain call with Salah gone", "stepping into
+   Gordon's vacated role", "clear number nine after Mayenda". A check that
+   flags those is useless — it would report thirteen faults where there is
+   one. So a mention counts as a fault only when no departure cue sits beside
+   it. The window is deliberately tight: a cue anywhere in the bullet would
+   let "Thin at the top after the Eze and Guehi sales. Mateta is the pick"
+   launder an unrelated name. */
+export const DEPARTURE_CUES =
+  /\b(gone|left|leaves|leaving|departed|departs|sold|sale|sales|vacated|replacement|replaces|removed|post-|after|once|if he stays|if .{0,12} leaves|no longer|last season|last term|previously|used to)\b/i;
+/* The past-tense cues were added after a false positive: "the reason Jimenez
+   carried the line last season was Muniz's injuries" is correct writing about
+   a player who has left, and the first version flagged it. Widening the cue
+   list weakens the check, so the mutation suite plants a real violation to
+   prove it still bites. */
+/* The cue must sit in the SAME SENTENCE as the name, not merely near it.
+   A character window was tried first and a mutation run broke it: restoring
+   "Bruno Guimaraes the reliable alternative." as its own sentence was excused
+   by "Newcastle have sold their leading chance creators" further along the
+   bullet — a departure cue about entirely different players. Proximity cannot
+   tell whose departure is being discussed; a sentence boundary can.
+   The character window it replaced is gone rather than left exported: a
+   mutation run flipped it from 90 to 100000 and nothing changed, because
+   nothing read it any more. A constant no behaviour depends on is not a
+   safeguard, it is a decoration that makes the mutation score look worse
+   than the code is. */
+export function sentenceAround(text, i) {
+  /* Split on . ; or an em dash FOLLOWED BY WHITESPACE, so decimal prices
+     (£7.5m) and initials do not cut a sentence in half. */
+  const before = text.slice(0, i);
+  const start = Math.max(before.lastIndexOf('. '), before.lastIndexOf('; '),
+    before.lastIndexOf('— '), before.lastIndexOf('.**'));
+  const rest = text.slice(i);
+  const cut = rest.search(/[.;]\s|—\s/);
+  return text.slice(start < 0 ? 0 : start + 1, cut < 0 ? text.length : i + cut + 1);
+}
+
+/* Names in an Out: line — a capitalised run immediately before a bracket. */
+export function outNames(block) {
+  const line = (block.match(/^\*\*Out:\*\*.*$/m) || [''])[0];
+  return [...line.matchAll(/([A-Z][\p{L}'’.-]+(?: [A-Z][\p{L}'’.-]+)*)\s*\(/gu)].map((m) => m[1]);
+}
+/* The recommendation bullets, which is where a pick lives. Prose above them
+   is exempt on purpose: prose is where a departure is explained. */
+export function pickBullets(block) {
+  return (block.match(/^- (?:Premium|Value|Differentials|Set-piece)[^\n]*$/gm) || []);
+}
+/* Every departed player recommended at the club he left, with the text that
+   proves it. Returns [] when the file is clean. */
+export function departedStillPicked(src) {
+  const bad = [];
+  for (const club of clubBlocks(src)) {
+    const outs = outNames(club.body);
+    const bullets = pickBullets(club.body);
+    if (!outs.length || !bullets.length) continue;
+    for (const full of outs) {
+      /* Surname, plus the ABBREVIATION the picks actually use: a forename
+         followed by a bare initial. The Newcastle set-piece line named
+         "Bruno G" three times and no surname search could see it — a mutation
+         run restored that exact line without tripping anything.
+
+         Matching bare forenames was tried and reverted: "Anthony" matched
+         Anthony Elanga in the same block as departed Anthony Gordon, and
+         "Harry" matched Harry Wilson against departed Harry Gray. The
+         forename-plus-initial pattern collides with neither, because
+         "Anthony E" does not match "Anthony Elanga" — the word boundary
+         after a single letter fails against a longer word. */
+      const parts = full.trim().split(/\s+/);
+      const surname = parts[parts.length - 1];
+      const forms = [];
+      if (surname.length >= 4) forms.push(surname);
+      if (parts.length > 1 && parts[0].length >= 4) forms.push(parts[0] + ' [A-Z]');
+      if (!forms.length) continue;
+      /* The initial form carries a deliberate [A-Z], so escape only the name parts. */
+      const esc = (f) => f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\[A-Z\\\]/, '[A-Z]');
+      const re = new RegExp('\\b(?:' + forms.map(esc).join('|') + ')\\b', 'g');
+      for (const bullet of bullets) {
+        for (const m of bullet.matchAll(re)) {
+          if (DEPARTURE_CUES.test(sentenceAround(bullet, m.index))) continue;
+          bad.push({ club: club.name, player: full, bullet: bullet.trim() });
+        }
+      }
+    }
+  }
+  return bad;
+}

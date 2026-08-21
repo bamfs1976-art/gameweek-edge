@@ -124,6 +124,120 @@ guards themselves — nothing asserted the ORDER of a double's two fixtures, and
 the squad page always had a squad so nothing checked that the toggle stays
 away when there is not one.
 
+## Guardian previews 17-18 — Newcastle and Forest (21 Aug 2026)
+
+Captured in `docs/benchmarks/pl-guardian-previews-17-18.json`. These are the
+two the 19-20 capture recorded as a gap, with the line *"if 17 is Newcastle,
+it is the one preview that would speak directly to the largest open error in
+our register."* It is Newcastle, and it does.
+
+### SETTLED: the Newcastle manager line
+
+Four sources now, and this one gives the successor a name, an age, a
+nationality and a career: **Matthias Jaissle**, 38, German, ex-RB Salzburg and
+Al-Ahli, never managed in England. Eddie Howe "stepped down". Our register
+still says *"Eddie Howe continues"* in **both** editions and builds two
+sentences on it, and the confirmed-new-bosses list names ten clubs while
+omitting Newcastle.
+
+**Still owed, not applied** — it adopts an outside claim, which is a register
+edit. What makes it worse than a wrong name: our own front matter says *"New
+managers reshuffle set-piece and penalty hierarchies, so early-season role
+certainty is worth more points than usual."* It says that about ten clubs and
+then treats Newcastle's dead-ball order as settled under a departed manager.
+
+### APPLIED: a departed player was being recommended at the club he left
+
+**Bruno Guimarães was named as Newcastle's captaincy alternative and placed on
+their penalties, free-kicks and corners** — four lines below an Out list
+recording his move to Arsenal. Our file records that move in four places and
+then recommended him anyway; the transfer landed on 13 Aug and the picks under
+it were never touched.
+
+Applied rather than listed, and the distinction matters: this adopts nothing
+from outside. Our own Out list already said he had gone, and the picks
+contradicted it. Making a file agree with itself is not taking a source's word
+for something. No replacement alternative was invented — Newcastle sold their
+leading chance creators and naming a substitute would be worse than the hole.
+
+**It had happened twice before.** The file already carried
+*"Correction (11 Aug): this line previously named Digne on corners while the
+same block listed him as sold to PSG"* and *"McNeil removed 13 Aug, he has gone
+to Palace"*. Twice found by hand, twice fixed one player at a time, no check
+written. So it recurred.
+
+There is a check now: `departedStillPicked()` in `scripts/briefing-parse.mjs`.
+No player in a club's **Out:** line may appear in that club's pick bullets
+without a departure cue **in the same sentence**. Getting it right took four
+corrections worth recording, because each one is a way a check can look like it
+works:
+
+1. A naive version reported **13 faults where there was one** — twelve were the
+   file writing correctly about a departure ("with Salah gone", "stepping into
+   Gordon's vacated role"). A report with twelve false positives gets ignored,
+   and the thirteenth goes with it.
+2. A character window let a cue about *other* players ("Newcastle have sold
+   their leading chance creators") excuse a restored recommendation two
+   sentences away. Proximity cannot tell whose departure is being discussed;
+   a sentence boundary can.
+3. Matching bare forenames flagged Anthony Elanga against departed Anthony
+   Gordon, and Harry Wilson against departed Harry Gray. The picks abbreviate
+   as "Bruno G", so the pattern is forename-plus-**initial**, which collides
+   with neither.
+4. The synthetic test fixture was called "Departed Playerson" — and *departed*
+   is itself a cue word, so the fixture excused the very thing it was built to
+   catch.
+
+`CUE_WINDOW` was deleted rather than left exported: a mutation flipped it from
+90 to 100000 and nothing changed, because nothing read it any more. A constant
+no behaviour depends on is a decoration, not a safeguard.
+
+### Two window-level conflicts, both open
+
+- **Newcastle's goalkeeper.** The Guardian's star signing is **Lukas Hornicek**,
+  £26m from Braga, "a genuine sweeper-keeper". Our register has **Ewen Jaouen**,
+  ~£24m from Reims, and no Hornicek anywhere. Two keepers, two clubs, two fees.
+  Both could be true; the preview calls Hornicek *the* signing of the window and
+  never mentions Jaouen. Newcastle's starting keeper is a priced clean-sheet
+  route, so this is not background. Settles on the bootstrap.
+- **Forest's summer spend.** The Guardian: *"Ousmane Diomande is the only
+  signing, at the time of writing, to have cost the club any money this summer,
+  with £34m spent."* Ours: *"around £90m of incomings"* — Hutchinson ~£37.5m,
+  McAtee ~£30m, Ndoye. One document is wrong about an entire window. The same
+  preview says McAtee and Ndoye have already had a season at Forest, which
+  would make our In list a year out of date — but a loan made permanent puts
+  both readings partly right, so it is not asserted either way. Our own In list
+  already carries *"(Some completion dates unverified, re-check.)"*, written
+  before this source existed, about exactly the field this turns on.
+
+### Register edits owed from this capture
+
+- **The Newcastle manager line**, in both editions, plus the new-bosses list.
+- **Ousmane Diomande** (£34m, Sporting, 22) — absent entirely, either way the
+  Forest conflict resolves.
+- **Tino Livramento** — a first-choice full-back who had surgery and "hopes to
+  return in early autumn", and our file has never mentioned him. A silent gap
+  is worse than a visible error: nothing in the app looks broken.
+- **Lukas Hornicek**, pending the goalkeeper conflict.
+- Smaller, all sourced: William Osula, Mason Miley, Ross Wilson (Newcastle);
+  Dilane Bakwa, Ola Aina, Vítor Pereira, Lucas Bergvall (Forest).
+- **Chris Wood**, a sharpening rather than an edit: two sources now say Forest
+  are shopping for a striker to lead the line. Ours names Kalimuendo, theirs
+  names Delap. Neither is signed; both are minutes risk on a £6.0m premium pick.
+
+### Not a conflict
+
+Our *"fifth manager in under 12 months"* against the Guardian's *"four permanent
+managers in one campaign"*. Four during 2025-26 plus Glasner in July 2026 is
+five in under twelve months. Both true, neither needs correcting — recorded
+because a count differing by one is exactly what a checker files as an error
+without reading the sentence around it.
+
+Guards: 30 checks in `dev/test-challenge-picks.mjs` (473 → 504) and a new
+section in `dev/test-briefing.mjs` (403 → 406). Mutation-tested 18/19 plus two
+cue-list mutations run separately; the one miss was a badly-chosen mutant
+removing an unused cue, which is how the dead `CUE_WINDOW` was found.
+
 ## Guardian previews 19-20 — Sunderland and Tottenham (21 Aug 2026)
 
 Captured in `docs/benchmarks/pl-guardian-previews-19-20.json`, the last two of

@@ -10,6 +10,7 @@
    sentence about THAT player, and a superlative must name the club the source
    actually puts at the top. */
 import fs from 'node:fs';
+import { departedStillPicked } from '../scripts/briefing-parse.mjs';
 const R = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 const H = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-tomhadley-preseason-thread.json`, 'utf8'));
 const PICKS = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/fpl-challenge-gw2-gw5.json`, 'utf8'));
@@ -1284,6 +1285,113 @@ ok('and transfer fees are explicitly kept apart from prices',
 /* --- a preview's silence is never read as a denial --- */
 ok('the source limits state that omission is not denial',
   /never as a denial/.test(g3) && /reading an absent Newcastle row as three source conflicts/.test(g3));
+
+/* ─── Guardian previews 17-18: Newcastle and Nottingham Forest ─────────────
+   The two the 19-20 capture recorded as a gap. 17 is Newcastle, which is what
+   that entry said would matter, and it settles the manager error. It also led
+   to finding a worse one in our own file.
+   ------------------------------------------------------------------------ */
+const GDN4 = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-guardian-previews-17-18.json`, 'utf8'));
+const g4 = JSON.stringify(GDN4);
+const GDN3f = fs.readFileSync(`${R}/docs/benchmarks/pl-guardian-previews-19-20.json`, 'utf8');
+
+/* --- the gap the previous capture recorded is the one this fills --- */
+ok('the 19-20 capture really did record 17 and 18 as missing',
+  /"neverCaptured": \[17, 18\]/.test(GDN3f));
+ok('and refused to name the clubs', /manufacturing a source we do not have/.test(GDN3f));
+ok('17 is Newcastle, as that entry said would matter',
+  GDN4.source.articles.find((a) => a.no === 17).club === 'Newcastle United');
+ok('and the fill is credited to the source, not to the guess being right',
+  /Not that the guess would have been right/.test(g4));
+
+/* --- the manager error, settled --- */
+ok('our register still says Eddie Howe continues, in BOTH editions',
+  /Eddie Howe continues/.test(MD) && /Eddie Howe continues/.test(HTML));
+/* The successor's name must NOT be in the register yet: the edit is owed, not
+   applied, and half-applying it in a set-piece aside is how a file ends up
+   naming two managers. An earlier version of this very commit did exactly
+   that and tripped the guard at line 771. */
+ok('and the successor is still not named in the register — the edit is owed',
+  !MD.includes('Jaissle') && !HTML.includes('Jaissle')
+  && /under an owed correction/.test(MD));
+ok('the capture names the successor fully, which the official three-word clause could not',
+  /Matthias Jaissle/.test(g4) && /38-year-old German/.test(g4));
+ok('four sources are counted, not three, and each names itself and its claim',
+  GDN4.theERRORThisSETTLES.theSourceCount.length === 4
+  && GDN4.theERRORThisSETTLES.theSourceCount.every((s) => s.source && s.said));
+ok('and it is listed as owed rather than applied, because it adopts an outside claim',
+  /Listed rather than applied here/.test(g4));
+/* The consequence that is not just "the name is wrong". */
+ok('the register\'s own front matter contradicts its Newcastle dead-ball line',
+  /New managers reshuffle set-piece and penalty hierarchies/.test(MD)
+  && /treats Newcastle's dead-ball order as settled under a manager who has gone/.test(g4));
+
+/* --- the error found in our OWN file, and applied --- */
+ok('our file records the Guimaraes move to Arsenal at both ends',
+  /Bruno Guimaraes \(CM, Newcastle, fee not confirmed here\)/.test(MD)
+  && /Bruno Guimaraes \(CM, Arsenal\)/.test(MD));
+/* Asserted structurally, not by exact string: a mutation restoring the line
+   with slightly different wording ("the reliable alternative" rather than
+   "the reliable minutes-and-creativity alternative") slipped past the exact
+   match. The parser answers the question the string was standing in for. */
+ok('and no longer recommends him as a Newcastle pick, by the parser not a phrase',
+  departedStillPicked(MD).length === 0);
+ok('nor on Newcastle penalties, free-kicks or corners',
+  !/Penalties Woltemade \(Bruno G secondary\)/.test(MD) && !/Bruno G 2nd/.test(HTML));
+/* The parser reads the markdown edition only, so the HTML gets its own
+   assertion. A mutation leaving the HTML stale while the markdown was fixed
+   went unnoticed once the string check was replaced by the parser check —
+   two editions need two checks. */
+ok('and the HTML edition is fixed too, not just the markdown',
+  !/Bruno Guimaraes the reliable/.test(HTML)
+  && !/FK Hall, Bruno G/.test(HTML)
+  && /has left for Arsenal/.test(HTML));
+ok('the correction says how it got there, not just that it was wrong',
+  /the transfer reached the Out list four lines above on 13 Aug and the picks under it were never touched/.test(MD));
+ok('no replacement alternative was invented to fill the hole',
+  /inventing a substitute for them would be a worse answer than saying so/.test(MD));
+ok('and the capture states why THIS edit was applied when the manager edit was not',
+  /Making a file agree with itself is not the same as taking a source's word/.test(g4));
+ok('recording that the same fault had already been hand-fixed twice',
+  /previously named Digne on corners/.test(MD) && /McNeil removed 13 Aug/.test(MD)
+  && /Twice found, twice fixed one player at a time, and no check written/.test(g4));
+
+/* --- the structural check that came out of it --- */
+ok('the check is named and lives in the parser, not in a one-off script',
+  /departedStillPicked, in scripts\/briefing-parse\.mjs/.test(g4));
+ok('the naive version is recorded as having reported 13 faults for 1',
+  /THIRTEEN faults where there was one/.test(g4));
+ok('and both fixture mistakes that made it pass wrongly are written down',
+  /swallowed by a cue already in that same sentence/.test(g4)
+  && /'Departed' is itself a cue word/.test(g4));
+
+/* --- two window-level conflicts, neither resolved by preference --- */
+ok('the goalkeeper conflict names both keepers and both fees',
+  /Lukas Hornicek/.test(g4) && /Ewen Jaouen \(GK, Reims, ~£24m\)/.test(MD) && /£26m/.test(g4));
+ok('and refuses to call our Jaouen line wrong',
+  /That our Jaouen line is wrong/.test(g4) && /notClaimed/.test(g4));
+ok('the Forest window conflict is stated as one document being a year out',
+  /one of the two documents is wrong about an entire transfer window/.test(g4));
+ok('with the loan-to-permanent reading offered rather than a verdict',
+  /A loan made permanent would put McAtee at Forest last season AND make him a paid signing/.test(g4));
+ok('and our own In list already carried the caveat the conflict turns on',
+  /\(Some completion dates unverified, re-check\.\)/.test(MD));
+
+/* --- the four-versus-five count that is NOT a conflict --- */
+ok('the manager count difference is explained rather than filed as an error',
+  /theAPPARENTConflictThatIsNot/.test(g4) && /Different windows/.test(g4));
+ok('and our register really does say five in under 12 months',
+  /the fifth manager in under 12 months/.test(MD));
+
+/* --- the silent gap --- */
+ok('Livramento is absent from both editions', !heldByRegister('Livramento'));
+ok('and the capture says why a silent gap is worse than a visible error',
+  /It is a silent one/.test(g4));
+
+/* --- still no prices, four Guardian captures running --- */
+const g4cap = CAPS5.declared.find((c) => c.sourceId === 'guardian-previews-17-18');
+ok('previews 17-18 declare zero prices',
+  g4cap === undefined || (g4cap.statedTotal === 0 && g4cap.exact.length === 0));
 
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
