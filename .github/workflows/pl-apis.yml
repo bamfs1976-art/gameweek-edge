@@ -1,24 +1,50 @@
-name: Premier League API probe
+name: Data source surveys
 
-# Asks which OTHER Premier League data sources answer without credentials —
-# the sibling of the FPL endpoint probe, and a workflow for the same reason:
-# the sandbox this project is developed in cannot reach these hosts (the
-# egress proxy answers 403), so the question cannot be answered honestly from
-# there. A runner can.
+# (The file is still pl-apis.yml. GitHub keys a workflow by its path, and
+# renaming it would orphan the run history and un-register workflow_dispatch,
+# so the filename is left alone and the name above says what it now covers.)
 #
-# Manual only. This is a survey to run when somebody asks "what else can we
-# use?", not a monitor. Nothing here is scheduled: repeatedly hitting somebody
-# else's undocumented API to re-learn the same answer would be rude for no
-# benefit.
+# Three questions about where football data could come from, asked from a
+# runner for the same reason: the sandbox this project is developed in cannot
+# reach any of these hosts (the egress proxy answers 403 — measured again on
+# 21 Aug 2026, when api.football-data.org and gameweekedge.co.uk both returned
+# `000`), so none can be answered honestly from there. Answering from
+# recollection would be presenting knowledge as verification, which is the
+# failure this repository keeps writing down.
+#
+#   survey   — what ELSE the Premier League serves without credentials.
+#   squad    — whether the source we ALREADY hold a key for makes one of
+#              those candidates unnecessary. (It did: 21 Aug 2026.)
+#   open     — what is free to USE, not merely free to reach. The successor
+#              question, and the one `survey` explicitly could not answer.
+#
+# They run independently, because a red job says nothing about the others.
+# See docs/data-sources.md and docs/scope-pulselive-source.md.
+#
+# Manual only. Surveys to run when somebody asks "what else can we use?", not
+# monitors. Nothing here is scheduled: repeatedly hitting somebody else's
+# undocumented API to re-learn the same answer would be rude for no benefit,
+# and football-data's free tier is ~10 requests a minute for the whole site.
+#
+# NO SECRETS ARE USED OR NEEDED. The squad probe calls our own deployed site,
+# so FOOTBALL_DATA_KEY stays in the Netlify function's environment where it
+# belongs. Copying it into GitHub to run this would be a worse trade than not
+# knowing the answer.
 
 on:
   workflow_dispatch:
+    inputs:
+      base:
+        description: 'Site the squad probe should ask (defaults to production)'
+        required: false
+        default: 'https://gameweekedge.co.uk'
 
 permissions:
   contents: read
 
 jobs:
-  probe:
+  survey:
+    name: What else answers without credentials
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,3 +53,42 @@ jobs:
           node-version: '22'
       - name: Probe non-FPL Premier League endpoints
         run: node dev/pl-endpoint-probe.mjs
+
+  squad:
+    name: Does football-data already fill nationality
+    runs-on: ubuntu-latest
+    # A red run here means the probe COULD NOT MEASURE — the proxy refused, or
+    # no squad came back to look in. It does not mean nationality is
+    # unavailable. Those are different findings and the script is built to
+    # keep them apart; read the VERDICT block, not the tick.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prove the probe's gates still fire
+        # First, deliberately. A probe whose gates have not been exercised
+        # cannot be trusted to tell "no" from "could not ask", and that
+        # distinction is the only reason to read its output.
+        run: node dev/test-squad-probe.mjs
+      - name: Ask whether nationality is populated
+        env:
+          GWE_BASE: ${{ inputs.base }}
+        run: node dev/probe-squad-nationality.mjs
+
+  open:
+    name: What is free to use, not just free to reach
+    runs-on: ubuntu-latest
+    # Candidates are filtered BEFORE probing: published terms, and no key.
+    # That excludes site backends by policy rather than by oversight — see
+    # docs/scope-pulselive-source.md. This job decides nothing about
+    # licensing; it prints excerpts and the URLs they came from.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prove the survey's judgement calls still hold
+        run: node dev/test-open-api-probe.mjs
+      - name: Survey free, keyless, documented APIs
+        run: node dev/open-api-probe.mjs

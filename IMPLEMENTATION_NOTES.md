@@ -369,6 +369,32 @@ checker before it was clear the checker was wrong. It is bracket-aware now.
 Mutation-tested 17/17 against the applied edits: revert any one of them and
 the suite goes red.
 
+## Pulselive declined; football-data already had it (21 Aug 2026)
+
+The "what else can we use?" survey in `docs/data-sources.md` produced four
+candidates on Pulselive, and a licensing question none of them could clear on
+their own: an undocumented site API, no published terms on third-party use, a
+site with a paid tier consuming it.
+
+Closed without having to answer that question. The two things worth having
+are both on `api.football-data.org`, which we hold a free key for under
+published terms and already proxy:
+
+- **`nationality`** — filled on 97/97 Premier League and 66/66 Championship
+  players asked. FPL's `elements` carry 59 fields and none is nationality.
+- **`status`** — `SCHEDULED` vs `TIMED` separates a provisional kick-off from
+  a confirmed one. Championship: `SCHEDULED 264, TIMED 276`.
+
+Full record and what would reopen it: `docs/scope-pulselive-source.md`.
+
+**Neither is wired into the app.** This established that the input exists,
+nothing more. The obvious use — a winter-tournament minutes-risk signal
+feeding the existing congestion model, which today has no AFCON or
+international-duty handling of any kind — is not built and is not decided.
+Note for whoever picks it up: nationality is **eligibility, not selection**.
+A Senegal-eligible player is not a called-up player, and anything built on
+this has to say "at risk", never "out".
+
 ## Register edits owed, with a source attached (18 Aug 2026)
 
 The official FPL Scout pre-season round-up (all 20 clubs, 172 stated prices)
