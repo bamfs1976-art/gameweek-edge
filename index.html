@@ -532,7 +532,9 @@ html.offline .net-banner{transform:translateY(0)}
    and nowrap there would truncate the description to one line. */
 .dl-grow{overflow:hidden}
 .dl:not(.desc) .dl-grow > .dl-nm,
-.dl:not(.desc) .dl-grow > .dl-sub{
+.dl:not(.desc) .dl-grow > .dl-sub,
+.dl:not(.desc) .dl-grow > .rv-open > .dl-nm,
+.dl:not(.desc) .dl-grow > .rv-open > .dl-sub{
   display:block;max-width:100%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
@@ -2087,7 +2089,16 @@ body{font-size:14px;line-height:1.35}
    at this size. Colour is never the only signal — the key below the pitch
    names both states in words. */
 .rv-wrap{white-space:normal;overflow:visible;text-overflow:clip}
-.rv-open{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+/* A flex column, not a block. .dl-grow is itself a flex column, and it was
+   what stacked the team name above the manager sub-line. Wrapping those two
+   spans in a button made them children of the BUTTON instead, so a
+   display:block button laid them out inline and they ran together —
+   "LammenadeMax Sargeant · GW 20" on one line. The button has to reproduce
+   the column it displaced, and carry min-width:0 so the name still ellipses
+   against the row rather than forcing it wide. */
+.rv-open{display:flex;flex-direction:column;align-items:stretch;
+  width:100%;min-width:0;text-align:left;
+  background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 .rv-open:hover .dl-nm{text-decoration:underline}
 .rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 /* White and amber, not accent-on-green. The first version ringed shared

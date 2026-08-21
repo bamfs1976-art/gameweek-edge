@@ -1081,6 +1081,48 @@ section('a mini-league standing opens that manager\u2019s team');
   ok(opened.rows === 3, 'every standing is an opener, got ' + opened.rows);
   ok((opened.ids || []).includes('7654321'), 'and carries the entry id, not the rank');
 
+  /* ── The two lines must actually be two lines ──────────────────────
+     Reported by a user, not by this file: "The spacing of the text is
+     awful", with the team name and the manager name run together —
+     "LammenadeMax Sargeant · GW 20". .dl-grow was a flex column and that
+     column was what stacked them; wrapping both spans in a display:block
+     button made them inline siblings again.
+
+     Nothing here could see it. Every existing check reads textContent,
+     which concatenates the two spans identically whether they render on
+     one line or two, so the suite was green through two deploys and two
+     rounds of screenshots. Geometry is the only thing that can tell the
+     difference: compare the boxes, not the strings. */
+  const lay = await lp.evaluate(() => {
+    const btn = document.querySelector('[data-rival]');
+    const nm = btn.querySelector('.dl-nm');
+    const sub = btn.querySelector('.dl-sub');
+    const b = btn.getBoundingClientRect();
+    const n = nm.getBoundingClientRect();
+    const s = sub.getBoundingClientRect();
+    return {
+      nmBottom: Math.round(n.bottom), subTop: Math.round(s.top),
+      nmH: Math.round(n.height), btnW: Math.round(b.width),
+      nmW: Math.round(n.width), subW: Math.round(s.width),
+      rowW: Math.round(btn.closest('.dl-row').getBoundingClientRect().width),
+      nmDisp: getComputedStyle(nm).display, subDisp: getComputedStyle(sub).display
+    };
+  });
+  /* Allow a pixel of rounding slack, but not a shared line: if they sat on
+     one line the sub's top would be at the name's top, a full line-height
+     above its bottom. */
+  ok(lay.subTop >= lay.nmBottom - 1,
+     'the manager line sits below the team name, not beside it (name bottom ' +
+     lay.nmBottom + ', sub top ' + lay.subTop + ')');
+  ok(lay.nmDisp === 'block' && lay.subDisp === 'block',
+     'both lines are block boxes so they can ellipse (' + lay.nmDisp + '/' + lay.subDisp + ')');
+  /* The button wrapping them must not defeat the row's clipping either —
+     a long name has to ellipse inside the row, not push it wide. */
+  ok(lay.nmW <= lay.btnW && lay.subW <= lay.btnW,
+     'neither line overflows the button (' + lay.nmW + '/' + lay.subW + ' in ' + lay.btnW + ')');
+  ok(lay.btnW <= lay.rowW,
+     'and the button does not force the row wider (' + lay.btnW + ' in ' + lay.rowW + ')');
+
   /* A real click, on a manager who is NOT the signed-in one. */
   const target = lp.locator('[data-rival="7654321"]').first();
   const hit = await lp.evaluate(() => {
