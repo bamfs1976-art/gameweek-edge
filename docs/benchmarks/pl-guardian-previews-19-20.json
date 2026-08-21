@@ -1,0 +1,174 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-21T13:10:00.000Z",
+  "note": "Guardian club previews 19 (Sunderland) and 20 (Tottenham), the last two of the series. Both published the morning of the GW1 deadline week. This project already holds previews 11-14 and 15-16; 17 and 18 were never captured, and that gap is recorded below rather than left to be inferred from the numbering.",
+
+  "source": {
+    "name": "The Guardian",
+    "articles": [
+      { "no": 19, "club": "Sunderland", "byline": "Louise Taylor", "published": "2026-08-21T00:01:00+01:00" },
+      { "no": 20, "club": "Tottenham Hotspur", "byline": "John Brewin", "published": "2026-08-21T12:00:00+01:00" }
+    ],
+    "readFrom": "pasted article text",
+    "commercialInterest": "A newspaper preview series. No affiliate links, no product, no FPL angle at all — these are football previews that happen to name players we price. That is why they contribute zero prices and a lot of squad facts.",
+    "whatKindOfSourceItIs": "Reported journalism with named bylines and a stated house prediction, distinct from the tip sheets and price tables this project mostly holds. It states transfers, departures, managers and ownership as fact, which is checkable; its predicted finishing positions are opinion, which is gradeable only in May.",
+    "aLimitWorthStating": "A preview is selective by construction. It names the players that make the story and omits the rest, so its SILENCE about a player is not evidence of anything. Every 'the Guardian does not mention X' note below is recorded as an omission, never as a denial — the fault this project made once already by reading an absent Newcastle row as three source conflicts."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "guardian-previews-19-20",
+    "statedTotal": 0,
+    "exact": [],
+    "bands": [],
+    "notEnumerated": "Zero FPL prices, as in previews 11-14 and 15-16. Transfer FEES are stated (Tonali £100m) and are not prices; this project has already read 105 fees as prices once and the two are kept apart deliberately. Recorded as SILENT on prices rather than unexamined."
+  },
+
+  "theSERIESGap": {
+    "held": ["11 Hull", "12 Ipswich", "13 Leeds", "14 Liverpool", "15 Manchester City", "16 Manchester United", "19 Sunderland", "20 Tottenham"],
+    "neverCaptured": [17, 18],
+    "why": "They were not pasted. Nothing is inferred about which clubs they cover — alphabetically 17 and 18 sit between Manchester United and Sunderland, which would make them Newcastle and Nottingham Forest, but the series order is not confirmed anywhere in the text we hold and guessing it would be manufacturing a source we do not have.",
+    "whyItMatters": "If 17 is Newcastle, it is the one preview that would speak directly to the largest open error in our register — the manager line. Recorded as a gap to fill, not as a finding."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "agreements": [
+      {
+        "claim": "Thomas Meunier, 34, free from Lille, is Sunderland's SOLE summer signing, with 'at least two more new recruits expected before the window closes'.",
+        "ourRegister": "**In:** Thomas Meunier (RB, Lille, free). More expected before the deadline.",
+        "verdict": "AGREES, including the incompleteness. Both documents say the same one signing and both say more are coming. The rarest kind of agreement in this collection: our register and an outside source agreeing about what they do NOT yet know."
+      },
+      {
+        "claim": "Régis Le Bris continues as Sunderland manager.",
+        "ourRegister": "'seventh in their first season back, with Regis Le Bris staying on'",
+        "verdict": "agrees"
+      },
+      {
+        "claim": "Sunderland are in the Europa League — 'continental combat for the first time since 1973-74', Thursday night football.",
+        "ourRegister": "'13 Aug: they qualified for the Europa League and this block did not say so ... Thursday-Sunday football, so every Sunderland asset now carries the same rotation warning'",
+        "verdict": "agrees, on a line our register had to be corrected into holding. A fourth source on a fact we originally missed."
+      },
+      {
+        "claim": "Sandro Tonali cost £100m from Newcastle.",
+        "ourRegister": "Recorded at BOTH ends — Spurs In: 'Sandro Tonali (CM, Newcastle, ~£100m)'; Newcastle Out: 'Sandro Tonali (CM, Tottenham, ~£100m)'.",
+        "verdict": "agrees at both ends, which is a stronger check than one club's list agreeing"
+      },
+      {
+        "claim": "Antonin Kinsky 'is set to be first choice this season after the departure of Guglielmo Vicario'.",
+        "ourRegister": "FPL picks, Value: 'Antonin Kinsky (GK, ~£4.5m), cheap starting keeper enabler.'",
+        "verdict": "AGREES, and it is the single most useful line in either preview for this project. Our register recommends Kinsky as a cheap STARTING keeper while its own Spurs In list also contains Martin Dubravka (GK, Burnley, free) — a free veteran keeper is exactly what would unseat a cheap enabler. The Guardian names Kinsky first choice and does not mention Dubravka at all. It does not settle the competition, but it is outside support for a pick our own transfer list argues against."
+      },
+      {
+        "claim": "Jan Paul van Hecke and Mateus Fernandes signed for Tottenham; Andy Robertson added as an experienced head.",
+        "ourRegister": "All three in the Spurs In list, van Hecke at ~£52m from Brighton, Fernandes ~£85m from West Ham, Robertson free from Liverpool.",
+        "verdict": "agrees"
+      },
+      {
+        "claim": "Roberto De Zerbi is Tottenham's manager after a seventeenth-place finish.",
+        "ourRegister": "'A dismal seventeenth triggered a full rebuild under Roberto De Zerbi, confirmed head coach.'",
+        "verdict": "agrees"
+      }
+    ],
+
+    "thePINThisCLOSES": {
+      "what": "The Sam FPL tips card (pl-preseason-tips-samfpl.json) left three short names unresolved. One of them was 'Robbo, in \"Richa & Robbo should start for Spurs\"'.",
+      "whatWasWritten": "'Our register holds Antonee Robinson at Fulham and the Michal capture prices a Robinson at £4.5m. Reading this as a claim that Antonee Robinson is at Spurs would manufacture a transfer out of a nickname. NOT recorded as a conflict.'",
+      "whatIsTrue": "The Guardian names 'Andy Robertson's addition as an experienced head' at Tottenham. Richarlison and Andy Robertson are both Spurs players, so the card's line is ordinary and resolvable.",
+      "theUNCOMFORTABLEPart": "Our register ALREADY held it. The Spurs In list has carried 'Andy Robertson (LB, Liverpool, free)' throughout, Liverpool's Out list has carried 'Andy Robertson (DEF, Tottenham, free)', and a third line elsewhere in the file explicitly discusses Robertson having left Liverpool. The pin stayed open because the search was for ROBINSON — the wrong surname — and the absence of a Robinson at Spurs was read as ambiguity in the source. It was not ambiguity in the source. It was a failed lookup in our own documents, reported as a limit of somebody else's.",
+      "theRuleThisAddsToTheFile": "Before recording a name as unresolvable, search the register for the name it might be, not only for the name first guessed. A nickname with two candidate expansions needs both looked up. Recorded here rather than quietly fixed in the older capture, because a correction that erases its own cause teaches nothing.",
+      "whatIsNOTClaimed": "That Robertson will start, which is what the card actually asserted. That is a team-sheet claim and settles on the GW1 line-up like any other."
+    },
+
+    "theCONVERGENCEWorthTheMost": {
+      "claim": "'If matches were decided by Opta's expected points metric, Sunderland would have been relegated last season. Instead they are preparing for a Europa League campaign after finishing 11 places higher than the XG figures implied they deserved. It was a wider margin between statistical performance and outcome than any other team in Europe's big five leagues experienced, for good or bad.'",
+      "ourRegister": "'And the underlying numbers say seventh flattered them: 42 goals scored against 38.89 xG, 48 conceded against 52.1 xGA, and 396 shots, nineteenth in the division. Overperformance at both ends at once, which makes regression the base case rather than the risk case.'",
+      "verdict": "AGREES, and independently. Our register reached the conclusion on 13 Aug from goals-versus-xG at both ends; the Guardian reaches it from Opta's expected-points table and a European ranking. Different metric, different framing, same finding — and the Guardian's version is stronger than ours, because 'the widest margin in the big five leagues' is a claim our numbers could not have produced.",
+      "whyThisIsNotJustAgreement": "The Sam FPL capture drew a distinction this one has to be held to: two sources agreeing on a JUDGEMENT drawn from facts both already share is popularity, not corroboration. This is the other case. The two arrive from separate measurements neither took from the other, so it is corroboration in the sense that matters.",
+      "whatItDoesToOurPicks": "Nothing yet, deliberately. Regression being the base case is already what our Sunderland block says; a second source does not make it more true, it makes holding the opposite more expensive. Our Sunderland picks are already hedged as home-fixture assets rather than season-long ones."
+    },
+
+    "theDISAGREEMENT": {
+      "claim": "'no key player has been sold this summer' (Sunderland).",
+      "ourRegister": "Sunderland Out: 'Eliezer Mayenda (ST, Rennes, ~£21.5m), Dan Neil (MID, departed, destination uncertain)...' and the block itself: 'they lost breakout striker Mayenda (~£21.5m to Rennes), so replacing goals is the priority'.",
+      "verdict": "OPEN, and carefully so. Our register says the club sold its breakout striker for £21.5m this summer and names it as the squad's central problem. The Guardian says no key player was sold and never mentions Mayenda in either the prospects or the transfer paragraph.",
+      "whyItIsNotFiledAsAFactualError": "'Key' is a judgement, not a fact. A writer can reasonably think a departing striker with one breakout season was not key, and that reading is consistent with everything else the preview says. What is checkable is the SALE, and the Guardian does not deny it — it is silent on it, and this file does not read silence as denial.",
+      "whatWouldSettleIt": "Nothing available before the season. It grades on whether Sunderland's goals hold up without him.",
+      "theRealPointOfRecordingIt": "Our register and this source are looking at the same squad and disagreeing about whether its biggest departure mattered. Our own line — 'replacing goals is the priority and incomings have been slow' — is now the minority view of two, and it is the line our Sunderland forward picks rest on."
+    },
+
+    "theLEANThatMovesAnOpenItem": {
+      "openItem": "Isidor vs Brobbey — recorded in IMPLEMENTATION_NOTES as an open conflict about who leads the Sunderland line.",
+      "ourRegister": "'Wilson Isidor (~£5.5-6.0m), clear number nine after Mayenda — though an outside Sunderland thread builds its entire case around Brian Brobbey and never mentions Isidor. One of the two of us is wrong about who leads this line.'",
+      "whatThisSourceAdds": "The Guardian's prospects paragraph lists the squad's high-calibre players and closes: 'Brian Brobbey is the sort of robust centre-forward few defenders enjoy marking.' Isidor appears in the preview exactly once, in the World Cup section, for scoring Haiti's first World Cup goal since 1974.",
+      "verdict": "A second outside source leaning Brobbey. NOT a settlement: neither source states a starting XI, and a preview naming one striker in its squad paragraph is not a team sheet.",
+      "theHonestScore": "Two outside sources have now written about this attack at length and framed it around Brobbey. Our register calls Isidor the clear number nine. That is 2-1 against our line, on judgement rather than fact, and our line has not moved.",
+      "whatWouldSettleIt": "The GW1 team sheet. Not another preview."
+    },
+
+    "theTENSION": {
+      "claim": "Meunier 'will compete with Mukiele and Trai Hume at right-back'.",
+      "ourRegister": "'Trai Hume (~£4.5m, 110 points, 2 goals, 1 assist, 10 clean sheets) has been deployed as a right winger in pre-season so Mukiele can overlap — for a defender that is a points risk rather than a bonus, since clean sheets pay a defender and not a winger, and it is unconfirmed for GW1.'",
+      "verdict": "Not a contradiction — a pre-season experiment and a squad role are different statements, and our own line already flags the winger deployment as unconfirmed. But the Guardian describes Hume as one of three right-backs and says nothing about a winger role.",
+      "whyItIsWorthTheSpace": "It bears directly on a priced FPL asset and on a specific risk our register raises. If Hume is simply a right-back competing with two others, the risk our block names changes shape: from 'plays out of position and loses clean-sheet points' to 'may not play at all'. Both are risks; they are not the same risk, and a manager reading our line would act differently on each.",
+      "recordedAs": "an unresolved difference in emphasis, with our line left standing and its 'unconfirmed for GW1' caveat now doing more work than it was"
+    },
+
+    "playersTheseArticlesNameThatOurRegisterDoesNOTHold": {
+      "method": "Word-boundary match against both editions of the register, not substring. The substring form is what once matched 'Trafford' inside 'Old Trafford' and reported a stadium as a player.",
+      "sunderland": ["Chris Rigg", "Robin Roefs", "Noah Sadiki", "Tom Proctor"],
+      "tottenham": ["Cristian Romero", "Djed Spence", "Guglielmo Vicario", "Savinho", "Mikey Moore", "Micky van de Ven"],
+      "offField": ["Kyril Louis-Dreyfus", "Juan Sartori", "Florent Ghisolfi", "Daniel Levy", "Vinai Venkatesham", "Igor Tudor", "Thomas Frank"],
+      "theThreeThatMatterForFPL": [
+        {
+          "name": "Robin Roefs",
+          "why": "Named among Sunderland's high-calibre individuals. Our register holds no Sunderland goalkeeper line at all, which for a club whose defensive assets we price as home-fixture picks is a hole in the middle of the case."
+        },
+        {
+          "name": "Guglielmo Vicario",
+          "why": "His departure is the stated reason Kinsky is first choice. Our register recommends Kinsky and holds neither Vicario's name nor his exit, so our own pick's justification is missing from our own file."
+        },
+        {
+          "name": "Cristian Romero",
+          "why": "A first-choice centre-back leaving, absent from our Spurs Out list entirely. Our Spurs defensive picks are built on Porro and van Hecke; a departure of this size changes the shape of that defence and we do not record it."
+        }
+      ],
+      "notablyNotAnFPLGap": "Thomas Frank and Igor Tudor are last season's Tottenham managers. Their absence is a history gap, not a squad one — our register names the current manager correctly, which is the part that affects a team sheet."
+    }
+  },
+
+  "watchItemsCreated": [
+    {
+      "item": "Savinho and Omar Marmoush 'expected to also arrive from Manchester City'.",
+      "ourRegister": "Marmoush appears exactly once in our file — in MANCHESTER CITY's set-piece line, as a direct free-kick alternative behind Cherki. Savinho appears nowhere.",
+      "verdict": "No conflict. 'Expected to arrive' is not arrived, and our register having Marmoush at City is the correct state for a move that has not happened. This project has already recorded the fault of upgrading a rumour to a transfer because a fee was attached.",
+      "whatToWatchFor": "If both complete, two things change at once: City's free-kick hierarchy loses an alternative, and Tottenham acquire the 'top-level striker' this preview calls a glaring absence — which would move our Spurs FPL picks off Solanke."
+    },
+    {
+      "item": "Sunderland had 12 players at the World Cup, 'more than Real Madrid'.",
+      "ourRegister": "Holds no World Cup participation counts for Sunderland.",
+      "whyItIsAnFPLItem": "Twelve returning tournament players in a squad about to add Thursday-night football is a minutes and fatigue signal on top of the rotation warning our block already carries. It sharpens an existing caution rather than creating a new one.",
+      "notClaimed": "That any specific player will be rested. We hold no minutes data for it and inventing one would be the kind of fabrication this file exists to prevent."
+    }
+  ],
+
+  "claimsWorthGrading": [
+    { "claim": "Sunderland finish 14th (Guardian writers' average)", "gradeable": true, "settlesOn": "the final table", "note": "against last season's 7th, and against our own register's regression case" },
+    { "claim": "Tottenham finish 6th (Guardian writers' average)", "gradeable": true, "settlesOn": "the final table", "note": "an eleven-place improvement predicted on a spending spree — the boldest positional call in the two previews" },
+    { "claim": "Kinsky is Tottenham's first-choice keeper", "gradeable": true, "settlesOn": "the GW1 team sheet, and it directly grades one of our own FPL picks" },
+    { "claim": "Brobbey leads the Sunderland line", "gradeable": true, "settlesOn": "the GW1 team sheet", "note": "the open Isidor/Brobbey item; our register says Isidor" },
+    { "claim": "Sunderland regress from seventh", "gradeable": true, "settlesOn": "the final table", "note": "our register and this source agree, from different measurements" },
+    { "claim": "Tom Proctor makes a competitive first-team debut this season", "gradeable": true, "settlesOn": "appearance records", "note": "hedged in the source as 'no surprise if', so grade the appearance and not the confidence" },
+    { "claim": "'no key player has been sold this summer'", "gradeable": false, "why": "'key' is a judgement. The underlying sale is a fact and is not disputed by either document." }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Closes the Sam FPL 'Robbo' pin — and records that it was closeable from our own register at the time, by searching the right surname.",
+    "Adds a second independent measurement behind the Sunderland regression line our register already holds.",
+    "Moves the Isidor/Brobbey item to 2-1 against our line, without settling it.",
+    "Adds ten squad names our register does not hold, three of which sit underneath FPL picks we already publish.",
+    "Records one disagreement ('no key player sold') that is not gradeable as stated, and says so rather than filing it as an error.",
+    "Contributes no prices, and is recorded as SILENT on prices rather than unexamined.",
+    "Leaves previews 17 and 18 recorded as never captured, rather than letting the numbering imply we had the full series."
+  ]
+}

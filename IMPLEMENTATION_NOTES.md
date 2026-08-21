@@ -124,6 +124,77 @@ guards themselves — nothing asserted the ORDER of a double's two fixtures, and
 the squad page always had a squad so nothing checked that the toggle stays
 away when there is not one.
 
+## Guardian previews 19-20 — Sunderland and Tottenham (21 Aug 2026)
+
+Captured in `docs/benchmarks/pl-guardian-previews-19-20.json`, the last two of
+the series. Previews 17 and 18 were never pasted and are recorded as a gap
+rather than left to be inferred from the numbering — if 17 is Newcastle, it is
+the one preview that would speak to the largest open error in our register.
+
+**Closed: the Sam FPL "Robbo" pin — and it was ours to close all along.**
+That capture left `Robbo, in 'Richa & Robbo should start for Spurs'` unresolved,
+reasoning that reading it as Antonee Robinson "would manufacture a transfer out
+of a nickname". The Guardian names Andy Robertson at Tottenham. So does our own
+register, in three separate places, and it has throughout: the Spurs In list,
+Liverpool's Out list, and a third line discussing his exit. The pin stayed open
+because the search was for **Robinson** — the wrong surname — and a missing
+Robinson was written up as ambiguity in the source. It was a failed lookup in
+our own documents, reported as a limit of somebody else's.
+
+The rule this adds: before recording a name as unresolvable, search for the
+name it might be, not only the name first guessed. Corrected in the open in the
+new capture rather than quietly patched in the old one.
+
+**Strengthened, from an independent measurement:** our Sunderland regression
+line. Our register reached it on 13 Aug from goals-versus-xG at both ends (42
+scored against 38.89 xG, 48 conceded against 52.1 xGA). The Guardian reaches it
+from Opta expected points — Sunderland would have been relegated on that metric
+and finished 11 places above what xG implied, *the widest such margin in
+Europe's big five leagues*. Different measurement, same finding, and theirs is
+the stronger claim. No pick changes; holding the opposite just got dearer.
+
+**Moved but not settled: Isidor vs Brobbey.** The Guardian's squad paragraph
+frames the Sunderland attack around Brobbey and names Isidor once, for a Haiti
+World Cup goal. That is a second outside source leaning Brobbey against our
+register's "clear number nine after Mayenda" — 2-1 against our line, on
+judgement not fact. Settles on the GW1 team sheet, not on another preview.
+
+**Open, and not gradeable as stated:** the Guardian says "no key player has been
+sold this summer"; our register says Sunderland lost breakout striker Mayenda
+for ~£21.5m and calls replacing his goals the priority. *Key* is a judgement, so
+this is filed as a disagreement rather than an error — and the preview's silence
+about the sale is not read as a denial of it.
+
+**Register edits owed from this capture:**
+
+- **Guglielmo Vicario's departure.** Our register recommends Antonin Kinsky as
+  a "cheap starting keeper enabler" while its own Spurs In list contains Martin
+  Dubravka on a free — a veteran keeper is exactly what unseats a cheap
+  enabler. The Guardian says Kinsky is first choice *because* Vicario left. Our
+  own pick's justification is missing from our own file.
+- **Cristian Romero has left Tottenham.** Absent from our Spurs Out list
+  entirely; a first-choice centre-back leaving changes the shape of a defence
+  we price Porro and van Hecke off.
+- **Robin Roefs**, named among Sunderland's key men. We hold no Sunderland
+  goalkeeper line at all, for a club whose defenders we price as home-fixture
+  assets.
+- Smaller, all sourced: Chris Rigg, Noah Sadiki, Tom Proctor (Sunderland);
+  Djed Spence to Inter, Mikey Moore, Micky van de Ven, Savinho (Tottenham).
+- **Trai Hume**, a tension rather than an edit: the Guardian lists him as one of
+  three right-backs; our register says he has been used as a right winger in
+  pre-season so Mukiele can overlap, and flags the clean-sheet cost. Both are
+  risks and they are not the same risk. Our "unconfirmed for GW1" caveat now
+  does more work than it was written to do.
+
+**Watch:** Savinho and Omar Marmoush are *expected* to arrive at Spurs from
+Manchester City. Not recorded as transfers — our register correctly still has
+Marmoush in City's free-kick order. If both land, City's dead-ball hierarchy
+loses an alternative and Spurs gain the striker this preview calls a glaring
+absence, which would move our Spurs picks off Solanke.
+
+Guards: 32 checks in `dev/test-challenge-picks.mjs` (473 total), mutation-tested
+16/16 against both the capture's claims and the register's facts.
+
 ## Register edits owed, with a source attached (18 Aug 2026)
 
 The official FPL Scout pre-season round-up (all 20 clubs, 172 stated prices)

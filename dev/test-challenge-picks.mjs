@@ -1188,6 +1188,103 @@ ok('Verbruggen and Hughes are still the two nothing prices',
   /the same two as in the previous draft/.test(rev2S)
   && !ROWS5.some((r) => r.key === normName('Verbruggen') && r.exact.length > 0));
 
+/* ─── Guardian previews 19-20: Sunderland and Tottenham ────────────────────
+   The last two of the series, both published on the morning of deadline week.
+   The valuable items are not the agreements — they are one pin this closes
+   about our OWN searching, one convergence arrived at from two different
+   measurements, and three squad gaps sitting underneath FPL picks we publish.
+   ------------------------------------------------------------------------ */
+const GDN3 = JSON.parse(fs.readFileSync(`${R}/docs/benchmarks/pl-guardian-previews-19-20.json`, 'utf8'));
+const g3 = JSON.stringify(GDN3);
+
+/* --- the pin this closes, and whose fault it was --- */
+ok('our register has held Andy Robertson at Tottenham all along',
+  /Andy Robertson \(LB, Liverpool, free\)/.test(MD));
+ok('and Liverpool records the same move from the other end',
+  /Andy Robertson \(DEF, Tottenham, free\)/.test(MD));
+ok('the Sam FPL card really did leave "Robbo" unresolved',
+  /Robbo, in 'Richa & Robbo should start for Spurs'/.test(
+    fs.readFileSync(`${R}/docs/benchmarks/pl-preseason-tips-samfpl.json`, 'utf8')));
+ok('the new capture closes it against the Guardian naming Robertson at Spurs',
+  /thePINThisCLOSES/.test(g3) && /Andy Robertson's addition as an experienced head/.test(g3));
+/* The point of the entry is the cause, not the answer. */
+ok('and it records the cause as our own failed lookup, not source ambiguity',
+  /the search was for ROBINSON/.test(g3) && /It was not ambiguity in the source/.test(g3));
+ok('the older capture is corrected in the open rather than rewritten',
+  /a correction that erases its own cause teaches nothing/.test(g3));
+ok('and the claim that Robertson will START is explicitly not adopted',
+  /That is a team-sheet claim/.test(g3));
+
+/* --- convergence, and the distinction it has to survive --- */
+ok('our register already held the Sunderland overperformance numbers',
+  /42 goals scored against 38\.89 xG/.test(MD) && /48 conceded against 52\.1 xGA/.test(MD));
+ok('the Guardian reaches it from a different metric entirely',
+  /expected points metric/.test(g3) && /11 places higher/.test(g3));
+ok('and the capture states why this counts as corroboration where the Arsenal one did not',
+  /separate measurements neither took from the other/.test(g3));
+/* Agreement must not quietly become a new claim. */
+ok('the convergence changes no pick, and says so',
+  /Nothing yet, deliberately/.test(g3));
+
+/* --- the disagreement is filed as ungradeable, not as an error --- */
+ok('"no key player has been sold" is recorded against our Mayenda line',
+  /breakout striker Mayenda/.test(MD) && /Eliezer Mayenda \(ST, Rennes, ~£21\.5m\)/.test(MD));
+ok('and it is NOT filed as a factual error, because "key" is a judgement',
+  /'key' is a judgement, not a fact/i.test(g3));
+ok('silence about the sale is not read as denial of it',
+  /it is silent on it, and this file does not read silence as denial/.test(g3));
+const ungradeable = GDN3.claimsWorthGrading.filter((c) => c.gradeable === false);
+ok('exactly the "key player" claim is marked ungradeable',
+  ungradeable.length === 1 && /no key player has been sold/.test(ungradeable[0].claim));
+
+/* --- the open Isidor/Brobbey item moves without being settled --- */
+ok('our register still calls Isidor the clear number nine',
+  /clear number nine after Mayenda/.test(MD));
+ok('the capture records a SECOND source leaning Brobbey', /A second outside source leaning Brobbey/.test(g3));
+ok('and refuses to call it settled', /NOT a settlement/.test(g3));
+ok('scoring it honestly against our own line', /That is 2-1 against our line/.test(g3));
+ok('with the team sheet named as what would settle it, not another preview',
+  /The GW1 team sheet\. Not another preview\./.test(g3));
+
+/* --- absence measured on word boundaries, and measured against the REAL file --- */
+const g3gaps = [].concat(
+  GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.sunderland,
+  GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.tottenham,
+  GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.offField);
+ok('every name claimed absent really is absent from both editions',
+  g3gaps.length >= 15 && g3gaps.filter(heldByRegister).length === 0);
+/* A gap list that could not have been wrong is not a check. This asserts the
+   list is non-trivial AND that the register genuinely holds the players the
+   same previews name that are NOT on it. */
+ok('and the previews name plenty we DO hold, so the gap list is selective',
+  ['Meunier', 'Mukiele', 'Hume', 'Kinsky', 'Porro', 'Tonali', 'Richarlison']
+    .every((n) => heldByRegister(n)));
+
+/* --- the three gaps that sit underneath published picks --- */
+const under = GDN3.verifiedAgainstOurRegister.playersTheseArticlesNameThatOurRegisterDoesNOTHold.theThreeThatMatterForFPL;
+ok('three gaps are singled out as sitting under FPL picks we publish', under.length === 3);
+ok('Vicario is one of them, because our Kinsky pick rests on his exit',
+  under.some((u) => u.name === 'Guglielmo Vicario') && /Antonin Kinsky \(GK, ~£4\.5m\), cheap starting keeper enabler/.test(MD));
+ok('and our own transfer list argues AGAINST that pick, which the capture states',
+  /Martin Dubravka \(GK, Burnley, free\)/.test(MD) && /a free veteran keeper is exactly what would unseat a cheap enabler/.test(g3));
+
+/* --- the series gap is recorded rather than implied --- */
+ok('previews 17 and 18 are recorded as never captured',
+  GDN3.theSERIESGap.neverCaptured.join() === '17,18');
+ok('and the file refuses to guess which clubs they cover',
+  /guessing it would be manufacturing a source we do not have/.test(g3));
+
+/* --- still no prices, three Guardian captures running --- */
+const g3cap = CAPS5.declared.find((c) => c.sourceId === 'guardian-previews-19-20');
+ok('previews 19-20 declare zero prices',
+  g3cap === undefined || (g3cap.statedTotal === 0 && g3cap.exact.length === 0));
+ok('and transfer fees are explicitly kept apart from prices',
+  /Transfer FEES are stated \(Tonali £100m\) and are not prices/.test(g3));
+
+/* --- a preview's silence is never read as a denial --- */
+ok('the source limits state that omission is not denial',
+  /never as a denial/.test(g3) && /reading an absent Newcastle row as three source conflicts/.test(g3));
+
 console.log(`checks passed ${pass}/${pass + fail.length}`);
 fail.forEach((f) => console.log('  FAIL ' + f));
 process.exit(fail.length ? 1 : 0);
