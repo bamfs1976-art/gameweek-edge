@@ -73,8 +73,10 @@ const CANDIDATES = [
     url: 'https://footballapi.pulselive.com/football/standings?comps=1' },
   { group: 'pulselive', origin: true, why: 'players',
     url: 'https://footballapi.pulselive.com/football/players?pageSize=10&comps=1' },
-  { group: 'pulselive', origin: true, why: 'per-match events — the timeline the site draws',
-    url: 'https://footballapi.pulselive.com/football/fixtures/93000' },
+  /* The first run guessed fixture id 93000 and got a 404. That is evidence
+     about the ID, not about the endpoint, and reporting it as "the endpoint is
+     gone" would have been exactly the confusion this project keeps recording.
+     Chained below instead, off a real id from the fixtures list. */
   { group: 'pulselive', origin: true, why: 'staff/officials for a season — would answer the referee question without scraping',
     url: 'https://footballapi.pulselive.com/football/teams/1/compseasons/719/staff' },
   { group: 'pulselive', origin: true, why: 'aggregate player stats',
@@ -103,7 +105,13 @@ const CANDIDATES = [
 ];
 
 const shapeOf = (body, ct) => {
-  if (!/json/i.test(ct)) return { kind: 'not-json', bytes: body.length };
+  /* Content-type is the first filter, not the only one: raw.githubusercontent
+     serves .json files as text/plain, and the first run reported a perfectly
+     good JSON file as "not-json" on that basis alone. So fall through to an
+     actual parse before calling it non-JSON. */
+  if (!/json/i.test(ct) && !(body.trim().startsWith('{') || body.trim().startsWith('['))) {
+    return { kind: 'not-json', bytes: body.length };
+  }
   let data;
   try { data = JSON.parse(body); } catch { return { kind: 'unparseable-json', bytes: body.length }; }
   if (Array.isArray(data)) {
@@ -139,6 +147,7 @@ async function hit(url, withOrigin) {
     const ct = r.headers.get('content-type') || '';
     const body = await r.text();
     return { status: r.status, contentType: ct.split(';')[0], bytes: body.length,
+      acao: r.headers.get('access-control-allow-origin'),
       shape: r.ok ? shapeOf(body, ct) : null,
       snippet: r.ok ? null : body.slice(0, 120).replace(/\s+/g, ' ') };
   } catch (e) {
@@ -191,7 +200,7 @@ function describe(r) {
     const best = (withOrigin && withOrigin.status >= 200 && withOrigin.status < 300)
       ? withOrigin : plain;
     summary.push({
-      group: c.group, url: c.url,
+      group: c.group, url: c.url, acao: best.acao,
       usable: !!(best.status >= 200 && best.status < 300 && best.shape
         && best.shape.kind !== 'not-json'),
       needsOrigin: !!(withOrigin && withOrigin.status < 300 && plain.status >= 300),
@@ -199,14 +208,51 @@ function describe(r) {
     });
   }
 
+  /* Chained probe: one real id, taken from the fixtures list above rather
+     than guessed. A 404 on a made-up id says nothing about the route. */
+  console.log('\n=== CHAINED (a real id, not a guessed one) ===');
+  try {
+    const list = await hit('https://footballapi.pulselive.com/football/fixtures?comps=1&pageSize=1', true);
+    const id = list.shape && list.shape.inner ? null : null;
+    const raw = await fetch('https://footballapi.pulselive.com/football/fixtures?comps=1&pageSize=1',
+      { headers: { 'User-Agent': UA, Accept: 'application/json', Origin: PL_ORIGIN } });
+    const j = await raw.json();
+    const fid = j && j.content && j.content[0] && j.content[0].id;
+    if (!fid) console.log('  could not read a fixture id from the list — chain not attempted');
+    else {
+      console.log(`  using fixture id ${fid}`);
+      const one = await hit(`https://footballapi.pulselive.com/football/fixtures/${fid}`, true);
+      console.log(`  single fixture   : ${describe(one)}`);
+      await sleep(500);
+      const tl = await hit(`https://footballapi.pulselive.com/football/fixtures/${fid}/textstream/EN?pageSize=5`, true);
+      console.log(`  textstream (commentary/events) : ${describe(tl)}`);
+    }
+  } catch (e) { console.log('  chain failed: ' + (e && e.message)); }
+
   console.log('\n=== SUMMARY ===');
   const usable = summary.filter((s) => s.usable);
   console.log(`probed ${CANDIDATES.length} candidates across ${new Set(CANDIDATES.map((c) => c.group)).size} groups`);
   console.log(`${usable.length} returned usable JSON without credentials`);
   const needsOrigin = usable.filter((s) => s.needsOrigin);
-  console.log(`${needsOrigin.length} of those required the Premier League Origin header,`);
-  console.log('  which means a browser on our own domain cannot call them directly —');
-  console.log('  they would need a Netlify function in front, like fpl.js and football-data.js.');
+  console.log(`${needsOrigin.length} of those required the Premier League Origin header.`);
+  /* The first run printed a consequence clause here unconditionally — "which
+     means a browser cannot call them directly" — which read as a finding when
+     the count was zero and was simply a non-sequitur. Say it only when it
+     applies, and say the thing that actually decides it otherwise. */
+  if (needsOrigin.length) {
+    console.log('  Those cannot be called from a browser on our own domain;');
+    console.log('  they need a Netlify function in front, like fpl.js and football-data.js.');
+  } else {
+    console.log('  So none of them is gated on looking like the PL front end.');
+  }
+  const cors = usable.filter((s) => s.acao);
+  console.log(`\n${cors.length} of ${usable.length} send an Access-Control-Allow-Origin header.`);
+  console.log('  This, not the Origin request header, is what decides whether the');
+  console.log('  BROWSER can call it. Server-side reachability says nothing about it:');
+  console.log('  a runner has no same-origin policy and this script is a runner.');
+  for (const s of usable) {
+    console.log(`    ${s.acao ? 'CORS ' + s.acao : 'no CORS header'} — ${short(s.url)}`);
+  }
   console.log('\nNOT MEASURED HERE: whether any of this is LICENSED for our use.');
   console.log('A 200 means reachable. Several of these are undocumented site APIs');
   console.log('whose terms say nothing about third-party use, and that judgement is');
