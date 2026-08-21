@@ -30,15 +30,64 @@
 const BASE = 'https://fantasy.premierleague.com/api';
 const UA = 'Mozilla/5.0 (compatible; GameweekEdge/1.0; +https://gameweekedge.co.uk)';
 
-/* Endpoints the app already proxies (netlify/functions/fpl.js ALLOW list).
-   Probed as well, because a control group is the only way to tell "this
-   endpoint is gone" from "the probe is broken". */
-const IN_USE = [
-  'bootstrap-static/', 'fixtures/', 'event-status/', 'set-piece-notes/',
-  'element-summary/1/', 'event/1/live/', 'dream-team/1/',
-  'entry/1/', 'entry/1/history/', 'entry/1/transfers/',
-  'entry/1/event/1/picks/', 'leagues-classic/314/standings/'
-];
+/* The proxy's own front door. "Are our endpoints firing?" is a question about
+   THIS, not about fantasy.premierleague.com — an endpoint can be perfectly
+   alive upstream and still be broken for our users, because the allowlist
+   rejects it, the redirect is wrong, or the function errors. The two are
+   probed separately and compared, since only the comparison says whose
+   problem a failure is. */
+const PROXY = (process.env.GWE_BASE || 'https://gameweekedge.co.uk').replace(/\/+$/, '') + '/api/fpl';
+
+/* ── IN-USE COVERAGE IS DERIVED, NOT TYPED ────────────────────────────
+   This list used to be hand-written, and it had drifted: twelve paths
+   against an allowlist of fifteen. The three it had quietly stopped
+   covering were the two h2h league routes and the CURRENT set-piece-notes
+   path — and a probe that omits an endpoint reports exactly the same thing
+   as a probe that finds it healthy. Silence and success looked identical.
+
+   So the list is now read out of netlify/functions/fpl.js at run time. Add an
+   endpoint to the allowlist and this probes it on the next run without
+   anybody remembering to; delete one and it stops. The count is asserted
+   against the file so a parse failure cannot masquerade as full coverage. */
+import { readFileSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+function allowPatterns() {
+  const src = readFileSync(path.join(HERE, '..', 'netlify', 'functions', 'fpl.js'), 'utf8');
+  const block = src.match(/const ALLOW = \[([\s\S]*?)\n\];/);
+  if (!block) throw new Error('could not find the ALLOW block in fpl.js — refusing to guess coverage');
+  return block[1]
+    .split('\n')
+    .map((l) => l.replace(/\/\*[\s\S]*?\*\//g, '').trim())
+    .map((l) => (l.match(/^\/\^(.*)\$\/,?$/) || [])[1])
+    .filter(Boolean);
+}
+
+/* Turn one allowlist regex into a path that really exists. Ids come from live
+   responses rather than from imagination: an earlier probe in this repo
+   guessed a fixture id, got a 404, and would have had that read as "the
+   endpoint is gone" — evidence about the id, not the route. Anything we
+   cannot source a real id for returns a REASON, and the coverage report
+   prints it as not-probed rather than letting it vanish. */
+function concreteFor(pattern, ids) {
+  let p = pattern.replace(/\\\//g, '/');
+  if (/leagues-h2h/.test(p)) {
+    if (!ids.h2h) return { skip: 'no real head-to-head league id available — see resolveIds()' };
+    p = p.replace('\\d+', String(ids.h2h));
+  }
+  if (/^entry\//.test(p)) {
+    if (!ids.entry) return { skip: 'could not resolve a real entry id' };
+    p = p.replace('\\d+', String(ids.entry));
+  }
+  if (/leagues-classic/.test(p)) p = p.replace('\\d+', String(ids.classic));
+  if (/element-summary/.test(p)) p = p.replace('\\d+', String(ids.element));
+  p = p.replace(/\\d\+/g, String(ids.event));
+  if (/\\d\+|\\/.test(p)) return { skip: 'pattern has unsubstituted metacharacters: ' + p };
+  return { path: p + '/' };
+}
 
 /* Candidates NOT currently in the allowlist. Includes several that are
    expected to fail — an auth-only route and a deliberate nonsense path — so
@@ -101,6 +150,56 @@ async function probe(path) {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* Probe the same endpoint through our own proxy. Same shape of answer, so the
+   two can be compared row by row. */
+async function probeProxy(p) {
+  const url = `${PROXY}/${p}`;
+  try {
+    const r = await fetch(url, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
+    const ct = r.headers.get('content-type') || '';
+    const body = await r.text();
+    return { path: p, status: r.status, contentType: ct.split(';')[0], bytes: body.length,
+      shape: r.ok ? shapeOf(body, ct) : null,
+      why: r.ok ? null : body.slice(0, 160).replace(/\s+/g, ' ') };
+  } catch (e) {
+    const to = e && (e.name === 'TimeoutError' || e.name === 'AbortError');
+    return { path: p, status: null, error: to ? 'no answer within 20000ms' : String(e && e.message) };
+  }
+}
+
+/* Real ids, sourced from real responses. The global classic league 314 holds
+   every registered manager, so its standings are where a genuine entry id
+   comes from; bootstrap-static names the current gameweek and a real element.
+
+   There is no equivalent source for a head-to-head league we are entitled to
+   read, so `h2h` stays null on purpose. Inventing one would produce a 404 and
+   a false headline — "our h2h endpoint is broken" — about an id rather than
+   about the route. Not probed is recorded as not probed. */
+async function resolveIds() {
+  const ids = { entry: null, event: 1, element: 1, classic: 314, h2h: null, notes: [] };
+  const boot = await probe('bootstrap-static/');
+  if (boot.status === 200) {
+    try {
+      const b = JSON.parse((await (await fetch(`${BASE}/bootstrap-static/`, { headers: { 'User-Agent': UA } })).text()));
+      const cur = (b.events || []).find((e) => e.is_current) || (b.events || []).find((e) => e.is_next);
+      if (cur) { ids.event = cur.id; ids.notes.push(`current gameweek ${cur.id} (from bootstrap events)`); }
+      if (b.elements && b.elements[0]) { ids.element = b.elements[0].id; ids.notes.push(`element ${ids.element}`); }
+    } catch (_) { ids.notes.push('bootstrap parsed badly; falling back to event 1, element 1'); }
+  } else ids.notes.push(`bootstrap answered ${boot.status}; ids fall back to 1`);
+
+  const st = await probe(`leagues-classic/${ids.classic}/standings/`);
+  if (st.status === 200) {
+    try {
+      const s = JSON.parse((await (await fetch(`${BASE}/leagues-classic/${ids.classic}/standings/`, { headers: { 'User-Agent': UA } })).text()));
+      const row = ((s.standings || {}).results || [])[0];
+      if (row && row.entry) { ids.entry = row.entry; ids.notes.push(`entry ${ids.entry} (top of league ${ids.classic})`); }
+    } catch (_) { /* recorded by the null below */ }
+  }
+  if (!ids.entry) ids.notes.push('NO real entry id resolved — entry/* rows will be reported as not probed');
+  ids.notes.push('no head-to-head league id is obtainable without joining one; leagues-h2h/* not probed');
+  return ids;
+}
+
 const line = (r) => {
   const s = r.status === null ? 'ERR ' : String(r.status);
   const bits = [s.padEnd(4), r.path.padEnd(46)];
@@ -114,17 +213,52 @@ const line = (r) => {
   return bits.join(' ');
 };
 
-(async () => {
+/* Exported for dev/test-fpl-probe-coverage.mjs. The coverage claim — "fifteen
+   allowlist patterns, N of them probeable" — is the load-bearing sentence in
+   this whole report, so the two functions that produce it are testable
+   without a network. */
+export { allowPatterns, concreteFor };
+
+/* Inert on import, or the coverage test would go to the internet. */
+const invokedDirectly = process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (invokedDirectly) await (async () => {
   console.log('FPL API endpoint probe — ' + new Date().toISOString());
   console.log('base: ' + BASE + '\n');
 
-  const results = { inUse: [], candidates: [] };
+  const results = { inUse: [], candidates: [], viaProxy: [], skipped: [] };
 
-  console.log('=== ALREADY IN THE PROXY ALLOWLIST (control group) ===');
+  const patterns = allowPatterns();
+  const ids = await resolveIds();
+  console.log('ids resolved from live responses, not guessed:');
+  ids.notes.forEach((n) => console.log('  · ' + n));
+
+  const IN_USE = [];
+  patterns.forEach((pat) => {
+    const c = concreteFor(pat, ids);
+    if (c.skip) results.skipped.push({ pattern: pat, reason: c.skip });
+    else IN_USE.push(c.path);
+  });
+  console.log(`\nallowlist in fpl.js: ${patterns.length} patterns → ${IN_USE.length} probeable, `
+    + `${results.skipped.length} not probeable`);
+
+  console.log('\n=== ALREADY IN THE PROXY ALLOWLIST (control group) ===');
   for (const p of IN_USE) {
     const r = await probe(p);
     results.inUse.push(r);
     console.log(line(r));
+    await sleep(400);
+  }
+
+  /* The question the owner actually asked. Upstream health is necessary and
+     not sufficient: these are the URLs the app calls. */
+  console.log('\n=== THE SAME ENDPOINTS THROUGH OUR OWN PROXY ===');
+  console.log(`base: ${PROXY}`);
+  for (const p of IN_USE) {
+    const r = await probeProxy(p);
+    results.viaProxy.push(r);
+    console.log(line(r) + (r.why ? '  · ' + r.why : ''));
     await sleep(400);
   }
 
@@ -150,9 +284,24 @@ const line = (r) => {
   const inUseBroken = results.inUse.filter((r) => !ok(r));
 
   console.log('\n=== SUMMARY ===');
-  console.log(`probed: ${IN_USE.length} in-use + ${CANDIDATES.length} candidates`);
-  console.log(`in-use endpoints NOT answering as JSON 200: ${inUseBroken.length}`
+  console.log(`probed: ${IN_USE.length} in-use (upstream AND via our proxy) + ${CANDIDATES.length} candidates`);
+  console.log(`in-use endpoints NOT answering as JSON 200 UPSTREAM: ${inUseBroken.length}`
     + (inUseBroken.length ? ' -> ' + inUseBroken.map((r) => `${r.path} (${r.status})` ).join(', ') : ''));
+
+  /* Whose fault is it. Upstream-broken is theirs and we wait; proxy-broken
+     while upstream is fine is OURS and is actionable today. Reporting one
+     number for both would bury the only rows anybody can act on. */
+  const proxyBroken = results.viaProxy.filter((r) => !ok(r));
+  const upstreamOkPaths = new Set(results.inUse.filter(ok).map((r) => r.path));
+  const oursAlone = proxyBroken.filter((r) => upstreamOkPaths.has(r.path));
+  console.log(`in-use endpoints NOT answering as JSON 200 THROUGH OUR PROXY: ${proxyBroken.length}`
+    + (proxyBroken.length ? ' -> ' + proxyBroken.map((r) => `${r.path} (${r.status})`).join(', ') : ''));
+  console.log(`  of those, healthy upstream and broken only for us: ${oursAlone.length}`
+    + (oursAlone.length ? ' -> ' + oursAlone.map((r) => r.path).join(', ') + '   <-- OUR BUG, ACTIONABLE' : ''));
+  if (results.skipped.length) {
+    console.log(`allowlist entries NOT PROBED (${results.skipped.length}) — absence of a result, not a pass:`);
+    results.skipped.forEach((s) => console.log(`  · /^${s.pattern}$/ — ${s.reason}`));
+  }
   console.log(`candidates answering JSON 200: ${liveNew.length}`
     + (liveNew.length ? ' -> ' + liveNew.map((r) => r.path).join(', ') : ''));
   console.log(`negative control (${control ? control.path : 'MISSING'}): `
