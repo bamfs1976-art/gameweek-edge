@@ -41,3 +41,11 @@ jobs:
         env:
           GWE_BASE: ${{ inputs.base || 'https://gameweekedge.co.uk' }}
         run: node dev/fpl-endpoint-probe.mjs
+      - name: What the API publishes about price
+        # A separate question from "which endpoints exist": whether the price
+        # data is populated well enough to beat the threshold model we already
+        # ship. Needs values, not key names, so it is its own script.
+        # continue-on-error so a failure here still leaves the survey above
+        # readable — the two answers are independent.
+        continue-on-error: true
+        run: node dev/fpl-price-probe.mjs
