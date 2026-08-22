@@ -146,6 +146,7 @@ const pieces = [
   extractFn(html, 'leagueSortSpec'),
   extractFn(html, 'sortLeagueRows'),
   extractFn(html, 'leagueStdRow'),
+  extractFn(html, 'leagueAwards'),
   extractFn(html, 'leagueEO'),
   extractFn(html, 'managerDetail'),
   extractFn(html, 'leagueSwing'),
@@ -298,7 +299,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1082,6 +1083,118 @@ section('freeTransfers: derived from published transfers, and checked against pu
   ok(core.freeTransfers(null, 5).verified === false, 'an absent derivation is never "verified"');
   ok(core.freeTransfers(H([gw(1, 0, 0)]), 0).cap === 5,
      'a nonsense cap falls back rather than freezing the count at zero');
+}
+
+section('leagueAwards: top score, captain, bench and differential');
+{
+  const ELS = {
+    1: { id: 1, web_name: 'Haaland' }, 2: { id: 2, web_name: 'Salah' },
+    3: { id: 3, web_name: 'Saka' },    4: { id: 4, web_name: 'Mbeumo' },
+    5: { id: 5, web_name: 'Benchy' },  6: { id: 6, web_name: 'Ødegaard' },
+  };
+  const ST = { 1: { total_points: 12 }, 2: { total_points: 8 }, 3: { total_points: 2 },
+    4: { total_points: 5 }, 5: { total_points: 21 }, 6: { total_points: 11 } };
+  const E = (n, name, team, gw) => ({ entry: n, player_name: name, entry_name: team, event_total: gw });
+  /* Three managers. Everyone starts Haaland and Salah (template), only
+     the third starts Ødegaard (a differential), and the second has a
+     mountain on the bench. */
+  const entries = [E(1, 'Max', 'Lammenade', 40), E(2, 'Sean', 'Mainoo', 49), E(3, 'Gareth', 'Wilson', 35)];
+  const picks = [
+    { picks: [
+      { element: 1, position: 1, multiplier: 2, is_captain: true },
+      { element: 2, position: 2, multiplier: 1 },
+      { element: 3, position: 3, multiplier: 1 },
+      { element: 5, position: 12, multiplier: 0 },
+    ] },
+    { picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 2, multiplier: 2, is_captain: true },
+      { element: 4, position: 3, multiplier: 1 },
+      { element: 5, position: 12, multiplier: 0 },
+    ] },
+    { picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 2, multiplier: 1 },
+      { element: 6, position: 3, multiplier: 1, is_captain: true },
+      { element: 4, position: 12, multiplier: 0 },
+    ] },
+  ];
+  const a = core.leagueAwards(entries, picks, ST, ELS);
+
+  ok(a.managers === 3, 'all three managers counted, got ' + a.managers);
+  /* Top score reads the STANDINGS total, not a sum of the live rows —
+     the official figure already carries hits and auto-subs. */
+  ok(a.top.mgr === 'Sean' && a.top.pts === 49, 'top score is the highest gameweek total');
+  ok(a.top.team === 'Mainoo', 'and names the team as well as the manager');
+
+  /* THE ARMBAND IS THE MULTIPLIER. Haaland captained is 12 × 2 = 24;
+     Salah captained is 8 × 2 = 16; Ødegaard captained is 11 × 1 — a
+     multiplier of 1 means the armband moved, so it is not doubled. */
+  ok(a.cap.pts === 24, 'the best captain is scored through the multiplier, got ' + a.cap.pts);
+  ok(a.cap.mgr === 'Max' && a.cap.name === 'Haaland', 'and is attributed correctly');
+
+  ok(a.bench.pts === 21 && a.bench.mgr === 'Max', 'bench tragedy is the biggest bench score');
+
+  /* A differential is owned by at most two of the loaded managers.
+     Haaland and Salah are started by all three, so neither qualifies
+     however well they scored — which is the point of the award. */
+  ok(a.diff !== null, 'a differential hero was found');
+  ok(a.diff.name === 'Ødegaard', 'the low-owned starter wins it, got ' + a.diff.name);
+  ok(a.diff.pts === 11, 'with his own score, not a doubled one');
+  ok(a.diff.mgr === 'Gareth', 'credited to the manager who owned him');
+
+  /* A BENCHED COPY OF A DIFFERENTIAL IS NOT A HERO, and proving that
+     needs a player who is started by one manager and benched by another.
+     A player nobody starts never enters the ownership count at all, so
+     he is excluded whether or not the bench is filtered — which is why
+     the first version of this check could not tell the two apart.
+
+     Here Benchy scores 21 and is STARTED by the second manager and
+     BENCHED by the first. The award belongs to the manager who played
+     him; crediting the one who left him out would be the opposite of
+     what the award means. */
+  const twoMgrs = [E(1, 'Benched-him', 'A', 10), E(2, 'Played-him', 'B', 30)];
+  const twoPicks = [
+    { picks: [{ element: 1, position: 1, multiplier: 1 }, { element: 5, position: 12, multiplier: 0 }] },
+    { picks: [{ element: 1, position: 1, multiplier: 1 }, { element: 5, position: 2, multiplier: 1 }] },
+  ];
+  const bh = core.leagueAwards(twoMgrs, twoPicks, ST, ELS);
+  ok(bh.diff && bh.diff.name === 'Benchy', 'the low-owned starter is the hero');
+  ok(bh.diff.mgr === 'Played-him',
+     'credited to the manager who STARTED him, not the one who benched him (got ' + bh.diff.mgr + ')');
+}
+
+section('leagueAwards: nothing to award, and nothing to throw');
+{
+  const ELS = { 1: { id: 1, web_name: 'A' } };
+  const E = { entry: 1, player_name: 'M', entry_name: 'T', event_total: 0 };
+  const P = [{ picks: [{ element: 1, position: 1, multiplier: 1 }] }];
+
+  ok(core.leagueAwards([], [], {}, ELS) === null, 'no entries, no awards');
+  ok(core.leagueAwards(null, null, {}, ELS) === null, 'and no throw on missing inputs');
+  ok(core.leagueAwards([E], [null], {}, ELS) === null,
+     'a manager whose picks failed to load leaves nothing to award');
+
+  /* Before a ball is kicked every score is nought. The three headline
+     awards still resolve — somebody is nominally top — but the
+     differential is withheld, because nobody has scored with one and
+     "hero, 0 points" is not a finding. */
+  const zero = core.leagueAwards([E], P, {}, ELS);
+  ok(zero !== null && zero.top.pts === 0, 'a scoreless gameweek still has a top score');
+  ok(zero.diff === null, 'but no differential hero at nought points');
+
+  /* A live feed with no row for a player is nought for the award, which
+     is right here: an award is a comparison, and a missing row cannot
+     win one. */
+  const noLive = core.leagueAwards([E], P, {}, ELS);
+  ok(noLive.cap.pts === 0, 'a captain with no live row scores nothing rather than throwing');
+
+  /* Only the managers actually passed in are counted, so the "top N"
+     claim on the card matches what was measured. */
+  const two = core.leagueAwards(
+    [E, { entry: 2, player_name: 'N', entry_name: 'U', event_total: 5 }],
+    [P[0], P[0]], { 1: { total_points: 3 } }, ELS);
+  ok(two.managers === 2, 'the manager count reports what was measured, got ' + two.managers);
 }
 
 section('sortLeagueRows: a different order, not a different league');

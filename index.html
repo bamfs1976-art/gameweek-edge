@@ -16684,10 +16684,14 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
   }).join('');
+  /* No Compute button. It existed because the awards cost eleven API
+     calls, which is a reason to CACHE them, not a reason to make the
+     reader ask twice for something the card already promises. The result
+     is cached per league and gameweek, so the repeated renders that a
+     sort or a view toggle causes are free. */
   const awards=h2h?'':'<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Best captain, bench tragedy and differential hero across the league (top 10 managers).</p>'+
-    '<button class="btn btn-primary btn-sm" onclick="genAwards('+leagueId+')">Compute awards</button>'+
-    '<div id="league-awards" style="margin-top:12px"></div></div>';
+    '<div id="league-awards"></div></div>';
   const myPage=LEAGUE_ME_RANK?Math.max(1,Math.ceil(LEAGUE_ME_RANK/50)):0;
   const pager=(page>1||hasNext)
     ? '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">'+
@@ -16752,6 +16756,9 @@ async function renderLeagueStandings(host,leagueId,mid,type){
     detailCard+raceCard+awards;
   host.querySelectorAll('[data-lgview]').forEach(btn=>
     btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
+  /* Fired after the standings are on screen, not awaited before them:
+     the table must not wait on eleven calls it does not need. */
+  if(!h2h)genAwards(leagueId);
   const sortSel=host.querySelector('#lg-sort');
   if(sortSel)sortSel.addEventListener('change',()=>lgSetSort(sortSel.value));
   const dirBtn=host.querySelector('#lg-dir');
@@ -16771,54 +16778,98 @@ async function renderLeagueStandings(host,leagueId,mid,type){
 }
 
 /* ── Gameweek awards across a mini-league's top managers ── */
+/* The four awards, from standings + picks + the live feed. Pure, so the
+   arithmetic can be tested without a browser, and small enough that the
+   RESULT can be cached rather than the eleven API responses behind it. */
+function leagueAwards(entries,picksAll,st,els){
+  const own={},perMgr=[];
+  (entries||[]).forEach((e,i)=>{
+    const picks=picksAll&&picksAll[i];
+    if(!picks||!Array.isArray(picks.picks))return;
+    let capPts=0,capName='',bench=0,best={pts:-1,name:''};
+    picks.picks.forEach(p=>{
+      const el=(els||{})[p.element]||{};
+      const pts=((st||{})[p.element]||{}).total_points||0;
+      if(p.position<=11){
+        own[p.element]=(own[p.element]||0)+1;
+        if(pts>best.pts)best={pts:pts,name:el.web_name||''};
+      }else bench+=pts;
+      /* The multiplier carries the armband, so a triple captain counts
+         three and a captain who did not play counts nothing. */
+      if(p.is_captain){capPts=pts*(p.multiplier||2);capName=el.web_name||'';}
+    });
+    perMgr.push({mgr:e.player_name,team:e.entry_name,score:e.event_total||0,
+      capPts:capPts,capName:capName,bench:bench,picks:picks});
+  });
+  if(!perMgr.length)return null;
+  const top=perMgr.reduce((a,c)=>c.score>a.score?c:a);
+  const cap=perMgr.reduce((a,c)=>c.capPts>a.capPts?c:a);
+  const trag=perMgr.reduce((a,c)=>c.bench>a.bench?c:a);
+  /* A differential is a starter owned by at most two of the managers we
+     loaded — so it is relative to this league, not to the game. */
+  let diff=null;
+  perMgr.forEach(m=>m.picks.picks.filter(p=>p.position<=11&&own[p.element]<=2).forEach(p=>{
+    const pts=((st||{})[p.element]||{}).total_points||0;
+    if(!diff||pts>diff.pts)diff={pts:pts,name:((els||{})[p.element]||{}).web_name||'',mgr:m.mgr};
+  }));
+  return {managers:perMgr.length,
+    top:{mgr:top.mgr,team:top.team,pts:top.score},
+    cap:{mgr:cap.mgr,name:cap.capName,pts:cap.capPts},
+    bench:{mgr:trag.mgr,pts:trag.bench},
+    /* A differential nobody scored with is not a hero. */
+    diff:(diff&&diff.pts>0)?{mgr:diff.mgr,name:diff.name,pts:diff.pts}:null};
+}
+/* Fetch-and-compute, cached on the league and gameweek. The awards used
+   to sit behind a Compute button because they cost eleven calls, and the
+   panel re-renders on every sort change and view toggle — so making them
+   automatic without caching would have turned one button press into
+   eleven calls per keystroke. cached() gives a short TTL (the live feed
+   moves during a matchday), localStorage persistence, and clearing by
+   the existing refresh button, all for free. */
+async function awardsData(leagueId,gw){
+  return cached('awards-'+leagueId+'-'+gw,90e3,async()=>{
+    const b=await boot();
+    const [data,live]=await Promise.all([loadStandings(leagueId),loadLive(gw)]);
+    const entries=((data.standings&&data.standings.results)||[]).slice(0,10);
+    if(!entries.length)return null;
+    const picksAll=await mapLimit(entries,6,e=>loadPicks(e.entry,gw).catch(()=>null));
+    return leagueAwards(entries,picksAll,statsById(live),b.els);
+  });
+}
 async function genAwards(leagueId){
   const box=document.getElementById('league-awards');
+  if(!box)return;
   box.innerHTML=skel(4);
   try{
     const b=await boot();
     const gw=b.cur.id;
-    const [data,live]=await Promise.all([loadStandings(leagueId),loadLive(gw)]);
-    const st=statsById(live);
-    const entries=((data.standings&&data.standings.results)||[]).slice(0,10);
-    if(!entries.length){box.innerHTML='<div class="dl-sub">No standings yet.</div>';return;}
-    const picksAll=await Promise.all(entries.map(e=>
-      loadPicks(e.entry,gw).catch(()=>null)));
-    const own={};
-    const perMgr=[];
-    entries.forEach((e,i)=>{
-      const picks=picksAll[i];
-      if(!picks||!picks.picks)return;
-      let capPts=0,capName='',bench=0,best={pts:-1};
-      picks.picks.forEach(p=>{
-        const el=b.els[p.element]||{};
-        const pts=(st[p.element]||{}).total_points||0;
-        if(p.position<=11){
-          own[p.element]=(own[p.element]||0)+1;
-          if(pts>best.pts)best={pts,name:el.web_name};
-        }else bench+=pts;
-        if(p.is_captain){capPts=pts*(p.multiplier||2);capName=el.web_name;}
-      });
-      perMgr.push({mgr:e.player_name,team:e.entry_name,score:e.event_total,
-        capPts,capName,bench,picks});
-    });
-    if(!perMgr.length){box.innerHTML='<div class="dl-sub">Couldn’t load league picks.</div>';return;}
-    const topScore=perMgr.reduce((a,c)=>c.score>a.score?c:a);
-    const bestCap=perMgr.reduce((a,c)=>c.capPts>a.capPts?c:a);
-    const tragedy=perMgr.reduce((a,c)=>c.bench>a.bench?c:a);
-    let diffHero=null;
-    perMgr.forEach(m=>m.picks.picks.filter(p=>p.position<=11&&own[p.element]<=2).forEach(p=>{
-      const pts=(st[p.element]||{}).total_points||0;
-      if(!diffHero||pts>diffHero.pts)diffHero={pts,name:(b.els[p.element]||{}).web_name,mgr:m.mgr};
-    }));
-    const row=(title,who,detail)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+title+'</span>'+
-      '<span class="dl-sub">'+esc(who)+'</span></span><span class="dl-col mono">'+detail+'</span></div>';
+    /* Before a ball is kicked every award is nought, and computing that
+       costs eleven calls to say nothing. */
+    const ph=gwPhase(b,await loadFixtures());
+    if(ph.phase==='pre'){
+      box.innerHTML='<div class="dl-sub">Awards appear once the gameweek kicks off.</div>';return;
+    }
+    const a=await awardsData(leagueId,gw);
+    if(!a){box.innerHTML='<div class="dl-sub">Couldn’t load the league’s picks for this gameweek.</div>';return;}
+    /* esc() once, here. The old version escaped the player name and then
+       escaped the whole line again, so a name with an ampersand rendered
+       its entity rather than the character. */
+    const row=(title,who,detail)=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell">'+
+      '<span class="dl-nm">'+title+'</span>'+
+      '<span class="dl-sub">'+esc(who)+'</span></span></span>'+
+      '<span class="dl-col mono">'+esc(detail)+'</span></div>';
     box.innerHTML='<div class="dl">'+
-      row('🏆 Top score',topScore.mgr+' — '+topScore.team,topScore.score+' pts')+
-      row('🎯 Best captain',bestCap.mgr+' — '+esc(bestCap.capName||'—'),bestCap.capPts+' pts')+
-      row('🪑 Bench tragedy',tragedy.mgr,tragedy.bench+' on bench')+
-      (diffHero&&diffHero.pts>0?row('💎 Differential hero',diffHero.mgr+' — '+esc(diffHero.name||''),diffHero.pts+' pts'):'')+
-      '</div>';
-  }catch(e){box.innerHTML='<div class="dl-sub">Awards couldn’t be computed right now.</div>';}
+      row('🏆 Top score',a.top.mgr+' — '+a.top.team,a.top.pts+' pts')+
+      row('🎯 Best captain',a.cap.mgr+' — '+(a.cap.name||'—'),a.cap.pts+' pts')+
+      row('🪑 Bench tragedy',a.bench.mgr,a.bench.pts+' on bench')+
+      (a.diff?row('💎 Differential hero',a.diff.mgr+' — '+a.diff.name,a.diff.pts+' pts'):'')+
+      '</div>'+
+      '<div class="dl-sub" style="margin-top:8px">Across the top '+a.managers+
+      ' manager'+(a.managers===1?'':'s')+' in the league.</div>';
+  }catch(e){
+    box.innerHTML='<div class="dl-sub">Awards couldn’t be computed right now. '+
+      '<button class="btn btn-ghost btn-sm" onclick="genAwards('+leagueId+')">Try again</button></div>';
+  }
 }
 
 /* ── Web Push (client) ─────────────────────────────────── */

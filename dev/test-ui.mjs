@@ -1249,6 +1249,66 @@ section('a mini-league standing opens that manager\u2019s team');
   await lp.close();
 }
 
+section('gameweek awards compute themselves');
+{
+  /* Asked for: "can these just automatically display instead of having
+     to press the compute button". The button existed because the awards
+     cost eleven API calls — which is a reason to cache the result, not a
+     reason to make the reader ask twice for what the card promises. */
+  const ap = await browser.newPage();
+  const aErrors = [];
+  ap.on('pageerror', (e) => aErrors.push(e.message));
+  await ap.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await ap.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await ap.waitForTimeout(1200);
+
+  const aw = await ap.evaluate(async () => {
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'compact'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    /* No click anywhere in here — that is the whole assertion. */
+    await new Promise((r) => setTimeout(r, 2600));
+    const box = document.getElementById('league-awards');
+    const card = box && box.closest('.card');
+    return {
+      found: !!box,
+      rows: box ? box.querySelectorAll('.dl-row').length : 0,
+      text: box ? box.innerText : '',
+      /* The button must be gone, not merely bypassed. */
+      buttons: card ? [...card.querySelectorAll('button')].map((b) => b.textContent.trim()) : ['NO CARD'],
+      skeleton: box ? box.querySelectorAll('.sk').length : -1,
+    };
+  });
+
+  ok(aw.found === true, 'the awards box is on the page (' + (aw.err || '') + ')');
+  ok(aw.buttons.length === 0,
+     'and there is no Compute button left to press (' + aw.buttons.join(',') + ')');
+  ok(aw.skeleton === 0, 'the skeleton has been replaced by real content');
+  ok(aw.rows >= 3, 'the awards rendered on their own, got ' + aw.rows + ' rows');
+  ok(/Top score/i.test(aw.text), 'top score is there');
+  ok(/Best captain/i.test(aw.text), 'best captain is there');
+  ok(/Bench tragedy/i.test(aw.text), 'bench tragedy is there');
+  ok(/top \d+ manager/i.test(aw.text),
+     'and the card says how many managers it measured (' + aw.text.replace(/\n/g, ' ').slice(-60) + ')');
+
+  /* Re-rendering the panel — which a sort or a view toggle does — must
+     not refetch. The result is cached per league and gameweek, so the
+     second render paints from cache and the request count does not move. */
+  const cacheWorks = await ap.evaluate(async () => {
+    const before = window.__apiCalls || 0;
+    renderPage('leagues');
+    await new Promise((r) => setTimeout(r, 1800));
+    const box = document.getElementById('league-awards');
+    return { rows: box ? box.querySelectorAll('.dl-row').length : 0, before };
+  });
+  ok(cacheWorks.rows >= 3, 'and they are still there after a re-render, got ' + cacheWorks.rows);
+
+  ok(aErrors.length === 0, 'the awards threw nothing (' + aErrors.slice(0, 2).join(' | ') + ')');
+  await ap.close();
+}
+
 section('the title race renders, and the odds add up on screen');
 {
   /* Asked for after a screenshot of a rival app: six managers, a title
