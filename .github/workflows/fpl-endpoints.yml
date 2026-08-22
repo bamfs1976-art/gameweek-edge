@@ -49,6 +49,13 @@ jobs:
         # readable — the two answers are independent.
         continue-on-error: true
         run: node dev/fpl-price-probe.mjs
+      - name: Why our gameweek total disagrees with FPL's
+        # On a SETTLED gameweek both numbers are final, so a remaining
+        # difference is not the "different clocks" the rival card claims — it
+        # is a defect the note is excusing. Grades the shipped rivalSquadRows
+        # against real public entries.
+        continue-on-error: true
+        run: node dev/fpl-points-gap.mjs
       - name: What bootstrap publishes that we never read
         # The field diff in the endpoint probe lists NAMES. This lists the
         # ones we do not read together with their fill rate and a real value,
