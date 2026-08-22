@@ -218,3 +218,73 @@ console.log(JSON.stringify(boot.game_config, null, 2));
 
 console.log('\n=== CHIPS, IN FULL (chip windows we do not read) ===');
 console.log(JSON.stringify(boot.chips, null, 2));
+
+/* ── Does FPL's own figure agree with our estimate? ───────────────────
+   As of 22 Aug the projections populated: 319 distinct values across 600
+   players, where the day before there was exactly 1. So the question is no
+   longer "is there anything there" but "is it better than what we ship", and
+   that is answerable — both numbers claim to say the same thing about the
+   same player at the same moment.
+
+   Three things get measured, because they justify different decisions:
+     - DIRECTION agreement. If we say rise and FPL says fall, one of us is
+       telling users the opposite of the truth. This is the disqualifying
+       disagreement and it is counted separately from magnitude.
+     - RANK correlation. Our percentage and theirs are not on the same scale
+       and never will be — ours is a logistic over a threshold, theirs is a
+       percentage of progress. Comparing them point-for-point would be a
+       category error. What matters is whether we ORDER players the same way.
+     - The `likelihood` field is NOT interpreted. It is a small signed
+       integer of unknown scale, and putting a guessed label on it is exactly
+       the mistake the region field is still sitting unshipped for. */
+console.log('\n\n=== OUR ESTIMATE vs FPL’S OWN FIGURE ===');
+{
+  const els = (boot.elements || []);
+  const total = boot.total_players || 10e6;
+  /* The shipped model, extracted rather than retyped. */
+  const src = readFileSync(path.join(HERE, '..', 'index.html'), 'utf8');
+  const at = src.indexOf('function priceChangeProb(');
+  const fnSrc = at < 0 ? null : src.slice(at, src.indexOf('\n}', at) + 2);
+  if (!fnSrc) { console.log('  could not extract priceChangeProb — no comparison made.'); }
+  else {
+    const priceChangeProb = new Function('return (' + fnSrc.replace('function priceChangeProb', 'function') + ')')();
+    const rows = [];
+    for (const e of els) {
+      const pct = parseFloat(e.price_change_percent);
+      if (!Number.isFinite(pct)) continue;
+      const ours = priceChangeProb(e, total);
+      const theirDir = pct > 0 ? 'rise' : pct < 0 ? 'fall' : 'flat';
+      rows.push({ name: e.web_name, ours: ours.prob, oursDir: ours.dir, theirs: pct, theirDir });
+    }
+    const moving = rows.filter((r) => r.theirDir !== 'flat' && r.oursDir !== 'flat');
+    const agree = moving.filter((r) => r.oursDir === r.theirDir).length;
+    console.log(`\n  ${rows.length} players carry a price_change_percent; ${moving.length} are moving on both sides.`);
+    console.log(`  DIRECTION agrees on ${agree}/${moving.length} (${(agree / Math.max(1, moving.length) * 100).toFixed(1)}%).`);
+    const wrong = moving.filter((r) => r.oursDir !== r.theirDir);
+    if (wrong.length) {
+      console.log(`  We point the OPPOSITE way for ${wrong.length}:`);
+      for (const r of wrong.slice(0, 8)) console.log(`    ${r.name.padEnd(18)} ours ${r.oursDir} ${r.ours}%   FPL ${r.theirs}%`);
+    }
+    /* Spearman on the movers, computed on absolute progress. */
+    const rank = (arr, key) => {
+      const idx = arr.map((_, i) => i).sort((a, b) => Math.abs(arr[b][key]) - Math.abs(arr[a][key]));
+      const out = new Array(arr.length);
+      idx.forEach((orig, r) => { out[orig] = r + 1; });
+      return out;
+    };
+    if (moving.length > 2) {
+      const a = rank(moving, 'ours'), b = rank(moving, 'theirs');
+      const n = moving.length;
+      let d2 = 0; for (let i = 0; i < n; i++) d2 += (a[i] - b[i]) ** 2;
+      const rho = 1 - (6 * d2) / (n * (n * n - 1));
+      console.log(`  RANK correlation (Spearman, |progress|): rho = ${rho.toFixed(3)} over ${n} movers.`);
+      console.log(rho > 0.7 ? '    Strong: we order players much as FPL does.'
+        : rho > 0.4 ? '    Moderate: broadly the same ordering, materially different in places.'
+        : '    Weak: our ordering is NOT theirs. Showing both without saying so would mislead.');
+    }
+    const top = rows.slice().sort((x, y) => Math.abs(y.theirs) - Math.abs(x.theirs)).slice(0, 10);
+    console.log('\n  closest to a move, by FPL’s own figure:');
+    console.log('  player               FPL%     ours');
+    for (const r of top) console.log(`  ${r.name.padEnd(20)} ${String(r.theirs).padEnd(8)} ${r.oursDir} ${r.ours}%`);
+  }
+}
