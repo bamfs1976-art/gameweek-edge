@@ -289,3 +289,103 @@ it red on three assertions.
    single-gameweek view ever loads cold
 
 Nothing above needs an API key, a login, or a paid service.
+
+---
+
+## Price: what the API publishes, measured 22 Aug 2026
+
+Prompted by "the FPL price change page is live — what can we consume?".
+Measured by `dev/fpl-price-probe.mjs` from a GitHub runner (this sandbox
+cannot reach fantasy.premierleague.com), run 8 of the FPL endpoint probe
+workflow. Every number below came back from the live API.
+
+### There is no price API
+
+Nine `/api/` paths probed — `element-status/`, `price-changes/`, `prices/`,
+`stats/prices/`, `stats/price-changes/`, `element-prices/`,
+`bootstrap-prices/`, plus `companion/v1/` discovered from the page HTML.
+**All nine answered 404 `text/html` at 179 bytes**, byte-identical to the
+negative control. So a 404 here means absent, not blocked, and the price
+page is not backed by a public REST endpoint we could call.
+
+`companion/v1` is the mobile companion API base and 404s on its own.
+
+### The page probe cannot locate the page — do not repeat it
+
+Seven candidate page paths were tried. All seven answered **200 `text/html`
+at exactly 10032 bytes** — and so did `/this-page-should-not-exist-xyz`.
+fantasy.premierleague.com is a single-page app: one shell for every route,
+routing resolved in the browser. **No conclusion about which page exists can
+be drawn from HTTP status there.** The first run of this probe had no page
+control and would have reported seven live pages as a finding.
+
+### Nothing has moved price yet this season
+
+All four change fields are present and **zero for all 600 players**:
+
+| field | non-zero | note |
+|---|---|---|
+| `cost_change_event` | 0/600 | |
+| `cost_change_event_fall` | 0/600 | |
+| `cost_change_start` | 0/600 | |
+| `cost_change_start_fall` | 0/600 | |
+
+`0 player(s) have moved price this gameweek; 0 since the season started.`
+Cross-checked: Haaland's `now_cost` is 155 and his GW1 `history[].value` is
+also 155, consistent with no movement rather than a broken field.
+
+**This observation cannot distinguish "prices frozen, nothing has moved yet"
+from "field deprecated and no longer populated."** Both produce an all-zero
+column. The measurement that separates them is to re-run this probe once
+FPL's own page shows a change: if the fields populate, they work; if they
+stay zero while the page shows movement, they are dead and we need another
+source. Until then, treat the zeroes as "too early", not as "working".
+
+### We already consume everything price-related that bootstrap publishes
+
+14/14 price fields present, none missing. `now_cost`, `cost_change_event`,
+`transfers_in_event`, `transfers_out_event`, `selected_by_percent`,
+`value_form`, `value_season` and `now_cost_rank` are all referenced in
+`index.html`. `cost_change_start` is not (0 references) — it is season-to-date
+drift, which would be a reasonable addition to a player profile once it is
+non-zero, but there is nothing to show today.
+
+`value_form` / `value_season` are non-zero for only 31/600 and cap at 2.0 —
+too early in the season to rank on.
+
+### `element-summary` publishes the real owner count — and it is not worth using
+
+`element-summary/{id}/history[]` carries `selected`, the actual number of
+managers owning the player. Our shipped `priceChangeProb` has to estimate
+that as `total_players × selected_by_percent / 100`, because bootstrap gives
+no better. Measured across the ownership range:
+
+| player | own% | actual `selected` | our estimate | error |
+|---|---|---|---|---|
+| Haaland | 69.4 | 6,209,794 | 6,325,563 | +1.9% |
+| Rogers | 24.4 | 2,178,086 | 2,223,973 | +2.1% |
+| Kelleher | 5.8 | 513,912 | 528,649 | +2.9% |
+| Sels | 1.6 | 140,711 | 145,834 | +3.6% |
+| George | 0.3 | 24,527 | 27,344 | +11.5% |
+| Davies | 0.1 | 11,845 | 9,115 | −23.0% |
+| Kamara | 0.0 | 555 | 9,115 | **16× too many** |
+
+The error explodes as ownership falls, exactly as `selected_by_percent`
+being published to one decimal place predicts. That looks like a strong case
+for using `selected` instead — **and it is wrong**, because of our own floor.
+
+The threshold is `max(20000, 0.30 × owners)`. The `0.30 × owners` term only
+overtakes the 20,000 floor above 66,667 owners — **0.73% ownership**. So:
+
+- **Below 0.73% ownership** the threshold is pinned at 20,000 and the owner
+  error changes *nothing*. Kamara's 16× error moves the threshold not at all.
+- **Above 0.73%** the estimate is accurate to within 3.5%, and the threshold
+  moves by at most 3.5%.
+
+Run through the shipped function, the largest probability change anywhere in
+the sample is **two percentage points** (Sels 57%→59%, Kelleher 20%→21%).
+That would cost one extra HTTP request per player — 600 calls to redraw the
+price panel — to move a displayed estimate by ≤2pp. Not worth it.
+
+Recorded so this is not re-investigated. If the threshold floor is ever
+lowered, revisit: the floor is the only reason the estimate is good enough.
