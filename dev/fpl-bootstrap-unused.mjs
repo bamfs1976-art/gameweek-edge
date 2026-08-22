@@ -63,6 +63,13 @@ function fill(rows, key) {
     const v = row ? row[key] : undefined;
     if (v === null || v === undefined || v === '') continue;
     nonNull++;
+    /* An empty array or empty object is NOT content. The first version
+       counted anything non-numeric as populated, so scout_risks: [] — empty
+       for every player — was reported as a candidate alongside real data.
+       That is the same "present is not populated" error this file exists to
+       catch, made one level down. */
+    if (Array.isArray(v) ? v.length === 0
+      : (typeof v === 'object' && Object.keys(v).length === 0)) continue;
     const n = typeof v === 'number' ? v : (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v)) ? Number(v) : null);
     if (n !== null) { numeric++; if (n < min) min = n; if (n > max) max = n; if (n !== 0) truthy++; }
     else { truthy++; }
@@ -167,3 +174,47 @@ for (const [label, rows] of [['elements', boot.elements], ['teams', boot.teams],
 fp.push(`top:${topKeys.slice().sort().join(',')}`);
 console.log('\n=== FIELD FINGERPRINT (commit this to make the next run able to say "new") ===');
 console.log(fp.join('\n'));
+
+/* ── The headline finding, dumped in full ─────────────────────────────
+   price_change_projections is populated for every player and is FPL
+   publishing its own price forecast — the thing our panel currently
+   approximates with a threshold model, and the thing a previous run of the
+   PRICE probe reported as absent. It reported that because its field list
+   was hand-written by me and did not contain this name; "14/14 price fields
+   present" measured my imagination, not the API. So this one gets printed in
+   full rather than as a truncated example, for a player at each end of the
+   transfer range, and so does game_config. A truncated string is not a
+   schema and cannot be built against. */
+console.log('\n\n=== PRICE_CHANGE_PROJECTIONS, IN FULL ===');
+const byNet = (boot.elements || []).slice().sort((a, c) =>
+  ((c.transfers_in_event || 0) - (c.transfers_out_event || 0)) -
+  ((a.transfers_in_event || 0) - (a.transfers_out_event || 0)));
+for (const e of [byNet[0], byNet[Math.floor(byNet.length / 2)], byNet[byNet.length - 1]].filter(Boolean)) {
+  const net = (e.transfers_in_event || 0) - (e.transfers_out_event || 0);
+  console.log(`\n  ${e.web_name}  own ${e.selected_by_percent}%  net ${net}  now_cost ${e.now_cost}`);
+  console.log(`    price_change_projections: ${JSON.stringify(e.price_change_projections)}`);
+  console.log(`    price_change_calibrating: ${JSON.stringify(e.price_change_calibrating)}`);
+  console.log(`    price_change_percent: ${JSON.stringify(e.price_change_percent)}   hourly_rate: ${JSON.stringify(e.price_change_hourly_rate)}   locked_until: ${JSON.stringify(e.price_change_locked_until)}`);
+}
+/* Is the projection actually varying, or is every player the same? A field
+   that is identical for all 600 carries no information however populated it
+   looks. */
+{
+  const sigs = new Map();
+  for (const e of boot.elements || []) {
+    const s = JSON.stringify(e.price_change_projections);
+    sigs.set(s, (sigs.get(s) || 0) + 1);
+  }
+  console.log(`\n  distinct price_change_projections values across ${(boot.elements || []).length} players: ${sigs.size}`);
+  for (const [s, n] of [...sigs.entries()].sort((a, c) => c[1] - a[1]).slice(0, 5)) {
+    console.log(`    ${String(n).padStart(4)}x  ${s.slice(0, 150)}`);
+  }
+  const cal = (boot.elements || []).filter((e) => e.price_change_calibrating).length;
+  console.log(`  price_change_calibrating true for ${cal}/${(boot.elements || []).length} players`);
+}
+
+console.log('\n=== GAME_CONFIG, IN FULL ===');
+console.log(JSON.stringify(boot.game_config, null, 2));
+
+console.log('\n=== CHIPS, IN FULL (chip windows we do not read) ===');
+console.log(JSON.stringify(boot.chips, null, 2));
