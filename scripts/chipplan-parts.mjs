@@ -50,7 +50,12 @@ export function buildChipApi(html) {
     grabConst('TIE_FDR') + '\n' + grabConst('CHIP_SEPARATION') + '\n' +
     grabConst('CHIP_PROVISIONAL_FROM') + '\n' + grabConst('WC_HORIZON_WEEKS') + '\n' +
     grabFn('wcHorizonFactor') + '\n' + grabConst('BB_RUNIN_PENALTY') + '\n' +
-    grabConst('FT_CAP') + '\n' + grabConst('CARRY_HORIZON') + '\n' +
+    /* ftCap() reads RULES.maxFt, which the app fills from game_config at boot.
+       There is no boot here, so RULES stays the fallback and the accessor
+       returns the same five the constant always did — the planner is graded
+       on its arithmetic, not on which rulebook it was handed. RULES itself is
+       already declared above. */
+    grabConst('FT_CAP') + '\n' + grabFn('ftCap') + '\n' + grabConst('CARRY_HORIZON') + '\n' +
     grabFn('deadWeight') + '\n' + grabFn('transferRunway') + '\n' +
     grabConst('LEDGER_MAX') + '\n' + grabTopConst('CHIP_LABEL') + '\n' +
     grabFn('freeTransfersFrom') + '\n' + grabFn('transferLedger') + '\n' +

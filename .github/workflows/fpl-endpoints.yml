@@ -41,3 +41,19 @@ jobs:
         env:
           GWE_BASE: ${{ inputs.base || 'https://gameweekedge.co.uk' }}
         run: node dev/fpl-endpoint-probe.mjs
+      - name: What the API publishes about price
+        # A separate question from "which endpoints exist": whether the price
+        # data is populated well enough to beat the threshold model we already
+        # ship. Needs values, not key names, so it is its own script.
+        # continue-on-error so a failure here still leaves the survey above
+        # readable — the two answers are independent.
+        continue-on-error: true
+        run: node dev/fpl-price-probe.mjs
+      - name: What bootstrap publishes that we never read
+        # The field diff in the endpoint probe lists NAMES. This lists the
+        # ones we do not read together with their fill rate and a real value,
+        # because an unused field that is null for every row is an empty
+        # column rather than an opportunity — the mistake already made twice
+        # here, on team strength and on cost_change_*.
+        continue-on-error: true
+        run: node dev/fpl-bootstrap-unused.mjs

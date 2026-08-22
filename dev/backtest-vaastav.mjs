@@ -72,8 +72,14 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
   .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
+/* nativeXP reads the points table from SCORING rather than restating it
+   inline. Backtests grade the model on a fixed rulebook, so the fallback
+   table is the right binding here — a historical season must not be regraded
+   under whatever the live game happens to publish today. */
+const scoringSrc = (() => { const i = html.indexOf('const SCORING_FALLBACK='); return html.slice(i, html.indexOf('\n', i)); })()
+  + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
-  [congestSrc, grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
+  [scoringSrc, congestSrc, grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
    grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'),
    grabFn(html, 'negRate90'), grabFn(html, 'nativeXP')].join('\n') + '\nreturn {nativeXP};'
 )();

@@ -186,6 +186,10 @@ export const ENGINE_CONSTS = [
   'SPLIT_MIN_GAMES', 'SPLIT_EDGE', 'OPP_SPLIT_MIN',
   /* Squad rules and the transfer solver's valuation terms. */
   'RULES_FALLBACK', 'BENCH_W', 'FT_LADDER', 'FT_CAP',
+  /* The points table. Read by pointsDist / squadSim / nativeXP, which used to
+     restate it inline; the engine needs the same binding the app has or those
+     three throw on their first call. */
+  'SCORING_FALLBACK',
 ];
 
 function grabFn(html, name) {
@@ -221,6 +225,9 @@ export function buildEngine(html) {
      declaration hoists above the extracted functions that close over it; the
      assignment waits until RULES_FALLBACK is actually initialised below. */
   var RULES;
+  /* Same hoisting reason as RULES: the projection functions close over
+     SCORING, and the assignment has to wait for SCORING_FALLBACK below. */
+  var SCORING;
   /* plsimRatings memoises its fit. In the app that lands in the shared cache;
      here the engine gets its own private store, so the second app's ratings
      can never collide with anything else on the page. */
@@ -230,11 +237,16 @@ ${parts.map((p) => '  ' + p.replace(/\n/g, '\n  ')).join('\n')}
   /* The engine ships FPL's squad shape as the default; an app with different
      rules calls GEEngine.setRules() at boot with its own. */
   RULES = RULES_FALLBACK;
+  SCORING = SCORING_FALLBACK;
 
   window.GEEngine = {
     ${names.join(', ')},
     setRules: function (r) { RULES = r || RULES_FALLBACK; },
-    getRules: function () { return RULES; }
+    getRules: function () { return RULES; },
+    /* A competition with a different points table sets it here, exactly as it
+       sets its squad rules. Defaults to FPL's. */
+    setScoring: function (s) { SCORING = s || SCORING_FALLBACK; },
+    getScoring: function () { return SCORING; }
   };
 })();
 `;

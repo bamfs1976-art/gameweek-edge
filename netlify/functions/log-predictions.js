@@ -69,7 +69,16 @@ function buildModel(html) {
     grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'fixtureXP'), grabFn(html, 'pointsDist'),
   ];
   // eslint-disable-next-line no-new-func
-  return new Function('const MEM={};\n' + pieces.join('\n')
+  return new Function('const MEM={};\n'
+    /* The points table. nativeXP and pointsDist used to restate it inline as
+       `type<=2?6:...`; they now read SCORING, so the logger has to supply the
+       same binding the app does or it throws on the first projection. It gets
+       the fallback rather than a derived table: this logger is handed a
+       bootstrap by its caller and grades the model, not the game's config, so
+       a constant here keeps every logged prediction on one known ruleset. */
+    + [...['SCORING_FALLBACK'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+       'let SCORING = SCORING_FALLBACK;'].join('\n') + '\n'
+    + pieces.join('\n')
     + '\nreturn {buildNextFix,buildGwFixtures,euroIndex,xP,fixtureXP,pointsDist};')();
 }
 
