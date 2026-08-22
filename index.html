@@ -689,6 +689,11 @@ html.offline .net-banner{transform:translateY(0)}
 /* Marker pills: free transfers, team value, in the bank, overall rank,
    progress, and the chip ledger. Always visible — this is the row people
    actually scan, so it must not need a tap. */
+/* View toggle + sort control on one row. The select takes the space it
+   needs and the direction button stays square. */
+.lg-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lg-sortsel{width:auto;flex:1 1 150px;min-width:0;padding:7px 10px;font-size:.8rem}
+.lg-dir{flex:0 0 auto;min-width:34px;font-weight:800}
 .lg-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
 .lg-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-min);
   font-weight:700;color:var(--text-2);background:var(--surface-2);
@@ -16125,6 +16130,71 @@ function leagueEO(picksArr){
   return {managers:n,byId:byId};
 }
 const CHIP_SHORT={wildcard:'WC','3xc':'TC',bboost:'BB',freehit:'FH',manager:'AM'};
+/* ── Sorting a league table ─────────────────────────────────
+   The table arrives in league order and that is the only order the
+   POSITION column ever describes. So sorting reorders the rows and
+   leaves the position alone: a manager 6th on total who is top this
+   week appears first, still labelled 6. Renumbering would turn a
+   different view of the same league into a claim about a different
+   league.
+
+   `dir` on each spec is the direction the field is worth reading in —
+   rank ascending because 1 is best, points descending because more is
+   better — so choosing a field gives the useful order without also
+   having to choose a direction.
+
+   `detail` marks the fields that only exist once squads are loaded.
+   The compact table has standings and nothing else, so offering to sort
+   it by team value would be offering a sort that silently does nothing. */
+const LEAGUE_SORTS=[
+  {key:'rank',  label:'League position',dir:1, get:r=>r.rank},
+  {key:'total', label:'Total points',   dir:-1,get:r=>r.total},
+  {key:'gw',    label:'Gameweek points',dir:-1,get:r=>r.gwPts},
+  {key:'move',  label:'Rank movement',  dir:-1,
+   get:r=>(r.lastRank&&r.rank)?r.lastRank-r.rank:null},
+  {key:'or',    label:'Overall rank',   dir:1, detail:true,get:r=>r.or},
+  {key:'tv',    label:'Team value',     dir:-1,detail:true,get:r=>r.tv},
+  {key:'yet',   label:'Players to play',dir:-1,detail:true,get:r=>r.yet},
+  {key:'played',label:'Gameweek done',  dir:-1,detail:true,
+   get:r=>r.totalUnits?r.playedUnits/r.totalUnits:null}
+];
+function leagueSortSpec(key){return LEAGUE_SORTS.filter(s=>s.key===key)[0]||null;}
+/* Sort rows by one of the specs above. `dir` overrides the spec's own
+   direction; anything else uses it. Pure — returns a new array.
+
+   Rows with no value for the chosen field sink to the bottom in BOTH
+   directions rather than counting as zero or as infinity. A manager
+   whose squad failed to load has no team value; sorting him to the top
+   of "most valuable squad" would be inventing a fact about him, and
+   sorting him to the top of the reverse would be inventing a different
+   one. Ties, and the sunk rows among themselves, fall back to league
+   order so the result is deterministic. */
+function sortLeagueRows(rows,key,dir){
+  const list=(rows||[]).slice(),spec=leagueSortSpec(key);
+  if(!spec)return list;
+  const d=(dir===1||dir===-1)?dir:spec.dir;
+  /* null/undefined are checked BEFORE Number(), because Number(null) is
+     0 and 0 is finite — so a manager whose squad failed to load would
+     sort as the POOREST in the league rather than sinking out of the
+     way, and would lead a low-to-high sort. The same trap caught
+     chipStatus earlier, where a missing gameweek became 0 and read as
+     "already started". Caught here by its own test, not by review. */
+  const num=v=>{if(v==null)return null;const n=Number(v);return Number.isFinite(n)?n:null;};
+  return list.sort((a,c)=>{
+    const av=num(spec.get(a)),cv=num(spec.get(c));
+    if(av==null&&cv==null)return (a.rank||0)-(c.rank||0);
+    if(av==null)return 1;
+    if(cv==null)return -1;
+    if(av!==cv)return d*(av<cv?-1:1);
+    return (a.rank||0)-(c.rank||0);
+  });
+}
+/* The standings payload reshaped onto the same field names managerDetail
+   uses, so one sorter serves both views instead of two that can drift. */
+function leagueStdRow(r){
+  return {entry:r.entry,name:r.entry_name,mgr:r.player_name,
+    rank:r.rank,lastRank:r.last_rank,gwPts:r.event_total,total:r.total,raw:r};
+}
 /* Free transfers a manager carries into the next deadline.
    ─────────────────────────────────────────────────────────
    I previously told the user this could not be done, on the grounds
@@ -16339,7 +16409,19 @@ async function mapLimit(items,limit,fn){
   return out;
 }
 const LG_STATE={done:'finished',live:'playing now',toPlay:'yet to play',blank:'no fixture'};
-let LEAGUE_VIEW='compact';
+let LEAGUE_VIEW='compact',LEAGUE_SORT='rank',LEAGUE_DIR=0;
+function lgSetSort(key){
+  const spec=leagueSortSpec(key);
+  if(!spec)return;
+  /* Choosing a new field resets to that field's natural direction; the
+     arrow button is what flips it. */
+  LEAGUE_SORT=spec.key;LEAGUE_DIR=0;renderPage('leagues');
+}
+function lgFlipDir(){
+  const spec=leagueSortSpec(LEAGUE_SORT);
+  const cur=LEAGUE_DIR||(spec?spec.dir:1);
+  LEAGUE_DIR=cur===1?-1:1;renderPage('leagues');
+}
 const LEAGUE_OPEN=new Set();
 const LEAGUE_DETAIL_MAX=50;
 function lgSetView(v){LEAGUE_VIEW=v==='detailed'?'detailed':'compact';renderPage('leagues');}
@@ -16383,8 +16465,12 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p></div>';
     const states=playerGwStates(b.els,fixtures,gw);
     const ftMax=ftCap();
-    const rows=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
+    /* Which fifty get loaded is decided by league position; how they are
+       ordered on screen is the user's choice. Sorting before the slice
+       would quietly change WHICH managers the card is about. */
+    const built=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
       .filter(Boolean);
+    const rows=sortLeagueRows(built,LEAGUE_SORT,LEAGUE_DIR);
     if(!rows.length)return '';
     const pct=v=>v==null?'':(v*100).toFixed(1)+'%';
     const cell=p=>{
@@ -16556,7 +16642,12 @@ async function renderLeagueStandings(host,leagueId,mid,type){
   const head=h2h
     ? '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · W-D-L</span><span class="dl-col">Pts</span></div>'
     : '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · manager</span><span class="dl-col">Total</span></div>';
-  const rows=res.map(r=>{
+  /* The compact table sorts too — on the fields standings alone can
+     answer. h2h keeps league order: its table is a W-D-L record and the
+     sort fields here describe a total-points race. */
+  const resSorted=h2h?res
+    :sortLeagueRows(res.map(leagueStdRow),LEAGUE_SORT,LEAGUE_DIR).map(r=>r.raw);
+  const rows=resSorted.map(r=>{
     const me=r.entry===meId;
     const mv=(r.last_rank&&r.rank)?r.last_rank-r.rank:0;
     if(h2h)return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
@@ -16594,9 +16685,24 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      which a head-to-head table has too, but the summary figures it leads
      with (rank movement, gameweek total) are the classic race's. */
   const detailed=!h2h&&LEAGUE_VIEW==='detailed';
-  const viewBar=h2h?'':'<div class="lensbar mb-14" id="lg-views">'+
+  const spec=leagueSortSpec(LEAGUE_SORT)||LEAGUE_SORTS[0];
+  const curDir=LEAGUE_DIR||spec.dir;
+  /* Only offer sorts the loaded data can actually perform. Team value
+     exists only once squads are fetched, so in the compact table it
+     would be a control that does nothing. */
+  const sortOpts=LEAGUE_SORTS.filter(o=>!o.detail||detailed);
+  const viewBar=h2h?'':'<div class="lg-bar mb-14">'+
+    '<div class="lensbar" id="lg-views">'+
     [['compact','Compact'],['detailed','Detailed']].map(v=>
       '<button class="lensbtn'+(LEAGUE_VIEW===v[0]?' on':'')+'" data-lgview="'+v[0]+'">'+v[1]+'</button>').join('')+
+    '</div>'+
+    '<label class="sr-only" for="lg-sort">Sort the table by</label>'+
+    '<select class="modal-in lg-sortsel" id="lg-sort">'+
+      sortOpts.map(o=>'<option value="'+o.key+'"'+(o.key===spec.key?' selected':'')+'>'+esc(o.label)+'</option>').join('')+
+    '</select>'+
+    '<button class="btn btn-ghost btn-sm lg-dir" id="lg-dir" '+
+      'aria-label="'+(curDir===1?'Sorted low to high':'Sorted high to low')+', tap to reverse" '+
+      'title="'+(curDir===1?'Low to high':'High to low')+'">'+(curDir===1?'▲':'▼')+'</button>'+
     '</div>';
   if(detailed)host.innerHTML=back+viewBar+'<div class="card mb-20"><div class="card-title">'+
       esc(data.league?data.league.name:'League')+'</div>'+
@@ -16610,10 +16716,24 @@ async function renderLeagueStandings(host,leagueId,mid,type){
        totals twice on one screen, so the detail card replaces it rather
        than sitting under it. The pager stays either way. */
     (detailed?'':'<div class="dl" id="league-standings">'+head+rows+'</div>')+
+    /* Sorting is client-side over the rows already fetched. On a league
+       that runs past one page that is a sort of THIS PAGE, not of the
+       league — the manager with the best gameweek may be on page four
+       and would never appear at the top however the arrow points. Said
+       only when a sort is actually active, because in league order the
+       page is genuinely the top of the table. */
+    ((!h2h&&LEAGUE_SORT!=='rank'&&(hasNext||page>1))
+      ? '<p class="dl-sub" style="margin:10px 0 0">Sorted within this page — ranks '+
+        ((page-1)*50+1)+'–'+((page-1)*50+res.length)+'. Managers on other pages are not reordered into it.</p>'
+      : '')+
     pager+'</div>'+
     detailCard+raceCard+awards;
   host.querySelectorAll('[data-lgview]').forEach(btn=>
     btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
+  const sortSel=host.querySelector('#lg-sort');
+  if(sortSel)sortSel.addEventListener('change',()=>lgSetSort(sortSel.value));
+  const dirBtn=host.querySelector('#lg-dir');
+  if(dirBtn)dirBtn.addEventListener('click',lgFlipDir);
   /* Every standing is a manager, and a manager has a squad. Same card the
      Rivals panel opens — a mini-league table is where people actually look
      their rivals up, and having to add somebody to a separate list first in

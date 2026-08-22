@@ -1529,6 +1529,98 @@ section('mini-league detailed view: every squad, with effective ownership');
   await dp.close();
 }
 
+section('mini-league sorting: a different order, not a different league');
+{
+  /* Asked for alongside the compact/detailed toggle. The mock league is
+     Rival FC 120 (GW 62), My Team 118 (GW 55), Third Wheel 90 (GW 40) —
+     so league order and gameweek order agree, and reversing is what
+     actually proves the control is wired. */
+  const sp = await browser.newPage();
+  const sErrors = [];
+  sp.on('pageerror', (e) => sErrors.push(e.message));
+  await sp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await sp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await sp.waitForTimeout(1200);
+
+  const out = await sp.evaluate(async () => {
+    const names = () => [...document.querySelectorAll('#league-standings .dl-row:not(.head) .dl-nm')]
+      .map((e) => e.textContent.replace(' · you', '').trim());
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'compact'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 1600));
+    const sel = document.getElementById('lg-sort');
+    const dir = document.getElementById('lg-dir');
+    if (!sel || !dir) return { found: false };
+    const base = names();
+    const opts = [...sel.options].map((o) => o.value);
+    const dirBefore = dir.textContent;
+
+    /* Reverse the default sort — league order, worst first. */
+    dir.click();
+    await new Promise((r) => setTimeout(r, 1400));
+    const reversed = names();
+
+    return {
+      found: true, base, reversed, opts, dirBefore,
+      dirAfter: document.getElementById('lg-dir').textContent,
+      /* Position labels must survive: reordering rows is not renumbering. */
+      ranks: [...document.querySelectorAll('#league-standings .dl-row:not(.head) .dl-rank')]
+        .map((e) => e.textContent.trim()),
+      barVisible: (() => { const b = document.querySelector('.lg-bar');
+        return b ? b.getBoundingClientRect().height > 0 : false; })(),
+      selW: document.getElementById('lg-sort').getBoundingClientRect().width,
+    };
+  });
+
+  ok(out.found === true, 'the sort control renders (' + (out.err || '') + ')');
+  ok(out.barVisible === true, 'on the same row as the view toggle');
+  ok(out.selW > 0, 'and the field select has width');
+
+  /* The compact table must not offer sorts it cannot perform: team
+     value and overall rank need squads, which compact has not loaded. */
+  ok(out.opts.join(',') === 'rank,total,gw,move',
+     'compact offers only the sorts standings can answer (' + out.opts.join(',') + ')');
+
+  ok(out.base.join(',') === 'Rival FC,My Team,Third Wheel',
+     'league order first (' + out.base.join(',') + ')');
+  ok(out.reversed.join(',') === 'Third Wheel,My Team,Rival FC',
+     'and the direction button reverses it (' + out.reversed.join(',') + ')');
+  /* The arrow must report the direction actually in force, in both
+     states — asserting one of them alone passes on a button that is
+     merely stuck. League position reads ascending by default (1 is
+     best), so it starts up and flips down. */
+  ok(out.dirBefore === '▲', 'league position starts ascending (' + out.dirBefore + ')');
+  ok(out.dirAfter === '▼', 'and the arrow turns over with the order (' + out.dirAfter + ')');
+
+  /* THE POSITION COLUMN IS NOT RECOMPUTED. Reversed, the rows read
+     3, 2, 1 — the same league, differently ordered. Renumbering to
+     1, 2, 3 would be a claim about a different table. */
+  ok(out.ranks.join(',') === '3,2,1',
+     'positions travel with their managers rather than being renumbered (' + out.ranks.join(',') + ')');
+
+  /* Detailed view offers the squad-dependent sorts as well. */
+  const deep = await sp.evaluate(async () => {
+    LEAGUE_VIEW = 'detailed'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+    renderPage('leagues');
+    await new Promise((r) => setTimeout(r, 3000));
+    const sel = document.getElementById('lg-sort');
+    if (!sel) return { opts: [] };
+    return {
+      opts: [...sel.options].map((o) => o.value),
+      mgrs: document.querySelectorAll('.lg-mgr').length,
+    };
+  });
+  ok(deep.opts.join(',') === 'rank,total,gw,move,or,tv,yet,played',
+     'detailed adds the squad-dependent sorts (' + deep.opts.join(',') + ')');
+  ok(deep.mgrs === 3, 'and the detailed rows still render, got ' + deep.mgrs);
+
+  ok(sErrors.length === 0, 'sorting threw nothing (' + sErrors.slice(0, 2).join(' | ') + ')');
+  await sp.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 
