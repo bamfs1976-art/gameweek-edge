@@ -92,8 +92,19 @@ const ENTRY_RE = /^\/api\/fpl\/entry\/\d+$/;
 const LIVE_RE = /^\/api\/fpl\/event\/\d+\/live$/;
 const HISTORY_RE = /^\/api\/fpl\/entry\/\d+\/history$/;
 const STANDINGS_RE = /^\/api\/fpl\/leagues-classic\/\d+\/standings$/;
+/* `current` carries real gameweek rows because the detailed league view
+   derives free transfers from them: transfers made per week, checked
+   against the hit FPL charged. An empty season yields no count at all,
+   which is correct behaviour but tests nothing. GW1 has transfers and no
+   hit — squad building — and GW2 spends one of the allowance. */
 const historyBody = () => JSON.stringify({
-  current: [], past: [], chips: [{ name: '3xc', event: 1, time: '2026-08-15T10:00:00Z' }]
+  current: [
+    { event: 1, points: 55, total_points: 55, rank: 1, overall_rank: 791032,
+      bank: 7, value: 1003, event_transfers: 0, event_transfers_cost: 0, points_on_bench: 5 },
+    { event: 2, points: 48, total_points: 103, rank: 2, overall_rank: 640210,
+      bank: 5, value: 1000, event_transfers: 1, event_transfers_cost: 0, points_on_bench: 2 },
+  ],
+  past: [], chips: [{ name: '3xc', event: 1, time: '2026-08-15T10:00:00Z' }]
 });
 /* Three managers, so a click can land on a row that is NOT the signed-in
    one — the interesting case is opening somebody else's team. */
@@ -1456,6 +1467,10 @@ section('mini-league detailed view: every squad, with effective ownership');
         .find((c) => /who separates this league/i.test((c.querySelector('.card-title') || {}).innerText || '')),
       progW: (() => { const p = first.querySelector('.lg-prog i');
         return p ? p.getBoundingClientRect().width : 0; })(),
+      pills: [...first.querySelectorAll('.lg-pill')].map((e) => e.innerText.replace(/\s+/g, ' ').trim()),
+      pillsVisible: (() => { const p = first.querySelector('.lg-pills');
+        return p ? p.getBoundingClientRect().height > 0 : false; })(),
+      chipCodes: [...first.querySelectorAll('.lg-chip')].map((e) => e.textContent),
     };
   });
 
@@ -1490,6 +1505,25 @@ section('mini-league detailed view: every squad, with effective ownership');
   /* Never let a scoped percentage read as a league-wide one. */
   ok(/effective ownership/i.test(view.text), 'the card says what the percentages are');
   ok(/captain counts twice/i.test(view.text), 'and how they are counted');
+
+  /* ── The markers ──────────────────────────────────────────────────
+     Free transfers, team value, money in the bank, overall rank,
+     progress and the chip ledger — the row a manager scans. They must
+     be readable WITHOUT expanding, which is why the height is checked
+     rather than just the text: a pill row inside the collapsed squad
+     block would pass every string assertion and be invisible. */
+  ok(view.pillsVisible === true, 'the marker row is visible without expanding');
+  const pillText = (view.pills || []).join(' | ');
+  ok(/FT ?\d/.test(pillText), 'free transfers are shown (' + pillText + ')');
+  ok(/TV ?£\d/.test(pillText), 'team value is shown');
+  ok(/ITB ?£\d/.test(pillText), 'money in the bank is shown');
+  ok(/OR ?[\d,]+/.test(pillText), 'overall rank is shown');
+  ok(/PLAYED ?\d+\/\d+/.test(pillText), 'progress is shown');
+
+  /* The chip ledger: what they have already spent this season. */
+  ok(/CHIPS/.test(pillText), 'the chip ledger is shown');
+  ok((view.chipCodes || []).includes('TC'),
+     'a chip played earlier in the season appears (' + (view.chipCodes || []).join(',') + ')');
 
   ok(dErrors.length === 0, 'the detailed view threw nothing (' + dErrors.slice(0, 2).join(' | ') + ')');
   await dp.close();

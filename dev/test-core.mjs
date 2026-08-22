@@ -137,6 +137,11 @@ const pieces = [
   extractFn(html, 'applyAutoSubs'),
   extractFn(html, 'rivalLivePts'),
   extractFn(html, 'rivalSquadRows'),
+  /* CHIP_API_LABEL already arrives with an earlier block. */
+  ...['CHIP_SHORT'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'chipStatus'),
+  extractFn(html, 'rivalChipSummary'),
+  extractFn(html, 'freeTransfers'),
   extractFn(html, 'leagueEO'),
   extractFn(html, 'managerDetail'),
   extractFn(html, 'leagueSwing'),
@@ -289,7 +294,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, managerDetail, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -974,6 +979,107 @@ section('leagueEO: effective ownership is multipliers, not headcount');
      'a manager whose picks failed to load is not counted as a manager who owns nobody');
 }
 
+section('freeTransfers: derived from published transfers, and checked against published hits');
+{
+  /* I told the user this could not be done. It can: FPL publishes
+     event_transfers for every gameweek, the accumulation rule is fixed,
+     and event_transfers_cost independently tests the result. */
+  const H = (rows, chips) => ({ current: rows, chips: chips || [] });
+  const gw = (event, made, cost) => ({ event, event_transfers: made, event_transfers_cost: cost || 0 });
+
+  /* GW1 is squad creation, not a transfer. Entering GW2 you have exactly
+     one — which is the "FT 1" every manager shows in a live GW1 table. */
+  const start = core.freeTransfers(H([gw(1, 0, 0)]), 5);
+  ok(start.ft === 1, 'after GW1 a manager has one free transfer, got ' + start.ft);
+  ok(start.verified === true, 'and the derivation agrees with the published hits');
+
+  /* Bank one a week up to the cap, and no further. */
+  const idle = core.freeTransfers(H([1, 2, 3, 4, 5, 6, 7, 8].map((e) => gw(e, 0, 0))), 5);
+  ok(idle.ft === 5, 'saved transfers stop at the cap, got ' + idle.ft);
+  ok(idle.cap === 5, 'and the cap is reported');
+
+  /* THE CAP IS THE GAME'S, NOT OURS. It went from 2 to 5 in 2024/25 and
+     a number written into this function would have been wrong for a
+     season without anything failing. */
+  const oldRules = core.freeTransfers(H([1, 2, 3, 4, 5].map((e) => gw(e, 0, 0))), 2);
+  ok(oldRules.ft === 2, 'under a cap of two, two is the ceiling, got ' + oldRules.ft);
+
+  /* Spending them. GW1→1 FT. GW2 uses it → 0, +1 = 1 entering GW3. */
+  const spend = core.freeTransfers(H([gw(1, 0, 0), gw(2, 1, 0), gw(3, 1, 0)]), 5);
+  ok(spend.ft === 1, 'spending one a week holds steady at one, got ' + spend.ft);
+
+  /* A hit: two transfers on one free transfer costs 4, and leaves zero
+     banked, so the next week starts from one. */
+  const hit = core.freeTransfers(H([gw(1, 0, 0), gw(2, 2, 4)]), 5);
+  ok(hit.ft === 1, 'after overspending you start again from one, got ' + hit.ft);
+  ok(hit.verified === true, 'and a hit that our count predicts is consistent');
+
+  /* THE SELF-CHECK, BOTH WAYS. This is what makes the number publishable
+     rather than merely plausible: FPL already told us whether they were
+     charged, so a reconstruction that disagrees is known to be wrong. */
+  const tooGenerous = core.freeTransfers(H([gw(1, 0, 0), gw(2, 1, 4)]), 5);
+  ok(tooGenerous.verified === false,
+     'a hit charged where our count says there was room is a contradiction');
+  const tooMean = core.freeTransfers(H([gw(1, 0, 0), gw(2, 3, 0)]), 5);
+  ok(tooMean.verified === false,
+     'and three transfers on one free transfer with no hit charged is one too');
+
+  /* Wildcard and Free Hit: unlimited, free, and they preserve the bank.
+     Eight transfers on a wildcard must not zero the saved count. */
+  const wc = core.freeTransfers(
+    H([gw(1, 0, 0), gw(2, 0, 0), gw(3, 8, 0)], [{ name: 'wildcard', event: 3 }]), 5);
+  ok(wc.ft === 3, 'a wildcard preserves what was banked, got ' + wc.ft);
+  ok(wc.verified === true, 'and costs nothing, as published');
+  const fh = core.freeTransfers(
+    H([gw(1, 0, 0), gw(2, 0, 0), gw(3, 11, 0)], [{ name: 'freehit', event: 3 }]), 5);
+  ok(fh.ft === 3, 'and so does a free hit, got ' + fh.ft);
+
+  /* A chip that does NOT free transfers must not be treated as if it
+     did — a bench boost week is an ordinary transfer week. */
+  const bb = core.freeTransfers(
+    H([gw(1, 0, 0), gw(2, 0, 0), gw(3, 2, 0)], [{ name: 'bboost', event: 3 }]), 5);
+  ok(bb.ft === 1, 'a bench boost week spends transfers normally, got ' + bb.ft);
+
+  /* GW1 IS NOT A TRANSFER WEEK, and only a GW1 that reports transfers
+     can show it. Every other test here has GW1 at zero transfers, where
+     treating it as free and treating it as ordinary give the same
+     answer — so without this the special case was untestable and a
+     mutation removing it survived. FPL charges nothing for building the
+     initial squad, so transfers in GW1 with no hit are correct data and
+     must not be read as a contradiction. */
+  const lateJoiner = core.freeTransfers(H([gw(1, 3, 0), gw(2, 0, 0)]), 5);
+  ok(lateJoiner.verified === true,
+     'transfers in GW1 with no hit charged are squad building, not a contradiction');
+  ok(lateJoiner.ft === 2, 'and they do not eat into the allowance, got ' + lateJoiner.ft);
+
+  /* Out-of-order history must not change the answer: the rule is
+     sequential, so sorting is load-bearing. Comparing the FINAL count
+     alone was not enough — the two orderings happen to land on the same
+     number here — so the check that bites is `verified`, which the
+     unsorted pass wrecks by testing each week against the wrong balance. */
+  const shuffled = core.freeTransfers(H([gw(3, 1, 0), gw(1, 0, 0), gw(2, 2, 4)]), 5);
+  const ordered = core.freeTransfers(H([gw(1, 0, 0), gw(2, 2, 4), gw(3, 1, 0)]), 5);
+  ok(shuffled.ft === ordered.ft, 'history out of order gives the same count');
+  ok(ordered.verified === true, 'the in-order season is consistent with its hits');
+  ok(shuffled.verified === ordered.verified,
+     'and shuffling the same season cannot make it inconsistent');
+
+  /* upToGw with nothing before it: no weeks processed, so no number.
+     This is the only path that reaches the empty-tally branch, and
+     without it a mutation returning 0 there survived. */
+  const none = core.freeTransfers(H([gw(3, 0, 0), gw(4, 0, 0)]), 5, 1);
+  ok(none.ft === null, 'no gameweeks in range gives no count, not zero');
+  ok(none.verified === false, 'and nothing verified');
+  const upTo = core.freeTransfers(H([gw(1, 0, 0), gw(2, 0, 0), gw(3, 0, 0)]), 5, 2);
+  ok(upTo.ft === 2, 'and a cut-off honours the weeks before it, got ' + upTo.ft);
+
+  ok(core.freeTransfers(null, 5).ft === null, 'no history, no number — not a zero');
+  ok(core.freeTransfers({ current: [] }, 5).ft === null, 'and an empty season likewise');
+  ok(core.freeTransfers(null, 5).verified === false, 'an absent derivation is never "verified"');
+  ok(core.freeTransfers(H([gw(1, 0, 0)]), 0).cap === 5,
+     'a nonsense cap falls back rather than freezing the count at zero');
+}
+
 section('managerDetail: one row of the detailed league table');
 {
   const ELS = {
@@ -1049,6 +1155,65 @@ section('managerDetail: one row of the detailed league table');
   const early = core.managerDetail(STD, PICKS, { elements: [] }, STATE, ELS, eo.byId);
   ok(early.xi.every((p) => p.pts === null), 'with no live rows, points are null rather than nought');
   ok(early.liveKnown === 0, 'and the row says how little it knows');
+}
+
+section('managerDetail: the markers — free transfers, value, rank, chips');
+{
+  const ELS = { 1: { id: 1, web_name: 'A', team: 1, element_type: 3 } };
+  const PICKS = {
+    active_chip: 'bboost',
+    entry_history: { overall_rank: 1186437, value: 1012, bank: 3,
+      event_transfers: 1, event_transfers_cost: 0 },
+    picks: [{ element: 1, position: 1, multiplier: 1 }],
+  };
+  const HIST = {
+    current: [
+      { event: 1, event_transfers: 0, event_transfers_cost: 0 },
+      { event: 2, event_transfers: 0, event_transfers_cost: 0 },
+      { event: 3, event_transfers: 1, event_transfers_cost: 0 },
+    ],
+    chips: [{ name: 'wildcard', event: 2 }, { name: 'bboost', event: 3 }],
+  };
+  const d = core.managerDetail({ entry: 1, rank: 1 }, PICKS, { elements: [] },
+    {}, ELS, {}, HIST, 5);
+
+  /* The four markers the user asked for. */
+  ok(d.ft && d.ft.ft === 2, 'free transfers are derived (' + (d.ft && d.ft.ft) + ')');
+  ok(d.ft.verified === true, 'and checked against the published hit costs');
+  ok(d.tv === 101.2, 'team value (' + d.tv + ')');
+  ok(d.bank === 0.3, 'money in the bank (' + d.bank + ')');
+  ok(d.or === 1186437, 'overall rank');
+
+  /* Chips: the whole season's ledger, with the live one marked. A chip
+     played in GW2 is only in the history; one played now is in both, and
+     the row has to say which is which. */
+  ok(d.chips.length === 2, 'both chips played this season are listed, got ' + d.chips.length);
+  ok(d.chips.map((c) => c.short).join(',') === 'WC,BB',
+     'in the order they were played (' + d.chips.map((c) => c.short).join(',') + ')');
+  ok(d.chips[0].active === false, 'a chip played in an earlier gameweek is not active');
+  ok(d.chips[1].active === true, 'and the one running right now is');
+  ok(d.chips[1].event === 3, 'each carries the gameweek it was played');
+  ok(d.chips[0].label === 'Wildcard', 'with a readable label, not the API code');
+
+  /* A chip the API names but we have no short code for must still show. */
+  const odd = core.managerDetail({ entry: 1 }, PICKS, { elements: [] }, {}, ELS, {},
+    { current: HIST.current, chips: [{ name: 'somethingnew', event: 4 }] }, 5);
+  ok(odd.chips[0].short === 'somethingnew',
+     'an unknown chip falls back to its name rather than vanishing');
+
+  /* No history loaded: no free transfers, no chips — and crucially no
+     zero, which would read as "used them all" and "played none". */
+  const bare = core.managerDetail({ entry: 1 }, PICKS, { elements: [] }, {}, ELS, {}, null, 5);
+  ok(bare.ft.ft === null, 'without history the free-transfer count is null, not zero');
+  ok(bare.ft.verified === false, 'and is not presented as verified');
+  ok(bare.chips.length === 0, 'and no chips are claimed');
+
+  /* A contradicted derivation must reach the row as unverified so the
+     card can withhold it. */
+  const bad = core.managerDetail({ entry: 1 }, PICKS, { elements: [] }, {}, ELS, {},
+    { current: [{ event: 1, event_transfers: 0, event_transfers_cost: 0 },
+                { event: 2, event_transfers: 1, event_transfers_cost: 4 }], chips: [] }, 5);
+  ok(bad.ft.verified === false, 'a derivation FPL contradicts arrives marked unverified');
 }
 
 section('leagueSwing: the players who actually separate a league');

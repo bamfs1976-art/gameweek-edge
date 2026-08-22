@@ -686,6 +686,16 @@ html.offline .net-banner{transform:translateY(0)}
   text-transform:uppercase;letter-spacing:.04em}
 .lg-up{color:var(--green-bright)}
 .lg-dn{color:var(--red)}
+/* Marker pills: free transfers, team value, in the bank, overall rank,
+   progress, and the chip ledger. Always visible — this is the row people
+   actually scan, so it must not need a tap. */
+.lg-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
+.lg-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-min);
+  font-weight:700;color:var(--text-2);background:var(--surface-2);
+  border:1px solid var(--border-2);border-radius:6px;padding:2px 7px;white-space:nowrap}
+.lg-pill b{font-size:var(--fs-min);font-weight:800;color:var(--text-3);letter-spacing:.05em}
+.lg-chip{font-style:normal;background:var(--surface-3);border-radius:4px;padding:0 4px;margin-left:3px}
+.lg-chip.on{background:var(--green);color:#fff}
 .lg-sq{padding:6px 12px 12px;border-top:1px solid var(--border-2)}
 .lg-sub-t{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
   color:var(--text-3);margin:12px 0 6px}
@@ -16114,11 +16124,68 @@ function leagueEO(picksArr){
   Object.keys(byId).forEach(k=>{byId[k].eo=byId[k].units/n;});
   return {managers:n,byId:byId};
 }
+const CHIP_SHORT={wildcard:'WC','3xc':'TC',bboost:'BB',freehit:'FH',manager:'AM'};
+/* Free transfers a manager carries into the next deadline.
+   ─────────────────────────────────────────────────────────
+   I previously told the user this could not be done, on the grounds
+   that FPL does not publish it and the sites that show it are guessing.
+   The first half is true and the second is not, so the conclusion was
+   wrong. FPL publishes `event_transfers` for every gameweek of every
+   manager, and the accumulation rule is fixed and known, so the count
+   is a DERIVATION from published data rather than an estimate:
+
+     entering GW1  0   — the squad is built free, not transferred in
+     each week     left = max(0, ft - transfers made)
+                   ft   = min(cap, left + 1)
+     wildcard / free hit weeks cost nothing and preserve what is banked
+
+   The cap is the game's own (game_config.rules.max_extra_free_transfers,
+   plus the one a week), not a number written here — it changed from 2 to
+   5 in 2024/25 and would change again silently otherwise.
+
+   What makes it publishable rather than merely plausible is the check.
+   FPL also publishes `event_transfers_cost`, and a hit is charged
+   exactly when transfers exceed free transfers — so every gameweek is a
+   test of the reconstruction. If our count says a manager was inside
+   their allowance in a week FPL charged them for, or charged in a week
+   FPL did not, the derivation has drifted and `verified` goes false; the
+   card then shows nothing rather than a number that has already been
+   contradicted. The check deliberately compares the SIGN and not the
+   size, because the points-per-hit figure is not published anywhere in
+   bootstrap and hardcoding four here would be the guess this function
+   exists to avoid. Pure. */
+function freeTransfers(history,cap,upToGw){
+  const rows=(((history&&history.current)||[])
+    .filter(r=>r&&Number.isFinite(Number(r.event)))
+    .slice().sort((a,c)=>Number(a.event)-Number(c.event)));
+  if(!rows.length)return {ft:null,verified:false,cap:null,gws:0};
+  const max=Number.isFinite(cap)&&cap>=1?cap:5;
+  const chipAt={};
+  (((history&&history.chips)||[])).forEach(c=>{
+    if(c&&c.name&&Number.isFinite(Number(c.event)))chipAt[Number(c.event)]=c.name;});
+  let ft=0,verified=true,seen=0;
+  for(const r of rows){
+    const ev=Number(r.event);
+    if(upToGw!=null&&ev>upToGw)break;
+    const chip=chipAt[ev];
+    /* GW1 is squad creation, not transfers — free like a wildcard. */
+    const free=ev===1||chip==='wildcard'||chip==='freehit';
+    const made=Math.max(0,Number(r.event_transfers)||0);
+    const cost=Math.max(0,Number(r.event_transfers_cost)||0);
+    if(!free){
+      const overspent=made>ft;
+      if(overspent!==(cost>0))verified=false;
+    }else if(cost>0)verified=false;   /* a free week cannot cost points */
+    ft=Math.min(max,(free?ft:Math.max(0,ft-made))+1);
+    seen++;
+  }
+  return {ft:seen?ft:null,verified:verified&&seen>0,cap:max,gws:seen};
+}
 /* One manager's row: their squad with live points and state, plus the
    summary figures that sit on the collapsed row. `std` is the standings
    entry, `picks` the picks payload (entry_history included), `stateById`
    from playerGwStates. Pure. */
-function managerDetail(std,picks,live,stateById,els,eoById){
+function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax){
   if(!picks||!Array.isArray(picks.picks))return null;
   /* Reuses the rival card's row builder, so auto-subs, the null-vs-zero
      discipline on missing live rows, and the multiplier handling are the
@@ -16146,6 +16213,13 @@ function managerDetail(std,picks,live,stateById,els,eoById){
     rank:std?std.rank:null,lastRank:std?std.last_rank:null,
     gwPts:std?std.event_total:null,total:std?std.total:null,
     chip:picks.active_chip||null,
+    /* What they have spent all season, and what is live this week. The
+       two come from different feeds and mean different things: a chip
+       played in GW3 is only in the history, one played now is in both. */
+    chips:rivalChipSummary(history,picks,null,null).played
+      .map(c=>({name:c.name,event:c.event,label:c.label,
+        short:CHIP_SHORT[c.name]||c.label,active:c.name===picks.active_chip})),
+    ft:freeTransfers(history,ftMax),
     or:eh.overall_rank==null?null:eh.overall_rank,
     tv:eh.value==null?null:eh.value/10,
     bank:eh.bank==null?null:eh.bank/10,
@@ -16292,15 +16366,24 @@ async function leagueDetailCard(res,leagueId,meId,whole){
     const ph=gwPhase(b,fixtures);
     const gw=(ph.cur&&ph.cur.id)||b.cur.id;
     const slice=res.slice(0,LEAGUE_DETAIL_MAX);
-    const [live,picksArr]=await Promise.all([
+    /* Two calls per manager: the squad, and the season history that the
+       free-transfer count and the chip ledger are derived from. Paired in
+       one job so a manager costs one slot rather than two passes. */
+    const [live,pairs]=await Promise.all([
       loadLive(gw).catch(()=>({elements:[]})),
-      mapLimit(slice,6,r=>loadPicks(r.entry,gw).catch(()=>null))
+      mapLimit(slice,6,r=>Promise.all([
+        loadPicks(r.entry,gw).catch(()=>null),
+        loadHistory(r.entry).catch(()=>null)
+      ]))
     ]);
+    const picksArr=pairs.map(p=>(p&&p[0])||null);
+    const histArr=pairs.map(p=>(p&&p[1])||null);
     const eo=leagueEO(picksArr);
     if(!eo.managers)return '<div class="card mb-20"><div class="card-title">Detailed view</div>'+
       '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p></div>';
     const states=playerGwStates(b.els,fixtures,gw);
-    const rows=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId))
+    const ftMax=ftCap();
+    const rows=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
       .filter(Boolean);
     if(!rows.length)return '';
     const pct=v=>v==null?'':(v*100).toFixed(1)+'%';
@@ -16323,10 +16406,26 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       const mv=(d.lastRank&&d.rank)?d.lastRank-d.rank:0;
       const chip=d.chip?'<span class="badge badge-amber">'+esc(CHIP_API_LABEL[d.chip]||d.chip)+'</span>':'';
       const meta=[d.mgr,
-        d.or==null?'':'OR '+fmtNum(d.or),
-        d.tv==null?'':'TV £'+d.tv.toFixed(1)+'m',
         d.transfers?d.transfers+' transfer'+(d.transfers===1?'':'s')+(d.hit?' (−'+d.hit+')':''):''
       ].filter(Boolean).join(' · ');
+      /* The markers, always visible without expanding — this is the row
+         a manager scans. Free transfers is shown only when the season's
+         published hit costs agree with the reconstruction; a derivation
+         FPL has already contradicted is worth less than a blank. */
+      const pill=(k,v,cls)=>'<span class="lg-pill'+(cls?' '+cls:'')+'"><b>'+k+'</b>'+v+'</span>';
+      const chipPills=d.chips.length
+        ? '<span class="lg-pill lg-chips"><b>CHIPS</b>'+d.chips.map(c=>
+            '<i class="lg-chip'+(c.active?' on':'')+'" title="'+esc(c.label)+
+            (c.event==null?'':' — GW'+c.event)+(c.active?', active now':'')+'">'+esc(c.short)+'</i>').join('')+
+          '</span>'
+        : pill('CHIPS','none yet');
+      const pills='<div class="lg-pills">'+
+        (d.ft&&d.ft.verified&&d.ft.ft!=null?pill('FT',d.ft.ft):'')+
+        (d.tv==null?'':pill('TV','£'+d.tv.toFixed(1)+'m'))+
+        (d.bank==null?'':pill('ITB','£'+d.bank.toFixed(1)+'m'))+
+        (d.or==null?'':pill('OR',fmtNum(d.or)))+
+        (d.totalUnits?pill('PLAYED',d.playedUnits+'/'+d.totalUnits):'')+
+        chipPills+'</div>';
       const prog=d.totalUnits
         ? '<div class="lg-prog"><i style="width:'+Math.round(100*d.playedUnits/d.totalUnits)+'%"></i></div>'+
           '<div class="dl-sub">Played '+d.playedUnits+'/'+d.totalUnits+
@@ -16351,7 +16450,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
           '<span class="lg-cap">'+(d.captain?esc(d.captain.name):'—')+'<small>captain</small></span>'+
           '<span class="dl-col mono">'+fmtNum(d.gwPts)+'</span>'+
           '<span class="mc-ch" id="lg-ch-'+d.entry+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span>'+
-        '</div>'+
+        '</div>'+pills+
         '<div class="lg-sq" id="lg-sq-'+d.entry+'"'+(open?'':' style="display:none"')+'>'+
           prog+
           '<div class="lg-grid">'+d.xi.map(cell).join('')+'</div>'+
