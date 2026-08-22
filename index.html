@@ -670,7 +670,18 @@ html.offline .net-banner{transform:translateY(0)}
 .md-sum{font-weight:700;font-size:.86rem;margin-bottom:8px}
 .md-next{display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin-bottom:10px;
   border-radius:8px;background:var(--green-soft)}
-.md-when{width:64px;flex-shrink:0;font-size:.72rem;color:var(--text-2)}
+/* The kickoff column and the count sit at the TOP of a row whose middle
+   can now run to several lines; .dl-row centres its children, which
+   would leave a badge floating beside the third name. */
+.md-row{align-items:flex-start}
+.md-when{width:64px;flex-shrink:0;font-size:.72rem;color:var(--text-2);padding-top:2px}
+.md-count{flex-shrink:0;align-self:flex-start;padding-top:3px;color:var(--blue);
+  font-size:var(--fs-min);font-weight:800;white-space:nowrap}
+/* Overrides .dl-row .dl-sub's nowrap+ellipsis for this one line. The
+   selector needs .dl-row in it to outweigh that rule — a bare .md-who
+   is one class against two and silently loses, which is how the first
+   attempt at this fix left the line still truncating. */
+.dl-row .dl-sub.md-who{white-space:normal;overflow:visible;text-overflow:clip}
 .md-ko{font-weight:700}
 .md-c{color:var(--green-bright)}
 .md-v,.md-b{color:var(--text-3)}
@@ -689,6 +700,11 @@ html.offline .net-banner{transform:translateY(0)}
 /* Marker pills: free transfers, team value, in the bank, overall rank,
    progress, and the chip ledger. Always visible — this is the row people
    actually scan, so it must not need a tap. */
+/* View toggle + sort control on one row. The select takes the space it
+   needs and the direction button stays square. */
+.lg-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.lg-sortsel{width:auto;flex:1 1 150px;min-width:0;padding:7px 10px;font-size:.8rem}
+.lg-dir{flex:0 0 auto;min-width:34px;font-weight:800}
 .lg-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
 .lg-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-min);
   font-weight:700;color:var(--text-2);background:var(--surface-2);
@@ -953,7 +969,18 @@ html.offline .net-banner{transform:translateY(0)}
 .tr-me{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
   padding:10px 12px;margin-bottom:10px;border-radius:10px;background:var(--green-soft)}
 .tr-big{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
-.tr-cell{display:block;flex:1;min-width:0}
+/* .dl-grow resolves to flex-direction:column with align-items:center —
+   the base rule sets the direction and the .dl-row override sets the
+   alignment, and neither was written expecting the other. A block child
+   therefore gets CENTRED and shrink-wrapped instead of filling the row:
+   measured at 312px inside a 510px parent, sitting 99px in on each side.
+   Text then clips at BOTH ends rather than truncating at one, which is
+   why a fixture read "IFO v LEE" with the N missing.
+
+   align-self:stretch opts this cell out of that centring, and width:100%
+   makes it fill. Fixed here rather than by changing .dl-grow, because
+   that rule is load-bearing for every other list in the app. */
+.tr-cell{display:block;width:100%;min-width:0;align-self:stretch}
 .tr-cell .dl-nm,.tr-cell .dl-sub{display:block}
 .tr-bar{display:block;height:4px;margin-top:6px;border-radius:3px;background:var(--border-2);overflow:hidden}
 .tr-bar i{display:block;height:100%;border-radius:3px;background:var(--green)}
@@ -16125,6 +16152,71 @@ function leagueEO(picksArr){
   return {managers:n,byId:byId};
 }
 const CHIP_SHORT={wildcard:'WC','3xc':'TC',bboost:'BB',freehit:'FH',manager:'AM'};
+/* ── Sorting a league table ─────────────────────────────────
+   The table arrives in league order and that is the only order the
+   POSITION column ever describes. So sorting reorders the rows and
+   leaves the position alone: a manager 6th on total who is top this
+   week appears first, still labelled 6. Renumbering would turn a
+   different view of the same league into a claim about a different
+   league.
+
+   `dir` on each spec is the direction the field is worth reading in —
+   rank ascending because 1 is best, points descending because more is
+   better — so choosing a field gives the useful order without also
+   having to choose a direction.
+
+   `detail` marks the fields that only exist once squads are loaded.
+   The compact table has standings and nothing else, so offering to sort
+   it by team value would be offering a sort that silently does nothing. */
+const LEAGUE_SORTS=[
+  {key:'rank',  label:'League position',dir:1, get:r=>r.rank},
+  {key:'total', label:'Total points',   dir:-1,get:r=>r.total},
+  {key:'gw',    label:'Gameweek points',dir:-1,get:r=>r.gwPts},
+  {key:'move',  label:'Rank movement',  dir:-1,
+   get:r=>(r.lastRank&&r.rank)?r.lastRank-r.rank:null},
+  {key:'or',    label:'Overall rank',   dir:1, detail:true,get:r=>r.or},
+  {key:'tv',    label:'Team value',     dir:-1,detail:true,get:r=>r.tv},
+  {key:'yet',   label:'Players to play',dir:-1,detail:true,get:r=>r.yet},
+  {key:'played',label:'Gameweek done',  dir:-1,detail:true,
+   get:r=>r.totalUnits?r.playedUnits/r.totalUnits:null}
+];
+function leagueSortSpec(key){return LEAGUE_SORTS.filter(s=>s.key===key)[0]||null;}
+/* Sort rows by one of the specs above. `dir` overrides the spec's own
+   direction; anything else uses it. Pure — returns a new array.
+
+   Rows with no value for the chosen field sink to the bottom in BOTH
+   directions rather than counting as zero or as infinity. A manager
+   whose squad failed to load has no team value; sorting him to the top
+   of "most valuable squad" would be inventing a fact about him, and
+   sorting him to the top of the reverse would be inventing a different
+   one. Ties, and the sunk rows among themselves, fall back to league
+   order so the result is deterministic. */
+function sortLeagueRows(rows,key,dir){
+  const list=(rows||[]).slice(),spec=leagueSortSpec(key);
+  if(!spec)return list;
+  const d=(dir===1||dir===-1)?dir:spec.dir;
+  /* null/undefined are checked BEFORE Number(), because Number(null) is
+     0 and 0 is finite — so a manager whose squad failed to load would
+     sort as the POOREST in the league rather than sinking out of the
+     way, and would lead a low-to-high sort. The same trap caught
+     chipStatus earlier, where a missing gameweek became 0 and read as
+     "already started". Caught here by its own test, not by review. */
+  const num=v=>{if(v==null)return null;const n=Number(v);return Number.isFinite(n)?n:null;};
+  return list.sort((a,c)=>{
+    const av=num(spec.get(a)),cv=num(spec.get(c));
+    if(av==null&&cv==null)return (a.rank||0)-(c.rank||0);
+    if(av==null)return 1;
+    if(cv==null)return -1;
+    if(av!==cv)return d*(av<cv?-1:1);
+    return (a.rank||0)-(c.rank||0);
+  });
+}
+/* The standings payload reshaped onto the same field names managerDetail
+   uses, so one sorter serves both views instead of two that can drift. */
+function leagueStdRow(r){
+  return {entry:r.entry,name:r.entry_name,mgr:r.player_name,
+    rank:r.rank,lastRank:r.last_rank,gwPts:r.event_total,total:r.total,raw:r};
+}
 /* Free transfers a manager carries into the next deadline.
    ─────────────────────────────────────────────────────────
    I previously told the user this could not be done, on the grounds
@@ -16339,7 +16431,19 @@ async function mapLimit(items,limit,fn){
   return out;
 }
 const LG_STATE={done:'finished',live:'playing now',toPlay:'yet to play',blank:'no fixture'};
-let LEAGUE_VIEW='compact';
+let LEAGUE_VIEW='compact',LEAGUE_SORT='rank',LEAGUE_DIR=0;
+function lgSetSort(key){
+  const spec=leagueSortSpec(key);
+  if(!spec)return;
+  /* Choosing a new field resets to that field's natural direction; the
+     arrow button is what flips it. */
+  LEAGUE_SORT=spec.key;LEAGUE_DIR=0;renderPage('leagues');
+}
+function lgFlipDir(){
+  const spec=leagueSortSpec(LEAGUE_SORT);
+  const cur=LEAGUE_DIR||(spec?spec.dir:1);
+  LEAGUE_DIR=cur===1?-1:1;renderPage('leagues');
+}
 const LEAGUE_OPEN=new Set();
 const LEAGUE_DETAIL_MAX=50;
 function lgSetView(v){LEAGUE_VIEW=v==='detailed'?'detailed':'compact';renderPage('leagues');}
@@ -16383,8 +16487,12 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p></div>';
     const states=playerGwStates(b.els,fixtures,gw);
     const ftMax=ftCap();
-    const rows=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
+    /* Which fifty get loaded is decided by league position; how they are
+       ordered on screen is the user's choice. Sorting before the slice
+       would quietly change WHICH managers the card is about. */
+    const built=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
       .filter(Boolean);
+    const rows=sortLeagueRows(built,LEAGUE_SORT,LEAGUE_DIR);
     if(!rows.length)return '';
     const pct=v=>v==null?'':(v*100).toFixed(1)+'%';
     const cell=p=>{
@@ -16556,7 +16664,12 @@ async function renderLeagueStandings(host,leagueId,mid,type){
   const head=h2h
     ? '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · W-D-L</span><span class="dl-col">Pts</span></div>'
     : '<div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Team · manager</span><span class="dl-col">Total</span></div>';
-  const rows=res.map(r=>{
+  /* The compact table sorts too — on the fields standings alone can
+     answer. h2h keeps league order: its table is a W-D-L record and the
+     sort fields here describe a total-points race. */
+  const resSorted=h2h?res
+    :sortLeagueRows(res.map(leagueStdRow),LEAGUE_SORT,LEAGUE_DIR).map(r=>r.raw);
+  const rows=resSorted.map(r=>{
     const me=r.entry===meId;
     const mv=(r.last_rank&&r.rank)?r.last_rank-r.rank:0;
     if(h2h)return '<div class="dl-row'+(me?' league-me':'')+'"><span class="dl-rank">'+r.rank+'</span>'+
@@ -16571,10 +16684,14 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
   }).join('');
+  /* No Compute button. It existed because the awards cost eleven API
+     calls, which is a reason to CACHE them, not a reason to make the
+     reader ask twice for something the card already promises. The result
+     is cached per league and gameweek, so the repeated renders that a
+     sort or a view toggle causes are free. */
   const awards=h2h?'':'<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Best captain, bench tragedy and differential hero across the league (top 10 managers).</p>'+
-    '<button class="btn btn-primary btn-sm" onclick="genAwards('+leagueId+')">Compute awards</button>'+
-    '<div id="league-awards" style="margin-top:12px"></div></div>';
+    '<div id="league-awards"></div></div>';
   const myPage=LEAGUE_ME_RANK?Math.max(1,Math.ceil(LEAGUE_ME_RANK/50)):0;
   const pager=(page>1||hasNext)
     ? '<div style="display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap">'+
@@ -16594,9 +16711,24 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      which a head-to-head table has too, but the summary figures it leads
      with (rank movement, gameweek total) are the classic race's. */
   const detailed=!h2h&&LEAGUE_VIEW==='detailed';
-  const viewBar=h2h?'':'<div class="lensbar mb-14" id="lg-views">'+
+  const spec=leagueSortSpec(LEAGUE_SORT)||LEAGUE_SORTS[0];
+  const curDir=LEAGUE_DIR||spec.dir;
+  /* Only offer sorts the loaded data can actually perform. Team value
+     exists only once squads are fetched, so in the compact table it
+     would be a control that does nothing. */
+  const sortOpts=LEAGUE_SORTS.filter(o=>!o.detail||detailed);
+  const viewBar=h2h?'':'<div class="lg-bar mb-14">'+
+    '<div class="lensbar" id="lg-views">'+
     [['compact','Compact'],['detailed','Detailed']].map(v=>
       '<button class="lensbtn'+(LEAGUE_VIEW===v[0]?' on':'')+'" data-lgview="'+v[0]+'">'+v[1]+'</button>').join('')+
+    '</div>'+
+    '<label class="sr-only" for="lg-sort">Sort the table by</label>'+
+    '<select class="modal-in lg-sortsel" id="lg-sort">'+
+      sortOpts.map(o=>'<option value="'+o.key+'"'+(o.key===spec.key?' selected':'')+'>'+esc(o.label)+'</option>').join('')+
+    '</select>'+
+    '<button class="btn btn-ghost btn-sm lg-dir" id="lg-dir" '+
+      'aria-label="'+(curDir===1?'Sorted low to high':'Sorted high to low')+', tap to reverse" '+
+      'title="'+(curDir===1?'Low to high':'High to low')+'">'+(curDir===1?'▲':'▼')+'</button>'+
     '</div>';
   if(detailed)host.innerHTML=back+viewBar+'<div class="card mb-20"><div class="card-title">'+
       esc(data.league?data.league.name:'League')+'</div>'+
@@ -16610,10 +16742,27 @@ async function renderLeagueStandings(host,leagueId,mid,type){
        totals twice on one screen, so the detail card replaces it rather
        than sitting under it. The pager stays either way. */
     (detailed?'':'<div class="dl" id="league-standings">'+head+rows+'</div>')+
+    /* Sorting is client-side over the rows already fetched. On a league
+       that runs past one page that is a sort of THIS PAGE, not of the
+       league — the manager with the best gameweek may be on page four
+       and would never appear at the top however the arrow points. Said
+       only when a sort is actually active, because in league order the
+       page is genuinely the top of the table. */
+    ((!h2h&&LEAGUE_SORT!=='rank'&&(hasNext||page>1))
+      ? '<p class="dl-sub" style="margin:10px 0 0">Sorted within this page — ranks '+
+        ((page-1)*50+1)+'–'+((page-1)*50+res.length)+'. Managers on other pages are not reordered into it.</p>'
+      : '')+
     pager+'</div>'+
     detailCard+raceCard+awards;
   host.querySelectorAll('[data-lgview]').forEach(btn=>
     btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
+  /* Fired after the standings are on screen, not awaited before them:
+     the table must not wait on eleven calls it does not need. */
+  if(!h2h)genAwards(leagueId);
+  const sortSel=host.querySelector('#lg-sort');
+  if(sortSel)sortSel.addEventListener('change',()=>lgSetSort(sortSel.value));
+  const dirBtn=host.querySelector('#lg-dir');
+  if(dirBtn)dirBtn.addEventListener('click',lgFlipDir);
   /* Every standing is a manager, and a manager has a squad. Same card the
      Rivals panel opens — a mini-league table is where people actually look
      their rivals up, and having to add somebody to a separate list first in
@@ -16629,54 +16778,98 @@ async function renderLeagueStandings(host,leagueId,mid,type){
 }
 
 /* ── Gameweek awards across a mini-league's top managers ── */
+/* The four awards, from standings + picks + the live feed. Pure, so the
+   arithmetic can be tested without a browser, and small enough that the
+   RESULT can be cached rather than the eleven API responses behind it. */
+function leagueAwards(entries,picksAll,st,els){
+  const own={},perMgr=[];
+  (entries||[]).forEach((e,i)=>{
+    const picks=picksAll&&picksAll[i];
+    if(!picks||!Array.isArray(picks.picks))return;
+    let capPts=0,capName='',bench=0,best={pts:-1,name:''};
+    picks.picks.forEach(p=>{
+      const el=(els||{})[p.element]||{};
+      const pts=((st||{})[p.element]||{}).total_points||0;
+      if(p.position<=11){
+        own[p.element]=(own[p.element]||0)+1;
+        if(pts>best.pts)best={pts:pts,name:el.web_name||''};
+      }else bench+=pts;
+      /* The multiplier carries the armband, so a triple captain counts
+         three and a captain who did not play counts nothing. */
+      if(p.is_captain){capPts=pts*(p.multiplier||2);capName=el.web_name||'';}
+    });
+    perMgr.push({mgr:e.player_name,team:e.entry_name,score:e.event_total||0,
+      capPts:capPts,capName:capName,bench:bench,picks:picks});
+  });
+  if(!perMgr.length)return null;
+  const top=perMgr.reduce((a,c)=>c.score>a.score?c:a);
+  const cap=perMgr.reduce((a,c)=>c.capPts>a.capPts?c:a);
+  const trag=perMgr.reduce((a,c)=>c.bench>a.bench?c:a);
+  /* A differential is a starter owned by at most two of the managers we
+     loaded — so it is relative to this league, not to the game. */
+  let diff=null;
+  perMgr.forEach(m=>m.picks.picks.filter(p=>p.position<=11&&own[p.element]<=2).forEach(p=>{
+    const pts=((st||{})[p.element]||{}).total_points||0;
+    if(!diff||pts>diff.pts)diff={pts:pts,name:((els||{})[p.element]||{}).web_name||'',mgr:m.mgr};
+  }));
+  return {managers:perMgr.length,
+    top:{mgr:top.mgr,team:top.team,pts:top.score},
+    cap:{mgr:cap.mgr,name:cap.capName,pts:cap.capPts},
+    bench:{mgr:trag.mgr,pts:trag.bench},
+    /* A differential nobody scored with is not a hero. */
+    diff:(diff&&diff.pts>0)?{mgr:diff.mgr,name:diff.name,pts:diff.pts}:null};
+}
+/* Fetch-and-compute, cached on the league and gameweek. The awards used
+   to sit behind a Compute button because they cost eleven calls, and the
+   panel re-renders on every sort change and view toggle — so making them
+   automatic without caching would have turned one button press into
+   eleven calls per keystroke. cached() gives a short TTL (the live feed
+   moves during a matchday), localStorage persistence, and clearing by
+   the existing refresh button, all for free. */
+async function awardsData(leagueId,gw){
+  return cached('awards-'+leagueId+'-'+gw,90e3,async()=>{
+    const b=await boot();
+    const [data,live]=await Promise.all([loadStandings(leagueId),loadLive(gw)]);
+    const entries=((data.standings&&data.standings.results)||[]).slice(0,10);
+    if(!entries.length)return null;
+    const picksAll=await mapLimit(entries,6,e=>loadPicks(e.entry,gw).catch(()=>null));
+    return leagueAwards(entries,picksAll,statsById(live),b.els);
+  });
+}
 async function genAwards(leagueId){
   const box=document.getElementById('league-awards');
+  if(!box)return;
   box.innerHTML=skel(4);
   try{
     const b=await boot();
     const gw=b.cur.id;
-    const [data,live]=await Promise.all([loadStandings(leagueId),loadLive(gw)]);
-    const st=statsById(live);
-    const entries=((data.standings&&data.standings.results)||[]).slice(0,10);
-    if(!entries.length){box.innerHTML='<div class="dl-sub">No standings yet.</div>';return;}
-    const picksAll=await Promise.all(entries.map(e=>
-      loadPicks(e.entry,gw).catch(()=>null)));
-    const own={};
-    const perMgr=[];
-    entries.forEach((e,i)=>{
-      const picks=picksAll[i];
-      if(!picks||!picks.picks)return;
-      let capPts=0,capName='',bench=0,best={pts:-1};
-      picks.picks.forEach(p=>{
-        const el=b.els[p.element]||{};
-        const pts=(st[p.element]||{}).total_points||0;
-        if(p.position<=11){
-          own[p.element]=(own[p.element]||0)+1;
-          if(pts>best.pts)best={pts,name:el.web_name};
-        }else bench+=pts;
-        if(p.is_captain){capPts=pts*(p.multiplier||2);capName=el.web_name;}
-      });
-      perMgr.push({mgr:e.player_name,team:e.entry_name,score:e.event_total,
-        capPts,capName,bench,picks});
-    });
-    if(!perMgr.length){box.innerHTML='<div class="dl-sub">Couldn’t load league picks.</div>';return;}
-    const topScore=perMgr.reduce((a,c)=>c.score>a.score?c:a);
-    const bestCap=perMgr.reduce((a,c)=>c.capPts>a.capPts?c:a);
-    const tragedy=perMgr.reduce((a,c)=>c.bench>a.bench?c:a);
-    let diffHero=null;
-    perMgr.forEach(m=>m.picks.picks.filter(p=>p.position<=11&&own[p.element]<=2).forEach(p=>{
-      const pts=(st[p.element]||{}).total_points||0;
-      if(!diffHero||pts>diffHero.pts)diffHero={pts,name:(b.els[p.element]||{}).web_name,mgr:m.mgr};
-    }));
-    const row=(title,who,detail)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+title+'</span>'+
-      '<span class="dl-sub">'+esc(who)+'</span></span><span class="dl-col mono">'+detail+'</span></div>';
+    /* Before a ball is kicked every award is nought, and computing that
+       costs eleven calls to say nothing. */
+    const ph=gwPhase(b,await loadFixtures());
+    if(ph.phase==='pre'){
+      box.innerHTML='<div class="dl-sub">Awards appear once the gameweek kicks off.</div>';return;
+    }
+    const a=await awardsData(leagueId,gw);
+    if(!a){box.innerHTML='<div class="dl-sub">Couldn’t load the league’s picks for this gameweek.</div>';return;}
+    /* esc() once, here. The old version escaped the player name and then
+       escaped the whole line again, so a name with an ampersand rendered
+       its entity rather than the character. */
+    const row=(title,who,detail)=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell">'+
+      '<span class="dl-nm">'+title+'</span>'+
+      '<span class="dl-sub">'+esc(who)+'</span></span></span>'+
+      '<span class="dl-col mono">'+esc(detail)+'</span></div>';
     box.innerHTML='<div class="dl">'+
-      row('🏆 Top score',topScore.mgr+' — '+topScore.team,topScore.score+' pts')+
-      row('🎯 Best captain',bestCap.mgr+' — '+esc(bestCap.capName||'—'),bestCap.capPts+' pts')+
-      row('🪑 Bench tragedy',tragedy.mgr,tragedy.bench+' on bench')+
-      (diffHero&&diffHero.pts>0?row('💎 Differential hero',diffHero.mgr+' — '+esc(diffHero.name||''),diffHero.pts+' pts'):'')+
-      '</div>';
-  }catch(e){box.innerHTML='<div class="dl-sub">Awards couldn’t be computed right now.</div>';}
+      row('🏆 Top score',a.top.mgr+' — '+a.top.team,a.top.pts+' pts')+
+      row('🎯 Best captain',a.cap.mgr+' — '+(a.cap.name||'—'),a.cap.pts+' pts')+
+      row('🪑 Bench tragedy',a.bench.mgr,a.bench.pts+' on bench')+
+      (a.diff?row('💎 Differential hero',a.diff.mgr+' — '+a.diff.name,a.diff.pts+' pts'):'')+
+      '</div>'+
+      '<div class="dl-sub" style="margin-top:8px">Across the top '+a.managers+
+      ' manager'+(a.managers===1?'':'s')+' in the league.</div>';
+  }catch(e){
+    box.innerHTML='<div class="dl-sub">Awards couldn’t be computed right now. '+
+      '<button class="btn btn-ghost btn-sm" onclick="genAwards('+leagueId+')">Try again</button></div>';
+  }
 }
 
 /* ── Web Push (client) ─────────────────────────────────── */
@@ -17744,13 +17937,24 @@ function matchdayCard(md,b,stale){
     const when=r.over?'<span class="badge badge-grey">FT</span>'
       :r.started?'<span class="badge badge-red">LIVE</span>'
       :'<span class="md-ko">'+esc(koLabel(r.ko))+'</span>';
-    const who=(xi.length?xi.map(nm).join(', '):'<i>bench only</i>')+
-      (bench.length?'<span class="md-b"> · bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>':'');
-    return '<div class="dl-row"><span class="md-when">'+when+'</span>'+
+    /* A squad list is a list, not a heading: it wraps. Truncating it
+       hides exactly the names the card exists to show, and with only
+       one line there is no room for a double gameweek's worth.
+       "bench only" is gone — when there is no starter, "Bench: Hughes"
+       says the same thing without the label and the value. */
+    const who=xi.length
+      ? xi.map(nm).join(', ')+
+        (bench.length?'<span class="md-b"> · bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>':'')
+      : '<span class="md-b">Bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>';
+    return '<div class="dl-row md-row"><span class="md-when">'+when+'</span>'+
       '<span class="dl-grow"><span class="tr-cell">'+
         '<span class="dl-nm">'+esc(teamShort(b,r.teamH))+' v '+esc(teamShort(b,r.teamA))+'</span>'+
-        '<span class="dl-sub">'+who+'</span></span></span>'+
-      '<span class="dl-col mono">'+r.players.length+'</span></div>';
+        '<span class="dl-sub md-who">'+who+'</span></span></span>'+
+      /* A bare number on the right of "ARS v COV" reads as a scoreline.
+         The dot marks it as the same "yours" count the fixture list
+         uses, and the title says it in words. */
+      '<span class="md-count" title="'+r.players.length+' of your squad in this match">●'+
+        r.players.length+'</span></div>';
   };
   const c=md.xi;
   const bits=[c.toPlay?c.toPlay+' still to play':'',c.live?c.live+' playing now':'',

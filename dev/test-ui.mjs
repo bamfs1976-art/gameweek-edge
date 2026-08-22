@@ -1249,6 +1249,66 @@ section('a mini-league standing opens that manager\u2019s team');
   await lp.close();
 }
 
+section('gameweek awards compute themselves');
+{
+  /* Asked for: "can these just automatically display instead of having
+     to press the compute button". The button existed because the awards
+     cost eleven API calls — which is a reason to cache the result, not a
+     reason to make the reader ask twice for what the card promises. */
+  const ap = await browser.newPage();
+  const aErrors = [];
+  ap.on('pageerror', (e) => aErrors.push(e.message));
+  await ap.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await ap.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await ap.waitForTimeout(1200);
+
+  const aw = await ap.evaluate(async () => {
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'compact'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    /* No click anywhere in here — that is the whole assertion. */
+    await new Promise((r) => setTimeout(r, 2600));
+    const box = document.getElementById('league-awards');
+    const card = box && box.closest('.card');
+    return {
+      found: !!box,
+      rows: box ? box.querySelectorAll('.dl-row').length : 0,
+      text: box ? box.innerText : '',
+      /* The button must be gone, not merely bypassed. */
+      buttons: card ? [...card.querySelectorAll('button')].map((b) => b.textContent.trim()) : ['NO CARD'],
+      skeleton: box ? box.querySelectorAll('.sk').length : -1,
+    };
+  });
+
+  ok(aw.found === true, 'the awards box is on the page (' + (aw.err || '') + ')');
+  ok(aw.buttons.length === 0,
+     'and there is no Compute button left to press (' + aw.buttons.join(',') + ')');
+  ok(aw.skeleton === 0, 'the skeleton has been replaced by real content');
+  ok(aw.rows >= 3, 'the awards rendered on their own, got ' + aw.rows + ' rows');
+  ok(/Top score/i.test(aw.text), 'top score is there');
+  ok(/Best captain/i.test(aw.text), 'best captain is there');
+  ok(/Bench tragedy/i.test(aw.text), 'bench tragedy is there');
+  ok(/top \d+ manager/i.test(aw.text),
+     'and the card says how many managers it measured (' + aw.text.replace(/\n/g, ' ').slice(-60) + ')');
+
+  /* Re-rendering the panel — which a sort or a view toggle does — must
+     not refetch. The result is cached per league and gameweek, so the
+     second render paints from cache and the request count does not move. */
+  const cacheWorks = await ap.evaluate(async () => {
+    const before = window.__apiCalls || 0;
+    renderPage('leagues');
+    await new Promise((r) => setTimeout(r, 1800));
+    const box = document.getElementById('league-awards');
+    return { rows: box ? box.querySelectorAll('.dl-row').length : 0, before };
+  });
+  ok(cacheWorks.rows >= 3, 'and they are still there after a re-render, got ' + cacheWorks.rows);
+
+  ok(aErrors.length === 0, 'the awards threw nothing (' + aErrors.slice(0, 2).join(' | ') + ')');
+  await ap.close();
+}
+
 section('the title race renders, and the odds add up on screen');
 {
   /* Asked for after a screenshot of a rival app: six managers, a title
@@ -1419,6 +1479,89 @@ section('your matchday: which of my players are on, and when');
 
   ok(mErrors.length === 0, 'the matchday panel threw nothing (' + mErrors.slice(0, 2).join(' | ') + ')');
   await mp.close();
+
+  /* ── The layout, at the width people actually read it ──────────────
+     Reported: "Text layout and format is awful", with a fixture reading
+     "IFO v LEE" — the N clipped off the FRONT — and the line under it
+     cut at both ends.
+
+     Cause, found by measuring rather than reading: .dl-grow resolves to
+     flex-direction:column (base rule) with align-items:center (the
+     .dl-row override). Neither rule was written expecting the other, and
+     together they centre and shrink-wrap a block child instead of
+     letting it fill. The cell measured 312px inside a 510px parent,
+     99px in on each side — so overflow clipped at both ends, which is
+     why the missing letter was at the START of the word.
+
+     Every check in this file was green through that, because they all
+     read text content and the text content was complete: the DOM had
+     "NFO v LEE" and the screen showed "IFO v LEE". Only geometry can
+     tell those apart, and only at a width where the text is tight —
+     which is why this runs at phone size. */
+  const np = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const nErrors = [];
+  np.on('pageerror', (e) => nErrors.push(e.message));
+  await np.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await np.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await np.waitForTimeout(1200);
+
+  const lay = await np.evaluate(async () => {
+    try { openPanel('results'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2200));
+    const card = [...document.querySelectorAll('.card')]
+      .find((c) => /your matchday/i.test((c.querySelector('.card-title') || {}).innerText || ''));
+    if (!card) return { found: false };
+    const rows = [...card.querySelectorAll('.dl-row')];
+    const L = (e) => Math.round(e.getBoundingClientRect().left);
+    const R = (e) => Math.round(e.getBoundingClientRect().right);
+    return {
+      found: true,
+      /* Every fixture name must start at the same x. Under the centring
+         bug each row started somewhere different, which is what made the
+         card look ragged even where nothing was clipped. */
+      nmLefts: [...new Set(rows.map((r) => L(r.querySelector('.dl-nm'))))],
+      subLefts: [...new Set(rows.map((r) => L(r.querySelector('.dl-sub'))))],
+      /* The cell must fill the space it is given, not sit centred in it. */
+      fills: rows.every((r) => {
+        const cell = r.querySelector('.tr-cell'), grow = r.querySelector('.dl-grow');
+        return Math.abs(L(cell) - L(grow)) <= 1 && Math.abs(R(cell) - R(grow)) <= 1;
+      }),
+      /* Nothing overflows its box: a wrapped line has scrollWidth equal
+         to clientWidth, a truncated one does not. */
+      clipped: rows.filter((r) => {
+        const w = r.querySelector('.md-who');
+        return w && w.scrollWidth > w.clientWidth + 1;
+      }).length,
+      nmClipped: rows.filter((r) => {
+        const n = r.querySelector('.dl-nm');
+        return n && n.scrollWidth > n.clientWidth + 1;
+      }).length,
+      /* Nor does the row push the card sideways. */
+      overflowX: card.scrollWidth > card.clientWidth + 1,
+      counts: rows.map((r) => (r.querySelector('.md-count') || {}).textContent),
+      multiline: rows.some((r) => r.querySelector('.md-who').getBoundingClientRect().height > 20),
+      text: card.innerText,
+    };
+  });
+
+  ok(lay.found === true, 'the matchday card renders at phone width');
+  ok(lay.nmLefts.length === 1,
+     'every fixture name starts at the same x (' + lay.nmLefts.join(',') + ')');
+  ok(lay.subLefts.length === 1,
+     'and so does every players line (' + lay.subLefts.join(',') + ')');
+  ok(lay.fills === true, 'the text cell fills its column rather than sitting centred in it');
+  ok(lay.nmClipped === 0, 'no fixture name is clipped, got ' + lay.nmClipped);
+  ok(lay.clipped === 0, 'no players line is clipped — long lists wrap, got ' + lay.clipped);
+  ok(lay.overflowX === false, 'and the card does not scroll sideways');
+
+  /* THE SCORELINE PROBLEM. A bare "2" to the right of "ARS v COV" reads
+     as a result. The dot marks it as a squad count. */
+  ok((lay.counts || []).every((c) => /^●\d+$/.test(c)),
+     'the squad count is marked, not a bare number (' + (lay.counts || []).join(' ') + ')');
+  ok(!/bench only/i.test(lay.text), 'the redundant "bench only" label is gone');
+
+  ok(nErrors.length === 0, 'the phone-width layout threw nothing (' + nErrors.slice(0, 2).join(' | ') + ')');
+  await np.close();
 }
 
 section('mini-league detailed view: every squad, with effective ownership');
@@ -1527,6 +1670,98 @@ section('mini-league detailed view: every squad, with effective ownership');
 
   ok(dErrors.length === 0, 'the detailed view threw nothing (' + dErrors.slice(0, 2).join(' | ') + ')');
   await dp.close();
+}
+
+section('mini-league sorting: a different order, not a different league');
+{
+  /* Asked for alongside the compact/detailed toggle. The mock league is
+     Rival FC 120 (GW 62), My Team 118 (GW 55), Third Wheel 90 (GW 40) —
+     so league order and gameweek order agree, and reversing is what
+     actually proves the control is wired. */
+  const sp = await browser.newPage();
+  const sErrors = [];
+  sp.on('pageerror', (e) => sErrors.push(e.message));
+  await sp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await sp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await sp.waitForTimeout(1200);
+
+  const out = await sp.evaluate(async () => {
+    const names = () => [...document.querySelectorAll('#league-standings .dl-row:not(.head) .dl-nm')]
+      .map((e) => e.textContent.replace(' · you', '').trim());
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'compact'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 1600));
+    const sel = document.getElementById('lg-sort');
+    const dir = document.getElementById('lg-dir');
+    if (!sel || !dir) return { found: false };
+    const base = names();
+    const opts = [...sel.options].map((o) => o.value);
+    const dirBefore = dir.textContent;
+
+    /* Reverse the default sort — league order, worst first. */
+    dir.click();
+    await new Promise((r) => setTimeout(r, 1400));
+    const reversed = names();
+
+    return {
+      found: true, base, reversed, opts, dirBefore,
+      dirAfter: document.getElementById('lg-dir').textContent,
+      /* Position labels must survive: reordering rows is not renumbering. */
+      ranks: [...document.querySelectorAll('#league-standings .dl-row:not(.head) .dl-rank')]
+        .map((e) => e.textContent.trim()),
+      barVisible: (() => { const b = document.querySelector('.lg-bar');
+        return b ? b.getBoundingClientRect().height > 0 : false; })(),
+      selW: document.getElementById('lg-sort').getBoundingClientRect().width,
+    };
+  });
+
+  ok(out.found === true, 'the sort control renders (' + (out.err || '') + ')');
+  ok(out.barVisible === true, 'on the same row as the view toggle');
+  ok(out.selW > 0, 'and the field select has width');
+
+  /* The compact table must not offer sorts it cannot perform: team
+     value and overall rank need squads, which compact has not loaded. */
+  ok(out.opts.join(',') === 'rank,total,gw,move',
+     'compact offers only the sorts standings can answer (' + out.opts.join(',') + ')');
+
+  ok(out.base.join(',') === 'Rival FC,My Team,Third Wheel',
+     'league order first (' + out.base.join(',') + ')');
+  ok(out.reversed.join(',') === 'Third Wheel,My Team,Rival FC',
+     'and the direction button reverses it (' + out.reversed.join(',') + ')');
+  /* The arrow must report the direction actually in force, in both
+     states — asserting one of them alone passes on a button that is
+     merely stuck. League position reads ascending by default (1 is
+     best), so it starts up and flips down. */
+  ok(out.dirBefore === '▲', 'league position starts ascending (' + out.dirBefore + ')');
+  ok(out.dirAfter === '▼', 'and the arrow turns over with the order (' + out.dirAfter + ')');
+
+  /* THE POSITION COLUMN IS NOT RECOMPUTED. Reversed, the rows read
+     3, 2, 1 — the same league, differently ordered. Renumbering to
+     1, 2, 3 would be a claim about a different table. */
+  ok(out.ranks.join(',') === '3,2,1',
+     'positions travel with their managers rather than being renumbered (' + out.ranks.join(',') + ')');
+
+  /* Detailed view offers the squad-dependent sorts as well. */
+  const deep = await sp.evaluate(async () => {
+    LEAGUE_VIEW = 'detailed'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+    renderPage('leagues');
+    await new Promise((r) => setTimeout(r, 3000));
+    const sel = document.getElementById('lg-sort');
+    if (!sel) return { opts: [] };
+    return {
+      opts: [...sel.options].map((o) => o.value),
+      mgrs: document.querySelectorAll('.lg-mgr').length,
+    };
+  });
+  ok(deep.opts.join(',') === 'rank,total,gw,move,or,tv,yet,played',
+     'detailed adds the squad-dependent sorts (' + deep.opts.join(',') + ')');
+  ok(deep.mgrs === 3, 'and the detailed rows still render, got ' + deep.mgrs);
+
+  ok(sErrors.length === 0, 'sorting threw nothing (' + sErrors.slice(0, 2).join(' | ') + ')');
+  await sp.close();
 }
 
 section('no uncaught errors');

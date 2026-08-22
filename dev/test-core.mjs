@@ -142,6 +142,11 @@ const pieces = [
   extractFn(html, 'chipStatus'),
   extractFn(html, 'rivalChipSummary'),
   extractFn(html, 'freeTransfers'),
+  extractArrayConst(html, 'LEAGUE_SORTS'),
+  extractFn(html, 'leagueSortSpec'),
+  extractFn(html, 'sortLeagueRows'),
+  extractFn(html, 'leagueStdRow'),
+  extractFn(html, 'leagueAwards'),
   extractFn(html, 'leagueEO'),
   extractFn(html, 'managerDetail'),
   extractFn(html, 'leagueSwing'),
@@ -294,7 +299,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1078,6 +1083,269 @@ section('freeTransfers: derived from published transfers, and checked against pu
   ok(core.freeTransfers(null, 5).verified === false, 'an absent derivation is never "verified"');
   ok(core.freeTransfers(H([gw(1, 0, 0)]), 0).cap === 5,
      'a nonsense cap falls back rather than freezing the count at zero');
+}
+
+section('leagueAwards: top score, captain, bench and differential');
+{
+  const ELS = {
+    1: { id: 1, web_name: 'Haaland' }, 2: { id: 2, web_name: 'Salah' },
+    3: { id: 3, web_name: 'Saka' },    4: { id: 4, web_name: 'Mbeumo' },
+    5: { id: 5, web_name: 'Benchy' },  6: { id: 6, web_name: 'Ødegaard' },
+  };
+  const ST = { 1: { total_points: 12 }, 2: { total_points: 8 }, 3: { total_points: 2 },
+    4: { total_points: 5 }, 5: { total_points: 21 }, 6: { total_points: 11 } };
+  const E = (n, name, team, gw) => ({ entry: n, player_name: name, entry_name: team, event_total: gw });
+  /* Three managers. Everyone starts Haaland and Salah (template), only
+     the third starts Ødegaard (a differential), and the second has a
+     mountain on the bench. */
+  const entries = [E(1, 'Max', 'Lammenade', 40), E(2, 'Sean', 'Mainoo', 49), E(3, 'Gareth', 'Wilson', 35)];
+  const picks = [
+    { picks: [
+      { element: 1, position: 1, multiplier: 2, is_captain: true },
+      { element: 2, position: 2, multiplier: 1 },
+      { element: 3, position: 3, multiplier: 1 },
+      { element: 5, position: 12, multiplier: 0 },
+    ] },
+    { picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 2, multiplier: 2, is_captain: true },
+      { element: 4, position: 3, multiplier: 1 },
+      { element: 5, position: 12, multiplier: 0 },
+    ] },
+    { picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 2, multiplier: 1 },
+      { element: 6, position: 3, multiplier: 1, is_captain: true },
+      { element: 4, position: 12, multiplier: 0 },
+    ] },
+  ];
+  const a = core.leagueAwards(entries, picks, ST, ELS);
+
+  ok(a.managers === 3, 'all three managers counted, got ' + a.managers);
+  /* Top score reads the STANDINGS total, not a sum of the live rows —
+     the official figure already carries hits and auto-subs. */
+  ok(a.top.mgr === 'Sean' && a.top.pts === 49, 'top score is the highest gameweek total');
+  ok(a.top.team === 'Mainoo', 'and names the team as well as the manager');
+
+  /* THE ARMBAND IS THE MULTIPLIER. Haaland captained is 12 × 2 = 24;
+     Salah captained is 8 × 2 = 16; Ødegaard captained is 11 × 1 — a
+     multiplier of 1 means the armband moved, so it is not doubled. */
+  ok(a.cap.pts === 24, 'the best captain is scored through the multiplier, got ' + a.cap.pts);
+  ok(a.cap.mgr === 'Max' && a.cap.name === 'Haaland', 'and is attributed correctly');
+
+  ok(a.bench.pts === 21 && a.bench.mgr === 'Max', 'bench tragedy is the biggest bench score');
+
+  /* A differential is owned by at most two of the loaded managers.
+     Haaland and Salah are started by all three, so neither qualifies
+     however well they scored — which is the point of the award. */
+  ok(a.diff !== null, 'a differential hero was found');
+  ok(a.diff.name === 'Ødegaard', 'the low-owned starter wins it, got ' + a.diff.name);
+  ok(a.diff.pts === 11, 'with his own score, not a doubled one');
+  ok(a.diff.mgr === 'Gareth', 'credited to the manager who owned him');
+
+  /* A BENCHED COPY OF A DIFFERENTIAL IS NOT A HERO, and proving that
+     needs a player who is started by one manager and benched by another.
+     A player nobody starts never enters the ownership count at all, so
+     he is excluded whether or not the bench is filtered — which is why
+     the first version of this check could not tell the two apart.
+
+     Here Benchy scores 21 and is STARTED by the second manager and
+     BENCHED by the first. The award belongs to the manager who played
+     him; crediting the one who left him out would be the opposite of
+     what the award means. */
+  const twoMgrs = [E(1, 'Benched-him', 'A', 10), E(2, 'Played-him', 'B', 30)];
+  const twoPicks = [
+    { picks: [{ element: 1, position: 1, multiplier: 1 }, { element: 5, position: 12, multiplier: 0 }] },
+    { picks: [{ element: 1, position: 1, multiplier: 1 }, { element: 5, position: 2, multiplier: 1 }] },
+  ];
+  const bh = core.leagueAwards(twoMgrs, twoPicks, ST, ELS);
+  ok(bh.diff && bh.diff.name === 'Benchy', 'the low-owned starter is the hero');
+  ok(bh.diff.mgr === 'Played-him',
+     'credited to the manager who STARTED him, not the one who benched him (got ' + bh.diff.mgr + ')');
+}
+
+section('leagueAwards: nothing to award, and nothing to throw');
+{
+  const ELS = { 1: { id: 1, web_name: 'A' } };
+  const E = { entry: 1, player_name: 'M', entry_name: 'T', event_total: 0 };
+  const P = [{ picks: [{ element: 1, position: 1, multiplier: 1 }] }];
+
+  ok(core.leagueAwards([], [], {}, ELS) === null, 'no entries, no awards');
+  ok(core.leagueAwards(null, null, {}, ELS) === null, 'and no throw on missing inputs');
+  ok(core.leagueAwards([E], [null], {}, ELS) === null,
+     'a manager whose picks failed to load leaves nothing to award');
+
+  /* Before a ball is kicked every score is nought. The three headline
+     awards still resolve — somebody is nominally top — but the
+     differential is withheld, because nobody has scored with one and
+     "hero, 0 points" is not a finding. */
+  const zero = core.leagueAwards([E], P, {}, ELS);
+  ok(zero !== null && zero.top.pts === 0, 'a scoreless gameweek still has a top score');
+  ok(zero.diff === null, 'but no differential hero at nought points');
+
+  /* A live feed with no row for a player is nought for the award, which
+     is right here: an award is a comparison, and a missing row cannot
+     win one. */
+  const noLive = core.leagueAwards([E], P, {}, ELS);
+  ok(noLive.cap.pts === 0, 'a captain with no live row scores nothing rather than throwing');
+
+  /* Only the managers actually passed in are counted, so the "top N"
+     claim on the card matches what was measured. */
+  const two = core.leagueAwards(
+    [E, { entry: 2, player_name: 'N', entry_name: 'U', event_total: 5 }],
+    [P[0], P[0]], { 1: { total_points: 3 } }, ELS);
+  ok(two.managers === 2, 'the manager count reports what was measured, got ' + two.managers);
+}
+
+section('sortLeagueRows: a different order, not a different league');
+{
+  /* Six managers. Deliberately: the league leader is NOT top this week,
+     and the manager 6th on total has the best gameweek — the case the
+     whole feature exists for. */
+  const R = [
+    { entry: 1, rank: 1, lastRank: 1, total: 200, gwPts: 40, or: 500,     tv: 101.5, yet: 3, playedUnits: 9,  totalUnits: 12 },
+    { entry: 2, rank: 2, lastRank: 4, total: 195, gwPts: 55, or: 12000,   tv: 100.0, yet: 0, playedUnits: 12, totalUnits: 12 },
+    { entry: 3, rank: 3, lastRank: 2, total: 190, gwPts: 30, or: 3000,    tv: 102.2, yet: 5, playedUnits: 4,  totalUnits: 12 },
+    { entry: 4, rank: 4, lastRank: 3, total: 185, gwPts: 45, or: 900,     tv: 99.5,  yet: 1, playedUnits: 10, totalUnits: 12 },
+    { entry: 5, rank: 5, lastRank: 5, total: 180, gwPts: 20, or: 250000,  tv: 100.7, yet: 8, playedUnits: 2,  totalUnits: 12 },
+    { entry: 6, rank: 6, lastRank: 6, total: 175, gwPts: 60, or: 77,      tv: 98.8,  yet: 2, playedUnits: 12, totalUnits: 16 },
+  ];
+  const order = (rows) => rows.map((r) => r.entry).join(',');
+
+  /* League order is the default and is what the position column means. */
+  ok(order(core.sortLeagueRows(R, 'rank')) === '1,2,3,4,5,6', 'league position sorts 1 first');
+  ok(order(core.sortLeagueRows(R, 'total')) === '1,2,3,4,5,6', 'and so does total points, on this table');
+
+  /* THE POINT OF THE FEATURE. Sorted by gameweek, last place leads. */
+  ok(order(core.sortLeagueRows(R, 'gw')) === '6,2,4,1,3,5',
+     'gameweek points puts the best week first (' + order(core.sortLeagueRows(R, 'gw')) + ')');
+
+  /* THE RANK IS NOT RECOMPUTED. Reordering rows must not renumber them:
+     the manager top of the gameweek is still 6th in the league, and a
+     table that said otherwise would be describing a different league. */
+  const byGw = core.sortLeagueRows(R, 'gw');
+  ok(byGw[0].rank === 6, 'the best gameweek is still labelled 6th, got ' + byGw[0].rank);
+  ok(byGw.map((r) => r.rank).sort((a, b) => a - b).join(',') === '1,2,3,4,5,6',
+     'every league position survives the sort exactly once');
+
+  /* Overall rank ascends by default — 1 is the good end. */
+  ok(order(core.sortLeagueRows(R, 'or')) === '6,1,4,3,2,5',
+     'overall rank puts the best rank first (' + order(core.sortLeagueRows(R, 'or')) + ')');
+  ok(order(core.sortLeagueRows(R, 'tv')) === '3,1,5,2,4,6', 'team value puts the richest squad first');
+  ok(order(core.sortLeagueRows(R, 'yet')) === '5,3,1,6,4,2', 'players to play puts the most left first');
+
+  /* Progress is a fraction, so a bench-boosted 10/16 ranks below 11/12
+     — the point being that raw counts are not comparable across chips. */
+  const prog = core.sortLeagueRows(R, 'played');
+  ok(prog[0].entry === 2, 'the finished squad is first on progress');
+  /* THE COMPARISON MUST BE A FRACTION. Entry 6 has bench-boosted, so he
+     has MORE units played in absolute terms (12) than entry 4 (10) while
+     being LESS far through his gameweek (12/16 against 10/12). Raw counts
+     and fractions therefore order these two oppositely, which is the only
+     arrangement that can tell the two implementations apart — the first
+     version of this test had 11/12 against 10/16, where both orderings
+     agree, and a mutation to raw counts sailed through it. */
+  ok(prog.findIndex((r) => r.entry === 4) < prog.findIndex((r) => r.entry === 6),
+     '10 of 12 is further through than 12 of 16, though the raw counts say otherwise');
+
+  /* Direction override. */
+  ok(order(core.sortLeagueRows(R, 'gw', 1)) === '5,3,1,4,2,6', 'the direction can be reversed');
+  ok(order(core.sortLeagueRows(R, 'gw', -1)) === order(core.sortLeagueRows(R, 'gw')),
+     'and the explicit natural direction matches the default');
+
+  /* Rank movement: entry 2 climbed two, entry 3 and 4 dropped one. */
+  ok(core.sortLeagueRows(R, 'move')[0].entry === 2, 'rank movement puts the biggest climb first');
+
+  /* Unknown key is not a silent reorder into some arbitrary order. */
+  ok(order(core.sortLeagueRows(R, 'nonsense')) === '1,2,3,4,5,6',
+     'an unrecognised sort key leaves the order alone');
+  ok(core.sortLeagueRows(null, 'gw').length === 0, 'a missing list does not throw');
+
+  /* The input must not be mutated — the caller still holds league order. */
+  const before = order(R);
+  core.sortLeagueRows(R, 'gw');
+  ok(order(R) === before, 'sorting returns a new array and leaves the original alone');
+}
+
+section('sortLeagueRows: a manager with no value does not win the sort');
+{
+  /* A squad that failed to load has no team value and no overall rank.
+     Treating that as zero would make him the poorest manager in the
+     league; treating it as infinity would make him the richest. Both
+     invent a fact. He sinks, in BOTH directions. */
+  const R = [
+    { entry: 1, rank: 1, total: 100, tv: 101.0, or: 500 },
+    { entry: 2, rank: 2, total: 90,  tv: null,  or: null },
+    { entry: 3, rank: 3, total: 80,  tv: 99.0,  or: 900 },
+  ];
+  const ord = (k, d) => core.sortLeagueRows(R, k, d).map((r) => r.entry).join(',');
+
+  ok(ord('tv') === '1,3,2', 'no team value sinks on a high-to-low sort');
+  ok(ord('tv', 1) === '3,1,2', 'and sinks on a low-to-high sort too');
+  ok(ord('or') === '1,3,2', 'the same for a missing overall rank');
+  ok(ord('or', -1) === '3,1,2', 'in both directions');
+
+  /* Several unknowns keep league order among themselves, so the table
+     does not reshuffle between repaints. */
+  const many = [
+    { entry: 1, rank: 1, tv: null }, { entry: 2, rank: 2, tv: 100 },
+    { entry: 3, rank: 3, tv: null }, { entry: 4, rank: 4, tv: null },
+  ];
+  ok(core.sortLeagueRows(many, 'tv').map((r) => r.entry).join(',') === '2,1,3,4',
+     'unknowns hold league order among themselves');
+
+  /* NaN is not a number either, however arithmetic produced it. */
+  ok(core.sortLeagueRows([
+    { entry: 1, rank: 1, tv: NaN }, { entry: 2, rank: 2, tv: 50 },
+  ], 'tv')[0].entry === 2, 'NaN sinks like a missing value');
+
+  /* Equal values fall back to league order rather than input order, so
+     two repaints of the same table agree. */
+  const tied = [
+    { entry: 3, rank: 3, gwPts: 40 }, { entry: 1, rank: 1, gwPts: 40 },
+    { entry: 2, rank: 2, gwPts: 40 },
+  ];
+  ok(core.sortLeagueRows(tied, 'gw').map((r) => r.entry).join(',') === '1,2,3',
+     'ties break on league position, so the order is deterministic');
+}
+
+section('leagueStdRow / LEAGUE_SORTS: one sorter for two views');
+{
+  /* The compact table has standings and the detailed view has assembled
+     rows; they must present the same field names or the sorter silently
+     stops working in one of them. */
+  const std = core.leagueStdRow({ entry: 7, entry_name: 'Team', player_name: 'Manager',
+    rank: 4, last_rank: 2, event_total: 55, total: 190 });
+  ok(std.rank === 4 && std.lastRank === 2, 'rank and movement are renamed onto the shared shape');
+  ok(std.gwPts === 55 && std.total === 190, 'and so are the two point totals');
+  ok(std.raw && std.raw.entry_name === 'Team',
+     'the original row is carried through so the renderer keeps its own fields');
+
+  /* Every always-available sort must actually work on a standings row —
+     this is the check that catches a field renamed on one side only. */
+  const compactKeys = core.LEAGUE_SORTS.filter((o) => !o.detail).map((o) => o.key);
+  ok(compactKeys.length === 4, 'four sorts need nothing but standings, got ' + compactKeys.length);
+  ok(compactKeys.every((k) => core.sortLeagueRows([std, core.leagueStdRow(
+      { entry: 8, rank: 1, last_rank: 3, event_total: 60, total: 200 })], k).length === 2),
+     'and every one of them sorts a standings row without throwing');
+
+  /* The detail-only sorts must be marked, or the compact table offers a
+     control that cannot do anything. */
+  const detailKeys = core.LEAGUE_SORTS.filter((o) => o.detail).map((o) => o.key);
+  ok(detailKeys.join(',') === 'or,tv,yet,played',
+     'the squad-dependent sorts are flagged (' + detailKeys.join(',') + ')');
+  ok(detailKeys.every((k) => core.leagueStdRow({ rank: 1 })[core.leagueSortSpec(k).key] === undefined
+      || k === 'played'),
+     'and none of them is answerable from standings alone');
+
+  ok(core.leagueSortSpec('rank').dir === 1, 'league position reads best-first ascending');
+  ok(core.leagueSortSpec('total').dir === -1, 'points read best-first descending');
+  ok(core.leagueSortSpec('or').dir === 1, 'overall rank ascends — 1 is the good end');
+  ok(core.leagueSortSpec('nope') === null, 'an unknown key has no spec');
+  ok(core.LEAGUE_SORTS.every((o) => o.dir === 1 || o.dir === -1),
+     'every sort declares a direction');
+  ok(new Set(core.LEAGUE_SORTS.map((o) => o.key)).size === core.LEAGUE_SORTS.length,
+     'and the keys are unique, so the select cannot have two of the same');
 }
 
 section('managerDetail: one row of the detailed league table');
