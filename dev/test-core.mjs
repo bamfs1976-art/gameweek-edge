@@ -124,6 +124,9 @@ const pieces = [
      this one. Both are wanted, so they cannot share a name. */
   extractFn(html, 'horizonXP').replace('function horizonXP(', 'function horizonXPreal('),
   extractFn(html, 'priceChangeProb'),
+  extractFn(html, 'fplPriceMove'),
+  extractFn(html, 'priceLocked'),
+  extractFn(html, 'priceSource'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
   extractFn(html, 'bestXI'),
@@ -269,7 +272,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -408,6 +411,126 @@ ok(xpFlagged < xp, 'chance-of-playing scales xP down');
 ok(core.xP({}, el, { diff: 3 }) >= 0, 'xP without model view stays non-negative');
 
 /* ── price model: caps, direction, monotonicity ─────────── */
+section('fplPriceMove: FPL’s own figure, read rather than approximated');
+{
+  /* Shapes copied from a live bootstrap-static, measured 22 Aug 2026. */
+  const CALAFIORI = {
+    price_change_percent: '19.9', price_change_hourly_rate: 1327,
+    price_change_calibrating: false, price_change_locked_until: null,
+    price_change_projections: [
+      { offset: 0, projected_percent: '32.5', likelihood: 2 },
+      { offset: 1, projected_percent: '52.5', likelihood: 3 },
+      { offset: 2, projected_percent: '72.5', likelihood: 4 }]
+  };
+  const PORRO = {
+    price_change_percent: '-7.4', price_change_hourly_rate: -1854,
+    price_change_calibrating: false, price_change_locked_until: null,
+    price_change_projections: [
+      { offset: 0, projected_percent: '-11.3', likelihood: -1 },
+      { offset: 1, projected_percent: '-17.5', likelihood: -1 },
+      { offset: 2, projected_percent: '-23.7', likelihood: -2 }]
+  };
+  const LOCKED = {
+    price_change_percent: '0.0', price_change_hourly_rate: 0,
+    price_change_calibrating: false,
+    price_change_locked_until: '2026-08-30T13:56:30.932335Z',
+    price_change_projections: []
+  };
+
+  const a = core.fplPriceMove(CALAFIORI);
+  ok(a && a.pct === 19.9 && a.dir === 'rise', 'a positive figure reads back as a rise (' + (a && a.pct) + ')');
+  ok(a.proj.length === 3 && a.proj[0].pct === 32.5 && a.proj[2].pct === 72.5,
+     'all three projection offsets are carried, in order');
+  ok(a.rate === 1327, 'the hourly rate is read');
+
+  const f = core.fplPriceMove(PORRO);
+  ok(f.dir === 'fall' && f.pct === -7.4, 'a negative figure reads back as a fall');
+  ok(f.proj[2].pct === -23.7, 'and its projections stay negative rather than losing the sign');
+
+  /* Order is the entire reason this replaced our estimate: ranked by
+     magnitude, the biggest mover has to come first whichever way it moves. */
+  const ranked = [PORRO, CALAFIORI].map((x) => core.fplPriceMove(x))
+    .sort((x, y) => Math.abs(y.pct) - Math.abs(x.pct));
+  ok(ranked[0].pct === 19.9, 'ranking by magnitude puts the biggest mover first regardless of direction');
+
+  /* Projections out of order upstream must still come back in order — the
+     column reads "today → +2d" and a shuffled array would print it backwards. */
+  const shuffled = core.fplPriceMove(Object.assign({}, CALAFIORI, {
+    price_change_projections: CALAFIORI.price_change_projections.slice().reverse()
+  }));
+  ok(shuffled.proj.map((x) => x.offset).join(',') === '0,1,2',
+     'projections sort by offset regardless of payload order');
+
+  /* Absence, and the three ways it happens. Each must yield null so the panel
+     falls back to the estimate and SAYS it did, rather than rendering a blank
+     where a number used to be. */
+  ok(core.fplPriceMove({}) === null, 'no price_change_percent yields null');
+  ok(core.fplPriceMove(null) === null, 'a null element yields null rather than throwing');
+  ok(core.fplPriceMove({ price_change_percent: 'n/a' }) === null, 'an unparseable figure yields null, not NaN');
+  ok(core.fplPriceMove(Object.assign({}, CALAFIORI, { price_change_calibrating: true })) === null,
+     'CALIBRATING yields null — the game saying its own number is not ready is not a number');
+
+  /* A zero is a real answer and must not be confused with absence: the player
+     is flat, which is different from FPL having no view. */
+  const flat = core.fplPriceMove({ price_change_percent: '0.0' });
+  ok(flat !== null && flat.dir === 'flat' && flat.pct === 0,
+     'a genuine zero is flat, NOT absent');
+
+  ok(core.fplPriceMove(Object.assign({}, CALAFIORI, { price_change_projections: null })).proj.length === 0,
+     'a missing projections array degrades to no projections rather than throwing');
+  ok(core.fplPriceMove(Object.assign({}, CALAFIORI, {
+    price_change_projections: [{ offset: 0, projected_percent: 'x' }] })).proj.length === 0,
+     'an unparseable projection row is dropped rather than becoming NaN');
+
+  /* Locked players cannot move however large the figure, so listing one as
+     "closest to a move" would be wrong. Locked is a fact from the API. */
+  const L = core.fplPriceMove(LOCKED);
+  const beforeLock = Date.parse('2026-08-25T00:00:00Z');
+  const afterLock = Date.parse('2026-09-01T00:00:00Z');
+  ok(core.priceLocked(L, beforeLock) === true, 'a player is locked before the stated time');
+  ok(core.priceLocked(L, afterLock) === false, 'and unlocked after it — the lock expires rather than sticking');
+  ok(core.priceLocked(a, beforeLock) === false, 'a player with no lock is never locked');
+  ok(core.priceLocked(null, beforeLock) === false, 'no figure at all is not a lock');
+}
+
+section('priceSource: the panel’s claim about provenance follows the data');
+{
+  const T = Date.parse('2026-08-25T00:00:00Z');
+  const moving = { price_change_percent: '19.9' };
+  const flat = { price_change_percent: '0.0' };
+  const locked = { price_change_percent: '12.0', price_change_locked_until: '2026-08-30T00:00:00Z' };
+  const none = { web_name: 'nobody' };
+
+  ok(core.priceSource([moving, none], T).official === true,
+     'one player with a real figure is enough to show FPL’s number');
+  ok(core.priceSource([none, none], T).official === false,
+     'no figures at all falls back to the estimate');
+
+  /* A table of players who cannot move is not a price panel. If the only
+     figures we have are locked, claiming to show FPL’s live view would be a
+     false statement about provenance even though the field is populated. */
+  ok(core.priceSource([locked, none], T).official === false,
+     'ONLY locked players is not an official view — it falls back');
+  ok(core.priceSource([locked, none], T).locked === 1, 'and the locked player is still counted, to be disclosed');
+  ok(core.priceSource([locked, moving], T).official === true,
+     'one unlocked mover alongside a locked one is enough');
+
+  /* Flat is a real answer but not a mover, so a field full of zeroes — which
+     is exactly what the API served the day before it went live — must not
+     read as "FPL is telling us something". */
+  ok(core.priceSource([flat, flat, flat], T).official === false,
+     'every player flat falls back rather than showing an all-zero table');
+  ok(core.priceSource([flat, flat], T).withFigure === 2,
+     'though a flat figure still counts as FPL having a view');
+
+  ok(core.priceSource([], T).official === false, 'no elements at all falls back');
+  ok(core.priceSource(null, T).official === false, 'a null element list does not throw');
+
+  /* The lock expires. After its time the same player is a normal mover. */
+  ok(core.priceSource([locked], Date.parse('2026-09-05T00:00:00Z')).official === true,
+     'once the lock expires the player counts again');
+}
+
 section('priceChangeProb caps, direction, monotonic in net transfers');
 const TOTAL = 10e6;
 const mk = (tin, tout, own) => ({ transfers_in_event: tin, transfers_out_event: tout, selected_by_percent: String(own) });
