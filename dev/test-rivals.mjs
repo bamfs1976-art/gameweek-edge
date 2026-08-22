@@ -75,6 +75,7 @@ vm.runInContext([
   extractLine(html, /const CHIP_API_LABEL=\{[^}]*\};/),
   extractLine(html, /const POS_PLURAL=\{[^}]*\};/),
   extractFn(html, 'rivalLivePts'),
+  extractFn(html, 'applyAutoSubs'),
   extractFn(html, 'rivalSquadRows'),
   extractFn(html, 'rivalGwTotal'),
   extractFn(html, 'rivalChipSummary'),
@@ -83,7 +84,7 @@ vm.runInContext([
   extractFn(html, 'elementExtras')
 ].join('\n'), ctx);
 
-const { rivalLivePts, rivalSquadRows, rivalGwTotal, rivalChipSummary,
+const { rivalLivePts, applyAutoSubs, rivalSquadRows, rivalGwTotal, rivalChipSummary,
   fplChipWindows, chipStatus, elementExtras } = ctx;
 
 let pass = 0; const fail = [];
@@ -469,6 +470,99 @@ const CHIPS_REAL = [
 
   const undef = rivalChipSummary(hist, { active_chip: null });
   ok(undef.status === null, 'called the old way, with no windows argument, it behaves the old way');
+}
+
+/* ── Auto-subs: the field that was read nowhere ──────────────────────
+   A starter who does not play is replaced by a bench player and the SUB's
+   points count. We read multiplier off the picks, so an auto-subbed squad
+   was summed as if the absent player had played and the sub had not. */
+{
+  /* 11 starters (positions 1-11) and 4 bench (12-15). Player 5 blanks,
+     player 12 comes on. Live points make the swap visible: the absent player
+     is worth 0, the sub is worth 9. */
+  const mkPicks = (subs, mutate) => {
+    const picks = [];
+    for (let i = 1; i <= 15; i++) {
+      picks.push({ element: 100 + i, position: i, multiplier: i <= 11 ? 1 : 0,
+        is_captain: i === 1, is_vice_captain: i === 2 });
+    }
+    if (mutate) mutate(picks);
+    return { picks, automatic_subs: subs || [] };
+  };
+  const live = { elements: [] };
+  for (let i = 1; i <= 15; i++) live.elements.push({ id: 100 + i, stats: { total_points: i === 5 ? 0 : (i === 12 ? 9 : 2) } });
+
+  const none = rivalSquadRows(mkPicks([]), live, new Set(), new Set());
+  /* 10 starters at 2 plus the blanker at 0 = 20. */
+  eq(none.live, 20, 'without auto-subs the XI sums as submitted');
+  eq(none.autoSubs, 0, 'and reports no substitutions');
+
+  const withSub = rivalSquadRows(
+    mkPicks([{ element_out: 105, element_in: 112 }]), live, new Set(), new Set());
+  eq(withSub.live, 29, 'the substitute’s 9 points count and the absent player’s 0 does not');
+  eq(withSub.autoSubs, 1, 'and the card is told one substitution was applied');
+  /* THE SUM ALONE CANNOT SEE THIS. The absent player scores 0, so leaving him
+     counting changes no total — mutation testing found that removing his
+     benching was undetectable. Count the counting players instead: eleven
+     score, not twelve. */
+  eq(withSub.liveOf, 11, 'exactly eleven players count after the swap, not twelve');
+  ok(withSub.xi.every((r) => r.id !== 105), 'the absent player is off the XI entirely');
+  ok(withSub.bench.some((r) => r.id === 105), 'and is on the bench, where the reader can see him');
+
+  /* THE CASE THAT WOULD BE WORSE THAN THE BUG. If FPL has already rewritten
+     the picks — starter benched, sub counting — applying the swap again
+     would bench the substitute and restore the player who never played.
+     I could not verify which way FPL reports it, so this is the guard that
+     makes the fix correct under either answer. */
+  const already = mkPicks([{ element_out: 105, element_in: 112 }], (p) => {
+    p[4].multiplier = 0; p[4].position = 12;
+    p[11].multiplier = 1; p[11].position = 5;
+  });
+  const done = rivalSquadRows(already, live, new Set(), new Set());
+  eq(done.live, 29, 'an already-applied swap is NOT applied twice');
+  eq(done.autoSubs, 0, 'and is not reported as something we did');
+
+  /* Substitutes are never captained. Transferring a captain’s multiplier to
+     the incoming player would double a score he never had. */
+  const capOut = rivalSquadRows(
+    mkPicks([{ element_out: 101, element_in: 112 }], (p) => { p[0].multiplier = 2; }),
+    live, new Set(), new Set());
+  const sub = capOut.xi.find((r) => r.id === 112);
+  ok(sub && sub.mult === 1, 'an incoming substitute comes on at 1x, not the captain’s multiplier');
+
+  /* Structural safety. */
+  const before = mkPicks([{ element_out: 105, element_in: 112 }]);
+  const snapshot = JSON.stringify(before);
+  applyAutoSubs(before);
+  ok(JSON.stringify(before) === snapshot, 'the original picks object is not mutated');
+
+  eq(applyAutoSubs({ picks: [], automatic_subs: [] }).autoSubsApplied, undefined,
+     'no subs leaves the payload untouched');
+  ok(applyAutoSubs(null) === null, 'a null payload does not throw');
+  eq(rivalSquadRows(mkPicks([{ element_out: 999, element_in: 112 }]), live, new Set(), new Set()).autoSubs, 0,
+     'a substitution naming a player who is not in the squad is ignored');
+  eq(rivalSquadRows(mkPicks([{ element_out: 105, element_in: 105 }]), live, new Set(), new Set()).autoSubs, 0,
+     'a substitution of a player for himself is ignored');
+  eq(rivalSquadRows({ picks: [], automatic_subs: 'nope' }, live, new Set(), new Set()).autoSubs, 0,
+     'a string automatic_subs is ignored rather than throwing');
+  /* A string happens to degrade safely — for..of walks its characters and
+     finds no matching players. A non-iterable OBJECT does not: that is where
+     the Array.isArray guard actually earns its place, and the string case
+     alone left the guard untested. */
+  let threw = false;
+  try { rivalSquadRows(mkPicks(null, null), live, new Set(), new Set()); } catch (_) { threw = true; }
+  ok(!threw, 'a null automatic_subs does not throw');
+  threw = false;
+  try {
+    rivalSquadRows({ picks: [], automatic_subs: { element_out: 105 } }, live, new Set(), new Set());
+  } catch (_) { threw = true; }
+  ok(!threw, 'a non-iterable object automatic_subs does not throw');
+
+  /* Two subs in one gameweek is normal and both must land. */
+  const two = rivalSquadRows(
+    mkPicks([{ element_out: 105, element_in: 112 }, { element_out: 106, element_in: 113 }]),
+    live, new Set(), new Set());
+  eq(two.autoSubs, 2, 'two substitutions both apply');
 }
 
 console.log(`rivals — ${pass}/${pass + fail.length} checks passed`);
