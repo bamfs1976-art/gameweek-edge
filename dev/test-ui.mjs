@@ -1182,6 +1182,17 @@ section('a mini-league standing opens that manager\u2019s team');
   const target = lp.locator('[data-rival="7654321"]').first();
   const hit = await lp.evaluate(() => {
     const b = document.querySelector('[data-rival="7654321"]');
+    /* Bring the row into view before asking what is on top of it. The
+       onboarding tour scrolls the hero card to centre on a fresh page,
+       and this test drives renderPage directly rather than showPanel, so
+       it never gets showPanel's scrollTo(0) — the league table therefore
+       renders at the tour's offset and the first row can sit behind the
+       sticky topbar. A real click scrolls first (Playwright's does, and
+       so does a thumb), so measuring un-scrolled tested a position no
+       user clicks from. What this check is actually for — an inert
+       ancestor, pointer-events:none, or an overlay covering the row —
+       is unaffected: all three still fail it with the row in view. */
+    b.scrollIntoView({ block: 'center' });
     const r = b.getBoundingClientRect();
     const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
     let n = b, inertAncestor = null;
@@ -1225,6 +1236,178 @@ section('a mini-league standing opens that manager\u2019s team');
   ok(/Triple Captain/.test(card.text), 'and the chip ledger reaches it from history');
   ok(lErrors.length === 0, 'the league table threw nothing (' + lErrors.slice(0, 2).join(' | ') + ')');
   await lp.close();
+}
+
+section('the title race renders, and the odds add up on screen');
+{
+  /* Asked for after a screenshot of a rival app: six managers, a title
+     race panel, and win odds that summed to 68%. Exactly one manager
+     wins a league, so the odds are a probability distribution — a table
+     that does not add up is a table that cannot be right. The engine
+     guarantees the sum by simulating jointly; this checks the sum
+     SURVIVES rendering, which is a separate claim and the one the user
+     can actually see. */
+  const rp = await browser.newPage();
+  const rErrors = [];
+  rp.on('pageerror', (e) => rErrors.push(e.message));
+  await rp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await rp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await rp.waitForTimeout(1200);
+
+  const race = await rp.evaluate(async () => {
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2000));
+    /* .card-title is text-transform:uppercase, so innerText comes back
+       shouting; match case-insensitively on the rendered string rather
+       than on what the source writes. */
+    const card = [...document.querySelectorAll('.card')]
+      .find((c) => /title race/i.test((c.querySelector('.card-title') || {}).innerText || ''));
+    if (!card) return { found: false };
+    const pcts = [...card.querySelectorAll('.dl-row .dl-col')]
+      .map((e) => parseFloat(e.textContent.replace('%', '')))
+      .filter((n) => Number.isFinite(n));
+    const bar = card.querySelector('.tr-bar');
+    const fill = card.querySelector('.tr-bar i');
+    return {
+      found: true,
+      text: card.innerText,
+      pcts,
+      rows: card.querySelectorAll('.dl-row').length,
+      mine: card.querySelectorAll('.dl-row.league-me').length,
+      strip: !!card.querySelector('.tr-me'),
+      barBg: bar ? getComputedStyle(bar).backgroundColor : null,
+      fillW: fill ? fill.getBoundingClientRect().width : 0,
+      barW: bar ? bar.getBoundingClientRect().width : 0,
+      stack: (() => {
+        const row = card.querySelector('.dl-row');
+        const nm = row.querySelector('.dl-nm').getBoundingClientRect();
+        const sub = row.querySelector('.dl-sub').getBoundingClientRect();
+        const br = row.querySelector('.tr-bar').getBoundingClientRect();
+        return { nmBottom: nm.bottom, subTop: sub.top, subBottom: sub.bottom, barTop: br.top };
+      })(),
+    };
+  });
+
+  ok(race.found === true, 'the title race card renders for a classic league');
+  ok(race.rows === 3, 'one row per manager, got ' + race.rows);
+  ok(race.mine === 1, 'the signed-in manager’s row is highlighted');
+  ok(race.strip === true, 'and their own odds get the headline strip');
+
+  /* THE POINT OF THE WHOLE FEATURE. Whole-percent rounding across three
+     rows can move the visible total by at most a point or so; anything
+     further out means the numbers on screen are not a distribution. */
+  const total = (race.pcts || []).reduce((a, b) => a + b, 0);
+  ok((race.pcts || []).length === 3, 'every manager shows a percentage, got ' + (race.pcts || []).length);
+  ok(Math.abs(total - 100) <= 2, 'the odds on screen add up to 100% (got ' + total + ')');
+
+  /* The leader of a three-way race that is 30 points clear should be the
+     favourite, and the table is sorted best-first. */
+  ok(race.pcts[0] >= race.pcts[2], 'the rows are ordered by odds, best first');
+
+  /* REGRESSION on a CSS variable that does not exist. The bar track was
+     written as var(--line); this codebase calls it --border-2. An
+     undefined custom property is not an error — it falls back to
+     transparent, so the bar silently vanishes in both themes and every
+     text-based assertion still passes. Only a computed style can see it. */
+  ok(race.barBg && !/rgba\(0, 0, 0, 0\)|transparent/.test(race.barBg),
+     'the likelihood bar has a visible track (' + race.barBg + ')');
+  ok(race.barW > 0 && race.fillW > 0, 'and the bar actually occupies space');
+  ok(race.fillW <= race.barW + 1, 'with the fill inside its track');
+
+  /* Same trap the Mini-Leagues rows fell into, and the reason the bar
+     was zero-width first time round: .dl-row .dl-grow lays its children
+     out in a ROW, so three spans dropped straight in end up beside each
+     other rather than stacked, and a flex item with no content gets no
+     width at all. textContent cannot see any of that — only the boxes
+     can. */
+  ok(race.stack.subTop >= race.stack.nmBottom - 1,
+     'the manager line sits below the team name, not beside it (' +
+     Math.round(race.stack.nmBottom) + ' / ' + Math.round(race.stack.subTop) + ')');
+  ok(race.stack.barTop >= race.stack.subBottom - 1,
+     'and the bar sits below both, not alongside them');
+
+  /* Never present a simulation as a forecast. */
+  ok(/not a forecast/i.test(race.text), 'the card says these are odds, not a forecast');
+  ok(/add up to 100%/i.test(race.text), 'and states the property the reader can check');
+
+  ok(rErrors.length === 0, 'the title race threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
+  await rp.close();
+}
+
+section('your matchday: which of my players are on, and when');
+{
+  /* Asked for: a way to see when squad players are due to play, so the
+     matches worth watching are obvious before kickoff. The fixture list
+     already had the times and the squad already had the players; nothing
+     joined them. */
+  const mp = await browser.newPage();
+  const mErrors = [];
+  mp.on('pageerror', (e) => mErrors.push(e.message));
+  await mp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await mp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await mp.waitForTimeout(1200);
+
+  const md = await mp.evaluate(async () => {
+    /* The panel is registered as 'results'; 'matchday' is the label. */
+    try { openPanel('results'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2200));
+    const card = [...document.querySelectorAll('.card')]
+      .find((c) => /your matchday/i.test((c.querySelector('.card-title') || {}).innerText || ''));
+    if (!card) return { found: false, panels: document.body.innerText.slice(0, 200) };
+    const rows = [...card.querySelectorAll('.dl-row')];
+    const head = document.querySelector('.mc-head');
+    const when = card.querySelector('.md-when');
+    const nm = rows[0] && rows[0].querySelector('.dl-nm');
+    const sub = rows[0] && rows[0].querySelector('.dl-sub');
+    return {
+      found: true,
+      text: card.innerText,
+      rows: rows.length,
+      markers: document.querySelectorAll('.mc-mine').length,
+      /* .mc-head is a five-column grid; the squad marker was folded in
+         beside the state badge precisely so it stays five. */
+      headKids: head ? head.children.length : null,
+      badgeHasBoth: !!(head && head.querySelector('.mc-badge .mc-mine')),
+      whenW: when ? when.getBoundingClientRect().width : 0,
+      stack: (nm && sub) ? { nmBottom: nm.getBoundingClientRect().bottom,
+                             subTop: sub.getBoundingClientRect().top } : null,
+      counts: [...document.querySelectorAll('.mc-mine')].map((e) => e.textContent),
+    };
+  });
+
+  ok(md.found === true, 'the matchday card renders (' + (md.panels || '') + ')');
+  /* Six of GW1's ten fixtures involve this squad — derived from the mock,
+     not guessed: the other four are between clubs nobody here owns. */
+  ok(md.rows === 6, 'one row per fixture involving my squad, got ' + md.rows);
+
+  /* The card and the fixture list below it are two renderings of the same
+     join, so they have to agree. If one drifts, this catches it. */
+  ok(md.markers > 0 && md.markers === md.rows,
+     'every fixture flagged in the list is a row in the card (' + md.markers + ' vs ' + md.rows + ')');
+
+  /* REGRESSION on the grid. Adding a sixth child to .mc-head would
+     re-flow every fixture row in the panel — teams and score would slide
+     out of their columns — and no text assertion would notice. */
+  ok(md.headKids === 5, '.mc-head is still a five-column grid, got ' + md.headKids);
+  ok(md.badgeHasBoth === true, 'and the squad marker shares the badge cell rather than adding one');
+
+  ok(md.whenW > 0, 'the kickoff column has width');
+  ok(md.stack && md.stack.subTop >= md.stack.nmBottom - 1,
+     'the players line sits below the fixture, not beside it');
+
+  /* The point of the card: it says how many are left, and marks the
+     captain, so the matches that matter most are obvious. */
+  ok(/still to play|playing now|finished/i.test(md.text),
+     'the card summarises where the gameweek stands');
+  ok(/\(C\)/.test(md.text), 'and marks the captain');
+  ok(md.counts.every((c) => /^●\d/.test(c)),
+     'each flagged fixture shows how many of mine are in it (' + md.counts.join(' ') + ')');
+
+  ok(mErrors.length === 0, 'the matchday panel threw nothing (' + mErrors.slice(0, 2).join(' | ') + ')');
+  await mp.close();
 }
 
 section('no uncaught errors');

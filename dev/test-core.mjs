@@ -128,6 +128,13 @@ const pieces = [
   extractFn(html, 'priceLocked'),
   extractFn(html, 'priceSource'),
   extractFn(html, 'fixtureOver'),
+  ...['RACE_TRIALS', 'RACE_SD_PRIOR', 'RACE_PRIOR_N', 'RACE_SD_FLOOR']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'raceSpread'),
+  extractFn(html, 'gwsRemaining'),
+  extractFn(html, 'titleRace'),
+  extractConst(html, 'POS_SHORT'),
+  extractFn(html, 'squadMatchday'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
   extractFn(html, 'bestXI'),
@@ -273,7 +280,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -458,6 +465,441 @@ section('fixtureOver: a match that has ended is not still live');
 
   ok(core.fixtureOver(null) === false, 'a null fixture is not over, and does not throw');
   ok(core.fixtureOver(undefined) === false, 'nor an undefined one');
+}
+
+section('raceSpread: a part-played gameweek is not a measurement');
+{
+  const S = core.RACE_SD_PRIOR;
+
+  /* THE TRAP. Two hours into a Saturday everybody has played three
+     players, everybody is on ~12 points, and the spread between managers
+     looks tiny. Feed that to the simulation and the current leader wins
+     the title with near-certainty, because the model has been told the
+     league has almost no randomness left in it. Only a settled gameweek
+     counts. */
+  const partScored = [11, 12, 13, 12, 11, 12];
+  ok(core.raceSpread(partScored, false).sd === S,
+     'a gameweek still being played falls back to the prior');
+  ok(core.raceSpread(partScored, false).fromData === false,
+     'and says so rather than claiming a measurement');
+  ok(core.raceSpread(partScored, true).sd < S,
+     'the very same numbers DO move the estimate once the gameweek is settled');
+
+  /* Guards the `complete` flag itself: if it were ignored, the two calls
+     above would agree and the trap would be invisible. */
+  ok(core.raceSpread(partScored, false).sd !== core.raceSpread(partScored, true).sd,
+     'the settled flag changes the answer — it is read, not decorative');
+
+  ok(core.raceSpread([40, 80], true).fromData === false,
+     'two managers are too few to measure a spread from');
+  ok(core.raceSpread([], true).sd === S, 'and none at all is the prior');
+  ok(core.raceSpread(null, true).sd === S, 'a missing list does not throw');
+  ok(core.raceSpread([50, 'x', null, undefined, 60, 70], true).n === 3,
+     'non-numeric entries are dropped rather than counted as zero');
+
+  /* A wide, real spread must pull the estimate ABOVE the prior, not just
+     shrink toward it — shrinkage that can only ever reduce would quietly
+     cap every league at the prior. */
+  const wide = [10, 30, 50, 70, 90, 110, 20, 100, 45, 85, 15, 95];
+  ok(core.raceSpread(wide, true).sd > S,
+     'a genuinely wide league measures wider than the prior');
+
+  /* Shrinkage is toward the prior, so a small sample cannot swing all the
+     way to its own observed value. */
+  const tight = [50, 50, 50, 51, 50, 50];
+  const t = core.raceSpread(tight, true);
+  ok(t.sd > 0.4 && t.sd < S,
+     'a freakishly tight sample is pulled back toward the prior, not believed');
+  ok(t.sd >= 4, 'and never falls below the floor');
+}
+
+section('gwsRemaining: the current gameweek is counted once, or not at all');
+{
+  const EVENTS = Array.from({ length: 38 }, (_, i) => ({ id: i + 1 }));
+
+  /* GW2 in progress: GW2..GW38 are still to be played. */
+  ok(core.gwsRemaining(EVENTS, 2, false) === 37,
+     'an unsettled gameweek is still to come');
+  /* Once GW2 is settled its points are banked in `total`; counting it
+     again would pay every manager for it twice. */
+  ok(core.gwsRemaining(EVENTS, 2, true) === 36,
+     'a settled gameweek is banked, not remaining');
+  ok(core.gwsRemaining(EVENTS, 38, true) === 0, 'the season can reach zero');
+  ok(core.gwsRemaining(EVENTS, 38, false) === 1, 'the final gameweek still counts while it is on');
+  ok(core.gwsRemaining(EVENTS, 40, true) === 0, 'never negative');
+  ok(core.gwsRemaining([], 2, false) === 0, 'no events, nothing to play');
+  ok(core.gwsRemaining(EVENTS, null, false) === 0, 'no current gameweek, nothing to play');
+}
+
+section('titleRace: the probabilities must add up');
+{
+  const L = (n) => Array.from({ length: n }, (_, i) => ({
+    entry: 100 + i, name: 'Team ' + i, mgr: 'M' + i, rank: i + 1,
+    total: 200 - i * 8,
+  }));
+  const sum = (r) => r.rows.reduce((a, x) => a + x.win, 0);
+
+  /* THE PROPERTY THE WHOLE DESIGN EXISTS FOR. Exactly one manager wins a
+     league, so the odds across the league are a probability distribution.
+     A per-manager formula produces plausible numbers that do not add to
+     one — a table of numbers that cannot all be true. A joint simulation
+     cannot fail this, which is precisely why it is a joint simulation. */
+  for (const n of [2, 3, 6, 20, 50]) {
+    const r = core.titleRace(L(n), 37, { trials: 4000 });
+    ok(Math.abs(sum(r) - 1) < 1e-9,
+       n + ' managers: the win probabilities sum to exactly 1');
+  }
+
+  /* Deterministic: a repaint must not reshuffle the odds. */
+  const a = core.titleRace(L(6), 37, { trials: 4000 });
+  const b = core.titleRace(L(6), 37, { trials: 4000 });
+  ok(JSON.stringify(a.rows) === JSON.stringify(b.rows),
+     'the same league renders the same odds every time');
+
+  /* Monotone in the gap: being further behind cannot help. */
+  const mono = core.titleRace(L(6), 37, { trials: 8000 }).rows;
+  const byTotal = mono.slice().sort((x, y) => y.total - x.total);
+  ok(byTotal.every((x, i) => i === 0 || byTotal[i - 1].win >= x.win - 0.02),
+     'more points banked never means worse odds');
+  ok(mono[0].win >= mono[mono.length - 1].win, 'and the leader is the favourite');
+
+  /* Rows come back best-first so the card can render them in order. */
+  ok(mono.every((x, i) => i === 0 || mono[i - 1].win >= x.win),
+     'rows are sorted by odds, best first');
+}
+
+section('titleRace: a long season is mostly noise, a short one is mostly the gap');
+{
+  const SIX = Array.from({ length: 6 }, (_, i) => ({
+    entry: 100 + i, name: 'T' + i, mgr: 'M' + i, rank: i + 1, total: 120 - i * 4,
+  }));
+
+  /* Six managers within 20 points at GW2, 37 gameweeks left. The gap is
+     tiny next to the remaining swing (14*sqrt(37) is about 85 points), so
+     the honest answer is close to one-in-six for everybody. Anything that
+     confidently separates these managers now is reading noise as signal.
+     This is the test that would fail if the model ever started treating
+     an early-season lead as meaningful. */
+  const early = core.titleRace(SIX, 37, { trials: 20000 });
+  ok(early.rows.every((r) => r.win > 0.09 && r.win < 0.26),
+     'at GW2 nobody in a tight six is far from one-in-six');
+  ok(early.rows[0].win - early.rows[5].win < 0.16,
+     'and the spread between best and worst odds stays modest');
+
+  /* The same table with one gameweek to go is a different league. Note
+     what does NOT happen: a 4-point lead with one gameweek of 14-point
+     swing left is worth a lot more than it was in August, but it is
+     still not a lock, and the model must not pretend otherwise. What
+     changes decisively is the BOTTOM of the table — with 37 gameweeks
+     left everyone is live, with one left the back markers are done. */
+  const late = core.titleRace(SIX, 1, { trials: 20000 });
+  ok(late.rows[0].win > 2 / 6,
+     'with one gameweek left the leader is a clear favourite, not one of six');
+  ok(late.rows[0].win < 0.6,
+     'but a 4-point lead against a 14-point swing is still not a formality');
+  ok(late.rows[0].win > early.rows[0].win + 0.12,
+     'the leader is meaningfully safer in May than in August on an identical table');
+  ok(late.rows[5].win < early.rows[5].win / 2,
+     'and the manager 20 points back has run out of gameweeks to close it');
+
+  /* Even across 37 gameweeks the leader must still be VISIBLY ahead. This
+     looks like a restatement of the band above and is not: it is the
+     lower net for a swing that grows too fast. Overstate the remaining
+     randomness and every manager converges on exactly one-in-six, which
+     passes a "close to uniform" test by being uniform for the wrong
+     reason. */
+  ok(early.rows[0].win > 0.18,
+     'a 20-point lead is still worth something over 37 gameweeks');
+
+  /* Points accumulate as a random walk, so VARIANCE grows with the number
+     of gameweeks and the spread grows with its square root. That single
+     choice is what makes an August lead nearly worthless and a May lead
+     nearly safe, and it deserves to be pinned exactly rather than
+     inferred from soft bands.
+
+     The identity: quadrupling the horizon doubles the swing, so it must
+     land in precisely the same place as halving the gap. Both runs draw
+     the same normals — same seed, same trial count, same league size —
+     so every trial reduces to the same comparison and the two tables
+     agree exactly, not merely closely. Under any other exponent the
+     ratios come apart and this fails. */
+  const P = (gap, gws) => core.titleRace([
+    { entry: 1, name: 'A', mgr: 'a', rank: 1, total: gap },
+    { entry: 2, name: 'B', mgr: 'b', rank: 2, total: 0 },
+  ], gws, { sd: 14, trials: 8000 }).rows.find((r) => r.entry === 1).win;
+
+  ok(P(20, 4) === P(10, 1),
+     'four times the horizon is exactly twice the swing — variance adds, spread is its root');
+  ok(P(30, 9) === P(10, 1), 'and nine times the horizon is exactly three times the swing');
+  /* Negative control: if the scaling were linear these would agree
+     instead, so the identity above has to be the discriminating one. */
+  ok(P(40, 4) !== P(10, 1),
+     'a linear horizon is NOT what the model does');
+  ok(Math.abs(late.rows.reduce((a, x) => a + x.win, 0) - 1) < 1e-9,
+     'and it still adds up');
+}
+
+section('titleRace: a shared scoring rate cannot change who wins');
+{
+  const M = (rate) => Array.from({ length: 5 }, (_, i) => ({
+    entry: 200 + i, name: 'T' + i, mgr: 'M' + i, rank: i + 1,
+    total: 150 - i * 10, rate,
+  }));
+
+  /* The documented reason the model needs no points-per-gameweek forecast:
+     a rate every manager shares shifts every final total equally and
+     cannot reorder them. If this ever fails, the model has started
+     depending on a number it has no business predicting. */
+  const none = core.titleRace(M(undefined), 20, { trials: 8000 });
+  const slow = core.titleRace(M(45), 20, { trials: 8000 });
+  const fast = core.titleRace(M(90), 20, { trials: 8000 });
+  ok(JSON.stringify(none.rows) === JSON.stringify(slow.rows),
+     'giving everyone a scoring rate changes nothing');
+  ok(JSON.stringify(slow.rows) === JSON.stringify(fast.rows),
+     'and doubling that shared rate changes nothing either');
+
+  /* A rate ADVANTAGE, though, must help — otherwise the parameter is
+     inert and the test above would pass for the wrong reason. */
+  const uplift = M(50);
+  uplift[4].rate = 58;                       /* last place, 8 pts/gw better */
+  const helped = core.titleRace(uplift, 20, { trials: 8000 });
+  const flat = core.titleRace(M(50), 20, { trials: 8000 });
+  const find = (r) => r.rows.find((x) => x.entry === 204).win;
+  ok(find(helped) > find(flat),
+     'a manager who scores faster than the field does gain ground');
+
+  /* The same invariance seen from the other side: a league race depends
+     on the gaps between totals, never on their absolute size. Awarding
+     every manager a thousand extra points changes nobody's chances.
+     Worth pinning because it is the assumption that lets the model skip
+     forecasting a points-per-gameweek rate at all — and because a
+     future "projected final total" feature would be the obvious way to
+     break it by accident. */
+  const shifted = M(50).map((m) => Object.assign({}, m, { total: m.total + 1000 }));
+  const same = core.titleRace(shifted, 20, { trials: 8000 });
+  ok(same.rows.every((r, i) => r.win === flat.rows[i].win),
+     'adding a constant to every total changes nothing');
+  ok(Math.abs(helped.rows.reduce((a, x) => a + x.win, 0) - 1) < 1e-9,
+     'and the distribution still sums to 1');
+}
+
+section('titleRace: settled seasons, ties and degenerate leagues');
+{
+  const two = (ta, tb) => ([
+    { entry: 1, name: 'A', mgr: 'a', rank: 1, total: ta },
+    { entry: 2, name: 'B', mgr: 'b', rank: 2, total: tb },
+  ]);
+
+  /* No gameweeks left: the table IS the result. No simulation, no
+     probabilistic hedging on a season that has already happened. */
+  const done = core.titleRace(two(200, 180), 0);
+  ok(done.decided === true, 'a finished season is decided, not simulated');
+  ok(done.rows[0].win === 1 && done.rows[1].win === 0,
+     'the leader has won it, at 100%');
+  ok(done.err === 0, 'and there is no simulation error to report');
+
+  /* A dead heat splits rather than picking one, which is what keeps the
+     sum exact. */
+  const tie = core.titleRace(two(200, 200), 0);
+  ok(tie.rows[0].win === 0.5 && tie.rows[1].win === 0.5,
+     'a tie splits the win evenly');
+  ok(tie.rows[0].win + tie.rows[1].win === 1, 'so the total is still 1');
+
+  ok(core.titleRace([], 10) === null, 'an empty league has no race');
+  ok(core.titleRace([{ entry: 1, name: 'A', mgr: 'a', rank: 1, total: 5 }], 10) === null,
+     'and neither does a league of one');
+  ok(core.titleRace(null, 10) === null, 'a missing list does not throw');
+
+  /* A manager with no total yet is dropped, not treated as zero — zero
+     would read as "hopelessly last" for somebody the API simply has not
+     scored. */
+  const withHole = two(200, 180).concat([{ entry: 3, name: 'C', mgr: 'c', rank: 3, total: null }]);
+  const r = core.titleRace(withHole, 5, { trials: 2000 });
+  ok(r.rows.length === 2, 'a manager with no total is dropped, not zeroed');
+  ok(Math.abs(r.rows.reduce((a, x) => a + x.win, 0) - 1) < 1e-9,
+     'and the remaining odds still sum to 1');
+
+  /* gap is measured from the leader and is what the card renders. */
+  ok(r.rows.find((x) => x.entry === 1).gap === 0, 'the leader is 0 behind');
+  ok(r.rows.find((x) => x.entry === 2).gap === 20, 'and the chaser is 20 behind');
+
+  /* A bad sd must not silently produce a decided league. */
+  const zeroSd = core.titleRace(two(200, 180), 10, { sd: 0, trials: 2000 });
+  ok(zeroSd.sd === core.RACE_SD_PRIOR,
+     'a zero spread falls back to the prior rather than freezing the table');
+  ok(zeroSd.rows[1].win > 0, 'so the chaser still has a chance');
+}
+
+section('squadMatchday: which of my players are on, and when');
+{
+  /* Two clubs playing each other, a third club playing elsewhere, and a
+     fourth with no fixture at all. Kickoffs deliberately out of order in
+     the source array so the sort has something to do. */
+  const T = { ARS: 1, CHE: 2, EVE: 3, NEW: 4, BLANKCLUB: 9 };
+  const ELS = {
+    10: { id: 10, web_name: 'Saka', team: T.ARS, element_type: 3 },
+    11: { id: 11, web_name: 'Rice', team: T.ARS, element_type: 3 },
+    12: { id: 12, web_name: 'Raya', team: T.ARS, element_type: 1 },
+    20: { id: 20, web_name: 'Palmer', team: T.CHE, element_type: 3 },
+    30: { id: 30, web_name: 'Pickford', team: T.EVE, element_type: 1 },
+    40: { id: 40, web_name: 'Isak', team: T.BLANKCLUB, element_type: 4 },
+  };
+  const PICKS = {
+    picks: [
+      { element: 10, position: 1, multiplier: 2, is_captain: true, is_vice_captain: false },
+      { element: 11, position: 2, multiplier: 1, is_captain: false, is_vice_captain: true },
+      { element: 20, position: 3, multiplier: 1, is_captain: false, is_vice_captain: false },
+      { element: 40, position: 4, multiplier: 1, is_captain: false, is_vice_captain: false },
+      { element: 30, position: 12, multiplier: 0, is_captain: false, is_vice_captain: false },
+      { element: 12, position: 13, multiplier: 0, is_captain: false, is_vice_captain: false },
+    ],
+  };
+  const FX = [
+    /* Sunday, later — listed FIRST to prove the sort is real. */
+    { id: 2, event: 5, team_h: T.EVE, team_a: T.NEW, kickoff_time: '2026-08-23T15:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+    /* Saturday lunchtime, already finished. */
+    { id: 1, event: 5, team_h: T.ARS, team_a: T.CHE, kickoff_time: '2026-08-22T11:30:00Z',
+      started: true, finished: true, finished_provisional: true },
+    /* A different gameweek entirely — must be ignored. */
+    { id: 3, event: 6, team_h: T.ARS, team_a: T.EVE, kickoff_time: '2026-08-29T14:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+  ];
+
+  const md = core.squadMatchday(PICKS, FX, ELS, 5);
+
+  ok(md !== null, 'a squad with fixtures produces a matchday');
+  ok(md.rows.length === 2, 'one row per fixture that involves my players, got ' + md.rows.length);
+
+  /* Ordering is the whole point of a "when do I watch" card. */
+  ok(md.rows[0].id === 1 && md.rows[1].id === 2,
+     'rows are in kickoff order, not source order');
+
+  /* The other gameweek must not leak in — the fixture list holds the
+     whole season and filtering on event is the only thing keeping GW6
+     out of GW5's schedule. */
+  ok(!md.rows.some((r) => r.id === 3), 'a fixture from another gameweek is not in this one');
+
+  /* Both my Arsenal starters AND my Chelsea starter are in fixture 1,
+     because both clubs are in it. Plus Raya on the bench. */
+  const first = md.rows[0];
+  ok(first.players.length === 4, 'every player from either club is in the row, got ' + first.players.length);
+  ok(first.players.map((p) => p.name).join(',') === 'Saka,Rice,Palmer,Raya',
+     'and they come back in squad order (' + first.players.map((p) => p.name).join(',') + ')');
+  ok(first.players[0].cap === true, 'the captain is flagged');
+  ok(first.players[1].vice === true, 'and so is the vice');
+  ok(first.players[3].bench === true, 'and the bench player is marked as bench');
+  ok(first.players[0].pos === 'MID' && first.players[3].pos === 'GKP',
+     'positions come through');
+
+  /* THE THING THAT IS INVISIBLE FROM THE FIXTURE SIDE. A player whose
+     club has no fixture cannot be found by looping over fixtures — he is
+     defined by being absent from all of them — so blanks are computed
+     from the squad. This is also the single most useful flag on the
+     card: a starter who is not playing at all. */
+  ok(md.blanks.length === 1 && md.blanks[0].name === 'Isak',
+     'a player whose club has no fixture is flagged as a blank');
+  ok(md.blanks[0].state === 'blank', 'and his state says so rather than "yet to play"');
+  ok(!md.rows.some((r) => r.players.some((p) => p.name === 'Isak')),
+     'and he appears in no fixture row, because he is in no fixture');
+
+  /* Counts are over the XI, and a blank is not a "still to play". */
+  ok(md.xi.done === 3, 'three of the XI have finished (' + md.xi.done + ')');
+  ok(md.xi.blank === 1, 'one of the XI has no fixture');
+  ok(md.xi.toPlay === 0, 'and nobody in the XI is still to play — the blank is not waiting');
+  ok(md.counts.done === 4, 'the all-squad tally counts the bench too (' + md.counts.done + ')');
+
+  /* next is the match to actually be watching. */
+  ok(md.next && md.next.id === 2, 'next up is the earliest match not yet started');
+}
+
+section('squadMatchday: doubles, blanks and unscheduled kickoffs');
+{
+  const ELS = {
+    10: { id: 10, web_name: 'Doubler', team: 1, element_type: 3 },
+    20: { id: 20, web_name: 'Single', team: 2, element_type: 3 },
+  };
+  const PICKS = { picks: [
+    { element: 10, position: 1, multiplier: 1 },
+    { element: 20, position: 2, multiplier: 1 },
+  ] };
+
+  /* Team 1 plays twice. One match is over, the other has not kicked off.
+     A per-fixture reading would call him finished off the first match;
+     he plainly is not — he has a whole game left. */
+  const DGW = [
+    { id: 1, event: 7, team_h: 1, team_a: 3, kickoff_time: '2026-09-01T18:00:00Z',
+      started: true, finished: true, finished_provisional: true },
+    { id: 2, event: 7, team_h: 4, team_a: 1, kickoff_time: '2026-09-04T18:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+    { id: 3, event: 7, team_h: 2, team_a: 5, kickoff_time: '2026-09-02T18:00:00Z',
+      started: true, finished: true, finished_provisional: true },
+  ];
+  const md = core.squadMatchday(PICKS, DGW, ELS, 7);
+  ok(md.rows.length === 3, 'a doubling player puts his club in two rows');
+  const dbl = md.players.find((p) => p.name === 'Doubler');
+  ok(dbl.games === 2, 'and the player knows he has two matches');
+  ok(dbl.state === 'toPlay',
+     'one match finished and one to come is STILL to play, not done');
+  ok(md.players.find((p) => p.name === 'Single').state === 'done',
+     'while a single-fixture player with his match over is done');
+  ok(md.doubles.length === 1 && md.doubles[0].name === 'Doubler',
+     'doubles are surfaced so the card can say so');
+  ok(md.next.id === 2, 'and the next match is the one still to come');
+
+  /* A match in play beats both — that is the one on the telly now. */
+  const LIVE = DGW.map((f) => f.id === 2
+    ? Object.assign({}, f, { started: true, finished: false, finished_provisional: false })
+    : f);
+  ok(core.squadMatchday(PICKS, LIVE, ELS, 7).players.find((p) => p.name === 'Doubler').state === 'live',
+     'a match in play makes the player live');
+  ok(core.squadMatchday(PICKS, LIVE, ELS, 7).next === null,
+     'and with nothing unstarted left there is no next match');
+
+  /* FPL leaves kickoff_time null until a match is scheduled. Date.parse
+     of that is NaN, and NaN sorts unpredictably — an unscheduled match
+     must land at the END, not masquerade as the earliest kickoff of the
+     gameweek and become "next up". */
+  const TBC = [
+    { id: 9, event: 8, team_h: 1, team_a: 3, kickoff_time: null,
+      started: false, finished: false, finished_provisional: false },
+    { id: 8, event: 8, team_h: 2, team_a: 4, kickoff_time: '2026-09-12T14:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+  ];
+  const t = core.squadMatchday(PICKS, TBC, ELS, 8);
+  ok(t.rows[0].id === 8, 'a scheduled match comes before an unscheduled one');
+  ok(t.rows[1].ko === null, 'and the unscheduled one reports no kickoff rather than NaN');
+  ok(t.next.id === 8, 'so "next up" is a match with a time, not a TBC');
+}
+
+section('squadMatchday: nothing to show, and nothing to throw');
+{
+  const ELS = { 10: { id: 10, web_name: 'A', team: 1, element_type: 3 } };
+  const PICKS = { picks: [{ element: 10, position: 1, multiplier: 1 }] };
+  const FX = [{ id: 1, event: 5, team_h: 1, team_a: 2, kickoff_time: '2026-08-22T14:00:00Z',
+    started: false, finished: false, finished_provisional: false }];
+
+  ok(core.squadMatchday(null, FX, ELS, 5) === null, 'no picks, no matchday');
+  ok(core.squadMatchday({ picks: [] }, FX, ELS, 5) === null, 'an empty squad likewise');
+  ok(core.squadMatchday(PICKS, [], ELS, 5).rows.length === 0,
+     'no fixtures means no rows, not a throw');
+  ok(core.squadMatchday(PICKS, [], ELS, 5).blanks.length === 1,
+     'and everybody is a blank when the gameweek has no matches at all');
+  ok(core.squadMatchday(PICKS, null, ELS, 5).rows.length === 0, 'a missing fixture list is survivable');
+  ok(core.squadMatchday(PICKS, FX, null, 5) === null,
+     'without the player index there is nobody to place');
+
+  /* A pick the bootstrap does not know is skipped, not rendered as
+     undefined — this is what a mid-season player removal looks like. */
+  const ghost = { picks: PICKS.picks.concat([{ element: 999, position: 2, multiplier: 1 }]) };
+  const g = core.squadMatchday(ghost, FX, ELS, 5);
+  ok(g.players.length === 1, 'an unknown player id is dropped rather than shown as a blank name');
+
+  /* multiplier absent: position decides bench, because that is what the
+     bench actually is. */
+  const noMult = { picks: [{ element: 10, position: 14 }] };
+  ok(core.squadMatchday(noMult, FX, ELS, 5).players[0].bench === true,
+     'position 14 is on the bench even with no multiplier field');
 }
 
 section('fplPriceMove: FPL’s own figure, read rather than approximated');

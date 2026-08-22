@@ -662,6 +662,18 @@ html.offline .net-banner{transform:translateY(0)}
   text-transform:uppercase;color:var(--text-3);background:var(--surface-2);
   border-radius:6px;padding:3px;margin:10px 0 6px}
 .mc-you{color:var(--blue);margin-right:3px;font-size:.7rem;vertical-align:2px}
+/* Your matchday: the squad-vs-kickoff join. .mc-badge keeps the state
+   badge and the squad count in ONE grid cell — .mc-head is a five-column
+   grid and a sixth child would re-flow every fixture row. */
+.mc-badge{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.mc-mine{color:var(--blue);font-size:.68rem;font-weight:800;white-space:nowrap}
+.md-sum{font-weight:700;font-size:.86rem;margin-bottom:8px}
+.md-next{display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin-bottom:10px;
+  border-radius:8px;background:var(--green-soft)}
+.md-when{width:64px;flex-shrink:0;font-size:.72rem;color:var(--text-2)}
+.md-ko{font-weight:700}
+.md-c{color:var(--green-bright)}
+.md-v,.md-b{color:var(--text-3)}
 .bench .pp{flex-basis:58px}
 .bench .pp-fig{width:40px;height:44px}
 .bench .pp-nm,.bench .pp-pt{max-width:56px;font-size:var(--fs-min)}
@@ -891,6 +903,16 @@ html.offline .net-banner{transform:translateY(0)}
 /* Mini-league: highlight the user's row */
 .dl-row.league-me{background:var(--green-soft)}
 .dl-row.league-me .dl-nm{color:var(--green-bright)}
+/* Title race: the odds strip and the per-manager likelihood bar. The bar
+   is scaled to the leader's odds, not to 100%, so a near-level race
+   still reads as level instead of as six near-empty slivers. */
+.tr-me{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
+  padding:10px 12px;margin-bottom:10px;border-radius:10px;background:var(--green-soft)}
+.tr-big{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
+.tr-cell{display:block;flex:1;min-width:0}
+.tr-cell .dl-nm,.tr-cell .dl-sub{display:block}
+.tr-bar{display:block;height:4px;margin-top:6px;border-radius:3px;background:var(--border-2);overflow:hidden}
+.tr-bar i{display:block;height:100%;border-radius:3px;background:var(--green)}
 
 /* Watchlist item (row + inline AI verdict) */
 .wl-item{border-bottom:1px solid var(--border)}
@@ -15877,6 +15899,138 @@ function wireAsk(host){
   Array.prototype.forEach.call(host.querySelectorAll('[data-q]'),btn=>btn.addEventListener('click',()=>sendAsk(btn.dataset.q)));
 }
 
+/* ── Title race: each manager's chance of winning the league ──
+   A mini-league title is a random walk, not a ranking. Every manager
+   carries a banked total, and the season adds a large, mostly random
+   number to each of them. So the question "what are my odds?" is a
+   question about one gap and one variance: how far behind am I, and
+   how much noise is left to close it.
+
+   The model:
+     final_i = total_i + gwsLeft*rate_i + sd*sqrt(gwsLeft)*z_i
+   Monte Carlo over z, count who finishes on top. Two consequences fall
+   out of that form and both matter.
+
+   First, a rate every manager shares — the league's average scoring
+   rate — shifts every final total by the same amount and cannot change
+   who is top. It cancels. That is why nothing here needs to predict how
+   many points a gameweek is worth: only the DIFFERENCES between
+   managers move the answer, so only differences are modelled. Callers
+   may pass a per-manager `rate`; it is used as a deviation from the
+   league mean, and omitting it (the default) means "nobody is assumed
+   better than anybody else", which is the honest early-season position.
+
+   Second, because every trial has exactly one winner, the probabilities
+   sum to 1 by construction rather than by correction. That is the whole
+   reason this is a joint simulation and not a per-manager formula: run
+   each manager through their own normal-CDF and you get a table of
+   plausible-looking numbers that do not add up, which is a table of
+   numbers that cannot all be true. The test suite asserts the sum.
+
+   Ties split the win evenly, which keeps that sum exact.
+
+   Deliberately NOT modelled, because each would be a guess dressed as a
+   number: future transfers, chips still in hand, fixture swings, and any
+   correlation between managers' remaining scores. The last one is the
+   interesting omission — mini-league rivals own many of the same
+   players, so their scores rise and fall together, and shared movement
+   cancels exactly like a shared rate does. Correlation therefore lives
+   entirely in `sd`, which is a spread BETWEEN managers, not the spread
+   of a manager's own scores. raceSpread measures that directly when the
+   data allows and falls back to a prior when it does not. */
+const RACE_TRIALS=20000;
+/* Spread between managers' gameweek scores, in points, when there is no
+   settled gameweek to measure. Lower than the raw spread of FPL scores
+   across all managers (nearer 18) because mini-league rivals share most
+   of a squad, and the shared part cancels. Replaced by the measured
+   figure as soon as one complete gameweek exists — same fallback-then-
+   observe shape as SCORING_FALLBACK. */
+const RACE_SD_PRIOR=14;
+/* Weight of the prior when blending, in units of "managers observed".
+   At six managers the measured spread and the prior count equally; a
+   500-manager league is essentially all data. */
+const RACE_PRIOR_N=6;
+const RACE_SD_FLOOR=4;
+/* Spread between managers in a single gameweek, shrunk toward the prior
+   by sample size. `complete` MUST be false while the gameweek is still
+   being played: mid-match every manager is part-scored, the spread
+   collapses toward zero, and a collapsed spread reads as "the current
+   leader has already won". Variances blend, not standard deviations —
+   variance is the additive quantity. Pure. */
+function raceSpread(scores,complete){
+  const xs=(scores||[]).filter(v=>Number.isFinite(v));
+  if(!complete||xs.length<3)return {sd:RACE_SD_PRIOR,n:0,fromData:false};
+  const mean=xs.reduce((a,b)=>a+b,0)/xs.length;
+  const varObs=xs.reduce((a,b)=>a+(b-mean)*(b-mean),0)/(xs.length-1);
+  const w=xs.length/(xs.length+RACE_PRIOR_N);
+  const sd=Math.sqrt(w*varObs+(1-w)*RACE_SD_PRIOR*RACE_SD_PRIOR);
+  return {sd:Math.max(RACE_SD_FLOOR,sd),n:xs.length,fromData:true};
+}
+/* Gameweeks still to be played, counting the current one unless it has
+   already been settled (in which case its points are banked in `total`
+   and counting it again would pay for it twice). */
+function gwsRemaining(events,curId,curDone){
+  const last=(events||[]).reduce((a,e)=>Math.max(a,(e&&e.id)||0),0);
+  if(!last||!curId)return 0;
+  return Math.max(0,last-curId+(curDone?0:1));
+}
+/* members: [{entry,name,mgr,rank,total,rate?}]. Returns rows carrying a
+   win probability, sorted best-first, or null if there is nothing to
+   race. Deterministic: the PRNG is seeded from the entry ids, so the
+   same league renders the same odds every time rather than flickering
+   on each repaint. Pure. */
+function titleRace(members,gwsLeft,opts){
+  opts=opts||{};
+  const list=(members||[]).filter(m=>m&&Number.isFinite(m.total));
+  if(list.length<2)return null;
+  const n=Math.max(0,Math.floor(gwsLeft||0));
+  const sd=Number.isFinite(opts.sd)&&opts.sd>0?opts.sd:RACE_SD_PRIOR;
+  const swing=sd*Math.sqrt(n);
+  const rates=list.map(m=>Number.isFinite(m.rate)?m.rate:0);
+  const rBar=rates.reduce((a,b)=>a+b,0)/rates.length;
+  /* Only the deviation from the league mean survives; see the header.
+     Note honestly that `-rBar` cannot change the result: dropping it
+     would add the same rBar*n to every manager, and a constant added to
+     everyone is invisible to argmax. Mutation testing confirms it —
+     removing it fails nothing, and no test could be written that it
+     would fail. It stays because it keeps `base` on the same scale as
+     the totals it is built from, and because the modelling claim in the
+     header should be visible in the arithmetic rather than left as a
+     remark about arithmetic that does not say it. */
+  const base=list.map((m,i)=>m.total+(rates[i]-rBar)*n);
+  const trials=swing>0?Math.max(1,opts.trials||RACE_TRIALS):1;
+  let s=list.reduce((a,m)=>(a^(((m.entry|0)*2654435761)>>>0))>>>0,0x9E3779B9)||1;
+  const rnd=()=>{s=(s+0x6D2B79F5)|0;let t=Math.imul(s^s>>>15,1|s);t=(t+Math.imul(t^t>>>7,61|t))^t;return((t^t>>>14)>>>0)/4294967296;};
+  let spare=null;
+  const norm=()=>{
+    if(spare!=null){const v=spare;spare=null;return v;}
+    /* Box-Muller. rnd() can return exactly 0 and log(0) is -Infinity. */
+    const u=Math.max(rnd(),1e-12),v=rnd(),r=Math.sqrt(-2*Math.log(u)),th=6.283185307179586*v;
+    spare=r*Math.sin(th);return r*Math.cos(th);
+  };
+  const wins=new Array(list.length).fill(0);
+  const fin=new Array(list.length);
+  for(let t=0;t<trials;t++){
+    let top=-Infinity;
+    for(let i=0;i<list.length;i++){
+      const f=base[i]+(swing>0?swing*norm():0);
+      fin[i]=f;if(f>top)top=f;
+    }
+    let tied=0;
+    for(let i=0;i<list.length;i++)if(fin[i]===top)tied++;
+    for(let i=0;i<list.length;i++)if(fin[i]===top)wins[i]+=1/tied;
+  }
+  const lead=list.reduce((a,m)=>Math.max(a,m.total),-Infinity);
+  const rows=list.map((m,i)=>({entry:m.entry,name:m.name,mgr:m.mgr,rank:m.rank,
+    total:m.total,gap:lead-m.total,win:wins[i]/trials}))
+    .sort((a,c)=>c.win-a.win||a.gap-c.gap);
+  return {rows,trials,sd,gwsLeft:n,decided:swing<=0,
+    /* Monte Carlo error on a probability near a half, in probability
+       points. The UI rounds to whole percent because anything finer
+       claims resolution this does not have. */
+    err:swing>0?0.5/Math.sqrt(trials):0};
+}
+
 /* ── Mini-League Tracker ───────────────────────────────── */
 const loadStandings=(id,page)=>api('leagues-classic/'+id+'/standings'+(page>1?'?page_standings='+page:''));
 let LEAGUE_SEL=null,LEAGUE_TYPE='classic',LEAGUE_PAGE=1,LEAGUE_ME_RANK=0;
@@ -15947,6 +16101,68 @@ async function h2hOpponentCard(leagueId,meId,standings){
       '</div>'+projRow+live+'</div>';
   }catch(_){return '';}
 }
+/* The title-race card. Rendered only when the whole league is on screen:
+   with pages beyond the first, the managers we can see are the current
+   top 50 and the eventual winner is very often not among them yet —
+   early in a season a 500-manager league is won from mid-table more
+   often than not. Odds over a truncated field would be odds for a
+   different competition than the one the user is in, so the card stays
+   away rather than quietly renormalising over whoever happens to fit on
+   a page. Returns '' rather than throwing: a missing race card must
+   never cost the user their standings. */
+async function titleRaceCard(res,meId){
+  try{
+    if(!res||res.length<2)return '';
+    const b=await boot();
+    const ph=gwPhase(b,await loadFixtures());
+    /* Settled, not merely finished: while bonus is still being applied
+       the totals move, and raceSpread must not read a part-scored
+       gameweek as the real spread between managers. */
+    const curDone=!!ph.dataChecked;
+    const left=gwsRemaining(b.events,ph.cur&&ph.cur.id,curDone);
+    const sp=raceSpread(res.map(r=>r.event_total),curDone);
+    const race=titleRace(res.map(r=>({entry:r.entry,name:r.entry_name,
+      mgr:r.player_name,rank:r.rank,total:r.total})),left,{sd:sp.sd});
+    if(!race)return '';
+    const pct=w=>w<=0?'0%':w<0.005?'<1%':Math.round(w*100)+'%';
+    const top=race.rows[0]?race.rows[0].win:0;
+    const me=race.rows.find(r=>r.entry===meId);
+    const head=me
+      ? '<div class="tr-me"><span class="dl-grow"><span class="dl-sub">Your rank</span>'+
+          '<span class="tr-big">'+fmtNum(me.rank)+'</span></span>'+
+        '<span style="text-align:right"><span class="dl-sub">Win odds</span>'+
+          '<span class="tr-big" style="color:var(--green)">'+pct(me.win)+'</span></span></div>'
+      : '';
+    const rows=race.rows.map(r=>{
+      const w=top>0?Math.max(2,Math.round(100*r.win/top)):0;
+      return '<div class="dl-row'+(r.entry===meId?' league-me':'')+'">'+
+        '<span class="dl-rank">'+fmtNum(r.rank)+'</span>'+
+        /* .dl-row .dl-grow is a HORIZONTAL flex container — that is what
+           the earlier spacing fix made it — so these three would sit
+           side by side and the bar would collapse to nothing. The
+           standings rows stack their lines inside a display:block
+           button; this card has nothing to click, so it uses a plain
+           block cell for the same reason. */
+        '<span class="dl-grow"><span class="tr-cell">'+
+        '<span class="dl-nm">'+esc(r.name)+(r.entry===meId?' · you':'')+'</span>'+
+        '<span class="dl-sub">'+esc(r.mgr)+' · '+(r.gap>0?fmtNum(r.gap)+' behind':'leads')+'</span>'+
+        '<span class="tr-bar"><i style="width:'+w+'%"></i></span></span></span>'+
+        '<span class="dl-col mono">'+pct(r.win)+'</span></div>';
+    }).join('');
+    const note=race.decided
+      ? 'The season is over — this is the final table.'
+      : 'Simulated '+fmtNum(race.trials)+' seasons from each manager’s current total and '+
+        fmtNum(race.gwsLeft)+' gameweek'+(race.gwsLeft===1?'':'s')+' of remaining swing'+
+        (sp.fromData?' (spread measured from this league’s last completed gameweek)':
+                     ' (spread from a season-average prior until a gameweek completes)')+
+        '. Across all '+fmtNum(race.rows.length)+' managers these add up to 100% — exactly one of them wins. '+
+        'Nobody is assumed to be a better manager than anybody else, and future transfers, chips and '+
+        'fixtures are not modelled, so treat these as odds on the gap, not a forecast of the season.';
+    return '<div class="card mb-20"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Title race</div>'+
+      head+'<div class="dl">'+rows+'</div>'+
+      '<p class="dl-sub" style="margin:10px 0 0">'+note+'</p></div>';
+  }catch(_){return '';}
+}
 async function renderLeagueStandings(host,leagueId,mid,type){
   host.innerHTML='<div class="card">'+skel(7)+'</div>';
   const back='<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;LEAGUE_PAGE=1;renderPage(\'leagues\')">‹ All leagues</button>';
@@ -15988,11 +16204,16 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       '</div>'
     : '';
   const oppCard=h2h?await h2hOpponentCard(leagueId,meId,res):'';
+  /* Classic only. A head-to-head title is decided by a fixture list, not
+     by total points, so this simulation would answer the wrong question
+     there — a H2H race needs the schedule modelled and that is a
+     different engine. */
+  const raceCard=(!h2h&&page===1&&!hasNext)?await titleRaceCard(res,meId):'';
   host.innerHTML=back+oppCard+
     '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
     '<div class="dl" id="league-standings">'+head+rows+'</div>'+pager+'</div>'+
-    awards;
+    raceCard+awards;
   /* Every standing is a manager, and a manager has a squad. Same card the
      Rivals panel opens — a mini-league table is where people actually look
      their rivals up, and having to add somebody to a separate list first in
@@ -17011,13 +17232,152 @@ function resNav(step){
   const h=document.getElementById('mc-body')||document.getElementById('ge-data');
   if(h)hydrateResults(h);
 }
+/* ── Your matchday: which of your players are on, and when ──
+   The fixture list already knows when every match kicks off, and the
+   squad already knows who you own, but nothing joined the two: before a
+   ball was kicked there was no way to see that three of your players
+   are in the Saturday lunchtime game and none are in the late one. This
+   does the join — fixture by fixture, in kickoff order, with your
+   players in each.
+
+   Three things it must get right, none of which are obvious:
+
+   Double gameweeks. A player can appear in two fixtures, so he appears
+   in two rows. That means per-player state cannot be read off a single
+   fixture: he is 'done' only when ALL of his matches are over, and
+   still 'to play' if one has finished and another has not started.
+   Counting fixture appearances instead of players would say a
+   doubling player is half-done, which is not a thing.
+
+   Blanks. A player whose club has no fixture at all this gameweek is
+   the single most useful thing to flag here, and he is invisible to any
+   loop over fixtures — he is defined by his ABSENCE from the list. So
+   blanks are computed from the squad side, not the fixture side.
+
+   Unscheduled kickoffs. FPL leaves kickoff_time null until a match is
+   scheduled. Those sort last rather than first, which is what
+   Date.parse(null) → NaN would otherwise do to the ordering. */
+/* POS_SHORT is declared once, up with the mystery player, and already
+   carries element type 5 (MNG) which an array indexed 1..4 would drop. */
+function squadMatchday(picks,fixtures,els,gw){
+  const list=(picks&&picks.picks)||[];
+  if(!list.length)return null;
+  const fx=(fixtures||[]).filter(f=>f&&f.event===gw);
+  const byTeam={};
+  fx.forEach(f=>{
+    if(f.team_h!=null)(byTeam[f.team_h]=byTeam[f.team_h]||[]).push(f);
+    if(f.team_a!=null)(byTeam[f.team_a]=byTeam[f.team_a]||[]).push(f);
+  });
+  const mine=[];
+  list.forEach(p=>{
+    const el=(els||{})[p&&p.element];
+    if(!el)return;
+    const games=byTeam[el.team]||[];
+    /* All of a player's matches are over → done. Any in play → live.
+       Otherwise there is football still to come. No fixture at all is a
+       blank, which is a different thing from being finished. */
+    const state=!games.length?'blank'
+      :games.some(f=>f.started&&!fixtureOver(f))?'live'
+      :games.every(f=>fixtureOver(f))?'done':'toPlay';
+    mine.push({id:el.id,name:el.web_name,team:el.team,
+      pos:POS_SHORT[el.element_type]||'',
+      bench:p.position>11,order:p.position,
+      cap:!!p.is_captain,vice:!!p.is_vice_captain,
+      games:games.length,state:state});
+  });
+  if(!mine.length)return null;
+  const inFix=(m,f)=>m.team===f.team_h||m.team===f.team_a;
+  const rows=fx.filter(f=>mine.some(m=>inFix(m,f))).map(f=>{
+    const ko=f.kickoff_time?Date.parse(f.kickoff_time):NaN;
+    return {id:f.id,kickoff:f.kickoff_time||null,ko:Number.isFinite(ko)?ko:null,
+      teamH:f.team_h,teamA:f.team_a,started:!!f.started,over:fixtureOver(f),
+      players:mine.filter(m=>inFix(m,f)).sort((a,c)=>a.order-c.order)};
+  }).sort((a,c)=>{
+    /* A match with no kickoff time yet is not "the earliest match". */
+    const ax=a.ko==null?Infinity:a.ko,cx=c.ko==null?Infinity:c.ko;
+    return ax-cx||a.id-c.id;
+  });
+  const tally=arr=>({toPlay:arr.filter(m=>m.state==='toPlay').length,
+    live:arr.filter(m=>m.state==='live').length,
+    done:arr.filter(m=>m.state==='done').length,
+    blank:arr.filter(m=>m.state==='blank').length});
+  const xi=mine.filter(m=>!m.bench);
+  return {rows,players:mine,gw:gw,
+    blanks:mine.filter(m=>m.state==='blank').sort((a,c)=>a.order-c.order),
+    doubles:mine.filter(m=>m.games>1).sort((a,c)=>a.order-c.order),
+    counts:tally(mine),xi:tally(xi),
+    /* The next match you actually need to be watching. */
+    next:rows.find(r=>!r.started)||null};
+}
+const koLabel=ms=>ms==null?'TBC'
+  :new Date(ms).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'});
+/* Renders squadMatchday. `stale` says the squad shown is today's rather
+   than the viewed gameweek's, which happens on a gameweek that has not
+   opened yet — the card has to say so, because a squad shown against
+   matches it was never picked for is a claim about a team that does not
+   exist. */
+function matchdayCard(md,b,stale){
+  if(!md||(!md.rows.length&&!md.blanks.length))return '';
+  const nm=m=>esc(m.name)+(m.cap?' <b class="md-c">(C)</b>':m.vice?' <span class="md-v">(V)</span>':'');
+  const row=r=>{
+    const xi=r.players.filter(m=>!m.bench),bench=r.players.filter(m=>m.bench);
+    const when=r.over?'<span class="badge badge-grey">FT</span>'
+      :r.started?'<span class="badge badge-red">LIVE</span>'
+      :'<span class="md-ko">'+esc(koLabel(r.ko))+'</span>';
+    const who=(xi.length?xi.map(nm).join(', '):'<i>bench only</i>')+
+      (bench.length?'<span class="md-b"> · bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>':'');
+    return '<div class="dl-row"><span class="md-when">'+when+'</span>'+
+      '<span class="dl-grow"><span class="tr-cell">'+
+        '<span class="dl-nm">'+esc(teamShort(b,r.teamH))+' v '+esc(teamShort(b,r.teamA))+'</span>'+
+        '<span class="dl-sub">'+who+'</span></span></span>'+
+      '<span class="dl-col mono">'+r.players.length+'</span></div>';
+  };
+  const c=md.xi;
+  const bits=[c.toPlay?c.toPlay+' still to play':'',c.live?c.live+' playing now':'',
+    c.done?c.done+' finished':'',c.blank?c.blank+' with no fixture':''].filter(Boolean);
+  const head=bits.length
+    ?'<div class="md-sum">'+esc(bits.join(' · '))+'<span class="dl-sub"> — of your XI</span></div>':'';
+  const n=md.next;
+  const nextUp=n
+    ?'<div class="md-next"><span class="dl-sub">Next up</span>'+
+       '<b>'+esc(teamShort(b,n.teamH))+' v '+esc(teamShort(b,n.teamA))+'</b>'+
+       '<span class="dl-sub">'+esc(koLabel(n.ko))+' · '+n.players.map(nm).join(', ')+'</span></div>'
+    :'';
+  const blanks=md.blanks.length
+    ?'<p class="dl-sub" style="margin:10px 0 0"><b>No fixture this gameweek:</b> '+
+       md.blanks.map(m=>esc(m.name)+(m.bench?' (bench)':'')).join(', ')+'</p>':'';
+  const dbl=md.doubles.length
+    ?'<p class="dl-sub" style="margin:6px 0 0"><b>Two matches:</b> '+
+       md.doubles.map(m=>esc(m.name)).join(', ')+'</p>':'';
+  const note=stale
+    ?'<p class="dl-sub" style="margin:6px 0 0">Showing your <b>current</b> squad — GW'+
+       md.gw+' has not opened yet, so transfers before the deadline will change this.</p>':'';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+
+    ' Your matchday</div>'+head+nextUp+
+    (md.rows.length?'<div class="dl">'+md.rows.map(row).join('')+'</div>'
+      :'<p class="dl-sub" style="margin:0">None of your squad has a fixture this gameweek.</p>')+
+    dbl+blanks+note+'</div>';
+}
 async function hydrateResults(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   if(RES_GW==null)RES_GW=b.cur.id;
   const gw=RES_GW;
-  let owned=new Set();
+  let owned=new Set(),myPicks=null,picksGw=gw;
   const mid=getMid();
-  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  if(mid){
+    /* Ask for the squad of the gameweek being VIEWED, not always the
+       current one. Paging back to GW3 used to mark today's squad on
+       GW3's matches, quietly attributing players to a team that did not
+       own them at the time. A future gameweek has no public picks
+       endpoint until it opens, so that case falls back to the current
+       squad and the card says which it is showing. */
+    try{myPicks=await loadPicks(mid,gw);}
+    catch(_){
+      if(gw!==b.cur.id){try{myPicks=await loadPicks(mid,b.cur.id);picksGw=b.cur.id;}catch(__){}}
+    }
+    if(myPicks&&myPicks.picks)owned=new Set(myPicks.picks.map(x=>x.element));
+  }
+  const md=squadMatchday(myPicks,fixtures,b.els,gw);
   const fx=fixtures.filter(f=>f.event===gw).slice()
     .sort((a,c)=>new Date(a.kickoff_time||0)-new Date(c.kickoff_time||0));
   if(gw===b.cur.id)markLive(fx.some(f=>f.started&&!f.finished));
@@ -17094,8 +17454,17 @@ async function hydrateResults(host){
     const hasSaves=!!(sv.h.length||sv.a.length);
     const hasDc=!!(dc.h.length||dc.a.length);
     const hasBps=!!(bps.h.length||bps.a.length);
-    if(!f.started)return '<div class="dl-sub" style="padding:8px 0">Kick-off '+
-      (f.kickoff_time?new Date(f.kickoff_time).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'TBC')+'.</div>'+model;
+    if(!f.started){
+      /* Before kickoff there are no stats to show, which used to make
+         this the one place the app said nothing about your own team.
+         Name the players you have in the match instead. */
+      const r=mdRow(f);
+      const yoursLine=r?'<div class="dl-sub" style="padding:2px 0 8px">Yours: '+
+        r.players.map(p=>esc(p.name)+(p.cap?' (C)':p.vice?' (V)':'')+(p.bench?' — bench':'')).join(', ')+'</div>':'';
+      return '<div class="dl-sub" style="padding:8px 0 0">Kick-off '+
+        (f.kickoff_time?new Date(f.kickoff_time).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'TBC')+'.</div>'+
+        yoursLine+model;
+    }
     return (hasEvents?cols(sideEvents('h'),sideEvents('a')):'')+
       (hasSaves?sec('Saves')+cols(
         sv.h.map(x=>yours(x.element)+pn(x.element)+' ('+x.value+')').join('<br>'),
@@ -17108,10 +17477,24 @@ async function hydrateResults(host){
   const badge=f=>fixtureOver(f)?'<span class="badge badge-grey">FT</span>'
     :f.started?'<span class="badge badge-red">LIVE</span>'
     :'<span class="dl-sub" style="font-size:.7rem">'+(f.kickoff_time?new Date(f.kickoff_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'TBC')+'</span>';
+  /* How many of your squad are in this match, on the collapsed header, so
+     the flag is visible while scrolling the list rather than only after
+     opening a match. Wrapped WITH the badge in one span on purpose:
+     .mc-head is a five-column grid and a sixth child would silently
+     re-flow every fixture row. */
+  const mdRow=f=>(md&&md.rows.find(r=>r.id===f.id))||null;
+  const mine=f=>{
+    const r=mdRow(f);
+    if(!r)return '';
+    const xi=r.players.filter(p=>!p.bench).length;
+    return '<span class="mc-mine" title="'+esc(r.players.map(p=>p.name).join(', '))+'">'+
+      '●'+r.players.length+(xi<r.players.length?'<span class="md-b"> ('+xi+' XI)</span>':'')+'</span>';
+  };
   const fixCard=f=>{
     const open=S.has(f.id);
     return '<div class="mc-fix">'+
-      '<div class="mc-head" onclick="resToggle('+f.id+')">'+badge(f)+
+      '<div class="mc-head" onclick="resToggle('+f.id+')">'+
+      '<span class="mc-badge">'+badge(f)+mine(f)+'</span>'+
         '<span class="mc-team h"><span>'+teamName(f.team_h)+'</span> '+crest(b,f.team_h,18)+'</span>'+
         '<span class="mc-score">'+(f.started?(f.team_h_score!=null?f.team_h_score:0)+' – '+(f.team_a_score!=null?f.team_a_score:0):'v')+'</span>'+
         '<span class="mc-team">'+crest(b,f.team_a,18)+' <span>'+teamName(f.team_a)+'</span></span>'+
@@ -17124,7 +17507,7 @@ async function hydrateResults(host){
     if(d!==lastDay){list+='<div class="mc-day">'+d+'</div>';lastDay=d;}
     list+=fixCard(f);
   });
-  host.innerHTML='<div class="card">'+
+  host.innerHTML=matchdayCard(md,b,picksGw!==gw)+'<div class="card">'+
     /* "Results", not "Match Centre" — the area is called Match Centre and the
        panel is Matchday, so a third name for the same thing on the same
        screen is just noise. This heading exists to anchor the GW pager. */
