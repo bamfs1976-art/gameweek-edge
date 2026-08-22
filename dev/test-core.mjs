@@ -133,6 +133,8 @@ const pieces = [
   extractFn(html, 'raceSpread'),
   extractFn(html, 'gwsRemaining'),
   extractFn(html, 'titleRace'),
+  extractConst(html, 'POS_SHORT'),
+  extractFn(html, 'squadMatchday'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
   extractFn(html, 'bestXI'),
@@ -278,7 +280,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -726,6 +728,178 @@ section('titleRace: settled seasons, ties and degenerate leagues');
   ok(zeroSd.sd === core.RACE_SD_PRIOR,
      'a zero spread falls back to the prior rather than freezing the table');
   ok(zeroSd.rows[1].win > 0, 'so the chaser still has a chance');
+}
+
+section('squadMatchday: which of my players are on, and when');
+{
+  /* Two clubs playing each other, a third club playing elsewhere, and a
+     fourth with no fixture at all. Kickoffs deliberately out of order in
+     the source array so the sort has something to do. */
+  const T = { ARS: 1, CHE: 2, EVE: 3, NEW: 4, BLANKCLUB: 9 };
+  const ELS = {
+    10: { id: 10, web_name: 'Saka', team: T.ARS, element_type: 3 },
+    11: { id: 11, web_name: 'Rice', team: T.ARS, element_type: 3 },
+    12: { id: 12, web_name: 'Raya', team: T.ARS, element_type: 1 },
+    20: { id: 20, web_name: 'Palmer', team: T.CHE, element_type: 3 },
+    30: { id: 30, web_name: 'Pickford', team: T.EVE, element_type: 1 },
+    40: { id: 40, web_name: 'Isak', team: T.BLANKCLUB, element_type: 4 },
+  };
+  const PICKS = {
+    picks: [
+      { element: 10, position: 1, multiplier: 2, is_captain: true, is_vice_captain: false },
+      { element: 11, position: 2, multiplier: 1, is_captain: false, is_vice_captain: true },
+      { element: 20, position: 3, multiplier: 1, is_captain: false, is_vice_captain: false },
+      { element: 40, position: 4, multiplier: 1, is_captain: false, is_vice_captain: false },
+      { element: 30, position: 12, multiplier: 0, is_captain: false, is_vice_captain: false },
+      { element: 12, position: 13, multiplier: 0, is_captain: false, is_vice_captain: false },
+    ],
+  };
+  const FX = [
+    /* Sunday, later — listed FIRST to prove the sort is real. */
+    { id: 2, event: 5, team_h: T.EVE, team_a: T.NEW, kickoff_time: '2026-08-23T15:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+    /* Saturday lunchtime, already finished. */
+    { id: 1, event: 5, team_h: T.ARS, team_a: T.CHE, kickoff_time: '2026-08-22T11:30:00Z',
+      started: true, finished: true, finished_provisional: true },
+    /* A different gameweek entirely — must be ignored. */
+    { id: 3, event: 6, team_h: T.ARS, team_a: T.EVE, kickoff_time: '2026-08-29T14:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+  ];
+
+  const md = core.squadMatchday(PICKS, FX, ELS, 5);
+
+  ok(md !== null, 'a squad with fixtures produces a matchday');
+  ok(md.rows.length === 2, 'one row per fixture that involves my players, got ' + md.rows.length);
+
+  /* Ordering is the whole point of a "when do I watch" card. */
+  ok(md.rows[0].id === 1 && md.rows[1].id === 2,
+     'rows are in kickoff order, not source order');
+
+  /* The other gameweek must not leak in — the fixture list holds the
+     whole season and filtering on event is the only thing keeping GW6
+     out of GW5's schedule. */
+  ok(!md.rows.some((r) => r.id === 3), 'a fixture from another gameweek is not in this one');
+
+  /* Both my Arsenal starters AND my Chelsea starter are in fixture 1,
+     because both clubs are in it. Plus Raya on the bench. */
+  const first = md.rows[0];
+  ok(first.players.length === 4, 'every player from either club is in the row, got ' + first.players.length);
+  ok(first.players.map((p) => p.name).join(',') === 'Saka,Rice,Palmer,Raya',
+     'and they come back in squad order (' + first.players.map((p) => p.name).join(',') + ')');
+  ok(first.players[0].cap === true, 'the captain is flagged');
+  ok(first.players[1].vice === true, 'and so is the vice');
+  ok(first.players[3].bench === true, 'and the bench player is marked as bench');
+  ok(first.players[0].pos === 'MID' && first.players[3].pos === 'GKP',
+     'positions come through');
+
+  /* THE THING THAT IS INVISIBLE FROM THE FIXTURE SIDE. A player whose
+     club has no fixture cannot be found by looping over fixtures — he is
+     defined by being absent from all of them — so blanks are computed
+     from the squad. This is also the single most useful flag on the
+     card: a starter who is not playing at all. */
+  ok(md.blanks.length === 1 && md.blanks[0].name === 'Isak',
+     'a player whose club has no fixture is flagged as a blank');
+  ok(md.blanks[0].state === 'blank', 'and his state says so rather than "yet to play"');
+  ok(!md.rows.some((r) => r.players.some((p) => p.name === 'Isak')),
+     'and he appears in no fixture row, because he is in no fixture');
+
+  /* Counts are over the XI, and a blank is not a "still to play". */
+  ok(md.xi.done === 3, 'three of the XI have finished (' + md.xi.done + ')');
+  ok(md.xi.blank === 1, 'one of the XI has no fixture');
+  ok(md.xi.toPlay === 0, 'and nobody in the XI is still to play — the blank is not waiting');
+  ok(md.counts.done === 4, 'the all-squad tally counts the bench too (' + md.counts.done + ')');
+
+  /* next is the match to actually be watching. */
+  ok(md.next && md.next.id === 2, 'next up is the earliest match not yet started');
+}
+
+section('squadMatchday: doubles, blanks and unscheduled kickoffs');
+{
+  const ELS = {
+    10: { id: 10, web_name: 'Doubler', team: 1, element_type: 3 },
+    20: { id: 20, web_name: 'Single', team: 2, element_type: 3 },
+  };
+  const PICKS = { picks: [
+    { element: 10, position: 1, multiplier: 1 },
+    { element: 20, position: 2, multiplier: 1 },
+  ] };
+
+  /* Team 1 plays twice. One match is over, the other has not kicked off.
+     A per-fixture reading would call him finished off the first match;
+     he plainly is not — he has a whole game left. */
+  const DGW = [
+    { id: 1, event: 7, team_h: 1, team_a: 3, kickoff_time: '2026-09-01T18:00:00Z',
+      started: true, finished: true, finished_provisional: true },
+    { id: 2, event: 7, team_h: 4, team_a: 1, kickoff_time: '2026-09-04T18:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+    { id: 3, event: 7, team_h: 2, team_a: 5, kickoff_time: '2026-09-02T18:00:00Z',
+      started: true, finished: true, finished_provisional: true },
+  ];
+  const md = core.squadMatchday(PICKS, DGW, ELS, 7);
+  ok(md.rows.length === 3, 'a doubling player puts his club in two rows');
+  const dbl = md.players.find((p) => p.name === 'Doubler');
+  ok(dbl.games === 2, 'and the player knows he has two matches');
+  ok(dbl.state === 'toPlay',
+     'one match finished and one to come is STILL to play, not done');
+  ok(md.players.find((p) => p.name === 'Single').state === 'done',
+     'while a single-fixture player with his match over is done');
+  ok(md.doubles.length === 1 && md.doubles[0].name === 'Doubler',
+     'doubles are surfaced so the card can say so');
+  ok(md.next.id === 2, 'and the next match is the one still to come');
+
+  /* A match in play beats both — that is the one on the telly now. */
+  const LIVE = DGW.map((f) => f.id === 2
+    ? Object.assign({}, f, { started: true, finished: false, finished_provisional: false })
+    : f);
+  ok(core.squadMatchday(PICKS, LIVE, ELS, 7).players.find((p) => p.name === 'Doubler').state === 'live',
+     'a match in play makes the player live');
+  ok(core.squadMatchday(PICKS, LIVE, ELS, 7).next === null,
+     'and with nothing unstarted left there is no next match');
+
+  /* FPL leaves kickoff_time null until a match is scheduled. Date.parse
+     of that is NaN, and NaN sorts unpredictably — an unscheduled match
+     must land at the END, not masquerade as the earliest kickoff of the
+     gameweek and become "next up". */
+  const TBC = [
+    { id: 9, event: 8, team_h: 1, team_a: 3, kickoff_time: null,
+      started: false, finished: false, finished_provisional: false },
+    { id: 8, event: 8, team_h: 2, team_a: 4, kickoff_time: '2026-09-12T14:00:00Z',
+      started: false, finished: false, finished_provisional: false },
+  ];
+  const t = core.squadMatchday(PICKS, TBC, ELS, 8);
+  ok(t.rows[0].id === 8, 'a scheduled match comes before an unscheduled one');
+  ok(t.rows[1].ko === null, 'and the unscheduled one reports no kickoff rather than NaN');
+  ok(t.next.id === 8, 'so "next up" is a match with a time, not a TBC');
+}
+
+section('squadMatchday: nothing to show, and nothing to throw');
+{
+  const ELS = { 10: { id: 10, web_name: 'A', team: 1, element_type: 3 } };
+  const PICKS = { picks: [{ element: 10, position: 1, multiplier: 1 }] };
+  const FX = [{ id: 1, event: 5, team_h: 1, team_a: 2, kickoff_time: '2026-08-22T14:00:00Z',
+    started: false, finished: false, finished_provisional: false }];
+
+  ok(core.squadMatchday(null, FX, ELS, 5) === null, 'no picks, no matchday');
+  ok(core.squadMatchday({ picks: [] }, FX, ELS, 5) === null, 'an empty squad likewise');
+  ok(core.squadMatchday(PICKS, [], ELS, 5).rows.length === 0,
+     'no fixtures means no rows, not a throw');
+  ok(core.squadMatchday(PICKS, [], ELS, 5).blanks.length === 1,
+     'and everybody is a blank when the gameweek has no matches at all');
+  ok(core.squadMatchday(PICKS, null, ELS, 5).rows.length === 0, 'a missing fixture list is survivable');
+  ok(core.squadMatchday(PICKS, FX, null, 5) === null,
+     'without the player index there is nobody to place');
+
+  /* A pick the bootstrap does not know is skipped, not rendered as
+     undefined — this is what a mid-season player removal looks like. */
+  const ghost = { picks: PICKS.picks.concat([{ element: 999, position: 2, multiplier: 1 }]) };
+  const g = core.squadMatchday(ghost, FX, ELS, 5);
+  ok(g.players.length === 1, 'an unknown player id is dropped rather than shown as a blank name');
+
+  /* multiplier absent: position decides bench, because that is what the
+     bench actually is. */
+  const noMult = { picks: [{ element: 10, position: 14 }] };
+  ok(core.squadMatchday(noMult, FX, ELS, 5).players[0].bench === true,
+     'position 14 is on the bench even with no multiplier field');
 }
 
 section('fplPriceMove: FPL’s own figure, read rather than approximated');

@@ -1337,6 +1337,79 @@ section('the title race renders, and the odds add up on screen');
   await rp.close();
 }
 
+section('your matchday: which of my players are on, and when');
+{
+  /* Asked for: a way to see when squad players are due to play, so the
+     matches worth watching are obvious before kickoff. The fixture list
+     already had the times and the squad already had the players; nothing
+     joined them. */
+  const mp = await browser.newPage();
+  const mErrors = [];
+  mp.on('pageerror', (e) => mErrors.push(e.message));
+  await mp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await mp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await mp.waitForTimeout(1200);
+
+  const md = await mp.evaluate(async () => {
+    /* The panel is registered as 'results'; 'matchday' is the label. */
+    try { openPanel('results'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2200));
+    const card = [...document.querySelectorAll('.card')]
+      .find((c) => /your matchday/i.test((c.querySelector('.card-title') || {}).innerText || ''));
+    if (!card) return { found: false, panels: document.body.innerText.slice(0, 200) };
+    const rows = [...card.querySelectorAll('.dl-row')];
+    const head = document.querySelector('.mc-head');
+    const when = card.querySelector('.md-when');
+    const nm = rows[0] && rows[0].querySelector('.dl-nm');
+    const sub = rows[0] && rows[0].querySelector('.dl-sub');
+    return {
+      found: true,
+      text: card.innerText,
+      rows: rows.length,
+      markers: document.querySelectorAll('.mc-mine').length,
+      /* .mc-head is a five-column grid; the squad marker was folded in
+         beside the state badge precisely so it stays five. */
+      headKids: head ? head.children.length : null,
+      badgeHasBoth: !!(head && head.querySelector('.mc-badge .mc-mine')),
+      whenW: when ? when.getBoundingClientRect().width : 0,
+      stack: (nm && sub) ? { nmBottom: nm.getBoundingClientRect().bottom,
+                             subTop: sub.getBoundingClientRect().top } : null,
+      counts: [...document.querySelectorAll('.mc-mine')].map((e) => e.textContent),
+    };
+  });
+
+  ok(md.found === true, 'the matchday card renders (' + (md.panels || '') + ')');
+  /* Six of GW1's ten fixtures involve this squad — derived from the mock,
+     not guessed: the other four are between clubs nobody here owns. */
+  ok(md.rows === 6, 'one row per fixture involving my squad, got ' + md.rows);
+
+  /* The card and the fixture list below it are two renderings of the same
+     join, so they have to agree. If one drifts, this catches it. */
+  ok(md.markers > 0 && md.markers === md.rows,
+     'every fixture flagged in the list is a row in the card (' + md.markers + ' vs ' + md.rows + ')');
+
+  /* REGRESSION on the grid. Adding a sixth child to .mc-head would
+     re-flow every fixture row in the panel — teams and score would slide
+     out of their columns — and no text assertion would notice. */
+  ok(md.headKids === 5, '.mc-head is still a five-column grid, got ' + md.headKids);
+  ok(md.badgeHasBoth === true, 'and the squad marker shares the badge cell rather than adding one');
+
+  ok(md.whenW > 0, 'the kickoff column has width');
+  ok(md.stack && md.stack.subTop >= md.stack.nmBottom - 1,
+     'the players line sits below the fixture, not beside it');
+
+  /* The point of the card: it says how many are left, and marks the
+     captain, so the matches that matter most are obvious. */
+  ok(/still to play|playing now|finished/i.test(md.text),
+     'the card summarises where the gameweek stands');
+  ok(/\(C\)/.test(md.text), 'and marks the captain');
+  ok(md.counts.every((c) => /^●\d/.test(c)),
+     'each flagged fixture shows how many of mine are in it (' + md.counts.join(' ') + ')');
+
+  ok(mErrors.length === 0, 'the matchday panel threw nothing (' + mErrors.slice(0, 2).join(' | ') + ')');
+  await mp.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 

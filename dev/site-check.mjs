@@ -211,9 +211,10 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'function titleRace', since: '2026-08-22',
-  what: 'each manager’s chance of winning their mini-league' };
-/* Rotated from 'function fixtureOver' (2026-08-22), which is the third
+const MARKER = { text: 'function squadMatchday', since: '2026-08-22',
+  what: 'which of your players are on, and when' };
+/* Rotated from 'function titleRace' (2026-08-22), and before that
+   'function fixtureOver' (2026-08-22), which is the third
    release in a row to go out unconfirmed: the GitHub connector dropped
    mid-session and has not come back, so the price panel, the auto-subs
    fix and the live-badge fix are all pushed-but-unverified. This marker
