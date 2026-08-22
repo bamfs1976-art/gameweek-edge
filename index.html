@@ -670,7 +670,18 @@ html.offline .net-banner{transform:translateY(0)}
 .md-sum{font-weight:700;font-size:.86rem;margin-bottom:8px}
 .md-next{display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin-bottom:10px;
   border-radius:8px;background:var(--green-soft)}
-.md-when{width:64px;flex-shrink:0;font-size:.72rem;color:var(--text-2)}
+/* The kickoff column and the count sit at the TOP of a row whose middle
+   can now run to several lines; .dl-row centres its children, which
+   would leave a badge floating beside the third name. */
+.md-row{align-items:flex-start}
+.md-when{width:64px;flex-shrink:0;font-size:.72rem;color:var(--text-2);padding-top:2px}
+.md-count{flex-shrink:0;align-self:flex-start;padding-top:3px;color:var(--blue);
+  font-size:var(--fs-min);font-weight:800;white-space:nowrap}
+/* Overrides .dl-row .dl-sub's nowrap+ellipsis for this one line. The
+   selector needs .dl-row in it to outweigh that rule — a bare .md-who
+   is one class against two and silently loses, which is how the first
+   attempt at this fix left the line still truncating. */
+.dl-row .dl-sub.md-who{white-space:normal;overflow:visible;text-overflow:clip}
 .md-ko{font-weight:700}
 .md-c{color:var(--green-bright)}
 .md-v,.md-b{color:var(--text-3)}
@@ -958,7 +969,18 @@ html.offline .net-banner{transform:translateY(0)}
 .tr-me{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
   padding:10px 12px;margin-bottom:10px;border-radius:10px;background:var(--green-soft)}
 .tr-big{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
-.tr-cell{display:block;flex:1;min-width:0}
+/* .dl-grow resolves to flex-direction:column with align-items:center —
+   the base rule sets the direction and the .dl-row override sets the
+   alignment, and neither was written expecting the other. A block child
+   therefore gets CENTRED and shrink-wrapped instead of filling the row:
+   measured at 312px inside a 510px parent, sitting 99px in on each side.
+   Text then clips at BOTH ends rather than truncating at one, which is
+   why a fixture read "IFO v LEE" with the N missing.
+
+   align-self:stretch opts this cell out of that centring, and width:100%
+   makes it fill. Fixed here rather than by changing .dl-grow, because
+   that rule is load-bearing for every other list in the app. */
+.tr-cell{display:block;width:100%;min-width:0;align-self:stretch}
 .tr-cell .dl-nm,.tr-cell .dl-sub{display:block}
 .tr-bar{display:block;height:4px;margin-top:6px;border-radius:3px;background:var(--border-2);overflow:hidden}
 .tr-bar i{display:block;height:100%;border-radius:3px;background:var(--green)}
@@ -17864,13 +17886,24 @@ function matchdayCard(md,b,stale){
     const when=r.over?'<span class="badge badge-grey">FT</span>'
       :r.started?'<span class="badge badge-red">LIVE</span>'
       :'<span class="md-ko">'+esc(koLabel(r.ko))+'</span>';
-    const who=(xi.length?xi.map(nm).join(', '):'<i>bench only</i>')+
-      (bench.length?'<span class="md-b"> · bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>':'');
-    return '<div class="dl-row"><span class="md-when">'+when+'</span>'+
+    /* A squad list is a list, not a heading: it wraps. Truncating it
+       hides exactly the names the card exists to show, and with only
+       one line there is no room for a double gameweek's worth.
+       "bench only" is gone — when there is no starter, "Bench: Hughes"
+       says the same thing without the label and the value. */
+    const who=xi.length
+      ? xi.map(nm).join(', ')+
+        (bench.length?'<span class="md-b"> · bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>':'')
+      : '<span class="md-b">Bench: '+bench.map(m=>esc(m.name)).join(', ')+'</span>';
+    return '<div class="dl-row md-row"><span class="md-when">'+when+'</span>'+
       '<span class="dl-grow"><span class="tr-cell">'+
         '<span class="dl-nm">'+esc(teamShort(b,r.teamH))+' v '+esc(teamShort(b,r.teamA))+'</span>'+
-        '<span class="dl-sub">'+who+'</span></span></span>'+
-      '<span class="dl-col mono">'+r.players.length+'</span></div>';
+        '<span class="dl-sub md-who">'+who+'</span></span></span>'+
+      /* A bare number on the right of "ARS v COV" reads as a scoreline.
+         The dot marks it as the same "yours" count the fixture list
+         uses, and the title says it in words. */
+      '<span class="md-count" title="'+r.players.length+' of your squad in this match">●'+
+        r.players.length+'</span></div>';
   };
   const c=md.xi;
   const bits=[c.toPlay?c.toPlay+' still to play':'',c.live?c.live+' playing now':'',

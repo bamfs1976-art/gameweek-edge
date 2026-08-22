@@ -1419,6 +1419,89 @@ section('your matchday: which of my players are on, and when');
 
   ok(mErrors.length === 0, 'the matchday panel threw nothing (' + mErrors.slice(0, 2).join(' | ') + ')');
   await mp.close();
+
+  /* ── The layout, at the width people actually read it ──────────────
+     Reported: "Text layout and format is awful", with a fixture reading
+     "IFO v LEE" — the N clipped off the FRONT — and the line under it
+     cut at both ends.
+
+     Cause, found by measuring rather than reading: .dl-grow resolves to
+     flex-direction:column (base rule) with align-items:center (the
+     .dl-row override). Neither rule was written expecting the other, and
+     together they centre and shrink-wrap a block child instead of
+     letting it fill. The cell measured 312px inside a 510px parent,
+     99px in on each side — so overflow clipped at both ends, which is
+     why the missing letter was at the START of the word.
+
+     Every check in this file was green through that, because they all
+     read text content and the text content was complete: the DOM had
+     "NFO v LEE" and the screen showed "IFO v LEE". Only geometry can
+     tell those apart, and only at a width where the text is tight —
+     which is why this runs at phone size. */
+  const np = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const nErrors = [];
+  np.on('pageerror', (e) => nErrors.push(e.message));
+  await np.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await np.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await np.waitForTimeout(1200);
+
+  const lay = await np.evaluate(async () => {
+    try { openPanel('results'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2200));
+    const card = [...document.querySelectorAll('.card')]
+      .find((c) => /your matchday/i.test((c.querySelector('.card-title') || {}).innerText || ''));
+    if (!card) return { found: false };
+    const rows = [...card.querySelectorAll('.dl-row')];
+    const L = (e) => Math.round(e.getBoundingClientRect().left);
+    const R = (e) => Math.round(e.getBoundingClientRect().right);
+    return {
+      found: true,
+      /* Every fixture name must start at the same x. Under the centring
+         bug each row started somewhere different, which is what made the
+         card look ragged even where nothing was clipped. */
+      nmLefts: [...new Set(rows.map((r) => L(r.querySelector('.dl-nm'))))],
+      subLefts: [...new Set(rows.map((r) => L(r.querySelector('.dl-sub'))))],
+      /* The cell must fill the space it is given, not sit centred in it. */
+      fills: rows.every((r) => {
+        const cell = r.querySelector('.tr-cell'), grow = r.querySelector('.dl-grow');
+        return Math.abs(L(cell) - L(grow)) <= 1 && Math.abs(R(cell) - R(grow)) <= 1;
+      }),
+      /* Nothing overflows its box: a wrapped line has scrollWidth equal
+         to clientWidth, a truncated one does not. */
+      clipped: rows.filter((r) => {
+        const w = r.querySelector('.md-who');
+        return w && w.scrollWidth > w.clientWidth + 1;
+      }).length,
+      nmClipped: rows.filter((r) => {
+        const n = r.querySelector('.dl-nm');
+        return n && n.scrollWidth > n.clientWidth + 1;
+      }).length,
+      /* Nor does the row push the card sideways. */
+      overflowX: card.scrollWidth > card.clientWidth + 1,
+      counts: rows.map((r) => (r.querySelector('.md-count') || {}).textContent),
+      multiline: rows.some((r) => r.querySelector('.md-who').getBoundingClientRect().height > 20),
+      text: card.innerText,
+    };
+  });
+
+  ok(lay.found === true, 'the matchday card renders at phone width');
+  ok(lay.nmLefts.length === 1,
+     'every fixture name starts at the same x (' + lay.nmLefts.join(',') + ')');
+  ok(lay.subLefts.length === 1,
+     'and so does every players line (' + lay.subLefts.join(',') + ')');
+  ok(lay.fills === true, 'the text cell fills its column rather than sitting centred in it');
+  ok(lay.nmClipped === 0, 'no fixture name is clipped, got ' + lay.nmClipped);
+  ok(lay.clipped === 0, 'no players line is clipped — long lists wrap, got ' + lay.clipped);
+  ok(lay.overflowX === false, 'and the card does not scroll sideways');
+
+  /* THE SCORELINE PROBLEM. A bare "2" to the right of "ARS v COV" reads
+     as a result. The dot marks it as a squad count. */
+  ok((lay.counts || []).every((c) => /^●\d+$/.test(c)),
+     'the squad count is marked, not a bare number (' + (lay.counts || []).join(' ') + ')');
+  ok(!/bench only/i.test(lay.text), 'the redundant "bench only" label is gone');
+
+  ok(nErrors.length === 0, 'the phone-width layout threw nothing (' + nErrors.slice(0, 2).join(' | ') + ')');
+  await np.close();
 }
 
 section('mini-league detailed view: every squad, with effective ownership');
