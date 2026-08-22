@@ -211,9 +211,15 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'function fixtureOver', since: '2026-08-22',
-  what: 'a finished match reading as finished before its bonus is confirmed' };
-/* Rotated from 'function applyAutoSubs' (2026-08-22), and before it from
+const MARKER = { text: 'function titleRace', since: '2026-08-22',
+  what: 'each manager’s chance of winning their mini-league' };
+/* Rotated from 'function fixtureOver' (2026-08-22), which is the third
+   release in a row to go out unconfirmed: the GitHub connector dropped
+   mid-session and has not come back, so the price panel, the auto-subs
+   fix and the live-badge fix are all pushed-but-unverified. This marker
+   is the newest of the four and its presence confirms every earlier one,
+   since they are all ancestors of the same build. Before that:
+   'function applyAutoSubs' (2026-08-22), and before it from
    'function fplPriceMove' (2026-08-22), which shipped in the
    previous build but was never confirmed live \u2014 the GitHub connector
    dropped out of that session before the site check could run, so that
