@@ -11928,7 +11928,57 @@ function rivalGwTotal(entryHistory,squad,finished){
   return {value:(squad&&squad.live)||0,label:'Live total, summed as the gameweek runs',live:true};
 }
 
+/* ── Auto-subs: the substitutions FPL made, which we were ignoring ────
+   When a starter does not play, FPL brings a bench player on and counts the
+   SUB's points instead. The picks endpoint reports that in `automatic_subs`
+   — a field this file did not read anywhere, so an auto-subbed squad was
+   summed as if the absent player had played and the substitute had not.
+
+   WHAT IS UNCERTAIN, AND WHY THE GUARD EXISTS. I could not verify from here
+   whether FPL rewrites `multiplier` on the picks once a gameweek settles, or
+   leaves the submitted lineup and reports the change only in this array.
+   Applying a swap that had already been applied would be worse than the bug:
+   it would bench the substitute and restore the player who never played.
+
+   So the swap is applied only when the picks do NOT already reflect it. If
+   the outgoing player is already benched and the incoming one already
+   counting, FPL has done it and this does nothing. That is correct under
+   either answer, which is the only reason it is safe to ship without being
+   able to measure which one is true.
+
+   THE CAPTAIN IS DELIBERATELY LEFT ALONE. If a captain does not play the
+   armband passes to the vice, which is a SECOND rule with its own conditions,
+   and a substitute is never captained. Guessing at it would put a doubled
+   score on a player who may not have had one. An incoming substitute comes on
+   at a plain multiplier of 1. */
+function applyAutoSubs(picks){
+  const subs=(picks&&picks.automatic_subs)||[];
+  /* Array.isArray is belt-and-braces and mutation testing says so: removing
+     it changes nothing for any realistic payload, because `.length` is
+     undefined on a plain object and on null, so the early return fires
+     regardless. It only bites on an array-LIKE value such as {length:2},
+     which no API returns. Kept because it is free and states the contract;
+     recorded as uncovered rather than propped up by a contrived test. */
+  if(!Array.isArray(subs)||!subs.length)return picks;
+  const list=((picks&&picks.picks)||[]).map(p=>Object.assign({},p));
+  const byId={};list.forEach(p=>{byId[p.element]=p;});
+  let applied=0;
+  for(const s of subs){
+    const out=byId[s&&s.element_out],inn=byId[s&&s.element_in];
+    if(!out||!inn||out===inn)continue;
+    const om=typeof out.multiplier==='number'?out.multiplier:(out.position<=11?1:0);
+    const im=typeof inn.multiplier==='number'?inn.multiplier:(inn.position<=11?1:0);
+    /* Already done by FPL: the starter is benched and the sub is counting. */
+    if(om===0&&im>0)continue;
+    out.multiplier=0;
+    inn.multiplier=1;
+    const op=out.position;out.position=inn.position;inn.position=op;
+    applied++;
+  }
+  return applied?Object.assign({},picks,{picks:list,autoSubsApplied:applied}):picks;
+}
 function rivalSquadRows(picks,live,myXi,myAll){
+  picks=applyAutoSubs(picks);
   const mine=myXi instanceof Set?myXi:new Set(myXi||[]);
   /* Two different questions, and they were being answered with one set.
      The RING asks "do I own this player at all" — so it reads the whole
@@ -11949,6 +11999,7 @@ function rivalSquadRows(picks,live,myXi,myAll){
       shared:owned.has(p.element),
       sharedXi:mine.has(p.element)};
   });
+  const autoSubs=(picks&&picks.autoSubsApplied)||0;
   const xi=rows.filter(r=>r.position<=11);
   const bench=rows.filter(r=>r.position>11);
   /* COUNTING rows, not starters. Under a Bench Boost every bench player has
@@ -11959,7 +12010,7 @@ function rivalSquadRows(picks,live,myXi,myAll){
      all three cases and needs no chip flag to know which it is. */
   const counting=rows.filter(r=>r.mult>0);
   const known=counting.filter(r=>r.pts!=null);
-  return {xi,bench,
+  return {xi,bench,autoSubs,
     shared:xi.filter(r=>r.sharedXi).length,
     differentials:xi.filter(r=>!r.sharedXi).length,
     /* Sums only the rows the feed actually reported, and says how many that
@@ -12126,6 +12177,13 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
   const activeBadge=C.activeLabel
     ?'<div class="rv-chip-live">'+svg(ICON.spark,'width="13" height="13"')+' '+esc(C.activeLabel)+
       ' active this gameweek</div>':'';
+  /* A substitution the reader did not make, changing the score they are
+     looking at, has to be visible. Otherwise a bench player appears in the
+     XI with points beside him and nothing on the card explains why. */
+  const subNote=S.autoSubs
+    ? '<div class="dl-sub" style="margin-top:8px">'+S.autoSubs+' automatic substitution'+
+      (S.autoSubs===1?'':'s')+' applied \u2014 FPL brings a bench player on when a starter does not play.</div>'
+    : '';
   const chipHist=C.played.length
     ?'<div class="card-title" style="margin-top:12px">Chips played</div><div class="dl">'+
       C.played.map(c=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(c.label)+'</span></span>'+
@@ -12163,6 +12221,7 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
   return '<div class="modal-head"><div class="dl">'+head+'</div>'+meta+activeBadge+partial+disagree+'</div>'+
     pitch+
     '<div class="card-title" style="margin-top:10px">Bench</div>'+bench+
+    subNote+
     chipHist+
     chipLeft+
     '<div class="dl-sub" style="margin-top:10px">'+

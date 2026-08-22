@@ -211,9 +211,13 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'function fplPriceMove', since: '2026-08-22',
-  what: 'FPL\u2019s own price-progress figure, replacing our estimate of it' };
-/* Rotated from 'function fplChipWindows' (2026-08-22 morning), which had
+const MARKER = { text: 'function applyAutoSubs', since: '2026-08-22',
+  what: 'the automatic substitutions FPL made, which we were ignoring' };
+/* Rotated from 'function fplPriceMove' (2026-08-22), which shipped in the
+   previous build but was never confirmed live \u2014 the GitHub connector
+   dropped out of that session before the site check could run, so that
+   release is pushed-but-unverified and this marker covers both.
+   Rotated from 'function fplChipWindows' (2026-08-22 morning), which had
    landed. Rotated from '.dl-grow > .rv-open > .dl-nm' (2026-08-22), and from
    'id="rival-fpl-note"' (2026-08-21 evening), which had landed in
    the previous build. Rotated from 'id="rival-modal"' (2026-08-21 morning), and from
