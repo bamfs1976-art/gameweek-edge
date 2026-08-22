@@ -78,10 +78,13 @@ vm.runInContext([
   extractFn(html, 'rivalSquadRows'),
   extractFn(html, 'rivalGwTotal'),
   extractFn(html, 'rivalChipSummary'),
+  extractFn(html, 'fplChipWindows'),
+  extractFn(html, 'chipStatus'),
   extractFn(html, 'elementExtras')
 ].join('\n'), ctx);
 
-const { rivalLivePts, rivalSquadRows, rivalGwTotal, rivalChipSummary, elementExtras } = ctx;
+const { rivalLivePts, rivalSquadRows, rivalGwTotal, rivalChipSummary,
+  fplChipWindows, chipStatus, elementExtras } = ctx;
 
 let pass = 0; const fail = [];
 const ok = (cond, label) => { if (cond) pass++; else fail.push(label); };
@@ -373,6 +376,100 @@ const find = (rows, label) => rows.find((r) => r.label === label);
   ok(!find(rows, 'Age'), 'an implausible age is dropped rather than printed');
 }
 eq(elementExtras(null, null, 0), [], 'no element yields no rows rather than throwing');
+
+/* ── Chip windows ────────────────────────────────────────────────────
+   The payload shape below is copied from a real bootstrap-static, measured
+   22 Aug 2026: eight rows, one per chip per half. Invented shapes are how a
+   parser passes its tests and fails on the live feed. */
+const CHIPS_REAL = [
+  { id: 1, name: 'wildcard', number: 1, start_event: 2,  stop_event: 19, chip_type: 'transfer' },
+  { id: 2, name: 'wildcard', number: 1, start_event: 20, stop_event: 38, chip_type: 'transfer' },
+  { id: 3, name: 'freehit',  number: 1, start_event: 2,  stop_event: 19, chip_type: 'transfer' },
+  { id: 4, name: 'bboost',   number: 1, start_event: 1,  stop_event: 19, chip_type: 'team' },
+  { id: 5, name: '3xc',      number: 1, start_event: 1,  stop_event: 19, chip_type: 'team' },
+  { id: 6, name: 'freehit',  number: 1, start_event: 20, stop_event: 38, chip_type: 'transfer' },
+  { id: 7, name: 'bboost',   number: 1, start_event: 20, stop_event: 38, chip_type: 'team' },
+  { id: 8, name: '3xc',      number: 1, start_event: 20, stop_event: 38, chip_type: 'team' },
+];
+{
+  const w = fplChipWindows({ chips: CHIPS_REAL });
+  eq(Object.keys(w).sort(), ['3xc', 'bboost', 'freehit', 'wildcard'], 'four chip names off the real payload');
+  eq(w.wildcard, [{ start: 2, stop: 19, type: 'transfer' }, { start: 20, stop: 38, type: 'transfer' }],
+     'wildcard carries both halves, in gameweek order');
+  eq(w.bboost[0].start, 1, 'bench boost opens in GW1 where the wildcard opens in GW2');
+
+  /* Rows sorted out of order upstream must still come back in order — the
+     real payload happens to list freehit's second half after 3xc's first. */
+  const shuffled = fplChipWindows({ chips: [...CHIPS_REAL].reverse() });
+  eq(shuffled.wildcard.map((x) => x.start), [2, 20], 'windows sort by gameweek regardless of payload order');
+
+  eq(fplChipWindows({}), {}, 'no chips key yields no windows rather than throwing');
+  eq(fplChipWindows(null), {}, 'a null payload yields no windows');
+  eq(fplChipWindows({ chips: [{ name: 'x', start_event: 9, stop_event: 3 }] }), {},
+     'a window that ends before it starts is dropped, not stored inverted');
+  eq(fplChipWindows({ chips: [{ name: null, start_event: 1, stop_event: 2 }] }), {},
+     'a row with no name is dropped');
+  eq(fplChipWindows({ chips: [{ name: 'wildcard', start_event: 'x', stop_event: 19 }] }), {},
+     'a non-numeric gameweek is dropped rather than becoming NaN');
+}
+
+/* ── Chip status: the two-half rule is the whole point ───────────────── */
+{
+  const w = fplChipWindows({ chips: CHIPS_REAL });
+  const played = [{ name: 'wildcard', event: 5 }];
+  const st = chipStatus(played, w, 8);
+  const wc = st.filter((x) => x.name === 'wildcard');
+  eq(wc.map((x) => x.state), ['played', 'upcoming'],
+     'a wildcard played in GW5 spends the FIRST half only — the second is still to come');
+  eq(wc[0].event, 5, 'and the played half records the gameweek it went on');
+
+  /* THE FAILURE THIS EXISTS TO PREVENT. Matching on chip NAME alone would
+     mark both halves used the moment one was, which is the confident-wrong
+     number the old card refused to print. */
+  ok(wc[1].state !== 'played', 'the second wildcard is NOT marked played by the first');
+
+  const late = chipStatus(played, w, 25);
+  const wcLate = late.filter((x) => x.name === 'wildcard');
+  eq(wcLate.map((x) => x.state), ['played', 'available'],
+     'past GW20 the second wildcard becomes available, the first stays spent');
+
+  const none = chipStatus([], w, 25);
+  eq(none.filter((x) => x.name === 'wildcard').map((x) => x.state), ['expired', 'available'],
+     'an unplayed first-half chip EXPIRES at GW20 rather than staying available');
+
+  const noGw = chipStatus([], w, null);
+  ok(noGw.every((x) => x.state === 'unknown'),
+     'with no gameweek the state is unknown, not guessed as available');
+
+  eq(chipStatus([{ name: 'wildcard', event: 25 }], w, 30)
+      .filter((x) => x.name === 'wildcard').map((x) => x.state), ['expired', 'played'],
+     'a wildcard played in GW25 spends the SECOND half, not the first');
+
+  ok(st.every((x, i, a) => i === 0 || a[i - 1].start <= x.start), 'rows come back in gameweek order');
+  ok(st.every((x) => typeof x.label === 'string' && x.label.length),
+     'every row carries a human label, not the API code');
+}
+
+/* ── rivalChipSummary: silence when the windows are unknown ─────────── */
+{
+  const hist = { chips: [{ name: 'wildcard', event: 5 }] };
+  const w = fplChipWindows({ chips: CHIPS_REAL });
+
+  const withW = rivalChipSummary(hist, { active_chip: null }, w, 8);
+  ok(Array.isArray(withW.status) && withW.status.length === 8, 'with windows, every chip half is reported');
+  ok(withW.remaining.length === 7, 'seven halves remain after one wildcard is spent');
+
+  /* An absent chips[] must not produce an empty "nothing left" list, and must
+     not produce an "all available" one either. It reverts to the honest blank
+     the card showed before any of this was derivable. */
+  const noW = rivalChipSummary(hist, { active_chip: null }, {}, 8);
+  ok(noW.status === null, 'no windows means no claim about what is left');
+  ok(noW.remaining === null, 'and no remaining list to render');
+  eq(noW.played.map((c) => c.event), [5], 'while what was PLAYED is still reported — that part is a fact');
+
+  const undef = rivalChipSummary(hist, { active_chip: null });
+  ok(undef.status === null, 'called the old way, with no windows argument, it behaves the old way');
+}
 
 console.log(`rivals — ${pass}/${pass + fail.length} checks passed`);
 if (fail.length) { fail.forEach((f) => console.log('  FAIL  ' + f)); process.exit(1); }

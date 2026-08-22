@@ -2993,6 +2993,18 @@ async function boot(){
      than constants, so a rule change lands on its own. Falls back field by
      field when a payload is partial. */
   try{RULES=fplRules(b);idx.rules=RULES;}catch(_){RULES=RULES_FALLBACK;idx.rules=RULES;}
+  /* Scoring and chip windows, same contract as the rules above: read from the
+     game where it publishes them, fall back to a constant where it does not,
+     and never half-apply either. */
+  try{SCORING=fplScoring(b);idx.scoring=SCORING;}catch(_){SCORING=SCORING_FALLBACK;idx.scoring=SCORING;}
+  try{idx.chipWindows=fplChipWindows(b);}catch(_){idx.chipWindows={};}
+  /* The gameweek nights FPL changes prices on. The price panel used to state
+     "00:00 UK time" as a fact in its own copy — correct today only because
+     23:00 UTC is midnight BST, and wrong from the October clock change. */
+  try{
+    const pcd=((b.game_config||{}).settings||{}).price_change_deadlines;
+    idx.priceDeadlines=Array.isArray(pcd)?pcd.filter(s=>typeof s==='string'&&!isNaN(Date.parse(s))):[];
+  }catch(_){idx.priceDeadlines=[];}
   /* Merge FPL Core Insights advanced stats onto the player objects (best
      effort — never blocks or breaks boot). Guarded everywhere downstream by
      the presence of `_ci`, so absence leaves every projection unchanged. */
@@ -9652,8 +9664,26 @@ function suspRisk(yellows,gw){
   const c=suspCutoff(gw),y=yellows||0,left=c.limit-y;
   return {...c,yellows:y,left,level:left<=0?'banned':left===1?'edge':left===2?'watch':null};
 }
+/* When the next price change lands, in the reader's own timezone, from the
+   schedule the game publishes. The copy used to assert "00:00 UK time" as a
+   flat fact. That is right today only because 23:00 UTC happens to be
+   midnight BST, and it silently becomes an hour wrong at the October clock
+   change — a wrong time on a page whose whole subject is a deadline.
+
+   Returns null when the schedule is absent or entirely in the past, and the
+   caller then says nothing rather than inventing a time. */
+function nextPriceChange(list,now){
+  const t=now==null?Date.now():now;
+  const next=(list||[])
+    .map(s=>Date.parse(s)).filter(n=>Number.isFinite(n)&&n>t).sort((a,c)=>a-c)[0];
+  if(next==null)return null;
+  const d=new Date(next);
+  return {at:next,
+    label:d.toLocaleString(undefined,{weekday:'short',hour:'2-digit',minute:'2-digit'})};
+}
 async function hydratePrice(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures().catch(()=>[])]);
+  const nextPC=nextPriceChange(b.priceDeadlines);
   const total=b.raw.total_players||10e6;
   const score=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
   const ppm=e=>e.now_cost?e.total_points/(e.now_cost/10):0;
@@ -9686,11 +9716,14 @@ async function hydratePrice(host){
       (worst.length?valueList(b,'Worst value — premiums underdelivering',worst,'var(--red)'):'')
     : '');
   host.innerHTML=lensLink('price','Tonight’s move and the net transfers behind it, for every player at once —')+
-    '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next <b>00:00 UK time</b> update, from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL’s exact algorithm is not public.</div>'+
+    '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next update'+
+      (nextPC?' — <b>'+esc(nextPC.label)+'</b>, from the game\u2019s own schedule':'')+
+      ', from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL\u2019s exact algorithm is not public.</div>'+
     probTbl('Likely risers tonight — estimate',riseP,true)+
     probTbl('Likely fallers tonight — estimate',fallP,false)+
     '<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
-      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys → higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day at <b>00:00 UK time</b>.</p></div>'+
+      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys \u2192 higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day'+
+      (nextPC?', next at <b>'+esc(nextPC.label)+'</b> in your timezone':' overnight UK time')+'.</p></div>'+
     tbl('Momentum — most bought (secondary signal)',risers,true)+
     tbl('Momentum — most sold (secondary signal)',fallers,false)+
     valueBoardCard(b,fixtures,6)+
@@ -10055,6 +10088,19 @@ function elementExtras(b,e,now){
   rank('threat_rank_type','Threat rank');
   rank('now_cost_rank_type','Price rank');
 
+  /* Overall rank, across every player in the game rather than within the
+     position. Only the two that say something the positional ranks cannot:
+     how widely owned a player is, and how he scores per start, are both
+     questions about the whole field — "7th most-owned defender" is a
+     different and much weaker claim than "7th most-owned player". The other
+     five *_rank fields duplicate their *_rank_type twins above closely
+     enough that showing all seven would be noise, not information. */
+  const total=(b&&b.elements||[]).length;
+  const oaRank=(k,label,note)=>{const v=num(e[k]);
+    if(v!=null&&v>0)add(label,v+(total?' of '+total:''),note);};
+  oaRank('selected_rank','Ownership rank','across every player, not just '+(POS_PLURAL[e.element_type]||'players'));
+  oaRank('points_per_game_rank','Points per game rank','across every player');
+
   if(e.squad_number)add('Squad number',e.squad_number);
   /* Age, not the raw date: a birth date on a player card is a date of birth,
      and what anyone actually reads it for is the age. */
@@ -10265,7 +10311,7 @@ function renderSolver(){
      week is what fixes a squad without a hit. Every option is charged for the
      banked transfers it spends, measured against rolling them all, so the
      comparison is like for like with the multi-week plan. */
-  const ftAfter=k=>Math.min(FT_CAP,Math.max(0,freeT-k)+1);
+  const ftAfter=k=>Math.min(ftCap(),Math.max(0,freeT-k)+1);
   const ftBase=ftValue(ftAfter(0));
   const roll=k=>ftValue(ftAfter(k))-ftBase;
   const opts=[{k:0,gain:0,hit:0,roll:0,net:0}];let cum=0;
@@ -10362,7 +10408,7 @@ const DECAY_BASE=0.9;
 /* Points value of holding `n` free transfers, relative to holding one. */
 function ftValue(n){
   let v=0;
-  const k=Math.max(1,Math.min(FT_CAP,Math.round(n||0)));
+  const k=Math.max(1,Math.min(ftCap(),Math.round(n||0)));
   for(let i=1;i<k&&i<FT_LADDER.length;i++)v+=FT_LADDER[i];
   return v;
 }
@@ -10566,7 +10612,7 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
       const add=(sq2,bank2,t,moves)=>{
         const hit=Math.max(0,t-st.ft)*4;
         next.push({squad:sq2,bank:bank2,
-          ft:Math.min(FT_CAP,Math.max(0,st.ft-t)+1),   /* free-transfer accrual, capped */
+          ft:Math.min(ftCap(),Math.max(0,st.ft-t)+1),   /* free-transfer accrual, capped */
           /* Points and the hit that buys them are discounted TOGETHER: a −4
              taken in GW+2 is paid in GW+2, so weighting the cost as though
              it were due today would make distant hits look artificially
@@ -11824,19 +11870,29 @@ function rivalSquadRows(picks,live,myXi,myAll){
    history says what has been burned across the season. A chip played this
    week appears in both, and one played in GW3 appears only in the second.
 
-   Chips left is deliberately NOT computed. The 2026-27 game grants two of
-   each across two halves of the season, so "remaining" depends on which half
-   a chip was played in and which half we are in — and getting that wrong
-   would print a confident number that is simply false. What has been played
-   is a fact; what is left is a rule we have not verified. */
-function rivalChipSummary(history,picks){
+   CHIPS LEFT USED TO BE DELIBERATELY OMITTED. The note here said the
+   two-half rules were a calculation we had not verified, and that a confident
+   wrong number beside a correct one was worse than showing nothing. That was
+   the right call on what was known then, and it is no longer necessary:
+   bootstrap's chips[] publishes one row per chip per window with the exact
+   gameweek range, so "remaining" is read from the game rather than assumed.
+
+   `windows` is optional and absent means the old behaviour — played only,
+   nothing claimed about what is left. A payload without chips[] must not
+   silently produce an empty "all chips available" list, which is the failure
+   mode that would put a false statement where the honest blank used to be. */
+function rivalChipSummary(history,picks,windows,gw){
   const active=(picks&&picks.active_chip)||null;
   const played=(((history&&history.chips)||[])
     .filter(c=>c&&c.name)
     .map(c=>({name:c.name,event:typeof c.event==='number'?c.event:null,
       label:CHIP_API_LABEL[c.name]||c.name}))
     .sort((a,c)=>(a.event||0)-(c.event||0)));
-  return {active,activeLabel:active?(CHIP_API_LABEL[active]||active):null,played};
+  const haveWindows=!!(windows&&Object.keys(windows).length);
+  const status=haveWindows?chipStatus(played,windows,gw):null;
+  return {active,activeLabel:active?(CHIP_API_LABEL[active]||active):null,played,
+    status,
+    remaining:status?status.filter(s=>s.state==='available'||s.state==='upcoming'):null};
 }
 
 function loadRivals(){try{return JSON.parse(localStorage.getItem('ge-rivals')||'[]');}catch(_){return [];}}
@@ -11912,7 +11968,7 @@ async function hydrateRivals(host){
    have that I do not". */
 function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
   const S=rivalSquadRows(picks,live,mine,mineAll);
-  const C=rivalChipSummary(history,picks);
+  const C=rivalChipSummary(history,picks,b&&b.chipWindows,gw);
   const els=b.els||{};
   const eh=(picks&&picks.entry_history)||{};
   const cell=r=>{
@@ -11968,9 +12024,26 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
     ?'<div class="card-title" style="margin-top:12px">Chips played</div><div class="dl">'+
       C.played.map(c=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(c.label)+'</span></span>'+
         '<span class="dl-col">'+(c.event==null?'—':'GW'+c.event)+'</span></div>').join('')+'</div>'+
-      '<div class="dl-sub" style="margin-top:6px">What they have spent. Chips remaining are not shown —'+
-      ' the two-half rules make that a calculation we have not verified.</div>'
+      '<div class="dl-sub" style="margin-top:6px">What they have spent.</div>'
     :'<div class="dl-sub" style="margin-top:12px">No chips played yet this season.</div>';
+  /* What is LEFT, from the published windows. Each row names its own gameweek
+     range, because "wildcard" without "GW20-38" is ambiguous in a season that
+     grants two of them — and the range is the whole reason this can be shown
+     at all. Rendered only when the windows are actually known. */
+  const chipLeft=C.status
+    ?'<div class="card-title" style="margin-top:12px">Chips remaining</div><div class="dl">'+
+      C.status.map(sw=>{
+        const cls=sw.state==='available'?'badge-green':sw.state==='upcoming'?'badge-grey'
+          :sw.state==='played'?'badge-blue':'badge-amber';
+        const word=sw.state==='available'?'available':sw.state==='upcoming'?'from GW'+sw.start
+          :sw.state==='played'?'played'+(sw.event==null?'':' GW'+sw.event):'expired';
+        return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(sw.label)+'</span>'+
+          '<span class="dl-sub">GW'+sw.start+'\u2013'+sw.stop+'</span></span>'+
+          '<span class="dl-col"><span class="badge '+cls+'">'+esc(word)+'</span></span></div>';
+      }).join('')+'</div>'+
+      '<div class="dl-sub" style="margin-top:6px">Windows come from the game\u2019s own chip'+
+      ' schedule, so each half is counted separately.</div>'
+    :'';
   /* When the card is opened from a league table we already know what FPL's
      own standings say this manager scored. Ours is summed from the live feed
      and theirs is their accounting; the two run at different cadences and can
@@ -11985,6 +12058,7 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
     pitch+
     '<div class="card-title" style="margin-top:10px">Bench</div>'+bench+
     chipHist+
+    chipLeft+
     '<div class="dl-sub" style="margin-top:10px">'+
       '<span class="rv-key rv-shared"></span> in your squad &nbsp; '+
       '<span class="rv-key rv-diff"></span> not in your squad</div>'+
@@ -13001,8 +13075,8 @@ function nativeXP(el,nf){
   const xg90=effGoalRate(el);                          /* finishing-aware (P-fix 5) */
   const xa90=parseFloat(el.expected_assists_per_90||'0');
   const fx=nf.lam/nf.lamAvg;
-  const gPts=type<=2?6:type===3?5:4;
-  const csPts=type<=2?4:type===3?1:0;
+  const gPts=SCORING.goal[type];
+  const csPts=SCORING.cs[type];
   let pts=m.pAppear+m.p60                              /* appearance: 1 + 1 at 60 mins */
     +xg90*m.minFrac*fx*gPts                            /* goals */
     +xa90*m.minFrac*fx*3                               /* assists */
@@ -14435,7 +14509,14 @@ function chipPlanCard(b,fixtures){
    are willing to absorb. Carrying a non-playing asset for one or two weeks
    costs a few points; carrying one for six costs more than the hit ever
    would, so a distant wildcard is no excuse. */
-const FT_CAP=5;                 /* free transfers that can be banked at once */
+/* Free transfers that can be banked at once. The constant is the fallback;
+   ftCap() is what the app reads, so the published rule wins where bootstrap
+   has answered and this stands in where it has not. Kept as a function
+   rather than a mutable global because these call sites run inside the
+   transfer planner's inner loops, long after boot, and a stale captured
+   value would silently plan against last season's rulebook. */
+const FT_CAP=5;
+function ftCap(){const n=RULES&&RULES.maxFt;return Number.isFinite(n)&&n>=1?n:FT_CAP;}
 const CARRY_HORIZON=3;          /* weeks within which a chip is worth waiting for */
 function deadWeight(b,squad){
   return (squad||[]).map(e=>{
@@ -14472,7 +14553,7 @@ function transferRunway(b,squad,plan){
   return {next,weeks,dead,carry,rebuilds:!!rebuilds,
     /* Banking is only useful up to the cap, and only if there is time to
        accumulate. Past the cap a saved transfer is simply lost. */
-    canStack:weeks==null?FT_CAP:Math.max(0,Math.min(FT_CAP,weeks)),
+    canStack:weeks==null?ftCap():Math.max(0,Math.min(ftCap(),weeks)),
     fixNow:carry?[]:dead.filter(d=>d.severity>=2)};
 }
 function transferRunwayCard(b,squad,plan){
@@ -14484,7 +14565,7 @@ function transferRunwayCard(b,squad,plan){
   let advice;
   if(r.carry){
     advice=' The '+label+' rebuilds the squad, so <b>stop paying to fix things it will fix for free</b>. '+
-      'Carry the problems below, take no hits, and bank your transfers — you can hold up to '+FT_CAP+
+      'Carry the problems below, take no hits, and bank your transfers — you can hold up to '+ftCap()+
       ', and arriving with a stack means the weeks after the chip are covered too.';
   } else if(r.rebuilds){
     advice=' The '+label+' is still '+r.weeks+' gameweeks out — too far to wait on. Carrying a player you cannot field '+
@@ -14507,7 +14588,7 @@ function transferRunwayCard(b,squad,plan){
     (rows?'<div class="dl desc">'+rows+'</div>'
       :'<p class="dl-sub" style="margin:0">No dead weight in your squad — everyone is available and playing. '+
        'Bank the transfers rather than making one for its own sake.</p>')+
-    '<div class="dl-sub" style="margin-top:8px">Free transfers stack to <b>'+FT_CAP+'</b>'+
+    '<div class="dl-sub" style="margin-top:8px">Free transfers stack to <b>'+ftCap()+'</b>'+
     (r.weeks?', so from here you could reach <b>'+r.canStack+'</b> by GW'+r.next.gw:'')+
     '. A stack is what turns one gameweek into a mini-wildcard, which is why banking is part of the chip plan '+
     'rather than doing nothing. Anything marked <b>carry</b> is only tolerable because the chip is close — '+
@@ -14543,7 +14624,7 @@ function freeTransfersFrom(hist){
   for(let i=0;i<cur.length;i++){
     const ev=cur[i]||{},ch=chipAt[ev.event];
     if(ev.event>1&&ch!=='wildcard'&&ch!=='freehit')ft=Math.max(0,ft-(ev.event_transfers||0));
-    ft=Math.min(FT_CAP,ft+1);
+    ft=Math.min(ftCap(),ft+1);
   }
   return ft;
 }
@@ -14560,7 +14641,7 @@ function transferLedger(b,squad,plan,ftNow){
   const end=Math.min(38,chipGws[chipGws.length-1],startGw+LEDGER_MAX-1);
   const isRebuild=g=>(chips[g]||[]).some(k=>k==='wildcard'||k==='freehit');
   const isBench=g=>(chips[g]||[]).some(k=>k==='benchboost'||k==='triplecaptain');
-  let ft=ftNow==null?1:Math.max(0,Math.min(FT_CAP,ftNow));
+  let ft=ftNow==null?1:Math.max(0,Math.min(ftCap(),ftNow));
   let need=deadWeight(b,squad).filter(d=>d.severity>=2).length;
   const rows=[];
   for(let g=startGw;g<=end;g++){
@@ -14594,10 +14675,10 @@ function transferLedger(b,squad,plan,ftNow){
        available whether or not the plan wanted one. Worth saying out loud —
        but not on a chip week, where it is either untrue (a wildcard's
        transfers are unlimited) or beside the point. */
-    const capped=act!=='chip'&&bank>=FT_CAP&&spend===0;
-    if(capped)note+=' You are at the '+FT_CAP+'-transfer cap, so this week’s free transfer is lost if unused.';
+    const capped=act!=='chip'&&bank>=ftCap()&&spend===0;
+    if(capped)note+=' You are at the '+ftCap()+'-transfer cap, so this week’s free transfer is lost if unused.';
     rows.push({gw:g,bank,act,spend,note,chips:here.slice(),capped});
-    ft=Math.min(FT_CAP,bank-spend+1);
+    ft=Math.min(ftCap(),bank-spend+1);
   }
   return {rows,startGw,end,ftNow:ftNow==null?null:ft,
     peak:rows.reduce((m,r)=>Math.max(m,r.bank),0),
@@ -14625,7 +14706,7 @@ function transferLedgerCard(b,squad,plan,ftNow){
     '<div class="dl desc">'+rows+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Peak bank <b>'+L.peak+'</b> · '+
     '<b>'+L.spent+'</b> transfer'+(L.spent===1?'':'s')+' spent before the last chip. '+
-    'A stack is the point: '+FT_CAP+' banked transfers is a mini-wildcard you did not have to play a chip for. '+
+    'A stack is the point: '+ftCap()+' banked transfers is a mini-wildcard you did not have to play a chip for. '+
     'The ledger assumes no hits — if you take one, every week after it shifts.</div></div>';
 }
 
@@ -14809,11 +14890,20 @@ function bestXI(scored){
    constant does, silently, for a whole season.
 
    RULES_FALLBACK below is today's rulebook and is what the app uses until
-   bootstrap has answered. Two rules are deliberately NOT read: the free
-   transfer cap and the 4-point hit are not published anywhere in the API,
-   and mapping them onto a field whose meaning we cannot confirm would be
-   worse than an honest constant. */
-const RULES_FALLBACK={squadSize:15,xiSize:11,teamLimit:3,budget:1000,need:{1:2,2:5,3:5,4:3},minPlay:{1:1,2:3,3:2,4:1},maxPlay:{1:1,2:5,3:5,4:3},sellFee:0.5,moneyDiv:10,fromApi:false};
+   bootstrap has answered.
+
+   THE FREE TRANSFER CAP IS NOW PUBLISHED. This comment used to say it was
+   not, alongside the 4-point hit, and that a rule read off a field whose
+   meaning we could not confirm would be worse than an honest constant. That
+   was true when it was written and is no longer: bootstrap carries a
+   top-level `game_config` — a key nothing in this file referenced — whose
+   `rules.max_extra_free_transfers` is 4. One free transfer a week plus four
+   banked is the cap of five that FT_CAP has hard-coded all along, so two
+   independent sources agree on today's value, which is the only reason the
+   reading is trustworthy rather than a guess at what the field means.
+
+   The 4-point hit is still not published, and is still a constant. */
+const RULES_FALLBACK={squadSize:15,xiSize:11,teamLimit:3,budget:1000,need:{1:2,2:5,3:5,4:3},minPlay:{1:1,2:3,3:2,4:1},maxPlay:{1:1,2:5,3:5,4:3},sellFee:0.5,moneyDiv:10,maxFt:5,fromApi:false};
 const SQUAD_NEED=RULES_FALLBACK.need;
 let RULES=RULES_FALLBACK;
 /* Build the rules from a raw bootstrap payload. Every field is taken only
@@ -14846,6 +14936,18 @@ function fplRules(raw){
     need:haveTypes?need:RULES_FALLBACK.need,
     minPlay:haveTypes?minPlay:RULES_FALLBACK.minPlay,
     maxPlay:haveTypes?maxPlay:RULES_FALLBACK.maxPlay,
+    /* One free transfer a week, plus however many the game lets you bank.
+       Bounded above as well as below: an implausible cap would silently
+       rewrite every plan in the transfer planner, and a number that large is
+       far more likely to be a field that does not mean what we think than a
+       rule change. Out of range falls back rather than being clamped, because
+       clamping would hide the disagreement. */
+    maxFt:(function(){
+      const extra=Number((raw&&raw.game_config&&raw.game_config.rules||{}).max_extra_free_transfers);
+      if(!Number.isFinite(extra)||extra<0)return RULES_FALLBACK.maxFt;
+      const cap=1+Math.round(extra);
+      return cap>=1&&cap<=15?cap:RULES_FALLBACK.maxFt;
+    })(),
     fromApi:!!(g.squad_squadsize||haveTypes),
   };
   /* The squad must add up to the stated size, or one of the two sources is
@@ -14854,6 +14956,121 @@ function fplRules(raw){
   if(sum!==out.squadSize){out.need=RULES_FALLBACK.need;out.squadSize=RULES_FALLBACK.squadSize;}
   return out;
 }
+/* ── Scoring, read from the game rather than restated in three places ──
+   bootstrap carries `game_config.scoring`: FPL's own points table. Until now
+   the projection engine restated it inline, three times, as
+   `type<=2?6:type===3?5:4`.
+
+   THAT WAS WRONG, AND HAD NO WAY OF BEING FOUND. `type<=2` puts goalkeepers
+   and defenders on the same six points for a goal. The published table says a
+   goalkeeper's goal is worth TEN. The constant was the only statement of the
+   rule anywhere in the app, so every test agreed with it by construction and
+   the error could only ever be caught by asking the game. It is rare enough
+   to be worth almost nothing in expectation and wrong regardless.
+
+   Keyed by position SHORT NAME (GKP/DEF/MID/FWD), not by element_type id, so
+   the join goes through element_types[].singular_name_short rather than an
+   assumed 1=GKP. Assuming it would score every position as another one if FPL
+   ever renumbered, which is the worst failure available here and completely
+   silent.
+
+   THRESHOLDS ARE NOT IN THE TABLE. game_config.scoring publishes the POINTS a
+   defensive contribution earns (2 outfield, 0 for a keeper) and not the stat
+   count needed to earn them — 10 for defenders, 12 otherwise. A rule that is
+   not published cannot be read, and picking a field that might carry it would
+   be the mistake the free-transfer note above describes. It stays a constant.
+
+   SCORING_FALLBACK is today's table, corrected. */
+const SCORING_FALLBACK={goal:{1:10,2:6,3:5,4:4},cs:{1:4,2:4,3:1,4:0},assist:3,defcon:{1:0,2:2,3:2,4:2},defconThreshold:{2:10,3:12,4:12},fromApi:false};
+let SCORING=SCORING_FALLBACK;
+function fplScoring(raw){
+  const sc=(raw&&raw.game_config&&raw.game_config.scoring)||null;
+  const types=(raw&&raw.element_types)||[];
+  const out={goal:{...SCORING_FALLBACK.goal},cs:{...SCORING_FALLBACK.cs},
+    assist:SCORING_FALLBACK.assist,defcon:{...SCORING_FALLBACK.defcon},
+    defconThreshold:{...SCORING_FALLBACK.defconThreshold},fromApi:false};
+  if(!sc)return out;
+  /* Position short name → element_type id, out of the payload itself. */
+  const byShort={};
+  for(const t of types){
+    const id=Number(t&&t.id);
+    const key=String((t&&(t.singular_name_short||t.plural_name_short))||'').trim().toUpperCase();
+    if(Number.isFinite(id)&&key)byShort[key]=id;
+  }
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null;};
+  /* All four positions or none. A half-mapped table would score two positions
+     by the new rules and two by the old, which is worse than either alone and
+     impossible to spot in the output. */
+  const mapPos=(obj,fallback)=>{
+    if(!obj||typeof obj!=='object')return {value:fallback,ok:false};
+    const m={};
+    for(const k of Object.keys(obj)){
+      const id=byShort[String(k).trim().toUpperCase()];
+      const n=num(obj[k]);
+      if(id!=null&&n!==null)m[id]=n;
+    }
+    const ok=[1,2,3,4].every(t=>m[t]!=null);
+    return {value:ok?m:fallback,ok};
+  };
+  const g=mapPos(sc.goals_scored,out.goal);
+  const c=mapPos(sc.clean_sheets,out.cs);
+  const d=mapPos(sc.defensive_contribution,out.defcon);
+  out.goal=g.value;out.cs=c.value;out.defcon=d.value;
+  const a=num(sc.assists);if(a!==null)out.assist=a;
+  out.fromApi=!!(g.ok||c.ok||d.ok||a!==null);
+  return out;
+}
+
+/* ── Chip windows, published rather than assumed ──────────────────────
+   bootstrap's chips[] carries one row PER CHIP PER WINDOW, each with the
+   gameweek range it may be played in. This season: wildcard and free hit run
+   2-19 and again 20-38, bench boost and triple captain 1-19 and 20-38.
+
+   The rival card shows chips PLAYED and deliberately does not show chips
+   REMAINING, because the two-half rules were not something this app could
+   verify and inventing them would have put a confident wrong number next to
+   a correct one. They are published, so it can now be derived instead. */
+function fplChipWindows(raw){
+  const rows=(raw&&raw.chips)||[];
+  const by={};
+  for(const c of rows){
+    const name=c&&c.name;
+    const a=Number(c&&c.start_event),z=Number(c&&c.stop_event);
+    if(!name||!Number.isFinite(a)||!Number.isFinite(z)||z<a)continue;
+    (by[name]=by[name]||[]).push({start:a,stop:z,type:(c&&c.chip_type)||null});
+  }
+  for(const k of Object.keys(by))by[k].sort((x,y)=>x.start-y.start||x.stop-y.stop);
+  return by;
+}
+/* Which chips are still to come, given what has been played.
+   `played` is the history endpoint's chips array — [{name, event}].
+
+   A chip is spent for a WINDOW when it was played inside that window's
+   gameweek range. That is what makes the two-half rule work without special
+   cases: the same name appears twice with different ranges, and each half is
+   spent independently. Comparing on name alone would mark both halves used
+   the moment one was. */
+function chipStatus(played,windows,gw){
+  const out=[];
+  for(const name of Object.keys(windows||{})){
+    for(const w of windows[name]){
+      const use=(played||[]).find(p=>p&&p.name===name&&
+        Number.isFinite(Number(p.event))&&Number(p.event)>=w.start&&Number(p.event)<=w.stop);
+      /* gw==null is checked before the numeric test on purpose: Number(null)
+         is 0, which is finite, so an absent gameweek would have passed the
+         guard and then been read as "before every window" — reporting every
+         chip as upcoming when in fact nothing is known. */
+      const state=use?'played'
+        :((gw==null||!Number.isFinite(Number(gw)))?'unknown'
+          :Number(gw)>w.stop?'expired'
+          :Number(gw)<w.start?'upcoming':'available');
+      out.push({name,label:CHIP_API_LABEL[name]||name,start:w.start,stop:w.stop,
+        type:w.type,state,event:use?Number(use.event):null});
+    }
+  }
+  return out.sort((a,b)=>a.start-b.start||(a.name<b.name?-1:a.name>b.name?1:0));
+}
+
 /* Fewest clubs that can field a legal XI, given the club cap — 11 players at
    3 per club needs 4 clubs. Derived rather than assumed, so it tracks a rule
    change with everything else. */
@@ -16975,7 +17192,7 @@ function pointsDist(el,nf,trials){
   const type=el.element_type,fx=nf.lamAvg?nf.lam/nf.lamAvg:1;
   const xg=effGoalRate(el),xa=parseFloat(el.expected_assists_per_90||'0');   /* finishing-aware (P-fix 5) */
   const dcp=parseFloat(el.defensive_contribution_per_90||'0');
-  const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0,thr=type===2?10:12;
+  const gPts=SCORING.goal[type],csPts=SCORING.cs[type],thr=SCORING.defconThreshold[type]||12;
   const mins=Math.max(el.minutes||0,1);
   const b90=(el.bonus||0)*90/Math.max(mins,90),sv90=(el.saves||0)*90/Math.max(mins,90);
   const p60c=Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
@@ -17046,7 +17263,7 @@ function squadSim(els,nfByTeam,capId,trials){
       if(conc[team]===undefined)conc[team]=cs[team]?0:pois(-Math.log(Math.max(0.03,Math.min(0.99,nf.cs)))); /* shared goals conceded (P-fix 1) */
       const m=minutesModel(e,Math.max(1,nf.gp||6),nf.congest);
       const type=e.element_type,fx=(nf.lamAvg?nf.lam/nf.lamAvg:1)*shock[team];
-      const gPts=type<=2?6:type===3?5:4,csPts=type<=2?4:type===3?1:0;
+      const gPts=SCORING.goal[type],csPts=SCORING.cs[type];
       const play=rnd()<m.pAppear,p60=play&&rnd()<Math.min(1,m.p60/Math.max(m.pAppear,1e-6));
       /* Expected minutes given he appears — the branch below has already
          conditioned on that, so the unconditional minFrac would charge the

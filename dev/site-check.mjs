@@ -211,9 +211,10 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: '.dl-grow > .rv-open > .dl-nm', since: '2026-08-21',
-  what: 'the rule that stacks the team name above the manager line again' };
-/* Rotated from 'id="rival-fpl-note"' (2026-08-21 evening), which had landed in
+const MARKER = { text: 'function fplChipWindows', since: '2026-08-22',
+  what: 'the chip windows read from the game rather than assumed' };
+/* Rotated from '.dl-grow > .rv-open > .dl-nm' (2026-08-22), and from
+   'id="rival-fpl-note"' (2026-08-21 evening), which had landed in
    the previous build. Rotated from 'id="rival-modal"' (2026-08-21 morning), and from
    'id="fdr-rows"' (2026-08-19) before that, each of which had done its job and
    stopped: by 21 Aug it was live in the previous build, so a green run proved

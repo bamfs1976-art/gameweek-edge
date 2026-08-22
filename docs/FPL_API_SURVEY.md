@@ -486,3 +486,81 @@ overstated use for **14 fields**, including every `*_rank` above,
 appear somewhere in a twenty-thousand-line file regardless. The error runs in
 the direction that conceals opportunities, so that diff should not be read as
 a coverage report.
+
+---
+
+## What was wired in, 22 Aug 2026
+
+Acting on the sweep above. Everything here reads the game where the game
+publishes it and falls back to a constant where it does not — the contract
+`fplRules` already used.
+
+### A real scoring bug, found by asking the game
+
+The projection engine restated the points table inline, three times, as
+`type<=2?6:type===3?5:4`. `type<=2` lumps goalkeepers in with defenders, so
+**a goalkeeper's goal was scored at 6 when the game pays 10.**
+
+It could not have been found any other way. The constant was the only
+statement of the rule anywhere in the app, so every test agreed with it by
+construction. Rare enough to be worth almost nothing in expectation, and
+wrong regardless.
+
+Now `SCORING`, from `game_config.scoring`, joined to element_type ids
+**through `element_types[].singular_name_short`** rather than an assumed
+1=GKP — a renumbering would otherwise score every position as another one,
+silently. All four positions map or none does: a half-mapped table would
+score two positions by the new rules and two by the old.
+
+Thresholds stay constant. `game_config.scoring` publishes the *points* a
+defensive contribution earns (2 outfield, 0 keeper), not the stat count
+needed to earn them (10 defenders, 12 otherwise). Unpublished rules stay
+honest constants.
+
+### Chip windows: the thing the rival card refused to show
+
+`chips[]` carries one row per chip per window. `fplChipWindows` parses them;
+`chipStatus` marks each window `played` / `available` / `upcoming` /
+`expired` / `unknown`.
+
+A chip is spent for a **window**, matched on name *and* gameweek range. That
+is the whole rule: matching on name alone marks both halves used the moment
+one is, which is exactly the confident-wrong number the card was written to
+avoid. Absent `chips[]` reverts to the old honest blank rather than rendering
+an empty "nothing left" list.
+
+### The free-transfer cap is published after all
+
+`RULES_FALLBACK`'s comment said the cap was not in the API. `game_config.rules.max_extra_free_transfers`
+is 4 — one a week plus four banked is the five `FT_CAP` had hard-coded all
+along. **Two independent sources agreeing on today's value is the only reason
+this reading is trustworthy** rather than a guess at what the field means.
+Out-of-range values fall back rather than clamp, so a disagreement surfaces
+instead of hiding. The 4-point hit is still unpublished and still a constant.
+
+### Price-change times
+
+`game_config.settings.price_change_deadlines` replaces copy that asserted
+"00:00 UK time" — right today only because 23:00 UTC is midnight BST, and an
+hour wrong from the October clock change, on a page whose subject is a
+deadline. Absent schedule says nothing rather than inventing a time.
+
+### Overall ranks
+
+`selected_rank` and `points_per_game_rank` on the player card. Only these
+two: they answer a question the positional `*_rank_type` fields already there
+cannot — "7th most-owned player" is a much stronger claim than "7th
+most-owned defender". The other five overall ranks duplicate their positional
+twins closely enough that showing all seven would be noise.
+
+### Deliberately not wired in
+
+- **`opta_code`, `teams[].pulse_id`** — stable join keys, and nothing to join
+  to. Adding them now would be dead code that reads as capability.
+- **`price_change_projections`** — all-zero for all 600 players today, and
+  the standing rule is that this app never presents somebody else's
+  projection as fact. Revisit when `likelihood` starts varying.
+- **`can_transact` / `can_select` / `special` / `has_temporary_code`** — flags
+  for a transfer UI this app does not have; it is read-only.
+- **`known_name`, `team_join_date`, `element_count`, `deadline_time_epoch`** —
+  real but cosmetic; no panel is worse without them.
