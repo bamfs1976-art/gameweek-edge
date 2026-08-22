@@ -211,16 +211,24 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'function leagueEO', since: '2026-08-22',
-  what: 'the detailed mini-league view with effective ownership' };
-/* Rotated from 'function squadMatchday' (2026-08-22), before that
-   'function titleRace' (2026-08-22), and before that
-   'function fixtureOver' (2026-08-22), which is the third
-   release in a row to go out unconfirmed: the GitHub connector dropped
-   mid-session and has not come back, so the price panel, the auto-subs
-   fix and the live-badge fix are all pushed-but-unverified. This marker
-   is the newest of the four and its presence confirms every earlier one,
-   since they are all ancestors of the same build. Before that:
+const MARKER = { text: 'function freeTransfers', since: '2026-08-22',
+  what: 'the league markers — free transfers, value, rank and the chip ledger' };
+/* Rotated from 'function leagueEO' (2026-08-22), before that
+   'function squadMatchday', 'function titleRace' and
+   'function fixtureOver' (all 2026-08-22).
+
+   RESOLVED 2026-08-22 16:48. Those four, plus the price panel and the
+   auto-subs fix, spent a day pushed-but-unverified because the GitHub
+   connector dropped mid-session and neither curl nor WebFetch can reach
+   the site from the sandbox. The connector came back and run
+   32585799682 reported:
+
+     ✓ deployed build  carries the detailed mini-league view with
+                       effective ownership (added 2026-08-22)
+
+   All six were ancestors of that build, so one marker confirmed the lot
+   — which is the argument for rotating the marker on every release
+   rather than only on the ones that feel significant. Before that:
    'function applyAutoSubs' (2026-08-22), and before it from
    'function fplPriceMove' (2026-08-22), which shipped in the
    previous build but was never confirmed live \u2014 the GitHub connector
