@@ -1764,6 +1764,83 @@ section('mini-league sorting: a different order, not a different league');
   await sp.close();
 }
 
+section('the sidebar at tablet widths: no hover, so nothing may depend on it');
+{
+  /* Reported: "Sidebar menu on iPad isn't right" — an iPad in landscape
+     showed a 48px strip of unlabelled icons with the FPL/EFL switcher
+     sliced down the middle.
+
+     The rail between 901px and 1279px opens on :hover. A touch screen
+     has no hover, so on an iPad in landscape (1024 and 1180 CSS px, both
+     inside that band) it could not be opened by any gesture: labels
+     stuck at opacity 0, the brand and gameweek strip at display:none,
+     and the competition switcher — wider than 48px — clipped by the
+     rail's overflow:hidden, which put the EFL link off the page rather
+     than merely out of reach.
+
+     Every viewport this suite used was a desktop one, where hover exists
+     and the rail behaves. The bug lives entirely in the combination of
+     width AND pointer type, so the check has to vary both. */
+  const CASES = [
+    { name: 'iPad portrait', w: 820, h: 1180, touch: true, drawer: true },
+    { name: 'iPad landscape', w: 1024, h: 768, touch: true, pinned: true },
+    { name: 'iPad 11in landscape', w: 1180, h: 820, touch: true, pinned: true },
+    { name: 'iPad Pro landscape', w: 1366, h: 1024, touch: true, pinned: true },
+    { name: 'desktop, mouse', w: 1180, h: 820, touch: false, rail: true },
+  ];
+  for (const c of CASES) {
+    const ctx = await browser.newContext({ viewport: { width: c.w, height: c.h }, hasTouch: c.touch });
+    const p = await ctx.newPage();
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(900);
+    const r = await p.evaluate(() => {
+      const sb = document.querySelector('.sidebar');
+      const g = document.querySelector('.sb-game');
+      const lab = document.querySelector('.nav-area-label');
+      const sbR = Math.round(sb.getBoundingClientRect().right);
+      const gHidden = g ? getComputedStyle(g).display === 'none' : true;
+      return {
+        hoverNone: matchMedia('(hover:none)').matches,
+        w: Math.round(sb.getBoundingClientRect().width),
+        labels: lab ? getComputedStyle(lab).opacity : null,
+        onScreen: Math.round(sb.getBoundingClientRect().left) >= 0,
+        switcherHidden: gHidden,
+        /* Visible but running past the sidebar's own edge is the defect:
+           a control the user can see part of and cannot reach. */
+        switcherClipped: !gHidden && g
+          ? [...g.querySelectorAll('.sb-game-btn')].some((b) => {
+              const bb = b.getBoundingClientRect();
+              return bb.width === 0 || Math.round(bb.right) > sbR + 1;
+            })
+          : false,
+      };
+    });
+
+    ok(r.hoverNone === c.touch,
+       c.name + ': pointer type is what the case says (hover:none=' + r.hoverNone + ')');
+    /* A control is never half-visible: either fully reachable, or
+       deliberately hidden with the rest of the collapsed rail. */
+    ok(r.switcherClipped === false,
+       c.name + ': the competition switcher is not sliced by the rail');
+
+    if (c.pinned) {
+      ok(r.w >= 200, c.name + ': the sidebar is pinned open, got ' + r.w + 'px');
+      ok(r.labels === '1', c.name + ': its labels are readable without hovering (' + r.labels + ')');
+      ok(r.switcherHidden === false, c.name + ': and the EFL link is on the page');
+    }
+    if (c.rail) {
+      /* The mouse case must NOT change — the rail is the desktop design. */
+      ok(r.w <= 60, c.name + ': keeps the collapsed icon rail, got ' + r.w + 'px');
+      ok(r.labels === '0', c.name + ': with labels revealed on hover, not before');
+      ok(r.switcherHidden === true, c.name + ': and the switcher hidden rather than half-drawn');
+    }
+    if (c.drawer) {
+      ok(r.w >= 200, c.name + ': the drawer keeps its full width, got ' + r.w + 'px');
+    }
+    await ctx.close();
+  }
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 

@@ -1818,9 +1818,14 @@ body{font-size:14px;line-height:1.35}
 @media(min-width:901px){
   .sidebar{width:48px;overflow:hidden;transition:width .16s var(--ease)}
   .sidebar:hover,.sidebar:focus-within{width:212px;box-shadow:10px 0 30px rgba(0,0,0,.4)}
-  .sidebar .brand-text,.sidebar .sb-gw,.sidebar .sb-foot{display:none}
+  /* .sb-game is 2 buttons wide and the rail is 48px with overflow
+     hidden, so leaving it visible renders a green chip sliced down the
+     middle with the EFL link cut off the page — which reads as broken
+     rather than collapsed. It hides and reveals with the other labels. */
+  .sidebar .brand-text,.sidebar .sb-gw,.sidebar .sb-foot,.sidebar .sb-game{display:none}
   .sidebar:hover .brand-text,.sidebar:focus-within .brand-text,
   .sidebar:hover .sb-gw,.sidebar:focus-within .sb-gw,
+  .sidebar:hover .sb-game,.sidebar:focus-within .sb-game,
   .sidebar:hover .sb-foot,.sidebar:focus-within .sb-foot{display:flex}
   .sidebar .sb-gw{display:none;flex-direction:column}
   .sidebar:hover .sb-gw,.sidebar:focus-within .sb-gw{display:block}
@@ -1830,11 +1835,39 @@ body{font-size:14px;line-height:1.35}
   .nav-area-label{opacity:0;transition:opacity .12s}
   .sidebar:hover .nav-area-label,.sidebar:focus-within .nav-area-label{opacity:1}
 }
+/* A TOUCH TABLET IN THE RAIL BAND. The 48px rail above opens on :hover,
+   and a touch screen has no hover — so on an iPad in landscape (1024 or
+   1180 CSS px, both inside 901–1279) it is a permanent strip of
+   unlabelled icons that cannot be opened by any gesture. Worse, the
+   competition switcher is wider than 48px and the rail clips it, so the
+   FPL chip is sliced in half and the EFL link is not merely hard to
+   reach but absent from the page.
+
+   Measured, not assumed: at 1180×820 with touch, (hover:none) matches,
+   .nav-area-label computes opacity 0, .brand-text and .sb-gw compute
+   display:none, and none of it can change without a pointer.
+
+   So pin it open. Placed BETWEEN the rail block and the xl block on
+   purpose — these selectors all have the same specificity, so order
+   decides, and an iPad Pro at 1366 must still get the 240px xl sidebar
+   rather than this narrower one. An iPad with a trackpad reports
+   (hover:hover) and keeps the rail, which is right: it has a pointer. */
+@media(min-width:901px) and (hover:none){
+  .sidebar{width:212px;overflow-y:auto;overflow-x:hidden;transition:none}
+  .sidebar:hover,.sidebar:focus-within{width:212px;box-shadow:none}
+  .sidebar .brand-text,.sidebar .sb-foot,.sidebar .sb-game{display:flex}
+  .sidebar .sb-gw{display:block}
+  .sb-brand{padding:14px 14px 12px}
+  .sb-nav{padding:8px 10px 14px}
+  .nav-area-btn{padding:9px 11px;gap:12px}
+  .nav-area-label{opacity:1}
+  .main{margin-left:212px}
+}
 /* xl (≥1280): pin the rail open with labels — no hover flyout, no overlay. */
 @media(min-width:1280px){
   .sidebar{width:240px;overflow-y:auto;overflow-x:hidden}
   .sidebar:hover,.sidebar:focus-within{width:240px;box-shadow:none}
-  .sidebar .brand-text,.sidebar .sb-foot{display:flex}
+  .sidebar .brand-text,.sidebar .sb-foot,.sidebar .sb-game{display:flex}
   .sidebar .sb-gw{display:block}
   .sb-brand{padding:16px 16px 12px}
   .sb-nav{padding:8px 10px 14px}
