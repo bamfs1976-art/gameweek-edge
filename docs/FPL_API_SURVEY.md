@@ -341,9 +341,51 @@ FPL's own page shows a change: if the fields populate, they work; if they
 stay zero while the page shows movement, they are dead and we need another
 source. Until then, treat the zeroes as "too early", not as "working".
 
-### We already consume everything price-related that bootstrap publishes
+### CORRECTION: we do NOT consume everything price-related
 
-14/14 price fields present, none missing. `now_cost`, `cost_change_event`,
+The paragraph that stood here said "14/14 price fields present, none
+missing", which read as complete coverage of the subject. It was complete
+coverage of MY LIST. `dev/fpl-price-probe.mjs` checks a hand-written
+`PRICE_FIELDS` array that I wrote, so it could only ever confirm what I
+already believed. Enumerating what the API actually returns
+(`dev/fpl-bootstrap-unused.mjs`) found five price fields that were not in it:
+
+  price_change_projections, price_change_calibrating, price_change_percent,
+  price_change_hourly_rate, price_change_locked_until
+
+plus an entire unreferenced top-level key, `game_config`, carrying
+`settings.price_change_deadlines`.
+
+**And then the values tempered it again.** `price_change_projections` is a
+populated array for all 600 players — it looks like FPL publishing its own
+price forecast, which would be a direct upgrade on our threshold model. It
+is not, yet. Across all 600 players there is exactly **one distinct value**:
+
+    [{"offset":0,"projected_percent":"0","likelihood":0},
+     {"offset":1,"projected_percent":"0","likelihood":0},
+     {"offset":2,"projected_percent":"0","likelihood":0}]
+
+Calafiori (net +28,214) and Pedro Porro (net −47,283) carry identical
+all-zero projections. `price_change_calibrating` is false for all 600.
+`price_change_percent`, `price_change_hourly_rate` and
+`price_change_locked_until` are empty for all 600.
+
+So the schema is real, named and three days deep (offset 0/1/2), and carries
+no information today. A fill-rate check alone reports it as populated,
+because a non-empty array of zeroes is still a non-empty array — the
+distinct-value count is what catches it. **Re-check after the first price
+change lands: if `likelihood` starts varying, FPL is publishing the forecast
+our panel currently estimates, and that is worth building on.**
+
+`game_config.settings.price_change_deadlines` gives the actual times:
+`2026-08-22T23:00:00Z`, `2026-08-23T23:00:00Z`, `2026-08-24T23:00:00Z`.
+Our price panel hardcodes "00:00 UK time" in user-facing copy. That is
+correct today (23:00 UTC = 00:00 BST) and becomes wrong at the October clock
+change. Reading the published timestamp fixes that permanently.
+
+### The rest of what bootstrap publishes and we never read
+
+14/14 of the fields on my hand-written price list are present. `now_cost`, `cost_change_event`,
 `transfers_in_event`, `transfers_out_event`, `selected_by_percent`,
 `value_form`, `value_season` and `now_cost_rank` are all referenced in
 `index.html`. `cost_change_start` is not (0 references) — it is season-to-date
@@ -389,3 +431,58 @@ price panel — to move a displayed estimate by ≤2pp. Not worth it.
 
 Recorded so this is not re-investigated. If the threshold floor is ever
 lowered, revisit: the floor is the only reason the estimate is good enough.
+
+---
+
+## Unused bootstrap fields, measured 22 Aug 2026
+
+`dev/fpl-bootstrap-unused.mjs`, run 10 of the FPL endpoint probe workflow.
+Every field bootstrap returns, tested against a word-boundary match in
+`index.html`, reported with fill rate and a real value.
+
+**This says "unconsumed", not "new".** We store no baseline, so one snapshot
+cannot tell an addition from something that was always there and never read.
+The run prints a field fingerprint for a future diff; commit one to make the
+stronger claim possible.
+
+**45 unused and populated, 17 unused and empty.** The split matters: an
+all-zero column is not an opportunity. And note the trap one level down —
+`price_change_projections` counts as populated (non-empty array) while
+carrying nothing but zeroes, which only the distinct-value check exposed.
+
+### Worth acting on
+
+| what | evidence | why |
+|---|---|---|
+| `chips[]` `start_event` / `stop_event` / `chip_type` | 8/8 | wildcard 2–19 & 20–38, freehit 2–19 & 20–38, bboost 1–19 & 20–38, 3xc 1–19 & 20–38. **The two-half chip rules, published.** The rival card deliberately omits "chips remaining" because those rules were unverified — this verifies them. |
+| `game_config.scoring` | full table | `goals_scored {GKP:10, DEF:6, MID:5, FWD:4}`, `defensive_contribution {DEF:2, FWD:2, GKP:0, MID:2}`, `assists 3`, `clean_sheets {DEF:4, GKP:4, MID:1}`, cards, own goals. Authoritative and self-updating on a rule change, where hardcoded constants are not. |
+| `game_config.settings.price_change_deadlines` | 3 timestamps | replaces hardcoded "00:00 UK time" copy; survives the clock change. |
+| `game_config.rules` | — | `squad_total_spend 1000`, `transfers_sell_on_fee 0.5`, `max_extra_free_transfers 4`, `transfers_cap 20`, `squad_team_limit 3`, `stats_form_days 30`. |
+| `*_rank` on elements | 600/600 | `influence_rank`, `creativity_rank`, `threat_rank`, `ict_index_rank`, `now_cost_rank`, `points_per_game_rank`, `selected_rank`. Cheap "Nth of 600" context. |
+| `opta_code` (e.g. `p154561`), `teams[].pulse_id` | 600/600, 20/20 | stable join keys to other providers, no name-matching. |
+| `events[].deadline_time_epoch` | 38/38 | integer deadline, no date parsing. |
+| `known_name` (68/600), `team_join_date` (584/600), `element_types[].element_count` | — | small profile detail. |
+
+### Published but empty — not opportunities
+
+`cost_change_event_fall`, `cost_change_start`, `cost_change_start_fall`,
+`price_change_percent`, `price_change_hourly_rate`,
+`price_change_locked_until`, `corners_and_indirect_freekicks_text`,
+`direct_freekicks_text`, `penalties_text`, `scout_risks`,
+`teams[].team_division`, `teams[].link_url`, `events[].release_time`,
+`events[].deadline_time_game_offset`, `events[].transfers_made`,
+`element_types[].squad_min_select`, `element_types[].squad_max_select`.
+
+The three set-piece `*_text` fields being empty is worth noting: we already
+read the `*_order` integers, and the text that would explain them is not
+populated. `game_config.scoring.mng_*` is present but zeroed throughout —
+manager scoring exists in the schema and is not active.
+
+### The existing field diff was hiding findings
+
+`dev/fpl-endpoint-probe.mjs` asks `appSrc.includes(name)`. On this run that
+overstated use for **14 fields**, including every `*_rank` above,
+`transfers_in`, `transfers_out` and `goals_conceded` — short names that
+appear somewhere in a twenty-thousand-line file regardless. The error runs in
+the direction that conceals opportunities, so that diff should not be read as
+a coverage report.
