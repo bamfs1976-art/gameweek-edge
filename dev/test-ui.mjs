@@ -1410,6 +1410,91 @@ section('your matchday: which of my players are on, and when');
   await mp.close();
 }
 
+section('mini-league detailed view: every squad, with effective ownership');
+{
+  /* Asked for after a screenshot of LiveFPL's detailed table: each
+     manager expanding to their squad, with each player's ownership
+     across the league beside his live score. */
+  const dp = await browser.newPage();
+  const dErrors = [];
+  dp.on('pageerror', (e) => dErrors.push(e.message));
+  await dp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await dp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await dp.waitForTimeout(1200);
+
+  const view = await dp.evaluate(async () => {
+    try {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'detailed';
+      renderPage('leagues');
+    } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3000));
+    const card = [...document.querySelectorAll('.card')]
+      .find((c) => /detailed view/i.test((c.querySelector('.card-title') || {}).innerText || ''));
+    if (!card) return { found: false, body: document.body.innerText.slice(0, 250) };
+    const mgrs = [...card.querySelectorAll('.lg-mgr')];
+    const first = mgrs[0];
+    const sq = first && first.querySelector('.lg-sq');
+    const beforeOpen = sq ? getComputedStyle(sq).display : null;
+    /* Expand the first manager and see the squad appear. */
+    first.querySelector('.lg-head').click();
+    await new Promise((r) => setTimeout(r, 150));
+    const afterOpen = sq ? getComputedStyle(sq).display : null;
+    const tiles = [...first.querySelectorAll('.lg-p')];
+    const eos = [...first.querySelectorAll('.lg-eo')].map((e) => e.textContent);
+    return {
+      found: true, text: card.innerText,
+      managers: mgrs.length,
+      beforeOpen, afterOpen,
+      tiles: tiles.length,
+      eos,
+      /* Compact rows must be gone — the same ranks twice is noise. */
+      compactRows: document.querySelectorAll('#league-standings .dl-row').length,
+      legend: card.querySelectorAll('.lg-legend span').length,
+      states: [...new Set(tiles.map((t) => [...t.classList].find((c) => /^lg-(done|live|toPlay|blank)$/.test(c))))],
+      swing: !![...document.querySelectorAll('.card')]
+        .find((c) => /who separates this league/i.test((c.querySelector('.card-title') || {}).innerText || '')),
+      progW: (() => { const p = first.querySelector('.lg-prog i');
+        return p ? p.getBoundingClientRect().width : 0; })(),
+    };
+  });
+
+  ok(view.found === true, 'the detailed view renders (' + (view.body || '') + ')');
+  ok(view.managers === 3, 'one block per manager, got ' + view.managers);
+
+  /* Expanding is the whole interaction. */
+  ok(view.beforeOpen === 'none', 'squads start collapsed');
+  ok(view.afterOpen !== 'none', 'and open when the manager row is clicked');
+
+  /* Fifteen tiles: eleven plus a four-man bench. */
+  ok(view.tiles === 15, 'the squad is fifteen players, got ' + view.tiles);
+
+  /* THE NUMBER THE SCREENSHOT IS ABOUT. Every player carries effective
+     ownership across the league, and it has to be a real percentage
+     rather than a blank or NaN. */
+  ok(view.eos.length === 15, 'every player carries an ownership figure, got ' + view.eos.length);
+  ok(view.eos.every((s) => /^\d+(\.\d+)?%$/.test(s)),
+     'and each is a percentage (' + view.eos.slice(0, 3).join(' ') + ')');
+  /* All three mock managers share this squad, so everyone starting is at
+     100% and the bench at 0% — which is exactly the case a headcount
+     would get wrong by calling the bench 100% owned. */
+  ok(view.eos.some((s) => s === '0.0%'),
+     'a player nobody starts reads 0%, not 100% (' + view.eos.join(' ') + ')');
+
+  ok(view.compactRows === 0, 'the compact table is replaced, not duplicated');
+  ok(view.legend === 4, 'the four player states are spelled out, got ' + view.legend);
+  ok(view.states.filter(Boolean).length >= 1, 'and tiles carry a state class');
+  ok(view.progW > 0, 'the played-so-far bar has width');
+  ok(view.swing === true, 'the swing card names who actually separates the league');
+
+  /* Never let a scoped percentage read as a league-wide one. */
+  ok(/effective ownership/i.test(view.text), 'the card says what the percentages are');
+  ok(/captain counts twice/i.test(view.text), 'and how they are counted');
+
+  ok(dErrors.length === 0, 'the detailed view threw nothing (' + dErrors.slice(0, 2).join(' | ') + ')');
+  await dp.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 

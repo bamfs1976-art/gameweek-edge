@@ -674,6 +674,40 @@ html.offline .net-banner{transform:translateY(0)}
 .md-ko{font-weight:700}
 .md-c{color:var(--green-bright)}
 .md-v,.md-b{color:var(--text-3)}
+/* Detailed league view: a manager per row, expanding to their squad. */
+.lg-mgr{border:1px solid var(--border-2);border-radius:var(--r-md);margin-bottom:8px;
+  overflow:hidden;background:var(--surface)}
+.lg-mgr.league-me{background:var(--green-soft)}
+.lg-head{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.lg-yet,.lg-cap{display:flex;flex-direction:column;align-items:center;flex-shrink:0;
+  font-size:.8rem;font-weight:700;line-height:1.15}
+.lg-cap{max-width:84px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lg-yet small,.lg-cap small{font-size:var(--fs-min);font-weight:600;color:var(--text-3);
+  text-transform:uppercase;letter-spacing:.04em}
+.lg-up{color:var(--green-bright)}
+.lg-dn{color:var(--red)}
+.lg-sq{padding:6px 12px 12px;border-top:1px solid var(--border-2)}
+.lg-sub-t{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--text-3);margin:12px 0 6px}
+.lg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.lg-grid.bench{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));opacity:.85}
+.lg-eo{display:block;font-size:var(--fs-min);font-weight:800;color:var(--text-2);
+  background:var(--surface-3);border-radius:4px;padding:1px 0;margin-top:2px}
+.lg-prog{height:5px;border-radius:3px;background:var(--border-2);overflow:hidden;margin:8px 0 6px}
+.lg-prog i{display:block;height:100%;border-radius:3px;background:var(--green)}
+/* Player state. These four are the whole read of a live table: what is
+   banked, what is happening, what is still to come, and what is never
+   coming. Colour AND a legend, because colour alone is not a label. */
+.lg-p{border-radius:8px;padding:4px 2px}
+.lg-done{background:var(--surface-2)}
+.lg-live{background:var(--green-soft);box-shadow:inset 0 0 0 1px var(--green)}
+.lg-toPlay{opacity:.62}
+.lg-blank{background:var(--red-soft,rgba(220,60,60,.12));opacity:.75}
+.lg-legend{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:10px;
+  font-size:.7rem;color:var(--text-2)}
+.lg-legend span{display:flex;align-items:center;gap:5px}
+.lg-dot{width:10px;height:10px;border-radius:3px;display:inline-block;
+  border:1px solid var(--border-3)}
 .bench .pp{flex-basis:58px}
 .bench .pp-fig{width:40px;height:44px}
 .bench .pp-nm,.bench .pp-pt{max-width:56px;font-size:var(--fs-min)}
@@ -16031,6 +16065,122 @@ function titleRace(members,gwsLeft,opts){
     err:swing>0?0.5/Math.sqrt(trials):0};
 }
 
+/* ── The league, in detail: every squad, and what it costs you ──
+   A mini-league table tells you who is ahead. It does not tell you WHY,
+   and the why is almost always one of two things: a player the field
+   owns and you do not, or a captain pick that differed. This assembles
+   both, for every manager on the page at once.
+
+   Effective ownership is the number that makes it work, and it is not
+   "how many people own him". It is the SUM OF MULTIPLIERS divided by the
+   number of managers — which is the only definition that survives
+   contact with the real game:
+
+     benched         multiplier 0 — owning him costs the field nothing
+     started         multiplier 1
+     captained       multiplier 2
+     triple-captain  multiplier 3
+     bench-boosted   the bench scores too, at 1 each
+
+   So a player started by everyone and captained by half a 12-manager
+   league is 18/12 = 150%, and every point he scores moves the whole
+   league up by 1.5 of them. That is the number that tells you whether
+   his haul helped you or hurt you, and no ownership count can. It also
+   means a player nobody starts reads 0%, which is correct and is
+   exactly what an ownership count would get wrong.
+
+   Everything here is derived from picks the API already publishes for
+   every manager in a league. Nothing is estimated. The one figure the
+   comparable sites show that is NOT here is remaining free transfers:
+   FPL does not publish it for other managers, those sites infer it, and
+   an inferred number rendered in the same style as a fetched one is the
+   kind of quiet fiction this app does not ship. */
+function leagueEO(picksArr){
+  const list=(picksArr||[]).filter(p=>p&&Array.isArray(p.picks));
+  const n=list.length;
+  if(!n)return {managers:0,byId:{}};
+  const byId={};
+  list.forEach(p=>{
+    p.picks.forEach(pk=>{
+      if(!pk||pk.element==null)return;
+      const m=typeof pk.multiplier==='number'?pk.multiplier:(pk.position<=11?1:0);
+      const e=byId[pk.element]||(byId[pk.element]={own:0,start:0,cap:0,units:0,eo:0});
+      e.own++;
+      if(m>0)e.start++;
+      if(pk.is_captain)e.cap++;
+      e.units+=m;
+    });
+  });
+  Object.keys(byId).forEach(k=>{byId[k].eo=byId[k].units/n;});
+  return {managers:n,byId:byId};
+}
+/* One manager's row: their squad with live points and state, plus the
+   summary figures that sit on the collapsed row. `std` is the standings
+   entry, `picks` the picks payload (entry_history included), `stateById`
+   from playerGwStates. Pure. */
+function managerDetail(std,picks,live,stateById,els,eoById){
+  if(!picks||!Array.isArray(picks.picks))return null;
+  /* Reuses the rival card's row builder, so auto-subs, the null-vs-zero
+     discipline on missing live rows, and the multiplier handling are the
+     same code the rest of the app already trusts. */
+  const S=rivalSquadRows(picks,live,null,null);
+  const eh=(picks&&picks.entry_history)||{};
+  const dress=r=>{
+    const el=(els||{})[r.id]||{};
+    const own=(eoById||{})[r.id]||null;
+    return {id:r.id,name:el.web_name||'',team:el.team==null?null:el.team,
+      type:el.element_type||0,pos:POS_SHORT[el.element_type]||'',
+      pts:r.pts,base:r.base,mult:r.mult,captain:r.captain,vice:r.vice,
+      bench:r.position>11,order:r.position,
+      state:(stateById||{})[r.id]||'unknown',
+      eo:own?own.eo:null};
+  };
+  const xi=S.xi.map(dress),bench=S.bench.map(dress);
+  /* Counting rows, not starters — under a Bench Boost the bench counts,
+     and after an auto-sub a substitute does. The multiplier already says
+     who scores, so no chip flag is needed to know which case this is. */
+  const counting=xi.concat(bench).filter(r=>r.mult>0);
+  const st=s=>counting.filter(r=>r.state===s).length;
+  return {
+    entry:std?std.entry:null,name:std?std.entry_name:'',mgr:std?std.player_name:'',
+    rank:std?std.rank:null,lastRank:std?std.last_rank:null,
+    gwPts:std?std.event_total:null,total:std?std.total:null,
+    chip:picks.active_chip||null,
+    or:eh.overall_rank==null?null:eh.overall_rank,
+    tv:eh.value==null?null:eh.value/10,
+    bank:eh.bank==null?null:eh.bank/10,
+    transfers:eh.event_transfers==null?null:eh.event_transfers,
+    hit:eh.event_transfers_cost||0,
+    autoSubs:S.autoSubs,
+    /* A blank player is not "yet to play" — he has no match to play in.
+       Lumping the two together tells a manager he still has five to come
+       when two of them are never coming. */
+    yet:st('toPlay'),playing:st('live'),blanks:st('blank'),
+    /* Progress in multiplier UNITS, so a captain counts for the two he
+       is worth: an eleven with the captain done reads 2/12, not 1/11. */
+    playedUnits:counting.filter(r=>r.state==='done').reduce((s,r)=>s+r.mult,0),
+    totalUnits:counting.reduce((s,r)=>s+r.mult,0),
+    live:S.live,liveKnown:S.liveKnown,liveOf:S.liveOf,
+    xi:xi,bench:bench,
+    captain:xi.concat(bench).filter(r=>r.captain)[0]||null,
+    vice:xi.concat(bench).filter(r=>r.vice)[0]||null};
+}
+/* The players that actually separate this league, best first: the ones
+   where owning them (or not) moves you most against the field. A player
+   at 100% EO cannot change your position no matter what he scores. */
+function leagueSwing(rows,eo,els,limit){
+  const byId=(eo&&eo.byId)||{},out=[];
+  Object.keys(byId).forEach(k=>{
+    const e=byId[k],el=(els||{})[k];
+    if(!el)return;
+    out.push({id:el.id,name:el.web_name,eo:e.eo,own:e.own,cap:e.cap,
+      /* Distance from universal ownership. 0 means the whole league has
+         him at the same weight and he is noise, not signal. */
+      swing:Math.abs(1-e.eo)});
+  });
+  return out.sort((a,c)=>c.swing-a.swing||c.eo-a.eo).slice(0,limit||8);
+}
+
 /* ── Mini-League Tracker ───────────────────────────────── */
 const loadStandings=(id,page)=>api('leagues-classic/'+id+'/standings'+(page>1?'?page_standings='+page:''));
 let LEAGUE_SEL=null,LEAGUE_TYPE='classic',LEAGUE_PAGE=1,LEAGUE_ME_RANK=0;
@@ -16099,6 +16249,138 @@ async function h2hOpponentCard(leagueId,meId,standings){
         '<span class="dl-sub" style="align-self:center">vs</span>'+
         '<span class="dl-grow" style="text-align:right"><span class="dl-nm">'+esc(opp.name)+'</span><span class="dl-sub">'+esc(opp.mgr)+' · '+rec(opp.id)+'</span></span>'+
       '</div>'+projRow+live+'</div>';
+  }catch(_){return '';}
+}
+/* Run `fn` over `items` with at most `limit` in flight. The detailed
+   league view needs one picks call per manager, and firing fifty at once
+   is how you get rate-limited by the proxy rather than served faster. */
+async function mapLimit(items,limit,fn){
+  const list=items||[],out=new Array(list.length);
+  let i=0;
+  const worker=async()=>{
+    for(;;){const k=i++;if(k>=list.length)return;
+      try{out[k]=await fn(list[k],k);}catch(_){out[k]=null;}}
+  };
+  await Promise.all(Array.from({length:Math.max(1,Math.min(limit,list.length))},worker));
+  return out;
+}
+const LG_STATE={done:'finished',live:'playing now',toPlay:'yet to play',blank:'no fixture'};
+let LEAGUE_VIEW='compact';
+const LEAGUE_OPEN=new Set();
+const LEAGUE_DETAIL_MAX=50;
+function lgSetView(v){LEAGUE_VIEW=v==='detailed'?'detailed':'compact';renderPage('leagues');}
+function lgToggle(id){
+  id=String(id);
+  if(LEAGUE_OPEN.has(id))LEAGUE_OPEN.delete(id);else LEAGUE_OPEN.add(id);
+  const box=document.getElementById('lg-sq-'+id),ch=document.getElementById('lg-ch-'+id);
+  if(box)box.style.display=LEAGUE_OPEN.has(id)?'':'none';
+  if(ch)ch.style.transform=LEAGUE_OPEN.has(id)?'rotate(180deg)':'';
+}
+/* The detailed league view: every manager's squad, with each player's
+   effective ownership ACROSS THIS LEAGUE beside his score.
+
+   The scoping note is not decoration. Effective ownership is a fraction
+   whose denominator is the managers we actually loaded, so on a league
+   that runs past one page it describes the fifty on screen and not the
+   league. Saying "across the league" there would be a different claim
+   from the one the arithmetic supports, so the card says which it is. */
+async function leagueDetailCard(res,leagueId,meId,whole){
+  try{
+    if(!res||!res.length)return '';
+    const b=await boot();
+    const fixtures=await loadFixtures();
+    const ph=gwPhase(b,fixtures);
+    const gw=(ph.cur&&ph.cur.id)||b.cur.id;
+    const slice=res.slice(0,LEAGUE_DETAIL_MAX);
+    const [live,picksArr]=await Promise.all([
+      loadLive(gw).catch(()=>({elements:[]})),
+      mapLimit(slice,6,r=>loadPicks(r.entry,gw).catch(()=>null))
+    ]);
+    const eo=leagueEO(picksArr);
+    if(!eo.managers)return '<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+      '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p></div>';
+    const states=playerGwStates(b.els,fixtures,gw);
+    const rows=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId))
+      .filter(Boolean);
+    if(!rows.length)return '';
+    const pct=v=>v==null?'':(v*100).toFixed(1)+'%';
+    const cell=p=>{
+      const el=b.els[p.id];
+      if(!el)return '';
+      const badge=p.captain?'<span class="rv-cap">C</span>':p.vice?'<span class="rv-cap rv-vc">V</span>':'';
+      /* An unknown score is a dash, never a nought — the live feed not
+         having reported a player is not the same as him scoring nothing. */
+      const pts=p.pts==null?'—':String(p.pts);
+      return '<div class="pp lg-p lg-'+p.state+'" onclick="openPlayer('+el.id+')" '+
+        'title="'+esc(el.web_name)+' — '+LG_STATE[p.state]+'">'+
+        ppFigure(b,el)+badge+
+        '<span class="pp-nm">'+esc(el.web_name)+'</span>'+
+        '<span class="lg-eo">'+pct(p.eo)+'</span>'+
+        '<span class="pp-pt">'+pts+'</span></div>';
+    };
+    const mgr=d=>{
+      const open=LEAGUE_OPEN.has(String(d.entry));
+      const mv=(d.lastRank&&d.rank)?d.lastRank-d.rank:0;
+      const chip=d.chip?'<span class="badge badge-amber">'+esc(CHIP_API_LABEL[d.chip]||d.chip)+'</span>':'';
+      const meta=[d.mgr,
+        d.or==null?'':'OR '+fmtNum(d.or),
+        d.tv==null?'':'TV £'+d.tv.toFixed(1)+'m',
+        d.transfers?d.transfers+' transfer'+(d.transfers===1?'':'s')+(d.hit?' (−'+d.hit+')':''):''
+      ].filter(Boolean).join(' · ');
+      const prog=d.totalUnits
+        ? '<div class="lg-prog"><i style="width:'+Math.round(100*d.playedUnits/d.totalUnits)+'%"></i></div>'+
+          '<div class="dl-sub">Played '+d.playedUnits+'/'+d.totalUnits+
+          ' — counted by what scores, so a captain is worth two.'+
+          (d.yet?' <b>'+d.yet+'</b> still to play.':'')+
+          (d.playing?' <b>'+d.playing+'</b> on the pitch.':'')+
+          (d.blanks?' <b>'+d.blanks+'</b> with no fixture.':'')+'</div>'
+        : '';
+      const partial=d.liveKnown<d.liveOf
+        ? '<div class="dl-sub" style="margin-top:6px">Live points cover '+d.liveKnown+' of '+d.liveOf+
+          ' scoring players so far; the rest have no row in the feed yet and show as —.</div>':'';
+      const subs=d.autoSubs
+        ? '<div class="dl-sub" style="margin-top:6px">'+d.autoSubs+' automatic substitution'+
+          (d.autoSubs===1?'':'s')+' applied.</div>':'';
+      return '<div class="lg-mgr'+(d.entry===meId?' league-me':'')+'">'+
+        '<div class="lg-head" onclick="lgToggle('+d.entry+')">'+
+          '<span class="dl-rank">'+fmtNum(d.rank)+(mv>0?'<small class="lg-up">▲</small>':mv<0?'<small class="lg-dn">▼</small>':'')+'</span>'+
+          '<span class="dl-grow"><span class="tr-cell">'+
+            '<span class="dl-nm">'+esc(d.name)+(d.entry===meId?' · you':'')+' '+chip+'</span>'+
+            '<span class="dl-sub">'+esc(meta)+'</span></span></span>'+
+          '<span class="lg-yet"><b>'+d.yet+'</b><small>yet</small></span>'+
+          '<span class="lg-cap">'+(d.captain?esc(d.captain.name):'—')+'<small>captain</small></span>'+
+          '<span class="dl-col mono">'+fmtNum(d.gwPts)+'</span>'+
+          '<span class="mc-ch" id="lg-ch-'+d.entry+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span>'+
+        '</div>'+
+        '<div class="lg-sq" id="lg-sq-'+d.entry+'"'+(open?'':' style="display:none"')+'>'+
+          prog+
+          '<div class="lg-grid">'+d.xi.map(cell).join('')+'</div>'+
+          '<div class="lg-sub-t">Bench</div><div class="lg-grid bench">'+d.bench.map(cell).join('')+'</div>'+
+          partial+subs+
+        '</div></div>';
+    };
+    const sw=leagueSwing(picksArr,eo,b.els,6);
+    const swing=sw.length
+      ? '<div class="card mb-20"><div class="card-title">Who separates this league</div>'+
+        '<p class="dl-sub" style="margin-bottom:8px">Furthest from the field first. A player at 100% scores for everyone equally and cannot move you '+
+        'up or down however many he gets; the ones above and below that line are the whole race.</p><div class="dl">'+
+        sw.map(p=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell">'+
+          '<span class="dl-nm">'+esc(p.name)+'</span>'+
+          '<span class="dl-sub">'+p.own+' of '+eo.managers+' own'+(p.cap?' · '+p.cap+' captain'+(p.cap===1?'':'s'):'')+'</span>'+
+          '</span></span><span class="dl-col mono">'+pct(p.eo)+'</span></div>').join('')+
+        '</div></div>':'';
+    const scope=whole
+      ? 'across all '+eo.managers+' managers in this league'
+      : 'across the '+eo.managers+' managers on this page — not the whole league';
+    const missing=picksArr.filter(p=>!p).length;
+    const note='<p class="dl-sub" style="margin:10px 0 0">Percentages are effective ownership '+scope+
+      ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
+      'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
+      (missing===1?'is':'are')+' excluded.':'')+'</p>';
+    return '<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+      '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
+        '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
+      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing;
   }catch(_){return '';}
 }
 /* The title-race card. Rendered only when the whole league is on screen:
@@ -16209,11 +16491,30 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      there — a H2H race needs the schedule modelled and that is a
      different engine. */
   const raceCard=(!h2h&&page===1&&!hasNext)?await titleRaceCard(res,meId):'';
-  host.innerHTML=back+oppCard+
+  /* Detailed view is classic-only: it is built on picks and multipliers,
+     which a head-to-head table has too, but the summary figures it leads
+     with (rank movement, gameweek total) are the classic race's. */
+  const detailed=!h2h&&LEAGUE_VIEW==='detailed';
+  const viewBar=h2h?'':'<div class="lensbar mb-14" id="lg-views">'+
+    [['compact','Compact'],['detailed','Detailed']].map(v=>
+      '<button class="lensbtn'+(LEAGUE_VIEW===v[0]?' on':'')+'" data-lgview="'+v[0]+'">'+v[1]+'</button>').join('')+
+    '</div>';
+  if(detailed)host.innerHTML=back+viewBar+'<div class="card mb-20"><div class="card-title">'+
+      esc(data.league?data.league.name:'League')+'</div>'+
+      '<div class="dl-sub">Loading every squad on this page — one call per manager.</div>'+
+      skel(6)+'</div>';
+  const detailCard=detailed?await leagueDetailCard(res,leagueId,meId,page===1&&!hasNext):'';
+  host.innerHTML=back+oppCard+viewBar+
     '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
-    '<div class="dl" id="league-standings">'+head+rows+'</div>'+pager+'</div>'+
-    raceCard+awards;
+    /* In detailed view the compact table would be the same ranks and
+       totals twice on one screen, so the detail card replaces it rather
+       than sitting under it. The pager stays either way. */
+    (detailed?'':'<div class="dl" id="league-standings">'+head+rows+'</div>')+
+    pager+'</div>'+
+    detailCard+raceCard+awards;
+  host.querySelectorAll('[data-lgview]').forEach(btn=>
+    btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
   /* Every standing is a manager, and a manager has a squad. Same card the
      Rivals panel opens — a mini-league table is where people actually look
      their rivals up, and having to add somebody to a separate list first in
@@ -17259,26 +17560,45 @@ function resNav(step){
    Date.parse(null) → NaN would otherwise do to the ordering. */
 /* POS_SHORT is declared once, up with the mystery player, and already
    carries element type 5 (MNG) which an array indexed 1..4 would drop. */
-function squadMatchday(picks,fixtures,els,gw){
-  const list=(picks&&picks.picks)||[];
-  if(!list.length)return null;
-  const fx=(fixtures||[]).filter(f=>f&&f.event===gw);
+/* A gameweek's fixtures indexed by club. A club appears twice in a
+   double gameweek, which is the only reason this is an array. */
+function gwFixturesByTeam(fixtures,gw){
   const byTeam={};
-  fx.forEach(f=>{
+  (fixtures||[]).filter(f=>f&&f.event===gw).forEach(f=>{
     if(f.team_h!=null)(byTeam[f.team_h]=byTeam[f.team_h]||[]).push(f);
     if(f.team_a!=null)(byTeam[f.team_a]=byTeam[f.team_a]||[]).push(f);
   });
+  return byTeam;
+}
+/* All of a club's matches over → done. Any in play → live. Otherwise
+   there is football still to come. No fixture at all is a blank, which
+   is a different thing from being finished: a blank player is not
+   waiting to score, he is not playing. Shared by the matchday card and
+   the league table so the two can never disagree about who has played. */
+function teamGwState(games){
+  if(!games||!games.length)return 'blank';
+  if(games.some(f=>f.started&&!fixtureOver(f)))return 'live';
+  return games.every(f=>fixtureOver(f))?'done':'toPlay';
+}
+/* element id → state, for every player in the bootstrap. */
+function playerGwStates(els,fixtures,gw){
+  const byTeam=gwFixturesByTeam(fixtures,gw),out={};
+  Object.keys(els||{}).forEach(k=>{
+    const el=els[k];
+    if(el&&el.id!=null)out[el.id]=teamGwState(byTeam[el.team]);
+  });
+  return out;
+}
+function squadMatchday(picks,fixtures,els,gw){
+  const list=(picks&&picks.picks)||[];
+  if(!list.length)return null;
+  const byTeam=gwFixturesByTeam(fixtures,gw);
   const mine=[];
   list.forEach(p=>{
     const el=(els||{})[p&&p.element];
     if(!el)return;
     const games=byTeam[el.team]||[];
-    /* All of a player's matches are over → done. Any in play → live.
-       Otherwise there is football still to come. No fixture at all is a
-       blank, which is a different thing from being finished. */
-    const state=!games.length?'blank'
-      :games.some(f=>f.started&&!fixtureOver(f))?'live'
-      :games.every(f=>fixtureOver(f))?'done':'toPlay';
+    const state=teamGwState(games);
     mine.push({id:el.id,name:el.web_name,team:el.team,
       pos:POS_SHORT[el.element_type]||'',
       bench:p.position>11,order:p.position,
@@ -17286,6 +17606,7 @@ function squadMatchday(picks,fixtures,els,gw){
       games:games.length,state:state});
   });
   if(!mine.length)return null;
+  const fx=(fixtures||[]).filter(f=>f&&f.event===gw);
   const inFix=(m,f)=>m.team===f.team_h||m.team===f.team_a;
   const rows=fx.filter(f=>mine.some(m=>inFix(m,f))).map(f=>{
     const ko=f.kickoff_time?Date.parse(f.kickoff_time):NaN;
