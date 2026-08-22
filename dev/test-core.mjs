@@ -134,6 +134,15 @@ const pieces = [
   extractFn(html, 'gwsRemaining'),
   extractFn(html, 'titleRace'),
   extractConst(html, 'POS_SHORT'),
+  extractFn(html, 'applyAutoSubs'),
+  extractFn(html, 'rivalLivePts'),
+  extractFn(html, 'rivalSquadRows'),
+  extractFn(html, 'leagueEO'),
+  extractFn(html, 'managerDetail'),
+  extractFn(html, 'leagueSwing'),
+  extractFn(html, 'gwFixturesByTeam'),
+  extractFn(html, 'teamGwState'),
+  extractFn(html, 'playerGwStates'),
   extractFn(html, 'squadMatchday'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
@@ -280,7 +289,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, managerDetail, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -900,6 +909,189 @@ section('squadMatchday: nothing to show, and nothing to throw');
   const noMult = { picks: [{ element: 10, position: 14 }] };
   ok(core.squadMatchday(noMult, FX, ELS, 5).players[0].bench === true,
      'position 14 is on the bench even with no multiplier field');
+}
+
+section('leagueEO: effective ownership is multipliers, not headcount');
+{
+  /* Twelve managers, mirroring the league in the screenshot that prompted
+     this. Haaland is owned by everyone and captained by seven, which is
+     19 multiplier units over 12 managers — 158.3%, exactly the figure
+     those tables show. That number is unreachable by counting owners:
+     headcount caps at 100%. */
+  const mk = (opts) => ({ picks: [
+    { element: 1, position: 1, multiplier: 1 },                    /* keeper */
+    { element: 2, position: 2, multiplier: opts.cap === 2 ? 2 : 1, is_captain: opts.cap === 2 },
+    { element: 3, position: 11, multiplier: opts.cap === 3 ? 2 : 1, is_captain: opts.cap === 3 },
+    { element: 4, position: 12, multiplier: 0 },                   /* benched */
+  ] });
+  const league = [];
+  for (let i = 0; i < 12; i++) league.push(mk({ cap: i < 7 ? 3 : 2 }));
+  const eo = core.leagueEO(league);
+
+  ok(eo.managers === 12, 'the manager count is the divisor, got ' + eo.managers);
+  /* element 3: started by 12, captained by 7 → 12 + 7 = 19 units. */
+  ok(Math.abs(eo.byId[3].eo - 19 / 12) < 1e-9,
+     'a universally owned, half-captained player is 158.3% (' + (eo.byId[3].eo * 100).toFixed(1) + ')');
+  ok(eo.byId[3].eo > 1, 'and effective ownership can exceed 100%, which headcount cannot');
+  ok(eo.byId[3].cap === 7, 'the captain count is carried separately');
+
+  /* THE CASE HEADCOUNT GETS WRONG. Element 4 is in all twelve squads and
+     started by none. Twelve owners is 100% by any ownership count, and
+     0% effective — he cannot move anyone's position because he scores
+     for nobody. */
+  ok(eo.byId[4].own === 12, 'a benched player is still owned by everyone');
+  ok(eo.byId[4].eo === 0, 'but his effective ownership is zero, because he scores for nobody');
+  ok(eo.byId[4].start === 0, 'and nobody starts him');
+
+  /* A missing multiplier falls back to position, because that is what the
+     bench is. */
+  const noMult = core.leagueEO([{ picks: [
+    { element: 9, position: 5 }, { element: 8, position: 13 },
+  ] }]);
+  ok(noMult.byId[9].eo === 1, 'a starter with no multiplier field counts as one');
+  ok(noMult.byId[8].eo === 0, 'and a bench player with none counts as zero');
+
+  /* Triple captain is three units, not two — the whole reason to sum
+     multipliers rather than special-case the armband. */
+  const tc = core.leagueEO([{ picks: [{ element: 5, position: 1, multiplier: 3, is_captain: true }] }]);
+  ok(tc.byId[5].eo === 3, 'a triple captain is three units of effective ownership');
+
+  /* A bench boost makes the bench count, with no chip flag needed. */
+  const bb = core.leagueEO([{ picks: [
+    { element: 6, position: 12, multiplier: 1 }, { element: 7, position: 13, multiplier: 1 },
+  ] }]);
+  ok(bb.byId[6].eo === 1, 'under a bench boost the bench has real effective ownership');
+
+  ok(core.leagueEO([]).managers === 0, 'an empty league divides by nothing rather than by zero');
+  ok(core.leagueEO(null).managers === 0, 'and a missing list does not throw');
+  ok(core.leagueEO([null, undefined, {}, { picks: 'no' }]).managers === 0,
+     'entries without a picks array are not managers');
+  /* A failed fetch must not inflate everyone else's ownership by shrinking
+     the divisor... it must shrink it. Dropping a manager we could not load
+     is right; counting them as owning nobody would be wrong. */
+  const partial = core.leagueEO([{ picks: [{ element: 1, position: 1, multiplier: 1 }] }, null]);
+  ok(partial.managers === 1 && partial.byId[1].eo === 1,
+     'a manager whose picks failed to load is not counted as a manager who owns nobody');
+}
+
+section('managerDetail: one row of the detailed league table');
+{
+  const ELS = {
+    1: { id: 1, web_name: 'Raya', team: 1, element_type: 1 },
+    2: { id: 2, web_name: 'Saka', team: 1, element_type: 3 },
+    3: { id: 3, web_name: 'Haaland', team: 2, element_type: 4 },
+    4: { id: 4, web_name: 'Bench1', team: 3, element_type: 2 },
+    5: { id: 5, web_name: 'Blanker', team: 9, element_type: 3 },
+  };
+  const PICKS = {
+    active_chip: '3xc',
+    entry_history: { overall_rank: 791032, value: 1003, bank: 7,
+      event_transfers: 2, event_transfers_cost: 4 },
+    picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 2, multiplier: 1, is_vice_captain: true },
+      { element: 3, position: 3, multiplier: 3, is_captain: true },
+      { element: 5, position: 4, multiplier: 1 },
+      { element: 4, position: 12, multiplier: 0 },
+    ],
+  };
+  const LIVE = { elements: [
+    { id: 1, stats: { total_points: 2 } },
+    { id: 2, stats: { total_points: 5 } },
+    { id: 3, stats: { total_points: 9 } },
+    { id: 5, stats: { total_points: 0 } },
+    { id: 4, stats: { total_points: 6 } },
+  ] };
+  const STATE = { 1: 'done', 2: 'live', 3: 'done', 4: 'done', 5: 'blank' };
+  const STD = { entry: 42, entry_name: 'Lammenade', player_name: 'Max Sargeant',
+    rank: 1, last_rank: 2, event_total: 28, total: 28 };
+  const eo = core.leagueEO([PICKS]);
+  const d = core.managerDetail(STD, PICKS, LIVE, STATE, ELS, eo.byId);
+
+  ok(d.name === 'Lammenade' && d.mgr === 'Max Sargeant', 'the standings identity comes through');
+  ok(d.chip === '3xc', 'the active chip is read from the picks, not guessed');
+  ok(d.or === 791032, 'overall rank comes from entry_history');
+  /* value and bank are published in tenths of a million. */
+  ok(d.tv === 100.3, 'team value is converted out of tenths (' + d.tv + ')');
+  ok(d.bank === 0.7, 'and so is the bank (' + d.bank + ')');
+  ok(d.transfers === 2 && d.hit === 4, 'transfers and their cost are carried');
+
+  /* PROGRESS IN UNITS, NOT PLAYERS. Two of the four counting players are
+     finished — but one of them is the triple captain, worth 3 on his own.
+     Counting players would read 2/4; counting what actually scores reads
+     4/6. The second is the one that tells you how much of your gameweek
+     is already banked. */
+  ok(d.totalUnits === 6, 'total units is the sum of multipliers (' + d.totalUnits + ')');
+  ok(d.playedUnits === 4,
+     'a finished triple captain carries three units, not one (' + d.playedUnits + ')');
+
+  /* A blank is not a "yet to play". Saying otherwise promises points that
+     are not coming. */
+  ok(d.yet === 0, 'nobody is yet to play — the only one left is a blank');
+  ok(d.playing === 1, 'one player is on the pitch');
+  ok(d.blanks === 1, 'and one has no fixture at all');
+
+  ok(d.captain && d.captain.name === 'Haaland', 'the captain is identified');
+  ok(d.vice && d.vice.name === 'Saka', 'and so is the vice');
+  ok(d.xi.length === 4 && d.bench.length === 1, 'the XI and bench are split');
+  ok(d.xi[0].eo != null, 'each player carries the league effective ownership');
+  ok(d.xi.find((p) => p.name === 'Haaland').pts === 27,
+     'a triple captain scores three times, got ' + d.xi.find((p) => p.name === 'Haaland').pts);
+  ok(d.bench[0].pts === 0, 'a benched player scores nothing however well he played');
+  ok(d.bench[0].base === 6, 'though his raw score is still available');
+
+  ok(core.managerDetail(STD, null, LIVE, STATE, ELS, {}) === null,
+     'a manager whose picks failed to load has no row');
+  ok(core.managerDetail(STD, { picks: 'nope' }, LIVE, STATE, ELS, {}) === null,
+     'and neither does a malformed payload');
+
+  /* No live feed yet: points are unknown, not zero. */
+  const early = core.managerDetail(STD, PICKS, { elements: [] }, STATE, ELS, eo.byId);
+  ok(early.xi.every((p) => p.pts === null), 'with no live rows, points are null rather than nought');
+  ok(early.liveKnown === 0, 'and the row says how little it knows');
+}
+
+section('leagueSwing: the players who actually separate a league');
+{
+  const ELS = {
+    1: { id: 1, web_name: 'Template' }, 2: { id: 2, web_name: 'Differential' },
+    3: { id: 3, web_name: 'Captained' }, 4: { id: 4, web_name: 'Benched' },
+  };
+  /* Four managers. Template started by all four (EO 100%), Differential by
+     one (25%), Captained by all and captained by all (200%), Benched by
+     all and started by none (0%). */
+  const league = [];
+  for (let i = 0; i < 4; i++) league.push({ picks: [
+    { element: 1, position: 1, multiplier: 1 },
+    { element: 2, position: 2, multiplier: i === 0 ? 1 : 0 },
+    { element: 3, position: 3, multiplier: 2, is_captain: true },
+    { element: 4, position: 12, multiplier: 0 },
+  ] });
+  const eo = core.leagueEO(league);
+  const sw = core.leagueSwing(league.length ? [] : [], eo, ELS, 10);
+
+  /* THE POINT. A player the whole league starts once each cannot change
+     anyone's position — his points land on every manager equally. He is
+     the LEAST interesting player in the league however many he scores,
+     and he must rank last here. */
+  ok(sw[sw.length - 1].name === 'Template',
+     'a player at exactly 100% is the least separating, got ' + sw[sw.length - 1].name);
+  ok(sw[0].name === 'Captained' || sw[0].name === 'Benched',
+     'the biggest swing is furthest from 100%, got ' + sw[0].name);
+
+  const find = (n) => sw.find((x) => x.name === n);
+  ok(Math.abs(find('Captained').eo - 2) < 1e-9, 'a universally captained player is 200%');
+  ok(find('Benched').eo === 0, 'and a universally benched one is 0%');
+  /* Both are one full unit away from the field, so both separate equally
+     — in opposite directions. */
+  ok(Math.abs(find('Captained').swing - find('Benched').swing) < 1e-9,
+     'owning what nobody starts and doubling what everybody owns swing alike');
+  ok(Math.abs(find('Differential').eo - 0.25) < 1e-9, 'a one-in-four pick is 25%');
+
+  ok(core.leagueSwing([], eo, ELS, 2).length === 2, 'the limit is honoured');
+  ok(core.leagueSwing([], { byId: {} }, ELS, 5).length === 0, 'an empty league has no swing players');
+  ok(core.leagueSwing([], eo, {}, 5).length === 0,
+     'a player the bootstrap does not know is skipped rather than shown nameless');
 }
 
 section('fplPriceMove: FPL’s own figure, read rather than approximated');
