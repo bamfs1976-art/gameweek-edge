@@ -39,10 +39,19 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /* ── Pages that might BE the price page ───────────────────────────────
    The user reports it is live; I do not know its path. Probing several and
    reporting which answered 200 is the honest way to find out, and a 404 here
-   is a real result rather than a failure. */
+   is a real result rather than a failure.
+
+   THE FIRST RUN OF THIS PROBE GOT THIS WRONG. All seven paths answered 200
+   text/html at byte-identical length, including two I invented. The site is a
+   single-page app: it serves the same shell for every route and decides what
+   exists in the browser. "200" here is not evidence of a page, and without a
+   control I would have reported seven live pages. So there is a control now,
+   and the byte length of every response is compared against it — a page whose
+   shell is the same size as the nonsense path told us nothing. */
+const PAGE_CONTROL = '/this-page-should-not-exist-xyz';
 const PAGE_CANDIDATES = [
   '/prices', '/prices/', '/statistics', '/statistics/prices',
-  '/player-list', '/price-changes', '/transfers'
+  '/player-list', '/price-changes', '/transfers', PAGE_CONTROL
 ];
 
 /* ── Hand-written API candidates ──────────────────────────────────────
@@ -153,6 +162,23 @@ for (const p of PAGE_CANDIDATES) {
   await sleep(500);
 }
 
+/* Does a 200 here mean anything? Only if the nonsense path answers differently
+   from the real ones. */
+const ctrl = results.pages.find((p) => p.path === PAGE_CONTROL);
+const realish = results.pages.filter((p) => p.path !== PAGE_CONTROL && p.status === 200);
+const distinct = ctrl && ctrl.status === 200
+  ? realish.filter((p) => p.bytes !== ctrl.bytes) : realish;
+console.log(`\n  page control ${PAGE_CONTROL} → ${ctrl ? ctrl.status + ' ' + ctrl.bytes + ' bytes' : 'MISSING'}`);
+if (ctrl && ctrl.status === 200 && distinct.length === 0) {
+  console.log('  ⚠ EVERY path answers 200 with the same shell, the nonsense one included.');
+  console.log('    This is a single-page app: routing happens in the browser. NO CONCLUSION');
+  console.log('    about which page exists can be drawn from these status codes.');
+} else if (ctrl && ctrl.status === 200) {
+  console.log(`  ${distinct.length} path(s) differ from the control shell: ${distinct.map((p) => p.path).join(', ')}`);
+} else {
+  console.log('  the control 404s, so a 200 above is a real page.');
+}
+
 const discovered = [...new Set(results.discovered.map((d) => d.api))];
 console.log(`\n  ${discovered.length} distinct /api/ path(s) referenced by those pages:`);
 for (const d of discovered) console.log('    · ' + d);
@@ -216,31 +242,61 @@ if (bs.status !== 200 || !/json/i.test(bs.contentType || '')) {
      Our shipped model estimates owners as total_players × selected_by_percent,
      because that is all bootstrap gives. If history rows carry `selected`,
      that is the real denominator the threshold scales with, and the gap
-     between the two is measurable rather than assumed. Checked on a real,
-     heavily-owned player. */
-  const target = els.slice().sort((a, c) => parseFloat(c.selected_by_percent) - parseFloat(a.selected_by_percent))[0];
-  if (target) {
-    await sleep(500);
-    const es = await get(`${BASE}/element-summary/${target.id}/`, { json: true });
-    console.log(`\n  element-summary/${target.id}/ (${target.web_name}, most-owned at ${target.selected_by_percent}%): ${es.status} ${es.contentType || ''}`);
-    if (es.status === 200 && /json/i.test(es.contentType || '')) {
-      const d = JSON.parse(es.body);
-      const h = (d.history || [])[(d.history || []).length - 1];
-      console.log(`    top-level keys: ${Object.keys(d).join(', ')}`);
-      console.log(`    history rows: ${(d.history || []).length}   history_past: ${(d.history_past || []).length}`);
-      if (h) {
-        console.log(`    latest history row keys: ${Object.keys(h).join(', ')}`);
-        const est = Math.round(b.total_players * parseFloat(target.selected_by_percent) / 100);
-        console.log(`    value=${h.value}  transfers_balance=${h.transfers_balance}  transfers_in=${h.transfers_in}  transfers_out=${h.transfers_out}`);
-        if (h.selected != null) {
-          console.log(`    selected=${h.selected}  (our model estimates ${est} owners — off by ${(((est - h.selected) / h.selected) * 100).toFixed(1)}%)`);
-        } else {
-          console.log(`    selected: ABSENT — the owner count is not published here, so the estimate stands.`);
-        }
-        results.elementSummary = { id: target.id, name: target.web_name, keys: Object.keys(h),
-          selected: h.selected ?? null, estimate: est };
-      }
+     between the two is measurable rather than assumed.
+
+     ONE PLAYER CANNOT ANSWER THIS. The first run checked only the most-owned
+     player and found the estimate 1.9% out, which reads like "the estimate is
+     fine". But selected_by_percent is published to one decimal place, so the
+     rounding error is a fixed fraction of a percentage point and its RELATIVE
+     size explodes as ownership falls — 0.05pp on a 60% player is nothing, on
+     a 0.1% player it is half the value. And low-owned players are exactly
+     where our model claims high confidence, because their threshold is small.
+     So this samples the whole ownership range and prints the error at each
+     end. A conclusion drawn from the premium alone would have been backwards
+     for the players it matters most for. */
+  const ranked = els.slice()
+    .filter((e) => Number.isFinite(parseFloat(e.selected_by_percent)))
+    .sort((a, c) => parseFloat(c.selected_by_percent) - parseFloat(a.selected_by_percent));
+  const pick = (frac) => ranked[Math.min(ranked.length - 1, Math.floor(frac * ranked.length))];
+  const sample = [...new Map(
+    [0, 0.02, 0.1, 0.25, 0.5, 0.75, 0.9].map(pick).filter(Boolean).map((e) => [e.id, e])
+  ).values()];
+
+  console.log(`\n  element-summary/{id}/ — does it publish the OWNER COUNT our model estimates?`);
+  console.log(`  (sampling ${sample.length} players across the ownership range)\n`);
+  console.log('  player               own%     actual selected   our estimate    error');
+  const errs = [];
+  for (const t of sample) {
+    await sleep(450);
+    const es = await get(`${BASE}/element-summary/${t.id}/`, { json: true });
+    if (es.status !== 200 || !/json/i.test(es.contentType || '')) {
+      console.log(`  ${pad(t.web_name, 20)} ${pad(t.selected_by_percent, 8)} ${es.status} ${es.contentType || ''}`);
+      continue;
     }
+    const d = JSON.parse(es.body);
+    const hist = d.history || [];
+    const h = hist[hist.length - 1];
+    if (!h) { console.log(`  ${pad(t.web_name, 20)} ${pad(t.selected_by_percent, 8)} no history rows yet`); continue; }
+    if (!results.elementSummary) {
+      results.elementSummary = { topLevelKeys: Object.keys(d), historyRowKeys: Object.keys(h),
+        publishesSelected: h.selected != null, rows: [] };
+      console.log(`    (top-level: ${Object.keys(d).join(', ')})`);
+      console.log(`    (history row: ${Object.keys(h).join(', ')})\n`);
+    }
+    if (h.selected == null) {
+      console.log(`  ${pad(t.web_name, 20)} ${pad(t.selected_by_percent, 8)} selected: ABSENT — estimate stands`);
+      continue;
+    }
+    const est = Math.round(b.total_players * parseFloat(t.selected_by_percent) / 100);
+    const err = ((est - h.selected) / h.selected) * 100;
+    errs.push({ name: t.web_name, own: t.selected_by_percent, selected: h.selected, est, err });
+    console.log(`  ${pad(t.web_name, 20)} ${pad(t.selected_by_percent, 8)} ${pad(h.selected, 17)} ${pad(est, 15)} ${err >= 0 ? '+' : ''}${err.toFixed(1)}%`);
+  }
+  if (results.elementSummary) results.elementSummary.rows = errs;
+  if (errs.length) {
+    const worst = errs.slice().sort((a, c) => Math.abs(c.err) - Math.abs(a.err))[0];
+    console.log(`\n  worst error in the sample: ${worst.name} at ${worst.own}% own — ${worst.err >= 0 ? '+' : ''}${worst.err.toFixed(1)}%`);
+    console.log(`  (our threshold is 30% of owners, so an owner error of X% moves the threshold by X%.)`);
   }
 }
 
