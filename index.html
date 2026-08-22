@@ -3171,8 +3171,8 @@ function gwPhase(b,fixtures,now){
     ||(b&&b.cur)||events[0]||null;
   const target=events.find(e=>ms(e)>now)||events.find(e=>e.is_next)||null;
   const curFix=cur?fx.filter(f=>f.event===cur.id):[];
-  const anyLive=curFix.some(f=>f.started&&!f.finished);
-  const allDone=curFix.length>0&&curFix.every(f=>f.finished);
+  const anyLive=curFix.some(f=>f.started&&!fixtureOver(f));
+  const allDone=curFix.length>0&&curFix.every(f=>fixtureOver(f));
   const dataChecked=!!(cur&&cur.data_checked);
   const curPassed=cur?ms(cur)<=now:false;
   let phase;
@@ -6464,7 +6464,7 @@ function socialSpecs(b,fixtures){
     const BM=(PLSIM.BASE_H+PLSIM.BASE_A)/2;
     const diff={},oppOf={};
     fixtures.forEach(f=>{
-      if(!f.event||f.finished||gws.indexOf(f.event)<0)return;
+      if(!f.event||fixtureOver(f)||gws.indexOf(f.event)<0)return;
       const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
       const gi=gws.indexOf(f.event);
       [[f.team_h,m.csH,f.team_a,true],[f.team_a,m.csA,f.team_h,false]].forEach(([t,cs,opp,home])=>{
@@ -6536,7 +6536,7 @@ function socialSpecs(b,fixtures){
     const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
     const acc={};
     fixtures.forEach(f=>{
-      if(!f.event||f.finished||f.event<startGw||f.event>=startGw+6)return;
+      if(!f.event||fixtureOver(f)||f.event<startGw||f.event>=startGw+6)return;
       const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
       (acc[f.team_h]=acc[f.team_h]||{xg:0,cs:0,n:0}).xg+=m.hx;acc[f.team_h].cs+=m.csH;acc[f.team_h].n++;
       (acc[f.team_a]=acc[f.team_a]||{xg:0,cs:0,n:0}).xg+=m.ax;acc[f.team_a].cs+=m.csA;acc[f.team_a].n++;
@@ -8171,7 +8171,7 @@ async function hydrateFixturesHub(host){
 async function hydrateFixtures(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const upcoming=b.upcoming;
-  const futureFix=fixtures.filter(f=>f.event&&(!upcoming||f.event>=upcoming.id)&&!f.finished);
+  const futureFix=fixtures.filter(f=>f.event&&(!upcoming||f.event>=upcoming.id)&&!fixtureOver(f));
   if(!upcoming||!futureFix.length){
     host.innerHTML=stateBox('calendar','Between seasons',
       'The 2026/27 fixtures appear here automatically the moment the FPL game opens for the new season. Everything is wired to the official API — no update needed.');
@@ -11340,8 +11340,8 @@ function statsById(live){const m={};(live.elements||[]).forEach(e=>{m[e.id]=e.st
 function gwStatusByTeam(b,fixtures){
   const m={};
   fixtures.filter(f=>f.event===b.cur.id).forEach(f=>{
-    m[f.team_h]={started:!!f.started,finished:!!f.finished};
-    m[f.team_a]={started:!!f.started,finished:!!f.finished};
+    m[f.team_h]={started:!!f.started,finished:fixtureOver(f)};
+    m[f.team_a]={started:!!f.started,finished:fixtureOver(f)};
   });
   return m;
 }
@@ -11376,7 +11376,7 @@ function plsimLiveProbs(R,f){
    this is what lets our live total lead the official app before bonus
    locks in. Returns extra points (× multiplier) and a per-element map. */
 function provBonusPts(b,st,fixtures,picks){
-  const gwFix=fixtures.filter(f=>f.event===b.cur.id&&f.started&&!f.finished);
+  const gwFix=fixtures.filter(f=>f.event===b.cur.id&&f.started&&!fixtureOver(f));
   const prov={};
   gwFix.forEach(f=>{const r=bonusForFixture(b,st,f);
     if(r&&!r.confirmed)r.earners.forEach(x=>{prov[x.e.id]=x.bonus;});});
@@ -11384,6 +11384,31 @@ function provBonusPts(b,st,fixtures,picks){
   picks.picks.forEach(p=>{if(p.position<=11)extra+=(prov[p.element]||0)*(p.multiplier||1);});
   return {extra,prov};
 }
+/* ── Is this match over? ──────────────────────────────────────────────
+   Reported: a match that finished on Friday night still carried a LIVE badge
+   at ten the next morning.
+
+   FPL answers the question in TWO stages and this file read only the second.
+   `finished_provisional` flips at the final whistle. `finished` flips only
+   once bonus points are confirmed and the gameweek data is checked, which can
+   be many hours later — overnight, in the case reported. Reading `finished`
+   alone therefore calls a completed match live for as long as FPL takes to
+   settle the bonus. `finished_provisional` appeared nowhere in this file.
+
+   A MINUTES BACKSTOP WAS CONSIDERED AND REJECTED. `minutes >= 90` looks like
+   an obvious third signal, but the code fifty lines below already writes
+   `Math.min(f.minutes||0,90)` — which only exists because the value CAN
+   exceed 90. So a match in stoppage time would be declared full time while it
+   was still being played, and showing FT during a goal is a worse error than
+   the one being fixed.
+
+   If FPL ever stops sending `finished_provisional` this returns exactly what
+   it returns today, so the change cannot regress: an absent field is not
+   `true`. */
+function fixtureOver(f){
+  return !!f&&(f.finished===true||f.finished_provisional===true);
+}
+
 /* ── LIVE: one matchday, five readings ──────────────────────
    Five destinations all answering "what is happening to my team right now",
    and the one moment you want them is the one moment you cannot afford to
@@ -11536,8 +11561,8 @@ function liveOddsCard(b,fixtures){
     const lp=plsimLiveProbs(R,f);
     if(!lp)return '';
     const score=(f.started||f.finished)?(f.team_h_score||0)+'-'+(f.team_a_score||0):'v';
-    const state=f.finished?'FT':f.started?(Math.min(f.minutes||0,90))+"'":'pre';
-    const sub=f.finished?'final':pc(lp.pH)+'% / '+pc(lp.pD)+'% / '+pc(lp.pA)+'%'+(f.started?' to finish':'');
+    const state=fixtureOver(f)?'FT':f.started?(Math.min(f.minutes||0,90))+"'":'pre';
+    const sub=fixtureOver(f)?'final':pc(lp.pH)+'% / '+pc(lp.pD)+'% / '+pc(lp.pA)+'%'+(f.started?' to finish':'');
     return '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+
       teamShort(b,f.team_h)+' '+score+' '+teamShort(b,f.team_a)+'</span>'+
       '<span class="dl-sub">'+sub+'</span></span>'+
@@ -17080,7 +17105,7 @@ async function hydrateResults(host){
       model;
   };
 
-  const badge=f=>f.finished?'<span class="badge badge-grey">FT</span>'
+  const badge=f=>fixtureOver(f)?'<span class="badge badge-grey">FT</span>'
     :f.started?'<span class="badge badge-red">LIVE</span>'
     :'<span class="dl-sub" style="font-size:.7rem">'+(f.kickoff_time?new Date(f.kickoff_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'TBC')+'</span>';
   const fixCard=f=>{

@@ -211,9 +211,10 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'function applyAutoSubs', since: '2026-08-22',
-  what: 'the automatic substitutions FPL made, which we were ignoring' };
-/* Rotated from 'function fplPriceMove' (2026-08-22), which shipped in the
+const MARKER = { text: 'function fixtureOver', since: '2026-08-22',
+  what: 'a finished match reading as finished before its bonus is confirmed' };
+/* Rotated from 'function applyAutoSubs' (2026-08-22), and before it from
+   'function fplPriceMove' (2026-08-22), which shipped in the
    previous build but was never confirmed live \u2014 the GitHub connector
    dropped out of that session before the site check could run, so that
    release is pushed-but-unverified and this marker covers both.

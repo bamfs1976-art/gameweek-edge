@@ -127,6 +127,7 @@ const pieces = [
   extractFn(html, 'fplPriceMove'),
   extractFn(html, 'priceLocked'),
   extractFn(html, 'priceSource'),
+  extractFn(html, 'fixtureOver'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
   extractFn(html, 'bestXI'),
@@ -272,7 +273,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -411,6 +412,54 @@ ok(xpFlagged < xp, 'chance-of-playing scales xP down');
 ok(core.xP({}, el, { diff: 3 }) >= 0, 'xP without model view stays non-negative');
 
 /* ── price model: caps, direction, monotonicity ─────────── */
+section('fixtureOver: a match that has ended is not still live');
+{
+  /* Reported: Arsenal 3-0 Coventry finished on Friday night and still carried
+     a LIVE badge at 10:07 the next morning. FPL settles a fixture in two
+     stages and this app read only the second. */
+  const F = (o) => Object.assign({ id: 1, started: true, minutes: 90,
+    team_h_score: 3, team_a_score: 0 }, o);
+
+  ok(core.fixtureOver(F({ finished: true, finished_provisional: true })) === true,
+     'a fully settled match is over');
+
+  /* THE REPORTED BUG. Full time has been blown — finished_provisional is set
+     — but bonus is not confirmed, so `finished` is still false. Reading
+     `finished` alone is what kept the badge red overnight. */
+  ok(core.fixtureOver(F({ finished: false, finished_provisional: true })) === true,
+     'a match at full time is over even before bonus is confirmed');
+
+  ok(core.fixtureOver(F({ finished: false, finished_provisional: false, minutes: 62 })) === false,
+     'a match in play is not over');
+  ok(core.fixtureOver(F({ started: false, finished: false, finished_provisional: false, minutes: 0 })) === false,
+     'a match that has not kicked off is not over');
+
+  /* A MINUTES BACKSTOP WAS REJECTED and this pins the decision. FPL's own
+     value can exceed 90 — the app writes Math.min(f.minutes||0,90) precisely
+     because of that — so treating 90 as full time would show FT during
+     stoppage time, and showing FT while a goal goes in is worse than the bug
+     being fixed. Ninety minutes with neither flag set is NOT over. */
+  ok(core.fixtureOver(F({ finished: false, finished_provisional: false, minutes: 90 })) === false,
+     'ninety minutes alone does NOT end the match — stoppage time is still play');
+  ok(core.fixtureOver(F({ finished: false, finished_provisional: false, minutes: 96 })) === false,
+     'and neither does 96');
+
+  /* If FPL ever stops sending the field, behaviour must be exactly what it is
+     today rather than throwing or flipping — an absent field is not true. */
+  ok(core.fixtureOver(F({ finished: true })) === true,
+     'without finished_provisional at all, `finished` still ends the match');
+  ok(core.fixtureOver(F({ finished: false })) === false,
+     'and its absence never makes a live match look over');
+
+  /* Truthiness is not enough: only an explicit true counts, so a stray
+     string or 1 from a changed payload cannot silently end matches. */
+  ok(core.fixtureOver(F({ finished: 'no', finished_provisional: 'no' })) === false,
+     'a non-boolean value does not end the match');
+
+  ok(core.fixtureOver(null) === false, 'a null fixture is not over, and does not throw');
+  ok(core.fixtureOver(undefined) === false, 'nor an undefined one');
+}
+
 section('fplPriceMove: FPL’s own figure, read rather than approximated');
 {
   /* Shapes copied from a live bootstrap-static, measured 22 Aug 2026. */
