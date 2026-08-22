@@ -564,3 +564,56 @@ twins closely enough that showing all seven would be noise.
   for a transfer UI this app does not have; it is read-only.
 - **`known_name`, `team_join_date`, `element_count`, `deadline_time_epoch`** —
   real but cosmetic; no panel is worse without them.
+
+---
+
+## FPL's price figure replaced our estimate, 22 Aug 2026
+
+The projections went live overnight, and the re-check condition recorded above
+was met: `price_change_projections` went from **1 distinct value across 600
+players** (all zeroes) to **319**.
+
+| player | net transfers | `price_change_percent` | projections (today / +1d / +2d) |
+|---|---|---|---|
+| Calafiori | +32,603 | **+19.9** | 32.5 → 52.5 → 72.5 |
+| Pedro Porro | −53,734 | **−7.4** | −11.3 → −17.5 → −23.7 |
+
+### Why it replaced ours rather than sitting beside it
+
+Measured against 379 players moving on both sides:
+
+- **Direction agrees 378/379 (99.7%)** — the one disagreement is a player FPL
+  has at −0.1%, flat within rounding. Direction was never the problem.
+- **Rank correlation rho = 0.30.** Ours compresses nearly every mover into a
+  12–18% band while FPL spreads them −23 to +20. Martinelli at −23.3 and
+  Tzolis at +13.4 came out of our model as 14% and 13% — indistinguishable.
+
+Ordering is the entire point of a "closest to a move" table, so ours was close
+to noise against the real thing. Showing both without explaining that would
+present a near-random ordering as a second opinion.
+
+### What is deliberately not read
+
+- **`likelihood`** on each projection — a small signed integer of unknown
+  scale (2/3/4 for one player, −1/−2 for another). Labelling it from a handful
+  of rows is the mistake `region` is still unshipped for.
+- **No threshold is named.** We rank by the figure and show it as published.
+  Claiming "100% is where the price moves" would invent a rule the API does
+  not state, and ranking needs no threshold.
+
+### The fallback is a claim about provenance, so it is tested
+
+`priceSource()` decides which number is on screen and the copy says which:
+"FPL's own figure" or "our estimates". A panel that silently swaps between a
+published figure and an approximation of it makes the same number mean two
+different things on different days.
+
+It falls back when there is nothing to show *and* in two cases where the field
+is populated but saying "FPL's own figure" would still be false:
+
+- **every player flat** — exactly what the API served the day before it went
+  live, and an all-zero table is not FPL telling us anything;
+- **every figure locked** — `price_change_locked_until` was set on 30 players;
+  a locked player cannot move price, so a table of them is not a price panel.
+
+Locked players are excluded from the tables and their count is disclosed.

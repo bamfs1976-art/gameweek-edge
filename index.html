@@ -9643,6 +9643,69 @@ function valueList(b,title,arr,highColor){
    transfers; heavily-transferred low-ownership players (small
    threshold) correctly show high likelihoods. Capped 5–95% and always
    labelled an estimate — the real algorithm is not public. */
+/* ── FPL's OWN price figure, which is now published ──────────────────
+   The threshold model below was written because FPL published nothing about
+   price progress. As of 22 Aug 2026 it does: `price_change_percent` is a
+   signed percentage of progress toward a move, and `price_change_projections`
+   carries the same figure projected one and two days out.
+
+   WHY THIS LEADS AND OUR ESTIMATE DOES NOT. Measured against 379 players
+   moving on both sides, our DIRECTION agrees with theirs 378/379 — but the
+   rank correlation is rho = 0.30. Ours compresses nearly every mover into a
+   12-18% band while FPL spreads them across -23 to +20, so Martinelli at
+   -23.3 and Tzolis at +13.4 came out as 14% and 13%: indistinguishable. The
+   ordering is the entire point of a "closest to a move" table, and ours was
+   close to noise against the real thing. Direction was never the problem.
+
+   WHAT IS DELIBERATELY NOT READ:
+   - `likelihood` on each projection is a small signed integer of unknown
+     scale (2/3/4 for one player, -1/-2 for another). Putting a label on it
+     from a handful of observed rows is the mistake `region` is still sitting
+     unshipped for.
+   - No claim is made that 100% is where a price moves. The figure is shown as
+     FPL's own progress number and ranked by, which needs no threshold; naming
+     one would be inventing a rule the API does not state.
+
+   Returns null when FPL has nothing to say — absent field, unparseable, or
+   `price_change_calibrating`, which is the game saying its own number is not
+   ready yet. Null means the caller falls back to the estimate and says so,
+   rather than showing a blank where a figure used to be. */
+function fplPriceMove(el){
+  if(!el||el.price_change_calibrating)return null;
+  const pct=parseFloat(el.price_change_percent);
+  if(!Number.isFinite(pct))return null;
+  const proj=(Array.isArray(el.price_change_projections)?el.price_change_projections:[])
+    .map(p=>({offset:Number(p&&p.offset),pct:parseFloat(p&&p.projected_percent)}))
+    .filter(p=>Number.isFinite(p.offset)&&Number.isFinite(p.pct))
+    .sort((a,c)=>a.offset-c.offset);
+  const lockRaw=el.price_change_locked_until;
+  const lockAt=lockRaw?Date.parse(lockRaw):NaN;
+  const rate=Number(el.price_change_hourly_rate);
+  return {pct,dir:pct>0?'rise':pct<0?'fall':'flat',proj,
+    lockedUntil:Number.isFinite(lockAt)?lockAt:null,
+    rate:Number.isFinite(rate)?rate:null};
+}
+/* A player FPL has locked cannot move price until the stated time, so listing
+   him as "closest to a move" would be wrong however large his figure. Locked
+   is a fact from the API, not an inference. */
+function priceLocked(mv,now){
+  return !!(mv&&mv.lockedUntil!=null&&mv.lockedUntil>(now==null?Date.now():now));
+}
+/* WHICH NUMBER IS ON SCREEN, decided by the data and stated in the copy.
+   Extracted rather than left inline because the panel makes a CLAIM about
+   provenance — "FPL's own figure" versus "our estimates" — and a claim that
+   can drift from the data it describes is worse than either number alone.
+   Pure, so the two paths are tested rather than eyeballed.
+
+   Locked and flat players do not count toward having an official view: a
+   table of players who cannot move, or are not moving, is not a price panel.
+   If everyone is locked we fall back and say so. */
+function priceSource(elements,now){
+  const moves=(elements||[]).map(e=>fplPriceMove(e)).filter(Boolean);
+  const locked=moves.filter(mv=>priceLocked(mv,now)).length;
+  const usable=moves.filter(mv=>!priceLocked(mv,now)&&mv.dir!=='flat').length;
+  return {official:usable>0,usable,locked,withFigure:moves.length};
+}
 function priceChangeProb(el,totalPlayers){
   const inn=el.transfers_in_event||0,out=el.transfers_out_event||0;
   const net=inn-out;
@@ -9692,7 +9755,38 @@ async function hydratePrice(host){
   const prem=b.elements.filter(e=>(e.now_cost||0)>=80&&(e.minutes||0)>=270);
   const worst=prem.map(e=>({e,v:ppm(e)})).sort((a,c)=>a.v-c.v).slice(0,5);
 
-  /* Tonight's likelihoods from the threshold model. */
+  /* ── FPL's own figure first, our estimate only if it has none ──────
+     Which of the two is on screen is decided by the data, and the panel says
+     which one it used. Silently swapping between a published figure and an
+     approximation of it would make the same number mean two different things
+     on different days. */
+  const now=Date.now();
+  const src=priceSource(b.elements,now);
+  const haveOfficial=src.official;
+  const lockedCount=src.locked;
+  const usable=b.elements.map(e=>({e,mv:fplPriceMove(e)}))
+    .filter(x=>x.mv&&!priceLocked(x.mv,now)&&x.mv.dir!=='flat');
+
+  const byPct=(dir)=>usable.filter(x=>x.mv.dir===dir)
+    .sort((a,c)=>Math.abs(c.mv.pct)-Math.abs(a.mv.pct)).slice(0,12);
+  const offRise=byPct('rise'),offFall=byPct('fall');
+  /* Today, +1 and +2 in one cell. The projections are the new capability and
+     a single number hides it — a player at 32.5% today and 72.5% in two days
+     is a different proposition from one flat at 30%. */
+  const projCell=mv=>{
+    const p=mv.proj;
+    if(!p.length)return '—';
+    return '<span style="font-size:.72rem;color:var(--text-3)">'+
+      p.slice(0,3).map(x=>x.pct.toFixed(1)).join(' → ')+'</span>';
+  };
+  const offTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
+    dlTable(b,arr.map(x=>x.e),['Progress','Today → +2d'],e=>{
+      const mv=fplPriceMove(e);
+      return ['<span style="color:'+(up?'var(--green)':'var(--red)')+';font-weight:700">'+
+        (mv.pct>0?'+':'')+mv.pct.toFixed(1)+'%</span>', projCell(mv)];
+    })+'</div>';
+
+  /* The threshold estimate, kept as the fallback. */
   const scored=b.elements.map(e=>({e,pc:priceChangeProb(e,total)}));
   const riseP=scored.filter(x=>x.pc.dir==='rise').sort((a,c)=>c.pc.prob-a.pc.prob||c.pc.net-a.pc.net).slice(0,12);
   const fallP=scored.filter(x=>x.pc.dir==='fall').sort((a,c)=>c.pc.prob-a.pc.prob||a.pc.net-c.pc.net).slice(0,12);
@@ -9715,15 +9809,27 @@ async function hydratePrice(host){
     ? valueList(b,'Best value — points per million',best,'var(--green)')+
       (worst.length?valueList(b,'Worst value — premiums underdelivering',worst,'var(--red)'):'')
     : '');
+  const whenTxt=nextPC?' Next update <b>'+esc(nextPC.label)+'</b>, from the game\u2019s own schedule.':'';
+  const officialIntro='<div class="dl-sub" style="margin-bottom:12px">How far each player has moved toward a price change, '+
+      '<b>from FPL\u2019s own published figure</b> rather than our estimate of it.'+whenTxt+
+      (lockedCount?' '+lockedCount+' player'+(lockedCount===1?' is':'s are')+' locked and cannot move yet \u2014 they are left out.':'')+'</div>';
+  const estimateIntro='<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next update'+
+      whenTxt+
+      ', from net transfers against an ownership-scaled threshold. FPL is not publishing its own progress figure right now, so these are <b>our estimates</b> \u2014 its exact algorithm is not public.</div>';
   host.innerHTML=lensLink('price','Tonight’s move and the net transfers behind it, for every player at once —')+
-    '<div class="dl-sub" style="margin-bottom:12px">Likelihood of a price move at the next update'+
-      (nextPC?' — <b>'+esc(nextPC.label)+'</b>, from the game\u2019s own schedule':'')+
-      ', from net transfers against an ownership-scaled threshold. All figures are <b>estimates</b> — FPL\u2019s exact algorithm is not public.</div>'+
-    probTbl('Likely risers tonight — estimate',riseP,true)+
-    probTbl('Likely fallers tonight — estimate',fallP,false)+
-    '<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
+    (haveOfficial?officialIntro:estimateIntro)+
+    (haveOfficial
+      ? offTbl('Closest to a rise \u2014 FPL\u2019s own figure',offRise,true)+
+        offTbl('Closest to a fall \u2014 FPL\u2019s own figure',offFall,false)+
+        '<div class="card mb-20"><div class="card-title">What this number is</div>'+
+        '<p class="dl-sub" style="margin:0">FPL publishes, for every player, how far transfer activity has carried them toward a price change, and projects it one and two days ahead \u2014 that is the <b>Today \u2192 +2d</b> column. Positive is toward a rise, negative toward a fall. '+
+        'We show the figure as published and rank by it; we do <b>not</b> claim to know the level at which a price actually moves, because FPL does not state one. '+
+        'The projection is <b>theirs, and it is a projection</b> \u2014 transfer activity can turn before it lands.</p></div>'
+      : probTbl('Likely risers tonight — estimate',riseP,true)+
+        probTbl('Likely fallers tonight — estimate',fallP,false))+
+    (haveOfficial?'':'<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
       '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership — approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys \u2192 higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day'+
-      (nextPC?', next at <b>'+esc(nextPC.label)+'</b> in your timezone':' overnight UK time')+'.</p></div>'+
+      (nextPC?', next at <b>'+esc(nextPC.label)+'</b> in your timezone':' overnight UK time')+'.</p></div>')+
     tbl('Momentum — most bought (secondary signal)',risers,true)+
     tbl('Momentum — most sold (secondary signal)',fallers,false)+
     valueBoardCard(b,fixtures,6)+

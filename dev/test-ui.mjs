@@ -506,6 +506,61 @@ section('panels render with data behind them, rather than their error state');
    the mock squad. Before it was added there was no double anywhere in this
    harness, so a "doubles render" check had nothing it could possibly find —
    it would have passed by measuring itself. */
+section('the price panel shows FPL\u2019s own figure, and says so');
+{
+  /* The panel makes a CLAIM about where its number comes from. The unit
+     suite proves priceSource() decides correctly; this proves the copy and
+     the tables that follow from that decision actually render — the new
+     offTbl/projCell path is not reachable from any other test, and "the
+     structure was tested, the rendering was not" is how the last three
+     visible bugs in this app got shipped. */
+  const pp = await browser.newPage();
+  const pErr = [];
+  pp.on('pageerror', (e) => pErr.push(e.message));
+  await pp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await pp.waitForTimeout(1200);
+
+  const price = await pp.evaluate(async () => {
+    try { openPanel('price'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2500));
+    const host = document.querySelector('#pages') || document.body;
+    const txt = host.innerText || '';
+    return { txt, html: host.innerHTML.length };
+  });
+  ok(!price.err, 'the price panel rendered (' + (price.err || '') + ')');
+  ok(price.html > 2000, 'and produced a real panel rather than an empty host');
+
+  /* The mock carries FPL figures, so the official path must be the one on
+     screen — and the estimate wording must NOT be, because both claims
+     cannot be true at once. */
+  /* Case-INSENSITIVE on purpose. innerText returns the RENDERED text, and
+     .card-title carries text-transform:uppercase, so the title arrives as
+     "FPL'S OWN FIGURE". A case-sensitive match here failed while the panel
+     was perfectly correct — the assertion was testing my memory of the CSS,
+     not the page. */
+  ok(/FPL\u2019s own (published )?figure/i.test(price.txt),
+     'it names FPL as the source of the number');
+  ok(!/our estimates/i.test(price.txt),
+     'and does NOT simultaneously call it our estimate');
+
+  /* The projections column is the new capability; a single number hides it. */
+  ok(/32\.5/.test(price.txt), 'today\u2019s projected figure is on screen');
+  ok(/72\.5/.test(price.txt), 'and the +2 day projection with it');
+
+  /* Ranked by magnitude: the biggest faller leads its table. */
+  ok(/-23\.3|−23\.3/.test(price.txt), 'the biggest faller appears');
+  ok(/\+19\.9/.test(price.txt), 'the biggest riser appears, signed');
+
+  /* The locked player has the LARGEST figure in the fixture (40.0) and must
+     still be absent — he cannot move price, so listing him first would be
+     the most prominent possible wrong answer. */
+  ok(!/40\.0/.test(price.txt), 'the locked player is excluded despite having the biggest figure');
+  ok(/locked/i.test(price.txt), 'and the exclusion is disclosed rather than silent');
+
+  ok(pErr.length === 0, 'the price panel threw nothing (' + pErr.slice(0, 2).join(' | ') + ')');
+  await pp.close();
+}
+
 section('my squad rows, and a double gameweek that is visible as one');
 {
   const sp = await browser.newPage();
