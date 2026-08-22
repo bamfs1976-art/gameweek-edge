@@ -166,6 +166,16 @@ const pieces = [
   extractConst(html, 'DRAFT_QUOTA'),
   extractLine(html, /const DRAFT_CLUB_MAX=\d+;/),
   extractFn(html, 'draftCounts'),
+  /* DRAFT_BUDGET is already extracted below by extractLine. planBudgetTenths
+     reads the game's published budget out of RULES, which is a module-level
+     binding in the app and therefore invisible here unless it comes too. */
+  extractConst(html, 'RULES_FALLBACK'),
+  'let RULES = RULES_FALLBACK;',
+  'let PLAN_BUDGET = null;',
+  extractFn(html, 'planBudgetTenths'),
+  extractFn(html, 'plannerBudget'),
+  extractFn(html, 'squadDiff'),
+  extractFn(html, 'plannerMoves'),
   extractFn(html, 'draftValidate'),
   extractFn(html, 'draftCanAdd'),
   extractFn(html, 'draftMinCost'),
@@ -299,7 +309,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1083,6 +1093,131 @@ section('freeTransfers: derived from published transfers, and checked against pu
   ok(core.freeTransfers(null, 5).verified === false, 'an absent derivation is never "verified"');
   ok(core.freeTransfers(H([gw(1, 0, 0)]), 0).cap === 5,
      'a nonsense cap falls back rather than freezing the count at zero');
+}
+
+section('plannerBudget: what a rebuild can actually spend');
+{
+  /* MEASURED, NOT ASSUMED. dev/fpl-budget-basis.mjs summed six real
+     squads at GW1 and found squad + bank = value every time, so the bank
+     is already inside value. Adding it on top would hand a manager a
+     fifth more money than they have. These are that probe's own rows. */
+  const REAL = [
+    { value: 1000, bank: 225, squad: 775 },
+    { value: 1000, bank: 170, squad: 830 },
+    { value: 1000, bank: 195, squad: 805 },
+    { value: 1000, bank: 210, squad: 790 },
+  ];
+  REAL.forEach((r) => {
+    ok(r.squad + r.bank === r.value, 'probe row is self-consistent: squad + bank = value');
+    ok(core.plannerBudget(r, 9999).tenths === r.value,
+       'budget is value alone (' + core.plannerBudget(r, 9999).tenths + ' from value ' + r.value + ')');
+    ok(core.plannerBudget(r, 9999).tenths !== r.value + r.bank,
+       'and emphatically NOT value + bank, which would be £' + ((r.value + r.bank) / 10).toFixed(1) + 'm');
+  });
+
+  const b = core.plannerBudget({ value: 1012, bank: 7 }, 1000);
+  ok(b.fromEntry === true, 'a real entry supplies the budget');
+  ok(b.tenths === 1012, 'a squad worth 101.2 can spend 101.2, got ' + b.tenths);
+  ok(b.bank === 7, 'and the bank is reported separately for the card');
+
+  /* Pre-season, or unlinked: the game's own starting budget. */
+  const pre = core.plannerBudget(null, 1000);
+  ok(pre.fromEntry === false, 'with no entry the budget is the fallback');
+  ok(pre.tenths === 1000, 'which is the game budget, got ' + pre.tenths);
+  ok(pre.bank === null, 'and there is no bank to report');
+  ok(core.plannerBudget({}, 1000).tenths === 1000, 'an empty entry_history falls back too');
+  ok(core.plannerBudget({ value: 0 }, 1000).tenths === 1000,
+     'a zero value is not a budget of nothing — it is a missing figure');
+  ok(core.plannerBudget({ value: -5 }, 1000).tenths === 1000, 'nor is a negative one');
+  ok(core.plannerBudget({ value: 'abc' }, 1000).tenths === 1000, 'and neither is a non-number');
+
+  /* The fallback must come from the game's published rules rather than a
+     literal here, so a rule change is picked up rather than contradicted. */
+  ok(core.plannerBudget(null, 950).tenths === 950, 'the caller decides the fallback');
+
+  /* A missing bank does not become zero: "no bank reported" and "an
+     empty bank" are different things on the card. */
+  ok(core.plannerBudget({ value: 1000 }, 1000).bank === null, 'an absent bank is unknown');
+  ok(core.plannerBudget({ value: 1000, bank: 0 }, 1000).bank === 0, 'an empty bank is zero');
+}
+
+section('squadDiff: the transfers that turn my team into the plan');
+{
+  const cur = [1, 2, 3, 4, 5];
+  ok(core.squadDiff(cur, [1, 2, 3, 4, 5]).moves === 0,
+     'a plan identical to the squad needs no transfers');
+  ok(core.squadDiff(cur, [1, 2, 3, 4, 5]).keep.length === 5, 'and keeps everyone');
+
+  const d = core.squadDiff(cur, [1, 2, 3, 9, 8]);
+  ok(d.in.join(',') === '9,8', 'incoming players are the ones the plan adds');
+  ok(d.out.join(',') === '4,5', 'outgoing are the ones it drops');
+  ok(d.moves === 2, 'two swaps, got ' + d.moves);
+  ok(d.keep.join(',') === '1,2,3', 'the rest are kept');
+
+  /* MOVES COUNTS INCOMING, and for a complete fifteen that is the same
+     number as outgoing. On a half-built plan it is not: only the ins are
+     known, because which of your players a finished plan would displace
+     has not been decided. So the count is a floor and `exact` says so. */
+  const full = (n, off) => Array.from({ length: 15 }, (_, i) => i + 1 + (i < n ? off : 0));
+  const both15 = core.squadDiff(full(0, 0), full(3, 100));
+  ok(both15.exact === true, 'two complete fifteens give an exact transfer count');
+  ok(both15.in.length === both15.out.length, 'and the ins and outs balance');
+  ok(both15.moves === 3, 'three changes, got ' + both15.moves);
+
+  const partial = core.squadDiff(full(0, 0), [1, 2, 3, 99]);
+  ok(partial.exact === false, 'a half-built plan is not an exact count');
+  ok(partial.moves === 1, 'and reports only the players it would have to bring in');
+
+  /* Duplicates and nulls must not inflate the count. */
+  ok(core.squadDiff([1, 1, 2], [1, 2]).moves === 0, 'a repeated id is not a transfer');
+  /* And a duplicate on the PLAN side is one player, not two transfers.
+     draftCanAdd cannot produce one, but the plan is restored from
+     localStorage and that is not a validated source. */
+  ok(core.squadDiff([], [5, 5]).moves === 1,
+     'a player listed twice in the plan is still one transfer, got ' + core.squadDiff([], [5, 5]).moves);
+  ok(core.squadDiff([], [5, 5]).in.join(',') === '5', 'and appears once in the list');
+  ok(core.squadDiff([1, null, 2], [1, 2, undefined]).moves === 0, 'nor is a missing one');
+  ok(core.squadDiff(null, null).moves === 0, 'and nothing at all does not throw');
+  ok(core.squadDiff([], [7]).in.join(',') === '7', 'an empty squad needs the whole plan');
+
+  /* Order of the plan is the order transfers are listed, so the card can
+     show them the way the user built them. */
+  ok(core.squadDiff([1], [5, 3, 1]).in.join(',') === '5,3',
+     'incoming keeps the plan order');
+}
+
+section('plannerMoves: what those transfers cost, and when we do not know');
+{
+  const D = (n) => ({ moves: n });
+
+  ok(core.plannerMoves(D(2), 2).paid === 0, 'two transfers on two free ones cost nothing');
+  ok(core.plannerMoves(D(2), 2).cost === 0, 'so no points');
+  ok(core.plannerMoves(D(4), 1).paid === 3, 'four on one free leaves three paid');
+  ok(core.plannerMoves(D(4), 1).cost === 12, 'at four points each, got ' + core.plannerMoves(D(4), 1).cost);
+  ok(core.plannerMoves(D(1), 5).free === 1,
+     'the free count never exceeds the transfers actually made');
+
+  /* A NULL FREE-TRANSFER COUNT IS NOT ZERO. freeTransfers() returns null
+     when its derivation was contradicted or there was no history, and
+     treating that as "no free transfers" would quote a hit for every
+     move on no evidence at all. */
+  const unknown = core.plannerMoves(D(3), null);
+  ok(unknown.known === false, 'an underived free-transfer count is marked unknown');
+  ok(unknown.paid === null, 'so the paid count is withheld');
+  ok(unknown.cost === null, 'and no points cost is claimed');
+  ok(unknown.moves === 3, 'though the number of transfers is still known');
+
+  /* A game with no transfer cost charges nothing — the same gate
+     transferFrame uses, rather than a second opinion about the rules. */
+  const freeGame = core.plannerMoves(D(5), 1, false);
+  ok(freeGame.paid === 4, 'a costless game still counts transfers beyond the allowance');
+  ok(freeGame.cost === 0, 'but charges nothing for them');
+  ok(freeGame.per === 0, 'and says the per-transfer cost is zero');
+
+  ok(core.plannerMoves(null, 2).moves === 0, 'no diff, no moves');
+  ok(core.plannerMoves(D(0), 0).cost === 0, 'nothing planned costs nothing');
+  ok(core.plannerMoves(D(-3), 1).moves === 0, 'a negative count is floored at zero');
+  ok(core.plannerMoves(D(2), -1).free === 0, 'and so is a negative allowance');
 }
 
 section('leagueAwards: top score, captain, bench and differential');

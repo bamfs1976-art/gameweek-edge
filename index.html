@@ -3716,7 +3716,7 @@ const NAV = [
       {id:'transfers', label:'Transfer Planner', icon:'swap', tier:'free'},
       {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'},
       {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free', needs:['chips']},
-      {id:'draft', label:'Pre-season Draft', icon:'bolt', tier:'free', needs:['preseasonDraft']},
+      {id:'draft', label:'Squad Planner', icon:'bolt', tier:'free', needs:['preseasonDraft']},
       {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
       {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']}
     ]
@@ -4649,8 +4649,8 @@ function renderPage(panelId){
           host.innerHTML=entryOk
             ? (pre
                 ? stateBox('calendar','Your squad unlocks after the deadline',
-                    'Linked and valid. The FPL API only serves a manager’s squad once teams lock — so before the first deadline'+(dl?' ('+dl+')':'')+' there are no picks to load. My Week and My Squad fill in automatically the moment the deadline passes. Until then, build and compare your XI on the Pre-season Draft.',
-                    '<button class="btn btn-primary btn-sm" onclick="openPanel(\'draft\')">Open Pre-season Draft</button>')
+                    'Linked and valid. The FPL API only serves a manager’s squad once teams lock — so before the first deadline'+(dl?' ('+dl+')':'')+' there are no picks to load. My Week and My Squad fill in automatically the moment the deadline passes. Until then, build and compare your XI in the Squad Planner.',
+                    '<button class="btn btn-primary btn-sm" onclick="openPanel(\'draft\')">Open Squad Planner</button>')
                 : stateBox('calendar','Squad not available yet',
                     'Your team ID is linked and valid. The official FPL API only serves a manager’s squad once the gameweek deadline has passed and teams lock. My Week and My Squad fill in automatically once the gameweek locks.',
                     '<button class="btn btn-ghost btn-sm" onclick="openMidModal()">Edit ID</button>'))
@@ -8592,7 +8592,7 @@ async function hydrateFixtures(host){
         (!squadPicks&&_mid
           ? '<div class="dl-sub" style="margin-bottom:10px">Your own players can fill these rows. '+
             'FPL does not publish a squad until the gameweek deadline passes, so until then '+
-            'save a team in <b>Pre-season Draft</b> and it appears here as <b>My draft</b>.</div>'
+            'save a team in the <b>Squad Planner</b> and it appears here as <b>My draft</b>.</div>'
           : '')+
         (squadPicks&&squadPicks.length
           ? '<div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">'+
@@ -19123,10 +19123,101 @@ async function hydrateLineups(host){
    club names against the bundle's 2026/27 team list. Free tier.
    ═══════════════════════════════════════════════════════════ */
 const DRAFT_KEY='ge-draft-v1';
-const DRAFT_BUDGET=1000;              /* tenths of £m = £100.0m (RULES.budget once bootstrap lands) */
+const DRAFT_BUDGET=1000;              /* last-resort budget in tenths of £m */
+/* The budget the planner is working to, in tenths. Three sources, in
+   order of authority: the linked squad's own value once the season is
+   under way, then the game's published starting budget, then the
+   literal above. The middle one closes a TODO that sat on DRAFT_BUDGET
+   since it was written — squad_total_spend is in game_config and was
+   already being read into RULES. */
+let PLAN_BUDGET=null;
+function planBudgetTenths(){
+  if(Number.isFinite(PLAN_BUDGET)&&PLAN_BUDGET>0)return PLAN_BUDGET;
+  const r=RULES&&Number(RULES.budget);
+  return Number.isFinite(r)&&r>0?r:DRAFT_BUDGET;
+}
 const DRAFT_QUOTA={1:2,2:5,3:5,4:3};
 const DRAFT_CLUB_MAX=3;
 let DRAFT_IDS=null;                   /* working draft — may be invalid */
+
+/* The budget for a squad rebuild.
+   ────────────────────────────────
+   Pre-season it is the game's own starting budget. From the first
+   deadline on it is what the manager could actually raise, and that is
+   `entry_history.value` ALONE — the bank is already inside it.
+
+   That was measured, not assumed, because the two readings differ by the
+   whole bank and I would have got it wrong. dev/fpl-budget-basis.mjs
+   summed each squad's now_cost against value and bank for six entries at
+   the top of league 314, in GW1 while selling prices still equal
+   now_cost:
+
+     squad £77.5m + bank £22.5m = value £100.0m
+     squad £83.0m + bank £17.0m = value £100.0m
+     squad £80.5m + bank £19.5m = value £100.0m
+     squad £79.0m + bank £21.0m = value £100.0m
+
+   Four for "value includes the bank", none against, and two entries with
+   an empty bank that could not decide either way. Adding the bank on top
+   would have handed that first manager £122.5m to spend — a fifth more
+   than they have — and every squad the planner built for them would have
+   been unaffordable in the game.
+
+   `bank` is still returned, because the card shows it: it is the part of
+   the budget not currently tied up in players. */
+function plannerBudget(eh,fallback){
+  const val=Number(eh&&eh.value);
+  const bank=Number(eh&&eh.bank);
+  if(!Number.isFinite(val)||val<=0)
+    return {tenths:fallback,fromEntry:false,value:null,bank:null};
+  return {tenths:val,fromEntry:true,value:val,
+    bank:Number.isFinite(bank)&&bank>=0?bank:null};
+}
+/* ── From a planned squad to the transfers that reach it ────
+   The pre-season board answered one question: what fifteen would I pick
+   with a clean £100.0m? From the first deadline on, nobody has a clean
+   £100.0m and nobody starts from nothing — the useful question becomes
+   "how do I get from the team I have to that one, and what does it
+   cost?". These two functions are that difference.
+
+   `moves` counts INCOMING players. For a complete fifteen the outs and
+   ins are equal by construction, so either would do; for a half-built
+   plan only the ins are known — the outs depend on which of your players
+   the finished plan would displace, which has not been decided yet. So
+   an incomplete plan reports a floor, and the caller says so. */
+function squadDiff(currentIds,plannedIds){
+  /* Deduped on the way in. A repeated id cannot be produced by
+     draftCanAdd, which refuses a player already in the plan — but the
+     plan is restored from localStorage, and a duplicate there would be
+     counted as two transfers for one player. A Set preserves insertion
+     order, so the plan still lists in the order it was built. */
+  const cur=[...new Set((currentIds||[]).filter(id=>id!=null))];
+  const plan=[...new Set((plannedIds||[]).filter(id=>id!=null))];
+  const curSet=new Set(cur),planSet=new Set(plan);
+  const out=cur.filter(id=>!planSet.has(id));
+  const inn=plan.filter(id=>!curSet.has(id));
+  return {out:out,in:inn,keep:cur.filter(id=>planSet.has(id)),
+    moves:inn.length,
+    /* Both sides are full fifteens, so out.length === in.length and the
+       transfer count is exact rather than a lower bound. */
+    exact:cur.length===15&&plan.length===15};
+}
+/* What those transfers cost. Free transfers come from the derivation in
+   freeTransfers(); a hit is 4 points, which is what transferFrame already
+   charges and is gated on the same capability — a game without a transfer
+   cost charges nothing, and the planner must not invent one. */
+function plannerMoves(diff,ft,chargeHits){
+  const moves=Math.max(0,Math.floor((diff&&diff.moves)||0));
+  /* A null free-transfer count is NOT zero. freeTransfers() returns null
+     when it could not derive one, and treating that as "no free
+     transfers" would quote a hit for every move on no evidence. */
+  const known=ft!=null&&Number.isFinite(Number(ft));
+  const free=known?Math.max(0,Math.floor(Number(ft))):null;
+  const paid=free==null?null:Math.max(0,moves-free);
+  const per=(chargeHits===false)?0:4;
+  return {moves:moves,free:free==null?null:Math.min(free,moves),
+    paid:paid,cost:paid==null?null:paid*per,per:per,known:known};
+}
 
 function draftCounts(players){
   const pos={1:0,2:0,3:0,4:0},clubs={};let cost=0;
@@ -19137,7 +19228,7 @@ function draftCounts(players){
 /* The standard-rules validator. `saveable` is the strict save gate:
    complete, within budget and inside every quota. */
 function draftValidate(players,budget){
-  budget=budget==null?DRAFT_BUDGET:budget;
+  budget=budget==null?planBudgetTenths():budget;
   const {pos,clubs,cost}=draftCounts(players);
   const quotaOk=[1,2,3,4].every(t=>(pos[t]||0)<=DRAFT_QUOTA[t]);
   const clubOk=Object.keys(clubs).every(c=>clubs[c]<=DRAFT_CLUB_MAX);
@@ -19237,7 +19328,7 @@ function draftBundleCtx(m,N){
    squad at each position's cheapest price. The local diagnosis
    benchmarks your draft against its total. */
 function draftTemplate(pool,xp6,budget){
-  budget=budget==null?DRAFT_BUDGET:budget;
+  budget=budget==null?planBudgetTenths():budget;
   const minCost={};
   [1,2,3,4].forEach(t=>{const cs=pool.filter(e=>e.element_type===t)
     .map(e=>e.now_cost||0).sort((a,c)=>a-c);minCost[t]=cs.length?cs[0]:40;});
@@ -19281,7 +19372,7 @@ function draftMinCost(pool){
    seed varies the pick so Generate again yields a different-but-strong
    squad. Always returns a complete, in-budget, rules-legal squad. Pure. */
 function draftBuild(pool,xp6,prefs,budget){
-  prefs=prefs||{};budget=budget==null?DRAFT_BUDGET:budget;
+  prefs=prefs||{};budget=budget==null?planBudgetTenths():budget;
   const tilt=prefs.tilt||'balanced',bench=prefs.bench||'strong',seed=(prefs.seed||0)>>>0;
   const jit=id=>{let s=(((id>>>0)*2654435761)^seed)>>>0;s=Math.imul(s^s>>>15,1|s);s^=s>>>13;return((s>>>0)%1000)/1000;};
   const tw=t=>tilt==='attack'?(t>=3?1.12:0.9):tilt==='defence'?(t<=2?1.12:0.9):1;
@@ -19307,7 +19398,7 @@ function draftBuild(pool,xp6,prefs,budget){
    rest by xP6 within budget. Powers remove-a-player-then-refill (FPLs
    remove + Auto Pick), reallocating the freed budget around what was kept. */
 function draftFillGaps(pool,xp6,current,budget){
-  budget=budget==null?DRAFT_BUDGET:budget;
+  budget=budget==null?planBudgetTenths():budget;
   const minCost=draftMinCost(pool),picked=(current||[]).slice(),have=new Set(picked.map(e=>e.id));
   pool.slice().sort((a,c)=>(xp6[c.id]||0)-(xp6[a.id]||0)).forEach(el=>{
     if(picked.length>=15||have.has(el.id))return;
@@ -19374,6 +19465,51 @@ function renderDraftPool(){
     '<div class="dl-sub" style="margin-top:8px">'+list.length+' available · sorted by xP6 (pre-season estimate) · showing the top '+shown.length+'.'+
     (S.hIdx?' Before a ball is kicked, xP6 comes from up to ten seasons of career data, weighted toward recent ones; the badge on each player says how much there is.':'')+'</div>';
 }
+/* "How do I get from my team to this plan?" — the question the board
+   could not answer before the season started and cannot avoid after.
+   Returns '' when there is nothing to compare against, so pre-season and
+   unlinked users see the page exactly as it was. */
+function plannerVsCard(S,ids){
+  const my=S&&S.mySquad;
+  if(!my||!my.ids||!my.ids.length)return '';
+  const b=S.b,d=squadDiff(my.ids,ids);
+  const nm=id=>{const e=b.els[id];return e?esc(e.web_name):'#'+id;};
+  if(!d.moves)return '<div class="card mb-20"><div class="card-title">Plan vs your team</div>'+
+    '<p class="dl-sub" style="margin:0">This plan <b>is</b> the squad you already own — nothing to do.</p></div>';
+  /* Only a verified free-transfer count is spent here. freeTransfers()
+     marks its own derivation unverified when the season's published hit
+     costs contradict it, and quoting a hit off a contradicted count
+     would be worse than quoting none. */
+  const ft=(S.myFt&&S.myFt.verified)?S.myFt.ft:null;
+  const mv=plannerMoves(d,ft,hasCap('transferCost'));
+  let cost;
+  if(mv.cost==null)
+    cost='Your free transfers could not be derived from your history, so no hit is estimated.';
+  else if(mv.per===0)
+    cost='This game charges nothing for transfers.';
+  else if(mv.paid===0)
+    cost='Covered by your '+mv.free+' free transfer'+(mv.free===1?'':'s')+' — no hit.';
+  else
+    cost='<b>'+mv.paid+'</b> beyond your '+(mv.free||0)+' free transfer'+(mv.free===1?'':'s')+
+      ' — a <b>'+mv.cost+'-point</b> hit if you did them all this week.';
+  /* An incomplete plan can only report a floor: which of your players a
+     finished fifteen would displace has not been decided yet. */
+  const head=d.exact
+    ? '<b>'+d.moves+'</b> transfer'+(d.moves===1?'':'s')+' to reach this plan'
+    : '<b>'+d.moves+'</b> player'+(d.moves===1?'':'s')+' to bring in so far — finish the fifteen for a transfer count';
+  const list=(label,arr,cls)=>arr.length
+    ? '<div class="dl-row"><span class="dl-grow"><span class="tr-cell">'+
+      '<span class="dl-nm">'+label+'</span>'+
+      '<span class="dl-sub md-who'+(cls?' '+cls:'')+'">'+arr.map(nm).join(', ')+'</span>'+
+      '</span></span><span class="dl-col mono">'+arr.length+'</span></div>'
+    : '';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+
+    ' Plan vs your team</div>'+
+    '<p class="dl-sub" style="margin:0 0 10px">'+head+'. '+cost+'</p>'+
+    '<div class="dl">'+list('In',d.in)+list('Out',d.out,'md-b')+'</div>'+
+    '<p class="dl-sub" style="margin:10px 0 0">Transfers are not made here — this is a plan. '+
+    'Your budget is your squad\u2019s current value, so a plan that fits here is one you could actually buy.</p></div>';
+}
 function renderDraft(){
   const S=window._draft;if(!S)return;
   const b=S.b;
@@ -19387,6 +19523,8 @@ function renderDraft(){
     '<div class="stat"><div class="stat-l">Bank</div><div class="stat-v" style="color:'+(v.overBudget?'var(--red)':'var(--green-bright)')+'">'+(v.overBudget?'−':'')+money(Math.abs(v.bank))+'</div></div>'+
     '<div class="stat"><div class="stat-l">xP6 total</div><div class="stat-v">'+players.reduce((s,e)=>s+(S.xp6[e.id]||0),0).toFixed(0)+'</div></div>'+
     '</div>';
+  const vsBox=document.getElementById('draft-vs');
+  if(vsBox)vsBox.innerHTML=plannerVsCard(S,DRAFT_IDS);
   const saveBtn=document.getElementById('draft-save');
   if(saveBtn)saveBtn.disabled=!v.saveable;
   const cnt=document.getElementById('draft-count');
@@ -19549,7 +19687,7 @@ async function draftContext(){
   const candidates=S.pool.filter(e=>DRAFT_IDS.indexOf(e.id)<0&&e.status==='a')
     .sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0)).slice(0,15).map(pl);
   return {note:'2026/27 pre-season draft. Prices are launch estimates; xP6 = projected points over GW1-6 (pre-season estimate); minsSecurity 0-100.',
-    budget:DRAFT_BUDGET/10,spent:v.cost/10,bank:v.bank/10,complete:v.complete,
+    budget:planBudgetTenths()/10,spent:v.cost/10,bank:v.bank/10,complete:v.complete,
     squad:players.map(pl),templateXP6:+S.tmplTotal.toFixed(1),candidates};
 }
 function genDraft(){return runAI('draft',draftContext,'draft-ai',{busy:'Reading your draft…',retryName:'genDraft'});}
@@ -19568,11 +19706,38 @@ async function hydrateDraft(host){
   let A=null;try{A=await loadArchive();}catch(_){}
   const hIdx=histPriorIndex(A);
   if(DRAFT_IDS==null)DRAFT_IDS=loadDraftIds();
+  /* ── The planner's two in-season inputs ────────────────────────────
+     Before the first deadline this page builds a squad from a clean
+     budget with nothing to compare against, which is what it was for.
+     After it, neither of those holds: the budget is whatever your squad
+     is worth, and the useful answer is not "what fifteen would I pick"
+     but "how do I get from mine to that one". Both come from one picks
+     call, and both are optional — unlinked, or pre-season, the page
+     behaves exactly as it did. */
+  let mySquad=null,myPicks=null,myFt=null;
+  PLAN_BUDGET=null;
+  if(getMid()&&b.liveSeason&&b.cur&&b.cur.id){
+    try{
+      myPicks=await loadPicks(getMid(),b.cur.id);
+      const eh=(myPicks&&myPicks.entry_history)||null;
+      const bud=plannerBudget(eh,null);
+      if(bud.fromEntry)PLAN_BUDGET=bud.tenths;
+      mySquad={ids:((myPicks&&myPicks.picks)||[]).map(p=>p.element),budget:bud};
+    }catch(_){}
+    try{myFt=freeTransfers(await loadHistory(getMid()),ftCap());}catch(_){}
+  }
   /* 2026/27 club filter: bootstrap clubs are kept only if they map into
      the model bundle's team list (FPL_TO_LG carries the 20 new-season
      clubs). If the whole bootstrap misses (weird API state), keep all. */
-  const modelClubs=m&&m.teams?Object.keys(m.teams):null;
-  const isNew=t=>{const club=FPL_TO_LG[t.short_name];
+  /* PRE-SEASON ONLY. Before a ball is kicked, bootstrap still lists last
+     season's clubs and the model bundle is what knows who came up, so
+     the board filters to the new twenty. Once the season is running
+     bootstrap IS the new twenty — and applying the filter then means a
+     stale bundle can quietly delete real clubs from the player pool,
+     which is a wrong answer rather than a cautious one. */
+  const modelClubs=(b.preseason&&m&&m.teams)?Object.keys(m.teams):null;
+  const isNew=t=>{if(!b.preseason)return true;
+    const club=FPL_TO_LG[t.short_name];
     return club?(!modelClubs||modelClubs.indexOf(club)>=0):false;};
   let okTeams=new Set(b.raw.teams.filter(isNew).map(t=>t.id));
   let relegated=b.raw.teams.filter(t=>!okTeams.has(t.id)).map(t=>t.short_name);
@@ -19593,7 +19758,8 @@ async function hydrateDraft(host){
     xp6[e.id]=draftXP6(e,ctx&&club?ctx.ease[club]:1,gp(e.team),prior[e.id]);});
   const tmpl=draftTemplate(pool.filter(e=>e.status==='a'),xp6);
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
-  const S=window._draft={b,m,ctx,pool,xp6,prior,hIdx,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,nf:buildNextFix(b,fixtures)};
+  const S=window._draft={b,m,ctx,pool,xp6,prior,hIdx,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,
+    nf:buildNextFix(b,fixtures),mySquad,myFt};
   const importBtn=(getMid()&&b.liveSeason)
     ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
@@ -19624,6 +19790,7 @@ async function hydrateDraft(host){
         '<button class="btn btn-ghost btn-sm" onclick="draftClear()">Clear</button>'+
         '<button class="btn btn-cta btn-sm" id="draft-save" onclick="draftSaveNow()">Save draft</button></span></div>'+
       '<div id="draft-summary"></div>'+
+      '<div id="draft-vs"></div>'+
       '<p class="dl-sub" style="margin-top:10px">Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
         'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'+notes+'</p></div>'+
     wizard+

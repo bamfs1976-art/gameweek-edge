@@ -849,7 +849,7 @@ section('a saved draft stands in when the deadline has not passed');
       toggle: !!document.getElementById('fdr-rows'),
       rows: document.querySelectorAll('#fdr-tbody tr').length,
       explains: /save a team in/i.test(txt),
-      namesTheDraft: /Pre-season Draft/i.test(txt),
+      namesTheDraft: /Squad Planner/i.test(txt),
       saysDeadline: /deadline passes/i.test(txt),
       down: /could not load this view/i.test(txt) };
   });
@@ -1839,6 +1839,86 @@ section('the sidebar at tablet widths: no hover, so nothing may depend on it');
     }
     await ctx.close();
   }
+}
+
+section('squad planner: a rebuild against your own budget, not a clean £100m');
+{
+  /* Asked for: turn the pre-season draft into a planner usable all
+     season. Two things change once the season is running — the budget is
+     your squad's value rather than the game's opening £100.0m, and the
+     useful output is the TRANSFERS from your team to the plan rather
+     than a squad in a vacuum. */
+  const pp = await browser.newPage();
+  const pErrors = [];
+  pp.on('pageerror', (e) => pErrors.push(e.message));
+  await pp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await pp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await pp.waitForTimeout(1200);
+
+  const plan = await pp.evaluate(async () => {
+    try { openPanel('draft'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3200));
+    const S = window._draft;
+    const txt = document.body.innerText;
+    return {
+      err: null,
+      booted: !!S,
+      /* The linked squad reached the planner, so a comparison is possible. */
+      mySquad: S && S.mySquad ? S.mySquad.ids.length : 0,
+      budgetFromEntry: !!(S && S.mySquad && S.mySquad.budget && S.mySquad.budget.fromEntry),
+      budgetTenths: (S && S.mySquad && S.mySquad.budget) ? S.mySquad.budget.tenths : null,
+      planBudget: typeof planBudgetTenths === 'function' ? planBudgetTenths() : null,
+      /* The panel is no longer branded pre-season only. */
+      named: /Squad Planner/i.test(txt),
+      stillPreseasonNamed: /Pre-season Draft/i.test(txt),
+      vsBox: !!document.getElementById('draft-vs'),
+    };
+  });
+
+  ok(plan.booted === true, 'the planner boots (' + (plan.err || '') + ')');
+  ok(plan.named === true, 'and is named as a planner rather than a pre-season draft');
+  ok(plan.stillPreseasonNamed === false, 'with the old name gone from the page');
+  ok(plan.vsBox === true, 'the plan-vs-team slot exists');
+
+  /* THE BUDGET. The mock squad is worth 1000 tenths (£100.0m) with the
+     bank already inside it, which the probe established against six real
+     squads. The planner must spend that, not the game's opening budget
+     plus a bank on top. */
+  ok(plan.mySquad === 15, 'the linked squad reached the planner, got ' + plan.mySquad);
+  ok(plan.budgetFromEntry === true, 'and supplied the budget');
+  ok(plan.budgetTenths === 1000, 'which is the squad value alone, got ' + plan.budgetTenths);
+  ok(plan.planBudget === plan.budgetTenths,
+     'and that is what the validator spends (' + plan.planBudget + ')');
+
+  /* Adding a player the squad does not own must produce a transfer line. */
+  const diff = await pp.evaluate(async () => {
+    const S = window._draft;
+    const mine = new Set(S.mySquad.ids);
+    const outsider = S.pool.find((e) => !mine.has(e.id));
+    DRAFT_IDS = S.mySquad.ids.slice(0, 14).concat([outsider.id]);
+    renderDraft();
+    await new Promise((r) => setTimeout(r, 250));
+    const box = document.getElementById('draft-vs');
+    return { text: box ? box.innerText : '', rows: box ? box.querySelectorAll('.dl-row').length : 0 };
+  });
+  ok(/transfer/i.test(diff.text), 'a plan that differs from the squad reports transfers');
+  ok(diff.rows >= 2, 'listing what comes in and what goes out, got ' + diff.rows + ' rows');
+  ok(/In\b/.test(diff.text) && /Out\b/.test(diff.text), 'both directions are named');
+
+  /* And a plan identical to the squad says so rather than showing an
+     empty transfer list. */
+  const same = await pp.evaluate(async () => {
+    DRAFT_IDS = window._draft.mySquad.ids.slice();
+    renderDraft();
+    await new Promise((r) => setTimeout(r, 250));
+    const box = document.getElementById('draft-vs');
+    return box ? box.innerText : '';
+  });
+  ok(/already own|nothing to do/i.test(same),
+     'a plan matching the squad says there is nothing to do (' + same.slice(0, 70) + ')');
+
+  ok(pErrors.length === 0, 'the planner threw nothing (' + pErrors.slice(0, 2).join(' | ') + ')');
+  await pp.close();
 }
 
 section('no uncaught errors');
