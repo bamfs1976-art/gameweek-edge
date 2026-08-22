@@ -49,3 +49,11 @@ jobs:
         # readable — the two answers are independent.
         continue-on-error: true
         run: node dev/fpl-price-probe.mjs
+      - name: What bootstrap publishes that we never read
+        # The field diff in the endpoint probe lists NAMES. This lists the
+        # ones we do not read together with their fill rate and a real value,
+        # because an unused field that is null for every row is an empty
+        # column rather than an opportunity — the mistake already made twice
+        # here, on team strength and on cost_change_*.
+        continue-on-error: true
+        run: node dev/fpl-bootstrap-unused.mjs
