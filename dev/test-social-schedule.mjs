@@ -39,8 +39,8 @@ function slice(from, to) {
   return html.slice(a, b);
 }
 const src = slice('const SOC_ROTA=', 'function socPlanCard(');
-const ctx = new Function(src + '\nreturn {SOC_ROTA,SOC_PIN,SOC_WEEKS,socPostTimes,socSchedule,socWhen};')();
-const { SOC_ROTA, SOC_PIN, socPostTimes, socSchedule } = ctx;
+const ctx = new Function(src + '\nreturn {SOC_ROTA,SOC_PIN,SOC_WEEKS,SOC_SHOTS,socPostTimes,socSchedule,socWhen};')();
+const { SOC_ROTA, SOC_PIN, SOC_SHOTS, socPostTimes, socSchedule } = ctx;
 
 /* ── The rota must name real cards ───────────────────────────────────
    A typo here is invisible: the id simply never matches, the card silently
@@ -76,7 +76,10 @@ const plan = socSchedule(b, now, null);
 /* ── Nothing in the past, and the order is the order ─────────────── */
 eq(plan.every(s => s.at.getTime() > now), true, 'every slot is in the future');
 eq(plan.every((s, i) => !i || plan[i - 1].at <= s.at), true, 'slots come back in ascending date order');
-const rotaSlots = plan.filter(s => s.id !== SOC_PIN);
+/* Two kinds of slot repeat by design — the pinned captaincy call and the
+   screenshot posts. Everything else is the rota, and the rota must not. */
+const SHOTS = new Set(ctx.SOC_SHOTS.map((s) => s.id));
+const rotaSlots = plan.filter(s => s.id !== SOC_PIN && !SHOTS.has(s.id));
 eq(new Set(rotaSlots.map(s => s.id)).size, rotaSlots.length, 'no rota card is scheduled twice');
 if (!plan.length) fail('a season with eight upcoming deadlines produced no schedule');
 
@@ -120,6 +123,42 @@ eq(pinned.length, new Set(plan.map(s => s.gw)).size,
   'on a weekly fixture list the captaincy call is scheduled every gameweek');
 eq(new Set(pinned.map(s => s.gw)).size, pinned.length, 'and never twice in the same gameweek');
 
+/* ── The GW Debrief ──────────────────────────────────────────────────
+   A screenshot post, not a card, and weekly like the captaincy call. It sits
+   five days out so it lands on the Monday of an ordinary Saturday-deadline
+   week — the gameweek just gone is still raw. */
+const SHOT_IDS = new Set(SOC_SHOTS.map((s) => s.id));
+const shots = plan.filter((s) => SHOT_IDS.has(s.id));
+eq(shots.length > 0, true, 'the debrief is in the queue');
+eq(shots.every((s) => s.shot === true), true, 'and is flagged as a screenshot, not a card');
+eq(shots.every((s) => s.at.getDay() === 1), true,
+  'a Saturday deadline puts the debrief on a Monday');
+/* One per gameweek, but not necessarily for the FIRST one in the window: at
+   five days out its slot is often already behind us when the panel opens,
+   and a queue that lists a past evening is worse than one that skips it. */
+eq(new Set(shots.map((s) => s.gw)).size, shots.length, 'never twice in the same gameweek');
+const gwCount = new Set(plan.map((s) => s.gw)).size;
+eq(shots.length >= gwCount - 1, true,
+  'and it recurs every gameweek whose slot has not already passed (' + shots.length + '/' + gwCount + ')');
+/* It has no rendered card, so a restricted card set must not drop it — that
+   is the whole difference between a screenshot post and a Studio one. */
+eq(socSchedule(b, now, new Set(['captains'])).some((s) => SHOT_IDS.has(s.id)), true,
+  'the debrief survives even when no other card rendered');
+
+/* ── A slot may not reach back past the previous deadline ────────────
+   Five days out is longer than a congested gap between gameweeks. Without a
+   guard the debrief for GW(n+1) lands before GW(n)'s deadline — telling the
+   owner to publish a debrief for a gameweek that has not been played. */
+for (const s of tightPlan) {
+  const idx = tight.events.findIndex((e) => e.id === s.gw);
+  if (idx <= 0) continue;
+  const prev = Date.parse(tight.events[idx - 1].deadline_time);
+  if (s.at.getTime() <= prev) {
+    fail('GW' + s.gw + ' ' + s.id + ' is scheduled before GW' + tight.events[idx - 1].id + "'s deadline");
+  }
+}
+if (!failed) ok('no slot is scheduled before the deadline of the gameweek it follows');
+
 /* ── Offsets land on the right weekday ───────────────────────────── */
 for (const s of plan) {
   const dl = new Date(b.events.find(e => e.id === s.gw).deadline_time);
@@ -153,7 +192,9 @@ if (!failed) ok('slots keep their wall-clock time across the end of BST');
 /* ── Only cards that actually rendered ───────────────────────────── */
 const have = new Set(['captains', 'defcon', 'set-pieces']);
 const narrow = socSchedule(b, now, have);
-eq(narrow.every(s => have.has(s.id)), true, 'a restricted card set never schedules a card that is missing');
+/* Screenshot posts are exempt — there is no rendered card to be missing. */
+eq(narrow.every(s => have.has(s.id) || SHOT_IDS.has(s.id)), true,
+  'a restricted card set never schedules a CARD that is missing');
 eq(narrow.length > 0, true, 'a restricted card set still produces a schedule');
 
 /* ── Degenerate inputs return nothing, rather than throwing ──────── */

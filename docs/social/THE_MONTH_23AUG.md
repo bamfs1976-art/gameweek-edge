@@ -31,6 +31,11 @@ own caption underneath it:
 | **Bluesky** | The Bluesky version, `#FPL` included, inside 300 characters |
 | **Alt text** | The image description — paste into the alt field before posting |
 
+**The GW Debrief is in the queue too**, under *From your own screen*. It has no
+card because the picture is a screenshot of your own debrief panel — but it
+carries the same three copy buttons, and it appears in the posting order with
+its date like everything else.
+
 **Share is the whole workflow.** Tap the card's Share button, pick X or
 Bluesky, post. On a phone that is three taps and no typing. Copy for X is the
 fallback for desktop, where the share sheet doesn't exist.
@@ -54,10 +59,16 @@ matter**; the other two are upside on a week when you have the time.
 
 | | Post | Where it comes from | |
 |---|---|---|---|
-| **D−3** | The Debrief | your own GW Debrief screen | Highest-converting post you have |
+| **D−5** | The Debrief ⭐ | your own GW Debrief screen | Highest-converting post you have |
+| **D−3** | Something useful | a Studio card, rotating | Utility, and a reason to open the app |
 | **D−2** | Captaincy call ⭐ | Studio → **Best captains** | **The one people act on** |
-| **D−1** | Something useful | a Studio card, rotating (below) | Utility, and a reason to open the app |
+| **D−1** | Something useful | a Studio card, rotating | Utility again |
 | **Matchday** | Live DefCon ⭐ | live screenshot, mid-match | **Nobody else can post this** |
+
+The Debrief sits five days out, which is the Monday of an ordinary
+Saturday-deadline week — the gameweek just gone is still raw and nobody has
+started thinking about the next one. It's in the app's queue like everything
+else; the app just asks you for the screenshot instead of drawing a card.
 
 **D is the deadline.** Every date below is my best read of the fixture
 calendar, but the app's deadline strip is the thing that's actually right —
