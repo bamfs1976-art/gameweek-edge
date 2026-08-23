@@ -77,8 +77,17 @@ const specSrc = html.slice(html.indexOf('function socialSpecs('),
 /* The comma matters: it is what separates a literal id from the ladders'
    push('ladder-'+pos, whose first argument is an expression, not a name. */
 const presetIds = [...specSrc.matchAll(/\bpush\('([a-z0-9-]+)'\s*,/g)].map(m => m[1]);
+/* Screenshot posts have no preset behind them — the picture is the owner's
+   own screen — but they are in the queue and so they need a caption like
+   anything else. Read the ids out of the page rather than restating them, so
+   adding one without a caption fails here. */
+const shotIds = [...html.slice(html.indexOf('const SOC_SHOTS='),
+  html.indexOf('const SOC_SHOT_IDS=')).matchAll(/\bid:'([a-z0-9-]+)'/g)].map((m) => m[1]);
+if (!shotIds.length) fail('could not read SOC_SHOTS — the scan is wrong');
+else ok('scanned ' + shotIds.length + ' screenshot post(s): ' + shotIds.join(', '));
+
 const expected = new Set([...presetIds, 'ladder-1', 'ladder-2', 'ladder-3', 'ladder-4',
-  'custom-list', 'custom-squad']);
+  ...shotIds, 'custom-list', 'custom-squad']);
 
 if (presetIds.length < 15) fail('only found ' + presetIds.length + ' presets — the scan is wrong');
 else ok('scanned ' + presetIds.length + ' push() presets from socialSpecs()');

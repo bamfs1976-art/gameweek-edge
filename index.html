@@ -1998,6 +1998,11 @@ body{font-size:14px;line-height:1.35}
 .soc-plan-d span{font-family:var(--font-mono);font-size:10px;letter-spacing:.03em;color:var(--text-3)}
 .soc-plan-c{flex:1 1 auto;min-width:0;font-size:12.5px;color:var(--text-2);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.soc-plan-c .soc-gw{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;color:var(--text-3)}
+.soc-shotrow{border:1px solid var(--border-2);border-radius:var(--r-lg);
+  padding:2px 10px 10px;margin-bottom:12px}
+.soc-shotrow:last-of-type{margin-bottom:0}
+.soc-shotrow .soc-bar{padding-left:0;padding-right:0;border-top:0}
 
 /* ── Club bonus leaders: who banks the bonus at each club ── */
 .cbl{display:flex;flex-direction:column}
@@ -7286,6 +7291,26 @@ Rotation risk you can see coming 👇 #FPL
 gameweekedge.co.uk`,
 a:`Players whose clubs have midweek fixtures, showing where rotation risk is highest.`},
 
+/* Not a card — your own GW Debrief screen. Written in the first person on
+   purpose: the post only works because it is your gameweek being marked,
+   including the ones that went badly. A neutral third-person version of this
+   is just another feature announcement. */
+'debrief':{
+x:`My gameweek, marked.
+
+The debrief scores every decision against what the model would have done — the captain, the bench, each of the fifteen. Not a leaderboard: the counterfactual, in points.
+
+Free, every week, for everyone.
+
+gameweekedge.co.uk`,
+b:`My gameweek, marked.
+
+The debrief scores every decision against what the model would have done — captain, bench, all fifteen. The counterfactual, in points.
+
+Free for everyone, every week. #FPL
+gameweekedge.co.uk`,
+a:`Gameweek debrief showing points gained and lost from the captain choice, the bench and each squad pick.`},
+
 'custom-list':{
 x:`Built this with the Gameweek Edge card builder — any players you like, ranked on whichever number you care about.
 
@@ -7330,6 +7355,26 @@ const SOC_ROTA=['set-pieces','defcon','data-xi','fixture-runs','overpriced',
 const SOC_PIN='captains';                       /* every week, two days out */
 const SOC_WEEKS=6;                              /* how far ahead to plan */
 
+/* ── Posts that come off your own screen ──────────────────────────────
+   Not every post is a Studio card. The GW Debrief is the highest-converting
+   thing in the whole rotation and the only one nobody else can write, because
+   it scores YOUR gameweek against what the model would have done — so it
+   belongs in the queue even though the graphic is a screenshot rather than a
+   render. SOC_SHOTS carries them: they schedule and caption exactly like a
+   card, but the panel asks you for the picture instead of drawing it.
+
+   Five days out puts it on the Monday of an ordinary Saturday-deadline week,
+   which is when the gameweek just gone is still raw and before anyone has
+   started thinking about the next one.
+
+   The live DefCon shot is deliberately NOT here. It has to be taken during
+   the 15:00 block while the match is running, and a queue entry telling you
+   to post it at 18:30 would be telling you to post it too late. */
+const SOC_SHOTS=[{id:'debrief',off:5,label:'THE GW DEBRIEF',
+  shot:'Your own GW Debrief screen — including the weeks it went badly.'}];
+const SOC_SHOT_IDS=new Set(SOC_SHOTS.map(s=>s.id));
+function socShot(id){return SOC_SHOTS.find(s=>s.id===id)||null;}
+
 /* X first, Bluesky later — its feeds run close to chronological, so the
    later slot is doing real work rather than being a rounding error, and it
    catches the US afternoon. Sunday evening runs earlier on both. */
@@ -7343,12 +7388,17 @@ function socPostTimes(d){
    promises a post that has no graphic behind it. */
 function socSchedule(b,now,have){
   now=now||Date.now();
-  const ok=have&&have.size?id=>have.has(id):()=>true;
+  /* Screenshot posts are exempt from the `have` filter: there is no rendered
+     card to be missing, so the picture is never the reason to drop one. */
+  const ok=have&&have.size?id=>SOC_SHOT_IDS.has(id)||have.has(id):()=>true;
   const rota=SOC_ROTA.filter(ok);
-  const evs=((b&&b.events)||[]).filter(e=>e&&e.id&&e.deadline_time)
-    .slice().sort((a,c)=>a.id-c.id)
-    .filter(e=>new Date(e.deadline_time).getTime()>now)
-    .slice(0,SOC_WEEKS);
+  const all=((b&&b.events)||[]).filter(e=>e&&e.id&&e.deadline_time)
+    .slice().sort((a,c)=>a.id-c.id);
+  const evs=all.filter(e=>new Date(e.deadline_time).getTime()>now).slice(0,SOC_WEEKS);
+  /* The deadline before each one, so a slot cannot be pushed back past the
+     gameweek it is meant to follow — see the guard below. */
+  const prevDl={};
+  all.forEach((e,i)=>{if(i)prevDl[e.id]=new Date(all[i-1].deadline_time).getTime();});
   const out=[];
   evs.forEach(ev=>{
     const dl=new Date(ev.deadline_time);
@@ -7356,6 +7406,7 @@ function socSchedule(b,now,have){
        order is stable: reopening the panel cannot reshuffle the queue. */
     const base=rota.length?((ev.id-1)*2)%rota.length:0;
     const slots=[];
+    SOC_SHOTS.forEach(s=>{if(ok(s.id))slots.push({off:s.off,id:s.id,shot:true});});
     if(rota.length)slots.push({off:3,id:rota[base]});
     if(ok(SOC_PIN))slots.push({off:2,id:SOC_PIN});
     if(rota.length>1)slots.push({off:1,id:rota[(base+1)%rota.length]});
@@ -7368,7 +7419,13 @@ function socSchedule(b,now,have){
       const hm=t.x.split(':');
       at.setHours(+hm[0],+hm[1],0,0);
       if(at.getTime()<=now)return;              /* slot already gone */
-      out.push({id:s.id,at,gw:ev.id,off:s.off,xTime:t.x,bTime:t.b});
+      /* A large offset can reach back past the PREVIOUS deadline, which puts
+         the post before the gameweek it is about. The debrief at five days
+         out does exactly that whenever deadlines are four days apart. Drop
+         the slot rather than publish a debrief for a gameweek still being
+         played. */
+      if(prevDl[ev.id]!=null&&at.getTime()<=prevDl[ev.id])return;
+      out.push({id:s.id,at,gw:ev.id,off:s.off,xTime:t.x,bTime:t.b,shot:!!s.shot});
     });
   });
   /* ── One post a day ───────────────────────────────────────────────
@@ -7385,19 +7442,20 @@ function socSchedule(b,now,have){
      list almost nothing but captaincy ever got scheduled. Urgency first,
      anchor second. The losers drop out rather than shuffling to a free day —
      a card moved off its offset is no longer the post it was written to be. */
-  out.sort((a,c)=>a.at-c.at||a.gw-c.gw||
-    (a.id===SOC_PIN?-1:c.id===SOC_PIN?1:0)||a.off-c.off);
+  const rank=s=>s.id===SOC_PIN?0:s.shot?1:2;
+  out.sort((a,c)=>a.at-c.at||a.gw-c.gw||rank(a)-rank(c)||a.off-c.off);
   const day=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
   const takenDay=new Set();
-  /* The pinned card repeats every week and is meant to — the queue would be
-     lying if it showed one captaincy call a month out. The rota cards must
-     not repeat inside the window, though: seeing the same card twice in a
-     fortnight reads as a broken queue rather than a rotation. */
+  /* The captaincy call and the debrief repeat every week and are meant to —
+     the queue would be lying if it showed one of each a month out. The rota
+     cards must not repeat inside the window, though: seeing the same card
+     twice in a fortnight reads as a broken queue rather than a rotation. */
+  const weekly=s=>s.id===SOC_PIN||s.shot;
   const seenCard=new Set();
   return out.filter(s=>{
     const k=day(s.at);
     if(takenDay.has(k))return false;
-    if(s.id!==SOC_PIN){
+    if(!weekly(s)){
       if(seenCard.has(s.id))return false;
       seenCard.add(s.id);
     }
@@ -7416,13 +7474,15 @@ function socPlanCard(plan,specs){
       ' Posting order</div><p class="dl-sub" style="margin:0">No upcoming deadlines to schedule against — '+
       'the order returns as soon as the next gameweek is published. Every card below still builds and still carries its caption.</p></div>';
   const title={};(specs||[]).forEach(s=>{title[s.id]=s.title;});
+  SOC_SHOTS.forEach(s=>{title[s.id]=s.label;});
   let last=null;
   const rows=plan.map(s=>{
     const gwHead=last!==s.gw?'<div class="soc-plan-gw">Gameweek '+s.gw+'</div>':'';
     last=s.gw;
     return gwHead+'<div class="soc-plan-row">'+
       '<span class="soc-plan-d"><b>'+esc(socWhen(s.at))+'</b><span>'+esc(s.xTime)+' X · '+esc(s.bTime)+' Bluesky</span></span>'+
-      '<span class="soc-plan-c">'+esc(title[s.id]||s.id)+'</span></div>';
+      '<span class="soc-plan-c">'+esc(title[s.id]||s.id)+
+        (s.shot?' <span class="soc-gw">screenshot</span>':'')+'</span></div>';
   }).join('');
   return '<div class="card mb-20"><div class="card-title">'+svg(ICON.calendar,'width="15" height="15"')+
     ' Posting order</div>'+
@@ -7459,6 +7519,11 @@ function socCopy(i,which){
   socCopyText(which==='x'?c.x:which==='b'?c.b:c.a,
     which==='x'?'X caption':which==='b'?'Bluesky caption':'Alt text');
 }
+function socCopyShot(id,which){
+  const c=socCaption(id);if(!c)return;
+  socCopyText(which==='x'?c.x:which==='b'?c.b:c.a,
+    which==='x'?'X caption':which==='b'?'Bluesky caption':'Alt text');
+}
 function socCopyCustom(which){
   const S=window._soc;if(!S||!S.custom)return;
   const c=socCaption(S.custom.id);if(!c)return;
@@ -7467,6 +7532,37 @@ function socCopyCustom(which){
 }
 /* The caption block that sits under a card. Shows the Bluesky version because
    it is the shorter of the two and reads as a complete post either way. */
+/* The posts with no card behind them. They still need the words, and they
+   still need a place in the panel, or "post your debrief every week" is a
+   line in a document nobody opens. */
+function socShotCard(plan){
+  const rows=SOC_SHOTS.map(s=>{
+    const c=socCaption(s.id);
+    if(!c)return '';
+    const due=(plan||[]).find(p=>p.id===s.id);
+    const arg=w=>"socCopyShot('"+s.id+"','"+w+"')";
+    return '<div class="soc-shotrow">'+
+      '<div class="soc-bar"><span class="soc-nm">'+esc(s.label)+'</span>'+
+      (due?'<span class="soc-gw">'+esc(socWhen(due.at))+' · '+esc(due.xTime)+'</span>':'')+'</div>'+
+      '<p class="dl-sub" style="margin:8px 0">'+esc(s.shot)+'</p>'+
+      '<div class="soc-cap" style="border-top:0;padding:0">'+
+        '<p class="soc-cap-t">'+esc(c.b)+'</p>'+
+        '<div class="soc-cap-b">'+
+          '<button class="btn btn-primary btn-sm" onclick="'+arg('x')+'">Copy for X</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="'+arg('b')+'">Bluesky</button>'+
+          '<button class="btn btn-ghost btn-sm" onclick="'+arg('a')+'">Alt text</button>'+
+        '</div></div></div>';
+  }).join('');
+  if(!rows)return '';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+
+    ' From your own screen</div>'+
+    '<p class="dl-sub" style="margin-bottom:12px">These two are in the queue but there is no card to render — the picture is a screenshot you take. '+
+    'The debrief is the highest-converting post in the rotation and the only one a competitor cannot write, because it is <b>your</b> gameweek being marked. '+
+    'Post the bad weeks too; that honesty is the pitch.</p>'+
+    rows+
+    '<p class="dl-sub" style="margin:14px 0 0"><b>Live DefCon</b> is the other one, and it is deliberately not scheduled: screenshot the Match Centre '+
+    'mid-match during the 3pm block and post it there and then. Queueing it for the evening would be queueing it for after it stopped being true.</p></div>';
+}
 function socCapBlock(id,i){
   const c=socCaption(id);
   if(!c)return '';
@@ -8016,6 +8112,7 @@ async function hydrateSocial(host){
     '<p class="dl-sub" style="margin-bottom:10px">The cards are ordered by the posting queue below — soonest first, then anything the rotation has not reached yet.</p>'+
     '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button></div>'+
     socPlanCard(plan,specs)+
+    socShotCard(plan)+
     '<div class="soc-grid">'+specs.map((sp,i)=>{
       const s=slotBy[sp.id];
       return '<div class="soc-item'+(s?' soc-due':'')+'"><div class="soc-shot" id="soc-'+i+'"></div>'+
