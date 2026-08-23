@@ -217,9 +217,11 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function gwStatsPack', since: '2026-08-23',
-  what: 'the gameweek stats pack — four review cards in the Social Studio' };
-/* Rotated from 'function checkForUpdate' (2026-08-23), which shipped in the
+const MARKER = { text: 'function gwPackWhy', since: '2026-08-23',
+  what: 'the Social Studio saying WHY the stats pack is not there yet' };
+/* Rotated from 'function gwStatsPack' (2026-08-23), which was confirmed live
+   by run 32661370800 — the first marker to be verified in a while. Before
+   that 'function checkForUpdate' (2026-08-23), which shipped in the
    PREVIOUS build and was never confirmed live: the sandbox that pushed it
    has an egress proxy that refuses gameweekedge.co.uk, so nothing could run
    this check. That release carried the detailed-league-view fix, the version
