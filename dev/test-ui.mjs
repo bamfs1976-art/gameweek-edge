@@ -1878,6 +1878,9 @@ section('the gameweek stats pack renders, and only for a scored gameweek');
       });
       return {
         packEv: (gwPackEvent(MEM._idx) || {}).id || null,
+        why: gwPackWhy(MEM._idx),
+        onScreen: !!document.querySelector('.soc-why'),
+        whyText: (document.querySelector('.soc-why') || {}).textContent || '',
         present: PACK.filter((id) => !!byId[id]),
         drawn,
         titles: PACK.filter((id) => byId[id]).map((id) => byId[id].title),
@@ -1918,6 +1921,16 @@ section('the gameweek stats pack renders, and only for a scored gameweek');
   ok(unscored.packEv === null, 'an unchecked gameweek is not reviewable');
   ok(unscored.present.length === 0,
      'and no pack card is built from it (' + unscored.present.join(',') + ')');
+  /* Reported as "can't see the new cards". Four cards missing with nothing
+     said is indistinguishable from four cards broken, so the studio has to
+     say which gameweek it is waiting on and what for. */
+  ok(unscored.onScreen === true, 'the studio SAYS why the pack is not there');
+  ok(/GW\d+/.test(unscored.whyText), 'naming the gameweek it is waiting on ('
+     + unscored.whyText.slice(0, 80) + ')');
+  ok(/bonus|being played/.test(unscored.whyText), 'and what it is waiting for');
+  /* And says nothing at all in the ordinary case, or the note becomes
+     furniture people stop reading. */
+  ok(scored.onScreen === false, 'and stays silent when the pack is actually there');
   ok(unscored.errs.length === 0, 'the studio still threw nothing (' + unscored.errs.slice(0, 2).join(' | ') + ')');
 }
 

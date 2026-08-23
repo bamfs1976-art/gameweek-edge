@@ -197,6 +197,7 @@ const pieces = [
   ...['GW_PACK_DIFF'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'gwPackLine'),
   extractFn(html, 'gwStatsPack'),
+  extractFn(html, 'gwPackWhy'),
   extractFn(html, 'sparkColor'),
   extractFn(aiSrc, 'fitJSON'),
   /* bestTransfer drives the dashboard/debrief suggestion; stub its only
@@ -315,7 +316,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -4095,6 +4096,50 @@ section('gameweek stats pack: only a SCORED gameweek, and only what happened');
     'figures FPL did not publish are absent, not zero');
   ok(core.gwStatsPack(els, [], evt, 10).scorers.length === 0, 'no live data yields no rows');
   ok(core.gwStatsPack(els, liveEls, evt, 2).scorers.length === 2, 'the limit is honoured');
+
+  /* ── WHY THERE IS NO PACK ────────────────────────────────────────
+     Reported as "can't see the new cards". The gate was right and it was
+     invisible: four cards were simply not in the gallery, with nothing to
+     say whether the season was young, a gameweek was still being scored,
+     or the feature was broken. An absence that cannot be told apart from a
+     bug is a bug. */
+  const W = core.gwPackWhy;
+  const NOW = Date.parse('2026-08-23T20:00:00Z');
+  const at = (id, iso, extra) => Object.assign({ id, deadline_time: iso }, extra || {});
+
+  ok(W({ events: [at(1, '2026-08-14T17:15:00Z', { data_checked: true })] }, NOW) === '',
+    'a pack that EXISTS explains nothing — the cards are their own explanation');
+
+  const inPlay = W({ events: [at(1, '2026-08-21T17:15:00Z', {})] }, NOW);
+  ok(/GW1/.test(inPlay) && /still being played/.test(inPlay),
+    'a gameweek in play says so, by number (' + inPlay.slice(0, 70) + ')');
+
+  /* finished and data_checked are different states and the wait is a
+     different length. Collapsing them into "not ready" would hide the one
+     that resolves in hours. */
+  const awaiting = W({ events: [at(1, '2026-08-21T17:15:00Z', { finished: true })] }, NOW);
+  ok(/bonus/.test(awaiting) && /within a day/.test(awaiting),
+    'a finished-but-unconfirmed gameweek names bonus as what is missing, and when it lands');
+  ok(awaiting !== inPlay, 'and it is not the same sentence as one still being played');
+
+  const preseason = W({ events: [at(1, '2026-08-28T17:15:00Z', {})] }, NOW);
+  ok(/first gameweek/.test(preseason) && !/GW/.test(preseason),
+    'before any deadline it names no gameweek, because none has been played');
+
+  /* The LATEST started gameweek is the one being waited on. Reporting GW1
+     while GW7 is in play would be an answer about the wrong week. */
+  const mid = W({ events: [
+    at(1, '2026-08-14T17:15:00Z', { finished: true }),
+    at(7, '2026-08-21T17:15:00Z', {})] }, NOW);
+  ok(/GW7/.test(mid) && !/GW1/.test(mid),
+    'mid-season it is about the gameweek actually being waited on (' + mid.slice(0, 60) + ')');
+
+  /* Every branch must say something. An empty string here is the silence
+     this whole helper exists to remove. */
+  [inPlay, awaiting, preseason, mid].forEach((m, i) =>
+    ok(typeof m === 'string' && m.length > 40, 'branch ' + i + ' produces a real sentence'));
+  ok(W({ events: [] }, NOW).length > 40 && W(null, NOW).length > 40,
+    'even an empty or missing season explains itself rather than going quiet');
 }
 
 /* ── summary ────────────────────────────────────────────── */

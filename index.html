@@ -6498,6 +6498,40 @@ function gwPackEvent(b){
   const evs=((b&&b.events)||[]).filter(e=>e&&e.id!=null&&e.data_checked);
   return evs.length?evs.reduce((a,c)=>c.id>a.id?c:a):null;
 }
+/* WHY there is no pack, in the reader's terms.
+
+   The gate above is right and it is also invisible: four cards simply are
+   not in the gallery, with nothing to say whether that is the season being
+   young, a gameweek still being scored, or the feature being broken. That
+   is the same silence the detailed league view was reported for, and it is
+   worse here — the cards were asked for, so their absence reads as a
+   failure to ship rather than as a rule doing its job.
+
+   Returns '' when a pack exists, so the caller renders nothing in the
+   ordinary case. Names the gameweek and its actual state otherwise, and
+   says when it will change: "not yet" is only a useful answer with a
+   "until what" attached. */
+function gwPackWhy(b,now){
+  if(gwPackEvent(b))return '';
+  now=now||Date.now();
+  const evs=((b&&b.events)||[]).filter(e=>e&&e.id!=null&&e.deadline_time);
+  const started=evs.filter(e=>new Date(e.deadline_time).getTime()<=now);
+  if(!started.length)return 'The gameweek stats pack — the biggest hauls, the '
+    +'hauls nobody owned, the bonus table and the week in numbers — appears here once '
+    +'the first gameweek has been played and scored.';
+  const last=started.reduce((a,c)=>c.id>a.id?c:a);
+  const lead='The gameweek stats pack is not here yet. ';
+  /* `finished` and `data_checked` are different states and the wait is a
+     different length, so they get different sentences. Collapsing them
+     into "not ready" would hide the one that resolves in hours. */
+  return last.finished
+    ? lead+'GW'+last.id+' has finished, but FPL has not confirmed its bonus points yet. '
+      +'Bonus is what the pack ranks on, so the four cards appear as soon as it lands — usually '
+      +'within a day of the last match.'
+    : lead+'GW'+last.id+' is still being played. The four cards appear once it has finished '
+      +'AND FPL has confirmed the bonus points, because a graphic posted on provisional '
+      +'numbers is one nobody can go back and correct.';
+}
 /* Ownership under which a haul counts as one the field missed. The app
    already has a definition — the differentials lens and the glossary both
    say under 15% — and a second one living here would mean the same word
@@ -8350,6 +8384,7 @@ async function hydrateSocial(host){
      every other card here is built from bootstrap and does not know this
      request happened. */
   const packEv=gwPackEvent(b);
+  const packWhy=gwPackWhy(b);
   const live=packEv?await loadLive(packEv.id).catch(()=>null):null;
   let specs=[];
   try{specs=socialSpecs(b,fixtures,live);}catch(_){}
@@ -8400,6 +8435,9 @@ async function hydrateSocial(host){
     'Otherwise use <b>Copy for X</b> or <b>Bluesky</b>. Both are written to fit a standard account with no Premium subscription — 280 weighted characters on X, where the link alone costs 23, and 300 on Bluesky. The Bluesky version is the one shown below each card. '+
     '<b>Alt text</b> copies the image description; paste it into the alt field before you post.</p>'+
     '<p class="dl-sub" style="margin-bottom:10px">The cards are ordered by the posting queue below — soonest first, then anything the rotation has not reached yet.</p>'+
+    /* Only when there is something to explain. In an ordinary week the pack
+       is in the gallery and this renders nothing at all. */
+    (packWhy?'<p class="dl-sub soc-why" style="margin-bottom:10px">'+esc(packWhy)+'</p>':'')+
     '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button></div>'+
     socPlanCard(plan,specs)+
     socShotCard(plan)+
