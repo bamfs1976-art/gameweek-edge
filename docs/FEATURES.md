@@ -77,7 +77,7 @@ My Team
 ├── Transfer Planner     (free)  Multi-GW beam solver + replacement finder + AI plan
 ├── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
 ├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
-├── Pre-season Draft     (free)  Squad builder — real FPL rules, xP6, AI diagnosis
+├── Squad Planner        (free)  Squad builder — real FPL rules, xP6, AI diagnosis
 ├── GW Debrief           (free)  Your gameweek, scored against the model
 └── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
 
@@ -291,9 +291,19 @@ the model, refreshed each gameweek, no human writer:
 
 ### My Team
 
-**Pre-season Draft** — a 2026/27 squad builder for planning before the game
-launches, under the standard FPL rules (15 players: 2 GK / 5 DEF / 5 MID /
-3 FWD, £100.0m, max 3 per club).
+**Squad Planner** — a squad builder under the standard FPL rules (15 players:
+2 GK / 5 DEF / 5 MID / 3 FWD, max 3 per club), usable all season.
+
+Before the first deadline it plans a launch squad against the game's own
+starting budget. Once the season is running it plans a REBUILD — a wildcard,
+a free hit, or a squad to work towards — against your own squad's value, and
+shows the transfers that would get you there, which of your free transfers
+they use and what the rest would cost in points.
+
+The budget in-season is `entry_history.value` alone: the bank is already
+inside it. That was measured against six real squads rather than assumed
+(dev/fpl-budget-basis.mjs) — adding the bank on top would have handed a
+manager a fifth more money than they have.
 - **Player pool** from the bootstrap with **predicted prices** (last season's
   final price / launch estimate, labelled). Relegated‑club players are excluded
   by checking club names against the model bundle's 2026/27 team list; a note

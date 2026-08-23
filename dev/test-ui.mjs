@@ -849,7 +849,7 @@ section('a saved draft stands in when the deadline has not passed');
       toggle: !!document.getElementById('fdr-rows'),
       rows: document.querySelectorAll('#fdr-tbody tr').length,
       explains: /save a team in/i.test(txt),
-      namesTheDraft: /Pre-season Draft/i.test(txt),
+      namesTheDraft: /Squad Planner/i.test(txt),
       saysDeadline: /deadline passes/i.test(txt),
       down: /could not load this view/i.test(txt) };
   });
@@ -1762,6 +1762,163 @@ section('mini-league sorting: a different order, not a different league');
 
   ok(sErrors.length === 0, 'sorting threw nothing (' + sErrors.slice(0, 2).join(' | ') + ')');
   await sp.close();
+}
+
+section('the sidebar at tablet widths: no hover, so nothing may depend on it');
+{
+  /* Reported: "Sidebar menu on iPad isn't right" — an iPad in landscape
+     showed a 48px strip of unlabelled icons with the FPL/EFL switcher
+     sliced down the middle.
+
+     The rail between 901px and 1279px opens on :hover. A touch screen
+     has no hover, so on an iPad in landscape (1024 and 1180 CSS px, both
+     inside that band) it could not be opened by any gesture: labels
+     stuck at opacity 0, the brand and gameweek strip at display:none,
+     and the competition switcher — wider than 48px — clipped by the
+     rail's overflow:hidden, which put the EFL link off the page rather
+     than merely out of reach.
+
+     Every viewport this suite used was a desktop one, where hover exists
+     and the rail behaves. The bug lives entirely in the combination of
+     width AND pointer type, so the check has to vary both. */
+  const CASES = [
+    { name: 'iPad portrait', w: 820, h: 1180, touch: true, drawer: true },
+    { name: 'iPad landscape', w: 1024, h: 768, touch: true, pinned: true },
+    { name: 'iPad 11in landscape', w: 1180, h: 820, touch: true, pinned: true },
+    { name: 'iPad Pro landscape', w: 1366, h: 1024, touch: true, pinned: true },
+    { name: 'desktop, mouse', w: 1180, h: 820, touch: false, rail: true },
+  ];
+  for (const c of CASES) {
+    const ctx = await browser.newContext({ viewport: { width: c.w, height: c.h }, hasTouch: c.touch });
+    const p = await ctx.newPage();
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(900);
+    const r = await p.evaluate(() => {
+      const sb = document.querySelector('.sidebar');
+      const g = document.querySelector('.sb-game');
+      const lab = document.querySelector('.nav-area-label');
+      const sbR = Math.round(sb.getBoundingClientRect().right);
+      const gHidden = g ? getComputedStyle(g).display === 'none' : true;
+      return {
+        hoverNone: matchMedia('(hover:none)').matches,
+        w: Math.round(sb.getBoundingClientRect().width),
+        labels: lab ? getComputedStyle(lab).opacity : null,
+        onScreen: Math.round(sb.getBoundingClientRect().left) >= 0,
+        switcherHidden: gHidden,
+        /* Visible but running past the sidebar's own edge is the defect:
+           a control the user can see part of and cannot reach. */
+        switcherClipped: !gHidden && g
+          ? [...g.querySelectorAll('.sb-game-btn')].some((b) => {
+              const bb = b.getBoundingClientRect();
+              return bb.width === 0 || Math.round(bb.right) > sbR + 1;
+            })
+          : false,
+      };
+    });
+
+    ok(r.hoverNone === c.touch,
+       c.name + ': pointer type is what the case says (hover:none=' + r.hoverNone + ')');
+    /* A control is never half-visible: either fully reachable, or
+       deliberately hidden with the rest of the collapsed rail. */
+    ok(r.switcherClipped === false,
+       c.name + ': the competition switcher is not sliced by the rail');
+
+    if (c.pinned) {
+      ok(r.w >= 200, c.name + ': the sidebar is pinned open, got ' + r.w + 'px');
+      ok(r.labels === '1', c.name + ': its labels are readable without hovering (' + r.labels + ')');
+      ok(r.switcherHidden === false, c.name + ': and the EFL link is on the page');
+    }
+    if (c.rail) {
+      /* The mouse case must NOT change — the rail is the desktop design. */
+      ok(r.w <= 60, c.name + ': keeps the collapsed icon rail, got ' + r.w + 'px');
+      ok(r.labels === '0', c.name + ': with labels revealed on hover, not before');
+      ok(r.switcherHidden === true, c.name + ': and the switcher hidden rather than half-drawn');
+    }
+    if (c.drawer) {
+      ok(r.w >= 200, c.name + ': the drawer keeps its full width, got ' + r.w + 'px');
+    }
+    await ctx.close();
+  }
+}
+
+section('squad planner: a rebuild against your own budget, not a clean £100m');
+{
+  /* Asked for: turn the pre-season draft into a planner usable all
+     season. Two things change once the season is running — the budget is
+     your squad's value rather than the game's opening £100.0m, and the
+     useful output is the TRANSFERS from your team to the plan rather
+     than a squad in a vacuum. */
+  const pp = await browser.newPage();
+  const pErrors = [];
+  pp.on('pageerror', (e) => pErrors.push(e.message));
+  await pp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await pp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await pp.waitForTimeout(1200);
+
+  const plan = await pp.evaluate(async () => {
+    try { openPanel('draft'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3200));
+    const S = window._draft;
+    const txt = document.body.innerText;
+    return {
+      err: null,
+      booted: !!S,
+      /* The linked squad reached the planner, so a comparison is possible. */
+      mySquad: S && S.mySquad ? S.mySquad.ids.length : 0,
+      budgetFromEntry: !!(S && S.mySquad && S.mySquad.budget && S.mySquad.budget.fromEntry),
+      budgetTenths: (S && S.mySquad && S.mySquad.budget) ? S.mySquad.budget.tenths : null,
+      planBudget: typeof planBudgetTenths === 'function' ? planBudgetTenths() : null,
+      /* The panel is no longer branded pre-season only. */
+      named: /Squad Planner/i.test(txt),
+      stillPreseasonNamed: /Pre-season Draft/i.test(txt),
+      vsBox: !!document.getElementById('draft-vs'),
+    };
+  });
+
+  ok(plan.booted === true, 'the planner boots (' + (plan.err || '') + ')');
+  ok(plan.named === true, 'and is named as a planner rather than a pre-season draft');
+  ok(plan.stillPreseasonNamed === false, 'with the old name gone from the page');
+  ok(plan.vsBox === true, 'the plan-vs-team slot exists');
+
+  /* THE BUDGET. The mock squad is worth 1000 tenths (£100.0m) with the
+     bank already inside it, which the probe established against six real
+     squads. The planner must spend that, not the game's opening budget
+     plus a bank on top. */
+  ok(plan.mySquad === 15, 'the linked squad reached the planner, got ' + plan.mySquad);
+  ok(plan.budgetFromEntry === true, 'and supplied the budget');
+  ok(plan.budgetTenths === 1000, 'which is the squad value alone, got ' + plan.budgetTenths);
+  ok(plan.planBudget === plan.budgetTenths,
+     'and that is what the validator spends (' + plan.planBudget + ')');
+
+  /* Adding a player the squad does not own must produce a transfer line. */
+  const diff = await pp.evaluate(async () => {
+    const S = window._draft;
+    const mine = new Set(S.mySquad.ids);
+    const outsider = S.pool.find((e) => !mine.has(e.id));
+    DRAFT_IDS = S.mySquad.ids.slice(0, 14).concat([outsider.id]);
+    renderDraft();
+    await new Promise((r) => setTimeout(r, 250));
+    const box = document.getElementById('draft-vs');
+    return { text: box ? box.innerText : '', rows: box ? box.querySelectorAll('.dl-row').length : 0 };
+  });
+  ok(/transfer/i.test(diff.text), 'a plan that differs from the squad reports transfers');
+  ok(diff.rows >= 2, 'listing what comes in and what goes out, got ' + diff.rows + ' rows');
+  ok(/In\b/.test(diff.text) && /Out\b/.test(diff.text), 'both directions are named');
+
+  /* And a plan identical to the squad says so rather than showing an
+     empty transfer list. */
+  const same = await pp.evaluate(async () => {
+    DRAFT_IDS = window._draft.mySquad.ids.slice();
+    renderDraft();
+    await new Promise((r) => setTimeout(r, 250));
+    const box = document.getElementById('draft-vs');
+    return box ? box.innerText : '';
+  });
+  ok(/already own|nothing to do/i.test(same),
+     'a plan matching the squad says there is nothing to do (' + same.slice(0, 70) + ')');
+
+  ok(pErrors.length === 0, 'the planner threw nothing (' + pErrors.slice(0, 2).join(' | ') + ')');
+  await pp.close();
 }
 
 section('no uncaught errors');

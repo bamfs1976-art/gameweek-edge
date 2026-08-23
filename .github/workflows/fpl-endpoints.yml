@@ -64,3 +64,11 @@ jobs:
         # here, on team strength and on cost_change_*.
         continue-on-error: true
         run: node dev/fpl-bootstrap-unused.mjs
+
+      - name: Does entry_history.value already include the bank?
+        # The squad planner needs a rebuild budget, which is value + bank
+        # only if the two are disjoint. Nothing in the app answers it and
+        # guessing would bake the error into every squad the page builds,
+        # so it is measured against real entries instead.
+        continue-on-error: true
+        run: node dev/fpl-budget-basis.mjs
