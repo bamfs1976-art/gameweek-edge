@@ -193,6 +193,10 @@ const pieces = [
      is what renders when the vendor bundle has not loaded. */
   extractFn(html, 'sparkPoints'),
   extractFn(html, 'transferMovers'),
+  extractFn(html, 'gwPackEvent'),
+  ...['GW_PACK_DIFF'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'gwPackLine'),
+  extractFn(html, 'gwStatsPack'),
   extractFn(html, 'sparkColor'),
   extractFn(aiSrc, 'fitJSON'),
   /* bestTransfer drives the dashboard/debrief suggestion; stub its only
@@ -311,7 +315,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -4000,6 +4004,97 @@ section('transfer market: the top ten each way, and what it refuses to pad');
   ok(core.transferMovers([{ id: 1 }, el(2, 5, 0)], 10).in.map((e) => e.id).join(',') === '2',
     'a player with no transfer fields at all is simply not ranked');
   ok(core.transferMovers(null, 10).in.length === 0, 'no elements yields no lists');
+}
+
+section('gameweek stats pack: only a SCORED gameweek, and only what happened');
+{
+  /* WHICH GAMEWEEK IT IS ABOUT is the whole risk. Bonus does not exist
+     until FPL awards it and BPS moves for hours after the whistle, so a
+     pack built on `finished` publishes numbers that change — and a graphic
+     is the one format nobody goes back and corrects. */
+  const ev = (id, extra) => Object.assign({ id, deadline_time: '2026-08-15T17:15:00Z' }, extra || {});
+  ok(core.gwPackEvent({ events: [ev(1, { finished: true, data_checked: true })] }).id === 1,
+    'a checked gameweek is reviewable');
+  ok(core.gwPackEvent({ events: [ev(1, { finished: true })] }) === null,
+    'FINISHED is not enough — it turns true before bonus is applied');
+  ok(core.gwPackEvent({ events: [ev(1, {})] }) === null, 'and an unplayed one certainly is not');
+  ok(core.gwPackEvent({ events: [] }) === null && core.gwPackEvent(null) === null,
+    'no season yields no pack');
+  /* The LATEST checked one, not the first — a mid-season pack must be about
+     last week, not about the opening weekend forever. */
+  ok(core.gwPackEvent({ events: [
+    ev(1, { data_checked: true }), ev(3, { data_checked: true }), ev(2, { data_checked: true })] }).id === 3,
+    'the most recent checked gameweek wins, whatever order the events arrive in');
+  ok(core.gwPackEvent({ events: [ev(4, { data_checked: true }), ev(5, { finished: true })] }).id === 4,
+    'a gameweek still being scored never displaces the last one that finished');
+
+  /* WHAT HE DID, in the words a match report would use. A blank line beats
+     "0 goals, 0 assists", which reads as a stat rather than its absence. */
+  const L = core.gwPackLine;
+  ok(L({ goals_scored: 2, assists: 1, bonus: 3, minutes: 90 }, 4) === '2 goals · 1 assist · 3 bonus',
+    'goals, assists and bonus read as a match report (' + L({ goals_scored: 2, assists: 1, bonus: 3 }, 4) + ')');
+  ok(L({ goals_scored: 1, minutes: 90 }, 4) === '1 goal', 'one goal is singular');
+  ok(L({ clean_sheets: 1, minutes: 90 }, 2) === 'clean sheet', 'a defender’s clean sheet is worth saying');
+  ok(L({ clean_sheets: 1, minutes: 90 }, 3) === '90 mins',
+    'a midfielder’s is one point, so it is not — the line falls back to minutes');
+  ok(L({ minutes: 0 }, 3) === 'did not play', 'a blank is stated plainly');
+  ok(L({ minutes: 62 }, 3) === '62 mins', 'and minutes stand in when nothing else happened');
+  ok(!/0 goals|0 assists|undefined|NaN/.test(L({ minutes: 90, goals_scored: 0, assists: 0 }, 3)),
+    'nothing that did not happen is ever printed');
+  ok(L({ red_cards: 1, yellow_cards: 1, minutes: 40 }, 3) === 'red card',
+    'a red card is the card that gets mentioned, not the yellow before it');
+
+  /* THE PACK. */
+  const els = {
+    1: { id: 1, web_name: 'Haaland', team: 1, element_type: 4, selected_by_percent: '60.0' },
+    2: { id: 2, web_name: 'Mbeumo', team: 2, element_type: 3, selected_by_percent: '4.5' },
+    3: { id: 3, web_name: 'Nobody', team: 2, element_type: 2, selected_by_percent: '0.2' },
+    4: { id: 4, web_name: 'Keeper', team: 3, element_type: 1, selected_by_percent: '30.0' }
+  };
+  const liveEls = [
+    { id: 1, stats: { total_points: 13, bps: 60, bonus: 3, minutes: 90, goals_scored: 2 } },
+    { id: 2, stats: { total_points: 13, bps: 40, bonus: 1, minutes: 90, goals_scored: 1, assists: 1 } },
+    { id: 3, stats: { total_points: 0, bps: 4, minutes: 0 } },
+    { id: 4, stats: { total_points: 6, bps: 30, bonus: 2, minutes: 90, clean_sheets: 1, saves: 4 } },
+    { id: 99, stats: { total_points: 20, bps: 90 } }        /* not in the bootstrap index */
+  ];
+  const evt = ev(7, { data_checked: true, average_entry_score: 51, highest_score: 121,
+    most_captained: 1, most_transferred_in: 2, transfers_made: 4200000,
+    chip_plays: [{ chip_name: 'bboost', num_played: 90000 }, { chip_name: '3xc', num_played: 120000 }] });
+  const pk = core.gwStatsPack(els, liveEls, evt, 10);
+
+  ok(pk.gw === 7, 'the pack knows which gameweek it is about');
+  /* A name with no stats, or stats with no name, is a broken row on a
+     published graphic — so an id in one feed and not the other is dropped
+     rather than half-drawn. */
+  ok(!pk.scorers.some((r) => r.id === 99), 'a live id the bootstrap does not know is dropped');
+  /* Level on points, BPS decides — the game’s own tie-break, so it is the
+     one already meaningful here. */
+  ok(pk.scorers.map((r) => r.id).join(',') === '1,2,4',
+    'scorers rank by points, ties broken on BPS (' + pk.scorers.map((r) => r.id).join(',') + ')');
+  ok(!pk.scorers.some((r) => r.pts === 0),
+    'a player who scored nothing is not padding out a top ten');
+  ok(pk.bonus.map((r) => r.id).join(',') === '1,2,4,3',
+    'the BPS table ranks on BPS, and keeps a player who scored no points but earned some');
+
+  /* Under 15% owned — the definition the differentials lens and the glossary
+     already use. A second definition here would mean the same word meant two
+     things in one product. */
+  ok(core.GW_PACK_DIFF === 15, 'the differential threshold is the app’s existing one');
+  ok(pk.diffs.map((r) => r.id).join(',') === '2', 'only the low-owned hauls are differentials');
+  ok(!pk.diffs.some((r) => r.id === 3), 'and a low-owned player who did nothing is not one');
+
+  ok(pk.numbers.avg === 51 && pk.numbers.high === 121, 'the published averages come straight through');
+  ok(pk.numbers.chips.map((c) => c.name).join(',') === '3xc,bboost',
+    'chips are ranked by how many played them (' + pk.numbers.chips.map((c) => c.name).join(',') + ')');
+
+  /* A season that published no chip figures must produce no chip row rather
+     than a row of zeroes. */
+  const bare = core.gwStatsPack(els, liveEls, ev(7, { data_checked: true }), 10);
+  ok(bare.numbers.chips.length === 0 && bare.numbers.avg === null,
+    'figures FPL did not publish are absent, not zero');
+  ok(core.gwStatsPack(els, [], evt, 10).scorers.length === 0, 'no live data yields no rows');
+  ok(core.gwStatsPack(els, liveEls, evt, 2).scorers.length === 2, 'the limit is honoured');
 }
 
 /* ── summary ────────────────────────────────────────────── */
