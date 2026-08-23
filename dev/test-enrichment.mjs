@@ -412,7 +412,17 @@ section('end to end: several providers, partial failure, nothing overwritten');
     ['news.test/search-news', { body: F('world-news.json') }]
   ], log);
 
-  const out = await buildFplEnrichment({ gameweek: 1, deps: { env, fetchImpl, cache: new MemoryCache() } });
+  /* Frozen clock, pinned to the era the fixtures are written in.
+     This assertion was a time bomb: world-news.json's newest player-matched
+     article is stamped 2026-08-16 09:00:00 and the recency window is seven
+     days, so "news is matched onto at least one player" passed for a week and
+     then failed forever — CI went red at 09:00:09 on the 23rd, nine seconds
+     after the article aged out, on a commit that touched none of this.
+     A fixture with an absolute date has to be read against an absolute now. */
+  const NOW = new Date('2026-08-17T00:00:00Z');
+  const out = await buildFplEnrichment({
+    gameweek: 1, deps: { env, fetchImpl, cache: new MemoryCache(), now: () => NOW }
+  });
 
   ok(Array.isArray(out.players) && out.players.length === BOOT.elements.length, 'every player is present');
   const gabriel = out.players.find((p) => p.identity.fpl_id === 102);
