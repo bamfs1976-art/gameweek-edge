@@ -1819,6 +1819,108 @@ section('mini-league sorting: a different order, not a different league');
   await sp.close();
 }
 
+section('the gameweek stats pack renders, and only for a scored gameweek');
+{
+  /* The pack is four review cards in a studio whose other twenty all look
+     forward. Two things a static read of the source cannot answer: does a
+     spec actually survive the canvas renderer, and does the gate hold when
+     the gameweek has NOT finished being scored — which is every gameweek,
+     for the hours that matter most.
+
+     The bootstrap fixture is patched per page rather than on disk:
+     data_checked drives gwPhase, so flipping it in dev/fixtures would move
+     half this suite's panels into a different phase to test four cards. */
+  const packPage = async (checked) => {
+    const p = await browser.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(e.message));
+    await p.route('**/api/fpl/bootstrap-static', async (route) => {
+      const res = await route.fetch();
+      const body = JSON.parse(await res.text());
+      body.events = body.events.map((e) => (e.id === 1
+        ? Object.assign({}, e, { data_checked: checked, average_entry_score: 51,
+          highest_score: 121, most_captained: body.elements[0].id,
+          most_transferred_in: body.elements[1].id, transfers_made: 4200000,
+          chip_plays: [{ chip_name: 'bboost', num_played: 90000 }] })
+        : e));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    /* A live feed with a real spread of scores and one low-owned haul, so
+       every card in the pack has something to rank. */
+    await p.route('**/api/fpl/event/*/live', async (route) => {
+      const res = await route.fetch();
+      const body = JSON.parse(await res.text());
+      const boot = JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-bootstrap.json'), 'utf8'));
+      body.elements = boot.elements.slice(0, 14).map((e, i) => ({
+        id: e.id,
+        stats: { total_points: 14 - i, bps: 60 - i * 3, bonus: i < 3 ? 3 - i : 0,
+          minutes: 90, goals_scored: i < 4 ? 2 : 0, assists: i < 6 ? 1 : 0 }
+      }));
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    });
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(1200);
+    const out = await p.evaluate(async () => {
+      window.GE_OWNER = true;
+      buildNav();
+      openPanel('social');
+      await new Promise((r) => setTimeout(r, 4000));
+      const specs = (window._soc && window._soc.specs) || [];
+      const byId = Object.fromEntries(specs.map((s) => [s.id, s]));
+      const PACK = ['gw-top-scorers', 'gw-differentials', 'gw-bonus', 'gw-week-in-numbers'];
+      const drawn = {};
+      PACK.forEach((id) => {
+        if (!byId[id]) return;
+        try {
+          const cv = renderSocialCard(byId[id], 1);
+          drawn[id] = { w: cv.width, h: cv.height, blank: !cv.toDataURL().length };
+        } catch (e) { drawn[id] = { err: e.message }; }
+      });
+      return {
+        packEv: (gwPackEvent(MEM._idx) || {}).id || null,
+        present: PACK.filter((id) => !!byId[id]),
+        drawn,
+        titles: PACK.filter((id) => byId[id]).map((id) => byId[id].title),
+        subs: PACK.filter((id) => byId[id]).map((id) => byId[id].sub),
+        scorers: byId['gw-top-scorers']
+          ? byId['gw-top-scorers'].items.map((it) => Number(it.v)) : null,
+        scorerMeta: byId['gw-top-scorers']
+          ? byId['gw-top-scorers'].items.map((it) => it.meta) : null,
+      };
+    });
+    await p.close();
+    return { ...out, errs };
+  };
+
+  const scored = await packPage(true);
+  ok(scored.packEv === 1, 'a checked gameweek is the one reviewed (' + scored.packEv + ')');
+  ok(scored.present.length === 4, 'all four pack cards build (' + scored.present.join(',') + ')');
+  /* A spec that cannot survive the canvas is a card that fails at the one
+     moment it is needed — the renderer is where a bad row actually throws. */
+  ok(Object.values(scored.drawn).every((d) => d && !d.err && d.w === 1080 && d.h === 1350),
+     'and every one renders to a 1080×1350 canvas (' +
+     JSON.stringify(Object.entries(scored.drawn).map(([k, v]) => k + ':' + (v.err || v.w + 'x' + v.h))) + ')');
+  /* The gameweek has to be ON the card. A review graphic that does not say
+     which week it reviews is unusable the moment it is reshared. */
+  ok(scored.subs.every((sub) => /GW\d+/.test(sub)),
+     'every pack card names its gameweek (' + scored.subs.join(' | ') + ')');
+  const desc = (a) => a.every((v, i) => i === 0 || v <= a[i - 1]);
+  ok(desc(scored.scorers), 'the hauls run biggest first (' + (scored.scorers || []).join('>') + ')');
+  ok(scored.scorers.every((v) => v > 0), 'and nobody who scored nothing pads the list');
+  /* "0 goals" on a published graphic is the failure this line guards. */
+  ok(scored.scorerMeta.every((m) => m && !/\b0 (goals|assists|bonus)\b|undefined|NaN/.test(m)),
+     'no row prints something that did not happen (' + (scored.scorerMeta || [])[0] + ')');
+  ok(scored.errs.length === 0, 'the studio threw nothing (' + scored.errs.slice(0, 2).join(' | ') + ')');
+
+  /* THE GATE. Bonus does not exist until FPL awards it, so an unchecked
+     gameweek must produce no pack at all — not a provisional one. */
+  const unscored = await packPage(false);
+  ok(unscored.packEv === null, 'an unchecked gameweek is not reviewable');
+  ok(unscored.present.length === 0,
+     'and no pack card is built from it (' + unscored.present.join(',') + ')');
+  ok(unscored.errs.length === 0, 'the studio still threw nothing (' + unscored.errs.slice(0, 2).join(' | ') + ')');
+}
+
 section('transfer market: two top tens, in a view that costs no tab');
 {
   /* Asked for as "top 10 players transferred in and top 10 transferred out,

@@ -6476,9 +6476,110 @@ function socSquadCard(b,res,title,sub,note){
     formation:res.formation,cost:res.cost,bank:res.bank,xp:res.xiXP};
 }
 
+/* ── THE GAMEWEEK STATS PACK ──────────────────────────────────────────
+   Every other card in this studio looks FORWARD — who to buy, what the
+   model projects, which fixtures turn. This is the week that just went,
+   which is the other half of a feed and the half people actually argue
+   about.
+
+   WHICH GAMEWEEK IT IS ALLOWED TO BE ABOUT is the whole risk here, so it
+   is decided in one place and decided strictly. Bonus points do not
+   exist until FPL awards them, and BPS moves for hours after the final
+   whistle; live totals move with it. A pack posted while a gameweek is
+   still being scored publishes numbers that will be different tomorrow —
+   and a graphic is the one format nobody goes back and corrects, because
+   the wrong version is already in somebody's timeline.
+
+   So: `data_checked`, and nothing weaker. Not `finished`, which turns
+   true before bonus is applied. If no gameweek has been checked yet the
+   pack simply does not exist this week, which is the honest answer for a
+   season that has not finished scoring one. */
+function gwPackEvent(b){
+  const evs=((b&&b.events)||[]).filter(e=>e&&e.id!=null&&e.data_checked);
+  return evs.length?evs.reduce((a,c)=>c.id>a.id?c:a):null;
+}
+/* Ownership under which a haul counts as one the field missed. The app
+   already has a definition — the differentials lens and the glossary both
+   say under 15% — and a second one living here would mean the same word
+   meant two things in the same product. */
+const GW_PACK_DIFF=15;
+/* What a player actually DID, in the order a match report would say it.
+   Only what happened: a blank line is better than "0 goals, 0 assists",
+   which reads as a stat rather than as the absence of one. */
+function gwPackLine(st,type){
+  const n=k=>Number(st&&st[k])||0;
+  const plural=(v,w)=>v+' '+w+(v===1?'':'s');
+  const out=[];
+  if(n('goals_scored'))out.push(plural(n('goals_scored'),'goal'));
+  if(n('assists'))out.push(plural(n('assists'),'assist'));
+  /* A clean sheet only scores for a keeper or a defender, and for a
+     midfielder it is a single point — so it is worth saying for the first
+     two and noise for everyone else. */
+  if(n('clean_sheets')&&(type===1||type===2))out.push('clean sheet');
+  if(n('saves')>=3)out.push(plural(n('saves'),'save'));
+  if(n('penalties_saved'))out.push(plural(n('penalties_saved'),'pen saved'));
+  if(n('bonus'))out.push(n('bonus')+' bonus');
+  if(n('red_cards'))out.push('red card');
+  else if(n('yellow_cards'))out.push('booked');
+  if(n('own_goals'))out.push(plural(n('own_goals'),'own goal'));
+  if(n('penalties_missed'))out.push(plural(n('penalties_missed'),'pen missed'));
+  if(!out.length)out.push(n('minutes')?n('minutes')+' mins':'did not play');
+  return out.join(' · ');
+}
+/* The pack itself: pure, so the ordering and the thresholds are testable
+   without a canvas, a network or a browser.
+
+   `els` is the bootstrap index (id → element) and `liveEls` is the live
+   feed's element array. A player in one and not the other is dropped
+   rather than half-rendered: a name with no stats, or stats with no name,
+   is a broken row on a published graphic. */
+function gwStatsPack(els,liveEls,ev,limit){
+  const n=Math.max(1,limit||10);
+  const rows=[];
+  (liveEls||[]).forEach(le=>{
+    const el=(els||{})[le&&le.id];
+    if(!el)return;
+    const st=(le&&le.stats)||{};
+    const pts=Number(st.total_points)||0;
+    rows.push({id:el.id,el:el,st:st,pts:pts,
+      bps:Number(st.bps)||0,bonus:Number(st.bonus)||0,
+      mins:Number(st.minutes)||0,
+      own:parseFloat(el.selected_by_percent)||0,
+      line:gwPackLine(st,el.element_type)});
+  });
+  /* Ties are broken by BPS and then by id. BPS is the game's own
+     tie-break for bonus, so it is the one already meaningful here, and the
+     id fallback keeps a rebuilt card in the same order as the one that was
+     posted an hour ago. */
+  const byPts=list=>list.slice().sort((a,c)=>c.pts-a.pts||c.bps-a.bps||a.id-c.id).slice(0,n);
+  /* A zero is not a ranking. Ten rows padded with players who did nothing
+     is a card that says nothing, and it is worse than a short one. */
+  const scored=rows.filter(r=>r.pts>0);
+  const chips=((ev&&ev.chip_plays)||[]).map(c=>({name:c&&c.chip_name,n:Number(c&&c.num_played)||0}))
+    .filter(c=>c.name&&c.n>0).sort((a,c)=>c.n-a.n);
+  return {
+    gw:ev?ev.id:null,
+    scorers:byPts(scored),
+    /* Today's ownership, not the ownership he had when he hauled — FPL
+       publishes no history for it, and after a big score the field has had
+       days to buy him. The card says so rather than implying a figure it
+       cannot have. */
+    diffs:byPts(scored.filter(r=>r.own<GW_PACK_DIFF)),
+    bonus:rows.filter(r=>r.bps>0).sort((a,c)=>c.bps-a.bps||c.pts-a.pts||a.id-c.id).slice(0,n),
+    numbers:{
+      avg:ev&&ev.average_entry_score!=null?Number(ev.average_entry_score):null,
+      high:ev&&ev.highest_score!=null?Number(ev.highest_score):null,
+      captained:ev?ev.most_captained:null,
+      transferredIn:ev?ev.most_transferred_in:null,
+      transfers:ev&&ev.transfers_made!=null?Number(ev.transfers_made):null,
+      chips:chips
+    }
+  };
+}
+
 /* Every card the studio can produce. Each entry is built lazily so one
    failing preset never takes the whole panel down. */
-function socialSpecs(b,fixtures){
+function socialSpecs(b,fixtures,live){
   const nf=buildNextFix(b,fixtures);
   const pool=socPool(b,nf);
   const gw=b.cur?b.cur.id:1;
@@ -6784,6 +6885,82 @@ function socialSpecs(b,fixtures){
           meta:g?Math.round(g.days)+' days before':'',
           v:c.load.toFixed(2),crest:crestUrl(b,c.team)};})};
   });
+
+  /* ── The gameweek stats pack ──────────────────────────────────────
+     Four cards about the week just gone, and they stand or fall
+     together: the pack exists only when a gameweek has finished being
+     SCORED, not merely finished. See gwPackEvent. Without live data —
+     the studio opened before the call landed, or the call failed — the
+     pack is simply absent, which is right: a review card with no
+     results on it is not a degraded card, it is a wrong one. */
+  const packEv=gwPackEvent(b);
+  const packLive=(live&&live.elements)||null;
+  if(packEv&&packLive&&packLive.length){
+    const pk=gwStatsPack(b.els,packLive,packEv,10);
+    const pgw='GW'+pk.gw;
+    const tok=r=>({nm:r.el.web_name,team:teamShort(b,r.el.team),meta:r.line,
+      photos:socPhotoUrls(r.el),crest:crestUrl(b,r.el.team)});
+
+    push('gw-top-scorers',()=>{
+      if(pk.scorers.length<5)return null;
+      return {kind:'rank',title:'THE WEEK’S BIGGEST HAULS',
+        sub:pgw+' · final scores, bonus applied',
+        note:'Every point FPL awarded in '+pgw+', bonus included. Final — this card is only built once the gameweek has finished being scored.',
+        items:pk.scorers.map(r=>Object.assign(tok(r),{v:String(r.pts)}))};
+    });
+
+    push('gw-differentials',()=>{
+      /* Three is the floor for a ranking. Below it this is a list of
+         players, not a table, and a two-row card is a card that should
+         not have been made. */
+      if(pk.diffs.length<3)return null;
+      return {kind:'rank',title:'THE ONES YOU DIDN’T OWN',
+        sub:pgw+' · biggest hauls under '+GW_PACK_DIFF+'% owned',
+        note:'Ownership is TODAY’S figure, not what he had on the day — FPL publishes no history for it, and the field has had a week to buy him since.',
+        items:pk.diffs.map(r=>Object.assign(tok(r),
+          {meta:r.own.toFixed(1)+'% owned · '+r.line,v:String(r.pts)}))};
+    });
+
+    push('gw-bonus',()=>{
+      if(pk.bonus.length<5)return null;
+      return {kind:'rank',title:'WHO THE BPS REWARDED',
+        sub:pgw+' · bonus points system, top 10',
+        note:'BPS is the score behind the bonus: passing, tackles, recoveries and saves as well as goals. The top three in each match take 3, 2 and 1.',
+        items:pk.bonus.map(r=>Object.assign(tok(r),
+          {meta:(r.bonus?'+'+r.bonus+' bonus · ':'no bonus · ')+r.pts+' pts',
+           v:String(r.bps)}))};
+    });
+
+    push('gw-week-in-numbers',()=>{
+      const nm=pk.numbers;
+      const who=id=>{const e=id!=null?b.els[id]:null;return e?e.web_name:null;};
+      const pts=id=>{const r=pk.scorers.concat(pk.bonus).find(x=>x.id===id);
+        return r?r.pts:null;};
+      const g=(label,value,sub,crest)=>value==null?null
+        :{label:label,items:[{nm:String(value),team:sub||'',crest:crest||''}]};
+      const capNm=who(nm.captained),trNm=who(nm.transferredIn);
+      const capPts=nm.captained!=null?pts(nm.captained):null;
+      const trPts=nm.transferredIn!=null?pts(nm.transferredIn):null;
+      const groups=[
+        g('AVERAGE',nm.avg,'points'),
+        g('BEST SCORE',nm.high,'points'),
+        /* The two crowd picks are worth printing only WITH what they
+           returned. "Most captained: Haaland" is a fact about last
+           Thursday; "Haaland, 2 points" is the week. */
+        capNm?g('MOST CAPTAINED',capNm,capPts==null?'':capPts+' pts'):null,
+        trNm?g('MOST BOUGHT',trNm,trPts==null?'':trPts+' pts'):null,
+        nm.transfers?g('TRANSFERS MADE',fmtK(nm.transfers),'across the game'):null,
+        nm.chips.length?{label:'CHIPS PLAYED',
+          items:nm.chips.slice(0,4).map(c=>({nm:fmtK(c.n),
+            team:CHIP_API_LABEL[c.name]||c.name}))}:null
+      ].filter(Boolean);
+      if(groups.length<3)return null;
+      return {kind:'ladder',title:'THE WEEK IN NUMBERS',
+        sub:pgw+' · the whole game, not just your team',
+        note:'FPL’s own published figures for '+pgw+' — the average and the best score are every manager in the game, not a sample.',
+        groups:groups};
+    });
+  }
 
   return out;
 }
@@ -7239,6 +7416,70 @@ The best option at every price point 👇 #FPL
 gameweekedge.co.uk`,
 a:`The best defensive-contribution options at each price point.`},
 
+/* ── The gameweek stats pack ──────────────────────────────────────────
+   Four review captions. Same rule as the rest of the table — no numbers in
+   the words, because the card carries those and a caption that repeats them
+   is a caption that can contradict them. */
+'gw-top-scorers':{
+x:`The biggest hauls of the gameweek, bonus included.
+
+Final scores, not live ones — this is built after the gameweek has finished being scored, so nothing on it moves again.
+
+Who did you have?
+
+gameweekedge.co.uk`,
+b:`The biggest hauls of the gameweek, bonus included.
+
+Final scores, not live ones — built after the gameweek finished being scored, so nothing on it moves again.
+
+Who did you have? #FPL
+gameweekedge.co.uk`,
+a:`A ranked list of the highest-scoring players of the gameweek, with what each of them did and the points they scored.`},
+
+'gw-differentials':{
+x:`The hauls almost nobody owned.
+
+Low-owned players who returned this week — the ones that moved rank for the managers who had them, and quietly cost everyone who didn't.
+
+Ownership shown is today's, after the field has had a week to react.
+
+gameweekedge.co.uk`,
+b:`The hauls almost nobody owned.
+
+Low-owned players who returned this week — the ones that moved rank for the few who had them.
+
+Ownership shown is today's, after the field has had a week to react. #FPL
+gameweekedge.co.uk`,
+a:`A ranked list of low-owned players who scored heavily in the gameweek, each with their current ownership percentage.`},
+
+'gw-bonus':{
+x:`Who the bonus points system actually rewarded this week.
+
+BPS is not goals. Passing, tackles, recoveries and saves all score, which is why a defender who did nothing obvious can walk off with three bonus.
+
+gameweekedge.co.uk`,
+b:`Who the bonus points system actually rewarded this week.
+
+BPS is not goals. Passing, tackles, recoveries and saves all score — which is how a defender who did nothing obvious walks off with three bonus. #FPL
+gameweekedge.co.uk`,
+a:`A ranked list of the highest bonus points system scores of the gameweek, with the bonus each player was awarded.`},
+
+'gw-week-in-numbers':{
+x:`The gameweek in numbers — the whole game, not just your team.
+
+The average, the best score in the world, what the crowd captained and what it returned.
+
+Beat the average? That is the only number that compounds.
+
+gameweekedge.co.uk`,
+b:`The gameweek in numbers — the whole game, not just your team.
+
+The average, the best score in the world, what the crowd captained and what it returned.
+
+Beat the average? That's the only number that compounds. #FPL
+gameweekedge.co.uk`,
+a:`A summary card of the gameweek: the average score, the highest score, the most captained and most bought players with their returns, and the chips played.`},
+
 'set-pieces':{
 x:`Penalties, free-kicks and corners — who actually takes them, club by club.
 
@@ -7377,8 +7618,21 @@ function socCaption(id){return SOC_CAPTIONS[id]||null;}
 
    Not scheduled here: the live DefCon shot during the 15:00 block. It is a
    screenshot of a match in progress, not a card, and scheduling it would
-   defeat the one thing that makes it worth posting. */
-const SOC_ROTA=['set-pieces','defcon','data-xi','fixture-runs','overpriced',
+   defeat the one thing that makes it worth posting.
+
+   The four stats-pack cards ride the same rotation rather than getting a
+   weekly slot of their own, and they are paired at the front so a gameweek
+   that draws one tends to draw its partner. Two things make that safe.
+   They are rebuilt at post time, so whenever one comes round it is about
+   the LAST scored gameweek rather than the one it was queued against — a
+   review card cannot go stale in this queue. And the slots the rota fills
+   are three and one days before the next deadline, which in an ordinary
+   week is a day or two after scoring finished: still the week everybody is
+   arguing about. In a season with no scored gameweek yet they render
+   nothing, and socSchedule's `have` filter drops them from the rota
+   instead of queueing a post with no graphic behind it. */
+const SOC_ROTA=['gw-top-scorers','gw-week-in-numbers','set-pieces','defcon',
+  'data-xi','fixture-runs','gw-differentials','gw-bonus','overpriced',
   'underpriced','bonus-magnets','differentials','congestion','chip-plan',
   'xg-runs','out-of-position','club-bonus','rotation-chain','attack-or-defence',
   'ladder-2','ladder-3','ladder-4','ladder-1','bank-xi','haaland-xi','big-three-xi'];
@@ -8091,8 +8345,14 @@ async function hydrateAnalytics(host){
 async function hydrateSocial(host){
   host.innerHTML=skel(4);
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  /* The results of the last SCORED gameweek, for the stats pack. One extra
+     call, and a failing one costs four review cards rather than the panel:
+     every other card here is built from bootstrap and does not know this
+     request happened. */
+  const packEv=gwPackEvent(b);
+  const live=packEv?await loadLive(packEv.id).catch(()=>null):null;
   let specs=[];
-  try{specs=socialSpecs(b,fixtures);}catch(_){}
+  try{specs=socialSpecs(b,fixtures,live);}catch(_){}
   if(!specs.length){
     host.innerHTML=stateBox('grid','No cards yet',
       'Cards are built from the projection model — they appear once the season’s players and fixtures are loaded.');

@@ -217,10 +217,16 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function checkForUpdate', since: '2026-08-23',
-  what: 'the detailed mini-league view fails visibly, and a deploy that lands '
-    + 'under an open app announces itself' };
-/* Rotated from 'function tilePoints' (2026-08-23), before that
+const MARKER = { text: 'function gwStatsPack', since: '2026-08-23',
+  what: 'the gameweek stats pack — four review cards in the Social Studio' };
+/* Rotated from 'function checkForUpdate' (2026-08-23), which shipped in the
+   PREVIOUS build and was never confirmed live: the sandbox that pushed it
+   has an egress proxy that refuses gameweekedge.co.uk, so nothing could run
+   this check. That release carried the detailed-league-view fix, the version
+   banner and the transfer market. All three are ancestors of this build, so
+   confirming THIS marker confirms the lot — which is the argument for
+   rotating on every release rather than only on the ones that get verified.
+   Before that 'function tilePoints' (2026-08-23), before that
    'function leagueEO' (2026-08-22), before that
    'function squadMatchday', 'function titleRace' and
    'function fixtureOver' (all 2026-08-22).
