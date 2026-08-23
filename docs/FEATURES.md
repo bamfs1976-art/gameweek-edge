@@ -31,7 +31,7 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 | Pillar | Delivered by |
 |---|---|
 | Model‑driven xP picks | Captaincy Lab, Scout AI, Transfer Solver, Fixture Planner |
-| Gameweek snapshot | Dashboard, This Gameweek |
+| Gameweek snapshot | Overview, This Gameweek |
 | Live matchday | Live Percentile, Bonus Tracker, DefCon Threats, Auto‑Sub Tracker, What‑If |
 | Team linking | Squad, Transfers, Captaincy, Live Percentile, Manager Report, Mini‑Leagues |
 | Intelligence & AI | Scout AI, Ask the Scout, EO/Template/Rival tools |
@@ -63,8 +63,8 @@ football and **Rivals** for the people you are playing against.
 
 ```
 Home
-├── Dashboard            (free)  Season snapshot, this week's calls, live state
-├── My Week              (free)  Your personalised gameweek brief
+├── My Week              (free)  Your personalised gameweek brief — home once a team is linked
+├── Overview             (free)  Season snapshot, this week's calls, live state — home until then
 ├── Gameweek recap       (free)  What just happened, and what it cost you
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
@@ -144,8 +144,11 @@ player‑detail modal.
 
 ### Home
 
-**Dashboard** — season snapshot tiles, this gameweek's headline actions, and a
-live alerts strip. Entry point for unlinked users (with a "load demo team" path).
+**Overview** (panel id `dashboard`, renamed from "Dashboard") — season snapshot
+tiles, this gameweek's headline actions, and a live alerts strip. The landing
+page for anyone who has not linked a team, with a "load demo team" path; linked
+managers land on **My Week** instead, because it has something to say and this
+has only the league-wide view.
 Topped by a **terminal ticker strip** (model confidence, captain, your rank +
 last‑GW movement or Model XI ΣxP, top differential, flag/price counts, data
 time) — the first slice of the "GWE terminal" dashboard direction; all values

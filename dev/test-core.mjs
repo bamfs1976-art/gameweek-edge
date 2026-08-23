@@ -3809,18 +3809,27 @@ section('shortcuts: every chord is registered, and in an order that matters');
      chord deleted from index.html fails here instead of silently
      disappearing from the app. */
   const chords = html.match(/const G_CHORDS=\{[\s\S]*?\};/)[0];
-  const keys = [...chords.matchAll(/(\w):'(\w+)'/g)].map((m) => m[1]);
-  ok(keys.length === 11, 'eleven chords defined (' + keys.length + ')');
+  const pairs = [...chords.matchAll(/(\w):'(\w+)'/g)].map((m) => [m[1], m[2]]);
+  const keys = pairs.map((p) => p[0]);
+  ok(keys.length === 12, 'twelve chords defined (' + keys.length + ')');
+  ok(new Set(keys).size === keys.length, 'and no key is bound twice');
+  /* `h` for home was added when My Week became the landing panel. `d` stayed
+     on Overview and `w` stayed on Watchlist, because silently repointing a
+     chord someone has in their fingers is worse than a stale mnemonic. */
+  const map = Object.fromEntries(pairs);
+  ok(map.h === 'myweek', 'g h goes to My Week');
+  ok(map.d === 'dashboard', 'g d still goes to Overview');
+  ok(map.w === 'watchlist', 'g w still goes to the Watchlist');
 
   const init = html.slice(html.indexOf('function initKeys()'));
   const body = init.slice(0, init.indexOf('\nfunction '));
   ok(/kbdBind\(\{'\[Control\]\+Meta\+k'/.test(body), 'Ctrl+K is bound');
   ok(/'\[Meta\]\+Control\+k'/.test(body), 'and Meta+K, so both work on every platform');
   ok(/ignore:\(\)=>false/.test(body), 'the palette binding opts out of the ignore rule');
-  /* All eleven chords are ONE sequence whose second press is a regex, and
-     that is a correctness requirement rather than a tidiness one.
+  /* Every chord is ONE sequence whose second press is a regex, and that is a
+     correctness requirement rather than a tidiness one.
 
-     Registering them as eleven separate sequences plus a catch-all looked
+     Registering them as separate sequences plus a catch-all looked
      right and ran wrong: tinykeys stops at the first complete match, so a
      fired chord left the catch-all's pending state half-consumed and the
      next plain `j` inside the timeout matched it and was swallowed. A

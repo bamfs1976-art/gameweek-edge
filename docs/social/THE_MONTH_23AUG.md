@@ -2,9 +2,17 @@
 
 ### Sun 23 Aug → Sun 20 Sep 2026 · **X + Bluesky**
 
+> **The app now carries this.** Studio → Social Studio opens on a **Posting
+> order** — every card in the queue with its date and time, worked out from
+> the real deadlines, and the gallery sorted to match. That is the thing to
+> follow day to day; it cannot go stale when a deadline moves, and this
+> document can.
+>
+> What is kept here is the part the app does not schedule: the Debrief, the
+> live DefCon shot, the break, and the reasoning behind the shape.
+
 Replaces the caption-carrying packs. It carries **no captions at all**, on
-purpose — they now live inside the app, next to the card they belong to. This
-document is only ever a list of which card to open.
+purpose — they now live inside the app, next to the card they belong to.
 
 ---
 
