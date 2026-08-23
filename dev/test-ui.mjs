@@ -1602,6 +1602,17 @@ section('mini-league detailed view: every squad, with effective ownership');
       beforeOpen, afterOpen,
       tiles: tiles.length,
       eos,
+      /* The bench: what each substitute is shown to have scored, and
+         whether the tile is marked as not counting. */
+      bench: (() => {
+        const g = first.querySelector('.lg-grid.bench');
+        if (!g) return null;
+        return [...g.querySelectorAll('.lg-p')].map((t) => ({
+          text: (t.querySelector('.pp-pt') || {}).textContent,
+          nc: !!t.querySelector('.pp-pt.lg-nc'),
+        }));
+      })(),
+      xiMarked: [...first.querySelectorAll('.lg-grid:not(.bench) .pp-pt.lg-nc')].length,
       /* Compact rows must be gone — the same ranks twice is noise. */
       compactRows: document.querySelectorAll('#league-standings .dl-row').length,
       legend: card.querySelectorAll('.lg-legend span').length,
@@ -1638,6 +1649,26 @@ section('mini-league detailed view: every squad, with effective ownership');
      would get wrong by calling the bench 100% owned. */
   ok(view.eos.some((s) => s === '0.0%'),
      'a player nobody starts reads 0%, not 100% (' + view.eos.join(' ') + ')');
+
+  /* ── Substitutes' scores ──────────────────────────────────────────
+     Reported: "the points of the substitutes are not displaying". They
+     were: p.pts is a player's score TIMES HIS MULTIPLIER, and a bench
+     multiplier is nought, so every substitute showed 0 whatever he did.
+
+     Every player in the live mock scores 2, so a bench tile reading 0 is
+     the bug and one reading 2 is the fix — the two are not confusable. */
+  ok(Array.isArray(view.bench) && view.bench.length === 4,
+     'the bench has four players, got ' + (view.bench || []).length);
+  ok(view.bench.some((t) => t.text === '2'),
+     'a substitute shows what he actually scored (' + (view.bench || []).map((t) => t.text).join(',') + ')');
+  ok(view.bench.every((t) => t.text !== '0'),
+     'and no substitute is reduced to a nought by his own multiplier');
+  /* Shown is not the same as counted. The figure has to be marked, or a
+     reader adds the bench into the gameweek total. */
+  ok(view.bench.every((t) => t.nc === true), 'each bench score is marked as not counting');
+  ok(view.xiMarked === 0, 'while the XI scores are not marked — those do count');
+  ok(/does not count/i.test(view.text) || /Bench Boost/i.test(view.text),
+     'and the card explains what a greyed bench figure means');
 
   ok(view.compactRows === 0, 'the compact table is replaced, not duplicated');
   ok(view.legend === 4, 'the four player states are spelled out, got ' + view.legend);

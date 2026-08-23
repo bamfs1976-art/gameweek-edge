@@ -723,6 +723,9 @@ html.offline .net-banner{transform:translateY(0)}
   color:var(--text-3);margin:12px 0 6px}
 .lg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
 .lg-grid.bench{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));opacity:.85}
+/* A score that does not count for this manager: shown, but plainly not
+   part of his total. */
+.pp-pt.lg-nc{opacity:.45;font-style:italic}
 .lg-eo{display:block;font-size:var(--fs-min);font-weight:800;color:var(--text-2);
   background:var(--surface-3);border-radius:4px;padding:1px 0;margin-top:2px}
 .lg-prog{height:5px;border-radius:3px;background:var(--border-2);overflow:hidden;margin:8px 0 6px}
@@ -16541,15 +16544,30 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       const el=b.els[p.id];
       if(!el)return '';
       const badge=p.captain?'<span class="rv-cap">C</span>':p.vice?'<span class="rv-cap rv-vc">V</span>':'';
+      /* WHICH NUMBER GOES ON THE TILE. p.pts is the player's
+         CONTRIBUTION — his score times his multiplier — so for a bench
+         player it is his score times nought, which is nought whatever he
+         did. Every substitute therefore showed 0, reported as "the
+         points of the substitutes are not displaying", which is exactly
+         what a column of noughts looks like.
+
+         So a player who counts shows his contribution, captain doubling
+         and all, and the counting tiles still sum to the gameweek score.
+         A player who does not shows what he SCORED, greyed — information
+         rather than noise. Under a Bench Boost his multiplier is 1, the
+         two numbers are the same, and nothing about this changes. */
+      const counts=p.mult>0;
+      const shown=counts?p.pts:p.base;
       /* An unknown score is a dash, never a nought — the live feed not
          having reported a player is not the same as him scoring nothing. */
-      const pts=p.pts==null?'—':String(p.pts);
+      const pts=shown==null?'—':String(shown);
       return '<div class="pp lg-p lg-'+p.state+'" onclick="openPlayer('+el.id+')" '+
-        'title="'+esc(el.web_name)+' — '+LG_STATE[p.state]+'">'+
+        'title="'+esc(el.web_name)+' — '+LG_STATE[p.state]+
+          (counts?'':' \u00b7 on the bench, so this score does not count for this manager')+'">'+
         ppFigure(b,el)+badge+
         '<span class="pp-nm">'+esc(el.web_name)+'</span>'+
         '<span class="lg-eo">'+pct(p.eo)+'</span>'+
-        '<span class="pp-pt">'+pts+'</span></div>';
+        '<span class="pp-pt'+(counts?'':' lg-nc')+'">'+pts+'</span></div>';
     };
     const mgr=d=>{
       const open=LEAGUE_OPEN.has(String(d.entry));
@@ -16622,10 +16640,16 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       ? 'across all '+eo.managers+' managers in this league'
       : 'across the '+eo.managers+' managers on this page — not the whole league';
     const missing=picksArr.filter(p=>!p).length;
+    /* The two numbers on a tile mean different things and the card has
+       to say so, or a greyed bench score reads as a contribution that
+       was somehow ignored. */
+    const benchNote=rows.some(r=>r.bench.some(p=>p.mult===0))
+      ? ' A greyed bench figure is what that player scored; it does not count for this manager unless they played a Bench Boost.'
+      : '';
     const note='<p class="dl-sub" style="margin:10px 0 0">Percentages are effective ownership '+scope+
       ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
       'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
-      (missing===1?'is':'are')+' excluded.':'')+'</p>';
+      (missing===1?'is':'are')+' excluded.':'')+benchNote+'</p>';
     return '<div class="card mb-20"><div class="card-title">Detailed view</div>'+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
