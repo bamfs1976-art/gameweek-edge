@@ -70,6 +70,15 @@ async function buildFplEnrichment({
   const cache = deps.cache || new MemoryCache();
   const logger = deps.logger || console;
   const providers = deps.providers || buildProviders({ config, cache, fetchImpl: deps.fetchImpl, now: deps.now, logger });
+  /* One clock for the whole run. The providers already took an injectable
+     `now`; the news step below did not, and read Date.now() directly. That
+     split is why a fixture-driven test could not be frozen — and it also let
+     a long run stamp `fetchedAt` from one clock while filtering articles for
+     recency against another. `now` is a () => Date, matching the providers. */
+  const nowMs = () => {
+    const t = deps.now ? deps.now() : new Date();
+    return t instanceof Date ? t.getTime() : Number(t);
+  };
 
   const quality = {
     sources: [], failed: [], warnings: [],
@@ -240,14 +249,14 @@ async function buildFplEnrichment({
       const approved = config.providers.world_news.sources;
       let articles = news.dedupe(res);
       articles = news.filterBySource(articles, approved);
-      articles = news.filterByRecency(articles, config.providers.world_news.windowDays);
+      articles = news.filterByRecency(articles, config.providers.world_news.windowDays, nowMs());
       const playerList = wanted.map((p) => ({
         fpl_id: p.identity.fpl_id, display_name: p.identity.display_name, full_name: p.identity.normalized_name
       }));
       for (const a of articles) {
         const s = news.scoreArticle(a, {
           players: playerList, teams: teamNames, approvedDomains: approved,
-          windowDays: config.providers.world_news.windowDays
+          windowDays: config.providers.world_news.windowDays, now: nowMs()
         });
         const item = newsItem({
           title: a.title, url: a.url, publisher: a.publisher, publishedAt: a.published_at,

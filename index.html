@@ -1978,6 +1978,27 @@ body{font-size:14px;line-height:1.35}
 .soc-cap-b{display:flex;flex-wrap:wrap;gap:6px}
 .soc-cap-b .btn{flex:0 0 auto}
 
+/* ── Social Studio: when each card is due ── */
+.soc-due{border-color:var(--accent-dim,var(--border-2))}
+.soc-slot{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;
+  padding:7px 10px;border-top:1px solid var(--border-2);
+  background:var(--surface-2,transparent)}
+.soc-slot b{font-size:12px;color:var(--text-1)}
+.soc-slot span{font-family:var(--font-mono);font-size:10px;letter-spacing:.04em;color:var(--text-3)}
+.soc-slot .soc-gw{margin-left:auto;color:var(--accent)}
+.soc-plan{display:flex;flex-direction:column}
+.soc-plan-gw{font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
+  color:var(--text-3);margin:10px 0 4px}
+.soc-plan-gw:first-child{margin-top:0}
+.soc-plan-row{display:flex;align-items:baseline;gap:10px;padding:7px 0;
+  border-bottom:1px solid var(--border);min-width:0}
+.soc-plan-row:last-child{border-bottom:0}
+.soc-plan-d{flex:0 0 auto;display:flex;flex-direction:column;min-width:118px}
+.soc-plan-d b{font-size:12.5px}
+.soc-plan-d span{font-family:var(--font-mono);font-size:10px;letter-spacing:.03em;color:var(--text-3)}
+.soc-plan-c{flex:1 1 auto;min-width:0;font-size:12.5px;color:var(--text-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ── Club bonus leaders: who banks the bonus at each club ── */
 .cbl{display:flex;flex-direction:column}
 .cbl-row{display:flex;align-items:center;gap:10px;min-height:38px;
@@ -2483,7 +2504,7 @@ body{font-size:14px;line-height:1.35}
         <span class="tb-divider" aria-hidden="true"></span>
         <div class="tb-crumb">
           <span class="tb-area" id="tb-area">Home</span>
-          <span class="tb-title" id="tb-title">Dashboard</span>
+          <span class="tb-title" id="tb-title">My Week</span>
         </div>
       </div>
       <div class="tb-right">
@@ -2568,7 +2589,8 @@ body{font-size:14px;line-height:1.35}
     <h3>Keyboard shortcuts</h3>
     <div class="kbd-grid">
       <kbd>⌘K / Ctrl-K</kbd><span>Command palette</span>
-      <kbd>g d</kbd><span>Dashboard</span>
+      <kbd>g h</kbd><span>My Week</span>
+      <kbd>g d</kbd><span>Overview</span>
       <kbd>g s</kbd><span>My Squad</span>
       <kbd>g t</kbd><span>Transfer Planner</span>
       <kbd>g c</kbd><span>Captaincy Lab</span>
@@ -3339,7 +3361,7 @@ function errorBox(){
 function loadDemoTeam(){
   setMid('1');
   toast('Demo team loaded — link your own any time');
-  renderPage('dashboard');
+  openPanel(homePanel());          /* a team is linked now, so that is My Week */
 }
 function linkBox(){
   return stateBox('team','Link your team to see this',
@@ -3713,8 +3735,8 @@ const NAV = [
   {
     id:'home', label:'Home', icon:'home',
     panels:[
-      {id:'dashboard', label:'Dashboard', icon:'dashboard', tier:'free'},
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
+      {id:'dashboard', label:'Overview', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
@@ -4503,9 +4525,9 @@ function openPanel(panelId,opts){
   const pv=PANEL_VIEW[panelId];
   if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
-  /* Unknown id, or an owner panel without owner rights, falls back to the
-     dashboard. This is the deep-link guard: typing #social does nothing. */
-  if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';
+  /* Unknown id, or an owner panel without owner rights, falls back home.
+     This is the deep-link guard: typing #social does nothing. */
+  if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId=homePanel();
   currentPanel=panelId;
   renderPage(panelId);
   syncNav();
@@ -4513,7 +4535,11 @@ function openPanel(panelId,opts){
   window.scrollTo({top:0});
   /* Panel deep links: the current panel lives in the hash so any view can
      be bookmarked or shared. replaceState keeps the history clean. */
-  try{history.replaceState(null,'',panelId==='dashboard'?location.pathname+location.search:'#'+panelId);}catch(_){}
+  /* The home panel sits on the bare URL, everything else on a hash. Which
+     panel is home now depends on whether a team is linked, so ask rather
+     than assume — otherwise a linked manager's home carries a #myweek that
+     an unlinked one's does not. */
+  try{history.replaceState(null,'',panelId===homePanel()?location.pathname+location.search:'#'+panelId);}catch(_){}
 }
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
@@ -5360,9 +5386,9 @@ async function hydrateAccountability(host){
       '<b>Graded in public</b><p>The same fitted attack/defence model powers every recommendation in the app. The full method and code are open in the PL Simulator repository — see the Methodology page.</p></div></div>';
 }
 
-/* ── Dashboard next steps ───────────────────────────────────
-   Every human who opens the app lands on the dashboard and, on the numbers,
-   almost none of them ever open a second panel. The quadrants answer this
+/* ── Overview next steps ───────────────────────────────────
+   Every unlinked visitor lands on Overview and, on the numbers, almost none
+   of them ever open a second panel. The quadrants answer this
    week's questions but the page has no way out of itself — fifty panels sit
    behind a sidebar nobody opens. So it ends with a handful of named
    destinations, chosen for whether a team is linked yet.
@@ -7282,6 +7308,131 @@ a:`A custom 15-man squad built in Gameweek Edge, with predicted points for each 
 };
 function socCaption(id){return SOC_CAPTIONS[id]||null;}
 
+/* ── The posting order ────────────────────────────────────────────────
+   A pack keyed to calendar dates goes stale the first time a deadline
+   moves, and they move constantly — a Friday-night opener and a Saturday
+   11:00 one shift every post by a day. So the order is derived from the
+   deadlines the app already holds, and the dates fall out of that.
+
+   The shape is one turn of the week per gameweek: a card three days out, the
+   captaincy call two days out, and a third card the day before. Captaincy is
+   pinned because it is the post people actually act on; everything else
+   rotates through SOC_ROTA two cards at a time, so a card comes round about
+   every ten gameweeks rather than every week.
+
+   Not scheduled here: the live DefCon shot during the 15:00 block. It is a
+   screenshot of a match in progress, not a card, and scheduling it would
+   defeat the one thing that makes it worth posting. */
+const SOC_ROTA=['set-pieces','defcon','data-xi','fixture-runs','overpriced',
+  'underpriced','bonus-magnets','differentials','congestion','chip-plan',
+  'xg-runs','out-of-position','club-bonus','rotation-chain','attack-or-defence',
+  'ladder-2','ladder-3','ladder-4','ladder-1','bank-xi','haaland-xi','big-three-xi'];
+const SOC_PIN='captains';                       /* every week, two days out */
+const SOC_WEEKS=6;                              /* how far ahead to plan */
+
+/* X first, Bluesky later — its feeds run close to chronological, so the
+   later slot is doing real work rather than being a rounding error, and it
+   catches the US afternoon. Sunday evening runs earlier on both. */
+function socPostTimes(d){
+  return d.getDay()===0?{x:'19:00',b:'19:30'}:{x:'18:30',b:'20:00'};
+}
+/* Pure and now-injectable, so dev/test-social-schedule.mjs can drive it with
+   fixed deadlines rather than whatever today happens to be.
+   `have` is the set of card ids that actually rendered this session: the
+   rota must never point at a card that could not be built, or the schedule
+   promises a post that has no graphic behind it. */
+function socSchedule(b,now,have){
+  now=now||Date.now();
+  const ok=have&&have.size?id=>have.has(id):()=>true;
+  const rota=SOC_ROTA.filter(ok);
+  const evs=((b&&b.events)||[]).filter(e=>e&&e.id&&e.deadline_time)
+    .slice().sort((a,c)=>a.id-c.id)
+    .filter(e=>new Date(e.deadline_time).getTime()>now)
+    .slice(0,SOC_WEEKS);
+  const out=[];
+  evs.forEach(ev=>{
+    const dl=new Date(ev.deadline_time);
+    /* Two rota cards per gameweek, indexed off the gameweek number so the
+       order is stable: reopening the panel cannot reshuffle the queue. */
+    const base=rota.length?((ev.id-1)*2)%rota.length:0;
+    const slots=[];
+    if(rota.length)slots.push({off:3,id:rota[base]});
+    if(ok(SOC_PIN))slots.push({off:2,id:SOC_PIN});
+    if(rota.length>1)slots.push({off:1,id:rota[(base+1)%rota.length]});
+    slots.forEach(s=>{
+      /* setDate, not millisecond arithmetic: across a clock change the
+         wall-clock time is what matters, and 18:30 must stay 18:30. */
+      const at=new Date(dl.getTime());
+      at.setDate(at.getDate()-s.off);
+      const t=socPostTimes(at);
+      const hm=t.x.split(':');
+      at.setHours(+hm[0],+hm[1],0,0);
+      if(at.getTime()<=now)return;              /* slot already gone */
+      out.push({id:s.id,at,gw:ev.id,off:s.off,xTime:t.x,bTime:t.b});
+    });
+  });
+  /* ── One post a day ───────────────────────────────────────────────
+     In an ordinary week the three slots are three consecutive days and
+     nothing collides. Congested weeks are the problem: a midweek round or a
+     double puts deadlines four days apart, and then this gameweek's D−1 lands
+     on the same evening as the next one's D−3. A queue that says "post three
+     cards tonight" is not a queue, so a day holds one post.
+
+     A contested day goes to the nearest deadline, and only then to the
+     captaincy call. Ranking the pin first instead looked right and starved
+     the rotation: a captaincy slot three gameweeks out would take a day from
+     a card due for the gameweek that is actually next, and on a tight fixture
+     list almost nothing but captaincy ever got scheduled. Urgency first,
+     anchor second. The losers drop out rather than shuffling to a free day —
+     a card moved off its offset is no longer the post it was written to be. */
+  out.sort((a,c)=>a.at-c.at||a.gw-c.gw||
+    (a.id===SOC_PIN?-1:c.id===SOC_PIN?1:0)||a.off-c.off);
+  const day=d=>d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+  const takenDay=new Set();
+  /* The pinned card repeats every week and is meant to — the queue would be
+     lying if it showed one captaincy call a month out. The rota cards must
+     not repeat inside the window, though: seeing the same card twice in a
+     fortnight reads as a broken queue rather than a rotation. */
+  const seenCard=new Set();
+  return out.filter(s=>{
+    const k=day(s.at);
+    if(takenDay.has(k))return false;
+    if(s.id!==SOC_PIN){
+      if(seenCard.has(s.id))return false;
+      seenCard.add(s.id);
+    }
+    takenDay.add(k);return true;
+  });
+}
+function socWhen(d){
+  return d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+}
+/* The queue, in order, at the top of the panel — so the answer to "what am I
+   posting and when" is the first thing on the page rather than something you
+   reconstruct by scrolling a gallery. */
+function socPlanCard(plan,specs){
+  if(!plan||!plan.length)
+    return '<div class="card mb-20"><div class="card-title">'+svg(ICON.calendar,'width="15" height="15"')+
+      ' Posting order</div><p class="dl-sub" style="margin:0">No upcoming deadlines to schedule against — '+
+      'the order returns as soon as the next gameweek is published. Every card below still builds and still carries its caption.</p></div>';
+  const title={};(specs||[]).forEach(s=>{title[s.id]=s.title;});
+  let last=null;
+  const rows=plan.map(s=>{
+    const gwHead=last!==s.gw?'<div class="soc-plan-gw">Gameweek '+s.gw+'</div>':'';
+    last=s.gw;
+    return gwHead+'<div class="soc-plan-row">'+
+      '<span class="soc-plan-d"><b>'+esc(socWhen(s.at))+'</b><span>'+esc(s.xTime)+' X · '+esc(s.bTime)+' Bluesky</span></span>'+
+      '<span class="soc-plan-c">'+esc(title[s.id]||s.id)+'</span></div>';
+  }).join('');
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.calendar,'width="15" height="15"')+
+    ' Posting order</div>'+
+    '<p class="dl-sub" style="margin-bottom:12px">Worked out from the real deadlines, so it moves when they do. '+
+    'The cards below are in this order, soonest first. Post the captaincy call whatever else you skip — it is the one people act on.</p>'+
+    '<div class="soc-plan">'+rows+'</div>'+
+    '<p class="dl-sub" style="margin:12px 0 0">Not in the list, because it cannot be: the <b>live DefCon shot</b> during the 3pm block. '+
+    'Screenshot the Match Centre mid-match and post it there and then — no competitor can make that post, and scheduling it defeats the point.</p></div>';
+}
+
 /* Clipboard, with the old-school fallback for the browsers and permission
    states where the async API is not there. Silence is the worst outcome, so
    every path either toasts success or toasts failure. */
@@ -7821,7 +7972,22 @@ async function hydrateSocial(host){
       'Cards are built from the projection model — they appear once the season’s players and fixtures are loaded.');
     return;
   }
-  window._soc={specs,b,fixtures,custom:null};
+  /* Order the gallery by when each card is due to be posted. Anything the
+     rota has not reached inside the planning window keeps its natural order
+     and sits below, unscheduled — still buildable, just not queued. */
+  const plan=socSchedule(b,Date.now(),new Set(specs.map(s=>s.id)));
+  /* The queue repeats the captaincy call weekly; the grid cannot — a card has
+     one place in it. First slot wins, and the plan is already sorted, so the
+     card sits at its next outing rather than its last. */
+  const slotBy={};plan.forEach(s=>{if(!slotBy[s.id])slotBy[s.id]=s;});
+  specs=specs.slice().sort((a,c)=>{
+    const sa=slotBy[a.id],sc=slotBy[c.id];
+    if(sa&&sc)return sa.at-sc.at;
+    if(sa)return -1;
+    if(sc)return 1;
+    return 0;
+  });
+  window._soc={specs,b,fixtures,custom:null,plan,slotBy};
   socBuildLoad();
   /* Warm crests and photos before drawing. Best-effort: anything that fails
      simply falls back to the club-colour tile, so a slow or blocked CDN
@@ -7847,13 +8013,19 @@ async function hydrateSocial(host){
     '<b>Share</b> hands the picture and the words to X or Bluesky together, so the post is already written when the app opens. '+
     'Otherwise use <b>Copy for X</b> or <b>Bluesky</b>. Both are written to fit a standard account with no Premium subscription — 280 weighted characters on X, where the link alone costs 23, and 300 on Bluesky. The Bluesky version is the one shown below each card. '+
     '<b>Alt text</b> copies the image description; paste it into the alt field before you post.</p>'+
+    '<p class="dl-sub" style="margin-bottom:10px">The cards are ordered by the posting queue below — soonest first, then anything the rotation has not reached yet.</p>'+
     '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button></div>'+
-    '<div class="soc-grid">'+specs.map((sp,i)=>
-      '<div class="soc-item"><div class="soc-shot" id="soc-'+i+'"></div>'+
+    socPlanCard(plan,specs)+
+    '<div class="soc-grid">'+specs.map((sp,i)=>{
+      const s=slotBy[sp.id];
+      return '<div class="soc-item'+(s?' soc-due':'')+'"><div class="soc-shot" id="soc-'+i+'"></div>'+
+      (s?'<div class="soc-slot"><b>'+esc(socWhen(s.at))+'</b>'+
+          '<span>'+esc(s.xTime)+' X · '+esc(s.bTime)+' Bluesky</span>'+
+          '<span class="soc-gw">GW'+s.gw+' &minus;'+s.off+'d</span></div>':'')+
       '<div class="soc-bar"><span class="soc-nm">'+esc(sp.title)+'</span>'+
       '<button class="btn btn-ghost btn-sm" onclick="socShare('+i+')">Share</button>'+
       '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div>'+
-      socCapBlock(sp.id,i)+'</div>').join('')+
+      socCapBlock(sp.id,i)+'</div>';}).join('')+
     '</div>';
   socBuildRender();
   socBuildRefresh();
@@ -20636,7 +20808,10 @@ function rowNav(dir){
    arrow) now reaches its own binding instead of being swallowed. Escape
    closing the cheatsheet is better than Escape doing nothing because a
    `g` was pressed a moment earlier. */
-const G_CHORDS={d:'dashboard',s:'squad',t:'transfers',c:'captain',p:'price',
+/* 'h' for home — My Week. 'd' stays on Overview: it is the chord people
+   already have in their fingers, and repointing it would be worse than
+   leaving the mnemonic slightly stale. 'w' is Watchlist and stays there. */
+const G_CHORDS={h:'myweek',d:'dashboard',s:'squad',t:'transfers',c:'captain',p:'price',
   f:'fixtures',m:'results',i:'injuries',w:'watchlist',r:'gwreport',l:'liverank'};
 const CHORD_MS=900;
 /* Shortcuts are an enhancement over a UI that is fully usable with a mouse,
@@ -21020,10 +21195,17 @@ function initPullToRefresh(){
 }
 
 /* ── INIT ──────────────────────────────────────────────── */
-/* The Dashboard is the app's home and starting point for everyone; the
-   personalised My Week briefing is one tap away in the Home area. Deep
-   links (hash / ?panel=) still override below. */
-function homePanel(){return 'dashboard';}
+/* My Week is home for anyone who has linked a team: it is the personalised
+   briefing, and landing on it beats landing one tap away from it.
+
+   It cannot be home for everyone, though. My Week has nothing to say without
+   a Manager ID — it renders a "link your team" prompt and stops — so making
+   it the unconditional home would put a dead end in front of every first-time
+   visitor, which is the exact fault the front door was built to fix. Overview
+   works with no team linked, so that is where an unlinked visitor lands.
+
+   Deep links (hash / ?panel=) still override both. */
+function homePanel(){return getMid()?'myweek':'dashboard';}
 function init(){
   buildNav();
   buildBottomNav();

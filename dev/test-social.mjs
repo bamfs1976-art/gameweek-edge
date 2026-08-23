@@ -569,8 +569,14 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
     'the panel-level simple filter still defers to canSeePanel');
   ok(/area\.panels\.filter\(canSeePanel\)/.test(html), 'the area tabs are filtered by the gate');
   ok(/if\(!canSeePanel\(p\)\)return;/.test(html), 'command palette is filtered by the gate');
-  ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId='dashboard';/.test(html),
+  /* The fallback target is homePanel(), not a literal: home is My Week for a
+     linked manager and Overview for everyone else, and a hard-coded
+     'dashboard' here would send half the users somewhere that is no longer
+     their home. */
+  ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId=homePanel\(\);/.test(html),
     'openPanel guards deep links');
+  ok(/function homePanel\(\)\{return getMid\(\)\?'myweek':'dashboard';\}/.test(html),
+    'home is My Week when a team is linked, Overview when it is not');
 
   /* ── The nav shape ───────────────────────────────────────
      The sidebar is a flat list of areas and the lateral move happens on the
@@ -800,7 +806,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(/panelId=resolvePanel\(panelId\);/.test(html), 'openPanel resolves the alias');
   /* Order matters: resolve first, then guard, or the alias never runs. */
   ok(html.indexOf('panelId=resolvePanel(panelId);') <
-     html.indexOf("if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId='dashboard';"),
+     html.indexOf('if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId=homePanel();'),
     'the alias is resolved before the unknown-id fallback');
   /* The bug a browser caught and the source test missed: the boot paths test
      PANELS[id] themselves, BEFORE openPanel ever sees the id, so a retired id
