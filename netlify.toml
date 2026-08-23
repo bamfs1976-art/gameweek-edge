@@ -44,6 +44,15 @@
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
     Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://resources.premierleague.com; connect-src 'self' https://knodunjnsxelmpziupwk.supabase.co https://plsimulation.netlify.app; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 
+# The build stamp the running app checks itself against. An installed PWA is
+# resumed rather than reloaded, so this is the one request that has to reach
+# the origin every time: a CDN-cached answer would report "still current" for
+# as long as it lived, which is precisely the staleness it exists to catch.
+[[headers]]
+  for = "/version.json"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
+
 # Clean URL for the marketing landing page (share gameweekedge.co.uk/welcome).
 [[redirects]]
   from = "/welcome"

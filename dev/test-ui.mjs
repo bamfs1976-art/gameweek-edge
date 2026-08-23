@@ -1819,6 +1819,138 @@ section('mini-league sorting: a different order, not a different league');
   await sp.close();
 }
 
+section('detailed view: a failure is visible, and never an empty league');
+{
+  /* Reported as "can no longer choose the detailed team view in mini
+     leagues so now nothing is showing".
+
+     The detailed card REPLACES the standings table — the same ranks and
+     totals twice on one screen is worse than either alone. It also
+     swallowed every failure and returned an empty string, so any bad
+     moment on the picks endpoint (a 429 from fetching fifty squads at
+     six in flight, a 5xx, a dropped connection) rendered a league card
+     with a title and literally nothing underneath: the table suppressed
+     for a card that had nothing to put in its place.
+
+     Two failures, told apart because they call for different things from
+     the reader. Before the deadline FPL 404s picks and the answer is
+     "wait". Anything else is a failure and the answer is "try again" —
+     and reporting one as the other tells a manager to wait for a
+     deadline that has already passed. */
+  const routed = async (status) => {
+    const p = await browser.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(e.message));
+    await p.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+    /* Only the picks call fails. Standings, live and history still answer,
+       so a card that renders nothing cannot blame the whole API. */
+    await p.route('**/api/fpl/entry/*/event/*/picks', (route) =>
+      route.fulfill({ status, contentType: 'application/json', body: '{"detail":"no"}' }));
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(1200);
+    const out = await p.evaluate(async () => {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'detailed'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+      renderPage('leagues');
+      await new Promise((r) => setTimeout(r, 4000));
+      const host = document.getElementById('ge-data');
+      return {
+        rows: document.querySelectorAll('#league-standings .dl-row:not(.head)').length,
+        toggles: document.querySelectorAll('[data-lgview]').length,
+        opts: [...(document.getElementById('lg-sort') || { options: [] }).options].map((o) => o.value),
+        retry: [...document.querySelectorAll('button')].some((b) => /try again/i.test(b.textContent)),
+        text: host ? host.innerText : '',
+      };
+    });
+    await p.close();
+    return { ...out, errs };
+  };
+
+  const boom = await routed(500);
+  ok(boom.rows === 3, 'a failed squad fetch leaves the standings on screen, got ' + boom.rows + ' rows');
+  ok(/couldn.t load the squads/i.test(boom.text), 'and says the squads could not be loaded');
+  ok(boom.retry === true, 'with a way to try again');
+  ok(!/aren.t public yet/i.test(boom.text),
+     'a failure is never reported as a deadline that has not passed');
+  /* The view toggle is the control the report was about: it must survive
+     the failure, or the reader cannot get back to a working view. */
+  ok(boom.toggles === 2, 'the Compact/Detailed toggle survives, got ' + boom.toggles);
+  /* Squad-dependent sorts would be inert over the standings table that is
+     standing in, so they are not offered while the squads are missing. */
+  ok(boom.opts.join(',') === 'rank,total,gw,move',
+     'and the squad-only sorts are not offered over the table that stood in ('
+     + boom.opts.join(',') + ')');
+  ok(boom.errs.length === 0, 'nothing threw (' + boom.errs.slice(0, 2).join(' | ') + ')');
+
+  const early = await routed(404);
+  ok(/aren.t public yet/i.test(early.text), 'a 404 on every squad still reads as "before the deadline"');
+  ok(early.rows === 3, 'and the standings stay there too, got ' + early.rows + ' rows');
+  ok(early.errs.length === 0, 'nothing threw before the deadline either ('
+     + early.errs.slice(0, 2).join(' | ') + ')');
+}
+
+section('a deploy that lands under a page nobody reloads');
+{
+  /* The app is one HTML file and the worker is network-first on it, so a
+     reload always gets the newest code. An installed PWA is resumed, not
+     reloaded — no navigation, so the worker is never asked and the shell
+     can run last week's build indefinitely. From the user's side that is
+     not "stale code", it is a feature that has vanished.
+
+     www/version.json is a hash of what shipped. The page captures it at
+     startup and re-asks on foreground; a different hash means a deploy
+     landed underneath it. */
+  const vp = await browser.newPage();
+  const vErrors = [];
+  vp.on('pageerror', (e) => vErrors.push(e.message));
+  let stamp = 'aaaaaaaaaaaa';
+  await vp.route('**/version.json*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ build: stamp }) }));
+  await vp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await vp.waitForTimeout(1200);
+
+  const quiet = await vp.evaluate(async () => {
+    await checkForUpdate(true);
+    const b = document.getElementById('upd-banner');
+    return { hidden: !b || b.hidden, known: GE_BUILD };
+  });
+  ok(quiet.known === 'aaaaaaaaaaaa', 'the page learns which build it is (' + quiet.known + ')');
+  ok(quiet.hidden === true, 'and the same build is never announced as an update');
+
+  stamp = 'bbbbbbbbbbbb';
+  const moved = await vp.evaluate(async () => {
+    await checkForUpdate(true);
+    const b = document.getElementById('upd-banner');
+    return { hidden: !b || b.hidden, visible: b ? b.getBoundingClientRect().height > 0 : false,
+      text: b ? b.innerText : '' };
+  });
+  ok(moved.hidden === false, 'a new build raises the banner');
+  ok(moved.visible === true, 'and the banner is actually on screen');
+  ok(/reload/i.test(moved.text), 'offering the reload that fixes it (' + moved.text.replace(/\n/g, ' ') + ')');
+
+  /* "Don't know" must never be shown as "out of date": offline, a 404 and
+     a proxy hiccup all answer nothing, and a banner raised on nothing is
+     an app that nags forever with no deploy behind it. */
+  const dp2 = await browser.newPage();
+  const dErrs2 = [];
+  dp2.on('pageerror', (e) => dErrs2.push(e.message));
+  await dp2.route('**/version.json*', (route) => route.fulfill({ status: 404, body: 'no' }));
+  await dp2.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await dp2.waitForTimeout(1200);
+  const unknown = await dp2.evaluate(async () => {
+    await checkForUpdate(true); await checkForUpdate(true);
+    const b = document.getElementById('upd-banner');
+    return { hidden: !b || b.hidden, known: GE_BUILD };
+  });
+  ok(unknown.hidden === true, 'a stamp that cannot be read raises nothing');
+  ok(unknown.known === null, 'and nothing is remembered as the build we are');
+  ok(dErrs2.length === 0 && vErrors.length === 0,
+     'the version check threw nothing (' + vErrors.concat(dErrs2).slice(0, 2).join(' | ') + ')');
+  await dp2.close();
+  await vp.close();
+}
+
 section('the sidebar at tablet widths: no hover, so nothing may depend on it');
 {
   /* Reported: "Sidebar menu on iPad isn't right" — an iPad in landscape

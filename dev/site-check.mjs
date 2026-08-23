@@ -206,14 +206,22 @@ try {
    failure this repository keeps writing down.
 
    So: name a marker that only exists in the newer build and look for it.
-   MARKER is deliberately a feature string rather than a commit hash, because
-   index.html is copied verbatim into www/ and carries no build stamp. It has
-   to be updated when it stops being new — and a stale marker fails loudly
-   here rather than silently passing, because the string will still be
-   present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'function tilePoints', since: '2026-08-23',
-  what: 'substitutes scores on BOTH squad cards, from one shared rule' };
-/* Rotated from 'function leagueEO' (2026-08-22), before that
+   MARKER is deliberately a feature string rather than a commit hash. There is
+   now a build stamp at /version.json — a hash of index.html and the bundles,
+   written by scripts/build-web.mjs so the running app can tell that a deploy
+   landed under it — but it is NOT what this check reads. It hashes esbuild's
+   output, so the value depends on where the build ran; comparing a local
+   stamp to Netlify's would fail for reasons that have nothing to do with
+   whether the change shipped. A feature string answers exactly the question
+   asked: is THIS code out there. It has to be updated when it stops being
+   new — and a stale marker fails loudly here rather than silently passing,
+   because the string will still be present and the check will simply stop
+   being informative. Hence the date. */
+const MARKER = { text: 'function checkForUpdate', since: '2026-08-23',
+  what: 'the detailed mini-league view fails visibly, and a deploy that lands '
+    + 'under an open app announces itself' };
+/* Rotated from 'function tilePoints' (2026-08-23), before that
+   'function leagueEO' (2026-08-22), before that
    'function squadMatchday', 'function titleRace' and
    'function fixtureOver' (all 2026-08-22).
 
