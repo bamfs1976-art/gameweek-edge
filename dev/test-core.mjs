@@ -136,6 +136,7 @@ const pieces = [
   extractConst(html, 'POS_SHORT'),
   extractFn(html, 'applyAutoSubs'),
   extractFn(html, 'rivalLivePts'),
+  extractFn(html, 'tilePoints'),
   extractFn(html, 'rivalSquadRows'),
   /* CHIP_API_LABEL already arrives with an earlier block. */
   ...['CHIP_SHORT'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
@@ -309,7 +310,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1139,6 +1140,50 @@ section('plannerBudget: what a rebuild can actually spend');
      empty bank" are different things on the card. */
   ok(core.plannerBudget({ value: 1000 }, 1000).bank === null, 'an absent bank is unknown');
   ok(core.plannerBudget({ value: 1000, bank: 0 }, 1000).bank === 0, 'an empty bank is zero');
+}
+
+section('tilePoints: what number goes on a player tile');
+{
+  /* The reported bug in one line: r.pts is score TIMES MULTIPLIER, so a
+     bench player's is nought however well he played. Two separate cards
+     had each written this choice out by hand and both got it wrong; it
+     now lives in one place so they cannot disagree. */
+  const bench = core.tilePoints({ mult: 0, base: 7, pts: 0 });
+  ok(bench.counts === false, 'a bench player does not count');
+  ok(bench.shown === 7, 'and shows what he SCORED, not his nought contribution');
+  ok(bench.text === '7', 'as text for the tile');
+
+  const starter = core.tilePoints({ mult: 1, base: 7, pts: 7 });
+  ok(starter.counts === true && starter.shown === 7, 'a starter shows his score');
+
+  /* The captain shows his CONTRIBUTION, so the counting tiles still add
+     up to the gameweek total. */
+  const cap = core.tilePoints({ mult: 2, base: 7, pts: 14 });
+  ok(cap.counts === true && cap.shown === 14, 'a captain shows the doubled figure, got ' + cap.shown);
+  const tc = core.tilePoints({ mult: 3, base: 7, pts: 21 });
+  ok(tc.shown === 21, 'and a triple captain the tripled one');
+
+  /* Under a Bench Boost the bench counts at 1, so the two readings
+     coincide and nothing is greyed. */
+  const bb = core.tilePoints({ mult: 1, base: 5, pts: 5 });
+  ok(bb.counts === true && bb.shown === 5, 'a bench-boosted substitute counts, at his own score');
+
+  /* A player who scored nothing still reads 0 — that is a real score. */
+  ok(core.tilePoints({ mult: 0, base: 0, pts: 0 }).text === '0',
+     'a substitute who genuinely scored nothing shows nought');
+
+  /* AN UNKNOWN IS A DASH, NEVER A NOUGHT. The live feed not having
+     reported a player is not the same as him scoring nothing, and this
+     is the one distinction the fix must not trample: it would be easy to
+     "fix" the bench by defaulting base to 0. */
+  ok(core.tilePoints({ mult: 0, base: null, pts: null }).text === '—',
+     'a substitute with no live row is a dash');
+  ok(core.tilePoints({ mult: 1, base: null, pts: null }).text === '—', 'and so is a starter');
+  ok(core.tilePoints({ mult: 0, base: null, pts: null }).shown === null,
+     'with the null surviving as a null');
+
+  ok(core.tilePoints(null).text === '—', 'no row at all does not throw');
+  ok(core.tilePoints({}).counts === false, 'and a row with no multiplier does not count');
 }
 
 section('squadDiff: the transfers that turn my team into the plan');

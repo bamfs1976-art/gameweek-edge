@@ -1070,6 +1070,11 @@ section('a rival opens, on a pitch, marked against my own XI');
       ringed: body.querySelectorAll('.qd-pitch .pp.rv-shared, .qd-pitch .pp.rv-diff').length,
       dashes: pts.filter((t) => t === '—').length,
       zeroes: pts.filter((t) => t === '0').length,
+      /* The bench, and whether its scores are marked as not counting. */
+      benchPts: [...body.querySelectorAll('.rv-bench .pp .pp-pt')].map((e) => ({
+        text: e.textContent, nc: e.classList.contains('lg-nc') })),
+      xiMarked: body.querySelectorAll('.qd-pitch .pp .pp-pt.lg-nc').length,
+      benchNote: /do not count unless a Bench Boost/i.test(body.textContent || ''),
       head: (body.textContent || '').slice(0, 400)
     };
   });
@@ -1085,6 +1090,24 @@ section('a rival opens, on a pitch, marked against my own XI');
      read as unknown, not as a blank gameweek. */
   ok(res.dashes === 1, 'the player missing from the live feed shows a dash, got ' + res.dashes);
   ok(res.zeroes === 0, 'and nothing invents a zero, got ' + res.zeroes);
+
+  /* ── Substitutes' scores, on the card a MINI-LEAGUE ROW OPENS ──────
+     "In my mini leagues the points of the substitutes are not
+     displaying." This card is what a standings row opens, and it had the
+     same defect as the detailed view: it printed the contribution, which
+     for a bench player is his score times nought.
+
+     Fixing one card and not the other is why the first attempt did not
+     land. The choice now lives in tilePoints and both call it. */
+  ok(res.benchPts.length === 4, 'every substitute shows a figure, got ' + res.benchPts.length);
+  ok(res.benchPts.some((t) => t.text === '2'),
+     'and it is what he scored, not his nought contribution (' +
+     res.benchPts.map((t) => t.text).join(',') + ')');
+  ok(res.benchPts.every((t) => t.text !== '0'),
+     'no substitute is reduced to a nought by his own multiplier');
+  ok(res.benchPts.every((t) => t.nc === true), 'each bench figure is marked as not counting');
+  ok(res.xiMarked === 0, 'while the XI figures are not marked — those do count');
+  ok(res.benchNote === true, 'and the card says what the greyed figures mean');
   ok(/of their XI in yours/.test(res.head), 'the header states how much of their XI is in mine');
   /* The count used to clip to "0 different…" in a modal heading, because
      .dl-row .dl-sub is nowrap+ellipsis for dense list rows. */
@@ -1244,6 +1267,7 @@ section('a mini-league standing opens that manager\u2019s team');
   ok(/Rival FC/.test(card.name), 'and names the manager clicked (' + card.name + ')');
   ok(card.xi === 11, 'eleven on the pitch, got ' + card.xi);
   ok(card.bench === 4, 'four on the bench, got ' + card.bench);
+
   ok(/Triple Captain/.test(card.text), 'and the chip ledger reaches it from history');
   ok(lErrors.length === 0, 'the league table threw nothing (' + lErrors.slice(0, 2).join(' | ') + ')');
   await lp.close();

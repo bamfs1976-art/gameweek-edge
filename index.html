@@ -12740,6 +12740,27 @@ async function hydrateTemplate(host){
    the same number and completely different facts, and printing the second as
    "0" is the quiet kind of wrong: it looks like information. The caller
    decides how to show an unknown; it must never be added into a total. */
+/* WHICH NUMBER GOES ON A PLAYER TILE.
+   r.pts is a player's CONTRIBUTION — his score times his multiplier — so
+   for anyone on the bench it is his score times nought, and the tile
+   reads 0 however well he played. That was reported as "the points of
+   the substitutes are not displaying", and it was true in two separate
+   cards that had each written the choice out by hand.
+
+   So the choice lives here once. A player who counts shows his
+   contribution, captain doubling included, and the counting tiles still
+   sum to the gameweek score. A player who does not shows what he SCORED,
+   for the caller to grey out. Under a Bench Boost the multiplier is 1
+   and the two are the same number.
+
+   An unknown stays a dash, never a nought — the live feed not having
+   reported a player is not the same as him scoring nothing. */
+function tilePoints(r){
+  const counts=!!r&&r.mult>0;
+  const shown=counts?(r&&r.pts):(r&&r.base);
+  return {counts:counts,shown:shown==null?null:shown,
+    text:shown==null?'\u2014':String(shown)};
+}
 function rivalLivePts(live,elId){
   const els=live&&live.elements;
   const row=!els?null:(Array.isArray(els)?els.find(e=>e&&e.id===elId):els[elId]);
@@ -12975,13 +12996,13 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
     const el=els[r.id];
     if(!el)return '';
     const badge=r.captain?'<span class="rv-cap">C</span>':r.vice?'<span class="rv-cap rv-vc">V</span>':'';
-    /* An unknown is a dash, never a nought. The whole point of carrying null
-       this far is that it survives to the screen. */
-    const pts=r.pts==null?'—':String(r.pts);
-    return '<div class="pp'+(r.shared?' rv-shared':' rv-diff')+'" onclick="openPlayer('+el.id+')">'+
+    /* Same question, same answer as the league card — see tilePoints. */
+    const tp=tilePoints(r);
+    return '<div class="pp'+(r.shared?' rv-shared':' rv-diff')+'" onclick="openPlayer('+el.id+')"'+
+      (tp.counts?'':' title="On the bench, so this score does not count for this manager"')+'>'+
       ppFigure(b,el)+badge+
       '<span class="pp-nm">'+esc(el.web_name)+'</span>'+
-      '<span class="pp-pt">'+pts+'</span></div>';
+      '<span class="pp-pt'+(tp.counts?'':' lg-nc')+'">'+tp.text+'</span></div>';
   };
   const byT=t=>S.xi.filter(r=>(els[r.id]||{}).element_type===t);
   const pitch='<div class="qd-pitch">'+pitchWrap(
@@ -12990,7 +13011,12 @@ function rivalDetailHTML(b,entry,picks,live,mine,gw,history,mineAll,fplTotal){
     '<div class="pitch-row">'+byT(3).map(cell).join('')+'</div>'+
     '<div class="pitch-row">'+byT(4).map(cell).join('')+'</div>')+'</div>';
   const benchPts=S.bench.filter(r=>r.pts!=null).reduce((s,r)=>s+r.pts,0);
-  const bench='<div class="rv-bench">'+S.bench.map(cell).join('')+'</div>';
+  const bench='<div class="rv-bench">'+S.bench.map(cell).join('')+'</div>'+
+    /* Shown is not counted. Without this a greyed bench figure reads as a
+       contribution that was somehow ignored, and a reader adds it in. */
+    (S.bench.some(r=>r.mult===0)
+      ? '<div class="dl-sub" style="margin-top:6px">Bench figures are what those players scored — they do not count unless a Bench Boost is played.</div>'
+      : '');
   /* Two separate honesty notes, because they are different problems. The
      first says the live feed is incomplete for THIS squad; the second says
      the number came from FPL's own tally rather than ours. Where the official
@@ -17236,11 +17262,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
          A player who does not shows what he SCORED, greyed — information
          rather than noise. Under a Bench Boost his multiplier is 1, the
          two numbers are the same, and nothing about this changes. */
-      const counts=p.mult>0;
-      const shown=counts?p.pts:p.base;
-      /* An unknown score is a dash, never a nought — the live feed not
-         having reported a player is not the same as him scoring nothing. */
-      const pts=shown==null?'—':String(shown);
+      const tp=tilePoints(p),counts=tp.counts,pts=tp.text;
       return '<div class="pp lg-p lg-'+p.state+'" onclick="openPlayer('+el.id+')" '+
         'title="'+esc(el.web_name)+' — '+LG_STATE[p.state]+
           (counts?'':' \u00b7 on the bench, so this score does not count for this manager')+'">'+

@@ -211,8 +211,8 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'lg-nc', since: '2026-08-23',
-  what: 'substitutes showing what they scored instead of a column of noughts' };
+const MARKER = { text: 'function tilePoints', since: '2026-08-23',
+  what: 'substitutes scores on BOTH squad cards, from one shared rule' };
 /* Rotated from 'function leagueEO' (2026-08-22), before that
    'function squadMatchday', 'function titleRace' and
    'function fixtureOver' (all 2026-08-22).
