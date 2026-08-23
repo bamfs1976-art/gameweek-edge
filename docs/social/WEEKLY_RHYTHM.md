@@ -1,10 +1,19 @@
 # Gameweek Edge — the weekly rhythm
 
-### From Wed 26 Aug, once GW1 is done · **X + Bluesky**
+### From Mon 21 Sep onwards · **X + Bluesky**
 
-Picks up where `GW1_WEEKEND_PLAN.md` ends on Tue 25 Aug, and runs to the first
-international break — then carries on unchanged, because it is a **cycle, not a
-calendar**.
+> **Read `THE_MONTH_23AUG.md` first.** It covers 23 Aug → 20 Sep with dates
+> against every post, and it is the one to work from day to day. This document
+> is the same four-post week with the dates stripped out, for when that month
+> runs out.
+>
+> **The captions below are duplicates now.** Every Social Studio card carries
+> its own caption in the app, with Share / Copy for X / Bluesky / Alt text
+> buttons underneath it. Use those — they cannot drift out of date the way a
+> file can. What follows is kept for the two posts that have no card: the
+> Debrief and the live DefCon shot.
+
+A **cycle, not a calendar** — it carries on unchanged to May.
 
 ---
 

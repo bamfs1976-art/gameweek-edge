@@ -1816,6 +1816,18 @@ body{font-size:14px;line-height:1.35}
 .soc-nm{flex:1 1 auto;min-width:0;font-family:var(--font-mono);font-size:10px;
   letter-spacing:.05em;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* ── Social Studio: the caption that goes with the card ──
+   The picture was never the hard part. Having to leave the app to find the
+   words is what stops a card getting posted, so the words live here. */
+.soc-cap{border-top:1px solid var(--border-2);padding:9px 10px 10px}
+/* Shown whole, never clamped. A Bluesky caption is capped at 300 characters,
+   which is six lines here — and a caption you have to expand to read is a
+   caption you cannot check before you post it. */
+.soc-cap-t{margin:0 0 8px;font-size:11.5px;line-height:1.5;color:var(--text-2);
+  white-space:pre-wrap;overflow-wrap:anywhere}
+.soc-cap-b{display:flex;flex-wrap:wrap;gap:6px}
+.soc-cap-b .btn{flex:0 0 auto}
+
 /* ── Club bonus leaders: who banks the bonus at each club ── */
 .cbl{display:flex;flex-direction:column}
 .cbl-row{display:flex;align-items:center;gap:10px;min-height:38px;
@@ -6710,6 +6722,400 @@ function renderSocialCard(spec,scale){
   return cv;
 }
 
+/* ── Captions ─────────────────────────────────────────────────────────
+   One entry per preset id: x (long form), b (Bluesky, hard 300-char limit)
+   and a (alt text). Final copy, deliberately carrying NO numbers — the card
+   carries those, which is what makes a caption safe to paste months from now
+   without checking anything. dev/test-social-captions.mjs enforces both rules:
+   every preset has an entry, and every Bluesky caption fits. */
+const SOC_CAPTIONS={
+'data-xi':{
+x:`This is the XI the model would build right now. A full £100.0m squad, no gut feel anywhere in it.
+
+Every pick is there because of a projected points number you can open up and check for yourself — including the ones you'll disagree with.
+
+Build yours 👇
+
+gameweekedge.co.uk`,
+b:`This is the XI the model would build right now — a full £100.0m squad, no gut feel anywhere in it.
+
+Every pick opens up to the projection behind it, including the ones you'll disagree with. #FPL
+gameweekedge.co.uk`,
+a:`The model's highest-projected squad — a full eleven plus bench inside £100.0m, with each player's predicted points.`},
+
+'haaland-xi':{
+x:`Most people start with Haaland and work backwards. So here's the honest version of that: Haaland forced in, and the model spending what's left as well as it possibly can.
+
+It's a useful test. If the other fourteen still look strong, the premium is affordable. If they look thin, that's your answer.
+
+gameweekedge.co.uk`,
+b:`Most people start with Haaland and work backwards. So: Haaland forced in, model spends what's left as well as it can.
+
+If the other fourteen still look strong, the premium is affordable. If they look thin, that's your answer. #FPL
+gameweekedge.co.uk`,
+a:`A full 15-man squad inside £100.0m with Haaland locked in, showing each player's predicted points.`},
+
+'big-three-xi':{
+x:`Three premiums locked, twelve players left to fill. This is what that actually costs you.
+
+Nobody talks about the back end of a big-three build, which is exactly where these teams win or lose. Here's the whole squad, not the fun half.
+
+gameweekedge.co.uk`,
+b:`Three premiums locked, twelve players left to fill — and this is what that actually costs you.
+
+Nobody talks about the back end of a big-three build, which is exactly where these teams win or lose. #FPL
+gameweekedge.co.uk`,
+a:`A full 15-man squad inside £100.0m with three premium players locked in, showing each player's predicted points.`},
+
+'bank-xi':{
+x:`Almost every squad you see online spends every last penny. This one deliberately doesn't.
+
+Holding money back costs you a fraction of a point now and buys you a free move later — and early in a season, flexibility is worth more than the 0.1 you left on the table.
+
+gameweekedge.co.uk`,
+b:`Almost every squad you see online spends every last penny. This one deliberately doesn't.
+
+Money in the bank costs a fraction of a point now and buys a free move later. Early on, flexibility beats the 0.1 you left behind. #FPL
+gameweekedge.co.uk`,
+a:`A full 15-man squad built to leave money in the bank rather than spend the whole budget, with predicted points for each player.`},
+
+'ladder-1':{
+x:`Goalkeepers, ranked by price band.
+
+The most ignored position in FPL and the easiest place to quietly waste money. Every half-million band, the best option in it, on projected points over the next six fixtures.
+
+Cheapest useful keeper is usually the right answer. Here's which one 👇
+
+gameweekedge.co.uk`,
+b:`Goalkeepers, ranked by price band.
+
+The most ignored position in FPL and the easiest place to quietly waste money. Best option in every half-million band, over the next six fixtures. #FPL
+gameweekedge.co.uk`,
+a:`The best-projected goalkeeper in each price band over the next six fixtures.`},
+
+'ladder-2':{
+x:`Defenders, ranked by price band.
+
+Every half-million, the best option in it, on projected points across the next six fixtures. Defence is where most squads leak value — a £4.5m pick who plays is worth more than a £6.0m one who rotates.
+
+gameweekedge.co.uk`,
+b:`Defenders, ranked by price band — the best option in every half-million, on projected points over the next six fixtures.
+
+Defence is where most squads quietly leak value. #FPL
+gameweekedge.co.uk`,
+a:`The best-projected defender in each price band over the next six fixtures.`},
+
+'ladder-3':{
+x:`Midfielders, ranked by price band.
+
+The deepest position in the game and the hardest to shop in. Every half-million band, the best option in it, on projected points over the next six fixtures.
+
+Find the one you're overpaying for 👇
+
+gameweekedge.co.uk`,
+b:`Midfielders, ranked by price band.
+
+The deepest position in the game and the hardest to shop in. Best option in every half-million, on projected points over the next six fixtures. #FPL
+gameweekedge.co.uk`,
+a:`The best-projected midfielder in each price band over the next six fixtures.`},
+
+'ladder-4':{
+x:`Forwards, ranked by price band.
+
+The position where the price gaps are biggest and the decisions hurt most. Every half-million band, the best option in it, on projected points across the next six fixtures.
+
+gameweekedge.co.uk`,
+b:`Forwards, ranked by price band — the best option in every half-million, on projected points over the next six fixtures.
+
+The position where the price gaps are biggest and the decisions hurt most. #FPL
+gameweekedge.co.uk`,
+a:`The best-projected forward in each price band over the next six fixtures.`},
+
+'captains':{
+x:`Captaincy, ranked.
+
+The Lab ranks every armband option by predicted points and shows the ceiling and the floor on each — because two players on the same projection can be very different bets. One is a steady six; the other is a two or a fifteen.
+
+Pick with your eyes open 👇
+
+gameweekedge.co.uk`,
+b:`Captaincy, ranked.
+
+The Lab ranks every option by predicted points and shows the ceiling AND the floor — two players on the same projection can be very different bets.
+
+Pick with your eyes open 👇 #FPL
+gameweekedge.co.uk`,
+a:`Captaincy options for the coming gameweek ranked by predicted points.`},
+
+'differentials':{
+x:`Low ownership, high projection. The players who move you up rather than keep you still.
+
+A differential is only worth it if the projection stands up on its own — otherwise it's just a template player nobody wanted. These clear that bar.
+
+gameweekedge.co.uk`,
+b:`Low ownership, high projection — the players who move you up rather than keep you still.
+
+A differential is only worth it if the projection stands up on its own. Otherwise it's just a player nobody wanted. #FPL
+gameweekedge.co.uk`,
+a:`Low-ownership players with high predicted points for the coming gameweek.`},
+
+'overpriced':{
+x:`Every FPL account tells you who to buy. Here's the other half: who the model thinks you're overpaying for.
+
+Fair price is what the median rate for that position implies, compared within position so defenders aren't flattered by cheap clean sheets.
+
+The players you don't buy shape your season as much as the ones you do 👇
+
+gameweekedge.co.uk`,
+b:`Every FPL account tells you who to buy. Here's the other half — who the model thinks you're overpaying for.
+
+Fair price is the median rate for that position, compared within position so defenders aren't flattered. #FPL
+gameweekedge.co.uk`,
+a:`Players priced above what the model's projection supports, with a fair price for each.`},
+
+'chip-plan':{
+x:`Chips, planned rather than panicked.
+
+The model looks across the coming gameweeks and says where each chip is actually worth the most — not "save it for a double", but a window, with the reasoning attached.
+
+Most people play chips in the week they remember they have them. That's the mistake this fixes.
+
+gameweekedge.co.uk`,
+b:`Chips, planned rather than panicked.
+
+The model looks across the coming gameweeks and says where each one is actually worth most — a window, with the reasoning attached.
+
+Most people play chips the week they remember they have them. #FPL
+gameweekedge.co.uk`,
+a:`A chip plan across the coming gameweeks, showing the best window for each chip.`},
+
+'underpriced':{
+x:`The players delivering more than their price tag implies.
+
+Not tips — predicted points from a model that gets graded against real results every gameweek, in public. You can check its record before you trust a single name on this card.
+
+gameweekedge.co.uk`,
+b:`The players delivering more than their price tag implies.
+
+Not tips — predicted points from a model graded against real results in public. Check its record before you trust a name on here. #FPL
+gameweekedge.co.uk`,
+a:`Players the model projects to outscore their price, with a fair price for each.`},
+
+'fixture-runs':{
+x:`The best fixture runs in the game right now.
+
+Fixtures aren't everything, but they're the cheapest edge available — you don't need a player to improve, you just need his opponents to get easier.
+
+Here's who has the kindest road ahead 👇
+
+gameweekedge.co.uk`,
+b:`The best fixture runs in the game right now.
+
+Fixtures aren't everything, but they're the cheapest edge going — you don't need a player to improve, just his opponents to get easier. #FPL
+gameweekedge.co.uk`,
+a:`Players with the best upcoming fixture runs, ranked by the difficulty of their next matches.`},
+
+'bonus-magnets':{
+x:`Bonus points decide more mini-leagues than anyone admits, and almost nobody picks for them.
+
+The BPS system rewards things that don't show up in a highlights reel — recoveries, tackles won, passes completed, clean sheets held. Some players farm it every week.
+
+Here are the ones who do 👇
+
+gameweekedge.co.uk`,
+b:`Bonus points decide more mini-leagues than anyone admits, and almost nobody picks for them.
+
+BPS rewards what a highlights reel misses — recoveries, tackles, passes, clean sheets. Some players farm it weekly. #FPL
+gameweekedge.co.uk`,
+a:`Players who consistently score highly in the bonus points system, ranked by their BPS record.`},
+
+'club-bonus':{
+x:`Who actually takes the bonus at each club.
+
+If two of your players are in the same defence, they're competing for the same three points — and one of them nearly always wins. Worth knowing before you double up.
+
+gameweekedge.co.uk`,
+b:`Who actually takes the bonus at each club.
+
+If two of your players are in the same defence they're competing for the same three points, and one of them nearly always wins. Worth knowing before you double up. #FPL
+gameweekedge.co.uk`,
+a:`The player most likely to take the bonus points at each club, listed club by club.`},
+
+'defcon':{
+x:`Defensive Contribution points are the cheapest in FPL.
+
+A defender needs 10 clearances, blocks, interceptions and tackles in a match for +2. A midfielder needs 12 of those plus ball recoveries. Capped at +2 each.
+
+Which means a defensive mid can be a near-nailed cheap returner. Here's the best one at every price point 👇
+
+gameweekedge.co.uk`,
+b:`Defensive Contribution points are the cheapest in FPL.
+
+Defenders: 10 clearances, blocks, interceptions & tackles → +2. Mids: 12 of those plus recoveries.
+
+The best option at every price point 👇 #FPL
+gameweekedge.co.uk`,
+a:`The best defensive-contribution options at each price point.`},
+
+'set-pieces':{
+x:`Penalties, free-kicks and corners — who actually takes them, club by club.
+
+Straight from the official set-piece order, not a guess. A nailed penalty taker is worth more over a season than most people's third midfielder.
+
+Fair warning: duties change, and the data lags a manager's decision.
+
+gameweekedge.co.uk`,
+b:`Penalties, free-kicks and corners — who actually takes them, club by club.
+
+Straight from the official set-piece order, not a guess. A nailed pen taker is worth more than most people's third midfielder. #FPL
+gameweekedge.co.uk`,
+a:`Set-piece takers club by club — the first-choice penalty, free-kick and corner taker at each.`},
+
+'rotation-chain':{
+x:`The cheap defender you can buy once and stop thinking about.
+
+Every rotation was tested against simply holding one player — and holding won. No switch across these gameweeks buys back the transfer it costs.
+
+Boring, and worth about four free transfers a season 👇
+
+gameweekedge.co.uk`,
+b:`The cheap defender you can buy once and stop thinking about.
+
+Every rotation was tested against simply holding one player, and holding won — no switch buys back the transfer it costs.
+
+Boring, and worth free transfers. #FPL
+gameweekedge.co.uk`,
+a:`Cheap defenders with the best run of fixtures to hold without rotating, with their average fixture difficulty.`},
+
+'attack-or-defence':{
+x:`Where should your money go — the attack or the back line?
+
+Same budget, two very different squads. The model prices both sides of that question and tells you which one the fixtures actually favour right now.
+
+The answer changes through a season. Most people's squads don't.
+
+gameweekedge.co.uk`,
+b:`Where should your money go — the attack or the back line?
+
+Same budget, two very different squads. The model prices both and says which the fixtures favour right now.
+
+The answer changes through a season. Most squads don't. #FPL
+gameweekedge.co.uk`,
+a:`A comparison of attacking and defensive investment, showing which the model favours for the coming fixtures.`},
+
+'xg-runs':{
+x:`The players with the most goals coming.
+
+Underlying numbers, not last week's scoreline. A striker who keeps getting into the right places will score eventually, and the window before he does is the cheapest time to own him.
+
+This is the buy-before-it-happens card 👇
+
+gameweekedge.co.uk`,
+b:`The players with the most goals coming.
+
+Underlying numbers, not last week's scoreline. A striker getting into the right places scores eventually, and the window before he does is the cheapest time to own him. #FPL
+gameweekedge.co.uk`,
+a:`Players whose underlying attacking numbers suggest goals are coming, ranked by expected goals.`},
+
+'out-of-position':{
+x:`Paid on the wrong tariff.
+
+Some players are priced as one thing and score as another — a defender who plays like a winger, a midfielder who barely leaves his own half. FPL pays them on their listed position, and that gap is free points.
+
+Here's where it's widest 👇
+
+gameweekedge.co.uk`,
+b:`Paid on the wrong tariff.
+
+Some players are priced as one thing and score as another — a defender who plays like a winger, a mid who never leaves his own half. FPL pays the listed position, and that gap is free points. #FPL
+gameweekedge.co.uk`,
+a:`Players whose scoring profile does not match their listed FPL position, and the points that gap is worth.`},
+
+'congestion':{
+x:`Who's playing midweek.
+
+European nights and cup rounds don't show up in an FPL fixture list, but they absolutely show up in your captain's legs on Saturday.
+
+Rotation risk you can see coming, before it costs you 👇
+
+gameweekedge.co.uk`,
+b:`Who's playing midweek.
+
+European nights and cup rounds don't show up in an FPL fixture list, but they show up in your captain's legs on Saturday.
+
+Rotation risk you can see coming 👇 #FPL
+gameweekedge.co.uk`,
+a:`Players whose clubs have midweek fixtures, showing where rotation risk is highest.`},
+
+'custom-list':{
+x:`Built this with the Gameweek Edge card builder — any players you like, ranked on whichever number you care about.
+
+The whole thing runs off the same model the app grades in public every week.
+
+gameweekedge.co.uk`,
+b:`Built this with the Gameweek Edge card builder — any players you like, ranked on whichever number you care about.
+
+Same model the app grades in public every week. #FPL
+gameweekedge.co.uk`,
+a:`A custom list of players built in Gameweek Edge, ranked by a chosen metric.`},
+
+'custom-squad':{
+x:`Built this in the Gameweek Edge squad builder — lock the players you want, and the model spends what's left as well as it can.
+
+gameweekedge.co.uk`,
+b:`Built this in the Gameweek Edge squad builder — lock the players you want, and the model spends what's left as well as it can. #FPL
+gameweekedge.co.uk`,
+a:`A custom 15-man squad built in Gameweek Edge, with predicted points for each player.`}
+};
+function socCaption(id){return SOC_CAPTIONS[id]||null;}
+
+/* Clipboard, with the old-school fallback for the browsers and permission
+   states where the async API is not there. Silence is the worst outcome, so
+   every path either toasts success or toasts failure. */
+async function socCopyText(text,label){
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(text);toast(label+' copied');return true;
+    }
+  }catch(_){}
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.setAttribute('readonly','');
+    ta.style.cssText='position:fixed;top:-1000px;opacity:0';
+    document.body.appendChild(ta);ta.select();
+    const ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(ok?label+' copied':'Could not copy — select the text instead');
+    return ok;
+  }catch(_){toast('Could not copy — select the text instead');return false;}
+}
+function socCopy(i,which){
+  const S=window._soc;if(!S||!S.specs[i])return;
+  const c=socCaption(S.specs[i].id);if(!c)return;
+  socCopyText(which==='x'?c.x:which==='b'?c.b:c.a,
+    which==='x'?'X caption':which==='b'?'Bluesky caption':'Alt text');
+}
+function socCopyCustom(which){
+  const S=window._soc;if(!S||!S.custom)return;
+  const c=socCaption(S.custom.id);if(!c)return;
+  socCopyText(which==='x'?c.x:which==='b'?c.b:c.a,
+    which==='x'?'X caption':which==='b'?'Bluesky caption':'Alt text');
+}
+/* The caption block that sits under a card. Shows the Bluesky version because
+   it is the shorter of the two and reads as a complete post either way. */
+function socCapBlock(id,i){
+  const c=socCaption(id);
+  if(!c)return '';
+  const arg=w=>i==null?"socCopyCustom('"+w+"')":'socCopy('+i+",'"+w+"')";
+  return '<div class="soc-cap">'+
+    '<p class="soc-cap-t">'+esc(c.b)+'</p>'+
+    '<div class="soc-cap-b">'+
+      '<button class="btn btn-primary btn-sm" onclick="'+arg('x')+'">Copy for X</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="'+arg('b')+'">Bluesky</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="'+arg('a')+'">Alt text</button>'+
+    '</div></div>';
+}
+
 function socDownload(i){
   const S=window._soc;if(!S||!S.specs[i])return;
   const spec=S.specs[i];
@@ -6734,10 +7140,19 @@ async function socShare(i){
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
   if(!blob)return;
   const file=new File([blob],'gwe-'+spec.id+'.png',{type:'image/png'});
+  /* Hand the caption over with the picture. Where the OS supports it — iOS
+     and Android both do — the target app opens with the post already written,
+     which is the whole difference between "I'll do it later" and posting. */
+  const c=socCaption(spec.id);
   if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:spec.title});return;}catch(_){}
+    const payload={files:[file],title:spec.title};
+    if(c)payload.text=c.b;
+    try{await navigator.share(payload);return;}catch(err){
+      if(err&&err.name==='AbortError')return;      /* user cancelled — not a failure */
+    }
   }
   socDownload(i);
+  if(c)socCopyText(c.b,'Caption');
 }
 
 /* ── Card builder ─────────────────────────────────────────────────────
@@ -6855,6 +7270,8 @@ async function socBuildRefresh(){
   let spec=null;try{spec=socBuildSpec(S.b,S.fixtures);}catch(_){}
   window._soc.custom=spec;
   const bar=document.getElementById('soc-b-actions');
+  const capBox=document.getElementById('soc-b-cap');
+  if(capBox)capBox.innerHTML=spec?socCapBlock(spec.id,null):'';
   if(!spec){
     box.innerHTML='<div class="soc-empty">'+
       (SOC_BUILD.kind==='squad'
@@ -6964,8 +7381,13 @@ function socCustomDownload(share){
   cv.toBlob(async blob=>{
     if(!blob){toast('Could not build the image');return;}
     const file=new File([blob],'gwe-'+spec.id+'.png',{type:'image/png'});
+    const c=socCaption(spec.id);
     if(share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      try{await navigator.share({files:[file],title:spec.title});return;}catch(_){}
+      const payload={files:[file],title:spec.title};
+      if(c)payload.text=c.b;
+      try{await navigator.share(payload);return;}catch(err){
+        if(err&&err.name==='AbortError')return;
+      }
     }
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);
     a.download='gwe-'+spec.id+'.png';a.click();
@@ -7201,19 +7623,24 @@ async function hydrateSocial(host){
           '<span class="soc-nm">Your card</span>'+
           '<button class="btn btn-ghost btn-sm" onclick="socCustomDownload(true)">Share</button>'+
           '<button class="btn btn-primary btn-sm" onclick="socCustomDownload(false)">PNG</button>'+
-        '</div></div>'+
+        '</div><div id="soc-b-cap"></div></div>'+
     '</div></div>'+
     '<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
     ' Ready-made cards</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Share-ready graphics built from the live model — the numbers on the card are the numbers in the app. '+
     'Every card is 1080×1350, the portrait ratio Instagram and X both crop kindly, and downloads as a PNG. '+
     'They rebuild from fresh data each time you open this page, so a card made today reflects today’s prices.</p>'+
+    '<p class="dl-sub" style="margin-bottom:10px"><b>Every card comes with its caption.</b> '+
+    '<b>Share</b> hands the picture and the words to X or Bluesky together, so the post is already written when the app opens. '+
+    'Otherwise use <b>Copy for X</b> or <b>Bluesky</b> — the Bluesky version is the one shown, and it always fits the 300-character limit. '+
+    '<b>Alt text</b> copies the image description; paste it into the alt field before you post.</p>'+
     '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button></div>'+
     '<div class="soc-grid">'+specs.map((sp,i)=>
       '<div class="soc-item"><div class="soc-shot" id="soc-'+i+'"></div>'+
       '<div class="soc-bar"><span class="soc-nm">'+esc(sp.title)+'</span>'+
       '<button class="btn btn-ghost btn-sm" onclick="socShare('+i+')">Share</button>'+
-      '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div></div>').join('')+
+      '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div>'+
+      socCapBlock(sp.id,i)+'</div>').join('')+
     '</div>';
   socBuildRender();
   socBuildRefresh();
