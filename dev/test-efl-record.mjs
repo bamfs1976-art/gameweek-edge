@@ -26,7 +26,7 @@
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -839,8 +839,28 @@ ok('the entry itself is byte-identical to what the status vouches for', () => {
      as a promise. */
   const header = Buffer.from(`blob ${raw.length}\0`, 'utf8');
   const sha = createHash('sha1').update(Buffer.concat([header, raw])).digest('hex');
-  assert.equal(sha, s.entryIntegrity.blobSha,
-    'the recorded entry has not changed since the pre-lockout status vouched for it');
+
+  /* The blobSha covered the WHOLE FILE — and the whole file is designed to
+     gain a `result` when the round settles. So the first grading broke this
+     check by doing its job, and main went red unnoticed. A byte-freeze on a
+     file that is meant to receive one more field is the wrong invariant.
+
+     What must never change is the ENTRY: what was picked, when, from which
+     universe. That is what picksSha256 covers, and `result` and
+     `voidedGrading` are excluded because they are the two fields a settled
+     round is allowed to gain. The guarantee is unchanged in strength —
+     editing a pick, a timestamp or the lock snapshot still fails here. */
+  const entry = JSON.parse(raw.toString('utf8'));
+  const sub = {};
+  for (const k of s.entryIntegrity.picksShaCovers) if (k in entry) sub[k] = entry[k];
+  const picksSha = createHash('sha256').update(JSON.stringify(sub)).digest('hex');
+  assert.equal(picksSha, s.entryIntegrity.picksSha256,
+    'the recorded PICKS have not changed since the pre-lockout status vouched for them');
+  assert.ok(!s.entryIntegrity.picksShaCovers.includes('result'),
+    'and the digest deliberately does not cover the result a settled round gains');
+  assert.equal(typeof s.entryIntegrity.blobSha, 'string',
+    'the original whole-file hash is kept as the record of what was vouched for');
+  void sha;
   assert.equal(s.entryIntegrity.commits, 1, 'and the status claims exactly one commit');
 });
 
@@ -1055,6 +1075,70 @@ ok('the tipsters inference was narrowed, and the measured number left alone', ()
   assert.equal(t.againstOurEntry.overlapWithOurSeven, 0,
     'and the count is untouched — a wrong inference from a right number is fixed '
     + 'by narrowing the inference, not by editing the number');
+});
+
+
+/* ── A GRADED ROUND MUST DESCRIBE A ROUND OF FOOTBALL ──────────────────────
+   Round 1 of 2026-27 was graded, committed and PUBLISHED with all 3,442
+   players on about -250 points, our squad on -1899, and a rank correlation of
+   -0.718 identical in every position. It was not a bad model: the lock
+   baseline had been captured against the previous season and the feed rolled
+   over before grading, so the subtraction returned newSeasonSoFar minus
+   lastSeasonFinal.
+
+   Nothing here caught it — an outside screenshot did. These checks exist so
+   the next one is caught by us. */
+ok('every graded round is physically possible, and a voided one says so', () => {
+  const files = readdirSync(join(ROOT, 'efl/data/rounds')).filter((f) => /^round-\d+\.json$/.test(f));
+  assert.ok(files.length > 0, 'there is at least one round entry');
+  for (const f of files) {
+    const r = JSON.parse(readFileSync(join(ROOT, 'efl/data/rounds', f), 'utf8'));
+
+    if (!r.result) {
+      /* Ungraded is legitimate. A VOIDED grading must not look like one that
+         simply has not run yet. */
+      if (r.voidedGrading) {
+        assert.ok(r.voidedGrading.whyItIsVoid, `${f}: a voided grading explains why`);
+        assert.ok(r.voidedGrading.thePreservedGradingForReference,
+          `${f}: the faulty grading is preserved, not deleted`);
+        assert.ok(r.picks && Array.isArray(r.picks.players) && r.picks.players.length > 0,
+          `${f}: voiding did not disturb the recorded picks`);
+        assert.ok(r.universe && r.universe.rows.length > 0,
+          `${f}: voiding did not disturb the lock snapshot`);
+      }
+      continue;
+    }
+
+    const pts = ((r.result.squad && r.result.squad.players) || []).map((p) => p.points);
+    if (pts.length) {
+      const negatives = pts.filter((p) => p < 0).length;
+      assert.ok(negatives <= 1, `${f}: at most one negative player score, got ${negatives} of ${pts.length}`);
+      assert.ok(Math.min(...pts) > -60, `${f}: no player below -60, worst ${Math.min(...pts)}`);
+      assert.ok(Math.max(...pts) < 200, `${f}: no player above 200, best ${Math.max(...pts)}`);
+    }
+    if (r.result.model && Number.isFinite(r.result.model.rho)) {
+      /* A useless model scores about zero. A large NEGATIVE correlation,
+         uniform across positions, is an inverted quantity, not a verdict. */
+      assert.ok(r.result.model.rho > -0.4,
+        `${f}: model rho ${r.result.model.rho.toFixed(3)} is the signature of an inverted measurement`);
+    }
+  }
+});
+
+ok('the grader refuses an implausible grading and names the cause', () => {
+  const g = readFileSync(join(ROOT, 'scripts/efl/grade-round.mjs'), 'utf8');
+  assert.match(g, /refusing to grade/, 'it refuses');
+  assert.match(g, /season rollover|rolled over/i, 'and names the rollover');
+  assert.match(g, /NEGATIVE round points/, 'and reports what it saw');
+});
+
+ok('the outside capture that exposed it stays on the record', () => {
+  const c = JSON.parse(readFileSync(join(ROOT, 'efl/data/benchmarks/round-01-community-results.json'), 'utf8'));
+  assert.equal(c.observedRoundOneScores.statedRoundAverage, 44, 'the observed round-1 average is recorded');
+  assert.ok(c.observedRoundOneScores.players.every((p) => p.points > 0),
+    'every observed round-1 score is positive — the fact that made -1899 impossible');
+  assert.match(JSON.stringify(c), /It took a stranger/,
+    'and it records that nothing of ours caught the fault');
 });
 
 console.log(`✓ Fantasy EFL ledger: ${checks} checks passed`);

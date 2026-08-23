@@ -1,0 +1,8 @@
+[
+  { "id": 9001, "event": 1, "team_h": 1, "team_a": 2, "kickoff_time": "2026-08-21T19:00:00Z",
+    "finished": false, "started": false },
+  { "id": 9002, "event": 1, "team_h": 3, "team_a": 4, "kickoff_time": "2026-08-22T14:00:00Z",
+    "finished": false, "started": false },
+  { "id": 9003, "event": 2, "team_h": 2, "team_a": 3, "kickoff_time": "2026-08-29T14:00:00Z",
+    "finished": false, "started": false }
+]

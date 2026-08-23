@@ -1,0 +1,233 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-18T09:39:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "Six posts from a Polish-language pre-season table series, captured as screenshots on the morning of 18 August. Every post carries a colour-coded stat table with an explicit price row or a price in the title, which makes this by a wide margin the largest set of stated FPL prices this project holds from one source.",
+
+  "source": {
+    "name": "Michał",
+    "handle": "@lesniczak_m",
+    "platform": "X",
+    "language": "Polish, read through X's Grok translation",
+    "verified": "no verification badge shown on the account",
+    "reach": "2.6K to 9.2K views per post — an order of magnitude smaller than the other captures",
+    "onePostWasReposted": "the 17 August post was reposted by 'FPL Matt', which is how it surfaced",
+    "readFrom": "screenshots",
+    "commercialInterest": "None visible. No product, no discount code, no affiliate link, no 'join us' call to action in any of the six posts. That makes it the only capture of the five with nothing attached to it — LazyFPL is free but promotes itself, and the other three sell something.",
+    "theTranslationIsALayer": "Every line of prose here passed through machine translation before it reached us. The tables did not — numbers and surnames survive translation unchanged — so the price data is at first hand and the prose is at second."
+  },
+
+  "theSixPosts": [
+    { "id": "strikers", "postedAt": "2026-07-31T07:53+01:00", "views": "11K", "title": "3 weeks to the start, so time for some FPL colors — starting with the strikers", "table": "14 forwards with a price row" },
+    { "id": "assistants", "postedAt": "2026-08-03T08:00+01:00", "views": "3K", "title": "Dearest assistants", "table": "14 midfielders with a price row" },
+    { "id": "expensive-defenders", "postedAt": "2026-08-04T09:53+01:00", "views": "3.5K", "title": "Even the most expensive defenders", "table": "18 defenders with a price row" },
+    { "id": "mid-price", "postedAt": "2026-08-06T16:53+01:00", "views": "2.6K", "title": "Help 5.5-6.5", "table": "18 midfielders with a price row" },
+    { "id": "five-defenders", "postedAt": "2026-08-11T07:27+01:00", "views": "5.8K", "title": "Penultimate table — defenders for 5", "table": "18 defenders, price in the title" },
+    { "id": "four-five-defenders", "postedAt": "2026-08-17T07:23+01:00", "views": "9.2K", "title": "Last post, defenders for 4.5", "table": "18 defenders, price in the title" }
+  ],
+
+  "whatWasReadAndWhatWasNOT": {
+    "read": "The price row (large, high contrast, unambiguous), the player names in the column headers, and the translated prose bullets. One statistics row — % of minutes in the midfielders table — because the post's own prose gives an internal check on it.",
+    "notRead": "Every other statistics row: team clean sheets, non-penalty xGA, goals and assists, shots per 90, big chances per 90, xGI per 90, defensive contributions per 90, FPL points per 90, and points against expected. Nine rows across six tables, roughly nine hundred figures.",
+    "why": "They are three or four characters tall in these screenshots. This project has already published one benchmark whose figures were read off a phone screenshot by eye and has spent two days finding the consequences. A number that cannot be read is not a number.",
+    "andTheFixtureROW": {
+      "what": "Each table carries a 'Fix' row encoding each player's next fixtures in six-character cells, apparently with capitals for home and lower case for away.",
+      "whyItIsNotTranscribed": "It is the smallest text in the image. One attempted reading of Gabriel's cell produced an Arsenal GW2 opponent that disagrees with our settled GW1-3 card.",
+      "whichWayThatCuts": "Toward my misreading, not toward a conflict. Our card was settled against the published schedule on 13 August and the post is from 4 August, and a six-character cell at this resolution is exactly where a transcription error comes from. Recording it as a source conflict would have been the same fault as every other one on file this week: measuring the instrument and reporting it as the world.",
+      "soItIsRecordedAsUnread": "Not as agreeing, and not as disagreeing."
+    },
+    "oneNameIsUncertain": "The eleventh column of the £4.5m defender table is rendered small and reads as 'Kansa'. The only Premier League defender that resolves to is Konsa. It is recorded below as Konsa WITH this note, and nothing is inferred from it about which club he is at — our register has an open question on exactly that, and answering it from a squint at a table header is not an answer."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "lesniczak",
+    "statedTotal": 100,
+    "howTheseWereRead": "Four tables carry an explicit £ row; two state a single price in the post title and every column belongs to it. No price here is inferred from a bracket or a band — each is a figure the source printed against a named player.",
+    "exact": [
+      { "player": "Haaland", "price": 15.5, "table": "strikers" },
+      { "player": "Isak", "price": 9.0, "table": "strikers" },
+      { "player": "Thiago", "canonical": "Igor Thiago", "price": 8.0, "table": "strikers" },
+      { "player": "Watkins", "price": 8.0, "table": "strikers" },
+      { "player": "Gyokeres", "price": 7.5, "table": "strikers" },
+      { "player": "Havertz", "price": 7.5, "table": "strikers" },
+      { "player": "J. Pedro", "canonical": "Joao Pedro", "price": 7.5, "table": "strikers" },
+      { "player": "Sesko", "price": 7.0, "table": "strikers" },
+      { "player": "Mateta", "price": 6.5, "table": "strikers" },
+      { "player": "Brobbey", "price": 6.0, "table": "strikers" },
+      { "player": "DCL", "canonical": "Calvert-Lewin", "price": 6.0, "table": "strikers" },
+      { "player": "Evanilson", "price": 6.0, "table": "strikers" },
+      { "player": "I. Jesus", "canonical": "Igor Jesus", "price": 6.0, "table": "strikers" },
+      { "player": "Solanke", "price": 6.0, "table": "strikers" },
+
+      { "player": "Bruno F.", "canonical": "Bruno Fernandes", "price": 12.0, "table": "assistants" },
+      { "player": "Palmer", "price": 9.5, "table": "assistants" },
+      { "player": "Saka", "price": 9.5, "table": "assistants" },
+      { "player": "Semenyo", "price": 8.5, "table": "assistants" },
+      { "player": "Cunha", "canonical": "Matheus Cunha", "price": 8.0, "table": "assistants", "resolvedOn": "18 Aug, by the official Scout round-up: it names Matheus Cunha (Man Utd) at £8.0m and Jair Cunha (Forest) at £4.5m. The automatic surname rule correctly REFUSED to merge a bare Cunha with either, and the checker reported a disagreement inside the official source itself until the fuller name was used. Pinned by price and table position, not by guess." },
+      { "player": "Mbeumo", "price": 8.0, "table": "assistants" },
+      { "player": "MGW", "canonical": "Gibbs-White", "price": 8.0, "table": "assistants" },
+      { "player": "Cherki", "price": 7.5, "table": "assistants" },
+      { "player": "Rice", "price": 7.5, "table": "assistants" },
+      { "player": "Rogers", "price": 7.5, "table": "assistants" },
+      { "player": "Wirtz", "price": 7.5, "table": "assistants" },
+      { "player": "Bruno G.", "canonical": "Bruno Guimaraes", "price": 7.0, "table": "assistants" },
+      { "player": "Foden", "price": 7.0, "table": "assistants" },
+      { "player": "Szobo", "canonical": "Szoboszlai", "price": 7.0, "table": "assistants" },
+
+      { "player": "Gabriel", "price": 8.0, "table": "expensive-defenders" },
+      { "player": "Timber", "price": 6.5, "table": "expensive-defenders" },
+      { "player": "Virgil", "canonical": "Van Dijk", "price": 6.5, "table": "expensive-defenders" },
+      { "player": "O'Reilly", "price": 6.5, "table": "expensive-defenders" },
+      { "player": "Guehi", "price": 6.0, "table": "expensive-defenders" },
+      { "player": "Lacroix", "price": 6.0, "table": "expensive-defenders" },
+      { "player": "Nunes", "price": 6.0, "table": "expensive-defenders" },
+      { "player": "Senesi", "price": 6.0, "table": "expensive-defenders" },
+      { "player": "Tarko", "canonical": "Tarkowski", "price": 6.0, "table": "expensive-defenders" },
+      { "player": "Calafiori", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "Gvardiol", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "James", "canonical": "Reece James", "price": 5.5, "table": "expensive-defenders", "resolvedOn": "18 Aug by the official Scout (Reece James, Chelsea, £5.5m). The register's James Garner is £6.0m — the collision the pin was protecting against." },
+      { "player": "Kerkez", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "Milenkovic", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "Mosquera", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "Mukiele", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "Munoz", "price": 5.5, "table": "expensive-defenders" },
+      { "player": "Porro", "canonical": "Pedro Porro", "price": 5.5, "table": "expensive-defenders" },
+
+      { "player": "Anderson", "price": 6.5, "table": "mid-price" },
+      { "player": "Dango", "price": 6.5, "table": "mid-price" },
+      { "player": "KDH", "canonical": "Dewsbury-Hall", "price": 6.5, "table": "mid-price" },
+      { "player": "Rayan", "canonical": "Rayan (Bournemouth)", "price": 6.5, "table": "mid-price", "resolvedOn": "19 Aug — the LAST of the four to resolve, and the one the official Scout could not touch because its round-up names no Rayan at all. FPL_Marcello gives Rayan at AFC Bournemouth, £6.5m; FPL Fran independently gives Rayan £6.5m with a GW1-3 run of mci / EVE / new, which are Bournemouth's fixtures in our own register. Club settled by a fixture run, forename still unknown." },
+      { "player": "Sarr", "canonical": "Ismaila Sarr", "price": 6.5, "table": "mid-price", "resolvedOn": "18 Aug, by the official Scout: exactly one Sarr at £6.5m, at Crystal Palace. Hadley's P. Sarr is £5.0m at Tottenham, confirmed 19 Aug by FPL_Marcello — two different players, as the pin assumed." },
+      { "player": "Wilson", "canonical": "Harry Wilson", "price": 6.5, "table": "mid-price", "resolvedOn": "18 Aug by the official Scout (£6.5m at Leeds, the only £6.5m Wilson) and confirmed 19 Aug by FPL_Marcello, who lists Harry Wilson at Leeds at £6.5m by name. The 18 Aug resolution was an inference by elimination; the 19 Aug one is the name in full." },
+      { "player": "Anthony", "canonical": "Jaidon Anthony", "price": 6.0, "table": "mid-price", "resolvedOn": "18 Aug by the official Scout (Jaidon Anthony, Brentford, £6.0m); FPL_Marcello names him in full at the same price on 19 Aug." },
+      { "player": "Barnes", "price": 6.0, "table": "mid-price" },
+      { "player": "Buendia", "price": 6.0, "table": "mid-price" },
+      { "player": "Hinshelwood", "price": 6.0, "table": "mid-price" },
+      { "player": "Kluivert", "price": 6.0, "table": "mid-price" },
+      { "player": "Le Fee", "price": 6.0, "table": "mid-price" },
+      { "player": "Ndiaye", "price": 6.0, "table": "mid-price" },
+      { "player": "Schade", "price": 6.0, "table": "mid-price" },
+      { "player": "Stach", "price": 6.0, "table": "mid-price" },
+      { "player": "Tel", "price": 6.0, "table": "mid-price" },
+      { "player": "Tavernier", "price": 6.0, "table": "mid-price" },
+      { "player": "Gross", "price": 5.5, "table": "mid-price" },
+
+      { "player": "Andersen", "price": 5.0, "table": "five-defenders" },
+      { "player": "Ballard", "price": 5.0, "table": "five-defenders" },
+      { "player": "Bijol", "price": 5.0, "table": "five-defenders" },
+      { "player": "Botman", "price": 5.0, "table": "five-defenders" },
+      { "player": "Canvot", "price": 5.0, "table": "five-defenders" },
+      { "player": "Colwill", "price": 5.0, "table": "five-defenders" },
+      { "player": "Dalot", "price": 5.0, "table": "five-defenders" },
+      { "player": "Gusto", "price": 5.0, "table": "five-defenders" },
+      { "player": "Keane", "price": 5.0, "table": "five-defenders" },
+      { "player": "Maguire", "price": 5.0, "table": "five-defenders" },
+      { "player": "Neco W.", "canonical": "Neco Williams", "price": 5.0, "table": "five-defenders" },
+      { "player": "O'Brien", "price": 5.0, "table": "five-defenders" },
+      { "player": "Richards", "price": 5.0, "table": "five-defenders" },
+      { "player": "Strujik", "canonical": "Struijk", "price": 5.0, "table": "five-defenders" },
+      { "player": "Thiaw", "price": 5.0, "table": "five-defenders" },
+      { "player": "v. Hecke", "canonical": "Van Hecke", "price": 5.0, "table": "five-defenders" },
+      { "player": "V.d. Ven", "canonical": "Van de Ven", "price": 5.0, "table": "five-defenders" },
+      { "player": "Wieffer", "price": 5.0, "table": "five-defenders" },
+
+      { "player": "Aina", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Ajer", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Bassey", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Bogle", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Cash", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "De Cuyper", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Dunk", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Hume", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Kadioglu", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Kayode", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Konsa", "price": 4.5, "table": "four-five-defenders", "readingNote": "rendered as 'Kansa' at this resolution — see oneNameIsUncertain above" },
+      { "player": "Maatsen", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Mitchell", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Mykolenko", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Reinildo", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Robinson", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Rodon", "price": 4.5, "table": "four-five-defenders" },
+      { "player": "Shaw", "price": 4.5, "table": "four-five-defenders" }
+    ],
+    "bands": [],
+    "fourSurnamesArePINNEDRATHERTHANRESOLVED": "Sarr, Wilson, Anthony, Rayan and the Reece-or-Daniel James column are given their own keys instead of being matched by surname. Hadley's table holds a P. Sarr at £5m, and merging him with a £6.5m Sarr would have manufactured a price conflict out of two different players — the same collision this project already recorded for Sangare. A surname that could be two people is not evidence about either.",
+    "independence": "The strikers table's footnote appears to read 'source: FFH / Fbref'. FFH is Fantasy Football Hub, which is also the affiliation of the Daily Mail author captured yesterday. If that reading is right, these two sources are NOT independent on any figure that comes from FFH. Recorded as a probable reading at the limit of legibility, and treated as though it were true wherever it would weaken a claim."
+  },
+
+  "whatPriceAGREEMENTACTUALLYPROVES": {
+    "theHonestFraming": "Sources agreeing on a price are not several witnesses to a proposition. They are several people reading the same public number off the same game. Fantasy Football Hub, a Polish analyst and a Daily Mail columnist all saying Igor Thiago is £8.0m is not three judgements converging — it is three copies of one fact.",
+    "whyThatMakesItMOREUsefulHereNotLess": "It is exactly what our register needs. Our price rows were ESTIMATES, marked est., made without a source. Any competent reading of the live game beats them, and three readings that agree with each other are very unlikely to all be misreadings.",
+    "andWhatItSaysAboutNothingElse": "It says nothing about any of these sources' judgement, and a source being right about a price is not evidence it is right about a player. That distinction is why the price agreements below are treated as settling register rows and the opinions further down are treated as claims to be graded."
+  },
+
+  "priceRowsThisSettlesInOurBriefing": {
+    "theEightRowTable": {
+      "what": "The briefing carries a price table of eight rows where our estimates differed from an outside table. Four were settled on 14 August by a BBC Sport piece and three more by Hadley's price column on 16 August, leaving the table at 'the outside table is right seven times from seven and ours is right none' with ONE row open.",
+      "theOpenRow": "Mateta (CRY) — our estimate ~£7.5m against the outside table's £6.5m.",
+      "whatThisCaptureSays": "£6.5m, in the strikers table, posted 31 July.",
+      "result": "The last open row now carries a second independent statement of the outside figure. On the same standard the other seven were settled by, that is eight from eight for the outside table and none from eight for our estimates.",
+      "whyItIsNotWrittenIntoTheBriefingHere": "A benchmark records what a source said; the briefing is a published document and its price table carries dates and attributions. The row should be closed there, with this capture cited, by an edit to the briefing — not silently by a JSON file."
+    },
+    "threeUnmarkedEstimatesAlsoConfirmed": [
+      "Isak — register '~£9.0m', this source £9.0m",
+      "Brobbey — register '~£6.0m', this source £6.0m",
+      "Neco Williams — register '~£5.0m DEF', this source £5.0m"
+    ],
+    "andOneOldBugClosed": {
+      "what": "The fpltips capture records a bug in which our checker read Van Hecke's transfer fee as an FPL price and reported '£5m vs ours £22.5m'.",
+      "now": "This source prints Van Hecke in a table titled 'defenders for 5'. The £5m reading was right and the £22.5m was the fee, which is what that capture concluded — now with an outside source behind it rather than only our own reasoning."
+    }
+  },
+
+  "prose": {
+    "strikers": ["3 weeks to the start, so time for some FPL colors", "Starting with the strikers"],
+    "assistants": [
+      "no Bruno is good, need to be careful",
+      "give God's health to Palmer and Saka",
+      "4 seasons in a row MGW with return every other match",
+      "Cherki is probably a bit underrated",
+      "Semenyo, Szobo and Rogers >90% minutes"
+    ],
+    "expensiveDefenders": ["A bit of eye strain, but from the most important stats: Mosquera played 2137 minutes last season."],
+    "midPrice": ["We will all one day click on Dango, Sarra, Rayana or Barnes, but few will hit the right moment"],
+    "fiveDefenders": [
+      "Dan Ballard and his big head",
+      "Maguire in the role of Casemiro at SFG would be something",
+      "Neco, Dalot and Wieffer the last soldiers on the flanks",
+      "Thiaw with the calendar could make the difference"
+    ],
+    "fourFiveDefenders": [
+      "Bogle, Kadioglu and De Cuyper for old-school fans",
+      "Mitchell might come in handy from September",
+      "Maatsen will deliver that one double-digit",
+      "Shaw a bit without the flair (sorry)",
+      "Have a great last week of scheming"
+    ]
+  },
+
+  "theOneStatisticsRowTranscribed": {
+    "which": "% of minutes, midfielders table, 3 August.",
+    "why": "The post's own prose says 'Semenyo, Szobo and Rogers >90% minutes', which is a claim ABOUT the row and therefore a check ON my reading of it.",
+    "asRead": { "Bruno F.": 90, "Palmer": 57, "Saka": 65, "Semenyo": 94, "Cunha": 73, "Mbeumo": 76, "MGW": 91, "Cherki": 52, "Rice": 90, "Rogers": 96, "Wirtz": 69, "Bruno G.": 72, "Foden": 61, "Szobo": 95 },
+    "theCheck": "Semenyo 94, Szoboszlai 95 and Rogers 96 are indeed the three highest, which is what the prose says. The reading survives its own test.",
+    "theTensionItLeaves": "Gibbs-White reads 91, which is also above 90 and is not in the sentence. Either the prose is a shortlist rather than an exhaustive set, or my reading of one cell is a point or two out. It is NOT recorded as an error in the source: between a machine-translated bullet and my reading of a small cell, my reading is the weaker link, and this project has already published one figure that turned out to be its own misreading.",
+    "whatItIsGoodFor": "Palmer at 57% and Cherki at 52% are minutes risks on a source that otherwise reads bullish about both. That is the kind of thing our own register does not hold and cannot compute before a season starts."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Cherki is underrated", "gradeable": true, "settlesOn": "his GW1-10 return per start against a 52% minutes share", "note": "the source's own table undercuts the claim, which is worth watching either way" },
+    { "claim": "Gibbs-White returns every other match, four seasons running", "gradeable": true, "settlesOn": "his GW1-10 attacking returns; a strong prior stated precisely enough to fail" },
+    { "claim": "Mitchell comes good from September", "gradeable": true, "settlesOn": "his minutes and returns from GW4 onward" },
+    { "claim": "Maatsen delivers one double-digit haul", "gradeable": true, "settlesOn": "any GW where he scores 10+" },
+    { "claim": "Thiaw's fixture run makes the difference", "gradeable": true, "settlesOn": "Newcastle clean sheets and his DEFCON hits over GW1-10", "note": "the same player whose appearance base is an open conflict between two other captures" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing is changed automatically. The Mateta row and the three unmarked estimates are recorded here as settled by an outside source and flagged for an edit to the briefing with the citation attached.",
+    "No pick, weight, rating or model parameter moves. This is a benchmark to be graded, not an input.",
+    "The four pinned surnames are a warning about the next capture as much as this one: Sarr, Wilson, Anthony and Rayan are all names that a surname matcher would happily merge with somebody else."
+  ]
+}

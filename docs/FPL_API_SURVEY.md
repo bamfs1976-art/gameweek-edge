@@ -289,3 +289,331 @@ it red on three assertions.
    single-gameweek view ever loads cold
 
 Nothing above needs an API key, a login, or a paid service.
+
+---
+
+## Price: what the API publishes, measured 22 Aug 2026
+
+Prompted by "the FPL price change page is live — what can we consume?".
+Measured by `dev/fpl-price-probe.mjs` from a GitHub runner (this sandbox
+cannot reach fantasy.premierleague.com), run 8 of the FPL endpoint probe
+workflow. Every number below came back from the live API.
+
+### There is no price API
+
+Nine `/api/` paths probed — `element-status/`, `price-changes/`, `prices/`,
+`stats/prices/`, `stats/price-changes/`, `element-prices/`,
+`bootstrap-prices/`, plus `companion/v1/` discovered from the page HTML.
+**All nine answered 404 `text/html` at 179 bytes**, byte-identical to the
+negative control. So a 404 here means absent, not blocked, and the price
+page is not backed by a public REST endpoint we could call.
+
+`companion/v1` is the mobile companion API base and 404s on its own.
+
+### The page probe cannot locate the page — do not repeat it
+
+Seven candidate page paths were tried. All seven answered **200 `text/html`
+at exactly 10032 bytes** — and so did `/this-page-should-not-exist-xyz`.
+fantasy.premierleague.com is a single-page app: one shell for every route,
+routing resolved in the browser. **No conclusion about which page exists can
+be drawn from HTTP status there.** The first run of this probe had no page
+control and would have reported seven live pages as a finding.
+
+### Nothing has moved price yet this season
+
+All four change fields are present and **zero for all 600 players**:
+
+| field | non-zero | note |
+|---|---|---|
+| `cost_change_event` | 0/600 | |
+| `cost_change_event_fall` | 0/600 | |
+| `cost_change_start` | 0/600 | |
+| `cost_change_start_fall` | 0/600 | |
+
+`0 player(s) have moved price this gameweek; 0 since the season started.`
+Cross-checked: Haaland's `now_cost` is 155 and his GW1 `history[].value` is
+also 155, consistent with no movement rather than a broken field.
+
+**This observation cannot distinguish "prices frozen, nothing has moved yet"
+from "field deprecated and no longer populated."** Both produce an all-zero
+column. The measurement that separates them is to re-run this probe once
+FPL's own page shows a change: if the fields populate, they work; if they
+stay zero while the page shows movement, they are dead and we need another
+source. Until then, treat the zeroes as "too early", not as "working".
+
+### CORRECTION: we do NOT consume everything price-related
+
+The paragraph that stood here said "14/14 price fields present, none
+missing", which read as complete coverage of the subject. It was complete
+coverage of MY LIST. `dev/fpl-price-probe.mjs` checks a hand-written
+`PRICE_FIELDS` array that I wrote, so it could only ever confirm what I
+already believed. Enumerating what the API actually returns
+(`dev/fpl-bootstrap-unused.mjs`) found five price fields that were not in it:
+
+  price_change_projections, price_change_calibrating, price_change_percent,
+  price_change_hourly_rate, price_change_locked_until
+
+plus an entire unreferenced top-level key, `game_config`, carrying
+`settings.price_change_deadlines`.
+
+**And then the values tempered it again.** `price_change_projections` is a
+populated array for all 600 players — it looks like FPL publishing its own
+price forecast, which would be a direct upgrade on our threshold model. It
+is not, yet. Across all 600 players there is exactly **one distinct value**:
+
+    [{"offset":0,"projected_percent":"0","likelihood":0},
+     {"offset":1,"projected_percent":"0","likelihood":0},
+     {"offset":2,"projected_percent":"0","likelihood":0}]
+
+Calafiori (net +28,214) and Pedro Porro (net −47,283) carry identical
+all-zero projections. `price_change_calibrating` is false for all 600.
+`price_change_percent`, `price_change_hourly_rate` and
+`price_change_locked_until` are empty for all 600.
+
+So the schema is real, named and three days deep (offset 0/1/2), and carries
+no information today. A fill-rate check alone reports it as populated,
+because a non-empty array of zeroes is still a non-empty array — the
+distinct-value count is what catches it. **Re-check after the first price
+change lands: if `likelihood` starts varying, FPL is publishing the forecast
+our panel currently estimates, and that is worth building on.**
+
+`game_config.settings.price_change_deadlines` gives the actual times:
+`2026-08-22T23:00:00Z`, `2026-08-23T23:00:00Z`, `2026-08-24T23:00:00Z`.
+Our price panel hardcodes "00:00 UK time" in user-facing copy. That is
+correct today (23:00 UTC = 00:00 BST) and becomes wrong at the October clock
+change. Reading the published timestamp fixes that permanently.
+
+### The rest of what bootstrap publishes and we never read
+
+14/14 of the fields on my hand-written price list are present. `now_cost`, `cost_change_event`,
+`transfers_in_event`, `transfers_out_event`, `selected_by_percent`,
+`value_form`, `value_season` and `now_cost_rank` are all referenced in
+`index.html`. `cost_change_start` is not (0 references) — it is season-to-date
+drift, which would be a reasonable addition to a player profile once it is
+non-zero, but there is nothing to show today.
+
+`value_form` / `value_season` are non-zero for only 31/600 and cap at 2.0 —
+too early in the season to rank on.
+
+### `element-summary` publishes the real owner count — and it is not worth using
+
+`element-summary/{id}/history[]` carries `selected`, the actual number of
+managers owning the player. Our shipped `priceChangeProb` has to estimate
+that as `total_players × selected_by_percent / 100`, because bootstrap gives
+no better. Measured across the ownership range:
+
+| player | own% | actual `selected` | our estimate | error |
+|---|---|---|---|---|
+| Haaland | 69.4 | 6,209,794 | 6,325,563 | +1.9% |
+| Rogers | 24.4 | 2,178,086 | 2,223,973 | +2.1% |
+| Kelleher | 5.8 | 513,912 | 528,649 | +2.9% |
+| Sels | 1.6 | 140,711 | 145,834 | +3.6% |
+| George | 0.3 | 24,527 | 27,344 | +11.5% |
+| Davies | 0.1 | 11,845 | 9,115 | −23.0% |
+| Kamara | 0.0 | 555 | 9,115 | **16× too many** |
+
+The error explodes as ownership falls, exactly as `selected_by_percent`
+being published to one decimal place predicts. That looks like a strong case
+for using `selected` instead — **and it is wrong**, because of our own floor.
+
+The threshold is `max(20000, 0.30 × owners)`. The `0.30 × owners` term only
+overtakes the 20,000 floor above 66,667 owners — **0.73% ownership**. So:
+
+- **Below 0.73% ownership** the threshold is pinned at 20,000 and the owner
+  error changes *nothing*. Kamara's 16× error moves the threshold not at all.
+- **Above 0.73%** the estimate is accurate to within 3.5%, and the threshold
+  moves by at most 3.5%.
+
+Run through the shipped function, the largest probability change anywhere in
+the sample is **two percentage points** (Sels 57%→59%, Kelleher 20%→21%).
+That would cost one extra HTTP request per player — 600 calls to redraw the
+price panel — to move a displayed estimate by ≤2pp. Not worth it.
+
+Recorded so this is not re-investigated. If the threshold floor is ever
+lowered, revisit: the floor is the only reason the estimate is good enough.
+
+---
+
+## Unused bootstrap fields, measured 22 Aug 2026
+
+`dev/fpl-bootstrap-unused.mjs`, run 10 of the FPL endpoint probe workflow.
+Every field bootstrap returns, tested against a word-boundary match in
+`index.html`, reported with fill rate and a real value.
+
+**This says "unconsumed", not "new".** We store no baseline, so one snapshot
+cannot tell an addition from something that was always there and never read.
+The run prints a field fingerprint for a future diff; commit one to make the
+stronger claim possible.
+
+**45 unused and populated, 17 unused and empty.** The split matters: an
+all-zero column is not an opportunity. And note the trap one level down —
+`price_change_projections` counts as populated (non-empty array) while
+carrying nothing but zeroes, which only the distinct-value check exposed.
+
+### Worth acting on
+
+| what | evidence | why |
+|---|---|---|
+| `chips[]` `start_event` / `stop_event` / `chip_type` | 8/8 | wildcard 2–19 & 20–38, freehit 2–19 & 20–38, bboost 1–19 & 20–38, 3xc 1–19 & 20–38. **The two-half chip rules, published.** The rival card deliberately omits "chips remaining" because those rules were unverified — this verifies them. |
+| `game_config.scoring` | full table | `goals_scored {GKP:10, DEF:6, MID:5, FWD:4}`, `defensive_contribution {DEF:2, FWD:2, GKP:0, MID:2}`, `assists 3`, `clean_sheets {DEF:4, GKP:4, MID:1}`, cards, own goals. Authoritative and self-updating on a rule change, where hardcoded constants are not. |
+| `game_config.settings.price_change_deadlines` | 3 timestamps | replaces hardcoded "00:00 UK time" copy; survives the clock change. |
+| `game_config.rules` | — | `squad_total_spend 1000`, `transfers_sell_on_fee 0.5`, `max_extra_free_transfers 4`, `transfers_cap 20`, `squad_team_limit 3`, `stats_form_days 30`. |
+| `*_rank` on elements | 600/600 | `influence_rank`, `creativity_rank`, `threat_rank`, `ict_index_rank`, `now_cost_rank`, `points_per_game_rank`, `selected_rank`. Cheap "Nth of 600" context. |
+| `opta_code` (e.g. `p154561`), `teams[].pulse_id` | 600/600, 20/20 | stable join keys to other providers, no name-matching. |
+| `events[].deadline_time_epoch` | 38/38 | integer deadline, no date parsing. |
+| `known_name` (68/600), `team_join_date` (584/600), `element_types[].element_count` | — | small profile detail. |
+
+### Published but empty — not opportunities
+
+`cost_change_event_fall`, `cost_change_start`, `cost_change_start_fall`,
+`price_change_percent`, `price_change_hourly_rate`,
+`price_change_locked_until`, `corners_and_indirect_freekicks_text`,
+`direct_freekicks_text`, `penalties_text`, `scout_risks`,
+`teams[].team_division`, `teams[].link_url`, `events[].release_time`,
+`events[].deadline_time_game_offset`, `events[].transfers_made`,
+`element_types[].squad_min_select`, `element_types[].squad_max_select`.
+
+The three set-piece `*_text` fields being empty is worth noting: we already
+read the `*_order` integers, and the text that would explain them is not
+populated. `game_config.scoring.mng_*` is present but zeroed throughout —
+manager scoring exists in the schema and is not active.
+
+### The existing field diff was hiding findings
+
+`dev/fpl-endpoint-probe.mjs` asks `appSrc.includes(name)`. On this run that
+overstated use for **14 fields**, including every `*_rank` above,
+`transfers_in`, `transfers_out` and `goals_conceded` — short names that
+appear somewhere in a twenty-thousand-line file regardless. The error runs in
+the direction that conceals opportunities, so that diff should not be read as
+a coverage report.
+
+---
+
+## What was wired in, 22 Aug 2026
+
+Acting on the sweep above. Everything here reads the game where the game
+publishes it and falls back to a constant where it does not — the contract
+`fplRules` already used.
+
+### A real scoring bug, found by asking the game
+
+The projection engine restated the points table inline, three times, as
+`type<=2?6:type===3?5:4`. `type<=2` lumps goalkeepers in with defenders, so
+**a goalkeeper's goal was scored at 6 when the game pays 10.**
+
+It could not have been found any other way. The constant was the only
+statement of the rule anywhere in the app, so every test agreed with it by
+construction. Rare enough to be worth almost nothing in expectation, and
+wrong regardless.
+
+Now `SCORING`, from `game_config.scoring`, joined to element_type ids
+**through `element_types[].singular_name_short`** rather than an assumed
+1=GKP — a renumbering would otherwise score every position as another one,
+silently. All four positions map or none does: a half-mapped table would
+score two positions by the new rules and two by the old.
+
+Thresholds stay constant. `game_config.scoring` publishes the *points* a
+defensive contribution earns (2 outfield, 0 keeper), not the stat count
+needed to earn them (10 defenders, 12 otherwise). Unpublished rules stay
+honest constants.
+
+### Chip windows: the thing the rival card refused to show
+
+`chips[]` carries one row per chip per window. `fplChipWindows` parses them;
+`chipStatus` marks each window `played` / `available` / `upcoming` /
+`expired` / `unknown`.
+
+A chip is spent for a **window**, matched on name *and* gameweek range. That
+is the whole rule: matching on name alone marks both halves used the moment
+one is, which is exactly the confident-wrong number the card was written to
+avoid. Absent `chips[]` reverts to the old honest blank rather than rendering
+an empty "nothing left" list.
+
+### The free-transfer cap is published after all
+
+`RULES_FALLBACK`'s comment said the cap was not in the API. `game_config.rules.max_extra_free_transfers`
+is 4 — one a week plus four banked is the five `FT_CAP` had hard-coded all
+along. **Two independent sources agreeing on today's value is the only reason
+this reading is trustworthy** rather than a guess at what the field means.
+Out-of-range values fall back rather than clamp, so a disagreement surfaces
+instead of hiding. The 4-point hit is still unpublished and still a constant.
+
+### Price-change times
+
+`game_config.settings.price_change_deadlines` replaces copy that asserted
+"00:00 UK time" — right today only because 23:00 UTC is midnight BST, and an
+hour wrong from the October clock change, on a page whose subject is a
+deadline. Absent schedule says nothing rather than inventing a time.
+
+### Overall ranks
+
+`selected_rank` and `points_per_game_rank` on the player card. Only these
+two: they answer a question the positional `*_rank_type` fields already there
+cannot — "7th most-owned player" is a much stronger claim than "7th
+most-owned defender". The other five overall ranks duplicate their positional
+twins closely enough that showing all seven would be noise.
+
+### Deliberately not wired in
+
+- **`opta_code`, `teams[].pulse_id`** — stable join keys, and nothing to join
+  to. Adding them now would be dead code that reads as capability.
+- **`price_change_projections`** — all-zero for all 600 players today, and
+  the standing rule is that this app never presents somebody else's
+  projection as fact. Revisit when `likelihood` starts varying.
+- **`can_transact` / `can_select` / `special` / `has_temporary_code`** — flags
+  for a transfer UI this app does not have; it is read-only.
+- **`known_name`, `team_join_date`, `element_count`, `deadline_time_epoch`** —
+  real but cosmetic; no panel is worse without them.
+
+---
+
+## FPL's price figure replaced our estimate, 22 Aug 2026
+
+The projections went live overnight, and the re-check condition recorded above
+was met: `price_change_projections` went from **1 distinct value across 600
+players** (all zeroes) to **319**.
+
+| player | net transfers | `price_change_percent` | projections (today / +1d / +2d) |
+|---|---|---|---|
+| Calafiori | +32,603 | **+19.9** | 32.5 → 52.5 → 72.5 |
+| Pedro Porro | −53,734 | **−7.4** | −11.3 → −17.5 → −23.7 |
+
+### Why it replaced ours rather than sitting beside it
+
+Measured against 379 players moving on both sides:
+
+- **Direction agrees 378/379 (99.7%)** — the one disagreement is a player FPL
+  has at −0.1%, flat within rounding. Direction was never the problem.
+- **Rank correlation rho = 0.30.** Ours compresses nearly every mover into a
+  12–18% band while FPL spreads them −23 to +20. Martinelli at −23.3 and
+  Tzolis at +13.4 came out of our model as 14% and 13% — indistinguishable.
+
+Ordering is the entire point of a "closest to a move" table, so ours was close
+to noise against the real thing. Showing both without explaining that would
+present a near-random ordering as a second opinion.
+
+### What is deliberately not read
+
+- **`likelihood`** on each projection — a small signed integer of unknown
+  scale (2/3/4 for one player, −1/−2 for another). Labelling it from a handful
+  of rows is the mistake `region` is still unshipped for.
+- **No threshold is named.** We rank by the figure and show it as published.
+  Claiming "100% is where the price moves" would invent a rule the API does
+  not state, and ranking needs no threshold.
+
+### The fallback is a claim about provenance, so it is tested
+
+`priceSource()` decides which number is on screen and the copy says which:
+"FPL's own figure" or "our estimates". A panel that silently swaps between a
+published figure and an approximation of it makes the same number mean two
+different things on different days.
+
+It falls back when there is nothing to show *and* in two cases where the field
+is populated but saying "FPL's own figure" would still be false:
+
+- **every player flat** — exactly what the API served the day before it went
+  live, and an all-zero table is not FPL telling us anything;
+- **every figure locked** — `price_change_locked_until` was set on 30 players;
+  a locked player cannot move price, so a table of them is not a price panel.
+
+Locked players are excluded from the tables and their count is disclosed.

@@ -142,6 +142,14 @@
   status = 200
   force = true
 
+# Enrichment layer: combines the official FPL feed with external providers.
+# READ-ONLY — it fetches and merges, and has no write path of any kind.
+[[redirects]]
+  from = "/api/enrich"
+  to = "/.netlify/functions/enrich"
+  status = 200
+  force = true
+
 # Owner-only feedback inbox. Separate function from the public write above:
 # one handler doing both means a single wrong branch exposes every message.
 [[redirects]]
@@ -273,6 +281,32 @@
   for = "/data/*"
   [headers.values]
     Cache-Control = "public, max-age=86400, stale-while-revalidate=604800"
+
+# The vendored rotation signal. Two rules, because the three files in here
+# have genuinely different lifetimes and caching them alike gets one of them
+# wrong — the same pinned-versus-live distinction the vendoring rests on.
+#
+# The module and the fitted coefficients are PINNED to an upstream commit and
+# only ever move on a deliberate re-vendor, which is itself a deploy. An hour
+# of freshness with a day of stale-while-revalidate costs nothing and saves a
+# round trip on every load.
+[[headers]]
+  for = "/vendor/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, stale-while-revalidate=86400"
+
+# The cup and European calendar is the LIVE input and the whole signal decays
+# behind it: a club whose midweek tie is missing reads as rested, confidently
+# and wrongly. It is refreshed daily and it is 5 KB, so it must never be served
+# from a cache the daily pull cannot reach — an FPL deadline falls inside the
+# stale window above, and a rotation flag that arrives after the deadline is
+# not a flag. Always revalidate; a 304 is cheap and correctness here is not.
+#
+# Listed after the rule above so it overrides it for this one path.
+[[headers]]
+  for = "/vendor/pl_other_fixtures.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
 
 # Scheduled push sender (hourly).
 [functions."push-cron"]

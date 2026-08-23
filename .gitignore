@@ -24,3 +24,4 @@ scripts/recap/*.json
 scripts/recap/out/
 scripts/social/.challenge-build/
 www/
+.env

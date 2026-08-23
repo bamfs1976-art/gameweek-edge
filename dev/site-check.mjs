@@ -36,6 +36,15 @@ const CHECKS = [
 
   { path: '/api/efl/health', status: [200, 503], json: true, why: 'the EFL feed health check' },
 
+  /* The enrichment layer, added 18 Aug 2026. Also THIS deploy's proof: the
+     MARKER below lives in index.html, and index.html did not change in this
+     release, so a marker check cannot tell this build from the last one. A
+     new ROUTE can. 503 is allowed because it is the endpoint's honest answer
+     when the official FPL feed is unreachable — that is a working endpoint
+     reporting a bad upstream, not a broken deploy. */
+  { path: '/api/enrich?players=1&news=0', status: [200, 503], json: true,
+    why: 'the enrichment endpoint (new 18 Aug)' },
+
   /* Added 11 Aug 2026, and it failed for three mornings running. Found by
      accident — a probe chasing something unrelated got a 503 back from this
      endpoint saying "FOOTBALL_DATA_KEY is not configured". The key was not
@@ -85,6 +94,17 @@ const UA = 'Mozilla/5.0 (compatible; GameweekEdgeSiteCheck/1.0; +https://gamewee
    a retry says so in the output, because "flaky" is a finding too. */
 const RETRIES = 2;
 const BACKOFF_MS = 1500;
+/* Every request gets a deadline. Without one this script hung for a quarter
+   of an hour on a check that normally takes fifteen seconds, and would have
+   sat there until GitHub's six-hour job limit — a deploy verification that
+   never returns is indistinguishable from one that has not been run, and it
+   holds the answer hostage either way. The retry loop makes it worse, not
+   better: a hang never throws, so it never retries.
+
+   The same fix went into dev/probe-squad-nationality.mjs and
+   dev/open-api-probe.mjs when it bit there. It should have come here at the
+   same time. */
+const TIMEOUT_MS = 15000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function request(url) {
@@ -95,6 +115,7 @@ async function request(url) {
       return {
         res: await fetch(url, {
           headers: { 'User-Agent': UA, Accept: '*/*' },
+          signal: AbortSignal.timeout(TIMEOUT_MS),
           /* Manual, because "it redirects" and "it serves the same page" are
              different promises and only one of them was made. */
           redirect: 'manual'
@@ -190,8 +211,45 @@ try {
    to be updated when it stops being new — and a stale marker fails loudly
    here rather than silently passing, because the string will still be
    present and the check will simply stop being informative. Hence the date. */
-const MARKER = { text: 'id="feedback-btn"', since: '2026-08-16',
-  what: 'the feedback button in the topbar' };
+const MARKER = { text: 'function plannerVsCard', since: '2026-08-22',
+  what: 'the squad planner working all season, against your own budget' };
+/* Rotated from 'function leagueEO' (2026-08-22), before that
+   'function squadMatchday', 'function titleRace' and
+   'function fixtureOver' (all 2026-08-22).
+
+   RESOLVED 2026-08-22 16:48. Those four, plus the price panel and the
+   auto-subs fix, spent a day pushed-but-unverified because the GitHub
+   connector dropped mid-session and neither curl nor WebFetch can reach
+   the site from the sandbox. The connector came back and run
+   32585799682 reported:
+
+     ✓ deployed build  carries the detailed mini-league view with
+                       effective ownership (added 2026-08-22)
+
+   All six were ancestors of that build, so one marker confirmed the lot
+   — which is the argument for rotating the marker on every release
+   rather than only on the ones that feel significant. Before that:
+   'function applyAutoSubs' (2026-08-22), and before it from
+   'function fplPriceMove' (2026-08-22), which shipped in the
+   previous build but was never confirmed live \u2014 the GitHub connector
+   dropped out of that session before the site check could run, so that
+   release is pushed-but-unverified and this marker covers both.
+   Rotated from 'function fplChipWindows' (2026-08-22 morning), which had
+   landed. Rotated from '.dl-grow > .rv-open > .dl-nm' (2026-08-22), and from
+   'id="rival-fpl-note"' (2026-08-21 evening), which had landed in
+   the previous build. Rotated from 'id="rival-modal"' (2026-08-21 morning), and from
+   'id="fdr-rows"' (2026-08-19) before that, each of which had done its job and
+   stopped: by 21 Aug it was live in the previous build, so a green run proved
+   the site was healthy and said nothing about whether the newest deploy had
+   landed. That is the second time this marker has aged out, and the second
+   time it was noticed only because somebody asked which build it belonged
+   to — before that, 'fdr-rows' was rotated in from 'id="feedback-btn"'
+   (2026-08-16) for exactly the same reason.
+
+   The pattern is the point: this string has to be rotated on every
+   user-visible change, and the failure mode is silent. It does not go red
+   when it goes stale; it goes green for the wrong reason. Anyone shipping a
+   change to index.html should assume this line is their job. */
 
 /* Are we even talking to the site?
 

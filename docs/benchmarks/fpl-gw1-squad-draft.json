@@ -1,0 +1,421 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "own-pick",
+  "recordedAt": "2026-08-19T12:34:00+01:00",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "hoursBeforeLock": 54,
+  "note": "The owner's GW1 draft squad, read off the Fantasy Premier League app. Recorded so git history is the evidence it predates the football — the same rule the EFL ledger runs on. It is a DRAFT, not a submitted entry, and it may change before the deadline.",
+  "source": {
+    "readFrom": "screenshot of the FPL app Transfers screen",
+    "stateAtCapture": "Unlimited free transfers, 0 pts cost, budget £0.0m, Wildcard and Free Hit both unavailable — the pre-season state before any gameweek has been played.",
+    "whatIsNotVisible": "The captain and vice-captain, and the starting eleven versus bench order. The pitch view shows a 5-5-3 arrangement of all fifteen, not a submitted XI."
+  },
+  "squad": [
+    {
+      "name": "Kinsky",
+      "pos": "GK",
+      "price": 4.5,
+      "club": "Tottenham Hotspur",
+      "gw1": "Brentford (A)"
+    },
+    {
+      "name": "Petrovic",
+      "pos": "GK",
+      "price": 4.5,
+      "club": "Bournemouth",
+      "gw1": "Manchester City (A)"
+    },
+    {
+      "name": "Maguire",
+      "pos": "DEF",
+      "price": 5.0,
+      "club": "Manchester United",
+      "gw1": "Hull City (A)"
+    },
+    {
+      "name": "Gabriel",
+      "pos": "DEF",
+      "price": 8.0,
+      "club": "Arsenal",
+      "gw1": "Coventry City (H)"
+    },
+    {
+      "name": "Van Hecke",
+      "pos": "DEF",
+      "price": 5.0,
+      "club": "Tottenham Hotspur",
+      "gw1": "Brentford (A)"
+    },
+    {
+      "name": "Kayode",
+      "pos": "DEF",
+      "price": 4.5,
+      "club": "Brentford",
+      "gw1": "Tottenham Hotspur (H)"
+    },
+    {
+      "name": "Neco Williams",
+      "pos": "DEF",
+      "price": 5.0,
+      "club": "Nottingham Forest",
+      "gw1": "Leeds United (H)"
+    },
+    {
+      "name": "Tielemans",
+      "pos": "MID",
+      "price": 6.0,
+      "club": "Manchester United",
+      "gw1": "Hull City (A)"
+    },
+    {
+      "name": "Mbeumo",
+      "pos": "MID",
+      "price": 8.0,
+      "club": "Manchester United",
+      "gw1": "Hull City (A)"
+    },
+    {
+      "name": "Elliot Anderson",
+      "pos": "MID",
+      "price": 6.5,
+      "club": "Manchester City",
+      "gw1": "Bournemouth (H)"
+    },
+    {
+      "name": "Palmer",
+      "pos": "MID",
+      "price": 9.5,
+      "club": "Chelsea",
+      "gw1": "Fulham (A)"
+    },
+    {
+      "name": "Hughes",
+      "pos": "MID",
+      "price": 4.5,
+      "club": "Crystal Palace",
+      "gw1": "Everton (A)"
+    },
+    {
+      "name": "Joao Pedro",
+      "pos": "FWD",
+      "price": 7.5,
+      "club": "Chelsea",
+      "gw1": "Fulham (A)"
+    },
+    {
+      "name": "Haaland",
+      "pos": "FWD",
+      "price": 15.5,
+      "club": "Manchester City",
+      "gw1": "Bournemouth (H)"
+    },
+    {
+      "name": "Calvert-Lewin",
+      "pos": "FWD",
+      "price": 6.0,
+      "club": "Leeds United",
+      "gw1": "Nottingham Forest (A)"
+    }
+  ],
+  "checkedMechanically": {
+    "budget": "£100.0m of £100.0m exactly. The app's stated £0.0m remaining reproduces from the fifteen prices, so no price was misread off the screenshot.",
+    "shape": "2 GK / 5 DEF / 5 MID / 3 FWD — a legal FPL squad.",
+    "clubLimit": "Manchester United 3 (Maguire, Tielemans, Mbeumo) — at the three-per-club limit, not over. No other club has more than two.",
+    "prices": "Fifteen checked against the official Scout list. Eleven are priced there and ALL ELEVEN AGREE. Four are not in that round-up at all: Petrovic, Kayode, Palmer, Hughes.",
+    "fixtures": "Fifteen GW1 fixtures checked against our register by reciprocity. FIFTEEN OF FIFTEEN AGREE, none conflict.",
+    "whatThatDoesAndDoesNotEstablish": "That the squad was transcribed correctly and that the app and our register agree about the opening card. It establishes nothing whatever about whether the picks are good."
+  },
+  "threeGW1HeadToHeadsINSIDETheSquad": {
+    "what": "Six of the fifteen are in matches where another of the fifteen is on the opposite side.",
+    "the": [
+      {
+        "match": "Brentford v Tottenham",
+        "yours": "Kinsky and Van Hecke (Spurs) against Kayode (Brentford)"
+      },
+      {
+        "match": "Bournemouth v Manchester City",
+        "yours": "Petrovic (Bournemouth) against Elliot Anderson and Haaland (Man City)"
+      },
+      {
+        "match": "Leeds v Nottingham Forest",
+        "yours": "Neco Williams (Forest) against Calvert-Lewin (Leeds)"
+      }
+    ],
+    "whichOnesActuallyMatter": "Only one goalkeeper plays, so the two GK clashes resolve to whichever of Kinsky or Petrovic starts — and if it is Petrovic, his clean sheet is directly against your own Haaland. The Forest-Leeds pairing is a live hedge in the starting eleven: Neco Williams needs a Forest clean sheet, Calvert-Lewin needs Leeds to score.",
+    "whatThisIsNot": "A mistake. Hedging is a choice, and a fifteen with no internal clashes across a twenty-club league would be a coincidence. It is recorded because it is the kind of thing that is invisible on the pitch view and obvious in a fixture table."
+  },
+  "whatOurNINECAPTURESSayAboutEachPick": {
+    "method": "Every pick looked up in the cross-source price data and in the prose of all nine captures. Counts are of captures that STATE a price, which is a measure of how well observed a player is, not of how good he is.",
+    "bestObserved": [
+      "Calvert-Lewin — seven captures at £6.0m, the most-corroborated price row this project holds. 78% of a hundred expert drafts, 26.8% globally.",
+      "Haaland, Mbeumo, Maguire, Elliot Anderson — five captures each, all agreeing.",
+      "Gabriel, Joao Pedro, Palmer — four each."
+    ],
+    "twoPicksNOTHINGWEHOLDCanSpeakTo": {
+      "who": "Petrovic and Hughes.",
+      "what": "Zero of nine captures price either. Our register has no line for either. The official Scout's Bournemouth section names no goalkeeper, and its Crystal Palace section does not mention a Hughes.",
+      "soWhat": "No read is offered on them, in either direction. That is a gap in what we hold, not a verdict on the picks — and saying so is the point, because a silence that looks like a judgement is how this project has gone wrong before."
+    }
+  },
+  "thePickTheEVIDENCELEANSAGAINST": {
+    "who": "Palmer, £9.5m — the second-largest single spend in the squad.",
+    "against": [
+      "FPL Fran marks him AVOID, one of only seven avoids across 102 players.",
+      "fpltips: 'Palmer (£9.5m) is still a strong pick, but right now he is not where I want to spend', preferring Morgan Rogers.",
+      "Tom Hadley's consistency table: a 38% four-plus-points hit rate last season — the weakest per pound of the premium group, against Bruno Fernandes 71% and Gabriel 77%.",
+      "Michal's minutes row reads him at 57% of available minutes last season.",
+      "The official Scout's Chelsea section does not mention him at all, while naming Morgan Rogers and Lacroix as expected GW1 starters and Caicedo as taking corners."
+    ],
+    "forHim": [
+      "BigManBakar makes the opposite case: 'being overlooked after a poor season' at £9.5m and 10% ownership, on penalties, decent early fixtures, 'not a bad deal at all'.",
+      "FPL Fran's own card gives him the highest non-penalty expected goals per 90 on the midfielders sheet at 0.49, while marking him Avoid — the card contradicts its own inputs, which cuts both ways.",
+      "Our register holds him on Chelsea penalties."
+    ],
+    "theHonestSummary": "Four independent negatives, one silence from the official source where a mention would have been expected, and one well-argued positive. Not unanimous, and not close to it either. This is the pick in the draft with the most evidence pointing one way.",
+    "whatItIsNot": "A recommendation to sell. Nothing here is a projection, ownership is not a forecast, and last season's hit rate is a prior rather than a prediction."
+  },
+  "thePickThatSITSAGAINSTOURTOWNREGISTER": {
+    "who": "Gabriel, £8.0m.",
+    "ourRegisterSays": "'11 Aug: Saliba out (back, no return date) — discount every Arsenal defensive asset until the replacement is signed.' The replacement named is Konsa, and the official Scout confirms Konsa is still at Aston Villa.",
+    "theOtherSide": "BigManBakar ('leaving them out is an unnecessary risk') and Sam FPL ('ARS def essential') both say the opposite. FPL Fran marks Gabriel a Great Option. The official Scout confirms both premises of our line — Saliba out for 'an extended period', Timber out for 'weeks' — and then reports that Gabriel completed 90 minutes on Sunday after a career-best 209 points from only 30 starts last season.",
+    "whereThatLeavesTheDraft": "It takes the outside sources' side against this project's own published position. That is a legitimate call and it is the single cleanest gradeable disagreement on file: identical premises, opposite conclusions, settled by Arsenal's GW1-6 clean sheets.",
+    "recorded": "Our register's line is NOT changed by the draft, and the draft is not changed by our register. Both stand, and one of them will be wrong."
+  },
+  "availabilityNotesThatTOUCHTheDraft": {
+    "fromTheOfficialScout": [
+      "Tielemans was 'making his first start of pre-season and looked short of match fitness' in the 4-2 defeat to Milan.",
+      "Mbeumo was named on the bench for the final friendly — the round-up reads it as Carrick being cautious after three starts in a week, not as a problem — and has been playing up front in Sesko's absence.",
+      "Haaland got his first pre-season action in the Community Shield, 53 minutes.",
+      "Kinsky is confirmed by De Zerbi as Tottenham's number one; Van Hecke and Robertson 'look likely to start the season'.",
+      "Neco Williams is named as an enticing option under Glasner's 3-4-3 with 'the onus on them to provide substantial attacking threat from the wing-back positions'.",
+      "Maguire started all but one pre-season match."
+    ],
+    "andNONEOfTheFifteenCarriesAnInjuryFlagInAnyCapture": "Checked against the availability list assembled from the official round-up. The players flagged there — Saliba, Timber, Minteh, Rodri, Nunes, Fofana, Andersen, Kroupi, Onana, Madjo, Abraham, Garnacho, Manzambi, Van den Berg, Mendy, Norgaard, Garner, Porro, Udogie, Van de Ven, Haji Wright — include none of these fifteen."
+  },
+  "oneConcentrationWorthNaming": {
+    "what": "Three Manchester United players — Maguire, Tielemans, Mbeumo, £19.0m together — all in the same GW1 fixture, away at Hull.",
+    "theCaseForIt": "Hull are the Guardian panel's predicted twentieth, were second-bottom for expected points in the Championship last season, and conceded 66 league goals. Their first-choice centre-back Charlie Hughes is ruled out of this exact fixture and their first-choice goalkeeper Butland is out for at least three months.",
+    "theCostOfIt": "It is the three-per-club limit spent on one match. If United draw a blank at the MKM Stadium, three of your fifteen return nothing together.",
+    "recordedNotJudged": "Both halves are true at once and which matters more is a judgement, not a fact."
+  },
+  "gradeableFromThisFile": [
+    {
+      "claim": "The fifteen named players, at these prices, as a GW1 squad",
+      "settlesOn": "GW1 points, and GW1-6 for the squad as a whole"
+    },
+    {
+      "claim": "Gabriel returns despite our register's Arsenal discount",
+      "settlesOn": "Arsenal's GW1-6 clean sheets — the same test the BigManBakar disagreement settles on"
+    },
+    {
+      "claim": "Palmer justifies £9.5m against four negatives",
+      "settlesOn": "his GW1-6 returns per pound against the premium midfield group"
+    },
+    {
+      "claim": "The three-United block pays off at Hull",
+      "settlesOn": "GW1 alone"
+    }
+  ],
+  "whatThisFileDoesNotDo": [
+    "It does not recommend a transfer, a captain or a starting eleven. The captain is not visible in the screenshot and nothing here is a projection.",
+    "It does not change any register line, price row or open conflict.",
+    "It is a DRAFT recorded 54 hours before the deadline and may not be what is submitted."
+  ],
+  "revisions": [
+    {
+      "recordedAt": "2026-08-19T13:55:00+01:00",
+      "hoursBeforeLock": 52.5,
+      "why": "Append-only. The first draft above is left exactly as recorded; this is the state at 13:55, and the captain is visible for the first time.",
+      "fourChanges": [
+        {
+          "out": "Palmer (CHE, £9.5m)",
+          "in": "Tzolis (ARS, £6.5m)",
+          "read": "Takes out the most-flagged pick in the squad and puts in the most-evidenced alternative. Four documents point at Tzolis: LazyFPL's headline call, our own register's early-differentials list, FPL Fran GREAT with the highest G+A/90 on the midfielders card at 1.17, and the official Scout saying he is set to start GW1 on the left with six pre-season assists — the most of any Premier League player."
+        },
+        {
+          "out": "Kayode (BRE, £4.5m)",
+          "in": "Van Dijk (LIV, £6.5m)",
+          "read": "Four captures price Van Dijk at £6.5m. It also removes the Brentford-versus-Spurs clash the first draft carried, and adds the only Liverpool asset in the squad."
+        },
+        {
+          "out": "Petrovic (BOU)",
+          "in": "Verbruggen (BHA)",
+          "read": "Petrovic was priced by zero captures. Verbruggen is mentioned once, in passing, in the BigManBakar capture — 'Gross/Verbruggen have che in GW2' — which treats him as a Brighton asset without pricing him. A marginal gain in what we hold, not a settled one."
+        },
+        {
+          "out": "Hughes (CRY, £4.5m)",
+          "in": "Tonali (TOT)",
+          "read": "SWAPPED ONE PLAYER NOTHING WE HOLD PRICES FOR ANOTHER. Three captures confirm Tonali moved Newcastle to Spurs for around £100m, and NOT ONE of the nine prices him or says anything about his role there. The official Scout's Tottenham section names eight players and he is not among them. Net information about that squad slot: unchanged."
+        }
+      ],
+      "startingXI": "3-4-3. Kinsky; Maguire, Gabriel, Van Dijk; Tielemans, Mbeumo, Elliot Anderson, Tzolis; Joao Pedro, Haaland, Calvert-Lewin.",
+      "captain": "Haaland (C), Tzolis (V) — the first draft recorded the captain as not visible; it is now.",
+      "bench": "Verbruggen (GK), Van Hecke, Neco Williams, Tonali — in that auto-sub order.",
+      "checkedMechanically": {
+        "shape": "2/5/5/3 squad, legal 3-4-3 eleven.",
+        "clubLimits": "Manchester United 3 and Tottenham 3 — BOTH FULL. Arsenal 2, Manchester City 2. Two clubs are now closed to further moves, where the first draft had one.",
+        "fixtures": "Fifteen GW1 fixtures checked against our register by reciprocity. FIFTEEN OF FIFTEEN AGREE.",
+        "internalClashes": "One, and it is XI-against-bench: Calvert-Lewin (Leeds) against Neco Williams (Forest). The first draft had three, two of them inside the eleven. This is a straightforward improvement."
+      },
+      "theBenchBoostQuestion": {
+        "asked": "Whether to play Bench Boost in GW1. The app offers Bench Boost and Triple Captain; Wildcard and Free Hit are unavailable.",
+        "theReadIsNo": "and the reasons are ordered by weight, not by rhetoric.",
+        "one_halfTheBenchIsUnKNOWNToEverythingWeHold": {
+          "wellEvidenced": [
+            "Van Hecke — the official Scout says he and Robertson 'look likely to start the season with fellow Spurs defenders either injured or late returnees', and separately that Porro, Udogie and Van de Ven have not featured at all in pre-season. Three captures price him at £5.0m; FPL Fran marks him GREAT.",
+            "Neco Williams — the official Scout names him and Aina as 'enticing Fantasy options, with the onus on them to provide substantial attacking threat from the wing-back positions' under Glasner's 3-4-3. Three captures at £5.0m, and our register's ~£5.0m estimate confirmed."
+          ],
+          "unknown": [
+            "Tonali — priced by ZERO of nine captures. His club is confirmed three ways and his FPL role is confirmed nowhere.",
+            "Verbruggen — one passing mention in one capture, no price, absent from our register."
+          ],
+          "soWhat": "A chip that can be played once a season would be committed on a bench that is half unevidenced. That is not a claim either player will fail; it is that nothing we hold can speak to them, which is a different and worse position to bet a chip from."
+        },
+        "two_benchBoostRemovesTheSafetyNet": "With the chip active all fifteen score and there are no automatic substitutions. A starter who is rotated or dropped scores nothing and no bench player replaces him. GW1 is the gameweek in which nobody has seen a competitive team sheet, so that risk is at its HIGHEST here, not its lowest.",
+        "three_gw1IsTheCheapestWeekToSpendIt": "Every club plays exactly once. Bench Boost's leverage comes from bench players delivering more than a normal week allows, which is why it is conventionally held for a double gameweek. In GW1 it buys four single fixtures.",
+        "andItConcentrates": "Under Bench Boost the squad would carry three players on Spurs away at Brentford (Kinsky, Van Hecke, Tonali) alongside the three already on Manchester United at Hull — two three-player blocks out of fifteen, across eight matches instead of seven.",
+        "theOtherChipOnOffer": {
+          "what": "Triple Captain, on Haaland at home to Bournemouth.",
+          "forIt": "Five captures price him, 83% of a hundred expert drafts own him against 71% of the field, and the Guardian makes him favourite for a fourth Golden Boot in five seasons.",
+          "againstIt": "He played 53 minutes in the Community Shield and that is his only pre-season action. Tripling a player short of match sharpness is the same class of risk as boosting a bench of unknowns, in a different place.",
+          "notARecommendation": "Recorded as the comparison the Bench Boost question implies, not as advice to play it."
+        },
+        "theRecommendation": "Hold both. Neither chip expires this week, and GW1 carries the least information of any gameweek in the season.",
+        "whatWouldChangeIt": "Confirmed GW1 line-ups naming Tonali and Verbruggen as starters. Those land after the deadline, which is the whole problem."
+      },
+      "onePriceFootnote": "The cross-source checker will not state a single agreed price for Haaland, because FPL Mate's graphic says £15.0m against £15.5m from the official list and three other captures. The official figure stands and the FPL app itself is the authority; noted only so the tool's output is not misread."
+    },
+    {
+      "recordedAt": "2026-08-19T14:21:00+01:00",
+      "hoursBeforeLock": 52,
+      "why": "Append-only. A substantial rebuild, with a new captain and a new shape.",
+      "startingXI": "4-3-3. Kinsky; Maguire, Gabriel, Andy Robertson, Gvardiol; Bruno Fernandes (C), M. Fernandes, Tzolis; Joao Pedro, Haaland (V), Calvert-Lewin.",
+      "bench": "Verbruggen (GK), Mitchell, Hughes, Mac Allister.",
+      "out": [
+        "Van Dijk",
+        "Tielemans",
+        "Mbeumo",
+        "Elliot Anderson",
+        "Tonali",
+        "Van Hecke",
+        "Neco Williams"
+      ],
+      "in": [
+        "Andy Robertson",
+        "Gvardiol",
+        "Bruno Fernandes",
+        "M. Fernandes",
+        "Mitchell",
+        "Hughes (returns)",
+        "Mac Allister"
+      ],
+      "checkedMechanically": {
+        "shape": "2/5/5/3 squad, legal 4-3-3 eleven.",
+        "clubLimits": "Tottenham 3 — FULL. Manchester United, Arsenal, Manchester City and Crystal Palace 2 each.",
+        "fixtures": "Fifteen GW1 fixtures checked by reciprocity against our register. FIFTEEN OF FIFTEEN AGREE.",
+        "internalClashes": "ZERO. Every pair of your players who share a GW1 match is on the SAME side. The first draft had three clashes, the second had one, this has none.",
+        "spread": "Fifteen players across nine matches, up from eight."
+      },
+      "theTwoFernandesInTheSameEleven": {
+        "what": "Bruno Fernandes (Manchester United, £12.0m, captain) and M. Fernandes (Tottenham, £6.0m) both start, and the app labels them 'B.Fernandes' and 'Fernandes'.",
+        "whyItIsWorthNaming": "This is the collision family this project has spent the week on — two Sangares, two Cunhas, Reece James against James Garner, Charlie Hughes against a Palace Hughes. Our own price checker REFUSES to merge 'M. Fernandes' with 'Bruno Fernandes' precisely because a surname match there would be wrong.",
+        "itIsNotAMistake": "They are two real players in two different matches. It is recorded because a team sheet with two near-identical labels is exactly where a fast read goes wrong."
+      },
+      "theCaptaincy": {
+        "pick": "Bruno Fernandes (C), Haaland (V).",
+        "forIt": [
+          "Six captures price him at £12.0m — more than any other player in the squad.",
+          "FPL_Marcello's highest-forecast midfielder: 29.4 predicted points over five gameweeks, from 6.7 points per game last season, the highest in the visible sheet.",
+          "Tom Hadley's table: a 71% four-plus-points hit rate, bettered in the premium group only by Gabriel's 77%.",
+          "89% of a hundred expert drafts and 48.7% of the field — the second most-picked player anywhere.",
+          "Away at Hull: the Guardian panel's predicted twentieth, second-bottom for expected points last season, first-choice centre-back Charlie Hughes ruled out of THIS fixture and first-choice goalkeeper Butland out at least three months.",
+          "United led the league for shots with 596, and he created at least 89 chances more than any other member of the squad."
+        ],
+        "againstIt": [
+          "The OFFICIAL Scout: he 'missed his second penalty in two matches' against Milan, and 'along with Youri Tielemans and Matheus Cunha, Fernandes was making his first start of pre-season and looked short of match fitness'.",
+          "The Guardian: 'Fernandes turns 32 in early September; can he outrun age for another season?' — the only age risk any capture attaches to him."
+        ],
+        "theSharpestPoint": "Two missed penalties in two matches is the strongest thing said against him, and it comes from the game's own publisher rather than a tipster. Penalties are a large share of what a £12.0m midfielder is bought for.",
+        "theViceIsSound": "If Bruno does not start, the armband moves to a player five captures price, at home to Bournemouth. That is the right shape for a vice.",
+        "notARecommendation": "Nothing here is a projection and none of it says captain him or do not."
+      },
+      "theNewPicksByHowWellEvidenced": {
+        "strong": [
+          "Gvardiol £5.5m — five captures. The official Scout: 'started all four friendlies... Gvardiol looks the most secure route into the Man City defence for the moment, with a degree of uncertainty elsewhere.'",
+          "Andy Robertson £4.5m — only one capture prices him, but it is the official one, and it says he and Van Hecke 'look likely to start the season with fellow Spurs defenders either injured or late returnees'. Porro, Udogie and Van de Ven have not featured at all in pre-season. He also assisted against Hoffenheim, and he is the resolution of Sam FPL's 'Robbo should start for Spurs'.",
+          "Mitchell £4.5m — two captures, and the official Scout says Sage's back three makes him and Munoz 'the favourites to start as wing-backs in that system'."
+        ],
+        "betterThanItsOneSourceSuggests": {
+          "who": "M. Fernandes £6.0m at Tottenham.",
+          "thePriceIsThinlyHeld": "Only FPL_Marcello prices him, and the official Scout's Tottenham section names eight players without him — so NOBODY has said he starts for Spurs.",
+          "butTheUnderlyingIsNot": "Hadley's £6m midfield DEFCON bracket ranks him THIRD OF SEVEN — 43% hit rate from 35 starts, 10.5 defensive actions per start, 7 attacking returns — ahead of Le Fee, Gravenberch and Ndiaye. Marcello has him at 135 points from 3,017 minutes, which is a nailed season.",
+          "theGap": "Hadley marks him 'at West Ham', which was last season's club. The underlying numbers are real and they were earned somewhere else, under a different manager, in a different role."
+        },
+        "theWeakestOfTheNewOnes": {
+          "who": "Mac Allister £5.5m.",
+          "what": "Marcello prices him and forecasts 13.4 over five gameweeks — one of the lowest figures in the visible sheet, against 20.6 for Stach at £6.0m. The Guardian says he 'was not alone in struggling last season, but showed this summer just how influential he can be'.",
+          "soWhat": "A bench midfielder, so it costs little. Recorded because it is the one new pick where the evidence points down rather than up."
+        },
+        "stillUnknown": "Verbruggen and Hughes — priced by zero of nine captures, the same two as in the previous draft."
+      },
+      "whatWasGivenUp": {
+        "what": "Mbeumo (five captures, FPL Fran GREAT), Elliot Anderson (five captures, Fran GREAT, the highest CBRIT/90 on the midfielders card at 13.88), Van Dijk (four captures), Van Hecke (three, an evidenced starter) and Neco Williams (three, an evidenced wing-back).",
+        "theTrade": "Five well-observed players out for a squad built around the single most-observed player in it. The eleven is now MORE concentrated on one premium and LESS broadly evidenced than the 13:55 version.",
+        "notAJudgement": "Which of those matters more is a choice about squad shape, not a fact either way."
+      },
+      "theConcentrationThatGREW": {
+        "what": "Three Tottenham players now START together away at Brentford — Kinsky, Robertson and M. Fernandes. In the previous draft the Spurs block was one starter and two bench.",
+        "whyItMatters": "A goalkeeper, a defender and a midfielder all riding one result. A Brentford win takes the clean sheet, the defensive contribution points and the save points together.",
+        "theOffsettingGain": "Internal clashes fell to zero, and the squad now spreads across nine matches rather than eight. Concentration went up in one place and down in another."
+      },
+      "CORRECTION": {
+        "what": "This entry said 'nine of fifteen changed since 13:55'. It is SEVEN.",
+        "theSeven": "Out: Van Dijk, Van Hecke, Neco Williams, Tielemans, Mbeumo, Elliot Anderson, Tonali. In: Andy Robertson, Gvardiol, Mitchell, Bruno Fernandes, M. Fernandes, Hughes, Mac Allister.",
+        "howItHappened": "Counted by hand while writing prose, in a file whose own out/in lists — seven names each — were sitting directly below the sentence. Nothing checked the number against the lists.",
+        "howItWasCaught": "By computing the diffs from the four squads instead of counting them, when asked for a full change log.",
+        "whyItIsRecorded": "It is the smallest possible instance of the fault this project keeps finding: a figure asserted in prose that the structured data beside it contradicts. A guard now compares the stated count to the lists."
+      },
+      "countedChanges": 7
+    },
+    {
+      "recordedAt": "2026-08-19T14:22:00+01:00",
+      "hoursBeforeLock": 52,
+      "why": "One minute after the previous draft. Two changes.",
+      "countedChanges": 2,
+      "out": [
+        "M. Fernandes",
+        "Mac Allister"
+      ],
+      "in": [
+        "Elliot Anderson (returns)",
+        "Gomez (Brighton)"
+      ],
+      "startingXI": "4-3-3, unchanged in shape. Kinsky; Maguire, Gabriel, Andy Robertson, Gvardiol; Bruno Fernandes (C), Elliot Anderson, Tzolis; Joao Pedro, Haaland (V), Calvert-Lewin.",
+      "bench": "Verbruggen (GK), Mitchell, Hughes, Gomez.",
+      "checkedMechanically": {
+        "shape": "2/5/5/3 squad, legal 4-3-3 eleven.",
+        "clubLimits": "MANCHESTER CITY 3 — FULL, and all three START: Gvardiol, Elliot Anderson and Haaland. Six clubs at two.",
+        "fixtures": "Fifteen GW1 fixtures checked by reciprocity. FIFTEEN OF FIFTEEN AGREE.",
+        "internalClashes": "Still zero.",
+        "spread": "Fifteen players across EIGHT matches, down from nine — Liverpool left the squad with Mac Allister."
+      },
+      "theConcentrationIsNowInTheELEVEN": {
+        "what": "Three Manchester City players start together at home to Bournemouth: a defender, a midfielder and the vice-captain.",
+        "againstTheEarlierDrafts": "The 14:21 draft's biggest block was three Spurs; that is now two. The City block moved from two to three and all three are in the eleven.",
+        "whatItMeans": "A clean sheet, defensive contributions and the striker's return all ride one result — and if Bruno Fernandes does not start, the armband moves INTO that same fixture.",
+        "notAJudgement": "Bournemouth at the Etihad is the softest opener any of these players has. Concentration and fixture quality point opposite ways here and the trade is the owner's."
+      },
+      "theBenchIsNowTwoMatches": {
+        "what": "Verbruggen and Gomez are both Brighton at home to Villa; Mitchell and Hughes are both Palace away at Everton.",
+        "whyItMattersOnlyIfBoosted": "Without Bench Boost this is irrelevant — the bench is insurance. With it, four bench points ride two results instead of four.",
+        "andTheBenchBoostReadIsUnchanged": "Hughes and Verbruggen are still priced by zero of nine captures. Gomez is priced by two (FPL_Marcello and FPL Fran, both £5.0m, Fran marking him a Great Option); Mitchell by two, with the official Scout calling him a favourite to start as a wing-back. Half the bench is now evidenced rather than a quarter — better, and not enough to change the answer."
+      },
+      "gomezResolvesAnOldAmBIGUITY": {
+        "what": "Sam FPL's tips card said 'Gomez limped'. Joe Gomez is a Liverpool defender and the card named no club.",
+        "now": "The Gomez in this squad is Brighton's £5.0m MIDFIELDER — FPL_Marcello lists him as 'Gomez BHA' and FPL Fran's midfielders card has 'Gomez*' at £5m with Brighton's fixture run.",
+        "whatIsStillNotEstablished": "Whether Sam FPL meant HIM. That card names no club either, and this identifies the priced player rather than the sentence."
+      }
+    }
+  ]
+}

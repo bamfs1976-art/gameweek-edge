@@ -1,0 +1,119 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-19T09:38:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "A survey of 100 FPL expert GW1 drafts, published two days before the deadline, giving the ten most-picked players with expert and global ownership and a GW1-4 fixture grid. The first ownership data this project holds, and the first source to disagree with the official price list.",
+
+  "source": {
+    "name": "FPL Mate (Dan)",
+    "handle": "@FPLMate",
+    "platform": "X",
+    "verified": "blue verification badge",
+    "postedAt": "2026-08-19T09:21:00+01:00",
+    "reach": "9.5K views, 81 likes, 23 bookmarks, 4 reposts",
+    "readFrom": "screenshot",
+    "method": "'I looked at 100 FPL Expert GW1 drafts' — a hand-collected sample, with no list of whose drafts, how they were chosen, or when they were read.",
+    "commercialInterest": "Drives traffic to a YouTube channel — 'More expert data and trends on my YouTube channel' with a link, repeated in a self-reply. Nothing is sold."
+  },
+
+  "theSample": {
+    "whatItIs": "100 drafts by people the author classes as experts, against the global ownership figure for the same players.",
+    "whatWeCannotCheck": "Who the hundred are, how they were selected, whether the drafts were final, and whether the global figures were pulled at the same moment. None of that is stated, so the expert percentages are unverifiable and the gap between expert and global is the interesting quantity rather than either number alone.",
+    "whyItIsWorthHoldingAnyway": "This project holds no ownership data at all and cannot reach the API that would supply it. A gradeable snapshot of what the field looked like before a ball was kicked is worth having even at second hand, because after the deadline it cannot be reconstructed."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "fplmate",
+    "statedTotal": 10,
+    "exact": [
+      { "player": "Joao Pedro", "price": 7.5 },
+      { "player": "Bruno Fernandes", "price": 12.0 },
+      { "player": "Haaland", "price": 15.0 },
+      { "player": "Calvert-Lewin", "price": 6.0 },
+      { "player": "Calafiori", "price": 5.5 },
+      { "player": "Kinsky", "price": 4.5 },
+      { "player": "Mbeumo", "price": 8.0 },
+      { "player": "Szoboszlai", "price": 7.0 },
+      { "player": "Gross", "price": 5.5 },
+      { "player": "Maguire", "price": 5.0 }
+    ],
+    "bands": [],
+    "notEnumerated": "Only the ten most-picked players are shown. This is a top-ten list, not a price table, and nine of the ten are prices the official source also states."
+  },
+
+  "theFirstPriceDISAGREEMENTInEightCaptures": {
+    "what": "This graphic prices Haaland at £15.0m.",
+    "whatTheOfficialSourceSays": "£15.5m — in the Scout round-up, in our own register's record movers line ('Haaland priced at a record £15.5m in FPL'), in the Daily Mail capture and in Michal's strikers table.",
+    "verdict": "FPL Mate is wrong. Four sources including the game's own publisher say £15.5m, and there is no version of this where a fifth-hand graphic outranks them.",
+    "whyItIsRecordedRatherThanCorrected": "Because it is the first time in 400-odd stated prices across eight captures that any two sources have disagreed at all, and a checker that had never reported a disagreement would be indistinguishable from a checker that could not. This one row is the evidence the instrument works.",
+    "andWhatItDoesNOTImply": "Nothing about the ownership figures beside it. A price typo in a graphic is not a reason to discount the survey it decorates — that would be the reverse of the fault this project keeps finding, and just as wrong."
+  },
+
+  "theTenPicks": [
+    { "rank": 1, "player": "Joao Pedro", "pos": "FWD", "club": "Chelsea", "price": 7.5, "expertPct": 93, "globalPct": 59.3 },
+    { "rank": 2, "player": "Bruno Fernandes", "pos": "MID", "club": "Man Utd", "price": 12.0, "expertPct": 89, "globalPct": 48.7 },
+    { "rank": 3, "player": "Haaland", "pos": "FWD", "club": "Man City", "price": 15.0, "expertPct": 83, "globalPct": 71.0, "priceNote": "stated £15.0m here; the official price is £15.5m" },
+    { "rank": 4, "player": "Calvert-Lewin", "pos": "FWD", "club": "Leeds", "price": 6.0, "expertPct": 78, "globalPct": 26.8 },
+    { "rank": 5, "player": "Calafiori", "pos": "DEF", "club": "Arsenal", "price": 5.5, "expertPct": 77, "globalPct": 25.4 },
+    { "rank": 6, "player": "Kinsky", "pos": "GKP", "club": "Tottenham", "price": 4.5, "expertPct": 69, "globalPct": 20.4 },
+    { "rank": 7, "player": "Mbeumo", "pos": "MID", "club": "Man Utd", "price": 8.0, "expertPct": 67, "globalPct": 29.9 },
+    { "rank": 8, "player": "Szoboszlai", "pos": "MID", "club": "Liverpool", "price": 7.0, "expertPct": 53, "globalPct": 41.2 },
+    { "rank": 9, "player": "Gross", "pos": "MID", "club": "Brighton", "price": 5.5, "expertPct": 47, "globalPct": 11.8 },
+    { "rank": 10, "player": "Maguire", "pos": "DEF", "club": "Man Utd", "price": 5.0, "expertPct": 46, "globalPct": 11.9 }
+  ],
+
+  "oneOwnershipFigureWeCanCROSSCHECK": {
+    "what": "The official Scout round-up says Calvert-Lewin's Fantasy ownership is 'above 25 per cent'.",
+    "thisGraphic": "26.8% global.",
+    "verdict": "AGREES, and it is the only ownership claim in any capture that can be checked against another. Two sources, one official, on a number this project holds no data for.",
+    "andTheOtherNine": "Unverifiable from anything we hold."
+  },
+
+  "whereTheEXPERTSDIVERGEFromTheField": {
+    "why": "The gap between the two columns is the only quantity here that does not depend on trusting either figure absolutely, because a systematic bias in the sample cancels.",
+    "widestGaps": [
+      { "player": "Gross", "expert": 47, "global": 11.8, "gap": 35.2 },
+      { "player": "Maguire", "expert": 46, "global": 11.9, "gap": 34.1 },
+      { "player": "Joao Pedro", "expert": 93, "global": 59.3, "gap": 33.7 },
+      { "player": "Calvert-Lewin", "expert": 78, "global": 26.8, "gap": 51.2 },
+      { "player": "Calafiori", "expert": 77, "global": 25.4, "gap": 51.6 },
+      { "player": "Kinsky", "expert": 69, "global": 20.4, "gap": 48.6 }
+    ],
+    "theOneWhereTheFieldIsAHEAD": "Haaland — 83% expert against 71.0% global is the narrowest gap on the board bar Szoboszlai, and Haaland is the only player the field owns more of in absolute terms than any expert pick.",
+    "whatThisTouchesInOurOwnWork": "Calvert-Lewin at £6.0m is the price row five captures agreed on and our register still does not hold. He is now also the fourth most-picked player among experts at 78%, against 26.8% of the field. Whatever else, this is not a differential."
+  },
+
+  "theGW1To4Grid": {
+    "what": "Each of the ten rows carries GW1-4 opponents with home and away, which is eight clubs' fixtures in a structured grid rather than prose.",
+    "checkedAgainstOurRegister": { "cells": 32, "agree": 30, "conflict": 0, "unheld": 2 },
+    "theTwoUnheld": "Manchester United GW4 and Manchester City GW4 — the exact gap our register has carried since the fixture card was settled on 13 August.",
+    "whatTheGridSays": "Manchester United GW4: MCI (H). Manchester City GW4: MUN (A). Reciprocally consistent.",
+    "theRunningCountOnTheGW4Derby": {
+      "statementsThatGW4IsAManchesterDerby": 4,
+      "byWhom": ["the FPL Challenge tile wording (our own derivation by elimination)", "BigManBakar ('City play United away')", "Daily Mail / Holly Shand ('Old Trafford providing the backdrop')", "FPL Mate's fixture grid"],
+      "statementsOfTheVENUE": 3,
+      "whatIsNEWHere": "The first of the four that is a STRUCTURED FIXTURE GRID rather than a sentence. The three before it were prose, and prose is where this project has made its transcription errors; a grid cell that says MUN (A) beside a grid cell that says MCI (H) is checkable by reciprocity, and it checks.",
+      "andItIsSTILLNotWrittenIntoTheRegister": "Our register holds no GW4 row for either Manchester club and this file does not add one. A benchmark records what a source said. But the case for an edit is now four statements strong, three of them on the venue, one of them structured — and the FPL Challenge GW4 pick that was derived by elimination has never depended on any of them."
+    },
+    "andOneOpenQUESTIONITCLOSES": {
+      "what": "A note has stood since the Hadley capture asking whether Sunderland's GW4 is at home to Arsenal or away.",
+      "thisGrid": "Arsenal GW4: SUN (A).",
+      "ourRegister": "Sunderland GW4: Arsenal (H).",
+      "verdict": "The same fixture, stated from opposite ends. There was never a conflict — Arsenal away IS Sunderland at home — and the open question was our own confusion rather than a disagreement between sources. Closed, with the cause recorded."
+    }
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Joao Pedro is the most-picked player among experts at 93%", "gradeable": "weakly", "settlesOn": "nothing we can reach; recorded as a snapshot, not a claim to grade" },
+    { "claim": "The GW4 Manchester derby is at Old Trafford", "gradeable": true, "settlesOn": "the published GW4 card" },
+    { "claim": "Calvert-Lewin's global ownership is 26.8%", "gradeable": true, "settlesOn": "the official ownership figure at the deadline, which agrees with the Scout's 'above 25 per cent'" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing automatically. The GW4 Manchester rows are now four-source supported and remain an owed edit rather than an applied one.",
+    "The Sunderland GW4 open question is closed as our own confusion, not a source conflict.",
+    "The Haaland £15.0m figure is recorded as WRONG against the official £15.5m and changes no price row."
+  ]
+}

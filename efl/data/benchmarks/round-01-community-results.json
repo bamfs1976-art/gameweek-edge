@@ -1,0 +1,108 @@
+{
+  "round": 1,
+  "competition": "Fantasy EFL 2026-27",
+  "kind": "community-capture",
+  "capturedAt": "2026-08-18T08:30:00.000Z",
+  "note": "Two X posts captured on the morning of 18 August 2026. One reports a settled round 1; the other is a round 2 forecast made before round 2 was played, so git history is the evidence it predates the football.",
+
+  "whyThisFileMattersMoreThanItsContents": {
+    "what": "The round-1 screenshot is what exposed a fault in this project's OWN published record.",
+    "how": "It shows real Fantasy EFL round-1 scores as small positive integers — 2, 12, 3, 8, 5, 15, 6 — against a stated GW1 average of 44 and a squad total of 54. Our ledger had graded the same round with every one of 3,442 players on roughly minus two hundred and fifty points and our squad on -1899.",
+    "outcome": "The grading was diagnosed as a season-rollover subtraction, voided, and a guard added so it cannot publish again. See voidedGrading in efl/data/rounds/round-01.json.",
+    "theUncomfortablePart": "Nothing inside this project caught it. The ledger graded, committed and published a round that describes nothing, and the model's rank correlation was published at -0.718 as though it were a verdict on the model. It took a stranger's screenshot."
+  },
+
+  "sources": [
+    {
+      "id": "feflfinny-gw1",
+      "name": "FEFLFinny",
+      "handle": "@FEFLFinny",
+      "platform": "X",
+      "verified": "no verification badge shown",
+      "postedAt": "2026-08-18, captured about a minute after posting",
+      "kind": "a manager reporting their own settled round-1 result",
+      "readFrom": "screenshot"
+    },
+    {
+      "id": "enginefant-gw2",
+      "name": "FantasyEngine",
+      "handle": "@EngineFant",
+      "platform": "X",
+      "verified": "the handle carries a blue verification badge",
+      "postedAt": "2026-08-18T08:57:00+01:00 (stamped on the post), 51 views at capture",
+      "kind": "two club selections for round 2, with stated reasoning",
+      "readFrom": "screenshot",
+      "note": "The avatar is an illustrated robot and the account name is 'FantasyEngine', which reads as an automated or model-driven account. It carries no platform AI-content label, so unlike the fpltips capture on the FPL side this is an inference from presentation, not a stated fact. Recorded as such."
+    }
+  ],
+
+  "observedRoundOneScores": {
+    "provenance": "Read off @FEFLFinny's own squad screenshot. These are ANOTHER MANAGER'S players, not ours, and the value here is the SCALE of Fantasy EFL round-1 scoring, not the individual picks.",
+    "squadTotal": 54,
+    "statedRoundAverage": 44,
+    "formation": "2-2-2",
+    "players": [
+      { "name": "R. Vitek", "position": "GK", "points": 2 },
+      { "name": "R. Balker", "points": 12, "note": "described as a double-digit haul" },
+      { "name": "Y. Mosquera", "points": 3, "club": "Wolves (orange shirt)" },
+      { "name": "L. Connell", "points": 8, "role": "captain" },
+      { "name": "A. Devine", "points": 5 },
+      { "name": "W. Lankshear", "points": 15, "role": "vice-captain", "note": "described as a double-digit haul" },
+      { "name": "O. Pearce", "points": 6 }
+    ],
+    "twoFurtherPlayersNotFullyVisible": "The screenshot cuts off below the front two, showing two more shirts (Leicester City and one other) without their scores. Seven of a seven-player squad are named in the visible rows, so the cut-off shirts are presumably the bench or a larger squad than our rules model — either way they are NOT transcribed, because a number that cannot be read is not a number.",
+    "whatThisEstablishes": "Round-1 Fantasy EFL scores are single- and low-double-digit positive integers, and a seven-player squad averages 44. Any grading that puts a squad at -1899 is measuring something else."
+  },
+
+  "gradesSomethingWeAlreadyHeld": {
+    "claim": "Y. Mosquera was independently picked by two community sources before round 1 — recorded in round-01-natethegreat.json as 'two independent lists converging on the same two centre-backs is the strongest community signal in the capture'.",
+    "outcome": "Mosquera scored 3 points in round 1.",
+    "andTheCleanSheet": "@FEFLFinny states 'No Boro or Wolves clean sheets', which settles the clean-sheet half of that pick directly.",
+    "caution": "Three points is one round. This is recorded as the first data point against a pre-round pick, not as a verdict on the source."
+  },
+
+  "roundTwoForecast": {
+    "provenance": "enginefant-gw2, posted before round 2 kicked off",
+    "picks": [
+      {
+        "club": "Luton Town",
+        "fixture": "home to Notts County",
+        "statedReasons": [
+          "fresh off a 4-goal away win against Reading",
+          "Notts County have scored barely 1 goal in their last 6 games across all competitions",
+          "expecting Luton to keep up a strong attacking tempo at home"
+        ]
+      },
+      {
+        "club": "Fleetwood Town",
+        "fixture": "home to Gillingham",
+        "statedReasons": [
+          "maximum 1 goal conceded across their last 8 matches",
+          "Gillingham have failed to score in their official games so far (0-6 goal difference)"
+        ]
+      }
+    ],
+    "gradeable": true,
+    "howItGrades": "Club points for Luton and Fleetwood in round 2, on the same basis the ledger uses for our own club picks — once the ledger can grade again.",
+    "checkableFactsInsideIt": "Every stated reason is a checkable claim about results — Luton's margin at Reading, Notts County's goals in six, Fleetwood's eight-match record, Gillingham's goal difference. NONE of them has been checked here: the Fantasy EFL feed is unreachable from this sandbox (the egress proxy refuses gameweekedge.co.uk), so they are transcribed and left unverified rather than assumed."
+  },
+
+  "oneThingItSaysAboutOurOwnRoundOne": {
+    "what": "The Luton post states a '4-goal away win against Reading'.",
+    "whyItIsRelevant": "Reading was one of this project's two club picks for round 1.",
+    "whatItImplies": "Reading conceded at least four at home in the round we backed them. That is consistent with a poor club return.",
+    "whyItIsNotRecordedAsAResult": "It is a passing clause in a third party's promotional post, not a result table, and 'a 4-goal away win' is ambiguous between a 4-0 scoreline and a four-goal margin. The ledger will grade our club picks from the feed when it can grade again. This is a pointer, not a number."
+  },
+
+  "whatCannotBeSettledFromHere": [
+    "Our own round-1 squad and club points. The feed is unreachable from this sandbox and the lock baseline is unusable across the season rollover. Round 1 is UNGRADED and is recorded as ungraded — not zero, not estimated, and not backfilled from a screenshot of somebody else's team.",
+    "Every factual claim inside the round-2 forecast, for the same reason.",
+    "Whether the two cut-off shirts in the round-1 screenshot were bench players or part of a larger squad."
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "efl/data/rounds/round-01.json: the graded result is VOIDED back to null, with the faulty grading preserved for reference and the full diagnosis appended. The picks, the lock snapshot and every timestamp are untouched.",
+    "scripts/efl/grade-round.mjs: a plausibility guard now refuses to grade when most players show negative round points, and names the season rollover as the likely cause.",
+    "Nothing else. No pick, weight or rating moves, and no score is invented for anybody."
+  ]
+}

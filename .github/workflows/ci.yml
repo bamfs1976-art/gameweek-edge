@@ -64,6 +64,15 @@ jobs:
       - name: Shell integrity guard
         run: node scripts/check-shell.mjs
 
+      # The vendored rotation signal, proved against its source rather than
+      # trusted. Offline (--check) is part of `npm test` via check-rotation;
+      # this step adds the network half: re-fetch from pl-bookings and fail if
+      # the pinned copy has drifted. Split out because it is the one check here
+      # that can fail for a reason outside this repo, and that deserves its own
+      # red light rather than being buried in the suite.
+      - name: Vendored rotation model matches its source
+        run: node scripts/vendor-rotation.mjs --check --remote
+
       # The briefing checker itself needs the live FPL API, which CI does not
       # get. What CI CAN guard is that the shipped briefing still parses into
       # the shape the checker expects — because a document that has drifted out

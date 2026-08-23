@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path';
 import { clubBlocks, priceClaims, penaltyClaims, moveClaims,
   teamsFromHtml, claimsFromTeams, fixtureContradictions, moveContradictions,
   pensProseClaims, pensSelfContradictions, mdFixtureClaims,
+  departedStillPicked, outNames, pickBullets, DEPARTURE_CUES,
   clubMatcher, samePlayer, CLUB_ALIAS } from '../scripts/briefing-parse.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -704,8 +705,14 @@ console.log('\n• briefing: the outside ranking is quarantined from the registe
   /* No fixture may be hand-copied out of the grid. */
   const teams = teamsFromHtml(html);
   const stated = teams.reduce((n, t) => n + (t.fx || []).length, 0);
-  ok(stated === 79, 'the document still states 79 opening fixtures — a hand-copied cell, or ' +
-    '--fix filling the gaps, would move this and both are worth looking at (' + stated + ')');
+  /* 79 until 21 Aug, when the two GW4 Manchester rows were added — the derby,
+     from four sources with three on the venue, into two blocks that held no
+     GW4 row at all. The tripwire did its job: it moved the moment the count
+     changed, which is the only way a hand-copied cell gets noticed. Moving
+     the number is only allowed alongside the reason. */
+  ok(stated === 81, 'the document states 81 opening fixtures — 79 plus the two GW4 ' +
+    'Manchester rows added 21 Aug. A hand-copied cell, or --fix filling the gaps, ' +
+    'would move this again and both are worth looking at (' + stated + ')');
   ok(/no fixture below is rewritten from it|Nothing in the\s*\n?fixture blocks below is rewritten from this image/i.test(md),
     'and the markdown still promises no fixture comes from the image');
 }
@@ -1328,6 +1335,102 @@ console.log('\n• briefing: the second wave of settled prices reached the block
     'exactly one row is recorded as still open');
   ok(settled.every((r) => r.right === 'theirs'),
     'every newly settled row went the same way, which is the finding');
+}
+
+console.log('• briefing: nobody is recommended at a club this file says they left');
+{
+  const md = readFileSync(join(ROOT, 'docs/briefings/2026-27-preseason.md'), 'utf8');
+  const bad = departedStillPicked(md);
+  ok(bad.length === 0,
+    'no departed player is named in the picks of the club he left'
+    + (bad.length ? ' — ' + bad.map((b) => `${b.player} (${b.club})`).join(', ') : ''));
+
+  /* The check must be shown able to find something, or a clean run means
+     nothing. Two ways: it found the real one when it was written (Bruno
+     Guimaraes was recommended as Newcastle's captaincy alternative and put on
+     their penalties, free-kicks and corners, four lines under an Out list
+     recording his move to Arsenal), and a planted violation still trips it. */
+  const doc = (bullet) => `## 1. Test FC\n\n**Pre-season summary:** x\n\n`
+    + `**In:** Silas Halbrook (MID, Elsewhere, ~£1m).\n\n`
+    + `**Out:** Marcus Quintance (MID, Elsewhere, ~£1m).\n\n`
+    + `**FPL picks:**\n- Premium / captaincy: ${bullet}\n`;
+  /* Tested on a synthetic document rather than by editing the real one. A
+     first attempt planted a name into a live bullet and the plant was
+     swallowed by a cue already in that same sentence — the test passed by
+     accident of wording, which is the failure mode this whole file is about.
+     The invented names are deliberately cue-free: the first pair were
+     "Departed Playerson" and "Arrived Newman", and "Departed" is itself a
+     cue word, so the fixture excused the very thing it was built to catch. */
+  const flagged = departedStillPicked(doc('Marcus Quintance is the pick.'));
+  ok(flagged.length === 1 && flagged[0].player === 'Marcus Quintance',
+    'a departed player recommended with no cue IS flagged');
+  ok(departedStillPicked(doc('No nailed premium with Marcus Quintance gone.')).length === 0,
+    'and the same name with a departure cue beside it is NOT');
+  ok(departedStillPicked(doc('Silas Halbrook is the pick.')).length === 0,
+    'while an arrival is never flagged, however it is phrased');
+  /* The cue has to be in the SAME SENTENCE, not merely nearby. A character
+     window was tried first and a mutation broke it: a departure cue about
+     other players, later in the same bullet, excused a restored
+     recommendation. */
+  ok(departedStillPicked(doc(
+    'Someone has gone.' + ' filler'.repeat(30) + ' Marcus Quintance is the pick.')).length === 1,
+    'a cue far away in the same bullet does not excuse it');
+  ok(departedStillPicked(doc(
+    'Marcus Quintance is the pick. The club has sold half the squad.')).length === 1,
+    'and neither does a cue in a NEIGHBOURING sentence about somebody else');
+  /* Punctuation inside brackets is not a sentence break. The register writes
+     "Mateta (£6.5m, published; our estimate said ~£7.5m) is the pick if he
+     stays" — the aside sits between the name and the cue, and a
+     bracket-blind splitter reported that correct line as a fault. The
+     document was reworded twice to suit the checker before it was clear the
+     checker was wrong. */
+  ok(departedStillPicked(doc(
+    'Marcus Quintance (£6.5m, published; est ~£7.5m) is the pick if he stays.')).length === 0,
+    'a bracketed aside between the name and its cue does not split the sentence');
+  ok(departedStillPicked(doc(
+    'Marcus Quintance (£6.5m, published; est ~£7.5m) is the pick.')).length === 1,
+    'but a bracketed aside is not itself a cue');
+
+  /* The abbreviation the real picks used. Newcastle's set-piece line named
+     "Bruno G" three times and a surname search could not see it — a mutation
+     run restored that exact line and nothing tripped. */
+  ok(departedStillPicked(doc('Pens Woltemade (Marcus Q secondary).')).length === 1,
+    'a forename-plus-initial abbreviation is within reach');
+  /* And the collisions that pattern is chosen to avoid. Bare forename
+     matching was tried and reverted: it flagged Anthony Elanga against
+     departed Anthony Gordon, and Harry Wilson against departed Harry Gray. */
+  ok(departedStillPicked(doc('Marcus Wilberforce is the pick.')).length === 0,
+    'and a different player sharing only the forename is NOT flagged');
+
+  /* The reason this is hard, and the reason a naive version is useless: most
+     mentions of a departed player are correct and necessary. A version
+     without the cue window reported thirteen faults where there was one. */
+  const naive = [];
+  for (const line of md.split('\n')) {
+    if (!/^- (Premium|Value|Differentials|Set-piece)/.test(line)) continue;
+    for (const n of ['Salah', 'Gordon', 'Mayenda', 'Welbeck', 'Semenyo', 'Guehi']) {
+      if (new RegExp('\\b' + n + '\\b').test(line)) naive.push(n);
+    }
+  }
+  ok(naive.length >= 6,
+    'the picks really do mention departed players legitimately (' + naive.length + ' mentions)');
+  ok(bad.length === 0 && naive.length >= 6,
+    'and the cue window separates those from the fault, rather than flagging both');
+
+  /* The cue list is the whole discriminator, so assert it covers the phrasings
+     the document actually uses — including the past-tense ones added after a
+     false positive on "the reason Jimenez carried the line last season". */
+  for (const phrase of ['with Salah gone', "stepping into Gordon's vacated role",
+    'clear number nine after Mayenda', 'the reason Jimenez carried the line last season',
+    'now Semenyo has gone', 'a direct Senesi replacement']) {
+    ok(DEPARTURE_CUES.test(phrase), `the cue list recognises "${phrase}"`);
+  }
+
+  /* Parser sanity: an Out line and pick bullets are actually being found.
+     If either returned nothing the check above would pass on every file. */
+  const nufc = md.slice(md.indexOf('## 15.'), md.indexOf('## 16.'));
+  ok(outNames(nufc).length >= 5, 'Out names are parsed (' + outNames(nufc).length + ')');
+  ok(pickBullets(nufc).length >= 3, 'pick bullets are parsed (' + pickBullets(nufc).length + ')');
 }
 
 console.log('\n' + passes + ' passed, ' + failures + ' failed');

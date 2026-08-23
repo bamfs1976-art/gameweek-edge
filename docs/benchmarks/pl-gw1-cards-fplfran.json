@@ -1,0 +1,128 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-19T09:39:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "Three FPL Fran position cards — defenders, midfielders and forwards — each giving price, the GW1-3 fixture run with clean-sheet or goal shading, per-90 underlying numbers and a four-way colour verdict. 102 priced players and a 57-cell fixture grid, all of which checks.",
+
+  "source": {
+    "name": "FPL Fran",
+    "platform": "shared as images",
+    "readFrom": "screenshots",
+    "cards": ["DEFENDERS", "MIDFIELDERS", "FORWARDS"],
+    "commercialInterest": "None visible on the cards themselves — no handle, no link, no call to action beyond the branding.",
+    "whatMakesItDifferent": "It is the only capture that publishes its verdict as a category rather than prose. Every player carries one of four labels — Great Option, Good Option, Differential Option, Avoid — which makes the whole card gradeable as a set rather than claim by claim.",
+    "statedBasis": "'All stats are per 90 minutes during the 25/26 season', with npxG/90, xA(G)/90, G+A/90 and CBIT or CBRIT/90 defined on the card."
+  },
+
+  "whatWasReadAndWhatWasNOT": {
+    "read": "The price column, the player list, the GW1-3 fixture columns, the colour verdict, and the per-90 figures for the players named below.",
+    "notFullyTranscribed": "The complete per-90 grid. Three cards times up to four numeric columns is several hundred figures at small type, and this project has already spent two days on the consequences of transcribing a screenshot grid by eye. The figures quoted below are the ones the findings actually rest on.",
+    "theShadingIsNotTranscribed": "Each fixture cell is shaded by projected clean-sheet or goal likelihood. That is the card's own model output, it has no stated scale, and reading a colour off a compressed image is not a measurement."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "fplfran",
+    "statedTotal": 102,
+    "exact": [
+      { "player": "Bobby Thomas", "price": 4.0 }, { "player": "Jacob Greaves", "price": 4.0 },
+      { "player": "Issa Diop", "price": 4.0 }, { "player": "Van Ewijk", "price": 4.0 },
+      { "player": "Leif Davis", "price": 4.0 }, { "player": "Dara O'Shea", "price": 4.0 },
+      { "player": "Charlie Hughes", "price": 4.0 }, { "player": "O'Nien", "price": 4.0 },
+      { "player": "Shaw", "price": 4.5 }, { "player": "Ajer", "price": 4.5 }, { "player": "Kayode", "price": 4.5 },
+      { "player": "Rodon", "price": 4.5 }, { "player": "De Cuyper", "price": 4.5 }, { "player": "Kadioglu", "price": 4.5 },
+      { "player": "Aina", "price": 4.5 }, { "player": "Cash", "price": 4.5 }, { "player": "Chadi Riad", "price": 4.5 },
+      { "player": "Maguire", "price": 5.0 }, { "player": "Ballard", "price": 5.0 }, { "player": "Vuskovic", "price": 5.0 },
+      { "player": "Jacquet", "price": 5.0 }, { "player": "Van Hecke", "price": 5.0 }, { "player": "Muharemovic", "price": 5.0 },
+      { "player": "Williams", "canonical": "Neco Williams", "price": 5.0 }, { "player": "Colwill", "price": 5.0 },
+      { "player": "Ben White", "price": 5.5 }, { "player": "Calafiori", "price": 5.5 }, { "player": "Frimpong", "price": 5.5 },
+      { "player": "Mosquera", "price": 5.5 }, { "player": "Gvardiol", "price": 5.5 }, { "player": "Pedro Porro", "price": 5.5 },
+      { "player": "Palestra", "price": 5.5 }, { "player": "Hill", "price": 5.5 }, { "player": "Kerkez", "price": 5.5 },
+      { "player": "Truffert", "price": 5.5 },
+      { "player": "Virgil", "canonical": "Van Dijk", "price": 6.5 }, { "player": "O'Reilly", "price": 6.5 },
+      { "player": "Tarkowski", "price": 6.0 }, { "player": "Guehi", "price": 6.0 }, { "player": "Senesi", "price": 6.0 },
+      { "player": "Lacroix", "price": 6.0 }, { "player": "Gabriel", "price": 8.0 },
+
+      { "player": "Gomez BHA", "canonical": "Gomez (Brighton)", "price": 5.0 },
+      { "player": "Sangare NFO", "canonical": "Sangare (Nottingham Forest)", "price": 5.0 },
+      { "player": "Norgaard", "price": 5.0 },
+      { "player": "Gross", "price": 5.5 }, { "player": "Mamadou Sangare", "price": 5.5 },
+      { "player": "Iwobi", "price": 5.5 }, { "player": "Ayari", "price": 5.5 }, { "player": "Xhaka", "price": 5.5 },
+      { "player": "Wharton", "price": 5.5 },
+      { "player": "Ndiaye", "price": 6.0 }, { "player": "Schade", "price": 6.0 }, { "player": "Le Fee", "price": 6.0 },
+      { "player": "Buendia", "price": 6.0 }, { "player": "Tavernier", "price": 6.0 }, { "player": "Garner", "price": 6.0 },
+      { "player": "Tel", "price": 6.0 }, { "player": "Stach", "price": 6.0 }, { "player": "Kluivert", "price": 6.0 },
+      { "player": "Scott", "price": 6.0 },
+      { "player": "Ismaila Sarr", "price": 6.5 }, { "player": "Dango Ouattara", "price": 6.5 },
+      { "player": "Elliot Anderson", "price": 6.5 }, { "player": "Tzolis", "price": 6.5 },
+      { "player": "Odegaard", "price": 6.5 }, { "player": "Rayan", "price": 6.5 },
+      { "player": "Dewsbury-Hall", "price": 6.5 },
+      { "player": "Szoboszlai", "price": 7.0 }, { "player": "Wirtz", "price": 7.5 }, { "player": "Foden", "price": 7.0 },
+      { "player": "Gakpo", "price": 7.0 }, { "player": "Morgan Rogers", "price": 7.5 }, { "player": "Rice", "price": 7.5 },
+      { "player": "Enzo", "price": 7.0 }, { "player": "Bruno Guimaraes", "price": 7.0 }, { "player": "Cherki", "price": 7.5 },
+      { "player": "Mbeumo", "price": 8.0 }, { "player": "Semenyo", "price": 8.5 },
+      { "player": "Gibbs-White", "price": 8.0 }, { "player": "Matheus Cunha", "price": 8.0 },
+      { "player": "Palmer", "price": 9.5 }, { "player": "Saka", "price": 9.5 },
+      { "player": "Bruno Fernandes", "price": 12.0 },
+
+      { "player": "Walle-Egeli", "canonical": "Walle Egeli", "price": 4.5 },
+      { "player": "Ellis Simms", "price": 5.0 },
+      { "player": "Barry", "price": 5.5 }, { "player": "McBurnie", "price": 5.5 },
+      { "player": "Georginio", "canonical": "Rutter", "price": 5.5 },
+      { "player": "Calvert-Lewin", "price": 6.0 }, { "player": "Brobbey", "price": 6.0 },
+      { "player": "Richarlison", "price": 6.0 }, { "player": "Igor Jesus", "price": 6.0 },
+      { "player": "Evanilson", "price": 6.0 }, { "player": "Gonzalo", "canonical": "Gonzalo Garcia", "price": 6.0 },
+      { "player": "Joao Pedro", "price": 7.5 }, { "player": "Havertz", "price": 7.5 }, { "player": "Gyokeres", "price": 7.5 },
+      { "player": "Thiago", "canonical": "Igor Thiago", "price": 8.0 }, { "player": "Isak", "price": 9.0 },
+      { "player": "Watkins", "price": 8.0 }, { "player": "Haaland", "price": 15.5 }
+    ],
+    "bands": [],
+    "independence": "Not independent of the official price list — like every other capture, it is reading the game. Its value is the fixture grid and the verdicts, not the prices."
+  },
+
+  "theFixtureGridCHECKSCOMPLETELY": {
+    "what": "Every row carries GW1-3 opponents, with capitals for home and lower case for away.",
+    "checkedAgainstOurRegister": { "clubs": 19, "cells": 57, "agree": 57, "conflict": 0, "unheld": 0 },
+    "verdict": "Fifty-seven from fifty-seven, by reciprocity, against a card that has never seen our register. The cleanest fixture agreement this project holds.",
+    "aFabricationOfMYOWNThatThisCheckSURFACED": {
+      "what": "The first run of this check reported THREE conflicts, all Newcastle: GW1 Liverpool away against our register's home, GW2 Brentford away against Tottenham, GW3 Manchester City home against Bournemouth.",
+      "whatWasWrong": "There is no Newcastle row on any of the three cards. I put one into the verification table myself and then read the output as a source conflict.",
+      "howBadThatIs": "Worse than a misreading. Every earlier fault on file this fortnight was a real string read wrongly; this was three fixture cells that no source ever stated, invented while building the instrument and then reported as the world. Had it stood, this file would have opened by accusing a card of getting Newcastle's opening three fixtures wrong when the card is silent about Newcastle entirely.",
+      "howItWasCaught": "By asking which card the Newcastle row came from before writing it down, and finding no answer. The count said three conflicts; the source said nothing at all.",
+      "andTheRealObservationUnderneath": "FPL Fran names 102 players across three cards and NOT ONE of them is a Newcastle player. That is a genuine finding — and it agrees with the fpltips capture's 'Nothing from Newcastle interests me right now, so I am happy to avoid them for the start.'"
+    }
+  },
+
+  "theFourWayVERDICTIsGradeableAsASet": {
+    "scheme": "Great Option (green), Good Option (yellow), Differential Option (orange), Avoid (red), with up and down arrows marking movers.",
+    "whyItIsWorthMore": "A tip sheet says a player is good. This says a player is good ON A FOUR-POINT SCALE, applied to 102 players at once, which is a distribution rather than a set of opinions. It can be scored the way a model is scored — do the Greats out-return the Goods, do the Avoids underperform — and no other capture supports that.",
+    "someLabelsWorthRecording": {
+      "great": ["Thomas, Greaves, Diop, van Ewijk (all £4m)", "Shaw, Ajer, De Cuyper", "Maguire, Ballard, Vuskovic, Jacquet, van Hecke, Muharemovic", "White, Calafiori, Frimpong, Mosquera", "Virgil, O'Reilly", "Gabriel", "Gross, M. Sangare, Ndiaye, Schade, Le Fee, Buendia", "Sarr, Dango, Anderson, Tzolis, Odegaard", "Szoboszlai, Wirtz, Foden, Rogers, Rice", "Semenyo, Gibbs-White", "Saka", "Barry, McBurnie, Georginio", "Havertz", "Isak"],
+      "avoid": ["Cherki", "Colwill", "Guehi", "Palmer", "Cunha", "Norgaard", "Xhaka"],
+      "differential": ["O'Nien", "Cash", "Chadi Riad", "Hill", "Truffert", "Simms", "Gyokeres", "Kluivert", "Scott", "Wharton", "Enzo", "Gomez BHA", "Sangare (Forest)"]
+    },
+    "theTensionWorthNaming": "Palmer is marked Avoid and carries the highest npxG/90 on the midfielders card at 0.49. Guehi is marked Avoid with 0.19 npxG+xAG/90 and 0.23 G+A/90, both strong for a defender. The card is evidently weighting fixtures and rotation over underlying numbers, which is a defensible model and an unstated one — it publishes the inputs and the verdict but not the function between them."
+  },
+
+  "whereItTOUCHESOurOwnPicks": {
+    "muharemovic": "Marked a GREAT option at £5.0m, and he is one of THIS project's own FPL Challenge GW5 Shield picks. An outside card reaching the same player from fixtures and CBIT/90 (10.86) rather than from Hadley's DEFCON table is the first independent support that pick has had.",
+    "tzolis": "Marked GREAT with an up arrow, and the highest G+A/90 on the midfielders card at 1.17. Our register carries him as an early differential and LazyFPL's headline call was that he is excellent value. Four documents now.",
+    "vuskovic": "Marked GREAT with an up arrow at £5.0m, CBIT/90 12.50 — the highest on the defenders card. Our register's only note on him was a checker bug that read his transfer fee as a price.",
+    "calvertLewin": "Marked a GOOD option, not a Great one — the one place any capture has been less than enthusiastic about the £6.0m row five sources agree on and 78% of experts own."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "The Great Options out-return the Good Options over GW1-6", "gradeable": true, "settlesOn": "points per player per label", "note": "the whole card as one testable distribution, which is what makes this capture unusual" },
+    { "claim": "The seven Avoids underperform their price bracket", "gradeable": true, "settlesOn": "the same" },
+    { "claim": "Tzolis returns at 1.17 G+A/90 rates", "gradeable": true, "settlesOn": "his GW1-10 returns per 90" },
+    { "claim": "Muharemovic is a Great option at £5.0m", "gradeable": true, "settlesOn": "his GW1-6 starts, clean sheets and DEFCON hits", "note": "grades our own Challenge pick at the same time" },
+    { "claim": "Palmer should be avoided despite the best npxG/90 on the card", "gradeable": true, "settlesOn": "his GW1-6 returns", "note": "the sharpest disagreement between the card's own inputs and its own verdict" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing. Every price agrees with the official list and every fixture cell agrees with our register.",
+    "It adds the first outside support for two of our own picks — Muharemovic and Tzolis — reached by a different route from ours.",
+    "The fabricated Newcastle row is recorded above rather than quietly deleted, because it was mine."
+  ]
+}

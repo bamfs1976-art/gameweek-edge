@@ -70,4 +70,36 @@ assert.ok(!/sk-ant-/.test(html), 'index.html contains what looks like an Anthrop
 assert.ok(!/https?:\/\/fantasy\.premierleague\.com\/api/.test(html),
   'index.html calls the FPL API origin directly — use the /api/fpl proxy');
 
+/* ── No two top-level consts may share a name ──────────────────────
+   The whole app is one <script> block. Two top-level `const X` in it is a
+   SyntaxError, and a SyntaxError there is not a degraded feature — nothing
+   runs at all, on every page.
+
+   Nothing caught this. The unit suites extract individual functions into a
+   vm, so they never parse the file as a whole and stayed green while the
+   shipped page was dead. It happened for real: a helper was hoisted to a
+   global called CHIP_LABEL without noticing the chip planner already had a
+   top-level CHIP_LABEL of its own, keyed by different strings. The browser
+   suite would have found it, but the browser suite is not what runs on every
+   commit — this is.
+
+   Only same-line `const NAME=` at column zero is considered, which is how
+   every top-level binding in this file is written. Indented declarations are
+   inside functions and may legitimately shadow. */
+{
+  const seen = new Map();
+  const dupes = [];
+  const re = /^const ([A-Za-z_$][\w$]*)\s*=/gm;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const name = m[1];
+    const line = html.slice(0, m.index).split('\n').length;
+    if (seen.has(name)) dupes.push(`${name} (lines ${seen.get(name)} and ${line})`);
+    else seen.set(name, line);
+  }
+  assert.ok(dupes.length === 0,
+    'duplicate top-level const in index.html — this is a SyntaxError and the app will not run: ' + dupes.join(', '));
+  console.log(`  ${seen.size} top-level consts, no duplicate names`);
+}
+
 console.log(`shell guard OK: ${REQUIRED_IDS.length} ids present, ${shellPaths.length} precache entries checked, no client-side secrets`);

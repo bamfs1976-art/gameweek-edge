@@ -1,0 +1,160 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-19T09:37:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "A points-analysis spreadsheet filtered to midfielders: last season's points, minutes, points per game and a derived Value score, against a stated prediction for the next five gameweeks of 2026-27. The only capture that publishes a numeric forecast per player.",
+
+  "source": {
+    "name": "FPL_Marcello",
+    "handle": "@FPL_Marcello",
+    "platform": "shared as a spreadsheet screenshot; the header says 'Support @FPL_Marcello on X and Discord and Patreon'",
+    "readFrom": "screenshot",
+    "commercialInterest": "A Patreon is named in the sheet header. Nothing is gated inside the screenshot itself.",
+    "columns": ["Player", "Pos", "Team", "Cost", "2025/26 Points", "Value", "2025/26 Minutes", "2025/26 Points Per Game", "FPL_Marcello's Next 5 Game Predicted Points"],
+    "rowsVisible": 68,
+    "filter": "The Pos column carries a filter marker and every visible row is MID. This is one position's worth of a larger sheet, sorted by the Value column descending."
+  },
+
+  "theTEAMColumnIsNotReliable": {
+    "why": "It has to be said before anything is taken from it, because the sheet mixes seasons.",
+    "theProof": "Lukic is listed at FULHAM. Both the Guardian and the official FPL Scout say he joined Ipswich from Fulham this summer, and the Scout prices him as an Ipswich player. Sessegnon is listed as a MIDFIELDER; the Scout says he has changed to DEFENDER for 2026/27.",
+    "butItIsNotUniformlyStale": "Elliot Anderson is listed at Manchester City, Morgan Rogers at Chelsea, Eze at Arsenal and Semenyo at Manchester City — all summer moves, all current.",
+    "soWhatItIs": "A hand-maintained sheet whose Pos and Team columns are mostly current and demonstrably lag on at least two rows. It cannot be used as a club register, and any club claim taken from it needs corroborating from somewhere structural.",
+    "whichIsWhyOneClaimBelowIsCorroboratedAndOneIsNot": "Bruno Guimaraes at Arsenal is confirmed three ways. Grealish at Everton is not, and is recorded as an open row rather than a fact."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "marcello",
+    "statedTotal": 68,
+    "exact": [
+      { "player": "Stach", "price": 6.0 }, { "player": "Sessegnon", "price": 4.5 },
+      { "player": "Bruno G.", "canonical": "Bruno Guimaraes", "price": 7.0 },
+      { "player": "Dewsbury-Hall", "price": 6.5 },
+      { "player": "Groß", "canonical": "Gross", "price": 5.5, "readingNote": "the sheet spells it with the eszett; folded to Gross, which is how every other capture and the official list spell it" },
+      { "player": "Elliot Anderson", "price": 6.5 }, { "player": "Harry Wilson", "price": 6.5 },
+      { "player": "Garner", "price": 6.0 }, { "player": "Ampadu", "price": 5.5 },
+      { "player": "Rayan", "price": 6.5 }, { "player": "Rice", "price": 7.5 },
+      { "player": "E.Le Fée", "canonical": "Le Fee", "price": 6.0 },
+      { "player": "Kamara", "price": 5.0 }, { "player": "Tavernier", "price": 6.0 },
+      { "player": "Gravenberch", "price": 6.0 }, { "player": "Ndiaye", "price": 6.0 },
+      { "player": "Xhaka", "price": 5.5 },
+      { "player": "O.Dango", "canonical": "Dango Ouattara", "price": 6.5 },
+      { "player": "Okafor", "price": 6.0 }, { "player": "Iwobi", "price": 5.5 },
+      { "player": "Ismaila Sarr", "price": 6.5 }, { "player": "Semenyo", "price": 8.5 },
+      { "player": "Zubimendi", "price": 5.5 },
+      { "player": "Sangaré NFO", "canonical": "Sangare (Nottingham Forest)", "price": 5.0 },
+      { "player": "Gibbs-White", "price": 8.0 }, { "player": "Szoboszlai", "price": 7.0 },
+      { "player": "M.Fernandes", "canonical": "M. Fernandes", "price": 6.0 },
+      { "player": "McGinn", "price": 5.5 }, { "player": "Enzo", "price": 7.0 },
+      { "player": "Damsgaard", "price": 5.5 }, { "player": "Aaronson", "price": 5.5 },
+      { "player": "Adams", "price": 5.0 }, { "player": "Ayari", "price": 5.5 },
+      { "player": "Scott", "price": 6.0 }, { "player": "Morgan Rogers", "price": 7.5 },
+      { "player": "Onana", "price": 5.0 }, { "player": "Grealish", "price": 6.5 },
+      { "player": "Kudus", "price": 6.5 },
+      { "player": "Gomez BHA", "canonical": "Gomez (Brighton)", "price": 5.0 },
+      { "player": "Caicedo", "price": 5.5 }, { "player": "Bentancur", "price": 5.5 },
+      { "player": "Wharton", "price": 5.5 }, { "player": "Schade", "price": 6.0 },
+      { "player": "Janelt", "price": 5.0 }, { "player": "Diarra", "price": 5.5 },
+      { "player": "Minteh", "price": 6.0 }, { "player": "Jaidon Anthony", "price": 6.0 },
+      { "player": "L.Miley", "canonical": "Miley", "price": 5.5 },
+      { "player": "Foden", "price": 7.0 }, { "player": "Neto", "price": 6.5 },
+      { "player": "Yarmoliuk", "price": 5.0 }, { "player": "Hinshelwood", "price": 6.0 },
+      { "player": "Mbeumo", "price": 8.0 }, { "player": "Bruno Fernandes", "price": 12.0 },
+      { "player": "J.Gomes", "canonical": "Joao Gomes", "price": 5.5 },
+      { "player": "Reijnders", "price": 6.0 },
+      { "player": "P.M.Sarr", "canonical": "P. Sarr", "price": 5.0 },
+      { "player": "Cherki", "price": 7.5 }, { "player": "Matheus Cunha", "price": 8.0 },
+      { "player": "Talbi", "price": 5.5 }, { "player": "Barkley", "price": 5.0 },
+      { "player": "Doku", "price": 7.5 }, { "player": "Saka", "price": 9.5 },
+      { "player": "Mac Allister", "price": 5.5 }, { "player": "Eze", "price": 6.5 },
+      { "player": "Berge", "price": 5.0 }, { "player": "Gakpo", "price": 7.0 },
+      { "player": "Lukić", "canonical": "Sasa Lukic", "price": 5.0 }
+    ],
+    "bands": [],
+    "notEnumerated": "The screenshot is cut off below Lukic, and the sheet is filtered to midfielders. Absence of a player from this list is not evidence the sheet is silent about him.",
+    "independence": "Not independent of the official price list. Its prices agree with it, including for Lukic, whose CLUB the sheet has wrong — the price column is current even where the team column is not."
+  },
+
+  "fourAmbiguitiesTHISRESOLVES": {
+    "why": "This sheet's value is not its prices, which the official source already settles. It is that a Team column, however unreliable as a register, disambiguates surnames that four earlier captures left pinned.",
+    "rayan": {
+      "wasPinned": "Michal's mid-price table carried a 'Rayan' at £6.5m that nothing could resolve. It was the ONE pin the official Scout left open — the round-up names no Rayan at all.",
+      "now": "Rayan, AFC Bournemouth, £6.5m, 67 points from 1,110 minutes last season. FPL Fran's midfielders card independently gives Rayan £6.5m with GW1-3 of mci / EVE / new, which are Bournemouth's fixtures in our own register.",
+      "verdict": "Resolved, two ways, one of them structural. All four of Michal's pinned surnames are now identified."
+    },
+    "theThirdSangare": {
+      "theStanding": "The Hadley capture recorded three Sangare rows and warned that reading the surname alone would merge two players. The official Scout confirmed Mamadou Sangare at Brentford at £5.5m. A bare 'Sangare' in Hadley's £5m DEFCON bracket stayed pinned as unidentified.",
+      "now": "This sheet has Sangare at NOTTINGHAM FOREST at £5.0m, and FPL Fran's midfielders card lists a separate £5m Sangare at Forest alongside the £5.5m Brentford one — two rows, two clubs, on the same card.",
+      "verdict": "The £5.0m Sangare is Forest's. Hadley's file recorded him as 'I. SANGARE', which fits Ibrahim Sangare at Forest, but the initial is Hadley's and neither of today's sources gives a first name, so the club is settled and the forename is not."
+    },
+    "gomez": {
+      "wasAmbiguous": "Sam FPL's tips card said 'Gomez limped'. Joe Gomez is a Liverpool defender and the card gave no club.",
+      "now": "Both this sheet and FPL Fran carry a midfielder 'Gomez' at Brighton, £5.0m. FPL Fran marks him a Great Option with the Brighton GW1-3 run.",
+      "verdict": "The Gomez in play at £5.0m is Brighton's midfielder. Whether Sam FPL meant HIM is still not established — 'Gomez limped' names no club either — so this identifies the priced player and not the sentence."
+    },
+    "joaoGomes": {
+      "theStanding": "The Hadley capture carried an open flag: his £5.5m midfield row read 'JOAO GOMES (at Wolves)', while our EFL benchmark recorded a £38m move to Aston Villa and his absence from the Wolves squad on 15 August. The Hadley file closed the flag in favour of the EFL reading.",
+      "now": "This sheet lists J.Gomes at ASTON VILLA, £5.5m.",
+      "verdict": "Confirms the reading the Hadley capture already chose, from a source that had nothing to do with either. The flag stays closed and now has outside support."
+    }
+  },
+
+  "oneClaimCORROBORATEDAndOneNOT": {
+    "brunoGuimaraesAtArsenal": {
+      "theSheet": "Bruno G., Arsenal, £7.0m, 154 points from 2,456 minutes, 5.3 per game.",
+      "ourRegister": "Already holds it — 'Bruno Guimaraes has joined Arsenal from Newcastle' appears twice, including in the 11 August update note.",
+      "thirdAndFourthLines": "FPL Fran's midfielders card gives Bruno G at £7.0m with GW1-3 of COV / avl / CHE, which are Arsenal's fixtures in our register; and the LazyFPL capture records Newcastle 'having lost Eddie Howe, Tonali, Gordon and Guimaraes this summer'.",
+      "verdict": "Four lines of evidence, one of them a fixture run rather than a team label, all agreeing with what our register already said. Nothing changes; a held position gains support."
+    },
+    "grealishAtEverton": {
+      "theSheet": "Grealish, Everton, £6.5m, 79 points from 1,627 minutes.",
+      "ourRegister": "'Rumours only: a striker target, a possible Grealish loan.'",
+      "whyItIsNOTSettledHere": "One source, and it is the source whose Team column is demonstrably stale on Lukic. The official Scout's Everton section does not mention Grealish at all, and no other capture carries him. A rumour in our register plus one unreliable column is not a transfer.",
+      "recordedAs": "An open row, to be settled by a team sheet or the official list."
+    }
+  },
+
+  "thePREDICTIONColumnIsTheGradeableThing": {
+    "what": "'FPL_Marcello's Next 5 Game Predicted Points' — a number per player for GW1-5, published before a ball is kicked.",
+    "whyItMattersMoreThanAnyOtherFieldHere": "It is the only per-player numeric forecast in eight captures. Every other source gives a verdict, a label or a price. This gives a quantity that can be scored against actual points with a correlation and an error, exactly as this project scores its own model.",
+    "someOfTheFigures": [
+      { "player": "Bruno Fernandes", "predicted5gw": 29.4, "lastSeasonPPG": 6.7 },
+      { "player": "Semenyo", "predicted5gw": 23.9, "lastSeasonPPG": 5.5 },
+      { "player": "Gibbs-White", "predicted5gw": 21.2, "lastSeasonPPG": 5.1 },
+      { "player": "Bruno Guimaraes", "predicted5gw": 20.9, "lastSeasonPPG": 5.3 },
+      { "player": "Elliot Anderson", "predicted5gw": 20.8, "lastSeasonPPG": 4.7 },
+      { "player": "Stach", "predicted5gw": 20.6, "lastSeasonPPG": 4.7 },
+      { "player": "Szoboszlai", "predicted5gw": 20.5, "lastSeasonPPG": 4.4 },
+      { "player": "Harry Wilson", "predicted5gw": 20.4, "lastSeasonPPG": 4.7 },
+      { "player": "Rice", "predicted5gw": 20.3, "lastSeasonPPG": 5.1 },
+      { "player": "Dewsbury-Hall", "predicted5gw": 20.2, "lastSeasonPPG": 4.9 },
+      { "player": "Saka", "predicted5gw": 19.9, "lastSeasonPPG": 5.1 },
+      { "player": "Mbeumo", "predicted5gw": 19.6, "lastSeasonPPG": 4.5 },
+      { "player": "Berge", "predicted5gw": 9.3, "lastSeasonPPG": 2.6 },
+      { "player": "Lukic", "predicted5gw": 9.1, "lastSeasonPPG": 2.6 }
+    ],
+    "theShapeOfIt": "Predicted five-game totals run from 9.1 to 29.4 across the visible rows, against last season's points per game of 2.6 to 6.7. Dividing gives an implied per-game figure close to last season's PPG for most rows, which suggests the forecast is anchored on PPG and adjusted for fixtures rather than built from underlying numbers. That is an inference from the shape of two columns and is NOT what the sheet says about itself.",
+    "howItWouldBeGraded": "Rank correlation between predicted GW1-5 points and actual GW1-5 points across the 68 rows, plus mean absolute error. Both are things this project already computes for its own model, so it is a like-for-like comparison rather than a new instrument.",
+    "whatWeCannotDo": "Grade it from here. Actual points need the FPL API, which the sandbox cannot reach, and the sheet is a screenshot rather than data. Recorded so that git history proves the forecast predates the football."
+  },
+
+  "theValueColumn": {
+    "what": "A derived score, highest at the top, on which the sheet is sorted. Stach 78.7, Sessegnon 78.2, Bruno G. 75.9, down to Lukic 51.5 in the visible rows.",
+    "whatItIsNot": "Explained. No formula is given, and points-per-million does not reproduce it — Stach's 137 points at £6.0m is 22.8 per million, while Sessegnon's 95 at £4.5m is 21.1, yet the two are nearly level on Value at 78.7 and 78.2. Minutes are clearly in it somewhere.",
+    "soItIsRecordedAndNotUsed": "A number whose definition we do not have cannot check anything, and reverse-engineering one from eight visible rows would be guessing."
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "The next-five-gameweek predictions, all 68 of them", "gradeable": true, "settlesOn": "actual GW1-5 points, by rank correlation and mean absolute error", "note": "the most gradeable artefact in any capture; git history is the evidence it predates the football" },
+    { "claim": "Bruno Fernandes leads all midfielders at 29.4 predicted points", "gradeable": true, "settlesOn": "GW1-5 midfielder points" },
+    { "claim": "Grealish is an Everton player", "gradeable": true, "settlesOn": "a team sheet or the official list", "note": "one source, and the column it comes from is demonstrably stale elsewhere" }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing automatically. It resolves four surname ambiguities left open by earlier captures and confirms one club claim our register already held.",
+    "The Grealish row is opened, not settled.",
+    "Its prices agree with the official list throughout, including for Lukic — whose club the sheet gets wrong while getting his price right."
+  ]
+}

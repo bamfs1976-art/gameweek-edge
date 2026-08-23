@@ -1,0 +1,9 @@
+[
+  { "id": "rec-1", "kind": "captain", "fplId": 101, "player": "Bukayo Saka",
+    "score": 8.4, "expectedPoints": 6.9, "rationale": "Home fixture, on penalties",
+    "generatedAt": "2026-08-16T10:00:00Z" },
+  { "id": "rec-2", "type": "transfer_in", "fpl_id": 105, "player": "Morgan Gibbs-White",
+    "xP": 5.1, "generatedAt": "2026-08-16T10:00:00Z" },
+  { "id": "rec-3", "kind": "moon_phase", "player": "Nobody", "score": 1 },
+  { "id": "rec-4" }
+]

@@ -1,0 +1,181 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-21T14:20:00.000Z",
+  "note": "Guardian club previews 17 (Newcastle) and 18 (Nottingham Forest). These are the two the 19-20 capture recorded as never captured, filed as a gap two commits ago with the line: 'if 17 is Newcastle, it is the one preview that would speak directly to the largest open error in our register.' It is Newcastle, and it does.",
+
+  "source": {
+    "name": "The Guardian",
+    "articles": [
+      { "no": 17, "club": "Newcastle United", "byline": "Louise Taylor", "published": "2026-08-20T00:01:00+01:00" },
+      { "no": 18, "club": "Nottingham Forest", "byline": "Will Unwin", "published": "2026-08-20T12:00:00+01:00" }
+    ],
+    "readFrom": "pasted article text",
+    "commercialInterest": "None apparent. A newspaper preview series with named bylines.",
+    "aLimitCarriedForward": "A preview is selective. Its silence about a player is not a denial, and no note below treats it as one."
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "guardian-previews-17-18",
+    "statedTotal": 0,
+    "exact": [],
+    "bands": [],
+    "notEnumerated": "Zero FPL prices, as in previews 11-14, 15-16 and 19-20 — four Guardian captures, none of which price a player. Transfer fees are stated (Hornicek £26m, Diomande £34m) and are not prices."
+  },
+
+  "theSERIESGapNowClosed": {
+    "predicted": "The 19-20 capture recorded 17 and 18 as never captured, and refused to guess which clubs they covered: 'guessing it would be manufacturing a source we do not have.'",
+    "outcome": "17 is Newcastle and 18 is Nottingham Forest — which is what alphabetical order implied and what the file declined to write down.",
+    "whatToTakeFromThat": "Not that the guess would have been right. That the guess would have been a guess, and the record is now sourced instead. The series is complete at 11-14, 15-16, 17-18, 19-20; previews 1-10 were never pasted and remain a gap."
+  },
+
+  "theERRORThisSETTLES": {
+    "item": "Newcastle's manager — the largest single error this project's outside captures have surfaced, flagged on 18 Aug and still unapplied.",
+    "ourRegister": {
+      "markdown": "'Underwhelmed to twelfth, but Eddie Howe continues. ... The question is whether Howe can knit a reshaped attack together quickly.'",
+      "html": "'Underwhelmed to 12th, Eddie Howe continues. ... Can Howe knit a reshaped attack together quickly.'",
+      "note": "Both editions. The error is not a stray word — two sentences are built on it, and the confirmed-new-bosses list at the top of the file names ten clubs and omits Newcastle."
+    },
+    "whatThisSourceSays": "'With Eddie Howe having stepped down, applying a full stop to almost five largely successful years as manager, there is a new head coach in Matthias Jaissle. The 38-year-old German excelled during previous postings in Austria and Saudi Arabia but has never managed in England.'",
+    "theSourceCount": [
+      { "source": "LazyFPL", "said": "Howe had left" },
+      { "source": "Daily Mail / Holly Shand", "said": "Howe had left" },
+      { "source": "the official FPL Scout", "said": "'the first under Jaissle'" },
+      { "source": "the Guardian (this capture)", "said": "Howe stepped down; Matthias Jaissle is head coach, aged 38, German, ex-RB Salzburg and Al-Ahli, never managed in England" }
+    ],
+    "verdict": "SETTLED. Four sources, one of them the game's own publisher. This is the first that gives the successor a full name, an age, a nationality and a career, which is what a register line needs — the official source's three-word clause established that Howe was gone but was explicitly recorded as not enough to write a manager line with.",
+    "ourRegisterHoldsJaissleNowhere": true,
+    "whatIsOwed": "A rewrite of the Newcastle manager line in both editions, and Newcastle added to the confirmed-new-bosses list. Listed rather than applied here, because adopting an outside claim into the register is a register edit and this file records what a source said.",
+    "whyItMattersBeyondBeingWrong": "The set-piece and penalty order under a new manager is unconfirmed by definition. Our register's own front matter says so: 'New managers reshuffle set-piece and penalty hierarchies, so early-season role certainty is worth more points than usual.' It says that about ten clubs and then treats Newcastle's dead-ball order as settled under a manager who has gone."
+  },
+
+  "theERRORThisCAUGHTInOurOwnFile": {
+    "what": "Our register recommended Bruno Guimaraes as a NEWCASTLE captaincy alternative, and placed him on Newcastle's penalties, free-kicks and corners — four lines under an Out list that records him joining Arsenal.",
+    "howItGotThere": "The transfer was added on 13 Aug ('Added 13 Aug, having been recorded only by the club at the other end: Bruno Guimaraes (CM, Arsenal)') and the FPL picks under it were never touched. Our file records the move in four separate places — the change log, Arsenal's summary, Arsenal's In list and Newcastle's Out list — and then recommends him at the club he left.",
+    "notFoundByThisSource": "The Guardian confirms the transfer but does not know what our picks say. The error was found by reading our own file while checking the Guardian's claim that Newcastle sold their three best players.",
+    "theSecondTimeThisHasHappened": "The file already carries two hand-written corrections for exactly this fault: 'Correction (11 Aug): this line previously named Digne on corners while the same block listed him as sold to PSG', and 'McNeil removed 13 Aug, he has gone to Palace'. Twice found, twice fixed one player at a time, and no check written. So it recurred.",
+    "whatWasDone": "Fixed in both editions, and a permanent structural check added — see theCHECKThisProduced. This is the one register edit applied rather than listed, because it adopts no outside claim: our own Out list already said he had left, and the picks contradicted it. Making a file agree with itself is not the same as taking a source's word for something.",
+    "whatWasNOTDone": "No replacement alternative was invented. Newcastle have sold their leading chance creators and the honest answer is that the alternative is unknown; naming a substitute to fill the hole would be worse than the hole."
+  },
+
+  "theCHECKThisProduced": {
+    "name": "departedStillPicked, in scripts/briefing-parse.mjs, asserted by dev/test-briefing.mjs",
+    "rule": "No player named in a club's **Out:** line may appear in that club's FPL pick bullets without a departure cue beside him.",
+    "whyTheCueWindowExists": "A naive version reported THIRTEEN faults where there was one. Twelve were the file writing correctly about a departure — 'the key Liverpool captain call with Salah gone', 'stepping into Gordon's vacated role', 'clear number nine after Mayenda', 'now Semenyo has gone'. A check that flags those is worse than no check, because a report with twelve false positives gets ignored and the thirteenth goes with it.",
+    "twoFalsePositivesItTaughtUs": [
+      "'the reason Jimenez carried the line last season was Muniz's injuries' — correct past-tense writing about a departed player, flagged until past-tense cues were added.",
+      "Our own correction note about Bruno Guimaraes tripped the check, because it named him without a cue word nearby. The note was reworded rather than the cue list widened: loosening the discriminator to accommodate one sentence is how a check stops working."
+    ],
+    "howItIsProvenAbleToFail": "On a synthetic document, not by editing the real one. A first attempt planted a departed name into a live bullet and the plant was swallowed by a cue already in that same sentence — the test passed by accident of wording, which is the exact failure mode the check exists to catch. The synthetic fixture then failed for a second embarrassing reason: the invented player was called 'Departed Playerson', and 'Departed' is itself a cue word, so the fixture excused the very thing it was built to catch. Both are recorded in the test file."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "agreements": [
+      {
+        "claim": "Newcastle sold Gordon (Barcelona), Tonali (Tottenham) and Guimaraes (Arsenal).",
+        "ourRegister": "All three in Newcastle's Out list, Gordon ~£69m, Tonali ~£100m, Guimaraes recorded 13 Aug from Arsenal's end.",
+        "verdict": "agrees, all three, and two of them at both ends"
+      },
+      {
+        "claim": "Kieran Trippier is the fourth of the departed 'leading four chance creators'.",
+        "ourRegister": "'Kieran Trippier (RB, Wolves, free)' in the Out list.",
+        "verdict": "agrees on the departure; the chance-creation ranking is new information we hold no data for"
+      },
+      {
+        "claim": "Bazoumana Touré, Aladji Bamba and Sean Steur are among the new signings.",
+        "ourRegister": "All three in the In list — Toure ~£43m from Hoffenheim, Steur ~£23m from Ajax, Bamba undisclosed from Monaco.",
+        "verdict": "agrees"
+      },
+      {
+        "claim": "Oliver Glasner is Forest's head coach, playing 3-4-2-1.",
+        "ourRegister": "'Oliver Glasner is confirmed head coach (appointed 6 July 2026)' and, in the front matter, 'Oliver Glasner (Nottingham Forest, moved from Palace)'.",
+        "verdict": "agrees. The formation is new — our register says 'a high-energy front-foot system' without naming a shape."
+      },
+      {
+        "claim": "Elliot Anderson has left Forest.",
+        "ourRegister": "'Elliot Anderson (CM, Man City, ~£116m)' in Forest's Out list, and the 15-16 capture already graded the fee as agreeing.",
+        "verdict": "agrees"
+      }
+    ],
+
+    "theAPPARENTConflictThatIsNot": {
+      "claim": "Forest went through 'four different coaches' last season, and were 'the first team in Premier League history to appoint four permanent managers in one campaign'.",
+      "ourRegister": "'Oliver Glasner is confirmed head coach (appointed 6 July 2026), the fifth manager in under 12 months.'",
+      "lookLikeAConflict": "four versus five",
+      "whyItIsNot": "Different windows. Four permanent managers DURING the 2025-26 campaign, plus Glasner appointed in July 2026, is five in under twelve months. Both statements can be true at once and neither needs correcting.",
+      "recordedBecause": "A count that differs by one is exactly the kind of thing that gets filed as an error by a checker comparing numbers without reading the sentence around them. This project has already recorded a case of asserting a conflict that did not exist."
+    },
+
+    "theGOALKEEPERConflict": {
+      "guardian": "Star signing: 'Newcastle now have a genuine sweeper-keeper in Lukas Hornicek, the 24-year-old Czech Republic international who has joined for £26m from Braga.'",
+      "ourRegister": "Newcastle In list: 'Ewen Jaouen (GK, Reims, ~£24m)'. Hornicek appears nowhere in either edition.",
+      "verdict": "OPEN. Two goalkeepers, two clubs, two fees, £24m and £26m. Both could be true — a club can sign two keepers — but the Guardian calls Hornicek THE star signing of the window and does not mention Jaouen, while our register lists Jaouen among four incomings and does not mention Hornicek.",
+      "whyItMattersForFPL": "Newcastle's starting goalkeeper is a priced asset and a clean-sheet route. If a £26m sweeper-keeper has arrived and our register does not know it, our read on that position is built on the wrong player.",
+      "whatWouldSettleIt": "The FPL bootstrap, which will list whichever keepers are actually registered, and the GW1 team sheet for which starts.",
+      "notClaimed": "That our Jaouen line is wrong. It may be a second signing, or a fee we have right about a player the preview simply did not choose to write about."
+    },
+
+    "theFORESTWindowConflict": {
+      "guardian": "'Ousmane Diomande is the only signing, at the time of writing, to have cost the club any money this summer, with £34m spent to secure the Ivorian defender from Sporting.'",
+      "ourRegister": "'Backed heavily (around £90m of incomings)' and an In list of 'Omari Hutchinson (W, Ipswich, ~£37.5m), James McAtee (AM, Man City, ~£30m), Dan Ndoye (W, Bologna)'. Diomande appears nowhere in either edition.",
+      "verdict": "OPEN, and one of the two documents is wrong about an entire transfer window.",
+      "theReadingThatWouldReconcileThem": "The same preview says 'James McAtee's first season in Nottingham was underwhelming' and that Ndoye and Bakwa 'faced difficult first years in the Premier League' — which puts McAtee and Ndoye at Forest LAST season, not this summer. If our In list is carrying the 2025 window as though it were the current one, the Guardian's £34m is right and our ~£90m is a year out of date.",
+      "whyThatIsNotAssertedAsTheAnswer": "A loan made permanent would put McAtee at Forest last season AND make him a paid signing this summer, which is a shape this file has seen twice already (Hincapie at Arsenal, Rushworth at Coventry). That reading makes both documents partly right. Choosing between the two without evidence would be exactly the guess this project keeps refusing to make.",
+      "whatWouldSettleIt": "The completion dates on Hutchinson, McAtee and Ndoye. Our own In list already carries the warning '(Some completion dates unverified, re-check.)' — written before this source existed, about the field this conflict turns on.",
+      "eitherWayADefiniteGap": "Ousmane Diomande, £34m, a 22-year-old centre-back the preview calls the club's only paid signing and 'hugely admired by Glasner', is absent from our register entirely."
+    },
+
+    "theSTRIKERTension": {
+      "guardian": "'Forest are seeking to sign a new striker, with Chris Wood's injury record and ageing body raising questions about the 34-year-old's ability to lead the line for a full season. Liam Delap is of interest.'",
+      "ourRegister": "Premium / captaincy: 'Chris Wood (£6.0m, published 14 Aug), proven scorer the past two seasons and Glasner will want a focal point, though form dipped late last term. Kalimuendo, if signed, complicates Wood's minutes.'",
+      "verdict": "Both documents hedge Wood's minutes against an unsigned striker, and name a DIFFERENT striker. Ours is Arnaud Kalimuendo ('reported in advanced talks, not yet done'); theirs is Liam Delap ('of interest', 'will not come cheap').",
+      "recordedAs": "two live rumours, neither upgraded. Our register already refused to treat Kalimuendo as signed on the strength of him playing in Forest friendlies — 'Playing in a club's friendlies is evidence of having joined it, not an announcement' — and Delap gets the same treatment.",
+      "whatItSharpens": "Our Wood line rests on him leading the line. Two independent sources now say Forest are shopping for someone to do that instead, which is a minutes risk on a £6.0m premium pick."
+    },
+
+    "theASSETRiskOurRegisterDoesNotHold": {
+      "player": "Tino Livramento",
+      "claim": "'missed the final five weeks of last season with a thigh injury but recovered in time to be called up... he was back home before his country's opening game against Croatia after sustaining a calf injury in training. Livramento has undergone \"minor\" surgery this summer and hopes to return to action in early autumn.'",
+      "ourRegister": "Livramento appears NOWHERE in either edition.",
+      "verdict": "A first-choice full-back at a club whose defenders we price, out until early autumn after surgery, and our file has never heard of him.",
+      "whyThisIsTheWorstKindOfGap": "An absent injury is not a wrong answer the user can see and discount. It is a silent one: nothing in the app says anything about him, so nothing looks broken. The Minteh case in the owed list is the same shape and worse — there our register actively recommends a player reported out for two to three months.",
+      "notClaimed": "A return date. 'Hopes to return in early autumn' after 'minor' surgery is the club's framing in the source's words, and the scare quotes around minor are the Guardian's."
+    },
+
+    "playersTheseArticlesNameThatOurRegisterDoesNOTHold": {
+      "method": "Word-boundary match against both editions.",
+      "newcastle": ["Matthias Jaissle", "Lukas Hornicek", "Tino Livramento", "William Osula", "Mason Miley", "Lewis Miley", "Ross Wilson", "David Hopkinson"],
+      "forest": ["Ousmane Diomande", "Dilane Bakwa", "Ola Aina", "Lucas Bergvall", "Vitor Pereira", "Evangelos Marinakis"],
+      "theOnesThatChangeAnAnswer": ["Matthias Jaissle", "Lukas Hornicek", "Tino Livramento", "Ousmane Diomande"]
+    },
+
+    "theWOLTEMADEQualifier": {
+      "ourRegister": "'Nick Woltemade, nailed striker and penalty taker, main goal threat.'",
+      "guardian": "'whether he can succeed where Howe failed and get the best out of last season's twin attacking disappointments Yoane Wissa and Nick Woltemade', with the photo caption 'More will be expected of William Osula this season'.",
+      "verdict": "No conflict about the ROLE — the Guardian does not dispute that Woltemade leads the line or takes penalties. It disputes how well he did it, in a season our register describes only as 'leads the line as main striker'.",
+      "recordedAs": "a qualifier on a premium pick, not a correction to it. 'Nailed' and 'disappointing' are compatible and both can be true of the same player."
+    }
+  },
+
+  "claimsWorthGrading": [
+    { "claim": "Newcastle finish 17th (Guardian writers' average)", "gradeable": true, "settlesOn": "the final table", "note": "a five-place fall predicted off the back of selling the top three" },
+    { "claim": "Nottingham Forest finish 11th (Guardian writers' average)", "gradeable": true, "settlesOn": "the final table" },
+    { "claim": "Matthias Jaissle is Newcastle's head coach", "gradeable": true, "settlesOn": "the GW1 team sheet, and it is already settled by four sources" },
+    { "claim": "Lukas Hornicek is at Newcastle", "gradeable": true, "settlesOn": "the FPL bootstrap" },
+    { "claim": "Livramento returns in early autumn", "gradeable": true, "settlesOn": "appearance records", "note": "grade the return, not the hope" },
+    { "claim": "Diomande is Forest's only paid signing this summer", "gradeable": true, "settlesOn": "completion dates on Hutchinson, McAtee and Ndoye" },
+    { "claim": "Forest sign a striker before the window shuts", "gradeable": true, "settlesOn": "the deadline", "note": "two sources, two different names" },
+    { "claim": "Jaissle gets the best out of Wissa and Woltemade", "gradeable": false, "why": "'the best out of' is not a threshold. Their goal returns are gradeable; this framing is not." }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "SETTLES the Newcastle manager error with a fourth source and the first full description of the successor. Listed as owed, not applied — it adopts an outside claim.",
+    "APPLIED, uniquely: Bruno Guimaraes removed from Newcastle's captaincy and set-piece lines in both editions. This adopts nothing from outside; our own Out list already recorded the transfer and the picks contradicted it.",
+    "Adds a permanent structural check so the same class of fault cannot recur silently a third time.",
+    "Opens two window-level conflicts — Newcastle's goalkeeper and Forest's summer spend — neither resolved by preference.",
+    "Adds Livramento, an injured first-choice full-back our file has never mentioned.",
+    "Closes the 17-18 gap the previous capture recorded, and confirms it was worth recording rather than guessing.",
+    "Contributes no prices. Four Guardian captures, zero prices between them."
+  ]
+}

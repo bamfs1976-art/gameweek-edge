@@ -27828,5 +27828,179 @@
       "3448": 251
     }
   },
-  "result": null
+  "result": null,
+  "voidedGrading": {
+    "voidedAt": "2026-08-18T08:20:00.000Z",
+    "whatWasPublished": "A graded round 1: every one of 3,442 players on roughly -250 points, our squad on -1899, the crowd's clubs on -247, and a rank correlation of -0.718 that was the same in all four positions.",
+    "whyItIsVoid": "The numbers are not a round of football. pointsAtLock was captured on 13 August while the feed still published the PREVIOUS season's cumulative totals — median 19, max 357, where a new season should read 0. By grading time on 17 August the feed had rolled over, so after-minus-before computed newSeasonSoFar minus lastSeasonFinal. Every established player 'scored' minus their last campaign; the only positive deltas belonged to players whose lock value was already 0, which is why the ceiling came out at +92.",
+    "whyTheCorrelationLookedLikeAVerdict": "-0.718, identical across GK, DEF, MID and FWD, reads on the record page as 'the model is strongly anti-predictive'. It is the opposite of a verdict: the model ranks by expected quality, expected quality correlates with last season's total, and last season's total entered the subtraction with a minus sign. A genuinely useless model scores about zero. A tidy -0.72 in every position is a measurement fault.",
+    "howItWasFound": "Not by us. An outside capture — @FEFLFinny's GW1 screenshot, posted 18 August — shows real Fantasy EFL round-1 scores as small positive integers (2, 12, 3, 8, 5, 15, 6) against a stated GW1 average of 44. Set beside our -1899, the record could not be right. See efl/data/benchmarks/round-01-community-results.json.",
+    "whatWasChanged": "result is set back to null so the published record stops showing a graded round that describes nothing. NOTHING ELSE IS EDITED: the picks, the lock snapshot, the universe and the timestamps stand exactly as recorded, because they are the evidence that the picks predated the football. This block is appended, not substituted — the ledger is append-only and a void that leaves no trace is just a quiet deletion.",
+    "whatStillNeedsDoing": "Round 1 cannot be graded from a lock baseline taken against the previous season. Either re-derive the baseline as zero for a first round of a new season, or re-record it against the current season and grade forward from round 2. Until then round 1 is UNGRADED, and that is the honest state — not zero, not estimated.",
+    "theGuardThatNowExists": "scripts/efl/grade-round.mjs refuses to grade when most players show negative round points or the worst is below -60, and says why. The previous guard only checked that the points COLUMN had not been renamed; here the name never changed, its meaning did, and a name check cannot see that.",
+    "theCommentThatMadeItPublishable": "The subtraction carried the note: 'A total that went DOWN is a post-match correction upstream, not a negative round. It is kept as-is rather than clamped ... and the number is small.' That was true when written. It stopped being true at the season rollover, and nothing checked. An assumption that has quietly stopped holding is worse than no assumption, which is why it is now enforced in code rather than asserted in a comment.",
+    "thePreservedGradingForReference": {
+      "gradedAt": "2026-08-17T21:42:12.989Z",
+      "attribution": "clean",
+      "window": {
+        "lastKickoff": "2026-08-17T19:00:00.000Z",
+        "nextRoundKickoff": "2026-08-20T19:00:00.000Z"
+      },
+      "fixtures": {
+        "played": 36,
+        "total": 36
+      },
+      "pointsField": "totalPoints",
+      "clubBasis": "official-points",
+      "crowdClubs": {
+        "ids": [
+          "39",
+          "25"
+        ],
+        "value": -247
+      },
+      "squad": {
+        "players": [
+          {
+            "id": "203362",
+            "name": "M. Hudson",
+            "club": "Oldham Athletic",
+            "position": "GK",
+            "points": -221
+          },
+          {
+            "id": "183386",
+            "name": "J. Beesley",
+            "club": "Bradford City",
+            "position": "FWD",
+            "points": -215
+          },
+          {
+            "id": "235517",
+            "name": "C. McJannet",
+            "club": "Grimsby Town",
+            "position": "DEF",
+            "points": -284
+          },
+          {
+            "id": "232977",
+            "name": "K. Watts",
+            "club": "Cambridge United",
+            "position": "DEF",
+            "points": -288
+          },
+          {
+            "id": "432647",
+            "name": "L. Wing",
+            "club": "Reading",
+            "position": "MID",
+            "points": -351
+          },
+          {
+            "id": "226473",
+            "name": "S. Twine",
+            "club": "Bristol City",
+            "position": "MID",
+            "points": -277
+          },
+          {
+            "id": "243951",
+            "name": "S. Thomas",
+            "club": "Stoke City",
+            "position": "MID",
+            "points": -263
+          }
+        ],
+        "total": -1899,
+        "unresolved": 0,
+        "formation": "1-2-3-1"
+      },
+      "captain": {
+        "id": "432647",
+        "points": -351,
+        "rank": 7,
+        "ties": 1,
+        "wasBest": false,
+        "bestPoints": -215,
+        "bestId": "183386",
+        "foregonePerMultiple": 136,
+        "vsOwnMean": -79.71428571428572
+      },
+      "clubs": {
+        "basis": "official-points",
+        "total": -348,
+        "perClub": [
+          {
+            "id": "108",
+            "value": -189,
+            "outcome": {
+              "played": 1,
+              "wins": 0,
+              "draws": 0,
+              "losses": 1,
+              "goalsFor": 3,
+              "goalsAgainst": 4,
+              "cleanSheets": 0,
+              "leaguePoints": 0
+            }
+          },
+          {
+            "id": "5",
+            "value": -159,
+            "outcome": {
+              "played": 1,
+              "wins": 0,
+              "draws": 1,
+              "losses": 0,
+              "goalsFor": 2,
+              "goalsAgainst": 2,
+              "cleanSheets": 0,
+              "leaguePoints": 1
+            }
+          }
+        ],
+        "fieldMean": -179.59722222222223,
+        "fieldMeanTwo": -359.19444444444446,
+        "bestTwo": 12,
+        "percentile": 0.5972222222222222
+      },
+      "baselines": {
+        "randomMean": -377.7585,
+        "randomMedian": -364,
+        "randomSamples": 2000,
+        "percentile": 0,
+        "naive": -1436,
+        "ceiling": 92,
+        "ceilingFormation": "1-2-2-2",
+        "fieldMean": -54.27019174898315,
+        "fieldMeanSeven": -379.89134224288205
+      },
+      "model": {
+        "n": 3442,
+        "rho": -0.718189036870507,
+        "topDecileLift": 3.289419773679166,
+        "byPosition": {
+          "GK": {
+            "n": 346,
+            "rho": -0.7156761455912419
+          },
+          "DEF": {
+            "n": 1084,
+            "rho": -0.7380521422081674
+          },
+          "MID": {
+            "n": 1154,
+            "rho": -0.738169256537419
+          },
+          "FWD": {
+            "n": 858,
+            "rho": -0.7220058296350362
+          }
+        }
+      },
+      "universe": {
+        "players": 3442
+      }
+    }
+  }
 }

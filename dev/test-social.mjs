@@ -94,15 +94,16 @@ const grabConst = (n) => {
   return html.slice(i, html.indexOf('\n', i));
 };
 
-const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules,
+const { squadOptimise, bestXI, RULES_FALLBACK, SCORING_FALLBACK, fplScoring, fplRules, ftCap, minClubsForXi, setRules,
   ftValue, benchValue, BENCH_W, FT_LADDER, FT_CAP, teamSheet, neverStarts, solvePlanMulti, DECAY_BASE } = new Function(
-  grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('minClubsForXi') + '\n' +
+  grabFn('bestXI') + '\n' + grabFn('fplRules') + '\n' + grabFn('fplScoring') + '\n' + grabFn('minClubsForXi') + '\n' +
   /* The two terms the transfer solver's objective gained beyond XI xP. */
-  grabConst('FT_CAP') + '\n' + grabConst('BENCH_W') + '\n' + grabConst('FT_LADDER') + '\n' +
+  grabConst('FT_CAP') + '\n' + grabFn('ftCap') + '\n' + grabConst('BENCH_W') + '\n' + grabConst('FT_LADDER') + '\n' +
   grabFn('ftValue') + '\n' + grabFn('benchValue') + '\n' +
   /* squadOptimise reads squad shape, club cap and budget from the live game
      rules now; the fallback block is exactly the old hard-coded values. */
   grabConst('RULES_FALLBACK') + '\nlet RULES=RULES_FALLBACK;\n' +
+  grabConst('SCORING_FALLBACK') + '\nlet SCORING=SCORING_FALLBACK;\n' +
   grabFn('squadOptimise') +
   /* The team sheet is assembly on top of bestXI — which formation, which
      armband, who never starts. The xP model underneath it has its own
@@ -112,7 +113,7 @@ const { squadOptimise, bestXI, RULES_FALLBACK, fplRules, minClubsForXi, setRules
   /* The plan solver, on the same stubbed xP: what is under test is the
      sequencing and the discounting, not the projection underneath. */
   '\n' + grabConst('DECAY_BASE') + '\n' + grabFn('solvePlanMulti') +
-  '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,fplRules,minClubsForXi,setRules:(r)=>{RULES=r;},'+
+  '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,SCORING_FALLBACK,fplScoring,fplRules,ftCap,minClubsForXi,setRules:(r)=>{RULES=r;},'+
   'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP,teamSheet,neverStarts,solvePlanMulti,DECAY_BASE};'
 )();
 
@@ -1157,6 +1158,104 @@ console.log('• squadOptimise: the club cap holds through the whole search');
     }
   }
   ok(built >= 8, 'enough squads were actually built to make the property meaningful (' + built + ')');
+}
+
+console.log('• fplScoring: the points table comes from the game, and a keeper scores 10');
+{
+  /* game_config.scoring as the live API actually serves it, measured
+     22 Aug 2026. Keyed by position SHORT NAME, which is the whole reason the
+     join has to go through element_types rather than an assumed 1=GKP. */
+  const TYPES = [
+    { id: 1, singular_name_short: 'GKP' }, { id: 2, singular_name_short: 'DEF' },
+    { id: 3, singular_name_short: 'MID' }, { id: 4, singular_name_short: 'FWD' },
+  ];
+  const SC = {
+    goals_scored: { DEF: 6, FWD: 4, GKP: 10, MID: 5 },
+    clean_sheets: { DEF: 4, FWD: 0, GKP: 4, MID: 1 },
+    defensive_contribution: { DEF: 2, FWD: 2, GKP: 0, MID: 2 },
+    assists: 3,
+  };
+  const boot = (scoring, types) => ({ game_config: { scoring: scoring === undefined ? SC : scoring },
+    element_types: types || TYPES });
+
+  const r = fplScoring(boot());
+  ok(r.fromApi === true, 'a real payload is marked as coming from the API');
+
+  /* THE BUG THIS REPLACED. Three inline copies of `type<=2?6:...` scored a
+     goalkeeper's goal at 6 by lumping keepers in with defenders. */
+  ok(r.goal[1] === 10, "a goalkeeper's goal is worth 10, not the 6 the inline constant gave (" + r.goal[1] + ')');
+  ok(r.goal[2] === 6 && r.goal[3] === 5 && r.goal[4] === 4, 'DEF/MID/FWD goals are unchanged at 6/5/4');
+  ok(r.cs[1] === 4 && r.cs[2] === 4 && r.cs[3] === 1 && r.cs[4] === 0, 'clean sheets read back 4/4/1/0');
+  ok(r.assist === 3, 'an assist is read, not assumed');
+  ok(r.defcon[1] === 0 && r.defcon[2] === 2, 'defensive contribution is worth nothing to a keeper and 2 to a defender');
+
+  /* The fallback has to agree with the live game, or the mock-backed suites
+     grade a different rulebook than the one users play. */
+  ok(SCORING_FALLBACK.goal[1] === 10, 'the fallback table states the keeper rule too, so an absent payload still scores it right');
+
+  /* The point of reading it at all: a rule change has to move. */
+  const changed = fplScoring(boot(Object.assign({}, SC, { goals_scored: { GKP: 12, DEF: 7, MID: 6, FWD: 5 }, assists: 4 })));
+  ok(changed.goal[1] === 12 && changed.goal[4] === 5, 'a new goal table is followed, not overridden');
+  ok(changed.assist === 4, 'a new assist value is followed');
+
+  /* THE FAILURE THE POSITION JOIN EXISTS TO PREVENT. If ids were assumed
+     rather than read, renumbering would score every position as another. */
+  const renum = fplScoring(boot(undefined, [
+    { id: 4, singular_name_short: 'GKP' }, { id: 3, singular_name_short: 'DEF' },
+    { id: 2, singular_name_short: 'MID' }, { id: 1, singular_name_short: 'FWD' },
+  ]));
+  ok(renum.goal[4] === 10 && renum.goal[1] === 4,
+     'positions are matched by name, so a renumbered payload still scores a keeper 10');
+
+  /* All four or none. A half-mapped table scores two positions by the new
+     rules and two by the old, which is undetectable in the output. */
+  const partial = fplScoring(boot(Object.assign({}, SC, { goals_scored: { GKP: 12, DEF: 7 } })));
+  ok(JSON.stringify(partial.goal) === JSON.stringify(SCORING_FALLBACK.goal),
+     'a table missing MID and FWD falls back whole rather than mixing two rulebooks');
+
+  ok(fplScoring({}).fromApi === false, 'no game_config means the fallback, honestly labelled');
+  ok(fplScoring({}).goal[1] === 10, 'and the fallback still scores a keeper 10');
+  ok(fplScoring(null).goal[3] === 5, 'a null payload does not throw');
+  const junk = fplScoring(boot(Object.assign({}, SC, { goals_scored: { GKP: 'x', DEF: 6, MID: 5, FWD: 4 } })));
+  ok(JSON.stringify(junk.goal) === JSON.stringify(SCORING_FALLBACK.goal),
+     'a non-numeric points value falls back rather than becoming NaN');
+
+  /* Thresholds are NOT in the published table and must stay constant. */
+  ok(r.defconThreshold[2] === 10 && r.defconThreshold[3] === 12,
+     'defcon thresholds stay hard-coded, because the game publishes the points and not the threshold');
+}
+
+console.log('• the free-transfer cap is read from game_config, not assumed');
+{
+  const base = {
+    game_settings: { squad_squadsize: 15, squad_squadplay: 11, squad_team_limit: 3,
+      squad_total_spend: 1000, transfers_sell_on_fee: 0.5, ui_currency_multiplier: 10 },
+    element_types: [
+      { id: 1, squad_select: 2, squad_min_play: 1, squad_max_play: 1 },
+      { id: 2, squad_select: 5, squad_min_play: 3, squad_max_play: 5 },
+      { id: 3, squad_select: 5, squad_min_play: 2, squad_max_play: 5 },
+      { id: 4, squad_select: 3, squad_min_play: 1, squad_max_play: 3 },
+    ],
+  };
+  const withCfg = (rules) => Object.assign({}, base, { game_config: { rules } });
+
+  /* Measured 22 Aug 2026: max_extra_free_transfers is 4, and one a week plus
+     four banked is the five FT_CAP has hard-coded all along. Two independent
+     sources agreeing is the only reason this reading is trustworthy. */
+  ok(fplRules(withCfg({ max_extra_free_transfers: 4 })).maxFt === 5,
+     'four extra plus the weekly one is a cap of five, matching the constant it replaces');
+  ok(fplRules(base).maxFt === 5, 'no game_config falls back to five rather than to nothing');
+  ok(fplRules(withCfg({ max_extra_free_transfers: 8 })).maxFt === 9, 'a rule change is followed');
+  ok(fplRules(withCfg({ max_extra_free_transfers: 0 })).maxFt === 1,
+     'zero extra means one a week, which is a legal rulebook and not an error');
+
+  /* Out of range falls back rather than clamping: clamping would silently
+     hide a disagreement between the field and what we think it means. */
+  ok(fplRules(withCfg({ max_extra_free_transfers: 900 })).maxFt === 5,
+     'an implausible cap falls back instead of rewriting every transfer plan');
+  ok(fplRules(withCfg({ max_extra_free_transfers: -3 })).maxFt === 5, 'a negative cap falls back');
+  ok(fplRules(withCfg({ max_extra_free_transfers: 'lots' })).maxFt === 5, 'a non-numeric cap falls back');
+  ok(fplRules(withCfg({})).maxFt === 5, 'an empty rules block falls back');
 }
 
 console.log('• ftValue: a banked transfer is worth points, with declining returns');

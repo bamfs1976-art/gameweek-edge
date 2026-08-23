@@ -1,0 +1,112 @@
+{
+  "gameweek": 1,
+  "competition": "Premier League 2026-27",
+  "kind": "outside-source-capture",
+  "capturedAt": "2026-08-18T09:37:00.000Z",
+  "deadlineAt": "2026-08-21T17:30:00Z",
+  "note": "A single pre-season tips card, card 1 of a series, posted three days before the GW1 deadline. Twelve lines, twenty-odd claims, and not one number in the whole graphic.",
+
+  "source": {
+    "name": "Sam FPL",
+    "handle": "@RegretFpl",
+    "platform": "X",
+    "verified": "no verification badge shown",
+    "postedAt": "2026-08-18T06:55:00+01:00",
+    "reach": "70K views, 1.3K likes, 903 bookmarks, 76 reposts, 22 replies — the widest reach of any capture this project holds",
+    "readFrom": "screenshot",
+    "commercialInterest": "Promotional. The post says 'Join us on Tiktok and Instagram for early access to the tips', the card is watermarked with three handles (@Samfpl, @RegretFpl, @SamFplTips) and it advertises 'MY NEW DRAFT ON TikTok & YouTube'. Nothing is sold directly; the product is attention across platforms.",
+    "whatKindOfSourceItIs": "A tip sheet, not an analysis. Every line is a verdict with no working shown — 'Tzolis underrated', 'Foden risky'. That makes it easy to grade and impossible to check, which is the opposite of the table captures."
+  },
+
+  "theCard": {
+    "title": "FPL TIPS FROM THE PRESEASON",
+    "cardNumber": 1,
+    "lines": [
+      "Tzolis underrated. ARS def essential.",
+      "Wirtz advanced. Szobo deeper with set pieces.",
+      "Semenyo lively. Foden risky. Trust Haaland.",
+      "Mbeumo lethal at no 9. Trust Bruno F. again",
+      "Williams & Igor will be popular from GW4 onwards",
+      "Schade and Dango can cover Thiago",
+      "Gross BHA best pick. Gomez limped.",
+      "J. Pedro essential. Palestra & Rogers on watchlist",
+      "Ndiaye pen taker. Dewsbury-Hall creative",
+      "Calvert consistent. Muharemovic/Rodon important",
+      "Hume hot. Lee Fee decent vs IPS, FUL",
+      "Richa & Robbo should start for Spurs"
+    ]
+  },
+
+  "sourceStatedPrices": {
+    "sourceId": "samfpl",
+    "statedTotal": 0,
+    "exact": [],
+    "bands": [],
+    "notEnumerated": "The card states no prices at all. This field exists so the checker records the source as SILENT on prices rather than as unexamined — the two are different and must not print the same way."
+  },
+
+  "verifiedAgainstOurRegister": {
+    "theOneHardFACTUALCLAIM": {
+      "claim": "'Lee Fee decent vs IPS, FUL' — Enzo Le Fee has good early fixtures against Ipswich and Fulham.",
+      "ourRegister": "Sunderland GW1 Ipswich Town (A), GW2 Fulham (H).",
+      "verdict": "AGREES, and in the right order. The only checkable fact on the card, and it checks out.",
+      "aSecondReadingItSupports": "The Michal capture's tables carry a fixture row we declined to transcribe. Its Le Fee cell appears to encode the same two opponents in the same order, which is consistent with the convention that capitals mark home games — but 'appears to' is why that row stayed unread."
+    },
+    "penaltyAndSetPieceClaims": {
+      "checked": 1,
+      "agreeing": 1,
+      "detail": [
+        { "claim": "'Ndiaye pen taker'", "ourRegister": "Set-piece and penalty magnets list: 'Ndiaye (pens)'", "verdict": "agrees" }
+      ],
+      "whyOnlyOne": "'Szobo deeper with set pieces' and 'Gross BHA best pick' are role and value judgements, not the kind of claim our set-piece register can answer. Gross's penalties are held there, but the card does not claim them."
+    },
+    "playersTheCardNamesThatOurRegisterDOESHold": [
+      "Tzolis — the register already lists him under Early differentials as 'Christos Tzolis (Arsenal)'",
+      "Palestra — 'a specialist wing-back rather than an orthodox full-back'",
+      "Muharemovic — carried in this project's own FPL Challenge GW5 Shield picks",
+      "Dewsbury-Hall, Wirtz, Mbeumo, Semenyo, Foden, Haaland, Bruno Fernandes, Joao Pedro, Ndiaye, Le Fee, Rogers, Schade, Gross, Calvert-Lewin"
+    ],
+    "playersItNamesThatOurRegisterDoesNOTHold": ["Rodon", "Hinshelwood is not on this card but see the fpltips correction below"],
+    "threeNamesLEFTUNRESOLVED": {
+      "why": "Each is a short form that could be more than one player, and this project has already merged two Sangares and two Fernandeses by guessing at a surname.",
+      "the": [
+        { "asWritten": "Igor, in 'Williams & Igor will be popular from GW4 onwards'", "problem": "The same card writes 'Thiago' for Igor Thiago one line below, so 'Igor' is being used for somebody else. Which Igor is not determinable from the card." },
+        { "asWritten": "Robbo, in 'Richa & Robbo should start for Spurs'", "problem": "Our register holds Antonee Robinson at Fulham and the Michal capture prices a Robinson at £4.5m. Reading this as a claim that Antonee Robinson is at Spurs would manufacture a transfer out of a nickname. NOT recorded as a conflict." },
+        { "asWritten": "Williams, in the same line as Igor", "problem": "The register holds Neco Williams at Forest, which fits 'popular from GW4 onwards' if Forest's fixtures turn, but the card does not say which Williams." }
+      ]
+    }
+  },
+
+  "theSecondSourceAgainstOurArsenalLine": {
+    "what": "'ARS def essential' is the second outside source to contradict this project's own published position on Arsenal defenders.",
+    "ourRegister": "'11 Aug: Saliba out (back, no return date) — discount every Arsenal defensive asset until the replacement is signed', repeated in the Arsenal block as 'a live discount on every Arsenal defensive asset'.",
+    "theFirstSource": "BigManBakar: 'Double Arsenal defence is a must to begin with... Leaving them out is an unnecessary risk.' Recorded in pl-preseason-chips-bigmanbakar.json as the first head-on disagreement between an outside capture and our own published position.",
+    "whatIsAndIsNotAdded": {
+      "added": "A second, independent, much wider-reaching source taking the same side. That raises the cost of our line being wrong; a position contradicted by two sources and held anyway needs to be right.",
+      "notAdded": "Any new evidence. This card shows no working at all — it asserts 'ARS def essential' and stops. BigManBakar at least stated the facts he was reasoning from, and stated the same facts our register does. Two assertions are not twice the evidence of one; they are the same amount of evidence, asserted twice.",
+      "whyThatDistinctionIsKeptHere": "Because the temptation is to treat a second agreeing voice as corroboration. On a matter of FACT it often is. On a matter of JUDGEMENT drawn from facts both sides already agree on, it is not — it is popularity."
+    },
+    "ourLineStands": "Unchanged, as it did after the first source. Arsenal's GW1-6 clean sheets settle it, and they settle it against one of us."
+  },
+
+  "convergencesWorthRecording": [
+    { "claim": "'Schade and Dango can cover Thiago'", "with": "fpltips: 'Igor Thiago (£8.0m) is an easy skip for me because cheaper forwards cover that slot better'", "note": "Two sources reach the same conclusion AND name the same cheaper forward. fpltips named Schade explicitly; the Michal capture prices Schade at £6.0m and Dango at £6.5m, against Thiago's now-thrice-stated £8.0m." },
+    { "claim": "'Tzolis underrated'", "with": "LazyFPL's headline call that Tzolis is 'excellent value at £6.5m if he can pin down that starting berth', and our own register listing him as an early differential", "note": "Three documents pointing at the same player from three directions." },
+    { "claim": "'Calvert consistent'", "with": "Calvert-Lewin at £6.0m, now stated by four separate captures, with our register still holding no price for him", "note": "The best-supported open price row we have, and now a judgement attached to it as well." }
+  ],
+
+  "claimsWorthGrading": [
+    { "claim": "Arsenal defenders are essential", "gradeable": true, "settlesOn": "Arsenal's GW1-6 clean sheets, against our register's discount line", "note": "the same item BigManBakar opened; this card does not change how it settles" },
+    { "claim": "Mbeumo is lethal at number nine", "gradeable": true, "settlesOn": "his GW1-6 position and goal return" },
+    { "claim": "Foden is risky", "gradeable": true, "settlesOn": "his minutes share — the Michal table already reads him at 61% last season, which supports the claim before a ball is kicked" },
+    { "claim": "Wirtz advanced, Szoboszlai deeper on set pieces", "gradeable": true, "settlesOn": "Liverpool's GW1-3 line-ups and set-piece takers" },
+    { "claim": "Richarlison and a Robinson start for Spurs", "gradeable": "partly", "settlesOn": "the GW1 team sheet", "note": "gradeable for Richarlison; the second name is not resolved here" },
+    { "claim": "Williams and Igor become popular from GW4", "gradeable": false, "why": "Neither player is identified with enough confidence to grade, and 'popular' is an ownership claim we hold no data for." }
+  ],
+
+  "whatThisChangesInOurDocuments": [
+    "Nothing in the register. One fixture claim agrees with it, one penalty claim agrees with it, and the Arsenal line stands with a second source now recorded against it.",
+    "It contributes no prices, and is recorded as SILENT on prices rather than unexamined.",
+    "It is the widest-reaching source we hold, at 70K views, and the least checkable. Those two facts sit together deliberately."
+  ]
+}

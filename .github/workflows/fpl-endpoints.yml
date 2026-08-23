@@ -15,6 +15,11 @@ name: FPL endpoint probe
 
 on:
   workflow_dispatch:
+    inputs:
+      base:
+        description: 'Site whose /api/fpl proxy to probe (defaults to production)'
+        required: false
+        default: 'https://gameweekedge.co.uk'
 
 permissions:
   contents: read
@@ -27,5 +32,43 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Probe the FPL API
+      - name: Prove the probe covers the whole allowlist
+        # First, because the report's headline is a coverage count. A probe
+        # that silently skips an endpoint prints the same thing as one that
+        # finds it healthy, and that is how three routes went unchecked.
+        run: node dev/test-fpl-probe-coverage.mjs
+      - name: Probe the FPL API, upstream and through our proxy
+        env:
+          GWE_BASE: ${{ inputs.base || 'https://gameweekedge.co.uk' }}
         run: node dev/fpl-endpoint-probe.mjs
+      - name: What the API publishes about price
+        # A separate question from "which endpoints exist": whether the price
+        # data is populated well enough to beat the threshold model we already
+        # ship. Needs values, not key names, so it is its own script.
+        # continue-on-error so a failure here still leaves the survey above
+        # readable — the two answers are independent.
+        continue-on-error: true
+        run: node dev/fpl-price-probe.mjs
+      - name: Why our gameweek total disagrees with FPL's
+        # On a SETTLED gameweek both numbers are final, so a remaining
+        # difference is not the "different clocks" the rival card claims — it
+        # is a defect the note is excusing. Grades the shipped rivalSquadRows
+        # against real public entries.
+        continue-on-error: true
+        run: node dev/fpl-points-gap.mjs
+      - name: What bootstrap publishes that we never read
+        # The field diff in the endpoint probe lists NAMES. This lists the
+        # ones we do not read together with their fill rate and a real value,
+        # because an unused field that is null for every row is an empty
+        # column rather than an opportunity — the mistake already made twice
+        # here, on team strength and on cost_change_*.
+        continue-on-error: true
+        run: node dev/fpl-bootstrap-unused.mjs
+
+      - name: Does entry_history.value already include the bank?
+        # The squad planner needs a rebuild budget, which is value + bank
+        # only if the two are disjoint. Nothing in the app answers it and
+        # guessing would bake the error into every squad the page builds,
+        # so it is measured against real entries instead.
+        continue-on-error: true
+        run: node dev/fpl-budget-basis.mjs
