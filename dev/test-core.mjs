@@ -192,6 +192,7 @@ const pieces = [
   /* Sparkline geometry — the SVG fallback still has to be right, because it
      is what renders when the vendor bundle has not loaded. */
   extractFn(html, 'sparkPoints'),
+  extractFn(html, 'transferMovers'),
   extractFn(html, 'sparkColor'),
   extractFn(aiSrc, 'fitJSON'),
   /* bestTransfer drives the dashboard/debrief suggestion; stub its only
@@ -310,7 +311,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -3950,6 +3951,55 @@ section('sparklines: the SVG fallback geometry is unchanged');
   ok(core.sparkColor([5, 1]) === 'var(--red)', 'a falling series is red');
   ok(core.sparkColor([5, 5]) === 'var(--green)', 'a flat series reads as not-falling, as before');
   ok(core.sparkColor([5, 1], { color: 'var(--blue)' }) === 'var(--blue)', 'an explicit colour wins');
+}
+
+section('transfer market: the top ten each way, and what it refuses to pad');
+{
+  const el = (id, i, o) => ({ id, transfers_in_event: i, transfers_out_event: o });
+  /* A plain field, ranked both ways. */
+  const set = [el(1, 500, 10), el(2, 900, 5), el(3, 100, 800), el(4, 0, 300)];
+  const m = core.transferMovers(set, 10);
+  ok(m.in.map((e) => e.id).join(',') === '2,1,3', 'most transferred in, biggest first');
+  ok(m.out.map((e) => e.id).join(',') === '3,4,1,2', 'and most transferred out, biggest first');
+
+  /* A player nobody has bought is not "eleventh most bought" — he is not in
+     that race. Padding a top ten out to ten rows with zeros would make the
+     tenth row indistinguishable from a real one. */
+  ok(!m.in.some((e) => e.id === 4), 'a player with no transfers in is not in the in list');
+  ok(m.in.length === 3 && m.out.length === 4,
+    'each list is only as long as there are players actually in that race');
+  ok(core.transferMovers([el(9, 0, 0)], 10).in.length === 0
+    && core.transferMovers([el(9, 0, 0)], 10).out.length === 0,
+    'a player with neither is in neither list');
+
+  /* The limit is the whole point of a top ten. */
+  const many = Array.from({ length: 40 }, (_, i) => el(i + 1, 1000 - i, i));
+  ok(core.transferMovers(many, 10).in.length === 10, 'the in list stops at ten');
+  ok(core.transferMovers(many, 10).out.length === 10, 'and so does the out list');
+  ok(core.transferMovers(many, 3).in.length === 3, 'the limit is honoured when it is not ten');
+
+  /* TIES ARE BROKEN BY THE OTHER SIDE OF THE LEDGER. Two players level on
+     40,000 in are not equally wanted if one is also being sold by 30,000.
+     Nothing about a raw count says that, so the sort has to. */
+  const tied = [el(7, 40000, 30000), el(8, 40000, 1000)];
+  ok(core.transferMovers(tied, 10).in.map((e) => e.id).join(',') === '8,7',
+    'level on transfers in, the better net leads');
+  const tiedOut = [el(11, 30000, 40000), el(12, 1000, 40000)];
+  ok(core.transferMovers(tiedOut, 10).out.map((e) => e.id).join(',') === '12,11',
+    'level on transfers out, the worse net leads');
+
+  /* Identical rows must not shuffle between renders — the panel is rebuilt
+     on every visit and a list that reorders itself reads as live movement
+     that did not happen. */
+  const same = [el(30, 100, 50), el(20, 100, 50), el(10, 100, 50)];
+  ok(core.transferMovers(same, 10).in.map((e) => e.id).join(',') === '10,20,30',
+    'identical rows fall back to id, so the order is stable');
+
+  /* Missing fields are absent counts, not zero-count entries that outrank
+     somebody real. */
+  ok(core.transferMovers([{ id: 1 }, el(2, 5, 0)], 10).in.map((e) => e.id).join(',') === '2',
+    'a player with no transfer fields at all is simply not ranked');
+  ok(core.transferMovers(null, 10).in.length === 0, 'no elements yields no lists');
 }
 
 /* ── summary ────────────────────────────────────────────── */

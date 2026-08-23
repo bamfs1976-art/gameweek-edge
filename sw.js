@@ -22,7 +22,7 @@
    removed; its shell is deliberately NOT listed below, and bumping VERSION
    is what evicts it from the caches of everyone who already had it. */
 
-const VERSION = 'ge-v10';
+const VERSION = 'ge-v11';
 const EFL = '/fantasy-efl/';
 /* Fantasy EFL's six routes and the modules behind them. Listed here rather
    than derived, because addAll() rejects the whole install if a single URL
@@ -115,6 +115,11 @@ self.addEventListener('fetch', (e) => {
 
   /* Never intercept the API — freshness is the data layer's job. */
   if (url.pathname.startsWith('/api/')) return;
+  /* Nor the build stamp. It exists so a long-lived tab can tell that a
+     deploy has happened since it loaded, and a cached answer to that
+     question is worse than no answer: it would report "still current"
+     forever, which is the exact failure it was added to detect. */
+  if (url.pathname === '/version.json') return;
   if (url.origin !== self.location.origin) return;
 
   /* The page/app shell and every file that IS the app: network-first, so a

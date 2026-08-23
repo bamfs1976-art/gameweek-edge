@@ -501,6 +501,16 @@ html.native .ptr-spinner.show{display:grid;opacity:1}
 html.offline .net-banner{transform:translateY(0)}
 .net-banner[hidden]{display:none}
 .net-dot{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0}
+/* Update banner: the same slot, in green, and shown by simply not being
+   hidden — it has no `html.offline` equivalent to slide it in, because
+   there is nothing to wait for once we know a new build exists. */
+.upd-banner{background:var(--green-soft);color:var(--green);
+  border-bottom:1px solid var(--green);transform:none}
+.upd-banner .btn{padding:3px 10px;font-size:.74rem}
+/* Both can be true at once — the deploy is found, then the connection
+   drops — and they share a slot, so the second one moves down rather
+   than printing on top of the first. */
+html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 
 /* ── LIVE DATA UI (Phase 2) ────────────────────────────── */
 .ge-host{min-height:120px}
@@ -2633,6 +2643,12 @@ body{font-size:14px;line-height:1.35}
   <span>You're offline — showing the last loaded view.</span>
 </div>
 
+<!-- Update banner: a deploy has landed since this page loaded -->
+<div class="net-banner upd-banner" id="upd-banner" role="status" aria-live="polite" hidden>
+  <span>A new version of Gameweek Edge is ready.</span>
+  <button class="btn btn-primary btn-sm" onclick="location.reload()">Reload</button>
+</div>
+
 <!-- Manager ID modal -->
 <div class="modal" id="mid-modal" role="dialog" aria-modal="true" aria-labelledby="mid-title">
   <div class="modal-bg" data-mid-close></div>
@@ -4322,7 +4338,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   price:{
-    desc:'Estimated rise/fall likelihood at the next 00:00 UK price update for every player, from net transfers against an ownership-scaled threshold — plus transfer momentum and value tables.',
+    desc:'Two reads of the same transfer flow: who the field is buying and selling right now, and what that is about to do to their price at the next 00:00 UK update.',
     layout:'standard'
   },
   setpiece:{
@@ -4476,7 +4492,7 @@ function closeMoreSheet(){
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
 const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
-  points5:'fixtures',csmatrix:'fixtures',
+  points5:'fixtures',csmatrix:'fixtures',market:'price',
   bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank',
   matchforecast:'results',lineups:'results',
   methodology:'accountability',
@@ -4496,7 +4512,7 @@ const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuri
    at parse time, taking the whole script — and the whole page — down with it.
    The arrow defers the lookup to call time, long after the consts exist.
    KEEP ON ONE LINE — dev/test-social.mjs reads only to the first newline. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v)};
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v)};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -4504,6 +4520,8 @@ const PANEL_VIEW={
   fixtures:{hub:'fixtures',view:'grid'},
   points5:{hub:'fixtures',view:'points'},
   csmatrix:{hub:'fixtures',view:'cs'},
+  price:{hub:'price',view:'moves'},
+  market:{hub:'price',view:'market'},
   liverank:{hub:'liverank',view:'rank'},
   bonus:{hub:'liverank',view:'bonus'},
   dcwatch:{hub:'liverank',view:'defcon'},
@@ -10562,7 +10580,61 @@ function nextPriceChange(list,now){
   return {at:next,
     label:d.toLocaleString(undefined,{weekday:'short',hour:'2-digit',minute:'2-digit'})};
 }
+/* ── Prices hub: two reads of the same transfer flow ──────
+   Transfers and prices are one subject — net transfers are literally what
+   moves a price — so they share a panel rather than a tab. The Players
+   area is capped at seven tabs on purpose (arriving on an area must not
+   put a wall of them in front of you), and a view costs no tab while
+   still being a real, bookmarkable address: #market lands here on the
+   market view exactly as #diffs lands on the players table's
+   differentials lens.
+
+   One consequence, stated rather than hidden: the panel's `needs` is
+   ['prices'], so a game without price changes would hide the market view
+   along with it, though transfer counts would still exist there. FPL is
+   the only game in GAMES and it has the capability, so this costs nothing
+   today — it is written down so that whoever adds a second game knows the
+   view needs separating rather than discovering it as a missing panel. */
+const PR_VIEWS=[
+  {id:'moves',label:'Price moves',
+   desc:'Who rises and who falls at the next 00:00 UK update — FPL’s own published figure where there is one, our ownership-scaled estimate where there is not, and the panel says which.'},
+  {id:'market',label:'Transfer market',
+   desc:'The ten players the field is buying hardest and the ten it is selling, from FPL’s own counts for the window that is open now.'}
+];
+function prView(id){return PR_VIEWS.find(v=>v.id===id)||PR_VIEWS[0];}
+let PR_VIEW='moves';
+function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});}
+const PR_HYDRATE={moves:(h)=>hydratePriceMoves(h),market:(h)=>hydrateTransferMarket(h)};
+function prRenderBody(){
+  const body=document.getElementById('pr-body');if(!body)return;
+  const note=document.getElementById('pr-note');
+  if(note)note.textContent=prView(PR_VIEW).desc;
+  document.querySelectorAll('#pr-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===PR_VIEW));
+  body.innerHTML=skel(5);
+  /* Each view owns the whole body, so a slow one cannot paint into a host
+     the reader has already switched away from. */
+  const token=(MEM._prToken=(MEM._prToken||0)+1);
+  Promise.resolve().then(()=>PR_HYDRATE[PR_VIEW](body)).catch(err=>{
+    if(token!==MEM._prToken)return;
+    body.innerHTML='<div class="hub-fail">'+stateBox('arrows','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
 async function hydratePrice(host){
+  host.innerHTML=
+    '<div class="lensbar" id="pr-views">'+PR_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===PR_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="pr-note" style="margin:0 0 12px"></p>'+
+    '<div id="pr-body"></div>';
+  host.querySelectorAll('#pr-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===PR_VIEW)return;
+    prSetView(btn.dataset.view);
+    prRenderBody();
+  }));
+  prRenderBody();
+}
+async function hydratePriceMoves(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures().catch(()=>[])]);
   const nextPC=nextPriceChange(b.priceDeadlines);
   const total=b.raw.total_players||10e6;
@@ -10681,6 +10753,111 @@ async function hydrateNews(host){
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">Official player news — injuries, suspensions and availability — <b>newest first</b>, straight from the FPL data ('+items.length+' updates). Tap a player for detail. For deeper written briefings see <a href="#blog" onclick="openPanel(\'blog\');return false">The Wire</a>.</div>'+
     '<div class="card"><div class="card-title">Latest player news</div><div class="dl">'+rows+'</div></div>';
+}
+
+/* ── TRANSFER MARKET: who the field is buying and selling ──
+   FPL publishes transfers_in_event and transfers_out_event on every
+   player. They are COUNTS, not estimates, and they reset at each
+   deadline — so they describe the window that is open now and nothing
+   before it.
+
+   Pure, and separated from the rendering, because the ordering is the
+   whole claim. Two things it refuses to fudge:
+
+   A player with no transfers in is not "eleventh most transferred in";
+   he is not in that race at all. Zeros are dropped rather than padding
+   a top ten out to ten — a list that always has ten rows tells you
+   nothing about whether the tenth is worth reading.
+
+   Ties are broken deterministically, and by the OTHER side of the
+   ledger. Two players level on 40,000 in are not equally wanted if one
+   is also being sold by 30,000 — so the one with the better net leads,
+   and identical rows fall back to id so the same data always renders in
+   the same order. */
+function transferMovers(elements,limit){
+  const n=Math.max(1,limit||10);
+  const list=(elements||[]).filter(e=>e&&e.id!=null);
+  const inn=e=>Number(e.transfers_in_event)||0;
+  const out=e=>Number(e.transfers_out_event)||0;
+  const net=e=>inn(e)-out(e);
+  const rank=(key,dir)=>list.filter(e=>key(e)>0)
+    .sort((a,c)=>key(c)-key(a)||dir*(net(c)-net(a))||a.id-c.id)
+    .slice(0,n);
+  return {in:rank(inn,1),out:rank(out,-1)};
+}
+/* The deadline these transfers are FOR, when one is known. The counters
+   reset at each deadline, so "since the last deadline" is always true of
+   them; naming the next one as well is what makes the window concrete. */
+function transferWindowNote(b){
+  const ev=((b&&b.events)||[]).find(e=>!e.finished&&e.deadline_time
+    &&new Date(e.deadline_time).getTime()>Date.now());
+  if(!ev)return '';
+  return ' They take effect at the <b>'+esc(ev.name)+'</b> deadline.';
+}
+async function hydrateTransferMarket(host){
+  const b=await boot();
+  const mv=transferMovers(b.elements,10);
+  const total=(b.raw&&b.raw.total_players)||0;
+  if(!mv.in.length&&!mv.out.length){
+    host.innerHTML=stateBox('arrows','No transfers counted yet',
+      'FPL resets these counts at every deadline. The moment managers start '
+      +'buying and selling for the next gameweek, the two lists fill in here.');
+    return;
+  }
+  let owned=new Set();const mid=getMid();
+  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  /* Price movement so far this window, from FPL's own cost_change_event.
+     It belongs beside a transfer count because it is the consequence:
+     the crowd buying a player is what moves his price, and a rise you
+     have already missed changes what the number in front of you means. */
+  const priceMove=e=>{
+    const c=Number(e.cost_change_event)||0;
+    if(!c)return '';
+    return ' <span class="'+(c>0?'pos':'neg')+'">'+(c>0?'▲':'▼')+Math.abs(c/10).toFixed(1)+'</span>';
+  };
+  const row=(e,i,side)=>{
+    const inn=Number(e.transfers_in_event)||0,out=Number(e.transfers_out_event)||0;
+    const net=inn-out;
+    const flag=e.status&&e.status!=='a'
+      ? ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>':'';
+    const mine=owned.has(e.id)?' <span class="badge badge-blue">yours</span>':'';
+    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')">'+
+      '<span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+flag+mine+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,13)+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+
+        ' · '+money(e.now_cost)+priceMove(e)+' · '+esc(String(e.selected_by_percent))+'% owned</span></span>'+
+      '<span class="dl-col mono '+(side==='in'?'pos':'neg')+'">'+(side==='in'?'+':'−')+fmtK(side==='in'?inn:out)+'</span>'+
+      '<span class="dl-col mono'+(net>0?' pos':net<0?' neg':'')+'">'+(net>0?'+':net<0?'−':'')+fmtK(Math.abs(net))+'</span></div>';
+  };
+  const table=(list,side,head)=>'<div class="dl"><div class="dl-row head">'+
+    '<span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
+    '<span class="dl-col">'+head+'</span><span class="dl-col">Net</span></div>'+
+    list.map((e,i)=>row(e,i,side)).join('')+'</div>';
+  const empty=what=>'<p class="dl-sub" style="margin:0">Nobody has been transferred '+what+
+    ' since the last deadline yet.</p>';
+  /* Ownership is what turns a transfer count into a rank consequence, and
+     it is the number people skip. 300,000 managers buying a player owned
+     by 40% of the game is a different event from 300,000 buying one owned
+     by 2% — the first barely changes anyone's position, the second is the
+     whole gameweek. Said once, here, rather than implied by a column. */
+  const scope=total
+    ? ' Out of roughly '+fmtNum(total)+' managers playing.'
+    : '';
+  host.innerHTML=
+    '<div class="dl-sub" style="margin-bottom:12px">FPL’s own transfer counts for the window that is open now — '
+      +'these are published figures, not our estimates, and they reset at every deadline.'
+      +transferWindowNote(b)+scope+' The <b>Net</b> column is transfers in minus transfers out, '
+      +'which is what actually moves a price: see the '
+      +'<a href="#price" onclick="openPanel(\'price\');return false">Price Predictor</a> for how close each one is to a change.</div>'+
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.trend,'width="15" height="15"')+' Most transferred in</div>'+
+      '<p class="dl-sub" style="margin:0 0 10px">The ten players the field is buying hardest. '
+      +'A crowded transfer is a rank DEFENCE, not a rank gain: owning what everybody owns keeps you level with them, '
+      +'and the players who actually move you are the ones missing from both of these lists.</p>'+
+      (mv.in.length?table(mv.in,'in','In'):empty('in'))+'</div>'+
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.arrows,'width="15" height="15"')+' Most transferred out</div>'+
+      '<p class="dl-sub" style="margin:0 0 10px">The ten being sold hardest. An injury or suspension badge usually explains the exodus; '
+      +'where there is no badge, the field is reacting to a blank or a fixture run, and that is a judgement you can disagree with.</p>'+
+      (mv.out.length?table(mv.out,'out','Out'):empty('out'))+'</div>';
 }
 
 /* Shared: a ranked player table with two metric columns. */
@@ -17197,7 +17374,17 @@ function lgFlipDir(){
 }
 const LEAGUE_OPEN=new Set();
 const LEAGUE_DETAIL_MAX=50;
-function lgSetView(v){LEAGUE_VIEW=v==='detailed'?'detailed':'compact';renderPage('leagues');}
+function lgSetView(v){
+  LEAGUE_VIEW=v==='detailed'?'detailed':'compact';
+  /* Coming back to compact with a squad-only field still selected would
+     leave the control disagreeing with the table: the field is not in the
+     compact list, so the select falls back to showing the first option
+     while the sort in force is still the one that has no values to read.
+     Reset to league order, which is what the table would show anyway. */
+  const spec=leagueSortSpec(LEAGUE_SORT);
+  if(LEAGUE_VIEW==='compact'&&spec&&spec.detail){LEAGUE_SORT='rank';LEAGUE_DIR=0;}
+  renderPage('leagues');
+}
 function lgToggle(id){
   id=String(id);
   if(LEAGUE_OPEN.has(id))LEAGUE_OPEN.delete(id);else LEAGUE_OPEN.add(id);
@@ -17215,27 +17402,44 @@ function lgToggle(id){
    from the one the arithmetic supports, so the card says which it is. */
 async function leagueDetailCard(res,leagueId,meId,whole){
   try{
-    if(!res||!res.length)return '';
+    if(!res||!res.length)return {ok:false,html:''};
     const b=await boot();
     const fixtures=await loadFixtures();
     const ph=gwPhase(b,fixtures);
     const gw=(ph.cur&&ph.cur.id)||b.cur.id;
     const slice=res.slice(0,LEAGUE_DETAIL_MAX);
+    /* WHY a squad is missing decides what this card is allowed to say.
+       FPL answers 404 for picks until the deadline passes: that is "not
+       yet", and it is true of everybody at once. Anything else — a 429
+       from the proxy when fifty managers are fetched two calls apiece, a
+       5xx, a dropped connection — is a failure. Telling a manager their
+       league's squads "aren't public yet" when the calls simply fell over
+       is a wrong answer, not a cautious one, and it is unfalsifiable from
+       the outside: they wait for a deadline that has already passed. */
+    const pickFail=[];
     /* Two calls per manager: the squad, and the season history that the
        free-transfer count and the chip ledger are derived from. Paired in
        one job so a manager costs one slot rather than two passes. */
     const [live,pairs]=await Promise.all([
       loadLive(gw).catch(()=>({elements:[]})),
       mapLimit(slice,6,r=>Promise.all([
-        loadPicks(r.entry,gw).catch(()=>null),
+        loadPicks(r.entry,gw).catch(e=>{pickFail.push((e&&e.status)||0);return null;}),
         loadHistory(r.entry).catch(()=>null)
       ]))
     ]);
     const picksArr=pairs.map(p=>(p&&p[0])||null);
     const histArr=pairs.map(p=>(p&&p[1])||null);
     const eo=leagueEO(picksArr);
-    if(!eo.managers)return '<div class="card mb-20"><div class="card-title">Detailed view</div>'+
-      '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p></div>';
+    if(!eo.managers){
+      const all404=pickFail.length===slice.length&&pickFail.every(st=>st===404);
+      return {ok:false,html:'<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+        (all404
+          ? '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p>'
+          : '<p class="dl-sub" style="margin:0 0 10px">Couldn’t load the squads for this league. This view asks the FPL API for one squad '+
+            'per manager, so a slow or rate-limited moment takes all of them down at once — the standings below are unaffected.</p>'+
+            '<button class="btn btn-ghost btn-sm" onclick="renderPage(\'leagues\')">Try again</button>')+
+        '</div>'};
+    }
     const states=playerGwStates(b.els,fixtures,gw);
     const ftMax=ftCap();
     /* Which fifty get loaded is decided by league position; how they are
@@ -17244,7 +17448,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
     const built=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
       .filter(Boolean);
     const rows=sortLeagueRows(built,LEAGUE_SORT,LEAGUE_DIR);
-    if(!rows.length)return '';
+    if(!rows.length)return {ok:false,html:''};
     const pct=v=>v==null?'':(v*100).toFixed(1)+'%';
     const cell=p=>{
       const el=b.els[p.id];
@@ -17352,11 +17556,17 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
       'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
       (missing===1?'is':'are')+' excluded.':'')+benchNote+'</p>';
-    return '<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+    return {ok:true,html:'<div class="card mb-20"><div class="card-title">Detailed view</div>'+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
-      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing;
-  }catch(_){return '';}
+      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing};
+  /* Never a silent ''. The detail card REPLACES the standings table, so an
+     empty string here used to render a league with no managers in it at
+     all — reported as "nothing is showing". A failure has to be visible,
+     and `ok:false` is what keeps the table on screen underneath it. */
+  }catch(_){return {ok:false,html:'<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+    '<p class="dl-sub" style="margin:0 0 10px">Couldn\u2019t build the detailed view. The standings below are unaffected.</p>'+
+    '<button class="btn btn-ghost btn-sm" onclick="renderPage(\'leagues\')">Try again</button></div>'};}
 }
 /* The title-race card. Rendered only when the whole league is on screen:
    with pages beyond the first, the managers we can see are the current
@@ -17482,34 +17692,42 @@ async function renderLeagueStandings(host,leagueId,mid,type){
   const spec=leagueSortSpec(LEAGUE_SORT)||LEAGUE_SORTS[0];
   const curDir=LEAGUE_DIR||spec.dir;
   /* Only offer sorts the loaded data can actually perform. Team value
-     exists only once squads are fetched, so in the compact table it
-     would be a control that does nothing. */
-  const sortOpts=LEAGUE_SORTS.filter(o=>!o.detail||detailed);
-  const viewBar=h2h?'':'<div class="lg-bar mb-14">'+
+     exists only once squads are fetched, so over the compact table it
+     would be a control that does nothing — and that stays true of a
+     detailed view whose squads failed to load, which is why this takes
+     the answer as an argument rather than reading `detailed`. */
+  const viewBarFor=deep=>h2h?'':'<div class="lg-bar mb-14">'+
     '<div class="lensbar" id="lg-views">'+
     [['compact','Compact'],['detailed','Detailed']].map(v=>
       '<button class="lensbtn'+(LEAGUE_VIEW===v[0]?' on':'')+'" data-lgview="'+v[0]+'">'+v[1]+'</button>').join('')+
     '</div>'+
     '<label class="sr-only" for="lg-sort">Sort the table by</label>'+
     '<select class="modal-in lg-sortsel" id="lg-sort">'+
-      sortOpts.map(o=>'<option value="'+o.key+'"'+(o.key===spec.key?' selected':'')+'>'+esc(o.label)+'</option>').join('')+
+      LEAGUE_SORTS.filter(o=>!o.detail||deep)
+        .map(o=>'<option value="'+o.key+'"'+(o.key===spec.key?' selected':'')+'>'+esc(o.label)+'</option>').join('')+
     '</select>'+
     '<button class="btn btn-ghost btn-sm lg-dir" id="lg-dir" '+
       'aria-label="'+(curDir===1?'Sorted low to high':'Sorted high to low')+', tap to reverse" '+
       'title="'+(curDir===1?'Low to high':'High to low')+'">'+(curDir===1?'▲':'▼')+'</button>'+
     '</div>';
-  if(detailed)host.innerHTML=back+viewBar+'<div class="card mb-20"><div class="card-title">'+
+  if(detailed)host.innerHTML=back+viewBarFor(true)+'<div class="card mb-20"><div class="card-title">'+
       esc(data.league?data.league.name:'League')+'</div>'+
       '<div class="dl-sub">Loading every squad on this page — one call per manager.</div>'+
       skel(6)+'</div>';
-  const detailCard=detailed?await leagueDetailCard(res,leagueId,meId,page===1&&!hasNext):'';
-  host.innerHTML=back+oppCard+viewBar+
+  const detail=detailed?await leagueDetailCard(res,leagueId,meId,page===1&&!hasNext):null;
+  const detailCard=detail?detail.html:'';
+  /* The detail card replaces the table only when it HAS the squads.
+     Suppressing the table for a detail card that came back empty left the
+     league card with a title and nothing under it. */
+  const detailShown=!!(detail&&detail.ok);
+  host.innerHTML=back+oppCard+viewBarFor(detailShown)+
     '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
     /* In detailed view the compact table would be the same ranks and
        totals twice on one screen, so the detail card replaces it rather
-       than sitting under it. The pager stays either way. */
-    (detailed?'':'<div class="dl" id="league-standings">'+head+rows+'</div>')+
+       than sitting under it — but only once it actually has the squads.
+       The pager stays either way. */
+    (detailShown?'':'<div class="dl" id="league-standings">'+head+rows+'</div>')+
     /* Sorting is client-side over the rows already fetched. On a league
        that runs past one page that is a sort of THIS PAGE, not of the
        league — the manager with the best gameweek may be on page four
@@ -20892,6 +21110,15 @@ function cmdkEntries(q){
       label:l.label,sub:'Players · lens',icon:'grid',base:0.4,
       run:()=>{plSetLens(l.id);openPanel('allplayers',{keepView:true});}});
   });
+  /* Same argument for the prices hub. "Transfer market" is what somebody
+     types when they want to know who the field is buying, and it is a view
+     rather than a panel, so without this the words find nothing. */
+  if(canSeePanel(PANELS.price))PR_VIEWS.forEach(v=>{
+    if(v.id==='moves')return;               /* that IS the panel, already listed */
+    out.push({name:v.label,aliases:[v.id,'transfers in','transfers out'],desc:'Prices view',
+      label:v.label,sub:PANELS.price.areaLabel+' · view',icon:'arrows',base:0.4,
+      run:()=>{prSetView(v.id);openPanel('price',{keepView:true});}});
+  });
   verbs.forEach(v=>out.push({name:v.label,aliases:v.aliases||[],desc:'action',
     label:v.label,sub:v.sub,icon:v.icon,base:0.5,run:v.run}));
   /* Players join the index only once there is something to match them on.
@@ -21345,6 +21572,61 @@ function registerSW(){
   window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js').catch(()=>{});});
 }
 
+/* ── A DEPLOY HAS LANDED SINCE THIS PAGE LOADED ──────────
+   The app is one HTML file, and the service worker is network-first on
+   it, so a RELOAD always gets the newest code. The gap is that an
+   installed PWA is rarely reloaded: resumed from the home screen it
+   restores the page it already had, no navigation happens, and the
+   worker is never asked. The shell can then run a build that is days
+   old while the server has moved on — which does not read as "stale
+   code", it reads as a feature that has disappeared.
+
+   So the page asks. www/version.json carries a hash of what shipped;
+   this captures the answer once at startup and re-asks whenever the app
+   comes back to the foreground. A different hash means a deploy landed
+   under this tab, and the banner offers the reload that fixes it.
+
+   Deliberately not automatic: reloading a page somebody is mid-way
+   through reading is worse than the staleness. And deliberately quiet on
+   failure — offline, a 404, a proxy hiccup are all "don't know", and
+   "don't know" must never be shown as "out of date". */
+let GE_BUILD=null,GE_VER_AT=0;
+const GE_VER_EVERY=5*60*1000;
+async function geFetchBuild(){
+  try{
+    /* The query is not decoration. A worker installed BEFORE this check
+       existed serves unknown paths cache-first, so it would pin the first
+       answer and report "still current" forever — to exactly the people
+       whose page never reloads, who are the ones this is for. A unique URL
+       misses that cache. The new worker ignores the path outright, and the
+       VERSION bump alongside it clears whatever the old one stored. */
+    const r=await fetch('/version.json?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return null;
+    const j=await r.json();
+    return (j&&typeof j.build==='string'&&j.build)||null;
+  }catch(_){return null;}
+}
+async function checkForUpdate(force){
+  if(window.GENative&&window.GENative.isNative)return;  // its assets ship in the binary
+  const now=Date.now();
+  if(!force&&now-GE_VER_AT<GE_VER_EVERY)return;
+  GE_VER_AT=now;
+  const build=await geFetchBuild();
+  if(!build)return;
+  if(!GE_BUILD){GE_BUILD=build;return;}                 // the build we are
+  if(build===GE_BUILD)return;
+  const b=document.getElementById('upd-banner');
+  if(b)b.hidden=false;
+}
+function initVersionWatch(){
+  if(window.GENative&&window.GENative.isNative)return;
+  checkForUpdate(true);
+  /* Foregrounding is the moment that matters: it is exactly the resume
+     that does NOT reload the page. */
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkForUpdate(false);});
+  window.addEventListener('focus',()=>checkForUpdate(false));
+}
+
 /* Lightweight pull-to-refresh on the window scroll (native only).
    The page scrolls at document level, so we gate on scroll position
    being at the very top. */
@@ -21425,6 +21707,7 @@ function init(){
   /* Connectivity banner (web + native), PWA worker, native shell wiring. */
   initNetwork();
   registerSW();
+  initVersionWatch();
   initNative();
 
   /* Manager ID linking. */

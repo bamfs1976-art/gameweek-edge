@@ -4,8 +4,9 @@
    Run via: npm run build:web   (cap sync calls this through npm run sync) */
 
 import { build } from 'esbuild';
-import { mkdir, copyFile, rm, readdir, stat, writeFile } from 'node:fs/promises';
+import { mkdir, copyFile, rm, readdir, stat, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { publishRecord } from './efl/publish-record.mjs';
 
@@ -115,6 +116,33 @@ async function buildEfl() {
   return { files: await countFiles(join(ROOT, 'efl/app')) + 1, record };
 }
 
+/* www/version.json — the build stamp the running app checks itself against.
+
+   The web app is a single HTML file held open for days at a time: an
+   installed PWA resumed from the home screen is not a fresh navigation, so
+   the service worker (network-first on the shell) is never asked, and a
+   deploy can sit on the server for a week while the phone keeps running
+   last Tuesday's code. That looks exactly like a feature that has gone
+   missing, because from the user's side it is one.
+
+   The stamp is a HASH OF WHAT SHIPS, not a timestamp. A rebuild that
+   changes nothing must not nag anybody to reload, and two builds of the
+   same commit must agree. Only the files that ARE the app are hashed —
+   icons and data change on their own schedule and reloading for them
+   would be noise. */
+const APP_FILES = ['index.html', 'native.js', 'auth.js', 'vendor.js', 'vendor.css'];
+
+async function writeVersion() {
+  const h = createHash('sha256');
+  for (const f of APP_FILES) {
+    const p = join(OUT, f);
+    if (existsSync(p)) h.update(await readFile(p));
+  }
+  const stamp = h.digest('hex').slice(0, 12);
+  await writeFile(join(OUT, 'version.json'), JSON.stringify({ build: stamp }) + '\n');
+  return stamp;
+}
+
 async function countFiles(dir) {
   let n = 0;
   for (const entry of await readdir(dir)) {
@@ -130,6 +158,8 @@ await bundleNative();
 await bundleAuth();
 await bundleVendor();
 const efl = await buildEfl();
+const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');
+console.log(`✓ Build stamp ${stamp} → www/version.json`);
 console.log(`✓ Built www/fantasy-efl/ (Fantasy EFL — ${efl.files} files, 6 routes, `
   + `${efl.record.rounds} recorded round(s), ${efl.record.graded} graded)`);
