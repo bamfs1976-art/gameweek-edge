@@ -19,8 +19,8 @@ own caption underneath it:
 | Button | What it does |
 |---|---|
 | **Share** | Hands the picture *and* the caption to X or Bluesky together — the post is already written when the app opens |
-| **Copy for X** | The long version, no hashtag, on the clipboard |
-| **Bluesky** | The short version, `#FPL` included, always inside 300 characters |
+| **Copy for X** | The X version, no hashtag, inside 280 characters |
+| **Bluesky** | The Bluesky version, `#FPL` included, inside 300 characters |
 | **Alt text** | The image description — paste into the alt field before posting |
 
 **Share is the whole workflow.** Tap the card's Share button, pick X or
@@ -30,6 +30,12 @@ fallback for desktop, where the share sheet doesn't exist.
 The caption shown under each card is the Bluesky one, because it's the shorter
 of the two and reads as a finished post either way. What you see is what
 you'd send.
+
+Both versions are written for a **standard account with no Premium
+subscription**. X is the tighter of the two: it bills every link at a flat 23
+characters however short it is, and counts each emoji as two, so 280 buys
+rather less than it looks like it does. Every caption is checked against that
+arithmetic in CI, so nothing here can quietly grow past the limit again.
 
 ---
 

@@ -94,9 +94,35 @@ for (const id of ids) {
   if (!expected.has(id)) fail('caption "' + id + '" matches no preset — stale entry?');
 }
 
-/* ── 2. Shape, and the Bluesky limit ─────────────────────────────────── */
+/* ── X's weighted character count ─────────────────────────────────────
+   X does not count characters, it counts "weighted" ones: code points in a
+   handful of ranges (Latin, punctuation, common dashes) weigh 1 and
+   everything else — every emoji, and the → in the DefCon caption — weighs 2.
+   On top of that every link is rewritten to a t.co URL and billed at a flat
+   23 regardless of its real length, so gameweekedge.co.uk costs 23, not 18.
+   Counting the naive way says these captions fit when they do not: the gap
+   ran to 25 characters on the worst of them.
+   Rules: https://developer.x.com/en/docs/counting-characters */
+const X_LIGHT = [[0, 4351], [8192, 8205], [8208, 8223], [8242, 8247]];
+const X_URL = /\b(?:https?:\/\/)?[a-z0-9-]+(?:\.[a-z0-9-]+)+(?:\/[^\s]*)?/gi;
+function xLen(s) {
+  let n = 0;
+  const stripped = s.replace(X_URL, () => { n += 23; return ''; });
+  for (const ch of stripped) {
+    const cp = ch.codePointAt(0);
+    n += X_LIGHT.some(([a, b]) => cp >= a && cp <= b) ? 1 : 2;
+  }
+  return n;
+}
+
+/* ── 2. Shape, and the two platform limits ───────────────────────────── */
 const LIMIT = 300;
+/* 280 is the limit on a standard X account. Premium raises it, but writing to
+   the higher ceiling is what put fifteen of these captions over the edge in
+   the first place — so the floor is what gets enforced. */
+const X_LIMIT = 280;
 let worst = { id: null, n: 0 };
+let worstX = { id: null, n: 0 };
 for (const id of ids) {
   const c = caps[id];
   for (const f of ['x', 'b', 'a']) {
@@ -109,6 +135,11 @@ for (const id of ids) {
     if (n > LIMIT) fail(id + '.b is ' + n + ' characters — Bluesky will reject it');
     if (n > worst.n) worst = { id, n };
   }
+  if (typeof c.x === 'string') {
+    const n = xLen(c.x);
+    if (n > X_LIMIT) fail(id + '.x is ' + n + ' weighted characters — X will reject it');
+    if (n > worstX.n) worstX = { id, n };
+  }
   /* The link is the entire point of posting. */
   for (const f of ['x', 'b']) {
     if (typeof c[f] === 'string' && !c[f].includes('gameweekedge.co.uk')) {
@@ -120,7 +151,10 @@ for (const id of ids) {
   if (typeof c.b === 'string' && !c.b.includes('#FPL')) fail(id + '.b is missing #FPL');
   if (typeof c.x === 'string' && c.x.includes('#')) fail(id + '.x contains a hashtag');
 }
-if (!failed) ok('all ' + ids.length + ' Bluesky captions fit (longest: ' + worst.id + ' at ' + worst.n + ')');
+if (!failed) {
+  ok('all ' + ids.length + ' Bluesky captions fit 300 (longest: ' + worst.id + ' at ' + worst.n + ')');
+  ok('all ' + ids.length + ' X captions fit 280 weighted (longest: ' + worstX.id + ' at ' + worstX.n + ')');
+}
 
 /* ── 3. The wiring is actually there ─────────────────────────────────── */
 for (const [needle, why] of [
