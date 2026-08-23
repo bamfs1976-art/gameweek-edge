@@ -1819,6 +1819,76 @@ section('mini-league sorting: a different order, not a different league');
   await sp.close();
 }
 
+section('transfer market: two top tens, in a view that costs no tab');
+{
+  /* Asked for as "top 10 players transferred in and top 10 transferred out,
+     in the players area". The Players area is capped at seven tabs on
+     purpose, so this is a VIEW of the prices panel — which makes #market a
+     real address, and makes that address worth checking: a route that
+     lands on the wrong view is the failure mode the hub map exists to
+     prevent, and it is invisible to a static read of the source. */
+  const tp = await browser.newPage();
+  const tErrors = [];
+  tp.on('pageerror', (e) => tErrors.push(e.message));
+  await tp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await tp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await tp.waitForTimeout(1200);
+
+  const out = await tp.evaluate(async () => {
+    openPanel('market');                       /* the deep link, not the internals */
+    await new Promise((r) => setTimeout(r, 2500));
+    const host = document.getElementById('ge-data');
+    const tables = [...document.querySelectorAll('#pr-body .dl')];
+    const rows = (t) => [...t.querySelectorAll('.dl-row:not(.head)')];
+    const nums = (t, col) => rows(t).map((r) =>
+      r.querySelectorAll('.dl-col')[col].textContent.replace(/[+−k]/g, ''));
+    return {
+      view: PR_VIEW,
+      onBtn: (document.querySelector('#pr-views .lensbtn.on') || {}).textContent,
+      tabs: NAV.find((a) => a.id === 'players').panels.length,
+      tables: tables.length,
+      heads: tables.map((t) => t.querySelector('.dl-row.head').textContent),
+      counts: tables.map((t) => rows(t).length),
+      firstCol: tables.map((t) => nums(t, 0)),
+      ranks: tables.map((t) => rows(t).map((r) => r.querySelector('.dl-rank').textContent)),
+      text: host ? host.innerText : '',
+    };
+  });
+
+  ok(out.view === 'market', 'the #market deep link opens the market view (' + out.view + ')');
+  ok(/transfer market/i.test(out.onBtn || ''), 'and the view button reads as selected (' + out.onBtn + ')');
+  /* The rule this shape exists to respect. If somebody later adds an eighth
+     tab, this says so here rather than in a design review. */
+  ok(out.tabs <= 7, 'the Players area still fits inside seven tabs (' + out.tabs + ')');
+
+  ok(out.tables === 2, 'two lists, in and out (' + out.tables + ')');
+  ok(/most transferred in/i.test(out.text) && /most transferred out/i.test(out.text),
+     'both are labelled for which direction they are');
+  ok(out.counts.every((n) => n > 0 && n <= 10),
+     'each list is a top ten at most (' + out.counts.join(',') + ')');
+
+  /* A ranked list that is not actually ranked is the bug worth catching:
+     the numbers have to descend, or the "top ten" is just ten players. */
+  const descends = (a) => a.every((v, i) => i === 0 || Number(v) <= Number(a[i - 1]));
+  ok(out.firstCol.every(descends),
+     'both lists run biggest first (' + out.firstCol.map((c) => c.join('>')).join(' | ') + ')');
+  ok(out.ranks.every((r) => r.join(',') === r.map((_, i) => i + 1).join(',')),
+     'and are numbered 1..n');
+
+  /* Switching back must not leave the market on screen under the other
+     view's heading — each view owns the whole body. */
+  const back = await tp.evaluate(async () => {
+    document.querySelector('#pr-views .lensbtn[data-view="moves"]').click();
+    await new Promise((r) => setTimeout(r, 2500));
+    return { view: PR_VIEW, market: /most transferred in/i.test(document.getElementById('ge-data').innerText) };
+  });
+  ok(back.view === 'moves', 'switching back selects the price view');
+  ok(back.market === false, 'and the market lists leave with it');
+
+  ok(tErrors.length === 0, 'the market view threw nothing (' + tErrors.slice(0, 2).join(' | ') + ')');
+  await tp.close();
+}
+
 section('detailed view: a failure is visible, and never an empty league');
 {
   /* Reported as "can no longer choose the detailed team view in mini

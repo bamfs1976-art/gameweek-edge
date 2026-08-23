@@ -4338,7 +4338,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   price:{
-    desc:'Estimated rise/fall likelihood at the next 00:00 UK price update for every player, from net transfers against an ownership-scaled threshold — plus transfer momentum and value tables.',
+    desc:'Two reads of the same transfer flow: who the field is buying and selling right now, and what that is about to do to their price at the next 00:00 UK update.',
     layout:'standard'
   },
   setpiece:{
@@ -4492,7 +4492,7 @@ function closeMoreSheet(){
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
 const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
-  points5:'fixtures',csmatrix:'fixtures',
+  points5:'fixtures',csmatrix:'fixtures',market:'price',
   bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank',
   matchforecast:'results',lineups:'results',
   methodology:'accountability',
@@ -4512,7 +4512,7 @@ const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuri
    at parse time, taking the whole script — and the whole page — down with it.
    The arrow defers the lookup to call time, long after the consts exist.
    KEEP ON ONE LINE — dev/test-social.mjs reads only to the first newline. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v)};
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v)};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -4520,6 +4520,8 @@ const PANEL_VIEW={
   fixtures:{hub:'fixtures',view:'grid'},
   points5:{hub:'fixtures',view:'points'},
   csmatrix:{hub:'fixtures',view:'cs'},
+  price:{hub:'price',view:'moves'},
+  market:{hub:'price',view:'market'},
   liverank:{hub:'liverank',view:'rank'},
   bonus:{hub:'liverank',view:'bonus'},
   dcwatch:{hub:'liverank',view:'defcon'},
@@ -10578,7 +10580,61 @@ function nextPriceChange(list,now){
   return {at:next,
     label:d.toLocaleString(undefined,{weekday:'short',hour:'2-digit',minute:'2-digit'})};
 }
+/* ── Prices hub: two reads of the same transfer flow ──────
+   Transfers and prices are one subject — net transfers are literally what
+   moves a price — so they share a panel rather than a tab. The Players
+   area is capped at seven tabs on purpose (arriving on an area must not
+   put a wall of them in front of you), and a view costs no tab while
+   still being a real, bookmarkable address: #market lands here on the
+   market view exactly as #diffs lands on the players table's
+   differentials lens.
+
+   One consequence, stated rather than hidden: the panel's `needs` is
+   ['prices'], so a game without price changes would hide the market view
+   along with it, though transfer counts would still exist there. FPL is
+   the only game in GAMES and it has the capability, so this costs nothing
+   today — it is written down so that whoever adds a second game knows the
+   view needs separating rather than discovering it as a missing panel. */
+const PR_VIEWS=[
+  {id:'moves',label:'Price moves',
+   desc:'Who rises and who falls at the next 00:00 UK update — FPL’s own published figure where there is one, our ownership-scaled estimate where there is not, and the panel says which.'},
+  {id:'market',label:'Transfer market',
+   desc:'The ten players the field is buying hardest and the ten it is selling, from FPL’s own counts for the window that is open now.'}
+];
+function prView(id){return PR_VIEWS.find(v=>v.id===id)||PR_VIEWS[0];}
+let PR_VIEW='moves';
+function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});}
+const PR_HYDRATE={moves:(h)=>hydratePriceMoves(h),market:(h)=>hydrateTransferMarket(h)};
+function prRenderBody(){
+  const body=document.getElementById('pr-body');if(!body)return;
+  const note=document.getElementById('pr-note');
+  if(note)note.textContent=prView(PR_VIEW).desc;
+  document.querySelectorAll('#pr-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===PR_VIEW));
+  body.innerHTML=skel(5);
+  /* Each view owns the whole body, so a slow one cannot paint into a host
+     the reader has already switched away from. */
+  const token=(MEM._prToken=(MEM._prToken||0)+1);
+  Promise.resolve().then(()=>PR_HYDRATE[PR_VIEW](body)).catch(err=>{
+    if(token!==MEM._prToken)return;
+    body.innerHTML='<div class="hub-fail">'+stateBox('arrows','Could not load this view',
+      (err&&err.message)||'Try again in a moment.')+'</div>';
+  });
+}
 async function hydratePrice(host){
+  host.innerHTML=
+    '<div class="lensbar" id="pr-views">'+PR_VIEWS.map(v=>
+      '<button class="lensbtn'+(v.id===PR_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>'+
+    '<p class="dl-sub" id="pr-note" style="margin:0 0 12px"></p>'+
+    '<div id="pr-body"></div>';
+  host.querySelectorAll('#pr-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===PR_VIEW)return;
+    prSetView(btn.dataset.view);
+    prRenderBody();
+  }));
+  prRenderBody();
+}
+async function hydratePriceMoves(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures().catch(()=>[])]);
   const nextPC=nextPriceChange(b.priceDeadlines);
   const total=b.raw.total_players||10e6;
@@ -10697,6 +10753,111 @@ async function hydrateNews(host){
   host.innerHTML=
     '<div class="dl-sub" style="margin-bottom:12px">Official player news — injuries, suspensions and availability — <b>newest first</b>, straight from the FPL data ('+items.length+' updates). Tap a player for detail. For deeper written briefings see <a href="#blog" onclick="openPanel(\'blog\');return false">The Wire</a>.</div>'+
     '<div class="card"><div class="card-title">Latest player news</div><div class="dl">'+rows+'</div></div>';
+}
+
+/* ── TRANSFER MARKET: who the field is buying and selling ──
+   FPL publishes transfers_in_event and transfers_out_event on every
+   player. They are COUNTS, not estimates, and they reset at each
+   deadline — so they describe the window that is open now and nothing
+   before it.
+
+   Pure, and separated from the rendering, because the ordering is the
+   whole claim. Two things it refuses to fudge:
+
+   A player with no transfers in is not "eleventh most transferred in";
+   he is not in that race at all. Zeros are dropped rather than padding
+   a top ten out to ten — a list that always has ten rows tells you
+   nothing about whether the tenth is worth reading.
+
+   Ties are broken deterministically, and by the OTHER side of the
+   ledger. Two players level on 40,000 in are not equally wanted if one
+   is also being sold by 30,000 — so the one with the better net leads,
+   and identical rows fall back to id so the same data always renders in
+   the same order. */
+function transferMovers(elements,limit){
+  const n=Math.max(1,limit||10);
+  const list=(elements||[]).filter(e=>e&&e.id!=null);
+  const inn=e=>Number(e.transfers_in_event)||0;
+  const out=e=>Number(e.transfers_out_event)||0;
+  const net=e=>inn(e)-out(e);
+  const rank=(key,dir)=>list.filter(e=>key(e)>0)
+    .sort((a,c)=>key(c)-key(a)||dir*(net(c)-net(a))||a.id-c.id)
+    .slice(0,n);
+  return {in:rank(inn,1),out:rank(out,-1)};
+}
+/* The deadline these transfers are FOR, when one is known. The counters
+   reset at each deadline, so "since the last deadline" is always true of
+   them; naming the next one as well is what makes the window concrete. */
+function transferWindowNote(b){
+  const ev=((b&&b.events)||[]).find(e=>!e.finished&&e.deadline_time
+    &&new Date(e.deadline_time).getTime()>Date.now());
+  if(!ev)return '';
+  return ' They take effect at the <b>'+esc(ev.name)+'</b> deadline.';
+}
+async function hydrateTransferMarket(host){
+  const b=await boot();
+  const mv=transferMovers(b.elements,10);
+  const total=(b.raw&&b.raw.total_players)||0;
+  if(!mv.in.length&&!mv.out.length){
+    host.innerHTML=stateBox('arrows','No transfers counted yet',
+      'FPL resets these counts at every deadline. The moment managers start '
+      +'buying and selling for the next gameweek, the two lists fill in here.');
+    return;
+  }
+  let owned=new Set();const mid=getMid();
+  if(mid){try{const p=await loadPicks(mid,b.cur.id);owned=new Set(p.picks.map(x=>x.element));}catch(_){}}
+  /* Price movement so far this window, from FPL's own cost_change_event.
+     It belongs beside a transfer count because it is the consequence:
+     the crowd buying a player is what moves his price, and a rise you
+     have already missed changes what the number in front of you means. */
+  const priceMove=e=>{
+    const c=Number(e.cost_change_event)||0;
+    if(!c)return '';
+    return ' <span class="'+(c>0?'pos':'neg')+'">'+(c>0?'▲':'▼')+Math.abs(c/10).toFixed(1)+'</span>';
+  };
+  const row=(e,i,side)=>{
+    const inn=Number(e.transfers_in_event)||0,out=Number(e.transfers_out_event)||0;
+    const net=inn-out;
+    const flag=e.status&&e.status!=='a'
+      ? ' <span class="badge '+(STATUS_BADGE[e.status]||'badge-grey')+'">'+(STATUS_LABEL[e.status]||e.status)+'</span>':'';
+    const mine=owned.has(e.id)?' <span class="badge badge-blue">yours</span>':'';
+    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')">'+
+      '<span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+flag+mine+'</span>'+
+      '<span class="dl-sub">'+crest(b,e.team,13)+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+
+        ' · '+money(e.now_cost)+priceMove(e)+' · '+esc(String(e.selected_by_percent))+'% owned</span></span>'+
+      '<span class="dl-col mono '+(side==='in'?'pos':'neg')+'">'+(side==='in'?'+':'−')+fmtK(side==='in'?inn:out)+'</span>'+
+      '<span class="dl-col mono'+(net>0?' pos':net<0?' neg':'')+'">'+(net>0?'+':net<0?'−':'')+fmtK(Math.abs(net))+'</span></div>';
+  };
+  const table=(list,side,head)=>'<div class="dl"><div class="dl-row head">'+
+    '<span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
+    '<span class="dl-col">'+head+'</span><span class="dl-col">Net</span></div>'+
+    list.map((e,i)=>row(e,i,side)).join('')+'</div>';
+  const empty=what=>'<p class="dl-sub" style="margin:0">Nobody has been transferred '+what+
+    ' since the last deadline yet.</p>';
+  /* Ownership is what turns a transfer count into a rank consequence, and
+     it is the number people skip. 300,000 managers buying a player owned
+     by 40% of the game is a different event from 300,000 buying one owned
+     by 2% — the first barely changes anyone's position, the second is the
+     whole gameweek. Said once, here, rather than implied by a column. */
+  const scope=total
+    ? ' Out of roughly '+fmtNum(total)+' managers playing.'
+    : '';
+  host.innerHTML=
+    '<div class="dl-sub" style="margin-bottom:12px">FPL’s own transfer counts for the window that is open now — '
+      +'these are published figures, not our estimates, and they reset at every deadline.'
+      +transferWindowNote(b)+scope+' The <b>Net</b> column is transfers in minus transfers out, '
+      +'which is what actually moves a price: see the '
+      +'<a href="#price" onclick="openPanel(\'price\');return false">Price Predictor</a> for how close each one is to a change.</div>'+
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.trend,'width="15" height="15"')+' Most transferred in</div>'+
+      '<p class="dl-sub" style="margin:0 0 10px">The ten players the field is buying hardest. '
+      +'A crowded transfer is a rank DEFENCE, not a rank gain: owning what everybody owns keeps you level with them, '
+      +'and the players who actually move you are the ones missing from both of these lists.</p>'+
+      (mv.in.length?table(mv.in,'in','In'):empty('in'))+'</div>'+
+    '<div class="card mb-20"><div class="card-title">'+svg(ICON.arrows,'width="15" height="15"')+' Most transferred out</div>'+
+      '<p class="dl-sub" style="margin:0 0 10px">The ten being sold hardest. An injury or suspension badge usually explains the exodus; '
+      +'where there is no badge, the field is reacting to a blank or a fixture run, and that is a judgement you can disagree with.</p>'+
+      (mv.out.length?table(mv.out,'out','Out'):empty('out'))+'</div>';
 }
 
 /* Shared: a ranked player table with two metric columns. */
@@ -20948,6 +21109,15 @@ function cmdkEntries(q){
     out.push({name:l.label,aliases:[l.id],desc:'Players lens',
       label:l.label,sub:'Players · lens',icon:'grid',base:0.4,
       run:()=>{plSetLens(l.id);openPanel('allplayers',{keepView:true});}});
+  });
+  /* Same argument for the prices hub. "Transfer market" is what somebody
+     types when they want to know who the field is buying, and it is a view
+     rather than a panel, so without this the words find nothing. */
+  if(canSeePanel(PANELS.price))PR_VIEWS.forEach(v=>{
+    if(v.id==='moves')return;               /* that IS the panel, already listed */
+    out.push({name:v.label,aliases:[v.id,'transfers in','transfers out'],desc:'Prices view',
+      label:v.label,sub:PANELS.price.areaLabel+' · view',icon:'arrows',base:0.4,
+      run:()=>{prSetView(v.id);openPanel('price',{keepView:true});}});
   });
   verbs.forEach(v=>out.push({name:v.label,aliases:v.aliases||[],desc:'action',
     label:v.label,sub:v.sub,icon:v.icon,base:0.5,run:v.run}));
