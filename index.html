@@ -630,6 +630,12 @@ html.offline .net-banner{transform:translateY(0)}
   font-size:var(--fs-min);font-weight:700;font-variant-numeric:tabular-nums;text-align:center;line-height:1.5}
 .pp-sub span{flex:1;padding:1px 2px;white-space:nowrap;overflow:hidden}
 .pp-sub .l{background:#dfe6ec;color:#2c3947}
+/* The next-three difficulty run, under the named next fixture. Colour
+   only — see the comment in renderDraft's cell for why it is not three
+   named chips. */
+.pp-run{display:flex;gap:1px;width:100%;max-width:64px;box-sizing:border-box;margin:2px auto 0}
+.pp-run i{flex:1;height:4px;border-radius:1px;display:block}
+.bench .pp-run{max-width:56px}
 .pp-sub .r{background:#bff0d2;color:#0c5c33}
 /* Haul / dud marker beside the figure — ⭐ 8+, 👎 played and blanked. */
 .pp-mark{position:absolute;top:-6px;right:-2px;font-size:.85rem;z-index:4;
@@ -4215,7 +4221,10 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   draft:{
-    desc:'Build your 2026/27 squad before the game launches — 15 players, £100.0m, the real FPL rules, with projected points over GW1–6 from our model.',
+    /* Static panel copy, so it cannot name a gameweek — but it must not
+       claim to be a launch-only tool either. The board itself says which
+       mode it is in. */
+    desc:'Plan a 15-man squad under the real FPL rules — a launch squad before the season, a wildcard, free hit or target squad after it, with projected points and the transfers to get there.',
     layout:'standard'
   },
   squad:{
@@ -19535,8 +19544,36 @@ function renderDraft(){
   const outfield=players.filter(e=>e.element_type>=2).sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0));
   const capId=outfield[0]?outfield[0].id:null,viceId=outfield[1]?outfield[1].id:null;
   const cell=e=>{
-    const nf=S.nf&&S.nf[e.team];
-    const fx=nf?'<div class="pp-sub"><span class="l" style="flex:1;background:'+(FDR_HEX[nf.diff]||'#d9dee3')+';color:#0c1014">'+esc(nf.opp)+' ('+(nf.home?'H':'A')+')</span></div>':'';
+    /* THREE fixtures, not one. A squad planner is a fixture decision as
+       much as a player one: a kind opener followed by two hard weeks is
+       a different pick from three kind ones, and a single chip could not
+       tell them apart. buildHorizon already returns the next N upcoming
+       with the model's own difficulty, and skips finished matches — so
+       in-season this is the next three still to play, not the season's
+       first three. */
+    const run=(S.hz&&S.hz[e.team])||[];
+    const next=run[0];
+    /* The named next fixture, then a three-segment difficulty bar for the
+       run. Three NAMED fixtures will not fit — the tile is 64px, so each
+       would get 21px and a three-letter club plus H/A does not go — and a
+       tooltip is not an answer on a phone. So the next match stays
+       readable and the two after it are colour only, with the whole run
+       in the title for a pointer and in the player card on tap.
+
+       Both come from buildHorizon, not one from here and one from
+       buildNextFix: two sources for the same fixture can disagree about
+       its difficulty, and a named chip contradicting the first segment
+       of the bar beneath it is worse than either alone. */
+    const runTitle=esc(run.map(f=>'GW'+f.event+' '+f.opp+' ('+(f.home?'H':'A')+')').join(' · '));
+    const fx=next
+      ? '<div class="pp-sub"><span class="l" style="flex:1;background:'+(FDR_HEX[next.diff]||'#d9dee3')+';color:#0c1014">'+
+          esc(next.opp)+' ('+(next.home?'H':'A')+')</span></div>'+
+        '<div class="pp-run" title="'+runTitle+'" aria-label="Next three: '+runTitle+'">'+
+          run.map(f=>'<i style="background:'+(FDR_HEX[f.diff]||'#d9dee3')+'"></i>').join('')+
+        '</div>'
+      /* No fixture in the window is a BLANK, and printing nothing there
+         would read as "not loaded yet" — the opposite of a warning. */
+      : '<div class="pp-sub"><span class="l" style="flex:1;background:#e9edf1;color:#6b7683">blank</span></div>';
     const badge=e.id===capId?'<span class="pp-badge">C</span>':e.id===viceId?'<span class="pp-badge" style="background:#c9ccd1">V</span>':'';
     return '<div class="pp'+(e.id===capId?' is-cap':'')+'" data-draft-open="'+e.id+'" role="button" tabindex="0">'+badge+ppFigure(b,e)+
       '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span>'+fx+'</div>';
@@ -19759,7 +19796,7 @@ async function hydrateDraft(host){
   const tmpl=draftTemplate(pool.filter(e=>e.status==='a'),xp6);
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
   const S=window._draft={b,m,ctx,pool,xp6,prior,hIdx,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,
-    nf:buildNextFix(b,fixtures),mySquad,myFt};
+    nf:buildNextFix(b,fixtures),hz:buildHorizon(b,fixtures,3),mySquad,myFt};
   const importBtn=(getMid()&&b.liveSeason)
     ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
@@ -19785,14 +19822,28 @@ async function hydrateDraft(host){
     (missing.length?' '+missing.map(esc).join(', ')+' players appear when FPL launches the 2026/27 game.':'');
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">'+svg(ICON.bolt,'width="15" height="15"')+' Draft board '+
-      '<span class="badge badge-amber">pre-season</span>'+
+      /* The badge said "pre-season" whatever the date. Renaming the panel
+         without rewriting what it says about itself left it claiming to
+         be a launch-day tool in the middle of a live gameweek. */
+      (b.preseason?'<span class="badge badge-amber">pre-season</span>'
+        :'<span class="badge badge-grey">GW'+((b.cur&&b.cur.id)||'')+'</span>')+
       '<span style="margin-left:auto;display:inline-flex;gap:6px;flex-wrap:wrap">'+importBtn+
         '<button class="btn btn-ghost btn-sm" onclick="draftClear()">Clear</button>'+
         '<button class="btn btn-cta btn-sm" id="draft-save" onclick="draftSaveNow()">Save draft</button></span></div>'+
       '<div id="draft-summary"></div>'+
       '<div id="draft-vs"></div>'+
-      '<p class="dl-sub" style="margin-top:10px">Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
-        'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'+notes+'</p></div>'+
+      /* Two different footnotes because they are two different claims.
+         Pre-season the prices are estimates and the projection is built
+         from last season; in-season the prices are the game's own and
+         the projection is running on this season's minutes. Printing the
+         pre-season one all year told users their budget was a guess. */
+      '<p class="dl-sub" style="margin-top:10px">'+
+        (b.preseason
+          ? 'Prices are <b>predicted</b> (last season’s final price / launch estimate) and can differ at launch. '+
+            'xP6 = projected points over GW1–6: last season’s per-90 points rate × minutes share × availability × the club’s 2026/27 fixture ease from our match model — a pre-season estimate.'
+          : 'Prices are the game’s current selling prices, and your budget is your own squad’s value. '+
+            'xP6 = projected points over the next six gameweeks: this season’s per-90 rate (blended with career form while the sample is short) × minutes share × availability × fixture ease.')+
+        notes+'</p></div>'+
     wizard+
     '<div class="grid draft-cols mb-20">'+
       '<div class="card"><div class="card-title">Your draft <span class="badge badge-green" id="draft-count"></span></div>'+

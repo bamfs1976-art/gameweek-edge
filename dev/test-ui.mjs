@@ -1917,6 +1917,45 @@ section('squad planner: a rebuild against your own budget, not a clean £100m');
   ok(/already own|nothing to do/i.test(same),
      'a plan matching the squad says there is nothing to do (' + same.slice(0, 70) + ')');
 
+  /* ── Fixtures on the tile ────────────────────────────────────────
+     A squad planner is a fixture decision as much as a player one, and
+     the board showed exactly one opponent per player — a kind opener
+     followed by two hard weeks looked identical to three kind ones. */
+  const fx = await pp.evaluate(async () => {
+    DRAFT_IDS = window._draft.mySquad.ids.slice();
+    renderDraft();
+    await new Promise((r) => setTimeout(r, 250));
+    const tiles = [...document.querySelectorAll('#draft-pitch .pp, .qd-pitch .pp, .pp')]
+      .filter((t) => t.querySelector('.pp-nm') && t.closest('.card'));
+    const runs = tiles.map((t) => t.querySelector('.pp-run')).filter(Boolean);
+    const segs = runs.map((r) => r.querySelectorAll('i').length);
+    const painted = runs.length ? [...runs[0].querySelectorAll('i')]
+      .map((i) => getComputedStyle(i).backgroundColor) : [];
+    return {
+      tiles: tiles.length,
+      runs: runs.length,
+      segs: [...new Set(segs)],
+      painted,
+      /* Each segment must have real width, or the bar is decoration. */
+      widths: runs.length ? [...runs[0].querySelectorAll('i')]
+        .map((i) => Math.round(i.getBoundingClientRect().width)) : [],
+      titled: runs.length ? (runs[0].getAttribute('title') || '') : '',
+      /* The named next fixture stays — colour alone is not a fixture. */
+      named: tiles.length ? !!tiles[0].querySelector('.pp-sub .l') : false,
+    };
+  });
+
+  ok(fx.runs > 0, 'players carry a fixture run, got ' + fx.runs + ' of ' + fx.tiles + ' tiles');
+  ok(fx.segs.length === 1 && fx.segs[0] === 3,
+     'and it is three gameweeks, got segment counts ' + fx.segs.join('/'));
+  ok(fx.named === true, 'the next opponent is still named, not reduced to a colour');
+  ok(fx.widths.every((w) => w > 0), 'every segment has width (' + fx.widths.join(',') + ')');
+  /* Colour is the whole signal, so a segment that never got one is a
+     blank bar pretending to be a difficulty rating. */
+  ok(fx.painted.every((c) => c && !/rgba\(0, 0, 0, 0\)/.test(c)),
+     'every segment is painted (' + fx.painted.join(' ') + ')');
+  ok(/GW\d/.test(fx.titled), 'and the run names its gameweeks on hover (' + fx.titled.slice(0, 50) + ')');
+
   ok(pErrors.length === 0, 'the planner threw nothing (' + pErrors.slice(0, 2).join(' | ') + ')');
   await pp.close();
 }

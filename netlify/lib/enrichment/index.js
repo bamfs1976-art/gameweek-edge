@@ -70,6 +70,10 @@ async function buildFplEnrichment({
   const cache = deps.cache || new MemoryCache();
   const logger = deps.logger || console;
   const providers = deps.providers || buildProviders({ config, cache, fetchImpl: deps.fetchImpl, now: deps.now, logger });
+  /* deps.now is a clock function returning a Date; the news helpers take
+     milliseconds. undefined means "use the wall clock", which is what
+     both of them default to. */
+  const newsNowMs=typeof deps.now==='function'?Number(deps.now()):undefined;
 
   const quality = {
     sources: [], failed: [], warnings: [],
@@ -240,14 +244,24 @@ async function buildFplEnrichment({
       const approved = config.providers.world_news.sources;
       let articles = news.dedupe(res);
       articles = news.filterBySource(articles, approved);
-      articles = news.filterByRecency(articles, config.providers.world_news.windowDays);
+      /* The clock is injectable here for the same reason it is on every
+         provider: a fixed article date measured against the wall clock
+         makes a test that passes today and fails on a date, with no code
+         change in between.
+
+         deps.now is a FUNCTION returning a Date — that is the convention
+         base.js already sets with `now = () => new Date()` — while these
+         two helpers want milliseconds. Converting here rather than
+         changing either convention. Undefined in production, and both
+         helpers then fall back to Date.now(). */
+      articles = news.filterByRecency(articles, config.providers.world_news.windowDays, newsNowMs);
       const playerList = wanted.map((p) => ({
         fpl_id: p.identity.fpl_id, display_name: p.identity.display_name, full_name: p.identity.normalized_name
       }));
       for (const a of articles) {
         const s = news.scoreArticle(a, {
           players: playerList, teams: teamNames, approvedDomains: approved,
-          windowDays: config.providers.world_news.windowDays
+          windowDays: config.providers.world_news.windowDays, now: newsNowMs
         });
         const item = newsItem({
           title: a.title, url: a.url, publisher: a.publisher, publishedAt: a.published_at,

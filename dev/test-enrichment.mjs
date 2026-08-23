@@ -412,7 +412,14 @@ section('end to end: several providers, partial failure, nothing overwritten');
     ['news.test/search-news', { body: F('world-news.json') }]
   ], log);
 
-  const out = await buildFplEnrichment({ gameweek: 1, deps: { env, fetchImpl, cache: new MemoryCache() } });
+  /* A FIXED INSTANT, because the fixtures carry fixed dates. The news
+     window is seven days and world-news.json is stamped 2026-08-16, so
+     reading it against the wall clock made this block pass for a week
+     and then fail on 2026-08-23 with nothing changed — which is a test
+     that reports the calendar, not the code. Every provider already
+     accepts an injected clock; the news filters now do too. */
+  const NOW = Date.parse('2026-08-17T00:00:00Z');
+  const out = await buildFplEnrichment({ gameweek: 1, deps: { env, fetchImpl, cache: new MemoryCache(), now: () => new Date(NOW) } });
 
   ok(Array.isArray(out.players) && out.players.length === BOOT.elements.length, 'every player is present');
   const gabriel = out.players.find((p) => p.identity.fpl_id === 102);
