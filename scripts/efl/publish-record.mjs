@@ -41,6 +41,11 @@ export function buildPublicRecord(entries, generatedAt = new Date().toISOString(
         position: p.position,
         score: p.score,
         fixture: p.fixture,
+        /* Carried through so the record page can show a double as a double.
+           Absent on rounds recorded before the ledger knew about them, which
+           is why the page falls back to `fixture` rather than assuming. */
+        fixtures: p.fixtures || null,
+        double: Boolean(p.double),
         points: pointsById.has(String(p.id)) ? pointsById.get(String(p.id)) : null
       })),
       clubs: e.picks.clubs.map((c, i) => {

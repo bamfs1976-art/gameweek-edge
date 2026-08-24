@@ -1334,6 +1334,188 @@ ok('an unrecognised position becomes MID, which is why the health check reports 
     + 'silent fallback would hand out for free');
 });
 
+/* ── Double rounds ─────────────────────────────────────
+   Reported from the official app: "EFL is a double gameweek this week, can
+   you check the app and the picks reflect this".
+
+   buildContext already kept two-fixtures-in-a-round rather than flattening,
+   "because both change a pick" — and then nextFixture flattened it anyway
+   for playerScore, which is the thing that actually picks the team. Two
+   chances to score is the entire reason a double is worth planning around,
+   and the model could not see the second match. */
+
+ok('roundOpportunity is EXACTLY (1 − difficulty) on a single fixture', () => {
+  /* The property that made this safe to change mid-season: every single
+     round scores as it always did, so nothing needs re-calibrating and no
+     graded round moves. Asserted across the range, not at one point. */
+  for (const d of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
+    assert.ok(Math.abs(model.roundOpportunity([{ difficulty: d, home: true }]) - (1 - d)) < 1e-12,
+      `single fixture at difficulty ${d} must score ${1 - d}`);
+  }
+});
+
+ok('a double is worth more than either of its matches alone', () => {
+  const easy = { difficulty: 0.2, home: true };
+  const hard = { difficulty: 0.8, home: false };
+  const both = model.roundOpportunity([easy, hard]);
+  assert.ok(both > model.roundOpportunity([easy]),
+    'two matches beat the easier one on its own');
+  assert.ok(both > model.roundOpportunity([hard]), 'and the harder one');
+  /* Two winnable matches beat one winnable plus one hard, which beats two
+     hard. More football is better, and better still when both are winnable. */
+  assert.ok(model.roundOpportunity([easy, easy]) > both);
+  assert.ok(both > model.roundOpportunity([hard, hard]));
+});
+
+ok('and it can never leave 0-1, so no clamp is hiding a runaway number', () => {
+  const many = Array.from({ length: 6 }, () => ({ difficulty: 0, home: true }));
+  const v = model.roundOpportunity(many);
+  assert.ok(v <= 1 && v >= 0, `six free hits must stay inside 0-1, got ${v}`);
+  assert.equal(model.roundOpportunity([]), 0, 'a blank round is nothing to play in, not neutral');
+  assert.equal(model.roundOpportunity(null), 0, 'and neither is no data');
+});
+
+/* THE SAMPLE SEASON HAS NO DOUBLE IN THE ROUND BEING PICKED FOR, and that
+   is not a detail — it is why this shipped unnoticed. sample-data puts its
+   blank and its double in a LATER round, so every test that scored a player
+   ran down the single-fixture path and the flattening in playerScore was
+   never exercised by anything.
+
+   So the double is built here: the real snapshot with one extra fixture
+   added in the current round, which is exactly the shape the official feed
+   serves for a rearranged match. */
+const dblSnap = (() => {
+  const copy = JSON.parse(JSON.stringify(snap));
+  const inRound = copy.fixtures.filter((f) => f.round === copy.currentRound);
+  /* Deliberately NOT the first fixture in the round. Two of the 72 clubs
+     have a difficulty of exactly 0, and at 0 the round opportunity is
+     already 1 — no second match can raise a probability that is already
+     certain. Picking one of those to demonstrate "a double is worth more"
+     would be picking the one case where the arithmetic says it is worth the
+     same, which is a real limit of the model and not the thing under test
+     here. It gets its own check below. */
+  const mid = inRound.filter((f) => {
+    const d = model.roundFixtures(ctx, f.homeId)[0];
+    return d && d.difficulty > 0.2 && d.difficulty < 0.8;
+  });
+  const base = mid[0] || inRound[0];
+  const other = inRound.find((f) => f.homeId !== base.homeId && f.awayId !== base.homeId
+    && f.homeId !== base.awayId && f.awayId !== base.awayId);
+  /* base.homeId picks up a SECOND match this round, away at other.homeId,
+     and the two venues differ so the home-share assertion has something to
+     measure. */
+  copy.fixtures.push({
+    id: `${base.id}-DBL`,
+    division: base.division,
+    round: copy.currentRound,
+    homeId: other.homeId,
+    awayId: base.homeId,
+    kickoff: base.kickoff,
+    finished: false,
+    status: 'scheduled'
+  });
+  return { snap: copy, clubId: base.homeId };
+})();
+const dblCtx = model.buildContext(dblSnap.snap);
+
+ok('roundFixtures returns every match in the round, nextFixture still one', () => {
+  const f = model.roundFixtures(dblCtx, dblSnap.clubId);
+  assert.equal(f.length, 2, 'the club we gave two matches has two');
+  assert.equal(model.nextFixture(dblCtx, dblSnap.clubId).fixtureId, f[0].fixtureId,
+    'nextFixture stays the FIRST match — callers that print one still get one');
+  assert.ok(f.every((m) => m.round === dblCtx.currentRound), 'and every match is in this round');
+  /* Everyone else is untouched: adding a double for one club must not turn
+     the rest of the division into doubles. */
+  const others = dblCtx.clubs.filter((c) => c.id !== dblSnap.clubId && c.id !== f[0].opponentId
+    && c.id !== f[1].opponentId);
+  assert.ok(others.every((c) => model.roundFixtures(dblCtx, c.id).length <= 1),
+    'and no other club gained a match');
+});
+
+ok('a player on a double is scored on both matches, and says so', () => {
+  const player = (dblCtx.playersByClub[dblSnap.clubId] || [])[0];
+  assert.ok(player, 'need a player at the doubled club');
+  const rec = model.playerScore(dblCtx, player);
+  assert.equal(rec.double, true, 'the recommendation states the double');
+  assert.equal(rec.fixtures.length, 2, 'and carries both matches');
+  assert.ok(rec.next, 'while `next` still holds one, for every caller that prints it');
+
+  /* The fixture factor must reflect BOTH matches. Scoring the round on the
+     first fixture alone is the defect this whole section exists for. */
+  const factor = rec.factors.find((f) => f.key === 'fixture');
+  const firstOnly = 1 - rec.fixtures[0].difficulty;
+  assert.ok(factor.value > firstOnly - 1e-12,
+    `a double must not score below its first match alone (${factor.value} vs ${firstOnly})`);
+  assert.ok(Math.abs(factor.value - model.roundOpportunity(rec.fixtures)) < 1e-12,
+    'and it is exactly the round opportunity, not an approximation of it');
+});
+
+ok('home asks whether he has home football, and a share would be wrong', () => {
+  const f = model.roundFixtures(dblCtx, dblSnap.clubId);
+  assert.ok(f.some((m) => m.home) && f.some((m) => !m.home),
+    'the built double is one home and one away');
+  const player = (dblCtx.playersByClub[dblSnap.clubId] || [])[0];
+  const home = model.playerScore(dblCtx, player).factors.find((x) => x.key === 'home');
+  /* A SHARE would score this 0.5 — below the 1.0 of a single home match —
+     and an extra match would make the player WORSE. That is what the first
+     version of this change did, and it is why the factor generalises the
+     old boolean instead of averaging it. */
+  assert.equal(home.value, 1, `home football is home football, got ${home.value}`);
+  /* Still 0 when none of the round is at home, exactly as the flag was. */
+  assert.equal(
+    model.roundOpportunity([{ difficulty: 1 }, { difficulty: 1 }]), 0,
+    'two away matches is no home football'
+  );
+});
+
+ok('and a player scores HIGHER for the double than he did without it', () => {
+  /* The point of the whole change, stated as the comparison a manager would
+     make: the same player, the same form and minutes, one extra match. */
+  const players = (dblCtx.playersByClub[dblSnap.clubId] || []);
+  assert.ok(players.length, 'need players at the doubled club');
+  for (const player of players) {
+    const before = model.playerScore(ctx, ctx.players.find((p) => p.id === player.id));
+    const after = model.playerScore(dblCtx, player);
+    assert.equal(before.double, false, 'he had one match in the untouched season');
+    assert.equal(after.double, true, 'and two in the doubled one');
+    assert.ok(after.score > before.score,
+      `${player.name}: the extra match must raise his rating (${before.score} → ${after.score})`);
+  }
+});
+
+ok('a double NEVER lowers a rating, whatever the second match is', () => {
+  /* The weaker claim, but the one that has to hold everywhere — including
+     the saturating case above, and including a second match that is the
+     hardest in the division. An extra game making a player worse is the
+     failure the share-based home factor introduced, so it is checked
+     against every club rather than the one that was convenient. */
+  for (const club of ctx.clubs) {
+    const single = model.roundFixtures(ctx, club.id);
+    if (single.length !== 1) continue;
+    const hardest = { difficulty: 1, home: false };
+    const withExtra = model.roundOpportunity(single.concat([hardest]));
+    assert.ok(withExtra >= model.roundOpportunity(single) - 1e-12,
+      `${club.name}: adding the worst possible match must not reduce the round`);
+  }
+});
+
+ok('a single round scores identically to the old first-fixture model', () => {
+  /* The regression that would matter most: this change must be invisible on
+     an ordinary week. Recomputed here the way the model used to, and
+     compared against what it now produces. */
+  const singles = ctx.players.filter((p) => model.roundFixtures(ctx, p.clubId).length === 1);
+  assert.ok(singles.length > 50, 'plenty of ordinary single-fixture players to check');
+  for (const p of singles.slice(0, 200)) {
+    const rec = model.playerScore(ctx, p);
+    const next = model.nextFixture(ctx, p.clubId);
+    const fixture = rec.factors.find((f) => f.key === 'fixture').value;
+    const home = rec.factors.find((f) => f.key === 'home').value;
+    assert.ok(Math.abs(fixture - (1 - next.difficulty)) < 1e-12,
+      `${p.name}: single-fixture score must be unchanged`);
+    assert.equal(home, next.home ? 1 : 0, `${p.name}: single-fixture home flag unchanged`);
+  }
+});
+
 console.log(`✓ Fantasy EFL: ${checks} checks passed `
   + `(${snap.clubs.length} clubs, ${snap.players.length} players, ${snap.fixtures.length} fixtures, `
   + `${ROUTES.length} routes)`);

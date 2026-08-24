@@ -475,11 +475,57 @@ export function runSummary(ctx, clubId, n = 6) {
 }
 
 /** The fixture a manager is actually picking for: the first one in the
- *  current round, or the next one after it if this round is blank. */
+ *  current round, or the next one after it if this round is blank.
+ *
+ *  Kept as the SINGLE fixture for everything that needs one — the row that
+ *  says "v Cambridge", the ledger's existing field. What it must not be is
+ *  the basis for scoring a round, because in a double round it silently
+ *  throws the second match away: see roundFixtures. */
 export function nextFixture(ctx, clubId) {
   const all = ctx.upcomingByClub[clubId] || [];
   const f = all.find((x) => x.round >= ctx.currentRound);
   return f ? fixtureRating(ctx, clubId, f) : null;
+}
+
+/** EVERY fixture a club has in the round being picked for.
+ *
+ *  buildContext deliberately keeps two-in-a-round rather than flattening,
+ *  "because both change a pick" — and then nextFixture flattened it anyway
+ *  for the one thing that actually picks the team. In a double round that
+ *  is the whole edge thrown away: two chances to score is the reason a
+ *  double is worth planning around at all.
+ *
+ *  Falls forward exactly as nextFixture does when this round is blank, so a
+ *  club with nothing on is still described by the match it does have next
+ *  rather than by an empty list. */
+export function roundFixtures(ctx, clubId) {
+  const all = ctx.upcomingByClub[clubId] || [];
+  const inRound = all.filter((f) => f.round === ctx.currentRound);
+  const use = inRound.length ? inRound : all.filter((f) => f.round >= ctx.currentRound).slice(0, 1);
+  return use.map((f) => fixtureRating(ctx, clubId, f));
+}
+
+/** The round's fixtures as one 0-1 opportunity figure.
+ *
+ *  Each match is a chance at a good return with probability (1 − difficulty),
+ *  so a round is the chance of AT LEAST ONE: 1 − Π(1 − oᵢ).
+ *
+ *  Two properties make this safe to change mid-season. On a single fixture
+ *  it is exactly (1 − difficulty) — the arithmetic the model has always
+ *  used — so every single round scores identically and nothing needs
+ *  re-calibrating or re-grading. And it cannot leave 0-1 by construction,
+ *  so no clamp is hiding a number that ran away.
+ *
+ *  It is also the right SHAPE: two winnable matches (0.8 each) reach 0.96,
+ *  a winnable one beside a hard one (0.8, 0.2) reaches 0.84, and two hard
+ *  ones (0.2) only 0.36. More football is better, and better still when
+ *  both matches are winnable — which is what a manager actually believes. */
+export function roundOpportunity(rated) {
+  const list = rated || [];
+  if (!list.length) return 0;
+  let miss = 1;
+  for (const m of list) miss *= 1 - clamp01(1 - m.difficulty);
+  return clamp01(1 - miss);
 }
 
 /* ── Player score ────────────────────────────────────────── */
@@ -490,7 +536,10 @@ export function nextFixture(ctx, clubId) {
  */
 export function playerScore(ctx, player) {
   const club = ctx.clubById[player.clubId];
-  const next = nextFixture(ctx, player.clubId);
+  /* The whole round, not just the first match of it. `next` stays the
+     single fixture for every caller that prints one. */
+  const fixtures = roundFixtures(ctx, player.clubId);
+  const next = fixtures[0] || null;
   const norms = ctx.playerNorms;
 
   const values = {
@@ -498,8 +547,17 @@ export function playerScore(ctx, player) {
     minutes: playingShare(ctx, player).value,
     output: norms.output[player.id] == null ? 0.5 : norms.output[player.id],
     /* A blank round is not a neutral fixture. Nothing to play in scores 0. */
-    fixture: next ? clamp01(1 - next.difficulty) : 0,
-    home: next && next.home ? 1 : 0
+    fixture: roundOpportunity(fixtures),
+    /* "Has he got home football this round" — the same question the old
+       boolean asked, generalised to a set rather than replaced by one.
+
+       A SHARE was the obvious first move and it is wrong: one home and one
+       away scores 0.5, below the 1.0 of a single home match, so adding a
+       second match could LOWER a player's rating. A double that makes a
+       player worse is the opposite of what a double is, and the first
+       version of this change did exactly that until a test compared the
+       same player with and without his extra match. */
+    home: roundOpportunity(fixtures.map((f) => ({ difficulty: f.home ? 0 : 1 })))
   };
 
   /* Weights are per-position: a goalkeeper's score leans on his fixture and
@@ -532,6 +590,10 @@ export function playerScore(ctx, player) {
     id: player.id,
     player,
     next,
+    /* Every match in the round, and how many. A caller that only ever
+       reads `next` keeps working; one that wants to SAY "double" now can. */
+    fixtures,
+    double: fixtures.length > 1,
     score,
     factors,
     suspension,

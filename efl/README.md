@@ -447,8 +447,24 @@ earlier rounds only and correlate it with the points actually scored in the
 | Starts and minutes | 34% |
 | Recent form — points per appearance in the last five | 26% |
 | Output — everything the player is paid for, at the real tariff, per 90 | 16% |
-| Next fixture | 16% |
+| The round's fixtures | 16% |
 | Home advantage | 8% |
+
+**The round, not the next match.** Both of these read every fixture the club
+has in the round being picked for, which on an ordinary week is one and on a
+double is two. Each is the chance of at least one — `1 − Π(1 − oᵢ)`, where a
+match's opportunity `oᵢ` is `1 − difficulty` for the fixture factor and
+simply "is it at home" for the other.
+
+Two properties matter. On a single fixture the formula is *exactly* the
+arithmetic the model always used, so an ordinary round scores identically and
+no graded round moves. And an extra match can never make a player worse —
+which a **share** would have done, scoring one home and one away at 0.5,
+below the 1.0 of a single home match. A double that downgrades a player is
+the opposite of what a double is.
+
+Its limit, stated: at difficulty 0 the round is already certain, so a second
+match cannot raise it further. Two of 72 clubs sit there in a typical round.
 
 **Minutes outweigh form**, which is the opposite of what this model shipped
 with (form 30%, minutes 22% — the FPL habit). A player averaging under 30

@@ -92,7 +92,7 @@ function playerCard(role, rec, ctx) {
       <span>${esc(club ? club.name : '—')}</span>
       ${availabilityBadge(p.availability)}${suspensionBadge(rec.suspension)}
     </div>
-    ${fixtureLine(rec.next, ctx)}
+    ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)}</p>
     <div class="pick-foot">
       <span>${formStrip(club ? club.form : [])}</span>
@@ -112,7 +112,7 @@ function captainCard(rec, ctx) {
       <span>${esc(club ? club.name : '—')}</span>
       ${availabilityBadge(p.availability)}
     </div>
-    ${fixtureLine(rec.next, ctx)}
+    ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)} Highest-rated available pick with a fixture rated
       ${rec.next ? rec.next.rating : '—'} or better, which is what a captaincy needs before
       anything else.</p>
@@ -134,7 +134,7 @@ function differentialCard(rec, ctx) {
       <span>${esc(club ? club.name : '—')}</span>
       ${availabilityBadge(p.availability)}
     </div>
-    ${fixtureLine(rec.next, ctx)}
+    ${fixtureLine(rec.fixtures || rec.next, ctx)}
     <p class="pick-why">${esc(rec.summary)}</p>
     <p class="pick-why" style="color:var(--text-3)"><b>Form differential ${rec.differential.score.toFixed(0)}</b>
       — a modelled, editorial measure of good recent output at a club that gets less attention.
@@ -166,17 +166,25 @@ function clubCard(rec, ctx) {
     </div>`);
 }
 
+/* `rated` may be one fixture or the whole round. A double gets a line per
+   match and says so: two chances to return is why the pick is there. */
 function fixtureLine(rated, ctx) {
-  if (!rated) {
+  const list = Array.isArray(rated) ? rated.filter(Boolean) : (rated ? [rated] : []);
+  if (!list.length) {
     return '<div class="pick-fix">' + fdrCell(null) + '<span>Blank round — no fixture</span></div>';
   }
-  const opp = ctx.clubById[rated.opponentId];
-  return '<div class="pick-fix">'
-    + fdrCell(rated.rating)
-    + homeAwayBadge(rated.home)
-    + `<span>${rated.home ? 'v' : 'at'} <b>${esc(opp ? opp.name : '—')}</b></span>`
-    + `<span class="muted">${esc(fmtDay(rated.kickoff))}</span>`
-    + '</div>';
+  const one = (r) => {
+    const opp = ctx.clubById[r.opponentId];
+    return '<div class="pick-fix">'
+      + fdrCell(r.rating)
+      + homeAwayBadge(r.home)
+      + `<span>${r.home ? 'v' : 'at'} <b>${esc(opp ? opp.name : '—')}</b></span>`
+      + `<span class="muted">${esc(fmtDay(r.kickoff))}</span>`
+      + '</div>';
+  };
+  if (list.length === 1) return one(list[0]);
+  return '<div class="pick-fix"><span class="t-sub"><b>Double round — '
+    + list.length + ' matches</b></span></div>' + list.map(one).join('');
 }
 
 function card(role, body) {
