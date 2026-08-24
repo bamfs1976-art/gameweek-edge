@@ -39,6 +39,9 @@ const gwSwing = new Function(
   'function plsimRatings(){return {att:{},def:{}};}\n' +
   'function plsimMatch(){return null;}\n' +          // null -> gwSwing reads f.team_*_difficulty
   'function plsimDiff(){return 3;}\n' +
+  /* The real "still to be played" rule, not a stub: gwSwing must not rank a
+     gameweek on games that have already been played. */
+  grabFn('fixtureOver') + '\n' + grabFn('fixtureToCome') + '\n' +
   grabFn('gwSwing') + '\nreturn gwSwing;'
 )();
 

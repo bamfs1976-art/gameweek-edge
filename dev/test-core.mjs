@@ -128,6 +128,8 @@ const pieces = [
   extractFn(html, 'priceLocked'),
   extractFn(html, 'priceSource'),
   extractFn(html, 'fixtureOver'),
+  extractFn(html, 'fixtureToCome'),
+  extractFn(html, 'gwAnchor'),
   ...['RACE_TRIALS', 'RACE_SD_PRIOR', 'RACE_PRIOR_N', 'RACE_SD_FLOOR']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'raceSpread'),
@@ -316,7 +318,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -501,6 +503,86 @@ section('fixtureOver: a match that has ended is not still live');
 
   ok(core.fixtureOver(null) === false, 'a null fixture is not over, and does not throw');
   ok(core.fixtureOver(undefined) === false, 'nor an undefined one');
+}
+
+section('gwAnchor: the app moves on when the football does');
+{
+  /* Reported: "After each gameweek the app needs to move to the next
+     gameweek. Planning tools like FDR doesn't need to show the previous GWs
+     after they are completed."
+
+     The anchor used to be `events.find(e => !e.finished)`. FPL does not set
+     an event's `finished` until every match in it has been played AND
+     scored, so between the last final whistle and that flag the app went on
+     offering the gameweek just played as the one to plan for. */
+  const ev = (id, o) => Object.assign({ id, finished: false, deadline_time: '2026-08-0' + id + 'T10:00:00Z' }, o);
+  const fx = (id, event, o) => Object.assign({ id, event, team_h: 1, team_a: 2,
+    finished: false, finished_provisional: false }, o);
+  const EVENTS = [ev(1), ev(2), ev(3)];
+
+  /* fixtureToCome: the shared rule the planning surfaces now share. */
+  ok(core.fixtureToCome(fx(1, 1)) === true, 'an unplayed scheduled fixture is still to come');
+  ok(core.fixtureToCome(fx(1, 1, { finished: true })) === false, 'a settled fixture is not');
+  /* THE WHOLE POINT of not reading `finished` directly. */
+  ok(core.fixtureToCome(fx(1, 1, { finished_provisional: true })) === false,
+     'nor one at full time waiting on bonus — which `!f.finished` called upcoming');
+  ok(core.fixtureToCome(fx(1, null)) === false,
+     'a postponed fixture with no gameweek is not in anyone’s horizon');
+  ok(core.fixtureToCome(null) === false, 'and a null fixture does not throw');
+
+  /* GW1 fully played at the final whistle; FPL has not flagged the event yet
+     because bonus is still pending. The anchor must already be GW2. */
+  const played = [fx(10, 1, { finished_provisional: true }), fx(11, 1, { finished: true }),
+    fx(20, 2), fx(21, 2), fx(30, 3)];
+  const a1 = core.gwAnchor(EVENTS, played);
+  ok(a1 && a1.id === 2, 'a gameweek whose games have all been played is not the one to plan for');
+
+  /* The old rule, spelled out, so the fix cannot be quietly reverted: on this
+     exact input `!e.finished` still answers GW1. */
+  ok(EVENTS.find((e) => !e.finished).id === 1,
+     'the event flags still say GW1 here — which is precisely the lag being fixed');
+
+  /* A gameweek in progress IS still the one to plan for: it has games left. */
+  const midweek = [fx(10, 1, { finished: true }), fx(11, 1), fx(20, 2)];
+  const a2 = core.gwAnchor(EVENTS, midweek);
+  ok(a2 && a2.id === 1, 'a gameweek with games still to come stays the anchor');
+
+  /* Order independence — the fixtures list is not sorted by gameweek. */
+  const shuffled = [fx(30, 3), fx(20, 2), fx(10, 1, { finished: true }), fx(11, 1)];
+  ok(core.gwAnchor(EVENTS, shuffled).id === 1, 'the earliest live gameweek wins regardless of list order');
+
+  /* Fallbacks. No fixtures is not evidence that a gameweek has ended, so the
+     event flags answer instead — that is the between-seasons case. */
+  ok(core.gwAnchor(EVENTS, []).id === 1, 'with no fixtures at all it falls back to the event flags');
+  ok(core.gwAnchor(EVENTS, null).id === 1, 'and a null fixtures list does not throw');
+  ok(core.gwAnchor([ev(1, { finished: true })], []) === null,
+     'every event finished and nothing scheduled is null, not a guess');
+
+  /* Season over: fixtures exist but all are played, and no event is unfinished. */
+  const done = [fx(10, 1, { finished: true })];
+  ok(core.gwAnchor([ev(1, { finished: true })], done) === null,
+     'a finished season has no gameweek to plan for');
+
+  /* A fixture pointing at a gameweek bootstrap does not carry must not
+     invent one — callers read `.id` off the result. */
+  ok(core.gwAnchor(EVENTS, [fx(99, 9)]) !== null && core.gwAnchor(EVENTS, [fx(99, 9)]).id === 1,
+     'an unknown gameweek id falls through to the flags rather than returning undefined');
+
+  /* THE OTHER DIRECTION, and the app's own mock bootstrap is exactly this
+     shape: GW1 declared finished while two of its fixtures are still
+     unplayed, because they were postponed and not yet rescheduled. A rule
+     that trusted fixtures alone dragged the anchor back onto a gameweek FPL
+     had already closed — planning for a week that had been and gone, which
+     is the bug in the other direction. */
+  const postponed = [ev(1, { finished: true }), ev(2), ev(3)];
+  const strays = [fx(10, 1), fx(11, 1), fx(20, 2), fx(30, 3)];
+  const a3 = core.gwAnchor(postponed, strays);
+  ok(a3 && a3.id === 2, 'a gameweek FPL has closed is never the anchor, stray fixtures notwithstanding');
+
+  /* And a gameweek with no fixtures scheduled into it at all — an empty week
+     mid-window — is skipped rather than offered as the horizon. */
+  const gap = core.gwAnchor(EVENTS, [fx(30, 3)]);
+  ok(gap && gap.id === 3, 'the first gameweek that actually has football is the anchor');
 }
 
 section('raceSpread: a part-played gameweek is not a measurement');

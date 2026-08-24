@@ -59,6 +59,9 @@ export function buildChipApi(html) {
     grabFn('deadWeight') + '\n' + grabFn('transferRunway') + '\n' +
     grabConst('LEDGER_MAX') + '\n' + grabTopConst('CHIP_LABEL') + '\n' +
     grabFn('freeTransfersFrom') + '\n' + grabFn('transferLedger') + '\n' +
+    /* The shared "still to be played" rule the planning surfaces read.
+       Both extracted functions filter through it, so it travels with them. */
+    grabFn('fixtureOver') + '\n' + grabFn('fixtureToCome') + '\n' +
     'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
     grabFn('intlBreakGws') + '\n' +
     grabConst('CONGEST_GAP_DAYS') + '\n' + grabConst('BB_CONGEST_PENALTY') + '\n' +

@@ -181,9 +181,72 @@ const noPicksServer = createServer((req, res) => {
   }
   return staticHandler(req, res);
 });
+/* A fourth server, reproducing the state the app was reported stuck in:
+   a gameweek whose every match has been played, which FPL has NOT yet
+   flagged finished because bonus is still being confirmed.
+
+   The committed mock cannot express this — it has GW1 already flagged
+   finished — and that is exactly why the bug was invisible here. FPL
+   settles a gameweek in two stages and the gap between them is hours
+   long; for the whole of it, the app was offering a gameweek that had
+   been played as the one to plan for.
+
+   Only the two payloads change. Everything else is the working API. */
+const ENDED_PORT = 8097;
+const endedBootstrap = () => {
+  const b = JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-bootstrap.json'), 'utf8'));
+  /* GW1 is being scored right now: current, and NOT finished. This is the
+     flag state that used to hold the whole app on a played gameweek. */
+  b.events.forEach((e) => {
+    e.finished = false;
+    e.data_checked = false;
+    e.is_current = e.id === 1;
+    e.is_next = e.id === 2;
+  });
+  return JSON.stringify(b);
+};
+const endedFixtures = () => {
+  const fx = JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-fixtures.json'), 'utf8'));
+  /* Every GW1 match is at full time. finished_provisional is set and
+     `finished` is not — the two-stage settle, mid-flight. */
+  fx.forEach((f) => {
+    if (f.event !== 1) return;
+    f.started = true; f.finished = false; f.finished_provisional = true;
+  });
+  return JSON.stringify(fx);
+};
+const endedServer = createServer((req, res) => {
+  const p = decodeURIComponent(req.url.split('?')[0]);
+  if (p === '/api/fpl/bootstrap-static') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(endedBootstrap());
+  }
+  if (p === '/api/fpl/fixtures') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(endedFixtures());
+  }
+  if (ENTRY_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(entryBody(p.split('/').pop()));
+  }
+  if (LIVE_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(liveBody());
+  }
+  if (HISTORY_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(historyBody());
+  }
+  if (PICKS_RE.test(p)) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json')));
+  }
+  return staticHandler(req, res);
+});
 await new Promise((r) => server.listen(PORT, r));
 await new Promise((r) => apiServer.listen(API_PORT, r));
 await new Promise((r) => noPicksServer.listen(NOPICKS_PORT, r));
+await new Promise((r) => endedServer.listen(ENDED_PORT, r));
 
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' })
   .catch(() => chromium.launch());
@@ -2332,6 +2395,71 @@ section('squad planner: a rebuild against your own budget, not a clean £100m');
   await pp.close();
 }
 
+section('the gameweek rolls over when the football does, not when FPL says so');
+{
+  /* Asked for: "After each gameweek the app needs to move to the next
+     gameweek. Planning tools like FDR as an example doesn't need to show
+     the previous GWs after they are completed."
+
+     Served here: GW1 played out in full, GW1's event still flagged
+     unfinished and current. The old anchor — first event with
+     finished === false — answers GW1, and every planning surface in the
+     app reads that anchor. */
+  const rp = await browser.newPage();
+  const rErrors = [];
+  rp.on('pageerror', (e) => rErrors.push(e.message));
+  await rp.goto(`http://localhost:${ENDED_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await rp.waitForTimeout(1400);
+
+  const roll = await rp.evaluate(async () => {
+    const b = await boot();
+    const fixtures = await loadFixtures();
+    const gw1 = fixtures.filter((f) => f.event === 1);
+    return {
+      /* What the raw flags say, proving the served state is the one
+         described — a test that silently stopped reproducing the bug
+         would otherwise still pass. */
+      flagSaysGw1: b.events.find((e) => !e.finished).id,
+      curId: b.cur ? b.cur.id : null,
+      gw1AllOver: gw1.length > 0 && gw1.every((f) => fixtureOver(f)),
+      gw1Count: gw1.length,
+      /* What the app plans for. */
+      anchor: b.upcoming ? b.upcoming.id : null,
+    };
+  });
+
+  ok(roll.gw1Count > 0 && roll.gw1AllOver === true,
+     'the served gameweek really has been played out (' + roll.gw1Count + ' matches, all over)');
+  ok(roll.flagSaysGw1 === 1,
+     'and FPL’s own event flag still calls it unfinished — the lag being fixed');
+  ok(roll.anchor === 2,
+     'so the app plans for GW2, not the gameweek just played (got GW' + roll.anchor + ')');
+  /* b.cur is deliberately NOT moved: it is the gameweek being scored, and
+     "my points this week" must keep pointing at it while bonus settles.
+     Planning and scoring are different questions with different answers. */
+  ok(roll.curId === 1,
+     'while the gameweek being scored stays GW1, so live points still resolve');
+
+  /* The FDR grid is the surface named in the report. Its first column must
+     be the gameweek ahead, and no played match may appear anywhere in it. */
+  const fdr = await rp.evaluate(async () => {
+    try { openPanel('fixtures'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3200));
+    const heads = Array.from(document.querySelectorAll('.fdr th'))
+      .map((th) => th.textContent.trim()).filter((t) => /^GW\d+$/.test(t));
+    return { err: null, heads, first: heads[0] || null };
+  });
+  ok(fdr.err === null, 'the fixture planner opens (' + (fdr.err || '') + ')');
+  ok(fdr.heads.length > 0, 'and lays out a gameweek grid (' + fdr.heads.length + ' columns)');
+  ok(fdr.first === 'GW2',
+     'whose first column is the gameweek ahead, not the one just played (got ' + fdr.first + ')');
+  ok(fdr.heads.indexOf('GW1') < 0,
+     'and a played gameweek appears nowhere in it');
+
+  ok(rErrors.length === 0, 'the rollover threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
+  await rp.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 
@@ -2339,5 +2467,6 @@ await browser.close();
 server.close();
 apiServer.close();
 noPicksServer.close();
+endedServer.close();
 console.log('\n' + passes + ' passed, ' + failures + ' failed');
 process.exit(failures ? 1 : 0);

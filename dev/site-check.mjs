@@ -217,16 +217,15 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'roundOpportunity', path: '/fantasy-efl/assets/model.js',
-  since: '2026-08-23',
-  what: 'Fantasy EFL scoring the whole round, so a double gameweek counts twice' };
-/* `path` exists because THIS release did not touch index.html at all — it is
-   entirely in the Fantasy EFL app — and a marker looked for in the FPL shell
-   would report "not deployed yet" forever while the deploy sat there
-   perfectly healthy. That is the failure this check exists to prevent,
-   pointed the other way: a red result for a green deploy is as useless as a
-   green one for a stale build. The path defaults to '/' so every earlier
-   marker keeps working unchanged. Rotated from 'function gwPackWhy' (2026-08-23),
+const MARKER = { text: 'function gwAnchor', since: '2026-08-24',
+  what: 'the planning gameweek that moves on when the football does' };
+/* `path` is what the PREVIOUS marker needed and this one does not: that
+   release was entirely in the Fantasy EFL app, so a marker looked for in
+   the FPL shell would have reported "not deployed yet" forever while the
+   deploy sat there perfectly healthy. This release is back in index.html,
+   so the default path of '/' is right. Rotated from 'roundOpportunity'
+   (2026-08-23, /fantasy-efl/assets/model.js), before that
+   'function tilePoints' (2026-08-23), 'function gwPackWhy' (2026-08-23),
    before that 'function gwStatsPack' (2026-08-23), which was confirmed live
    by run 32661370800 — the first marker to be verified in a while. Before
    that 'function checkForUpdate' (2026-08-23), which shipped in the
@@ -236,8 +235,7 @@ const MARKER = { text: 'roundOpportunity', path: '/fantasy-efl/assets/model.js',
    banner and the transfer market. All three are ancestors of this build, so
    confirming THIS marker confirms the lot — which is the argument for
    rotating on every release rather than only on the ones that get verified.
-   Before that 'function tilePoints' (2026-08-23), before that
-   'function leagueEO' (2026-08-22), before that
+   Before that 'function leagueEO' (2026-08-22), before that
    'function squadMatchday', 'function titleRace' and
    'function fixtureOver' (all 2026-08-22).
 
