@@ -217,9 +217,17 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function gwPackWhy', since: '2026-08-23',
-  what: 'the Social Studio saying WHY the stats pack is not there yet' };
-/* Rotated from 'function gwStatsPack' (2026-08-23), which was confirmed live
+const MARKER = { text: 'roundOpportunity', path: '/fantasy-efl/assets/model.js',
+  since: '2026-08-23',
+  what: 'Fantasy EFL scoring the whole round, so a double gameweek counts twice' };
+/* `path` exists because THIS release did not touch index.html at all — it is
+   entirely in the Fantasy EFL app — and a marker looked for in the FPL shell
+   would report "not deployed yet" forever while the deploy sat there
+   perfectly healthy. That is the failure this check exists to prevent,
+   pointed the other way: a red result for a green deploy is as useless as a
+   green one for a stale build. The path defaults to '/' so every earlier
+   marker keeps working unchanged. Rotated from 'function gwPackWhy' (2026-08-23),
+   before that 'function gwStatsPack' (2026-08-23), which was confirmed live
    by run 32661370800 — the first marker to be verified in a while. Before
    that 'function checkForUpdate' (2026-08-23), which shipped in the
    PREVIOUS build and was never confirmed live: the sandbox that pushed it
@@ -297,13 +305,14 @@ if (unreachable) {
 
 console.log('');
 try {
-  const { res } = await request(ORIGIN + '/');
+  const { res } = await request(ORIGIN + (MARKER.path || '/'));
   const html = await res.text();
   const there = html.includes(MARKER.text);
   if (!there) failed++;
   console.log(`  ${there ? '✓' : '✗'} deployed build  ${there
     ? 'carries ' + MARKER.what + ' (added ' + MARKER.since + ')'
     : 'does NOT carry ' + MARKER.what + ' — the push has not deployed yet, or the build failed'}`);
+  console.log(`                    checked in ${MARKER.path || '/'}`);
 } catch (err) {
   failed++;
   console.log(`  ✗ deployed build  could not be read: ${err.message}`);
