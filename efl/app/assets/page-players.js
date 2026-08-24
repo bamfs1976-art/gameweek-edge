@@ -311,7 +311,7 @@ function row(r, columns) {
     <td data-label="Last 5">${meter(Math.min(1, perApp / 12), r.formApps ? perApp.toFixed(1) : '—', formLabel)}</td>
     <td class="num" data-label="Starts">${p.starts}</td>
     ${statCells}
-    <td data-label="Next fixture">${nextCell(rec.next)}</td>
+    <td data-label="Next fixture">${nextCell(rec.next, rec.fixtures)}</td>
     <td data-label="Status">${availabilityBadge(p.availability)}${suspensionBadge(rec.suspension)}
       ${r.differential.score >= 55 ? `<span class="t-sub" title="${esc(r.differential.note)}">${esc(r.differential.label)} ${r.differential.score.toFixed(0)}</span>` : ''}</td>
     <td class="num" data-label="Modelled rating"><b>${rec.score.toFixed(1)}</b>
@@ -319,10 +319,18 @@ function row(r, columns) {
   </tr>`;
 }
 
-function nextCell(next) {
-  if (!next) return `${fdrCell(null)} <span class="t-sub">No fixture</span>`;
-  const opp = ctx.clubById[next.opponentId];
-  return `<span style="display:inline-flex;align-items:center;gap:5px">${fdrCell(next.rating)}
-    ${homeAwayBadge(next.home)}</span>
-    <span class="t-sub">${esc(opp ? opp.short : '???')} · ${esc(fmtDay(next.kickoff))}</span>`;
+/* Every match in the round, not just the first. A double is the reason to
+   pick a player at all that week, and a column showing one of his two
+   fixtures reads as though he has one. */
+function nextCell(next, fixtures) {
+  const list = (fixtures && fixtures.length) ? fixtures : (next ? [next] : []);
+  if (!list.length) return `${fdrCell(null)} <span class="t-sub">No fixture</span>`;
+  const one = (f) => {
+    const opp = ctx.clubById[f.opponentId];
+    return `<span style="display:inline-flex;align-items:center;gap:5px">${fdrCell(f.rating)}
+      ${homeAwayBadge(f.home)}</span>
+      <span class="t-sub">${esc(opp ? opp.short : '???')} · ${esc(fmtDay(f.kickoff))}</span>`;
+  };
+  if (list.length === 1) return one(list[0]);
+  return `<span class="t-sub"><b>Double round</b></span><br>${list.map(one).join('<br>')}`;
 }

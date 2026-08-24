@@ -18,6 +18,21 @@ initTheme();
 const RECORD_URL = '/fantasy-efl/data/record.json';
 
 const n1 = (v) => (Number.isFinite(v) ? (Math.round(v * 10) / 10).toFixed(1) : '—');
+
+/* A recorded pick's fixtures, as one line of meta.
+
+   Rounds recorded before the ledger knew about doubles carry only
+   `fixture`; ones recorded since carry the whole list. Reading the list
+   when it is there and the single when it is not keeps every round in the
+   archive readable, and never claims a double the file cannot evidence. */
+function fixtureMeta(p) {
+  const list = (p.fixtures && p.fixtures.length) ? p.fixtures : (p.fixture ? [p.fixture] : []);
+  if (!list.length) return '';
+  const one = (f) => `${f.home ? 'v' : 'at'} ${esc(f.opponent || '')}`;
+  return list.length > 1
+    ? ` · double: ${list.map(one).join(' + ')}`
+    : ` · ${one(list[0])}`;
+}
 const int = (v) => (Number.isFinite(v) ? String(Math.round(v)) : '—');
 const pct = (v) => (Number.isFinite(v) ? `${Math.round(v * 100)}%` : '—');
 const rho = (v) => (Number.isFinite(v) ? v.toFixed(3) : '—');
@@ -147,8 +162,7 @@ function latestRound(rounds) {
     return `<div class="sq-card">
       <div class="sq-pos">${esc(p.position)}${isCaptain ? ' <span class="sq-armband" title="Captain">C</span>' : ''}</div>
       <div class="sq-name">${esc(p.name)}</div>
-      <div class="sq-meta">${esc(p.club || '')}${p.fixture
-    ? ` · ${p.fixture.home ? 'v' : 'at'} ${esc(p.fixture.opponent || '')}` : ''}</div>
+      <div class="sq-meta">${esc(p.club || '')}${fixtureMeta(p)}</div>
       <div class="sq-foot">
         <span class="muted">rated ${n1(p.score)}</span>
         <span class="sq-score">${Number.isFinite(points) ? `${int(points)} pts` : '—'}</span>

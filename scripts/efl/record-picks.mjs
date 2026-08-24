@@ -139,13 +139,25 @@ const crowdClubs = (raw.squads || [])
   .slice(0, 2)
   .map((s) => String(s.id));
 
-const fixtureOf = (rec) => (rec.next ? {
-  opponentId: String(rec.next.opponentId),
-  opponent: (ctx.clubById[rec.next.opponentId] || {}).name || null,
-  home: Boolean(rec.next.home),
-  rating: rec.next.rating == null ? null : rec.next.rating,
-  kickoff: rec.next.kickoff || null
+const oneFixture = (f) => (f ? {
+  opponentId: String(f.opponentId),
+  opponent: (ctx.clubById[f.opponentId] || {}).name || null,
+  home: Boolean(f.home),
+  rating: f.rating == null ? null : f.rating,
+  kickoff: f.kickoff || null
 } : null);
+const fixtureOf = (rec) => oneFixture(rec.next);
+/* EVERY match the pick has in the round. `fixture` stays exactly as it was
+   — the grader, the published record and the site's record page all read
+   it, and a round file is evidence whose shape should not shift under
+   them — but on a DOUBLE round it describes half the football the pick was
+   made for, and a ledger that cannot tell a double from a single cannot be
+   re-graded honestly years later. So the full list is recorded alongside
+   it, and `double` states the fact rather than leaving it to be counted. */
+const fixturesOf = (rec) => {
+  const list = (rec.fixtures || (rec.next ? [rec.next] : [])).map(oneFixture).filter(Boolean);
+  return list.length ? list : null;
+};
 
 const entry = {
   round: roundNumber,
@@ -179,7 +191,9 @@ const entry = {
       division: (ctx.clubById[rec.player.clubId] || {}).division || null,
       position: rec.player.position,
       score: rec.score,
-      fixture: fixtureOf(rec)
+      fixture: fixtureOf(rec),
+      fixtures: fixturesOf(rec),
+      double: Boolean(rec.fixtures && rec.fixtures.length > 1)
     })),
     captain: String(squad.captain.player.id),
     clubs: clubPicks.map((rec) => ({
