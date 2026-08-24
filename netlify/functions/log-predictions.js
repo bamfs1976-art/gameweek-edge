@@ -63,6 +63,9 @@ function buildModel(html) {
     ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
       .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
     grabFn(html, 'euroIndex'), grabFn(html, 'congestionLoad'), grabFn(html, 'congestionFactor'),
+    /* The shared "still to be played" rule both fixture builders filter
+       through — a match at full time waiting on bonus is not upcoming. */
+    grabFn(html, 'fixtureOver'), grabFn(html, 'fixtureToCome'),
     grabFn(html, 'buildNextFix'), grabFn(html, 'buildGwFixtures'),
     grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
     grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),

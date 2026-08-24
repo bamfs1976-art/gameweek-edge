@@ -3022,13 +3022,25 @@ async function cached(key,ttl,loader){
   try{localStorage.setItem('ge-c-'+key,JSON.stringify({t:now,v}));}catch(_){/* quota: memory only */}
   return v;
 }
+/* Read a cached value if it is already in memory, and never fetch.
+
+   For callers on a hot path that can USE fresh data but must not pay for
+   it. cached() would round-trip on a miss; this answers null and lets the
+   caller carry on with what it has. Deliberately memory-only: touching
+   localStorage here would put a JSON.parse of a megabyte of fixtures on
+   that hot path, which is the cost this exists to avoid. */
+function cachedPeek(key,ttl){
+  const e=MEM[ck(key)];
+  return (e&&Date.now()-e.t<ttl)?e.v:null;
+}
 function clearLiveCache(){
   const keep=ck('boot');
   Object.keys(MEM).forEach(k=>{if(k!==keep)delete MEM[k];});
 }
 
 const loadBootstrap=()=>cached('boot',12*3600e3,()=>api('bootstrap-static'));
-const loadFixtures =()=>cached('fixtures',10*60e3,()=>api('fixtures'));
+const FIXTURES_TTL=10*60e3;
+const loadFixtures =()=>cached('fixtures',FIXTURES_TTL,()=>api('fixtures'));
 const loadEntry    =id=>api('entry/'+id);
 const loadHistory  =id=>api('entry/'+id+'/history');
 const loadPicks    =(id,gw)=>api('entry/'+id+'/event/'+gw+'/picks');
@@ -3144,18 +3156,67 @@ function curSeason(){return (MEM._idx&&MEM._idx.season)||'';}
    bootstrap is loaded, so callers treat unknown as "no warning". */
 function curSeasonStarted(){return MEM._idx?MEM._idx.seasonStarted:undefined;}
 
+/* Has the football moved past the gameweek this index was built on?
+
+   Two caches conspired to freeze the app on a gameweek that had been
+   played. boot() indexes bootstrap once and memoises it for the life of
+   the tab, and bootstrap itself is cached for twelve hours — deliberately,
+   because it is a large and mostly static payload. But the events array
+   inside it is not static: it is how the app knows which gameweek to plan
+   for. Cached together, a tab opened on Saturday morning was still
+   planning for Saturday's gameweek on Saturday night, and a reload changed
+   nothing because the reload read the same cached copy.
+
+   Fixtures are cached for ten minutes, so they move first. When they say
+   the anchor has moved, the whole index is rebuilt from a fresh bootstrap
+   — not patched, because everything else in there has moved too: the
+   averages, the chip counts, the captaincy numbers, each player's
+   event_points. A partly-updated index would be a subtler bug than the
+   one being fixed.
+
+   Fixtures being unreachable is not evidence of anything, so it answers
+   no and the app carries on with what it has. */
+function gwMoved(idx){
+  if(!idx||!idx.events)return false;
+  /* PEEK, never fetch. boot() is awaited by every panel on every render, so
+     a network call here would be paid hundreds of times per session — and
+     when fixtures are unreachable, cached() pins no failure, so every one
+     of those calls would go back out to the wire. Fixtures are loaded by
+     essentially every panel anyway, so by the time this matters they are in
+     memory; until then it answers "no" and costs nothing. */
+  const fixtures=cachedPeek('fixtures',FIXTURES_TTL);
+  if(!fixtures||!fixtures.length)return false;
+  const a=gwAnchor(idx.events,fixtures);
+  if(!a)return false;
+  return !idx.upcoming||a.id!==idx.upcoming.id;
+}
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
-  if(MEM._idx)return MEM._idx;
-  const b=await loadBootstrap();
+  if(MEM._idx){
+    if(!gwMoved(MEM._idx))return MEM._idx;
+    delete MEM._idx;
+    try{const k=ck('boot');delete MEM[k];localStorage.removeItem('ge-c-'+k);}catch(_){/* memory only */}
+  }
+  /* Fixtures are fetched ALONGSIDE bootstrap, not after it. The planning
+     anchor needs both (see gwAnchor), and boot() is awaited by every panel
+     before it can render — so chaining the two would put the whole app
+     behind the sum of two round trips instead of the slower one. A fixtures
+     failure is not fatal here: the anchor falls back to the event flags. */
+  const [b,fixturesForGw]=await Promise.all([
+    loadBootstrap(),
+    loadFixtures().catch(()=>null)
+  ]);
   const teams={},els={},types={};
   b.teams.forEach(t=>teams[t.id]=t);
   b.elements.forEach(e=>els[e.id]=e);
   b.element_types.forEach(t=>types[t.id]=t);
   const cur=b.events.find(e=>e.is_current)||b.events.find(e=>e.is_next)||b.events[b.events.length-1];
-  /* First gameweek that hasn't finished — the planning horizon. Null
-     between seasons (the new FPL game not yet live in the API). */
-  const upcoming=b.events.find(e=>!e.finished)||null;
+  /* The planning horizon: the first gameweek with a game still to be
+     played. Null between seasons (the new FPL game not yet live in the
+     API). Fixtures are what make this answer track the football rather
+     than FPL's settling schedule — see gwAnchor — and a fixtures failure
+     falls back to the event flags rather than taking bootstrap down. */
+  const upcoming=gwAnchor(b.events,fixturesForGw);
   const liveSeason=b.events.some(e=>e.is_current||e.is_next);
   /* Pre-season: no player has logged a minute yet (the same signal the
      suspension watch uses). Before GW1 completes, form/minutes are 0 and
@@ -9087,7 +9148,11 @@ async function hydrateFixtures(host){
     const put=(team,gw,cell)=>{const row=byTeamGw[team]=byTeamGw[team]||{};
       (row[gw]=row[gw]||[]).push(cell);};
     fixtures.forEach(f=>{
-      if(!f.event||f.event<from||f.event>=from+winN)return;
+      /* Played games are not planning material. Without this the grid's
+         first column carried matches that had already kicked off and
+         finished — coloured by their pre-match difficulty, as though they
+         were still ahead of you. */
+      if(!fixtureToCome(f)||f.event<from||f.event>=from+winN)return;
       const m=matchModel(b,f,R);
       put(f.team_h,f.event,{opp:teamShort(b,f.team_a),ko:f.kickoff_time||'',
         diff:m?plsimDiff(m.pH):f.team_h_difficulty,fdr:f.team_h_difficulty,home:true,
@@ -10714,8 +10779,7 @@ function buildNextFix(b,fixtures){
      before the cup competitions start, and congestionLoad returns 0 for both
      — so this quietly does nothing rather than guessing. */
   const kick=f=>Date.parse(f.kickoff_time);
-  fixtures.filter(f=>f.event).sort((a,c)=>a.event-c.event).forEach(f=>{
-    if(f.finished)return;
+  fixtures.filter(fixtureToCome).sort((a,c)=>a.event-c.event).forEach(f=>{
     const m=plsimMatch(R,f.team_h,f.team_a);
     if(!map[f.team_h])map[f.team_h]={opp:teamShort(b,f.team_a),home:true,event:f.event,
       diff:m?plsimDiff(m.pH):f.team_h_difficulty,gp:played[f.team_h]||0,
@@ -11359,7 +11423,7 @@ function buildGwFixtures(b,fixtures,gws){
   fixtures.forEach(f=>{if(f.finished){played[f.team_h]=(played[f.team_h]||0)+1;
     played[f.team_a]=(played[f.team_a]||0)+1;}});
   const map={};
-  fixtures.filter(f=>f.event&&gwSet.has(f.event)&&!f.finished).forEach(f=>{
+  fixtures.filter(f=>fixtureToCome(f)&&gwSet.has(f.event)).forEach(f=>{
     const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
     /* opp/home are carried for LABELLING only — nothing in the xP path reads
        them. A team sheet that lists a projection without naming the fixture
@@ -12225,6 +12289,53 @@ function provBonusPts(b,st,fixtures,picks){
    `true`. */
 function fixtureOver(f){
   return !!f&&(f.finished===true||f.finished_provisional===true);
+}
+/* Still to be played — the one rule every planning surface should agree on.
+   A fixture counts only if it is scheduled into a gameweek at all, which
+   postponed games are not until they are rescheduled.
+
+   `!f.finished` is NOT that rule, and half this file used to think it was.
+   FPL settles a match in two stages: finished_provisional at the final
+   whistle, finished once bonus has been applied a couple of hours later.
+   Read the raw flag and a match the whole country watched end is still
+   "unfinished", so it stays in the horizon, keeps its projection, and holds
+   the planning anchor on a gameweek that is over. */
+function fixtureToCome(f){return !!f&&!!f.event&&!fixtureOver(f);}
+/* The gameweek to plan for: the first one with a ball still to be kicked.
+
+   This used to be the first event with finished === false, and that flag
+   lags the football badly. FPL flips an event's `finished` only once every
+   match in it has been played AND scored — often the next morning. Until
+   then every planning surface here anchored on the gameweek just played:
+   the FDR grid opened on it, the chip planner scored it, the squad planner
+   showed its runs. That is the gameweek the app was asked to move on from.
+
+   The fixtures list knows first and is refreshed every ten minutes, so it
+   is the source of truth. The event flags remain the fallback for when
+   fixtures are unavailable — between seasons, or before a fixture list is
+   published — and returning null (season over, or no season yet) is a
+   real answer that callers already handle. */
+function gwAnchor(events,fixtures){
+  /* Both sources get a veto, and they veto different mistakes.
+
+     An event FPL has declared finished is finished, whatever the fixtures
+     list still says: a postponed match keeps pointing at its original
+     gameweek until it is rescheduled, and that stray must not drag the
+     anchor backwards into a week that is over.
+
+     Among the weeks that remain, the first with a game still to come is the
+     one to plan for — that is the half the event flags are too slow to
+     answer. */
+  const evs=(events||[]).filter(e=>e&&!e.finished);
+  if(!evs.length)return null;
+  const toCome={};
+  (fixtures||[]).forEach(f=>{if(fixtureToCome(f))toCome[f.event]=true;});
+  /* The trailing fallback carries the no-fixtures cases on its own: an empty
+     fixture list, or one with nothing left in it, matches no event and lands
+     here. That is the right answer rather than a special case — an absent
+     fixture list is not evidence about any particular gameweek, so the flags
+     answer alone rather than the app inventing a horizon it cannot see. */
+  return evs.find(e=>toCome[e.id])||evs[0];
 }
 
 /* ── LIVE: one matchday, five readings ──────────────────────
@@ -13407,7 +13518,7 @@ function buildHorizon(b,fixtures,N){
   fixtures.forEach(f=>{if(f.finished){played[f.team_h]=(played[f.team_h]||0)+1;
     played[f.team_a]=(played[f.team_a]||0)+1;}});
   const map={};
-  fixtures.filter(f=>f.event&&!f.finished).sort((a,c)=>a.event-c.event).forEach(f=>{
+  fixtures.filter(fixtureToCome).sort((a,c)=>a.event-c.event).forEach(f=>{
     const m=plsimMatch(R,f.team_h,f.team_a);if(!m)return;
     const push=(team,opp,home,lam,cs,win)=>{
       const arr=map[team]=map[team]||[];
@@ -15153,7 +15264,7 @@ function clubFdrRuns(b,fixtures,n){
   n=n||6;
   const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
   const acc={};
-  (fixtures||[]).filter(f=>f&&f.event&&f.event>=startGw&&!f.finished)
+  (fixtures||[]).filter(f=>fixtureToCome(f)&&f.event>=startGw)
     .sort((a,c)=>a.event-c.event)
     .forEach(f=>{
       [[f.team_h,f.team_a,f.team_h_difficulty,1],[f.team_a,f.team_h,f.team_a_difficulty,0]].forEach(r=>{
@@ -15221,7 +15332,11 @@ function chipHalfWindow(startGw){
 function fdrGameweeks(b,fixtures,from,to){
   const acc={};
   (fixtures||[]).forEach(f=>{
-    if(!f||!f.event||f.event<from||f.event>to)return;
+    /* Only games still to come. A gameweek already under way is not a
+       gameweek you can aim a chip at, and counting its played fixtures
+       would price it as though you could. Weeks left short by this are
+       dropped by the caller's minimum-clubs guard. */
+    if(!fixtureToCome(f)||f.event<from||f.event>to)return;
     const a=acc[f.event]||(acc[f.event]={gw:f.event,sum:0,n:0,easy:0,hard:0,count:{},rows:[]});
     [[f.team_h,f.team_a,f.team_h_difficulty,1],[f.team_a,f.team_h,f.team_a_difficulty,0]].forEach(r=>{
       const team=r[0],opp=r[1],d=Number(r[2]),home=r[3];
@@ -15754,7 +15869,7 @@ function chipRoadmapCard(b,fixtures){
     const teamOwn={};(b.elements||[]).forEach(e=>{teamOwn[e.team]=(teamOwn[e.team]||0)+(parseFloat(e.selected_by_percent)||0);});
     const byTeamGw={};
     fixtures.forEach(f=>{
-      if(!f.event||f.event<startGw||f.event>=startGw+N)return;
+      if(!fixtureToCome(f)||f.event<startGw||f.event>=startGw+N)return;
       const m=plsimMatch(R,f.team_h,f.team_a);
       (byTeamGw[f.team_h]=byTeamGw[f.team_h]||{})[f.event]=m?plsimDiff(m.pH):f.team_h_difficulty;
       (byTeamGw[f.team_a]=byTeamGw[f.team_a]||{})[f.event]=m?plsimDiff(m.pA):f.team_a_difficulty;
@@ -15808,7 +15923,7 @@ function gwSwing(b,fixtures,N){
   const teamOwn={};(b.elements||[]).forEach(e=>{teamOwn[e.team]=(teamOwn[e.team]||0)+(parseFloat(e.selected_by_percent)||0);});
   const acc={};
   fixtures.forEach(f=>{
-    if(!f.event||f.event<startGw||f.event>=startGw+N)return;
+    if(!fixtureToCome(f)||f.event<startGw||f.event>=startGw+N)return;
     const m=plsimMatch(R,f.team_h,f.team_a);
     const dH=m?plsimDiff(m.pH):f.team_h_difficulty;
     const dA=m?plsimDiff(m.pA):f.team_a_difficulty;
@@ -18227,7 +18342,7 @@ async function hydrateDossier(host){
   for(let g=startGw;g<startGw+8&&g<=38;g++)runGws.push(g);
   const byGw={};
   fixtures.forEach(f=>{
-    if(!f.event||f.finished||(f.team_h!==tid&&f.team_a!==tid))return;
+    if(!fixtureToCome(f)||(f.team_h!==tid&&f.team_a!==tid))return;
     const home=f.team_h===tid,m=plsimMatch(R,f.team_h,f.team_a);
     (byGw[f.event]=byGw[f.event]||[]).push({opp:teamShort(b,home?f.team_a:f.team_h),home,
       diff:m?plsimDiff(home?m.pH:m.pA):(home?f.team_h_difficulty:f.team_a_difficulty)});
@@ -19406,7 +19521,7 @@ function transferFrame(best,bankTenths,freeTransfers,horizonN,chargeHits){
    detection, so the chip model can point at the real windows. */
 function eventShape(fixtures){
   const ev={};
-  (fixtures||[]).filter(f=>f.event&&!f.finished).forEach(f=>{
+  (fixtures||[]).filter(fixtureToCome).forEach(f=>{
     const e=ev[f.event]=ev[f.event]||{gw:f.event,count:0,app:{}};
     e.count++;e.app[f.team_h]=(e.app[f.team_h]||0)+1;e.app[f.team_a]=(e.app[f.team_a]||0)+1;
   });
