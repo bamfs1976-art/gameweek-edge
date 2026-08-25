@@ -1523,8 +1523,14 @@ section('your matchday: which of my players are on, and when');
   await mp.waitForTimeout(1200);
 
   const md = await mp.evaluate(async () => {
-    /* The panel is registered as 'results'; 'matchday' is the label. */
-    try { openPanel('results'); } catch (e) { return { err: e.message }; }
+    /* The panel is registered as 'results'; 'matchday' is the label.
+       GW1 is named EXPLICITLY. This used to rely on the panel defaulting to
+       b.cur, which the mock made GW1 — and then the default moved to the
+       gameweek ahead, so a test about the squad-to-fixture join silently
+       became a test of a different gameweek. Which week is under test is
+       part of the test; where the panel OPENS is pinned separately, on the
+       server built to have those two disagree. */
+    try { RES_GW = 1; openPanel('results'); } catch (e) { return { err: e.message }; }
     await new Promise((r) => setTimeout(r, 2200));
     const card = [...document.querySelectorAll('.card')]
       .find((c) => /your matchday/i.test((c.querySelector('.card-title') || {}).innerText || ''));
@@ -2519,6 +2525,27 @@ section('the gameweek rolls over when the football does, not when FPL says so');
   ok(/still being scored/i.test(deb.txt),
      'it says the gameweek is still being scored instead');
 
+  /* MATCHDAY MOVES ON TOO. Reported alongside the header: "matchday results
+     need to move to the new GW after all the matches in the previous GW have
+     completed". It opened on b.cur — is_current — which FPL parks on the week
+     just played until the next deadline, so it showed a full set of finished
+     results as the matchday for four days. */
+  const md = await rp.evaluate(async () => {
+    try { openPanel('results'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3000));
+    const b = await boot();
+    return { err: null, resGw: typeof RES_GW === 'number' ? RES_GW : null,
+      cur: b.cur ? b.cur.id : null, anchor: b.upcoming ? b.upcoming.id : null,
+      live: window._gwLive };
+  });
+  ok(md.err === null, 'matchday opens (' + (md.err || '') + ')');
+  ok(md.cur === 1 && md.anchor === 2,
+     'on a server where GW1 is played out but FPL still calls it current');
+  ok(md.resGw === 2,
+     'matchday opens on the gameweek ahead, not the one just played (got GW' + md.resGw + ')');
+  ok(md.live === false,
+     'and nothing is marked live, because no match on screen is in play');
+
   ok(rErrors.length === 0, 'the rollover threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
   await rp.close();
 }
@@ -2618,6 +2645,87 @@ section('two reports: one about you, one about the gameweek');
 
   ok(rErrors.length === 0, 'neither report threw (' + rErrors.slice(0, 2).join(' | ') + ')');
   await rp.close();
+}
+
+section('the gameweek pack actually builds its cards');
+{
+  /* socialSpecs registers every preset as push(id, fn) inside a try/catch
+     that swallows the error — so a card whose builder throws does not fail,
+     it simply is not there. The caption and rota suites scan the SOURCE, so
+     they are satisfied by an id that exists in the file and would pass
+     happily while the card had never once rendered.
+
+     This builds them. It is the only check that can tell a card that works
+     from a card that is quietly absent, and it covers all five of the
+     gameweek pack rather than just the new one. */
+  const sp = await browser.newPage();
+  const sErrors = [];
+  sp.on('pageerror', (e) => sErrors.push(e.message));
+  await sp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await sp.waitForTimeout(1400);
+
+  const built = await sp.evaluate(async () => {
+    const b = await boot();
+    const fixtures = await loadFixtures();
+    const ev = b.events.filter((e) => e.data_checked).pop();
+    if (!ev) return { err: 'the fixture has no scored gameweek — the pack cannot be exercised' };
+    const live = await loadLive(ev.id);
+    let specs;
+    try { specs = socialSpecs(b, fixtures, live); } catch (e) { return { err: e.message }; }
+    const byId = Object.fromEntries(specs.map((s) => [s.id, s]));
+    const dc = byId['gw-defcon'];
+    return {
+      err: null, gw: ev.id, ids: specs.map((s) => s.id),
+      /* Measure the WEEK IN NUMBERS labels in the FONT THE CARD DRAWS THEM
+         IN. The arithmetic is unit-tested; what only a browser can say is
+         whether these particular words, in this particular face, actually
+         overrun the column — which is what the reported PNG showed. */
+      ladder: (() => {
+        const wn = byId['gw-week-in-numbers'];
+        if (!wn) return null;
+        const c = document.createElement('canvas').getContext('2d');
+        c.font = '800 27px system-ui,sans-serif';
+        const labs = (wn.groups || []).map((g) => ({ label: g.label, w: c.measureText(g.label).width }));
+        return { labs, itemX: labs.map((l) => socLadderItemX(l.w)) };
+      })(),
+      defcon: dc ? { title: dc.title, n: (dc.items || []).length,
+        allValued: (dc.items || []).every((it) => it.v != null && it.v !== ''),
+        allNamed: (dc.items || []).every((it) => !!it.nm),
+        meta: (dc.items || [])[0] ? (dc.items || [])[0].meta : null } : null,
+    };
+  });
+
+  ok(built.err === null, 'the studio builds its card list (' + (built.err || '') + ')');
+  ok(built.defcon !== null, 'the defcon card is among them, not silently swallowed');
+  if (built.defcon) {
+    ok(/DEFCON/i.test(built.defcon.title), 'titled as a defcon card (' + built.defcon.title + ')');
+    ok(built.defcon.n >= 5, 'with at least five rows — below that it is a list, not a ranking');
+    ok(built.defcon.allValued && built.defcon.allNamed,
+       'every row has a player and a count behind it');
+    ok(/needed \d+/.test(built.defcon.meta || ''),
+       'and each row says the threshold it had to clear (' + built.defcon.meta + ')');
+  }
+  /* The four that shipped before it, checked the same way for the first
+     time — the same swallow applies to them. */
+  for (const id of ['gw-top-scorers', 'gw-bonus', 'gw-week-in-numbers']) {
+    ok((built.ids || []).indexOf(id) >= 0, id + ' builds too');
+  }
+  /* The reported overlap, measured rather than eyeballed. */
+  ok(built.ladder !== null, 'the week-in-numbers card builds');
+  if (built.ladder) {
+    const LEFT = 64, OLD_COLUMN = 206;
+    const over = built.ladder.labs.filter((l) => LEFT + l.w > OLD_COLUMN);
+    ok(over.length > 0,
+       'at least one label really does overrun the old fixed column — the reported bug reproduces (' +
+       over.map((l) => l.label + ' ' + Math.round(l.w) + 'px').join(', ') + ')');
+    built.ladder.labs.forEach((l, i) => {
+      ok(built.ladder.itemX[i] >= LEFT + l.w,
+         'and "' + l.label + '" no longer has the value printed through it');
+    });
+  }
+
+  ok(sErrors.length === 0, 'building the cards threw nothing (' + sErrors.slice(0, 2).join(' | ') + ')');
+  await sp.close();
 }
 
 section('no uncaught errors');
