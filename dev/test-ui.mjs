@@ -2470,6 +2470,7 @@ section('the gameweek rolls over when the football does, not when FPL says so');
       gw2Deadline: fmtDeadline(b.events.find((e) => e.id === 2).deadline_time),
       phase: ph.phase,
       tkdl: (document.getElementById('tk-dl') || {}).textContent || '',
+      tkgw: (document.getElementById('tk-gw') || {}).textContent || '',
     };
   });
   ok(strip.num === '2',
@@ -2480,6 +2481,14 @@ section('the gameweek rolls over when the football does, not when FPL says so');
      'the phase is not "live" once every match has been played (got ' + strip.phase + ')');
   ok(!/LIVE/.test(strip.tkdl),
      'so the header carries no LIVE badge (' + strip.tkdl.slice(0, 40) + ')');
+  /* The status strip and the sidebar must not contradict each other. They
+     did: the strip read "GW 1" beside a sidebar reading Gameweek 2, and it
+     read it next to its own "GW1 RESULT IN" message, so the chip repeated
+     its neighbour instead of answering its own question. */
+  ok(/\b2\b/.test(strip.tkgw) && !/\b1\b/.test(strip.tkgw),
+     'and the strip names the same gameweek as the sidebar (' + strip.tkgw.trim() + ')');
+  ok(/GW1/.test(strip.tkdl),
+     'while the message beside it still names the gameweek being settled (' + strip.tkdl.slice(0, 30) + ')');
 
   /* The debrief must not tell someone whose gameweek has just finished that
      no gameweek has finished. It still waits for confirmed bonus — it just

@@ -217,9 +217,13 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function bootBehind', since: '2026-08-25',
-  what: 'the whole app moving off a gameweek that has been played' };
-/* Rotated from 'function gwAnchor' (2026-08-24), which shipped and was
+const MARKER = { text: 'const labelEv=b.upcoming||focus', since: '2026-08-25',
+  what: 'the status strip naming the same gameweek as the sidebar' };
+/* Rotated from 'function bootBehind' (2026-08-25), confirmed live by run
+   53. That release moved the sidebar onto the gameweek ahead; this one
+   stops the status strip contradicting it.
+
+   Before that 'function gwAnchor' (2026-08-24), which shipped and was
    confirmed live by run 52 — it moved the PLANNING anchor but left the
    header, the sidebar strip and the debrief on the played gameweek,
    which is what this release finishes.
