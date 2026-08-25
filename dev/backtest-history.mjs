@@ -66,8 +66,22 @@ const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
 const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
   .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
+/* nativeXP reads the points table from SCORING rather than restating it
+   inline, and this context has to supply it or the extracted function throws
+   the moment it is called. The FALLBACK table is the right binding for a
+   backtest — a historical season must not be regraded under whatever the
+   live game happens to publish today — which is exactly the choice
+   backtest-vaastav.mjs makes for the same reason.
+
+   This was missed when nativeXP started reading SCORING. Three of the four
+   places that extract it were updated; this one was not, and because the
+   workflow behind it runs weekly the break sat undetected from the Saturday
+   it landed until the following Tuesday's run. Nothing else exercises this
+   script — which is the argument for the guard below. */
+const scoringSrc = (() => { const i = html.indexOf('const SCORING_FALLBACK='); return html.slice(i, html.indexOf('\n', i)); })()
+  + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
-  [congestSrc, grabFn('minutesModel'), grabFn('concedePts'), grabFn('savePts'),
+  [scoringSrc, congestSrc, grabFn('minutesModel'), grabFn('concedePts'), grabFn('savePts'),
     grabFn('dcHitProb'), grabFn('effGoalRate'),
     grabFn('negRate90'), grabFn('nativeXP')].join('\n') + '\nreturn {nativeXP};',
 )();

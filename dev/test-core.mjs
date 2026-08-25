@@ -478,6 +478,39 @@ section('extractBlock: the harness must not corrupt what it measures');
   try { new Function('return (' + flag + ')'); } catch (_) { parsed = false; }
   ok(parsed, 'and it parses on its own');
 
+  /* EVERY ISOLATED MODEL CONTEXT MUST SUPPLY WHAT THE MODEL READS.
+
+     Four files extract the scoring model out of index.html and evaluate it
+     in a bare `new Function` context. When nativeXP started reading its
+     points table from SCORING instead of restating it inline, three of the
+     four were given that binding and the fourth — dev/backtest-history.mjs
+     — was not. It threw "SCORING is not defined" the first time it scored a
+     player. Nothing noticed for three days, because the only thing that
+     runs that script is a workflow scheduled weekly.
+
+     So the invariant is checked here rather than waiting for a Tuesday. The
+     model's app-level constants are UPPER_SNAKE by convention, so they can
+     be read straight off the extracted source: whatever the function
+     references, the file that evaluates it has to declare. */
+  {
+    const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+      .replace(/'[^']*'|"[^"]*"/g, '');
+    const globalsOf = (fn) => [...new Set(strip(extractFn(html, fn)).match(/\b[A-Z][A-Z0-9_]{2,}\b/g) || [])];
+    const consumers = ['dev/backtest-history.mjs', 'dev/backtest-vaastav.mjs',
+      'netlify/functions/log-predictions.js'];
+    const needed = [...new Set([...globalsOf('nativeXP'), ...globalsOf('minutesModel')])];
+    ok(needed.includes('SCORING'),
+       'the scan finds the constant that broke this (' + needed.join(', ') + ')');
+    for (const rel of consumers) {
+      let src = '';
+      try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch (_) { /* reported below */ }
+      ok(src.length > 0, rel + ' is readable');
+      for (const g of needed) {
+        ok(src.includes(g), rel + ' supplies ' + g + ' to the model it evaluates');
+      }
+    }
+  }
+
   /* And the real one that exposed the regex hole, measured the way the
      damage was measured: by how much of the file came with it. */
   const escSrc = extractFn(html, 'esc');
