@@ -50,6 +50,43 @@ function extractBlock(src, startIdx) {
     }
     if (ch === '/' && nx === '/') { com = 1; j++; continue; }
     if (ch === '/' && nx === '*') { com = 2; j++; continue; }
+    /* REGEX LITERALS, and they are not a nicety. esc() is one line long and
+       contains /[&<>"']/ — a character class holding both quote marks. A
+       scanner that only knows strings sees those quotes open and close
+       phantom strings, loses the closing brace, and keeps going: measured,
+       this extraction ran 638 lines past the end of the function and pulled
+       35 unrelated functions and 25 top-level consts into the test context.
+       It never failed loudly. It just meant the harness was quietly
+       evaluating a large slice of the app nobody had asked for, and any new
+       top-level const declared in that range collided with a stub.
+
+       A slash opens a regex unless the previous significant character could
+       end a value — an identifier, a number, a closing bracket. Division
+       after those; regex everywhere else. Inside a [...] class a slash is
+       literal, so the class has to be tracked too. */
+    if (ch === '/') {
+      let k = j - 1;
+      while (k >= 0 && /\s/.test(src[k])) k--;
+      const prev = k >= 0 ? src[k] : '';
+      /* `return /re/` and `typeof /re/` end in identifier characters but a
+         regex follows all the same, so the word itself has to be read —
+         not just its last letter. */
+      let word = '';
+      for (let w = k; w >= 0 && /[A-Za-z]/.test(src[w]); w--) word = src[w] + word;
+      const kw = /^(return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await)$/.test(word);
+      if (kw || !/[\w$)\]]/.test(prev)) {
+        let cls = false;
+        for (j++; j < src.length; j++) {
+          const c2 = src[j];
+          if (c2 === '\\') { j++; continue; }
+          if (c2 === '[') cls = true;
+          else if (c2 === ']') cls = false;
+          else if (c2 === '/' && !cls) break;
+          else if (c2 === '\n') break;      /* unterminated: not a regex after all */
+        }
+        continue;
+      }
+    }
     if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
     if (ch === '{') depth++;
     else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
@@ -127,9 +164,22 @@ const pieces = [
   extractFn(html, 'fplPriceMove'),
   extractFn(html, 'priceLocked'),
   extractFn(html, 'priceSource'),
+  ...['CHIP_API_LABEL'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'teamShort'),
   extractFn(html, 'fixtureOver'),
   extractFn(html, 'fixtureToCome'),
   extractFn(html, 'gwAnchor'),
+  extractFn(html, 'gwsPlayedOut'),
+  extractFn(html, 'bootBehind'),
+  /* gwMoved is the mechanism that makes a RUNNING app move on: boot()
+     memoises its index for the life of the tab, and this is the only thing
+     that ever throws it away. Its cache read is stubbed — what is under
+     test is the decision, not the cache — and the recheck timer comes from
+     the source so the rate limit is the shipped one. */
+  'let PEEK_FX = null;\nfunction cachedPeek(){ return PEEK_FX; }\nconst FIXTURES_TTL = 1;\nfunction __setPeek(v){ PEEK_FX = v; }\nfunction __resetRecheck(){ BOOT_RECHECKED = 0; }',
+  ...['BOOT_RECHECK_MS'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  'let BOOT_RECHECKED = 0;',
+  extractFn(html, 'gwMoved'),
   ...['RACE_TRIALS', 'RACE_SD_PRIOR', 'RACE_PRIOR_N', 'RACE_SD_FLOOR']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'raceSpread'),
@@ -207,6 +257,9 @@ const pieces = [
   'function horizonXP(_b, el, _hz){ return el._hx || 0; }',
   extractLine(html, /const MIN_TR_GAIN=[\d.]+;/),
   extractFn(html, 'bestTransfer'),
+  ...['MATCH_MAX_MS', 'BLIND_LIVE_MS']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'fixtureStuck'),
   extractFn(html, 'gwPhase'),
   /* Section 2: decision-grade recommendation model. */
   extractFn(html, 'confTier'),
@@ -318,7 +371,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -398,7 +451,18 @@ section('extractBlock: the harness must not corrupt what it measures');
     ["brace in a string", 'function f(){ var s = "}"; return 1; }'],
     ["brace in a template", "function f(){ var s = `}`; return 1; }"],
     ["escaped quote", "function f(){ var s = 'it\\'s'; return 1; }"],
-    ["comment marker inside a string", 'function f(){ var s = "/*"; return 1; }']
+    ["comment marker inside a string", 'function f(){ var s = "/*"; return 1; }'],
+    /* REGEX LITERALS. esc() is one line and holds /[&<>"']/ — a character
+       class containing both quote marks. The scanner read those as strings
+       opening, lost the closing brace, and captured 638 lines instead of
+       one: 35 unrelated functions and 25 top-level consts, silently, for as
+       long as this file has existed. Nothing failed; the harness was simply
+       evaluating a large slice of the app nobody had asked it to. */
+    ["quotes inside a regex character class", `function f(){ return s.replace(/[&<>"']/g, ''); }`],
+    ["a brace inside a regex", 'function f(){ return /[}]/.test(s); }'],
+    ["an escaped slash inside a regex", 'function f(){ return /a\\/b/.test(s); }'],
+    ["division is not a regex", 'function f(){ var a = 1; return (a) / 2 / 1; }'],
+    ["a regex after a return", 'function f(){ return /"/; }']
   ];
   for (const [label, src] of cases) {
     let got = null;
@@ -413,6 +477,14 @@ section('extractBlock: the harness must not corrupt what it measures');
   let parsed = true;
   try { new Function('return (' + flag + ')'); } catch (_) { parsed = false; }
   ok(parsed, 'and it parses on its own');
+
+  /* And the real one that exposed the regex hole, measured the way the
+     damage was measured: by how much of the file came with it. */
+  const escSrc = extractFn(html, 'esc');
+  ok(escSrc.split('\n').length === 1,
+     'esc extracts as the one line it is, not 638 (' + escSrc.split('\n').length + ')');
+  ok((escSrc.match(/^function [A-Za-z0-9_$]+\(/gm) || []).length === 1,
+     'and carries no other function with it');
 }
 
 section('esc escapes <>&"\'');
@@ -583,6 +655,128 @@ section('gwAnchor: the app moves on when the football does');
      mid-window — is skipped rather than offered as the horizon. */
   const gap = core.gwAnchor(EVENTS, [fx(30, 3)]);
   ok(gap && gap.id === 3, 'the first gameweek that actually has football is the anchor');
+}
+
+section('the app moves off a gameweek that has been played');
+{
+  /* Reported, four days after GW1's deadline, with a screenshot: the header
+     read "GW 1 · LIVE GW1 in play", the sidebar read "Gameweek 1 · Deadline
+     Fri 21 Aug 18:30", and the debrief said "No finished gameweek yet".
+
+     Three separate mechanisms, one symptom. */
+  const HOUR = 3600e3, D = 86400e3;
+  const NOW = 1_700_000_000_000;
+  const isoAt = (ms) => new Date(ms).toISOString();
+  const ev = (id, o) => Object.assign(
+    { id, finished: false, data_checked: false, is_current: false, is_next: false,
+      deadline_time: isoAt(NOW - 4 * D) }, o);
+  const fx = (id, event, o) => Object.assign(
+    { id, event, team_h: 1, team_a: 2, started: true,
+      finished: false, finished_provisional: false }, o);
+
+  /* ── gwsPlayedOut: what is behind us, by the football not the flags ── */
+  const evs = [ev(1, { is_current: true }), ev(2, { deadline_time: isoAt(NOW + 3 * D), is_next: true })];
+  const played = [fx(10, 1, { finished: true }), fx(11, 1, { finished_provisional: true }),
+    fx(20, 2, { started: false })];
+  const out = core.gwsPlayedOut(evs, played);
+  ok(out.length === 1 && out[0].id === 1,
+     'a gameweek whose every match is over is behind us, flags notwithstanding');
+  ok(core.gwsPlayedOut(evs, []).length === 0,
+     'and an empty fixture list reports NOTHING played out, rather than the whole season');
+  ok(core.gwsPlayedOut(evs, [fx(10, 1)]).length === 0, 'a gameweek still playing is not behind us');
+  ok(core.gwsPlayedOut(null, null).length === 0, 'null inputs do not throw');
+
+  /* ── bootBehind: the hole the first fix left open ──────────────────
+     The anchor is computed FROM fixtures, so once the football moves on the
+     anchor moves with it and the index looks self-consistent — while the
+     events array it was built from is still the stale copy that says the
+     played gameweek is unfinished. That is what left the debrief insisting
+     the season had not started. */
+  const staleIdx = { cur: evs[0], upcoming: evs[1], events: evs };
+  ok(core.bootBehind(staleIdx, played) === true,
+     'bootstrap calling a played-out gameweek unfinished is behind the football');
+  ok(core.bootBehind({ cur: ev(1, { finished: true }), events: evs }, played) === false,
+     'once FPL flags it finished there is nothing to chase');
+  ok(core.bootBehind(staleIdx, [fx(10, 1), fx(11, 1, { finished: true })]) === false,
+     'a gameweek with a match still to finish is not behind, it is in progress');
+  ok(core.bootBehind({ cur: evs[0], events: evs }, [fx(20, 2)]) === false,
+     'and no fixtures for that gameweek is no evidence either way');
+
+  /* ── gwPhase: a LIVE badge needs evidence ────────────────────────── */
+  const bOf = (e) => ({ events: e, cur: e.find((x) => x.is_current) || e[0] });
+
+  /* THE STUCK ROW. An abandoned match, or a feed that stopped updating,
+     leaves started set with neither finished flag — and that pinned the
+     header in LIVE indefinitely. */
+  const stuck = [fx(10, 1, { kickoff_time: isoAt(NOW - 4 * D) })];
+  const rStuck = core.gwPhase(bOf(evs), stuck, NOW);
+  ok(rStuck.anyLive === false,
+     'a match that kicked off four days ago is stuck data, not a match in play');
+  ok(rStuck.phase !== 'live', 'so the header does not claim the gameweek is live');
+
+  /* Still in play an hour after kickoff, which must keep working. */
+  const nowPlaying = [fx(10, 1, { kickoff_time: isoAt(NOW - 1 * HOUR) })];
+  ok(core.gwPhase(bOf(evs), nowPlaying, NOW).phase === 'live',
+     'a match that kicked off an hour ago IS in play');
+  /* No kickoff time cannot condemn the row — absence of evidence either way. */
+  ok(core.gwPhase(bOf(evs), [fx(10, 1)], NOW).phase === 'live',
+     'and a fixture with no kickoff time is still treated as in play');
+  ok(core.fixtureStuck({ kickoff_time: isoAt(NOW - 6 * HOUR) }, NOW) === true, 'six hours is stuck');
+  ok(core.fixtureStuck({ kickoff_time: isoAt(NOW - 2 * HOUR) }, NOW) === false, 'two hours is not');
+  ok(core.fixtureStuck({}, NOW) === false, 'no kickoff time is never stuck');
+
+  /* THE BLIND CLAIM. With no fixture rows at all the app assumed live, with
+     no time bound — so a fixtures outage produced a LIVE badge for days. */
+  const justPassed = [ev(1, { is_current: true, deadline_time: isoAt(NOW - 2 * HOUR) }),
+    ev(2, { deadline_time: isoAt(NOW + 5 * D), is_next: true })];
+  ok(core.gwPhase(bOf(justPassed), [], NOW).phase === 'live',
+     'no fixture data two hours after the deadline still reads as live — kickoff is imminent');
+  ok(core.gwPhase(bOf(evs), [], NOW).phase !== 'live',
+     'but four days after it, with no fixture data, the app stops claiming a gameweek is live');
+
+  /* ── gwMoved: what actually throws the memoised index away ─────────
+     boot() indexes bootstrap once per tab. This is the ONLY thing that ever
+     drops that index, so if it answers no the app cannot move on no matter
+     how right everything else is. It had no test at all: a mutation that
+     disabled its anchor check passed the whole suite. */
+  core.__resetRecheck();
+  const idxAnchorStale = { cur: evs[0], upcoming: evs[0], events: evs };
+  core.__setPeek(played);
+  ok(core.gwMoved(idxAnchorStale) === 'anchor',
+     'an index still pointing at a played-out gameweek is stale');
+
+  core.__resetRecheck();
+  /* cur must be the SAME finished event the array holds — an index whose
+     cur disagrees with its own events is not "fresh", it is corrupt, and
+     the first draft of this test built exactly that and blamed the code. */
+  const doneGw1 = ev(1, { finished: true, data_checked: true, is_current: true });
+  const idxFresh = { cur: doneGw1, upcoming: evs[1], events: [doneGw1, evs[1]] };
+  core.__setPeek(played);
+  ok(core.gwMoved(idxFresh) === false,
+     'and one whose anchor and flags both agree with the football is not');
+
+  /* The case the first fix missed: anchor correct, events array behind. */
+  core.__resetRecheck();
+  ok(core.gwMoved({ cur: evs[0], upcoming: evs[1], events: evs }) === 'behind',
+     'a correct anchor over a stale events array is still stale — the hole that left the debrief empty');
+
+  /* Rate limit: the settling case stays true for hours, and boot() runs
+     before every render, so it must not re-download bootstrap each time. */
+  ok(core.gwMoved({ cur: evs[0], upcoming: evs[1], events: evs }) === false,
+     'and asking again immediately does not trigger a second re-fetch');
+  ok(core.BOOT_RECHECK_MS >= 60e3, 'the recheck interval is minutes, not milliseconds');
+
+  /* A moved anchor is a transition, not a standing condition, so it is
+     never rate-limited away. */
+  core.__setPeek(played);
+  ok(core.gwMoved(idxAnchorStale) === 'anchor',
+     'while a moved anchor is never suppressed by that timer');
+
+  /* No fixtures in memory: peek, never fetch, never guess. */
+  core.__setPeek(null);
+  ok(core.gwMoved(idxAnchorStale) === false, 'with no fixtures cached it declines rather than fetching');
+  core.__setPeek([]);
+  ok(core.gwMoved(idxAnchorStale) === false, 'and an empty list is not evidence either');
 }
 
 section('raceSpread: a part-played gameweek is not a measurement');

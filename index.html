@@ -3203,9 +3203,58 @@ function gwMoved(idx){
   const fixtures=cachedPeek('fixtures',FIXTURES_TTL);
   if(!fixtures||!fixtures.length)return false;
   const a=gwAnchor(idx.events,fixtures);
-  if(!a)return false;
-  return !idx.upcoming||a.id!==idx.upcoming.id;
+  /* A moved anchor is a one-shot transition — refresh at once. */
+  if(a&&(!idx.upcoming||a.id!==idx.upcoming.id))return 'anchor';
+  /* THE ANCHOR AGREEING IS NOT THE SAME AS BOOTSTRAP BEING CURRENT, and
+     reading it as though it were left a hole big enough to drive the whole
+     complaint through.
+
+     The anchor is computed FROM fixtures. So once a gameweek's football
+     ends, the anchor moves to the next week on the next fixtures refresh
+     and the index looks internally consistent for ever after — while the
+     events array it was built from is still the twelve-hour-old copy that
+     says the played gameweek is unfinished, is_current, and unchecked.
+     Everything reading those flags stayed wrong for the rest of the TTL:
+     the debrief found no finished gameweek and said the season had not
+     started, and the header could not tell a settled week from a live one.
+
+     So ask the other question too — is bootstrap BEHIND THE FOOTBALL? */
+  /* Whereas this one stays true for as long as FPL takes to settle, so it
+     is asked on a timer rather than on every render. */
+  if(!bootBehind(idx,fixtures))return false;
+  const now=Date.now();
+  if(now-BOOT_RECHECKED<BOOT_RECHECK_MS)return false;
+  BOOT_RECHECKED=now;
+  return 'behind';
 }
+/* Bootstrap's own current gameweek, played out in full according to the
+   fixtures, but still not flagged finished. Either the cached copy is old
+   or FPL has not settled it yet; from here the two are indistinguishable
+   and the answer is the same — go and look again. */
+function bootBehind(idx,fixtures){
+  const cur=idx.cur;
+  if(!cur||cur.finished)return false;
+  let n=0;
+  for(let i=0;i<fixtures.length;i++){
+    const f=fixtures[i];
+    if(!f||f.event!==cur.id)continue;
+    if(!fixtureOver(f))return false;
+    n++;
+  }
+  return n>0;
+}
+/* How often a bootstrap that looks behind may be re-fetched.
+
+   Rate-limiting is not an optimisation here, it is the difference between
+   a refresh and a stampede. When FPL is genuinely mid-settle the condition
+   above stays true for hours, and boot() is awaited before every panel
+   render — so an unguarded check would re-download the largest payload the
+   app has, over and over, for as long as the bonus took to confirm. This
+   bounds the staleness to minutes instead of the twelve-hour TTL, at a
+   handful of extra requests an hour in the one window where they buy
+   something. */
+const BOOT_RECHECK_MS=10*60e3;
+let BOOT_RECHECKED=0;
 /* Indexed, memoised view of bootstrap. */
 async function boot(){
   if(MEM._idx){
@@ -3412,6 +3461,18 @@ function fmtDayShort(iso){
      between — GW done & checked, next GW's deadline is ahead
      ended   — no future deadline anywhere (season over)
    Pure and now-injectable so it can be unit-tested. */
+/* Longest a single match can plausibly still be in progress, measured from
+   its kickoff. Ninety minutes plus half-time, stoppage, a VAR age and a
+   floodlight failure, rounded up hard: anything beyond this is not a match
+   in play, it is a row nobody updated. */
+const MATCH_MAX_MS=5*3600e3;
+function fixtureStuck(f,now){
+  const ko=f&&f.kickoff_time?Date.parse(f.kickoff_time):NaN;
+  return Number.isFinite(ko)&&(now||Date.now())-ko>MATCH_MAX_MS;
+}
+/* How long after a deadline the app may call a gameweek live on no fixture
+   evidence whatsoever. */
+const BLIND_LIVE_MS=6*3600e3;
 function gwPhase(b,fixtures,now){
   now=now||Date.now();
   const events=(b&&b.events)||[];
@@ -3422,18 +3483,40 @@ function gwPhase(b,fixtures,now){
     ||(b&&b.cur)||events[0]||null;
   const target=events.find(e=>ms(e)>now)||events.find(e=>e.is_next)||null;
   const curFix=cur?fx.filter(f=>f.event===cur.id):[];
-  const anyLive=curFix.some(f=>f.started&&!fixtureOver(f));
+  /* A match that kicked off and never finished is IN PLAY for about two
+     hours and stuck data for ever after. Abandonments, postponements
+     rewritten in place, a feed that stops updating — all leave `started`
+     set with neither finished flag, and reading that literally pins the
+     whole app in LIVE indefinitely, days after the football stopped. A
+     kickoff time we can check is checked; one we do not have cannot
+     condemn the row, so an absent time still counts as in play. */
+  const anyLive=curFix.some(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f,now));
   const allDone=curFix.length>0&&curFix.every(f=>fixtureOver(f));
+  /* Still genuinely open: a match yet to be played, or one actually in
+     progress. NOT the same as `!allDone`, and the difference is a stuck
+     row — an abandoned match keeps a gameweek permanently "not all done"
+     while nothing about it is ongoing, which is how the header came to
+     insist a gameweek was live four days after it ended. */
+  const curOpen=curFix.some(f=>!fixtureOver(f)&&!fixtureStuck(f,now));
   const dataChecked=!!(cur&&cur.data_checked);
   const curPassed=cur?ms(cur)<=now:false;
   let phase;
   if(cur&&!curPassed)                          phase='pre';
   else if(anyLive)                             phase='live';
-  else if(curPassed&&!allDone&&!dataChecked&&(curFix.length||!fx.length)) phase='live';
+  /* Deadline gone and the gameweek not yet settled → live. The second
+     clause is the no-data case: between the deadline and the first kickoff
+     there may be no fixture rows to read, and the honest reading then is
+     that the gameweek has begun. That was unbounded, so a fixtures outage
+     left the header insisting a gameweek was in play for as long as the
+     outage lasted. FPL's deadline is ninety minutes before the first
+     match, so BLIND_LIVE_MS is generous cover for the gap and its match —
+     past it, with no fixture data at all, the app stops claiming. */
+  else if(curPassed&&!dataChecked&&
+          (curOpen||(!fx.length&&now-ms(cur)<=BLIND_LIVE_MS))) phase='live';
   else if(curPassed&&!dataChecked)             phase='post';
   else if(target)                              phase='between';
   else                                         phase='ended';
-  return {phase,cur,target,anyLive,allDone,dataChecked,curPassed};
+  return {phase,cur,target,anyLive,allDone,curOpen,dataChecked,curPassed};
 }
 const STATUS_LABEL={i:'Injured',d:'Doubtful',s:'Suspended',u:'Unavailable',n:'Not available'};
 const STATUS_BADGE={i:'badge-red',d:'badge-amber',s:'badge-red',u:'badge-grey',n:'badge-grey'};
@@ -8539,8 +8622,23 @@ async function hydrateGwreport(host){
   if(!mid){host.innerHTML=linkBox();return;}
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const finished=b.events.filter(e=>e.finished);
-  if(!finished.length){host.innerHTML=stateBox('calendar','No finished gameweek yet',
-    'Your first debrief appears after GW1 wraps up — how you did, what worked, and what to change.');return;}
+  if(!finished.length){
+    /* TWO VERY DIFFERENT SILENCES, AND THE COPY USED TO CONFLATE THEM.
+
+       "Your first debrief appears after GW1 wraps up" is true before a ball
+       is kicked and false — visibly, insultingly so — to somebody who has
+       just watched their gameweek finish. A debrief needs FINAL points, so
+       it waits for FPL to confirm bonus rather than reading provisional
+       scores as though they were settled; but waiting is not the same as
+       there being nothing to wait for, and the panel has to say which. */
+    const played=gwsPlayedOut(b.events,fixtures);
+    const last=played[played.length-1];
+    host.innerHTML=last
+      ? stateBox('calendar','GW'+last.id+' is still being scored',
+          'Every match is played, but FPL hasn’t confirmed bonus points yet. Your debrief appears as soon as it does — it waits for the final numbers rather than showing provisional ones.')
+      : stateBox('calendar','No finished gameweek yet',
+          'Your first debrief appears after GW1 wraps up — how you did, what worked, and what to change.');
+    return;}
   const minGw=finished[0].id,maxGw=finished[finished.length-1].id;
   if(REP_GW==null)REP_GW=maxGw;
   REP_GW=Math.max(minGw,Math.min(maxGw,REP_GW));
@@ -12790,6 +12888,22 @@ function fixtureToCome(f){return !!f&&!!f.event&&!fixtureOver(f);}
    fixtures are unavailable — between seasons, or before a fixture list is
    published — and returning null (season over, or no season yet) is a
    real answer that callers already handle. */
+/* Gameweeks whose football is over, earliest first — every match played,
+   whatever FPL's event flags say about them yet.
+
+   The counterpart to gwAnchor: that one answers what is still ahead, this
+   one what is behind. A gameweek with no fixtures scheduled into it is not
+   "played out", it is unknown, so it is never included — otherwise an
+   empty fixture list would report the whole season complete. */
+function gwsPlayedOut(events,fixtures){
+  const seen={},open={};
+  (fixtures||[]).forEach(f=>{
+    if(!f||!f.event)return;
+    seen[f.event]=true;
+    if(!fixtureOver(f))open[f.event]=true;
+  });
+  return (events||[]).filter(e=>e&&seen[e.id]&&!open[e.id]);
+}
 function gwAnchor(events,fixtures){
   /* Both sources get a veto, and they veto different mistakes.
 
@@ -21931,8 +22045,21 @@ function syncLinkRibbon(){
 async function hydrateGwStrip(){
   try{
     const b=await boot();
-    document.getElementById('gw-num').textContent=b.cur.id;
-    document.getElementById('gw-deadline').textContent=fmtDeadline(b.cur.deadline_time);
+    /* The gameweek you are HEADING INTO, not the one FPL is still scoring.
+
+       This read b.cur, which is `is_current`, and FPL parks that on a
+       gameweek until the NEXT one's deadline arrives. So from the final
+       whistle on Monday until Friday teatime the strip sat on the gameweek
+       just played and counted down to a deadline four days gone — the app
+       visibly failing to move on, in the one place that exists to say
+       which gameweek it is.
+
+       b.upcoming is that gameweek while its football is still to come and
+       the next one the moment it is not, which is exactly what this strip
+       is for. b.cur remains the fallback for a season that has ended. */
+    const gw=b.upcoming||b.cur;
+    document.getElementById('gw-num').textContent=gw.id;
+    document.getElementById('gw-deadline').textContent=fmtDeadline(gw.deadline_time);
   }catch(_){/* leave the static fallback in place */}
 }
 
