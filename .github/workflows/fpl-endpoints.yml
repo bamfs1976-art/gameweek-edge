@@ -72,3 +72,13 @@ jobs:
         # so it is measured against real entries instead.
         continue-on-error: true
         run: node dev/fpl-budget-basis.mjs
+
+      - name: When does FPL actually settle a gameweek?
+        # The app's three clocks — the event flags, the fixture flags, and the
+        # football itself — disagree, and the whole "the app is still showing
+        # the last gameweek" class of bug lives in the gaps between them. This
+        # prints all three side by side so the gap is measured rather than
+        # reasoned about. It could never be run from the dev sandbox, which is
+        # exactly why it belongs to a runner.
+        continue-on-error: true
+        run: node dev/fpl-gw-rollover.mjs

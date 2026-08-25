@@ -16,12 +16,11 @@
  * planning tool anchored on `finished` is pointing at a gameweek that is
  * over. If that gap is real, `finished` is the wrong anchor.
  *
- * NOT YET RUN AGAINST LIVE FPL. Written while fixing the rollover on
- * 2026-08-24, when fantasy.premierleague.com was unreachable from the
- * build sandbox (connection refused, not a proxy fault). The fix it
- * accompanies was therefore derived from the code and pinned by the
- * offline suites, not by this probe's output — so nothing here should be
- * cited as a measurement until someone has actually run it.
+ * RUN IT FROM A RUNNER, not from here. fantasy.premierleague.com is
+ * unreachable from the build sandbox — it answered connection-refused on
+ * 24 Aug 2026 and 403 at the egress proxy the next day — so this is wired
+ * into .github/workflows/fpl-endpoints.yml and dispatched. That is the
+ * only place its output counts as a measurement.
  *
  * Run: node dev/fpl-gw-rollover.mjs
  */
