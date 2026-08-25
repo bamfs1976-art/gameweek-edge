@@ -3912,6 +3912,7 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'dashboard', label:'Overview', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
+      {id:'gwdebrief', label:'GW Debrief', icon:'calendar', tier:'free'},
       {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'accountability', label:'The Model', icon:'target', tier:'free'}
@@ -3925,8 +3926,7 @@ const NAV = [
       {id:'captain', label:'Captaincy Lab', icon:'star', tier:'free'},
       {id:'chips', label:'Chip Strategy', icon:'diamond', tier:'free', needs:['chips']},
       {id:'draft', label:'Squad Planner', icon:'bolt', tier:'free', needs:['preseasonDraft']},
-      {id:'gwreport', label:'GW Debrief', icon:'calendar', tier:'free'},
-      {id:'gwhistory', label:'Manager Report', icon:'calendar', tier:'paid', needs:['seasonHistory']}
+      {id:'gwreport', label:'Manager Report', icon:'calendar', tier:'free'}
     ]
   },
   {
@@ -4050,7 +4050,7 @@ function canSeeArea(a){
    unreachable. Getting that the wrong way round would turn a decluttered nav
    into a broken one. */
 const SIMPLE_PANELS=new Set([
-  'dashboard','myweek','gw-actions',              /* Home — what do I do this week */
+  'dashboard','myweek','gw-actions','gwdebrief',  /* Home — what do I do this week */
   'squad','captain','transfers','gwreport',       /* My Team */
   'allplayers','price','news',                    /* Players */
   'fixtures',                                     /* Planner */
@@ -4434,7 +4434,11 @@ const PANEL_CONTENT = {
     layout:'squad'
   },
   gwreport:{
-    desc:'Your gameweek, debriefed: how it went against the average, what worked, what cost you points, and the model’s suggested transfer and captain for the next deadline.',
+    desc:'Everything about your season in one place: the last gameweek debriefed against the average, what worked and what cost you points, the model’s suggested transfer and captain for the next deadline, and the season arc behind it — points by gameweek, rank trajectory, chip returns, captain accuracy and transfer ROI.',
+    layout:'standard'
+  },
+  gwdebrief:{
+    desc:'The whole gameweek, debriefed: the biggest scores and what earned them, the bonus table, defensive contributions against the threshold, and the hauls most managers missed.',
     layout:'standard'
   },
   transfers:{
@@ -4503,10 +4507,6 @@ const PANEL_CONTENT = {
   },
   chips:{
     desc:'Chip allocation and the best gameweeks to deploy each one.',
-    layout:'standard'
-  },
-  gwhistory:{
-    desc:'Your season in review — points by gameweek, captain accuracy, bench waste and rank arrows.',
     layout:'standard'
   },
   watchlist:{
@@ -4636,6 +4636,9 @@ function closeMoreSheet(){
    an old bookmark or shared link lands on the thing that absorbed it rather
    than silently falling back to the dashboard. */
 const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuries:'allplayers',
+  /* The season review and the weekly debrief were two destinations asking
+     one question — how am I doing — so they are one panel now. */
+  gwhistory:'gwreport',
   points5:'fixtures',csmatrix:'fixtures',market:'price',
   bonus:'liverank',dcwatch:'liverank',defcon:'liverank',autosubs:'liverank',
   matchforecast:'results',lineups:'results',
@@ -5478,7 +5481,7 @@ async function hydrateAccountability(host){
           '<div class="stat"><div class="stat-l">Captain hit rate</div><div class="stat-v">'+capHitTxt+'</div></div>'+
           '<div class="stat"><div class="stat-l">GWs played</div><div class="stat-v">'+played+'</div></div>'+
           '<div class="stat"><div class="stat-l">Avg / GW</div><div class="stat-v">'+(avgPts!=null?avgPts:'—')+'</div></div>'+
-        '</div><div class="dl-sub" style="margin-top:10px">Percentile is your live overall rank against '+fmtNum(totalPlayers)+' managers · captain hit rate = armband was your top scorer ('+capHitSub+'). Full captain analysis is in the <a href="#gwhistory" onclick="openPanel(\'gwhistory\');return false">Manager Report</a>.</div></div>';
+        '</div><div class="dl-sub" style="margin-top:10px">Percentile is your live overall rank against '+fmtNum(totalPlayers)+' managers · captain hit rate = armband was your top scorer ('+capHitSub+'). Full captain analysis is in the <a href="#gwreport" onclick="openPanel(\'gwreport\');return false">Manager Report</a>.</div></div>';
     }
   }catch(_){}}
   /* Live prediction accuracy from the logged model predictions (P5). */
@@ -5998,6 +6001,116 @@ async function hydrateDesign(host){
     panel('Keys','<span class="cmdk-foot" style="border:0;padding:0"><kbd>⌘K</kbd> <kbd>g s</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>?</kbd></span>')+
     '</div>'+
     '<p class="dl-sub" style="margin-top:14px">Every primitive is a plain HTML/CSS pattern driven by the tokens — no components, no build step. Data rows: 28px · card padding 12px · radius 4px max · depth by hairline, never shadow.</p>';
+}
+
+/* ── GW Debrief — the whole gameweek, not your team ──────
+   Asked for alongside the personal report: "an overall GW debrief that
+   covers the headlines across the whole GW, highest scorer, bonus points,
+   defcon".
+
+   WHICH GAMEWEEK, AND WHY NOT data_checked. The social pack refuses to
+   build until FPL has confirmed bonus, and it is right to: a graphic is
+   the one format nobody goes back and corrects. A panel is not a graphic.
+   It rebuilds every time it is opened, so it can show a gameweek the
+   moment the football is over and say plainly that bonus is provisional —
+   which is more useful than four days of an empty page, and honest as
+   long as it labels itself. That label is not decoration; it is the thing
+   that makes showing the numbers early defensible. */
+async function hydrateGwdebrief(host){
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const played=gwsPlayedOut(b.events,fixtures);
+  const ev=played.length?played[played.length-1]:null;
+  if(!ev){
+    const nextEv=b.upcoming;
+    host.innerHTML=stateBox('calendar','No gameweek to debrief yet',
+      nextEv?'The headlines — biggest scores, the bonus table and the defensive returns — appear here once GW'+nextEv.id+' has been played.'
+        :'The headlines appear here once a gameweek has been played.');
+    return;
+  }
+  let live;
+  try{live=await loadLive(ev.id);}
+  catch(_){host.innerHTML=stateBox('calendar','GW'+ev.id+' data unavailable',
+    'FPL’s live feed for this gameweek could not be loaded. It is usually a passing outage — try again shortly.');return;}
+  const liveEls=(live&&live.elements)||[];
+  const pack=gwStatsPack(b.els,liveEls,ev,8);
+  const dc=hasCap('defcon')?gwDefcon(b.els,liveEls,SCORING,8):null;
+  const settled=!!ev.data_checked;
+  const prov=settled?'':'<span class="badge badge-amber">Bonus provisional</span>';
+
+  const nm=r=>'<div class="dl-row dl-click" onclick="openPlayer('+r.el.id+')">'+avatar(b,r.el,28)+
+    '<span class="dl-grow"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
+    '<span class="dl-sub">'+crest(b,r.el.team,12)+teamShort(b,r.el.team)+' · '+posShort(b,r.el.element_type)+
+    (r.line?' · '+esc(r.line):'')+'</span></span>';
+  const card=(title,body,sub)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
+    (sub?'<p class="dl-sub" style="margin-bottom:10px">'+sub+'</p>':'')+body+'</div>';
+
+  /* ── The week in numbers ── */
+  const n=pack.numbers;
+  const chipLine=n.chips.length
+    ? n.chips.map(c=>esc(CHIP_API_LABEL[c.name]||c.name)+' '+fmtK(c.n)).join(' · ')
+    : 'none played';
+  const who=id=>{const e=b.els[id];return e?esc(e.web_name):'—';};
+  const numbers=card('GW'+ev.id+' in numbers '+prov,
+    '<div class="grid g-4">'+
+      kpi('Average score',n.avg==null?'—':fmtNum(n.avg),'across every manager','var(--blue)')+
+      kpi('Highest score',n.high==null?'—':fmtNum(n.high),'the best single team','var(--green)')+
+      kpi('Most captained',n.captained?who(n.captained):'—','the armband of the week','var(--purple)')+
+      kpi('Transfers made',n.transfers==null?'—':fmtK(n.transfers),'chips: '+chipLine,'var(--amber)')+
+    '</div>');
+
+  /* ── Highest scorers ── */
+  const scorers=pack.scorers.length
+    ? card('Highest scorers',
+        '<div class="dl">'+pack.scorers.map(r=>nm(r)+'<span class="dl-col mono pos">'+r.pts+'</span></div>').join('')+'</div>',
+        'The biggest returns of the gameweek, with what each player actually did.')
+    : '';
+
+  /* ── Bonus ── */
+  const bonus=pack.bonus.length
+    ? card('Bonus points'+(settled?'':' <span class="badge badge-amber">provisional</span>'),
+        '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span>'+
+        '<span class="dl-col">BPS</span><span class="dl-col">Bonus</span></div>'+
+        pack.bonus.map(r=>nm(r)+'<span class="dl-col mono">'+r.bps+'</span>'+
+          '<span class="dl-col mono'+(r.bonus?' pos':'')+'">'+(r.bonus?'+'+r.bonus:'—')+'</span></div>').join('')+'</div>',
+        settled?'Ranked on the bonus points system — the game’s own tie-break — with the bonus each player was awarded.'
+          :'Ranked on BPS. FPL has not confirmed this gameweek’s bonus yet, so the awarded column can still move.')
+    : '';
+
+  /* ── Defensive contributions ── */
+  let defcon='';
+  if(dc&&dc.measured){
+    defcon=card('Defensive contributions',
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Player</span>'+
+      '<span class="dl-col">CBIT</span><span class="dl-col">Pts</span></div>'+
+      dc.rows.map(r=>'<div class="dl-row dl-click" onclick="openPlayer('+r.el.id+')">'+avatar(b,r.el,28)+
+        '<span class="dl-grow"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
+        '<span class="dl-sub">'+crest(b,r.el.team,12)+teamShort(b,r.el.team)+' · '+posShort(b,r.el.element_type)+
+        ' · needs '+r.thr+'</span></span>'+
+        '<span class="dl-col mono'+(r.hit?' pos':'')+'">'+r.dc+'</span>'+
+        '<span class="dl-col mono'+(r.hit?' pos':'')+'">'+(r.pts?'+'+r.pts:'—')+'</span></div>').join('')+'</div>',
+      '<b>'+fmtNum(dc.hits)+'</b> player'+(dc.hits===1?'':'s')+' cleared the threshold, worth <b>'+fmtNum(dc.points)+'</b> points between them. '+
+      'Defenders need '+(SCORING.defconThreshold[2])+' clearances, blocks, interceptions and tackles; everyone further forward needs '+(SCORING.defconThreshold[3])+', with recoveries counted too. Goalkeepers do not score it.');
+  }else if(dc){
+    /* measured === 0 means the feed carried no such field for anybody —
+       which is a different statement from "nobody made a tackle", and the
+       card has to make the difference visible rather than print zeroes. */
+    defcon=card('Defensive contributions',
+      '<p class="dl-sub" style="margin:0">FPL’s live feed for GW'+ev.id+' did not carry defensive-contribution numbers, so there is nothing to rank. '+
+      'This is about the feed rather than the football — no conclusion should be drawn from it.</p>');
+  }
+
+  /* ── Hauls the field missed ── */
+  const diffs=pack.diffs.length
+    ? card('Hauls the field missed',
+        '<div class="dl">'+pack.diffs.map(r=>nm(r)+'<span class="dl-col mono pos">'+r.pts+'</span></div>').join('')+'</div>',
+        'The biggest scores from players under '+GW_PACK_DIFF+'% owned. Ownership is <b>today’s</b> — FPL publishes no history for it, and after a haul the field has had days to buy in.')
+    : '';
+
+  host.innerHTML='<div class="card mb-20"><div class="card-title">'+esc(ev.name)+' debrief</div>'+
+    '<p class="dl-sub" style="margin:0">What happened across the whole gameweek — the biggest scores, who the bonus system rewarded, and the defensive returns. '+
+    (settled?'FPL has confirmed this gameweek’s bonus, so every number here is final.'
+      :'FPL has not confirmed bonus for this gameweek yet, so the bonus and points columns can still move.')+'</p></div>'+
+    numbers+scorers+bonus+defcon+diffs;
 }
 
 /* ── Manager Report — season review + captain analysis ─── */
@@ -6753,6 +6866,44 @@ function gwStatsPack(els,liveEls,ev,limit){
       chips:chips
     }
   };
+}
+
+/* Who cleared the defensive-contribution threshold, and who did not.
+
+   Thresholds and points come from the game's own rulebook rather than from
+   constants here — a defender clears at 10 and everyone further forward at
+   12, and goalkeepers do not score it at all, which is why the table is
+   keyed by position and a missing entry means "not eligible" rather than
+   "zero". A rule change lands on its own.
+
+   THE ABSENT FIELD IS NOT A ZERO, and the distinction is the whole reason
+   this returns `measured`. If FPL stops publishing defensive_contribution
+   in the live feed, every row silently becomes 0 and the card would report
+   that nobody in the league made a tackle — a confident, wrong answer. A
+   row with no number is skipped instead, so `measured` is 0 and the caller
+   can say it has no data rather than inventing one. */
+function gwDefcon(els,liveEls,scoring,limit){
+  const sc=scoring||SCORING_FALLBACK;
+  const thrByType=sc.defconThreshold||{},ptsByType=sc.defcon||{};
+  const rows=[];
+  (liveEls||[]).forEach(le=>{
+    const el=(els||{})[le&&le.id];
+    if(!el)return;
+    const st=(le&&le.stats)||{};
+    const dc=Number(st.defensive_contribution);
+    if(!Number.isFinite(dc))return;
+    const thr=thrByType[el.element_type],pts=Number(ptsByType[el.element_type])||0;
+    /* No threshold or no points for the position: a keeper is not a
+       defender who failed, he is not playing this game. */
+    if(thr==null||!pts)return;
+    const hit=dc>=thr;
+    rows.push({id:el.id,el:el,dc:dc,thr:thr,hit:hit,pts:hit?pts:0,
+      mins:Number(st.minutes)||0});
+  });
+  rows.sort((a,c)=>c.dc-a.dc||c.pts-a.pts||a.id-c.id);
+  return {measured:rows.length,hits:rows.filter(r=>r.hit).length,
+    points:rows.reduce((s,r)=>s+r.pts,0),
+    rows:rows.slice(0,Math.max(1,limit||10))};
 }
 
 /* Every card the studio can produce. Each entry is built lazily so one
@@ -8617,6 +8768,48 @@ function repNav(step){
   const h=document.getElementById('ge-data');
   if(h)hydrateGwreport(h);
 }
+/* The season half of the Manager Report, and the reason it is not simply
+   pasted in.
+
+   These were two panels — a weekly debrief and a season review — asking one
+   question between them: how am I doing. Merging them is what was asked for,
+   but the season review was PRO and the debrief was free, so a careless
+   merge would hand a paid feature to everyone who opened the free one.
+
+   The subscription gate therefore moves down a level rather than
+   disappearing, exactly as the Live panel does with its paid views: a free
+   reader sees the real section, blurred and inert, behind the standard lock
+   strip, and its hydrator never runs — so it never fetches a season of
+   history to build something nobody is going to be shown.
+
+   `seasonHistory` is a different gate again and stays a hard one: it is a
+   capability of the GAME, not of the subscription, so a game that publishes
+   no history simply has no such section. */
+/* DECLARATIVE, so the guarantee above is checkable. An inline `!isPro()`
+   buried in a render function is a promise no test can read: dev/test-social
+   counts where the Pro gates ARE, and a merge that quietly dropped one would
+   look identical to a panel having been retired. The Live hub learned this
+   the same way, which is why LV_VIEWS carries its tiers as data.
+   KEEP ON ONE LINE — the test reads it with a balanced-bracket scan. */
+const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'paid',needs:['seasonHistory']}];
+function reportSection(id){return REPORT_SECTIONS.filter(x=>x.id===id)[0]||null;}
+function reportShell(host,debriefHtml){
+  const sec=reportSection('season');
+  if(!sec||!capsMet(sec.needs)){host.innerHTML=debriefHtml;return;}
+  const locked=sec.tier==='paid'&&!isPro();
+  host.innerHTML=debriefHtml+
+    '<div class="card-title" style="margin:24px 0 10px">'+esc(sec.label)+
+      (locked?' <span class="badge badge-amber">Pro</span>':'')+'</div>'+
+    (locked
+      ? proLockWrap(skel(5),'mr-season')
+      : '<div id="mr-season">'+skel(5)+'</div>');
+  if(locked)return;
+  const seasonHost=document.getElementById('mr-season');
+  if(seasonHost)hydrateGwhistory(seasonHost).catch(()=>{
+    seasonHost.innerHTML=stateBox('calendar','Season review unavailable',
+      'Your gameweek history could not be loaded from FPL just now.');
+  });
+}
 async function hydrateGwreport(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
@@ -8633,11 +8826,15 @@ async function hydrateGwreport(host){
        there being nothing to wait for, and the panel has to say which. */
     const played=gwsPlayedOut(b.events,fixtures);
     const last=played[played.length-1];
-    host.innerHTML=last
+    /* No RETURN. The weekly debrief and the season review are one panel now,
+       and the season half has its own reasons to be empty — losing it
+       because THIS week is unsettled would be the merge making the page
+       worse than either half was alone. */
+    reportShell(host,last
       ? stateBox('calendar','GW'+last.id+' is still being scored',
           'Every match is played, but FPL hasn’t confirmed bonus points yet. Your debrief appears as soon as it does — it waits for the final numbers rather than showing provisional ones.')
       : stateBox('calendar','No finished gameweek yet',
-          'Your first debrief appears after GW1 wraps up — how you did, what worked, and what to change.');
+          'Your first debrief appears after GW1 wraps up — how you did, what worked, and what to change.'));
     return;}
   const minGw=finished[0].id,maxGw=finished[finished.length-1].id;
   if(REP_GW==null)REP_GW=maxGw;
@@ -8648,7 +8845,7 @@ async function hydrateGwreport(host){
   try{
     [picks,live,hist]=await Promise.all([loadPicks(mid,gw),loadLive(gw),loadHistory(mid)]);
     trs=await loadTransfers(mid).catch(()=>[]);
-  }catch(_){host.innerHTML=stateBox('calendar','No data for GW'+gw,'Your team data for this gameweek isn’t available from FPL.');return;}
+  }catch(_){reportShell(host,stateBox('calendar','No data for GW'+gw,'Your team data for this gameweek isn’t available from FPL.'));return;}
   const pts={};(live.elements||[]).forEach(e=>{pts[e.id]=e.stats?e.stats.total_points:0;});
   const eh=picks.entry_history||{};
   const nm=id=>{const e=b.els[id];return e?esc(e.web_name):'—';};
@@ -8744,7 +8941,7 @@ async function hydrateGwreport(host){
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
   }
 
-  host.innerHTML='<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">GW Debrief'+
+  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">GW Debrief'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
@@ -8753,7 +8950,7 @@ async function hydrateGwreport(host){
     summary+
     list('What worked',good,'var(--green)')+
     list('Where to improve',bad,'var(--amber)')+
-    nextSec;
+    nextSec);
 }
 
 /* Fixture Planner: FDR grid, next 6 GWs */
@@ -21413,8 +21610,8 @@ const WIRED={
   social:hydrateSocial,
   analytics:hydrateAnalytics,
   feedback:hydrateFeedback,
-  gwhistory:hydrateGwhistory,
   gwreport:hydrateGwreport,
+  gwdebrief:hydrateGwdebrief,
   archive:hydrateArchive,
   draft:hydrateDraft,
   squad:hydrateSquad,

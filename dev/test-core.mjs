@@ -249,6 +249,7 @@ const pieces = [
   ...['GW_PACK_DIFF'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'gwPackLine'),
   extractFn(html, 'gwStatsPack'),
+  extractFn(html, 'gwDefcon'),
   extractFn(html, 'gwPackWhy'),
   extractFn(html, 'sparkColor'),
   extractFn(aiSrc, 'fitJSON'),
@@ -371,7 +372,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -810,6 +811,64 @@ section('the app moves off a gameweek that has been played');
   ok(core.gwMoved(idxAnchorStale) === false, 'with no fixtures cached it declines rather than fetching');
   core.__setPeek([]);
   ok(core.gwMoved(idxAnchorStale) === false, 'and an empty list is not evidence either');
+}
+
+section('gwDefcon: who cleared the threshold, and the zero that is not one');
+{
+  /* Asked for as part of a whole-gameweek debrief: "highest scorer, bonus
+     points, defcon". Thresholds and points come from the game's rulebook —
+     a defender clears at 10, everyone further forward at 12, keepers do not
+     score it — so the table is keyed by position and a missing entry means
+     ineligible rather than zero. */
+  const SC = { defconThreshold: { 2: 10, 3: 12, 4: 12 }, defcon: { 1: 0, 2: 2, 3: 2, 4: 2 } };
+  const els = { 1: { id: 1, element_type: 2, web_name: 'Back' },
+    2: { id: 2, element_type: 3, web_name: 'Mid' },
+    3: { id: 3, element_type: 1, web_name: 'Keeper' },
+    4: { id: 4, element_type: 2, web_name: 'Other' } };
+  const le = (id, dc, mins) => ({ id, stats: { defensive_contribution: dc, minutes: mins == null ? 90 : mins } });
+
+  const r = core.gwDefcon(els, [le(1, 12), le(2, 9), le(3, 20), le(4, 10)], SC, 10);
+  ok(r.measured === 3, 'the keeper is not measured at all — he is not playing this game (' + r.measured + ')');
+  ok(r.hits === 2, 'a defender on 12 and one on exactly 10 both clear; the midfielder on 9 does not');
+  ok(r.points === 4, 'and the two who cleared are worth two points each');
+  ok(r.rows[0].el.id === 1 && r.rows[0].dc === 12, 'ranked by contributions, highest first');
+  ok(r.rows.every((x) => x.el.element_type !== 1), 'no keeper appears in the table');
+
+  /* EXACTLY the threshold clears it. An off-by-one here silently denies a
+     player the two points the game actually awarded him. */
+  ok(core.gwDefcon(els, [le(1, 10)], SC, 5).hits === 1, 'ten is a hit for a defender, not a miss');
+  ok(core.gwDefcon(els, [le(1, 9)], SC, 5).hits === 0, 'nine is not');
+  ok(core.gwDefcon(els, [le(2, 12)], SC, 5).hits === 1, 'twelve is a hit for a midfielder');
+  ok(core.gwDefcon(els, [le(2, 11)], SC, 5).hits === 0, 'eleven is not — the two positions differ');
+
+  /* THE ABSENT FIELD IS NOT A ZERO. If FPL stops publishing the stat, every
+     row would read 0 and the card would report that nobody in the league
+     made a tackle — confident and wrong. measured must fall to zero so the
+     caller can say it has no data instead. */
+  const blind = core.gwDefcon(els, [{ id: 1, stats: { minutes: 90 } }, { id: 2, stats: {} }], SC, 5);
+  ok(blind.measured === 0, 'a feed with no defensive_contribution measures nobody');
+  ok(blind.hits === 0 && blind.rows.length === 0, 'and ranks nobody, rather than ranking zeroes');
+  const real = core.gwDefcon(els, [le(1, 0)], SC, 5);
+  ok(real.measured === 1 && real.hits === 0,
+     'while a genuine zero IS measured — that is a player who made none, not a missing field');
+
+  /* A player in the feed but not in bootstrap is dropped rather than
+     half-rendered, the same rule gwStatsPack applies. */
+  /* TWO SEPARATE RULES, and today's rulebook happens to make one of them
+     invisible. Keepers are excluded here because they SCORE nothing, and
+     also because the threshold table has no entry for them — so dropping
+     the points half of the guard changes nothing against the live table.
+     A rulebook that gave keepers a threshold but no points would then let
+     them into a table of players earning points, which is the bug the
+     second half exists to prevent. */
+  const GK_THR = { defconThreshold: { 1: 14, 2: 10, 3: 12, 4: 12 }, defcon: { 1: 0, 2: 2, 3: 2, 4: 2 } };
+  const gk = core.gwDefcon(els, [le(3, 20)], GK_THR, 5);
+  ok(gk.measured === 0,
+     'a position with a threshold but no points is still not playing this game');
+
+  ok(core.gwDefcon(els, [le(99, 30)], SC, 5).measured === 0, 'an unknown element is dropped');
+  ok(core.gwDefcon(null, null, SC, 5).measured === 0, 'null inputs do not throw');
+  ok(core.gwDefcon(els, [le(1, 12), le(4, 11)], SC, 1).rows.length === 1, 'the limit is honoured');
 }
 
 section('raceSpread: a part-played gameweek is not a measurement');
