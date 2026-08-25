@@ -7260,6 +7260,27 @@ function socialSpecs(b,fixtures,live){
            v:String(r.bps)}))};
     });
 
+    /* Who actually cleared the threshold, which is a different question from
+       the DEFCON BY BUDGET card further up: that one is a forward-looking
+       shortlist of reliable returners at each price, this is the week that
+       happened. Both are worth posting and neither replaces the other.
+
+       Hits only. A ranked table of players who did NOT earn the points is
+       not a defcon card, it is a list of tackles — and the five-row floor is
+       the same one the other rank cards use, because four rows is a list
+       rather than a ranking. */
+    push('gw-defcon',()=>{
+      const d=gwDefcon(b.els,packLive,SCORING,999);
+      const hits=d.rows.filter(r=>r.hit);
+      if(hits.length<5)return null;
+      const dthr=(SCORING.defconThreshold||{});
+      return {kind:'rank',title:'WHO CLEARED DEFCON',
+        sub:pgw+' · defensive contributions, +2 each',
+        note:'Defenders need '+dthr[2]+' clearances, blocks, interceptions and tackles; everyone further forward needs '+dthr[3]+', recoveries included. Goalkeepers do not score it. Ranked on the count, not on the two points, because every player here earned the same two.',
+        items:hits.slice(0,10).map(r=>Object.assign(tok(r),
+          {meta:'needed '+r.thr+' · '+posShort(b,r.el.element_type),v:String(r.dc)}))};
+    });
+
     push('gw-week-in-numbers',()=>{
       const nm=pk.numbers;
       const who=id=>{const e=id!=null?b.els[id]:null;return e?e.web_name:null;};
@@ -7793,6 +7814,20 @@ BPS is not goals. Passing, tackles, recoveries and saves all score — which is 
 gameweekedge.co.uk`,
 a:`A ranked list of the highest bonus points system scores of the gameweek, with the bonus each player was awarded.`},
 
+'gw-defcon':{
+x:`Who cleared the defensive threshold this week.
+
+Two points for 10 clearances, blocks, interceptions and tackles if you are a defender; 12, recoveries included, if you play further forward.
+
+The quietest points in the game, and the most repeatable.
+
+gameweekedge.co.uk`,
+b:`Who cleared the defensive threshold this week.
+
+Two points for 10 CBIT as a defender, 12 with recoveries further forward. The quietest points in the game — and the most repeatable. #FPL
+gameweekedge.co.uk`,
+a:`A ranked list of the players who cleared the defensive contribution threshold this gameweek, showing each player's count and the threshold his position had to clear.`},
+
 'gw-week-in-numbers':{
 x:`The gameweek in numbers — the whole game, not just your team.
 
@@ -7961,7 +7996,7 @@ function socCaption(id){return SOC_CAPTIONS[id]||null;}
    nothing, and socSchedule's `have` filter drops them from the rota
    instead of queueing a post with no graphic behind it. */
 const SOC_ROTA=['gw-top-scorers','gw-week-in-numbers','set-pieces','defcon',
-  'data-xi','fixture-runs','gw-differentials','gw-bonus','overpriced',
+  'data-xi','fixture-runs','gw-differentials','gw-bonus','gw-defcon','overpriced',
   'underpriced','bonus-magnets','differentials','congestion','chip-plan',
   'xg-runs','out-of-position','club-bonus','rotation-chain','attack-or-defence',
   'ladder-2','ladder-3','ladder-4','ladder-1','bank-xi','haaland-xi','big-three-xi'];
@@ -7983,8 +8018,14 @@ const SOC_WEEKS=6;                              /* how far ahead to plan */
    The live DefCon shot is deliberately NOT here. It has to be taken during
    the 15:00 block while the match is running, and a queue entry telling you
    to post it at 18:30 would be telling you to post it too late. */
-const SOC_SHOTS=[{id:'debrief',off:5,label:'THE GW DEBRIEF',
-  shot:'Your own GW Debrief screen — including the weeks it went badly.'}];
+/* Named for the panel as it stands: the personal report is the Manager
+   Report now, and "GW Debrief" is the whole-gameweek panel anybody can read.
+   A prompt telling you to screenshot "your GW Debrief" after that rename
+   points at the one post nobody needs a screenshot for, since the public
+   gameweek cards are rendered. The id stays `debrief` so a queue already
+   planned does not lose its entry. */
+const SOC_SHOTS=[{id:'debrief',off:5,label:'YOUR MANAGER REPORT',
+  shot:'Your own Manager Report screen — including the weeks it went badly.'}];
 const SOC_SHOT_IDS=new Set(SOC_SHOTS.map(s=>s.id));
 function socShot(id){return SOC_SHOTS.find(s=>s.id===id)||null;}
 

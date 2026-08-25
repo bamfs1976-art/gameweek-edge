@@ -2620,6 +2620,61 @@ section('two reports: one about you, one about the gameweek');
   await rp.close();
 }
 
+section('the gameweek pack actually builds its cards');
+{
+  /* socialSpecs registers every preset as push(id, fn) inside a try/catch
+     that swallows the error — so a card whose builder throws does not fail,
+     it simply is not there. The caption and rota suites scan the SOURCE, so
+     they are satisfied by an id that exists in the file and would pass
+     happily while the card had never once rendered.
+
+     This builds them. It is the only check that can tell a card that works
+     from a card that is quietly absent, and it covers all five of the
+     gameweek pack rather than just the new one. */
+  const sp = await browser.newPage();
+  const sErrors = [];
+  sp.on('pageerror', (e) => sErrors.push(e.message));
+  await sp.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await sp.waitForTimeout(1400);
+
+  const built = await sp.evaluate(async () => {
+    const b = await boot();
+    const fixtures = await loadFixtures();
+    const ev = b.events.filter((e) => e.data_checked).pop();
+    if (!ev) return { err: 'the fixture has no scored gameweek — the pack cannot be exercised' };
+    const live = await loadLive(ev.id);
+    let specs;
+    try { specs = socialSpecs(b, fixtures, live); } catch (e) { return { err: e.message }; }
+    const byId = Object.fromEntries(specs.map((s) => [s.id, s]));
+    const dc = byId['gw-defcon'];
+    return {
+      err: null, gw: ev.id, ids: specs.map((s) => s.id),
+      defcon: dc ? { title: dc.title, n: (dc.items || []).length,
+        allValued: (dc.items || []).every((it) => it.v != null && it.v !== ''),
+        allNamed: (dc.items || []).every((it) => !!it.nm),
+        meta: (dc.items || [])[0] ? (dc.items || [])[0].meta : null } : null,
+    };
+  });
+
+  ok(built.err === null, 'the studio builds its card list (' + (built.err || '') + ')');
+  ok(built.defcon !== null, 'the defcon card is among them, not silently swallowed');
+  if (built.defcon) {
+    ok(/DEFCON/i.test(built.defcon.title), 'titled as a defcon card (' + built.defcon.title + ')');
+    ok(built.defcon.n >= 5, 'with at least five rows — below that it is a list, not a ranking');
+    ok(built.defcon.allValued && built.defcon.allNamed,
+       'every row has a player and a count behind it');
+    ok(/needed \d+/.test(built.defcon.meta || ''),
+       'and each row says the threshold it had to clear (' + built.defcon.meta + ')');
+  }
+  /* The four that shipped before it, checked the same way for the first
+     time — the same swallow applies to them. */
+  for (const id of ['gw-top-scorers', 'gw-bonus', 'gw-week-in-numbers']) {
+    ok((built.ids || []).indexOf(id) >= 0, id + ' builds too');
+  }
+  ok(sErrors.length === 0, 'building the cards threw nothing (' + sErrors.slice(0, 2).join(' | ') + ')');
+  await sp.close();
+}
+
 section('no uncaught errors');
 ok(pageErrors.length === 0, 'page threw nothing (' + pageErrors.slice(0, 3).join(' | ') + ')');
 

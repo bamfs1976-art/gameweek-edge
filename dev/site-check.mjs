@@ -217,9 +217,10 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function gwDefcon', since: '2026-08-25',
-  what: 'the whole-gameweek debrief, and the two personal reports merged into one' };
-/* Rotated from 'const labelEv=b.upcoming||focus' (2026-08-25), confirmed
+const MARKER = { text: 'WHO CLEARED DEFCON', since: '2026-08-25',
+  what: 'the defcon card in the shareable gameweek pack' };
+/* Rotated from 'function gwDefcon' (2026-08-25), confirmed live by run 56.
+   Before that 'const labelEv=b.upcoming||focus' (2026-08-25), confirmed
    live by run 55. Before that 'function bootBehind' (2026-08-25), confirmed
    live by run 53. That release moved the sidebar onto the gameweek ahead; this one
    stops the status strip contradicting it.
