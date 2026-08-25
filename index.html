@@ -7316,6 +7316,14 @@ function socialSpecs(b,fixtures,live){
 }
 
 /* ── Canvas renderer ─────────────────────────────────────────────────── */
+/* Where a ladder row's items may begin, given the width its label actually
+   measured. Pure, so the overlap is a testable arithmetic fact rather than
+   something you have to render a PNG and squint at. The floor keeps every
+   short-label card aligned exactly where it has always been. */
+const SOC_LADDER_X=206,SOC_LADDER_PAD=26,SOC_LADDER_LEFT=64;
+function socLadderItemX(labelW){
+  return Math.max(SOC_LADDER_X,SOC_LADDER_LEFT+(Number(labelW)||0)+SOC_LADDER_PAD);
+}
 function socRound(x,px,py,w,h,r){
   if(x.roundRect){x.beginPath();x.roundRect(px,py,w,h,r);return;}
   x.beginPath();x.rect(px,py,w,h);
@@ -7446,7 +7454,14 @@ function renderSocialCard(spec,scale){
       socRound(x,40,y,W-80,rh-9,12);x.fill();
       x.textAlign='left';x.font='800 27px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
       x.fillText(grp.label,64,y+rh/2+2);
-      let cx=206;
+      /* Start the items AFTER the label, not at a column chosen for the
+         labels this card happened to have first. The ladder was built for
+         'ARS' and '£4.0-4.5m', so a fixed 206 cleared them comfortably —
+         and then THE WEEK IN NUMBERS arrived with 'MOST CAPTAINED' and
+         'TRANSFERS MADE', which are wider than the 142px that column left,
+         and printed the value straight through the label. Measured, so the
+         short-label cards keep the alignment they already had. */
+      let cx=socLadderItemX(x.measureText(grp.label).width);
       (grp.items||[]).forEach((it,i)=>{
         if(cx>W-190)return;
         /* Crest chip ahead of each name — club identity at a glance. Rows
@@ -19735,7 +19750,15 @@ function matchdayCard(md,b,stale){
 }
 async function hydrateResults(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
-  if(RES_GW==null)RES_GW=b.cur.id;
+  /* Open on the gameweek the football is in, not the one FPL is still
+     scoring. b.cur is is_current, which FPL parks on a gameweek until the
+     NEXT one's deadline — so Matchday opened on the week just played and
+     stayed there until Friday, showing a full set of finished results as
+     though they were the matchday. b.upcoming is that same gameweek while
+     it still has a ball to be kicked, and the next one the moment it does
+     not, which is exactly when this should move on. Paging still works
+     from wherever it lands. */
+  if(RES_GW==null)RES_GW=(b.upcoming||b.cur).id;
   const gw=RES_GW;
   let owned=new Set(),myPicks=null,picksGw=gw;
   const mid=getMid();
@@ -19755,7 +19778,12 @@ async function hydrateResults(host){
   const md=squadMatchday(myPicks,fixtures,b.els,gw);
   const fx=fixtures.filter(f=>f.event===gw).slice()
     .sort((a,c)=>new Date(a.kickoff_time||0)-new Date(c.kickoff_time||0));
-  if(gw===b.cur.id)markLive(fx.some(f=>f.started&&!f.finished));
+  /* Live is a property of the gameweek ON SCREEN, not of whichever one FPL
+     calls current — with the default above those are routinely different
+     now, and the old test would have stopped marking live at all. The rule
+     is the shared one: started, not over, and not a row nobody has updated
+     for hours, which is what kept the badge lit after an abandonment. */
+  markLive(fx.some(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f)));
   let livePts=null;
   if(fx.some(f=>f.started)){
     try{const live=await loadLive(gw);livePts={};
