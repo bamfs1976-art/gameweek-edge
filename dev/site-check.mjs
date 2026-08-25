@@ -217,9 +217,14 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function gwAnchor', since: '2026-08-24',
-  what: 'the planning gameweek that moves on when the football does' };
-/* `path` is what the PREVIOUS marker needed and this one does not: that
+const MARKER = { text: 'function bootBehind', since: '2026-08-25',
+  what: 'the whole app moving off a gameweek that has been played' };
+/* Rotated from 'function gwAnchor' (2026-08-24), which shipped and was
+   confirmed live by run 52 — it moved the PLANNING anchor but left the
+   header, the sidebar strip and the debrief on the played gameweek,
+   which is what this release finishes.
+
+   `path` is what an earlier marker needed and this one does not: that
    release was entirely in the Fantasy EFL app, so a marker looked for in
    the FPL shell would have reported "not deployed yet" forever while the
    deploy sat there perfectly healthy. This release is back in index.html,

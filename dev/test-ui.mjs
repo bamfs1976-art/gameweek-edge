@@ -2456,6 +2456,46 @@ section('the gameweek rolls over when the football does, not when FPL says so');
   ok(fdr.heads.indexOf('GW1') < 0,
      'and a played gameweek appears nowhere in it');
 
+  /* THE THREE SURFACES IN THE REPORT, on the state it was reported in.
+     A screenshot four days after GW1's deadline showed the header on
+     "GW 1 · LIVE GW1 in play", the sidebar on "Gameweek 1 · Deadline Fri
+     21 Aug 18:30", and the debrief saying "No finished gameweek yet". */
+  const strip = await rp.evaluate(async () => {
+    const b = await boot();
+    await hydrateGwStrip();
+    const ph = gwPhase(b, await loadFixtures());
+    return {
+      num: (document.getElementById('gw-num') || {}).textContent,
+      deadline: (document.getElementById('gw-deadline') || {}).textContent,
+      gw2Deadline: fmtDeadline(b.events.find((e) => e.id === 2).deadline_time),
+      phase: ph.phase,
+      tkdl: (document.getElementById('tk-dl') || {}).textContent || '',
+    };
+  });
+  ok(strip.num === '2',
+     'the sidebar shows the gameweek ahead, not the one just played (got ' + strip.num + ')');
+  ok(strip.deadline === strip.gw2Deadline,
+     'and counts down to its deadline, not the one four days gone (' + strip.deadline + ')');
+  ok(strip.phase !== 'live',
+     'the phase is not "live" once every match has been played (got ' + strip.phase + ')');
+  ok(!/LIVE/.test(strip.tkdl),
+     'so the header carries no LIVE badge (' + strip.tkdl.slice(0, 40) + ')');
+
+  /* The debrief must not tell someone whose gameweek has just finished that
+     no gameweek has finished. It still waits for confirmed bonus — it just
+     says which of the two silences this is. */
+  const deb = await rp.evaluate(async () => {
+    try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {}
+    try { openPanel('gwreport'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2600));
+    return { err: null, txt: document.body.innerText };
+  });
+  ok(deb.err === null, 'the debrief opens (' + (deb.err || '') + ')');
+  ok(!/No finished gameweek yet/i.test(deb.txt),
+     'and does not claim the season has yet to produce one');
+  ok(/still being scored/i.test(deb.txt),
+     'it says the gameweek is still being scored instead');
+
   ok(rErrors.length === 0, 'the rollover threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
   await rp.close();
 }
