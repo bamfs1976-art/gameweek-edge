@@ -34,9 +34,11 @@ const AREA = {
      finds them, so they record views like any other panel. fplbasics is worth
      watching on its own: it is the one panel whose view count says something
      about how many arrivals are new to the game, not just new to the app. */
-  home: ['dashboard', 'myweek', 'gw-actions', 'blog', 'scout', 'accountability',
+  home: ['dashboard', 'myweek', 'gw-actions', 'gwdebrief', 'blog', 'scout', 'accountability',
     'design', 'glossary', 'fplbasics'],
-  'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport', 'gwhistory'],
+  /* gwhistory was the season review; it is a SECTION of gwreport now, so it
+     no longer reports panel_view events of its own. */
+  'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport'],
   live: ['liverank'],
   players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
   planner: ['fixtures', 'seasonsim', 'watchlist', 'alerts'],

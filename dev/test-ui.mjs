@@ -118,10 +118,24 @@ const standingsBody = () => JSON.stringify({
 });
 const picksFixture = () => JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json'), 'utf8'));
 const LIVE_MISSING = picksFixture().picks.find((p) => p.position === 3).element;
+/* total_points stays 2 for every row — the rival-card assertions are written
+   against that and the point of those is the rendering, not the arithmetic.
+   The rest of the stats block is new: the whole-gameweek debrief ranks on
+   bps, bonus and defensive_contribution, and a feed carrying none of them
+   exercises only the "we have no data" path. Values are derived from the
+   pick order so they are deterministic and a rebuilt fixture cannot drift. */
 const liveBody = () => JSON.stringify({
   elements: picksFixture().picks
     .filter((p) => p.element !== LIVE_MISSING)
-    .map((p) => ({ id: p.element, stats: { total_points: 2 } }))
+    .map((p, i) => ({ id: p.element, stats: {
+      total_points: 2,
+      bps: 40 - i,
+      bonus: i === 0 ? 3 : i === 1 ? 2 : i === 2 ? 1 : 0,
+      /* Alternating either side of the defenders' threshold of 10, so the
+         table has both a player who cleared it and one who did not. */
+      defensive_contribution: i % 2 === 0 ? 12 : 4,
+      minutes: 90,
+    } }))
 });
 const entryBody = (id) => JSON.stringify({
   id: Number(id), name: 'Rival FC', player_first_name: 'Sam', player_last_name: 'Rivers',
@@ -2506,6 +2520,103 @@ section('the gameweek rolls over when the football does, not when FPL says so');
      'it says the gameweek is still being scored instead');
 
   ok(rErrors.length === 0, 'the rollover threw nothing (' + rErrors.slice(0, 2).join(' | ') + ')');
+  await rp.close();
+}
+
+section('two reports: one about you, one about the gameweek');
+{
+  /* Asked for: merge the GW Debrief and the Manager Report into one overview
+     for the signed-in manager, and separately have a debrief covering the
+     whole gameweek — highest scorer, bonus points, defcon.
+
+     Driven on the played-out server, where GW1's football is over, because
+     that is when either report has anything to say. */
+  const rp = await browser.newPage();
+  const rErrors = [];
+  rp.on('pageerror', (e) => rErrors.push(e.message));
+  await rp.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await rp.goto(`http://localhost:${ENDED_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await rp.waitForTimeout(1400);
+
+  /* ── the whole-gameweek debrief ── */
+  const gwd = await rp.evaluate(async () => {
+    try { openPanel('gwdebrief'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3000));
+    const txt = document.body.innerText;
+    const titles = Array.from(document.querySelectorAll('.card-title')).map((n) => n.textContent.trim());
+    return { err: null, txt, titles };
+  });
+  ok(gwd.err === null, 'the gameweek debrief opens (' + (gwd.err || '') + ')');
+  ok(gwd.titles.some((t) => /in numbers/i.test(t)), 'it leads with the week in numbers');
+  ok(gwd.titles.some((t) => /Highest scorers/i.test(t)), 'and ranks the highest scorers');
+  ok(gwd.titles.some((t) => /Bonus points/i.test(t)), 'and shows the bonus table');
+  ok(gwd.titles.some((t) => /Defensive contributions/i.test(t)), 'and the defensive contributions');
+  /* The honest-fallback copy must NOT be showing: the fixture carries the
+     field, so a card saying otherwise would mean the reader is wired wrong. */
+  ok(!/did not carry defensive-contribution/i.test(gwd.txt),
+     'reading real defensive numbers rather than reporting none');
+  /* GW1 is played out but not data_checked on this server, so the panel must
+     say the bonus can still move rather than presenting it as final. */
+  ok(/provisional/i.test(gwd.txt),
+     'and marks the bonus provisional while FPL has not confirmed it');
+
+  /* ── the personal report, both halves in one panel ── */
+  const mr = await rp.evaluate(async () => {
+    try { openPanel('gwreport'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 3600));
+    return { err: null, txt: document.body.innerText,
+      seasonHost: !!document.getElementById('mr-season'),
+      titles: Array.from(document.querySelectorAll('.card-title')).map((n) => n.textContent.trim()) };
+  });
+  ok(mr.err === null, 'the manager report opens (' + (mr.err || '') + ')');
+  ok(mr.seasonHost === true,
+     'the season review renders INSIDE it — the two panels are one destination now');
+  ok(mr.titles.some((t) => /Your season/i.test(t)), 'under its own heading');
+
+  /* THE PAID GUARANTEE, BOTH WAYS. The season review was a Pro panel before
+     the merge, so a free reader must still hit a lock — and, more than that,
+     its hydrator must not run at all: a blurred section that has already
+     fetched and rendered a season of history has leaked the thing the lock
+     is there to sell. Asserting only "a lock is present" would pass on a
+     page that had rendered the content behind it. */
+  const free = await rp.evaluate(() => ({
+    locked: !!document.querySelector('.pro-lockstrip'),
+    /* Card TITLES, not body text. The panel's own description names the
+       season sections — "points by gameweek ... transfer ROI" — so matching
+       the whole page finds the blurb advertising the locked feature and
+       calls it a leak. The rendered section is what matters. */
+    leaked: Array.from(document.querySelectorAll('.card-title'))
+      .some((n) => /Points by gameweek|Transfer ROI/i.test(n.textContent)),
+  }));
+  ok(free.locked === true, 'a free reader meets the Pro lock on the season half');
+  ok(free.leaked === false, 'and the season content was never rendered behind it');
+
+  /* And with Pro, the same section actually produces the report. */
+  const pro = await rp.evaluate(async () => {
+    try { localStorage.setItem('ge-tier', 'pro'); } catch (_) {}
+    try { openPanel('dashboard'); openPanel('gwreport'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 4000));
+    return { err: null,
+      locked: !!document.querySelector('.pro-lockstrip'),
+      titles: Array.from(document.querySelectorAll('.card-title')).map((n) => n.textContent.trim()) };
+  });
+  ok(pro.err === null, 'the report re-opens as Pro (' + (pro.err || '') + ')');
+  ok(pro.locked === false, 'with no lock strip');
+  ok(pro.titles.some((t) => /Points by gameweek/i.test(t)),
+     'and the season review actually renders (' + pro.titles.slice(0, 6).join(' | ') + ')');
+
+  /* The retired id still lands somewhere real rather than falling back to
+     the dashboard, which is what an old bookmark would otherwise do. */
+  const alias = await rp.evaluate(async () => {
+    try { openPanel('gwhistory'); } catch (e) { return { err: e.message }; }
+    await new Promise((r) => setTimeout(r, 2200));
+    return { err: null, title: (document.getElementById('tb-title') || {}).textContent || '' };
+  });
+  ok(alias.err === null, 'the retired gwhistory id still opens (' + (alias.err || '') + ')');
+  ok(/Manager Report/i.test(alias.title),
+     'and lands on the report that absorbed it (' + alias.title.trim() + ')');
+
+  ok(rErrors.length === 0, 'neither report threw (' + rErrors.slice(0, 2).join(' | ') + ')');
   await rp.close();
 }
 

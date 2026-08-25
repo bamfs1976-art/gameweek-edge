@@ -603,7 +603,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   ok(!NAV.some((a) => a.id === 'intel'), 'the catch-all Pro area is gone');
   const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
   const rehomed = {
-    scout: 'home', gwhistory: 'myteam', liverank: 'live', results: 'matchcentre',
+    scout: 'home', liverank: 'live', results: 'matchcentre',
     setpiece: 'players', rotation: 'players', seasonsim: 'planner',
     rivals: 'rivals', eo: 'rivals',
   };
@@ -621,8 +621,24 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   }
   ok(LV.some((v) => v.tier !== 'paid'),
     'and the Live panel keeps free views, so it is not a paid panel in disguise');
+  /* The Manager Report went the same way: the season review was a Pro panel
+     of its own until it was merged into the free weekly debrief, so its lock
+     had to move onto the SECTION. Counted here for the same reason as the
+     Live views — a merge that dropped the tier instead of relocating it
+     would otherwise read as a panel simply having been retired, which is
+     precisely how a paid feature gets given away by accident. */
+  const RS = new Function('return ' + balanced(html, html.indexOf('const REPORT_SECTIONS='), '[', ']'))();
+  const season = RS.find((x) => x.id === 'season');
+  ok(season && season.tier === 'paid', 'the season half of the Manager Report is still Pro');
+  ok(RS.some((x) => x.tier !== 'paid'),
+    'and the weekly debrief beside it stays free, so the merge did not take one away');
+  ok(!navPanels.some((p) => p.id === 'gwhistory'),
+    'the retired season panel is gone from the nav');
+  ok(/gwhistory:'gwreport'/.test(html),
+    'and its id still resolves, so an old link lands on what absorbed it');
   ok(navPanels.filter((p) => p.tier === 'paid').length +
-     LV.filter((v) => v.tier === 'paid').length >= 10,
+     LV.filter((v) => v.tier === 'paid').length +
+     RS.filter((x) => x.tier === 'paid').length >= 10,
     'Pro moved with the thing, it was not given away');
 
   /* Two things called "league" two aisles apart: the Premier League and your
