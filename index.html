@@ -21506,9 +21506,18 @@ function tickTicker(){
   const cdShort=iso=>{const ms=new Date(iso)-Date.now();if(ms<=0)return null;
     const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),m=Math.floor(ms%3600e3/60e3);
     return 'T-'+(d>0?d+'d '+h+'h':h>0?h+'h '+m+'m':m+'m');};
-  /* Label the GW the phase is actually about: the live/settling one when
-     mid-play, otherwise the one we're counting down to. */
-  const labelEv=(ph.phase==='live'||ph.phase==='post')?(ph.cur||focus):focus;
+  /* This chip is the app's answer to "which gameweek is it", and it has to
+     be the SAME answer the sidebar gives or the two contradict each other
+     on screen — which is exactly what happened: the strip read "GW 1" while
+     the sidebar read Gameweek 2.
+
+     It used to name the settling gameweek during live and post. That was
+     defensible in isolation and wrong beside its neighbour twice over: the
+     message immediately to its right already says "GW1 RESULT IN", so the
+     chip spent those phases repeating the gameweek next to it instead of
+     answering its own question. The anchor is the answer in every phase —
+     the gameweek in progress while one is, the next one once it is not. */
+  const labelEv=b.upcoming||focus;
   set('tk-gw','GW <b>'+(labelEv?labelEv.id:b.cur.id)+'</b>');
   /* Phase-aware header — never the dead "DEADLINE PASSED". */
   if(ph.phase==='pre'){
