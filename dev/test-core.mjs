@@ -250,8 +250,12 @@ const pieces = [
   extractFn(html, 'gwPackLine'),
   extractFn(html, 'gwStatsPack'),
   extractFn(html, 'gwDefcon'),
+  extractFn(html, 'managerCard'),
   ...['SOC_LADDER_X', 'SOC_LADDER_PAD', 'SOC_LADDER_LEFT']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  ...['SOC_ROW_H', 'SOC_ROW_MIN']
+    .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'socRowFont'),
   extractFn(html, 'socLadderItemX'),
   extractFn(html, 'gwPackWhy'),
   extractFn(html, 'sparkColor'),
@@ -375,7 +379,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -904,6 +908,112 @@ section('socLadderItemX: the label and the value cannot share a column');
   }
   ok(core.socLadderItemX(undefined) === core.SOC_LADDER_X,
      'an unmeasurable label falls back to the old column rather than NaN');
+}
+
+section('managerCard: the numbers on it add up to the number at the top');
+{
+  /* Built after FPL's own gameweek recap, whose eleven scores sum exactly to
+     its headline — which is what makes it credible at a glance. The rows
+     here therefore carry APPLIED points, captain already doubled, and a hit
+     is a row rather than a silent subtraction. */
+  const els = {};
+  for (let i = 1; i <= 15; i++) els[i] = { id: i, web_name: 'P' + i, team: 1, element_type: i <= 1 ? 1 : i <= 6 ? 2 : i <= 11 ? 3 : 4 };
+  const pick = (id, position, o) => Object.assign(
+    { element: id, position, multiplier: position <= 11 ? 1 : 0, is_captain: false, is_vice_captain: false }, o);
+  const picks = (o) => Object.assign({
+    entry_history: { points: 0, event_transfers_cost: 0, overall_rank: 1234 },
+    picks: Array.from({ length: 15 }, (_, i) => pick(i + 1, i + 1)),
+  }, o || {});
+  const live = (map) => Object.keys(map).map((id) => ({ id: Number(id), stats: { total_points: map[id] } }));
+  const flat = {}; for (let i = 1; i <= 15; i++) flat[i] = 2;
+
+  /* Captain doubled, eleven starters at 2, one of them on 4. */
+  let p = picks();
+  p.picks[2] = pick(3, 3, { is_captain: true, multiplier: 2 });
+  p.picks[4] = pick(5, 5, { is_vice_captain: true });
+  p.entry_history.points = 24;
+  let c = core.managerCard(p, live(flat), { id: 7, average_entry_score: 20 }, els, { name: 'Real Treforys' });
+  ok(c !== null, 'a full squad produces a card');
+  ok(c.xi.length === 11 && c.bench.length === 4, 'eleven counting, four benched');
+  ok(c.scored === 24, 'the eleven scored 24 — ten at 2, the captain doubled to 4');
+  ok(c.xi.reduce((s, r) => s + r.pts, 0) === c.total,
+     'and the rows sum to the headline, which is the whole point of the layout');
+  ok(c.reconciles === true, 'the arithmetic closes against FPL’s own total');
+  ok(c.name === 'Real Treforys' && c.gw === 7, 'the team and gameweek come through');
+  ok(c.vsAvg === 4, 'scored against the gameweek average, which the official card omits');
+  ok(c.benchPts === 8, 'and the bench points are counted — the thing FPL does not tell you');
+  ok(c.cap && c.cap.el.id === 3 && c.cap.pts === 4, 'the captain is identified with his DOUBLED score');
+  ok(c.vice && c.vice.el.id === 5, 'and the vice-captain, which the official card shows too');
+  ok(c.top && c.top.el.id === 3, 'top performer is the highest APPLIED score, not the highest base');
+
+  /* A hit must not vanish. If it did, the rows would sum to more than the
+     score and the card would quietly lie about arithmetic it is claiming. */
+  p = picks({ entry_history: { points: 20, event_transfers_cost: 4, overall_rank: 9 } });
+  p.picks[2] = pick(3, 3, { is_captain: true, multiplier: 2 });
+  c = core.managerCard(p, live(flat), { id: 7, average_entry_score: 20 }, els, null);
+  ok(c.hit === 4 && c.scored === 24 && c.total === 20,
+     'the eleven scored 24, the hit cost 4, the total is 20');
+  ok(c.reconciles === true, 'and that still reconciles — scored minus hit is the official score');
+  ok(c.vsAvg === 0, 'the comparison uses the total you were actually credited, hit included');
+
+  /* When FPL's total disagrees with our sum we must NOT claim they add up. */
+  p = picks({ entry_history: { points: 99, event_transfers_cost: 0 } });
+  c = core.managerCard(p, live(flat), { id: 7, average_entry_score: 20 }, els, null);
+  ok(c.reconciles === false,
+     'a total we cannot reproduce is flagged rather than papered over');
+  ok(c.total === 99, 'and the headline stays FPL’s number, not ours');
+
+  /* AUTO-SUBS. A starter who did not play has already been replaced; summing
+     the submitted lineup credits a player who never came on. */
+  const subbed = picks({ automatic_subs: [{ element_out: 11, element_in: 12 }] });
+  const scores = Object.assign({}, flat); scores[11] = 0; scores[12] = 9;
+  c = core.managerCard(subbed, live(scores), { id: 7, average_entry_score: 20 }, els, null);
+  ok(c.xi.some((r) => r.el.id === 12), 'the substitute is counted');
+  ok(!c.xi.some((r) => r.el.id === 11), 'and the player who did not play is not');
+  ok(c.top && c.top.el.id === 12, 'so the top performer can be a player who started on the bench');
+
+  /* BENCH BOOST, which is the case that tells the two rules apart. Every
+     one of the fifteen counts, so an eleven picked by POSITION would drop
+     four players who scored and the column would no longer sum to the
+     headline — on the one card whose whole claim is that it does. */
+  const bb = picks({ active_chip: 'bboost' });
+  bb.picks = bb.picks.map((q) => Object.assign({}, q, { multiplier: 1 }));
+  bb.entry_history.points = 30;
+  c = core.managerCard(bb, live(flat), { id: 7, average_entry_score: 20 }, els, null);
+  ok(c.xi.length === 15, 'bench boost counts all fifteen (' + c.xi.length + ')');
+  ok(c.bench.length === 0, 'and nobody is on the bench');
+  ok(c.xi.reduce((s, r) => s + r.pts, 0) === c.total && c.reconciles === true,
+     'the fifteen still add up to the headline');
+  ok(c.benchPts === 0, 'with no points left on a bench that is empty');
+
+  /* Degenerate input must not produce half a card on a published graphic. */
+  ok(core.managerCard(null, [], {}, els, null) === null, 'no picks, no card');
+  ok(core.managerCard({ picks: [] }, [], {}, els, null) === null, 'an empty squad makes no card');
+  ok(core.managerCard(picks(), live(flat), {}, {}, null) === null,
+     'and a squad whose players are not in bootstrap makes no card rather than a nameless one');
+}
+
+section('socRowFont: text that shrinks with the row it sits in');
+{
+  /* The manager card is eleven rows most weeks and FIFTEEN on a Bench Boost,
+     plus a hit row. The rows shrink to fit a fixed vertical budget, so a
+     name drawn at a constant 28px eventually overflows the row it is in —
+     which is the ladder bug one card along, and was reported there. */
+  ok(core.socRowFont(core.SOC_ROW_H, 28) === 28,
+     'a full-height row draws at the size the card was designed at');
+  ok(core.socRowFont(60, 28) === 28, 'and never larger, however much room there is');
+  /* The invariant that matters: the glyphs fit inside the drawn pill, which
+     is the row less its 6px gap. Checked across every row count the card
+     can actually produce — eleven, fifteen, and either plus a hit row. */
+  for (const rows of [11, 12, 15, 16]) {
+    const rh = Math.min(core.SOC_ROW_H, (1148 - 690) / rows);
+    const f = core.socRowFont(rh, 28);
+    ok(f <= rh - 6,
+       rows + ' rows: ' + f + 'px text fits a ' + Math.round(rh) + 'px row');
+  }
+  ok(core.socRowFont(10, 28) === 15, 'an absurd row still yields readable text, not 6px');
+  ok(core.socRowFont(0, 28) === 15 && core.socRowFont(undefined, 28) === 15,
+     'and a missing height does not produce NaN on a published graphic');
 }
 
 section('raceSpread: a part-played gameweek is not a measurement');

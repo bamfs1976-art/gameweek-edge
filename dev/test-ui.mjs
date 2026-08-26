@@ -2665,13 +2665,15 @@ section('the gameweek pack actually builds its cards');
   await sp.waitForTimeout(1400);
 
   const built = await sp.evaluate(async () => {
+    try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {}
     const b = await boot();
     const fixtures = await loadFixtures();
     const ev = b.events.filter((e) => e.data_checked).pop();
     if (!ev) return { err: 'the fixture has no scored gameweek — the pack cannot be exercised' };
     const live = await loadLive(ev.id);
+    const me = await socMeGw(ev.id).catch(() => null);
     let specs;
-    try { specs = socialSpecs(b, fixtures, live); } catch (e) { return { err: e.message }; }
+    try { specs = socialSpecs(b, fixtures, live, me); } catch (e) { return { err: e.message }; }
     const byId = Object.fromEntries(specs.map((s) => [s.id, s]));
     const dc = byId['gw-defcon'];
     return {
@@ -2687,6 +2689,19 @@ section('the gameweek pack actually builds its cards');
         c.font = '800 27px system-ui,sans-serif';
         const labs = (wn.groups || []).map((g) => ({ label: g.label, w: c.measureText(g.label).width }));
         return { labs, itemX: labs.map((l) => socLadderItemX(l.w)) };
+      })(),
+      /* The personal card, which is the one nobody else can write — and
+         until now the only post in the rotation that was a screenshot. */
+      mine: (() => {
+        const m = byId['your-gameweek'];
+        if (!m) return null;
+        const sum = (m.items || []).reduce((s, it) => s + (Number(it.v) || 0), 0)
+          + (m.hitRow ? Number(m.hitRow.v) : 0);
+        return { title: m.title, total: m.total, n: (m.items || []).length, sum,
+          hasHero: !!m.hero, hasCapt: !!m.capt,
+          tags: (m.items || []).map((it) => it.tag).filter(Boolean),
+          allPos: (m.items || []).every((it) => !!it.pos),
+          rendered: (() => { try { return !!renderSocialCard(m, 0.25); } catch (_) { return false; } })() };
       })(),
       defcon: dc ? { title: dc.title, n: (dc.items || []).length,
         allValued: (dc.items || []).every((it) => it.v != null && it.v !== ''),
@@ -2722,6 +2737,19 @@ section('the gameweek pack actually builds its cards');
       ok(built.ladder.itemX[i] >= LEFT + l.w,
          'and "' + l.label + '" no longer has the value printed through it');
     });
+  }
+
+  /* The personal card. Its whole claim is that the column adds up to the
+     headline, so that is what gets asserted — not merely that it exists. */
+  ok(built.mine !== null, 'the personal gameweek card builds for a linked team');
+  if (built.mine) {
+    ok(built.mine.n >= 11, 'with the full counting side on it (' + built.mine.n + ')');
+    ok(built.mine.sum === built.mine.total,
+       'and the rows sum to the headline: ' + built.mine.sum + ' vs ' + built.mine.total);
+    ok(built.mine.hasHero && built.mine.hasCapt, 'a top performer and a captain are identified');
+    ok(built.mine.tags.indexOf('(C)') >= 0, 'the armband is marked on the row it belongs to');
+    ok(built.mine.allPos === true, 'every row carries a position badge');
+    ok(built.mine.rendered === true, 'and the canvas renderer draws it without throwing');
   }
 
   ok(sErrors.length === 0, 'building the cards threw nothing (' + sErrors.slice(0, 2).join(' | ') + ')');
