@@ -217,10 +217,11 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function socLadderItemX', since: '2026-08-25',
-  what: 'the ladder card no longer printing its value through its label' };
-/* Rotated from 'WHO CLEARED DEFCON' (2026-08-25), which shipped with this
-   release rather than separately. Before that 'function gwDefcon'
+const MARKER = { text: 'function managerCard', since: '2026-08-26',
+  what: 'your own gameweek as a rendered card, not a screenshot' };
+/* Rotated from 'function socLadderItemX' (2026-08-25), confirmed live by
+   run 57. Before that 'WHO CLEARED DEFCON' (2026-08-25), which shipped
+   alongside it rather than separately. Before that 'function gwDefcon'
    (2026-08-25), confirmed live by run 56.
    Before that 'const labelEv=b.upcoming||focus' (2026-08-25), confirmed
    live by run 55. Before that 'function bootBehind' (2026-08-25), confirmed

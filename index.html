@@ -6906,9 +6906,75 @@ function gwDefcon(els,liveEls,scoring,limit){
     rows:rows.slice(0,Math.max(1,limit||10))};
 }
 
+/* YOUR gameweek, as a card rather than a screenshot.
+
+   Every other preset in the studio is about the league or the model. Not
+   one is about the reader's own team — and the queue's most valuable post,
+   by its own comment, was the one telling you to go and screenshot the
+   panel. FPL's official recap renders that card; ours asked you to take a
+   picture of a screen.
+
+   THE NUMBERS ADD UP, and that is a design decision worth stating. On the
+   official card the eleven scores sum exactly to the headline, which is
+   what makes it credible at a glance. So the rows here carry APPLIED points
+   — base times multiplier, the captain already doubled — and any hit is a
+   row of its own rather than a silent subtraction. `reconciles` says
+   whether the arithmetic actually closed against FPL's own total; when it
+   does not, the caller must not claim the rows sum to the score, because
+   one of them is wrong and we cannot tell which.
+
+   Auto-subs go through applyAutoSubs rather than a second implementation of
+   the same rule: a starter who did not play has already been replaced by
+   the time this runs, and summing the submitted lineup would credit a
+   player who never came on. */
+function managerCard(picks,liveEls,ev,els,entry){
+  const P=applyAutoSubs(picks);
+  const rows=((P&&P.picks)||[]);
+  if(rows.length<11)return null;
+  const pts={};
+  (liveEls||[]).forEach(le=>{if(le&&le.id!=null)pts[le.id]=Number((le.stats||{}).total_points)||0;});
+  const eh=(P&&P.entry_history)||{};
+  const mk=p=>{
+    const el=(els||{})[p.element];
+    if(!el)return null;
+    const mult=typeof p.multiplier==='number'?p.multiplier:(p.position<=11?1:0);
+    const base=pts[p.element]||0;
+    return {el:el,base:base,mult:mult,pts:base*mult,
+      cap:!!p.is_captain,vice:!!p.is_vice_captain,pos:p.position};
+  };
+  const all=rows.map(mk).filter(Boolean);
+  if(all.length<11)return null;
+  /* Counting is multiplier-driven, not position-driven: after an auto-sub
+     the eleven that scored are not the eleven numbered 1-11. */
+  const xi=all.filter(r=>r.mult>0).sort((a,c)=>a.pos-c.pos);
+  const bench=all.filter(r=>r.mult===0).sort((a,c)=>a.pos-c.pos);
+  const hit=Number(eh.event_transfers_cost)||0;
+  const scored=xi.reduce((s,r)=>s+r.pts,0);
+  const official=eh.points==null?null:Number(eh.points);
+  const top=xi.slice().sort((a,c)=>c.pts-a.pts||a.pos-c.pos)[0]||null;
+  const avg=ev&&ev.average_entry_score!=null?Number(ev.average_entry_score):null;
+  const total=official==null?scored-hit:official;
+  return {
+    gw:ev?ev.id:null,
+    name:(entry&&entry.name)||null,
+    total:total,
+    /* Both are worth having: `scored` is what the eleven produced, `total`
+       is what the game credited you after the hit. */
+    scored:scored,hit:hit,
+    reconciles:official==null||scored-hit===official,
+    avg:avg,vsAvg:avg==null?null:total-avg,
+    benchPts:bench.reduce((s,r)=>s+r.base,0),
+    rank:eh.overall_rank==null?null:Number(eh.overall_rank),
+    top:top,
+    cap:all.filter(r=>r.cap)[0]||null,
+    vice:all.filter(r=>r.vice)[0]||null,
+    xi:xi,bench:bench
+  };
+}
+
 /* Every card the studio can produce. Each entry is built lazily so one
    failing preset never takes the whole panel down. */
-function socialSpecs(b,fixtures,live){
+function socialSpecs(b,fixtures,live,me){
   const nf=buildNextFix(b,fixtures);
   const pool=socPool(b,nf);
   const gw=b.cur?b.cur.id:1;
@@ -7281,6 +7347,45 @@ function socialSpecs(b,fixtures,live){
           {meta:'needed '+r.thr+' · '+posShort(b,r.el.element_type),v:String(r.dc)}))};
     });
 
+    /* The only card in the studio about the reader's own team. It needs the
+       linked manager, so it is absent for a visitor with no team — which is
+       right: there is no generic version of your gameweek. */
+    push('your-gameweek',()=>{
+      if(!me||!me.picks)return null;
+      const mc=managerCard(me.picks,packLive,packEv,b.els,me.entry);
+      if(!mc||!mc.xi.length)return null;
+      /* If our sum does not reproduce FPL's own total we do not know which
+         of the two is wrong, and the card's entire claim is that the column
+         adds up to the headline. Publishing it anyway would put two numbers
+         on a graphic that visibly contradict each other — not a degraded
+         card, a wrong one, and the one format nobody can go back and
+         correct. So it simply is not built. */
+      if(!mc.reconciles)return null;
+      const tokOf=r=>({nm:r.el.web_name,pos:posShort(b,r.el.element_type),v:r.pts,
+        tag:r.cap?'(C)':r.vice?'(V)':'',
+        crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)});
+      const items=mc.xi.map(tokOf);
+      const benchToks=mc.bench.map(tokOf);
+      const find=r=>r?items.concat(benchToks).filter(t=>t.nm===r.el.web_name)[0]||tokOf(r):null;
+      return {kind:'manager',
+        /* The team name IS the title, uppercased like every other card's.
+           Capped because the shared header centres the title without
+           measuring it, so a long name would run off both edges. */
+        title:mc.name?String(mc.name).slice(0,18).toUpperCase():'YOUR GAMEWEEK',
+        sub:pgw+' · your team, scored',
+        total:mc.total,vsAvg:mc.vsAvg,
+        rankLine:mc.rank!=null?'OR '+fmtNum(mc.rank):null,
+        hero:find(mc.top),capt:find(mc.cap),vice:find(mc.vice),
+        items:items,bench:benchToks,
+        /* A hit is a row rather than a silent subtraction, so the column
+           still adds up to the headline. */
+        hitRow:mc.hit?{nm:'Transfer hit',v:'-'+mc.hit,neg:true,pos:''}:null,
+        benchLine:benchToks.length?'Bench: '+benchToks.map(t=>t.nm).join(', ')
+          +' · '+mc.benchPts+' pts left there':'',
+        note:(mc.reconciles?'Every score here is the points FPL credited, captain already doubled, and they add up to the total. ':'')
+          +(mc.avg!=null?'The gameweek average was '+mc.avg+'.':'')};
+    });
+
     push('gw-week-in-numbers',()=>{
       const nm=pk.numbers;
       const who=id=>{const e=id!=null?b.els[id]:null;return e?e.web_name:null;};
@@ -7321,6 +7426,16 @@ function socialSpecs(b,fixtures,live){
    something you have to render a PNG and squint at. The floor keeps every
    short-label card aligned exactly where it has always been. */
 const SOC_LADDER_X=206,SOC_LADDER_PAD=26,SOC_LADDER_LEFT=64;
+/* Row text scales with the row it sits in. The manager card is eleven rows
+   most weeks and FIFTEEN on a Bench Boost — plus a hit row — and a fixed
+   28px name in a row that has shrunk to 30px is the ladder bug again, one
+   card along. Proportional to the roomy case, floored so it never becomes
+   unreadable, and capped so the ordinary week looks exactly as designed. */
+const SOC_ROW_H=46,SOC_ROW_MIN=15;
+function socRowFont(rh,base){
+  const b=Number(base)||0,h=Number(rh)||0;
+  return Math.max(SOC_ROW_MIN,Math.min(b,Math.round(h*b/SOC_ROW_H)));
+}
 function socLadderItemX(labelW){
   return Math.max(SOC_LADDER_X,SOC_LADDER_LEFT+(Number(labelW)||0)+SOC_LADDER_PAD);
 }
@@ -7442,6 +7557,109 @@ function renderSocialCard(spec,scale){
     stat(W*0.18,'FORMATION',(spec.formation||[]).join('-'));
     stat(W*0.50,'SQUAD OF 15','£'+((spec.cost||0)/10).toFixed(1)+'m');
     stat(W*0.82,'IN THE BANK','£'+((spec.bank||0)/10).toFixed(1)+'m');
+  } else if(spec.kind==='manager'){
+    /* One manager's gameweek. The vertical budget is fixed and explicit:
+       four bands and a footnote, sized so the eleven rows can never grow
+       into the note at the bottom however many of them there are. */
+    const pill=(px,cy,txt,fs)=>{
+      x.font='800 '+fs+'px system-ui,sans-serif';
+      const w=Math.max(3*fs,x.measureText(txt).width+22),h=fs+11;
+      x.fillStyle='rgba(255,255,255,.13)';socRound(x,px-w,cy-h/2,w,h,10);x.fill();
+      x.fillStyle='rgba(255,255,255,.82)';x.textAlign='center';
+      x.fillText(txt,px-w/2,cy+fs*0.35);
+      x.textAlign='left';return w;
+    };
+    /* Band 1 — the score, which is the whole reason anybody posts this. */
+    x.fillStyle='rgba(255,255,255,.07)';socRound(x,40,248,W-80,152,20);x.fill();
+    x.textAlign='left';
+    x.font='800 104px system-ui,sans-serif';x.fillStyle=SOC_INK;
+    x.fillText(String(spec.total),76,352);
+    const tw=x.measureText(String(spec.total)).width;
+    x.font='800 30px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';
+    x.fillText('PTS',76+tw+16,352);
+    x.textAlign='right';
+    if(spec.vsAvg!=null){
+      const up=spec.vsAvg>=0;
+      x.font='800 40px system-ui,sans-serif';x.fillStyle=up?SOC_ACCENT:'#f87171';
+      x.fillText((up?'+':'')+spec.vsAvg+' vs avg',W-76,320);
+    }
+    if(spec.rankLine){
+      x.font='600 25px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';
+      x.fillText(spec.rankLine,W-76,364);
+    }
+    x.textAlign='left';
+    /* Band 2 — top performer, the one player the week is remembered by. */
+    const hero=spec.hero;
+    if(hero){
+      x.fillStyle='rgba(255,255,255,.07)';socRound(x,40,416,W-80,124,20);x.fill();
+      const r=40,hx=112,hy=478;
+      x.save();x.beginPath();x.arc(hx,hy,r,0,2*Math.PI);x.closePath();
+      x.fillStyle='rgba(255,255,255,.10)';x.fill();x.clip();
+      if(hero._img){const im=hero._img,sc=Math.max((r*2)/im.naturalWidth,(r*2)/im.naturalHeight)*1.08;
+        x.drawImage(im,hx-im.naturalWidth*sc/2,hy-r-2,im.naturalWidth*sc,im.naturalHeight*sc);}
+      x.restore();
+      x.font='800 22px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+      x.fillText('TOP PERFORMER',176,458);
+      x.font='800 34px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      x.fillText(clip(hero.nm,20),176,500);
+      x.textAlign='right';
+      x.font='800 52px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      x.fillText(String(hero.v),W-76,494);
+      x.textAlign='left';
+    }
+    /* Band 3 — armband and its understudy, side by side. */
+    const half=(tok,tag,cx)=>{
+      if(!tok)return;
+      x.textAlign='center';
+      x.font='800 21px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+      x.fillText(tag,cx,586);
+      x.font='800 30px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      x.fillText(clip(tok.nm,16),cx,624);
+      x.font='600 23px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.55)';
+      x.fillText(tok.v+' pts',cx,656);
+      x.textAlign='left';
+    };
+    half(spec.capt,'CAPTAIN',W/4+20);
+    half(spec.vice,'VICE',W-W/4-20);
+    if(spec.capt&&spec.vice){
+      x.fillStyle='rgba(255,255,255,.14)';x.fillRect(W/2-1,570,2,96);
+    }
+    /* Band 4 — the eleven, and the hit if there was one, so the column
+       adds up to the number at the top of the card. */
+    const list=(spec.items||[]).concat(spec.hitRow?[spec.hitRow]:[]);
+    const top=690,bottom=1148;
+    const rh=Math.min(46,(bottom-top)/Math.max(1,list.length));
+    list.forEach((it,i)=>{
+      const y=top+i*rh;
+      x.fillStyle=i%2?'rgba(255,255,255,.03)':'rgba(255,255,255,.055)';
+      socRound(x,40,y,W-80,rh-6,10);x.fill();
+      const mid=y+(rh-6)/2;
+      const fN=socRowFont(rh,28),fS=socRowFont(rh,20),fT=socRowFont(rh,19);
+      const base=mid+fN*0.35;
+      x.textAlign='right';
+      x.font='800 '+fN+'px system-ui,sans-serif';
+      x.fillStyle=it.neg?'#f87171':SOC_INK;
+      x.fillText(String(it.v),150,base);
+      x.textAlign='left';
+      x.font='600 '+fS+'px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.42)';
+      x.fillText('pts',162,base);
+      x.font='700 '+fN+'px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      const nx=214,nm=clip(it.nm,22);
+      x.fillText(nm,nx,base);
+      const nw=x.measureText(nm).width;
+      if(it.tag){
+        x.font='800 '+fT+'px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+        x.fillText(it.tag,nx+nw+14,base);
+      }
+      if(it.pos)pill(W-64,mid,it.pos,fT);
+    });
+    /* The bench, named and not scored — it is context, not a ranking. */
+    if(spec.benchLine){
+      x.textAlign='center';x.font='600 22px system-ui,sans-serif';
+      x.fillStyle='rgba(255,255,255,.42)';
+      x.fillText(clip(spec.benchLine,72),W/2,1182);
+      x.textAlign='left';
+    }
   } else if(spec.kind==='ladder'){
     const gs=spec.groups||[],top=268,avail=H-top-190;
     /* Rows stretch to fill the card, and a short list is centred rather than
@@ -7829,6 +8047,18 @@ BPS is not goals. Passing, tackles, recoveries and saves all score — which is 
 gameweekedge.co.uk`,
 a:`A ranked list of the highest bonus points system scores of the gameweek, with the bonus each player was awarded.`},
 
+'your-gameweek':{
+x:`My gameweek, scored.
+
+Every number on the card is the points FPL credited — captain already doubled — and they add up to the total. The bench is there too, including what I left on it.
+
+gameweekedge.co.uk`,
+b:`My gameweek, scored.
+
+Every number is the points FPL credited, captain already doubled, and they add up to the total — bench included, and what I left on it. #FPL
+gameweekedge.co.uk`,
+a:`A card showing one manager's gameweek: the total score against the gameweek average, the top-scoring player, the captain and vice-captain, the starting eleven with each player's points and position, and the bench.`},
+
 'gw-defcon':{
 x:`Who cleared the defensive threshold this week.
 
@@ -8011,7 +8241,7 @@ function socCaption(id){return SOC_CAPTIONS[id]||null;}
    nothing, and socSchedule's `have` filter drops them from the rota
    instead of queueing a post with no graphic behind it. */
 const SOC_ROTA=['gw-top-scorers','gw-week-in-numbers','set-pieces','defcon',
-  'data-xi','fixture-runs','gw-differentials','gw-bonus','gw-defcon','overpriced',
+  'data-xi','fixture-runs','gw-differentials','gw-bonus','gw-defcon','your-gameweek','overpriced',
   'underpriced','bonus-magnets','differentials','congestion','chip-plan',
   'xg-runs','out-of-position','club-bonus','rotation-chain','attack-or-defence',
   'ladder-2','ladder-3','ladder-4','ladder-1','bank-xi','haaland-xi','big-three-xi'];
@@ -8727,6 +8957,18 @@ async function hydrateAnalytics(host){
   out.innerHTML=kpis+daily+areas+panels;
 }
 
+/* The linked manager's picks and entry for one gameweek. Null rather than a
+   throw when there is no team or FPL declines — the caller treats an absent
+   payload as "no personal card", which is the honest outcome. */
+async function socMeGw(gw){
+  const mid=getMid();
+  if(!mid)return null;
+  const [picks,entry]=await Promise.all([
+    loadPicks(mid,gw).catch(()=>null),
+    loadEntry(mid).catch(()=>null)
+  ]);
+  return picks?{picks:picks,entry:entry}:null;
+}
 async function hydrateSocial(host){
   host.innerHTML=skel(4);
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -8737,8 +8979,13 @@ async function hydrateSocial(host){
   const packEv=gwPackEvent(b);
   const packWhy=gwPackWhy(b);
   const live=packEv?await loadLive(packEv.id).catch(()=>null):null;
+  /* The linked manager's own gameweek, for the one card that is about the
+     reader rather than the league. Two more calls, both optional: no team
+     linked, or either call failing, costs exactly that card and nothing
+     else in the gallery. */
+  const me=packEv&&getMid()?await socMeGw(packEv.id).catch(()=>null):null;
   let specs=[];
-  try{specs=socialSpecs(b,fixtures,live);}catch(_){}
+  try{specs=socialSpecs(b,fixtures,live,me);}catch(_){}
   if(!specs.length){
     host.innerHTML=stateBox('grid','No cards yet',
       'Cards are built from the projection model — they appear once the season’s players and fixtures are loaded.');
