@@ -82,3 +82,13 @@ jobs:
         # exactly why it belongs to a runner.
         continue-on-error: true
         run: node dev/fpl-gw-rollover.mjs
+
+      - name: Why is a gameweek card missing from the studio?
+        # Reported: only two of the six cards built from a settled gameweek
+        # appear. Every builder returns null below its own row floor, inside
+        # a try/catch that swallows throws — so "not enough rows", "field
+        # absent from the feed" and "it crashed" all look identical from the
+        # gallery, which is to say invisible. This prints the number each
+        # gate is comparing and the floor it has to clear.
+        continue-on-error: true
+        run: node dev/fpl-card-gates.mjs
