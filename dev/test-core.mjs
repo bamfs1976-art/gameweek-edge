@@ -1016,6 +1016,48 @@ section('socRowFont: text that shrinks with the row it sits in');
      'and a missing height does not produce NaN on a published graphic');
 }
 
+section('Social Studio: the cards are the first thing on the page');
+{
+  /* Reported as "all 25 are there but they are not displaying". They were
+     displaying. The panel opened on the custom builder and four paragraphs
+     of reference prose, so on a phone the first card sat about two screens
+     down — indistinguishable, from the reader's chair, from a gallery that
+     had failed to build.
+
+     Order is the fix, so order is what this asserts. It reads the shipped
+     assignment rather than restating it, and it fails if the builder or the
+     prose ever climbs back above the grid. */
+  const fn = html.slice(html.indexOf('async function hydrateSocial('));
+  const body = fn.slice(0, fn.indexOf('\n/* ── GW Debrief'));
+  const assign = body.slice(body.indexOf('  host.innerHTML=\n'));
+  const at = (s) => assign.indexOf(s);
+  ok(at('gridHtml') > -1 && at('buildHtml') > -1, 'both blocks are in the assignment');
+  ok(at('gridHtml') < at('buildHtml'), 'the gallery is placed above the builder');
+  ok(at('gridHtml') < at('socPlanCard'), 'and above the posting queue');
+  ok(at('soc-head') < at('gridHtml'), 'the header row is the only thing above it');
+
+  /* The prose is reference — read once, then in the way every week after.
+     A <details> costs one line until someone wants it. */
+  ok(/const helpHtml='<details class="soc-help">/.test(body),
+     'the caption reference is behind a disclosure, not open by default');
+  ok(at('helpHtml') > -1 && at('helpHtml') < at('gridHtml'),
+     'placed above the grid, where closed it costs one line');
+
+  /* The count and the bulk download are the two things a reader who came
+     for graphics wants before scrolling: how many, and give me all of them. */
+  ok(/soc-count">'\+specs\.length/.test(body), 'the header states how many cards there are');
+  ok(at("socDownloadAll()") < at('gridHtml'), 'and offers all of them in one click');
+
+  /* A tile whose renderer throws used to leave an empty box and say
+     nothing — the other thing "not displaying" could have meant, and
+     visually identical to a card that was never built. */
+  const paint = body.slice(body.indexOf('specs.forEach((sp,i)=>{', body.indexOf('socBuildRefresh')));
+  ok(/catch\(_\)\{[\s\S]*soc-fail/.test(paint),
+     'a card that cannot be drawn says so in its own tile');
+  ok(!/catch\(_\)\{\}/.test(paint), 'and the silent swallow is gone');
+  ok(/\.soc-fail\{/.test(html), 'with a style for it, so it is legible');
+}
+
 section('raceSpread: a part-played gameweek is not a measurement');
 {
   const S = core.RACE_SD_PRIOR;
