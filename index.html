@@ -1976,11 +1976,32 @@ body{font-size:14px;line-height:1.35}
   background:var(--surface)}
 .soc-empty{padding:22px 14px;font-size:12px;color:var(--text-3);text-align:center;line-height:1.5}
 
+/* ── Social Studio: the header row and the reference behind a disclosure ──
+   The panel used to spend its first screen on a builder form and four
+   paragraphs about caption limits before showing a single card. The count
+   and the download sit on one line with the title; the prose is reference
+   and lives in a <details> that is shut by default. */
+.soc-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.soc-head .btn{margin-left:auto}
+.soc-count{font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;
+  color:var(--text-3);background:var(--surface-2,rgba(255,255,255,.06));
+  border-radius:999px;padding:2px 8px}
+.soc-help{margin-top:10px}
+.soc-help summary{cursor:pointer;font-size:12px;color:var(--text-3);
+  list-style:none;padding:4px 0}
+.soc-help summary::-webkit-details-marker{display:none}
+.soc-help summary:before{content:'▸ ';color:var(--text-3)}
+.soc-help[open] summary:before{content:'▾ '}
+.soc-help p{margin:8px 0}
+
 /* ── Social Studio: card previews in a responsive gallery ── */
 .soc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .soc-item{border:1px solid var(--border-2);border-radius:var(--r-lg);overflow:hidden;
   background:var(--surface)}
 .soc-shot{background:#0a1410;line-height:0}
+/* A card that cannot be drawn says so, rather than leaving a gap the reader
+   has to interpret — see the catch in hydrateSocial. */
+.soc-fail{padding:22px 14px;font-size:12px;line-height:1.5;color:var(--text-3);text-align:center}
 .soc-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-top:1px solid var(--border-2)}
 .soc-nm{flex:1 1 auto;min-width:0;font-family:var(--font-mono);font-size:10px;
   letter-spacing:.05em;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -9012,7 +9033,7 @@ async function hydrateSocial(host){
      simply falls back to the club-colour tile, so a slow or blocked CDN
      costs a little polish, never a card. */
   try{await socPreloadImages(specs);}catch(_){}
-  host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
+  const buildHtml='<div class="card"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
     ' Build your own</div>'+
     '<div class="soc-build">'+
       '<div id="soc-builder"></div>'+
@@ -9022,24 +9043,30 @@ async function hydrateSocial(host){
           '<button class="btn btn-ghost btn-sm" onclick="socCustomDownload(true)">Share</button>'+
           '<button class="btn btn-primary btn-sm" onclick="socCustomDownload(false)">PNG</button>'+
         '</div><div id="soc-b-cap"></div></div>'+
-    '</div></div>'+
-    '<div class="card mb-20"><div class="card-title">'+svg(ICON.grid,'width="15" height="15"')+
-    ' Ready-made cards</div>'+
-    '<p class="dl-sub" style="margin-bottom:10px">Share-ready graphics built from the live model — the numbers on the card are the numbers in the app. '+
-    'Every card is 1080×1350, the portrait ratio Instagram and X both crop kindly, and downloads as a PNG. '+
+    '</div></div>';
+
+  /* THE CARDS COME FIRST, and everything below is why.
+
+     Reported as "all 25 are there but they are not displaying". They were
+     displaying — under a screenful of something else. The panel opened on
+     the custom builder, then four paragraphs about caption limits and alt
+     text, then a button, and only then the gallery: on a phone the first
+     card sat roughly two full screens down, so the page you opened to
+     collect this week's graphics showed you a form you did not ask for.
+
+     So the order is now gallery, queue, then the builder. The prose that
+     was four paragraphs is one line and a disclosure — it is reference,
+     read once, and it was charging every visit for that. */
+  const helpHtml='<details class="soc-help"><summary>How the cards and captions work</summary>'+
+    '<p class="dl-sub">Every card is 1080×1350, the portrait ratio Instagram and X both crop kindly, and downloads as a PNG. '+
     'They rebuild from fresh data each time you open this page, so a card made today reflects today’s prices.</p>'+
-    '<p class="dl-sub" style="margin-bottom:10px"><b>Every card comes with its caption.</b> '+
+    '<p class="dl-sub"><b>Every card comes with its caption.</b> '+
     '<b>Share</b> hands the picture and the words to X or Bluesky together, so the post is already written when the app opens. '+
     'Otherwise use <b>Copy for X</b> or <b>Bluesky</b>. Both are written to fit a standard account with no Premium subscription — 280 weighted characters on X, where the link alone costs 23, and 300 on Bluesky. The Bluesky version is the one shown below each card. '+
     '<b>Alt text</b> copies the image description; paste it into the alt field before you post.</p>'+
-    '<p class="dl-sub" style="margin-bottom:10px">The cards are ordered by the posting queue below — soonest first, then anything the rotation has not reached yet.</p>'+
-    /* Only when there is something to explain. In an ordinary week the pack
-       is in the gallery and this renders nothing at all. */
-    (packWhy?'<p class="dl-sub soc-why" style="margin-bottom:10px">'+esc(packWhy)+'</p>':'')+
-    '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button></div>'+
-    socPlanCard(plan,specs)+
-    socShotCard(plan)+
-    '<div class="soc-grid">'+specs.map((sp,i)=>{
+    '<p class="dl-sub" style="margin-bottom:0">The cards are ordered by the posting queue — soonest first, then anything the rotation has not reached yet.</p>'+
+    '</details>';
+  const gridHtml='<div class="soc-grid">'+specs.map((sp,i)=>{
       const s=slotBy[sp.id];
       return '<div class="soc-item'+(s?' soc-due':'')+'"><div class="soc-shot" id="soc-'+i+'"></div>'+
       (s?'<div class="soc-slot"><b>'+esc(socWhen(s.at))+'</b>'+
@@ -9050,6 +9077,21 @@ async function hydrateSocial(host){
       '<button class="btn btn-primary btn-sm" onclick="socDownload('+i+')">PNG</button></div>'+
       socCapBlock(sp.id,i)+'</div>';}).join('')+
     '</div>';
+  host.innerHTML=
+    '<div class="card mb-20"><div class="soc-head">'+
+      '<div class="card-title" style="margin:0">'+svg(ICON.grid,'width="15" height="15"')+
+      ' Ready-made cards <span class="soc-count">'+specs.length+'</span></div>'+
+      '<button class="btn btn-primary btn-sm" onclick="socDownloadAll()">Download all '+specs.length+'</button>'+
+    '</div>'+
+    '<p class="dl-sub" style="margin:8px 0 0">Built from the live model — the numbers on the card are the numbers in the app.</p>'+
+    /* Only when there is something to explain. In an ordinary week the pack
+       is in the gallery and this renders nothing at all. */
+    (packWhy?'<p class="dl-sub soc-why" style="margin:10px 0 0">'+esc(packWhy)+'</p>':'')+
+    helpHtml+'</div>'+
+    gridHtml+
+    socPlanCard(plan,specs)+
+    socShotCard(plan)+
+    buildHtml;
   socBuildRender();
   socBuildRefresh();
   /* Previews render at a third scale — full size only on download. */
@@ -9057,7 +9099,12 @@ async function hydrateSocial(host){
     const box=document.getElementById('soc-'+i);if(!box)return;
     try{const cv=renderSocialCard(sp,0.34);cv.style.width='100%';cv.style.height='auto';
       cv.style.display='block';cv.setAttribute('role','img');
-      cv.setAttribute('aria-label',sp.title+' — '+(sp.sub||''));box.appendChild(cv);}catch(_){}
+      cv.setAttribute('aria-label',sp.title+' — '+(sp.sub||''));box.appendChild(cv);}
+    catch(_){
+      /* An empty tile was one of the two things "the cards are not
+         displaying" could have meant, and it looks identical to a card that
+         was never built. Name it, so the next report says which. */
+      box.innerHTML='<div class="soc-fail">This card couldn’t be drawn.<br>The rest of the gallery is unaffected.</div>';}
   });
 }
 

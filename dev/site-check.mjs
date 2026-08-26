@@ -217,9 +217,16 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function managerCard', since: '2026-08-26',
-  what: 'your own gameweek as a rendered card, not a screenshot' };
-/* Rotated from 'function socLadderItemX' (2026-08-25), confirmed live by
+const MARKER = { text: 'class="soc-head"', since: '2026-08-26',
+  what: 'the studio opening on the cards instead of on the builder form' };
+/* Rotated from 'function managerCard' (2026-08-26). That one shipped the
+   personal card; the cards were then reported as missing from the studio.
+   They were not missing — all 26 built and all 26 rendered — the panel was
+   spending its first screen on a builder form and four paragraphs of
+   reference prose, so on a phone the first card sat about two screens
+   down. This marker is the header row that now leads the panel.
+
+   Before that 'function socLadderItemX' (2026-08-25), confirmed live by
    run 57. Before that 'WHO CLEARED DEFCON' (2026-08-25), which shipped
    alongside it rather than separately. Before that 'function gwDefcon'
    (2026-08-25), confirmed live by run 56.
