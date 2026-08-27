@@ -25,6 +25,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractBlock, extractFn } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -36,40 +37,7 @@ const get = async (p) => {
   return r.json();
 };
 
-/* Same brace matcher the test harness uses, regex literals included. */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === '/') {
-      let k = j - 1;
-      while (k >= 0 && /\s/.test(src[k])) k--;
-      const prev = k >= 0 ? src[k] : '';
-      let word = '';
-      for (let w = k; w >= 0 && /[A-Za-z]/.test(src[w]); w--) word = src[w] + word;
-      if (/^(return|typeof|in|of|new|case|do|else)$/.test(word) || !/[\w$)\]]/.test(prev)) {
-        let cls = false;
-        for (j++; j < src.length; j++) {
-          const c2 = src[j];
-          if (c2 === '\\') { j++; continue; }
-          if (c2 === '[') cls = true; else if (c2 === ']') cls = false;
-          else if (c2 === '/' && !cls) break;
-          else if (c2 === '\n') break;
-        }
-        continue;
-      }
-    }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (!depth) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+const grabFn = (n) => extractFn(html, n);
 const grabLine = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
 const M = new Function(
   grabLine('SCORING_FALLBACK') + '\nlet SCORING = SCORING_FALLBACK;\n'

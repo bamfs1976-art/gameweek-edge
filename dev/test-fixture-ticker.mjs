@@ -34,53 +34,10 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import vm from 'node:vm';
+import { extractBlock, extractConst, extractFn, extractLine } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-
-/* Same extractor the other suites use: locate a named function, brace-match
-   it out, evaluate the real shipping source. Comments are skipped before
-   strings so an apostrophe in prose cannot open a phantom string. */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  if (open < 0) throw new Error('no opening brace');
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) {
-      if (com === 1 && ch === '\n') com = 0;
-      else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; }
-      continue;
-    }
-    if (inStr) {
-      if (esc) esc = false;
-      else if (ch === '\\') esc = true;
-      else if (ch === inStr) inStr = null;
-      continue;
-    }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced braces');
-}
-function extractFn(src, name) {
-  const idx = src.indexOf('function ' + name + '(');
-  if (idx < 0) throw new Error('function not found: ' + name);
-  return extractBlock(src, idx);
-}
-function extractConst(src, name) {
-  const idx = src.indexOf('const ' + name + '=');
-  if (idx < 0) throw new Error('const not found: ' + name);
-  return extractBlock(src, idx) + ';';
-}
-function extractLine(src, re) {
-  const m = src.match(re);
-  if (!m) throw new Error('line not found: ' + re);
-  return m[0];
-}
 
 const ctx = vm.createContext({ console });
 vm.runInContext([

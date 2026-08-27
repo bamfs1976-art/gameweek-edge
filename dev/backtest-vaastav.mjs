@@ -35,6 +35,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractBlock, extractFn } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const season = process.argv[2] || '2023-24';
@@ -49,23 +50,7 @@ if (!path) {
   process.exit(0);
 }
 
-/* ── extract the shipping model from index.html (same approach as the
-   prediction logger, so what is graded is exactly what ships) ─────────── */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced block');
-}
-const grabFn = (h, n) => extractBlock(h, h.indexOf('function ' + n + '('));
+const grabFn = (h, n) => extractFn(h, n);
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 /* minutesModel now depends on the fixture-congestion helper; historical runs
    pass no congestion, so congestionFactor returns 1 and nothing changes. */

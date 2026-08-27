@@ -15,20 +15,22 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractBlock, extractDecl } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-function extractBlock(src, s) { const o = src.indexOf('{', s); let d = 0, q = null, e = false;
-  for (let j = o; j < src.length; j++) { const c = src[j];
-    if (q) { if (e) e = false; else if (c === '\\') e = true; else if (c === q) q = null; continue; }
-    if (c === "'" || c === '"' || c === '`') { q = c; continue; }
-    if (c === '{') d++; else if (c === '}') { d--; if (!d) return src.slice(s, j + 1); } } }
+
 /* minutesModel now depends on the fixture-congestion helper; historical runs
    pass no congestion, so congestionFactor returns 1 and nothing changes. */
 const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
   .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
+/* nativeXP reads the points table from SCORING rather than restating it
+   inline, so this context has to supply it or the extracted function throws
+   the moment it is called. */
+const scoringSrc = extractDecl(html, 'SCORING_FALLBACK') + '\nlet SCORING = SCORING_FALLBACK;';
 const nativeXP = new Function(
+  scoringSrc + '\n' +
   congestSrc + '\n' +
   extractBlock(html, html.indexOf('function minutesModel(')) + '\n' +
   extractBlock(html, html.indexOf('function concedePts(')) + '\n' +

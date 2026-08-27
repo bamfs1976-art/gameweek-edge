@@ -34,6 +34,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractBlock, extractFn } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const arg = (n, d) => { const i = process.argv.indexOf('--' + n); return i > -1 ? process.argv[i + 1] : d; };
@@ -43,19 +44,8 @@ const GRID = (arg('grid', '0.5,0.6,0.7,0.8,0.85,0.9,0.95,1.0')).split(',').map(N
 
 /* ── the app's real solver, on a projection we control ──────────────────── */
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-function extractBlock(src, startIdx) {
-  let i = src.indexOf('{', startIdx), depth = 0;
-  for (let j = i; j < src.length; j++) {
-    const c = src[j], d = src[j + 1];
-    if (c === '/' && d === '/') { while (j < src.length && src[j] !== '\n') j++; continue; }
-    if (c === '/' && d === '*') { j += 2; while (j < src.length && !(src[j] === '*' && src[j + 1] === '/')) j++; j++; continue; }
-    if (c === '"' || c === "'" || c === '`') { const q = c; j++; while (j < src.length && src[j] !== q) { if (src[j] === '\\') j++; j++; } continue; }
-    if (c === '{') depth++;
-    else if (c === '}') { depth--; if (!depth) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+
+const grabFn = (n) => extractFn(html, n);
 const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
 
 /* DECAY_BASE is a const in the app; the sweep needs it writable, so it is

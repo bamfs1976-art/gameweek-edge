@@ -38,31 +38,14 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { SEASONS, parseCsv, num, str, detectEra } from '../scripts/history/lib.mjs';
+import { extractBlock, extractFn } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'dev', 'fixtures', 'vaastav');
 const OUT = join(ROOT, 'data', 'backtest-history.json');
 
-/* ── extract the shipping model from index.html ──────────────────────────
-   Same approach, and the same ~15 lines, as dev/backtest-vaastav.mjs: the
-   model is graded by pulling it out of the file that ships it, so a change to
-   nativeXP cannot pass here and fail in the app. */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced block');
-}
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+const grabFn = (n) => extractFn(html, n);
 const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
   .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
@@ -73,11 +56,20 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
    live game happens to publish today — which is exactly the choice
    backtest-vaastav.mjs makes for the same reason.
 
-   This was missed when nativeXP started reading SCORING. Three of the four
-   places that extract it were updated; this one was not, and because the
+   This was missed when nativeXP started reading SCORING, and because the
    workflow behind it runs weekly the break sat undetected from the Saturday
-   it landed until the following Tuesday's run. Nothing else exercises this
-   script — which is the argument for the guard below. */
+   it landed until the following Tuesday's run.
+
+   This comment used to continue "three of the four places that extract it
+   were updated; this one was not". That was wrong, and wrong in the
+   direction that reads as reassurance: THREE more were broken and stayed
+   broken — backtest-season, model-validate and simulate-gameweek all threw
+   "SCORING is not defined" on import, and were only found when every dev
+   script was run during an unrelated consolidation. The count came from
+   memory rather than from the directory.
+
+   The guard it promised never landed either. It has now, in
+   dev/test-core.mjs, and it reads the list off disk. */
 const scoringSrc = (() => { const i = html.indexOf('const SCORING_FALLBACK='); return html.slice(i, html.indexOf('\n', i)); })()
   + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
