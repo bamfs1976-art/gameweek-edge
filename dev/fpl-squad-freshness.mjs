@@ -36,9 +36,27 @@ const T = (id) => teams[id] || ('team ' + id);
 const POS = { 1: 'GK', 2: 'DEF', 3: 'MID', 4: 'FWD', 5: 'MNG' };
 
 console.log('PAYLOAD');
-console.log('  bootstrap-static is ' + (raw.length / 1024).toFixed(0) + 'KB over the wire (uncompressed JSON)');
-console.log('  ' + els.length + ' players across ' + (boot.teams || []).length + ' clubs');
-console.log('  This is the number the 12-hour client cache exists to avoid re-fetching.');
+console.log('  ' + (raw.length / 1024).toFixed(0) + 'KB of JSON, '
+  + els.length + ' players across ' + (boot.teams || []).length + ' clubs');
+
+/* WHAT A PHONE ACTUALLY DOWNLOADS, which is the only size the cache decision
+   turns on. The raw JSON figure above is the one it is tempting to reason
+   from and it is the wrong one by a large factor: the app fetches through
+   our own proxy, which compresses. Choosing a TTL off the uncompressed
+   number would be picking a number from an instrument nobody read. */
+const enc = async (label, url, headers) => {
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json', ...headers } });
+    if (!r.ok) { console.log('  ' + label.padEnd(28) + r.status); return; }
+    const buf = await r.arrayBuffer();
+    console.log('  ' + label.padEnd(28) + (buf.byteLength / 1024).toFixed(0) + 'KB'
+      + '   content-encoding: ' + (r.headers.get('content-encoding') || 'none'));
+  } catch (e) { console.log('  ' + label.padEnd(28) + 'unreachable — ' + (e && e.message)); }
+};
+const SITE = (process.env.GWE_BASE || 'https://gameweekedge.co.uk').replace(/\/$/, '');
+await enc('through our proxy, brotli', SITE + '/api/fpl/bootstrap-static', { 'Accept-Encoding': 'br' });
+await enc('through our proxy, gzip', SITE + '/api/fpl/bootstrap-static', { 'Accept-Encoding': 'gzip' });
+console.log('  ^ this is what the 12-hour client cache exists to avoid re-fetching.');
 console.log('');
 
 /* WHICH FIELDS EXIST. Printed rather than assumed: a probe that reads a key
