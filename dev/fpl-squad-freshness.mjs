@@ -19,6 +19,8 @@
  *
  * Run: node dev/fpl-squad-freshness.mjs
  */
+import zlib from 'node:zlib';
+
 const BASE = 'https://fantasy.premierleague.com/api';
 const UA = 'Mozilla/5.0 (compatible; GameweekEdgeProbe/1.0)';
 
@@ -40,23 +42,43 @@ console.log('  ' + (raw.length / 1024).toFixed(0) + 'KB of JSON, '
   + els.length + ' players across ' + (boot.teams || []).length + ' clubs');
 
 /* WHAT A PHONE ACTUALLY DOWNLOADS, which is the only size the cache decision
-   turns on. The raw JSON figure above is the one it is tempting to reason
-   from and it is the wrong one by a large factor: the app fetches through
-   our own proxy, which compresses. Choosing a TTL off the uncompressed
-   number would be picking a number from an instrument nobody read. */
-const enc = async (label, url, headers) => {
-  try {
-    const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/json', ...headers } });
-    if (!r.ok) { console.log('  ' + label.padEnd(28) + r.status); return; }
-    const buf = await r.arrayBuffer();
-    console.log('  ' + label.padEnd(28) + (buf.byteLength / 1024).toFixed(0) + 'KB'
-      + '   content-encoding: ' + (r.headers.get('content-encoding') || 'none'));
-  } catch (e) { console.log('  ' + label.padEnd(28) + 'unreachable — ' + (e && e.message)); }
-};
+   turns on. The raw JSON figure above is the tempting one and it is wrong by
+   a large factor, because the app fetches through our own proxy and that
+   compresses.
+
+   MEASURING IT IS FIDDLIER THAN IT LOOKS, and the first attempt here got it
+   wrong in a way worth recording: it fetched with an explicit
+   Accept-Encoding and reported `(await r.arrayBuffer()).byteLength`. Node's
+   fetch decompresses transparently, so that returns the DECODED length —
+   1590KB, identical to the raw JSON — while the content-encoding header sat
+   there saying `br`. The run printed a compressed-looking measurement that
+   was the uncompressed number, which is exactly the error the step was
+   added to correct, one layer down.
+
+   So: content-length off the wire where the server sends it, which is the
+   real transferred size, plus a local compression of the same bytes as a
+   floor-to-ceiling estimate. Two independent numbers rather than one
+   confident one. */
 const SITE = (process.env.GWE_BASE || 'https://gameweekedge.co.uk').replace(/\/$/, '');
-await enc('through our proxy, brotli', SITE + '/api/fpl/bootstrap-static', { 'Accept-Encoding': 'br' });
-await enc('through our proxy, gzip', SITE + '/api/fpl/bootstrap-static', { 'Accept-Encoding': 'gzip' });
-console.log('  ^ this is what the 12-hour client cache exists to avoid re-fetching.');
+for (const enc of ['br', 'gzip']) {
+  try {
+    const r = await fetch(SITE + '/api/fpl/bootstrap-static', {
+      headers: { 'User-Agent': UA, Accept: 'application/json', 'Accept-Encoding': enc },
+    });
+    const len = r.headers.get('content-length');
+    console.log('  proxy, Accept-Encoding: ' + enc.padEnd(6)
+      + (r.ok ? (len ? (Number(len) / 1024).toFixed(0) + 'KB transferred' : 'content-length not sent (chunked)')
+        : 'HTTP ' + r.status)
+      + '   served as: ' + (r.headers.get('content-encoding') || 'identity'));
+  } catch (e) { console.log('  proxy, Accept-Encoding: ' + enc.padEnd(6) + 'unreachable — ' + (e && e.message)); }
+}
+const buf = Buffer.from(raw);
+console.log('  compressing these bytes here: '
+  + (zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 5 } }).length / 1024).toFixed(0)
+  + 'KB brotli(q5), '
+  + (zlib.gzipSync(buf, { level: 6 }).length / 1024).toFixed(0) + 'KB gzip(6)');
+console.log('  ^ THIS is what the 12-hour client cache exists to avoid re-fetching,');
+console.log('    not the 1590KB above.');
 console.log('');
 
 /* WHICH FIELDS EXIST. Printed rather than assumed: a probe that reads a key
