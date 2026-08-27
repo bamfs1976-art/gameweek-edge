@@ -14,6 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractBlock, extractFn } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -44,30 +45,8 @@ function startsRegex(src, i) {
   while (w >= 0 && /[A-Za-z0-9_$]/.test(src[w])) w--;
   return RE_KEYWORDS.has(src.slice(w + 1, k + 1));
 }
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0, re = 0;   /* re: 1 body, 2 char class */
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (re) {
-      if (esc) esc = false;
-      else if (ch === '\\') esc = true;
-      else if (re === 2) { if (ch === ']') re = 1; }
-      else if (ch === '[') re = 2;
-      else if (ch === '/') re = 0;
-      continue;
-    }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === '/' && startsRegex(src, j)) { re = 1; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+
+const grabFn = (n) => extractFn(html, n);
 /* Bracket-matched slice for any opener — extractBlock only knows braces, and
    NAV is an array literal. Shared so more than one block can read it. */
 function balancedFrom(src, from, open, close) {
@@ -1359,7 +1338,6 @@ console.log('• benchValue: a substitute is discounted, not worthless');
     'a squad entirely in the XI has an empty bench');
   ok(benchValue([null, undefined].concat(squad), xiIds, score) === v, 'holes in the squad are ignored');
 }
-
 
 console.log('• team sheet: the same fifteen, week by week');
 {

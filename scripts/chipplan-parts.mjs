@@ -8,30 +8,22 @@
  * the test file until a second caller needed it; two copies of a list like
  * this stay in step for about a week.
  *
- * Comments are skipped before strings in the scanner. An apostrophe in prose
- * inside a block comment otherwise opens a phantom string and the capture
- * runs past the closing brace — which is exactly how dev/test-core.mjs
- * silently stopped parsing once.
+ * The scanner itself now lives in dev/extract.mjs, shared with every other
+ * caller. It used to be copied in here, with a note that comments are
+ * skipped before strings so an apostrophe in prose cannot open a phantom
+ * string. True, and not enough: this copy never learned about regex
+ * literals, so /[&<>"']/ in esc() would have run the capture hundreds of
+ * lines past the closing brace. Fourteen copies of this function had drifted
+ * to fourteen different states of half-fixed.
+ *
+ * extractBlock was exported from here. Nothing outside imported it — only
+ * buildChipApi — so it goes rather than being re-exported.
  */
-
-export function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
+import { extractBlock, extractFn, extractDecl } from '../dev/extract.mjs';
 
 export function buildChipApi(html) {
-  const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
-  const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
+  const grabFn = (n) => extractFn(html, n);
+  const grabConst = (n) => extractDecl(html, n);
   /* Some names exist both at top level and shadowed inside a function; anchor
      to the line start so the sandbox gets the one the app's top-level code
      sees. */

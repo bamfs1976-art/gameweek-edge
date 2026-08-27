@@ -22,6 +22,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import vm from 'node:vm';
+import { extractBlock } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -29,20 +30,6 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 let pass = 0; const fails = [];
 const ok = (c, m) => { if (c) { pass++; } else { fails.push(m); console.error('  ✗ ' + m); } };
 
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced block');
-}
 const fn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
 
 /* The real builder, run for real — a copy of the prose would prove nothing. */

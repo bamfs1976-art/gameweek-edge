@@ -9,7 +9,7 @@
  *
  * Run: node dev/test-core.mjs   (also `npm test`)
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 /* The palette ranks through Fuse.js in the browser. Importing the same
@@ -17,119 +17,11 @@ import { dirname, join } from 'node:path';
    mock of it — the whole point of the change was typo tolerance, and a
    mock would happily "tolerate" whatever we told it to. */
 import Fuse from 'fuse.js';
+import { extractArrayConst, extractBlock, extractConst, extractFn, extractLine } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const aiSrc = readFileSync(join(ROOT, 'netlify/functions/ai.js'), 'utf8');
-
-/* ── extraction helpers ─────────────────────────────────── */
-/* Comments are skipped BEFORE strings, and that ordering is the whole point.
-   Without it an ordinary apostrophe in prose — "a midfielder's tariff" inside
-   an explanatory comment — opens a phantom string, the scanner sails past the
-   closing brace, and the extracted "function" swallows whatever follows it.
-   That is not hypothetical: it is how this file started failing the moment a
-   comment in oopFlag used the word midfielder's. The sibling extractors in
-   extract-engine.mjs and test-chipplan.mjs already did this; this one was the
-   last naive scanner left. */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  if (open < 0) throw new Error('no opening brace');
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) {
-      if (com === 1 && ch === '\n') com = 0;
-      else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; }
-      continue;
-    }
-    if (inStr) {
-      if (esc) esc = false;
-      else if (ch === '\\') esc = true;
-      else if (ch === inStr) inStr = null;
-      continue;
-    }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    /* REGEX LITERALS, and they are not a nicety. esc() is one line long and
-       contains /[&<>"']/ — a character class holding both quote marks. A
-       scanner that only knows strings sees those quotes open and close
-       phantom strings, loses the closing brace, and keeps going: measured,
-       this extraction ran 638 lines past the end of the function and pulled
-       35 unrelated functions and 25 top-level consts into the test context.
-       It never failed loudly. It just meant the harness was quietly
-       evaluating a large slice of the app nobody had asked for, and any new
-       top-level const declared in that range collided with a stub.
-
-       A slash opens a regex unless the previous significant character could
-       end a value — an identifier, a number, a closing bracket. Division
-       after those; regex everywhere else. Inside a [...] class a slash is
-       literal, so the class has to be tracked too. */
-    if (ch === '/') {
-      let k = j - 1;
-      while (k >= 0 && /\s/.test(src[k])) k--;
-      const prev = k >= 0 ? src[k] : '';
-      /* `return /re/` and `typeof /re/` end in identifier characters but a
-         regex follows all the same, so the word itself has to be read —
-         not just its last letter. */
-      let word = '';
-      for (let w = k; w >= 0 && /[A-Za-z]/.test(src[w]); w--) word = src[w] + word;
-      const kw = /^(return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await)$/.test(word);
-      if (kw || !/[\w$)\]]/.test(prev)) {
-        let cls = false;
-        for (j++; j < src.length; j++) {
-          const c2 = src[j];
-          if (c2 === '\\') { j++; continue; }
-          if (c2 === '[') cls = true;
-          else if (c2 === ']') cls = false;
-          else if (c2 === '/' && !cls) break;
-          else if (c2 === '\n') break;      /* unterminated: not a regex after all */
-        }
-        continue;
-      }
-    }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced braces');
-}
-function extractFn(src, name) {
-  const idx = src.indexOf('function ' + name + '(');
-  if (idx < 0) throw new Error('function not found: ' + name);
-  /* `async` sits BEFORE the word this searches for, so slicing from
-     `function` drops it. When the body contains an await that fails to
-     parse, which is the loud case and survivable. When it does not, the
-     extraction succeeds and returns a value where the app returns a
-     promise — the quiet case, and the one that would have a test passing
-     against semantics the app does not have. */
-  const pre = src.slice(Math.max(0, idx - 10), idx);
-  return (/\basync\s+$/.test(pre) ? 'async ' : '') + extractBlock(src, idx);
-}
-function extractConst(src, name) {
-  const idx = src.indexOf('const ' + name + '=');
-  if (idx < 0) throw new Error('const not found: ' + name);
-  return extractBlock(src, idx) + ';';
-}
-/* extractConst brace-matches from the first `{`, which is right for an
-   object literal and wrong for an array of them: `const X=[{a},{b}]` gives
-   back just `{a}`. Array constants get their own extractor rather than a
-   reshaped source, because the source should read the way it wants to. */
-function extractArrayConst(src, name) {
-  const idx = src.indexOf('const ' + name + '=[');
-  if (idx < 0) throw new Error('array const not found: ' + name);
-  const open = src.indexOf('[', idx);
-  let depth = 0;
-  for (let j = open; j < src.length; j++) {
-    if (src[j] === '[') depth++;
-    else if (src[j] === ']' && --depth === 0) return src.slice(idx, j + 1) + ';';
-  }
-  throw new Error('unterminated array const: ' + name);
-}
-function extractLine(src, re) {
-  const m = src.match(re);
-  if (!m) throw new Error('line not found: ' + re);
-  return m[0];
-}
 
 /* ── build the isolated context ─────────────────────────── */
 const pieces = [
@@ -463,6 +355,49 @@ section('dcHitLabel: "never clears it" and "never seen him" are different claims
      the same to a reader scanning the DC hit% column. */
   ok(L({ element_type: 2, minutes: 0 }) !== L({ element_type: 2, minutes: 2000, defensive_contribution: 0 }),
     'no-history and never-hit render differently');
+}
+
+section('every sandbox that extracts nativeXP supplies the scoring table');
+{
+  /* nativeXP stopped restating the points table inline and started reading
+     SCORING. Every place that lifts it into a `new Function` has to supply
+     that binding, or the extracted model throws the moment it is called —
+     and these scripts are the ones nothing else exercises, so the throw
+     surfaces days later on a scheduled run, or never.
+
+     It has already happened twice. dev/backtest-history.mjs broke on a
+     Saturday and was found by the following Tuesday's weekly workflow. Its
+     fix carries a comment reading "three of the four places that extract it
+     were updated; this one was not" — and that was wrong: THREE more were
+     broken, and stayed broken, because the comment counted call sites from
+     memory instead of from the directory. backtest-season, model-validate
+     and simulate-gameweek all threw "SCORING is not defined" on import.
+
+     So the list is read off disk. A new script that lifts nativeXP into its
+     own sandbox is covered the day it is written, without anyone
+     remembering — which is the whole difference between this and the
+     comment it replaces.
+
+     Files that go through buildEngine are deliberately not required to: the
+     engine bundle declares SCORING itself. The rule is about hand-rolled
+     sandboxes. */
+  const dirs = ['dev', 'scripts'];
+  const offenders = [];
+  let checked = 0;
+  for (const d of dirs) {
+    for (const f of readdirSync(join(ROOT, d))) {
+      if (!f.endsWith('.mjs')) continue;
+      const src = readFileSync(join(ROOT, d, f), 'utf8');
+      /* Only hand-rolled sandboxes. A file that merely mentions nativeXP in
+         prose, or gets it from buildEngine, is not making this mistake. */
+      if (!/new Function\(/.test(src) || !/\bnativeXP\b/.test(src)) continue;
+      checked++;
+      if (!/\bSCORING\b/.test(src)) offenders.push(d + '/' + f);
+    }
+  }
+  ok(checked >= 5, 'the sweep found the sandboxes rather than an empty list (' + checked + ')');
+  ok(!offenders.length,
+     'every one supplies SCORING' + (offenders.length ? ' — missing in ' + offenders.join(', ') : ''));
 }
 
 section('extractBlock: the harness must not corrupt what it measures');
@@ -3530,7 +3465,6 @@ ok(promoted === core.PLSIM_PROMOTED, 'an unknown/promoted club falls back to PLS
 ok(promoted[0] < 1 && promoted[1] > 1, 'the promoted default is below average (weaker attack, concedes more)');
 ok(core.plsimPrior({}) === core.PLSIM_PROMOTED && core.plsimPrior(null) === core.PLSIM_PROMOTED, 'missing team name is handled, not a crash');
 ok(core.plsimPrior({ name: 'Manchester City' })[0] > 1.2, 'alias resolves multi-word names (Manchester City -> mancity)');
-
 
 section('eloPrior: a club-specific prior where we have no fitted one (Tier 2)');
 {

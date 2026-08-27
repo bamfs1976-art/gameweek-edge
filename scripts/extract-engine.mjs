@@ -27,13 +27,24 @@
  */
 import { readFileSync } from 'node:fs';
 
-/* ── A scanner that is actually correct ──────────────────────────────
-   The test suite's extractor tracks strings and (in places) comments, but
-   not regex literals — which is why extracting `esc`, whose body contains
-   the character class /[&<>"']/g, silently swallows everything up to the
-   next stray quote. That bug is harmless in a test that only reads the
-   result, and NOT harmless here: an over-captured function would drag half
-   the app into the shared engine.
+/* ── A scanner that is actually correct, and now the only one ────────
+   This used to open by contrasting itself with "the test suite's extractor",
+   which tracked strings and sometimes comments but not regex literals — so
+   extracting `esc`, whose body contains the character class /[&<>"']/g,
+   silently swallowed everything up to the next stray quote. That was true of
+   fourteen separate copies of the idea across eighteen files, each repaired
+   only when it happened to bite the file it was in.
+
+   There is no contrast to draw any more: dev/extract.mjs delegates here, and
+   every suite and probe goes through it. This is the repository's scanner.
+   It was already the strongest of the fourteen — the only one that also
+   skips `${...}` interpolation inside template literals, and the only one
+   with a test file of its own — which is why consolidation moved TO it
+   rather than replacing it.
+
+   Getting this wrong is worse here than in a test that only reads the
+   result: an over-captured function would drag half the app into the shared
+   engine.
 
    This scanner therefore tracks all five things that can contain a brace or
    a quote and not mean it: single/double strings, template literals, line

@@ -38,35 +38,25 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { extractBlock, extractFn, extractDecl } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 
-/* ── extract the shipping model verbatim ────────────────── */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, line = false, block = false;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (line) { if (ch === '\n') line = false; continue; }
-    if (block) { if (ch === '*' && nx === '/') { block = false; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { line = true; j++; continue; }
-    if (ch === '/' && nx === '*') { block = true; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++;
-    else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced block from ' + startIdx);
-}
-const grab = name => extractBlock(html, html.indexOf('function ' + name + '('));
+const grab = (name) => extractFn(html, name);
 /* minutesModel now depends on the fixture-congestion helper; historical runs
    pass no congestion, so congestionFactor returns 1 and nothing changes. */
 const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
   .map(n => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); })
   .join('\n') + '\n' + extractBlock(html, html.indexOf('function congestionFactor('));
+/* nativeXP reads the points table from SCORING rather than restating it
+   inline, so this context has to supply it or the extracted function throws
+   the moment it is called. The FALLBACK table is the right binding for a
+   backtest: a historical season must not be regraded under whatever the live
+   game publishes today. */
+const scoringSrc = extractDecl(html, 'SCORING_FALLBACK') + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
-  [congestSrc, grab('minutesModel'), grab('concedePts'), grab('savePts'), grab('dcHitProb'), grab('effGoalRate'), grab('negRate90'),
+  [scoringSrc, congestSrc, grab('minutesModel'), grab('concedePts'), grab('savePts'), grab('dcHitProb'), grab('effGoalRate'), grab('negRate90'),
     grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
   '\nreturn { minutesModel, nativeXP, xP, pointsDist };'
 )();

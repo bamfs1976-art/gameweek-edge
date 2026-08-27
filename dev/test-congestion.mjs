@@ -20,6 +20,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
+import { extractBlock, extractFn } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -27,22 +28,7 @@ const require = createRequire(import.meta.url);
 const EF = require(join(ROOT, 'netlify/functions/euro-fixtures.js'));
 const TE = require(join(ROOT, 'netlify/functions/team-elo.js'));
 
-/* Comment/string-aware brace matcher (apostrophes in comments are safe). */
-function extractBlock(src, startIdx) {
-  const open = src.indexOf('{', startIdx);
-  let depth = 0, inStr = null, esc = false, com = 0;
-  for (let j = open; j < src.length; j++) {
-    const ch = src[j], nx = src[j + 1];
-    if (com) { if (com === 1 && ch === '\n') com = 0; else if (com === 2 && ch === '*' && nx === '/') { com = 0; j++; } continue; }
-    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === inStr) inStr = null; continue; }
-    if (ch === '/' && nx === '/') { com = 1; j++; continue; }
-    if (ch === '/' && nx === '*') { com = 2; j++; continue; }
-    if (ch === "'" || ch === '"' || ch === '`') { inStr = ch; continue; }
-    if (ch === '{') depth++; else if (ch === '}') { depth--; if (depth === 0) return src.slice(startIdx, j + 1); }
-  }
-  throw new Error('unbalanced');
-}
-const grabFn = (n) => extractBlock(html, html.indexOf('function ' + n + '('));
+const grabFn = (n) => extractFn(html, n);
 const grabConst = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
 
 const API = new Function(
@@ -278,10 +264,12 @@ console.log('• cached: a failed fetch is never pinned for the full TTL');
        a resting 0 is the honest value — every real timestamp clears it, and
        the behaviour under test is unchanged by its presence. */
     'let CACHE_FLOOR=0;\n' +
-    /* grabFn anchors on `function cached(`, which drops the `async`
-       keyword in front of it — put it back or the awaits inside are a
-       syntax error. */
-    'async ' + grabFn('cached') + '\nreturn cached;'
+    /* No `async` prefix here any more. This file used to add one by hand,
+       with a comment explaining that the local scanner dropped the keyword —
+       a workaround for a bug, kept next to the bug for a year instead of
+       fixing it. The shared extractor keeps the keyword, so prepending a
+       second one is now the error. */
+    grabFn('cached') + '\nreturn cached;'
   )({}, {
     getItem: (k) => (k in store ? store[k] : null),
     setItem: (k, v) => { store[k] = v; },
