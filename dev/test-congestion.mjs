@@ -272,6 +272,12 @@ console.log('• cached: a failed fetch is never pinned for the full TTL');
   const CACHE = new Function(
     'MEM', 'localStorage', 'noteData', 'GAME',
     grabFn('ck') + '\n' +
+    /* The Refresh button raises this floor so entries written before it are
+       ignored and refetched; cached() reads it on both its hit paths and
+       clamps its write stamp up to it. Nothing here exercises a refresh, so
+       a resting 0 is the honest value — every real timestamp clears it, and
+       the behaviour under test is unchanged by its presence. */
+    'let CACHE_FLOOR=0;\n' +
     /* grabFn anchors on `function cached(`, which drops the `async`
        keyword in front of it — put it back or the awaits inside are a
        syntax error. */

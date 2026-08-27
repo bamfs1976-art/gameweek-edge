@@ -92,3 +92,14 @@ jobs:
         # gate is comparing and the floor it has to clear.
         continue-on-error: true
         run: node dev/fpl-card-gates.mjs
+
+      - name: Is the player list we show the one FPL is publishing?
+        # Asked during a busy window: "lots of confirmed transfers, can we
+        # make sure the players have been updated from the API". Nothing in
+        # this repo carries a player list — every name comes from
+        # bootstrap-static — so the feed's answer and the app's answer differ
+        # only by the cache between them. This prints both halves: what the
+        # feed says about recent squad movement, and the payload size that is
+        # the entire argument for the cache making it stale.
+        continue-on-error: true
+        run: node dev/fpl-squad-freshness.mjs
