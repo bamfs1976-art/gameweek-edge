@@ -217,9 +217,18 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'const BOOT_TTL=', since: '2026-08-27',
-  what: 'the player list refreshing hourly instead of twice a day' };
-/* Rotated from 'class="soc-head"' (2026-08-26), confirmed live by run 60.
+const MARKER = { text: 'swing:e.sd', since: '2026-08-27',
+  what: 'the league-swing card ranking by spread instead of distance from 100%' };
+/* Rotated from 'const BOOT_TTL=' (2026-08-27), confirmed live by run 61.
+
+   Reported from a real twelve-manager league: "Who separates this league"
+   listed six players and every one read 0.0%. The percentages were right;
+   the RANKING was inverted at one end. leagueSwing scored each player by
+   |1 - eo|, so a player at 0% — benched by everyone who owns him, scoring
+   for nobody — got 1.0, the maximum. The six players least able to move
+   the table led the card that names who decides it.
+
+   Before that 'class="soc-head"' (2026-08-26), confirmed live by run 60.
 
    Asked during a busy transfer window: are the players updated from the
    API? They were — a runner probe found the feed carrying Konsa to Arsenal
