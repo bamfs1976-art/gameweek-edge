@@ -3045,9 +3045,9 @@ function ck(key){return GAME.id+':'+key;}
 async function cached(key,ttl,loader){
   const now=Date.now();
   key=ck(key);
-  if(MEM[key]&&now-MEM[key].t<ttl){noteData(MEM[key].t);return MEM[key].v;}
+  if(MEM[key]&&now-MEM[key].t<ttl&&MEM[key].t>=CACHE_FLOOR){noteData(MEM[key].t);return MEM[key].v;}
   try{const raw=localStorage.getItem('ge-c-'+key);if(raw){const o=JSON.parse(raw);
-    if(now-o.t<ttl){MEM[key]={t:o.t,v:o.v};noteData(o.t);return o.v;}}}catch(_){}
+    if(now-o.t<ttl&&o.t>=CACHE_FLOOR){MEM[key]={t:o.t,v:o.v};noteData(o.t);return o.v;}}}catch(_){}
   const v=await loader();
   /* Never cache a failure. The best-effort loaders (Core Insights, the cup
      calendar, club Elo) resolve to null when the endpoint is unreachable, and
@@ -3055,8 +3055,13 @@ async function cached(key,ttl,loader){
      without the feature. A null is retried on the next call instead; loaders
      that genuinely fail throw, and throwing never reaches here at all. */
   if(v==null)return v;
-  MEM[key]={t:now,v};
-  try{localStorage.setItem('ge-c-'+key,JSON.stringify({t:now,v}));}catch(_){/* quota: memory only */}
+  /* Stamped at or after the floor, never below it — see clearLiveCache. The
+     clamp is what stops a refresh completing inside its own millisecond from
+     writing an entry its own floor would then reject, which would refetch on
+     every read for that tick. */
+  const stamp=Math.max(now,CACHE_FLOOR);
+  MEM[key]={t:stamp,v};
+  try{localStorage.setItem('ge-c-'+key,JSON.stringify({t:stamp,v}));}catch(_){/* quota: memory only */}
   return v;
 }
 /* Read a cached value if it is already in memory, and never fetch.
@@ -3070,9 +3075,46 @@ function cachedPeek(key,ttl){
   const e=MEM[ck(key)];
   return (e&&Date.now()-e.t<ttl)?e.v:null;
 }
+/* The Refresh button's clear, and it drops BOOTSTRAP TOO.
+
+   It used to keep it. bootstrap-static is the largest payload the app has,
+   so sparing it looked like the considerate thing to do — but bootstrap is
+   where every player, club, price and injury note lives, which makes it
+   precisely what somebody is asking for when they tap Refresh. A signing, a
+   price change, a fitness update: the button could not show any of them.
+   Reported during a busy transfer window, and the feed's own clock says a
+   browser can sit 12 hours behind it.
+
+   The saving was not protecting anything either. This function has exactly
+   ONE caller — doRefresh, via refreshData. The 45-second live poll does not
+   come through here; it re-invokes the panel hydrator, which has its own
+   short TTLs. So the guard was not sparing a timer from stampeding a 1.6MB
+   endpoint, it was only stopping an explicit user gesture from working.
+
+   It raises a FLOOR rather than deleting the stored copies, and that part is
+   deliberate. The cache writes to memory and to localStorage, so emptying
+   memory alone would let the persisted half hand the same stale bytes back
+   and the button would still do nothing. But deleting the persisted half
+   destroys the offline copy — and a refresh that fails is exactly when a
+   phone on a bad train connection still needs it. A floor gets both: every
+   entry stamped before now is ignored and refetched, nothing is thrown
+   away, and a reload after a failed refresh still has something to show. */
+let CACHE_FLOOR=0;
 function clearLiveCache(){
-  const keep=ck('boot');
-  Object.keys(MEM).forEach(k=>{if(k!==keep)delete MEM[k];});
+  /* +1, and the write below clamps to it. A plain Date.now() cannot separate
+     "written just before the refresh" from "written just after it" when both
+     land in the same millisecond, and the entry then survives the very clear
+     that was meant to drop it. Rare against a real network — the refetch is
+     a round trip away — but the test that found it runs fast enough to sit
+     there every time, and a guard that only holds when the clock cooperates
+     is not a guard.
+
+     Raised from whichever is later, the clock or the floor already set, so
+     two refreshes inside one millisecond still step past each other — a
+     plain Date.now()+1 twice in the same tick yields the same number, and
+     the second refresh silently does nothing. */
+  CACHE_FLOOR=Math.max(Date.now(),CACHE_FLOOR)+1;
+  Object.keys(MEM).forEach(k=>delete MEM[k]);
 }
 
 const loadBootstrap=()=>cached('boot',12*3600e3,()=>api('bootstrap-static'));

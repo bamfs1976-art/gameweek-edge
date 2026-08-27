@@ -96,7 +96,14 @@ function extractBlock(src, startIdx) {
 function extractFn(src, name) {
   const idx = src.indexOf('function ' + name + '(');
   if (idx < 0) throw new Error('function not found: ' + name);
-  return extractBlock(src, idx);
+  /* `async` sits BEFORE the word this searches for, so slicing from
+     `function` drops it. When the body contains an await that fails to
+     parse, which is the loud case and survivable. When it does not, the
+     extraction succeeds and returns a value where the app returns a
+     promise — the quiet case, and the one that would have a test passing
+     against semantics the app does not have. */
+  const pre = src.slice(Math.max(0, idx - 10), idx);
+  return (/\basync\s+$/.test(pre) ? 'async ' : '') + extractBlock(src, idx);
 }
 function extractConst(src, name) {
   const idx = src.indexOf('const ' + name + '=');
@@ -177,6 +184,19 @@ const pieces = [
      test is the decision, not the cache — and the recheck timer comes from
      the source so the rate limit is the shipped one. */
   'let PEEK_FX = null;\nfunction cachedPeek(){ return PEEK_FX; }\nconst FIXTURES_TTL = 1;\nfunction __setPeek(v){ PEEK_FX = v; }\nfunction __resetRecheck(){ BOOT_RECHECKED = 0; }',
+  /* THE REFRESH PATH. Nothing here tested it, which is how the Refresh
+     button came to preserve the single payload a manager taps Refresh to
+     see. The browser's storage and the app's game scoping are stubbed —
+     what is under test is the cache decision, not localStorage. */
+  'const GAME={id:"fpl"};\nfunction noteData(){}\n'
+    + 'const __LS={};\nconst localStorage={getItem:(k)=>(k in __LS?__LS[k]:null),'
+    + 'setItem:(k,v)=>{__LS[k]=String(v);},removeItem:(k)=>{delete __LS[k];}};\n'
+    + 'function __lsKeys(){return Object.keys(__LS);}',
+  extractLine(html, /const MEM=\{\};/),
+  extractFn(html, 'ck'),
+  extractFn(html, 'cached'),
+  extractLine(html, /let CACHE_FLOOR=0;/),
+  extractFn(html, 'clearLiveCache'),
   ...['BOOT_RECHECK_MS'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   'let BOOT_RECHECKED = 0;',
   extractFn(html, 'gwMoved'),
@@ -379,7 +399,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -1014,6 +1034,86 @@ section('socRowFont: text that shrinks with the row it sits in');
   ok(core.socRowFont(10, 28) === 15, 'an absurd row still yields readable text, not 6px');
   ok(core.socRowFont(0, 28) === 15 && core.socRowFont(undefined, 28) === 15,
      'and a missing height does not produce NaN on a published graphic');
+}
+
+section('Refresh actually refreshes — including the player list');
+{
+  /* Reported during a busy transfer window: are the players updated from
+     the API? They are — a runner probe found the feed carrying Hadjam to
+     Brighton and Baleba to United dated the day before. What was not
+     updated was the copy in the browser.
+
+     bootstrap-static carries every player, club, price and injury note. It
+     was cached for twelve hours, in localStorage as well as memory, and
+     clearLiveCache — the Refresh button's one and only job — explicitly
+     kept it:
+
+         const keep=ck('boot');
+         Object.keys(MEM).forEach(k=>{if(k!==keep)delete MEM[k];});
+
+     So Refresh could not show a signing, a price change or a fitness
+     update. The guard was not even buying anything: this function has a
+     single caller, the button, and the 45-second live poll re-invokes the
+     hydrator instead of coming through here. */
+  const TTL = 60 * 60e3;
+  const load = (v) => { let n = 0; const f = async () => { n++; return v; }; f.calls = () => n; return f; };
+
+  Object.keys(core.MEM).forEach((k) => delete core.MEM[k]);
+  const a = load('first');
+  ok(await core.cached('boot', TTL, a) === 'first', 'a cold cache calls the loader');
+  ok(await core.cached('boot', TTL, a) === 'first' && a.calls() === 1,
+     'and the second read is served from cache, not the network');
+
+  /* THE BUG, PINNED. */
+  core.clearLiveCache();
+  const b = load('second');
+  ok(await core.cached('boot', TTL, b) === 'second',
+     'after Refresh, the player list is fetched again');
+  ok(b.calls() === 1, 'exactly once — the floor does not turn one read into two');
+  /* And the refetched value has to STICK. Raising the floor above the clock
+     means a value written in that same millisecond is stamped below the
+     floor that was just set, so without the clamp in cached() every read
+     for the rest of the tick refetches — a refresh that quietly disables
+     the cache instead of renewing it. Found by mutation: dropping the clamp
+     left every other assertion here green. */
+  ok(await core.cached('boot', TTL, b) === 'second' && b.calls() === 1,
+     'and the refetched value is cached again, not refetched on every read');
+
+  /* Every key, not a hand-picked list. The old code named `boot` as the
+     exception; naming it as the inclusion would be the same mistake wearing
+     the other coat, so the floor is blind to which key it is. */
+  core.clearLiveCache();
+  const fx = load('fixtures-2');
+  ok(await core.cached('fixtures', TTL, fx) === 'fixtures-2',
+     'and so is everything else the panel had cached');
+
+  /* THE PERSISTED HALF. The cache writes to memory AND localStorage, so
+     clearing memory alone would let the stored copy hand the same stale
+     bytes straight back — the button would still do nothing. */
+  const stored = core.__lsKeys().filter((k) => k.indexOf('ge-c-fpl:') === 0);
+  ok(stored.length > 0, 'the cache does persist to localStorage (' + stored.length + ' keys)');
+  core.clearLiveCache();
+  Object.keys(core.MEM).forEach((k) => delete core.MEM[k]);  /* memory gone, storage intact */
+  const c = load('third');
+  ok(await core.cached('boot', TTL, c) === 'third',
+     'a refresh is not defeated by the localStorage copy surviving');
+
+  /* AND IT IS A FLOOR, NOT A DELETE. A refresh that fails is exactly when a
+     phone on a bad connection still needs the stored copy, so nothing is
+     thrown away — the entries are ignored for this page life and are still
+     there for the next one. */
+  ok(core.__lsKeys().some((k) => k.indexOf('ge-c-fpl:') === 0),
+     'the offline copy survives a refresh, rather than being destroyed by it');
+
+  /* A failing loader must not poison the cache with its own failure. */
+  core.clearLiveCache();
+  let threw = false;
+  try { await core.cached('boot', TTL, async () => { throw new Error('offline'); }); }
+  catch (_) { threw = true; }
+  ok(threw, 'a failed refresh surfaces the error rather than a stale value');
+  const d = load('fourth');
+  ok(await core.cached('boot', TTL, d) === 'fourth',
+     'and the next attempt still reaches the network');
 }
 
 section('Social Studio: the cards are the first thing on the page');
