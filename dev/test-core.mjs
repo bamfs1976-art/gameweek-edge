@@ -1546,6 +1546,83 @@ section('squadMatchday: nothing to show, and nothing to throw');
      'position 14 is on the bench even with no multiplier field');
 }
 
+section('leagueSwing: a player nobody starts separates nobody');
+{
+  /* Reported from a real twelve-manager league: "Who separates this
+     league" listed six players and EVERY ONE read 0.0%.
+
+     The rows were arithmetically right and the ranking was backwards.
+     leagueSwing scored each player by Math.abs(1 - eo) — distance from
+     universal ownership — and sorted descending. That is correct at one
+     end: a player everyone starts scores for everyone equally and cannot
+     change the table. It is exactly wrong at the other. A player at 0%
+     is in nobody's XI, so he scores for nobody and cannot change the
+     table either — and |1 - 0| is 1.0, the maximum, so the six players
+     LEAST able to affect the league sorted to the top of the panel that
+     exists to name the ones who decide it.
+
+     The measure is the spread of the multiplier across managers. Both
+     extremes go to zero, which is what "cannot move you up or down"
+     actually means. */
+  const els = {};
+  for (let i = 1; i <= 6; i++) els[i] = { id: i, web_name: 'P' + i };
+  const N = 12;
+  /* 1 — everyone starts him.            2 — one owner, benched.
+     3 — three owners, all benched.      4 — half the league starts him.
+     5 — everyone owns, seven captain.   6 — one owner, one captain. */
+  const league = [];
+  for (let i = 0; i < N; i++) {
+    league.push({ picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 12, multiplier: i === 0 ? 0 : undefined },
+      { element: 3, position: 12, multiplier: 0 },
+      { element: 4, position: 5, multiplier: i < 6 ? 1 : 0 },
+      { element: 5, position: 6, multiplier: i < 7 ? 2 : 1, is_captain: i < 7 },
+      { element: 6, position: 7, multiplier: i === 0 ? 2 : 0, is_captain: i === 0 },
+    ].filter((p) => !(p.element === 2 && i > 0)) });
+  }
+  const eo = core.leagueEO(league);
+  ok(eo.byId[2].eo === 0 && eo.byId[3].eo === 0,
+     'the benched players really are on 0% effective ownership');
+
+  const sw = core.leagueSwing(league, eo, els, 6);
+  const ids = sw.map((p) => p.id);
+
+  /* THE BUG, PINNED. */
+  ok(!ids.includes(2) && !ids.includes(3),
+     'a player nobody starts is not listed as separating the league');
+  ok(!sw.some((p) => p.eo === 0),
+     'and no row reads 0.0% — every one of them did when this was reported');
+
+  /* The other end, which the old measure got right and must keep. */
+  ok(!ids.includes(1), 'nor is a player every single manager starts at the same weight');
+
+  /* What is left is the actual race, and the order is worth stating
+     because I expected it wrong. A lone CAPTAIN (element 6: one manager
+     on a multiplier of 2, eleven on nothing) outranks an even 6-v-6 split
+     of single-weighted starts (element 4). Checked rather than argued
+     with: the captain puts twice the player's score on one manager and
+     zero on everyone else, so the gap he can open is wider than the gap
+     between two halves of the league each getting him once. The measure
+     is right and my intuition was the thing that needed correcting. */
+  ok(ids[0] === 6, 'a lone captain leads — twice the stake on one manager (' + ids.join(', ') + ')');
+  ok(ids.includes(4), 'and an even split of the league is right behind him');
+  ok(ids.includes(5), 'a universally owned but half-captained player also separates');
+  ok(sw.every((p, i, a) => !i || a[i - 1].swing >= p.swing), 'most divisive first');
+
+  /* THE SYMMETRY that says this is a principled measure rather than one
+     tuned to the example. Being the only manager who owns him and being
+     the only manager who does NOT are equally divisive: eleven-of-twelve
+     and one-of-twelve give the identical spread. |1 - eo| could not do
+     this — it scored them 0.083 and 0.917. */
+  const one = core.leagueEO(Array.from({ length: N }, (_, i) =>
+    ({ picks: [{ element: 9, position: 1, multiplier: i === 0 ? 1 : 0 }] })));
+  const all = core.leagueEO(Array.from({ length: N }, (_, i) =>
+    ({ picks: [{ element: 9, position: 1, multiplier: i === 0 ? 0 : 1 }] })));
+  ok(Math.abs(one.byId[9].sd - all.byId[9].sd) < 1e-12,
+     'owning alone and missing out alone separate the league identically');
+}
+
 section('leagueEO: effective ownership is multipliers, not headcount');
 {
   /* Twelve managers, mirroring the league in the screenshot that prompted
@@ -2297,25 +2374,45 @@ section('leagueSwing: the players who actually separate a league');
   const eo = core.leagueEO(league);
   const sw = core.leagueSwing(league.length ? [] : [], eo, ELS, 10);
 
-  /* THE POINT. A player the whole league starts once each cannot change
-     anyone's position — his points land on every manager equally. He is
-     the LEAST interesting player in the league however many he scores,
-     and he must rank last here. */
-  ok(sw[sw.length - 1].name === 'Template',
-     'a player at exactly 100% is the least separating, got ' + sw[sw.length - 1].name);
-  ok(sw[0].name === 'Captained' || sw[0].name === 'Benched',
-     'the biggest swing is furthest from 100%, got ' + sw[0].name);
+  /* THE POINT, and this block used to state half of it.
 
-  const find = (n) => sw.find((x) => x.name === n);
-  ok(Math.abs(find('Captained').eo - 2) < 1e-9, 'a universally captained player is 200%');
-  ok(find('Benched').eo === 0, 'and a universally benched one is 0%');
-  /* Both are one full unit away from the field, so both separate equally
-     — in opposite directions. */
-  ok(Math.abs(find('Captained').swing - find('Benched').swing) < 1e-9,
-     'owning what nobody starts and doubling what everybody owns swing alike');
-  ok(Math.abs(find('Differential').eo - 0.25) < 1e-9, 'a one-in-four pick is 25%');
+     A player the whole league starts once each cannot change anyone's
+     position — his points land on every manager equally. That much was
+     always asserted here, and it still holds: Template is gone from the
+     list entirely.
 
-  ok(core.leagueSwing([], eo, ELS, 2).length === 2, 'the limit is honoured');
+     What this block ALSO used to assert is that "Captained" — owned by
+     everyone and captained by everyone, EO 200% — was among the BIGGEST
+     swings, because the old measure was |1 - eo| and 200% is a full unit
+     from 100%. That was the same bug wearing its other face. Everyone
+     getting double is still everyone getting the same: he cannot move a
+     single manager past another, however many he scores. The test blessed
+     it for as long as the code did.
+
+     All three no-signal shapes now drop out, and only the genuine
+     differential is left. */
+  const names = sw.map((x) => x.name);
+  ok(!names.includes('Template'), 'a player every manager starts identically does not appear');
+  ok(!names.includes('Captained'), 'nor one every manager CAPTAINS identically, at 200%');
+  ok(!names.includes('Benched'), 'nor one every manager owns and nobody starts, at 0%');
+  ok(names.join(',') === 'Differential',
+     'the one player the league disagrees on is the whole list (' + names.join(', ') + ')');
+
+  /* The effective-ownership figures themselves are unchanged — it is the
+     RANKING that was wrong, not the percentages, which is why every row in
+     the reported screenshot was arithmetically correct. */
+  ok(Math.abs(eo.byId[3].eo - 2) < 1e-9, 'a universally captained player is still 200%');
+  ok(eo.byId[4].eo === 0, 'and a universally benched one is still 0%');
+  ok(Math.abs(eo.byId[2].eo - 0.25) < 1e-9, 'a one-in-four pick is still 25%');
+  /* Both extremes now score zero separating power, by the same rule and
+     for the same reason, rather than a full unit each. */
+  ok(eo.byId[3].sd === 0 && eo.byId[4].sd === 0 && eo.byId[1].sd === 0,
+     'everyone-captains, everyone-benches and everyone-starts all separate nobody');
+
+  /* The limit needs a league with enough separating players to cap. This
+     one deliberately has exactly one, so it is tested where the rows are. */
+  ok(core.leagueSwing([], eo, ELS, 2).length === 1,
+     'a league with one divisive player lists one, not a padded two');
   ok(core.leagueSwing([], { byId: {} }, ELS, 5).length === 0, 'an empty league has no swing players');
   ok(core.leagueSwing([], eo, {}, 5).length === 0,
      'a player the bootstrap does not know is skipped rather than shown nameless');

@@ -18207,14 +18207,24 @@ function leagueEO(picksArr){
     p.picks.forEach(pk=>{
       if(!pk||pk.element==null)return;
       const m=typeof pk.multiplier==='number'?pk.multiplier:(pk.position<=11?1:0);
-      const e=byId[pk.element]||(byId[pk.element]={own:0,start:0,cap:0,units:0,eo:0});
+      const e=byId[pk.element]||(byId[pk.element]={own:0,start:0,cap:0,units:0,sq:0,eo:0,sd:0});
       e.own++;
       if(m>0)e.start++;
       if(pk.is_captain)e.cap++;
       e.units+=m;
+      /* Sum of squares, so the SPREAD of the multiplier is available and
+         not just its mean. leagueSwing needs it — see the note there. */
+      e.sq+=m*m;
     });
   });
-  Object.keys(byId).forEach(k=>{byId[k].eo=byId[k].units/n;});
+  /* Divided by the manager COUNT, not the owner count, in both. A manager
+     who does not own him contributes a multiplier of zero to the league,
+     which is a real zero and belongs in the average and in the spread. */
+  Object.keys(byId).forEach(k=>{
+    const e=byId[k];
+    e.eo=e.units/n;
+    e.sd=Math.sqrt(Math.max(0,e.sq/n-e.eo*e.eo));
+  });
   return {managers:n,byId:byId};
 }
 const CHIP_SHORT={wildcard:'WC','3xc':'TC',bboost:'BB',freehit:'FH',manager:'AM'};
@@ -18406,11 +18416,31 @@ function leagueSwing(rows,eo,els,limit){
     const e=byId[k],el=(els||{})[k];
     if(!el)return;
     out.push({id:el.id,name:el.web_name,eo:e.eo,own:e.own,cap:e.cap,
-      /* Distance from universal ownership. 0 means the whole league has
-         him at the same weight and he is noise, not signal. */
-      swing:Math.abs(1-e.eo)});
+      /* THE SPREAD OF THE MULTIPLIER, not its distance from anything.
+
+         This was Math.abs(1-e.eo) — distance from universal ownership —
+         sorted descending. Right at one end and exactly backwards at the
+         other. A player at 100% cannot move anyone up or down, which is
+         what the panel's own copy says. But a player at 0% cannot move
+         anyone either, for the opposite reason: he is in nobody's XI, so
+         nobody scores him. |1-eo| hands him 1.0, the MAXIMUM, so the
+         players least able to affect the table sorted straight to the top
+         of a panel about who decides it. Reported from a real twelve-man
+         league with every visible row reading 0.0%.
+
+         Standard deviation is the measure that was wanted. Everyone on 1
+         separates nobody; everyone on 0 separates nobody; a captain here
+         and a benching there is the whole race. It needs no special case
+         for captains or Triple Captain — a multiplier of 2 or 3 widens
+         the spread on its own. */
+      swing:e.sd});
   });
-  return out.sort((a,c)=>c.swing-a.swing||c.eo-a.eo).slice(0,limit||8);
+  /* A spread of zero is not a weak signal, it is the absence of one: every
+     manager in the league gets identical value from him whatever he scores.
+     Dropped rather than ranked last, so the panel cannot pad itself with
+     rows that answer its own question with "nobody". */
+  return out.filter(p=>p.swing>0)
+    .sort((a,c)=>c.swing-a.swing||c.eo-a.eo).slice(0,limit||8);
 }
 
 /* ── Mini-League Tracker ───────────────────────────────── */
@@ -18673,8 +18703,9 @@ async function leagueDetailCard(res,leagueId,meId,whole){
     const sw=leagueSwing(picksArr,eo,b.els,6);
     const swing=sw.length
       ? '<div class="card mb-20"><div class="card-title">Who separates this league</div>'+
-        '<p class="dl-sub" style="margin-bottom:8px">Furthest from the field first. A player at 100% scores for everyone equally and cannot move you '+
-        'up or down however many he gets; the ones above and below that line are the whole race.</p><div class="dl">'+
+        '<p class="dl-sub" style="margin-bottom:8px">Most divisive first — the players this league is least agreed on. '+
+        'A player everyone starts scores for everyone equally, and a player nobody starts scores for nobody; '+
+        'neither can move you up or down however many he gets. The ones some of you have and some of you don’t are the whole race.</p><div class="dl">'+
         sw.map(p=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell">'+
           '<span class="dl-nm">'+esc(p.name)+'</span>'+
           '<span class="dl-sub">'+p.own+' of '+eo.managers+' own'+(p.cap?' · '+p.cap+' captain'+(p.cap===1?'':'s'):'')+'</span>'+

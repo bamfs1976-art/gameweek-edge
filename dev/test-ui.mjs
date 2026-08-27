@@ -117,6 +117,32 @@ const standingsBody = () => JSON.stringify({
   ] }
 });
 const picksFixture = () => JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json'), 'utf8'));
+/* THE LEAGUE HAS TO DISAGREE ABOUT SOMETHING.
+
+   Every manager used to be served the byte-identical squad. That is a
+   league in which nobody separates anybody — and "Who separates this
+   league" correctly has nothing to say about such a league, so the card
+   does not render and the assertion for it cannot pass on the truth. It
+   passed anyway, because the old ranking scored a player at 0% effective
+   ownership as maximally divisive and padded the card with the bench.
+
+   So one manager captains someone else. It is the smallest change that
+   gives the card real content: exactly two players gain a spread, the
+   other thirteen and the whole bench stay identical across all three
+   squads, and every other assertion in that section still measures what
+   it measured before. */
+const ODD_ONE_OUT = 9998887;
+const leaguePicks = (entry) => {
+  const f = picksFixture();
+  if (Number(entry) !== ODD_ONE_OUT) return JSON.stringify(f);
+  const xi = f.picks.filter((x) => x.position <= 11);
+  const from = xi.filter((x) => x.is_captain)[0];
+  const to = xi.filter((x) => !x.is_captain && !x.is_vice_captain)[0];
+  if (!from || !to) return JSON.stringify(f);
+  from.is_captain = false; from.multiplier = 1;
+  to.is_captain = true; to.multiplier = 2;
+  return JSON.stringify(f);
+};
 const LIVE_MISSING = picksFixture().picks.find((p) => p.position === 3).element;
 /* total_points stays 2 for every row — the rival-card assertions are written
    against that and the point of those is the rendering, not the arithmetic.
@@ -167,9 +193,17 @@ const apiServer = createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(standingsBody());
   }
-  if (API[p] || PICKS_RE.test(p)) {
+  /* PICKS BEFORE THE FIXTURE MAP, because this is the server the
+     mini-league view reads and its managers must not all field the same
+     squad — see leaguePicks. The two were one branch, which is why the
+     first attempt at varying them changed a route nothing here calls. */
+  if (PICKS_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p] || 'fpl-mock-picks.json')));
+    return res.end(leaguePicks(p.split('/')[4]));
+  }
+  if (API[p]) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(readFileSync(join(ROOT, 'dev/fixtures', API[p])));
   }
   return staticHandler(req, res);
 });
@@ -253,7 +287,7 @@ const endedServer = createServer((req, res) => {
   }
   if (PICKS_RE.test(p)) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-picks.json')));
+    return res.end(leaguePicks(p.split('/')[4]));
   }
   return staticHandler(req, res);
 });
@@ -1724,8 +1758,14 @@ section('mini-league detailed view: every squad, with effective ownership');
       compactRows: document.querySelectorAll('#league-standings .dl-row').length,
       legend: card.querySelectorAll('.lg-legend span').length,
       states: [...new Set(tiles.map((t) => [...t.classList].find((c) => /^lg-(done|live|toPlay|blank)$/.test(c))))],
-      swing: !![...document.querySelectorAll('.card')]
-        .find((c) => /who separates this league/i.test((c.querySelector('.card-title') || {}).innerText || '')),
+      /* The card AND its rows. Asserting only that the card exists is what
+         let a ranking through that filled it with players at 0% effective
+         ownership — every row correct, every row meaningless. */
+      swingPct: (() => {
+        const c = [...document.querySelectorAll('.card')]
+          .find((x) => /who separates this league/i.test((x.querySelector('.card-title') || {}).innerText || ''));
+        return c ? [...c.querySelectorAll('.dl-row .dl-col')].map((e) => e.innerText.trim()) : null;
+      })(),
       progW: (() => { const p = first.querySelector('.lg-prog i');
         return p ? p.getBoundingClientRect().width : 0; })(),
       pills: [...first.querySelectorAll('.lg-pill')].map((e) => e.innerText.replace(/\s+/g, ' ').trim()),
@@ -1781,7 +1821,16 @@ section('mini-league detailed view: every squad, with effective ownership');
   ok(view.legend === 4, 'the four player states are spelled out, got ' + view.legend);
   ok(view.states.filter(Boolean).length >= 1, 'and tiles carry a state class');
   ok(view.progW > 0, 'the played-so-far bar has width');
-  ok(view.swing === true, 'the swing card names who actually separates the league');
+  /* Reported from a real twelve-manager league: this card listed six
+     players and every one read 0.0%. They were benched by their owners, so
+     they scored for nobody and could not move the table — yet the ranking
+     scored a player at 0% as maximally divisive, which put the six LEAST
+     relevant players at the top of the card that names who decides it. */
+  ok(Array.isArray(view.swingPct) && view.swingPct.length > 0,
+     'the swing card renders with rows, got ' + JSON.stringify(view.swingPct));
+  ok(view.swingPct.every((s) => s !== '0.0%'),
+     'and none of them reads 0.0% — a player nobody starts separates nobody ('
+     + (view.swingPct || []).join(' ') + ')');
 
   /* Never let a scoped percentage read as a league-wide one. */
   ok(/effective ownership/i.test(view.text), 'the card says what the percentages are');
