@@ -217,9 +217,19 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'class="soc-head"', since: '2026-08-26',
-  what: 'the studio opening on the cards instead of on the builder form' };
-/* Rotated from 'function managerCard' (2026-08-26). That one shipped the
+const MARKER = { text: 'const BOOT_TTL=', since: '2026-08-27',
+  what: 'the player list refreshing hourly instead of twice a day' };
+/* Rotated from 'class="soc-head"' (2026-08-26), confirmed live by run 60.
+
+   Asked during a busy transfer window: are the players updated from the
+   API? They were — a runner probe found the feed carrying Konsa to Arsenal
+   and Baleba to United, dated. What was not updated was the copy in the
+   browser: bootstrap-static was cached for twelve hours, and the Refresh
+   button explicitly preserved the one payload a manager taps Refresh to
+   see. BOOT_TTL is the named constant that hour now lives in, so its
+   presence in the deployed HTML is exactly this release.
+
+   Before that 'function managerCard' (2026-08-26). That one shipped the
    personal card; the cards were then reported as missing from the studio.
    They were not missing — all 26 built and all 26 rendered — the panel was
    spending its first screen on a builder form and four paragraphs of

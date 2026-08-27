@@ -3117,7 +3117,29 @@ function clearLiveCache(){
   Object.keys(MEM).forEach(k=>delete MEM[k]);
 }
 
-const loadBootstrap=()=>cached('boot',12*3600e3,()=>api('bootstrap-static'));
+/* HOW LONG THE PLAYER LIST MAY BE STALE.
+
+   Twelve hours, until a busy transfer window made the cost of that obvious:
+   bootstrap-static carries every player, club, price and injury note, so a
+   manager who opened the app at nine in the morning saw nine o'clock's squads
+   until nine at night. A runner probe watching FPL's own news_added clock
+   caught changes landing at 22:00, 16:00 and 14:05 on consecutive days, and
+   measured the newest one at 12.2 hours old — past the window, so a copy at
+   the TTL boundary was provably missing it.
+
+   The twelve hours were paid for the payload, and the payload was never
+   measured until now. It is 1590KB of JSON, which is the frightening number
+   and the wrong one: the app fetches through our own proxy, which compresses,
+   and the same bytes are 104KB brotli / 137KB gzip. An hour's TTL therefore
+   costs about 100KB per hour of active use, and the edge caches for five
+   minutes on top, so most of those never reach origin.
+
+   An hour is not chosen to be tidy. Prices settle once daily, news moves
+   through the day, and a transfer lands whenever it lands — so the honest
+   floor is "within an hour of FPL knowing", and 100KB is a fair price for it.
+   Refresh clears it outright; see clearLiveCache. */
+const BOOT_TTL=60*60e3;
+const loadBootstrap=()=>cached('boot',BOOT_TTL,()=>api('bootstrap-static'));
 const FIXTURES_TTL=10*60e3;
 const loadFixtures =()=>cached('fixtures',FIXTURES_TTL,()=>api('fixtures'));
 const loadEntry    =id=>api('entry/'+id);
