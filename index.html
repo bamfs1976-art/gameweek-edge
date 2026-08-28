@@ -2585,6 +2585,15 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   background-attachment:local,local,scroll,scroll;
 }
 
+/* ── Live pitch (Live · Pitch view) — player-card state during matchday.
+   Colours are fixed, not tokens: these cells sit on the green pitch and
+   the dark photo tiles, which do not change with the app theme. */
+.lvp .pp.to-play{opacity:.55}
+.lvp .pp.live-now .pp-fig{box-shadow:0 0 0 2px #4ade80,0 3px 8px rgba(0,0,0,.3)}
+.lvp .pp-sub .bn-on{background:#bff0d2;color:#0c5c33;font-weight:800}
+.lvp .pp-sub .bn-prov{background:#f9e9c0;color:#7a5410;font-weight:800}
+.lvp .pp-sub .dc-on{background:#bff0d2;color:#0c5c33;font-weight:800}
+
 /* Chips and toggles pick up the round editorial geometry. */
 .tchip,.area-tab,.lensbtn{border-radius:var(--r-pill)}
 /* 44px touch minimum on the tab strips and lens pills. */
@@ -2945,7 +2954,9 @@ const ICON = {
   moon:'<path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8z"/>',
   dashboard:'<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/>',
   bolt:'<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>',
-  squad:'<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/>',
+  /* A football shirt — it used to be a house-with-door outline, which read
+     as a second Home icon sitting right under the real one. */
+  squad:'<path d="M9 3a3 3 0 0 0 6 0l5 2 2 4.5-3.5 2L17 9.5V21H7V9.5l-1.5 2-3.5-2L4 5z"/>',
   swap:'<path d="M7 4 3 8l4 4M3 8h13M17 20l4-4-4-4M21 16H8"/>',
   star:'<path d="M12 2.5l2.9 6 6.6.6-5 4.4 1.5 6.4L12 16.6 6 19.9l1.5-6.4-5-4.4 6.6-.6z"/>',
   pulse:'<path d="M3 12h4l3 8 4-16 3 8h4"/>',
@@ -4789,11 +4800,12 @@ const DESTINATIONS=[
   {id:'squad',label:'Squad',icon:'squad',go:()=>openPanel('squad')},
   {id:'players',label:'Players',icon:'players',go:()=>openPanel('allplayers')},
   {id:'live',label:'Live',icon:'pulse',go:()=>openPanel('liverank')},
+  {id:'leagues',label:'Leagues',icon:'trophy',go:()=>openPanel('leagues')},
   {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
 ];
 /* Which destination lights up for the panel you are on. */
 const DEST_AREA={home:'home',myteam:'squad',players:'players',live:'live',
-  planner:'more',rivals:'more',matchcentre:'more',studio:'more',more:'more'};
+  planner:'more',rivals:'leagues',matchcentre:'more',studio:'more',more:'more'};
 
 /* ── THE MORE INDEX ──────────────────────────────────────
    A grouped, self-describing map of everything beyond the four main
@@ -4813,7 +4825,6 @@ const MORE_GROUPS=[
     ['fixtures','Who has the kindest run, and when'],
     ['diffs','Strong players the field does not own'],
     ['price','Tonight’s likely risers and fallers'],
-    ['leagues','Your mini-leagues, live'],
     ['rivals','What the managers around you are doing'],
     ['eo','Effective ownership and the template'],
     ['compare','Any two players side by side'],
@@ -4939,7 +4950,7 @@ const PANEL_VIEW={
   csmatrix:{hub:'fixtures',view:'cs'},
   price:{hub:'price',view:'moves'},
   market:{hub:'price',view:'market'},
-  liverank:{hub:'liverank',view:'rank'},
+  liverank:{hub:'liverank',view:'pitch'},
   bonus:{hub:'liverank',view:'bonus'},
   dcwatch:{hub:'liverank',view:'defcon'},
   defcon:{hub:'liverank',view:'threats'},
@@ -13789,6 +13800,8 @@ function gwAnchor(events,fixtures){
    defensive contributions drops those views entirely rather than showing a
    board that can never fill. */
 const LV_VIEWS=[
+  {id:'pitch',label:'Pitch',tier:'free',fn:'hydrateLivePitch',
+   desc:'Your squad on the pitch — live points, provisional bonus and defensive contributions ticking up as the matches happen.'},
   {id:'rank',label:'Percentile',tier:'free',fn:'hydrateLiveRank',
    desc:'Your live score and an estimated percentile against the field, updating through the matchday. An estimate — a true live rank needs the full FPL population.'},
   {id:'bonus',label:'Bonus',tier:'free',needs:['bps'],fn:'hydrateBonus',
@@ -13800,9 +13813,9 @@ const LV_VIEWS=[
   {id:'autosubs',label:'Auto-subs',tier:'paid',needs:['autosubs'],fn:'hydrateAutosubs',
    desc:'Which bench players are projected to come on, and the points swing when they do.'}
 ];
-const LV_HYDRATE={rank:(h)=>hydrateLiveRank(h),bonus:(h)=>hydrateBonus(h),
+const LV_HYDRATE={pitch:(h)=>hydrateLivePitch(h),rank:(h)=>hydrateLiveRank(h),bonus:(h)=>hydrateBonus(h),
   defcon:(h)=>hydrateDcwatch(h),threats:(h)=>hydrateDefcon(h),autosubs:(h)=>hydrateAutosubs(h)};
-let LV_VIEW='rank';
+let LV_VIEW='pitch';
 /* Only the views this game pack actually supports. Everything downstream
    reads this rather than LV_VIEWS, so a dropped capability cannot leave a
    chip pointing at a view that will not render. */
@@ -13853,6 +13866,91 @@ async function hydrateLive(host){
     lvRenderBody();
   }));
   lvRenderBody();
+}
+
+/* ── Live Pitch — your squad laid out on the pitch with live points,
+   provisional bonus and defensive contributions per player, updating in
+   place through the matchday (the live tick re-runs the active view).
+   The three live facts each player card carries:
+     big number   live points × multiplier, including provisional bonus
+     left cell    bonus — confirmed (B+n) or provisional from live BPS (★+n)
+     right cell   DefCon progress toward the +2 (✓ once banked), minutes
+                  for keepers or when the defcon capability is absent. */
+async function hydrateLivePitch(host){
+  const mid=getMid();
+  if(!mid){host.innerHTML=linkBox();return;}
+  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const [picks,live]=await Promise.all([loadPicks(mid,b.cur.id),loadLive(b.cur.id)]);
+  const st=statsById(live);
+  const status=gwStatusByTeam(b,fixtures);
+  const pb=provBonusPts(b,st,fixtures,picks);
+  const hasDc=hasCap('defcon');
+  const THR=t=>t===2?10:(t>=3?12:null);   /* GK excluded */
+  const starters=picks.picks.filter(p=>p.position<=11);
+  const bench=picks.picks.filter(p=>p.position>11);
+  let playing=0,done=0,toPlay=0,dcBanked=0;
+  const cell=pk=>{
+    const el=b.els[pk.element]||{};
+    const s=st[pk.element]||{};
+    const ts=status[el.team]||{};
+    const xi=pk.position<=11;
+    const mult=xi?(pk.multiplier||1):1;
+    const base=s.total_points||0;
+    const prov=pb.prov[pk.element]||0;
+    const pts=(base+prov)*mult;
+    const mins=s.minutes||0;
+    if(xi){if(ts.finished)done++;else if(ts.started)playing++;else toPlay++;}
+    const state=ts.finished?'':(ts.started?' live-now':' to-play');
+    const badge=pk.is_captain?'C':pk.is_vice_captain?'V':'';
+    const mark=pts>=8?'<span class="pp-mark" title="Hauling">🔥</span>'
+      :(mins>=60&&base<=2?'<span class="pp-mark" title="Played and blanked">👎</span>':'');
+    /* Bonus cell: confirmed beats provisional; provisional is starred so a
+       number that can still move never reads as settled. */
+    const bn=(s.bonus||0)>0?'<span class="l bn-on" title="Confirmed bonus">B+'+s.bonus+'</span>'
+      :prov>0?'<span class="l bn-prov" title="Provisional bonus from live BPS">★+'+prov+'</span>'
+      :'<span class="l" title="No bonus yet">B·0</span>';
+    /* DefCon cell: progress toward the +2, for outfielders when the game
+       scores it; otherwise the honest fallback is minutes. */
+    const thr=THR(el.element_type);
+    let dc='';
+    if(hasDc&&thr!=null){
+      const n=parseInt(s.defensive_contribution,10)||0;
+      const hit=n>=thr;
+      if(hit&&xi)dcBanked++;
+      dc='<span class="r'+(hit?' dc-on':'')+'" title="Defensive contribution '+n+' of '+thr+(hit?' — +2 banked':'')+'">'+
+        (hit?'✓+2':n+'/'+thr)+'</span>';
+    }else{
+      dc='<span class="r" title="Minutes played">'+mins+'′</span>';
+    }
+    return '<div class="pp'+(pk.is_captain?' is-cap':'')+state+'">'+
+      (badge?'<span class="pp-badge">'+badge+'</span>':'')+mark+
+      ppFigure(b,el)+
+      '<span class="pp-nm">'+esc(el.web_name||'')+'</span>'+
+      '<span class="pp-pt">'+pts+'</span>'+
+      '<span class="pp-sub">'+bn+dc+'</span></div>';
+  };
+  const byType=t=>starters.filter(p=>(b.els[p.element]||{}).element_type===t);
+  const row=arr=>'<div class="pitch-row">'+arr.map(cell).join('')+'</div>';
+  const pitch=pitchWrap(
+    row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
+    '<div class="bench">'+bench.map(cell).join('')+'</div>');
+  const liveTotal=starters.reduce((s2,p)=>s2+(st[p.element]&&st[p.element].total_points||0)*(p.multiplier||1),0)+pb.extra;
+  markLive(playing>0);
+  host.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<span class="dl-sub" style="margin:0">Gameweek '+b.cur.id+'</span>'+liveStamp(playing>0)+'</div>'+
+    '<div class="grid g-4 mb-20">'+
+      kpi('Live GW points',liveTotal,(pb.extra>0?'incl. +'+pb.extra+' provisional bonus':'GW'+b.cur.id+' so far'),'var(--green)')+
+      kpi('Playing now',playing,toPlay+' still to play','var(--blue)')+
+      kpi('DefCon +2s',dcBanked,'banked by your XI','var(--purple)')+
+      kpi('Completed',done+'/11','of your XI','var(--text-2)')+
+    '</div>'+
+    '<div class="card lvp"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' Your squad, live</div>'+
+      pitch+
+      '<div class="dl-sub" style="margin-top:10px">Points include the captain multiplier and provisional bonus. '+
+      '<b>B+n</b> confirmed bonus · <b>★+n</b> provisional from live BPS · '+
+      (hasDc?'right cell: defensive contribution toward the +2 threshold (✓+2 once banked)':'right cell: minutes played')+
+      ' · dimmed players are still to play, a green ring means in play now.</div></div>';
 }
 
 async function hydrateLiveRank(host){

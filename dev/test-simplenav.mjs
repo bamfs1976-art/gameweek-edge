@@ -105,13 +105,13 @@ const shell = (page) => page.evaluate(() => ({
   path: location.pathname,
 }));
 
-const FIVE = ['Home', 'Squad', 'Players', 'Live', 'More'];
+const NAV_LABELS = ['Home', 'Squad', 'Players', 'Live', 'Leagues', 'More'];
 
 /* ── essentials ── */
 {
   const { ctx, page, errors } = await open('beginner');
   const s = await shell(page);
-  check('one nav map: sidebar is Home·Squad·Players·Live·More', s.sidebar.join('|'), FIVE.join('|'));
+  check('one nav map: sidebar is Home·Squad·Players·Live·Leagues·More', s.sidebar.join('|'), NAV_LABELS.join('|'));
   check('one nav map: bottom tabs carry identical labels and order', s.bottom.join('|'), s.sidebar.join('|'));
   check('essentials: the DecisionCard hero renders', s.hero, true);
   check('essentials: transfer + chip sibling cards render', s.pair, true);
@@ -128,7 +128,7 @@ const FIVE = ['Home', 'Squad', 'Players', 'Live', 'More'];
 {
   const { ctx, page, errors } = await open('expert');
   const s = await shell(page);
-  check('everything: same five destinations', s.sidebar.join('|'), FIVE.join('|'));
+  check('everything: same destinations', s.sidebar.join('|'), NAV_LABELS.join('|'));
   check('everything: named sections join the page flow', s.sectionsShown, true);
   check('everything: the section jumper appears', s.jumpShown, true);
   check('depth control reads Everything', s.densityLabel, 'Depth: Everything');
@@ -142,7 +142,7 @@ const FIVE = ['Home', 'Squad', 'Players', 'Live', 'More'];
   const s = await shell(page);
   /* Ownership is a Pro panel with no nav tab of its own; the URL must
      still land on it (shown locked), never bounce to the dashboard. */
-  check('a panel outside the five tabs is still reachable by URL',
+  check('a panel outside the nav tabs is still reachable by URL',
     s.area === 'Rivals' && s.title !== 'Overview', true);
   check('and it still gets a tab strip to move sideways', s.tabs.length, t => t >= 2);
   await ctx.close();
@@ -205,7 +205,7 @@ const FIVE = ['Home', 'Squad', 'Players', 'Live', 'More'];
   await page.waitForTimeout(2500);
   const s = await shell(page);
   check('switching to Everything reveals the sections', s.sectionsShown, true);
-  check('and the nav still shows the same five destinations', s.sidebar.join('|'), FIVE.join('|'));
+  check('and the nav still shows the same destinations', s.sidebar.join('|'), NAV_LABELS.join('|'));
   await ctx.close();
 }
 

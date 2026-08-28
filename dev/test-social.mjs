@@ -635,8 +635,8 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      unmapped area is a panel whose nav never highlights. */
   const destSrc = balanced(html, html.indexOf('const DESTINATIONS='), '[', ']');
   const destIds = new Set([...destSrc.matchAll(/id:'([a-z]+)'/g)].map((m) => m[1]));
-  ok([...destIds].join('|') === 'home|squad|players|live|more',
-    'the five destinations are Home, Squad, Players, Live, More in order');
+  ok([...destIds].join('|') === 'home|squad|players|live|leagues|more',
+    'the destinations are Home, Squad, Players, Live, Leagues, More in order');
   const destMap = new Function('return ' + balanced(html, html.indexOf('const DEST_AREA='), '{', '}'))();
   for (const a of areas) {
     ok(destIds.has(destMap[a.id]), a.id + ': reachable on mobile (bar or More sheet)');
