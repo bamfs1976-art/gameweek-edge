@@ -329,6 +329,26 @@ assert.equal(merged.length, 1,
   'would shorten the apparent rest gap and invent congestion out of a de-duplication bug');
 assert.equal(merged[0].src, 'euro', 'the live feed must win over the snapshot, not the other way round');
 
+/* ...and a draw-pending PLACEHOLDER BLOCK must be dropped whole. The upstream
+   harvest can publish a club as identical-timestamp rows carrying both venues
+   (seen live: eight UCL rows per club, 4×H + 4×A, one kick-off); conflicting
+   venues at one kick-off carry no information, and "first row wins" fed
+   fabricated congestion. Conditional on the current snapshot actually holding
+   such a block, so this self-disables when upstream cleans its data. */
+{
+  const groups = {};
+  for (const r of CAL) (groups[r.c + '|' + r.d] = groups[r.c + '|' + r.d] || []).push(r);
+  const block = Object.values(groups).find((g) =>
+    g.length > 1 && g.some((r) => (r.v || 'H') !== (g[0].v || 'H')));
+  if (block) {
+    const club = block[0].c;
+    const bPh = { teams: { 1: { short_name: club, name: club } } };
+    const calPh = call('competitiveCalendar(b,f,1)', { b: bPh, f: [] });
+    assert.ok(calPh.every((e) => e.ms !== Date.parse(block[0].d)),
+      club + ': a conflicting-venue placeholder block from the snapshot leaked into the calendar');
+  }
+}
+
 /* rotationEntries must be a VIEW over that calendar, not a second merge. */
 const view = call('rotationEntries(b,f,1)', { b: bLive, f: league });
 assert.deepEqual(view.map((e) => Date.parse(e.d)), cal.map((e) => e.ms),

@@ -355,14 +355,10 @@ a{color:inherit;text-decoration:none}
   width:min(260px,72vw);background:var(--elevated,var(--surface-2));color:var(--text);border:1px solid var(--border);
   border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
   box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:normal;pointer-events:none}
-#help-btn{font-weight:800;font-size:15px;line-height:1}
 body[data-density="beginner"] .expert-only{display:none}
-/* Simple mode hides the two topbar power tools. Both are expert reflexes and
-   both drew the eye at the same weight as the only button that matters on a
-   first visit — see docs/FIRST_RUN_UX.md §4.6. Linking a team flips density to
-   expert, so they come back the moment they are wanted. */
-body[data-density="beginner"] #export-btn,
-body[data-density="beginner"] #refresh-btn{display:none}
+/* Refresh and Export live in the overflow menu now, tucked away for
+   everyone — Depth no longer hides them, so an Essentials user can still
+   refresh data or export a view. */
 /* First-use expansion of a jargon term, beginner density only. */
 .jt-gloss{color:var(--text-3);font-weight:400;font-size:.92em}
 /* Terminal furniture that reads as noise before you know the product. The
@@ -4391,9 +4387,9 @@ function applyDensity(d){if(document.body)document.body.setAttribute('data-densi
 function densityLabel(d){return d==='beginner'?'Essentials':'Everything';}
 function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}applyDensity(d);
   const b=document.getElementById('density-btn');if(b)b.textContent='Depth: '+densityLabel(d);
-  /* Density now decides how many destinations the nav offers, not just how
-     much detail a panel prints, so the shell has to be rebuilt with it. */
-  try{buildNav();buildBottomNav();if(typeof openPanel==='function')openPanel(currentPanel);}catch(_){}}
+  /* Depth changes what the current page shows, so re-render it. The five
+     nav destinations are fixed and need no rebuild. */
+  try{if(typeof openPanel==='function')openPanel(currentPanel);}catch(_){}}
 
 /* The old dashboard chip row (+ MODEL XI / + DIFFERENTIALS / …) is gone.
    The Depth control decides what the page shows: Essentials is the three
@@ -4782,18 +4778,12 @@ let currentPanel='dashboard';
    An area lands on its first VISIBLE panel, not its first declared one: a
    game pack that removes a capability must not leave the nav pointing at a
    panel that no longer exists. */
-function areaLanding(area){
-  const first=(area.panels||[]).filter(navVisible)[0]
-    ||(area.panels||[]).filter(canSeePanel)[0];
-  return first?first.id:null;
-}
 /* ── ONE NAV MAP, FIVE DESTINATIONS ──────────────────────
    Bottom tabs (mobile) and the sidebar (desktop) render the SAME list,
    with identical labels and order: Home · Squad · Players · Live · More.
    Everything deeper lives on the More index screen (a real page, not a
    sheet with a different vocabulary). */
 const MORE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
-const areaBy=id=>NAV.find(a=>a.id===id)||null;
 const DESTINATIONS=[
   {id:'home',label:'Home',icon:'home',go:()=>openPanel(homePanel())},
   {id:'squad',label:'Squad',icon:'squad',go:()=>openPanel('squad')},
@@ -6157,7 +6147,7 @@ async function hydrateDashboard(host){
   const flagsN=b.elements.filter(e=>e.status&&e.status!=='a').length;
   const moversN=b.elements.reduce((n,e)=>{const pc=priceChangeProb(e,total);return n+((pc.dir!=='flat'&&pc.prob>=60)?1:0);},0);
   const miniStat=(v,l)=>'<div class="qd-ministat"><span class="m-v">'+v+'</span><span class="m-l">'+l+'</span></div>';
-  const q4='<div class="card qd" data-dash="live">'+qh('Live state',heroLabel+' · '+heroTag)+
+  const q4='<div class="card qd" id="sec-live" data-dash="live">'+qh('Live state',heroLabel+' · '+heroTag)+
     '<div class="qd-ministats">'+miniStat(moversN,'price movers')+miniStat(flagsN,'fitness flags')+
       miniStat(capConf&&capConf.value!=null?Math.round(capConf.value):'—','model conf')+'</div>'+
     heroNote+
@@ -15317,14 +15307,30 @@ function competitiveCalendar(b,fixtures,teamId){
   });
   /* The vendored snapshot fills only what the feed has not got — keyed by club
      short code, and matched on kick-off so the same tie from both sources is
-     counted once. */
+     counted once.
+
+     Placeholder guard: while a round's draw is pending, the upstream harvest
+     can publish a club as a block of identical-timestamp rows carrying BOTH
+     venues (seen live: eight UCL rows per club, 4×H + 4×A, one kick-off).
+     Conflicting venues at one kick-off carry no information — the 72-hour
+     European away-leg flag would be a coin flip, and "first row wins" was
+     feeding fabricated congestion — so such a group is dropped whole. A real
+     tie duplicated with a consistent venue still counts once. */
   const code=teamShort(b,teamId);
   if(code&&typeof PL_OTHER_FIXTURES!=='undefined'){
+    const byMs={};
     PL_OTHER_FIXTURES.forEach(r=>{
       if(r.c!==code)return;
       const ms=Date.parse(r.d);
       if(!Number.isFinite(ms)||seen[ms])return;
+      (byMs[ms]=byMs[ms]||[]).push(r);
+    });
+    Object.keys(byMs).forEach(k=>{
+      const rows=byMs[k];
+      if(rows.some(r=>(r.v||'H')!==(rows[0].v||'H')))return;
+      const ms=+k;
       seen[ms]=1;
+      const r=rows[0];
       out.push({ms,comp:ROT_COMP_ALIAS[r.comp]||r.comp,v:r.v||'H',league:false,src:'vendor'});
     });
   }
@@ -22431,11 +22437,6 @@ function tickTicker(){
   const ph=gwPhase(b,fx);
   const focus=ph.target||ph.cur||b.cur;
   /* Countdown to a given deadline, or null once it has passed. */
-  const cd=iso=>{const ms=new Date(iso)-Date.now();if(ms<=0)return null;
-    const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),
-      m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
-    const p=n=>String(n).padStart(2,'0');
-    return 'T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s);};
   const cdShort=iso=>{const ms=new Date(iso)-Date.now();if(ms<=0)return null;
     const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),
       m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
@@ -22463,40 +22464,20 @@ function tickTicker(){
     const ms=new Date(focus.deadline_time)-Date.now();
     const t=cdShort(focus.deadline_time)||'—';
     setTone(ms<=36e5?'alert':ms<=216e5?'warn':'');
-    set('tk-dl','deadline <b>'+t+'</b>');set('qd-count',cd(focus.deadline_time)||'—');
+    set('tk-dl','deadline <b>'+t+'</b>');
   }else if(ph.phase==='live'){
     setTone('');
     set('tk-dl','<b class="pos">● live</b> — in play now');
-    set('qd-count','LIVE');
   }else if(ph.phase==='post'){
     setTone('');
     set('tk-dl','GW'+(ph.cur?ph.cur.id:'')+' <b>result settling</b>');
-    set('qd-count','GW'+(ph.cur?ph.cur.id:''));
   }else if(ph.phase==='between'&&ph.target){
     setTone('');
     const t=cdShort(ph.target.deadline_time);
     set('tk-dl','opens <b>'+(t||fmtDayShort(ph.target.deadline_time))+'</b>');
-    set('qd-count',cd(ph.target.deadline_time)||fmtDayShort(ph.target.deadline_time));
   }else{
     setTone('');
-    set('tk-dl','season <b>ended</b>');set('qd-count','—');
-  }
-  /* Market + fitness counts, recomputed only when the bootstrap changes.
-     Between/after a GW the per-event deltas reset to zero — show a neutral
-     "steady" rather than a stark "↑0 ↓0". */
-  if(window._tkSrc!==b){
-    window._tkSrc=b;
-    let up=0,dn=0,flags=0;
-    b.elements.forEach(e=>{
-      if(e.cost_change_event>0)up++;else if(e.cost_change_event<0)dn++;
-      if(e.status&&e.status!=='a')flags++;
-    });
-    set('tk-prices',(up||dn)
-      ?'PRICES <b class="pos">↑'+up+'</b> <b class="neg">↓'+dn+'</b>'
-      :'PRICES <b>steady</b>');
-    set('tk-flags','FLAGS <b>'+flags+'</b>');
-    if(MEM._prevFlags!=null&&MEM._prevFlags!==flags)flashEl(document.getElementById('tk-flags'),flags>MEM._prevFlags?1:-1);
-    MEM._prevFlags=flags;
+    set('tk-dl','season <b>ended</b>');
   }
 }
 
