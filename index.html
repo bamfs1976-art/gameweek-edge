@@ -19230,7 +19230,12 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      row can read GW 0 in the middle of a matchday. Rather than fake a
      number it cannot compute, the table says whose number it is and
      points at the view that does sum the live feed. */
-  const gwFrozen=(!h2h&&b.cur&&!b.cur.finished)
+  /* boot() is memoised behind MEM._idx, so after the first panel this is a
+     cache read, not a round trip. It is awaited here and not read off some
+     outer scope: this function has no `b`, and reaching for one threw a
+     ReferenceError that took the ENTIRE leagues panel down with it. */
+  let curEv=null;try{curEv=(await boot()).cur;}catch(_){/* the note is optional; the table is not */}
+  const gwFrozen=(!h2h&&curEv&&!curEv.finished)
     ? '<div class="dl-sub" style="margin-top:8px">The GW column is FPL\u2019s own figure, which they '+
       'update when the gameweek is scored rather than as it runs. For a total summed from the live '+
       'feed, switch to <b>Detailed</b>.</div>':'';

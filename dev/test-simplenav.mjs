@@ -2,13 +2,14 @@
  * Navigation + depth contract, post-overhaul.
  *
  * What must hold:
- *  1. The sidebar and the bottom tab bar render the SAME five destinations,
- *     with identical labels and order: Home · Squad · Players · Live · More.
+ *  1. The sidebar and the bottom tab bar render the SAME six destinations,
+ *     with identical labels and order:
+ *     Home · Squad · Players · Live · Leagues · More.
  *  2. Depth (Essentials/Everything) decides how much the Home page shows:
  *     Essentials is the decision cards alone; Everything adds the named
  *     sections (Model XI, Differentials, Live state) and their jump nav.
  *  3. A panel that is not a nav destination is still reachable by URL —
- *     the load-bearing case. If depth or the five-tab nav ever leaks into
+ *     the load-bearing case. If depth or the tab nav ever leaks into
  *     openPanel, every bookmark and shared link breaks.
  *  4. Path routing: a deep path renders the right panel; in-app navigation
  *     pushes history and back returns.
