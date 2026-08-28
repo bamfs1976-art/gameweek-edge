@@ -2593,6 +2593,9 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .lvp .pp-sub .bn-on{background:#bff0d2;color:#0c5c33;font-weight:800}
 .lvp .pp-sub .bn-prov{background:#f9e9c0;color:#7a5410;font-weight:800}
 .lvp .pp-sub .dc-on{background:#bff0d2;color:#0c5c33;font-weight:800}
+/* A league score that is still being summed from the live feed, so a
+   reader can tell it apart from a settled one at a glance. */
+.lg-livept{color:var(--green)}
 
 /* Chips and toggles pick up the round editorial geometry. */
 .tchip,.area-tab,.lensbtn{border-radius:var(--r-pill)}
@@ -14430,7 +14433,16 @@ function rivalLivePts(live,elId){
 function rivalGwTotal(entryHistory,squad,finished){
   const official=(entryHistory&&typeof entryHistory.points==='number')?entryHistory.points:null;
   if(finished&&official!=null)return {value:official,label:'Gameweek points from FPL',live:false};
-  return {value:(squad&&squad.live)||0,label:'Live total, summed as the gameweek runs',live:true};
+  /* THE HIT COMES OFF THE LIVE SUM TOO, or the two branches are not the
+     same quantity. FPL's own total is net of any transfer cost; the live
+     sum is the raw points of the counting rows. Leave the hit out and a
+     manager who took a -4 reads four points high all afternoon and then
+     silently drops when the gameweek settles — the number changing for no
+     visible reason is exactly the kind of disagreement this helper was
+     written to end. */
+  const hit=(entryHistory&&entryHistory.event_transfers_cost)||0;
+  return {value:((squad&&squad.live)||0)-hit,
+    label:'Live total, summed as the gameweek runs',live:true};
 }
 
 /* ── Auto-subs: the substitutions FPL made, which we were ignoring ────
@@ -18712,7 +18724,7 @@ function freeTransfers(history,cap,upToGw){
    summary figures that sit on the collapsed row. `std` is the standings
    entry, `picks` the picks payload (entry_history included), `stateById`
    from playerGwStates. Pure. */
-function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax){
+function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finished){
   if(!picks||!Array.isArray(picks.picks))return null;
   /* Reuses the rival card's row builder, so auto-subs, the null-vs-zero
      discipline on missing live rows, and the multiplier handling are the
@@ -18735,10 +18747,24 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax){
      who scores, so no chip flag is needed to know which case this is. */
   const counting=xi.concat(bench).filter(r=>r.mult>0);
   const st=s=>counting.filter(r=>r.state===s).length;
+  const T=rivalGwTotal(eh,S,!!finished);
   return {
     entry:std?std.entry:null,name:std?std.entry_name:'',mgr:std?std.player_name:'',
     rank:std?std.rank:null,lastRank:std?std.last_rank:null,
-    gwPts:std?std.event_total:null,total:std?std.total:null,
+    /* THE GAMEWEEK SCORE, and why it is not std.event_total.
+       event_total comes from the classic-standings endpoint, which FPL
+       only updates once it scores the gameweek — so all through a live
+       matchday it reads 0 while the very squad printed underneath this
+       row shows players on 1, 2 and 9. Reported exactly that way: "the
+       live score isn't updating with the live points". The rival card
+       already had this problem and already solved it; the league table
+       was the one surface still reading the frozen field. One helper
+       now answers "what did they score" everywhere. */
+    gwPts:T.value,gwLive:T.live,gwLabel:T.label,
+    /* Kept so the row can SAY when it disagrees with FPL's own table
+       rather than quietly contradicting it. */
+    gwOfficial:std&&std.event_total!=null?std.event_total:null,
+    total:std?std.total:null,
     chip:picks.active_chip||null,
     /* What they have spent all season, and what is live this week. The
        two come from different feeds and mean different things: a chip
@@ -18972,7 +18998,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
     /* Which fifty get loaded is decided by league position; how they are
        ordered on screen is the user's choice. Sorting before the slice
        would quietly change WHICH managers the card is about. */
-    const built=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax))
+    const built=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax,!!(b.cur&&b.cur.finished)))
       .filter(Boolean);
     const rows=sortLeagueRows(built,LEAGUE_SORT,LEAGUE_DIR);
     if(!rows.length)return {ok:false,html:''};
@@ -19026,6 +19052,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
         (d.bank==null?'':pill('ITB','£'+d.bank.toFixed(1)+'m'))+
         (d.or==null?'':pill('OR',fmtNum(d.or)))+
         (d.totalUnits?pill('PLAYED',d.playedUnits+'/'+d.totalUnits):'')+
+        (d.hit?pill('HIT','−'+d.hit):'')+
         chipPills+'</div>';
       const prog=d.totalUnits
         ? '<div class="lg-prog"><i style="width:'+Math.round(100*d.playedUnits/d.totalUnits)+'%"></i></div>'+
@@ -19038,6 +19065,11 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       const partial=d.liveKnown<d.liveOf
         ? '<div class="dl-sub" style="margin-top:6px">Live points cover '+d.liveKnown+' of '+d.liveOf+
           ' scoring players so far; the rest have no row in the feed yet and show as —.</div>':'';
+      /* Two numbers for one gameweek is only confusing if neither is named. */
+      const fplNote=(d.gwLive&&d.gwOfficial!=null&&d.gwOfficial!==d.gwPts)
+        ? '<div class="dl-sub" style="margin-top:6px">FPL’s own standings still read <b>'+
+          fmtNum(d.gwOfficial)+'</b> for this gameweek. Their table updates when the gameweek is '+
+          'scored; this total is summed from the live feed as the matches run.</div>':'';
       const subs=d.autoSubs
         ? '<div class="dl-sub" style="margin-top:6px">'+d.autoSubs+' automatic substitution'+
           (d.autoSubs===1?'':'s')+' applied.</div>':'';
@@ -19049,14 +19081,14 @@ async function leagueDetailCard(res,leagueId,meId,whole){
             '<span class="dl-sub">'+esc(meta)+'</span></span></span>'+
           '<span class="lg-yet"><b>'+d.yet+'</b><small>yet</small></span>'+
           '<span class="lg-cap">'+(d.captain?esc(d.captain.name):'—')+'<small>captain</small></span>'+
-          '<span class="dl-col mono">'+fmtNum(d.gwPts)+'</span>'+
+          '<span class="dl-col mono'+(d.gwLive?' lg-livept':'')+'" title="'+esc(d.gwLabel||'')+'">'+fmtNum(d.gwPts)+'</span>'+
           '<span class="mc-ch" id="lg-ch-'+d.entry+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span>'+
         '</div>'+pills+
         '<div class="lg-sq" id="lg-sq-'+d.entry+'"'+(open?'':' style="display:none"')+'>'+
           prog+
           '<div class="lg-grid">'+d.xi.map(cell).join('')+'</div>'+
           '<div class="lg-sub-t">Bench</div><div class="lg-grid bench">'+d.bench.map(cell).join('')+'</div>'+
-          partial+subs+
+          partial+fplNote+subs+
         '</div></div>';
     };
     const sw=leagueSwing(picksArr,eo,b.els,6);
@@ -19190,6 +19222,18 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       '<span class="dl-sub">'+esc(r.player_name)+' · GW '+fmtNum(r.event_total)+(mv>0?' · ▲'+mv:mv<0?' · ▼'+(-mv):'')+'</span></button></span>'+
       '<span class="dl-col mono">'+fmtNum(r.total)+'</span></div>';
   }).join('');
+  /* WHAT THE GW COLUMN HERE IS, said out loud while it is wrong-looking.
+     This table has standings and nothing else: computing a live total
+     needs one picks call per manager, which is exactly the cost the
+     compact view exists to avoid. So it prints FPL's own figure, and
+     FPL freezes that until it scores the gameweek — which is why every
+     row can read GW 0 in the middle of a matchday. Rather than fake a
+     number it cannot compute, the table says whose number it is and
+     points at the view that does sum the live feed. */
+  const gwFrozen=(!h2h&&b.cur&&!b.cur.finished)
+    ? '<div class="dl-sub" style="margin-top:8px">The GW column is FPL\u2019s own figure, which they '+
+      'update when the gameweek is scored rather than as it runs. For a total summed from the live '+
+      'feed, switch to <b>Detailed</b>.</div>':'';
   /* No Compute button. It existed because the awards cost eleven API
      calls, which is a reason to CACHE them, not a reason to make the
      reader ask twice for something the card already promises. The result
@@ -19255,7 +19299,7 @@ async function renderLeagueStandings(host,leagueId,mid,type){
        totals twice on one screen, so the detail card replaces it rather
        than sitting under it — but only once it actually has the squads.
        The pager stays either way. */
-    (detailShown?'':'<div class="dl" id="league-standings">'+head+rows+'</div>')+
+    (detailShown?'':'<div class="dl" id="league-standings">'+head+rows+'</div>'+gwFrozen)+
     /* Sorting is client-side over the rows already fetched. On a league
        that runs past one page that is a sort of THIS PAGE, not of the
        league — the manager with the best gameweek may be on page four

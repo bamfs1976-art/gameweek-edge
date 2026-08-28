@@ -164,6 +164,20 @@ const allTwo = () => { const m = {}; for (let i = 0; i < 15; i++) m[100 + i] = 2
   eq(rivalGwTotal(null, { live: 12 }, true).value, 12, 'missing history falls back to the live sum');
   eq(rivalGwTotal(null, null, false).value, 0, 'and missing everything is 0, not NaN');
 }
+{
+  /* THE HIT IS PART OF THE SCORE. FPL's own total is net of the transfer
+     cost, so a live sum that ignores it is not the same quantity — the
+     number would read four high all afternoon and then drop when the
+     gameweek settled, with nothing on screen to explain the fall. */
+  const hit = rivalGwTotal({ points: 0, event_transfers_cost: 4 }, { live: 30 }, false);
+  eq(hit.value, 26, 'a live total is net of the transfer hit');
+  eq(rivalGwTotal({ points: 0, event_transfers_cost: 0 }, { live: 30 }, false).value, 30,
+    'and an unhit gameweek is untouched');
+  /* Once it is finished FPL's figure already has the hit in it, so taking
+     it off again would double-count. */
+  eq(rivalGwTotal({ points: 26, event_transfers_cost: 4 }, { live: 30 }, true).value, 26,
+    'a finished gameweek does not subtract the hit twice');
+}
 
 /* ── the missing row ──────────────────────────────────────────────── */
 {

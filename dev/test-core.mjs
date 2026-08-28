@@ -103,6 +103,8 @@ const pieces = [
   extractFn(html, 'rivalLivePts'),
   extractFn(html, 'tilePoints'),
   extractFn(html, 'rivalSquadRows'),
+  /* managerDetail derives the gameweek score through it. */
+  extractFn(html, 'rivalGwTotal'),
   /* CHIP_API_LABEL already arrives with an earlier block. */
   ...['CHIP_SHORT'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'chipStatus'),
@@ -2284,6 +2286,28 @@ section('managerDetail: one row of the detailed league table');
      'a triple captain scores three times, got ' + d.xi.find((p) => p.name === 'Haaland').pts);
   ok(d.bench[0].pts === 0, 'a benched player scores nothing however well he played');
   ok(d.bench[0].base === 6, 'though his raw score is still available');
+
+  /* THE SCORE THIS ROW USED TO GET WRONG. gwPts was std.event_total —
+     the classic-standings field FPL freezes until it scores the gameweek
+     — so all through a live matchday the row printed a confident number
+     (0 early on) directly above its own players showing 2, 5 and 27.
+     Reported from a live gameweek as "the live score isn't updating with
+     the live points". It is summed from the live feed now, and net of the
+     hit, because FPL's own total is net of it too and the two have to be
+     the same quantity or the number drops when the gameweek settles.
+     Live rows here are 2 + 5 + (9x3) + 0 = 34, less the -4 = 30. */
+  ok(d.gwPts === 30,
+     'the gameweek score is summed live and net of the hit, got ' + d.gwPts);
+  ok(d.gwLive === true, 'and is flagged as a running total');
+  ok(d.gwOfficial === 28,
+     "while FPL's own figure stays available for the row to name when they disagree");
+  {
+    const settled = core.managerDetail({ ...STD, event_total: 31 },
+      { ...PICKS, entry_history: { ...PICKS.entry_history, points: 31 } },
+      LIVE, STATE, ELS, eo.byId, null, 5, true);
+    ok(settled.gwPts === 31 && settled.gwLive === false,
+       'and once the gameweek is scored FPL\u2019s own total takes over, got ' + settled.gwPts);
+  }
 
   ok(core.managerDetail(STD, null, LIVE, STATE, ELS, {}) === null,
      'a manager whose picks failed to load has no row');
