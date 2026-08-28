@@ -312,22 +312,46 @@ assert.equal(cal[1].comp, 'LCUP',
 /* THE SNAPSHOT FILLS WHAT THE FEED HAS NOT GOT. This is the offline half of
    the calendar and the reason the signal still works when /api/euro-fixtures is
    unreachable — so it has to be reached when the feed is silent... */
-const snap = CAL.filter((r) => r.c === 'CHE')[0];
-assert.ok(snap, 'the vendored snapshot has no CHE tie to test the fallback with');
-const bNoFeed = { teams: { 1: { short_name: 'CHE', name: 'Chelsea' } } };
+/* The club AND the number of ties it should surface are both read from the
+   snapshot, never hardcoded. This case pinned CHE and the literal 1, and the
+   calendar is LIVE DATA refreshed daily as rounds are drawn: the morning
+   Chelsea's second League Cup tie was published, a test about de-duplication
+   failed for having counted correctly, and the daily refresh stopped
+   committing — so the signal this guard protects began decaying behind a
+   green-looking repo. Same lesson as the isolation club above. */
+const usableTies = (club) => {
+  const byMs = {};
+  for (const r of CAL) {
+    if (r.c !== club) continue;
+    const ms = Date.parse(r.d);
+    if (!Number.isFinite(ms)) continue;
+    (byMs[ms] = byMs[ms] || []).push(r);
+  }
+  /* Conflicting venues at one kick-off are a draw-pending placeholder and are
+     dropped whole by competitiveCalendar (see the case below), so they must
+     not be counted here either. */
+  return Object.values(byMs).filter((g) => g.every((r) => (r.v || 'H') === (g[0].v || 'H')));
+};
+const fbClub = [...new Set(CAL.map((r) => r.c))].find((c) => usableTies(c).length > 0);
+assert.ok(fbClub, 'the vendored snapshot has no usable tie to test the fallback with');
+const fbTies = usableTies(fbClub);
+const snap = fbTies[0][0];
+const bNoFeed = { teams: { 1: { short_name: fbClub, name: fbClub } } };
 const filled = call('competitiveCalendar(b,f,1)', { b: bNoFeed, f: [] });
-assert.equal(filled.length, 1,
+assert.equal(filled.length, fbTies.length,
   'with no live feed the vendored snapshot is not filling the calendar, so an app that cannot ' +
-  'reach /api/euro-fixtures would read every club as rested');
-assert.equal(filled[0].src, 'vendor', 'the snapshot entry is not tagged as vendored');
+  `reach /api/euro-fixtures would read every club as rested (${fbClub} has ${fbTies.length} usable ties)`);
+assert.ok(filled.every((e) => e.src === 'vendor'), 'a snapshot entry is not tagged as vendored');
 
 /* ...and NOT counted twice when the feed has the same tie. */
 const bDup = { teams: bNoFeed.teams, euro: { 1: [{ gw: 2, comp: 'LCUP', ms: Date.parse(snap.d), v: snap.v }] } };
 const merged = call('competitiveCalendar(b,f,1)', { b: bDup, f: [] });
-assert.equal(merged.length, 1,
+assert.equal(merged.length, fbTies.length,
   'a tie present in both the live feed and the vendored snapshot is being counted twice, which ' +
   'would shorten the apparent rest gap and invent congestion out of a de-duplication bug');
-assert.equal(merged[0].src, 'euro', 'the live feed must win over the snapshot, not the other way round');
+const dup = merged.filter((e) => e.ms === Date.parse(snap.d));
+assert.equal(dup.length, 1, 'the duplicated tie appears more than once in the merged calendar');
+assert.equal(dup[0].src, 'euro', 'the live feed must win over the snapshot, not the other way round');
 
 /* ...and a draw-pending PLACEHOLDER BLOCK must be dropped whole. The upstream
    harvest can publish a club as identical-timestamp rows carrying both venues
@@ -363,9 +387,26 @@ assert.ok(view.every((e) => e.d && e.comp && (e.v === 'H' || e.v === 'A')),
    tie has not been DRAWN yet therefore reads "fresh" confidently and wrongly.
    That is worse than the opening-weekend known:false, because it renders as an
    answer rather than as a blank. */
+/* The horizon is the LATEST of the live feed and the vendored snapshot, so
+   it is computed from those two here rather than pinned to a literal date.
+   The snapshot is refreshed daily and grows every time a round is drawn —
+   it reached 11 days out one morning and 48 the next — so any date typed
+   into this file is wrong by the end of the week. What must hold is the
+   RULE (the horizon is the last known cup or European date), not a value. */
+const feedMax = Object.values(bLive.euro || {}).flat()
+  .map((m) => m.ms).filter(Number.isFinite)
+  .reduce((a, m) => (m > a ? m : a), -Infinity);
+const snapMax = CAL.map((r) => Date.parse(r.d)).filter(Number.isFinite)
+  .reduce((a, m) => (m > a ? m : a), -Infinity);
 const horizon = call('calendarHorizon(b)', { b: bLive });
-assert.equal(horizon, Date.parse('2026-09-16T19:00:00Z'),
-  'calendarHorizon is not reporting the last known cup or European date');
+assert.equal(horizon, Math.max(feedMax, snapMax),
+  'calendarHorizon is not reporting the last known cup or European date ' +
+  `(feed reaches ${new Date(feedMax).toISOString()}, snapshot ${new Date(snapMax).toISOString()})`);
+/* And it must be the snapshot doing the reaching, not just the synthetic
+   feed entry — otherwise this passes on a calendar that has expired. */
+assert.ok(snapMax > Date.now(),
+  'every date in the vendored snapshot is in the past, so the calendar has expired entirely — ' +
+  'run: node scripts/vendor-rotation.mjs --refresh');
 
 const beyond = call('teamRotationRisk(b,f,1,Date.parse("2027-05-01T15:00:00Z"))', { b: bLive, f: league });
 assert.equal(beyond.restProvisional, true,

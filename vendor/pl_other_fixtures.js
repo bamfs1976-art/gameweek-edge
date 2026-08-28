@@ -5,7 +5,7 @@
  * source   bamfs1976-art/pl-bookings  data/pl_other_fixtures.js
  * commit   5ab0bfcbfb437b98755f7469bd9533d59220c792
  * branch   claude/la-liga-booking-research-x5h55f
- * sha256   0dbf508c7bb2f339f9c9850af221020e36ff3c0f38ac0fb90169f6ae21ad25a8
+ * sha256   696ad795e3567d46e60e9d29a41a3b0bb6e79c6bf6f6b7f1ac7afc04ba828453
  * fetched  2026-08-28
  *
  * Re-vendor with: node scripts/vendor-rotation.mjs
@@ -25,7 +25,7 @@
 //   comp  UCL, UEL, UECL, FAC (FA Cup), LCUP (League Cup)
 //   v     H or A — the away leg is what the 72-hour European flag needs
 //
-// LCUP 74, UCL 40, UECL 2
+// LCUP 78, UCL 40, UECL 8, UEL 24
 const PL_OTHER_FIXTURES = [
   {c:"BRC",d:"2026-08-06T18:45:00+00:00",comp:"LCUP",v:"H"},
   {c:"WOL",d:"2026-08-07T18:45:00+00:00",comp:"LCUP",v:"H"},
@@ -86,11 +86,14 @@ const PL_OTHER_FIXTURES = [
   {c:"BHA",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"BOU",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"BRE",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
+  {c:"CHE",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"COV",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"CRY",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"EVE",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
+  {c:"FUL",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"HUL",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"IPS",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
+  {c:"LEE",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"LIN",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"LIV",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"MCI",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
@@ -102,6 +105,7 @@ const PL_OTHER_FIXTURES = [
   {c:"SHU",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"SUN",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"TOT",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
+  {c:"WHU",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"WOL",d:"2026-09-08T14:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"ARS",d:"2026-09-08T19:00:00+00:00",comp:"UCL",v:"H"},
   {c:"ARS",d:"2026-09-08T19:00:00+00:00",comp:"UCL",v:"H"},
@@ -143,6 +147,36 @@ const PL_OTHER_FIXTURES = [
   {c:"MUN",d:"2026-09-08T19:00:00+00:00",comp:"UCL",v:"A"},
   {c:"MUN",d:"2026-09-08T19:00:00+00:00",comp:"UCL",v:"A"},
   {c:"MUN",d:"2026-09-08T19:00:00+00:00",comp:"UCL",v:"A"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"BOU",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"CRY",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
+  {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"A"},
+  {c:"BHA",d:"2026-10-15T19:00:00+00:00",comp:"UECL",v:"H"},
+  {c:"BHA",d:"2026-10-15T19:00:00+00:00",comp:"UECL",v:"H"},
+  {c:"BHA",d:"2026-10-15T19:00:00+00:00",comp:"UECL",v:"H"},
+  {c:"BHA",d:"2026-10-15T19:00:00+00:00",comp:"UECL",v:"A"},
+  {c:"BHA",d:"2026-10-15T19:00:00+00:00",comp:"UECL",v:"A"},
+  {c:"BHA",d:"2026-10-15T19:00:00+00:00",comp:"UECL",v:"A"},
 ];
 
 const PL_OTHER_FIXTURES_CLUBS = {"Arsenal": "ARS", "Aston Villa": "AVL", "Brighton & Hove Albion": "BHA", "Birmingham City": "BIR", "Blackburn Rovers": "BLB", "Bolton Wanderers": "BOL", "AFC Bournemouth": "BOU", "Bristol City": "BRC", "Brentford": "BRE", "Burnley": "BUR", "Cardiff City": "CAR", "Charlton Athletic": "CHA", "Chelsea": "CHE", "Coventry City": "COV", "Crystal Palace": "CRY", "Derby County": "DER", "Everton": "EVE", "Fulham": "FUL", "Hull City": "HUL", "Ipswich Town": "IPS", "Leeds United": "LEE", "Lincoln City": "LIN", "Liverpool": "LIV", "Manchester City": "MCI", "Middlesbrough": "MID", "Millwall": "MIL", "Manchester United": "MUN", "Newcastle United": "NEW", "Nottingham Forest": "NFO", "Norwich City": "NOR", "Portsmouth": "POR", "Preston North End": "PRE", "Queens Park Rangers": "QPR", "Sheffield United": "SHU", "Southampton": "SOU", "Stoke City": "STK", "Sunderland": "SUN", "Swansea City": "SWA", "Tottenham Hotspur": "TOT", "Watford": "WAT", "West Bromwich Albion": "WBA", "West Ham United": "WHU", "Wolverhampton Wanderers": "WOL", "Wrexham": "WRE"};

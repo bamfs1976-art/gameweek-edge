@@ -19,7 +19,7 @@
     },
     "other-fixtures": {
       "path": "data/pl_other_fixtures.js",
-      "sha256": "0dbf508c7bb2f339f9c9850af221020e36ff3c0f38ac0fb90169f6ae21ad25a8",
+      "sha256": "696ad795e3567d46e60e9d29a41a3b0bb6e79c6bf6f6b7f1ac7afc04ba828453",
       "pinned": false,
       "fetched": "2026-08-28",
       "changed": "2026-08-28",
