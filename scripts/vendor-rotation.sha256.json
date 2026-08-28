@@ -19,10 +19,10 @@
     },
     "other-fixtures": {
       "path": "data/pl_other_fixtures.js",
-      "sha256": "823df6ca9246a56a04b40859d36fc37ec75c2b682c6435d21dc5932e26d3074a",
+      "sha256": "0dbf508c7bb2f339f9c9850af221020e36ff3c0f38ac0fb90169f6ae21ad25a8",
       "pinned": false,
-      "fetched": "2026-08-20",
-      "changed": "2026-08-20",
+      "fetched": "2026-08-28",
+      "changed": "2026-08-28",
       "ref": "claude/la-liga-booking-research-x5h55f"
     }
   }
