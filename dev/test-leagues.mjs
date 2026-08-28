@@ -130,12 +130,30 @@ const openLeague = async (type) => {
   await page.waitForTimeout(5000);
   const got = await page.evaluate(() => ({
     cards: document.querySelectorAll('.lg-mgr').length,
-    score: document.querySelector('.lg-mgr .lg-head .dl-col')?.textContent.trim(),
-    titled: document.querySelector('.lg-mgr .lg-head .dl-col')?.getAttribute('title') || '',
+    score: document.querySelector('.lg-mgr .lg-head .lg-num b')?.textContent.trim(),
+    titled: document.querySelector('.lg-mgr .lg-head .lg-num')?.getAttribute('title') || '',
+    total: document.querySelector('.lg-mgr .lg-head .lg-tot b')?.textContent.trim(),
+    totalTitle: document.querySelector('.lg-mgr .lg-head .lg-tot')?.getAttribute('title') || '',
+    labels: [...document.querySelectorAll('.lg-mgr .lg-head .lg-num small')]
+      .slice(0, 2).map(e => e.textContent.trim()),
+    /* The whole point of the column: it must not read as last week's
+       total sitting beside this week's live score. */
+    totalsAscendWithRank: (() => {
+      const t = [...document.querySelectorAll('.lg-mgr .lg-tot b')]
+        .map(e => parseInt(e.textContent.replace(/[^0-9-]/g, ''), 10));
+      return t.length >= 2 && t.every(n => Number.isFinite(n)) &&
+        t.every((n, i) => i === 0 || t[i - 1] >= n);
+    })(),
   }));
   check('Detailed renders manager cards', got.cards, n => n >= 1);
   check('each card prints a gameweek score', got.score, s => s != null && /\d/.test(s));
   check('and says what that score is', got.titled, s => /gameweek|live/i.test(s));
+  /* The rows are ordered on the season total, so a card that shows only
+     the gameweek score is sorted by a number it never prints. */
+  check('each card prints the season total too', got.total, s => s != null && /\d/.test(s));
+  check('both score columns are labelled', got.labels.join('|'), 'gw|total');
+  check('the total says which season figure it is', got.totalTitle, s => /season total/i.test(s));
+  check('totals fall with rank, so the ordering reads', got.totalsAscendWithRank, true);
   check('the detailed view raises no page error', errors.join(' | '), '');
   await page.evaluate(() => lgSetView('compact'));
   await page.waitForTimeout(2500);

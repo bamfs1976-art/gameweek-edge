@@ -2309,6 +2309,43 @@ section('managerDetail: one row of the detailed league table');
        'and once the gameweek is scored FPL\u2019s own total takes over, got ' + settled.gwPts);
   }
 
+  /* THE SEASON TOTAL, which is on FPL's scoring clock exactly like
+     event_total is. Reported after the gameweek column was fixed: the
+     detailed card showed no cumulative total at all, so rows sorted on
+     rank were sorted by a quantity the card never printed. Printing
+     std.total raw would have been its own bug — through a live matchday
+     that figure is the total THROUGH LAST WEEK, so it would sit beside a
+     live gameweek score reading as of a different day, then jump. */
+  ok(d.totalRun === 30,
+     'the running total substitutes our gameweek figure for FPL\u2019s, got ' + d.totalRun);
+  {
+    /* The ordinary live shape: FPL has not scored the gameweek, so its
+       event_total is 0 and its season total excludes the week entirely. */
+    const frozen = core.managerDetail({ ...STD, event_total: 0, total: 1284 },
+      PICKS, LIVE, STATE, ELS, eo.byId);
+    ok(frozen.totalRun === 1314,
+       'a frozen gameweek adds the live score to the season total, got ' + frozen.totalRun);
+    ok(frozen.totalLive === true, 'and the total is flagged as still moving');
+  }
+  {
+    /* The partial shape: FPL has published something for the week and
+       folded it into the season total. Ours replaces it rather than
+       stacking on top, or the manager reads 28 points too high. */
+    const partial = core.managerDetail({ ...STD, event_total: 28, total: 1284 },
+      PICKS, LIVE, STATE, ELS, eo.byId);
+    ok(partial.totalRun === 1286,
+       'a partial figure is replaced, not added to, got ' + partial.totalRun);
+  }
+  {
+    const settled = core.managerDetail({ ...STD, event_total: 31, total: 1315 },
+      { ...PICKS, entry_history: { ...PICKS.entry_history, points: 31 } },
+      LIVE, STATE, ELS, eo.byId, null, 5, true);
+    ok(settled.totalRun === 1315 && settled.totalLive === false,
+       'and once scored the season total is FPL\u2019s, untouched, got ' + settled.totalRun);
+  }
+  ok(core.managerDetail({ ...STD, total: null }, PICKS, LIVE, STATE, ELS, eo.byId).totalRun === null,
+     'a row with no season total prints nothing rather than a wrong number');
+
   ok(core.managerDetail(STD, null, LIVE, STATE, ELS, {}) === null,
      'a manager whose picks failed to load has no row');
   ok(core.managerDetail(STD, { picks: 'nope' }, LIVE, STATE, ELS, {}) === null,
