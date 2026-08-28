@@ -1,15 +1,22 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="dark">
+<html lang="en-GB" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
-<meta name="theme-color" content="#0A0C0F">
+<meta name="theme-color" content="#f4f6f8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gameweek Edge">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
 <script>
+/* Theme, before first paint. Light is the brand default (matching the
+   marketing site); a stored choice wins. Runs here so the page never
+   flashes the wrong theme while the app boots. */
+try{
+  var geTheme = localStorage.getItem('ge-theme');
+  document.documentElement.setAttribute('data-theme', geTheme==='dark'?'dark':'light');
+}catch(_){}
 /* ── FRONT DOOR ───────────────────────────────────────────────────
    gameweekedge.co.uk serves this file, so a first-time visitor used to
    land in the 36-panel app with no idea what it was — which is what the
@@ -103,7 +110,7 @@
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
@@ -187,26 +194,43 @@
   --accent-warn:#8a690e;   /* 4.51:1 — was #b58a12, 2.80:1. Carries text
                               (.dl-warn, .t-flag, .sig-v.warn), so 4.5 applies. */
 
-  /* Radii — terminal-tight, 4px max on surfaces */
-  --r-sm:3px;--r-md:4px;--r-lg:4px;--r-xl:6px;--r-pill:4px;
+  /* Radii — the marketing page's soft editorial geometry (its --r is 16px).
+     Chips and pills are fully round; cards sit between. */
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-pill:999px;
 
   /* Layout */
   --sidebar-w:48px;
-  --topbar-h:44px;
-  --tickbar-h:28px;
+  --topbar-h:54px;
   --bottomnav-h:66px;
 
   /* Shadow */
   --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
   --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
 
-  /* Motion */
+  /* Motion — one scale: state changes 150ms, layout moves 250ms. */
   --ease:cubic-bezier(.2,.8,.2,1);
+  --t-state:150ms;
+  --t-layout:250ms;
 
-  /* Fonts — mono for data and headers, Inter for UI copy */
-  --font-display:'IBM Plex Mono',ui-monospace,monospace;
-  --font-body:'Inter',system-ui,sans-serif;
+  /* Fonts — the marketing site's pairing carried into the app. Bricolage
+     Grotesque for display/headings, Public Sans for UI and prose. Mono is
+     for NUMERALS ONLY (always with tabular-nums), never sentences. */
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
+  --font-body:'Public Sans',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+
+  /* Position tokens — one hue per position, used identically in pills,
+     pitch slots and tables. All measured ≥4.5:1 on --surface-3. */
+  --pos-gk:#8a690e;  --pos-gk-soft:rgba(184,146,30,.14);
+  --pos-def:#2e6ac2; --pos-def-soft:rgba(46,106,194,.12);
+  --pos-mid:#147e48; --pos-mid-soft:rgba(20,126,72,.12);
+  --pos-fwd:#c93834; --pos-fwd-soft:rgba(201,56,52,.11);
+
+  /* Confidence tokens — Low / Medium / High as a consistent 3-step scale
+     (dot meter + tinted chip), never a bare word. */
+  --conf-high:#147e48;   --conf-high-soft:rgba(20,126,72,.12);
+  --conf-med:#8a690e;    --conf-med-soft:rgba(184,146,30,.14);
+  --conf-low:#626f7d;    --conf-low-soft:rgba(98,111,125,.12);
 
   /* Type scale — 1.125 (major second), the ratio for dense data UIs.
      This file had grown 59 distinct font sizes between 7.68px and 42px, 53%
@@ -226,68 +250,72 @@
   --fs-xl:26px;     /* page headings */
   --fs-2xl:32px;    /* hero numbers */
 
-  /* Terminal extras */
-  /* The single most important number on a screen, and in the light theme it
-     was the LEAST readable thing on it: #7ab520 measured 2.19:1. A bright
-     lime cannot clear 4.5:1 on a light canvas — brightness and
-     contrast-with-white pull opposite ways — and .hot renders as an inline
-     bold span at 11-13px, so the 3:1 large-text allowance does not apply.
-     Light takes the same hue at a passing lightness; dark keeps the bright
-     value, where it already measures 16.19:1. */
-  --hot:#527915;          /* 4.51:1 — was #7ab520, 2.19:1 */
+  /* The single most important number on a screen. In the brand language it
+     is the deep green ink, one step darker than --green for extra punch —
+     never a neon lime. .hot renders as an inline bold span at 11-13px, so
+     it is held to 4.5:1 like body text. */
+  --hot:#0f6d3d;          /* 5.92:1 on --surface-3 */
   --chip:#e7ebef;
 }
 
 /* ── DARK MODE ──────────────────────────────────────────── */
-/* Lifted, softer dark — not near-black. Easier on the eyes. */
-/* Terminal dark — the default. Near-black, hairline borders, sharp
-   semantic colours. Depth comes from borders, not shadows. */
+/* The same brand, after dark — deep ink surfaces, the forest green kept
+   as the single accent (brightened only as far as AA requires), no neon.
+   Driven entirely by the same tokens as light; nothing else changes. */
 [data-theme="dark"]{
-  --bg:#0A0C0F;
-  --surface:#111418;
-  --surface-2:#161A20;
-  --surface-3:#1C2128;
-  --elevated:#161A20;
+  --bg:#10161c;
+  --surface:#171e26;
+  --surface-2:#1c242d;
+  --surface-3:#232b34;
+  --elevated:#1c242d;
 
-  --border:#1F242B;
-  --border-2:#262C34;
-  --border-3:#333A44;
+  --border:#242d37;
+  --border-2:#2c3641;
+  --border-3:#3a4652;
 
-  --text:#E6E8EB;
-  --text-2:#9AA3AD;
-  --text-3:#8A94A0;   /* AA (≈6.3:1) on the #0A0C0F canvas */
-  /* Held to the 3:1 UI threshold like its light-theme twin, for the same
-     reason: it marks absence, not content. Was #3E454E — 1.67:1 on
-     --surface-3, the one contrast failure the dark theme still carried. */
-  --text-4:#656f7e;   /* 3.18:1 on #1C2128 */
+  --text:#e9edf1;   /* 12.17:1 on --surface-3 */
+  --text-2:#a6b1bc; /*  6.57:1 */
+  --text-3:#97a3ae; /*  5.57:1 */
+  /* Held to the 3:1 UI threshold like its light-theme twin: it marks
+     absence (the "—" glyph, blank cells), not content. */
+  --text-4:#697683; /*  3.08:1 on #232b34 */
 
-  --green:#00D26A;
-  --green-bright:#00D26A;
-  --green-soft:rgba(0,210,106,.12);
-  --green-glow:rgba(0,210,106,.22);
+  --green:#45c483;        /* 6.46:1 — brand green lifted for dark, not lime */
+  --green-bright:#3aa971;
+  --green-soft:rgba(69,196,131,.13);
+  --green-glow:rgba(69,196,131,.20);
 
-  --amber:#F5A524;
-  --amber-soft:rgba(245,165,36,.13);
-  --lock:#F5A524;
-  --lock-on:#0A0C0F;
-  --tab-on:#00D26A;
-  --red:#FF4D4F;
-  --red-soft:rgba(255,77,79,.12);
-  --blue:#4186f6;     /* 4.60:1 on #1C2128 — was #3B82F6, 4.40:1 */
-  --blue-soft:rgba(59,130,246,.13);
-  --purple:#8b7cf6;
-  --purple-soft:rgba(139,124,246,.13);
+  --amber:#f0a63a;
+  --amber-soft:rgba(240,166,58,.13);
+  --lock:#f0a63a;
+  --lock-on:#10161c;
+  --tab-on:#52cd8f;       /* 7.15:1 — the green ink for active tabs */
+  --red:#ff6b6b;
+  --red-soft:rgba(255,107,107,.12);
+  --blue:#6aa4f8;
+  --blue-soft:rgba(106,164,248,.13);
+  --purple:#a795f2;
+  --purple-soft:rgba(167,149,242,.13);
 
-  /* Semantic accents (dark) — amber CTA on dark ink, red alert, amber-yellow warn. */
-  --accent-cta:#F5A524;--accent-cta-ink:#0A0C0F;
-  --accent-alert:#FF4D4F;
-  --accent-warn:#F5C518;
+  /* Semantic accents (dark) — amber CTA on dark ink, red alert, warn. */
+  --accent-cta:#f0a63a;--accent-cta-ink:#10161c;
+  --accent-alert:#ff6b6b;
+  --accent-warn:#e8c14b;
 
-  --hot:#B6FF3C;
-  --chip:#2A2F36;
+  /* Position + confidence hues, lifted for dark surfaces. */
+  --pos-gk:#e0b53f;  --pos-gk-soft:rgba(224,181,63,.14);
+  --pos-def:#6aa4f8; --pos-def-soft:rgba(106,164,248,.14);
+  --pos-mid:#45c483; --pos-mid-soft:rgba(69,196,131,.14);
+  --pos-fwd:#ff8a85; --pos-fwd-soft:rgba(255,138,133,.13);
+  --conf-high:#45c483; --conf-high-soft:rgba(69,196,131,.14);
+  --conf-med:#e0b53f;  --conf-med-soft:rgba(224,181,63,.14);
+  --conf-low:#97a3ae;  --conf-low-soft:rgba(151,163,174,.13);
 
-  --shadow:none;
-  --shadow-lg:0 0 0 1px var(--border);
+  --hot:#52cd8f;
+  --chip:#2a333d;
+
+  --shadow:0 1px 3px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.25);
+  --shadow-lg:0 6px 18px rgba(0,0,0,.4),0 20px 48px rgba(0,0,0,.32);
 }
 
 /* ── RESET & BASE ──────────────────────────────────────── */
@@ -328,7 +356,6 @@ a{color:inherit;text-decoration:none}
   border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
   box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:normal;pointer-events:none}
 #help-btn{font-weight:800;font-size:15px;line-height:1}
-#density-btn{font-family:var(--font-mono,monospace);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
 body[data-density="beginner"] .expert-only{display:none}
 /* Simple mode hides the two topbar power tools. Both are expert reflexes and
    both drew the eye at the same weight as the only button that matters on a
@@ -345,60 +372,52 @@ body[data-density="beginner"] #refresh-btn{display:none}
    strip and the provenance line go the same way: both restate what the
    action card and the "graded in public" strip already say, and the strip's
    MODEL XI figure points at a panel simple mode does not show. */
-body[data-density="beginner"] #tk-prices,
-body[data-density="beginner"] #tk-flags,
-body[data-density="beginner"] #tk-cmdk-btn,
 body[data-density="beginner"] .tk-strip,
 body[data-density="beginner"] .dash-meta{display:none}
 .beginner-only{display:none}
 body[data-density="beginner"] .beginner-only{display:block}
-.tour{position:fixed;inset:0;z-index:200;pointer-events:none}
-.tour-spot{position:fixed;border:2px solid var(--green-bright);border-radius:8px;box-shadow:0 0 0 100vmax rgba(0,0,0,.55);transition:all .25s var(--ease,ease)}
-.tour-pop{position:fixed;pointer-events:auto;width:288px;max-width:88vw;background:var(--elevated,var(--surface-2));border:1px solid var(--green-bright);
-  border-radius:10px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.45)}
-.tour-pop .tour-step{font-family:var(--font-mono,monospace);font-size:var(--fs-min);letter-spacing:.15em;text-transform:uppercase;color:var(--text-3)}
-.tour-pop h4{margin:4px 0}.tour-pop p{margin:0 0 12px;font-size:12.5px;line-height:1.5;color:var(--text-2)}
-.tour-actions{display:flex;gap:8px;align-items:center}.tour-actions .tour-gloss{margin-right:auto;font-size:11px;color:var(--text-3)}
+/* ── LinkTeamFlow + PreviewEmptyState (the coach-mark tour is gone) ── */
+.ltf{display:flex;flex-direction:column;gap:10px;max-width:460px}
+.ltf-row{display:flex;gap:8px}
+.ltf-in{flex:1;min-width:0;padding:12px 14px;border:1.5px solid var(--border-2);
+  border-radius:var(--r-md);font-size:15px;font-family:var(--font-body);
+  font-variant-numeric:tabular-nums;background:var(--surface);color:var(--text)}
+.ltf-in:focus{outline:none;border-color:var(--green-bright)}
+.ltf-msg{min-height:1.2em;font-size:12.5px;color:var(--text-2)}
+.ltf-msg.err{color:var(--red)}
+.ltf-msg.ok{color:var(--green);font-weight:600}
+.ltf-hint summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--green);list-style:none}
+.ltf-hint summary::-webkit-details-marker{display:none}
+.ltf-hint summary::before{content:"?";display:inline-grid;place-items:center;width:16px;height:16px;
+  margin-right:6px;border-radius:50%;background:var(--green-soft);font-size:11px;font-weight:800}
+.ltf-hint p{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--text-2)}
+.ltf-browse{align-self:flex-start;background:none;border:0;padding:4px 0;cursor:pointer;
+  font-size:12.5px;font-weight:600;color:var(--text-3);text-decoration:underline;
+  text-underline-offset:3px}
+.ltf-browse:hover{color:var(--text)}
+.ltf-hero{max-width:560px;margin:4vh auto 0;padding:28px 24px}
+.ltf-hero-t{font-family:var(--font-display);font-size:1.6rem;letter-spacing:-.02em;margin:0 0 6px}
+.ltf-hero-s{font-size:14px;color:var(--text-2);line-height:1.55;margin:0 0 18px}
+.pe-wrap{position:relative;min-height:340px}
+.pe-preview{filter:blur(4px) saturate(.7);opacity:.6;pointer-events:none;user-select:none}
+.pe-panel{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;text-align:left;padding:20px}
+.pe-card{background:var(--elevated);border:1px solid var(--border-2);border-radius:var(--r-xl);
+  padding:22px;box-shadow:var(--shadow-lg);width:100%;max-width:480px}
+.pe-t{font-family:var(--font-display);font-size:1.25rem;letter-spacing:-.01em;margin:0 0 4px;text-align:center}
+.pe-s{font-size:13px;color:var(--text-2);line-height:1.5;margin:0 0 12px;max-width:420px;text-align:center}
 /* Enriched "This week · action" rows: why-line, confidence chip, alternatives */
-.qd-arow{border-top:1px solid var(--border)}.qd-arow:first-of-type{border-top:0}
-.qd-why{font-size:10.5px;color:var(--text-3);margin:0 0 7px;padding-left:2px;line-height:1.4}
-body[data-density="beginner"] .qd-why{color:var(--text-2)}
-.qd-alt{margin:0 0 7px}
-.qd-alt summary{font-size:10px;color:var(--green-bright);cursor:pointer;list-style:none;text-transform:uppercase;letter-spacing:.06em}
-.qd-alt summary::-webkit-details-marker{display:none}
-.qd-alt summary::before{content:'▸ ';font-size:var(--fs-min)}.qd-alt[open] summary::before{content:'▾ '}
-.qd-alt-row{display:flex;justify-content:space-between;font-size:11px;color:var(--text-2);padding:3px 0 3px 12px}
 /* Live-state mini-stats (replaces the oversized countdown) */
 .qd-ministats{display:flex;gap:14px;flex-wrap:wrap;padding:4px 0 10px}
 .qd-ministat{display:flex;flex-direction:column;gap:1px}
 .qd-ministat .m-v{font-family:var(--font-mono);font-size:20px;font-weight:600;line-height:1;color:var(--text)}
 .qd-ministat .m-l{font-family:var(--font-mono);font-size:var(--fs-min);letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
-/* Slim not-linked educational strip (replaces the ribbon banner) */
-.link-strip{position:sticky;top:calc(var(--tickbar-h) + var(--topbar-h));z-index:95;
-  display:flex;align-items:center;gap:10px;padding:7px 14px;font-size:12px;color:var(--text-2);
-  background:var(--surface);border-bottom:1px solid var(--border)}
-.link-strip.hidden{display:none}
-.link-strip .btn{flex-shrink:0}.link-strip .ls-x{margin-left:auto;background:none;border:0;color:var(--text-3);cursor:pointer;padding:4px}
-/* Mobile (Section 4): 5-item bottom nav, More sheet, decluttered top strip */
+/* Mobile: 44px touch targets on the bottom nav. */
 .bn-item{min-height:44px;min-width:44px}
-.more-sheet{position:fixed;inset:0;z-index:210;display:flex;flex-direction:column;justify-content:flex-end}
-.more-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5)}
-.more-panel{position:relative;background:var(--elevated,var(--surface-2));border-top:1px solid var(--border);
-  border-radius:14px 14px 0 0;padding:8px 10px calc(12px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(0,0,0,.5)}
-.more-grab{width:36px;height:4px;border-radius:2px;background:var(--border-3,var(--border));margin:6px auto 10px}
-.more-row{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 8px;background:none;border:0;
-  color:var(--text);font-size:15px;text-align:left;border-radius:8px}
-.more-row:hover,.more-row:focus-visible{background:var(--surface-3)}
-.more-row .bn-ic{width:20px;height:20px;color:var(--green-bright)}
-.tk-short{display:none}
 @media(max-width:639px){
-  #tk-prices,#tk-cmdk-btn,.tickbar .tk-brand{display:none}
-  /* Declutter the top bar so the logo never overlaps the actions. Export,
-     refresh and the density toggle move out of the bar (density lives in the
-     More sheet); the wordmark and freshness pill hide, leaving the logo mark. */
-  #export-btn,#refresh-btn,#density-btn,.tb-logo-text,#tb-updated{display:none}
-  .tickbar{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .tk-full{display:none}.tk-short{display:inline}
+  /* Declutter the bar: the wordmark and freshness pill hide, leaving the
+     mark, the gameweek chip, Link team and the overflow menu. */
+  .tb-logo-text,#tb-updated{display:none}
 }
 /* Section 7: persistent right rail on large screens (>=1024px) */
 .right-rail{display:none}
@@ -451,17 +470,11 @@ html.native .btn,
 html.native .nav-area{
   -webkit-user-select:none;user-select:none;
 }
-/* Top safe-area: the inset belongs to whichever bar is topmost, and that is
-   the TICKER, not the topbar. It was on the topbar, which sits underneath —
-   so on a notched device the ticker ran under the status bar while the
-   topbar reserved space for a notch it was nowhere near. The topbar's sticky
-   offset then has to clear the ticker's new height as well. */
-html.native .tickbar{
-  height:calc(var(--tickbar-h) + env(safe-area-inset-top));
-  padding-top:env(safe-area-inset-top);
-}
+/* Top safe-area: the GameweekBar is the topmost bar, so it carries the
+   notch inset. */
 html.native .topbar{
-  top:calc(var(--tickbar-h) + env(safe-area-inset-top));
+  height:calc(var(--topbar-h) + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);
 }
 /* Drawer header sits under the status bar too when opened. */
 html.native .sb-brand{
@@ -1160,15 +1173,11 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   min-width:0;
 }
 
-/* Topbar. Sticks BELOW the ticker, which is its sibling and also sticky.
-   Both sat at top:0, so the moment the page scrolled they pinned to the same
-   strip and the ticker (z-index 150) covered the topbar (z-index 100) — the
-   hamburger, the title, refresh, export and the account button all went
-   behind it, on every panel. At rest they stacked correctly, which is why it
-   only showed up once you scrolled. */
+/* The GameweekBar — the ONE sticky bar. Brand mark, the live gameweek
+   chip, the Link-team CTA and a single overflow control. */
 .topbar{
-  position:sticky;top:var(--tickbar-h);z-index:100;
-  height:var(--topbar-h);padding:0 26px;
+  position:sticky;top:0;z-index:150;
+  height:var(--topbar-h);padding:0 20px;
   background:color-mix(in srgb,var(--bg) 88%,transparent);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border-bottom:1px solid var(--border);
@@ -1232,25 +1241,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 @media(prefers-reduced-motion:reduce){.tb-updated::before{animation:none}}
 @media(max-width:560px){.tb-updated{display:none}}
 
-/* Persistent search launcher — wide screens only. Opens ⌘K.
-   Was ≥1024px, which is precisely where an iPad in landscape sits: the bar
-   gained a 210px box at the one width with nothing to spare. ⌘K itself still
-   works everywhere, and the tickbar carries a visible ⌘K chip, so nothing is
-   lost below this breakpoint. */
-.tb-search{display:none}
-@media(min-width:1280px){
-  .tb-search{display:inline-flex;align-items:center;gap:8px;cursor:text;
-    width:210px;height:36px;padding:0 12px;border-radius:var(--r-md);
-    background:var(--surface-3);border:1px solid var(--border-2);
-    color:var(--text-3);font-size:.8rem;transition:border-color .15s}
-  .tb-search:hover{border-color:var(--border-3)}
-  .tb-search svg{width:15px;height:15px;flex-shrink:0;opacity:.8}
-  .tb-search .tbs-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tb-search kbd{font-family:var(--font-mono);font-size:10px;padding:1px 5px;border-radius:3px;
-    background:var(--surface);border:1px solid var(--border-2);color:var(--text-3)}
-}
-
-/* Sticky "Link Team" ribbon — a slim, dismissible on-ramp for guests. */
+/* Search lives in the overflow menu (and ⌘K works everywhere). */
 
 /* ── BUTTONS ───────────────────────────────────────────── */
 .btn{
@@ -1752,21 +1743,25 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .avatar img{width:100%;height:100%;object-fit:cover}
 .dl-row .dl-grow{display:flex;align-items:center;gap:0;min-width:0}
 /* ═══════════════════════════════════════════════════════════
-   TERMINAL SKIN — Phase 1 of the "Bloomberg for FPL" redesign.
-   Overrides live at the end of the sheet so the cascade wins;
-   tokens above supply the palette. Depth = borders, not shadows.
+   EDITORIAL SKIN — one product, one voice. The marketing site's
+   calm, editorial language (Bricolage display, Public Sans UI,
+   soft radii, real elevation) carried into the app, with the
+   analytics density kept. Mono is for numerals only, always
+   tabular. Overrides live at the end of the sheet so the
+   cascade wins; tokens above supply the palette.
    ═══════════════════════════════════════════════════════════ */
-body{font-size:14px;line-height:1.35}
+body{font-size:14px;line-height:1.5}
 
-/* Data is monospace and tabular everywhere it's numeric. */
+/* Numerals are mono and tabular everywhere they're numeric —
+   and ONLY there. Sentences never render in mono. */
 .stat-v,.dl-col,.mono,.gw-num,.num,.pd-sv,.dl-rank,.tb-updated,
 .ptable td.num,.ptable th.num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
 
-/* Panels: hairline border, 4px radius, 12px padding, tracked label. */
-.card{border:1px solid var(--border-2);box-shadow:none;padding:12px}
-.card-title{font-family:var(--font-mono);font-weight:600;font-size:11px;
-  text-transform:uppercase;letter-spacing:.15em;color:var(--text-2)}
-.dl-row{min-height:28px;padding:5px 10px;font-size:13px}
+/* Cards: soft corners, gentle elevation, comfortable padding. */
+.card{border:1px solid var(--border);box-shadow:var(--shadow);padding:16px;border-radius:var(--r-lg)}
+.card-title{font-family:var(--font-body);font-weight:800;font-size:11px;
+  text-transform:uppercase;letter-spacing:.1em;color:var(--text-2)}
+.dl-row{min-height:32px;padding:7px 12px;font-size:13px}
 .dl-row.head{font-size:10px;letter-spacing:.07em}
 /* Descriptive list rows: a bold title plus a full-sentence caption that must
    WRAP and read left-aligned — unlike compact row-meta, which truncates to one
@@ -1781,12 +1776,12 @@ body{font-size:14px;line-height:1.35}
 .tchip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border:1px solid var(--border-2);
   border-radius:var(--r-md);background:var(--surface-2);color:var(--text);font-size:11px;font-weight:600;
   cursor:pointer;line-height:1.6;transition:opacity .12s}
-.tchip-act{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--green)}
+.tchip-act{text-transform:uppercase;letter-spacing:.06em;color:var(--green)}
 .tchip.off{opacity:.32;text-decoration:line-through}
-/* Dashboard terminal ticker strip. */
+/* Dashboard metrics strip. */
 .tk-strip{display:flex;gap:18px;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;
   padding:8px 14px;margin:0 0 12px;border:1px solid var(--border-2);border-radius:var(--r-md);
-  background:var(--surface-2);font-family:var(--font-mono);font-size:11px;scrollbar-width:none}
+  background:var(--surface-2);font-size:11px;scrollbar-width:none;font-variant-numeric:tabular-nums}
 .tk-strip::-webkit-scrollbar{display:none}
 .tk-i{display:inline-flex;align-items:center;gap:6px;flex:0 0 auto}
 .tk-i::before{content:"◆";color:var(--green);opacity:.55;margin-right:8px}
@@ -1795,43 +1790,83 @@ body{font-size:14px;line-height:1.35}
 .tk-vv{color:var(--text);font-weight:600}
 .tk-vv .pos{color:var(--green)}
 .tk-vv .neg{color:var(--red)}
-.badge{border-radius:3px;font-family:var(--font-mono);font-size:10px;
-  text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.badge{border-radius:var(--r-sm);font-size:10px;
+  text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 .btn{border-radius:var(--r-md)}
-[data-theme="dark"] .btn-primary{background:var(--green);color:#06130b}
-[data-theme="dark"] .btn-primary:hover{background:#00e876;color:#06130b}
-:focus-visible{outline:2px solid var(--green);outline-offset:1px;border-radius:2px}
+[data-theme="dark"] .btn-primary{background:var(--green);color:#0b1510}
+[data-theme="dark"] .btn-primary:hover{background:var(--tab-on);color:#0b1510}
+:focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
 
-/* ── Top ticker strip (28px, always-on, monospace) ── */
-.tickbar{
-  height:var(--tickbar-h);display:flex;align-items:center;gap:18px;
-  padding:0 12px;background:var(--bg);border-bottom:1px solid var(--border);
-  font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;
-  color:var(--text-2);white-space:nowrap;overflow-x:auto;scrollbar-width:none;
-  position:sticky;top:0;z-index:150;
-}
-.tickbar::-webkit-scrollbar{display:none}
-.tk-item b{color:var(--text);font-weight:600}
-/* Adaptive deadline tone — the countdown escalates as the deadline nears:
-   neutral out past a week, amber-yellow inside 7 days, red inside 24h. */
-.tk-item b.dl-warn{color:var(--accent-warn)}
-.tk-item b.dl-alert{color:var(--accent-alert)}
-.tk-item .pos{color:var(--green)}
-.tk-item .neg{color:var(--red)}
-.tk-brand{color:var(--green);font-weight:700;letter-spacing:.1em}
+/* ── The gameweek chip: "GW2 · deadline in 5h 12m", live-ticking ── */
+.gwchip{display:inline-flex;align-items:center;gap:7px;min-width:0;
+  padding:5px 12px;border-radius:var(--r-pill);white-space:nowrap;
+  background:var(--green-soft);border:1px solid transparent;
+  font-size:12.5px;font-weight:600;color:var(--text-2);
+  font-variant-numeric:tabular-nums;overflow:hidden}
+.gwchip-gw{color:var(--tab-on);font-weight:800}
+.gwchip-gw b{font-weight:800}
+.gwchip-sep{color:var(--text-4)}
+.gwchip-dl{overflow:hidden;text-overflow:ellipsis}
+.gwchip-dl b{color:var(--text);font-weight:700}
+/* The countdown escalates: amber inside 6 hours, red inside the last hour. */
+.gwchip-dl b.dl-warn,.gwchip.warn{color:var(--accent-warn)}
+.gwchip.warn{background:var(--amber-soft)}
+.gwchip.warn .gwchip-gw,.gwchip.warn .gwchip-dl b{color:var(--accent-warn)}
+.gwchip-dl b.dl-alert{color:var(--accent-alert)}
+.gwchip.alert{background:var(--red-soft)}
+.gwchip.alert .gwchip-gw,.gwchip.alert .gwchip-dl b{color:var(--accent-alert)}
+.gwchip .pos{color:var(--green)}
 .tk-dot{width:5px;height:5px;border-radius:50%;background:var(--green);
   display:inline-block;margin-right:6px;animation:tkpulse 2s infinite}
 @keyframes tkpulse{0%,100%{opacity:1}50%{opacity:.35}}
-.tk-cmdk{margin-left:auto;font-family:var(--font-mono);font-size:10px;
-  border:1px solid var(--border-2);border-radius:3px;padding:2px 7px;
-  color:var(--text-3);background:var(--surface);flex-shrink:0}
-.tk-cmdk:hover{color:var(--text);border-color:var(--border-3)}
 
-/* ── Slimmer topbar under the ticker ── */
-.topbar{height:var(--topbar-h)}
+/* ── Overflow menu (the bar's single "more" control) ── */
+.tb-right{position:relative}
+.tb-menu{position:absolute;top:calc(100% + 8px);right:0;z-index:300;
+  min-width:220px;padding:6px;border-radius:var(--r-lg);
+  background:var(--elevated);border:1px solid var(--border-2);
+  box-shadow:var(--shadow-lg)}
+.tb-menu[hidden]{display:none}
+.tbm-row{display:flex;align-items:center;gap:11px;width:100%;min-height:44px;
+  padding:0 12px;border-radius:var(--r-md);background:none;border:0;
+  color:var(--text);font-size:13.5px;font-weight:600;text-align:left;cursor:pointer}
+.tbm-row:hover,.tbm-row:focus-visible{background:var(--surface-3)}
+.tbm-row svg{width:16px;height:16px;flex-shrink:0;color:var(--text-3)}
+.tbm-row kbd{margin-left:auto;font-family:var(--font-mono);font-size:10px;
+  padding:1px 6px;border-radius:4px;background:var(--surface-3);
+  border:1px solid var(--border-2);color:var(--text-3)}
+
+/* ── Bar breadcrumb: the h1 names the page, so the bar doesn't repeat it. */
+.tb-crumb{display:none!important}
+.tb-divider{display:none}
 .tb-tag{display:none}
-.tb-area{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
-.tb-title{font-family:var(--font-mono);font-size:13px;font-weight:600}
+
+/* ── Live tab: a pulsing dot only while matches are in play ── */
+.nav-area-ic,.bn-ic{position:relative}
+.live-ping{display:none;position:absolute;top:-1px;right:-3px;width:7px;height:7px;
+  border-radius:50%;background:var(--green);box-shadow:0 0 0 2px var(--surface)}
+body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
+
+/* ── The More index screen ── */
+.more-group-h{font-family:var(--font-body);font-size:11px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
+  margin:22px 0 10px}
+.more-group-h:first-child{margin-top:0}
+.more-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.more-it{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 14px;
+  border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--border);
+  color:var(--text);text-align:left;cursor:pointer;box-shadow:var(--shadow);
+  transition:border-color var(--t-state),background var(--t-state)}
+.more-it:hover{border-color:var(--green-bright);background:var(--green-soft)}
+.more-it-ic{width:20px;height:20px;flex-shrink:0;color:var(--green)}
+.more-it-ic svg{width:18px;height:18px}
+.more-it-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.more-it-t{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+.more-it-s{font-size:11.5px;color:var(--text-3);line-height:1.4}
+.more-it-go{color:var(--text-4);font-size:15px}
+.lock-chip{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-min);font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--lock);
+  background:var(--amber-soft);border-radius:var(--r-pill);padding:1px 7px}
 
 /* ── Icon rail (desktop): 48px, expands on hover/focus ── */
 @media(min-width:901px){
@@ -2217,24 +2252,10 @@ body{font-size:14px;line-height:1.35}
 .kbd-grid kbd{justify-self:start}
 
 /* ── Home quadrants ── */
-/* Panel chip row — add/remove dashboard panels. Terminal-flavoured: mono,
-   hairline, the active ones carry the brand tint. */
-.dash-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-.dash-chip{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
-  padding:5px 10px;min-height:28px;border-radius:999px;cursor:pointer;
-  background:transparent;border:1px solid var(--border-2);color:var(--text-3);
-  transition:color .14s var(--ease),border-color .14s var(--ease),background .14s var(--ease)}
-.dash-chip::before{content:'+ ';opacity:.8}
-.dash-chip.on{color:var(--green-bright);border-color:var(--green);background:var(--green-soft)}
-.dash-chip.on::before{content:'✓ '}
-.dash-chip:hover{color:var(--text)}
-.dash-chip.on:hover{color:var(--green-bright)}
 /* Next steps — the dashboard's only way out. Everyone who opens the app
    lands here, so it has to point somewhere; a handful of named destinations
    beats fifty in a sidebar nobody opens. */
 .dash-next{margin:18px 0 4px}
-.dash-next-h{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
 .dash-next-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media(max-width:640px){.dash-next-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dash-next-b{display:block;width:100%;text-align:left;cursor:pointer;padding:10px 12px;
@@ -2326,21 +2347,6 @@ body{font-size:14px;line-height:1.35}
 .rv-key{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:-1px;margin-right:3px}
 .rv-key.rv-shared{background:#fff;border:1px solid var(--border-2)}
 .rv-key.rv-diff{background:var(--amber);border:1px solid var(--amber)}
-/* PROOF BAND — the one claim no competitor can make, moved from the foot of
-   the page to directly under the hero. Rivals present the official FPL data
-   beautifully; we compute our own numbers and publish our own error rate.
-   Burying that at the bottom in 11px mono was giving away the whole argument. */
-.proof-band{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-  padding:13px 16px;margin:0 0 14px;border-radius:var(--r-md);
-  border:1px solid var(--border-2);border-left:3px solid var(--green);
-  background:var(--surface)}
-.proof-claim{font-size:14px;font-weight:600;color:var(--text);line-height:1.35}
-.proof-stat{font-family:var(--font-mono);font-size:12px;color:var(--text-2);letter-spacing:.02em}
-.proof-stat b{color:var(--green);font-weight:700}
-.proof-link{margin-left:auto;font-size:12px;font-weight:600;color:var(--green);
-  white-space:nowrap;text-decoration:none}
-.proof-link:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:4px}
-@media(max-width:520px){.proof-band{gap:7px}.proof-link{margin-left:0}}
 
 /* ONE HERO CARD. The quad grid gave four equal cards, so nothing led and the
    eye had no entry point. The week's action spans the full width; the other
@@ -2395,8 +2401,9 @@ body{font-size:14px;line-height:1.35}
   display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;
   padding:20px 16px;border-top:1px solid var(--border-3);border-bottom:1px solid var(--border-3);
   background:color-mix(in srgb,var(--bg) 92%,transparent)}
-.pls-tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.2em;font-weight:700;
-  color:var(--green);border:1px solid var(--green);border-radius:3px;padding:2px 8px}
+.pls-tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;
+  letter-spacing:.08em;text-transform:uppercase;font-weight:800;
+  color:var(--lock);background:var(--amber-soft);border-radius:var(--r-pill);padding:3px 10px}
 .pls-txt{font-size:13px;color:var(--text-2)}
 
 /* ── /design primitives page ── */
@@ -2434,6 +2441,163 @@ body{font-size:14px;line-height:1.35}
 .ge-chart .u-over{touch-action:pan-y}
 .row-sel{outline:2px solid var(--green);outline-offset:-2px;background:var(--green-soft)}
 .pl-scroll{max-height:72vh;overflow:auto}
+
+/* ═══════════════════════════════════════════════════════════
+   EDITORIAL PASS — mono is reserved for numerals. Every label,
+   eyebrow, caption and sentence below used to render in IBM Plex
+   Mono; they are UI copy, so they take the body sans. Numeric
+   cells and key numbers keep mono+tabular via the rules above.
+   ═══════════════════════════════════════════════════════════ */
+#density-btn,.qd-ministat .m-l,.rr-h,.rr-stat,.demo-chip,
+.mw-lab,.mw-exp summary,.cs-head,.xpd-lab,.tb-area,.tb-title,
+.text-caption,.mxi-group,.mxi-row.mxi-hd,.mxi-club,.mxi-pct,.mxi-toggle,
+.soc-f>span,.soc-nm,.soc-slot span,.soc-plan-gw,.soc-plan-d span,
+.soc-plan-c .soc-gw,.cbl-club b,.cbl-m,.cns-tag,.vb-t,.vb-hd,.vb-pos,
+.dcb-hd,.cp-dgw,.sig-row,.cmdk-in,.cmdk-row .ck-sub,.cmdk-foot,
+.kbd-sheet h3,.qd-label,.qd-meta,.qd-k,.qd-foot,
+.qd-sub-label,.trust-strip,.dash-meta,.inj-chip,.pro-cmp-head,
+.post-meta,.pls-tag,.ds-sw>span,.conf-chip,.modal-in{font-family:var(--font-body)}
+/* The strips and rows above still carry numbers inline — keep them tabular. */
+.sig-row,.rr-stat,.qd-meta,.qd-foot,.proof-stat,.trust-strip,
+.dash-meta,.mxi-pct,.cs-x{font-variant-numeric:tabular-nums}
+/* Eyebrow labels stay uppercase but lose the extreme mono tracking. */
+.qd-label{letter-spacing:.09em;font-weight:800}
+.qd-meta{letter-spacing:.02em}
+.mxi-group,.qd-sub-label{letter-spacing:.09em;font-weight:800}
+/* Display type — headings take the brand grotesque. */
+.page-head h1,.modal-card h3,.pro-hero h2,#pro-body h3,.kbd-sheet h3,
+.brand-name,.tb-name{font-family:var(--font-display)}
+.stat-v,.kpi-value,.pro-price-v,.qd-count{font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ── ConfidenceMeter — Low / Medium / High as a 3-step dot scale.
+   The same component everywhere confidence appears; never a bare word. */
+.conf-chip{display:inline-flex;align-items:center;gap:6px;
+  font-size:.68rem;font-weight:700;letter-spacing:.02em;
+  padding:3px 9px;border-radius:var(--r-pill);white-space:nowrap}
+.conf-chip::before{content:none}
+.conf-dots{display:inline-flex;gap:2.5px;align-items:center}
+.conf-dots i{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.28}
+.conf-chip.conf-high .conf-dots i,
+.conf-chip.conf-med .conf-dots i:nth-child(-n+2),
+.conf-chip.conf-low .conf-dots i:first-child{opacity:1}
+.conf-high{background:var(--conf-high-soft);color:var(--conf-high)}
+.conf-med{background:var(--conf-med-soft);color:var(--conf-med)}
+.conf-low{background:var(--conf-low-soft);color:var(--conf-low)}
+/* Legacy tier names map onto the same scale. */
+.conf-green{background:var(--conf-high-soft);color:var(--conf-high)}
+.conf-amber{background:var(--conf-med-soft);color:var(--conf-med)}
+.conf-red{background:var(--conf-low-soft);color:var(--conf-low)}
+
+/* ── Position pills — one hue per position, everywhere. */
+.pos-pill{display:inline-flex;align-items:center;justify-content:center;
+  min-width:34px;padding:2px 7px;border-radius:var(--r-pill);
+  font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.pos-pill.p1{background:var(--pos-gk-soft);color:var(--pos-gk)}
+.pos-pill.p2{background:var(--pos-def-soft);color:var(--pos-def)}
+.pos-pill.p3{background:var(--pos-mid-soft);color:var(--pos-mid)}
+.pos-pill.p4{background:var(--pos-fwd-soft);color:var(--pos-fwd)}
+
+/* ── DecisionCard — the three calls are the product, so they get the
+   page: display-size name, xP as the dominant numeral, confidence as the
+   token scale, alternatives always visible. */
+.dc{display:flex;flex-direction:column;gap:10px}
+.dc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.dc-tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dc-modeltag{display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+  font-size:11px;font-weight:600;color:var(--text-2);
+  background:var(--amber-soft);border:1px solid transparent;border-radius:var(--r-pill);
+  padding:3px 10px;transition:border-color var(--t-state)}
+.dc-modeltag b{color:var(--lock);font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:10px}
+.dc-modeltag:hover{border-color:var(--lock)}
+.dc-main{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.dc-name{font-family:var(--font-display);font-size:clamp(26px,6vw,34px);font-weight:800;
+  letter-spacing:-.02em;line-height:1.05;color:var(--text);background:none;border:0;
+  padding:0;cursor:pointer;text-align:left}
+.dc-name:hover{color:var(--green)}
+.dc-xp{display:flex;align-items:baseline;gap:6px}
+.dc-xp b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:clamp(28px,6vw,38px);font-weight:600;line-height:1;color:var(--hot)}
+.dc-xp span{font-size:12px;font-weight:700;color:var(--text-3)}
+.dc-sub{font-size:13px;color:var(--text-2);line-height:1.5;margin:0}
+.dc-margin{font-size:12px;color:var(--text-3);margin:0}
+.dc-margin b{color:var(--text-2)}
+.dc-primer{font-size:12px;margin:0}
+.dc-primer a{color:var(--green);font-weight:600}
+/* AlternativesRow — vice + two alternatives, always visible, never behind
+   a disclosure triangle. Name · xP · delta vs the captain. */
+.dc-alts{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;margin:2px 0}
+.dc-alts::-webkit-scrollbar{display:none}
+.dc-alt{flex:1 0 auto;display:flex;align-items:center;gap:8px;min-height:44px;
+  padding:8px 12px;border-radius:var(--r-md);cursor:pointer;
+  background:var(--surface-3);border:1px solid var(--border);color:var(--text);
+  transition:border-color var(--t-state)}
+.dc-alt:hover{border-color:var(--green-bright)}
+.dc-alt-tag{font-size:var(--fs-min);font-weight:800;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--text-3)}
+.dc-alt-nm{font-size:13px;font-weight:700}
+.dc-alt-xp{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:13px;font-weight:600}
+.dc-alt-d{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:11px;color:var(--text-3)}
+/* Transfer + chip: two sibling cards under the hero. */
+.dc-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:16px 0}
+@media(max-width:720px){.dc-pair{grid-template-columns:1fr}}
+.dc-call{font-size:16px;line-height:1.4}
+.dc-call b{font-weight:800}
+.dc-call .dl-sub{display:block;margin-top:2px}
+.dc-call-v{display:inline-block;margin-left:8px;font-weight:700;font-size:14px}
+.dc-call-v.pos{color:var(--green)}
+.dc-cta{align-self:flex-start;margin-top:auto}
+.dc-hero{margin-bottom:0}
+.dc-hero+.dc-pair{margin-top:16px}
+/* Section jumper — Everything depth only. */
+.dash-jump{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 14px}
+.dash-jump-l{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--text-3);margin-right:6px}
+.dash-jump a{display:inline-flex;align-items:center;min-height:32px;padding:2px 12px;
+  border-radius:var(--r-pill);border:1px solid var(--border-2);background:var(--surface);
+  font-size:12px;font-weight:600;color:var(--text-2);
+  transition:border-color var(--t-state),color var(--t-state)}
+.dash-jump a:hover{border-color:var(--green-bright);color:var(--green)}
+/* Two contextual next-actions. */
+.dash-next{margin:18px 0 14px}
+.dash-next .dash-next-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:480px){.dash-next .dash-next-row{grid-template-columns:1fr}}
+
+/* ── Players table filters: position chips with counts + clear-all ── */
+.pl-poschips{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 10px}
+.pl-poschips .pos-pill{min-height:32px;cursor:pointer;border:1.5px solid transparent;
+  font-size:11px;padding:2px 12px;transition:border-color var(--t-state)}
+.pl-poschips .pos-pill b{margin-left:4px;font-weight:700;opacity:.75}
+.pl-poschips .pos-pill:hover{border-color:currentColor}
+.pl-poschips .pos-pill.on{border-color:currentColor}
+.pl-clear{min-height:32px;background:none;border:0;cursor:pointer;padding:2px 10px;
+  font-size:12px;font-weight:600;color:var(--text-3);text-decoration:underline;
+  text-underline-offset:3px}
+.pl-clear:hover{color:var(--text)}
+/* Horizontal overflow always scrolls inside its own container, with an
+   edge fade so a cut-off column reads as "more this way", never as a
+   page-level overflow. */
+.pl-scroll,.fdr,.scroll{
+  background:
+    linear-gradient(90deg,var(--surface) 30%,transparent) 0 0,
+    linear-gradient(270deg,var(--surface) 30%,transparent) 100% 0,
+    radial-gradient(farthest-side at 0 50%,rgba(12,16,20,.16),transparent) 0 0,
+    radial-gradient(farthest-side at 100% 50%,rgba(12,16,20,.16),transparent) 100% 0;
+  background-repeat:no-repeat;
+  background-size:34px 100%,34px 100%,12px 100%,12px 100%;
+  background-attachment:local,local,scroll,scroll;
+}
+
+/* Chips and toggles pick up the round editorial geometry. */
+.tchip,.area-tab,.lensbtn{border-radius:var(--r-pill)}
+/* 44px touch minimum on the tab strips and lens pills. */
+@media(pointer:coarse){
+  .area-tab,.lensbtn,.seg-b{min-height:44px}
+}
+.seg{border-radius:var(--r-pill)}
+/* State transitions run on the one motion scale. */
+.btn,.area-tab,.nav-area-btn,.bn-item,.tchip{transition-duration:var(--t-state)}
 
 /* Motion discipline. */
 @media(prefers-reduced-motion:reduce){
@@ -2515,17 +2679,10 @@ body{font-size:14px;line-height:1.35}
   <!-- ═══ MAIN ═══ -->
   <div class="main" id="main-wrap">
 
-    <!-- Terminal ticker: GW, deadline countdown, market + fitness state -->
-    <div class="tickbar" id="tickbar">
-      <span class="tk-item tk-brand"><span class="tk-dot" aria-hidden="true"></span>GWE</span>
-      <span class="tk-item" id="tk-gw">GW —</span>
-      <span class="tk-item" id="tk-dl">DEADLINE <b>—</b></span>
-      <span class="tk-item" id="tk-prices">PRICES <b>—</b></span>
-      <span class="tk-item" id="tk-flags">FLAGS <b>—</b></span>
-      <button class="tk-cmdk" id="tk-cmdk-btn" aria-label="Open command palette">⌘K</button>
-    </div>
-
-    <!-- Topbar -->
+    <!-- ═══ GAMEWEEK BAR — the single sticky bar ═══
+         Brand mark · "GW2 · deadline in 5h 12m" (live-ticking, amber
+         inside 6h) · Link team · one overflow menu. The old GW strip,
+         four-icon rail and ⌘K chip all fold into this. -->
     <header class="topbar">
       <div class="tb-left">
         <button class="hamburger" id="hamburger" aria-label="Open navigation">
@@ -2546,51 +2703,55 @@ body{font-size:14px;line-height:1.35}
             <span class="tb-tag">For fantasy managers</span>
           </span>
         </a>
-        <span class="tb-divider" aria-hidden="true"></span>
+        <!-- The one gameweek fact the bar exists for: which GW, and how
+             long until it locks. Ticks every second; amber inside 6h. -->
+        <span class="gwchip" id="gwchip">
+          <span class="gwchip-gw" id="tk-gw">GW —</span>
+          <span class="gwchip-sep" aria-hidden="true">·</span>
+          <span class="gwchip-dl" id="tk-dl">—</span>
+        </span>
         <div class="tb-crumb">
           <span class="tb-area" id="tb-area">Home</span>
           <span class="tb-title" id="tb-title">My Week</span>
         </div>
       </div>
       <div class="tb-right">
-        <button class="tb-search" id="tb-search" aria-label="Search players, panels and actions" title="Search (⌘K)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-          <span class="tbs-txt">Search…</span><kbd>⌘K</kbd>
-        </button>
         <span id="tb-updated" class="tb-updated" aria-live="polite"></span>
-        <button class="btn btn-ghost btn-icon" id="export-btn" aria-label="Export the current view as CSV" title="Export the current view as CSV">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/>
-          </svg>
-        </button>
-        <button class="btn btn-ghost btn-icon" id="refresh-btn" aria-label="Refresh data">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
-          </svg>
-        </button>
-        <button class="btn btn-ghost btn-sm" id="density-btn" aria-label="Switch between the simple view and every tool" title="Simple / Everything">Simple</button>
-        <button class="btn btn-ghost btn-icon" id="help-btn" aria-label="Help, tour and glossary" title="Help &amp; glossary">?</button>
-        <button class="btn btn-ghost btn-icon" id="feedback-btn" aria-label="Send feedback about this app" title="Send feedback">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/>
-          </svg>
-        </button>
         <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
           </svg>
-          <span class="si-label">Link Team</span>
+          <span class="si-label">Link team</span>
         </button>
+        <button class="btn btn-ghost btn-icon" id="menu-btn" aria-label="Menu — search, tools and settings" aria-haspopup="true" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </button>
+        <!-- Overflow menu: the power tools that used to be a four-icon rail. -->
+        <div class="tb-menu" id="tb-menu" hidden>
+          <button class="tbm-row" id="tbm-search" aria-label="Search players, panels and actions">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            Search<kbd>⌘K</kbd>
+          </button>
+          <button class="tbm-row" id="density-btn" aria-label="Switch between the essentials and every tool">Depth: Essentials</button>
+          <button class="tbm-row" id="refresh-btn" aria-label="Refresh data">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
+            Refresh data
+          </button>
+          <button class="tbm-row" id="export-btn" aria-label="Export the current view as CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/></svg>
+            Export CSV
+          </button>
+          <button class="tbm-row" id="help-btn" aria-label="Help and glossary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.5"/><circle cx="12" cy="17" r=".5"/></svg>
+            Help &amp; glossary
+          </button>
+          <button class="tbm-row" id="feedback-btn" aria-label="Send feedback about this app">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/></svg>
+            Send feedback
+          </button>
+        </div>
       </div>
     </header>
-
-    <!-- Slim not-linked educational strip: hidden once a team is linked -->
-    <div class="link-strip hidden" id="link-ribbon">
-      <span>Not linked? You’re seeing the model’s recommended squad. <a href="#" onclick="openMidModal();return false"><b>Link team</b></a> to personalise.</span>
-      <button class="ls-x" id="link-ribbon-x" aria-label="Dismiss">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
 
     <!-- Pages render here -->
     <div id="pages"></div>
@@ -3623,9 +3784,10 @@ function loadDemoTeam(){
   openPanel(homePanel());          /* a team is linked now, so that is My Week */
 }
 function linkBox(){
-  return stateBox('team','Link your team to see this',
-    'Enter your FPL Manager ID and your personalised data loads here, live from the official API.',
-    '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>');
+  /* A designed empty state, not a bare panel: the shape of the real
+     component sits blurred behind the one input that unlocks it. */
+  return previewEmptyState('Link your team',
+    'Enter your FPL Manager ID and this fills with your own squad, live from the official API.');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -4169,6 +4331,10 @@ PANELS.design={id:'design',label:'Design System',icon:'grid',tier:'free',areaId:
 /* Hidden panel: plain-English glossary at /glossary (reachable from the ? menu,
    the tour, and inline jargon). */
 PANELS.glossary={id:'glossary',label:'Glossary',icon:'question',tier:'free',areaId:'home',areaLabel:'Home'};
+/* The More index — the fifth nav destination. A real, grouped screen
+   (Plan · Research · Account &amp; help) rather than a drawer with a
+   different vocabulary; every panel not on the four main tabs lives here. */
+PANELS.more={id:'more',label:'More',icon:'grid',tier:'free',areaId:'more',areaLabel:'More'};
 /* Hidden panel: how Fantasy Premier League itself works. The glossary answers
    "what does this word mean" for someone who already has the word; this
    answers "how does this game work" for someone who does not. Reachable from
@@ -4221,99 +4387,96 @@ function jt(term,label){const def=GLOSSARY[term]||'';
    labels; expert shows everything. Default beginner until a team is linked. */
 function getDensity(){try{return localStorage.getItem('ge-density')||(getMid()?'expert':'beginner');}catch(_){return 'beginner';}}
 function applyDensity(d){if(document.body)document.body.setAttribute('data-density',d);}
-function densityLabel(d){return d==='beginner'?'Simple':'Everything';}
+/* The Depth control: Essentials (default) or Everything, persisted. */
+function densityLabel(d){return d==='beginner'?'Essentials':'Everything';}
 function setDensity(d){try{localStorage.setItem('ge-density',d);}catch(_){}applyDensity(d);
-  const b=document.getElementById('density-btn');if(b)b.textContent=densityLabel(d);
+  const b=document.getElementById('density-btn');if(b)b.textContent='Depth: '+densityLabel(d);
   /* Density now decides how many destinations the nav offers, not just how
      much detail a panel prints, so the shell has to be rebuilt with it. */
   try{buildNav();buildBottomNav();if(typeof openPanel==='function')openPanel(currentPanel);}catch(_){}}
 
-/* ── Dashboard panel curation ──────────────────────────────
-   The density toggle controls detail *inside* a panel; this controls which
-   panels are on the page at all. A first-time beginner lands on the three
-   that answer "what do I do this week" and can add the rest from the chip
-   row — so the dashboard opens calm and grows on demand, rather than
-   presenting everything at once. Choices persist per browser. */
-const DASH_PANELS=[['action','This week'],['xi','Model XI'],['diffs','Differentials'],['live','Live state'],['feed','Signals']];
-function dashHidden(){
-  try{const raw=localStorage.getItem('ge-dash-hidden');
-    if(raw)return new Set(JSON.parse(raw)||[]);}catch(_){}
-  /* No stored choice: simple mode opens on the one panel that answers "what
-     do I do this week" and nothing else. The rest are a chip away and stay
-     put once chosen. Expert opens on the full set. See §4.3. */
-  return new Set(getDensity()==='beginner'?['xi','diffs','live','feed']:[]);
-}
-function dashApply(){
-  const hid=dashHidden();
-  document.querySelectorAll('#ge-data [data-dash]').forEach(el=>{
-    el.hidden=hid.has(el.getAttribute('data-dash'));});
-  document.querySelectorAll('#ge-data .dash-chip[data-chip]').forEach(c=>{
-    const on=!hid.has(c.getAttribute('data-chip'));
-    c.classList.toggle('on',on);c.setAttribute('aria-pressed',on?'true':'false');});
-}
-function dashToggle(k){
-  const hid=dashHidden();
-  if(hid.has(k))hid.delete(k);else hid.add(k);
-  try{localStorage.setItem('ge-dash-hidden',JSON.stringify([...hid]));}catch(_){}
-  dashApply();
-}
-/* Reveal the whole board and remember it, so the chip row is a one-way door
-   out of the simple default rather than five separate decisions. */
-function dashShowAll(){
-  try{localStorage.setItem('ge-dash-hidden','[]');}catch(_){}
-  dashApply();
-  const row=document.querySelector('#ge-data .dash-chips');
-  if(row)row.outerHTML=dashChipRow();
-}
-function dashChipRow(){
-  const hid=dashHidden();
-  return '<div class="dash-chips" role="group" aria-label="Show or hide dashboard panels">'+
-    DASH_PANELS.map(([k,l])=>'<button type="button" class="dash-chip'+(hid.has(k)?'':' on')+'" data-chip="'+k+'"'+
-      ' aria-pressed="'+(hid.has(k)?'false':'true')+'" onclick="dashToggle(\''+k+'\')">'+esc(l)+'</button>').join('')+
-    /* One tap to the whole board, so the simple default is a starting point
-       rather than a wall of off switches to work through. */
-    (hid.size?'<button type="button" class="dash-chip" onclick="dashShowAll()">Show everything +</button>':'')+
+/* The old dashboard chip row (+ MODEL XI / + DIFFERENTIALS / …) is gone.
+   The Depth control decides what the page shows: Essentials is the three
+   calls; Everything adds the named sections (Model XI, Differentials,
+   Live state, Signals) with a jump nav — self-describing sections in the
+   page flow, not cryptic toggle chips. */
+
+/* The spotlight tour is gone. Coach marks rendered over live content were
+   the onboarding fighting the page; the first-run experience is now the
+   LinkTeamFlow screen (see linkTeamFlowHtml) plus designed empty states,
+   and nothing ever draws over the content again. */
+
+/* \u2500\u2500 LinkTeamFlow \u2014 the single focused link-your-team form \u2500\u2500
+   Manager ID field with inline validation and the manager's name echoed
+   back on success; a "where do I find this?" hint; and a secondary
+   "just browse the model squad" path. Reused by the first-run screen and
+   by every designed empty state. */
+function linkTeamFlowHtml(opts){
+  opts=opts||{};
+  return '<div class="ltf">'+
+    '<div class="ltf-row">'+
+      '<input class="ltf-in" id="ltf-input" inputmode="numeric" autocomplete="off" '+
+        'placeholder="Your Manager ID \u2014 e.g. 3500123" aria-label="FPL Manager ID">'+
+      '<button class="btn btn-cta" id="ltf-save" onclick="ltfSave()">Link team</button>'+
+    '</div>'+
+    '<div class="ltf-msg" id="ltf-msg" role="status" aria-live="polite"></div>'+
+    '<details class="ltf-hint"><summary>Where do I find my Manager ID?</summary>'+
+      '<p>Open <b>fantasy.premierleague.com</b>, go to the <b>Points</b> tab, and copy the '+
+      'number after <b>/entry/</b> in the address bar \u2014 e.g. \u2026/entry/<b>3500123</b>/event/2. '+
+      'Nothing to sign up for; the ID only reads your public team.</p></details>'+
+    (opts.browse!==false
+      ?'<button type="button" class="ltf-browse" onclick="openPanel(\'dashboard\')">Just browse the model squad \u2192</button>'
+      :'')+
     '</div>';
 }
-
-/* Three-step spotlight tour — non-blocking, skippable, shown once.
-
-   It used to name the furniture: "This Week · Action", "Model XI", "Link your
-   team". That is a caption on a page the reader has already decided is too
-   much. These three answer what they came to find out — what do I do, how do
-   I make it mine, where is everything else — in that order. The Model XI step
-   went because simple mode no longer shows it on arrival. */
-const TOUR=[
-  {sel:'#tour-q1',title:'Your three calls',body:'Who to captain, whether to make a transfer, and whether to play a chip. Decide those and your gameweek is done.'},
-  {sel:'#signin-btn',title:'Make it yours',body:'Link your FPL team and these become calls about your squad, not the model\u2019s generic one. Nothing to sign up for.'},
-  {sel:'#density-btn',title:'When you want more',body:'You are on the simple view. Switch to Everything for the other thirty tools — prices, rivals, simulators — whenever you are ready.'}
-];
-let TOUR_I=0;
-function tourSeen(){try{return localStorage.getItem('ge-tour-seen')==='1';}catch(_){return true;}}
-function endTour(){try{localStorage.setItem('ge-tour-seen','1');}catch(_){}
-  const o=document.getElementById('tour');if(o)o.remove();window.removeEventListener('resize',tourShow);}
-function tourShow(){const o=document.getElementById('tour');if(!o)return;const step=TOUR[TOUR_I];
-  const el=step&&document.querySelector(step.sel);
-  if(!el){TOUR_I++;if(TOUR_I>=TOUR.length)return endTour();return tourShow();}
-  el.scrollIntoView({block:'center',behavior:'smooth'});
-  const r=el.getBoundingClientRect(),spot=o.querySelector('.tour-spot'),pop=o.querySelector('.tour-pop');
-  spot.style.left=(r.left-6)+'px';spot.style.top=(r.top-6)+'px';spot.style.width=(r.width+12)+'px';spot.style.height=(r.height+12)+'px';
-  o.querySelector('.tour-step').textContent='Step '+(TOUR_I+1)+' of '+TOUR.length;
-  o.querySelector('.tour-title').textContent=step.title;o.querySelector('.tour-body').textContent=step.body;
-  o.querySelector('#tour-next').textContent=TOUR_I===TOUR.length-1?'Done':'Next';
-  pop.style.left=Math.max(12,Math.min(r.left,window.innerWidth-300))+'px';
-  if(r.bottom+180<window.innerHeight){pop.style.top=(r.bottom+12)+'px';pop.style.bottom='auto';}
-  else{pop.style.bottom=(window.innerHeight-r.top+12)+'px';pop.style.top='auto';}}
-function startTour(){endTour();try{localStorage.removeItem('ge-tour-seen');}catch(_){}TOUR_I=0;
-  const o=document.createElement('div');o.id='tour';o.className='tour';
-  o.innerHTML='<div class="tour-spot"></div><div class="tour-pop"><div class="tour-step"></div><h4 class="tour-title"></h4>'+
-    '<p class="tour-body"></p><div class="tour-actions"><a href="#" class="tour-gloss" onclick="endTour();openPanel(\'fplbasics\');return false">New to FPL?</a>'+
-    '<button class="btn btn-ghost btn-sm" id="tour-skip">Skip</button><button class="btn btn-cta btn-sm" id="tour-next">Next</button></div></div>';
-  document.body.appendChild(o);
-  o.querySelector('#tour-skip').onclick=endTour;
-  o.querySelector('#tour-next').onclick=function(){TOUR_I++;if(TOUR_I>=TOUR.length)endTour();else tourShow();};
-  window.addEventListener('resize',tourShow);tourShow();}
-function maybeTour(){if(tourSeen())return;setTimeout(function(){if(document.getElementById('tour-q1'))startTour();},700);}
+/* Inline validation: fetch the entry, echo the manager's name, then link. */
+async function ltfSave(){
+  const inp=document.getElementById('ltf-input'),msg=document.getElementById('ltf-msg'),
+    btn=document.getElementById('ltf-save');
+  if(!inp||!msg)return;
+  const val=(inp.value||'').trim().replace(/\D/g,'');
+  if(!val){msg.className='ltf-msg err';msg.textContent='Enter the numeric Manager ID from your FPL team URL.';return;}
+  if(btn){btn.disabled=true;btn.textContent='Checking\u2026';}
+  msg.className='ltf-msg';msg.textContent='Looking up manager '+val+'\u2026';
+  try{
+    const entry=await loadEntry(val);
+    const nm=entry&&(entry.name||((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim());
+    msg.className='ltf-msg ok';
+    msg.textContent='Found: '+(nm||('manager '+val))+' \u2014 linking\u2026';
+    setMid(val);
+    refreshIdentity(entry);
+    track('team_linked');
+    toast('Linked to '+(nm||'your team'));
+    window.GENative&&GENative.hapticSuccess();
+    setTimeout(()=>{try{renderPage(currentPanel);}catch(_){}},450);
+  }catch(e){
+    msg.className='ltf-msg err';
+    msg.textContent=(e&&e.status===404)
+      ?'No manager found with that ID \u2014 check the number and try again.'
+      :'Could not reach the FPL API. Try again in a moment.';
+    window.GENative&&GENative.hapticWarning();
+  }finally{if(btn){btn.disabled=false;btn.textContent='Link team';}}
+}
+/* \u2500\u2500 PreviewEmptyState \u2014 a blurred preview of the real component
+   behind one sentence of value and one primary input. Never a dead end. */
+function previewEmptyState(title,sentence,previewHtml){
+  return '<div class="pe-wrap">'+
+    '<div class="pe-preview" inert aria-hidden="true">'+(previewHtml||peSkeleton())+'</div>'+
+    '<div class="pe-panel"><div class="pe-card">'+
+      '<h2 class="pe-t">'+esc(title)+'</h2>'+
+      '<p class="pe-s">'+sentence+'</p>'+linkTeamFlowHtml()+'</div></div>'+
+    '</div>';
+}
+/* A generic mocked preview: header row + data rows, matching the shape of
+   the component that will render here once linked. */
+function peSkeleton(){
+  let rows='';
+  for(let i=0;i<6;i++)rows+='<div class="dl-row"><span class="dl-rank">'+(i+1)+'</span>'+
+    '<span class="dl-grow"><span class="sk" style="width:'+(38+(i*7)%40)+'%;margin:0"></span></span>'+
+    '<span class="dl-col"><span class="sk" style="width:34px;margin:0"></span></span>'+
+    '<span class="dl-col"><span class="sk" style="width:28px;margin:0"></span></span></div>';
+  return '<div class="card"><div class="card-title">Your team</div><div class="dl">'+rows+'</div></div>';
+}
 
 async function hydrateGlossary(host){
   const rows=Object.keys(GLOSSARY).map(k=>'<div class="dl-row" style="display:block;padding:11px 0">'+
@@ -4321,7 +4484,7 @@ async function hydrateGlossary(host){
     '<div class="dl-sub" style="margin-top:3px;line-height:1.5;font-size:12.5px">'+esc(GLOSSARY[k])+'</div></div>').join('');
   host.innerHTML='<div class="card mb-20"><div class="card-title">FPL &amp; model terms</div><div class="dl">'+rows+'</div></div>'+
     '<div class="dl-sub">New to FPL? <a href="#" onclick="openPanel(\'fplbasics\');return false">Start with how the game works →</a>'+
-    ' · <a href="#" onclick="startTour();return false">Replay the 3-step tour →</a></div>';
+    '</div>';
 }
 /* The rules of the game, not of the app. Deliberately static: nothing here
    depends on live data, so it renders in full before a single request lands —
@@ -4357,7 +4520,7 @@ async function hydrateFplBasics(host){
       '</div></div>';
 }
 function wireUXButtons(){
-  const h=document.getElementById('help-btn');if(h&&!h._w){h._w=1;h.addEventListener('click',startTour);}
+  const h=document.getElementById('help-btn');if(h&&!h._w){h._w=1;h.addEventListener('click',()=>openPanel('glossary'));}
   const fb=document.getElementById('feedback-btn');
   if(fb&&!fb._w){fb._w=1;fb.addEventListener('click',openFeedbackModal);}
   const fbs=document.getElementById('fb-send');
@@ -4379,7 +4542,7 @@ function wireUXButtons(){
     if(e.key!=='Escape')return;
     const m=document.getElementById('fb-modal');
     if(m&&m.classList.contains('show'))closeFeedbackModal();});}
-  const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent=densityLabel(getDensity());
+  const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent='Depth: '+densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
 (function(){function ux(){applyDensity(getDensity());wireUXButtons();buildRightRail();}
@@ -4437,6 +4600,7 @@ async function buildRightRail(){
 /* ── PANEL CONTENT DEFINITIONS (placeholder, shell only) ──── */
 /* Each panel describes what it will hold once built in step 2. */
 const PANEL_CONTENT = {
+  more:{desc:'Everything beyond the four main tabs — planning tools, research, account and help — in one grouped index.',layout:'standard'},
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
   fplbasics:{desc:'How Fantasy Premier League works — the whole game in two minutes.',layout:'standard'},
   archive:{
@@ -4623,97 +4787,128 @@ function areaLanding(area){
     ||(area.panels||[]).filter(canSeePanel)[0];
   return first?first.id:null;
 }
-function buildNav(){
-  const nav=document.getElementById('sb-nav');
-  nav.innerHTML='';
-  NAV.filter(navVisibleArea).forEach(area=>{
-    const wrap=document.createElement('div');
-    wrap.className='nav-area';
-
-    const btn=document.createElement('button');
-    btn.className='nav-area-btn';
-    btn.dataset.area=area.id;
-    /* Every visible panel in the area is listed for search and screen
-       readers even though only the area shows — the panel names are how
-       people look for things, and the tabs reveal them on arrival. */
-    btn.setAttribute('aria-label',area.label+' — '+area.panels.filter(navVisible).map(p=>p.label).join(', '));
-    /* No Pro badge on an area. There used to be exactly one paid area, so the
-       badge meant something; now that Pro is a property of a panel rather
-       than a place, six of the seven areas contain one and the badge marks
-       everything, which is the same as marking nothing. The lock lives on the
-       tab, where it names the actual thing you cannot open. */
-    btn.innerHTML=
-      '<span class="nav-area-ic">'+svg(ICON[area.icon])+'</span>'+
-      '<span class="nav-area-label">'+area.label+'</span>';
-    const go=areaLanding(area);
-    if(go)btn.addEventListener('click',()=>openPanel(go));
-    wrap.appendChild(btn);
-    nav.appendChild(wrap);
-  });
-}
-
-/* ── BUILD BOTTOM NAV (mobile) ─────────────────────────── */
-/* Five-item bottom nav (mobile): Home · My Squad · Players · Match Centre
-   · More. Each item deep-links to the panel a manager most wants under that
-   label; the remaining areas live in the More sheet so nothing is orphaned. */
+/* ── ONE NAV MAP, FIVE DESTINATIONS ──────────────────────
+   Bottom tabs (mobile) and the sidebar (desktop) render the SAME list,
+   with identical labels and order: Home · Squad · Players · Live · More.
+   Everything deeper lives on the More index screen (a real page, not a
+   sheet with a different vocabulary). */
 const MORE_ICON='<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
 const areaBy=id=>NAV.find(a=>a.id===id)||null;
-const BOTTOM_NAV=[
-  {label:'Home',area:'home',icon:'home',go:()=>openPanel(homePanel())},
-  {label:'My Squad',area:'myteam',icon:'squad',go:()=>openPanel('squad')},
-  {label:'Players',area:'players',icon:'players',go:()=>openPanel('allplayers')},
-  /* Shown as "Matches": the full name ellipsed to "Match Cent…" on a 390px
-     phone, which is the width most of these taps happen at. The accessible
-     name keeps the real label. */
-  {label:'Match Centre',short:'Matches',area:'matchcentre',icon:'pulse',go:()=>openPanel('results')},
-  {label:'More',area:'',icon:'more',go:()=>openMoreSheet()}
+const DESTINATIONS=[
+  {id:'home',label:'Home',icon:'home',go:()=>openPanel(homePanel())},
+  {id:'squad',label:'Squad',icon:'squad',go:()=>openPanel('squad')},
+  {id:'players',label:'Players',icon:'players',go:()=>openPanel('allplayers')},
+  {id:'live',label:'Live',icon:'pulse',go:()=>openPanel('liverank')},
+  {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
 ];
-function buildBottomNav(){
-  const bn=document.getElementById('bottom-nav');
-  bn.innerHTML='';
-  /* Drop a bar item whose area the current view doesn't offer; More always
-     stays, because it carries the escape hatch to the other view. */
-  BOTTOM_NAV.filter(it=>!it.area||navVisibleArea(areaBy(it.area)||{})).forEach(it=>{
-    const item=document.createElement('button');
-    item.className='bn-item';
-    if(it.area)item.dataset.area=it.area;
-    item.setAttribute('aria-label',it.label);
-    item.innerHTML='<span class="bn-ic">'+(it.icon==='more'?MORE_ICON:svg(ICON[it.icon]))+'</span>'+
-      '<span class="bn-label">'+(it.short||it.label)+'</span>';
-    item.addEventListener('click',it.go);
-    bn.appendChild(item);
+/* Which destination lights up for the panel you are on. */
+const DEST_AREA={home:'home',myteam:'squad',players:'players',live:'live',
+  planner:'more',rivals:'more',matchcentre:'more',studio:'more',more:'more'};
+
+/* ── THE MORE INDEX ──────────────────────────────────────
+   A grouped, self-describing map of everything beyond the four main
+   tabs. Pro panels appear with a quiet lock (opening one shows the
+   preview-not-paywall screen); panels the active game has no capability
+   for are absent entirely. */
+const MORE_GROUPS=[
+  {label:'Plan',items:[
+    ['transfers','Plan moves over the next five gameweeks'],
+    ['captain','Compare the armband candidates'],
+    ['chips','When to play each chip'],
+    ['draft','Build your fifteen before the game opens'],
+    ['watchlist','Track prices and fitness on your shortlist'],
+    ['seasonsim','Simulate the season from here'],
+    ['alerts','Push alerts for prices, injuries and deadlines']]},
+  {label:'Research',items:[
+    ['fixtures','Who has the kindest run, and when'],
+    ['diffs','Strong players the field does not own'],
+    ['price','Tonight’s likely risers and fallers'],
+    ['leagues','Your mini-leagues, live'],
+    ['rivals','What the managers around you are doing'],
+    ['eo','Effective ownership and the template'],
+    ['compare','Any two players side by side'],
+    ['scoutboard','The scout’s shortlist by position'],
+    ['setpiece','Who takes penalties, corners and free kicks'],
+    ['rotation','Congestion and rotation risk by club'],
+    ['results','Scores, forecasts and projected line-ups'],
+    ['titlerace','The title race, simulated'],
+    ['dossier','Club-by-club dossiers and form'],
+    ['archive','Ten seasons of FPL history'],
+    ['scout','Ask the AI scout about your squad'],
+    ['news','Injury and press-conference news'],
+    ['blog','The Wire — what the model is seeing']]},
+  {label:'Account & help',items:[
+    ['__account','Sign in, sync and manage your plan'],
+    ['accountability','The model, graded in public'],
+    ['glossary','Every term, in plain English'],
+    ['fplbasics','New to FPL? The game in two minutes'],
+    ['__feedback','Tell the person who builds this what broke']]}
+];
+async function hydrateMore(host){
+  const groups=MORE_GROUPS.map(g=>{
+    const rows=g.items.map(([id,why])=>{
+      if(id==='__account')return moreRow('Account & settings',why,'openAccount()','users',false);
+      if(id==='__feedback')return moreRow('Send feedback',why,'openFeedbackModal()','question',false);
+      const p=PANELS[resolvePanel(id)];
+      if(!p||!canSeePanel(p))return '';
+      const label=id==='diffs'?'Differentials':p.label;
+      const lk=p.tier==='paid'&&!isPro();
+      return moreRow(label,why,'openPanel(\''+id+'\')',p.icon,lk);
+    }).filter(Boolean).join('');
+    return rows?'<h2 class="more-group-h">'+esc(g.label)+'</h2><div class="more-grid">'+rows+'</div>':'';
+  }).join('');
+  const studio=window.GE_OWNER
+    ?'<h2 class="more-group-h">Studio</h2><div class="more-grid">'+
+      [['social','Share-ready graphics from the live model'],
+       ['analytics','Who is using the app'],
+       ['feedback','The feedback inbox']].map(([id,why])=>{
+        const p=PANELS[id];return p?moreRow(p.label,why,'openPanel(\''+id+'\')',p.icon,false):'';
+      }).join('')+'</div>'
+    :'';
+  host.innerHTML=groups+studio;
+}
+function moreRow(label,why,on,icon,locked){
+  return '<button type="button" class="more-it" onclick="'+on+'">'+
+    '<span class="more-it-ic">'+svg(ICON[icon]||ICON.grid)+'</span>'+
+    '<span class="more-it-tx"><span class="more-it-t">'+esc(label)+
+    (locked?' <span class="lock-chip" aria-label="Pro feature">'+svg(ICON.lock,'width="10" height="10"')+' Pro</span>':'')+
+    '</span><span class="more-it-s">'+esc(why)+'</span></span>'+
+    '<span class="more-it-go" aria-hidden="true">›</span></button>';
+}
+function navItemHtml(d){
+  return '<span class="nav-area-ic">'+(d.icon==='more'?MORE_ICON:svg(ICON[d.icon]))+
+    (d.id==='live'?'<span class="live-ping" aria-hidden="true"></span>':'')+'</span>'+
+    '<span class="nav-area-label">'+d.label+'</span>';
+}
+function buildNav(){
+  const nav=document.getElementById('sb-nav');
+  if(!nav)return;
+  nav.innerHTML='';
+  DESTINATIONS.forEach(d=>{
+    const btn=document.createElement('button');
+    btn.className='nav-area-btn';
+    btn.dataset.dest=d.id;
+    btn.setAttribute('aria-label',d.label);
+    btn.innerHTML=navItemHtml(d);
+    btn.addEventListener('click',d.go);
+    nav.appendChild(btn);
   });
 }
-/* The More sheet: every area not on the bottom bar, plus the glossary. */
-function openMoreSheet(){
-  closeMoreSheet();
-  const items=[['live','Live'],['planner','Planner'],['rivals','Rivals'],
-      ...(window.GE_OWNER?[['studio','Studio']]:[]),['glossary','Glossary']]
-    /* Skip an area the active game has emptied, and land on its first
-       *visible* panel rather than its first declared one. */
-    .filter(([id])=>id==='glossary'||navVisibleArea(areaBy(id)||{}))
-    .map(([id,label])=>{
-      const a=areaBy(id);
-      const target=id==='glossary'?'glossary':(a?areaLanding(a):id);
-      const icon=id==='glossary'?'question':(a?a.icon:'grid');
-      return '<button class="more-row" onclick="closeMoreSheet();openPanel(\''+target+'\')"><span class="bn-ic">'+svg(ICON[icon]||'')+'</span>'+esc(label)+'</button>';
-    }).join('');
-  const dens=getDensity()==='beginner'?'expert':'beginner';
-  const densRow='<button class="more-row" onclick="setDensity(\''+dens+'\');closeMoreSheet()"><span class="bn-ic">'+svg(ICON.spark||'')+'</span>View: '+densityLabel(getDensity())+' — tap for '+densityLabel(dens)+'</button>';
-  const s=document.createElement('div');s.id='more-sheet';s.className='more-sheet';
-  s.innerHTML='<div class="more-backdrop" onclick="closeMoreSheet()"></div>'+
-    '<div class="more-panel" role="dialog" aria-modal="true" aria-label="More navigation"><div class="more-grab"></div>'+items+densRow+'</div>';
-  /* Remember the trigger so focus can return to it on close, then move focus
-     into the sheet for keyboard/screen-reader users. */
-  MEM._moreReturn=document.activeElement;
-  document.body.appendChild(s);
-  const first=s.querySelector('.more-row');if(first)first.focus();
-}
-function closeMoreSheet(){
-  const s=document.getElementById('more-sheet');if(!s)return;
-  s.remove();
-  const r=MEM._moreReturn;MEM._moreReturn=null;
-  if(r&&document.contains(r)&&typeof r.focus==='function')r.focus();
+function buildBottomNav(){
+  const bn=document.getElementById('bottom-nav');
+  if(!bn)return;
+  bn.innerHTML='';
+  DESTINATIONS.forEach(d=>{
+    const item=document.createElement('button');
+    item.className='bn-item';
+    item.dataset.dest=d.id;
+    item.setAttribute('aria-label',d.label);
+    item.innerHTML='<span class="bn-ic">'+(d.icon==='more'?MORE_ICON:svg(ICON[d.icon]))+
+      (d.id==='live'?'<span class="live-ping" aria-hidden="true"></span>':'')+'</span>'+
+      '<span class="bn-label">'+d.label+'</span>';
+    item.addEventListener('click',d.go);
+    bn.appendChild(item);
+  });
 }
 
 /* ── OPEN A PANEL ──────────────────────────────────────── */
@@ -4777,6 +4972,37 @@ const PANEL_VIEW={
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
+
+/* ── PATH ROUTING ──────────────────────────────────────────
+   Real URLs, one per screen: /squad, /players, /planner, /live … Every
+   panel id doubles as a path; the map below renames the handful whose
+   public path reads better than their internal id. Netlify's SPA
+   fallback serves index.html for all of them, and the legacy #hash and
+   ?panel= entry points still resolve (then normalise to the path). */
+const PANEL_PATH={myweek:'/week',dashboard:'/overview',allplayers:'/players',
+  transfers:'/planner',captain:'/captaincy',liverank:'/live',price:'/prices',
+  gwdebrief:'/debrief',results:'/matchday',accountability:'/model',
+  'gw-actions':'/recap',setpiece:'/set-pieces'};
+function panelPath(id){return PANEL_PATH[id]||('/'+id);}
+const PATH_PANEL=Object.fromEntries(
+  Object.entries(PANEL_PATH).map(([id,p])=>[p.slice(1),id]));
+function pathPanel(path){
+  const seg=String(path||'/').replace(/^\/+|\/+$/g,'').toLowerCase();
+  if(!seg||seg==='index.html')return '';
+  return PATH_PANEL[seg]||seg;
+}
+/* Write the current panel into the address bar. The home panel owns the
+   bare URL; everything else gets its named path. Deep-link view ids
+   (/diffs, /injuries, /whatif …) keep their own path so the URL still
+   names the view it opens. */
+function routeSync(urlId,resolvedId,push){
+  try{
+    const path=resolvedId===homePanel()&&!PANEL_VIEW[urlId]?'/':panelPath(urlId);
+    if(location.pathname===path)return;
+    if(push)history.pushState({panel:urlId},'',path);
+    else history.replaceState({panel:urlId},'',path);
+  }catch(_){}
+}
 function openPanel(panelId,opts){
   /* Read the view from the id as typed, not the resolved one — the whole
      point is that #diffs and #injuries resolve to the same panel and must
@@ -4789,6 +5015,7 @@ function openPanel(panelId,opts){
      browser check on the sibling app caught it. A plain open (the nav, a deep
      link, a bookmark) still resets to the default, which is what makes
      clicking Players in the nav predictable. */
+  const urlId=panelId;
   const pv=PANEL_VIEW[panelId];
   if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
@@ -4800,23 +5027,19 @@ function openPanel(panelId,opts){
   syncNav();
   closeSidebar();
   window.scrollTo({top:0});
-  /* Panel deep links: the current panel lives in the hash so any view can
-     be bookmarked or shared. replaceState keeps the history clean. */
-  /* The home panel sits on the bare URL, everything else on a hash. Which
-     panel is home now depends on whether a team is linked, so ask rather
-     than assume — otherwise a linked manager's home carries a #myweek that
-     an unlinked one's does not. */
-  try{history.replaceState(null,'',panelId===homePanel()?location.pathname+location.search:'#'+panelId);}catch(_){}
+  /* Real URLs: every screen is bookmarkable and back/forward works.
+     In-app navigation pushes a history entry; popstate/boot pass
+     noHistory so the traversal itself never re-pushes. */
+  routeSync(urlId,panelId,!(opts&&opts.noHistory));
 }
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
 function syncNav(){
-  const activeArea=PANELS[currentPanel].areaId;
-
-  document.querySelectorAll('.nav-area-btn').forEach(btn=>{
-    const a=btn.dataset.area;
-    btn.classList.toggle('active',a===activeArea);
-    if(a===activeArea)btn.setAttribute('aria-current','page');
+  const activeDest=DEST_AREA[PANELS[currentPanel].areaId]||'more';
+  document.querySelectorAll('.nav-area-btn,.bn-item').forEach(btn=>{
+    const on=btn.dataset.dest===activeDest;
+    btn.classList.toggle('active',on);
+    if(on)btn.setAttribute('aria-current','page');
     else btn.removeAttribute('aria-current');
   });
   /* The strip scrolls sideways, so on a narrow screen the active view can sit
@@ -4824,15 +5047,6 @@ function syncNav(){
      it belongs to whichever tab happens to be leftmost. */
   const tab=document.querySelector('#area-tabs .area-tab.on');
   if(tab&&tab.scrollIntoView)try{tab.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
-  /* Highlight the matching bar item; when the current area lives only in the
-     More sheet (Live / Planner / Rivals / Glossary), light up "More" so the
-     bar never looks like nothing is selected. */
-  const barAreas=BOTTOM_NAV.filter(b=>b.area).map(b=>b.area);
-  document.querySelectorAll('.bn-item').forEach(item=>{
-    const a=item.dataset.area;
-    const active=a?a===activeArea:!barAreas.includes(activeArea);
-    item.classList.toggle('active',active);
-  });
 }
 
 /* ── RENDER A PAGE ─────────────────────────────────────── */
@@ -4843,11 +5057,13 @@ const WIDE_PANELS=new Set(['draft']);
    a hub. Merging the Live boards made the second case necessary: three of
    the five views are paid and two are free, so the gate had to move inside
    the panel — the same journey the players table's column gate made. */
-function proLockWrap(inner,id){
+function proLockWrap(inner,id,why){
+  /* ProGate — preview, not paywall: the real tool renders blurred behind
+     one quiet strip, so you can see the shape of the answer you'd get. */
   return '<div class="pro-lockwrap">'+
     '<div'+(id?' id="'+id+'"':'')+' class="ge-host pro-blur" inert aria-hidden="true">'+inner+'</div>'+
-    '<div class="pro-lockstrip"><span class="pls-tag">PRO</span>'+
-      '<span class="pls-txt">This is the live tool — unlock to use it.</span>'+
+    '<div class="pro-lockstrip"><span class="pls-tag">'+svg(ICON.lock,'width="11" height="11"')+' Pro</span>'+
+      '<span class="pls-txt">'+(why||'This is the live tool, running now — Pro unlocks the specifics.')+'</span>'+
       '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
 }
 
@@ -4893,7 +5109,15 @@ function renderPage(panelId){
 
   document.getElementById('tb-area').textContent=panel.areaLabel;
   document.getElementById('tb-title').textContent=panel.label;
-  document.title='Gameweek Edge \u2014 '+panel.label;
+  /* Per-route metadata: a real <title> and description for every screen,
+     so bookmarks, shares and tabs name the page rather than the app. */
+  document.title=panelId===homePanel()
+    ?'Gameweek Edge \u2014 the calm, clear edge for FPL managers'
+    :panel.label+' \u2014 Gameweek Edge';
+  try{
+    const md=document.querySelector('meta[name="description"]');
+    if(md&&content&&content.desc)md.setAttribute('content',content.desc+' \u2014 Gameweek Edge.');
+  }catch(_){}
 
   const pages=document.getElementById('pages');
   const isPaid=(panel.tier==='paid');
@@ -5414,9 +5638,17 @@ function bestTransfer(b,squadEls,xiEls,bank,hz,protectIds){
    model's top-3 drivers. Default home for linked managers. */
 async function hydrateMyWeek(host){
   const mid=getMid();
-  if(!mid){host.innerHTML=stateBox('team','Link your team for My Week',
-    'Your personalised gameweek briefing — rank, captain, transfer, chip and watchlist — loads here once you link your FPL Manager ID.',
-    '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button>');return;}
+  if(!mid){
+    /* First run: one focused screen. The Manager ID field, the where-do-I
+       -find-this hint, and a browse-the-model-squad secondary path. No
+       coach marks, no banner. */
+    host.innerHTML='<div class="ltf-hero card">'+
+      '<h2 class="ltf-hero-t">Link your team</h2>'+
+      '<p class="ltf-hero-s">One number personalises everything — your rank, captain call, best transfer, '+
+        'chip timing and watchlist, live from the official FPL API.</p>'+
+      linkTeamFlowHtml()+
+      '</div>';
+    return;}
   const b=await boot();
   const [fixtures,picks,hist]=await Promise.all([loadFixtures(),loadPicks(mid,b.cur.id),loadHistory(mid)]);
   await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes for the squad */
@@ -5672,17 +5904,14 @@ const NEXT_WHY={
   price:'Tonight’s likely risers and fallers'
 };
 function dashNextSteps(mid){
-  /* Without a linked team the personalised panels are dead ends, so the
-     unlinked list is everything that stands on its own. */
-  const order=mid
-    ?['transfers','captain','fixtures','allplayers','chips','squad']
-    :['draft','fixtures','allplayers','price','chips'];
-  const items=order.filter(id=>NEXT_WHY[id]&&PANELS[id]&&canSeePanel(PANELS[id])).slice(0,6);
+  /* Two contextual next-actions, not a link grid — the More index carries
+     the full map. Linked managers plan; unlinked visitors explore. */
+  const order=mid?['transfers','fixtures']:['draft','allplayers'];
+  const items=order.filter(id=>NEXT_WHY[id]&&PANELS[id]&&canSeePanel(PANELS[id])).slice(0,2);
   if(!items.length)return '';
-  return '<div class="dash-next"><div class="dash-next-h">Where to next</div>'+
-    '<div class="dash-next-row">'+items.map(id=>
+  return '<div class="dash-next"><div class="dash-next-row">'+items.map(id=>
       '<button type="button" class="dash-next-b" onclick="openPanel(\''+id+'\')">'+
-        '<span class="dash-next-t">'+esc(PANELS[id].label)+'</span>'+
+        '<span class="dash-next-t">'+esc(PANELS[id].label)+' →</span>'+
         '<span class="dash-next-s">'+esc(NEXT_WHY[id])+'</span></button>').join('')+
     '</div></div>';
 }
@@ -5754,39 +5983,58 @@ async function hydrateDashboard(host){
   else if(chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold')
     chipBody='<b>'+chipAdv.best.label+'</b> <span class="dl-sub">'+chipAdv.best.window+'</span>';
   else chipBody='<b>HOLD</b> <span class="dl-sub">'+(chipAdv&&chipAdv.best?esc(chipAdv.best.reason):(chipsLeft?chipsLeft.join(' · ')+' in hand':'link team'))+'</span>';
-  /* Enriched rows: a why-line, a High/Medium/Low confidence chip and (for the
-     captain) a next-2-options expander fill the panel with reasoning. */
-  const cLabel=t=>t==='high'?'High':t==='med'?'Medium':'Low';
-  const capTier=confTier(capConf.value||0);
+  /* ── The hero DecisionCard — the three calls ARE the product. ──
+     Captain leads at display size, xP as the dominant numeral, vice and
+     two alternatives always visible in a comparison row (no disclosure
+     triangles); transfer and chip follow as sibling cards, each with a
+     one-line plain-English rationale and an explicit CTA. */
   const capWhy=cap?(function(){const n=nf[cap.el.team]||{};const ch=cap.el.chance_of_playing_next_round==null?100:cap.el.chance_of_playing_next_round;
-    return 'vs '+esc(n.opp||'?')+(n.home?' (H)':' (A)')+(n.lam!=null?', team xG '+n.lam.toFixed(2):'')+', '+ch+'% to start';})():'';
-  const capAlt=cap?capM.picks.slice(1,3).map(p=>'<div class="qd-alt-row"><span>'+esc(p.el.web_name)+'</span><span class="mono">'+(p.xp!=null?p.xp.toFixed(1):'—')+' xP</span></div>').join(''):'';
+    return 'vs '+esc(n.opp||'?')+(n.home?' (H)':' (A)')+(n.lam!=null?' \u00b7 team xG '+n.lam.toFixed(2):'')+' \u00b7 '+ch+'% to start';})():'';
   const trGain=(squad&&trCls==='pos'&&trVal!=null)?parseFloat(String(trVal).replace('+',''))||0:0;
-  const trTier=trGain>=3?'high':trGain>=1.5?'med':'low';
-  const trWhy=squad?(trCls==='pos'?'+'+trGain.toFixed(1)+' xP over the next 5 gameweeks':'holding scores more than any move this week'):'link your team for a transfer tuned to your squad';
+  const trConf=squad?Math.max(20,Math.min(92,Math.round(45+trGain*12))):null;
+  const trWhy=squad?(trCls==='pos'?'Worth +'+trGain.toFixed(1)+' expected points over the next five gameweeks.':'Holding scores more than any move this week.'):'Link your team for a transfer tuned to your squad.';
   const chipOn=chipAdv&&chipAdv.best&&chipAdv.best.window!=='hold';
-  const chipTier=chipOn?(chipAdv.best.conf>=67?'high':chipAdv.best.conf>=45?'med':'low'):'low';
   const chipWhy=chipAdv&&chipAdv.best?esc(chipAdv.best.reason):'';
-  const arow=(k,body,v,cls,why,tier,tierLabel,alt)=>
-    '<div class="qd-arow"><div class="qd-row"><span class="qd-k">'+k+'</span>'+body+
-      (tier?'<span class="conf-chip conf-'+tier+'" style="margin-left:6px">'+tierLabel+'</span>':'')+
-      (v!=null?'<span class="qd-v'+(cls?' '+cls:'')+'">'+v+'</span>':'')+'</div>'+
-      (why?'<div class="qd-why">'+why+'</div>':'')+
-      (alt?'<details class="qd-alt"><summary>Alternatives</summary>'+alt+'</details>':'')+'</div>';
-  /* Status chip: PRE-SEASON dominates before GW1 (numbers are provisional,
-     for a linked manager too); otherwise DEMO for an unlinked manager. */
-  const statusTag=b.preseason?'<span class="demo-chip">PRE-SEASON</span>':(mid?'':'<span class="demo-chip">DEMO</span>');
-  const q1='<div class="card qd qd-hero'+(mid&&!b.preseason?'':' qd-demo')+'" id="tour-q1" data-dash="action">'+qh('This week · action','GW'+b.cur.id+' · CONF '+Math.round(capConf.value||0)+'%',statusTag)+
-    '<p class="beginner-only dl-sub" style="margin:2px 0 8px">Your captain, transfer and chip call for this gameweek, in one glance. '+
-      /* The one signpost for someone who does not yet know the game itself.
-         Simple mode only: an experienced manager does not need offering a
-         primer every time they open the dashboard. */
-      '<a href="#" onclick="openPanel(\'fplbasics\');return false">New to FPL? Start here \u2192</a></p>'+
-    arow('► CAPTAIN',cap?'<b>'+esc(cap.el.web_name)+'</b>':'—',cap?cap.xp.toFixed(1)+' xP':null,'qd-hot',capWhy,cap?capTier:'',cLabel(capTier),capAlt)+
-    arow('VICE',vice?'<b>'+esc(vice.el.web_name)+'</b>':'—',vice?vice.xp.toFixed(1)+' xP':null,'','backup if your captain is benched or does not start','','','')+
-    arow('TRANSFER',trBody,trVal,trCls,trWhy,squad?trTier:'',cLabel(trTier),'')+
-    arow('CHIP',chipBody,null,'',chipWhy,chipOn?chipTier:'',cLabel(chipTier),'')+
-    '<div class="qd-foot"><span style="opacity:.85">'+jt('captain margin')+' '+(margin>=0?'+':'')+margin.toFixed(1)+' '+jt('xP')+' · <span class="expert-only">'+scopeNote+'</span></span>'+formSpark+'</div></div>';
+  /* Unlinked, the card says whose squad this is — inline, not a banner. */
+  const modelTag=mid?'':'<button type="button" class="dc-modeltag" onclick="openMidModal()">'+
+    '<b>Model squad</b> \u00b7 not your team \u2014 link yours</button>';
+  const preTag=b.preseason?'<span class="demo-chip">Pre-season</span>':'';
+  const alts=cap?capM.picks.slice(1,4):[];
+  const altRow=alts.length?'<div class="dc-alts" role="list" aria-label="Vice-captain and alternatives">'+
+    alts.map((p,i)=>{const d=p.xp!=null&&cap&&cap.xp!=null?p.xp-cap.xp:null;
+      return '<button type="button" class="dc-alt" role="listitem" onclick="openPlayer('+p.el.id+')">'+
+        '<span class="dc-alt-tag">'+(i===0?'Vice':'Alt')+'</span>'+
+        '<span class="dc-alt-nm">'+esc(p.el.web_name)+'</span>'+
+        '<span class="dc-alt-xp num">'+(p.xp!=null?p.xp.toFixed(1):'\u2014')+'</span>'+
+        (d!=null?'<span class="dc-alt-d num">'+(d>=0?'+':'')+d.toFixed(1)+'</span>':'')+
+        '</button>';}).join('')+'</div>':'';
+  const q1='<section class="card dc dc-hero" data-dash="action" aria-labelledby="dc-cap-h">'+
+    '<div class="dc-head"><span class="qd-label" id="dc-cap-h">Captain \u00b7 GW'+b.cur.id+'</span>'+
+      '<span class="dc-tags">'+preTag+modelTag+(cap?confChip(capConf.value||0,''):'')+'</span></div>'+
+    (cap
+      ?'<div class="dc-main"><button type="button" class="dc-name" onclick="openPlayer('+cap.el.id+')">'+esc(cap.el.web_name)+'</button>'+
+        '<div class="dc-xp"><b class="num">'+cap.xp.toFixed(1)+'</b><span>'+jt('xP')+'</span></div></div>'+
+        '<p class="dc-sub">'+capWhy+'</p>'+
+        altRow+
+        '<p class="dc-margin">'+jt('captain margin')+' <b class="num">'+(margin>=0?'+':'')+margin.toFixed(1)+'</b> '+jt('xP')+
+          '<span class="expert-only"> \u00b7 '+scopeNote+'</span>'+formSpark+'</p>'
+      :'<p class="dc-sub">No eligible captain yet \u2014 the call appears once fixtures are set.</p>')+
+    '<p class="beginner-only dc-primer"><a href="#" onclick="openPanel(\'fplbasics\');return false">New to FPL? Start here \u2192</a></p>'+
+    '</section>';
+  const q1b='<div class="dc-pair" data-dash="action2">'+
+    '<section class="card dc" aria-label="Transfer call">'+
+      '<div class="dc-head"><span class="qd-label">Transfer</span>'+(squad&&trConf!=null?confChip(trConf,''):'')+'</div>'+
+      '<div class="dc-call">'+trBody+(trVal!=null?'<span class="dc-call-v num '+(trCls||'')+'">'+trVal+' xP</span>':'')+'</div>'+
+      '<p class="dc-sub">'+trWhy+'</p>'+
+      '<button class="btn btn-ghost btn-sm dc-cta" onclick="openPanel(\'transfers\')">Open Planner</button>'+
+    '</section>'+
+    '<section class="card dc" aria-label="Chip call">'+
+      '<div class="dc-head"><span class="qd-label">Chip</span>'+(chipOn?confChip(chipAdv.best.conf,''):'')+'</div>'+
+      '<div class="dc-call">'+chipBody+'</div>'+
+      '<p class="dc-sub">'+(chipWhy||'Chips are one-off boosters \u2014 timing them to the fixture calendar is most of their value.')+'</p>'+
+      '<button class="btn btn-ghost btn-sm dc-cta" onclick="openPanel(\'chips\')">See chip timing</button>'+
+    '</section>'+
+    '</div>';
 
   /* ── Q2: model XI — list by default on phones, pitch toggle ── */
   const xiPool=scoutScored(b,nf);
@@ -5840,7 +6088,7 @@ async function hydrateDashboard(host){
      photo tiles; the pitch view stays one tap away via the toggle. */
   const mxiView='list';
   const mxiBtn=totw?'<button class="btn btn-primary btn-sm mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
-  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="tour-q2" data-dash="xi">'+
+  const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="sec-xi" data-dash="xi">'+
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
     '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+'</span></div>'+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">The 11 players our model would pick this week.</p>'+q2Body+'</div>';
@@ -5859,7 +6107,7 @@ async function hydrateDashboard(host){
       '<span class="qd-v" style="width:76px;text-align:right;color:var(--text-2)">'+esc((nf[e.team]||{}).opp||'—')+(nf[e.team]?(nf[e.team].home?' H':' A'):'')+(nf[e.team]?fdrChip(nf[e.team].diff):'')+'</span>'+
       '<span style="width:14px;text-align:right">'+d+'</span></div>';
   }).join('');
-  const q3='<div class="card qd" data-dash="diffs">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
+  const q3='<div class="card qd" id="sec-diffs" data-dash="diffs">'+qh('Differentials &lt; 15%',diffs.length+' picks')+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">'+jt('differential','Differentials')+' are strong players under 15% owned — where you gain rank on the field.</p>'+
     '<div class="qd-row" style="color:var(--text-3);font-family:var(--font-mono);font-size:10px;min-height:20px">'+
     '<span style="flex:1">PLAYER</span><span>OWN</span><span style="width:44px;text-align:right">XP</span>'+
@@ -5931,57 +6179,27 @@ async function hydrateDashboard(host){
     if(pred===act){hits++;if(f.event===lastGw){lastHits++;}}
     if(f.event===lastGw)lastN++;
   });
-  /* The claim, stated once and stated first. In season it is the live record;
-     pre-season there is no live record to quote, so it falls back to the
-     held-out backtest rather than to a boast. */
-  const proof='<div class="proof-band">'+
-    '<span class="proof-claim">Our forecasts, graded in public.</span>'+
-    (done.length
-      ? '<span class="proof-stat">favourite correct <b>'+Math.round(100*hits/done.length)+'%</b>'+
-        ' across '+done.length+' matches'+(lastN?' &middot; last GW <b>'+lastHits+'/'+lastN+'</b>':'')+'</span>'
-      : '<span class="proof-stat">held-out backtest <b>'+jt('RPS')+' 0.2126</b> on 25/26 &middot; '+
-        'scoring core beats the form baseline on real actuals</span>')+
-    '<a class="proof-link" href="#" onclick="openPanel(\'accountability\');return false">'+
-      'See every prediction &rarr;</a>'+
-    '</div>';
-
-  const trust='<div class="trust-strip"><span class="perf-h">MODEL PERFORMANCE</span>'+
-    (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> · '+done.length+' matches</span>'+
-      (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started — backtest below</span>')+
+  /* ── Model performance — trust-building, so it closes the page rather
+     than opening it. One strip: the live record when there is one, the
+     held-out backtest when there is not, and the way to every prediction. */
+  const trust='<div class="trust-strip"><span class="perf-h">Model performance</span>'+
+    (done.length?'<span>favourite correct <b>'+Math.round(100*hits/done.length)+'%</b> \u00b7 '+done.length+' matches</span>'+
+      (lastN?'<span>last GW <b>'+lastHits+'/'+lastN+'</b></span>':''):'<span>season not started \u2014 graded from kick-off</span>')+
     '<span class="expert-only">backtest '+jt('RPS')+' <b>0.2126</b> '+jt('held-out backtest','held-out')+' 25/26</span>'+
-    '<span class="beginner-only">forecasts tested on unseen gameweeks — <b>strong</b> accuracy</span>'+
-    '<a href="#" onclick="openPanel(\'methodology\');return false" style="margin-left:auto;color:var(--green)">METHODOLOGY →</a></div>';
+    '<span class="beginner-only">forecasts tested on unseen gameweeks, graded in public</span>'+
+    '<a href="#" onclick="openPanel(\'accountability\');return false" style="margin-left:auto;color:var(--green)">See every prediction \u2192</a></div>';
 
-  /* Data-provenance meta line (v6 prototype): honest timestamp + source. */
-  const meta='<div class="dash-meta"><span>DATA '+stamp+'</span>'+
-    '<span class="g">SRC OFFICIAL FPL API</span>'+
-    '<span class="expert-only">MODEL held-out '+jt('RPS')+' 0.2126</span></div>';
-
-  /* ── Hero: the single "what to do this week" line, or live status ──
-     B4 casual on-ramp + B1 live-rank hero + B3 reliability, up top. */
-  let hero;
+  /* Live matchday takes the top slot; otherwise the DecisionCard leads. */
+  let hero='';
   if(anyLive&&mid){
     hero='<div class="dash-hero live"><span class="dash-hero-dot" aria-hidden="true"></span>'+
-      '<span class="dash-hero-txt"><b>Gameweek '+b.cur.id+' is live.</b> Your points and live rank are updating now — no lag, no crashes.</span>'+
-      '<a class="btn btn-primary btn-sm" href="#" onclick="openPanel(\'liverank\');return false">Live rank &rarr;</a></div>';
-  } else if(mid&&cap){
-    const isSwap=trBody.indexOf('&rarr;')>=0||trBody.indexOf('→')>=0;
-    const swapTxt=isSwap?('transfer '+trBody.replace(/<[^>]+>/g,'').trim()):'no urgent transfer';
-    hero='<div class="dash-hero"><span class="dash-hero-txt"><b>This week:</b> captain <b>'+esc(cap.el.web_name)+'</b>, '+swapTxt+
-      (chipsLeft&&chipsLeft.length?', hold your chips':'')+'.</span>'+
-      '<a class="btn btn-ghost btn-sm" href="#" onclick="openPanel(\'gw-actions\');return false">Full plan &rarr;</a></div>';
-  } else {
-    /* Not linked: the single primary CTA is the top-bar button and the slim
-       educational strip above — no duplicate hero card here. */
-    hero='';
+      '<span class="dash-hero-txt"><b>Gameweek '+b.cur.id+' is live.</b> Your points and live rank are updating now.</span>'+
+      '<a class="btn btn-primary btn-sm" href="#" onclick="openPanel(\'liverank\');return false">Live rank \u2192</a></div>';
   }
 
-  /* ── Signals feed: the model read of this gameweek as a terminal log ──
-     Each line is one actionable thing, drawn only from figures already on the
-     dashboard, tagged and colour-coded like a trade blotter. Ordered by how
-     soon it needs a decision: fitness first, then tonight prices, then the
-     transfer market, then defensive-return form. Empty categories vanish, so
-     pre-season (no price churn) simply shows fewer lines. */
+  /* ── Signals feed: the model read of this gameweek, one line each ──
+     Ordered by how soon it needs a decision: fitness first, then tonight
+     prices, then the transfer market, then defensive-return form. */
   const sig=[];
   const sigClub=e=>'<span class="sig-club">'+esc(teamShort(b,e.team))+'</span>';
   flagged.forEach(e=>{
@@ -5993,17 +6211,17 @@ async function hydrateDashboard(host){
   });
   movers.filter(x=>x.pc.prob>=55).slice(0,4).forEach(x=>{
     const rise=x.pc.dir==='rise';
-    sig.push({tag:rise?'PRICE▲':'PRICE▼',cls:rise?'t-up':'t-down',
+    sig.push({tag:rise?'PRICE\u25b2':'PRICE\u25bc',cls:rise?'t-up':'t-down',
       html:sigClub(x.e)+esc(x.e.web_name),msg:rise?'rising tonight':'falling tonight',
       v:x.pc.prob+'%',vcls:rise?'pos':'neg'});
   });
   const netEls=b.elements.map(e=>({e,net:(e.transfers_in_event||0)-(e.transfers_out_event||0)}));
   netEls.filter(x=>x.net>0).sort((a,c)=>c.net-a.net).slice(0,2).forEach(x=>
-    sig.push({tag:'XFER▲',cls:'t-xin',html:sigClub(x.e)+esc(x.e.web_name),
+    sig.push({tag:'XFER\u25b2',cls:'t-xin',html:sigClub(x.e)+esc(x.e.web_name),
       msg:'transferred in',v:'+'+fmtK(x.net),vcls:'pos'}));
   netEls.filter(x=>x.net<0).sort((a,c)=>a.net-c.net).slice(0,1).forEach(x=>
-    sig.push({tag:'XFER▼',cls:'t-xout',html:sigClub(x.e)+esc(x.e.web_name),
-      msg:'transferred out',v:'−'+fmtK(-x.net),vcls:'neg'}));
+    sig.push({tag:'XFER\u25bc',cls:'t-xout',html:sigClub(x.e)+esc(x.e.web_name),
+      msg:'transferred out',v:'\u2212'+fmtK(-x.net),vcls:'neg'}));
   b.elements.filter(e=>e._ci&&(e._ci.dcs||0)>=5&&e._ci.dchr!=null
       &&(e.element_type===2||e.element_type===3)&&e.status==='a')
     .sort((a,c)=>c._ci.dchr-a._ci.dchr).slice(0,2).forEach(e=>
@@ -6014,30 +6232,22 @@ async function hydrateDashboard(host){
     '<span class="sig-name">'+s.html+'</span>'+
     '<span class="sig-msg">'+s.msg+'</span>'+
     '<span class="sig-v '+(s.vcls||'')+'">'+s.v+'</span></div>').join('');
-  const q5=sig.length?'<div class="card qd qd-feed" data-dash="feed">'+
-    qh('Signals','model read · GW'+b.cur.id)+
+  const q5=sig.length?'<div class="card qd qd-feed expert-only" id="sec-signals" data-dash="feed">'+
+    qh('Signals','model read \u00b7 GW'+b.cur.id)+
     '<div class="sig-feed" role="log" aria-label="Model signals for this gameweek">'+sigRows+'</div></div>':'';
 
-  /* Terminal ticker strip — model + team metrics at a glance, above the fold.
-     Every value is already computed above; horizontally scrollable on mobile. */
-  const tkItem=(l,v,cls)=>'<span class="tk-i"><span class="tk-l">'+l+'</span> <span class="tk-vv'+(cls?' '+cls:'')+'">'+v+'</span></span>';
-  const rankDStr=rankDelta==null?'':' <span class="'+(rankDelta<0?'pos':rankDelta>0?'neg':'')+'">('+(rankDelta>0?'+':'')+fmtNum(rankDelta)+')</span>';
-  /* Three, not six. Working memory holds about four chunks and the old strip
-     spent all of them before the page had said anything. The three cut were
-     each already on screen: MODEL CONF sits in the action card's header and
-     again in its ministats, TOP DIFF is the entire differentials card, and
-     DATA repeats the provenance line rendered directly beneath. */
-  const tkStrip='<div class="tk-strip" role="status" aria-label="Model and team metrics">'+
-    (cap?tkItem('CAPTAIN',esc(cap.el.web_name)+' '+cap.xp.toFixed(1)+' xP'):'')+
-    ((mid&&rankNow!=null)
-      ? tkItem('YOUR RANK',fmtNum(rankNow)+rankDStr)
-      : (totw?tkItem('MODEL XI ΣxP',totw.total.toFixed(1)):''))+
-    tkItem('FLAGS',flagsN+' · '+moversN+' price')+
-    '</div>';
-  host.innerHTML=hero+proof+tkStrip+meta+dashChipRow()+'<div class="quad-grid">'+q1+q2+q3+q4+'</div>'+q5+dashNextSteps(mid)+trust;
-  dashApply();
+  /* Section jumper — real, named sections at Everything depth, one tap
+     away, instead of the old cryptic chip row. */
+  const jumpSecs=[['sec-xi','Model XI'],['sec-diffs','Differentials'],['sec-live','Live state']]
+    .concat(sig.length?[['sec-signals','Signals']]:[]);
+  const jump='<nav class="dash-jump expert-only" aria-label="Sections on this page"><span class="dash-jump-l">On this page</span>'+
+    jumpSecs.map(([id,l])=>'<a href="#" onclick="var s=document.getElementById(\''+id+'\');if(s)s.scrollIntoView({behavior:\'smooth\',block:\'start\'});return false">'+l+'</a>').join('')+
+    '</nav>';
+
+  host.innerHTML=hero+q1+q1b+jump+
+    '<div class="quad-grid expert-only">'+q2+q3+q4+'</div>'+q5+
+    dashNextSteps(mid)+trust;
   tickTicker();
-  maybeTour();
 }
 
 /* ── Methodology: how the numbers are made, in plain English ── */
@@ -6062,17 +6272,24 @@ async function hydrateMethodology(host){
     '<p class="dl-sub">Questions or spot an error? The whole app is built to be checked — tell us and we’ll fix it.</p>';
 }
 
-/* ── /design: the terminal primitives, demoed in one place ── */
+/* ── /design: the editorial primitives, demoed in one place.
+   Swatches read the LIVE tokens rather than carrying their own hex, so
+   this page can never drift from the stylesheet or the active theme. */
 async function hydrateDesign(host){
-  const sw=(name,v)=>'<div class="ds-sw"><div style="background:'+v+'"></div><span>'+name+'<br>'+v+'</span></div>';
+  const tok=n=>{try{return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}catch(_){return '';}};
+  const sw=n=>'<div class="ds-sw"><div style="background:var('+n+')"></div><span>'+n+'<br>'+tok(n)+'</span></div>';
   const panel=(t,body)=>'<div class="card"><div class="card-title">'+t+'</div>'+body+'</div>';
   host.innerHTML='<div class="ds-grid">'+
     panel('Tokens · surfaces','<div class="ds-swatches">'+
-      sw('--bg','#0A0C0F')+sw('--surface','#111418')+sw('--surface-2','#161A20')+sw('--border','#1F242B')+'</div>')+
+      sw('--bg')+sw('--surface')+sw('--surface-3')+sw('--border-2')+'</div>')+
     panel('Tokens · semantic','<div class="ds-swatches">'+
-      sw('--green','#00D26A')+sw('--red','#FF4D4F')+sw('--amber','#F5A524')+sw('--blue','#3B82F6')+sw('--hot','#B6FF3C')+'</div>')+
-    panel('Type','<div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-2)">Panel label · 11px mono tracked</div>'+
-      '<div style="font-size:14px;margin:6px 0">Body copy — Inter 14/1.35</div>'+
+      sw('--green')+sw('--red')+sw('--amber')+sw('--blue')+sw('--hot')+'</div>')+
+    panel('Tokens · positions','<div class="ds-swatches">'+
+      sw('--pos-gk')+sw('--pos-def')+sw('--pos-mid')+sw('--pos-fwd')+'</div>'+
+      '<div style="margin-top:8px;display:flex;gap:6px"><span class="pos-pill p1">GKP</span><span class="pos-pill p2">DEF</span><span class="pos-pill p3">MID</span><span class="pos-pill p4">FWD</span></div>')+
+    panel('Confidence','<div style="display:flex;gap:8px;flex-wrap:wrap">'+confChip(82,'')+confChip(58,'')+confChip(31,'')+'</div>')+
+    panel('Type','<div style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.02em">Display — Bricolage Grotesque</div>'+
+      '<div style="font-size:14px;margin:6px 0">Body copy — Public Sans 14/1.5</div>'+
       '<div class="mono" style="font-size:22px">1,234.56 <span class="pos">+7.8</span> <span class="neg">-2.1</span></div>')+
     panel('Deltas &amp; badges','<div class="qd-row"><span class="qd-k">DELTA</span><b>Haaland</b><span class="qd-v pos">↑ +0.3</span></div>'+
       '<div class="qd-row"><span class="qd-k">BADGES</span><span class="badge badge-green">LIVE</span> <span class="badge badge-amber">DOUBTFUL</span> <span class="badge badge-red">FT</span> <span class="badge badge-grey">GW38</span></div>')+
@@ -6080,12 +6297,11 @@ async function hydrateDesign(host){
       '<div class="qd-row"><b>Form (falling)</b><span class="qd-v">'+spark([12,9,10,6,4,2],{w:80,h:16})+'</span></div>')+
     panel('Progress bar','<div class="qd-row"><b>Rise 82%</b><span class="qd-bar"><div style="width:82%"></div></span></div>'+
       '<div class="qd-row"><b>Fall 61%</b><span class="qd-bar fall"><div style="width:61%"></div></span></div>')+
-    panel('Ticker items','<div class="tickbar" style="position:static;border:1px solid var(--border-2);border-radius:4px">'+
-      '<span class="tk-item tk-brand"><span class="tk-dot"></span>GWE</span><span class="tk-item">GW <b>38</b></span>'+
-      '<span class="tk-item">PRICES <b class="pos">↑7</b> <b class="neg">↓12</b></span></div>')+
+    panel('Gameweek chip','<span class="gwchip"><span class="gwchip-gw">GW<b>38</b></span><span class="gwchip-sep">·</span><span class="gwchip-dl">deadline <b>in 5h 12m</b></span></span> '+
+      '<span class="gwchip warn" style="margin-left:8px"><span class="gwchip-gw">GW<b>38</b></span><span class="gwchip-sep">·</span><span class="gwchip-dl">deadline <b>in 2h 04m</b></span></span>')+
     panel('Keys','<span class="cmdk-foot" style="border:0;padding:0"><kbd>⌘K</kbd> <kbd>g s</kbd> <kbd>j</kbd> <kbd>k</kbd> <kbd>?</kbd></span>')+
     '</div>'+
-    '<p class="dl-sub" style="margin-top:14px">Every primitive is a plain HTML/CSS pattern driven by the tokens — no components, no build step. Data rows: 28px · card padding 12px · radius 4px max · depth by hairline, never shadow.</p>';
+    '<p class="dl-sub" style="margin-top:14px">Every primitive is a plain HTML/CSS pattern driven by the tokens — no components, no build step. Mono is for numerals only, always tabular; cards 12px radius with soft elevation; light is the default theme and dark is the same tokens after dark. See DESIGN.md.</p>';
 }
 
 /* ── GW Debrief — the whole gameweek, not your team ──────
@@ -10868,10 +11084,15 @@ function renderPlayerTable(){
     const head='<thead><tr>'+cols.map(c=>{
       const lk=plColLocked(c);
       const active=!lk&&c.k===PL_STATE.k,arrow=active?(PL_STATE.dir===-1?' ▼':' ▲'):'';
+      /* Column-header glossary: the same plain-English definition the
+         inline jargon terms carry, as a hover/focus tooltip. */
+      const def=GLOSSARY[c.l]||GLOSSARY[String(c.l).replace(/\s.*$/,'')]||'';
       /* A locked heading carries no data-k, so the sort handler cannot see
          it at all — the lock is in the markup, not only in the handler. */
-      return '<th '+(lk?'data-lk="1" title="The Edge — unlock this column"':'data-k="'+c.k+'"')+
-        ' class="'+(c.num?'num':'')+(active?' active':'')+(lk?' lk':'')+'">'+
+      return '<th '+(lk?'data-lk="1" title="The Edge — unlock this column"':'data-k="'+c.k+'"'+
+          (def?' title="'+esc(def)+'"':''))+
+        ' class="'+(c.num?'num':'')+(active?' active':'')+(lk?' lk':'')+'"'+
+        (def?' aria-label="'+esc(c.l)+': '+esc(def)+'"':'')+'>'+
         (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(c.l)+arrow+'</th>';
     }).join('')+'</tr></thead>';
     const body='<tbody>'+shown.map(e=>'<tr data-id="'+e.id+'">'+cols.map(c=>
@@ -10956,16 +11177,40 @@ async function hydrateAllPlayers(host){
     '<p class="dl-sub" id="pl-lensnote" style="margin:0 0 10px"></p>'+
     preseasonNote(b,'the xP column is provisional')+
     '<div class="pl-filters">'+
-      '<input id="pl-q" class="modal-in" placeholder="Search player…" autocomplete="off" style="flex:2 1 150px">'+
-      '<select id="pl-pos" class="modal-in" style="flex:1 1 100px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
-      '<select id="pl-team" class="modal-in" style="flex:1 1 120px">'+teamOpts+'</select>'+
+      '<input id="pl-q" class="modal-in" type="search" placeholder="Search player…" autocomplete="off" aria-label="Search players" style="flex:2 1 150px">'+
+      '<select id="pl-team" class="modal-in" aria-label="Filter by club" style="flex:1 1 120px">'+teamOpts+'</select>'+
       '<div class="seg" id="pl-viewseg"><button class="seg-b'+(PL_STATE.view==='table'?' on':'')+'" data-v="table">Table</button><button class="seg-b'+(PL_STATE.view==='cards'?' on':'')+'" data-v="cards">Cards</button><button class="seg-b'+(PL_STATE.view==='chart'?' on':'')+'" data-v="chart">Value</button></div>'+
+    '</div>'+
+    '<div class="pl-poschips" id="pl-poschips" role="group" aria-label="Filter by position">'+
+      [[1,'GKP'],[2,'DEF'],[3,'MID'],[4,'FWD']].map(([t,l])=>{
+        const n=b.elements.filter(e=>e.element_type===t).length;
+        return '<button type="button" class="pos-pill p'+t+(PL_STATE.pos===t?' on':'')+'" data-pos="'+t+'"'+
+          ' aria-pressed="'+(PL_STATE.pos===t?'true':'false')+'">'+l+' <b class="num">'+n+'</b></button>';
+      }).join('')+
+      '<button type="button" class="pl-clear" id="pl-clear" hidden>Clear all ×</button>'+
     '</div>'+
     '<div id="pl-view"></div>'+
     '<div class="dl-sub" id="pl-count" style="margin-top:8px"></div></div>';
-  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();renderPlayerTable();});
-  host.querySelector('#pl-pos').addEventListener('change',e=>{PL_STATE.pos=+e.target.value;renderPlayerTable();});
-  host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;renderPlayerTable();});
+  const plSyncFilters=()=>{
+    host.querySelectorAll('#pl-poschips .pos-pill').forEach(x=>{
+      const on=+x.dataset.pos===PL_STATE.pos;
+      x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});
+    const cl=host.querySelector('#pl-clear');
+    if(cl)cl.hidden=!(PL_STATE.pos||PL_STATE.team||PL_STATE.q);
+  };
+  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();plSyncFilters();renderPlayerTable();});
+  host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;plSyncFilters();renderPlayerTable();});
+  host.querySelectorAll('#pl-poschips .pos-pill').forEach(btn=>btn.addEventListener('click',()=>{
+    PL_STATE.pos=PL_STATE.pos===+btn.dataset.pos?0:+btn.dataset.pos;
+    plSyncFilters();renderPlayerTable();
+  }));
+  host.querySelector('#pl-clear').addEventListener('click',()=>{
+    PL_STATE.pos=0;PL_STATE.team=0;PL_STATE.q='';
+    const q=host.querySelector('#pl-q');if(q)q.value='';
+    const t=host.querySelector('#pl-team');if(t)t.value='0';
+    plSyncFilters();renderPlayerTable();
+  });
+  plSyncFilters();
   host.querySelectorAll('#pl-viewseg .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
     PL_STATE.view=btn.dataset.v;
     host.querySelectorAll('#pl-viewseg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
@@ -13129,9 +13374,7 @@ async function hydrateChips(host){
   const swingCard=gwSwingCard(b,fixtures);
   if(!mid){
     host.innerHTML=planCard+roadCard+swingCard+
-      '<div class="card"><div class="ge-state">'+svg(ICON.team)+
-        '<b>Your chips</b><p>Link your team (top right) to see which chips you have left, personalised Bench Boost readiness and the double / blank timing for your own squad.</p>'+
-        '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
+      previewEmptyState('Your chips','See which chips you have left, personalised Bench Boost readiness and the double / blank timing for your own squad.');
     return;
   }
   const hist=await loadHistory(mid);
@@ -13956,9 +14199,8 @@ async function hydrateEO(host){
         '<div class="dl">'+plist(exposure,'badge-red','Exposed')+'</div></div>':'');
   }catch(_){personal='';}}
   if(!personal){
-    personal='<div class="card mb-20"><div class="ge-state">'+svg(ICON.target)+
-      '<b>Link your team for Cover &amp; Edge</b><p>Add your FPL Manager ID to split your own XI into rank-protecting cover and rank-climbing edge picks, and see where you’re exposed.</p>'+
-      '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Link team</button></div></div>';
+    personal='<div class="mb-20">'+previewEmptyState('Cover & Edge',
+      'Split your own XI into rank-protecting cover and rank-climbing edge picks, and see where you\u2019re exposed.')+'</div>';
   }
 
   /* League-wide reference: the most-owned players and their EO. */
@@ -14877,9 +15119,22 @@ function openXpDrawer(name,xp,parts){
 }
 function closeXpDrawer(){const d=document.getElementById('xp-drawer');if(d)d.classList.remove('open');}
 /* Flash a number green (up) or red (down) for ~2s when its value changes.
-   Wired to live state (e.g. the ticker flags), not just demo data. */
+   Wired to live state (e.g. the ticker flags), not just demo data.
+   Every flash is also announced to the screen-reader live region — colour
+   alone must never be the only signal a value moved. */
 function flashEl(el,dir){if(!el)return;el.classList.remove('flash-up','flash-down');void el.offsetWidth;
-  el.classList.add(dir>0?'flash-up':'flash-down');setTimeout(function(){el.classList.remove('flash-up','flash-down');},2100);}
+  el.classList.add(dir>0?'flash-up':'flash-down');setTimeout(function(){el.classList.remove('flash-up','flash-down');},2100);
+  try{const t=(el.textContent||'').trim();if(t)announceLive(t+(dir>0?' — up':' — down'));}catch(_){}}
+/* ARIA live region for live-score and rank changes. One polite region,
+   debounced, so assistive tech hears the change without being flooded. */
+function announceLive(text){
+  let r=document.getElementById('ge-live-region');
+  if(!r){r=document.createElement('div');r.id='ge-live-region';r.className='sr-only';
+    r.setAttribute('role','status');r.setAttribute('aria-live','polite');
+    document.body.appendChild(r);}
+  clearTimeout(announceLive._t);
+  announceLive._t=setTimeout(()=>{r.textContent=text;},400);
+}
 /* Model XI "why this pick" — form, fixture difficulty, minutes and price,
    in the shared right-side drawer. */
 async function mxiWhy(id){
@@ -20476,11 +20731,16 @@ function clubDepth(elements,teamId,gp){
 
 /* Confidence tier + chip — one component reused across surfaces.
    green ≥70 · amber 50–69 · red <50, always with the number shown. */
-function confTier(v){return v>=70?'green':v>=50?'amber':'red';}
+function confTier(v){return v>=70?'high':v>=50?'med':'low';}
+function confWord(t){return t==='high'?'High':t==='med'?'Medium':'Low';}
+/* ConfidenceMeter — the one way confidence renders anywhere in the app:
+   a 3-step dot scale plus the word, never a bare number or colour alone. */
 function confChip(v,label){
   v=Math.max(0,Math.min(100,Math.round(v)));
-  return '<span class="conf-chip conf-'+confTier(v)+'" title="Model confidence '+v+'/100">'+
-    (label?esc(label)+' ':'')+v+'</span>';
+  const tier=confTier(v);
+  return '<span class="conf-chip conf-'+tier+'" title="Model confidence '+v+'/100">'+
+    '<span class="conf-dots" aria-hidden="true"><i></i><i></i><i></i></span>'+
+    (label?esc(label)+' ':'')+confWord(tier)+'</span>';
 }
 
 /* Captain eligibility: outfield attackers only (MID/FWD — never GK/DEF),
@@ -22051,6 +22311,7 @@ async function hydrateDraft(host){
 
 /* Panels wired to live FPL data. */
 const WIRED={
+  more:hydrateMore,
   myweek:hydrateMyWeek,
   accountability:hydrateModelHub,
   dashboard:hydrateDashboard,
@@ -22132,6 +22393,9 @@ function applyTheme(theme){
   document.getElementById('theme-label').textContent=isDark?'Light':'Dark';
   /* Persist and let the native shell colour the status bar to match. */
   try{localStorage.setItem('ge-theme',theme);}catch(_){}
+  /* Keep the browser chrome in step with the canvas. */
+  try{const tc=document.querySelector('meta[name="theme-color"]');
+    if(tc)tc.setAttribute('content',isDark?'#10161c':'#f4f6f8');}catch(_){}
   window.GENative&&GENative.setTheme(theme);
 }
 function storedTheme(){
@@ -22140,6 +22404,20 @@ function storedTheme(){
 function toggleTheme(){
   const current=document.documentElement.getAttribute('data-theme');
   applyTheme(current==='dark'?'light':'dark');
+}
+
+/* ── OVERFLOW MENU (the GameweekBar's single "more" control) ── */
+function toggleTbMenu(){
+  const m=document.getElementById('tb-menu'),b=document.getElementById('menu-btn');
+  if(!m)return;
+  m.hidden=!m.hidden;
+  if(b)b.setAttribute('aria-expanded',m.hidden?'false':'true');
+  if(!m.hidden){const f=m.querySelector('button');if(f)f.focus();}
+}
+function closeTbMenu(){
+  const m=document.getElementById('tb-menu'),b=document.getElementById('menu-btn');
+  if(m)m.hidden=true;
+  if(b)b.setAttribute('aria-expanded','false');
 }
 
 /* ── TERMINAL TICKER ─────────────────────────────────────
@@ -22159,8 +22437,9 @@ function tickTicker(){
     const p=n=>String(n).padStart(2,'0');
     return 'T-'+(d>0?d+'d ':'')+p(h)+':'+p(m)+':'+p(s);};
   const cdShort=iso=>{const ms=new Date(iso)-Date.now();if(ms<=0)return null;
-    const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),m=Math.floor(ms%3600e3/60e3);
-    return 'T-'+(d>0?d+'d '+h+'h':h>0?h+'h '+m+'m':m+'m');};
+    const d=Math.floor(ms/86400e3),h=Math.floor(ms%86400e3/3600e3),
+      m=Math.floor(ms%3600e3/60e3),s=Math.floor(ms%60e3/1e3);
+    return 'in '+(d>0?d+'d '+h+'h':h>0?h+'h '+String(m).padStart(2,'0')+'m':m>0?m+'m '+String(s).padStart(2,'0')+'s':s+'s');};
   /* This chip is the app's answer to "which gameweek is it", and it has to
      be the SAME answer the sidebar gives or the two contradict each other
      on screen — which is exactly what happened: the strip read "GW 1" while
@@ -22173,27 +22452,34 @@ function tickTicker(){
      answering its own question. The anchor is the answer in every phase —
      the gameweek in progress while one is, the next one once it is not. */
   const labelEv=b.upcoming||focus;
-  set('tk-gw','GW <b>'+(labelEv?labelEv.id:b.cur.id)+'</b>');
-  /* Phase-aware header — never the dead "DEADLINE PASSED". */
+  set('tk-gw','GW<b>'+(labelEv?labelEv.id:b.cur.id)+'</b>');
+  /* Tone applies to the whole chip: amber inside 6 hours, red inside the
+     last hour. The Live tab's pulsing dot follows the same phase read. */
+  const chip=document.getElementById('gwchip');
+  const setTone=t=>{if(chip){chip.classList.toggle('warn',t==='warn');chip.classList.toggle('alert',t==='alert');}};
+  try{document.body.classList.toggle('gw-live',ph.phase==='live');}catch(_){}
+  /* Phase-aware copy — plain English, never the dead "DEADLINE PASSED". */
   if(ph.phase==='pre'){
-    const t=cd(focus.deadline_time)||'—';
-    const ts=cdShort(focus.deadline_time)||t;
-    /* Escalating urgency: red inside 24h, amber-yellow inside a week. */
-    const msLeft=new Date(focus.deadline_time)-Date.now();
-    const tone=msLeft<=0?'':msLeft<=864e5?'dl-alert':msLeft<=6048e5?'dl-warn':'';
-    set('tk-dl','DEADLINE <b'+(tone?' class="'+tone+'"':'')+'><span class="tk-full">'+t+'</span><span class="tk-short">'+ts+'</span></b>');set('qd-count',t);
+    const ms=new Date(focus.deadline_time)-Date.now();
+    const t=cdShort(focus.deadline_time)||'—';
+    setTone(ms<=36e5?'alert':ms<=216e5?'warn':'');
+    set('tk-dl','deadline <b>'+t+'</b>');set('qd-count',cd(focus.deadline_time)||'—');
   }else if(ph.phase==='live'){
-    set('tk-dl','<b class="pos">● LIVE</b> GW'+(ph.cur?ph.cur.id:'')+' in play');
+    setTone('');
+    set('tk-dl','<b class="pos">● live</b> — in play now');
     set('qd-count','LIVE');
   }else if(ph.phase==='post'){
-    set('tk-dl','GW'+(ph.cur?ph.cur.id:'')+' <b>RESULT IN</b>');
+    setTone('');
+    set('tk-dl','GW'+(ph.cur?ph.cur.id:'')+' <b>result settling</b>');
     set('qd-count','GW'+(ph.cur?ph.cur.id:''));
   }else if(ph.phase==='between'&&ph.target){
-    const t=cd(ph.target.deadline_time);
-    set('tk-dl','GW'+ph.target.id+' OPENS <b>'+(t||fmtDayShort(ph.target.deadline_time))+'</b>');
-    set('qd-count',t||fmtDayShort(ph.target.deadline_time));
+    setTone('');
+    const t=cdShort(ph.target.deadline_time);
+    set('tk-dl','opens <b>'+(t||fmtDayShort(ph.target.deadline_time))+'</b>');
+    set('qd-count',cd(ph.target.deadline_time)||fmtDayShort(ph.target.deadline_time));
   }else{
-    set('tk-dl','SEASON <b>ENDED</b>');set('qd-count','—');
+    setTone('');
+    set('tk-dl','season <b>ended</b>');set('qd-count','—');
   }
   /* Market + fitness counts, recomputed only when the bootstrap changes.
      Between/after a GW the per-event deltas reset to zero — show a neutral
@@ -22359,7 +22645,6 @@ function initCmdk(){
     const row=e.target.closest('[data-ck]');if(row)cmdkRun(+row.dataset.ck);
   });
   document.addEventListener('click',e=>{if(e.target.closest('[data-cmdk-close]'))cmdkClose();});
-  document.getElementById('tk-cmdk-btn').addEventListener('click',cmdkOpen);
 }
 
 /* Row navigation: j/k walk the current panel's clickable rows, enter
@@ -22430,7 +22715,9 @@ const CHORD_MS=900;
    so a missing bundle degrades to "no shortcuts" rather than to a thrown
    error that would abandon the rest of this script. */
 function kbdBind(map,opts){
-  if(!window.tinykeys){console.warn('tinykeys unavailable — keyboard shortcuts are off');return;}
+  /* Bundled into vendor.js; when a stripped-down build ships without it the
+     shortcut layer simply stays off — no console noise about it. */
+  if(!window.tinykeys)return;
   return window.tinykeys(document,map,opts);
 }
 /* True when a key event must not reach a shortcut. Order matches the
@@ -22694,15 +22981,7 @@ function refreshIdentity(entry){
   const label=btn.querySelector('.si-label')||btn;
   if(entry&&entry.name){label.textContent=entry.name;}
   else if(getMid()){label.textContent='My Team';}
-  else{label.textContent='Link Team';}
-  syncLinkRibbon();
-}
-/* Show the sticky guest ribbon only when no team is linked and it hasn't
-   been dismissed this session. */
-function syncLinkRibbon(){
-  const r=document.getElementById('link-ribbon');if(!r)return;
-  let dismissed=false;try{dismissed=sessionStorage.getItem('ge-lr-x')==='1';}catch(_){}
-  r.classList.toggle('hidden',!!getMid()||dismissed);
+  else{label.textContent='Link team';}
 }
 
 /* ── GAMEWEEK STRIP (sidebar) ──────────────────────────── */
@@ -22890,7 +23169,7 @@ function init(){
   buildNav();
   buildBottomNav();
   sparkWatch();
-  applyTheme(storedTheme()||'dark');
+  applyTheme(storedTheme()||'light');
   const home=homePanel();
   currentPanel=home;
   renderPage(home);
@@ -22901,12 +23180,13 @@ function init(){
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
   document.getElementById('refresh-btn').addEventListener('click',doRefresh);
 
-  /* Persistent desktop search launcher → command palette. */
-  document.getElementById('tb-search').addEventListener('click',cmdkOpen);
-  /* Sticky guest ribbon: dismiss for the session, and show it if needed. */
-  document.getElementById('link-ribbon-x').addEventListener('click',()=>{
-    try{sessionStorage.setItem('ge-lr-x','1');}catch(_){}syncLinkRibbon();});
-  syncLinkRibbon();
+  /* Overflow menu: search, depth, refresh, export, help, feedback. */
+  document.getElementById('menu-btn').addEventListener('click',toggleTbMenu);
+  document.getElementById('tbm-search').addEventListener('click',()=>{closeTbMenu();cmdkOpen();});
+  document.addEventListener('click',e=>{
+    const m=document.getElementById('tb-menu');
+    if(m&&!m.hidden&&!e.target.closest('#tb-menu')&&!e.target.closest('#menu-btn'))closeTbMenu();
+  });
 
   /* Connectivity banner (web + native), PWA worker, native shell wiring. */
   initNetwork();
@@ -22946,22 +23226,37 @@ function init(){
     refreshTierFromCloud(0);
     try{history.replaceState({},'',location.pathname);}catch(_){}
   }
-  /* Deep link from a push notification (e.g. /?panel=price). */
-  const pm=resolvePanel((location.search.match(/[?&]panel=([a-z-]+)/)||[])[1]);
-  if(pm&&PANELS[pm]){openPanel(pm);
-    try{history.replaceState({},'',location.pathname);}catch(_){}}
-
-  /* Hash deep link (#panelId) — bookmarkable views; openPanel keeps it fresh. */
-  const hp=resolvePanel(location.hash.slice(1));
-  if(hp&&PANELS[hp])openPanel(hp);
+  /* Deep links, in priority order: ?panel= (push notifications), the legacy
+     #hash (old bookmarks and shares — normalised to the path), then the
+     real path (/squad, /players …). openPanel writes the canonical URL. */
+  const pm=(location.search.match(/[?&]panel=([a-z-]+)/)||[])[1];
+  const hh=location.hash.slice(1);
+  if(pm&&PANELS[resolvePanel(pm)]){
+    try{history.replaceState({},'',location.pathname);}catch(_){}
+    openPanel(pm,{noHistory:true});
+  } else if(hh&&PANELS[resolvePanel(hh)]){
+    try{history.replaceState({},'',location.pathname);}catch(_){}
+    openPanel(hh,{noHistory:true});
+  } else {
+    const pp=pathPanel(location.pathname);
+    if(pp&&PANELS[resolvePanel(pp)])openPanel(pp,{noHistory:true});
+    else if(pp&&location.pathname!=='/'){
+      /* Unknown path: land home and say so in the URL rather than 404ing. */
+      openPanel(homePanel(),{noHistory:true});
+    }
+  }
+  /* Back/forward re-opens the panel the URL names, without re-pushing. */
+  window.addEventListener('popstate',()=>{
+    const pp=pathPanel(location.pathname);
+    const target=pp&&PANELS[resolvePanel(pp)]?pp:homePanel();
+    if(resolvePanel(target)!==currentPanel||PANEL_VIEW[target])openPanel(target,{noHistory:true});
+  });
+  /* Legacy in-app #hash links still work: translate to the path route. */
   window.addEventListener('hashchange',()=>{
-    const p=resolvePanel(location.hash.slice(1));
-    if(!p||!PANELS[p])return;
-    if(p!==currentPanel){openPanel(p);return;}
-    /* Already here — but arriving via a retired id leaves that id in the bar,
-       so the URL claims a panel that no longer exists. Normalise it. */
-    if(location.hash.slice(1)!==p){
-      try{history.replaceState(null,'','#'+p);}catch(_){}}
+    const p=location.hash.slice(1);
+    if(!p||!PANELS[resolvePanel(p)])return;
+    try{history.replaceState({},'',location.pathname);}catch(_){}
+    openPanel(p);
   });
 
   document.getElementById('export-btn').addEventListener('click',exportViewCSV);
@@ -22982,8 +23277,12 @@ function init(){
      fire from inside a text field too — the manager-id modal is a form, and
      Escape has always closed it. Hence `ignore:()=>false` rather than
      kbdIgnore. */
-  kbdBind({Escape:()=>{closeSidebar();closeMidModal();closeUpgrade();closeAccount();closePlayer();closeXpDrawer();closeMoreSheet();}},
+  kbdBind({Escape:()=>{closeSidebar();closeMidModal();closeUpgrade();closeAccount();closePlayer();closeXpDrawer();closeTbMenu();}},
     {ignore:()=>false});
+  /* Any one-shot menu row closes the menu after its own handler runs. */
+  document.getElementById('tb-menu').addEventListener('click',e=>{
+    if(e.target.closest('.tbm-row'))setTimeout(closeTbMenu,60);
+  });
 }
 
 document.addEventListener('DOMContentLoaded',init);

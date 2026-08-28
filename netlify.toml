@@ -59,17 +59,9 @@
   to = "/landing.html"
   status = 200
 
-# Clean URL for the model methodology page (linked from the trust strip).
-[[redirects]]
-  from = "/methodology"
-  to = "/?panel=methodology"
-  status = 301
-
-# Clean URL for the design-system reference.
-[[redirects]]
-  from = "/design"
-  to = "/?panel=design"
-  status = 301
+# /methodology and /design used to 301 to ?panel= URLs. The app now uses
+# real path routing, so they are served by the SPA fallback at the end of
+# this file and resolved client-side like every other route.
 
 # football-data.org proxy: referees and cross-competition (midweek) fixtures,
 # neither of which the FPL feed carries. The API key stays in the function's
@@ -283,6 +275,17 @@
   to = "/data/backtest-history.json"
   status = 200
   force = true
+
+# ── SPA fallback ─────────────────────────────────────────────────
+# The app routes by real paths (/squad, /players, /planner, …), so every
+# path that is not a real file must serve the shell instead of the host
+# 404 page. Not forced, so existing files (landing.html, icons, data,
+# /fantasy-efl/*) and every rule above still win; this is the LAST rule
+# and only catches what nothing else claimed.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 # History is immutable between rebuilds, so cache it hard. stale-while-
 # revalidate means a new season's data rolls out without anyone waiting on it.

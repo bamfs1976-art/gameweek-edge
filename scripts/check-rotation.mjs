@@ -262,14 +262,31 @@ for (const p of ['scripts/content/model.mjs', 'scripts/extract-engine.mjs']) {
    The fix was to merge once, in competitiveCalendar(), and let each consumer
    take the slice it is calibrated for. What must not happen now is a second
    merge growing back somewhere else. */
-/* MCI deliberately: it has no tie in the vendored snapshot, so this case
-   isolates the live feed + league merge. The snapshot's own contribution is
-   asserted separately below, with a club that does. */
-const TEAMS = { 1: { short_name: 'MCI', name: 'Manchester City' } };
+/* A club with no tie in the vendored snapshot, so this case isolates the
+   live feed + league merge. PICKED DYNAMICALLY: the calendar is refreshed
+   daily and rounds are drawn progressively, so any hardcoded club (it used
+   to be MCI) eventually gains a snapshot tie and fails this guard for a
+   reason that has nothing to do with the merge. The snapshot's own
+   contribution is asserted separately below, with a club that does. */
+const CANDIDATES = [
+  ['MCI', 'Manchester City'], ['LIV', 'Liverpool'], ['ARS', 'Arsenal'],
+  ['CHE', 'Chelsea'], ['TOT', 'Tottenham'], ['MUN', 'Manchester United'],
+  ['NEW', 'Newcastle'], ['AVL', 'Aston Villa'], ['WHU', 'West Ham'],
+  ['BHA', 'Brighton'], ['EVE', 'Everton'], ['FUL', 'Fulham'],
+  ['CRY', 'Crystal Palace'], ['WOL', 'Wolves'], ['BOU', 'Bournemouth'],
+  ['BRE', 'Brentford'], ['NFO', "Nott'm Forest"], ['BUR', 'Burnley'],
+  ['LEE', 'Leeds'], ['SUN', 'Sunderland'],
+];
+/* In a League Cup week every club can hold a snapshot tie at once. The
+   merge consults the snapshot only by short code (r.c !== code), so a code
+   that cannot appear in it behaves identically to a real club without a
+   tie — and keeps this case meaningful in those weeks. */
+const isolated = CANDIDATES.find(([c]) => CAL.every((r) => r.c !== c))
+  || ['ZZZ', 'Isolation FC'];
+assert.equal(CAL.filter((r) => r.c === isolated[0]).length, 0,
+  'the chosen club has a tie in the vendored snapshot, so it does not isolate the live-feed merge');
+const TEAMS = { 1: { short_name: isolated[0], name: isolated[1] } };
 const bLive = { teams: TEAMS, euro: { 1: [{ gw: 5, comp: 'EFL', ms: Date.parse('2026-09-16T19:00:00Z'), v: 'A' }] } };
-assert.equal(CAL.filter((r) => r.c === 'MCI').length, 0,
-  'MCI now has a tie in the vendored snapshot, so it no longer isolates the live-feed merge — ' +
-  'pick another club with no snapshot entry for the case below');
 const league = [
   { team_h: 1, team_a: 2, kickoff_time: '2026-09-13T14:00:00Z', event: 4 },
   { team_h: 2, team_a: 1, kickoff_time: '2026-09-20T15:30:00Z', event: 5 },
