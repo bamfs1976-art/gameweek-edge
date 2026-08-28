@@ -408,6 +408,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return
         if self.path == "/":
             self.path = "/index.html"
+        # SPA fallback, mirroring the Netlify /* -> /index.html rewrite:
+        # any extensionless app path serves the shell so path routing works.
+        p = self.path.split("?")[0]
+        if "." not in p.rsplit("/", 1)[-1] and not p.startswith("/api/"):
+            self.path = "/index.html"
         return super().do_GET()
 
     def log_message(self, *a):

@@ -112,9 +112,10 @@ check('Stripe return never hits the pitch', await run(async (page) => {
   await go(page, '/?upgrade=success', 'https://checkout.stripe.com/'); return where(page);
 }), 'app @ /');
 
+/* Path routing normalises the ?panel= link to the panel's real URL. */
 check('push deep link never hits the pitch', await run(async (page) => {
   await go(page, '/?panel=price'); return where(page);
-}), 'app @ /');
+}), 'app @ /prices');
 
 check('a linked team skips the pitch', await run(async (page, ctx) => {
   await ctx.addInitScript(() => { try{ localStorage.setItem('ge-mid','12345'); }catch(_){} });

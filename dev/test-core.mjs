@@ -2825,9 +2825,9 @@ ok(r.phase !== 'pre' && (r.target ? r.target.id === 11 || r.phase === 'live' : t
 
 /* ── Section 2: decision-grade recommendation model ─────── */
 section('confTier / confChip thresholds');
-ok(core.confTier(70) === 'green' && core.confTier(95) === 'green', '≥70 is green');
-ok(core.confTier(50) === 'amber' && core.confTier(69) === 'amber', '50–69 is amber');
-ok(core.confTier(49) === 'red' && core.confTier(0) === 'red', '<50 is red');
+ok(core.confTier(70) === 'high' && core.confTier(95) === 'high', '≥70 is high');
+ok(core.confTier(50) === 'med' && core.confTier(69) === 'med', '50–69 is medium');
+ok(core.confTier(49) === 'low' && core.confTier(0) === 'low', '<50 is low');
 
 section('captainEligible filters to fit MID/FWD attackers');
 const capEl = (t, extra) => Object.assign({ element_type: t, status: 'a', chance_of_playing_next_round: null }, extra || {});
@@ -2872,7 +2872,7 @@ const clear = core.captainConfidence({ picks: [{ el: mkC(1, 4, 9, 40), xp: 9 }, 
 const tie = core.captainConfidence({ picks: [{ el: mkC(1, 4, 6, 40), xp: 6 }, { el: mkC(2, 4, 5.8, 20), xp: 5.8 }] });
 ok(clear.value > tie.value, 'a clear captain scores more confidently than a coin-flip');
 ok(clear.value >= 0 && clear.value <= 96, 'confidence stays within bounds');
-ok(['green', 'amber', 'red'].includes(clear.tier), 'a tier is assigned');
+ok(['high', 'med', 'low'].includes(clear.tier), 'a tier is assigned');
 
 section('transferFrame: money, net xP and −4 breakeven');
 const fr = core.transferFrame({ out: { now_cost: 70 }, cand: { now_cost: 85 }, gain: 6 }, 20, 1, 5);
@@ -2988,7 +2988,7 @@ ok([1, 2, 3, 4, 5].includes(core.fdrAttack(1.47)) && [1, 2, 3, 4, 5].includes(co
 
 section('setPieceConfidence: penalties dominate, roles + xP add');
 const pen1 = core.setPieceConfidence({ penalties_order: 1 });
-ok(pen1.value === 82 && pen1.tier === 'green', 'a primary penalty taker is high confidence');
+ok(pen1.value === 82 && pen1.tier === 'high', 'a primary penalty taker is high confidence');
 ok(pen1.roles.includes('penalties') && pen1.addXp >= 0.5, 'flags the penalty role with real xP value');
 const pen2 = core.setPieceConfidence({ penalties_order: 2 });
 ok(pen2.value < pen1.value, 'the 2nd-choice taker is less certain than the 1st');

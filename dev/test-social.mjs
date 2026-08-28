@@ -541,7 +541,10 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      narrows the nav as well as the detail. That must NARROW the owner and
      capability gate, never replace it — so assert both the call site and the
      delegation, or a Simple view could quietly expose an owner area. */
-  ok(/NAV\.filter\(navVisibleArea\)/.test(html), 'sidebar areas are filtered by the gate');
+  ok(/const DESTINATIONS=\[/.test(html) && /DESTINATIONS\.forEach/.test(html),
+    'the sidebar and bottom bar render the one shared destination list');
+  ok(/if\(!p\|\|!canSeePanel\(p\)\)return '';/.test(html),
+    'the More index is filtered by the gate');
   ok(/function navVisibleArea\(a\)\{\s*if\(!canSeeArea\(a\)\)return false;/.test(html),
     'and the simple-view filter still defers to canSeeArea');
   ok(/function navVisible\(p\)\{\s*if\(!canSeePanel\(p\)\)return false;/.test(html),
@@ -627,23 +630,17 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
     'replaced by Match Centre (the football) and Rivals (the people)');
   ok(areaOfPanel.leagues === 'rivals', 'Mini-Leagues sits with the rivals, not the planner');
 
-  /* Every area on the bottom bar and in the More sheet must still exist —
-     a renamed area id here is a bar item that highlights nothing. */
-  const areaIds = new Set(NAV.map((a) => a.id));
-  const barSrc = balanced(html, html.indexOf('const BOTTOM_NAV='), '[', ']');
-  for (const m of barSrc.matchAll(/area:'([a-z]+)'/g)) {
-    ok(areaIds.has(m[1]), 'bottom bar area ' + m[1] + ' exists');
+  /* One nav map: the bottom bar and the sidebar render DESTINATIONS, and
+     DEST_AREA must place every NAV area under one of those five tabs — an
+     unmapped area is a panel whose nav never highlights. */
+  const destSrc = balanced(html, html.indexOf('const DESTINATIONS='), '[', ']');
+  const destIds = new Set([...destSrc.matchAll(/id:'([a-z]+)'/g)].map((m) => m[1]));
+  ok([...destIds].join('|') === 'home|squad|players|live|more',
+    'the five destinations are Home, Squad, Players, Live, More in order');
+  const destMap = new Function('return ' + balanced(html, html.indexOf('const DEST_AREA='), '{', '}'))();
+  for (const a of areas) {
+    ok(destIds.has(destMap[a.id]), a.id + ': reachable on mobile (bar or More sheet)');
   }
-  const moreSrc = html.slice(html.indexOf('function openMoreSheet('), html.indexOf('function closeMoreSheet('));
-  for (const m of moreSrc.matchAll(/\['([a-z]+)','[^']+'\]/g)) {
-    ok(m[1] === 'glossary' || areaIds.has(m[1]), 'More sheet area ' + m[1] + ' exists');
-  }
-  /* Between the bar and the sheet, every area must be reachable on a phone —
-     the sidebar is not on screen there. */
-  const barAreas = [...barSrc.matchAll(/area:'([a-z]+)'/g)].map((m) => m[1]);
-  const moreAreas = [...moreSrc.matchAll(/\['([a-z]+)','[^']+'\]/g)].map((m) => m[1]);
-  const reachable = new Set([...barAreas, ...moreAreas]);
-  for (const a of areas) ok(reachable.has(a.id), a.id + ': reachable on mobile (bar or More sheet)');
 
   /* The site map in docs/FEATURES.md had gone quietly stale — it still listed
      an "Intelligence (Pro)" area and panels that had not existed for weeks,
@@ -807,17 +804,20 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      PANELS[id] themselves, BEFORE openPanel ever sees the id, so a retired id
      was rejected as unknown and the alias never ran. Every entry point has to
      resolve for itself. */
-  ok(/const hp=resolvePanel\(location\.hash\.slice\(1\)\);/.test(html),
-    'the hash deep link resolves aliases on load');
-  ok(/const p=resolvePanel\(location\.hash\.slice\(1\)\);/.test(html),
+  ok(/PANELS\[resolvePanel\(hh\)\]/.test(html),
+    'the legacy hash deep link resolves aliases on load');
+  ok(/window\.addEventListener\('hashchange'/.test(html) && /PANELS\[resolvePanel\(p\)\]/.test(html),
     'and so does hashchange');
-  /* Landing on a retired id while already on the target renders the right
-     panel but leaves the dead id in the address bar, so the URL names a panel
-     that no longer exists. */
-  ok(/if\(location\.hash\.slice\(1\)!==p\)\{[\s\S]{0,80}replaceState\(null,'','#'\+p\)/.test(html),
-    'a retired id is normalised out of the URL even when no navigation happens');
-  ok(/const pm=resolvePanel\(\(location\.search\.match/.test(html),
-    'and the ?panel= query link');
+  /* Path routing: openPanel writes the canonical path on every open, so a
+     retired id or legacy hash is normalised out of the URL. */
+  ok(/function routeSync\(urlId,resolvedId,push\)/.test(html) && /routeSync\(urlId,panelId/.test(html),
+    'openPanel normalises the URL to the canonical path');
+  ok(/window\.addEventListener\('popstate'/.test(html),
+    'back/forward re-opens the panel the path names');
+  ok(/const PANEL_PATH=\{/.test(html) && /function pathPanel\(path\)/.test(html),
+    'the path map and resolver exist');
+  ok(/PANELS\[resolvePanel\(pm\)\]/.test(html),
+    'and the ?panel= query link resolves aliases too');
   for (const m of html.matchAll(/if\((?:hp|p|pm)&&PANELS\[(?:hp|p|pm)\]/g)) {
     const before = html.slice(0, m.index);
     ok(/resolvePanel\([^)]*\)/.test(before.slice(-400)),
@@ -840,7 +840,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   }
   ok(/function dashNextSteps\(mid\)/.test(html), 'the next-steps builder exists');
   ok(/canSeePanel\(PANELS\[id\]\)/.test(html), 'and filters through the capability gate');
-  ok(/\.slice\(0,\s*6\)/.test(html), 'and is capped rather than listing everything');
+  ok(/\.slice\(0,\s*2\)/.test(html), 'and is capped at two contextual actions');
   /* Assert the PROPERTY, not the exact concatenation. The previous version
      pinned the literal `hero+tkStrip+meta+...` string, so inserting a band
      into the dashboard broke a test about next steps — a false failure that
@@ -848,16 +848,14 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   const dashRender = (html.match(/host\.innerHTML=hero\+[^;]*;/) || [''])[0];
   ok(dashRender.includes('dashNextSteps(mid)'), 'the dashboard actually renders it');
 
-  /* The proof band is the one claim no competitor can make — that we publish
-     our own error rate. It sat last on the page, in the smallest text, which
-     gave the argument away. It leads now, and this stops it drifting back. */
-  ok(/class="proof-band"/.test(html), 'the accountability band exists');
-  ok(dashRender.indexOf('proof') > -1 && dashRender.indexOf('proof') < dashRender.indexOf('tkStrip'),
-    'and renders above the metrics strip rather than at the foot of the page');
-  /* Anchor on the JS that builds the band, not the first mention of the class
-     — that one is the CSS rule, hundreds of lines earlier. */
-  const proofJs = html.slice(html.indexOf('class="proof-band"'), html.indexOf('class="proof-band"') + 900);
-  ok(/openPanel\(\\?'accountability\\?'\)/.test(proofJs),
+  /* Model performance is trust-building, not the first thing: the strip
+     closes the page (the decision cards lead), and still links to the full
+     graded record. */
+  ok(/class="trust-strip"/.test(html), 'the accountability strip exists');
+  ok(dashRender.indexOf('trust') > dashRender.indexOf('q1'),
+    'and renders at the foot of the page, after the decision cards');
+  const trustJs = html.slice(html.indexOf('Model performance</span>') - 400, html.indexOf('Model performance</span>') + 900);
+  ok(/openPanel\(\\?'accountability\\?'\)/.test(trustJs),
     'and links to Model Accountability, not just the methodology write-up');
   /* Unlinked visitors are the ones who bounce, and the personalised panels
      are dead ends for them, so the two lists must genuinely differ. */
