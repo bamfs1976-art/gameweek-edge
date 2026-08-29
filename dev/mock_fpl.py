@@ -137,6 +137,11 @@ for t in teams:
         })
 N = len(elements)
 
+# The gameweek the mock is "in". Named once so the events feed, the entry
+# history and any test that reasons about "as of which week" cannot drift
+# apart — they used to be three independent literals.
+CUR_EVENT = 1
+
 if PRESEASON:
     # Minutes, form and ownership reset for the new season; ep_next stays as a
     # provisional projection (FPL seeds it pre-season), so xP-ranked boards are
@@ -148,7 +153,7 @@ if PRESEASON:
                  bonus=0, bps=0)
 
 events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
-           "is_current": g == 1, "is_next": g == 2,
+           "is_current": g == CUR_EVENT, "is_next": g == CUR_EVENT + 1,
            "deadline_time": f"2026-08-{14 + g:02d}T17:15:00Z",
            "most_captained": 6, "most_selected": 6, "most_transferred_in": 12,
            "top_element": 6, "top_element_info": {"id": 6, "points": 13},
@@ -259,11 +264,17 @@ def summary_for(pid):
 
 def history_for(entry):
     rr = random.Random(entry)
-    cur, total, orank = [], 0, 500000
-    for g in range(1, 39):
+    # Only the gameweeks that have actually been played. A 38-row history
+    # during GW1 is not a shape the real API ever returns, and it hid the
+    # question this data is now used to answer: which gameweek is the
+    # overall rank as of?
+    cur, total = [], 0
+    for g in range(1, CUR_EVENT + 1):
         pts = rr.randint(20, 95)
         total += pts
-        orank = max(1000, orank + rr.randint(-40000, 30000))
+        # Derivable from the entry and the gameweek, so a test can prove a
+        # rendered rank belongs to the manager AND the week it claims.
+        orank = 1000000 + entry + g
         cur.append({"event": g, "points": pts, "total_points": total,
                     "rank": rr.randint(1, 400000), "overall_rank": orank,
                     "event_transfers": rr.randint(0, 2),
@@ -282,7 +293,13 @@ def picks_for(entry):
                        "is_captain": p == 0, "is_vice_captain": p == 1}
                       for p, pid in enumerate(ids)],
             "entry_history": {"bank": 5, "value": 1000, "points": 55,
-                              "rank": 120000, "event_transfers_cost": 0}}
+                              "rank": 120000, "event_transfers_cost": 0,
+                              # Distinct per manager and derivable from the
+                              # entry id, so a test can prove the rendered OR
+                              # belongs to the row it sits on. It was absent
+                              # entirely before, which is how a whole column
+                              # went untested.
+                              "overall_rank": 1000000 + entry}}
 
 
 def transfers_for(entry):

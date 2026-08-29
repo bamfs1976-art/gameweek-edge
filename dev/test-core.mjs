@@ -2346,6 +2346,50 @@ section('managerDetail: one row of the detailed league table');
   ok(core.managerDetail({ ...STD, total: null }, PICKS, LIVE, STATE, ELS, eo.byId).totalRun === null,
      'a row with no season total prints nothing rather than a wrong number');
 
+  /* THE OVERALL RANK. It had no test at all, and neither did the mock
+     server carry an overall_rank field, so the whole column rendered
+     nothing under test while shipping to every card in production. */
+  {
+    const HIST = { current: [
+      { event: 1, overall_rank: 900000 },
+      { event: 2, overall_rank: 742118 },
+    ] };
+    const d2 = core.managerDetail(STD, PICKS, LIVE, STATE, ELS, eo.byId, HIST, 5);
+    ok(d2.or === 742118 && d2.orEvent === 2,
+       'the overall rank comes from the newest gameweek FPL has ranked, got ' + d2.or);
+  }
+  {
+    /* Mid-gameweek: FPL has not scored this week, so its row carries no
+       rank yet. The honest answer is last week's rank, named as such —
+       not a blank column that looks broken. */
+    const HIST = { current: [
+      { event: 1, overall_rank: 900000 },
+      { event: 2, overall_rank: null },
+    ] };
+    const d2 = core.managerDetail(STD, PICKS, LIVE, STATE, ELS, eo.byId, HIST, 5);
+    ok(d2.or === 900000 && d2.orEvent === 1,
+       'an unranked gameweek falls back to the last ranked one, got ' + d2.or + '@' + d2.orEvent);
+  }
+  {
+    /* History failed to load: entry_history is the fallback, and it
+       cannot say which gameweek it is as of. */
+    const withOr = { ...PICKS,
+      entry_history: { ...PICKS.entry_history, overall_rank: 555111 } };
+    const d2 = core.managerDetail(STD, withOr, LIVE, STATE, ELS, eo.byId, null, 5);
+    ok(d2.or === 555111 && d2.orEvent === null,
+       'with no history the picks payload still supplies a rank, got ' + d2.or);
+  }
+  {
+    /* Nothing ranked anywhere: no history rows AND no rank in the picks
+       payload. The pill has to be absent, not zero — a rank of 0 does
+       not exist, and printing one would be a fabricated position. */
+    const bare = { ...PICKS,
+      entry_history: { ...PICKS.entry_history, overall_rank: undefined } };
+    const d2 = core.managerDetail(STD, bare, LIVE, STATE, ELS, eo.byId, { current: [] }, 5);
+    ok(d2.or === null && d2.orEvent === null,
+       'a manager with no ranked gameweek anywhere prints no rank, got ' + JSON.stringify(d2.or));
+  }
+
   ok(core.managerDetail(STD, null, LIVE, STATE, ELS, {}) === null,
      'a manager whose picks failed to load has no row');
   ok(core.managerDetail(STD, { picks: 'nope' }, LIVE, STATE, ELS, {}) === null,

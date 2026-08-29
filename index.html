@@ -742,6 +742,8 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
   font-weight:700;color:var(--text-2);background:var(--surface-2);
   border:1px solid var(--border-2);border-radius:6px;padding:2px 7px;white-space:nowrap}
 .lg-pill b{font-size:var(--fs-min);font-weight:800;color:var(--text-3);letter-spacing:.05em}
+.lg-asof{font-style:normal;font-size:var(--fs-min);font-weight:700;color:var(--text-3);
+  background:var(--surface-3);border-radius:4px;padding:0 4px;margin-left:4px}
 .lg-chip{font-style:normal;background:var(--surface-3);border-radius:4px;padding:0 4px;margin-left:3px}
 .lg-chip.on{background:var(--green);color:#fff}
 .lg-sq{padding:6px 12px 12px;border-top:1px solid var(--border-2)}
@@ -18800,7 +18802,34 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
       .map(c=>({name:c.name,event:c.event,label:c.label,
         short:CHIP_SHORT[c.name]||c.label,active:c.name===picks.active_chip})),
     ft:freeTransfers(history,ftMax),
-    or:eh.overall_rank==null?null:eh.overall_rank,
+    /* THE OVERALL RANK IS FPL'S, AND IT IS AS OF THE LAST GAMEWEEK THEY
+       SCORED — not as of the numbers beside it.
+
+       Two things were wrong with reading it straight off the current
+       gameweek's entry_history. It is null there until FPL scores the
+       week, so the whole column vanished mid-gameweek and reappeared
+       later, which reads as a broken pill rather than an absent fact.
+       And when it IS populated it is a season-long rank FPL computed on
+       their own clock, sitting unlabelled next to a gameweek score this
+       app sums live — two numbers current as of different moments, with
+       nothing on the row saying so.
+
+       The season history carries a per-gameweek overall_rank and we
+       already fetch it for the free-transfer count, so the newest
+       gameweek FPL has actually ranked is available without a new call.
+       That is what this returns, with the gameweek it belongs to, so the
+       row can say which one it is. entry_history stays as the fallback
+       for a manager whose history failed to load. */
+    or:(function(){
+      const cur=(history&&Array.isArray(history.current))?history.current:[];
+      for(let i=cur.length-1;i>=0;i--)if(cur[i]&&cur[i].overall_rank!=null)return cur[i].overall_rank;
+      return eh.overall_rank==null?null:eh.overall_rank;
+    })(),
+    orEvent:(function(){
+      const cur=(history&&Array.isArray(history.current))?history.current:[];
+      for(let i=cur.length-1;i>=0;i--)if(cur[i]&&cur[i].overall_rank!=null)return cur[i].event;
+      return null;
+    })(),
     tv:eh.value==null?null:eh.value/10,
     bank:eh.bank==null?null:eh.bank/10,
     transfers:eh.event_transfers==null?null:eh.event_transfers,
@@ -19077,7 +19106,17 @@ async function leagueDetailCard(res,leagueId,meId,whole){
         (d.ft&&d.ft.verified&&d.ft.ft!=null?pill('FT',d.ft.ft):'')+
         (d.tv==null?'':pill('TV','£'+d.tv.toFixed(1)+'m'))+
         (d.bank==null?'':pill('ITB','£'+d.bank.toFixed(1)+'m'))+
-        (d.or==null?'':pill('OR',fmtNum(d.or)))+
+        /* Named when it is not as of the gameweek on screen. An overall
+           rank that is a week behind the score beside it is not wrong,
+           but a bare number cannot say which week it is from — and the
+           reader is left to assume it moves with everything else. */
+        (d.or==null?''
+          :(d.orEvent!=null&&gw!=null&&d.orEvent<gw)
+            ? '<span class="lg-pill" title="FPL\u2019s overall rank after gameweek '+d.orEvent+
+              '. They publish it when they score a gameweek, so it stays put while this one runs.">'+
+              '<b>OR</b>'+fmtNum(d.or)+'<i class="lg-asof">GW'+d.orEvent+'</i></span>'
+            : '<span class="lg-pill" title="FPL\u2019s overall rank after gameweek '+
+              (d.orEvent==null?'their last scoring pass':d.orEvent)+'."><b>OR</b>'+fmtNum(d.or)+'</span>')+
         (d.totalUnits?pill('PLAYED',d.playedUnits+'/'+d.totalUnits):'')+
         (d.hit?pill('HIT','−'+d.hit):'')+
         chipPills+'</div>';
