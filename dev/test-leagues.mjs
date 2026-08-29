@@ -138,6 +138,23 @@ const openLeague = async (type) => {
       .slice(0, 2).map(e => e.textContent.trim()),
     /* The whole point of the column: it must not read as last week's
        total sitting beside this week's live score. */
+    /* Keyed to BOTH the entry and the gameweek: the mock's history
+       returns overall_rank = 1000000 + entry + event, so a rank pulled
+       from the wrong manager, or from the wrong week of the right
+       manager, is caught rather than merely looking plausible. */
+    ors: [...document.querySelectorAll('.lg-mgr')]
+      .map(el => (el.querySelector('.lg-pill[title*="overall rank"]') || {}).textContent || '')
+      .filter(Boolean),
+    orMismatches: [...document.querySelectorAll('.lg-mgr')].map(el => {
+      const entry = ((el.querySelector('.lg-head')?.getAttribute('onclick') || '')
+        .match(/lgToggle\((\d+)\)/) || [])[1];
+      const pill = el.querySelector('.lg-pill[title*="overall rank"]');
+      if(!entry || !pill) return 'missing:' + entry;
+      const want = (1000000 + Number(entry) + 1).toLocaleString('en-GB');
+      return pill.textContent.includes(want) ? '' : entry + ':' + pill.textContent;
+    }).filter(Boolean),
+    orTitle: document.querySelector('.lg-mgr .lg-pill[title*="overall rank"]')
+      ?.getAttribute('title') || '',
     totalsAscendWithRank: (() => {
       const t = [...document.querySelectorAll('.lg-mgr .lg-tot b')]
         .map(e => parseInt(e.textContent.replace(/[^0-9-]/g, ''), 10));
@@ -154,6 +171,14 @@ const openLeague = async (type) => {
   check('both score columns are labelled', got.labels.join('|'), 'gw|total');
   check('the total says which season figure it is', got.totalTitle, s => /season total/i.test(s));
   check('totals fall with rank, so the ordering reads', got.totalsAscendWithRank, true);
+  /* The OR column had no coverage at all — the mock carried no
+     overall_rank field, so the pill never rendered under test while it
+     was on every card in production. It now does, keyed to the entry id
+     so a misattributed rank cannot pass. */
+  check('every card prints an overall rank', got.ors.length, n => n >= 2);
+  check('and each rank is the one belonging to that manager',
+    got.orMismatches.join('|'), '');
+  check('the rank says whose figure it is and when', got.orTitle, s => /overall rank after gameweek/i.test(s));
   check('the detailed view raises no page error', errors.join(' | '), '');
   await page.evaluate(() => lgSetView('compact'));
   await page.waitForTimeout(2500);
