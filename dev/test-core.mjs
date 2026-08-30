@@ -165,6 +165,8 @@ const pieces = [
   extractFn(html, 'gwPackLine'),
   extractFn(html, 'gwStatsPack'),
   extractFn(html, 'gwDefcon'),
+  extractFn(html, 'bonusForFixture'),
+  extractFn(html, 'provBonusPts'),
   extractFn(html, 'managerCard'),
   ...['SOC_LADDER_X', 'SOC_LADDER_PAD', 'SOC_LADDER_LEFT']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
@@ -294,7 +296,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2219,6 +2221,88 @@ section('leagueStdRow / LEAGUE_SORTS: one sorter for two views');
      'every sort declares a direction');
   ok(new Set(core.LEAGUE_SORTS.map((o) => o.key)).size === core.LEAGUE_SORTS.length,
      'and the keys are unique, so the select cannot have two of the same');
+}
+
+section('bonusForFixture: bonus is a ranking, and a ranking needs something to rank');
+{
+  /* Reported as "live points isn't correct", proved by one screenshot: five
+     players in five different fixtures each carrying a provisional +3, when
+     a single match only ever awards 3-2-1 to three of them. The squad's
+     live total ran 12 points high — four counting players inflated by 3
+     apiece — against the same squad's league card. */
+  const B = { elements: [
+    { id: 1, team: 1, web_name: 'Keeper' },
+    { id: 2, team: 1, web_name: 'Back' },
+    { id: 3, team: 2, web_name: 'Wing' },
+    { id: 4, team: 2, web_name: 'Sub' },
+    { id: 5, team: 3, web_name: 'Elsewhere' },
+  ], cur: { id: 2 } };
+  const F = { event: 2, team_h: 1, team_a: 2, started: true, finished: false,
+    finished_provisional: false };
+
+  {
+    /* Two minutes into the match. Everybody is on the pitch, nobody has
+       banked anything yet. Before the fix all four tied on 0, took the
+       first slot as one group, and were handed three bonus each. */
+    const st = { 1: { bps: 0, minutes: 2 }, 2: { bps: 0, minutes: 2 },
+                 3: { bps: 0, minutes: 2 }, 4: { bps: 0, minutes: 2 } };
+    ok(core.bonusForFixture(B, st, F) === null,
+       'a match where nobody has positive BPS projects no bonus at all');
+  }
+  {
+    /* Real BPS: the 3-2-1 goes to the top three, and the player on nothing
+       is not one of them however few rivals he has. */
+    const st = { 1: { bps: 30, minutes: 90 }, 2: { bps: 22, minutes: 90 },
+                 3: { bps: 11, minutes: 90 }, 4: { bps: 0, minutes: 6 } };
+    const r = core.bonusForFixture(B, st, F);
+    ok(r.earners.length === 3, 'three earners, not everyone on the pitch, got ' + r.earners.length);
+    ok(r.earners.map(x => x.e.id + ':' + x.bonus).join('|') === '1:3|2:2|3:1',
+       'and they take 3-2-1 in BPS order, got ' + r.earners.map(x => x.e.id + ':' + x.bonus).join('|'));
+    ok(!r.earners.some(x => x.e.id === 4), 'a player on zero BPS earns nothing');
+    ok(r.confirmed === false, 'and it is provisional until FPL posts real bonus');
+  }
+  {
+    /* FPL's own tie rule, which the grouping already implemented and which
+       this fix must not disturb: two level at the top take 3 each and the
+       next takes 1, with the 2 consumed by the tie. */
+    const st = { 1: { bps: 30, minutes: 90 }, 2: { bps: 30, minutes: 90 },
+                 3: { bps: 11, minutes: 90 }, 4: { bps: 4, minutes: 90 } };
+    const r = core.bonusForFixture(B, st, F);
+    ok(r.earners.map(x => x.bonus).join(',') === '3,3,1',
+       'a tie at the top takes 3-3-1, got ' + r.earners.map(x => x.bonus).join(','));
+  }
+  {
+    /* Confirmed bonus is FPL's, and the projection stands aside. */
+    const st = { 1: { bps: 30, minutes: 90, bonus: 3 }, 2: { bps: 22, minutes: 90 },
+                 3: { bps: 11, minutes: 90 } };
+    ok(core.bonusForFixture(B, st, F).confirmed === true,
+       'once FPL has posted bonus in the match the fixture reads as confirmed');
+  }
+
+  /* provBonusPts, the number the pitch view actually adds to the squad. */
+  {
+    const picks = { picks: [
+      { element: 1, position: 1, multiplier: 1 },
+      { element: 2, position: 2, multiplier: 1 },
+      { element: 3, position: 3, multiplier: 2 },
+      { element: 4, position: 12, multiplier: 0 },
+    ] };
+    const kickoff = { 1: { bps: 0, minutes: 2 }, 2: { bps: 0, minutes: 2 },
+                      3: { bps: 0, minutes: 2 }, 4: { bps: 0, minutes: 2 } };
+    ok(core.provBonusPts(B, kickoff, [F], picks).extra === 0,
+       'at kickoff the squad gains no provisional bonus, got ' +
+       core.provBonusPts(B, kickoff, [F], picks).extra);
+    /* The bench player tops the BPS table, the captain is second. Earners
+       are 4:+3, 3:+2, 1:+1 — so the squad should gain the captain's 2
+       doubled plus 1, and nothing at all for the bench player's 3. */
+    const live = { 4: { bps: 50, minutes: 90 }, 3: { bps: 40, minutes: 90 },
+                   1: { bps: 30, minutes: 90 }, 2: { bps: 22, minutes: 90 } };
+    const got = core.provBonusPts(B, live, [F], picks);
+    ok(got.extra === 5,
+       'the captain multiplier applies and the bench earns nothing, got ' + got.extra);
+    ok(got.prov[4] === 3,
+       'though the bench player is still projected his own bonus for display');
+  }
 }
 
 section('managerDetail: one row of the detailed league table');

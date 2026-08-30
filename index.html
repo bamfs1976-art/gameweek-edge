@@ -14053,7 +14053,29 @@ function liveOddsCard(b,fixtures){
 function bonusForFixture(b,st,f){
   const players=b.elements.filter(e=>e.team===f.team_h||e.team===f.team_a)
     .map(e=>({e,bps:(st[e.id]||{}).bps||0,mins:(st[e.id]||{}).minutes||0,real:(st[e.id]||{}).bonus||0}))
-    .filter(x=>x.mins>0);
+    /* ZERO BPS IS NOT A BONUS POSITION, and leaving that out awarded three
+       bonus to every player in a match that had just kicked off.
+
+       Reported as "live points isn't correct", with the proof in one
+       screenshot: five players across five different fixtures each carrying
+       a provisional +3, when only three players in any single match can
+       take bonus at all. A goalkeeper two minutes into his game was one of
+       them.
+
+       The cause is the tie handling below meeting an empty scoreboard. At
+       kickoff every player in the fixture sits on 0 BPS, so they group into
+       ONE tie on nothing, that group takes the first slot, and all
+       twenty-two are handed +3. The squad's live total then ran twelve
+       points high — four counting players inflated by three apiece — and
+       drifted back down as real BPS arrived, which is exactly the kind of
+       number that reads as broken.
+
+       Bonus is a ranking, and a ranking needs something to rank. Until
+       somebody in the match has banked a positive BPS there is no
+       provisional bonus to project, and saying so is the honest answer.
+       gwStatsPack already applied this rule to its own bonus table; this
+       was the surface that did not. */
+    .filter(x=>x.mins>0&&x.bps>0);
   if(!players.length)return null;
   players.sort((a,c)=>c.bps-a.bps);
   const groups=[];players.forEach(p=>{const g=groups[groups.length-1];
@@ -14088,9 +14110,17 @@ async function hydrateBonus(host){
       ' <span class="badge '+(r.confirmed?'badge-grey':'badge-green')+'">'+(r.confirmed?'Confirmed':'Provisional')+'</span></div>'+
       '<div class="dl">'+rows+'</div></div>';
   }).join('');
+  /* Every match in play, and not one banked BPS between them — the first
+     minutes of a round. Reachable now that a scoreless match projects
+     nothing rather than handing everyone three, and an empty page under a
+     live header would read as a failure rather than as "too early". */
+  const tooEarly=cards.trim()
+    ? ''
+    : stateBox('diamond','No bonus to project yet',
+        'The matches are under way but nobody has banked a BPS score yet. The 3-2-1 appears as soon as there is something to rank.');
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.diamond,'width="15" height="15"')+' Live bonus</div>'+
       '<p class="dl-sub">Projected bonus from current BPS for every match in play — the real 3-2-1 before the FPL API adds it. '+(mid?'Your players are highlighted. ':'')+'Provisional until the match finishes and bonus is confirmed.</p></div>'+
-    cards;
+    (cards||tooEarly);
 }
 
 /* ── DefCon Threats: high-scoring players you don't own ─── */
