@@ -128,6 +128,10 @@ const openLeague = async (type) => {
 {
   await page.evaluate(() => lgSetView('detailed'));
   await page.waitForTimeout(5000);
+  /* The progress line lives inside the collapsed squad box. */
+  await page.evaluate(() => [...document.querySelectorAll('.lg-mgr .lg-head')]
+    .forEach(el => el.click()));
+  await page.waitForTimeout(1200);
   const got = await page.evaluate(() => ({
     cards: document.querySelectorAll('.lg-mgr').length,
     score: document.querySelector('.lg-mgr .lg-head .lg-num b')?.textContent.trim(),
@@ -155,6 +159,20 @@ const openLeague = async (type) => {
     }).filter(Boolean),
     orTitle: document.querySelector('.lg-mgr .lg-pill[title*="overall rank"]')
       ?.getAttribute('title') || '',
+    settledPill: [...document.querySelectorAll('.lg-mgr')].every(el =>
+      [...el.querySelectorAll('.lg-pill')].some(x => /^SETTLED/.test(x.textContent.trim()))),
+    /* Open every card, read "Settled a/b" and the named buckets, and
+       require a = b once the buckets are added back. */
+    progressMismatch: [...document.querySelectorAll('.lg-mgr')].map(el => {
+      const t = (el.querySelector('.lg-prog')?.nextElementSibling?.textContent || '');
+      const head = t.match(/Settled\s+(\d+)\/(\d+)/);
+      if(!head) return 'no progress line';
+      const grab = (re) => { const m = t.match(re); return m ? Number(m[1]) : 0; };
+      const sum = Number(head[1]) + grab(/(\d+)(?:\s*\([^)]*\))?\s+still to play/) +
+        grab(/(\d+)(?:\s*\([^)]*\))?\s+on the pitch/) +
+        grab(/(\d+)(?:\s*\([^)]*\))?\s+with no fixture/);
+      return sum === Number(head[2]) ? '' : head[0] + ' but buckets sum to ' + sum;
+    }).filter(Boolean),
     totalsAscendWithRank: (() => {
       const t = [...document.querySelectorAll('.lg-mgr .lg-tot b')]
         .map(e => parseInt(e.textContent.replace(/[^0-9-]/g, ''), 10));
@@ -179,6 +197,12 @@ const openLeague = async (type) => {
   check('and each rank is the one belonging to that manager',
     got.orMismatches.join('|'), '');
   check('the rank says whose figure it is and when', got.orTitle, s => /overall rank after gameweek/i.test(s));
+  check('every card labels the progress pill SETTLED, not PLAYED', got.settledPill, true);
+  /* The property the report was about: the sentence under the bar has to
+     reconcile against its own denominator. It did not, because half of it
+     was counted in players and half in scoring slots. */
+  check('the progress breakdown adds up to its denominator',
+    got.progressMismatch.join('|'), '');
   check('the detailed view raises no page error', errors.join(' | '), '');
   await page.evaluate(() => lgSetView('compact'));
   await page.waitForTimeout(2500);

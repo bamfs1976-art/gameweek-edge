@@ -18786,6 +18786,26 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
      who scores, so no chip flag is needed to know which case this is. */
   const counting=xi.concat(bench).filter(r=>r.mult>0);
   const st=s=>counting.filter(r=>r.state===s).length;
+  /* THE SAME BUCKETS, WEIGHTED THE WAY THE DENOMINATOR IS.
+
+     Reported as the played count not being correct, and the card's own
+     arithmetic showed it: "Played 2/12 ... 5 still to play. 4 on the
+     pitch." Two, five and four make eleven, against a denominator of
+     twelve, and no amount of staring reconciles it.
+
+     The two halves of that sentence were counted on different scales.
+     playedUnits and totalUnits are multiplier-weighted — the whole point
+     of them, so a captain yet to play is worth the two he will score —
+     while st() returns a HEADCOUNT of rows. Put beside one another they
+     silently mix players and scoring slots, and the mix only shows when
+     the captain happens to sit in one of the named buckets: in the
+     report he was still to play, so five players were six slots and the
+     line came up one short.
+
+     A breakdown printed against a total has to be in the units of that
+     total. These are. The headcounts stay for the head cell and for the
+     "Players to play" sort, which are about people rather than slots. */
+  const stU=s=>counting.filter(r=>r.state===s).reduce((a,r)=>a+r.mult,0);
   const T=rivalGwTotal(eh,S,!!finished);
   return {
     entry:std?std.entry:null,name:std?std.entry_name:'',mgr:std?std.player_name:'',
@@ -18869,6 +18889,7 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
        Lumping the two together tells a manager he still has five to come
        when two of them are never coming. */
     yet:st('toPlay'),playing:st('live'),blanks:st('blank'),
+    yetUnits:stU('toPlay'),playingUnits:stU('live'),blankUnits:stU('blank'),
     /* Progress in multiplier UNITS, so a captain counts for the two he
        is worth: an eleven with the captain done reads 2/12, not 1/11. */
     playedUnits:counting.filter(r=>r.state==='done').reduce((s,r)=>s+r.mult,0),
@@ -19147,16 +19168,32 @@ async function leagueDetailCard(res,leagueId,meId,whole){
               '<b>OR</b>'+fmtNum(d.or)+'<i class="lg-asof">GW'+d.orEvent+'</i></span>'
             : '<span class="lg-pill" title="FPL\u2019s overall rank after gameweek '+
               (d.orEvent==null?'their last scoring pass':d.orEvent)+'."><b>OR</b>'+fmtNum(d.or)+'</span>')+
-        (d.totalUnits?pill('PLAYED',d.playedUnits+'/'+d.totalUnits):'')+
+        /* SETTLED, not PLAYED. A player on the pitch right now has very
+           much played, so reporting him as un-played beside his own live
+           score reads as an error — six players had points on the board
+           in the report while this pill said two. What the bar actually
+           measures is how much of the gameweek is finished and can no
+           longer move, which is the useful thing and now the honest
+           label. It matches the legend above the squad, which has always
+           called these four states finished, playing now, yet to play
+           and no fixture. */
+        (d.totalUnits?pill('SETTLED',d.playedUnits+'/'+d.totalUnits):'')+
         (d.hit?pill('HIT','−'+d.hit):'')+
         chipPills+'</div>';
       const prog=d.totalUnits
         ? '<div class="lg-prog"><i style="width:'+Math.round(100*d.playedUnits/d.totalUnits)+'%"></i></div>'+
-          '<div class="dl-sub">Played '+d.playedUnits+'/'+d.totalUnits+
-          ' — counted by what scores, so a captain is worth two.'+
-          (d.yet?' <b>'+d.yet+'</b> still to play.':'')+
-          (d.playing?' <b>'+d.playing+'</b> on the pitch.':'')+
-          (d.blanks?' <b>'+d.blanks+'</b> with no fixture.':'')+'</div>'
+          /* Every figure here is a scoring slot, like the denominator, and
+             the player count rides along in brackets wherever a captain
+             makes the two differ. The four buckets add up to the total —
+             which is the property that was broken. */
+          (function(){
+            const slot=(u,n)=>'<b>'+u+'</b>'+(n!==u?' ('+n+' player'+(n===1?'':'s')+')':'');
+            return '<div class="dl-sub">Settled '+d.playedUnits+'/'+d.totalUnits+
+              ' — counted by what scores, so a captain is worth two.'+
+              (d.yetUnits?' '+slot(d.yetUnits,d.yet)+' still to play.':'')+
+              (d.playingUnits?' '+slot(d.playingUnits,d.playing)+' on the pitch.':'')+
+              (d.blankUnits?' '+slot(d.blankUnits,d.blanks)+' with no fixture.':'')+'</div>';
+          })()
         : '';
       const partial=d.liveKnown<d.liveOf
         ? '<div class="dl-sub" style="margin-top:6px">Live points cover '+d.liveKnown+' of '+d.liveOf+
