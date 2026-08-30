@@ -2474,6 +2474,36 @@ section('managerDetail: one row of the detailed league table');
        'a manager with no ranked gameweek anywhere prints no rank, got ' + JSON.stringify(d2.or));
   }
 
+  /* THE PROGRESS BREAKDOWN MUST ADD UP TO ITS OWN DENOMINATOR.
+     Reported as the played count being wrong, and the card proved it:
+     "Played 2/12 ... 5 still to play. 4 on the pitch." — eleven against
+     twelve. playedUnits/totalUnits were multiplier-weighted while the
+     named buckets were headcounts, so the line came up short by exactly
+     the captain whenever he sat in one of them. */
+  {
+    /* The fixture's captain (element 3, multiplier 3 under Triple
+       Captain) is 'done', Saka is 'live', Raya is 'done', the blanker
+       has no fixture. Counting rows are the four with mult > 0. */
+    ok(d.playedUnits + d.yetUnits + d.playingUnits + d.blankUnits === d.totalUnits,
+       'the four state buckets account for every scoring slot, got ' +
+       [d.playedUnits, d.yetUnits, d.playingUnits, d.blankUnits].join('+') +
+       ' vs ' + d.totalUnits);
+    ok(d.playingUnits === 1 && d.playing === 1,
+       'one player on the pitch is one slot when he is not the captain');
+    ok(d.blankUnits === 1 && d.blanks === 1, 'and the blanker is one of each');
+  }
+  {
+    /* The captain in a bucket is where units and headcount part company,
+       and the case the report actually hit: one player, three slots. */
+    const STATE2 = { 1: 'done', 2: 'done', 3: 'toPlay', 4: 'done', 5: 'blank' };
+    const d2 = core.managerDetail(STD, PICKS, LIVE, STATE2, ELS, eo.byId);
+    ok(d2.yet === 1 && d2.yetUnits === 3,
+       'a Triple Captain still to play is one player and three slots, got ' +
+       d2.yet + '/' + d2.yetUnits);
+    ok(d2.playedUnits + d2.yetUnits + d2.playingUnits + d2.blankUnits === d2.totalUnits,
+       'and the buckets still account for the whole total');
+  }
+
   ok(core.managerDetail(STD, null, LIVE, STATE, ELS, {}) === null,
      'a manager whose picks failed to load has no row');
   ok(core.managerDetail(STD, { picks: 'nope' }, LIVE, STATE, ELS, {}) === null,
