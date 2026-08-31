@@ -157,7 +157,14 @@ events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
            "deadline_time": f"2026-08-{14 + g:02d}T17:15:00Z",
            "most_captained": 6, "most_selected": 6, "most_transferred_in": 12,
            "top_element": 6, "top_element_info": {"id": 6, "points": 13},
-           "average_entry_score": 50, "highest_score": 100} for g in range(1, 39)]
+           "average_entry_score": 50, "highest_score": 100,
+           # The league-wide figures the Home status board leads with. They
+           # were absent, so every one of those cells rendered a dash and a
+           # test could not tell a working card from a broken one.
+           "transfers_made": 11_562_127,
+           "chip_plays": [{"chip_name": "wildcard", "num_played": 279_227},
+                          {"chip_name": "bboost", "num_played": 41_003}],
+           } for g in range(1, 39)]
 
 rng = random.Random(1)
 fixtures = []
@@ -169,7 +176,11 @@ for i, (h, a) in enumerate(gw1):
     started = i < 9
     fixtures.append({"id": fid, "event": 1, "team_h": h, "team_a": a,
                      "team_h_difficulty": 3, "team_a_difficulty": 3,
-                     "kickoff_time": "2026-08-15T14:00:00Z",
+                     # Spread over four days, the way a real round is, so the
+                     # Home status board has more than one row to show. Only
+                     # the dates move; every finished/started flag and score
+                     # below is untouched.
+                     "kickoff_time": f"2026-08-{14 + i // 3:02d}T{12 + (i % 3) * 2:02d}:00:00Z",
                      "finished": i < 8, "started": started, "minutes": 90 if started else 0,
                      "team_h_score": (i % 4) if started else None,
                      "team_a_score": (i % 3) if started else None})
@@ -316,6 +327,7 @@ def transfers_for(entry):
 
 def entry_for(entry):
     return {"id": entry, "name": f"Team {entry - 99}", "player_first_name": "Demo",
+            "player_last_name": "Manager",
             "summary_overall_points": 2100, "summary_overall_rank": 240000,
             "summary_event_points": 53, "last_deadline_value": 1015,
             "last_deadline_bank": 8,

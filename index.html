@@ -154,6 +154,14 @@ try{
      --green-bright is DECORATION ONLY (focus rings, borders, the tour
      spotlight) where SC 1.4.11 asks 3:1 and it clears at 3.07:1. It must
      never carry text: --tab-on (5.66:1) exists for exactly that. */
+  /* The status board's identity card is the one filled panel on Home, so
+     its ink is measured against the fill rather than against the canvas.
+     White on --hero-b clears AAA in light; the dark pair is a muted forest
+     that keeps the card distinct from the surfaces around it without
+     going neon. */
+  --hero-a:#147e48;
+  --hero-b:#0b5c34;
+  --hero-ink:#ffffff;
   --green:#147e48;      /* 4.51:1 — was #15824a, 4.28:1 */
   --green-bright:#1f9d5c;
   --green-soft:rgba(31,157,92,.11);
@@ -280,6 +288,9 @@ try{
      absence (the "—" glyph, blank cells), not content. */
   --text-4:#697683; /*  3.08:1 on #232b34 */
 
+  --hero-a:#1a5c3c;
+  --hero-b:#12362a;
+  --hero-ink:#e8f4ec;
   --green:#45c483;        /* 6.46:1 — brand green lifted for dark, not lime */
   --green-bright:#3aa971;
   --green-soft:rgba(69,196,131,.13);
@@ -2273,6 +2284,70 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .an-bar{display:inline-block;width:110px;height:6px;border-radius:3px;background:var(--surface-3);
   vertical-align:middle;overflow:hidden}
 .an-bar>span{display:block;height:100%;background:var(--green);border-radius:3px}
+/* ── The status board ──────────────────────────────────────────────────
+   Home opens as a board of small, factual cards: who you are, where the
+   gameweek is, when the next deadline falls, what the country did this
+   week. Every card works before a team is linked, because the only one
+   that needs a team is the one that invites you to connect it.
+
+   Twelve columns so cards can take natural, uneven widths; one column on
+   a phone, where the order below is the reading order. */
+.sb{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.sb>*{min-width:0}
+.sb-team{grid-column:span 5}
+.sb-status{grid-column:span 7}
+.sb-cd{grid-column:span 4}
+.sb-num{grid-column:span 8}
+.sb-half{grid-column:span 6}
+@media(max-width:900px){
+  .sb-team,.sb-status,.sb-cd,.sb-num,.sb-half{grid-column:span 12}
+}
+/* The identity card carries the only colour on the board, so the eye
+   lands on it first and the factual cards stay quiet around it. */
+.sb-team{background:linear-gradient(135deg,var(--hero-a) 0%,var(--hero-b) 100%);
+  color:var(--hero-ink);border:none}
+.sb-team .sb-t-name{font-family:var(--font-display);font-size:1.45rem;font-weight:700;
+  line-height:1.15;margin:0}
+.sb-team .sb-t-mgr{font-size:.85rem;opacity:.82;margin:2px 0 0}
+.sb-team .sb-t-gw{font-size:var(--fs-min);text-transform:uppercase;letter-spacing:.06em;
+  opacity:.78;margin:14px 0 6px}
+.sb-figs{display:flex;align-items:flex-end;gap:18px}
+.sb-fig{display:flex;flex-direction:column}
+.sb-fig b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:1.35rem;font-weight:700;line-height:1.1}
+.sb-fig.lead b{font-size:2.4rem}
+.sb-fig small{font-size:var(--fs-min);text-transform:uppercase;letter-spacing:.05em;opacity:.8}
+.sb-team .btn{margin-top:14px}
+/* Day rows: label, count, state. The state is a chip so the column scans
+   vertically without reading a word of it. */
+.sb-day{display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-top:1px solid var(--border-2)}
+.sb-day:first-of-type{border-top:none}
+.sb-day-d{flex:1;font-weight:600;font-size:.88rem}
+.sb-day-n{font-size:var(--fs-min);color:var(--text-3)}
+.sb-chip{font-size:var(--fs-min);font-weight:800;letter-spacing:.05em;
+  padding:3px 9px;border-radius:var(--r-pill);white-space:nowrap;
+  background:var(--surface-2);color:var(--text-2)}
+.sb-chip.is-live{background:var(--green);color:#fff}
+.sb-chip.is-prov,.sb-chip.is-part{background:var(--amber-soft);color:var(--amber)}
+.sb-chip.is-done{background:var(--surface-3);color:var(--text-3)}
+/* The countdown: one big monospaced clock, split into labelled cells so
+   it stays readable when it drops from days to seconds. */
+.sb-clock{display:flex;gap:10px;margin:4px 0 2px}
+.sb-clock div{display:flex;flex-direction:column;align-items:center;min-width:44px}
+.sb-clock b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:1.7rem;font-weight:700;line-height:1.1}
+.sb-clock small{font-size:var(--fs-min);text-transform:uppercase;letter-spacing:.05em;
+  color:var(--text-3)}
+/* Four league-wide numbers, the ones FPL leads with. */
+.sb-nums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media(max-width:560px){.sb-nums{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.sb-n{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sb-n b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:1.15rem;font-weight:700;line-height:1.15;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-n small{font-size:var(--fs-min);text-transform:uppercase;letter-spacing:.05em;
+  color:var(--text-3)}
 .quad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
 /* Two-column from tablet up (iPad portrait 768px included); single column only on phones. */
 @media(max-width:767px){.quad-grid{grid-template-columns:1fr}}
@@ -5663,8 +5738,17 @@ async function hydrateMyWeek(host){
       '</div>';
     return;}
   const b=await boot();
-  const [fixtures,picks,hist]=await Promise.all([loadFixtures(),loadPicks(mid,b.cur.id),loadHistory(mid)]);
+  const [fixtures,picks,hist,entry]=await Promise.all([loadFixtures(),loadPicks(mid,b.cur.id),
+    loadHistory(mid),loadEntry(mid).catch(()=>null)]);
   await attachRecent(b,picks.picks.map(p=>p.element));   /* recent-form minutes for the squad */
+  /* The gameweek figure the board leads with, summed from the live feed
+     while the round runs rather than read from FPL's frozen field. */
+  let liveGwPts=null;
+  try{
+    const lv=await loadLive(b.cur.id);
+    const S=rivalSquadRows(picks,lv,null,null);
+    liveGwPts=rivalGwTotal(picks.entry_history,S,!!(b.cur&&b.cur.finished)).value;
+  }catch(_){/* the board falls back to FPL's own figure */}
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,5);
   const xiEls=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
@@ -5743,7 +5827,12 @@ async function hydrateMyWeek(host){
       ph.phase==='between'&&ph.target?'GW'+ph.target.id+' opens '+fmtDayShort(ph.target.deadline_time):
       'GW'+(ph.target?ph.target.id:b.cur.id)+' deadline ahead';})();
 
+  /* HOME IS THE STATUS BOARD, for everyone. homePanel() sends a linked
+     manager here and an unlinked visitor to the dashboard, so the board
+     has to open both or half the audience never sees it — which is
+     exactly the half that has a team. Same builder, same cards. */
   host.innerHTML=
+    dashBoard(b,fixtures,mid,entry,hist,liveGwPts)+
     '<div class="card mw-card">'+
       '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Your week</span>'+
         '<span class="qd-meta">'+esc(phaseNote)+' · '+stamp+'</span></div>'+
@@ -5929,6 +6018,191 @@ function dashNextSteps(mid){
     '</div></div>';
 }
 
+/* Which deadline the status board counts down to, and whether the round
+   the app is anchored on has already started.
+
+   The anchor is the gameweek the rest of the app is on — the sidebar, the
+   gameweek chip, the planner all name it. While its deadline is ahead,
+   that is the deadline. Once it passes, that round is under way and the
+   clock belongs to the next one; the card says so rather than silently
+   printing a different gameweek number from the sidebar and leaving the
+   reader to wonder which is wrong.
+
+   Pure: takes the anchor event, the full event list and a clock. */
+function boardDeadline(anchor,events,now){
+  const t=now==null?Date.now():now;
+  const future=(events||[]).filter(e=>e&&e.deadline_time&&
+      new Date(e.deadline_time).getTime()>t)
+    .sort((a,c)=>new Date(a.deadline_time)-new Date(c.deadline_time));
+  const ahead=!!(anchor&&anchor.deadline_time&&
+    new Date(anchor.deadline_time).getTime()>t);
+  const event=ahead?anchor:(future[0]||null);
+  return {event:event,
+    /* Named only when there IS an anchor that has started; with no anchor
+       at all there is nothing to say is under way. */
+    underWay:(!ahead&&anchor)?anchor:null,
+    upcoming:future.filter(e=>!event||e.id!==event.id).slice(0,4)};
+}
+/* ── The status board that opens Home ──────────────────────────────────
+   Modelled on the shape of FPL's own homepage — identity, where the round
+   is, when the next deadline falls, what the country did — but built from
+   feeds this app already holds, so it costs no request the page was not
+   making anyway.
+
+   Every card renders without a linked team. The only one that needs one
+   is the identity card, and unlinked it becomes the invitation to connect
+   rather than an empty box: the board is a welcome before it is a
+   dashboard, and a welcome that greets you with blanks is neither. */
+function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
+  const cur=b.cur||{};
+  /* Seven figures do not fit a quarter-width cell, and an ellipsis in the
+     middle of a number is worse than a rounded one: "11,562,..." tells the
+     reader nothing, "11.6M" tells them the scale, which is the whole point
+     of the figure. Exact values stay in the title for anyone who wants
+     them. Under six figures nothing is gained by rounding, so nothing is. */
+  const compact=n=>{
+    if(n==null||!isFinite(n))return '—';
+    n=Number(n);
+    if(Math.abs(n)>=1e6)return (n/1e6).toFixed(1).replace(/\.0$/,'')+'M';
+    if(Math.abs(n)>=1e5)return Math.round(n/1e3)+'k';
+    return fmtNum(n);
+  };
+  const card=(cls,title,body,foot)=>'<section class="card '+cls+'">'+
+    (title?'<div class="card-title">'+title+'</div>':'')+body+(foot||'')+'</section>';
+
+  /* ── who you are, and what you have scored ── */
+  const curH=(hist&&Array.isArray(hist.current))?hist.current:[];
+  const lastRow=curH.length?curH[curH.length-1]:null;
+  /* The gameweek figure prefers the live sum while the round is running,
+     for the same reason the league card does: FPL's own total is frozen
+     until they score it. */
+  const gwPts=liveGwPts!=null?liveGwPts:(lastRow?lastRow.points:null);
+  const seasonPts=lastRow?lastRow.total_points:null;
+  const orNow=(function(){
+    for(let i=curH.length-1;i>=0;i--)if(curH[i]&&curH[i].overall_rank!=null)return curH[i].overall_rank;
+    return null;
+  })();
+  const mgrName=entry?[entry.player_first_name,entry.player_last_name].filter(Boolean).join(' '):'';
+  const teamCard=mid&&entry
+    ? card('sb-team',null,
+        '<p class="sb-t-name">'+esc(entry.name||'Your team')+'</p>'+
+        (mgrName?'<p class="sb-t-mgr">'+esc(mgrName)+'</p>':'')+
+        '<p class="sb-t-gw">Gameweek '+cur.id+'</p>'+
+        '<div class="sb-figs">'+
+          '<span class="sb-fig"><b>'+fmtNum(cur.average_entry_score)+'</b><small>average</small></span>'+
+          '<span class="sb-fig lead"><b>'+(gwPts==null?'—':fmtNum(gwPts))+'</b><small>points</small></span>'+
+          '<span class="sb-fig"><b>'+fmtNum(cur.highest_score)+'</b><small>highest</small></span>'+
+        '</div>'+
+        '<a class="btn btn-primary btn-sm" href="#" onclick="openPanel(\'squad\');return false">Open my squad →</a>')
+    : card('sb-team',null,
+        '<p class="sb-t-name">Welcome to Gameweek Edge</p>'+
+        '<p class="sb-t-mgr">Connect your FPL team and every screen here becomes about your squad — captaincy, transfers, live points and your mini-leagues.</p>'+
+        '<p class="sb-t-gw">Gameweek '+cur.id+'</p>'+
+        '<div class="sb-figs">'+
+          '<span class="sb-fig"><b>'+fmtNum(cur.average_entry_score)+'</b><small>average</small></span>'+
+          '<span class="sb-fig lead"><b>'+fmtNum(cur.highest_score)+'</b><small>highest</small></span>'+
+        '</div>'+
+        '<a class="btn btn-primary btn-sm" href="#" onclick="openPanel(\'myweek\');return false">Link my team →</a>');
+
+  /* ── where the round actually is, day by day ── */
+  const days=gwDayStatus(fixtures,cur.id);
+  const chipCls={finished:'is-done',live:'is-live',provisional:'is-prov',
+    part:'is-part',toCome:''};
+  const dayRows=days.map(d=>'<div class="sb-day">'+
+    '<span class="sb-day-d">'+fmtDayShort(new Date(d.ts).toISOString())+'</span>'+
+    '<span class="sb-day-n">'+d.games+' match'+(d.games===1?'':'es')+'</span>'+
+    '<span class="sb-chip '+chipCls[d.state]+'">'+GW_DAY_LABEL[d.state]+'</span>'+
+    '</div>').join('');
+  const statusCard=card('sb-status','Gameweek '+cur.id+' status',
+    dayRows||'<p class="dl-sub" style="margin:0">No fixtures are scheduled for this gameweek yet. They appear here as soon as the calendar is published.</p>',
+    days.length?'<p class="dl-sub" style="margin:10px 0 0">Provisional means every match that day has been played but FPL has not confirmed the bonus points yet.</p>':'');
+
+  /* ── the next deadline, ticking ── */
+  /* gwAnchor's answer, via gwPhase — the same one the sidebar and the
+     gameweek chip print. Reaching for "first deadline in the future"
+     instead would be a second opinion on a question the app has already
+     answered, and the two would disagree on screen the moment a deadline
+     passed with the round still to be played. */
+  const ph=gwPhase(b,fixtures);
+  const dl=boardDeadline(ph.target||b.upcoming||null,b.events,null);
+  const nextEv=dl.event;
+  const underWay=dl.underWay
+    ? '<p class="dl-sub" style="margin:0 0 6px">Gameweek '+dl.underWay.id+' is under way — its deadline has passed.</p>'
+    : '';
+  const upcoming=dl.upcoming;
+  /* The clock is filled by the app's existing one-second tick rather than
+     a timer of its own — see tickTicker. Rendered with the real remaining
+     time so it is correct on the very first paint, before any tick. */
+  const cdCells=(function(){
+    if(!nextEv)return '';
+    const ms=Math.max(0,new Date(nextEv.deadline_time)-Date.now());
+    const d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),
+      m=Math.floor(ms%36e5/6e4),sec=Math.floor(ms%6e4/1e3);
+    const cell=(v,l)=>'<div><b>'+String(v).padStart(2,'0')+'</b><small>'+l+'</small></div>';
+    return cell(d,'days')+cell(h,'hrs')+cell(m,'min')+cell(sec,'sec');
+  })();
+  const cdCard=card('sb-cd','Next deadline',
+    nextEv
+      ? underWay+
+        '<p class="dl-sub" style="margin:0 0 6px">Gameweek '+nextEv.id+' · <b>'+fmtDeadline(nextEv.deadline_time)+'</b></p>'+
+        '<div class="sb-clock" id="sb-clock" data-deadline="'+esc(nextEv.deadline_time)+'">'+cdCells+'</div>'+
+        (upcoming.length?'<p class="dl-sub" style="margin:10px 0 0">Then '+
+          upcoming.map(e=>'GW'+e.id+' '+fmtDayShort(e.deadline_time)).join(' · ')+'</p>':'')
+      : '<p class="dl-sub" style="margin:0">No deadline ahead — the season is complete.</p>');
+
+  /* ── what the country did this week ── */
+  const chipsPlayed=((cur.chip_plays)||[]).reduce((n,c)=>n+(Number(c&&c.num_played)||0),0);
+  const capEl=b.els[cur.most_captained],inEl=b.els[cur.most_transferred_in];
+  const nStat=(v,l,title)=>'<div class="sb-n"'+(title?' title="'+esc(title)+'"':'')+
+    '><b>'+v+'</b><small>'+l+'</small></div>';
+  const numsCard=card('sb-num','Gameweek '+cur.id+' across FPL',
+    '<div class="sb-nums">'+
+      nStat(compact(cur.transfers_made),'transfers made',fmtNum(cur.transfers_made)+' transfers')+
+      nStat(compact(chipsPlayed),'chips played',fmtNum(chipsPlayed)+' chips')+
+      nStat(capEl?esc(capEl.web_name):'—','most captained')+
+      nStat(inEl?esc(inEl.web_name):'—','most bought')+
+    '</div>'+
+    (mid&&(seasonPts!=null||orNow!=null)
+      ? '<div class="sb-nums" style="margin-top:14px">'+
+          nStat(fmtNum(seasonPts),'season points')+
+          nStat(compact(orNow),'overall rank',orNow==null?'':fmtNum(orNow)+' of '+
+            fmtNum((b.raw&&b.raw.total_players)||null))+
+          nStat(compact((b.raw&&b.raw.total_players)||null),'managers',
+            fmtNum((b.raw&&b.raw.total_players)||null)+' playing')+
+          nStat(gwPts==null?'—':fmtNum(gwPts),'this gameweek')+
+        '</div>'
+      : ''));
+
+  /* ── the market, both directions ── */
+  const mv=transferMovers(b.elements,5);
+  const mvRow=(e,n)=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell">'+
+    '<span class="dl-nm">'+esc(e.web_name)+'</span>'+
+    '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+'</span>'+
+    '</span></span><span class="dl-col mono">'+fmtNum(n)+'</span></div>';
+  const mvList=(arr,key)=>arr.length
+    ? '<div class="dl">'+arr.map(e=>mvRow(e,Number(e[key])||0)).join('')+'</div>'
+    : '<p class="dl-sub" style="margin:0">The transfer market has not moved yet this gameweek.</p>';
+  const moversCard=card('sb-half','Most bought this gameweek',mvList(mv.in,'transfers_in_event'));
+  const soldCard=card('sb-half','Most sold this gameweek',mvList(mv.out,'transfers_out_event'));
+
+  /* ── who is not fit ── */
+  const news=latestNews(b,6);
+  const newsCard=card('sb-half','Player availability',
+    news.length
+      ? '<div class="dl">'+news.map(n=>'<div class="dl-row">'+
+          '<span class="dl-grow"><span class="tr-cell">'+
+          '<span class="dl-nm">'+esc(n.el.web_name)+'</span>'+
+          '<span class="dl-sub">'+teamShort(b,n.el.team)+' · '+esc(n.news)+'</span>'+
+          '</span></span>'+
+          (n.chance==null?'':'<span class="dl-col mono">'+n.chance+'%</span>')+
+          '</div>').join('')+'</div>'
+      : '<p class="dl-sub" style="margin:0">No fitness news on file right now.</p>',
+    '<p class="dl-sub" style="margin:10px 0 0"><a href="#" onclick="openPanel(\'allplayers\');return false">Every player and their status →</a></p>');
+
+  return '<div class="sb">'+teamCard+statusCard+cdCard+numsCard+
+    moversCard+soldCard+newsCard+'</div>';
+}
+
 async function hydrateDashboard(host){
   const mid=getMid();
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -5942,8 +6216,23 @@ async function hydrateDashboard(host){
   let capPool=b.elements.filter(e=>e.status==='a').map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
   let squad=null,bank=0,chipsLeft=null,scopeNote='league-wide model',formSpark='';
   let rankNow=null,rankDelta=null;                       /* season rank + last-GW movement, for the ticker */
+  /* Held for the status board's identity card. Fetched alongside the two
+     calls this panel already makes rather than after them, so linking a
+     team costs the page no extra round trip. */
+  let entry=null,histAll=null,liveGwPts=null;
   if(mid){try{
-    const [picks,hist]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid)]);
+    const [picks,hist,ent]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid),
+      loadEntry(mid).catch(()=>null)]);
+    entry=ent;histAll=hist;
+    /* The gameweek figure the board leads with, summed from the live feed
+       while the round runs — FPL's own is frozen until they score it, the
+       same trap the league card fell into. */
+    try{
+      const lv=await loadLive(b.cur.id);
+      const S=rivalSquadRows(picks,lv,null,null);
+      const T=rivalGwTotal(picks.entry_history,S,!!(b.cur&&b.cur.finished));
+      liveGwPts=T.value;
+    }catch(_){/* the board falls back to FPL's own figure */}
     squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
     bank=(picks.entry_history&&picks.entry_history.bank)||0;
     const curH=hist.current||[];
@@ -6257,7 +6546,11 @@ async function hydrateDashboard(host){
     jumpSecs.map(([id,l])=>'<a href="#" onclick="var s=document.getElementById(\''+id+'\');if(s)s.scrollIntoView({behavior:\'smooth\',block:\'start\'});return false">'+l+'</a>').join('')+
     '</nav>';
 
-  host.innerHTML=hero+q1+q1b+jump+
+  /* The board opens the page: identity, where the round is, the deadline
+     and the league-wide numbers, before the model says anything. The
+     three calls stay exactly where they were, one screen down. */
+  const board=dashBoard(b,fixtures,mid,entry,histAll,liveGwPts);
+  host.innerHTML=hero+board+q1+q1b+jump+
     '<div class="quad-grid expert-only">'+q2+q3+q4+'</div>'+q5+
     dashNextSteps(mid)+trust;
   tickTicker();
@@ -20585,6 +20878,50 @@ function playerGwStates(els,fixtures,gw){
   });
   return out;
 }
+/* ── The gameweek, day by day ──────────────────────────────────────────
+   What the FPL homepage puts at the top of its own status board, and the
+   first thing anyone opening this app on a Saturday wants to know: how
+   far through the round are we?
+
+   FPL settles a match in two stages, so a day has more states than
+   "done" and "not done". A day where every match has been scored is
+   FINISHED; one where they have all been played but the bonus is not
+   confirmed is PROVISIONAL, which is FPL's own word for it. A day with a
+   ball actually rolling is IN PLAY. A day half played is neither
+   finished nor untouched and says so rather than rounding to whichever
+   is closer. Nothing kicked off yet is TO COME.
+
+   Pure, and returns days in kick-off order. */
+function gwDayStatus(fixtures,gw){
+  const rows=(fixtures||[]).filter(f=>f&&f.event===gw&&f.kickoff_time);
+  const byDay={};
+  rows.forEach(f=>{
+    const d=new Date(f.kickoff_time);
+    if(isNaN(d))return;
+    /* Grouped on the local calendar day, because that is the day the
+       reader is thinking of when they look at a Saturday. */
+    const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+
+      String(d.getDate()).padStart(2,'0');
+    (byDay[key]=byDay[key]||{key:key,ts:d.getTime(),games:[]}).games.push(f);
+    if(d.getTime()<byDay[key].ts)byDay[key].ts=d.getTime();
+  });
+  return Object.keys(byDay).sort().map(k=>{
+    const g=byDay[k].games;
+    const over=g.filter(fixtureOver).length;
+    const confirmed=g.filter(f=>f.finished===true).length;
+    const playing=g.filter(f=>f.started&&!fixtureOver(f)).length;
+    const started=g.filter(f=>f.started).length;
+    let state;
+    if(confirmed===g.length)                 state='finished';
+    else if(playing)                         state='live';
+    else if(over===g.length)                 state='provisional';
+    else if(over||started)                   state='part';
+    else                                     state='toCome';
+    return {key:k,ts:byDay[k].ts,games:g.length,state:state};
+  });
+}
+const GW_DAY_LABEL={finished:'FINISHED',live:'IN PLAY',provisional:'PROVISIONAL',
+  part:'PART PLAYED',toCome:'TO COME'};
 function squadMatchday(picks,fixtures,els,gw){
   const list=(picks&&picks.picks)||[];
   if(!list.length)return null;
@@ -22740,6 +23077,21 @@ function tickTicker(){
      chip spent those phases repeating the gameweek next to it instead of
      answering its own question. The anchor is the answer in every phase —
      the gameweek in progress while one is, the next one once it is not. */
+  /* The status board's deadline clock rides this same one-second tick.
+     A second timer for one card would be a second thing to leak; the
+     card renders itself correct on first paint and this only keeps it
+     moving while it is on screen. */
+  (function(){
+    const el=document.getElementById('sb-clock');
+    if(!el)return;
+    const iso=el.getAttribute('data-deadline');
+    if(!iso)return;
+    const ms=Math.max(0,new Date(iso)-Date.now());
+    const d=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5),
+      m=Math.floor(ms%36e5/6e4),sec=Math.floor(ms%6e4/1e3);
+    const cell=(v,l)=>'<div><b>'+String(v).padStart(2,'0')+'</b><small>'+l+'</small></div>';
+    el.innerHTML=cell(d,'days')+cell(h,'hrs')+cell(m,'min')+cell(sec,'sec');
+  })();
   const labelEv=b.upcoming||focus;
   set('tk-gw','GW<b>'+(labelEv?labelEv.id:b.cur.id)+'</b>');
   /* Tone applies to the whole chip: amber inside 6 hours, red inside the

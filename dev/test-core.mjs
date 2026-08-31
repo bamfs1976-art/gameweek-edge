@@ -165,6 +165,8 @@ const pieces = [
   extractFn(html, 'gwPackLine'),
   extractFn(html, 'gwStatsPack'),
   extractFn(html, 'gwDefcon'),
+  extractFn(html, 'gwDayStatus'),
+  extractFn(html, 'boardDeadline'),
   extractFn(html, 'bonusForFixture'),
   extractFn(html, 'provBonusPts'),
   extractFn(html, 'managerCard'),
@@ -296,7 +298,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2221,6 +2223,92 @@ section('leagueStdRow / LEAGUE_SORTS: one sorter for two views');
      'every sort declares a direction');
   ok(new Set(core.LEAGUE_SORTS.map((o) => o.key)).size === core.LEAGUE_SORTS.length,
      'and the keys are unique, so the select cannot have two of the same');
+}
+
+section('boardDeadline: the clock names the gameweek the app is on');
+{
+  const ev = (id, iso) => ({ id: id, deadline_time: iso });
+  const EVENTS = [ev(1, '2026-08-14T17:15:00Z'), ev(2, '2026-08-21T17:15:00Z'),
+                  ev(3, '2026-08-28T17:15:00Z'), ev(4, '2026-09-04T17:15:00Z'),
+                  ev(5, '2026-09-11T17:15:00Z'), ev(6, '2026-09-18T17:15:00Z')];
+  const NOW = new Date('2026-08-22T12:00:00Z').getTime();   /* GW2 under way */
+
+  {
+    /* The ordinary case: the anchor is ahead, so it is the clock. */
+    const r = core.boardDeadline(ev(3, '2026-08-28T17:15:00Z'), EVENTS, NOW);
+    ok(r.event.id === 3, 'an anchor still ahead is the deadline shown, got ' + r.event.id);
+    ok(r.underWay === null, 'and nothing is under way');
+    ok(r.upcoming.map(e => e.id).join(',') === '4,5,6',
+       'the rest follow it, without repeating it, got ' + r.upcoming.map(e => e.id).join(','));
+  }
+  {
+    /* The case that made the card disagree with the sidebar: the anchor's
+       deadline has gone. The clock moves on AND says why. */
+    const r = core.boardDeadline(ev(2, '2026-08-21T17:15:00Z'), EVENTS, NOW);
+    ok(r.event.id === 3, 'a passed anchor hands the clock to the next gameweek, got ' + r.event.id);
+    ok(r.underWay && r.underWay.id === 2,
+       'and the round already running is named, got ' + JSON.stringify(r.underWay && r.underWay.id));
+  }
+  {
+    /* No anchor at all — between seasons, or before a fixture list. There
+       is nothing to call under way, and no number to invent. */
+    const r = core.boardDeadline(null, EVENTS, NOW);
+    ok(r.event.id === 3, 'with no anchor the next deadline still shows, got ' + r.event.id);
+    ok(r.underWay === null, 'and nothing is claimed to be under way');
+  }
+  {
+    const r = core.boardDeadline(null, EVENTS, new Date('2027-01-01T00:00:00Z').getTime());
+    ok(r.event === null && r.upcoming.length === 0,
+       'a finished season has no deadline and no list');
+  }
+  ok(core.boardDeadline(null, null, NOW).event === null,
+     'and no events at all is answered, not thrown');
+}
+
+section('gwDayStatus: how far through the round are we, day by day');
+{
+  const at = (day, h) => '2026-08-' + String(day).padStart(2, '0') +
+    'T' + String(h).padStart(2, '0') + ':00:00Z';
+  const fx = (day, h, o) => Object.assign({ event: 2, kickoff_time: at(day, h) }, o);
+  const day = (rows, i) => core.gwDayStatus(rows, 2)[i || 0];
+
+  ok(core.gwDayStatus([], 2).length === 0, 'no fixtures means no days, not a blank row');
+  ok(core.gwDayStatus([fx(29, 12, {})], 3).length === 0,
+     'another gameweek\u2019s fixtures are not this gameweek\u2019s days');
+  ok(core.gwDayStatus([{ event: 2 }], 2).length === 0,
+     'a fixture with no kick-off time cannot be placed on a day');
+
+  ok(day([fx(29, 12, { started: false })]).state === 'toCome',
+     'nothing kicked off is still to come');
+  ok(day([fx(29, 12, { started: true })]).state === 'live',
+     'a ball rolling is in play');
+  /* The state FPL's own board spends most of a Saturday evening in:
+     every match played, bonus not yet confirmed. */
+  ok(day([fx(29, 12, { started: true, finished_provisional: true })]).state === 'provisional',
+     'played but unconfirmed is provisional, not finished');
+  ok(day([fx(29, 12, { started: true, finished: true, finished_provisional: true })]).state === 'finished',
+     'scored by FPL is finished');
+  /* A day half played is neither, and rounding it to either would be a
+     claim the fixtures do not support. */
+  ok(day([fx(29, 12, { started: true, finished_provisional: true }),
+          fx(29, 17, { started: false })]).state === 'part',
+     'one match done and one to come is part played');
+  ok(day([fx(29, 12, { started: true, finished: true, finished_provisional: true }),
+          fx(29, 17, { started: true })]).state === 'live',
+     'and a match actually in play outranks the one already scored');
+
+  {
+    const days = core.gwDayStatus([
+      fx(31, 12, { started: false }),
+      fx(29, 15, { started: true, finished: true, finished_provisional: true }),
+      fx(29, 17, { started: true, finished: true, finished_provisional: true }),
+      fx(30, 14, { started: true, finished_provisional: true }),
+    ], 2);
+    ok(days.length === 3, 'one row per calendar day, got ' + days.length);
+    ok(days.map(d => d.state).join('|') === 'finished|provisional|toCome',
+       'and they come back in kick-off order, got ' + days.map(d => d.state).join('|'));
+    ok(days[0].games === 2, 'a day counts its own matches, got ' + days[0].games);
+  }
 }
 
 section('bonusForFixture: bonus is a ranking, and a ranking needs something to rank');

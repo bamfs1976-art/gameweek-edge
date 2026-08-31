@@ -16,6 +16,9 @@ dev/decay-fit-*.json
 dev/fixtures/vaastav/**/merged_gw.csv
 dev/fixtures/vaastav/**/players_raw.csv
 dev/fixtures/vaastav/master_team_list.csv
+# Python bytecode from importing dev/mock_fpl.py directly (a handy way to
+# check the fixture data without starting the server).
+__pycache__/
 node_modules/
 scripts/content/content.json
 scripts/content/out/
