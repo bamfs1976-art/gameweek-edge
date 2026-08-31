@@ -73,6 +73,22 @@ jobs:
       - name: Vendored rotation model matches its source
         run: node scripts/vendor-rotation.mjs --check --remote
 
+      # Same split, same reason, for the vendored FPL OpenAPI spec. `npm test`
+      # already proves the committed copy is intact and parses; what it cannot
+      # prove offline is that the pin still describes something real. This
+      # re-fetches from mcclowes/fpl-oas and fails only if the PINNED COMMIT
+      # has stopped serving the bytes we recorded — a force-push or a rewritten
+      # history under a SHA we treat as immutable, which would quietly turn the
+      # witness in dev/test-fpl-contract.mjs into a different document.
+      #
+      # Upstream moving ON from the pin is NOT a failure and does not turn this
+      # red: a third-party spec advancing is normal, adopting it is a decision
+      # to make deliberately by re-running the vendor script and reading the
+      # diff, and a check that goes red every time somebody else commits is one
+      # that gets ignored. The run says so in its log instead.
+      - name: Vendored FPL spec still matches its pinned source
+        run: node scripts/vendor-fpl-spec.mjs --check --remote
+
       # The briefing checker itself needs the live FPL API, which CI does not
       # get. What CI CAN guard is that the shipped briefing still parses into
       # the shape the checker expects — because a document that has drifted out
