@@ -61,21 +61,23 @@ const refresh = process.argv.includes('--refresh');
  * recorded hash and the bytes it describes could disagree the next time
  * anybody ran this, which is the entire point of recording the hash.
  *
- * A NOTE ON WHERE THIS COMMIT LIVES. 5ab0bfc is the head of the source repo's
- * `claude/la-liga-booking-research-x5h55f` branch, NOT of `main` — none of the
- * three files exists on main yet. That has one consequence worth stating in
- * the file that depends on it: the desk's daily data-refresh workflow only
- * harvests pl_other_fixtures.js on that same unmerged branch, so until it
- * merges the upstream calendar is frozen at this commit and `--refresh` will
- * keep returning identical bytes. The freshness assertion in `--check` is what
- * notices that, rather than us assuming a refresh is running.
+ * A NOTE ON WHERE THIS COMMIT LIVES. It used to be the head of an unmerged
+ * `claude/la-liga-booking-research-x5h55f` branch, because none of the three
+ * files existed on main. That mattered: the desk's daily data-refresh only
+ * harvested pl_other_fixtures.js on that branch, so the calendar here was
+ * frozen and `--refresh` kept returning identical bytes.
+ *
+ * All three files are on main now, and the harvest step with them, so the
+ * source is main and a refresh actually refreshes. The two pinned files are
+ * byte-identical across the move — same SHA-256 in the manifest before and
+ * after — so repointing adopted no new code, only a branch that is fed.
  */
 const SOURCE = {
   owner: 'bamfs1976-art',
   repo: 'pl-bookings',
   /* Full SHA. An abbreviated ref would resolve differently as the repo grows. */
-  commit: '5ab0bfcbfb437b98755f7469bd9533d59220c792',
-  branch: 'claude/la-liga-booking-research-x5h55f',
+  commit: 'eb9c75acc2809be6e8c06859f1a962f1c6775f1f',
+  branch: 'main',
 };
 const RAW = 'https://raw.githubusercontent.com/' + SOURCE.owner + '/' + SOURCE.repo + '/';
 
@@ -366,6 +368,25 @@ async function doVendor(only) {
        size stops being read, and a deploy nobody reads is where real changes
        hide. So an unchanged payload is a genuine no-op. */
     if (prev && prev.sha256 === hash && existsSync(localPath(f))) {
+      /* THE PAYLOAD IS NOT THE ONLY THING THAT CAN MOVE. The header records
+         which commit and branch the bytes came from, and a pin can be
+         repointed — at a branch that finally merged, say — without a byte of
+         code changing. Leaving the header behind then makes `--check` fail
+         against its own freshly-written manifest, which is exactly what
+         happened when this pin moved to main.
+
+         So the test is whether the FILE would differ, not the payload, and
+         `fetched` is carried over rather than restamped: an unchanged
+         payload still does not churn a date, so the no-deploy property above
+         survives intact. */
+      const want = header(f, hash, prev.fetched) + body;
+      if (readFileSync(localPath(f), 'utf8') !== want) {
+        writeFileSync(localPath(f), want);
+        files[f.id] = { ...prev, ref };
+        console.log('  ' + f.id.padEnd(16) + kb.padStart(6) +
+          ' KB  provenance re-stamped, payload unchanged since ' + prev.fetched);
+        continue;
+      }
       console.log('  ' + f.id.padEnd(16) + kb.padStart(6) + ' KB  unchanged since ' + prev.fetched);
       continue;
     }
