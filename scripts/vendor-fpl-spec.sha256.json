@@ -1,0 +1,12 @@
+{
+  "source": "mcclowes/fpl-oas",
+  "path": "static/openapi.yaml",
+  "commit": "9e7efac377ba52315137d7a40712ed6666e10ded",
+  "branch": "main",
+  "licence": "MIT, Copyright (c) 2026 Max McClowes",
+  "fetched": "2026-08-31",
+  "yaml_sha256": "3fd3d66d95753636746469c911357158e63f5ff13acbefbbaacdbfcef6f10ae9",
+  "json_sha256": "71e81e71b1cf4814e63d9beb38bcaa7385e829b1207afe473427bafd7de42acd",
+  "paths": 21,
+  "schemas": 39
+}

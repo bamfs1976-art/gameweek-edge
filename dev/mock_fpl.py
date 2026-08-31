@@ -43,9 +43,20 @@ SHORT = ["ARS", "AVL", "BOU", "BRE", "BHA", "CHE", "COV", "CRY", "EVE", "FUL",
 # Official PL team codes (drive real crest URLs when online).
 CODES = [3, 7, 91, 94, 36, 8, 102, 31, 11, 54, 88, 40, 2, 14, 43, 1, 4, 17, 6, 56]
 
+# strength/position/played and the rest of the league-table block are what
+# the real API sends and dev/test-fpl-contract.mjs found missing here. A
+# spread rather than a constant, so code that ranks on strength has
+# something to rank.
 teams = [{"id": i + 1, "name": n, "short_name": SHORT[i], "code": CODES[i],
           "strength_attack_home": 1100, "strength_attack_away": 1100,
-          "strength_defence_home": 1100, "strength_defence_away": 1100}
+          "strength_defence_home": 1100, "strength_defence_away": 1100,
+          "strength": 3 + (i % 3), "strength_overall_home": 1200 + i * 10,
+          "strength_overall_away": 1180 + i * 10,
+          "position": i + 1, "played": 2, "win": i % 3, "draw": i % 2,
+          "loss": max(0, 2 - (i % 3) - (i % 2)),
+          "points": (i % 3) * 3 + (i % 2), "form": None,
+          "team_division": None, "unavailable": False,
+          "pulse_id": i + 1}
          for i, n in enumerate(TEAMS)]
 
 # squad_select / squad_min_play / squad_max_play are the fields the app reads
@@ -58,10 +69,28 @@ element_types = [{"id": k, "singular_name_short": s, "plural_name": p,
                                               (4, "FWD", "Forwards", 3, 1, 3)]]
 
 # The rules the game publishes about itself: squad size, XI size, the per-club
-# cap, the budget in tenths, the sell-on fee and the money display divisor.
+# cap, the budget in tenths, the sell-on fee and the money display divisor —
+# and then the league, cup and UI block the real API sends alongside them.
+# The app reads none of that second half, but serving only the half we
+# happen to use is how a mock teaches the suite that the rest does not exist.
 game_settings = {"squad_squadsize": 15, "squad_squadplay": 11, "squad_team_limit": 3,
                  "squad_total_spend": 1000, "transfers_sell_on_fee": 0.5,
-                 "ui_currency_multiplier": 10, "transfers_cap": 20}
+                 "ui_currency_multiplier": 10, "transfers_cap": 20,
+                 "max_extra_free_transfers": 4, "stats_form_days": 30,
+                 "sys_vice_captain_enabled": True, "ui_use_special_shirts": False,
+                 "timezone": "UTC", "percentile_ranks": [1, 5, 10, 20, 30],
+                 "featured_entries": [],
+                 "league_join_private_max": 30, "league_join_public_max": 5,
+                 "league_max_size_public_classic": 20,
+                 "league_max_size_public_h2h": 16,
+                 "league_max_size_private_h2h": 16,
+                 "league_max_ko_rounds_private_h2h": 3,
+                 "league_prefix_public": "league",
+                 "league_points_h2h_win": 3, "league_points_h2h_lose": 0,
+                 "league_points_h2h_draw": 1,
+                 "league_ko_first_instead_of_random": False,
+                 "cup_start_event_id": None, "cup_stop_event_id": None,
+                 "cup_qualifying_method": None, "cup_type": None}
 
 # Six players per club (GKP, 2 DEF, 2 MID, FWD) → a legal Team-of-the-Week is
 # always formable, so every panel (incl. Scout AI) renders.
@@ -112,11 +141,11 @@ for t in teams:
             "transfers_in": (eid * 5000) % 900000, "cost_change_event": (eid % 5) - 2,
             "cost_change_start": (eid % 7) - 3, "photo": f"{100000 + eid}.jpg",
             "expected_goals": "0.5", "expected_assists": "0.2",
-            "expected_goals_per_90": "0.45" if et == 4 else "0.10",
-            "expected_assists_per_90": "0.20",
+            "expected_goals_per_90": 0.45 if et == 4 else 0.10,
+            "expected_assists_per_90": 0.20,
             "expected_goal_involvements": "0.7",
-            "expected_goal_involvements_per_90": "0.65" if et >= 3 else "0.20",
-            "expected_goals_conceded": "1.1", "expected_goals_conceded_per_90": "1.05",
+            "expected_goal_involvements_per_90": 0.65 if et >= 3 else 0.20,
+            "expected_goals_conceded": "1.1", "expected_goals_conceded_per_90": 1.05,
             "defensive_contribution": str(10 + eid % 20),
             "defensive_contribution_per_90": str(round(2 + (eid % 10) * 0.3, 1)),
             "recoveries": str(20 + eid % 30), "starts": 1, "news": "",
@@ -127,7 +156,7 @@ for t in teams:
             "influence": str(30 + eid % 20), "ict_index": str(30 + eid % 60),
             "bps": 50 + eid % 40, "bonus": eid % 7,
             "tackles": str(eid % 8), "clearances_blocks_interceptions": str(eid % 15),
-            "saves": "0", "clean_sheets": eid % 3, "goals_conceded": eid % 10,
+            "saves": 0, "clean_sheets": eid % 3, "goals_conceded": eid % 10,
             "goals_scored": eid % 6, "assists": eid % 4,
             "value_form": str(round(0.4 + (eid % 10) * 0.1, 1)),
             "value_season": str(round(4 + (eid % 12) * 0.5, 1)),
@@ -204,8 +233,28 @@ if PRESEASON:
         f.update(finished=False, started=False, minutes=0,
                  team_h_score=None, team_a_score=None)
 
+# The chip catalogue and the phase table are both top-level in the real
+# payload and were both missing here, so nothing that reads a chip window
+# or a monthly phase had anything to read under test.
+chips = [{"id": i + 1, "name": n, "number": 1, "start_event": 1,
+          "stop_event": 38, "chip_type": t,
+          "overrides": {"rules": {}, "scoring": {}, "element_types": [],
+                        "pick_multiplier": None}}
+         for i, (n, t) in enumerate([("wildcard", "transfer"),
+                                     ("freehit", "transfer"),
+                                     ("bboost", "team"),
+                                     ("3xc", "team")])]
+
+# Phases are the month-by-month mini-tables; 1 is always "Overall".
+phases = [{"id": 1, "name": "Overall", "start_event": 1, "stop_event": 38,
+           "highest_score": None}] + [
+    {"id": i + 2, "name": n, "start_event": lo, "stop_event": hi,
+     "highest_score": None}
+    for i, (n, lo, hi) in enumerate([("August", 1, 3), ("September", 4, 6),
+                                     ("October", 7, 9)])]
+
 bootstrap = {"teams": teams, "elements": elements, "element_types": element_types,
-             "game_settings": game_settings,
+             "game_settings": game_settings, "phases": phases, "chips": chips,
              "events": events, "total_players": 10_000_000}
 
 
@@ -223,7 +272,12 @@ def live_el(e):
 
 
 live = {"elements": [live_el(e) for e in elements]}
-event_status = {"status": [{"bonus_added": False, "event": 1, "date": "2026-08-15"}],
+# "points" is the per-day settle stage — "r" once FPL has scored that day,
+# "l" while it is still live. It is the same two-stage settle that
+# finished/finished_provisional expresses on a fixture, and it was absent
+# here entirely, so no test ever saw it.
+event_status = {"status": [{"bonus_added": False, "event": 1,
+                            "date": "2026-08-15", "points": "l"}],
                 "leagues": "Updated"}
 standings = {"league": {"name": "Test League"}, "standings": {"results": [
     {"entry": 100 + i, "entry_name": f"Team {i}", "player_name": f"Mgr {i}",
@@ -291,9 +345,16 @@ def history_for(entry):
                     "event_transfers": rr.randint(0, 2),
                     "event_transfers_cost": rr.choice([0, 0, 0, 4]),
                     "points_on_bench": rr.randint(0, 18),
+                    "rank_sort": rr.randint(1, 400000),
+                    "percentile_rank": rr.randint(1, 100),
                     "value": 1000 + g, "bank": rr.randint(0, 30)})
-    return {"current": cur, "chips": [{"name": "wildcard", "event": 8},
-            {"name": "3xc", "event": 30}], "past": []}
+    # A played chip carries the instant it was played, not just the week.
+    return {"current": cur,
+            "chips": [{"name": "wildcard", "event": 8,
+                       "time": "2026-10-17T10:30:00Z"},
+                      {"name": "3xc", "event": 30,
+                       "time": "2027-03-13T11:00:00Z"}],
+            "past": []}
 
 
 def picks_for(entry):
@@ -303,8 +364,22 @@ def picks_for(entry):
                        "multiplier": 2 if p == 0 else (1 if p < 11 else 0),
                        "is_captain": p == 0, "is_vice_captain": p == 1}
                       for p, pid in enumerate(ids)],
+            # active_chip and automatic_subs were both absent, so every
+            # chip and auto-sub path in the app was untested: a triple
+            # captain or a bench boost changes the multiplier the score
+            # is built from, and an auto-sub changes who counts at all.
+            # Null and empty are the ordinary gameweek; a test that wants
+            # a chip should say so rather than inherit one by default.
+            "active_chip": None,
+            "automatic_subs": [],
             "entry_history": {"bank": 5, "value": 1000, "points": 55,
                               "rank": 120000, "event_transfers_cost": 0,
+                              "event": CUR_EVENT, "event_transfers": 1,
+                              # total_points is the SEASON total and points
+                              # is this gameweek's. They coincide only
+                              # because the mock sits in gameweek one.
+                              "points_on_bench": 6, "total_points": 55,
+                              "rank_sort": 120000, "percentile_rank": 12,
                               # Distinct per manager and derivable from the
                               # entry id, so a test can prove the rendered OR
                               # belongs to the row it sits on. It was absent
@@ -351,7 +426,10 @@ def route(path):
         return standings
     if p.startswith("leagues-h2h/"):
         return h2h_standings
-    if p == "set-piece-notes":
+    # The app requests "team/set-piece-notes"; only the bare name was
+    # matched here, so that fetch 404d under test and the suite only ever
+    # exercised the failure branch. Both spellings answer now.
+    if p in ("team/set-piece-notes", "set-piece-notes"):
         return set_piece_notes
     if p.startswith("dream-team/"):
         return dream_team_for(int(p.split("/")[1]))
