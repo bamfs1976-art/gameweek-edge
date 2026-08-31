@@ -3,8 +3,8 @@
  * the module — PLDRotation.rotationRisk and the rest-day primitives
  *
  * source   bamfs1976-art/pl-bookings  assets/rotation.js
- * commit   5ab0bfcbfb437b98755f7469bd9533d59220c792
- * branch   claude/la-liga-booking-research-x5h55f
+ * commit   eb9c75acc2809be6e8c06859f1a962f1c6775f1f
+ * branch   main
  * sha256   4f02a1daf8187ca41b2df776818eff6f031925bcd20b44b4dce839331eb06049
  * fetched  2026-08-20
  *
