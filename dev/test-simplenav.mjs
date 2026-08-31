@@ -210,6 +210,76 @@ const NAV_LABELS = ['Home', 'Squad', 'Players', 'Live', 'Leagues', 'More'];
   await ctx.close();
 }
 
+/* ── the status board opens Home, for both audiences ──
+   Home is not one panel: homePanel() sends a linked manager to My Week and
+   an unlinked visitor to the dashboard. The board shipped on one of them
+   first and the other rendered nothing, so both are checked here. */
+for(const [who, mid] of [['linked', '123456'], ['unlinked', null]]){
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 1500 } });
+  await ctx.addInitScript(([m]) => {
+    try{
+      localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
+      localStorage.setItem('ge-visited', '1');
+      if(m) localStorage.setItem('ge-mid', m); else localStorage.removeItem('ge-mid');
+    }catch(_){}
+  }, [mid]);
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e).split('\n')[0]));
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(4500);
+  const got = await page.evaluate(() => ({
+    board: !!document.querySelector('.sb'),
+    cards: document.querySelectorAll('.sb > .card').length,
+    team: document.querySelector('.sb-team .sb-t-name')?.textContent.trim() || '',
+    cta: document.querySelector('.sb-team .btn')?.textContent.trim() || '',
+    days: document.querySelectorAll('.sb-day').length,
+    chips: [...document.querySelectorAll('.sb-day .sb-chip')].map(e => e.textContent.trim()),
+    clock: document.querySelectorAll('#sb-clock div').length,
+    nums: document.querySelectorAll('.sb-n').length,
+    /* Nothing on the board may render an ellipsis-truncated number: the
+       cells are narrow and a cut-off figure tells the reader nothing. */
+    clipped: [...document.querySelectorAll('.sb-n b')]
+      .filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent.trim()),
+    hScroll: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  }));
+  check(`${who}: the status board opens Home`, got.board, true);
+  check(`${who}: it carries the full set of cards`, got.cards, n => n >= 6);
+  check(`${who}: the gameweek is broken down by day`, got.days, n => n >= 1);
+  check(`${who}: every day states where it is`, got.chips.length, got.days);
+  check(`${who}: the deadline clock has four cells`, got.clock, 4);
+  check(`${who}: the league-wide numbers render`, got.nums, n => n >= 4);
+  check(`${who}: no number is cut off`, got.clipped.join('|'), '');
+  check(`${who}: the board does not scroll the page sideways`, got.hScroll, false);
+  check(`${who}: Home raises no page error`, errors.join(' | '), '');
+  await ctx.close();
+}
+
+/* The identity card is the one thing that differs, and it must invite
+   rather than sit empty when there is no team to greet. */
+{
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 1200 } });
+  await ctx.addInitScript(() => {
+    try{
+      localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
+      localStorage.setItem('ge-visited', '1');
+      localStorage.removeItem('ge-mid');
+    }catch(_){}
+  });
+  const page = await ctx.newPage();
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForTimeout(4000);
+  const got = await page.evaluate(() => ({
+    name: document.querySelector('.sb-team .sb-t-name')?.textContent.trim() || '',
+    cta: document.querySelector('.sb-team .btn')?.textContent.trim() || '',
+  }));
+  check('unlinked: the identity card welcomes rather than sitting empty',
+    got.name, s => /welcome/i.test(s));
+  check('unlinked: and its call to action is to link a team',
+    got.cta, s => /link my team/i.test(s));
+  await ctx.close();
+}
+
 await b.close(); stop();
 console.log(`\n${results.filter(Boolean).length}/${results.length} passed`);
 process.exit(results.every(Boolean) ? 0 : 1);
