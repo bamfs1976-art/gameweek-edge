@@ -2302,6 +2302,13 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 @media(max-width:900px){
   .sb-team,.sb-status,.sb-cd,.sb-num,.sb-half{grid-column:span 12}
 }
+/* The 4/8 split gives each card four cells to fit — a countdown and
+   four league-wide figures. Between 900px and 1200px, with the right
+   rail taking 296px, neither has the room: this is the band the board
+   was reported cut off in. They take the full width there instead. */
+@media(min-width:901px) and (max-width:1200px){
+  .sb-cd,.sb-num{grid-column:span 12}
+}
 /* The identity card carries the only colour on the board, so the eye
    lands on it first and the factual cards stay quiet around it. */
 .sb-team{background:linear-gradient(135deg,var(--hero-a) 0%,var(--hero-b) 100%);
@@ -2331,12 +2338,18 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .sb-chip.is-live{background:var(--green);color:#fff}
 .sb-chip.is-prov,.sb-chip.is-part{background:var(--amber-soft);color:var(--amber)}
 .sb-chip.is-done{background:var(--surface-3);color:var(--text-3)}
-/* The countdown: one big monospaced clock, split into labelled cells so
-   it stays readable when it drops from days to seconds. */
-.sb-clock{display:flex;gap:10px;margin:4px 0 2px}
-.sb-clock div{display:flex;flex-direction:column;align-items:center;min-width:44px}
+/* The countdown: one monospaced clock, split into labelled cells so it
+   stays readable when it drops from days to seconds. A GRID of four
+   equal columns, not a flex row of fixed-width cells: the cells were
+   min-width:44px, so the clock could not shrink below ~206px while its
+   card gets as little as 165px between 1024 and 1280, and the seconds
+   ran past the card edge and were cut off. minmax(0,1fr) divides
+   whatever room there is, so it cannot spill at any width. */
+.sb-clock{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;margin:4px 0 2px}
+.sb-clock div{display:flex;flex-direction:column;align-items:center;min-width:0}
 .sb-clock b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
-  font-size:1.7rem;font-weight:700;line-height:1.1}
+  font-size:clamp(1.25rem,2.1vw,1.7rem);font-weight:700;line-height:1.1}
 .sb-clock small{font-size:var(--fs-min);text-transform:uppercase;letter-spacing:.05em;
   color:var(--text-3)}
 /* Four league-wide numbers, the ones FPL leads with. */
@@ -2346,6 +2359,9 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .sb-n b{font-family:var(--font-mono);font-variant-numeric:tabular-nums;
   font-size:1.15rem;font-weight:700;line-height:1.15;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Names are not figures. The mono face is for numerals — it is also
+   wider, so 'De Cuyper' was ellipsised in a cell the UI font fits. */
+.sb-n.is-name b{font-family:var(--font-body);font-variant-numeric:normal}
 .sb-n small{font-size:var(--fs-min);text-transform:uppercase;letter-spacing:.05em;
   color:var(--text-3)}
 .quad-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
@@ -6153,14 +6169,15 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
   /* ── what the country did this week ── */
   const chipsPlayed=((cur.chip_plays)||[]).reduce((n,c)=>n+(Number(c&&c.num_played)||0),0);
   const capEl=b.els[cur.most_captained],inEl=b.els[cur.most_transferred_in];
-  const nStat=(v,l,title)=>'<div class="sb-n"'+(title?' title="'+esc(title)+'"':'')+
+  const nStat=(v,l,title,isName)=>'<div class="sb-n'+(isName?' is-name':'')+'"'+
+    (title?' title="'+esc(title)+'"':'')+
     '><b>'+v+'</b><small>'+l+'</small></div>';
   const numsCard=card('sb-num','Gameweek '+cur.id+' across FPL',
     '<div class="sb-nums">'+
       nStat(compact(cur.transfers_made),'transfers made',fmtNum(cur.transfers_made)+' transfers')+
       nStat(compact(chipsPlayed),'chips played',fmtNum(chipsPlayed)+' chips')+
-      nStat(capEl?esc(capEl.web_name):'—','most captained')+
-      nStat(inEl?esc(inEl.web_name):'—','most bought')+
+      nStat(capEl?esc(capEl.web_name):'—','most captained',null,true)+
+      nStat(inEl?esc(inEl.web_name):'—','most bought',null,true)+
     '</div>'+
     (mid&&(seasonPts!=null||orNow!=null)
       ? '<div class="sb-nums" style="margin-top:14px">'+

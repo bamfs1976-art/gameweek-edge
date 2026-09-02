@@ -24,6 +24,7 @@ import http.server
 import json
 import os
 import random
+from datetime import datetime, timedelta, timezone
 
 # Pre-season mode (PRESEASON=1): models the state before the GW1 deadline —
 # every player minutes/form/ownership at zero (ep_next still provisionally
@@ -181,9 +182,37 @@ if PRESEASON:
                  clean_sheets=0, goals_conceded=0, goals_scored=0, assists=0,
                  bonus=0, bps=0)
 
+# ── the season's clock ─────────────────────────────────────────────────
+#
+# Dates were literals — f"2026-08-{14 + g:02d}" — and the arithmetic ran off
+# the end of the month: gameweeks 18 upward were stamped 2026-08-32 through
+# 2026-08-52, and the GW2-8 fixtures 2026-08-27 through 2026-08-69. Those are
+# strings, so they served fine and typed fine; they are just not dates. Every
+# consumer got Invalid Date, which is why the Home countdown card rendered
+# "the season is complete" rather than a clock, and why no test noticed.
+#
+# So: real arithmetic, and anchored to NOW rather than to a fixed August.
+# A fixture pinned to literal dates ages out — this one had — and the whole
+# point of the board is what is still ahead. GW1 sits four days back, so it
+# is finished and its four match days are behind us; GW2 is three days out,
+# so there is always a deadline to count down to.
+SEASON_GW1 = (datetime.now(timezone.utc) - timedelta(days=4)).replace(
+    hour=17, minute=15, second=0, microsecond=0)
+
+
+def gw_deadline(g):
+    """Deadline for gameweek g — weekly from GW1."""
+    return SEASON_GW1 + timedelta(days=7 * (g - 1))
+
+
+def iso(dt):
+    """The Z-suffixed UTC form the real API emits."""
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
            "is_current": g == CUR_EVENT, "is_next": g == CUR_EVENT + 1,
-           "deadline_time": f"2026-08-{14 + g:02d}T17:15:00Z",
+           "deadline_time": iso(gw_deadline(g)),
            "most_captained": 6, "most_selected": 6, "most_transferred_in": 12,
            "top_element": 6, "top_element_info": {"id": 6, "points": 13},
            "average_entry_score": 50, "highest_score": 100,
@@ -209,7 +238,8 @@ for i, (h, a) in enumerate(gw1):
                      # Home status board has more than one row to show. Only
                      # the dates move; every finished/started flag and score
                      # below is untouched.
-                     "kickoff_time": f"2026-08-{14 + i // 3:02d}T{12 + (i % 3) * 2:02d}:00:00Z",
+                     "kickoff_time": iso(gw_deadline(1) + timedelta(
+                         days=i // 3, hours=(i % 3) * 2 - 5)),
                      "finished": i < 8, "started": started, "minutes": 90 if started else 0,
                      "team_h_score": (i % 4) if started else None,
                      "team_a_score": (i % 3) if started else None})
@@ -223,7 +253,8 @@ for g in range(2, 9):
                          "finished": False, "started": False,
                          "team_h_difficulty": rng.randint(2, 4),
                          "team_a_difficulty": rng.randint(2, 4),
-                         "kickoff_time": f"2026-08-{13 + g * 7:02d}T14:00:00Z"})
+                         "kickoff_time": iso(gw_deadline(g) + timedelta(
+                             days=1, hours=-3))})
 
 if PRESEASON:
     # No gameweek is finished or current; GW1 is next, nothing played.
@@ -277,7 +308,7 @@ live = {"elements": [live_el(e) for e in elements]}
 # finished/finished_provisional expresses on a fixture, and it was absent
 # here entirely, so no test ever saw it.
 event_status = {"status": [{"bonus_added": False, "event": 1,
-                            "date": "2026-08-15", "points": "l"}],
+                            "date": iso(gw_deadline(1))[:10], "points": "l"}],
                 "leagues": "Updated"}
 standings = {"league": {"name": "Test League"}, "standings": {"results": [
     {"entry": 100 + i, "entry_name": f"Team {i}", "player_name": f"Mgr {i}",
@@ -288,7 +319,7 @@ h2h_standings = {"league": {"name": "H2H Test League"}, "standings": {"results":
      "rank": i + 1, "last_rank": i + 2, "matches_won": 6 - i, "matches_drawn": 1,
      "matches_lost": i, "points_for": 500 - i * 10, "total": (6 - i) * 3 + 1}
     for i in range(6)]}}
-set_piece_notes = {"last_updated": "2026-08-14T10:00:00Z", "teams": [
+set_piece_notes = {"last_updated": iso(gw_deadline(1) - timedelta(days=1)), "teams": [
     {"id": 1, "notes": [{"info_message": "Fwd is on penalties; Wng takes direct free-kicks.",
                          "source_link": "", "external_link": False}]},
     {"id": 14, "notes": [{"info_message": "First-choice penalty taker confirmed.",
@@ -322,7 +353,8 @@ def summary_for(pid):
              "assists": rr.randint(0, 12)}]
     upcoming = [{"event": 2 + i, "team_h": ((pid + i) % 20) + 1,
                  "team_a": ((pid + i + 5) % 20) + 1, "is_home": i % 2 == 0,
-                 "difficulty": rng.randint(2, 5), "kickoff_time": "2026-08-22T14:00:00Z"}
+                 "difficulty": rng.randint(2, 5),
+                 "kickoff_time": iso(gw_deadline(2) + timedelta(days=1))}
                 for i in range(5)]
     return {"history": hist, "history_past": past, "fixtures": upcoming}
 
@@ -396,7 +428,8 @@ def transfers_for(entry):
             out.append({"element_in": rr.randint(1, N), "element_out": rr.randint(1, N),
                         "element_in_cost": rr.randint(45, 130),
                         "element_out_cost": rr.randint(45, 130),
-                        "entry": entry, "event": g, "time": "2026-08-20T10:00:00Z"})
+                        "entry": entry, "event": g,
+                        "time": iso(gw_deadline(1) - timedelta(days=2))})
     return out
 
 

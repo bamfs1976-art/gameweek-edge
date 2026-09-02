@@ -214,8 +214,16 @@ const NAV_LABELS = ['Home', 'Squad', 'Players', 'Live', 'Leagues', 'More'];
    Home is not one panel: homePanel() sends a linked manager to My Week and
    an unlinked visitor to the dashboard. The board shipped on one of them
    first and the other rendered nothing, so both are checked here. */
+/* WIDTH MATTERS, and one width was not enough. The board was only ever
+   driven at 1280. The right rail appears at 1024px and takes 296px out of
+   the main column, while the board's cards stay in their 4/8 split until
+   900px — so between those two the deadline card gets as little as 165px
+   for a four-cell countdown, and the seconds ran off the edge of the card.
+   Reported from an iPad. 1024 is the tightest point of that band; 1280 is
+   where it was already being checked and must not regress. */
 for(const [who, mid] of [['linked', '123456'], ['unlinked', null]]){
-  const ctx = await b.newContext({ viewport: { width: 1280, height: 1500 } });
+ for(const vw of [1024, 1280]){
+  const ctx = await b.newContext({ viewport: { width: vw, height: 1500 } });
   await ctx.addInitScript(([m]) => {
     try{
       localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
@@ -241,18 +249,49 @@ for(const [who, mid] of [['linked', '123456'], ['unlinked', null]]){
        cells are narrow and a cut-off figure tells the reader nothing. */
     clipped: [...document.querySelectorAll('.sb-n b')]
       .filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent.trim()),
+    /* The countdown has to fit the card it is drawn in. Measured two ways
+       because they fail differently: scrollWidth catches a row that is
+       wider than its box, and the last cell's right edge catches one that
+       has escaped the card altogether — which is what a reader sees as a
+       clipped "SEC". */
+    clockOverflow: (() => {
+      const c = document.querySelector('.sb-clock');
+      return c ? c.scrollWidth - c.clientWidth : 0;
+    })(),
+    clockEscapes: (() => {
+      const card = document.querySelector('.sb-cd');
+      const last = [...document.querySelectorAll('.sb-clock div')].pop();
+      if(!card || !last) return 0;
+      return Math.round(last.getBoundingClientRect().right
+        - card.getBoundingClientRect().right);
+    })(),
+    /* Mono is the numeral face. A player name set in it is both wrong by
+       the type rules and wider than it needs to be, which is how "De
+       Cuyper" came to be ellipsised in a cell that fits it. */
+    nameInMono: [...document.querySelectorAll('.sb-n.is-name b')]
+      .filter(e => /Mono|monospace/i.test(getComputedStyle(e).fontFamily))
+      .map(e => e.textContent.trim()),
+    namedCells: document.querySelectorAll('.sb-n.is-name').length,
     hScroll: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  check(`${who}: the status board opens Home`, got.board, true);
-  check(`${who}: it carries the full set of cards`, got.cards, n => n >= 6);
-  check(`${who}: the gameweek is broken down by day`, got.days, n => n >= 1);
-  check(`${who}: every day states where it is`, got.chips.length, got.days);
-  check(`${who}: the deadline clock has four cells`, got.clock, 4);
-  check(`${who}: the league-wide numbers render`, got.nums, n => n >= 4);
-  check(`${who}: no number is cut off`, got.clipped.join('|'), '');
-  check(`${who}: the board does not scroll the page sideways`, got.hScroll, false);
-  check(`${who}: Home raises no page error`, errors.join(' | '), '');
+  check(`${who} @${vw}: the status board opens Home`, got.board, true);
+  check(`${who} @${vw}: it carries the full set of cards`, got.cards, n => n >= 6);
+  check(`${who} @${vw}: the gameweek is broken down by day`, got.days, n => n >= 1);
+  check(`${who} @${vw}: every day states where it is`, got.chips.length, got.days);
+  check(`${who} @${vw}: the deadline clock has four cells`, got.clock, 4);
+  check(`${who} @${vw}: the league-wide numbers render`, got.nums, n => n >= 4);
+  check(`${who} @${vw}: no number is cut off`, got.clipped.join('|'), '');
+  check(`${who} @${vw}: the countdown fits its card`, got.clockOverflow, 0);
+  check(`${who} @${vw}: and no cell escapes the card edge`,
+    got.clockEscapes, n => n <= 0);
+  check(`${who} @${vw}: the named cells are set in the UI face, not mono`,
+    got.nameInMono.join('|'), '');
+  check(`${who} @${vw}: and there are named cells to check`,
+    got.namedCells, n => n >= 2);
+  check(`${who} @${vw}: the board does not scroll the page sideways`, got.hScroll, false);
+  check(`${who} @${vw}: Home raises no page error`, errors.join(' | '), '');
   await ctx.close();
+ }
 }
 
 /* The identity card is the one thing that differs, and it must invite
