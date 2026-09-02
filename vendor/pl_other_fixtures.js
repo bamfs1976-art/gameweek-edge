@@ -5,8 +5,8 @@
  * source   bamfs1976-art/pl-bookings  data/pl_other_fixtures.js
  * commit   eb9c75acc2809be6e8c06859f1a962f1c6775f1f
  * branch   main
- * sha256   58fdc35ad125764db19e115a1892aaafb4ad9b72a8c4676ab4feeaf971c448b8
- * fetched  2026-08-31
+ * sha256   6e7852a78f8e8d31a2cba0393cdaca9cb453a7f70a852424ee70c673d0663135
+ * fetched  2026-09-02
  *
  * Re-vendor with: node scripts/vendor-rotation.mjs
  * Verify with:    node scripts/vendor-rotation.mjs --check
@@ -91,8 +91,6 @@ const PL_OTHER_FIXTURES = [
   {c:"MCI",d:"2026-09-08T19:00:00+00:00",comp:"UCL",v:"A"},
   {c:"MIL",d:"2026-09-08T19:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"NEW",d:"2026-09-08T19:00:00+00:00",comp:"LCUP",v:"A"},
-  {c:"EVE",d:"2026-09-09T18:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"WOL",d:"2026-09-09T18:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"ARS",d:"2026-09-09T19:00:00+00:00",comp:"UCL",v:"A"},
   {c:"CHE",d:"2026-09-09T19:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"LEE",d:"2026-09-09T19:00:00+00:00",comp:"LCUP",v:"A"},
@@ -103,14 +101,16 @@ const PL_OTHER_FIXTURES = [
   {c:"ARS",d:"2026-09-15T19:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"BRE",d:"2026-09-15T19:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"IPS",d:"2026-09-15T19:00:00+00:00",comp:"LCUP",v:"H"},
+  {c:"LIV",d:"2026-09-15T19:00:00+00:00",comp:"LCUP",v:"H"},
+  {c:"TOT",d:"2026-09-15T19:00:00+00:00",comp:"LCUP",v:"A"},
+  {c:"EVE",d:"2026-09-16T18:45:00+00:00",comp:"LCUP",v:"H"},
   {c:"SHU",d:"2026-09-16T18:45:00+00:00",comp:"LCUP",v:"A"},
+  {c:"WOL",d:"2026-09-16T18:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"AVL",d:"2026-09-16T19:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"BHA",d:"2026-09-16T19:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"COV",d:"2026-09-16T19:00:00+00:00",comp:"LCUP",v:"H"},
-  {c:"LIV",d:"2026-09-16T19:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"MUN",d:"2026-09-16T19:00:00+00:00",comp:"LCUP",v:"H"},
   {c:"SUN",d:"2026-09-16T19:00:00+00:00",comp:"UEL",v:"H"},
-  {c:"TOT",d:"2026-09-16T19:00:00+00:00",comp:"LCUP",v:"A"},
   {c:"MCI",d:"2026-09-17T18:30:00+00:00",comp:"LCUP",v:"H"},
   {c:"NOR",d:"2026-09-17T18:30:00+00:00",comp:"LCUP",v:"A"},
   {c:"BOU",d:"2026-09-17T19:00:00+00:00",comp:"UEL",v:"A"},
