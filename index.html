@@ -7312,7 +7312,11 @@ async function socPreloadImages(specs){
     if(o.crest)jobs.push(socLoadImg(o.crest).then(im=>{o._crest=im;}));
   };
   (specs||[]).forEach(sp=>{
-    (sp.rows||[]).forEach(r=>r.forEach(want));
+    /* `rows` is a grid of rows-of-cells on the pitch card and a list of
+       row OBJECTS on the FDR grid. Both carry crests, and r.forEach on
+       an object throws — which would take the whole preload, and with
+       it every image on every card, down with it. */
+    (sp.rows||[]).forEach(r=>Array.isArray(r)?r.forEach(want):want(r));
     (sp.bench||[]).forEach(want);
     (sp.items||[]).forEach(want);
     (sp.groups||[]).forEach(g=>(g.items||[]).forEach(want));
@@ -7712,14 +7716,37 @@ function socialSpecs(b,fixtures,live,me){
         v:r.delta.toFixed(1),crest:crestUrl(b,r.el.team),photos:socPhotoUrls(r.el)}))};
   });
 
+  /* The FDR grid everybody already reads, as a card. It was a ranked list
+     with the first FOUR opponents printed as one run-on string under a
+     "Next 6 gameweeks" caption — so it named six weeks and showed four, and
+     a colourless line of club codes made the reader do the difficulty
+     themselves. A grid is what this data is: a week per column, a club per
+     row, each cell coloured on the same 1-5 scale the Fixtures panel uses. */
   push('fixture-runs',()=>{
-    const runs=clubFdrRuns(b,fixtures,6);
-    if(runs.length<10)return null;
-    return {kind:'rank',title:'BEST FIXTURE RUNS',
-      sub:'Next 6 gameweeks · official FDR',
-      note:'Average official difficulty over each club’s next six fixtures. A season-long rating of the opponent, so it knows nothing about form or injuries.',
-      items:runs.slice(0,8).map(r=>({nm:teamShort(b,r.team),team:r.opps.slice(0,4).join(' '),
-        meta:r.n+' fixtures',v:r.mean.toFixed(2),crest:crestUrl(b,r.team)}))};
+    const grid=clubFdrGrid(b,fixtures,6);
+    if(grid.gws.length<3||grid.rows.length<10)return null;
+    const cellOf=c=>{
+      if(!c)return {parts:['\u2014'],grade:0,dgw:false};
+      const each=(c.each&&c.each.length)?c.each:[c];
+      return {parts:each.map(f=>f.opp+(f.home?'':' (a)')),
+        grade:fdrGrade('fpl',c),dgw:each.length>1};
+    };
+    return {kind:'fdr',title:'BEST FIXTURE RUNS',
+      sub:'GW'+grid.gws[0]+'\u2013'+grid.gws[grid.gws.length-1]+' \u00b7 official FDR',
+      heads:grid.gws.map(g=>'GW'+g),
+      rows:grid.rows.slice(0,10).map(r=>({
+        nm:teamShort(b,r.team),crest:crestUrl(b,r.team),
+        /* The mean is what the rows are ordered on, so it is printed: a
+           table sorted by a number it never shows is a table you have to
+           take on trust. The fixture count sits with it because a club with
+           a blank tops this list on five games, not six. */
+        avg:r.mean.toFixed(2),n:r.n,
+        cells:grid.gws.map(g=>cellOf(r.cells[g]))})),
+      /* Two wrapped lines is all the footer keeps, so this is written to
+         fit rather than to be cut mid-clause. */
+      note:'Official FPL difficulty, 1 to 5, over each club\u2019s next six '+
+        'gameweeks. A season-long rating of the opponent \u2014 it knows '+
+        'nothing about form or fitness.'};
   });
 
   push('bonus-magnets',()=>{
@@ -8373,6 +8400,65 @@ function renderSocialCard(spec,scale){
       x.fillText(clip(spec.benchLine,72),W/2,1182);
       x.textAlign='left';
     }
+  } else if(spec.kind==='fdr'){
+    /* The Fixtures panel's own 1-5 palette, copied by value so the card and
+       the app colour a 4 the same red. Ink is dark on every band except the
+       hardest, which is what the stylesheet does too. */
+    const FDR_BG=['rgba(255,255,255,.06)','#2ecf73','#8fd9a6','#d9dee3','#f0a3a0','#e05a55'];
+    const FDR_INK=['rgba(255,255,255,.42)','#0d1f16','#0d1f16','#3a4650','#2a1414','#ffffff'];
+    const rows=spec.rows||[],heads=spec.heads||[];
+    const top=262,avail=H-top-176;
+    const PAD=40,GAP=6,CLUB=150,AVG=96;
+    const cols=Math.max(1,heads.length);
+    const cellW=(W-PAD*2-CLUB-AVG-GAP*(cols+1))/cols;
+    const headH=40;
+    const rh=Math.min(88,(avail-headH)/Math.max(1,rows.length));
+    const cx0=PAD+CLUB+GAP;
+    const colX=i=>cx0+i*(cellW+GAP);
+
+    /* Column headings. */
+    x.textAlign='center';x.font='800 22px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+    heads.forEach((h,i)=>x.fillText(h,colX(i)+cellW/2,top+26));
+    x.fillText('AVG',W-PAD-AVG/2,top+26);
+
+    rows.forEach((r,ri)=>{
+      const y=top+headH+ri*rh,h=rh-6;
+      /* Club: crest then short name, left-aligned like every other card. */
+      const cy=y+h/2;
+      if(r._crest){
+        x.save();x.beginPath();x.arc(PAD+20,cy,20,0,2*Math.PI);x.closePath();
+        x.fillStyle='rgba(255,255,255,.08)';x.fill();x.clip();
+        x.drawImage(r._crest,PAD,cy-20,40,40);x.restore();
+      }
+      x.textAlign='left';x.font='800 26px system-ui,sans-serif';x.fillStyle=SOC_INK;
+      x.fillText(r.nm,PAD+(r._crest?50:0),cy+9);
+
+      (r.cells||[]).forEach((c,i)=>{
+        const gx=colX(i),g=Math.max(0,Math.min(5,c.grade|0));
+        x.fillStyle=FDR_BG[g];socRound(x,gx,y,cellW,h,10);x.fill();
+        /* A double gets the panel's inset ring — two opponents in one week is
+           the single most valuable thing on this grid and must not read as
+           just another cell. */
+        if(c.dgw){x.strokeStyle='rgba(12,16,20,.5)';x.lineWidth=3;
+          socRound(x,gx+2,y+2,cellW-4,h-4,8);x.stroke();}
+        x.fillStyle=FDR_INK[g];x.textAlign='center';
+        const parts=c.parts||['\u2014'];
+        if(parts.length>1){
+          x.font='800 17px system-ui,sans-serif';
+          parts.slice(0,2).forEach((t,k)=>x.fillText(t,gx+cellW/2,cy-2+k*20));
+        }else{
+          x.font='800 21px system-ui,sans-serif';
+          x.fillText(parts[0],gx+cellW/2,cy+7);
+        }
+      });
+
+      /* The number the rows are sorted on, with the fixture count under it. */
+      x.textAlign='center';
+      x.font='800 26px system-ui,sans-serif';x.fillStyle=SOC_ACCENT;
+      x.fillText(r.avg,W-PAD-AVG/2,cy+2);
+      x.font='600 17px system-ui,sans-serif';x.fillStyle='rgba(255,255,255,.45)';
+      x.fillText(r.n+(r.n===1?' game':' games'),W-PAD-AVG/2,cy+22);
+    });
   } else if(spec.kind==='ladder'){
     const gs=spec.groups||[],top=268,avail=H-top-190;
     /* Rows stretch to fill the card, and a short list is centred rather than
@@ -8659,18 +8745,18 @@ gameweekedge.co.uk`,
 a:`Players the model projects to outscore their price, with a fair price for each.`},
 
 'fixture-runs':{
-x:`The best fixture runs in the game right now.
+x:`The next six gameweeks, ranked by who has it easiest.
 
 Fixtures aren't everything, but they're the cheapest edge available — you don't need a player to improve, you just need his opponents to get easier.
 
-Here's who has the kindest road ahead 👇
+Every club's run, week by week 👇
 
 gameweekedge.co.uk`,
 b:`The best fixture runs in the game right now.
 
 Fixtures aren't everything, but they're the cheapest edge going — you don't need a player to improve, just his opponents to get easier. #FPL
 gameweekedge.co.uk`,
-a:`Players with the best upcoming fixture runs, ranked by the difficulty of their next matches.`},
+a:`A fixture difficulty grid: ten clubs as rows, the next six gameweeks as columns, and each cell the opponent for that week shaded on the official one-to-five difficulty scale — green for the easiest, red for the hardest. A blank gameweek shows a dash and a double gameweek shows both opponents in one outlined cell. The last column is each club's average difficulty over the run, which is the order the rows are in.`},
 
 'bonus-magnets':{
 x:`Bonus points decide more mini-leagues than anyone admits, and almost nobody picks for them.
@@ -17285,27 +17371,46 @@ function congestedGws(events){
    than twice one side: it is not two independent midweeks, it is a squad
    playing three times in eight days with the weekend in the middle. */
 const BB_CONGEST_PENALTY={1:0.25,2:0.60};
-/* Each club's next N fixtures on official FDR, best run first. The classic
-   pre-season graphic, and the same numbers the chip plan reads. */
-function clubFdrRuns(b,fixtures,n){
+/* Each club's next N GAMEWEEKS on official FDR as a grid, kindest run first.
+   The classic pre-season graphic.
+
+   Gameweeks, not fixtures, and the distinction is the whole point of looking
+   at a run. This counted the next six FIXTURES: a club with a double
+   therefore had its window end a gameweek early, and one with a blank had it
+   run a gameweek late, while the card above it printed "Next 6 gameweeks".
+   A column is a gameweek now — a double holds two opponents, a blank holds
+   none, and both are visible rather than quietly changing the window.
+
+   fdrCombine and fdrOppLabel are the Fixtures panel's own, so a double is
+   folded and labelled here exactly as the panel folds and labels it. */
+function clubFdrGrid(b,fixtures,n){
   n=n||6;
   const startGw=(b.upcoming&&b.upcoming.id)||(b.cur&&b.cur.id)||1;
-  const acc={};
-  (fixtures||[]).filter(f=>fixtureToCome(f)&&f.event>=startGw)
-    .sort((a,c)=>a.event-c.event)
-    .forEach(f=>{
-      [[f.team_h,f.team_a,f.team_h_difficulty,1],[f.team_a,f.team_h,f.team_a_difficulty,0]].forEach(r=>{
-        const t=r[0],d=Number(r[2]);
-        if(!isFinite(d)||!d)return;
-        const a=acc[t]||(acc[t]={team:t,sum:0,n:0,opps:[]});
-        if(a.n>=n)return;
-        a.sum+=d;a.n++;
-        a.opps.push(teamShort(b,r[1])+(r[3]?'':'*'));   /* asterisk marks away */
-      });
+  const gws=[];for(let g=startGw;g<startGw+n&&g<=38;g++)gws.push(g);
+  const inWindow=new Set(gws);
+  const by={};
+  const put=(t,g,c)=>{const r=by[t]=by[t]||{};(r[g]=r[g]||[]).push(c);};
+  (fixtures||[]).forEach(f=>{
+    if(!fixtureToCome(f)||!inWindow.has(f.event))return;
+    put(f.team_h,f.event,{opp:teamShort(b,f.team_a),ko:f.kickoff_time||'',
+      fdr:Number(f.team_h_difficulty),home:true});
+    put(f.team_a,f.event,{opp:teamShort(b,f.team_h),ko:f.kickoff_time||'',
+      fdr:Number(f.team_a_difficulty),home:false});
+  });
+  const rows=Object.keys(by).map(t=>{
+    const cells={};let sum=0,played=0;
+    gws.forEach(g=>{
+      const list=(by[t][g]||[]).filter(c=>isFinite(c.fdr)&&c.fdr>0);
+      if(!list.length){cells[g]=null;return;}
+      /* Kick-off order, so a week's two opponents read in the order they are
+         actually played — the same sort the Fixtures panel applies. */
+      cells[g]=fdrCombine(list.slice().sort((a,z)=>
+        String(a.ko).localeCompare(String(z.ko))));
+      list.forEach(c=>{sum+=c.fdr;played++;});
     });
-  return Object.values(acc).filter(a=>a.n>0)
-    .map(a=>({team:a.team,n:a.n,mean:a.sum/a.n,opps:a.opps}))
-    .sort((a,c)=>a.mean-c.mean);
+    return {team:Number(t),cells:cells,n:played,mean:played?sum/played:99};
+  }).filter(r=>r.n>0).sort((a,c)=>a.mean-c.mean);
+  return {gws:gws,rows:rows};
 }
 
 /* Eleven players, at most three per club: four clubs is the fewest that can

@@ -54,7 +54,13 @@ export function buildChipApi(html) {
     /* The shared "still to be played" rule the planning surfaces read.
        Both extracted functions filter through it, so it travels with them. */
     grabFn('fixtureOver') + '\n' + grabFn('fixtureToCome') + '\n' +
-    'const teamShort=(b,t)=>"T"+t;\n' + grabFn('clubFdrRuns') + '\n' +
+    /* clubFdrGrid folds a double gameweek with the Fixtures panel's own
+       fdrCombine, so the three small helpers that reaches for travel
+       with it — otherwise the sandbox gets a grid that cannot combine. */
+    'const teamShort=(b,t)=>"T"+t;\n' +
+    grabFn('plsimDiff') + '\n' + grabFn('fdrOfficial') + '\n' +
+    grabFn('fdrOppLabel') + '\n' + grabFn('fdrCombine') + '\n' +
+    grabFn('clubFdrGrid') + '\n' +
     grabFn('intlBreakGws') + '\n' +
     grabConst('CONGEST_GAP_DAYS') + '\n' + grabConst('BB_CONGEST_PENALTY') + '\n' +
     grabFn('congestedGws') + '\n' +
@@ -66,7 +72,7 @@ export function buildChipApi(html) {
        extraction shipped only the first, so the offline tool answered the
        fixture question and looked like it had answered the chip question. */
     grabFn('chipSwings') + '\n' +
-    'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,chipSwings,intlBreakGws,congestedGws,clubFdrRuns,' +
+    'return {chipHalfWindow,fdrGameweeks,chipPlanFdr,chipSwings,intlBreakGws,congestedGws,clubFdrGrid,' +
     'wcHorizonFactor,breakSeverity,breakScale,' +
     'deadWeight,transferRunway,freeTransfersFrom,transferLedger,minClubsForXi};'
   )();
