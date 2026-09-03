@@ -211,6 +211,13 @@ def iso(dt):
 
 
 events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
+           # FPL's two-stage settle: `finished` means every match is played,
+           # `data_checked` means it has scored the week and confirmed bonus.
+           # It was absent entirely, and gwPackEvent gates on it — so the
+           # whole gameweek stats pack, and every Social Studio card built
+           # from it, was unreachable under the mock. dev/test-fpl-contract
+           # had already flagged it as a declared field we do not serve.
+           "data_checked": g == 1,
            "is_current": g == CUR_EVENT, "is_next": g == CUR_EVENT + 1,
            "deadline_time": iso(gw_deadline(g)),
            "most_captained": 6, "most_selected": 6, "most_transferred_in": 12,
@@ -303,6 +310,10 @@ def live_el(e):
 
 
 live = {"elements": [live_el(e) for e in elements]}
+# What each player actually scored this gameweek, read back off the live
+# payload rather than recomputed — so a squad's points and the live feed
+# can never disagree, which is the one thing the real API guarantees.
+LIVE_PTS = {el["id"]: el["stats"]["total_points"] for el in live["elements"]}
 # "points" is the per-day settle stage — "r" once FPL has scored that day,
 # "l" while it is still live. It is the same two-stage settle that
 # finished/finished_provisional expresses on a fixture, and it was absent
@@ -389,9 +400,17 @@ def history_for(entry):
             "past": []}
 
 
+# A transfer hit the mock always takes, so the "points are net of the hit"
+# path is the one under test rather than the one nobody exercises.
+HIT = 4
+
+
 def picks_for(entry):
     rr = random.Random(entry)
     ids = rr.sample(range(1, N + 1), 15)
+    mult = lambda p: 2 if p == 0 else (1 if p < 11 else 0)
+    xi_points = sum(LIVE_PTS.get(pid, 0) * mult(p) for p, pid in enumerate(ids))
+    bench_points = sum(LIVE_PTS.get(pid, 0) for p, pid in enumerate(ids) if p >= 11)
     return {"picks": [{"element": pid, "position": p + 1,
                        "multiplier": 2 if p == 0 else (1 if p < 11 else 0),
                        "is_captain": p == 0, "is_vice_captain": p == 1}
@@ -404,13 +423,22 @@ def picks_for(entry):
             # a chip should say so rather than inherit one by default.
             "active_chip": None,
             "automatic_subs": [],
-            "entry_history": {"bank": 5, "value": 1000, "points": 55,
-                              "rank": 120000, "event_transfers_cost": 0,
+            # POINTS ARE COMPUTED, NOT DECLARED. This was the literal 55
+            # while the eleven it describes summed to 70 off the live feed,
+            # and managerCard rightly refuses to publish a card whose column
+            # does not add up to its headline — so the two Social Studio
+            # cards about your own team could never be built under the mock,
+            # and neither could be tested. The real API's `points` IS the
+            # eleven, captain doubled, less any hit; so is this now.
+            "entry_history": {"bank": 5, "value": 1000,
+                              "points": xi_points - HIT,
+                              "rank": 120000, "event_transfers_cost": HIT,
                               "event": CUR_EVENT, "event_transfers": 1,
                               # total_points is the SEASON total and points
                               # is this gameweek's. They coincide only
                               # because the mock sits in gameweek one.
-                              "points_on_bench": 6, "total_points": 55,
+                              "points_on_bench": bench_points,
+                              "total_points": xi_points - HIT,
                               "rank_sort": 120000, "percentile_rank": 12,
                               # Distinct per manager and derivable from the
                               # entry id, so a test can prove the rendered OR

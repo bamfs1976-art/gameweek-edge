@@ -107,7 +107,7 @@ const CALLS = [
  * rise. Lower the number in the same commit that closes the gap — a baseline
  * left above the truth is a ratchet with the pawl filed off. */
 const BASELINE = {
-  '/bootstrap-static/': 64,
+  '/bootstrap-static/': 63,
   '/fixtures/': 5,
   '/event-status/': 0,
   '/team/set-piece-notes/': 0,

@@ -8010,6 +8010,95 @@ function socialSpecs(b,fixtures,live,me){
           +(mc.avg!=null?'The gameweek average was '+mc.avg+'.':'')};
     });
 
+    /* ── The manager report, as a card ────────────────────────────────
+       The Studio told you to SCREENSHOT this one. SOC_SHOTS carries a
+       prompt — "your own Manager Report screen" — because the personal
+       report was the one post in the rotation nobody could render, and a
+       screenshot of a scrolling panel is a poor graphic: it arrives at
+       whatever width the phone was, with the app's furniture around it.
+
+       This is the report's VERDICT rather than its prose: the six numbers
+       the panel opens with, which are the ones that answer "how did your
+       week go" without the reader needing your squad. That is also what
+       keeps it distinct from `your-gameweek`, which lists the eleven and
+       what each of them scored. One card is the squad; this one is the
+       week's account of itself.
+
+       It says the bad weeks too. A report card that only renders when you
+       did well is a trophy, not a report — and the captain line names what
+       the armband cost whenever it was the wrong call. */
+    push('manager-report',()=>{
+      if(!me||!me.picks)return null;
+      const mc=managerCard(me.picks,packLive,packEv,b.els,me.entry);
+      if(!mc)return null;
+      /* Same guard as your-gameweek, for the same reason: if our arithmetic
+         does not reproduce FPL's own total then one of the two is wrong and
+         we cannot say which. A graphic is the one format nobody goes back
+         and corrects, so it is not published at all. */
+      if(!mc.reconciles||mc.total==null)return null;
+
+      const eh=me.picks.entry_history||{};
+      /* The renderer keeps its truncation helper private, so this card
+         carries its own rather than reaching for one it cannot see —
+         push() swallows a ReferenceError, and the symptom would have been
+         the card simply never appearing. */
+      const cut=(t,n)=>{t=String(t==null?'':t);
+        return t.length>n?t.slice(0,n-1)+'\u2026':t;};
+      const g=(label,nm,sub,crest)=>nm==null?null
+        :{label:label,items:[{nm:String(nm),team:sub||'',crest:crest||''}]};
+
+      /* Which way the rank moved, from the history rows. Absent when the
+         gameweek is the first, when FPL has not ranked it yet, or when the
+         history call failed — in every one of those the rank still prints
+         and only the direction is missing. */
+      const rows=(me.hist&&Array.isArray(me.hist.current))?me.hist.current:[];
+      const iNow=rows.findIndex(r=>r&&r.event===mc.gw);
+      const orNow=iNow>=0&&rows[iNow].overall_rank!=null
+        ? Number(rows[iNow].overall_rank) : mc.rank;
+      const orPrev=iNow>0&&rows[iNow-1].overall_rank!=null
+        ? Number(rows[iNow-1].overall_rank) : null;
+      const move=(orNow!=null&&orPrev!=null)
+        ? (orNow<orPrev ? '\u25b2 '+fmtNum(orPrev-orNow)+' places'
+          : orNow>orPrev ? '\u25bc '+fmtNum(orNow-orPrev)+' places'
+          : 'no change')
+        : (b.raw&&b.raw.total_players
+            ? 'of '+fmtNum(b.raw.total_players)+' managers' : 'overall');
+
+      /* The armband, judged. Ranked on BASE points, because the captain's
+         multiplier is what is being decided — comparing his doubled score
+         with an ordinary player's single one would flatter every armband. */
+      const byBase=mc.xi.slice().sort((a,c)=>c.base-a.base);
+      const best=byBase[0]||null;
+      const cap=mc.cap||null;
+      const capLost=(cap&&best)?(best.base-cap.base)*((cap.mult||2)-1):0;
+      const capSub=!cap?null
+        :capLost<=0 ? cap.pts+' pts \u00b7 your best call'
+        :cut(best.el.web_name,12)+' was worth '+capLost+' more';
+
+      const vs=mc.vsAvg;
+      const groups=[
+        g('SCORE',mc.total,mc.avg!=null?'the average was '+mc.avg:'points'),
+        vs==null?null:g('VS AVERAGE',(vs>0?'+':'')+vs,
+          vs>0?'clear of the field':vs<0?'behind the field':'dead level'),
+        orNow==null?null:g('OVERALL RANK',fmtNum(orNow),move),
+        cap?g('CAPTAIN',cut(cap.el.web_name,12),capSub,crestUrl(b,cap.el.team)):null,
+        g('BENCH',mc.benchPts,'points left there'),
+        g('TRANSFERS',Number(eh.event_transfers)||0,
+          mc.hit?'\u2212'+mc.hit+' points taken':'no hit taken')
+      ].filter(Boolean);
+      /* Four is the fewest that still reads as a report rather than a stat. */
+      if(groups.length<4)return null;
+
+      return {kind:'ladder',title:'MANAGER REPORT',
+        sub:pgw+(mc.name?' \u00b7 '+String(mc.name).slice(0,22):' \u00b7 your season'),
+        /* Two wrapped lines is all the footer keeps before it truncates,
+           so this is written to fit rather than to be cut mid-clause. */
+        note:'Every figure is FPL\u2019s own for '+pgw+
+          '. The score is what the game credited after any hit; the captain '+
+          'line compares base points, before doubling.',
+        groups:groups};
+    });
+
     push('gw-week-in-numbers',()=>{
       const nm=pk.numbers;
       const who=id=>{const e=id!=null?b.els[id]:null;return e?e.web_name:null;};
@@ -8683,6 +8772,18 @@ Every number is the points FPL credited, captain already doubled, and they add u
 gameweekedge.co.uk`,
 a:`A card showing one manager's gameweek: the total score against the gameweek average, the top-scoring player, the captain and vice-captain, the starting eleven with each player's points and position, and the bench.`},
 
+'manager-report':{
+x:`My gameweek, marked.
+
+Score against the average, where the rank moved, what the armband was worth, and the points I left on the bench. The good weeks and the bad ones get the same card.
+
+gameweekedge.co.uk`,
+b:`My gameweek, marked.
+
+Score against the average, where the rank went, what the armband was worth, and what I left on the bench. Good weeks and bad ones get the same card. #FPL
+gameweekedge.co.uk`,
+a:`A manager's gameweek report card: the score with the gameweek average beneath it, the margin above or below that average, the overall rank and how far it moved, the captain with what the pick was worth, the points left on the bench, and the number of transfers with any hit taken.`},
+
 'gw-defcon':{
 x:`Who cleared the defensive threshold this week.
 
@@ -8865,7 +8966,7 @@ function socCaption(id){return SOC_CAPTIONS[id]||null;}
    nothing, and socSchedule's `have` filter drops them from the rota
    instead of queueing a post with no graphic behind it. */
 const SOC_ROTA=['gw-top-scorers','gw-week-in-numbers','set-pieces','defcon',
-  'data-xi','fixture-runs','gw-differentials','gw-bonus','gw-defcon','your-gameweek','overpriced',
+  'data-xi','fixture-runs','gw-differentials','gw-bonus','gw-defcon','your-gameweek','manager-report','overpriced',
   'underpriced','bonus-magnets','differentials','congestion','chip-plan',
   'xg-runs','out-of-position','club-bonus','rotation-chain','attack-or-defence',
   'ladder-2','ladder-3','ladder-4','ladder-1','bank-xi','haaland-xi','big-three-xi'];
@@ -9587,11 +9688,17 @@ async function hydrateAnalytics(host){
 async function socMeGw(gw){
   const mid=getMid();
   if(!mid)return null;
-  const [picks,entry]=await Promise.all([
+  /* History is here for one line on the report card — which way the rank
+     moved. It is fetched alongside rather than instead of anything, and it
+     fails to null on its own, so a bad response costs the arrow and not the
+     card. A rank with no direction is still worth printing; a card that
+     refuses to build because an optional call failed is not. */
+  const [picks,entry,hist]=await Promise.all([
     loadPicks(mid,gw).catch(()=>null),
-    loadEntry(mid).catch(()=>null)
+    loadEntry(mid).catch(()=>null),
+    loadHistory(mid).catch(()=>null)
   ]);
-  return picks?{picks:picks,entry:entry}:null;
+  return picks?{picks:picks,entry:entry,hist:hist}:null;
 }
 async function hydrateSocial(host){
   host.innerHTML=skel(4);
