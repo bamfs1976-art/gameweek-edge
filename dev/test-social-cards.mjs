@@ -103,21 +103,26 @@ async function studio(mid){
 
     /* The footer keeps two wrapped lines and marks anything past them with
        an ellipsis. Wrap it here the way renderSocialCard does, in the same
-       font, so a note that would be cut is a measured fact. */
-    const noteLines = (() => {
-      if(!mr || !mr.note) return 0;
+       font, so a note that would be cut is a measured fact rather than
+       something somebody has to notice in a PNG — which is how two cards
+       shipped with their last clause missing. Measured for EVERY card, not
+       just the one being added. */
+    const wrapLines = (note) => {
+      if(!note) return 0;
       const cv = document.createElement('canvas');
       cv.width = 1080; cv.height = 1350;
       const x = cv.getContext('2d');
       x.font = '600 21px system-ui,sans-serif';
       let line = '', n = 0;
-      String(mr.note).split(' ').forEach(w => {
+      String(note).split(' ').forEach(w => {
         const t = line ? line + ' ' + w : w;
         if(x.measureText(t).width > 1080 - 140){ n++; line = w; } else line = t;
       });
       if(line) n++;
       return n;
-    })();
+    };
+    const noteLines = mr ? wrapLines(mr.note) : 0;
+    const cutNotes = specs.filter(sp => wrapLines(sp.note) > 2).map(sp => sp.id);
 
     /* A card that draws nothing still produces a canvas. Sample the middle
        band for ink so "it rendered" means something was actually painted. */
@@ -141,7 +146,43 @@ async function studio(mid){
         labels: (mr.groups || []).map(g => g.label),
         values: (mr.groups || []).map(g => (g.items[0] || {}).nm),
         subs: (mr.groups || []).map(g => (g.items[0] || {}).team) },
-      noteLines, painted,
+      noteLines, painted, cutNotes,
+      /* The card the FDR grid replaced said "Next 6 gameweeks" and printed
+         four opponents. The grid is the fix, so its shape is the check. */
+      fdr: (() => {
+        const g = specs.find(s => s.id === 'fixture-runs');
+        if(!g) return null;
+        return { kind: g.kind, heads: (g.heads || []).length,
+          rows: (g.rows || []).length,
+          cellsPerRow: [...new Set((g.rows || []).map(r => (r.cells || []).length))],
+          grades: [...new Set((g.rows || []).flatMap(r =>
+            (r.cells || []).map(c => c.grade)))].sort(),
+          avgs: (g.rows || []).map(r => Number(r.avg)),
+          sub: g.sub };
+      })(),
+      /* Doubles and blanks are the reason a run has to be read by GAMEWEEK,
+         and the mock's window need not contain either — so put one of each
+         in front of the builder directly. */
+      synth: (() => {
+        const start = (bb.upcoming && bb.upcoming.id) || (bb.cur && bb.cur.id) || 1;
+        const mk = (id, ev, h, a) => ({ id, event: ev, team_h: h, team_a: a,
+          team_h_difficulty: 2, team_a_difficulty: 4, finished: false,
+          started: false, kickoff_time: '2030-01-0' + (id % 9 + 1) + 'T12:00:00Z' });
+        const fx = [];
+        let id = 1;
+        /* Club 1 plays twice in the first week and not at all in the second;
+           club 2 plays once a week throughout. */
+        fx.push(mk(id++, start, 1, 3), mk(id++, start, 4, 1));
+        for(let k = 0; k < 6; k++) fx.push(mk(id++, start + k, 2, 5));
+        const g = clubFdrGrid(bb, fx, 6);
+        const r1 = g.rows.find(r => r.team === 1);
+        const r2 = g.rows.find(r => r.team === 2);
+        return { gws: g.gws.length,
+          dgwEach: r1 && r1.cells[g.gws[0]] ? (r1.cells[g.gws[0]].each || []).length : 0,
+          blankIsNull: !!(r1 && r1.cells[g.gws[1]] === null),
+          dgwClubGames: r1 ? r1.n : 0,
+          steadyClubGames: r2 ? r2.n : 0 };
+      })(),
     };
   });
   await ctx.close();
@@ -172,6 +213,28 @@ console.log('\nthe linked manager gets a report card');
      the kind of thing nobody can correct after posting. */
   check('the footer note fits without being cut', got.noteLines, n => n > 0 && n <= 2);
   check('the card paints something', got.painted, n => n > 5000);
+  check('no card\u2019s footer note is cut off', (got.cutNotes || []).join('|'), '');
+
+  /* ── the fixture-runs grid ── */
+  check('fixture runs render as a grid', got.fdr && got.fdr.kind, 'fdr');
+  check('with a column per gameweek, six of them', got.fdr && got.fdr.heads, 6);
+  check('and every row carries a cell for each', got.fdr && got.fdr.cellsPerRow.join(','), '6');
+  check('ten clubs are listed', got.fdr && got.fdr.rows, 10);
+  check('cells are graded on the 1-5 scale', got.fdr && got.fdr.grades,
+    g => Array.isArray(g) && g.length > 1 && g.every(v => v >= 0 && v <= 5));
+  /* The rows claim to be the BEST runs, so they must actually be ordered. */
+  check('kindest run first', got.fdr && got.fdr.avgs,
+    a => Array.isArray(a) && a.every((v, i) => i === 0 || a[i - 1] <= v));
+  check('the sub-line names the real window', got.fdr && got.fdr.sub,
+    s => /^GW\d+\u2013GW?\d+ /.test(s) || /^GW\d+\u2013\d+ /.test(s));
+
+  check('a double gameweek is one cell holding two fixtures', got.synth.dgwEach, 2);
+  check('a blank gameweek is an empty cell, not a shifted window',
+    got.synth.blankIsNull, true);
+  check('the window stays six gameweeks for both', got.synth.gws, 6);
+  check('and a double club shows two games in one week',
+    got.synth.dgwClubGames, 2);
+  check('while a club playing weekly shows six', got.synth.steadyClubGames, 6);
   check('building the studio raises no page error', errors.join(' | '), '');
 }
 

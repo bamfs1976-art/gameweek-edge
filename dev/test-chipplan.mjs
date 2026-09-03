@@ -442,22 +442,42 @@ console.log('• chipPlanFdr: the second-half run-in');
     'a first-half wildcard still has the rest of the season to shape');
 }
 
-console.log('• clubFdrRuns: best fixture runs on official FDR');
+console.log('• clubFdrGrid: the next six GAMEWEEKS, kindest run first');
 {
-  const runs = API.clubFdrRuns;
+  const grid = API.clubFdrGrid;
   /* Club 1 gets a soft run, everyone else average. */
   const fx = makeFixtures(1, 10, (gw, team) => (team === 1 ? 1 : 3));
-  const r = runs(boot(), fx, 6);
-  ok(r.length === 20, 'every club gets a run');
-  ok(r[0].team === 1, 'the softest run comes first');
-  ok(Math.abs(r[0].mean - 1) < 1e-9, 'the mean is over that club’s own fixtures');
-  ok(r.every((x) => x.n === 6), 'each run is capped at the window length');
-  ok(r[0].opps.length === 6, 'opponents are listed for the run');
-  ok(r.every((x) => x.mean >= r[0].mean), 'sorted ascending by difficulty');
-  ok(runs(boot(), [], 6).length === 0, 'no fixtures yields no runs');
-  /* Finished fixtures are history and must not count towards a future run. */
+  const g = grid(boot(), fx, 6);
+  ok(g.gws.length === 6, 'the window is six gameweeks');
+  ok(g.gws[0] === 1 && g.gws[5] === 6, 'starting at the upcoming one');
+  ok(g.rows.length === 20, 'every club gets a row');
+  ok(g.rows[0].team === 1, 'the softest run comes first');
+  ok(Math.abs(g.rows[0].mean - 1) < 1e-9, 'the mean is over that club’s own fixtures');
+  ok(g.rows.every((r) => r.n === 6), 'a club playing weekly has six games');
+  ok(g.rows.every((r) => g.gws.every((w) => r.cells[w])), 'and a cell in every week');
+  ok(g.rows.every((r) => r.mean >= g.rows[0].mean), 'sorted ascending by difficulty');
+  ok(grid(boot(), [], 6).rows.length === 0, 'no fixtures yields no rows');
+
+  /* THE WINDOW DOES NOT SLIDE. Counting the next six FIXTURES, a finished
+     GW1 pulled GW7 into the run while the card above it said "next 6
+     gameweeks". A gameweek that has been played is an empty column, not a
+     reason to show a different week. */
   const done = fx.map((f) => (f.event === 1 ? Object.assign({}, f, { finished: true }) : f));
-  ok(runs(boot(), done, 6)[0].opps.length === 6, 'finished fixtures are skipped, the window still fills');
+  const after = grid(boot(), done, 6);
+  ok(after.gws[5] === 6, 'a played gameweek does not drag GW7 into the window');
+  ok(after.rows.every((r) => r.cells[1] === null), 'it is an empty column');
+  ok(after.rows.every((r) => r.n === 5), 'and the run is honestly five games');
+
+  /* A double is one column holding both fixtures, which is the whole reason
+     to key this by gameweek rather than by fixture. */
+  const dbl = makeFixtures(1, 10, () => 3)
+    .concat([{ id: 9001, event: 2, team_h: 1, team_a: 4,
+      team_h_difficulty: 2, team_a_difficulty: 2 }]);
+  const dg = grid(boot(), dbl, 6);
+  const club1 = dg.rows.find((r) => r.team === 1);
+  ok(dg.gws.length === 6, 'the window is still six gameweeks');
+  ok((club1.cells[2].each || []).length === 2, 'the double week holds two fixtures');
+  ok(club1.n === 7, 'and the club is credited with seven games across six weeks');
 }
 
 console.log('• chipPlanFdr: a gameweek needs enough clubs to be a gameweek');
