@@ -2404,7 +2404,7 @@ section('managerDetail: one row of the detailed league table');
   };
   const PICKS = {
     active_chip: '3xc',
-    entry_history: { overall_rank: 791032, value: 1003, bank: 7,
+    entry_history: { event: 3, overall_rank: 791032, value: 1003, bank: 7,
       event_transfers: 2, event_transfers_cost: 4 },
     picks: [
       { element: 1, position: 1, multiplier: 1 },
@@ -2488,32 +2488,57 @@ section('managerDetail: one row of the detailed league table');
      std.total raw would have been its own bug — through a live matchday
      that figure is the total THROUGH LAST WEEK, so it would sit beside a
      live gameweek score reading as of a different day, then jump. */
-  ok(d.totalRun === 30,
-     'the running total substitutes our gameweek figure for FPL\u2019s, got ' + d.totalRun);
+  ok(d.totalRun === 28,
+     'with no history to read, the total is FPL\u2019s own and nothing else, got ' + d.totalRun);
   {
-    /* The ordinary live shape: FPL has not scored the gameweek, so its
-       event_total is 0 and its season total excludes the week entirely. */
-    const frozen = core.managerDetail({ ...STD, event_total: 0, total: 1284 },
-      PICKS, LIVE, STATE, ELS, eo.byId);
-    ok(frozen.totalRun === 1314,
-       'a frozen gameweek adds the live score to the season total, got ' + frozen.totalRun);
-    ok(frozen.totalLive === true, 'and the total is flagged as still moving');
-  }
-  {
-    /* The partial shape: FPL has published something for the week and
-       folded it into the season total. Ours replaces it rather than
-       stacking on top, or the manager reads 28 points too high. */
-    const partial = core.managerDetail({ ...STD, event_total: 28, total: 1284 },
-      PICKS, LIVE, STATE, ELS, eo.byId);
-    ok(partial.totalRun === 1286,
-       'a partial figure is replaced, not added to, got ' + partial.totalRun);
-  }
-  {
-    const settled = core.managerDetail({ ...STD, event_total: 31, total: 1315 },
+    /* THE REPORTED BUG. A live GW3 with nothing kicked off: rank 4 printed
+       64 against rank 2's 57 and rank 3's 52, an ordering no league table
+       can produce. The overall ranks on the same rows ascended cleanly, so
+       the sort was right and the number was wrong.
+
+       The old arithmetic was total − event_total + live, which assumed
+       event_total describes the gameweek on screen. It does not have to:
+       until FPL scores GW3 those standings fields still describe GW2, so
+       the subtraction removed a week that had already been played and the
+       card printed the total through GW1.
+
+       The history settles it without an assumption. GW1 and GW2 are in it,
+       GW3 is not, so the answer is GW2's cumulative plus what GW3 is worth
+       live: 104 + 30. Under the old expression this read 104 − 44 + 30 = 90. */
+    const HIST = { current: [
+      { event: 1, points: 60, total_points: 60 },
+      { event: 2, points: 44, total_points: 104 },
+    ] };
+    const live3 = core.managerDetail({ ...STD, event_total: 44, total: 104 },
+      PICKS, LIVE, STATE, ELS, eo.byId, HIST);
+    ok(live3.totalRun === 134,
+       'an unscored gameweek is added to the history\u2019s cumulative total, got ' + live3.totalRun);
+    ok(live3.totalLive === true, 'and the total is flagged as still moving');
+
+    /* THE PROPERTY THAT MATTERS: the answer no longer depends on a field
+       whose gameweek nobody can determine. Whatever the standings say
+       event_total is, the history says which weeks are counted. */
+    const odd = core.managerDetail({ ...STD, event_total: 999, total: 104 },
+      PICKS, LIVE, STATE, ELS, eo.byId, HIST);
+    ok(odd.totalRun === 134,
+       'and event_total cannot move it, whatever gameweek it belongs to, got ' + odd.totalRun);
+
+    /* Once FPL scores the week its own cumulative figure is the answer,
+       and nothing is added on top of it. */
+    const scored = core.managerDetail({ ...STD, event_total: 31, total: 135 },
       { ...PICKS, entry_history: { ...PICKS.entry_history, points: 31 } },
-      LIVE, STATE, ELS, eo.byId, null, 5, true);
-    ok(settled.totalRun === 1315 && settled.totalLive === false,
-       'and once scored the season total is FPL\u2019s, untouched, got ' + settled.totalRun);
+      LIVE, STATE, ELS, eo.byId,
+      { current: HIST.current.concat([{ event: 3, points: 31, total_points: 135 }]) },
+      5, true);
+    ok(scored.totalRun === 135 && scored.totalLive === false,
+       'a scored gameweek takes FPL\u2019s cumulative total, untouched, got ' + scored.totalRun);
+
+    /* A first gameweek has no history behind it, and 30 is the season. */
+    const first = core.managerDetail({ ...STD, event_total: 0, total: 0 },
+      { ...PICKS, entry_history: { ...PICKS.entry_history, event: 1 } },
+      LIVE, STATE, ELS, eo.byId, { current: [] });
+    ok(first.totalRun === 30,
+       'the opening gameweek IS the season total, got ' + first.totalRun);
   }
   ok(core.managerDetail({ ...STD, total: null }, PICKS, LIVE, STATE, ELS, eo.byId).totalRun === null,
      'a row with no season total prints nothing rather than a wrong number');
