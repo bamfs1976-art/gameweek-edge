@@ -13888,15 +13888,58 @@ async function hydrateChips(host){
   const planCard=chipPlanCard(b,fixtures);
   const roadCard=chipRoadmapCard(b,fixtures);
   const swingCard=gwSwingCard(b,fixtures);
+  const playsCard=chipPlaysCard(b);
   if(!mid){
-    host.innerHTML=planCard+roadCard+swingCard+
+    host.innerHTML=planCard+roadCard+swingCard+playsCard+
       previewEmptyState('Your chips','See which chips you have left, personalised Bench Boost readiness and the double / blank timing for your own squad.');
     return;
   }
   const hist=await loadHistory(mid);
   const used=hist.chips||[];
+  /* A Triple Captain row that just says "GW7" leaves out the only thing
+     anyone wants to know about it. The captain is read back from that
+     gameweek's own picks.
+
+     This is YOUR captain, and only ever yours: FPL publishes no field-wide
+     "who did Triple Captain managers pick" figure. The bootstrap's
+     most_captained is the armband across the whole game, chip or not, so
+     printing it here would answer a different question while looking like
+     an answer to this one.
+
+     The player taken is the one actually carrying the multiplier, not the
+     one wearing the armband at deadline — if the captain did not play, the
+     vice takes the multiplier and the vice is who was tripled. Where those
+     differ the row says so, because "you triple-captained X" would be a
+     lie about a week where X never got on. */
+  const tcCap={};
+  await Promise.all(used.filter(c=>c&&c.name==='3xc'&&c.event!=null).map(async c=>{
+    const gw=Number(c.event);
+    try{
+      const [pk,lv]=await Promise.all([loadPicks(mid,gw),loadLive(gw)]);
+      const picks=(pk&&pk.picks)||[];
+      if(!picks.length)return;
+      const got=picks.slice().sort((a,d)=>(d.multiplier||0)-(a.multiplier||0))[0];
+      if(!got||!(got.multiplier>1))return;
+      const el=b.els[got.element];
+      if(!el)return;
+      const named=picks.filter(x=>x.is_captain)[0];
+      const le=((lv&&lv.elements)||[]).filter(e=>e&&e.id===got.element)[0];
+      const pts=(le&&le.stats&&typeof le.stats.total_points==='number')?le.stats.total_points:null;
+      tcCap[gw]={el:el,mult:got.multiplier,pts:pts,
+        moved:!!(named&&named.element!==got.element&&b.els[named.element]),
+        named:(named&&b.els[named.element])||null};
+    }catch(_){}
+  }));
+  const tcLine=c=>{
+    const t=(c&&c.name==='3xc')?tcCap[Number(c.event)]:null;
+    if(!t)return '';
+    return '<span class="dl-sub">'+crest(b,t.el.team,12)+esc(t.el.web_name)+
+      (t.pts==null?'':' \u00b7 '+t.pts+' pts \u00d7'+t.mult+' = <b>'+(t.pts*t.mult)+'</b>')+
+      (t.moved?' \u00b7 <span style="color:var(--amber)">'+esc(t.named.web_name)+' had the armband but did not play</span>':'')+
+      '</span>';
+  };
   const usedRows=used.length?used.map(c=>
-    '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(CHIP_API_LABEL[c.name]||c.name)+'</span></span>'+
+    '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(CHIP_API_LABEL[c.name]||c.name)+'</span>'+tcLine(c)+'</span>'+
     '<span style="font-weight:700;color:var(--text-2)">GW'+c.event+'</span></div>').join('')
     :'<div class="dl-row"><span class="dl-sub">No chips played yet this season.</span></div>';
   const usedNames=used.map(c=>c.name);
@@ -13968,6 +14011,7 @@ async function hydrateChips(host){
     bbCard+
     '<div class="card mb-20"><div class="card-title">Chips played</div>'+
       '<div class="dl">'+usedRows+'</div></div>'+
+    playsCard+
     '<div class="card mb-20"><div class="card-title">Still available</div>'+
       '<div class="dl">'+(remaining.length?remaining.map(([,n])=>
         '<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+n+'</span></span>'+
@@ -17691,7 +17735,68 @@ function chipPlanFdr(b,fixtures,opts){
     breakGws:Object.keys(breaks).map(Number).filter(g=>g>=win.from&&g<=win.to).sort((a,c)=>a-c),
     leagueMean:played.reduce((s,g)=>s+g.mean,0)/played.length};
 }
+/* ── How many chips the whole game played, gameweek by gameweek ───────
+   Straight off bootstrap-static: every event carries chip_plays, a list of
+   {chip_name, num_played} for that week. No extra request, and it is the
+   whole player base rather than a sample.
+
+   Only weeks that HAVE a figure are returned. A future gameweek carries an
+   empty list, and printing it as "0 chips played" would state as fact
+   something that has not happened yet — the same distinction the gameweek
+   pack draws between "none" and "not yet".
+
+   The chip names are taken from the data, not from a list written here.
+   FPL has added chips mid-season before (the Assistant Manager), and a
+   hard-coded set would silently drop the new one. */
+function chipPlaysByGw(events){
+  const rows=[];
+  const totals={};
+  (events||[]).forEach(e=>{
+    if(!e||e.id==null)return;
+    const plays=Array.isArray(e.chip_plays)?e.chip_plays:[];
+    const counted=plays.filter(c=>c&&c.chip_name&&Number(c.num_played)>0)
+      .map(c=>({name:String(c.chip_name),n:Number(c.num_played)}));
+    if(!counted.length)return;
+    counted.forEach(c=>{totals[c.name]=(totals[c.name]||0)+c.n;});
+    rows.push({gw:Number(e.id),
+      total:counted.reduce((s,c)=>s+c.n,0),
+      byChip:counted.slice().sort((a,c)=>c.n-a.n)});
+  });
+  rows.sort((a,c)=>a.gw-c.gw);
+  /* Columns in the order the game itself has used them most, so the busiest
+     chip leads and a newly introduced one lands at the end rather than
+     wherever an alphabetical sort happens to put it. */
+  const names=Object.keys(totals).sort((a,c)=>totals[c]-totals[a]||a.localeCompare(c));
+  return {rows:rows,names:names,totals:totals,
+    grand:names.reduce((s,n)=>s+totals[n],0)};
+}
 const CHIP_LABEL={wildcard:'Wildcard',freehit:'Free Hit',benchboost:'Bench Boost',triplecaptain:'Triple Captain'};
+/* The table of it. Rendered from whatever chip names the data carried, so
+   a chip FPL adds mid-season appears without a code change. */
+function chipPlaysCard(b){
+  let cp=null;try{cp=chipPlaysByGw(b&&b.events);}catch(_){}
+  if(!cp||!cp.rows.length)return '';
+  const label=n=>CHIP_API_LABEL[n]||n;
+  const head='<thead><tr><th>GW</th>'+
+    cp.names.map(n=>'<th class="num">'+esc(label(n))+'</th>').join('')+
+    '<th class="num">Total</th></tr></thead>';
+  const body=cp.rows.map(r=>{
+    const by={};r.byChip.forEach(c=>{by[c.name]=c.n;});
+    return '<tr><td><b>GW'+r.gw+'</b></td>'+
+      cp.names.map(n=>'<td class="num">'+
+        (by[n]?fmtNum(by[n]):'<span style="color:var(--text-4)">\u2014</span>')+'</td>').join('')+
+      '<td class="num"><b>'+fmtNum(r.total)+'</b></td></tr>';
+  }).join('');
+  const foot='<tr><td><b>Season</b></td>'+
+    cp.names.map(n=>'<td class="num"><b>'+fmtNum(cp.totals[n])+'</b></td>').join('')+
+    '<td class="num"><b>'+fmtNum(cp.grand)+'</b></td></tr>';
+  return '<div class="card mb-20"><div class="card-title">Chips played across the game</div>'+
+    '<p class="dl-sub" style="margin-bottom:10px">Every chip played by every manager in FPL, gameweek by gameweek \u2014 '+
+      'FPL\u2019s own published counts, the whole player base rather than a sample. '+
+      'Gameweeks still to come are left out rather than shown as zero.</p>'+
+    '<div class="pl-scroll"><table class="ptable">'+
+      head+'<tbody>'+body+foot+'</tbody></table></div></div>';
+}
 function chipPlanCard(b,fixtures){
   let plan=null;try{plan=chipPlanFdr(b,fixtures);}catch(_){}
   if(!plan)return '';

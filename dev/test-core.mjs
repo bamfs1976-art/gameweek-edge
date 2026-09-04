@@ -237,6 +237,7 @@ const pieces = [
   extractFn(html, 'fdrGrade'),
   extractFn(html, 'fdrPatchFor'),
   extractFn(html, 'chipSwings'),
+  extractFn(html, 'chipPlaysByGw'),
   /* Latest News feed. */
   extractFn(html, 'timeAgo'),
   extractFn(html, 'latestNews'),
@@ -298,7 +299,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5176,6 +5177,66 @@ section('gameweek stats pack: only a SCORED gameweek, and only what happened');
     ok(typeof m === 'string' && m.length > 40, 'branch ' + i + ' produces a real sentence'));
   ok(W({ events: [] }, NOW).length > 40 && W(null, NOW).length > 40,
     'even an empty or missing season explains itself rather than going quiet');
+}
+
+/* ── chipPlaysByGw: the field's chip usage, gameweek by gameweek ── */
+section('chipPlaysByGw reports what was played, never what has not happened');
+{
+  const { chipPlaysByGw } = core;
+  const ev = (id, plays) => ({ id, chip_plays: plays });
+  const P = (chip_name, num_played) => ({ chip_name, num_played });
+
+  const season = chipPlaysByGw([
+    ev(1, [P('wildcard', 120000), P('freehit', 3000)]),
+    ev(2, [P('wildcard', 80000), P('bboost', 15000), P('3xc', 22000)]),
+    ev(3, []),
+    ev(4, null)
+  ]);
+
+  ok(season.rows.length === 2, 'gameweeks with no chips played are left out entirely');
+  ok(season.rows.every((r) => r.gw !== 3 && r.gw !== 4),
+    'a gameweek nobody has reached is absent, not a row of zeroes');
+
+  /* The whole point of the card: the per-gameweek total is the sum of that
+     week's chips, not a running season figure. */
+  ok(season.rows[0].total === 123000, 'a gameweek total is that week alone');
+  ok(season.rows[1].total === 117000, 'and the next week is that week alone too');
+
+  ok(season.totals.wildcard === 200000 && season.totals.freehit === 3000,
+    'season totals accumulate across gameweeks');
+  ok(season.grand === 240000, 'the grand total is every chip in every week');
+
+  /* Columns are ordered by how much the chip is actually used, so the
+     busiest one leads. */
+  ok(season.names[0] === 'wildcard', 'the most-played chip leads the columns');
+  ok(season.names.join(',') === 'wildcard,3xc,bboost,freehit',
+    'and the rest follow by season total (' + season.names.join(',') + ')');
+
+  /* FPL has introduced a chip mid-season before. Nothing here may be keyed
+     off a hard-coded list of four. */
+  const withNew = chipPlaysByGw([ev(9, [P('manager', 500), P('wildcard', 100)])]);
+  ok(withNew.names.includes('manager'),
+    'a chip the app has never heard of still gets a column');
+  ok(withNew.rows[0].total === 600, 'and counts towards the gameweek total');
+
+  /* A chip listed with no plays is not a play. */
+  const zeros = chipPlaysByGw([ev(5, [P('bboost', 0), P('freehit', null)]), ev(6, [P('bboost', 7)])]);
+  ok(zeros.rows.length === 1 && zeros.rows[0].gw === 6,
+    'a chip_plays entry of zero is not a gameweek anyone played a chip in');
+  ok(!Object.prototype.hasOwnProperty.call(zeros.totals, 'freehit'),
+    'and a null count does not invent a column');
+
+  /* The API returns events in order, but nothing in the app guarantees it. */
+  const shuffled = chipPlaysByGw([ev(12, [P('bboost', 2)]), ev(3, [P('bboost', 1)]), ev(7, [P('bboost', 5)])]);
+  ok(shuffled.rows.map((r) => r.gw).join(',') === '3,7,12',
+    'rows come back in gameweek order whatever order the events arrived in');
+
+  /* Pre-season, and a bootstrap that failed to carry events at all. */
+  [[], null, undefined, [{ id: null, chip_plays: [P('wildcard', 5)] }]].forEach((input, i) => {
+    const r = chipPlaysByGw(input);
+    ok(r && r.rows.length === 0 && r.grand === 0,
+      'nothing to report reports nothing rather than throwing (case ' + i + ')');
+  });
 }
 
 /* ── summary ────────────────────────────────────────────── */

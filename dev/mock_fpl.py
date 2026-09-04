@@ -220,15 +220,29 @@ events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
            "data_checked": g == 1,
            "is_current": g == CUR_EVENT, "is_next": g == CUR_EVENT + 1,
            "deadline_time": iso(gw_deadline(g)),
-           "most_captained": 6, "most_selected": 6, "most_transferred_in": 12,
-           "top_element": 6, "top_element_info": {"id": 6, "points": 13},
-           "average_entry_score": 50, "highest_score": 100,
+           # Everything below is a fact about a gameweek that has been
+           # PLAYED. The real API leaves them empty for a week nobody has
+           # reached — chip_plays is [], transfers_made is 0, the "most"
+           # fields are null — and serving GW38 the same 279,227 wildcards
+           # as GW1 let a card that fabricates future weeks look correct
+           # here. The gameweek-by-gameweek chip table is exactly that
+           # card, so the mock has to keep the distinction.
+           "most_captained": 6 if g <= CUR_EVENT else None,
+           "most_selected": 6 if g <= CUR_EVENT else None,
+           "most_transferred_in": 12 if g <= CUR_EVENT else None,
+           "top_element": 6 if g <= CUR_EVENT else None,
+           "top_element_info": {"id": 6, "points": 13} if g <= CUR_EVENT else None,
+           "average_entry_score": 50 if g <= CUR_EVENT else 0,
+           "highest_score": 100 if g <= CUR_EVENT else None,
            # The league-wide figures the Home status board leads with. They
            # were absent, so every one of those cells rendered a dash and a
            # test could not tell a working card from a broken one.
-           "transfers_made": 11_562_127,
+           "transfers_made": 11_562_127 if g <= CUR_EVENT else 0,
            "chip_plays": [{"chip_name": "wildcard", "num_played": 279_227},
-                          {"chip_name": "bboost", "num_played": 41_003}],
+                          {"chip_name": "bboost", "num_played": 41_003},
+                          {"chip_name": "3xc", "num_played": 96_412},
+                          {"chip_name": "freehit", "num_played": 18_770}]
+                         if g <= CUR_EVENT else [],
            } for g in range(1, 39)]
 
 rng = random.Random(1)
@@ -366,6 +380,19 @@ def summary_for(pid):
     return {"history": hist, "history_past": past, "fixtures": upcoming}
 
 
+# The chips this manager has played. Every one of them is in a gameweek
+# that has actually been played: the list said "wildcard, GW8" and "3xc,
+# GW30" while the season history stopped at GW1, so the mock was
+# claiming chips from weeks that do not exist yet — and the picks it served
+# for those weeks knew nothing about them.
+#
+# It is one chip because only one gameweek has been played and you cannot
+# play two in a week. picks_for reads this list, so a 3xc week here really
+# does come back with a tripled captain.
+CHIPS_PLAYED = [{"name": "3xc", "event": 1, "time": iso(gw_deadline(1))}]
+CHIP_BY_GW = {c["event"]: c["name"] for c in CHIPS_PLAYED}
+
+
 def history_for(entry):
     rr = random.Random(entry)
     # Only the gameweeks that have actually been played. A 38-row history
@@ -388,12 +415,7 @@ def history_for(entry):
                     "percentile_rank": rr.randint(1, 100),
                     "value": 1000 + g, "bank": rr.randint(0, 30)})
     # A played chip carries the instant it was played, not just the week.
-    return {"current": cur,
-            "chips": [{"name": "wildcard", "event": 8,
-                       "time": "2026-10-17T10:30:00Z"},
-                      {"name": "3xc", "event": 30,
-                       "time": "2027-03-13T11:00:00Z"}],
-            "past": []}
+    return {"current": cur, "chips": CHIPS_PLAYED, "past": []}
 
 
 # A transfer hit the mock always takes, so the "points are net of the hit"
@@ -436,23 +458,28 @@ standings = {"league": {"name": "Test League"},
              "standings": {"results": _standings_rows(8)}}
 
 
-def picks_for(entry):
+def picks_for(entry, gw=CUR_EVENT):
+    chip = CHIP_BY_GW.get(int(gw))
+    cap_mult = 3 if chip == "3xc" else 2
+
     rr = random.Random(entry)
     ids = rr.sample(range(1, N + 1), 15)
-    mult = lambda p: 2 if p == 0 else (1 if p < 11 else 0)
+    mult = lambda p: cap_mult if p == 0 else (1 if p < 11 else 0)
     xi_points = sum(LIVE_PTS.get(pid, 0) * mult(p) for p, pid in enumerate(ids))
     bench_points = sum(LIVE_PTS.get(pid, 0) for p, pid in enumerate(ids) if p >= 11)
     return {"picks": [{"element": pid, "position": p + 1,
-                       "multiplier": 2 if p == 0 else (1 if p < 11 else 0),
+                       "multiplier": mult(p),
                        "is_captain": p == 0, "is_vice_captain": p == 1}
                       for p, pid in enumerate(ids)],
             # active_chip and automatic_subs were both absent, so every
             # chip and auto-sub path in the app was untested: a triple
             # captain or a bench boost changes the multiplier the score
             # is built from, and an auto-sub changes who counts at all.
-            # Null and empty are the ordinary gameweek; a test that wants
-            # a chip should say so rather than inherit one by default.
-            "active_chip": None,
+            # The chip is whatever CHIPS_PLAYED says for THIS gameweek, so
+            # it agrees with the history rather than contradicting it — the
+            # history claimed a Triple Captain and the picks for that very
+            # week came back with an ordinary doubled captain.
+            "active_chip": chip,
             "automatic_subs": [],
             # POINTS ARE COMPUTED, NOT DECLARED. This was the literal 55
             # while the eleven it describes summed to 70 off the live feed,
@@ -532,7 +559,12 @@ def route(path):
         eid_ = int(parts[1])
         if p.endswith("picks"):
             # Pre-season the squad is not yet locked, so the API 404s.
-            return None if PRESEASON else picks_for(eid_)
+            # The gameweek is part of the path and it matters: a chip week
+            # serves different multipliers from an ordinary one, and the
+            # mock used to throw the number away and answer every week the
+            # same.
+            gw_ = int(parts[3]) if len(parts) > 4 and parts[2] == "event" else CUR_EVENT
+            return None if PRESEASON else picks_for(eid_, gw_)
         if p.endswith("transfers"):
             return transfers_for(eid_)
         if p.endswith("history"):
