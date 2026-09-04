@@ -19329,6 +19329,49 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
      "Players to play" sort, which are about people rather than slots. */
   const stU=s=>counting.filter(r=>r.state===s).reduce((a,r)=>a+r.mult,0);
   const T=rivalGwTotal(eh,S,!!finished);
+  /* ── THE SEASON TOTAL: ask the history which weeks are already in it ──
+     This subtracted std.event_total from std.total and added our live
+     figure, on the assumption that event_total describes the gameweek on
+     screen — 0 before FPL scores it, a partial while it does. Reported
+     against a live GW3 where nobody had kicked off: rank 4 printed 64
+     against rank 2's 57 and rank 3's 52, which no ordering can justify.
+     The overall ranks on the same rows ascended cleanly with rank, so the
+     table was sorted correctly and the printed total was wrong.
+
+     The classic-standings endpoint does not say WHICH gameweek its
+     event_total belongs to, and this app has now been caught twice
+     assuming it. When FPL has not yet scored the week on screen those
+     fields still describe the last one it DID score — so subtracting
+     event_total removes a gameweek that has already been played, and the
+     card prints the total through the week before last.
+
+     The season history says it outright: every row is a gameweek FPL has
+     scored, carrying its own cumulative total_points. So the question is
+     not what event_total means, it is whether the gameweek on screen is
+     in the history yet — and the answer needs no assumption at all. */
+  const RUN=(function(){
+    const gw=(eh&&eh.event!=null)?Number(eh.event):null;
+    const rows=(history&&Array.isArray(history.current))
+      ? history.current
+          .filter(r=>r&&r.event!=null&&typeof r.total_points==='number')
+          .slice().sort((a,c)=>a.event-c.event)
+      : null;
+    if(rows&&gw!=null){
+      /* Scored: FPL's own cumulative figure for this very week. */
+      const mine=rows.filter(r=>Number(r.event)===gw)[0];
+      if(mine)return {value:mine.total_points,live:false};
+      /* Not scored: everything up to it, plus what it is worth live. The
+         floor of 0 is a first gameweek, which has no history behind it. */
+      const before=rows.filter(r=>Number(r.event)<gw).pop();
+      return {value:(before?before.total_points:0)+(T.value||0),live:T.live};
+    }
+    /* No history to lean on — the OR pill is absent for the same reason.
+       FPL's own total is the only figure left that is certainly a real
+       cumulative one, so it is printed as FPL's rather than dressed up as
+       a running total we cannot actually compute. */
+    const seasonTotal=(std&&typeof std.total==='number')?std.total:null;
+    return {value:seasonTotal,live:false};
+  })();
   return {
     entry:std?std.entry:null,name:std?std.entry_name:'',mgr:std?std.player_name:'',
     rank:std?std.rank:null,lastRank:std?std.last_rank:null,
@@ -19346,26 +19389,11 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
        rather than quietly contradicting it. */
     gwOfficial:std&&std.event_total!=null?std.event_total:null,
     total:std?std.total:null,
-    /* THE SEASON TOTAL, and why it is not std.total on its own.
-       FPL's `total` is scored on the same clock as `event_total`: both
-       update when the gameweek is scored, neither during it. So through
-       a live matchday std.total is the total THROUGH LAST WEEK, and
-       printing it beside a live gameweek score puts two numbers on one
-       row that are current as of different days — the season total would
-       visibly lag its own gameweek column all afternoon and then jump.
-       Substituting our figure for FPL's is one expression that is right
-       in both states: while live, their gameweek number (0, or a partial)
-       comes out and ours goes in; once settled, T.value IS their number,
-       so the arithmetic returns std.total unchanged. Hits need no special
-       case — std.total is net of them and, since the last commit, so is
-       T.value. */
-    totalRun:(function(){
-      const seasonTotal=std&&typeof std.total==='number'?std.total:null;
-      if(seasonTotal==null)return null;
-      if(!T.live)return seasonTotal;
-      return seasonTotal-((std&&typeof std.event_total==='number')?std.event_total:0)+T.value;
-    })(),
-    totalLive:T.live,
+    /* Computed above, from the history rather than from std.total: FPL's
+       `total` is on the same scoring clock as event_total, so through a
+       live matchday it is the total through the last week FPL scored. */
+    totalRun:RUN.value,
+    totalLive:RUN.live,
     chip:picks.active_chip||null,
     /* What they have spent all season, and what is live this week. The
        two come from different feeds and mean different things: a chip

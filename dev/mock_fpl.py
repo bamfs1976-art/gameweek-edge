@@ -321,10 +321,6 @@ LIVE_PTS = {el["id"]: el["stats"]["total_points"] for el in live["elements"]}
 event_status = {"status": [{"bonus_added": False, "event": 1,
                             "date": iso(gw_deadline(1))[:10], "points": "l"}],
                 "leagues": "Updated"}
-standings = {"league": {"name": "Test League"}, "standings": {"results": [
-    {"entry": 100 + i, "entry_name": f"Team {i}", "player_name": f"Mgr {i}",
-     "rank": i + 1, "last_rank": i + 2, "event_total": 40 + i, "total": 500 - i}
-    for i in range(8)]}}
 h2h_standings = {"league": {"name": "H2H Test League"}, "standings": {"results": [
     {"entry": 100 + i, "entry_name": f"Team {i}", "player_name": f"Mgr {i}",
      "rank": i + 1, "last_rank": i + 2, "matches_won": 6 - i, "matches_drawn": 1,
@@ -403,6 +399,41 @@ def history_for(entry):
 # A transfer hit the mock always takes, so the "points are net of the hit"
 # path is the one under test rather than the one nobody exercises.
 HIT = 4
+
+
+# ── The classic league table, built from the SAME season as the histories ──
+#
+# `total` was 500 - i and `event_total` 40 + i, while history_for() generated
+# an entirely separate random season for the same entry. The league table and
+# the manager's own history therefore described different people, which the
+# real API cannot do: a standings row IS the last row of that manager's
+# history.
+#
+# The disagreement was not harmless. dev/test-leagues.mjs asserts that the
+# totals fall with rank — the exact property a live GW3 was reported breaking
+# — and 500 - i descends by construction no matter what arithmetic the card
+# puts above it. A wrong cumulative total sailed through a check written to
+# catch it.
+def _standings_rows(n):
+    rows = []
+    for i in range(n):
+        entry = 100 + i
+        cur = history_for(entry)["current"]
+        last = cur[-1] if cur else None
+        rows.append({"entry": entry, "entry_name": f"Team {i}",
+                     "player_name": f"Mgr {i}",
+                     "event_total": last["points"] if last else 0,
+                     "total": last["total_points"] if last else 0})
+    # Rank is the order of the totals, because that is what rank means.
+    rows.sort(key=lambda r: (-r["total"], r["entry"]))
+    for k, r in enumerate(rows):
+        r["rank"] = k + 1
+        r["last_rank"] = k + 2
+    return rows
+
+
+standings = {"league": {"name": "Test League"},
+             "standings": {"results": _standings_rows(8)}}
 
 
 def picks_for(entry):
