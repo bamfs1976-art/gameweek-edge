@@ -22,9 +22,16 @@ import { extractArrayConst, extractBlock, extractConst, extractFn, extractLine }
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const aiSrc = readFileSync(join(ROOT, 'netlify/functions/ai.js'), 'utf8');
+/* The card-ban ladder is vendored, not written in index.html: suspRisk and
+   suspCutoff call PLDCore.nextSuspension against GE_SUSPENSION, both loaded
+   here exactly as the browser loads them, so what is graded is the rule
+   that ships. */
+const vendorSusp = ['suspension_core.js', 'suspension_scheme.js']
+  .map((f) => readFileSync(join(ROOT, 'vendor', f), 'utf8')).join('\n');
 
 /* ── build the isolated context ─────────────────────────── */
 const pieces = [
+  vendorSusp,
   /* SCORING is a module-level binding the projection engine reads for the
      points table — it replaced three inline copies of `type<=2?6:...`, one of
      which scored a goalkeeper's goal at 6 when the game says 10. Extracted
@@ -122,6 +129,7 @@ const pieces = [
   extractFn(html, 'teamGwState'),
   extractFn(html, 'playerGwStates'),
   extractFn(html, 'squadMatchday'),
+  extractFn(html, 'suspNext'),
   extractFn(html, 'suspCutoff'),
   extractFn(html, 'suspRisk'),
   extractFn(html, 'bestXI'),
@@ -2937,16 +2945,23 @@ const symm = core.priceChangeProb(mk(0, 150e3, 2), TOTAL);
 ok(symm.prob === lowOwn.prob, 'fall probability symmetric with rise');
 
 /* ── suspension model: cutoffs and proximity levels ─────── */
-section('suspRisk cutoffs / proximity levels');
+section('suspRisk cutoffs / proximity levels (the vendored ladder)');
 ok(core.suspCutoff(1).limit === 5 && core.suspCutoff(19).limit === 5, '5-card limit through GW19');
+ok(core.suspCutoff(1).by === 19 && core.suspCutoff(1).ban === 1, '… by match 19, one match');
 ok(core.suspCutoff(20).limit === 10 && core.suspCutoff(32).limit === 10, '10-card limit GW20–32');
+ok(core.suspCutoff(20).ban === 2, '… and that ban is two matches');
 ok(core.suspCutoff(33).limit === 15 && core.suspCutoff(38).limit === 15, '15-card limit after GW32');
+ok(core.suspCutoff(33).by == null && core.suspCutoff(33).ban === 3, '… ungated, three matches');
 ok(core.suspRisk(4, 10).level === 'edge', '4 yellows at GW10 → one from a ban');
 ok(core.suspRisk(3, 10).level === 'watch', '3 yellows at GW10 → two away');
 ok(core.suspRisk(2, 10).level === null, '2 yellows at GW10 → no flag');
 ok(core.suspRisk(4, 25).level === null, '4 yellows after the GW19 cutoff → no flag (limit 10)');
 ok(core.suspRisk(9, 25).level === 'edge', '9 yellows at GW25 → one from the 10-card ban');
-ok(core.suspRisk(5, 10).level === 'banned', 'hitting the limit flags as banned');
+/* The shared rule: reaching a rung moves the watch to the next one. The
+   ban itself is FPL's status flag, not a level here. */
+ok(core.suspRisk(5, 10).limit === 10 && core.suspRisk(5, 10).left === 5 && core.suspRisk(5, 10).level === null,
+  'five at GW10: the watch moves on to ten, five more needed');
+ok(core.suspRisk(15, 38).dead === true && core.suspRisk(15, 38).level === null, 'fifteen: no rung left, and no flag invented');
 ok(core.suspRisk(0, 1).left === 5 && core.suspRisk(0, 1).level === null, 'clean record → 5 left, no flag');
 ok(core.suspRisk(null, 10).yellows === 0, 'null yellows treated as 0');
 

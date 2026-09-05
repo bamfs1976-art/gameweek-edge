@@ -1545,6 +1545,7 @@ console.log('• the column gate: a Pro column is locked, unsortable and unexpor
     ${fn('baselineBps')}
     ${fn('baselineBps90')}
     ${fn('priceChangeProb')}
+    ${fn('suspNext')}
     ${fn('suspCutoff')}
     ${fn('suspRisk')}
     ${fn('confTier')}
@@ -1556,6 +1557,11 @@ console.log('• the column gate: a Pro column is locked, unsortable and unexpor
     ${fn('dcHitRate')}
     ${fn('dcHitLabel')}
     const window={};
+    /* The vendored ladder, after window exists: the module picks window
+       over globalThis when it can, and a const declared below it is in its
+       temporal dead zone at that moment. */
+    ${readFileSync(join(ROOT, 'vendor', 'suspension_core.js'), 'utf8')}
+    ${readFileSync(join(ROOT, 'vendor', 'suspension_scheme.js'), 'utf8')}
     ${fn('plColLocked')}
     ${fn('plSusp')}
     ${fn('plCols')}

@@ -3048,6 +3048,14 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 <script src="vendor/rotation.js"></script>
 <script src="vendor/rotation_model.js"></script>
 <script src="vendor/pl_other_fixtures.js"></script>
+<!-- The card-ban ladder, vendored from the same desk: the rule
+     (PLDCore.nextSuspension), the Premier League scheme it reads
+     (GE_SUSPENSION) and the watch built on it (PLDSuspension). Loaded in
+     that order because suspension.js reads PLDCore on load. Precached by
+     sw.js for the same reason as the three above. -->
+<script src="vendor/suspension_core.js"></script>
+<script src="vendor/suspension_scheme.js"></script>
+<script src="vendor/suspension.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Shell logic
@@ -12537,10 +12545,36 @@ function priceChangeProb(el,totalPlayers){
    Premier League card bans: 5 yellows by GW19 (1-match ban),
    10 by GW32 (2 matches), 15 across the season (3 matches). Past a
    cutoff, earlier yellows can no longer trigger that ban. */
-function suspCutoff(gw){return gw<=19?{limit:5,by:19}:gw<=32?{limit:10,by:32}:{limit:15,by:38};}
+/* ── The card-ban ladder: the vendored rule, not a local copy ─────────
+   No threshold is written here, and scripts/check-shell.mjs fails the
+   build if one reappears. vendor/suspension_core.js carries
+   PLDCore.nextSuspension byte for byte from the Bookings Desk
+   (bamfs1976-art/pl-bookings) and vendor/suspension_scheme.js the
+   Premier League ladder it reads. The club's match number is taken as
+   the gameweeks already played, gw - 1: a rung gated "by match 19" is
+   therefore alive through GW19 and dead from GW20, which is what the
+   old inline copy said in its own words.
+
+   One consequence worth knowing: a player who has reached a rung is on
+   his way to the NEXT one, not "banned". The ban itself is the FPL
+   status flag ('s'), which every caller already reads. */
+function suspNext(yellows,gw){
+  const w=(typeof window!=='undefined'&&window)||null;
+  const C=(w&&w.PLDCore)||(typeof PLDCore!=='undefined'&&PLDCore)||null;
+  const S=(w&&w.GE_SUSPENSION)||(typeof GE_SUSPENSION!=='undefined'&&GE_SUSPENSION)||null;
+  if(!C||!S||typeof C.nextSuspension!=='function')return null;
+  return C.nextSuspension(Math.max(0,yellows||0),Math.max(0,(gw||1)-1),S);
+}
+function suspCutoff(gw){
+  const n=suspNext(0,gw);
+  if(!n||n.dead)return {limit:null,by:null,ban:null};
+  return {limit:n.at,by:n.by,ban:n.ban};
+}
 function suspRisk(yellows,gw){
-  const c=suspCutoff(gw),y=yellows||0,left=c.limit-y;
-  return {...c,yellows:y,left,level:left<=0?'banned':left===1?'edge':left===2?'watch':null};
+  const y=yellows||0,n=suspNext(y,gw);
+  if(!n||n.dead)return {limit:null,by:null,ban:null,yellows:y,left:null,level:null,dead:true};
+  return {limit:n.at,by:n.by,ban:n.ban,yellows:y,left:n.need,
+    level:n.need===1?'edge':n.need===2?'watch':null,dead:false};
 }
 /* When the next price change lands, in the reader's own timezone, from the
    schedule the game publishes. The copy used to assert "00:00 UK time" as a
@@ -13274,7 +13308,7 @@ function playerDetailHTML(b,fixtures,id){
     (e.value_season!=null?stat('Value (season)',e.value_season):'')+
     (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
-    (e.yellow_cards?stat('Yellows',e.yellow_cards+' of '+susp.limit+' by GW'+susp.by):'')+
+    (e.yellow_cards&&susp.limit?stat('Yellows',e.yellow_cards+' of '+susp.limit+(susp.by?' by GW'+susp.by:'')):'')+
     '</div>'+
     '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points. Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';

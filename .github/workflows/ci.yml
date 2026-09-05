@@ -73,6 +73,13 @@ jobs:
       - name: Vendored rotation model matches its source
         run: node scripts/vendor-rotation.mjs --check --remote
 
+      # The card-ban ladder, same arrangement: `npm test` proves the committed
+      # slices match their recorded hashes and still say 5/10/15 gated at 19
+      # and 32; this step re-fetches core.js, suspension.js and pl_data.js at
+      # the pinned commit and fails if the vendored bytes have drifted.
+      - name: Vendored suspension rule matches its source
+        run: node scripts/vendor-suspension.mjs --check --remote
+
       # Same split, same reason, for the vendored FPL OpenAPI spec. `npm test`
       # already proves the committed copy is intact and parses; what it cannot
       # prove offline is that the pin still describes something real. This

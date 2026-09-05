@@ -179,3 +179,32 @@ Provenance is proved rather than asserted. Each file carries a generated header
 naming the source commit and its payload SHA-256; `scripts/vendor-rotation.mjs
 --check` verifies the committed bytes offline, and `--check --remote` re-fetches
 from the source and fails if the pinned copies have drifted. Both run in CI.
+
+---
+
+## Suspension rule — vendored from the Bookings Desk (first-party)
+
+Same source, same arrangement, second module. The card-ban ladder (five
+cautions by the club's 19th match, ten by the 32nd for two matches, fifteen at
+any point for three) used to be typed out inside `index.html`; it now comes
+from the repository whose subject is bookings, and `scripts/check-shell.mjs`
+fails the build if a threshold is typed here again.
+
+- **Source** https://github.com/bamfs1976-art/pl-bookings
+- **Commit** `34bba4cd8978e0dc9df1327baad8dccee4e71ffd` (`main`)
+- **Files**
+  - `vendor/suspension.js` ← `assets/suspension.js` — verbatim. `PLDSuspension`,
+    the watch strip built on the rule.
+  - `vendor/suspension_core.js` ← `assets/core.js` — three functions sliced
+    verbatim (`pCardsAtLeast`, `suspensionCycle`, `nextSuspension`) and
+    exported as `PLDCore`. The rest of `core.js` is desk logic this app does
+    not use and is not shipped.
+  - `vendor/suspension_scheme.js` ← `data/pl_data.js` — the Premier League
+    `SUSPENSION` literal, verbatim, exported as `GE_SUSPENSION`.
+- **Used for** the suspension watch: the "one yellow from a ban" chips on
+  player detail, the Alerts feed and the Signals feed, through `suspRisk()`
+  and `suspCutoff()` in `index.html`, which call `PLDCore.nextSuspension`.
+- **Verified by** `scripts/vendor-suspension.mjs --check` (offline, in `npm
+  test`: hashes match and the loaded rule still says 5/10/15 gated at 19 and
+  32) and `--check --remote` (CI: re-fetches and re-slices from the pinned
+  commit).

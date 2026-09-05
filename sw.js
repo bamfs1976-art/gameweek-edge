@@ -55,7 +55,11 @@ const EFL_SHELL = [
 const ROTATION = [
   '/vendor/rotation.js',
   '/vendor/rotation_model.js',
-  '/vendor/pl_other_fixtures.js'
+  '/vendor/pl_other_fixtures.js',
+  /* The card-ban ladder, vendored from the same desk. */
+  '/vendor/suspension_core.js',
+  '/vendor/suspension_scheme.js',
+  '/vendor/suspension.js'
 ];
 const SHELL = [
   '/',
