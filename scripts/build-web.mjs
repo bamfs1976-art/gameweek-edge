@@ -24,7 +24,9 @@ const STATIC_FILES = ['index.html', 'landing.html', 'privacy.html', 'manifest.we
    than built; scripts/vendor-rotation.mjs owns proving it has not drifted. */
 /* `record/` is the public FPL record page; its record.json is written beside
    it by publishFplRecord below, from data/record. */
-const STATIC_DIRS = ['icons', 'data', 'vendor', 'record'];
+/* `lib/` is first-party browser code loaded by <script src> (the share
+   theme and adapters); precached by sw.js alongside vendor/. */
+const STATIC_DIRS = ['icons', 'data', 'vendor', 'record', 'lib'];
 
 async function clean() {
   if (existsSync(OUT)) await rm(OUT, { recursive: true, force: true });

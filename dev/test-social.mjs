@@ -561,8 +561,10 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      their home. */
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId=homePanel\(\);/.test(html),
     'openPanel guards deep links');
-  ok(/function homePanel\(\)\{return getMid\(\)\?'myweek':'dashboard';\}/.test(html),
-    'home is My Week when a team is linked, Overview when it is not');
+  /* Home is the first-run flow until it is finished, then My Week for a
+     linked manager and Overview for everyone else. */
+  ok(/function homePanel\(\)\{\s*if\(onboardActive\(\)\)return 'onboard';\s*return getMid\(\)\?'myweek':'dashboard';\s*\}/.test(html),
+    'home is the first-run flow until done, then My Week when a team is linked, Overview when it is not');
 
   /* ── The nav shape ───────────────────────────────────────
      The sidebar is a flat list of areas and the lateral move happens on the

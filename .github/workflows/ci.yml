@@ -80,6 +80,16 @@ jobs:
       - name: Vendored suspension rule matches its source
         run: node scripts/vendor-suspension.mjs --check --remote
 
+      # The share renderer and saver, vendored verbatim from the same desk.
+      - name: Vendored share renderer matches its source
+        run: node scripts/vendor-share.mjs --check --remote
+
+      # The share cards: the three adapters draw the XI, the gameweek, the
+      # wordmark and the URL, no card carries betting language, and nothing
+      # saves through a bare anchor (dead on iOS). Also in `npm test`.
+      - name: Share cards say what the app says
+        run: node scripts/check-share.mjs
+
       # Same split, same reason, for the vendored FPL OpenAPI spec. `npm test`
       # already proves the committed copy is intact and parses; what it cannot
       # prove offline is that the pin still describes something real. This

@@ -208,3 +208,26 @@ fails the build if a threshold is typed here again.
   test`: hashes match and the loaded rule still says 5/10/15 gated at 19 and
   32) and `--check --remote` (CI: re-fetches and re-slices from the pinned
   commit).
+
+---
+
+## Share cards — vendored from the Bookings Desk (first-party)
+
+- **Source** https://github.com/bamfs1976-art/pl-bookings
+- **Commit** `34bba4cd8978e0dc9df1327baad8dccee4e71ffd` (`main`)
+- **Files**
+  - `vendor/share.js` ← `assets/share.js` — verbatim. `PLDShare`: the
+    1080×1350 canvas renderer, its theme registry and drawing primitives.
+  - `vendor/save.js` ← `assets/save.js` — verbatim. `PLDSave.file`: the native
+    share sheet where a phone has one, the anchor fallback elsewhere.
+- **Not vendored** `lib/gwe-share.js` is this repository's own: the Gameweek
+  Edge theme (registered as `PLDShare.THEMES.GWE`) and the three adapters
+  (Team of the Week, captain pick, squad rating). It composes cards from the
+  renderer's exported primitives rather than its desk cards, because the desk
+  cards' shared footer draws an age-and-gambling line a Gameweek Edge card
+  must never carry.
+- **Used for** every image and CSV that leaves the app: the Share buttons on
+  the Model XI, Captaincy Lab and the first-run squad rating, the My Squad
+  and Team Reveal cards, Social Studio and the CSV exports.
+- **Verified by** `scripts/vendor-share.mjs --check` and `--check --remote`,
+  and `scripts/check-share.mjs`, all in CI.
