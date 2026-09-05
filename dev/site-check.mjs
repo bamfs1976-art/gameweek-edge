@@ -217,9 +217,21 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'function chipPlaysByGw', since: '2026-09-04',
-  what: 'the gameweek-by-gameweek count of every chip played across FPL' };
-/* Rotated from 'swing:e.sd' (2026-08-27), never confirmed live.
+const MARKER = { text: 'f.event<=cur.id', since: '2026-09-05',
+  what: 'the staleness check that notices a LATER gameweek has kicked off' };
+/* Rotated from 'function chipPlaysByGw' (2026-09-04), confirmed live by
+   run 72 — the first run in eight days whose green meant anything.
+
+   Reported that morning: GW3's Friday match had been played and the app
+   was still showing GW2. The feed was right and the app's own copy of it
+   was pinned in memory, because the check for "is bootstrap behind the
+   football?" returned early whenever FPL's current gameweek was flagged
+   finished — which is its state for the entire window between one
+   gameweek settling and the next kicking off. This line is the question
+   that was missing: has a gameweek AFTER this one already started?
+
+   Rotating on the same day as the fix, in the same push, which is the
+   only discipline that keeps this check meaningful.
 
    The Chips page gained a table of how many chips the whole game played
    each gameweek, off the counts bootstrap-static already carries, and the
