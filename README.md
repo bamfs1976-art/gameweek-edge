@@ -221,8 +221,10 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 
 **All 38 panels (7 areas) are wired to live data** — see `docs/FEATURES.md` for the full panel reference.
 
-- **Free:** Dashboard, This Gameweek, Pre-season Draft (2026/27 squad builder), My Squad (live pitch), Transfer Planner, Captaincy Lab, Fixture Planner, Clean Sheet Matrix, Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist (saved on device), Alerts, Player Compare.
-- **Pro** (gated behind the paywall): Live Percentile (an estimated percentile, not a true live rank), DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, **Scout AI**, Set Piece Register, Rotation Risk.
+- **Free:** My Week, Overview, Gameweek recap, GW Debrief, The Wire, The Model, My Squad, Transfer Planner, Captaincy Lab, Chip Strategy, Squad Planner, Manager Report, Live (Percentile and Bonus views), Players (with the Differentials and Fitness lenses), Scout Board, Player Compare, Price Predictor, Latest News, Fixtures (grid, points and clean-sheet views), Watchlist, Alerts, Mini-Leagues, Matchday, Title Race, Clubs, Ten Seasons.
+- **Pro** (gated behind the paywall): **Scout AI**, the DEFCON, Rank threats and Auto-subs views of Live, Set Piece Register, Rotation Risk, Simulators (season and what-if), Rival Scout, Ownership (your EO and the template). Live is an estimated percentile, not a true live rank, and says so.
+
+Panel names are canonical across the app, the landing page and the docs: see `docs/NAMING.md`.
 
 **Scout AI** is our own answer to third-party prediction sites, built on the data we already have plus Claude:
 - A transparent **predicted-points (xP)** model — FPL's expected points scaled by availability and fixture difficulty — feeds an optimiser that picks the **Team of the Week** (best valid XI, max 3 per club) and the **captain**. Captaincy Lab now ranks by xP too.
@@ -232,9 +234,9 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 All Claude calls go through **one** server function, `netlify/functions/ai.js` (per-task prompts). The **numbers come from our own models**; Claude reasons over the JSON we pass and is told not to invent data. Models are chosen per task (Haiku 4.5 for high-volume, Sonnet 4.6 for chat/reasoning).
 
 - **Ask the Scout** — a chat coach grounded in your squad, xP, fixtures and candidates.
-- **AI Scout Report** — captain, gameweek picks and a read on your team.
+- **Scout AI report** — captain, gameweek picks and a read on your team.
 - **AI Transfer Planner** — concrete moves (out → in, cost, hit y/n) from your squad and fixtures.
-- **Weekly Digest** & **Last Gameweek Review** — Dashboard cards.
+- **Weekly Digest** & **Last Gameweek Review** — Overview cards.
 - **Player verdicts** (Watchlist), **Chip Adviser** (Chip Strategy), **Rival Brief** (Rival Scout).
 
 The Anthropic key stays server-side — set `ANTHROPIC_API_KEY` on the Netlify site to switch them all on (without it, each shows a tidy setup note). On-demand generations are **cached per gameweek** and the buttons on free panels are **Pro-gated** to control cost.
@@ -253,17 +255,17 @@ It answers the one question live data cannot, because before gameweek one there
 is no live data: **who is worth picking?** Measured on the pre-season board, it
 takes the Draft from *0 of 120 players ranked* to *120 of 120*.
 
-- **Pre-season Draft** — minutes- and recency-weighted career priors, with a
+- **Squad Planner** — minutes- and recency-weighted career priors, with a
   visible confidence badge and an explicit *"No PL record"* fallback for
   promoted-club and overseas players.
-- **Model Accountability** — every season graded separately. The model beat the
+- **The Model** — every season graded separately. The model beat the
   form baseline in all ten; the four seasons with expected-goals data are
   labelled *as shipped* and the six before them *proxy*, and the two are never
   pooled.
 - **Captaincy / Transfers / Rank Threats** — career haul and blank rates next to
   the simulated ones, and a regression flag when a player is scoring above or
   below his underlying chances.
-- **Ten Seasons panel** — all-time records, career comparison, and a daily
+- **Ten Seasons** — all-time records, career comparison, and a daily
   guess-the-player puzzle.
 
 Rebuild with `npm run history`; `.github/workflows/history.yml` does it weekly

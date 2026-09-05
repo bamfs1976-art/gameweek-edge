@@ -2919,11 +2919,12 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <kbd>g t</kbd><span>Transfer Planner</span>
       <kbd>g c</kbd><span>Captaincy Lab</span>
       <kbd>g p</kbd><span>Price Predictor</span>
-      <kbd>g f</kbd><span>Fixture Planner</span>
-      <kbd>g m</kbd><span>Match Centre</span>
-      <kbd>g i</kbd><span>Injury Monitor</span>
+      <kbd>g f</kbd><span>Fixtures</span>
+      <kbd>g m</kbd><span>Matchday</span>
+      <kbd>g i</kbd><span>Players (fitness lens)</span>
       <kbd>g w</kbd><span>Watchlist</span>
-      <kbd>g r</kbd><span>GW Debrief</span>
+      <kbd>g r</kbd><span>Manager Report</span>
+      <kbd>g l</kbd><span>Live</span>
       <kbd>j / k</kbd><span>Next / previous row</span>
       <kbd>↵</kbd><span>Open selected row</span>
       <kbd>?</kbd><span>This cheatsheet</span>
@@ -3952,7 +3953,7 @@ function linkBox(){
    ═══════════════════════════════════════════════════════════ */
 const PRICE={monthly:'£3.99',season:'£24.99'};
 const PRO_BENEFITS=[
-  ['spark','AI Scout','Ask the Scout about your squad — transfer, captaincy and chip calls, reasoned from the model.'],
+  ['spark','Scout AI','Ask the Scout about your squad — transfer, captaincy and chip calls, reasoned from the model.'],
   ['users','Rival intelligence','Scout rivals, effective ownership and the top template — your edge in every mini-league.'],
   ['question','Simulators & depth','What-If and season simulators, plus set-piece order and rotation risk on every player.']
 ];
@@ -3983,8 +3984,8 @@ function openUpgrade(){
   /* Free users see exactly what The Edge adds over the standard app. */
   const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
     '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
-    ['AI Scout &amp; Ask the Scout','Rival Scout — overtake your league','EO Tracker &amp; Template Meter',
-     'Season &amp; What-If simulators','Your DEFCON &amp; set-piece register']
+    ['Scout AI &amp; Ask the Scout','Rival Scout — overtake your league','Ownership — your EO and the template',
+     'Simulators — season and what-if','Live DEFCON &amp; the Set Piece Register']
       .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">—</span><span class="y">✓</span></div>').join('')+
     '</div>';
   document.getElementById('pro-body').innerHTML=
@@ -4349,7 +4350,7 @@ const NAV = [
       {id:'dashboard', label:'Overview', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'gwdebrief', label:'GW Debrief', icon:'calendar', tier:'free'},
-      {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
+      {id:'blog', label:'The Wire', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'accountability', label:'The Model', icon:'target', tier:'free'}
     ]
@@ -5079,9 +5080,9 @@ const MORE_GROUPS=[
     ['titlerace','The title race, simulated'],
     ['dossier','Club-by-club dossiers and form'],
     ['archive','Ten seasons of FPL history'],
-    ['scout','Ask the AI scout about your squad'],
+    ['scout','Scout AI: the model XI, the report and Ask the Scout'],
     ['news','Injury and press-conference news'],
-    ['blog','The Wire — what the model is seeing']]},
+    ['blog','The Wire: the latest data briefings']]},
   {label:'Account & help',items:[
     ['__mode','Simple shows five panels; Terminal shows every panel in the rail'],
     ['__account','Sign in, sync and manage your plan'],
@@ -6614,7 +6615,7 @@ async function hydrateDashboard(host){
     :ph.phase==='post'
     ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Bonus &amp; prices settling — see the results →</a></div>'
     :ph.phase==='live'
-    ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>'
+    ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open Matchday →</a></div>'
     :ph.phase==='pre'
     ?'<div class="qd-foot" style="margin-bottom:8px">Season starts <b>'+fmtDeadline((ph.target||b.cur).deadline_time)+'</b>. Live rank, ownership drift and captain leverage appear here once the first ball is kicked.</div>'
     :'';
@@ -10232,7 +10233,7 @@ async function hydrateGwreport(host){
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
   }
 
-  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">GW Debrief'+
+  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">Your gameweek, reviewed'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
@@ -14167,7 +14168,7 @@ async function hydrateChips(host){
       aiGate('<button class="btn btn-primary btn-sm" onclick="genChips()">Advise my chips</button>')+
       '<div id="chips-ai" style="margin-top:12px"></div></div>'+
     '<div class="card"><div class="ge-state">'+svg(ICON.diamond)+
-      '<b>When to play them</b><p>Bench Boost and Triple Captain pay off in double gameweeks; Free Hit covers a blank. Watch the Fixture Planner for upcoming doubles and blanks.</p></div></div>';
+      '<b>When to play them</b><p>Bench Boost and Triple Captain pay off in double gameweeks; Free Hit covers a blank. Watch Fixtures for upcoming doubles and blanks.</p></div></div>';
 }
 
 /* ── Watchlist: local list of tracked players ──────────── */
@@ -14245,7 +14246,7 @@ async function hydrateCompare(host){
           '<tr><th class="tm">GW</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><span class="dl-sub">'+esc(teamShort(b,e.team))+'</span></td>').join('')+'</tr>'+
           fxRows+
         '</table></div>'+
-        '<p class="dl-sub" style="margin-top:8px">Each cell is the player’s club fixture that gameweek — greener is an easier opponent (H/A shown). The model difficulty, the same lens as the Fixture Planner.</p></div>'
+        '<p class="dl-sub" style="margin-top:8px">Each cell is the player’s club fixture that gameweek — greener is an easier opponent (H/A shown). The model difficulty, the same lens as Fixtures.</p></div>'
     : '';
   const table=sel.length?
     '<div class="fdr"><table>'+
@@ -18846,7 +18847,7 @@ async function hydrateScout(host){
         '<div class="dl-sub" style="margin-top:10px">xPts = predicted points: FPL’s expected points scaled by availability and fixture.</div>'+
       '</div>'+
     '</div>'+
-    '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Scout Report</div>'+
+    '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Scout AI report</div>'+
       '<p class="dl-sub" style="margin-bottom:12px">Claude analyses the gameweek and'+(getMid()?' your squad,':'')+' explains the picks, captain and transfer angles.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="genScoutReport()">Generate AI scout report</button>'+
       '<div id="scout-report" style="margin-top:14px"></div>'+
@@ -20672,7 +20673,7 @@ function chipStrategyArticle(){
     '<li><b>The run-in is discounted.</b> A Wildcard buys the gameweeks that follow it, so its value tapers as GW38 approaches, and Bench Boost and Triple Captain are marked down in the final two weeks where sides with nothing to play for rotate.</li>'+
     '</ul>';
 
-  body+='<p class="muted">Chip windows, the reasoning behind each and a shareable plan card are in the <b>Chip Planner</b>. Rules and the official windows discussed here are from the Premier League’s Scout column, 7 August 2026; the fixture reads, the Bench Boost case and the opening-five difficulty are ours, and are graded in Model Accountability like every other call we publish.</p>';
+  body+='<p class="muted">Chip windows, the reasoning behind each and a shareable plan card are in <b>Chip Strategy</b>. Rules and the official windows discussed here are from the Premier League’s Scout column, 7 August 2026; the fixture reads, the Bench Boost case and the opening-five difficulty are ours, and are graded under The Model like every other call we publish.</p>';
 
   return {kick:'Strategy',title:'Chips in 2026/27: Two Halves, and the One Window We’d Skip',
     dek:'Eight chips, split at GW19. The official advice is right about Haaland and, we think, wrong about an early Bench Boost — here is the case for each.',
@@ -20731,7 +20732,7 @@ async function hydrateBlog(host){
      the Week and the live briefings. */
   try{arts.unshift(...preseasonArticles());}catch(_){}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
-  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire — latest news</div>'+
+  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
     '<div class="blog-list">'+arts.map((a,i)=>articleCard(a,i,b.cur.id)).join('')+'</div>';
   host.querySelectorAll('.post-hd').forEach(btn=>btn.addEventListener('click',()=>{

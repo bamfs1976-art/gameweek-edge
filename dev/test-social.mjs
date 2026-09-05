@@ -541,7 +541,11 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      narrows the nav as well as the detail. That must NARROW the owner and
      capability gate, never replace it — so assert both the call site and the
      delegation, or a Simple view could quietly expose an owner area. */
-  ok(/const DESTINATIONS=\[/.test(html) && /DESTINATIONS\.forEach/.test(html),
+  /* Both bars render destinations(), which picks DESTINATIONS (Terminal) or
+     DESTINATIONS_SIMPLE (Simple) — one list per mode, never two lists per
+     bar. dev/test-simplenav.mjs proves the labels match in the browser. */
+  ok(/const DESTINATIONS=\[/.test(html) && /const DESTINATIONS_SIMPLE=\[/.test(html)
+    && (html.match(/destinations\(\)\.forEach/g) || []).length === 2,
     'the sidebar and bottom bar render the one shared destination list');
   ok(/if\(!p\|\|!canSeePanel\(p\)\)return '';/.test(html),
     'the More index is filtered by the gate');

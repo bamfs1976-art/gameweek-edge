@@ -30,10 +30,10 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 | Pillar | Delivered by |
 |---|---|
-| Model‑driven xP picks | Captaincy Lab, Scout AI, Transfer Solver, Fixture Planner |
-| Gameweek snapshot | Overview, This Gameweek |
-| Live matchday | Live Percentile, Bonus Tracker, DefCon Threats, Auto‑Sub Tracker, What‑If |
-| Team linking | Squad, Transfers, Captaincy, Live Percentile, Manager Report, Mini‑Leagues |
+| Model‑driven xP picks | Captaincy Lab, Scout AI, Transfer Planner, Fixtures |
+| Gameweek snapshot | Overview, My Week |
+| Live matchday | Live (Percentile, Bonus, DEFCON, Rank threats, Auto-subs views), Simulators |
+| Team linking | My Squad, Transfer Planner, Captaincy Lab, Live, Manager Report, Mini‑Leagues |
 | Intelligence & AI | Scout AI, Ask the Scout, EO/Template/Rival tools |
 | Content | The Wire (auto blog), Team of the Week |
 
@@ -80,6 +80,7 @@ Home
 ├── My Week              (free)  Your personalised gameweek brief — home once a team is linked
 ├── Overview             (free)  Season snapshot, this week's calls, live state — home until then
 ├── Gameweek recap       (free)  What just happened, and what it cost you
+├── GW Debrief           (free)  The whole gameweek, scored against the model
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
 └── The Model            (free)  Track record first, then how it works
@@ -92,8 +93,7 @@ My Team
 ├── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
 ├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
 ├── Squad Planner        (free)  Squad builder — real FPL rules, xP6, AI diagnosis
-├── GW Debrief           (free)  Your gameweek, scored against the model
-└── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
+└── Manager Report       (free)  Your gameweek reviewed, plus the season: points, rank, chips, captain/transfer ROI
 
 Live
 └── Live                 (free)  One matchday, five views — Percentile and Bonus
@@ -147,9 +147,10 @@ Both are free; neither shows a tab strip, since neither belongs to an area's
 list.
 
 **Global chrome:** top bar (menu, brand, refresh, My Team), left sidebar
-(flat area list), area tab strip on every page, mobile bottom nav (Home · My
-Squad · Players · Match Centre · More) with the remaining areas in the More
-sheet, theme toggle (light/dark), deadline strip, account menu, upgrade modal,
+(flat area list), area tab strip on every page, mobile bottom nav (Terminal:
+Home · Squad · Players · Live · Leagues · More; Simple: This Gameweek · My
+Squad · Transfer Planner · Captaincy Lab · Price Predictor · More) with the
+remaining areas in the More index, theme toggle (light/dark), deadline strip, account menu, upgrade modal,
 player‑detail modal.
 
 ---

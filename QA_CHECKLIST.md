@@ -24,13 +24,13 @@ Run this before each release. Test on a real iPhone (Safari) and an Android phon
 - [ ] Skip link works; visible focus rings on keyboard tab; Escape closes modals/drawer
 
 ## 3. Free panels (linked team)
-- [ ] Dashboard: KPIs, recent-form chart, Weekly Digest + Last GW Review cards
-- [ ] This Gameweek: deadline, average/highest, crowd moves
+- [ ] Overview: KPIs, recent-form chart, Weekly Digest + Last GW Review cards
+- [ ] My Week: deadline, average/highest, crowd moves
 - [ ] My Squad: live pitch with captain ×2, live points, GW summary
 - [ ] Transfer Planner: budget, in-form targets, AI Transfer Planner (Pro-gated button)
 - [ ] Captaincy Lab: ranked by predicted points; safe/balanced/differential
-- [ ] Fixture Planner: 6-GW FDR grid + Match outlook probabilities; pre-season shows "Between seasons"
-- [ ] Differentials / Price Predictor / Injury Monitor: lists populate
+- [ ] Fixtures: 6-GW FDR grid + Match outlook probabilities; pre-season shows "Between seasons"
+- [ ] Players (Differentials and Fitness lenses) / Price Predictor: lists populate
 - [ ] Chip Strategy: chips used/available + AI Chip Adviser
 - [ ] Watchlist: search-add, remove, per-player AI verdict; persists; toasts
 - [ ] Alerts: deadline + fitness + price feed; push card; preference toggles
@@ -45,7 +45,7 @@ Run this before each release. Test on a real iPhone (Safari) and an Android phon
 
 ## 5. AI features (key set)
 - [ ] Ask the Scout: question returns a grounded answer; suggested chips work; thread scrolls
-- [ ] Scout AI: Team of the Week pitch + AI scout report
+- [ ] Scout AI: Team of the Week pitch + Scout AI report
 - [ ] Transfer plan / digest / review / chip adviser / rival brief / player verdict each generate and cache per gameweek
 - [ ] With no key: each shows a tidy "AI needs setup" note (no crash)
 
