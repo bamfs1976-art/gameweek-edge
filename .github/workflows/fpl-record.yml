@@ -1,0 +1,66 @@
+name: FPL record
+
+# Records the model's Team of the Week, captain and price calls before each
+# gameweek deadline, and grades them once FPL has scored the gameweek. The
+# committed files under data/record are the whole point: a git history is
+# timestamped evidence that a pick existed before the football did.
+#
+# Every three hours, like the Fantasy EFL ledger: the recorder only writes
+# inside the 36 hours before a deadline, and deadlines fall on Friday
+# evenings and Saturday mornings as well as Saturday lunchtimes. Runs outside
+# a window do nothing and say so.
+#
+# A failure here is worth an email: the feed was down (a gameweek may have
+# gone unrecorded, and the gap will be visible on /record forever) or the
+# feed changed shape.
+
+on:
+  schedule:
+    - cron: '40 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write # commit the ledger
+
+concurrency:
+  group: fpl-record
+  cancel-in-progress: false
+
+jobs:
+  ledger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No npm install: the scripts import node builtins, the repo's own
+      # extractor and the app's own functions lifted out of index.html —
+      # which is also why they cannot drift from what the website runs.
+      - name: Record this gameweek's calls
+        run: node scripts/record/record-picks.mjs
+
+      - name: Grade gameweeks FPL has scored
+        if: always()
+        run: node scripts/record/grade-gw.mjs
+
+      - name: Commit whatever changed
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/record
+          if git diff --staged --quiet; then
+            echo "Nothing to commit — no gameweek was in its window and none had been scored."
+            exit 0
+          fi
+          FILES=$(git diff --staged --name-only | sed 's#.*/gw-##; s#\.json##' | paste -sd, -)
+          git commit -m "FPL record: gameweek(s) ${FILES}"
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            echo "push failed, retrying in $((2 ** i))s"
+            sleep $((2 ** i))
+          done
+          exit 1

@@ -6166,7 +6166,42 @@ async function hydrateAccountability(host){
     }
   }catch(_){}
 
+  /* ── The FPL record, graded in public ──────────────────
+     Read from /record/record.json, the same file /record/ reads, built at
+     deploy from data/record. Nothing is computed here: a scorecard that
+     re-marked its own homework in the browser could disagree with the
+     ledger it reports. Every figure is either the ledger's or "not graded". */
+  let recordCard='';
+  try{
+    const rr=await fetch(apiBase()+'/record/record.json',{headers:{Accept:'application/json'}});
+    if(rr.ok){
+      const rec=await rr.json(),sn=rec.season||{},t=sn.totw||{},c=sn.captain||{},pr=sn.prices||{};
+      const ng='<span class="badge badge-amber">not graded</span>';
+      const stat=(l,v,sub)=>'<div class="stat"><div class="stat-l">'+l+'</div><div class="stat-v">'+v+'</div>'+(sub?'<div class="dl-sub">'+sub+'</div>':'')+'</div>';
+      const plain=(rec.gameweeks||[]).length
+        ?(sn.graded
+          ?'<b>'+sn.graded+' of '+sn.recorded+' recorded gameweeks graded.</b> '+
+            (t.averageGraded?'The model Team of the Week outscored the average manager in '+t.beatAverage+' of '+t.averageGraded+'. ':'The average manager score has not been published for a graded gameweek yet. ')+
+            (t.naiveGraded?'It beat an XI picked on form alone in '+t.beatNaive+' of '+t.naiveGraded+'. ':'')+
+            (c.graded?'The captain\u2019s median rank among every player who played was '+c.medianRank+', and he was the top scorer '+c.top+' time'+(c.top===1?'':'s')+'. ':'')+
+            (pr.graded?Math.round((pr.rate||0)*100)+'% of the price calls happened.':'')
+          :'<b>'+sn.recorded+' gameweek'+(sn.recorded===1?'':'s')+' recorded, none graded yet.</b> The first grade lands once FPL has scored a recorded gameweek.')
+        :'<b>Nothing recorded yet.</b> The first entry is written inside the 36 hours before the next deadline.';
+      recordCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Model Accountability \u2014 the FPL record</div>'+
+        '<p class="dl-sub" style="margin:0 0 10px">'+plain+'</p>'+
+        (sn.graded?'<div class="statgrid">'+
+          stat('XI vs average manager',t.averageGraded?t.beatAverage+'/'+t.averageGraded:ng,t.averageGraded?'XI '+t.meanPoints+' pts vs '+t.meanAverage+' average':'')+
+          stat('XI vs form XI',t.naiveGraded?t.beatNaive+'/'+t.naiveGraded:ng,t.naiveGraded?'beat \u201cpick on form\u201d':'')+
+          stat('Captain median rank',c.graded?c.medianRank:ng,c.graded?'top ten '+c.top10+' of '+c.graded:'')+
+          stat('Price calls hit',pr.graded?Math.round((pr.rate||0)*100)+'%':ng,pr.graded?pr.hits+' of '+pr.graded:'')+
+          '</div>':'')+
+        '<div class="dl-sub" style="margin-top:10px">Recorded before every deadline, graded after, never overwritten. Team of the Week is the eleven\u2019s official points with no captain doubling; the average manager score includes captains and chips, so the two are not the same measure. '+
+        '<a href="/record/" target="_blank" rel="noopener">The full record, gameweek by gameweek \u2192</a></div></div>';
+    }
+  }catch(_){/* the page is honest without it: no card, no invented figure */}
+
   host.innerHTML=
+    recordCard+
     '<div class="card mb-20"><div class="card-title">Model scorecard</div>'+scoreGrid+
       '<div class="dl-sub" style="margin-top:10px">The match model is scored on <b>held-out</b> 2025/26 results — a ranked probability score of <b>0.2126</b> (lower is better; a coin-flip is ~0.25). '+
       '“Favourite correct” is how often the higher-probability side actually won or drew as modelled, recomputed live as fixtures finish. Every number here moves with real results — no cherry-picking.</div></div>'+

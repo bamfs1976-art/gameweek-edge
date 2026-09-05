@@ -98,6 +98,18 @@ football happens, the job cannot write after a lockout or overwrite an entry,
 and the whole record — good weeks and bad — is at
 **[`/fantasy-efl/record/`](https://gameweekedge.co.uk/fantasy-efl/record/)**.
 
+**The FPL model is graded the same way.** Inside the 36 hours before every
+deadline, `scripts/record/record-picks.mjs` writes the model Team of the Week,
+the captain pick and the five most likely price moves to `data/record/`, built
+by the same functions the app runs. After FPL scores the gameweek,
+`grade-gw.mjs` grades the eleven's official points against the average manager
+score and against a form XI fixed at the same moment, ranks the captain among
+every player who played, and counts the price calls that happened. The whole
+record, including "not graded" where the feed published no input, is at
+**[`/record/`](https://gameweekedge.co.uk/record/)** and, in plain English,
+under **The Model** in the app. Same refusals as the EFL ledger: never after a
+deadline, never overwritten.
+
 ### Game packs
 
 A *game pack* (`GAMES` in `index.html`) says where the data comes from, what
