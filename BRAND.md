@@ -45,13 +45,14 @@ The brand rules it demonstrated still stand, because they are the rules for **an
 ## 6. Colour
 | Token | Hex | Use |
 |---|---|---|
-| Green (primary) | `#15824a` | Brand, primary buttons, logo tile |
+| Green (primary, fill) | `#15824a` | Logo tile, icons, theme-color, filled buttons |
+| Green (primary, ink) | `#147e48` | Green text and links in the app: `#15824a` measures 4.28:1 on the darkest light surface, so the ink is deepened to clear 4.5:1 |
 | Green bright | `#1f9d5c` | Accents, highlights, links |
 | Ink | `#10171e` | Primary text (light theme) |
 | Ink-2 | `#586673` | Secondary text |
 | Background | `#f4f6f8` | App/page background (light) |
 | Surface | `#ffffff` | Cards |
-| Dark background | `#0f161d` | Dark theme base |
+| Dark background | `#10161c` | Dark theme base (`--bg` in `index.html`; `dev/test-tokens.mjs` measures against it) |
 | Amber | `#b9741a` | Caution / price-fall |
 | Red | `#cc3d39` | Risk / injury |
 | Blue | `#2f6dc7` · Purple `#7a5cc7` | Data accents |

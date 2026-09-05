@@ -1,4 +1,28 @@
-# Third-party licences
+# Licences
+
+## This repository's own licence: to be confirmed by the owner
+
+There is no `LICENSE` file at the root of this repository, and `package.json`
+declares none. The repository is public, so until a licence is chosen the
+default position under copyright law applies: **all rights reserved**. Nobody
+may copy, modify or redistribute the code, and the "open data" and "MIT is
+fine" rules in the brief apply to what comes *in*, not to what goes *out*.
+
+The decision is the owner's and is deliberately not made here. The candidates
+worth weighing:
+
+| Option | What it means for this project |
+|---|---|
+| **No licence (all rights reserved)** | The current state. Protects a commercial product with a paid tier. Anyone may read the code; nobody may reuse it. Contributors have no clear terms |
+| **MIT** | Anyone may reuse the app, the model and the ledgers, including competitors, provided they keep the notice. Simplest for contributors; weakest for a product with Pro billing |
+| **AGPL-3.0** | Reuse is allowed but anyone running a modified copy as a service must publish their changes. Keeps a fork from quietly becoming a rival closed product; incompatible with the "no copyleft" rule this file applies to third-party code |
+| **Source-available (for example PolyForm Noncommercial)** | Readable and forkable for personal use; commercial use reserved to the owner |
+
+Whichever is chosen: add a `LICENSE` file at the root, set `"license"` in
+`package.json` to the matching SPDX identifier (or `"UNLICENSED"`), and
+record the choice here with the date.
+
+## Third-party licences
 
 Every library bundled into the shipped app, with its licence and where the
 code comes from. MIT and Apache-2.0 only — nothing copyleft goes into this

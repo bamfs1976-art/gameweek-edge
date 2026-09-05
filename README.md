@@ -14,10 +14,11 @@ signals, fixture context, news and optional third-party recommendations, each
 with its own provenance, timestamp and staleness. It is **read-only**.
 
 It works with **no credentials**: the official FPL feed and football-data.org
-are already proxied by this site. Five further providers (LetLetMe, an
-unofficial FPL GraphQL/REST wrapper, two Apify actors and World News) ship as
-complete adapters that stay switched off until their settings are supplied,
-and are **not verified against a live endpoint** from this repository.
+are already proxied by this site, and those two are the only sources this
+README vouches for. Further provider adapters exist in the code but are
+switched off and unverified; they are listed, with that status, under
+*Adapters not verified against a live endpoint* in
+[docs/ENRICHMENT.md](docs/ENRICHMENT.md).
 
 ```bash
 npm run enrich -- --health                       # what is configured
