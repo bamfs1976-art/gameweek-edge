@@ -59,6 +59,11 @@ signed-out visitors. Neither is guessed here.
    dark background recorded as `#10161c`.
 3. `BRAND.md` §9: feature names aligned to the NAV registry (see
    `docs/NAMING.md`).
+4. Light amber `#b9741a` → `#8f5a12` and light alert red `#cc3d39` →
+   `#c23632`, found by `scripts/check-a11y.mjs`: both are used as body-size
+   text and measured 3.3:1 and 4.3:1 on the darkest light surface, below the
+   4.5:1 that `BRAND.md` §6 requires. `BRAND.md` and `DESIGN.md` record the
+   new values; the dark theme was already compliant and is unchanged.
 
 Nothing else was recoloured. The navy-versus-green and terminal-versus-editorial
 questions are the owner's, and they are the first two questions in the report

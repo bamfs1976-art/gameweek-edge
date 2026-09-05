@@ -154,11 +154,14 @@ function tokens(block) {
       const r = contrast(t[ink], t[fill]);
       if (r < 4.5) note('contrast', `${theme}: ${ink} on ${fill} = ${r.toFixed(2)}:1 (needs 4.5)`);
     }
-    /* Filled buttons with literal white ink. */
-    for (const fill of ['--green', '--red']) {
+    /* Filled buttons: .btn-primary is white on --green in light and the
+       ink #0b1510 on the lifted green in dark (the [data-theme="dark"]
+       override); the danger button is white on --red in light only. */
+    const filled = theme === 'light' ? [['#ffffff', '--green'], ['#ffffff', '--red']] : [['#0b1510', '--green']];
+    for (const [ink, fill] of filled) {
       if (!t[fill]) continue;
-      const r = contrast('#ffffff', t[fill]);
-      if (r < 4.5) note('contrast', `${theme}: white text on ${fill} ${t[fill]} = ${r.toFixed(2)}:1 (needs 4.5; .btn-primary / .badge-red)`);
+      const r = contrast(ink, t[fill]);
+      if (r < 4.5) note('contrast', `${theme}: ${ink} text on ${fill} ${t[fill]} = ${r.toFixed(2)}:1 (needs 4.5; .btn-primary)`);
     }
   }
 }
@@ -194,7 +197,9 @@ function tokens(block) {
 
 /* ── 5. labels ──────────────────────────────────────────────────── */
 {
-  const src = html.replace(/<!--[\s\S]*?-->/g, '');
+  /* Both comment styles stripped: the app's script explains its own markup
+     in prose, and a <select> mentioned in a comment is not a control. */
+  const src = html.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
   const forIds = new Set([...src.matchAll(/<label[^>]*\bfor=["'\\]*([a-zA-Z0-9_-]+)/g)].map((m) => m[1]));
   for (const m of src.matchAll(/<(input|select|textarea)\b[^>]*>/g)) {
     const tag = m[0];

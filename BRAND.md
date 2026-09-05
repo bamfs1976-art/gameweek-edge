@@ -53,7 +53,7 @@ The brand rules it demonstrated still stand, because they are the rules for **an
 | Background | `#f4f6f8` | App/page background (light) |
 | Surface | `#ffffff` | Cards |
 | Dark background | `#10161c` | Dark theme base (`--bg` in `index.html`; `dev/test-tokens.mjs` measures against it) |
-| Amber | `#b9741a` | Caution / price-fall |
+| Amber | `#8f5a12` | Caution / price-fall. Deepened from `#b9741a` (3.3:1) so it clears 4.5:1 as text on every light surface; the dark theme keeps `#f0a63a` |
 | Red | `#cc3d39` | Risk / injury |
 | Blue | `#2f6dc7` · Purple `#7a5cc7` | Data accents |
 

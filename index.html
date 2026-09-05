@@ -183,7 +183,7 @@ try{
   --green-glow:rgba(31,157,92,.20);
 
   /* Accents */
-  --amber:#b9741a;
+  --amber:#8f5a12;      /* 5.09:1 on --surface-3 — was #b9741a, 3.32:1; it is text in 45 places */
   --amber-soft:rgba(185,116,26,.11);
   /* The paywall accent. Deliberately NOT --amber: a locked column heading and
      a lens chip are 12px semibold, so they need 4.5:1 against the surface they
@@ -213,7 +213,7 @@ try{
      a label under the AA floor. The fill still clears 3:1 against the canvas
      so the button keeps a visible edge. */
   --accent-cta:#a46615;--accent-cta-ink:#ffffff;  /* ink 4.68:1 */
-  --accent-alert:#cc3d39;
+  --accent-alert:#c23632; /* 4.79:1 — was #cc3d39, 4.31:1 */
   --accent-warn:#8a690e;   /* 4.51:1 — was #b58a12, 2.80:1. Carries text
                               (.dl-warn, .t-flag, .sig-v.warn), so 4.5 applies. */
 
@@ -376,7 +376,7 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
 /* ── UX pass: onboarding tour, jargon tooltips, density toggle ── */
 .jargon{border-bottom:1px dotted var(--text-3);cursor:help;position:relative}
-.jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright);outline:none}
+.jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright)}
 .jargon:hover::after,.jargon:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
   width:min(260px,72vw);background:var(--elevated,var(--surface-2));color:var(--text);border:1px solid var(--border);
   border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
@@ -1271,6 +1271,20 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
 @media(prefers-reduced-motion:reduce){.tb-updated::before{animation:none}}
 @media(max-width:560px){.tb-updated{display:none}}
+/* ── PHONE CHROME (under 560px) ────────────────────────────
+   The rail is the bottom tab bar (five simple-mode panels plus More —
+   buildBottomNav reads phoneNav()); the sidebar stays reachable as the
+   drawer behind the hamburger. The ticker chip holds one line. The
+   controls a phone does not need go: CSV export, and the ⌘K hint on a
+   keyboard the phone does not have. scripts/check-mobile.mjs holds all of
+   this. */
+@media(max-width:560px){
+  .gwchip{max-width:48vw}
+  .gwchip-dl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30vw}
+  #export-btn{display:none}
+  #tbm-search kbd{display:none}
+  .tb-crumb{display:none}
+}
 
 /* Search lives in the overflow menu (and ⌘K works everywhere). */
 
@@ -2254,7 +2268,9 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   box-shadow:0 24px 80px rgba(0,0,0,.55)}
 .cmdk-in{width:100%;padding:13px 14px;background:var(--surface);border:0;
   border-bottom:1px solid var(--border-2);color:var(--text);
-  font-family:var(--font-mono);font-size:14px;outline:none}
+  font-family:var(--font-mono);font-size:14px}
+/* The ring stays; it is drawn inside the panel so it is not clipped. */
+.cmdk-in:focus-visible{outline-offset:-3px}
 .cmdk-in::placeholder{color:var(--text-3)}
 .cmdk-list{max-height:min(50vh,420px);overflow-y:auto;padding:4px}
 .cmdk-row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
@@ -2716,7 +2732,12 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .tchip,.area-tab,.lensbtn{border-radius:var(--r-pill)}
 /* 44px touch minimum on the tab strips and lens pills. */
 @media(pointer:coarse){
-  .area-tab,.lensbtn,.seg-b{min-height:44px}
+  .area-tab,.lensbtn,.seg-b,.btn,.tchip,.tbm-row,.acct-btn,.theme-toggle,.hamburger,.ltf-browse,.mode-opt,.acct-link,.more-it,.nav-area-btn,.bn-item{min-height:44px}
+  /* 16px stops iOS zooming the page when a control takes focus; the width
+     cap stops a select sizing to its longest option and Safari shrinking
+     the whole layout viewport to fit it. */
+  input,select,textarea{font-size:16px;max-width:100%}
+  select{max-width:100%}
 }
 .seg{border-radius:var(--r-pill)}
 /* State transitions run on the one motion scale. */
@@ -2750,7 +2771,9 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 
 /* Motion discipline. */
 @media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  /* Duration alone does not stop an infinite loop repainting every frame:
+     the iteration count comes down with it, and smooth scrolling goes. */
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 </style>
 </head>
@@ -2802,7 +2825,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
     <!-- Footer -->
     <div class="sb-foot">
       <button class="acct-btn" id="acct-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>
         <span class="acct-label" id="acct-label">Sign in to sync</span>
       </button>
       <div class="sb-foot-row">
@@ -2835,7 +2858,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
     <header class="topbar">
       <div class="tb-left">
         <button class="hamburger" id="hamburger" aria-label="Open navigation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M3 6h18M3 12h18M3 18h18"/>
           </svg>
         </button>
@@ -2867,7 +2890,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <div class="tb-right">
         <span id="tb-updated" class="tb-updated" aria-live="polite"></span>
         <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
           </svg>
           <span class="si-label">Link team</span>
@@ -2878,24 +2901,24 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
         <!-- Overflow menu: the power tools that used to be a four-icon rail. -->
         <div class="tb-menu" id="tb-menu" hidden>
           <button class="tbm-row" id="tbm-search" aria-label="Search players, panels and actions">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             Search<kbd>⌘K</kbd>
           </button>
           <button class="tbm-row" id="density-btn" aria-label="Switch between the essentials and every tool">Depth: Essentials</button>
           <button class="tbm-row" id="refresh-btn" aria-label="Refresh data">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
             Refresh data
           </button>
           <button class="tbm-row" id="export-btn" aria-label="Export the current view as CSV">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/></svg>
             Export CSV
           </button>
           <button class="tbm-row" id="help-btn" aria-label="Help and glossary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.5"/><circle cx="12" cy="17" r=".5"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.5"/><circle cx="12" cy="17" r=".5"/></svg>
             Help &amp; glossary
           </button>
           <button class="tbm-row" id="feedback-btn" aria-label="Send feedback about this app">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/></svg>
             Send feedback
           </button>
         </div>
@@ -2919,7 +2942,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <div><div class="xpd-lab">Why this pick</div><div class="xpd-title" id="xpd-title">—</div></div>
       <div class="xpd-xp" id="xpd-xp">—</div>
       <button class="lr-x" onclick="closeXpDrawer()" aria-label="Close">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
     <ul class="xpd-list" id="xpd-list"></ul>
@@ -2966,7 +2989,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 
 <!-- Pull-to-refresh affordance (shown only in the native app) -->
 <div class="ptr-spinner" id="ptr-spinner" aria-hidden="true">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
 </div>
 
 <!-- Offline banner: announced politely; shown whenever connectivity drops -->
@@ -3143,7 +3166,7 @@ const ICON = {
 };
 
 function svg(path,extra){
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
+  return '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
     'stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+path+'</svg>';
 }
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -4280,8 +4303,8 @@ function openAccount(){
       '<h3 id="acct-title">Sign in to sync</h3>'+
       '<p class="modal-hint" style="margin:0 0 14px">Create an account to carry your team, watchlist and Pro status across devices. It’s optional — the app works without it.</p>'+
       (STORAGE_OK?'':'<div role="alert" style="background:rgba(245,165,36,.12);border:1px solid rgba(245,165,36,.4);color:var(--amber);border-radius:4px;padding:8px 10px;font-size:.8rem;line-height:1.35;margin:0 0 12px">This browser won’t remember your sign-in — you’re in Private Browsing or storage is blocked. Open <b>gameweekedge.co.uk</b> in a normal tab, or add it to your Home Screen, to stay signed in.</div>')+
-      '<input class="modal-in" id="acct-email" type="email" inputmode="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">'+
-      '<input class="modal-in" id="acct-pass" type="password" autocomplete="current-password" placeholder="Password (min 6 characters)">'+
+      '<input class="modal-in" id="acct-email" aria-label="Email" type="email" inputmode="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">'+
+      '<input class="modal-in" id="acct-pass" aria-label="Password" type="password" autocomplete="current-password" placeholder="Password (min 6 characters)">'+
       '<div class="modal-err" id="acct-err" role="alert"></div>'+
       '<div class="modal-row"><button class="btn btn-ghost" id="acct-create">Create account</button>'+
         '<button class="btn btn-primary" id="acct-signin">Sign in</button></div>'+
@@ -5102,6 +5125,20 @@ const DESTINATIONS_SIMPLE=[
   {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
 ];
 function destinations(){return simpleNav()?DESTINATIONS_SIMPLE:DESTINATIONS;}
+/* A phone (under 560px) gets the five simple-mode panels plus More in the
+   bottom bar whatever the display mode: the drawer behind the hamburger
+   still carries the mode's full rail. Re-evaluated on resize across the
+   breakpoint. */
+function phoneNav(){try{return window.matchMedia&&window.matchMedia('(max-width:560px)').matches;}catch(_){return false;}}
+let PHONE_NAV_LAST=null;
+function watchPhoneNav(){
+  try{
+    const mq=window.matchMedia('(max-width:560px)');
+    PHONE_NAV_LAST=mq.matches;
+    const on=()=>{if(mq.matches!==PHONE_NAV_LAST){PHONE_NAV_LAST=mq.matches;buildBottomNav();syncNav();}};
+    if(mq.addEventListener)mq.addEventListener('change',on);else if(mq.addListener)mq.addListener(on);
+  }catch(_){}
+}
 /* Which destination lights up for the panel you are on. */
 const DEST_AREA={home:'home',myteam:'squad',players:'players',live:'live',
   planner:'more',rivals:'leagues',matchcentre:'more',studio:'more',more:'more'};
@@ -5209,7 +5246,7 @@ function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   if(!bn)return;
   bn.innerHTML='';
-  destinations().forEach(d=>{
+  (phoneNav()?DESTINATIONS_SIMPLE:destinations()).forEach(d=>{
     const item=document.createElement('button');
     item.className='bn-item';
     item.dataset.dest=d.id;
@@ -5347,8 +5384,12 @@ function openPanel(panelId,opts){
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
 function syncNav(){
   const active=activeDest(currentPanel);
+  /* The bottom bar may be the phone list while the rail is the mode's list,
+     so each is matched against the destination set it actually renders. */
+  const p=PANELS[currentPanel];
+  const phoneActive=phoneNav()?(DEST_PANEL_SIMPLE[currentPanel]||(p&&p.areaId==='home'?'home':'more')):active;
   document.querySelectorAll('.nav-area-btn,.bn-item').forEach(btn=>{
-    const on=btn.dataset.dest===active;
+    const on=btn.dataset.dest===(btn.classList.contains('bn-item')?phoneActive:active);
     btn.classList.toggle('active',on);
     if(on)btn.setAttribute('aria-current','page');
     else btn.removeAttribute('aria-current');
@@ -5711,12 +5752,19 @@ function sparkPoints(values){
 function sparkColor(v,opts){
   return (opts&&opts.color)||(v[v.length-1]>=v[0]?'var(--green)':'var(--red)');
 }
+/* The text alternative a sparkline carries: its shape, in words. A
+   reader who cannot see the line still learns the trend and its ends. */
+function sparkLabel(v){
+  const a=v[0],z=v[v.length-1];
+  const dir=z>a?'rising':z<a?'falling':'flat';
+  return 'Trend over '+v.length+' points, '+dir+': from '+a+' to '+z+', low '+Math.min(...v)+', high '+Math.max(...v);
+}
 function sparkSvg(v,w,h,col){
   const mn=Math.min(...v),mx=Math.max(...v),sp=(mx-mn)||1;
   const X=i=>1+(i/(v.length-1))*(w-2);
   const Y=x=>h-2-((x-mn)/sp)*(h-4);
   const d=v.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x).toFixed(1)).join(' ');
-  return '<svg class="sparkline" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'+
+  return '<svg class="sparkline" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(sparkLabel(v))+'">'+
     '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'+
     '<circle cx="'+X(v.length-1).toFixed(1)+'" cy="'+Y(v[v.length-1]).toFixed(1)+'" r="1.8" fill="'+col+'"/></svg>';
 }
@@ -5727,7 +5775,7 @@ function spark(values,opts){
   const col=sparkColor(v,opts);
   if(!window.uPlot)return sparkSvg(v,w,h,col);
   return '<span class="sparkline spark-host" data-spark="'+esc(JSON.stringify(v))+
-    '" data-spark-col="'+esc(col)+'" style="width:'+w+'px;height:'+h+'px" aria-hidden="true"></span>';
+    '" data-spark-col="'+esc(col)+'" style="width:'+w+'px;height:'+h+'px" role="img" aria-label="'+esc(sparkLabel(v))+'"></span>';
 }
 /* Terminal palette, read from the CSS custom properties rather than
    duplicated here, so a theme change moves the charts with everything
@@ -14150,7 +14198,7 @@ async function hydrateTransfers(host){
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
-        '<select class="modal-in" id="rep-sel" style="max-width:280px;flex:1 1 200px"><option value="">Choose a player…</option>'+opts+'</select>'+
+        '<select class="modal-in" id="rep-sel" aria-label="Player to replace" style="max-width:280px;flex:1 1 200px"><option value="">Choose a player…</option>'+opts+'</select>'+
         '<div class="seg"><button class="seg-b on" data-mode="xp">Best points</button><button class="seg-b" data-mode="style">Closest style</button></div></div>'+
         '<div id="rep-out"></div></div>';
     }catch(_){}
@@ -14465,7 +14513,7 @@ async function hydrateWatchlist(host){
   }).join('');
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add a player</div>'+
-      '<input class="modal-in" id="watch-search" placeholder="Search players…" autocomplete="off">'+
+      '<input class="modal-in" id="watch-search" aria-label="Search players to add to your watchlist" placeholder="Search players…" autocomplete="off">'+
       '<div class="sugg" id="watch-sugg"></div></div>'+
     '<div class="card"><div class="card-title">Your watchlist'+(watch.length?' ('+watch.length+')':'')+'</div>'+
       (watch.length?rows
@@ -14527,7 +14575,7 @@ async function hydrateCompare(host){
     :'<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add up to four players side by side.</p></div>';
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add players ('+sel.length+'/4)</div>'+
-      '<input class="modal-in" id="cmp-search" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
+      '<input class="modal-in" id="cmp-search" aria-label="Search players to compare" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
       '<div class="sugg" id="cmp-sugg"></div></div>'+
     fixCard+
     '<div class="card">'+table+'</div>';
@@ -15609,7 +15657,7 @@ async function hydrateRivals(host){
   }));
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add a rival</div>'+
-      '<input class="modal-in" id="rival-in" inputmode="numeric" placeholder="Rival Manager ID"'+(rivals.length>=5?' disabled':'')+'>'+
+      '<input class="modal-in" id="rival-in" aria-label="Rival Manager ID" inputmode="numeric" placeholder="Rival Manager ID"'+(rivals.length>=5?' disabled':'')+'>'+
       '<div class="dl-sub" style="margin-top:8px">Track up to five rivals. Points gap is relative to your overall total.</div></div>'+
     '<div class="card'+(rivals.length?' mb-20':'')+'"><div class="card-title">Your rivals'+(rivals.length?' ('+rivals.length+'/5)':'')+'</div>'+
       (rivals.length?'<div class="dl"><div class="dl-row head"><span class="dl-grow">Rival · shared XI</span><span class="dl-col">Gap</span><span style="width:32px"></span></div>'+cards.join('')+'</div>'
@@ -17264,15 +17312,15 @@ async function hydrateArchive(host){
 
     '<div class="card mb-20"><div class="card-title">All-time records</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
-        '<select class="modal-in" id="arch-rec" style="flex:1 1 200px">'+recOpts+'</select>'+
-        '<select class="modal-in" id="arch-pos" style="flex:1 1 140px">'+posOpts+'</select>'+
+        '<select class="modal-in" id="arch-rec" aria-label="Record" style="flex:1 1 200px">'+recOpts+'</select>'+
+        '<select class="modal-in" id="arch-pos" aria-label="Position" style="flex:1 1 140px">'+posOpts+'</select>'+
       '</div><div class="dl" id="arch-recs"></div></div>'+
 
     '<div class="card"><div class="card-title">Compare two careers</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">Any two players who appeared in the last ten seasons, season by season.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
-        '<input class="modal-in" id="arch-a" list="arch-names" placeholder="First player" style="flex:1 1 160px">'+
-        '<input class="modal-in" id="arch-b" list="arch-names" placeholder="Second player" style="flex:1 1 160px">'+
+        '<input class="modal-in" id="arch-a" aria-label="First player" list="arch-names" placeholder="First player" style="flex:1 1 160px">'+
+        '<input class="modal-in" id="arch-b" aria-label="Second player" list="arch-names" placeholder="Second player" style="flex:1 1 160px">'+
       '</div><datalist id="arch-names">'+nameOpts+'</datalist>'+
       '<div id="arch-cmp"></div></div>';
 
@@ -17362,7 +17410,7 @@ function archMysteryRender(){
     foot='<div class="dl-sub" style="margin-top:10px">It was <b>'+esc(m.answer.n)+'</b>. A new player tomorrow.</div>';
   }else{
     foot='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
-      '<input class="modal-in" id="arch-guess" list="arch-names" placeholder="Name the player" style="flex:1 1 180px">'+
+      '<input class="modal-in" id="arch-guess" aria-label="Name the player" list="arch-names" placeholder="Name the player" style="flex:1 1 180px">'+
       '<button class="btn btn-primary btn-sm" onclick="archMysteryGuess()">Guess</button>'+
       '<button class="btn btn-ghost btn-sm" onclick="archMysteryReveal()">Give up</button></div>'+
       '<div class="dl-sub" style="margin-top:8px">A new clue after every wrong guess. Same player for everyone, changes at midnight UTC.</div>';
@@ -21389,7 +21437,7 @@ function renderSeasonSim(host,bundle,posCounts,ptsSum,n){
   /* Finish-position heatmap */
   const maxP=Math.max(...order.map(t=>Math.max(...posCounts[t])/n*100));
   const cell=22;const W=110+20*cell,H=order.length*cell+20;
-  let grid='<svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W,560)+'px;width:100%;height:auto">';
+  let grid='<svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W,560)+'px;width:100%;height:auto" role="img" aria-label="Finish-position heatmap: for each club, the share of simulated seasons ending in each league position; the table above carries the same figures">';
   order.forEach((t,r)=>{const y=r*cell;grid+='<text x="104" y="'+(y+cell-7)+'" text-anchor="end" style="font-size:var(--fs-min);fill:var(--text-2)">'+esc(t.length>12?t.slice(0,11)+'…':t)+'</text>';
     for(let p=0;p<20;p++){const v=posCounts[t][p]/n*100,f=Math.pow(v/maxP,0.55);
       grid+='<rect x="'+(110+p*cell)+'" y="'+y+'" width="'+(cell-2)+'" height="'+(cell-2)+'" rx="2" fill="var(--green-bright)" fill-opacity="'+(0.05+0.95*f).toFixed(3)+'"><title>'+esc(t)+' — '+(p+1)+': '+v.toFixed(1)+'%</title></rect>';}});
@@ -21415,7 +21463,7 @@ async function hydrateSeasonSim(host){
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Season Simulator</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Monte Carlo the whole season from the fitted model — title, European and relegation odds, the finish-position grid and run-in difficulty.</p>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-      '<select class="modal-in" id="ss-sims" style="max-width:150px"><option value="2000">2,000 seasons</option><option value="5000" selected>5,000 seasons</option><option value="10000">10,000 seasons</option><option value="25000">25,000 seasons</option></select>'+
+      '<select class="modal-in" id="ss-sims" aria-label="Number of simulations" style="max-width:150px"><option value="2000">2,000 seasons</option><option value="5000" selected>5,000 seasons</option><option value="10000">10,000 seasons</option><option value="25000">25,000 seasons</option></select>'+
       '<button class="btn btn-primary btn-sm" id="ss-run">Run simulation</button><span class="dl-sub" id="ss-status"></span></div>'+
     '<div class="prog" id="ss-prog" style="display:none;height:4px;background:var(--surface-3);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:0;background:var(--green)"></div></div>'+
     /* Pinning used to be a separate panel that told you to go and run this
@@ -21425,10 +21473,10 @@ async function hydrateSeasonSim(host){
     '<details class="ss-pin" style="margin-top:12px"><summary class="dl-sub" style="cursor:pointer">Pin results and re-run</summary>'+
       '<p class="dl-sub" style="margin:8px 0">Fix a win, draw or exact score, then re-run. Everything else is simulated as normal and the odds are shown against the unpinned baseline.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-        '<select class="modal-in" id="lsc-md" style="max-width:130px">'+mdOpts+'</select>'+
-        '<select class="modal-in" id="lsc-fx" style="max-width:200px"></select>'+
-        '<select class="modal-in" id="lsc-res" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
-        '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
+        '<select class="modal-in" id="lsc-md" aria-label="Match" style="max-width:130px">'+mdOpts+'</select>'+
+        '<select class="modal-in" id="lsc-fx" aria-label="Fixture" style="max-width:200px"></select>'+
+        '<select class="modal-in" id="lsc-res" aria-label="Result" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
+        '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" aria-label="Home goals" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" aria-label="Away goals" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
         '<button class="btn btn-ghost btn-sm" id="lsc-add">Add pin</button>'+
         '<button class="btn btn-ghost btn-sm" id="lsc-clear">Clear</button></div>'+
       '<div id="lsc-list" style="margin:10px 0"></div>'+
@@ -22889,7 +22937,7 @@ async function hydrateLineups(host){
     '<span class="dl-col">'+(e.chance_of_playing_next_round==null?'—':e.chance_of_playing_next_round+'%')+'</span></div>').join('');
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Club</div>'+
-      '<select class="modal-in" id="lineup-team" style="max-width:280px">'+opts+'</select></div>'+
+      '<select class="modal-in" id="lineup-team" aria-label="Team" style="max-width:280px">'+opts+'</select></div>'+
     (proj
       ? '<div class="grid g-sb mb-20">'+
           '<div class="card"><div class="card-title">'+crest(b,t.id,16)+' '+esc(t.name)+' — projected XI '+
@@ -23640,8 +23688,8 @@ async function hydrateDraft(host){
         '<div class="dl-sub" style="margin-top:10px">Tap a player for details or to remove. 2 GK / 5 DEF / 5 MID / 3 FWD · £100.0m · max 3 per club. Over-budget drafting is allowed, but the draft only saves when it’s legal.</div></div>'+
       '<div class="card"><div class="card-title">Player pool</div>'+
         '<div class="pl-filters" style="margin-bottom:8px">'+
-          '<input id="draft-q" class="modal-in" placeholder="Search players…" autocomplete="off" style="flex:2 1 140px">'+
-          '<select id="draft-pos" class="modal-in" style="flex:1 1 110px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
+          '<input id="draft-q" aria-label="Search players" class="modal-in" placeholder="Search players…" autocomplete="off" style="flex:2 1 140px">'+
+          '<select id="draft-pos" aria-label="Position filter" class="modal-in" style="flex:1 1 110px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
         '</div>'+
         '<div class="pl-filters" style="margin-bottom:8px;gap:14px">'+
           '<label class="dl-sub" style="display:flex;flex-direction:column;gap:2px;flex:1 1 150px;margin:0"><span>Max price: <b id="draft-price-v">Any</b></span>'+
@@ -23671,7 +23719,8 @@ async function hydrateDraft(host){
     /* scrollIntoView, because on a phone the pool is a full screen below the
        pitch and a silently-filtered list you cannot see reads as nothing
        having happened. Guarded: jsdom and older Safari lack the options form. */
-    if(pool&&pool.scrollIntoView){ try{ pool.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ pool.scrollIntoView(); } }
+    const motionOk=!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if(pool&&pool.scrollIntoView){ try{ pool.scrollIntoView({behavior:motionOk?'smooth':'auto',block:'start'}); }catch(_){ pool.scrollIntoView(); } }
     const q=host.querySelector('#draft-q');
     if(q&&window.matchMedia&&window.matchMedia('(min-width:900px)').matches) q.focus();
   }
@@ -24584,6 +24633,7 @@ function init(){
   try{document.body.setAttribute('data-mode',displayMode());}catch(_){}
   buildNav();
   buildBottomNav();
+  watchPhoneNav();
   sparkWatch();
   applyTheme(storedTheme()||'light');
   const home=homePanel();

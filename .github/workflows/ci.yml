@@ -90,6 +90,18 @@ jobs:
       - name: Share cards say what the app says
         run: node scripts/check-share.mjs
 
+      # WCAG 2.2 AA, held statically: focus rings, sparkline text
+      # alternatives, token contrast in both themes, reduced motion, and a
+      # name on every form control. Counts and exemptions in docs/A11Y_AUDIT.md.
+      - name: Accessibility guard
+        run: node scripts/check-a11y.mjs
+
+      # The phone: share sheet not bare anchors, safe areas, the 560px chrome,
+      # 16px controls with a width cap, 44px targets. Every one of these
+      # failed silently on an iPhone before it was an assertion.
+      - name: Mobile guard
+        run: node scripts/check-mobile.mjs
+
       # Same split, same reason, for the vendored FPL OpenAPI spec. `npm test`
       # already proves the committed copy is intact and parses; what it cannot
       # prove offline is that the pin still describes something real. This

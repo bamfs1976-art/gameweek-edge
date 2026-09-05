@@ -545,8 +545,9 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      DESTINATIONS_SIMPLE (Simple) — one list per mode, never two lists per
      bar. dev/test-simplenav.mjs proves the labels match in the browser. */
   ok(/const DESTINATIONS=\[/.test(html) && /const DESTINATIONS_SIMPLE=\[/.test(html)
-    && (html.match(/destinations\(\)\.forEach/g) || []).length === 2,
-    'the sidebar and bottom bar render the one shared destination list');
+    && /nav\.innerHTML='';\s*destinations\(\)\.forEach/.test(html)
+    && /bn\.innerHTML='';\s*\(phoneNav\(\)\?DESTINATIONS_SIMPLE:destinations\(\)\)\.forEach/.test(html),
+    'the sidebar and bottom bar render the one shared destination list (the bar takes the phone list under 560px)');
   ok(/if\(!p\|\|!canSeePanel\(p\)\)return '';/.test(html),
     'the More index is filtered by the gate');
   ok(/function navVisibleArea\(a\)\{\s*if\(!canSeeArea\(a\)\)return false;/.test(html),
