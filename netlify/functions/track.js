@@ -1,5 +1,5 @@
 /* Gameweek Edge — first-party analytics sink (Netlify Function)
-   POST { event, props?, anon_id? } -> 204. Inserts a row into
+   POST { event, props?, anon_id?, src? } -> 204. Inserts a row into
    gwedge_events via the service-role key. No third-party scripts, no
    cookies: the client sends a random persisted anon id so funnels can
    be counted without identifying anyone.
@@ -27,6 +27,14 @@ exports.handler = async (event) => {
   if (b.props && typeof b.props === 'object') {
     const s = JSON.stringify(b.props);
     if (s.length <= 2000) props = b.props;
+  }
+  /* Channel attribution. The client sends the ?src= tag this device first
+     arrived with; it lands in props.src so the weekly view in
+     supabase/gwedge_attribution.sql can group sign-ups and Pro conversions
+     by channel. Allow-listed, so a stray value cannot become a column. */
+  const SRC = ['x', 'reddit', 'threads', 'bluesky', 'linkedin', 'email', 'creator', 'seo'];
+  if (typeof b.src === 'string' && SRC.includes(b.src)) {
+    props = Object.assign({}, props || {}, { src: b.src });
   }
 
   const row = {

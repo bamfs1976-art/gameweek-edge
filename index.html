@@ -39,6 +39,21 @@ try{
   try{ ls = window.localStorage; ls.setItem('ge-probe','1'); ls.removeItem('ge-probe'); }
   catch(_){ return; }
 
+  /* ── CHANNEL ATTRIBUTION ──
+     A link tagged ?src=x|reddit|threads|bluesky|linkedin|email|creator|seo
+     records where this device first came from. Captured HERE, ahead of the
+     /welcome redirect below, because that redirect drops the query string
+     and the newcomer it sends to the pitch is exactly the visitor the tag
+     was for. First visit wins: a later tagged link does not rewrite it.
+     track() attaches it to every event; the sign-up and Pro-conversion
+     events are what the weekly view in supabase/ reads. */
+  try{
+    var sm = location.search.match(/[?&]src=([a-z]+)/);
+    if(sm && /^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(sm[1]) && !ls.getItem('ge-src')){
+      ls.setItem('ge-src', sm[1]);
+    }
+  }catch(_){}
+
   function isNewcomer(){
     /* An installed PWA or the native shell is by definition a return visit. */
     try{
@@ -3290,11 +3305,16 @@ function anonId(){
     return a;
   }catch(_){return 'anon';}
 }
+/* The channel this device first arrived from (?src=…), or null. Set once by
+   the head script; never rewritten. */
+function attribSrc(){try{return localStorage.getItem('ge-src')||null;}catch(_){return null;}}
 function track(event,props){
   try{
+    const body={event:String(event),props:props||null,anon_id:anonId()};
+    const src=attribSrc();if(src)body.src=src;
     fetch(apiBase()+'/api/track',{method:'POST',keepalive:true,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({event:String(event),props:props||null,anon_id:anonId()})
+      body:JSON.stringify(body)
     }).catch(()=>{});
   }catch(_){/* analytics must never break the app */}
 }
@@ -4308,6 +4328,7 @@ async function doAuth(mode){
       const {data,error}=await sb.auth.signUp({email,password:pass,
         options:{emailRedirectTo:location.origin}});
       if(error)throw error;
+      track('sign_up');
       if(data.session){closeAccount();}                 // confirmations off
       else acctErr('Account created — check your email to confirm, then sign in.');
     }
@@ -14343,6 +14364,9 @@ async function hydrateAlerts(host){
   const prefs=loadAlertPrefs();
   const toggle=(k,label)=>'<label class="alert-tog"><span>'+label+'</span>'+
     '<input type="checkbox" data-pref="'+k+'"'+(prefs[k]!==false?' checked':'')+'></label>';
+  /* Opt-in: off until switched on, on the device and on the server. */
+  const toggleOff=(k,label)=>'<label class="alert-tog"><span>'+label+'</span>'+
+    '<input type="checkbox" data-pref="'+k+'"'+(prefs[k]===true?' checked':'')+'></label>';
 
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Push alerts</div>'+
@@ -14367,6 +14391,7 @@ async function hydrateAlerts(host){
       toggle('scorer','Your players scoring or assisting')+
       toggle('bonus','Bonus swings on your players')+
       toggle('defcon','Your players hitting the DEFCON +2')+
+      toggleOff('captainout','Captain not starting — once the confirmed XI is in and he is not in it (off by default)')+
       '<div class="dl-sub" style="margin:12px 0 8px">Around the deadline</div>'+
       toggle('price','Price changes')+
       toggle('pricerisk','Evening warning: your players likely to move tonight')+

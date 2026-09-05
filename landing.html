@@ -10,6 +10,14 @@
    and it keeps the promise that the pitch is shown once, not on every
    visit. See docs/FIRST_RUN_UX.md §4.1. */
 try{ localStorage.setItem('ge-visited','1'); }catch(_){}
+/* Channel attribution: a ?src= tag on a link straight to /welcome is kept
+   the same way index.html keeps one on a link to /. First visit wins. */
+try{
+  var sm = location.search.match(/[?&]src=([a-z]+)/);
+  if(sm && /^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(sm[1]) && !localStorage.getItem('ge-src')){
+    localStorage.setItem('ge-src', sm[1]);
+  }
+}catch(_){}
 </script>
 <title>Gameweek Edge — the calm, clear edge for FPL managers</title>
 <meta name="description" content="Gameweek Edge is the smart companion for Fantasy Premier League managers: predicted points, an AI scout, a Match Centre and a per-gameweek debrief that tells you what your captain cost you — the app that tells you what to do next. Ad-free, from the official data.">
