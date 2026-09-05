@@ -2707,6 +2707,16 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 /* State transitions run on the one motion scale. */
 .btn,.area-tab,.nav-area-btn,.bn-item,.tchip{transition-duration:var(--t-state)}
 
+/* Display-mode switch (account modal). */
+.mode-switch{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--border)}
+.mode-switch-h{font-size:var(--fs-min);font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+.mode-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-radius:var(--r-md);padding:4px}
+.mode-opt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:10px 12px;min-height:44px;border-radius:var(--r-sm)}
+.mode-opt b{font-size:.86rem;color:var(--text)}
+.mode-opt span{font-size:.74rem;color:var(--text-2);line-height:1.3}
+.mode-seg .seg-b.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.mode-opt.on b{color:var(--tab-on)}
+
 /* Motion discipline. */
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -4149,6 +4159,19 @@ async function syncOnLogin(){
     }
     if(prof&&prof.tier){try{localStorage.setItem('ge-tier',prof.tier);}catch(_){}}
 
+    /* Display mode: its own query, so a project that has not run the
+       display_mode migration cannot take the tier and Manager ID sync down
+       with it. Local wins where the device has chosen; otherwise the cloud
+       value applies, and a device with no choice pushes nothing up. */
+    try{
+      const {data:dm}=await sb.from('gwedge_profiles').select('display_mode').eq('user_id',id).maybeSingle();
+      const cloud=dm&&dm.display_mode;
+      let local=null;try{local=localStorage.getItem('ge-mode');}catch(_){}
+      if(DISPLAY_MODES.indexOf(cloud)>=0){CLOUD_MODE=cloud;
+        if(!local)setDisplayMode(cloud,{silent:true,quiet:true});}
+      else if(DISPLAY_MODES.indexOf(local)>=0)cloudProfile({display_mode:local});
+    }catch(_){}
+
     /* Site owner: unlock full access and persist it to the cloud profile. */
     if(SESSION&&await isOwner(SESSION.user.email)){
       window.GE_OWNER=true;
@@ -4194,9 +4217,11 @@ function openAccount(){
       '<h3 id="acct-title">'+(window.GE_OWNER?'Owner — full access':'You’re signed in')+'</h3>'+
       '<p style="text-align:center;color:var(--text-2);font-size:.86rem;margin-bottom:6px">'+esc(SESSION.user.email||'')+'</p>'+
       '<p class="modal-hint" style="text-align:center;margin:0 0 16px">'+(window.GE_OWNER?'Every Pro feature is unlocked on this account, on every device you sign in on.':'Your Manager ID, tier, watchlist and rivals sync across every device you sign in on.')+'</p>'+
+      modeSwitchHtml()+
       '<button class="btn btn-primary" style="width:100%;justify-content:center" id="acct-signout">Sign out</button>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-acct-close>Close</button></div>';
     document.getElementById('acct-signout').addEventListener('click',doSignOut);
+    wireModeSwitch(body);
   }else{
     body.innerHTML=
       '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
@@ -4208,7 +4233,9 @@ function openAccount(){
       '<div class="modal-err" id="acct-err" role="alert"></div>'+
       '<div class="modal-row"><button class="btn btn-ghost" id="acct-create">Create account</button>'+
         '<button class="btn btn-primary" id="acct-signin">Sign in</button></div>'+
-      '<button class="acct-link" id="acct-reset">Forgot password?</button>';
+      '<button class="acct-link" id="acct-reset">Forgot password?</button>'+
+      modeSwitchHtml();
+    wireModeSwitch(body);
     document.getElementById('acct-signin').addEventListener('click',()=>doAuth('in'));
     document.getElementById('acct-create').addEventListener('click',()=>doAuth('up'));
     document.getElementById('acct-reset').addEventListener('click',doReset);
@@ -4217,6 +4244,25 @@ function openAccount(){
   document.getElementById('acct-modal').classList.add('show');focusModal('acct-modal');
 }
 function closeAccount(){document.getElementById('acct-modal').classList.remove('show');}
+/* The display-mode setting, as a two-option control. Lives in the account
+   modal (signed in or out) and on the More index. */
+function modeSwitchHtml(){
+  const m=displayMode();
+  const opt=(v,label,why)=>'<button type="button" class="seg-b mode-opt'+(m===v?' on':'')+'" data-mode-opt="'+v+'" aria-pressed="'+(m===v?'true':'false')+'">'+
+    '<b>'+label+'</b><span>'+why+'</span></button>';
+  return '<div class="mode-switch" role="group" aria-label="Display mode">'+
+    '<div class="mode-switch-h">Display mode</div>'+
+    '<div class="seg mode-seg">'+opt('simple','Simple','Five panels in the rail; everything else under More')+
+      opt('terminal','Terminal','Every panel, the full app')+'</div>'+
+    '<p class="modal-hint" style="margin:6px 0 12px">Saved on this device'+(SESSION?' and on your account':'; sign in to carry it across devices')+'.</p></div>';
+}
+function wireModeSwitch(root){
+  Array.prototype.forEach.call(root.querySelectorAll('[data-mode-opt]'),btn=>
+    btn.addEventListener('click',()=>{
+      setDisplayMode(btn.dataset.modeOpt);
+      root.querySelectorAll('[data-mode-opt]').forEach(x=>{const on=x===btn;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});
+    }));
+}
 function acctErr(m){const e=document.getElementById('acct-err');if(e)e.textContent=m;}
 /* Turn Supabase auth errors into plain, calm English. Rate-limit / quota
    errors (HTTP 429) are the common one during heavy use — say what to do,
@@ -4440,13 +4486,56 @@ function canSeeArea(a){
    unreachable. Getting that the wrong way round would turn a decluttered nav
    into a broken one. */
 const SIMPLE_PANELS=new Set([
-  'dashboard','myweek','gw-actions','gwdebrief',  /* Home — what do I do this week */
-  'squad','captain','transfers','gwreport',       /* My Team */
-  'allplayers','price','news',                    /* Players */
-  'fixtures',                                     /* Planner */
-  'liverank'                                      /* Live */
+  'myweek','dashboard',                           /* This Gameweek — the home destination */
+  'squad','transfers','captain',                  /* My Team */
+  'price'                                         /* Players */
 ]);
-function simpleNav(){return getDensity()==='beginner';}
+/* ── DISPLAY MODE: simple or terminal ─────────────────────
+   Two values, persisted per user: `ge-mode` on the device first, then the
+   display_mode column on gwedge_profiles once signed in. New sign-ups and
+   signed-out visitors default to simple. Terminal is the full app, exactly
+   as it was before the setting existed.
+
+   Simple mode is a NAVIGATION filter, like the density-driven one it
+   replaces: the left rail and the bottom tab bar show five panels plus
+   More, and the area tab strips shrink to the same shortlist. Every panel
+   stays reachable through the More index, the command palette, deep links
+   and push notifications, because openPanel never consults this. */
+const DISPLAY_MODES=['simple','terminal'];
+/* The resolver is pure so dev/test-core.mjs can hold the rule directly:
+   the device's own choice wins, then the cloud profile, then simple. */
+function resolveDisplayMode(local,cloud){
+  if(DISPLAY_MODES.indexOf(local)>=0)return local;
+  if(DISPLAY_MODES.indexOf(cloud)>=0)return cloud;
+  return 'simple';
+}
+let CLOUD_MODE=null;   /* gwedge_profiles.display_mode, read on sign-in */
+function displayMode(){
+  let local=null;try{local=localStorage.getItem('ge-mode');}catch(_){}
+  return resolveDisplayMode(local,CLOUD_MODE);
+}
+function displayModeLabel(m){return m==='terminal'?'Terminal':'Simple';}
+function setDisplayMode(m,opts){
+  opts=opts||{};
+  if(DISPLAY_MODES.indexOf(m)<0)return;
+  try{localStorage.setItem('ge-mode',m);}catch(_){}
+  if(!opts.silent&&typeof cloudProfile==='function')cloudProfile({display_mode:m});
+  try{track('display_mode',{mode:m});}catch(_){}
+  try{document.body.setAttribute('data-mode',m);}catch(_){}
+  if(opts.quiet)return;
+  try{buildNav();buildBottomNav();syncNav();}catch(_){}
+  try{if(typeof openPanel==='function')openPanel(currentPanel,{keepView:true});}catch(_){}
+  try{toast(m==='terminal'?'Terminal mode: every panel in the rail':'Simple mode: five panels, everything else under More');}catch(_){}
+}
+/* A device that already carried a linked team before this setting existed
+   is not a first session: it keeps the full app it had. Runs once. */
+function migrateDisplayMode(){
+  try{
+    if(localStorage.getItem('ge-mode'))return;
+    if(getMid())localStorage.setItem('ge-mode','terminal');
+  }catch(_){}
+}
+function simpleNav(){return displayMode()==='simple';}
 /* Visible in the NAV — a narrower question than canSeePanel's "does this
    exist for you". Pro panels drop out of simple mode entirely: a lock is a
    good advertisement to someone who has found their feet, and a wall to
@@ -4939,9 +5028,28 @@ const DESTINATIONS=[
   {id:'leagues',label:'Leagues',icon:'trophy',go:()=>openPanel('leagues')},
   {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
 ];
+/* Simple mode: five panels and More. "This Gameweek" is a destination
+   rather than a panel — it lands on My Week once a team is linked and on
+   Overview (or the first-run flow) before then, the same rule Home uses. */
+const DESTINATIONS_SIMPLE=[
+  {id:'home',label:'This Gameweek',icon:'target',go:()=>openPanel(homePanel())},
+  {id:'p-squad',label:'My Squad',icon:'squad',go:()=>openPanel('squad')},
+  {id:'p-transfers',label:'Transfer Planner',icon:'swap',go:()=>openPanel('transfers')},
+  {id:'p-captain',label:'Captaincy Lab',icon:'star',go:()=>openPanel('captain')},
+  {id:'p-price',label:'Price Predictor',icon:'arrows',go:()=>openPanel('price')},
+  {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
+];
+function destinations(){return simpleNav()?DESTINATIONS_SIMPLE:DESTINATIONS;}
 /* Which destination lights up for the panel you are on. */
 const DEST_AREA={home:'home',myteam:'squad',players:'players',live:'live',
   planner:'more',rivals:'leagues',matchcentre:'more',studio:'more',more:'more'};
+const DEST_PANEL_SIMPLE={myweek:'home',dashboard:'home',squad:'p-squad',transfers:'p-transfers',
+  captain:'p-captain',price:'p-price'};
+function activeDest(panelId){
+  const p=PANELS[panelId];if(!p)return 'more';
+  if(simpleNav())return DEST_PANEL_SIMPLE[panelId]||(p.areaId==='home'?'home':'more');
+  return DEST_AREA[p.areaId]||'more';
+}
 
 /* ── THE MORE INDEX ──────────────────────────────────────
    A grouped, self-describing map of everything beyond the four main
@@ -4975,6 +5083,7 @@ const MORE_GROUPS=[
     ['news','Injury and press-conference news'],
     ['blog','The Wire — what the model is seeing']]},
   {label:'Account & help',items:[
+    ['__mode','Simple shows five panels; Terminal shows every panel in the rail'],
     ['__account','Sign in, sync and manage your plan'],
     ['accountability','The model, graded in public'],
     ['glossary','Every term, in plain English'],
@@ -4984,6 +5093,9 @@ const MORE_GROUPS=[
 async function hydrateMore(host){
   const groups=MORE_GROUPS.map(g=>{
     const rows=g.items.map(([id,why])=>{
+      if(id==='__mode'){const m=displayMode();
+        return moreRow((m==='simple'?'Switch to Terminal mode':'Switch to Simple mode'),why,
+          'setDisplayMode(\''+(m==='simple'?'terminal':'simple')+'\')','grid',false);}
       if(id==='__account')return moreRow('Account & settings',why,'openAccount()','users',false);
       if(id==='__feedback')return moreRow('Send feedback',why,'openFeedbackModal()','question',false);
       const p=PANELS[resolvePanel(id)];
@@ -5021,7 +5133,7 @@ function buildNav(){
   const nav=document.getElementById('sb-nav');
   if(!nav)return;
   nav.innerHTML='';
-  DESTINATIONS.forEach(d=>{
+  destinations().forEach(d=>{
     const btn=document.createElement('button');
     btn.className='nav-area-btn';
     btn.dataset.dest=d.id;
@@ -5035,7 +5147,7 @@ function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   if(!bn)return;
   bn.innerHTML='';
-  DESTINATIONS.forEach(d=>{
+  destinations().forEach(d=>{
     const item=document.createElement('button');
     item.className='bn-item';
     item.dataset.dest=d.id;
@@ -5172,9 +5284,9 @@ function openPanel(panelId,opts){
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
 function syncNav(){
-  const activeDest=DEST_AREA[PANELS[currentPanel].areaId]||'more';
+  const active=activeDest(currentPanel);
   document.querySelectorAll('.nav-area-btn,.bn-item').forEach(btn=>{
-    const on=btn.dataset.dest===activeDest;
+    const on=btn.dataset.dest===active;
     btn.classList.toggle('active',on);
     if(on)btn.setAttribute('aria-current','page');
     else btn.removeAttribute('aria-current');
@@ -23584,6 +23696,7 @@ function cmdkEntries(q){
   const verbs=[
     {label:'Link your FPL team',sub:'action',icon:'squad',aliases:['connect','manager id','team id','sign in'],run:()=>openMidModal()},
     {label:'Toggle light / dark theme',sub:'action',icon:'sun',aliases:['dark mode','light mode','appearance'],run:()=>toggleTheme()},
+    {label:'Switch display mode (Simple / Terminal)',sub:'action',icon:'grid',aliases:['simple mode','terminal mode','display mode','more panels','fewer panels'],run:()=>setDisplayMode(displayMode()==='simple'?'terminal':'simple')},
     {label:'Refresh data',sub:'action',icon:'rotate',aliases:['reload','update'],run:()=>location.reload()},
     {label:'Export current view as CSV',sub:'action',icon:'arrows',aliases:['download','csv','spreadsheet'],run:()=>{const b=document.getElementById('export-btn');b&&b.click();}},
     {label:'Keyboard shortcuts',sub:'action',icon:'spark',aliases:['keys','hotkeys','cheatsheet'],run:()=>{document.getElementById('kbd-overlay').hidden=false;}}
@@ -24182,6 +24295,8 @@ function initPullToRefresh(){
    Deep links (hash / ?panel=) still override both. */
 function homePanel(){return getMid()?'myweek':'dashboard';}
 function init(){
+  migrateDisplayMode();
+  try{document.body.setAttribute('data-mode',displayMode());}catch(_){}
   buildNav();
   buildBottomNav();
   sparkWatch();

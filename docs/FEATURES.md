@@ -42,10 +42,24 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 ## 2. Site map
 
 Navigation is **7 areas** (plus an owner‑only Studio) holding **36 panels** —
-in the **Everything** view. The **Simple** view, which is the default until a
-team is linked, narrows the nav to **5 areas and 12 panels** (`SIMPLE_PANELS`)
-and drops every Pro‑locked entry; it filters navigation only, so deep links and
-the command palette still reach everything. See `docs/FIRST_RUN_UX.md`.
+in **Terminal** mode. The app has two **display modes**, persisted per user
+(`ge-mode` on the device, `gwedge_profiles.display_mode` once signed in):
+
+- **Simple** — the default for signed-out visitors and new sign-ups. The left
+  rail and the bottom tab bar show five panels plus More: **This Gameweek**
+  (lands on My Week once a team is linked, Overview before then), **My Squad**,
+  **Transfer Planner**, **Captaincy Lab**, **Price Predictor**. Area tab
+  strips shrink to the same shortlist (`SIMPLE_PANELS`).
+- **Terminal** — every panel, exactly as before the setting existed. A device
+  that already carried a linked team when the setting shipped keeps Terminal.
+
+Simple mode filters navigation only: the More index, the command palette, deep
+links and push notifications reach every panel in both modes, and nothing is
+deleted. The toggle lives in Account & settings and at the top of the More
+index; `resolveDisplayMode()` is unit-tested in `dev/test-core.mjs` and the
+rail contract in `dev/test-simplenav.mjs`. The older **Depth** control
+(Essentials / Everything) is unchanged and decides how much a page shows, not
+how many pages there are. See `docs/FIRST_RUN_UX.md`.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
