@@ -703,8 +703,48 @@ section('the app moves off a gameweek that has been played');
      'once FPL flags it finished there is nothing to chase');
   ok(core.bootBehind(staleIdx, [fx(10, 1), fx(11, 1, { finished: true })]) === false,
      'a gameweek with a match still to finish is not behind, it is in progress');
-  ok(core.bootBehind({ cur: evs[0], events: evs }, [fx(20, 2)]) === false,
+  ok(core.bootBehind({ cur: evs[0], events: evs }, [fx(20, 2, { started: false })]) === false,
      'and no fixtures for that gameweek is no evidence either way');
+
+  /* ── the second hole: the football moved on WITHOUT us ─────────────
+     Reported on the Saturday morning of GW3, whose Friday-night match had
+     been played and scored: the app was still showing GW2.
+
+     FPL parks is_current on a gameweek until the NEXT one's deadline, so
+     from the moment GW2 settled until GW3 kicked off, bootstrap said
+     is_current GW2, finished true. The check above returns false on its
+     first line for that whole stretch, and the anchor had already moved
+     to GW3 days earlier so it had nothing to report either. Neither
+     question could see it.
+
+     And nothing downstream could either: boot() returns the in-memory
+     index before it reaches cached(), so BOOT_TTL never gets a look at
+     it. A tab left open across the deadline stayed on GW2 indefinitely. */
+  const settled = ev(2, { finished: true, data_checked: true, is_current: true });
+  const nextUp = ev(3, { deadline_time: isoAt(NOW + 1 * HOUR) });
+  const liveIdx = { cur: settled, upcoming: nextUp, events: [settled, nextUp] };
+
+  ok(core.bootBehind(liveIdx, [fx(30, 3, { started: true })]) === true,
+     'a later gameweek that has kicked off means is_current has moved and this copy has not');
+  ok(core.bootBehind(liveIdx, [fx(30, 3, { started: true, finished: true })]) === true,
+     'and a later gameweek already played is the same answer, more so');
+  ok(core.bootBehind(liveIdx, [fx(30, 3, { started: false })]) === false,
+     'but a later gameweek that has NOT kicked off is the ordinary week between two rounds');
+  ok(core.bootBehind(liveIdx, []) === false,
+     'and with no fixtures at all there is nothing to conclude');
+
+  /* The steady state this must not disturb: once the refetch has happened,
+     bootstrap agrees with the football and the question stops firing —
+     otherwise it would re-download the largest payload the app has every
+     ten minutes for the length of a gameweek. */
+  const fresh = ev(3, { is_current: true });
+  ok(core.bootBehind({ cur: fresh, upcoming: fresh, events: [fresh] },
+       [fx(30, 3, { started: true, finished: true }), fx(31, 3, { started: false })]) === false,
+     'a gameweek in progress under its OWN current flag is not behind anything');
+
+  /* The earlier hole must stay closed. */
+  ok(core.bootBehind(staleIdx, played) === true,
+     'and the played-out-but-unfinished case still answers yes');
 
   /* ── gwPhase: a LIVE badge needs evidence ────────────────────────── */
   const bOf = (e) => ({ events: e, cur: e.find((x) => x.is_current) || e[0] });
