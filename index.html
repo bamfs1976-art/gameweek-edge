@@ -5120,12 +5120,15 @@ const DESTINATIONS=[
    rather than a panel — it lands on My Week once a team is linked and on
    Overview (or the first-run flow) before then, the same rule Home uses. */
 const DESTINATIONS_SIMPLE=[
-  {id:'home',label:'This Gameweek',icon:'target',go:()=>openPanel(homePanel())},
-  {id:'p-squad',label:'My Squad',icon:'squad',go:()=>openPanel('squad')},
-  {id:'p-transfers',label:'Transfer Planner',icon:'swap',go:()=>openPanel('transfers')},
-  {id:'p-captain',label:'Captaincy Lab',icon:'star',go:()=>openPanel('captain')},
-  {id:'p-price',label:'Price Predictor',icon:'arrows',go:()=>openPanel('price')},
-  {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
+  /* `short` is what the bottom tab bar prints: five full panel names do
+     not fit a phone width without ellipsis, and "Transfer Pl…" is worse
+     than a short form. The rail keeps the full label. */
+  {id:'home',label:'This Gameweek',short:'Gameweek',icon:'target',go:()=>openPanel(homePanel())},
+  {id:'p-squad',label:'My Squad',short:'Squad',icon:'squad',go:()=>openPanel('squad')},
+  {id:'p-transfers',label:'Transfer Planner',short:'Transfers',icon:'swap',go:()=>openPanel('transfers')},
+  {id:'p-captain',label:'Captaincy Lab',short:'Captaincy',icon:'star',go:()=>openPanel('captain')},
+  {id:'p-price',label:'Price Predictor',short:'Prices',icon:'arrows',go:()=>openPanel('price')},
+  {id:'more',label:'More',short:'More',icon:'more',go:()=>openPanel('more')}
 ];
 function destinations(){return simpleNav()?DESTINATIONS_SIMPLE:DESTINATIONS;}
 /* A phone (under 560px) gets the five simple-mode panels plus More in the
@@ -5256,7 +5259,7 @@ function buildBottomNav(){
     item.setAttribute('aria-label',d.label);
     item.innerHTML='<span class="bn-ic">'+(d.icon==='more'?MORE_ICON:svg(ICON[d.icon]))+
       (d.id==='live'?'<span class="live-ping" aria-hidden="true"></span>':'')+'</span>'+
-      '<span class="bn-label">'+d.label+'</span>';
+      '<span class="bn-label">'+(d.short||d.label)+'</span>';
     item.addEventListener('click',d.go);
     bn.appendChild(item);
   });
@@ -19923,9 +19926,15 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
           .slice().sort((a,c)=>a.event-c.event)
       : null;
     if(rows&&gw!=null){
-      /* Scored: FPL's own cumulative figure for this very week. */
+      /* Scored: FPL's own cumulative figure for this very week. ONLY once
+         the gameweek is finished: FPL adds the current gameweek's row to
+         the history at the deadline and updates it as the round runs, so
+         its presence does not mean the week is scored. Trusting it mid-
+         round printed a cumulative total from the last history fetch
+         beside a live gameweek score summed minutes ago — 182 total with
+         32 for the week, while FPL's own table already said 211. */
       const mine=rows.filter(r=>Number(r.event)===gw)[0];
-      if(mine)return {value:mine.total_points,live:false};
+      if(mine&&!T.live)return {value:mine.total_points,live:false};
       /* Not scored: everything up to it, plus what it is worth live. The
          floor of 0 is a first gameweek, which has no history behind it. */
       const before=rows.filter(r=>Number(r.event)<gw).pop();
@@ -20176,7 +20185,8 @@ function lgToggle(id){
    that runs past one page it describes the fifty on screen and not the
    league. Saying "across the league" there would be a different claim
    from the one the arithmetic supports, so the card says which it is. */
-async function leagueDetailCard(res,leagueId,meId,whole){
+async function leagueDetailCard(res,leagueId,meId,whole,name){
+  const cardTitle=(name?esc(name)+' <span class="dl-sub" style="font-weight:600;text-transform:none;letter-spacing:0">\u00b7 detailed view</span>':'Detailed view');
   try{
     if(!res||!res.length)return {ok:false,html:''};
     const b=await boot();
@@ -20208,7 +20218,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
     const eo=leagueEO(picksArr);
     if(!eo.managers){
       const all404=pickFail.length===slice.length&&pickFail.every(st=>st===404);
-      return {ok:false,html:'<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+      return {ok:false,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+
         (all404
           ? '<p class="dl-sub" style="margin:0">Squads for this gameweek aren’t public yet — they open when the deadline passes.</p>'
           : '<p class="dl-sub" style="margin:0 0 10px">Couldn’t load the squads for this league. This view asks the FPL API for one squad '+
@@ -20373,7 +20383,7 @@ async function leagueDetailCard(res,leagueId,meId,whole){
       ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
       'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
       (missing===1?'is':'are')+' excluded.':'')+benchNote+'</p>';
-    return {ok:true,html:'<div class="card mb-20"><div class="card-title">Detailed view</div>'+
+    return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
       '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing};
@@ -20548,20 +20558,19 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       esc(data.league?data.league.name:'League')+'</div>'+
       '<div class="dl-sub">Loading every squad on this page — one call per manager.</div>'+
       skel(6)+'</div>';
-  const detail=detailed?await leagueDetailCard(res,leagueId,meId,page===1&&!hasNext):null;
+  const detail=detailed?await leagueDetailCard(res,leagueId,meId,page===1&&!hasNext,data.league&&data.league.name):null;
   const detailCard=detail?detail.html:'';
   /* The detail card replaces the table only when it HAS the squads.
      Suppressing the table for a detail card that came back empty left the
      league card with a title and nothing under it. */
   const detailShown=!!(detail&&detail.ok);
-  host.innerHTML=back+oppCard+viewBarFor(detailShown)+
-    '<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
+  /* In detailed view the detail card IS the league card — it carries the
+     league name in its title and replaces the compact table, so the name
+     is not left as a heading over an empty card. The pager rides at the
+     foot of whichever card is shown. */
+  const leagueCard=detailShown?'':'<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
       (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
-    /* In detailed view the compact table would be the same ranks and
-       totals twice on one screen, so the detail card replaces it rather
-       than sitting under it — but only once it actually has the squads.
-       The pager stays either way. */
-    (detailShown?'':'<div class="dl" id="league-standings">'+head+rows+'</div>'+gwFrozen)+
+    '<div class="dl" id="league-standings">'+head+rows+'</div>'+gwFrozen+
     /* Sorting is client-side over the rows already fetched. On a league
        that runs past one page that is a sort of THIS PAGE, not of the
        league — the manager with the best gameweek may be on page four
@@ -20572,8 +20581,9 @@ async function renderLeagueStandings(host,leagueId,mid,type){
       ? '<p class="dl-sub" style="margin:10px 0 0">Sorted within this page — ranks '+
         ((page-1)*50+1)+'–'+((page-1)*50+res.length)+'. Managers on other pages are not reordered into it.</p>'
       : '')+
-    pager+'</div>'+
-    detailCard+raceCard+awards;
+    pager+'</div>';
+  host.innerHTML=back+oppCard+viewBarFor(detailShown)+leagueCard+
+    (detailShown?detailCard.replace(/<\/div>\s*$/,pager+'</div>'):detailCard)+raceCard+awards;
   host.querySelectorAll('[data-lgview]').forEach(btn=>
     btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
   /* Fired after the standings are on screen, not awaited before them:
@@ -23883,7 +23893,12 @@ function closeTbMenu(){
 function tickTicker(){
   const b=MEM._idx;if(!b||!b.cur)return;
   const set=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
-  const fx=(MEM.fixtures&&MEM.fixtures.v)||null;
+  /* Through cachedPeek, never MEM.fixtures: the cache is keyed per game
+     (ck), so a bare read finds nothing, gwPhase sees no fixtures, and once
+     the deadline is more than six hours old the chip calls a live
+     gameweek "result settling" while matches are being played. Seen on a
+     Saturday afternoon with three matches in progress. */
+  const fx=cachedPeek('fixtures',FIXTURES_TTL)||null;
   const ph=gwPhase(b,fx);
   const focus=ph.target||ph.cur||b.cur;
   /* Countdown to a given deadline, or null once it has passed. */

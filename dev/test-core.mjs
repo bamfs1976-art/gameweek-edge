@@ -2586,6 +2586,19 @@ section('managerDetail: one row of the detailed league table');
     ok(scored.totalRun === 135 && scored.totalLive === false,
        'a scored gameweek takes FPL\u2019s cumulative total, untouched, got ' + scored.totalRun);
 
+    /* THE ROW FPL ADDS AT THE DEADLINE. The history carries the current
+       gameweek from the moment it locks, with a cumulative figure that
+       moves on FPL's cadence, not ours. While the round is running that
+       row is not a scored week and must not be printed as the total:
+       before it, plus the live sum, is the only figure that agrees with
+       the gameweek score printed beside it. */
+    const midRound = core.managerDetail({ ...STD, event_total: 11, total: 190 },
+      PICKS, LIVE, STATE, ELS, eo.byId,
+      { current: HIST.current.concat([{ event: 3, points: 11, total_points: 115 }]) },
+      5, false);
+    ok(midRound.totalRun === 134 && midRound.totalLive === true,
+       'a history row for the running gameweek does not freeze the total, got ' + midRound.totalRun);
+
     /* A first gameweek has no history behind it, and 30 is the season. */
     const first = core.managerDetail({ ...STD, event_total: 0, total: 0 },
       { ...PICKS, entry_history: { ...PICKS.entry_history, event: 1 } },
