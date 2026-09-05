@@ -59,6 +59,12 @@ for (const p of shellPaths) {
   assert.ok(existsSync(join(root, p)), `sw.js precaches ${p} but the file does not exist`);
 }
 
+/* The fixtures cache is keyed per game through ck(); a bare MEM.fixtures
+   read finds nothing and the ticker then calls a live gameweek "result
+   settling". Read it through cachedPeek. */
+assert.ok(!/MEM\.fixtures\b/.test(html.replace(/\/\*[\s\S]*?\*\//g, '')),
+  'index.html reads MEM.fixtures directly — use cachedPeek(\'fixtures\', FIXTURES_TTL)');
+
 /* Client-side secret patterns must never reappear. */
 assert.ok(!/anthropic-dangerous-direct-browser-access/.test(html),
   'index.html contains a direct-browser Anthropic call');
