@@ -19926,9 +19926,15 @@ function managerDetail(std,picks,live,stateById,els,eoById,history,ftMax,finishe
           .slice().sort((a,c)=>a.event-c.event)
       : null;
     if(rows&&gw!=null){
-      /* Scored: FPL's own cumulative figure for this very week. */
+      /* Scored: FPL's own cumulative figure for this very week. ONLY once
+         the gameweek is finished: FPL adds the current gameweek's row to
+         the history at the deadline and updates it as the round runs, so
+         its presence does not mean the week is scored. Trusting it mid-
+         round printed a cumulative total from the last history fetch
+         beside a live gameweek score summed minutes ago — 182 total with
+         32 for the week, while FPL's own table already said 211. */
       const mine=rows.filter(r=>Number(r.event)===gw)[0];
-      if(mine)return {value:mine.total_points,live:false};
+      if(mine&&!T.live)return {value:mine.total_points,live:false};
       /* Not scored: everything up to it, plus what it is worth live. The
          floor of 0 is a first gameweek, which has no history behind it. */
       const before=rows.filter(r=>Number(r.event)<gw).pop();
