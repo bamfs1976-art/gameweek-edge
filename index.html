@@ -3583,13 +3583,46 @@ function gwMoved(idx){
   BOOT_RECHECKED=now;
   return 'behind';
 }
-/* Bootstrap's own current gameweek, played out in full according to the
-   fixtures, but still not flagged finished. Either the cached copy is old
-   or FPL has not settled it yet; from here the two are indistinguishable
-   and the answer is the same — go and look again. */
+/* Is the cached bootstrap behind the football? There are TWO ways it can
+   be, and only one of them used to be asked.
+
+   ONE: bootstrap's own current gameweek has played out in full according
+   to the fixtures, but is still not flagged finished. Either the cached
+   copy is old or FPL has not settled it yet; from here the two are
+   indistinguishable and the answer is the same — go and look again.
+
+   TWO: THE FOOTBALL HAS MOVED PAST IT ENTIRELY. A gameweek AFTER the one
+   bootstrap calls current has already kicked off, which can only mean FPL
+   has moved is_current on and this copy predates it.
+
+   Two was the hole, and it was open in exactly the window that matters.
+   FPL parks is_current on a gameweek until the NEXT one's deadline, so
+   from the moment GW(n) settles until GW(n+1) kicks off, is_current is
+   GW(n) with finished true — and the old check returned false on its
+   first line for that entire stretch. The anchor could not raise the
+   alarm either: it had moved to GW(n+1) when GW(n)'s football ended, days
+   before, so it was unchanged and gwMoved's other question answered no
+   as well.
+
+   Nothing else was left to catch it. boot() returns the in-memory index
+   before it ever reaches cached(), so BOOT_TTL is not a backstop here —
+   it is only consulted on a fresh page load. A tab or an installed app
+   left open across a deadline therefore sat on the PREVIOUS gameweek for
+   as long as it stayed open. Reported on the Saturday morning of GW3,
+   whose Friday-night match had already been played and scored. */
 function bootBehind(idx,fixtures){
   const cur=idx.cur;
-  if(!cur||cur.finished)return false;
+  if(!cur)return false;
+  /* TWO, asked FIRST — it is true whatever cur.finished says, and that
+     early return is precisely what hid it. `started` is enough on its own:
+     a later gameweek cannot kick off before its own deadline passes, and
+     that deadline is what moves is_current. */
+  for(let i=0;i<fixtures.length;i++){
+    const f=fixtures[i];
+    if(!f||!f.event||f.event<=cur.id)continue;
+    if(f.started===true||fixtureOver(f))return true;
+  }
+  if(cur.finished)return false;
   let n=0;
   for(let i=0;i<fixtures.length;i++){
     const f=fixtures[i];
