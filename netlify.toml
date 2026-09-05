@@ -53,6 +53,13 @@
   [headers.values]
     Cache-Control = "no-store, max-age=0"
 
+# The FPL record: rebuilt from data/record on every deploy. Short-lived so a
+# graded gameweek shows within minutes, not after a day of edge cache.
+[[headers]]
+  for = "/record/record.json"
+  [headers.values]
+    Cache-Control = "public, max-age=300, stale-while-revalidate=3600"
+
 # Clean URL for the marketing landing page (share gameweekedge.co.uk/welcome).
 [[redirects]]
   from = "/welcome"

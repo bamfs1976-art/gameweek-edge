@@ -35,7 +35,10 @@ const AREA = {
      watching on its own: it is the one panel whose view count says something
      about how many arrivals are new to the game, not just new to the app. */
   home: ['dashboard', 'myweek', 'gw-actions', 'gwdebrief', 'blog', 'scout', 'accountability',
-    'design', 'glossary', 'fplbasics', 'more'],
+    'design', 'glossary', 'fplbasics', 'more',
+    /* The first-run flow. Its own panel_view events, plus onboard_step and
+       onboard_done, are what the link rate in docs/FIRST_RUN_UX.md §6 reads. */
+    'onboard'],
   /* gwhistory was the season review; it is a SECTION of gwreport now, so it
      no longer reports panel_view events of its own. */
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport'],

@@ -6,6 +6,9 @@
      • scorer  — an owned XI player scored or assisted
      • defcon  — an owned XI player banked the 2025/26 defensive +2
      • bonus   — an owned XI player moved into (or up) the provisional 3-2-1
+     • captainout — the captain's match has started and he is not in the
+                 starting XI. OPT-IN (prefs.captainout === true), once per
+                 gameweek per manager, deep-linked to Captaincy Lab.
 
    Squad + snapshot are keyed per manager, so one live fetch serves every
    subscriber on that team. Respects each subscriber's prefs. No-ops (fast)
@@ -29,6 +32,11 @@ const api = async (path) => {
   if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + path);
   return r.json();
 };
+
+/* Does any subscriber on this team want an opt-in alert type? */
+function targets_want(subs, type) {
+  return (subs || []).some((s) => s.prefs && s.prefs[type] === true);
+}
 
 /* Provisional 3-2-1 for one fixture from live BPS, official tie rule. */
 function fixtureBonus(elsByTeam, st, f) {
@@ -66,7 +74,7 @@ exports.handler = async () => {
 
   /* Which subscribers have a linked team and want live alerts. */
   const { data: subs } = await sb.from('gwedge_push_subs').select('*');
-  const live = (subs || []).filter((s) => s.manager_id && (!s.prefs || s.prefs.scorer !== false || s.prefs.bonus !== false || s.prefs.defcon !== false));
+  const live = (subs || []).filter((s) => s.manager_id && (!s.prefs || s.prefs.scorer !== false || s.prefs.bonus !== false || s.prefs.defcon !== false || s.prefs.captainout === true));
   if (!live.length) return { statusCode: 200, body: 'no live-opted subscribers' };
 
   /* Reference maps. */
@@ -79,6 +87,27 @@ exports.handler = async () => {
   try { liveData = await api('event/' + gw.id + '/live/'); } catch (_) { return { statusCode: 200, body: 'live unavailable' }; }
   const st = {}; (liveData.elements || []).forEach((e) => { st[e.id] = e.stats || {}; });
   const provBonus = {}; inPlay.forEach((f) => Object.assign(provBonus, fixtureBonus(elsByTeam, st, f)));
+
+  /* ── Captain not starting ──────────────────────────────────
+     "Confirmed XI" from the live endpoint: once a fixture has been running
+     for a few minutes every starter carries minutes > 0 in event/{gw}/live.
+     A captain still on 0 after that is not in the starting eleven. The
+     first live update can lag kick-off, so the fixture has to be at least
+     CAPTAIN_XI_MIN minutes in before the absence counts as evidence rather
+     than latency. Double gameweeks: every started fixture of his club must
+     agree, so a captain who plays the second match is never flagged on the
+     first. */
+  const CAPTAIN_XI_MIN = 5;
+  const startedByTeam = {};
+  inPlay.forEach((f) => {
+    [f.team_h, f.team_a].forEach((t) => { (startedByTeam[t] = startedByTeam[t] || []).push(f); });
+  });
+  const captainNotStarting = (el) => {
+    const fx = startedByTeam[el.team] || [];
+    if (!fx.length) return false;                                    /* his match has not begun */
+    if (!fx.every((f) => (f.minutes || 0) >= CAPTAIN_XI_MIN)) return false;
+    return ((st[el.id] || {}).minutes || 0) === 0;
+  };
 
   const byMid = {};
   live.forEach((s) => { (byMid[s.manager_id] = byMid[s.manager_id] || []).push(s); });
@@ -119,6 +148,22 @@ exports.handler = async () => {
     const cur = {};
     const events = [];   /* {type, body} */
 
+    /* The captain, before the XI loop: one check, one push, one flag in the
+       same per-manager state row so a warm container and a cold one agree. */
+    const capPick = (picks.picks || []).find((p) => p.is_captain);
+    const capEl = capPick && elMap[capPick.element];
+    const capFlagged = !!(prev && prev.__captainout);
+    let capOut = capFlagged;
+    if (capEl && !capFlagged && targets_want(byMid[mid], 'captainout') && captainNotStarting(capEl)) {
+      capOut = true;
+      const vc = (picks.picks || []).find((p) => p.is_vice_captain);
+      const vcEl = vc && elMap[vc.element];
+      events.push({ type: 'captainout',
+        body: capEl.web_name + (teams[capEl.team] ? ' (' + teams[capEl.team] + ')' : '') +
+          ' is not in the starting XI.' +
+          (vcEl ? ' If he does not come on, the armband passes to ' + vcEl.web_name + '.' : '') });
+    }
+
     xi.forEach((p) => {
       const el = elMap[p.element]; if (!el) return;
       const s = st[p.element] || {};
@@ -137,23 +182,30 @@ exports.handler = async () => {
       if (bonus > pr.bonus) events.push({ type: 'bonus', body: '✨ ' + who + ' now projected +' + bonus + ' bonus' });
     });
 
+    if (capOut) cur.__captainout = true;
     await setState(stateKey, cur);
     if (!events.length) continue;
 
     /* One grouped notification per event type, per manager's subscribers. */
     const targets = byMid[mid];
-    const types = ['scorer', 'defcon', 'bonus'];
+    const types = ['scorer', 'defcon', 'bonus', 'captainout'];
     for (const type of types) {
       const msgs = events.filter((e) => e.type === type);
       if (!msgs.length) continue;
-      const title = type === 'scorer' ? 'Your players are involved' : type === 'defcon' ? 'Defensive +2 banked' : 'Bonus movement';
+      const title = type === 'scorer' ? 'Your players are involved' : type === 'defcon' ? 'Defensive +2 banked'
+        : type === 'captainout' ? 'Captain not starting' : 'Bonus movement';
       const body = msgs.slice(0, 4).map((m) => m.body).join('  ') + (msgs.length > 4 ? '  …' : '');
-      const recip = targets.filter((s) => !s.prefs || s.prefs[type] !== false);
+      /* Every other live alert is on unless switched off; this one is off
+         unless switched on. */
+      const recip = type === 'captainout'
+        ? targets.filter((s) => s.prefs && s.prefs.captainout === true)
+        : targets.filter((s) => !s.prefs || s.prefs[type] !== false);
+      const url = type === 'captainout' ? '/?panel=captain' : '/?panel=liverank';
       await Promise.allSettled(recip.map(async (s) => {
         try {
           await webpush.sendNotification(
             { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-            JSON.stringify({ title, body, url: '/?panel=liverank', tag: 'live-' + type })
+            JSON.stringify({ title, body, url, tag: 'live-' + type })
           );
           sent++;
         } catch (err) {

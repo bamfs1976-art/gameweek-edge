@@ -10,6 +10,14 @@
    and it keeps the promise that the pitch is shown once, not on every
    visit. See docs/FIRST_RUN_UX.md §4.1. */
 try{ localStorage.setItem('ge-visited','1'); }catch(_){}
+/* Channel attribution: a ?src= tag on a link straight to /welcome is kept
+   the same way index.html keeps one on a link to /. First visit wins. */
+try{
+  var sm = location.search.match(/[?&]src=([a-z]+)/);
+  if(sm && /^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(sm[1]) && !localStorage.getItem('ge-src')){
+    localStorage.setItem('ge-src', sm[1]);
+  }
+}catch(_){}
 </script>
 <title>Gameweek Edge — the calm, clear edge for FPL managers</title>
 <meta name="description" content="Gameweek Edge is the smart companion for Fantasy Premier League managers: predicted points, an AI scout, a Match Centre and a per-gameweek debrief that tells you what your captain cost you — the app that tells you what to do next. Ad-free, from the official data.">
@@ -250,12 +258,12 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
       <p>The clarity of the official site, with the depth top managers rely on — and an AI scout to tie it together.</p>
     </div>
     <div class="feat-grid">
-      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9 5 .8-3.6 3.5 1 5-4.2-2.3L7.6 17l1-5L5 8.7l5-.8z"/></svg></div><h3>AI Scout &amp; chat</h3><p>Ask anything about your team. Get a captain pick, transfer plan and gameweek report — grounded in your real squad.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.9 5 .8-3.6 3.5 1 5-4.2-2.3L7.6 17l1-5L5 8.7l5-.8z"/></svg></div><h3>Scout AI &amp; Ask the Scout</h3><p>Ask anything about your team. Get a captain pick, transfer plan and gameweek report — grounded in your real squad.</p></div>
       <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8M21 7v5h-5"/></svg></div><h3>Predicted points</h3><p>A transparent model picks the optimal Team of the Week and ranks every captain choice by expected points.</p></div>
-      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></div><h3>Live matchday</h3><p>Track your live score, rank threats and projected auto-subs as the points land — minute by minute.</p></div>
-      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M9 18h6M12 13v5M9 21h6"/></svg></div><h3>Mini-leagues</h3><p>Live standings for every classic league, your rank movement, and how to overtake your rivals.</p></div>
-      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></div><h3>Fixtures &amp; odds</h3><p>A six-gameweek difficulty grid plus win, draw and clean-sheet probabilities for every match.</p></div>
-      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div><h3>Smart alerts</h3><p>Price changes, injury flags and deadline reminders pushed to your phone — even when the app is closed.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></div><h3>Live</h3><p>Track your live score, percentile, rank threats and projected auto-subs as the points land — minute by minute.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M9 18h6M12 13v5M9 21h6"/></svg></div><h3>Mini-Leagues</h3><p>Live standings for every classic league, your rank movement, and how to overtake your rivals.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg></div><h3>Fixtures</h3><p>A six-gameweek difficulty grid plus win, draw and clean-sheet probabilities for every match.</p></div>
+      <div class="feat"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div><h3>Alerts</h3><p>Price changes, injury flags and deadline reminders pushed to your phone — even when the app is closed.</p></div>
     </div>
   </div>
 </section>
@@ -296,7 +304,7 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
   <div class="wrap">
     <div class="sec-head">
       <span class="eyebrow">Why Gameweek Edge</span>
-      <h2>Live rank and EO — without the ads or the crashes</h2>
+      <h2>Live percentile and ownership — without the ads or the crashes</h2>
       <p>The official app tells you what happened. Live-rank sites tell you where you are. Gameweek Edge does both — and tells you what to do next.</p>
     </div>
     <div class="cmp-wrap">
@@ -310,11 +318,11 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
           </tr>
         </thead>
         <tbody>
-          <tr><td>Live overall rank, in-play</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td></tr>
+          <tr><td>Live percentile, in-play</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td></tr>
           <tr><td>Effective ownership (shields vs swords)</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td></tr>
           <tr><td>Predicted points &amp; captain ranking</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="no">—</span></td></tr>
-          <tr><td>AI scout, grounded in your squad</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="no">—</span></td></tr>
-          <tr><td>Per-gameweek debrief</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="no">—</span></td></tr>
+          <tr><td>Scout AI, grounded in your squad</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="no">—</span></td></tr>
+          <tr><td>GW Debrief, every gameweek</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="no">—</span></td></tr>
           <tr><td>Reliable live updates</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—<small>crashes on big weekends</small></span></td><td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td></tr>
           <tr><td>Ad-free</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—<small>ad-supported</small></span></td></tr>
           <tr><td>Built for your phone</td><td class="col-ge"><span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></td><td><span class="no">—</span></td><td><span class="no">—<small>desktop-first</small></span></td></tr>
@@ -335,11 +343,11 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
         <div class="amt">£0</div>
         <div class="sub">Everything to run your own team.</div>
         <ul>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Dashboard, squad &amp; this gameweek</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Match Centre, live rank &amp; GW Debrief</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Transfer planner &amp; captaincy lab</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Fixtures, differentials &amp; price moves</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Mini-leagues, watchlist &amp; alerts</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Overview, My Squad &amp; My Week</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Matchday, Live &amp; GW Debrief</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Transfer Planner &amp; Captaincy Lab</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Fixtures, Players &amp; Price Predictor</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Mini-Leagues, Watchlist &amp; Alerts</li>
         </ul>
         <a class="btn btn-ghost" href="/">Get started</a>
       </div>
@@ -350,9 +358,9 @@ footer{border-top:1px solid var(--border);padding:40px 0 56px;margin-top:20px}
         <div class="sub">or £24.99 a season pass · cancel anytime</div>
         <ul>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Everything in Free</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> AI Scout chat, reports &amp; transfer plans</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> DefCon threats, auto-subs &amp; what-if simulator</li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> EO, template, rival scout &amp; set-pieces</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Scout AI chat, reports &amp; transfer plans</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Live DEFCON, auto-subs &amp; Simulators</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Ownership, Rival Scout &amp; Set Piece Register</li>
         </ul>
         <a class="btn btn-primary" href="/">Start with Pro</a>
       </div>

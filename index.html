@@ -39,6 +39,21 @@ try{
   try{ ls = window.localStorage; ls.setItem('ge-probe','1'); ls.removeItem('ge-probe'); }
   catch(_){ return; }
 
+  /* ── CHANNEL ATTRIBUTION ──
+     A link tagged ?src=x|reddit|threads|bluesky|linkedin|email|creator|seo
+     records where this device first came from. Captured HERE, ahead of the
+     /welcome redirect below, because that redirect drops the query string
+     and the newcomer it sends to the pitch is exactly the visitor the tag
+     was for. First visit wins: a later tagged link does not rewrite it.
+     track() attaches it to every event; the sign-up and Pro-conversion
+     events are what the weekly view in supabase/ reads. */
+  try{
+    var sm = location.search.match(/[?&]src=([a-z]+)/);
+    if(sm && /^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(sm[1]) && !ls.getItem('ge-src')){
+      ls.setItem('ge-src', sm[1]);
+    }
+  }catch(_){}
+
   function isNewcomer(){
     /* An installed PWA or the native shell is by definition a return visit. */
     try{
@@ -168,7 +183,7 @@ try{
   --green-glow:rgba(31,157,92,.20);
 
   /* Accents */
-  --amber:#b9741a;
+  --amber:#8f5a12;      /* 5.09:1 on --surface-3 — was #b9741a, 3.32:1; it is text in 45 places */
   --amber-soft:rgba(185,116,26,.11);
   /* The paywall accent. Deliberately NOT --amber: a locked column heading and
      a lens chip are 12px semibold, so they need 4.5:1 against the surface they
@@ -198,7 +213,7 @@ try{
      a label under the AA floor. The fill still clears 3:1 against the canvas
      so the button keeps a visible edge. */
   --accent-cta:#a46615;--accent-cta-ink:#ffffff;  /* ink 4.68:1 */
-  --accent-alert:#cc3d39;
+  --accent-alert:#c23632; /* 4.79:1 — was #cc3d39, 4.31:1 */
   --accent-warn:#8a690e;   /* 4.51:1 — was #b58a12, 2.80:1. Carries text
                               (.dl-warn, .t-flag, .sig-v.warn), so 4.5 applies. */
 
@@ -361,7 +376,7 @@ a{color:inherit;text-decoration:none}
 :focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
 /* ── UX pass: onboarding tour, jargon tooltips, density toggle ── */
 .jargon{border-bottom:1px dotted var(--text-3);cursor:help;position:relative}
-.jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright);outline:none}
+.jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright)}
 .jargon:hover::after,.jargon:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
   width:min(260px,72vw);background:var(--elevated,var(--surface-2));color:var(--text);border:1px solid var(--border);
   border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
@@ -1256,6 +1271,23 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
 @media(prefers-reduced-motion:reduce){.tb-updated::before{animation:none}}
 @media(max-width:560px){.tb-updated{display:none}}
+/* ── PHONE CHROME (under 560px) ────────────────────────────
+   The rail is the bottom tab bar (five simple-mode panels plus More —
+   buildBottomNav reads phoneNav()); the sidebar stays reachable as the
+   drawer behind the hamburger. The ticker chip holds one line. The
+   controls a phone does not need go: CSV export, and the ⌘K hint on a
+   keyboard the phone does not have. scripts/check-mobile.mjs holds all of
+   this. */
+@media(max-width:560px){
+  /* A five-button segment control is wider than a phone: it scrolls inside
+     itself rather than pushing the page sideways. */
+  .seg{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .gwchip{max-width:48vw}
+  .gwchip-dl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30vw}
+  #export-btn{display:none}
+  #tbm-search kbd{display:none}
+  .tb-crumb{display:none}
+}
 
 /* Search lives in the overflow menu (and ⌘K works everywhere). */
 
@@ -2239,7 +2271,9 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   box-shadow:0 24px 80px rgba(0,0,0,.55)}
 .cmdk-in{width:100%;padding:13px 14px;background:var(--surface);border:0;
   border-bottom:1px solid var(--border-2);color:var(--text);
-  font-family:var(--font-mono);font-size:14px;outline:none}
+  font-family:var(--font-mono);font-size:14px}
+/* The ring stays; it is drawn inside the panel so it is not clipped. */
+.cmdk-in:focus-visible{outline-offset:-3px}
 .cmdk-in::placeholder{color:var(--text-3)}
 .cmdk-list{max-height:min(50vh,420px);overflow-y:auto;padding:4px}
 .cmdk-row{display:flex;align-items:center;gap:10px;width:100%;padding:7px 10px;
@@ -2701,15 +2735,48 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .tchip,.area-tab,.lensbtn{border-radius:var(--r-pill)}
 /* 44px touch minimum on the tab strips and lens pills. */
 @media(pointer:coarse){
-  .area-tab,.lensbtn,.seg-b{min-height:44px}
+  .area-tab,.lensbtn,.seg-b,.btn,.tchip,.tbm-row,.acct-btn,.theme-toggle,.hamburger,.ltf-browse,.mode-opt,.acct-link,.more-it,.nav-area-btn,.bn-item{min-height:44px}
+  /* 16px stops iOS zooming the page when a control takes focus; the width
+     cap stops a select sizing to its longest option and Safari shrinking
+     the whole layout viewport to fit it. */
+  input,select,textarea{font-size:16px;max-width:100%}
+  select{max-width:100%}
 }
 .seg{border-radius:var(--r-pill)}
 /* State transitions run on the one motion scale. */
 .btn,.area-tab,.nav-area-btn,.bn-item,.tchip{transition-duration:var(--t-state)}
 
+/* Onboarding: three steps. */
+.ob-steps{display:flex;gap:14px;list-style:none;margin:0 0 18px;padding:0;flex-wrap:wrap}
+.ob-step{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:var(--text-3)}
+.ob-step-n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--surface-3);color:var(--text-2);font-size:11px}
+.ob-step.on{color:var(--text)}
+.ob-step.on .ob-step-n{background:var(--green);color:#fff}
+.ob-step.done .ob-step-n{background:var(--green-soft);color:var(--tab-on)}
+.ob-rating .stat-v small{font-size:.7rem;font-weight:700;color:var(--text-3)}
+.ob-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.ob-action{border-left:3px solid var(--green);margin:6px 0 14px}
+.ob-action-l{font-size:var(--fs-min);font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.ob-action-t{font-family:var(--font-display);font-size:1.25rem;letter-spacing:-.01em;margin:4px 0 6px}
+.ob-action .btn{margin-top:8px}
+.ob-signin{font-size:12.5px;color:var(--text-2);line-height:1.55;padding:12px 14px;border:1px dashed var(--border-2);border-radius:var(--r-md);margin-bottom:10px}
+.ob-signin .btn{margin-top:8px;display:inline-flex}
+
+/* Display-mode switch (account modal). */
+.mode-switch{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--border)}
+.mode-switch-h{font-size:var(--fs-min);font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px}
+.mode-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;border-radius:var(--r-md);padding:4px}
+.mode-opt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:10px 12px;min-height:44px;border-radius:var(--r-sm)}
+.mode-opt b{font-size:.86rem;color:var(--text)}
+.mode-opt span{font-size:.74rem;color:var(--text-2);line-height:1.3}
+.mode-seg .seg-b.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.mode-opt.on b{color:var(--tab-on)}
+
 /* Motion discipline. */
 @media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  /* Duration alone does not stop an infinite loop repainting every frame:
+     the iteration count comes down with it, and smooth scrolling goes. */
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 </style>
 </head>
@@ -2761,7 +2828,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
     <!-- Footer -->
     <div class="sb-foot">
       <button class="acct-btn" id="acct-btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6"/></svg>
         <span class="acct-label" id="acct-label">Sign in to sync</span>
       </button>
       <div class="sb-foot-row">
@@ -2794,7 +2861,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
     <header class="topbar">
       <div class="tb-left">
         <button class="hamburger" id="hamburger" aria-label="Open navigation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M3 6h18M3 12h18M3 18h18"/>
           </svg>
         </button>
@@ -2826,7 +2893,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <div class="tb-right">
         <span id="tb-updated" class="tb-updated" aria-live="polite"></span>
         <button class="btn btn-cta btn-sm" id="signin-btn" aria-label="Link your FPL team">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="7" r="3.2"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 11l2 2 4-4"/>
           </svg>
           <span class="si-label">Link team</span>
@@ -2837,24 +2904,24 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
         <!-- Overflow menu: the power tools that used to be a four-icon rail. -->
         <div class="tb-menu" id="tb-menu" hidden>
           <button class="tbm-row" id="tbm-search" aria-label="Search players, panels and actions">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
             Search<kbd>⌘K</kbd>
           </button>
           <button class="tbm-row" id="density-btn" aria-label="Switch between the essentials and every tool">Depth: Essentials</button>
           <button class="tbm-row" id="refresh-btn" aria-label="Refresh data">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/></svg>
             Refresh data
           </button>
           <button class="tbm-row" id="export-btn" aria-label="Export the current view as CSV">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5"/><path d="M4 19.5h16"/></svg>
             Export CSV
           </button>
           <button class="tbm-row" id="help-btn" aria-label="Help and glossary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.5"/><circle cx="12" cy="17" r=".5"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.6 2.6 0 0 1 5 1c0 1.7-2.5 2-2.5 3.5"/><circle cx="12" cy="17" r=".5"/></svg>
             Help &amp; glossary
           </button>
           <button class="tbm-row" id="feedback-btn" aria-label="Send feedback about this app">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/></svg>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.1 9.1 0 0 1-3.3-.6L3 21l1.8-5a8.1 8.1 0 0 1-.8-3.5 8.4 8.4 0 0 1 8.5-8.4 8.4 8.4 0 0 1 8.5 8.4z"/></svg>
             Send feedback
           </button>
         </div>
@@ -2878,7 +2945,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <div><div class="xpd-lab">Why this pick</div><div class="xpd-title" id="xpd-title">—</div></div>
       <div class="xpd-xp" id="xpd-xp">—</div>
       <button class="lr-x" onclick="closeXpDrawer()" aria-label="Close">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
     <ul class="xpd-list" id="xpd-list"></ul>
@@ -2909,11 +2976,12 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <kbd>g t</kbd><span>Transfer Planner</span>
       <kbd>g c</kbd><span>Captaincy Lab</span>
       <kbd>g p</kbd><span>Price Predictor</span>
-      <kbd>g f</kbd><span>Fixture Planner</span>
-      <kbd>g m</kbd><span>Match Centre</span>
-      <kbd>g i</kbd><span>Injury Monitor</span>
+      <kbd>g f</kbd><span>Fixtures</span>
+      <kbd>g m</kbd><span>Matchday</span>
+      <kbd>g i</kbd><span>Players (fitness lens)</span>
       <kbd>g w</kbd><span>Watchlist</span>
-      <kbd>g r</kbd><span>GW Debrief</span>
+      <kbd>g r</kbd><span>Manager Report</span>
+      <kbd>g l</kbd><span>Live</span>
       <kbd>j / k</kbd><span>Next / previous row</span>
       <kbd>↵</kbd><span>Open selected row</span>
       <kbd>?</kbd><span>This cheatsheet</span>
@@ -2924,7 +2992,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 
 <!-- Pull-to-refresh affordance (shown only in the native app) -->
 <div class="ptr-spinner" id="ptr-spinner" aria-hidden="true">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
+  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg>
 </div>
 
 <!-- Offline banner: announced politely; shown whenever connectivity drops -->
@@ -3037,6 +3105,21 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 <script src="vendor/rotation.js"></script>
 <script src="vendor/rotation_model.js"></script>
 <script src="vendor/pl_other_fixtures.js"></script>
+<!-- The card-ban ladder, vendored from the same desk: the rule
+     (PLDCore.nextSuspension), the Premier League scheme it reads
+     (GE_SUSPENSION) and the watch built on it (PLDSuspension). Loaded in
+     that order because suspension.js reads PLDCore on load. Precached by
+     sw.js for the same reason as the three above. -->
+<script src="vendor/suspension_core.js"></script>
+<script src="vendor/suspension_scheme.js"></script>
+<script src="vendor/suspension.js"></script>
+<!-- Share cards: the desk's renderer and saver, verbatim, then the Gameweek
+     Edge theme and adapters on top (first-party, lib/). save.js is what
+     makes a card reach an iPhone at all: Safari ignores `download` on a
+     blob: URL, so every card goes out through PLDSave.file. Precached. -->
+<script src="vendor/share.js"></script>
+<script src="vendor/save.js"></script>
+<script src="lib/gwe-share.js"></script>
 <script>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Shell logic
@@ -3086,7 +3169,7 @@ const ICON = {
 };
 
 function svg(path,extra){
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
+  return '<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" '+
     'stroke-linecap="round" stroke-linejoin="round" '+(extra||'')+'>'+path+'</svg>';
 }
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -3271,11 +3354,16 @@ function anonId(){
     return a;
   }catch(_){return 'anon';}
 }
+/* The channel this device first arrived from (?src=…), or null. Set once by
+   the head script; never rewritten. */
+function attribSrc(){try{return localStorage.getItem('ge-src')||null;}catch(_){return null;}}
 function track(event,props){
   try{
+    const body={event:String(event),props:props||null,anon_id:anonId()};
+    const src=attribSrc();if(src)body.src=src;
     fetch(apiBase()+'/api/track',{method:'POST',keepalive:true,
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({event:String(event),props:props||null,anon_id:anonId()})
+      body:JSON.stringify(body)
     }).catch(()=>{});
   }catch(_){/* analytics must never break the app */}
 }
@@ -3942,7 +4030,7 @@ function linkBox(){
    ═══════════════════════════════════════════════════════════ */
 const PRICE={monthly:'£3.99',season:'£24.99'};
 const PRO_BENEFITS=[
-  ['spark','AI Scout','Ask the Scout about your squad — transfer, captaincy and chip calls, reasoned from the model.'],
+  ['spark','Scout AI','Ask the Scout about your squad — transfer, captaincy and chip calls, reasoned from the model.'],
   ['users','Rival intelligence','Scout rivals, effective ownership and the top template — your edge in every mini-league.'],
   ['question','Simulators & depth','What-If and season simulators, plus set-piece order and rotation risk on every player.']
 ];
@@ -3973,8 +4061,8 @@ function openUpgrade(){
   /* Free users see exactly what The Edge adds over the standard app. */
   const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
     '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
-    ['AI Scout &amp; Ask the Scout','Rival Scout — overtake your league','EO Tracker &amp; Template Meter',
-     'Season &amp; What-If simulators','Your DEFCON &amp; set-piece register']
+    ['Scout AI &amp; Ask the Scout','Rival Scout — overtake your league','Ownership — your EO and the template',
+     'Simulators — season and what-if','Live DEFCON &amp; the Set Piece Register']
       .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">—</span><span class="y">✓</span></div>').join('')+
     '</div>';
   document.getElementById('pro-body').innerHTML=
@@ -4149,6 +4237,19 @@ async function syncOnLogin(){
     }
     if(prof&&prof.tier){try{localStorage.setItem('ge-tier',prof.tier);}catch(_){}}
 
+    /* Display mode: its own query, so a project that has not run the
+       display_mode migration cannot take the tier and Manager ID sync down
+       with it. Local wins where the device has chosen; otherwise the cloud
+       value applies, and a device with no choice pushes nothing up. */
+    try{
+      const {data:dm}=await sb.from('gwedge_profiles').select('display_mode').eq('user_id',id).maybeSingle();
+      const cloud=dm&&dm.display_mode;
+      let local=null;try{local=localStorage.getItem('ge-mode');}catch(_){}
+      if(DISPLAY_MODES.indexOf(cloud)>=0){CLOUD_MODE=cloud;
+        if(!local)setDisplayMode(cloud,{silent:true,quiet:true});}
+      else if(DISPLAY_MODES.indexOf(local)>=0)cloudProfile({display_mode:local});
+    }catch(_){}
+
     /* Site owner: unlock full access and persist it to the cloud profile. */
     if(SESSION&&await isOwner(SESSION.user.email)){
       window.GE_OWNER=true;
@@ -4194,21 +4295,25 @@ function openAccount(){
       '<h3 id="acct-title">'+(window.GE_OWNER?'Owner — full access':'You’re signed in')+'</h3>'+
       '<p style="text-align:center;color:var(--text-2);font-size:.86rem;margin-bottom:6px">'+esc(SESSION.user.email||'')+'</p>'+
       '<p class="modal-hint" style="text-align:center;margin:0 0 16px">'+(window.GE_OWNER?'Every Pro feature is unlocked on this account, on every device you sign in on.':'Your Manager ID, tier, watchlist and rivals sync across every device you sign in on.')+'</p>'+
+      modeSwitchHtml()+
       '<button class="btn btn-primary" style="width:100%;justify-content:center" id="acct-signout">Sign out</button>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-acct-close>Close</button></div>';
     document.getElementById('acct-signout').addEventListener('click',doSignOut);
+    wireModeSwitch(body);
   }else{
     body.innerHTML=
       '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
       '<h3 id="acct-title">Sign in to sync</h3>'+
       '<p class="modal-hint" style="margin:0 0 14px">Create an account to carry your team, watchlist and Pro status across devices. It’s optional — the app works without it.</p>'+
       (STORAGE_OK?'':'<div role="alert" style="background:rgba(245,165,36,.12);border:1px solid rgba(245,165,36,.4);color:var(--amber);border-radius:4px;padding:8px 10px;font-size:.8rem;line-height:1.35;margin:0 0 12px">This browser won’t remember your sign-in — you’re in Private Browsing or storage is blocked. Open <b>gameweekedge.co.uk</b> in a normal tab, or add it to your Home Screen, to stay signed in.</div>')+
-      '<input class="modal-in" id="acct-email" type="email" inputmode="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">'+
-      '<input class="modal-in" id="acct-pass" type="password" autocomplete="current-password" placeholder="Password (min 6 characters)">'+
+      '<input class="modal-in" id="acct-email" aria-label="Email" type="email" inputmode="email" autocomplete="email" placeholder="Email" style="margin-bottom:10px">'+
+      '<input class="modal-in" id="acct-pass" aria-label="Password" type="password" autocomplete="current-password" placeholder="Password (min 6 characters)">'+
       '<div class="modal-err" id="acct-err" role="alert"></div>'+
       '<div class="modal-row"><button class="btn btn-ghost" id="acct-create">Create account</button>'+
         '<button class="btn btn-primary" id="acct-signin">Sign in</button></div>'+
-      '<button class="acct-link" id="acct-reset">Forgot password?</button>';
+      '<button class="acct-link" id="acct-reset">Forgot password?</button>'+
+      modeSwitchHtml();
+    wireModeSwitch(body);
     document.getElementById('acct-signin').addEventListener('click',()=>doAuth('in'));
     document.getElementById('acct-create').addEventListener('click',()=>doAuth('up'));
     document.getElementById('acct-reset').addEventListener('click',doReset);
@@ -4217,6 +4322,25 @@ function openAccount(){
   document.getElementById('acct-modal').classList.add('show');focusModal('acct-modal');
 }
 function closeAccount(){document.getElementById('acct-modal').classList.remove('show');}
+/* The display-mode setting, as a two-option control. Lives in the account
+   modal (signed in or out) and on the More index. */
+function modeSwitchHtml(){
+  const m=displayMode();
+  const opt=(v,label,why)=>'<button type="button" class="seg-b mode-opt'+(m===v?' on':'')+'" data-mode-opt="'+v+'" aria-pressed="'+(m===v?'true':'false')+'">'+
+    '<b>'+label+'</b><span>'+why+'</span></button>';
+  return '<div class="mode-switch" role="group" aria-label="Display mode">'+
+    '<div class="mode-switch-h">Display mode</div>'+
+    '<div class="seg mode-seg">'+opt('simple','Simple','Five panels in the rail; everything else under More')+
+      opt('terminal','Terminal','Every panel, the full app')+'</div>'+
+    '<p class="modal-hint" style="margin:6px 0 12px">Saved on this device'+(SESSION?' and on your account':'; sign in to carry it across devices')+'.</p></div>';
+}
+function wireModeSwitch(root){
+  Array.prototype.forEach.call(root.querySelectorAll('[data-mode-opt]'),btn=>
+    btn.addEventListener('click',()=>{
+      setDisplayMode(btn.dataset.modeOpt);
+      root.querySelectorAll('[data-mode-opt]').forEach(x=>{const on=x===btn;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});
+    }));
+}
 function acctErr(m){const e=document.getElementById('acct-err');if(e)e.textContent=m;}
 /* Turn Supabase auth errors into plain, calm English. Rate-limit / quota
    errors (HTTP 429) are the common one during heavy use — say what to do,
@@ -4253,6 +4377,7 @@ async function doAuth(mode){
       const {data,error}=await sb.auth.signUp({email,password:pass,
         options:{emailRedirectTo:location.origin}});
       if(error)throw error;
+      track('sign_up');
       if(data.session){closeAccount();}                 // confirmations off
       else acctErr('Account created — check your email to confirm, then sign in.');
     }
@@ -4303,7 +4428,7 @@ const NAV = [
       {id:'dashboard', label:'Overview', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
       {id:'gwdebrief', label:'GW Debrief', icon:'calendar', tier:'free'},
-      {id:'blog', label:'The Wire — latest news', icon:'news', tier:'free'},
+      {id:'blog', label:'The Wire', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'accountability', label:'The Model', icon:'target', tier:'free'}
     ]
@@ -4440,13 +4565,56 @@ function canSeeArea(a){
    unreachable. Getting that the wrong way round would turn a decluttered nav
    into a broken one. */
 const SIMPLE_PANELS=new Set([
-  'dashboard','myweek','gw-actions','gwdebrief',  /* Home — what do I do this week */
-  'squad','captain','transfers','gwreport',       /* My Team */
-  'allplayers','price','news',                    /* Players */
-  'fixtures',                                     /* Planner */
-  'liverank'                                      /* Live */
+  'myweek','dashboard',                           /* This Gameweek — the home destination */
+  'squad','transfers','captain',                  /* My Team */
+  'price'                                         /* Players */
 ]);
-function simpleNav(){return getDensity()==='beginner';}
+/* ── DISPLAY MODE: simple or terminal ─────────────────────
+   Two values, persisted per user: `ge-mode` on the device first, then the
+   display_mode column on gwedge_profiles once signed in. New sign-ups and
+   signed-out visitors default to simple. Terminal is the full app, exactly
+   as it was before the setting existed.
+
+   Simple mode is a NAVIGATION filter, like the density-driven one it
+   replaces: the left rail and the bottom tab bar show five panels plus
+   More, and the area tab strips shrink to the same shortlist. Every panel
+   stays reachable through the More index, the command palette, deep links
+   and push notifications, because openPanel never consults this. */
+const DISPLAY_MODES=['simple','terminal'];
+/* The resolver is pure so dev/test-core.mjs can hold the rule directly:
+   the device's own choice wins, then the cloud profile, then simple. */
+function resolveDisplayMode(local,cloud){
+  if(DISPLAY_MODES.indexOf(local)>=0)return local;
+  if(DISPLAY_MODES.indexOf(cloud)>=0)return cloud;
+  return 'simple';
+}
+let CLOUD_MODE=null;   /* gwedge_profiles.display_mode, read on sign-in */
+function displayMode(){
+  let local=null;try{local=localStorage.getItem('ge-mode');}catch(_){}
+  return resolveDisplayMode(local,CLOUD_MODE);
+}
+function displayModeLabel(m){return m==='terminal'?'Terminal':'Simple';}
+function setDisplayMode(m,opts){
+  opts=opts||{};
+  if(DISPLAY_MODES.indexOf(m)<0)return;
+  try{localStorage.setItem('ge-mode',m);}catch(_){}
+  if(!opts.silent&&typeof cloudProfile==='function')cloudProfile({display_mode:m});
+  try{track('display_mode',{mode:m});}catch(_){}
+  try{document.body.setAttribute('data-mode',m);}catch(_){}
+  if(opts.quiet)return;
+  try{buildNav();buildBottomNav();syncNav();}catch(_){}
+  try{if(typeof openPanel==='function')openPanel(currentPanel,{keepView:true});}catch(_){}
+  try{toast(m==='terminal'?'Terminal mode: every panel in the rail':'Simple mode: five panels, everything else under More');}catch(_){}
+}
+/* A device that already carried a linked team before this setting existed
+   is not a first session: it keeps the full app it had. Runs once. */
+function migrateDisplayMode(){
+  try{
+    if(localStorage.getItem('ge-mode'))return;
+    if(getMid())localStorage.setItem('ge-mode','terminal');
+  }catch(_){}
+}
+function simpleNav(){return displayMode()==='simple';}
 /* Visible in the NAV — a narrower question than canSeePanel's "does this
    exist for you". Pro panels drop out of simple mode entirely: a lock is a
    good advertisement to someone who has found their feet, and a wall to
@@ -4483,6 +4651,11 @@ PANELS.more={id:'more',label:'More',icon:'grid',tier:'free',areaId:'more',areaLa
    answers "how does this game work" for someone who does not. Reachable from
    the ? menu, the tour and the simple dashboard. */
 PANELS.fplbasics={id:'fplbasics',label:'New to FPL',icon:'question',tier:'free',areaId:'home',areaLabel:'Home'};
+/* The first-run flow for a signed-out visitor: Manager ID → squad rating →
+   one thing to do. Home resolves to it until it is finished (see
+   onboardActive / homePanel); afterwards it stays reachable by URL as a
+   replay of the rating. */
+PANELS.onboard={id:'onboard',label:'Get started',icon:'target',tier:'free',areaId:'home',areaLabel:'Home'};
 
 /* ── Onboarding, jargon tooltips and beginner/expert density ──────
    Plain-English definitions for every term a first-time manager meets. */
@@ -4908,6 +5081,10 @@ const PANEL_CONTENT = {
   alerts:{
     desc:'Price, injury, booking and deadline alerts tuned to your squad.',
     layout:'standard'
+  },
+  onboard:{
+    desc:'Enter your Manager ID, see your squad rated against the model, and get one thing to do this week.',
+    layout:'standard'
   }
 };
 
@@ -4939,9 +5116,42 @@ const DESTINATIONS=[
   {id:'leagues',label:'Leagues',icon:'trophy',go:()=>openPanel('leagues')},
   {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
 ];
+/* Simple mode: five panels and More. "This Gameweek" is a destination
+   rather than a panel — it lands on My Week once a team is linked and on
+   Overview (or the first-run flow) before then, the same rule Home uses. */
+const DESTINATIONS_SIMPLE=[
+  {id:'home',label:'This Gameweek',icon:'target',go:()=>openPanel(homePanel())},
+  {id:'p-squad',label:'My Squad',icon:'squad',go:()=>openPanel('squad')},
+  {id:'p-transfers',label:'Transfer Planner',icon:'swap',go:()=>openPanel('transfers')},
+  {id:'p-captain',label:'Captaincy Lab',icon:'star',go:()=>openPanel('captain')},
+  {id:'p-price',label:'Price Predictor',icon:'arrows',go:()=>openPanel('price')},
+  {id:'more',label:'More',icon:'more',go:()=>openPanel('more')}
+];
+function destinations(){return simpleNav()?DESTINATIONS_SIMPLE:DESTINATIONS;}
+/* A phone (under 560px) gets the five simple-mode panels plus More in the
+   bottom bar whatever the display mode: the drawer behind the hamburger
+   still carries the mode's full rail. Re-evaluated on resize across the
+   breakpoint. */
+function phoneNav(){try{return window.matchMedia&&window.matchMedia('(max-width:560px)').matches;}catch(_){return false;}}
+let PHONE_NAV_LAST=null;
+function watchPhoneNav(){
+  try{
+    const mq=window.matchMedia('(max-width:560px)');
+    PHONE_NAV_LAST=mq.matches;
+    const on=()=>{if(mq.matches!==PHONE_NAV_LAST){PHONE_NAV_LAST=mq.matches;buildBottomNav();syncNav();}};
+    if(mq.addEventListener)mq.addEventListener('change',on);else if(mq.addListener)mq.addListener(on);
+  }catch(_){}
+}
 /* Which destination lights up for the panel you are on. */
 const DEST_AREA={home:'home',myteam:'squad',players:'players',live:'live',
   planner:'more',rivals:'leagues',matchcentre:'more',studio:'more',more:'more'};
+const DEST_PANEL_SIMPLE={myweek:'home',dashboard:'home',onboard:'home',squad:'p-squad',transfers:'p-transfers',
+  captain:'p-captain',price:'p-price'};
+function activeDest(panelId){
+  const p=PANELS[panelId];if(!p)return 'more';
+  if(simpleNav())return DEST_PANEL_SIMPLE[panelId]||(p.areaId==='home'?'home':'more');
+  return DEST_AREA[p.areaId]||'more';
+}
 
 /* ── THE MORE INDEX ──────────────────────────────────────
    A grouped, self-describing map of everything beyond the four main
@@ -4971,10 +5181,11 @@ const MORE_GROUPS=[
     ['titlerace','The title race, simulated'],
     ['dossier','Club-by-club dossiers and form'],
     ['archive','Ten seasons of FPL history'],
-    ['scout','Ask the AI scout about your squad'],
+    ['scout','Scout AI: the model XI, the report and Ask the Scout'],
     ['news','Injury and press-conference news'],
-    ['blog','The Wire — what the model is seeing']]},
+    ['blog','The Wire: the latest data briefings']]},
   {label:'Account & help',items:[
+    ['__mode','Simple shows five panels; Terminal shows every panel in the rail'],
     ['__account','Sign in, sync and manage your plan'],
     ['accountability','The model, graded in public'],
     ['glossary','Every term, in plain English'],
@@ -4984,6 +5195,9 @@ const MORE_GROUPS=[
 async function hydrateMore(host){
   const groups=MORE_GROUPS.map(g=>{
     const rows=g.items.map(([id,why])=>{
+      if(id==='__mode'){const m=displayMode();
+        return moreRow((m==='simple'?'Switch to Terminal mode':'Switch to Simple mode'),why,
+          'setDisplayMode(\''+(m==='simple'?'terminal':'simple')+'\')','grid',false);}
       if(id==='__account')return moreRow('Account & settings',why,'openAccount()','users',false);
       if(id==='__feedback')return moreRow('Send feedback',why,'openFeedbackModal()','question',false);
       const p=PANELS[resolvePanel(id)];
@@ -5021,7 +5235,7 @@ function buildNav(){
   const nav=document.getElementById('sb-nav');
   if(!nav)return;
   nav.innerHTML='';
-  DESTINATIONS.forEach(d=>{
+  destinations().forEach(d=>{
     const btn=document.createElement('button');
     btn.className='nav-area-btn';
     btn.dataset.dest=d.id;
@@ -5035,7 +5249,7 @@ function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
   if(!bn)return;
   bn.innerHTML='';
-  DESTINATIONS.forEach(d=>{
+  (phoneNav()?DESTINATIONS_SIMPLE:destinations()).forEach(d=>{
     const item=document.createElement('button');
     item.className='bn-item';
     item.dataset.dest=d.id;
@@ -5172,9 +5386,13 @@ function openPanel(panelId,opts){
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
 function syncNav(){
-  const activeDest=DEST_AREA[PANELS[currentPanel].areaId]||'more';
+  const active=activeDest(currentPanel);
+  /* The bottom bar may be the phone list while the rail is the mode's list,
+     so each is matched against the destination set it actually renders. */
+  const p=PANELS[currentPanel];
+  const phoneActive=phoneNav()?(DEST_PANEL_SIMPLE[currentPanel]||(p&&p.areaId==='home'?'home':'more')):active;
   document.querySelectorAll('.nav-area-btn,.bn-item').forEach(btn=>{
-    const on=btn.dataset.dest===activeDest;
+    const on=btn.dataset.dest===(btn.classList.contains('bn-item')?phoneActive:active);
     btn.classList.toggle('active',on);
     if(on)btn.setAttribute('aria-current','page');
     else btn.removeAttribute('aria-current');
@@ -5537,12 +5755,19 @@ function sparkPoints(values){
 function sparkColor(v,opts){
   return (opts&&opts.color)||(v[v.length-1]>=v[0]?'var(--green)':'var(--red)');
 }
+/* The text alternative a sparkline carries: its shape, in words. A
+   reader who cannot see the line still learns the trend and its ends. */
+function sparkLabel(v){
+  const a=v[0],z=v[v.length-1];
+  const dir=z>a?'rising':z<a?'falling':'flat';
+  return 'Trend over '+v.length+' points, '+dir+': from '+a+' to '+z+', low '+Math.min(...v)+', high '+Math.max(...v);
+}
 function sparkSvg(v,w,h,col){
   const mn=Math.min(...v),mx=Math.max(...v),sp=(mx-mn)||1;
   const X=i=>1+(i/(v.length-1))*(w-2);
   const Y=x=>h-2-((x-mn)/sp)*(h-4);
   const d=v.map((x,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(x).toFixed(1)).join(' ');
-  return '<svg class="sparkline" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true">'+
+  return '<svg class="sparkline" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" role="img" aria-label="'+esc(sparkLabel(v))+'">'+
     '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'+
     '<circle cx="'+X(v.length-1).toFixed(1)+'" cy="'+Y(v[v.length-1]).toFixed(1)+'" r="1.8" fill="'+col+'"/></svg>';
 }
@@ -5553,7 +5778,7 @@ function spark(values,opts){
   const col=sparkColor(v,opts);
   if(!window.uPlot)return sparkSvg(v,w,h,col);
   return '<span class="sparkline spark-host" data-spark="'+esc(JSON.stringify(v))+
-    '" data-spark-col="'+esc(col)+'" style="width:'+w+'px;height:'+h+'px" aria-hidden="true"></span>';
+    '" data-spark-col="'+esc(col)+'" style="width:'+w+'px;height:'+h+'px" role="img" aria-label="'+esc(sparkLabel(v))+'"></span>';
 }
 /* Terminal palette, read from the CSS custom properties rather than
    duplicated here, so a theme change moves the charts with everything
@@ -5767,6 +5992,128 @@ function bestTransfer(b,squadEls,xiEls,bank,hz,protectIds){
     if(!best||gain>best.gain)best={out,cand,gain};
   });
   return (best&&best.gain>=MIN_TR_GAIN)?best:null;
+}
+
+/* ── ONBOARDING: three steps, under a minute ──────────────
+   1. Enter your Manager ID (the LinkTeamFlow, reused as is).
+   2. One screen: your XI's expected points against the model XI, how many
+      of your eleven the model would also pick, and your weakest position.
+      Every number comes from xP(), scoutScored() and bestXI() — the same
+      functions every panel already runs. No new rating model.
+   3. One recommended action, linking to the panel that does it — then, and
+      only then, the sign-in prompt.
+   Each step is recorded through track() as onboard_step. */
+let ONBOARD_STEP=null;
+const POS_NAMES={1:'goalkeeper',2:'defence',3:'midfield',4:'attack'};
+function obSteps(n){
+  return '<ol class="ob-steps" aria-label="Progress">'+[1,2,3].map(i=>
+    '<li class="ob-step'+(i===n?' on':i<n?' done':'')+'"'+(i===n?' aria-current="step"':'')+'>'+
+    '<span class="ob-step-n" aria-hidden="true">'+i+'</span><span class="ob-step-t">'+
+    ['Your Manager ID','Your squad, rated','One thing to do'][i-1]+'</span></li>').join('')+'</ol>';
+}
+function obSkip(){onboardFinish('skip');openPanel('dashboard');}
+async function hydrateOnboard(host){
+  const mid=getMid();
+  const step=!mid?1:(ONBOARD_STEP===3?3:2);
+  try{track('onboard_step',{step});}catch(_){}
+  if(step===1){
+    host.innerHTML='<div class="ltf-hero card ob">'+obSteps(1)+
+      '<h2 class="ltf-hero-t">Rate my squad</h2>'+
+      '<p class="ltf-hero-s">Enter your Manager ID and the model rates your eleven against its own, then tells you the one thing worth doing this week. Under a minute, no account needed.</p>'+
+      linkTeamFlowHtml({browse:false})+
+      '<button type="button" class="ltf-browse" onclick="obSkip()">Look around first \u2192</button>'+
+      '</div>';
+    return;
+  }
+  host.innerHTML='<div class="ltf-hero card ob">'+obSteps(step)+skel(4)+'</div>';
+  const b=await boot();
+  let picks=null,fixtures=null;
+  try{[fixtures,picks]=await Promise.all([loadFixtures(),loadPicks(mid,b.cur.id)]);}
+  catch(_){picks=null;}
+  if(!picks||!picks.picks||!picks.picks.length){
+    /* Before the first deadline FPL publishes no picks, so there is nothing
+       to rate yet. Say so and hand over the one useful thing: the planner. */
+    host.innerHTML='<div class="ltf-hero card ob">'+obSteps(3)+
+      '<h2 class="ltf-hero-t">Your squad unlocks after the first deadline</h2>'+
+      '<p class="ltf-hero-s">FPL only publishes a team once its gameweek has locked. Until then the Squad Planner builds your fifteen under the real rules, with the model\u2019s projections.</p>'+
+      '<div class="ob-action card"><div class="ob-action-l">Do this now</div><div class="ob-action-t">Build your fifteen in the Squad Planner</div>'+
+      '<button class="btn btn-cta" onclick="onboardFinish(\'draft\');openPanel(\'draft\')">Open the Squad Planner</button></div>'+
+      obSignin()+'</div>';
+    return;
+  }
+  const nf=buildNextFix(b,fixtures);
+  const xiEls=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
+  const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
+  const mine=xiEls.map(e=>({el:e,p:xP(b,e,nf[e.team])}));
+  const myXP=mine.reduce((s,x)=>s+x.p,0);
+  const model=bestXI(scoutScored(b,nf));
+  const modelXP=model?model.total:0;
+  const modelIds=new Set(model?model.xi.map(s=>s.el.id):[]);
+  const overlap=mine.filter(x=>modelIds.has(x.el.id)).length;
+  /* Weakest position: where your average player trails the model's average
+     player by the most expected points. */
+  const avg=rows=>{const o={};[1,2,3,4].forEach(t=>{const r=rows.filter(x=>x.el.element_type===t);o[t]=r.length?r.reduce((s,x)=>s+x.p,0)/r.length:null;});return o;};
+  const mineAvg=avg(mine),modelAvg=avg(model?model.xi:[]);
+  let weakest=null,gap=0;
+  [1,2,3,4].forEach(t=>{if(mineAvg[t]==null||modelAvg[t]==null)return;const d=modelAvg[t]-mineAvg[t];if(d>gap){gap=d;weakest=t;}});
+  const share=modelXP>0?Math.round(100*myXP/modelXP):null;
+  const gwLabel='GW'+(b.upcoming?b.upcoming.id:b.cur.id);
+  window._rating={gw:b.upcoming?b.upcoming.id:b.cur.id,myXP,modelXP,overlap,weakest:weakest?POS_NAMES[weakest]:null,share,
+    manager:(picks.entry_history&&picks.entry_history.entry)||mid};
+
+  if(step===2){
+    host.innerHTML='<div class="ltf-hero card ob">'+obSteps(2)+
+      '<h2 class="ltf-hero-t">Your squad, rated</h2>'+
+      '<p class="ltf-hero-s">Expected points for '+gwLabel+', your starting eleven against the eleven the model would pick from every player in the game.</p>'+
+      '<div class="statgrid ob-rating">'+
+        '<div class="stat"><div class="stat-l">Your XI</div><div class="stat-v">'+myXP.toFixed(1)+' <small>xP</small></div></div>'+
+        '<div class="stat"><div class="stat-l">Model XI</div><div class="stat-v">'+modelXP.toFixed(1)+' <small>xP</small></div></div>'+
+        '<div class="stat"><div class="stat-l">Against the model XI</div><div class="stat-v">'+(share!=null?share+'%':'\u2014')+'</div><div class="dl-sub">'+overlap+' of your 11 are in the model\u2019s eleven</div></div>'+
+        '<div class="stat"><div class="stat-l">Weakest position</div><div class="stat-v">'+(weakest?POS_NAMES[weakest]:'none stands out')+'</div>'+(weakest?'<div class="dl-sub">'+gap.toFixed(1)+' xP per player behind the model</div>':'')+'</div>'+
+      '</div>'+
+      '<div class="ob-row"><button class="btn btn-cta" id="ob-next" onclick="ONBOARD_STEP=3;renderPage(\'onboard\')">What should I do this week? \u2192</button>'+
+      '<button type="button" class="btn btn-ghost btn-sm" onclick="shareRatingCard()">Share</button></div>'+
+      '</div>';
+    return;
+  }
+  /* Step 3: one action, from the same calls My Week makes. */
+  const hz=buildHorizon(b,fixtures,5);
+  const bank=(picks.entry_history&&picks.entry_history.bank)||0;
+  const capM=captainModel(b,nf,xiEls,3);
+  const protect=new Set(capM.picks.slice(0,2).map(p=>p.el.id));
+  let best=null;try{best=bestTransfer(b,squad,xiEls,bank,hz,protect);}catch(_){}
+  const capPick=picks.picks.find(p=>p.is_captain);
+  const capEl=capPick&&b.els[capPick.element];
+  const modelCap=capM.picks[0];
+  let action;
+  if(best){
+    const fr=transferFrame(best,bank,1,5,hasCap('transferCost'));
+    action={to:'transfers',label:'Transfer Planner',
+      title:esc(best.out.web_name)+' \u2192 '+esc(best.cand.web_name),
+      why:'+'+best.gain.toFixed(1)+' xP over the next five gameweeks'+(fr.priceDelta?' \u00b7 '+(fr.priceDelta>0?'+':'')+'\u00a3'+fr.priceDelta.toFixed(1)+'m':'')+
+        (weakest?' \u00b7 your '+POS_NAMES[weakest]+' is where the model finds the gap':'')};
+  }else if(modelCap&&capEl&&modelCap.el.id!==capEl.id){
+    action={to:'captain',label:'Captaincy Lab',
+      title:'Captain '+esc(modelCap.el.web_name)+', not '+esc(capEl.web_name),
+      why:modelCap.xp.toFixed(1)+' xP against '+xP(b,capEl,nf[capEl.team]).toFixed(1)+' \u2014 see the full ranking'};
+  }else{
+    action={to:'price',label:'Price Predictor',
+      title:'Hold. Watch tonight\u2019s price moves',
+      why:'No move clears the bar this week and your captain matches the model. The Price Predictor shows who is about to rise or fall.'};
+  }
+  host.innerHTML='<div class="ltf-hero card ob">'+obSteps(3)+
+    '<h2 class="ltf-hero-t">One thing to do this week</h2>'+
+    '<div class="ob-action card"><div class="ob-action-l">'+esc(action.label)+'</div>'+
+      '<div class="ob-action-t">'+action.title+'</div><p class="dl-sub">'+action.why+'</p>'+
+      '<button class="btn btn-cta" id="ob-go" onclick="onboardFinish(\''+action.to+'\');openPanel(\''+action.to+'\')">Open '+esc(action.label)+' \u2192</button></div>'+
+    obSignin()+
+    '<button type="button" class="ltf-browse" onclick="onboardFinish(\'home\');openPanel(\'myweek\')">Or go to My Week \u2192</button>'+
+    '</div>';
+}
+/* The sign-in prompt, shown after the rating and never before it. */
+function obSignin(){
+  return '<div class="ob-signin"><b>Keep this on every device.</b> A free account syncs your Manager ID, watchlist and rivals. Optional \u2014 the app works without it. '+
+    '<button type="button" class="btn btn-ghost btn-sm" id="ob-signin" onclick="openAccount()">Create a free account</button></div>';
 }
 
 /* ── My Week: the six-line personalised briefing ──────────
@@ -6024,7 +6371,42 @@ async function hydrateAccountability(host){
     }
   }catch(_){}
 
+  /* ── The FPL record, graded in public ──────────────────
+     Read from /record/record.json, the same file /record/ reads, built at
+     deploy from data/record. Nothing is computed here: a scorecard that
+     re-marked its own homework in the browser could disagree with the
+     ledger it reports. Every figure is either the ledger's or "not graded". */
+  let recordCard='';
+  try{
+    const rr=await fetch(apiBase()+'/record/record.json',{headers:{Accept:'application/json'}});
+    if(rr.ok){
+      const rec=await rr.json(),sn=rec.season||{},t=sn.totw||{},c=sn.captain||{},pr=sn.prices||{};
+      const ng='<span class="badge badge-amber">not graded</span>';
+      const stat=(l,v,sub)=>'<div class="stat"><div class="stat-l">'+l+'</div><div class="stat-v">'+v+'</div>'+(sub?'<div class="dl-sub">'+sub+'</div>':'')+'</div>';
+      const plain=(rec.gameweeks||[]).length
+        ?(sn.graded
+          ?'<b>'+sn.graded+' of '+sn.recorded+' recorded gameweeks graded.</b> '+
+            (t.averageGraded?'The model Team of the Week outscored the average manager in '+t.beatAverage+' of '+t.averageGraded+'. ':'The average manager score has not been published for a graded gameweek yet. ')+
+            (t.naiveGraded?'It beat an XI picked on form alone in '+t.beatNaive+' of '+t.naiveGraded+'. ':'')+
+            (c.graded?'The captain\u2019s median rank among every player who played was '+c.medianRank+', and he was the top scorer '+c.top+' time'+(c.top===1?'':'s')+'. ':'')+
+            (pr.graded?Math.round((pr.rate||0)*100)+'% of the price calls happened.':'')
+          :'<b>'+sn.recorded+' gameweek'+(sn.recorded===1?'':'s')+' recorded, none graded yet.</b> The first grade lands once FPL has scored a recorded gameweek.')
+        :'<b>Nothing recorded yet.</b> The first entry is written inside the 36 hours before the next deadline.';
+      recordCard='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Model Accountability \u2014 the FPL record</div>'+
+        '<p class="dl-sub" style="margin:0 0 10px">'+plain+'</p>'+
+        (sn.graded?'<div class="statgrid">'+
+          stat('XI vs average manager',t.averageGraded?t.beatAverage+'/'+t.averageGraded:ng,t.averageGraded?'XI '+t.meanPoints+' pts vs '+t.meanAverage+' average':'')+
+          stat('XI vs form XI',t.naiveGraded?t.beatNaive+'/'+t.naiveGraded:ng,t.naiveGraded?'beat \u201cpick on form\u201d':'')+
+          stat('Captain median rank',c.graded?c.medianRank:ng,c.graded?'top ten '+c.top10+' of '+c.graded:'')+
+          stat('Price calls hit',pr.graded?Math.round((pr.rate||0)*100)+'%':ng,pr.graded?pr.hits+' of '+pr.graded:'')+
+          '</div>':'')+
+        '<div class="dl-sub" style="margin-top:10px">Recorded before every deadline, graded after, never overwritten. Team of the Week is the eleven\u2019s official points with no captain doubling; the average manager score includes captains and chips, so the two are not the same measure. '+
+        '<a href="/record/" target="_blank" rel="noopener">The full record, gameweek by gameweek \u2192</a></div></div>';
+    }
+  }catch(_){/* the page is honest without it: no card, no invented figure */}
+
   host.innerHTML=
+    recordCard+
     '<div class="card mb-20"><div class="card-title">Model scorecard</div>'+scoreGrid+
       '<div class="dl-sub" style="margin-top:10px">The match model is scored on <b>held-out</b> 2025/26 results — a ranked probability score of <b>0.2126</b> (lower is better; a coin-flip is ~0.25). '+
       '“Favourite correct” is how often the higher-probability side actually won or drew as modelled, recomputed live as fixtures finish. Every number here moves with real results — no cherry-picking.</div></div>'+
@@ -6440,9 +6822,14 @@ async function hydrateDashboard(host){
      photo tiles; the pitch view stays one tap away via the toggle. */
   const mxiView='list';
   const mxiBtn=totw?'<button class="btn btn-primary btn-sm mxi-toggle" onclick="mxiToggle(this)">'+(mxiView==='list'?'View pitch':'View list')+'</button>':'';
+  /* What the share card says is what this section says. */
+  window._totw=totw?{gw:b.upcoming?b.upcoming.id:b.cur.id,formation:totw.formation.join('-'),total:totw.total,
+    players:totw.xi.map(s=>({name:s.el.web_name,team:teamShort(b,s.el.team),pos:posShort(b,s.el.element_type),xp:s.p,
+      fixture:nf[s.el.team]?nf[s.el.team].opp+' ('+(nf[s.el.team].home?'H':'A')+') '+nf[s.el.team].diff:''}))}:null;
+  const shareXiBtn=totw?'<button type="button" class="btn btn-ghost btn-sm" onclick="shareTotwCard()" aria-label="Share the Team of the Week as an image">Share</button>':'';
   const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="sec-xi" data-dash="xi">'+
     '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
-    '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+'</span></div>'+
+    '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+shareXiBtn+'</span></div>'+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">The 11 players our model would pick this week.</p>'+q2Body+'</div>';
 
   /* ── Q3: differentials — like-for-like with the Differentials tab ──
@@ -6502,7 +6889,7 @@ async function hydrateDashboard(host){
     :ph.phase==='post'
     ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Bonus &amp; prices settling — see the results →</a></div>'
     :ph.phase==='live'
-    ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open the Match Centre →</a></div>'
+    ?'<div class="qd-foot" style="margin-bottom:8px"><a href="#" onclick="openPanel(\'results\');return false">Matches in play — open Matchday →</a></div>'
     :ph.phase==='pre'
     ?'<div class="qd-foot" style="margin-bottom:8px">Season starts <b>'+fmtDeadline((ph.target||b.cur).deadline_time)+'</b>. Live rank, ownership drift and captain leverage appear here once the first ball is kicked.</div>'
     :'';
@@ -7175,6 +7562,47 @@ async function hydrateSquad(host){
    Draws a square social image on a canvas (no external libraries —
    the CSP allows nothing else) and hands it to the Web Share API,
    falling back to a download. */
+/* ── Saving a file: the share sheet where a phone has one ─────────
+   Every PNG and CSV leaves the app through PLDSave.file (vendor/save.js):
+   the native share sheet where navigator.canShare accepts a File, the
+   anchor everywhere else, and a dismissed sheet reported as cancelled
+   rather than downloaded. scripts/check-share.mjs fails the build if a
+   bare `a.download=` comes back — that idiom is a dead button on iOS. */
+async function saveBlob(blob,name,mime,doneMsg){
+  if(!blob){toast('Could not build the file');return 'failed';}
+  if(!(window.PLDSave&&PLDSave.file)){toast('Saving is unavailable in this browser');return 'failed';}
+  const how=await PLDSave.file(blob,name,mime||'image/png');
+  if(how==='share')toast('Shared');
+  else if(how==='cancelled')toast('Share cancelled');
+  else toast(doneMsg||'Downloaded');
+  return how;
+}
+/* ── The three model cards, through lib/gwe-share.js ─────────────
+   Each reads a plain object the panel has already computed (window._totw,
+   window._cap, window._rating), so the card can only ever say what the
+   screen said. */
+async function shareTotwCard(){
+  const d=window._totw;if(!d){toast('Open the Model XI first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.totwSpec(d);
+  track('share_card',{card:'totw',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Team of the Week card downloaded');
+}
+async function shareCaptainCard(){
+  const d=window._cap;if(!d){toast('Open Captaincy Lab first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.captainSpec(d);
+  track('share_card',{card:'captain',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Captain card downloaded');
+}
+async function shareRatingCard(){
+  const d=window._rating;if(!d){toast('Rate your squad first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.ratingSpec(d);
+  track('share_card',{card:'rating',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Squad rating card downloaded');
+}
+
 async function shareSquadCard(){
   const S=window._share;if(!S){toast('Open My Squad first');return;}
   const W=1080,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;
@@ -7208,15 +7636,7 @@ async function shareSquadCard(){
   if(S.top&&S.top.nm)center('Star player: '+S.top.nm+' · '+S.top.pts+' pts',830,'600 34px system-ui,sans-serif','rgba(255,255,255,.8)');
   center('gameweekedge.co.uk',965,'700 30px system-ui,sans-serif','#4ade80');
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
-  if(!blob){toast('Could not build the image');return;}
-  const file=new File([blob],'gameweek-'+S.gw+'.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'My GW'+S.gw,text:'GW'+S.gw+': '+S.pts+' pts on Gameweek Edge'});return;}catch(_){/* cancelled → fall through */}
-  }
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='gameweek-'+S.gw+'.png';a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-  toast('Share card downloaded');
+  await saveBlob(blob,'gameweek-'+S.gw+'.png','image/png','Share card downloaded');
 }
 
 /* ── Team Reveal card ────────────────────────────────────
@@ -7271,15 +7691,7 @@ async function shareTeamReveal(){
   if(S.value!=null)center('Squad value £'+(S.value/10).toFixed(1)+'m'+(S.bank!=null?'  ·  Bank £'+(S.bank/10).toFixed(1)+'m':''),H-78,'600 30px system-ui,sans-serif','rgba(255,255,255,.72)');
   center('gameweekedge.co.uk',H-36,'700 30px system-ui,sans-serif','#4ade80');
   const blob=await new Promise(r=>cv.toBlob(r,'image/png'));
-  if(!blob){toast('Could not build the image');return;}
-  const file=new File([blob],'team-reveal-gw'+S.gw+'.png',{type:'image/png'});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){
-    try{await navigator.share({files:[file],title:'My GW'+S.gw+' team',text:'My GW'+S.gw+' squad — built on Gameweek Edge'});return;}catch(_){/* cancelled → fall through */}
-  }
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='team-reveal-gw'+S.gw+'.png';a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-  toast('Team Reveal downloaded');
+  await saveBlob(blob,'team-reveal-gw'+S.gw+'.png','image/png','Team Reveal downloaded');
 }
 
 /* ── SOCIAL STUDIO ────────────────────────────────────────────────────
@@ -9323,13 +9735,7 @@ function socDownload(i){
   const S=window._soc;if(!S||!S.specs[i])return;
   const spec=S.specs[i];
   const cv=renderSocialCard(spec,1);
-  cv.toBlob(blob=>{
-    if(!blob){toast('Could not build the image');return;}
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download='gwe-'+spec.id+'.png';a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-    toast('Card downloaded');
-  },'image/png');
+  cv.toBlob(blob=>{saveBlob(blob,'gwe-'+spec.id+'.png','image/png','Card downloaded');},'image/png');
 }
 async function socDownloadAll(){
   const S=window._soc;if(!S)return;
@@ -9583,19 +9989,11 @@ function socCustomDownload(share){
   const spec=S.custom,cv=renderSocialCard(spec,1);
   cv.toBlob(async blob=>{
     if(!blob){toast('Could not build the image');return;}
-    const file=new File([blob],'gwe-'+spec.id+'.png',{type:'image/png'});
-    const c=socCaption(spec.id);
-    if(share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      const payload={files:[file],title:spec.title};
-      if(c)payload.text=c.b;
-      try{await navigator.share(payload);return;}catch(err){
-        if(err&&err.name==='AbortError')return;
-      }
-    }
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download='gwe-'+spec.id+'.png';a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-    toast('Card downloaded');
+    /* The caption used to ride the share sheet as `text`; PLDSave shares the
+       file alone, the way every desk card does, and the caption stays one
+       tap away on the Copy buttons beside this one. */
+    void share;
+    await saveBlob(blob,'gwe-'+spec.id+'.png','image/png','Card downloaded');
   },'image/png');
 }
 
@@ -10120,7 +10518,7 @@ async function hydrateGwreport(host){
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
   }
 
-  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">GW Debrief'+
+  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">Your gameweek, reviewed'+
       '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
       '<b>GW'+gw+'</b>'+
@@ -11518,12 +11916,8 @@ function exportPlayersCSV(){
   const csv=playersCsv(S.b,S.xpMap,list,{...(S.ctx||{}),pro:isPro()});
   try{
     const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
     const gw=S.b.cur?S.b.cur.id:'';
-    const a=document.createElement('a');a.href=url;a.download='gameweek-edge-players'+(gw?'-gw'+gw:'')+'.csv';
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);
-    toast(list.length+' players exported');
+    saveBlob(blob,'gameweek-edge-players'+(gw?'-gw'+gw:'')+'.csv','text/csv',list.length+' players exported');
     window.GENative&&GENative.hapticSuccess&&GENative.hapticSuccess();
   }catch(_){toast('Export failed on this device');}
 }
@@ -12424,10 +12818,36 @@ function priceChangeProb(el,totalPlayers){
    Premier League card bans: 5 yellows by GW19 (1-match ban),
    10 by GW32 (2 matches), 15 across the season (3 matches). Past a
    cutoff, earlier yellows can no longer trigger that ban. */
-function suspCutoff(gw){return gw<=19?{limit:5,by:19}:gw<=32?{limit:10,by:32}:{limit:15,by:38};}
+/* ── The card-ban ladder: the vendored rule, not a local copy ─────────
+   No threshold is written here, and scripts/check-shell.mjs fails the
+   build if one reappears. vendor/suspension_core.js carries
+   PLDCore.nextSuspension byte for byte from the Bookings Desk
+   (bamfs1976-art/pl-bookings) and vendor/suspension_scheme.js the
+   Premier League ladder it reads. The club's match number is taken as
+   the gameweeks already played, gw - 1: a rung gated "by match 19" is
+   therefore alive through GW19 and dead from GW20, which is what the
+   old inline copy said in its own words.
+
+   One consequence worth knowing: a player who has reached a rung is on
+   his way to the NEXT one, not "banned". The ban itself is the FPL
+   status flag ('s'), which every caller already reads. */
+function suspNext(yellows,gw){
+  const w=(typeof window!=='undefined'&&window)||null;
+  const C=(w&&w.PLDCore)||(typeof PLDCore!=='undefined'&&PLDCore)||null;
+  const S=(w&&w.GE_SUSPENSION)||(typeof GE_SUSPENSION!=='undefined'&&GE_SUSPENSION)||null;
+  if(!C||!S||typeof C.nextSuspension!=='function')return null;
+  return C.nextSuspension(Math.max(0,yellows||0),Math.max(0,(gw||1)-1),S);
+}
+function suspCutoff(gw){
+  const n=suspNext(0,gw);
+  if(!n||n.dead)return {limit:null,by:null,ban:null};
+  return {limit:n.at,by:n.by,ban:n.ban};
+}
 function suspRisk(yellows,gw){
-  const c=suspCutoff(gw),y=yellows||0,left=c.limit-y;
-  return {...c,yellows:y,left,level:left<=0?'banned':left===1?'edge':left===2?'watch':null};
+  const y=yellows||0,n=suspNext(y,gw);
+  if(!n||n.dead)return {limit:null,by:null,ban:null,yellows:y,left:null,level:null,dead:true};
+  return {limit:n.at,by:n.by,ban:n.ban,yellows:y,left:n.need,
+    level:n.need===1?'edge':n.need===2?'watch':null,dead:false};
 }
 /* When the next price change lands, in the reader's own timezone, from the
    schedule the game publishes. The copy used to assert "00:00 UK time" as a
@@ -13161,7 +13581,7 @@ function playerDetailHTML(b,fixtures,id){
     (e.value_season!=null?stat('Value (season)',e.value_season):'')+
     (e.goals_scored!=null?stat('Goals',fmtNum(e.goals_scored)):'')+
     (e.assists!=null?stat('Assists',fmtNum(e.assists)):'')+
-    (e.yellow_cards?stat('Yellows',e.yellow_cards+' of '+susp.limit+' by GW'+susp.by):'')+
+    (e.yellow_cards&&susp.limit?stat('Yellows',e.yellow_cards+' of '+susp.limit+(susp.by?' by GW'+susp.by:'')):'')+
     '</div>'+
     '<div class="dl-sub" style="margin-top:8px">xGI = expected goal involvements. DefCon = defensive-contribution points. Value = points per £m this season. Mins security: secure ≥75, watch 50–74, risky &lt;50 (last season’s starts/minutes until the new season is played).'+
     (mins<90?' Per-90 rates need a fuller sample — treat as provisional.':'')+'</div></div>';
@@ -13781,7 +14201,7 @@ async function hydrateTransfers(host){
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement — next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
         '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
-        '<select class="modal-in" id="rep-sel" style="max-width:280px;flex:1 1 200px"><option value="">Choose a player…</option>'+opts+'</select>'+
+        '<select class="modal-in" id="rep-sel" aria-label="Player to replace" style="max-width:280px;flex:1 1 200px"><option value="">Choose a player…</option>'+opts+'</select>'+
         '<div class="seg"><button class="seg-b on" data-mode="xp">Best points</button><button class="seg-b" data-mode="style">Closest style</button></div></div>'+
         '<div id="rep-out"></div></div>';
     }catch(_){}
@@ -13860,13 +14280,17 @@ async function hydrateCaptain(host){
   const labels=['Top pick','Alternative','Differential'];
   /* First-choice penalty takers get a P badge — a real captaincy edge. */
   const penBadge=e=>e.penalties_order===1?' <span class="badge badge-amber" title="First-choice penalty taker">P</span>':'';
+  window._cap={gw:b.upcoming?b.upcoming.id:b.cur.id,confidence:conf.value,
+    picks:model.picks.map(p=>({name:p.el.web_name,team:teamShort(b,p.el.team),xp:p.xp,eo:p.eo,
+      fixture:nf[p.el.team]?nf[p.el.team].opp+' ('+(nf[p.el.team].home?'H':'A')+') '+nf[p.el.team].diff:''}))};
   const cards=model.picks.map((p,i)=>{
     const e=p.el,n=nf[e.team]||{};
     const ceiling=n.t3!=null?'Team 3+ goals '+Math.round(n.t3*100)+'% · CS '+Math.round((n.cs||0)*100)+'%':'';
     const evCls=p.ev>=0?'pos':'neg';
     return '<div class="card">'+
-      '<div class="card-title" style="display:flex;justify-content:space-between;align-items:center">'+labels[i]+
-        (i===0?confChip(conf.value,'Conf'):'')+'</div>'+
+      '<div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+labels[i]+
+        (i===0?'<span style="display:flex;gap:8px;align-items:center">'+confChip(conf.value,'Conf')+
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="shareCaptainCard()" aria-label="Share the captain pick as an image">Share</button></span>':'')+'</div>'+
       '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
       '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+penBadge(e)+'</div>'+
       '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%'+lgRunTag(b,e.team,lgctx)+'</div></div></div>'+
@@ -14055,7 +14479,7 @@ async function hydrateChips(host){
       aiGate('<button class="btn btn-primary btn-sm" onclick="genChips()">Advise my chips</button>')+
       '<div id="chips-ai" style="margin-top:12px"></div></div>'+
     '<div class="card"><div class="ge-state">'+svg(ICON.diamond)+
-      '<b>When to play them</b><p>Bench Boost and Triple Captain pay off in double gameweeks; Free Hit covers a blank. Watch the Fixture Planner for upcoming doubles and blanks.</p></div></div>';
+      '<b>When to play them</b><p>Bench Boost and Triple Captain pay off in double gameweeks; Free Hit covers a blank. Watch Fixtures for upcoming doubles and blanks.</p></div></div>';
 }
 
 /* ── Watchlist: local list of tracked players ──────────── */
@@ -14092,7 +14516,7 @@ async function hydrateWatchlist(host){
   }).join('');
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add a player</div>'+
-      '<input class="modal-in" id="watch-search" placeholder="Search players…" autocomplete="off">'+
+      '<input class="modal-in" id="watch-search" aria-label="Search players to add to your watchlist" placeholder="Search players…" autocomplete="off">'+
       '<div class="sugg" id="watch-sugg"></div></div>'+
     '<div class="card"><div class="card-title">Your watchlist'+(watch.length?' ('+watch.length+')':'')+'</div>'+
       (watch.length?rows
@@ -14133,7 +14557,7 @@ async function hydrateCompare(host){
           '<tr><th class="tm">GW</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><span class="dl-sub">'+esc(teamShort(b,e.team))+'</span></td>').join('')+'</tr>'+
           fxRows+
         '</table></div>'+
-        '<p class="dl-sub" style="margin-top:8px">Each cell is the player’s club fixture that gameweek — greener is an easier opponent (H/A shown). The model difficulty, the same lens as the Fixture Planner.</p></div>'
+        '<p class="dl-sub" style="margin-top:8px">Each cell is the player’s club fixture that gameweek — greener is an easier opponent (H/A shown). The model difficulty, the same lens as Fixtures.</p></div>'
     : '';
   const table=sel.length?
     '<div class="fdr"><table>'+
@@ -14154,7 +14578,7 @@ async function hydrateCompare(host){
     :'<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add up to four players side by side.</p></div>';
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add players ('+sel.length+'/4)</div>'+
-      '<input class="modal-in" id="cmp-search" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
+      '<input class="modal-in" id="cmp-search" aria-label="Search players to compare" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
       '<div class="sugg" id="cmp-sugg"></div></div>'+
     fixCard+
     '<div class="card">'+table+'</div>';
@@ -14196,6 +14620,9 @@ async function hydrateAlerts(host){
   const prefs=loadAlertPrefs();
   const toggle=(k,label)=>'<label class="alert-tog"><span>'+label+'</span>'+
     '<input type="checkbox" data-pref="'+k+'"'+(prefs[k]!==false?' checked':'')+'></label>';
+  /* Opt-in: off until switched on, on the device and on the server. */
+  const toggleOff=(k,label)=>'<label class="alert-tog"><span>'+label+'</span>'+
+    '<input type="checkbox" data-pref="'+k+'"'+(prefs[k]===true?' checked':'')+'></label>';
 
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Push alerts</div>'+
@@ -14220,6 +14647,7 @@ async function hydrateAlerts(host){
       toggle('scorer','Your players scoring or assisting')+
       toggle('bonus','Bonus swings on your players')+
       toggle('defcon','Your players hitting the DEFCON +2')+
+      toggleOff('captainout','Captain not starting — once the confirmed XI is in and he is not in it (off by default)')+
       '<div class="dl-sub" style="margin:12px 0 8px">Around the deadline</div>'+
       toggle('price','Price changes')+
       toggle('pricerisk','Evening warning: your players likely to move tonight')+
@@ -15232,7 +15660,7 @@ async function hydrateRivals(host){
   }));
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Add a rival</div>'+
-      '<input class="modal-in" id="rival-in" inputmode="numeric" placeholder="Rival Manager ID"'+(rivals.length>=5?' disabled':'')+'>'+
+      '<input class="modal-in" id="rival-in" aria-label="Rival Manager ID" inputmode="numeric" placeholder="Rival Manager ID"'+(rivals.length>=5?' disabled':'')+'>'+
       '<div class="dl-sub" style="margin-top:8px">Track up to five rivals. Points gap is relative to your overall total.</div></div>'+
     '<div class="card'+(rivals.length?' mb-20':'')+'"><div class="card-title">Your rivals'+(rivals.length?' ('+rivals.length+'/5)':'')+'</div>'+
       (rivals.length?'<div class="dl"><div class="dl-row head"><span class="dl-grow">Rival · shared XI</span><span class="dl-col">Gap</span><span style="width:32px"></span></div>'+cards.join('')+'</div>'
@@ -16887,15 +17315,15 @@ async function hydrateArchive(host){
 
     '<div class="card mb-20"><div class="card-title">All-time records</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
-        '<select class="modal-in" id="arch-rec" style="flex:1 1 200px">'+recOpts+'</select>'+
-        '<select class="modal-in" id="arch-pos" style="flex:1 1 140px">'+posOpts+'</select>'+
+        '<select class="modal-in" id="arch-rec" aria-label="Record" style="flex:1 1 200px">'+recOpts+'</select>'+
+        '<select class="modal-in" id="arch-pos" aria-label="Position" style="flex:1 1 140px">'+posOpts+'</select>'+
       '</div><div class="dl" id="arch-recs"></div></div>'+
 
     '<div class="card"><div class="card-title">Compare two careers</div>'+
       '<p class="dl-sub" style="margin-bottom:10px">Any two players who appeared in the last ten seasons, season by season.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
-        '<input class="modal-in" id="arch-a" list="arch-names" placeholder="First player" style="flex:1 1 160px">'+
-        '<input class="modal-in" id="arch-b" list="arch-names" placeholder="Second player" style="flex:1 1 160px">'+
+        '<input class="modal-in" id="arch-a" aria-label="First player" list="arch-names" placeholder="First player" style="flex:1 1 160px">'+
+        '<input class="modal-in" id="arch-b" aria-label="Second player" list="arch-names" placeholder="Second player" style="flex:1 1 160px">'+
       '</div><datalist id="arch-names">'+nameOpts+'</datalist>'+
       '<div id="arch-cmp"></div></div>';
 
@@ -16985,7 +17413,7 @@ function archMysteryRender(){
     foot='<div class="dl-sub" style="margin-top:10px">It was <b>'+esc(m.answer.n)+'</b>. A new player tomorrow.</div>';
   }else{
     foot='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'+
-      '<input class="modal-in" id="arch-guess" list="arch-names" placeholder="Name the player" style="flex:1 1 180px">'+
+      '<input class="modal-in" id="arch-guess" aria-label="Name the player" list="arch-names" placeholder="Name the player" style="flex:1 1 180px">'+
       '<button class="btn btn-primary btn-sm" onclick="archMysteryGuess()">Guess</button>'+
       '<button class="btn btn-ghost btn-sm" onclick="archMysteryReveal()">Give up</button></div>'+
       '<div class="dl-sub" style="margin-top:8px">A new clue after every wrong guess. Same player for everyone, changes at midnight UTC.</div>';
@@ -18734,7 +19162,7 @@ async function hydrateScout(host){
         '<div class="dl-sub" style="margin-top:10px">xPts = predicted points: FPL’s expected points scaled by availability and fixture.</div>'+
       '</div>'+
     '</div>'+
-    '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' AI Scout Report</div>'+
+    '<div class="card"><div class="card-title">'+svg(ICON.spark,'width="15" height="15"')+' Scout AI report</div>'+
       '<p class="dl-sub" style="margin-bottom:12px">Claude analyses the gameweek and'+(getMid()?' your squad,':'')+' explains the picks, captain and transfer angles.</p>'+
       '<button class="btn btn-primary btn-sm" onclick="genScoutReport()">Generate AI scout report</button>'+
       '<div id="scout-report" style="margin-top:14px"></div>'+
@@ -20560,7 +20988,7 @@ function chipStrategyArticle(){
     '<li><b>The run-in is discounted.</b> A Wildcard buys the gameweeks that follow it, so its value tapers as GW38 approaches, and Bench Boost and Triple Captain are marked down in the final two weeks where sides with nothing to play for rotate.</li>'+
     '</ul>';
 
-  body+='<p class="muted">Chip windows, the reasoning behind each and a shareable plan card are in the <b>Chip Planner</b>. Rules and the official windows discussed here are from the Premier League’s Scout column, 7 August 2026; the fixture reads, the Bench Boost case and the opening-five difficulty are ours, and are graded in Model Accountability like every other call we publish.</p>';
+  body+='<p class="muted">Chip windows, the reasoning behind each and a shareable plan card are in <b>Chip Strategy</b>. Rules and the official windows discussed here are from the Premier League’s Scout column, 7 August 2026; the fixture reads, the Bench Boost case and the opening-five difficulty are ours, and are graded under The Model like every other call we publish.</p>';
 
   return {kick:'Strategy',title:'Chips in 2026/27: Two Halves, and the One Window We’d Skip',
     dek:'Eight chips, split at GW19. The official advice is right about Haaland and, we think, wrong about an early Bench Boost — here is the case for each.',
@@ -20619,7 +21047,7 @@ async function hydrateBlog(host){
      the Week and the live briefings. */
   try{arts.unshift(...preseasonArticles());}catch(_){}
   if(!arts.length){host.innerHTML=stateBox('news','Briefings warming up','The Wire writes itself from live data — articles appear once the season’s numbers are in.');return;}
-  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire — latest news</div>'+
+  host.innerHTML='<div class="blog-intro card"><div class="card-title">'+svg(ICON.news,'width="15" height="15"')+' The Wire</div>'+
       '<p class="dl-sub">Fresh briefings written automatically from live FPL data and our projection model — updated every gameweek. Tap any story to read it.</p></div>'+
     '<div class="blog-list">'+arts.map((a,i)=>articleCard(a,i,b.cur.id)).join('')+'</div>';
   host.querySelectorAll('.post-hd').forEach(btn=>btn.addEventListener('click',()=>{
@@ -21012,7 +21440,7 @@ function renderSeasonSim(host,bundle,posCounts,ptsSum,n){
   /* Finish-position heatmap */
   const maxP=Math.max(...order.map(t=>Math.max(...posCounts[t])/n*100));
   const cell=22;const W=110+20*cell,H=order.length*cell+20;
-  let grid='<svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W,560)+'px;width:100%;height:auto">';
+  let grid='<svg viewBox="0 0 '+W+' '+H+'" style="min-width:'+Math.min(W,560)+'px;width:100%;height:auto" role="img" aria-label="Finish-position heatmap: for each club, the share of simulated seasons ending in each league position; the table above carries the same figures">';
   order.forEach((t,r)=>{const y=r*cell;grid+='<text x="104" y="'+(y+cell-7)+'" text-anchor="end" style="font-size:var(--fs-min);fill:var(--text-2)">'+esc(t.length>12?t.slice(0,11)+'…':t)+'</text>';
     for(let p=0;p<20;p++){const v=posCounts[t][p]/n*100,f=Math.pow(v/maxP,0.55);
       grid+='<rect x="'+(110+p*cell)+'" y="'+y+'" width="'+(cell-2)+'" height="'+(cell-2)+'" rx="2" fill="var(--green-bright)" fill-opacity="'+(0.05+0.95*f).toFixed(3)+'"><title>'+esc(t)+' — '+(p+1)+': '+v.toFixed(1)+'%</title></rect>';}});
@@ -21038,7 +21466,7 @@ async function hydrateSeasonSim(host){
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Season Simulator</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Monte Carlo the whole season from the fitted model — title, European and relegation odds, the finish-position grid and run-in difficulty.</p>'+
     '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
-      '<select class="modal-in" id="ss-sims" style="max-width:150px"><option value="2000">2,000 seasons</option><option value="5000" selected>5,000 seasons</option><option value="10000">10,000 seasons</option><option value="25000">25,000 seasons</option></select>'+
+      '<select class="modal-in" id="ss-sims" aria-label="Number of simulations" style="max-width:150px"><option value="2000">2,000 seasons</option><option value="5000" selected>5,000 seasons</option><option value="10000">10,000 seasons</option><option value="25000">25,000 seasons</option></select>'+
       '<button class="btn btn-primary btn-sm" id="ss-run">Run simulation</button><span class="dl-sub" id="ss-status"></span></div>'+
     '<div class="prog" id="ss-prog" style="display:none;height:4px;background:var(--surface-3);border-radius:3px;margin-top:10px;overflow:hidden"><div style="height:100%;width:0;background:var(--green)"></div></div>'+
     /* Pinning used to be a separate panel that told you to go and run this
@@ -21048,10 +21476,10 @@ async function hydrateSeasonSim(host){
     '<details class="ss-pin" style="margin-top:12px"><summary class="dl-sub" style="cursor:pointer">Pin results and re-run</summary>'+
       '<p class="dl-sub" style="margin:8px 0">Fix a win, draw or exact score, then re-run. Everything else is simulated as normal and the odds are shown against the unpinned baseline.</p>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-        '<select class="modal-in" id="lsc-md" style="max-width:130px">'+mdOpts+'</select>'+
-        '<select class="modal-in" id="lsc-fx" style="max-width:200px"></select>'+
-        '<select class="modal-in" id="lsc-res" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
-        '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
+        '<select class="modal-in" id="lsc-md" aria-label="Match" style="max-width:130px">'+mdOpts+'</select>'+
+        '<select class="modal-in" id="lsc-fx" aria-label="Fixture" style="max-width:200px"></select>'+
+        '<select class="modal-in" id="lsc-res" aria-label="Result" style="max-width:120px"><option value="H">Home win</option><option value="D">Draw</option><option value="A">Away win</option><option value="score">Exact score…</option></select>'+
+        '<span id="lsc-score" style="display:none"><input type="number" id="lsc-hg" aria-label="Home goals" min="0" max="10" value="1" class="modal-in" style="width:52px"> – <input type="number" id="lsc-ag" aria-label="Away goals" min="0" max="10" value="0" class="modal-in" style="width:52px"></span>'+
         '<button class="btn btn-ghost btn-sm" id="lsc-add">Add pin</button>'+
         '<button class="btn btn-ghost btn-sm" id="lsc-clear">Clear</button></div>'+
       '<div id="lsc-list" style="margin:10px 0"></div>'+
@@ -22512,7 +22940,7 @@ async function hydrateLineups(host){
     '<span class="dl-col">'+(e.chance_of_playing_next_round==null?'—':e.chance_of_playing_next_round+'%')+'</span></div>').join('');
   host.innerHTML=
     '<div class="card mb-20"><div class="card-title">Club</div>'+
-      '<select class="modal-in" id="lineup-team" style="max-width:280px">'+opts+'</select></div>'+
+      '<select class="modal-in" id="lineup-team" aria-label="Team" style="max-width:280px">'+opts+'</select></div>'+
     (proj
       ? '<div class="grid g-sb mb-20">'+
           '<div class="card"><div class="card-title">'+crest(b,t.id,16)+' '+esc(t.name)+' — projected XI '+
@@ -23263,8 +23691,8 @@ async function hydrateDraft(host){
         '<div class="dl-sub" style="margin-top:10px">Tap a player for details or to remove. 2 GK / 5 DEF / 5 MID / 3 FWD · £100.0m · max 3 per club. Over-budget drafting is allowed, but the draft only saves when it’s legal.</div></div>'+
       '<div class="card"><div class="card-title">Player pool</div>'+
         '<div class="pl-filters" style="margin-bottom:8px">'+
-          '<input id="draft-q" class="modal-in" placeholder="Search players…" autocomplete="off" style="flex:2 1 140px">'+
-          '<select id="draft-pos" class="modal-in" style="flex:1 1 110px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
+          '<input id="draft-q" aria-label="Search players" class="modal-in" placeholder="Search players…" autocomplete="off" style="flex:2 1 140px">'+
+          '<select id="draft-pos" aria-label="Position filter" class="modal-in" style="flex:1 1 110px"><option value="0">All positions</option><option value="1">GKP</option><option value="2">DEF</option><option value="3">MID</option><option value="4">FWD</option></select>'+
         '</div>'+
         '<div class="pl-filters" style="margin-bottom:8px;gap:14px">'+
           '<label class="dl-sub" style="display:flex;flex-direction:column;gap:2px;flex:1 1 150px;margin:0"><span>Max price: <b id="draft-price-v">Any</b></span>'+
@@ -23294,7 +23722,8 @@ async function hydrateDraft(host){
     /* scrollIntoView, because on a phone the pool is a full screen below the
        pitch and a silently-filtered list you cannot see reads as nothing
        having happened. Guarded: jsdom and older Safari lack the options form. */
-    if(pool&&pool.scrollIntoView){ try{ pool.scrollIntoView({behavior:'smooth',block:'start'}); }catch(_){ pool.scrollIntoView(); } }
+    const motionOk=!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if(pool&&pool.scrollIntoView){ try{ pool.scrollIntoView({behavior:motionOk?'smooth':'auto',block:'start'}); }catch(_){ pool.scrollIntoView(); } }
     const q=host.querySelector('#draft-q');
     if(q&&window.matchMedia&&window.matchMedia('(min-width:900px)').matches) q.focus();
   }
@@ -23339,6 +23768,7 @@ async function hydrateDraft(host){
 const WIRED={
   more:hydrateMore,
   myweek:hydrateMyWeek,
+  onboard:hydrateOnboard,
   accountability:hydrateModelHub,
   dashboard:hydrateDashboard,
   glossary:hydrateGlossary,
@@ -23584,6 +24014,7 @@ function cmdkEntries(q){
   const verbs=[
     {label:'Link your FPL team',sub:'action',icon:'squad',aliases:['connect','manager id','team id','sign in'],run:()=>openMidModal()},
     {label:'Toggle light / dark theme',sub:'action',icon:'sun',aliases:['dark mode','light mode','appearance'],run:()=>toggleTheme()},
+    {label:'Switch display mode (Simple / Terminal)',sub:'action',icon:'grid',aliases:['simple mode','terminal mode','display mode','more panels','fewer panels'],run:()=>setDisplayMode(displayMode()==='simple'?'terminal':'simple')},
     {label:'Refresh data',sub:'action',icon:'rotate',aliases:['reload','update'],run:()=>location.reload()},
     {label:'Export current view as CSV',sub:'action',icon:'arrows',aliases:['download','csv','spreadsheet'],run:()=>{const b=document.getElementById('export-btn');b&&b.click();}},
     {label:'Keyboard shortcuts',sub:'action',icon:'spark',aliases:['keys','hotkeys','cheatsheet'],run:()=>{document.getElementById('kbd-overlay').hidden=false;}}
@@ -23808,11 +24239,7 @@ function exportViewCSV(){
   if(lines.length<2){toast('Nothing tabular on this panel to export');return;}
   try{
     const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');a.href=url;a.download='gameweek-edge-'+currentPanel+'.csv';
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);
-    toast((lines.length-1)+' rows exported');
+    saveBlob(blob,'gameweek-edge-'+currentPanel+'.csv','text/csv',(lines.length-1)+' rows exported');
     window.GENative&&GENative.hapticSuccess&&GENative.hapticSuccess();
   }catch(_){toast('Export failed on this device');}
 }
@@ -24180,10 +24607,36 @@ function initPullToRefresh(){
    works with no team linked, so that is where an unlinked visitor lands.
 
    Deep links (hash / ?panel=) still override both. */
-function homePanel(){return getMid()?'myweek':'dashboard';}
+/* ── ONBOARDING STATE ─────────────────────────────────────
+   `ge-onboard` is absent (never started), 'done', or anything else the flow
+   writes while it runs. A device that already carried a linked team when
+   the flow shipped is not a first session and is marked done at boot; a
+   signed-in account never sees it; blocked storage fails open so nobody is
+   trapped on a screen the app cannot remember leaving. */
+function onboardDone(){try{return localStorage.getItem('ge-onboard')==='done';}catch(_){return true;}}
+function onboardFinish(reason){
+  try{localStorage.setItem('ge-onboard','done');}catch(_){}
+  try{track('onboard_done',{action:reason||'unknown'});}catch(_){}
+}
+function onboardActive(){
+  if(onboardDone())return false;
+  if(typeof SESSION!=='undefined'&&SESSION)return false;
+  return true;
+}
+function migrateOnboard(){
+  try{if(getMid()&&!localStorage.getItem('ge-onboard'))localStorage.setItem('ge-onboard','done');}catch(_){}
+}
+function homePanel(){
+  if(onboardActive())return 'onboard';
+  return getMid()?'myweek':'dashboard';
+}
 function init(){
+  migrateOnboard();
+  migrateDisplayMode();
+  try{document.body.setAttribute('data-mode',displayMode());}catch(_){}
   buildNav();
   buildBottomNav();
+  watchPhoneNav();
   sparkWatch();
   applyTheme(storedTheme()||'light');
   const home=homePanel();

@@ -33,7 +33,7 @@ const sw = readFileSync(join(root, 'sw.js'), 'utf8');
    arrays are read. A list this check cannot see is a list it cannot guard,
    which is worse than a slightly longer regex. */
 const shell = [];
-for (const name of ['SHELL', 'EFL_SHELL']) {
+for (const name of ['SHELL', 'EFL_SHELL', 'ROTATION']) {
   const block = sw.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\]`));
   assert.ok(block, `sw.js has no ${name} precache list`);
   shell.push(...[...block[1].matchAll(/'(\/[^']*)'/g)].map((m) => m[1]));
@@ -100,6 +100,40 @@ assert.ok(!/https?:\/\/fantasy\.premierleague\.com\/api/.test(html),
   assert.ok(dupes.length === 0,
     'duplicate top-level const in index.html — this is a SyntaxError and the app will not run: ' + dupes.join(', '));
   console.log(`  ${seen.size} top-level consts, no duplicate names`);
+}
+
+/* ── The card-ban ladder lives in vendor/, never here ──────────────
+   The 5 / 10 / 15 cautions rule, gated at matches 19 and 32, is vendored
+   from pl-bookings (scripts/vendor-suspension.mjs) and read through
+   PLDCore.nextSuspension. index.html once carried its own copy, and the
+   push sender a third; a threshold typed here again is a second rule
+   waiting to disagree with the first. Comments are stripped first so prose
+   about the rule cannot trip it, and the rule's own explanation above
+   stays readable. */
+{
+  const code = html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
+  const banned = [
+    [/\bgw\s*<=\s*19\s*\?/, 'gw<=19 ? … — the GW19 gate typed by hand'],
+    [/\bgw\s*<=\s*32\s*\?/, 'gw<=32 ? … — the GW32 gate typed by hand'],
+    [/\{\s*limit\s*:\s*(5|10|15)\b/, '{limit:5|10|15 — a caution threshold typed by hand'],
+    [/\blimit\s*:\s*(5|10|15)\s*,\s*by\s*:/, 'limit:N, by:M — the ladder typed by hand'],
+    [/yellow_cards\s*(\|\|\s*0\s*)?\)?\s*===?\s*(4|9|14)\b/, 'yellow_cards === 4|9|14 — "one from a ban" typed by hand'],
+  ];
+  for (const [re, why] of banned) {
+    const m = code.match(re);
+    assert.ok(!m, 'index.html carries a hard-coded suspension threshold (' + why + '): ' +
+      JSON.stringify(m && m[0]) + '. Read it through PLDCore.nextSuspension and GE_SUSPENSION instead.');
+  }
+  for (const need of ['vendor/suspension_core.js', 'vendor/suspension_scheme.js', 'vendor/suspension.js']) {
+    assert.ok(new RegExp('<script src="' + need.replace('.', '\\.') + '"').test(html),
+      'index.html no longer loads ' + need + ' — the suspension rule would be undefined at runtime');
+  }
+  assert.ok(/\.nextSuspension\(/.test(code), 'index.html no longer calls PLDCore.nextSuspension — the ladder is not the vendored one');
+  assert.ok(/GE_SUSPENSION/.test(code), 'index.html no longer reads GE_SUSPENSION — the ladder is not the vendored scheme');
+  console.log('  suspension ladder: no hard-coded threshold, vendored rule loaded and called');
 }
 
 console.log(`shell guard OK: ${REQUIRED_IDS.length} ids present, ${shellPaths.length} precache entries checked, no client-side secrets`);

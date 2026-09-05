@@ -9,6 +9,7 @@ import { existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { publishRecord } from './efl/publish-record.mjs';
+import { publishRecord as publishFplRecord } from './record/publish-record.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
@@ -21,7 +22,11 @@ const STATIC_FILES = ['index.html', 'landing.html', 'privacy.html', 'manifest.we
    distinct from www/vendor.js, which is the esbuild bundle below. It is a
    directory of committed source with recorded hashes, so it is copied rather
    than built; scripts/vendor-rotation.mjs owns proving it has not drifted. */
-const STATIC_DIRS = ['icons', 'data', 'vendor'];
+/* `record/` is the public FPL record page; its record.json is written beside
+   it by publishFplRecord below, from data/record. */
+/* `lib/` is first-party browser code loaded by <script src> (the share
+   theme and adapters); precached by sw.js alongside vendor/. */
+const STATIC_DIRS = ['icons', 'data', 'vendor', 'record', 'lib'];
 
 async function clean() {
   if (existsSync(OUT)) await rm(OUT, { recursive: true, force: true });
@@ -158,6 +163,9 @@ await bundleNative();
 await bundleAuth();
 await bundleVendor();
 const efl = await buildEfl();
+/* The FPL ledger's public projection, next to the page that reads it. */
+const fplRecord = await publishFplRecord(join(OUT, 'record'));
+console.log(`✓ FPL record → www/record/record.json (${fplRecord.gameweeks} gameweek(s), ${fplRecord.graded} graded)`);
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');
 console.log(`✓ Build stamp ${stamp} → www/version.json`);

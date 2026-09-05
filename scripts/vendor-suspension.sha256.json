@@ -1,0 +1,27 @@
+{
+  "commit": "34bba4cd8978e0dc9df1327baad8dccee4e71ffd",
+  "branch": "main",
+  "files": {
+    "suspension": {
+      "from": "assets/suspension.js",
+      "to": "vendor/suspension.js",
+      "sha256": "a16674dbe5dddafc1ad1efdbee75e8d19551752c589d05455ea3411f47933532",
+      "sourceSha256": "a16674dbe5dddafc1ad1efdbee75e8d19551752c589d05455ea3411f47933532",
+      "fetched": "2026-09-05"
+    },
+    "suspension-core": {
+      "from": "assets/core.js",
+      "to": "vendor/suspension_core.js",
+      "sha256": "dab55215b1d7a47cdc91aae9f938a236476598a5fb1a4c9ff17555e904bd250d",
+      "sourceSha256": "f6f4dd24e9dca8d94ee2327d69c2b4a91a41557331824d12558e9845b05feb91",
+      "fetched": "2026-09-05"
+    },
+    "suspension-scheme": {
+      "from": "data/pl_data.js",
+      "to": "vendor/suspension_scheme.js",
+      "sha256": "5220a42a1f285083d02fba52a651d6d742dec5fa76057ab8b4187579246ed463",
+      "sourceSha256": "4a892beb1062ff7e1c25435e96cfb459dc9dd7bee6b9a78e6f60d311cdcaeadf",
+      "fetched": "2026-09-05"
+    }
+  }
+}

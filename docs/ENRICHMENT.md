@@ -1,7 +1,9 @@
 # Data-integration (enrichment) layer
 
-Combines the official FPL feed with up to five external providers into one
-canonical response: availability and injury flags, predicted-line-up and
+Combines the official FPL feed with football-data.org, and optionally with
+further providers whose adapters ship switched off and unverified (see
+*Adapters not verified against a live endpoint* below), into one canonical
+response: availability and injury flags, predicted-line-up and
 minutes-risk signals, fixture and opponent context, relevant news, optional
 third-party recommendations — each carrying its own provenance, timestamp and
 staleness.
@@ -28,22 +30,35 @@ dev/enrich-cli.mjs            read-only CLI
 
 ## What each integration contributes, and how far to trust it
 
+### Verified sources
+
 | Source | Contributes | Status |
 |---|---|---|
 | **Official FPL** | FPL ids, official availability, price, ownership, fixtures | **LIVE** — authoritative, keyless, via the existing `/api/fpl` proxy |
 | **football-data.org** | fixtures, results, competition, status, score | **LIVE** — key already configured, via the existing `/api/football-data` proxy |
-| **LetLetMe** | player metadata, teams, fixtures, FPL-level metrics | Adapter only — needs `LETLETME_API_BASE_URL` |
-| **Unofficial FPL GraphQL/REST** | second opinion on price, points, ownership, form, minutes | Adapter only — needs `FPL_GRAPHQL_API_URL` |
-| **Apify Live Football Data** | injuries, predicted line-ups | Adapter only — needs `APIFY_TOKEN` + actor id |
-| **Apify FPL Intelligence** | transfer/captain/price recommendations | Adapter only, **off by default** |
-| **World News API** | BBC/Sky/Guardian team and player context | Adapter only — needs base URL + key |
+
+### Adapters not verified against a live endpoint
+
+These five ship as complete adapters and stay switched off until their
+settings are supplied. **None of them has been verified against a live
+endpoint from this repository.** Their request shapes come from each
+provider's documentation and are exercised only against the fixtures in
+`dev/fixtures/enrichment/`. They are configuration away from working, not
+proof that they work, and the top-level README makes no claim for them. If
+one is switched on, verify it by hand first: `npm run enrich -- --health`
+reports what answered.
+
+| Source | Contributes | Status |
+|---|---|---|
+| **LetLetMe** | player metadata, teams, fixtures, FPL-level metrics | Adapter only, unverified — needs `LETLETME_API_BASE_URL` |
+| **Unofficial FPL GraphQL/REST** | second opinion on price, points, ownership, form, minutes | Adapter only, unverified — needs `FPL_GRAPHQL_API_URL` |
+| **Apify Live Football Data** | injuries, predicted line-ups | Adapter only, unverified — needs `APIFY_TOKEN` + actor id |
+| **Apify FPL Intelligence** | transfer/captain/price recommendations | Adapter only, unverified, **off by default** |
+| **World News API** | BBC/Sky/Guardian team and player context | Adapter only, unverified — needs base URL + key |
 
 > **Unofficial and third-party.** Everything except the official FPL feed is
 > outside this project's control and may change shape or disappear without
-> notice. The five adapters above have **not** been verified against a live
-> endpoint from this repository — their request shapes come from each
-> provider's documentation and are exercised only against fixtures. They are
-> configuration away from working, not proof that they work.
+> notice.
 
 ## Precedence: what may overwrite what
 

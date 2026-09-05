@@ -247,6 +247,15 @@ Ordered by impact ÷ effort. The first two are bug fixes and could ship today.
 | ~~7~~ | ~~The "I'm new to FPL" explainer~~ — **done**, `#fplbasics` | M | The genuinely missing content, not just a rearrangement |
 | ~~8~~ | ~~Rewrite the tour around the job, not the furniture~~ — **done** | M | Only worth doing after 3 and 6, or it captions the wrong thing |
 
+### 5.3 September 2026: display mode replaces the density nav filter
+
+The twelve-panel Simple nav below was driven by density. It is now driven by a
+dedicated **display mode** setting (`simple` / `terminal`, `ge-mode`, synced to
+`gwedge_profiles.display_mode`). Simple shows five panels plus More in the rail
+and the bottom tabs; Terminal is the full app. Density (Depth: Essentials /
+Everything) keeps deciding how much a page shows. The rule that mattered is
+unchanged: a hidden panel is unlisted, never unreachable.
+
 ### 5.2 What shipped for 3–8
 
 **The toggle is now called Simple / Everything**, not Beginner / Expert. Nobody

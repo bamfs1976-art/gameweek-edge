@@ -30,10 +30,10 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 
 | Pillar | Delivered by |
 |---|---|
-| Model‑driven xP picks | Captaincy Lab, Scout AI, Transfer Solver, Fixture Planner |
-| Gameweek snapshot | Overview, This Gameweek |
-| Live matchday | Live Percentile, Bonus Tracker, DefCon Threats, Auto‑Sub Tracker, What‑If |
-| Team linking | Squad, Transfers, Captaincy, Live Percentile, Manager Report, Mini‑Leagues |
+| Model‑driven xP picks | Captaincy Lab, Scout AI, Transfer Planner, Fixtures |
+| Gameweek snapshot | Overview, My Week |
+| Live matchday | Live (Percentile, Bonus, DEFCON, Rank threats, Auto-subs views), Simulators |
+| Team linking | My Squad, Transfer Planner, Captaincy Lab, Live, Manager Report, Mini‑Leagues |
 | Intelligence & AI | Scout AI, Ask the Scout, EO/Template/Rival tools |
 | Content | The Wire (auto blog), Team of the Week |
 
@@ -42,10 +42,24 @@ the 2026/27 season opens, the app populates automatically — no manual update.
 ## 2. Site map
 
 Navigation is **7 areas** (plus an owner‑only Studio) holding **36 panels** —
-in the **Everything** view. The **Simple** view, which is the default until a
-team is linked, narrows the nav to **5 areas and 12 panels** (`SIMPLE_PANELS`)
-and drops every Pro‑locked entry; it filters navigation only, so deep links and
-the command palette still reach everything. See `docs/FIRST_RUN_UX.md`.
+in **Terminal** mode. The app has two **display modes**, persisted per user
+(`ge-mode` on the device, `gwedge_profiles.display_mode` once signed in):
+
+- **Simple** — the default for signed-out visitors and new sign-ups. The left
+  rail and the bottom tab bar show five panels plus More: **This Gameweek**
+  (lands on My Week once a team is linked, Overview before then), **My Squad**,
+  **Transfer Planner**, **Captaincy Lab**, **Price Predictor**. Area tab
+  strips shrink to the same shortlist (`SIMPLE_PANELS`).
+- **Terminal** — every panel, exactly as before the setting existed. A device
+  that already carried a linked team when the setting shipped keeps Terminal.
+
+Simple mode filters navigation only: the More index, the command palette, deep
+links and push notifications reach every panel in both modes, and nothing is
+deleted. The toggle lives in Account & settings and at the top of the More
+index; `resolveDisplayMode()` is unit-tested in `dev/test-core.mjs` and the
+rail contract in `dev/test-simplenav.mjs`. The older **Depth** control
+(Essentials / Everything) is unchanged and decides how much a page shows, not
+how many pages there are. See `docs/FIRST_RUN_UX.md`.
 The sidebar lists the areas only — an area is a destination, not a folder, and
 lands on its first panel. The lateral move happens on the page: every panel
 carries an **area tab strip** naming the handful of views that belong with it
@@ -66,6 +80,7 @@ Home
 ├── My Week              (free)  Your personalised gameweek brief — home once a team is linked
 ├── Overview             (free)  Season snapshot, this week's calls, live state — home until then
 ├── Gameweek recap       (free)  What just happened, and what it cost you
+├── GW Debrief           (free)  The whole gameweek, scored against the model
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
 └── The Model            (free)  Track record first, then how it works
@@ -78,8 +93,7 @@ My Team
 ├── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
 ├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
 ├── Squad Planner        (free)  Squad builder — real FPL rules, xP6, AI diagnosis
-├── GW Debrief           (free)  Your gameweek, scored against the model
-└── Manager Report       (Pro)   Season review: points, rank, chips, captain/transfer ROI
+└── Manager Report       (free)  Your gameweek reviewed, plus the season: points, rank, chips, captain/transfer ROI
 
 Live
 └── Live                 (free)  One matchday, five views — Percentile and Bonus
@@ -133,9 +147,10 @@ Both are free; neither shows a tab strip, since neither belongs to an area's
 list.
 
 **Global chrome:** top bar (menu, brand, refresh, My Team), left sidebar
-(flat area list), area tab strip on every page, mobile bottom nav (Home · My
-Squad · Players · Match Centre · More) with the remaining areas in the More
-sheet, theme toggle (light/dark), deadline strip, account menu, upgrade modal,
+(flat area list), area tab strip on every page, mobile bottom nav (Terminal:
+Home · Squad · Players · Live · Leagues · More; Simple: This Gameweek · My
+Squad · Transfer Planner · Captaincy Lab · Price Predictor · More) with the
+remaining areas in the More index, theme toggle (light/dark), deadline strip, account menu, upgrade modal,
 player‑detail modal.
 
 ---

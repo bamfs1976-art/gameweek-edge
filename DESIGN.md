@@ -25,7 +25,7 @@ paint by a head script, so neither theme ever flashes.
 | `--surface-3` | `#eef1f4` | `#232b34` | the strictest surface — contrast is measured here |
 | `--text` … `--text-4` | 4-step ink ramp | 4-step ink ramp | `--text-4` marks absence only (3:1 UI bar) |
 | `--green` | `#147e48` | `#45c483` | the single brand accent |
-| `--amber` / `--lock` | `#b9741a` / `#8a5410` | `#f0a63a` | "watch this / partial" + the Pro affordance |
+| `--amber` / `--lock` | `#8f5a12` / `#8a5410` | `#f0a63a` | "watch this / partial" + the Pro affordance |
 | `--red` | `#c93834` | `#ff6b6b` | genuine negatives only: injury out, price fall confirmed, over budget |
 | `--accent-cta` | amber fill, white ink | amber fill, ink `#10161c` | actions read as actions; green stays reserved for positive data |
 | `--hot` | `#0f6d3d` | `#52cd8f` | THE key number on a screen |

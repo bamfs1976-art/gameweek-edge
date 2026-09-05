@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en-GB" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>The Model's Record — Gameweek Edge</title>
+<meta name="description" content="Every Fantasy Premier League gameweek, the Team of the Week, captain and price predictions this site published before the deadline, and how they scored against the average manager and a form XI.">
+<link rel="canonical" href="https://gameweekedge.co.uk/record/">
+<meta name="theme-color" content="#f4f6f8">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gameweek Edge">
+<meta property="og:title" content="The model's record — Gameweek Edge">
+<meta property="og:description" content="Team of the Week, captain and price calls recorded before every deadline and graded after every gameweek, in public.">
+<meta property="og:url" content="https://gameweekedge.co.uk/record/">
+<meta property="og:image" content="https://gameweekedge.co.uk/icons/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script>
+(function(){try{var t=localStorage.getItem('ge-theme');
+document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');}catch(e){}})();
+</script>
+<style>
+/* Tokens copied from index.html so this page is the app's colour, not a
+   re-pick. Light by default, dark on the same stored choice the app uses. */
+:root{--bg:#f4f6f8;--surface:#ffffff;--surface-3:#eef1f4;--border:rgba(12,16,20,.08);--border-2:rgba(12,16,20,.13);
+  --text:#10171e;--text-2:#586673;--text-3:#626f7d;--green:#147e48;--green-bright:#1f9d5c;--green-soft:rgba(31,157,92,.11);
+  --amber:#b9741a;--red:#c93834;--hot:#0f6d3d;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif;--font-body:'Public Sans',system-ui,sans-serif;--font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  --r-md:8px;--r-lg:12px;--r-pill:999px;--shadow:0 1px 2px rgba(12,16,20,.05),0 6px 20px rgba(12,16,20,.06)}
+[data-theme="dark"]{--bg:#10161c;--surface:#171e26;--surface-3:#232b34;--border:#242d37;--border-2:#2c3641;
+  --text:#e9edf1;--text-2:#a6b1bc;--text-3:#97a3ae;--green:#45c483;--green-bright:#3aa971;--green-soft:rgba(69,196,131,.13);
+  --amber:#f0a63a;--red:#ff6b6b;--hot:#52cd8f;--shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);line-height:1.5;-webkit-font-smoothing:antialiased}
+body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+a{color:var(--green);text-underline-offset:2px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--green-bright);outline-offset:2px}
+.skip-link{position:absolute;left:-9999px;top:8px;background:var(--surface);padding:8px 12px;border-radius:var(--r-md);z-index:10}
+.skip-link:focus{left:12px}
+.wrap{max-width:960px;margin:0 auto;padding:0 18px}
+.hdr{border-bottom:1px solid var(--border);background:var(--surface)}
+.hdr-in{display:flex;align-items:center;gap:12px;min-height:60px}
+.brand{display:flex;flex-direction:column;line-height:1.05}
+.brand-name{font-family:var(--font-display);font-size:1.05rem;letter-spacing:-.01em}
+.brand-name .light{font-weight:600}.brand-name .bold{font-weight:800}
+.brand-tag{font-size:.7rem;color:var(--text-3);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.logo-mark{width:34px;height:34px;flex:0 0 auto}
+.hdr-sp{flex:1}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;padding:8px 0}
+.tab{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:var(--r-pill);font-size:.86rem;font-weight:700;text-decoration:none;color:var(--text-2);border:1px solid transparent}
+.tab[aria-current]{background:var(--green-soft);color:var(--green);border-color:var(--border-2)}
+.theme-btn{min-height:44px;padding:0 14px;border-radius:var(--r-pill);border:1px solid var(--border-2);background:var(--surface);color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+main{padding:22px 0 40px}
+h1{font-family:var(--font-display);font-size:1.9rem;letter-spacing:-.02em;margin:0 0 8px}
+h2{font-family:var(--font-display);font-size:1.2rem;letter-spacing:-.01em;margin:26px 0 10px}
+.note{color:var(--text-2);font-size:.92rem;max-width:70ch;margin:0 0 6px}
+.faint{color:var(--text-3)}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;box-shadow:var(--shadow)}
+.lab{font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3)}
+.big{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:1.7rem;color:var(--hot);margin:2px 0 4px}
+.sub{font-size:.84rem;color:var(--text-2)}
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:520px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+td.num,th.num{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:2px 8px;border-radius:var(--r-pill);font-size:.72rem;font-weight:800;letter-spacing:.03em;border:1px solid var(--border-2);background:var(--surface-3);color:var(--text-2)}
+.badge.good{background:var(--green-soft);color:var(--green);border-color:transparent}
+.badge.bad{color:var(--red)}
+.badge.wait{color:var(--amber)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.xi{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.pl{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:var(--r-md);background:var(--surface-3);font-size:.82rem}
+.pl b{font-weight:700}.pl .pts{font-family:var(--font-mono);font-weight:600;color:var(--hot)}
+.prose p{max-width:72ch;color:var(--text-2);font-size:.92rem}
+.foot{border-top:1px solid var(--border);padding:18px 0 28px;font-size:.82rem;color:var(--text-3)}
+.foot p{max-width:72ch}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(pointer:coarse){input,select,textarea{font-size:16px;max-width:100%}}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="hdr">
+  <div class="wrap hdr-in">
+    <a href="/" aria-label="Gameweek Edge — home" style="display:flex;align-items:center;gap:11px;min-width:0;text-decoration:none;color:inherit">
+      <svg class="logo-mark" viewBox="0 0 38 38" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="36" height="36" rx="10" fill="#15824a"/>
+        <rect x="1" y="1" width="36" height="36" rx="10" stroke="#1f9d5c" stroke-width="1.5" opacity="0.5"/>
+        <path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="30" cy="11" r="3.4" fill="#fff"/>
+        <path d="M9 28.5 H29" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity="0.45"/>
+      </svg>
+      <span class="brand"><span class="brand-name"><span class="light">Gameweek</span> <span class="bold">Edge</span></span><span class="brand-tag">The model's record</span></span>
+    </a>
+    <div class="hdr-sp"></div>
+    <button class="theme-btn" id="theme-toggle" type="button" aria-label="Switch colour theme">Dark</button>
+  </div>
+  <div class="wrap">
+    <nav class="tabs" aria-label="Gameweek Edge sections">
+      <a class="tab" href="/">Open the app</a>
+      <a class="tab" href="/model">The Model, in the app</a>
+      <a class="tab" href="/record/" aria-current="page">FPL record</a>
+      <a class="tab" href="/fantasy-efl/record/">Fantasy EFL record</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <section>
+    <h1>The model's record</h1>
+    <p class="note">Every gameweek, inside the day and a half before the deadline, this site writes down
+      the model's Team of the Week, its captain pick and its five most likely price moves. After the
+      gameweek is scored they are graded against what an average manager scored, against an XI picked
+      on form alone, and against every player who took the field. Everything below is that record,
+      including the weeks it went badly.</p>
+    <p class="note" id="record-meta" aria-live="polite">Loading the record…</p>
+  </section>
+
+  <section aria-labelledby="season-title">
+    <h2 id="season-title">The season so far</h2>
+    <div id="season"></div>
+  </section>
+
+  <section aria-labelledby="latest-title">
+    <h2 class="sr-only" id="latest-title">The most recent gameweek</h2>
+    <div id="latest"></div>
+  </section>
+
+  <section aria-labelledby="rounds-title">
+    <h2 id="rounds-title">Gameweek by gameweek</h2>
+    <div id="rounds"></div>
+  </section>
+
+  <section aria-labelledby="method-title" class="prose">
+    <h2 id="method-title">How this is kept honest</h2>
+    <p><b>Picks are recorded before the deadline, or not at all.</b> A scheduled job writes the
+      gameweek's file inside the 36 hours before the deadline and stores both times, so the gap is on
+      the page. It refuses to write after a deadline and refuses to overwrite a gameweek that exists.
+      There is no flag that turns either refusal off, and the file is committed to a public
+      repository, so its history is timestamped evidence. A missing gameweek means the job did not run
+      or the feed was down; it is never filled in later.</p>
+    <p><b>The picks are the ones the app showed.</b> The job runs the same functions the app runs,
+      lifted out of the same file, not a copy of them.</p>
+    <p><b>The Team of the Week is graded on the eleven's official points, undoubled.</b> FPL's
+      average manager score includes captains, chips and automatic substitutions, so the two are not
+      the same measure. The XI with the model captain doubled is shown beside it; the honest headline
+      is the plain sum. The form XI is the best legal eleven by FPL's own form figure, chosen at the
+      same moment as our picks, never afterwards.</p>
+    <p><b>The captain is graded by rank.</b> Where he finished by official points among every player
+      who played that gameweek. Rank one means the model named the top scorer.</p>
+    <p><b>A price call is a hit when the price moved the way the model said</b> between the record
+      and the grade. A price that did not move is a miss, not a pending call.</p>
+    <p><b>"Not graded" means the feed did not publish the input.</b> Nothing on this page is
+      estimated to fill a gap.</p>
+    <p>None of this makes a projection a promise. A model that beats these bars over a season is one
+      worth reading alongside what you know; it does not know what happens on Saturday.</p>
+  </section>
+</main>
+
+<footer class="foot wrap">
+  <p><b>Independent tool.</b> Not affiliated with, endorsed by or associated with the Premier League
+    or the official Fantasy Premier League game. Competition and club names are used descriptively.</p>
+  <p><a href="/privacy.html">Privacy policy</a> · <a href="/">Gameweek Edge</a> · <a href="/fantasy-efl/">Fantasy EFL</a></p>
+</footer>
+
+<script>
+(function(){
+  'use strict';
+  var RECORD_URL='/record/record.json';
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  var int=function(v){return Number.isFinite(v)?String(Math.round(v)):'—';};
+  var n1=function(v){return Number.isFinite(v)?(Math.round(v*10)/10).toFixed(1):'—';};
+  var pct=function(v){return Number.isFinite(v)?Math.round(v*100)+'%':'—';};
+  var day=function(iso){var t=Date.parse(iso);return Number.isFinite(t)?new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';};
+  var NG='<span class="badge wait">not graded</span>';
+
+  /* Theme toggle: the same stored choice as the app. */
+  var tb=document.getElementById('theme-toggle');
+  function applyTheme(t){document.documentElement.setAttribute('data-theme',t);tb.textContent=t==='dark'?'Light':'Dark';try{localStorage.setItem('ge-theme',t);}catch(e){}}
+  tb.textContent=document.documentElement.getAttribute('data-theme')==='dark'?'Light':'Dark';
+  tb.addEventListener('click',function(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');});
+
+  function card(label,value,detail){return '<div class="card"><div class="lab">'+esc(label)+'</div><div class="big">'+value+'</div><div class="sub">'+detail+'</div></div>';}
+
+  function seasonCards(s){
+    if(!s||!s.graded)return '<p class="note">No gameweek has been graded yet. The first scorecard appears once a recorded gameweek has been scored by FPL.</p>';
+    var t=s.totw,c=s.captain,p=s.prices;
+    return '<div class="grid">'+
+      card('Team of the Week vs the average manager',t.averageGraded?int(t.beatAverage)+' / '+int(t.averageGraded):NG,
+        t.averageGraded?'gameweeks in which the model XI outscored the average manager. XI averaged '+n1(t.meanPoints)+' points against an average score of '+n1(t.meanAverage)+'.':'FPL has not published an average score for a graded gameweek yet.')+
+      card('Team of the Week vs a form XI',t.naiveGraded?int(t.beatNaive)+' / '+int(t.naiveGraded):NG,
+        t.naiveGraded?'gameweeks in which the model XI beat an eleven picked on form alone. This is the bar that has to fall.':'No form XI could be fixed yet; there is no form before the first gameweek.')+
+      card('Captain rank',c.graded?int(c.medianRank):NG,
+        c.graded?'median rank of the model captain among every player who played. Top scorer '+int(c.top)+' time'+(c.top===1?'':'s')+', top ten '+int(c.top10)+' of '+int(c.graded)+'.':'No captain graded yet.')+
+      card('Price calls',p.graded?pct(p.rate):NG,
+        p.graded?int(p.hits)+' of '+int(p.graded)+' predicted moves happened.':'No price call graded yet.')+
+      '</div>';
+  }
+
+  function xiChips(players){
+    return '<div class="xi">'+players.map(function(pl){
+      return '<span class="pl"><b>'+esc(pl.name)+'</b><span class="faint">'+esc(pl.team)+' · '+esc(pl.position)+'</span>'+
+        (pl.points!=null?'<span class="pts">'+int(pl.points)+'</span>':'<span class="faint">'+n1(pl.xp)+' xP</span>')+'</span>';
+    }).join('')+'</div>';
+  }
+
+  function latest(gws){
+    if(!gws.length)return '<p class="note">Nothing has been recorded yet.</p>';
+    var g=gws[gws.length-1],r=g.result;
+    var head='<div class="card"><div class="lab">Gameweek '+int(g.gw)+' · '+(r?'graded':'recorded, not yet played')+'</div>'+
+      '<p class="sub">Recorded '+day(g.recordedAt)+', '+n1(g.hoursBeforeDeadline)+' hours before the deadline ('+day(g.deadlineAt)+').</p>';
+    var totw='<h3 style="margin:12px 0 2px;font-size:1rem">Team of the Week · '+esc(g.totw.formation)+' · '+n1(g.totw.modelTotal)+' xP'+
+      (r?' → <span class="pts" style="font-family:var(--font-mono);color:var(--hot)">'+int(r.totw.total)+' points</span>'+
+        (r.totw.average!=null?' vs average '+int(r.totw.average):' · average '+NG)+
+        (r.totw.naive!=null?' · form XI '+int(r.totw.naive):''):'')+'</h3>'+xiChips(g.totw.players);
+    var cap='<h3 style="margin:14px 0 2px;font-size:1rem">Captain · '+esc(g.captain.name)+' ('+esc(g.captain.team)+') · '+n1(g.captain.xp)+' xP'+
+      (r&&r.captain?' → '+int(r.captain.points)+' points, rank '+int(r.captain.rank)+' of '+int(r.captain.of):(r?' → '+NG:''))+'</h3>'+
+      '<p class="sub">Also considered: '+g.captain.alternatives.map(function(a){return esc(a.name)+' '+n1(a.xp);}).join(', ')+'</p>';
+    var pr='<h3 style="margin:14px 0 2px;font-size:1rem">Price calls'+(r?' · '+int(r.prices.hits)+' of '+int(r.prices.graded)+' hit':'')+'</h3>'+
+      '<div class="xi">'+g.prices.map(function(p){
+        var flag=p.hit==null?'':p.hit?'<span class="badge good">moved</span>':'<span class="badge bad">did not</span>';
+        return '<span class="pl"><b>'+esc(p.name)+'</b><span class="faint">'+esc(p.team)+' · '+(p.dir==='rise'?'↑ rise':'↓ fall')+' '+int(p.prob)+'%</span>'+flag+'</span>';
+      }).join('')+'</div>';
+    return head+totw+cap+pr+'</div>';
+  }
+
+  function roundsTable(gws){
+    if(!gws.length)return '';
+    var rows=gws.slice().reverse().map(function(g){
+      var r=g.result;
+      var flag=!r?'<span class="badge wait">Not played yet</span>':r.totw.beatAverage==null?'<span class="badge">Graded</span>':r.totw.beatAverage?'<span class="badge good">Beat the average</span>':'<span class="badge bad">Below the average</span>';
+      return '<tr><th scope="row">GW'+int(g.gw)+'</th>'+
+        '<td>'+esc(g.totw.formation)+' · '+n1(g.totw.modelTotal)+' xP</td>'+
+        '<td class="num">'+(r?int(r.totw.total):'—')+'</td>'+
+        '<td class="num">'+(r?(r.totw.average!=null?int(r.totw.average):NG):'—')+'</td>'+
+        '<td class="num">'+(r?(r.totw.naive!=null?int(r.totw.naive):NG):'—')+'</td>'+
+        '<td>'+esc(g.captain.name)+(r&&r.captain?' <span class="faint">'+int(r.captain.points)+' pts · #'+int(r.captain.rank)+'</span>':'')+'</td>'+
+        '<td class="num">'+(r?int(r.prices.hits)+'/'+int(r.prices.graded):'—')+'</td>'+
+        '<td>'+flag+'</td></tr>';
+    }).join('');
+    return '<div class="tscroll"><table><caption class="sr-only">Every recorded gameweek and how it was graded</caption>'+
+      '<thead><tr><th scope="col">GW</th><th scope="col">Model XI</th><th scope="col" class="num">XI pts</th><th scope="col" class="num">Average</th><th scope="col" class="num">Form XI</th><th scope="col">Captain</th><th scope="col" class="num">Prices</th><th scope="col">Verdict</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table></div>';
+  }
+
+  fetch(RECORD_URL,{headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('HTTP '+r.status);return r.json();})
+    .then(function(rec){
+      var gws=rec.gameweeks||[];
+      document.getElementById('record-meta').textContent=gws.length
+        ?gws.length+' gameweek'+(gws.length===1?'':'s')+' recorded, '+(rec.season.graded||0)+' graded. Ledger last moved '+day(rec.ledgerUpdatedAt)+'.'
+        :'Nothing recorded yet. The first entry is written inside the 36 hours before the next deadline.';
+      document.getElementById('season').innerHTML=seasonCards(rec.season);
+      document.getElementById('latest').innerHTML=latest(gws);
+      document.getElementById('rounds').innerHTML=roundsTable(gws);
+    })
+    .catch(function(err){
+      document.getElementById('record-meta').textContent='The record could not be loaded ('+err.message+'). Nothing is shown rather than a guess.';
+    });
+})();
+</script>
+</body>
+</html>

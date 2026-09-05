@@ -541,8 +541,13 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      narrows the nav as well as the detail. That must NARROW the owner and
      capability gate, never replace it — so assert both the call site and the
      delegation, or a Simple view could quietly expose an owner area. */
-  ok(/const DESTINATIONS=\[/.test(html) && /DESTINATIONS\.forEach/.test(html),
-    'the sidebar and bottom bar render the one shared destination list');
+  /* Both bars render destinations(), which picks DESTINATIONS (Terminal) or
+     DESTINATIONS_SIMPLE (Simple) — one list per mode, never two lists per
+     bar. dev/test-simplenav.mjs proves the labels match in the browser. */
+  ok(/const DESTINATIONS=\[/.test(html) && /const DESTINATIONS_SIMPLE=\[/.test(html)
+    && /nav\.innerHTML='';\s*destinations\(\)\.forEach/.test(html)
+    && /bn\.innerHTML='';\s*\(phoneNav\(\)\?DESTINATIONS_SIMPLE:destinations\(\)\)\.forEach/.test(html),
+    'the sidebar and bottom bar render the one shared destination list (the bar takes the phone list under 560px)');
   ok(/if\(!p\|\|!canSeePanel\(p\)\)return '';/.test(html),
     'the More index is filtered by the gate');
   ok(/function navVisibleArea\(a\)\{\s*if\(!canSeeArea\(a\)\)return false;/.test(html),
@@ -557,8 +562,10 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      their home. */
   ok(/if\(!PANELS\[panelId\]\|\|!canSeePanel\(PANELS\[panelId\]\)\)panelId=homePanel\(\);/.test(html),
     'openPanel guards deep links');
-  ok(/function homePanel\(\)\{return getMid\(\)\?'myweek':'dashboard';\}/.test(html),
-    'home is My Week when a team is linked, Overview when it is not');
+  /* Home is the first-run flow until it is finished, then My Week for a
+     linked manager and Overview for everyone else. */
+  ok(/function homePanel\(\)\{\s*if\(onboardActive\(\)\)return 'onboard';\s*return getMid\(\)\?'myweek':'dashboard';\s*\}/.test(html),
+    'home is the first-run flow until done, then My Week when a team is linked, Overview when it is not');
 
   /* ── The nav shape ───────────────────────────────────────
      The sidebar is a flat list of areas and the lateral move happens on the
@@ -1541,6 +1548,7 @@ console.log('• the column gate: a Pro column is locked, unsortable and unexpor
     ${fn('baselineBps')}
     ${fn('baselineBps90')}
     ${fn('priceChangeProb')}
+    ${fn('suspNext')}
     ${fn('suspCutoff')}
     ${fn('suspRisk')}
     ${fn('confTier')}
@@ -1552,6 +1560,11 @@ console.log('• the column gate: a Pro column is locked, unsortable and unexpor
     ${fn('dcHitRate')}
     ${fn('dcHitLabel')}
     const window={};
+    /* The vendored ladder, after window exists: the module picks window
+       over globalThis when it can, and a const declared below it is in its
+       temporal dead zone at that moment. */
+    ${readFileSync(join(ROOT, 'vendor', 'suspension_core.js'), 'utf8')}
+    ${readFileSync(join(ROOT, 'vendor', 'suspension_scheme.js'), 'utf8')}
     ${fn('plColLocked')}
     ${fn('plSusp')}
     ${fn('plCols')}

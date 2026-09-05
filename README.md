@@ -14,10 +14,11 @@ signals, fixture context, news and optional third-party recommendations, each
 with its own provenance, timestamp and staleness. It is **read-only**.
 
 It works with **no credentials**: the official FPL feed and football-data.org
-are already proxied by this site. Five further providers (LetLetMe, an
-unofficial FPL GraphQL/REST wrapper, two Apify actors and World News) ship as
-complete adapters that stay switched off until their settings are supplied,
-and are **not verified against a live endpoint** from this repository.
+are already proxied by this site, and those two are the only sources this
+README vouches for. Further provider adapters exist in the code but are
+switched off and unverified; they are listed, with that status, under
+*Adapters not verified against a live endpoint* in
+[docs/ENRICHMENT.md](docs/ENRICHMENT.md).
 
 ```bash
 npm run enrich -- --health                       # what is configured
@@ -96,6 +97,18 @@ possible in hindsight. The picks are committed to this repository before the
 football happens, the job cannot write after a lockout or overwrite an entry,
 and the whole record — good weeks and bad — is at
 **[`/fantasy-efl/record/`](https://gameweekedge.co.uk/fantasy-efl/record/)**.
+
+**The FPL model is graded the same way.** Inside the 36 hours before every
+deadline, `scripts/record/record-picks.mjs` writes the model Team of the Week,
+the captain pick and the five most likely price moves to `data/record/`, built
+by the same functions the app runs. After FPL scores the gameweek,
+`grade-gw.mjs` grades the eleven's official points against the average manager
+score and against a form XI fixed at the same moment, ranks the captain among
+every player who played, and counts the price calls that happened. The whole
+record, including "not graded" where the feed published no input, is at
+**[`/record/`](https://gameweekedge.co.uk/record/)** and, in plain English,
+under **The Model** in the app. Same refusals as the EFL ledger: never after a
+deadline, never overwritten.
 
 ### Game packs
 
@@ -220,8 +233,10 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 
 **All 38 panels (7 areas) are wired to live data** — see `docs/FEATURES.md` for the full panel reference.
 
-- **Free:** Dashboard, This Gameweek, Pre-season Draft (2026/27 squad builder), My Squad (live pitch), Transfer Planner, Captaincy Lab, Fixture Planner, Clean Sheet Matrix, Differentials, Price Predictor, Injury Monitor, Chip Strategy, Watchlist (saved on device), Alerts, Player Compare.
-- **Pro** (gated behind the paywall): Live Percentile (an estimated percentile, not a true live rank), DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Rival Scout, **Scout AI**, Set Piece Register, Rotation Risk.
+- **Free:** My Week, Overview, Gameweek recap, GW Debrief, The Wire, The Model, My Squad, Transfer Planner, Captaincy Lab, Chip Strategy, Squad Planner, Manager Report, Live (Percentile and Bonus views), Players (with the Differentials and Fitness lenses), Scout Board, Player Compare, Price Predictor, Latest News, Fixtures (grid, points and clean-sheet views), Watchlist, Alerts, Mini-Leagues, Matchday, Title Race, Clubs, Ten Seasons.
+- **Pro** (gated behind the paywall): **Scout AI**, the DEFCON, Rank threats and Auto-subs views of Live, Set Piece Register, Rotation Risk, Simulators (season and what-if), Rival Scout, Ownership (your EO and the template). Live is an estimated percentile, not a true live rank, and says so.
+
+Panel names are canonical across the app, the landing page and the docs: see `docs/NAMING.md`.
 
 **Scout AI** is our own answer to third-party prediction sites, built on the data we already have plus Claude:
 - A transparent **predicted-points (xP)** model — FPL's expected points scaled by availability and fixture difficulty — feeds an optimiser that picks the **Team of the Week** (best valid XI, max 3 per club) and the **captain**. Captaincy Lab now ranks by xP too.
@@ -231,9 +246,9 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 All Claude calls go through **one** server function, `netlify/functions/ai.js` (per-task prompts). The **numbers come from our own models**; Claude reasons over the JSON we pass and is told not to invent data. Models are chosen per task (Haiku 4.5 for high-volume, Sonnet 4.6 for chat/reasoning).
 
 - **Ask the Scout** — a chat coach grounded in your squad, xP, fixtures and candidates.
-- **AI Scout Report** — captain, gameweek picks and a read on your team.
+- **Scout AI report** — captain, gameweek picks and a read on your team.
 - **AI Transfer Planner** — concrete moves (out → in, cost, hit y/n) from your squad and fixtures.
-- **Weekly Digest** & **Last Gameweek Review** — Dashboard cards.
+- **Weekly Digest** & **Last Gameweek Review** — Overview cards.
 - **Player verdicts** (Watchlist), **Chip Adviser** (Chip Strategy), **Rival Brief** (Rival Scout).
 
 The Anthropic key stays server-side — set `ANTHROPIC_API_KEY` on the Netlify site to switch them all on (without it, each shows a tidy setup note). On-demand generations are **cached per gameweek** and the buttons on free panels are **Pro-gated** to control cost.
@@ -252,17 +267,17 @@ It answers the one question live data cannot, because before gameweek one there
 is no live data: **who is worth picking?** Measured on the pre-season board, it
 takes the Draft from *0 of 120 players ranked* to *120 of 120*.
 
-- **Pre-season Draft** — minutes- and recency-weighted career priors, with a
+- **Squad Planner** — minutes- and recency-weighted career priors, with a
   visible confidence badge and an explicit *"No PL record"* fallback for
   promoted-club and overseas players.
-- **Model Accountability** — every season graded separately. The model beat the
+- **The Model** — every season graded separately. The model beat the
   form baseline in all ten; the four seasons with expected-goals data are
   labelled *as shipped* and the six before them *proxy*, and the two are never
   pooled.
 - **Captaincy / Transfers / Rank Threats** — career haul and blank rates next to
   the simulated ones, and a regression flag when a player is scoring above or
   below his underlying chances.
-- **Ten Seasons panel** — all-time records, career comparison, and a daily
+- **Ten Seasons** — all-time records, career comparison, and a daily
   guess-the-player puzzle.
 
 Rebuild with `npm run history`; `.github/workflows/history.yml` does it weekly

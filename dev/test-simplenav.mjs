@@ -72,15 +72,21 @@ const check = (name, got, want) => {
   console.log(`${ok ? '✓' : '✗'} ${name}` + (ok ? '' : `\n    got ${JSON.stringify(got)}`));
 };
 
-const open = async (density, path, viewport) => {
+const open = async (density, path, viewport, mode) => {
   const ctx = await b.newContext({ viewport: viewport || { width: 1280, height: 1100 } });
-  await ctx.addInitScript(([d]) => {
+  await ctx.addInitScript(([d, m]) => {
     try{
       localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
       localStorage.setItem('ge-visited', '1');      /* never bounce to /welcome */
       if(d) localStorage.setItem('ge-density', d);
+      /* Terminal is the pre-existing experience every check below was
+         written against; simple is the new default and gets its own block. */
+      localStorage.setItem('ge-mode', m || 'terminal');
+      /* Likewise the first-run flow: finished, so Home is the board these
+         checks were written against. The flow has its own block. */
+      localStorage.setItem('ge-onboard', 'done');
     }catch(_){}
-  }, [density]);
+  }, [density, mode]);
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push(String(e).split('\n')[0]));
@@ -122,6 +128,99 @@ const NAV_LABELS = ['Home', 'Squad', 'Players', 'Live', 'Leagues', 'More'];
   check('no coach marks over the page', s.coachMark, false);
   check('depth control reads Essentials', s.densityLabel, 'Depth: Essentials');
   check('essentials: no page errors', errors.length, 0);
+  await ctx.close();
+}
+
+/* ── simple mode: the five-panel rail ── */
+{
+  const { ctx, page, errors } = await open('beginner', '/', null, 'simple');
+  const s = await shell(page);
+  const SIMPLE = ['This Gameweek', 'My Squad', 'Transfer Planner', 'Captaincy Lab', 'Price Predictor', 'More'];
+  check('simple: the rail is the five panels plus More', s.sidebar.join('|'), SIMPLE.join('|'));
+  check('simple: bottom tabs carry the same six', s.bottom.join('|'), s.sidebar.join('|'));
+  check('simple: no page errors', errors.length, 0);
+  /* Every panel stays reachable: a deep link to a panel outside the five. */
+  await page.evaluate(() => openPanel('fixtures'));
+  await page.waitForTimeout(800);
+  check('simple: a panel outside the rail still opens by name', await page.evaluate(() => document.getElementById('tb-title')?.textContent.trim()), 'Fixtures');
+  await ctx.close();
+}
+{
+  /* No stored mode at all: a signed-out visitor is simple by default, and a
+     device that already carried a linked team keeps the full rail. */
+  const fresh = async (mid) => {
+    const c = await b.newContext({ viewport: { width: 1280, height: 1100 } });
+    await c.addInitScript(([m]) => { try{
+      localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
+      localStorage.setItem('ge-visited', '1');
+      localStorage.setItem('ge-onboard', 'done');
+      if(m) localStorage.setItem('ge-mid', m);
+    }catch(_){} }, [mid]);
+    const p = await c.newPage();
+    await p.goto(BASE + '/', { waitUntil: 'load' });
+    await p.waitForTimeout(3000);
+    const labels = await p.evaluate(() => [...document.querySelectorAll('#sb-nav .nav-area-label')].map(e => e.textContent.trim()));
+    const stored = await p.evaluate(() => localStorage.getItem('ge-mode'));
+    await c.close();
+    return { labels, stored };
+  };
+  const a = await fresh(null);
+  check('no stored mode, no team: the rail is simple', a.labels[0], 'This Gameweek');
+  const b2 = await fresh('101');
+  check('no stored mode, team already linked: the device keeps the full rail', b2.labels.join('|'), NAV_LABELS.join('|'));
+  check('and records that as terminal so it never flips later', b2.stored, 'terminal');
+}
+
+/* ── first run: three steps, under a minute ── */
+{
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 1100 } });
+  await ctx.addInitScript(() => { try{
+    localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
+    localStorage.setItem('ge-visited', '1');
+    localStorage.removeItem('ge-mid'); localStorage.removeItem('ge-onboard');
+  }catch(_){} });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(String(e).split('\n')[0]));
+  const t0 = Date.now();
+  await page.goto(BASE + '/', { waitUntil: 'load' });
+  await page.waitForSelector('#ltf-input', { timeout: 8000 }).catch(() => {});
+  const s1 = await page.evaluate(() => ({
+    step: document.querySelector('.ob-step.on .ob-step-t')?.textContent.trim(),
+    input: !!document.getElementById('ltf-input'),
+    signin: !!document.getElementById('ob-signin'),
+  }));
+  check('onboarding: a signed-out newcomer lands on step 1, the Manager ID', s1.step, 'Your Manager ID');
+  check('onboarding: no sign-in prompt before the rating', s1.signin, false);
+  await page.fill('#ltf-input', '101');
+  await page.click('#ltf-save');
+  await page.waitForSelector('#ob-next', { timeout: 10000 }).catch(() => {});
+  const s2 = await page.evaluate(() => ({
+    step: document.querySelector('.ob-step.on .ob-step-t')?.textContent.trim(),
+    stats: document.querySelectorAll('.ob-rating .stat').length,
+    signin: !!document.getElementById('ob-signin'),
+    text: document.querySelector('.ob-rating')?.textContent || '',
+  }));
+  check('onboarding: linking moves to step 2, the rating', s2.step, 'Your squad, rated');
+  check('onboarding: the rating carries xP, the model XI and a weakest position', s2.stats, 4);
+  check('onboarding: still no sign-in prompt on the rating', s2.signin, false);
+  await page.click('#ob-next');
+  await page.waitForSelector('#ob-go', { timeout: 10000 }).catch(() => {});
+  const s3 = await page.evaluate(() => ({
+    step: document.querySelector('.ob-step.on .ob-step-t')?.textContent.trim(),
+    go: document.getElementById('ob-go')?.textContent.trim() || '',
+    signin: !!document.getElementById('ob-signin'),
+  }));
+  check('onboarding: step 3 is one recommended action', s3.step, 'One thing to do');
+  check('onboarding: the action opens a named panel', s3.go, g => /^Open /.test(g));
+  check('onboarding: the sign-in prompt appears only now', s3.signin, true);
+  check('onboarding: the whole flow ran well inside a minute', Date.now() - t0, ms => ms < 60000);
+  await page.click('#ob-go');
+  await page.waitForTimeout(1500);
+  const after = await page.evaluate(() => ({ done: localStorage.getItem('ge-onboard'), title: document.getElementById('tb-title')?.textContent.trim() }));
+  check('onboarding: taking the action finishes the flow', after.done, 'done');
+  check('onboarding: and lands on the panel it named', after.title, t => /Transfer Planner|Captaincy Lab|Price Predictor/.test(t));
+  check('onboarding: no page errors', errors.length, 0);
   await ctx.close();
 }
 
@@ -228,6 +327,7 @@ for(const [who, mid] of [['linked', '123456'], ['unlinked', null]]){
     try{
       localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
       localStorage.setItem('ge-visited', '1');
+      localStorage.setItem('ge-onboard', 'done');
       if(m) localStorage.setItem('ge-mid', m); else localStorage.removeItem('ge-mid');
     }catch(_){}
   }, [mid]);
@@ -302,6 +402,7 @@ for(const [who, mid] of [['linked', '123456'], ['unlinked', null]]){
     try{
       localStorage.setItem('ge-api-base', 'http://127.0.0.1:8731');
       localStorage.setItem('ge-visited', '1');
+      localStorage.setItem('ge-onboard', 'done');
       localStorage.removeItem('ge-mid');
     }catch(_){}
   });
