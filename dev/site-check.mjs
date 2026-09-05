@@ -217,9 +217,32 @@ try {
    new — and a stale marker fails loudly here rather than silently passing,
    because the string will still be present and the check will simply stop
    being informative. Hence the date. */
-const MARKER = { text: 'swing:e.sd', since: '2026-08-27',
-  what: 'the league-swing card ranking by spread instead of distance from 100%' };
-/* Rotated from 'const BOOT_TTL=' (2026-08-27), confirmed live by run 61.
+const MARKER = { text: 'function chipPlaysByGw', since: '2026-09-04',
+  what: 'the gameweek-by-gameweek count of every chip played across FPL' };
+/* Rotated from 'swing:e.sd' (2026-08-27), never confirmed live.
+
+   The Chips page gained a table of how many chips the whole game played
+   each gameweek, off the counts bootstrap-static already carries, and the
+   Triple Captain row in your own played-chips list gained the captain you
+   actually tripled. chipPlaysByGw is the function behind the table and
+   exists in no earlier build.
+
+   THIS IS THE FAILURE THIS BLOCK DESCRIBES, CAUGHT IN THE ACT. The marker
+   sat on 'swing:e.sd' for eight days and SIXTEEN releases to index.html —
+   the UI/UX overhaul, the live pitch view, four separate leagues fixes,
+   the provisional-bonus fix, the Home status board, the countdown that
+   would not fit its card, two Social Studio cards, the mini-league
+   cumulative total, and this one. Every check in between could only have
+   gone green, because the string was live the whole time; a run two
+   minutes after any of those pushes would have reported "deployed and
+   verified" while looking at a build up to sixteen releases old.
+
+   Nothing went red. Nobody was told. It was noticed only because somebody
+   asked, again — the fourth time in this log that is how it surfaced.
+   Rotating on every user-visible change to index.html is not bookkeeping;
+   it is the only thing that keeps this check meaning anything.
+
+   Before that 'const BOOT_TTL=' (2026-08-27), confirmed live by run 61.
 
    Reported from a real twelve-manager league: "Who separates this league"
    listed six players and every one read 0.0%. The percentages were right;
