@@ -2,6 +2,7 @@
   "name": "gameweek-edge",
   "version": "1.0.0",
   "private": true,
+  "license": "UNLICENSED",
   "description": "Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.",
   "scripts": {
     "build:web": "node scripts/build-web.mjs",

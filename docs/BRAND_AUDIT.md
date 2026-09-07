@@ -4,7 +4,14 @@ Scope: `index.html`, `landing.html`, `privacy.html`, `manifest.webmanifest`,
 the icon and social-image generators, `README.md`, `DESIGN.md`, measured
 against `BRAND.md` as it exists in this repository.
 
-## The finding that needs a decision
+## Decision: green primary, light default (7 September 2026)
+
+The owner confirmed on 7 September 2026 that `BRAND.md` stands as written:
+green primary, light theme by default, dark as the toggle. The navy and
+dark-terminal reading in the readiness brief is withdrawn. No second pass is
+needed; every surface below was already reconciled to the file.
+
+## The finding that needed a decision
 
 `BRAND.md` in this repository says: **green primary** (`#15824a`), green
 bright (`#1f9d5c`) for accents and links, a **light theme by default** with
