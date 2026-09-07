@@ -32,8 +32,10 @@ function priceChangeProb(el, totalPlayers) {
   return { dir: net > 0 ? 'rise' : net < 0 ? 'fall' : 'flat', prob: Math.max(5, Math.min(95, Math.round(raw))) };
 }
 
-/* Card-ban cutoffs: 5 yellows by GW19, 10 by GW32, 15 across the season. */
-const suspLimit = (gw) => (gw <= 19 ? 5 : gw <= 32 ? 10 : 15);
+/* The card-ban ladder is the vendored rule the app reads, loaded through
+   netlify/lib/suspension.js. No threshold is written in this file, and
+   scripts/check-shell.mjs fails the build if one reappears. */
+const { loadRule, justOneFromBan } = require('../lib/suspension');
 
 exports.handler = async () => {
   const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
@@ -59,7 +61,8 @@ exports.handler = async () => {
 
   /* Price + injury + card-ban diff vs the last snapshot. */
   const gwNow = (boot.events || []).find((e) => e.is_current) || (boot.events || []).find((e) => e.is_next);
-  const limit = suspLimit(gwNow ? gwNow.id : 38);
+  const rule = loadRule();
+  const gwId = gwNow ? gwNow.id : 38;
   const prev = (await getState('snapshot')) || {};
   const snap = {};
   const risers = [], fallers = [], injured = [], banEdge = [];
@@ -71,7 +74,8 @@ exports.handler = async () => {
     else if (e.now_cost < p.c) fallers.push(e);
     if (p.s === 'a' && e.status !== 'a') injured.push(e);
     /* Just picked up the yellow that leaves them one from a ban. */
-    if ((e.yellow_cards || 0) === limit - 1 && (p.y || 0) < limit - 1) banEdge.push(e);
+    const rung = justOneFromBan(rule, e.yellow_cards, p.y, gwId);
+    if (rung) banEdge.push({ e, rung });
   });
   await setState('snapshot', snap);
 
@@ -90,10 +94,14 @@ exports.handler = async () => {
       url: '/?panel=injuries' });
   }
   if (hadSnapshot && banEdge.length) {
-    const top = banEdge.sort((a, c) => parseFloat(c.selected_by_percent) - parseFloat(a.selected_by_percent));
+    const top = banEdge.sort((a, c) => parseFloat(c.e.selected_by_percent) - parseFloat(a.e.selected_by_percent));
+    /* Name the rung when everyone listed is on the same one; mid-season the
+       list can mix a player closing on five with one closing on ten. */
+    const rungs = new Set(top.map((x) => x.rung.at));
+    const which = rungs.size === 1 ? 'the ' + top[0].rung.at + '-card ban' : 'a ban';
     alerts.push({ type: 'suspension', title: 'Suspension risk',
-      body: top.slice(0, 4).map(nm).join(', ') + (top.length > 4 ? '…' : '') +
-        (top.length > 1 ? ' are' : ' is') + ' now one yellow from the ' + limit + '-card ban.',
+      body: top.slice(0, 4).map((x) => nm(x.e)).join(', ') + (top.length > 4 ? '…' : '') +
+        (top.length > 1 ? ' are' : ' is') + ' now one yellow from ' + which + '.',
       url: '/?panel=injuries' });
   }
 

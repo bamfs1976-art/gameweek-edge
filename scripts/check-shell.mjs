@@ -128,10 +128,31 @@ assert.ok(!/https?:\/\/fantasy\.premierleague\.com\/api/.test(html),
     [/\blimit\s*:\s*(5|10|15)\s*,\s*by\s*:/, 'limit:N, by:M — the ladder typed by hand'],
     [/yellow_cards\s*(\|\|\s*0\s*)?\)?\s*===?\s*(4|9|14)\b/, 'yellow_cards === 4|9|14 — "one from a ban" typed by hand'],
   ];
-  for (const [re, why] of banned) {
-    const m = code.match(re);
-    assert.ok(!m, 'index.html carries a hard-coded suspension threshold (' + why + '): ' +
-      JSON.stringify(m && m[0]) + '. Read it through PLDCore.nextSuspension and GE_SUSPENSION instead.');
+  const stripComments = (src) => src
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1');
+  const noHandTypedLadder = (src, label) => {
+    for (const [re, why] of banned) {
+      const m = src.match(re);
+      assert.ok(!m, label + ' carries a hard-coded suspension threshold (' + why + '): ' +
+        JSON.stringify(m && m[0]) + '. Read it through PLDCore.nextSuspension and GE_SUSPENSION instead.');
+    }
+  };
+  noHandTypedLadder(code, 'index.html');
+  /* The push sender once carried the third copy. It now reads the vendored
+     rule through netlify/lib/suspension.js, and this keeps it that way. */
+  for (const fn of ['push-cron.js', 'push-live.js']) {
+    const src = stripComments(readFileSync(join(root, 'netlify/functions', fn), 'utf8'));
+    noHandTypedLadder(src, 'netlify/functions/' + fn);
+  }
+  {
+    const cron = stripComments(readFileSync(join(root, 'netlify/functions/push-cron.js'), 'utf8'));
+    assert.ok(/require\('\.\.\/lib\/suspension'\)/.test(cron) && /justOneFromBan\(/.test(cron),
+      'push-cron.js no longer reads the ladder through netlify/lib/suspension.js');
+    const lib = stripComments(readFileSync(join(root, 'netlify/lib/suspension.js'), 'utf8'));
+    noHandTypedLadder(lib, 'netlify/lib/suspension.js');
+    assert.ok(/\.nextSuspension\(/.test(lib) && /GE_SUSPENSION/.test(lib),
+      'netlify/lib/suspension.js no longer calls the vendored PLDCore.nextSuspension against GE_SUSPENSION');
   }
   for (const need of ['vendor/suspension_core.js', 'vendor/suspension_scheme.js', 'vendor/suspension.js']) {
     assert.ok(new RegExp('<script src="' + need.replace('.', '\\.') + '"').test(html),
@@ -139,7 +160,7 @@ assert.ok(!/https?:\/\/fantasy\.premierleague\.com\/api/.test(html),
   }
   assert.ok(/\.nextSuspension\(/.test(code), 'index.html no longer calls PLDCore.nextSuspension — the ladder is not the vendored one');
   assert.ok(/GE_SUSPENSION/.test(code), 'index.html no longer reads GE_SUSPENSION — the ladder is not the vendored scheme');
-  console.log('  suspension ladder: no hard-coded threshold, vendored rule loaded and called');
+  console.log('  suspension ladder: no hard-coded threshold in the app or the push sender, vendored rule loaded and called');
 }
 
 console.log(`shell guard OK: ${REQUIRED_IDS.length} ids present, ${shellPaths.length} precache entries checked, no client-side secrets`);

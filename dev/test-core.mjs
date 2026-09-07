@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path';
    mock would happily "tolerate" whatever we told it to. */
 import Fuse from 'fuse.js';
 import { extractArrayConst, extractBlock, extractConst, extractFn, extractLine } from './extract.mjs';
+import { createRequire } from 'node:module';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -2977,6 +2978,34 @@ ok(core.suspRisk(5, 10).limit === 10 && core.suspRisk(5, 10).left === 5 && core.
 ok(core.suspRisk(15, 38).dead === true && core.suspRisk(15, 38).level === null, 'fifteen: no rung left, and no flag invented');
 ok(core.suspRisk(0, 1).left === 5 && core.suspRisk(0, 1).level === null, 'clean record → 5 left, no flag');
 ok(core.suspRisk(null, 10).yellows === 0, 'null yellows treated as 0');
+
+/* ── the push sender reads the same ladder ───────────────── */
+section('push-cron suspension alert reads the vendored ladder (netlify/lib/suspension.js)');
+{
+  const { loadRule, justOneFromBan } = createRequire(import.meta.url)(join(ROOT, 'netlify/lib/suspension.js'));
+  const rule = loadRule();
+  ok(rule && typeof rule.next === 'function', 'the rule loads from vendor/ outside a browser');
+  ok(rule.scheme && rule.scheme.kind === 'ladder', 'and it is the Premier League ladder, as data');
+  const edge = justOneFromBan(rule, 4, 3, 10);
+  ok(edge && edge.at === 5 && edge.ban === 1 && edge.by === 19, '3→4 yellows at GW10: one from the 5-card ban (one match, by match 19)');
+  ok(justOneFromBan(rule, 4, 4, 10) === null, 'no new caution since the last snapshot → not announced again');
+  ok(justOneFromBan(rule, 4, 3, 25) === null, '3→4 after the GW19 gate → six from ten, no alert');
+  const ten = justOneFromBan(rule, 9, 8, 25);
+  ok(ten && ten.at === 10 && ten.ban === 2, '8→9 at GW25: one from the 10-card ban, two matches');
+  ok(justOneFromBan(rule, 5, 4, 10) === null, '4→5: the rung is reached, the watch moves on, nothing to send');
+  const fifteen = justOneFromBan(rule, 14, 13, 38);
+  ok(fifteen && fifteen.at === 15 && fifteen.ban === 3 && fifteen.by == null, '13→14 at GW38: one from the ungated 15-card ban');
+  ok(justOneFromBan(null, 4, 3, 10) === null, 'no rule to hand → no alert, never a guess');
+  let agree = true;
+  for (const gw of [1, 10, 19, 20, 32, 33, 38]) {
+    for (let y = 1; y <= 16; y++) {
+      const push = justOneFromBan(rule, y, y - 1, gw) != null;
+      const app = core.suspRisk(y, gw).level === 'edge';
+      if (push !== app) agree = false;
+    }
+  }
+  ok(agree, 'for every count and gate the push alert fires exactly when the app shows "edge"');
+}
 
 /* ── minutesSecurity: bounds, monotonicity, availability ── */
 section('minutesSecurity bounds, monotonicity, availability');
