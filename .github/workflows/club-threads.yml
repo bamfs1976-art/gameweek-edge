@@ -39,7 +39,19 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
+      # The nested sharp that @capacitor/assets pins downloads its native
+      # library from GitHub Releases at install time, and one 504 from that
+      # download failed run 43 before a single content script ran. A short
+      # retry with backoff turns a transient fetch error back into a
+      # working install; a genuine breakage still fails after the last try.
+      - name: Install dependencies
+        run: |
+          for i in 1 2 3 4; do
+            npm ci && exit 0
+            echo "npm ci failed, retrying in $((2 ** i))s"
+            sleep $((2 ** i))
+          done
+          exit 1
 
       - name: Generate
         run: |
