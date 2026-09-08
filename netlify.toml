@@ -330,6 +330,9 @@
 # Scheduled push sender (hourly).
 [functions."push-cron"]
   schedule = "@hourly"
+  # The card-ban ladder comes from the same two vendored files the app loads
+  # (netlify/lib/suspension.js), so they travel with the function.
+  included_files = ["vendor/suspension_core.js", "vendor/suspension_scheme.js"]
 
 # FPL Core Insights aggregator — pulls the open advanced-stats dataset and
 # refreshes public.gwedge_core_insights twice daily, ~1h after upstream.

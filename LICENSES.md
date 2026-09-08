@@ -1,15 +1,19 @@
 # Licences
 
-## This repository's own licence: to be confirmed by the owner
+## This repository's own licence: all rights reserved (decided 7 September 2026)
 
-There is no `LICENSE` file at the root of this repository, and `package.json`
-declares none. The repository is public, so until a licence is chosen the
-default position under copyright law applies: **all rights reserved**. Nobody
-may copy, modify or redistribute the code, and the "open data" and "MIT is
-fine" rules in the brief apply to what comes *in*, not to what goes *out*.
+The owner chose **no licence** on 7 September 2026. The repository is public,
+so the default position under copyright law applies: **all rights reserved**.
+Anyone may read the code; nobody may copy, modify or redistribute it. The
+"open data" and "MIT is fine" rules in the brief apply to what comes *in*,
+not to what goes *out*.
 
-The decision is the owner's and is deliberately not made here. The candidates
-worth weighing:
+What records the choice: `package.json` declares `"license": "UNLICENSED"`,
+the SPDX marker for a package that is not open source, and no `LICENSE` file
+is added on purpose, since a file would imply terms that do not exist. GitHub
+shows the repository as having no licence, which is the accurate state.
+
+For the record, the candidates that were weighed:
 
 | Option | What it means for this project |
 |---|---|
@@ -18,9 +22,9 @@ worth weighing:
 | **AGPL-3.0** | Reuse is allowed but anyone running a modified copy as a service must publish their changes. Keeps a fork from quietly becoming a rival closed product; incompatible with the "no copyleft" rule this file applies to third-party code |
 | **Source-available (for example PolyForm Noncommercial)** | Readable and forkable for personal use; commercial use reserved to the owner |
 
-Whichever is chosen: add a `LICENSE` file at the root, set `"license"` in
-`package.json` to the matching SPDX identifier (or `"UNLICENSED"`), and
-record the choice here with the date.
+If the choice changes: add a `LICENSE` file at the root, set `"license"` in
+`package.json` to the matching SPDX identifier, and record the change here
+with the date.
 
 ## Third-party licences
 
