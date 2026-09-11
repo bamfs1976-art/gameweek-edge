@@ -906,8 +906,8 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:default;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
 /* Only a heading that sorts looks like it sorts. */
 .ptable th[data-k],.ptable th[data-ti],.ptable th.sb-sort{cursor:pointer}
-.ptable th[data-ti][aria-sort="ascending"]::after{content:" \25B2";font-size:.6rem}
-.ptable th[data-ti][aria-sort="descending"]::after{content:" \25BC";font-size:.6rem}
+.ptable th[data-ti][aria-sort="ascending"]::after{content:" \25B2";font-size:var(--fs-min)}
+.ptable th[data-ti][aria-sort="descending"]::after{content:" \25BC";font-size:var(--fs-min)}
 .ptable th[data-ti]:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
 /* Keyboard row focus: a ring inside the row, and the row lifts like hover. */
 .ptable tbody tr:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
