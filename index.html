@@ -4010,14 +4010,25 @@ function stateBox(icon,title,text,btn){
   return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
     '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
 }
+/* Every failed state ends in the same next action. `fn` is the handler
+   as a string; the default repaints the panel on screen. */
+function retryBtn(fn){
+  return '<button class="btn btn-ghost btn-sm" onclick="'+(fn||'renderPage(currentPanel)')+'">Try again</button>';
+}
 function errorBox(){
-  return stateBox('bolt','Could not load live data',
-    'The FPL API can be slow on matchday. Pull to refresh or try the refresh button.',
-    '<button class="btn btn-ghost btn-sm" onclick="refreshData()">Try again</button>');
+  return stateBox('bolt','We could not reach the FPL API',
+    'The official API is slow on matchday and drops out for a minute at a time. This usually clears within a minute. Try again.',
+    retryBtn('refreshData()'));
+}
+/* The sentence under a hub view that threw: what went wrong if the error
+   says, then the same calm next step every time. */
+function hubFailText(err){
+  const m=err&&err.message?String(err.message).replace(/[.\s]+$/,''):'';
+  return (m?m+'. ':'')+'This usually clears within a minute. Try again.';
 }
 function loadDemoTeam(){
   setMid('1');
-  toast('Demo team loaded — link your own any time');
+  toast('Demo team loaded. Link your own any time.');
   openPanel(homePanel());          /* a team is linked now, so that is My Week */
 }
 function linkBox(){
@@ -5653,7 +5664,7 @@ function proLockWrap(inner,id,why){
   return '<div class="pro-lockwrap">'+
     '<div'+(id?' id="'+id+'"':'')+' class="ge-host pro-blur" inert aria-hidden="true">'+inner+'</div>'+
     '<div class="pro-lockstrip"><span class="pls-tag">'+svg(ICON.lock,'width="11" height="11"')+' Pro</span>'+
-      '<span class="pls-txt">'+(why||'This is the live tool, running now — Pro unlocks the specifics.')+'</span>'+
+      '<span class="pls-txt">'+(why||'This is the live tool, running now. Pro unlocks the specifics.')+'</span>'+
       '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
 }
 
@@ -5774,7 +5785,7 @@ function renderPage(panelId){
                 : stateBox('calendar','Squad not available yet',
                     'Your team ID is linked and valid. The official FPL API only serves a manager’s squad once the gameweek deadline has passed and teams lock. My Week and My Squad fill in automatically once the gameweek locks.',
                     '<button class="btn btn-ghost btn-sm" onclick="openMidModal()">Edit ID</button>'))
-            : stateBox('question','Manager not found','Check the ID and try again.',
+            : stateBox('question','No manager has that ID','Check the number after /entry/ in your team’s URL on the official site, then try again.',
                 '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>');
         }else{
           host.innerHTML=errorBox();
@@ -9900,9 +9911,9 @@ async function socCopyText(text,label){
     document.body.appendChild(ta);ta.select();
     const ok=document.execCommand('copy');
     document.body.removeChild(ta);
-    toast(ok?label+' copied':'Could not copy — select the text instead');
+    toast(ok?label+' copied':'Could not copy. Select the text instead.');
     return ok;
-  }catch(_){toast('Could not copy — select the text instead');return false;}
+  }catch(_){toast('Could not copy. Select the text instead.');return false;}
 }
 function socCopy(i,which){
   const S=window._soc;if(!S||!S.specs[i])return;
@@ -10174,7 +10185,7 @@ function socBuildResults(q){
     '<button class="soc-res" onclick="socBuildAdd('+e.id+')">'+crest(S.b,e.team,15)+
     '<b>'+esc(e.web_name)+'</b><span class="dl-sub">'+esc(posShort(S.b,e.element_type))+' · '+
     money(e.now_cost)+'</span><span class="soc-plus">+</span></button>').join('')
-    :'<div class="dl-sub" style="padding:6px 2px">No match.</div>';
+    :'<div class="dl-sub" style="padding:6px 2px">No player matches that. Try a shorter name.</div>';
 }
 function socBuildRender(){
   const host=document.getElementById('soc-builder');const S=window._soc;
@@ -10621,7 +10632,7 @@ function reportShell(host,debriefHtml){
   const seasonHost=document.getElementById('mr-season');
   if(seasonHost)hydrateGwhistory(seasonHost).catch(()=>{
     seasonHost.innerHTML=stateBox('calendar','Season review unavailable',
-      'Your gameweek history could not be loaded from FPL just now.');
+      'Your gameweek history could not be loaded from FPL just now. This usually clears within a minute. Try again.',retryBtn());
   });
 }
 async function hydrateGwreport(host){
@@ -11335,6 +11346,7 @@ const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(
    Each hub still declares its views as a plain `const XX_VIEWS=[...]`, because
    the route test reads those arrays out of the source to check that a retired
    link only ever names a view its hub actually owns. */
+const HUB_RETRY={};
 function makeHub(key,views,hydrate,icon){
   let cur=views[0].id;
   const view=id=>views.filter(v=>v.id===id)[0]||views[0];
@@ -11352,9 +11364,10 @@ function makeHub(key,views,hydrate,icon){
     Promise.resolve().then(()=>hydrate[cur](body)).catch(err=>{
       if(tk!==MEM['_'+key+'Token'])return;
       body.innerHTML='<div class="hub-fail">'+stateBox(icon,'Could not load this view',
-        (err&&err.message)||'Try again in a moment.')+'</div>';
+        hubFailText(err),retryBtn('HUB_RETRY[\''+key+'\']()'))+'</div>';
     });
   };
+  HUB_RETRY[key]=renderBody;
   return {setView,hydrate:async host=>{
     host.innerHTML=
       '<div class="lensbar" id="'+key+'-views">'+views.map(v=>
@@ -11427,7 +11440,7 @@ function mdRenderBody(){
   Promise.resolve().then(()=>MD_HYDRATE[MD_VIEW](body)).catch(err=>{
     if(token!==MEM._mdToken)return;
     body.innerHTML='<div class="hub-fail">'+stateBox('target','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('mdRenderBody()'))+'</div>';
   });
 }
 async function hydrateModelHub(host){
@@ -11460,7 +11473,7 @@ function fxRenderBody(){
     /* Marked so a test can tell a HUB failure — the view's hydrator threw —
        from a view rendering its own legitimate empty state. */
     body.innerHTML='<div class="hub-fail">'+stateBox('calendar','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('fxRenderBody()'))+'</div>';
   });
 }
 async function hydrateFixturesHub(host){
@@ -13201,7 +13214,7 @@ function prRenderBody(){
   Promise.resolve().then(()=>PR_HYDRATE[PR_VIEW](body)).catch(err=>{
     if(token!==MEM._prToken)return;
     body.innerHTML='<div class="hub-fail">'+stateBox('arrows','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('prRenderBody()'))+'</div>';
   });
 }
 async function hydratePrice(host){
@@ -13507,7 +13520,7 @@ function renderSuggestions(b,query,container,exclude,onPick){
   container.innerHTML=matches.map(e=>
     '<button class="sugg-row" data-id="'+e.id+'"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
     '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+'</span></button>'
-  ).join('')||'<div class="dl-sub" style="padding:8px 4px">No matches.</div>';
+  ).join('')||'<div class="dl-sub" style="padding:8px 4px">No player matches that. Try the first few letters of the surname.</div>';
   Array.prototype.forEach.call(container.querySelectorAll('.sugg-row'),btn=>{
     btn.addEventListener('click',()=>onPick(parseInt(btn.dataset.id,10)));
   });
@@ -15168,7 +15181,7 @@ function lvRenderBody(opts){
     /* Marked so a test can tell a HUB failure — the view's hydrator threw —
        from a view rendering its own legitimate empty state. */
     body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('lvRenderBody()'))+'</div>';
   });
 }
 async function hydrateLive(host){
@@ -16181,7 +16194,7 @@ async function hydrateSetpiece(host){
         confChip(roleConf(key,e[key]),'')+ordBadge(e[key])+'</div>';}).join('')
     ).join('');
     return '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-      (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No data yet.</div>')+'</div>';
+      (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No set-piece notes for this duty yet. They fill in as the official notes are published.</div>')+'</div>';
   };
   /* Club-first grid: the question is "if I buy from this club, who is on
      what", so the club is the row and the three duties are the columns.
@@ -17588,7 +17601,7 @@ async function hydrateArchive(host){
   const idx=histPriorIndex(A);
   if(!idx){
     host.innerHTML=stateBox('trophy','The archive is not available',
-      'Ten seasons of historical data load from our own store. It looks unreachable right now — everything else in the app is unaffected. Try again shortly.');
+      'Ten seasons of historical data load from our own store. It looks unreachable right now. Everything else in the app is unaffected. Try again in a minute.',retryBtn());
     return;
   }
   const seasons=idx.seasons,careers=histCareers(idx);
@@ -17693,7 +17706,7 @@ function archMysteryRender(){
   const S=window._arch,box=document.getElementById('arch-mystery');
   if(!S||!box)return;
   const m=histMystery(S.idx);
-  if(!m){box.innerHTML='<div class="dl-sub">No puzzle available.</div>';return;}
+  if(!m){box.innerHTML='<div class="dl-sub">No puzzle today. A new one appears with the next data refresh.</div>';return;}
   const st=histMysteryState(m.dayKey);
   const wrong=st.guesses.filter(g=>!g.hit).length;
   const shown=Math.min(m.clues.length,1+wrong);
@@ -19498,9 +19511,9 @@ async function buildScoutPayload(){
 const AI_BUSY={};
 function aiToken(){return SESSION&&SESSION.access_token?SESSION.access_token:null;}
 function aiSignInBox(){
-  return stateBox('team','Sign in to use AI features',
-    'AI scouting runs on your account so calls can be verified and metered server-side. Sign in (it’s free) and try again.',
-    '<button class="btn btn-primary btn-sm" onclick="openAccount()">Sign in</button>');
+  return stateBox('team','Log in to run the AI scout',
+    'Everything else works without an account. The AI runs on the server, so a free login lets each call be checked and metered, and keeps your reports on every device you use.',
+    '<button class="btn btn-primary btn-sm" onclick="openAccount()">Log in</button>');
 }
 async function aiErrText(r){try{return ((await r.json()).error)||'';}catch(_){return '';}}
 async function runAI(task,contextFn,boxId,opts){
@@ -19529,7 +19542,7 @@ async function runAI(task,contextFn,boxId,opts){
     if(!r.ok)throw new Error('HTTP '+r.status);
     const text=((await r.json()).text||'').trim();
     if(opts.cacheKey)try{localStorage.setItem(opts.cacheKey,text);}catch(_){}
-    box.innerHTML=mdLite(text)||'<p class="dl-sub">No response.</p>';
+    box.innerHTML=mdLite(text)||'<p class="dl-sub">The AI sent nothing back. Try again.</p>';
     window.GENative&&GENative.hapticSuccess();
   }catch(e){
     box.innerHTML=stateBox('bolt','Could not generate','The AI service was slow or unavailable. Try again in a moment.',
@@ -19792,7 +19805,7 @@ async function sendAsk(text){
     const token=aiToken();
     if(!token){                                      /* signed out: the local engine still answers */
       local();
-      ASK_MSGS.push({role:'assistant',content:'_Sign in to use AI features — conversational answers run on your account. The reply above comes from the free on-device model._',local:true});
+      ASK_MSGS.push({role:'assistant',content:'_The reply above comes from the free on-device model. Log in to get conversational answers from the AI scout, which runs on your account._',local:true});
     }else{
     track('ai_call',{task:'ask'});
     const r=await fetch(apiBase()+'/api/ai',{method:'POST',
@@ -21402,7 +21415,7 @@ function lgBar(v,max,soft){return 'background:linear-gradient(90deg,'+soft+' '+M
 async function hydrateTitleRace(host){
   host.innerHTML=skel(6);
   let m;try{m=await loadModelBundle();}catch(e){
-    host.innerHTML=stateBox('trophy','League odds unavailable','The season odds load from our PL Simulator model — try again in a moment.');return;}
+    host.innerHTML=stateBox('trophy','League odds unavailable','The season odds load from our PL Simulator model. This usually clears within a minute. Try again.',retryBtn());return;}
   const snaps=m.odds_history||[],snap=snaps[snaps.length-1];
   if(!snap||!snap.clubs){host.innerHTML=stateBox('trophy','No season odds yet','Title and relegation odds appear here once the model has run for the season.');return;}
   const clubs=snap.clubs,names=Object.keys(clubs);
@@ -21630,7 +21643,7 @@ async function hydrateDossier(host){
 async function hydrateClubForm(host){
   host.innerHTML=skel(6);
   let m;try{m=await loadModelBundle();}catch(e){
-    host.innerHTML=stateBox('pulse','Form unavailable','Recent form loads from our PL Simulator model — try again shortly.');return;}
+    host.innerHTML=stateBox('pulse','Form unavailable','Recent form loads from our PL Simulator model. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.form){host.innerHTML=stateBox('pulse','No form yet','Recent form appears here once the season’s results are in.');return;}
   lgfReadUrl();
   const st=m.season_state||{};
@@ -21805,7 +21818,7 @@ function renderSeasonSim(host,bundle,posCounts,ptsSum,n){
 }
 async function hydrateSeasonSim(host){
   host.innerHTML=skel(4);
-  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('target','Simulator unavailable','The season model loads from our PL Simulator — try again shortly.');return;}
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('target','Simulator unavailable','The season model loads from our PL Simulator. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.fixtures){host.innerHTML=stateBox('target','Fixtures not set','The season simulation runs once the 2026/27 fixtures are published.');return;}
   const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Season Simulator</div>'+
@@ -21926,7 +21939,7 @@ function mcRenderBody(opts){
     /* Marked so a test can tell a HUB failure — the view's hydrator threw —
        from a view rendering its own legitimate empty state. */
     body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('mcRenderBody()'))+'</div>';
   });
 }
 async function hydrateMatchday(host){
@@ -21946,7 +21959,7 @@ async function hydrateMatchday(host){
 
 async function hydrateMatchForecast(host){
   host.innerHTML=skel(4);
-  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model — try again shortly.');return;}
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.fixtures){host.innerHTML=stateBox('grid','Fixtures not set','Match forecasts appear once the fixtures are published.');return;}
   const pro=isPro();
   const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
@@ -22416,7 +22429,7 @@ async function hydrateCsMatrix(host){
   CSM_N=urlPick('n',CSM_N,6,v=>+v===10?10:+v===6?6:null);
   setUrlState({n:CSM_N!==6?CSM_N:null});
   let m;try{m=await loadModelBundle();}catch(e){
-    host.innerHTML=stateBox('shield','Clean-sheet odds unavailable','The matrix loads from our PL Simulator model bundle — try again in a moment.');return;}
+    host.innerHTML=stateBox('shield','Clean-sheet odds unavailable','The matrix loads from our PL Simulator model bundle. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.fixtures||!m.teams||!Object.keys(m.teams).length){
     host.innerHTML=stateBox('shield','Fixtures not set','The clean-sheet matrix appears once the season’s clubs and fixtures are in the model.');return;}
   const D=csMatrixData(m);
@@ -23843,7 +23856,7 @@ function draftSaveNow(){
   const players=DRAFT_IDS.map(id=>S.b.els[id]).filter(Boolean);
   const v=draftValidate(players);
   if(!v.saveable){
-    toast(v.overBudget?'Over budget — free up '+money(-v.bank)+' to save':'Pick the full 15 (2 GK / 5 DEF / 5 MID / 3 FWD) to save');
+    toast(v.overBudget?'Over budget. Free up '+money(-v.bank)+' to save':'Pick the full 15 (2 GK / 5 DEF / 5 MID / 3 FWD) to save');
     return;
   }
   try{localStorage.setItem(DRAFT_KEY,JSON.stringify({season:curSeason(),ids:DRAFT_IDS.slice(),t:Date.now()}));}catch(_){}
@@ -23928,7 +23941,7 @@ function genDraft(){return runAI('draft',draftContext,'draft-ai',{busy:'Reading 
 async function hydrateDraft(host){
   let b;
   try{b=await boot();}catch(e){
-    host.innerHTML=stateBox('squad','Player pool unavailable','The FPL API looks to be between seasons (mid-rollover). The draft board opens as soon as the new player list is up — try again shortly.');
+    host.innerHTML=stateBox('squad','Player pool unavailable','The FPL API looks to be between seasons (mid-rollover). The draft board opens as soon as the new player list is up. This usually clears within a minute. Try again.',retryBtn());
     return;
   }
   let fixtures=[];try{fixtures=await loadFixtures();}catch(_){}
@@ -24438,7 +24451,7 @@ function cmdkRender(q){
     '<button class="cmdk-row'+(i===CMDK.sel?' sel':'')+'" data-ck="'+i+'" role="option">'+
     '<span class="ck-ic">'+svg(ICON[it.icon]||ICON.grid)+'</span>'+
     '<b>'+esc(it.label)+'</b><span class="ck-sub">'+esc(it.sub||'')+'</span></button>').join('')||
-    '<div class="cmdk-row" style="color:var(--text-3)">No matches.</div>';
+    '<div class="cmdk-row" style="color:var(--text-3)">Nothing matches that. Try a panel, a player or a lens name.</div>';
 }
 function cmdkRun(i){
   const it=CMDK.items[i];if(!it)return;
