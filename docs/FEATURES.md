@@ -80,7 +80,7 @@ Home
 ├── My Week              (free)  Your personalised gameweek brief — home once a team is linked
 ├── Overview             (free)  Season snapshot, this week's calls, live state — home until then
 ├── Gameweek recap       (free)  What just happened, and what it cost you
-├── GW Debrief           (free)  The whole gameweek, scored against the model
+├── Gameweek Debrief     (free)  The whole gameweek, scored against the model
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
 └── The Model            (free)  Track record first, then how it works

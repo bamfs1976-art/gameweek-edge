@@ -4433,7 +4433,7 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'dashboard', label:'Overview', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
-      {id:'gwdebrief', label:'GW Debrief', icon:'calendar', tier:'free'},
+      {id:'gwdebrief', label:'Gameweek Debrief', icon:'calendar', tier:'free'},
       {id:'blog', label:'The Wire', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'accountability', label:'The Model', icon:'target', tier:'free'}
@@ -5332,6 +5332,53 @@ const PANEL_VIEW={
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
+/* What a panel used to be called, and what a newcomer would type for it.
+   The command palette searches these alongside the label, so muscle memory
+   ("gwreport", "results") and plain English ("match centre", "prices")
+   both land. Retired ids from PANEL_ALIAS are folded in automatically. */
+const PANEL_SYNONYMS={
+  gwdebrief:['gw debrief','debrief','gameweek review','weekly review'],
+  gwreport:['manager report','season report','manager season report','gw history','my season'],
+  results:['match centre','results','matchday','scores','match forecast','line-ups','lineups'],
+  allplayers:['players table','player list','player stats','differentials','injuries','fitness'],
+  liverank:['live rank','live points','bonus','defcon','auto-subs'],
+  accountability:['methodology','the model','track record','how it works','model accountability'],
+  eo:['effective ownership','ownership','template'],
+  dossier:['clubs','club dossier','club form','team form'],
+  price:['prices','price changes','price predictor','transfer market','risers','fallers'],
+  seasonsim:['simulator','season simulator','what if','scenario lab'],
+  'gw-actions':['recap','gameweek recap'],
+  draft:['squad planner','draft','squad builder','wildcard planner'],
+  transfers:['transfer planner','transfers','planner'],
+  captain:['captaincy','captain','captaincy lab','armband'],
+  fixtures:['fdr','fixture difficulty','fixture grid','fixture ticker','clean sheets','points planner'],
+  leagues:['mini leagues','mini-leagues','league','standings'],
+  rivals:['rival scout','rivals'],
+  scout:['scout ai','ask the scout','team of the week','totw','model xi'],
+  compare:['player compare','compare players','comparison','head to head'],
+  archive:['ten seasons','history','archive','past seasons'],
+  myweek:['my week','this gameweek','home'],
+  dashboard:['overview','dashboard'],
+  squad:['my squad','my team','pitch'],
+  chips:['chip strategy','chips','wildcard','bench boost','triple captain','free hit'],
+  watchlist:['watchlist','shortlist'],
+  alerts:['alerts','notifications','push'],
+  scoutboard:['scout board','per 90','shortlist'],
+  setpiece:['set pieces','set piece register','penalties','corners','free kicks'],
+  rotation:['rotation risk','congestion'],
+  news:['news','latest news','press conference'],
+  blog:['the wire','blog','briefings'],
+  titlerace:['title race'],
+  glossary:['glossary','terms','what does'],
+  fplbasics:['fpl basics','new to fpl','how to play']
+};
+let PANEL_RETIRED=null;
+function panelAliases(id){
+  if(!PANEL_RETIRED){PANEL_RETIRED={};
+    Object.keys(PANEL_ALIAS).forEach(k=>{(PANEL_RETIRED[PANEL_ALIAS[k]]=PANEL_RETIRED[PANEL_ALIAS[k]]||[]).push(k);});}
+  const out=[id].concat(PANEL_RETIRED[id]||[],PANEL_SYNONYMS[id]||[]);
+  return out.filter((a,i)=>out.indexOf(a)===i);
+}
 
 /* ── PATH ROUTING ──────────────────────────────────────────
    Real URLs, one per screen: /squad, /players, /planner, /live … Every
@@ -24341,7 +24388,7 @@ function cmdkEntries(q){
   Object.keys(PANELS).forEach(id=>{
     const p=PANELS[id];
     if(!canSeePanel(p))return;              /* owner panels stay out of search */
-    out.push({name:p.label,aliases:[id],desc:p.areaLabel,
+    out.push({name:p.label,aliases:panelAliases(id),desc:p.areaLabel,
       label:p.label,sub:p.areaLabel,icon:p.icon,base:1,run:()=>openPanel(id)});
   });
   /* Lenses are searchable by name too. Folding a board into the table would
@@ -24516,7 +24563,9 @@ function initKeys(){
   binds['[Shift]+g [Shift]+(.)']=e=>{
     if(sheetOpen())return;
     const id=G_CHORDS[(e.key||'').toLowerCase()];
-    if(id&&PANELS[id]){e.preventDefault();openPanel(id);}
+    /* Through resolvePanel: `g i` names the fitness lens by its retired id,
+       which is an alias rather than a panel, and was a dead chord without it. */
+    if(id&&PANELS[resolvePanel(id)]){e.preventDefault();openPanel(id);}
   };
   binds.Escape=()=>{if(sheetOpen())byId('kbd-overlay').hidden=true;};
   binds['[Shift]+?']=()=>{const k=byId('kbd-overlay');k.hidden=!k.hidden;};
