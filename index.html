@@ -895,7 +895,19 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .pl-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:var(--r-md)}
 .ptable{border-collapse:collapse;width:100%;font-size:.8rem;white-space:nowrap}
 .ptable th,.ptable td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
-.ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:pointer;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
+.ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:default;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
+/* Only a heading that sorts looks like it sorts. */
+.ptable th[data-k],.ptable th[data-ti],.ptable th.sb-sort{cursor:pointer}
+.ptable th[data-ti][aria-sort="ascending"]::after{content:" \25B2";font-size:.6rem}
+.ptable th[data-ti][aria-sort="descending"]::after{content:" \25BC";font-size:.6rem}
+.ptable th[data-ti]:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
+/* Keyboard row focus: a ring inside the row, and the row lifts like hover. */
+.ptable tbody tr:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
+.ptable tbody tr:focus-visible td{background:var(--surface-3)}
+/* Per-column filters, a second header row. */
+.ptable .tbl-filters td{padding:3px 6px 7px;background:var(--surface-2);position:sticky;top:0;z-index:1;border-bottom:1px solid var(--border-2)}
+.ptable .tbl-filters select{width:100%;min-width:64px;font:inherit;font-size:.72rem;padding:3px 4px;
+  background:var(--surface);color:var(--text);border:1px solid var(--border-2);border-radius:var(--r-sm)}
 .ptable th:hover{color:var(--text)}
 .ptable th.active{color:var(--green-bright)}
 .ptable th.num,.ptable td.num{text-align:right;font-variant-numeric:tabular-nums}
@@ -3966,6 +3978,180 @@ const STATUS_BADGE={i:'badge-red',d:'badge-amber',s:'badge-red',u:'badge-grey',n
 
 /* ── Panel state helpers (loading / error / empty) ─────── */
 function skel(rows){let s='';for(let i=0;i<(rows||4);i++)s+='<div class="sk" style="width:'+(100-i*8)+'%"></div>';return '<div class="card">'+s+'</div>';}
+/* ── DATA TABLE ──────────────────────────────────────────
+   One behaviour for every table. The markup is whatever the panel builds
+   (.pl-scroll > table.ptable); enhanceTable gives it what the markup alone
+   cannot: a real thead, sortable headings with aria-sort, a per-column
+   filter where a text column has fewer than TBL_FILTER_MAX distinct values,
+   focusable rows with a visible ring and arrow-key movement, and Enter to
+   open. Tables that sort their own model (the players table, the scout
+   board) carry data-tbl="model" and keep their sort and their own filters;
+   every other table sorts its rows in place, and the panel's first table
+   keeps that sort in the URL as tsort=. A MutationObserver enhances any
+   table a hydrator paints, so a panel opts in by rendering a .ptable. */
+const TBL_FILTER_MAX=25;
+/* A cell's sort value: a number when the text reads as one (prices, per
+   cents and signed figures included), else the lower-cased text. */
+function tableCellValue(text){
+  const t=String(text==null?'':text).replace(/\s+/g,' ').trim();
+  if(/^[£+\-−]?\d[\d,]*(\.\d+)?%?$/.test(t)){
+    const n=parseFloat(t.replace(/[£,%+\s]/g,'').replace('−','-'));
+    if(Number.isFinite(n))return n;
+  }
+  return t.toLowerCase();
+}
+/* Numbers sort among themselves in the asked direction; text likewise; a
+   number always sits above text, so a column of figures with a few dashes
+   keeps the dashes at the bottom whichever way it is sorted. */
+function tableSortValue(a,b,dir){
+  const an=typeof a==='number',bn=typeof b==='number';
+  if(an&&bn)return (a-b)*dir;
+  if(an)return -1;
+  if(bn)return 1;
+  return a<b?-dir:a>b?dir:0;
+}
+/* Which columns earn a filter: text columns with between two and
+   TBL_FILTER_MAX distinct values, on a table with enough rows to need one. */
+function tableFilterable(columns,rowCount){
+  if(rowCount<8)return [];
+  return columns.map((vals,i)=>{
+    if(!vals||vals.numeric)return null;
+    const set=new Set(vals.filter(v=>v!==''));
+    return set.size>1&&set.size<TBL_FILTER_MAX&&set.size<rowCount?i:null;
+  }).filter(i=>i!=null);
+}
+function tableIsPrimary(table){
+  const first=document.querySelector('#ge-data table.ptable');
+  return first===table;
+}
+function enhanceTable(table){
+  if(!table||table.dataset.tblOn)return;
+  table.dataset.tblOn='1';
+  const model=table.dataset.tbl==='model';
+  let thead=table.tHead;
+  if(!thead){
+    const first=table.querySelector('tr');
+    if(first&&first.querySelector('th')){
+      thead=document.createElement('thead');
+      first.parentNode.insertBefore(thead,first);
+      thead.appendChild(first);
+    }
+  }
+  const tbody=table.tBodies[0];
+  if(!thead||!tbody||!thead.rows[0])return;
+  const hrow=thead.rows[0];
+  const ths=Array.from(hrow.cells);
+  const rows=()=>Array.from(tbody.rows);
+  const cellText=td=>(td?(td.dataset.v!=null?td.dataset.v:td.textContent):'').replace(/\s+/g,' ').trim();
+
+  /* Sorting, for tables without a model of their own. */
+  if(!model){
+    ths.forEach((th,i)=>{
+      if(th.dataset.k||th.dataset.lk||!th.textContent.trim()||th.colSpan>1)return;
+      th.dataset.ti=String(i);
+      th.tabIndex=0;
+      th.setAttribute('aria-sort','none');
+      th.setAttribute('title','Sort by '+th.textContent.trim());
+    });
+    const sort=(i,dir)=>{
+      const rs=rows();
+      const vals=rs.map(tr=>tableCellValue(cellText(tr.cells[i])));
+      const idx=rs.map((_,j)=>j).sort((x,y)=>tableSortValue(vals[x],vals[y],dir)||x-y);
+      /* Footer rows (totals) stay at the bottom whatever the sort. */
+      const foot=idx.filter(j=>/\b(ts-foot|ts-tot|tbl-foot)\b/.test(rs[j].className));
+      idx.filter(j=>foot.indexOf(j)<0).concat(foot).forEach(j=>tbody.appendChild(rs[j]));
+      ths.forEach((th,j)=>{
+        if(th.dataset.ti==null)return;
+        th.setAttribute('aria-sort',j===i?(dir===1?'ascending':'descending'):'none');
+        th.classList.toggle('active',j===i);
+      });
+      table.dataset.sort=i+':'+dir;
+      if(tableIsPrimary(table))setUrlState({tsort:i+(dir===1?'a':'d')});
+    };
+    hrow.addEventListener('click',e=>{
+      const th=e.target.closest('th[data-ti]');if(!th)return;
+      const i=+th.dataset.ti;
+      const cur=table.dataset.sort?table.dataset.sort.split(':').map(Number):null;
+      const dir=cur&&cur[0]===i?-cur[1]:(th.classList.contains('num')?-1:1);
+      sort(i,dir);
+    });
+    hrow.addEventListener('keydown',e=>{
+      const th=e.target.closest('th[data-ti]');
+      if(th&&(e.key==='Enter'||e.key===' ')){e.preventDefault();th.click();}
+    });
+    if(tableIsPrimary(table)){
+      const m=/^(\d+)([ad])$/.exec(urlState('tsort')||'');
+      if(m&&ths[+m[1]]&&ths[+m[1]].dataset.ti!=null)sort(+m[1],m[2]==='a'?1:-1);
+    }
+  }
+
+  /* Per-column filters. */
+  if(!model){
+    const rs=rows();
+    const columns=ths.map((th,i)=>{
+      const vals=rs.map(tr=>cellText(tr.cells[i]));
+      const numeric=th.classList.contains('num')||vals.filter(v=>v).every(v=>typeof tableCellValue(v)==='number');
+      const arr=vals;arr.numeric=numeric;return arr;
+    });
+    const fcols=tableFilterable(columns,rs.length);
+    if(fcols.length){
+      const fr=document.createElement('tr');
+      fr.className='tbl-filters';
+      ths.forEach((th,i)=>{
+        const td=document.createElement('td');
+        if(fcols.indexOf(i)>=0){
+          const opts=Array.from(new Set(columns[i].filter(v=>v))).sort((a,c)=>a.localeCompare(c));
+          const label=th.textContent.trim()||('column '+(i+1));
+          td.innerHTML='<select aria-label="Filter by '+esc(label)+'"><option value="">All</option>'+
+            opts.map(o=>'<option value="'+esc(o)+'">'+esc(o)+'</option>').join('')+'</select>';
+        }
+        fr.appendChild(td);
+      });
+      thead.appendChild(fr);
+      const apply=()=>{
+        const active=Array.from(fr.querySelectorAll('select')).map(s=>[Array.from(fr.cells).indexOf(s.parentNode),s.value]).filter(x=>x[1]);
+        rows().forEach(tr=>{
+          const hide=active.some(([i,v])=>cellText(tr.cells[i])!==v);
+          tr.hidden=hide;
+        });
+      };
+      fr.addEventListener('change',apply);
+    }
+  }
+
+  /* Rows: a roving tab stop, arrows to move, Enter or Space to open. */
+  const openable=tr=>!!(tr.dataset.id||tr.dataset.open||tr.dataset.row||tr.classList.contains('dl-click')||tr.getAttribute('onclick'));
+  rows().forEach((tr,i)=>{if(openable(tr))tr.tabIndex=i===0?0:-1;});
+  table.addEventListener('keydown',e=>{
+    const tr=e.target.closest('tbody tr');if(!tr||e.target!==tr)return;
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();
+      const vis=rows().filter(r=>openable(r)&&!r.hidden);
+      let j=vis.indexOf(tr)+(e.key==='ArrowDown'?1:-1);
+      j=Math.max(0,Math.min(vis.length-1,j));
+      vis.forEach(r=>{r.tabIndex=-1;});
+      if(vis[j]){vis[j].tabIndex=0;vis[j].focus();}
+    }else if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();tr.click();
+    }
+  });
+}
+function enhanceTables(root){
+  Array.prototype.forEach.call((root||document).querySelectorAll('table.ptable:not([data-tbl-on])'),enhanceTable);
+}
+let TBL_MO=null;
+function watchTables(){
+  const pages=document.getElementById('pages');
+  if(!pages||TBL_MO||!window.MutationObserver)return;
+  let queued=false;
+  TBL_MO=new MutationObserver(()=>{
+    if(queued)return;queued=true;
+    (window.requestAnimationFrame||setTimeout)(()=>{queued=false;enhanceTables(pages);});
+  });
+  TBL_MO.observe(pages,{childList:true,subtree:true});
+  enhanceTables(pages);
+}
+
 function stateBox(icon,title,text,btn){
   return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
     '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
@@ -12335,6 +12521,7 @@ function renderPlayerTable(){
       return '<th '+(lk?'data-lk="1" title="The Edge — unlock this column"':'data-k="'+c.k+'"'+
           (def?' title="'+esc(def)+'"':''))+
         ' class="'+(c.num?'num':'')+(active?' active':'')+(lk?' lk':'')+'"'+
+        (lk?'':' aria-sort="'+(active?(PL_STATE.dir===1?'ascending':'descending'):'none')+'"')+
         (def?' aria-label="'+esc(c.l)+': '+esc(def)+'"':'')+'>'+
         (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(c.l)+arrow+'</th>';
     }).join('')+'</tr></thead>';
@@ -12342,7 +12529,7 @@ function renderPlayerTable(){
       plColLocked(c)
         ? '<td class="'+(c.num?'num ':'')+'lk">'+plLockCell()+'</td>'
         : '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
-    view.innerHTML='<div class="pl-scroll"><table class="ptable">'+head+body+'</table></div>';
+    view.innerHTML='<div class="pl-scroll"><table class="ptable" data-tbl="model" data-export="1">'+head+body+'</table></div>';
   }
   const cnt=document.getElementById('pl-count');
   if(cnt)cnt.textContent=list.length+' players'+
@@ -12943,8 +13130,9 @@ function renderScoutBoard(){
             :'<span class="sb-fx sb-fx-none">—</span>';}
     return out;
   };
-  const head='<tr><th>Player</th><th>Next '+SB_FIX+'</th>'+
-    cols.map(c=>'<th class="num sb-sort'+(c.k===key?' active':'')+'" data-k="'+c.k+'">'+esc(c.l)+'</th>').join('')+'</tr>';
+  const head='<thead><tr><th>Player</th><th>Next '+SB_FIX+'</th>'+
+    cols.map(c=>'<th class="num sb-sort'+(c.k===key?' active':'')+'" data-k="'+c.k+'" aria-sort="'+
+      (c.k===key?(SB_DIR===1?'ascending':'descending'):'none')+'">'+esc(c.l)+(c.k===key?(SB_DIR===1?' ▲':' ▼'):'')+'</th>').join('')+'</tr></thead>';
   const rows=shown.map(e=>{
     const cells=cols.map(c=>{const r=range[c.k],v=c.v(e);
       const sc=r[1]>r[0]?(v-r[0])/(r[1]-r[0]):0.5;
@@ -12953,7 +13141,7 @@ function renderScoutBoard(){
       '<span class="dl-sub">'+crest(b,e.team,12)+money(e.now_cost)+'</span></td>'+
       '<td><span class="sb-fxc">'+fixCells(e.team)+'</span></td>'+cells+'</tr>';
   }).join('');
-  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table">'+head+rows+'</table></div>'+
+  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table" data-tbl="model" data-export="1">'+head+'<tbody>'+rows+'</tbody></table></div>'+
     '<div class="dl-sub" style="margin-top:8px">'+list.length+' '+esc(posShort(b,pos))+(SB_PRICE?' at '+money(SB_PRICE)+' or under':'')+' with 450+ minutes · sorted by '+esc(col.l)+' · showing the top '+shown.length+'. Tap a heading to re-sort, a row for the full profile.</div>';
 }
 async function hydrateScoutBoard(host){
@@ -13028,7 +13216,7 @@ function renderPointsPlanner(){
   }
   const maxGw=Math.max.apply(null,scored.map(s=>s.cells.length));
   let gwHead='';for(let i=0;i<maxGw;i++)gwHead+='<th class="num">'+(i+1)+'</th>';
-  const head='<tr><th>Player</th><th class="num">Next '+PP_N+'</th>'+gwHead+'</tr>';
+  const head='<thead><tr><th>Player</th><th class="num">Next '+PP_N+'</th>'+gwHead+'</tr></thead>';
   const rows=scored.map(s=>{const e=s.e;let cells='';
     for(let i=0;i<maxGw;i++){const c=s.cells[i];
       if(!c){cells+='<td class="pp-cell sb-fx-none">—</td>';continue;}
@@ -13036,7 +13224,7 @@ function renderPointsPlanner(){
     return '<tr data-open="'+e.id+'"><td class="sb-pl"><span class="sb-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+crest(b,e.team,12)+esc(posShort(b,e.element_type))+' · '+money(e.now_cost)+'</span></td>'+
       '<td class="num"><b>'+s.total.toFixed(1)+'</b></td>'+cells+'</tr>';}).join('');
-  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table pp-table">'+head+rows+'</table></div>'+
+  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table pp-table" data-export="1">'+head+'<tbody>'+rows+'</tbody></table></div>'+
     '<div class="dl-sub" style="margin-top:8px">Top '+scored.length+(PP_POS?' '+esc(posShort(b,PP_POS)):'')+' by projected points over the next '+PP_N+' gameweeks · each cell is the fixture and its expected points. Tap a row for the full profile.</div>';
 }
 async function hydratePointsPlanner(host){
@@ -24515,7 +24703,8 @@ function initCmdk(){
    opens the selected one. Selection is a transient class — no state. */
 function rowNav(dir){
   const rows=Array.from(document.querySelectorAll(
-    '#ge-data .dl-click, #ge-data .ptable tbody tr[data-id], #ge-data .mc-head, #ge-data .post-hd'));
+    '#ge-data .dl-click, #ge-data .ptable tbody tr[data-id], #ge-data .ptable tbody tr[data-open], #ge-data .ptable tbody tr[data-row], #ge-data .mc-head, #ge-data .post-hd'))
+    .filter(r=>!r.hidden);
   if(!rows.length)return;
   const cur=document.querySelector('.row-sel');
   let i=rows.indexOf(cur)+dir;
@@ -24665,10 +24854,12 @@ function closeSidebar(){
 function exportViewCSV(){
   if(currentPanel==='allplayers'&&typeof exportPlayersCSV==='function'){exportPlayersCSV();return;}
   const page=document.querySelector('.page.active');
-  const table=page&&page.querySelector('table');
+  /* The panel's marked table first; else the first one on the page. */
+  const table=page&&(page.querySelector('table[data-export]')||page.querySelector('table'));
   if(!table){toast('Nothing tabular on this panel to export');return;}
   const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const lines=Array.prototype.map.call(table.querySelectorAll('tr'),tr=>
+  /* What is on screen: filtered-out rows and the filter row itself stay out. */
+  const lines=Array.prototype.filter.call(table.querySelectorAll('tr'),tr=>!tr.hidden&&!tr.classList.contains('tbl-filters')).map(tr=>
     Array.prototype.map.call(tr.querySelectorAll('th,td'),c=>q(c.innerText.replace(/\s+/g,' ').trim())).join(','));
   if(lines.length<2){toast('Nothing tabular on this panel to export');return;}
   try{
@@ -25189,6 +25380,7 @@ function init(){
   /* No first-run modal here. A newcomer is routed to /welcome by the front
      door in the head before this file ever renders, so anyone reaching init()
      has either seen the pitch or asked for the app by name. */
+  watchTables();
   initCmdk();
   initKeys();
   setInterval(tickTicker,1000);
