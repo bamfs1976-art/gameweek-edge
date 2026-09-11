@@ -1137,6 +1137,15 @@ dataset (used freely with attribution), aligned by the official FPL element id:
 - **Serverless (Netlify Functions):** `fpl` (FPL proxy), `ai` (LLM),
   `checkout` / `portal` / `stripe-webhook` (billing), `push-key` /
   `push-subscribe` / `push-unsubscribe` / `push-cron` (web push).
+- **URL state (`index.html`, `URL STATE` block):** the path names the panel
+  and the query string names its state: `?view=` for the tab inside a hub,
+  then each view's own keys (sort, filters, gameweek, players, league …).
+  Hydrators read their keys through `urlPick` on entry and write them back
+  through `setUrlState` at every change, so a copied address reopens the
+  same view. Tab changes are history entries; scroll restores on back and
+  forward. The pure helpers are unit-tested in `dev/test-core.mjs`; the
+  browser behaviour is covered by the `dev/smoke.mjs` run and the routing
+  cases in `dev/test-simplenav.mjs`. See `DESIGN.md` → Routing.
 - **Routing (`netlify.toml`):** `/api/fpl/*`, `/api/ai`, `/api/checkout`,
   `/api/portal`, `/api/stripe-webhook`, `/api/push-*`; `/welcome` → landing page.
   Build command `npm run build:web`, publish dir `www`.

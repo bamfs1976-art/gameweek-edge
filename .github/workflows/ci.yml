@@ -102,6 +102,12 @@ jobs:
       - name: Mobile guard
         run: node scripts/check-mobile.mjs
 
+      # UI copy: no em dashes in anything a reader sees. A ratchet, because
+      # the shell carried hundreds before the rule; the count may fall,
+      # never rise.
+      - name: Copy guard
+        run: node scripts/check-copy.mjs
+
       # Same split, same reason, for the vendored FPL OpenAPI spec. `npm test`
       # already proves the committed copy is intact and parses; what it cannot
       # prove offline is that the pin still describes something real. This
