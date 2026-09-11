@@ -2998,7 +2998,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <kbd>g c</kbd><span>Captaincy Lab</span>
       <kbd>g p</kbd><span>Price Predictor</span>
       <kbd>g f</kbd><span>Fixtures</span>
-      <kbd>g m</kbd><span>Matchday</span>
+      <kbd>g m</kbd><span>Match Centre</span>
       <kbd>g i</kbd><span>Players (fitness lens)</span>
       <kbd>g w</kbd><span>Watchlist</span>
       <kbd>g r</kbd><span>Manager Report</span>
@@ -4528,7 +4528,7 @@ const NAV = [
     ]
   },
   {
-    id:'matchcentre', label:'Match Centre', icon:'trophy',
+    id:'matchcentre', label:'Football', icon:'trophy',
     panels:[
       /* Results, Match Forecasts and Projected XI read one fixture list at
          three points in time, so they are views of one panel (MC_VIEWS).
@@ -4536,7 +4536,7 @@ const NAV = [
          are season reference you browse, not matchday views you flick
          between. The id stays `results` for the deep links and the bottom
          bar. */
-      {id:'results', label:'Matchday', icon:'pulse', tier:'free'},
+      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
       {id:'dossier', label:'Clubs', icon:'shield', tier:'free'},
       /* Ten seasons of the competition — records, careers and the daily
@@ -5397,7 +5397,7 @@ function resolvePanel(id){return PANEL_ALIAS[id]||id;}
 const PANEL_SYNONYMS={
   gwdebrief:['gw debrief','debrief','gameweek review','weekly review'],
   gwreport:['manager report','season report','manager season report','gw history','my season'],
-  results:['match centre','results','matchday','scores','match forecast','line-ups','lineups'],
+  results:['match centre','results','matchday','scores','fixtures results','match forecast','line-ups','lineups'],
   allplayers:['players table','player list','player stats','differentials','injuries','fitness'],
   liverank:['live rank','live points','bonus','defcon','auto-subs'],
   accountability:['methodology','the model','track record','how it works','model accountability'],

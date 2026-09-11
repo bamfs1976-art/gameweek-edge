@@ -110,7 +110,7 @@ The **query string is the panel's state**. The path names the panel; `?view=`
 names the tab inside a hub (`/players?view=diffs`, `/fixtures?view=cs`), and
 each view writes its own keys as the reader changes things: the players
 table's `sort`, `dir`, `pos`, `team`, `q` and `layout`; the fixture grid's
-`win`, `from`, `lens` and `rows`; Matchday's `gw` and the line-ups `team`; the
+`win`, `from`, `lens` and `rows`; Match Centre's `gw` and the line-ups `team`; the
 Manager Report's `gw`; a club dossier's `team`, form's `venue` and `win`;
 Player Compare's `players`; a mini-league's `league`, `type`, `page`, `sort`,
 `dir` and `layout`; the Scout Board's `pos`, `max`, `sort`, `dir`; the Points

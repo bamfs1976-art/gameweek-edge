@@ -125,8 +125,8 @@ Rivals
     ├── Your EO                  Effective ownership; your cover, edge and exposure
     └── The template             The most-owned XI, and how close yours is
 
-Match Centre
-├── Matchday             (free)  One fixture list, three views: results / forecasts / line-ups
+Football
+├── Match Centre         (free)  One fixture list, three views: results / forecasts / line-ups
 │                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
 ├── Clubs                (free)  One club: what it is, and its recent form
@@ -965,7 +965,7 @@ so it shows before a team is linked and pre‑season.
 
 ### Match Centre
 
-**Matchday** — one fixture list, three points in time. Results, Match Forecasts
+**Match Centre** (panel id `results`, path `/matchday`) — one fixture list, three points in time. Results, Match Forecasts
 and Projected XI were three destinations reading the same fixtures before,
 during and after: what the model expected, who was likely to start it, and what
 actually happened. You want those within one move of each other — the pre‑match
