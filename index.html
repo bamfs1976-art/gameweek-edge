@@ -5345,16 +5345,136 @@ function pathPanel(path){
   if(!seg||seg==='index.html')return '';
   return PATH_PANEL[seg]||seg;
 }
+/* ── URL STATE ─────────────────────────────────────────────
+   The path names the panel; the query string names the state of it: which
+   tab (`view=`), which gameweek, which players, which sort. URL_Q is the
+   in-memory copy of that query for the panel on screen. Every hydrator
+   reads its own keys from it on entry (a deep link or back/forward wins
+   over whatever was in memory) and writes them back through setUrlState as
+   the reader changes things, so the address bar always describes the page
+   and a copied link reopens exactly this view.
+
+   Writes are replaceState by default: a filter change is not a place you
+   went. A tab change IS, so the lens bars call historyPoint() first and the
+   tab lands on its own history entry with the scroll position of the one
+   it left. */
+let URL_Q={};
+/* openPanel holds writes while it works out the state, then routeSync
+   writes path and query in one go. */
+let URL_HOLD=false;
+function urlQuery(search){
+  const out={};
+  const s=String(search==null?'':search).replace(/^\?/,'');
+  if(!s)return out;
+  s.split('&').forEach(kv=>{
+    if(!kv)return;
+    const i=kv.indexOf('=');
+    let k,v;
+    try{
+      k=decodeURIComponent((i<0?kv:kv.slice(0,i)).replace(/\+/g,' '));
+      v=i<0?'':decodeURIComponent(kv.slice(i+1).replace(/\+/g,' '));
+    }catch(_){return;}
+    if(k)out[k]=v;
+  });
+  return out;
+}
+function urlQueryString(q){
+  return Object.keys(q||{}).filter(k=>q[k]!=null&&q[k]!=='').map(k=>
+    encodeURIComponent(k)+'='+encodeURIComponent(String(q[k])).replace(/%2C/g,',')).join('&');
+}
+/* Merge a patch into a query: null, undefined, '' and false delete the key,
+   everything else is written as a string. Returns a new object. */
+function mergeQuery(cur,patch){
+  const out=Object.assign({},cur||{});
+  Object.keys(patch||{}).forEach(k=>{
+    const v=patch[k];
+    if(v==null||v===''||v===false)delete out[k];else out[k]=String(v);
+  });
+  return out;
+}
+function urlHref(path,q){const qs=urlQueryString(q);return path+(qs?'?'+qs:'');}
+/* Read the current panel's state: one key, or a copy of the whole query. */
+function urlState(key){return key==null?Object.assign({},URL_Q):URL_Q[key];}
+function urlStateInt(key,fallback){
+  const v=parseInt(URL_Q[key],10);return Number.isFinite(v)?v:fallback;
+}
+/* The path a state write goes under. A view-alias path (/diffs, /whatif)
+   names one tab; once the reader picks another tab the hub's own path
+   (/players?view=fitness) is the honest address. */
+function urlBasePath(){
+  const seg=pathPanel(location.pathname);
+  if(seg&&PANEL_VIEW[seg]&&seg!==resolvePanel(seg)&&currentPanel===resolvePanel(seg)&&
+     URL_Q.view!==PANEL_VIEW[seg].view)return panelPath(currentPanel);
+  return location.pathname;
+}
+function setUrlState(patch,opts){
+  URL_Q=mergeQuery(URL_Q,patch);
+  if(URL_HOLD)return;
+  try{
+    const href=urlHref(urlBasePath(),URL_Q);
+    if(href===location.pathname+location.search)return;
+    const st=Object.assign({},history.state||{});
+    if(opts&&opts.push)history.pushState(st,'',href);
+    else history.replaceState(st,'',href);
+  }catch(_){}
+}
+/* Remember how far down the page the reader was, on the entry they are
+   about to leave, so back and forward land where they were. */
+function saveScroll(){
+  try{
+    history.replaceState(Object.assign({},history.state||{},{scroll:window.scrollY||0}),'',location.href);
+  }catch(_){}
+}
+/* Commit the current URL as its own history entry before a tab change, so
+   the change becomes a place back can return to. */
+function historyPoint(){
+  try{
+    saveScroll();
+    history.pushState(Object.assign({},history.state||{},{scroll:0}),'',location.href);
+  }catch(_){}
+}
+/* Scroll to restore once the panel has painted. Set by popstate, consumed
+   by renderPage after the hydrator resolves; a second attempt a moment
+   later covers hubs that paint their body asynchronously. */
+let PENDING_SCROLL=null;
+function restoreScroll(){
+  const y=PENDING_SCROLL;
+  if(y==null)return;
+  PENDING_SCROLL=null;
+  const go=()=>{try{window.scrollTo(0,y);}catch(_){}};
+  if(window.requestAnimationFrame)requestAnimationFrame(go);else go();
+  setTimeout(()=>{if(Math.abs((window.scrollY||0)-y)>8)go();},300);
+}
+/* The hubs' current view, read rather than tracked, so the URL is always a
+   function of the state and never drifts from it. The default view is left
+   out of the URL: /players is the table, /players?view=diffs is a lens. */
+const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view()};
+const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier'};
+function hubViewParam(panelId){
+  const g=HUB_GETVIEW[panelId];if(!g)return null;
+  let v=null;try{v=g();}catch(_){}
+  return v&&v!==HUB_DEFAULT_VIEW[panelId]?v:null;
+}
+/* The hub setters call this: it writes the view into the query without
+   creating a history entry (the lens bars add the entry themselves). */
+function hubViewChanged(panelId){
+  if(URL_HOLD)return;
+  setUrlState({view:hubViewParam(panelId)});
+}
 /* Write the current panel into the address bar. The home panel owns the
    bare URL; everything else gets its named path. Deep-link view ids
    (/diffs, /injuries, /whatif …) keep their own path so the URL still
-   names the view it opens. */
+   names the view it opens. The query carries the panel's state. */
 function routeSync(urlId,resolvedId,push){
   try{
     const path=resolvedId===homePanel()&&!PANEL_VIEW[urlId]?'/':panelPath(urlId);
-    if(location.pathname===path)return;
-    if(push)history.pushState({panel:urlId},'',path);
-    else history.replaceState({panel:urlId},'',path);
+    /* /diffs already says which tab; /diffs?view=diffs would say it twice. */
+    const q=Object.assign({},URL_Q);
+    if(PANEL_VIEW[urlId]&&urlId!==resolvedId&&q.view===PANEL_VIEW[urlId].view)delete q.view;
+    const href=urlHref(path,q);
+    if(href===location.pathname+location.search)return;
+    if(push)history.pushState({panel:urlId},'',href);
+    else history.replaceState({panel:urlId},'',href);
   }catch(_){}
 }
 function openPanel(panelId,opts){
@@ -5371,20 +5491,35 @@ function openPanel(panelId,opts){
      clicking Players in the nav predictable. */
   const urlId=panelId;
   const pv=PANEL_VIEW[panelId];
+  const traversal=!!(opts&&opts.noHistory);
+  /* Leaving a page by navigation: remember its scroll on its own entry
+     first. On back/forward the browser has already moved, so there is no
+     entry of ours to write to. */
+  if(!traversal)saveScroll();
+  URL_HOLD=true;
+  /* The query is the panel's state. A deep link or a traversal brings its
+     own; in-app navigation starts clean. */
+  URL_Q=mergeQuery({},(opts&&opts.query)||{});
   if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back home.
      This is the deep-link guard: typing #social does nothing. */
   if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId=homePanel();
+  /* ?view= names a tab outright and wins over the deep-link id's default,
+     so /players?view=fitness and /injuries open the same thing. */
+  if(URL_Q.view&&HUB_SETVIEW[panelId])HUB_SETVIEW[panelId](URL_Q.view);
+  if(HUB_GETVIEW[panelId])URL_Q=mergeQuery(URL_Q,{view:hubViewParam(panelId)});
+  else delete URL_Q.view;
   currentPanel=panelId;
+  URL_HOLD=false;
   renderPage(panelId);
   syncNav();
   closeSidebar();
-  window.scrollTo({top:0});
+  if(PENDING_SCROLL==null)window.scrollTo({top:0});
   /* Real URLs: every screen is bookmarkable and back/forward works.
      In-app navigation pushes a history entry; popstate/boot pass
      noHistory so the traversal itself never re-pushes. */
-  routeSync(urlId,panelId,!(opts&&opts.noHistory));
+  routeSync(urlId,panelId,!traversal);
 }
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
@@ -5546,15 +5681,15 @@ function renderPage(panelId){
         }else{
           host.innerHTML=errorBox();
         }
-      });
+      }).then(restoreScroll,restoreScroll);
     armLiveRefresh(panelId);
   } else if(WIRED[panelId]&&locked){
     /* Hydrate the blurred preview too — real UI, no interaction, no
        live polling. Failures just leave the skeleton under the blur. */
     const host=document.getElementById('ge-data');
-    Promise.resolve().then(()=>WIRED[panelId](host)).catch(()=>{});
+    Promise.resolve().then(()=>WIRED[panelId](host)).catch(()=>{}).then(restoreScroll);
     armLiveRefresh(null);
-  } else { armLiveRefresh(null); }
+  } else { armLiveRefresh(null);restoreScroll(); }
 }
 
 /* ── Live auto-refresh ─────────────────────────────────────────────
@@ -11087,7 +11222,7 @@ const FX_VIEWS=[
 ];
 let FX_VIEW='grid';
 function fxView(id){return FX_VIEWS.filter(v=>v.id===id)[0]||FX_VIEWS[0];}
-function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});}
+function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});hubViewChanged('fixtures');}
 const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(h),cs:(h)=>hydrateCsMatrix(h)};
 /* ── HUB FACTORY ───────────────────────────────────────────
    The four hubs above each hand-rolled this shape. Three more would be a
@@ -11101,7 +11236,7 @@ const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(
 function makeHub(key,views,hydrate,icon){
   let cur=views[0].id;
   const view=id=>views.filter(v=>v.id===id)[0]||views[0];
-  const setView=id=>{cur=view(id).id;track(key+'_view',{view:cur});};
+  const setView=id=>{cur=view(id).id;track(key+'_view',{view:cur});hubViewChanged(currentPanel);};
   const renderBody=()=>{
     const body=document.getElementById(key+'-body');if(!body)return;
     const note=document.getElementById(key+'-note');
@@ -11126,10 +11261,11 @@ function makeHub(key,views,hydrate,icon){
       '<div id="'+key+'-body"></div>';
     host.querySelectorAll('#'+key+'-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
       if(btn.dataset.view===cur)return;
+      historyPoint();
       setView(btn.dataset.view);renderBody();
     }));
     renderBody();
-  }};
+  },view:()=>cur};
 }
 
 /* Two simulators asking the same question at two scales — what happens next
@@ -11176,7 +11312,7 @@ const MD_VIEWS=[
 ];
 let MD_VIEW='record';
 function mdView(id){return MD_VIEWS.filter(v=>v.id===id)[0]||MD_VIEWS[0];}
-function mdSetView(id){MD_VIEW=mdView(id).id;track('model_view',{view:MD_VIEW});}
+function mdSetView(id){MD_VIEW=mdView(id).id;track('model_view',{view:MD_VIEW});hubViewChanged('accountability');}
 const MD_HYDRATE={record:(h)=>hydrateAccountability(h),method:(h)=>hydrateMethodology(h)};
 function mdRenderBody(){
   const body=document.getElementById('md-body');if(!body)return;
@@ -11200,6 +11336,7 @@ async function hydrateModelHub(host){
     '<div id="md-body"></div>';
   host.querySelectorAll('#md-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===MD_VIEW)return;
+    historyPoint();
     mdSetView(btn.dataset.view);
     mdRenderBody();
   }));
@@ -11232,6 +11369,7 @@ async function hydrateFixturesHub(host){
     '<div id="fx-body"></div>';
   host.querySelectorAll('#fx-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===FX_VIEW)return;
+    historyPoint();
     fxSetView(btn.dataset.view);
     fxRenderBody();
   }));
@@ -12095,6 +12233,7 @@ function plSetLens(id){
   if(target&&!plColLocked(target)){PL_STATE.k=l.sort;PL_STATE.dir=l.dir===1?1:-1;}
   else if(plColLocked(target)){PL_STATE.k='total_points';PL_STATE.dir=-1;}
   track('players_lens',{lens:l.id});
+  hubViewChanged('allplayers');
 }
 async function hydrateAllPlayers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -12163,6 +12302,7 @@ async function hydrateAllPlayers(host){
     renderPlayerTable();
   }));
   host.querySelectorAll('#pl-lensbar .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.lens!==PL_STATE.lens)historyPoint();
     plSetLens(btn.dataset.lens);
     host.querySelectorAll('#pl-lensbar .lensbtn').forEach(x=>x.classList.toggle('on',x===btn));
     renderPlayerTable();
@@ -12892,7 +13032,7 @@ const PR_VIEWS=[
 ];
 function prView(id){return PR_VIEWS.find(v=>v.id===id)||PR_VIEWS[0];}
 let PR_VIEW='moves';
-function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});}
+function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});hubViewChanged('price');}
 const PR_HYDRATE={moves:(h)=>hydratePriceMoves(h),market:(h)=>hydrateTransferMarket(h)};
 function prRenderBody(){
   const body=document.getElementById('pr-body');if(!body)return;
@@ -12918,6 +13058,7 @@ async function hydratePrice(host){
     '<div id="pr-body"></div>';
   host.querySelectorAll('#pr-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===PR_VIEW)return;
+    historyPoint();
     prSetView(btn.dataset.view);
     prRenderBody();
   }));
@@ -14845,7 +14986,7 @@ let LV_VIEW='pitch';
 function lvViews(){return LV_VIEWS.filter(v=>capsMet(v.needs));}
 function lvView(id){const a=lvViews();return a.filter(v=>v.id===id)[0]||a[0]||LV_VIEWS[0];}
 function lvLocked(v){return !!(v&&v.tier==='paid')&&!isPro();}
-function lvSetView(id){LV_VIEW=lvView(id).id;track('live_view',{view:LV_VIEW});}
+function lvSetView(id){LV_VIEW=lvView(id).id;track('live_view',{view:LV_VIEW});hubViewChanged('liverank');}
 /* quiet: the 45-second live tick re-runs the active view in place. Painting a
    skeleton first would flash the whole panel every 45 seconds, which is the
    opposite of what a live screen is for. */
@@ -14885,6 +15026,7 @@ async function hydrateLive(host){
     '<div id="lv-body"></div>';
   host.querySelectorAll('#lv-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===LV_VIEW)return;
+    historyPoint();
     lvSetView(btn.dataset.view);
     lvRenderBody();
   }));
@@ -21576,7 +21718,7 @@ const MC_HYDRATE={results:(h)=>hydrateResults(h),forecasts:(h)=>hydrateMatchFore
   lineups:(h)=>hydrateLineups(h)};
 let MC_VIEW='results';
 function mcView(id){return MC_VIEWS.filter(v=>v.id===id)[0]||MC_VIEWS[0];}
-function mcSetView(id){MC_VIEW=mcView(id).id;track('matchday_view',{view:MC_VIEW});}
+function mcSetView(id){MC_VIEW=mcView(id).id;track('matchday_view',{view:MC_VIEW});hubViewChanged('results');}
 function mcRenderBody(opts){
   const body=document.getElementById('mc-body');if(!body)return;
   const v=mcView(MC_VIEW);
@@ -21602,6 +21744,7 @@ async function hydrateMatchday(host){
     '<div id="mc-body"></div>';
   host.querySelectorAll('#mc-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===MC_VIEW)return;
+    historyPoint();
     mcSetView(btn.dataset.view);
     mcRenderBody();
   }));
@@ -24704,40 +24847,52 @@ function init(){
 
   track('app_open');
 
+  /* The app restores scroll itself (see restoreScroll): the browser's own
+     attempt fires before the panel has painted and lands at the top. */
+  try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(_){}
   /* Returning from Stripe checkout: pull the new tier and tidy the URL. */
-  if(/[?&]upgrade=success/.test(location.search)){
+  const q0=urlQuery(location.search);
+  if(q0.upgrade==='success'){
     track('checkout_success');
     refreshTierFromCloud(0);
-    try{history.replaceState({},'',location.pathname);}catch(_){}
   }
   /* Deep links, in priority order: ?panel= (push notifications), the legacy
      #hash (old bookmarks and shares — normalised to the path), then the
-     real path (/squad, /players …). openPanel writes the canonical URL. */
-  const pm=(location.search.match(/[?&]panel=([a-z-]+)/)||[])[1];
-  const hh=location.hash.slice(1);
+     real path (/squad, /players …). openPanel writes the canonical URL.
+     The rest of the query is the panel's own state and travels with it;
+     the one-shot keys consumed here and by the front door do not. */
+  const pm=q0.panel;
+  /* Through pathPanel, so a hash written as a path (#players) resolves the
+     way the path itself would. */
+  const hh=pathPanel(location.hash.slice(1));
+  const q1=mergeQuery(q0,{panel:null,upgrade:null,src:null,app:null});
   if(pm&&PANELS[resolvePanel(pm)]){
-    try{history.replaceState({},'',location.pathname);}catch(_){}
-    openPanel(pm,{noHistory:true});
+    openPanel(pm,{noHistory:true,query:q1});
   } else if(hh&&PANELS[resolvePanel(hh)]){
-    try{history.replaceState({},'',location.pathname);}catch(_){}
-    openPanel(hh,{noHistory:true});
+    try{history.replaceState({},'',location.pathname+location.search);}catch(_){}
+    openPanel(hh,{noHistory:true,query:q1});
   } else {
     const pp=pathPanel(location.pathname);
-    if(pp&&PANELS[resolvePanel(pp)])openPanel(pp,{noHistory:true});
+    if(pp&&PANELS[resolvePanel(pp)])openPanel(pp,{noHistory:true,query:q1});
     else if(pp&&location.pathname!=='/'){
       /* Unknown path: land home and say so in the URL rather than 404ing. */
       openPanel(homePanel(),{noHistory:true});
     }
+    else if(Object.keys(q1).length)openPanel(homePanel(),{noHistory:true,query:q1});
   }
-  /* Back/forward re-opens the panel the URL names, without re-pushing. */
-  window.addEventListener('popstate',()=>{
+  /* Back/forward re-opens the panel the URL names, with the tab and the
+     state the query carries and the scroll position the entry saved,
+     without re-pushing. */
+  window.addEventListener('popstate',e=>{
     const pp=pathPanel(location.pathname);
     const target=pp&&PANELS[resolvePanel(pp)]?pp:homePanel();
-    if(resolvePanel(target)!==currentPanel||PANEL_VIEW[target])openPanel(target,{noHistory:true});
+    const st=(e&&e.state)||{};
+    PENDING_SCROLL=Number.isFinite(st.scroll)?st.scroll:0;
+    openPanel(target,{noHistory:true,query:urlQuery(location.search)});
   });
   /* Legacy in-app #hash links still work: translate to the path route. */
   window.addEventListener('hashchange',()=>{
-    const p=location.hash.slice(1);
+    const p=pathPanel(location.hash.slice(1));
     if(!p||!PANELS[resolvePanel(p)])return;
     try{history.replaceState({},'',location.pathname);}catch(_){}
     openPanel(p);
