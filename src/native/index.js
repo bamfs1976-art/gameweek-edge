@@ -45,7 +45,7 @@ const GENative = {
     const dark = theme === 'dark';
     safe(() => StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark }));
     if (platform === 'android') {
-      safe(() => StatusBar.setBackgroundColor({ color: dark ? '#0f161d' : '#f4f6f8' }));
+      safe(() => StatusBar.setBackgroundColor({ color: dark ? '#0a0c0f' : '#f4f6f8' }));
     }
   },
 

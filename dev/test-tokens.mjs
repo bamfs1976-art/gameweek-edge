@@ -56,10 +56,10 @@ function readTokens(block) {
   for (const m of block.matchAll(/(--[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) out[m[1]] = m[2];
   return out;
 }
-/* The first :root is the light theme. The dark theme is the block that
-   redefines --bg to the near-black canvas. */
-const light = readTokens(tokenBlock(/:root\{\s*\n\s*\/\* Surfaces \*\//));
-const dark = readTokens(tokenBlock(/--bg:#10161c;/));
+/* :root is the terminal (dark) theme. Light is the variant block that
+   redefines --bg to the pale canvas. */
+const dark = readTokens(tokenBlock(/:root\{\s*\n\s*\/\* Surfaces \*\//));
+const light = readTokens(tokenBlock(/\[data-theme="light"\]\{\s*\n\s*\/\* Surfaces \*\//));
 
 assert.ok(Object.keys(light).length > 20, `light theme parsed only ${Object.keys(light).length} tokens`);
 assert.ok(Object.keys(dark).length > 8, `dark theme parsed only ${Object.keys(dark).length} tokens`);

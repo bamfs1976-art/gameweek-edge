@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="light">
+<html lang="en-GB" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
-<meta name="theme-color" content="#f4f6f8">
+<meta name="theme-color" content="#0a0c0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gameweek Edge">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
 <script>
-/* Theme, before first paint. Light is the brand default (matching the
-   marketing site); a stored choice wins. Runs here so the page never
-   flashes the wrong theme while the app boots. */
+/* Theme, before first paint. The terminal (dark) is the default; a
+   stored choice wins. Runs here so the page never flashes the wrong theme
+   while the app boots. */
 try{
   var geTheme = localStorage.getItem('ge-theme');
-  document.documentElement.setAttribute('data-theme', geTheme==='dark'?'dark':'light');
+  document.documentElement.setAttribute('data-theme', geTheme==='light'?'light':'dark');
 }catch(_){}
 /* ── FRONT DOOR ───────────────────────────────────────────────────
    gameweekedge.co.uk serves this file, so a first-time visitor used to
@@ -125,7 +125,7 @@ try{
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
@@ -134,136 +134,94 @@ try{
    ═══════════════════════════════════════════════════════════ */
 
 /* ── DESIGN TOKENS ─────────────────────────────────────── */
-/* Light mode is the default (:root). Dark mode overrides. */
+/* The terminal is the default (:root): a near-black canvas, one bright
+   green, mono numerals, 4px geometry. Light is a variant driven by the
+   same token names, in the block below. dev/test-tokens.mjs and
+   scripts/check-a11y.mjs recompute every contrast claim against these
+   values on every run: change a token here, never a rule there. */
 :root{
   /* Surfaces */
-  --bg:#f4f6f8;
-  --surface:#ffffff;
-  --surface-2:#ffffff;
-  --surface-3:#eef1f4;
-  --elevated:#ffffff;
+  --bg:#0a0c0f;
+  --surface:#111418;
+  --surface-2:#151a20;
+  --surface-3:#1a2026;
+  --elevated:#151a20;
 
-  /* Borders */
-  --border:rgba(12,16,20,.08);
-  --border-2:rgba(12,16,20,.13);
-  --border-3:rgba(12,16,20,.22);
+  /* Borders: depth comes from a 1px line, never from a glow */
+  --border:#20262d;
+  --border-2:#2a323b;
+  --border-3:#3a444f;
 
-  /* Text */
-  /* A four-step ramp where every step is measured, not eyeballed. Ratios are
-     against --surface-3 (#eef1f4), the DARKEST light surface and so the
-     strictest of the three; each token clears its bar on --bg and --surface
-     by construction.
-     --text-3 and --text-4 were 2.63:1 and 1.65:1 — the light theme inherited
-     dark-theme hues that do not survive the flip. --text-3 alone has 110 uses.
-     --text-4 renders ABSENCE (the "—" glyph, blank fixture cells, unfilled
-     dots), so it is held to the 3:1 UI threshold rather than 4.5:1; pushing
-     it to 4.5 collapses it into --text-3 and the ramp loses a step. */
-  --text:#10171e;   /* 15.92:1 */
-  --text-2:#586673; /*  5.20:1 */
-  --text-3:#626f7d; /*  4.53:1 — was #8a97a4, 2.63:1 */
-  --text-4:#78899a; /*  3.17:1 — was #b4bfc9, 1.65:1 */
+  /* Text: a four-step ink ramp, measured on --surface-3 (the lightest
+     surface). --text-4 marks absence only and is held to the 3:1 UI bar. */
+  --text:#e8ecf1;
+  --text-2:#aab3be;
+  --text-3:#8d97a3;
+  --text-4:#68727f;
 
-  /* Brand — deep confident pitch green */
-  /* --green is ink (104 uses) and needs 4.5:1; it sat at 4.28:1 on
-     --surface-3 — close enough to look fine and still fail.
-     --green-bright is DECORATION ONLY (focus rings, borders, the tour
-     spotlight) where SC 1.4.11 asks 3:1 and it clears at 3.07:1. It must
-     never carry text: --tab-on (5.66:1) exists for exactly that. */
-  /* The status board's identity card is the one filled panel on Home, so
-     its ink is measured against the fill rather than against the canvas.
-     White on --hero-b clears AAA in light; the dark pair is a muted forest
-     that keeps the card distinct from the surfaces around it without
-     going neon. */
-  --hero-a:#147e48;
-  --hero-b:#0b5c34;
-  --hero-ink:#ffffff;
-  --green:#147e48;      /* 4.51:1 — was #15824a, 4.28:1 */
-  --green-bright:#1f9d5c;
-  --green-soft:rgba(31,157,92,.11);
-  --green-glow:rgba(31,157,92,.20);
+  /* Brand: the one green. --on-brand is the ink that sits on it. */
+  --hero-a:#0f3d27;
+  --hero-b:#0a2a1b;
+  --hero-ink:#e8ecf1;
+  --green:#00d26a;
+  --green-bright:#2ee88c;
+  --green-soft:rgba(0,210,106,.12);
+  --green-glow:rgba(0,210,106,.22);
+  --on-brand:#0a0c0f;
 
-  /* Accents */
-  --amber:#8f5a12;      /* 5.09:1 on --surface-3 — was #b9741a, 3.32:1; it is text in 45 places */
-  --amber-soft:rgba(185,116,26,.11);
-  /* The paywall accent. Deliberately NOT --amber: a locked column heading and
-     a lens chip are 12px semibold, so they need 4.5:1 against the surface they
-     sit on, and --amber only reaches 3.3:1 on the light canvas. --lock-on is
-     the ink that goes ON a --lock fill, which flips with the theme because
-     the fill does. Measured: light 5.5:1 and 6.3:1, dark 7.9:1 and 9.6:1. */
-  --lock:#8a5410;
-  --lock-on:#ffffff;
-  /* Active-tab ink. --green-bright is the brand green but only 3.3:1 on the
-     light canvas, and a tab label is 13px semibold. 5.9:1 here. */
-  --tab-on:#0f6d3d;
-  /* These three cleared 4.5:1 on --bg and were quietly short of it on
-     --surface-3 — the surface a card or a table row actually sits on.
-     Measuring against the lightest surface is the easy mistake. */
-  --red:#c93834;        /* 4.52:1 — was #cc3d39, 4.31:1 */
-  --red-soft:rgba(204,61,57,.10);
-  --blue:#2e6ac2;       /* 4.68:1 — was #2f6dc7, 4.48:1 */
-  --blue-soft:rgba(47,109,199,.10);
-  --purple:#795ac6;     /* 4.53:1 — was #7a5cc7, 4.43:1 */
-  --purple-soft:rgba(122,92,199,.10);
+  /* Accents. Blue is lifted from the brief's #3b82f6 to #4f92ff: the
+     original measures 4.45:1 on --surface-3, a hair under AA for text. */
+  --amber:#f5a524;
+  --amber-soft:rgba(245,165,36,.12);
+  --lock:#f5a524;
+  --lock-on:#0a0c0f;
+  --tab-on:#00d26a;
+  --red:#ff4d4f;
+  --red-soft:rgba(255,77,79,.12);
+  --blue:#4f92ff;
+  --blue-soft:rgba(79,146,255,.12);
+  --purple:#a78bfa;
+  --purple-soft:rgba(167,139,250,.12);
+  --accent-cta:#00d26a;--accent-cta-ink:#0a0c0f;
+  --accent-alert:#ff4d4f;
+  --accent-warn:#f5a524;
 
-  /* Semantic accents — CTAs are amber (green stays reserved for positive
-     data), alerts red, warnings amber-yellow. Components use these names so
-     the roles never blur. */
-  /* A FILL, not ink — so the pair that matters is --accent-cta-ink ON it,
-     and white on #b9741a was 3.77:1. Every primary button in the app carried
-     a label under the AA floor. The fill still clears 3:1 against the canvas
-     so the button keeps a visible edge. */
-  --accent-cta:#a46615;--accent-cta-ink:#ffffff;  /* ink 4.68:1 */
-  --accent-alert:#c23632; /* 4.79:1 — was #cc3d39, 4.31:1 */
-  --accent-warn:#8a690e;   /* 4.51:1 — was #b58a12, 2.80:1. Carries text
-                              (.dl-warn, .t-flag, .sig-v.warn), so 4.5 applies. */
-
-  /* Radii — the marketing page's soft editorial geometry (its --r is 16px).
-     Chips and pills are fully round; cards sit between. */
-  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-pill:999px;
+  /* Geometry: 4px. Pills stay round. */
+  --r-sm:3px;--r-md:4px;--r-lg:4px;--r-xl:6px;--r-pill:999px;
 
   /* Layout */
   --sidebar-w:48px;
   --topbar-h:54px;
   --bottomnav-h:66px;
 
-  /* Shadow */
-  --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
-  --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
+  /* Elevation: the border does the work; only floating layers cast. */
+  --shadow:0 0 0 0 rgba(0,0,0,0);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.5);
 
-  /* Motion — one scale: state changes 150ms, layout moves 250ms. */
   --ease:cubic-bezier(.2,.8,.2,1);
   --t-state:150ms;
   --t-layout:250ms;
 
-  /* Fonts — the marketing site's pairing carried into the app. Bricolage
-     Grotesque for display/headings, Public Sans for UI and prose. Mono is
-     for NUMERALS ONLY (always with tabular-nums), never sentences. */
-  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
-  --font-body:'Public Sans',system-ui,sans-serif;
+  /* Type: Inter for everything a person reads, IBM Plex Mono for every
+     number, always with tabular figures. */
+  --font-display:'Inter',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
 
-  /* Position tokens — one hue per position, used identically in pills,
-     pitch slots and tables. All measured ≥4.5:1 on --surface-3. */
-  --pos-gk:#8a690e;  --pos-gk-soft:rgba(184,146,30,.14);
-  --pos-def:#2e6ac2; --pos-def-soft:rgba(46,106,194,.12);
-  --pos-mid:#147e48; --pos-mid-soft:rgba(20,126,72,.12);
-  --pos-fwd:#c93834; --pos-fwd-soft:rgba(201,56,52,.11);
+  /* Position colours: one hue per position, in pills, pitch slots and tables */
+  --pos-gk:#f5a524;  --pos-gk-soft:rgba(245,165,36,.14);
+  --pos-def:#4f92ff; --pos-def-soft:rgba(79,146,255,.14);
+  --pos-mid:#00d26a; --pos-mid-soft:rgba(0,210,106,.14);
+  --pos-fwd:#ff4d4f; --pos-fwd-soft:rgba(255,77,79,.13);
 
-  /* Confidence tokens — Low / Medium / High as a consistent 3-step scale
-     (dot meter + tinted chip), never a bare word. */
-  --conf-high:#147e48;   --conf-high-soft:rgba(20,126,72,.12);
-  --conf-med:#8a690e;    --conf-med-soft:rgba(184,146,30,.14);
-  --conf-low:#626f7d;    --conf-low-soft:rgba(98,111,125,.12);
+  /* Confidence scale */
+  --conf-high:#00d26a; --conf-high-soft:rgba(0,210,106,.14);
+  --conf-med:#f5a524;  --conf-med-soft:rgba(245,165,36,.14);
+  --conf-low:#8d97a3;  --conf-low-soft:rgba(141,151,163,.13);
 
-  /* Type scale — 1.125 (major second), the ratio for dense data UIs.
-     This file had grown 59 distinct font sizes between 7.68px and 42px, 53%
-     of them under 12px. That is not a scale, it is 281 independent decisions,
-     and it is why density reads as noise rather than as information.
+  /* Type scale: 1.125 (major second). --fs-min is the floor; nothing under
+     10px survives a phone in daylight and dev/test-tokens.mjs holds the line. */
      --fs-min is the floor: a data-dense terminal earns small type, but
-     7.68px is not small, it is unreadable, and nothing under 10px survives a
-     phone in daylight. dev/test-tokens.mjs fails the build if a new
-     declaration drops below it. New work should use these tokens; existing
-     sizes migrate to the nearest step as each component is next touched. */
   --fs-min:10px;    /* floor — micro labels, table keys */
   --fs-xs:11px;     /* chips, captions, dense table cells */
   --fs-sm:12.5px;   /* secondary UI copy */
@@ -273,75 +231,61 @@ try{
   --fs-xl:26px;     /* page headings */
   --fs-2xl:32px;    /* hero numbers */
 
-  /* The single most important number on a screen. In the brand language it
-     is the deep green ink, one step darker than --green for extra punch —
-     never a neon lime. .hot renders as an inline bold span at 11-13px, so
-     it is held to 4.5:1 like body text. */
-  --hot:#0f6d3d;          /* 5.92:1 on --surface-3 */
-  --chip:#e7ebef;
+  /* THE key number on a screen */
+  --hot:#b6ff3c;
+  --chip:#1a2026;
 }
 
-/* ── DARK MODE ──────────────────────────────────────────── */
-/* The same brand, after dark — deep ink surfaces, the forest green kept
-   as the single accent (brightened only as far as AA requires), no neon.
-   Driven entirely by the same tokens as light; nothing else changes. */
-[data-theme="dark"]{
-  --bg:#10161c;
-  --surface:#171e26;
-  --surface-2:#1c242d;
-  --surface-3:#232b34;
-  --elevated:#1c242d;
-
-  --border:#242d37;
-  --border-2:#2c3641;
-  --border-3:#3a4652;
-
-  --text:#e9edf1;   /* 12.17:1 on --surface-3 */
-  --text-2:#a6b1bc; /*  6.57:1 */
-  --text-3:#97a3ae; /*  5.57:1 */
-  /* Held to the 3:1 UI threshold like its light-theme twin: it marks
-     absence (the "—" glyph, blank cells), not content. */
-  --text-4:#697683; /*  3.08:1 on #232b34 */
-
-  --hero-a:#1a5c3c;
-  --hero-b:#12362a;
-  --hero-ink:#e8f4ec;
-  --green:#45c483;        /* 6.46:1 — brand green lifted for dark, not lime */
-  --green-bright:#3aa971;
-  --green-soft:rgba(69,196,131,.13);
-  --green-glow:rgba(69,196,131,.20);
-
-  --amber:#f0a63a;
-  --amber-soft:rgba(240,166,58,.13);
-  --lock:#f0a63a;
-  --lock-on:#10161c;
-  --tab-on:#52cd8f;       /* 7.15:1 — the green ink for active tabs */
-  --red:#ff6b6b;
-  --red-soft:rgba(255,107,107,.12);
-  --blue:#6aa4f8;
-  --blue-soft:rgba(106,164,248,.13);
-  --purple:#a795f2;
-  --purple-soft:rgba(167,149,242,.13);
-
-  /* Semantic accents (dark) — amber CTA on dark ink, red alert, warn. */
-  --accent-cta:#f0a63a;--accent-cta-ink:#10161c;
-  --accent-alert:#ff6b6b;
-  --accent-warn:#e8c14b;
-
-  /* Position + confidence hues, lifted for dark surfaces. */
-  --pos-gk:#e0b53f;  --pos-gk-soft:rgba(224,181,63,.14);
-  --pos-def:#6aa4f8; --pos-def-soft:rgba(106,164,248,.14);
-  --pos-mid:#45c483; --pos-mid-soft:rgba(69,196,131,.14);
-  --pos-fwd:#ff8a85; --pos-fwd-soft:rgba(255,138,133,.13);
-  --conf-high:#45c483; --conf-high-soft:rgba(69,196,131,.14);
-  --conf-med:#e0b53f;  --conf-med-soft:rgba(224,181,63,.14);
-  --conf-low:#97a3ae;  --conf-low-soft:rgba(151,163,174,.13);
-
-  --hot:#52cd8f;
-  --chip:#2a333d;
-
-  --shadow:0 1px 3px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.25);
-  --shadow-lg:0 6px 18px rgba(0,0,0,.4),0 20px 48px rgba(0,0,0,.32);
+/* ── LIGHT MODE ─────────────────────────────────────────── */
+/* The editorial palette the app shipped with, kept as a variant: the
+   same token names, so nothing else changes. */
+[data-theme="light"]{
+  /* Surfaces */
+  --bg:#f4f6f8;
+  --surface:#ffffff;
+  --surface-2:#ffffff;
+  --surface-3:#eef1f4;
+  --elevated:#ffffff;
+  --border:rgba(12,16,20,.08);
+  --border-2:rgba(12,16,20,.13);
+  --border-3:rgba(12,16,20,.22);
+  --text:#10171e;
+  --text-2:#586673;
+  --text-3:#626f7d;
+  --text-4:#78899a;
+  --hero-a:#147e48;
+  --hero-b:#0b5c34;
+  --hero-ink:#ffffff;
+  --green:#147e48;
+  --green-bright:#1f9d5c;
+  --green-soft:rgba(31,157,92,.11);
+  --green-glow:rgba(31,157,92,.20);
+  --amber:#8f5a12;
+  --amber-soft:rgba(185,116,26,.11);
+  --lock:#8a5410;
+  --lock-on:#ffffff;
+  --tab-on:#0f6d3d;
+  --red:#c93834;
+  --red-soft:rgba(204,61,57,.10);
+  --blue:#2e6ac2;
+  --blue-soft:rgba(47,109,199,.10);
+  --purple:#795ac6;
+  --purple-soft:rgba(122,92,199,.10);
+  --accent-cta:#a46615;--accent-cta-ink:#ffffff;
+  --accent-alert:#c23632;
+  --accent-warn:#8a690e;
+  --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
+  --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
+  --pos-gk:#8a690e;  --pos-gk-soft:rgba(184,146,30,.14);
+  --pos-def:#2e6ac2; --pos-def-soft:rgba(46,106,194,.12);
+  --pos-mid:#147e48; --pos-mid-soft:rgba(20,126,72,.12);
+  --pos-fwd:#c93834; --pos-fwd-soft:rgba(201,56,52,.11);
+  --conf-high:#147e48;   --conf-high-soft:rgba(20,126,72,.12);
+  --conf-med:#8a690e;    --conf-med-soft:rgba(184,146,30,.14);
+  --conf-low:#626f7d;    --conf-low-soft:rgba(98,111,125,.12);
+  --hot:#0f6d3d;
+  --chip:#e7ebef;
+  --on-brand:#ffffff;
 }
 
 /* ── RESET & BASE ──────────────────────────────────────── */
@@ -379,7 +323,7 @@ a{color:inherit;text-decoration:none}
 .jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright)}
 .jargon:hover::after,.jargon:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
   width:min(260px,72vw);background:var(--elevated,var(--surface-2));color:var(--text);border:1px solid var(--border);
-  border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
+  border-radius:var(--r-md);padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
   box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:normal;pointer-events:none}
 body[data-density="beginner"] .expert-only{display:none}
 /* Refresh and Export live in the overflow menu now, tucked away for
@@ -443,14 +387,14 @@ body[data-density="beginner"] .beginner-only{display:block}
 }
 /* Section 7: persistent right rail on large screens (>=1024px) */
 .right-rail{display:none}
-.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px}
+.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:14px}
 .rr-h{font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
 .rr-ask-in{display:flex;gap:6px}
-.rr-ask-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border-2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px}
+.rr-ask-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border-2);border-radius:var(--r-md);padding:7px 9px;color:var(--text);font-size:12px}
 .rr-ask-in input:focus{outline:none;border-color:var(--green-bright)}
 .rr-ask-out{margin-top:8px;font-size:12px;line-height:1.5;color:var(--text-2)}
 .rr-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.rr-col{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px}
+.rr-col{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:8px}
 .rr-nm{font-weight:700;font-size:12.5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rr-stat{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);font-family:var(--font-mono);padding:1px 0}
 .rr-stat b{color:var(--text)}
@@ -688,7 +632,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 /* The bench lives on its own opaque strip "off the pitch", so the
    centre-circle arc can never run through the bench players. */
 .bench{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;
-  position:relative;z-index:2;padding:9px 10px 7px;border-radius:10px;
+  position:relative;z-index:2;padding:9px 10px 7px;border-radius:var(--r-lg);
   background:linear-gradient(180deg,#1d4a2e,#163a24);
   border:1px solid rgba(255,255,255,.22);box-shadow:0 2px 10px rgba(0,12,5,.3)}
 
@@ -704,14 +648,14 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-team span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mc-team.h{justify-content:flex-end;text-align:right}
 .mc-score{background:var(--surface-3);border:1px solid var(--border-2);
-  padding:4px 12px;border-radius:8px;font-weight:800;white-space:nowrap}
+  padding:4px 12px;border-radius:var(--r-md);font-weight:800;white-space:nowrap}
 .mc-ch{transition:transform .2s;color:var(--text-3);font-size:.75rem}
 .mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
 .mc-cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:.85rem;line-height:1.9}
 .mc-cols .h{text-align:right}
 .mc-sec{text-align:center;font-weight:700;font-size:.72rem;letter-spacing:.05em;
   text-transform:uppercase;color:var(--text-3);background:var(--surface-2);
-  border-radius:6px;padding:3px;margin:10px 0 6px}
+  border-radius:var(--r-md);padding:3px;margin:10px 0 6px}
 .mc-you{color:var(--blue);margin-right:3px;font-size:.7rem;vertical-align:2px}
 /* Your matchday: the squad-vs-kickoff join. .mc-badge keeps the state
    badge and the squad count in ONE grid cell — .mc-head is a five-column
@@ -720,7 +664,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-mine{color:var(--blue);font-size:.68rem;font-weight:800;white-space:nowrap}
 .md-sum{font-weight:700;font-size:.86rem;margin-bottom:8px}
 .md-next{display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin-bottom:10px;
-  border-radius:8px;background:var(--green-soft)}
+  border-radius:var(--r-md);background:var(--green-soft)}
 /* The kickoff column and the count sit at the TOP of a row whose middle
    can now run to several lines; .dl-row centres its children, which
    would leave a badge floating beside the third name. */
@@ -766,7 +710,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .lg-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
 .lg-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-min);
   font-weight:700;color:var(--text-2);background:var(--surface-2);
-  border:1px solid var(--border-2);border-radius:6px;padding:2px 7px;white-space:nowrap}
+  border:1px solid var(--border-2);border-radius:var(--r-md);padding:2px 7px;white-space:nowrap}
 .lg-pill b{font-size:var(--fs-min);font-weight:800;color:var(--text-3);letter-spacing:.05em}
 .lg-asof{font-style:normal;font-size:var(--fs-min);font-weight:700;color:var(--text-3);
   background:var(--surface-3);border-radius:4px;padding:0 4px;margin-left:4px}
@@ -787,7 +731,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 /* Player state. These four are the whole read of a live table: what is
    banked, what is happening, what is still to come, and what is never
    coming. Colour AND a legend, because colour alone is not a label. */
-.lg-p{border-radius:8px;padding:4px 2px}
+.lg-p{border-radius:var(--r-md);padding:4px 2px}
 .lg-done{background:var(--surface-2)}
 .lg-live{background:var(--green-soft);box-shadow:inset 0 0 0 1px var(--green)}
 .lg-toPlay{opacity:.62}
@@ -876,7 +820,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 /* Ask the Scout (chat) */
 .ask-thread{max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 10px}
 .ask-empty{color:var(--text-3);font-size:.82rem;text-align:center;padding:18px}
-.ask-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:.86rem;line-height:1.5}
+.ask-msg{max-width:88%;padding:10px 13px;border-radius:var(--r-xl);font-size:.86rem;line-height:1.5}
 .ask-msg p{margin:0 0 6px}.ask-msg p:last-child{margin:0}
 .ask-msg ul{margin:4px 0;padding-left:18px}.ask-msg h4{margin:4px 0;font-size:.9rem}
 .ask-user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
@@ -921,18 +865,18 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .pd-meta{font-size:.8rem;color:var(--text-2);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px}
 .pd-x{align-self:flex-start;background:none;border:0;font-size:1.5rem;line-height:1;color:var(--text-3);cursor:pointer;padding:0 4px}
 .pd-kpi{margin-bottom:14px}.pd-sec{margin-bottom:12px}
-.pd-news{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text);background:var(--surface-3);border-left:3px solid var(--amber);padding:8px 10px;border-radius:8px;margin-bottom:12px}
+.pd-news{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text);background:var(--surface-3);border-left:3px solid var(--amber);padding:8px 10px;border-radius:var(--r-md);margin-bottom:12px}
 .pd-tick{display:flex;gap:6px;flex-wrap:wrap}
-.pd-fx{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:6px 4px;border-radius:8px;font-size:.74rem;font-weight:800;color:#16241b}
+.pd-fx{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:6px 4px;border-radius:var(--r-md);font-size:.74rem;font-weight:800;color:#16241b}
 .pd-fx b{font-size:var(--fs-min);opacity:.8;font-weight:600;margin-top:1px}
 .pd-fx.fdr-5{color:#fff}
 .pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:8px}
+.pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:var(--r-md)}
 .pd-sl{font-size:.78rem;color:var(--text-2)}.pd-sv{font-weight:700;font-size:.84rem}
 .pd-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .pd-chip{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
 .pd-chip-hot{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
-.bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:8px;font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
+.bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:var(--r-md);font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
 .bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
 /* Live status pill + auto-refresh */
 .live-pill{display:inline-flex;align-items:center;gap:6px;font-size:.64rem;font-weight:800;letter-spacing:.04em;
@@ -944,7 +888,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .dc-meter{height:7px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:5px}
 .dc-fill{height:100%;border-radius:4px;background:var(--green-bright);transition:width .3s var(--ease)}
 .dc-fill.hit{background:var(--green)}
-.solver-best{background:var(--green-soft);border-radius:8px}
+.solver-best{background:var(--green-soft);border-radius:var(--r-md)}
 .solver-idx{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:.72rem;margin-right:8px;flex:0 0 auto}
 /* Player List table */
 .pl-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
@@ -1030,7 +974,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
    is scaled to the leader's odds, not to 100%, so a near-level race
    still reads as level instead of as six near-empty slivers. */
 .tr-me{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
-  padding:10px 12px;margin-bottom:10px;border-radius:10px;background:var(--green-soft)}
+  padding:10px 12px;margin-bottom:10px;border-radius:var(--r-lg);background:var(--green-soft)}
 .tr-big{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
 /* .dl-grow resolves to flex-direction:column with align-items:center —
    the base rule sets the direction and the .dl-row override sets the
@@ -1095,7 +1039,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
   background:var(--bg-2);border:1px solid var(--border);border-radius:9px;
 }
 .sb-game-btn{
-  flex:1;padding:6px 8px;border-radius:6px;text-align:center;text-decoration:none;
+  flex:1;padding:6px 8px;border-radius:var(--r-md);text-align:center;text-decoration:none;
   font-size:.7rem;font-weight:700;letter-spacing:.04em;color:var(--text-3);
   transition:background .15s,color .15s;
 }
@@ -1313,7 +1257,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   transition:transform .1s var(--ease),filter .14s var(--ease),background .14s var(--ease);
 }
 .btn svg{width:15px;height:15px}
-.btn-primary{background:var(--green);color:#fff;box-shadow:0 2px 8px var(--green-glow)}
+.btn-primary{background:var(--green);color:#0a0c0f;box-shadow:0 2px 8px var(--green-glow)}
 .btn-primary:hover{filter:brightness(1.08)}
 /* Amber CTA — the primary call-to-action colour (Link team, Next, Ask, Save).
    Green is reserved for positive data, so actions read as actions. */
@@ -1498,7 +1442,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
    player who failed to load. Kept dim enough that a half-built squad still
    leads with the players in it. */
 .pp-slot{cursor:pointer;opacity:.72;transition:opacity .12s,transform .12s}
-.pp-slot .pp-fig{border:1.5px dashed rgba(255,255,255,.55);border-radius:10px;background:rgba(255,255,255,.06)}
+.pp-slot .pp-fig{border:1.5px dashed rgba(255,255,255,.55);border-radius:var(--r-lg);background:rgba(255,255,255,.06)}
 /* .pp-pt is a WHITE pill — the price chip. Recolouring the text white here
    made "Add" invisible on it; the default dark ink is what that pill is
    designed for. */
@@ -1507,7 +1451,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 /* The focus ring is on the pitch, which is mid-green — a themed ring can
    vanish into it, so this one is white with a dark backing and does not
    depend on the palette. */
-.pp-slot:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:8px}
+.pp-slot:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:var(--r-md)}
 @media(prefers-reduced-motion:reduce){ .pp-slot{transition:none} .pp-slot:hover,.pp-slot:focus-visible{transform:none} }
 /* The one line an empty pitch owes the reader. Sits above the grass rather
    than on it: over the green it competes with the slots it is pointing at. */
@@ -1523,7 +1467,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .draft-start .btn{vertical-align:baseline}
 .draft-start b{color:var(--text)}
 .draft-start-chip{
-  display:inline-block;font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-min);font-weight:700;
+  display:inline-block;font-family:var(--font-mono);font-size:var(--fs-min);font-weight:700;
   background:var(--surface-3);color:var(--text);border-radius:5px;padding:1px 6px;white-space:nowrap;
 }
 .pitch-row{
@@ -1650,7 +1594,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   border-radius:14px 14px 0 0;padding:18px 20px 24px;
   transform:translateY(100%);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
 .xp-drawer.open .xpd-sheet{transform:translateY(0)}
-@media(min-width:640px){.xpd-sheet{bottom:24px;border-radius:14px;border-bottom:1px solid var(--border-2)}}
+@media(min-width:640px){.xpd-sheet{bottom:24px;border-radius:var(--r-xl);border-bottom:1px solid var(--border-2)}}
 .xpd-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .xpd-lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3)}
 .xpd-title{font-family:var(--font-display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
@@ -1752,12 +1696,12 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 
 /* ── BRAND ELEVATION — gradient moments, depth, motion ───── */
 :root{
+  --grad-brand:linear-gradient(118deg,#00b95c 0%,#00d26a 100%);
+  --grad-glow:0 0 0 1px rgba(0,210,106,.28);
+}
+[data-theme="light"]{
   --grad-brand:linear-gradient(118deg,#0d6e3f 0%,#15945b 45%,#1d6fa8 100%);
   --grad-glow:0 6px 24px rgba(21,148,91,.28);
-}
-[data-theme="dark"]{
-  --grad-brand:linear-gradient(118deg,#16a35f 0%,#1cbd7e 45%,#2f8fd0 100%);
-  --grad-glow:0 6px 26px rgba(28,189,126,.22);
 }
 .btn{transition:transform .12s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
 .btn:active{transform:scale(.96)}
@@ -1795,7 +1739,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 
 .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
 .seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
-.seg-b.on{background:var(--grad-brand);color:#fff}
+.seg-b.on{background:var(--grad-brand);color:var(--on-brand)}
 /* Full-width, horizontally-scrollable segmented control + its panes
    (Gameweek recap tabs: Scorers · Market · Picks · Value · Template). */
 .gw-seg{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;margin-bottom:14px;scrollbar-width:none}
@@ -1861,8 +1805,8 @@ body{font-size:14px;line-height:1.5}
 .badge{border-radius:var(--r-sm);font-size:10px;
   text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 .btn{border-radius:var(--r-md)}
-[data-theme="dark"] .btn-primary{background:var(--green);color:#0b1510}
-[data-theme="dark"] .btn-primary:hover{background:var(--tab-on);color:#0b1510}
+[data-theme="light"] .btn-primary{background:var(--green);color:#fff}
+[data-theme="light"] .btn-primary:hover{background:var(--tab-on);color:#fff}
 :focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
 
 /* ── The gameweek chip: "GW2 · deadline in 5h 12m", live-ticking ── */
@@ -2329,7 +2273,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .dash-next-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media(max-width:640px){.dash-next-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dash-next-b{display:block;width:100%;text-align:left;cursor:pointer;padding:10px 12px;
-  border-radius:10px;background:var(--surface-2);border:1px solid var(--border-2);
+  border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--border-2);
   transition:border-color .14s var(--ease),background .14s var(--ease)}
 .dash-next-b:hover{border-color:var(--green);background:var(--green-soft)}
 .dash-next-b:focus-visible{outline:2px solid var(--green-bright);outline-offset:1px}
@@ -2475,7 +2419,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   width:100%;min-width:0;text-align:left;
   background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 .rv-open:hover .dl-nm{text-decoration:underline}
-.rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-md)}
 /* White and amber, not accent-on-green. The first version ringed shared
    players in the accent colour and differentials in translucent white, which
    was designed against a dark surface — on the actual green pitch, in the
@@ -7346,8 +7290,8 @@ async function hydrateDesign(host){
       sw('--pos-gk')+sw('--pos-def')+sw('--pos-mid')+sw('--pos-fwd')+'</div>'+
       '<div style="margin-top:8px;display:flex;gap:6px"><span class="pos-pill p1">GKP</span><span class="pos-pill p2">DEF</span><span class="pos-pill p3">MID</span><span class="pos-pill p4">FWD</span></div>')+
     panel('Confidence','<div style="display:flex;gap:8px;flex-wrap:wrap">'+confChip(82,'')+confChip(58,'')+confChip(31,'')+'</div>')+
-    panel('Type','<div style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.02em">Display — Bricolage Grotesque</div>'+
-      '<div style="font-size:14px;margin:6px 0">Body copy — Public Sans 14/1.5</div>'+
+    panel('Type','<div style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.02em">Display, Inter 800</div>'+
+      '<div style="font-size:14px;margin:6px 0">Body copy, Inter 14/1.5</div>'+
       '<div class="mono" style="font-size:22px">1,234.56 <span class="pos">+7.8</span> <span class="neg">-2.1</span></div>')+
     panel('Deltas &amp; badges','<div class="qd-row"><span class="qd-k">DELTA</span><b>Haaland</b><span class="qd-v pos">↑ +0.3</span></div>'+
       '<div class="qd-row"><span class="qd-k">BADGES</span><span class="badge badge-green">LIVE</span> <span class="badge badge-amber">DOUBTFUL</span> <span class="badge badge-red">FT</span> <span class="badge badge-grey">GW38</span></div>')+
@@ -23877,8 +23821,8 @@ function renderDraft(){
         '</div>'
       /* No fixture in the window is a BLANK, and printing nothing there
          would read as "not loaded yet" — the opposite of a warning. */
-      : '<div class="pp-sub"><span class="l" style="flex:1;background:#e9edf1;color:#6b7683">blank</span></div>';
-    const badge=e.id===capId?'<span class="pp-badge">C</span>':e.id===viceId?'<span class="pp-badge" style="background:#c9ccd1">V</span>':'';
+      : '<div class="pp-sub"><span class="l" style="flex:1;background:var(--surface-3);color:var(--text-3)">blank</span></div>';
+    const badge=e.id===capId?'<span class="pp-badge">C</span>':e.id===viceId?'<span class="pp-badge" style="background:var(--border-3)">V</span>':'';
     return '<div class="pp'+(e.id===capId?' is-cap':'')+'" data-draft-open="'+e.id+'" role="button" tabindex="0">'+badge+ppFigure(b,e)+
       '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span>'+fx+'</div>';
   };
@@ -24319,7 +24263,7 @@ function applyTheme(theme){
   try{localStorage.setItem('ge-theme',theme);}catch(_){}
   /* Keep the browser chrome in step with the canvas. */
   try{const tc=document.querySelector('meta[name="theme-color"]');
-    if(tc)tc.setAttribute('content',isDark?'#10161c':'#f4f6f8');}catch(_){}
+    if(tc)tc.setAttribute('content',isDark?'#0a0c0f':'#f4f6f8');}catch(_){}
   window.GENative&&GENative.setTheme(theme);
 }
 function storedTheme(){
@@ -25128,7 +25072,7 @@ function init(){
   buildBottomNav();
   watchPhoneNav();
   sparkWatch();
-  applyTheme(storedTheme()||'light');
+  applyTheme(storedTheme()||'dark');
   const home=homePanel();
   currentPanel=home;
   renderPage(home);
