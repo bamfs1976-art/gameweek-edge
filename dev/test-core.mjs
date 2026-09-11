@@ -191,6 +191,26 @@ const pieces = [
      gets the five-panel rail or the full app. Pure, so it is held here. */
   extractArrayConst(html, 'DISPLAY_MODES'),
   extractFn(html, 'resolveDisplayMode'),
+  /* URL state: the query string is the panel's state. Pure helpers only;
+     setUrlState touches history and is exercised in the browser. */
+  extractFn(html, 'urlQuery'),
+  extractFn(html, 'urlQueryString'),
+  extractFn(html, 'mergeQuery'),
+  extractFn(html, 'urlHref'),
+  'let URL_Q={},URL_FROM_LINK=false,URL_ENTRY=0;const URL_ENTRY_SEEN={};',
+  'function __enter(){URL_ENTRY++;}',
+  extractFn(html, 'urlEntryOnce'),
+  'function __setUrl(q,fromLink){URL_Q=q||{};URL_FROM_LINK=!!fromLink;}',
+  extractFn(html, 'urlPick'),
+  extractFn(html, 'retryBtn'),
+  extractFn(html, 'hubFailText'),
+  /* Panel names: retired ids and everyday synonyms the palette searches. */
+  extractConst(html, 'PANEL_ALIAS'),
+  extractConst(html, 'PANEL_SYNONYMS'),
+  'let PANEL_RETIRED=null;',
+  extractFn(html, 'resolvePanel'),
+  extractFn(html, 'panelAliases'),
+  extractFn(html, 'urlIdList'),
   extractFn(aiSrc, 'fitJSON'),
   /* bestTransfer drives the dashboard/debrief suggestion; stub its only
      dependency (horizonXP) so we test the logic, not the xP maths. */
@@ -312,7 +332,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5355,6 +5375,101 @@ section('resolveDisplayMode: local choice, then cloud, then simple');
   ok(resolveDisplayMode('beginner', null) === 'simple', 'the retired density values are not modes');
   ok(resolveDisplayMode('', 'garbage') === 'simple', 'a bad cloud value falls back to simple rather than throwing');
   ok(resolveDisplayMode('TERMINAL', null) === 'simple', 'values are exact: the setting is written by this app, never typed');
+}
+
+/* ── URL state ──────────────────────────────────────────── */
+section('urlQuery: the query string parses to a plain object and back');
+{
+  const { urlQuery, urlQueryString, mergeQuery, urlHref } = core;
+  ok(JSON.stringify(urlQuery('?view=diffs&gw=4')) === '{"view":"diffs","gw":"4"}', 'two keys parse');
+  ok(JSON.stringify(urlQuery('view=diffs')) === '{"view":"diffs"}', 'a leading ? is optional');
+  ok(JSON.stringify(urlQuery('')) === '{}' && JSON.stringify(urlQuery(null)) === '{}', 'empty and null parse to nothing');
+  ok(urlQuery('players=1,2,3').players === '1,2,3', 'a comma list survives');
+  ok(urlQuery('q=de+bruyne').q === 'de bruyne', 'a plus is a space');
+  ok(urlQuery('q=%E2%82%AC').q === '\u20ac', 'percent-encoding decodes');
+  ok(urlQuery('bad=%E0%A4%A').bad === undefined, 'a malformed escape is skipped, not thrown');
+  ok(urlQuery('flag').flag === '', 'a bare key reads as empty');
+  ok(urlQueryString({ view: 'diffs', gw: 4 }) === 'view=diffs&gw=4', 'numbers serialise as strings');
+  ok(urlQueryString({ players: '1,2,3' }) === 'players=1,2,3', 'commas stay readable in a shared link');
+  ok(urlQueryString({ q: 'de bruyne' }) === 'q=de%20bruyne', 'spaces are encoded');
+  ok(urlQueryString({ a: null, b: undefined, c: '' }) === '', 'empty values are left out');
+  ok(urlHref('/players', {}) === '/players', 'no state, no question mark');
+  ok(urlHref('/players', { view: 'diffs' }) === '/players?view=diffs', 'state joins the path');
+  const merged = mergeQuery({ view: 'diffs', gw: '4' }, { gw: null, sort: 'xp' });
+  ok(JSON.stringify(merged) === '{"view":"diffs","sort":"xp"}', 'null deletes, a new key is added');
+  ok(JSON.stringify(mergeQuery({ a: '1' }, { a: false })) === '{}', 'false deletes too');
+  const base = { a: '1' }; mergeQuery(base, { b: '2' });
+  ok(JSON.stringify(base) === '{"a":"1"}', 'merge returns a new object and leaves its input alone');
+  ok(JSON.stringify(mergeQuery({ a: '1' }, { a: 0 })) === '{"a":"0"}', 'zero is a value, not an absence');
+}
+
+section('urlPick: the link wins, then the default after a link, then memory');
+{
+  const { urlPick, urlIdList, __setUrl } = core;
+  const int = (v) => (parseInt(v, 10) > 0 ? parseInt(v, 10) : null);
+  __setUrl({ gw: '3' }, true);
+  ok(urlPick('gw', 7, 1, int) === 3, 'a value in the URL is used');
+  __setUrl({ gw: 'nonsense' }, true);
+  ok(urlPick('gw', 7, 1, int) === 1, 'nonsense in the URL falls to the default after a link');
+  __setUrl({}, true);
+  ok(urlPick('gw', 7, 1, int) === 1, 'after a link or a traversal an absent key means the default');
+  __setUrl({}, false);
+  ok(urlPick('gw', 7, 1, int) === 7, 'after in-app navigation an absent key means what was in memory');
+  __setUrl({ gw: '' }, false);
+  ok(urlPick('gw', 7, 1, int) === 7, 'an empty value counts as absent');
+  __setUrl({ q: 'ar' }, false);
+  ok(urlPick('q', '', '') === 'ar', 'without a parser the raw string is returned');
+  ok(JSON.stringify(urlIdList('1,2,x,-3,4')) === '[1,2,4]', 'an id list keeps positive integers only');
+  ok(urlIdList('1,2,3,4,5,6', 4).length === 4, 'an id list is capped');
+  ok(urlIdList('').length === 0 && urlIdList(null).length === 0, 'nothing parses to an empty list');
+}
+
+section('urlEntryOnce: the URL is read once per entry to a panel, then memory is the truth');
+{
+  const { urlEntryOnce, __enter } = core;
+  __enter();
+  ok(urlEntryOnce('leagues') === true, 'the first read after an entry consumes it');
+  ok(urlEntryOnce('leagues') === false, 'a repaint on the same entry does not read the URL again');
+  ok(urlEntryOnce('results') === true, 'another reader on the same entry still gets its first read');
+  __enter();
+  ok(urlEntryOnce('leagues') === true, 'a new entry (link, traversal or navigation) reads again');
+}
+
+section('failed states: a sentence, then the same next action every time');
+{
+  const { retryBtn, hubFailText } = core;
+  ok(/<button[^>]*onclick="renderPage\(currentPanel\)"[^>]*>Try again<\/button>/.test(retryBtn()), 'the default retry repaints the panel on screen');
+  ok(/onclick="fxRenderBody\(\)"/.test(retryBtn('fxRenderBody()')), 'a hub retry re-runs its own view');
+  ok(hubFailText(null) === 'This usually clears within a minute. Try again.', 'no error detail: the calm sentence alone');
+  ok(hubFailText(new Error('HTTP 502')) === 'HTTP 502. This usually clears within a minute. Try again.', 'an error message leads, then the next step');
+  ok(hubFailText(new Error('Timed out. ')) === 'Timed out. This usually clears within a minute. Try again.', 'a trailing stop is not doubled');
+  ok(!/\u2014/.test(hubFailText(new Error('x')) + retryBtn()), 'no em dash in the copy');
+}
+
+section('panelAliases: the palette finds a panel by its old id, its old name and plain English');
+{
+  const { PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, cmdkSearch } = core;
+  ok(panelAliases('allplayers').includes('diffs') && panelAliases('allplayers').includes('injuries'), 'retired ids fold in from PANEL_ALIAS');
+  ok(panelAliases('results').includes('match centre') && panelAliases('results').includes('results'), 'Matchday answers to Match Centre and Results');
+  ok(panelAliases('gwdebrief').includes('gw debrief'), 'the Gameweek Debrief still answers to its old label');
+  ok(panelAliases('gwreport').includes('manager report') && panelAliases('gwreport').includes('gwhistory'), 'the Manager Report answers to its label and its retired id');
+  ok(panelAliases('squad')[0] === 'squad', 'the raw id is always first');
+  ok(new Set(panelAliases('seasonsim')).size === panelAliases('seasonsim').length, 'no duplicate aliases');
+  Object.keys(PANEL_SYNONYMS).forEach((id) => {
+    ok(!PANEL_ALIAS[id], 'synonyms are keyed by a live panel id, not a retired one: ' + id);
+    PANEL_SYNONYMS[id].forEach((a) => ok(a === a.toLowerCase() && !/[\u2014]/.test(a), 'synonym is lower case with no em dash: ' + a));
+  });
+  ok(resolvePanel('gwhistory') === 'gwreport' && resolvePanel('squad') === 'squad', 'resolvePanel maps a retired id and leaves a live one');
+  /* Through the palette's own ranking, with the substring fallback. */
+  const entries = ['results', 'gwdebrief', 'gwreport', 'allplayers', 'fixtures'].map((id) => ({
+    name: { results: 'Matchday', gwdebrief: 'Gameweek Debrief', gwreport: 'Manager Report', allplayers: 'Players', fixtures: 'Fixtures' }[id],
+    aliases: panelAliases(id), desc: '', base: 1, id
+  }));
+  const top = (q) => cmdkSearch(entries, q, null)[0];
+  ok(top('match centre') && top('match centre').id === 'results', 'typing Match Centre finds Matchday');
+  ok(top('gwreport') && top('gwreport').id === 'gwreport', 'typing gwreport finds the Manager Report');
+  ok(top('gw debrief') && top('gw debrief').id === 'gwdebrief', 'typing the old debrief label finds it');
+  ok(top('diffs') && top('diffs').id === 'allplayers', 'typing a retired id finds the panel that absorbed it');
 }
 
 /* ── summary ────────────────────────────────────────────── */

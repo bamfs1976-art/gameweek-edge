@@ -106,6 +106,25 @@ rule, not forced). Legacy `#hash` and `?panel=` deep links still resolve, then
 normalise to the path. Every screen sets its own `<title>` and meta
 description and renders exactly one `h1`.
 
+The **query string is the panel's state**. The path names the panel; `?view=`
+names the tab inside a hub (`/players?view=diffs`, `/fixtures?view=cs`), and
+each view writes its own keys as the reader changes things: the players
+table's `sort`, `dir`, `pos`, `team`, `q` and `layout`; the fixture grid's
+`win`, `from`, `lens` and `rows`; Match Centre's `gw` and the line-ups `team`; the
+Manager Report's `gw`; a club dossier's `team`, form's `venue` and `win`;
+Player Compare's `players`; a mini-league's `league`, `type`, `page`, `sort`,
+`dir` and `layout`; the Scout Board's `pos`, `max`, `sort`, `dir`; the Points
+Planner's `pos` and `n`; the clean-sheet matrix's `n`; the Squad Planner's
+`ids`. Defaults are left out, so the bare path is always the default view.
+
+`urlPick(key, memory, default, parse)` decides whose value wins on entry: the
+link's when it names one, the default after a link or a traversal (back from
+`?gw=3` must show the current gameweek again), memory otherwise. A tab change
+is a history entry (`historyPoint()`), a filter change is not; scroll is saved
+on the entry being left and restored after the hydrator resolves. The
+**Copy link** control in the page header (`pageToolsHtml`) copies the address
+on every view worth sending on; personal panels are left out.
+
 ## Key components
 
 - **DecisionCard** (`.dc`, `.dc-hero`) — the three calls are the product.

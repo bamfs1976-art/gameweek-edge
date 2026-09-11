@@ -1129,6 +1129,20 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 /* Nav */
 .sb-nav{flex:1;overflow-y:auto;padding:8px 10px 16px}
 .nav-area{margin-bottom:2px}
+/* The grouped menu: every panel under its area, in the phone and tablet
+   drawer only. The desktop rail hides it (see the 900px block). */
+.sb-all{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.sb-group{margin-bottom:6px}
+.sb-group-h{font-size:var(--fs-min);font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--text-3);padding:8px 12px 4px}
+.sb-sub{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:var(--r-sm);
+  color:var(--text-2);font-size:.84rem;font-weight:600;text-align:left;
+  transition:background .14s var(--ease),color .14s var(--ease)}
+.sb-sub svg{width:14px;height:14px;flex-shrink:0;color:var(--text-3)}
+.sb-sub span:first-of-type{flex:1;min-width:0}
+.sb-sub:hover{background:var(--surface-3);color:var(--text)}
+.sb-sub.active{background:var(--green-soft);color:var(--green-bright)}
+.sb-sub.active svg{color:var(--green-bright)}
 .nav-area-btn{
   display:flex;align-items:center;gap:11px;width:100%;
   padding:10px 12px;border-radius:var(--r-sm);
@@ -1349,6 +1363,11 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 }
 .page-head p{font-size:.85rem;color:var(--text-3);margin-top:4px}
 .page-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+/* The control slot on the right of every page header: Copy link today,
+   share and export later. Sits at the top on a phone, beside the title on
+   a desktop, and never pushes the title off its line. */
+.page-head-tools{display:flex;gap:8px;align-items:center;flex-shrink:0;padding-top:6px}
+.page-head-tools .btn svg{width:14px;height:14px}
 
 /* Locked banner */
 /* ── PRO PAYWALL ───────────────────────────────────────── */
@@ -1656,10 +1675,11 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   .g-sb,.draft-cols{grid-template-columns:minmax(0,1fr)}
 }
 @media(max-width:900px){
-  .sidebar{transform:translateX(-100%)}
-  .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  .sidebar{transform:translateX(-100%);visibility:hidden;transition:transform .32s var(--ease),visibility 0s .32s}
+  .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg);visibility:visible;transition:transform .32s var(--ease),visibility 0s}
   .main{margin-left:0}
   .hamburger{display:flex}
+  .sb-all{display:block}
   .g-3{grid-template-columns:repeat(2,1fr)}
   /* Keep the last of the content clear of the fixed bottom bar — the bar
      grows by the home-indicator inset on notched phones, so the padding
@@ -2735,6 +2755,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .tchip,.area-tab,.lensbtn{border-radius:var(--r-pill)}
 /* 44px touch minimum on the tab strips and lens pills. */
 @media(pointer:coarse){
+  .sb-sub{min-height:44px}
   .area-tab,.lensbtn,.seg-b,.btn,.tchip,.tbm-row,.acct-btn,.theme-toggle,.hamburger,.ltf-browse,.mode-opt,.acct-link,.more-it,.nav-area-btn,.bn-item{min-height:44px}
   /* 16px stops iOS zooming the page when a control takes focus; the width
      cap stops a select sizing to its longest option and Safari shrinking
@@ -2860,7 +2881,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
          four-icon rail and ⌘K chip all fold into this. -->
     <header class="topbar">
       <div class="tb-left">
-        <button class="hamburger" id="hamburger" aria-label="Open navigation">
+        <button class="hamburger" id="hamburger" aria-label="Open navigation" aria-expanded="false" aria-controls="sidebar">
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
             <path d="M3 6h18M3 12h18M3 18h18"/>
           </svg>
@@ -2977,7 +2998,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       <kbd>g c</kbd><span>Captaincy Lab</span>
       <kbd>g p</kbd><span>Price Predictor</span>
       <kbd>g f</kbd><span>Fixtures</span>
-      <kbd>g m</kbd><span>Matchday</span>
+      <kbd>g m</kbd><span>Match Centre</span>
       <kbd>g i</kbd><span>Players (fitness lens)</span>
       <kbd>g w</kbd><span>Watchlist</span>
       <kbd>g r</kbd><span>Manager Report</span>
@@ -3165,7 +3186,8 @@ const ICON = {
   spark:'<path d="M12 3l1.8 4.9L19 9.7l-4.2 2.6L13 18l-1-4-4 1.5 3-3.2L9 7l3 1.4z"/><path d="M19 14l.7 2 .3 .9-2-.7"/>',
   chat:'<path d="M21 11.5a8.5 8.5 0 0 1-12.3 7.6L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5z"/>',
   news:'<path d="M4 5h13v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M17 8h3v10a2 2 0 0 1-2 2M7 9h7M7 12.5h7M7 16h4"/>',
-  trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 18h6M12 13v5M9 21h6"/>'
+  trophy:'<path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M9 18h6M12 13v5M9 21h6"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.1 0l2.8-2.8a5 5 0 0 0-7.1-7.1L11 4.9"/><path d="M14 11a5 5 0 0 0-7.1 0l-2.8 2.8a5 5 0 0 0 7.1 7.1L13 19.1"/>'
 };
 
 function svg(path,extra){
@@ -4004,14 +4026,25 @@ function stateBox(icon,title,text,btn){
   return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
     '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
 }
+/* Every failed state ends in the same next action. `fn` is the handler
+   as a string; the default repaints the panel on screen. */
+function retryBtn(fn){
+  return '<button class="btn btn-ghost btn-sm" onclick="'+(fn||'renderPage(currentPanel)')+'">Try again</button>';
+}
 function errorBox(){
-  return stateBox('bolt','Could not load live data',
-    'The FPL API can be slow on matchday. Pull to refresh or try the refresh button.',
-    '<button class="btn btn-ghost btn-sm" onclick="refreshData()">Try again</button>');
+  return stateBox('bolt','We could not reach the FPL API',
+    'The official API is slow on matchday and drops out for a minute at a time. This usually clears within a minute. Try again.',
+    retryBtn('refreshData()'));
+}
+/* The sentence under a hub view that threw: what went wrong if the error
+   says, then the same calm next step every time. */
+function hubFailText(err){
+  const m=err&&err.message?String(err.message).replace(/[.\s]+$/,''):'';
+  return (m?m+'. ':'')+'This usually clears within a minute. Try again.';
 }
 function loadDemoTeam(){
   setMid('1');
-  toast('Demo team loaded — link your own any time');
+  toast('Demo team loaded. Link your own any time.');
   openPanel(homePanel());          /* a team is linked now, so that is My Week */
 }
 function linkBox(){
@@ -4427,7 +4460,7 @@ const NAV = [
       {id:'myweek', label:'My Week', icon:'target', tier:'free'},
       {id:'dashboard', label:'Overview', icon:'dashboard', tier:'free'},
       {id:'gw-actions', label:'Gameweek recap', icon:'bolt', tier:'free'},
-      {id:'gwdebrief', label:'GW Debrief', icon:'calendar', tier:'free'},
+      {id:'gwdebrief', label:'Gameweek Debrief', icon:'calendar', tier:'free'},
       {id:'blog', label:'The Wire', icon:'news', tier:'free'},
       {id:'scout', label:'Scout AI', icon:'spark', tier:'paid'},
       {id:'accountability', label:'The Model', icon:'target', tier:'free'}
@@ -4495,7 +4528,7 @@ const NAV = [
     ]
   },
   {
-    id:'matchcentre', label:'Match Centre', icon:'trophy',
+    id:'matchcentre', label:'Football', icon:'trophy',
     panels:[
       /* Results, Match Forecasts and Projected XI read one fixture list at
          three points in time, so they are views of one panel (MC_VIEWS).
@@ -4503,7 +4536,7 @@ const NAV = [
          are season reference you browse, not matchday views you flick
          between. The id stays `results` for the deep links and the bottom
          bar. */
-      {id:'results', label:'Matchday', icon:'pulse', tier:'free'},
+      {id:'results', label:'Match Centre', icon:'pulse', tier:'free'},
       {id:'titlerace', label:'Title Race', icon:'trophy', tier:'free'},
       {id:'dossier', label:'Clubs', icon:'shield', tier:'free'},
       /* Ten seasons of the competition — records, careers and the daily
@@ -5234,6 +5267,30 @@ function navItemHtml(d){
     (d.id==='live'?'<span class="live-ping" aria-hidden="true"></span>':'')+'</span>'+
     '<span class="nav-area-label">'+d.label+'</span>';
 }
+/* ── THE GROUPED MENU (phone and tablet) ──────────────────
+   Under the desktop breakpoint the rail is a drawer behind the hamburger,
+   and a drawer that lists six areas leaves every other panel two taps
+   away and unnamed. So the drawer also carries a grouped index of every
+   panel the reader can open: each area as a heading, its panels beneath,
+   Pro ones marked. Built from NAV, so a new panel is in it by definition.
+   CSS hides it on the desktop rail, where hover-expansion and the area
+   tabs do the same job. */
+function navGroupsHtml(){
+  const row=(p,label)=>{
+    const lk=p.tier==='paid'&&!isPro();
+    return '<button type="button" class="sb-sub" data-panel="'+p.id+'">'+
+      svg(ICON[p.icon]||ICON.grid,'width="14" height="14"')+'<span>'+esc(label||p.label)+'</span>'+
+      (lk?'<span class="lock-chip" aria-label="Pro feature">'+svg(ICON.lock,'width="9" height="9"')+' Pro</span>':'')+
+      '</button>';
+  };
+  const groups=NAV.filter(canSeeArea).map(a=>{
+    const panels=a.panels.filter(canSeePanel);
+    if(!panels.length)return '';
+    return '<div class="sb-group"><div class="sb-group-h">'+esc(a.label)+'</div>'+panels.map(p=>row(p)).join('')+'</div>';
+  }).join('');
+  const help=['glossary','fplbasics'].map(id=>PANELS[id]).filter(p=>p&&canSeePanel(p)).map(p=>row(p)).join('');
+  return groups+(help?'<div class="sb-group"><div class="sb-group-h">Help</div>'+help+'</div>':'');
+}
 function buildNav(){
   const nav=document.getElementById('sb-nav');
   if(!nav)return;
@@ -5247,6 +5304,13 @@ function buildNav(){
     btn.addEventListener('click',d.go);
     nav.appendChild(btn);
   });
+  const all=document.createElement('div');
+  all.className='sb-all';
+  all.setAttribute('role','group');
+  all.setAttribute('aria-label','All tools');
+  all.innerHTML=navGroupsHtml();
+  all.querySelectorAll('[data-panel]').forEach(btn=>btn.addEventListener('click',()=>openPanel(btn.dataset.panel)));
+  nav.appendChild(all);
 }
 function buildBottomNav(){
   const bn=document.getElementById('bottom-nav');
@@ -5326,6 +5390,53 @@ const PANEL_VIEW={
 /* Every entry point has to resolve before it tests PANELS[id], or a retired
    id is rejected as unknown and the alias never gets a chance to run. */
 function resolvePanel(id){return PANEL_ALIAS[id]||id;}
+/* What a panel used to be called, and what a newcomer would type for it.
+   The command palette searches these alongside the label, so muscle memory
+   ("gwreport", "results") and plain English ("match centre", "prices")
+   both land. Retired ids from PANEL_ALIAS are folded in automatically. */
+const PANEL_SYNONYMS={
+  gwdebrief:['gw debrief','debrief','gameweek review','weekly review'],
+  gwreport:['manager report','season report','manager season report','gw history','my season'],
+  results:['match centre','results','matchday','scores','fixtures results','match forecast','line-ups','lineups'],
+  allplayers:['players table','player list','player stats','differentials','injuries','fitness'],
+  liverank:['live rank','live points','bonus','defcon','auto-subs'],
+  accountability:['methodology','the model','track record','how it works','model accountability'],
+  eo:['effective ownership','ownership','template'],
+  dossier:['clubs','club dossier','club form','team form'],
+  price:['prices','price changes','price predictor','transfer market','risers','fallers'],
+  seasonsim:['simulator','season simulator','what if','scenario lab'],
+  'gw-actions':['recap','gameweek recap'],
+  draft:['squad planner','draft','squad builder','wildcard planner'],
+  transfers:['transfer planner','transfers','planner'],
+  captain:['captaincy','captain','captaincy lab','armband'],
+  fixtures:['fdr','fixture difficulty','fixture grid','fixture ticker','clean sheets','points planner'],
+  leagues:['mini leagues','mini-leagues','league','standings'],
+  rivals:['rival scout','rivals'],
+  scout:['scout ai','ask the scout','team of the week','totw','model xi'],
+  compare:['player compare','compare players','comparison','head to head'],
+  archive:['ten seasons','history','archive','past seasons'],
+  myweek:['my week','this gameweek','home'],
+  dashboard:['overview','dashboard'],
+  squad:['my squad','my team','pitch'],
+  chips:['chip strategy','chips','wildcard','bench boost','triple captain','free hit'],
+  watchlist:['watchlist','shortlist'],
+  alerts:['alerts','notifications','push'],
+  scoutboard:['scout board','per 90','shortlist'],
+  setpiece:['set pieces','set piece register','penalties','corners','free kicks'],
+  rotation:['rotation risk','congestion'],
+  news:['news','latest news','press conference'],
+  blog:['the wire','blog','briefings'],
+  titlerace:['title race'],
+  glossary:['glossary','terms','what does'],
+  fplbasics:['fpl basics','new to fpl','how to play']
+};
+let PANEL_RETIRED=null;
+function panelAliases(id){
+  if(!PANEL_RETIRED){PANEL_RETIRED={};
+    Object.keys(PANEL_ALIAS).forEach(k=>{(PANEL_RETIRED[PANEL_ALIAS[k]]=PANEL_RETIRED[PANEL_ALIAS[k]]||[]).push(k);});}
+  const out=[id].concat(PANEL_RETIRED[id]||[],PANEL_SYNONYMS[id]||[]);
+  return out.filter((a,i)=>out.indexOf(a)===i);
+}
 
 /* ── PATH ROUTING ──────────────────────────────────────────
    Real URLs, one per screen: /squad, /players, /planner, /live … Every
@@ -5345,16 +5456,170 @@ function pathPanel(path){
   if(!seg||seg==='index.html')return '';
   return PATH_PANEL[seg]||seg;
 }
+/* ── URL STATE ─────────────────────────────────────────────
+   The path names the panel; the query string names the state of it: which
+   tab (`view=`), which gameweek, which players, which sort. URL_Q is the
+   in-memory copy of that query for the panel on screen. Every hydrator
+   reads its own keys from it on entry (a deep link or back/forward wins
+   over whatever was in memory) and writes them back through setUrlState as
+   the reader changes things, so the address bar always describes the page
+   and a copied link reopens exactly this view.
+
+   Writes are replaceState by default: a filter change is not a place you
+   went. A tab change IS, so the lens bars call historyPoint() first and the
+   tab lands on its own history entry with the scroll position of the one
+   it left. */
+let URL_Q={};
+/* openPanel holds writes while it works out the state, then routeSync
+   writes path and query in one go. */
+let URL_HOLD=false;
+function urlQuery(search){
+  const out={};
+  const s=String(search==null?'':search).replace(/^\?/,'');
+  if(!s)return out;
+  s.split('&').forEach(kv=>{
+    if(!kv)return;
+    const i=kv.indexOf('=');
+    let k,v;
+    try{
+      k=decodeURIComponent((i<0?kv:kv.slice(0,i)).replace(/\+/g,' '));
+      v=i<0?'':decodeURIComponent(kv.slice(i+1).replace(/\+/g,' '));
+    }catch(_){return;}
+    if(k)out[k]=v;
+  });
+  return out;
+}
+function urlQueryString(q){
+  return Object.keys(q||{}).filter(k=>q[k]!=null&&q[k]!=='').map(k=>
+    encodeURIComponent(k)+'='+encodeURIComponent(String(q[k])).replace(/%2C/g,',')).join('&');
+}
+/* Merge a patch into a query: null, undefined, '' and false delete the key,
+   everything else is written as a string. Returns a new object. */
+function mergeQuery(cur,patch){
+  const out=Object.assign({},cur||{});
+  Object.keys(patch||{}).forEach(k=>{
+    const v=patch[k];
+    if(v==null||v===''||v===false)delete out[k];else out[k]=String(v);
+  });
+  return out;
+}
+function urlHref(path,q){const qs=urlQueryString(q);return path+(qs?'?'+qs:'');}
+/* True while the panel on screen was opened by a link or a traversal
+   rather than by in-app navigation. Then an absent key means the default,
+   not "whatever was in memory": back from /matchday?gw=3 to /matchday has
+   to show the current gameweek again. */
+let URL_FROM_LINK=false;
+/* The URL is read ONCE per entry to a panel. After that memory is the
+   truth and every change is written back, so code that sets a state
+   variable and repaints is not overruled by the address bar it has not
+   updated yet. URL_ENTRY counts entries; each reader records the entry it
+   last consumed. A hub view that paints later than its hub still reads the
+   entry it arrived on, because the count only moves in openPanel. */
+let URL_ENTRY=0;
+const URL_ENTRY_SEEN={};
+function urlEntryOnce(tag){
+  if(URL_ENTRY_SEEN[tag]===URL_ENTRY)return false;
+  URL_ENTRY_SEEN[tag]=URL_ENTRY;
+  return true;
+}
+/* Read the current panel's state: one key, or a copy of the whole query. */
+function urlState(key){return key==null?Object.assign({},URL_Q):URL_Q[key];}
+/* One state value: the URL's when it names one (parse validates and
+   returns null for nonsense), the default after a link or a traversal,
+   the in-memory value otherwise. Hydrators call this on entry and then
+   write the value back, so memory and address bar agree from then on. */
+function urlPick(key,mem,dflt,parse){
+  const v=URL_Q[key];
+  if(v!=null&&v!==''){const p=parse?parse(v):v;if(p!=null)return p;}
+  return URL_FROM_LINK?dflt:mem;
+}
+/* Comma-separated ids, the way a share link writes a list of players. */
+function urlIdList(v,max){
+  return String(v||'').split(',').map(x=>parseInt(x,10)).filter(x=>Number.isFinite(x)&&x>0).slice(0,max||50);
+}
+function urlStateInt(key,fallback){
+  const v=parseInt(URL_Q[key],10);return Number.isFinite(v)?v:fallback;
+}
+/* The path a state write goes under. A view-alias path (/diffs, /whatif)
+   names one tab; once the reader picks another tab the hub's own path
+   (/players?view=fitness) is the honest address. */
+function urlBasePath(){
+  const seg=pathPanel(location.pathname);
+  if(seg&&PANEL_VIEW[seg]&&seg!==resolvePanel(seg)&&currentPanel===resolvePanel(seg)&&
+     URL_Q.view!==PANEL_VIEW[seg].view)return panelPath(currentPanel);
+  return location.pathname;
+}
+function setUrlState(patch,opts){
+  URL_Q=mergeQuery(URL_Q,patch);
+  if(URL_HOLD)return;
+  try{
+    const href=urlHref(urlBasePath(),URL_Q);
+    if(href===location.pathname+location.search)return;
+    const st=Object.assign({},history.state||{});
+    if(opts&&opts.push)history.pushState(st,'',href);
+    else history.replaceState(st,'',href);
+  }catch(_){}
+}
+/* Remember how far down the page the reader was, on the entry they are
+   about to leave, so back and forward land where they were. */
+function saveScroll(){
+  try{
+    history.replaceState(Object.assign({},history.state||{},{scroll:window.scrollY||0}),'',location.href);
+  }catch(_){}
+}
+/* Commit the current URL as its own history entry before a tab change, so
+   the change becomes a place back can return to. */
+function historyPoint(){
+  try{
+    saveScroll();
+    history.pushState(Object.assign({},history.state||{},{scroll:0}),'',location.href);
+  }catch(_){}
+}
+/* Scroll to restore once the panel has painted. Set by popstate, consumed
+   by renderPage after the hydrator resolves; a second attempt a moment
+   later covers hubs that paint their body asynchronously. */
+let PENDING_SCROLL=null;
+function restoreScroll(){
+  const y=PENDING_SCROLL;
+  if(y==null)return;
+  PENDING_SCROLL=null;
+  const go=()=>{try{window.scrollTo(0,y);}catch(_){}};
+  if(window.requestAnimationFrame)requestAnimationFrame(go);else go();
+  setTimeout(()=>{if(Math.abs((window.scrollY||0)-y)>8)go();},300);
+}
+/* The hubs' current view, read rather than tracked, so the URL is always a
+   function of the state and never drifts from it. The default view is left
+   out of the URL: /players is the table, /players?view=diffs is a lens. */
+const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view()};
+const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier'};
+function hubViewParam(panelId){
+  const g=HUB_GETVIEW[panelId];if(!g)return null;
+  let v=null;try{v=g();}catch(_){}
+  return v&&v!==HUB_DEFAULT_VIEW[panelId]?v:null;
+}
+/* The hub setters call this: it writes the view into the query without
+   creating a history entry (the lens bars add the entry themselves). */
+function hubViewChanged(panelId){
+  if(URL_HOLD)return;
+  /* A new view starts with a clean query: the old view's filters do not
+     describe this one. The view's own hydrator writes its keys as it paints. */
+  URL_Q={};
+  setUrlState({view:hubViewParam(panelId)});
+}
 /* Write the current panel into the address bar. The home panel owns the
    bare URL; everything else gets its named path. Deep-link view ids
    (/diffs, /injuries, /whatif …) keep their own path so the URL still
-   names the view it opens. */
+   names the view it opens. The query carries the panel's state. */
 function routeSync(urlId,resolvedId,push){
   try{
     const path=resolvedId===homePanel()&&!PANEL_VIEW[urlId]?'/':panelPath(urlId);
-    if(location.pathname===path)return;
-    if(push)history.pushState({panel:urlId},'',path);
-    else history.replaceState({panel:urlId},'',path);
+    /* /diffs already says which tab; /diffs?view=diffs would say it twice. */
+    const q=Object.assign({},URL_Q);
+    if(PANEL_VIEW[urlId]&&urlId!==resolvedId&&q.view===PANEL_VIEW[urlId].view)delete q.view;
+    const href=urlHref(path,q);
+    if(href===location.pathname+location.search)return;
+    if(push)history.pushState({panel:urlId},'',href);
+    else history.replaceState({panel:urlId},'',href);
   }catch(_){}
 }
 function openPanel(panelId,opts){
@@ -5371,20 +5636,37 @@ function openPanel(panelId,opts){
      clicking Players in the nav predictable. */
   const urlId=panelId;
   const pv=PANEL_VIEW[panelId];
+  const traversal=!!(opts&&opts.noHistory);
+  /* Leaving a page by navigation: remember its scroll on its own entry
+     first. On back/forward the browser has already moved, so there is no
+     entry of ours to write to. */
+  if(!traversal)saveScroll();
+  URL_HOLD=true;
+  /* The query is the panel's state. A deep link or a traversal brings its
+     own; in-app navigation starts clean. */
+  URL_FROM_LINK=!!(opts&&opts.query);
+  URL_ENTRY++;
+  URL_Q=mergeQuery({},(opts&&opts.query)||{});
   if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
   /* Unknown id, or an owner panel without owner rights, falls back home.
      This is the deep-link guard: typing #social does nothing. */
   if(!PANELS[panelId]||!canSeePanel(PANELS[panelId]))panelId=homePanel();
+  /* ?view= names a tab outright and wins over the deep-link id's default,
+     so /players?view=fitness and /injuries open the same thing. */
+  if(URL_Q.view&&HUB_SETVIEW[panelId])HUB_SETVIEW[panelId](URL_Q.view);
+  if(HUB_GETVIEW[panelId])URL_Q=mergeQuery(URL_Q,{view:hubViewParam(panelId)});
+  else delete URL_Q.view;
   currentPanel=panelId;
+  URL_HOLD=false;
   renderPage(panelId);
   syncNav();
   closeSidebar();
-  window.scrollTo({top:0});
+  if(PENDING_SCROLL==null)window.scrollTo({top:0});
   /* Real URLs: every screen is bookmarkable and back/forward works.
      In-app navigation pushes a history entry; popstate/boot pass
      noHistory so the traversal itself never re-pushes. */
-  routeSync(urlId,panelId,!(opts&&opts.noHistory));
+  routeSync(urlId,panelId,!traversal);
 }
 
 /* ── SYNC NAV ACTIVE STATES ────────────────────────────── */
@@ -5400,11 +5682,40 @@ function syncNav(){
     if(on)btn.setAttribute('aria-current','page');
     else btn.removeAttribute('aria-current');
   });
+  /* The grouped menu names panels, so it can say exactly where you are. */
+  document.querySelectorAll('.sb-sub').forEach(btn=>{
+    const on=btn.dataset.panel===currentPanel;
+    btn.classList.toggle('active',on);
+    if(on)btn.setAttribute('aria-current','page');
+    else btn.removeAttribute('aria-current');
+  });
   /* The strip scrolls sideways, so on a narrow screen the active view can sit
      off-screen with nothing on show marked current — the page then looks like
      it belongs to whichever tab happens to be leftmost. */
   const tab=document.querySelector('#area-tabs .area-tab.on');
   if(tab&&tab.scrollIntoView)try{tab.scrollIntoView({block:'nearest',inline:'center'});}catch(_){}
+}
+
+/* ── COPY LINK ─────────────────────────────────────────────
+   Every view that produces a result worth sending to someone gets a Copy
+   link control in its header. The address bar already carries the tab and
+   the state, so the link IS the view. Personal panels (My Week, My Squad,
+   the Transfer Planner …) are left out: they show the reader's own team,
+   and a link to them opens the recipient's, not the sender's. */
+const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','price','setpiece','rotation','news',
+  'fixtures','results','titlerace','dossier','archive','seasonsim','eo','draft','gwdebrief','gw-actions',
+  'blog','accountability','glossary','fplbasics']);
+function pageLinkable(panelId){return LINKABLE_PANELS.has(panelId);}
+function copyViewLink(){
+  track('copy_link',{panel:currentPanel});
+  return socCopyText(location.href,'Link');
+}
+function pageToolsHtml(panelId){
+  if(!pageLinkable(panelId))return '';
+  return '<div class="page-head-tools">'+
+    '<button type="button" class="btn btn-ghost btn-sm" id="copy-link-btn" onclick="copyViewLink()" '+
+      'aria-label="Copy a link to this view" title="Copy a link to this view">'+
+      svg(ICON.link,'width="14" height="14"')+' Copy link</button></div>';
 }
 
 /* ── RENDER A PAGE ─────────────────────────────────────── */
@@ -5421,7 +5732,7 @@ function proLockWrap(inner,id,why){
   return '<div class="pro-lockwrap">'+
     '<div'+(id?' id="'+id+'"':'')+' class="ge-host pro-blur" inert aria-hidden="true">'+inner+'</div>'+
     '<div class="pro-lockstrip"><span class="pls-tag">'+svg(ICON.lock,'width="11" height="11"')+' Pro</span>'+
-      '<span class="pls-txt">'+(why||'This is the live tool, running now — Pro unlocks the specifics.')+'</span>'+
+      '<span class="pls-txt">'+(why||'This is the live tool, running now. Pro unlocks the specifics.')+'</span>'+
       '<button class="btn btn-primary btn-sm" onclick="openUpgrade()">Unlock The Edge</button></div></div>';
 }
 
@@ -5508,6 +5819,7 @@ function renderPage(panelId){
             '<h1>'+panel.label+'</h1>'+
             '<p>'+content.desc+'</p>'+
           '</div>'+
+          pageToolsHtml(panelId)+
         '</div>'+
       '</div>'+
       areaTabsHtml(panelId)+
@@ -5541,20 +5853,20 @@ function renderPage(panelId){
                 : stateBox('calendar','Squad not available yet',
                     'Your team ID is linked and valid. The official FPL API only serves a manager’s squad once the gameweek deadline has passed and teams lock. My Week and My Squad fill in automatically once the gameweek locks.',
                     '<button class="btn btn-ghost btn-sm" onclick="openMidModal()">Edit ID</button>'))
-            : stateBox('question','Manager not found','Check the ID and try again.',
+            : stateBox('question','No manager has that ID','Check the number after /entry/ in your team’s URL on the official site, then try again.',
                 '<button class="btn btn-primary btn-sm" onclick="openMidModal()">Edit ID</button>');
         }else{
           host.innerHTML=errorBox();
         }
-      });
+      }).then(restoreScroll,restoreScroll);
     armLiveRefresh(panelId);
   } else if(WIRED[panelId]&&locked){
     /* Hydrate the blurred preview too — real UI, no interaction, no
        live polling. Failures just leave the skeleton under the blur. */
     const host=document.getElementById('ge-data');
-    Promise.resolve().then(()=>WIRED[panelId](host)).catch(()=>{});
+    Promise.resolve().then(()=>WIRED[panelId](host)).catch(()=>{}).then(restoreScroll);
     armLiveRefresh(null);
-  } else { armLiveRefresh(null); }
+  } else { armLiveRefresh(null);restoreScroll(); }
 }
 
 /* ── Live auto-refresh ─────────────────────────────────────────────
@@ -9667,9 +9979,9 @@ async function socCopyText(text,label){
     document.body.appendChild(ta);ta.select();
     const ok=document.execCommand('copy');
     document.body.removeChild(ta);
-    toast(ok?label+' copied':'Could not copy — select the text instead');
+    toast(ok?label+' copied':'Could not copy. Select the text instead.');
     return ok;
-  }catch(_){toast('Could not copy — select the text instead');return false;}
+  }catch(_){toast('Could not copy. Select the text instead.');return false;}
 }
 function socCopy(i,which){
   const S=window._soc;if(!S||!S.specs[i])return;
@@ -9941,7 +10253,7 @@ function socBuildResults(q){
     '<button class="soc-res" onclick="socBuildAdd('+e.id+')">'+crest(S.b,e.team,15)+
     '<b>'+esc(e.web_name)+'</b><span class="dl-sub">'+esc(posShort(S.b,e.element_type))+' · '+
     money(e.now_cost)+'</span><span class="soc-plus">+</span></button>').join('')
-    :'<div class="dl-sub" style="padding:6px 2px">No match.</div>';
+    :'<div class="dl-sub" style="padding:6px 2px">No player matches that. Try a shorter name.</div>';
 }
 function socBuildRender(){
   const host=document.getElementById('soc-builder');const S=window._soc;
@@ -10342,9 +10654,10 @@ async function hydrateSocial(host){
    A per-gameweek report card built entirely from data already in the
    app: summary vs the field, what worked, what cost points, then the
    model's suggested transfer and captain for the upcoming deadline. */
-let REP_GW=null;
+let REP_GW=null,REP_GW_MAX=null;
 function repNav(step){
   REP_GW=(REP_GW||1)+step;
+  setUrlState({gw:REP_GW});
   const h=document.getElementById('ge-data');
   if(h)hydrateGwreport(h);
 }
@@ -10387,7 +10700,7 @@ function reportShell(host,debriefHtml){
   const seasonHost=document.getElementById('mr-season');
   if(seasonHost)hydrateGwhistory(seasonHost).catch(()=>{
     seasonHost.innerHTML=stateBox('calendar','Season review unavailable',
-      'Your gameweek history could not be loaded from FPL just now.');
+      'Your gameweek history could not be loaded from FPL just now. This usually clears within a minute. Try again.',retryBtn());
   });
 }
 async function hydrateGwreport(host){
@@ -10417,8 +10730,11 @@ async function hydrateGwreport(host){
           'Your first debrief appears after GW1 wraps up — how you did, what worked, and what to change.'));
     return;}
   const minGw=finished[0].id,maxGw=finished[finished.length-1].id;
+  REP_GW_MAX=maxGw;
+  if(urlEntryOnce('gwreport'))REP_GW=urlPick('gw',REP_GW,maxGw,v=>parseInt(v,10)>0?parseInt(v,10):null);
   if(REP_GW==null)REP_GW=maxGw;
   REP_GW=Math.max(minGw,Math.min(maxGw,REP_GW));
+  setUrlState({gw:REP_GW!==maxGw?REP_GW:null});
   const gw=REP_GW;
   const ev=b.events.find(e=>e.id===gw)||{};
   let picks,live,hist,trs;
@@ -11087,7 +11403,7 @@ const FX_VIEWS=[
 ];
 let FX_VIEW='grid';
 function fxView(id){return FX_VIEWS.filter(v=>v.id===id)[0]||FX_VIEWS[0];}
-function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});}
+function fxSetView(id){FX_VIEW=fxView(id).id;track('fixtures_view',{view:FX_VIEW});hubViewChanged('fixtures');}
 const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(h),cs:(h)=>hydrateCsMatrix(h)};
 /* ── HUB FACTORY ───────────────────────────────────────────
    The four hubs above each hand-rolled this shape. Three more would be a
@@ -11098,10 +11414,11 @@ const FX_HYDRATE={grid:(h)=>hydrateFixtures(h),points:(h)=>hydratePointsPlanner(
    Each hub still declares its views as a plain `const XX_VIEWS=[...]`, because
    the route test reads those arrays out of the source to check that a retired
    link only ever names a view its hub actually owns. */
+const HUB_RETRY={};
 function makeHub(key,views,hydrate,icon){
   let cur=views[0].id;
   const view=id=>views.filter(v=>v.id===id)[0]||views[0];
-  const setView=id=>{cur=view(id).id;track(key+'_view',{view:cur});};
+  const setView=id=>{cur=view(id).id;track(key+'_view',{view:cur});hubViewChanged(currentPanel);};
   const renderBody=()=>{
     const body=document.getElementById(key+'-body');if(!body)return;
     const note=document.getElementById(key+'-note');
@@ -11115,9 +11432,10 @@ function makeHub(key,views,hydrate,icon){
     Promise.resolve().then(()=>hydrate[cur](body)).catch(err=>{
       if(tk!==MEM['_'+key+'Token'])return;
       body.innerHTML='<div class="hub-fail">'+stateBox(icon,'Could not load this view',
-        (err&&err.message)||'Try again in a moment.')+'</div>';
+        hubFailText(err),retryBtn('HUB_RETRY[\''+key+'\']()'))+'</div>';
     });
   };
+  HUB_RETRY[key]=renderBody;
   return {setView,hydrate:async host=>{
     host.innerHTML=
       '<div class="lensbar" id="'+key+'-views">'+views.map(v=>
@@ -11126,10 +11444,11 @@ function makeHub(key,views,hydrate,icon){
       '<div id="'+key+'-body"></div>';
     host.querySelectorAll('#'+key+'-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
       if(btn.dataset.view===cur)return;
+      historyPoint();
       setView(btn.dataset.view);renderBody();
     }));
     renderBody();
-  }};
+  },view:()=>cur};
 }
 
 /* Two simulators asking the same question at two scales — what happens next
@@ -11176,7 +11495,7 @@ const MD_VIEWS=[
 ];
 let MD_VIEW='record';
 function mdView(id){return MD_VIEWS.filter(v=>v.id===id)[0]||MD_VIEWS[0];}
-function mdSetView(id){MD_VIEW=mdView(id).id;track('model_view',{view:MD_VIEW});}
+function mdSetView(id){MD_VIEW=mdView(id).id;track('model_view',{view:MD_VIEW});hubViewChanged('accountability');}
 const MD_HYDRATE={record:(h)=>hydrateAccountability(h),method:(h)=>hydrateMethodology(h)};
 function mdRenderBody(){
   const body=document.getElementById('md-body');if(!body)return;
@@ -11189,7 +11508,7 @@ function mdRenderBody(){
   Promise.resolve().then(()=>MD_HYDRATE[MD_VIEW](body)).catch(err=>{
     if(token!==MEM._mdToken)return;
     body.innerHTML='<div class="hub-fail">'+stateBox('target','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('mdRenderBody()'))+'</div>';
   });
 }
 async function hydrateModelHub(host){
@@ -11200,6 +11519,7 @@ async function hydrateModelHub(host){
     '<div id="md-body"></div>';
   host.querySelectorAll('#md-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===MD_VIEW)return;
+    historyPoint();
     mdSetView(btn.dataset.view);
     mdRenderBody();
   }));
@@ -11221,7 +11541,7 @@ function fxRenderBody(){
     /* Marked so a test can tell a HUB failure — the view's hydrator threw —
        from a view rendering its own legitimate empty state. */
     body.innerHTML='<div class="hub-fail">'+stateBox('calendar','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('fxRenderBody()'))+'</div>';
   });
 }
 async function hydrateFixturesHub(host){
@@ -11232,6 +11552,7 @@ async function hydrateFixturesHub(host){
     '<div id="fx-body"></div>';
   host.querySelectorAll('#fx-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===FX_VIEW)return;
+    historyPoint();
     fxSetView(btn.dataset.view);
     fxRenderBody();
   }));
@@ -11295,6 +11616,15 @@ async function hydrateFixtures(host){
      else's fixture graphic. curFrom defaults to now, so the panel opens
      exactly as it always did. */
   let curView='overall',curWin=Math.min(10,REM),curFrom=startGw;
+  /* These four live in this closure, so a link is the only memory they
+     have: read them from the query on entry, write them on every change. */
+  const defWin=curWin;
+  curView=urlPick('lens',curView,'overall',v=>VIEWS.some(x=>x[0]===v)?v:null);
+  curWin=urlPick('win',curWin,defWin,v=>WINS.some(x=>x[0]===+v)?+v:null);
+  curFrom=urlPick('from',curFrom,startGw,v=>{const g=parseInt(v,10);return g>=startGw&&g<=38?g:null;});
+  curRows=urlPick('rows',curRows,'clubs',v=>v==='squad'&&squadPicks&&squadPicks.length?'squad':v==='clubs'?'clubs':null);
+  const writeUrl=()=>setUrlState({lens:curView!=='overall'?curView:null,win:curWin!==defWin?curWin:null,
+    from:curFrom!==startGw?curFrom:null,rows:curRows!=='clubs'?curRows:null});
 
   /* Match outlook for the upcoming gameweek — window-independent. */
   const gwFix=fixtures.filter(f=>f.event===startGw);
@@ -11319,6 +11649,7 @@ async function hydrateFixtures(host){
   /* Everything below depends on the chosen horizon, so it rebuilds when the
      window control changes. */
   function build(){
+    writeUrl();
     /* Clamp the start so the window always has at least two gameweeks in it,
        however late in the season the user drags it. */
     const from=Math.max(startGw,Math.min(curFrom,37));
@@ -11580,7 +11911,7 @@ async function hydrateFixtures(host){
       '<div id="fdr-entry">'+fdrEntryHtml(curView)+'</div>'+
       planCard+swCard+chainCard+rotCard+valCard+outlookCard;
     const vseg=host.querySelector('#fdr-view');
-    if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;renderFdr(curView);}});
+    if(vseg)vseg.addEventListener('click',e=>{const btn=e.target.closest('.seg-b');if(btn){curView=btn.dataset.view;writeUrl();renderFdr(curView);}});
     /* Rows rebuild rather than re-render: the header row and the club filter
        both change with the row source, and they live outside #fdr-tbody. */
     const rseg=host.querySelector('#fdr-rows');
@@ -11615,6 +11946,28 @@ async function hydrateFixtures(host){
    ═══════════════════════════════════════════════════════════ */
 const PL_TEXTCOLS=['web_name','team','pos'];
 let PL_STATE={k:'total_points',dir:-1,pos:0,team:0,q:'',view:'table',lens:'all'};
+const PL_LAYOUTS=['table','cards','chart'];
+/* The table's state in the URL: sort and direction (only when they differ
+   from the lens's own default), the position and club filters, the search
+   and the layout. The lens itself is ?view=, written by the hub layer. */
+function plReadUrl(){
+  if(urlEntryOnce('allplayers')){
+    const q=urlState();
+    if(q.sort){PL_STATE.k=String(q.sort);PL_STATE.dir=q.dir==='asc'?1:-1;}
+    PL_STATE.pos=urlPick('pos',PL_STATE.pos,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    PL_STATE.team=urlPick('team',PL_STATE.team,0,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    PL_STATE.q=urlPick('q',PL_STATE.q,'',v=>String(v).trim().toLowerCase()||null);
+    PL_STATE.view=urlPick('layout',PL_STATE.view,'table',v=>PL_LAYOUTS.indexOf(v)>=0?v:null);
+  }
+  plWriteUrl();
+}
+function plWriteUrl(){
+  const d=plLensDefault(plLens(PL_STATE.lens))||{k:'total_points',dir:-1};
+  const custom=PL_STATE.k!==d.k||PL_STATE.dir!==d.dir;
+  setUrlState({sort:custom?PL_STATE.k:null,dir:custom&&PL_STATE.dir===1?'asc':null,
+    pos:PL_STATE.pos||null,team:PL_STATE.team||null,q:PL_STATE.q||null,
+    layout:PL_STATE.view!=='table'?PL_STATE.view:null});
+}
 function fnum(v){const x=parseFloat(v);return isNaN(x)?'—':x.toFixed(2);}
 
 /* ── The column gate ────────────────────────────────────────
@@ -12087,14 +12440,31 @@ function lensLink(id,label){
   return '<p class="dl-sub" style="margin:0 0 12px">'+esc(label)+' '+
     '<a href="#allplayers" onclick="openLens(\''+id+'\');return false">Open it in the players table →</a></p>';
 }
+/* The sort a lens opens on: its own column when the reader can have it,
+   total points when that column is behind the Pro lock. Needs the column
+   set, which exists only once the table has loaded; a lens chosen before
+   then (a deep link) is applied by the hydrator. */
+let PL_LENS_PENDING=false;
+function plLensDefault(l){
+  const cols=window._pl?plCols(window._pl.b,window._pl.xpMap,window._pl.ctx):[];
+  if(!cols.length)return null;
+  const target=cols.filter(c=>c.k===l.sort)[0];
+  if(target&&!plColLocked(target))return {k:l.sort,dir:l.dir===1?1:-1};
+  if(plColLocked(target))return {k:'total_points',dir:-1};
+  return {k:PL_STATE.k,dir:PL_STATE.dir};
+}
+function plApplyLensSort(l){
+  const d=plLensDefault(l);
+  if(!d){PL_LENS_PENDING=true;return;}
+  PL_LENS_PENDING=false;
+  PL_STATE.k=d.k;PL_STATE.dir=d.dir;
+}
 function plSetLens(id){
   const l=plLens(id);
   PL_STATE.lens=l.id;
-  const cols=window._pl?plCols(window._pl.b,window._pl.xpMap,window._pl.ctx):[];
-  const target=cols.filter(c=>c.k===l.sort)[0];
-  if(target&&!plColLocked(target)){PL_STATE.k=l.sort;PL_STATE.dir=l.dir===1?1:-1;}
-  else if(plColLocked(target)){PL_STATE.k='total_points';PL_STATE.dir=-1;}
+  plApplyLensSort(l);
   track('players_lens',{lens:l.id});
+  hubViewChanged('allplayers');
 }
 async function hydrateAllPlayers(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -12115,8 +12485,10 @@ async function hydrateAllPlayers(host){
     tmpl,total:b.raw.total_players||10e6,hz,vsplit,
     seasonStarted:b.elements.some(e=>(e.minutes||0)>0)};
   window._pl={b,xpMap,ctx};
+  if(PL_LENS_PENDING)plApplyLensSort(plLens(PL_STATE.lens));
+  plReadUrl();
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
-    .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
+    .map(t=>'<option value="'+t.id+'"'+(t.id===PL_STATE.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
   host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">Players'+
     '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
     plLensBar()+
@@ -12144,25 +12516,28 @@ async function hydrateAllPlayers(host){
     const cl=host.querySelector('#pl-clear');
     if(cl)cl.hidden=!(PL_STATE.pos||PL_STATE.team||PL_STATE.q);
   };
-  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();plSyncFilters();renderPlayerTable();});
-  host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;plSyncFilters();renderPlayerTable();});
+  /* A link that names a search or a club shows it in the control too. */
+  if(PL_STATE.q){const q0=host.querySelector('#pl-q');if(q0)q0.value=PL_STATE.q;}
+  host.querySelector('#pl-q').addEventListener('input',e=>{PL_STATE.q=e.target.value.trim().toLowerCase();plSyncFilters();plWriteUrl();renderPlayerTable();});
+  host.querySelector('#pl-team').addEventListener('change',e=>{PL_STATE.team=+e.target.value;plSyncFilters();plWriteUrl();renderPlayerTable();});
   host.querySelectorAll('#pl-poschips .pos-pill').forEach(btn=>btn.addEventListener('click',()=>{
     PL_STATE.pos=PL_STATE.pos===+btn.dataset.pos?0:+btn.dataset.pos;
-    plSyncFilters();renderPlayerTable();
+    plSyncFilters();plWriteUrl();renderPlayerTable();
   }));
   host.querySelector('#pl-clear').addEventListener('click',()=>{
     PL_STATE.pos=0;PL_STATE.team=0;PL_STATE.q='';
     const q=host.querySelector('#pl-q');if(q)q.value='';
     const t=host.querySelector('#pl-team');if(t)t.value='0';
-    plSyncFilters();renderPlayerTable();
+    plSyncFilters();plWriteUrl();renderPlayerTable();
   });
   plSyncFilters();
   host.querySelectorAll('#pl-viewseg .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
     PL_STATE.view=btn.dataset.v;
     host.querySelectorAll('#pl-viewseg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
-    renderPlayerTable();
+    plWriteUrl();renderPlayerTable();
   }));
   host.querySelectorAll('#pl-lensbar .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.lens!==PL_STATE.lens)historyPoint();
     plSetLens(btn.dataset.lens);
     host.querySelectorAll('#pl-lensbar .lensbtn').forEach(x=>x.classList.toggle('on',x===btn));
     renderPlayerTable();
@@ -12175,7 +12550,7 @@ async function hydrateAllPlayers(host){
     if(th&&th.dataset.k){const k=th.dataset.k;
       if(PL_STATE.k===k)PL_STATE.dir*=-1;
       else{PL_STATE.k=k;PL_STATE.dir=PL_TEXTCOLS.indexOf(k)>=0?1:-1;}
-      renderPlayerTable();return;}
+      plWriteUrl();renderPlayerTable();return;}
     if(ev.target.closest('.pl-lk')){openUpgrade();return;}
     const hit=ev.target.closest('[data-id]');
     if(hit)openPlayer(+hit.dataset.id);
@@ -12546,6 +12921,18 @@ function differentials(elements,maxOwn,maxCost){
 let SB_POS=3;                 /* default MID, like the pundit boards */
 let SB_SORT=null,SB_DIR=-1;   /* null → the position's default sort key */
 let SB_PRICE=0;               /* price cap in tenths of £m (0 = any) — budget finder */
+function sbReadUrl(){
+  if(urlEntryOnce('scoutboard')){
+    SB_POS=urlPick('pos',SB_POS,3,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    SB_PRICE=urlPick('max',SB_PRICE,0,v=>[45,50,55].indexOf(+v)>=0?+v:null);
+    SB_SORT=urlPick('sort',SB_SORT,null,v=>/^[a-z0-9_]+$/i.test(v)?v:null);
+    SB_DIR=urlPick('dir',SB_DIR,-1,v=>v==='asc'?1:v==='desc'?-1:null);
+  }
+  sbWriteUrl();
+}
+function sbWriteUrl(){
+  setUrlState({pos:SB_POS!==3?SB_POS:null,max:SB_PRICE||null,sort:SB_SORT||null,dir:SB_SORT&&SB_DIR===1?'asc':null});
+}
 const SB_FIX=6;               /* fixture columns shown on the board */
 /* Per-90 from a season total; 0 when there are no minutes yet. */
 function sbP90(e,total){const m=e.minutes||0;return m>0?(parseFloat(total)||0)*90/m:0;}
@@ -12629,6 +13016,7 @@ async function hydrateScoutBoard(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const hz=buildHorizon(b,fixtures,6);   /* six ahead — pre-season planning needs the run, not the next game */
   window._sb={b,hz,fixtures};
+  sbReadUrl();
   const seg=[['3','MID'],['4','FWD'],['2','DEF'],['1','GKP']]
     .map(function(o){return '<button class="seg-b'+(SB_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
   const priceSeg=[['0','Any price'],['45','≤£4.5'],['50','≤£5.0'],['55','≤£5.5']]
@@ -12649,16 +13037,16 @@ async function hydrateScoutBoard(host){
   host.querySelector('#sb-seg').addEventListener('click',function(ev){
     const btn=ev.target.closest('.seg-b');if(!btn)return;
     document.querySelectorAll('#sb-seg .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});
-    SB_POS=+btn.dataset.pos;SB_SORT=null;SB_DIR=-1;renderScoutBoard();
+    SB_POS=+btn.dataset.pos;SB_SORT=null;SB_DIR=-1;sbWriteUrl();renderScoutBoard();
   });
   host.querySelector('#sb-price').addEventListener('click',function(ev){
     const btn=ev.target.closest('.seg-b');if(!btn)return;
     document.querySelectorAll('#sb-price .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});
-    SB_PRICE=+btn.dataset.cap;renderScoutBoard();
+    SB_PRICE=+btn.dataset.cap;sbWriteUrl();renderScoutBoard();
   });
   host.addEventListener('click',function(ev){
     const th=ev.target.closest('.sb-sort');
-    if(th){const k=th.dataset.k;if(SB_SORT===k)SB_DIR=-SB_DIR;else{SB_SORT=k;SB_DIR=-1;}renderScoutBoard();return;}
+    if(th){const k=th.dataset.k;if(SB_SORT===k)SB_DIR=-SB_DIR;else{SB_SORT=k;SB_DIR=-1;}sbWriteUrl();renderScoutBoard();return;}
     const row=ev.target.closest('tr[data-open]');
     if(row)openPlayer(+row.dataset.open);
   });
@@ -12671,6 +13059,14 @@ async function hydrateScoutBoard(host){
    + fixtureXP), so the planner and the solver agree.
    ═══════════════════════════════════════════════════════════ */
 let PP_POS=0,PP_N=5;
+function ppReadUrl(){
+  if(urlEntryOnce('pointsplanner')){
+    PP_POS=urlPick('pos',PP_POS,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    PP_N=urlPick('n',PP_N,5,v=>+v===8?8:+v===5?5:null);
+  }
+  ppWriteUrl();
+}
+function ppWriteUrl(){setUrlState({pos:PP_POS||null,n:PP_N!==5?PP_N:null});}
 function renderPointsPlanner(){
   const S=window._pp;if(!S)return;const box=document.getElementById('pp-out');if(!box)return;
   const b=S.b,hz=buildHorizon(b,S.fixtures,PP_N);
@@ -12702,6 +13098,7 @@ function renderPointsPlanner(){
 async function hydratePointsPlanner(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   window._pp={b,fixtures};
+  ppReadUrl();
   const posSeg=[['0','All'],['1','GKP'],['2','DEF'],['3','MID'],['4','FWD']]
     .map(function(o){return '<button class="seg-b'+(PP_POS===+o[0]?' on':'')+'" data-pos="'+o[0]+'">'+o[1]+'</button>';}).join('');
   const nSeg=[['5','Next 5'],['8','Next 8']]
@@ -12716,9 +13113,9 @@ async function hydratePointsPlanner(host){
     '<div id="pp-out"></div></div>';
   renderPointsPlanner();
   host.querySelector('#pp-pos').addEventListener('click',function(ev){const btn=ev.target.closest('.seg-b');if(!btn)return;
-    document.querySelectorAll('#pp-pos .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});PP_POS=+btn.dataset.pos;renderPointsPlanner();});
+    document.querySelectorAll('#pp-pos .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});PP_POS=+btn.dataset.pos;ppWriteUrl();renderPointsPlanner();});
   host.querySelector('#pp-n').addEventListener('click',function(ev){const btn=ev.target.closest('.seg-b');if(!btn)return;
-    document.querySelectorAll('#pp-n .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});PP_N=+btn.dataset.n;renderPointsPlanner();});
+    document.querySelectorAll('#pp-n .seg-b').forEach(function(x){x.classList.toggle('on',x===btn);});PP_N=+btn.dataset.n;ppWriteUrl();renderPointsPlanner();});
   host.addEventListener('click',function(ev){const row=ev.target.closest('tr[data-open]');if(row)openPlayer(+row.dataset.open);});
 }
 
@@ -12892,7 +13289,7 @@ const PR_VIEWS=[
 ];
 function prView(id){return PR_VIEWS.find(v=>v.id===id)||PR_VIEWS[0];}
 let PR_VIEW='moves';
-function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});}
+function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});hubViewChanged('price');}
 const PR_HYDRATE={moves:(h)=>hydratePriceMoves(h),market:(h)=>hydrateTransferMarket(h)};
 function prRenderBody(){
   const body=document.getElementById('pr-body');if(!body)return;
@@ -12907,7 +13304,7 @@ function prRenderBody(){
   Promise.resolve().then(()=>PR_HYDRATE[PR_VIEW](body)).catch(err=>{
     if(token!==MEM._prToken)return;
     body.innerHTML='<div class="hub-fail">'+stateBox('arrows','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('prRenderBody()'))+'</div>';
   });
 }
 async function hydratePrice(host){
@@ -12918,6 +13315,7 @@ async function hydratePrice(host){
     '<div id="pr-body"></div>';
   host.querySelectorAll('#pr-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===PR_VIEW)return;
+    historyPoint();
     prSetView(btn.dataset.view);
     prRenderBody();
   }));
@@ -13212,7 +13610,7 @@ function renderSuggestions(b,query,container,exclude,onPick){
   container.innerHTML=matches.map(e=>
     '<button class="sugg-row" data-id="'+e.id+'"><span class="dl-nm">'+esc(e.web_name)+'</span>'+
     '<span class="dl-sub">'+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+'</span></button>'
-  ).join('')||'<div class="dl-sub" style="padding:8px 4px">No matches.</div>';
+  ).join('')||'<div class="dl-sub" style="padding:8px 4px">No player matches that. Try the first few letters of the surname.</div>';
   Array.prototype.forEach.call(container.querySelectorAll('.sugg-row'),btn=>{
     btn.addEventListener('click',()=>onPick(parseInt(btn.dataset.id,10)));
   });
@@ -14540,7 +14938,9 @@ async function hydrateCompare(host){
   const hz=buildHorizon(b,fixtures,6);
   const CMP_FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
   const gpOf=minutesBasis(b,fixtures);
+  if(urlEntryOnce('compare'))COMPARE=urlPick('players',COMPARE,[],v=>{const a=urlIdList(v,4);return a.length?a:null;});
   COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
+  compareWriteUrl();
   const sel=COMPARE.map(id=>b.els[id]);
   const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
   /* Side-by-side fixture comparison over the next 6 gameweeks — one row per
@@ -14588,11 +14988,12 @@ async function hydrateCompare(host){
   const inp=host.querySelector('#cmp-search'),sugg=host.querySelector('#cmp-sugg');
   if(inp&&!inp.disabled){
     inp.addEventListener('input',()=>renderSuggestions(b,inp.value,sugg,new Set(COMPARE),id=>{
-      if(COMPARE.length<4&&!COMPARE.includes(id))COMPARE.push(id);renderPage('compare');}));
+      if(COMPARE.length<4&&!COMPARE.includes(id))COMPARE.push(id);compareWriteUrl();renderPage('compare');}));
   }
   Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'),btn=>
-    btn.addEventListener('click',()=>{COMPARE=COMPARE.filter(x=>x!==parseInt(btn.dataset.rm,10));renderPage('compare');}));
+    btn.addEventListener('click',()=>{COMPARE=COMPARE.filter(x=>x!==parseInt(btn.dataset.rm,10));compareWriteUrl();renderPage('compare');}));
 }
+function compareWriteUrl(){setUrlState({players:COMPARE.length?COMPARE.join(','):null});}
 
 /* ── Alerts: live feed + local notification preferences ── */
 function loadAlertPrefs(){try{return JSON.parse(localStorage.getItem('ge-alert-prefs')||'{}');}catch(_){return {};}}
@@ -14845,7 +15246,7 @@ let LV_VIEW='pitch';
 function lvViews(){return LV_VIEWS.filter(v=>capsMet(v.needs));}
 function lvView(id){const a=lvViews();return a.filter(v=>v.id===id)[0]||a[0]||LV_VIEWS[0];}
 function lvLocked(v){return !!(v&&v.tier==='paid')&&!isPro();}
-function lvSetView(id){LV_VIEW=lvView(id).id;track('live_view',{view:LV_VIEW});}
+function lvSetView(id){LV_VIEW=lvView(id).id;track('live_view',{view:LV_VIEW});hubViewChanged('liverank');}
 /* quiet: the 45-second live tick re-runs the active view in place. Painting a
    skeleton first would flash the whole panel every 45 seconds, which is the
    opposite of what a live screen is for. */
@@ -14870,7 +15271,7 @@ function lvRenderBody(opts){
     /* Marked so a test can tell a HUB failure — the view's hydrator threw —
        from a view rendering its own legitimate empty state. */
     body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('lvRenderBody()'))+'</div>';
   });
 }
 async function hydrateLive(host){
@@ -14885,6 +15286,7 @@ async function hydrateLive(host){
     '<div id="lv-body"></div>';
   host.querySelectorAll('#lv-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===LV_VIEW)return;
+    historyPoint();
     lvSetView(btn.dataset.view);
     lvRenderBody();
   }));
@@ -15882,7 +16284,7 @@ async function hydrateSetpiece(host){
         confChip(roleConf(key,e[key]),'')+ordBadge(e[key])+'</div>';}).join('')
     ).join('');
     return '<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-      (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No data yet.</div>')+'</div>';
+      (rows?'<div class="dl">'+rows+'</div>':'<div class="dl-sub">No set-piece notes for this duty yet. They fill in as the official notes are published.</div>')+'</div>';
   };
   /* Club-first grid: the question is "if I buy from this club, who is on
      what", so the club is the row and the three duties are the columns.
@@ -17289,7 +17691,7 @@ async function hydrateArchive(host){
   const idx=histPriorIndex(A);
   if(!idx){
     host.innerHTML=stateBox('trophy','The archive is not available',
-      'Ten seasons of historical data load from our own store. It looks unreachable right now — everything else in the app is unaffected. Try again shortly.');
+      'Ten seasons of historical data load from our own store. It looks unreachable right now. Everything else in the app is unaffected. Try again in a minute.',retryBtn());
     return;
   }
   const seasons=idx.seasons,careers=histCareers(idx);
@@ -17394,7 +17796,7 @@ function archMysteryRender(){
   const S=window._arch,box=document.getElementById('arch-mystery');
   if(!S||!box)return;
   const m=histMystery(S.idx);
-  if(!m){box.innerHTML='<div class="dl-sub">No puzzle available.</div>';return;}
+  if(!m){box.innerHTML='<div class="dl-sub">No puzzle today. A new one appears with the next data refresh.</div>';return;}
   const st=histMysteryState(m.dayKey);
   const wrong=st.guesses.filter(g=>!g.hit).length;
   const shown=Math.min(m.clues.length,1+wrong);
@@ -19199,9 +19601,9 @@ async function buildScoutPayload(){
 const AI_BUSY={};
 function aiToken(){return SESSION&&SESSION.access_token?SESSION.access_token:null;}
 function aiSignInBox(){
-  return stateBox('team','Sign in to use AI features',
-    'AI scouting runs on your account so calls can be verified and metered server-side. Sign in (it’s free) and try again.',
-    '<button class="btn btn-primary btn-sm" onclick="openAccount()">Sign in</button>');
+  return stateBox('team','Log in to run the AI scout',
+    'Everything else works without an account. The AI runs on the server, so a free login lets each call be checked and metered, and keeps your reports on every device you use.',
+    '<button class="btn btn-primary btn-sm" onclick="openAccount()">Log in</button>');
 }
 async function aiErrText(r){try{return ((await r.json()).error)||'';}catch(_){return '';}}
 async function runAI(task,contextFn,boxId,opts){
@@ -19230,7 +19632,7 @@ async function runAI(task,contextFn,boxId,opts){
     if(!r.ok)throw new Error('HTTP '+r.status);
     const text=((await r.json()).text||'').trim();
     if(opts.cacheKey)try{localStorage.setItem(opts.cacheKey,text);}catch(_){}
-    box.innerHTML=mdLite(text)||'<p class="dl-sub">No response.</p>';
+    box.innerHTML=mdLite(text)||'<p class="dl-sub">The AI sent nothing back. Try again.</p>';
     window.GENative&&GENative.hapticSuccess();
   }catch(e){
     box.innerHTML=stateBox('bolt','Could not generate','The AI service was slow or unavailable. Try again in a moment.',
@@ -19493,7 +19895,7 @@ async function sendAsk(text){
     const token=aiToken();
     if(!token){                                      /* signed out: the local engine still answers */
       local();
-      ASK_MSGS.push({role:'assistant',content:'_Sign in to use AI features — conversational answers run on your account. The reply above comes from the free on-device model._',local:true});
+      ASK_MSGS.push({role:'assistant',content:'_The reply above comes from the free on-device model. Log in to get conversational answers from the AI scout, which runs on your account._',local:true});
     }else{
     track('ai_call',{task:'ask'});
     const r=await fetch(apiBase()+'/api/ai',{method:'POST',
@@ -20064,9 +20466,30 @@ function leagueSwing(rows,eo,els,limit){
 const loadStandings=(id,page)=>api('leagues-classic/'+id+'/standings'+(page>1?'?page_standings='+page:''));
 let LEAGUE_SEL=null,LEAGUE_TYPE='classic',LEAGUE_PAGE=1,LEAGUE_ME_RANK=0;
 
+/* The league in the URL: which one, its type, the page, the sort and the
+   layout. Nothing is written until a league is open — the list itself has
+   no state. */
+function lgReadUrl(){
+  if(urlEntryOnce('leagues')){
+    LEAGUE_SEL=urlPick('league',LEAGUE_SEL,null,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    LEAGUE_TYPE=urlPick('type',LEAGUE_TYPE,'classic',v=>v==='h2h'||v==='classic'?v:null);
+    LEAGUE_PAGE=urlPick('page',LEAGUE_PAGE,1,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    LEAGUE_SORT=urlPick('sort',LEAGUE_SORT,'rank',v=>{const s=leagueSortSpec(v);return s?s.key:null;});
+    LEAGUE_DIR=urlPick('dir',LEAGUE_DIR,0,v=>v==='asc'?1:v==='desc'?-1:null);
+    LEAGUE_VIEW=urlPick('layout',LEAGUE_VIEW,'compact',v=>v==='detailed'||v==='compact'?v:null);
+  }
+  lgWriteUrl();
+}
+function lgWriteUrl(){
+  const on=!!LEAGUE_SEL;
+  setUrlState({league:on?LEAGUE_SEL:null,type:on&&LEAGUE_TYPE!=='classic'?LEAGUE_TYPE:null,
+    page:on&&LEAGUE_PAGE>1?LEAGUE_PAGE:null,sort:on&&LEAGUE_SORT!=='rank'?LEAGUE_SORT:null,
+    dir:on&&LEAGUE_DIR?(LEAGUE_DIR===1?'asc':'desc'):null,layout:on&&LEAGUE_VIEW!=='compact'?LEAGUE_VIEW:null});
+}
 async function hydrateLeagues(host){
   const mid=getMid();
   if(!mid){host.innerHTML=linkBox();return;}
+  lgReadUrl();
   if(LEAGUE_SEL){return renderLeagueStandings(host,LEAGUE_SEL,mid,LEAGUE_TYPE);}
   const entry=await loadEntry(mid);
   const classic=((entry.leagues&&entry.leagues.classic)||[]).filter(l=>l.id);
@@ -20084,11 +20507,11 @@ async function hydrateLeagues(host){
   host.innerHTML=group('Classic leagues',classic,'classic')+group('Head-to-head leagues',h2h,'h2h')+
     '<div class="dl-sub">Tap a league to see the standings.</div>';
   Array.prototype.forEach.call(host.querySelectorAll('[data-league]'),b=>
-    b.addEventListener('click',()=>{LEAGUE_SEL=parseInt(b.dataset.league,10);LEAGUE_TYPE=b.dataset.type;
-      LEAGUE_ME_RANK=parseInt(b.dataset.rank,10)||0;LEAGUE_PAGE=1;renderPage('leagues');}));
+    b.addEventListener('click',()=>{historyPoint();LEAGUE_SEL=parseInt(b.dataset.league,10);LEAGUE_TYPE=b.dataset.type;
+      LEAGUE_ME_RANK=parseInt(b.dataset.rank,10)||0;LEAGUE_PAGE=1;lgWriteUrl();renderPage('leagues');}));
 }
 
-function leaguePage(n){LEAGUE_PAGE=Math.max(1,n);renderPage('leagues');}
+function leaguePage(n){LEAGUE_PAGE=Math.max(1,n);lgWriteUrl();renderPage('leagues');}
 /* Sum a manager's starting XI xP for a gameweek (captain doubled via the
    pick multiplier; bench excluded as multiplier 0). Null before the squads
    lock, when the picks endpoint is not yet public. */
@@ -20150,12 +20573,12 @@ function lgSetSort(key){
   if(!spec)return;
   /* Choosing a new field resets to that field's natural direction; the
      arrow button is what flips it. */
-  LEAGUE_SORT=spec.key;LEAGUE_DIR=0;renderPage('leagues');
+  LEAGUE_SORT=spec.key;LEAGUE_DIR=0;lgWriteUrl();renderPage('leagues');
 }
 function lgFlipDir(){
   const spec=leagueSortSpec(LEAGUE_SORT);
   const cur=LEAGUE_DIR||(spec?spec.dir:1);
-  LEAGUE_DIR=cur===1?-1:1;renderPage('leagues');
+  LEAGUE_DIR=cur===1?-1:1;lgWriteUrl();renderPage('leagues');
 }
 const LEAGUE_OPEN=new Set();
 const LEAGUE_DETAIL_MAX=50;
@@ -20168,6 +20591,7 @@ function lgSetView(v){
      Reset to league order, which is what the table would show anyway. */
   const spec=leagueSortSpec(LEAGUE_SORT);
   if(LEAGUE_VIEW==='compact'&&spec&&spec.detail){LEAGUE_SORT='rank';LEAGUE_DIR=0;}
+  lgWriteUrl();
   renderPage('leagues');
 }
 function lgToggle(id){
@@ -20459,7 +20883,7 @@ async function titleRaceCard(res,meId){
 }
 async function renderLeagueStandings(host,leagueId,mid,type){
   host.innerHTML='<div class="card">'+skel(7)+'</div>';
-  const back='<button class="btn btn-ghost btn-sm mb-14" onclick="LEAGUE_SEL=null;LEAGUE_PAGE=1;renderPage(\'leagues\')">‹ All leagues</button>';
+  const back='<button class="btn btn-ghost btn-sm mb-14" onclick="historyPoint();LEAGUE_SEL=null;LEAGUE_PAGE=1;lgWriteUrl();renderPage(\'leagues\')">‹ All leagues</button>';
   const h2h=type==='h2h',page=LEAGUE_PAGE;
   let data;try{data=await (h2h?loadH2HStandings(leagueId,page):loadStandings(leagueId,page));}
   catch(e){host.innerHTML=back+errorBox();return;}
@@ -21083,7 +21507,7 @@ function lgBar(v,max,soft){return 'background:linear-gradient(90deg,'+soft+' '+M
 async function hydrateTitleRace(host){
   host.innerHTML=skel(6);
   let m;try{m=await loadModelBundle();}catch(e){
-    host.innerHTML=stateBox('trophy','League odds unavailable','The season odds load from our PL Simulator model — try again in a moment.');return;}
+    host.innerHTML=stateBox('trophy','League odds unavailable','The season odds load from our PL Simulator model. This usually clears within a minute. Try again.',retryBtn());return;}
   const snaps=m.odds_history||[],snap=snaps[snaps.length-1];
   if(!snap||!snap.clubs){host.innerHTML=stateBox('trophy','No season odds yet','Title and relegation odds appear here once the model has run for the season.');return;}
   const clubs=snap.clubs,names=Object.keys(clubs);
@@ -21135,12 +21559,14 @@ function renderClubForm(host,m){
 }
 /* ── Club Dossier ─────────────────────────────────────────── */
 let DOSSIER_TEAM=null;
-function dossierPick(id){DOSSIER_TEAM=parseInt(id,10)||null;renderPage('dossier');}
+function dossierPick(id){DOSSIER_TEAM=parseInt(id,10)||null;setUrlState({team:DOSSIER_TEAM});renderPage('dossier');}
 async function hydrateDossier(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   if(!teams.length){host.innerHTML=stateBox('shield','Between seasons','Club dossiers appear the moment the new season opens in the FPL API.');return;}
+  if(urlEntryOnce('dossier'))DOSSIER_TEAM=urlPick('team',DOSSIER_TEAM,null,v=>parseInt(v,10)||null);
   if(DOSSIER_TEAM==null||!b.teams[DOSSIER_TEAM])DOSSIER_TEAM=teams[0].id;
+  setUrlState({team:DOSSIER_TEAM!==teams[0].id?DOSSIER_TEAM:null});
   const tid=DOSSIER_TEAM;
   const picker='<div class="fdr-teams" style="margin-bottom:14px">'+teams.map(t=>
     '<button class="tchip'+(t.id===tid?' tchip-act':'')+'" onclick="dossierPick('+t.id+')">'+
@@ -21309,22 +21735,38 @@ async function hydrateDossier(host){
 async function hydrateClubForm(host){
   host.innerHTML=skel(6);
   let m;try{m=await loadModelBundle();}catch(e){
-    host.innerHTML=stateBox('pulse','Form unavailable','Recent form loads from our PL Simulator model — try again shortly.');return;}
+    host.innerHTML=stateBox('pulse','Form unavailable','Recent form loads from our PL Simulator model. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.form){host.innerHTML=stateBox('pulse','No form yet','Recent form appears here once the season’s results are in.');return;}
+  lgfReadUrl();
   const st=m.season_state||{};
   host.innerHTML='<div class="card"><div class="card-title">'+svg(ICON.pulse,'width="15" height="15"')+' Team form</div>'+
     bundleSeasonWarn(m)+
     '<p class="dl-sub" style="margin-bottom:10px">Recent form from <b>'+esc(st.label||'')+'</b>'+(st.live?' — live, '+st.played_md+' matchdays played':' (last completed season, until 2026/27 kicks off)')+'. Home/Away split the last games at that venue; PPG makes the windows comparable.</p>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">'+
-      '<div class="seg" data-seg="venue"><button class="seg-b on" data-v="overall">Overall</button><button class="seg-b" data-v="home">Home</button><button class="seg-b" data-v="away">Away</button></div>'+
-      '<div class="seg" data-seg="win"><button class="seg-b on" data-v="5">Last 5</button><button class="seg-b" data-v="10">Last 10</button><button class="seg-b" data-v="20">Last 20</button></div>'+
+      lgfSeg('venue',LGF_VENUE,[['overall','Overall'],['home','Home'],['away','Away']])+
+      lgfSeg('win',LGF_WIN,[['5','Last 5'],['10','Last 10'],['20','Last 20']])+
     '</div><div id="lgf-out"></div></div>';
   renderClubForm(host,m);
   host.querySelectorAll('.seg').forEach(seg=>seg.querySelectorAll('.seg-b').forEach(btn=>btn.addEventListener('click',()=>{
     seg.querySelectorAll('.seg-b').forEach(x=>x.classList.toggle('on',x===btn));
     if(seg.dataset.seg==='venue')LGF_VENUE=btn.dataset.v;else LGF_WIN=btn.dataset.v;
+    lgfWriteUrl();
     renderClubForm(host,m);
   })));
+}
+function lgfSeg(id,cur,opts){
+  return '<div class="seg" data-seg="'+id+'">'+opts.map(o=>
+    '<button class="seg-b'+(o[0]===cur?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>').join('')+'</div>';
+}
+function lgfReadUrl(){
+  if(urlEntryOnce('clubform')){
+    LGF_VENUE=urlPick('venue',LGF_VENUE,'overall',v=>['overall','home','away'].indexOf(v)>=0?v:null);
+    LGF_WIN=urlPick('win',LGF_WIN,'5',v=>['5','10','20'].indexOf(String(v))>=0?String(v):null);
+  }
+  lgfWriteUrl();
+}
+function lgfWriteUrl(){
+  setUrlState({venue:LGF_VENUE!=='overall'?LGF_VENUE:null,win:LGF_WIN!=='5'?LGF_WIN:null});
 }
 
 /* ── League season engine (ported from the PL Simulator; operates on the
@@ -21470,7 +21912,7 @@ function renderSeasonSim(host,bundle,posCounts,ptsSum,n){
 }
 async function hydrateSeasonSim(host){
   host.innerHTML=skel(4);
-  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('target','Simulator unavailable','The season model loads from our PL Simulator — try again shortly.');return;}
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('target','Simulator unavailable','The season model loads from our PL Simulator. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.fixtures){host.innerHTML=stateBox('target','Fixtures not set','The season simulation runs once the 2026/27 fixtures are published.');return;}
   const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
   host.innerHTML='<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Season Simulator</div>'+
@@ -21576,7 +22018,7 @@ const MC_HYDRATE={results:(h)=>hydrateResults(h),forecasts:(h)=>hydrateMatchFore
   lineups:(h)=>hydrateLineups(h)};
 let MC_VIEW='results';
 function mcView(id){return MC_VIEWS.filter(v=>v.id===id)[0]||MC_VIEWS[0];}
-function mcSetView(id){MC_VIEW=mcView(id).id;track('matchday_view',{view:MC_VIEW});}
+function mcSetView(id){MC_VIEW=mcView(id).id;track('matchday_view',{view:MC_VIEW});hubViewChanged('results');}
 function mcRenderBody(opts){
   const body=document.getElementById('mc-body');if(!body)return;
   const v=mcView(MC_VIEW);
@@ -21591,7 +22033,7 @@ function mcRenderBody(opts){
     /* Marked so a test can tell a HUB failure — the view's hydrator threw —
        from a view rendering its own legitimate empty state. */
     body.innerHTML='<div class="hub-fail">'+stateBox('pulse','Could not load this view',
-      (err&&err.message)||'Try again in a moment.')+'</div>';
+      hubFailText(err),retryBtn('mcRenderBody()'))+'</div>';
   });
 }
 async function hydrateMatchday(host){
@@ -21602,6 +22044,7 @@ async function hydrateMatchday(host){
     '<div id="mc-body"></div>';
   host.querySelectorAll('#mc-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
     if(btn.dataset.view===MC_VIEW)return;
+    historyPoint();
     mcSetView(btn.dataset.view);
     mcRenderBody();
   }));
@@ -21610,7 +22053,7 @@ async function hydrateMatchday(host){
 
 async function hydrateMatchForecast(host){
   host.innerHTML=skel(4);
-  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model — try again shortly.');return;}
+  let m;try{m=await loadModelBundle();}catch(e){host.innerHTML=stateBox('grid','Forecasts unavailable','Match forecasts load from our PL Simulator model. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.fixtures){host.innerHTML=stateBox('grid','Fixtures not set','Match forecasts appear once the fixtures are published.');return;}
   const pro=isPro();
   const mdOpts=Array.from({length:38},(_,i)=>'<option value="'+(i+1)+'">Matchday '+(i+1)+'</option>').join('');
@@ -21646,8 +22089,10 @@ function resToggle(id){
   if(d)d.style.display=S.has(id)?'':'none';
   if(ch)ch.style.transform=S.has(id)?'rotate(180deg)':'';
 }
+let RES_GW_DEFAULT=null;
 function resNav(step){
   RES_GW=Math.max(1,Math.min(38,(RES_GW||1)+step));
+  setUrlState({gw:RES_GW!==RES_GW_DEFAULT?RES_GW:null});
   window._resOpen=new Set();
   /* The results board owns a VIEW of the Matchday panel, not the panel — so
      it re-renders into the hub's body. Re-rendering into #ge-data would wipe
@@ -21866,7 +22311,10 @@ async function hydrateResults(host){
      it still has a ball to be kicked, and the next one the moment it does
      not, which is exactly when this should move on. Paging still works
      from wherever it lands. */
-  if(RES_GW==null)RES_GW=(b.upcoming||b.cur).id;
+  RES_GW_DEFAULT=(b.upcoming||b.cur).id;
+  if(urlEntryOnce('results'))RES_GW=urlPick('gw',RES_GW,RES_GW_DEFAULT,v=>{const g=parseInt(v,10);return g>=1&&g<=38?g:null;});
+  if(RES_GW==null)RES_GW=RES_GW_DEFAULT;
+  setUrlState({gw:RES_GW!==RES_GW_DEFAULT?RES_GW:null});
   const gw=RES_GW;
   let owned=new Set(),myPicks=null,picksGw=gw;
   const mid=getMid();
@@ -22072,8 +22520,10 @@ function csMatrixData(m){
 }
 async function hydrateCsMatrix(host){
   host.innerHTML=skel(6);
+  if(urlEntryOnce('csmatrix'))CSM_N=urlPick('n',CSM_N,6,v=>+v===10?10:+v===6?6:null);
+  setUrlState({n:CSM_N!==6?CSM_N:null});
   let m;try{m=await loadModelBundle();}catch(e){
-    host.innerHTML=stateBox('shield','Clean-sheet odds unavailable','The matrix loads from our PL Simulator model bundle — try again in a moment.');return;}
+    host.innerHTML=stateBox('shield','Clean-sheet odds unavailable','The matrix loads from our PL Simulator model bundle. This usually clears within a minute. Try again.',retryBtn());return;}
   if(!m.fixtures||!m.teams||!Object.keys(m.teams).length){
     host.innerHTML=stateBox('shield','Fixtures not set','The clean-sheet matrix appears once the season’s clubs and fixtures are in the model.');return;}
   const D=csMatrixData(m);
@@ -22114,6 +22564,7 @@ async function hydrateCsMatrix(host){
   host.querySelectorAll('#csm-seg .seg-b').forEach(btn=>btn.addEventListener('click',()=>{
     host.querySelectorAll('#csm-seg .seg-b').forEach(x=>x.classList.toggle('on',x===btn));
     CSM_N=parseInt(btn.dataset.n,10)||6;
+    setUrlState({n:CSM_N!==6?CSM_N:null});
     render();
   }));
   render();
@@ -22933,7 +23384,9 @@ async function hydrateLineups(host){
   const gp=teamGamesPlayed(fixtures);
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   if(!teams.length){host.innerHTML=stateBox('squad','No clubs yet','Projected lineups appear once the season data loads.');return;}
+  if(urlEntryOnce('lineups'))LINEUP_TEAM=urlPick('team',LINEUP_TEAM,null,v=>parseInt(v,10)||null);
   if(LINEUP_TEAM==null||!b.teams[LINEUP_TEAM])LINEUP_TEAM=teams[0].id;
+  setUrlState({team:LINEUP_TEAM!==teams[0].id?LINEUP_TEAM:null});
   const t=b.teams[LINEUP_TEAM];
   const proj=projectXI(b,t.id,gp[t.id]);
   const opts=teams.map(x=>'<option value="'+x.id+'"'+(x.id===t.id?' selected':'')+'>'+esc(x.name)+'</option>').join('');
@@ -22965,7 +23418,7 @@ async function hydrateLineups(host){
     '<div class="card"><div class="card-title">Methodology</div>'+
       '<p class="dl-sub" style="margin:0">Score = 65% starts share ('+(gp[t.id]||0)+' club games played) + 35% minutes share, × availability from the official status flag and chance-of-playing. The XI is the legal formation maximising the combined score. It cannot see tactical rotation or press-conference news — treat it as a base rate, not a leak.</p></div>';
   const sel=host.querySelector('#lineup-team');
-  if(sel)sel.addEventListener('change',()=>{LINEUP_TEAM=parseInt(sel.value,10);hydrateLineups(host);});
+  if(sel)sel.addEventListener('change',()=>{LINEUP_TEAM=parseInt(sel.value,10);setUrlState({team:LINEUP_TEAM!==teams[0].id?LINEUP_TEAM:null});hydrateLineups(host);});
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -23373,6 +23826,7 @@ function renderDraft(){
   const S=window._draft;if(!S)return;
   const b=S.b;
   DRAFT_IDS=DRAFT_IDS.filter(id=>b.els[id]);
+  setUrlState({ids:DRAFT_IDS.length?DRAFT_IDS.join(','):null});
   const players=DRAFT_IDS.map(id=>b.els[id]).filter(Boolean);
   const v=draftValidate(players);
   const sum=document.getElementById('draft-summary');
@@ -23496,7 +23950,7 @@ function draftSaveNow(){
   const players=DRAFT_IDS.map(id=>S.b.els[id]).filter(Boolean);
   const v=draftValidate(players);
   if(!v.saveable){
-    toast(v.overBudget?'Over budget — free up '+money(-v.bank)+' to save':'Pick the full 15 (2 GK / 5 DEF / 5 MID / 3 FWD) to save');
+    toast(v.overBudget?'Over budget. Free up '+money(-v.bank)+' to save':'Pick the full 15 (2 GK / 5 DEF / 5 MID / 3 FWD) to save');
     return;
   }
   try{localStorage.setItem(DRAFT_KEY,JSON.stringify({season:curSeason(),ids:DRAFT_IDS.slice(),t:Date.now()}));}catch(_){}
@@ -23581,7 +24035,7 @@ function genDraft(){return runAI('draft',draftContext,'draft-ai',{busy:'Reading 
 async function hydrateDraft(host){
   let b;
   try{b=await boot();}catch(e){
-    host.innerHTML=stateBox('squad','Player pool unavailable','The FPL API looks to be between seasons (mid-rollover). The draft board opens as soon as the new player list is up — try again shortly.');
+    host.innerHTML=stateBox('squad','Player pool unavailable','The FPL API looks to be between seasons (mid-rollover). The draft board opens as soon as the new player list is up. This usually clears within a minute. Try again.',retryBtn());
     return;
   }
   let fixtures=[];try{fixtures=await loadFixtures();}catch(_){}
@@ -23592,6 +24046,10 @@ async function hydrateDraft(host){
      alphabetical. That is the old behaviour, not a crash. */
   let A=null;try{A=await loadArchive();}catch(_){}
   const hIdx=histPriorIndex(A);
+  /* A shared draft: ?ids= names the fifteen. It fills the working draft,
+     never the one saved on this device — that still takes a deliberate save. */
+  const linkIds=urlEntryOnce('draft')&&urlState('ids')?urlIdList(urlState('ids'),15):[];
+  if(linkIds.length)DRAFT_IDS=linkIds;
   if(DRAFT_IDS==null)DRAFT_IDS=loadDraftIds();
   /* ── The planner's two in-season inputs ────────────────────────────
      Before the first deadline this page builds a squad from a clean
@@ -24037,7 +24495,7 @@ function cmdkEntries(q){
   Object.keys(PANELS).forEach(id=>{
     const p=PANELS[id];
     if(!canSeePanel(p))return;              /* owner panels stay out of search */
-    out.push({name:p.label,aliases:[id],desc:p.areaLabel,
+    out.push({name:p.label,aliases:panelAliases(id),desc:p.areaLabel,
       label:p.label,sub:p.areaLabel,icon:p.icon,base:1,run:()=>openPanel(id)});
   });
   /* Lenses are searchable by name too. Folding a board into the table would
@@ -24087,7 +24545,7 @@ function cmdkRender(q){
     '<button class="cmdk-row'+(i===CMDK.sel?' sel':'')+'" data-ck="'+i+'" role="option">'+
     '<span class="ck-ic">'+svg(ICON[it.icon]||ICON.grid)+'</span>'+
     '<b>'+esc(it.label)+'</b><span class="ck-sub">'+esc(it.sub||'')+'</span></button>').join('')||
-    '<div class="cmdk-row" style="color:var(--text-3)">No matches.</div>';
+    '<div class="cmdk-row" style="color:var(--text-3)">Nothing matches that. Try a panel, a player or a lens name.</div>';
 }
 function cmdkRun(i){
   const it=CMDK.items[i];if(!it)return;
@@ -24212,7 +24670,9 @@ function initKeys(){
   binds['[Shift]+g [Shift]+(.)']=e=>{
     if(sheetOpen())return;
     const id=G_CHORDS[(e.key||'').toLowerCase()];
-    if(id&&PANELS[id]){e.preventDefault();openPanel(id);}
+    /* Through resolvePanel: `g i` names the fitness lens by its retired id,
+       which is an alias rather than a panel, and was a dead chord without it. */
+    if(id&&PANELS[resolvePanel(id)]){e.preventDefault();openPanel(id);}
   };
   binds.Escape=()=>{if(sheetOpen())byId('kbd-overlay').hidden=true;};
   binds['[Shift]+?']=()=>{const k=byId('kbd-overlay');k.hidden=!k.hidden;};
@@ -24230,13 +24690,28 @@ function initKeys(){
 }
 
 /* ── SIDEBAR DRAWER (mobile) ───────────────────────────── */
+/* The drawer is a dialog in all but name: opening it moves focus inside
+   (to the current panel's row when there is one, else the first button),
+   closing it hands focus back to the hamburger, and the closed drawer is
+   visibility:hidden under 900px so its buttons drop out of the tab order
+   instead of being an invisible trap at the top of every page. */
 function openSidebar(){
-  document.getElementById('sidebar').classList.add('open');
+  const sb=document.getElementById('sidebar');
+  sb.classList.add('open');
   document.getElementById('overlay').classList.add('show');
+  const hb=document.getElementById('hamburger');
+  if(hb)hb.setAttribute('aria-expanded','true');
+  const first=sb.querySelector('.sb-sub[aria-current="page"]')||sb.querySelector('.nav-area-btn.active')||sb.querySelector('#sb-nav button');
+  if(first&&first.focus)setTimeout(()=>{try{first.focus({preventScroll:true});}catch(_){first.focus();}},40);
 }
 function closeSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
+  const sb=document.getElementById('sidebar');
+  const wasOpen=sb.classList.contains('open');
+  sb.classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
+  const hb=document.getElementById('hamburger');
+  if(hb)hb.setAttribute('aria-expanded','false');
+  if(wasOpen&&hb&&sb.contains(document.activeElement)&&hb.offsetParent)hb.focus();
 }
 
 /* ── EXPORT CURRENT VIEW ───────────────────────────────── */
@@ -24661,6 +25136,12 @@ function init(){
 
   document.getElementById('hamburger').addEventListener('click',openSidebar);
   document.getElementById('overlay').addEventListener('click',closeSidebar);
+  /* Escape closes the drawer from inside it even when the shortcut bundle
+     has not loaded: a drawer you can open from the keyboard and not close
+     is a trap, and a missing vendor.js must not be able to set one. */
+  document.getElementById('sidebar').addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&document.getElementById('sidebar').classList.contains('open')){e.preventDefault();closeSidebar();}
+  });
   document.getElementById('theme-toggle').addEventListener('click',toggleTheme);
   document.getElementById('refresh-btn').addEventListener('click',doRefresh);
 
@@ -24704,40 +25185,52 @@ function init(){
 
   track('app_open');
 
+  /* The app restores scroll itself (see restoreScroll): the browser's own
+     attempt fires before the panel has painted and lands at the top. */
+  try{if('scrollRestoration' in history)history.scrollRestoration='manual';}catch(_){}
   /* Returning from Stripe checkout: pull the new tier and tidy the URL. */
-  if(/[?&]upgrade=success/.test(location.search)){
+  const q0=urlQuery(location.search);
+  if(q0.upgrade==='success'){
     track('checkout_success');
     refreshTierFromCloud(0);
-    try{history.replaceState({},'',location.pathname);}catch(_){}
   }
   /* Deep links, in priority order: ?panel= (push notifications), the legacy
      #hash (old bookmarks and shares — normalised to the path), then the
-     real path (/squad, /players …). openPanel writes the canonical URL. */
-  const pm=(location.search.match(/[?&]panel=([a-z-]+)/)||[])[1];
-  const hh=location.hash.slice(1);
+     real path (/squad, /players …). openPanel writes the canonical URL.
+     The rest of the query is the panel's own state and travels with it;
+     the one-shot keys consumed here and by the front door do not. */
+  const pm=q0.panel;
+  /* Through pathPanel, so a hash written as a path (#players) resolves the
+     way the path itself would. */
+  const hh=pathPanel(location.hash.slice(1));
+  const q1=mergeQuery(q0,{panel:null,upgrade:null,src:null,app:null});
   if(pm&&PANELS[resolvePanel(pm)]){
-    try{history.replaceState({},'',location.pathname);}catch(_){}
-    openPanel(pm,{noHistory:true});
+    openPanel(pm,{noHistory:true,query:q1});
   } else if(hh&&PANELS[resolvePanel(hh)]){
-    try{history.replaceState({},'',location.pathname);}catch(_){}
-    openPanel(hh,{noHistory:true});
+    try{history.replaceState({},'',location.pathname+location.search);}catch(_){}
+    openPanel(hh,{noHistory:true,query:q1});
   } else {
     const pp=pathPanel(location.pathname);
-    if(pp&&PANELS[resolvePanel(pp)])openPanel(pp,{noHistory:true});
+    if(pp&&PANELS[resolvePanel(pp)])openPanel(pp,{noHistory:true,query:q1});
     else if(pp&&location.pathname!=='/'){
       /* Unknown path: land home and say so in the URL rather than 404ing. */
       openPanel(homePanel(),{noHistory:true});
     }
+    else if(Object.keys(q1).length)openPanel(homePanel(),{noHistory:true,query:q1});
   }
-  /* Back/forward re-opens the panel the URL names, without re-pushing. */
-  window.addEventListener('popstate',()=>{
+  /* Back/forward re-opens the panel the URL names, with the tab and the
+     state the query carries and the scroll position the entry saved,
+     without re-pushing. */
+  window.addEventListener('popstate',e=>{
     const pp=pathPanel(location.pathname);
     const target=pp&&PANELS[resolvePanel(pp)]?pp:homePanel();
-    if(resolvePanel(target)!==currentPanel||PANEL_VIEW[target])openPanel(target,{noHistory:true});
+    const st=(e&&e.state)||{};
+    PENDING_SCROLL=Number.isFinite(st.scroll)?st.scroll:0;
+    openPanel(target,{noHistory:true,query:urlQuery(location.search)});
   });
   /* Legacy in-app #hash links still work: translate to the path route. */
   window.addEventListener('hashchange',()=>{
-    const p=location.hash.slice(1);
+    const p=pathPanel(location.hash.slice(1));
     if(!p||!PANELS[resolvePanel(p)])return;
     try{history.replaceState({},'',location.pathname);}catch(_){}
     openPanel(p);

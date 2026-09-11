@@ -233,7 +233,7 @@ All data comes live from the official FPL API via the proxy (the FPL API has no 
 
 **All 38 panels (7 areas) are wired to live data** — see `docs/FEATURES.md` for the full panel reference.
 
-- **Free:** My Week, Overview, Gameweek recap, GW Debrief, The Wire, The Model, My Squad, Transfer Planner, Captaincy Lab, Chip Strategy, Squad Planner, Manager Report, Live (Percentile and Bonus views), Players (with the Differentials and Fitness lenses), Scout Board, Player Compare, Price Predictor, Latest News, Fixtures (grid, points and clean-sheet views), Watchlist, Alerts, Mini-Leagues, Matchday, Title Race, Clubs, Ten Seasons.
+- **Free:** My Week, Overview, Gameweek recap, Gameweek Debrief, The Wire, The Model, My Squad, Transfer Planner, Captaincy Lab, Chip Strategy, Squad Planner, Manager Report, Live (Percentile and Bonus views), Players (with the Differentials and Fitness lenses), Scout Board, Player Compare, Price Predictor, Latest News, Fixtures (grid, points and clean-sheet views), Watchlist, Alerts, Mini-Leagues, Matchday, Title Race, Clubs, Ten Seasons.
 - **Pro** (gated behind the paywall): **Scout AI**, the DEFCON, Rank threats and Auto-subs views of Live, Set Piece Register, Rotation Risk, Simulators (season and what-if), Rival Scout, Ownership (your EO and the template). Live is an estimated percentile, not a true live rank, and says so.
 
 Panel names are canonical across the app, the landing page and the docs: see `docs/NAMING.md`.

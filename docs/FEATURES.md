@@ -80,7 +80,7 @@ Home
 ├── My Week              (free)  Your personalised gameweek brief — home once a team is linked
 ├── Overview             (free)  Season snapshot, this week's calls, live state — home until then
 ├── Gameweek recap       (free)  What just happened, and what it cost you
-├── GW Debrief           (free)  The whole gameweek, scored against the model
+├── Gameweek Debrief     (free)  The whole gameweek, scored against the model
 ├── The Wire             (free)  Auto-written data briefings + Team of the Week
 ├── Scout AI             (Pro)   Model XI, scout report and the ask box
 └── The Model            (free)  Track record first, then how it works
@@ -125,8 +125,8 @@ Rivals
     ├── Your EO                  Effective ownership; your cover, edge and exposure
     └── The template             The most-owned XI, and how close yours is
 
-Match Centre
-├── Matchday             (free)  One fixture list, three views: results / forecasts / line-ups
+Football
+├── Match Centre         (free)  One fixture list, three views: results / forecasts / line-ups
 │                                (absorbed Match Forecasts and Projected XI)
 ├── Title Race           (free)  Season odds from the backtested model
 ├── Clubs                (free)  One club: what it is, and its recent form
@@ -965,7 +965,7 @@ so it shows before a team is linked and pre‑season.
 
 ### Match Centre
 
-**Matchday** — one fixture list, three points in time. Results, Match Forecasts
+**Match Centre** (panel id `results`, path `/matchday`) — one fixture list, three points in time. Results, Match Forecasts
 and Projected XI were three destinations reading the same fixtures before,
 during and after: what the model expected, who was likely to start it, and what
 actually happened. You want those within one move of each other — the pre‑match
@@ -1137,6 +1137,15 @@ dataset (used freely with attribution), aligned by the official FPL element id:
 - **Serverless (Netlify Functions):** `fpl` (FPL proxy), `ai` (LLM),
   `checkout` / `portal` / `stripe-webhook` (billing), `push-key` /
   `push-subscribe` / `push-unsubscribe` / `push-cron` (web push).
+- **URL state (`index.html`, `URL STATE` block):** the path names the panel
+  and the query string names its state: `?view=` for the tab inside a hub,
+  then each view's own keys (sort, filters, gameweek, players, league …).
+  Hydrators read their keys through `urlPick` on entry and write them back
+  through `setUrlState` at every change, so a copied address reopens the
+  same view. Tab changes are history entries; scroll restores on back and
+  forward. The pure helpers are unit-tested in `dev/test-core.mjs`; the
+  browser behaviour is covered by the `dev/smoke.mjs` run and the routing
+  cases in `dev/test-simplenav.mjs`. See `DESIGN.md` → Routing.
 - **Routing (`netlify.toml`):** `/api/fpl/*`, `/api/ai`, `/api/checkout`,
   `/api/portal`, `/api/stripe-webhook`, `/api/push-*`; `/welcome` → landing page.
   Build command `npm run build:web`, publish dir `www`.
