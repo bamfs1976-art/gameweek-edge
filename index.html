@@ -387,7 +387,15 @@ body[data-density="beginner"] .beginner-only{display:block}
 }
 /* Section 7: persistent right rail on large screens (>=1024px) */
 .right-rail{display:none}
-.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:14px}
+.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:14px}
+/* ── SECTION CARD HEAD ── the title on the left, the controls on the right.
+   One row for every card; the ad hoc flex rows it replaced each drew the
+   same thing a slightly different way. The title is an h2, so the page
+   outline reads h1 then its sections. */
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.card-head .card-title{margin:0;flex:1 1 auto;min-width:0}
+.card-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-left:auto}
+.card-tools .qd-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .rr-h{font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
 .rr-ask-in{display:flex;gap:6px}
 .rr-ask-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border-2);border-radius:var(--r-md);padding:7px 9px;color:var(--text);font-size:12px}
@@ -1379,14 +1387,14 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .card-title{
   font-size:.68rem;font-weight:700;letter-spacing:.09em;
   text-transform:uppercase;color:var(--text-3);
-  margin-bottom:14px;display:flex;align-items:center;
+  margin:0 0 14px;display:flex;align-items:center;
   justify-content:space-between;gap:8px;
 }
 
 /* ── KPI CARD ──────────────────────────────────────────── */
 .kpi{
   background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-lg);padding:18px;
+  border-radius:var(--r-lg);padding:16px;
   box-shadow:var(--shadow);position:relative;overflow:hidden;
 }
 .kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%}
@@ -4155,6 +4163,24 @@ function watchTables(){
 function stateBox(icon,title,text,btn){
   return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
     '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
+}
+/* ── SECTION CARD ─────────────────────────────────────────
+   One card for every named section: a title on the left (an h2), a
+   controls slot on the right, the same 1px border and padding everywhere.
+   cardHead builds the head row on its own for panels that assemble the
+   rest of the card by hand; sectionCard builds the whole thing. */
+function cardHead(title,tools,opts){
+  opts=opts||{};
+  return '<div class="card-head">'+
+    '<h2 class="card-title'+(opts.cls?' '+opts.cls:'')+'"'+(opts.id?' id="'+opts.id+'"':'')+'>'+title+'</h2>'+
+    (tools?'<div class="card-tools">'+tools+'</div>':'')+'</div>';
+}
+function sectionCard(spec){
+  const tag=spec.tag||'div';
+  return '<'+tag+' class="card'+(spec.cls?' '+spec.cls:'')+'"'+(spec.id?' id="'+spec.id+'"':'')+(spec.attrs?' '+spec.attrs:'')+'>'+
+    (spec.title?cardHead(spec.title,spec.tools,{id:spec.titleId}):'')+
+    (spec.sub?'<p class="dl-sub" style="margin:0 0 10px">'+spec.sub+'</p>':'')+
+    (spec.body||'')+(spec.foot||'')+'</'+tag+'>';
 }
 /* Every failed state ends in the same next action. `fn` is the handler
    as a string; the default repaints the panel on screen. */
@@ -6943,8 +6969,7 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
     if(Math.abs(n)>=1e5)return Math.round(n/1e3)+'k';
     return fmtNum(n);
   };
-  const card=(cls,title,body,foot)=>'<section class="card '+cls+'">'+
-    (title?'<div class="card-title">'+title+'</div>':'')+body+(foot||'')+'</section>';
+  const card=(cls,title,body,foot)=>sectionCard({tag:'section',cls,title,body,foot});
 
   /* ── who you are, and what you have scored ── */
   const curH=(hist&&Array.isArray(hist.current))?hist.current:[];
@@ -7086,8 +7111,8 @@ async function hydrateDashboard(host){
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,5);
   const stamp=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const qh=(label,kpiHtml,tag)=>'<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>'+label+(tag||'')+'</span>'+
-    '<span class="qd-meta">'+(kpiHtml?kpiHtml+' · ':'')+stamp+'</span></div>';
+  const qh=(label,kpiHtml,tag)=>cardHead('<span class="tk-dot" aria-hidden="true"></span>'+label+(tag||''),
+    '<span class="qd-meta">'+(kpiHtml?kpiHtml+' · ':'')+stamp+'</span>');
 
   /* ── Q1: this week's calls ── */
   let capPool=b.elements.filter(e=>e.status==='a').map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
@@ -7188,8 +7213,7 @@ async function hydrateDashboard(host){
         (d!=null?'<span class="dc-alt-d num">'+(d>=0?'+':'')+d.toFixed(1)+'</span>':'')+
         '</button>';}).join('')+'</div>':'';
   const q1='<section class="card dc dc-hero" data-dash="action" aria-labelledby="dc-cap-h">'+
-    '<div class="dc-head"><span class="qd-label" id="dc-cap-h">Captain \u00b7 GW'+b.cur.id+'</span>'+
-      '<span class="dc-tags">'+preTag+modelTag+(cap?confChip(capConf.value||0,''):'')+'</span></div>'+
+    cardHead('Captain \u00b7 GW'+b.cur.id,'<span class="dc-tags">'+preTag+modelTag+(cap?confChip(capConf.value||0,''):'')+'</span>',{id:'dc-cap-h'})+
     (cap
       ?'<div class="dc-main"><button type="button" class="dc-name" onclick="openPlayer('+cap.el.id+')">'+esc(cap.el.web_name)+'</button>'+
         '<div class="dc-xp"><b class="num">'+cap.xp.toFixed(1)+'</b><span>'+jt('xP')+'</span></div></div>'+
@@ -7202,13 +7226,13 @@ async function hydrateDashboard(host){
     '</section>';
   const q1b='<div class="dc-pair" data-dash="action2">'+
     '<section class="card dc" aria-label="Transfer call">'+
-      '<div class="dc-head"><span class="qd-label">Transfer</span>'+(squad&&trConf!=null?confChip(trConf,''):'')+'</div>'+
+      cardHead('Transfer',squad&&trConf!=null?confChip(trConf,''):'')+
       '<div class="dc-call">'+trBody+(trVal!=null?'<span class="dc-call-v num '+(trCls||'')+'">'+trVal+' xP</span>':'')+'</div>'+
       '<p class="dc-sub">'+trWhy+'</p>'+
       '<button class="btn btn-ghost btn-sm dc-cta" onclick="openPanel(\'transfers\')">Open Planner</button>'+
     '</section>'+
     '<section class="card dc" aria-label="Chip call">'+
-      '<div class="dc-head"><span class="qd-label">Chip</span>'+(chipOn?confChip(chipAdv.best.conf,''):'')+'</div>'+
+      cardHead('Chip',chipOn?confChip(chipAdv.best.conf,''):'')+
       '<div class="dc-call">'+chipBody+'</div>'+
       '<p class="dc-sub">'+(chipWhy||'Chips are one-off boosters \u2014 timing them to the fixture calendar is most of their value.')+'</p>'+
       '<button class="btn btn-ghost btn-sm dc-cta" onclick="openPanel(\'chips\')">See chip timing</button>'+
@@ -7273,8 +7297,8 @@ async function hydrateDashboard(host){
       fixture:nf[s.el.team]?nf[s.el.team].opp+' ('+(nf[s.el.team].home?'H':'A')+') '+nf[s.el.team].diff:''}))}:null;
   const shareXiBtn=totw?'<button type="button" class="btn btn-ghost btn-sm" onclick="shareTotwCard()" aria-label="Share the Team of the Week as an image">Share</button>':'';
   const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="sec-xi" data-dash="xi">'+
-    '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
-    '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+shareXiBtn+'</span></div>'+
+    cardHead('<span class="tk-dot" aria-hidden="true"></span>Model XI',
+      '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+'</span>'+mxiBtn+shareXiBtn)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">The 11 players our model would pick this week.</p>'+q2Body+'</div>';
 
   /* ── Q3: differentials — like-for-like with the Differentials tab ──
@@ -7440,7 +7464,7 @@ async function hydrateDashboard(host){
 
 /* ── Methodology: how the numbers are made, in plain English ── */
 async function hydrateMethodology(host){
-  const sec=(t,body)=>'<div class="card mb-20"><div class="card-title">'+t+'</div>'+body+'</div>';
+  const sec=(t,body)=>sectionCard({cls:'mb-20',title:t,body});
   const p=t=>'<p class="dl-sub" style="margin:0 0 8px;font-size:13px;line-height:1.55">'+t+'</p>';
   host.innerHTML=
     sec('Team-strength engine',
@@ -7530,8 +7554,7 @@ async function hydrateGwdebrief(host){
     '<span class="dl-grow"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
     '<span class="dl-sub">'+crest(b,r.el.team,12)+teamShort(b,r.el.team)+' · '+posShort(b,r.el.element_type)+
     (r.line?' · '+esc(r.line):'')+'</span></span>';
-  const card=(title,body,sub)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-    (sub?'<p class="dl-sub" style="margin-bottom:10px">'+sub+'</p>':'')+body+'</div>';
+  const card=(title,body,sub)=>sectionCard({cls:'mb-20',title,sub,body});
 
   /* ── The week in numbers ── */
   const n=pack.numbers;
@@ -7974,18 +7997,18 @@ async function hydrateSquad(host){
   const lcIcon=l=>l==='warn'?'⚠':l==='info'?'•':'✓';
   const lcCls=l=>l==='warn'?'var(--amber)':l==='info'?'var(--text-3)':'var(--green-bright)';
   const allOk=lc.length===1&&lc[0].level==='ok';
-  const lcCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Lineup checker'+
-    (allOk?'<span class="badge badge-green">All clear</span>':'<span class="badge badge-amber">'+lc.filter(i=>i.level==='warn').length+' to check</span>')+'</div>'+
+  const lcCard='<div class="card mb-20">'+cardHead('Lineup checker',
+    allOk?'<span class="badge badge-green">All clear</span>':'<span class="badge badge-amber">'+lc.filter(i=>i.level==='warn').length+' to check</span>')+
     '<div class="dl">'+lc.map(i=>'<div class="dl-row diag-row"><span style="flex-shrink:0;color:'+lcCls(i.level)+';font-weight:700;width:18px">'+lcIcon(i.level)+'</span>'+
       '<span class="diag-txt">'+esc(i.msg)+'</span></div>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Checked against fixtures, availability and your captain for GW'+gw+'.</div></div>';
   host.innerHTML=
     lcCard+
     '<div class="grid g-sb mb-20">'+
-      '<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Your XI '+
+      '<div class="card">'+cardHead('Your XI',
         '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span>'+
-        '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="shareTeamReveal()">'+svg(ICON.arrows,'width="13" height="13"')+' Reveal</button>'+
-        '<button class="btn btn-ghost btn-sm" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button></div>'+
+        '<button class="btn btn-ghost btn-sm" onclick="shareTeamReveal()">'+svg(ICON.arrows,'width="13" height="13"')+' Reveal</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button>')+
         pitchWrap(
           row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
           '<div class="bench">'+bench.map(cell).join('')+'</div>')+
@@ -10967,11 +10990,10 @@ async function hydrateGwreport(host){
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
   }
 
-  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">Your gameweek, reviewed'+
-      '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
+  reportShell(host,'<div class="card mb-20">'+cardHead('Your gameweek, reviewed',
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
-      '<b>GW'+gw+'</b>'+
-      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button></span></div>'+
+      '<b class="num">GW'+gw+'</b>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button>')+
     '<p class="dl-sub" style="margin:0">Your week, reviewed — and what the model would do before the next deadline.</p></div>'+
     summary+
     list('What worked',good,'var(--green)')+
@@ -12620,8 +12642,8 @@ async function hydrateAllPlayers(host){
   plReadUrl();
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'"'+(t.id===PL_STATE.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
-  host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">Players'+
-    '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
+  host.innerHTML='<div class="card">'+cardHead('Players',
+    '<button class="btn btn-ghost btn-sm" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button>')+
     plLensBar()+
     '<p class="dl-sub" id="pl-lensnote" style="margin:0 0 10px"></p>'+
     preseasonNote(b,'the xP column is provisional')+
@@ -14672,8 +14694,8 @@ async function hydrateTransfers(host){
       if(best){
         const fr=transferFrame(best,bank,1,5,hasCap('transferCost'));
         const beTxt=fr.beGw===Infinity?'—':(fr.beGw<=5?fr.beGw.toFixed(1)+' GW':'>5 GW');
-        recCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Recommended move'+
-          confChip(Math.max(45,Math.min(90,Math.round(50+best.gain*6))),'Conf')+'</div>'+
+        recCard='<div class="card mb-20">'+cardHead('Recommended move',
+          confChip(Math.max(45,Math.min(90,Math.round(50+best.gain*6))),'Conf'))+
           '<div class="dl-row" style="align-items:center"><span class="dl-grow"><span class="dl-nm">'+
             esc(best.out.web_name)+' → <b>'+esc(best.cand.web_name)+'</b></span>'+
             '<span class="dl-sub">'+(fr.priceDelta>0?'+':'')+'£'+fr.priceDelta.toFixed(1)+'m · bank after £'+fr.bankAfter.toFixed(1)+'m'+(fr.affordable?'':' · <span style="color:var(--red)">over budget</span>')+'</span></span>'+
@@ -14697,7 +14719,7 @@ async function hydrateTransfers(host){
       }else{
         const marg=b.elements.filter(e=>e.status==='a'&&e.now_cost&&e.now_cost<=bank+Math.max.apply(null,squad.map(s=>s.now_cost||0)))
           .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
-        recCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Recommended move'+confChip(72,'Conf')+'</div>'+
+        recCard='<div class="card mb-20">'+cardHead('Recommended move',confChip(72,'Conf'))+
           '<div class="dl-row"><span class="dl-grow"><span class="dl-nm"><b>Hold</b> — no move clears the +1.5 xP bar over 5 GW</span>'+
           '<span class="dl-sub">Your XI is the highest-EV option this week; save the transfer.'+
           (marg?' Closest upgrade if you must: <b>'+esc(marg.web_name)+'</b> ('+horizonXP(b,marg,hz).toFixed(1)+' xP / 5 GW).':'')+'</span></span></div></div>';
@@ -14821,9 +14843,8 @@ async function hydrateCaptain(host){
     const ceiling=n.t3!=null?'Team 3+ goals '+Math.round(n.t3*100)+'% · CS '+Math.round((n.cs||0)*100)+'%':'';
     const evCls=p.ev>=0?'pos':'neg';
     return '<div class="card">'+
-      '<div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+labels[i]+
-        (i===0?'<span style="display:flex;gap:8px;align-items:center">'+confChip(conf.value,'Conf')+
-          '<button type="button" class="btn btn-ghost btn-sm" onclick="shareCaptainCard()" aria-label="Share the captain pick as an image">Share</button></span>':'')+'</div>'+
+      cardHead(labels[i],i===0?confChip(conf.value,'Conf')+
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="shareCaptainCard()" aria-label="Share the captain pick as an image">Share</button>':'')+
       '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
       '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+penBadge(e)+'</div>'+
       '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%'+lgRunTag(b,e.team,lgctx)+'</div></div></div>'+
@@ -14959,7 +14980,7 @@ async function hydrateChips(host){
     const bbRows=bb.rows.sort((a,c)=>c.xp-a.xp).map(r=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
       '<span class="dl-sub">'+teamShort(b,r.el.team)+' · '+(r.hasFix?'next '+nextFixLabel(nf[r.el.team]):'no fixture')+(r.live?'':' · <span style="color:var(--amber)">not counted</span>')+'</span></span>'+
       '<span class="dl-col mono">'+r.xp.toFixed(1)+'</span></div>').join('');
-    bbCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Bench Boost readiness'+confChip(bb.score,'')+'</div>'+
+    bbCard='<div class="card mb-20">'+cardHead('Bench Boost readiness',confChip(bb.score,''))+
       '<p class="dl-sub" style="margin-bottom:10px"><b>'+bb.playing+'/'+bb.total+'</b> bench players are fit with a fixture · <b>'+bb.benchXP.toFixed(1)+'</b> combined bench xP this gameweek. '+
         (bb.score>=70?'Your bench is Bench-Boost ready.':bb.score>=50?'A decent bench — a double gameweek would seal it.':'Thin right now — wait for a double or strengthen the bench first.')+'</p>'+
       '<div class="dl">'+bbRows+'</div></div>';
@@ -22602,11 +22623,10 @@ async function hydrateResults(host){
     /* "Results", not "Match Centre" — the area is called Match Centre and the
        panel is Matchday, so a third name for the same thing on the same
        screen is just noise. This heading exists to anchor the GW pager. */
-    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Results'+
-      '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
+    cardHead('Results',
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
-      '<b>GW'+gw+'</b>'+
-      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button></span></div>'+
+      '<b class="num">GW'+gw+'</b>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button>')+
     '<div class="dl-sub" style="margin-bottom:4px">Tap a match for scorers, cards, saves, defensive contributions and the bonus race.'+
       (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
     (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
