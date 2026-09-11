@@ -5509,6 +5509,19 @@ function urlHref(path,q){const qs=urlQueryString(q);return path+(qs?'?'+qs:'');}
    not "whatever was in memory": back from /matchday?gw=3 to /matchday has
    to show the current gameweek again. */
 let URL_FROM_LINK=false;
+/* The URL is read ONCE per entry to a panel. After that memory is the
+   truth and every change is written back, so code that sets a state
+   variable and repaints is not overruled by the address bar it has not
+   updated yet. URL_ENTRY counts entries; each reader records the entry it
+   last consumed. A hub view that paints later than its hub still reads the
+   entry it arrived on, because the count only moves in openPanel. */
+let URL_ENTRY=0;
+const URL_ENTRY_SEEN={};
+function urlEntryOnce(tag){
+  if(URL_ENTRY_SEEN[tag]===URL_ENTRY)return false;
+  URL_ENTRY_SEEN[tag]=URL_ENTRY;
+  return true;
+}
 /* Read the current panel's state: one key, or a copy of the whole query. */
 function urlState(key){return key==null?Object.assign({},URL_Q):URL_Q[key];}
 /* One state value: the URL's when it names one (parse validates and
@@ -5632,6 +5645,7 @@ function openPanel(panelId,opts){
   /* The query is the panel's state. A deep link or a traversal brings its
      own; in-app navigation starts clean. */
   URL_FROM_LINK=!!(opts&&opts.query);
+  URL_ENTRY++;
   URL_Q=mergeQuery({},(opts&&opts.query)||{});
   if(pv&&!(opts&&opts.keepView)&&HUB_SETVIEW[pv.hub])HUB_SETVIEW[pv.hub](pv.view);
   panelId=resolvePanel(panelId);
@@ -10717,7 +10731,7 @@ async function hydrateGwreport(host){
     return;}
   const minGw=finished[0].id,maxGw=finished[finished.length-1].id;
   REP_GW_MAX=maxGw;
-  REP_GW=urlPick('gw',REP_GW,maxGw,v=>parseInt(v,10)>0?parseInt(v,10):null);
+  if(urlEntryOnce('gwreport'))REP_GW=urlPick('gw',REP_GW,maxGw,v=>parseInt(v,10)>0?parseInt(v,10):null);
   if(REP_GW==null)REP_GW=maxGw;
   REP_GW=Math.max(minGw,Math.min(maxGw,REP_GW));
   setUrlState({gw:REP_GW!==maxGw?REP_GW:null});
@@ -11937,18 +11951,19 @@ const PL_LAYOUTS=['table','cards','chart'];
    from the lens's own default), the position and club filters, the search
    and the layout. The lens itself is ?view=, written by the hub layer. */
 function plReadUrl(){
-  const q=urlState();
-  if(q.sort){PL_STATE.k=String(q.sort);PL_STATE.dir=q.dir==='asc'?1:-1;}
-  PL_STATE.pos=urlPick('pos',PL_STATE.pos,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
-  PL_STATE.team=urlPick('team',PL_STATE.team,0,v=>parseInt(v,10)>0?parseInt(v,10):null);
-  PL_STATE.q=urlPick('q',PL_STATE.q,'',v=>String(v).trim().toLowerCase()||null);
-  PL_STATE.view=urlPick('layout',PL_STATE.view,'table',v=>PL_LAYOUTS.indexOf(v)>=0?v:null);
+  if(urlEntryOnce('allplayers')){
+    const q=urlState();
+    if(q.sort){PL_STATE.k=String(q.sort);PL_STATE.dir=q.dir==='asc'?1:-1;}
+    PL_STATE.pos=urlPick('pos',PL_STATE.pos,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    PL_STATE.team=urlPick('team',PL_STATE.team,0,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    PL_STATE.q=urlPick('q',PL_STATE.q,'',v=>String(v).trim().toLowerCase()||null);
+    PL_STATE.view=urlPick('layout',PL_STATE.view,'table',v=>PL_LAYOUTS.indexOf(v)>=0?v:null);
+  }
   plWriteUrl();
 }
 function plWriteUrl(){
-  const l=plLens(PL_STATE.lens);
-  const dk=(l&&l.sort)||'total_points',dd=l&&l.dir===1?1:-1;
-  const custom=PL_STATE.k!==dk||PL_STATE.dir!==dd;
+  const d=plLensDefault(plLens(PL_STATE.lens))||{k:'total_points',dir:-1};
+  const custom=PL_STATE.k!==d.k||PL_STATE.dir!==d.dir;
   setUrlState({sort:custom?PL_STATE.k:null,dir:custom&&PL_STATE.dir===1?'asc':null,
     pos:PL_STATE.pos||null,team:PL_STATE.team||null,q:PL_STATE.q||null,
     layout:PL_STATE.view!=='table'?PL_STATE.view:null});
@@ -12425,13 +12440,29 @@ function lensLink(id,label){
   return '<p class="dl-sub" style="margin:0 0 12px">'+esc(label)+' '+
     '<a href="#allplayers" onclick="openLens(\''+id+'\');return false">Open it in the players table →</a></p>';
 }
+/* The sort a lens opens on: its own column when the reader can have it,
+   total points when that column is behind the Pro lock. Needs the column
+   set, which exists only once the table has loaded; a lens chosen before
+   then (a deep link) is applied by the hydrator. */
+let PL_LENS_PENDING=false;
+function plLensDefault(l){
+  const cols=window._pl?plCols(window._pl.b,window._pl.xpMap,window._pl.ctx):[];
+  if(!cols.length)return null;
+  const target=cols.filter(c=>c.k===l.sort)[0];
+  if(target&&!plColLocked(target))return {k:l.sort,dir:l.dir===1?1:-1};
+  if(plColLocked(target))return {k:'total_points',dir:-1};
+  return {k:PL_STATE.k,dir:PL_STATE.dir};
+}
+function plApplyLensSort(l){
+  const d=plLensDefault(l);
+  if(!d){PL_LENS_PENDING=true;return;}
+  PL_LENS_PENDING=false;
+  PL_STATE.k=d.k;PL_STATE.dir=d.dir;
+}
 function plSetLens(id){
   const l=plLens(id);
   PL_STATE.lens=l.id;
-  const cols=window._pl?plCols(window._pl.b,window._pl.xpMap,window._pl.ctx):[];
-  const target=cols.filter(c=>c.k===l.sort)[0];
-  if(target&&!plColLocked(target)){PL_STATE.k=l.sort;PL_STATE.dir=l.dir===1?1:-1;}
-  else if(plColLocked(target)){PL_STATE.k='total_points';PL_STATE.dir=-1;}
+  plApplyLensSort(l);
   track('players_lens',{lens:l.id});
   hubViewChanged('allplayers');
 }
@@ -12454,6 +12485,7 @@ async function hydrateAllPlayers(host){
     tmpl,total:b.raw.total_players||10e6,hz,vsplit,
     seasonStarted:b.elements.some(e=>(e.minutes||0)>0)};
   window._pl={b,xpMap,ctx};
+  if(PL_LENS_PENDING)plApplyLensSort(plLens(PL_STATE.lens));
   plReadUrl();
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'"'+(t.id===PL_STATE.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
@@ -12890,10 +12922,12 @@ let SB_POS=3;                 /* default MID, like the pundit boards */
 let SB_SORT=null,SB_DIR=-1;   /* null → the position's default sort key */
 let SB_PRICE=0;               /* price cap in tenths of £m (0 = any) — budget finder */
 function sbReadUrl(){
-  SB_POS=urlPick('pos',SB_POS,3,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
-  SB_PRICE=urlPick('max',SB_PRICE,0,v=>[45,50,55].indexOf(+v)>=0?+v:null);
-  SB_SORT=urlPick('sort',SB_SORT,null,v=>/^[a-z0-9_]+$/i.test(v)?v:null);
-  SB_DIR=urlPick('dir',SB_DIR,-1,v=>v==='asc'?1:v==='desc'?-1:null);
+  if(urlEntryOnce('scoutboard')){
+    SB_POS=urlPick('pos',SB_POS,3,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    SB_PRICE=urlPick('max',SB_PRICE,0,v=>[45,50,55].indexOf(+v)>=0?+v:null);
+    SB_SORT=urlPick('sort',SB_SORT,null,v=>/^[a-z0-9_]+$/i.test(v)?v:null);
+    SB_DIR=urlPick('dir',SB_DIR,-1,v=>v==='asc'?1:v==='desc'?-1:null);
+  }
   sbWriteUrl();
 }
 function sbWriteUrl(){
@@ -13026,8 +13060,10 @@ async function hydrateScoutBoard(host){
    ═══════════════════════════════════════════════════════════ */
 let PP_POS=0,PP_N=5;
 function ppReadUrl(){
-  PP_POS=urlPick('pos',PP_POS,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
-  PP_N=urlPick('n',PP_N,5,v=>+v===8?8:+v===5?5:null);
+  if(urlEntryOnce('pointsplanner')){
+    PP_POS=urlPick('pos',PP_POS,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    PP_N=urlPick('n',PP_N,5,v=>+v===8?8:+v===5?5:null);
+  }
   ppWriteUrl();
 }
 function ppWriteUrl(){setUrlState({pos:PP_POS||null,n:PP_N!==5?PP_N:null});}
@@ -14902,7 +14938,7 @@ async function hydrateCompare(host){
   const hz=buildHorizon(b,fixtures,6);
   const CMP_FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
   const gpOf=minutesBasis(b,fixtures);
-  COMPARE=urlPick('players',COMPARE,[],v=>{const a=urlIdList(v,4);return a.length?a:null;});
+  if(urlEntryOnce('compare'))COMPARE=urlPick('players',COMPARE,[],v=>{const a=urlIdList(v,4);return a.length?a:null;});
   COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
   compareWriteUrl();
   const sel=COMPARE.map(id=>b.els[id]);
@@ -20434,12 +20470,14 @@ let LEAGUE_SEL=null,LEAGUE_TYPE='classic',LEAGUE_PAGE=1,LEAGUE_ME_RANK=0;
    layout. Nothing is written until a league is open — the list itself has
    no state. */
 function lgReadUrl(){
-  LEAGUE_SEL=urlPick('league',LEAGUE_SEL,null,v=>parseInt(v,10)>0?parseInt(v,10):null);
-  LEAGUE_TYPE=urlPick('type',LEAGUE_TYPE,'classic',v=>v==='h2h'||v==='classic'?v:null);
-  LEAGUE_PAGE=urlPick('page',LEAGUE_PAGE,1,v=>parseInt(v,10)>0?parseInt(v,10):null);
-  LEAGUE_SORT=urlPick('sort',LEAGUE_SORT,'rank',v=>{const s=leagueSortSpec(v);return s?s.key:null;});
-  LEAGUE_DIR=urlPick('dir',LEAGUE_DIR,0,v=>v==='asc'?1:v==='desc'?-1:null);
-  LEAGUE_VIEW=urlPick('layout',LEAGUE_VIEW,'compact',v=>v==='detailed'||v==='compact'?v:null);
+  if(urlEntryOnce('leagues')){
+    LEAGUE_SEL=urlPick('league',LEAGUE_SEL,null,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    LEAGUE_TYPE=urlPick('type',LEAGUE_TYPE,'classic',v=>v==='h2h'||v==='classic'?v:null);
+    LEAGUE_PAGE=urlPick('page',LEAGUE_PAGE,1,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    LEAGUE_SORT=urlPick('sort',LEAGUE_SORT,'rank',v=>{const s=leagueSortSpec(v);return s?s.key:null;});
+    LEAGUE_DIR=urlPick('dir',LEAGUE_DIR,0,v=>v==='asc'?1:v==='desc'?-1:null);
+    LEAGUE_VIEW=urlPick('layout',LEAGUE_VIEW,'compact',v=>v==='detailed'||v==='compact'?v:null);
+  }
   lgWriteUrl();
 }
 function lgWriteUrl(){
@@ -21526,7 +21564,7 @@ async function hydrateDossier(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   if(!teams.length){host.innerHTML=stateBox('shield','Between seasons','Club dossiers appear the moment the new season opens in the FPL API.');return;}
-  DOSSIER_TEAM=urlPick('team',DOSSIER_TEAM,null,v=>parseInt(v,10)||null);
+  if(urlEntryOnce('dossier'))DOSSIER_TEAM=urlPick('team',DOSSIER_TEAM,null,v=>parseInt(v,10)||null);
   if(DOSSIER_TEAM==null||!b.teams[DOSSIER_TEAM])DOSSIER_TEAM=teams[0].id;
   setUrlState({team:DOSSIER_TEAM!==teams[0].id?DOSSIER_TEAM:null});
   const tid=DOSSIER_TEAM;
@@ -21721,8 +21759,10 @@ function lgfSeg(id,cur,opts){
     '<button class="seg-b'+(o[0]===cur?' on':'')+'" data-v="'+o[0]+'">'+o[1]+'</button>').join('')+'</div>';
 }
 function lgfReadUrl(){
-  LGF_VENUE=urlPick('venue',LGF_VENUE,'overall',v=>['overall','home','away'].indexOf(v)>=0?v:null);
-  LGF_WIN=urlPick('win',LGF_WIN,'5',v=>['5','10','20'].indexOf(String(v))>=0?String(v):null);
+  if(urlEntryOnce('clubform')){
+    LGF_VENUE=urlPick('venue',LGF_VENUE,'overall',v=>['overall','home','away'].indexOf(v)>=0?v:null);
+    LGF_WIN=urlPick('win',LGF_WIN,'5',v=>['5','10','20'].indexOf(String(v))>=0?String(v):null);
+  }
   lgfWriteUrl();
 }
 function lgfWriteUrl(){
@@ -22272,7 +22312,7 @@ async function hydrateResults(host){
      not, which is exactly when this should move on. Paging still works
      from wherever it lands. */
   RES_GW_DEFAULT=(b.upcoming||b.cur).id;
-  RES_GW=urlPick('gw',RES_GW,RES_GW_DEFAULT,v=>{const g=parseInt(v,10);return g>=1&&g<=38?g:null;});
+  if(urlEntryOnce('results'))RES_GW=urlPick('gw',RES_GW,RES_GW_DEFAULT,v=>{const g=parseInt(v,10);return g>=1&&g<=38?g:null;});
   if(RES_GW==null)RES_GW=RES_GW_DEFAULT;
   setUrlState({gw:RES_GW!==RES_GW_DEFAULT?RES_GW:null});
   const gw=RES_GW;
@@ -22480,7 +22520,7 @@ function csMatrixData(m){
 }
 async function hydrateCsMatrix(host){
   host.innerHTML=skel(6);
-  CSM_N=urlPick('n',CSM_N,6,v=>+v===10?10:+v===6?6:null);
+  if(urlEntryOnce('csmatrix'))CSM_N=urlPick('n',CSM_N,6,v=>+v===10?10:+v===6?6:null);
   setUrlState({n:CSM_N!==6?CSM_N:null});
   let m;try{m=await loadModelBundle();}catch(e){
     host.innerHTML=stateBox('shield','Clean-sheet odds unavailable','The matrix loads from our PL Simulator model bundle. This usually clears within a minute. Try again.',retryBtn());return;}
@@ -23344,7 +23384,7 @@ async function hydrateLineups(host){
   const gp=teamGamesPlayed(fixtures);
   const teams=b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name));
   if(!teams.length){host.innerHTML=stateBox('squad','No clubs yet','Projected lineups appear once the season data loads.');return;}
-  LINEUP_TEAM=urlPick('team',LINEUP_TEAM,null,v=>parseInt(v,10)||null);
+  if(urlEntryOnce('lineups'))LINEUP_TEAM=urlPick('team',LINEUP_TEAM,null,v=>parseInt(v,10)||null);
   if(LINEUP_TEAM==null||!b.teams[LINEUP_TEAM])LINEUP_TEAM=teams[0].id;
   setUrlState({team:LINEUP_TEAM!==teams[0].id?LINEUP_TEAM:null});
   const t=b.teams[LINEUP_TEAM];
@@ -24008,7 +24048,7 @@ async function hydrateDraft(host){
   const hIdx=histPriorIndex(A);
   /* A shared draft: ?ids= names the fifteen. It fills the working draft,
      never the one saved on this device — that still takes a deliberate save. */
-  const linkIds=urlState('ids')?urlIdList(urlState('ids'),15):[];
+  const linkIds=urlEntryOnce('draft')&&urlState('ids')?urlIdList(urlState('ids'),15):[];
   if(linkIds.length)DRAFT_IDS=linkIds;
   if(DRAFT_IDS==null)DRAFT_IDS=loadDraftIds();
   /* ── The planner's two in-season inputs ────────────────────────────

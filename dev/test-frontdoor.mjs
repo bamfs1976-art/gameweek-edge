@@ -122,9 +122,11 @@ check('a linked team skips the pitch', await run(async (page, ctx) => {
   await go(page, '/', SOCIAL); return where(page);
 }), 'app @ /');
 
+/* A hash written as a path (#players) now resolves the way the path would,
+   so the bookmark lands on the players table rather than on home. */
 check('bookmarked #players reaches the app', await run(async (page) => {
   await go(page, '/#players'); return where(page);
-}), 'app @ /');
+}), 'app @ /players');
 
 check('a same-origin referrer never triggers the pitch', await run(async (page, ctx) => {
   /* Belt and braces: ge-visited already covers the landing -> app trip, but
