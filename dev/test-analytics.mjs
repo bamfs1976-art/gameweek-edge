@@ -133,7 +133,7 @@ console.log('• areas roll up, and an untouched area is reported as a finding')
 
   /* The Planner having zero external views was the sharpest finding in the
      first sample, and an absent row is easy to miss. */
-  ok(s.untouchedAreas.includes('players') && s.untouchedAreas.includes('match centre'),
+  ok(s.untouchedAreas.includes('players') && s.untouchedAreas.includes('football'),
     'areas nobody opened are listed explicitly (' + s.untouchedAreas.join(', ') + ')');
   ok(!s.untouchedAreas.includes('home'), 'and a touched area is not');
   ok(!s.untouchedAreas.includes('studio'), 'studio is owner-only, so it is never a finding');
