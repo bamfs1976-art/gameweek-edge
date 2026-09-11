@@ -2239,6 +2239,13 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sig-v{flex:0 0 auto;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
 .sig-v.pos{color:var(--green)}.sig-v.neg{color:var(--red)}.sig-v.warn{color:var(--accent-warn)}
+/* Never colour alone: a rising figure gets an arrow, a falling one too, a
+   warning a mark, so the feed reads the same without the hue. */
+.sig-v.pos::before{content:"\25B2 ";font-size:.7em}
+.sig-v.neg::before{content:"\25BC ";font-size:.7em}
+.sig-v.warn::before{content:"! "}
+.dl-click{cursor:pointer}
+.dl-click:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px;background:var(--surface-3)}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -4147,6 +4154,30 @@ function enhanceTable(table){
 function enhanceTables(root){
   Array.prototype.forEach.call((root||document).querySelectorAll('table.ptable:not([data-tbl-on])'),enhanceTable);
 }
+/* ── A11Y ENHANCER ───────────────────────────────────────
+   Two things the string-built markup gets wrong everywhere at once, fixed
+   in one place as it paints. A clickable list row (.dl-click) is a
+   control, so it takes focus and opens on Enter or Space. A card title is
+   a section heading, so the outline of every view reads h1, then its
+   sections, without touching two hundred templates. */
+function enhanceA11y(root){
+  root=root||document;
+  Array.prototype.forEach.call(root.querySelectorAll('.dl-click:not([tabindex])'),el=>{
+    el.tabIndex=0;
+    if(!el.getAttribute('role'))el.setAttribute('role','button');
+  });
+  Array.prototype.forEach.call(root.querySelectorAll('div.card-title:not([role])'),el=>{
+    el.setAttribute('role','heading');el.setAttribute('aria-level','2');
+  });
+}
+function initA11y(){
+  document.addEventListener('keydown',e=>{
+    const t=e.target;
+    if(!t||!t.classList||!t.classList.contains('dl-click'))return;
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    e.preventDefault();t.click();
+  });
+}
 let TBL_MO=null;
 function watchTables(){
   const pages=document.getElementById('pages');
@@ -4154,10 +4185,10 @@ function watchTables(){
   let queued=false;
   TBL_MO=new MutationObserver(()=>{
     if(queued)return;queued=true;
-    (window.requestAnimationFrame||setTimeout)(()=>{queued=false;enhanceTables(pages);});
+    (window.requestAnimationFrame||setTimeout)(()=>{queued=false;enhanceTables(pages);enhanceA11y(pages);});
   });
   TBL_MO.observe(pages,{childList:true,subtree:true});
-  enhanceTables(pages);
+  enhanceTables(pages);enhanceA11y(pages);
 }
 
 function stateBox(icon,title,text,btn){
@@ -5866,12 +5897,19 @@ function copyViewLink(){
   track('copy_link',{panel:currentPanel});
   return socCopyText(location.href,'Link');
 }
+/* Views whose key result renders to a share card, and the handler. */
+const PAGE_SHARE={gwreport:'shareReportCard()',compare:'shareCompareCard()',gwdebrief:'shareDebriefCard()'};
 function pageToolsHtml(panelId){
-  if(!pageLinkable(panelId))return '';
-  return '<div class="page-head-tools">'+
+  const tools=[];
+  if(pageLinkable(panelId))tools.push(
     '<button type="button" class="btn btn-ghost btn-sm" id="copy-link-btn" onclick="copyViewLink()" '+
       'aria-label="Copy a link to this view" title="Copy a link to this view">'+
-      svg(ICON.link,'width="14" height="14"')+' Copy link</button></div>';
+      svg(ICON.link,'width="14" height="14"')+' Copy link</button>');
+  if(PAGE_SHARE[panelId])tools.push(
+    '<button type="button" class="btn btn-ghost btn-sm" id="share-view-btn" onclick="'+PAGE_SHARE[panelId]+'" '+
+      'aria-label="Share this view as an image" title="Share this view as an image">'+
+      svg(ICON.arrows,'width="14" height="14"')+' Share</button>');
+  return tools.length?'<div class="page-head-tools">'+tools.join('')+'</div>':'';
 }
 
 /* ── RENDER A PAGE ─────────────────────────────────────── */
@@ -7562,6 +7600,9 @@ async function hydrateGwdebrief(host){
     ? n.chips.map(c=>esc(CHIP_API_LABEL[c.name]||c.name)+' '+fmtK(c.n)).join(' · ')
     : 'none played';
   const who=id=>{const e=b.els[id];return e?esc(e.web_name):'—';};
+  window._debrief={gw:ev.id,avg:n.avg,high:n.high,captained:n.captained?(b.els[n.captained]||{}).web_name||null:null,
+    transfers:n.transfers,chips:n.chips.map(c=>(CHIP_API_LABEL[c.name]||c.name)+' '+fmtK(c.n)).join(', '),
+    settled,scorers:pack.scorers.slice(0,8).map(r=>({name:r.el.web_name,team:teamShort(b,r.el.team),pos:posShort(b,r.el.element_type),pts:r.pts}))};
   const numbers=card('GW'+ev.id+' in numbers '+prov,
     '<div class="grid g-4">'+
       kpi('Average score',n.avg==null?'—':fmtNum(n.avg),'across every manager','var(--blue)')+
@@ -7675,6 +7716,7 @@ async function hydrateGwhistory(host){
   const sd=Math.round(Math.sqrt(cur.reduce((s,c)=>s+(c.points-avgPts)*(c.points-avgPts),0)/cur.length));
   let streak=0,bestStreak=0;
   for(let i=1;i<cur.length;i++){if(cur[i].overall_rank<cur[i-1].overall_rank){streak++;if(streak>bestStreak)bestStreak=streak;}else streak=0;}
+  window._reportSeason={gws:cur.length,avgPts,benchTot,hitsTot,green,bestGw:best.event,bestPts:best.points,bestRank,nowRank};
   const shape='<div class="grid g-4 mb-20">'+
     kpi('Best rank',bestRank?fmtNum(bestRank):'—','season high','var(--green)')+
     kpi('Consistency','±'+sd,'points swing (std dev)','var(--blue)')+
@@ -8062,6 +8104,29 @@ async function shareCaptainCard(){
   const spec=GWEShare.captainSpec(d);
   track('share_card',{card:'captain',gw:d.gw});
   return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Captain card downloaded');
+}
+/* The three view cards: the Manager Report, a player comparison and the
+   Gameweek Debrief. Same rule: only what the page has just computed. */
+async function shareReportCard(){
+  const d=window._report;if(!d){toast('Open the Manager Report first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.reportSpec(Object.assign({},d,{season:window._reportSeason||null}));
+  track('share_card',{card:'report',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Manager Report card downloaded');
+}
+async function shareCompareCard(){
+  const d=window._cmp;if(!d||!d.players||d.players.length<2){toast('Pick at least two players to compare first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.compareSpec(d);
+  track('share_card',{card:'compare',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Comparison card downloaded');
+}
+async function shareDebriefCard(){
+  const d=window._debrief;if(!d){toast('Open the Gameweek Debrief first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.debriefSpec(d);
+  track('share_card',{card:'debrief',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Debrief card downloaded');
 }
 async function shareRatingCard(){
   const d=window._rating;if(!d){toast('Rate your squad first');return;}
@@ -10931,6 +10996,10 @@ async function hydrateGwreport(host){
   const capLost=capPick?(bestBase-capBase)*((capPick.multiplier||2)-1):0;
   const gwTrs=(Array.isArray(trs)?trs:[]).filter(t=>t.event===gw);
   const trNet=gwTrs.reduce((s,t)=>s+(pts[t.element_in]||0)-(pts[t.element_out]||0),0)-(eh.event_transfers_cost||0);
+  /* What the share card can say: only what this page has just computed. */
+  window._report={gw,points:eh.points||0,avg,high,rank:orNow,rankMove:arrow,bench:eh.points_on_bench||0,
+    transfers:eh.event_transfers||0,hits:eh.event_transfers_cost||0,capLost,trNet,
+    captain:capPick?(b.els[capPick.element]||{}).web_name||null:null,verdict};
 
   /* ── What worked ── */
   const good=[];
@@ -15096,6 +15165,13 @@ async function hydrateCompare(host){
   compareWriteUrl();
   const sel=COMPARE.map(id=>b.els[id]);
   const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
+  /* The share card: the same players and figures, as plain values. */
+  window._cmp=sel.length?{gw:(b.upcoming||b.cur||{}).id,
+    players:sel.map(e=>({name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),price:money(e.now_cost)})),
+    metrics:[['Price',e=>money(e.now_cost)],['Owned',e=>e.selected_by_percent+'%'],['Total pts',e=>e.total_points],
+      ['Form',e=>e.form],['Pts / game',e=>e.points_per_game],['xG',e=>e.expected_goals||'n/a'],['xA',e=>e.expected_assists||'n/a'],
+      ['xP next 6',e=>{try{return horizonXP(b,e,hz).toFixed(1);}catch(_){return 'n/a';}}]]
+      .map(([label,fn])=>({label,values:sel.map(e=>String(fn(e)))}))}:null;
   /* Side-by-side fixture comparison over the next 6 gameweeks — one row per
      gameweek, each cell the player's fixture coloured by difficulty. */
   const maxN=Math.max.apply(null,[0].concat(sel.map(e=>(hz[e.team]||[]).length)));
@@ -25401,6 +25477,7 @@ function init(){
      door in the head before this file ever renders, so anyone reaching init()
      has either seen the pitch or asked for the app by name. */
   watchTables();
+  initA11y();
   initCmdk();
   initKeys();
   setInterval(tickTicker,1000);
