@@ -28,6 +28,13 @@ const CHECKS = [
   { path: '/fantasy-efl/record/', status: 200, why: 'the model\'s record' },
   { path: '/fantasy-efl/how-to-play/', status: 200, why: 'the guide' },
 
+  /* Discoverability, added 12 Sep 2026: the sitemap, the robots file that
+     names it, and one pre-rendered content shell served at its clean path. */
+  { path: '/robots.txt', status: 200, why: 'robots.txt naming the sitemap' },
+  { path: '/sitemap.xml', status: 200, why: 'the build-time sitemap' },
+  { path: '/glossary', status: 200, why: 'a pre-rendered content route at its clean path' },
+  { path: '/methodology', status: 200, why: 'the methodology shell with the FAQ schema' },
+
   /* The retired app. These URLs were public, so they must not 404. */
   { path: '/euro/', redirect: '/', why: 'retired Euro app → front door' },
   { path: '/euro/index.html', redirect: '/', why: 'retired Euro shell → front door' },

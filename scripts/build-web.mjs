@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { publishRecord } from './efl/publish-record.mjs';
 import { publishRecord as publishFplRecord } from './record/publish-record.mjs';
+import { buildSeo } from './seo/build.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
@@ -166,6 +167,10 @@ const efl = await buildEfl();
 /* The FPL ledger's public projection, next to the page that reads it. */
 const fplRecord = await publishFplRecord(join(OUT, 'record'));
 console.log(`✓ FPL record → www/record/record.json (${fplRecord.gameweeks} gameweek(s), ${fplRecord.graded} graded)`);
+/* Sitemap, robots and the pre-rendered content shells, from the same
+   registries the app routes by (scripts/seo/routes.mjs). */
+const seo = await buildSeo(ROOT, OUT);
+console.log(`✓ SEO → www/sitemap.xml (${seo.urls} urls), www/robots.txt, ${seo.shells.length} pre-rendered shell(s): ${seo.shells.join(', ')}`);
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');
 console.log(`✓ Build stamp ${stamp} → www/version.json`);

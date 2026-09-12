@@ -666,6 +666,22 @@ useful — the **overpriced**. Benchmarking within position is deliberate:
 defenders score fewer points per pound than forwards by design, so one
 league‑wide rate would brand every defender a bargain.
 
+**Discoverability** (September 2026). Every public route writes its own
+title, description, canonical URL and social tags through `seoSync()` in
+`index.html`, from the same registries the app routes by (`NAV`,
+`PANEL_CONTENT`, `PANEL_PATH`, `PANEL_VIEW`); the canonical is the panel's
+public path with no query, and a retired id that names a view (`/methodology`)
+keeps its own. `scripts/seo/` reads the same registries at build time
+(`npm run build:web`): `www/sitemap.xml` lists every public route and static
+page once, `www/robots.txt` allows the site and names the sitemap, and five
+content routes (`/methodology`, `/design`, `/glossary`, `/fplbasics`, `/blog`)
+get a pre-rendered shell, the whole app with that route's head and copy
+already in the HTML, which `netlify.toml` serves at the clean path and the
+app hydrates on load. The landing page carries `SoftwareApplication`
+structured data and the methodology shell `FAQPage`, built from the landing
+FAQ it also shows. `dev/test-seo.mjs` holds all of it together and
+`dev/site-check.mjs` checks the deployed sitemap, robots and shells.
+
 **Ten Seasons** — the archive is a hub now. *Archive* (free) keeps the
 all-time records, the two-career comparison and the daily puzzle. *Season
 table* (Pro, `/archive?view=seasons&season=2023-24`) is the season history
