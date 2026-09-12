@@ -5,8 +5,10 @@
 -- localStorage, and a signed-in reader's groups also stay local when this
 -- table is missing or unreachable.
 --
--- Run in the Supabase SQL editor (idempotent). NOT YET APPLIED: apply it as
--- the migration `create_gwedge_groups` and note the date here.
+-- Run in the Supabase SQL editor (idempotent).
+--
+-- APPLIED 12 Sep 2026 to project knodunjnsxelmpziupwk, as the migration
+-- `create_gwedge_groups`. Kept here as the source of truth.
 
 create table if not exists public.gwedge_groups (
   user_id    uuid not null references auth.users (id) on delete cascade,

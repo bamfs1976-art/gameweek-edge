@@ -106,7 +106,7 @@ Players
 ├── Scout Board          (free)  Per-90 shortlist + price ladder, DefCon + bonus by club
 ├── Player Compare       (free)  Up to 4 players side by side
 ├── Stats Heatmap        (free)  Players by gameweek on any stat, colour-scaled, sortable by consistency
-├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
+├── Price Predictor      (free)  Progress bars to a move, countdown, hourly momentum, searchable day-by-day history, value tables
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
 └── Latest News          (free)  Official player news, newest first
 
@@ -639,6 +639,23 @@ of a price rise/fall tonight** (net transfers vs an ownership‑scaled threshold
 logistic mapping, capped 5–95%, labelled an estimate), with sorted riser/faller
 lists; net‑transfer momentum is kept as a secondary signal, plus
 **points‑per‑million** best/worst value tables.
+
+The Price Centre upgrade (September 2026) is presentation over the same two
+numbers, FPL's own progress figure where it publishes one and the threshold
+estimate where it does not. Each row carries a **progress bar** that fills from
+the centre toward a rise or a fall, a **countdown** to the next price change
+ticks from the schedule the game publishes (`price_change_deadlines`), and a
+**Hourly momentum** card shows net transfers per hour over the last 24 hours
+with a sparkline per player. A third view, **Price history** (`/prices?view=history`,
+`?q=` for a search), lists who rose and who fell day by day, searchable by
+player or club. Both the momentum and the history come from our own hourly
+record: the push sender (`netlify/functions/push-cron.js`) already reads the
+bootstrap every hour, so it writes the last 25 samples of every player's
+transfer counts and the changes it sees into `gwedge_push_state`
+(`netlify/lib/price-feed.js`), and `netlify/functions/price-feed.js` serves
+them at `/api/price-feed`, cached ten minutes. Where the feed is not
+configured the panel keeps the game's own figures and says the history is not
+recorded yet.
 
 Topped by the **Value board** — the forward‑looking counterpart. Every outfield
 player is projected over their next 6 fixtures, then priced against the *median

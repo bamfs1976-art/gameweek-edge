@@ -36,14 +36,17 @@ function priceChangeProb(el, totalPlayers) {
    netlify/lib/suspension.js. No threshold is written in this file, and
    scripts/check-shell.mjs fails the build if one reappears. */
 const { loadRule, justOneFromBan } = require('../lib/suspension');
+/* The price feed's memory: hourly transfer samples and the changes seen,
+   written here because this is the one job that already reads the
+   bootstrap every hour. Read back by netlify/functions/price-feed.js. */
+const { recordFlow, recordChanges } = require('../lib/price-feed');
 
 exports.handler = async () => {
   const pub = process.env.VAPID_PUBLIC_KEY, priv = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT || 'mailto:alerts@gameweekedge.co.uk';
   const supaUrl = process.env.SUPABASE_URL, supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!pub || !priv || !supaUrl || !supaKey) return { statusCode: 200, body: 'not configured' };
+  if (!supaUrl || !supaKey) return { statusCode: 200, body: 'not configured' };
 
-  webpush.setVapidDetails(subject, pub, priv);
   const sb = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
 
   const getState = async (k) => { const { data } = await sb.from('gwedge_push_state').select('value').eq('key', k).maybeSingle(); return data ? data.value : null; };
@@ -80,6 +83,19 @@ exports.handler = async () => {
   await setState('snapshot', snap);
 
   const hadSnapshot = Object.keys(prev).length > 0;   /* don't fire on the very first run */
+  /* Write the feed before anything is sent, so a push failure never costs
+     an hour of history; and never let the feed cost an alert. */
+  try {
+    const nowIso = new Date().toISOString();
+    await setState('price_flow', recordFlow(await getState('price_flow'), boot.elements, nowIso));
+    if (hadSnapshot && (risers.length || fallers.length)) {
+      const changes = [...risers, ...fallers].map((e) => ({
+        id: e.id, n: e.web_name, t: teams[e.team] || '', p: e.element_type, from: prev[e.id].c, to: e.now_cost }));
+      await setState('price_log', recordChanges(await getState('price_log'), changes, nowIso.slice(0, 10)));
+    }
+  } catch (_) { /* the feed is a convenience; the alerts below still go */ }
+  if (!pub || !priv) return { statusCode: 200, body: 'feed recorded; push not configured' };
+  webpush.setVapidDetails(subject, pub, priv);
   if (hadSnapshot && (risers.length || fallers.length)) {
     alerts.push({ type: 'price', title: 'Overnight price changes',
       body: risers.length + ' risers, ' + fallers.length + ' fallers. ' +

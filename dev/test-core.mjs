@@ -69,6 +69,15 @@ const pieces = [
   extractFn(html, 'horizonXP').replace('function horizonXP(', 'function horizonXPreal('),
   extractFn(html, 'priceChangeProb'),
   extractFn(html, 'fplPriceMove'),
+  extractFn(html, 'priceBarSpec'),
+  extractFn(html, 'priceBarHtml'),
+  extractFn(html, 'fmtCountdown'),
+  extractFn(html, 'priceFlowFor'),
+  extractFn(html, 'priceMomentum'),
+  extractFn(html, 'priceMomentumBoard'),
+  extractFn(html, 'prFold'),
+  extractFn(html, 'priceHistoryDays'),
+  ...['PR_FLOW_HOURS', 'PR_HISTORY_DAYS'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'priceLocked'),
   extractFn(html, 'priceSource'),
   ...['CHIP_API_LABEL'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
@@ -397,7 +406,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5755,6 +5764,55 @@ section('Mini-Leagues: groups of Team IDs, captains, transfers, differentials, o
   const ol = lgOverlap([1, 2, 3, 4], [{ entry: 5, name: 'Twin', xi: [1, 2, 3, 9] }, { entry: 6, name: 'Other', xi: [7, 8] }]);
   ok(ol[0].name === 'Twin' && ol[0].shared === 3 && ol[0].of === 4 && ol[0].share === 0.75 && ol[1].share === 0, 'overlap is the share of your eleven a rival also starts, most similar first');
   ok(!/—/.test(JSON.stringify([rows, caps, wk, diffs, ov, ol])), 'no em dash in the league copy');
+}
+
+section('Price Centre: the bar, the clock, the momentum and the history are presentation over the same numbers');
+{
+  const { priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, priceHistoryDays, priceChangeProb, PR_FLOW_HOURS, PR_HISTORY_DAYS } = core;
+  ok(PR_FLOW_HOURS === 24 && PR_HISTORY_DAYS === 30, 'a day of momentum and a month of history');
+  /* The bar fills from the centre, and only ever as far as the end. */
+  ok(priceBarSpec(0.62).dir === 'rise' && priceBarSpec(0.62).pct === 62, 'a positive fraction is a rise, drawn to the percentage');
+  ok(priceBarSpec(-0.3).dir === 'fall' && priceBarSpec(-0.3).pct === 30, 'a negative fraction is a fall');
+  ok(priceBarSpec(1.8).pct === 100 && priceBarSpec(-4).pct === 100, 'past the end draws a full bar, never more');
+  ok(priceBarSpec(0).dir === 'flat' && priceBarSpec(NaN).dir === 'flat' && priceBarSpec('x').pct === 0, 'zero, NaN and junk are flat, not a bar');
+  const rise = priceBarHtml(0.5), fall = priceBarHtml(-0.5), flat = priceBarHtml(0);
+  ok(/class="pr-fill rise" style="left:50%;width:25\.0%"/.test(rise), 'a rise fills rightward from the middle, half the track for 50%');
+  ok(/class="pr-fill fall" style="right:50%;width:25\.0%"/.test(fall), 'a fall fills leftward from the middle');
+  ok(!/pr-fill/.test(flat) && /pr-mid/.test(flat), 'a flat player keeps the track and the centre line and no fill');
+  ok(/role="img" aria-label="50% of the way to a rise"/.test(rise), 'the bar says in words what it draws');
+  /* The estimate's own progress figure is what the bar reads, unchanged. */
+  const pc = priceChangeProb({ transfers_in_event: 60000, transfers_out_event: 0, selected_by_percent: '2.0' }, 10e6);
+  ok(Math.abs(pc.progress - 1) < 1e-9 && priceBarSpec(pc.progress).pct === 100, 'the threshold model’s progress drives the bar without a second model');
+  /* The clock. */
+  ok(fmtCountdown(5 * 3600e3 + 12 * 60e3) === '5h 12m' && fmtCountdown(3 * 3600e3 + 5 * 60e3) === '3h 05m', 'hours and zero-padded minutes');
+  ok(fmtCountdown(42 * 60e3) === '42m' && fmtCountdown(30e3) === 'under a minute', 'minutes alone, then under a minute');
+  ok(fmtCountdown(2 * 86400e3 + 3600e3) === '2d 1h', 'days and hours beyond a day');
+  ok(fmtCountdown(-5) === 'any moment now' && fmtCountdown(0) === 'any moment now', 'a time that has passed is due, not negative');
+  ok(fmtCountdown('x') === null && fmtCountdown(NaN) === null, 'no number is null rather than a made-up string');
+  /* Momentum from the feed. */
+  const feed = { ts: ['t1', 't2', 't3', 't4'], net: { 7: [100, 200, null, 300], 8: [-50, -50, -50, -50], 9: [0, 0, 0, 0] } };
+  ok(priceFlowFor(feed, 7).length === 4 && priceFlowFor(feed, 7)[2] === null, 'a player’s deltas keep the null where the counters reset');
+  ok(priceFlowFor(feed, 99) === null && priceFlowFor(null, 7) === null && priceFlowFor({}, 7) === null, 'no feed or no player is null');
+  const m = priceMomentum(feed, 7);
+  ok(m.sum === 600 && m.hours === 3 && m.perHour === 200 && m.last === 300 && m.series.length === 3, 'sum, hours with data, per-hour average and the latest hour');
+  ok(priceMomentum(feed, 8).sum === -200 && priceMomentum(feed, 8).perHour === -50, 'a seller reads negative');
+  const board = priceMomentumBoard(feed, [{ id: 7 }, { id: 8 }, { id: 9 }, { id: 10 }], 5);
+  ok(board.in.length === 1 && board.in[0].e.id === 7 && board.out.length === 1 && board.out[0].e.id === 8, 'bought and sold boards, flat and unknown players on neither');
+  ok(priceMomentumBoard(null, [{ id: 7 }], 5).in.length === 0, 'no feed is an empty board rather than a throw');
+  /* The history, by day and searchable. */
+  const log = { days: {
+    '2026-09-10': [{ id: 1, n: 'Haaland', t: 'MCI', p: 4, from: 140, to: 141 }, { id: 2, n: 'Saka', t: 'ARS', p: 3, from: 100, to: 99 }, { id: 3, n: 'Ødegaard', t: 'ARS', p: 3, from: 80, to: 81 }],
+    '2026-09-11': [{ id: 4, n: 'Salah', t: 'LIV', p: 3, from: 130, to: 129 }, { id: 5, n: 'Bad', t: 'X', from: 'n', to: 1 }, { id: 6, n: 'Same', t: 'X', from: 50, to: 50 }],
+    'junk': [{ id: 9, n: 'Nope', t: 'Z', from: 1, to: 2 }] } };
+  const all = priceHistoryDays(log, '', 30);
+  ok(all.length === 2 && all[0].day === '2026-09-11' && all[1].day === '2026-09-10', 'newest day first, and a key that is not a date is ignored');
+  ok(all[0].rows.length === 1 && all[0].rows[0].name === 'Salah' && all[0].down === 1 && all[0].up === 0, 'unparseable and unchanged rows are dropped');
+  ok(all[1].rows.map((r) => r.name).join(',') === 'Haaland,Ødegaard,Saka' && all[1].up === 2 && all[1].down === 1, 'risers first, then fallers, alphabetical within');
+  ok(priceHistoryDays(log, 'ars', 30).length === 1 && priceHistoryDays(log, 'ars', 30)[0].rows.length === 2, 'a club short name matches, case-insensitive, and empty days drop out');
+  ok(priceHistoryDays(log, 'odegaard', 30)[0].rows[0].name === 'Ødegaard', 'accents fold: odegaard finds Ødegaard');
+  ok(priceHistoryDays(log, 'zzz', 30).length === 0, 'no match is an empty list');
+  ok(priceHistoryDays(log, '', 1).length === 1 && priceHistoryDays(null, '', 30).length === 0, 'the day limit holds and no log is no days');
+  ok(!/—/.test(JSON.stringify([priceBarSpec(0.5), fmtCountdown(1e6), all])), 'no em dash in the price copy');
 }
 
 section('colour ramps: the heatmap steps carry their ink at AA, and the FDR ramp is one ramp');

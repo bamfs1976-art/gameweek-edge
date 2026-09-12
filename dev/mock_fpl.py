@@ -319,9 +319,51 @@ phases = [{"id": 1, "name": "Overall", "start_event": 1, "stop_event": 38,
     for i, (n, lo, hi) in enumerate([("August", 1, 3), ("September", 4, 6),
                                      ("October", 7, 9)])]
 
+# The nights the game changes prices on, the way the real payload carries
+# them under game_config.settings. The price panel reads its countdown
+# from here and says nothing when the list is empty, so the mock lists the
+# next seven nights at 23:00 UTC (midnight in British Summer Time).
+_pc_base = datetime.now(timezone.utc).replace(hour=23, minute=0, second=0, microsecond=0)
+if _pc_base <= datetime.now(timezone.utc):
+    _pc_base += timedelta(days=1)
+game_config = {"settings": {"price_change_deadlines": [
+    (_pc_base + timedelta(days=i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(7)]}}
+
 bootstrap = {"teams": teams, "elements": elements, "element_types": element_types,
-             "game_settings": game_settings, "phases": phases, "chips": chips,
+             "game_settings": game_settings, "game_config": game_config,
+             "phases": phases, "chips": chips,
              "events": events, "total_players": 10_000_000}
+
+
+def price_feed():
+    """What netlify/functions/price-feed.js serves: 24 hourly net-transfer
+    deltas per player and the price changes seen, by day. Deterministic in
+    the element id so a test can name a mover; one hour in nine is a null,
+    the way a deadline passing inside an hour reads in the real feed."""
+    now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    ts = [(now - timedelta(hours=23 - i)).strftime("%Y-%m-%dT%H:%M:%SZ") for i in range(24)]
+    net = {}
+    for e in elements:
+        eid = e["id"]
+        if eid % 4 == 0:
+            continue
+        base = ((eid * 37) % 900) - 450
+        net[str(eid)] = [None if (i == 5 and eid % 9 == 0)
+                         else base + ((eid * (i + 1)) % 120) - 60 for i in range(24)]
+    short = {t["id"]: t["short_name"] for t in teams}
+    days = {}
+    for d in range(6):
+        day = (now - timedelta(days=d)).strftime("%Y-%m-%d")
+        rows = []
+        for e in elements:
+            eid = e["id"]
+            if (eid + d) % 41 == 0:
+                up = eid % 2 == 0
+                to = e["now_cost"]
+                rows.append({"id": eid, "n": e["web_name"], "t": short[e["team"]],
+                             "p": e["element_type"], "from": to - 1 if up else to + 1, "to": to})
+        days[day] = rows
+    return {"configured": True, "hours": 24, "ts": ts, "net": net, "log": {"days": days}}
 
 
 def live_el(e):
@@ -632,6 +674,8 @@ def own_api(path):
             return None
         with open(hp, "r", encoding="utf-8") as fh:
             return json.load(fh)
+    if path == "/api/price-feed":
+        return price_feed()
     if path == "/api/team-elo":
         return {"season": "mock", "elo": {str(t["id"]): 1650 + 22 * i
                                           for i, t in enumerate(teams)}}

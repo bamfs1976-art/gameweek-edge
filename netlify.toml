@@ -248,6 +248,14 @@
   status = 200
   force = true
 
+# Price Centre feed: hourly transfer momentum and the day-by-day price
+# changes the hourly push sender records (netlify/lib/price-feed.js).
+[[redirects]]
+  from = "/api/price-feed"
+  to = "/.netlify/functions/price-feed"
+  status = 200
+  force = true
+
 # Midweek European and cup fixtures by FPL gameweek — the congestion the
 # official FPL API cannot see, used by the minutes model and Rotation Risk.
 [[redirects]]
