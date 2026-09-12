@@ -1185,6 +1185,9 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
    which is reserved for decorative glyphs. */
 .sb-foot-v{font-size:.66rem;color:var(--text-3)}
 .sb-foot-legal{font-size:var(--fs-min);line-height:1.45;color:var(--text-3);margin:0}
+.sb-foot-links{font-size:var(--fs-min);line-height:1.6;color:var(--text-3);margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px 10px}
+.sb-foot-links a{color:var(--text-2);text-decoration:underline}
+.sb-foot-links:empty{display:none}
 /* Sibling app card. Fantasy EFL is a different competition on the same
    account, so it gets a real card rather than another footer link — but a
    quiet one, below the account button, not competing with the nav. */
@@ -2978,7 +2981,8 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
         <span class="sb-sib-go" aria-hidden="true">↗</span>
       </a>
       <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>
-      <p class="sb-foot-legal">Independent app: not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively. <a href="/privacy.html" style="color:inherit;text-decoration:underline">Privacy policy</a></p>
+      <p class="sb-foot-legal">Independent app: not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively.</p>
+      <p class="sb-foot-links" id="sb-foot-links"></p>
     </div>
   </aside>
 
@@ -5250,7 +5254,7 @@ function wireUXButtons(){
   const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent='Depth: '+densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
-(function(){function ux(){applyDensity(getDensity());wireUXButtons();buildRightRail();}
+(function(){function ux(){applyDensity(getDensity());wireUXButtons();buildRightRail();try{renderSiteLinks();}catch(_){}}
   if(document.readyState!=='loading')ux();else document.addEventListener('DOMContentLoaded',ux);
   window.addEventListener('resize',function(){if(!_railBuilt&&railWanted())buildRightRail();});})();
 
@@ -5581,6 +5585,10 @@ const MORE_GROUPS=[
     ['scout','Scout AI: the model XI, the report and Ask the Scout'],
     ['news','Injury and press-conference news'],
     ['blog','The Wire: the latest data briefings']]},
+  {label:'Community',items:[
+    ['__discord','Talk transfers, captains and the model with other managers'],
+    ['__league','Play against everyone who uses the app'],
+    ['__contact','Email the person who builds this']]},
   {label:'Account & help',items:[
     ['__mode','Simple shows five panels; Terminal shows every panel in the rail'],
     ['__account','Sign in, sync and manage your plan'],
@@ -5597,6 +5605,9 @@ async function hydrateMore(host){
           'setDisplayMode(\''+(m==='simple'?'terminal':'simple')+'\')','grid',false);}
       if(id==='__account')return moreRow('Account & settings',why,'openAccount()','users',false);
       if(id==='__feedback')return moreRow('Send feedback',why,'openFeedbackModal()','question',false);
+      if(id==='__discord'){if(!SITE_LINKS.discord)return '';return moreRow('Join the Discord',why,"window.open('"+SITE_LINKS.discord.replace(/'/g,'')+"','_blank','noopener')",'chat',false);}
+      if(id==='__league'){if(!SITE_LINKS.leagueCode)return '';return moreRow('Join the official mini-league',why,"window.open('"+LEAGUE_JOIN+encodeURIComponent(SITE_LINKS.leagueCode)+"','_blank','noopener')",'trophy',false);}
+      if(id==='__contact'){if(!SITE_LINKS.contact)return '';return moreRow('Contact',why,"location.href='mailto:"+SITE_LINKS.contact.replace(/'/g,'')+"'",'chat',false);}
       const p=PANELS[resolvePanel(id)];
       if(!p||!canSeePanel(p))return '';
       const label=id==='diffs'?'Differentials':p.label;
@@ -6157,6 +6168,28 @@ function areaTabsHtml(panelId){
    reads the same registries at build time for the sitemap and the
    pre-rendered shells, so the two can only ever agree. */
 const SITE_URL='https://gameweekedge.co.uk';
+/* ── Community and legal links, in one place ─────────────────
+   The Discord invite, the official mini-league's auto-join code, the
+   contact address and the terms page. Empty means the link is not shown:
+   in the sidebar footer, the More sheet, the landing page, the tool
+   pages and the articles, all of which read this constant (the static
+   pages at build time, through scripts/site/links.mjs). Fill a value and
+   every footer gains the link on the next build; nothing is hand-copied. */
+const SITE_LINKS={discord:'',leagueCode:'',contact:'',terms:''};
+const LEAGUE_JOIN='https://fantasy.premierleague.com/leagues/auto-join/';
+function siteFooterLinks(){
+  const l=SITE_LINKS,out=[];
+  if(l.contact)out.push(['mailto:'+l.contact,'Contact']);
+  if(l.terms)out.push([l.terms,'Terms']);
+  out.push(['/privacy.html','Privacy policy']);
+  if(l.discord)out.push([l.discord,'Discord',true]);
+  if(l.leagueCode)out.push([LEAGUE_JOIN+encodeURIComponent(l.leagueCode),'Official mini-league',true]);
+  return out;
+}
+function renderSiteLinks(){
+  const el=document.getElementById('sb-foot-links');if(!el)return;
+  el.innerHTML=siteFooterLinks().map(([href,label,ext])=>'<a href="'+esc(href)+'"'+(ext?' rel="noopener" target="_blank"':'')+'>'+esc(label)+'</a>').join('');
+}
 const SITE_TITLE='Gameweek Edge: the calm, clear edge for FPL managers';
 const SITE_DESC='The calm, clear companion for Fantasy Premier League managers: predicted points, an AI scout, live matchday tracking, mini-leagues, price predictions and alerts, built on the official FPL data.';
 function seoAliasFor(panelId){

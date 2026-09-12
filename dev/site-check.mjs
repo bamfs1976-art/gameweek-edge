@@ -34,6 +34,9 @@ const CHECKS = [
   { path: '/sitemap.xml', status: 200, why: 'the build-time sitemap' },
   { path: '/glossary', status: 200, why: 'a pre-rendered content route at its clean path' },
   { path: '/methodology', status: 200, why: 'the methodology shell with the FAQ schema' },
+  { path: '/tools/', status: 200, why: 'the tool pages index, rendered from the committed snapshot' },
+  { path: '/tools/fixture-difficulty/', status: 200, why: 'fixture difficulty by team' },
+  { path: '/tools/injuries/', status: 200, why: 'injuries and suspensions' },
 
   /* The retired app. These URLs were public, so they must not 404. */
   { path: '/euro/', redirect: '/', why: 'retired Euro app → front door' },
