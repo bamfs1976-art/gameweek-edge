@@ -294,6 +294,37 @@
 # ── SPA fallback ─────────────────────────────────────────────────
 # The app routes by real paths (/squad, /players, /planner, …), so every
 # path that is not a real file must serve the shell instead of the host
+# Pre-rendered shells for the public content routes. scripts/seo/build.mjs
+# writes www/<route>.html at build time: the app shell with that route's
+# title, description, canonical and social tags and its copy already in the
+# HTML, which the app then hydrates. A rewrite rather than trust in clean-URL
+# handling, so /glossary is served the same whatever the site setting. The
+# list mirrors PRERENDER in scripts/seo/routes.mjs; dev/test-seo.mjs checks.
+[[redirects]]
+  from = "/methodology"
+  to = "/methodology.html"
+  status = 200
+
+[[redirects]]
+  from = "/design"
+  to = "/design.html"
+  status = 200
+
+[[redirects]]
+  from = "/glossary"
+  to = "/glossary.html"
+  status = 200
+
+[[redirects]]
+  from = "/fplbasics"
+  to = "/fplbasics.html"
+  status = 200
+
+[[redirects]]
+  from = "/blog"
+  to = "/blog.html"
+  status = 200
+
 # 404 page. Not forced, so existing files (landing.html, icons, data,
 # /fantasy-efl/*) and every rule above still win; this is the LAST rule
 # and only catches what nothing else claimed.

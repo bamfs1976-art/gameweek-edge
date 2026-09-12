@@ -119,9 +119,12 @@ try{
 <meta property="og:description" content="An AI scout, predicted points, live matchday tracking, mini-leagues and alerts for Fantasy Premier League managers.">
 <meta property="og:image" content="https://gameweekedge.co.uk/icons/og.png">
 <meta property="og:url" content="https://gameweekedge.co.uk/">
+<meta property="og:site_name" content="Gameweek Edge">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Gameweek Edge: for fantasy managers">
+<meta name="twitter:description" content="An AI scout, predicted points, live matchday tracking, mini-leagues and alerts for Fantasy Premier League managers.">
 <meta name="twitter:image" content="https://gameweekedge.co.uk/icons/og.png">
+<link rel="canonical" href="https://gameweekedge.co.uk/">
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1057,6 +1060,9 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .sh-career .statgrid{grid-template-columns:repeat(4,1fr)}
 @media (max-width:600px){.sh-career .statgrid{grid-template-columns:repeat(2,1fr)}}
 @media (max-width:480px){.sh-career .sh-sm{display:none}}
+.faq-d{margin:0 0 8px}
+.faq-d summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--text)}
+.faq-d[open] summary{margin-bottom:4px}
 
 /* Watchlist item (row + inline AI verdict) */
 .wl-item{border-bottom:1px solid var(--border)}
@@ -5186,6 +5192,17 @@ const FPL_BASICS=[
   ['The deadline is absolute','Ninety minutes before the first match of the gameweek. Nothing can be changed after it. Not your captain, not your bench, nothing.'],
   ['Defensive Contribution (DefCon)','New-ish, and the cheapest points in the game. A defender making 10 clearances, blocks, interceptions and tackles in a match earns +2; a midfielder or forward needs 12 of those plus ball recoveries. Capped at +2 each.']
 ];
+/* The questions the landing page answers, kept here too so the methodology
+   page can show them and the FAQPage schema describes copy that is on the
+   page. dev/test-seo.mjs holds this and landing.html's FAQ together. */
+const FAQ=[
+  {"q": "Is this the official Fantasy Premier League app?", "a": "No. Gameweek Edge is an independent companion that uses the official FPL data to give you deeper analysis. It isn't affiliated with, endorsed by, or connected to the Premier League or the official Fantasy Premier League game."},
+  {"q": "How is this different from the official app or a live-rank site?", "a": "The official app is where you set your team, but it has no predictions, no AI and a reputation for freezing on big gameweeks. Live-rank sites are great for your in-play rank and effective ownership, but they're ad-supported, desktop-first and stop at the numbers. Gameweek Edge gives you the live rank and EO, from the official data, ad-free and built for your phone. Then adds predicted points and an AI scout that tells you what to actually do next."},
+  {"q": "Do I need to pay?", "a": "No: the Free tier has everything you need to run your own team. Pro unlocks the AI scout, rival intelligence and the simulators for £3.99/month or £24.99 a season, and you can cancel anytime."},
+  {"q": "Which devices does it work on?", "a": "Any modern browser, on iPhone and Android. Add it to your home screen for a full-screen, app-like experience that works offline and can send you alerts."},
+  {"q": "Is my data safe?", "a": "Yes. We only use your public FPL Manager ID and the official data. Your account, watchlist and preferences are protected with row-level security, and we never sell your data or show ads."},
+  {"q": "How accurate is the AI?", "a": "The numbers, predicted points, optimal teams, probabilities, come from our own transparent models built on the official data. The AI explains the picks and is instructed to use only that data, so it won't invent stats."}
+];
 async function hydrateFplBasics(host){
   const rows=FPL_BASICS.map(([h,b],i)=>
     '<div class="dl-row" style="display:block;padding:13px 0">'+
@@ -5726,7 +5743,7 @@ const PANEL_VIEW={
   template:{hub:'eo',view:'template'},
   dossier:{hub:'dossier',view:'dossier'},
   clubform:{hub:'dossier',view:'form'},
-  methodology:{hub:'accountability',view:'method'},
+  methodology:{hub:'accountability',view:'method',label:'Methodology'},
   results:{hub:'results',view:'results'},
   matchforecast:{hub:'results',view:'forecasts'},
   lineups:{hub:'results',view:'lineups'}
@@ -5956,6 +5973,8 @@ function hubViewChanged(panelId){
   (HUB_KEEP_KEYS[panelId]||[]).forEach(k=>{if(URL_Q[k]!=null)kept[k]=URL_Q[k];});
   URL_Q=kept;
   setUrlState({view:hubViewParam(panelId)});
+  /* The canonical follows the view: /methodology is its own address. */
+  try{seoSync(panelId);}catch(_){}
 }
 /* Write the current panel into the address bar. The home panel owns the
    bare URL; everything else gets its named path. Deep-link view ids
@@ -6128,6 +6147,54 @@ function areaTabsHtml(panelId){
         (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(p.label)+'</button>';
     }).join('')+'</nav>';
 }
+/* ── Per-route metadata ─────────────────────────────────
+   One place writes the title, the description, the canonical URL and the
+   social tags for the screen on show, so a bookmark, a share, a tab and a
+   crawler all name the page rather than the app. The canonical is the
+   panel's public path with no query: views and filters are the same page.
+   A retired id that still names a view (/methodology) keeps its own path,
+   because that is the address the link promised. scripts/seo/routes.mjs
+   reads the same registries at build time for the sitemap and the
+   pre-rendered shells, so the two can only ever agree. */
+const SITE_URL='https://gameweekedge.co.uk';
+const SITE_TITLE='Gameweek Edge: the calm, clear edge for FPL managers';
+const SITE_DESC='The calm, clear companion for Fantasy Premier League managers: predicted points, an AI scout, live matchday tracking, mini-leagues, price predictions and alerts, built on the official FPL data.';
+function seoAliasFor(panelId){
+  let view=null;try{view=HUB_GETVIEW[panelId]?HUB_GETVIEW[panelId]():null;}catch(_){}
+  if(!view||view===HUB_DEFAULT_VIEW[panelId])return null;
+  return Object.keys(PANEL_VIEW).find(a=>PANEL_VIEW[a].hub===panelId&&PANEL_VIEW[a].view===view&&resolvePanel(a)===panelId)||null;
+}
+function seoCanonicalPath(panelId){
+  if(panelId===homePanel())return '/';
+  const alias=seoAliasFor(panelId);
+  return alias?'/'+alias:panelPath(panelId);
+}
+function seoTitleFor(panelId){
+  const p=PANELS[panelId];
+  if(panelId===homePanel()||!p)return SITE_TITLE;
+  const alias=seoAliasFor(panelId);
+  const label=(alias&&PANEL_VIEW[alias].label)||p.label;
+  return label+' | Gameweek Edge';
+}
+function seoDescFor(panelId){
+  if(panelId===homePanel())return SITE_DESC;
+  const alias=seoAliasFor(panelId);
+  const c=(alias&&PANEL_CONTENT[alias]&&PANEL_CONTENT[alias].desc)?PANEL_CONTENT[alias]:PANEL_CONTENT[panelId];
+  const d=c&&c.desc?String(c.desc).replace(/\.?\s*$/,'.'):'';
+  return d?d+' Gameweek Edge.':'';
+}
+function seoSync(panelId){
+  const title=seoTitleFor(panelId),desc=seoDescFor(panelId),url=SITE_URL+seoCanonicalPath(panelId);
+  document.title=title;
+  const set=(sel,attr,val)=>{try{const el=document.querySelector(sel);if(el&&val)el.setAttribute(attr,val);}catch(_){}};
+  set('meta[name="description"]','content',desc);
+  set('link[rel="canonical"]','href',url);
+  set('meta[property="og:title"]','content',title);
+  set('meta[property="og:description"]','content',desc);
+  set('meta[property="og:url"]','content',url);
+  set('meta[name="twitter:title"]','content',title);
+  set('meta[name="twitter:description"]','content',desc);
+}
 function renderPage(panelId){
   const panel=PANELS[panelId];
   const content=PANEL_CONTENT[panelId];
@@ -6136,15 +6203,7 @@ function renderPage(panelId){
 
   document.getElementById('tb-area').textContent=panel.areaLabel;
   document.getElementById('tb-title').textContent=panel.label;
-  /* Per-route metadata: a real <title> and description for every screen,
-     so bookmarks, shares and tabs name the page rather than the app. */
-  document.title=panelId===homePanel()
-    ?'Gameweek Edge: the calm, clear edge for FPL managers'
-    :panel.label+' | Gameweek Edge';
-  try{
-    const md=document.querySelector('meta[name="description"]');
-    if(md&&content&&content.desc)md.setAttribute('content',content.desc.replace(/\.?\s*$/,'.')+' Gameweek Edge.');
-  }catch(_){}
+  seoSync(panelId);
 
   const pages=document.getElementById('pages');
   const isPaid=(panel.tier==='paid');
@@ -7686,6 +7745,7 @@ async function hydrateMethodology(host){
       p('Card-ban proximity uses the real cutoffs: 5 yellows by GW19, 10 by GW32, 15 across the season. Fitness comes from the official status flags and news feed. Deeper card analytics live in our companion app, Bookings Desk.'))+
     sec('Changelog: July 2026',
       p('Match Centre with model verdicts · per-gameweek GW Debrief · suspension watch and push alert · personalised price alerts + evening risk warning · set-piece and start-likelihood chips · sortable transfer targets · shareable gameweek card · terminal redesign.'))+
+    sec('Questions, answered',FAQ.map(f=>'<details class="faq-d"><summary>'+esc(f.q)+'</summary>'+p(esc(f.a))+'</details>').join(''))+
     '<p class="dl-sub">Questions or spot an error? The whole app is built to be checked. Tell us and we’ll fix it.</p>';
 }
 
