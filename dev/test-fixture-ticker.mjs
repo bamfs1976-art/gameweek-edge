@@ -221,7 +221,7 @@ const cell = (o) => Object.assign({
   eq(fdrOppLabel(d), 'IPS (a) + FUL', 'a double names both, each with its own venue');
   ok(fdrOppLabel(d).includes('FUL'), 'the second fixture is not the one that disappears');
   ok(fdrOppLabel(d).includes('IPS'), 'and neither is the first');
-  eq(fdrOppLabel(null), '—', 'a blank gameweek labels as a dash');
+  eq(fdrOppLabel(null), '–', 'a blank gameweek labels as a dash');
 
   /* Venue is per fixture, not per cell. A club can play away then home in the
      same week, and one (a) covering both would be a false statement about a

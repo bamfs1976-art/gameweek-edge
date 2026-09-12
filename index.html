@@ -1431,8 +1431,10 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 }
 .kpi-value{
   font-family:var(--font-display);font-size:1.9rem;
-  font-weight:800;letter-spacing:-.04em;line-height:1;
+  font-weight:800;letter-spacing:-.04em;line-height:1;overflow-wrap:anywhere;
 }
+.kpi-value.kpi-sm{font-size:1.4rem}
+.kpi-value.kpi-xs{font-size:1.1rem;letter-spacing:-.02em}
 .kpi-delta{font-size:.72rem;color:var(--text-3);margin-top:6px}
 
 /* ── PLACEHOLDER CONTENT ───────────────────────────────── */
@@ -2327,6 +2329,20 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .hm-prog{height:4px;background:var(--surface-3);border-radius:3px;overflow:hidden;margin-top:8px}
 .hm-prog i{display:block;height:100%;background:var(--green);transition:width .2s}
 @media(max-width:600px){.hm-table th.hm-name{min-width:118px;max-width:130px}}
+/* Manager Season Report */
+.rep-team-form{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+.rep-team-form .modal-in{width:150px;max-width:100%}
+.ge-state .rep-team-form{margin-top:12px;justify-content:center}
+.sr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:760px){.sr-grid{grid-template-columns:1fr}}
+.sr-svg{display:block;font-family:var(--font-body);overflow:visible}
+.sr-svg .sr-grid{stroke:var(--border-2);stroke-width:1}
+.sr-svg .sr-tick{font-family:var(--font-mono);font-size:10px;fill:var(--text-3)}
+.sr-svg .sr-end{font-family:var(--font-mono);font-size:11px;font-weight:700;fill:var(--text)}
+.sr-tl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sr-tl li{display:flex;gap:12px;align-items:flex-start;padding:8px 10px;background:var(--surface-3);border-radius:var(--r-md)}
+.sr-cost{font-family:var(--font-mono);font-weight:800;color:var(--red);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+.sr-body{display:flex;flex-direction:column;gap:2px;min-width:0}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -5986,7 +6002,7 @@ function syncNav(){
    the state, so the link IS the view. Personal panels (My Week, My Squad,
    the Transfer Planner …) are left out: they show the reader's own team,
    and a link to them opens the recipient's, not the sender's. */
-const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','heatmap','price','setpiece','rotation','news',
+const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','heatmap','gwreport','price','setpiece','rotation','news',
   'fixtures','results','titlerace','dossier','archive','seasonsim','eo','draft','gwdebrief','gw-actions',
   'blog','accountability','glossary','fplbasics']);
 function pageLinkable(panelId){return LINKABLE_PANELS.has(panelId);}
@@ -6222,10 +6238,13 @@ function liveStamp(isLive){
    Each takes the #ge-data host node and replaces its skeleton with
    real, live content (or a link/empty state). Registered in WIRED.
    ═══════════════════════════════════════════════════════════ */
+/* A long value (a seven-figure rank, a word like "differential") steps
+   down a size rather than clipping at the tile edge. */
+function kpiSize(value){const n=String(value==null?'':value).replace(/<[^>]*>/g,'').length;return n>10?' kpi-xs':n>7?' kpi-sm':'';}
 const kpi=(label,value,delta,colour)=>
   '<div class="kpi"><div class="kpi-accent" style="background:'+colour+'"></div>'+
     '<div class="kpi-label">'+esc(label)+'</div>'+
-    '<div class="kpi-value">'+value+'</div>'+
+    '<div class="kpi-value'+kpiSize(value)+'">'+value+'</div>'+
     '<div class="kpi-delta">'+esc(delta)+'</div></div>';
 
 /* Dashboard: season snapshot from entry + history */
@@ -7765,8 +7784,8 @@ async function hydrateGwdebrief(host){
 
 /* ── Manager Report — season review + captain analysis ─── */
 async function hydrateGwhistory(host){
-  const mid=getMid();
-  if(!mid){host.innerHTML=linkBox();return;}
+  const mid=repMid();
+  if(!mid){host.innerHTML=repTeamBox();return;}
   const [b,hist]=await Promise.all([boot(),loadHistory(mid)]);
   const cur=(hist.current||[]).filter(g=>g);
   if(!cur.length){host.innerHTML=stateBox('calendar','No gameweeks yet',
@@ -7867,25 +7886,56 @@ async function hydrateGwhistory(host){
       '</div><div class="dl-sub" style="margin-top:8px">Bench Boost shows the bench points it banked; other chips show that gameweek’s score against the average.</div></div>';
   }
 
-  host.innerHTML=tiles+shape+chart+rankChart+chipsSec+
+  /* Two curves the history row already carries: bench points, cumulative,
+     and team value. Static SVG with a tooltip on every marker. */
+  const curvePts=srSeasonCurves(cur);
+  const curves='<div class="sr-grid mb-20">'+
+    '<div class="card"><div class="card-title">Points on the bench, cumulative</div>'+
+      srLineSvg(curvePts.map(c=>({x:c.gw,y:c.benchCum})),{label:'Cumulative bench points by gameweek',color:'var(--amber)',zero:true})+
+      '<div class="dl-sub" style="margin-top:6px">'+benchTot+' points left on the bench so far, '+(cur.length?(benchTot/cur.length).toFixed(1):'0')+' a week.</div></div>'+
+    '<div class="card"><div class="card-title">Team value</div>'+
+      srLineSvg(curvePts.map(c=>({x:c.gw,y:c.value})),{label:'Team value by gameweek',color:'var(--blue)',fmt:v=>'£'+v.toFixed(1)+'m'})+
+      '<div class="dl-sub" style="margin-top:6px">Squad value at each deadline'+(curvePts.length?', £'+curvePts[curvePts.length-1].bank.toFixed(1)+'m in the bank now':'')+'.</div></div>'+
+    '</div>';
+  const proWrap=(id,inner,why)=>{const sec=reportSection(id);return sec&&sec.tier==='paid'&&!isPro()?proLockWrap(inner,null,why):inner;};
+  host.innerHTML=tiles+shape+curves+chart+rankChart+
+    '<div class="card mb-20"><div class="card-title">Ownership profile</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">How template or how differential the starting eleven has been, week by week, on today’s ownership figures.</p>'+
+      '<div id="own-report" style="margin-top:4px">'+skel(3)+'</div></div>'+
     '<div class="card mb-20"><div class="card-title">Captain analysis</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">How your armband did across the season. Accuracy, points missed to the optimal pick, and your most-trusted captains.</p>'+
+      '<p class="dl-sub" style="margin-bottom:10px">How the armband did across the season: against the best pick in the squad with hindsight, and against the player the field captained.</p>'+
       '<div id="cap-report" style="margin-top:4px">'+skel(3)+'</div></div>'+
-    '<div class="card"><div class="card-title">Transfer ROI</div>'+
-      '<p class="dl-sub" style="margin-bottom:10px">Did your transfers pay off? For each move we total the points your incoming player has scored since, versus the one you sold, assuming you held.</p>'+
-      '<div id="tr-report" style="margin-top:4px">'+skel(3)+'</div></div>';
-  /* Auto-load the two deeper analyses. Each fans out a burst of per-gameweek
-     and per-player requests, so they run after the main report is on screen. */
-  genCaptainReport();
-  genTransferReport();
+    '<div class="card mb-20"><div class="card-title">Transfer ROI</div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">Did the transfers pay off? For each move we total the points the incoming player has scored since, versus the one sold, assuming both were held.</p>'+
+      '<div id="tr-report" style="margin-top:4px">'+skel(3)+'</div></div>'+
+    chipsSec+
+    proWrap('chips','<div class="card mb-20"><div class="card-title">Chip effectiveness <span class="badge badge-amber">Pro</span></div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">What each chip actually added, against that gameweek’s average score. FPL does not publish the field’s average chip return, so the gameweek average is the benchmark.</p>'+
+      '<div id="chip-report">'+skel(2)+'</div></div>','Pro reads what each chip really added.')+
+    proWrap('decisions','<div class="card mb-20"><div class="card-title">Decision timeline <span class="badge badge-amber">Pro</span></div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">The three decisions that cost the most: an armband, a transfer or a bench call, ranked by the points they left behind.</p>'+
+      '<div id="dec-report">'+skel(3)+'</div></div>','Pro names the three calls that cost the most.')+
+    proWrap('narrative','<div class="card mb-20"><div class="card-title">Season narrative <span class="badge badge-amber">Pro</span></div>'+
+      '<p class="dl-sub" style="margin-bottom:10px">A short written read of the season, reasoned only over the figures on this page. It never invents a number.</p>'+
+      '<div id="ai-season"><button class="btn btn-primary btn-sm" onclick="genSeasonNarrative()">Write the season narrative</button></div></div>','Pro writes the season up from these figures.');
+  /* The deeper analyses fan out per-gameweek requests, so they run after the
+     main report is on screen. Transfers first: the decision timeline reads
+     both. */
+  window._srTransfersP=genTransferReport();
+  genSeasonDepth(b,hist,cur);
+}
+function genSeasonNarrative(){
+  const mid=repMid();
+  return runAI('season',()=>window._seasonJson||{},'ai-season',
+    {busy:'Reading the season…',retryName:'genSeasonNarrative',cacheKey:'ge-ai-season-'+((window._seasonJson||{}).gws||0)+'-'+mid});
 }
 
 async function genTransferReport(){
-  const box=document.getElementById('tr-report');box.innerHTML=skel(3);
+  const box=document.getElementById('tr-report');if(!box)return [];box.innerHTML=skel(3);
   try{
-    const b=await boot();const mid=getMid();
+    const b=await boot();const mid=repMid();
     const trs=await loadTransfers(mid);
-    if(!trs||!trs.length){box.innerHTML='<div class="dl-sub">No transfers made yet this season.</div>';return;}
+    if(!trs||!trs.length){box.innerHTML='<div class="dl-sub">No transfers made yet this season.</div>';return [];}
     const ids=new Set();trs.forEach(t=>{ids.add(t.element_in);ids.add(t.element_out);});
     const sums={};
     await Promise.all([...ids].map(id=>loadSummary(id).then(s=>{sums[id]=s;}).catch(()=>{sums[id]=null;})));
@@ -7897,7 +7947,13 @@ async function genTransferReport(){
         outN:(b.els[t.element_out]||{}).web_name||'?',inP,outP,d};});
     const hist=await loadHistory(mid);
     const hitsTot=(hist.current||[]).reduce((s,c)=>s+(c.event_transfers_cost||0),0);
+    /* The week's hit, shared across the moves made that week, so the decision
+       timeline can charge each transfer its part. */
+    const hitBy={},nBy={};(hist.current||[]).forEach(c=>{hitBy[c.event]=c.event_transfers_cost||0;});
+    rows.forEach(r=>{nBy[r.event]=(nBy[r.event]||0)+1;});
+    rows.forEach(r=>{r.hit=Math.round((hitBy[r.event]||0)/nBy[r.event]);});
     const eff=net-hitsTot;
+    if(window._reportSeason)window._reportSeason.trNet=eff;
     const wins=rows.filter(r=>r.d>0).length;
     const best=rows.slice().sort((a,c)=>c.d-a.d)[0];
     const worst=rows.slice().sort((a,c)=>a.d-c.d)[0];
@@ -7918,59 +7974,197 @@ async function genTransferReport(){
       (best&&best.d>0?hl(best,'Best call','var(--green)'):'')+
       (worst&&worst.d<0?hl(worst,'Worst call','var(--red)'):'')+
       '<div class="card-title" style="margin-top:14px">Recent transfers</div><div class="dl">'+recent+'</div>'+
-      '<div class="dl-sub" style="margin-top:8px">“Since” = points scored from the gameweek of the move onward, assuming you held both. It doesn’t model later moves, so treat it as the forward swing each transfer created.</div>';
-  }catch(e){box.innerHTML='<div class="dl-sub">Couldn’t analyse transfers right now.</div>';}
+      '<div class="dl-sub" style="margin-top:8px">“Since” = points scored from the gameweek of the move onward, assuming both were held. It doesn’t model later moves, so treat it as the forward swing each transfer created.</div>';
+    return rows;
+  }catch(e){box.innerHTML='<div class="dl-sub">Couldn’t analyse transfers right now.</div>';return [];}
 }
 
-async function genCaptainReport(){
-  const box=document.getElementById('cap-report');
-  box.innerHTML=skel(3);
-  try{
-    const b=await boot();const mid=getMid();
-    const hist=await loadHistory(mid);
-    const played=(hist.current||[]).map(g=>g.event).filter(g=>{const e=b.events.find(x=>x.id===g);return e&&e.finished;});
-    if(!played.length){box.innerHTML='<div class="dl-sub">No finished gameweeks yet.</div>';return;}
-    let capTot=0,optTot=0,hit=0;const capCount={};const histRows=[];
-    for(const gw of played){
-      let picks,live;
-      try{[picks,live]=await Promise.all([loadPicks(mid,gw),loadLive(gw)]);}catch(_){continue;}
-      const st=statsById(live);
-      const xi=picks.picks.filter(p=>p.position<=11);
-      const capPick=picks.picks.find(p=>p.is_captain)||xi[0];
-      const mult=capPick&&capPick.multiplier?capPick.multiplier:2;
-      const capBase=(st[capPick.element]||{}).total_points||0;
-      const capPts=capBase*mult;
-      const bestEl=xi.reduce((a,p)=>{const v=(st[p.element]||{}).total_points||0;return v>a.v?{id:p.element,v}:a;},{id:0,v:-1});
-      const optPts=bestEl.v*mult;
-      capTot+=capPts;optTot+=optPts;
-      if(capPick.element===bestEl.id)hit++;
-      capCount[capPick.element]=(capCount[capPick.element]||0)+1;
-      const nm=(b.els[capPick.element]||{}).web_name||'–';
-      const bn=(b.els[bestEl.id]||{}).web_name||'–';
-      histRows.push({gw,nm,capPts,bn,optPts,good:capPick.element===bestEl.id});
+/* ── Manager Season Report: the pure parts ────────────────
+   weeks = [{gw, picks, pts:{id:points}, mostCaptained}] for the finished
+   gameweeks, loaded once per team and held for the session. Everything
+   below reads that shape and the history rows, so it is testable without a
+   browser. */
+const SR_WEEKS={};
+function srSeasonCurves(rows){
+  let cum=0;
+  return (rows||[]).map(r=>{cum+=(r.points_on_bench||0);
+    return {gw:r.event,points:r.points||0,bench:r.points_on_bench||0,benchCum:cum,value:(r.value||0)/10,bank:(r.bank||0)/10};});
+}
+/* The armband, week by week: the captain who actually carried it (the vice
+   when the captain sat out), the best pick in the eleven with hindsight, and
+   the player the field captained. */
+function srCaptaincy(weeks){
+  const rows=[];let capTot=0,optTot=0,hit=0,vsField=0,fieldN=0;const count={};
+  (weeks||[]).forEach(w=>{
+    const picks=w.picks||[],pts=w.pts||{};
+    const xi=picks.filter(p=>p.position<=11);if(!xi.length)return;
+    const armed=picks.find(p=>p.multiplier>1)||picks.find(p=>p.is_captain)||xi[0];
+    const mult=armed.multiplier>1?armed.multiplier:2;
+    const capBase=pts[armed.element]||0,capPts=capBase*mult;
+    const best=xi.reduce((a,p)=>{const v=pts[p.element]||0;return v>a.v?{id:p.element,v}:a;},{id:armed.element,v:-1});
+    const optPts=Math.max(best.v,0)*mult;
+    const mc=w.mostCaptained||null,mcPts=mc?(pts[mc]||0)*mult:null;
+    capTot+=capPts;optTot+=optPts;
+    const optimal=armed.element===best.id||capPts>=optPts;
+    if(optimal)hit++;
+    if(mc){vsField+=capPts-mcPts;fieldN++;}
+    count[armed.element]=(count[armed.element]||0)+1;
+    rows.push({gw:w.gw,cap:armed.element,capPts,best:best.id,bestPts:optPts,mostCap:mc,mostCapPts:mcPts,optimal,lost:Math.max(0,optPts-capPts)});
+  });
+  const n=rows.length;
+  return {rows,n,capTot,optTot,hit,accuracy:n?Math.round(100*hit/n):0,missed:optTot-capTot,vsField,fieldN,count};
+}
+/* Mean ownership of the starting eleven each week, on the ownership figures
+   passed in (today's, the API keeps no history), and a season label. */
+function srOwnership(weeks,own){
+  own=own||{};
+  const rows=(weeks||[]).map(w=>{
+    const xi=(w.picks||[]).filter(p=>p.position<=11);
+    const vals=xi.map(p=>cmpNum(own[p.element]));
+    const mean=vals.length?vals.reduce((s,v)=>s+v,0)/vals.length:0;
+    return {gw:w.gw,mean,template:vals.filter(v=>v>=30).length,diff:vals.filter(v=>v<10).length};});
+  const mean=rows.length?rows.reduce((s,r)=>s+r.mean,0)/rows.length:0;
+  return {rows,mean,label:mean>=25?'template':mean>=15?'balanced':'differential'};
+}
+/* What each chip added. Bench Boost: the bench points it banked. Triple
+   Captain: the extra captain multiple. Free Hit and Wildcard: this squad
+   against the one before it, scored on that week's points, captain doubled
+   in both. The gameweek average is the benchmark FPL publishes. */
+function srChipEffect(chips,weeks,rows,events){
+  const byGw={};(weeks||[]).forEach(w=>{byGw[w.gw]=w;});
+  const rowBy={};(rows||[]).forEach(r=>{rowBy[r.event]=r;});
+  const avgBy={};(events||[]).forEach(e=>{avgBy[e.id]=e.average_entry_score||0;});
+  const xiPts=(w,pts)=>(w.picks||[]).filter(p=>p.position<=11).reduce((s,p)=>s+(pts[p.element]||0)*(p.is_captain?2:1),0);
+  return (chips||[]).map(ch=>{
+    const w=byGw[ch.event],r=rowBy[ch.event],prev=byGw[ch.event-1],pts=w?w.pts||{}:{};
+    let gain=null,basis='';
+    if(ch.name==='bboost'){gain=w?(w.picks||[]).filter(p=>p.position>11).reduce((s,p)=>s+(pts[p.element]||0),0):(r&&r.points_on_bench!=null?r.points_on_bench:null);basis='bench points banked';}
+    else if(ch.name==='3xc'){const armed=w&&((w.picks||[]).find(p=>p.multiplier>1)||(w.picks||[]).find(p=>p.is_captain));gain=armed?(pts[armed.element]||0):null;basis='the extra captain multiple';}
+    else if(ch.name==='freehit'||ch.name==='wildcard'){
+      if(w&&prev){gain=xiPts(w,pts)-xiPts(prev,pts);basis='this squad against the one before it, that week';}
+      else basis='no previous squad to compare';
+    }else basis='no return to measure';
+    return {name:ch.name,label:CHIP_API_LABEL[ch.name]||ch.name,gw:ch.event,points:r?r.points:null,avg:avgBy[ch.event]||null,gain,basis};
+  });
+}
+/* The three costliest decisions: an armband that missed, a transfer that
+   lost points (its share of the hit included), a bench call where a benched
+   player outscored a starter. Ranked by the points left behind. */
+function srDecisions(cap,trs,weeks,els){
+  const nm=id=>(els&&els[id]&&els[id].web_name)||('#'+id);
+  const out=[];
+  ((cap&&cap.rows)||[]).forEach(r=>{if(r.lost>0)out.push({kind:'captain',gw:r.gw,cost:r.lost,
+    text:'Captained '+nm(r.cap)+' for '+r.capPts+' when '+nm(r.best)+' would have returned '+r.bestPts+'.'});});
+  (trs||[]).forEach(t=>{const cost=-(t.d||0)+(t.hit||0);if(cost>0)out.push({kind:'transfer',gw:t.event,cost,
+    text:'Sold '+t.outN+' for '+t.inN+': '+t.outP+' against '+t.inP+' since'+(t.hit?', plus a '+t.hit+'-point hit':'')+'.'});});
+  (weeks||[]).forEach(w=>{
+    const pts=w.pts||{},picks=w.picks||[];
+    const xi=picks.filter(p=>p.position<=11&&p.multiplier!==0),bench=picks.filter(p=>p.position>11);
+    if(!xi.length||!bench.length)return;
+    const worst=xi.reduce((a,p)=>{const v=pts[p.element]||0;return v<a.v?{id:p.element,v}:a;},{id:xi[0].element,v:Infinity});
+    const star=bench.reduce((a,p)=>{const v=pts[p.element]||0;return v>a.v?{id:p.element,v}:a;},{id:bench[0].element,v:-Infinity});
+    const cost=star.v-worst.v;
+    if(cost>0)out.push({kind:'bench',gw:w.gw,cost,text:nm(star.id)+' scored '+star.v+' on the bench while '+nm(worst.id)+' started for '+worst.v+'.'});
+  });
+  return out.sort((a,b)=>b.cost-a.cost||a.gw-b.gw).slice(0,3);
+}
+/* One series, one axis: a 2px line, a marker on every point with its own
+   tooltip, three hairline gridlines, the last value labelled. */
+function srLineSvg(points,opts){
+  opts=opts||{};const W=opts.width||520,H=opts.height||150,L=48,R=16,T=16,B=24;
+  const n=(points||[]).length;if(!n)return '';
+  const ys=points.map(p=>p.y);
+  const ymin=opts.zero?0:Math.min.apply(null,ys),ymax=Math.max.apply(null,ys);const sp=(ymax-ymin)||1;
+  const X=i=>n>1?L+(W-L-R)*i/(n-1):(L+W-R)/2;const Y=v=>T+(H-T-B)*(1-(v-ymin)/sp);
+  const fmt=opts.fmt||(v=>String(Math.round(v)));const col=opts.color||'var(--green-bright)';
+  const grid=[0,0.5,1].map(k=>{const v=ymin+sp*k,y=Y(v).toFixed(1);
+    return '<line x1="'+L+'" y1="'+y+'" x2="'+(W-R)+'" y2="'+y+'" class="sr-grid"/><text x="'+(L-6)+'" y="'+(Y(v)+4).toFixed(1)+'" text-anchor="end" class="sr-tick">'+esc(fmt(v))+'</text>';}).join('');
+  const path=points.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.y).toFixed(1)).join(' ');
+  const marks=points.map((p,i)=>'<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.y).toFixed(1)+'" r="4" fill="'+col+'" stroke="var(--surface)" stroke-width="2"><title>GW'+p.x+': '+esc(fmt(p.y))+'</title></circle>').join('');
+  const step=n>8?Math.ceil(n/6):1;
+  const ticks=points.map((p,i)=>(i===0||i===n-1||(i%step===0&&i<n-2))?'<text x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle" class="sr-tick">GW'+p.x+'</text>':'').join('');
+  const last=points[n-1];
+  const end='<text x="'+X(n-1).toFixed(1)+'" y="'+(Y(last.y)-9).toFixed(1)+'" text-anchor="end" class="sr-end">'+esc(fmt(last.y))+'</text>';
+  return '<svg class="sr-svg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(opts.label||'')+'" preserveAspectRatio="xMidYMid meet">'+grid+
+    '<path d="'+path+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+marks+ticks+end+'</svg>';
+}
+/* The finished gameweeks for one team: picks and that week's live points,
+   four at a time, held for the session. */
+async function srLoadWeeks(mid,b,played){
+  const last=Math.max.apply(null,played);
+  const mcBy={};(b.events||[]).forEach(e=>{mcBy[e.id]=e.most_captained||null;});
+  const queue=played.slice(),out={};
+  const worker=async()=>{while(queue.length){const gw=queue.shift();const key=mid+':'+gw;
+    if(!SR_WEEKS[key]){
+      const [picks,map]=await Promise.all([loadPicks(mid,gw),hmLoadGw(gw,last)]);
+      const pts={};Object.keys(map).forEach(id=>{pts[id]=cmpNum(map[id].total_points);});
+      SR_WEEKS[key]={gw,picks:picks.picks||[],chip:picks.active_chip||null,pts,mostCaptained:mcBy[gw]};
     }
-    const missed=optTot-capTot;
-    const acc=Math.round(100*hit/played.length);
-    const topCaps=Object.entries(capCount).sort((a,c)=>c[1]-a[1]).slice(0,5)
-      .map(([id,n])=>({el:b.els[id],n}));
-    const tiles='<div class="grid g-4 mb-14">'+
-      kpi('Captain points',String(capTot),(capTot/played.length).toFixed(1)+' avg','var(--green)')+
-      kpi('Accuracy',acc+'%',hit+'/'+played.length+' optimal','var(--blue)')+
-      kpi('Missed',String(missed),'to the best pick','var(--red)')+
-      kpi('Optimal',String(optTot),'with hindsight','var(--purple)')+
-    '</div>';
-    const caps='<div class="card-title" style="margin-top:6px">Most captained</div><div class="dl">'+
-      topCaps.map(c=>'<div class="dl-row">'+avatar(b,c.el,30)+
-        '<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc((c.el||{}).web_name||'–')+'</span>'+
-        '<span class="dl-sub">'+crest(b,(c.el||{}).team,13)+c.n+'× captained</span></span></div>').join('')+'</div>';
-    const recent=histRows.slice(-6).reverse().map(r=>
-      '<div class="dl-row" style="border-left:3px solid '+(r.good?'var(--green)':'var(--red)')+';padding-left:10px">'+
-      '<span class="dl-grow"><span class="dl-nm">GW'+r.gw+' · '+esc(r.nm)+' '+r.capPts+' pts</span>'+
-      '<span class="dl-sub">'+(r.good?'optimal pick':'best was '+esc(r.bn)+' '+r.optPts+' pts')+'</span></span></div>').join('');
-    box.innerHTML=tiles+caps+'<div class="card-title" style="margin-top:14px">Recent armbands</div><div class="dl">'+recent+'</div>';
-  }catch(e){box.innerHTML='<div class="dl-sub">Couldn’t analyse captains right now.</div>';}
+    out[gw]=SR_WEEKS[key];}};
+  await Promise.all([worker(),worker(),worker(),worker()]);
+  return played.map(g=>out[g]).filter(Boolean);
 }
-
+async function genSeasonDepth(b,hist,cur){
+  const mid=repMid();
+  const fill=(id,html)=>{const el=document.getElementById(id);if(el)el.innerHTML=html;};
+  const ids=['own-report','cap-report','chip-report','dec-report'];
+  const played=cur.map(g=>g.event).filter(g=>{const e=b.events.find(x=>x.id===g);return e&&e.finished;});
+  if(!played.length){ids.forEach(id=>fill(id,'<div class="dl-sub">No finished gameweeks yet. These sections fill in once GW1 is scored.</div>'));return;}
+  let weeks;
+  try{weeks=await srLoadWeeks(mid,b,played);}
+  catch(e){ids.forEach(id=>fill(id,'<div class="dl-sub">The gameweek squads could not be loaded just now. This usually clears within a minute. '+retryBtn()+'</div>'));return;}
+  const nm=id=>esc((b.els[id]||{}).web_name||'–');
+  /* Captaincy */
+  const cap=srCaptaincy(weeks);
+  const topCaps=Object.entries(cap.count).sort((a,c)=>c[1]-a[1]).slice(0,5).map(([id,n])=>({el:b.els[id],n}));
+  fill('cap-report','<div class="grid g-4 mb-14">'+
+      kpi('Accuracy',cap.accuracy+'%',cap.hit+' of '+cap.n+' were the best pick','var(--blue)')+
+      kpi('Missed',String(cap.missed),'points to the best pick','var(--red)')+
+      kpi('Against the field',cap.fieldN?(cap.vsField>=0?'+':'')+cap.vsField:'–',cap.fieldN?'versus the most-captained player':'no field data','var(--green)')+
+      kpi('Captain points',String(cap.capTot),cap.n?(cap.capTot/cap.n).toFixed(1)+' a week':'','var(--purple)')+
+    '</div>'+
+    '<div class="card-title" style="margin-top:6px">Most captained</div><div class="dl">'+
+      topCaps.map(c=>'<div class="dl-row">'+avatar(b,c.el,30)+'<span class="dl-grow" style="display:block"><span class="dl-nm">'+esc((c.el||{}).web_name||'–')+'</span>'+
+        '<span class="dl-sub">'+crest(b,(c.el||{}).team,13)+c.n+'× captained</span></span></div>').join('')+'</div>'+
+    '<div class="card-title" style="margin-top:14px">Recent armbands</div><div class="dl">'+
+      cap.rows.slice(-6).reverse().map(r=>'<div class="dl-row" style="border-left:3px solid '+(r.optimal?'var(--green)':'var(--red)')+';padding-left:10px">'+
+        '<span class="dl-grow"><span class="dl-nm">GW'+r.gw+' · '+nm(r.cap)+' '+r.capPts+' pts</span>'+
+        '<span class="dl-sub">'+(r.optimal?'the best pick':'best was '+nm(r.best)+' '+r.bestPts+' pts')+(r.mostCap?' · field captained '+nm(r.mostCap)+' '+r.mostCapPts:'')+'</span></span></div>').join('')+'</div>');
+  /* Ownership profile */
+  const own={};b.elements.forEach(e=>{own[e.id]=cmpNum(e.selected_by_percent);});
+  const ow=srOwnership(weeks,own);
+  const lastRow=ow.rows[ow.rows.length-1];
+  fill('own-report','<div class="grid g-4 mb-14">'+
+      kpi('Profile',ow.label,'mean XI ownership '+ow.mean.toFixed(1)+'%','var(--blue)')+
+      kpi('Latest week',lastRow?lastRow.mean.toFixed(1)+'%':'–','mean ownership of the XI','var(--green)')+
+      kpi('Template picks',lastRow?String(lastRow.template):'–','owned by 30% or more','var(--purple)')+
+      kpi('Differentials',lastRow?String(lastRow.diff):'–','owned by under 10%','var(--amber)')+
+    '</div>'+
+    srLineSvg(ow.rows.map(r=>({x:r.gw,y:r.mean})),{label:'Mean ownership of the starting eleven by gameweek',color:'var(--purple)',fmt:v=>v.toFixed(0)+'%',zero:true})+
+    '<div class="dl-sub" style="margin-top:6px">Template is 25% and over, differential under 15%. Today’s ownership figures, since FPL keeps no history of them.</div>');
+  /* Chip effectiveness (Pro) */
+  const chips=srChipEffect(hist.chips||[],weeks,cur,b.events);
+  fill('chip-report',chips.length?'<div class="dl"><div class="dl-row head"><span class="dl-grow">Chip</span><span class="dl-col">Added</span><span class="dl-col">GW vs avg</span></div>'+
+    chips.map(c=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(c.label)+' · GW'+c.gw+'</span><span class="dl-sub">'+esc(c.basis)+'</span></span>'+
+      '<span class="dl-col mono">'+(c.gain==null?'–':(c.gain>=0?'+':'')+c.gain)+'</span>'+
+      '<span class="dl-col mono">'+(c.points==null?'–':c.points+(c.avg?' v '+c.avg:''))+'</span></div>').join('')+'</div>'
+    :'<div class="dl-sub">No chips played yet.</div>');
+  /* Decision timeline (Pro), once the transfer report has its rows */
+  let trs=[];try{trs=await (window._srTransfersP||Promise.resolve([]));}catch(_){trs=[];}
+  const dec=srDecisions(cap,trs,weeks,b.els);
+  fill('dec-report',dec.length?'<ol class="sr-tl">'+dec.map(d=>'<li><span class="sr-cost">-'+d.cost+'</span><span class="sr-body"><b>GW'+d.gw+' · '+({captain:'Captaincy',transfer:'Transfer',bench:'Bench'})[d.kind]+'</b><span class="dl-sub">'+esc(d.text)+'</span></span></li>').join('')+'</ol>'
+    :'<div class="dl-sub">Nothing cost you yet. Every call so far was the best available.</div>');
+  /* What the narrative and the share card may say: only what this page computed. */
+  window._seasonJson={team:mid,gws:cur.length,points:cur.length?cur[cur.length-1].total_points:0,
+    rank:{now:cur.length?cur[cur.length-1].overall_rank:null,best:Math.min.apply(null,cur.filter(c=>c.overall_rank).map(c=>c.overall_rank).concat([Infinity]))},
+    weeks:cur.map(c=>({gw:c.event,points:c.points,rank:c.overall_rank,bench:c.points_on_bench,hit:c.event_transfers_cost})),
+    captaincy:{accuracy:cap.accuracy,missed:cap.missed,vsField:cap.fieldN?cap.vsField:null,mostUsed:topCaps.slice(0,3).map(c=>({name:(c.el||{}).web_name,times:c.n}))},
+    ownership:{label:ow.label,mean:+ow.mean.toFixed(1)},
+    transfers:{count:trs.length,net:trs.reduce((s,t)=>s+(t.d||0),0),hits:cur.reduce((s,c)=>s+(c.event_transfers_cost||0),0)},
+    chips:chips.map(c=>({chip:c.label,gw:c.gw,added:c.gain,points:c.points,gwAverage:c.avg})),
+    costliest:dec.map(d=>({gw:d.gw,kind:d.kind,cost:d.cost,what:d.text}))};
+  if(window._reportSeason)Object.assign(window._reportSeason,{capAcc:cap.accuracy,vsField:cap.fieldN?cap.vsField:null,ownLabel:ow.label});
+}
 
 async function hydrateGwActions(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
@@ -10969,6 +11163,36 @@ async function hydrateSocial(host){
    app: summary vs the field, what worked, what cost points, then the
    model's suggested transfer and captain for the upcoming deadline. */
 let REP_GW=null,REP_GW_MAX=null;
+/* The report reads any public Team ID, not only the linked one. REP_TEAM is
+   the override (null means the linked team). It travels as entry=, FPL's
+   own name for a team id, and never as team=, which the Players table
+   reads as a club filter. */
+let REP_TEAM=null;
+function srTeamId(v){const n=parseInt(String(v==null?'':v).replace(/[^0-9]/g,''),10);return n>0&&n<100000000?n:null;}
+function repMid(){return REP_TEAM||getMid()||'';}
+/* The link always names the team, the linked one included, so a copied
+   link opens the same report for whoever receives it. */
+function repTeamParam(){return REP_TEAM||srTeamId(getMid())||null;}
+function repTeamBar(mid,entry){
+  const linked=String(mid)===String(getMid()||'');
+  const who=entry?((entry.player_first_name||'')+' '+(entry.player_last_name||'')).trim():'';
+  return '<div class="card mb-20 rep-team">'+cardHead(entry&&entry.name?esc(entry.name):'Team '+esc(mid),
+      '<form class="rep-team-form" onsubmit="return repViewTeam(this)"><input class="modal-in" inputmode="numeric" placeholder="Any Team ID" aria-label="View another team by its FPL Team ID"><button class="btn btn-ghost btn-sm" type="submit">View</button></form>')+
+    '<p class="dl-sub" style="margin:0">'+(who?esc(who)+' · ':'')+'Team ID '+esc(mid)+(linked?' (your linked team)':'')+'. Any public Team ID works here, no password needed.'+
+    (!linked&&getMid()?' <a href="#" onclick="repViewTeam(null);return false">Back to your team</a>':'')+'</p></div>';
+}
+function repViewTeam(form){
+  const v=form?srTeamId(form.querySelector('input').value):null;
+  if(form&&!v){toast('Enter a Team ID: the number after /entry/ in the FPL address bar');return false;}
+  REP_TEAM=v&&String(v)!==String(getMid()||'')?v:null;
+  REP_GW=null;historyPoint();setUrlState({entry:REP_TEAM,gw:null});
+  track('report_team',{own:!REP_TEAM});renderPage('gwreport');return false;
+}
+function repTeamBox(){
+  return '<div class="card"><div class="ge-state">'+svg(ICON.calendar)+'<b>Any team, by ID</b>'+
+    '<p>Enter an FPL Team ID to read that season, yours or anyone’s. No password needed: it is the number after /entry/ in the address bar on the FPL site. Link your own team in Settings and it opens here by default.</p>'+
+    '<form class="rep-team-form" onsubmit="return repViewTeam(this)"><input class="modal-in" inputmode="numeric" placeholder="e.g. 3500123" aria-label="FPL Team ID"><button class="btn btn-primary btn-sm" type="submit">View report</button></form></div></div>';
+}
 function repNav(step){
   REP_GW=(REP_GW||1)+step;
   setUrlState({gw:REP_GW});
@@ -10998,7 +11222,7 @@ function repNav(step){
    look identical to a panel having been retired. The Live hub learned this
    the same way, which is why LV_VIEWS carries its tiers as data.
    KEEP ON ONE LINE — the test reads it with a balanced-bracket scan. */
-const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'paid',needs:['seasonHistory']}];
+const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'free',needs:['seasonHistory']},{id:'chips',label:'Chip effectiveness',tier:'paid'},{id:'decisions',label:'Decision timeline',tier:'paid'},{id:'narrative',label:'Season narrative',tier:'paid'}];
 function reportSection(id){return REPORT_SECTIONS.filter(x=>x.id===id)[0]||null;}
 function reportShell(host,debriefHtml){
   const sec=reportSection('season');
@@ -11018,9 +11242,17 @@ function reportShell(host,debriefHtml){
   });
 }
 async function hydrateGwreport(host){
-  const mid=getMid();
-  if(!mid){host.innerHTML=linkBox();return;}
-  const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  const entered=urlEntryOnce('gwreport');
+  if(entered)REP_TEAM=urlPick('entry',REP_TEAM,null,v=>{const id=srTeamId(v);return id&&String(id)!==String(getMid()||'')?id:null;});
+  const mid=repMid();
+  if(!mid){host.innerHTML=repTeamBox();return;}
+  const [b,fixtures,entry]=await Promise.all([boot(),loadFixtures(),loadEntry(mid).catch(()=>null)]);
+  const bar=repTeamBar(mid,entry);
+  if(!entry&&REP_TEAM){
+    setUrlState({entry:REP_TEAM});
+    host.innerHTML=bar+stateBox('calendar','No team with that ID','FPL has no public team numbered '+mid+'. Check the number: it is the one after /entry/ in the address bar on the FPL site.');
+    return;
+  }
   const finished=b.events.filter(e=>e.finished);
   if(!finished.length){
     /* TWO VERY DIFFERENT SILENCES, AND THE COPY USED TO CONFLATE THEM.
@@ -11037,25 +11269,26 @@ async function hydrateGwreport(host){
        and the season half has its own reasons to be empty — losing it
        because THIS week is unsettled would be the merge making the page
        worse than either half was alone. */
-    reportShell(host,last
+    setUrlState({entry:repTeamParam()});
+    reportShell(host,bar+(last
       ? stateBox('calendar','GW'+last.id+' is still being scored',
           'Every match is played, but FPL hasn’t confirmed bonus points yet. Your debrief appears as soon as it does. It waits for the final numbers rather than showing provisional ones.')
       : stateBox('calendar','No finished gameweek yet',
-          'Your first debrief appears after GW1 wraps up. How you did, what worked, and what to change.'));
+          'Your first debrief appears after GW1 wraps up. How you did, what worked, and what to change.')));
     return;}
   const minGw=finished[0].id,maxGw=finished[finished.length-1].id;
   REP_GW_MAX=maxGw;
-  if(urlEntryOnce('gwreport'))REP_GW=urlPick('gw',REP_GW,maxGw,v=>parseInt(v,10)>0?parseInt(v,10):null);
+  if(entered)REP_GW=urlPick('gw',REP_GW,maxGw,v=>parseInt(v,10)>0?parseInt(v,10):null);
   if(REP_GW==null)REP_GW=maxGw;
   REP_GW=Math.max(minGw,Math.min(maxGw,REP_GW));
-  setUrlState({gw:REP_GW!==maxGw?REP_GW:null});
+  setUrlState({gw:REP_GW!==maxGw?REP_GW:null,entry:repTeamParam()});
   const gw=REP_GW;
   const ev=b.events.find(e=>e.id===gw)||{};
   let picks,live,hist,trs;
   try{
     [picks,live,hist]=await Promise.all([loadPicks(mid,gw),loadLive(gw),loadHistory(mid)]);
     trs=await loadTransfers(mid).catch(()=>[]);
-  }catch(_){reportShell(host,stateBox('calendar','No data for GW'+gw,'Your team data for this gameweek isn’t available from FPL.'));return;}
+  }catch(_){reportShell(host,bar+stateBox('calendar','No data for GW'+gw,'The team data for this gameweek isn’t available from FPL.'));return;}
   const pts={};(live.elements||[]).forEach(e=>{pts[e.id]=e.stats?e.stats.total_points:0;});
   const eh=picks.entry_history||{};
   const nm=id=>{const e=b.els[id];return e?esc(e.web_name):'–';};
@@ -11155,7 +11388,7 @@ async function hydrateGwreport(host){
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
   }
 
-  reportShell(host,'<div class="card mb-20">'+cardHead('Your gameweek, reviewed',
+  reportShell(host,bar+'<div class="card mb-20">'+cardHead('Your gameweek, reviewed',
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
       '<b class="num">GW'+gw+'</b>'+
       '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button>')+

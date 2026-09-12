@@ -243,6 +243,14 @@ const pieces = [
   extractFn(html, 'hmWindow'),
   extractFn(html, 'hmFmt'),
   extractFn(html, 'hmLastGw'),
+  /* Manager Season Report: the pure parts behind the season sections. */
+  extractFn(html, 'srTeamId'),
+  extractFn(html, 'srSeasonCurves'),
+  extractFn(html, 'srCaptaincy'),
+  extractFn(html, 'srOwnership'),
+  extractFn(html, 'srChipEffect'),
+  extractFn(html, 'srDecisions'),
+  extractFn(html, 'srLineSvg'),
   /* Panel names: retired ids and everyday synonyms the palette searches. */
   extractConst(html, 'PANEL_ALIAS'),
   extractConst(html, 'PANEL_SYNONYMS'),
@@ -371,7 +379,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5594,6 +5602,58 @@ section('Stats Heatmap: range, rows, sorting, bins and the virtual window');
   const past = new Date(Date.now() - 864e5).toISOString(), future = new Date(Date.now() + 864e5).toISOString();
   ok(hmLastGw({ events: [{ id: 1, finished: true }, { id: 2, finished: true }, { id: 3, is_current: true, deadline_time: future }] }) === 2, 'a current gameweek before its deadline has no figures yet');
   ok(hmLastGw({ events: [{ id: 1, finished: true }, { id: 2, is_current: true, deadline_time: past }] }) === 2 && hmLastGw({ events: [] }) === 0, 'a current gameweek past its deadline counts; pre-season is zero');
+}
+
+section('Manager Season Report: team ids, curves, captaincy, ownership, chips, decisions and the line');
+{
+  const { srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg } = core;
+  ok(srTeamId('3500123') === 3500123 && srTeamId(' 42 ') === 42 && srTeamId('entry/77/') === 77, 'a team id is the digits, however it was pasted');
+  ok(srTeamId('') === null && srTeamId('abc') === null && srTeamId('0') === null && srTeamId(null) === null, 'no digits, or zero, is no team');
+  const rows = [
+    { event: 1, points: 60, total_points: 60, overall_rank: 900000, points_on_bench: 5, event_transfers_cost: 0, value: 1000, bank: 5 },
+    { event: 2, points: 40, total_points: 100, overall_rank: 1200000, points_on_bench: 12, event_transfers_cost: 4, value: 1004, bank: 12 },
+    { event: 3, points: 80, total_points: 180, overall_rank: 700000, points_on_bench: 0, event_transfers_cost: 0, value: 1011, bank: 3 },
+  ];
+  const cv = srSeasonCurves(rows);
+  ok(cv.length === 3 && cv[1].benchCum === 17 && cv[2].benchCum === 17 && cv[2].value === 101.1 && cv[1].bank === 1.2, 'bench points accumulate and value is in £m');
+  ok(srSeasonCurves([]).length === 0 && srSeasonCurves(null).length === 0, 'no history is no curve');
+  /* Three weeks: an optimal captain, a miss, and a triple captain where the vice carried it. */
+  const pk = (ids, cap, mult) => ids.map((id, i) => ({ element: id, position: i + 1, multiplier: i === cap ? mult : i < 11 ? 1 : 0, is_captain: i === cap }));
+  const w1 = { gw: 1, picks: pk([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], 0, 2), pts: { 1: 10, 2: 4, 12: 8 }, mostCaptained: 2 };
+  const w2 = { gw: 2, picks: pk([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], 0, 2), pts: { 1: 2, 3: 9, 2: 6, 13: 1 }, mostCaptained: 2 };
+  const w3 = { gw: 3, picks: pk([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], 1, 3).map((p) => p.element === 1 ? Object.assign({}, p, { multiplier: 0 }) : p), pts: { 2: 5, 4: 7 }, mostCaptained: null };
+  const cap = srCaptaincy([w1, w2, w3]);
+  ok(cap.n === 3 && cap.rows[0].optimal && cap.rows[0].capPts === 20 && cap.rows[0].lost === 0, 'a captain who was the best pick is optimal, doubled');
+  ok(!cap.rows[1].optimal && cap.rows[1].capPts === 4 && cap.rows[1].bestPts === 18 && cap.rows[1].best === 3 && cap.rows[1].lost === 14, 'a miss records the best pick and the points lost');
+  ok(cap.rows[2].cap === 2 && cap.rows[2].capPts === 15 && cap.rows[2].bestPts === 21 && cap.rows[2].mostCapPts === null, 'the armband that carried (the vice, tripled) is the one scored; no field data is null');
+  ok(cap.hit === 1 && cap.accuracy === 33 && cap.missed === 20 && cap.capTot === 39 && cap.optTot === 59, 'the totals add up');
+  ok(cap.vsField === (20 - 8) + (4 - 12) && cap.fieldN === 2, 'against the field is summed only where the field is known');
+  ok(cap.count[1] === 2 && cap.count[2] === 1, 'captain counts follow who carried the armband');
+  ok(srCaptaincy([]).n === 0 && srCaptaincy([{ gw: 1, picks: [], pts: {} }]).n === 0, 'no weeks, or a week with no eleven, is nothing');
+  const own = { 1: '45.0', 2: '31.0', 3: '9.5', 4: '2.0', 5: '12.0' };
+  const ow = srOwnership([w1], own);
+  ok(ow.rows.length === 1 && Math.abs(ow.rows[0].mean - (45 + 31 + 9.5 + 2 + 12) / 11) < 1e-9 && ow.rows[0].template === 2 && ow.rows[0].diff === 8, 'mean ownership over the eleven, unknown players at zero, template and differential counts');
+  ok(srOwnership([w1], { 1: '60', 2: '60', 3: '60', 4: '60', 5: '60', 6: '60', 7: '60', 8: '60', 9: '60', 10: '60', 11: '60' }).label === 'template' && srOwnership([w1], {}).label === 'differential', 'the season label follows the mean');
+  const chips = [{ name: 'bboost', event: 1 }, { name: '3xc', event: 3 }, { name: 'freehit', event: 2 }, { name: 'wildcard', event: 1 }, { name: 'manager', event: 2 }];
+  const ce = srChipEffect(chips, [w1, w2, w3], rows, [{ id: 1, average_entry_score: 50 }, { id: 2, average_entry_score: 45 }, { id: 3, average_entry_score: 55 }]);
+  ok(ce[0].label === 'Bench Boost' && ce[0].gain === 8 && ce[0].points === 60 && ce[0].avg === 50, 'a Bench Boost adds the bench points');
+  ok(ce[1].label === 'Triple Captain' && ce[1].gain === 5, 'a Triple Captain adds the extra multiple of the armband that carried');
+  ok(ce[2].label === 'Free Hit' && ce[2].gain === 0 && /before it/.test(ce[2].basis), 'a Free Hit scores this squad against last week’s on the same points');
+  ok(ce[3].gain === null && /no previous/.test(ce[3].basis), 'a Wildcard in GW1 has nothing to compare');
+  ok(ce[4].gain === null && ce[4].label === 'Assistant Manager', 'a chip with no measurable return says so');
+  const trs = [{ event: 2, inN: 'Ana', outN: 'Ben', inP: 3, outP: 12, d: -9, hit: 4 }, { event: 3, inN: 'Cal', outN: 'Dee', inP: 20, outP: 5, d: 15, hit: 0 }];
+  const els = { 1: { web_name: 'One' }, 2: { web_name: 'Two' }, 3: { web_name: 'Three' }, 4: { web_name: 'Four' }, 12: { web_name: 'Twelve' }, 13: { web_name: 'Thirteen' } };
+  const dec = srDecisions(cap, trs, [w1, w2, w3], els);
+  ok(dec.length === 3 && dec[0].kind === 'captain' && dec[0].gw === 2 && dec[0].cost === 14, 'the costliest decision leads: the GW2 armband');
+  ok(dec[1].kind === 'transfer' && dec[1].cost === 13 && /plus a 4-point hit/.test(dec[1].text), 'a losing transfer is charged its share of the hit');
+  ok(dec[2].kind === 'bench' && dec[2].gw === 1 && dec[2].cost === 8 && /Twelve scored 8 on the bench/.test(dec[2].text), 'a bench star outscoring a starter is a bench call');
+  ok(srDecisions(srCaptaincy([w1]), [], [w1], els).length === 1 && srDecisions(null, [], [], els).length === 0, 'only real costs are listed, at most three');
+  const svg = srLineSvg([{ x: 1, y: 5 }, { x: 2, y: 17 }, { x: 3, y: 17 }], { label: 'Bench', fmt: (v) => v.toFixed(0) });
+  ok((svg.match(/<circle /g) || []).length === 3 && (svg.match(/<title>GW/g) || []).length === 3, 'one marker with a tooltip per point');
+  ok(/aria-label="Bench"/.test(svg) && /<path d="M/.test(svg) && (svg.match(/class="sr-grid"/g) || []).length === 3, 'a named chart, one path, three gridlines');
+  ok(/class="sr-end">17</.test(svg), 'the last value is labelled');
+  ok(srLineSvg([{ x: 4, y: 1.5 }], { fmt: (v) => '£' + v.toFixed(1) + 'm' }).includes('£1.5m') && srLineSvg([], {}) === '', 'a single point draws, no points draws nothing');
+  ok(!/—/.test(svg + JSON.stringify(dec) + JSON.stringify(ce)), 'no em dash in the report copy');
 }
 
 section('colour ramps: the heatmap steps carry their ink at AA, and the FDR ramp is one ramp');
