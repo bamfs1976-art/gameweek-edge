@@ -1,0 +1,49 @@
+name: Tool pages
+
+# Refreshes data/tool-pages.json from the official FPL API and commits it
+# when it changed. The deploy that follows renders the public tool pages
+# (www/tools/**) from the file: fixture difficulty by team, price changes,
+# injuries and suspensions and a page per top-200 player. Generated from
+# the data on every run, never hand-maintained.
+#
+# 06:20 UTC is after the night's price changes have landed and before the
+# daily content run; the second run catches afternoon team news.
+
+on:
+  schedule:
+    - cron: '20 6,15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tool-pages
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch the snapshot
+        run: node scripts/tools/fetch.mjs
+      - name: Commit when it changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/tool-pages.json
+          if git diff --staged --quiet; then
+            echo "Nothing to commit: the snapshot is unchanged."
+            exit 0
+          fi
+          git commit -m "Tool pages: snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3 4; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}" && exit 0
+            echo "push failed, retrying in $((2 ** i))s"
+            sleep $((2 ** i))
+          done
+          exit 1

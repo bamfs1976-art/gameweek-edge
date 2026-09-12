@@ -682,6 +682,23 @@ structured data and the methodology shell `FAQPage`, built from the landing
 FAQ it also shows. `dev/test-seo.mjs` holds all of it together and
 `dev/site-check.mjs` checks the deployed sitemap, robots and shells.
 
+**Tool pages** (`/tools/`, September 2026). Thin, static, indexable pages
+generated from the official FPL data and never written by hand: fixture
+difficulty by team (`/tools/fixture-difficulty/`, one page per club), price
+changes (`/tools/price-changes/`, the latest day from the price feed plus the
+gameweek's changes and net transfers), injuries and suspensions
+(`/tools/injuries/`, every flagged player with the official news, and who is
+one caution from a ban under the vendored ladder) and a page for each of the
+top 200 players by points (`/tools/players/<slug>/`). The Tool pages workflow
+(`.github/workflows/tool-pages.yml`, 06:20 and 15:20 UTC) runs
+`scripts/tools/fetch.mjs`, which reduces the feed to `data/tool-pages.json`
+(`scripts/tools/snapshot.mjs`, about 85 KB) and commits it when it changed;
+the build renders the pages from that file (`scripts/tools/pages.mjs`,
+`scripts/tools/build.mjs`) and adds them to the sitemap. Each page carries
+its own title, description, canonical, social tags and structured data, the
+app's tokens in dark and light, and links into the live tool in the app.
+Until the first snapshot lands the build writes no tool pages and says so.
+
 **Ten Seasons** — the archive is a hub now. *Archive* (free) keeps the
 all-time records, the two-career comparison and the daily puzzle. *Season
 table* (Pro, `/archive?view=seasons&season=2023-24`) is the season history
