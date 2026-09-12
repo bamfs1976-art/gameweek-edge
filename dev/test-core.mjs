@@ -251,6 +251,16 @@ const pieces = [
   extractFn(html, 'srChipEffect'),
   extractFn(html, 'srDecisions'),
   extractFn(html, 'srLineSvg'),
+  /* Team Planner: the six-week engine and its pure helpers. */
+  extractArrayConst(html, 'TP_CHIPS'),
+  ...['TP_HORIZON', 'TP_FT_MAX', 'TP_HIT', 'TP_HALF_GWS'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'tpHalf'),
+  extractFn(html, 'tpChipLabel'),
+  extractFn(html, 'tpChipAvailable'),
+  extractFn(html, 'tpBestXI'),
+  extractFn(html, 'tpEvaluate'),
+  extractFn(html, 'tpModelSquad'),
+  extractFn(html, 'tpMergeDrafts'),
   /* Panel names: retired ids and everyday synonyms the palette searches. */
   extractConst(html, 'PANEL_ALIAS'),
   extractConst(html, 'PANEL_SYNONYMS'),
@@ -379,7 +389,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5654,6 +5664,60 @@ section('Manager Season Report: team ids, curves, captaincy, ownership, chips, d
   ok(/class="sr-end">17</.test(svg), 'the last value is labelled');
   ok(srLineSvg([{ x: 4, y: 1.5 }], { fmt: (v) => '£' + v.toFixed(1) + 'm' }).includes('£1.5m') && srLineSvg([], {}) === '', 'a single point draws, no points draws nothing');
   ok(!/—/.test(svg + JSON.stringify(dec) + JSON.stringify(ce)), 'no em dash in the report copy');
+}
+
+section('Team Planner: chips per half, the six-week walk, a model squad and draft merging');
+{
+  const { TP_CHIPS, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts } = core;
+  ok(TP_CHIPS.length === 4 && TP_HIT === 4 && TP_FT_MAX === 5, 'four chips, a four-point hit, five banked transfers at most');
+  ok(tpHalf(19) === 1 && tpHalf(20) === 2, 'the season halves at GW19/20');
+  const used = [{ name: '3xc', event: 3 }];
+  ok(!tpChipAvailable('3xc', 9, used, []) && tpChipAvailable('3xc', 22, used, []), 'a chip used in the first half is gone for that half and back in the second');
+  ok(!tpChipAvailable('bboost', 10, [], [{ gw: 12, chip: 'bboost' }]) && tpChipAvailable('bboost', 12, [], [{ gw: 12, chip: 'bboost' }]), 'a chip planned elsewhere in the half blocks it, except in its own week');
+  /* Fifteen players: two keepers, five defenders, five mids, three forwards, prices in tenths. */
+  const P = {};
+  const add = (id, pos, team, price, xp) => { P[id] = { pos, team, price, xp }; };
+  [[1, 1, 1, 45, 3], [2, 1, 2, 40, 2], [3, 2, 3, 55, 4], [4, 2, 4, 50, 4], [5, 2, 5, 45, 3], [6, 2, 6, 45, 3], [7, 2, 7, 40, 2],
+   [8, 3, 8, 130, 8], [9, 3, 9, 90, 6], [10, 3, 10, 70, 5], [11, 3, 11, 60, 4], [12, 3, 12, 50, 3],
+   [13, 4, 13, 140, 7], [14, 4, 14, 80, 5], [15, 4, 15, 60, 2],
+   [20, 3, 9, 100, 9], [21, 4, 13, 90, 6], [22, 2, 3, 60, 5], [23, 1, 1, 50, 5]].forEach((a) => add(...a));
+  const ctx = { gws: [9, 10, 11, 12, 13, 14], xp: (id, gw) => (P[id] ? P[id].xp : 0) * (gw === 12 ? 2 : 1), price: (id) => P[id].price, pos: (id) => P[id].pos, team: (id) => P[id].team, used: [{ name: 'bboost', event: 4 }] };
+  const squad = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+  const xi = tpBestXI(squad.map((id) => ({ id, p: P[id].xp })), ctx.pos, ctx.team);
+  ok(xi.ids.length === 11 && xi.ids.indexOf(2) < 0 && xi.ids.indexOf(15) < 0 && xi.total === 52, 'the best eleven leaves the weaker keeper and the weakest forward on the bench');
+  const base = tpEvaluate({ squad, bank: 5, ft: 1, gws: {} }, ctx);
+  ok(base.rows.length === 6 && base.rows[0].captain === 8 && base.rows[0].points === 60 && base.rows[3].points === 120, 'with no moves the top projection is captain and points double in the double gameweek');
+  ok(base.rows.map((r) => r.ft).join(',') === '1,2,3,4,5,5' && base.hits === 0 && base.finalValue === 1005, 'free transfers roll up to five, value is squad plus bank');
+  const plan = { squad, bank: 5, ft: 1, gws: {
+    9: { transfers: [{ out: 9, in: 20 }, { out: 14, in: 21 }], captain: 20, chip: null },
+    10: { transfers: [{ out: 3, in: 22 }], captain: null, chip: 'freehit' },
+    11: { transfers: [], captain: 15, chip: '3xc' },
+    12: { transfers: [], captain: null, chip: 'bboost' },
+  } };
+  const ev = tpEvaluate(plan, ctx);
+  const r9 = ev.rows[0];
+  ok(r9.transfers === 2 && r9.hit === 4 && r9.ftAfter === 0 && r9.bank === 5 - 10 - 10 && r9.warnings.some((w) => /Over budget/.test(w)), 'two moves on one free transfer cost a hit, and going into the red is flagged');
+  ok(r9.captain === 20 && r9.points === tpBestXI(r9.squad.map((id) => ({ id, p: P[id].xp })), ctx.pos, ctx.team).total + 9 - 4, 'the chosen captain doubles and the hit comes off');
+  const r10 = ev.rows[1];
+  ok(r10.chip === 'freehit' && r10.hit === 0 && r10.ft === 1 && r10.ftAfter === 1 && r10.squad.indexOf(22) >= 0, 'a Free Hit week charges no hit and keeps the free transfer');
+  ok(ev.rows[2].squad.indexOf(22) < 0 && ev.rows[2].squad.indexOf(3) >= 0 && ev.rows[2].ft === 2, 'the squad reverts after the Free Hit and the transfer rolls on');
+  const r11 = ev.rows[2];
+  ok(r11.chip === '3xc' && r11.captain !== 15 && r11.warnings.some((w) => /not in the best eleven/.test(w)) && r11.capPts === 2 * ctx.xp(r11.captain, 11), 'a captain outside the eleven is replaced and a Triple Captain adds two multiples');
+  ok(ev.rows[3].chip === 'bboost' && ev.rows[3].benchPts > 0 && ev.rows[3].warnings.some((w) => /already used/.test(w)), 'a Bench Boost adds the bench and a chip already used this half is flagged');
+  ok(ev.warnings >= 3 && ev.total > base.total, 'warnings are counted and the plan totals');
+  const bad = tpEvaluate({ squad, bank: 5, ft: 1, gws: { 9: { transfers: [{ out: 8, in: 23 }, { out: 99, in: 20 }, { out: 9, in: 8 }], captain: null, chip: null } } }, ctx);
+  ok(bad.rows[0].transfers === 0 && bad.rows[0].warnings.length === 3, 'a position mismatch, a missing player and a duplicate are all refused with a reason');
+  const four = tpEvaluate({ squad, bank: 500, ft: 5, gws: { 9: { transfers: [{ out: 4, in: 22 }], captain: null, chip: null } } }, Object.assign({}, ctx, { team: (id) => [3, 5, 6, 22].indexOf(id) >= 0 ? 3 : P[id].team }));
+  ok(four.rows[0].warnings.some((w) => /three players from one club/.test(w)), 'a fourth player from one club is flagged');
+  const cands = Object.keys(P).map((id) => ({ id: +id, pos: P[id].pos, team: P[id].team, price: P[id].price, xp: P[id].xp }));
+  const model = tpModelSquad(cands, 1000);
+  const counts = model.ids.reduce((m, id) => { m[P[id].pos] = (m[P[id].pos] || 0) + 1; return m; }, {});
+  ok(model.complete && counts[1] === 2 && counts[2] === 5 && counts[3] === 5 && counts[4] === 3 && model.cost <= 1000, 'a model squad fills the quota inside the budget');
+  const cheap = tpModelSquad(cands, 950);
+  ok(cheap.complete && cheap.cost <= 950 && cheap.cost <= model.cost, 'a tighter budget walks the squad down');
+  const merged = tpMergeDrafts([{ id: 'a', name: 'A', updated: 5, plan: 1 }, { id: 'b', name: 'B', updated: 9, plan: 1 }], [{ id: 'a', name: 'A2', updated: 8, plan: 2 }, { id: 'c', name: 'C', updated: 1, plan: 3 }]);
+  ok(merged.length === 3 && merged.find((d) => d.id === 'a').name === 'A2' && merged[0].id === 'b' && merged[2].id === 'c', 'the newer copy of a draft wins and the list is newest first');
+  ok(!/—/.test(JSON.stringify(ev.rows.map((r) => r.warnings))), 'no em dash in the warnings');
 }
 
 section('colour ramps: the heatmap steps carry their ink at AA, and the FDR ramp is one ramp');

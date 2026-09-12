@@ -270,14 +270,22 @@ for i, (h, a) in enumerate(gw1):
                      "finished": i < 8, "started": started, "minutes": 90 if started else 0,
                      "team_h_score": (i % 4) if started else None,
                      "team_a_score": (i % 3) if started else None})
-for g in range(2, 9):
+# With the default CUR_EVENT the schedule stops at GW8, as it always did.
+# A mock run later in the season (CUR_EVENT=8 for the planner and the
+# season report) marks the rounds up to the current one as played and
+# schedules eight more, so a six-week plan has fixtures to project.
+LAST_SCHEDULED = 8 if CUR_EVENT == 1 else min(38, CUR_EVENT + 8)
+for g in range(2, LAST_SCHEDULED + 1):
     order = list(range(1, 21))
     rng.shuffle(order)
+    played = g <= CUR_EVENT
     for i in range(0, 20, 2):
         fid += 1
         fixtures.append({"id": fid, "event": g, "team_h": order[i], "team_a": order[i + 1],
-                         "team_h_score": None, "team_a_score": None,
-                         "finished": False, "started": False,
+                         "team_h_score": (i // 2) % 4 if played else None,
+                         "team_a_score": (i // 2) % 3 if played else None,
+                         "finished": played, "started": played,
+                         "minutes": 90 if played else 0,
                          "team_h_difficulty": rng.randint(2, 4),
                          "team_a_difficulty": rng.randint(2, 4),
                          "kickoff_time": iso(gw_deadline(g) + timedelta(

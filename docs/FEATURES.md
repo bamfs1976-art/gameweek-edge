@@ -89,7 +89,8 @@ Home
 
 My Team
 ├── My Squad             (free)  Live pitch from your picks + live points
-├── Transfer Planner     (free)  Multi-GW beam solver + replacement finder + AI plan
+├── Transfer Planner     (free)  Solver view: beam solver + replacement finder + AI plan;
+│                                Six-week plan view: transfers, captain and chip per GW
 ├── Captaincy Lab        (free)  Captain ranking by xP (safe + differential)
 ├── Chip Strategy        (free)  Chip allocation + best GWs (AI-assisted)
 ├── Squad Planner        (free)  Squad builder — real FPL rules, xP6, AI diagnosis
@@ -616,6 +617,18 @@ an ownership profile week by week on today's figures. Pro: chip effectiveness
 (what each chip added against the gameweek average), a decision timeline of
 the three costliest calls, and an AI‑written narrative reasoned only over the
 figures on the page. The share card carries the season figures.
+
+**Team Planner** — the six‑week plan view of the Transfer Planner
+(`/planner?view=plan`). One card per upcoming gameweek: the transfers you
+intend (out and in, like for like), the captain, and the chip, with the
+running projected points, the hit, free transfers before and after, the bank
+and the team value. Chips are validated against the history and the rest of
+the plan, once per half of the season; a Free Hit reverts the squad the week
+after; a Wildcard or Free Hit week charges no hit. Free: one plan, saved on
+the device, no account (a reader with no linked team starts from their Squad
+Planner draft or a model squad). Pro: named drafts, synced to Supabase when
+signed in (`supabase/gwedge_plans.sql`, local until it is applied), and a
+side‑by‑side comparison of two drafts.
 
 **Differentials** and the **Injury Monitor** are no longer panels — both were a
 filter and a sort over the same player data, so they are lenses on the Players

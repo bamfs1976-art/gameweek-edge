@@ -2343,6 +2343,17 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .sr-tl li{display:flex;gap:12px;align-items:flex-start;padding:8px 10px;background:var(--surface-3);border-radius:var(--r-md)}
 .sr-cost{font-family:var(--font-mono);font-weight:800;color:var(--red);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
 .sr-body{display:flex;flex-direction:column;gap:2px;min-width:0}
+/* Team Planner */
+.tp-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:8px 0}
+.tp-field{display:flex;flex-direction:column;gap:3px;flex:1 1 180px;min-width:0}
+.tp-sum{flex:1 1 100%}
+.tp-add{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.tp-add .tp-out{flex:1 1 200px;min-width:0}
+.tp-in-wrap{position:relative;flex:1 1 200px;min-width:0}
+.tp-in-wrap .tp-in{width:100%}
+.tp-in-wrap .sugg{position:absolute;left:0;right:0;z-index:5}
+.tp-warn{margin:8px 0 0;padding-left:18px;color:var(--amber);font-size:.8rem}
+.tp-gw.warn{border-color:var(--amber)}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -5650,7 +5661,7 @@ const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuri
    at parse time, taking the whole script — and the whole page — down with it.
    The arrow defers the lookup to call time, long after the consts exist.
    KEEP ON ONE LINE — dev/test-social.mjs reads only to the first newline. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v),compare:cmpSetView};
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v),compare:cmpSetView,transfers:tpSetView};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -5884,11 +5895,11 @@ function restoreScroll(){
 /* The hubs' current view, read rather than tracked, so the URL is always a
    function of the state and never drifts from it. The default view is left
    out of the URL: /players is the table, /players?view=diffs is a lens. */
-const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view(),compare:()=>CMP_VIEW};
-const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier',compare:'table'};
+const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view(),compare:()=>CMP_VIEW,transfers:()=>TP_VIEW};
+const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier',compare:'table',transfers:'solver'};
 /* Keys that belong to the panel rather than to one of its views, so a
    view change carries them over instead of starting clean. */
-const HUB_KEEP_KEYS={compare:['players','metrics']};
+const HUB_KEEP_KEYS={compare:['players','metrics'],transfers:['draft']};
 function hubViewParam(panelId){
   const g=HUB_GETVIEW[panelId];if(!g)return null;
   let v=null;try{v=g();}catch(_){}
@@ -14211,6 +14222,7 @@ function cosine(a,c){
 
 function suggestReplacements(b,hz,outId,selId,mode){
   const sel=document.getElementById(selId),out=document.getElementById(outId);
+  if(!sel||!out)return;
   const el=b.els[parseInt(sel.value,10)];
   if(!el){out.innerHTML='';return;}
   const sq=window._sq||{ids:new Set(),bank:0};
@@ -15059,12 +15071,22 @@ function renderTargets(sortKey){
   }).join('');
 }
 
+let TP_RENDER=0;
 async function hydrateTransfers(host){
+  /* A view switch mid-load must not let the older render finish into the
+     newer one: every await below is followed by a staleness check. */
+  const token=++TP_RENDER;
+  const stale=()=>token!==TP_RENDER||!host.isConnected;
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
+  if(stale())return;
+  if(urlEntryOnce('transfers'))TP_DRAFT=urlPick('draft',TP_DRAFT,null,v=>String(v).replace(/[^A-Za-z0-9_-]/g,'').slice(0,40)||null);
+  const bar='<div class="lensbar" id="tp-views">'+TP_VIEWS.map(v=>'<button class="lensbtn'+(v.id===TP_VIEW?' on':'')+'" data-view="'+v.id+'" onclick="tpGo(\''+v.id+'\')">'+esc(v.label)+'</button>').join('')+'</div>';
+  if(TP_VIEW==='plan'){await renderPlanView(host,b,fixtures,bar,stale);return;}
   /* Career context for the move itself. The single most expensive transfer
      mistake is buying the back of a hot streak — and the streak is visible in
      the form table, while the reason it will end is not. */
   const hIdx=histPriorIndex(await loadArchive().catch(()=>null));
+  if(stale())return;
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,6);
   const hzN=(hz[Object.keys(hz)[0]]||[]).length;
@@ -15080,8 +15102,10 @@ async function hydrateTransfers(host){
       const picks=await loadPicks(mid,b.cur.id);
       const bank=((picks.entry_history&&picks.entry_history.bank)||0);
       const squad=picks.picks.map(p=>b.els[p.element]).filter(Boolean);
+      if(stale())return;
       window._sq={ids:new Set(squad.map(e=>e.id)),bank};
       window._solver={b,hz,squad,bank,fixtures,ctx:await loadLeagueCtx().catch(()=>null)};
+      if(stale())return;
       /* Decision-grade single move: concrete OUT→IN with the money and the
          −4 breakeven spelled out, plus the honest "hold" alternative. */
       const xiEls=picks.picks.filter(p=>p.position<=11).map(p=>b.els[p.element]).filter(Boolean);
@@ -15194,10 +15218,290 @@ async function hydrateTransfers(host){
         aiGate('<button class="btn btn-primary btn-sm" onclick="genTransferPlan()">Plan my transfers</button>')+'<div id="transfer-ai" style="margin-top:14px"></div>'
       : '<p class="dl-sub">Link your team (top right) for AI transfer advice tailored to your squad.</p>')+
     '</div>';
-  host.innerHTML=budget+replacer+aiCard+
+  if(stale())return;
+  host.innerHTML=bar+budget+replacer+aiCard+
     '<div class="dl-sub" style="margin-bottom:12px">Transfer targets ranked by recent form, with each player’s next fixture difficulty.</div>'+
     sections;
 }
+
+/* ── Team Planner: a six-gameweek plan ─────────────────────
+   Transfers, captain and chip per gameweek, with the running projected
+   points, hits, free transfers and team value. The pure engine below
+   reads a plan and a context of functions (xp, price, position, club),
+   so it is testable without the app. Free: one plan on this device, no
+   account needed. Pro: named drafts, synced when signed in, compared
+   side by side. */
+const TP_VIEWS=[{id:'solver',label:'Solver'},{id:'plan',label:'Six-week plan'}];
+const TP_CHIPS=[{id:'wildcard',label:'Wildcard'},{id:'freehit',label:'Free Hit'},{id:'bboost',label:'Bench Boost'},{id:'3xc',label:'Triple Captain'}];
+const TP_HORIZON=6;
+const TP_FT_MAX=5;
+const TP_HIT=4;
+const TP_KEY='ge-plan-v1';
+let TP_VIEW='solver',TP_DRAFT=null;
+function tpSetView(v){TP_VIEW=TP_VIEWS.some(x=>x.id===v)?v:'solver';track('planner_view',{view:TP_VIEW});hubViewChanged('transfers');}
+function tpGo(v){if(v===TP_VIEW)return;historyPoint();tpSetView(v);renderPage('transfers');}
+/* Chips come in two sets, one per half of the season. */
+const TP_HALF_GWS=19;
+function tpHalf(gw){return gw>TP_HALF_GWS?2:1;}
+function tpChipLabel(id){const c=TP_CHIPS.filter(x=>x.id===id)[0];return c?c.label:id;}
+/* A chip is available in a gameweek when neither the history nor the rest of
+   the plan has it played in that half of the season. */
+function tpChipAvailable(chip,gw,used,planned){
+  const half=tpHalf(gw);
+  if((used||[]).some(u=>u&&u.name===chip&&tpHalf(u.event)===half))return false;
+  if((planned||[]).some(p=>p&&p.chip===chip&&p.gw!==gw&&tpHalf(p.gw)===half))return false;
+  return true;
+}
+/* The best eleven from a scored squad, through the app's formation picker. */
+function tpBestXI(scored,posOf,teamOf){
+  const best=bestXI(scored.map(x=>({id:x.id,p:x.p,el:{element_type:posOf(x.id),team:teamOf(x.id)}})));
+  if(!best)return {ids:[],total:0};
+  return {ids:best.xi.map(x=>x.id),total:best.total};
+}
+/* Walk the plan gameweek by gameweek. plan={squad:[15 ids],bank,ft,gws:{gw:{transfers:[{out,in}],captain,chip}}}
+   ctx={gws:[ids],xp(id,gw),price(id),pos(id),team(id),used:[{name,event}]} */
+function tpEvaluate(plan,ctx){
+  let squad=(plan.squad||[]).slice(),bank=plan.bank||0,ft=plan.ft==null?1:plan.ft;
+  const planned=Object.keys(plan.gws||{}).map(k=>({gw:+k,chip:(plan.gws[k]||{}).chip})).filter(x=>x.chip);
+  const rows=[];let total=0,hits=0,revert=null;
+  (ctx.gws||[]).forEach(gw=>{
+    const g=Object.assign({transfers:[],captain:null,chip:null},(plan.gws||{})[gw]||{});
+    if(revert){squad=revert.squad;bank=revert.bank;revert=null;}
+    const warnings=[];
+    const chip=g.chip&&TP_CHIPS.some(c=>c.id===g.chip)?g.chip:null;
+    if(chip&&!tpChipAvailable(chip,gw,ctx.used,planned))warnings.push(tpChipLabel(chip)+' is already used in this half of the season.');
+    const before={squad:squad.slice(),bank};
+    let n=0;
+    (g.transfers||[]).forEach(t=>{
+      const k=squad.indexOf(t.out);
+      if(k<0){warnings.push('A transfer out names a player no longer in the squad.');return;}
+      if(squad.indexOf(t.in)>=0){warnings.push('A transfer in names a player already in the squad.');return;}
+      if(ctx.pos(t.out)!==ctx.pos(t.in)){warnings.push('A transfer swaps players of different positions.');return;}
+      squad[k]=t.in;bank+=ctx.price(t.out)-ctx.price(t.in);n++;
+    });
+    const clubs={};squad.forEach(id=>{const c=ctx.team(id);clubs[c]=(clubs[c]||0)+1;});
+    if(Object.keys(clubs).some(c=>clubs[c]>3))warnings.push('More than three players from one club.');
+    if(bank<0)warnings.push('Over budget by £'+(-bank/10).toFixed(1)+'m.');
+    const free=chip==='wildcard'||chip==='freehit';
+    const hit=free?0:Math.max(0,n-ft)*TP_HIT;
+    const ftAfter=free?ft:Math.max(0,ft-n);
+    const scored=squad.map(id=>({id,p:ctx.xp(id,gw)}));
+    const xi=tpBestXI(scored,ctx.pos,ctx.team);
+    const bench=squad.filter(id=>xi.ids.indexOf(id)<0);
+    const top=xi.ids.slice().sort((a,c)=>ctx.xp(c,gw)-ctx.xp(a,gw))[0]||null;
+    let captain=g.captain&&xi.ids.indexOf(g.captain)>=0?g.captain:top;
+    if(g.captain&&captain!==g.captain)warnings.push('The chosen captain is not in the best eleven that week, so the top projection wears the armband.');
+    const capMult=chip==='3xc'?3:2;
+    const capPts=captain?ctx.xp(captain,gw)*(capMult-1):0;
+    const benchPts=chip==='bboost'?bench.reduce((s,id)=>s+ctx.xp(id,gw),0):0;
+    const points=xi.total+capPts+benchPts-hit;
+    total+=points;hits+=hit;
+    const value=squad.reduce((s,id)=>s+ctx.price(id),0)+bank;
+    rows.push({gw,squad:squad.slice(),xi:xi.ids,bench,captain,chip,transfers:n,hit,ft,ftAfter,bank,value,points,xiPts:xi.total,capPts,benchPts,warnings});
+    if(chip==='freehit')revert=before;
+    ft=Math.min(TP_FT_MAX,ftAfter+1);
+  });
+  return {rows,total,hits,finalValue:rows.length?rows[rows.length-1].value:0,warnings:rows.reduce((n,r)=>n+r.warnings.length,0)};
+}
+/* A starting squad for a reader with no linked team: the best projection at
+   each slot under the quota and the club cap, walked down to the budget by
+   swapping the weakest value for the cheapest alternative in that position. */
+function tpModelSquad(cands,budget){
+  const quota={1:2,2:5,3:5,4:3};
+  const byPos={1:[],2:[],3:[],4:[]};
+  (cands||[]).forEach(c=>{if(byPos[c.pos])byPos[c.pos].push(c);});
+  Object.keys(byPos).forEach(k=>byPos[k].sort((a,c)=>c.xp-a.xp));
+  const club={},pick=[];
+  [1,2,3,4].forEach(pos=>{let n=0;for(const c of byPos[pos]){if(n>=quota[pos])break;if((club[c.team]||0)>=3)continue;pick.push(c);club[c.team]=(club[c.team]||0)+1;n++;}});
+  const cost=()=>pick.reduce((s,c)=>s+c.price,0);
+  let guard=0;
+  while(cost()>budget&&guard++<60){
+    let best=null;
+    pick.forEach((c,i)=>{
+      const alts=byPos[c.pos].filter(a=>a.price<c.price&&pick.indexOf(a)<0&&((club[a.team]||0)<3||a.team===c.team));
+      if(!alts.length)return;
+      const a=alts.reduce((x,y)=>(c.xp-y.xp)/Math.max(1,c.price-y.price)<(c.xp-x.xp)/Math.max(1,c.price-x.price)?y:x);
+      const loss=(c.xp-a.xp)/Math.max(1,c.price-a.price);
+      if(!best||loss<best.loss)best={i,a,loss};
+    });
+    if(!best)break;
+    const out=pick[best.i];club[out.team]--;pick[best.i]=best.a;club[best.a.team]=(club[best.a.team]||0)+1;
+  }
+  return {ids:pick.map(c=>c.id),cost:cost(),complete:pick.length===15};
+}
+/* Drafts on this device, and the merge with what the cloud holds: the newer
+   copy of each draft wins, by its updated stamp. */
+function tpLoadStore(){
+  try{const o=JSON.parse(localStorage.getItem(TP_KEY)||'null');
+    if(o&&Array.isArray(o.drafts)){const sn=curSeason();if(o.season&&sn&&o.season!==sn)return {season:sn,drafts:[],active:null};return o;}
+  }catch(_){}
+  return {season:curSeason(),drafts:[],active:null};
+}
+function tpSaveStore(st){try{localStorage.setItem(TP_KEY,JSON.stringify(st));}catch(_){}}
+function tpMergeDrafts(local,cloud){
+  const by={};
+  (local||[]).forEach(d=>{if(d&&d.id)by[d.id]=d;});
+  (cloud||[]).forEach(d=>{if(!d||!d.id)return;const l=by[d.id];if(!l||(d.updated||0)>(l.updated||0))by[d.id]=d;});
+  return Object.keys(by).map(k=>by[k]).sort((a,c)=>(c.updated||0)-(a.updated||0));
+}
+function tpNewDraft(name,plan){return {id:'d'+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36),name:name||'My plan',updated:Date.now(),plan};}
+/* Cloud sync for Pro readers who are signed in. Every failure is silent
+   and the planner says "saved on this device" instead. */
+async function tpCloudPull(){
+  if(!sb||!uid()||!isPro())return null;
+  try{const {data,error}=await sb.from('gwedge_plans').select('id,name,plan,updated_at').eq('user_id',uid());
+    if(error||!data)return null;
+    return data.map(r=>({id:r.id,name:r.name,plan:r.plan,updated:r.updated_at?new Date(r.updated_at).getTime():0}));
+  }catch(_){return null;}
+}
+async function tpCloudPush(d){
+  if(!sb||!uid()||!isPro()||!d)return false;
+  try{const {error}=await sb.from('gwedge_plans').upsert({user_id:uid(),id:d.id,name:d.name,season:curSeason()||null,plan:d.plan,updated_at:new Date(d.updated||Date.now()).toISOString()});return !error;}catch(_){return false;}
+}
+async function tpCloudDelete(id){
+  if(!sb||!uid()||!isPro())return false;
+  try{const {error}=await sb.from('gwedge_plans').delete().eq('user_id',uid()).eq('id',id);return !error;}catch(_){return false;}
+}
+async function renderPlanView(host,b,fixtures,bar,stale){
+  stale=stale||(()=>!host.isConnected);
+  host.innerHTML=bar+skel(5);
+  const now=Date.now();
+  const gws=b.events.filter(e=>!e.finished&&e.deadline_time&&new Date(e.deadline_time).getTime()>now).slice(0,TP_HORIZON).map(e=>e.id);
+  if(!gws.length){host.innerHTML=bar+stateBox('calendar','No gameweeks left to plan','The season’s deadlines have all passed. The planner returns with the new season’s fixtures.');return;}
+  const hz=buildHorizon(b,fixtures,TP_HORIZON+4);
+  const xpCache={};
+  const xp=(id,gw)=>{const k=id+':'+gw;if(xpCache[k]!=null)return xpCache[k];const e=b.els[id];let v=0;
+    if(e)(hz[e.team]||[]).forEach(fx=>{if(fx.event===gw)v+=fixtureXP(b,e,fx);});xpCache[k]=v;return v;};
+  const price=id=>(b.els[id]||{}).now_cost||0,pos=id=>(b.els[id]||{}).element_type||0,team=id=>(b.els[id]||{}).team||0;
+  /* The starting squad: the linked team, else the Squad Planner draft, else a model squad. */
+  const mid=getMid();let start=null,source='',used=[],ftStart=1;
+  if(mid){
+    try{const [picks,hist]=await Promise.all([loadPicks(mid,b.cur.id),loadHistory(mid).catch(()=>null)]);
+      const ids=picks.picks.map(p=>p.element).filter(id=>b.els[id]);
+      if(ids.length===15){start={squad:ids,bank:(picks.entry_history&&picks.entry_history.bank)||0};source='your linked squad';}
+      if(hist){used=hist.chips||[];const f=freeTransfers(hist,TP_FT_MAX,b.cur.id);if(f&&f.ft!=null)ftStart=Math.max(1,f.ft);}
+    }catch(_){}
+  }
+  if(stale())return;
+  if(!start){const d=loadDraftIds();if(d.length===15&&d.every(id=>b.els[id])){start={squad:d,bank:Math.max(0,planBudgetTenths()-d.reduce((s,id)=>s+price(id),0))};source='your Squad Planner draft';}}
+  if(!start){
+    const cands=b.elements.filter(e=>e.status==='a'&&e.now_cost>0).map(e=>({id:e.id,pos:e.element_type,team:e.team,price:e.now_cost,xp:gws.reduce((sm,gw)=>sm+xp(e.id,gw),0)}));
+    const m=tpModelSquad(cands,planBudgetTenths());
+    if(m.complete){start={squad:m.ids,bank:planBudgetTenths()-m.cost};source='a model squad, since no team is linked';}
+  }
+  if(!start){host.innerHTML=bar+stateBox('swap','No squad to plan from','Link your team in Settings, or build a draft in the Squad Planner, and the six-week plan starts from it.');return;}
+  const ctx={gws,xp,price,pos,team,used};
+  window._tpCtx=ctx;
+  /* Drafts: one on this device for everyone, several for Pro, merged with the cloud. */
+  let st=tpLoadStore();
+  if(isPro()){const cloud=await tpCloudPull();if(cloud){st.drafts=tpMergeDrafts(st.drafts,cloud);tpSaveStore(st);}}
+  if(stale())return;
+  if(!st.drafts.length){st.drafts=[tpNewDraft('My plan',{squad:start.squad,bank:start.bank,ft:ftStart,gws:{}})];st.active=st.drafts[0].id;tpSaveStore(st);}
+  if(!isPro())st.drafts=st.drafts.slice(0,1);
+  let active=st.drafts.find(d=>d.id===(TP_DRAFT||st.active))||st.drafts[0];
+  TP_DRAFT=active.id;st.active=active.id;
+  const writeUrl=()=>setUrlState({draft:st.drafts.length>1?active.id:null});
+  writeUrl();
+  let synced=null;
+  const save=async(push)=>{active.updated=Date.now();tpSaveStore(st);if(push!==false){synced=await tpCloudPush(active);paintStatus();}};
+  const nm=id=>esc((b.els[id]||{}).web_name||'–');
+  const gbp=t=>'£'+(t/10).toFixed(1)+'m';
+  const paintStatus=()=>{const el=host.querySelector('#tp-status');if(!el)return;
+    el.textContent=isPro()?(synced?'Synced to your account.':synced===false?'Saved on this device. Cloud sync is unavailable right now.':'Saved on this device.'):'Saved on this device. No account needed.';};
+  const paint=()=>{
+    const plan=active.plan;
+    const ev=tpEvaluate(plan,ctx);
+    const planned=Object.keys(plan.gws||{}).map(k=>({gw:+k,chip:(plan.gws[k]||{}).chip})).filter(x=>x.chip);
+    const draftOpts=st.drafts.map(d=>'<option value="'+esc(d.id)+'"'+(d.id===active.id?' selected':'')+'>'+esc(d.name)+'</option>').join('');
+    const head='<div class="card mb-20">'+cardHead('Six-week plan',
+        (isPro()?'<select class="modal-in" id="tp-draft" aria-label="Draft">'+draftOpts+'</select>'+
+          '<button class="btn btn-ghost btn-sm" id="tp-new">New draft</button><button class="btn btn-ghost btn-sm" id="tp-rename">Rename</button>'+(st.drafts.length>1?'<button class="btn btn-ghost btn-sm" id="tp-del">Delete</button>':'')
+          :proLockWrap('<button class="btn btn-ghost btn-sm" disabled>New draft</button>',null,'Pro keeps several named drafts and syncs them to your account.'))+
+        '<button class="btn btn-ghost btn-sm" id="tp-reset">Reset</button>')+
+      '<p class="dl-sub" style="margin:0 0 6px">Starts from '+source+': '+gbp(plan.squad.reduce((s,id)=>s+price(id),0))+' of players, '+gbp(plan.bank)+' in the bank, '+plan.ft+' free transfer'+(plan.ft===1?'':'s')+'. Projections are the model’s expected points for each fixture; selling prices are taken as current prices.</p>'+
+      '<p class="dl-sub" id="tp-status" style="margin:0"></p></div>';
+    const strip='<div class="grid g-4 mb-20">'+
+      kpi('Projected points',ev.total.toFixed(0),'over '+gws.length+' gameweeks','var(--green)')+
+      kpi('Hits',ev.hits?'-'+ev.hits:'0',ev.hits?'points on hits':'no hits taken','var(--red)')+
+      kpi('Team value',gbp(ev.finalValue),'at GW'+gws[gws.length-1],'var(--blue)')+
+      kpi('Chips',planned.length?planned.map(p=>tpChipLabel(p.chip).replace('Triple Captain','TC').replace('Bench Boost','BB').replace('Wildcard','WC').replace('Free Hit','FH')+' GW'+p.gw).join(' · '):'none',ev.warnings?ev.warnings+' warning'+(ev.warnings===1?'':'s'):'plan is valid','var(--amber)')+
+      '</div>';
+    const cards=ev.rows.map((r,i)=>{
+      const g=Object.assign({transfers:[],captain:null,chip:null},(plan.gws||{})[r.gw]||{});
+      const evn=b.events.find(e=>e.id===r.gw)||{};
+      const squadBefore=i?ev.rows[i-1].chip==='freehit'?ev.rows[i-1].squad&&(i>1?ev.rows[i-2].squad:plan.squad):ev.rows[i-1].squad:plan.squad;
+      const outOpts=(i?(ev.rows[i-1].chip==='freehit'?(i>1?ev.rows[i-2].squad:plan.squad):ev.rows[i-1].squad):plan.squad).map(id=>'<option value="'+id+'">'+nm(id)+' ('+posShort(b,pos(id))+' '+gbp(price(id))+')</option>').join('');
+      const trs=(g.transfers||[]).map((t,k)=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+nm(t.out)+' → <b>'+nm(t.in)+'</b></span><span class="dl-sub">'+(price(t.out)-price(t.in)>=0?'+':'')+gbp(price(t.out)-price(t.in)).replace('£-','-£')+' to the bank</span></span><button type="button" class="btn btn-ghost btn-sm" data-rm="'+r.gw+':'+k+'" aria-label="Remove this transfer">Remove</button></div>').join('');
+      const capOpts=r.xi.slice().sort((a,c)=>xp(c,r.gw)-xp(a,r.gw)).map(id=>'<option value="'+id+'"'+(id===r.captain?' selected':'')+'>'+nm(id)+' ('+xp(id,r.gw).toFixed(1)+')</option>').join('');
+      const chipOpts='<option value="">No chip</option>'+TP_CHIPS.map(c=>{const ok=tpChipAvailable(c.id,r.gw,used,planned)||g.chip===c.id;
+        return '<option value="'+c.id+'"'+(g.chip===c.id?' selected':'')+(ok?'':' disabled')+'>'+esc(c.label)+(ok?'':' (used this half)')+'</option>';}).join('');
+      return '<div class="card mb-20 tp-gw'+(r.warnings.length?' warn':'')+'">'+cardHead('GW'+r.gw+(evn.name&&evn.name!=='Gameweek '+r.gw?' · '+esc(evn.name):''),
+          '<b class="num" title="Projected points this gameweek">'+r.points.toFixed(1)+' pts</b>')+
+        '<div class="tp-row"><span class="dl-sub">Free transfers '+r.ft+' → '+r.ftAfter+' · '+(r.hit?'<span style="color:var(--red)">-'+r.hit+' hit</span>':'no hit')+' · bank '+gbp(r.bank)+' · value '+gbp(r.value)+'</span></div>'+
+        (trs?'<div class="dl">'+trs+'</div>':'<p class="dl-sub" style="margin:6px 0">No transfers this week.</p>')+
+        '<div class="tp-add"><select class="modal-in tp-out" data-gw="'+r.gw+'" aria-label="Player to move on in GW'+r.gw+'">'+outOpts+'</select>'+
+          '<span class="tp-in-wrap"><input class="modal-in tp-in" data-gw="'+r.gw+'" type="search" placeholder="Bring in…" aria-label="Search a player to bring in for GW'+r.gw+'" autocomplete="off"><div class="sugg" data-sugg="'+r.gw+'"></div></span></div>'+
+        '<div class="tp-row">'+
+          '<label class="tp-field"><span class="dl-sub">Captain</span><select class="modal-in tp-cap" data-gw="'+r.gw+'" aria-label="Captain for GW'+r.gw+'">'+capOpts+'</select></label>'+
+          '<label class="tp-field"><span class="dl-sub">Chip</span><select class="modal-in tp-chip" data-gw="'+r.gw+'" aria-label="Chip for GW'+r.gw+'">'+chipOpts+'</select></label>'+
+          '<span class="dl-sub tp-sum">XI '+r.xiPts.toFixed(1)+' · captain +'+r.capPts.toFixed(1)+(r.benchPts?' · bench +'+r.benchPts.toFixed(1):'')+'</span>'+
+        '</div>'+
+        (r.warnings.length?'<ul class="tp-warn">'+r.warnings.map(w=>'<li>'+esc(w)+'</li>').join('')+'</ul>':'')+
+        '</div>';
+    }).join('');
+    let compare='';
+    if(isPro()&&st.drafts.length>1){
+      const other=st.drafts.find(d=>d.id===(TP_CMP||''))||st.drafts.find(d=>d.id!==active.id);
+      const ev2=other?tpEvaluate(other.plan,ctx):null;
+      const opts=st.drafts.filter(d=>d.id!==active.id).map(d=>'<option value="'+esc(d.id)+'"'+(other&&d.id===other.id?' selected':'')+'>'+esc(d.name)+'</option>').join('');
+      compare='<div class="card mb-20">'+cardHead('Compare drafts','<select class="modal-in" id="tp-cmp" aria-label="Draft to compare against">'+opts+'</select>')+
+        (ev2?'<div class="fdr"><table class="cmp-table"><tr><th class="tm">Gameweek</th><td><b>'+esc(active.name)+'</b></td><td><b>'+esc(other.name)+'</b></td><td>Gap</td></tr>'+
+          ev.rows.map((r,i)=>{const o=ev2.rows[i]||{points:0,chip:null};const d=r.points-o.points;
+            return '<tr><th class="tm">GW'+r.gw+'</th><td class="num">'+r.points.toFixed(1)+(r.chip?' <span class="dl-sub">'+esc(tpChipLabel(r.chip))+'</span>':'')+'</td><td class="num">'+o.points.toFixed(1)+(o.chip?' <span class="dl-sub">'+esc(tpChipLabel(o.chip))+'</span>':'')+'</td><td class="num" style="color:'+(d>=0?'var(--green)':'var(--red)')+'">'+(d>=0?'+':'')+d.toFixed(1)+'</td></tr>';}).join('')+
+          '<tr><th class="tm">Total</th><td class="num"><b>'+ev.total.toFixed(1)+'</b></td><td class="num"><b>'+ev2.total.toFixed(1)+'</b></td><td class="num"><b>'+(ev.total-ev2.total>=0?'+':'')+(ev.total-ev2.total).toFixed(1)+'</b></td></tr>'+
+          '<tr><th class="tm">Hits</th><td class="num">'+ev.hits+'</td><td class="num">'+ev2.hits+'</td><td class="num">'+(ev2.hits-ev.hits>=0?'+':'')+(ev2.hits-ev.hits)+'</td></tr>'+
+          '<tr><th class="tm">Value at the end</th><td class="num">'+gbp(ev.finalValue)+'</td><td class="num">'+gbp(ev2.finalValue)+'</td><td class="num">'+gbp(ev.finalValue-ev2.finalValue).replace('£-','-£')+'</td></tr>'+
+          '</table></div>':'')+'</div>';
+    }
+    host.innerHTML=bar+head+strip+cards+compare;
+    paintStatus();
+    window._tpPlan={draft:active.id,total:ev.total,hits:ev.hits,rows:ev.rows.map(r=>({gw:r.gw,points:+r.points.toFixed(1),chip:r.chip,transfers:r.transfers}))};
+  };
+  const gwOf=el=>+el.dataset.gw;
+  host.addEventListener('change',async e=>{
+    const t=e.target;
+    if(t.classList.contains('tp-cap')){const gw=gwOf(t);active.plan.gws[gw]=Object.assign({transfers:[],captain:null,chip:null},active.plan.gws[gw]||{},{captain:+t.value||null});await save();paint();return;}
+    if(t.classList.contains('tp-chip')){const gw=gwOf(t);active.plan.gws[gw]=Object.assign({transfers:[],captain:null,chip:null},active.plan.gws[gw]||{},{chip:t.value||null});track('planner_chip',{chip:t.value||'none'});await save();paint();return;}
+    if(t.id==='tp-draft'){const d=st.drafts.find(x=>x.id===t.value);if(d){active=d;TP_DRAFT=d.id;st.active=d.id;tpSaveStore(st);historyPoint();writeUrl();paint();}return;}
+    if(t.id==='tp-cmp'){TP_CMP=t.value;paint();return;}
+  });
+  host.addEventListener('input',e=>{
+    const t=e.target;if(!t.classList.contains('tp-in'))return;
+    const gw=gwOf(t);const box=host.querySelector('[data-sugg="'+gw+'"]');
+    const row=(active.plan.gws[gw]||{});const r=null;
+    const exclude=new Set((tpEvaluate(active.plan,ctx).rows.find(x=>x.gw===gw)||{squad:[]}).squad);
+    renderSuggestions(b,t.value,box,exclude,id=>{
+      const sel=host.querySelector('.tp-out[data-gw="'+gw+'"]');const out=sel?+sel.value:0;
+      if(!out||!id)return;
+      if(pos(out)!==pos(id)){toast('Swap like for like: '+posShort(b,pos(out))+' for '+posShort(b,pos(out)));return;}
+      const g=active.plan.gws[gw]=Object.assign({transfers:[],captain:null,chip:null},active.plan.gws[gw]||{});
+      g.transfers=(g.transfers||[]).concat([{out,in:id}]);
+      track('planner_transfer',{gw});save().then(paint);
+    });
+  });
+  host.addEventListener('click',async e=>{
+    const rm=e.target.closest('[data-rm]');
+    if(rm){const [gw,k]=rm.dataset.rm.split(':').map(Number);const g=active.plan.gws[gw];if(g&&g.transfers){g.transfers.splice(k,1);await save();paint();}return;}
+    if(e.target.closest('#tp-reset')){if(!confirm('Reset this draft to the starting squad and no moves?'))return;active.plan={squad:start.squad,bank:start.bank,ft:ftStart,gws:{}};await save();paint();return;}
+    if(e.target.closest('#tp-new')){const name=prompt('Name the new draft','Draft '+(st.drafts.length+1));if(name==null)return;
+      const d=tpNewDraft(name.trim()||('Draft '+(st.drafts.length+1)),{squad:start.squad,bank:start.bank,ft:ftStart,gws:{}});st.drafts.unshift(d);active=d;TP_DRAFT=d.id;st.active=d.id;await save();historyPoint();writeUrl();paint();return;}
+    if(e.target.closest('#tp-rename')){const name=prompt('Rename this draft',active.name);if(name==null||!name.trim())return;active.name=name.trim();await save();paint();return;}
+    if(e.target.closest('#tp-del')){if(st.drafts.length<2||!confirm('Delete the draft “'+active.name+'”?'))return;const gone=active.id;st.drafts=st.drafts.filter(d=>d.id!==gone);active=st.drafts[0];TP_DRAFT=active.id;st.active=active.id;tpSaveStore(st);tpCloudDelete(gone);writeUrl();paint();return;}
+  });
+  paint();
+  track('planner_plan',{source,gws:gws.length,pro:isPro()});
+}
+let TP_CMP=null;
 function genTransferPlan(){
   if(!getMid())return;
   return runAI('transfers',askContext,'transfer-ai',
