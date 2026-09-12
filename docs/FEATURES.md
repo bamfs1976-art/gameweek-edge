@@ -121,7 +121,7 @@ Planner
 └── Alerts               (free)  Price/injury/deadline + model-watch alerts
 
 Rivals
-├── Mini-Leagues         (free)  Classic + H2H standings, GW awards
+├── Mini-Leagues         (free)  Classic + H2H + your own league; squads, captains, transfers; Pro rival tools
 ├── Rival Scout          (Pro)   Track up to 5 rivals, overlap + gaps
 └── Ownership            (Pro)   What the field owns, and how much you own
     ├── Your EO                  Effective ownership; your cover, edge and exposure
@@ -781,10 +781,18 @@ by average CS% over the window; cells show opponent + H/(a) on a green→red
 scale; doubles stack in the cell, blanks show –. Cached per bundle fetch.
 Pre‑season the window is GW1–6 of the new season.
 
-**Mini‑Leagues** — your **classic** and **head‑to‑head** leagues. Classic shows
-total + rank movement and a **Gameweek awards** tool (best captain, bench
-tragedy, differential hero across the top 10). H2H shows W‑D‑L, points‑for and
-league points.
+**Mini‑Leagues** — every **classic** and **head‑to‑head** league on the
+linked entry, plus **your own league**: paste any set of Team IDs and track
+them as a group (kept on the device, and on the account when signed in;
+`supabase/gwedge_groups.sql`). Classic shows total + rank movement and a
+**Gameweek awards** tool (best captain, bench tragedy, differential hero
+across the top 10). H2H shows W‑D‑L, points‑for and league points. The
+**Detailed** view loads every squad on the page and adds effective ownership
+across the league, the captains across the league, this gameweek's transfers,
+and for Pro the rival tools: differentials the league has left alone, who is
+about to overtake you (and who you catch) on next‑gameweek projections, and
+the template overlap of each rival's eleven with yours. A group opens at
+`/leagues?league=<id>&type=custom`.
 
 **Chip plan (GW1–19, official FDR)** — chips reset at the halfway point, so
 each one is used inside its half or lost. That makes the planning window the

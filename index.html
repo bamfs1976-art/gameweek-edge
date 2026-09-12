@@ -2354,6 +2354,12 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .tp-in-wrap .sugg{position:absolute;left:0;right:0;z-index:5}
 .tp-warn{margin:8px 0 0;padding-left:18px;color:var(--amber);font-size:.8rem}
 .tp-gw.warn{border-color:var(--amber)}
+/* Your own league */
+.grp-form{display:flex;flex-direction:column;gap:8px}
+.grp-form textarea{font-family:var(--font-mono);resize:vertical;min-height:70px}
+.grp-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grp-row{align-items:center;gap:8px}
+.grp-open{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;display:block}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -21782,7 +21788,7 @@ let LEAGUE_SEL=null,LEAGUE_TYPE='classic',LEAGUE_PAGE=1,LEAGUE_ME_RANK=0;
 function lgReadUrl(){
   if(urlEntryOnce('leagues')){
     LEAGUE_SEL=urlPick('league',LEAGUE_SEL,null,v=>parseInt(v,10)>0?parseInt(v,10):null);
-    LEAGUE_TYPE=urlPick('type',LEAGUE_TYPE,'classic',v=>v==='h2h'||v==='classic'?v:null);
+    LEAGUE_TYPE=urlPick('type',LEAGUE_TYPE,'classic',v=>v==='h2h'||v==='classic'||v==='custom'?v:null);
     LEAGUE_PAGE=urlPick('page',LEAGUE_PAGE,1,v=>parseInt(v,10)>0?parseInt(v,10):null);
     LEAGUE_SORT=urlPick('sort',LEAGUE_SORT,'rank',v=>{const s=leagueSortSpec(v);return s?s.key:null;});
     LEAGUE_DIR=urlPick('dir',LEAGUE_DIR,0,v=>v==='asc'?1:v==='desc'?-1:null);
@@ -21804,7 +21810,7 @@ async function hydrateLeagues(host){
   const entry=await loadEntry(mid);
   const classic=((entry.leagues&&entry.leagues.classic)||[]).filter(l=>l.id);
   const h2h=((entry.leagues&&entry.leagues.h2h)||[]).filter(l=>l.id);
-  if(!classic.length&&!h2h.length){host.innerHTML=stateBox('trophy','No leagues yet','Your mini-leagues appear here once you’ve joined some.');return;}
+  const groups=await grpLoadAll();
   const btn=(l,type)=>{
     const mv=(l.entry_last_rank&&l.entry_rank)?l.entry_last_rank-l.entry_rank:0;
     return '<button class="dl-row" data-league="'+l.id+'" data-type="'+type+'" data-rank="'+(l.entry_rank||0)+'" style="width:100%;text-align:left">'+
@@ -21814,11 +21820,151 @@ async function hydrateLeagues(host){
   };
   const group=(title,arr,type)=>arr.length
     ? '<div class="card mb-20"><div class="card-title">'+title+'</div><div class="dl">'+arr.map(l=>btn(l,type)).join('')+'</div></div>':'';
-  host.innerHTML=group('Classic leagues',classic,'classic')+group('Head-to-head leagues',h2h,'h2h')+
+  const grpRow=g=>'<div class="dl-row grp-row"><button class="dl-grow grp-open" data-league="'+g.id+'" data-type="custom" data-rank="0" style="text-align:left">'+
+      '<span class="dl-nm">'+esc(g.name)+'</span><span class="dl-sub">'+g.ids.length+' team'+(g.ids.length===1?'':'s')+' · your own league</span></button>'+
+      '<button type="button" class="btn btn-ghost btn-sm" data-grpdel="'+g.id+'" aria-label="Delete the group '+esc(g.name)+'">Delete</button></div>';
+  const builder='<div class="card mb-20">'+cardHead('Your own league')+
+    '<p class="dl-sub" style="margin:0 0 10px">Paste any set of Team IDs and track them as a league: standings, squads, captains and transfers, the same as a real one. Kept on this device'+(uid()?' and on your account':', and on your account when you sign in')+'.</p>'+
+    (groups.length?'<div class="dl mb-14" id="grp-list">'+groups.map(grpRow).join('')+'</div>':'')+
+    '<form id="grp-form" class="grp-form">'+
+      '<input class="modal-in" id="grp-name" maxlength="40" placeholder="A name for the group" aria-label="Group name">'+
+      '<textarea class="modal-in" id="grp-ids" rows="3" placeholder="Team IDs, one per line or separated by commas" aria-label="Team IDs"></textarea>'+
+      '<div class="grp-actions"><button class="btn btn-primary btn-sm" type="submit">Save group</button><span class="dl-sub">Up to 50 teams. A Team ID is the number after /entry/ in the FPL address bar.</span></div>'+
+    '</form></div>';
+  host.innerHTML=(classic.length||h2h.length
+      ? group('Classic leagues',classic,'classic')+group('Head-to-head leagues',h2h,'h2h')
+      : '<div class="card mb-20"><div class="ge-state">'+svg(ICON.trophy)+'<b>No leagues yet</b><p>Your mini-leagues appear here once you have joined some. In the meantime, build one of your own below.</p></div></div>')+
+    builder+
     '<div class="dl-sub">Tap a league to see the standings.</div>';
   Array.prototype.forEach.call(host.querySelectorAll('[data-league]'),b=>
     b.addEventListener('click',()=>{historyPoint();LEAGUE_SEL=parseInt(b.dataset.league,10);LEAGUE_TYPE=b.dataset.type;
       LEAGUE_ME_RANK=parseInt(b.dataset.rank,10)||0;LEAGUE_PAGE=1;lgWriteUrl();renderPage('leagues');}));
+  const form=host.querySelector('#grp-form');
+  if(form)form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const ids=lgParseIds(host.querySelector('#grp-ids').value);
+    const name=(host.querySelector('#grp-name').value||'').trim()||('My league '+(groups.length+1));
+    if(ids.length<2){toast('Add at least two Team IDs');return;}
+    const g={id:Date.now(),name,ids,updated:Date.now()};
+    await grpSave(g);track('league_group',{n:ids.length});
+    historyPoint();LEAGUE_SEL=g.id;LEAGUE_TYPE='custom';LEAGUE_ME_RANK=0;LEAGUE_PAGE=1;lgWriteUrl();renderPage('leagues');
+  });
+  host.addEventListener('click',async e=>{
+    const del=e.target.closest('[data-grpdel]');
+    if(!del)return;
+    const g=groups.find(x=>String(x.id)===del.dataset.grpdel);
+    if(!g||!confirm('Delete the group “'+g.name+'”?'))return;
+    await grpDelete(g.id);renderPage('leagues');
+  });
+}
+/* ── Your own league: a group of Team IDs, stored per user ─────
+   On this device always; on the account as well when signed in, the way
+   the watchlist and rivals are. The newer copy of a group wins. */
+const GRP_KEY='ge-groups-v1';
+function lgParseIds(text){
+  const out=[];
+  String(text==null?'':text).split(/[^0-9]+/).forEach(t=>{const n=parseInt(t,10);if(n>0&&n<100000000&&out.indexOf(n)<0)out.push(n);});
+  return out.slice(0,50);
+}
+function grpLoadLocal(){
+  try{const o=JSON.parse(localStorage.getItem(GRP_KEY)||'null');
+    if(o&&Array.isArray(o.groups)){const sn=curSeason();if(o.season&&sn&&o.season!==sn)return [];return o.groups.filter(g=>g&&g.id&&Array.isArray(g.ids));}
+  }catch(_){}
+  return [];
+}
+function grpSaveLocal(groups){try{localStorage.setItem(GRP_KEY,JSON.stringify({season:curSeason(),groups}));}catch(_){}}
+async function grpCloudPull(){
+  if(!sb||!uid())return null;
+  try{const {data,error}=await sb.from('gwedge_groups').select('id,name,entries,updated_at').eq('user_id',uid());
+    if(error||!data)return null;
+    return data.map(r=>({id:Number(r.id),name:r.name,ids:Array.isArray(r.entries)?r.entries:[],updated:r.updated_at?new Date(r.updated_at).getTime():0}));
+  }catch(_){return null;}
+}
+async function grpCloudPush(g){
+  if(!sb||!uid()||!g)return false;
+  try{const {error}=await sb.from('gwedge_groups').upsert({user_id:uid(),id:String(g.id),name:g.name,season:curSeason()||null,entries:g.ids,updated_at:new Date(g.updated||Date.now()).toISOString()});return !error;}catch(_){return false;}
+}
+async function grpCloudDelete(id){
+  if(!sb||!uid())return false;
+  try{const {error}=await sb.from('gwedge_groups').delete().eq('user_id',uid()).eq('id',String(id));return !error;}catch(_){return false;}
+}
+async function grpLoadAll(){
+  let groups=grpLoadLocal();
+  const cloud=await grpCloudPull();
+  if(cloud){groups=tpMergeDrafts(groups,cloud);grpSaveLocal(groups);}
+  return groups;
+}
+async function grpSave(g){
+  const groups=grpLoadLocal().filter(x=>x.id!==g.id);groups.unshift(g);grpSaveLocal(groups);
+  await grpCloudPush(g);
+}
+async function grpDelete(id){
+  grpSaveLocal(grpLoadLocal().filter(x=>x.id!==id));
+  await grpCloudDelete(id);
+}
+function grpFind(id){return grpLoadLocal().find(g=>g.id===id)||null;}
+/* Standings rows for a group, from each entry's own summary: ranked on
+   the season total. FPL keeps no last-week rank for a league that only
+   exists here, so movement is blank. */
+function lgCustomRows(entries){
+  const rows=(entries||[]).filter(e=>e&&e.id).map(e=>({entry:e.id,entry_name:e.name||('Team '+e.id),
+    player_name:((e.player_first_name||'')+' '+(e.player_last_name||'')).trim(),
+    total:e.summary_overall_points||0,event_total:e.summary_event_points||0,overall_rank:e.summary_overall_rank||null,last_rank:null}));
+  rows.sort((a,c)=>c.total-a.total||a.entry-c.entry);
+  rows.forEach((r,i)=>{r.rank=i+1;});
+  return rows;
+}
+/* ── League insight: the pure parts ────────────────────────
+   Read the picks the detailed view already loaded, so none of these
+   costs another request. */
+const LEAGUE_PRO_SECTIONS=['differentials','overtake','overlap'];
+function lgCaptains(picksArr,pts,els){
+  const by={};let managers=0;
+  (picksArr||[]).forEach(p=>{
+    if(!p||!Array.isArray(p.picks))return;managers++;
+    const c=p.picks.find(x=>x.multiplier>1)||p.picks.find(x=>x.is_captain);if(!c)return;
+    const e=by[c.element]||(by[c.element]={id:c.element,name:(els&&els[c.element]&&els[c.element].web_name)||('#'+c.element),count:0,pts:pts?(pts[c.element]||0):0});
+    e.count++;
+  });
+  return {managers,rows:Object.keys(by).map(k=>by[k]).sort((a,c)=>c.count-a.count||c.pts-a.pts||a.name.localeCompare(c.name))};
+}
+function lgWeekTransfers(trsArr,gw,els,rows){
+  const nm=id=>(els&&els[id]&&els[id].web_name)||('#'+id);
+  const out=[];
+  (rows||[]).forEach((r,i)=>{
+    const t=(trsArr||[])[i];if(!Array.isArray(t))return;
+    const week=t.filter(x=>x&&x.event===gw);if(!week.length)return;
+    out.push({entry:r.entry,name:r.entry_name,moves:week.map(x=>({outId:x.element_out,inId:x.element_in,out:nm(x.element_out),in:nm(x.element_in)}))});
+  });
+  return out;
+}
+/* Players this league has left alone: owned by a quarter of it or fewer,
+   not in your squad, ranked by next-gameweek projection. */
+function lgDifferentials(eo,myIds,cands,limit){
+  const mine=new Set(myIds||[]);const n=(eo&&eo.managers)||0;
+  return (cands||[]).filter(c=>c&&!mine.has(c.id)&&c.xp>0)
+    .map(c=>{const e=eo&&eo.byId&&eo.byId[c.id];const own=e?e.own:0;return Object.assign({},c,{own,share:n?own/n:0});})
+    .filter(c=>c.share<=0.25)
+    .sort((a,c)=>c.xp-a.xp||a.share-c.share)
+    .slice(0,limit||8);
+}
+/* Who passes whom after the next gameweek if every projection lands:
+   threats are behind you and projected past you, targets are ahead and
+   within reach. rows carry {entry,name,rank,total,proj}. */
+function lgOvertake(rows,meId){
+  const me=(rows||[]).find(r=>r.entry===meId);
+  if(!me)return {me:null,threats:[],targets:[]};
+  const after=r=>(r.total||0)+(r.proj||0);
+  const threats=rows.filter(r=>r.entry!==meId&&r.rank>me.rank&&after(r)>after(me))
+    .map(r=>({entry:r.entry,name:r.name,rank:r.rank,gap:(me.total||0)-(r.total||0),margin:after(r)-after(me)})).sort((a,c)=>c.margin-a.margin);
+  const targets=rows.filter(r=>r.entry!==meId&&r.rank<me.rank&&after(me)>after(r))
+    .map(r=>({entry:r.entry,name:r.name,rank:r.rank,gap:(r.total||0)-(me.total||0),margin:after(me)-after(r)})).sort((a,c)=>c.margin-a.margin);
+  return {me,threats,targets};
+}
+function lgOverlap(myXI,rows){
+  const mine=new Set(myXI||[]);
+  return (rows||[]).map(r=>{const shared=(r.xi||[]).filter(id=>mine.has(id)).length;
+    return {entry:r.entry,name:r.name,shared,of:mine.size,share:mine.size?shared/mine.size:0};}).sort((a,c)=>c.share-a.share||a.name.localeCompare(c.name));
 }
 
 function leaguePage(n){LEAGUE_PAGE=Math.max(1,n);lgWriteUrl();renderPage('leagues');}
@@ -22103,6 +22249,56 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
           '<span class="dl-sub">'+p.own+' of '+eo.managers+' own'+(p.cap?' · '+p.cap+' captain'+(p.cap===1?'':'s'):'')+'</span>'+
           '</span></span><span class="dl-col mono">'+pct(p.eo)+'</span></div>').join('')+
         '</div></div>':'';
+    /* Captains across the league, this week's transfers, and for Pro the
+       rival tools. All from what is already loaded, bar one transfers call
+       per manager. */
+    const ptsById={};(live.elements||[]).forEach(e=>{ptsById[e.id]=(e.stats||{}).total_points||0;});
+    const caps=lgCaptains(picksArr,ptsById,b.els);
+    const myPicks=picksArr[slice.findIndex(r=>r.entry===meId)]||null;
+    const myCap=myPicks?(myPicks.picks.find(x=>x.multiplier>1)||myPicks.picks.find(x=>x.is_captain)):null;
+    const capCard=caps.rows.length?'<div class="card mb-20"><div class="card-title">Captains across the league</div>'+
+      '<p class="dl-sub" style="margin-bottom:8px">Who wears the armband this gameweek, across '+caps.managers+' manager'+(caps.managers===1?'':'s')+(myCap?'. Yours is <b>'+esc((b.els[myCap.element]||{}).web_name||'')+'</b>':'')+'.</p><div class="dl">'+
+      caps.rows.slice(0,8).map(c=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell"><span class="dl-nm">'+esc(c.name)+'</span>'+
+        '<span class="dl-sub">'+c.count+' of '+caps.managers+' · '+Math.round(100*c.count/caps.managers)+'%</span></span></span>'+
+        '<span class="dl-col mono">'+c.pts+' pts</span></div>').join('')+'</div></div>':'';
+    const trsArr=await mapLimit(slice,6,r=>loadTransfers(r.entry).catch(()=>null));
+    const wk=lgWeekTransfers(trsArr,gw,b.els,slice);
+    const trCard='<div class="card mb-20"><div class="card-title">Transfers this gameweek</div>'+
+      (wk.length?'<div class="dl">'+wk.map(m=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell"><span class="dl-nm">'+esc(m.name)+(m.entry===meId?' · you':'')+'</span>'+
+          '<span class="dl-sub">'+m.moves.map(x=>esc(x.out)+' → '+esc(x.in)).join(' · ')+'</span></span></span>'+
+          '<span class="dl-col mono">'+m.moves.length+'</span></div>').join('')+'</div>'
+        :'<p class="dl-sub" style="margin:0">No transfers made for GW'+gw+' by the managers on this page.</p>')+'</div>';
+    const nf=buildNextFix(b,fixtures);
+    const projOf={};slice.forEach((r,i)=>{const p=picksArr[i];if(!p)return;let sum=0;p.picks.forEach(pk=>{const el=b.els[pk.element];if(el)sum+=(xP(b,el,nf[el.team])||0)*(pk.multiplier||0);});projOf[r.entry]=sum;});
+    const ovRows=built.map(d=>({entry:d.entry,name:d.name,rank:d.rank,total:d.totalRun!=null?d.totalRun:d.total,proj:projOf[d.entry]||0}));
+    const ov=lgOvertake(ovRows,meId);
+    const myXI=(built.find(d=>d.entry===meId)||{xi:[]}).xi.map(p=>p.id);
+    const myAll=myPicks?myPicks.picks.map(p=>p.element):[];
+    const cands=b.elements.filter(e=>e.status==='a').map(e=>({id:e.id,name:e.web_name,team:e.team,pos:e.element_type,xp:xP(b,e,nf[e.team])||0}));
+    const diffs=lgDifferentials(eo,myAll,cands,8);
+    const overlap=lgOverlap(myXI,built.filter(d=>d.entry!==meId).map(d=>({entry:d.entry,name:d.name,xi:d.xi.map(p=>p.id)})));
+    const proBadge=' <span class="badge badge-amber">Pro</span>';
+    const diffCard='<div class="card mb-20"><div class="card-title">Differentials to target'+proBadge+'</div>'+
+      '<p class="dl-sub" style="margin-bottom:8px">Players a quarter of this league or fewer own, that you do not, ranked by next-gameweek projection.</p>'+
+      (diffs.length?'<div class="dl">'+diffs.map(d=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell"><span class="dl-nm">'+esc(d.name)+'</span>'+
+        '<span class="dl-sub">'+esc(teamShort(b,d.team))+' · '+esc(posShort(b,d.pos))+' · '+d.own+' of '+eo.managers+' own</span></span></span>'+
+        '<span class="dl-col mono">'+d.xp.toFixed(1)+' xP</span></div>').join('')+'</div>':'<p class="dl-sub" style="margin:0">Nothing this league has left alone is worth a move right now.</p>')+'</div>';
+    const ovCard='<div class="card mb-20"><div class="card-title">About to overtake you'+proBadge+'</div>'+
+      (ov.me
+        ? '<p class="dl-sub" style="margin-bottom:8px">If every projection lands next gameweek: who passes you from behind, and who you catch.</p>'+
+          (ov.threats.length?'<div class="dl">'+ov.threats.slice(0,6).map(t=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell"><span class="dl-nm">'+esc(t.name)+'</span>'+
+            '<span class="dl-sub">rank '+t.rank+' · '+fmtNum(t.gap)+' behind you now</span></span></span><span class="dl-col mono" style="color:var(--red)">+'+t.margin.toFixed(1)+'</span></div>').join('')+'</div>'
+            :'<p class="dl-sub" style="margin:0 0 8px">Nobody behind you is projected past you next gameweek.</p>')+
+          (ov.targets.length?'<div class="card-title" style="margin-top:10px">In your sights</div><div class="dl">'+ov.targets.slice(0,4).map(t=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell"><span class="dl-nm">'+esc(t.name)+'</span>'+
+            '<span class="dl-sub">rank '+t.rank+' · '+fmtNum(t.gap)+' ahead now</span></span></span><span class="dl-col mono" style="color:var(--green)">+'+t.margin.toFixed(1)+'</span></div>').join('')+'</div>':'')
+        : '<p class="dl-sub" style="margin:0">You are not in this league, so there is nobody to overtake. Your linked team has to be one of the managers here.</p>')+'</div>';
+    const olCard='<div class="card mb-20"><div class="card-title">Template overlap'+proBadge+'</div>'+
+      (myXI.length?'<p class="dl-sub" style="margin-bottom:8px">How much of your starting eleven each rival also starts. High overlap means a quiet race; low overlap means either of you can swing it.</p><div class="dl">'+
+        overlap.slice(0,10).map(o=>'<div class="dl-row"><span class="dl-grow"><span class="tr-cell"><span class="dl-nm">'+esc(o.name)+'</span>'+
+          '<span class="dl-sub">'+o.shared+' of '+o.of+' shared</span></span></span><span class="dl-col mono">'+Math.round(100*o.share)+'%</span></div>').join('')+'</div>'
+        :'<p class="dl-sub" style="margin:0">Your linked team is not in this league, so there is no eleven to compare against.</p>')+'</div>';
+    const proCards=isPro()?diffCard+ovCard+olCard:proLockWrap(diffCard+ovCard+olCard,null,'Pro finds the differentials this league has missed, who is about to overtake you, and how template each rival is.');
+    const extra=capCard+trCard+proCards;
     const scope=whole
       ? 'across all '+eo.managers+' managers in this league'
       : 'across the '+eo.managers+' managers on this page: not the whole league';
@@ -22120,7 +22316,7 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
     return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
-      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing};
+      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing+extra};
   /* Never a silent ''. The detail card REPLACES the standings table, so an
      empty string here used to render a league with no managers in it at
      all — reported as "nothing is showing". A failure has to be visible,
@@ -22194,9 +22390,19 @@ async function titleRaceCard(res,meId){
 async function renderLeagueStandings(host,leagueId,mid,type){
   host.innerHTML='<div class="card">'+skel(7)+'</div>';
   const back='<button class="btn btn-ghost btn-sm mb-14" onclick="historyPoint();LEAGUE_SEL=null;LEAGUE_PAGE=1;lgWriteUrl();renderPage(\'leagues\')">‹ All leagues</button>';
-  const h2h=type==='h2h',page=LEAGUE_PAGE;
-  let data;try{data=await (h2h?loadH2HStandings(leagueId,page):loadStandings(leagueId,page));}
-  catch(e){host.innerHTML=back+errorBox();return;}
+  const h2h=type==='h2h',custom=type==='custom',page=LEAGUE_PAGE;
+  let data;
+  if(custom){
+    const g=grpFind(leagueId);
+    if(!g){host.innerHTML=back+stateBox('trophy','Group not found','This league of your own is not on this device. Build it again from the list, or sign in to bring your groups across.');return;}
+    const entries=await mapLimit(g.ids,6,id=>loadEntry(id).catch(()=>null));
+    const rows=lgCustomRows(entries);
+    if(!rows.length){host.innerHTML=back+stateBox('trophy','No teams answered','None of the Team IDs in this group could be loaded from FPL just now. Check the numbers, or try again in a minute.',retryBtn());return;}
+    data={league:{name:g.name},standings:{results:rows,has_next:false},missing:g.ids.length-rows.length};
+  }else{
+    try{data=await (h2h?loadH2HStandings(leagueId,page):loadStandings(leagueId,page));}
+    catch(e){host.innerHTML=back+errorBox();return;}
+  }
   const res=(data.standings&&data.standings.results)||[];
   const hasNext=!!(data.standings&&data.standings.has_next);
   const meId=parseInt(mid,10);
@@ -22245,7 +22451,7 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      reader ask twice for something the card already promises. The result
      is cached per league and gameweek, so the repeated renders that a
      sort or a view toggle causes are free. */
-  const awards=h2h?'':'<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
+  const awards=(h2h||custom)?'':'<div class="card"><div class="card-title">'+svg(ICON.trophy,'width="15" height="15"')+' Gameweek awards</div>'+
     '<p class="dl-sub" style="margin-bottom:10px">Best captain, bench tragedy and differential hero across the league (top 10 managers).</p>'+
     '<div id="league-awards"></div></div>';
   const myPage=LEAGUE_ME_RANK?Math.max(1,Math.ceil(LEAGUE_ME_RANK/50)):0;
@@ -22302,9 +22508,11 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      league name in its title and replaces the compact table, so the name
      is not left as a heading over an empty card. The pager rides at the
      foot of whichever card is shown. */
+  const detailHint=(!h2h)?'<div class="dl-sub" style="margin-top:6px">Detailed adds every squad, the captains across the league, this week’s transfers'+(isPro()?' and the rival tools':' and the Pro rival tools')+'.</div>':'';
+  const missingNote=(custom&&data.missing)?'<div class="dl-sub" style="margin-top:6px">'+data.missing+' Team ID'+(data.missing===1?'':'s')+' in this group could not be loaded and '+(data.missing===1?'is':'are')+' left out.</div>':'';
   const leagueCard=detailShown?'':'<div class="card mb-20"><div class="card-title">'+esc(data.league?data.league.name:'League')+
-      (h2h?' <span class="badge badge-grey">H2H</span>':'')+'</div>'+
-    '<div class="dl" id="league-standings">'+head+rows+'</div>'+gwFrozen+
+      (h2h?' <span class="badge badge-grey">H2H</span>':custom?' <span class="badge badge-grey">Your own</span>':'')+'</div>'+
+    '<div class="dl" id="league-standings">'+head+rows+'</div>'+gwFrozen+detailHint+missingNote+
     /* Sorting is client-side over the rows already fetched. On a league
        that runs past one page that is a sort of THIS PAGE, not of the
        league — the manager with the best gameweek may be on page four
@@ -22322,7 +22530,7 @@ async function renderLeagueStandings(host,leagueId,mid,type){
     btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
   /* Fired after the standings are on screen, not awaited before them:
      the table must not wait on eleven calls it does not need. */
-  if(!h2h)genAwards(leagueId);
+  if(!h2h&&!custom)genAwards(leagueId);
   const sortSel=host.querySelector('#lg-sort');
   if(sortSel)sortSel.addEventListener('change',()=>lgSetSort(sortSel.value));
   const dirBtn=host.querySelector('#lg-dir');

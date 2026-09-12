@@ -5,8 +5,10 @@
 -- localStorage, and a Pro reader's drafts also stay local when this table
 -- is missing or unreachable (the planner says "saved on this device").
 --
--- Run in the Supabase SQL editor (idempotent). NOT YET APPLIED: apply it
--- as the migration `create_gwedge_plans` and note the date here.
+-- Run in the Supabase SQL editor (idempotent).
+--
+-- APPLIED 12 Sep 2026 to project knodunjnsxelmpziupwk, as the migration
+-- `create_gwedge_plans`. Kept here as the source of truth.
 
 create table if not exists public.gwedge_plans (
   user_id    uuid not null references auth.users (id) on delete cascade,
