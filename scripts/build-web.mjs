@@ -183,7 +183,7 @@ const links = siteLinks(await readFile(join(ROOT, 'index.html'), 'utf8'));
   await writeFile(landing, src.replace('<!-- site:links -->', footerLinksHtml(links)));
 }
 const blog = await buildBlog(ROOT, OUT, links);
-console.log(blog.posts ? `✓ Articles → www/articles/ (${blog.posts} post(s), index and feed.xml)` : `· Articles skipped: ${blog.note}`);
+console.log(blog.posts ? `✓ Articles → www/blog/ (${blog.posts} post(s), index and feed.xml)` : `✓ Articles → www/blog/ (index and feed.xml, ${blog.note})`);
 const tools = await buildToolPages(ROOT, OUT, links);
 console.log(tools.pages ? `✓ Tool pages → www/tools/ (${tools.pages} pages from a snapshot built ${tools.built})` : `· Tool pages skipped: ${tools.note}`);
 const seo = await buildSeo(ROOT, OUT, tools.urls.concat(blog.urls));

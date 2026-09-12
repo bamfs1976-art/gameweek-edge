@@ -1,8 +1,8 @@
 # Articles
 
-Markdown files in this folder become pages at `/articles/<slug>/` when the
-site builds, with an index at `/articles/` and an RSS feed at
-`/articles/feed.xml`. Nothing is published until a file here qualifies.
+Markdown files in this folder become pages at `/blog/<slug>/` when the
+site builds, with an index at `/blog/` and an RSS feed at
+`/blog/feed.xml`. The index and the feed exist from the first build; a post appears once a file here qualifies.
 
 ## File name
 

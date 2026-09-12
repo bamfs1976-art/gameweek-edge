@@ -674,7 +674,7 @@ public path with no query, and a retired id that names a view (`/methodology`)
 keeps its own. `scripts/seo/` reads the same registries at build time
 (`npm run build:web`): `www/sitemap.xml` lists every public route and static
 page once, `www/robots.txt` allows the site and names the sitemap, and five
-content routes (`/methodology`, `/design`, `/glossary`, `/fplbasics`, `/blog`)
+content routes (`/methodology`, `/design`, `/glossary`, `/fplbasics`, `/wire`)
 get a pre-rendered shell, the whole app with that route's head and copy
 already in the HTML, which `netlify.toml` serves at the clean path and the
 app hydrates on load. The landing page carries `SoftwareApplication`
@@ -684,13 +684,13 @@ FAQ it also shows. `dev/test-seo.mjs` holds all of it together and
 
 **Content and community scaffold** (September 2026, Phase 5 of the brief;
 scaffold only, no content written). `content/posts/*.md` becomes
-`/articles/<slug>/` at build with an index and an RSS 2.0 feed at
-`/articles/feed.xml` (`scripts/blog/`); front matter carries title,
+`/blog/<slug>/` at build with an index and an RSS 2.0 feed at
+`/blog/feed.xml` (`scripts/blog/`); front matter carries title,
 description, date, author, tags and draft, and drafts, underscored files and
-future dates stay out. With no published post the build writes nothing and
-says so, so the site shows no empty section. The base is `/articles/` because
-`/blog` is The Wire, the app's own briefings; moving either is a one-line
-change once the owner decides which owns the word. `SITE_LINKS` in
+future dates stay out. The index and the feed are always written: with no
+post the index says the articles are on their way and points at The Wire and
+the tools. The Wire, the app's auto-written briefings, moved from `/blog` to
+`/wire` to make room (the bare `/blog` redirects to `/blog/`). `SITE_LINKS` in
 `index.html` is the one place the Discord invite, the official mini-league's
 auto-join code, the contact address and a terms page live: the app renders
 them into the sidebar footer and a Community group on the More sheet, and the

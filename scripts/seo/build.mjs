@@ -22,8 +22,11 @@ export async function buildSeo(root, out, extra) {
     const route = routes.find((r) => r.id === id);
     if (!route) throw new Error('PRERENDER names a route the app does not have: ' + id);
     const jsonld = id === 'methodology' ? faqJsonLd(appFaq(html)) : null;
-    writeFileSync(join(out, id + '.html'), shellFor(html, route, routeBody(id, html, landing), jsonld));
-    shells.push(id);
+    /* The file is the route's path (/wire → wire.html), the rewrite in
+       netlify.toml points the clean path at it. */
+    const file = route.path.replace(/^\//, '');
+    writeFileSync(join(out, file + '.html'), shellFor(html, route, routeBody(id, html, landing), jsonld));
+    shells.push(file);
   }
   return { urls: routes.length + pages.length + (extra || []).length, shells };
 }
