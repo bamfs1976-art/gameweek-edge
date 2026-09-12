@@ -1,16 +1,15 @@
 /* UI copy guard.
 
-   The house rule is no em dashes in anything a reader sees. The shell
-   carries several hundred from before the rule, so this is a ratchet rather
-   than a ban: it counts the em dashes that reach the DOM (string literals in
-   the app script and text in the markup, never comments) and fails the
-   moment the count goes UP. Lower the baseline as copy is rewritten.
+   The house rule is no em dashes in anything a reader sees. The copy was
+   rewritten to zero, so the ratchet is now a ban: it counts the em dashes
+   that reach the DOM (string literals in the app script and text in the
+   markup, never comments) and fails on the first one. A missing value in a
+   table cell is an en dash, never an em dash.
 
      node scripts/check-copy.mjs            # fail if the count rose
      node scripts/check-copy.mjs --report   # print the count and exit 0
 
-   A lone '—' used as a null placeholder in a table cell is counted too; a
-   later pass can swap those for an en dash or a real word. */
+   A lone '—' used as a null placeholder is counted too: use '–'. */
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -20,7 +19,7 @@ const report = process.argv.includes('--report');
 
 /* Ratchet baseline: the count on the day the guard landed. Lower it when
    copy is rewritten; never raise it. */
-export const BASELINE = { 'index.html': 767, 'landing.html': 37, 'privacy.html': 8 };
+export const BASELINE = { 'index.html': 0, 'landing.html': 0, 'privacy.html': 0 };
 
 /* Strip block and line comments from JS, and HTML comments, keeping string
    literals intact so their em dashes are counted. */

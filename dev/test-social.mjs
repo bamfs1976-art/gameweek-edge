@@ -461,7 +461,7 @@ console.log('• socMetricDefs: every metric computes and formats sanely');
      than showing a fabricated zero. */
   const noHist = Object.assign({}, el, { _hist: null });
   ok(['ppa', 'sd', 'haul', 'blank'].every((k) => by[k].v(noHist) === -1), 'missing history sentinels to -1');
-  ok(['ppa', 'sd', 'haul', 'blank'].every((k) => by[k].f(by[k].v(noHist)) === '—'), 'and prints a dash');
+  ok(['ppa', 'sd', 'haul', 'blank'].every((k) => by[k].f(by[k].v(noHist)) === '–'), 'and prints a dash');
 
   /* Missing advanced data must read as zero, not crash or print undefined. */
   const bare = { id: 2, team: 1, now_cost: 40, element_type: 2 };
