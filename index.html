@@ -2246,6 +2246,26 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .sig-v.warn::before{content:"! "}
 .dl-click{cursor:pointer}
 .dl-click:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px;background:var(--surface-3)}
+/* Player Compare: chips, legend, the SVG charts. Text in the charts wears
+   the text tokens; only the marks carry a series colour. */
+.cmp-metrics{display:flex;flex-wrap:wrap;gap:6px}
+.cmp-metrics .tchip.on{border-color:var(--green);color:var(--green)}
+.cmp-metrics .tchip.off{opacity:.55;text-decoration:none}
+.cmp-metrics .tchip.off:hover,.cmp-metrics .tchip.off:focus-visible{opacity:.9}
+.cmp-sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
+.cmp-legend{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 12px;padding:0;font-size:.86rem;font-weight:600}
+.cmp-chart{margin-top:8px}
+.cmp-chart-radar{max-width:420px;margin:12px auto 0}
+.cmp-svg{display:block;font-family:var(--font-body);overflow:visible}
+.cmp-svg .cmp-lbl{font-size:12px;font-weight:700;fill:var(--text-2);text-transform:uppercase;letter-spacing:.06em}
+.cmp-svg .cmp-nm{font-size:11px;font-weight:600;fill:var(--text-2)}
+.cmp-svg .cmp-val{font-family:var(--font-mono);font-size:11px;fill:var(--text);font-variant-numeric:tabular-nums}
+.cmp-svg .cmp-axmax{font-family:var(--font-mono);font-size:10px;fill:var(--text-3)}
+.cmp-svg .cmp-grid{fill:none;stroke:var(--border-2);stroke-width:1}
+.cmp-svg .cmp-best{font-weight:700;fill:var(--green)}
+.cmp-table td.cmp-best{color:var(--green);font-weight:800;position:relative}
+.cmp-table td.cmp-best::after{content:" \25CF";font-size:.6em;vertical-align:middle}
+.cmp-fdrn{font-family:var(--font-mono);font-size:.7em;opacity:.8;margin-left:2px}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -5544,7 +5564,7 @@ const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuri
    at parse time, taking the whole script — and the whole page — down with it.
    The arrow defers the lookup to call time, long after the consts exist.
    KEEP ON ONE LINE — dev/test-social.mjs reads only to the first newline. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v)};
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v),compare:cmpSetView};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -5777,8 +5797,11 @@ function restoreScroll(){
 /* The hubs' current view, read rather than tracked, so the URL is always a
    function of the state and never drifts from it. The default view is left
    out of the URL: /players is the table, /players?view=diffs is a lens. */
-const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view()};
-const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier'};
+const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view(),compare:()=>CMP_VIEW};
+const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier',compare:'table'};
+/* Keys that belong to the panel rather than to one of its views, so a
+   view change carries them over instead of starting clean. */
+const HUB_KEEP_KEYS={compare:['players','metrics']};
 function hubViewParam(panelId){
   const g=HUB_GETVIEW[panelId];if(!g)return null;
   let v=null;try{v=g();}catch(_){}
@@ -5789,8 +5812,11 @@ function hubViewParam(panelId){
 function hubViewChanged(panelId){
   if(URL_HOLD)return;
   /* A new view starts with a clean query: the old view's filters do not
-     describe this one. The view's own hydrator writes its keys as it paints. */
-  URL_Q={};
+     describe this one. The view's own hydrator writes its keys as it paints.
+     Panel-level keys (which players are being compared) carry over. */
+  const kept={};
+  (HUB_KEEP_KEYS[panelId]||[]).forEach(k=>{if(URL_Q[k]!=null)kept[k]=URL_Q[k];});
+  URL_Q=kept;
   setUrlState({view:hubViewParam(panelId)});
 }
 /* Write the current panel into the address bar. The home panel owns the
@@ -15154,75 +15180,256 @@ async function hydrateWatchlist(host){
 
 /* ── Player Compare: up to 4 side by side ──────────────── */
 let COMPARE=[];
+/* ── PLAYER COMPARE ────────────────────────────────────────
+   Two to four players side by side. The metrics are a registry: counting
+   stats (points, minutes, price …) and per-90 rates. The reader picks
+   which, the choice is remembered on the device and travels in the URL,
+   and the same list drives the table, the charts and the share card.
+   Charts are inline SVG: small multiples of bars for counting stats (one
+   axis per metric, never a shared one) and a radar for per-90 rates. */
+function cmpNum(v){const n=parseFloat(v);return Number.isFinite(n)?n:0;}
+function cmpPer90(e,total){const m=cmpNum(e&&e.minutes);return m>0?cmpNum(total)*90/m:0;}
+const CMP_METRICS=[
+  {id:'points',label:'Points',kind:'count',dp:0,v:e=>cmpNum(e.total_points)},
+  {id:'xg',label:'xG',kind:'count',dp:2,v:e=>cmpNum(e.expected_goals)},
+  {id:'xa',label:'xA',kind:'count',dp:2,v:e=>cmpNum(e.expected_assists)},
+  {id:'minutes',label:'Minutes',kind:'count',dp:0,v:e=>cmpNum(e.minutes)},
+  {id:'price',label:'Price',kind:'count',dp:1,low:1,unit:'£',v:e=>cmpNum(e.now_cost)/10},
+  {id:'own',label:'Ownership',kind:'count',dp:1,unit:'%',v:e=>cmpNum(e.selected_by_percent)},
+  {id:'dc',label:'Defensive contributions',kind:'count',dp:0,v:e=>cmpNum(e.defensive_contribution)},
+  {id:'goals',label:'Goals',kind:'count',dp:0,v:e=>cmpNum(e.goals_scored)},
+  {id:'assists',label:'Assists',kind:'count',dp:0,v:e=>cmpNum(e.assists)},
+  {id:'bonus',label:'Bonus',kind:'count',dp:0,v:e=>cmpNum(e.bonus)},
+  {id:'cs',label:'Clean sheets',kind:'count',dp:0,v:e=>cmpNum(e.clean_sheets)},
+  {id:'form',label:'Form',kind:'count',dp:1,v:e=>cmpNum(e.form)},
+  {id:'ppg',label:'Points per game',kind:'count',dp:1,v:e=>cmpNum(e.points_per_game)},
+  {id:'ict',label:'ICT index',kind:'count',dp:1,v:e=>cmpNum(e.ict_index)},
+  {id:'pts90',label:'Points per 90',kind:'per90',dp:2,v:e=>cmpPer90(e,e.total_points)},
+  {id:'xg90',label:'xG per 90',kind:'per90',dp:2,v:e=>cmpPer90(e,e.expected_goals)},
+  {id:'xa90',label:'xA per 90',kind:'per90',dp:2,v:e=>cmpPer90(e,e.expected_assists)},
+  {id:'xgi90',label:'xGI per 90',kind:'per90',dp:2,v:e=>cmpPer90(e,e.expected_goal_involvements)},
+  {id:'dc90',label:'DC per 90',kind:'per90',dp:1,v:e=>cmpPer90(e,e.defensive_contribution)},
+  {id:'bonus90',label:'Bonus per 90',kind:'per90',dp:2,v:e=>cmpPer90(e,e.bonus)}
+];
+const CMP_DEFAULT=['points','xg','xa','minutes','price','own','dc'];
+const CMP_METRICS_KEY='ge-cmp-metrics';
+const CMP_VIEWS=[{id:'table',label:'Table'},{id:'chart',label:'Chart'}];
+/* Four series colours, validated for colour-vision deficiency and for
+   contrast against both surfaces (dataviz palette check, OKLab). They
+   never carry text: names and values wear the text tokens. */
+const CMP_SERIES=['#16a058','#4a8df9','#c4820e','#7f6ce6'];
+let CMP_VIEW='table';
+let CMP_METRIC_IDS=null;
+function cmpMetric(id){return CMP_METRICS.filter(m=>m.id===id)[0]||null;}
+/* A comma list from the URL or storage: known ids only, in order, once. */
+function cmpParseMetrics(v){
+  const out=[];
+  String(v||'').split(',').forEach(x=>{const id=x.trim().toLowerCase();if(cmpMetric(id)&&out.indexOf(id)<0)out.push(id);});
+  return out;
+}
+function cmpFmt(m,v){
+  const n=cmpNum(v);
+  const t=n.toFixed(m.dp==null?1:m.dp);
+  return m.unit==='£'?'£'+t+'m':m.unit==='%'?t+'%':t;
+}
+function cmpLoadMetrics(){
+  try{const a=cmpParseMetrics(localStorage.getItem(CMP_METRICS_KEY)||'');if(a.length)return a;}catch(_){}
+  return CMP_DEFAULT.slice();
+}
+function cmpSaveMetrics(ids){try{localStorage.setItem(CMP_METRICS_KEY,ids.join(','));}catch(_){}}
+function cmpSetView(id){
+  CMP_VIEW=CMP_VIEWS.some(v=>v.id===id)?id:'table';
+  track('compare_view',{view:CMP_VIEW});
+  hubViewChanged('compare');
+}
+/* The rows every view reads: one per chosen metric, one value per player. */
+function cmpRows(ids,players){
+  return ids.map(cmpMetric).filter(Boolean).map(m=>{
+    const values=players.map(e=>m.v(e));
+    return {id:m.id,label:m.label,kind:m.kind,low:!!m.low,values,text:values.map(v=>cmpFmt(m,v))};
+  });
+}
+/* Which value in a row is the one to mark: the highest, or the lowest when
+   lower is better (price). Null when they all tie. */
+function cmpBestIndex(row){
+  const vals=row.values;if(!vals.length)return null;
+  const pick=row.low?Math.min.apply(null,vals):Math.max.apply(null,vals);
+  if(vals.every(v=>v===pick))return null;
+  return vals.indexOf(pick);
+}
+/* Small multiples: one panel per counting metric, a horizontal bar per
+   player on that metric's own scale, the value at the tip in mono. Bars
+   are 14px, rounded at the data end, with a 2px surface gap between them. */
+function cmpBarsSvg(rows,players,colours,opts){
+  opts=opts||{};
+  const W=opts.width||560,L=opts.labelWidth||150,R=64,barH=14,gap=2,pad=10,headH=22;
+  const n=players.length;if(!rows.length||!n)return '';
+  const blockH=headH+n*(barH+gap)+pad;
+  const H=rows.length*blockH+4;
+  let y=0,out='';
+  rows.forEach(row=>{
+    const max=Math.max.apply(null,row.values.concat([0]));
+    const best=cmpBestIndex(row);
+    out+='<text x="0" y="'+(y+14)+'" class="cmp-lbl">'+esc(row.label)+'</text>';
+    row.values.forEach((v,i)=>{
+      const by=y+headH+i*(barH+gap);
+      const w=max>0?Math.max(2,Math.round((W-L-R)*v/max)):2;
+      out+='<rect x="'+L+'" y="'+by+'" width="'+w+'" height="'+barH+'" rx="2" fill="'+colours[i%colours.length]+'"><title>'+esc(players[i].name)+': '+esc(row.text[i])+' '+esc(row.label)+'</title></rect>';
+      out+='<text x="'+(L-8)+'" y="'+(by+11)+'" text-anchor="end" class="cmp-nm">'+esc(players[i].name)+'</text>';
+      out+='<text x="'+(L+w+6)+'" y="'+(by+11)+'" class="cmp-val'+(best===i?' cmp-best':'')+'">'+esc(row.text[i])+'</text>';
+    });
+    y+=blockH;
+  });
+  const label='Bar charts: '+rows.map(r=>r.label).join(', ')+' for '+players.map(p=>p.name).join(', ');
+  return '<svg class="cmp-svg" viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="'+esc(label)+'" preserveAspectRatio="xMinYMin meet">'+out+'</svg>';
+}
+/* Radar: one axis per per-90 metric, every axis scaled 0 to that axis's
+   best value, one polygon per player. Needs at least three axes to be a
+   shape; below that the caller draws bars instead. */
+function cmpRadarSvg(rows,players,colours,opts){
+  opts=opts||{};
+  if(rows.length<3||!players.length)return '';
+  const S=opts.size||360,c=S/2,r=S/2-58,n=rows.length;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/n;
+  const pt=(i,k)=>[c+r*k*Math.cos(ang(i)),c+r*k*Math.sin(ang(i))];
+  let out='';
+  [0.25,0.5,0.75,1].forEach(k=>{
+    out+='<polygon points="'+rows.map((_,i)=>pt(i,k).map(x=>x.toFixed(1)).join(',')).join(' ')+'" class="cmp-grid"/>';
+  });
+  rows.forEach((row,i)=>{
+    const [x,y]=pt(i,1);
+    out+='<line x1="'+c+'" y1="'+c+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" class="cmp-grid"/>';
+    const [lx,ly]=pt(i,1.16);
+    const anchor=Math.abs(lx-c)<8?'middle':lx<c?'end':'start';
+    const max=Math.max.apply(null,row.values.concat([0]));
+    out+='<text x="'+lx.toFixed(1)+'" y="'+(ly+4).toFixed(1)+'" text-anchor="'+anchor+'" class="cmp-lbl">'+esc(row.label)+'</text>';
+    out+='<text x="'+lx.toFixed(1)+'" y="'+(ly+18).toFixed(1)+'" text-anchor="'+anchor+'" class="cmp-axmax">max '+esc(cmpFmt(cmpMetric(row.id)||{dp:2},max))+'</text>';
+  });
+  players.forEach((p,j)=>{
+    const pts=rows.map((row,i)=>{const max=Math.max.apply(null,row.values.concat([0]));const k=max>0?row.values[j]/max:0;return pt(i,k);});
+    const col=colours[j%colours.length];
+    out+='<polygon points="'+pts.map(q=>q.map(x=>x.toFixed(1)).join(',')).join(' ')+'" fill="'+col+'" fill-opacity=".12" stroke="'+col+'" stroke-width="2" stroke-linejoin="round"><title>'+esc(p.name)+'</title></polygon>';
+    pts.forEach((q,i)=>{out+='<circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="4" fill="'+col+'" stroke="var(--surface)" stroke-width="2"><title>'+esc(p.name)+': '+esc(rows[i].text[j])+' '+esc(rows[i].label)+'</title></circle>';});
+  });
+  const label='Radar: '+rows.map(r=>r.label).join(', ')+' for '+players.map(p=>p.name).join(', ')+', each axis scaled to its best value';
+  return '<svg class="cmp-svg cmp-radar" viewBox="0 0 '+S+' '+S+'" width="100%" role="img" aria-label="'+esc(label)+'" preserveAspectRatio="xMidYMin meet">'+out+'</svg>';
+}
+function cmpLegendHtml(players,colours){
+  return '<ul class="cmp-legend" aria-label="Players">'+players.map((p,i)=>
+    '<li><span class="cmp-sw" style="background:'+colours[i%colours.length]+'" aria-hidden="true"></span>'+esc(p.name)+
+    (p.sub?' <span class="dl-sub">'+esc(p.sub)+'</span>':'')+'</li>').join('')+'</ul>';
+}
+function cmpSeriesColours(){return CMP_SERIES;}
+function compareWriteUrl(){
+  const ids=CMP_METRIC_IDS||[];
+  const dflt=ids.length===CMP_DEFAULT.length&&ids.every((x,i)=>x===CMP_DEFAULT[i]);
+  setUrlState({players:COMPARE.length?COMPARE.join(','):null,metrics:dflt||!ids.length?null:ids.join(',')});
+}
 async function hydrateCompare(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
-  const nf=buildNextFix(b,fixtures);
-  const hz=buildHorizon(b,fixtures,6);
+  const hz=buildHorizon(b,fixtures,5);
   const CMP_FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
   const gpOf=minutesBasis(b,fixtures);
-  if(urlEntryOnce('compare'))COMPARE=urlPick('players',COMPARE,[],v=>{const a=urlIdList(v,4);return a.length?a:null;});
+  if(urlEntryOnce('compare')){
+    COMPARE=urlPick('players',COMPARE,[],v=>{const a=urlIdList(v,4);return a.length?a:null;});
+    CMP_METRIC_IDS=urlPick('metrics',CMP_METRIC_IDS||cmpLoadMetrics(),cmpLoadMetrics(),v=>{const a=cmpParseMetrics(v);return a.length?a:null;});
+  }
+  if(!CMP_METRIC_IDS)CMP_METRIC_IDS=cmpLoadMetrics();
   COMPARE=COMPARE.filter(id=>b.els[id]).slice(0,4);
   compareWriteUrl();
   const sel=COMPARE.map(id=>b.els[id]);
-  const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
+  const players=sel.map(e=>({id:e.id,name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),price:money(e.now_cost),
+    sub:teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)}));
+  const colours=cmpSeriesColours();
+  const rows=cmpRows(CMP_METRIC_IDS,sel);
   /* The share card: the same players and figures, as plain values. */
   window._cmp=sel.length?{gw:(b.upcoming||b.cur||{}).id,
-    players:sel.map(e=>({name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),price:money(e.now_cost)})),
-    metrics:[['Price',e=>money(e.now_cost)],['Owned',e=>e.selected_by_percent+'%'],['Total pts',e=>e.total_points],
-      ['Form',e=>e.form],['Pts / game',e=>e.points_per_game],['xG',e=>e.expected_goals||'n/a'],['xA',e=>e.expected_assists||'n/a'],
-      ['xP next 6',e=>{try{return horizonXP(b,e,hz).toFixed(1);}catch(_){return 'n/a';}}]]
-      .map(([label,fn])=>({label,values:sel.map(e=>String(fn(e)))}))}:null;
-  /* Side-by-side fixture comparison over the next 6 gameweeks — one row per
-     gameweek, each cell the player's fixture coloured by difficulty. */
+    players:players.map(p=>({name:p.name,team:p.team,pos:p.pos,price:p.price})),
+    metrics:rows.map(r=>({label:r.label,values:r.text,low:r.low}))}:null;
+
+  /* Next five fixtures, side by side, coloured by model difficulty. */
   const maxN=Math.max.apply(null,[0].concat(sel.map(e=>(hz[e.team]||[]).length)));
   let fxRows='';
   for(let i=0;i<maxN;i++){
     const ev=sel.map(e=>(hz[e.team]||[])[i]).filter(Boolean)[0];
-    fxRows+='<tr><th class="tm">'+(ev?'GW'+ev.event:'—')+'</th>'+sel.map(e=>{
+    fxRows+='<tr><th class="tm">'+(ev?'GW'+ev.event:'n/a')+'</th>'+sel.map(e=>{
       const fx=(hz[e.team]||[])[i];
-      return fx?'<td style="background:'+(CMP_FDR_HEX[fx.diff]||'#d9dee3')+';color:#0c1014;font-weight:700">'+esc(fx.opp)+' ('+(fx.home?'H':'A')+')</td>':'<td class="blank">—</td>';
+      return fx?'<td style="background:'+(CMP_FDR_HEX[fx.diff]||'#d9dee3')+';color:#0c1014;font-weight:700">'+esc(fx.opp)+' ('+(fx.home?'H':'A')+') <span class="cmp-fdrn">'+fx.diff+'</span></td>':'<td class="blank">blank</td>';
     }).join('')+'</tr>';
   }
   const fixCard=(sel.length&&maxN)
-    ? '<div class="card mb-20"><div class="card-title">Fixture comparison — next '+maxN+' gameweeks</div>'+
+    ? sectionCard({cls:'mb-20',title:'Next '+maxN+' fixtures',body:
         '<div class="fdr"><table>'+
           '<tr><th class="tm">GW</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><span class="dl-sub">'+esc(teamShort(b,e.team))+'</span></td>').join('')+'</tr>'+
           fxRows+
         '</table></div>'+
-        '<p class="dl-sub" style="margin-top:8px">Each cell is the player’s club fixture that gameweek — greener is an easier opponent (H/A shown). The model difficulty, the same lens as Fixtures.</p></div>'
+        '<p class="dl-sub" style="margin-top:8px">Each cell is the club fixture that gameweek with the model difficulty from 1 (easiest) to 5, greener the easier; H or A is home or away. The same lens as Fixtures.</p>'})
     : '';
-  const table=sel.length?
-    '<div class="fdr"><table>'+
-      '<tr><th class="tm">Player</th>'+sel.map(e=>'<td><b>'+esc(e.web_name)+'</b><br><button class="btn btn-ghost btn-sm" data-rm="'+e.id+'" style="margin-top:4px">Remove</button></td>').join('')+'</tr>'+
-      metric('Team',e=>teamShort(b,e.team))+
-      metric('Position',e=>posShort(b,e.element_type))+
-      metric('Price',e=>money(e.now_cost))+
-      metric('Owned %',e=>e.selected_by_percent)+
-      metric('Total pts',e=>e.total_points)+
-      metric('Form',e=>e.form)+
-      metric('Pts / game',e=>e.points_per_game)+
-      metric('Mins security',e=>minsBadge(e,gpOf(e.team)))+
-      metric('xG',e=>e.expected_goals||'—')+
-      metric('xA',e=>e.expected_assists||'—')+
-      metric('ICT',e=>e.ict_index)+
-    '</table></div>'+
-    '<div class="dl-sub" style="margin-top:8px">Mins security blends starts share, minutes share and availability: secure ≥75, watch 50–74, risky &lt;50. Pre-season it reads from last season’s starts and minutes.</div>'
-    :'<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add up to four players side by side.</p></div>';
+
+  const metricChips='<div class="cmp-metrics" role="group" aria-label="Metrics to compare">'+
+    CMP_METRICS.map(m=>{const on=CMP_METRIC_IDS.indexOf(m.id)>=0;
+      return '<button type="button" class="tchip'+(on?' on':' off')+'" data-metric="'+m.id+'" aria-pressed="'+(on?'true':'false')+'">'+esc(m.label)+'</button>';}).join('')+
+    '</div>';
+
+  const tableView=()=>{
+    if(!sel.length)return '';
+    const head='<tr><th class="tm">Player</th>'+sel.map((e,i)=>'<td><span class="cmp-sw" style="background:'+colours[i%colours.length]+'" aria-hidden="true"></span><b>'+esc(e.web_name)+'</b><br><button type="button" class="btn btn-ghost btn-sm" data-rm="'+e.id+'" style="margin-top:4px">Remove</button></td>').join('')+'</tr>';
+    const fixed='<tr><th class="tm">Club</th>'+sel.map(e=>'<td>'+esc(teamShort(b,e.team))+'</td>').join('')+'</tr>'+
+      '<tr><th class="tm">Position</th>'+sel.map(e=>'<td>'+esc(posShort(b,e.element_type))+'</td>').join('')+'</tr>'+
+      '<tr><th class="tm">Minutes security</th>'+sel.map(e=>'<td>'+minsBadge(e,gpOf(e.team))+'</td>').join('')+'</tr>';
+    const body=rows.map(r=>{const best=cmpBestIndex(r);
+      return '<tr><th class="tm">'+esc(r.label)+'</th>'+
+        r.text.map((t,i)=>'<td class="num'+(best===i?' cmp-best':'')+'">'+esc(t)+(best===i?'<span class="sr-only"> (best)</span>':'')+'</td>').join('')+'</tr>';}).join('');
+    return '<div class="fdr"><table class="cmp-table">'+head+fixed+body+'</table></div>'+
+      '<p class="dl-sub" style="margin-top:8px">The best figure in each row is marked. Minutes security blends starts share, minutes share and availability: secure 75 and over, watch 50 to 74, risky under 50.</p>';
+  };
+  const chartView=()=>{
+    if(!sel.length)return '';
+    const counts=rows.filter(r=>r.kind==='count'),rates=rows.filter(r=>r.kind==='per90');
+    /* The bar panels are drawn at the card's real width, so type stays at
+       its set size on a phone instead of scaling down with the viewBox. */
+    const cw=Math.max(280,Math.min(560,(host.clientWidth||600)-34));
+    const radar=cmpRadarSvg(rates,players,colours,{size:Math.min(360,cw)});
+    const bars=cmpBarsSvg(counts.concat(radar?[]:rates),players,colours,{width:cw,labelWidth:cw<420?92:150});
+    return cmpLegendHtml(players,colours)+
+      (bars?'<div class="cmp-chart">'+bars+'</div>':'')+
+      (radar?'<div class="cmp-chart cmp-chart-radar">'+radar+'<p class="dl-sub">Per-90 rates on a radar: each axis runs from zero to the best of these players on that rate, so the shape says who leads where, not how big the gap is. The figures are in the table view.</p></div>':'')+
+      (!bars&&!radar?'<p class="dl-sub">Pick at least one metric to chart.</p>':'');
+  };
+  const viewBar='<div class="lensbar" id="cmp-views">'+CMP_VIEWS.map(v=>
+    '<button class="lensbtn'+(v.id===CMP_VIEW?' on':'')+'" data-view="'+v.id+'">'+esc(v.label)+'</button>').join('')+'</div>';
+  const empty='<div class="ge-state">'+svg(ICON.compare)+'<b>Pick players to compare</b><p>Search above to add two to four players side by side. The table and the chart fill in as you add them.</p></div>';
+
   host.innerHTML=
-    '<div class="card mb-20"><div class="card-title">Add players ('+sel.length+'/4)</div>'+
-      '<input class="modal-in" id="cmp-search" aria-label="Search players to compare" placeholder="Search players…" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
-      '<div class="sugg" id="cmp-sugg"></div></div>'+
+    sectionCard({cls:'mb-20',title:'Add players ('+sel.length+'/4)',body:
+      '<input class="modal-in" id="cmp-search" type="search" aria-label="Search players to compare" placeholder="Search a player by name" autocomplete="off"'+(sel.length>=4?' disabled':'')+'>'+
+      '<div class="sugg" id="cmp-sugg"></div>'})+
+    sectionCard({cls:'mb-20',title:'Metrics',body:
+      '<p class="dl-sub" style="margin:0 0 8px">Tap to add or remove a metric. Your choice is remembered on this device and travels in a copied link.</p>'+metricChips})+
     fixCard+
-    '<div class="card">'+table+'</div>';
+    '<div class="card">'+viewBar+'<div id="cmp-body">'+(sel.length?(CMP_VIEW==='chart'?chartView():tableView()):empty)+'</div></div>';
+
   const inp=host.querySelector('#cmp-search'),sugg=host.querySelector('#cmp-sugg');
   if(inp&&!inp.disabled){
     inp.addEventListener('input',()=>renderSuggestions(b,inp.value,sugg,new Set(COMPARE),id=>{
       if(COMPARE.length<4&&!COMPARE.includes(id))COMPARE.push(id);compareWriteUrl();renderPage('compare');}));
   }
-  Array.prototype.forEach.call(host.querySelectorAll('[data-rm]'),btn=>
-    btn.addEventListener('click',()=>{COMPARE=COMPARE.filter(x=>x!==parseInt(btn.dataset.rm,10));compareWriteUrl();renderPage('compare');}));
+  host.addEventListener('click',e=>{
+    const rm=e.target.closest('[data-rm]');
+    if(rm){COMPARE=COMPARE.filter(x=>x!==parseInt(rm.dataset.rm,10));compareWriteUrl();renderPage('compare');return;}
+    const chip=e.target.closest('[data-metric]');
+    if(chip){
+      const id=chip.dataset.metric;
+      const on=CMP_METRIC_IDS.indexOf(id)>=0;
+      if(on&&CMP_METRIC_IDS.length===1){toast('Keep at least one metric');return;}
+      CMP_METRIC_IDS=on?CMP_METRIC_IDS.filter(x=>x!==id):CMP_METRICS.map(m=>m.id).filter(m=>m===id||CMP_METRIC_IDS.indexOf(m)>=0);
+      cmpSaveMetrics(CMP_METRIC_IDS);compareWriteUrl();track('compare_metrics',{n:CMP_METRIC_IDS.length});
+      renderPage('compare');return;
+    }
+    const vb=e.target.closest('#cmp-views .lensbtn');
+    if(vb&&vb.dataset.view!==CMP_VIEW){historyPoint();cmpSetView(vb.dataset.view);renderPage('compare');}
+  });
 }
-function compareWriteUrl(){setUrlState({players:COMPARE.length?COMPARE.join(','):null});}
 
 /* ── Alerts: live feed + local notification preferences ── */
 function loadAlertPrefs(){try{return JSON.parse(localStorage.getItem('ge-alert-prefs')||'{}');}catch(_){return {};}}

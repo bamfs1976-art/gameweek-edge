@@ -587,8 +587,13 @@ for the +2, real per‑match data from Core Insights where the sample allows,
 otherwise a tilde‑marked estimate), alongside actions per start and attacking
 returns.
 
-**Player Compare** — up to four players side by side on form, xG, price,
-ownership, ICT and **minutes security** (three‑tier badge).
+**Player Compare** — up to four players side by side. A metric picker of
+twenty counting stats and per‑90 rates (your choice is remembered on the
+device and travels in a copied link as `metrics=`), a table view that marks
+the best figure in each row, a chart view (small‑multiple bars for counts, a
+radar for per‑90 rates once three are chosen), the next five fixtures on the
+model difficulty scale, **minutes security** (three‑tier badge) and a share
+card. Views live at `?view=table|chart`.
 
 **Differentials** and the **Injury Monitor** are no longer panels — both were a
 filter and a sort over the same player data, so they are lenses on the Players
