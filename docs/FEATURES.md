@@ -107,6 +107,7 @@ Players
 ├── Player Compare       (free)  Up to 4 players side by side
 ├── Stats Heatmap        (free)  Players by gameweek on any stat, colour-scaled, sortable by consistency
 ├── Price Predictor      (free)  Progress bars to a move, countdown, hourly momentum, searchable day-by-day history, value tables
+│                                (Ten Seasons, under Football, adds a Pro season table and career card over the same archive)
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
 └── Latest News          (free)  Official player news, newest first
 
@@ -664,6 +665,19 @@ is the gap, so the panel names both the **underpriced** and — rarer, and more
 useful — the **overpriced**. Benchmarking within position is deliberate:
 defenders score fewer points per pound than forwards by design, so one
 league‑wide rate would brand every defender a bargain.
+
+**Ten Seasons** — the archive is a hub now. *Archive* (free) keeps the
+all-time records, the two-career comparison and the daily puzzle. *Season
+table* (Pro, `/archive?view=seasons&season=2023-24`) is the season history
+layer: a season switcher over the same vendored artefact, every player who
+appeared that season as a sortable table (points, minutes, returns, xG where
+the era has it, price at first and last appearance), a position filter and a
+search (`?pos=`, `?q=`), and a **career card** for any row (`?player=<code>`)
+with points by season, totals and the season-by-season line. The player
+dossier's *Previous seasons* card shows Pro readers every season the official
+API records, with price and points per 90, and links into the career. Source:
+the open vaastav dataset (MIT), the same artefact behind the pre-season
+priors, rebuilt weekly by the FPL History workflow.
 
 **Set Piece Register** — official written **taker notes** (from `set-piece-notes`)
 plus confirmed penalty / direct‑FK / corner order.

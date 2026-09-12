@@ -76,6 +76,13 @@ const pieces = [
   extractFn(html, 'priceMomentum'),
   extractFn(html, 'priceMomentumBoard'),
   extractFn(html, 'prFold'),
+  extractFn(html, 'histCols'),
+  extractFn(html, 'shSeasons'),
+  extractFn(html, 'shSeasonRow'),
+  extractFn(html, 'shRows'),
+  extractFn(html, 'shFilter'),
+  extractFn(html, 'shCareer'),
+  ...['SH_SEASONS_MAX', 'SH_POS'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'priceHistoryDays'),
   ...['PR_FLOW_HOURS', 'PR_HISTORY_DAYS'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'priceLocked'),
@@ -406,7 +413,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5813,6 +5820,46 @@ section('Price Centre: the bar, the clock, the momentum and the history are pres
   ok(priceHistoryDays(log, 'zzz', 30).length === 0, 'no match is an empty list');
   ok(priceHistoryDays(log, '', 1).length === 1 && priceHistoryDays(null, '', 30).length === 0, 'the day limit holds and no log is no days');
   ok(!/—/.test(JSON.stringify([priceBarSpec(0.5), fmtCountdown(1e6), all])), 'no em dash in the price copy');
+}
+
+section('Season History: one season of the archive at a time, and the career behind a row');
+{
+  const { shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS } = core;
+  ok(SH_SEASONS_MAX === 10 && SH_POS[1] === 'GKP' && SH_POS[4] === 'FWD', 'ten seasons at most, four positions named');
+  /* A tiny artefact in the real shape: cols published, seasons with era flags. */
+  const cols = ['m', 'ap', 'st', 'pts', 'p2', 'g', 'a', 'cs', 'gc', 'bo', 'sv', 'yc', 'rc', 'og', 'pm', 'ps', 'xg', 'xa', 'xgc', 'dc', 'v0', 'v1', 'hp', 'hap', 'awp', 'awap', 'r10', 'r5', 'bl', 'mx', 'pos', 'tm'];
+  const row = (o) => cols.map((c) => o[c] || 0);
+  const H = { cols, seasons: {
+    '2021-22': { era: { xg: false, starts: false }, teams: { 1: 'Arsenal', 2: 'Spurs' } },
+    '2022-23': { era: { xg: true, starts: true }, teams: {} },
+    'junk': { era: {} } },
+    players: [
+      { c: 10, n: 'Ødegaard', p: 3, s: { '2021-22': row({ m: 2700, ap: 30, pts: 150, g: 7, a: 4, cs: 10, bo: 12, xg: 5, v0: 55, v1: 60, r10: 3, bl: 8, mx: 15, pos: 3, tm: 1 }),
+                                       '2022-23': row({ m: 3000, ap: 34, st: 33, pts: 200, g: 15, a: 8, xg: 12.5, xa: 6, v0: 60, v1: 68, r10: 6, bl: 6, mx: 19, pos: 3, tm: 1 }) } },
+      { c: 11, n: 'Kane', p: 4, s: { '2021-22': row({ m: 3200, ap: 36, pts: 190, g: 17, a: 9, pos: 4, tm: 2, v0: 125, v1: 124, mx: 17 }) } },
+      { c: 12, n: 'Bench', p: 2, s: { '2021-22': row({ m: 0, ap: 0, pos: 2, tm: 1 }) } } ] };
+  ok(shSeasons(H).join(',') === '2022-23,2021-22', 'seasons newest first, and a key that is not a season is dropped');
+  ok(shSeasons(null).length === 0 && shSeasons({}).length === 0, 'no artefact is no seasons');
+  const r = shSeasonRow(H, H.players[0], '2021-22');
+  ok(r.team === 'Arsenal' && r.pos === 3 && r.pts === 150 && r.ap === 30, 'a season row carries club, position and totals');
+  ok(r.xg === null && r.st === null && r.xa === null, 'a season before the xG era carries null, not zero, for xG and starts');
+  ok(Math.abs(r.p90 - 5) < 1e-9 && Math.abs(r.ppa - 5) < 1e-9, 'points per 90 and per appearance are derived from minutes and appearances');
+  const r2 = shSeasonRow(H, H.players[0], '2022-23');
+  ok(r2.xg === 12.5 && r2.st === 33 && r2.team === '', 'inside the era the numbers come through; a season with no club map has an empty club');
+  ok(shSeasonRow(H, H.players[2], '2021-22') === null && shSeasonRow(H, H.players[1], '2022-23') === null, 'no appearances, or no season, is no row');
+  const rows = shRows(H, '2021-22');
+  ok(rows.length === 2 && rows[0].name === 'Kane' && rows[1].name === 'Ødegaard', 'a season lists everyone who appeared, points first');
+  ok(shRows(H, '2030-31').length === 0 && shRows(null, '2021-22').length === 0, 'an unknown season or no artefact is an empty list');
+  ok(shFilter(rows, { pos: 4 }).length === 1 && shFilter(rows, { pos: 4 })[0].name === 'Kane', 'a position filter holds');
+  ok(shFilter(rows, { q: 'odegaard' }).length === 1 && shFilter(rows, { q: 'ARSENAL' }).length === 1 && shFilter(rows, { q: 'spurs' })[0].name === 'Kane', 'the search folds accents and case, and matches the club too');
+  ok(shFilter(rows, {}).length === 2 && shFilter(rows, { pos: 1 }).length === 0, 'no filter keeps everyone; an empty position is empty');
+  const car = shCareer(H, 10);
+  ok(car && car.name === 'Ødegaard' && car.seasons.length === 2 && car.seasons[0].season === '2021-22', 'a career is every season, oldest first');
+  ok(car.total.pts === 350 && car.total.ap === 64 && car.total.g === 22 && car.best.season === '2022-23', 'totals add up and the best season is named');
+  ok(Math.abs(car.total.ppa - 350 / 64) < 1e-9 && Math.abs(car.total.p90 - 350 / (5700 / 90)) < 1e-9, 'career rates come from the totals');
+  ok(shCareer(H, '11').name === 'Kane', 'a code as a string still finds the player');
+  ok(shCareer(H, 12) === null && shCareer(H, 999) === null && shCareer(null, 10) === null, 'no appearances, an unknown code, or no artefact is null');
+  ok(!/—/.test(JSON.stringify([rows, car])), 'no em dash in the season copy');
 }
 
 section('colour ramps: the heatmap steps carry their ink at AA, and the FDR ramp is one ramp');

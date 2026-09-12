@@ -23,7 +23,7 @@ Re-run the workflow before trusting any of this. Endpoints rot.
 | `fantasy.premierleague.com/api` | none | `netlify/functions/fpl.js`, with an ALLOW list |
 | `api.football-data.org` v4 | free key, configured | `netlify/functions/football-data.js` — midweek fixtures, and (measured 21 Aug 2026) squad **nationality** and confirmed-vs-provisional kick-offs |
 | `resources.premierleague.com` | none | direct — crests and player photos |
-| `raw.githubusercontent.com` (vaastav) | none | build-time, historical seasons |
+| `raw.githubusercontent.com` (vaastav) | none | build-time, historical seasons. MIT licence (LICENSE file checked 12 Sep 2026). Attributed in the app on Ten Seasons. Feeds the pre-season priors, the model backtest and the Pro season table and career card. |
 
 ## Reachable, free, not used
 

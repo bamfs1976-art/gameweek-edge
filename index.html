@@ -1051,6 +1051,12 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .pr-search{margin:0 0 12px}
 .pr-search .modal-in{width:100%;max-width:420px}
 @media (max-width:480px){.pr-bar{width:56px}}
+/* Season History: the season switcher and the career card. */
+.sh-controls{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.sh-controls .modal-in{flex:1 1 160px;min-width:0}
+.sh-career .statgrid{grid-template-columns:repeat(4,1fr)}
+@media (max-width:600px){.sh-career .statgrid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:480px){.sh-career .sh-sm{display:none}}
 
 /* Watchlist item (row + inline AI verdict) */
 .wl-item{border-bottom:1px solid var(--border)}
@@ -5286,7 +5292,7 @@ const PANEL_CONTENT = {
   glossary:{desc:'Plain-English definitions of every term the app uses.',layout:'standard'},
   fplbasics:{desc:'How Fantasy Premier League works. The whole game in two minutes.',layout:'standard'},
   archive:{
-    desc:'Ten seasons of Fantasy Premier League, 2016-17 to 2025-26. The all-time records, any two careers side by side, and a new player to guess every day.',
+    desc:'Ten seasons of Fantasy Premier League, 2016-17 to 2025-26. The all-time records, any two careers side by side, a new player to guess every day, and for Pro readers every season as a table with the whole career behind each player.',
     layout:'standard'
   },
   social:{
@@ -5695,7 +5701,7 @@ const PANEL_ALIAS={scenariolab:'seasonsim',ask:'scout',diffs:'allplayers',injuri
    at parse time, taking the whole script — and the whole page — down with it.
    The arrow defers the lookup to call time, long after the consts exist.
    KEEP ON ONE LINE — dev/test-social.mjs reads only to the first newline. */
-const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v),compare:cmpSetView,transfers:tpSetView};
+const HUB_SETVIEW={allplayers:plSetLens,fixtures:fxSetView,liverank:lvSetView,results:mcSetView,accountability:mdSetView,price:prSetView,archive:arSetView,seasonsim:v=>SM_HUB.setView(v),eo:v=>OW_HUB.setView(v),dossier:v=>CL_HUB.setView(v),compare:cmpSetView,transfers:tpSetView};
 const PANEL_VIEW={
   allplayers:{hub:'allplayers',view:'all'},
   diffs:{hub:'allplayers',view:'diffs'},
@@ -5753,7 +5759,7 @@ const PANEL_SYNONYMS={
   scout:['scout ai','ask the scout','team of the week','totw','model xi'],
   compare:['player compare','compare players','comparison','head to head'],
   heatmap:['stats heatmap','heatmap','gameweek grid','consistency','points by gameweek'],
-  archive:['ten seasons','history','archive','past seasons'],
+  archive:['ten seasons','history','archive','past seasons','season history','season table','last season'],
   myweek:['my week','this gameweek','home'],
   dashboard:['overview','dashboard'],
   squad:['my squad','my team','pitch'],
@@ -5929,8 +5935,8 @@ function restoreScroll(){
 /* The hubs' current view, read rather than tracked, so the URL is always a
    function of the state and never drifts from it. The default view is left
    out of the URL: /players is the table, /players?view=diffs is a lens. */
-const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view(),compare:()=>CMP_VIEW,transfers:()=>TP_VIEW};
-const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',seasonsim:'season',eo:'yours',dossier:'dossier',compare:'table',transfers:'solver'};
+const HUB_GETVIEW={allplayers:()=>PL_STATE.lens,fixtures:()=>FX_VIEW,liverank:()=>LV_VIEW,results:()=>MC_VIEW,accountability:()=>MD_VIEW,price:()=>PR_VIEW,archive:()=>AR_VIEW,seasonsim:()=>SM_HUB.view(),eo:()=>OW_HUB.view(),dossier:()=>CL_HUB.view(),compare:()=>CMP_VIEW,transfers:()=>TP_VIEW};
+const HUB_DEFAULT_VIEW={allplayers:'all',fixtures:'grid',liverank:'pitch',results:'results',accountability:'record',price:'moves',archive:'archive',seasonsim:'season',eo:'yours',dossier:'dossier',compare:'table',transfers:'solver'};
 /* Keys that belong to the panel rather than to one of its views, so a
    view change carries them over instead of starting clean. */
 const HUB_KEEP_KEYS={compare:['players','metrics'],transfers:['draft']};
@@ -6047,7 +6053,7 @@ function syncNav(){
    the state, so the link IS the view. Personal panels (My Week, My Squad,
    the Transfer Planner …) are left out: they show the reader's own team,
    and a link to them opens the recipient's, not the sender's. */
-const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','heatmap','gwreport','price','setpiece','rotation','news',
+const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','heatmap','gwreport','price','archive','setpiece','rotation','news',
   'fixtures','results','titlerace','dossier','archive','seasonsim','eo','draft','gwdebrief','gw-actions',
   'blog','accountability','glossary','fplbasics']);
 function pageLinkable(panelId){return LINKABLE_PANELS.has(panelId);}
@@ -14593,11 +14599,24 @@ function summarySections(b,sum,id){
     out+=consistencyCard(hist);
   }
   if(past.length){
-    out+='<div class="card pd-sec"><div class="card-title">Previous seasons</div>'+
-      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Season</span><span class="dl-col">Pts</span><span class="dl-col">G/A</span><span class="dl-col">Mins</span></div>'+
-      past.slice(-4).reverse().map(s=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(s.season_name)+'</span></span>'+
-        '<span class="dl-col mono">'+(s.total_points||0)+'</span><span class="dl-col mono">'+(s.goals_scored||0)+'/'+(s.assists||0)+'</span>'+
-        '<span class="dl-col mono">'+fmtNum(s.minutes)+'</span></div>').join('')+'</div></div>';
+    /* Free readers keep the last four seasons. Pro readers get every
+       season the game records, with price and points per 90, and the
+       ten-season career behind it. Official API data throughout. */
+    const pro=isPro();
+    const el=(b.els&&b.els[id])||(b.elements||[]).find(x=>x.id===id);
+    const rows=pro?past.slice().reverse():past.slice(-4).reverse();
+    const p90=s=>s.minutes>0?((s.total_points||0)/(s.minutes/90)).toFixed(1):'–';
+    const price=s=>(s.start_cost!=null&&s.end_cost!=null)?money(s.start_cost)+' → '+money(s.end_cost):'–';
+    out+='<div class="card pd-sec"><div class="card-title">Previous seasons'+(pro?'':' <span class="badge badge-grey">last 4</span>')+'</div>'+
+      '<div class="dl"><div class="dl-row head"><span class="dl-grow">Season</span><span class="dl-col">Pts</span>'+(pro?'<span class="dl-col">Pts/90</span>':'')+'<span class="dl-col">G/A</span><span class="dl-col">Mins</span>'+(pro?'<span class="dl-col">Price</span>':'')+'</div>'+
+      rows.map(s=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(s.season_name)+'</span></span>'+
+        '<span class="dl-col mono">'+(s.total_points||0)+'</span>'+(pro?'<span class="dl-col mono">'+p90(s)+'</span>':'')+'<span class="dl-col mono">'+(s.goals_scored||0)+'/'+(s.assists||0)+'</span>'+
+        '<span class="dl-col mono">'+fmtNum(s.minutes)+'</span>'+(pro?'<span class="dl-col mono" style="min-width:110px">'+price(s)+'</span>':'')+'</div>').join('')+'</div>'+
+      (pro
+        ?'<div class="dl-sub" style="margin-top:8px">Every season the game records, from the official API.'+
+          (el&&el.code!=null?' <a href="#archive" onclick="shOpenCareer('+el.code+');return false">Ten-season career</a>, with clubs, prices and returns season by season.':'')+'</div>'
+        :'<div class="dl-sub" style="margin-top:8px">Pro readers see every season with price and points per 90, and the ten-season career behind it.</div>')+
+      '</div>';
   }
   return out;
 }
@@ -19207,12 +19226,256 @@ function histMysterySave(st){
 }
 
 /* ── Ten Seasons panel ──────────────────────────────────── */
+/* ── Ten Seasons hub: the archive as it was, and the season table ──
+   The archive view is the free reference: records, two careers, the
+   puzzle. The season table is the Pro layer over the same artefact: one
+   season at a time, every player who appeared in it, and the whole career
+   behind any row. Same lens-bar contract as the Live hub, lock included. */
+const AR_VIEWS=[
+  {id:'archive',label:'Archive',tier:'free',
+   desc:'Ten seasons of Fantasy Premier League: the all-time records, any two careers side by side and a player to guess every day.'},
+  {id:'seasons',label:'Season table',tier:'paid',
+   desc:'Pick a season and read every player who appeared in it: points, minutes, returns and price, sortable by any column. Tap a player for the whole career.'}
+];
+let AR_VIEW='archive';
+function arView(id){return AR_VIEWS.find(v=>v.id===id)||AR_VIEWS[0];}
+function arLocked(v){return !!(v&&v.tier==='paid')&&!isPro();}
+function arSetView(id){AR_VIEW=arView(id).id;track('archive_view',{view:AR_VIEW});hubViewChanged('archive');}
+const AR_HYDRATE={archive:(h)=>hydrateArchiveBody(h),seasons:(h)=>hydrateSeasonTable(h)};
+function arRenderBody(){
+  const body=document.getElementById('ar-body');if(!body)return;
+  const v=arView(AR_VIEW);
+  const note=document.getElementById('ar-note');
+  if(note)note.textContent=v.desc;
+  document.querySelectorAll('#ar-views .lensbtn').forEach(btn=>
+    btn.classList.toggle('on',btn.dataset.view===v.id));
+  if(arLocked(v)){
+    body.innerHTML=proLockWrap(skel(6),null,'Every season as a table, and the whole career behind each player. Pro unlocks it.');
+    return;
+  }
+  body.innerHTML=skel(5);
+  const token=(MEM._arToken=(MEM._arToken||0)+1);
+  Promise.resolve().then(()=>AR_HYDRATE[v.id](body)).catch(err=>{
+    if(token!==MEM._arToken)return;
+    body.innerHTML='<div class="hub-fail">'+stateBox('trophy','Could not load this view',
+      hubFailText(err),retryBtn('arRenderBody()'))+'</div>';
+  });
+}
 async function hydrateArchive(host){
+  host.innerHTML=
+    '<div class="lensbar" id="ar-views">'+AR_VIEWS.map(v=>{
+      const lk=arLocked(v);
+      return '<button class="lensbtn'+(v.id===arView(AR_VIEW).id?' on':'')+(lk?' lk':'')+'" data-view="'+v.id+'">'+
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(v.label)+'</button>';
+    }).join('')+'</div>'+
+    '<p class="dl-sub" id="ar-note" style="margin:0 0 12px"></p>'+
+    '<div id="ar-body"></div>';
+  host.querySelectorAll('#ar-views .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.view===AR_VIEW)return;
+    historyPoint();
+    arSetView(btn.dataset.view);
+    arRenderBody();
+  }));
+  arRenderBody();
+}
+
+/* ── Season History: one season of the archive at a time ────────
+   Pure readers over the artefact, so the table and the career card are
+   tested against a known payload rather than eyeballed. Nothing here
+   changes the artefact or the priors built from it. */
+const SH_SEASONS_MAX=10;
+const SH_POS={1:'GKP',2:'DEF',3:'MID',4:'FWD'};
+/* Seasons newest first, and only keys shaped like one. */
+function shSeasons(H){
+  return Object.keys((H&&H.seasons)||{}).filter(k=>/^\d{4}-\d{2}$/.test(k)).sort().reverse().slice(0,SH_SEASONS_MAX);
+}
+/* One season row for one player, or null when he did not appear in it.
+   Era flags decide whether xG and starts are numbers or absent, because a
+   zero from a season the game did not record would read as "none". */
+function shSeasonRow(H,p,season){
+  const meta=H&&H.seasons&&H.seasons[season];
+  const s=p&&p.s&&p.s[season];
+  if(!meta||!s)return null;
+  const C=histCols(H),era=meta.era||{},teams=meta.teams||{};
+  const ap=s[C.ap]||0;
+  if(!(ap>0))return null;
+  const m=s[C.m]||0,pts=s[C.pts]||0;
+  return {code:p.c,name:p.n,season,pos:s[C.pos]||p.p||0,team:teams[s[C.tm]]||'',
+    pts,ap,m,g:s[C.g]||0,a:s[C.a]||0,cs:s[C.cs]||0,bo:s[C.bo]||0,
+    st:era.starts?(s[C.st]||0):null,xg:era.xg?(s[C.xg]||0):null,xa:era.xg?(s[C.xa]||0):null,
+    p90:m>0?pts/(m/90):0,ppa:pts/ap,r10:s[C.r10]||0,bl:s[C.bl]||0,mx:s[C.mx]||0,
+    v0:s[C.v0]||0,v1:s[C.v1]||0};
+}
+/* Every player who appeared in a season, points first. */
+function shRows(H,season){
+  if(!H||!Array.isArray(H.players))return [];
+  const out=[];
+  for(const p of H.players){const r=shSeasonRow(H,p,season);if(r)out.push(r);}
+  return out.sort((a,c)=>c.pts-a.pts||c.m-a.m||a.name.localeCompare(c.name));
+}
+/* Position and a search over name or club, accent- and case-insensitive. */
+function shFilter(rows,opts){
+  const pos=(opts&&opts.pos)||0;
+  const q=prFold(opts&&opts.q).trim();
+  return (rows||[]).filter(r=>(!pos||r.pos===pos)&&(!q||prFold(r.name).includes(q)||prFold(r.team).includes(q)));
+}
+/* One player's whole career, oldest season first, with totals. */
+function shCareer(H,code){
+  if(!H||!Array.isArray(H.players)||code==null)return null;
+  const p=H.players.find(x=>x.c===code||String(x.c)===String(code));
+  if(!p)return null;
+  const seasons=Object.keys(p.s||{}).sort().map(sn=>shSeasonRow(H,p,sn)).filter(Boolean);
+  if(!seasons.length)return null;
+  const tot=seasons.reduce((t,r)=>{t.pts+=r.pts;t.ap+=r.ap;t.m+=r.m;t.g+=r.g;t.a+=r.a;t.cs+=r.cs;t.r10+=r.r10;if(r.mx>t.mx)t.mx=r.mx;return t;},
+    {pts:0,ap:0,m:0,g:0,a:0,cs:0,r10:0,mx:0});
+  tot.ppa=tot.ap>0?tot.pts/tot.ap:0;
+  tot.p90=tot.m>0?tot.pts/(tot.m/90):0;
+  return {code:p.c,name:p.n,pos:p.p||0,seasons,total:tot,best:seasons.slice().sort((a,c)=>c.pts-a.pts)[0]};
+}
+function shFmtN(v,dp){return v==null?'–':(dp?Number(v).toFixed(dp):fmtNum(v));}
+/* From the player dossier: the ten-season career for this player. */
+function shOpenCareer(code){
+  if(typeof closePlayer==='function')closePlayer();
+  MEM._sh=Object.assign(MEM._sh||{},{player:code});
+  arSetView('seasons');
+  openPanel('archive',{keepView:true});
+}
+async function hydrateSeasonTable(host){
+  const [b,A]=await Promise.all([boot(),loadArchive().catch(()=>null)]);
+  const seasons=shSeasons(A);
+  if(!A||!seasons.length){
+    host.innerHTML=stateBox('trophy','The archive is not available',
+      'Ten seasons of historical data load from our own store. It looks unreachable right now. Everything else in the app is unaffected. Try again in a minute.',retryBtn('arRenderBody()'));
+    return;
+  }
+  const S=MEM._sh=MEM._sh||{season:null,pos:0,q:'',player:null};
+  S.season=urlPick('season',seasons.includes(S.season)?S.season:seasons[0],seasons[0],v=>seasons.includes(v)?v:null);
+  S.pos=urlPick('pos',S.pos||0,0,v=>{const n=parseInt(v,10);return n>=1&&n<=4?n:null;});
+  S.q=urlPick('q',S.q||'','',v=>String(v).slice(0,40));
+  S.player=urlPick('player',S.player||null,null,v=>{const n=parseInt(v,10);return n>0?n:null;});
+  const write=()=>setUrlState({season:S.season!==seasons[0]?S.season:null,pos:S.pos||null,q:S.q||null,player:S.player||null});
+  const byCode={};b.elements.forEach(e=>{if(e.code!=null)byCode[e.code]=e;});
+  const teamsKnown=sn=>Object.keys((A.seasons[sn]&&A.seasons[sn].teams)||{}).length>0;
+  /* The artefact carries no club map for the newest season until the
+     upstream team list catches up; for the season the game is playing now
+     the live team list uses the same ids, so it fills the gap. */
+  const curKey=String(b.season||'').replace('/','-');
+  if(A.seasons[curKey]&&!teamsKnown(curKey)&&b.raw&&Array.isArray(b.raw.teams)){
+    const t={};b.raw.teams.forEach(x=>{if(x&&x.id!=null)t[x.id]=x.name;});A.seasons[curKey].teams=t;
+  }
+
+  host.innerHTML=
+    '<div class="lensbar" id="sh-seasons" role="tablist" aria-label="Season">'+seasons.map(sn=>
+      '<button class="lensbtn'+(sn===S.season?' on':'')+'" data-season="'+sn+'" role="tab" aria-selected="'+(sn===S.season)+'">'+sn+'</button>').join('')+'</div>'+
+    '<div class="sh-controls">'+
+      '<select class="modal-in" id="sh-pos" aria-label="Position">'+[[0,'All positions'],[1,'Goalkeepers'],[2,'Defenders'],[3,'Midfielders'],[4,'Forwards']]
+        .map(([v,l])=>'<option value="'+v+'"'+(v===S.pos?' selected':'')+'>'+l+'</option>').join('')+'</select>'+
+      '<input class="modal-in" id="sh-q" type="search" maxlength="40" placeholder="Player or club" aria-label="Search the season by player or club" value="'+esc(S.q)+'" autocomplete="off">'+
+    '</div>'+
+    '<div id="sh-career"></div>'+
+    '<div id="sh-table"></div>';
+
+  const drawCareer=()=>{
+    const box=host.querySelector('#sh-career');if(!box)return;
+    if(!S.player){box.innerHTML='';return;}
+    const car=shCareer(A,S.player);
+    const closeBtn='<button type="button" class="btn btn-ghost btn-sm" id="sh-close">Close</button>';
+    if(!car){
+      box.innerHTML='<div class="card mb-20 sh-career">'+cardHead('Career',closeBtn)+
+        '<p class="dl-sub" style="margin:0">This player has no Premier League seasons in the archive yet. A first season appears after it is played.</p></div>';
+      host.querySelector('#sh-close').addEventListener('click',()=>{S.player=null;write();drawCareer();});
+      return;
+    }
+    const el=byCode[car.code];
+    const tools=(el?'<button type="button" class="btn btn-ghost btn-sm" onclick="openPlayer('+el.id+')">Dossier</button> ':'')+closeBtn;
+    const xs=car.seasons.map(r=>histYear(r.season));
+    /* Bars per season as the fallback when the chart library is not on
+       the page, the same shape the dossier's form chart falls back to. */
+    const barsSvg=(()=>{const n=car.seasons.length,W=Math.max(260,n*56),CH=110,pad=6,bw=(W-pad*2)/n;
+      const maxP=Math.max(4,...car.seasons.map(r=>r.pts));
+      return '<svg viewBox="0 0 '+W+' '+CH+'" style="max-width:'+W+'px;width:100%;height:auto" role="img" aria-label="'+esc('Points by season: '+car.seasons.map(r=>r.season+' '+r.pts).join(', '))+'">'+
+        car.seasons.map((r,i)=>{const bh=(CH-38)*r.pts/maxP,x=pad+i*bw,y=CH-20-bh;
+          return '<rect x="'+(x+4).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+(bw-8).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="var(--green-bright)" fill-opacity=".85"><title>'+r.season+': '+r.pts+' pts</title></rect>'+
+            '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(y-3).toFixed(1)+'" text-anchor="middle" style="font-size:var(--fs-min);fill:var(--text-2)">'+r.pts+'</text>'+
+            '<text x="'+(x+bw/2).toFixed(1)+'" y="'+(CH-6)+'" text-anchor="middle" style="font-size:var(--fs-min);fill:var(--text-3)">'+r.season.slice(2)+'</text>';}).join('')+'</svg>';})();
+    const chart=car.seasons.length>1?chartHost({
+      x:xs,
+      series:[{label:'Points',color:'var(--green-bright)',data:car.seasons.map(r=>r.pts),width:2}],
+      opts:{height:120,legend:true,xLabel:'Season'}
+    },barsSvg):'';
+    const rows=car.seasons.slice().reverse().map(r=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+r.season+'</span>'+
+      '<span class="dl-sub">'+esc(r.team||'')+(r.team?' · ':'')+(SH_POS[r.pos]||'')+' · '+money(r.v0)+' → '+money(r.v1)+'</span></span>'+
+      '<span class="dl-col mono">'+r.pts+'</span><span class="dl-col mono sh-sm">'+r.ap+'</span><span class="dl-col mono">'+r.g+'/'+r.a+'</span>'+
+      '<span class="dl-col mono">'+r.p90.toFixed(1)+'</span></div>').join('');
+    box.innerHTML='<div class="card mb-20 sh-career">'+cardHead(esc(car.name)+' <span class="badge badge-grey">'+(SH_POS[car.pos]||'')+'</span>',tools)+
+      '<div class="statgrid" style="margin-bottom:12px">'+
+        '<div class="stat"><div class="stat-l">Points</div><div class="stat-v">'+fmtNum(car.total.pts)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Appearances</div><div class="stat-v">'+fmtNum(car.total.ap)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Per appearance</div><div class="stat-v">'+car.total.ppa.toFixed(2)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Best season</div><div class="stat-v">'+car.best.pts+' <span class="dl-sub">'+car.best.season+'</span></div></div>'+
+      '</div>'+chart+
+      '<div class="dl" style="margin-top:10px"><div class="dl-row head"><span class="dl-grow">Season</span><span class="dl-col">Pts</span><span class="dl-col sh-sm">Apps</span><span class="dl-col">G/A</span><span class="dl-col">Pts/90</span></div>'+rows+'</div></div>';
+    host.querySelector('#sh-close').addEventListener('click',()=>{S.player=null;write();drawCareer();});
+  };
+  const drawTable=()=>{
+    const box=host.querySelector('#sh-table');if(!box)return;
+    const all=shRows(A,S.season);
+    const rows=shFilter(all,{pos:S.pos,q:S.q});
+    const era=(A.seasons[S.season]&&A.seasons[S.season].era)||{};
+    if(!rows.length){
+      box.innerHTML=stateBox('eye','Nobody matches',
+        (S.q?'Nothing in '+S.season+' matches \u201c'+S.q+'\u201d. ':'')+'Try another spelling, another position or another season.',
+        '<button type="button" class="btn btn-ghost btn-sm" id="sh-clear">Clear the search</button>');
+      const c=box.querySelector('#sh-clear');if(c)c.addEventListener('click',()=>{S.q='';S.pos=0;const q=host.querySelector('#sh-q');if(q)q.value='';const ps=host.querySelector('#sh-pos');if(ps)ps.value='0';write();drawTable();});
+      return;
+    }
+    const th=(l,num,title)=>'<th'+(num?' class="num"':'')+(title?' title="'+esc(title)+'"':'')+'>'+l+'</th>';
+    const td=(v,num,raw)=>'<td'+(num?' class="num"':'')+(raw!=null?' data-v="'+raw+'"':'')+'>'+v+'</td>';
+    const head='<tr>'+th('#',1)+th('Player')+th('Pos')+th('Club')+th('Pts',1)+th('Apps',1)+th('Mins',1)+th('G',1,'Goals')+th('A',1,'Assists')+th('CS',1,'Clean sheets')+th('Bonus',1)+
+      th('xG',1,'Expected goals')+th('xA',1,'Expected assists')+th('Pts/90',1)+th('Hauls',1,'Gameweeks of 10 or more')+th('Blanks',1,'Appearances of 2 or fewer')+th('Best',1,'Best single gameweek')+th('Start',1,'Price at first appearance')+th('End',1,'Price at last appearance')+'</tr>';
+    const body=rows.map((r,i)=>'<tr data-open="1" data-code="'+r.code+'"'+(r.code===S.player?' class="active"':'')+'>'+td(i+1,1)+td('<b>'+esc(r.name)+'</b>')+td(SH_POS[r.pos]||'–')+td(esc(r.team||'–'))+
+      td(r.pts,1)+td(r.ap,1)+td(fmtNum(r.m),1,r.m)+td(r.g,1)+td(r.a,1)+td(r.cs,1)+td(r.bo,1)+
+      td(shFmtN(r.xg,1),1)+td(shFmtN(r.xa,1),1)+td(r.p90.toFixed(1),1)+td(r.r10,1)+td(r.bl,1)+td(r.mx,1)+td(money(r.v0),1)+td(money(r.v1),1)+'</tr>').join('');
+    box.innerHTML='<div class="dl-sub" style="margin:0 0 8px">'+rows.length+' of '+all.length+' players who appeared in '+S.season+
+        (era.xg?'':'. Expected goals and assists are not in the record before 2022-23')+
+        (teamsKnown(S.season)?'':'. Club names are not in the record for this season yet')+
+        '. Tap a heading to sort, a row for the career.</div>'+
+      '<div class="pl-scroll"><table class="ptable" id="sh-ptable" aria-label="Every player in '+S.season+'"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+    box.querySelectorAll('tbody tr').forEach(tr=>tr.addEventListener('click',()=>{
+      S.player=parseInt(tr.dataset.code,10)||null;
+      box.querySelectorAll('tbody tr.active').forEach(x=>x.classList.remove('active'));
+      tr.classList.add('active');
+      write();drawCareer();
+      const c=host.querySelector('#sh-career');
+      const motionOk=!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if(c&&c.scrollIntoView)c.scrollIntoView({block:'nearest',behavior:motionOk?'smooth':'auto'});
+    }));
+  };
+  host.querySelectorAll('#sh-seasons .lensbtn').forEach(btn=>btn.addEventListener('click',()=>{
+    if(btn.dataset.season===S.season)return;
+    historyPoint();
+    S.season=btn.dataset.season;
+    host.querySelectorAll('#sh-seasons .lensbtn').forEach(x=>{const on=x===btn;x.classList.toggle('on',on);x.setAttribute('aria-selected',on?'true':'false');});
+    track('season_table',{season:S.season});
+    write();drawTable();
+  }));
+  host.querySelector('#sh-pos').addEventListener('change',ev=>{S.pos=parseInt(ev.target.value,10)||0;write();drawTable();});
+  let timer=null;
+  host.querySelector('#sh-q').addEventListener('input',ev=>{
+    S.q=String(ev.target.value||'').slice(0,40);
+    clearTimeout(timer);timer=setTimeout(()=>{write();drawTable();},200);
+  });
+  write();
+  drawCareer();
+  drawTable();
+}
+
+async function hydrateArchiveBody(host){
   const A=await loadArchive().catch(()=>null);
   const idx=histPriorIndex(A);
   if(!idx){
     host.innerHTML=stateBox('trophy','The archive is not available',
-      'Ten seasons of historical data load from our own store. It looks unreachable right now. Everything else in the app is unaffected. Try again in a minute.',retryBtn());
+      'Ten seasons of historical data load from our own store. It looks unreachable right now. Everything else in the app is unaffected. Try again in a minute.',retryBtn('arRenderBody()'));
     return;
   }
   const seasons=idx.seasons,careers=histCareers(idx);
@@ -26237,6 +26500,14 @@ function cmdkEntries(q){
     out.push({name:v.label,aliases:[v.id,'transfers in','transfers out'],desc:'Prices view',
       label:v.label,sub:PANELS.price.areaLabel+' · view',icon:'arrows',base:0.4,
       run:()=>{prSetView(v.id);openPanel('price',{keepView:true});}});
+  });
+  /* And the archive: "season table" and "last season" are what somebody
+     types, and both are a view of Ten Seasons rather than a panel. */
+  if(canSeePanel(PANELS.archive))AR_VIEWS.forEach(v=>{
+    if(v.id==='archive')return;             /* that IS the panel, already listed */
+    out.push({name:v.label,aliases:[v.id,'season history','last season','season table'],desc:'Ten Seasons view',
+      label:v.label,sub:PANELS.archive.areaLabel+' · view',icon:'trophy',base:0.4,
+      run:()=>{arSetView(v.id);openPanel('archive',{keepView:true});}});
   });
   verbs.forEach(v=>out.push({name:v.label,aliases:v.aliases||[],desc:'action',
     label:v.label,sub:v.sub,icon:v.icon,base:0.5,run:v.run}));
