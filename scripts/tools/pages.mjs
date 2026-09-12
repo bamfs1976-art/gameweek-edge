@@ -9,6 +9,7 @@
    pages as a map of path to HTML, so the whole set is tested. */
 import { createRequire } from 'node:module';
 import { POS, POS_LONG, STATUS, HORIZON } from './snapshot.mjs';
+import { footerLinksHtml } from '../site/links.mjs';
 
 const require = createRequire(import.meta.url);
 const SITE = 'https://gameweekedge.co.uk';
@@ -22,7 +23,7 @@ const fmtStamp = (iso) => { try { const d = new Date(iso); return d.toLocaleStri
 let RULE;
 function rule() { if (RULE === undefined) { try { RULE = require('../../netlify/lib/suspension.js').loadRule(); } catch (_) { RULE = null; } } return RULE; }
 
-const CSS = `
+export const CSS = `
 :root{--bg:#0a0c0f;--surface:#111418;--surface-3:#1a2026;--border:#20262d;--border-2:#2a323b;--text:#e8ecf1;--text-2:#aab3be;--text-3:#8d97a3;--green:#00d26a;--green-bright:#2ee88c;--green-soft:rgba(0,210,106,.12);--amber:#f5a524;--red:#ff4d4f;--on-brand:#0a0c0f;
 --fdr-1:#2ecf73;--fdr-ink-1:#0d1f16;--fdr-2:#8fd9a6;--fdr-ink-2:#0d1f16;--fdr-3:#d9dee3;--fdr-ink-3:#3a4650;--fdr-4:#f0a3a0;--fdr-ink-4:#2a1414;--fdr-5:#e05a55;--fdr-ink-5:#2a1414;
 --font-body:'Inter',system-ui,sans-serif;--font-mono:'IBM Plex Mono',ui-monospace,monospace;--r:4px}
@@ -53,10 +54,10 @@ th{background:var(--surface-3);font-size:.66rem;text-transform:uppercase;letter-
 .pos,.neg{font-family:var(--font-mono);font-weight:700}.pos{color:var(--green)}.neg{color:var(--red)}
 .muted{color:var(--text-3);font-size:.8rem}.list{list-style:none;padding:0;margin:0;columns:2;column-gap:18px}.list li{break-inside:avoid;padding:3px 0}
 @media (max-width:600px){.list{columns:1}h1{font-size:1.4rem}}
-footer{border-top:1px solid var(--border);padding:18px 0 40px;color:var(--text-3);font-size:.78rem}footer a{color:var(--text-2)}
+footer{border-top:1px solid var(--border);padding:18px 0 40px;color:var(--text-3);font-size:.78rem}footer a{color:var(--text-2)}.flinks a{margin-right:12px}
 `;
 
-const LOGO = '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><rect x="1" y="1" width="36" height="36" rx="8" fill="#00d26a"/><path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#0a0c0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="11" r="3.4" fill="#0a0c0f"/></svg>';
+export const LOGO = '<svg viewBox="0 0 38 38" fill="none" aria-hidden="true"><rect x="1" y="1" width="36" height="36" rx="8" fill="#00d26a"/><path d="M9 25.5 L16 17 L22 22 L30 11" stroke="#0a0c0f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="30" cy="11" r="3.4" fill="#0a0c0f"/></svg>';
 
 export const TOOLS = [
   { path: '/tools/fixture-difficulty/', label: 'Fixture difficulty', app: '/fixtures' },
@@ -65,7 +66,7 @@ export const TOOLS = [
   { path: '/tools/players/', label: 'Player pages', app: '/players' },
 ];
 
-function frame({ title, desc, path, h1, lede, body, snap, jsonld, current }) {
+function frame({ title, desc, path, h1, lede, body, snap, jsonld, current, links }) {
   const url = SITE + path;
   const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [
     { '@type': 'ListItem', position: 1, name: 'Gameweek Edge', item: SITE + '/' },
@@ -85,7 +86,7 @@ function frame({ title, desc, path, h1, lede, body, snap, jsonld, current }) {
     '<main id="main" class="wrap"><h1>' + h1 + '</h1><p class="lede">' + lede + '</p>' + body + '</main>\n' +
     '<footer><div class="wrap"><p>Data from the official Fantasy Premier League API, updated ' + esc(fmtStamp(snap.built)) + '. ' + (snap.event.nextName ? esc(snap.event.nextName) + ' deadline ' + esc(fmtDate(snap.event.deadline)) + '. ' : '') +
     'These pages are generated from the data, not written by hand. Gameweek Edge is an independent app and is not affiliated with, endorsed by or associated with the Premier League or the official Fantasy Premier League game.</p>' +
-    '<p><a href="/">Gameweek Edge</a> · <a href="/tools/">All tools</a> · <a href="/methodology">Methodology</a> · <a href="/privacy.html">Privacy</a></p></div></footer>\n</body>\n</html>\n';
+    '<p class="flinks"><a href="/">Gameweek Edge</a> <a href="/tools/">All tools</a> <a href="/methodology">Methodology</a> ' + footerLinksHtml(links || {}) + '</p></div></footer>\n</body>\n</html>\n';
 }
 
 const fdrCell = (d, opp, home) => '<span class="fdr fdr-' + d + '" title="Difficulty ' + d + ' of 5">' + esc(opp) + ' (' + (home ? 'H' : 'A') + ')</span>';
@@ -103,16 +104,16 @@ export function teamRuns(snap) {
   }).sort((x, y) => (x.avg == null) - (y.avg == null) || x.avg - y.avg || x.team.name.localeCompare(y.team.name));
 }
 
-function pageIndex(snap) {
+function pageIndex(snap, links) {
   const body = '<div class="card"><p class="card-title">The tools</p><ul class="list">' + TOOLS.map((t) => '<li><a href="' + t.path + '">' + t.label + '</a></li>').join('') + '</ul></div>' +
     '<div class="card"><p class="card-title">Player pages, top ' + snap.players.length + ' by points</p><ul class="list">' +
     snap.players.map((p) => '<li><a href="/tools/players/' + p.slug + '/">' + esc(p.web) + '</a> <span class="muted">' + esc(teamShort(snap, p.team)) + ' · ' + POS[p.pos] + ' · ' + p.pts + ' pts</span></li>').join('') + '</ul></div>';
   return frame({ title: 'FPL tools: fixture difficulty, price changes, injuries and player pages | Gameweek Edge',
     desc: 'Free Fantasy Premier League reference pages generated from the official data: fixture difficulty by team, price changes, injuries and suspensions and a page for every top-200 player.',
-    path: '/tools/', h1: 'FPL tools', lede: 'Reference pages generated from the official Fantasy Premier League data, refreshed on a schedule. Each one links into the app for the live version.', body, snap, current: '/tools/' });
+    path: '/tools/', h1: 'FPL tools', lede: 'Reference pages generated from the official Fantasy Premier League data, refreshed on a schedule. Each one links into the app for the live version.', body, snap, links, current: '/tools/' });
 }
 
-function pageDifficulty(snap) {
+function pageDifficulty(snap, links) {
   const runs = teamRuns(snap);
   const gws = [...new Set(snap.fixtures.map((f) => f.gw))].sort((a, b) => a - b);
   const rows = runs.map((r) => '<tr><td><a href="/tools/fixture-difficulty/' + r.team.slug + '/">' + esc(r.team.name) + '</a></td>' +
@@ -122,10 +123,10 @@ function pageDifficulty(snap) {
     '<p class="muted" style="margin:10px 0 0">Difficulty is FPL’s own 1 to 5 rating for each fixture, 1 the easiest. H is home, A is away. The app’s <a href="/fixtures">Fixture Planner</a> adds the model’s own read, clean-sheet odds and a points planner.</p></div>';
   return frame({ title: 'FPL fixture difficulty by team, next ' + gws.length + ' gameweeks | Gameweek Edge',
     desc: 'Every Premier League club’s next ' + gws.length + ' fixtures with FPL’s official difficulty rating, ranked from the easiest run to the hardest. Updated from the official data.',
-    path: '/tools/fixture-difficulty/', h1: 'Fixture difficulty by team', lede: 'Each club’s next fixtures with the official difficulty rating, easiest run first. Tap a club for its fixtures and its most-owned players.', body, snap, current: '/tools/fixture-difficulty/' });
+    path: '/tools/fixture-difficulty/', h1: 'Fixture difficulty by team', lede: 'Each club’s next fixtures with the official difficulty rating, easiest run first. Tap a club for its fixtures and its most-owned players.', body, snap, links, current: '/tools/fixture-difficulty/' });
 }
 
-function pageTeam(snap, r) {
+function pageTeam(snap, r, links) {
   const t = r.team;
   const rows = r.runs.map((f) => '<tr><td class="num">' + f.gw + '</td><td>' + esc(f.oppName) + ' (' + (f.home ? 'Home' : 'Away') + ')</td><td>' + fdrCell(f.d, f.opp, f.home) + '</td><td>' + esc(f.kick ? fmtDate(f.kick) : '') + '</td></tr>').join('');
   const squad = snap.players.filter((p) => p.team === t.id).sort((a, b) => b.pts - a.pts).slice(0, 12);
@@ -135,10 +136,10 @@ function pageTeam(snap, r) {
     '<p class="muted">In the app: <a href="/players?team=' + t.id + '">every ' + esc(t.name) + ' player</a> and the <a href="/fixtures">Fixture Planner</a>.</p>';
   return frame({ title: esc(t.name) + ' fixtures and FPL difficulty, next ' + r.runs.length + ' gameweeks | Gameweek Edge',
     desc: esc(t.name) + '’s next ' + r.runs.length + ' Premier League fixtures with FPL’s official difficulty rating' + (r.avg != null ? ', averaging ' + r.avg.toFixed(2) + ' of 5' : '') + ', and the club’s top FPL players.',
-    path: '/tools/fixture-difficulty/' + t.slug + '/', h1: esc(t.name) + ' fixture difficulty', lede: 'The next fixtures from ' + esc(t.name) + '’s side, with FPL’s official difficulty rating, and the club’s players in the top ' + snap.players.length + '.', body, snap, current: '/tools/fixture-difficulty/' });
+    path: '/tools/fixture-difficulty/' + t.slug + '/', h1: esc(t.name) + ' fixture difficulty', lede: 'The next fixtures from ' + esc(t.name) + '’s side, with FPL’s official difficulty rating, and the club’s players in the top ' + snap.players.length + '.', body, snap, links, current: '/tools/fixture-difficulty/' });
 }
 
-function pagePrices(snap) {
+function pagePrices(snap, links) {
   const m = snap.movers;
   const tbl = (rows, cols) => rows.length ? '<div class="scroll"><table><thead><tr>' + cols.map((c) => '<th' + (c.num ? ' class="num"' : '') + '>' + c.h + '</th>').join('') + '</tr></thead><tbody>' +
     rows.map((r) => '<tr>' + cols.map((c) => '<td' + (c.num ? ' class="num"' : '') + '>' + c.v(r) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>' : '<p class="muted">None recorded.</p>';
@@ -153,10 +154,10 @@ function pagePrices(snap) {
     '<p class="muted" style="margin:10px 0 0">Net transfers are what move a price. The app’s <a href="/prices">Price Predictor</a> shows how close each player is to a change tonight, the hourly momentum and a searchable history.</p></div>';
   return frame({ title: 'FPL price changes today: risers, fallers and net transfers | Gameweek Edge',
     desc: 'Today’s Fantasy Premier League price rises and falls, the changes since the gameweek started and the most bought and sold players, from the official data.',
-    path: '/tools/price-changes/', h1: 'FPL price changes', lede: 'Who rose and who fell, the changes since the gameweek started and the net transfers driving the next ones.', body, snap, current: '/tools/price-changes/' });
+    path: '/tools/price-changes/', h1: 'FPL price changes', lede: 'Who rose and who fell, the changes since the gameweek started and the net transfers driving the next ones.', body, snap, links, current: '/tools/price-changes/' });
 }
 
-function pageInjuries(snap) {
+function pageInjuries(snap, links) {
   const groups = [['i', 'Injured'], ['d', 'Doubtful'], ['s', 'Suspended'], ['u', 'Unavailable'], ['n', 'Not available'], ['a', 'Flagged but available']];
   const badge = (s) => '<span class="badge ' + (s === 'i' || s === 's' ? 'badge-red' : s === 'd' ? 'badge-amber' : '') + '">' + esc(STATUS[s] || s) + '</span>';
   const name = (r) => { const p = snap.players.find((x) => x.id === r.id); return p ? '<a href="/tools/players/' + p.slug + '/">' + esc(r.web) + '</a>' : esc(r.web); };
@@ -177,10 +178,10 @@ function pageInjuries(snap) {
     '<p class="muted">In the app: the <a href="/injuries">Fitness lens</a> on the players table, sorted by ownership, and push alerts for new flags.</p>';
   return frame({ title: 'FPL injuries and suspensions: every flagged player with the official news | Gameweek Edge',
     desc: 'Every Fantasy Premier League player flagged injured, doubtful, suspended or unavailable, with the official news and chance of playing, plus who is one yellow card from a ban.',
-    path: '/tools/injuries/', h1: 'Injuries and suspensions', lede: 'Every flagged player with the official news and chance of playing, most-owned first, and the players one caution from a ban.', body, snap, current: '/tools/injuries/' });
+    path: '/tools/injuries/', h1: 'Injuries and suspensions', lede: 'Every flagged player with the official news and chance of playing, most-owned first, and the players one caution from a ban.', body, snap, links, current: '/tools/injuries/' });
 }
 
-function pagePlayer(snap, p) {
+function pagePlayer(snap, p, links) {
   const t = snap.teams.find((x) => x.id === p.team) || { name: '', short: '', slug: '' };
   const runs = teamRuns(snap).find((r) => r.team.id === p.team);
   const fixtures = runs ? runs.runs : [];
@@ -200,10 +201,10 @@ function pagePlayer(snap, p) {
   const jsonld = { '@context': 'https://schema.org', '@type': 'Person', name: full, jobTitle: POS_LONG[p.pos] || 'Footballer', memberOf: { '@type': 'SportsTeam', name: t.name }, url: SITE + '/tools/players/' + p.slug + '/' };
   return frame({ title: esc(named) + ' FPL: price, ownership, form and fixtures | Gameweek Edge',
     desc: esc(full) + ' (' + esc(t.name) + ', ' + POS_LONG[p.pos] + '): ' + money(p.cost) + ', owned by ' + p.own.toFixed(1) + '% of managers, ' + p.pts + ' points, form ' + p.form.toFixed(1) + '. Next fixtures with difficulty and the latest availability news.',
-    path: '/tools/players/' + p.slug + '/', h1: esc(full), lede: esc(t.name) + ' · ' + POS_LONG[p.pos] + ' · ' + money(p.cost) + ' · owned by ' + p.own.toFixed(1) + '% of ' + (snap.total ? Math.round(snap.total / 1e6) + ' million' : 'all') + ' managers.', body, snap, jsonld, current: '/tools/players/' });
+    path: '/tools/players/' + p.slug + '/', h1: esc(full), lede: esc(t.name) + ' · ' + POS_LONG[p.pos] + ' · ' + money(p.cost) + ' · owned by ' + p.own.toFixed(1) + '% of ' + (snap.total ? Math.round(snap.total / 1e6) + ' million' : 'all') + ' managers.', body, snap, links, jsonld, current: '/tools/players/' });
 }
 
-function pagePlayersIndex(snap) {
+function pagePlayersIndex(snap, links) {
   const byPos = [1, 2, 3, 4].map((pos) => { const rows = snap.players.filter((p) => p.pos === pos); return rows.length ? '<div class="card"><p class="card-title">' + POS_LONG[pos] + 's (' + rows.length + ')</p><ul class="list">' + rows.map((p) => '<li><a href="/tools/players/' + p.slug + '/">' + esc(p.web) + '</a> <span class="muted">' + esc(teamShort(snap, p.team)) + ' · ' + money(p.cost) + ' · ' + p.pts + ' pts</span></li>').join('') + '</ul></div>' : ''; }).join('');
   return frame({ title: 'FPL player pages: the top ' + snap.players.length + ' by points | Gameweek Edge',
     desc: 'A page for each of the top ' + snap.players.length + ' Fantasy Premier League players by points: price, ownership, form, this season’s numbers, availability and the next fixtures with difficulty.',
@@ -212,14 +213,17 @@ function pagePlayersIndex(snap) {
 
 const teamShort = (snap, id) => { const t = snap.teams.find((x) => x.id === id); return t ? t.short : ''; };
 
-export function renderAll(snap) {
+export function renderAll(snap, links) {
   const out = new Map();
-  out.set('/tools/', pageIndex(snap));
-  out.set('/tools/fixture-difficulty/', pageDifficulty(snap));
-  teamRuns(snap).forEach((r) => out.set('/tools/fixture-difficulty/' + r.team.slug + '/', pageTeam(snap, r)));
-  out.set('/tools/price-changes/', pagePrices(snap));
-  out.set('/tools/injuries/', pageInjuries(snap));
-  out.set('/tools/players/', pagePlayersIndex(snap));
-  snap.players.forEach((p) => out.set('/tools/players/' + p.slug + '/', pagePlayer(snap, p)));
+  const L = links || {};
+  const withLinks = (html) => html.replace('<p class="flinks">', '<p class="flinks" data-links="' + (Object.keys(L).length ? '1' : '0') + '">');
+  out.set('/tools/', pageIndex(snap, L));
+  out.set('/tools/fixture-difficulty/', pageDifficulty(snap, L));
+  teamRuns(snap).forEach((r) => out.set('/tools/fixture-difficulty/' + r.team.slug + '/', pageTeam(snap, r, L)));
+  out.set('/tools/price-changes/', pagePrices(snap, L));
+  out.set('/tools/injuries/', pageInjuries(snap, L));
+  out.set('/tools/players/', pagePlayersIndex(snap, L));
+  snap.players.forEach((p) => out.set('/tools/players/' + p.slug + '/', pagePlayer(snap, p, L)));
+  for (const [k, v] of out) out.set(k, withLinks(v));
   return out;
 }

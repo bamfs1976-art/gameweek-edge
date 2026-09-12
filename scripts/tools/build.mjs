@@ -8,11 +8,11 @@ import { renderAll } from './pages.mjs';
 
 export const SNAPSHOT = 'data/tool-pages.json';
 
-export async function buildToolPages(root, out) {
+export async function buildToolPages(root, out, links) {
   const file = join(root, SNAPSHOT);
   if (!existsSync(file)) return { pages: 0, urls: [], built: null, note: 'no snapshot at ' + SNAPSHOT + ' (the tool-pages workflow writes it)' };
   const snap = JSON.parse(readFileSync(file, 'utf8'));
-  const pages = renderAll(snap);
+  const pages = renderAll(snap, links);
   const urls = [];
   for (const [path, html] of pages) {
     const dir = join(out, path);

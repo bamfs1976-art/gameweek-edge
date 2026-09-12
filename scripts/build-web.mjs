@@ -12,6 +12,8 @@ import { publishRecord } from './efl/publish-record.mjs';
 import { publishRecord as publishFplRecord } from './record/publish-record.mjs';
 import { buildSeo } from './seo/build.mjs';
 import { buildToolPages } from './tools/build.mjs';
+import { buildBlog } from './blog/build.mjs';
+import { siteLinks, footerLinksHtml } from './site/links.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
@@ -170,9 +172,21 @@ const fplRecord = await publishFplRecord(join(OUT, 'record'));
 console.log(`✓ FPL record → www/record/record.json (${fplRecord.gameweeks} gameweek(s), ${fplRecord.graded} graded)`);
 /* Sitemap, robots and the pre-rendered content shells, from the same
    registries the app routes by (scripts/seo/routes.mjs). */
-const tools = await buildToolPages(ROOT, OUT);
+/* The community and legal links live once, in index.html (SITE_LINKS);
+   every static page reads them here. The landing page's footer carries a
+   marker the build fills, so its links can never differ from the app's. */
+const links = siteLinks(await readFile(join(ROOT, 'index.html'), 'utf8'));
+{
+  const landing = join(OUT, 'landing.html');
+  const src = await readFile(landing, 'utf8');
+  if (!src.includes('<!-- site:links -->')) throw new Error('landing.html has lost its <!-- site:links --> marker');
+  await writeFile(landing, src.replace('<!-- site:links -->', footerLinksHtml(links)));
+}
+const blog = await buildBlog(ROOT, OUT, links);
+console.log(blog.posts ? `✓ Articles → www/articles/ (${blog.posts} post(s), index and feed.xml)` : `· Articles skipped: ${blog.note}`);
+const tools = await buildToolPages(ROOT, OUT, links);
 console.log(tools.pages ? `✓ Tool pages → www/tools/ (${tools.pages} pages from a snapshot built ${tools.built})` : `· Tool pages skipped: ${tools.note}`);
-const seo = await buildSeo(ROOT, OUT, tools.urls);
+const seo = await buildSeo(ROOT, OUT, tools.urls.concat(blog.urls));
 console.log(`✓ SEO → www/sitemap.xml (${seo.urls} urls), www/robots.txt, ${seo.shells.length} pre-rendered shell(s): ${seo.shells.join(', ')}`);
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');

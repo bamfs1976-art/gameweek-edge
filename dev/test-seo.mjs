@@ -116,7 +116,7 @@ section('the rewrite rules and the build agree with the list');
   ok(res.shells.length === PRERENDER.length && existsSync(join(dir, 'sitemap.xml')) && existsSync(join(dir, 'robots.txt')) && PRERENDER.every((id) => existsSync(join(dir, id + '.html'))), 'buildSeo writes the sitemap, robots and every shell');
   ok(res.urls === routes.length + pages.length, 'and reports the url count');
   rmSync(dir, { recursive: true, force: true });
-  ok(/buildSeo\(ROOT, OUT, tools\.urls\)/.test(readFileSync(join(ROOT, 'scripts/build-web.mjs'), 'utf8')), 'npm run build:web runs the step, after the tool pages so the sitemap lists them');
+  ok(/buildSeo\(ROOT, OUT, tools\.urls\.concat\(blog\.urls\)\)/.test(readFileSync(join(ROOT, 'scripts/build-web.mjs'), 'utf8')), 'npm run build:web runs the step after the tool pages and the articles, so the sitemap lists them');
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

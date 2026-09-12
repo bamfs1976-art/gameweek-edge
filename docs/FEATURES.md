@@ -682,6 +682,22 @@ structured data and the methodology shell `FAQPage`, built from the landing
 FAQ it also shows. `dev/test-seo.mjs` holds all of it together and
 `dev/site-check.mjs` checks the deployed sitemap, robots and shells.
 
+**Content and community scaffold** (September 2026, Phase 5 of the brief;
+scaffold only, no content written). `content/posts/*.md` becomes
+`/articles/<slug>/` at build with an index and an RSS 2.0 feed at
+`/articles/feed.xml` (`scripts/blog/`); front matter carries title,
+description, date, author, tags and draft, and drafts, underscored files and
+future dates stay out. With no published post the build writes nothing and
+says so, so the site shows no empty section. The base is `/articles/` because
+`/blog` is The Wire, the app's own briefings; moving either is a one-line
+change once the owner decides which owns the word. `SITE_LINKS` in
+`index.html` is the one place the Discord invite, the official mini-league's
+auto-join code, the contact address and a terms page live: the app renders
+them into the sidebar footer and a Community group on the More sheet, and the
+build reads the same constant (`scripts/site/links.mjs`) into the landing
+footer, the tool pages and the articles. Empty values render nothing.
+`dev/test-blog.mjs` covers the renderer, the posts, the feed and the links.
+
 **Tool pages** (`/tools/`, September 2026). Thin, static, indexable pages
 generated from the official FPL data and never written by hand: fixture
 difficulty by team (`/tools/fixture-difficulty/`, one page per club), price
