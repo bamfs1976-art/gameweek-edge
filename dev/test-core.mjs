@@ -416,9 +416,9 @@ section('dcHitLabel: "never clears it" and "never seen him" are different claims
      is a player this returned ~0% for, i.e. the tool was loudest exactly
      where it knew least. */
   const L = core.dcHitLabel;
-  ok(L({ element_type: 2, minutes: 0, starts: 0 }) === '—',
+  ok(L({ element_type: 2, minutes: 0, starts: 0 }) === '–',
     'a defender with no PL minutes gets no figure at all, not ~0%');
-  ok(L({ element_type: 2, minutes: 0, defensive_contribution_per_90: '12.4' }) === '—',
+  ok(L({ element_type: 2, minutes: 0, defensive_contribution_per_90: '12.4' }) === '–',
     'and a per-90 carried over from another league does not create a basis either');
   ok(L({ element_type: 2, minutes: 2000, defensive_contribution: 0 }) === '~0%',
     'but a real season with genuinely no defensive returns still reports ~0% — '
@@ -1986,13 +1986,13 @@ section('tilePoints: what number goes on a player tile');
      reported a player is not the same as him scoring nothing, and this
      is the one distinction the fix must not trample: it would be easy to
      "fix" the bench by defaulting base to 0. */
-  ok(core.tilePoints({ mult: 0, base: null, pts: null }).text === '—',
+  ok(core.tilePoints({ mult: 0, base: null, pts: null }).text === '–',
      'a substitute with no live row is a dash');
-  ok(core.tilePoints({ mult: 1, base: null, pts: null }).text === '—', 'and so is a starter');
+  ok(core.tilePoints({ mult: 1, base: null, pts: null }).text === '–', 'and so is a starter');
   ok(core.tilePoints({ mult: 0, base: null, pts: null }).shown === null,
      'with the null surviving as a null');
 
-  ok(core.tilePoints(null).text === '—', 'no row at all does not throw');
+  ok(core.tilePoints(null).text === '–', 'no row at all does not throw');
   ok(core.tilePoints({}).counts === false, 'and a row with no multiplier does not count');
 }
 
@@ -3604,7 +3604,7 @@ section('fdrPatchFor / entry points: a run is only a window if it is actually ki
 
   const p1 = core.fdrPatchFor('overall', 1, gws, byTeamGw, 3);
   ok(p1 && gws[p1.start] === 3, 'the kind stretch is found where it starts (GW' +
-    (p1 ? gws[p1.start] : '—') + ')');
+    (p1 ? gws[p1.start] : '–') + ')');
   ok(p1 && gws[p1.end] === 5, 'and runs to the end of K');
   ok(core.fdrPatchFor('overall', 2, gws, byTeamGw, 3) === null,
     'a club whose best run is still hard gets no window at all');
@@ -4258,7 +4258,7 @@ section('team strength: FPL\'s own venue-split rating, and the ways it lies');
   const cell = (o) => Object.assign({ opp: 'BOU', home: true, diff: 2, fdr: 2,
     lam: 2.21, cs: 0.33, win: 0.62, s: { edge: 1.25, basis: 'overall' } }, o || {});
   ok(core.fdrCellValue('strength', cell()) === '1.25', 'the strength lens prints the ratio');
-  ok(core.fdrCellValue('strength', cell({ s: null })) === '—',
+  ok(core.fdrCellValue('strength', cell({ s: null })) === '–',
     'a fixture with no strength data shows a dash rather than a number');
   ok(core.fdrLens('strength').unit === 'STR', 'the lens names its own unit');
   ok(core.fdrGrade('strength', cell()) === 2, 'fdrGrade routes the strength view');
@@ -4269,7 +4269,7 @@ section('team strength: FPL\'s own venue-split rating, and the ways it lies');
     'the run total AVERAGES the ratio — summing ratios would be meaningless');
   ok(core.fdrRunTotal('strength', [cell({ s: null }), cell({ s: { edge: 2, basis: 'overall' } })]) === '2.00',
     'and a partial run averages only the fixtures that have data');
-  ok(core.fdrRunTotal('strength', [cell({ s: null })]) === '—',
+  ok(core.fdrRunTotal('strength', [cell({ s: null })]) === '–',
     'an all-missing run has no total');
 
   /* Adding a lens must not disturb the others. */
@@ -4324,11 +4324,11 @@ section('fdr lenses: the cell shows the projection, not just a colour (Tier 2)')
     'each lens names its own unit');
 
   /* Blanks: a club with no fixture that week has no cell at all. */
-  ok(core.fdrCellValue('attack', null) === '—', 'a blank gameweek shows a dash, not a zero');
-  ok(core.fdrRunTotal('attack', [null, null]) === '—', 'an all-blank run has no total');
+  ok(core.fdrCellValue('attack', null) === '–', 'a blank gameweek shows a dash, not a zero');
+  ok(core.fdrRunTotal('attack', [null, null]) === '–', 'an all-blank run has no total');
   ok(core.fdrRunTotal('attack', [null, cell({ lam: 2 }), null]) === '2.00',
     'and a partial run totals only the fixtures that exist');
-  ok(core.fdrRunTotal('attack', []) === '—' && core.fdrRunTotal('attack', null) === '—', 'an empty run is safe');
+  ok(core.fdrRunTotal('attack', []) === '–' && core.fdrRunTotal('attack', null) === '–', 'an empty run is safe');
 
   /* Missing model output must read as zero, never NaN on the page. */
   const bare = { opp: 'X', home: true, diff: 3, fdr: 3 };
@@ -5491,12 +5491,12 @@ section('data table: cell values, ordering and which columns earn a filter');
   ok(tableCellValue('139') === 139 && tableCellValue(' 4.2 ') === 4.2, 'plain figures read as numbers');
   ok(tableCellValue('£6.9') === 6.9 && tableCellValue('29.3%') === 29.3 && tableCellValue('+12') === 12 && tableCellValue('−4') === -4, 'prices, percentages and signed figures read as numbers');
   ok(tableCellValue('1,234') === 1234, 'a thousands comma is not a decimal');
-  ok(tableCellValue('SUN') === 'sun' && tableCellValue('—') === '—', 'text lower-cases; a dash stays text');
+  ok(tableCellValue('SUN') === 'sun' && tableCellValue('–') === '–', 'text lower-cases; a dash stays text');
   ok(tableCellValue('GW2') === 'gw2', 'a label with digits is still text');
   const sorted = (vals, dir) => vals.slice().sort((a, b) => tableSortValue(a, b, dir));
   ok(JSON.stringify(sorted([3, 1, 2], 1)) === '[1,2,3]' && JSON.stringify(sorted([3, 1, 2], -1)) === '[3,2,1]', 'numbers sort both ways');
   ok(JSON.stringify(sorted(['b', 'a', 'c'], 1)) === '["a","b","c"]', 'text sorts ascending');
-  ok(JSON.stringify(sorted([2, '—', 1], -1)) === '[2,1,"—"]' && JSON.stringify(sorted([2, '—', 1], 1)) === '[1,2,"—"]', 'a dash sits below the numbers whichever way');
+  ok(JSON.stringify(sorted([2, '–', 1], -1)) === '[2,1,"–"]' && JSON.stringify(sorted([2, '–', 1], 1)) === '[1,2,"–"]', 'a dash sits below the numbers whichever way');
   const col = (arr, numeric) => { const a = arr.slice(); a.numeric = !!numeric; return a; };
   const rows = 20;
   const clubs = col(Array.from({ length: rows }, (_, i) => 'Club ' + (i % 6)));

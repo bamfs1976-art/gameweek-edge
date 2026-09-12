@@ -14,6 +14,10 @@ The clarity of the official FPL site, with the depth serious managers rely on â€
 - **Plain English.** Short sentences. No filler, no jargon walls.
 - **Expert, not arrogant.** Explain the "why", respect the manager's call.
 - **British English** throughout (favour, colour, defence).
+- **No em dashes in anything a reader sees.** Break the sentence, use a colon
+  for a label, a comma for an aside, a middle dot between figures. A missing
+  value in a table is an en dash (â€“). `scripts/check-copy.mjs` fails the build
+  on the first em dash in UI copy.
 - Do say: "predicted points", "your edge", "the smart companion".
 - Don't say: "guaranteed", "nailed on", "tipster", anything gambling-adjacent.
 
