@@ -209,6 +209,20 @@ const pieces = [
   extractFn(html, 'tableSortValue'),
   extractFn(html, 'tableFilterable'),
   extractFn(html, 'hubFailText'),
+  /* Player Compare: the metric registry and the pure builders behind both views. */
+  extractFn(html, 'cmpNum'),
+  extractFn(html, 'cmpPer90'),
+  extractArrayConst(html, 'CMP_METRICS'),
+  extractArrayConst(html, 'CMP_DEFAULT'),
+  extractArrayConst(html, 'CMP_SERIES'),
+  extractFn(html, 'cmpMetric'),
+  extractFn(html, 'cmpParseMetrics'),
+  extractFn(html, 'cmpFmt'),
+  extractFn(html, 'cmpRows'),
+  extractFn(html, 'cmpBestIndex'),
+  extractFn(html, 'cmpBarsSvg'),
+  extractFn(html, 'cmpRadarSvg'),
+  extractFn(html, 'cmpLegendHtml'),
   /* Panel names: retired ids and everyday synonyms the palette searches. */
   extractConst(html, 'PANEL_ALIAS'),
   extractConst(html, 'PANEL_SYNONYMS'),
@@ -337,7 +351,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5474,6 +5488,50 @@ section('data table: cell values, ordering and which columns earn a filter');
   ok(tableFilterable([many], 40).length === 0, 'a column with ' + TBL_FILTER_MAX + ' or more distinct values does not filter');
   const one = col(Array.from({ length: rows }, () => 'same'));
   ok(tableFilterable([one], rows).length === 0, 'one value is nothing to filter by');
+}
+
+section('Player Compare: metric registry, rows, best marks and the SVG charts');
+{
+  const { CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml } = core;
+  const ids = CMP_METRICS.map((m) => m.id);
+  ok(new Set(ids).size === ids.length, 'metric ids are unique');
+  ok(CMP_DEFAULT.every((id) => cmpMetric(id)), 'every default metric exists in the registry');
+  ok(CMP_METRICS.every((m) => m.kind === 'count' || m.kind === 'per90'), 'every metric is a count or a per-90 rate');
+  ok(CMP_METRICS.filter((m) => m.kind === 'per90').length >= 3, 'at least three per-90 rates, so the radar has a shape');
+  ok(CMP_SERIES.length === 4 && CMP_SERIES.every((c) => /^#[0-9a-f]{6}$/.test(c)), 'four series colours as hex');
+  ok(JSON.stringify(cmpParseMetrics('xg, XA ,xg,nope,points')) === '["xg","xa","points"]', 'a metric list parses known ids once, in order, case-insensitively');
+  ok(cmpParseMetrics('').length === 0 && cmpParseMetrics(null).length === 0, 'an empty list is empty');
+  const p = (name, o) => Object.assign({ name, total_points: 0, minutes: 0, now_cost: 50, selected_by_percent: '0', expected_goals: '0', expected_assists: '0', defensive_contribution: 0 }, o);
+  const a = p('Ana', { total_points: 120, minutes: 900, now_cost: 65, selected_by_percent: '12.5', expected_goals: '4.5' });
+  const b = p('Ben', { total_points: 80, minutes: 450, now_cost: 50, selected_by_percent: '3.2', expected_goals: '2.25' });
+  const c = p('Cal', { total_points: 120, minutes: 1800, now_cost: 90, selected_by_percent: '40.0', expected_goals: '9' });
+  ok(cmpPer90(a, a.total_points) === 12 && cmpPer90(b, b.total_points) === 16 && cmpPer90(p('x'), 5) === 0, 'per 90 scales by minutes and is zero with no minutes');
+  ok(cmpFmt(cmpMetric('price'), 6.5) === '£6.5m' && cmpFmt(cmpMetric('own'), 12.5) === '12.5%' && cmpFmt(cmpMetric('xg'), 4.5) === '4.50' && cmpFmt(cmpMetric('points'), 120) === '120', 'values format with their unit and decimals');
+  const rows = cmpRows(['points', 'price', 'xg', 'bogus', 'pts90'], [a, b, c]);
+  ok(rows.length === 4 && rows[0].id === 'points' && rows[3].kind === 'per90', 'rows follow the chosen ids and drop unknown ones');
+  ok(JSON.stringify(rows[0].values) === '[120,80,120]' && JSON.stringify(rows[0].text) === '["120","80","120"]', 'a row carries one value and one label per player');
+  ok(cmpBestIndex(rows[0]) === 0, 'a tie for best marks the first of the tied');
+  ok(cmpBestIndex(rows[1]) === 1 && rows[1].low === true, 'price marks the lowest');
+  ok(cmpBestIndex(rows[2]) === 2, 'xG marks the highest');
+  ok(cmpBestIndex({ values: [3, 3, 3], low: false }) === null && cmpBestIndex({ values: [], low: false }) === null, 'all equal or no players marks nothing');
+  const pl = [a, b, c].map((e) => ({ name: e.name }));
+  const bars = cmpBarsSvg(rows.slice(0, 3), pl, CMP_SERIES);
+  ok((bars.match(/<rect /g) || []).length === 9, 'bars draw one rect per player per metric');
+  ok((bars.match(/<title>/g) || []).length === 9, 'every bar has a tooltip');
+  ok(/role="img" aria-label="Bar charts: Points, Price, xG for Ana, Ben, Cal"/.test(bars), 'the bar chart names its metrics and players for assistive tech');
+  ok(/class="cmp-val cmp-best">120</.test(bars) && /class="cmp-val cmp-best">£5.0m</.test(bars), 'the best value in each panel is marked, including the lowest price');
+  ok(!/fill="#[0-9a-f]{6}"[^>]*class="cmp-(val|nm|lbl)"/.test(bars) && (bars.match(/fill="#/g) || []).length === 9, 'only the marks carry a series colour; text wears the tokens');
+  ok(cmpBarsSvg([], pl, CMP_SERIES) === '' && cmpBarsSvg(rows, [], CMP_SERIES) === '', 'no rows or no players draws nothing');
+  const rates = cmpRows(['pts90', 'xg90', 'xa90'], [a, b, c]);
+  const radar = cmpRadarSvg(rates, pl, CMP_SERIES);
+  ok((radar.match(/<polygon /g) || []).length === 4 + 3, 'the radar has four grid rings and one polygon per player');
+  ok((radar.match(/<line /g) || []).length === 3 && (radar.match(/<circle /g) || []).length === 9, 'one axis per metric, one point per player per axis');
+  ok(/aria-label="Radar: Points per 90, xG per 90, xA per 90 for Ana, Ben, Cal, each axis scaled to its best value"/.test(radar), 'the radar names its axes and players');
+  ok(cmpRadarSvg(rates.slice(0, 2), pl, CMP_SERIES) === '', 'fewer than three axes is no radar');
+  ok(cmpRadarSvg(rates, [], CMP_SERIES) === '', 'no players is no radar');
+  const legend = cmpLegendHtml([{ name: 'A <b>', sub: 'MID' }, { name: 'B' }], CMP_SERIES);
+  ok((legend.match(/<li>/g) || []).length === 2 && /A &lt;b&gt;/.test(legend) && /MID/.test(legend), 'the legend lists every player, escaped, with the sub line when present');
+  ok(!/\u2014/.test(bars + radar + legend), 'no em dash in the chart copy');
 }
 
 section('panelAliases: the palette finds a panel by its old id, its old name and plain English');
