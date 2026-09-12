@@ -1038,6 +1038,19 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .tr-cell .dl-nm,.tr-cell .dl-sub{display:block}
 .tr-bar{display:block;height:4px;margin-top:6px;border-radius:3px;background:var(--border-2);overflow:hidden}
 .tr-bar i{display:block;height:100%;border-radius:3px;background:var(--green)}
+/* Price Centre: a bar that fills from the centre toward a rise or a fall,
+   the countdown to the next change and the history search. Up and down
+   use the same status tokens as the rest of the page. */
+.pr-bar{position:relative;display:inline-block;width:96px;height:8px;border-radius:4px;background:var(--border-2);vertical-align:middle;margin-right:6px;overflow:hidden}
+.pr-bar .pr-mid{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--text-4)}
+.pr-bar .pr-fill{position:absolute;top:0;bottom:0;border-radius:4px}
+.pr-bar .pr-fill.rise{background:var(--green)}
+.pr-bar .pr-fill.fall{background:var(--red)}
+.pr-pct{font-weight:700}
+.pr-count{font-family:var(--font-mono);font-size:1.6rem;font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--text)}
+.pr-search{margin:0 0 12px}
+.pr-search .modal-in{width:100%;max-width:420px}
+@media (max-width:480px){.pr-bar{width:56px}}
 
 /* Watchlist item (row + inline AI verdict) */
 .wl-item{border-bottom:1px solid var(--border)}
@@ -3645,6 +3658,20 @@ const loadCoreInsights=()=>cached('core-insights',6*3600e3,async()=>{
    any failure, so a club with no known cup calendar is simply uncongested. */
 /* Club Elo keyed by FPL team id — a club-specific prior for the match model
    where we have no offline-fitted one. Best-effort like the rest. */
+/* The Price Centre feed: hourly transfer momentum and the day-by-day
+   price changes our hourly recorder writes. Same contract as the rest:
+   a short timeout and a null on any failure, so the panel shows the
+   game's own figures and says the history is not recorded yet. Cached
+   ten minutes, inside the hourly cadence it is written at. */
+const loadPriceFeed=()=>cached('price-feed',10*60e3,async()=>{
+  const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),6000);
+  try{
+    const r=await fetch(apiBase()+'/api/price-feed',{signal:ctrl.signal,headers:{'Accept':'application/json'}});
+    if(!r.ok)return null;
+    const j=await r.json();
+    return j&&j.configured?j:null;
+  }catch(_){return null;}finally{clearTimeout(timer);}
+});
 const loadTeamElo=()=>cached('team-elo',6*3600e3,async()=>{
   const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),6000);
   try{
@@ -5189,13 +5216,14 @@ function wireUXButtons(){
     const b=e.target.closest('.fb-kind');if(b)fbSetKind(b.dataset.kind);});}
   document.querySelectorAll('[data-fb-close]').forEach(function(el){
     if(el._w)return;el._w=1;el.addEventListener('click',closeFeedbackModal);});
-  /* Escape closes it. The app has no global handler for the other modals and
-     this does not add one — a dialog marked aria-modal that a keyboard user
-     cannot dismiss is a defect, but fixing the other four is not this change. */
+  /* Escape closes it, and the player dossier too: a dialog marked
+     aria-modal that a keyboard user cannot dismiss is a defect. */
   if(!document._fbEsc){document._fbEsc=1;document.addEventListener('keydown',function(e){
     if(e.key!=='Escape')return;
     const m=document.getElementById('fb-modal');
-    if(m&&m.classList.contains('show'))closeFeedbackModal();});}
+    if(m&&m.classList.contains('show'))closeFeedbackModal();
+    const pm=document.getElementById('player-modal');
+    if(pm&&pm.classList.contains('show')&&typeof closePlayer==='function')closePlayer();});}
   const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent='Depth: '+densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
@@ -13835,7 +13863,103 @@ function nextPriceChange(list,now){
   return {at:next,
     label:d.toLocaleString(undefined,{weekday:'short',hour:'2-digit',minute:'2-digit'})};
 }
-/* ── Prices hub: two reads of the same transfer flow ──────
+/* ── Price Centre: the presentation layer over the same two numbers ──
+   Nothing below changes what is measured. FPL's own progress figure and
+   the ownership-scaled estimate stay exactly as they were; these helpers
+   only decide how far a bar fills, how a countdown reads and how a day of
+   changes lists. Pure, so the bar and the clock are tested rather than
+   eyeballed. */
+const PR_FLOW_HOURS=24;
+const PR_HISTORY_DAYS=30;
+/* A signed fraction of the way to a move (-1..1) becomes a bar that fills
+   from the centre: rightward for a rise, leftward for a fall. Clamped, so a
+   figure past the end draws a full bar rather than escaping the track. */
+function priceBarSpec(frac){
+  const f=Number(frac);
+  if(!Number.isFinite(f)||f===0)return {dir:'flat',pct:0,label:'No movement toward a change'};
+  const pct=Math.round(Math.min(1,Math.abs(f))*100);
+  const dir=f>0?'rise':'fall';
+  return {dir,pct,label:pct+'% of the way to a '+dir};
+}
+function priceBarHtml(frac){
+  const b=priceBarSpec(frac);
+  const w=(b.pct/2).toFixed(1);
+  const fill=b.dir==='flat'?'':'<i class="pr-fill '+b.dir+'" style="'+(b.dir==='rise'?'left:50%':'right:50%')+';width:'+w+'%"></i>';
+  return '<span class="pr-bar" role="img" aria-label="'+esc(b.label)+'"><i class="pr-mid"></i>'+fill+'</span>';
+}
+/* "5h 12m", from milliseconds. Under a minute reads as such; a time that
+   has passed reads as "any moment now", because the schedule says it is
+   due and the feed has not yet caught up. Null for no number at all. */
+function fmtCountdown(ms){
+  const n=Number(ms);
+  if(!Number.isFinite(n))return null;
+  if(n<=0)return 'any moment now';
+  const mins=Math.floor(n/60000);
+  if(mins<1)return 'under a minute';
+  const d=Math.floor(mins/1440),h=Math.floor((mins%1440)/60),m=mins%60;
+  if(d>0)return d+'d '+h+'h';
+  if(h>0)return h+'h '+(m<10?'0':'')+m+'m';
+  return m+'m';
+}
+/* One player's hourly net transfers from the feed: deltas aligned to
+   feed.ts, null where the counters reset inside that hour. Null when the
+   feed has nothing for him. */
+function priceFlowFor(feed,id){
+  if(!feed||!feed.net||!Array.isArray(feed.ts))return null;
+  const s=feed.net[id]||feed.net[String(id)];
+  if(!Array.isArray(s)||!s.length)return null;
+  return s.map(x=>(x==null||!Number.isFinite(Number(x)))?null:Number(x));
+}
+function priceMomentum(feed,id){
+  const s=priceFlowFor(feed,id);
+  if(!s)return null;
+  const vals=s.filter(x=>x!=null);
+  if(!vals.length)return null;
+  const sum=vals.reduce((a,c)=>a+c,0);
+  return {series:vals,hours:vals.length,sum,perHour:Math.round(sum/vals.length),last:vals[vals.length-1]};
+}
+/* The momentum board: the players being bought and sold hardest over the
+   window, by the 24-hour sum. Flat players are not on either list. */
+function priceMomentumBoard(feed,elements,limit){
+  const n=Math.max(1,limit||8);
+  const rows=(elements||[]).filter(e=>e&&e.id!=null).map(e=>({e,m:priceMomentum(feed,e.id)})).filter(x=>x.m&&x.m.sum!==0);
+  const by=dir=>rows.filter(x=>dir>0?x.m.sum>0:x.m.sum<0)
+    .sort((a,c)=>Math.abs(c.m.sum)-Math.abs(a.m.sum)||a.e.id-c.e.id).slice(0,n);
+  return {in:by(1),out:by(-1)};
+}
+/* The history, day by day and newest first, matched against a search. A
+   query matches a player's name or club short name, case- and accent-
+   insensitive; an empty query keeps every day. Days with no matching row
+   are dropped so a search never yields a list of empty headings. */
+/* Ø, ł and ß do not decompose under NFD, and the game has Ødegaard,
+   Sørloth and Højlund, so they are folded by hand. */
+function prFold(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[øØ]/g,'o').replace(/[łŁ]/g,'l').replace(/[đĐ]/g,'d').replace(/ß/g,'ss').toLowerCase();}
+function priceHistoryDays(log,query,limit){
+  const days=(log&&log.days)||{};
+  const q=prFold(query).trim();
+  const keys=Object.keys(days).filter(k=>/^\d{4}-\d{2}-\d{2}$/.test(k)).sort().reverse();
+  const out=[];
+  keys.forEach(day=>{
+    const rows=(Array.isArray(days[day])?days[day]:[])
+      .filter(r=>r&&Number.isFinite(Number(r.to))&&Number.isFinite(Number(r.from))&&Number(r.to)!==Number(r.from))
+      .filter(r=>!q||prFold(r.n).includes(q)||prFold(r.t).includes(q))
+      .map(r=>({id:r.id,name:String(r.n||''),team:String(r.t||''),pos:r.p==null?null:Number(r.p),from:Number(r.from),to:Number(r.to),up:Number(r.to)>Number(r.from)}))
+      .sort((a,c)=>(c.up?1:0)-(a.up?1:0)||a.name.localeCompare(c.name));
+    if(rows.length)out.push({day,rows,up:rows.filter(r=>r.up).length,down:rows.filter(r=>!r.up).length});
+  });
+  return out.slice(0,Math.max(1,limit||PR_HISTORY_DAYS));
+}
+/* The countdown ticks every half minute while its element is on the page
+   and stops itself the moment it is not. */
+function prStartClock(){
+  if(MEM._prClock)clearInterval(MEM._prClock);
+  const tick=()=>{const el=document.getElementById('pr-count');
+    if(!el){clearInterval(MEM._prClock);MEM._prClock=null;return;}
+    el.textContent=fmtCountdown(Number(el.dataset.at)-Date.now())||'';};
+  MEM._prClock=setInterval(tick,30000);
+}
+
+/* ── Prices hub: three reads of the same transfer flow ──────
    Transfers and prices are one subject — net transfers are literally what
    moves a price — so they share a panel rather than a tab. The Players
    area is capped at seven tabs on purpose (arriving on an area must not
@@ -13854,12 +13978,14 @@ const PR_VIEWS=[
   {id:'moves',label:'Price moves',
    desc:'Who rises and who falls at the next 00:00 UK update. FPL’s own published figure where there is one, our ownership-scaled estimate where there is not, and the panel says which.'},
   {id:'market',label:'Transfer market',
-   desc:'The ten players the field is buying hardest and the ten it is selling, from FPL’s own counts for the window that is open now.'}
+   desc:'The ten players the field is buying hardest and the ten it is selling, from FPL’s own counts for the window that is open now.'},
+  {id:'history',label:'Price history',
+   desc:'Who rose and who fell, day by day, from our hourly record of the game’s prices. Search by player or club.'}
 ];
 function prView(id){return PR_VIEWS.find(v=>v.id===id)||PR_VIEWS[0];}
 let PR_VIEW='moves';
 function prSetView(id){PR_VIEW=prView(id).id;track('price_view',{view:PR_VIEW});hubViewChanged('price');}
-const PR_HYDRATE={moves:(h)=>hydratePriceMoves(h),market:(h)=>hydrateTransferMarket(h)};
+const PR_HYDRATE={moves:(h)=>hydratePriceMoves(h),market:(h)=>hydrateTransferMarket(h),history:(h)=>hydratePriceHistory(h)};
 function prRenderBody(){
   const body=document.getElementById('pr-body');if(!body)return;
   const note=document.getElementById('pr-note');
@@ -13891,7 +14017,7 @@ async function hydratePrice(host){
   prRenderBody();
 }
 async function hydratePriceMoves(host){
-  const [b,fixtures]=await Promise.all([boot(),loadFixtures().catch(()=>[])]);
+  const [b,fixtures,feed]=await Promise.all([boot(),loadFixtures().catch(()=>[]),loadPriceFeed().catch(()=>null)]);
   const nextPC=nextPriceChange(b.priceDeadlines);
   const total=b.raw.total_players||10e6;
   const score=e=>(e.transfers_in_event||0)-(e.transfers_out_event||0);
@@ -13926,9 +14052,9 @@ async function hydratePriceMoves(host){
       p.slice(0,3).map(x=>x.pct.toFixed(1)).join(' → ')+'</span>';
   };
   const offTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-    dlTable(b,arr.map(x=>x.e),['Progress','Today → +2d'],e=>{
+    dlTable(b,arr.map(x=>x.e),['To a move','Today → +2d'],e=>{
       const mv=fplPriceMove(e);
-      return ['<span style="color:'+(up?'var(--green)':'var(--red)')+';font-weight:700">'+
+      return [priceBarHtml(mv.pct/100)+'<span class="pr-pct '+(up?'pos':'neg')+'">'+
         (mv.pct>0?'+':'')+mv.pct.toFixed(1)+'%</span>', projCell(mv)];
     })+'</div>';
 
@@ -13937,9 +14063,9 @@ async function hydratePriceMoves(host){
   const riseP=scored.filter(x=>x.pc.dir==='rise').sort((a,c)=>c.pc.prob-a.pc.prob||c.pc.net-a.pc.net).slice(0,12);
   const fallP=scored.filter(x=>x.pc.dir==='fall').sort((a,c)=>c.pc.prob-a.pc.prob||a.pc.net-c.pc.net).slice(0,12);
   const probTbl=(title,arr,up)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-    dlTable(b,arr.map(x=>x.e),['Tonight','Net '+(up?'in':'out')],e=>{
+    dlTable(b,arr.map(x=>x.e),['Threshold','Net '+(up?'in':'out')],e=>{
       const pc=priceChangeProb(e,total);
-      return ['<span style="color:'+(up?'var(--green)':'var(--red)')+';font-weight:700">'+pc.prob+'%</span>',
+      return [priceBarHtml(pc.progress)+'<span class="pr-pct '+(up?'pos':'neg')+'">'+pc.prob+'%</span>',
         fmtK(Math.abs(pc.net))];
     })+'</div>';
 
@@ -13956,6 +14082,31 @@ async function hydratePriceMoves(host){
       (worst.length?valueList(b,'Worst value: premiums underdelivering',worst,'var(--red)'):'')
     : '');
   const whenTxt=nextPC?' Next update <b>'+esc(nextPC.label)+'</b>, from the game\u2019s own schedule.':'';
+  /* The clock: how long until the next change, from the schedule the game
+     publishes, ticking on the page. */
+  const clockCard=nextPC?'<div class="card mb-20"><div class="card-title">Next price change</div>'+
+    '<div class="pr-count" id="pr-count" data-at="'+nextPC.at+'">'+esc(fmtCountdown(nextPC.at-now)||'')+'</div>'+
+    '<p class="dl-sub" style="margin:6px 0 0">'+esc(nextPC.label)+' in your own time zone, from the schedule the game publishes. Prices move once a night and the figures here catch up shortly after.</p></div>':'';
+  /* Hourly momentum from our own record of the game's counts: the rate,
+     and its shape over the day, rather than one total for the window. */
+  const mb=priceMomentumBoard(feed,b.elements,8);
+  const flowRow=(x,i)=>{const m=x.m,e=x.e;const mv=fplPriceMove(e);
+    return '<div class="dl-row dl-click" onclick="openPlayer('+e.id+')"><span class="dl-rank">'+(i+1)+'</span>'+avatar(b,e,32)+
+      '<span class="dl-grow"><span class="dl-nm">'+esc(e.web_name)+'</span><span class="dl-sub">'+crest(b,e.team,13)+teamShort(b,e.team)+' · '+posShort(b,e.element_type)+' · '+money(e.now_cost)+
+      (mv&&mv.rate!=null&&mv.rate!==0?' · FPL rate '+(mv.rate>0?'+':'−')+fmtK(Math.abs(mv.rate))+'/h':'')+'</span></span>'+
+      '<span class="dl-col">'+spark(m.series,{w:64,h:18,color:m.sum>0?'var(--green)':'var(--red)'})+'</span>'+
+      '<span class="dl-col mono '+(m.perHour>0?'pos':m.perHour<0?'neg':'')+'">'+(m.perHour>0?'+':m.perHour<0?'−':'')+fmtK(Math.abs(m.perHour))+'</span>'+
+      '<span class="dl-col mono '+(m.sum>0?'pos':'neg')+'">'+(m.sum>0?'+':'−')+fmtK(Math.abs(m.sum))+'</span></div>';};
+  const flowTbl=list=>'<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player</span>'+
+    '<span class="dl-col">Shape</span><span class="dl-col">Per hour</span><span class="dl-col">Net 24h</span></div>'+list.map(flowRow).join('')+'</div>';
+  const hours=feed&&Array.isArray(feed.ts)?feed.ts.length:0;
+  const momentumCard='<div class="card mb-20" id="pr-momentum"><div class="card-title">'+svg(ICON.trend,'width="15" height="15"')+' Hourly momentum, last 24 hours</div>'+
+    (mb.in.length||mb.out.length
+      ? '<p class="dl-sub" style="margin:0 0 10px">Net transfers per hour from our hourly record of the game\u2019s counts, '+hours+' hour'+(hours===1?'':'s')+' so far. A rate still climbing is the one to act on before the update; one that has flattened has usually done its moving.</p>'+
+        (mb.in.length?'<div class="dl-sub" style="margin:0 0 6px;font-weight:600">Being bought</div>'+flowTbl(mb.in):'')+
+        (mb.out.length?'<div class="dl-sub" style="margin:12px 0 6px;font-weight:600">Being sold</div>'+flowTbl(mb.out):'')
+      : '<p class="dl-sub" style="margin:0">Hour-by-hour momentum builds from our hourly record of the game\u2019s transfer counts. Nothing is recorded for this window yet; the totals since the deadline are below, and this fills in over the next few hours.</p>')+
+    '</div>';
   const officialIntro='<div class="dl-sub" style="margin-bottom:12px">How far each player has moved toward a price change, '+
       '<b>from FPL\u2019s own published figure</b> rather than our estimate of it.'+whenTxt+
       (lockedCount?' '+lockedCount+' player'+(lockedCount===1?' is':'s are')+' locked and cannot move yet. They are left out.':'')+'</div>';
@@ -13963,24 +14114,78 @@ async function hydratePriceMoves(host){
       whenTxt+
       ', from net transfers against an ownership-scaled threshold. FPL is not publishing its own progress figure right now, so these are <b>our estimates</b>: its exact algorithm is not public.</div>';
   host.innerHTML=lensLink('price','Tonight’s move and the net transfers behind it, for every player at once.')+
-    (haveOfficial?officialIntro:estimateIntro)+
+    (haveOfficial?officialIntro:estimateIntro)+clockCard+
     (haveOfficial
       ? offTbl('Closest to a rise: FPL\u2019s own figure',offRise,true)+
         offTbl('Closest to a fall: FPL\u2019s own figure',offFall,false)+
         '<div class="card mb-20"><div class="card-title">What this number is</div>'+
         '<p class="dl-sub" style="margin:0">FPL publishes, for every player, how far transfer activity has carried them toward a price change, and projects it one and two days ahead. That is the <b>Today \u2192 +2d</b> column. Positive is toward a rise, negative toward a fall. '+
-        'We show the figure as published and rank by it; we do <b>not</b> claim to know the level at which a price actually moves, because FPL does not state one. '+
+        'We show the figure as published and rank by it, and the bar draws it against 100%; we do <b>not</b> claim to know the level at which a price actually moves, because FPL does not state one. '+
         'The projection is <b>theirs, and it is a projection</b>, transfer activity can turn before it lands.</p></div>'
       : probTbl('Likely risers tonight: estimate',riseP,true)+
         probTbl('Likely fallers tonight: estimate',fallP,false))+
     (haveOfficial?'':'<div class="card mb-20"><div class="card-title">How the estimate works</div>'+
-      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership. Approximated here as ~30% of current owners (floor 20k). The % maps progress towards that threshold through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys \u2192 higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day'+
+      '<p class="dl-sub" style="margin:0">A player’s price moves when net transfers this gameweek cross a threshold that grows with ownership. Approximated here as ~30% of current owners (floor 20k). The bar shows how far net transfers have carried a player toward that threshold, and the % maps the same progress through a logistic curve, capped at 5–95%. It is monotonic in net transfers (more buys \u2192 higher rise chance), and low-owned players surge fastest because their threshold is small. Prices update once a day'+
       (nextPC?', next at <b>'+esc(nextPC.label)+'</b> in your timezone':' overnight UK time')+'.</p></div>')+
-    tbl('Momentum: most bought (secondary signal)',risers,true)+
-    tbl('Momentum: most sold (secondary signal)',fallers,false)+
+    momentumCard+
+    tbl('Since the deadline: most bought',risers,true)+
+    tbl('Since the deadline: most sold',fallers,false)+
     valueBoardCard(b,fixtures,6)+
     valueCards+
     (best.length?'<div class="dl-sub">Points per million = total points ÷ current price, for players with 270+ minutes. Worst value looks only at premiums (£8.0m+).</div>':'');
+  prStartClock();
+}
+
+/* ── Price history: who rose and who fell, by day, searchable ──────
+   From the same hourly record. The search lives in the URL as ?q= so a
+   filtered day can be sent as a link, and it clears when the reader
+   changes view, because it describes this view alone. */
+async function hydratePriceHistory(host){
+  const [b,feed]=await Promise.all([boot(),loadPriceFeed().catch(()=>null)]);
+  MEM._prQ=urlPick('q',MEM._prQ||'','',v=>String(v).slice(0,40));
+  const els={};b.elements.forEach(e=>{els[e.id]=e;});
+  const dayLabel=day=>{try{return new Date(day+'T12:00:00Z').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});}catch(_){return day;}};
+  const draw=()=>{
+    const list=document.getElementById('pr-hist');if(!list)return;
+    const q=MEM._prQ||'';
+    const recorded=feed&&feed.log&&feed.log.days&&Object.keys(feed.log.days).length>0;
+    if(!recorded){
+      list.innerHTML=stateBox('arrows','No price history recorded yet',
+        'Our hourly record of the game\u2019s prices starts filling this in after the first overnight change it sees. Tonight\u2019s likely movers are on the Price moves view.',
+        '<button type="button" class="btn btn-ghost btn-sm" onclick="prSetView(\'moves\');prRenderBody()">Price moves</button>');
+      return;
+    }
+    const days=priceHistoryDays(feed.log,q,PR_HISTORY_DAYS);
+    if(!days.length){
+      list.innerHTML=stateBox('eye','Nothing matches \u201c'+q+'\u201d',
+        'Try a surname or a club\u2019s short name, such as ARS or LIV. Clear the box to see every day again.','');
+      return;
+    }
+    list.innerHTML=days.map(d=>{
+      const rows=d.rows.map(r=>{const e=els[r.id];
+        return '<div class="dl-row'+(e?' dl-click" onclick="openPlayer('+e.id+')"':'"')+'>'+
+          (e?avatar(b,e,32):'<span class="dl-rank">·</span>')+
+          '<span class="dl-grow"><span class="dl-nm">'+esc(r.name)+'</span><span class="dl-sub">'+
+            (e?crest(b,e.team,13):'')+esc(r.team)+(r.pos?' · '+posShort(b,r.pos):'')+'</span></span>'+
+          '<span class="dl-col mono" style="color:var(--text-3)">'+money(r.from)+'</span>'+
+          '<span class="dl-col mono '+(r.up?'pos':'neg')+'">'+(r.up?'▲':'▼')+' '+money(r.to)+'</span></div>';}).join('');
+      return '<div class="card mb-20">'+cardHead(esc(dayLabel(d.day)),'<span class="dl-sub">'+d.up+' up · '+d.down+' down</span>')+
+        '<div class="dl"><div class="dl-row head"><span class="dl-rank">#</span><span class="dl-grow">Player</span><span class="dl-col">Was</span><span class="dl-col">Now</span></div>'+rows+'</div></div>';
+    }).join('');
+  };
+  const total=feed&&feed.log&&feed.log.days?Object.keys(feed.log.days).length:0;
+  host.innerHTML='<div class="dl-sub" style="margin-bottom:12px">Every price change our hourly record has seen, newest day first'+
+      (total?' ('+Math.min(total,PR_HISTORY_DAYS)+' day'+(total===1?'':'s')+' shown)':'')+'. Prices are in the game\u2019s own units and a day is the day the change was seen.</div>'+
+    '<div class="pr-search"><label for="pr-q" class="sr-only">Search the price history by player or club</label>'+
+    '<input class="modal-in" id="pr-q" type="search" maxlength="40" placeholder="Player or club, e.g. Haaland or MCI" value="'+esc(MEM._prQ||'')+'" autocomplete="off"></div>'+
+    '<div id="pr-hist"></div>';
+  let timer=null;
+  host.querySelector('#pr-q').addEventListener('input',ev=>{
+    MEM._prQ=String(ev.target.value||'').slice(0,40);
+    clearTimeout(timer);timer=setTimeout(()=>{setUrlState({q:MEM._prQ||null});draw();},200);
+  });
+  if(MEM._prQ)setUrlState({q:MEM._prQ});
+  draw();
 }
 
 /* ── Latest News: official player news, newest first ─────
