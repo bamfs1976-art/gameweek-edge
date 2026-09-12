@@ -1,50 +1,53 @@
 # Gameweek Edge — design system
 
-One product, one voice. The app carries the marketing site's calm, editorial
-language (`landing.html` is the source of truth), then adds analytics density.
-Reference feel: The Athletic's match pages crossed with Linear's information
-hierarchy. Not a terminal, not a trading dashboard, no neon.
+One product, one voice: a terminal. Dense, calm, exact. A near-black canvas,
+one green, numbers in a monospace face with tabular figures, 4px geometry,
+depth from a 1px line rather than a shadow. Reference feel: a trading
+terminal's discipline with the plain-English copy of a good match report.
+The marketing site (`landing.html`) keeps its own light, editorial look.
 
 Everything below ships as CSS custom properties in `index.html`'s token block.
 Components never hardcode colour — if a hue isn't a token, it doesn't exist.
-`dev/test-tokens.mjs` recomputes every contrast claim on every run and fails
-the build when a token drops below its bar.
+`dev/test-tokens.mjs` and `scripts/check-a11y.mjs` recompute every contrast
+claim on every run and fail the build when a token drops below its bar.
 
 ## Themes
 
-Light is the default (it is the brand; the marketing site is light). Dark is a
-first-class variant driven entirely by the same token names — deep ink
-surfaces, the forest green lifted just far enough for AA, never lime-on-black.
-The choice persists in `localStorage.ge-theme` and is applied before first
-paint by a head script, so neither theme ever flashes.
+The terminal (dark) is the default and lives on `:root`. Light is a variant,
+kept for readers who want it, driven entirely by the same token names under
+`[data-theme="light"]`. The choice persists in `localStorage.ge-theme` and is
+applied before first paint by a head script, so neither theme ever flashes.
 
-| Token | Light | Dark | Role |
+| Token | Terminal | Light | Role |
 | --- | --- | --- | --- |
-| `--bg` | `#f4f6f8` | `#10161c` | canvas |
-| `--surface` | `#ffffff` | `#171e26` | cards |
-| `--surface-3` | `#eef1f4` | `#232b34` | the strictest surface — contrast is measured here |
+| `--bg` | `#0a0c0f` | `#f4f6f8` | canvas |
+| `--surface` | `#111418` | `#ffffff` | cards |
+| `--surface-3` | `#1a2026` | `#eef1f4` | the lightest terminal surface — contrast is measured here |
+| `--border` | `#20262d` | `rgba(12,16,20,.08)` | the 1px line that does the work of a shadow |
 | `--text` … `--text-4` | 4-step ink ramp | 4-step ink ramp | `--text-4` marks absence only (3:1 UI bar) |
-| `--green` | `#147e48` | `#45c483` | the single brand accent |
-| `--amber` / `--lock` | `#8f5a12` / `#8a5410` | `#f0a63a` | "watch this / partial" + the Pro affordance |
-| `--red` | `#c93834` | `#ff6b6b` | genuine negatives only: injury out, price fall confirmed, over budget |
-| `--accent-cta` | amber fill, white ink | amber fill, ink `#10161c` | actions read as actions; green stays reserved for positive data |
-| `--hot` | `#0f6d3d` | `#52cd8f` | THE key number on a screen |
+| `--green` | `#00d26a` | `#147e48` | the single brand accent; `--on-brand` is the ink that sits on it |
+| `--hot` | `#b6ff3c` | `#0f6d3d` | THE key number on a screen |
+| `--red` | `#ff4d4f` | `#c93834` | genuine negatives only: injury out, price fall, over budget |
+| `--amber` / `--lock` | `#f5a524` | `#8f5a12` / `#8a5410` | "watch this" and the Pro affordance |
+| `--blue` | `#4f92ff` | `#2e6ac2` | info. The brief's `#3b82f6` measures 4.45:1 on `--surface-3`, so it is lifted |
+| `--accent-cta` | green fill, canvas ink | amber fill, white ink | actions read as actions |
 
-2–3 surface elevation steps only; depth comes from `--shadow`/`--shadow-lg`
-(soft editorial shadows in light, deeper ones in dark — never borders alone,
-never glow).
+Shadows are off in the terminal (`--shadow` is transparent); only floating
+layers cast (`--shadow-lg`). The brand gradient pair (`--grad-brand`,
+`--grad-glow`) is a flat green in the terminal and the old blue-green sweep
+in light.
 
 ## Position colours
 
 One hue per position, used identically in pills (`.pos-pill.p1–.p4`), pitch
 slots and tables. All ≥4.5:1 on `--surface-3` in both themes.
 
-| Position | Light | Dark |
+| Position | Terminal | Light |
 | --- | --- | --- |
-| GK  `--pos-gk`  | `#8a690e` | `#e0b53f` |
-| DEF `--pos-def` | `#2e6ac2` | `#6aa4f8` |
-| MID `--pos-mid` | `#147e48` | `#45c483` |
-| FWD `--pos-fwd` | `#c93834` | `#ff8a85` |
+| GK  `--pos-gk`  | `#f5a524` | `#8a690e` |
+| DEF `--pos-def` | `#4f92ff` | `#2e6ac2` |
+| MID `--pos-mid` | `#00d26a` | `#147e48` |
+| FWD `--pos-fwd` | `#ff4d4f` | `#c93834` |
 
 Each has a `-soft` translucent fill for pill backgrounds.
 
@@ -62,22 +65,20 @@ bare word, never a bare number, never colour alone.
 
 ## Typography
 
-- **Display** `--font-display`: Bricolage Grotesque — headings, the wordmark,
-  hero player names, modal titles.
-- **UI & prose** `--font-body`: Public Sans — everything else. Labels,
-  eyebrows, captions, sentences. *No mono prose, ever.*
-- **Numerals** `--font-mono`: IBM Plex Mono, **only** for numbers, and always
-  with `font-variant-numeric: tabular-nums` (the `.num`/`.mono` utilities and
-  the numeric-cell rules apply both together).
+- **Everything a person reads** `--font-display` and `--font-body`: Inter.
+  Headings, labels, sentences, buttons.
+- **Every number** `--font-mono`: IBM Plex Mono, always with
+  `font-variant-numeric: tabular-nums` (the `.num`/`.mono` utilities and the
+  table's numeric cells apply both together). Never mono prose.
 
 Type scale is `--fs-min` (10px floor, build-enforced) → `--fs-2xl` (32px),
-major-second ratio. Eyebrow labels are Public Sans 800, 10–11px, uppercase,
-`.09–.1em` tracking.
+major-second ratio. Eyebrow labels are 10–11px, uppercase, `.09–.1em`
+tracking; card titles the same, as `h2`.
 
 ## Geometry & motion
 
-- Radii: `--r-sm` 6 / `--r-md` 8 / `--r-lg` 12 (cards) / `--r-xl` 16 /
-  `--r-pill` 999 (chips, pills, toggles). The marketing site's soft geometry.
+- Radii: 4px. `--r-sm` 3 / `--r-md` 4 / `--r-lg` 4 / `--r-xl` 6 /
+  `--r-pill` 999 (chips, pills, toggles stay round).
 - Motion: one scale — `--t-state` 150ms for state changes, `--t-layout` 250ms
   for layout moves, `--ease` shared. `prefers-reduced-motion` collapses all
   animation globally.
@@ -151,6 +152,18 @@ on every view worth sending on; personal panels are left out.
   blurred and inert behind a single quiet strip (`PRO` pill + one line + one
   CTA). Locked lenses/columns/tabs show a small lock and open the upsell —
   a Pro control never silently does nothing.
+- **SectionCard** (`sectionCard`, `cardHead`) — every named section: an
+  `h2.card-title` on the left, a `.card-tools` slot on the right (a Share or
+  Export button, a pager, a confidence chip), one 1px border, 16px padding.
+  The dashboard's DecisionCards and quadrants, and every card that carries a
+  control, are built through it.
+- **DataTable** (`enhanceTable`) — one behaviour for every `.ptable`: a real
+  thead, sortable headings with `aria-sort` and a focus ring, a per-column
+  filter where a text column has fewer than 25 distinct values, a roving tab
+  stop on the rows (arrows move, Enter opens), the panel's first table's sort
+  in the URL as `tsort=`, and the edge-fade scroll affordance. Tables that
+  sort their own model (players, scout board) carry `data-tbl="model"`.
+  Numerics are right-aligned mono with tabular figures; text is Inter.
 - **Players table** — sticky sortable header with glossary tooltips on
   column headings, sticky search, position chips with live counts +
   clear-all, capped rows with an explicit "filter to narrow" note. All

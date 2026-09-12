@@ -43,36 +43,37 @@ The brand rules it demonstrated still stand, because they are the rules for **an
 - Source artwork: `assets/icon-only.png` (icon — the mark above bold **GWE** lettering), `assets/icon-mark.png` (chart-only variant for tiny sizes like the favicon), `icons/` (web/PWA), `icons/og.png` (social). Regenerate with `node scripts/gen-art.mjs && node scripts/gen-pwa-icons.mjs`.
 
 ## 6. Colour
-| Token | Hex | Use |
-|---|---|---|
-| Green (primary, fill) | `#15824a` | Logo tile, icons, theme-color, filled buttons |
-| Green (primary, ink) | `#147e48` | Green text and links in the app: `#15824a` measures 4.28:1 on the darkest light surface, so the ink is deepened to clear 4.5:1 |
-| Green bright | `#1f9d5c` | Accents, highlights, links |
-| Ink | `#10171e` | Primary text (light theme) |
-| Ink-2 | `#586673` | Secondary text |
-| Background | `#f4f6f8` | App/page background (light) |
-| Surface | `#ffffff` | Cards |
-| Dark background | `#10161c` | Dark theme base (`--bg` in `index.html`; `dev/test-tokens.mjs` measures against it) |
-| Amber | `#8f5a12` | Caution / price-fall. Deepened from `#b9741a` (3.3:1) so it clears 4.5:1 as text on every light surface; the dark theme keeps `#f0a63a` |
-| Red | `#cc3d39` | Risk / injury |
-| Blue | `#2f6dc7` · Purple `#7a5cc7` | Data accents |
+The app is a dark terminal by default; light is a variant. Every value is a
+token in `index.html` and `DESIGN.md` carries the full table; the ones the
+brand rests on:
 
-Fixture-difficulty scale: 1 `#2ecf73` → 3 `#d9dee3` → 5 `#e05a55`.
-Contrast: body text ≥ 4.5:1, large text/UI ≥ 3:1 (WCAG 2.2 AA).
+| Token | Terminal | Light | Use |
+|---|---|---|---|
+| Green (`--green`) | `#00d26a` | `#147e48` | The single accent: logo tile, active states, the key figure. Ink on it is `--on-brand` (`#0a0c0f` / white) |
+| Hot (`--hot`) | `#b6ff3c` | `#0f6d3d` | THE key number on a screen |
+| Ink (`--text`) | `#e8ecf1` | `#10171e` | Primary text |
+| Ink-2 (`--text-2`) | `#aab3be` | `#586673` | Secondary text |
+| Background (`--bg`) | `#0a0c0f` | `#f4f6f8` | The canvas (`theme-color`, manifest, native status bar) |
+| Surface (`--surface`) | `#111418` | `#ffffff` | Cards |
+| Amber (`--amber`) | `#f5a524` | `#8f5a12` | Caution, price fall, the Pro affordance |
+| Red (`--red`) | `#ff4d4f` | `#c93834` | Risk, injury, over budget |
+| Blue (`--blue`) · Purple (`--purple`) | `#4f92ff` · `#a78bfa` | `#2e6ac2` · `#795ac6` | Data accents |
+
+Fixture-difficulty scale: 1 `#2ecf73` → 3 `#d9dee3` → 5 `#e05a55`, always with the figure printed in the cell.
+Contrast: body text ≥ 4.5:1, large text/UI ≥ 3:1 (WCAG 2.2 AA), measured by `dev/test-tokens.mjs` and `scripts/check-a11y.mjs` on every run.
 
 ## 7. Typography
-- **Display / headings:** Bricolage Grotesque (600–800), tight tracking (`-0.02em`).
-- **Body / data:** Public Sans (400–800).
-- **Mono (figures):** IBM Plex Mono.
-- Numbers that change (points, rank) use the display or mono face with tabular figures.
+- **Everything a person reads:** Inter (400–800).
+- **Every number:** IBM Plex Mono with tabular figures.
+- Share cards use the same two faces (`lib/gwe-share.js`).
 
 ## 8. Layout
-- 8pt spacing grid. Generous radii (12–22px). Soft shadows, never heavy.
-- Lead with graphics — the pitch, big numbers, colour-coded badges. Dense tables sit one level deeper.
-- Light theme is default; dark theme fully supported.
+- 8pt spacing grid. 4px radii; pills stay round. Depth from a 1px border, not a shadow.
+- Lead with the decision — the captain call, the transfer, the key number — then the tables one level deeper.
+- The terminal (dark) is the default; the light theme is fully supported.
 
 ## 9. Naming of features (canonical)
-The `NAV` registry in `index.html` is the source of truth; `docs/NAMING.md` carries the full table and the retired variants. Panels: My Week · Overview · Gameweek recap · GW Debrief · The Wire · Scout AI (with Ask the Scout) · The Model · My Squad · Transfer Planner · Captaincy Lab · Chip Strategy · Squad Planner · Manager Report · Live · Players · Scout Board · Player Compare · Price Predictor · Set Piece Register · Rotation Risk · Latest News · Fixtures · Simulators · Watchlist · Alerts · Mini-Leagues · Rival Scout · Ownership · Matchday · Title Race · Clubs · Ten Seasons · Glossary · New to FPL.
+The `NAV` registry in `index.html` is the source of truth; `docs/NAMING.md` carries the full table and the retired variants. Panels: My Week · Overview · Gameweek recap · Gameweek Debrief · The Wire · Scout AI (with Ask the Scout) · The Model · My Squad · Transfer Planner · Captaincy Lab · Chip Strategy · Squad Planner · Manager Report · Live · Players · Scout Board · Player Compare · Price Predictor · Set Piece Register · Rotation Risk · Latest News · Fixtures · Simulators · Watchlist · Alerts · Mini-Leagues · Rival Scout · Ownership · Match Centre · Title Race · Clubs · Ten Seasons · Glossary · New to FPL.
 
 Retired and never to be reintroduced as names: Live Rank, Live Percentile (as a panel name), DefCon Threats, Auto-Sub Tracker, What-If Simulator, EO Tracker, Template Meter, Fixture Planner, Points Planner, Clean Sheet Matrix, Injury Monitor, Differentials (as a panel), Pre-season Draft, Dashboard, This Gameweek (as a panel), AI Scout, Model Accountability, Match Centre (as a panel; it remains the area name).
 

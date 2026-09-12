@@ -1,21 +1,21 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="light">
+<html lang="en-GB" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="Gameweek Edge — the calm, clear companion that gives Fantasy Premier League managers a measurable edge.">
-<meta name="theme-color" content="#f4f6f8">
+<meta name="theme-color" content="#0a0c0f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gameweek Edge">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="format-detection" content="telephone=no">
 <script>
-/* Theme, before first paint. Light is the brand default (matching the
-   marketing site); a stored choice wins. Runs here so the page never
-   flashes the wrong theme while the app boots. */
+/* Theme, before first paint. The terminal (dark) is the default; a
+   stored choice wins. Runs here so the page never flashes the wrong theme
+   while the app boots. */
 try{
   var geTheme = localStorage.getItem('ge-theme');
-  document.documentElement.setAttribute('data-theme', geTheme==='dark'?'dark':'light');
+  document.documentElement.setAttribute('data-theme', geTheme==='light'?'light':'dark');
 }catch(_){}
 /* ── FRONT DOOR ───────────────────────────────────────────────────
    gameweekedge.co.uk serves this file, so a first-time visitor used to
@@ -125,7 +125,7 @@ try{
 <title>Gameweek Edge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* ═══════════════════════════════════════════════════════════
    GAMEWEEK EDGE — Phase 1 / Step 1: Structural Shell
@@ -134,136 +134,94 @@ try{
    ═══════════════════════════════════════════════════════════ */
 
 /* ── DESIGN TOKENS ─────────────────────────────────────── */
-/* Light mode is the default (:root). Dark mode overrides. */
+/* The terminal is the default (:root): a near-black canvas, one bright
+   green, mono numerals, 4px geometry. Light is a variant driven by the
+   same token names, in the block below. dev/test-tokens.mjs and
+   scripts/check-a11y.mjs recompute every contrast claim against these
+   values on every run: change a token here, never a rule there. */
 :root{
   /* Surfaces */
-  --bg:#f4f6f8;
-  --surface:#ffffff;
-  --surface-2:#ffffff;
-  --surface-3:#eef1f4;
-  --elevated:#ffffff;
+  --bg:#0a0c0f;
+  --surface:#111418;
+  --surface-2:#151a20;
+  --surface-3:#1a2026;
+  --elevated:#151a20;
 
-  /* Borders */
-  --border:rgba(12,16,20,.08);
-  --border-2:rgba(12,16,20,.13);
-  --border-3:rgba(12,16,20,.22);
+  /* Borders: depth comes from a 1px line, never from a glow */
+  --border:#20262d;
+  --border-2:#2a323b;
+  --border-3:#3a444f;
 
-  /* Text */
-  /* A four-step ramp where every step is measured, not eyeballed. Ratios are
-     against --surface-3 (#eef1f4), the DARKEST light surface and so the
-     strictest of the three; each token clears its bar on --bg and --surface
-     by construction.
-     --text-3 and --text-4 were 2.63:1 and 1.65:1 — the light theme inherited
-     dark-theme hues that do not survive the flip. --text-3 alone has 110 uses.
-     --text-4 renders ABSENCE (the "—" glyph, blank fixture cells, unfilled
-     dots), so it is held to the 3:1 UI threshold rather than 4.5:1; pushing
-     it to 4.5 collapses it into --text-3 and the ramp loses a step. */
-  --text:#10171e;   /* 15.92:1 */
-  --text-2:#586673; /*  5.20:1 */
-  --text-3:#626f7d; /*  4.53:1 — was #8a97a4, 2.63:1 */
-  --text-4:#78899a; /*  3.17:1 — was #b4bfc9, 1.65:1 */
+  /* Text: a four-step ink ramp, measured on --surface-3 (the lightest
+     surface). --text-4 marks absence only and is held to the 3:1 UI bar. */
+  --text:#e8ecf1;
+  --text-2:#aab3be;
+  --text-3:#8d97a3;
+  --text-4:#68727f;
 
-  /* Brand — deep confident pitch green */
-  /* --green is ink (104 uses) and needs 4.5:1; it sat at 4.28:1 on
-     --surface-3 — close enough to look fine and still fail.
-     --green-bright is DECORATION ONLY (focus rings, borders, the tour
-     spotlight) where SC 1.4.11 asks 3:1 and it clears at 3.07:1. It must
-     never carry text: --tab-on (5.66:1) exists for exactly that. */
-  /* The status board's identity card is the one filled panel on Home, so
-     its ink is measured against the fill rather than against the canvas.
-     White on --hero-b clears AAA in light; the dark pair is a muted forest
-     that keeps the card distinct from the surfaces around it without
-     going neon. */
-  --hero-a:#147e48;
-  --hero-b:#0b5c34;
-  --hero-ink:#ffffff;
-  --green:#147e48;      /* 4.51:1 — was #15824a, 4.28:1 */
-  --green-bright:#1f9d5c;
-  --green-soft:rgba(31,157,92,.11);
-  --green-glow:rgba(31,157,92,.20);
+  /* Brand: the one green. --on-brand is the ink that sits on it. */
+  --hero-a:#0f3d27;
+  --hero-b:#0a2a1b;
+  --hero-ink:#e8ecf1;
+  --green:#00d26a;
+  --green-bright:#2ee88c;
+  --green-soft:rgba(0,210,106,.12);
+  --green-glow:rgba(0,210,106,.22);
+  --on-brand:#0a0c0f;
 
-  /* Accents */
-  --amber:#8f5a12;      /* 5.09:1 on --surface-3 — was #b9741a, 3.32:1; it is text in 45 places */
-  --amber-soft:rgba(185,116,26,.11);
-  /* The paywall accent. Deliberately NOT --amber: a locked column heading and
-     a lens chip are 12px semibold, so they need 4.5:1 against the surface they
-     sit on, and --amber only reaches 3.3:1 on the light canvas. --lock-on is
-     the ink that goes ON a --lock fill, which flips with the theme because
-     the fill does. Measured: light 5.5:1 and 6.3:1, dark 7.9:1 and 9.6:1. */
-  --lock:#8a5410;
-  --lock-on:#ffffff;
-  /* Active-tab ink. --green-bright is the brand green but only 3.3:1 on the
-     light canvas, and a tab label is 13px semibold. 5.9:1 here. */
-  --tab-on:#0f6d3d;
-  /* These three cleared 4.5:1 on --bg and were quietly short of it on
-     --surface-3 — the surface a card or a table row actually sits on.
-     Measuring against the lightest surface is the easy mistake. */
-  --red:#c93834;        /* 4.52:1 — was #cc3d39, 4.31:1 */
-  --red-soft:rgba(204,61,57,.10);
-  --blue:#2e6ac2;       /* 4.68:1 — was #2f6dc7, 4.48:1 */
-  --blue-soft:rgba(47,109,199,.10);
-  --purple:#795ac6;     /* 4.53:1 — was #7a5cc7, 4.43:1 */
-  --purple-soft:rgba(122,92,199,.10);
+  /* Accents. Blue is lifted from the brief's #3b82f6 to #4f92ff: the
+     original measures 4.45:1 on --surface-3, a hair under AA for text. */
+  --amber:#f5a524;
+  --amber-soft:rgba(245,165,36,.12);
+  --lock:#f5a524;
+  --lock-on:#0a0c0f;
+  --tab-on:#00d26a;
+  --red:#ff4d4f;
+  --red-soft:rgba(255,77,79,.12);
+  --blue:#4f92ff;
+  --blue-soft:rgba(79,146,255,.12);
+  --purple:#a78bfa;
+  --purple-soft:rgba(167,139,250,.12);
+  --accent-cta:#00d26a;--accent-cta-ink:#0a0c0f;
+  --accent-alert:#ff4d4f;
+  --accent-warn:#f5a524;
 
-  /* Semantic accents — CTAs are amber (green stays reserved for positive
-     data), alerts red, warnings amber-yellow. Components use these names so
-     the roles never blur. */
-  /* A FILL, not ink — so the pair that matters is --accent-cta-ink ON it,
-     and white on #b9741a was 3.77:1. Every primary button in the app carried
-     a label under the AA floor. The fill still clears 3:1 against the canvas
-     so the button keeps a visible edge. */
-  --accent-cta:#a46615;--accent-cta-ink:#ffffff;  /* ink 4.68:1 */
-  --accent-alert:#c23632; /* 4.79:1 — was #cc3d39, 4.31:1 */
-  --accent-warn:#8a690e;   /* 4.51:1 — was #b58a12, 2.80:1. Carries text
-                              (.dl-warn, .t-flag, .sig-v.warn), so 4.5 applies. */
-
-  /* Radii — the marketing page's soft editorial geometry (its --r is 16px).
-     Chips and pills are fully round; cards sit between. */
-  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-pill:999px;
+  /* Geometry: 4px. Pills stay round. */
+  --r-sm:3px;--r-md:4px;--r-lg:4px;--r-xl:6px;--r-pill:999px;
 
   /* Layout */
   --sidebar-w:48px;
   --topbar-h:54px;
   --bottomnav-h:66px;
 
-  /* Shadow */
-  --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
-  --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
+  /* Elevation: the border does the work; only floating layers cast. */
+  --shadow:0 0 0 0 rgba(0,0,0,0);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.5);
 
-  /* Motion — one scale: state changes 150ms, layout moves 250ms. */
   --ease:cubic-bezier(.2,.8,.2,1);
   --t-state:150ms;
   --t-layout:250ms;
 
-  /* Fonts — the marketing site's pairing carried into the app. Bricolage
-     Grotesque for display/headings, Public Sans for UI and prose. Mono is
-     for NUMERALS ONLY (always with tabular-nums), never sentences. */
-  --font-display:'Bricolage Grotesque',system-ui,sans-serif;
-  --font-body:'Public Sans',system-ui,sans-serif;
+  /* Type: Inter for everything a person reads, IBM Plex Mono for every
+     number, always with tabular figures. */
+  --font-display:'Inter',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,monospace;
 
-  /* Position tokens — one hue per position, used identically in pills,
-     pitch slots and tables. All measured ≥4.5:1 on --surface-3. */
-  --pos-gk:#8a690e;  --pos-gk-soft:rgba(184,146,30,.14);
-  --pos-def:#2e6ac2; --pos-def-soft:rgba(46,106,194,.12);
-  --pos-mid:#147e48; --pos-mid-soft:rgba(20,126,72,.12);
-  --pos-fwd:#c93834; --pos-fwd-soft:rgba(201,56,52,.11);
+  /* Position colours: one hue per position, in pills, pitch slots and tables */
+  --pos-gk:#f5a524;  --pos-gk-soft:rgba(245,165,36,.14);
+  --pos-def:#4f92ff; --pos-def-soft:rgba(79,146,255,.14);
+  --pos-mid:#00d26a; --pos-mid-soft:rgba(0,210,106,.14);
+  --pos-fwd:#ff4d4f; --pos-fwd-soft:rgba(255,77,79,.13);
 
-  /* Confidence tokens — Low / Medium / High as a consistent 3-step scale
-     (dot meter + tinted chip), never a bare word. */
-  --conf-high:#147e48;   --conf-high-soft:rgba(20,126,72,.12);
-  --conf-med:#8a690e;    --conf-med-soft:rgba(184,146,30,.14);
-  --conf-low:#626f7d;    --conf-low-soft:rgba(98,111,125,.12);
+  /* Confidence scale */
+  --conf-high:#00d26a; --conf-high-soft:rgba(0,210,106,.14);
+  --conf-med:#f5a524;  --conf-med-soft:rgba(245,165,36,.14);
+  --conf-low:#8d97a3;  --conf-low-soft:rgba(141,151,163,.13);
 
-  /* Type scale — 1.125 (major second), the ratio for dense data UIs.
-     This file had grown 59 distinct font sizes between 7.68px and 42px, 53%
-     of them under 12px. That is not a scale, it is 281 independent decisions,
-     and it is why density reads as noise rather than as information.
+  /* Type scale: 1.125 (major second). --fs-min is the floor; nothing under
+     10px survives a phone in daylight and dev/test-tokens.mjs holds the line. */
      --fs-min is the floor: a data-dense terminal earns small type, but
-     7.68px is not small, it is unreadable, and nothing under 10px survives a
-     phone in daylight. dev/test-tokens.mjs fails the build if a new
-     declaration drops below it. New work should use these tokens; existing
-     sizes migrate to the nearest step as each component is next touched. */
   --fs-min:10px;    /* floor — micro labels, table keys */
   --fs-xs:11px;     /* chips, captions, dense table cells */
   --fs-sm:12.5px;   /* secondary UI copy */
@@ -273,75 +231,61 @@ try{
   --fs-xl:26px;     /* page headings */
   --fs-2xl:32px;    /* hero numbers */
 
-  /* The single most important number on a screen. In the brand language it
-     is the deep green ink, one step darker than --green for extra punch —
-     never a neon lime. .hot renders as an inline bold span at 11-13px, so
-     it is held to 4.5:1 like body text. */
-  --hot:#0f6d3d;          /* 5.92:1 on --surface-3 */
-  --chip:#e7ebef;
+  /* THE key number on a screen */
+  --hot:#b6ff3c;
+  --chip:#1a2026;
 }
 
-/* ── DARK MODE ──────────────────────────────────────────── */
-/* The same brand, after dark — deep ink surfaces, the forest green kept
-   as the single accent (brightened only as far as AA requires), no neon.
-   Driven entirely by the same tokens as light; nothing else changes. */
-[data-theme="dark"]{
-  --bg:#10161c;
-  --surface:#171e26;
-  --surface-2:#1c242d;
-  --surface-3:#232b34;
-  --elevated:#1c242d;
-
-  --border:#242d37;
-  --border-2:#2c3641;
-  --border-3:#3a4652;
-
-  --text:#e9edf1;   /* 12.17:1 on --surface-3 */
-  --text-2:#a6b1bc; /*  6.57:1 */
-  --text-3:#97a3ae; /*  5.57:1 */
-  /* Held to the 3:1 UI threshold like its light-theme twin: it marks
-     absence (the "—" glyph, blank cells), not content. */
-  --text-4:#697683; /*  3.08:1 on #232b34 */
-
-  --hero-a:#1a5c3c;
-  --hero-b:#12362a;
-  --hero-ink:#e8f4ec;
-  --green:#45c483;        /* 6.46:1 — brand green lifted for dark, not lime */
-  --green-bright:#3aa971;
-  --green-soft:rgba(69,196,131,.13);
-  --green-glow:rgba(69,196,131,.20);
-
-  --amber:#f0a63a;
-  --amber-soft:rgba(240,166,58,.13);
-  --lock:#f0a63a;
-  --lock-on:#10161c;
-  --tab-on:#52cd8f;       /* 7.15:1 — the green ink for active tabs */
-  --red:#ff6b6b;
-  --red-soft:rgba(255,107,107,.12);
-  --blue:#6aa4f8;
-  --blue-soft:rgba(106,164,248,.13);
-  --purple:#a795f2;
-  --purple-soft:rgba(167,149,242,.13);
-
-  /* Semantic accents (dark) — amber CTA on dark ink, red alert, warn. */
-  --accent-cta:#f0a63a;--accent-cta-ink:#10161c;
-  --accent-alert:#ff6b6b;
-  --accent-warn:#e8c14b;
-
-  /* Position + confidence hues, lifted for dark surfaces. */
-  --pos-gk:#e0b53f;  --pos-gk-soft:rgba(224,181,63,.14);
-  --pos-def:#6aa4f8; --pos-def-soft:rgba(106,164,248,.14);
-  --pos-mid:#45c483; --pos-mid-soft:rgba(69,196,131,.14);
-  --pos-fwd:#ff8a85; --pos-fwd-soft:rgba(255,138,133,.13);
-  --conf-high:#45c483; --conf-high-soft:rgba(69,196,131,.14);
-  --conf-med:#e0b53f;  --conf-med-soft:rgba(224,181,63,.14);
-  --conf-low:#97a3ae;  --conf-low-soft:rgba(151,163,174,.13);
-
-  --hot:#52cd8f;
-  --chip:#2a333d;
-
-  --shadow:0 1px 3px rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.25);
-  --shadow-lg:0 6px 18px rgba(0,0,0,.4),0 20px 48px rgba(0,0,0,.32);
+/* ── LIGHT MODE ─────────────────────────────────────────── */
+/* The editorial palette the app shipped with, kept as a variant: the
+   same token names, so nothing else changes. */
+[data-theme="light"]{
+  /* Surfaces */
+  --bg:#f4f6f8;
+  --surface:#ffffff;
+  --surface-2:#ffffff;
+  --surface-3:#eef1f4;
+  --elevated:#ffffff;
+  --border:rgba(12,16,20,.08);
+  --border-2:rgba(12,16,20,.13);
+  --border-3:rgba(12,16,20,.22);
+  --text:#10171e;
+  --text-2:#586673;
+  --text-3:#626f7d;
+  --text-4:#78899a;
+  --hero-a:#147e48;
+  --hero-b:#0b5c34;
+  --hero-ink:#ffffff;
+  --green:#147e48;
+  --green-bright:#1f9d5c;
+  --green-soft:rgba(31,157,92,.11);
+  --green-glow:rgba(31,157,92,.20);
+  --amber:#8f5a12;
+  --amber-soft:rgba(185,116,26,.11);
+  --lock:#8a5410;
+  --lock-on:#ffffff;
+  --tab-on:#0f6d3d;
+  --red:#c93834;
+  --red-soft:rgba(204,61,57,.10);
+  --blue:#2e6ac2;
+  --blue-soft:rgba(47,109,199,.10);
+  --purple:#795ac6;
+  --purple-soft:rgba(122,92,199,.10);
+  --accent-cta:#a46615;--accent-cta-ink:#ffffff;
+  --accent-alert:#c23632;
+  --accent-warn:#8a690e;
+  --shadow:0 1px 3px rgba(12,16,20,.07),0 6px 16px rgba(12,16,20,.05);
+  --shadow-lg:0 4px 12px rgba(12,16,20,.1),0 16px 40px rgba(12,16,20,.08);
+  --pos-gk:#8a690e;  --pos-gk-soft:rgba(184,146,30,.14);
+  --pos-def:#2e6ac2; --pos-def-soft:rgba(46,106,194,.12);
+  --pos-mid:#147e48; --pos-mid-soft:rgba(20,126,72,.12);
+  --pos-fwd:#c93834; --pos-fwd-soft:rgba(201,56,52,.11);
+  --conf-high:#147e48;   --conf-high-soft:rgba(20,126,72,.12);
+  --conf-med:#8a690e;    --conf-med-soft:rgba(184,146,30,.14);
+  --conf-low:#626f7d;    --conf-low-soft:rgba(98,111,125,.12);
+  --hot:#0f6d3d;
+  --chip:#e7ebef;
+  --on-brand:#ffffff;
 }
 
 /* ── RESET & BASE ──────────────────────────────────────── */
@@ -379,7 +323,7 @@ a{color:inherit;text-decoration:none}
 .jargon:hover,.jargon:focus{color:var(--green-bright);border-bottom-color:var(--green-bright)}
 .jargon:hover::after,.jargon:focus::after{content:attr(data-tip);position:absolute;left:0;bottom:calc(100% + 6px);z-index:60;
   width:min(260px,72vw);background:var(--elevated,var(--surface-2));color:var(--text);border:1px solid var(--border);
-  border-radius:6px;padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
+  border-radius:var(--r-md);padding:7px 9px;font-size:11px;line-height:1.4;font-weight:400;text-transform:none;letter-spacing:0;
   box-shadow:0 8px 24px rgba(0,0,0,.35);white-space:normal;pointer-events:none}
 body[data-density="beginner"] .expert-only{display:none}
 /* Refresh and Export live in the overflow menu now, tucked away for
@@ -443,14 +387,22 @@ body[data-density="beginner"] .beginner-only{display:block}
 }
 /* Section 7: persistent right rail on large screens (>=1024px) */
 .right-rail{display:none}
-.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:14px}
+.rr-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:14px}
+/* ── SECTION CARD HEAD ── the title on the left, the controls on the right.
+   One row for every card; the ad hoc flex rows it replaced each drew the
+   same thing a slightly different way. The title is an h2, so the page
+   outline reads h1 then its sections. */
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.card-head .card-title{margin:0;flex:1 1 auto;min-width:0}
+.card-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0;margin-left:auto}
+.card-tools .qd-meta{font-family:var(--font-mono);font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .rr-h{font-family:var(--font-mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-2);margin-bottom:8px}
 .rr-ask-in{display:flex;gap:6px}
-.rr-ask-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border-2);border-radius:6px;padding:7px 9px;color:var(--text);font-size:12px}
+.rr-ask-in input{flex:1;min-width:0;background:var(--bg);border:1px solid var(--border-2);border-radius:var(--r-md);padding:7px 9px;color:var(--text);font-size:12px}
 .rr-ask-in input:focus{outline:none;border-color:var(--green-bright)}
 .rr-ask-out{margin-top:8px;font-size:12px;line-height:1.5;color:var(--text-2)}
 .rr-cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.rr-col{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px}
+.rr-col{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:8px}
 .rr-nm{font-weight:700;font-size:12.5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rr-stat{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);font-family:var(--font-mono);padding:1px 0}
 .rr-stat b{color:var(--text)}
@@ -688,7 +640,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 /* The bench lives on its own opaque strip "off the pitch", so the
    centre-circle arc can never run through the bench players. */
 .bench{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;
-  position:relative;z-index:2;padding:9px 10px 7px;border-radius:10px;
+  position:relative;z-index:2;padding:9px 10px 7px;border-radius:var(--r-lg);
   background:linear-gradient(180deg,#1d4a2e,#163a24);
   border:1px solid rgba(255,255,255,.22);box-shadow:0 2px 10px rgba(0,12,5,.3)}
 
@@ -704,14 +656,14 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-team span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mc-team.h{justify-content:flex-end;text-align:right}
 .mc-score{background:var(--surface-3);border:1px solid var(--border-2);
-  padding:4px 12px;border-radius:8px;font-weight:800;white-space:nowrap}
+  padding:4px 12px;border-radius:var(--r-md);font-weight:800;white-space:nowrap}
 .mc-ch{transition:transform .2s;color:var(--text-3);font-size:.75rem}
 .mc-det{padding:4px 12px 12px;border-top:1px solid var(--border-2)}
 .mc-cols{display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;font-size:.85rem;line-height:1.9}
 .mc-cols .h{text-align:right}
 .mc-sec{text-align:center;font-weight:700;font-size:.72rem;letter-spacing:.05em;
   text-transform:uppercase;color:var(--text-3);background:var(--surface-2);
-  border-radius:6px;padding:3px;margin:10px 0 6px}
+  border-radius:var(--r-md);padding:3px;margin:10px 0 6px}
 .mc-you{color:var(--blue);margin-right:3px;font-size:.7rem;vertical-align:2px}
 /* Your matchday: the squad-vs-kickoff join. .mc-badge keeps the state
    badge and the squad count in ONE grid cell — .mc-head is a five-column
@@ -720,7 +672,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .mc-mine{color:var(--blue);font-size:.68rem;font-weight:800;white-space:nowrap}
 .md-sum{font-weight:700;font-size:.86rem;margin-bottom:8px}
 .md-next{display:flex;flex-direction:column;gap:2px;padding:8px 10px;margin-bottom:10px;
-  border-radius:8px;background:var(--green-soft)}
+  border-radius:var(--r-md);background:var(--green-soft)}
 /* The kickoff column and the count sit at the TOP of a row whose middle
    can now run to several lines; .dl-row centres its children, which
    would leave a badge floating beside the third name. */
@@ -766,7 +718,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .lg-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 10px}
 .lg-pill{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-min);
   font-weight:700;color:var(--text-2);background:var(--surface-2);
-  border:1px solid var(--border-2);border-radius:6px;padding:2px 7px;white-space:nowrap}
+  border:1px solid var(--border-2);border-radius:var(--r-md);padding:2px 7px;white-space:nowrap}
 .lg-pill b{font-size:var(--fs-min);font-weight:800;color:var(--text-3);letter-spacing:.05em}
 .lg-asof{font-style:normal;font-size:var(--fs-min);font-weight:700;color:var(--text-3);
   background:var(--surface-3);border-radius:4px;padding:0 4px;margin-left:4px}
@@ -787,7 +739,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 /* Player state. These four are the whole read of a live table: what is
    banked, what is happening, what is still to come, and what is never
    coming. Colour AND a legend, because colour alone is not a label. */
-.lg-p{border-radius:8px;padding:4px 2px}
+.lg-p{border-radius:var(--r-md);padding:4px 2px}
 .lg-done{background:var(--surface-2)}
 .lg-live{background:var(--green-soft);box-shadow:inset 0 0 0 1px var(--green)}
 .lg-toPlay{opacity:.62}
@@ -876,7 +828,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 /* Ask the Scout (chat) */
 .ask-thread{max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:4px 2px 10px}
 .ask-empty{color:var(--text-3);font-size:.82rem;text-align:center;padding:18px}
-.ask-msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:.86rem;line-height:1.5}
+.ask-msg{max-width:88%;padding:10px 13px;border-radius:var(--r-xl);font-size:.86rem;line-height:1.5}
 .ask-msg p{margin:0 0 6px}.ask-msg p:last-child{margin:0}
 .ask-msg ul{margin:4px 0;padding-left:18px}.ask-msg h4{margin:4px 0;font-size:.9rem}
 .ask-user{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
@@ -921,18 +873,18 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .pd-meta{font-size:.8rem;color:var(--text-2);display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:3px}
 .pd-x{align-self:flex-start;background:none;border:0;font-size:1.5rem;line-height:1;color:var(--text-3);cursor:pointer;padding:0 4px}
 .pd-kpi{margin-bottom:14px}.pd-sec{margin-bottom:12px}
-.pd-news{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text);background:var(--surface-3);border-left:3px solid var(--amber);padding:8px 10px;border-radius:8px;margin-bottom:12px}
+.pd-news{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--text);background:var(--surface-3);border-left:3px solid var(--amber);padding:8px 10px;border-radius:var(--r-md);margin-bottom:12px}
 .pd-tick{display:flex;gap:6px;flex-wrap:wrap}
-.pd-fx{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:6px 4px;border-radius:8px;font-size:.74rem;font-weight:800;color:#16241b}
+.pd-fx{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px;padding:6px 4px;border-radius:var(--r-md);font-size:.74rem;font-weight:800;color:#16241b}
 .pd-fx b{font-size:var(--fs-min);opacity:.8;font-weight:600;margin-top:1px}
 .pd-fx.fdr-5{color:#fff}
 .pd-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:8px}
+.pd-stat{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--surface-3);border-radius:var(--r-md)}
 .pd-sl{font-size:.78rem;color:var(--text-2)}.pd-sv{font-weight:700;font-size:.84rem}
 .pd-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
 .pd-chip{font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:var(--r-pill);background:var(--surface-3);color:var(--text-2);border:1px solid var(--border-2)}
 .pd-chip-hot{background:var(--green-soft);color:var(--green-bright);border-color:var(--green-bright)}
-.bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:8px;font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
+.bonus-b{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:26px;border-radius:var(--r-md);font-weight:800;font-size:.82rem;margin-right:4px;color:#12241a}
 .bonus-3{background:#f5c518}.bonus-2{background:#c7cdd4}.bonus-1{background:#e0a878}
 /* Live status pill + auto-refresh */
 .live-pill{display:inline-flex;align-items:center;gap:6px;font-size:.64rem;font-weight:800;letter-spacing:.04em;
@@ -944,14 +896,26 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .dc-meter{height:7px;border-radius:4px;background:var(--surface-3);overflow:hidden;margin-top:5px}
 .dc-fill{height:100%;border-radius:4px;background:var(--green-bright);transition:width .3s var(--ease)}
 .dc-fill.hit{background:var(--green)}
-.solver-best{background:var(--green-soft);border-radius:8px}
+.solver-best{background:var(--green-soft);border-radius:var(--r-md)}
 .solver-idx{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:.72rem;margin-right:8px;flex:0 0 auto}
 /* Player List table */
 .pl-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
 .pl-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:var(--r-md)}
 .ptable{border-collapse:collapse;width:100%;font-size:.8rem;white-space:nowrap}
 .ptable th,.ptable td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
-.ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:pointer;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
+.ptable th{position:sticky;top:0;z-index:1;background:var(--surface-2);cursor:default;user-select:none;font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2)}
+/* Only a heading that sorts looks like it sorts. */
+.ptable th[data-k],.ptable th[data-ti],.ptable th.sb-sort{cursor:pointer}
+.ptable th[data-ti][aria-sort="ascending"]::after{content:" \25B2";font-size:var(--fs-min)}
+.ptable th[data-ti][aria-sort="descending"]::after{content:" \25BC";font-size:var(--fs-min)}
+.ptable th[data-ti]:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
+/* Keyboard row focus: a ring inside the row, and the row lifts like hover. */
+.ptable tbody tr:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
+.ptable tbody tr:focus-visible td{background:var(--surface-3)}
+/* Per-column filters, a second header row. */
+.ptable .tbl-filters td{padding:3px 6px 7px;background:var(--surface-2);position:sticky;top:0;z-index:1;border-bottom:1px solid var(--border-2)}
+.ptable .tbl-filters select{width:100%;min-width:64px;font:inherit;font-size:.72rem;padding:3px 4px;
+  background:var(--surface);color:var(--text);border:1px solid var(--border-2);border-radius:var(--r-sm)}
 .ptable th:hover{color:var(--text)}
 .ptable th.active{color:var(--green-bright)}
 .ptable th.num,.ptable td.num{text-align:right;font-variant-numeric:tabular-nums}
@@ -1030,7 +994,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
    is scaled to the leader's odds, not to 100%, so a near-level race
    still reads as level instead of as six near-empty slivers. */
 .tr-me{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;
-  padding:10px 12px;margin-bottom:10px;border-radius:10px;background:var(--green-soft)}
+  padding:10px 12px;margin-bottom:10px;border-radius:var(--r-lg);background:var(--green-soft)}
 .tr-big{display:block;font-size:1.6rem;font-weight:800;line-height:1.1}
 /* .dl-grow resolves to flex-direction:column with align-items:center —
    the base rule sets the direction and the .dl-row override sets the
@@ -1095,7 +1059,7 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
   background:var(--bg-2);border:1px solid var(--border);border-radius:9px;
 }
 .sb-game-btn{
-  flex:1;padding:6px 8px;border-radius:6px;text-align:center;text-decoration:none;
+  flex:1;padding:6px 8px;border-radius:var(--r-md);text-align:center;text-decoration:none;
   font-size:.7rem;font-weight:700;letter-spacing:.04em;color:var(--text-3);
   transition:background .15s,color .15s;
 }
@@ -1313,7 +1277,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   transition:transform .1s var(--ease),filter .14s var(--ease),background .14s var(--ease);
 }
 .btn svg{width:15px;height:15px}
-.btn-primary{background:var(--green);color:#fff;box-shadow:0 2px 8px var(--green-glow)}
+.btn-primary{background:var(--green);color:#0a0c0f;box-shadow:0 2px 8px var(--green-glow)}
 .btn-primary:hover{filter:brightness(1.08)}
 /* Amber CTA — the primary call-to-action colour (Link team, Next, Ask, Save).
    Green is reserved for positive data, so actions read as actions. */
@@ -1423,14 +1387,14 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .card-title{
   font-size:.68rem;font-weight:700;letter-spacing:.09em;
   text-transform:uppercase;color:var(--text-3);
-  margin-bottom:14px;display:flex;align-items:center;
+  margin:0 0 14px;display:flex;align-items:center;
   justify-content:space-between;gap:8px;
 }
 
 /* ── KPI CARD ──────────────────────────────────────────── */
 .kpi{
   background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r-lg);padding:18px;
+  border-radius:var(--r-lg);padding:16px;
   box-shadow:var(--shadow);position:relative;overflow:hidden;
 }
 .kpi-accent{position:absolute;top:0;left:0;width:3px;height:100%}
@@ -1498,7 +1462,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
    player who failed to load. Kept dim enough that a half-built squad still
    leads with the players in it. */
 .pp-slot{cursor:pointer;opacity:.72;transition:opacity .12s,transform .12s}
-.pp-slot .pp-fig{border:1.5px dashed rgba(255,255,255,.55);border-radius:10px;background:rgba(255,255,255,.06)}
+.pp-slot .pp-fig{border:1.5px dashed rgba(255,255,255,.55);border-radius:var(--r-lg);background:rgba(255,255,255,.06)}
 /* .pp-pt is a WHITE pill — the price chip. Recolouring the text white here
    made "Add" invisible on it; the default dark ink is what that pill is
    designed for. */
@@ -1507,7 +1471,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 /* The focus ring is on the pitch, which is mid-green — a themed ring can
    vanish into it, so this one is white with a dark backing and does not
    depend on the palette. */
-.pp-slot:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:8px}
+.pp-slot:focus-visible{outline:2px solid #fff;outline-offset:3px;border-radius:var(--r-md)}
 @media(prefers-reduced-motion:reduce){ .pp-slot{transition:none} .pp-slot:hover,.pp-slot:focus-visible{transform:none} }
 /* The one line an empty pitch owes the reader. Sits above the grass rather
    than on it: over the green it competes with the slots it is pointing at. */
@@ -1523,7 +1487,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .draft-start .btn{vertical-align:baseline}
 .draft-start b{color:var(--text)}
 .draft-start-chip{
-  display:inline-block;font-family:var(--mono,ui-monospace,monospace);font-size:var(--fs-min);font-weight:700;
+  display:inline-block;font-family:var(--font-mono);font-size:var(--fs-min);font-weight:700;
   background:var(--surface-3);color:var(--text);border-radius:5px;padding:1px 6px;white-space:nowrap;
 }
 .pitch-row{
@@ -1650,7 +1614,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
   border-radius:14px 14px 0 0;padding:18px 20px 24px;
   transform:translateY(100%);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
 .xp-drawer.open .xpd-sheet{transform:translateY(0)}
-@media(min-width:640px){.xpd-sheet{bottom:24px;border-radius:14px;border-bottom:1px solid var(--border-2)}}
+@media(min-width:640px){.xpd-sheet{bottom:24px;border-radius:var(--r-xl);border-bottom:1px solid var(--border-2)}}
 .xpd-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .xpd-lab{font-family:var(--font-mono);font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3)}
 .xpd-title{font-family:var(--font-display);font-size:1.15rem;font-weight:800;letter-spacing:-.02em}
@@ -1752,12 +1716,12 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 
 /* ── BRAND ELEVATION — gradient moments, depth, motion ───── */
 :root{
+  --grad-brand:linear-gradient(118deg,#00b95c 0%,#00d26a 100%);
+  --grad-glow:0 0 0 1px rgba(0,210,106,.28);
+}
+[data-theme="light"]{
   --grad-brand:linear-gradient(118deg,#0d6e3f 0%,#15945b 45%,#1d6fa8 100%);
   --grad-glow:0 6px 24px rgba(21,148,91,.28);
-}
-[data-theme="dark"]{
-  --grad-brand:linear-gradient(118deg,#16a35f 0%,#1cbd7e 45%,#2f8fd0 100%);
-  --grad-glow:0 6px 26px rgba(28,189,126,.22);
 }
 .btn{transition:transform .12s var(--ease),box-shadow .18s var(--ease),background .18s var(--ease)}
 .btn:active{transform:scale(.96)}
@@ -1795,7 +1759,7 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 
 .seg{display:inline-flex;border:1px solid var(--border-2);border-radius:var(--r-pill);overflow:hidden;background:var(--surface-3)}
 .seg-b{border:none;background:none;padding:7px 13px;font:inherit;font-size:.82rem;font-weight:600;color:var(--text-2);cursor:pointer}
-.seg-b.on{background:var(--grad-brand);color:#fff}
+.seg-b.on{background:var(--grad-brand);color:var(--on-brand)}
 /* Full-width, horizontally-scrollable segmented control + its panes
    (Gameweek recap tabs: Scorers · Market · Picks · Value · Template). */
 .gw-seg{display:flex;width:100%;overflow-x:auto;overflow-y:hidden;margin-bottom:14px;scrollbar-width:none}
@@ -1861,8 +1825,8 @@ body{font-size:14px;line-height:1.5}
 .badge{border-radius:var(--r-sm);font-size:10px;
   text-transform:uppercase;letter-spacing:.05em;font-weight:700}
 .btn{border-radius:var(--r-md)}
-[data-theme="dark"] .btn-primary{background:var(--green);color:#0b1510}
-[data-theme="dark"] .btn-primary:hover{background:var(--tab-on);color:#0b1510}
+[data-theme="light"] .btn-primary{background:var(--green);color:#fff}
+[data-theme="light"] .btn-primary:hover{background:var(--tab-on);color:#fff}
 :focus-visible{outline:2.5px solid var(--green-bright);outline-offset:2px;border-radius:4px}
 
 /* ── The gameweek chip: "GW2 · deadline in 5h 12m", live-ticking ── */
@@ -2275,6 +2239,13 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sig-v{flex:0 0 auto;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
 .sig-v.pos{color:var(--green)}.sig-v.neg{color:var(--red)}.sig-v.warn{color:var(--accent-warn)}
+/* Never colour alone: a rising figure gets an arrow, a falling one too, a
+   warning a mark, so the feed reads the same without the hue. */
+.sig-v.pos::before{content:"\25B2 ";font-size:.7em}
+.sig-v.neg::before{content:"\25BC ";font-size:.7em}
+.sig-v.warn::before{content:"! "}
+.dl-click{cursor:pointer}
+.dl-click:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px;background:var(--surface-3)}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -2329,7 +2300,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .dash-next-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 @media(max-width:640px){.dash-next-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .dash-next-b{display:block;width:100%;text-align:left;cursor:pointer;padding:10px 12px;
-  border-radius:10px;background:var(--surface-2);border:1px solid var(--border-2);
+  border-radius:var(--r-lg);background:var(--surface-2);border:1px solid var(--border-2);
   transition:border-color .14s var(--ease),background .14s var(--ease)}
 .dash-next-b:hover{border-color:var(--green);background:var(--green-soft)}
 .dash-next-b:focus-visible{outline:2px solid var(--green-bright);outline-offset:1px}
@@ -2475,7 +2446,7 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   width:100%;min-width:0;text-align:left;
   background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
 .rv-open:hover .dl-nm{text-decoration:underline}
-.rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.rv-open:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-md)}
 /* White and amber, not accent-on-green. The first version ringed shared
    players in the accent colour and differentials in translucent white, which
    was designed against a dark surface — on the actual green pitch, in the
@@ -4022,9 +3993,225 @@ const STATUS_BADGE={i:'badge-red',d:'badge-amber',s:'badge-red',u:'badge-grey',n
 
 /* ── Panel state helpers (loading / error / empty) ─────── */
 function skel(rows){let s='';for(let i=0;i<(rows||4);i++)s+='<div class="sk" style="width:'+(100-i*8)+'%"></div>';return '<div class="card">'+s+'</div>';}
+/* ── DATA TABLE ──────────────────────────────────────────
+   One behaviour for every table. The markup is whatever the panel builds
+   (.pl-scroll > table.ptable); enhanceTable gives it what the markup alone
+   cannot: a real thead, sortable headings with aria-sort, a per-column
+   filter where a text column has fewer than TBL_FILTER_MAX distinct values,
+   focusable rows with a visible ring and arrow-key movement, and Enter to
+   open. Tables that sort their own model (the players table, the scout
+   board) carry data-tbl="model" and keep their sort and their own filters;
+   every other table sorts its rows in place, and the panel's first table
+   keeps that sort in the URL as tsort=. A MutationObserver enhances any
+   table a hydrator paints, so a panel opts in by rendering a .ptable. */
+const TBL_FILTER_MAX=25;
+/* A cell's sort value: a number when the text reads as one (prices, per
+   cents and signed figures included), else the lower-cased text. */
+function tableCellValue(text){
+  const t=String(text==null?'':text).replace(/\s+/g,' ').trim();
+  if(/^[£+\-−]?\d[\d,]*(\.\d+)?%?$/.test(t)){
+    const n=parseFloat(t.replace(/[£,%+\s]/g,'').replace('−','-'));
+    if(Number.isFinite(n))return n;
+  }
+  return t.toLowerCase();
+}
+/* Numbers sort among themselves in the asked direction; text likewise; a
+   number always sits above text, so a column of figures with a few dashes
+   keeps the dashes at the bottom whichever way it is sorted. */
+function tableSortValue(a,b,dir){
+  const an=typeof a==='number',bn=typeof b==='number';
+  if(an&&bn)return (a-b)*dir;
+  if(an)return -1;
+  if(bn)return 1;
+  return a<b?-dir:a>b?dir:0;
+}
+/* Which columns earn a filter: text columns with between two and
+   TBL_FILTER_MAX distinct values, on a table with enough rows to need one. */
+function tableFilterable(columns,rowCount){
+  if(rowCount<8)return [];
+  return columns.map((vals,i)=>{
+    if(!vals||vals.numeric)return null;
+    const set=new Set(vals.filter(v=>v!==''));
+    return set.size>1&&set.size<TBL_FILTER_MAX&&set.size<rowCount?i:null;
+  }).filter(i=>i!=null);
+}
+function tableIsPrimary(table){
+  const first=document.querySelector('#ge-data table.ptable');
+  return first===table;
+}
+function enhanceTable(table){
+  if(!table||table.dataset.tblOn)return;
+  table.dataset.tblOn='1';
+  const model=table.dataset.tbl==='model';
+  let thead=table.tHead;
+  if(!thead){
+    const first=table.querySelector('tr');
+    if(first&&first.querySelector('th')){
+      thead=document.createElement('thead');
+      first.parentNode.insertBefore(thead,first);
+      thead.appendChild(first);
+    }
+  }
+  const tbody=table.tBodies[0];
+  if(!thead||!tbody||!thead.rows[0])return;
+  const hrow=thead.rows[0];
+  const ths=Array.from(hrow.cells);
+  const rows=()=>Array.from(tbody.rows);
+  const cellText=td=>(td?(td.dataset.v!=null?td.dataset.v:td.textContent):'').replace(/\s+/g,' ').trim();
+
+  /* Sorting, for tables without a model of their own. */
+  if(!model){
+    ths.forEach((th,i)=>{
+      if(th.dataset.k||th.dataset.lk||!th.textContent.trim()||th.colSpan>1)return;
+      th.dataset.ti=String(i);
+      th.tabIndex=0;
+      th.setAttribute('aria-sort','none');
+      th.setAttribute('title','Sort by '+th.textContent.trim());
+    });
+    const sort=(i,dir)=>{
+      const rs=rows();
+      const vals=rs.map(tr=>tableCellValue(cellText(tr.cells[i])));
+      const idx=rs.map((_,j)=>j).sort((x,y)=>tableSortValue(vals[x],vals[y],dir)||x-y);
+      /* Footer rows (totals) stay at the bottom whatever the sort. */
+      const foot=idx.filter(j=>/\b(ts-foot|ts-tot|tbl-foot)\b/.test(rs[j].className));
+      idx.filter(j=>foot.indexOf(j)<0).concat(foot).forEach(j=>tbody.appendChild(rs[j]));
+      ths.forEach((th,j)=>{
+        if(th.dataset.ti==null)return;
+        th.setAttribute('aria-sort',j===i?(dir===1?'ascending':'descending'):'none');
+        th.classList.toggle('active',j===i);
+      });
+      table.dataset.sort=i+':'+dir;
+      if(tableIsPrimary(table))setUrlState({tsort:i+(dir===1?'a':'d')});
+    };
+    hrow.addEventListener('click',e=>{
+      const th=e.target.closest('th[data-ti]');if(!th)return;
+      const i=+th.dataset.ti;
+      const cur=table.dataset.sort?table.dataset.sort.split(':').map(Number):null;
+      const dir=cur&&cur[0]===i?-cur[1]:(th.classList.contains('num')?-1:1);
+      sort(i,dir);
+    });
+    hrow.addEventListener('keydown',e=>{
+      const th=e.target.closest('th[data-ti]');
+      if(th&&(e.key==='Enter'||e.key===' ')){e.preventDefault();th.click();}
+    });
+    if(tableIsPrimary(table)){
+      const m=/^(\d+)([ad])$/.exec(urlState('tsort')||'');
+      if(m&&ths[+m[1]]&&ths[+m[1]].dataset.ti!=null)sort(+m[1],m[2]==='a'?1:-1);
+    }
+  }
+
+  /* Per-column filters. */
+  if(!model){
+    const rs=rows();
+    const columns=ths.map((th,i)=>{
+      const vals=rs.map(tr=>cellText(tr.cells[i]));
+      const numeric=th.classList.contains('num')||vals.filter(v=>v).every(v=>typeof tableCellValue(v)==='number');
+      const arr=vals;arr.numeric=numeric;return arr;
+    });
+    const fcols=tableFilterable(columns,rs.length);
+    if(fcols.length){
+      const fr=document.createElement('tr');
+      fr.className='tbl-filters';
+      ths.forEach((th,i)=>{
+        const td=document.createElement('td');
+        if(fcols.indexOf(i)>=0){
+          const opts=Array.from(new Set(columns[i].filter(v=>v))).sort((a,c)=>a.localeCompare(c));
+          const label=th.textContent.trim()||('column '+(i+1));
+          td.innerHTML='<select aria-label="Filter by '+esc(label)+'"><option value="">All</option>'+
+            opts.map(o=>'<option value="'+esc(o)+'">'+esc(o)+'</option>').join('')+'</select>';
+        }
+        fr.appendChild(td);
+      });
+      thead.appendChild(fr);
+      const apply=()=>{
+        const active=Array.from(fr.querySelectorAll('select')).map(s=>[Array.from(fr.cells).indexOf(s.parentNode),s.value]).filter(x=>x[1]);
+        rows().forEach(tr=>{
+          const hide=active.some(([i,v])=>cellText(tr.cells[i])!==v);
+          tr.hidden=hide;
+        });
+      };
+      fr.addEventListener('change',apply);
+    }
+  }
+
+  /* Rows: a roving tab stop, arrows to move, Enter or Space to open. */
+  const openable=tr=>!!(tr.dataset.id||tr.dataset.open||tr.dataset.row||tr.classList.contains('dl-click')||tr.getAttribute('onclick'));
+  rows().forEach((tr,i)=>{if(openable(tr))tr.tabIndex=i===0?0:-1;});
+  table.addEventListener('keydown',e=>{
+    const tr=e.target.closest('tbody tr');if(!tr||e.target!==tr)return;
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){
+      e.preventDefault();
+      const vis=rows().filter(r=>openable(r)&&!r.hidden);
+      let j=vis.indexOf(tr)+(e.key==='ArrowDown'?1:-1);
+      j=Math.max(0,Math.min(vis.length-1,j));
+      vis.forEach(r=>{r.tabIndex=-1;});
+      if(vis[j]){vis[j].tabIndex=0;vis[j].focus();}
+    }else if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();tr.click();
+    }
+  });
+}
+function enhanceTables(root){
+  Array.prototype.forEach.call((root||document).querySelectorAll('table.ptable:not([data-tbl-on])'),enhanceTable);
+}
+/* ── A11Y ENHANCER ───────────────────────────────────────
+   Two things the string-built markup gets wrong everywhere at once, fixed
+   in one place as it paints. A clickable list row (.dl-click) is a
+   control, so it takes focus and opens on Enter or Space. A card title is
+   a section heading, so the outline of every view reads h1, then its
+   sections, without touching two hundred templates. */
+function enhanceA11y(root){
+  root=root||document;
+  Array.prototype.forEach.call(root.querySelectorAll('.dl-click:not([tabindex])'),el=>{
+    el.tabIndex=0;
+    if(!el.getAttribute('role'))el.setAttribute('role','button');
+  });
+  Array.prototype.forEach.call(root.querySelectorAll('div.card-title:not([role])'),el=>{
+    el.setAttribute('role','heading');el.setAttribute('aria-level','2');
+  });
+}
+function initA11y(){
+  document.addEventListener('keydown',e=>{
+    const t=e.target;
+    if(!t||!t.classList||!t.classList.contains('dl-click'))return;
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    e.preventDefault();t.click();
+  });
+}
+let TBL_MO=null;
+function watchTables(){
+  const pages=document.getElementById('pages');
+  if(!pages||TBL_MO||!window.MutationObserver)return;
+  let queued=false;
+  TBL_MO=new MutationObserver(()=>{
+    if(queued)return;queued=true;
+    (window.requestAnimationFrame||setTimeout)(()=>{queued=false;enhanceTables(pages);enhanceA11y(pages);});
+  });
+  TBL_MO.observe(pages,{childList:true,subtree:true});
+  enhanceTables(pages);enhanceA11y(pages);
+}
+
 function stateBox(icon,title,text,btn){
   return '<div class="card"><div class="ge-state">'+svg(ICON[icon]||ICON.question)+
     '<b>'+esc(title)+'</b><p>'+esc(text)+'</p>'+(btn||'')+'</div></div>';
+}
+/* ── SECTION CARD ─────────────────────────────────────────
+   One card for every named section: a title on the left (an h2), a
+   controls slot on the right, the same 1px border and padding everywhere.
+   cardHead builds the head row on its own for panels that assemble the
+   rest of the card by hand; sectionCard builds the whole thing. */
+function cardHead(title,tools,opts){
+  opts=opts||{};
+  return '<div class="card-head">'+
+    '<h2 class="card-title'+(opts.cls?' '+opts.cls:'')+'"'+(opts.id?' id="'+opts.id+'"':'')+'>'+title+'</h2>'+
+    (tools?'<div class="card-tools">'+tools+'</div>':'')+'</div>';
+}
+function sectionCard(spec){
+  const tag=spec.tag||'div';
+  return '<'+tag+' class="card'+(spec.cls?' '+spec.cls:'')+'"'+(spec.id?' id="'+spec.id+'"':'')+(spec.attrs?' '+spec.attrs:'')+'>'+
+    (spec.title?cardHead(spec.title,spec.tools,{id:spec.titleId}):'')+
+    (spec.sub?'<p class="dl-sub" style="margin:0 0 10px">'+spec.sub+'</p>':'')+
+    (spec.body||'')+(spec.foot||'')+'</'+tag+'>';
 }
 /* Every failed state ends in the same next action. `fn` is the handler
    as a string; the default repaints the panel on screen. */
@@ -5710,12 +5897,19 @@ function copyViewLink(){
   track('copy_link',{panel:currentPanel});
   return socCopyText(location.href,'Link');
 }
+/* Views whose key result renders to a share card, and the handler. */
+const PAGE_SHARE={gwreport:'shareReportCard()',compare:'shareCompareCard()',gwdebrief:'shareDebriefCard()'};
 function pageToolsHtml(panelId){
-  if(!pageLinkable(panelId))return '';
-  return '<div class="page-head-tools">'+
+  const tools=[];
+  if(pageLinkable(panelId))tools.push(
     '<button type="button" class="btn btn-ghost btn-sm" id="copy-link-btn" onclick="copyViewLink()" '+
       'aria-label="Copy a link to this view" title="Copy a link to this view">'+
-      svg(ICON.link,'width="14" height="14"')+' Copy link</button></div>';
+      svg(ICON.link,'width="14" height="14"')+' Copy link</button>');
+  if(PAGE_SHARE[panelId])tools.push(
+    '<button type="button" class="btn btn-ghost btn-sm" id="share-view-btn" onclick="'+PAGE_SHARE[panelId]+'" '+
+      'aria-label="Share this view as an image" title="Share this view as an image">'+
+      svg(ICON.arrows,'width="14" height="14"')+' Share</button>');
+  return tools.length?'<div class="page-head-tools">'+tools.join('')+'</div>':'';
 }
 
 /* ── RENDER A PAGE ─────────────────────────────────────── */
@@ -6813,8 +7007,7 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
     if(Math.abs(n)>=1e5)return Math.round(n/1e3)+'k';
     return fmtNum(n);
   };
-  const card=(cls,title,body,foot)=>'<section class="card '+cls+'">'+
-    (title?'<div class="card-title">'+title+'</div>':'')+body+(foot||'')+'</section>';
+  const card=(cls,title,body,foot)=>sectionCard({tag:'section',cls,title,body,foot});
 
   /* ── who you are, and what you have scored ── */
   const curH=(hist&&Array.isArray(hist.current))?hist.current:[];
@@ -6956,8 +7149,8 @@ async function hydrateDashboard(host){
   const nf=buildNextFix(b,fixtures);
   const hz=buildHorizon(b,fixtures,5);
   const stamp=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const qh=(label,kpiHtml,tag)=>'<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>'+label+(tag||'')+'</span>'+
-    '<span class="qd-meta">'+(kpiHtml?kpiHtml+' · ':'')+stamp+'</span></div>';
+  const qh=(label,kpiHtml,tag)=>cardHead('<span class="tk-dot" aria-hidden="true"></span>'+label+(tag||''),
+    '<span class="qd-meta">'+(kpiHtml?kpiHtml+' · ':'')+stamp+'</span>');
 
   /* ── Q1: this week's calls ── */
   let capPool=b.elements.filter(e=>e.status==='a').map(e=>({e,p:xP(b,e,nf[e.team])})).sort((a,c)=>c.p-a.p);
@@ -7058,8 +7251,7 @@ async function hydrateDashboard(host){
         (d!=null?'<span class="dc-alt-d num">'+(d>=0?'+':'')+d.toFixed(1)+'</span>':'')+
         '</button>';}).join('')+'</div>':'';
   const q1='<section class="card dc dc-hero" data-dash="action" aria-labelledby="dc-cap-h">'+
-    '<div class="dc-head"><span class="qd-label" id="dc-cap-h">Captain \u00b7 GW'+b.cur.id+'</span>'+
-      '<span class="dc-tags">'+preTag+modelTag+(cap?confChip(capConf.value||0,''):'')+'</span></div>'+
+    cardHead('Captain \u00b7 GW'+b.cur.id,'<span class="dc-tags">'+preTag+modelTag+(cap?confChip(capConf.value||0,''):'')+'</span>',{id:'dc-cap-h'})+
     (cap
       ?'<div class="dc-main"><button type="button" class="dc-name" onclick="openPlayer('+cap.el.id+')">'+esc(cap.el.web_name)+'</button>'+
         '<div class="dc-xp"><b class="num">'+cap.xp.toFixed(1)+'</b><span>'+jt('xP')+'</span></div></div>'+
@@ -7072,13 +7264,13 @@ async function hydrateDashboard(host){
     '</section>';
   const q1b='<div class="dc-pair" data-dash="action2">'+
     '<section class="card dc" aria-label="Transfer call">'+
-      '<div class="dc-head"><span class="qd-label">Transfer</span>'+(squad&&trConf!=null?confChip(trConf,''):'')+'</div>'+
+      cardHead('Transfer',squad&&trConf!=null?confChip(trConf,''):'')+
       '<div class="dc-call">'+trBody+(trVal!=null?'<span class="dc-call-v num '+(trCls||'')+'">'+trVal+' xP</span>':'')+'</div>'+
       '<p class="dc-sub">'+trWhy+'</p>'+
       '<button class="btn btn-ghost btn-sm dc-cta" onclick="openPanel(\'transfers\')">Open Planner</button>'+
     '</section>'+
     '<section class="card dc" aria-label="Chip call">'+
-      '<div class="dc-head"><span class="qd-label">Chip</span>'+(chipOn?confChip(chipAdv.best.conf,''):'')+'</div>'+
+      cardHead('Chip',chipOn?confChip(chipAdv.best.conf,''):'')+
       '<div class="dc-call">'+chipBody+'</div>'+
       '<p class="dc-sub">'+(chipWhy||'Chips are one-off boosters \u2014 timing them to the fixture calendar is most of their value.')+'</p>'+
       '<button class="btn btn-ghost btn-sm dc-cta" onclick="openPanel(\'chips\')">See chip timing</button>'+
@@ -7143,8 +7335,8 @@ async function hydrateDashboard(host){
       fixture:nf[s.el.team]?nf[s.el.team].opp+' ('+(nf[s.el.team].home?'H':'A')+') '+nf[s.el.team].diff:''}))}:null;
   const shareXiBtn=totw?'<button type="button" class="btn btn-ghost btn-sm" onclick="shareTotwCard()" aria-label="Share the Team of the Week as an image">Share</button>':'';
   const q2='<div class="card qd qd-mxi" data-mxi="'+mxiView+'" id="sec-xi" data-dash="xi">'+
-    '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Model XI</span>'+
-    '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+mxiBtn+shareXiBtn+'</span></div>'+
+    cardHead('<span class="tk-dot" aria-hidden="true"></span>Model XI',
+      '<span class="qd-meta">'+(totw?'<span class="hot">'+totw.total.toFixed(0)+'</span> xP':'—')+'</span>'+mxiBtn+shareXiBtn)+
     '<p class="beginner-only dl-sub" style="margin:2px 0 6px">The 11 players our model would pick this week.</p>'+q2Body+'</div>';
 
   /* ── Q3: differentials — like-for-like with the Differentials tab ──
@@ -7310,7 +7502,7 @@ async function hydrateDashboard(host){
 
 /* ── Methodology: how the numbers are made, in plain English ── */
 async function hydrateMethodology(host){
-  const sec=(t,body)=>'<div class="card mb-20"><div class="card-title">'+t+'</div>'+body+'</div>';
+  const sec=(t,body)=>sectionCard({cls:'mb-20',title:t,body});
   const p=t=>'<p class="dl-sub" style="margin:0 0 8px;font-size:13px;line-height:1.55">'+t+'</p>';
   host.innerHTML=
     sec('Team-strength engine',
@@ -7346,8 +7538,8 @@ async function hydrateDesign(host){
       sw('--pos-gk')+sw('--pos-def')+sw('--pos-mid')+sw('--pos-fwd')+'</div>'+
       '<div style="margin-top:8px;display:flex;gap:6px"><span class="pos-pill p1">GKP</span><span class="pos-pill p2">DEF</span><span class="pos-pill p3">MID</span><span class="pos-pill p4">FWD</span></div>')+
     panel('Confidence','<div style="display:flex;gap:8px;flex-wrap:wrap">'+confChip(82,'')+confChip(58,'')+confChip(31,'')+'</div>')+
-    panel('Type','<div style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.02em">Display — Bricolage Grotesque</div>'+
-      '<div style="font-size:14px;margin:6px 0">Body copy — Public Sans 14/1.5</div>'+
+    panel('Type','<div style="font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.02em">Display, Inter 800</div>'+
+      '<div style="font-size:14px;margin:6px 0">Body copy, Inter 14/1.5</div>'+
       '<div class="mono" style="font-size:22px">1,234.56 <span class="pos">+7.8</span> <span class="neg">-2.1</span></div>')+
     panel('Deltas &amp; badges','<div class="qd-row"><span class="qd-k">DELTA</span><b>Haaland</b><span class="qd-v pos">↑ +0.3</span></div>'+
       '<div class="qd-row"><span class="qd-k">BADGES</span><span class="badge badge-green">LIVE</span> <span class="badge badge-amber">DOUBTFUL</span> <span class="badge badge-red">FT</span> <span class="badge badge-grey">GW38</span></div>')+
@@ -7400,8 +7592,7 @@ async function hydrateGwdebrief(host){
     '<span class="dl-grow"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
     '<span class="dl-sub">'+crest(b,r.el.team,12)+teamShort(b,r.el.team)+' · '+posShort(b,r.el.element_type)+
     (r.line?' · '+esc(r.line):'')+'</span></span>';
-  const card=(title,body,sub)=>'<div class="card mb-20"><div class="card-title">'+title+'</div>'+
-    (sub?'<p class="dl-sub" style="margin-bottom:10px">'+sub+'</p>':'')+body+'</div>';
+  const card=(title,body,sub)=>sectionCard({cls:'mb-20',title,sub,body});
 
   /* ── The week in numbers ── */
   const n=pack.numbers;
@@ -7409,6 +7600,9 @@ async function hydrateGwdebrief(host){
     ? n.chips.map(c=>esc(CHIP_API_LABEL[c.name]||c.name)+' '+fmtK(c.n)).join(' · ')
     : 'none played';
   const who=id=>{const e=b.els[id];return e?esc(e.web_name):'—';};
+  window._debrief={gw:ev.id,avg:n.avg,high:n.high,captained:n.captained?(b.els[n.captained]||{}).web_name||null:null,
+    transfers:n.transfers,chips:n.chips.map(c=>(CHIP_API_LABEL[c.name]||c.name)+' '+fmtK(c.n)).join(', '),
+    settled,scorers:pack.scorers.slice(0,8).map(r=>({name:r.el.web_name,team:teamShort(b,r.el.team),pos:posShort(b,r.el.element_type),pts:r.pts}))};
   const numbers=card('GW'+ev.id+' in numbers '+prov,
     '<div class="grid g-4">'+
       kpi('Average score',n.avg==null?'—':fmtNum(n.avg),'across every manager','var(--blue)')+
@@ -7522,6 +7716,7 @@ async function hydrateGwhistory(host){
   const sd=Math.round(Math.sqrt(cur.reduce((s,c)=>s+(c.points-avgPts)*(c.points-avgPts),0)/cur.length));
   let streak=0,bestStreak=0;
   for(let i=1;i<cur.length;i++){if(cur[i].overall_rank<cur[i-1].overall_rank){streak++;if(streak>bestStreak)bestStreak=streak;}else streak=0;}
+  window._reportSeason={gws:cur.length,avgPts,benchTot,hitsTot,green,bestGw:best.event,bestPts:best.points,bestRank,nowRank};
   const shape='<div class="grid g-4 mb-20">'+
     kpi('Best rank',bestRank?fmtNum(bestRank):'—','season high','var(--green)')+
     kpi('Consistency','±'+sd,'points swing (std dev)','var(--blue)')+
@@ -7844,18 +8039,18 @@ async function hydrateSquad(host){
   const lcIcon=l=>l==='warn'?'⚠':l==='info'?'•':'✓';
   const lcCls=l=>l==='warn'?'var(--amber)':l==='info'?'var(--text-3)':'var(--green-bright)';
   const allOk=lc.length===1&&lc[0].level==='ok';
-  const lcCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Lineup checker'+
-    (allOk?'<span class="badge badge-green">All clear</span>':'<span class="badge badge-amber">'+lc.filter(i=>i.level==='warn').length+' to check</span>')+'</div>'+
+  const lcCard='<div class="card mb-20">'+cardHead('Lineup checker',
+    allOk?'<span class="badge badge-green">All clear</span>':'<span class="badge badge-amber">'+lc.filter(i=>i.level==='warn').length+' to check</span>')+
     '<div class="dl">'+lc.map(i=>'<div class="dl-row diag-row"><span style="flex-shrink:0;color:'+lcCls(i.level)+';font-weight:700;width:18px">'+lcIcon(i.level)+'</span>'+
       '<span class="diag-txt">'+esc(i.msg)+'</span></div>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Checked against fixtures, availability and your captain for GW'+gw+'.</div></div>';
   host.innerHTML=
     lcCard+
     '<div class="grid g-sb mb-20">'+
-      '<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Your XI '+
+      '<div class="card">'+cardHead('Your XI',
         '<span class="badge badge-green">GW'+gw+' live: '+liveTotal+' pts</span>'+
-        '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="shareTeamReveal()">'+svg(ICON.arrows,'width="13" height="13"')+' Reveal</button>'+
-        '<button class="btn btn-ghost btn-sm" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button></div>'+
+        '<button class="btn btn-ghost btn-sm" onclick="shareTeamReveal()">'+svg(ICON.arrows,'width="13" height="13"')+' Reveal</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="shareSquadCard()">'+svg(ICON.arrows,'width="13" height="13"')+' Share</button>')+
         pitchWrap(
           row(byType(1))+row(byType(2))+row(byType(3))+row(byType(4))+
           '<div class="bench">'+bench.map(cell).join('')+'</div>')+
@@ -7909,6 +8104,29 @@ async function shareCaptainCard(){
   const spec=GWEShare.captainSpec(d);
   track('share_card',{card:'captain',gw:d.gw});
   return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Captain card downloaded');
+}
+/* The three view cards: the Manager Report, a player comparison and the
+   Gameweek Debrief. Same rule: only what the page has just computed. */
+async function shareReportCard(){
+  const d=window._report;if(!d){toast('Open the Manager Report first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.reportSpec(Object.assign({},d,{season:window._reportSeason||null}));
+  track('share_card',{card:'report',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Manager Report card downloaded');
+}
+async function shareCompareCard(){
+  const d=window._cmp;if(!d||!d.players||d.players.length<2){toast('Pick at least two players to compare first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.compareSpec(d);
+  track('share_card',{card:'compare',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Comparison card downloaded');
+}
+async function shareDebriefCard(){
+  const d=window._debrief;if(!d){toast('Open the Gameweek Debrief first');return;}
+  if(!window.GWEShare){toast('Share cards are unavailable');return;}
+  const spec=GWEShare.debriefSpec(d);
+  track('share_card',{card:'debrief',gw:d.gw});
+  return saveBlob(await GWEShare.card(spec),spec.filename,'image/png','Debrief card downloaded');
 }
 async function shareRatingCard(){
   const d=window._rating;if(!d){toast('Rate your squad first');return;}
@@ -10778,6 +10996,10 @@ async function hydrateGwreport(host){
   const capLost=capPick?(bestBase-capBase)*((capPick.multiplier||2)-1):0;
   const gwTrs=(Array.isArray(trs)?trs:[]).filter(t=>t.event===gw);
   const trNet=gwTrs.reduce((s,t)=>s+(pts[t.element_in]||0)-(pts[t.element_out]||0),0)-(eh.event_transfers_cost||0);
+  /* What the share card can say: only what this page has just computed. */
+  window._report={gw,points:eh.points||0,avg,high,rank:orNow,rankMove:arrow,bench:eh.points_on_bench||0,
+    transfers:eh.event_transfers||0,hits:eh.event_transfers_cost||0,capLost,trNet,
+    captain:capPick?(b.els[capPick.element]||{}).web_name||null:null,verdict};
 
   /* ── What worked ── */
   const good=[];
@@ -10837,11 +11059,10 @@ async function hydrateGwreport(host){
       '<div class="dl-sub" style="margin-top:8px">From the fitted team-strength model and player projections (selling prices approximated at current price). The Transfer Planner’s solver and AI planner go deeper.</div></div>';
   }
 
-  reportShell(host,'<div class="card mb-20"><div class="card-title" style="display:flex;align-items:center;gap:8px">Your gameweek, reviewed'+
-      '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
+  reportShell(host,'<div class="card mb-20">'+cardHead('Your gameweek, reviewed',
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="repNav(-1)"'+(gw<=minGw?' disabled':'')+'>‹</button>'+
-      '<b>GW'+gw+'</b>'+
-      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button></span></div>'+
+      '<b class="num">GW'+gw+'</b>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="repNav(1)"'+(gw>=maxGw?' disabled':'')+'>›</button>')+
     '<p class="dl-sub" style="margin:0">Your week, reviewed — and what the model would do before the next deadline.</p></div>'+
     summary+
     list('What worked',good,'var(--green)')+
@@ -12391,6 +12612,7 @@ function renderPlayerTable(){
       return '<th '+(lk?'data-lk="1" title="The Edge — unlock this column"':'data-k="'+c.k+'"'+
           (def?' title="'+esc(def)+'"':''))+
         ' class="'+(c.num?'num':'')+(active?' active':'')+(lk?' lk':'')+'"'+
+        (lk?'':' aria-sort="'+(active?(PL_STATE.dir===1?'ascending':'descending'):'none')+'"')+
         (def?' aria-label="'+esc(c.l)+': '+esc(def)+'"':'')+'>'+
         (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(c.l)+arrow+'</th>';
     }).join('')+'</tr></thead>';
@@ -12398,7 +12620,7 @@ function renderPlayerTable(){
       plColLocked(c)
         ? '<td class="'+(c.num?'num ':'')+'lk">'+plLockCell()+'</td>'
         : '<td class="'+(c.num?'num':'')+'">'+(c.d?c.d(e):String(c.v(e)))+'</td>').join('')+'</tr>').join('')+'</tbody>';
-    view.innerHTML='<div class="pl-scroll"><table class="ptable">'+head+body+'</table></div>';
+    view.innerHTML='<div class="pl-scroll"><table class="ptable" data-tbl="model" data-export="1">'+head+body+'</table></div>';
   }
   const cnt=document.getElementById('pl-count');
   if(cnt)cnt.textContent=list.length+' players'+
@@ -12489,8 +12711,8 @@ async function hydrateAllPlayers(host){
   plReadUrl();
   const teamOpts='<option value="0">All teams</option>'+b.raw.teams.slice().sort((a,c)=>a.name.localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'"'+(t.id===PL_STATE.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
-  host.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:8px">Players'+
-    '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button></div>'+
+  host.innerHTML='<div class="card">'+cardHead('Players',
+    '<button class="btn btn-ghost btn-sm" onclick="exportPlayersCSV()">'+svg(ICON.arrows,'width="13" height="13"')+' Export CSV</button>')+
     plLensBar()+
     '<p class="dl-sub" id="pl-lensnote" style="margin:0 0 10px"></p>'+
     preseasonNote(b,'the xP column is provisional')+
@@ -12999,8 +13221,9 @@ function renderScoutBoard(){
             :'<span class="sb-fx sb-fx-none">—</span>';}
     return out;
   };
-  const head='<tr><th>Player</th><th>Next '+SB_FIX+'</th>'+
-    cols.map(c=>'<th class="num sb-sort'+(c.k===key?' active':'')+'" data-k="'+c.k+'">'+esc(c.l)+'</th>').join('')+'</tr>';
+  const head='<thead><tr><th>Player</th><th>Next '+SB_FIX+'</th>'+
+    cols.map(c=>'<th class="num sb-sort'+(c.k===key?' active':'')+'" data-k="'+c.k+'" aria-sort="'+
+      (c.k===key?(SB_DIR===1?'ascending':'descending'):'none')+'">'+esc(c.l)+(c.k===key?(SB_DIR===1?' ▲':' ▼'):'')+'</th>').join('')+'</tr></thead>';
   const rows=shown.map(e=>{
     const cells=cols.map(c=>{const r=range[c.k],v=c.v(e);
       const sc=r[1]>r[0]?(v-r[0])/(r[1]-r[0]):0.5;
@@ -13009,7 +13232,7 @@ function renderScoutBoard(){
       '<span class="dl-sub">'+crest(b,e.team,12)+money(e.now_cost)+'</span></td>'+
       '<td><span class="sb-fxc">'+fixCells(e.team)+'</span></td>'+cells+'</tr>';
   }).join('');
-  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table">'+head+rows+'</table></div>'+
+  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table" data-tbl="model" data-export="1">'+head+'<tbody>'+rows+'</tbody></table></div>'+
     '<div class="dl-sub" style="margin-top:8px">'+list.length+' '+esc(posShort(b,pos))+(SB_PRICE?' at '+money(SB_PRICE)+' or under':'')+' with 450+ minutes · sorted by '+esc(col.l)+' · showing the top '+shown.length+'. Tap a heading to re-sort, a row for the full profile.</div>';
 }
 async function hydrateScoutBoard(host){
@@ -13084,7 +13307,7 @@ function renderPointsPlanner(){
   }
   const maxGw=Math.max.apply(null,scored.map(s=>s.cells.length));
   let gwHead='';for(let i=0;i<maxGw;i++)gwHead+='<th class="num">'+(i+1)+'</th>';
-  const head='<tr><th>Player</th><th class="num">Next '+PP_N+'</th>'+gwHead+'</tr>';
+  const head='<thead><tr><th>Player</th><th class="num">Next '+PP_N+'</th>'+gwHead+'</tr></thead>';
   const rows=scored.map(s=>{const e=s.e;let cells='';
     for(let i=0;i<maxGw;i++){const c=s.cells[i];
       if(!c){cells+='<td class="pp-cell sb-fx-none">—</td>';continue;}
@@ -13092,7 +13315,7 @@ function renderPointsPlanner(){
     return '<tr data-open="'+e.id+'"><td class="sb-pl"><span class="sb-nm">'+esc(e.web_name)+'</span>'+
       '<span class="dl-sub">'+crest(b,e.team,12)+esc(posShort(b,e.element_type))+' · '+money(e.now_cost)+'</span></td>'+
       '<td class="num"><b>'+s.total.toFixed(1)+'</b></td>'+cells+'</tr>';}).join('');
-  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table pp-table">'+head+rows+'</table></div>'+
+  box.innerHTML='<div class="pl-scroll"><table class="ptable sb-table pp-table" data-export="1">'+head+'<tbody>'+rows+'</tbody></table></div>'+
     '<div class="dl-sub" style="margin-top:8px">Top '+scored.length+(PP_POS?' '+esc(posShort(b,PP_POS)):'')+' by projected points over the next '+PP_N+' gameweeks · each cell is the fixture and its expected points. Tap a row for the full profile.</div>';
 }
 async function hydratePointsPlanner(host){
@@ -14540,8 +14763,8 @@ async function hydrateTransfers(host){
       if(best){
         const fr=transferFrame(best,bank,1,5,hasCap('transferCost'));
         const beTxt=fr.beGw===Infinity?'—':(fr.beGw<=5?fr.beGw.toFixed(1)+' GW':'>5 GW');
-        recCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Recommended move'+
-          confChip(Math.max(45,Math.min(90,Math.round(50+best.gain*6))),'Conf')+'</div>'+
+        recCard='<div class="card mb-20">'+cardHead('Recommended move',
+          confChip(Math.max(45,Math.min(90,Math.round(50+best.gain*6))),'Conf'))+
           '<div class="dl-row" style="align-items:center"><span class="dl-grow"><span class="dl-nm">'+
             esc(best.out.web_name)+' → <b>'+esc(best.cand.web_name)+'</b></span>'+
             '<span class="dl-sub">'+(fr.priceDelta>0?'+':'')+'£'+fr.priceDelta.toFixed(1)+'m · bank after £'+fr.bankAfter.toFixed(1)+'m'+(fr.affordable?'':' · <span style="color:var(--red)">over budget</span>')+'</span></span>'+
@@ -14565,7 +14788,7 @@ async function hydrateTransfers(host){
       }else{
         const marg=b.elements.filter(e=>e.status==='a'&&e.now_cost&&e.now_cost<=bank+Math.max.apply(null,squad.map(s=>s.now_cost||0)))
           .sort((a,c)=>horizonXP(b,c,hz)-horizonXP(b,a,hz))[0];
-        recCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Recommended move'+confChip(72,'Conf')+'</div>'+
+        recCard='<div class="card mb-20">'+cardHead('Recommended move',confChip(72,'Conf'))+
           '<div class="dl-row"><span class="dl-grow"><span class="dl-nm"><b>Hold</b> — no move clears the +1.5 xP bar over 5 GW</span>'+
           '<span class="dl-sub">Your XI is the highest-EV option this week; save the transfer.'+
           (marg?' Closest upgrade if you must: <b>'+esc(marg.web_name)+'</b> ('+horizonXP(b,marg,hz).toFixed(1)+' xP / 5 GW).':'')+'</span></span></div></div>';
@@ -14689,9 +14912,8 @@ async function hydrateCaptain(host){
     const ceiling=n.t3!=null?'Team 3+ goals '+Math.round(n.t3*100)+'% · CS '+Math.round((n.cs||0)*100)+'%':'';
     const evCls=p.ev>=0?'pos':'neg';
     return '<div class="card">'+
-      '<div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:8px">'+labels[i]+
-        (i===0?'<span style="display:flex;gap:8px;align-items:center">'+confChip(conf.value,'Conf')+
-          '<button type="button" class="btn btn-ghost btn-sm" onclick="shareCaptainCard()" aria-label="Share the captain pick as an image">Share</button></span>':'')+'</div>'+
+      cardHead(labels[i],i===0?confChip(conf.value,'Conf')+
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="shareCaptainCard()" aria-label="Share the captain pick as an image">Share</button>':'')+
       '<div style="display:flex;align-items:center;gap:10px">'+avatar(b,e,44)+
       '<div><div class="stat-v" style="line-height:1.1">'+esc(e.web_name)+penBadge(e)+'</div>'+
       '<div class="dl-sub" style="margin:2px 0">'+crest(b,e.team,14)+money(e.now_cost)+' · '+e.selected_by_percent+'%'+lgRunTag(b,e.team,lgctx)+'</div></div></div>'+
@@ -14827,7 +15049,7 @@ async function hydrateChips(host){
     const bbRows=bb.rows.sort((a,c)=>c.xp-a.xp).map(r=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(r.el.web_name)+'</span>'+
       '<span class="dl-sub">'+teamShort(b,r.el.team)+' · '+(r.hasFix?'next '+nextFixLabel(nf[r.el.team]):'no fixture')+(r.live?'':' · <span style="color:var(--amber)">not counted</span>')+'</span></span>'+
       '<span class="dl-col mono">'+r.xp.toFixed(1)+'</span></div>').join('');
-    bbCard='<div class="card mb-20"><div class="card-title" style="display:flex;justify-content:space-between;align-items:center">Bench Boost readiness'+confChip(bb.score,'')+'</div>'+
+    bbCard='<div class="card mb-20">'+cardHead('Bench Boost readiness',confChip(bb.score,''))+
       '<p class="dl-sub" style="margin-bottom:10px"><b>'+bb.playing+'/'+bb.total+'</b> bench players are fit with a fixture · <b>'+bb.benchXP.toFixed(1)+'</b> combined bench xP this gameweek. '+
         (bb.score>=70?'Your bench is Bench-Boost ready.':bb.score>=50?'A decent bench — a double gameweek would seal it.':'Thin right now — wait for a double or strengthen the bench first.')+'</p>'+
       '<div class="dl">'+bbRows+'</div></div>';
@@ -14943,6 +15165,13 @@ async function hydrateCompare(host){
   compareWriteUrl();
   const sel=COMPARE.map(id=>b.els[id]);
   const metric=(label,fn)=>'<tr><th class="tm">'+label+'</th>'+sel.map(e=>'<td>'+fn(e)+'</td>').join('')+'</tr>';
+  /* The share card: the same players and figures, as plain values. */
+  window._cmp=sel.length?{gw:(b.upcoming||b.cur||{}).id,
+    players:sel.map(e=>({name:e.web_name,team:teamShort(b,e.team),pos:posShort(b,e.element_type),price:money(e.now_cost)})),
+    metrics:[['Price',e=>money(e.now_cost)],['Owned',e=>e.selected_by_percent+'%'],['Total pts',e=>e.total_points],
+      ['Form',e=>e.form],['Pts / game',e=>e.points_per_game],['xG',e=>e.expected_goals||'n/a'],['xA',e=>e.expected_assists||'n/a'],
+      ['xP next 6',e=>{try{return horizonXP(b,e,hz).toFixed(1);}catch(_){return 'n/a';}}]]
+      .map(([label,fn])=>({label,values:sel.map(e=>String(fn(e)))}))}:null;
   /* Side-by-side fixture comparison over the next 6 gameweeks — one row per
      gameweek, each cell the player's fixture coloured by difficulty. */
   const maxN=Math.max.apply(null,[0].concat(sel.map(e=>(hz[e.team]||[]).length)));
@@ -22470,11 +22699,10 @@ async function hydrateResults(host){
     /* "Results", not "Match Centre" — the area is called Match Centre and the
        panel is Matchday, so a third name for the same thing on the same
        screen is just noise. This heading exists to anchor the GW pager. */
-    '<div class="card-title" style="display:flex;align-items:center;gap:8px">Results'+
-      '<span style="margin-left:auto;display:flex;gap:6px;align-items:center">'+
+    cardHead('Results',
       '<button class="btn btn-ghost btn-sm" aria-label="Previous gameweek" onclick="resNav(-1)"'+(gw<=1?' disabled':'')+'>‹</button>'+
-      '<b>GW'+gw+'</b>'+
-      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button></span></div>'+
+      '<b class="num">GW'+gw+'</b>'+
+      '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button>')+
     '<div class="dl-sub" style="margin-bottom:4px">Tap a match for scorers, cards, saves, defensive contributions and the bonus race.'+
       (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
     (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
@@ -23877,8 +24105,8 @@ function renderDraft(){
         '</div>'
       /* No fixture in the window is a BLANK, and printing nothing there
          would read as "not loaded yet" — the opposite of a warning. */
-      : '<div class="pp-sub"><span class="l" style="flex:1;background:#e9edf1;color:#6b7683">blank</span></div>';
-    const badge=e.id===capId?'<span class="pp-badge">C</span>':e.id===viceId?'<span class="pp-badge" style="background:#c9ccd1">V</span>':'';
+      : '<div class="pp-sub"><span class="l" style="flex:1;background:var(--surface-3);color:var(--text-3)">blank</span></div>';
+    const badge=e.id===capId?'<span class="pp-badge">C</span>':e.id===viceId?'<span class="pp-badge" style="background:var(--border-3)">V</span>':'';
     return '<div class="pp'+(e.id===capId?' is-cap':'')+'" data-draft-open="'+e.id+'" role="button" tabindex="0">'+badge+ppFigure(b,e)+
       '<span class="pp-nm">'+esc(e.web_name)+'</span><span class="pp-pt">'+money(e.now_cost)+'</span>'+fx+'</div>';
   };
@@ -24319,7 +24547,7 @@ function applyTheme(theme){
   try{localStorage.setItem('ge-theme',theme);}catch(_){}
   /* Keep the browser chrome in step with the canvas. */
   try{const tc=document.querySelector('meta[name="theme-color"]');
-    if(tc)tc.setAttribute('content',isDark?'#10161c':'#f4f6f8');}catch(_){}
+    if(tc)tc.setAttribute('content',isDark?'#0a0c0f':'#f4f6f8');}catch(_){}
   window.GENative&&GENative.setTheme(theme);
 }
 function storedTheme(){
@@ -24571,7 +24799,8 @@ function initCmdk(){
    opens the selected one. Selection is a transient class — no state. */
 function rowNav(dir){
   const rows=Array.from(document.querySelectorAll(
-    '#ge-data .dl-click, #ge-data .ptable tbody tr[data-id], #ge-data .mc-head, #ge-data .post-hd'));
+    '#ge-data .dl-click, #ge-data .ptable tbody tr[data-id], #ge-data .ptable tbody tr[data-open], #ge-data .ptable tbody tr[data-row], #ge-data .mc-head, #ge-data .post-hd'))
+    .filter(r=>!r.hidden);
   if(!rows.length)return;
   const cur=document.querySelector('.row-sel');
   let i=rows.indexOf(cur)+dir;
@@ -24721,10 +24950,12 @@ function closeSidebar(){
 function exportViewCSV(){
   if(currentPanel==='allplayers'&&typeof exportPlayersCSV==='function'){exportPlayersCSV();return;}
   const page=document.querySelector('.page.active');
-  const table=page&&page.querySelector('table');
+  /* The panel's marked table first; else the first one on the page. */
+  const table=page&&(page.querySelector('table[data-export]')||page.querySelector('table'));
   if(!table){toast('Nothing tabular on this panel to export');return;}
   const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const lines=Array.prototype.map.call(table.querySelectorAll('tr'),tr=>
+  /* What is on screen: filtered-out rows and the filter row itself stay out. */
+  const lines=Array.prototype.filter.call(table.querySelectorAll('tr'),tr=>!tr.hidden&&!tr.classList.contains('tbl-filters')).map(tr=>
     Array.prototype.map.call(tr.querySelectorAll('th,td'),c=>q(c.innerText.replace(/\s+/g,' ').trim())).join(','));
   if(lines.length<2){toast('Nothing tabular on this panel to export');return;}
   try{
@@ -25128,7 +25359,7 @@ function init(){
   buildBottomNav();
   watchPhoneNav();
   sparkWatch();
-  applyTheme(storedTheme()||'light');
+  applyTheme(storedTheme()||'dark');
   const home=homePanel();
   currentPanel=home;
   renderPage(home);
@@ -25245,6 +25476,8 @@ function init(){
   /* No first-run modal here. A newcomer is routed to /welcome by the front
      door in the head before this file ever renders, so anyone reaching init()
      has either seen the pitch or asked for the app by name. */
+  watchTables();
+  initA11y();
   initCmdk();
   initKeys();
   setInterval(tickTicker,1000);

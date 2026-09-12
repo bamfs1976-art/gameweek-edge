@@ -127,11 +127,13 @@ function tokens(block) {
   return out;
 }
 {
-  const lightStart = css.search(/:root\s*\{\s*--bg:#f4f6f8/);
-  const darkStart = css.search(/\[data-theme="dark"\]\s*\{\s*--bg:#10161c/);
+  /* The terminal (dark) is :root; light is the variant and inherits
+     anything it does not redefine. */
+  const darkStart = css.search(/:root\s*\{\s*--bg:#0a0c0f/);
+  const lightStart = css.search(/\[data-theme="light"\]\s*\{\s*--bg:#f4f6f8/);
   const cut = (i) => css.slice(i, css.indexOf('\n}', i));
-  const light = tokens(cut(lightStart));
-  const dark = Object.assign({}, light, tokens(cut(darkStart)));
+  const dark = tokens(cut(darkStart));
+  const light = Object.assign({}, dark, tokens(cut(lightStart)));
   const SURFACES = ['--bg', '--surface', '--surface-2', '--surface-3', '--elevated'];
   /* Ink tokens and the bar each is held to. Text at body size needs 4.5;
      --text-4 and --green-bright are UI-only and need 3.0. */
@@ -154,10 +156,10 @@ function tokens(block) {
       const r = contrast(t[ink], t[fill]);
       if (r < 4.5) note('contrast', `${theme}: ${ink} on ${fill} = ${r.toFixed(2)}:1 (needs 4.5)`);
     }
-    /* Filled buttons: .btn-primary is white on --green in light and the
-       ink #0b1510 on the lifted green in dark (the [data-theme="dark"]
+    /* Filled buttons: .btn-primary is the canvas ink #0a0c0f on --green in
+       the terminal and white on --green in light (the [data-theme="light"]
        override); the danger button is white on --red in light only. */
-    const filled = theme === 'light' ? [['#ffffff', '--green'], ['#ffffff', '--red']] : [['#0b1510', '--green']];
+    const filled = theme === 'light' ? [['#ffffff', '--green'], ['#ffffff', '--red']] : [['#0a0c0f', '--green']];
     for (const [ink, fill] of filled) {
       if (!t[fill]) continue;
       const r = contrast(ink, t[fill]);

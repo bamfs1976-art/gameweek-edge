@@ -203,6 +203,11 @@ const pieces = [
   'function __setUrl(q,fromLink){URL_Q=q||{};URL_FROM_LINK=!!fromLink;}',
   extractFn(html, 'urlPick'),
   extractFn(html, 'retryBtn'),
+  /* The data table's pure parts: cell values, ordering, which columns filter. */
+  ...['TBL_FILTER_MAX'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'tableCellValue'),
+  extractFn(html, 'tableSortValue'),
+  extractFn(html, 'tableFilterable'),
   extractFn(html, 'hubFailText'),
   /* Panel names: retired ids and everyday synonyms the palette searches. */
   extractConst(html, 'PANEL_ALIAS'),
@@ -332,7 +337,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5444,6 +5449,31 @@ section('failed states: a sentence, then the same next action every time');
   ok(hubFailText(new Error('HTTP 502')) === 'HTTP 502. This usually clears within a minute. Try again.', 'an error message leads, then the next step');
   ok(hubFailText(new Error('Timed out. ')) === 'Timed out. This usually clears within a minute. Try again.', 'a trailing stop is not doubled');
   ok(!/\u2014/.test(hubFailText(new Error('x')) + retryBtn()), 'no em dash in the copy');
+}
+
+section('data table: cell values, ordering and which columns earn a filter');
+{
+  const { tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX } = core;
+  ok(tableCellValue('139') === 139 && tableCellValue(' 4.2 ') === 4.2, 'plain figures read as numbers');
+  ok(tableCellValue('£6.9') === 6.9 && tableCellValue('29.3%') === 29.3 && tableCellValue('+12') === 12 && tableCellValue('−4') === -4, 'prices, percentages and signed figures read as numbers');
+  ok(tableCellValue('1,234') === 1234, 'a thousands comma is not a decimal');
+  ok(tableCellValue('SUN') === 'sun' && tableCellValue('—') === '—', 'text lower-cases; a dash stays text');
+  ok(tableCellValue('GW2') === 'gw2', 'a label with digits is still text');
+  const sorted = (vals, dir) => vals.slice().sort((a, b) => tableSortValue(a, b, dir));
+  ok(JSON.stringify(sorted([3, 1, 2], 1)) === '[1,2,3]' && JSON.stringify(sorted([3, 1, 2], -1)) === '[3,2,1]', 'numbers sort both ways');
+  ok(JSON.stringify(sorted(['b', 'a', 'c'], 1)) === '["a","b","c"]', 'text sorts ascending');
+  ok(JSON.stringify(sorted([2, '—', 1], -1)) === '[2,1,"—"]' && JSON.stringify(sorted([2, '—', 1], 1)) === '[1,2,"—"]', 'a dash sits below the numbers whichever way');
+  const col = (arr, numeric) => { const a = arr.slice(); a.numeric = !!numeric; return a; };
+  const rows = 20;
+  const clubs = col(Array.from({ length: rows }, (_, i) => 'Club ' + (i % 6)));
+  const names = col(Array.from({ length: rows }, (_, i) => 'Player ' + i));
+  const points = col(Array.from({ length: rows }, (_, i) => String(i)), true);
+  ok(JSON.stringify(tableFilterable([names, clubs, points], rows)) === '[1]', 'a text column with a handful of values filters; unique names and numbers do not');
+  ok(tableFilterable([clubs], 5).length === 0, 'a short table gets no filter row');
+  const many = col(Array.from({ length: 40 }, (_, i) => 'v' + i));
+  ok(tableFilterable([many], 40).length === 0, 'a column with ' + TBL_FILTER_MAX + ' or more distinct values does not filter');
+  const one = col(Array.from({ length: rows }, () => 'same'));
+  ok(tableFilterable([one], rows).length === 0, 'one value is nothing to filter by');
 }
 
 section('panelAliases: the palette finds a panel by its old id, its old name and plain English');

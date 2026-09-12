@@ -101,6 +101,32 @@ assert.equal(rating.hero.value, '76%');
 assert.ok(rating.stats.some((s) => s.value === '4 of 11'), 'the overlap figure is on the rating card');
 assert.ok(rating.stats.some((s) => s.value === 'defence'), 'the weakest position is on the rating card');
 
+const report = G.reportSpec({ gw: 7, points: 71, avg: 52, high: 118, rank: 245310, rankMove: '▲ 120,400', bench: 9, transfers: 2, hits: 4,
+  capLost: 6, trNet: 3, captain: 'Salah', verdict: 'A good week, comfortably above the average.',
+  season: { gws: 7, avgPts: 58, benchTot: 41, hitsTot: 8, green: 4, bestGw: 3, bestPts: 84, bestRank: 190211, nowRank: 245310 } });
+assert.ok(/GW7/.test(report.title), report.title);
+assert.equal(report.hero.value, '71', 'the report hero is the gameweek points');
+assert.ok(report.stats.some((s) => s.value === '245,310'), 'the overall rank is on the report card');
+assert.ok(report.stats.some((s) => s.value === '+3 pts'), 'the net transfer return is signed');
+assert.ok(report.sections[0].rows.some((r) => r.value === '4 of 6'), 'green arrows are counted against the gameweeks played');
+assert.ok(report.sections[0].rows.some((r) => r.value === '190,211'), 'the best rank is on the report card');
+const bare = G.reportSpec({ gw: 1, points: 60, avg: 55, high: 110, rank: null, rankMove: '—', bench: 2, transfers: 0, hits: 0, capLost: 0, trNet: 0, captain: 'Haaland', season: null });
+assert.equal(bare.sections.length, 0, 'an early-season report with no history draws no season section');
+assert.ok(bare.stats.some((s) => s.value === '—'), 'no rank yet reads as a dash, never as zero');
+
+const cmp = G.compareSpec({ gw: 7, players: [{ name: 'Salah', team: 'LIV', pos: 'MID', price: '£12.8m' }, { name: 'Palmer', team: 'CHE', pos: 'MID', price: '£10.5m' }],
+  metrics: [{ label: 'Total pts', values: ['54', '47'] }, { label: 'xG', values: ['4.12', '3.90'] }, { label: 'Price', values: ['£12.8m', '£10.5m'] }] });
+assert.ok(/Salah v Palmer/.test(cmp.subtitle), cmp.subtitle);
+assert.equal(cmp.columns.heads.length, 2, 'one column per player');
+assert.equal(cmp.columns.rows.length, 3, 'one row per metric');
+assert.ok(cmp.columns.rows.find((r) => r.label === 'Price').higherIsBetter === false, 'a higher price is not a better price');
+
+const deb = G.debriefSpec({ gw: 7, avg: 52, high: 118, captained: 'Salah', transfers: 12400000, chips: 'Wildcard 41k', settled: true,
+  scorers: [{ name: 'Haaland', team: 'MCI', pos: 'FWD', pts: 20 }, { name: 'Palmer', team: 'CHE', pos: 'MID', pts: 15 }] });
+assert.ok(/GW7/.test(deb.title), deb.title);
+assert.ok(deb.stats.some((s) => s.value === '12,400,000'), 'transfers made is on the debrief card');
+assert.equal(deb.sections[0].rows.length, 2, 'the scorers the app showed');
+
 /* ---- it draws, and draws the numbers ------------------------------------ */
 const BETTING = /18\+|begambleaware|\bodds\b|\bbet\b|\bbets\b|\bacca\b|\bstake\b|\bbookmaker|\btip(s|ster)?\b|nailed on|guaranteed/i;
 async function drawText(spec) {
@@ -127,6 +153,21 @@ assert.ok(/GW7/.test(rtext) && rtext.includes('76%') && rtext.includes('4 of 11'
 assert.ok(rtext.includes('GAMEWEEK EDGE') && rtext.includes('gameweekedge.co.uk'), 'the rating card lost its identity');
 assert.ok(!BETTING.test(rtext), 'betting language on the rating card');
 
+const reptext = await drawText(report);
+assert.ok(/GW7/.test(reptext) && reptext.includes('71') && reptext.includes('245,310') && reptext.includes('Salah'), 'the report card lost its figures');
+assert.ok(reptext.includes('GAMEWEEK EDGE') && reptext.includes('gameweekedge.co.uk'), 'the report card lost its identity');
+assert.ok(!BETTING.test(reptext), 'betting language on the report card: ' + JSON.stringify(reptext.match(BETTING)));
+
+const cmptext = await drawText(cmp);
+assert.ok(cmptext.includes('Salah') && cmptext.includes('Palmer') && cmptext.includes('54') && cmptext.includes('4.12'), 'the comparison card lost a player or a figure');
+assert.ok(cmptext.includes('GAMEWEEK EDGE') && cmptext.includes('gameweekedge.co.uk'), 'the comparison card lost its identity');
+assert.ok(!BETTING.test(cmptext), 'betting language on the comparison card');
+
+const debtext = await drawText(deb);
+assert.ok(/GW7/.test(debtext) && debtext.includes('Haaland') && debtext.includes('20') && debtext.includes('12,400,000'), 'the debrief card lost its figures');
+assert.ok(debtext.includes('GAMEWEEK EDGE') && debtext.includes('gameweekedge.co.uk'), 'the debrief card lost its identity');
+assert.ok(!BETTING.test(debtext), 'betting language on the debrief card');
+
 /* ---- the composer never routes through a desk card ---------------------- */
 const gwe = readFileSync(join(root, 'lib', 'gwe-share.js'), 'utf8')
   .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
@@ -142,5 +183,6 @@ for (const need of ['vendor/share.js', 'vendor/save.js', 'lib/gwe-share.js']) {
   assert.ok(index.includes('<script src="' + need + '"'), 'index.html does not load ' + need);
 }
 assert.ok(/GWEShare\.(totwSpec|captainSpec|ratingSpec)/.test(index), 'index.html never builds a card through the adapters');
+assert.ok(/GWEShare\.(reportSpec|compareSpec|debriefSpec)/.test(index), 'index.html never builds a view card');
 
-console.log('check-share OK: GWE theme registered, three adapters draw their figures, the XI, the gameweek, the wordmark and the URL, with no betting language');
+console.log('check-share OK: GWE theme registered, six adapters draw their figures, the XI, the gameweek, the wordmark and the URL, with no betting language');
