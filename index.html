@@ -234,6 +234,25 @@ try{
   /* THE key number on a screen */
   --hot:#b6ff3c;
   --chip:#1a2026;
+
+  /* Stats Heatmap: one hue, dark to bright, six steps above zero. Every
+     step carries its own ink at 4.5:1 or better (dev/test-core.mjs checks). */
+  --hm-0:#1a2026;--hm-ink-0:#8d97a3;
+  --hm-1:#1e3a2a;--hm-ink-1:#e8ecf1;
+  --hm-2:#234f36;--hm-ink-2:#e8ecf1;
+  --hm-3:#296343;--hm-ink-3:#e8ecf1;
+  --hm-4:#30a367;--hm-ink-4:#0a0c0f;
+  --hm-5:#31c579;--hm-ink-5:#0a0c0f;
+  --hm-6:#2ee88c;--hm-ink-6:#0a0c0f;
+  /* Fixture difficulty, 1 easiest to 5 hardest: the one ramp the grid,
+     Player Compare, the Planner and the share card all read (FDR_RAMP
+     in the script carries the same five pairs). Dark ink on every band:
+     white on the red reads at 3.7:1, under AA for small figures. */
+  --fdr-1:#2ecf73;--fdr-ink-1:#0d1f16;
+  --fdr-2:#8fd9a6;--fdr-ink-2:#0d1f16;
+  --fdr-3:#d9dee3;--fdr-ink-3:#3a4650;
+  --fdr-4:#f0a3a0;--fdr-ink-4:#2a1414;
+  --fdr-5:#e05a55;--fdr-ink-5:#2a1414;
 }
 
 /* ── LIGHT MODE ─────────────────────────────────────────── */
@@ -286,6 +305,14 @@ try{
   --hot:#0f6d3d;
   --chip:#e7ebef;
   --on-brand:#ffffff;
+
+  --hm-0:#eef1f4;--hm-ink-0:#5c6673;
+  --hm-1:#e6f6ec;--hm-ink-1:#1c2530;
+  --hm-2:#c4decc;--hm-ink-2:#1c2530;
+  --hm-3:#a2c6ad;--hm-ink-3:#1c2530;
+  --hm-4:#81af8f;--hm-ink-4:#1c2530;
+  --hm-5:#3d8156;--hm-ink-5:#ffffff;
+  --hm-6:#0f6b3a;--hm-ink-6:#ffffff;
 }
 
 /* ── RESET & BASE ──────────────────────────────────────── */
@@ -581,8 +608,8 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
 .fdr .fdr-mult{display:inline-block;margin-left:3px;font-size:var(--fs-min);font-weight:900;
   vertical-align:super;opacity:.8}
 .fdr td.fdr-dgw{box-shadow:inset 0 0 0 2px rgba(12,16,20,.45)}
-.fdr-1{background:#2ecf73}.fdr-2{background:#8fd9a6}.fdr-3{background:#d9dee3;color:#3a4650}
-.fdr-4{background:#f0a3a0}.fdr-5{background:#e05a55;color:#fff}
+.fdr-1{background:var(--fdr-1);color:var(--fdr-ink-1)}.fdr-2{background:var(--fdr-2);color:var(--fdr-ink-2)}.fdr-3{background:var(--fdr-3);color:var(--fdr-ink-3)}
+.fdr-4{background:var(--fdr-4);color:var(--fdr-ink-4)}.fdr-5{background:var(--fdr-5);color:var(--fdr-ink-5)}
 .fdr td.blank{background:var(--surface-3);color:var(--text-4);font-weight:600}
 
 /* Big stat row (this gameweek) */
@@ -2266,6 +2293,40 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .cmp-table td.cmp-best{color:var(--green);font-weight:800;position:relative}
 .cmp-table td.cmp-best::after{content:" \25CF";font-size:.6em;vertical-align:middle}
 .cmp-fdrn{font-family:var(--font-mono);font-size:.7em;opacity:.8;margin-left:2px}
+/* Stats Heatmap. Rows are a fixed pitch (HM_ROW_H in the script) so the
+   virtual window can place a spacer for the rows it does not draw. The
+   first column and the header stay put while the grid scrolls. */
+.hm-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.hm-controls .modal-in{flex:1 1 150px;min-width:0}
+.hm-range{display:inline-flex;align-items:center;gap:6px;flex:1 1 200px}
+.hm-range .modal-in{flex:1 1 80px}
+.hm-legend{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:10px 0 0;font-size:.75rem;color:var(--text-2)}
+.hm-legend i{display:inline-block;width:22px;height:14px;border-radius:2px;border:1px solid var(--border)}
+.hm-count{font-size:.78rem;color:var(--text-2);margin:0 0 8px}
+.hm-scroll{overflow:auto;max-height:72vh;border:1px solid var(--border);border-radius:var(--r-md);position:relative}
+.hm-scroll:focus-visible{outline:2px solid var(--green-bright);outline-offset:-2px}
+.hm-table{border-collapse:separate;border-spacing:2px;font-family:var(--font-mono);font-size:.72rem;font-variant-numeric:tabular-nums;margin:0}
+.hm-table tr{height:30px}
+.hm-table th{font-family:var(--font-body);font-size:.66rem;text-transform:uppercase;letter-spacing:.03em;color:var(--text-2);font-weight:700;padding:4px 6px;white-space:nowrap;background:var(--surface-2);position:sticky;top:0;z-index:2}
+.hm-table th.hm-name{text-align:left;left:0;z-index:3;text-transform:none;letter-spacing:0;font-size:.76rem;color:var(--text);min-width:150px;max-width:190px;overflow:hidden;text-overflow:ellipsis}
+.hm-table tbody th.hm-name{top:auto;z-index:1;font-weight:600}
+.hm-table th.hm-name .dl-sub{font-weight:500;font-size:.66rem}
+.hm-table td{height:26px;min-width:38px;padding:0 5px;text-align:center;border-radius:2px;white-space:nowrap}
+.hm-table th.on{color:var(--green)}
+.hm-c0{background:var(--hm-0);color:var(--hm-ink-0)}
+.hm-c1{background:var(--hm-1);color:var(--hm-ink-1)}
+.hm-c2{background:var(--hm-2);color:var(--hm-ink-2)}
+.hm-c3{background:var(--hm-3);color:var(--hm-ink-3)}
+.hm-c4{background:var(--hm-4);color:var(--hm-ink-4)}
+.hm-c5{background:var(--hm-5);color:var(--hm-ink-5)}
+.hm-c6{background:var(--hm-6);color:var(--hm-ink-6)}
+.hm-dnp{opacity:.5}
+.hm-table td.hm-sum{background:var(--surface-3);color:var(--text);font-weight:700}
+.hm-table td.hm-sum.on{color:var(--green)}
+.hm-sp td{padding:0;height:auto;min-width:0;background:none}
+.hm-prog{height:4px;background:var(--surface-3);border-radius:3px;overflow:hidden;margin-top:8px}
+.hm-prog i{display:block;height:100%;background:var(--green);transition:width .2s}
+@media(max-width:600px){.hm-table th.hm-name{min-width:118px;max-width:130px}}
 .t-flag{background:rgba(181,138,18,.16);color:var(--accent-warn)}
 .t-out,.t-down,.t-xout{background:rgba(204,61,57,.15);color:var(--red)}
 .t-up,.t-xin{background:var(--green-soft);color:var(--green-bright)}
@@ -4704,9 +4765,9 @@ const NAV = [
       {id:'allplayers', label:'Players', icon:'grid', tier:'free'},
       {id:'scoutboard', label:'Scout Board', icon:'grid', tier:'free'},
       {id:'compare', label:'Player Compare', icon:'compare', tier:'free'},
+      {id:'heatmap', label:'Stats Heatmap', icon:'grid', tier:'free'},
       {id:'price', label:'Price Predictor', icon:'arrows', tier:'free', needs:['prices']},
       {id:'setpiece', label:'Set Piece Register', icon:'whistle', tier:'paid', needs:['setPieces']},
-      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
       {id:'news', label:'Latest News', icon:'bell', tier:'free'}
     ]
   },
@@ -4718,6 +4779,10 @@ const NAV = [
          this panel now — see PANEL_VIEW, which keeps #points5 and #csmatrix
          landing on the view they always showed. */
       {id:'fixtures', label:'Fixtures', icon:'calendar', tier:'free'},
+      /* Rotation Risk is club congestion over the coming fixtures, so it
+         plans alongside the Fixture Planner rather than sitting with the
+         player tables. */
+      {id:'rotation', label:'Rotation Risk', icon:'flag', tier:'paid'},
       {id:'seasonsim', label:'Simulators', icon:'target', tier:'paid'},
       {id:'watchlist', label:'Watchlist', icon:'eye', tier:'free'},
       {id:'alerts', label:'Alerts', icon:'bell', tier:'free'}
@@ -5290,6 +5355,10 @@ const PANEL_CONTENT = {
     desc:'Compare up to four players side by side on form, xG, price and ownership.',
     layout:'standard'
   },
+  heatmap:{
+    desc:'Every player by gameweek on one stat, colour-scaled with the number in every cell, so consistency shows at a glance.',
+    layout:'standard'
+  },
   price:{
     desc:'Two reads of the same transfer flow: who the field is buying and selling right now, and what that is about to do to their price at the next 00:00 UK update.',
     layout:'standard'
@@ -5417,6 +5486,7 @@ const MORE_GROUPS=[
     ['rivals','What the managers around you are doing'],
     ['eo','Effective ownership and the template'],
     ['compare','Any two players side by side'],
+    ['heatmap','Any stat, player by gameweek, colour-scaled'],
     ['scoutboard','The scout’s shortlist by position'],
     ['setpiece','Who takes penalties, corners and free kicks'],
     ['rotation','Congestion and rotation risk by club'],
@@ -5621,6 +5691,7 @@ const PANEL_SYNONYMS={
   rivals:['rival scout','rivals'],
   scout:['scout ai','ask the scout','team of the week','totw','model xi'],
   compare:['player compare','compare players','comparison','head to head'],
+  heatmap:['stats heatmap','heatmap','gameweek grid','consistency','points by gameweek'],
   archive:['ten seasons','history','archive','past seasons'],
   myweek:['my week','this gameweek','home'],
   dashboard:['overview','dashboard'],
@@ -5915,7 +5986,7 @@ function syncNav(){
    the state, so the link IS the view. Personal panels (My Week, My Squad,
    the Transfer Planner …) are left out: they show the reader's own team,
    and a link to them opens the recipient's, not the sender's. */
-const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','price','setpiece','rotation','news',
+const LINKABLE_PANELS=new Set(['allplayers','scoutboard','compare','heatmap','price','setpiece','rotation','news',
   'fixtures','results','titlerace','dossier','archive','seasonsim','eo','draft','gwdebrief','gw-actions',
   'blog','accountability','glossary','fplbasics']);
 function pageLinkable(panelId){return LINKABLE_PANELS.has(panelId);}
@@ -9405,11 +9476,10 @@ function renderSocialCard(spec,scale){
       x.textAlign='left';
     }
   } else if(spec.kind==='fdr'){
-    /* The Fixtures panel's own 1-5 palette, copied by value so the card and
-       the app colour a 4 the same red. Ink is dark on every band except the
-       hardest, which is what the stylesheet does too. */
-    const FDR_BG=['rgba(255,255,255,.06)','#2ecf73','#8fd9a6','#d9dee3','#f0a3a0','#e05a55'];
-    const FDR_INK=['rgba(255,255,255,.42)','#0d1f16','#0d1f16','#3a4650','#2a1414','#ffffff'];
+    /* The app's one 1-5 ramp, so the card and the Fixtures grid colour a
+       4 the same red. Slot 0 is the blank cell. */
+    const FDR_BG=['rgba(255,255,255,.06)'].concat([1,2,3,4,5].map(fdrBg));
+    const FDR_INK=['rgba(255,255,255,.42)'].concat([1,2,3,4,5].map(fdrInk));
     const rows=spec.rows||[],heads=spec.heads||[];
     const top=262,avail=H-top-176;
     const PAD=40,GAP=6,CLUB=150,AVG=96;
@@ -15187,6 +15257,12 @@ let COMPARE=[];
    and the same list drives the table, the charts and the share card.
    Charts are inline SVG: small multiples of bars for counting stats (one
    axis per metric, never a shared one) and a radar for per-90 rates. */
+/* One fixture-difficulty ramp for the script: the same five pairs as the
+   --fdr-N / --fdr-ink-N tokens in the stylesheet (dev/test-core.mjs checks
+   they agree). Ink is dark on every band: white on the red fails AA. */
+const FDR_RAMP={1:['#2ecf73','#0d1f16'],2:['#8fd9a6','#0d1f16'],3:['#d9dee3','#3a4650'],4:['#f0a3a0','#2a1414'],5:['#e05a55','#2a1414']};
+function fdrBg(d){return (FDR_RAMP[d]||FDR_RAMP[3])[0];}
+function fdrInk(d){return (FDR_RAMP[d]||FDR_RAMP[3])[1];}
 function cmpNum(v){const n=parseFloat(v);return Number.isFinite(n)?n:0;}
 function cmpPer90(e,total){const m=cmpNum(e&&e.minutes);return m>0?cmpNum(total)*90/m:0;}
 const CMP_METRICS=[
@@ -15328,7 +15404,6 @@ function compareWriteUrl(){
 async function hydrateCompare(host){
   const [b,fixtures]=await Promise.all([boot(),loadFixtures()]);
   const hz=buildHorizon(b,fixtures,5);
-  const CMP_FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
   const gpOf=minutesBasis(b,fixtures);
   if(urlEntryOnce('compare')){
     COMPARE=urlPick('players',COMPARE,[],v=>{const a=urlIdList(v,4);return a.length?a:null;});
@@ -15354,7 +15429,7 @@ async function hydrateCompare(host){
     const ev=sel.map(e=>(hz[e.team]||[])[i]).filter(Boolean)[0];
     fxRows+='<tr><th class="tm">'+(ev?'GW'+ev.event:'n/a')+'</th>'+sel.map(e=>{
       const fx=(hz[e.team]||[])[i];
-      return fx?'<td style="background:'+(CMP_FDR_HEX[fx.diff]||'#d9dee3')+';color:#0c1014;font-weight:700">'+esc(fx.opp)+' ('+(fx.home?'H':'A')+') <span class="cmp-fdrn">'+fx.diff+'</span></td>':'<td class="blank">blank</td>';
+      return fx?'<td style="background:'+fdrBg(fx.diff)+';color:'+fdrInk(fx.diff)+';font-weight:700">'+esc(fx.opp)+' ('+(fx.home?'H':'A')+') <span class="cmp-fdrn">'+fx.diff+'</span></td>':'<td class="blank">blank</td>';
     }).join('')+'</tr>';
   }
   const fixCard=(sel.length&&maxN)
@@ -15429,6 +15504,268 @@ async function hydrateCompare(host){
     const vb=e.target.closest('#cmp-views .lensbtn');
     if(vb&&vb.dataset.view!==CMP_VIEW){historyPoint();cmpSetView(vb.dataset.view);renderPage('compare');}
   });
+}
+
+/* ── Stats Heatmap ─────────────────────────────────────────
+   Every player on one live-stat metric, one column per gameweek in a
+   range, the cell colour-scaled with the number always printed. Rows
+   carry total, mean and variance so consistency is a sort away. The
+   live payload for a gameweek is a few hundred KB, so they are held in
+   memory only, and a finished gameweek is fetched once per session. */
+const HM_METRICS=[
+  {id:'points',label:'Points',key:'total_points',dp:0},
+  {id:'minutes',label:'Minutes',key:'minutes',dp:0},
+  {id:'goals',label:'Goals',key:'goals_scored',dp:0},
+  {id:'assists',label:'Assists',key:'assists',dp:0},
+  {id:'cs',label:'Clean sheets',key:'clean_sheets',dp:0},
+  {id:'bonus',label:'Bonus',key:'bonus',dp:0},
+  {id:'bps',label:'BPS',key:'bps',dp:0},
+  {id:'xg',label:'xG',key:'expected_goals',dp:2},
+  {id:'xa',label:'xA',key:'expected_assists',dp:2},
+  {id:'xgi',label:'xGI',key:'expected_goal_involvements',dp:2},
+  {id:'dc',label:'Defensive contributions',key:'defensive_contribution',dp:0},
+  {id:'ict',label:'ICT index',key:'ict_index',dp:1},
+  {id:'saves',label:'Saves',key:'saves',dp:0},
+  {id:'gc',label:'Goals conceded',key:'goals_conceded',dp:0}
+];
+const HM_PRICE_BANDS=[
+  {id:'all',label:'Any price',lo:0,hi:Infinity},
+  {id:'u5',label:'Under £5.0m',lo:0,hi:5},
+  {id:'5-7',label:'£5.0m to £6.9m',lo:5,hi:7},
+  {id:'7-9',label:'£7.0m to £8.9m',lo:7,hi:9},
+  {id:'9-11',label:'£9.0m to £10.9m',lo:9,hi:11},
+  {id:'11+',label:'£11.0m and over',lo:11,hi:Infinity}
+];
+const HM_OWN_BANDS=[
+  {id:'all',label:'Any ownership',lo:0,hi:Infinity},
+  {id:'u5',label:'Under 5%',lo:0,hi:5},
+  {id:'5-15',label:'5% to 15%',lo:5,hi:15},
+  {id:'15-30',label:'15% to 30%',lo:15,hi:30},
+  {id:'30+',label:'30% and over',lo:30,hi:Infinity}
+];
+const HM_SORTS=[{id:'total',label:'Total'},{id:'mean',label:'Mean'},{id:'var',label:'Variance'}];
+const HM_STEPS=6;
+const HM_ROW_H=32;
+const HM_VIRTUAL_CELLS=2000;
+const HM_DEFAULT_SPAN=6;
+const HM_LIVE_TTL=2*60e3;
+let HM_STATE={metric:'points',from:0,to:0,pos:0,team:0,price:'all',own:'all',sort:'total',dir:-1,q:''};
+const HM_LIVE={};
+function hmMetric(id){return HM_METRICS.filter(m=>m.id===id)[0]||null;}
+function hmBand(list,id){return list.filter(b=>b.id===id)[0]||list[0];}
+function hmInBand(list,id,v){const b=hmBand(list,id);return v>=b.lo&&v<b.hi;}
+/* A gameweek range from a link, clipped to what has been played: no end
+   means the latest, no start means the last few, an inverted pair folds
+   to its end. Null before the first gameweek has been played. */
+function hmParseRange(from,to,last,span){
+  if(!(last>=1))return null;
+  let a=parseInt(from,10),z=parseInt(to,10);
+  if(!(z>=1))z=last;z=Math.min(z,last);
+  if(!(a>=1))a=Math.max(1,z-(span||HM_DEFAULT_SPAN)+1);
+  a=Math.min(a,z);
+  return {from:a,to:z};
+}
+function hmStats(vals){
+  const n=vals.length;if(!n)return {total:0,mean:0,var:0};
+  const total=vals.reduce((s,v)=>s+v,0),mean=total/n;
+  const v=vals.reduce((s,x)=>s+(x-mean)*(x-mean),0)/n;
+  return {total,mean,var:v};
+}
+/* One row per player passing the filters: the metric per gameweek, whether
+   they played it, and the three summary figures. */
+function hmRows(players,liveByGw,gws,metric,f){
+  const m=typeof metric==='string'?hmMetric(metric):metric;if(!m)return [];
+  f=f||{};const q=String(f.q||'').trim().toLowerCase();
+  const out=[];
+  players.forEach(e=>{
+    if(f.pos&&e.element_type!==f.pos)return;
+    if(f.team&&e.team!==f.team)return;
+    if(f.price&&f.price!=='all'&&!hmInBand(HM_PRICE_BANDS,f.price,cmpNum(e.now_cost)/10))return;
+    if(f.own&&f.own!=='all'&&!hmInBand(HM_OWN_BANDS,f.own,cmpNum(e.selected_by_percent)))return;
+    if(q&&String(e.web_name||'').toLowerCase().indexOf(q)<0)return;
+    const values=[],played=[];
+    gws.forEach(gw=>{const st=(liveByGw[gw]||{})[e.id];values.push(st?cmpNum(st[m.key]):0);played.push(!!(st&&cmpNum(st.minutes)>0));});
+    const st=hmStats(values);
+    out.push({id:e.id,name:e.web_name,team:e.team,pos:e.element_type,price:cmpNum(e.now_cost)/10,own:cmpNum(e.selected_by_percent),values,played,total:st.total,mean:st.mean,var:st.var});
+  });
+  return out;
+}
+function hmSort(rows,key,dir){
+  const k=HM_SORTS.some(s=>s.id===key)?key:'total';dir=dir===1?1:-1;
+  return rows.slice().sort((a,b)=>(a[k]-b[k])*dir||(b.total-a.total)||String(a.name).localeCompare(String(b.name)));
+}
+/* The colour bin for a value: 0 for nothing, then HM_STEPS equal bins up
+   to the largest value in view, so the brightest cell is always the best. */
+function hmBin(v,max,steps){
+  steps=steps||HM_STEPS;
+  if(!(v>0)||!(max>0))return 0;
+  return Math.max(1,Math.min(steps,Math.ceil(v/max*steps)));
+}
+/* The rows to draw for a scroll position: what the viewport shows plus a
+   buffer either side, so a flick never lands on a blank band. */
+function hmWindow(scrollTop,viewH,rowH,n,buffer){
+  buffer=buffer==null?8:buffer;
+  const start=Math.max(0,Math.floor(scrollTop/rowH)-buffer);
+  const end=Math.min(n,Math.ceil((scrollTop+viewH)/rowH)+buffer);
+  return {start:Math.min(start,Math.max(0,n)),end:Math.max(start,end)};
+}
+function hmFmt(m,v){return cmpNum(v).toFixed(m.dp||0);}
+function hmWriteUrl(){
+  const s=HM_STATE;
+  setUrlState({metric:s.metric!=='points'?s.metric:null,from:s.from||null,to:s.to||null,
+    pos:s.pos||null,team:s.team||null,price:s.price!=='all'?s.price:null,own:s.own!=='all'?s.own:null,
+    sort:s.sort!=='total'?s.sort:null,dir:s.dir===1?'asc':null,q:s.q||null});
+}
+/* The last gameweek with live figures: finished, or current with its
+   deadline passed. Zero before the season starts. */
+function hmLastGw(b){
+  const now=Date.now();
+  return (b.events||[]).reduce((last,ev)=>{
+    const live=ev.finished||(ev.is_current&&ev.deadline_time&&new Date(ev.deadline_time).getTime()<=now);
+    return live&&ev.id>last?ev.id:last;},0);
+}
+async function hmLoadGw(gw,last){
+  const e=HM_LIVE[gw];
+  const fresh=e&&(gw<last||Date.now()-e.t<HM_LIVE_TTL);
+  if(fresh)return e.map;
+  const lv=await loadLive(gw);
+  const map={};(lv.elements||[]).forEach(el=>{map[el.id]=el.stats||{};});
+  HM_LIVE[gw]={t:Date.now(),map};
+  return map;
+}
+async function hydrateHeatmap(host){
+  const b=await boot();
+  const last=hmLastGw(b);
+  if(urlEntryOnce('heatmap')){
+    const S=HM_STATE;
+    S.metric=urlPick('metric',S.metric,'points',v=>hmMetric(String(v).toLowerCase())?String(v).toLowerCase():null);
+    S.from=urlPick('from',S.from,0,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    S.to=urlPick('to',S.to,0,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    S.pos=urlPick('pos',S.pos,0,v=>[1,2,3,4].indexOf(+v)>=0?+v:null);
+    S.team=urlPick('team',S.team,0,v=>parseInt(v,10)>0?parseInt(v,10):null);
+    S.price=urlPick('price',S.price,'all',v=>HM_PRICE_BANDS.some(x=>x.id===v)?v:null);
+    S.own=urlPick('own',S.own,'all',v=>HM_OWN_BANDS.some(x=>x.id===v)?v:null);
+    S.sort=urlPick('sort',S.sort,'total',v=>HM_SORTS.some(x=>x.id===v)?v:null);
+    S.dir=urlPick('dir',S.dir,-1,v=>v==='asc'?1:v==='desc'?-1:null);
+    S.q=urlPick('q',S.q,'',v=>String(v).slice(0,40));
+  }
+  if(!last){
+    host.innerHTML=stateBox('grid','No gameweeks played yet','The heatmap fills in once the first gameweek has been played. Until then the Players table has last season’s figures.');
+    return;
+  }
+  const r=hmParseRange(HM_STATE.from,HM_STATE.to,last);
+  HM_STATE.from=r.from;HM_STATE.to=r.to;
+  hmWriteUrl();
+  const gws=[];for(let g=r.from;g<=r.to;g++)gws.push(g);
+  const S=HM_STATE;
+  const gwOpts=sel=>Array.from({length:last},(_,i)=>'<option value="'+(i+1)+'"'+(i+1===sel?' selected':'')+'>GW'+(i+1)+'</option>').join('');
+  const teamOpts='<option value="0">All clubs</option>'+Object.values(b.teams).sort((x,y)=>x.name.localeCompare(y.name))
+    .map(t=>'<option value="'+t.id+'"'+(t.id===S.team?' selected':'')+'>'+esc(t.name)+'</option>').join('');
+  const opt=(list,cur)=>list.map(x=>'<option value="'+x.id+'"'+(x.id===cur?' selected':'')+'>'+esc(x.label)+'</option>').join('');
+  const controls=
+    '<div class="hm-controls">'+
+      '<select class="modal-in" id="hm-metric" aria-label="Metric">'+opt(HM_METRICS,S.metric)+'</select>'+
+      '<span class="hm-range"><select class="modal-in" id="hm-from" aria-label="First gameweek">'+gwOpts(S.from)+'</select><span class="dl-sub">to</span><select class="modal-in" id="hm-to" aria-label="Last gameweek">'+gwOpts(S.to)+'</select></span>'+
+      '<select class="modal-in" id="hm-team" aria-label="Filter by club">'+teamOpts+'</select>'+
+      '<select class="modal-in" id="hm-price" aria-label="Price band">'+opt(HM_PRICE_BANDS,S.price)+'</select>'+
+      '<select class="modal-in" id="hm-own" aria-label="Ownership band">'+opt(HM_OWN_BANDS,S.own)+'</select>'+
+      '<input id="hm-q" class="modal-in" type="search" placeholder="Search player" autocomplete="off" aria-label="Search players" value="'+esc(S.q)+'">'+
+    '</div>'+
+    '<div class="pl-poschips" role="group" aria-label="Filter by position">'+
+      [[1,'GKP'],[2,'DEF'],[3,'MID'],[4,'FWD']].map(([t,l])=>'<button type="button" class="pos-pill p'+t+(S.pos===t?' on':'')+'" data-pos="'+t+'" aria-pressed="'+(S.pos===t?'true':'false')+'">'+l+'</button>').join('')+
+      '<span class="dl-sub" style="margin-left:auto">Sort by</span>'+
+      '<div class="seg" id="hm-sort" role="group" aria-label="Sort rows by">'+HM_SORTS.map(x=>'<button type="button" class="seg-b'+(x.id===S.sort?' on':'')+'" data-sort="'+x.id+'" aria-pressed="'+(x.id===S.sort?'true':'false')+'">'+esc(x.label)+'</button>').join('')+'</div>'+
+      '<button type="button" class="btn btn-ghost btn-sm" id="hm-dir" aria-label="Sort direction">'+(S.dir===1?'Low to high':'High to low')+'</button>'+
+    '</div>';
+  const m=hmMetric(S.metric);
+  const legend='<div class="hm-legend" aria-hidden="true"><span>0</span>'+Array.from({length:HM_STEPS+1},(_,i)=>'<i class="hm-c'+i+'"></i>').join('')+'<span id="hm-max"></span></div>'+
+    '<p class="dl-sub" style="margin-top:6px">Colour runs from zero to the largest value in view and the number is always printed, so the scale reads without colour. A dimmed figure is a gameweek the player did not play.</p>';
+  host.innerHTML=
+    sectionCard({cls:'mb-20',title:'Stats per gameweek',body:controls+
+      '<p class="hm-count" id="hm-count"></p><div id="hm-grid" aria-live="polite"></div>'+legend});
+  const grid=host.querySelector('#hm-grid'),count=host.querySelector('#hm-count');
+  const scrollTo=()=>{};
+
+  /* Load what the range needs, a few at a time, with a progress line. */
+  const missing=gws.filter(g=>!(HM_LIVE[g]&&(g<last||Date.now()-HM_LIVE[g].t<HM_LIVE_TTL)));
+  if(missing.length){
+    let done=0;
+    const prog=()=>{grid.innerHTML='<div class="card"><div class="ge-state"><b>Loading gameweek '+Math.min(missing.length,done+1)+' of '+missing.length+'</b><p>Live figures for each gameweek in the range, held for this session.</p><div class="hm-prog" style="width:100%;max-width:280px"><i style="width:'+Math.round(done/missing.length*100)+'%"></i></div></div></div>';};
+    prog();
+    try{
+      const queue=missing.slice();
+      const worker=async()=>{while(queue.length){const g=queue.shift();await hmLoadGw(g,last);done++;prog();}};
+      await Promise.all([worker(),worker(),worker(),worker()]);
+    }catch(e){
+      grid.innerHTML=stateBox('grid','Gameweek figures unavailable',hubFailText(e),retryBtn());
+      count.textContent='';
+      wire();return;
+    }
+  }
+  const liveByGw={};gws.forEach(g=>{liveByGw[g]=HM_LIVE[g].map;});
+  let rows=[],max=0,win=null,virtual=false;
+  const cell=(row,i)=>{
+    const v=row.values[i],bin=hmBin(v,max);
+    return '<td class="hm-c'+bin+(row.played[i]?'':' hm-dnp')+'" title="'+esc(row.name)+', GW'+gws[i]+': '+hmFmt(m,v)+' '+esc(m.label.toLowerCase())+(row.played[i]?'':', did not play')+'">'+hmFmt(m,v)+'</td>';
+  };
+  const rowHtml=row=>'<tr><th scope="row" class="hm-name" title="'+esc(row.name)+'">'+esc(row.name)+' <span class="dl-sub">'+esc(teamShort(b,row.team))+' · '+esc(posShort(b,row.pos))+' · £'+row.price.toFixed(1)+'m</span></th>'+
+    row.values.map((_,i)=>cell(row,i)).join('')+
+    '<td class="hm-sum'+(S.sort==='total'?' on':'')+'">'+hmFmt(m,row.total)+'</td><td class="hm-sum'+(S.sort==='mean'?' on':'')+'">'+row.mean.toFixed(1)+'</td><td class="hm-sum'+(S.sort==='var'?' on':'')+'">'+row.var.toFixed(1)+'</td></tr>';
+  const spacer=n=>n>0?'<tr class="hm-sp" aria-hidden="true"><td colspan="'+(gws.length+4)+'" style="height:'+(n*HM_ROW_H)+'px"></td></tr>':'';
+  const body=()=>{
+    if(!virtual)return rows.map(rowHtml).join('');
+    const w=win||hmWindow(0,600,HM_ROW_H,rows.length);
+    return spacer(w.start)+rows.slice(w.start,w.end).map(rowHtml).join('')+spacer(rows.length-w.end);
+  };
+  const paint=()=>{
+    const m2=hmMetric(S.metric);
+    rows=hmSort(hmRows(b.elements,liveByGw,gws,m2,S),S.sort,S.dir);
+    max=rows.reduce((mx,r)=>Math.max(mx,Math.max.apply(null,r.values)),0);
+    virtual=rows.length*gws.length>HM_VIRTUAL_CELLS;
+    win=null;
+    const mx=host.querySelector('#hm-max');if(mx)mx.textContent=hmFmt(m2,max)+' '+m2.label.toLowerCase();
+    count.textContent=rows.length?rows.length+' player'+(rows.length===1?'':'s')+' · GW'+S.from+' to GW'+S.to+' · '+m2.label+(virtual?' · rows draw as you scroll':''):'';
+    if(!rows.length){grid.innerHTML='<div class="ge-state">'+svg(ICON.grid)+'<b>No players match</b><p>Loosen a filter: position, club, price band, ownership band or the search.</p><button type="button" class="btn btn-ghost btn-sm" id="hm-clear">Clear filters</button></div>';return;}
+    const head='<thead><tr><th class="hm-name">Player</th>'+gws.map(g=>'<th>GW'+g+'</th>').join('')+
+      '<th class="num'+(S.sort==='total'?' on':'')+'">Total</th><th class="num'+(S.sort==='mean'?' on':'')+'">Mean</th><th class="num'+(S.sort==='var'?' on':'')+'">Var</th></tr></thead>';
+    grid.innerHTML='<div class="hm-scroll" id="hm-scroll" tabindex="0" role="region" aria-label="'+esc(m2.label)+' by gameweek, '+rows.length+' players, GW'+S.from+' to GW'+S.to+'. Use the arrow keys to scroll.">'+
+      '<table class="hm-table" data-tbl="model">'+head+'<tbody id="hm-body">'+body()+'</tbody></table></div>';
+    const sc=grid.querySelector('#hm-scroll');
+    if(virtual&&sc){
+      let queued=false;
+      /* A timer, not requestAnimationFrame: a frame can be held back for
+         hundreds of milliseconds under load and the window would lag the
+         scroll. The redraw is a few dozen rows, cheap enough to run at once. */
+      const onScroll=()=>{if(queued)return;queued=true;setTimeout(()=>{queued=false;
+        const w=hmWindow(sc.scrollTop,sc.clientHeight,HM_ROW_H,rows.length);
+        if(win&&w.start===win.start&&w.end===win.end)return;
+        win=w;const tb=sc.querySelector('#hm-body');if(tb)tb.innerHTML=body();});};
+      win=hmWindow(0,sc.clientHeight||600,HM_ROW_H,rows.length);
+      const tb=sc.querySelector('#hm-body');if(tb)tb.innerHTML=body();
+      sc.addEventListener('scroll',onScroll,{passive:true});
+    }
+  };
+  const wire=()=>{
+    const on=(id,ev,fn)=>{const el=host.querySelector(id);if(el)el.addEventListener(ev,fn);};
+    on('#hm-metric','change',e=>{S.metric=e.target.value;hmWriteUrl();track('heatmap_metric',{metric:S.metric});paint();});
+    const range=()=>{const f=+host.querySelector('#hm-from').value,t=+host.querySelector('#hm-to').value;
+      const r2=hmParseRange(Math.min(f,t),Math.max(f,t),last);S.from=r2.from;S.to=r2.to;hmWriteUrl();renderPage('heatmap');};
+    on('#hm-from','change',range);on('#hm-to','change',range);
+    on('#hm-team','change',e=>{S.team=+e.target.value;hmWriteUrl();paint();});
+    on('#hm-price','change',e=>{S.price=e.target.value;hmWriteUrl();paint();});
+    on('#hm-own','change',e=>{S.own=e.target.value;hmWriteUrl();paint();});
+    let t=null;on('#hm-q','input',e=>{clearTimeout(t);t=setTimeout(()=>{S.q=e.target.value.trim().slice(0,40);hmWriteUrl();paint();},150);});
+    host.addEventListener('click',e=>{
+      const pp=e.target.closest('.pos-pill[data-pos]');
+      if(pp){S.pos=S.pos===+pp.dataset.pos?0:+pp.dataset.pos;host.querySelectorAll('.pos-pill[data-pos]').forEach(x=>{const o=+x.dataset.pos===S.pos;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o?'true':'false');});hmWriteUrl();paint();return;}
+      const sb=e.target.closest('#hm-sort .seg-b');
+      if(sb){S.sort=sb.dataset.sort;host.querySelectorAll('#hm-sort .seg-b').forEach(x=>{const o=x.dataset.sort===S.sort;x.classList.toggle('on',o);x.setAttribute('aria-pressed',o?'true':'false');});hmWriteUrl();paint();return;}
+      if(e.target.closest('#hm-dir')){S.dir=S.dir===1?-1:1;e.target.closest('#hm-dir').textContent=S.dir===1?'Low to high':'High to low';hmWriteUrl();paint();return;}
+      if(e.target.closest('#hm-clear')){S.pos=0;S.team=0;S.price='all';S.own='all';S.q='';hmWriteUrl();renderPage('heatmap');}
+    });
+  };
+  paint();wire();
+  track('heatmap_view',{metric:S.metric,span:gws.length,rows:rows.length});
 }
 
 /* ── Alerts: live feed + local notification preferences ── */
@@ -24279,7 +24616,6 @@ function renderDraft(){
   if(cnt)cnt.textContent=players.length+'/15';
   /* Suggested captain / vice — the two highest-xP6 outfield picks — and each
      player's opening fixture on the card, so the draft reads like a team sheet. */
-  const FDR_HEX={1:'#2ecf73',2:'#8fd9a6',3:'#d9dee3',4:'#f0a3a0',5:'#e05a55'};
   const outfield=players.filter(e=>e.element_type>=2).sort((a,c)=>(S.xp6[c.id]||0)-(S.xp6[a.id]||0));
   const capId=outfield[0]?outfield[0].id:null,viceId=outfield[1]?outfield[1].id:null;
   const cell=e=>{
@@ -24305,10 +24641,10 @@ function renderDraft(){
        of the bar beneath it is worse than either alone. */
     const runTitle=esc(run.map(f=>'GW'+f.event+' '+f.opp+' ('+(f.home?'H':'A')+')').join(' · '));
     const fx=next
-      ? '<div class="pp-sub"><span class="l" style="flex:1;background:'+(FDR_HEX[next.diff]||'#d9dee3')+';color:#0c1014">'+
+      ? '<div class="pp-sub"><span class="l" style="flex:1;background:'+fdrBg(next.diff)+';color:'+fdrInk(next.diff)+'">'+
           esc(next.opp)+' ('+(next.home?'H':'A')+')</span></div>'+
         '<div class="pp-run" title="'+runTitle+'" aria-label="Next three: '+runTitle+'">'+
-          run.map(f=>'<i style="background:'+(FDR_HEX[f.diff]||'#d9dee3')+'"></i>').join('')+
+          run.map(f=>'<i style="background:'+fdrBg(f.diff)+'"></i>').join('')+
         '</div>'
       /* No fixture in the window is a BLANK, and printing nothing there
          would read as "not loaded yet" — the opposite of a warning. */
@@ -24701,6 +25037,7 @@ const WIRED={
   allplayers:hydrateAllPlayers,
   scoutboard:hydrateScoutBoard,
   compare:hydrateCompare,
+  heatmap:hydrateHeatmap,
   fixtures:hydrateFixturesHub,
   price:hydratePrice,
   news:hydrateNews,

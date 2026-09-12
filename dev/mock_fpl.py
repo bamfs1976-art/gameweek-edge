@@ -122,8 +122,14 @@ HIST_CODES = _hist_codes()
 
 elements = []
 eid = 0
+# SQUAD_DEPTH=n repeats the six-player template n times per club (names take
+# a suffix from the second copy), for tests that need a board the size of
+# the real game: the heatmap only virtualises above two thousand cells.
+SQUAD_ROWS = [(et, nm if k == 0 else f"{nm}{k + 1}", ep)
+              for k in range(int(os.environ.get("SQUAD_DEPTH", "1")))
+              for et, nm, ep in SQUAD]
 for t in teams:
-    for et, nm, ep in SQUAD:
+    for et, nm, ep in SQUAD_ROWS:
         eid += 1
         elements.append({
             "id": eid, "web_name": f"{t['short_name']}{nm}", "team": t["id"],
@@ -170,7 +176,7 @@ N = len(elements)
 # The gameweek the mock is "in". Named once so the events feed, the entry
 # history and any test that reasons about "as of which week" cannot drift
 # apart — they used to be three independent literals.
-CUR_EVENT = 1
+CUR_EVENT = int(os.environ.get("CUR_EVENT", "1"))
 
 if PRESEASON:
     # Minutes, form and ownership reset for the new season; ep_next stays as a
@@ -210,7 +216,7 @@ def iso(dt):
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-events = [{"id": g, "name": f"Gameweek {g}", "finished": g == 1,
+events = [{"id": g, "name": f"Gameweek {g}", "finished": g <= CUR_EVENT,
            # FPL's two-stage settle: `finished` means every match is played,
            # `data_checked` means it has scored the week and confirmed bonus.
            # It was absent entirely, and gwPackEvent gates on it — so the
@@ -324,6 +330,32 @@ def live_el(e):
 
 
 live = {"elements": [live_el(e) for e in elements]}
+
+
+def live_for(gw):
+    """The live payload for any gameweek. The current one is `live` above,
+    so squad points and the feed keep agreeing; earlier ones vary
+    deterministically by gameweek, so a grid of players by gameweek has
+    real shape to sort and colour (and a fixed share of did-not-plays)."""
+    gw = int(gw)
+    if gw == CUR_EVENT:
+        return live
+    els = []
+    for e in elements:
+        k = (e["id"] * 7 + gw * 13) % 17
+        played = (e["id"] + gw) % 5 != 0
+        base = live_el(e)
+        base["stats"].update({
+            "total_points": (k % 12) if played else 0,
+            "minutes": (90 if k % 3 else 62) if played else 0,
+            "bps": (5 + k * 2) if played else 0,
+            "bonus": 3 if (played and k == 16) else 0,
+            "goals_scored": 1 if (played and k % 6 == 0) else 0,
+            "assists": 1 if (played and k % 5 == 0) else 0,
+            "clean_sheets": 1 if (played and k % 4 == 0) else 0,
+        })
+        els.append(base)
+    return {"elements": els}
 # What each player actually scored this gameweek, read back off the live
 # payload rather than recomputed — so a squad's points and the live feed
 # can never disagree, which is the one thing the real API guarantees.
@@ -538,7 +570,8 @@ def route(path):
     if p.startswith("fixtures"):
         return fixtures
     if p.startswith("event/") and p.endswith("live"):
-        return live
+        gw = p[len("event/"):-len("/live")]
+        return live_for(gw) if gw.isdigit() else live
     if p == "event-status":
         return event_status
     if p.startswith("leagues-classic/"):

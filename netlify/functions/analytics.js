@@ -43,8 +43,8 @@ const AREA = {
      no longer reports panel_view events of its own. */
   'my team': ['squad', 'transfers', 'captain', 'chips', 'draft', 'gwreport'],
   live: ['liverank'],
-  players: ['allplayers', 'scoutboard', 'compare', 'price', 'setpiece', 'rotation', 'news'],
-  planner: ['fixtures', 'seasonsim', 'watchlist', 'alerts'],
+  players: ['allplayers', 'scoutboard', 'compare', 'heatmap', 'price', 'setpiece', 'news'],
+  planner: ['fixtures', 'rotation', 'seasonsim', 'watchlist', 'alerts'],
   rivals: ['leagues', 'rivals', 'eo'],
   football: ['results', 'titlerace', 'dossier', 'archive'],
   studio: ['social', 'analytics', 'feedback']
