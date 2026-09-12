@@ -156,7 +156,20 @@ function readLocal(f) {
 
 async function fetchSource(f, ref) {
   const url = RAW + ref + '/' + f.from;
-  const r = await fetch(url, { headers: { 'user-agent': 'gameweek-edge/vendor-rotation' } });
+  /* A daily job on a shared runner sees the odd dropped connection: on
+     12 Sep 2026 the scheduled run died in 100 ms on a bare "fetch failed"
+     after twenty-three clean days. A network-level failure (no response at
+     all) is retried twice with a short pause; an HTTP status is not, because
+     a 404 at the pinned commit is a real finding and retrying it only delays
+     the message below. */
+  let r;
+  for (let attempt = 1; ; attempt++) {
+    try { r = await fetch(url, { headers: { 'user-agent': 'gameweek-edge/vendor-rotation' } }); break; }
+    catch (e) {
+      if (attempt >= 3) throw new Error('fetching ' + f.from + ' failed three times (' + (e && e.message) + ').\n  ' + url);
+      await new Promise((res) => setTimeout(res, 2000 * attempt));
+    }
+  }
   if (!r.ok) {
     throw new Error('fetching ' + f.from + ' at ' + ref.slice(0, 12) + ' returned HTTP ' + r.status +
       '.\n  ' + url +
