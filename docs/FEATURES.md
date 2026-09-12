@@ -104,14 +104,15 @@ Players
 │                                (absorbed Differentials and the Injury Monitor)
 ├── Scout Board          (free)  Per-90 shortlist + price ladder, DefCon + bonus by club
 ├── Player Compare       (free)  Up to 4 players side by side
+├── Stats Heatmap        (free)  Players by gameweek on any stat, colour-scaled, sortable by consistency
 ├── Price Predictor      (free)  Rise/fall % tonight (threshold model) + value tables
 ├── Set Piece Register   (Pro)   Official taker notes + penalty/FK/corner order
-├── Rotation Risk        (Pro)   Midweek congestion, dead rubbers, start-rate risk
 └── Latest News          (free)  Official player news, newest first
 
 Planner
 ├── Fixtures             (free)  One horizon, three views: grid / points / clean sheets
 │                                (absorbed the Points Planner and Clean Sheet Matrix)
+├── Rotation Risk        (Pro)   Midweek congestion, dead rubbers, start-rate risk
 ├── Simulators           (Pro)   What happens next, at two scales
 │   ├── Season                   Full-season Monte Carlo (absorbed Scenario Lab)
 │   └── What-if                  Rank impact of a goal / assist / clean sheet
@@ -594,6 +595,17 @@ the best figure in each row, a chart view (small‑multiple bars for counts, a
 radar for per‑90 rates once three are chosen), the next five fixtures on the
 model difficulty scale, **minutes security** (three‑tier badge) and a share
 card. Views live at `?view=table|chart`.
+
+**Stats Heatmap** — every player by gameweek on one live stat (points,
+minutes, goals, assists, clean sheets, bonus, BPS, xG, xA, xGI, defensive
+contributions, ICT, saves, goals conceded). Cells are colour‑scaled from zero
+to the largest value in view on a single‑hue ramp with the number always
+printed, and a did‑not‑play is dimmed. Filters for position, club, price band
+and ownership band plus a name search; rows sort by total, mean or variance
+either way, so consistency is a sort away. The gameweek range, metric,
+filters and sort all live in the URL (`/heatmap?metric=xg&from=3&to=8`).
+Above about 2,000 cells the body draws only the rows in view. Live payloads
+are held in memory for the session, a finished gameweek fetched once.
 
 **Differentials** and the **Injury Monitor** are no longer panels — both were a
 filter and a sort over the same player data, so they are lenses on the Players

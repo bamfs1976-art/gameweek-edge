@@ -223,6 +223,26 @@ const pieces = [
   extractFn(html, 'cmpBarsSvg'),
   extractFn(html, 'cmpRadarSvg'),
   extractFn(html, 'cmpLegendHtml'),
+  /* Stats Heatmap: the registries and the pure builders behind the grid. */
+  extractConst(html, 'FDR_RAMP'),
+  extractFn(html, 'fdrBg'),
+  extractFn(html, 'fdrInk'),
+  extractArrayConst(html, 'HM_METRICS'),
+  extractArrayConst(html, 'HM_PRICE_BANDS'),
+  extractArrayConst(html, 'HM_OWN_BANDS'),
+  extractArrayConst(html, 'HM_SORTS'),
+  ...['HM_STEPS', 'HM_ROW_H', 'HM_VIRTUAL_CELLS', 'HM_DEFAULT_SPAN'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
+  extractFn(html, 'hmMetric'),
+  extractFn(html, 'hmBand'),
+  extractFn(html, 'hmInBand'),
+  extractFn(html, 'hmParseRange'),
+  extractFn(html, 'hmStats'),
+  extractFn(html, 'hmRows'),
+  extractFn(html, 'hmSort'),
+  extractFn(html, 'hmBin'),
+  extractFn(html, 'hmWindow'),
+  extractFn(html, 'hmFmt'),
+  extractFn(html, 'hmLastGw'),
   /* Panel names: retired ids and everyday synonyms the palette searches. */
   extractConst(html, 'PANEL_ALIAS'),
   extractConst(html, 'PANEL_SYNONYMS'),
@@ -351,7 +371,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -5532,6 +5552,70 @@ section('Player Compare: metric registry, rows, best marks and the SVG charts');
   const legend = cmpLegendHtml([{ name: 'A <b>', sub: 'MID' }, { name: 'B' }], CMP_SERIES);
   ok((legend.match(/<li>/g) || []).length === 2 && /A &lt;b&gt;/.test(legend) && /MID/.test(legend), 'the legend lists every player, escaped, with the sub line when present');
   ok(!/\u2014/.test(bars + radar + legend), 'no em dash in the chart copy');
+}
+
+section('Stats Heatmap: range, rows, sorting, bins and the virtual window');
+{
+  const { HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw } = core;
+  const ids = HM_METRICS.map((m) => m.id);
+  ok(new Set(ids).size === ids.length && HM_METRICS.every((m) => typeof m.key === 'string' && m.label), 'metric ids are unique and each names a live stat');
+  ok(hmMetric('points').key === 'total_points' && hmMetric('nope') === null, 'a metric looks up by id');
+  ok(HM_STEPS === 6 && HM_ROW_H > 0 && HM_VIRTUAL_CELLS === 2000 && HM_DEFAULT_SPAN === 6, 'the constants the grid is built on');
+  ok(hmInBand(HM_PRICE_BANDS, 'u5', 4.9) && !hmInBand(HM_PRICE_BANDS, 'u5', 5.0) && hmInBand(HM_PRICE_BANDS, '11+', 14.5) && hmInBand(HM_PRICE_BANDS, 'all', 99), 'price bands are half-open and the top band is unbounded');
+  ok(hmInBand(HM_OWN_BANDS, '5-15', 5) && !hmInBand(HM_OWN_BANDS, '5-15', 15) && hmInBand(HM_OWN_BANDS, '30+', 31), 'ownership bands likewise');
+  ok(JSON.stringify(hmParseRange(null, null, 8)) === '{"from":3,"to":8}', 'no range means the last six played gameweeks');
+  ok(JSON.stringify(hmParseRange('2', '5', 8)) === '{"from":2,"to":5}', 'a full range is kept');
+  ok(JSON.stringify(hmParseRange('6', '40', 8)) === '{"from":6,"to":8}', 'an end past the last played gameweek clips');
+  ok(JSON.stringify(hmParseRange('9', '3', 8)) === '{"from":3,"to":3}', 'an inverted pair folds to its end');
+  ok(JSON.stringify(hmParseRange(null, null, 2)) === '{"from":1,"to":2}', 'early season shows what there is');
+  ok(hmParseRange('1', '3', 0) === null, 'nothing played yet is null');
+  const st = hmStats([2, 4, 6]);
+  ok(st.total === 12 && st.mean === 4 && Math.abs(st.var - 8 / 3) < 1e-9, 'total, mean and population variance');
+  ok(hmStats([]).total === 0 && hmStats([]).var === 0, 'no gameweeks is all zeros');
+  const p = (id, o) => Object.assign({ id, web_name: 'P' + id, element_type: 3, team: 1, now_cost: 55, selected_by_percent: '10.0' }, o);
+  const players = [p(1), p(2, { element_type: 2, team: 2, now_cost: 120, selected_by_percent: '45.0', web_name: 'Salah' }), p(3, { now_cost: 45, selected_by_percent: '2.0' })];
+  const live = { 3: { 1: { total_points: 6, minutes: 90 }, 2: { total_points: 2, minutes: 90 }, 3: { total_points: 0, minutes: 0 } }, 4: { 1: { total_points: 6, minutes: 90 }, 2: { total_points: 12, minutes: 90 } } };
+  const rows = hmRows(players, live, [3, 4], 'points', {});
+  ok(rows.length === 3 && JSON.stringify(rows[0].values) === '[6,6]' && JSON.stringify(rows[1].values) === '[2,12]', 'one row per player with the metric per gameweek');
+  ok(JSON.stringify(rows[2].values) === '[0,0]' && JSON.stringify(rows[2].played) === '[false,false]', 'a missing or unplayed gameweek is zero and flagged did-not-play');
+  ok(rows[0].var === 0 && rows[1].var === 25 && rows[1].total === 14, 'summary figures per row');
+  ok(hmRows(players, live, [3, 4], 'points', { pos: 2 }).length === 1 && hmRows(players, live, [3, 4], 'points', { team: 2 })[0].name === 'Salah', 'position and club filters');
+  ok(hmRows(players, live, [3, 4], 'points', { price: '11+' }).length === 1 && hmRows(players, live, [3, 4], 'points', { own: 'u5' })[0].id === 3, 'price band and ownership band filters');
+  ok(hmRows(players, live, [3, 4], 'points', { q: 'sal' }).length === 1 && hmRows(players, live, [3, 4], 'bogus', {}).length === 0, 'name search, and an unknown metric draws nothing');
+  const byVar = hmSort(rows, 'var', 1);
+  ok(byVar[0].id === 1 && byVar[1].id === 3 && byVar[2].id === 2, 'variance ascending, ties broken by total descending');
+  ok(hmSort(rows, 'total', -1)[0].id === 2 && hmSort(rows, 'nope', -1)[0].id === 2, 'total descending is the default sort');
+  ok(hmBin(0, 12) === 0 && hmBin(5, 0) === 0 && hmBin(12, 12) === HM_STEPS && hmBin(0.1, 12) === 1 && hmBin(6, 12) === 3 && hmBin(99, 12) === HM_STEPS, 'bins: zero is zero, the largest is the top step, over the top clamps');
+  ok(JSON.stringify(hmWindow(0, 600, 32, 1000, 8)) === '{"start":0,"end":27}', 'the first window is the viewport plus a buffer');
+  ok(JSON.stringify(hmWindow(3200, 600, 32, 1000, 8)) === '{"start":92,"end":127}', 'a scrolled window buffers both ways');
+  ok(JSON.stringify(hmWindow(31800, 600, 32, 1000, 8)) === '{"start":985,"end":1000}', 'the last window clips to the row count');
+  ok(JSON.stringify(hmWindow(0, 600, 32, 5, 8)) === '{"start":0,"end":5}', 'a short list is drawn whole');
+  ok(hmFmt({ dp: 2 }, '1.234') === '1.23' && hmFmt({ dp: 0 }, 7) === '7', 'values print to the metric’s decimals');
+  const past = new Date(Date.now() - 864e5).toISOString(), future = new Date(Date.now() + 864e5).toISOString();
+  ok(hmLastGw({ events: [{ id: 1, finished: true }, { id: 2, finished: true }, { id: 3, is_current: true, deadline_time: future }] }) === 2, 'a current gameweek before its deadline has no figures yet');
+  ok(hmLastGw({ events: [{ id: 1, finished: true }, { id: 2, is_current: true, deadline_time: past }] }) === 2 && hmLastGw({ events: [] }) === 0, 'a current gameweek past its deadline counts; pre-season is zero');
+}
+
+section('colour ramps: the heatmap steps carry their ink at AA, and the FDR ramp is one ramp');
+{
+  const { FDR_RAMP, fdrBg, fdrInk } = core;
+  const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+  const contrast = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+  const block = (re) => { const m = html.match(re); return m ? m[0] : ''; };
+  const dark = block(/:root\{[\s\S]*?\n\}/), light = block(/\[data-theme="light"\]\{[\s\S]*?\n\}/);
+  for (const [name, css] of [['dark', dark], ['light', light]]) {
+    const steps = [];
+    for (let i = 0; i <= 6; i++) { const bg = (css.match(new RegExp('--hm-' + i + ':(#[0-9a-f]{6})')) || [])[1], ink = (css.match(new RegExp('--hm-ink-' + i + ':(#[0-9a-f]{6})')) || [])[1]; steps.push([bg, ink]); }
+    ok(steps.every(([bg, ink]) => bg && ink), name + ' theme defines all seven heatmap steps with ink');
+    ok(steps.every(([bg, ink]) => contrast(bg, ink) >= 4.5), name + ' theme: every step’s ink reads at 4.5:1 or better (' + steps.map(([bg, ink]) => contrast(bg, ink).toFixed(1)).join(', ') + ')');
+    const L = steps.slice(1).map(([bg]) => lum(bg));
+    ok(L.every((v, i) => i === 0 || (name === 'dark' ? v > L[i - 1] : v < L[i - 1])), name + ' theme: the six steps run one way in lightness, so the scale is ordered without colour vision');
+  }
+  const fdrTokens = [1, 2, 3, 4, 5].map((d) => [(dark.match(new RegExp('--fdr-' + d + ':(#[0-9a-f]{6})')) || [])[1], (dark.match(new RegExp('--fdr-ink-' + d + ':(#[0-9a-f]{6})')) || [])[1]]);
+  ok(fdrTokens.every(([bg, ink], i) => bg === FDR_RAMP[i + 1][0] && ink === FDR_RAMP[i + 1][1]), 'the stylesheet FDR tokens and FDR_RAMP carry the same five pairs');
+  ok(fdrBg(4) === '#f0a3a0' && fdrInk(5) === '#2a1414' && fdrBg(9) === FDR_RAMP[3][0], 'fdrBg and fdrInk read the ramp, an unknown band is the neutral middle');
+  ok([1, 2, 3, 4, 5].every((d) => contrast(fdrBg(d), fdrInk(d)) >= 4.5), 'every FDR band reads its ink at AA');
+  ok(!/#2ecf73|#8fd9a6|#f0a3a0|#e05a55/.test(html.replace(dark, '').replace(/const FDR_RAMP=\{[^\n]*/, '')), 'no other copy of the FDR hex values remains in the page');
 }
 
 section('panelAliases: the palette finds a panel by its old id, its old name and plain English');

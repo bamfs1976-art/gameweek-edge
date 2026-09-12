@@ -593,7 +593,7 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
   const areaOfPanel = Object.fromEntries(navPanels.map((p) => [p.id, p.area]));
   const rehomed = {
     scout: 'home', liverank: 'live', results: 'matchcentre',
-    setpiece: 'players', rotation: 'players', seasonsim: 'planner',
+    setpiece: 'players', rotation: 'planner', seasonsim: 'planner',
     rivals: 'rivals', eo: 'rivals',
   };
   for (const [id, area] of Object.entries(rehomed)) {
