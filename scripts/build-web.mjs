@@ -11,6 +11,7 @@ import { join } from 'node:path';
 import { publishRecord } from './efl/publish-record.mjs';
 import { publishRecord as publishFplRecord } from './record/publish-record.mjs';
 import { buildSeo } from './seo/build.mjs';
+import { buildToolPages } from './tools/build.mjs';
 
 const ROOT = process.cwd();
 const OUT = join(ROOT, 'www');
@@ -169,7 +170,9 @@ const fplRecord = await publishFplRecord(join(OUT, 'record'));
 console.log(`✓ FPL record → www/record/record.json (${fplRecord.gameweeks} gameweek(s), ${fplRecord.graded} graded)`);
 /* Sitemap, robots and the pre-rendered content shells, from the same
    registries the app routes by (scripts/seo/routes.mjs). */
-const seo = await buildSeo(ROOT, OUT);
+const tools = await buildToolPages(ROOT, OUT);
+console.log(tools.pages ? `✓ Tool pages → www/tools/ (${tools.pages} pages from a snapshot built ${tools.built})` : `· Tool pages skipped: ${tools.note}`);
+const seo = await buildSeo(ROOT, OUT, tools.urls);
 console.log(`✓ SEO → www/sitemap.xml (${seo.urls} urls), www/robots.txt, ${seo.shells.length} pre-rendered shell(s): ${seo.shells.join(', ')}`);
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');

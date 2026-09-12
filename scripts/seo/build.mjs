@@ -10,12 +10,12 @@ import { join } from 'node:path';
 import { publicRoutes, readHead, sitemapXml, robotsTxt, STATIC_PAGES, PRERENDER } from './routes.mjs';
 import { routeBody, shellFor, appFaq, faqJsonLd } from './prerender.mjs';
 
-export async function buildSeo(root, out) {
+export async function buildSeo(root, out, extra) {
   const html = readFileSync(join(root, 'index.html'), 'utf8');
   const landing = readFileSync(join(root, 'landing.html'), 'utf8');
   const routes = publicRoutes(html);
   const pages = STATIC_PAGES.map((p) => readHead(root, p)).filter(Boolean);
-  writeFileSync(join(out, 'sitemap.xml'), sitemapXml(routes, pages));
+  writeFileSync(join(out, 'sitemap.xml'), sitemapXml(routes, pages, null, extra));
   writeFileSync(join(out, 'robots.txt'), robotsTxt());
   const shells = [];
   for (const id of PRERENDER) {
@@ -25,5 +25,5 @@ export async function buildSeo(root, out) {
     writeFileSync(join(out, id + '.html'), shellFor(html, route, routeBody(id, html, landing), jsonld));
     shells.push(id);
   }
-  return { urls: routes.length + pages.length, shells };
+  return { urls: routes.length + pages.length + (extra || []).length, shells };
 }

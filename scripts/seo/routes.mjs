@@ -101,7 +101,7 @@ export function readHead(root, page) {
   return { ...page, title: title.replace(/&amp;/g, '&'), description, canonical };
 }
 
-export function sitemapXml(routes, pages, built) {
+export function sitemapXml(routes, pages, built, extra) {
   const day = (built || new Date()).toISOString().slice(0, 10);
   const url = (loc, freq, pri) => '  <url><loc>' + esc(SITE + loc) + '</loc><lastmod>' + day + '</lastmod><changefreq>' + freq + '</changefreq><priority>' + pri + '</priority></url>';
   const seen = new Set();
@@ -113,6 +113,10 @@ export function sitemapXml(routes, pages, built) {
   for (const p of pages) {
     if (!p || seen.has(p.path)) continue; seen.add(p.path);
     rows.push(url(p.path, 'weekly', p.path === '/welcome' ? '0.9' : '0.6'));
+  }
+  for (const e of extra || []) {
+    if (!e || seen.has(e.path)) continue; seen.add(e.path);
+    rows.push(url(e.path, e.freq || 'daily', e.pri || '0.6'));
   }
   return '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + rows.join('\n') + '\n</urlset>\n';
 }
