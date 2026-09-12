@@ -617,8 +617,15 @@ console.log('• panel wiring: every panel is registered everywhere it needs to 
      would otherwise read as a panel simply having been retired, which is
      precisely how a paid feature gets given away by accident. */
   const RS = new Function('return ' + balanced(html, html.indexOf('const REPORT_SECTIONS='), '[', ']'))();
+  /* Phase 3.3 opened the season report's core (rank journey, bench, captaincy,
+     transfers, value, ownership) to free and moved the Pro lock onto three
+     depth sections, each declared here so the count below still sees them. */
   const season = RS.find((x) => x.id === 'season');
-  ok(season && season.tier === 'paid', 'the season half of the Manager Report is still Pro');
+  ok(season && season.tier === 'free', 'the season core of the Manager Report is free');
+  for (const id of ['chips', 'decisions', 'narrative']) {
+    const sec = RS.find((x) => x.id === id);
+    ok(sec && sec.tier === 'paid', 'the ' + id + ' depth section of the Manager Report is Pro');
+  }
   ok(RS.some((x) => x.tier !== 'paid'),
     'and the weekly debrief beside it stays free, so the merge did not take one away');
   ok(!navPanels.some((p) => p.id === 'gwhistory'),

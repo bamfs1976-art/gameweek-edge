@@ -68,6 +68,10 @@ const TASKS = {
     instruction: "Using myTeam and rivals (with squad overlap and points gap), explain how to overtake each rival: which differentials to target or avoid, and the captaincy angle. About 150 words.",
     model: 'claude-sonnet-5', max: 600, pro: true
   },
+  season: {
+    instruction: "Write the manager's season narrative from the `season` data: about 170 words in three short paragraphs. Cover the rank journey (weeks, points, rank now and best), captaincy (accuracy, points missed, the return against the field's captain), transfers (count, net points, hits), the bench, any chips and the costliest decisions listed. Quote only figures that appear in the data and name only players it names. Plain, calm, no hype. End with one practical lesson for the rest of the season. Never use an em dash.",
+    model: 'claude-sonnet-5', max: 700, pro: true
+  },
   draft: {
     instruction: "Diagnose this pre-season draft squad (squad entries carry position, club, predicted price, xP6 = projected points over GW1-6, and minsSecurity 0-100). Cover: budget balance across positions and the bank, club concentration, minutes-security risks, and the squad's total xP6 versus templateXP6 (a greedy reference draft from the same pool). Then suggest at most TWO swaps using only players from candidates, each as **OUT → IN** with the price difference and one-line reasoning. Note once that prices and projections are pre-season estimates. About 160 words.",
     model: 'claude-sonnet-5', max: 700, pro: true

@@ -607,6 +607,16 @@ filters and sort all live in the URL (`/heatmap?metric=xg&from=3&to=8`).
 Above about 2,000 cells the body draws only the rows in view. Live payloads
 are held in memory for the session, a finished gameweek fetched once.
 
+**Manager Season Report** — the season half of the Manager Report, for any
+public Team ID (`/gwreport?entry=3500123`, no password; the linked team opens
+by default). Free: the rank journey with chip markers, points on the bench
+cumulative, team value, captaincy accuracy against the best pick with
+hindsight and against the most‑captained player, transfer ROI after hits, and
+an ownership profile week by week on today's figures. Pro: chip effectiveness
+(what each chip added against the gameweek average), a decision timeline of
+the three costliest calls, and an AI‑written narrative reasoned only over the
+figures on the page. The share card carries the season figures.
+
 **Differentials** and the **Injury Monitor** are no longer panels — both were a
 filter and a sort over the same player data, so they are lenses on the Players
 table (*Differentials* and *Fitness*). Old links still work.
