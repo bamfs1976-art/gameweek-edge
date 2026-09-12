@@ -110,10 +110,11 @@ section('pre-rendered shells: the head, the copy and the schema');
 
 section('the rewrite rules and the build agree with the list');
 {
-  for (const id of PRERENDER) ok(new RegExp('from = "/' + id + '"\\n  to = "/' + id + '\\.html"\\n  status = 200').test(toml), 'netlify.toml rewrites /' + id + ' to its shell');
+  for (const id of PRERENDER) { const p = routes.find((r) => r.id === id).path; ok(new RegExp('from = "' + p + '"\\n  to = "' + p + '\\.html"\\n  status = 200').test(toml), 'netlify.toml rewrites ' + p + ' to its shell'); }
+  ok(routes.find((r) => r.id === 'blog').path === '/wire' && /from = "\/blog"\n  to = "\/blog\/"\n  status = 301/.test(toml), 'The Wire answers at /wire and /blog lands on the articles');
   const dir = mkdtempSync(join(tmpdir(), 'ge-seo-'));
   const res = await buildSeo(ROOT, dir);
-  ok(res.shells.length === PRERENDER.length && existsSync(join(dir, 'sitemap.xml')) && existsSync(join(dir, 'robots.txt')) && PRERENDER.every((id) => existsSync(join(dir, id + '.html'))), 'buildSeo writes the sitemap, robots and every shell');
+  ok(res.shells.length === PRERENDER.length && existsSync(join(dir, 'sitemap.xml')) && existsSync(join(dir, 'robots.txt')) && PRERENDER.every((id) => existsSync(join(dir, routes.find((r) => r.id === id).path.replace(/^\//, '') + '.html'))) && existsSync(join(dir, 'wire.html')), 'buildSeo writes the sitemap, robots and every shell, named after its path');
   ok(res.urls === routes.length + pages.length, 'and reports the url count');
   rmSync(dir, { recursive: true, force: true });
   ok(/buildSeo\(ROOT, OUT, tools\.urls\.concat\(blog\.urls\)\)/.test(readFileSync(join(ROOT, 'scripts/build-web.mjs'), 'utf8')), 'npm run build:web runs the step after the tool pages and the articles, so the sitemap lists them');

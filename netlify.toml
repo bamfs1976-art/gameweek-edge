@@ -299,7 +299,8 @@
 # title, description, canonical and social tags and its copy already in the
 # HTML, which the app then hydrates. A rewrite rather than trust in clean-URL
 # handling, so /glossary is served the same whatever the site setting. The
-# list mirrors PRERENDER in scripts/seo/routes.mjs; dev/test-seo.mjs checks.
+# list mirrors PRERENDER in scripts/seo/routes.mjs (The Wire's route is
+# /wire, so its shell is wire.html); dev/test-seo.mjs checks.
 [[redirects]]
   from = "/methodology"
   to = "/methodology.html"
@@ -321,9 +322,16 @@
   status = 200
 
 [[redirects]]
-  from = "/blog"
-  to = "/blog.html"
+  from = "/wire"
+  to = "/wire.html"
   status = 200
+
+# The written articles live at /blog/ (content/posts, built beside the
+# app); the bare path lands on the directory whatever the clean-URL setting.
+[[redirects]]
+  from = "/blog"
+  to = "/blog/"
+  status = 301
 
 # 404 page. Not forced, so existing files (landing.html, icons, data,
 # /fantasy-efl/*) and every rule above still win; this is the LAST rule

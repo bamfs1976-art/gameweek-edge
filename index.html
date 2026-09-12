@@ -5798,7 +5798,7 @@ const PANEL_SYNONYMS={
   setpiece:['set pieces','set piece register','penalties','corners','free kicks'],
   rotation:['rotation risk','congestion'],
   news:['news','latest news','press conference'],
-  blog:['the wire','blog','briefings'],
+  blog:['the wire','briefings','data briefings'],
   titlerace:['title race'],
   glossary:['glossary','terms','what does'],
   fplbasics:['fpl basics','new to fpl','how to play']
@@ -5820,7 +5820,10 @@ function panelAliases(id){
 const PANEL_PATH={myweek:'/week',dashboard:'/overview',allplayers:'/players',
   transfers:'/planner',captain:'/captaincy',liverank:'/live',price:'/prices',
   gwdebrief:'/debrief',results:'/matchday',accountability:'/model',
-  'gw-actions':'/recap',setpiece:'/set-pieces'};
+  'gw-actions':'/recap',setpiece:'/set-pieces',
+  /* The Wire is the app's auto-written briefings; /blog is the written
+     articles (content/posts), a static section built beside the app. */
+  blog:'/wire'};
 function panelPath(id){return PANEL_PATH[id]||('/'+id);}
 const PATH_PANEL=Object.fromEntries(
   Object.entries(PANEL_PATH).map(([id,p])=>[p.slice(1),id]));

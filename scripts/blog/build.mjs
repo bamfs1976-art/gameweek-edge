@@ -7,17 +7,17 @@
    With no published post the build writes nothing and says so: the
    scaffold ships, the content does not.
 
-   BLOG_BASE is /articles/ because /blog is The Wire, the app's own
-   auto-written briefings, which already answers at that address with a
-   pre-rendered shell. Moving it is a one-line change here plus the Wire's
-   path, once the owner decides which of the two owns the word. */
+   The index and the feed are always written, so /blog/ answers from the
+   first deploy: with no post it says the articles are on their way and
+   points at The Wire (the app's auto-written briefings, at /wire) and the
+   tools. Posts appear beneath it as they are published. */
 import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { frontMatter, renderMarkdown, excerpt, esc } from './markdown.mjs';
 import { CSS, LOGO } from '../tools/pages.mjs';
 import { footerLinksHtml } from '../site/links.mjs';
 
-export const BLOG_BASE = '/articles/';
+export const BLOG_BASE = '/blog/';
 export const BLOG_TITLE = 'Gameweek Edge articles';
 export const BLOG_DESC = 'Written pieces from the people behind Gameweek Edge: how the model thinks, what the data says, and how to use the app well.';
 const SITE = 'https://gameweekedge.co.uk';
@@ -57,8 +57,10 @@ function frame({ title, desc, path, body, links, rss }) {
 }
 
 export function renderIndex(posts, links) {
-  const body = '<h1>' + esc(BLOG_TITLE.replace('Gameweek Edge ', 'A')) + 'rticles</h1><p class="lede">' + esc(BLOG_DESC) + ' <a href="' + BLOG_BASE + 'feed.xml">RSS feed</a>.</p>' +
-    '<ul class="plist">' + posts.map((p) => '<li><a href="' + p.path + '">' + esc(p.title) + '</a><div class="meta">' + fmtDate(p.date) + (p.author ? ' · ' + esc(p.author) : '') + '</div><p style="margin:0;color:var(--text-2)">' + esc(p.description) + '</p></li>').join('') + '</ul>';
+  const list = posts.length
+    ? '<ul class="plist">' + posts.map((p) => '<li><a href="' + p.path + '">' + esc(p.title) + '</a><div class="meta">' + fmtDate(p.date) + (p.author ? ' · ' + esc(p.author) : '') + '</div><p style="margin:0;color:var(--text-2)">' + esc(p.description) + '</p></li>').join('') + '</ul>'
+    : '<div class="card"><p class="card-title">No articles yet</p><p style="margin:0;color:var(--text-2)">The first pieces are on their way. In the meantime <a href="/wire">The Wire</a> writes a briefing from the live data every gameweek, and the <a href="/tools/">tools</a> carry fixture difficulty, price changes, injuries and a page per player.</p></div>';
+  const body = '<h1>Articles</h1><p class="lede">' + esc(BLOG_DESC) + ' <a href="' + BLOG_BASE + 'feed.xml">RSS feed</a>.</p>' + list;
   return frame({ title: BLOG_TITLE + ' | Gameweek Edge', desc: BLOG_DESC, path: BLOG_BASE, body, links, rss: true });
 }
 
@@ -79,7 +81,6 @@ export function renderFeed(posts, built) {
 
 export async function buildBlog(root, out, links, now) {
   const posts = readPosts(join(root, 'content', 'posts'), now);
-  if (!posts.length) return { posts: 0, urls: [], note: 'no published post in content/posts (drafts, underscored files and future dates are left out)' };
   const base = join(out, BLOG_BASE);
   mkdirSync(base, { recursive: true });
   writeFileSync(join(base, 'index.html'), renderIndex(posts, links));
@@ -90,5 +91,5 @@ export async function buildBlog(root, out, links, now) {
     writeFileSync(join(out, p.path, 'index.html'), renderPost(p, links));
     urls.push({ path: p.path, freq: 'monthly', pri: '0.6' });
   }
-  return { posts: posts.length, urls };
+  return { posts: posts.length, urls, note: posts.length ? '' : 'no published post in content/posts yet (drafts, underscored files and future dates are left out); the index and the feed are written' };
 }
