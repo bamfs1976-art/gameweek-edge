@@ -2206,6 +2206,144 @@ section('detailed view: a failure is visible, and never an empty league');
      + early.errs.slice(0, 2).join(' | ') + ')');
 }
 
+section('detailed view: the order matches the totals beside it');
+{
+  /* THE REPORTED BUG, on the render path rather than on the helper.
+     "Clearly not in the right order based on total points", with a
+     screenshot whose TOTAL column read 322, 281, 282, 282, 283, 280,
+     287 straight down the page.
+
+     FPL freeze `rank` until they score a gameweek, and the detailed view
+     sums a running total from the live feed. So the table sat in last
+     week's order with this week's numbers printed beside it, and the
+     pure-function tests could not see it because they never built a card.
+
+     This league is arranged so the two orders genuinely disagree: the
+     manager FPL have bottom captains the player having the huge
+     gameweek, and ends the afternoon top. */
+  const BASE = { 7654321: 120, 1234567: 118, 9998887: 90 };
+  const RANK = [
+    { rank: 1, last_rank: 1, entry: 7654321, entry_name: 'Rival FC', player_name: 'Sam Rivers', event_total: 0, total: 120 },
+    { rank: 2, last_rank: 2, entry: 1234567, entry_name: 'My Team', player_name: 'Me Myself', event_total: 0, total: 118 },
+    { rank: 3, last_rank: 3, entry: 9998887, entry_name: 'Third Wheel', player_name: 'Pat Third', event_total: 0, total: 90 },
+  ];
+  const fx = picksFixture();
+  const XI = fx.picks.filter((p) => p.position <= 11).map((p) => p.element);
+  const HERO = XI[XI.length - 1];          /* the one having the week */
+  const PLAIN = XI[0];
+  const picksFor = (entry) => {
+    const f = picksFixture();
+    f.picks.forEach((p) => {
+      p.is_captain = false; p.is_vice_captain = false;
+      p.multiplier = p.position <= 11 ? 1 : 0;
+    });
+    const capId = Number(entry) === 9998887 ? HERO : PLAIN;
+    const cap = f.picks.find((p) => p.element === capId);
+    cap.is_captain = true; cap.multiplier = 2;
+    f.entry_history.event_transfers_cost = 0;
+    return JSON.stringify(f);
+  };
+  const liveFor = () => JSON.stringify({
+    elements: picksFixture().picks.map((p) => ({
+      id: p.element, stats: { total_points: p.element === HERO ? 60 : 2, minutes: 90 } }))
+  });
+  const historyFor = (entry) => JSON.stringify({
+    current: [{ event: 1, points: BASE[entry], total_points: BASE[entry], rank: 1,
+      overall_rank: 500000, bank: 5, value: 1000, event_transfers: 0,
+      event_transfers_cost: 0, points_on_bench: 0 }],
+    past: [], chips: []
+  });
+
+  /* GW2 in play: current, unfinished, unscored. The shipped fixture has
+     GW1 finished, where FPL's order and ours are the same arithmetic and
+     nothing here would be exercised. */
+  const bootLive = () => {
+    const b = JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-bootstrap.json'), 'utf8'));
+    b.events.forEach((e) => {
+      e.is_current = e.id === 2; e.is_next = e.id === 3; e.is_previous = e.id === 1;
+      if (e.id >= 2) { e.finished = false; e.data_checked = false; }
+    });
+    return JSON.stringify(b);
+  };
+
+  const open = async (opts) => {
+    const o = opts || {};
+    const p = await browser.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(e.message));
+    await p.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+    await p.route('**/api/fpl/bootstrap-static', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: bootLive() }));
+    await p.route('**/api/fpl/leagues-classic/*/standings*', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ league: { id: 555, name: 'The Office League' },
+          standings: { has_next: false, results: RANK } }) }));
+    await p.route('**/api/fpl/event/*/live', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: liveFor() }));
+    await p.route('**/api/fpl/entry/*/event/*/picks', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json',
+        body: picksFor(r.request().url().split('/entry/')[1].split('/')[0]) }));
+    await p.route('**/api/fpl/entry/*/history', (r) => {
+      const id = Number(r.request().url().split('/entry/')[1].split('/')[0]);
+      if (o.breakHistory === id) return r.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+      return r.fulfill({ status: 200, contentType: 'application/json', body: historyFor(id) });
+    });
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(1200);
+    const out = await p.evaluate(async (sort) => {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'detailed'; LEAGUE_SORT = sort; LEAGUE_DIR = 0;
+      renderPage('leagues');
+      await new Promise((r) => setTimeout(r, 5000));
+      const heads = [...document.querySelectorAll('.lg-mgr')];
+      const host = document.getElementById('ge-data');
+      return {
+        names: heads.map((h) => (h.querySelector('.dl-nm') || {}).textContent || ''),
+        pos: heads.map((h) => parseInt(((h.querySelector('.dl-rank') || {}).textContent || '').replace(/\D+/g, ''), 10)),
+        totals: heads.map((h) => Number(((h.querySelector('.lg-tot b') || {}).textContent || '').replace(/,/g, ''))),
+        title: (heads[0] ? (heads[0].querySelector('.dl-rank') || {}).getAttribute('title') : '') || '',
+        text: host ? host.innerText : '',
+      };
+    }, o.sort || 'rank');
+    await p.close();
+    return { ...out, errs };
+  };
+
+  const byRank = await open({ sort: 'rank' });
+  ok(byRank.totals.length === 3, 'three managers render, got ' + byRank.totals.length);
+  /* The assertion the screenshot failed. */
+  ok(byRank.totals.every((v, i) => i === 0 || byRank.totals[i - 1] >= v),
+     'the totals read down the page never go back up, got ' + byRank.totals.join(','));
+  ok(/Third Wheel/.test(byRank.names[0]),
+     'the manager with the best running total leads, got ' + byRank.names[0]);
+  ok(byRank.pos.join(',') === '1,2,3',
+     'and the positions count 1, 2, 3 down the page, got ' + byRank.pos.join(','));
+  ok(/running order/i.test(byRank.text), 'the card says the positions are this gameweek’s');
+  ok(/still has them at 3/.test(byRank.title),
+     'and the badge names FPL’s own position, got ' + byRank.title);
+  ok(byRank.errs.length === 0, 'nothing threw (' + byRank.errs.slice(0, 2).join(' | ') + ')');
+
+  /* Choosing Total points must not change the order it is already in:
+     the sort and the column read the same field now. */
+  const byTotal = await open({ sort: 'total' });
+  ok(byTotal.names.join('|') === byRank.names.join('|'),
+     'sorting by total points agrees with the live position, got ' + byTotal.names.join(','));
+
+  /* A MIXED FIELD IS REFUSED. One history fails, so that manager's total
+     falls back to FPL's settled figure. Ranking the league on a mixture
+     would put them below people they are beating, so the card keeps
+     FPL's order and says why. */
+  const mixed = await open({ sort: 'rank', breakHistory: 9998887 });
+  ok(mixed.totals.length === 3, 'the card still renders with a history missing');
+  ok(/Rival FC/.test(mixed.names[0]),
+     'FPL’s order is kept, got ' + mixed.names[0]);
+  ok(/as of the last gameweek they scored/i.test(mixed.text),
+     'and the card says whose positions these are');
+  ok(/season history did not load/i.test(mixed.text), 'and why it did not build its own');
+  ok(mixed.errs.length === 0, 'nothing threw on the mixed field ('
+     + mixed.errs.slice(0, 2).join(' | ') + ')');
+}
+
 section('a deploy that lands under a page nobody reloads');
 {
   /* The app is one HTML file and the worker is network-first on it, so a

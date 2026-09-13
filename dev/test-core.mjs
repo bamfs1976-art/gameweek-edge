@@ -138,6 +138,7 @@ const pieces = [
   extractFn(html, 'leagueSortSpec'),
   extractFn(html, 'sortLeagueRows'),
   extractFn(html, 'leagueStdRow'),
+  extractFn(html, 'leagueLivePos'),
   extractFn(html, 'leagueAwards'),
   extractFn(html, 'leagueEO'),
   extractFn(html, 'managerDetail'),
@@ -413,7 +414,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2378,6 +2379,95 @@ section('leagueStdRow / LEAGUE_SORTS: one sorter for two views');
      'every sort declares a direction');
   ok(new Set(core.LEAGUE_SORTS.map((o) => o.key)).size === core.LEAGUE_SORTS.length,
      'and the keys are unique, so the select cannot have two of the same');
+}
+
+section('leagueLivePos: the order the totals on screen are actually in');
+{
+  /* The reported case, with the figures off the user's own screenshot:
+     rank ascends 1 to 7 while the running totals do not. */
+  const R = [
+    { entry: 1, rank: 1, totalRun: 322, totalLive: true },
+    { entry: 2, rank: 2, totalRun: 281, totalLive: true },
+    { entry: 3, rank: 3, totalRun: 282, totalLive: true },
+    { entry: 4, rank: 4, totalRun: 282, totalLive: true },
+    { entry: 5, rank: 5, totalRun: 283, totalLive: true },
+    { entry: 6, rank: 6, totalRun: 280, totalLive: true },
+    { entry: 7, rank: 7, totalRun: 287, totalLive: true },
+  ];
+  const pos = core.leagueLivePos(R.slice());
+  ok(pos[1] === 1 && pos[7] === 2 && pos[5] === 3,
+     'the highest running totals lead, got ' + pos[1] + ',' + pos[7] + ',' + pos[5]);
+  ok(pos[3] === 4 && pos[4] === 4,
+     'equal totals share a position, got ' + pos[3] + ' and ' + pos[4]);
+  ok(pos[2] === 6, 'and the next position skips the tie, got ' + pos[2]);
+  ok(pos[6] === 7, 'the lowest running total is last, got ' + pos[6]);
+  ok(Object.keys(pos).length === 7, 'every manager gets a position');
+
+  /* The tie is split by league position so two renders agree. */
+  const tie = core.leagueLivePos([
+    { entry: 9, rank: 5, totalRun: 100 }, { entry: 8, rank: 2, totalRun: 100 }]);
+  ok(tie[8] === 1 && tie[9] === 1, 'tied totals both read 1');
+
+  /* REFUSES A PARTIAL FIELD rather than rank a mixture. */
+  ok(Object.keys(core.leagueLivePos([
+      { entry: 1, rank: 1, totalRun: 300 },
+      { entry: 2, rank: 2, totalRun: null }])).length === 0,
+     'one missing running total and no positions are offered at all');
+  ok(Object.keys(core.leagueLivePos([
+      { entry: 1, rank: 1, totalRun: 300 }, { entry: 2, rank: 2 }])).length === 0,
+     'and an absent field counts as missing, not as nought');
+  ok(Object.keys(core.leagueLivePos([])).length === 0, 'an empty league is empty');
+  ok(Object.keys(core.leagueLivePos(null)).length === 0, 'a missing list does not throw');
+
+  /* The input is not reordered under the caller. */
+  const src = [{ entry: 1, rank: 1, totalRun: 10 }, { entry: 2, rank: 2, totalRun: 99 }];
+  const copy = src.slice();
+  core.leagueLivePos(copy);
+  ok(src.map((r) => r.entry).join(',') === '1,2', 'the caller keeps its own order');
+}
+
+section('LEAGUE_SORTS: the sort reads the field the row displays');
+{
+  /* THE BUG, stated as a test. The detailed view prints totalRun and
+     the sort read total, so "Total points" ordered the table by a
+     number it never showed. Mid-gameweek those disagree by whatever
+     the manager has scored so far. */
+  const LIVE = [
+    { entry: 1, rank: 1, total: 235, totalRun: 322, gwPts: 87 },
+    { entry: 2, rank: 2, total: 199, totalRun: 281, gwPts: 82 },
+    { entry: 3, rank: 3, total: 219, totalRun: 280, gwPts: 61 },
+  ];
+  const order = (rows) => rows.map((r) => r.entry).join(',');
+  ok(order(core.sortLeagueRows(LIVE, 'total')) === '1,2,3',
+     'total points orders on the running total, got ' + order(core.sortLeagueRows(LIVE, 'total')));
+  ok(core.LEAGUE_SORTS.filter((o) => o.key === 'total')[0].get(LIVE[1]) === 281,
+     'the getter returns the figure on screen, not FPL\u2019s frozen one');
+
+  /* And the compact table, which has no running total, is untouched. */
+  const std = core.leagueStdRow({ entry: 5, rank: 2, last_rank: 1, event_total: 40, total: 190 });
+  ok(core.LEAGUE_SORTS.filter((o) => o.key === 'total')[0].get(std) === 190,
+     'a standings row still sorts on FPL\u2019s total');
+  ok(core.LEAGUE_SORTS.filter((o) => o.key === 'rank')[0].get(std) === 2,
+     'and on FPL\u2019s position');
+
+  /* League position follows the live position once one exists. */
+  const withPos = [
+    { entry: 1, rank: 3, livePos: 1 }, { entry: 2, rank: 1, livePos: 2 },
+    { entry: 3, rank: 2, livePos: 3 }];
+  ok(order(core.sortLeagueRows(withPos, 'rank')) === '1,2,3',
+     'league position sorts on the live position when the row has one, got ' +
+     order(core.sortLeagueRows(withPos, 'rank')));
+  ok(order(core.sortLeagueRows(withPos.map((r) => ({ entry: r.entry, rank: r.rank })), 'rank')) === '2,3,1',
+     'and on FPL\u2019s position when it does not');
+
+  /* Rank movement has to measure whatever the arrow beside it draws. */
+  const mv = core.LEAGUE_SORTS.filter((o) => o.key === 'move')[0];
+  ok(mv.get({ rank: 5, livePos: 2, lastRank: 5 }) === 3,
+     'movement against a live position is this gameweek\u2019s climb, got ' +
+     mv.get({ rank: 5, livePos: 2, lastRank: 5 }));
+  ok(mv.get({ rank: 2, lastRank: 5 }) === 3,
+     'and FPL\u2019s own movement when there is no live position');
+  ok(mv.get({ rank: 2 }) === null, 'with nothing to compare it stays null, not nought');
 }
 
 section('boardDeadline: the clock names the gameweek the app is on');
