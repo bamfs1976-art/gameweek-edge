@@ -22028,11 +22028,26 @@ const CHIP_SHORT={wildcard:'WC','3xc':'TC',bboost:'BB',freehit:'FH',manager:'AM'
    The compact table has standings and nothing else, so offering to sort
    it by team value would be offering a sort that silently does nothing. */
 const LEAGUE_SORTS=[
-  {key:'rank',  label:'League position',dir:1, get:r=>r.rank},
-  {key:'total', label:'Total points',   dir:-1,get:r=>r.total},
+  /* THE FIELD THE ROW SHOWS, not the field FPL published.
+     The detailed view prints a running total summed from the live feed,
+     and a live position built from it; the compact table has only FPL's
+     own frozen figures. One getter serves both by preferring the live
+     field when the row carries it. Sorting on r.total while the column
+     rendered r.totalRun meant "Total points" ordered the table by a
+     number it never displayed, which was reported as a table plainly in
+     the wrong order. A compact row has neither field, so it falls
+     through to FPL's and nothing about that view changes. */
+  {key:'rank',  label:'League position',dir:1, get:r=>r.livePos!=null?r.livePos:r.rank},
+  {key:'total', label:'Total points',   dir:-1,get:r=>r.totalRun!=null?r.totalRun:r.total},
   {key:'gw',    label:'Gameweek points',dir:-1,get:r=>r.gwPts},
+  /* The same quantity the arrow on the row draws. Against FPL's frozen
+     rank that is their movement across the last two scored gameweeks;
+     against a live position it is movement so far THIS gameweek, from
+     where FPL left them. Sorting one while showing the other would put
+     the biggest climber halfway down a column of arrows. */
   {key:'move',  label:'Rank movement',  dir:-1,
-   get:r=>(r.lastRank&&r.rank)?r.lastRank-r.rank:null},
+   get:r=>r.livePos!=null?((r.rank||0)-r.livePos)
+     :((r.lastRank&&r.rank)?r.lastRank-r.rank:null)},
   {key:'or',    label:'Overall rank',   dir:1, detail:true,get:r=>r.or},
   {key:'tv',    label:'Team value',     dir:-1,detail:true,get:r=>r.tv},
   {key:'yet',   label:'Players to play',dir:-1,detail:true,get:r=>r.yet},
@@ -22075,6 +22090,48 @@ function sortLeagueRows(rows,key,dir){
 function leagueStdRow(r){
   return {entry:r.entry,name:r.entry_name,mgr:r.player_name,
     rank:r.rank,lastRank:r.last_rank,gwPts:r.event_total,total:r.total,raw:r};
+}
+/* THE POSITION THE TABLE IS ACTUALLY IN, while the gameweek runs.
+   ────────────────────────────────────────────────────────────────
+   FPL freezes `rank` until it scores a gameweek, so all through a
+   matchday the detailed view sat in last week's order with this week's
+   running totals printed beside it. Read straight down the column the
+   numbers went 322, 281, 282, 282, 283, 280, 287 and the table looked
+   broken, because by the figures on screen it was.
+
+   So positions get rebuilt from the totals on screen. Standard
+   competition ranking: equal totals share a position and the next one
+   skips, the way a league table works, rather than splitting a tie on
+   whatever order the rows arrived in. FPL's own rank is the tie-break
+   between equal totals, so the order is stable from render to render.
+
+   REFUSES A PARTIAL FIELD. Every row has to carry a finite running
+   total or this returns nothing at all and the caller keeps FPL's
+   positions. A manager whose season history failed to load falls back
+   to FPL's settled total, which is a smaller number of a different
+   kind; ranking the field on a mixture of the two would place them
+   below people they are beating. Better to show an order that is a
+   week old and say so than one that is wrong today. Pure. */
+function leagueLivePos(rows){
+  const list=(rows||[]).slice();
+  if(!list.length)return {};
+  /* null BEFORE Number(), the same trap the sorter above documents:
+     Number(null) is 0 and 0 is finite, so a manager with no running
+     total would pass the completeness check and then rank last on a
+     nought he never scored. */
+  const val=r=>{const v=r&&r.totalRun;if(v==null)return null;
+    const n=Number(v);return Number.isFinite(n)?n:null;};
+  if(list.some(r=>val(r)==null))return {};
+  const by=list.sort((a,c)=>val(c)-val(a)||(a.rank||0)-(c.rank||0));
+  const out={};
+  let pos=0,seen=0,last=null;
+  by.forEach(r=>{
+    seen++;
+    const v=val(r);
+    if(last===null||v!==last){pos=seen;last=v;}
+    out[r.entry]=pos;
+  });
+  return out;
 }
 /* Free transfers a manager carries into the next deadline.
    ─────────────────────────────────────────────────────────
@@ -22677,6 +22734,30 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
        would quietly change WHICH managers the card is about. */
     const built=slice.map((r,i)=>managerDetail(r,picksArr[i],live,states,b.els,eo.byId,histArr[i],ftMax,!!(b.cur&&b.cur.finished)))
       .filter(Boolean);
+    /* ── LIVE POSITIONS, and the three conditions on offering them ──
+       1. The whole league has to be here. On a league that runs past
+          this card's fifty, a position rebuilt from what loaded is a
+          position in the page, and printing it in the # column would
+          tell somebody they are third of four hundred.
+       2. Somebody's total has to be live. Once FPL scores the week,
+          their positions and these totals are the same arithmetic and
+          FPL's are the authority.
+       3. Every total has to be live. Mixing a live running total with
+          a settled one ranks the settled manager below people they are
+          beating; leagueLivePos refuses the field rather than guess.
+       When any of them fails the card keeps FPL's order and says which
+       order it is, which is the honest half of the fix. */
+    const wholePage=!!whole&&res.length<=LEAGUE_DETAIL_MAX;
+    const allBuilt=built.length===res.length;
+    const wholeField=wholePage&&allBuilt;
+    const anyLive=built.some(d=>d.totalLive);
+    const posById=(wholeField&&anyLive&&built.length>1&&built.every(d=>d.totalLive))
+      ? leagueLivePos(built.slice()) : {};
+    const liveOn=Object.keys(posById).length===built.length&&built.length>0;
+    if(liveOn)built.forEach(d=>{d.livePos=posById[d.entry];});
+    /* Sorted after the positions exist, because "League position" reads
+       them: sorting first would order the table on the very field this
+       block is here to replace. */
     const rows=sortLeagueRows(built,LEAGUE_SORT,LEAGUE_DIR);
     if(!rows.length)return {ok:false,html:''};
     const pct=v=>v==null?'':(v*100).toFixed(1)+'%';
@@ -22707,7 +22788,19 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
     };
     const mgr=d=>{
       const open=LEAGUE_OPEN.has(String(d.entry));
-      const mv=(d.lastRank&&d.rank)?d.lastRank-d.rank:0;
+      /* THE ARROW HAS TO MEASURE THE SAME THING THE NUMBER DOES.
+         Against FPL's frozen rank it is FPL's own movement across the
+         last two scored gameweeks, which is what it has always been.
+         Against a live position it is movement so far THIS gameweek,
+         measured from where FPL left them, which is the only reading
+         that agrees with the badge beside it. */
+      const mv=d.livePos!=null
+        ? ((d.rank||0)-d.livePos)
+        : ((d.lastRank&&d.rank)?d.lastRank-d.rank:0);
+      const posTitle=d.livePos!=null
+        ? 'Live position, from this gameweek\u2019s running total. FPL\u2019s own table still has them at '+
+          fmtNum(d.rank)+' and moves when the gameweek is scored.'
+        : anyLive?'FPL\u2019s position, as of the last gameweek they scored.':'';
       const chip=d.chip?'<span class="badge badge-amber">'+esc(CHIP_API_LABEL[d.chip]||d.chip)+'</span>':'';
       const meta=[d.mgr,
         d.transfers?d.transfers+' transfer'+(d.transfers===1?'':'s')+(d.hit?' (−'+d.hit+')':''):''
@@ -22778,7 +22871,9 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
           (d.autoSubs===1?'':'s')+' applied.</div>':'';
       return '<div class="lg-mgr'+(d.entry===meId?' league-me':'')+'">'+
         '<div class="lg-head" onclick="lgToggle('+d.entry+')">'+
-          '<span class="dl-rank">'+fmtNum(d.rank)+(mv>0?'<small class="lg-up">▲</small>':mv<0?'<small class="lg-dn">▼</small>':'')+'</span>'+
+          '<span class="dl-rank"'+(posTitle?' title="'+esc(posTitle)+'"':'')+'>'+
+            fmtNum(d.livePos!=null?d.livePos:d.rank)+
+            (mv>0?'<small class="lg-up">▲</small>':mv<0?'<small class="lg-dn">▼</small>':'')+'</span>'+
           '<span class="dl-grow"><span class="tr-cell">'+
             '<span class="dl-nm">'+esc(d.name)+(d.entry===meId?' · you':'')+' '+chip+'</span>'+
             '<span class="dl-sub">'+esc(meta)+'</span></span></span>'+
@@ -22834,7 +22929,7 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
         :'<p class="dl-sub" style="margin:0">No transfers made for GW'+gw+' by the managers on this page.</p>')+'</div>';
     const nf=buildNextFix(b,fixtures);
     const projOf={};slice.forEach((r,i)=>{const p=picksArr[i];if(!p)return;let sum=0;p.picks.forEach(pk=>{const el=b.els[pk.element];if(el)sum+=(xP(b,el,nf[el.team])||0)*(pk.multiplier||0);});projOf[r.entry]=sum;});
-    const ovRows=built.map(d=>({entry:d.entry,name:d.name,rank:d.rank,total:d.totalRun!=null?d.totalRun:d.total,proj:projOf[d.entry]||0}));
+    const ovRows=built.map(d=>({entry:d.entry,name:d.name,rank:d.livePos!=null?d.livePos:d.rank,total:d.totalRun!=null?d.totalRun:d.total,proj:projOf[d.entry]||0}));
     const ov=lgOvertake(ovRows,meId);
     const myXI=(built.find(d=>d.entry===meId)||{xi:[]}).xi.map(p=>p.id);
     const myAll=myPicks?myPicks.picks.map(p=>p.element):[];
@@ -22873,6 +22968,25 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
     const benchNote=rows.some(r=>r.bench.some(p=>p.mult===0))
       ? ' A greyed bench figure is what that player scored; it does not count for this manager unless they played a Bench Boost.'
       : '';
+    /* WHICH ORDER THE TABLE IS IN, said out loud either way. A live
+       order is a claim about right now and needs saying; FPL's order
+       beside live totals needs saying MORE, because it is the case that
+       looks broken. */
+    const posNote=liveOn
+      ? '<p class="dl-sub" style="margin:10px 0 0">Positions are this gameweek\u2019s running order, built from the '+
+        'totals beside them. FPL keep the order they finished the last gameweek in and move it when they score '+
+        'this one, so their table and this one disagree until then.</p>'
+      : anyLive
+        ? '<p class="dl-sub" style="margin:10px 0 0">Positions are FPL\u2019s, as of the last gameweek they scored, '+
+          'so they sit still while the totals beside them run. '+
+          (!wholePage
+            ? 'This page is part of a larger league, so an order built here would order the page and not the league.'
+            : !allBuilt
+              ? 'A squad could not be loaded, so an order built here would leave that manager out of their own league.'
+              : built.length<2?''
+                :'A season history did not load, so a live order would mix running totals with settled ones.')+
+          '</p>'
+        : '';
     const note='<p class="dl-sub" style="margin:10px 0 0">Percentages are effective ownership '+scope+
       ': the sum of everyone’s multipliers, so a captain counts twice and a benched player counts nothing. '+
       'GW'+gw+'.'+(missing?' '+missing+' manager'+(missing===1?'’s squad':'s’ squads')+' could not be loaded and '+
@@ -22880,7 +22994,7 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
     return {ok:true,html:'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+
       '<div class="lg-legend">'+Object.keys(LG_STATE).map(k=>
         '<span><i class="lg-dot lg-'+k+'"></i>'+LG_STATE[k]+'</span>').join('')+'</div>'+
-      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+note+'</div>'+swing+extra};
+      '<div class="lg-list">'+rows.map(mgr).join('')+'</div>'+posNote+note+'</div>'+swing+extra};
   /* Never a silent ''. The detail card REPLACES the standings table, so an
      empty string here used to render a league with no managers in it at
      all — reported as "nothing is showing". A failure has to be visible,

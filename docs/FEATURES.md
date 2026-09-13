@@ -469,6 +469,25 @@ and the points swing.
 
 ### Rivals
 
+**Mini-Leagues** — classic, head-to-head and leagues you build from Team IDs.
+Compact is FPL's own table. Detailed loads every squad on the page and sums a
+running total from the live feed.
+
+Two clocks run in that panel and the code says which is which. FPL freeze
+`rank`, `total` and `event_total` until they score a gameweek, so all through a
+matchday they describe the last week they scored. The detailed view's GW and
+TOTAL columns are ours, summed live and net of hits, so during a live gameweek
+FPL's order and our numbers disagree.
+
+While a gameweek runs the detailed view therefore ranks on what it displays:
+`leagueLivePos` rebuilds positions from the running totals, equal totals share a
+position, and the ▲▼ arrow becomes movement so far this gameweek rather than
+FPL's last scored move. It refuses to do any of that unless the whole league is
+on screen and every manager's running total is live, because an order built on a
+mixture of live and settled totals places people below rivals they are beating.
+When it refuses, the card keeps FPL's positions and prints which order they are
+and why. The compact table is untouched: it shows FPL's figures throughout.
+
 **EO Tracker** — effective ownership, the real measure of rank gain at the top.
 
 **Template Meter** — squad overlap with the top‑10k template and where your edge sits.
