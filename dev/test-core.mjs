@@ -139,6 +139,14 @@ const pieces = [
   extractFn(html, 'sortLeagueRows'),
   extractFn(html, 'leagueStdRow'),
   extractFn(html, 'leagueLivePos'),
+  extractArrayConst(html, 'MONTH_NAMES'),
+  extractFn(html, 'gwMonths'),
+  extractConst(html, 'COMP_UNNORMALISED'),
+  extractFn(html, 'compManager'),
+  extractArrayConst(html, 'COMP_TIES'),
+  extractFn(html, 'compTieSpec'),
+  extractFn(html, 'compRank'),
+  extractFn(html, 'tcCaptainGain'),
   extractFn(html, 'leagueAwards'),
   extractFn(html, 'leagueEO'),
   extractFn(html, 'managerDetail'),
@@ -414,7 +422,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2468,6 +2476,192 @@ section('LEAGUE_SORTS: the sort reads the field the row displays');
   ok(mv.get({ rank: 2, lastRank: 5 }) === 3,
      'and FPL\u2019s own movement when there is no live position');
   ok(mv.get({ rank: 2 }) === null, 'with nothing to compare it stays null, not nought');
+}
+
+section('gwMonths: a gameweek belongs to the month of its deadline');
+{
+  const ev = (id, iso) => ({ id: id, deadline_time: iso });
+  const M = core.gwMonths([
+    ev(1, '2026-08-14T17:15:00Z'), ev(2, '2026-08-21T17:15:00Z'),
+    ev(3, '2026-08-28T17:15:00Z'), ev(4, '2026-09-04T17:15:00Z'),
+    ev(5, '2026-09-11T17:15:00Z'), ev(6, '2027-01-02T12:00:00Z'),
+  ]);
+  ok(M.length === 3, 'three months are represented, got ' + M.length);
+  ok(M[0].key === '2026-08' && M[0].label === 'August 2026',
+     'the first is August 2026, got ' + M[0].key + ' / ' + M[0].label);
+  ok(M[0].gws.join(',') === '1,2,3', 'with its gameweeks, got ' + M[0].gws.join(','));
+  ok(M[1].gws.join(',') === '4,5', 'and September takes the rest, got ' + M[1].gws.join(','));
+  ok(M[2].key === '2027-01', 'a January across the new year is its own month, got ' + M[2].key);
+  ok(M[2].year === 2027, 'and carries the right year, got ' + M[2].year);
+
+  /* Calendar order, whatever order the events arrive in. */
+  const shuffled = core.gwMonths([ev(4, '2026-09-04T17:15:00Z'), ev(1, '2026-08-14T17:15:00Z')]);
+  ok(shuffled.map((m) => m.key).join(',') === '2026-08,2026-09',
+     'months come back in calendar order, got ' + shuffled.map((m) => m.key).join(','));
+
+  /* A gameweek with no deadline cannot be placed and is not invented into one. */
+  ok(core.gwMonths([{ id: 9 }, ev(1, '2026-08-14T17:15:00Z')]).length === 1,
+     'an event with no deadline is left out rather than guessed');
+  ok(core.gwMonths([ev(1, 'not a date')]).length === 0, 'and an unparseable one too');
+  ok(core.gwMonths(null).length === 0, 'a missing event list does not throw');
+}
+
+section('compManager: the competition score, and what each rule costs');
+{
+  /* GW1 clean. GW2 a -8 hit. GW3 a Bench Boost with 24 on the bench.
+     GW4 a Triple Captain. Every `points` is FPL's own figure, which the
+     app has established elsewhere is already net of the hit. */
+  const H = {
+    current: [
+      { event: 1, points: 60, event_transfers: 0, event_transfers_cost: 0, points_on_bench: 5 },
+      { event: 2, points: 76, event_transfers: 3, event_transfers_cost: 8, points_on_bench: 2 },
+      { event: 3, points: 90, event_transfers: 1, event_transfers_cost: 0, points_on_bench: 24 },
+      { event: 4, points: 70, event_transfers: 0, event_transfers_cost: 0, points_on_bench: 3 },
+    ],
+    chips: [{ name: 'bboost', event: 3 }, { name: '3xc', event: 4 }],
+  };
+  const GWS = [1, 2, 3, 4];
+
+  const plain = core.compManager(H, GWS, { hits: true });
+  ok(plain.total === 296, 'counting hits and normalising nothing is FPL’s own sum, got ' + plain.total);
+  ok(plain.hits === 8, 'the hit is reported, got ' + plain.hits);
+  ok(plain.transfers === 4, 'and the transfers, got ' + plain.transfers);
+  ok(plain.bench === 34, 'and the bench points, got ' + plain.bench);
+  ok(plain.best === 90, 'best single gameweek is the Bench Boost week, got ' + plain.best);
+  ok(plain.played === 4 && plain.missing === 0, 'four gameweeks played');
+
+  /* NOT counting hits ADDS the cost back: FPL already took it off. */
+  ok(core.compManager(H, GWS, { hits: false }).total === 304,
+     'not counting hits adds the cost back, got ' + core.compManager(H, GWS, { hits: false }).total);
+
+  /* Bench Boost scored as the starting eleven, exactly, for no extra call. */
+  ok(core.compManager(H, GWS, { hits: true, normBB: true }).total === 272,
+     'normalising Bench Boost removes the bench points of that week only, got ' +
+     core.compManager(H, GWS, { hits: true, normBB: true }).total);
+
+  /* A Bench Boost OUTSIDE the selected gameweeks is not normalised. */
+  ok(core.compManager(H, [1, 2], { hits: true, normBB: true }).total === 136,
+     'a chip in a gameweek not selected changes nothing');
+
+  /* Triple Captain needs the captain's base score handed in. */
+  const tc = core.compManager(H, GWS, { hits: true, normTC: true, tcGain: { 4: 12 } });
+  ok(tc.total === 284, 'capping the Triple Captain removes one multiple, got ' + tc.total);
+  ok(tc.tcUnknown === false, 'and the week resolved');
+
+  /* THE TRAP. An unresolvable Triple Captain must not score as nought:
+     that would leave this manager's tripled captain standing while every
+     other manager's was capped. */
+  const unk = core.compManager(H, GWS, { hits: true, normTC: true, tcGain: {} });
+  ok(unk.tcUnknown === true, 'an unresolved Triple Captain is reported, not silently skipped');
+  ok(unk.total === 296, 'and the score is left alone rather than reduced by nought, got ' + unk.total);
+
+  /* Both normalisations together, and hits off. */
+  const all = core.compManager(H, GWS, { hits: false, normBB: true, normTC: true, tcGain: { 4: 12 } });
+  ok(all.total === 268, '296 plus the 8 hit, less 24 bench and 12 captain, got ' + all.total);
+
+  /* A manager who was not in the game for a gameweek scores nothing for
+     it and is COUNTED as absent rather than as a nought. */
+  const late = core.compManager({ current: [H.current[2], H.current[3]] }, GWS, { hits: true });
+  ok(late.played === 2 && late.missing === 2, 'a late joiner played 2 of 4, got ' + late.played);
+  ok(late.of === 4, 'against the full set, got ' + late.of);
+  ok(late.weeks[0].score === null, 'and the missing week is a null, not a nought');
+
+  /* A row with no points is a row we cannot score. */
+  const noPts = core.compManager({ current: [{ event: 1, points: null }] }, [1], { hits: true });
+  ok(noPts.missing === 1 && noPts.total === 0, 'a row with no points counts as absent');
+
+  /* Assistant Manager is flagged, never altered. */
+  const am = core.compManager(
+    { current: [{ event: 1, points: 70, points_on_bench: 4 }], chips: [{ name: 'manager', event: 1 }] },
+    [1], { hits: true, normBB: true, normTC: true });
+  ok(am.total === 70, 'the Assistant Manager chip is left alone, got ' + am.total);
+  ok(am.flags.join(',') === 'manager', 'and flagged so the card says so, got ' + am.flags.join(','));
+  ok(core.COMP_UNNORMALISED.manager === 'Assistant Manager', 'with a name to print');
+
+  ok(core.compManager(null, GWS, {}).total === 0, 'a missing history does not throw');
+  ok(core.compManager(H, null, {}).of === 0, 'nor a missing gameweek list');
+}
+
+section('compRank: a tie is allowed to stay a tie');
+{
+  const R = () => [
+    { entry: 1, mgr: 'Ann',  rank: 3, total: 200, hits: 8, transfers: 6, bench: 20, best: 80 },
+    { entry: 2, mgr: 'Bob',  rank: 1, total: 200, hits: 0, transfers: 2, bench: 30, best: 70 },
+    { entry: 3, mgr: 'Cara', rank: 2, total: 190, hits: 4, transfers: 3, bench: 10, best: 95 },
+  ];
+  const order = (rows) => rows.map((r) => r.entry).join(',');
+
+  /* THE DEFAULT, and the point of the whole setting. Level on points,
+     nothing to separate them, so they SHARE first place. */
+  const tied = core.compRank(R(), ['none', 'none', 'none']);
+  ok(tied[0].pos === 1 && tied[1].pos === 1, 'two level managers share first place');
+  ok(tied[0].tied === true && tied[1].tied === true, 'and are marked as tied');
+  ok(tied[2].pos === 3, 'the next position skips, got ' + tied[2].pos);
+  ok(tied[2].tied === false, 'and a manager on their own is not marked tied');
+
+  /* Fewest hits splits them, and Bob took none. */
+  const byHits = core.compRank(R(), ['hits']);
+  ok(order(byHits) === '2,1,3', 'fewest hits ranks higher, got ' + order(byHits));
+  ok(byHits[0].pos === 1 && byHits[1].pos === 2, 'and the tie is gone');
+
+  /* Fewest bench points would have gone the other way. */
+  ok(order(core.compRank(R(), ['bench'])) === '1,2,3',
+     'fewest bench points is a different answer, got ' + order(core.compRank(R(), ['bench'])));
+  ok(order(core.compRank(R(), ['best'])) === '1,2,3', 'best single gameweek another');
+  ok(order(core.compRank(R(), ['alpha'])) === '1,2,3', 'and alphabetical another');
+
+  /* A level set to None ENDS the chain: the levels behind it never run. */
+  const stopped = core.compRank(R(), ['none', 'hits', 'alpha']);
+  ok(stopped[0].pos === 1 && stopped[1].pos === 1,
+     'None at level one stops the chain, whatever sits behind it');
+
+  /* Equal on points AND on the chain is still a tie. */
+  const sameHits = core.compRank([
+    { entry: 1, mgr: 'Ann', rank: 2, total: 100, hits: 4, transfers: 1, bench: 0, best: 50 },
+    { entry: 2, mgr: 'Bob', rank: 1, total: 100, hits: 4, transfers: 9, bench: 0, best: 50 },
+  ], ['hits', 'none']);
+  ok(sameHits[0].pos === 1 && sameHits[1].pos === 1,
+     'level on points and on the only tie-break in play is still a tie');
+  ok(sameHits.map((r) => r.entry).join(',') === '2,1',
+     'ordered by league position so two renders agree, got ' + sameHits.map((r) => r.entry).join(','));
+
+  /* Highest total always wins, whatever the chain says. */
+  ok(core.compRank(R(), ['alpha'])[2].total === 190, 'points come first, always');
+  ok(core.compRank(null, ['hits']).length === 0, 'a missing list does not throw');
+  ok(core.compRank(R(), null)[0].pos === 1, 'nor a missing chain');
+  ok(core.COMP_TIES[0].key === 'none', 'None is the first option offered');
+  ok(core.COMP_TIES.every((t) => t.key === 'none' ? !t.cmp : !!t.cmp),
+     'and it is the only one with nothing to compare');
+  ok(core.compTieSpec('nope') === null, 'an unknown tie-break has no spec');
+  ok(core.compRank(R(), ['nope'])[0].pos === 1, 'and behaves as None rather than throwing');
+}
+
+section('tcCaptainGain: one multiple, from what actually happened');
+{
+  const LIVE = { elements: [{ id: 5, stats: { total_points: 12 } }, { id: 6, stats: { total_points: 3 } }] };
+  const picks = (rows) => ({ picks: rows });
+
+  ok(core.tcCaptainGain(picks([{ element: 5, multiplier: 3 }, { element: 6, multiplier: 1 }]), LIVE) === 12,
+     'a tripled captain is worth one extra multiple of his score');
+
+  /* THE CASE is_captain WOULD GET WRONG. The captain did not play, so the
+     armband passed to the vice and it is the VICE who was tripled. */
+  ok(core.tcCaptainGain(picks([
+      { element: 5, multiplier: 0, is_captain: true }, { element: 6, multiplier: 3 }]), LIVE) === 3,
+     'the multiplier says who the chip acted on, not the captain flag');
+
+  /* Picks that disagree with the chip ledger deduct nothing rather than
+     stripping a multiple that was never applied. */
+  ok(core.tcCaptainGain(picks([{ element: 5, multiplier: 2 }]), LIVE) === 0,
+     'a plain x2 is already capped, so nothing comes off');
+
+  /* NULL, never nought, when the feed has not mentioned the player. */
+  ok(core.tcCaptainGain(picks([{ element: 99, multiplier: 3 }]), LIVE) === null,
+     'a player the live feed has no row for is unknown, not nought');
+  ok(core.tcCaptainGain(picks([]), LIVE) === null, 'an empty squad is unknown');
+  ok(core.tcCaptainGain(null, LIVE) === null, 'missing picks do not throw');
+  ok(core.tcCaptainGain(picks([{ element: 5, multiplier: 3 }]), null) === null,
+     'and a missing live feed is unknown rather than nought');
 }
 
 section('boardDeadline: the clock names the gameweek the app is on');

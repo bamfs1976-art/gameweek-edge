@@ -963,6 +963,29 @@ html.offline .upd-banner{top:calc(env(safe-area-inset-top) + 38px)}
    thing" should look identical wherever it appears. Sits BELOW the area tabs
    in the hierarchy, which are underlined rather than pilled for that reason.
    Scrolls sideways on a phone rather than wrapping to three rows. */
+/* Competition lens: the month table, its week chips and its rule toggles. */
+.cp-weeks{display:flex;flex-wrap:wrap;gap:6px}
+.cp-w{display:inline-flex;align-items:baseline;gap:4px;font-size:.78rem;font-weight:700;
+  color:var(--text-2);background:var(--surface-2);border:1px solid var(--border-2);
+  border-radius:var(--r-md);padding:3px 7px;font-variant-numeric:tabular-nums}
+.cp-w b{font-size:var(--fs-min);font-weight:800;color:var(--text-3);letter-spacing:.04em}
+.cp-w.cp-chip{border-color:var(--amber)}
+.cp-w i{font-style:normal;font-size:var(--fs-min);font-weight:800;color:var(--amber);
+  background:var(--surface-3);border-radius:4px;padding:0 4px}
+/* The adjustment this rule made to the week, so a reader can see the sum
+   rather than take the total on trust. */
+.cp-w u{text-decoration:none;font-size:var(--fs-min);font-weight:700;color:var(--text-3)}
+.cp-eq{font-weight:800;color:var(--text-3);margin-left:1px}
+/* Same ink rule as the lens buttons: dark on the bright fill, which is the
+   only pairing that clears AA in both themes. */
+.cp-tg{flex:0 0 auto;background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);
+  border-radius:var(--r-pill);padding:6px 11px;font-size:.74rem;font-weight:600;cursor:pointer;
+  white-space:nowrap;transition:background .14s,color .14s,border-color .14s}
+.cp-tg:hover{color:var(--text)}
+.cp-tg.on{background:var(--green-bright);border-color:var(--green-bright);color:#0A0C0F}
+.cp-tie{display:flex;align-items:center;gap:6px;flex:1 1 150px;min-width:0}
+.cp-tie>span{font-size:var(--fs-min);font-weight:800;color:var(--text-3);flex:0 0 auto}
+.cp-rules summary{cursor:pointer;font-size:.76rem;font-weight:600;color:var(--green)}
 .lensbar{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .lensbar::-webkit-scrollbar{display:none}
 .lensbtn{flex:0 0 auto;background:var(--surface-3);border:1px solid var(--border);color:var(--text-2);
@@ -22133,6 +22156,220 @@ function leagueLivePos(rows){
   });
   return out;
 }
+/* ── THE COMPETITION LAYER ────────────────────────────────────────────
+   A mini-league argues about two things FPL's own table cannot settle.
+   Who won the month, and whether the week somebody played a chip in
+   ought to count the same as everybody else's.
+
+   Both are answerable from data the panel already fetches. Neither is
+   answerable by an opinion this file is entitled to hold on its own, so
+   every rule here is a SETTING, every setting rides in the URL, and the
+   card prints the rules it used underneath the table. A league that
+   disagrees changes the rules and shares the link. */
+
+/* Which gameweeks belong to which month, from FPL's own deadlines.
+   A gameweek is placed by the month its DEADLINE falls in, which is the
+   only date FPL publishes for it and the one managers plan around. It is
+   also a choice rather than a fact: a gameweek with a Tuesday-the-first
+   deadline is played almost entirely in the new month, and a league that
+   wants it counted the other way has no way to say so. Said out loud in
+   the card rather than left for somebody to discover in March.
+
+   Months come back in calendar order with their gameweeks in order, and
+   a month FPL has no gameweek in does not appear at all. Pure. */
+const MONTH_NAMES=['January','February','March','April','May','June',
+  'July','August','September','October','November','December'];
+function gwMonths(events){
+  const out=[],by={};
+  (events||[]).forEach(e=>{
+    if(!e||e.id==null||!e.deadline_time)return;
+    const d=new Date(e.deadline_time);
+    if(isNaN(d.getTime()))return;
+    const key=d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0');
+    if(!by[key]){by[key]={key,label:MONTH_NAMES[d.getUTCMonth()]+' '+d.getUTCFullYear(),
+      month:d.getUTCMonth(),year:d.getUTCFullYear(),gws:[]};out.push(by[key]);}
+    by[key].gws.push(Number(e.id));
+  });
+  out.sort((a,c)=>a.year-c.year||a.month-c.month);
+  out.forEach(m=>m.gws.sort((a,c)=>a-c));
+  return out;
+}
+
+/* THE NORMALISATIONS, and why each one costs what it costs.
+
+   HITS. FPL's `points` for a gameweek is already net of the transfer
+   cost — the app checked that elsewhere and reconciles scored minus hit
+   against it, so this is a settled fact here rather than an assumption.
+   Counting hits therefore means leaving the figure alone; NOT counting
+   them means adding the cost back.
+
+   BENCH BOOST. `points_on_bench` is published every gameweek, chip or
+   no chip, and in a Bench Boost week those same points are also inside
+   `points`. Subtracting it scores the week as the starting eleven, which
+   is exactly what the normalisation means, exactly, and for no extra
+   API call at all.
+
+   TRIPLE CAPTAIN. There is no published field for this one. The armband
+   is worth one extra multiple of whatever the captain scored, and that
+   number lives in the gameweek's live feed against the squad's picks, so
+   capping at x2 costs one picks call per manager who played the chip
+   plus one live call per gameweek they played it in. Managers play it
+   once a season, so in any given month that is usually nought calls and
+   occasionally one. The caller fetches it; this function is handed the
+   answer or handed null.
+
+   WHAT IS NOT NORMALISED, and said rather than hidden. A Wildcard or
+   Free Hit changes the squad rather than inflating the score, so there
+   is nothing to cap. The Assistant Manager chip's contribution is not
+   separable from the gameweek score without inventing a rule about what
+   the manager "would have" scored, and a competition table is the last
+   place to start inventing. Rows carrying one are flagged, not altered. */
+const COMP_UNNORMALISED={manager:'Assistant Manager'};
+
+/* One manager's competition score over a set of gameweeks.
+
+   `tcGain` maps gameweek to the captain's base score for a Triple
+   Captain played that week, or null where it could not be established.
+   A null with normalisation switched ON is NOT quietly treated as nought
+   — it comes back as `tcUnknown`, and the caller decides what an
+   unresolvable row does to the table. Treating it as nought would leave
+   this manager's tripled captain standing while everybody else's was
+   capped, which is the one outcome worse than not normalising at all.
+
+   Gameweeks with no history row are gameweeks this manager was not in
+   the game for. They score nothing and are counted in `missing`, so the
+   table can say "played 3 of 4" rather than imply a nought. Pure. */
+function compManager(history,gws,opts){
+  const o=opts||{};
+  const rows=((history&&history.current)||[]).filter(r=>r&&r.event!=null);
+  const by={};rows.forEach(r=>{by[Number(r.event)]=r;});
+  const chipAt={};
+  (((history&&history.chips)||[])).forEach(c=>{
+    if(c&&c.name&&c.event!=null)chipAt[Number(c.event)]=c.name;});
+  const want=(gws||[]).slice().sort((a,c)=>a-c);
+  const weeks=[];
+  let total=0,hits=0,transfers=0,bench=0,best=null,missing=0,tcUnknown=false;
+  const flags={};
+  want.forEach(gw=>{
+    const r=by[gw];
+    if(!r){missing++;weeks.push({gw,score:null,raw:null,chip:null,adj:0});return;}
+    const chip=chipAt[gw]||null;
+    const cost=Math.max(0,Number(r.event_transfers_cost)||0);
+    const onBench=Math.max(0,Number(r.points_on_bench)||0);
+    /* null BEFORE Number(), for the third time in this file and caught by
+       its own test rather than by review: Number(null) is 0 and 0 is
+       finite, so a gameweek FPL has published no score for would have
+       counted as a nought scored rather than a gameweek not played, and
+       a late joiner would have been ranked as though they turned up and
+       failed. */
+    const paid=r.points==null?null:Number(r.points);
+    if(paid==null||!Number.isFinite(paid)){missing++;weeks.push({gw,score:null,raw:null,chip,adj:0});return;}
+    let score=paid;
+    let adj=0;
+    if(!o.hits){score+=cost;adj+=cost;}
+    if(o.normBB&&chip==='bboost'){score-=onBench;adj-=onBench;}
+    if(o.normTC&&chip==='3xc'){
+      const g=(o.tcGain||{})[gw];
+      if(g==null){tcUnknown=true;}
+      else{score-=Number(g)||0;adj-=Number(g)||0;}
+    }
+    if(chip&&COMP_UNNORMALISED[chip])flags[chip]=true;
+    total+=score;hits+=cost;transfers+=Math.max(0,Number(r.event_transfers)||0);
+    bench+=onBench;
+    if(best==null||score>best)best=score;
+    weeks.push({gw,score,raw:paid,chip,adj});
+  });
+  return {total,hits,transfers,bench,best,missing,played:want.length-missing,
+    of:want.length,weeks,tcUnknown,flags:Object.keys(flags)};
+}
+
+/* THE TIE-BREAK CHAIN, and the point of letting it stop.
+
+   Three levels, each a field, applied in order until one separates two
+   managers. A level set to 'none' ENDS the chain, and anybody still
+   level is genuinely level — shown sharing a position, first place
+   included. That is the setting worth having: a league that would rather
+   crown two winners than split them on who made fewer transfers can say
+   so, and most leagues would.
+
+   Alphabetical is last-resort rather than a real tie-break, and it is
+   offered because a league that wants a single name out of the machine
+   needs something total. It says what it is on the card.
+
+   Standard competition ranking: equal rows share a position and the next
+   position skips, the way a league table works. Pure — returns a new
+   array and never reorders the caller's. */
+const COMP_TIES=[
+  {key:'none',    label:'Leave them tied',      cmp:null},
+  {key:'hits',    label:'Fewest points to hits',cmp:(a,c)=>a.hits-c.hits},
+  {key:'transfers',label:'Fewest transfers',    cmp:(a,c)=>a.transfers-c.transfers},
+  {key:'bench',   label:'Fewest bench points',  cmp:(a,c)=>a.bench-c.bench},
+  {key:'best',    label:'Best single gameweek', cmp:(a,c)=>(c.best||0)-(a.best||0)},
+  {key:'alpha',   label:'Manager name A to Z',  cmp:(a,c)=>String(a.mgr||'').localeCompare(String(c.mgr||''))}
+];
+function compTieSpec(key){return COMP_TIES.filter(t=>t.key===key)[0]||null;}
+function compRank(rows,order){
+  const list=(rows||[]).slice();
+  const chain=[];
+  for(const k of (order||[])){
+    const spec=compTieSpec(k);
+    if(!spec||!spec.cmp)break;          /* 'none', or an unknown key, ends it */
+    chain.push(spec.cmp);
+  }
+  /* The league's own position is the last resort BELOW the chain, not a
+     tie-break offered in it: without something total the sort is not
+     stable across renders, and a table that reshuffles itself on every
+     repaint reads as broken even when every position in it is right. */
+  list.sort((a,c)=>{
+    if(a.total!==c.total)return c.total-a.total;
+    for(const cmp of chain){const d=cmp(a,c);if(d)return d;}
+    return (a.rank||0)-(c.rank||0);
+  });
+  /* Tied for the purposes of the POSITION means tied on everything the
+     chain actually looked at. The stabiliser above orders them; it must
+     not also separate them, or 'none' would silently never tie anybody. */
+  const same=(a,c)=>{
+    if(a.total!==c.total)return false;
+    for(const cmp of chain)if(cmp(a,c))return false;
+    return true;
+  };
+  let pos=0,seen=0,prev=null;
+  const count={};
+  list.forEach(r=>{
+    seen++;
+    if(prev===null||!same(prev,r))pos=seen;
+    r.pos=pos;prev=r;
+    count[pos]=(count[pos]||0)+1;
+  });
+  list.forEach(r=>{r.tied=count[r.pos]>1;});
+  return list;
+}
+
+/* The extra multiple a Triple Captain is worth, for capping it back to a
+   normal week. Taken from the picks rather than from `is_captain`,
+   because after settlement the multiplier is what actually happened: if
+   the captain did not play, the armband passed to the vice and it is the
+   VICE's score that was tripled. The row carrying the largest multiplier
+   is the one the chip acted on either way.
+
+   Generalised as (multiplier - 2) rather than hardcoded to one extra
+   multiple, so a squad whose picks disagree with the chip ledger and
+   report a plain x2 deducts nothing at all instead of stripping a
+   multiple that was never applied.
+
+   Returns NULL, never nought, when the feed has no row for the player.
+   Nought is a real deduction and would leave a tripled captain standing
+   in a table that claims to have capped him. */
+function tcCaptainGain(picks,live){
+  const list=((picks&&picks.picks)||[]).filter(p=>p&&p.element!=null);
+  if(!list.length)return null;
+  const armed=list.slice().sort((a,c)=>
+    (Number(c.multiplier)||0)-(Number(a.multiplier)||0))[0];
+  const mult=Number(armed&&armed.multiplier)||0;
+  if(mult<2)return null;
+  const pts=rivalLivePts(live,armed.element);
+  return pts==null?null:pts*Math.max(0,mult-2);
+}
 /* Free transfers a manager carries into the next deadline.
    ─────────────────────────────────────────────────────────
    I previously told the user this could not be done, on the grounds
@@ -22413,7 +22650,27 @@ function lgReadUrl(){
     LEAGUE_PAGE=urlPick('page',LEAGUE_PAGE,1,v=>parseInt(v,10)>0?parseInt(v,10):null);
     LEAGUE_SORT=urlPick('sort',LEAGUE_SORT,'rank',v=>{const s=leagueSortSpec(v);return s?s.key:null;});
     LEAGUE_DIR=urlPick('dir',LEAGUE_DIR,0,v=>v==='asc'?1:v==='desc'?-1:null);
-    LEAGUE_VIEW=urlPick('layout',LEAGUE_VIEW,'compact',v=>v==='detailed'||v==='compact'?v:null);
+    LEAGUE_VIEW=urlPick('layout',LEAGUE_VIEW,'compact',
+      v=>(v==='detailed'||v==='compact'||v==='competition')?v:null);
+    /* The competition rules travel in the link, because sending the link
+       IS how a league agrees them. A month key is validated by shape
+       rather than against the calendar: the events are not loaded yet
+       here, and a month with no gameweeks in it falls back to the season
+       when the card looks it up. */
+    LEAGUE_MONTH=urlPick('month',LEAGUE_MONTH,'all',
+      v=>(v==='all'||/^\d{4}-\d{2}$/.test(v))?v:null);
+    LEAGUE_NORM=urlPick('rules',LEAGUE_NORM,{hits:true,bb:false,tc:false},v=>{
+      const on=String(v).split(',').map(x=>x.trim()).filter(Boolean);
+      if(!on.length)return null;
+      if(on.length===1&&on[0]==='none')return {hits:false,bb:false,tc:false};
+      if(on.some(x=>COMP_NORM_KEYS.indexOf(x)<0))return null;
+      return {hits:on.indexOf('hits')>=0,bb:on.indexOf('bb')>=0,tc:on.indexOf('tc')>=0};
+    });
+    LEAGUE_TIES=urlPick('ties',LEAGUE_TIES,['none','none','none'],v=>{
+      const parts=String(v).split(',').map(x=>x.trim());
+      if(parts.length!==3||parts.some(x=>!compTieSpec(x)))return null;
+      return parts;
+    });
   }
   lgWriteUrl();
 }
@@ -22421,7 +22678,12 @@ function lgWriteUrl(){
   const on=!!LEAGUE_SEL;
   setUrlState({league:on?LEAGUE_SEL:null,type:on&&LEAGUE_TYPE!=='classic'?LEAGUE_TYPE:null,
     page:on&&LEAGUE_PAGE>1?LEAGUE_PAGE:null,sort:on&&LEAGUE_SORT!=='rank'?LEAGUE_SORT:null,
-    dir:on&&LEAGUE_DIR?(LEAGUE_DIR===1?'asc':'desc'):null,layout:on&&LEAGUE_VIEW!=='compact'?LEAGUE_VIEW:null});
+    dir:on&&LEAGUE_DIR?(LEAGUE_DIR===1?'asc':'desc'):null,layout:on&&LEAGUE_VIEW!=='compact'?LEAGUE_VIEW:null,
+    /* Only while the lens that uses them is showing, so the rules do not
+       trail behind a reader who has gone back to the ordinary table. */
+    month:on&&LEAGUE_VIEW==='competition'&&LEAGUE_MONTH!=='all'?LEAGUE_MONTH:null,
+    rules:on&&LEAGUE_VIEW==='competition'?compRulesParam():null,
+    ties:on&&LEAGUE_VIEW==='competition'?compTiesParam():null});
 }
 async function hydrateLeagues(host){
   const mid=getMid();
@@ -22660,14 +22922,14 @@ function lgFlipDir(){
 const LEAGUE_OPEN=new Set();
 const LEAGUE_DETAIL_MAX=50;
 function lgSetView(v){
-  LEAGUE_VIEW=v==='detailed'?'detailed':'compact';
+  LEAGUE_VIEW=(v==='detailed'||v==='competition')?v:'compact';
   /* Coming back to compact with a squad-only field still selected would
      leave the control disagreeing with the table: the field is not in the
      compact list, so the select falls back to showing the first option
      while the sort in force is still the one that has no values to read.
      Reset to league order, which is what the table would show anyway. */
   const spec=leagueSortSpec(LEAGUE_SORT);
-  if(LEAGUE_VIEW==='compact'&&spec&&spec.detail){LEAGUE_SORT='rank';LEAGUE_DIR=0;}
+  if(LEAGUE_VIEW!=='detailed'&&spec&&spec.detail){LEAGUE_SORT='rank';LEAGUE_DIR=0;}
   lgWriteUrl();
   renderPage('leagues');
 }
@@ -23003,6 +23265,220 @@ async function leagueDetailCard(res,leagueId,meId,whole,name){
     '<p class="dl-sub" style="margin:0 0 10px">Couldn\u2019t build the detailed view. The standings below are unaffected.</p>'+
     '<button class="btn btn-ghost btn-sm" onclick="renderPage(\'leagues\')">Try again</button></div>'};}
 }
+/* ── THE COMPETITION CARD ─────────────────────────────────────────────
+   The league table a mini-league actually argues about: one month at a
+   time, with the chip weeks levelled if the league wants them levelled.
+
+   NO LEAGUE ADMIN, ON PURPOSE. The obvious shape for this is an owner
+   who sets the rules once and everybody else reads them, and that needs
+   per-league ownership, invitations and a migration, which is a large
+   piece of accounts work to answer a question a query string already
+   answers. So the rules are the READER's, they ride in the URL, and
+   agreeing them with your league is sending the link. Nobody signs up,
+   nobody is locked out, and two managers who prefer different rules are
+   each allowed their own view of the same league.
+
+   Free, deliberately. This is the card somebody pastes into a WhatsApp
+   group, and a paywall on the thing that travels is a paywall on the
+   only distribution the app has. The Pro tools stay where they are. */
+let LEAGUE_MONTH='all';
+let LEAGUE_NORM={hits:true,bb:false,tc:false};
+let LEAGUE_TIES=['none','none','none'];
+const COMP_NORM_KEYS=['hits','bb','tc'];
+function lgSetMonth(k){LEAGUE_MONTH=k||'all';lgWriteUrl();renderPage('leagues');}
+function lgToggleNorm(k){
+  if(COMP_NORM_KEYS.indexOf(k)<0)return;
+  LEAGUE_NORM[k]=!LEAGUE_NORM[k];lgWriteUrl();renderPage('leagues');
+}
+function lgSetTie(level,key){
+  const i=Number(level);
+  if(!(i>=0&&i<3)||!compTieSpec(key))return;
+  LEAGUE_TIES[i]=key;lgWriteUrl();renderPage('leagues');
+}
+/* The rules as one short string, so a link carries them and a reader can
+   see at a glance what they are being shown. Only what differs from the
+   defaults is written, which keeps an ordinary link clean. */
+function compRulesParam(){
+  const on=COMP_NORM_KEYS.filter(k=>LEAGUE_NORM[k]);
+  const dflt=COMP_NORM_KEYS.filter(k=>({hits:true,bb:false,tc:false})[k]);
+  return on.join(',')===dflt.join(',')?null:(on.length?on.join(','):'none');
+}
+function compTiesParam(){
+  return LEAGUE_TIES.every(t=>t==='none')?null:LEAGUE_TIES.join(',');
+}
+async function leagueCompCard(res,meId,name,whole){
+  const cardTitle=(name?esc(name)+' <span class="dl-sub" style="font-weight:600;text-transform:none;letter-spacing:0">· competition</span>':'Competition');
+  const wrap=inner=>'<div class="card mb-20"><div class="card-title">'+cardTitle+'</div>'+inner+'</div>';
+  try{
+    if(!res||!res.length)return {ok:false,html:''};
+    const b=await boot();
+    const events=(b.events||[]);
+    const months=gwMonths(events);
+    /* ONLY GAMEWEEKS FPL HAS SCORED. A gameweek still being played has a
+       total that moves under the table, and a monthly competition that
+       reorders itself every time somebody scores is not a competition,
+       it is a live feed. The card names which gameweeks are in so the
+       exclusion is visible rather than mysterious. */
+    const done={},checked={};
+    events.forEach(e=>{if(e&&e.id!=null){done[Number(e.id)]=!!e.finished;checked[Number(e.id)]=!!e.data_checked;}});
+    const month=months.filter(m=>m.key===LEAGUE_MONTH)[0]||null;
+    const pool=month?month.gws:months.reduce((a,m)=>a.concat(m.gws),[]);
+    const gws=pool.filter(g=>done[g]);
+    /* Finished is not the same as settled: bonus lands afterwards and
+       moves totals. Named rather than waited for, because a table that
+       vanishes for a day after every gameweek is worse than one that
+       says it is still moving. */
+    const provisional=gws.filter(g=>!checked[g]);
+    /* ok:FALSE, so the ordinary standings stay on screen underneath.
+       This card replaces the table when it has a table to put there, and
+       "no gameweek has been scored yet" is not one: taking the league
+       away to say nothing has happened leaves the reader with less than
+       they arrived with. Same call the detailed view makes when picks
+       are not public yet. */
+    if(!gws.length)return {ok:false,html:wrap(
+      '<p class="dl-sub" style="margin:0">'+(month
+        ? 'No gameweek in '+esc(month.label)+' has been scored yet. The table fills in as FPL scores each one.'
+        : 'No gameweek has been scored yet this season. The table starts after the first one is settled.')+
+      '</p>'+compBar(months))};
+    const slice=res.slice(0,LEAGUE_DETAIL_MAX);
+    const hists=await mapLimit(slice,6,r=>loadHistory(r.entry).catch(()=>null));
+    if(hists.every(h=>!h))return {ok:false,html:wrap(
+      '<p class="dl-sub" style="margin:0 0 10px">Couldn’t load the season histories this table is built from. '+
+      'One call per manager, so a rate-limited moment takes all of them at once. The standings below are unaffected.</p>'+
+      '<button class="btn btn-ghost btn-sm" onclick="renderPage(\'leagues\')">Try again</button>')};
+    /* TRIPLE CAPTAIN COSTS CALLS, so it only makes them for the managers
+       who actually played the chip inside the chosen gameweeks. In most
+       months that is nobody and this does nothing at all. */
+    const tcBy={};let tcFailed=0;
+    if(LEAGUE_NORM.tc){
+      const plays=[];
+      slice.forEach((r,i)=>{
+        (((hists[i]&&hists[i].chips)||[])).forEach(c=>{
+          if(c&&c.name==='3xc'&&c.event!=null&&gws.indexOf(Number(c.event))>=0)
+            plays.push({entry:r.entry,gw:Number(c.event)});});
+      });
+      if(plays.length){
+        const need=plays.map(p=>p.gw).filter((g,i,a)=>a.indexOf(g)===i);
+        const lives={};
+        await Promise.all(need.map(g=>loadLive(g).then(v=>{lives[g]=v;}).catch(()=>{lives[g]=null;})));
+        const pk=await mapLimit(plays,6,p=>loadPicks(p.entry,p.gw).catch(()=>null));
+        plays.forEach((p,k)=>{
+          const gain=tcCaptainGain(pk[k],lives[p.gw]);
+          if(gain==null)tcFailed++;
+          else{(tcBy[p.entry]=tcBy[p.entry]||{})[p.gw]=gain;}
+        });
+      }
+    }
+    const opts={hits:LEAGUE_NORM.hits,normBB:LEAGUE_NORM.bb,normTC:LEAGUE_NORM.tc&&!tcFailed};
+    const built=slice.map((r,i)=>{
+      const h=hists[i];
+      if(!h)return null;
+      const m=compManager(h,gws,Object.assign({tcGain:tcBy[r.entry]||{}},opts));
+      return Object.assign({entry:r.entry,name:r.entry_name,mgr:r.player_name,rank:r.rank},m);
+    }).filter(Boolean);
+    if(!built.length)return {ok:false,html:''};
+    const rows=compRank(built,LEAGUE_TIES);
+    const period=month?month.label:'the season so far';
+    const winner=rows.filter(r=>r.pos===1);
+    const flagged=rows.filter(r=>r.flags&&r.flags.length);
+    const short=rows.filter(r=>r.missing>0).length;
+    const missingHist=slice.length-built.length;
+    const head='<div class="dl-row head"><span class="dl-rank">#</span>'+
+      '<span class="dl-grow">Team · manager</span>'+
+      '<span class="dl-col">Score</span></div>';
+    const body=rows.map(r=>{
+      const open=LEAGUE_OPEN.has('c'+r.entry);
+      const weeks=r.weeks.map(w=>'<span class="cp-w'+(w.chip?' cp-chip':'')+'">'+
+        '<b>GW'+w.gw+'</b>'+(w.score==null?'–':fmtNum(w.score))+
+        (w.chip?'<i>'+esc(CHIP_SHORT[w.chip]||w.chip)+'</i>':'')+
+        (w.adj?'<u>'+(w.adj>0?'+':'')+w.adj+'</u>':'')+'</span>').join('');
+      const sub=[r.mgr,
+        r.missing?('played '+r.played+' of '+r.of):'',
+        r.hits?(r.hits+' to hits'):''].filter(Boolean).join(' · ');
+      return '<div class="lg-mgr'+(r.entry===meId?' league-me':'')+'">'+
+        '<div class="lg-head" onclick="lgToggle(\'c'+r.entry+'\')">'+
+        '<span class="dl-rank">'+fmtNum(r.pos)+(r.tied?'<small class="cp-eq">=</small>':'')+
+          (r.pos===1?' '+svg(ICON.trophy,'width="12" height="12"'):'')+'</span>'+
+        '<span class="dl-grow"><span class="tr-cell">'+
+          '<span class="dl-nm">'+esc(r.name)+(r.entry===meId?' · you':'')+'</span>'+
+          '<span class="dl-sub">'+esc(sub)+'</span></span></span>'+
+        '<span class="dl-col mono">'+fmtNum(r.total)+'</span>'+
+        '<span class="mc-ch" id="lg-ch-c'+r.entry+'"'+(open?' style="transform:rotate(180deg)"':'')+'>▼</span>'+
+        '</div>'+
+        '<div class="lg-sq cp-weeks" id="lg-sq-c'+r.entry+'"'+(open?'':' style="display:none"')+'>'+weeks+'</div>'+
+        '</div>';
+    }).join('');
+    /* THE RULES, printed under the table rather than left in the
+       controls. Somebody arriving on a shared link did not set them and
+       has no other way of knowing what they are looking at. */
+    const ruleBits=[
+      LEAGUE_NORM.hits?'hits counted against the score':'hits added back, so a −4 costs nothing here',
+      LEAGUE_NORM.bb?'Bench Boost weeks scored as the starting eleven':null,
+      opts.normTC?'Triple Captain capped at double':null
+    ].filter(Boolean);
+    const tieNames=LEAGUE_TIES.map(t=>compTieSpec(t)).filter(t=>t&&t.cmp).map(t=>t.label.toLowerCase());
+    const note='<p class="dl-sub" style="margin:10px 0 0">'+
+      'Ranked on '+esc(gws.length===1?'GW'+gws[0]:'GW'+gws[0]+' to GW'+gws[gws.length-1])+
+      ' ('+gws.length+' gameweek'+(gws.length===1?'':'s')+' FPL has scored) for '+esc(period)+'. '+
+      'Rules in force: '+esc(ruleBits.join(', '))+'. '+
+      (tieNames.length
+        ? 'Level scores are separated by '+esc(tieNames.join(', then '))+'.'
+        : 'Managers level on score are shown sharing a position, first place included.')+
+      (provisional.length
+        ? ' GW'+provisional.join(', GW')+' '+(provisional.length===1?'is':'are')+
+          ' finished but FPL are still applying bonus, so '+(provisional.length===1?'that total':'those totals')+' still moves.'
+        : '')+
+      (flagged.length
+        ? ' '+flagged.length+' manager'+(flagged.length===1?'':'s')+' played an '+
+          esc(COMP_UNNORMALISED.manager)+', which is not normalised: its points are not separable from the gameweek score without inventing a rule.'
+        : '')+
+      (short?' '+short+' manager'+(short===1?' was':'s were')+' not in the game for every gameweek here, and scored nothing for the ones they missed.':'')+
+      (missingHist?' '+missingHist+' season histor'+(missingHist===1?'y':'ies')+' could not be loaded and '+(missingHist===1?'is':'are')+' left out.':'')+
+      /* A month table built over one page of a four-hundred manager
+         league is a table of the page. The winner of the month may not
+         be on it at all, so the card says whose month it is describing
+         rather than letting a position read as a league position. */
+      (whole?'':' This is one page of a larger league, so these positions are positions on this page rather than in the league.')+
+      '</p>'+
+      (tcFailed?'<p class="dl-sub" style="margin:6px 0 0">Triple Captain normalisation is off for this table: '+
+        tcFailed+' of the chip weeks would not load, and capping some managers’ captains while leaving others tripled '+
+        'would be worse than capping none. <button class="btn btn-ghost btn-sm" onclick="renderPage(\'leagues\')">Try again</button></p>':'');
+    const crown=(month&&winner.length&&!provisional.length&&whole)
+      ? '<p class="dl-sub" style="margin:0 0 10px">'+
+        (winner.length===1
+          ? '<b>'+esc(winner[0].mgr||winner[0].name)+'</b> tops '+esc(month.label)+'.'
+          : esc(winner.map(w=>w.mgr||w.name).join(' and '))+' are level at the top of '+esc(month.label)+'.')+
+        ' Tap a row for the gameweek by gameweek breakdown.</p>'
+      : '<p class="dl-sub" style="margin:0 0 10px">Tap a row for the gameweek by gameweek breakdown.</p>';
+    return {ok:true,html:wrap(compBar(months)+crown+'<div class="dl">'+head+body+'</div>'+note)};
+  }catch(_){return {ok:false,html:wrap(
+    '<p class="dl-sub" style="margin:0 0 10px">Couldn’t build the competition table. The standings below are unaffected.</p>'+
+    '<button class="btn btn-ghost btn-sm" onclick="renderPage(\'leagues\')">Try again</button>')};}
+}
+/* The controls. Folded shut by default: the table is the point and six
+   selects above it would bury it, especially on a phone. */
+function compBar(months){
+  const opt=(v,l,sel)=>'<option value="'+esc(v)+'"'+(sel?' selected':'')+'>'+esc(l)+'</option>';
+  const monthSel='<label class="sr-only" for="cp-month">Month</label>'+
+    '<select class="modal-in lg-sortsel" id="cp-month">'+
+    opt('all','Season so far',LEAGUE_MONTH==='all')+
+    (months||[]).map(m=>opt(m.key,m.label,LEAGUE_MONTH===m.key)).join('')+'</select>';
+  const toggle=(k,l,why)=>'<button class="cp-tg'+(LEAGUE_NORM[k]?' on':'')+'" data-cpnorm="'+k+'" '+
+    'aria-pressed="'+(LEAGUE_NORM[k]?'true':'false')+'" title="'+esc(why)+'">'+esc(l)+'</button>';
+  const ties=[0,1,2].map(i=>'<label class="cp-tie"><span>'+(i+1)+'</span>'+
+    '<label class="sr-only" for="cp-tie'+i+'">Tie-break level '+(i+1)+'</label>'+
+    '<select class="modal-in lg-sortsel" id="cp-tie'+i+'" data-cptie="'+i+'">'+
+    COMP_TIES.map(t=>opt(t.key,t.label,LEAGUE_TIES[i]===t.key)).join('')+'</select></label>').join('');
+  return '<div class="lg-bar mb-14">'+monthSel+
+    toggle('hits','Count hits','On: a −4 lowers the score, as FPL scores it. Off: the cost is added back.')+
+    toggle('bb','Level Bench Boost','Score a Bench Boost week as the starting eleven, the same eleven everybody else had.')+
+    toggle('tc','Cap Triple Captain','Score a tripled captain at double, the same armband everybody else had.')+
+    '</div>'+
+    '<details class="cp-rules"><summary>Tie-breaks</summary>'+
+    '<p class="dl-sub" style="margin:8px 0">Applied in order until one separates two managers. Set a level to '+
+    '<b>Leave them tied</b> to stop there and let managers share a position, first place included.</p>'+
+    '<div class="lg-bar mb-14">'+ties+'</div></details>';
+}
 /* The title-race card. Rendered only when the whole league is on screen:
    with pages beyond the first, the managers we can see are the current
    top 50 and the eventual winner is very often not among them yet —
@@ -23151,6 +23627,11 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      which a head-to-head table has too, but the summary figures it leads
      with (rank movement, gameweek total) are the classic race's. */
   const detailed=!h2h&&LEAGUE_VIEW==='detailed';
+  /* Classic only, for the same reason the detailed view is: a
+     head-to-head league is won on a fixture list, so ranking its
+     managers on total points would answer a question nobody in it is
+     asking. The lens bar is hidden for h2h anyway. */
+  const compo=!h2h&&LEAGUE_VIEW==='competition';
   const spec=leagueSortSpec(LEAGUE_SORT)||LEAGUE_SORTS[0];
   const curDir=LEAGUE_DIR||spec.dir;
   /* Only offer sorts the loaded data can actually perform. Team value
@@ -23160,18 +23641,30 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      the answer as an argument rather than reading `detailed`. */
   const viewBarFor=deep=>h2h?'':'<div class="lg-bar mb-14">'+
     '<div class="lensbar" id="lg-views">'+
-    [['compact','Compact'],['detailed','Detailed']].map(v=>
+    [['compact','Compact'],['detailed','Detailed'],['competition','Competition']].map(v=>
       '<button class="lensbtn'+(LEAGUE_VIEW===v[0]?' on':'')+'" data-lgview="'+v[0]+'">'+v[1]+'</button>').join('')+
     '</div>'+
-    '<label class="sr-only" for="lg-sort">Sort the table by</label>'+
-    '<select class="modal-in lg-sortsel" id="lg-sort">'+
-      LEAGUE_SORTS.filter(o=>!o.detail||deep)
-        .map(o=>'<option value="'+o.key+'"'+(o.key===spec.key?' selected':'')+'>'+esc(o.label)+'</option>').join('')+
-    '</select>'+
-    '<button class="btn btn-ghost btn-sm lg-dir" id="lg-dir" '+
-      'aria-label="'+(curDir===1?'Sorted low to high':'Sorted high to low')+', tap to reverse" '+
-      'title="'+(curDir===1?'Low to high':'High to low')+'">'+(curDir===1?'▲':'▼')+'</button>'+
+    /* The competition table brings its own order and its own tie-breaks,
+       so this control would sort nothing there. Offering it anyway is
+       the same sin as offering team value over the compact table, which
+       the comment above this exists to prevent. */
+    (LEAGUE_VIEW==='competition'?'':
+      '<label class="sr-only" for="lg-sort">Sort the table by</label>'+
+      '<select class="modal-in lg-sortsel" id="lg-sort">'+
+        LEAGUE_SORTS.filter(o=>!o.detail||deep)
+          .map(o=>'<option value="'+o.key+'"'+(o.key===spec.key?' selected':'')+'>'+esc(o.label)+'</option>').join('')+
+      '</select>'+
+      '<button class="btn btn-ghost btn-sm lg-dir" id="lg-dir" '+
+        'aria-label="'+(curDir===1?'Sorted low to high':'Sorted high to low')+', tap to reverse" '+
+        'title="'+(curDir===1?'Low to high':'High to low')+'">'+(curDir===1?'▲':'▼')+'</button>')+
     '</div>';
+  if(compo)host.innerHTML=back+viewBarFor(false)+'<div class="card mb-20"><div class="card-title">'+
+      esc(data.league?data.league.name:'League')+'</div>'+
+      '<div class="dl-sub">Reading every manager\u2019s season history. One call per manager.</div>'+
+      skel(6)+'</div>';
+  const comp=compo?await leagueCompCard(res,meId,data.league&&data.league.name,page===1&&!hasNext):null;
+  const compShown=!!(comp&&comp.ok);
+  const compCard=comp?comp.html:'';
   if(detailed)host.innerHTML=back+viewBarFor(true)+'<div class="card mb-20"><div class="card-title">'+
       esc(data.league?data.league.name:'League')+'</div>'+
       '<div class="dl-sub">Loading every squad on this page. One call per manager.</div>'+
@@ -23181,7 +23674,12 @@ async function renderLeagueStandings(host,leagueId,mid,type){
   /* The detail card replaces the table only when it HAS the squads.
      Suppressing the table for a detail card that came back empty left the
      league card with a title and nothing under it. */
-  const detailShown=!!(detail&&detail.ok);
+  const detailOk=!!(detail&&detail.ok);
+  /* The compact table stands in for whichever lens failed to build, and
+     for neither when one of them succeeded. A failed competition card
+     must not suppress it either: that was the bug that once rendered a
+     league card with a title and nothing under it. */
+  const detailShown=detailOk||compShown;
   /* In detailed view the detail card IS the league card — it carries the
      league name in its title and replaces the compact table, so the name
      is not left as a heading over an empty card. The pager rides at the
@@ -23202,8 +23700,9 @@ async function renderLeagueStandings(host,leagueId,mid,type){
         ((page-1)*50+1)+'–'+((page-1)*50+res.length)+'. Managers on other pages are not reordered into it.</p>'
       : '')+
     pager+'</div>';
-  host.innerHTML=back+oppCard+viewBarFor(detailShown)+leagueCard+
-    (detailShown?detailCard.replace(/<\/div>\s*$/,pager+'</div>'):detailCard)+raceCard+awards;
+  host.innerHTML=back+oppCard+viewBarFor(detailOk)+leagueCard+
+    (compShown?compCard.replace(/<\/div>\s*$/,pager+'</div>'):compCard)+
+    (detailOk?detailCard.replace(/<\/div>\s*$/,pager+'</div>'):detailCard)+raceCard+awards;
   host.querySelectorAll('[data-lgview]').forEach(btn=>
     btn.addEventListener('click',()=>{if(btn.dataset.lgview!==LEAGUE_VIEW)lgSetView(btn.dataset.lgview);}));
   /* Fired after the standings are on screen, not awaited before them:
@@ -23211,6 +23710,15 @@ async function renderLeagueStandings(host,leagueId,mid,type){
   if(!h2h&&!custom)genAwards(leagueId);
   const sortSel=host.querySelector('#lg-sort');
   if(sortSel)sortSel.addEventListener('change',()=>lgSetSort(sortSel.value));
+  /* The competition controls. Delegated the same way the rival buttons
+     are, because the whole card repaints on every one of them and a
+     listener per control would be re-bound on each pass. */
+  const monthSel=host.querySelector('#cp-month');
+  if(monthSel)monthSel.addEventListener('change',()=>lgSetMonth(monthSel.value));
+  host.querySelectorAll('[data-cpnorm]').forEach(btn=>
+    btn.addEventListener('click',()=>lgToggleNorm(btn.dataset.cpnorm)));
+  host.querySelectorAll('[data-cptie]').forEach(sel=>
+    sel.addEventListener('change',()=>lgSetTie(sel.dataset.cptie,sel.value)));
   const dirBtn=host.querySelector('#lg-dir');
   if(dirBtn)dirBtn.addEventListener('click',lgFlipDir);
   /* Every standing is a manager, and a manager has a squad. Same card the

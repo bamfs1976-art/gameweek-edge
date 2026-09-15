@@ -488,6 +488,44 @@ mixture of live and settled totals places people below rivals they are beating.
 When it refuses, the card keeps FPL's positions and prints which order they are
 and why. The compact table is untouched: it shows FPL's figures throughout.
 
+**Competition lens** — the month table a mini-league actually argues about.
+
+FPL publishes a season table and nothing else, so two questions it cannot
+answer get settled in group chats instead: who won the month, and whether the
+week somebody played a chip should count the same as everybody else's. Both are
+answerable from data the panel already fetches.
+
+Scoring, per gameweek, from each manager's own season history:
+
+| Rule | How | What it costs |
+|---|---|---|
+| Hits counted | FPL's `points` is already net of the cost, so this leaves it alone | nothing |
+| Hits added back | `points + event_transfers_cost` | nothing |
+| Bench Boost levelled | `points − points_on_bench` in that week, which is exactly the starting XI | nothing |
+| Triple Captain capped | deduct `(multiplier − 2) ×` the armed player's score | one picks call per manager who played it, one live call per gameweek |
+
+`gwMonths` places a gameweek in the month its **deadline** falls in. That is a
+choice rather than a fact, and the card says so: a gameweek with a deadline on
+the first of the month is played almost entirely in the new one.
+
+Three things it refuses to do. It scores only gameweeks FPL has **finished**, and
+names any that are finished but still gaining bonus. It stands Triple Captain
+normalisation down **entirely** if any chip week fails to load, because capping
+some captains while leaving others tripled is worse than capping none. It leaves
+the Assistant Manager chip alone and flags it, because its contribution is not
+separable from the gameweek score without inventing a rule.
+
+Tie-breaks are three configurable levels (fewest hits, fewest transfers, fewest
+bench points, best single gameweek, alphabetical), applied in order. Setting a
+level to **Leave them tied** ends the chain and lets managers share a position,
+first place included. That is the default: the table does not invent a winner.
+
+**No league admin, deliberately.** Rules are the reader's and ride in the query
+string (`month`, `rules`, `ties`), so agreeing them with your league is sending
+the link. Per-league ownership would need accounts, invitations and a migration
+to answer a question a URL already answers, and it would lock out everyone who
+had not signed up. Free, for the same reason: this is the card that travels.
+
 **EO Tracker** — effective ownership, the real measure of rank gain at the top.
 
 **Template Meter** — squad overlap with the top‑10k template and where your edge sits.
