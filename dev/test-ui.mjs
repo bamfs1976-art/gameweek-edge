@@ -2190,8 +2190,9 @@ section('detailed view: a failure is visible, and never an empty league');
   ok(!/aren.t public yet/i.test(boom.text),
      'a failure is never reported as a deadline that has not passed');
   /* The view toggle is the control the report was about: it must survive
-     the failure, or the reader cannot get back to a working view. */
-  ok(boom.toggles === 2, 'the Compact/Detailed toggle survives, got ' + boom.toggles);
+     the failure, or the reader cannot get back to a working view. Three
+     lenses since the competition table joined Compact and Detailed. */
+  ok(boom.toggles === 3, 'every lens button survives the failure, got ' + boom.toggles);
   /* Squad-dependent sorts would be inert over the standings table that is
      standing in, so they are not offered while the squads are missing. */
   ok(boom.opts.join(',') === 'rank,total,gw,move',
@@ -2342,6 +2343,181 @@ section('detailed view: the order matches the totals beside it');
   ok(/season history did not load/i.test(mixed.text), 'and why it did not build its own');
   ok(mixed.errs.length === 0, 'nothing threw on the mixed field ('
      + mixed.errs.slice(0, 2).join(' | ') + ')');
+}
+
+section('competition lens: the month table, and the rules printed under it');
+{
+  /* Three managers whose season order and whose MONTH order are not the
+     same, because a monthly competition that always agrees with the
+     season table would prove nothing. Rival FC leads the season; Third
+     Wheel wins September. Bench Boost and Triple Captain are each played
+     inside the month, so both normalisations have something to bite on. */
+  const RANK = [
+    { rank: 1, last_rank: 1, entry: 7654321, entry_name: 'Rival FC', player_name: 'Sam Rivers', event_total: 62, total: 300 },
+    { rank: 2, last_rank: 2, entry: 1234567, entry_name: 'My Team', player_name: 'Me Myself', event_total: 55, total: 280 },
+    { rank: 3, last_rank: 3, entry: 9998887, entry_name: 'Third Wheel', player_name: 'Pat Third', event_total: 40, total: 260 },
+  ];
+  /* GW1 and GW2 are August, GW3 and GW4 September. Every one scored. */
+  const bootDone = () => {
+    const b = JSON.parse(readFileSync(join(ROOT, 'dev/fixtures/fpl-mock-bootstrap.json'), 'utf8'));
+    const dl = { 1: '2026-08-14T17:15:00Z', 2: '2026-08-21T17:15:00Z',
+                 3: '2026-09-04T17:15:00Z', 4: '2026-09-11T17:15:00Z' };
+    b.events.forEach((e) => {
+      if (dl[e.id]) e.deadline_time = dl[e.id];
+      e.finished = e.id <= 4; e.data_checked = e.id <= 4;
+      e.is_current = e.id === 4; e.is_next = e.id === 5; e.is_previous = e.id === 3;
+    });
+    return JSON.stringify(b);
+  };
+  /* Third Wheel wins September on raw points, and does it with a Bench
+     Boost worth 30 and a Triple Captain in the same month. Normalise
+     both and the month changes hands, which is the whole argument the
+     feature exists to settle. */
+  const SEASON = {
+    7654321: [[1, 80, 0, 0, 5], [2, 70, 8, 2, 4], [3, 75, 0, 0, 6], [4, 75, 0, 0, 3]],
+    1234567: [[1, 70, 0, 0, 2], [2, 70, 0, 0, 8], [3, 70, 4, 1, 5], [4, 70, 0, 0, 4]],
+    9998887: [[1, 50, 0, 0, 3], [2, 50, 0, 0, 3], [3, 90, 0, 0, 30], [4, 70, 0, 0, 2]],
+  };
+  const CHIPS = { 9998887: [{ name: 'bboost', event: 3 }, { name: '3xc', event: 4 }] };
+  const historyFor = (id) => JSON.stringify({
+    current: (SEASON[id] || []).map((r) => ({
+      event: r[0], points: r[1], total_points: 0, rank: 1, overall_rank: 500000,
+      bank: 5, value: 1000, event_transfers: r[3], event_transfers_cost: r[2], points_on_bench: r[4],
+    })),
+    past: [], chips: CHIPS[id] || [],
+  });
+  /* The tripled captain is worth 20, so capping him takes 20 off GW4. */
+  const HERO = picksFixture().picks[0].element;
+  const picksTC = () => {
+    const f = picksFixture();
+    f.picks.forEach((p) => { p.is_captain = false; p.is_vice_captain = false;
+      p.multiplier = p.position <= 11 ? 1 : 0; });
+    const cap = f.picks.find((p) => p.element === HERO);
+    cap.is_captain = true; cap.multiplier = 3;
+    return JSON.stringify(f);
+  };
+  const liveTC = () => JSON.stringify({
+    elements: picksFixture().picks.map((p) => ({
+      id: p.element, stats: { total_points: p.element === HERO ? 20 : 2, minutes: 90 } })),
+  });
+
+  const open = async (o) => {
+    const p = await browser.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(e.message));
+    await p.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+    await p.route('**/api/fpl/bootstrap-static', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: bootDone() }));
+    await p.route('**/api/fpl/leagues-classic/*/standings*', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ league: { id: 555, name: 'The Office League' },
+          standings: { has_next: false, results: RANK } }) }));
+    await p.route('**/api/fpl/entry/*/history', (r) => {
+      const id = Number(r.request().url().split('/entry/')[1].split('/')[0]);
+      if (o.breakHistory) return r.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
+      return r.fulfill({ status: 200, contentType: 'application/json', body: historyFor(id) });
+    });
+    await p.route('**/api/fpl/entry/*/event/*/picks', (r) =>
+      o.breakPicks
+        ? r.fulfill({ status: 500, contentType: 'application/json', body: '{}' })
+        : r.fulfill({ status: 200, contentType: 'application/json', body: picksTC() }));
+    await p.route('**/api/fpl/event/*/live', (r) =>
+      r.fulfill({ status: 200, contentType: 'application/json', body: liveTC() }));
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(1200);
+    const out = await p.evaluate(async (s) => {
+      LEAGUE_SEL = 555; LEAGUE_TYPE = 'classic'; LEAGUE_PAGE = 1;
+      LEAGUE_VIEW = 'competition'; LEAGUE_SORT = 'rank'; LEAGUE_DIR = 0;
+      LEAGUE_MONTH = s.month; LEAGUE_NORM = s.norm; LEAGUE_TIES = s.ties;
+      renderPage('leagues');
+      await new Promise((r) => setTimeout(r, 4500));
+      const rows = [...document.querySelectorAll('.lg-mgr')];
+      const host = document.getElementById('ge-data');
+      return {
+        names: rows.map((h) => (h.querySelector('.dl-nm') || {}).textContent || ''),
+        pos: rows.map((h) => ((h.querySelector('.dl-rank') || {}).textContent || '').trim()),
+        totals: rows.map((h) => Number(((h.querySelector('.dl-col') || {}).textContent || '').replace(/,/g, ''))),
+        months: [...(document.getElementById('cp-month') || { options: [] }).options].map((x) => x.value),
+        toggles: document.querySelectorAll('[data-cpnorm]').length,
+        tieSels: document.querySelectorAll('[data-cptie]').length,
+        sortSel: !!document.getElementById('lg-sort'),
+        pager: /Page 1/.test((document.getElementById('ge-data') || {}).innerText || ''),
+        weeks: document.querySelectorAll('.cp-w').length,
+        url: location.search,
+        text: host ? host.innerText : '',
+      };
+    }, { month: o.month || 'all', norm: o.norm || { hits: true, bb: false, tc: false },
+         ties: o.ties || ['none', 'none', 'none'] });
+    await p.close();
+    return { ...out, errs };
+  };
+
+  /* SEPTEMBER, scored exactly as FPL scores it. */
+  const sep = await open({ month: '2026-09' });
+  ok(sep.totals.length === 3, 'three managers render, got ' + sep.totals.length);
+  ok(sep.totals.join(',') === '160,150,140',
+     'September totals are the two gameweeks in it, got ' + sep.totals.join(','));
+  ok(/Third Wheel/.test(sep.names[0]), 'and Third Wheel tops the month, got ' + sep.names[0]);
+  ok(/tops September 2026/.test(sep.text), 'the card names the month winner');
+  ok(/Ranked on GW3 to GW4/.test(sep.text), 'and says which gameweeks it used');
+  ok(/hits counted against the score/.test(sep.text), 'and prints the rules in force');
+  ok(sep.months[0] === 'all' && sep.months.indexOf('2026-08') > 0,
+     'the month picker offers the season and every month, got ' + sep.months.join(','));
+  ok(sep.toggles === 3 && sep.tieSels === 3, 'three rule toggles and three tie-break levels');
+  /* The ordinary sort control has nothing to sort here: this table brings
+     its own order and its own tie-breaks. Offering it would be a control
+     that silently does nothing, which is the thing the sort registry's
+     own comment exists to prevent. */
+  ok(sep.sortSel === false, 'the standings sort control is not offered over a table it cannot sort');
+  ok(sep.errs.length === 0, 'nothing threw (' + sep.errs.slice(0, 2).join(' | ') + ')');
+
+  /* THE ARGUMENT THE FEATURE SETTLES. Level the Bench Boost and cap the
+     Triple Captain and September changes hands. */
+  const levelled = await open({ month: '2026-09', norm: { hits: true, bb: true, tc: true } });
+  ok(levelled.totals.join(',') === '150,140,110',
+     'levelling the chips restates the month, got ' + levelled.totals.join(','));
+  ok(/Rival FC/.test(levelled.names[0]),
+     'and the month changes hands, got ' + levelled.names[0]);
+  ok(/Bench Boost weeks scored as the starting eleven/.test(levelled.text),
+     'the card says the Bench Boost was levelled');
+  ok(/Triple Captain capped at double/.test(levelled.text), 'and the captain capped');
+  ok(levelled.errs.length === 0, 'nothing threw levelling chips');
+
+  /* Hits added back is the other direction, and only Rival FC took one. */
+  const noHits = await open({ month: '2026-08', norm: { hits: false, bb: false, tc: false } });
+  ok(noHits.totals[0] === 158, 'August with the hit added back, got ' + noHits.totals[0]);
+  ok(/hits added back/.test(noHits.text), 'and the card says so');
+
+  /* TIES ARE ALLOWED TO STAY TIES, which is the default. */
+  const tied = await open({ month: '2026-08' });
+  ok(tied.totals.join(',') === '150,140,100', 'August totals, got ' + tied.totals.join(','));
+  ok(/sharing a position/.test(tied.text), 'the default says level managers share a position');
+
+  /* The rules ride in the link, so sending it is how a league agrees them. */
+  const shared = await open({ month: '2026-09', norm: { hits: false, bb: true, tc: false },
+                              ties: ['hits', 'none', 'none'] });
+  ok(/month=2026-09/.test(shared.url), 'the month is in the URL, got ' + shared.url);
+  ok(/rules=bb/.test(shared.url), 'and the rules, got ' + shared.url);
+  ok(/ties=hits/.test(shared.url), 'and the tie-breaks');
+  ok(/separated by fewest points to hits/.test(shared.text), 'which the card states');
+
+  /* A TRIPLE CAPTAIN THAT WILL NOT LOAD TURNS THE RULE OFF FOR EVERYBODY.
+     Capping some captains and leaving others tripled is worse than
+     capping none, so the card stands the rule down and says why. */
+  const halfTC = await open({ month: '2026-09', norm: { hits: true, bb: true, tc: true }, breakPicks: true });
+  ok(/Triple Captain normalisation is off for this table/.test(halfTC.text),
+     'an unloadable chip week stands the whole rule down');
+  ok(!/Triple Captain capped at double/.test(halfTC.text), 'and the rule is not claimed');
+  /* The Bench Boost rule is unaffected and stays on: 90 less its 30 on
+     the bench, plus an uncapped 70. Only the captain rule stood down. */
+  ok(halfTC.totals.join(',') === '150,140,130',
+     'so no captain is capped, got ' + halfTC.totals.join(','));
+  ok(halfTC.errs.length === 0, 'nothing threw standing the rule down');
+
+  /* A failure is visible and never an empty league. */
+  const dead = await open({ month: '2026-09', breakHistory: true });
+  ok(/Couldn.t load the season histories/.test(dead.text), 'a dead history call says so');
+  ok(dead.errs.length === 0, 'and throws nothing (' + dead.errs.slice(0, 2).join(' | ') + ')');
 }
 
 section('a deploy that lands under a page nobody reloads');
