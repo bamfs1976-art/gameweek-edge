@@ -167,7 +167,7 @@
       data-width="1920"
       data-height="1080"
       data-fps="30"
-      data-duration="22.95"
+      data-duration="23.46"
     >
       <div id="canvas-lift" data-layout-ignore="true"></div>
 
@@ -179,8 +179,8 @@
         </div>
       </section>
 
-      <!-- Scene 2 — the ladder — 3.87 to 11.46 (dissolves out 10.86 to 11.46) -->
-      <section id="sc2" class="clip" data-start="3.87" data-duration="7.59" data-track-index="1">
+      <!-- Scene 2 — the ladder — 3.87 to 10.93 (dissolves out 10.37 to 10.93) -->
+      <section id="sc2" class="clip" data-start="3.87" data-duration="7.06" data-track-index="1">
         <div id="sc2-inner" class="inner">
           <p id="l1" class="ladder-line">The official app tells you what happened.</p>
           <p id="l2" class="ladder-line">Live-rank sites tell you where you are.</p>
@@ -189,8 +189,8 @@
         </div>
       </section>
 
-      <!-- Scene 3 — the Scout answers — 11.46 to 18.56 (dissolves out 18.02 to 18.56) -->
-      <section id="sc3" class="clip" data-start="11.46" data-duration="7.10" data-track-index="2">
+      <!-- Scene 3 — the Scout answers — 10.93 to 19.10 (dissolves out 18.56 to 19.10) -->
+      <section id="sc3" class="clip" data-start="10.93" data-duration="8.17" data-track-index="2">
         <div id="sc3-inner" class="inner">
           <div id="card">
             <div class="card-head">
@@ -201,14 +201,14 @@
               <div class="card-label">Scout AI</div>
               <div class="card-chrome">Grounded in your squad. Never invents stats.</div>
             </div>
-            <div id="bub-u" class="bub">Haaland or Salah (C) this week?</div>
-            <div id="bub-a" class="bub">Salah edges it: higher predicted points (<span class="num" id="pp-hi">8.1</span> vs <span class="num">7.6</span>) and a softer home fixture.</div>
+            <div id="bub-u" class="bub">Haaland or Schade (C) this week?</div>
+            <div id="bub-a" class="bub">Schade edges it: <span class="num" id="pp-hi">10.3</span> predicted points to <span class="num">10.0</span>, and Brentford at home. Haaland stays the safer template pick.</div>
           </div>
         </div>
       </section>
 
-      <!-- Scene 4 — lockup and the ask — 18.56 to 22.95 -->
-      <section id="sc4" class="clip" data-start="18.56" data-duration="4.39" data-track-index="3">
+      <!-- Scene 4 — lockup and the ask — 19.10 to 23.46 -->
+      <section id="sc4" class="clip" data-start="19.10" data-duration="4.36" data-track-index="3">
         <div id="sc4-inner" class="inner">
           <div id="lockup">
             <div class="mark-wrap">
@@ -225,13 +225,13 @@
       </section>
 
       <!-- Audio. Music bed on track 10, sparse SFX above it (polished restraint: three cues). -->
-      <audio id="bg-music" data-start="0" data-duration="22.95" data-track-index="10" data-volume="1"
+      <audio id="bg-music" data-start="0" data-duration="23.46" data-track-index="10" data-volume="1"
              src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"></audio>
       <audio id="sfx-payoff" data-start="6.51" data-duration="0.19" data-track-index="11" data-volume="0.5"
              src="assets/sfx/interface/drop_002.ogg"></audio>
-      <audio id="sfx-answer" data-start="13.06" data-duration="0.11" data-track-index="12" data-volume="0.45"
+      <audio id="sfx-answer" data-start="12.50" data-duration="0.11" data-track-index="12" data-volume="0.45"
              src="assets/sfx/interface/drop_001.ogg"></audio>
-      <audio id="sfx-lockup" data-start="18.51" data-duration="0.13" data-track-index="13" data-volume="0.55"
+      <audio id="sfx-lockup" data-start="19.05" data-duration="0.13" data-track-index="13" data-volume="0.55"
              src="assets/sfx/interface/bong_001.ogg"></audio>
     </div>
 
@@ -246,33 +246,35 @@
         tl.fromTo("#hook-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.out" }, 1.09); // beat-grid: 1.09s
         tl.to("#sc1-inner", { opacity: 0, duration: 0.6, ease: "power1.inOut" }, 3.27);
 
-        // ---------- Scene 2 — the ladder — 3.87 to 11.46 ----------
+        // ---------- Scene 2 — the ladder — 3.87 to 10.93 ----------
         // beat-grid: line 1 at 4.39s, line 2 at 5.34s, line 3 at 6.56s
         tl.fromTo("#l1", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 4.39);
         tl.fromTo("#l2", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 5.34);
         tl.fromTo("#l3", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 6.56);
         tl.fromTo("#l3-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.out" }, 8.74); // beat-locked: 8.74s strong cue
-        tl.to("#sc2-inner", { opacity: 0, duration: 0.6, ease: "power1.inOut" }, 10.86);
+        tl.to("#sc2-inner", { opacity: 0, duration: 0.56, ease: "power1.inOut" }, 10.37);
 
-        // ---------- Scene 3 — the Scout answers — 11.46 to 18.56 ----------
-        tl.fromTo("#card", { scale: 0.965, y: 18, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.75, ease: "power3.out" }, 11.46); // beat-grid: 11.46s
-        tl.fromTo("#bub-u", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 12.02); // beat-grid: 12.02s
-        tl.fromTo("#bub-a", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 13.11); // beat-locked: 13.11s strong cue
+        // ---------- Scene 3 — the Scout answers — 10.93 to 19.10 ----------
+        // The exchange is the model's own GW5 call, read from data/record/gw-05.json:
+        // Schade (BRE) 10.3 xp as the captain pick, Haaland (MCI) 10.0 xp as the alternative.
+        tl.fromTo("#card", { scale: 0.965, y: 18, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.75, ease: "power3.out" }, 10.93); // beat-locked: 10.93s strong cue
+        tl.fromTo("#bub-u", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 11.46); // beat-grid: 11.46s
+        tl.fromTo("#bub-a", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 12.55); // beat-locked: 12.55s strong cue
         // The one key number on screen takes --hot, once, after the answer has been read (BRAND.md §6).
-        tl.to("#pp-hi", { color: "#b6ff3c", duration: 0.4, ease: "power2.out" }, 16.38); // beat-grid: 16.38s
-        tl.to("#sc3-inner", { opacity: 0, duration: 0.54, ease: "power1.inOut" }, 18.02);
+        tl.to("#pp-hi", { color: "#b6ff3c", duration: 0.4, ease: "power2.out" }, 16.93); // beat-grid: 16.93s
+        tl.to("#sc3-inner", { opacity: 0, duration: 0.54, ease: "power1.inOut" }, 18.56); // beat-locked: 18.56s strong cue
 
-        // ---------- Scene 4 — lockup and the ask — 18.56 to 22.95 ----------
-        tl.fromTo("#lockup", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 18.56); // beat-locked: 18.56s strong cue
-        tl.fromTo("#price", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 19.66); // beat-locked: 19.66s strong cue
-        tl.fromTo("#disclaimer", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.out" }, 19.66);
-        tl.fromTo("#domain", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 20.75); // beat-grid: 20.75s
+        // ---------- Scene 4 — lockup and the ask — 19.10 to 23.46 ----------
+        tl.fromTo("#lockup", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 19.10); // beat-grid: 19.10s
+        tl.fromTo("#price", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 20.19); // beat-grid: 20.19s
+        tl.fromTo("#disclaimer", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.out" }, 20.19);
+        tl.fromTo("#domain", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 21.28); // beat-grid: 21.28s
 
         // ---------- Music: steady low bed, fading to quiet under the lockup ----------
         // data-volume stays at 1 so the tween alone carries the level (lint:
         // audio_volume_tween_overrides_gain).
         tl.set("#bg-music", { volume: 0.30 }, 0);
-        tl.to("#bg-music", { volume: 0, duration: 1.2, ease: "power1.in" }, 21.73);
+        tl.to("#bg-music", { volume: 0, duration: 1.2, ease: "power1.in" }, 22.26);
 
         // ---------- Audio-reactive: two decoratives breathe, nothing else ----------
         // Pre-extracted per-frame data, sampled once per frame. No waveforms, no
@@ -290,7 +292,7 @@
 
         for (var i = 0; i < D.totalFrames; i++) {
           var t = i / D.fps;
-          if (t > 22.95) break;
+          if (t > 23.46) break;
           tl.call(frameSetter(D.frames[i]), [], t);
         }
 

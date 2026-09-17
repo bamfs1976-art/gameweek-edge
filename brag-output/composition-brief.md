@@ -7,7 +7,7 @@ Create a short, polished sales video for Gameweek Edge (gameweekedge.co.uk), an 
 - Composition directory: `brag-output/composition/`
 - Rendered video: `brag-output/brag.mp4`
 - Format: landscape — 1920x1080, 30fps
-- Duration: 22.95 seconds
+- Duration: 23.47 seconds
 
 ## Source Material
 - Project root: `/home/user/gameweek-edge`
@@ -15,7 +15,7 @@ Create a short, polished sales video for Gameweek Edge (gameweekedge.co.uk), an 
 - Product name: **Gameweek Edge** (never "FPL Edge", never a name containing a competition mark)
 - Tagline: *FPL, with an edge.*
 - Strongest claim: the three-line ladder from the landing page's comparison section
-- Key UI moment to recreate: the **Scout AI** chat exchange from `landing.html`, rebuilt in the app's real dark-surface tokens
+- Key UI moment to recreate: the **Scout AI** chat exchange from `landing.html`, rebuilt in the app's real dark-surface tokens and carrying the model's real gameweek 5 call from `data/record/gw-05.json` (Schade, BRE, 10.3 xp as the captain pick; Haaland, MCI, 10.0 xp as the alternative), recorded 17 September 2026, 29 hours before the deadline
 - Real asset used: `assets/icon-mark.png` (the pitch-green tile with the white form line and node), copied to `composition/assets/img/gwe-mark.png`
 
 ### Copy that must appear verbatim
@@ -23,8 +23,8 @@ Create a short, polished sales video for Gameweek Edge (gameweekedge.co.uk), an 
 - "The official app tells you what happened."
 - "Live-rank sites tell you where you are."
 - "Gameweek Edge tells you what to do next."
-- "Haaland or Salah (C) this week?"
-- "Salah edges it: higher predicted points (8.1 vs 7.6) and a softer home fixture."
+- "Haaland or Schade (C) this week?"
+- "Schade edges it: 10.3 predicted points to 10.0, and Brentford at home. Haaland stays the safer template pick."
 - "Grounded in your squad. Never invents stats."
 - "FPL, with an edge."
 - "Free to start. Pro from £3.99 a month."
@@ -69,9 +69,9 @@ Create a short, polished sales video for Gameweek Edge (gameweekedge.co.uk), an 
 Use the storyboard in `brag-output/brag-plan.md` as the creative contract. Scene summary:
 
 1. **The question** — clip 0.00 to 3.87s — "What did your captain cost you?" alone, green rule draws under it.
-2. **The ladder** — clip 3.87 to 11.46s — three positioning lines arrive on the beat grid (4.39 / 5.34 / 6.56) and hold together, then a green rule signs the payoff line at 8.74s.
-3. **The Scout answers** — clip 11.46 to 18.56s — the Scout AI card with the trust line as header chrome, the question at 12.02s, the grounded answer at 13.11s, `8.1` lifting to `--hot` at 16.38s.
-4. **Lockup and the ask** — clip 18.56 to 22.95s — mark, name, tagline, then price at 19.66s, domain at 20.75s, disclaimer holding from 19.66s.
+2. **The ladder** — clip 3.87 to 10.93s — three positioning lines arrive on the beat grid (4.39 / 5.34 / 6.56) and hold together, then a green rule signs the payoff line at 8.74s.
+3. **The Scout answers** — clip 10.93 to 19.10s — the Scout AI card with the trust line as header chrome, the question at 11.46s, the grounded answer at 12.55s, `10.3` lifting to `--hot` at 16.93s.
+4. **Lockup and the ask** — clip 19.10 to 23.46s — mark, name, tagline, then price at 20.19s, domain at 21.28s, disclaimer holding from 20.19s.
 
 Scenes never overlap: each dissolves its content to nothing on the canvas before the next clip opens, so no two text blocks share a frame.
 
@@ -79,13 +79,13 @@ Scenes never overlap: each dissolves its content to nothing on the canvas before
 - Audio role: warm low bed with sparse professional accents
 - Audio arc: constant low bed from frame 0, three soft cues marking the only three moments that matter, fade to silence under the lockup
 - Music: `assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3` at `data-volume` 0.30
-- Music treatment: no ducking, no beat-chopping. `data-volume` stays at 1 and the timeline carries the level (0.30), tweened to 0 from 21.73s to 22.93s so the last frame settles into quiet.
-- Music cue guidance: bundled preset at `assets/music/cues/happy-beats-business-moves-vol-12-by-ende-dot-app.music-cues.json`, tempo 109.96 BPM. **Strong-cue locks: 8.74s (the rule under the payoff line), 13.11s (the Scout answers), 18.56s (the logo lockup) and 19.66s (the price line).** Beat grid for the Scene 2 ladder: 4.39, 5.34, 6.56. Every scene boundary sits on a beat.
-- Audio-reactive treatment: subtle. Per-frame data pre-extracted to `assets/music/audio-data.js` (`window.AUDIO_DATA`, 30fps, 16 bands, 690 frames). Drive the green glow behind the logo mark from RMS and the Scout card's border presence from bass. No waveform, no equaliser, no pulsing type. Text scale never reacts.
+- Music treatment: no ducking, no beat-chopping. `data-volume` stays at 1 and the timeline carries the level (0.30), tweened to 0 from 22.26s to 23.46s so the last frame settles into quiet.
+- Music cue guidance: bundled preset at `assets/music/cues/happy-beats-business-moves-vol-12-by-ende-dot-app.music-cues.json`, tempo 109.96 BPM. **Strong-cue locks: 8.74s (the rule under the payoff line), 10.93s (the Scout card arrives), 12.55s (the Scout answers) and 18.56s (the card dissolves into the lockup).** Beat grid for the Scene 2 ladder: 4.39, 5.34, 6.56. Every scene boundary sits on a beat.
+- Audio-reactive treatment: subtle. Per-frame data pre-extracted to `assets/music/audio-data.js` (`window.AUDIO_DATA`, 30fps, 16 bands, 720 frames). Drive the green glow behind the logo mark from RMS and the Scout card's border presence from bass. No waveform, no equaliser, no pulsing type. Text scale never reacts.
 - Audio-coupled moments:
   - Scene 2 line 3 (6.51s) — the payoff line is the only ladder line with a sound
-  - Scene 3 scout answer (13.06s) — soft arrival
-  - Scene 4 lockup (18.51s) — one low bell, nothing after it
+  - Scene 3 scout answer (12.50s) — soft arrival
+  - Scene 4 lockup (19.05s) — one low bell, nothing after it
 - SFX selection: `interface/drop_001.ogg`, `interface/drop_002.ogg`, `interface/bong_001.ogg`, all copied to `assets/sfx/interface/`. Volumes 0.45 to 0.60, per the polished restraint rule.
 - SFX analysis guidance: `~/.claude/skills/brag/assets/sfx/sfx-analysis.md` — all three picks are low high-frequency risk.
 - Restraint rule: no cue lands on top of a line the viewer is still reading. Nothing percussive.
@@ -96,6 +96,7 @@ Follow `hyperframes-core` (composition contract and `data-*` timing), `hyperfram
 Requirements:
 - Show the real Scout AI exchange, in the app's own tokens. That scene is the point of the video.
 - Every text element must clear the reading floor in `brag-plan.md`'s readability table.
-- Stay within 23 seconds.
+- Stay within 24 seconds.
 - `npx hyperframes check` must pass with zero findings before render, contrast included.
 - Use only local assets. No network fetches at render time.
+- **Never name a player who is not in the current player universe.** Check every name against the newest file in `data/record/` before writing copy. Mohamed Salah left the Premier League before the 2026/27 season and must not appear.
