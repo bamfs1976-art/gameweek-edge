@@ -2520,6 +2520,55 @@ section('competition lens: the month table, and the rules printed under it');
   ok(dead.errs.length === 0, 'and throws nothing (' + dead.errs.slice(0, 2).join(' | ') + ')');
 }
 
+section('My Week says each figure once, and the New badge renders');
+{
+  /* Row 1 of My Week printed the overall rank, the gameweek rank and the
+     move, all of which the board above it already carried. The panel is
+     now figures once at the top and decisions below, and these checks are
+     what stops the duplicate creeping back. */
+  const p = await browser.newPage();
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => { try { localStorage.setItem('ge-mid', '1234567'); } catch (_) {} });
+  await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(1200);
+  const out = await p.evaluate(async () => {
+    openPanel('myweek');
+    await new Promise((r) => setTimeout(r, 3500));
+    const host = document.getElementById('ge-data');
+    const labels = [...document.querySelectorAll('.mw-lab')].map((x) => x.textContent.trim());
+    const stats = [...document.querySelectorAll('.sb-n small')].map((x) => x.textContent.trim());
+    return {
+      rows: labels,
+      stats,
+      newChips: document.querySelectorAll('.new-chip').length,
+      text: host ? host.innerText : '',
+    };
+  });
+  await p.close();
+
+  ok(out.rows.length === 5, 'five decision rows, not six, got ' + out.rows.length);
+  ok(out.rows.indexOf('Rank') < 0,
+     'and none of them is the Rank row the board already covers, got ' + out.rows.join(','));
+  ok(out.rows.join(',') === 'Captain,Transfer,Chip,Watchlist,Fixture',
+     'the five that remain are the decisions, got ' + out.rows.join(','));
+
+  /* The figure that moved up, and the one it replaced. */
+  ok(out.stats.indexOf('rank movement') >= 0,
+     'the board carries the rank movement, got ' + out.stats.join(' | '));
+  ok(out.stats.indexOf('overall rank') >= 0, 'alongside the rank itself');
+  ok(out.stats.indexOf('managers') < 0,
+     'and the manager count it replaced is gone, since the rank tile already names it');
+
+  /* THE DUPLICATE, asserted as absent. "overall" appeared in both the
+     board and the deleted row. */
+  ok((out.text.match(/overall rank/gi) || []).length <= 1,
+     'the phrase appears once on the panel, got ' + (out.text.match(/overall rank/gi) || []).length);
+
+  ok(out.newChips >= 1, 'the New badge renders on the nav, got ' + out.newChips);
+  ok(errs.length === 0, 'nothing threw (' + errs.slice(0, 2).join(' | ') + ')');
+}
+
 section('a deploy that lands under a page nobody reloads');
 {
   /* The app is one HTML file and the worker is network-first on it, so a

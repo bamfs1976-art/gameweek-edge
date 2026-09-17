@@ -1983,6 +1983,13 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 .lock-chip{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-min);font-weight:800;
   letter-spacing:.05em;text-transform:uppercase;color:var(--lock);
   background:var(--amber-soft);border-radius:var(--r-pill);padding:1px 7px}
+/* Same geometry as the lock chip so the pair line up when a panel is both
+   new and Pro. Green, because amber is spoken for by the lock and this is
+   good news rather than a gate. --green on --green-soft over the surface
+   is the pairing already used for the hint summaries. */
+.new-chip{display:inline-flex;align-items:center;font-size:var(--fs-min);font-weight:800;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--green);
+  background:var(--green-soft);border-radius:var(--r-pill);padding:1px 7px;margin-left:6px}
 
 /* ── Icon rail (desktop): 48px, expands on hover/focus ── */
 @media(min-width:901px){
@@ -5373,7 +5380,7 @@ const PANEL_CONTENT = {
     layout:'standard'
   },
   myweek:{
-    desc:'Your whole gameweek in six lines. Rank, captain, transfer, chip, watchlist and a fixture to note. Tap “Explain this” to see the model’s reasons.',
+    desc:'Your whole gameweek in five decisions. Captain, transfer, chip, watchlist and a fixture to note, under the figures for how the week is actually going. Tap “Explain this” to see the model’s reasons.',
     layout:'standard'
   },
   accountability:{
@@ -5691,11 +5698,39 @@ function navItemHtml(d){
    Pro ones marked. Built from NAV, so a new panel is in it by definition.
    CSS hides it on the desktop rail, where hover-expansion and the area
    tabs do the same job. */
+/* WHAT IS NEW, and why the badge takes itself down.
+   A "New" flag a human has to remember to remove is a flag still sitting
+   there in March, telling somebody a five-month-old panel is news. So
+   this is a map of panel id to the date the work actually shipped, and
+   the badge renders for NEW_DAYS after that and then stops on its own.
+   Adding a line is the whole job; forgetting to remove it costs nothing,
+   which is the only reason a list like this stays honest.
+
+   Dates are ISO and read as UTC, deliberately: a local-midnight parse
+   would make the badge appear and vanish at a different moment for a
+   reader in Sydney than for one in Swansea, over a fact that is the same
+   for both of them. Pure, so a test can wind the clock forward. */
+const PANEL_NEW={leagues:'2026-09-15'};
+const NEW_DAYS=21;
+function panelIsNew(id,now){
+  const d=PANEL_NEW[id];
+  if(!d)return false;
+  const t=Date.parse(String(d)+'T00:00:00Z');
+  if(!Number.isFinite(t))return false;
+  const age=(now==null?Date.now():now)-t;
+  return age>=0&&age<NEW_DAYS*864e5;
+}
+/* Text, not a coloured dot: a badge whose only signal is a hue is a
+   badge a colour-blind reader and a screen reader both miss. */
+function newChipHtml(id,now){
+  return panelIsNew(id,now)?'<span class="new-chip">New</span>':'';
+}
 function navGroupsHtml(){
   const row=(p,label)=>{
     const lk=p.tier==='paid'&&!isPro();
     return '<button type="button" class="sb-sub" data-panel="'+p.id+'">'+
       svg(ICON[p.icon]||ICON.grid,'width="14" height="14"')+'<span>'+esc(label||p.label)+'</span>'+
+      newChipHtml(p.id)+
       (lk?'<span class="lock-chip" aria-label="Pro feature">'+svg(ICON.lock,'width="9" height="9"')+' Pro</span>':'')+
       '</button>';
   };
@@ -6202,7 +6237,7 @@ function areaTabsHtml(panelId){
       const on=p.id===panelId,lk=p.tier==='paid'&&!isPro();
       return '<button class="area-tab'+(on?' on':'')+(lk?' lk':'')+'" data-panel="'+p.id+'"'+
         (on?' aria-current="page"':'')+' onclick="openPanel(\''+p.id+'\')">'+
-        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(p.label)+'</button>';
+        (lk?svg(ICON.lock,'width="10" height="10"')+' ':'')+esc(p.label)+newChipHtml(p.id)+'</button>';
     }).join('')+'</nav>';
 }
 /* ── Per-route metadata ─────────────────────────────────
@@ -6972,24 +7007,29 @@ async function hydrateMyWeek(host){
     (explain&&explain.length?'<details class="mw-exp"><summary>Explain this</summary><ul>'+
       explain.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></details>':'')+'</div>';
 
-  /* Row 1 — Rank + this-GW movement. */
-  const cur=hist.current||[];
-  const lastG=cur[cur.length-1],prevG=cur[cur.length-2];
-  let rankCall;
-  if(lastG&&lastG.overall_rank){
-    let mv='<span class="dl-sub">held</span>';
-    if(prevG&&prevG.overall_rank){const d=prevG.overall_rank-lastG.overall_rank;
-      mv=d>0?'<span class="pos">▲ '+fmtNum(Math.abs(d))+'</span>':d<0?'<span class="neg">▼ '+fmtNum(Math.abs(d))+'</span>':'<span class="dl-sub">held</span>';}
-    rankCall='<b>'+fmtNum(lastG.overall_rank)+'</b> overall <span class="dl-sub">· GW'+lastG.event+' '+fmtNum(lastG.rank||0)+' · '+mv+'</span>';
-  }else rankCall='<b>Season not started</b> <span class="dl-sub">rank appears after GW1</span>';
+  /* WHERE ROW 1 WENT.
+     There was a Rank row here, and everything in it was already on the
+     screen: the board above prints the overall rank, the gameweek rank
+     and, since the move joined it, the climb or fall as well. One panel
+     was stating the same figures twice and the rank in three places.
 
-  /* Row 2 — Captain (decision-grade). */
+     It also had a bug worth recording rather than quietly deleting. It
+     read the last two history ROWS, and FPL adds the running gameweek's
+     row at the deadline with a null rank, so mid-gameweek it fell into
+     its own else branch and told a reader in September that the season
+     had not started. The replacement in the board above reads the last
+     two PUBLISHED ranks instead, which cannot do that.
+
+     So the panel is now figures once at the top, then the decisions the
+     model actually makes. Nothing was lost in the removal. */
+
+  /* Row 1 — Captain (decision-grade). */
   const capM=captainModel(b,nf,xiEls,3);
   const cap=capM.picks[0],capConf=captainConfidence(capM);
   const capCall=cap?'<b>'+esc(cap.el.web_name)+'</b> (C) <span class="dl-sub">'+cap.xp.toFixed(1)+' xP · '+nextFixLabel(nf[cap.el.team])+'</span>':'<b>–</b> <span class="dl-sub">no eligible captain yet</span>';
   const capSide=cap?confChip(capConf.value,''):'';
 
-  /* Row 3 — Transfer. */
+  /* Row 2 — Transfer. */
   const protect=new Set(capM.picks.slice(0,2).map(p=>p.el.id));
   const best=bestTransfer(b,squad,xiEls,bank,hz,protect);
   const fr=transferFrame(best,bank,1,5,hasCap('transferCost'));
@@ -6998,7 +7038,7 @@ async function hydrateMyWeek(host){
     :'<b>Hold</b> <span class="dl-sub">no move clears the +1.5 xP bar over 5 GW</span>';
   const trSide=best?'<span class="pos" style="font-weight:700">+'+best.gain.toFixed(1)+'</span>':'';
 
-  /* Row 4 — Chip. */
+  /* Row 3 — Chip. */
   const used=(hist.chips||[]).map(c=>c.name);
   const chipsLeft=['wildcard','3xc','bboost','freehit'].filter(k=>!used.includes(k));
   const adv=chipAdvice(b,fixtures,chipsLeft,xiEls,capHintFrom(capM,nf));
@@ -7007,7 +7047,7 @@ async function hydrateMyWeek(host){
   else if(adv.best&&adv.best.window!=='hold'){chipCall='<b>'+esc(adv.best.label)+'</b> <span class="dl-sub">'+esc(adv.best.window)+'</span>';chipSide=confChip(adv.best.conf,'');}
   else{chipCall='<b>Hold '+(adv.best?esc(adv.best.label):'chips')+'</b> <span class="dl-sub">no window yet</span>';chipSide=adv.best?confChip(adv.best.conf,''):'';}
 
-  /* Row 5 — Watchlist alerts. */
+  /* Row 4 — Watchlist alerts. */
   const watch=loadWatch();
   const total=b.elements.length;
   const alerts=[];
@@ -7022,7 +7062,7 @@ async function hydrateMyWeek(host){
   else{wCall='<b>'+alerts.length+' alert'+(alerts.length>1?'s':'')+'</b> <span class="dl-sub">'+esc(alerts[0].e.web_name)+': '+esc(alerts[0].tags.join(', '))+(alerts.length>1?' · +'+(alerts.length-1)+' more':'')+'</span>';
     wSide='<span class="badge badge-amber">'+alerts.length+'</span>';}
 
-  /* Row 6 — Fixture spotlight: the standout fixture in your XI. */
+  /* Row 5 — Fixture spotlight: the standout fixture in your XI. */
   const teamSeen={},fxRows=[];
   xiEls.forEach(e=>{const n=nf[e.team];if(n&&n.diff!=null&&!teamSeen[e.team]){teamSeen[e.team]=1;fxRows.push({team:e.team,n});}});
   fxRows.sort((a,c)=>a.n.diff-c.n.diff);
@@ -7047,7 +7087,6 @@ async function hydrateMyWeek(host){
     '<div class="card mw-card">'+
       '<div class="qd-head"><span class="qd-label"><span class="tk-dot" aria-hidden="true"></span>Your week</span>'+
         '<span class="qd-meta">'+esc(phaseNote)+' · '+stamp+'</span></div>'+
-      mwRow('Rank','liverank',rankCall,'',null)+
       mwRow('Captain','captain',capCall,capSide,cap?captainFeatures(b,nf,cap):null)+
       mwRow('Transfer','transfers',trCall,trSide,transferFeatures(b,hz,best,fr))+
       mwRow('Chip','chips',chipCall,chipSide,chipsLeft.length?chipFeatures(adv):null)+
@@ -7327,6 +7366,20 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
     for(let i=curH.length-1;i>=0;i--)if(curH[i]&&curH[i].overall_rank!=null)return curH[i].overall_rank;
     return null;
   })();
+  /* THE MOVE, over the last two ranks FPL HAS PUBLISHED.
+     Not the last two rows, which is a different thing and a trap: FPL
+     adds the running gameweek's row at the deadline with a null rank, so
+     reading the last two rows compares a real rank against nothing. My
+     Week's own rank line did exactly that and told a reader mid-gameweek
+     that the season had not started. Positive is a climb, because a
+     smaller rank is a better one. Null until there are two to compare,
+     never nought: "no move" and "no second gameweek yet" are different
+     facts and only one of them is worth printing as a dash. */
+  const orMove=(function(){
+    const ranked=curH.filter(r=>r&&r.overall_rank!=null);
+    if(ranked.length<2)return null;
+    return ranked[ranked.length-2].overall_rank-ranked[ranked.length-1].overall_rank;
+  })();
   const mgrName=entry?[entry.player_first_name,entry.player_last_name].filter(Boolean).join(' '):'';
   const teamCard=mid&&entry
     ? card('sb-team',null,
@@ -7413,8 +7466,16 @@ function dashBoard(b,fixtures,mid,entry,hist,liveGwPts){
           nStat(fmtNum(seasonPts),'season points')+
           nStat(compact(orNow),'overall rank',orNow==null?'':fmtNum(orNow)+' of '+
             fmtNum((b.raw&&b.raw.total_players)||null))+
-          nStat(compact((b.raw&&b.raw.total_players)||null),'managers',
-            fmtNum((b.raw&&b.raw.total_players)||null)+' playing')+
+          /* The glyph carries the direction, not the colour: a11y forbids
+             meaning that only a hue conveys, and this tile is read at a
+             glance more than any other here. */
+          nStat(orMove==null?'–'
+              :(orMove>0?'\u25b2 ':orMove<0?'\u25bc ':'')+compact(Math.abs(orMove)),
+            'rank movement',
+            orMove==null?'Two scored gameweeks are needed before a move can be measured'
+              :orMove>0?'Up '+fmtNum(orMove)+' places since the gameweek before'
+              :orMove<0?'Down '+fmtNum(-orMove)+' places since the gameweek before'
+              :'Level with the gameweek before')+
           nStat(gwPts==null?'–':fmtNum(gwPts),'this gameweek')+
         '</div>'
       : ''));
