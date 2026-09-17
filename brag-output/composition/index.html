@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Gameweek Edge sales video</title>
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/music/audio-data.js"></script>
+    <style>
+      /* Fonts, vendored locally from the same families the app loads (BRAND.md §7). */
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: block; src: url(assets/fonts/Inter-400.woff2) format("woff2"); }
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: block; src: url(assets/fonts/Inter-600.woff2) format("woff2"); }
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: block; src: url(assets/fonts/Inter-700.woff2) format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: block; src: url(assets/fonts/IBMPlexMono-600.woff2) format("woff2"); }
+
+      /* Tokens lifted verbatim from BRAND.md §6 and the app's own :root. */
+      :root {
+        --bg: #0a0c0f;
+        --surface: #111418;
+        --surface-2: #1a2026;
+        --green: #00d26a;
+        --green-soft: rgba(0, 210, 106, 0.12);
+        --hot: #b6ff3c;
+        --text: #e8ecf1;
+        --text-2: #aab3be;
+        --line: rgba(255, 255, 255, 0.09);
+      }
+
+      html, body { margin: 0; padding: 0; background: var(--bg); }
+
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        font-feature-settings: "cv05" 1;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Untimed full-bleed canvas lift. Needs its own positioning (core: untimed
+         elements get no automatic layout). */
+      #canvas-lift {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(1200px 620px at 50% 118%, rgba(0, 210, 106, 0.10), rgba(0, 210, 106, 0) 70%),
+          radial-gradient(900px 500px at 50% -15%, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 72%);
+      }
+
+      .clip { position: absolute; inset: 0; }
+      .inner { position: absolute; inset: 0; display: flex; }
+
+      /* ---------- Scene 1 : the question ---------- */
+      #sc1-inner { flex-direction: column; align-items: center; justify-content: center; }
+      #hook {
+        margin: 0;
+        max-width: 1480px;
+        font-size: 86px;
+        font-weight: 400;
+        line-height: 1.16;
+        letter-spacing: -0.025em;
+        text-align: center;
+        color: var(--text);
+      }
+      .rule {
+        height: 2px;
+        background: var(--green);
+        transform-origin: left center;
+        border-radius: 2px;
+      }
+      #hook-rule { width: 440px; margin-top: 48px; }
+
+      /* ---------- Scene 2 : the ladder ---------- */
+      #sc2-inner { flex-direction: column; align-items: flex-start; justify-content: center; padding: 0 260px; }
+      .ladder-line {
+        margin: 0 0 30px 0;
+        font-size: 58px;
+        font-weight: 400;
+        line-height: 1.42;
+        letter-spacing: -0.015em;
+        color: var(--text-2);
+      }
+      #l3 { color: var(--text); margin-bottom: 0; }
+      #l3 .brand { color: var(--green); font-weight: 600; }
+      #l3-rule { width: 560px; margin-top: 44px; }
+
+      /* ---------- Scene 3 : the Scout answers ---------- */
+      #sc3-inner { flex-direction: column; align-items: center; justify-content: center; }
+      #card {
+        width: 1420px;
+        box-sizing: border-box;
+        padding: 46px 56px 54px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+      }
+      .card-head { display: flex; align-items: center; gap: 16px; margin-bottom: 34px; }
+      .card-chrome { margin-left: auto; font-size: 25px; font-weight: 400; color: var(--text-2); letter-spacing: 0.005em; }
+      .dot-wrap { position: relative; width: 12px; height: 12px; }
+      #scout-dot-glow {
+        position: absolute;
+        left: -13px; top: -13px;
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(0, 210, 106, 0.55), rgba(0, 210, 106, 0) 68%);
+      }
+      .dot { position: absolute; inset: 0; border-radius: 50%; background: var(--green); }
+      .card-label {
+        font-size: 25px;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-2);
+      }
+      .bub {
+        box-sizing: border-box;
+        max-width: 1120px;
+        padding: 26px 38px;
+        border-radius: 24px;
+        font-size: 38px;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      /* Bubble shapes follow the app's own .bub rules: the tail corner squares off. */
+      #bub-u { align-self: flex-end; background: var(--surface-2); border-bottom-right-radius: 6px; max-width: 780px; }
+      #bub-a { align-self: flex-start; background: var(--green-soft); border-bottom-left-radius: 6px; margin-top: 28px; }
+      .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+      /* ---------- Scene 4 : lockup and the ask ---------- */
+      #sc4-inner { flex-direction: column; align-items: center; justify-content: center; }
+      #lockup { display: flex; flex-direction: column; align-items: center; }
+      .mark-wrap { position: relative; width: 148px; height: 148px; }
+      #logo-glow {
+        position: absolute;
+        left: -66px; top: -66px;
+        width: 280px; height: 280px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(0, 210, 106, 0.42), rgba(0, 210, 106, 0) 66%);
+      }
+      #mark { position: relative; display: block; width: 148px; height: 148px; border-radius: 34px; }
+      #wordmark { margin: 34px 0 0 0; font-size: 74px; font-weight: 700; letter-spacing: -0.025em; color: var(--text); }
+      #tagline { margin: 14px 0 0 0; font-size: 34px; font-weight: 400; color: var(--text-2); }
+      #price { margin: 46px 0 0 0; font-size: 32px; font-weight: 400; color: var(--text); }
+      #domain { margin: 18px 0 0 0; font-size: 38px; font-weight: 600; letter-spacing: -0.005em; color: var(--green); }
+      #disclaimer {
+        position: absolute;
+        left: 160px; right: 160px; bottom: 54px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        color: var(--text-2);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="gameweek-edge-brag"
+      data-start="0"
+      data-width="1920"
+      data-height="1080"
+      data-fps="30"
+      data-duration="22.95"
+    >
+      <div id="canvas-lift" data-layout-ignore="true"></div>
+
+      <!-- Scene 1 — the question — 0.00 to 3.87 (content settles by 0.85, dissolves out 3.27 to 3.87) -->
+      <section id="sc1" class="clip" data-start="0" data-duration="3.87" data-track-index="0">
+        <div id="sc1-inner" class="inner">
+          <h1 id="hook">What did your captain cost you?</h1>
+          <div id="hook-rule" class="rule" data-layout-ignore="true"></div>
+        </div>
+      </section>
+
+      <!-- Scene 2 — the ladder — 3.87 to 11.46 (dissolves out 10.86 to 11.46) -->
+      <section id="sc2" class="clip" data-start="3.87" data-duration="7.59" data-track-index="1">
+        <div id="sc2-inner" class="inner">
+          <p id="l1" class="ladder-line">The official app tells you what happened.</p>
+          <p id="l2" class="ladder-line">Live-rank sites tell you where you are.</p>
+          <p id="l3" class="ladder-line"><span class="brand">Gameweek Edge</span> tells you what to do next.</p>
+          <div id="l3-rule" class="rule" data-layout-ignore="true"></div>
+        </div>
+      </section>
+
+      <!-- Scene 3 — the Scout answers — 11.46 to 18.56 (dissolves out 18.02 to 18.56) -->
+      <section id="sc3" class="clip" data-start="11.46" data-duration="7.10" data-track-index="2">
+        <div id="sc3-inner" class="inner">
+          <div id="card">
+            <div class="card-head">
+              <div class="dot-wrap">
+                <div id="scout-dot-glow" data-layout-ignore="true"></div>
+                <div class="dot"></div>
+              </div>
+              <div class="card-label">Scout AI</div>
+              <div class="card-chrome">Grounded in your squad. Never invents stats.</div>
+            </div>
+            <div id="bub-u" class="bub">Haaland or Salah (C) this week?</div>
+            <div id="bub-a" class="bub">Salah edges it: higher predicted points (<span class="num" id="pp-hi">8.1</span> vs <span class="num">7.6</span>) and a softer home fixture.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 4 — lockup and the ask — 18.56 to 22.95 -->
+      <section id="sc4" class="clip" data-start="18.56" data-duration="4.39" data-track-index="3">
+        <div id="sc4-inner" class="inner">
+          <div id="lockup">
+            <div class="mark-wrap">
+              <div id="logo-glow" data-layout-ignore="true"></div>
+              <img id="mark" src="assets/img/gwe-mark.png" alt="Gameweek Edge" />
+            </div>
+            <p id="wordmark">Gameweek Edge</p>
+            <p id="tagline">FPL, with an edge.</p>
+          </div>
+          <p id="price">Free to start. Pro from <span class="num">£3.99</span> a month.</p>
+          <p id="domain">gameweekedge.co.uk</p>
+        </div>
+        <p id="disclaimer">Not affiliated with, endorsed by, or associated with the Premier League or the official Fantasy Premier League game.</p>
+      </section>
+
+      <!-- Audio. Music bed on track 10, sparse SFX above it (polished restraint: three cues). -->
+      <audio id="bg-music" data-start="0" data-duration="22.95" data-track-index="10" data-volume="1"
+             src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3"></audio>
+      <audio id="sfx-payoff" data-start="6.51" data-duration="0.19" data-track-index="11" data-volume="0.5"
+             src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-answer" data-start="13.06" data-duration="0.11" data-track-index="12" data-volume="0.45"
+             src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-lockup" data-start="18.51" data-duration="0.13" data-track-index="13" data-volume="0.55"
+             src="assets/sfx/interface/bong_001.ogg"></audio>
+    </div>
+
+    <script>
+      // Beat grid and strong cues come from the bundled preset for
+      // happy-beats-business-moves-vol-12 (109.96 BPM). See composition-brief.md.
+      document.fonts.ready.then(function () {
+        var tl = gsap.timeline({ paused: true });
+
+        // ---------- Scene 1 — the question — 0.00 to 3.87 ----------
+        tl.fromTo("#hook", { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0.30);
+        tl.fromTo("#hook-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.out" }, 1.09); // beat-grid: 1.09s
+        tl.to("#sc1-inner", { opacity: 0, duration: 0.6, ease: "power1.inOut" }, 3.27);
+
+        // ---------- Scene 2 — the ladder — 3.87 to 11.46 ----------
+        // beat-grid: line 1 at 4.39s, line 2 at 5.34s, line 3 at 6.56s
+        tl.fromTo("#l1", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 4.39);
+        tl.fromTo("#l2", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 5.34);
+        tl.fromTo("#l3", { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 6.56);
+        tl.fromTo("#l3-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.out" }, 8.74); // beat-locked: 8.74s strong cue
+        tl.to("#sc2-inner", { opacity: 0, duration: 0.6, ease: "power1.inOut" }, 10.86);
+
+        // ---------- Scene 3 — the Scout answers — 11.46 to 18.56 ----------
+        tl.fromTo("#card", { scale: 0.965, y: 18, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.75, ease: "power3.out" }, 11.46); // beat-grid: 11.46s
+        tl.fromTo("#bub-u", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 12.02); // beat-grid: 12.02s
+        tl.fromTo("#bub-a", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 13.11); // beat-locked: 13.11s strong cue
+        // The one key number on screen takes --hot, once, after the answer has been read (BRAND.md §6).
+        tl.to("#pp-hi", { color: "#b6ff3c", duration: 0.4, ease: "power2.out" }, 16.38); // beat-grid: 16.38s
+        tl.to("#sc3-inner", { opacity: 0, duration: 0.54, ease: "power1.inOut" }, 18.02);
+
+        // ---------- Scene 4 — lockup and the ask — 18.56 to 22.95 ----------
+        tl.fromTo("#lockup", { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "power3.out" }, 18.56); // beat-locked: 18.56s strong cue
+        tl.fromTo("#price", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 19.66); // beat-locked: 19.66s strong cue
+        tl.fromTo("#disclaimer", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power1.out" }, 19.66);
+        tl.fromTo("#domain", { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 20.75); // beat-grid: 20.75s
+
+        // ---------- Music: steady low bed, fading to quiet under the lockup ----------
+        // data-volume stays at 1 so the tween alone carries the level (lint:
+        // audio_volume_tween_overrides_gain).
+        tl.set("#bg-music", { volume: 0.30 }, 0);
+        tl.to("#bg-music", { volume: 0, duration: 1.2, ease: "power1.in" }, 21.73);
+
+        // ---------- Audio-reactive: two decoratives breathe, nothing else ----------
+        // Pre-extracted per-frame data, sampled once per frame. No waveforms, no
+        // equaliser bars, and text never scales or pulses.
+        var D = window.AUDIO_DATA;
+        var logoGlow = document.getElementById("logo-glow");
+        var scoutGlow = document.getElementById("scout-dot-glow");
+
+        function frameSetter(frame) {
+          return function () {
+            logoGlow.style.opacity = (0.30 + frame.rms * 0.45).toFixed(3);
+            scoutGlow.style.opacity = (0.25 + frame.bands[0] * 0.55).toFixed(3);
+          };
+        }
+
+        for (var i = 0; i < D.totalFrames; i++) {
+          var t = i / D.fps;
+          if (t > 22.95) break;
+          tl.call(frameSetter(D.frames[i]), [], t);
+        }
+
+        window.__timelines["gameweek-edge-brag"] = tl;
+      });
+    </script>
+  </body>
+</html>
