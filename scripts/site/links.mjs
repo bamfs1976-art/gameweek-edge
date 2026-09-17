@@ -28,6 +28,14 @@ export function footerLinks(links, opts) {
   if (l.discord) out.push({ href: l.discord, label: 'Discord', external: true });
   if (l.leagueCode) out.push({ href: LEAGUE_JOIN + encodeURIComponent(l.leagueCode), label: 'Official mini-league', external: true });
   if (opts && opts.articles) out.push({ href: opts.articles, label: 'Articles' });
+  /* THE REFERENCE PAGES, and why a footer is the right place for them.
+     225 generated tool pages sat in the sitemap with nothing on the site
+     linking to them, and Search Console reported 257 URLs "discovered,
+     currently not indexed". A sitemap says a page exists; a link says it
+     is worth reading, and only the second earns crawl budget. This is the
+     one footer every built page shares, so one entry here is a path from
+     every page on the site into the set. */
+  if (!(opts && opts.skipTools)) out.push({ href: '/tools/', label: 'FPL tools' });
   return out;
 }
 

@@ -52,7 +52,7 @@ th{background:var(--surface-3);font-size:.66rem;text-transform:uppercase;letter-
 .badge{display:inline-block;padding:2px 7px;border-radius:var(--r);font-size:.68rem;font-weight:700;background:var(--surface-3);color:var(--text-2)}
 .badge-red{background:rgba(255,77,79,.14);color:var(--red)}.badge-amber{background:rgba(245,165,36,.14);color:var(--amber)}.badge-green{background:var(--green-soft);color:var(--green)}
 .pos,.neg{font-family:var(--font-mono);font-weight:700}.pos{color:var(--green)}.neg{color:var(--red)}
-.muted{color:var(--text-3);font-size:.8rem}.list{list-style:none;padding:0;margin:0;columns:2;column-gap:18px}.list li{break-inside:avoid;padding:3px 0}
+.muted{color:var(--text-3);font-size:.8rem}.list{list-style:none;padding:0;margin:0;columns:2;column-gap:18px}.list li{break-inside:avoid;padding:3px 0}.list.inline{columns:auto;display:flex;flex-wrap:wrap;gap:4px 14px}.list.inline li{padding:2px 0}
 @media (max-width:600px){.list{columns:1}h1{font-size:1.4rem}}
 footer{border-top:1px solid var(--border);padding:18px 0 40px;color:var(--text-3);font-size:.78rem}footer a{color:var(--text-2)}.flinks a{margin-right:12px}
 `;
@@ -86,7 +86,7 @@ function frame({ title, desc, path, h1, lede, body, snap, jsonld, current, links
     '<main id="main" class="wrap"><h1>' + h1 + '</h1><p class="lede">' + lede + '</p>' + body + '</main>\n' +
     '<footer><div class="wrap"><p>Data from the official Fantasy Premier League API, updated ' + esc(fmtStamp(snap.built)) + '. ' + (snap.event.nextName ? esc(snap.event.nextName) + ' deadline ' + esc(fmtDate(snap.event.deadline)) + '. ' : '') +
     'These pages are generated from the data, not written by hand. Gameweek Edge is an independent app and is not affiliated with, endorsed by or associated with the Premier League or the official Fantasy Premier League game.</p>' +
-    '<p class="flinks"><a href="/">Gameweek Edge</a> <a href="/tools/">All tools</a> <a href="/methodology">Methodology</a> ' + footerLinksHtml(links || {}) + '</p></div></footer>\n</body>\n</html>\n';
+    '<p class="flinks"><a href="/">Gameweek Edge</a> <a href="/tools/">All tools</a> <a href="/methodology">Methodology</a> ' + footerLinksHtml(links || {}, { skipTools: true }) + '</p></div></footer>\n</body>\n</html>\n';
 }
 
 const fdrCell = (d, opp, home) => '<span class="fdr fdr-' + d + '" title="Difficulty ' + d + ' of 5">' + esc(opp) + ' (' + (home ? 'H' : 'A') + ')</span>';
@@ -126,6 +126,24 @@ function pageDifficulty(snap, links) {
     path: '/tools/fixture-difficulty/', h1: 'Fixture difficulty by team', lede: 'Each club’s next fixtures with the official difficulty rating, easiest run first. Tap a club for its fixtures and its most-owned players.', body, snap, links, current: '/tools/fixture-difficulty/' });
 }
 
+/* EVERY CLUB, ON EVERY CLUB PAGE.
+   A generated set whose pages only link back to their own index is a set
+   the crawler has to re-enter from the top for each one, and 20 club
+   pages behind a single hub is exactly the shape that sat "discovered,
+   currently not indexed". Linking them to each other turns the set into
+   a mesh: land anywhere and every other page is one hop away. It is also
+   the useful thing for a reader comparing two clubs' runs, which is why
+   it earns its place rather than being link plumbing. */
+function clubStrip(snap, currentSlug) {
+  const runs = teamRuns(snap);
+  if (runs.length < 2) return '';
+  return '<div class="card"><p class="card-title">Every club, easiest run first</p><ul class="list inline">' +
+    runs.map((r) => r.team.slug === currentSlug
+      ? '<li><b>' + esc(r.team.name) + '</b></li>'
+      : '<li><a href="/tools/fixture-difficulty/' + r.team.slug + '/">' + esc(r.team.name) + '</a></li>').join('') +
+    '</ul></div>';
+}
+
 function pageTeam(snap, r, links) {
   const t = r.team;
   const rows = r.runs.map((f) => '<tr><td class="num">' + f.gw + '</td><td>' + esc(f.oppName) + ' (' + (f.home ? 'Home' : 'Away') + ')</td><td>' + fdrCell(f.d, f.opp, f.home) + '</td><td>' + esc(f.kick ? fmtDate(f.kick) : '') + '</td></tr>').join('');
@@ -133,6 +151,7 @@ function pageTeam(snap, r, links) {
   const body = '<div class="card"><p class="card-title">Next ' + r.runs.length + ' fixtures' + (r.avg != null ? ', average difficulty ' + r.avg.toFixed(2) : '') + '</p><div class="scroll"><table><thead><tr><th class="num">GW</th><th>Opponent</th><th>Difficulty</th><th>Date</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>' +
     (squad.length ? '<div class="card"><p class="card-title">' + esc(t.name) + ' players in the top ' + snap.players.length + '</p><div class="scroll"><table><thead><tr><th>Player</th><th>Pos</th><th class="num">Price</th><th class="num">Owned</th><th class="num">Points</th><th class="num">Form</th></tr></thead><tbody>' +
       squad.map((p) => '<tr><td><a href="/tools/players/' + p.slug + '/">' + esc(p.web) + '</a></td><td>' + POS[p.pos] + '</td><td class="num">' + money(p.cost) + '</td><td class="num">' + p.own.toFixed(1) + '%</td><td class="num">' + p.pts + '</td><td class="num">' + p.form.toFixed(1) + '</td></tr>').join('') + '</tbody></table></div></div>' : '') +
+    clubStrip(snap, t.slug) +
     '<p class="muted">In the app: <a href="/players?team=' + t.id + '">every ' + esc(t.name) + ' player</a> and the <a href="/fixtures">Fixture Planner</a>.</p>';
   return frame({ title: esc(t.name) + ' fixtures and FPL difficulty, next ' + r.runs.length + ' gameweeks | Gameweek Edge',
     desc: esc(t.name) + '’s next ' + r.runs.length + ' Premier League fixtures with FPL’s official difficulty rating' + (r.avg != null ? ', averaging ' + r.avg.toFixed(2) + ' of 5' : '') + ', and the club’s top FPL players.',
@@ -188,13 +207,20 @@ function pagePlayer(snap, p, links) {
   const per90 = p.min > 0 ? (p.pts / (p.min / 90)).toFixed(1) : '–';
   const availability = p.status === 'a' && !p.news ? 'Available' : (STATUS[p.status] || p.status) + (p.chance != null ? ', ' + p.chance + '% chance of playing' : '') + (p.news ? '. ' + p.news : '');
   const stat = (l, v) => '<div class="stat"><div class="stat-l">' + l + '</div><div class="stat-v">' + v + '</div></div>';
+  const mates = snap.players.filter((x) => x.team === p.team && x.slug !== p.slug)
+    .sort((a, b) => b.pts - a.pts).slice(0, 10);
   const body = '<div class="card"><div class="grid">' + stat('Price', money(p.cost)) + stat('Owned', p.own.toFixed(1) + '%') + stat('Points', p.pts) + stat('Form', p.form.toFixed(1)) + stat('Per 90', per90) + stat('Minutes', p.min.toLocaleString('en-GB')) + '</div></div>' +
     '<div class="card"><p class="card-title">This season</p><div class="scroll"><table><thead><tr><th class="num">Goals</th><th class="num">Assists</th><th class="num">Clean sheets</th><th class="num">Bonus</th><th class="num">xG</th><th class="num">xA</th><th class="num">Yellows</th><th class="num">Price change</th></tr></thead><tbody><tr>' +
     '<td class="num">' + p.g + '</td><td class="num">' + p.a + '</td><td class="num">' + p.cs + '</td><td class="num">' + p.bonus + '</td><td class="num">' + p.xg.toFixed(2) + '</td><td class="num">' + p.xa.toFixed(2) + '</td><td class="num">' + p.yc + '</td><td class="num"><span class="' + (p.ccs > 0 ? 'pos' : p.ccs < 0 ? 'neg' : '') + '">' + (p.ccs > 0 ? '+' : '') + (p.ccs / 10).toFixed(1) + '</span></td></tr></tbody></table></div></div>' +
     '<div class="card"><p class="card-title">Availability</p><p style="margin:0">' + esc(availability) + '</p></div>' +
     '<div class="card"><p class="card-title">Next ' + fixtures.length + ' fixtures</p>' + (fixtures.length ? '<div class="scroll"><table><thead><tr><th class="num">GW</th><th>Opponent</th><th>Difficulty</th><th>Date</th></tr></thead><tbody>' +
       fixtures.map((f) => '<tr><td class="num">' + f.gw + '</td><td>' + esc(f.oppName) + ' (' + (f.home ? 'Home' : 'Away') + ')</td><td>' + fdrCell(f.d, f.opp, f.home) + '</td><td>' + esc(f.kick ? fmtDate(f.kick) : '') + '</td></tr>').join('') + '</tbody></table></div>' : '<p class="muted">No fixtures scheduled in the window.</p>') + '</div>' +
-    '<p class="muted">In the app: <a href="/players?q=' + encodeURIComponent(p.web) + '">' + esc(p.web) + ' in the players table</a> with predicted points, the dossier and the form chart, and <a href="/tools/fixture-difficulty/' + t.slug + '/">' + esc(t.name) + '’s fixture run</a>.</p>';
+    /* The rest of the club, so a reader comparing team-mates does not
+       have to go back through an index, and so 200 player pages are a
+       mesh rather than 200 leaves hanging off one hub. */
+    (mates.length ? '<div class="card"><p class="card-title">More ' + esc(t.name) + ' players</p><ul class="list inline">' +
+      mates.map((m) => '<li><a href="/tools/players/' + m.slug + '/">' + esc(m.web) + '</a> <span class="muted">' + m.pts + ' pts</span></li>').join('') + '</ul></div>' : '') +
+    '<p class="muted">In the app: <a href="/players?q=' + encodeURIComponent(p.web) + '">' + esc(p.web) + ' in the players table</a> with predicted points, the dossier and the form chart, and <a href="/tools/fixture-difficulty/' + t.slug + '/">' + esc(t.name) + '’s fixture run</a>, alongside <a href="/tools/players/">every player page</a>.</p>';
   const full = (p.first + ' ' + p.second).trim() || p.web;
   /* Two players with one name: the club in the title keeps the pages apart. */
   const named = p.dup ? full + ' (' + t.name + ')' : full;

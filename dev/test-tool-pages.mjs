@@ -97,6 +97,43 @@ const idx = pages.get('/tools/players/');
 ok(/Tom Same \(Arsenal\) FPL/.test(pages.get('/tools/players/tom-same-5/')) && /Tom Same \(Aston Villa\) FPL/.test(pages.get('/tools/players/tom-same-6/')), 'two players with one name are told apart by club in the title');
 ok(/Goalkeepers \(8\)/.test(idx) && /Defenders \(8\)/.test(idx) && (idx.match(/href="\/tools\/players\/[a-z0-9-]+\/"/g) || []).length === 30, 'the player index lists everyone by position');
 
+section('the set links to itself, so a crawler can walk it');
+{
+  /* WHY THIS SECTION EXISTS. 225 generated pages sat in the sitemap with
+     one page on the whole site linking into them, and Search Console
+     reported 257 URLs "discovered, currently not indexed". A sitemap says
+     a page exists; a link says it is worth reading. These checks are the
+     link structure, asserted, so it cannot quietly rot back to a set of
+     leaves hanging off a single hub. */
+  const clubA = pages.get('/tools/fixture-difficulty/arsenal/');
+  const clubB = pages.get('/tools/fixture-difficulty/aston-villa/');
+  const clubLinks = (html) => new Set((html.match(/href="\/tools\/fixture-difficulty\/[a-z0-9-]+\/"/g) || []));
+  ok(clubLinks(clubA).size >= 2, 'a club page links to its sibling clubs, got ' + clubLinks(clubA).size);
+  ok(!/href="\/tools\/fixture-difficulty\/arsenal\/"/.test(clubA),
+     'and never to itself: the club it is about is plain text, not a link back');
+  ok(/href="\/tools\/fixture-difficulty\/arsenal\/"/.test(clubB),
+     'while the club it is not about is a link');
+  ok(/Every club, easiest run first/.test(clubA), 'the strip says what order it is in');
+
+  /* Reciprocity: every club reachable from every other, so there is no
+     island the crawler can only reach from the index. */
+  const slugs = [...pages.keys()].filter((k) => /^\/tools\/fixture-difficulty\/[^/]+\/$/.test(k));
+  ok(slugs.length >= 2, 'the fixture set has club pages, got ' + slugs.length);
+  ok(slugs.every((k) => clubLinks(pages.get(k)).size === slugs.length - 1),
+     'every club page links to every other club and none to itself');
+
+  const pl = pages.get('/tools/players/martin-odegaard/');
+  const mates = new Set((pl.match(/href="\/tools\/players\/[a-z0-9-]+\/"/g) || []));
+  ok(mates.size >= 1, 'a player page links to club-mates, got ' + mates.size);
+  ok(!/href="\/tools\/players\/martin-odegaard\/"/.test(pl), 'and never to itself');
+  ok(/href="\/tools\/players\/"/.test(pl), 'and back up to the player index');
+
+  /* The shared footer must not double up on a page that already carries
+     its own "All tools" link. */
+  ok((pl.match(/href="\/tools\/"/g) || []).length === 1,
+     'one link to the tools index per page, not two, got ' + (pl.match(/href="\/tools\/"/g) || []).length);
+}
+
 section('the sitemap takes the tool pages');
 const urls = [...pages.keys()].map((path) => ({ path, freq: 'daily', pri: '0.6' }));
 const xml = sitemapXml([{ path: '/', tier: 'free' }], [], new Date('2026-08-21T00:00:00Z'), urls);

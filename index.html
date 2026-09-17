@@ -1211,6 +1211,10 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 .sb-foot-links{font-size:var(--fs-min);line-height:1.6;color:var(--text-3);margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px 10px}
 .sb-foot-links a{color:var(--text-2);text-decoration:underline}
 .sb-foot-links:empty{display:none}
+/* The static reference row sits above the community links and is never
+   empty, so it needs no :empty guard; it is dimmed a shade to keep the
+   community links the louder of the two. */
+.sb-foot-ref{margin-top:8px}
 /* Sibling app card. Fantasy EFL is a different competition on the same
    account, so it gets a real card rather than another footer link — but a
    quiet one, below the account button, not competing with the nav. */
@@ -3005,6 +3009,23 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
       </a>
       <a class="sb-foot-v" href="https://bookingsdesk.netlify.app" rel="noopener" style="font-weight:600">Part of the Edge family · Bookings Desk ↗</a>
       <p class="sb-foot-legal">Independent app: not affiliated with, endorsed by or associated with the Premier League or Fantasy Premier League. Those names are trademarks of their respective owners, used descriptively.</p>
+      <!-- STATIC, and that is the whole point of it.
+           The links below this one are written by renderSiteLinks at boot,
+           which is fine for a reader and weak for a crawler: it makes the
+           only route to the 225 generated tool pages depend on JavaScript
+           running. Search Console reported 257 URLs "discovered, currently
+           not indexed" while nothing in the served markup pointed at any of
+           them. These are plain anchors in the shipped HTML, so they survive
+           into every pre-rendered shell (those are built from this file) and
+           they are there whether or not a script runs. -->
+      <p class="sb-foot-links sb-foot-ref">
+        <a href="/tools/">FPL tools</a>
+        <a href="/glossary">Glossary</a>
+        <a href="/fplbasics">FPL basics</a>
+        <a href="/methodology">Methodology</a>
+        <a href="/wire">The Wire</a>
+        <a href="/blog/">Articles</a>
+      </p>
       <p class="sb-foot-links" id="sb-foot-links"></p>
     </div>
   </aside>

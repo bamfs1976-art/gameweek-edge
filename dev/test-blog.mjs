@@ -83,10 +83,17 @@ section('one source of links');
   const links = siteLinks(html);
   ok(links && 'discord' in links && 'leagueCode' in links && 'contact' in links && 'terms' in links, 'SITE_LINKS in index.html has the four keys');
   ok(Object.values(links).every((v) => v === ''), 'every value is empty until the owner fills it (the scaffold)');
-  ok(footerLinks(links).length === 1 && footerLinks(links)[0].label === 'Privacy', 'with nothing filled only the privacy link renders');
+  /* The tools link is unconditional: it points at pages that always exist,
+     unlike the community links, which render only once they have a value.
+     It is the one path from every built page into the generated set. */
+  ok(footerLinks(links).map((x) => x.label).join('|') === 'Privacy|FPL tools',
+     'with nothing filled the privacy and tools links still render, got ' + footerLinks(links).map((x) => x.label).join('|'));
+  ok(footerLinks(links, { skipTools: true }).length === 1,
+     'and a page that already carries its own tools link can suppress it');
+  ok(footerLinks(links).some((x) => x.href === '/tools/'), 'the tools link is the index, with its trailing slash');
   const all = footerLinks(L);
-  ok(all.map((x) => x.label).join('|') === 'Contact|Privacy|Discord|Official mini-league' && all[3].href === LEAGUE_JOIN + 'xyz12', 'filled values render in one order everywhere');
-  ok(footerLinks({ ...L, terms: '/terms.html' }).map((x) => x.label).join('|') === 'Contact|Terms|Privacy|Discord|Official mini-league', 'terms sits between contact and privacy when it exists');
+  ok(all.map((x) => x.label).join('|') === 'Contact|Privacy|Discord|Official mini-league|FPL tools' && all[3].href === LEAGUE_JOIN + 'xyz12', 'filled values render in one order everywhere');
+  ok(footerLinks({ ...L, terms: '/terms.html' }).map((x) => x.label).join('|') === 'Contact|Terms|Privacy|Discord|Official mini-league|FPL tools', 'terms sits between contact and privacy when it exists');
   ok(/rel="noopener">Discord<\/a>/.test(footerLinksHtml(L)) && !/rel="noopener">Contact/.test(footerLinksHtml(L)), 'external links carry noopener');
   ok(/<!-- site:links -->/.test(readFileSync(join(ROOT, 'landing.html'), 'utf8')), 'the landing page carries the marker the build fills');
   ok(/id="sb-foot-links"/.test(html) && /function renderSiteLinks\(\)/.test(html) && /renderSiteLinks\(\);/.test(html), 'the app renders the same links into its sidebar footer at boot');
