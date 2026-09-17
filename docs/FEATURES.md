@@ -772,6 +772,32 @@ its own title, description, canonical, social tags and structured data, the
 app's tokens in dark and light, and links into the live tool in the app.
 Until the first snapshot lands the build writes no tool pages and says so.
 
+**Internal linking, and why it is structural rather than decoration.** Four
+days after the sitemap went to Search Console, 257 of the 273 URLs read
+"Discovered, currently not indexed", and an audit of the built output found
+why: exactly one page on the site linked into `/tools/`, and that page was
+the empty articles index, which nothing linked to either. The 225 generated
+pages were reachable only from the sitemap. A sitemap says a page exists; a
+link says it is worth reading, and only the second earns crawl budget.
+
+Three paths now exist and each is asserted by a test, so they cannot rot:
+
+| Path | Where | Guard |
+|---|---|---|
+| Every built page → `/tools/` | `footerLinks` in `scripts/site/links.mjs`, unconditional (`skipTools` suppresses it on pages carrying their own) | `dev/test-blog.mjs` |
+| `/` and every pre-rendered shell → the reference pages | a **static** `<p class="sb-foot-ref">` in `index.html`, plain anchors in the shipped markup | built output |
+| Club ↔ club, player ↔ club-mate | `clubStrip` and the club-mates card in `scripts/tools/pages.mjs` | `dev/test-tool-pages.mjs` |
+
+The static row in `index.html` is static on purpose. The links beside it are
+written by `renderSiteLinks` at boot, which is fine for a reader and makes a
+crawler's only route to 225 pages depend on a script running. Being in the
+markup also carries it into all five pre-rendered shells, which are built
+from that file.
+
+The honest limit: none of this substitutes for inbound links. A domain
+nobody links to is crawled sparingly whatever its sitemap and its internal
+structure say.
+
 **Ten Seasons** — the archive is a hub now. *Archive* (free) keeps the
 all-time records, the two-career comparison and the daily puzzle. *Season
 table* (Pro, `/archive?view=seasons&season=2023-24`) is the season history
