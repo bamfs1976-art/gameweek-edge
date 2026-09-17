@@ -488,6 +488,26 @@ mixture of live and settled totals places people below rivals they are beating.
 When it refuses, the card keeps FPL's positions and prints which order they are
 and why. The compact table is untouched: it shows FPL's figures throughout.
 
+**My Week says each figure once.** The panel used to open with a board
+carrying the overall rank, the gameweek rank and the points, and then a Rank
+row underneath repeating all three. The row also read the last two history
+ROWS rather than the last two published ranks, and since FPL adds the running
+gameweek's row at the deadline with a null rank, mid-gameweek it fell into its
+own else branch and told a reader in September that the season had not started.
+
+The row is gone. The move it carried now sits in the board as `orMove`, read
+off the last two ranks FPL has actually published, and it took the slot the
+manager count held because the overall-rank tile already names the total in
+its tooltip. My Week is figures once at the top, then five decisions: captain,
+transfer, chip, watchlist, fixture.
+
+**New badges that take themselves down.** `PANEL_NEW` maps a panel id to the
+date its work shipped and `panelIsNew` renders the chip for `NEW_DAYS` after
+that, on the drawer rows and the desktop area tabs. Dates parse as UTC so the
+badge changes state at the same instant for every reader rather than at local
+midnight. A flag a human has to remember to remove is a flag still there in
+March; this one expires itself, so adding a line is the whole job.
+
 **Competition lens** — the month table a mini-league actually argues about.
 
 FPL publishes a season table and nothing else, so two questions it cannot
