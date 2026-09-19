@@ -1244,6 +1244,30 @@ so it shows before a team is linked and pre‑season.
 **Alerts** — price‑change / injury / deadline reminders and **model‑watch** alerts
 (when the model's view of a player shifts). Optional push notifications.
 
+Push splits in two. `push-cron.js` runs hourly around the deadline: price
+moves, fitness flags, suspension risk, the deadline itself. `push-live.js`
+runs every two minutes while a gameweek is in play and alerts on your own XI:
+goals and assists, the defensive +2, bonus movement, a player substituted
+(opt-in) and a captain missing from the confirmed XI (opt-in).
+
+Three things about the in-play feed are harder than they look, and all three
+are handled in `netlify/lib/live-events.js`:
+
+- **A goal is not a fact when it appears.** VAR can take it back and the feed
+  carries no "under review" flag, so a new goal or assist is held briefly
+  before it counts. One chalked off inside that window is never sent. One
+  taken away after it was sent produces a **correction** alert, which follows
+  the scorer preference rather than carrying a switch of its own.
+- **`finished` is not the final whistle.** FPL leaves it false until bonus is
+  confirmed, which can lag by hours. Scope follows `finished_provisional`
+  instead, keeping a finished fixture a few minutes longer so the last bonus
+  movement still goes out.
+- **There is no substitution event at all.** A player off the pitch is visible
+  only as minutes that stopped advancing while the match clock ran on. Read
+  from `explain[]` so a double gameweek is counted per fixture, not as one
+  total, and deliberately slow to fire: a wrong "he is off" costs more than a
+  late one.
+
 ### Match Centre
 
 **Match Centre** (panel id `results`, path `/matchday`) — one fixture list, three points in time. Results, Match Forecasts
@@ -1417,7 +1441,7 @@ dataset (used freely with attribution), aligned by the official FPL element id:
   holds descriptions/layouts.
 - **Serverless (Netlify Functions):** `fpl` (FPL proxy), `ai` (LLM),
   `checkout` / `portal` / `stripe-webhook` (billing), `push-key` /
-  `push-subscribe` / `push-unsubscribe` / `push-cron` (web push).
+  `push-subscribe` / `push-unsubscribe` / `push-cron` / `push-live` (web push).
 - **URL state (`index.html`, `URL STATE` block):** the path names the panel
   and the query string names its state: `?view=` for the tab inside a hub,
   then each view's own keys (sort, filters, gameweek, players, league …).
@@ -1528,7 +1552,11 @@ netlify/functions/
   fpl.js        FPL API proxy (endpoint allowlist)
   ai.js         LLM endpoint (ANTHROPIC_API_KEY)
   checkout.js portal.js stripe-webhook.js   billing
-  push-key.js push-subscribe.js push-unsubscribe.js push-cron.js  web push
+  push-key.js push-subscribe.js push-unsubscribe.js  web push
+  push-cron.js  hourly alerts      push-live.js  in-play alerts
+netlify/lib/
+  live-events.js  in-play reading: fixture scope, VAR hold, substitutions
+  price-feed.js   hourly transfer samples   suspension.js  the card ladder
 ios/  capacitor.config.json    iOS wrapper
 dev/
   mock_fpl.py                  offline mock FPL API + static server
