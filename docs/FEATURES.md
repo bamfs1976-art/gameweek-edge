@@ -67,6 +67,56 @@ carries an **area tab strip** naming the handful of views that belong with it
 rather than dead; **Pro** panels show as a locked tab, because you cannot want
 what you cannot see.
 
+### The sidebar scrolls as one thing, and why that had to change
+
+The sidebar is a flex column: brand, competition switcher, gameweek strip,
+navigation, footer. The navigation was `flex:1` with `overflow-y:auto`, which
+reads like "take the space that is left and scroll if you need to" and behaves
+like something else. A flex item that is its own scroll container has
+`min-height:auto` resolve to **zero**, so it does not hold its ground. It
+shrinks to whatever the footer leaves, and the footer, having no shrink of its
+own, takes as much as its content asks for.
+
+That was invisible for as long as every screen was tall enough. Measured on the
+shipped build, area buttons fully visible out of six:
+
+| Viewport | Pointer | Nav height | Needed | Visible |
+|---|---|---|---|---|
+| 1024x768 | touch | 22px | 286px | 0 of 6 |
+| 1180x820 | touch | 22px | 286px | 0 of 6 |
+| 1366x1024 | touch | 232px | 286px | 5 of 6 |
+| 1280x720 | mouse | 22px | 250px | 0 of 6 |
+| 1440x900 | mouse | 129px | 250px | 3 of 6 |
+| 1920x1080 | mouse | 309px | 309px | 6 of 6 |
+
+Reported as "Menu is inaccessible on iPad", which is where it bites hardest,
+but the table says it is a **short viewport** fault rather than a tablet one. An
+iPad in landscape is simply the shortest screen wide enough to be given the
+pinned sidebar. A 1280x720 laptop had it just as badly. Adding six reference
+links to the footer took the navigation from 71px to 22px, which is what turned
+it from awkward into invisible.
+
+The fix is to stop the navigation being a scroll container of its own and let
+the whole sidebar scroll. One scroller, natural flow, nothing can be crushed by
+anything. `margin-top:auto` on the footer keeps it pinned to the bottom edge
+when there is spare room, because auto margins absorb free space and resolve to
+zero when there is none, so one line covers the tall screen and the short one.
+Scoped to the two pinned states: the 48px hover rail hides its footer, so it has
+no crush to fix, and giving it a content-height nav would overflow a rail whose
+overflow is hidden.
+
+The grouped index of every panel (`.sb-all`) now follows the **pointer** rather
+than the width. It exists because you cannot hover to explore, so it belongs on
+any touch device wide enough to be pinned open, not only on phones under 900px.
+A desktop with a mouse keeps the shorter area list, hover-expansion and the area
+tabs.
+
+`dev/test-ui.mjs` asserts reachability rather than visibility: each control is
+scrolled into view and must land whole inside the sidebar and inside the window.
+A list you scroll to passes, a list crushed to 22px does not, and the assertion
+survives a later change of layout. Nine viewports, varying height and pointer as
+well as width, including the two laptops.
+
 There is no "The Edge" area any more. It used to hold twelve unrelated paid
 tools — the app's single biggest pile, and the one place a Pro tool could hide
 from the topic it belonged to. Pro is a property of a *panel* now, not a place,

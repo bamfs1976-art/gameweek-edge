@@ -2708,6 +2708,108 @@ section('the sidebar at tablet widths: no hover, so nothing may depend on it');
   }
 }
 
+section('the sidebar menu is reachable on every short screen, not just tall ones');
+{
+  /* Reported: "Menu is inaccessible on iPad". The section above already
+     pinned the sidebar open on a touch tablet and proved its width, its
+     labels and its competition switcher. Every one of those assertions
+     still passed while the navigation itself was 22px tall.
+
+     That is the gap this section closes. .sb-nav is flex:1 with
+     overflow-y:auto, and a flex item that is its own scroll container
+     has min-height:auto resolve to ZERO, so it shrinks to whatever the
+     footer leaves and the footer takes as much as it wants. Measured on
+     the shipped build: 0 of 6 area buttons fully visible at 1180x820
+     touch, 0 of 6 at 1280x720 with a mouse, 3 of 6 at 1440x900, and all
+     6 only at 1920x1080. So it was never about the iPad. It was about
+     the HEIGHT, and every viewport the suite used was tall enough to
+     hide it.
+
+     Two things follow for how this is written. The cases vary height as
+     well as width and pointer, including two ordinary laptops. And the
+     assertion is reachability, not visibility: scroll each control into
+     view and require it to land whole inside the sidebar and inside the
+     window. A list you scroll to passes, a list crushed to 22px does
+     not, and neither answer depends on which layout gets chosen later.
+
+     It also guards the next footer row somebody adds. Adding six
+     reference links to the footer took the nav from 71px to 22px, which
+     is what turned this from awkward into invisible. */
+  const CASES = [
+    { name: 'iPad landscape', w: 1024, h: 768, touch: true, fullMenu: true },
+    { name: 'iPad 11in landscape', w: 1180, h: 820, touch: true, fullMenu: true },
+    { name: 'iPad Pro landscape', w: 1366, h: 1024, touch: true, fullMenu: true },
+    { name: 'iPad portrait', w: 820, h: 1180, touch: true, drawer: true, fullMenu: true },
+    { name: 'phone', w: 390, h: 844, touch: true, drawer: true, fullMenu: true },
+    /* The two laptops that had the bug with a mouse. They keep the
+       shorter area list the desktop design intends, so fullMenu is off
+       and the areas alone must be reachable. */
+    { name: 'laptop 1280x720', w: 1280, h: 720, touch: false },
+    { name: 'laptop 1440x900', w: 1440, h: 900, touch: false },
+    { name: 'desktop 1920x1080', w: 1920, h: 1080, touch: false, footAtBottom: true },
+    /* The hover rail hides its footer, so it has no crush to fix and
+       must not have acquired one. */
+    { name: 'rail, mouse', w: 1180, h: 820, touch: false, rail: true },
+  ];
+  for (const c of CASES) {
+    const ctx = await browser.newContext({ viewport: { width: c.w, height: c.h }, hasTouch: c.touch });
+    const p = await ctx.newPage();
+    await p.goto(`http://localhost:${API_PORT}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(900);
+    /* Under 900px the sidebar is a drawer behind the hamburger, so open
+       it: a closed drawer is off-canvas by design, not a defect. */
+    if (c.drawer) await p.evaluate(() => document.querySelector('.sidebar').classList.add('open'));
+    await p.waitForTimeout(250);
+
+    const r = await p.evaluate(async () => {
+      const sb = document.querySelector('.sidebar');
+      const areas = [...document.querySelectorAll('#sb-nav .nav-area-btn')];
+      const panels = [...document.querySelectorAll('.sb-sub')];
+      const whole = async (el) => {
+        el.scrollIntoView({ block: 'nearest' });
+        await new Promise((r) => requestAnimationFrame(r));
+        const b = el.getBoundingClientRect(), s = sb.getBoundingClientRect();
+        return b.height > 0 && b.top >= s.top - 1 && b.bottom <= s.bottom + 1
+          && b.left >= s.left - 1 && b.right <= s.right + 1
+          && b.top >= -1 && b.bottom <= innerHeight + 1;
+      };
+      let a = 0; for (const el of areas) if (await whole(el)) a++;
+      let q = 0; for (const el of panels) if (await whole(el)) q++;
+      const foot = document.querySelector('.sb-foot');
+      const fb = foot.getBoundingClientRect(), sbb = sb.getBoundingClientRect();
+      return {
+        areas: areas.length, areasOk: a,
+        panels: panels.length, panelsOk: q,
+        menuShown: getComputedStyle(document.querySelector('.sb-all')).display !== 'none',
+        footAtBottom: Math.abs(Math.round(fb.bottom) - Math.round(sbb.bottom)) <= 1,
+      };
+    });
+
+    /* The whole point: not one area is out of reach, on any screen. */
+    ok(r.areas > 0 && r.areasOk === r.areas,
+       c.name + ': every area button is reachable (' + r.areasOk + ' of ' + r.areas + ')');
+
+    if (c.fullMenu) {
+      ok(r.menuShown === true, c.name + ': the full panel index is on the page');
+      ok(r.panels > 0 && r.panelsOk === r.panels,
+         c.name + ': and every panel in it is reachable (' + r.panelsOk + ' of ' + r.panels + ')');
+    } else {
+      /* A mouse can hover the rail and use the area tabs, so the long
+         list stays off — the desktop design, unchanged. */
+      ok(r.menuShown === false, c.name + ': keeps the shorter area list a pointer can explore');
+    }
+    if (c.footAtBottom) {
+      /* With room to spare the footer still sits on the bottom edge, so
+         the fix for short screens did not restyle tall ones. */
+      ok(r.footAtBottom === true, c.name + ': the footer still sits at the bottom when there is room');
+    }
+    if (c.rail) {
+      ok(r.menuShown === false, c.name + ': the collapsed rail stays as it was');
+    }
+    await ctx.close();
+  }
+}
+
 section('squad planner: a rebuild against your own budget, not a clean £100m');
 {
   /* Asked for: turn the pre-season draft into a planner usable all

@@ -1168,8 +1168,11 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 /* Nav */
 .sb-nav{flex:1;overflow-y:auto;padding:8px 10px 16px}
 .nav-area{margin-bottom:2px}
-/* The grouped menu: every panel under its area, in the phone and tablet
-   drawer only. The desktop rail hides it (see the 900px block). */
+/* The grouped menu: every panel under its area. Off by default and
+   switched on wherever there is no hover to explore with — the phone
+   drawer (the 900px block) and any pinned touch sidebar (the hover:none
+   block beside it). The desktop rail keeps it hidden: hovering reveals
+   the labels and the area tabs do the rest. */
 .sb-all{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
 .sb-group{margin-bottom:6px}
 .sb-group-h{font-size:var(--fs-min);font-weight:800;letter-spacing:.09em;text-transform:uppercase;
@@ -2051,6 +2054,68 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
   .nav-area-btn{padding:9px 11px;gap:12px}
   .nav-area-label{opacity:1}
   .main{margin-left:240px}
+}
+/* THE SIDEBAR SCROLLS AS ONE THING, wherever the footer is on the page.
+
+   Reported: "Menu is inaccessible on iPad". The sidebar was not
+   collapsed — it was pinned open at 212px exactly as the block above
+   intends, and every navigation button was squeezed out of sight by the
+   footer beneath it.
+
+   The mechanism is a flexbox rule that is easy to read past. .sb-nav is
+   flex:1 with overflow-y:auto, and a flex item that is its own scroll
+   container has min-height:auto resolve to ZERO. So it does not hold its
+   ground: it shrinks to whatever the footer leaves, and the footer, with
+   no shrink of its own, takes as much as its content wants. On a tall
+   screen there is room for both and nothing looks wrong.
+
+   Measured on the shipped build, at the height the footer is now:
+     1180x820 touch  nav 22px of the 286px it needs,  0 of 6 areas visible
+     1024x768 touch  nav 22px,                        0 of 6
+     1366x1024 touch nav 232px,                       5 of 6
+     1440x900 mouse  nav 129px,                       3 of 6
+     1280x720 mouse  nav 22px,                        0 of 6
+     1920x1080 mouse nav 309px,                       6 of 6
+   So this was never an iPad fault. It is a SHORT VIEWPORT fault, and an
+   iPad in landscape is simply the shortest screen wide enough to be
+   given the pinned sidebar. A 1280x720 laptop had it just as badly.
+
+   The fix is to stop the nav being a scroll container of its own and let
+   the whole sidebar scroll instead. One scroller, natural flow, nothing
+   can be crushed by anything: the nav renders at its full height, the
+   footer follows it, and if the two together are taller than the screen
+   the reader scrolls the sidebar, which already has overflow-y:auto in
+   both blocks above.
+
+   margin-top:auto keeps the footer pinned to the bottom when there IS
+   spare room, which is how it looks on a 1080p screen today. Auto
+   margins absorb free space and resolve to zero when there is none, so
+   the same line covers both cases without a second breakpoint.
+
+   Scoped to the two pinned states on purpose. The 48px hover rail in
+   between hides its footer entirely, so it has no crush to fix, and
+   giving the nav its content height there would overflow a rail whose
+   overflow is hidden and cannot scroll. */
+@media (min-width:901px) and (hover:none), (min-width:1280px){
+  .sb-nav{flex:0 0 auto;overflow-y:visible}
+  .sb-foot{margin-top:auto}
+}
+/* AND THE FULL MENU, on any pinned sidebar you cannot hover.
+
+   .sb-all is the grouped index of every panel, and it was switched on
+   only under 900px. The comment where it is defined says "the phone and
+   tablet drawer", but the breakpoint only ever gave it to phones: an
+   iPad in landscape is 1024 or 1180 CSS px, so it got six area buttons
+   where a phone got all of them.
+
+   The condition is the pointer, not the width. The rail hides this list
+   because hovering it reveals the labels and the area tabs finish the
+   job; neither of those exists on a touch screen, so a touch device that
+   is wide enough to be pinned open needs the same full index a phone
+   gets. A 1280px desktop with a mouse keeps the shorter list it has
+   today, which is the design working as intended. */
+@media(min-width:901px) and (hover:none){
+  .sb-all{display:block}
 }
 @media(max-width:900px){
   .sidebar{width:248px}
