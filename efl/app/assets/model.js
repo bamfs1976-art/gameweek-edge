@@ -1048,6 +1048,99 @@ export function squadRationale(ctx, squad) {
   return parts.join(', ') + '.';
 }
 
+/* ── The Max Captain chip ────────────────────────────────
+   The official game gives you two of these a season, one per half. Playing
+   it hands the armband, after the fact, to whichever of your seven scores
+   most — so you never have to guess the captain that round.
+
+   WHAT IT IS WORTH, AND WHY THE MODEL CANNOT SAY IT IN POINTS.
+   The chip pays the difference between the player who turns out best and
+   the player you would have picked. This model scores players on a 0-100
+   rating, not in points, and it has one number per player rather than a
+   distribution — so asking it "how many points does the chip add" would get
+   an answer of zero every time, because the player it would captain IS its
+   own highest-rated pick. That answer would be confidently wrong.
+
+   What the chip is really insuring against is the two things that make a
+   captain call go wrong, and both of them the model can see:
+
+     1. A CONTESTED ARMBAND. When the top of your seven is bunched, the
+        captain call is close to a coin toss and the chip removes the risk
+        of calling it badly. When one player is clear of the rest, you would
+        captain him anyway and the chip adds almost nothing.
+     2. ROTATION RISK ON THE CAPTAIN. A blanking captain is the worst
+        outcome in the game. If the player you would captain is not nailed
+        on to start, the chip quietly moves the armband to someone who did
+        play.
+
+   So this reports the read, not a fake points figure, and says which of the
+   two reasons is driving it. The guide and the dashboard both print it. */
+
+/** Ratings this close to the captain's count as contesting the armband. */
+export const ARMBAND_CONTEST_BAND = 4;
+
+/** A playing share below this makes the intended captain a rotation risk. */
+export const CAPTAIN_NAILED_SHARE = 0.7;
+
+/**
+ * Should you play Max Captain this round?
+ *
+ * @param {Object} ctx
+ * @param {Object} squad  the result of buildSquad()
+ * @returns {{verdict:'play'|'consider'|'hold', contested:number, gap:number,
+ *            captainShare:number, nailed:boolean, reasons:string[],
+ *            summary:string}|null}
+ */
+export function maxCaptainRead(ctx, squad) {
+  if (!squad || !squad.captain || !squad.picks || !squad.picks.length) return null;
+
+  const rest = squad.picks.filter((r) => r !== squad.captain)
+    .slice().sort((a, b) => b.score - a.score);
+  /* The gap to the NEXT best, not to the field: one rival within touching
+     distance is what makes the call hard, however far back the rest are. */
+  const gap = rest.length ? Math.round((squad.captain.score - rest[0].score) * 10) / 10 : 0;
+  const contested = rest.filter((r) => squad.captain.score - r.score <= ARMBAND_CONTEST_BAND).length;
+
+  const share = playingShare(ctx, squad.captain.player);
+  const captainShare = Math.round(share.value * 100) / 100;
+  /* Before a ball is kicked there are no minutes to read, so nobody counts
+     as a rotation risk — the same gate the rest of the model applies. */
+  const nailed = !hasPlayedFootball(ctx) || captainShare >= CAPTAIN_NAILED_SHARE;
+
+  const reasons = [];
+  if (contested >= 2) {
+    reasons.push(`${contested} of your seven rate within ${ARMBAND_CONTEST_BAND} points of `
+      + `${squad.captain.player.name}, so the armband is close to a coin toss`);
+  } else if (contested === 1) {
+    /* One near rival is a narrow call, not a lottery, and this branch lands
+       on "hold" — so the reason has to read like one. A reason that argues
+       for playing the chip under a verdict that says to keep it is the kind
+       of contradiction that makes a reader stop trusting the whole panel. */
+    reasons.push(`only ${rest[0].player.name} is close to ${squad.captain.player.name}, `
+      + 'so the call is narrow rather than a lottery');
+  } else {
+    reasons.push(`${squad.captain.player.name} is clear of the rest by ${gap.toFixed(1)}, `
+      + 'so you would captain him with or without the chip');
+  }
+  if (!nailed) {
+    reasons.push(`he has started ${Math.round(captainShare * 100)}% of the available football, `
+      + 'so a blank captain is live');
+  }
+
+  /* Either reason on its own is worth a chip; both together is the round to
+     spend one. Neither, and it keeps until a week that needs it. */
+  const verdict = (contested >= 2 && !nailed) ? 'play'
+    : (contested >= 2 || !nailed) ? 'consider'
+      : 'hold';
+  const summary = {
+    play: 'Play it: the armband is contested and your captain is not nailed on.',
+    consider: 'Worth considering, and it will keep if this round has a better use.',
+    hold: 'Hold it. This captain call is straightforward, so the chip would buy little.'
+  }[verdict];
+
+  return { verdict, contested, gap, captainShare, nailed, reasons, summary };
+}
+
 /* ── formatting helpers shared by the views ─────────────── */
 
 export function ordinal(n) {

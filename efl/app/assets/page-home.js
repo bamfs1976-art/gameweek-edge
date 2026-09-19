@@ -6,7 +6,8 @@
 
 import { loadSnapshot } from './provider.js';
 import {
-  buildContext, roundPicks, runSummary, ordinal, buildSquad, squadRationale, playerScore
+  buildContext, roundPicks, runSummary, ordinal, buildSquad, squadRationale, playerScore,
+  maxCaptainRead
 } from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
@@ -230,7 +231,8 @@ function renderSquad() {
       ${oneClubChip
     ? 'The two-per-club limit is lifted, so this is the side to play a one-club chip on.'
     : 'Limited to two players per club, as the game requires.'}
-      Ratings are modelled; the shape and the club limit are the game's rules.</p>`);
+      Ratings are modelled; the shape and the club limit are the game's rules.</p>
+    ${chipPanel(ctx, squad)}`);
 
   const toggle = document.getElementById('one-club-chip');
   if (toggle) {
@@ -243,6 +245,49 @@ function renderSquad() {
       if (again) again.focus();
     });
   }
+}
+
+/* Both of the game's chips, side by side, each with the model's read on
+   whether this is the round to spend it.
+
+   The verdict is a WORD as well as a colour, because a colour on its own is
+   not a signal a screen reader or a colourblind reader can use. */
+const CHIP_VERDICT_LABEL = { play: 'Play it', consider: 'Worth a look', hold: 'Hold' };
+
+function chipPanel(ctx, squad) {
+  const read = maxCaptainRead(ctx, squad);
+  const clubsUsed = Object.keys(squad.clubCounts).length;
+
+  const maxCaptain = read ? `
+    <article class="chip-card chip-${esc(read.verdict)}">
+      <p class="chip-head">
+        <span class="chip-name">Max Captain</span>
+        <span class="chip-verdict">${esc(CHIP_VERDICT_LABEL[read.verdict])}</span>
+      </p>
+      <p class="chip-say">${esc(read.summary)}</p>
+      <ul class="chip-why">${read.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+      <p class="chip-rule">Two a season, one in each half. It hands the armband to your
+        highest scorer once every one of your seven has finished playing, so the captain
+        call stops being a call.</p>
+    </article>` : '';
+
+  const oneClub = `
+    <article class="chip-card chip-${oneClubChip ? 'play' : 'hold'}">
+      <p class="chip-head">
+        <span class="chip-name">One Club</span>
+        <span class="chip-verdict">${oneClubChip ? 'Modelled on' : 'Modelled off'}</span>
+      </p>
+      <p class="chip-say">${oneClubChip
+    ? `The seven above ignores the two-per-club limit and uses ${clubsUsed} club${clubsUsed === 1 ? '' : 's'}.`
+    : 'The seven above keeps to two players per club. Switch the chip on in the bar above to see the side it would buy you.'}</p>
+      <p class="chip-rule">Once a season. It lifts the two-players-per-club limit for one
+        round, so it pays when one club has a run of fixtures worth stacking.</p>
+    </article>`;
+
+  return `<div class="chips">${maxCaptain}${oneClub}</div>
+    <p class="sec-note" style="margin-top:9px">Chip reads are this model's opinion of your
+      own seven, not the game's advice. The official game is the authority on how many chips
+      you hold and when they reset.</p>`;
 }
 
 function squadCard(rec, isCaptain) {

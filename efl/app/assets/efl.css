@@ -406,6 +406,39 @@ details.coverage li{margin-bottom:5px}
 .squad-toggle{display:flex;align-items:center;gap:7px;font-size:var(--fs-sm);color:var(--text-2)}
 .squad-toggle input{width:16px;height:16px;accent-color:var(--efl)}
 
+/* ── CHIPS ───────────────────────────────────────────── */
+.chips{
+  display:grid;gap:10px;margin-top:13px;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+}
+.chip-card{
+  padding:12px 13px;border:1px solid var(--border-2);border-radius:var(--r-lg);
+  background:var(--surface);border-left-width:3px;
+}
+/* The verdict is carried by the word in .chip-verdict; this only reinforces it. */
+.chip-play{border-left-color:var(--green);background:var(--green-soft)}
+.chip-consider{border-left-color:var(--amber);background:var(--amber-soft)}
+.chip-hold{border-left-color:var(--border-3)}
+.chip-head{display:flex;align-items:baseline;justify-content:space-between;gap:9px;margin:0 0 6px}
+.chip-name{
+  font-family:var(--font-display);font-size:var(--fs-sm);font-weight:700;
+  letter-spacing:.04em;color:var(--text);
+}
+.chip-verdict{
+  font-family:var(--font-display);font-size:var(--fs-min);font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;
+}
+.chip-play .chip-verdict{color:var(--green)}
+.chip-consider .chip-verdict{color:var(--amber)}
+.chip-hold .chip-verdict{color:var(--text-3)}
+.chip-say{margin:0;font-size:var(--fs-sm);color:var(--text-2)}
+.chip-why{margin:7px 0 0;padding-left:17px;font-size:var(--fs-sm);color:var(--text-2)}
+.chip-why li{margin-bottom:3px}
+.chip-rule{
+  margin:9px 0 0;padding-top:8px;border-top:1px solid var(--border);
+  font-size:var(--fs-min);color:var(--text-3);
+}
+
 /* ── FILTERS ─────────────────────────────────────────── */
 .filters{
   display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));

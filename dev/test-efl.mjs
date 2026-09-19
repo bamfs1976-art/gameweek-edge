@@ -760,6 +760,97 @@ ok('the one-club chip lifts the club limit and never scores worse', () => {
     'lifting a constraint cannot produce a worse best squad');
 });
 
+/* ── The Max Captain chip read ────────────────────────
+   The chip is a real rule of the official game and the model's read on it is
+   an opinion, so what is worth pinning is the SHAPE of that opinion: that it
+   answers at all, that the two things driving it move it in the right
+   direction, and that it never claims a points figure the model cannot
+   support. The exact band cut is a tuned weight, so it is read from the
+   export rather than written into the test. */
+
+/* A squad stub is enough here: the read only looks at picks, scores and the
+   captain's playing share, and building one by hand lets the two drivers be
+   moved independently, which real sample data will not do on demand. */
+const squadOf = (scores, captainPlayer) => {
+  const picks = scores.map((score, i) => ({
+    score,
+    player: i === 0 && captainPlayer ? captainPlayer
+      : { id: 'p' + i, name: 'Player ' + i, clubId: ctx.players[0].clubId, position: 'MID', starts: 10, appearances: 10, minutes: 900 }
+  }));
+  return { picks, captain: picks[0], clubCounts: {}, formation: { id: '1-2-2-2' } };
+};
+const nailedOn = { id: 'cap', name: 'Nailed On', clubId: ctx.players[0].clubId, position: 'MID', starts: 99, appearances: 99, minutes: 99 * 90 };
+const rotated = { id: 'cap', name: 'Rotation Risk', clubId: ctx.players[0].clubId, position: 'MID', starts: 1, appearances: 99, minutes: 90 };
+
+ok('a runaway captain who is nailed on means the chip is held', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([90, 50, 48, 45, 44, 40, 38], nailedOn));
+  assert.equal(read.verdict, 'hold');
+  assert.equal(read.contested, 0, 'nobody is near him');
+  assert.ok(/clear of the rest/.test(read.reasons[0]), 'the reason says why');
+});
+
+ok('a single near rival reads as narrow, and never argues against its own verdict', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 40, 38, 30, 28, 26], nailedOn));
+  assert.equal(read.contested, 1);
+  assert.equal(read.verdict, 'hold');
+  assert.ok(/narrow rather than a lottery/.test(read.reasons[0]),
+    'a reason arguing for the chip under a verdict that says hold it costs the reader their trust');
+});
+
+ok('a bunched top of the squad makes the armband contested', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 68, 67, 40, 38, 30], nailedOn));
+  assert.ok(read.contested >= 2, 'three rivals inside the band should count');
+  assert.equal(read.verdict, 'consider', 'contested alone is worth a look, not a certainty');
+});
+
+ok('both drivers together is the round to play it', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 68, 67, 40, 38, 30], rotated));
+  assert.equal(read.verdict, 'play');
+  assert.equal(read.nailed, false);
+  assert.equal(read.reasons.length, 2, 'both reasons are given, not just the verdict');
+});
+
+ok('a rotation risk alone lifts a straightforward call off hold', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([90, 50, 48, 45, 44, 40, 38], rotated));
+  assert.equal(read.verdict, 'consider');
+  assert.ok(read.reasons.some((r) => /blank captain is live/.test(r)));
+});
+
+ok('the contest band is the exported one, so tuning it does not mean editing a test', () => {
+  const band = model.ARMBAND_CONTEST_BAND;
+  const inside = model.maxCaptainRead(ctx, squadOf([70, 70 - band + 0.1, 20, 19, 18, 17, 16], nailedOn));
+  const outside = model.maxCaptainRead(ctx, squadOf([70, 70 - band - 0.1, 20, 19, 18, 17, 16], nailedOn));
+  assert.equal(inside.contested, 1);
+  assert.equal(outside.contested, 0);
+});
+
+ok('the read never claims a points value for the chip', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 68, 67, 40, 38, 30], rotated));
+  const printed = [read.summary, ...read.reasons].join(' ');
+  assert.ok(!/\bpoints? (gain|value|worth|extra)\b/i.test(printed),
+    'the model has one rating per player, not a distribution, so a points figure would be invented');
+  assert.equal(typeof read.gap, 'number', 'the rating gap is reported instead, which it can support');
+});
+
+ok('no squad means no read, rather than a thrown error', () => {
+  assert.equal(model.maxCaptainRead(ctx, null), null);
+  assert.equal(model.maxCaptainRead(ctx, { picks: [], captain: null }), null);
+});
+
+ok('before a ball is kicked nobody is a rotation risk', () => {
+  const preCtx = { ...ctx, seasonStarted: false };
+  const read = model.maxCaptainRead(preCtx, squadOf([90, 50, 48, 45, 44, 40, 38], rotated));
+  assert.equal(read.nailed, true, 'with no minutes played there is nothing to read');
+  assert.equal(read.verdict, 'hold');
+});
+
+ok('the built seven gets a real read from real data', () => {
+  const read = model.maxCaptainRead(ctx, model.buildSquad(ctx));
+  assert.ok(['play', 'consider', 'hold'].includes(read.verdict));
+  assert.ok(read.summary.length > 20, 'the verdict is explained in words');
+  assert.ok(read.captainShare >= 0 && read.captainShare <= 1);
+});
+
 ok('every player in the squad is available, has a fixture, and is not excluded', () => {
   const squad = model.buildSquad(ctx, { exclude: [ctx.players[0].id] });
   for (const r of squad.picks) {
