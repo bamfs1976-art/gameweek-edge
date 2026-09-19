@@ -1,12 +1,12 @@
 {
- "built": "2026-09-19T22:44:45.313Z",
+ "built": "2026-09-19T22:46:52.399Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-19T22:44:45.313Z",
+  "generatedAt": "2026-09-19T22:46:52.399Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -153,7 +153,7 @@
      "name": "T. Wright",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -290,19 +290,19 @@
      "name": "A. Hartridge",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "M. Boateng",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "M. Baidoo",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -439,43 +439,43 @@
      "name": "Z. Obiero",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 23 Oct"
     },
     {
      "name": "K. Harris",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 1 Jul"
     },
     {
      "name": "L. Gordon",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "A. Little",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury"
     },
     {
      "name": "L. MacLorg",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury"
     },
     {
      "name": "S. Tabares",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury"
     },
     {
      "name": "B. Dack",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury"
     }
    ],
    "cardRisk": []
@@ -612,7 +612,7 @@
      "name": "M. Macey",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -742,19 +742,19 @@
      "name": "J. Veltman",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury, expected back 20 Sept"
     },
     {
      "name": "T. Soucek",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 10 Oct"
     },
     {
      "name": "A. Areola",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Dead Leg injury, expected back 20 Sept"
     }
    ],
    "cardRisk": []
@@ -884,13 +884,13 @@
      "name": "N. Galves",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "M. Johnston",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
@@ -1020,19 +1020,19 @@
      "name": "B. Lawal",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "S. Ingelsson",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury, expected back 11 Oct"
     },
     {
      "name": "A. Cresswell",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 30 Dec"
     }
    ],
    "cardRisk": []
@@ -1169,13 +1169,13 @@
      "name": "N. Tavares",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "K. Smith",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Dislocated Shoulder injury"
     }
    ],
    "cardRisk": []
@@ -1312,49 +1312,49 @@
      "name": "A. Cook",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "D. Harrington",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Hand Injury"
     },
     {
      "name": "J. Amaluzor",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "H. Cartwright",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury"
     },
     {
      "name": "J. Andrews",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "D. Tharme",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "R. Staunton",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Shoulder Injury"
     },
     {
      "name": "C. Gardner",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -1491,31 +1491,31 @@
      "name": "M. Owolabi-Belewu",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "Z. Hemming",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Hand Injury"
     },
     {
      "name": "R. Sotiriou",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "D. Duffy",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury"
     },
     {
      "name": "W. Dickson",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 1 Mar"
     }
    ],
    "cardRisk": []
@@ -1652,7 +1652,7 @@
      "name": "M. Rose",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -1789,13 +1789,13 @@
      "name": "J. Roberts",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "T. Taylor",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     }
    ],
    "cardRisk": []
@@ -1932,43 +1932,43 @@
      "name": "J. Tilley",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "M. Browne",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     },
     {
      "name": "S. Goma",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "H. Hedges",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "J. Kirby",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "H. Cornick",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "M. Stevens",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     }
    ],
    "cardRisk": []
@@ -2105,7 +2105,7 @@
      "name": "F. Onukwuli",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -2235,13 +2235,13 @@
      "name": "M. Roerslev",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Strain"
     },
     {
      "name": "C. Jander",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 12 Oct"
     }
    ],
    "cardRisk": []
@@ -2371,19 +2371,19 @@
      "name": "A. Ahmed",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 2 May"
     },
     {
      "name": "L. Mahovo",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 11 Oct"
     },
     {
      "name": "M. Topic",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -2513,19 +2513,19 @@
      "name": "J. Key",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 20 Sept"
     },
     {
      "name": "R. Stewart",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 11 Oct"
     },
     {
      "name": "C. Burgess",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Tendon Rupture injury, expected back 2 May"
     }
    ],
    "cardRisk": []
@@ -2655,25 +2655,25 @@
      "name": "C. Elder",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Concussion injury"
     },
     {
      "name": "T. Darikwa",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 2 May"
     },
     {
      "name": "T. Hamer",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Heart Condition injury, expected back 20 Sept"
     },
     {
      "name": "M. Melia",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 25 Oct"
     }
    ],
    "cardRisk": []
@@ -2810,25 +2810,25 @@
      "name": "S. McLoughlin",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "P. Bauer",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "C. Stead",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "G. Hoddle",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Broken Foot injury"
     }
    ],
    "cardRisk": []
@@ -2965,7 +2965,7 @@
      "name": "S. Patton",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Leg Injury"
     }
    ],
    "cardRisk": []
@@ -3102,7 +3102,7 @@
      "name": "C. Jennings",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -3239,19 +3239,19 @@
      "name": "L. Agbaire",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 23 Oct"
     },
     {
      "name": "M. Kaleta",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "H. Duncan",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 14 Oct"
     }
    ],
    "cardRisk": []
@@ -3388,13 +3388,13 @@
      "name": "J. Price",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 13 Oct"
     },
     {
      "name": "S. Proctor",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     }
    ],
    "cardRisk": []
@@ -3531,13 +3531,13 @@
      "name": "J. Stones",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Back Injury, expected back 5 Oct"
     },
     {
      "name": "H. Boateng",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 1 Oct"
     }
    ],
    "cardRisk": []
@@ -3674,25 +3674,25 @@
      "name": "A. Cannon",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "K. Thompson-Sommers",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury, expected back 1 Dec"
     },
     {
      "name": "J. Batty",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Leg Injury"
     },
     {
      "name": "K. Hughes",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -3829,13 +3829,13 @@
      "name": "A. Evans",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "H. Williams",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Tendon Rupture injury"
     }
    ],
    "cardRisk": []
@@ -3972,37 +3972,37 @@
      "name": "L. Barry",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "M. Lowe",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "S. Swinkels",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "J. Liongola",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "T. Onyango",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "C. McGhee",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Shoulder Injury"
     }
    ],
    "cardRisk": []
@@ -4132,7 +4132,7 @@
      "name": "A. Jones",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -4262,49 +4262,49 @@
      "name": "Marezi",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury, expected back 12 Oct"
     },
     {
      "name": "L. Brooke-Smith",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 2 May"
     },
     {
      "name": "J. Murphy",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Groin Injury, expected back 12 Oct"
     },
     {
      "name": "C. Ogilvie",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 12 Oct"
     },
     {
      "name": "K. Anderson",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 12 Oct"
     },
     {
      "name": "M. Kosznovszky",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 31 Dec"
     },
     {
      "name": "T. Waddingham",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 4 Nov"
     },
     {
      "name": "F. Umeh-Chibueze",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -4441,55 +4441,55 @@
      "name": "B. Middlemas",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "L. Millard",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Dislocated Shoulder injury"
     },
     {
      "name": "R. Tafazolli",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Toe Injury"
     },
     {
      "name": "O. Palmer",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "J. Snowdon",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Groin Injury"
     },
     {
      "name": "H. Smith",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "F. Holman",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 2 Dec"
     },
     {
      "name": "J. McGregor",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 2 Oct"
     },
     {
      "name": "G. Kilkenny",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Broken Ankle injury, expected back 1 Dec"
     }
    ],
    "cardRisk": []
@@ -4626,7 +4626,7 @@
      "name": "M. Faal",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -4763,7 +4763,7 @@
      "name": "R. Harbottle",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 7 Oct"
     }
    ],
    "cardRisk": []
@@ -4894,13 +4894,13 @@
      "name": "A. Sidibeh",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "B. Hills",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -5037,43 +5037,43 @@
      "name": "E. Ebanks-Landell",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "R. East",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Toe Injury"
     },
     {
      "name": "B. Bilongo",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "D. Rodney",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "S. Beckwith",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "W. Jenkins",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "C. Pettit",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "MCL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -5210,25 +5210,25 @@
      "name": "F. Rawson",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "T. Moore",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "I. Sinclair",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "K. Mooney",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -5365,7 +5365,7 @@
      "name": "K. Wilson",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -5502,25 +5502,25 @@
      "name": "D. Mitchell",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "A. Gilchrist",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "S. Boniface",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     },
     {
      "name": "O. Dovin",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Shoulder Injury"
     }
    ],
    "cardRisk": []
@@ -5657,31 +5657,31 @@
      "name": "S. George",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "D. Woodman",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "G. Smith",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "A. Charles",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "J. Jones",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -5818,25 +5818,25 @@
      "name": "T. Davies",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "K. Patten",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "K. Etete",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "J. Crole",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
@@ -5973,13 +5973,13 @@
      "name": "R. Hutchinson",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury"
     },
     {
      "name": "O. Taylor",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Groin Injury"
     }
    ],
    "cardRisk": []
@@ -6116,31 +6116,31 @@
      "name": "J. Donacien",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "E. List",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury"
     },
     {
      "name": "J. Perkins",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "J. Burroughs",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "L. Shaw",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -6265,25 +6265,25 @@
      "name": "A. Emakhu",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "F. Kent",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "R. Roosken",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Broken Foot injury"
     },
     {
      "name": "J. Jin-Woo",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Back Injury"
     }
    ],
    "cardRisk": []
@@ -6413,49 +6413,49 @@
      "name": "Y. Ribeiro",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "A. Forshaw",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hip Injury, expected back 11 Oct"
     },
     {
      "name": "Y. Ohashi",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "M. Jørgensen",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "A. Kargbo",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "S. Wharton",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury"
     },
     {
      "name": "L. Miller",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Tendon Rupture injury, expected back 2 Jan"
     },
     {
      "name": "M. Litherland",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Back Injury"
     }
    ],
    "cardRisk": []
@@ -6585,19 +6585,19 @@
      "name": "R. Jiménez",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "Y. Mosquera",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 21 Sept"
     },
     {
      "name": "R. Saïd",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "MCL Knee Injury, expected back 21 Sept"
     }
    ],
    "cardRisk": []
@@ -6727,25 +6727,25 @@
      "name": "D. Gray",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Illness, expected back 20 Sept"
     },
     {
      "name": "M. Bird",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 11 Oct"
     },
     {
      "name": "M. Leonard",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Tendon Rupture injury, expected back 31 Dec"
     },
     {
      "name": "T. Gardner-Hickman",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -6875,25 +6875,25 @@
      "name": "R. Colwill",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 11 Oct"
     },
     {
      "name": "I. Davies",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "C. Chambers",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 11 Oct"
     },
     {
      "name": "W. Fish",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hernia injury, expected back 8 Nov"
     }
    ],
    "cardRisk": []
@@ -7023,31 +7023,31 @@
      "name": "M. Cleworth",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 5 Nov"
     },
     {
      "name": "N. Broadhead",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury"
     },
     {
      "name": "G. Thomason",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 8 Nov"
     },
     {
      "name": "L. Cacace",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury, expected back 20 Sept"
     },
     {
      "name": "S. Revan",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -7178,19 +7178,19 @@
      "name": "J. Stolarczyk",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "C. Chaplin",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     },
     {
      "name": "B. Nelson",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -7327,13 +7327,13 @@
      "name": "B. Cargill",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "G. Abbott",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury"
     }
    ],
    "cardRisk": []
@@ -7470,13 +7470,13 @@
      "name": "A. Oluwabori",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "S. Cox",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -7613,31 +7613,31 @@
      "name": "J. Leake",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Dislocated Shoulder injury"
     },
     {
      "name": "T. Bishop",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "B. Perry",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "M. Jolliffe",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "R. Harvey",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -7767,19 +7767,19 @@
      "name": "C. Forino",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Groin Injury"
     },
     {
      "name": "L. Brunt",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "L. Stephenson",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 21 Sept"
     }
    ],
    "cardRisk": []
@@ -7909,25 +7909,25 @@
      "name": "S. McCallum",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury, expected back 20 Sept"
     },
     {
      "name": "F. Seriki",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 11 Oct"
     },
     {
      "name": "H. Burrows",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 11 Oct"
     },
     {
      "name": "R. Oné",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -8057,31 +8057,31 @@
      "name": "I. Chair",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury, expected back 10 Oct"
     },
     {
      "name": "T. Lamptey",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury"
     },
     {
      "name": "R. Kone",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury, expected back 20 Sept"
     },
     {
      "name": "B. Kemper",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 10 Oct"
     },
     {
      "name": "K. Dembélé",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 10 Oct"
     }
    ],
    "cardRisk": []
@@ -8211,31 +8211,31 @@
      "name": "J. Zemura",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury"
     },
     {
      "name": "E. Bove",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 11 Oct"
     },
     {
      "name": "M. Payero",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Groin Injury"
     },
     {
      "name": "M. Bola",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 11 Oct"
     },
     {
      "name": "K. Baah",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -8365,7 +8365,7 @@
      "name": "R. Dickie",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -8496,25 +8496,25 @@
      "name": "J. Sterry",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "H. Clifton",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hernia injury"
     },
     {
      "name": "M. Pearson",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "J. Collins",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -8651,37 +8651,37 @@
      "name": "S. Robertson",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury"
     },
     {
      "name": "E. Acquah",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "D. Campbell",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury"
     },
     {
      "name": "M. Platt",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "L. Macari",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Leg Injury"
     },
     {
      "name": "M. Sanders",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury"
     }
    ],
    "cardRisk": []
@@ -8818,7 +8818,7 @@
      "name": "J. Stevens",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -8955,19 +8955,19 @@
      "name": "S. Duke-McKenna",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "K. Jennings",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "V. Mannone",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Hand Injury"
     }
    ],
    "cardRisk": []
@@ -9104,19 +9104,19 @@
      "name": "F. Delap",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "C. Gilligan",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "G. Arubi",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -9247,19 +9247,19 @@
      "name": "R. Ledson",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "M. McGuane",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "C. Ashia",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Groin Injury"
     }
    ],
    "cardRisk": []
@@ -9396,19 +9396,19 @@
      "name": "Z. Larkeche",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "C. Slicker",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "I. Smith",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
@@ -9545,37 +9545,37 @@
      "name": "T. O'Connor",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "V. Masara",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knock"
     },
     {
      "name": "S. Hughes",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Strain"
     },
     {
      "name": "R. Adebisi",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "M. Garbett",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "D. Frith",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
@@ -9712,43 +9712,43 @@
      "name": "G. Honeyman",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "C. Hamilton",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "M. Ihiekwe",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Toe Injury"
     },
     {
      "name": "F. Horsfall",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "O. Nwankwo",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "N. Ennis",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "D. Taylor",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -9878,49 +9878,49 @@
      "name": "M. Mbick",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "N. Chalobah",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury, expected back 11 Oct"
     },
     {
      "name": "B. Koumetio",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "C. Sichenje",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 2 May"
     },
     {
      "name": "M. Godden",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "W. Mannion",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Shoulder Injury, expected back 11 Oct"
     },
     {
      "name": "R. Apter",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "K. Ramsay",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -10050,49 +10050,49 @@
      "name": "H. Mejbri",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 30 Dec"
     },
     {
      "name": "D. Satpaev",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 20 Sept"
     },
     {
      "name": "B. Humphreys",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 25 Oct"
     },
     {
      "name": "J. Beyer",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "J. Cullen",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury, expected back 30 Sept"
     },
     {
      "name": "A. Barnes",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury, expected back 20 Sept"
     },
     {
      "name": "J. Banel",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     },
     {
      "name": "E. Agyei",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Muscle Injury, expected back 20 Sept"
     }
    ],
    "cardRisk": []
@@ -10222,43 +10222,43 @@
      "name": "J. Coburn",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Foot Injury, expected back 25 Oct"
     },
     {
      "name": "C. De Norre",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury, expected back 11 Oct"
     },
     {
      "name": "L. Jensen",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Thigh Injury"
     },
     {
      "name": "R. Esse",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury, expected back 11 Oct"
     },
     {
      "name": "R. Leonard",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 20 Sept"
     },
     {
      "name": "T. Crama",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "M. Ivanovic",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Broken Foot injury, expected back 20 Sept"
     }
    ],
    "cardRisk": []
@@ -10389,31 +10389,31 @@
      "name": "B. Benagr",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "S. Morris",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     },
     {
      "name": "S. Baptiste",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "ACL Knee Injury"
     },
     {
      "name": "S. Sandal",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury"
     },
     {
      "name": "J. Luker",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -10544,7 +10544,7 @@
      "name": "R. Trevitt",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -10674,43 +10674,43 @@
      "name": "J. Widell Zetterström",
      "position": "GK",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 1 Nov"
     },
     {
      "name": "H. Meister",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Head Injury, expected back 11 Oct"
     },
     {
      "name": "C. Forsyth",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Knee Injury, expected back 27 Dec"
     },
     {
      "name": "F. Bilbija",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Back Injury"
     },
     {
      "name": "P. Agyemang",
      "position": "FWD",
      "status": "injured",
-     "news": ""
+     "news": "Achilles Tendon Rupture injury, expected back 2 Jan"
     },
     {
      "name": "M. Clarke",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Calf Injury, expected back 22 Nov"
     },
     {
      "name": "D. Murkin",
      "position": "DEF",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 27 Dec"
     }
    ],
    "cardRisk": []
@@ -10840,31 +10840,22 @@
      "name": "A. McCann",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Hamstring injury, expected back 2 Jan"
     },
     {
      "name": "B. Potts",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     },
     {
      "name": "T. Carroll",
      "position": "MID",
      "status": "injured",
-     "news": ""
+     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
   }
- ],
- "diagnostics": {
-  "injuryDetailsKeys": [
-   "endDate",
-   "expectedEndDate",
-   "startDate",
-   "status",
-   "type"
-  ]
- }
+ ]
 }
