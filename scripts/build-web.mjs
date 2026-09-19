@@ -12,6 +12,7 @@ import { publishRecord } from './efl/publish-record.mjs';
 import { publishRecord as publishFplRecord } from './record/publish-record.mjs';
 import { buildSeo } from './seo/build.mjs';
 import { buildToolPages } from './tools/build.mjs';
+import { buildEflClubPages } from './efl/clubpages/build.mjs';
 import { buildBlog } from './blog/build.mjs';
 import { siteLinks, footerLinksHtml } from './site/links.mjs';
 
@@ -186,7 +187,9 @@ const blog = await buildBlog(ROOT, OUT, links);
 console.log(blog.posts ? `✓ Articles → www/blog/ (${blog.posts} post(s), index and feed.xml)` : `✓ Articles → www/blog/ (index and feed.xml, ${blog.note})`);
 const tools = await buildToolPages(ROOT, OUT, links);
 console.log(tools.pages ? `✓ Tool pages → www/tools/ (${tools.pages} pages from a snapshot built ${tools.built})` : `· Tool pages skipped: ${tools.note}`);
-const seo = await buildSeo(ROOT, OUT, tools.urls.concat(blog.urls));
+const eflClubs = await buildEflClubPages(ROOT, OUT);
+console.log(eflClubs.pages ? `✓ Fantasy EFL club pages → www/fantasy-efl/clubs/ (${eflClubs.pages} pages from a snapshot built ${eflClubs.built})` : `· Fantasy EFL club pages skipped: ${eflClubs.note}`);
+const seo = await buildSeo(ROOT, OUT, tools.urls.concat(blog.urls).concat(eflClubs.urls));
 console.log(`✓ SEO → www/sitemap.xml (${seo.urls} urls), www/robots.txt, ${seo.shells.length} pre-rendered shell(s): ${seo.shells.join(', ')}`);
 const stamp = await writeVersion();
 console.log('✓ Built www/ (index.html + native.js + auth.js + vendor.js/.css)');

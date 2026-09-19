@@ -117,7 +117,19 @@ section('the rewrite rules and the build agree with the list');
   ok(res.shells.length === PRERENDER.length && existsSync(join(dir, 'sitemap.xml')) && existsSync(join(dir, 'robots.txt')) && PRERENDER.every((id) => existsSync(join(dir, routes.find((r) => r.id === id).path.replace(/^\//, '') + '.html'))) && existsSync(join(dir, 'wire.html')), 'buildSeo writes the sitemap, robots and every shell, named after its path');
   ok(res.urls === routes.length + pages.length, 'and reports the url count');
   rmSync(dir, { recursive: true, force: true });
-  ok(/buildSeo\(ROOT, OUT, tools\.urls\.concat\(blog\.urls\)\)/.test(readFileSync(join(ROOT, 'scripts/build-web.mjs'), 'utf8')), 'npm run build:web runs the step after the tool pages and the articles, so the sitemap lists them');
+  /* Every generated set has to reach the sitemap, and the only thing that
+     makes that true is the order of these lines in build-web.mjs. Pinning
+     the call means a new set of pages cannot be added without either
+     wiring it in or turning this red. */
+  const buildSrc = readFileSync(join(ROOT, 'scripts/build-web.mjs'), 'utf8');
+  const seoCall = (buildSrc.match(/buildSeo\(ROOT, OUT,([^)]*(?:\)[^)]*)*)\);/) || [])[1] || '';
+  for (const source of ['tools.urls', 'blog.urls', 'eflClubs.urls']) {
+    ok(seoCall.includes(source), 'the sitemap step is handed ' + source + ', so those pages are listed');
+  }
+  for (const [name, call] of [['tool pages', 'buildToolPages'], ['articles', 'buildBlog'], ['Fantasy EFL club pages', 'buildEflClubPages']]) {
+    ok(buildSrc.indexOf(call) < buildSrc.indexOf('buildSeo(ROOT, OUT'),
+      'the ' + name + ' are built BEFORE the sitemap, or their urls would not exist yet');
+  }
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');
