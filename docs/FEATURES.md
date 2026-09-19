@@ -1441,7 +1441,8 @@ dataset (used freely with attribution), aligned by the official FPL element id:
   holds descriptions/layouts.
 - **Serverless (Netlify Functions):** `fpl` (FPL proxy), `ai` (LLM),
   `checkout` / `portal` / `stripe-webhook` (billing), `push-key` /
-  `push-subscribe` / `push-unsubscribe` / `push-cron` / `push-live` (web push).
+  `push-subscribe` / `push-unsubscribe` / `push-cron` / `push-live` (web push),
+  `mcp` (the MCP server).
 - **URL state (`index.html`, `URL STATE` block):** the path names the panel
   and the query string names its state: `?view=` for the tab inside a hub,
   then each view's own keys (sort, filters, gameweek, players, league …).
@@ -1554,9 +1555,11 @@ netlify/functions/
   checkout.js portal.js stripe-webhook.js   billing
   push-key.js push-subscribe.js push-unsubscribe.js  web push
   push-cron.js  hourly alerts      push-live.js  in-play alerts
+  mcp.js        MCP server (POST /api/mcp)
 netlify/lib/
   live-events.js  in-play reading: fixture scope, VAR hold, substitutions
   price-feed.js   hourly transfer samples   suspension.js  the card ladder
+  mcp.js          the MCP wire protocol, without the SDK
 ios/  capacitor.config.json    iOS wrapper
 dev/
   mock_fpl.py                  offline mock FPL API + static server

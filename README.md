@@ -216,6 +216,35 @@ Price-change, injury and deadline alerts delivered even when the app is closed â
 
 Env vars: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (a `mailto:` you own), plus `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` (shared with billing). Generate keys with `npx web-push generate-vapid-keys`.
 
+## Ask the model from your assistant (MCP)
+
+`POST /api/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io)
+server, so Claude (or anything else that speaks MCP) can ask **this model** the
+questions the app answers, instead of re-deriving them from the raw FPL feed.
+
+Add it in Claude under Settings, Connectors, Add custom connector, and paste
+`https://gameweekedge.co.uk/api/mcp`. Open the same URL in a browser and it
+describes itself.
+
+Five tools, all read-only and all unauthenticated, because everything they
+return is already public:
+
+| Tool | Answers |
+|---|---|
+| `fpl_player_projection` | projected points, haul and blank chance for named players |
+| `fpl_captain_options` | captain candidates ranked, optionally within your squad or under an ownership cap |
+| `fpl_price_predictions` | who rises or falls tonight, with a probability |
+| `fpl_suspension_watch` | who is one booking from a ban, and how long |
+| `fpl_model_record` | the model's own graded accuracy, so the answer to "why trust this" is evidence |
+
+**It runs the shipping model, not a copy.** The projections come from the same
+functions the browser runs, extracted from `index.html` at runtime exactly as
+`log-predictions` does (`included_files` in `netlify.toml`). There is no second
+model to drift.
+
+The protocol layer is `netlify/lib/mcp.js`, written directly rather than with
+the official SDK â€” its header says why, and when to swap it out.
+
 ## Environment variables (all server-side, on Netlify)
 
 | Feature | Variables |
