@@ -60,6 +60,20 @@ jobs:
         if: always()
         run: node scripts/efl/grade-round.mjs ${{ github.event.inputs.grade_ambiguous == 'true' && '--force' || '' }}
 
+      # The public club pages' data. Separate from the ledger above and on
+      # purpose: the ledger is EVIDENCE (written once, before the football,
+      # never rewritten), while this is a SNAPSHOT of how things stand and
+      # is meant to be overwritten every run. Same job because both want
+      # the same feed at the same cadence, and a club page that is three
+      # hours stale is fine where a missing one is not.
+      #
+      # It refuses to write a feed that lost half the league rather than
+      # publishing thirty pages and silently deleting forty-two, so a bad
+      # feed leaves yesterday's pages up.
+      - name: Refresh the club pages' data
+        if: always()
+        run: node scripts/efl/clubpages/snapshot.mjs
+
       # The per-document diagnosis, in the log of the run that needed it.
       # Deliberately NOT on every run: /api/efl/health skips every cache and
       # fans out to all three upstream documents, and the steps above have
@@ -100,8 +114,18 @@ jobs:
             echo "Nothing to commit — no round was in its window and none had settled."
             exit 0
           fi
-          FILES=$(git diff --staged --name-only | sed 's#.*/round-##; s#\.json##' | paste -sd, -)
-          git commit -m "Fantasy EFL ledger: round(s) ${FILES}"
+          # Rounds and the club-page snapshot land in the same commit when
+          # both moved, so the message names whichever actually changed
+          # rather than claiming a round that was not written.
+          ROUNDS=$(git diff --staged --name-only | grep '/rounds/' | sed 's#.*/round-##; s#\.json##' | paste -sd, - || true)
+          CLUBS=$(git diff --staged --name-only | grep -c 'club-pages.json' || true)
+          # `[ … ] && VAR=…` returns 1 when the test fails, and this step runs
+          # under bash -e, so the chained form would abort the whole commit
+          # the first time only one of the two changed. Plain ifs instead.
+          MSG="Fantasy EFL ledger:"
+          if [ -n "$ROUNDS" ]; then MSG="$MSG round(s) ${ROUNDS}"; fi
+          if [ "$CLUBS" != "0" ]; then MSG="$MSG${ROUNDS:+,} club-page snapshot"; fi
+          git commit -m "$MSG"
           # The scheduled job races nothing but itself; a rebase keeps it
           # behind any human commit that landed while it was running.
           for i in 1 2 3 4; do
