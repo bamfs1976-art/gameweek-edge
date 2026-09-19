@@ -17,7 +17,7 @@
  *
  * Run: node dev/test-efl-club-pages.mjs
  */
-import { buildClubSnapshot, slugify } from '../scripts/efl/clubpages/snapshot.mjs';
+import { buildClubSnapshot, slugify, loadClubSnapshot, MINIMUM_CLUBS } from '../scripts/efl/clubpages/snapshot.mjs';
 import { renderAll, BASE, DISCLAIMER } from '../scripts/efl/clubpages/pages.mjs';
 import { buildSampleSnapshot } from '../efl/app/assets/sample-data.js';
 
@@ -137,6 +137,44 @@ section('no data degrades to no pages');
   ok(renderAll(null).size === 0, 'a missing snapshot renders nothing rather than throwing');
   ok(renderAll({ clubs: [] }).size === 0, 'an empty one renders nothing');
   ok(renderAll({ clubs: [{ name: 'No Slug' }] }).size === 0, 'a club with no slug is skipped rather than written to a bad path');
+}
+
+section('the loader: the half that talks to the feed, driven with stubs');
+{
+  /* This is here because the first version of it lived inside the CLI's
+     `if (import.meta.url === …)` block, where no test could reach it. It
+     called the provider with no argument, every test passed, and it threw
+     on the first real run against the live feed. */
+  const docs = { squads: [], players: [], rounds: [] };
+  const fakeSnapshot = { clubs: [], players: [], fixtures: [], currentRound: 7, source: { label: 'stub' } };
+  const full = { ...fakeSnapshot };
+
+  let sawDocs = null, sawOpts = null;
+  const loaded = await loadClubSnapshot({
+    now: Date.parse('2026-09-19T12:00:00Z'),
+    fetchDocuments: async () => docs,
+    buildOfficialSnapshot: (d, opts) => { sawDocs = d; sawOpts = opts; return buildSampleSnapshot(); },
+  });
+  ok(sawDocs === docs, 'whatever the feed returned is handed straight to the app\'s own mapping');
+  ok(sawOpts && sawOpts.now === Date.parse('2026-09-19T12:00:00Z'), 'and the clock is passed in, not read from the wall');
+  ok(loaded.clubs.length === 72, 'a healthy feed produces a full snapshot');
+  ok(loaded.built === '2026-09-19T12:00:00.000Z', 'the build stamp is the injected clock, so a test can pin it');
+
+  let refused = null;
+  try {
+    await loadClubSnapshot({
+      fetchDocuments: async () => docs,
+      buildOfficialSnapshot: () => ({ ...full, clubs: [], players: [], fixtures: [] }),
+    });
+  } catch (err) { refused = err; }
+  ok(refused, 'a feed that lost the league is refused rather than written');
+  ok(/72/.test(refused.message) && /0 clubs/.test(refused.message),
+    'and the refusal says what it got and what it expected, because this runs unattended');
+  ok(MINIMUM_CLUBS > 0 && MINIMUM_CLUBS < 72, 'the floor leaves room for a club being temporarily absent, but not for half the league');
+
+  let threw = null;
+  try { await loadClubSnapshot({ fetchDocuments: async () => { throw new Error('feed answered 503'); } }); } catch (e) { threw = e; }
+  ok(threw && /503/.test(threw.message), 'a feed that is down surfaces its own error rather than a stack trace about undefined');
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

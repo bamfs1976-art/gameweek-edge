@@ -122,7 +122,44 @@ export function buildClubSnapshot(snapshot, opts = {}) {
   };
 }
 
-/* ── the half that talks to the network ────────────────── */
+/* ── loading it ──────────────────────────────────────────
+   Separated from the CLI, and with its two collaborators injectable, for
+   one reason: the first version of this file put the whole thing inside an
+   `if (import.meta.url === …)` block, which nothing could reach from a
+   test. It called officialProvider() with no argument, every test passed,
+   and it threw on the first real run. A shell thin enough to read is not
+   the same as a shell that has been run. */
+
+/** How few clubs mean the feed is broken rather than small. The EFL has 72. */
+export const MINIMUM_CLUBS = 60;
+
+export async function loadClubSnapshot(deps = {}) {
+  const fetchDocuments = deps.fetchDocuments || (await import('../lib.mjs')).fetchDocuments;
+  const buildOfficialSnapshot = deps.buildOfficialSnapshot
+    || (await import('../../../efl/app/assets/provider.js')).buildOfficialSnapshot;
+  const now = deps.now || Date.now();
+
+  /* The same two calls the ledger's recorder makes, and deliberately so:
+     fetchDocuments goes through this site's own /api/efl proxy rather than
+     the upstream host, and buildOfficialSnapshot is the mapping the app
+     itself runs. A second route to the same feed is a second thing to keep
+     in step, and this is the one place where "the pages say what the app
+     says" is actually enforced. */
+  const snapshot = buildOfficialSnapshot(await fetchDocuments(), { now });
+  const snap = buildClubSnapshot(snapshot, { built: new Date(now).toISOString() });
+
+  /* A snapshot that lost half the league is not a smaller snapshot, it is a
+     broken feed, and writing it would publish 30 pages and silently delete
+     42. Refuse instead: the last good file stays committed and the pages
+     with it. */
+  if (snap.clubs.length < MINIMUM_CLUBS) {
+    throw new Error(`the feed returned ${snap.clubs.length} clubs, and the game has 72`);
+  }
+  return snap;
+}
+
+/* ── the CLI ─────────────────────────────────────────────
+   Run by .github/workflows/efl-ledger.yml, never at build time. */
 if (import.meta.url === 'file://' + process.argv[1]) {
   const { writeFileSync, mkdirSync } = await import('node:fs');
   const { dirname, join } = await import('node:path');
@@ -132,19 +169,13 @@ if (import.meta.url === 'file://' + process.argv[1]) {
   const argOut = process.argv.indexOf('--out');
   const out = argOut > -1 ? process.argv[argOut + 1] : 'efl/data/club-pages.json';
 
-  const { officialProvider } = await import('../../../efl/app/assets/provider.js');
-  const snapshot = await officialProvider().load();
-  const snap = buildClubSnapshot(snapshot);
-
-  /* A snapshot that lost half the league is not a smaller snapshot, it is a
-     broken feed, and writing it would publish 30 pages and silently delete
-     42. Refuse instead: the last good file stays committed and the pages
-     with it. */
-  if (snap.clubs.length < 60) {
-    console.error(`Refusing to write: the feed returned ${snap.clubs.length} clubs, and the game has 72.`);
+  try {
+    const snap = await loadClubSnapshot();
+    mkdirSync(join(ROOT, dirname(out)), { recursive: true });
+    writeFileSync(join(ROOT, out), JSON.stringify(snap, null, 1) + '\n');
+    console.log(`\u2713 ${out} — ${snap.clubs.length} clubs, round ${snap.round}, from ${snap.source && snap.source.label}`);
+  } catch (err) {
+    console.error('\u2717 Refusing to write the club-page snapshot: ' + err.message);
     process.exit(1);
   }
-  mkdirSync(join(ROOT, dirname(out)), { recursive: true });
-  writeFileSync(join(ROOT, out), JSON.stringify(snap, null, 1) + '\n');
-  console.log(`✓ ${out} — ${snap.clubs.length} clubs, round ${snap.round}, from ${snap.source && snap.source.label}`);
 }
