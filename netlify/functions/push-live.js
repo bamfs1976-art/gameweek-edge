@@ -4,11 +4,21 @@
    feed against the last snapshot and pushes personal events:
 
      • scorer  — an owned XI player scored or assisted
+     • correction — a goal or assist we already alerted on was taken away
+                 again (VAR, or a reattribution). Follows the scorer pref.
      • defcon  — an owned XI player banked the 2025/26 defensive +2
      • bonus   — an owned XI player moved into (or up) the provisional 3-2-1
+     • subbedoff — an owned XI player has left the pitch. OPT-IN
+                 (prefs.subbedoff === true), once per fixture per manager.
      • captainout — the captain's match has started and he is not in the
                  starting XI. OPT-IN (prefs.captainout === true), once per
                  gameweek per manager, deep-linked to Captaincy Lab.
+
+   Goals are held briefly before they count, fixtures leave scope at the
+   whistle rather than when bonus is confirmed, and substitutions are read
+   from minutes that stopped advancing. All three live in
+   netlify/lib/live-events.js with their reasoning, and are tested by
+   dev/test-live-events.mjs.
 
    Squad + snapshot are keyed per manager, so one live fetch serves every
    subscriber on that team. Respects each subscriber's prefs. No-ops (fast)
@@ -19,6 +29,7 @@
 
 const webpush = require('web-push');
 const { createClient } = require('@supabase/supabase-js');
+const { liveScope, holdVolatile, observe, trackMinutes } = require('../lib/live-events');
 
 exports.config = { schedule: '*/2 * * * *' };
 
@@ -69,12 +80,24 @@ exports.handler = async () => {
   if (!gw) return { statusCode: 200, body: 'no current gameweek' };
   try { fixtures = await api('fixtures/?event=' + gw.id); } catch (_) { return { statusCode: 200, body: 'fixtures unavailable' }; }
 
-  const inPlay = fixtures.filter((f) => f.started && !f.finished);
-  if (!inPlay.length) return { statusCode: 200, body: 'nothing in play' };
+  /* `finished` waits for bonus to be confirmed, which can lag the whistle by
+     hours; until it flips, every fixture of the day would count as in play
+     and the whole per-manager fan-out would keep running against an empty
+     pitch. `finished_provisional` is the whistle, and liveScope keeps a
+     finished fixture for a few more minutes so the last bonus movement
+     still goes out. */
+  const now = Date.now();
+  const scopeKey = 'live:' + gw.id + ':scope';
+  const scope = liveScope(fixtures, await getState(scopeKey), now);
+  const inPlay = scope.active;
+  if (!inPlay.length) {
+    try { await setState(scopeKey, scope.seen); } catch (_) { /* best effort */ }
+    return { statusCode: 200, body: 'nothing in play' };
+  }
 
   /* Which subscribers have a linked team and want live alerts. */
   const { data: subs } = await sb.from('gwedge_push_subs').select('*');
-  const live = (subs || []).filter((s) => s.manager_id && (!s.prefs || s.prefs.scorer !== false || s.prefs.bonus !== false || s.prefs.defcon !== false || s.prefs.captainout === true));
+  const live = (subs || []).filter((s) => s.manager_id && (!s.prefs || s.prefs.scorer !== false || s.prefs.bonus !== false || s.prefs.defcon !== false || s.prefs.captainout === true || s.prefs.subbedoff === true));
   if (!live.length) return { statusCode: 200, body: 'no live-opted subscribers' };
 
   /* Reference maps. */
@@ -87,6 +110,22 @@ exports.handler = async () => {
   try { liveData = await api('event/' + gw.id + '/live/'); } catch (_) { return { statusCode: 200, body: 'live unavailable' }; }
   const st = {}; (liveData.elements || []).forEach((e) => { st[e.id] = e.stats || {}; });
   const provBonus = {}; inPlay.forEach((f) => Object.assign(provBonus, fixtureBonus(elsByTeam, st, f)));
+
+  /* A goal is not a fact the moment it appears: VAR can take it back, and
+     the feed carries no "under review" flag. Goals and assists are held
+     briefly before they count as announced, so a goal chalked off inside
+     the window is never sent at all. What survives the hold is what the
+     per-manager diff below compares against, and a confirmed count that
+     later falls is how a correction gets noticed. */
+  const holdKey = 'live:' + gw.id + ':hold';
+  const held = holdVolatile(await getState(holdKey), st, now);
+  const goals = held.confirmed;
+
+  /* FPL publishes no substitution event, so a player off the pitch shows up
+     only as minutes that have stopped advancing while the clock runs on. */
+  const trackKey = 'live:' + gw.id + ':minutes';
+  const tracked = trackMinutes(await getState(trackKey), observe(liveData.elements, inPlay));
+  const offPitch = new Set(tracked.off);
 
   /* ── Captain not starting ──────────────────────────────────
      "Confirmed XI" from the live endpoint: once a fixture has been running
@@ -167,19 +206,28 @@ exports.handler = async () => {
     xi.forEach((p) => {
       const el = elMap[p.element]; if (!el) return;
       const s = st[p.element] || {};
-      const g = s.goals_scored || 0, a = s.assists || 0;
+      const conf = goals[p.element] || { g: 0, a: 0 };
+      const g = conf.g, a = conf.a;
       const dc = parseInt(s.defensive_contribution, 10) || 0;
       const t = thr(el.element_type);
       const dcHit = t != null && dc >= t;
       const bonus = provBonus[p.element] || 0;
+      const off = offPitch.has(String(p.element));
       cur[p.element] = { g, a, dcHit, bonus };
+      if (off) cur[p.element].off = true;
       if (!prev) return;   /* seed silently on first pass */
-      const pr = prev[p.element] || { g: 0, a: 0, dcHit: false, bonus: 0 };
+      const pr = prev[p.element] || { g: 0, a: 0, dcHit: false, bonus: 0, off: false };
       const who = el.web_name + (teams[el.team] ? ' (' + teams[el.team] + ')' : '');
+      /* A confirmed count going DOWN means something we already told this
+         manager about has been taken away. Saying nothing would leave them
+         counting points they no longer have. */
       if (g > pr.g) events.push({ type: 'scorer', body: '⚽ ' + who + ' scored' + (g > 1 ? ' (' + g + ')' : '') + '!' });
+      else if (g < pr.g) events.push({ type: 'correction', body: '❌ ' + who + ': goal ruled out' + (g > 0 ? ', now on ' + g : '') });
       if (a > pr.a) events.push({ type: 'scorer', body: '🅰️ ' + who + ' assisted' + (a > 1 ? ' (' + a + ')' : '') + '!' });
+      else if (a < pr.a) events.push({ type: 'correction', body: '❌ ' + who + ': assist no longer stands' });
       if (dcHit && !pr.dcHit) events.push({ type: 'defcon', body: '🛡️ ' + who + ' banked the defensive +2' });
       if (bonus > pr.bonus) events.push({ type: 'bonus', body: '✨ ' + who + ' now projected +' + bonus + ' bonus' });
+      if (off && !pr.off) events.push({ type: 'subbedoff', body: '🔄 ' + who + ' has been substituted' });
     });
 
     if (capOut) cur.__captainout = true;
@@ -188,18 +236,23 @@ exports.handler = async () => {
 
     /* One grouped notification per event type, per manager's subscribers. */
     const targets = byMid[mid];
-    const types = ['scorer', 'defcon', 'bonus', 'captainout'];
+    const types = ['scorer', 'correction', 'defcon', 'bonus', 'subbedoff', 'captainout'];
+    const TITLES = {
+      scorer: 'Your players are involved', correction: 'Correction',
+      defcon: 'Defensive +2 banked', bonus: 'Bonus movement',
+      subbedoff: 'Player substituted', captainout: 'Captain not starting',
+    };
     for (const type of types) {
       const msgs = events.filter((e) => e.type === type);
       if (!msgs.length) continue;
-      const title = type === 'scorer' ? 'Your players are involved' : type === 'defcon' ? 'Defensive +2 banked'
-        : type === 'captainout' ? 'Captain not starting' : 'Bonus movement';
+      const title = TITLES[type];
       const body = msgs.slice(0, 4).map((m) => m.body).join('  ') + (msgs.length > 4 ? '  …' : '');
-      /* Every other live alert is on unless switched off; this one is off
-         unless switched on. */
-      const recip = type === 'captainout'
-        ? targets.filter((s) => s.prefs && s.prefs.captainout === true)
-        : targets.filter((s) => !s.prefs || s.prefs[type] !== false);
+      /* Two of these are off unless switched on. A correction has no switch
+         of its own: it follows the alert it is correcting, so turning off
+         scorer alerts turns off their corrections too. */
+      const recip = (type === 'captainout' || type === 'subbedoff')
+        ? targets.filter((s) => s.prefs && s.prefs[type] === true)
+        : targets.filter((s) => !s.prefs || s.prefs[type === 'correction' ? 'scorer' : type] !== false);
       const url = type === 'captainout' ? '/?panel=captain' : '/?panel=liverank';
       await Promise.allSettled(recip.map(async (s) => {
         try {
@@ -214,6 +267,18 @@ exports.handler = async () => {
       }));
     }
   }
+
+  /* The three gameweek-scoped memories, written once per run whichever
+     managers this run's batch covered. Best effort: losing one costs a
+     re-seed next run, never a wrong alert, because a manager is only ever
+     told about a change against his own stored row. */
+  try {
+    await Promise.all([
+      setState(scopeKey, scope.seen),
+      setState(holdKey, held.hold),
+      setState(trackKey, tracked.track),
+    ]);
+  } catch (_) { /* best effort */ }
 
   return { statusCode: 200, body: 'sent ' + sent + ' live notifications' };
 };

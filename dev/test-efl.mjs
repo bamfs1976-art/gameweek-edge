@@ -760,6 +760,230 @@ ok('the one-club chip lifts the club limit and never scores worse', () => {
     'lifting a constraint cannot produce a worse best squad');
 });
 
+/* ── Your own seven ───────────────────────────────────
+   The advice is only worth anything if it is about a side somebody holds,
+   so what matters is that an incomplete or illegal one is still scored and
+   told what is wrong with it, and that a suggested swap is one the game
+   would actually let you make. */
+
+const idsOfBest = () => model.buildSquad(ctx).picks.map((r) => r.player.id);
+
+ok('a squad nobody has picked yet is scored, not refused', () => {
+  const a = model.squadAdvice(ctx, []);
+  assert.equal(a.count, 0);
+  assert.equal(a.complete, false);
+  assert.ok(/7 more to pick/.test(a.issues.join(' ')), 'it says what is missing');
+  assert.deepEqual(a.swaps, [], 'and offers no swaps for a side that does not exist yet');
+});
+
+ok('a saved player who has left the game is reported, not silently dropped', () => {
+  const a = model.squadAdvice(ctx, [idsOfBest()[0], 'no-such-player']);
+  assert.deepEqual(a.unknown, ['no-such-player']);
+  assert.equal(a.count, 1, 'the ones still in the game are still scored');
+});
+
+ok('the model\'s own best seven is legal and has nothing worth swapping', () => {
+  const a = model.squadAdvice(ctx, idsOfBest());
+  assert.equal(a.complete, true);
+  assert.equal(a.legal, true, 'the squad builder produced an illegal side: ' + a.issues.join('; '));
+  assert.ok(a.formations.length >= 1, 'it matches at least one legal shape');
+  assert.equal(a.swaps.length, 0,
+    'if a single swap could improve the best side the model can find, one of the two is wrong');
+});
+
+ok('a weak side gets ranked swaps, best gain first', () => {
+  /* Take the model's best seven and replace its strongest player with the
+     worst legal alternative in the same position, so there is a known
+     upgrade waiting. */
+  const best = model.buildSquad(ctx);
+  const weakest = best.picks.reduce((a, b) => (b.score < a.score ? b : a));
+  const strongest = best.picks.reduce((a, b) => (b.score > a.score ? b : a));
+  const heldClubs = new Set(best.picks.map((r) => r.player.clubId));
+  const replacement = ctx.players
+    .filter((p) => p.position === strongest.player.position)
+    .filter((p) => p.availability.status === 'available')
+    .filter((p) => !heldClubs.has(p.clubId))
+    .map((p) => model.playerScore(ctx, p))
+    .filter((r) => r.next)
+    .sort((a, b) => a.score - b.score)[0];
+  assert.ok(replacement, 'the sample data should contain a weaker alternative');
+
+  const ids = best.picks.filter((r) => r !== strongest).map((r) => r.player.id).concat(replacement.player.id);
+  const a = model.squadAdvice(ctx, ids, { limit: 5 });
+  assert.equal(a.complete, true);
+  assert.ok(a.swaps.length > 0, 'a weakened side should have something worth changing');
+  for (let i = 1; i < a.swaps.length; i++) {
+    assert.ok(a.swaps[i - 1].gain >= a.swaps[i].gain, 'swaps are ranked by how much they gain');
+  }
+  assert.ok(a.swaps.every((s) => s.gain > 0), 'a swap that gains nothing is not advice');
+  assert.ok(a.swaps.every((s) => s.reason && s.reason.length > 5), 'each swap says why, in words');
+  assert.ok(a.total < best.total, 'the weakened side scores below the best one');
+  void weakest;
+});
+
+ok('every suggested swap leaves a side the game would accept', () => {
+  const best = model.buildSquad(ctx);
+  const strongest = best.picks.reduce((a, b) => (b.score > a.score ? b : a));
+  const alt = ctx.players
+    .filter((p) => p.position === strongest.player.position && p.availability.status === 'available')
+    .map((p) => model.playerScore(ctx, p)).filter((r) => r.next)
+    .sort((a, b) => a.score - b.score)[0];
+  const ids = best.picks.filter((r) => r !== strongest).map((r) => r.player.id).concat(alt.player.id);
+  const a = model.squadAdvice(ctx, ids, { limit: 5 });
+
+  for (const s of a.swaps) {
+    const after = a.picks.filter((r) => r.player.id !== s.out.player.id).concat(s.in);
+    assert.equal(after.length, 7, 'a swap is one out and one in');
+    const pos = {};
+    after.forEach((r) => { pos[r.player.position] = (pos[r.player.position] || 0) + 1; });
+    const shapes = model.FORMATIONS.filter((f) => ['GK', 'DEF', 'MID', 'FWD'].every((k) => (pos[k] || 0) === f[k]));
+    assert.ok(shapes.length, `swapping in ${s.in.player.name} leaves an illegal shape`);
+    const clubs = {};
+    after.forEach((r) => { clubs[r.player.clubId] = (clubs[r.player.clubId] || 0) + 1; });
+    assert.ok(Object.values(clubs).every((n) => n <= model.MAX_PER_CLUB),
+      `swapping in ${s.in.player.name} breaks the two-per-club limit`);
+    assert.ok(!a.picks.some((r) => r.player.id === s.in.player.id), 'never suggests a player already owned');
+  }
+});
+
+ok('three from one club is called out, and the one-club chip forgives it', () => {
+  const byClub = {};
+  for (const p of ctx.players) (byClub[p.clubId] = byClub[p.clubId] || []).push(p);
+  const big = Object.values(byClub).find((list) => list.length >= 3);
+  const ids = big.slice(0, 3).map((p) => p.id);
+  const plain = model.squadAdvice(ctx, ids);
+  assert.ok(/limit is 2/.test(plain.issues.join(' ')), 'the club limit is reported in the manager\'s terms');
+  const chipped = model.squadAdvice(ctx, ids, { oneClubChip: true });
+  assert.ok(!/limit is/.test(chipped.issues.join(' ')), 'the chip lifts it');
+});
+
+ok('an unavailable player in the side is surfaced separately from the score', () => {
+  const hurt = ctx.players.find((p) => p.availability.status !== 'available');
+  if (!hurt) return;                       /* sample data may be fully fit */
+  const a = model.squadAdvice(ctx, [hurt.id]);
+  assert.equal(a.unavailable.length, 1, 'a manager needs to see this whatever the rating says');
+});
+
+ok('the slot layout follows the squad, so a legal side is never partly hidden', () => {
+  /* The bug this pins: a FIXED row of slots (1-3-2-1) silently hides the
+     second forward of a 1-2-2-2, and because the form is read back from the
+     slots on every change, the next edit then deletes him. */
+  for (const f of model.FORMATIONS) {
+    const counts = { GK: f.GK, DEF: f.DEF, MID: f.MID, FWD: f.FWD };
+    const slots = model.slotLayout(counts);
+    assert.equal(slots.length, 7, `${f.id}: seven players need seven slots`);
+    for (const pos of ['GK', 'DEF', 'MID', 'FWD']) {
+      assert.equal(slots.filter((s) => s === pos).length, f[pos],
+        `${f.id}: every ${pos} in the side has a slot to sit in`);
+    }
+  }
+});
+
+ok('an empty squad still gets a full row of slots to fill', () => {
+  const slots = model.slotLayout({});
+  assert.equal(slots.length, 7);
+  assert.equal(slots.filter((s) => s === 'GK').length, 1, 'exactly one goalkeeper, as the game requires');
+});
+
+ok('an illegal side is shown in full rather than quietly trimmed', () => {
+  /* Five defenders is not a legal shape. Hiding the extras would make the
+     side impossible to fix from the form that reported it. */
+  const slots = model.slotLayout({ GK: 1, DEF: 5, MID: 1, FWD: 1 });
+  assert.ok(slots.filter((s) => s === 'DEF').length >= 5, 'every defender picked is still visible');
+  assert.ok(slots.length > 7, 'an over-full side needs more than seven slots to show it');
+});
+
+/* ── The Max Captain chip read ────────────────────────
+   The chip is a real rule of the official game and the model's read on it is
+   an opinion, so what is worth pinning is the SHAPE of that opinion: that it
+   answers at all, that the two things driving it move it in the right
+   direction, and that it never claims a points figure the model cannot
+   support. The exact band cut is a tuned weight, so it is read from the
+   export rather than written into the test. */
+
+/* A squad stub is enough here: the read only looks at picks, scores and the
+   captain's playing share, and building one by hand lets the two drivers be
+   moved independently, which real sample data will not do on demand. */
+const squadOf = (scores, captainPlayer) => {
+  const picks = scores.map((score, i) => ({
+    score,
+    player: i === 0 && captainPlayer ? captainPlayer
+      : { id: 'p' + i, name: 'Player ' + i, clubId: ctx.players[0].clubId, position: 'MID', starts: 10, appearances: 10, minutes: 900 }
+  }));
+  return { picks, captain: picks[0], clubCounts: {}, formation: { id: '1-2-2-2' } };
+};
+const nailedOn = { id: 'cap', name: 'Nailed On', clubId: ctx.players[0].clubId, position: 'MID', starts: 99, appearances: 99, minutes: 99 * 90 };
+const rotated = { id: 'cap', name: 'Rotation Risk', clubId: ctx.players[0].clubId, position: 'MID', starts: 1, appearances: 99, minutes: 90 };
+
+ok('a runaway captain who is nailed on means the chip is held', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([90, 50, 48, 45, 44, 40, 38], nailedOn));
+  assert.equal(read.verdict, 'hold');
+  assert.equal(read.contested, 0, 'nobody is near him');
+  assert.ok(/clear of the rest/.test(read.reasons[0]), 'the reason says why');
+});
+
+ok('a single near rival reads as narrow, and never argues against its own verdict', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 40, 38, 30, 28, 26], nailedOn));
+  assert.equal(read.contested, 1);
+  assert.equal(read.verdict, 'hold');
+  assert.ok(/narrow rather than a lottery/.test(read.reasons[0]),
+    'a reason arguing for the chip under a verdict that says hold it costs the reader their trust');
+});
+
+ok('a bunched top of the squad makes the armband contested', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 68, 67, 40, 38, 30], nailedOn));
+  assert.ok(read.contested >= 2, 'three rivals inside the band should count');
+  assert.equal(read.verdict, 'consider', 'contested alone is worth a look, not a certainty');
+});
+
+ok('both drivers together is the round to play it', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 68, 67, 40, 38, 30], rotated));
+  assert.equal(read.verdict, 'play');
+  assert.equal(read.nailed, false);
+  assert.equal(read.reasons.length, 2, 'both reasons are given, not just the verdict');
+});
+
+ok('a rotation risk alone lifts a straightforward call off hold', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([90, 50, 48, 45, 44, 40, 38], rotated));
+  assert.equal(read.verdict, 'consider');
+  assert.ok(read.reasons.some((r) => /blank captain is live/.test(r)));
+});
+
+ok('the contest band is the exported one, so tuning it does not mean editing a test', () => {
+  const band = model.ARMBAND_CONTEST_BAND;
+  const inside = model.maxCaptainRead(ctx, squadOf([70, 70 - band + 0.1, 20, 19, 18, 17, 16], nailedOn));
+  const outside = model.maxCaptainRead(ctx, squadOf([70, 70 - band - 0.1, 20, 19, 18, 17, 16], nailedOn));
+  assert.equal(inside.contested, 1);
+  assert.equal(outside.contested, 0);
+});
+
+ok('the read never claims a points value for the chip', () => {
+  const read = model.maxCaptainRead(ctx, squadOf([70, 69, 68, 67, 40, 38, 30], rotated));
+  const printed = [read.summary, ...read.reasons].join(' ');
+  assert.ok(!/\bpoints? (gain|value|worth|extra)\b/i.test(printed),
+    'the model has one rating per player, not a distribution, so a points figure would be invented');
+  assert.equal(typeof read.gap, 'number', 'the rating gap is reported instead, which it can support');
+});
+
+ok('no squad means no read, rather than a thrown error', () => {
+  assert.equal(model.maxCaptainRead(ctx, null), null);
+  assert.equal(model.maxCaptainRead(ctx, { picks: [], captain: null }), null);
+});
+
+ok('before a ball is kicked nobody is a rotation risk', () => {
+  const preCtx = { ...ctx, seasonStarted: false };
+  const read = model.maxCaptainRead(preCtx, squadOf([90, 50, 48, 45, 44, 40, 38], rotated));
+  assert.equal(read.nailed, true, 'with no minutes played there is nothing to read');
+  assert.equal(read.verdict, 'hold');
+});
+
+ok('the built seven gets a real read from real data', () => {
+  const read = model.maxCaptainRead(ctx, model.buildSquad(ctx));
+  assert.ok(['play', 'consider', 'hold'].includes(read.verdict));
+  assert.ok(read.summary.length > 20, 'the verdict is explained in words');
+  assert.ok(read.captainShare >= 0 && read.captainShare <= 1);
+});
+
 ok('every player in the squad is available, has a fixture, and is not excluded', () => {
   const squad = model.buildSquad(ctx, { exclude: [ctx.players[0].id] });
   for (const r of squad.picks) {

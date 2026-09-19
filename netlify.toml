@@ -128,6 +128,14 @@
   status = 301
   force = true
 
+# The MCP server. One URL, GET for humans and POST for the protocol, so a
+# person who pastes it into a browser sees what it is rather than an error.
+[[redirects]]
+  from = "/api/mcp"
+  to = "/.netlify/functions/mcp"
+  status = 200
+  force = true
+
 # AI features (Claude) — scout report, chat, transfers, digest, etc.
 [[redirects]]
   from = "/api/ai"
@@ -375,6 +383,14 @@
     Cache-Control = "public, max-age=0, must-revalidate"
 
 # Scheduled push sender (hourly).
+# The MCP server runs the SHIPPING model, extracted from index.html at
+# runtime the same way the prediction logger does, and reads the same
+# vendored card ladder the app and the push sender read. All three files
+# must travel with the function or the tools that need them say so and the
+# rest keep working.
+[functions."mcp"]
+  included_files = ["index.html", "vendor/suspension_core.js", "vendor/suspension_scheme.js"]
+
 [functions."push-cron"]
   schedule = "@hourly"
   # The card-ban ladder comes from the same two vendored files the app loads

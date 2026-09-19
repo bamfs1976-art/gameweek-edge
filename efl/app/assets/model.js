@@ -1048,6 +1048,264 @@ export function squadRationale(ctx, squad) {
   return parts.join(', ') + '.';
 }
 
+/* ── Your own seven ──────────────────────────────────────
+   Everything above answers "what is the best side this round". That is not
+   the question a manager with a team actually has. They already own seven
+   players, they are allowed a handful of changes, and what they need is
+   which ONE to change — not a list of seven strangers they cannot afford to
+   move to in a single round.
+
+   So this scores a squad somebody already holds, says whether it is legal,
+   and ranks the single swaps that would raise it most. The official game
+   tells you your score after the fact; nothing tells you this beforehand,
+   because nothing else has a model of the round. */
+
+/** Which formations a set of positions satisfies. Empty means illegal. */
+function matchingFormations(counts) {
+  return FORMATIONS.filter((f) => ['GK', 'DEF', 'MID', 'FWD'].every((p) => (counts[p] || 0) === f[p]));
+}
+
+function positionCounts(records) {
+  const counts = {};
+  for (const r of records) counts[r.player.position] = (counts[r.player.position] || 0) + 1;
+  return counts;
+}
+
+function clubCounts(records) {
+  const counts = {};
+  for (const r of records) counts[r.player.clubId] = (counts[r.player.clubId] || 0) + 1;
+  return counts;
+}
+
+/**
+ * Score a squad the user already owns, and rank the swaps worth making.
+ *
+ * `ids` is whatever the user has saved, in any order and possibly
+ * incomplete — a half-filled side is the normal state of a team being
+ * built, not an error, so it is scored and told what it is missing rather
+ * than refused.
+ *
+ * @param {Object} ctx
+ * @param {string[]} ids
+ * @param {{scored?:Object[], oneClubChip?:boolean, limit?:number}} [opts]
+ */
+export function squadAdvice(ctx, ids, opts = {}) {
+  const scored = opts.scored || ctx.players.map((p) => playerScore(ctx, p));
+  const byId = new Map(scored.map((r) => [r.player.id, r]));
+  const maxPerClub = opts.oneClubChip ? SQUAD_SIZE : MAX_PER_CLUB;
+  const limit = opts.limit == null ? 3 : opts.limit;
+
+  const picks = [];
+  const unknown = [];
+  for (const id of ids || []) {
+    const r = byId.get(id);
+    if (r) picks.push(r); else unknown.push(id);
+  }
+
+  const counts = positionCounts(picks);
+  const clubs = clubCounts(picks);
+  const total = Math.round(picks.reduce((s, r) => s + r.score, 0) * 10) / 10;
+
+  /* Three different kinds of wrong, and a manager can act on each of them
+     differently, so they are reported apart rather than as one "invalid". */
+  const issues = [];
+  if (picks.length !== SQUAD_SIZE) {
+    issues.push(picks.length < SQUAD_SIZE
+      ? `${SQUAD_SIZE - picks.length} more to pick`
+      : `${picks.length - SQUAD_SIZE} too many`);
+  }
+  if (picks.length === SQUAD_SIZE && !matchingFormations(counts).length) {
+    issues.push('that mix of positions is not one of the three legal shapes');
+  }
+  for (const [clubId, n] of Object.entries(clubs)) {
+    if (n > maxPerClub) {
+      const club = ctx.clubById[clubId];
+      issues.push(`${n} from ${(club && club.name) || 'one club'}, and the limit is ${maxPerClub}`);
+    }
+  }
+  const unavailable = picks.filter((r) => r.player.availability.status !== 'available');
+  const blanking = picks.filter((r) => !r.next);
+
+  /* The swaps. One change at a time, because one change is what a manager
+     is deciding: a ranked list of seven replacements they would all have to
+     make together is not advice, it is the ideal side again. */
+  const swaps = [];
+  if (picks.length === SQUAD_SIZE) {
+    const held = new Set(picks.map((r) => r.player.id));
+    const pool = scored
+      .filter((r) => r.next)
+      .filter((r) => r.player.availability.status === 'available')
+      .filter((r) => !held.has(r.player.id))
+      .sort((a, b) => b.score - a.score);
+
+    for (const out of picks) {
+      for (const inc of pool) {
+        if (held.has(inc.player.id)) continue;
+        if (inc.score <= out.score) break;            /* pool is sorted: nothing below helps */
+        const after = picks.filter((r) => r !== out).concat(inc);
+        if (!matchingFormations(positionCounts(after)).length) continue;
+        if (Object.values(clubCounts(after)).some((n) => n > maxPerClub)) continue;
+        swaps.push({
+          out, in: inc,
+          gain: Math.round((inc.score - out.score) * 10) / 10,
+          /* Why this one, in the manager's terms rather than the model's. */
+          reason: swapReason(ctx, out, inc),
+        });
+        break;                                        /* the best legal upgrade for this player */
+      }
+    }
+    swaps.sort((a, b) => b.gain - a.gain);
+  }
+
+  return {
+    picks,
+    unknown,
+    total,
+    count: picks.length,
+    complete: picks.length === SQUAD_SIZE,
+    legal: picks.length === SQUAD_SIZE && !issues.length,
+    issues,
+    formations: matchingFormations(counts).map((f) => f.id),
+    clubCounts: clubs,
+    unavailable,
+    blanking,
+    swaps: swaps.slice(0, limit),
+  };
+}
+
+function swapReason(ctx, out, inc) {
+  if (out.player.availability.status !== 'available') return `${out.player.name} is ${out.player.availability.status}`;
+  if (!out.next) return `${out.player.name} has no fixture this round`;
+  if (inc.double && !out.double) return `${inc.player.name} plays twice this round`;
+  if (out.next && inc.next && inc.next.rating < out.next.rating) {
+    return `${inc.player.name} has the kinder fixture`;
+  }
+  const outShare = playingShare(ctx, out.player).value;
+  const inShare = playingShare(ctx, inc.player).value;
+  if (inShare - outShare > 0.2) return `${inc.player.name} is the more certain starter`;
+  return `${inc.player.name} rates higher on this round's form and fixture`;
+}
+
+const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FWD'];
+
+/* The slots have to follow the squad, not the other way round.
+   A FIXED row of slots (one goalkeeper, three defenders, two midfielders,
+   one forward) silently hides a player the moment the side runs a different
+   legal shape — and because the form is read back from the slots on every
+   change, the hidden player is then DELETED by the next edit. That is how
+   the first version of this lost the second forward out of a 1-2-2-2.
+
+   So: choose whichever legal formation asks the fewest players to be
+   dropped, and then add a slot for anything still left over, so an illegal
+   side is fully visible and fixable rather than quietly trimmed. */
+export function slotLayout(counts) {
+  let best = null;
+  for (const f of FORMATIONS) {
+    const drops = POSITION_ORDER.reduce((n, p) => n + Math.max(0, (counts[p] || 0) - f[p]), 0);
+    const adds = POSITION_ORDER.reduce((n, p) => n + Math.max(0, f[p] - (counts[p] || 0)), 0);
+    if (!best || drops < best.drops || (drops === best.drops && adds < best.adds)) best = { f, drops, adds };
+  }
+  const slots = [];
+  for (const p of POSITION_ORDER) {
+    const n = Math.max(best.f[p], counts[p] || 0);
+    for (let i = 0; i < n; i += 1) slots.push(p);
+  }
+  return slots;
+}
+
+/* ── The Max Captain chip ────────────────────────────────
+   The official game gives you two of these a season, one per half. Playing
+   it hands the armband, after the fact, to whichever of your seven scores
+   most — so you never have to guess the captain that round.
+
+   WHAT IT IS WORTH, AND WHY THE MODEL CANNOT SAY IT IN POINTS.
+   The chip pays the difference between the player who turns out best and
+   the player you would have picked. This model scores players on a 0-100
+   rating, not in points, and it has one number per player rather than a
+   distribution — so asking it "how many points does the chip add" would get
+   an answer of zero every time, because the player it would captain IS its
+   own highest-rated pick. That answer would be confidently wrong.
+
+   What the chip is really insuring against is the two things that make a
+   captain call go wrong, and both of them the model can see:
+
+     1. A CONTESTED ARMBAND. When the top of your seven is bunched, the
+        captain call is close to a coin toss and the chip removes the risk
+        of calling it badly. When one player is clear of the rest, you would
+        captain him anyway and the chip adds almost nothing.
+     2. ROTATION RISK ON THE CAPTAIN. A blanking captain is the worst
+        outcome in the game. If the player you would captain is not nailed
+        on to start, the chip quietly moves the armband to someone who did
+        play.
+
+   So this reports the read, not a fake points figure, and says which of the
+   two reasons is driving it. The guide and the dashboard both print it. */
+
+/** Ratings this close to the captain's count as contesting the armband. */
+export const ARMBAND_CONTEST_BAND = 4;
+
+/** A playing share below this makes the intended captain a rotation risk. */
+export const CAPTAIN_NAILED_SHARE = 0.7;
+
+/**
+ * Should you play Max Captain this round?
+ *
+ * @param {Object} ctx
+ * @param {Object} squad  the result of buildSquad()
+ * @returns {{verdict:'play'|'consider'|'hold', contested:number, gap:number,
+ *            captainShare:number, nailed:boolean, reasons:string[],
+ *            summary:string}|null}
+ */
+export function maxCaptainRead(ctx, squad) {
+  if (!squad || !squad.captain || !squad.picks || !squad.picks.length) return null;
+
+  const rest = squad.picks.filter((r) => r !== squad.captain)
+    .slice().sort((a, b) => b.score - a.score);
+  /* The gap to the NEXT best, not to the field: one rival within touching
+     distance is what makes the call hard, however far back the rest are. */
+  const gap = rest.length ? Math.round((squad.captain.score - rest[0].score) * 10) / 10 : 0;
+  const contested = rest.filter((r) => squad.captain.score - r.score <= ARMBAND_CONTEST_BAND).length;
+
+  const share = playingShare(ctx, squad.captain.player);
+  const captainShare = Math.round(share.value * 100) / 100;
+  /* Before a ball is kicked there are no minutes to read, so nobody counts
+     as a rotation risk — the same gate the rest of the model applies. */
+  const nailed = !hasPlayedFootball(ctx) || captainShare >= CAPTAIN_NAILED_SHARE;
+
+  const reasons = [];
+  if (contested >= 2) {
+    reasons.push(`${contested} of your seven rate within ${ARMBAND_CONTEST_BAND} points of `
+      + `${squad.captain.player.name}, so the armband is close to a coin toss`);
+  } else if (contested === 1) {
+    /* One near rival is a narrow call, not a lottery, and this branch lands
+       on "hold" — so the reason has to read like one. A reason that argues
+       for playing the chip under a verdict that says to keep it is the kind
+       of contradiction that makes a reader stop trusting the whole panel. */
+    reasons.push(`only ${rest[0].player.name} is close to ${squad.captain.player.name}, `
+      + 'so the call is narrow rather than a lottery');
+  } else {
+    reasons.push(`${squad.captain.player.name} is clear of the rest by ${gap.toFixed(1)}, `
+      + 'so you would captain him with or without the chip');
+  }
+  if (!nailed) {
+    reasons.push(`he has started ${Math.round(captainShare * 100)}% of the available football, `
+      + 'so a blank captain is live');
+  }
+
+  /* Either reason on its own is worth a chip; both together is the round to
+     spend one. Neither, and it keeps until a week that needs it. */
+  const verdict = (contested >= 2 && !nailed) ? 'play'
+    : (contested >= 2 || !nailed) ? 'consider'
+      : 'hold';
+  const summary = {
+    play: 'Play it: the armband is contested and your captain is not nailed on.',
+    consider: 'Worth considering, and it will keep if this round has a better use.',
+    hold: 'Hold it. This captain call is straightforward, so the chip would buy little.'
+  }[verdict];
+
+  return { verdict, contested, gap, captainShare, nailed, reasons, summary };
+}
+
 /* ── formatting helpers shared by the views ─────────────── */
 
 export function ordinal(n) {
