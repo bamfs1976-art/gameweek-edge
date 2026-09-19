@@ -131,6 +131,17 @@ const str = (v, fallback = '') => (v == null ? fallback : String(v));
    — which every caller already handles, because a feed that reports no
    reason is the ordinary case. Never "[object Object]". */
 const NOTE_KEYS = ['note', 'description', 'reason', 'text', 'detail', 'title', 'label', 'name'];
+
+/* Is there anything here at all? An empty string, an empty object and an
+   empty list all mean "nothing reported"; anything else means the feed is
+   telling us something, even when we cannot read it. */
+function hasContent(value) {
+  if (value == null) return false;
+  if (typeof value === 'string') return value.trim() !== '';
+  if (Array.isArray(value)) return value.some(hasContent);
+  if (typeof value === 'object') return Object.values(value).some(hasContent);
+  return true;
+}
 function noteText(value) {
   if (value == null) return '';
   if (typeof value === 'string') return value.trim();
@@ -531,7 +542,18 @@ export function mapOfficialPlayers(players, clubsById) {
   return (players || []).map((p) => {
     const club = clubsById[String(p.squadId)];
     const appearances = num(p.appearances);
-    const injury = str(p.injuryDetails).trim();
+    /* injuryDetails is an OBJECT in the live feed, so str() here produced
+       the literal "[object Object]" and handed it on as a perfectly good
+       string — which is why hardening normaliseAvailability alone did not
+       fix it. The text has to be read out before anything stringifies.
+
+       And the FLAG is separate from the TEXT on purpose. Reading the text
+       and then testing it would mark a player with an injury the feed did
+       not describe as AVAILABLE, which is the one direction this must
+       never fail in: an injury we cannot put into words is still an
+       injury, and the model discounts him for it either way. */
+    const injury = noteText(p.injuryDetails).trim();
+    const injured = injury !== '' || hasContent(p.injuryDetails);
     return normalisePlayer({
       id: String(p.id),
       name: str(p.displayName, `${str(p.firstName)} ${str(p.lastName)}`.trim()),
@@ -563,7 +585,7 @@ export function mapOfficialPlayers(players, clubsById) {
         redCards: p.redCards
       },
       last5: [],
-      availability: injury
+      availability: injured
         ? { status: 'injured', note: injury, chancePlaying: 0 }
         : { status: 'available', note: 'No reported issue', chancePlaying: 100 },
       ownership: null

@@ -761,6 +761,30 @@ ok('the one-club chip lifts the club limit and never scores worse', () => {
     'lifting a constraint cannot produce a worse best squad');
 });
 
+ok('an injury the feed cannot describe still counts as an injury', () => {
+  /* The first fix read the text and then tested it, which marked a player
+     carrying an injuryDetails object with no readable text as AVAILABLE.
+     That is the one direction this must never fail in. */
+  const squads = [{ id: '1', name: 'Swansea City', shortName: 'SWA', competition: { id: '1', name: 'Championship' } }];
+  const byId = Object.fromEntries(model_provider.mapOfficialSquads(squads, model_provider.mapCompetitions(squads)).map((c) => [c.id, c]));
+  const avail = (injuryDetails) => model_provider.mapOfficialPlayers(
+    [{ id: '9', displayName: 'J. Key', squadId: '1', position: 'D', appearances: 5, injuryDetails }], byId)[0].availability;
+
+  assert.equal(avail({ description: 'Knee ligament damage' }).note, 'Knee ligament damage',
+    'the live feed sends an object, and the words come out of it');
+  assert.equal(avail({ description: 'Knee ligament damage' }).status, 'injured');
+  assert.equal(avail({ id: 4 }).status, 'injured',
+    'an injury with nothing readable in it is STILL an injury, not a fit player');
+  assert.equal(avail({ id: 4 }).note, '', 'it just has nothing to say about it');
+  assert.equal(avail('Hamstring').status, 'injured', 'a plain string still works, in case the feed changes back');
+  for (const nothing of [null, undefined, '', '   ', {}, []]) {
+    assert.equal(avail(nothing).status, 'available', 'nothing reported means available: ' + JSON.stringify(nothing));
+  }
+  for (const raw of [{ description: 'x' }, { id: 4 }, 'Hamstring']) {
+    assert.ok(!/\[object Object\]/.test(avail(raw).note), 'and never the literal "[object Object]"');
+  }
+});
+
 ok('an availability note is never the words "[object Object]"', () => {
   /* The live feed sends this field as an OBJECT. str() turned it into the
      literal "[object Object]", which the app showed in a tooltip nobody
