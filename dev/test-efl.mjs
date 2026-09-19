@@ -761,6 +761,25 @@ ok('the one-club chip lifts the club limit and never scores worse', () => {
     'lifting a constraint cannot produce a worse best squad');
 });
 
+ok('the injury note is built from the shape the live feed actually sends', () => {
+  /* Not guessed. The club-page job reports the object's keys when nothing
+     readable comes out, and the live feed answered:
+     type, status, startDate, endDate, expectedEndDate. */
+  const note = model_provider.injuryNote;
+  assert.equal(note({ type: 'Knee', status: 'Injured', expectedEndDate: '2026-10-01' }), 'Knee injury, expected back 1 Oct',
+    'the injury and the date a manager is waiting on');
+  assert.equal(note({ type: 'Hamstring' }), 'Hamstring injury', 'a body part on its own is not a sentence');
+  assert.equal(note({ type: 'Knee injury', expectedEndDate: '2026-10-05' }), 'Knee injury, expected back 5 Oct',
+    'and the word is not doubled when the feed already said it');
+  assert.equal(note({ type: 'Calf', endDate: '2026-09-30' }), 'Calf injury, expected back 30 Sept',
+    'endDate stands in when there is no expected one');
+  assert.equal(note({ status: 'Doubtful' }), 'Doubtful', 'a status alone is still worth saying');
+  assert.equal(note('Hamstring, out three weeks'), 'Hamstring, out three weeks', 'a feed that sends prose still works');
+  assert.equal(note({}), '', 'and nothing reported says nothing');
+  assert.equal(note({ type: 'Knee', expectedEndDate: 'not a date' }), 'Knee injury',
+    'an unparseable date costs its clause and nothing else');
+});
+
 ok('an injury the feed cannot describe still counts as an injury', () => {
   /* The first fix read the text and then tested it, which marked a player
      carrying an injuryDetails object with no readable text as AVAILABLE.

@@ -132,6 +132,37 @@ const str = (v, fallback = '') => (v == null ? fallback : String(v));
    reason is the ordinary case. Never "[object Object]". */
 const NOTE_KEYS = ['note', 'description', 'reason', 'text', 'detail', 'title', 'label', 'name'];
 
+/* The live feed's injuryDetails, whose shape is not documented anywhere we
+   can read. It was found by asking: the club-page job reports the object's
+   keys when nothing readable comes out of it, and it reported
+   type, status, startDate, endDate, expectedEndDate.
+
+   So the sentence is built rather than looked up. `type` is the injury
+   ("Knee"), `status` how it stands, and a return date is the thing a
+   manager actually wants. Every part is optional, because a feed that
+   stopped sending one should cost that clause and nothing else. */
+const ukDate = (value) => {
+  const t = Date.parse(noteText(value));
+  if (!Number.isFinite(t)) return '';
+  try { return new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); }
+  catch (_) { return ''; }
+};
+
+export function injuryNote(details) {
+  const direct = noteText(details);
+  if (direct) return direct;                      /* a feed that sends prose */
+  if (!details || typeof details !== 'object') return '';
+
+  const type = noteText(details.type);
+  const status = noteText(details.status);
+  const back = ukDate(details.expectedEndDate) || ukDate(details.endDate);
+
+  /* "Knee" on its own is a body part, not a sentence. */
+  const head = type ? (/injur|strain|knock|illness|surgery/i.test(type) ? type : type + ' injury') : status;
+  if (!head) return back ? 'Expected back ' + back : '';
+  return back ? head + ', expected back ' + back : head;
+}
+
 /* Is there anything here at all? An empty string, an empty object and an
    empty list all mean "nothing reported"; anything else means the feed is
    telling us something, even when we cannot read it. */
@@ -552,7 +583,7 @@ export function mapOfficialPlayers(players, clubsById) {
        not describe as AVAILABLE, which is the one direction this must
        never fail in: an injury we cannot put into words is still an
        injury, and the model discounts him for it either way. */
-    const injury = noteText(p.injuryDetails).trim();
+    const injury = injuryNote(p.injuryDetails).trim();
     const injured = injury !== '' || hasContent(p.injuryDetails);
     return normalisePlayer({
       id: String(p.id),

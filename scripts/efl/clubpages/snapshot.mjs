@@ -160,9 +160,16 @@ export async function loadClubSnapshot(deps = {}) {
     const sample = ((documents && documents.players) || []).find((p) => p && p.injuryDetails
       && typeof p.injuryDetails === 'object' && Object.keys(p.injuryDetails).length);
     if (sample) {
-      snap.diagnostics = { injuryDetailsKeys: Object.keys(sample.injuryDetails).sort() };
+      /* The keys answered "where is the text"; the status vocabulary
+         answers "is this man injured or merely doubtful", which is worth
+         far more to the model than the sentence is. Both are recorded. */
+      const statuses = [...new Set(((documents && documents.players) || [])
+        .map((p) => p && p.injuryDetails && p.injuryDetails.status)
+        .filter((v) => typeof v === 'string' && v.trim()))].sort().slice(0, 12);
+      snap.diagnostics = { injuryDetailsKeys: Object.keys(sample.injuryDetails).sort(), injuryStatuses: statuses };
       console.log(`· ${unavailable.length} players are flagged injured and none carries a readable note. `
-        + `injuryDetails keys: ${snap.diagnostics.injuryDetailsKeys.join(', ')}`);
+        + `injuryDetails keys: ${snap.diagnostics.injuryDetailsKeys.join(', ')}`
+        + (statuses.length ? ` | status values: ${statuses.join(', ')}` : ''));
     }
   }
 
