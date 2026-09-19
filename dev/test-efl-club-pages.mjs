@@ -102,6 +102,52 @@ section('the body carries this club\'s own football');
     'a different club gets different players, which is what stops these being doorway pages');
 }
 
+section('the page never publishes a number the feed did not give it');
+{
+  /* Both of these shipped in the first real snapshot and were caught by
+     looking at it: early in a season the feed serves 0 points and 0 played
+     for all 72 clubs, and four stat tiles reading 0 look like a broken page
+     rather than an honest one. */
+  const base = snap.clubs[0];
+  const early = renderAll({ ...snap, clubs: [{ ...base, slug: 'early', played: 0, points: 0 }] }).get(BASE + 'early/');
+  ok(!/stat-l">Points/.test(early), 'with nothing played, no points tile');
+  ok(!/stat-l">Played/.test(early), 'and no played tile');
+  ok(/stat-l">Club rating/.test(early) && /stat-l">League position/.test(early),
+    'the rating and the position are real either way, so they stay');
+
+  const later = renderAll({ ...snap, clubs: [{ ...base, slug: 'later', played: 12, points: 20 }] }).get(BASE + 'later/');
+  ok(/stat-l">Points/.test(later) && later.includes('>20<'), 'once the season is under way the table is shown');
+}
+
+section('the division reads correctly wherever it appears');
+{
+  /* The model calls it "the Championship", which is right in a sentence and
+     wrong the moment an article is already there. "the the Championship"
+     shipped in the first render of the real data. */
+  let doubled = 0;
+  for (const [, html] of pages) if (/\bthe the\b/i.test(html)) doubled++;
+  ok(doubled === 0, 'no page says "the the Championship"');
+  const champ = snap.clubs.find((c) => /Champ/.test(c.divisionName));
+  if (champ) {
+    const html = pages.get(BASE + champ.slug + '/');
+    ok(/sit \w+ in the Championship/.test(html), 'the lede keeps the article, because a sentence needs it');
+    ok(/the Championship side/.test(html), 'and the description drops the duplicate rather than the word');
+  }
+}
+
+section('a stale snapshot cannot put "[object Object]" on a public page');
+{
+  const base = snap.clubs.find((c) => c.players.length);
+  const stale = renderAll({ ...snap, clubs: [{ ...base, slug: 'stale',
+    unavailable: [{ name: 'J. Key', position: 'DEF', status: 'injured', news: '[object Object]' }] }] }).get(BASE + 'stale/');
+  ok(!/\[object Object\]/.test(stale), 'the literal is dropped rather than printed');
+  ok(/J\. Key/.test(stale) && /injured/.test(stale), 'the player and the status still show, because those are real');
+
+  const good = renderAll({ ...snap, clubs: [{ ...base, slug: 'good',
+    unavailable: [{ name: 'J. Key', position: 'DEF', status: 'injured', news: 'Hamstring, out three weeks' }] }] }).get(BASE + 'good/');
+  ok(/Hamstring, out three weeks/.test(good), 'a real note is still printed');
+}
+
 section('the things a public page must always carry');
 {
   let noDisclaimer = 0, noViewport = 0, noSkip = 0, noLang = 0;

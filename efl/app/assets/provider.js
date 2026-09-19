@@ -120,12 +120,38 @@ export function readConfig(win) {
 const num = (v, fallback = 0) => (Number.isFinite(Number(v)) ? Number(v) : fallback);
 const str = (v, fallback = '') => (v == null ? fallback : String(v));
 
+/* The note is the one field the feed sends as an OBJECT. `str()` turns
+   that into the literal text "[object Object]", which the app then showed
+   in an availability tooltip and, once there were public club pages, in
+   body text on seventy-two of them. Nobody caught it for the same reason:
+   a tooltip is not somewhere anyone looks.
+
+   So a note that is not a string is not trusted to stringify. The common
+   text keys are tried in turn and, failing all of them, the note is empty
+   — which every caller already handles, because a feed that reports no
+   reason is the ordinary case. Never "[object Object]". */
+const NOTE_KEYS = ['note', 'description', 'reason', 'text', 'detail', 'title', 'label', 'name'];
+function noteText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map(noteText).filter(Boolean).join('. ');
+  if (typeof value === 'object') {
+    for (const key of NOTE_KEYS) {
+      const inner = noteText(value[key]);
+      if (inner) return inner;
+    }
+  }
+  return '';
+}
+
 export function normaliseAvailability(raw) {
   const src = raw || {};
   const status = VALID_STATUSES.has(src.status) ? src.status : 'available';
   const chance = src.chancePlaying == null || src.chancePlaying === ''
     ? null : Math.max(0, Math.min(100, num(src.chancePlaying, 0)));
-  return { status, note: str(src.note, status === 'available' ? 'No reported issue' : ''), chancePlaying: chance };
+  const note = noteText(src.note) || (status === 'available' ? 'No reported issue' : '');
+  return { status, note, chancePlaying: chance };
 }
 
 export function normaliseClub(raw) {

@@ -31,6 +31,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import assert from 'node:assert/strict';
+import * as model_provider from '../efl/app/assets/provider.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APP = join(ROOT, 'efl', 'app');
@@ -758,6 +759,27 @@ ok('the one-club chip lifts the club limit and never scores worse', () => {
   assert.ok(chipped, 'no squad was built with the chip');
   assert.ok(chipped.total >= normal.total - 1e-9,
     'lifting a constraint cannot produce a worse best squad');
+});
+
+ok('an availability note is never the words "[object Object]"', () => {
+  /* The live feed sends this field as an OBJECT. str() turned it into the
+     literal "[object Object]", which the app showed in a tooltip nobody
+     reads and the public club pages then showed in body text on 72 of
+     them. The provider is the seam a feed plugs into, so this is where it
+     is caught. */
+  const note = (raw) => model_provider.normaliseAvailability(raw).note;
+  assert.equal(note({ status: 'injured', note: 'Hamstring' }), 'Hamstring', 'a string is passed through');
+  assert.equal(note({ status: 'injured', note: { description: 'Knee ligament damage', id: 9 } }), 'Knee ligament damage',
+    'an object is read for its text rather than stringified');
+  assert.equal(note({ status: 'injured', note: { reason: 'Knock' } }), 'Knock', 'under any of the usual keys');
+  assert.equal(note({ status: 'injured', note: [{ text: 'Calf' }, { text: 'Out until October' }] }), 'Calf. Out until October',
+    'a list is joined rather than stringified');
+  assert.equal(note({ status: 'injured', note: { id: 9, code: 'INJ' } }), '',
+    'an object with no text in it reports nothing, which every caller already handles');
+  assert.equal(note({ status: 'available' }), 'No reported issue', 'an available player still gets the usual line');
+  for (const raw of [{ status: 'injured', note: {} }, { status: 'injured', note: { a: { b: {} } } }, { status: 'injured', note: 0 }]) {
+    assert.ok(!/\[object Object\]/.test(note(raw)), 'never the literal "[object Object]", whatever the feed sends');
+  }
 });
 
 /* ── Your own seven ───────────────────────────────────

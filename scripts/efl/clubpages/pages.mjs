@@ -42,6 +42,18 @@ const ordinal = (n) => {
 
 const fdr = (d) => '<span class="fdr fdr-' + d + '" title="Modelled difficulty ' + d + ' of 5">' + d + '</span>';
 
+/* The model names the Championship "the Championship", which reads correctly
+   in a sentence ("sit 4th in the Championship") and reads as "the the
+   Championship" the moment an article is already there. Both forms are
+   needed, so both exist rather than one being bent to cover the other. */
+const bareDivision = (name) => String(name || '').replace(/^the\s+/i, '');
+
+/* The provider now reads a real sentence out of the feed's note object
+   (normaliseAvailability), but a snapshot committed before that fix still
+   carries the literal "[object Object]", and this renderer reads whatever
+   is committed. Saying nothing is always better than saying that. */
+const noteOf = (p) => (/^\[object\b/.test(String(p.news || '')) ? '' : p.news);
+
 function frame({ title, desc, path, h1, lede, body, snap, jsonld }) {
   const url = SITE + path;
   const crumbs = {
@@ -101,7 +113,7 @@ function clubStrip(snap, currentSlug) {
     byDivision.get(c.divisionName).push(c);
   }
   return [...byDivision.entries()].map(([division, list]) => '<div class="card"><p class="card-title">'
-    + esc(division) + ', best rated first</p><ul class="list inline">'
+    + esc(bareDivision(division)) + ', best rated first</p><ul class="list inline">'
     + list.map((c) => (c.slug === currentSlug
       ? '<li><b>' + esc(c.name) + '</b></li>'
       : '<li><a href="' + BASE + c.slug + '/">' + esc(c.name) + '</a></li>')).join('')
@@ -149,7 +161,7 @@ function riskCard(club) {
   const out = club.unavailable.length
     ? '<p class="card-title">Unavailable</p><ul class="list">' + club.unavailable.map((p) => '<li>' + esc(p.name)
       + ' <span class="badge badge-red">' + esc(p.status) + '</span>'
-      + (p.news ? ' <span class="muted">' + esc(p.news) + '</span>' : '') + '</li>').join('') + '</ul>'
+      + (noteOf(p) ? ' <span class="muted">' + esc(noteOf(p)) + '</span>' : '') + '</li>').join('') + '</ul>'
     : '';
   const cards = club.cardRisk.length
     ? '<p class="card-title" style="margin-top:14px">One booking from a ban</p><ul class="list">'
@@ -162,11 +174,18 @@ function riskCard(club) {
 export function pageClub(snap, club) {
   const where = ordinal(club.position) + ' in ' + club.divisionName;
   const best = club.players[0];
+  /* Points and played are only shown when the feed actually published
+     them. Early in a season it serves zeroes for both, and four tiles
+     reading 0 look like a broken page rather than an honest one — the
+     rating and the position are real either way. */
+  const table = club.played > 0
+    ? '<div class="stat"><div class="stat-l">Points</div><div class="stat-v">' + esc(String(club.points)) + '</div></div>'
+      + '<div class="stat"><div class="stat-l">Played</div><div class="stat-v">' + esc(String(club.played)) + '</div></div>'
+    : '';
   const body = '<div class="card"><div class="grid">'
     + '<div class="stat"><div class="stat-l">Club rating</div><div class="stat-v">' + club.rating.toFixed(1) + '</div></div>'
     + '<div class="stat"><div class="stat-l">League position</div><div class="stat-v">' + esc(ordinal(club.position)) + '</div></div>'
-    + '<div class="stat"><div class="stat-l">Points</div><div class="stat-v">' + esc(String(club.points)) + '</div></div>'
-    + '<div class="stat"><div class="stat-l">Played</div><div class="stat-v">' + esc(String(club.played)) + '</div></div>'
+    + table
     + '</div><p class="muted" style="margin:12px 0 0">' + esc(club.summary) + '</p></div>'
     + fixtureCard(club) + playerCard(club) + riskCard(club)
     + '<div class="card"><p class="card-title">Build a side around them</p><p>The '
@@ -188,7 +207,7 @@ export function pageClub(snap, club) {
   return frame({
     title: club.name + ' Fantasy EFL: ratings, fixtures and players | Gameweek Edge',
     desc: club.name + ' in the official Fantasy EFL game: a modelled club rating, the next fixtures with '
-      + 'difficulty, and the ' + club.divisionName + ' side\'s best-rated players'
+      + 'difficulty, and the ' + bareDivision(club.divisionName) + ' side\'s best-rated players'
       + (best ? ', led by ' + best.name : '') + '. Generated from the official feed.',
     path: BASE + club.slug + '/',
     h1: club.name + ' in Fantasy EFL',
