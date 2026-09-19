@@ -1048,6 +1048,171 @@ export function squadRationale(ctx, squad) {
   return parts.join(', ') + '.';
 }
 
+/* ── Your own seven ──────────────────────────────────────
+   Everything above answers "what is the best side this round". That is not
+   the question a manager with a team actually has. They already own seven
+   players, they are allowed a handful of changes, and what they need is
+   which ONE to change — not a list of seven strangers they cannot afford to
+   move to in a single round.
+
+   So this scores a squad somebody already holds, says whether it is legal,
+   and ranks the single swaps that would raise it most. The official game
+   tells you your score after the fact; nothing tells you this beforehand,
+   because nothing else has a model of the round. */
+
+/** Which formations a set of positions satisfies. Empty means illegal. */
+function matchingFormations(counts) {
+  return FORMATIONS.filter((f) => ['GK', 'DEF', 'MID', 'FWD'].every((p) => (counts[p] || 0) === f[p]));
+}
+
+function positionCounts(records) {
+  const counts = {};
+  for (const r of records) counts[r.player.position] = (counts[r.player.position] || 0) + 1;
+  return counts;
+}
+
+function clubCounts(records) {
+  const counts = {};
+  for (const r of records) counts[r.player.clubId] = (counts[r.player.clubId] || 0) + 1;
+  return counts;
+}
+
+/**
+ * Score a squad the user already owns, and rank the swaps worth making.
+ *
+ * `ids` is whatever the user has saved, in any order and possibly
+ * incomplete — a half-filled side is the normal state of a team being
+ * built, not an error, so it is scored and told what it is missing rather
+ * than refused.
+ *
+ * @param {Object} ctx
+ * @param {string[]} ids
+ * @param {{scored?:Object[], oneClubChip?:boolean, limit?:number}} [opts]
+ */
+export function squadAdvice(ctx, ids, opts = {}) {
+  const scored = opts.scored || ctx.players.map((p) => playerScore(ctx, p));
+  const byId = new Map(scored.map((r) => [r.player.id, r]));
+  const maxPerClub = opts.oneClubChip ? SQUAD_SIZE : MAX_PER_CLUB;
+  const limit = opts.limit == null ? 3 : opts.limit;
+
+  const picks = [];
+  const unknown = [];
+  for (const id of ids || []) {
+    const r = byId.get(id);
+    if (r) picks.push(r); else unknown.push(id);
+  }
+
+  const counts = positionCounts(picks);
+  const clubs = clubCounts(picks);
+  const total = Math.round(picks.reduce((s, r) => s + r.score, 0) * 10) / 10;
+
+  /* Three different kinds of wrong, and a manager can act on each of them
+     differently, so they are reported apart rather than as one "invalid". */
+  const issues = [];
+  if (picks.length !== SQUAD_SIZE) {
+    issues.push(picks.length < SQUAD_SIZE
+      ? `${SQUAD_SIZE - picks.length} more to pick`
+      : `${picks.length - SQUAD_SIZE} too many`);
+  }
+  if (picks.length === SQUAD_SIZE && !matchingFormations(counts).length) {
+    issues.push('that mix of positions is not one of the three legal shapes');
+  }
+  for (const [clubId, n] of Object.entries(clubs)) {
+    if (n > maxPerClub) {
+      const club = ctx.clubById[clubId];
+      issues.push(`${n} from ${(club && club.name) || 'one club'}, and the limit is ${maxPerClub}`);
+    }
+  }
+  const unavailable = picks.filter((r) => r.player.availability.status !== 'available');
+  const blanking = picks.filter((r) => !r.next);
+
+  /* The swaps. One change at a time, because one change is what a manager
+     is deciding: a ranked list of seven replacements they would all have to
+     make together is not advice, it is the ideal side again. */
+  const swaps = [];
+  if (picks.length === SQUAD_SIZE) {
+    const held = new Set(picks.map((r) => r.player.id));
+    const pool = scored
+      .filter((r) => r.next)
+      .filter((r) => r.player.availability.status === 'available')
+      .filter((r) => !held.has(r.player.id))
+      .sort((a, b) => b.score - a.score);
+
+    for (const out of picks) {
+      for (const inc of pool) {
+        if (held.has(inc.player.id)) continue;
+        if (inc.score <= out.score) break;            /* pool is sorted: nothing below helps */
+        const after = picks.filter((r) => r !== out).concat(inc);
+        if (!matchingFormations(positionCounts(after)).length) continue;
+        if (Object.values(clubCounts(after)).some((n) => n > maxPerClub)) continue;
+        swaps.push({
+          out, in: inc,
+          gain: Math.round((inc.score - out.score) * 10) / 10,
+          /* Why this one, in the manager's terms rather than the model's. */
+          reason: swapReason(ctx, out, inc),
+        });
+        break;                                        /* the best legal upgrade for this player */
+      }
+    }
+    swaps.sort((a, b) => b.gain - a.gain);
+  }
+
+  return {
+    picks,
+    unknown,
+    total,
+    count: picks.length,
+    complete: picks.length === SQUAD_SIZE,
+    legal: picks.length === SQUAD_SIZE && !issues.length,
+    issues,
+    formations: matchingFormations(counts).map((f) => f.id),
+    clubCounts: clubs,
+    unavailable,
+    blanking,
+    swaps: swaps.slice(0, limit),
+  };
+}
+
+function swapReason(ctx, out, inc) {
+  if (out.player.availability.status !== 'available') return `${out.player.name} is ${out.player.availability.status}`;
+  if (!out.next) return `${out.player.name} has no fixture this round`;
+  if (inc.double && !out.double) return `${inc.player.name} plays twice this round`;
+  if (out.next && inc.next && inc.next.rating < out.next.rating) {
+    return `${inc.player.name} has the kinder fixture`;
+  }
+  const outShare = playingShare(ctx, out.player).value;
+  const inShare = playingShare(ctx, inc.player).value;
+  if (inShare - outShare > 0.2) return `${inc.player.name} is the more certain starter`;
+  return `${inc.player.name} rates higher on this round's form and fixture`;
+}
+
+const POSITION_ORDER = ['GK', 'DEF', 'MID', 'FWD'];
+
+/* The slots have to follow the squad, not the other way round.
+   A FIXED row of slots (one goalkeeper, three defenders, two midfielders,
+   one forward) silently hides a player the moment the side runs a different
+   legal shape — and because the form is read back from the slots on every
+   change, the hidden player is then DELETED by the next edit. That is how
+   the first version of this lost the second forward out of a 1-2-2-2.
+
+   So: choose whichever legal formation asks the fewest players to be
+   dropped, and then add a slot for anything still left over, so an illegal
+   side is fully visible and fixable rather than quietly trimmed. */
+export function slotLayout(counts) {
+  let best = null;
+  for (const f of FORMATIONS) {
+    const drops = POSITION_ORDER.reduce((n, p) => n + Math.max(0, (counts[p] || 0) - f[p]), 0);
+    const adds = POSITION_ORDER.reduce((n, p) => n + Math.max(0, f[p] - (counts[p] || 0)), 0);
+    if (!best || drops < best.drops || (drops === best.drops && adds < best.adds)) best = { f, drops, adds };
+  }
+  const slots = [];
+  for (const p of POSITION_ORDER) {
+    const n = Math.max(best.f[p], counts[p] || 0);
+    for (let i = 0; i < n; i += 1) slots.push(p);
+  }
+  return slots;
+}
+
 /* ── The Max Captain chip ────────────────────────────────
    The official game gives you two of these a season, one per half. Playing
    it hands the armband, after the fact, to whichever of your seven scores

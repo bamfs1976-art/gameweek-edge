@@ -439,6 +439,47 @@ details.coverage li{margin-bottom:5px}
   font-size:var(--fs-min);color:var(--text-3);
 }
 
+/* ── YOUR SEVEN ──────────────────────────────────────── */
+.mine-grid{
+  display:grid;gap:9px;margin-bottom:11px;
+  grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+}
+.mine-slot{display:flex;flex-direction:column;gap:5px;min-width:0}
+.mine-slot label{
+  font-family:var(--font-display);font-size:var(--fs-min);font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
+}
+.mine-slot select{
+  width:100%;padding:9px;font-family:inherit;font-size:var(--fs-sm);
+  color:var(--text);background:var(--bg);border:1px solid var(--border-2);
+  border-radius:var(--r-md);
+  /* 44px of target on a phone, the same floor the rest of the site keeps. */
+  min-height:44px;
+}
+.mine-slot select:hover{border-color:var(--border-3)}
+.mine-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:11px}
+
+.swaps{display:grid;gap:8px;margin-top:11px}
+.swap{
+  padding:10px 12px;border:1px solid var(--border-2);border-radius:var(--r-lg);
+  background:var(--surface);border-left:3px solid var(--border-3);
+}
+/* The best change is the one a manager came for, so it is the one that
+   looks different. The rest are alternatives, not a to-do list. */
+.swap-top{border-left-color:var(--efl);background:var(--surface-3)}
+.swap-move{
+  margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;
+  font-size:var(--fs-sm);
+}
+.swap-out{color:var(--text-3);text-decoration:line-through}
+.swap-arrow{color:var(--text-3)}
+.swap-in{font-weight:700;color:var(--text)}
+.swap-gain{
+  margin-left:auto;font-family:var(--font-mono);font-weight:700;
+  font-size:var(--fs-sm);color:var(--green);
+}
+.swap-why{margin:5px 0 0;font-size:var(--fs-min);color:var(--text-2)}
+
 /* ── FILTERS ─────────────────────────────────────────── */
 .filters{
   display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));

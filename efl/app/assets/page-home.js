@@ -7,7 +7,7 @@
 import { loadSnapshot } from './provider.js';
 import {
   buildContext, roundPicks, runSummary, ordinal, buildSquad, squadRationale, playerScore,
-  maxCaptainRead
+  maxCaptainRead, squadAdvice, slotLayout
 } from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
@@ -41,10 +41,12 @@ async function start() {
     scoredPlayers = ctx.players.map((p) => playerScore(ctx, p));
     renderPicks(ctx);
     renderSquad();
+    renderMine();
     renderSnapshot(ctx);
   } catch (err) {
     mount('picks-grid', errorState(err, 'retry-picks'));
     mount('squad-body', '');
+    mount('mine-body', '');
     mount('snapshot-body', '');
     const retry = document.getElementById('retry-picks');
     if (retry) retry.addEventListener('click', () => window.location.reload());
@@ -288,6 +290,178 @@ function chipPanel(ctx, squad) {
     <p class="sec-note" style="margin-top:9px">Chip reads are this model's opinion of your
       own seven, not the game's advice. The official game is the authority on how many chips
       you hold and when they reset.</p>`;
+}
+
+/* ── Your seven ─────────────────────────────────────────
+   Seven selects rather than a search box. A search is the obvious build and
+   it is the wrong one here: the game asks for a fixed shape, so the slots
+   ARE the interface, and a native select is the control a phone, a keyboard
+   and a screen reader all already know how to drive. Grouping the options
+   by club is what makes a thousand players navigable — you know which club
+   you are picking from before you know which player. */
+
+const MINE_KEY = 'ge-efl-squad';
+const POSITION_LABEL = { GK: 'Goalkeeper', DEF: 'Defender', MID: 'Midfielder', FWD: 'Forward' };
+
+function loadMine() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(MINE_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter((x) => typeof x === 'string').slice(0, 7) : [];
+  } catch (_) { return []; }           /* private mode, or somebody edited it */
+}
+function saveMine(ids) {
+  try { localStorage.setItem(MINE_KEY, JSON.stringify(ids)); } catch (_) { /* private mode */ }
+}
+
+let mineIds = [];
+
+function playerOptions(ctx, position, selectedId) {
+  const byClub = new Map();
+  for (const p of ctx.players) {
+    if (p.position !== position) continue;
+    const club = ctx.clubById[p.clubId];
+    const key = club ? club.name : 'Other';
+    if (!byClub.has(key)) byClub.set(key, []);
+    byClub.get(key).push(p);
+  }
+  const groups = [...byClub.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return `<option value="">Not picked</option>` + groups.map(([club, list]) => {
+    const opts = list.sort((a, b) => a.name.localeCompare(b.name)).map((p) => {
+      const flag = p.availability.status === 'available' ? '' : ' (' + p.availability.status + ')';
+      return `<option value="${esc(p.id)}"${p.id === selectedId ? ' selected' : ''}>${esc(p.name)}${esc(flag)}</option>`;
+    }).join('');
+    return `<optgroup label="${esc(club)}">${opts}</optgroup>`;
+  }).join('');
+}
+
+function renderMine() {
+  const ctx = context;
+  mineIds = loadMine();
+  const advice = squadAdvice(ctx, mineIds, { scored: scoredPlayers, oneClubChip, limit: 3 });
+  const best = buildSquad(ctx, { scored: scoredPlayers, oneClubChip });
+
+  const filled = advice.picks.map((r) => r.player);
+  const counts = {};
+  for (const p of filled) counts[p.position] = (counts[p.position] || 0) + 1;
+  const used = new Set();
+  const slotValue = (pos) => {
+    const hit = filled.find((p) => p.position === pos && !used.has(p.id));
+    if (hit) used.add(hit.id);
+    return hit ? hit.id : '';
+  };
+  const slots = slotLayout(counts).map((pos, i) => {
+    const id = 'mine-slot-' + i;
+    return `<div class="mine-slot">
+      <label for="${id}">${esc(POSITION_LABEL[pos])}</label>
+      <select id="${id}" data-slot="${i}" data-pos="${pos}">${playerOptions(ctx, pos, slotValue(pos))}</select>
+    </div>`;
+  }).join('');
+
+  const empty = !advice.count;
+  const gap = Math.round((best.total - advice.total) * 10) / 10;
+
+  const verdict = empty
+    ? '<p class="sec-note">Pick your side above and this will rate it, check it against the rules '
+      + 'and tell you the one change worth making.</p>'
+    : `<div class="squad-bar">
+        <span class="sb-stat">Your rating <b>${advice.total.toFixed(1)}</b></span>
+        <span class="sb-stat">Model's best <b>${best.total.toFixed(1)}</b></span>
+        <span class="sb-stat">${advice.complete
+    ? (gap <= 0 ? 'You are level with it' : `<b>${gap.toFixed(1)}</b> behind it`)
+    : `<b>${advice.count}</b> of 7 picked`}</span>
+      </div>`;
+
+  const problems = [];
+  for (const issue of advice.issues) problems.push(issue);
+  for (const r of advice.unavailable) problems.push(`${r.player.name} is ${r.player.availability.status}`);
+  for (const r of advice.blanking) problems.push(`${r.player.name} has no fixture this round`);
+  if (advice.unknown.length) problems.push(`${advice.unknown.length} saved pick(s) are no longer in the game`);
+
+  const problemList = problems.length
+    ? `<div class="chip-card chip-consider" style="margin-top:11px">
+        <p class="chip-head"><span class="chip-name">Worth fixing first</span></p>
+        <ul class="chip-why">${problems.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      </div>`
+    : '';
+
+  let swapBlock = '';
+  if (advice.complete && advice.swaps.length) {
+    swapBlock = `<div class="swaps">${advice.swaps.map((s, i) => `
+      <article class="swap${i === 0 ? ' swap-top' : ''}">
+        <p class="swap-move">
+          <span class="swap-out">${esc(s.out.player.name)}</span>
+          <span class="swap-arrow" aria-hidden="true">→</span>
+          <span class="sr-only">out, replaced by</span>
+          <span class="swap-in">${esc(s.in.player.name)}</span>
+          <span class="swap-gain">+${s.gain.toFixed(1)}</span>
+        </p>
+        <p class="swap-why">${esc(s.reason)}</p>
+      </article>`).join('')}</div>
+      <p class="sec-note" style="margin-top:9px">One change at a time, ranked by what each gains.
+        Every one of these leaves a side the game would accept: the shape stays legal and the
+        two-per-club limit holds.</p>`;
+  } else if (advice.complete && advice.legal) {
+    swapBlock = `<div class="chip-card chip-play" style="margin-top:11px">
+      <p class="chip-head"><span class="chip-name">No change worth making</span>
+        <span class="chip-verdict">Hold</span></p>
+      <p class="chip-say">The model cannot find a single swap that would raise this side. Save your
+        moves for a week that needs them.</p></div>`;
+  }
+
+  const chipRead = advice.complete && advice.legal
+    ? maxCaptainRead(ctx, { picks: advice.picks, captain: advice.picks.reduce((a, b) => (b.score > a.score ? b : a)), clubCounts: advice.clubCounts })
+    : null;
+  const chipBlock = chipRead
+    ? `<div class="chip-card chip-${esc(chipRead.verdict)}" style="margin-top:11px">
+        <p class="chip-head"><span class="chip-name">Max Captain, on your side</span>
+          <span class="chip-verdict">${esc(CHIP_VERDICT_LABEL[chipRead.verdict])}</span></p>
+        <p class="chip-say">${esc(chipRead.summary)}</p>
+        <ul class="chip-why">${chipRead.reasons.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+      </div>`
+    : '';
+
+  mount('mine-body', `
+    <div class="mine-grid">${slots}</div>
+    <div class="mine-actions">
+      <button type="button" class="btn btn-ghost btn-sm" id="mine-copy">Start from the model's seven</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="mine-clear">Clear</button>
+    </div>
+    ${verdict}${problemList}${swapBlock}${chipBlock}`);
+
+  const body = document.getElementById('mine-body');
+  if (!body) return;
+
+  body.querySelectorAll('select[data-slot]').forEach((sel) => {
+    sel.addEventListener('change', () => {
+      const ids = [...body.querySelectorAll('select[data-slot]')].map((s) => s.value).filter(Boolean);
+      /* A player picked into two slots is a slip, not a squad. Keep the
+         first and let the change stand rather than silently reverting it. */
+      saveMine([...new Set(ids)]);
+      const focused = sel.id;
+      renderMine();
+      const again = document.getElementById(focused);
+      if (again) again.focus();
+    });
+  });
+
+  const copy = document.getElementById('mine-copy');
+  if (copy) {
+    copy.addEventListener('click', () => {
+      saveMine(best.picks.map((r) => r.player.id));
+      renderMine();
+      const first = document.querySelector('#mine-body select[data-slot]');
+      if (first) first.focus();
+    });
+  }
+  const clear = document.getElementById('mine-clear');
+  if (clear) {
+    clear.addEventListener('click', () => {
+      saveMine([]);
+      renderMine();
+      const first = document.querySelector('#mine-body select[data-slot]');
+      if (first) first.focus();
+    });
+  }
 }
 
 function squadCard(rec, isCaptain) {
