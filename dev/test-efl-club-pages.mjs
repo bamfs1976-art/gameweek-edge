@@ -218,6 +218,31 @@ section('the loader: the half that talks to the feed, driven with stubs');
     'and the refusal says what it got and what it expected, because this runs unattended');
   ok(MINIMUM_CLUBS > 0 && MINIMUM_CLUBS < 72, 'the floor leaves room for a club being temporarily absent, but not for half the league');
 
+  /* When nothing readable comes back, the loader says what the feed's
+     object actually looked like, so the next fix is informed rather than
+     another guess at the key names. */
+  /* Every unavailable player must have an empty note for the diagnostic to
+     fire: one readable note anywhere means the mapping is working and there
+     is nothing to report. The sample data ships notes, so they are cleared. */
+  const withInjuries = buildSampleSnapshot();
+  let blanked = 0;
+  for (const pl of withInjuries.players) {
+    if (pl.availability && pl.availability.status !== 'available') { pl.availability.note = ''; blanked++; }
+  }
+  ok(blanked > 0, 'the sample data has unavailable players to blank, or this check proves nothing');
+  const diag = await loadClubSnapshot({
+    fetchDocuments: async () => ({ players: [{ id: '1', injuryDetails: { injuryType: 'Knee', expectedReturn: '2026-10-01' } }] }),
+    buildOfficialSnapshot: () => withInjuries,
+  });
+  ok(diag.diagnostics && diag.diagnostics.injuryDetailsKeys.join(',') === 'expectedReturn,injuryType',
+    'an unreadable injury object has its keys reported, rather than being guessed at again');
+
+  const quiet = await loadClubSnapshot({
+    fetchDocuments: async () => ({ players: [] }),
+    buildOfficialSnapshot: () => buildSampleSnapshot(),
+  });
+  ok(!quiet.diagnostics, 'and a feed whose notes read fine says nothing');
+
   let threw = null;
   try { await loadClubSnapshot({ fetchDocuments: async () => { throw new Error('feed answered 503'); } }); } catch (e) { threw = e; }
   ok(threw && /503/.test(threw.message), 'a feed that is down surfaces its own error rather than a stack trace about undefined');

@@ -145,8 +145,26 @@ export async function loadClubSnapshot(deps = {}) {
      itself runs. A second route to the same feed is a second thing to keep
      in step, and this is the one place where "the pages say what the app
      says" is actually enforced. */
-  const snapshot = buildOfficialSnapshot(await fetchDocuments(), { now });
+  const documents = await fetchDocuments();
+  const snapshot = buildOfficialSnapshot(documents, { now });
   const snap = buildClubSnapshot(snapshot, { built: new Date(now).toISOString() });
+
+  /* The feed publishes an injury as an OBJECT, and the keys it uses are not
+     documented anywhere we can read. The mapper tries the usual ones and
+     falls back to flagging the player injured with nothing to say, which is
+     safe but less useful than the real sentence. Rather than guess again,
+     say what the object actually looks like in the log of the run that
+     found it, so the next fix is informed rather than another guess. */
+  const unavailable = snap.clubs.flatMap((c) => c.unavailable);
+  if (unavailable.length && !unavailable.some((u) => u.news)) {
+    const sample = ((documents && documents.players) || []).find((p) => p && p.injuryDetails
+      && typeof p.injuryDetails === 'object' && Object.keys(p.injuryDetails).length);
+    if (sample) {
+      snap.diagnostics = { injuryDetailsKeys: Object.keys(sample.injuryDetails).sort() };
+      console.log(`· ${unavailable.length} players are flagged injured and none carries a readable note. `
+        + `injuryDetails keys: ${snap.diagnostics.injuryDetailsKeys.join(', ')}`);
+    }
+  }
 
   /* A snapshot that lost half the league is not a smaller snapshot, it is a
      broken feed, and writing it would publish 30 pages and silently delete
