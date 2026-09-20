@@ -141,4 +141,86 @@ if (missing.length) {
   process.exit(1);
 }
 
-console.log('check-deps: ' + imports + ' imports across ' + scanned + ' files, all declared');
+/*
+ * Second pass: declared is not the same as INSTALLED.
+ *
+ * The check above treats dependencies and devDependencies alike, which is
+ * right for `npm ci` on a laptop. CI does not run that. It runs
+ * `npm ci --omit=dev`, deliberately, so the heavy devDependencies
+ * (playwright, sharp, ffmpeg-static) cost seconds rather than minutes.
+ *
+ * That makes a second, unwritten contract: everything `npm test` imports
+ * has to be a RUNTIME dependency, or it has to cope with being absent.
+ * Nothing enforced it, so moving esbuild's import into dev/test-mcp.mjs
+ * turned CI red on main for four consecutive pushes while every local run
+ * stayed green — the same shape as the four-day Daily Content failure this
+ * file was written for, one square along: declared, and still missing.
+ *
+ * A devDependency may be imported by the suite on one condition: the file
+ * skips cleanly when it is not installed. The browser tests have done this
+ * from the start. The allowlist is explicit so that adding a new one is a
+ * decision somebody makes, not a default they fall into.
+ */
+const SKIPPABLE = new Set([
+  /* Browser tests. Real Chromium, ~300MB with the download, and the
+     assertions are about rendering rather than about anything CI can
+     usefully prove without a browser. Each one exits 0 with a "skipped"
+     line when playwright is missing. */
+  'playwright'
+]);
+
+const runtime = new Set(Object.keys(pkg.dependencies || {}));
+const devOnly = new Set(Object.keys(pkg.devDependencies || {}).filter((d) => !runtime.has(d)));
+
+/* The suite as the CI step actually invokes it: `node <file>` out of the
+   test script, so this cannot drift from what runs. */
+const testFiles = [...String((pkg.scripts || {}).test || '').matchAll(/node\s+(\S+\.mjs)/g)]
+  .map((m) => m[1])
+  .filter((f) => f !== 'scripts/check-deps.mjs');   /* its fixtures below are literal imports */
+
+if (!testFiles.length) {
+  console.error('✗ check-deps could not read any `node <file>` out of the test script.');
+  process.exit(1);
+}
+
+const unguarded = [];
+for (const rel of testFiles) {
+  let raw;
+  try { raw = readFileSync(join(ROOT, rel), 'utf8'); }
+  catch (_) {
+    console.error('✗ npm test runs ' + rel + ', which does not exist.');
+    process.exit(1);
+  }
+  const src = stripComments(raw);
+  const seen = new Set();
+  let m;
+  IMPORT.lastIndex = 0;
+  while ((m = IMPORT.exec(src))) {
+    const spec = m[1] || m[2] || m[3];
+    if (!spec || spec.startsWith('.') || spec.startsWith('/') || spec.startsWith('node:')) continue;
+    const name = spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0];
+    if (builtin.has(name) || runtime.has(name) || seen.has(name)) continue;
+    seen.add(name);
+    if (!devOnly.has(name)) continue;
+    /* Allowlisted, but the allowance is for skipping — so it has to skip.
+       A file that imports playwright and then throws is no better under
+       --omit=dev than one that never handled it at all. */
+    const skips = SKIPPABLE.has(name) && /catch/.test(src) && /skipped/.test(raw) && /process\.exit\(0\)/.test(src);
+    if (!skips) unguarded.push({ rel, name, allowed: SKIPPABLE.has(name) });
+  }
+}
+
+if (unguarded.length) {
+  console.error('✗ npm test imports devDependencies that CI will not have:\n');
+  for (const { rel, name, allowed } of unguarded) {
+    console.error('  ' + name + '  ← ' + rel +
+      (allowed ? '   (allowlisted, but this file does not skip when it is missing)' : ''));
+  }
+  console.error('\nCI installs with `npm ci --omit=dev`, so a devDependency is absent there.\n' +
+    'Either move the package to "dependencies", or make the file exit 0 with a\n' +
+    '"skipped" line when the import fails, and add it to SKIPPABLE.');
+  process.exit(1);
+}
+
+console.log('check-deps: ' + imports + ' imports across ' + scanned + ' files, all declared;\n' +
+  '            ' + testFiles.length + ' suite files import nothing CI omits');
