@@ -1,12 +1,12 @@
 {
- "built": "2026-09-20T04:55:40.636Z",
+ "built": "2026-09-20T11:26:26.210Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-20T04:55:40.636Z",
+  "generatedAt": "2026-09-20T11:26:26.210Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -842,10 +842,10 @@
     {
      "name": "I. Price",
      "position": "MID",
-     "rating": 78,
+     "rating": 78.4,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 2 goals and 1 assist."
+     "summary": "Started 8 of 8 (100%), 2 goals and 1 assist."
     },
     {
      "name": "J. Morgan",
@@ -853,7 +853,7 @@
      "rating": 76.1,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), playing at home."
+     "summary": "Started 8 of 8 (100%), playing at home."
     },
     {
      "name": "C. Styles",
@@ -861,15 +861,15 @@
      "rating": 75,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 2 goals and 0 assists."
+     "summary": "Started 8 of 8 (100%), 2 goals and 0 assists."
     },
     {
      "name": "M. O'Leary",
      "position": "GK",
-     "rating": 72.6,
+     "rating": 73.4,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
      "name": "O. Diakité",
@@ -877,15 +877,15 @@
      "rating": 72.2,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "N. Phillips",
-     "position": "DEF",
-     "rating": 69.9,
+     "name": "J. Molumby",
+     "position": "MID",
+     "rating": 70.2,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -6534,7 +6534,7 @@
      "rating": 62.3,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "M. Munetsi",
@@ -6542,15 +6542,15 @@
      "rating": 61.6,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "André",
      "position": "MID",
-     "rating": 60.9,
+     "rating": 61.6,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "F. López",
@@ -6558,23 +6558,23 @@
      "rating": 60.8,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), 3 goals and 2 assists."
+     "summary": "Started 7 of 7 (100%), 3 goals and 2 assists."
     },
     {
-     "name": "J. Tchatchoua",
-     "position": "DEF",
-     "rating": 59,
+     "name": "J. Sá",
+     "position": "GK",
+     "rating": 55.4,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 86,
+     "summary": "Started 6 of 7 (86%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "T. Doyle",
-     "position": "MID",
-     "rating": 57.5,
+     "name": "M. Mané",
+     "position": "FWD",
+     "rating": 55.3,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
