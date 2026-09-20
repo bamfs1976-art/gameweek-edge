@@ -148,6 +148,38 @@ const ukDate = (value) => {
   catch (_) { return ''; }
 };
 
+/* The feed's injury STATUS vocabulary, which was not documented anywhere
+   we could read and is not guessed at here either: the club-page job
+   reported it from the live feed as
+       "1 | Questionable (50%)"   and   "2 | Out (0%)"
+   an id, a label and a chance of playing.
+
+   This matters more than the sentence does. Everything carrying an injury
+   object was being mapped to "injured", which the model multiplies by 0.12;
+   a player the feed calls Questionable at 50% belongs on "doubtful" and
+   0.72. Treating the two alike writes off players who are expected to
+   start.
+
+   Matched on the LABEL rather than the id, because an id is a number whose
+   meaning we would be assuming; a label that stops matching falls back to
+   injured, which is the safe direction. */
+const INJURY_STATUS = [
+  { test: /questionable|doubt|probable|knock/i, status: 'doubtful' },
+  { test: /out|unavailable|ruled/i, status: 'injured' },
+  { test: /suspend|ban/i, status: 'suspended' },
+];
+
+export function injuryStatus(details) {
+  const raw = details && typeof details === 'object' ? noteText(details.status) : '';
+  if (!raw) return { status: 'injured', chancePlaying: null };
+  const hit = INJURY_STATUS.find((r) => r.test.test(raw));
+  /* "(50%)" is the feed's own read on whether he plays, and the app already
+     has a field for it. */
+  const pct = /(\d{1,3})\s*%/.exec(raw);
+  const chance = pct ? Math.max(0, Math.min(100, Number(pct[1]))) : null;
+  return { status: hit ? hit.status : 'injured', chancePlaying: chance };
+}
+
 export function injuryNote(details) {
   const direct = noteText(details);
   if (direct) return direct;                      /* a feed that sends prose */
@@ -617,7 +649,10 @@ export function mapOfficialPlayers(players, clubsById) {
       },
       last5: [],
       availability: injured
-        ? { status: 'injured', note: injury, chancePlaying: 0 }
+        ? (() => {
+          const { status, chancePlaying } = injuryStatus(p.injuryDetails);
+          return { status, note: injury, chancePlaying: chancePlaying == null ? 0 : chancePlaying };
+        })()
         : { status: 'available', note: 'No reported issue', chancePlaying: 100 },
       ownership: null
     });

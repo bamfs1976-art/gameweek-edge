@@ -781,6 +781,38 @@ ok('the injury note is built from the shape the live feed actually sends', () =>
     'an unparseable date costs its clause and nothing else');
 });
 
+ok('the feed\'s injury status decides doubtful from out, on values it actually sends', () => {
+  /* Not guessed. The club-page job reported the live vocabulary:
+     "1 | Questionable (50%)" and "2 | Out (0%)". Everything carrying an
+     injury object was being mapped to injured (0.12 on the multiplier);
+     a player the feed calls Questionable at 50% belongs on doubtful
+     (0.72), and treating the two alike writes off players expected to
+     start. */
+  const squads = [{ id: '1', name: 'C', shortName: 'C', competitionId: '1' }];
+  const byId = Object.fromEntries(model_provider.mapOfficialSquads(squads, model_provider.mapCompetitions(squads)).map((c) => [c.id, c]));
+  const avail = (injuryDetails) => model_provider.mapOfficialPlayers(
+    [{ id: '9', displayName: 'P', squadId: '1', position: 'D', appearances: 5, injuryDetails }], byId)[0].availability;
+
+  const q = avail({ status: '1 | Questionable (50%)', type: 'Knee' });
+  assert.equal(q.status, 'doubtful', 'Questionable is a doubt, not a write-off');
+  assert.equal(q.chancePlaying, 50, 'and the feed\'s own percentage is kept rather than thrown away');
+
+  const out = avail({ status: '2 | Out (0%)', type: 'ACL Knee Injury' });
+  assert.equal(out.status, 'injured');
+  assert.equal(out.chancePlaying, 0);
+
+  /* Matched on the LABEL, because the id is a number whose meaning we would
+     be assuming. A label that stops matching falls back to injured, which
+     is the safe direction. */
+  assert.equal(avail({ status: '9 | Something New', type: 'Calf' }).status, 'injured',
+    'a status nobody has seen before is treated as injured, not as available');
+  assert.equal(avail({ type: 'Calf' }).status, 'injured', 'and so is an injury with no status at all');
+  assert.equal(avail(null).status, 'available', 'while no injury is still no injury');
+
+  assert.equal(model_provider.injuryStatus({ status: 'Suspended' }).status, 'suspended',
+    'a suspension is its own thing, not an injury');
+});
+
 ok('an injury the feed cannot describe still counts as an injury', () => {
   /* The first fix read the text and then tested it, which marked a player
      carrying an injuryDetails object with no readable text as AVAILABLE.
@@ -846,27 +878,42 @@ ok('a feed with no table, no goals and one form string for everyone is called ou
   assert.equal(sig.form, false, 'every club showing WWW is a placeholder, not a league everybody won');
   assert.equal(sig.goals, false);
   assert.deepEqual(sig.missing, ['league tables', 'recent form', 'goals scored and conceded']);
-  assert.ok(/provisional/.test(sig.note), 'and the note says how to read the numbers, not just that they are thin');
+  assert.ok(/home advantage alone/.test(sig.note), 'and the note says what is left driving the number');
 });
 
-ok('any one real input is enough to stop calling it uninformative', () => {
+ok('the club rating and the fixture scale are judged apart', () => {
+  /* The first version ran them together and got the live feed wrong. The
+     club rating leans on form (0.28); fixture difficulty never sees form
+     at all — it is the opponent's points per game (0.50), defence (0.28)
+     and attack (0.22), all of which come from the table or the goals. So a
+     feed publishing form and nothing else, which is what the live one does,
+     gives real club ratings and a difficulty scale that cannot move. */
+  const formOnly = flatClubs();
+  formOnly.clubs.forEach((c, i) => { c.form = [['W'], ['L'], ['D', 'W'], ['L', 'L']][i % 4]; });
+  const sig = model.clubSignal(formOnly);
+  assert.equal(sig.form, true, 'form that varies between clubs is signal');
+  assert.equal(sig.informative, true, 'so the club rating has something to say');
+  assert.equal(sig.difficultyInformative, false, 'but fixture difficulty still has nothing to separate opponents with');
+  assert.ok(sig.note, 'and the caveat stays, because the thing it explains is still happening');
+  assert.ok(/points per game/.test(sig.note), 'naming the inputs that are missing rather than waving at them');
+});
+
+ok('a table or goals is what clears the fixture caveat', () => {
   const withTable = flatClubs();
   withTable.clubs[0].played = 6;
-  assert.equal(model.clubSignal(withTable).informative, true, 'a played count is signal');
+  assert.equal(model.clubSignal(withTable).difficultyInformative, true, 'a played count feeds points per game');
   assert.equal(model.clubSignal(withTable).note, '', 'and the caveat goes away with it');
-
-  const withForm = flatClubs();
-  withForm.clubs[0].form = ['L', 'D', 'W'];
-  assert.equal(model.clubSignal(withForm).form, true, 'form that varies between clubs is signal');
 
   const withGoals = flatClubs();
   withGoals.clubs[0].last5.goalsFor = 4;
-  assert.equal(model.clubSignal(withGoals).goals, true, 'goals anywhere are signal');
+  assert.equal(model.clubSignal(withGoals).goals, true, 'goals feed attack and defence');
+  assert.equal(model.clubSignal(withGoals).difficultyInformative, true);
 });
 
 ok('the real sample dataset reads as informative, so the gate is not always-on', () => {
   const sig = model.clubSignal(ctx);
   assert.equal(sig.informative, true, 'a generated league with a real table must not trip the caveat');
+  assert.equal(sig.difficultyInformative, true);
   assert.equal(sig.note, '');
 });
 

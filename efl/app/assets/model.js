@@ -904,15 +904,27 @@ export function clubSignal(ctx) {
   if (!form) missing.push('recent form');
   if (!goals) missing.push('goals scored and conceded');
 
+  /* Two different claims, and the first version ran them together.
+     The CLUB RATING leans on form (0.28) as well as the table, so a varying
+     form string is enough to separate clubs. FIXTURE DIFFICULTY does not
+     see form at all: it is the opponent's points per game (0.50), their
+     defence (0.28) and their attack (0.22), every one of which comes from
+     the table or the goals. So a feed publishing form and nothing else
+     gives real club ratings and a difficulty scale that cannot move.
+     Measured: form varies across all 72 clubs, and difficulty still
+     returned nothing but 3s and 4s. */
   const informative = table || form || goals;
-  const note = informative
-    ? ''
-    : 'The official feed is not yet publishing ' + missing.join(', ')
-      + ' this season, so every club looks alike on those inputs. Club ratings and '
-      + 'fixture difficulty are currently driven by the fixture list and home advantage '
-      + 'alone, and should be read as provisional rather than as a settled view.';
+  const difficultyInformative = table || goals;
 
-  return { table, form, goals, informative, missing, note };
+  const note = difficultyInformative
+    ? ''
+    : 'The official feed is not yet publishing ' + missing.join(' or ')
+      + ' this season. Fixture difficulty is built from the opponent\'s points per game, '
+      + 'attack and defence, so with none of those published it cannot separate one '
+      + 'opponent from another and is currently driven by home advantage alone. The club '
+      + 'and player ratings still read recent form, so they carry more than this does.';
+
+  return { table, form, goals, informative, difficultyInformative, missing, note };
 }
 
 /** The difficulty values a set of fixtures actually takes, low to high. */
