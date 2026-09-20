@@ -28970,5 +28970,167 @@
       "3448": 19
     }
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-09-20T16:08:15.448Z",
+    "attribution": "clean",
+    "window": {
+      "lastKickoff": "2026-09-20T12:30:00.000Z",
+      "nextRoundKickoff": "2026-09-26T11:30:00.000Z"
+    },
+    "fixtures": {
+      "played": 36,
+      "total": 36
+    },
+    "pointsField": "totalPoints",
+    "clubBasis": "official-points",
+    "crowdClubs": {
+      "ids": [
+        "21",
+        "80"
+      ],
+      "value": 14
+    },
+    "squad": {
+      "players": [
+        {
+          "id": "220037",
+          "name": "B. Peacock-Farrell",
+          "club": "Blackpool",
+          "position": "GK",
+          "points": 2
+        },
+        {
+          "id": "135715",
+          "name": "K. Tshimanga",
+          "club": "Barnet",
+          "position": "FWD",
+          "points": 12
+        },
+        {
+          "id": "248520",
+          "name": "A. Pressley",
+          "club": "Walsall",
+          "position": "FWD",
+          "points": 0
+        },
+        {
+          "id": "184532",
+          "name": "J. Fitzwater",
+          "club": "Exeter City",
+          "position": "DEF",
+          "points": 10
+        },
+        {
+          "id": "229594",
+          "name": "P. Neumann",
+          "club": "Birmingham City",
+          "position": "DEF",
+          "points": 4
+        },
+        {
+          "id": "220336",
+          "name": "C. Lakin",
+          "club": "Barnet",
+          "position": "MID",
+          "points": 11
+        },
+        {
+          "id": "503000",
+          "name": "J. Kabia",
+          "club": "Leyton Orient",
+          "position": "MID",
+          "points": 3
+        }
+      ],
+      "total": 42,
+      "unresolved": 0,
+      "formation": "1-2-2-2"
+    },
+    "captain": {
+      "id": "135715",
+      "points": 12,
+      "rank": 1,
+      "ties": 1,
+      "wasBest": true,
+      "bestPoints": 12,
+      "bestId": "135715",
+      "foregonePerMultiple": 0,
+      "vsOwnMean": 6
+    },
+    "clubs": {
+      "basis": "official-points",
+      "total": 14,
+      "perClub": [
+        {
+          "id": "19",
+          "value": 5,
+          "outcome": {
+            "played": 1,
+            "wins": 0,
+            "draws": 1,
+            "losses": 0,
+            "goalsFor": 0,
+            "goalsAgainst": 0,
+            "cleanSheets": 1,
+            "leaguePoints": 1
+          }
+        },
+        {
+          "id": "100",
+          "value": 9,
+          "outcome": {
+            "played": 1,
+            "wins": 1,
+            "draws": 0,
+            "losses": 0,
+            "goalsFor": 3,
+            "goalsAgainst": 0,
+            "cleanSheets": 1,
+            "leaguePoints": 3
+          }
+        }
+      ],
+      "fieldMean": 4.305555555555555,
+      "fieldMeanTwo": 8.61111111111111,
+      "bestTwo": 22,
+      "percentile": 0.7291666666666666
+    },
+    "baselines": {
+      "randomMean": 7.95,
+      "randomMedian": 7,
+      "randomSamples": 2000,
+      "percentile": 1,
+      "naive": 48,
+      "ceiling": 109,
+      "ceilingFormation": "1-3-2-1",
+      "fieldMean": 1.1414988814317673,
+      "fieldMeanSeven": 7.990492170022371
+    },
+    "model": {
+      "n": 3576,
+      "rho": 0.6516345649056791,
+      "topDecileLift": 3.5017175828477116,
+      "byPosition": {
+        "GK": {
+          "n": 360,
+          "rho": 0.6117267469708696
+        },
+        "DEF": {
+          "n": 1121,
+          "rho": 0.6454404799268454
+        },
+        "MID": {
+          "n": 1197,
+          "rho": 0.6838682769721459
+        },
+        "FWD": {
+          "n": 898,
+          "rho": 0.662043137857551
+        }
+      }
+    },
+    "universe": {
+      "players": 3576
+    }
+  }
 }
