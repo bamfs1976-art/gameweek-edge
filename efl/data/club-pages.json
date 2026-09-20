@@ -1,12 +1,12 @@
 {
- "built": "2026-09-19T23:07:54.344Z",
+ "built": "2026-09-20T04:06:31.721Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-19T23:07:54.344Z",
+  "generatedAt": "2026-09-20T04:06:31.721Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -19,6 +19,26 @@
     "Divisions were read from the feed's competition ids in order: 10 → Championship (24 clubs), 11 → League One (24 clubs), 12 → League Two (24 clubs). If a club is in the wrong division, that mapping is why."
    ]
   }
+ },
+ "signal": {
+  "table": false,
+  "form": true,
+  "goals": false,
+  "informative": true,
+  "missing": [
+   "league tables",
+   "goals scored and conceded"
+  ],
+  "note": ""
+ },
+ "difficulty": {
+  "values": [
+   3,
+   4
+  ],
+  "min": 3,
+  "max": 4,
+  "full": false
  },
  "clubs": [
   {
@@ -37,7 +57,7 @@
     "W"
    ],
    "rating": 66.1,
-   "summary": "9 points from the last 3, next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "9 points from the last 3, next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -174,7 +194,7 @@
     "W"
    ],
    "rating": 66.1,
-   "summary": "9 points from the last 3, next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "9 points from the last 3, next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -323,7 +343,7 @@
     "W"
    ],
    "rating": 61.9,
-   "summary": "9 points from the last 3, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "9 points from the last 3, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -496,7 +516,7 @@
     "D"
    ],
    "rating": 59.1,
-   "summary": "7 points from the last 3, next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "7 points from the last 3, next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -593,7 +613,7 @@
     {
      "name": "C. Hazard",
      "position": "GK",
-     "rating": 70.5,
+     "rating": 71.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -633,7 +653,7 @@
     "W"
    ],
    "rating": 57,
-   "summary": "7 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "7 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -699,7 +719,7 @@
     {
      "name": "M. Solomon",
      "position": "MID",
-     "rating": 75.9,
+     "rating": 76.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 2 assists."
@@ -707,7 +727,7 @@
     {
      "name": "M. Kanté",
      "position": "MID",
-     "rating": 74.9,
+     "rating": 75.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 3 goals and 1 assist."
@@ -739,22 +759,10 @@
    ],
    "unavailable": [
     {
-     "name": "J. Veltman",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 20 Sept"
-    },
-    {
      "name": "T. Soucek",
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury, expected back 10 Oct"
-    },
-    {
-     "name": "A. Areola",
-     "position": "GK",
-     "status": "injured",
-     "news": "Dead Leg injury, expected back 20 Sept"
     }
    ],
    "cardRisk": []
@@ -775,7 +783,7 @@
     "W"
    ],
    "rating": 57,
-   "summary": "7 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "7 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -833,7 +841,7 @@
     {
      "name": "I. Price",
      "position": "MID",
-     "rating": 77.5,
+     "rating": 78,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 2 goals and 1 assist."
@@ -849,7 +857,7 @@
     {
      "name": "C. Styles",
      "position": "MID",
-     "rating": 74.5,
+     "rating": 75,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 2 goals and 0 assists."
@@ -865,7 +873,7 @@
     {
      "name": "O. Diakité",
      "position": "MID",
-     "rating": 71.9,
+     "rating": 72.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -911,7 +919,7 @@
     "D"
    ],
    "rating": 57,
-   "summary": "7 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "7 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -969,7 +977,7 @@
     {
      "name": "E. Galbraith",
      "position": "MID",
-     "rating": 68.8,
+     "rating": 70.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 3 goals and 1 assist."
@@ -985,15 +993,15 @@
     {
      "name": "V. Johansson",
      "position": "GK",
-     "rating": 65.4,
+     "rating": 66.2,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), 2 clean sheets."
     },
     {
      "name": "B. Wilmot",
      "position": "DEF",
-     "rating": 60.8,
+     "rating": 60.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -1001,7 +1009,7 @@
     {
      "name": "D. Soumaré",
      "position": "MID",
-     "rating": 59.6,
+     "rating": 59.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -1053,7 +1061,7 @@
     "D"
    ],
    "rating": 55.7,
-   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -1196,7 +1204,7 @@
     "D"
    ],
    "rating": 55.7,
-   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -1375,7 +1383,7 @@
     "D"
    ],
    "rating": 55.7,
-   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -1536,7 +1544,7 @@
     "W"
    ],
    "rating": 55.7,
-   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -1641,7 +1649,7 @@
     {
      "name": "J. Grant",
      "position": "MID",
-     "rating": 54.7,
+     "rating": 54.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -1673,7 +1681,7 @@
     "W"
    ],
    "rating": 55.6,
-   "summary": "6 points from the last 3 — steady, next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "6 points from the last 3 — steady, next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -1816,7 +1824,7 @@
     "W"
    ],
    "rating": 54.9,
-   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "7 points from the last 3, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -1989,7 +1997,7 @@
     "D"
    ],
    "rating": 53.7,
-   "summary": "5 points from the last 3 — steady, next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "5 points from the last 3 — steady, next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -2126,7 +2134,7 @@
     "W"
    ],
    "rating": 52.3,
-   "summary": "6 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "6 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -2200,7 +2208,7 @@
     {
      "name": "L. Scienza",
      "position": "MID",
-     "rating": 75.2,
+     "rating": 75.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 2 assists."
@@ -2208,7 +2216,7 @@
     {
      "name": "F. Downes",
      "position": "MID",
-     "rating": 73.9,
+     "rating": 74.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 0 goals and 2 assists."
@@ -2216,7 +2224,7 @@
     {
      "name": "K. Matsuki",
      "position": "MID",
-     "rating": 71.9,
+     "rating": 72.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -2224,7 +2232,7 @@
     {
      "name": "J. Ward-Prowse",
      "position": "MID",
-     "rating": 71.2,
+     "rating": 71.6,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), 1 goal and 2 assists."
@@ -2262,7 +2270,7 @@
     "W"
    ],
    "rating": 52.3,
-   "summary": "6 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "6 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -2320,7 +2328,7 @@
     {
      "name": "A. Brooks",
      "position": "MID",
-     "rating": 68.5,
+     "rating": 69.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 2 goals and 2 assists."
@@ -2328,7 +2336,7 @@
     {
      "name": "P. Mattsson",
      "position": "MID",
-     "rating": 65.5,
+     "rating": 66,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 0 goals and 1 assist."
@@ -2336,7 +2344,7 @@
     {
      "name": "K. McLean",
      "position": "MID",
-     "rating": 62.6,
+     "rating": 63,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 0 goals and 0 assists."
@@ -2404,7 +2412,7 @@
     "L"
    ],
    "rating": 52.3,
-   "summary": "6 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "6 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -2478,7 +2486,7 @@
     {
      "name": "M. Yeo",
      "position": "MID",
-     "rating": 73.2,
+     "rating": 73.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 0 assists."
@@ -2486,7 +2494,7 @@
     {
      "name": "S. Welsh",
      "position": "DEF",
-     "rating": 73.1,
+     "rating": 73.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -2494,7 +2502,7 @@
     {
      "name": "F. Lissah",
      "position": "DEF",
-     "rating": 73.1,
+     "rating": 73.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -2509,12 +2517,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Key",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 20 Sept"
-    },
     {
      "name": "R. Stewart",
      "position": "FWD",
@@ -2546,7 +2548,7 @@
     "W"
    ],
    "rating": 52.3,
-   "summary": "6 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "6 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -2620,7 +2622,7 @@
     {
      "name": "A. Reach",
      "position": "MID",
-     "rating": 64.2,
+     "rating": 64.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
@@ -2628,7 +2630,7 @@
     {
      "name": "C. McGrandles",
      "position": "MID",
-     "rating": 63.2,
+     "rating": 63.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 0 goals and 0 assists."
@@ -2636,7 +2638,7 @@
     {
      "name": "R. Hackett",
      "position": "MID",
-     "rating": 63.2,
+     "rating": 63.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 1 assist."
@@ -2644,7 +2646,7 @@
     {
      "name": "T. Bayliss",
      "position": "MID",
-     "rating": 58.3,
+     "rating": 59.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -2662,12 +2664,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 2 May"
-    },
-    {
-     "name": "T. Hamer",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Heart Condition injury, expected back 20 Sept"
     },
     {
      "name": "M. Melia",
@@ -2694,7 +2690,7 @@
     "D"
    ],
    "rating": 52.1,
-   "summary": "Next 3 rated 2.9 of 5 on average, 5 points from the last 3 — steady, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average, 5 points from the last 3 — steady.",
    "factors": [
     {
      "label": "Recent form",
@@ -2849,7 +2845,7 @@
     "W"
    ],
    "rating": 51.4,
-   "summary": "6 points from the last 3 — steady, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "6 points from the last 3 — steady, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -2922,7 +2918,7 @@
     {
      "name": "J. Pereira",
      "position": "GK",
-     "rating": 66.4,
+     "rating": 67.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 6 of 6 (100%), 3 clean sheets."
@@ -2986,7 +2982,7 @@
     "W"
    ],
    "rating": 50.5,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3123,7 +3119,7 @@
     "L"
    ],
    "rating": 50.5,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3220,7 +3216,7 @@
     {
      "name": "T. Bradshaw",
      "position": "FWD",
-     "rating": 69.3,
+     "rating": 69.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), playing at home."
@@ -3272,7 +3268,7 @@
     "L"
    ],
    "rating": 50.5,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3415,7 +3411,7 @@
     "D"
    ],
    "rating": 50.5,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3512,7 +3508,7 @@
     {
      "name": "O. Banks",
      "position": "MID",
-     "rating": 69.2,
+     "rating": 68.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -3558,7 +3554,7 @@
     "W"
    ],
    "rating": 50.5,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3623,7 +3619,7 @@
     {
      "name": "F. Potter",
      "position": "DEF",
-     "rating": 73.1,
+     "rating": 72.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -3655,7 +3651,7 @@
     {
      "name": "S. Rooney",
      "position": "DEF",
-     "rating": 70.6,
+     "rating": 70.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -3713,7 +3709,7 @@
     "D"
    ],
    "rating": 49.5,
-   "summary": "5 points from the last 3 — steady, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "5 points from the last 3 — steady, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3856,7 +3852,7 @@
     "W"
    ],
    "rating": 47.9,
-   "summary": "5 points from the last 3 — steady, next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "5 points from the last 3 — steady, next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -3921,7 +3917,7 @@
     {
      "name": "J. Lumley",
      "position": "GK",
-     "rating": 65,
+     "rating": 65.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -4023,7 +4019,7 @@
     "W"
    ],
    "rating": 47.7,
-   "summary": "5 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "5 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -4089,7 +4085,7 @@
     {
      "name": "S. Berhalter",
      "position": "MID",
-     "rating": 75.2,
+     "rating": 75.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 1 assist."
@@ -4113,7 +4109,7 @@
     {
      "name": "R. McGree",
      "position": "MID",
-     "rating": 69.6,
+     "rating": 69.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -4121,7 +4117,7 @@
     {
      "name": "A. Morris",
      "position": "MID",
-     "rating": 68.9,
+     "rating": 69.2,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), 1 goal and 0 assists."
@@ -4153,7 +4149,7 @@
     "W"
    ],
    "rating": 47.7,
-   "summary": "5 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "5 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -4211,7 +4207,7 @@
     {
      "name": "E. Adams",
      "position": "MID",
-     "rating": 64.9,
+     "rating": 65.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 1 goal and 1 assist."
@@ -4219,7 +4215,7 @@
     {
      "name": "A. Segecic",
      "position": "MID",
-     "rating": 60.6,
+     "rating": 60.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -4235,7 +4231,7 @@
     {
      "name": "Z. Swanson",
      "position": "DEF",
-     "rating": 58.4,
+     "rating": 58.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -4249,7 +4245,7 @@
      "summary": "Started 6 of 7 (86%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "R. Kavuma-McQueen",
+     "name": "A. Kamara",
      "position": "FWD",
      "rating": 56.4,
      "status": "available",
@@ -4325,7 +4321,7 @@
     "W"
    ],
    "rating": 47.4,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -4510,7 +4506,7 @@
     "L"
    ],
    "rating": 47.4,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -4647,7 +4643,7 @@
     "W"
    ],
    "rating": 47.4,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -4784,7 +4780,7 @@
     "W"
    ],
    "rating": 47.2,
-   "summary": "0 conceded in the last 3. 1 blank round in the next 3.",
+   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -4921,7 +4917,7 @@
     "L"
    ],
    "rating": 46.3,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -5094,7 +5090,7 @@
     "W"
    ],
    "rating": 46.3,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -5249,7 +5245,7 @@
     "D"
    ],
    "rating": 45.1,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -5386,7 +5382,7 @@
     "D"
    ],
    "rating": 44.4,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -5541,7 +5537,7 @@
     "L"
    ],
    "rating": 44.4,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -5702,7 +5698,7 @@
     "L"
    ],
    "rating": 44.3,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -5857,7 +5853,7 @@
     "D"
    ],
    "rating": 43.2,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -6000,7 +5996,7 @@
     "W"
    ],
    "rating": 43.2,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -6161,7 +6157,7 @@
     "W"
    ],
    "rating": 43.2,
-   "summary": "7 points from the last 3, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3.",
+   "summary": "7 points from the last 3. 2 blank rounds in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -6304,7 +6300,7 @@
     "L"
    ],
    "rating": 43,
-   "summary": "4 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "4 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -6362,7 +6358,7 @@
     {
      "name": "K. Montgomery",
      "position": "MID",
-     "rating": 79.1,
+     "rating": 79.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 1 goal and 0 assists."
@@ -6386,7 +6382,7 @@
     {
      "name": "R. Morishita",
      "position": "MID",
-     "rating": 73.6,
+     "rating": 73.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 1 assist."
@@ -6394,10 +6390,10 @@
     {
      "name": "T. Cantwell",
      "position": "MID",
-     "rating": 72.9,
+     "rating": 73.3,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
+     "summary": "Started 8 of 8 (100%), 1 goal and 0 assists."
     },
     {
      "name": "A. Gudjohnsen",
@@ -6476,7 +6472,7 @@
     "L"
    ],
    "rating": 43,
-   "summary": "4 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "4 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -6542,7 +6538,15 @@
     {
      "name": "M. Munetsi",
      "position": "MID",
-     "rating": 61.3,
+     "rating": 61.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "André",
+     "position": "MID",
+     "rating": 60.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
@@ -6556,14 +6560,6 @@
      "summary": "Started 6 of 6 (100%), 3 goals and 2 assists."
     },
     {
-     "name": "André",
-     "position": "MID",
-     "rating": 60.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "J. Tchatchoua",
      "position": "DEF",
      "rating": 59,
@@ -6574,7 +6570,7 @@
     {
      "name": "T. Doyle",
      "position": "MID",
-     "rating": 57.3,
+     "rating": 57.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 6 of 6 (100%), tough fixture (rated 4 of 5)."
@@ -6618,7 +6614,7 @@
     "L"
    ],
    "rating": 43,
-   "summary": "4 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "4 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -6700,7 +6696,7 @@
     {
      "name": "P. Seung-Ho",
      "position": "MID",
-     "rating": 60,
+     "rating": 60.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -6723,12 +6719,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "D. Gray",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Illness, expected back 20 Sept"
-    },
     {
      "name": "M. Bird",
      "position": "MID",
@@ -6766,7 +6756,7 @@
     "D"
    ],
    "rating": 43,
-   "summary": "4 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "4 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -6824,7 +6814,7 @@
     {
      "name": "A. Robertson",
      "position": "MID",
-     "rating": 66.2,
+     "rating": 66.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 0 goals and 0 assists."
@@ -6832,7 +6822,7 @@
     {
      "name": "J. Moylan",
      "position": "MID",
-     "rating": 65.9,
+     "rating": 66.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 3 goals and 1 assist."
@@ -6846,6 +6836,14 @@
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     },
     {
+     "name": "P. Ng",
+     "position": "DEF",
+     "rating": 59.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "Y. Salech",
      "position": "FWD",
      "rating": 59.9,
@@ -6854,16 +6852,8 @@
      "summary": "Started 8 of 8 (100%), 2 goals and 1 assist."
     },
     {
-     "name": "P. Ng",
-     "position": "DEF",
-     "rating": 59.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "O. Tanner",
-     "position": "FWD",
+     "name": "C. Willock",
+     "position": "MID",
      "rating": 58.5,
      "status": "available",
      "minutesShare": 100,
@@ -6914,7 +6904,7 @@
     "D"
    ],
    "rating": 43,
-   "summary": "4 points from the last 3 — steady, 0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "4 points from the last 3 — steady. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -6996,7 +6986,15 @@
     {
      "name": "L. O'Brien",
      "position": "MID",
-     "rating": 60.3,
+     "rating": 60.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Whiteman",
+     "position": "MID",
+     "rating": 59.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -7008,14 +7006,6 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 3 goals and 1 assist."
-    },
-    {
-     "name": "B. Whiteman",
-     "position": "MID",
-     "rating": 59,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -7036,12 +7026,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Thigh Injury, expected back 8 Nov"
-    },
-    {
-     "name": "L. Cacace",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury, expected back 20 Sept"
     },
     {
      "name": "S. Revan",
@@ -7068,7 +7052,7 @@
     "L"
    ],
    "rating": 41.8,
-   "summary": "0 conceded in the last 3. 1 blank round in the next 3.",
+   "summary": "Only 4 points from the last 3. 1 blank round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -7159,7 +7143,7 @@
     {
      "name": "A. McCarthy",
      "position": "GK",
-     "rating": 58,
+     "rating": 58.4,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 6 of 7 (86%), tough fixture (rated 4 of 5)."
@@ -7211,7 +7195,7 @@
     "L"
    ],
    "rating": 41.6,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -7300,7 +7284,7 @@
     {
      "name": "R. Oates",
      "position": "FWD",
-     "rating": 70.2,
+     "rating": 70.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), playing at home."
@@ -7316,7 +7300,7 @@
     {
      "name": "R. Sweeney",
      "position": "DEF",
-     "rating": 69.9,
+     "rating": 69.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -7354,7 +7338,7 @@
     "D"
    ],
    "rating": 40.1,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -7497,7 +7481,7 @@
     "L"
    ],
    "rating": 40.1,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -7602,7 +7586,7 @@
     {
      "name": "S. Raggett",
      "position": "DEF",
-     "rating": 58.5,
+     "rating": 58.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -7658,7 +7642,7 @@
     "L"
    ],
    "rating": 38.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Only 3 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -7716,7 +7700,7 @@
     {
      "name": "J. Sheehan",
      "position": "MID",
-     "rating": 74.9,
+     "rating": 75.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 0 goals and 0 assists."
@@ -7756,7 +7740,7 @@
     {
      "name": "E. Erhahon",
      "position": "MID",
-     "rating": 67.3,
+     "rating": 67.6,
      "status": "available",
      "minutesShare": 86,
      "summary": "Started 6 of 7 (86%), even fixture (rated 3 of 5)."
@@ -7800,7 +7784,7 @@
     "W"
    ],
    "rating": 38.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Only 3 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -7858,7 +7842,7 @@
     {
      "name": "S. Peck",
      "position": "MID",
-     "rating": 76.2,
+     "rating": 76.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 1 goal and 2 assists."
@@ -7880,37 +7864,31 @@
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
+     "name": "S. McCallum",
+     "position": "DEF",
+     "rating": 69.8,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "H. Choudhury",
+     "position": "MID",
+     "rating": 68.2,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
+    },
+    {
      "name": "P. Bamford",
      "position": "FWD",
      "rating": 68.1,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), playing at home."
-    },
-    {
-     "name": "H. Choudhury",
-     "position": "MID",
-     "rating": 67.9,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "T. Cannon",
-     "position": "FWD",
-     "rating": 66.3,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), playing at home."
     }
    ],
    "unavailable": [
-    {
-     "name": "S. McCallum",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury, expected back 20 Sept"
-    },
     {
      "name": "F. Seriki",
      "position": "DEF",
@@ -7948,7 +7926,7 @@
     "D"
    ],
    "rating": 38.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Only 3 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -8036,17 +8014,17 @@
      "summary": "Started 8 of 8 (100%), 2 goals and 2 assists."
     },
     {
-     "name": "J. Dunne",
-     "position": "DEF",
-     "rating": 57.4,
+     "name": "N. Madsen",
+     "position": "MID",
+     "rating": 57.6,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "K. Adamson",
+     "name": "J. Dunne",
      "position": "DEF",
-     "rating": 56.2,
+     "rating": 57.4,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
@@ -8064,12 +8042,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Muscle Injury"
-    },
-    {
-     "name": "R. Kone",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 20 Sept"
     },
     {
      "name": "B. Kemper",
@@ -8102,7 +8074,7 @@
     "W"
    ],
    "rating": 38.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Only 3 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -8160,7 +8132,7 @@
     {
      "name": "H. Kyprianou",
      "position": "MID",
-     "rating": 75.2,
+     "rating": 75.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 0 goals and 0 assists."
@@ -8168,7 +8140,7 @@
     {
      "name": "E. Kayembe",
      "position": "MID",
-     "rating": 73.2,
+     "rating": 73.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
@@ -8256,7 +8228,7 @@
     "L"
    ],
    "rating": 38.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Only 3 points from the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -8322,7 +8294,7 @@
     {
      "name": "J. Knight",
      "position": "MID",
-     "rating": 61.6,
+     "rating": 61.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -8386,7 +8358,7 @@
     "L"
    ],
    "rating": 38.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 1 blank round in the next 3.",
+   "summary": "Next 3 rated 3.7 of 5 on average. 1 blank round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -8445,7 +8417,7 @@
     {
      "name": "T. Simkin",
      "position": "GK",
-     "rating": 65,
+     "rating": 65.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -8535,7 +8507,7 @@
     "D"
    ],
    "rating": 38.1,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -8702,7 +8674,7 @@
     "L"
    ],
    "rating": 38.1,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -8839,7 +8811,7 @@
     "L"
    ],
    "rating": 38.1,
-   "summary": "Next 3 rated 2.9 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 2.9 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -8988,7 +8960,7 @@
     "D"
    ],
    "rating": 37.4,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -9077,7 +9049,7 @@
     {
      "name": "C. Addai",
      "position": "GK",
-     "rating": 60.3,
+     "rating": 60.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -9137,7 +9109,7 @@
     "D"
    ],
    "rating": 34.8,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 1 blank round in the next 3.",
+   "summary": "Next 3 rated 3.7 of 5 on average. 1 blank round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -9196,7 +9168,7 @@
     {
      "name": "M. Young",
      "position": "GK",
-     "rating": 63.1,
+     "rating": 63.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -9218,20 +9190,20 @@
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
     },
     {
+     "name": "D. Sanches Fernandes",
+     "position": "FWD",
+     "rating": 60.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 2 goals and 3 assists."
+    },
+    {
      "name": "M. Wallace",
      "position": "DEF",
      "rating": 60.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "D. Sanches Fernandes",
-     "position": "FWD",
-     "rating": 60.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 2 goals and 3 assists."
     },
     {
      "name": "I. Bowat",
@@ -9280,7 +9252,7 @@
     "L"
    ],
    "rating": 33.9,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -9351,14 +9323,6 @@
      "summary": "Started 7 of 7 (100%), 3 goals and 0 assists."
     },
     {
-     "name": "T. Noslin",
-     "position": "MID",
-     "rating": 63.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 0 goals and 1 assist."
-    },
-    {
      "name": "S. Gale",
      "position": "MID",
      "rating": 63.5,
@@ -9367,9 +9331,17 @@
      "summary": "Started 7 of 7 (100%), 0 goals and 0 assists."
     },
     {
+     "name": "T. Noslin",
+     "position": "MID",
+     "rating": 63.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 0 goals and 1 assist."
+    },
+    {
      "name": "R. Ravenhill",
      "position": "GK",
-     "rating": 62.6,
+     "rating": 63.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -9429,7 +9401,7 @@
     "L"
    ],
    "rating": 33.9,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -9494,7 +9466,7 @@
     {
      "name": "A. Bass",
      "position": "GK",
-     "rating": 64.5,
+     "rating": 65.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
@@ -9596,7 +9568,7 @@
     "L"
    ],
    "rating": 33.9,
-   "summary": "Next 3 rated 3.1 of 5 on average, 0 conceded in the last 3, 0 scored in the last 3.",
+   "summary": "Next 3 rated 3.1 of 5 on average.",
    "factors": [
     {
      "label": "Recent form",
@@ -9659,20 +9631,20 @@
    ],
    "players": [
     {
+     "name": "B. Peacock-Farrell",
+     "position": "GK",
+     "rating": 70.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 1 clean sheet plus 1 attacking return."
+    },
+    {
      "name": "J. Bowler",
      "position": "MID",
      "rating": 69.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), 2 goals and 2 assists."
-    },
-    {
-     "name": "B. Peacock-Farrell",
-     "position": "GK",
-     "rating": 69.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 1 clean sheet plus 1 attacking return."
     },
     {
      "name": "O. Casey",
@@ -9769,7 +9741,7 @@
     "D"
    ],
    "rating": 33.7,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Next 3 rated 4.0 of 5 on average. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -9859,7 +9831,7 @@
     {
      "name": "C. Coventry",
      "position": "MID",
-     "rating": 69,
+     "rating": 68.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -9867,7 +9839,7 @@
     {
      "name": "M. Leaburn",
      "position": "FWD",
-     "rating": 67.7,
+     "rating": 68,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), playing at home."
@@ -9941,7 +9913,7 @@
     "D"
    ],
    "rating": 33.7,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Next 3 rated 4.0 of 5 on average. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -9999,7 +9971,7 @@
     {
      "name": "U. Raghouber",
      "position": "MID",
-     "rating": 59,
+     "rating": 59.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -10031,7 +10003,7 @@
     {
      "name": "J. Laurent",
      "position": "MID",
-     "rating": 53.6,
+     "rating": 53.8,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
@@ -10039,7 +10011,7 @@
     {
      "name": "A. Ramsey",
      "position": "MID",
-     "rating": 53,
+     "rating": 53.1,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
@@ -10051,12 +10023,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 30 Dec"
-    },
-    {
-     "name": "D. Satpaev",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 20 Sept"
     },
     {
      "name": "B. Humphreys",
@@ -10077,22 +10043,10 @@
      "news": "ACL Knee Injury, expected back 30 Sept"
     },
     {
-     "name": "A. Barnes",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 20 Sept"
-    },
-    {
      "name": "J. Banel",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "E. Agyei",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 20 Sept"
     }
    ],
    "cardRisk": []
@@ -10113,7 +10067,7 @@
     "L"
    ],
    "rating": 33.7,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Next 3 rated 4.0 of 5 on average. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -10211,7 +10165,7 @@
     {
      "name": "J. Metcalfe",
      "position": "MID",
-     "rating": 59.3,
+     "rating": 59.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -10243,22 +10197,10 @@
      "news": "Ankle Injury, expected back 11 Oct"
     },
     {
-     "name": "R. Leonard",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 20 Sept"
-    },
-    {
      "name": "T. Crama",
      "position": "DEF",
      "status": "injured",
      "news": "Ankle Injury"
-    },
-    {
-     "name": "M. Ivanovic",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Broken Foot injury, expected back 20 Sept"
     }
    ],
    "cardRisk": []
@@ -10279,7 +10221,7 @@
     "D"
    ],
    "rating": 31.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 1 blank round in the next 3.",
+   "summary": "Next 3 rated 3.7 of 5 on average. 1 blank round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -10434,7 +10376,7 @@
     "L"
    ],
    "rating": 31.3,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 1 blank round in the next 3.",
+   "summary": "Next 3 rated 3.7 of 5 on average. 1 blank round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -10565,7 +10507,7 @@
     "L"
    ],
    "rating": 29,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Next 3 rated 4.0 of 5 on average. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -10623,10 +10565,18 @@
     {
      "name": "B. Clark",
      "position": "MID",
-     "rating": 76.5,
+     "rating": 77.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 2 goals and 2 assists."
+    },
+    {
+     "name": "S. Langås",
+     "position": "DEF",
+     "rating": 70.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
      "name": "C. Taylor",
@@ -10637,17 +10587,9 @@
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "S. Langås",
-     "position": "DEF",
-     "rating": 69.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "S. Szmodics",
      "position": "MID",
-     "rating": 69.2,
+     "rating": 69.6,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), 2 goals and 1 assist."
@@ -10655,7 +10597,7 @@
     {
      "name": "A. Mowatt",
      "position": "MID",
-     "rating": 68.9,
+     "rating": 69.2,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), 0 goals and 0 assists."
@@ -10731,7 +10673,7 @@
     "L"
    ],
    "rating": 29,
-   "summary": "0 conceded in the last 3, 0 scored in the last 3. 2 blank rounds in the next 3. 1 double round in the next 3.",
+   "summary": "Next 3 rated 4.0 of 5 on average. 2 blank rounds in the next 3. 1 double round in the next 3.",
    "factors": [
     {
      "label": "Recent form",
@@ -10797,7 +10739,7 @@
     {
      "name": "J. Thompson",
      "position": "MID",
-     "rating": 72.6,
+     "rating": 72.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -10805,7 +10747,7 @@
     {
      "name": "A. Devine",
      "position": "MID",
-     "rating": 72.6,
+     "rating": 72.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -10819,20 +10761,20 @@
      "summary": "Started 8 of 8 (100%), playing at home."
     },
     {
+     "name": "S. Mills",
+     "position": "MID",
+     "rating": 68.2,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
+    },
+    {
      "name": "D. Iversen",
      "position": "GK",
      "rating": 68.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "S. Mills",
-     "position": "MID",
-     "rating": 67.9,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -10857,5 +10799,11 @@
    ],
    "cardRisk": []
   }
- ]
+ ],
+ "diagnostics": {
+  "injuryStatuses": [
+   "1 | Questionable (50%)",
+   "2 | Out (0%)"
+  ]
+ }
 }
