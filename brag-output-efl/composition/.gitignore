@@ -1,0 +1,11 @@
+# The music bed is not redistributed here. It ships with the /brag skill
+# ("Happy Beats / Business Moves" by ende.app) and the rendered efl.mp4
+# already carries it. Restore it before re-rendering:
+#
+#   cp ~/.claude/skills/brag/assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3 \
+#      brag-output-efl/composition/assets/music/
+#
+assets/music/*.mp3
+
+# Working artefacts from `hyperframes snapshot`.
+snapshots/

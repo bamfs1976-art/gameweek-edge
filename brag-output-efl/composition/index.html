@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1080" />
+    <title>Fantasy EFL</title>
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/music/audio-data.js"></script>
+    <style>
+      /* The two families the Fantasy EFL app loads. Note the display face here
+         is IBM Plex Mono, not Inter: that is the app's own --font-display, and
+         it is part of what makes this read as a sibling rather than a clone. */
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: block; src: url(assets/fonts/Inter-400.woff2) format("woff2"); }
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: block; src: url(assets/fonts/Inter-600.woff2) format("woff2"); }
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: block; src: url(assets/fonts/Inter-700.woff2) format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: block; src: url(assets/fonts/IBMPlexMono-400.woff2) format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: block; src: url(assets/fonts/IBMPlexMono-500.woff2) format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: block; src: url(assets/fonts/IBMPlexMono-600.woff2) format("woff2"); }
+
+      /* Tokens copied from efl/app/assets/efl.css, [data-theme="dark"]. */
+      :root {
+        --bg: #0a0c0f;
+        --surface: #111418;
+        --surface-2: #161a20;
+        --surface-3: #1c2128;
+        --border: #1f242b;
+        --border-2: #262c34;
+        --border-3: #333a44;
+        --text: #e6e8eb;
+        --text-2: #9aa3ad;
+        --text-3: #8a94a0;
+        --efl: #7c8cf0;
+        --efl-bright: #8f9dff;
+        --efl-soft: rgba(124, 140, 240, 0.14);
+        --div-championship: #8f9dff;
+        --div-league-one: #3ecfbb;
+        --div-league-two: #f5a524;
+        --r-md: 4px;
+      }
+
+      html, body { margin: 0; padding: 0; background: var(--bg); }
+
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #canvas-lift {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(760px 420px at 50% 116%, rgba(124, 140, 240, 0.11), rgba(124, 140, 240, 0) 70%),
+          radial-gradient(620px 360px at 50% -14%, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 72%);
+      }
+
+      .clip { position: absolute; inset: 0; }
+      .inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 56px; box-sizing: border-box; }
+
+      .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
+      .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+      /* ---------- Card chrome, with the app's three-division stripe ----------
+         The stripe is the signature: Championship indigo, League One teal,
+         League Two amber, exactly as efl.css draws it on .hero::before. */
+      .card {
+        position: relative;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 50px 54px 54px 64px;
+        background: linear-gradient(135deg, var(--efl-soft) 0%, transparent 62%), var(--surface);
+        border: 1px solid var(--border-2);
+        border-radius: var(--r-md);
+        overflow: hidden;
+      }
+      .stripe {
+        position: absolute; left: 0; top: 0; bottom: 0; width: 6px;
+        background: linear-gradient(180deg,
+          var(--div-championship) 0 33.3%,
+          var(--div-league-one) 33.3% 66.6%,
+          var(--div-league-two) 66.6% 100%);
+      }
+      .card-head { display: flex; align-items: baseline; gap: 18px; margin-bottom: 34px; }
+      .card-label {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 23px; font-weight: 600; letter-spacing: 0.15em;
+        text-transform: uppercase; color: var(--efl);
+      }
+      .card-chrome { margin-left: auto; font-size: 24px; font-weight: 400; color: var(--text-2); }
+
+      /* ---------- Scene 1 : the fact ---------- */
+      #eyebrow {
+        margin: 0 0 26px 0;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 26px; font-weight: 500; letter-spacing: 0.22em;
+        text-transform: uppercase; color: var(--efl); text-align: center;
+      }
+      #hook { margin: 0; font-size: 88px; font-weight: 600; line-height: 1.14; letter-spacing: -0.028em; text-align: center; color: var(--text); }
+      #hook-sub { margin: 38px 0 0 0; font-size: 42px; font-weight: 400; color: var(--text-2); text-align: center; }
+      #hook-sub .num { color: var(--efl-bright); }
+
+      /* ---------- Scene 2 : a different game ---------- */
+      .grp { margin-top: 6px; }
+      .grp + .grp { margin-top: 36px; }
+      .grp-k {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 21px; font-weight: 500; letter-spacing: 0.15em;
+        text-transform: uppercase; color: var(--text-3); margin-bottom: 18px;
+      }
+      .chips { display: flex; flex-wrap: wrap; gap: 14px; }
+      .chip {
+        border-radius: 999px; padding: 14px 26px; font-size: 30px;
+        background: var(--surface-3); border: 1px solid var(--border-3); color: var(--text-2);
+      }
+      .chip.on { background: var(--efl-soft); border-color: var(--efl); color: var(--efl-bright); }
+
+      /* ---------- Scene 3 : the model's seven ---------- */
+      .prow { padding: 20px 0; border-bottom: 1px solid var(--border); }
+      .prow-top { display: flex; align-items: baseline; }
+      .p-name { flex: 0 0 auto; font-size: 40px; color: var(--text); }
+      .p-cap {
+        margin-left: 14px; font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 20px; font-weight: 600; letter-spacing: 0.08em;
+        background: var(--efl); color: #0a0c0f; border-radius: 999px; padding: 5px 13px;
+      }
+      .p-rate { margin-left: auto; font-size: 38px; }
+      .prow-sub { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 26px; color: var(--text-2); }
+      .ddot { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; }
+      .d-ch { background: var(--div-championship); }
+      .d-l1 { background: var(--div-league-one); }
+      #clubs-row { display: flex; align-items: baseline; padding-top: 26px; }
+      #clubs-row .grp-k { margin-bottom: 0; }
+      #clubs-row .v { margin-left: auto; font-size: 30px; color: var(--text); }
+
+      /* ---------- Scene 4 : the record ---------- */
+      .tiles { display: flex; gap: 20px; }
+      .tile { flex: 1 1 0; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-md); padding: 30px 32px 34px; }
+      .tile-k {
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 21px; font-weight: 500; letter-spacing: 0.13em;
+        text-transform: uppercase; color: var(--text-3);
+      }
+      .tile-v { margin-top: 14px; font-size: 82px; line-height: 1; color: var(--efl-bright); }
+      #rec-line { margin: 32px 0 0 0; font-size: 34px; color: var(--text); }
+
+      /* ---------- Scene 5 : lockup ---------- */
+      #lockup { display: flex; flex-direction: column; align-items: center; }
+      #big-stripe {
+        width: 232px; height: 10px; border-radius: 999px;
+        background: linear-gradient(90deg,
+          var(--div-championship) 0 33.3%,
+          var(--div-league-one) 33.3% 66.6%,
+          var(--div-league-two) 66.6% 100%);
+      }
+      #divisions {
+        margin: 30px 0 0 0;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 24px; font-weight: 500; letter-spacing: 0.17em;
+        text-transform: uppercase; color: var(--efl); text-align: center;
+      }
+      #wordmark { margin: 22px 0 0 0; font-size: 80px; font-weight: 700; letter-spacing: -0.028em; color: var(--text); }
+      #from { margin: 12px 0 0 0; font-size: 32px; font-weight: 400; color: var(--text-2); }
+      #stats {
+        margin: 40px 0 0 0;
+        font-family: "IBM Plex Mono", ui-monospace, monospace;
+        font-size: 28px; font-weight: 400; color: var(--text-2);
+      }
+      #url { margin: 18px 0 0 0; font-size: 36px; font-weight: 600; color: var(--efl-bright); }
+      #disclaimer {
+        position: absolute; left: 80px; right: 80px; bottom: 38px;
+        text-align: center; font-size: 18px; font-weight: 400; line-height: 1.45;
+        letter-spacing: 0.01em; color: var(--text-2);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="gameweek-edge-efl"
+      data-start="0"
+      data-width="1080"
+      data-height="1080"
+      data-fps="30"
+      data-duration="24.74"
+    >
+      <div id="canvas-lift" data-layout-ignore="true"></div>
+
+      <!-- Scene 1 — the fact — 0.00 to 4.23 (dissolves out 3.70 to 4.23) -->
+      <section id="sc1" class="clip" data-start="0" data-duration="4.23" data-track-index="0">
+        <div id="sc1-inner" class="inner">
+          <p id="eyebrow">Fantasy EFL</p>
+          <p id="hook">The forward is the worst-scoring position.</p>
+          <p id="hook-sub">Measured across <span class="num">83,698</span> appearances.</p>
+        </div>
+      </section>
+
+      <!-- Scene 2 — a different game — 4.23 to 10.01 (dissolves out 9.50 to 10.01) -->
+      <section id="sc2" class="clip" data-start="4.23" data-duration="5.78" data-track-index="1">
+        <div id="sc2-inner" class="inner">
+          <div id="sc2-card" class="card">
+            <div class="stripe" data-layout-ignore="true"></div>
+            <div class="card-head">
+              <div class="card-label">A different game</div>
+              <div class="card-chrome">FPL instincts do not transfer.</div>
+            </div>
+            <div class="grp" id="grp-a">
+              <div class="grp-k">Not in this game</div>
+              <div class="chips">
+                <span class="chip">No budget</span>
+                <span class="chip">No prices</span>
+                <span class="chip">No transfers</span>
+              </div>
+            </div>
+            <div class="grp" id="grp-b">
+              <div class="grp-k">The rules</div>
+              <div class="chips">
+                <span class="chip on">Seven players</span>
+                <span class="chip on">Two clubs</span>
+                <span class="chip on">Max two per club</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 3 — the model's seven — 10.01 to 16.34 (dissolves out 15.81 to 16.34) -->
+      <section id="sc3" class="clip" data-start="10.01" data-duration="6.33" data-track-index="2">
+        <div id="sc3-inner" class="inner">
+          <div id="sc3-card" class="card">
+            <div class="stripe" data-layout-ignore="true"></div>
+            <div class="card-head">
+              <div class="card-label">Round 7 · the model's seven</div>
+              <div class="card-chrome mono">1-2-2-2</div>
+            </div>
+            <div class="prow" id="p1">
+              <div class="prow-top"><span class="p-name">J. Bowen</span><span class="p-cap">C</span><span class="p-rate num">82.5</span></div>
+              <div class="prow-sub"><span class="ddot d-ch"></span>West Ham United · Championship</div>
+            </div>
+            <div class="prow" id="p2">
+              <div class="prow-top"><span class="p-name">C. Larin</span><span class="p-rate num">81.1</span></div>
+              <div class="prow-sub"><span class="ddot d-ch"></span>Southampton · Championship</div>
+            </div>
+            <div class="prow" id="p3">
+              <div class="prow-top"><span class="p-name">O. Cooper</span><span class="p-rate num">80.7</span></div>
+              <div class="prow-sub"><span class="ddot d-l1"></span>Notts County · League One</div>
+            </div>
+            <div id="clubs-row">
+              <div class="grp-k">Club picks</div>
+              <div class="v">Bradford City · Plymouth Argyle</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 4 — the record — 16.34 to 21.06 (dissolves out 20.54 to 21.06) -->
+      <section id="sc4" class="clip" data-start="16.34" data-duration="4.72" data-track-index="3">
+        <div id="sc4-inner" class="inner">
+          <div id="sc4-card" class="card">
+            <div class="stripe" data-layout-ignore="true"></div>
+            <div class="card-head">
+              <div class="card-label">The record</div>
+              <div class="card-chrome">Written down before kick-off.</div>
+            </div>
+            <div class="tiles" id="rec-tiles">
+              <div class="tile"><div class="tile-k">Rounds graded</div><div class="tile-v num">4</div></div>
+              <div class="tile"><div class="tile-k">Top 10% vs field</div><div class="tile-v num">3.7x</div></div>
+            </div>
+            <p id="rec-line">Beaten a random seven every graded round.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 5 — lockup — 21.06 to 24.74 -->
+      <section id="sc5" class="clip" data-start="21.06" data-duration="3.68" data-track-index="4">
+        <div id="sc5-inner" class="inner">
+          <div id="lockup">
+            <div id="big-stripe" data-layout-ignore="true"></div>
+            <p id="divisions">Championship · League One · League Two</p>
+            <p id="wordmark">Fantasy EFL</p>
+            <p id="from">from Gameweek Edge</p>
+          </div>
+          <p id="stats">72 clubs · 3,500+ players · 42 rounds</p>
+          <p id="url">gameweekedge.co.uk/fantasy-efl</p>
+        </div>
+        <p id="disclaimer">Independent tool. Not affiliated with, endorsed by or associated with the English Football League or the official Fantasy EFL game.</p>
+      </section>
+
+      <!-- Audio. Music bed on track 10, one soft cue per card (app-store posture). -->
+      <audio id="bg-music" data-start="0" data-duration="24.74" data-track-index="10" data-volume="1"
+             src="assets/music/happy-beats-business-moves-vol-9-by-ende-dot-app.mp3"></audio>
+      <audio id="sfx-game" data-start="4.18" data-duration="0.11" data-track-index="11" data-volume="0.65"
+             src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-seven" data-start="9.96" data-duration="0.19" data-track-index="12" data-volume="0.65"
+             src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-record" data-start="16.29" data-duration="0.11" data-track-index="13" data-volume="0.65"
+             src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-lockup" data-start="21.01" data-duration="0.13" data-track-index="14" data-volume="0.7"
+             src="assets/sfx/interface/bong_001.ogg"></audio>
+    </div>
+
+    <script>
+      // Beat grid and strong cues from the bundled preset for
+      // happy-beats-business-moves-vol-9 (114.84 BPM).
+      document.fonts.ready.then(function () {
+        var tl = gsap.timeline({ paused: true });
+
+        function card(sel, t) {
+          tl.fromTo(sel, { scale: 0.972, y: 16, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, t);
+        }
+        function rise(sel, t, dur) {
+          tl.fromTo(sel, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: dur || 0.45, ease: "power3.out" }, t);
+        }
+        function dissolve(sel, t) {
+          tl.to(sel, { opacity: 0, duration: 0.52, ease: "power1.inOut" }, t);
+        }
+
+        // ---------- Scene 1 — the fact — 0.00 to 4.23 ----------
+        rise("#eyebrow", 0.30, 0.45);
+        rise("#hook", 0.80, 0.55);
+        rise("#hook-sub", 2.12, 0.5); // beat-locked: 2.12s strong cue
+        dissolve("#sc1-inner", 3.70);
+
+        // ---------- Scene 2 — a different game — 4.23 to 10.01 ----------
+        card("#sc2-card", 4.23); // beat-locked: 4.23s strong cue
+        rise("#grp-a", 5.28, 0.5); // beat-locked: 5.28s strong cue
+        rise("#grp-b", 6.34, 0.5); // beat-locked: 6.34s strong cue
+        dissolve("#sc2-inner", 9.50);
+
+        // ---------- Scene 3 — the model's seven — 10.01 to 16.34 ----------
+        card("#sc3-card", 10.01); // beat-locked: 10.01s strong cue
+        // beat-grid: the seven arrive one per strong cue
+        rise("#p1", 10.54, 0.45);
+        rise("#p2", 11.60, 0.45);
+        rise("#p3", 12.65, 0.45);
+        rise("#clubs-row", 13.70, 0.45);
+        dissolve("#sc3-inner", 15.81);
+
+        // ---------- Scene 4 — the record — 16.34 to 21.06 ----------
+        card("#sc4-card", 16.34); // beat-grid: 16.34s
+        rise("#rec-tiles", 16.86, 0.5); // beat-grid: 16.86s
+        rise("#rec-line", 17.91, 0.45); // beat-grid: 17.91s
+        dissolve("#sc4-inner", 20.54); // beat-locked: 20.54s strong cue
+
+        // ---------- Scene 5 — lockup — 21.06 to 24.74 ----------
+        rise("#lockup", 21.06, 0.62);
+        tl.fromTo("#disclaimer", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, 21.06);
+        rise("#stats", 22.12, 0.45);
+        rise("#url", 23.17, 0.45); // beat-locked: 23.17s strong cue
+
+        // ---------- Music ----------
+        // data-volume stays at 1 so the tween alone carries the level (lint:
+        // audio_volume_tween_overrides_gain).
+        tl.set("#bg-music", { volume: 0.32 }, 0);
+        tl.to("#bg-music", { volume: 0, duration: 1.2, ease: "power1.in" }, 23.54);
+
+        // ---------- Audio-reactive: the stripe breathes, nothing else ----------
+        var D = window.AUDIO_DATA;
+        var stripe = document.getElementById("big-stripe");
+
+        function frameSetter(frame) {
+          return function () {
+            stripe.style.opacity = (0.62 + frame.rms * 0.38).toFixed(3);
+          };
+        }
+
+        for (var i = 0; i < D.totalFrames; i++) {
+          var t = i / D.fps;
+          if (t > 24.74) break;
+          tl.call(frameSetter(D.frames[i]), [], t);
+        }
+
+        window.__timelines["gameweek-edge-efl"] = tl;
+      });
+    </script>
+  </body>
+</html>
