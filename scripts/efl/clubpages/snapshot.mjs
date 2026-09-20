@@ -22,20 +22,13 @@
    than a broken deploy.
 
    Run: node scripts/efl/clubpages/snapshot.mjs [--out efl/data/club-pages.json] */
-import { buildContext, clubScore, playerScore, playingShare, divisionName } from '../../../efl/app/assets/model.js';
+import { buildContext, clubScore, playerScore, playingShare, divisionName, clubSignal, observedDifficulty, slugify } from '../../../efl/app/assets/model.js';
 
-/* A URL a person could have guessed. Kept here rather than in the renderer
-   because the slug is part of the data contract: it is what the sitemap,
-   the links between pages and any inbound link all agree on, and deriving
-   it in two places is how they stop agreeing. */
-export function slugify(name) {
-  return String(name || '')
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/&/g, ' and ')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+/* slugify now lives in the app's model (efl/app/assets/model.js), because
+   the app's own club picker links to these pages and a third copy of the
+   rule is a third thing to keep in step. Re-exported so every caller of
+   this module keeps working. */
+export { slugify };
 
 /* How many of a club's players are worth listing. Enough to be a useful
    page, few enough that it is a shortlist rather than a squad dump. */
@@ -114,10 +107,20 @@ export function buildClubSnapshot(snapshot, opts = {}) {
     };
   }).sort((a, b) => b.rating - a.rating);
 
+  /* What the numbers on these pages are standing on, recorded WITH them so
+     the renderer never has to guess and a committed snapshot carries its own
+     caveat. See clubSignal() for why this is not decoration. */
+  const signal = clubSignal(ctx);
+  const difficulty = observedDifficulty(
+    clubs.flatMap((c) => c.fixtures.flatMap((f) => f.matches.map((m) => m.rating))),
+  );
+
   return {
     built: opts.built || new Date().toISOString(),
     round: snapshot.currentRound,
     source: snapshot.source,
+    signal,
+    difficulty,
     clubs,
   };
 }
@@ -156,20 +159,34 @@ export async function loadClubSnapshot(deps = {}) {
      say what the object actually looks like in the log of the run that
      found it, so the next fix is informed rather than another guess. */
   const unavailable = snap.clubs.flatMap((c) => c.unavailable);
+
+  /* The STATUS vocabulary, reported whenever anyone is unavailable rather
+     than only when the notes are unreadable. That condition was the first
+     version's mistake: it fired once, answered where the injury text lives,
+     and then went silent forever the moment the text started reading — at
+     which point the question it had NOT answered was still open. Whether a
+     man is injured or merely doubtful is worth 0.12 against 0.72 on the
+     availability multiplier, which is worth more to the model than the
+     sentence ever was. Small cardinality, so it costs nothing to carry. */
+  if (unavailable.length) {
+    const statuses = [...new Set(((documents && documents.players) || [])
+      .map((p) => p && p.injuryDetails && p.injuryDetails.status)
+      .filter((v) => typeof v === 'string' && v.trim()))].sort().slice(0, 12);
+    if (statuses.length) {
+      snap.diagnostics = { ...(snap.diagnostics || {}), injuryStatuses: statuses };
+      console.log(`· ${unavailable.length} unavailable players. The feed's injury status values: `
+        + statuses.join(', ') + '. Every one is currently mapped to "injured"; anything meaning '
+        + 'doubtful should be mapped there instead (0.72 against 0.12 on the multiplier).');
+    }
+  }
+
   if (unavailable.length && !unavailable.some((u) => u.news)) {
     const sample = ((documents && documents.players) || []).find((p) => p && p.injuryDetails
       && typeof p.injuryDetails === 'object' && Object.keys(p.injuryDetails).length);
     if (sample) {
-      /* The keys answered "where is the text"; the status vocabulary
-         answers "is this man injured or merely doubtful", which is worth
-         far more to the model than the sentence is. Both are recorded. */
-      const statuses = [...new Set(((documents && documents.players) || [])
-        .map((p) => p && p.injuryDetails && p.injuryDetails.status)
-        .filter((v) => typeof v === 'string' && v.trim()))].sort().slice(0, 12);
-      snap.diagnostics = { injuryDetailsKeys: Object.keys(sample.injuryDetails).sort(), injuryStatuses: statuses };
+      snap.diagnostics = { ...(snap.diagnostics || {}), injuryDetailsKeys: Object.keys(sample.injuryDetails).sort() };
       console.log(`· ${unavailable.length} players are flagged injured and none carries a readable note. `
-        + `injuryDetails keys: ${snap.diagnostics.injuryDetailsKeys.join(', ')}`
-        + (statuses.length ? ` | status values: ${statuses.join(', ')}` : ''));
+        + `injuryDetails keys: ${snap.diagnostics.injuryDetailsKeys.join(', ')}`);
     }
   }
 

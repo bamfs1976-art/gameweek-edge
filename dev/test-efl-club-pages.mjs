@@ -148,6 +148,32 @@ section('a stale snapshot cannot put "[object Object]" on a public page');
   ok(/Hamstring, out three weeks/.test(good), 'a real note is still printed');
 }
 
+section('a page says what its numbers are standing on');
+{
+  /* Measured on the live feed: 72 clubs, all played 0, all the same form
+     string, and a "1 is the most favourable, 5 the least" legend sitting
+     next to ratings that only ever took the values 3 and 4. */
+  const flat = { ...snap,
+    signal: { informative: false, missing: ['league tables'], note: 'The official feed is not yet publishing league tables this season, so treat these as provisional.' },
+    difficulty: { values: [3, 4], min: 3, max: 4, full: false },
+    clubs: [snap.clubs[0]] };
+  const html = renderAll(flat).get(BASE + snap.clubs[0].slug + '/');
+  ok(/treat these as provisional/.test(html), 'the caveat is on the page');
+  ok(html.indexOf('provisional') < html.indexOf('stat-l">Club rating'),
+    'and ABOVE the big numbers, because a reader who stops at them is the one who needs it');
+  ok(/only takes the values 3 and 4/.test(html), 'the legend states the range the ratings actually take');
+  ok(!/1 is the most favourable, 5 the least/.test(html), 'rather than claiming a five-point scale it is not using');
+
+  const full = { ...snap, signal: { informative: true, missing: [], note: '' },
+    difficulty: { values: [1, 2, 3, 4, 5], min: 1, max: 5, full: true }, clubs: [snap.clubs[0]] };
+  const good = renderAll(full).get(BASE + snap.clubs[0].slug + '/');
+  ok(/1 is the most favourable, 5 the least/.test(good), 'a feed that does separate the clubs gets the plain legend back');
+  ok(!/provisional/.test(good), 'and no caveat');
+
+  const silent = renderAll({ ...snap, clubs: [snap.clubs[0]] }).get(BASE + snap.clubs[0].slug + '/');
+  ok(typeof silent === 'string' && silent.length > 500, 'a snapshot with no signal recorded still renders');
+}
+
 section('the things a public page must always carry');
 {
   let noDisclaimer = 0, noViewport = 0, noSkip = 0, noLang = 0;
@@ -241,7 +267,23 @@ section('the loader: the half that talks to the feed, driven with stubs');
     fetchDocuments: async () => ({ players: [] }),
     buildOfficialSnapshot: () => buildSampleSnapshot(),
   });
-  ok(!quiet.diagnostics, 'and a feed whose notes read fine says nothing');
+  ok(!quiet.diagnostics, 'and a feed whose notes read fine, carrying no statuses, says nothing');
+
+  /* The first version only reported the status vocabulary when NO note was
+     readable. It fired once, answered where the text lives, and then went
+     silent forever — leaving the question it had not answered still open. */
+  const readable = await loadClubSnapshot({
+    fetchDocuments: async () => ({ players: [
+      { id: '1', injuryDetails: { status: 'Doubtful', type: 'Knock' } },
+      { id: '2', injuryDetails: { status: 'Injured', type: 'Knee' } },
+      { id: '3', injuryDetails: { status: 'Injured', type: 'Calf' } },
+    ] }),
+    buildOfficialSnapshot: () => buildSampleSnapshot(),
+  });
+  ok(readable.diagnostics && readable.diagnostics.injuryStatuses.join(',') === 'Doubtful,Injured',
+    'the status vocabulary is reported even when the notes read perfectly well');
+  ok(!readable.diagnostics.injuryDetailsKeys,
+    'and the keys are not, because that question is already answered');
 
   let threw = null;
   try { await loadClubSnapshot({ fetchDocuments: async () => { throw new Error('feed answered 503'); } }); } catch (e) { threw = e; }

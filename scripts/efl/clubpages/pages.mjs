@@ -120,7 +120,7 @@ function clubStrip(snap, currentSlug) {
     + '</ul></div>').join('');
 }
 
-function fixtureCard(club) {
+function fixtureCard(club, snap) {
   if (!club.fixtures.length) {
     return '<div class="card"><p class="card-title">Next fixtures</p><p class="muted">No fixtures in the data for this club yet.</p></div>';
   }
@@ -131,9 +131,19 @@ function fixtureCard(club) {
     return '<tr><td>Round ' + esc(String(r.round)) + '</td><td>' + cells
       + (r.double ? ' <span class="badge badge-green">Double</span>' : '') + '</td></tr>';
   }).join('');
+  /* The legend used to claim a 1-to-5 scale unconditionally. Measured on
+     the live feed it was returning nothing but 3s and 4s, because the
+     opponent inputs carry no signal yet (clubSignal). Say the range the
+     numbers actually take. */
+  const d = (snap && snap.difficulty) || {};
+  const scale = d.values && d.values.length && !d.full
+    ? 'Lower is more favourable. On this round\'s data the rating only takes the value'
+      + (d.values.length > 1 ? 's ' + d.values.join(' and ') : ' ' + d.values[0])
+      + ', not the full 1 to 5, because the feed is not yet separating the clubs.'
+    : '1 is the most favourable, 5 the least.';
   return '<div class="card"><p class="card-title">Next fixtures, with modelled difficulty</p>'
     + '<div class="scroll"><table><thead><tr><th>Round</th><th>Opponent</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-    + '<p class="muted" style="margin:10px 0 0">1 is the most favourable, 5 the least. Difficulty is modelled from the '
+    + '<p class="muted" style="margin:10px 0 0">' + esc(scale) + ' Difficulty is modelled from the '
     + 'opponent\'s points per game, attack and defence, measured <b>within their own division</b> so a League Two side '
     + 'is not flattered against Championship opposition. The <a href="/fantasy-efl/fixtures/">fixture ticker</a> has every club.</p></div>';
 }
@@ -182,12 +192,18 @@ export function pageClub(snap, club) {
     ? '<div class="stat"><div class="stat-l">Points</div><div class="stat-v">' + esc(String(club.points)) + '</div></div>'
       + '<div class="stat"><div class="stat-l">Played</div><div class="stat-v">' + esc(String(club.played)) + '</div></div>'
     : '';
-  const body = '<div class="card"><div class="grid">'
+  /* Above the stat tiles, not below them: a reader who stops after the big
+     numbers is exactly the reader who needs to know what they rest on. */
+  const caveat = snap && snap.signal && snap.signal.note
+    ? '<div class="card" style="border-left:3px solid var(--amber)"><p class="card-title">'
+      + 'How settled these numbers are</p><p class="muted" style="margin:0">' + esc(snap.signal.note) + '</p></div>'
+    : '';
+  const body = caveat + '<div class="card"><div class="grid">'
     + '<div class="stat"><div class="stat-l">Club rating</div><div class="stat-v">' + club.rating.toFixed(1) + '</div></div>'
     + '<div class="stat"><div class="stat-l">League position</div><div class="stat-v">' + esc(ordinal(club.position)) + '</div></div>'
     + table
     + '</div><p class="muted" style="margin:12px 0 0">' + esc(club.summary) + '</p></div>'
-    + fixtureCard(club) + playerCard(club) + riskCard(club)
+    + fixtureCard(club, snap) + playerCard(club) + riskCard(club)
     + '<div class="card"><p class="card-title">Build a side around them</p><p>The '
     + '<a href="/fantasy-efl/">Fantasy EFL dashboard</a> picks a legal seven across all seventy-two clubs, rates the '
     + 'side you already hold and names the one change worth making. The game lets you take '

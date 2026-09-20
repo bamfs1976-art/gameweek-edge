@@ -772,9 +772,16 @@ export function clubScore(ctx, club, opts = {}) {
 
   const score = Math.round(clamp01(factors.reduce((s, f) => s + f.value * f.weight, 0)) * 1000) / 10;
   const ranked = factors.slice().sort((a, b) => (b.value * b.weight) - (a.value * a.weight));
-  const parts = ranked.slice(0, 3).filter((f) => f.value > 0.45).map((f) => f.note);
-  let summary = (parts.length ? parts.join(', ') : ranked[0].note);
-  summary = summary.charAt(0).toUpperCase() + summary.slice(1) + '.';
+  /* A factor whose input the feed never published now returns an empty
+     note rather than a zero (clubFactorNote), so empties are dropped here
+     or the join leaves a stray comma. The fallback has to survive them
+     too: every note being empty is a real state this season. */
+  const parts = ranked.slice(0, 3).filter((f) => f.value > 0.45 && f.note).map((f) => f.note);
+  const fallback = ranked.find((f) => f.note);
+  let summary = parts.length ? parts.join(', ') : (fallback ? fallback.note : '');
+  summary = summary
+    ? summary.charAt(0).toUpperCase() + summary.slice(1) + '.'
+    : 'Not enough published yet this season to separate this club from the rest.';
   if (run.blanks) summary += ` ${run.blanks} blank round${run.blanks === 1 ? '' : 's'} in the next ${window}.`;
   if (run.doubles) summary += ` ${run.doubles} double round${run.doubles === 1 ? '' : 's'} in the next ${window}.`;
 
@@ -792,12 +799,24 @@ const CLUB_FACTOR_LABELS = {
 function clubFactorNote(key, value, club, run, homeCount) {
   const l5 = club.last5;
   if (key === 'form') {
+    /* "0 points from the last 0 — steady" is not a sentence about football.
+       Nothing played is nothing to say. */
+    if (!l5.played) return '';
     return value > 0.7 ? `${l5.points} points from the last ${l5.played}`
       : value > 0.4 ? `${l5.points} points from the last ${l5.played} — steady`
         : `only ${l5.points} points from the last ${l5.played}`;
   }
-  if (key === 'attack') return `${l5.goalsFor} scored in the last ${l5.played}`;
+  /* A goal count the feed never published is not nil, and "0 scored in the
+     last 3" is a flat untruth about a side that has been scoring. The feed
+     currently serves a form string and no goals at all (mapOfficialSquads),
+     so the clause is dropped rather than filled with a zero. The caller
+     joins what it is given, so an omitted clause costs a sentence fragment
+     and nothing else. */
+  if (key === 'attack') {
+    return l5.goalsFor ? `${l5.goalsFor} scored in the last ${l5.played}` : '';
+  }
   if (key === 'defence') {
+    if (!l5.goalsAgainst && !l5.cleanSheets) return '';
     return `${l5.goalsAgainst} conceded in the last ${l5.played}`
       + (l5.cleanSheets ? ` with ${l5.cleanSheets} clean sheet${l5.cleanSheets === 1 ? '' : 's'}` : '');
   }
@@ -825,6 +844,83 @@ function clubFactorNote(key, value, club, run, homeCount) {
  * player's score is driven by his fixture, which is genuinely the only
  * information anyone has in round one.
  */
+/* ── Club page slugs ─────────────────────────────────────
+   The URL each club's public page lives at. It lives HERE rather than
+   beside the generator because three things have to agree on it: the
+   generator that writes the page, the sitemap that lists it, and the app's
+   own club picker that links to it. Deriving it in three places is how
+   they stop agreeing. */
+export function slugify(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/** Where a club's public page lives. */
+export function clubPagePath(club) {
+  const slug = slugify(club && club.name);
+  return slug ? '/fantasy-efl/clubs/' + slug + '/' : null;
+}
+
+/* ── What the club side can actually say ─────────────────
+   The same rule as hasPlayedFootball(), applied to the other half of the
+   model. Zero and unknown are different, and the club inputs are where
+   that distinction currently bites hardest.
+
+   The feed publishes a league position and a three-match form string, and
+   no played count, no goals and no league points (mapOfficialSquads says
+   so). Early in a season it also serves the SAME form string for every
+   club. The arithmetic still runs and still produces numbers, and those
+   numbers are almost entirely noise:
+
+     · goals for and against normalise to 0.50, the midpoint, for everyone;
+     · form normalises to 1.00 for everyone when every club shows the same
+       three results;
+     · fixture difficulty leans 50% on the opponent's points per game, 28%
+       on their defence and 22% on their attack, so with all three flat the
+       only thing left moving it is home advantage — worth "a fifth of a
+       difficulty band". Measured on the live feed, a 1-to-5 scale was
+       returning nothing but 3s and 4s.
+
+   A rating built on that is not wrong so much as unsupported, and printing
+   it beside a 1-to-5 legend claims a precision nobody has. So the state is
+   detected and reported, and every surface that prints a club number says
+   what it is standing on. */
+export function clubSignal(ctx) {
+  const clubs = (ctx && ctx.clubs) || [];
+  const table = clubs.some((c) => (c.played || 0) > 0);
+  const goals = clubs.some((c) => (c.goalsFor || 0) > 0 || (c.goalsAgainst || 0) > 0
+    || ((c.last5 || {}).goalsFor || 0) > 0 || ((c.last5 || {}).goalsAgainst || 0) > 0);
+  /* One distinct form string across 72 clubs is a placeholder, not a
+     league in which everybody won. */
+  const forms = new Set(clubs.map((c) => (c.form || []).join('')));
+  const form = forms.size > 1;
+
+  const missing = [];
+  if (!table) missing.push('league tables');
+  if (!form) missing.push('recent form');
+  if (!goals) missing.push('goals scored and conceded');
+
+  const informative = table || form || goals;
+  const note = informative
+    ? ''
+    : 'The official feed is not yet publishing ' + missing.join(', ')
+      + ' this season, so every club looks alike on those inputs. Club ratings and '
+      + 'fixture difficulty are currently driven by the fixture list and home advantage '
+      + 'alone, and should be read as provisional rather than as a settled view.';
+
+  return { table, form, goals, informative, missing, note };
+}
+
+/** The difficulty values a set of fixtures actually takes, low to high. */
+export function observedDifficulty(ratings) {
+  const seen = [...new Set((ratings || []).filter((r) => Number.isFinite(r)))].sort((a, b) => a - b);
+  return { values: seen, min: seen[0], max: seen[seen.length - 1], full: seen.length > 2 };
+}
+
 export function hasPlayedFootball(ctx) {
   /* buildContext() measures this properly. A context assembled by hand —
      a test, a caller predating the flag — is assumed to be mid-season,

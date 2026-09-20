@@ -10,11 +10,24 @@
    what stops the rating being an opaque score with a sentence bolted on. */
 
 import { loadSnapshot } from './provider.js';
-import { buildContext, clubScore, runSummary, ordinal, CLUB_WEIGHTS } from './model.js';
+import { buildContext, clubScore, runSummary, ordinal, CLUB_WEIGHTS, clubPagePath } from './model.js';
 import {
   esc, mount, initTheme, sourceBanner, errorState, emptyState, fdrCell, fdrLegend,
   methodNote, divisionBadge, formStrip, ownershipCell, fmtDay, DIVISION_LABELS
 } from './ui.js';
+
+/* Each club has a public page of its own (/fantasy-efl/clubs/<slug>/),
+   generated from this same model. Until now nothing in the app linked to
+   them, so the only way in was a search engine — seventy-two pages that
+   the app itself treated as if they did not exist. The path comes from the
+   model so the app, the generator and the sitemap cannot disagree. */
+function clubLink(club) {
+  const href = clubPagePath(club);
+  return href
+    ? `<a href="${href}" title="${esc(club.name)}: ratings, fixtures and players">${esc(club.name)}</a>`
+    : esc(club.name);
+}
+
 
 initTheme();
 
@@ -121,7 +134,7 @@ function bestCard(r, index) {
   const opp = first && ctx.clubById[first.opponentId];
   return `<article class="pick">
     <p class="pick-role">${index === 0 ? 'Top club pick' : `#${index + 1}`}</p>
-    <div class="pick-name">${esc(club.name)}</div>
+    <div class="pick-name">${clubLink(club)}</div>
     <div class="pick-meta">
       ${divisionBadge(club.division)}
       <span>${esc(ordinal(club.position))} · ${club.points} pts from ${club.played}</span>
@@ -229,7 +242,7 @@ function row(r) {
   if (r6.blanks) notes.push(`${r6.blanks} blank`);
   return `<tr>
     <td data-label="Club">
-      <span class="t-name">${esc(club.name)}</span>
+      <span class="t-name">${clubLink(club)}</span>
       <span class="t-sub">${esc(DIVISION_LABELS[club.division])} · ${esc(ordinal(club.position))} ·
         ${club.points} pts${notes.length ? ` · ${esc(notes.join(', '))}` : ''}</span>
     </td>

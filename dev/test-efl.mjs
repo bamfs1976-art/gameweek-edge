@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import assert from 'node:assert/strict';
 import * as model_provider from '../efl/app/assets/provider.js';
+import * as sample from '../efl/app/assets/sample-data.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const APP = join(ROOT, 'efl', 'app');
@@ -823,6 +824,99 @@ ok('an availability note is never the words "[object Object]"', () => {
   for (const raw of [{ status: 'injured', note: {} }, { status: 'injured', note: { a: { b: {} } } }, { status: 'injured', note: 0 }]) {
     assert.ok(!/\[object Object\]/.test(note(raw)), 'never the literal "[object Object]", whatever the feed sends');
   }
+});
+
+/* ── What the club side can actually say ──────────────
+   Measured on the live feed: 72 clubs, every one with played 0, every one
+   with the same three-match form string, and a 1-to-5 fixture scale that
+   returned nothing but 3s and 4s. The arithmetic was fine; the claim it
+   supported was not. */
+
+const flatClubs = (n = 6) => ({
+  clubs: Array.from({ length: n }, (_, i) => ({
+    id: 'c' + i, name: 'Club ' + i, played: 0, points: 0, goalsFor: 0, goalsAgainst: 0,
+    form: ['W', 'W', 'W'], last5: { played: 3, points: 9, goalsFor: 0, goalsAgainst: 0 },
+  })),
+});
+
+ok('a feed with no table, no goals and one form string for everyone is called out', () => {
+  const sig = model.clubSignal(flatClubs());
+  assert.equal(sig.informative, false, 'nothing here separates one club from another');
+  assert.equal(sig.table, false);
+  assert.equal(sig.form, false, 'every club showing WWW is a placeholder, not a league everybody won');
+  assert.equal(sig.goals, false);
+  assert.deepEqual(sig.missing, ['league tables', 'recent form', 'goals scored and conceded']);
+  assert.ok(/provisional/.test(sig.note), 'and the note says how to read the numbers, not just that they are thin');
+});
+
+ok('any one real input is enough to stop calling it uninformative', () => {
+  const withTable = flatClubs();
+  withTable.clubs[0].played = 6;
+  assert.equal(model.clubSignal(withTable).informative, true, 'a played count is signal');
+  assert.equal(model.clubSignal(withTable).note, '', 'and the caveat goes away with it');
+
+  const withForm = flatClubs();
+  withForm.clubs[0].form = ['L', 'D', 'W'];
+  assert.equal(model.clubSignal(withForm).form, true, 'form that varies between clubs is signal');
+
+  const withGoals = flatClubs();
+  withGoals.clubs[0].last5.goalsFor = 4;
+  assert.equal(model.clubSignal(withGoals).goals, true, 'goals anywhere are signal');
+});
+
+ok('the real sample dataset reads as informative, so the gate is not always-on', () => {
+  const sig = model.clubSignal(ctx);
+  assert.equal(sig.informative, true, 'a generated league with a real table must not trip the caveat');
+  assert.equal(sig.note, '');
+});
+
+ok('an empty or malformed context does not throw', () => {
+  for (const bad of [null, undefined, {}, { clubs: [] }]) {
+    assert.equal(typeof model.clubSignal(bad).informative, 'boolean');
+  }
+});
+
+ok('the difficulty legend states the range the ratings actually take', () => {
+  /* The live feed returned only 3s and 4s while the page said "1 is the
+     most favourable, 5 the least". */
+  const two = model.observedDifficulty([3, 4, 3, 4, 3]);
+  assert.deepEqual(two.values, [3, 4]);
+  assert.equal(two.full, false, 'two values is not a five-point scale, whatever the legend says');
+  const full = model.observedDifficulty([1, 2, 3, 4, 5]);
+  assert.equal(full.full, true);
+  assert.equal(full.min, 1);
+  assert.equal(full.max, 5);
+  assert.deepEqual(model.observedDifficulty([]).values, [], 'no fixtures is an empty range, not a crash');
+  assert.deepEqual(model.observedDifficulty([3, null, NaN, 4]).values, [3, 4], 'nulls are not difficulties');
+});
+
+ok('a club summary never reports a figure the feed did not publish', () => {
+  /* "0 conceded in the last 3, 0 scored in the last 3" went out on 72
+     public club pages about sides that had been scoring. The feed sends a
+     form string and no goals at all, and a goal count nobody published is
+     not nil. */
+  const withClub = (mutate) => {
+    const c = model.buildContext(sample.buildSampleSnapshot ? sample.buildSampleSnapshot() : snap);
+    c.clubs.forEach(mutate);
+    return c;
+  };
+  void withClub;
+
+  const plain = model.clubScore(ctx, ctx.clubs[0]).summary;
+  assert.ok(/\./.test(plain), 'a full feed still gets a sentence');
+
+  const noGoals = model.buildContext(sample.buildSampleSnapshot());
+  noGoals.clubs.forEach((c) => { c.last5.goalsFor = 0; c.last5.goalsAgainst = 0; c.last5.cleanSheets = 0; });
+  const g = model.clubScore(noGoals, noGoals.clubs[0]).summary;
+  assert.ok(!/0 scored/.test(g) && !/0 conceded/.test(g), 'unpublished goals are omitted, not printed as zero');
+  assert.ok(!/, ,/.test(g) && !/,\s*\./.test(g), 'and the clause is dropped cleanly, with no stray comma');
+  assert.ok(/\.$/.test(g), 'the sentence still ends properly');
+
+  const nothing = model.buildContext(sample.buildSampleSnapshot());
+  nothing.clubs.forEach((c) => { c.last5 = { played: 0, points: 0, goalsFor: 0, goalsAgainst: 0, cleanSheets: 0 }; });
+  const n = model.clubScore(nothing, nothing.clubs[0]).summary;
+  assert.ok(!/from the last 0/.test(n), '"0 points from the last 0 — steady" is not a sentence about football');
+  assert.ok(n.length > 10 && /\.$/.test(n), 'and something readable is still said');
 });
 
 /* ── Your own seven ───────────────────────────────────

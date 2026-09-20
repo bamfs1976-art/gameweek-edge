@@ -163,16 +163,27 @@ async function eflSnapshot() {
     const { model, provider } = await eflModel();
     const snapshot = provider.buildOfficialSnapshot(documents, { now: Date.now() });
     const ctx = model.buildContext(snapshot);
-    return { ctx, scored: ctx.players.map((p) => model.playerScore(ctx, p)), round: snapshot.currentRound, model };
+    return {
+      ctx,
+      scored: ctx.players.map((p) => model.playerScore(ctx, p)),
+      round: snapshot.currentRound,
+      model,
+      /* What the club-side numbers are standing on. Handed to the caller
+         rather than kept quiet: a model reading these tools will repeat a
+         rating as fact unless told what it rests on. */
+      signal: model.clubSignal(ctx),
+    };
   });
 }
 
-const eflPlayerRow = (ctx, r) => {
+const eflPlayerRow = (ctx, r, model) => {
   const club = ctx.clubById[r.player.clubId] || {};
   const row = {
     player: r.player.name,
     club: club.name || '?',
-    division: club.division || '?',
+    /* The slug ("league-one") is an id, not a name. It reached the live
+       output and an assistant will repeat whatever it is handed. */
+    division: club.division ? model.divisionName(club.division) : '?',
     position: r.player.position,
     rating: Math.round(r.score * 10) / 10,
     status: r.player.availability.status,
@@ -506,7 +517,7 @@ const TOOLS = [
     outputSchema: { type: 'object', properties: { squad: { type: 'array', items: { type: 'object' } } }, additionalProperties: true },
     annotations: READ_ONLY,
     async run(args) {
-      const { ctx, scored, round, model } = await eflSnapshot();
+      const { ctx, scored, round, model, signal } = await eflSnapshot();
       const exclude = [];
       for (const name of (args.exclude || []).slice(0, 10)) {
         const hit = scored.find((r) => r.player.name.toLowerCase().includes(String(name).toLowerCase()));
@@ -523,11 +534,12 @@ const TOOLS = [
         round,
         formation: squad.formation.id,
         combined_rating: squad.total,
-        squad: squad.picks.map((r) => ({ ...eflPlayerRow(ctx, r), captain: r === squad.captain })),
+        squad: squad.picks.map((r) => ({ ...eflPlayerRow(ctx, r, model), captain: r === squad.captain })),
         captain: squad.captain.player.name,
         club_picks: (picks.allClubs || []).slice(0, 2).map((c) => ({ club: c.club.name, division: c.club.division, rating: Math.round(c.score * 10) / 10, why: c.summary })),
         max_captain_chip: chip && { verdict: chip.verdict, summary: chip.summary, reasons: chip.reasons },
         why: model.squadRationale(ctx, squad),
+        caveat: signal.note || undefined,
         method: 'A 0-100 rating per player from minutes, form, output, fixture and home advantage, '
           + 'weighted per position. Measured across 83,698 real appearances, minutes are the strongest '
           + 'single signal in this game and the forward is the WORST-scoring position, so do not carry '
@@ -555,7 +567,7 @@ const TOOLS = [
     outputSchema: { type: 'object', properties: { swaps: { type: 'array', items: { type: 'object' } } }, additionalProperties: true },
     annotations: READ_ONLY,
     async run(args) {
-      const { ctx, scored, round, model } = await eflSnapshot();
+      const { ctx, scored, round, model, signal } = await eflSnapshot();
       const names = Array.isArray(args.players) ? args.players.slice(0, 7) : [];
       if (!names.length) return toolFailure('Name the players held, for example {"players": ["A. Idah", "M. Yeo"]}.');
 
@@ -583,9 +595,10 @@ const TOOLS = [
         problems: advice.issues,
         unavailable: advice.unavailable.map((r) => ({ player: r.player.name, status: r.player.availability.status })),
         no_fixture: advice.blanking.map((r) => r.player.name),
-        squad: advice.picks.map((r) => eflPlayerRow(ctx, r)),
+        squad: advice.picks.map((r) => eflPlayerRow(ctx, r, model)),
         swaps: advice.swaps.map((s) => ({ out: s.out.player.name, in: s.in.player.name, gain: s.gain, why: s.reason })),
         max_captain_chip: chip && { verdict: chip.verdict, summary: chip.summary, reasons: chip.reasons },
+        caveat: signal.note || undefined,
         method: 'One change at a time, because one change is what a manager is deciding. Every swap is '
           + 'checked to leave a legal shape and to keep the two-players-per-club limit, so nothing is '
           + 'suggested that the game would refuse.',
