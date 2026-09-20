@@ -1,12 +1,12 @@
 {
- "built": "2026-09-20T04:06:31.721Z",
+ "built": "2026-09-20T04:09:46.023Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-20T04:06:31.721Z",
+  "generatedAt": "2026-09-20T04:09:46.023Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -25,11 +25,12 @@
   "form": true,
   "goals": false,
   "informative": true,
+  "difficultyInformative": false,
   "missing": [
    "league tables",
    "goals scored and conceded"
   ],
-  "note": ""
+  "note": "The official feed is not yet publishing league tables or goals scored and conceded this season. Fixture difficulty is built from the opponent's points per game, attack and defence, so with none of those published it cannot separate one opponent from another and is currently driven by home advantage alone. The club and player ratings still read recent form, so they carry more than this does."
  },
  "difficulty": {
   "values": [
@@ -1317,16 +1318,16 @@
    ],
    "unavailable": [
     {
+     "name": "D. Harrington",
+     "position": "GK",
+     "status": "doubtful",
+     "news": "Hand Injury"
+    },
+    {
      "name": "A. Cook",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "D. Harrington",
-     "position": "GK",
-     "status": "injured",
-     "news": "Hand Injury"
     },
     {
      "name": "J. Amaluzor",
@@ -2656,7 +2657,7 @@
     {
      "name": "C. Elder",
      "position": "DEF",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Concussion injury"
     },
     {
@@ -6578,16 +6579,16 @@
    ],
    "unavailable": [
     {
+     "name": "Y. Mosquera",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Ankle Injury, expected back 21 Sept"
+    },
+    {
      "name": "R. Jiménez",
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury"
-    },
-    {
-     "name": "Y. Mosquera",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 21 Sept"
     },
     {
      "name": "R. Saïd",
@@ -7748,6 +7749,12 @@
    ],
    "unavailable": [
     {
+     "name": "L. Stephenson",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Thigh Injury, expected back 21 Sept"
+    },
+    {
      "name": "C. Forino",
      "position": "DEF",
      "status": "injured",
@@ -7758,12 +7765,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "L. Stephenson",
-     "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 21 Sept"
     }
    ],
    "cardRisk": []
@@ -8034,13 +8035,13 @@
     {
      "name": "I. Chair",
      "position": "MID",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Unknown injury, expected back 10 Oct"
     },
     {
      "name": "T. Lamptey",
      "position": "DEF",
-     "status": "injured",
+     "status": "doubtful",
      "news": "Muscle Injury"
     },
     {
@@ -9847,16 +9848,22 @@
    ],
    "unavailable": [
     {
+     "name": "N. Chalobah",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Thigh Injury, expected back 11 Oct"
+    },
+    {
+     "name": "K. Ramsay",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Ankle Injury, expected back 11 Oct"
+    },
+    {
      "name": "M. Mbick",
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "N. Chalobah",
-     "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 11 Oct"
     },
     {
      "name": "B. Koumetio",
@@ -9887,12 +9894,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury"
-    },
-    {
-     "name": "K. Ramsay",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
