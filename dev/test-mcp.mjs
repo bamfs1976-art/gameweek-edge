@@ -27,6 +27,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import assert from 'node:assert/strict';
+import { existsSync, rmSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -179,6 +180,94 @@ section('the price-move curve is the one the app shows');
   ok(high > low, 'the same net transfers move a low-owned player sooner, because the threshold scales with owners');
   ok(priceChangeProb(el(99e6, 1), 10e6).prob <= 95 && priceChangeProb(el(1, 99), 10e6).prob >= 5,
     'the probability is clamped, because this is an estimate of an algorithm the game has never published');
+}
+
+/* ── 4. The production bundle ─────────────────────────
+   Netlify builds these functions with esbuild, and this one now imports the
+   Fantasy EFL model, which is an ES module while the function is CommonJS.
+   "It works under node" and "it works once esbuild has turned it into
+   CommonJS" are different claims, and only the second one ships. So the
+   test does what the deploy does: bundle this exact file and run the
+   result. */
+
+section('the function survives the bundler, and the EFL model comes with it');
+{
+  const esbuild = (await import('esbuild')).default;
+  const out = join(ROOT, 'dev', '.tmp-mcp-bundle.cjs');
+  await esbuild.build({
+    entryPoints: [join(ROOT, 'netlify', 'functions', 'mcp.js')],
+    outfile: out, bundle: true, platform: 'node', format: 'cjs', target: 'node22',
+    logLevel: 'silent',
+  });
+  ok(existsSync(out), 'esbuild bundles the function the way Netlify does');
+
+  /* The bundle is one file, so the EFL modules cannot be stubbed through
+     the require cache any more. fetch is the seam that survives bundling,
+     which is also the only seam production has. */
+  const realFetch = globalThis.fetch;
+  const club = (id, competitionId, name) => ({ id, competitionId, name, leaguePosition: 1,
+    percentSelected: 5, fdrHome: 3, fdrAway: 3, last3Form: 'WWW' });
+  const squads = [];
+  for (let c = 1; c <= 3; c++) for (let i = 1; i <= 4; i++) squads.push(club(String(c * 10 + i), String(c), 'Club ' + c + '-' + i));
+  const players = [];
+  for (const sq of squads) {
+    for (const [n, pos] of [[1, 'GK'], [2, 'DEF'], [3, 'DEF'], [4, 'MID'], [5, 'MID'], [6, 'FWD'], [7, 'FWD']]) {
+      players.push({ id: sq.id + '-' + n, squadId: sq.id, displayName: sq.name + ' P' + n, position: pos,
+        appearances: 6, totalPoints: 30 - n, goalsScored: 1, injuryDetails: null, minutesPlayed: 540 });
+    }
+  }
+  /* homeId/awayId, not homeSquadId: the first version of this fixture used
+     the wrong names and the bundled provider rejected it by name, which is
+     the shape guard doing exactly its job. */
+  const games = [];
+  for (let i = 0; i < squads.length; i += 2) {
+    games.push({ id: 'g' + i, homeId: squads[i].id, awayId: squads[i + 1].id,
+      kickoff: new Date(Date.now() + 9e5).toISOString() });
+  }
+  const rounds = [{ roundNumber: 7, status: 'open', lockoutDate: new Date(Date.now() + 864e5).toISOString(), games }];
+  const DOCS = { 'squads.json': squads, 'players.json': players, 'rounds.json': rounds };
+
+  globalThis.fetch = async (url) => {
+    const name = Object.keys(DOCS).find((k) => String(url).endsWith(k));
+    if (!name) throw new Error('the bundle reached for something other than the EFL feed: ' + url);
+    return { ok: true, status: 200, json: async () => DOCS[name] };
+  };
+
+  try {
+    const bundled = require(out);
+    const names = bundled.TOOLS.map((t) => t.name);
+    ok(names.includes('efl_round_picks') && names.includes('efl_rate_squad'),
+      'the EFL tools are present in the bundled function');
+
+    const res = await bundled.handler({ httpMethod: 'POST', body: JSON.stringify({
+      jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'efl_round_picks', arguments: {} } }) });
+    const result = JSON.parse(res.body).result;
+    const picks = result.structuredContent;
+    ok(!result.isError, 'the EFL tool runs inside the bundle: ' + (result.isError ? result.content[0].text : 'ok'));
+    ok(picks && picks.squad && picks.squad.length === 7, 'and returns a legal seven');
+    ok(picks && picks.formation, 'in one of the game\'s formations');
+    ok(picks && picks.squad.filter((p) => p.captain).length === 1, 'with exactly one captain');
+    const perClub = {};
+    for (const p of (picks && picks.squad) || []) perClub[p.club] = (perClub[p.club] || 0) + 1;
+    ok(Object.values(perClub).every((n) => n <= 2), 'and never more than two players from one club');
+
+    const rate = await bundled.handler({ httpMethod: 'POST', body: JSON.stringify({
+      jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'efl_rate_squad',
+        arguments: { players: picks.squad.map((p) => p.player) } } }) });
+    const rated = JSON.parse(rate.body).result.structuredContent;
+    ok(rated.players_recognised === 7, 'the rating tool finds players by the names the picks tool printed');
+    ok(rated.legal === true, 'and agrees the model\'s own seven is legal');
+    ok(Array.isArray(rated.swaps), 'and answers with a swap list rather than an error');
+
+    const missing = await bundled.handler({ httpMethod: 'POST', body: JSON.stringify({
+      jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'efl_rate_squad',
+        arguments: { players: ['Nobody At All'] } } }) });
+    const m = JSON.parse(missing.body).result.structuredContent;
+    ok(m.not_found.includes('Nobody At All'), 'a name it cannot place is reported back, not silently dropped');
+  } finally {
+    globalThis.fetch = realFetch;
+    try { rmSync(out); } catch (_) { /* best effort */ }
+  }
 }
 
 console.log('\n' + pass + ' passed, ' + fail + ' failed');

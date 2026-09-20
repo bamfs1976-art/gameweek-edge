@@ -226,8 +226,8 @@ Add it in Claude under Settings, Connectors, Add custom connector, and paste
 `https://gameweekedge.co.uk/api/mcp`. Open the same URL in a browser and it
 describes itself.
 
-Five tools, all read-only and all unauthenticated, because everything they
-return is already public:
+Seven tools, all read-only and all unauthenticated, because everything they
+return is already public. Two games, and the prefix says which:
 
 | Tool | Answers |
 |---|---|
@@ -236,11 +236,21 @@ return is already public:
 | `fpl_price_predictions` | who rises or falls tonight, with a probability |
 | `fpl_suspension_watch` | who is one booking from a ban, and how long |
 | `fpl_model_record` | the model's own graded accuracy, so the answer to "why trust this" is evidence |
+| `efl_round_picks` | a legal Fantasy EFL seven for this round, the captain, the two club picks and a Max Captain read |
+| `efl_rate_squad` | rates the EFL side you already hold and names the single change worth making |
+
+The EFL pair are the ones nothing else offers: there is no other free tool
+for the official Fantasy EFL game, and the games do not share instincts (in
+EFL the forward is the worst-scoring position), so the server's instructions
+tell the model not to answer one with the other's tools.
 
 **It runs the shipping model, not a copy.** The projections come from the same
 functions the browser runs, extracted from `index.html` at runtime exactly as
 `log-predictions` does (`included_files` in `netlify.toml`). There is no second
-model to drift.
+model to drift. The EFL tools import the app's own ES modules
+across the CommonJS boundary for the same reason, and `dev/test-mcp.mjs`
+bundles the function with esbuild the way Netlify does and runs the result,
+because working under node and working once bundled are different claims.
 
 The protocol layer is `netlify/lib/mcp.js`, written directly rather than with
 the official SDK — its header says why, and when to swap it out.

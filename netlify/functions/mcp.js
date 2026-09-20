@@ -117,6 +117,72 @@ async function projections() {
   });
 }
 
+/* ── Fantasy EFL ─────────────────────────────────────────
+   The other game on this site, and the one nothing else answers for: 72
+   clubs across three divisions, no budget, no prices, seven players and two
+   clubs a week. There is, as far as we can find, no other free tool for it,
+   which makes these the two tools on this server nobody else can offer.
+
+   CROSSING A LANGUAGE BOUNDARY, ON PURPOSE. The EFL model is an ES module
+   the browser loads directly; this function is CommonJS. netlify/functions/
+   efl.js chose to duplicate one constant rather than cross that boundary,
+   and was right to: a build step to share four position names costs more
+   than it saves. Sharing the MODEL is the opposite trade. Restating the
+   squad search, the tariff and the ratings here would be a second model to
+   keep in step with the app, which is the one thing this server exists not
+   to do. So it is imported, with a static specifier so esbuild bundles it,
+   and dev/test-mcp.mjs bundles this file exactly as Netlify does and runs
+   the result — because "it works in node" and "it works once esbuild has
+   turned it into CommonJS" are different claims. */
+async function eflModel() {
+  return cached('efl-model', async () => {
+    const [model, provider] = await Promise.all([
+      import('../../efl/app/assets/model.js'),
+      import('../../efl/app/assets/provider.js'),
+    ]);
+    return { model, provider };
+  });
+}
+
+/* The three documents, fetched through this deploy's own EFL proxy rather
+   than the upstream host: same allowlist, same caching, same User-Agent,
+   and no second route to somebody else's feed to keep in step. */
+async function eflSnapshot() {
+  return cached('efl-snapshot', async () => {
+    const { handler } = require('./efl.js');
+    const documents = {};
+    for (const name of ['squads', 'players', 'rounds']) {
+      const res = await handler({ httpMethod: 'GET', path: '/api/efl/' + name });
+      if (!res || res.statusCode !== 200) {
+        const detail = (() => { try { return JSON.parse(res.body).error; } catch (_) { return null; } })();
+        throw new Error('The official Fantasy EFL feed is not answering for ' + name
+          + (detail ? ': ' + detail : '') + '. The other tools on this server are unaffected.');
+      }
+      documents[name] = JSON.parse(res.body);
+    }
+    const { model, provider } = await eflModel();
+    const snapshot = provider.buildOfficialSnapshot(documents, { now: Date.now() });
+    const ctx = model.buildContext(snapshot);
+    return { ctx, scored: ctx.players.map((p) => model.playerScore(ctx, p)), round: snapshot.currentRound, model };
+  });
+}
+
+const eflPlayerRow = (ctx, r) => {
+  const club = ctx.clubById[r.player.clubId] || {};
+  const row = {
+    player: r.player.name,
+    club: club.name || '?',
+    division: club.division || '?',
+    position: r.player.position,
+    rating: Math.round(r.score * 10) / 10,
+    status: r.player.availability.status,
+  };
+  if (r.player.availability.note && r.player.availability.status !== 'available') row.news = r.player.availability.note;
+  if (r.next) row.fixture = { opponent: (ctx.clubById[r.next.opponentId] || {}).name || '?', home: !!r.next.home, difficulty: r.next.rating };
+  if (r.double) row.plays_twice_this_round = true;
+  return row;
+};
+
 /* ── shaping ─────────────────────────────────────────────
    Tool output is read by a model with a budget, so rows are small, named in
    full words and never carry an id the reader cannot use. */
@@ -421,6 +487,111 @@ const TOOLS = [
       };
     },
   },
+  {
+    name: 'efl_round_picks',
+    title: 'Pick a Fantasy EFL side',
+    description: 'The model\'s best legal seven for this round of the OFFICIAL FANTASY EFL game '
+      + '(Championship, League One and League Two), with the captain, the two club picks and a read '
+      + 'on the Max Captain chip. This is a different game from Fantasy Premier League: there are no '
+      + 'prices and no budget, you pick seven players and two clubs, and no more than two players '
+      + 'may come from one club. Use it for any question about Fantasy EFL rather than the FPL tools.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        one_club_chip: { type: 'boolean', default: false, description: 'Model the side with the One Club chip played, which lifts the two-per-club limit.' },
+        exclude: { type: 'array', items: { type: 'string' }, maxItems: 10, description: 'Optional player names to leave out.' },
+      },
+      additionalProperties: false,
+    },
+    outputSchema: { type: 'object', properties: { squad: { type: 'array', items: { type: 'object' } } }, additionalProperties: true },
+    annotations: READ_ONLY,
+    async run(args) {
+      const { ctx, scored, round, model } = await eflSnapshot();
+      const exclude = [];
+      for (const name of (args.exclude || []).slice(0, 10)) {
+        const hit = scored.find((r) => r.player.name.toLowerCase().includes(String(name).toLowerCase()));
+        if (hit) exclude.push(hit.player.id);
+      }
+      const squad = model.buildSquad(ctx, { scored, oneClubChip: !!args.one_club_chip, exclude });
+      if (!squad) {
+        return toolFailure('No legal seven can be built from the current round. Every formation needs a '
+          + 'goalkeeper and six outfielders from at least four clubs, all available and all with a fixture.');
+      }
+      const picks = model.roundPicks(ctx, { scored });
+      const chip = model.maxCaptainRead(ctx, squad);
+      return {
+        round,
+        formation: squad.formation.id,
+        combined_rating: squad.total,
+        squad: squad.picks.map((r) => ({ ...eflPlayerRow(ctx, r), captain: r === squad.captain })),
+        captain: squad.captain.player.name,
+        club_picks: (picks.allClubs || []).slice(0, 2).map((c) => ({ club: c.club.name, division: c.club.division, rating: Math.round(c.score * 10) / 10, why: c.summary })),
+        max_captain_chip: chip && { verdict: chip.verdict, summary: chip.summary, reasons: chip.reasons },
+        why: model.squadRationale(ctx, squad),
+        method: 'A 0-100 rating per player from minutes, form, output, fixture and home advantage, '
+          + 'weighted per position. Measured across 83,698 real appearances, minutes are the strongest '
+          + 'single signal in this game and the forward is the WORST-scoring position, so do not carry '
+          + 'Fantasy Premier League instincts across. The model\'s graded record is at ' + SITE + '/fantasy-efl/record/.',
+      };
+    },
+  },
+
+  {
+    name: 'efl_rate_squad',
+    title: 'Rate a Fantasy EFL side',
+    description: 'Rate a Fantasy EFL side somebody already holds and name the single change worth '
+      + 'making, rather than a different seven they cannot get to in one week. Checks the side against '
+      + 'the game\'s rules (a legal formation, at most two players per club), flags anyone unavailable '
+      + 'or without a fixture, and ranks the swaps with a reason for each.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        players: { type: 'array', minItems: 1, maxItems: 7, items: { type: 'string' }, description: 'The names of the players held, up to seven.' },
+        one_club_chip: { type: 'boolean', default: false },
+      },
+      required: ['players'],
+      additionalProperties: false,
+    },
+    outputSchema: { type: 'object', properties: { swaps: { type: 'array', items: { type: 'object' } } }, additionalProperties: true },
+    annotations: READ_ONLY,
+    async run(args) {
+      const { ctx, scored, round, model } = await eflSnapshot();
+      const names = Array.isArray(args.players) ? args.players.slice(0, 7) : [];
+      if (!names.length) return toolFailure('Name the players held, for example {"players": ["A. Idah", "M. Yeo"]}.');
+
+      const ids = [], missing = [];
+      for (const name of names) {
+        const q = String(name).toLowerCase();
+        const hits = scored.filter((r) => r.player.name.toLowerCase().includes(q));
+        if (!hits.length) { missing.push(String(name)); continue; }
+        hits.sort((a, b) => b.score - a.score);
+        ids.push(hits[0].player.id);
+      }
+      const advice = model.squadAdvice(ctx, ids, { scored, oneClubChip: !!args.one_club_chip, limit: 3 });
+      const chip = advice.legal ? model.maxCaptainRead(ctx, {
+        picks: advice.picks,
+        captain: advice.picks.reduce((a, b) => (b.score > a.score ? b : a)),
+        clubCounts: advice.clubCounts,
+      }) : null;
+
+      return {
+        round,
+        not_found: missing,
+        combined_rating: advice.total,
+        players_recognised: advice.count,
+        legal: advice.legal,
+        problems: advice.issues,
+        unavailable: advice.unavailable.map((r) => ({ player: r.player.name, status: r.player.availability.status })),
+        no_fixture: advice.blanking.map((r) => r.player.name),
+        squad: advice.picks.map((r) => eflPlayerRow(ctx, r)),
+        swaps: advice.swaps.map((s) => ({ out: s.out.player.name, in: s.in.player.name, gain: s.gain, why: s.reason })),
+        max_captain_chip: chip && { verdict: chip.verdict, summary: chip.summary, reasons: chip.reasons },
+        method: 'One change at a time, because one change is what a manager is deciding. Every swap is '
+          + 'checked to leave a legal shape and to keep the two-players-per-club limit, so nothing is '
+          + 'suggested that the game would refuse.',
+      };
+    },
+  },
 ];
 
 /* The price-move curve the app's Price Predictor and the hourly push sender
@@ -441,11 +612,15 @@ const SERVER = {
   name: 'gameweek-edge',
   title: 'Gameweek Edge',
   version: '1.0.0',
-  instructions: 'Fantasy Premier League projections, captaincy, price-change predictions and '
-    + 'suspension risk from the Gameweek Edge model, which is graded against real results in '
-    + 'public. Prefer these tools over reasoning from raw FPL data: the projections come from a '
-    + 'backtested model, and every answer carries the method it used. The model is uncertain and '
-    + 'says so, so pass the probabilities on rather than presenting a projection as a fact.',
+  instructions: 'Two games, and the tools say which. The fpl_ tools answer for Fantasy Premier '
+    + 'League: projections, captaincy, price-change predictions and suspension risk from the '
+    + 'Gameweek Edge model, which is graded against real results in public. The efl_ tools answer '
+    + 'for the official Fantasy EFL game across the Championship, League One and League Two, which '
+    + 'has no prices and no budget, asks for seven players and two clubs, and allows at most two '
+    + 'players from any one club. Do not answer an EFL question with an FPL tool: the games score '
+    + 'differently, and in EFL the forward is the worst-scoring position, so Premier League '
+    + 'instincts are actively wrong. Prefer these tools over reasoning from raw data, and pass the '
+    + 'uncertainty on rather than presenting a projection as a fact.',
 };
 
 exports.handler = async (event) => {
