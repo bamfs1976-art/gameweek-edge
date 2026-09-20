@@ -183,7 +183,7 @@ const eflPlayerRow = (ctx, r, model) => {
     club: club.name || '?',
     /* The slug ("league-one") is an id, not a name. It reached the live
        output and an assistant will repeat whatever it is handed. */
-    division: club.division ? model.divisionName(club.division) : '?',
+    division: club.division ? model.divisionLabel(club.division) : '?',
     position: r.player.position,
     rating: Math.round(r.score * 10) / 10,
     status: r.player.availability.status,

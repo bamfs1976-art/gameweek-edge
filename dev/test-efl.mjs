@@ -781,6 +781,18 @@ ok('the injury note is built from the shape the live feed actually sends', () =>
     'an unparseable date costs its clause and nothing else');
 });
 
+ok('a division has a sentence form and a label form, and they are not the same', () => {
+  /* "the the Championship" reached a meta description; "league-one" reached
+     the live MCP output; "the Championship" as a JSON field value reads
+     like a sentence fragment. One rule, two forms, both in the model. */
+  assert.equal(model.divisionName('championship'), 'the Championship', 'the sentence form keeps its article');
+  assert.equal(model.divisionLabel('championship'), 'Championship', 'the label form drops it');
+  for (const id of ['league-one', 'league-two']) {
+    assert.equal(model.divisionLabel(id), model.divisionName(id), 'a division with no article is the same either way');
+  }
+  assert.ok(!/^the /i.test(model.divisionLabel('championship')), 'no label starts with an article');
+});
+
 ok('the feed\'s injury status decides doubtful from out, on values it actually sends', () => {
   /* Not guessed. The club-page job reported the live vocabulary:
      "1 | Questionable (50%)" and "2 | Out (0%)". Everything carrying an

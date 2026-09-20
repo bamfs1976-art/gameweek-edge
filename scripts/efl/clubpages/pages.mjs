@@ -42,10 +42,8 @@ const ordinal = (n) => {
 
 const fdr = (d) => '<span class="fdr fdr-' + d + '" title="Modelled difficulty ' + d + ' of 5">' + d + '</span>';
 
-/* The model names the Championship "the Championship", which reads correctly
-   in a sentence ("sit 4th in the Championship") and reads as "the the
-   Championship" the moment an article is already there. Both forms are
-   needed, so both exist rather than one being bent to cover the other. */
+/* The article-free form. The rule lives in the model (divisionLabel), so
+   this is the one place that needs it from a NAME rather than an id. */
 const bareDivision = (name) => String(name || '').replace(/^the\s+/i, '');
 
 /* The provider now reads a real sentence out of the feed's note object

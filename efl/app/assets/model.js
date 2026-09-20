@@ -1424,6 +1424,16 @@ export function ordinal(n) {
   return v + (s[(m - 20) % 10] || s[m] || s[0]);
 }
 
+/* The bare name, with no article. divisionName() returns "the Championship",
+   which is right inside a sentence ("sit 4th in the Championship") and wrong
+   anywhere an article is already there or a label is expected — a JSON field
+   called "division" should read Championship, not the Championship. Both
+   forms exist rather than one being bent to cover the other, and both live
+   here so the pages, the app and the MCP tools agree. */
+export function divisionLabel(id) {
+  return divisionName(id).replace(/^the\s+/i, '');
+}
+
 export function divisionName(id) {
   return { championship: 'the Championship', 'league-one': 'League One', 'league-two': 'League Two' }[id]
     || id;
