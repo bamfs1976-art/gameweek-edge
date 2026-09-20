@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1080" />
+    <title>Gameweek Edge features</title>
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/music/audio-data.js"></script>
+    <style>
+      /* Fonts, vendored from the same families the app loads (BRAND.md §7). */
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: block; src: url(assets/fonts/Inter-400.woff2) format("woff2"); }
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 600; font-display: block; src: url(assets/fonts/Inter-600.woff2) format("woff2"); }
+      @font-face { font-family: "Inter"; font-style: normal; font-weight: 700; font-display: block; src: url(assets/fonts/Inter-700.woff2) format("woff2"); }
+      @font-face { font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: block; src: url(assets/fonts/IBMPlexMono-600.woff2) format("woff2"); }
+
+      /* Tokens from BRAND.md §6 and the app's own :root. */
+      :root {
+        --bg: #0a0c0f;
+        --surface: #111418;
+        --surface-2: #1a2026;
+        --green: #00d26a;
+        --green-soft: rgba(0, 210, 106, 0.12);
+        --hot: #b6ff3c;
+        --text: #e8ecf1;
+        --text-2: #aab3be;
+        --line: rgba(255, 255, 255, 0.09);
+      }
+
+      html, body { margin: 0; padding: 0; background: var(--bg); }
+
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Inter", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      #canvas-lift {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(760px 420px at 50% 116%, rgba(0, 210, 106, 0.10), rgba(0, 210, 106, 0) 70%),
+          radial-gradient(620px 360px at 50% -14%, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 72%);
+      }
+
+      .clip { position: absolute; inset: 0; }
+      .inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 56px; box-sizing: border-box; }
+
+      .num { font-family: "IBM Plex Mono", ui-monospace, monospace; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+      /* ---------- Shared card chrome (the app's own: 1px border, 6px radius, no shadow) ---------- */
+      .card {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 52px 56px 56px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+      }
+      .card-head { display: flex; align-items: center; gap: 16px; margin-bottom: 38px; }
+      .dot-wrap { position: relative; width: 13px; height: 13px; }
+      .dot-glow {
+        position: absolute; left: -12px; top: -12px; width: 35px; height: 35px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(0, 210, 106, 0.55), rgba(0, 210, 106, 0) 68%);
+      }
+      .dot { position: absolute; inset: 0; border-radius: 50%; background: var(--green); }
+      .card-label { font-size: 24px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-2); }
+      .card-chrome { margin-left: auto; font-size: 24px; font-weight: 400; color: var(--text-2); }
+
+      /* ---------- Scene 1 : the proof ---------- */
+      #hook-line { margin: 0; font-size: 92px; font-weight: 600; line-height: 1.16; letter-spacing: -0.028em; text-align: center; color: var(--text); }
+      #hook-line .ln { display: block; }
+      #hook-line .soft { font-weight: 400; color: var(--text-2); }
+      #hook-sub { margin: 40px 0 0 0; font-size: 46px; font-weight: 400; color: var(--text-2); text-align: center; }
+      #mae { color: var(--hot); }
+
+      /* ---------- Scene 2 : Scout AI ---------- */
+      .bub { box-sizing: border-box; padding: 26px 36px; border-radius: 26px; font-size: 40px; line-height: 1.42; color: var(--text); }
+      #bub-u { align-self: flex-end; background: var(--surface-2); border-bottom-right-radius: 6px; max-width: 700px; }
+      #bub-a { align-self: flex-start; background: var(--green-soft); border-bottom-left-radius: 6px; max-width: 840px; margin-top: 28px; }
+      #sc2-card { display: flex; flex-direction: column; }
+
+      /* ---------- Scene 3 : Captaincy Lab ---------- */
+      .trow { display: flex; align-items: baseline; font-size: 44px; color: var(--text); padding: 24px 0; border-bottom: 1px solid var(--line); }
+      .trow:last-of-type { border-bottom: 0; padding-bottom: 0; }
+      .thead { font-size: 23px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-2); padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+      .c-name { flex: 1 1 auto; }
+      .c-team { width: 130px; font-size: 30px; color: var(--text-2); }
+      .c-xp { width: 150px; text-align: right; }
+      .c-haul { width: 175px; text-align: right; }
+      .thead .c-xp, .thead .c-haul, .thead .c-team { font-size: 23px; }
+
+      /* ---------- Scene 4 : Live ---------- */
+      .tiles { display: flex; gap: 20px; }
+      .tile { flex: 1 1 0; background: var(--surface-2); border-radius: 6px; padding: 32px 36px 36px; }
+      .tile-k { font-size: 23px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; color: var(--text-2); }
+      .tile-v { margin-top: 14px; font-size: 86px; line-height: 1; color: var(--text); }
+      .chips { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 32px; }
+      .chip { background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 13px 24px; font-size: 26px; color: var(--text-2); }
+
+      /* ---------- Scene 5 : the edge tools ---------- */
+      .erow { padding: 28px 0; border-bottom: 1px solid var(--line); }
+      .erow:last-of-type { border-bottom: 0; padding-bottom: 0; }
+      .e-k { font-size: 23px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-2); }
+      .e-body { display: flex; align-items: baseline; margin-top: 16px; font-size: 40px; color: var(--text); }
+      .e-what { flex: 1 1 auto; }
+      .e-val { text-align: right; color: var(--green); }
+
+      /* ---------- Scene 6 : lockup ---------- */
+      #lockup { display: flex; flex-direction: column; align-items: center; }
+      .mark-wrap { position: relative; width: 158px; height: 158px; }
+      #logo-glow {
+        position: absolute; left: -66px; top: -66px; width: 290px; height: 290px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(0, 210, 106, 0.42), rgba(0, 210, 106, 0) 66%);
+      }
+      #mark { position: relative; display: block; width: 158px; height: 158px; border-radius: 36px; }
+      #wordmark { margin: 32px 0 0 0; font-size: 72px; font-weight: 700; letter-spacing: -0.025em; color: var(--text); }
+      #tagline { margin: 14px 0 0 0; font-size: 36px; font-weight: 400; color: var(--text-2); }
+      #freeline { margin: 40px 0 0 0; font-size: 34px; font-weight: 400; color: var(--text); }
+      #domain { margin: 18px 0 0 0; font-size: 42px; font-weight: 600; color: var(--green); }
+      #disclaimer {
+        position: absolute; left: 88px; right: 88px; bottom: 40px;
+        text-align: center; font-size: 18px; font-weight: 400; line-height: 1.45;
+        letter-spacing: 0.01em; color: var(--text-2);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="gameweek-edge-features"
+      data-start="0"
+      data-width="1080"
+      data-height="1080"
+      data-fps="30"
+      data-duration="24.76"
+    >
+      <div id="canvas-lift" data-layout-ignore="true"></div>
+
+      <!-- Scene 1 — the proof — 0.00 to 4.23 (dissolves out 3.70 to 4.23) -->
+      <section id="sc1" class="clip" data-start="0" data-duration="4.23" data-track-index="0">
+        <div id="sc1-inner" class="inner">
+          <p id="hook-line"><span class="ln"><span class="num">1,000</span> projections.</span><span class="ln soft">Graded in public.</span></p>
+          <p id="hook-sub">Mean error: <span class="num" id="mae">1.9</span> points.</p>
+        </div>
+      </section>
+
+      <!-- Scene 2 — Scout AI — 4.23 to 10.01 (dissolves out 9.50 to 10.01) -->
+      <section id="sc2" class="clip" data-start="4.23" data-duration="5.78" data-track-index="1">
+        <div id="sc2-inner" class="inner">
+          <div id="sc2-card" class="card">
+            <div class="card-head">
+              <div class="dot-wrap">
+                <div id="scout-dot-glow" class="dot-glow" data-layout-ignore="true"></div>
+                <div class="dot"></div>
+              </div>
+              <div class="card-label">Scout AI</div>
+              <div class="card-chrome">Never invents stats.</div>
+            </div>
+            <div id="bub-u" class="bub">Gvardiol or Haaland (C)?</div>
+            <div id="bub-a" class="bub">Gvardiol <span class="num">8.3</span> to Haaland's <span class="num">8.1</span>. But Haaland hauls more often.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 3 — Captaincy Lab — 10.01 to 14.22 (dissolves out 13.70 to 14.22) -->
+      <section id="sc3" class="clip" data-start="10.01" data-duration="4.21" data-track-index="2">
+        <div id="sc3-inner" class="inner">
+          <div id="sc3-card" class="card">
+            <div class="card-head">
+              <div class="dot-wrap"><div class="dot"></div></div>
+              <div class="card-label">Captaincy Lab</div>
+              <div class="card-chrome">Every captain, ranked.</div>
+            </div>
+            <div class="trow thead"><span class="c-name">Player</span><span class="c-team">Team</span><span class="c-xp">xP</span><span class="c-haul">Haul</span></div>
+            <div class="trow" id="r1"><span class="c-name">Gvardiol</span><span class="c-team">MCI</span><span class="c-xp num">8.3</span><span class="c-haul num">8%</span></div>
+            <div class="trow" id="r2"><span class="c-name">Haaland</span><span class="c-team">MCI</span><span class="c-xp num">8.1</span><span class="c-haul num">27%</span></div>
+            <div class="trow" id="r3"><span class="c-name">Bogle</span><span class="c-team">LEE</span><span class="c-xp num">7.9</span><span class="c-haul num">23%</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 4 — Live — 14.22 to 18.44 (dissolves out 17.91 to 18.44) -->
+      <section id="sc4" class="clip" data-start="14.22" data-duration="4.22" data-track-index="3">
+        <div id="sc4-inner" class="inner">
+          <div id="sc4-card" class="card">
+            <div class="card-head">
+              <div class="dot-wrap"><div class="dot"></div></div>
+              <div class="card-label">Live</div>
+              <div class="card-chrome">One matchday, five views.</div>
+            </div>
+            <div class="tiles" id="tiles">
+              <div class="tile"><div class="tile-k">GW points</div><div class="tile-v num">64</div></div>
+              <div class="tile"><div class="tile-k">Live rank</div><div class="tile-v num">150k</div></div>
+            </div>
+            <div class="chips" id="chips">
+              <span class="chip">Percentile</span>
+              <span class="chip">Bonus</span>
+              <span class="chip">DEFCON</span>
+              <span class="chip">Rank threats</span>
+              <span class="chip">Auto-subs</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 5 — the edge tools — 18.44 to 22.12 (dissolves out 21.59 to 22.12) -->
+      <section id="sc5" class="clip" data-start="18.44" data-duration="3.68" data-track-index="4">
+        <div id="sc5-inner" class="inner">
+          <div id="sc5-card" class="card">
+            <div class="card-head">
+              <div class="dot-wrap"><div class="dot"></div></div>
+              <div class="card-label">Before it costs you</div>
+            </div>
+            <div class="erow" id="e1">
+              <div class="e-k">Price Predictor</div>
+              <div class="e-body"><span class="e-what">Kostoulas, Brighton</span><span class="e-val num">95% to rise</span></div>
+            </div>
+            <div class="erow" id="e2">
+              <div class="e-k">Suspension Watch</div>
+              <div class="e-body"><span class="e-what">One yellow from a ban</span><span class="e-val num">0 at risk</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Scene 6 — lockup — 22.12 to 24.76 -->
+      <section id="sc6" class="clip" data-start="22.12" data-duration="2.64" data-track-index="5">
+        <div id="sc6-inner" class="inner">
+          <div id="lockup">
+            <div class="mark-wrap">
+              <div id="logo-glow" data-layout-ignore="true"></div>
+              <img id="mark" src="assets/img/gwe-mark.png" alt="Gameweek Edge" />
+            </div>
+            <p id="wordmark">Gameweek Edge</p>
+            <p id="tagline">FPL, with an edge.</p>
+            <p id="freeline">Free to start. Ad-free.</p>
+          </div>
+          <p id="domain">gameweekedge.co.uk</p>
+        </div>
+        <p id="disclaimer">Not affiliated with, endorsed by, or associated with the Premier League or the official Fantasy Premier League game.</p>
+      </section>
+
+      <!-- Audio. Music bed on track 10, a light consistent SFX layer above it (app-store posture). -->
+      <audio id="bg-music" data-start="0" data-duration="24.76" data-track-index="10" data-volume="1"
+             src="assets/music/happy-beats-business-moves-vol-11-by-ende-dot-app.mp3"></audio>
+      <audio id="sfx-scout" data-start="4.18" data-duration="0.11" data-track-index="11" data-volume="0.65"
+             src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-capt" data-start="9.96" data-duration="0.19" data-track-index="12" data-volume="0.65"
+             src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-live" data-start="14.17" data-duration="0.11" data-track-index="13" data-volume="0.65"
+             src="assets/sfx/interface/drop_001.ogg"></audio>
+      <audio id="sfx-edge" data-start="18.39" data-duration="0.19" data-track-index="14" data-volume="0.65"
+             src="assets/sfx/interface/drop_002.ogg"></audio>
+      <audio id="sfx-lockup" data-start="22.07" data-duration="0.13" data-track-index="15" data-volume="0.7"
+             src="assets/sfx/interface/bong_001.ogg"></audio>
+    </div>
+
+    <script>
+      // Beat grid and strong cues from the bundled preset for
+      // happy-beats-business-moves-vol-11 (114.84 BPM). Every scene boundary and
+      // every card reveal sits on a beat; four land on strong cues.
+      document.fonts.ready.then(function () {
+        var tl = gsap.timeline({ paused: true });
+        var RISE = { y: 18, opacity: 0 };
+        var SET = { y: 0, opacity: 1, duration: 0.45, ease: "power3.out" };
+
+        function card(sel, t) {
+          tl.fromTo(sel, { scale: 0.972, y: 16, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, t);
+        }
+        function rise(sel, t, dur) {
+          tl.fromTo(sel, RISE, Object.assign({}, SET, { duration: dur || 0.45 }), t);
+        }
+        function dissolve(sel, t) {
+          tl.to(sel, { opacity: 0, duration: 0.52, ease: "power1.inOut" }, t);
+        }
+
+        // ---------- Scene 1 — the proof — 0.00 to 4.23 ----------
+        rise("#hook-line", 0.30, 0.55);
+        rise("#hook-sub", 1.60, 0.5); // beat-locked: 1.60s strong cue
+        dissolve("#sc1-inner", 3.70);
+
+        // ---------- Scene 2 — Scout AI — 4.23 to 10.01 ----------
+        card("#sc2-card", 4.23); // beat-grid: 4.23s
+        rise("#bub-u", 4.75, 0.45); // beat-grid: 4.75s
+        rise("#bub-a", 5.80, 0.5); // beat-locked: 5.80s strong cue
+        dissolve("#sc2-inner", 9.50);
+
+        // ---------- Scene 3 — Captaincy Lab — 10.01 to 14.22 ----------
+        card("#sc3-card", 10.01); // beat-grid: 10.01s
+        // beat-grid: rows at 10.54s, 11.06s, 11.60s
+        rise("#r1", 10.54, 0.4);
+        rise("#r2", 11.06, 0.4);
+        rise("#r3", 11.60, 0.4);
+        dissolve("#sc3-inner", 13.70);
+
+        // ---------- Scene 4 — Live — 14.22 to 18.44 ----------
+        card("#sc4-card", 14.22); // beat-locked: 14.22s strong cue
+        rise("#tiles", 14.76, 0.5); // beat-grid: 14.76s
+        rise("#chips", 15.81, 0.45); // beat-grid: 15.81s
+        dissolve("#sc4-inner", 17.91);
+
+        // ---------- Scene 5 — the edge tools — 18.44 to 22.12 ----------
+        card("#sc5-card", 18.44); // beat-grid: 18.44s
+        rise("#e1", 18.96, 0.45); // beat-grid: 18.96s
+        rise("#e2", 19.49, 0.45); // beat-locked: 19.49s strong cue
+        dissolve("#sc5-inner", 21.59);
+
+        // ---------- Scene 6 — lockup — 22.12 to 24.76 ----------
+        rise("#lockup", 22.12, 0.62);
+        tl.fromTo("#disclaimer", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power1.out" }, 22.12);
+        rise("#domain", 23.17, 0.45); // beat-grid: 23.17s
+
+        // ---------- Music: warm bed, fading to quiet under the lockup ----------
+        // data-volume stays at 1 so the tween alone carries the level (lint:
+        // audio_volume_tween_overrides_gain).
+        tl.set("#bg-music", { volume: 0.32 }, 0);
+        tl.to("#bg-music", { volume: 0, duration: 1.2, ease: "power1.in" }, 23.56);
+
+        // ---------- Audio-reactive: two decoratives breathe, nothing else ----------
+        var D = window.AUDIO_DATA;
+        var logoGlow = document.getElementById("logo-glow");
+        var scoutGlow = document.getElementById("scout-dot-glow");
+
+        function frameSetter(frame) {
+          return function () {
+            logoGlow.style.opacity = (0.30 + frame.rms * 0.45).toFixed(3);
+            scoutGlow.style.opacity = (0.25 + frame.bands[0] * 0.55).toFixed(3);
+          };
+        }
+
+        for (var i = 0; i < D.totalFrames; i++) {
+          var t = i / D.fps;
+          if (t > 24.76) break;
+          tl.call(frameSetter(D.frames[i]), [], t);
+        }
+
+        window.__timelines["gameweek-edge-features"] = tl;
+      });
+    </script>
+  </body>
+</html>
