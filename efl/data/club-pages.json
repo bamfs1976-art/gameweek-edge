@@ -1,12 +1,12 @@
 {
- "built": "2026-09-21T04:58:00.132Z",
+ "built": "2026-09-21T12:50:51.679Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-21T04:58:00.132Z",
+  "generatedAt": "2026-09-21T12:50:51.679Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1312,12 +1312,6 @@
    ],
    "unavailable": [
     {
-     "name": "D. Harrington",
-     "position": "GK",
-     "status": "doubtful",
-     "news": "Hand Injury"
-    },
-    {
      "name": "A. Cook",
      "position": "FWD",
      "status": "injured",
@@ -2377,6 +2371,12 @@
    ],
    "unavailable": [
     {
+     "name": "D. Harrington",
+     "position": "GK",
+     "status": "doubtful",
+     "news": "Hand Injury"
+    },
+    {
      "name": "C. Forino",
      "position": "DEF",
      "status": "injured",
@@ -3375,6 +3375,24 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Davison",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "J. Turner-Cooke",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "J. Ruffels",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "J. Price",
      "position": "MID",
@@ -6109,6 +6127,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Maxwell",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
     {
      "name": "J. Donacien",
      "position": "DEF",
