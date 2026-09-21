@@ -1,12 +1,12 @@
 {
- "built": "2026-09-20T23:15:38.710Z",
+ "built": "2026-09-21T04:58:00.132Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-20T23:15:38.710Z",
+  "generatedAt": "2026-09-21T04:58:00.132Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -890,22 +890,10 @@
    ],
    "unavailable": [
     {
-     "name": "Y. Mosquera",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Ankle Injury, expected back 21 Sept"
-    },
-    {
      "name": "R. Jiménez",
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury"
-    },
-    {
-     "name": "R. Saïd",
-     "position": "FWD",
-     "status": "injured",
-     "news": "MCL Knee Injury, expected back 21 Sept"
     }
    ],
    "cardRisk": []
@@ -2357,7 +2345,7 @@
     {
      "name": "M. Conway",
      "position": "DEF",
-     "rating": 74,
+     "rating": 73.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
@@ -2388,12 +2376,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "L. Stephenson",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Thigh Injury, expected back 21 Sept"
-    },
     {
      "name": "C. Forino",
      "position": "DEF",
@@ -7721,7 +7703,7 @@
     {
      "name": "P. Mattsson",
      "position": "MID",
-     "rating": 66.4,
+     "rating": 65.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 0 goals and 1 assist."
@@ -7729,7 +7711,7 @@
     {
      "name": "K. McLean",
      "position": "MID",
-     "rating": 64.1,
+     "rating": 64.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 0 goals and 0 assists."
@@ -7745,7 +7727,7 @@
     {
      "name": "J. Córdoba",
      "position": "DEF",
-     "rating": 59.3,
+     "rating": 58.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
