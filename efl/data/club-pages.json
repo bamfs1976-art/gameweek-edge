@@ -1,12 +1,12 @@
 {
- "built": "2026-09-21T19:59:49.977Z",
+ "built": "2026-09-22T00:08:04.921Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-21T19:59:49.977Z",
+  "generatedAt": "2026-09-22T00:08:04.921Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -3227,6 +3227,12 @@
    ],
    "unavailable": [
     {
+     "name": "G. Sebine",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Calf Injury, expected back 21 Oct"
+    },
+    {
      "name": "L. Agbaire",
      "position": "DEF",
      "status": "injured",
@@ -5673,6 +5679,18 @@
      "position": "GK",
      "status": "injured",
      "news": "Unknown injury"
+    },
+    {
+     "name": "C. Whitely",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Concussion injury"
+    },
+    {
+     "name": "C. Headman",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
     },
     {
      "name": "D. Woodman",
@@ -9096,6 +9114,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Unknown injury"
+    },
+    {
+     "name": "G. Evans",
+     "position": "MID",
+     "status": "injured",
+     "news": "Foot Injury"
     },
     {
      "name": "C. Gilligan",
