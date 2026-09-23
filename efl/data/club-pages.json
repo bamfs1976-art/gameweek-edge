@@ -1,12 +1,12 @@
 {
- "built": "2026-09-22T21:20:31.287Z",
+ "built": "2026-09-23T04:47:02.604Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-22T21:20:31.287Z",
+  "generatedAt": "2026-09-23T04:47:02.604Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -485,12 +485,6 @@
      "position": "GK",
      "status": "injured",
      "news": "Thigh Injury"
-    },
-    {
-     "name": "B. Dack",
-     "position": "MID",
-     "status": "injured",
-     "news": "Calf Injury"
     }
    ],
    "cardRisk": []
@@ -1312,34 +1306,10 @@
      "news": "Unknown injury"
     },
     {
-     "name": "J. Amaluzor",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "H. Cartwright",
-     "position": "GK",
-     "status": "injured",
-     "news": "Muscle Injury"
-    },
-    {
      "name": "J. Andrews",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "D. Tharme",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "R. Staunton",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Shoulder Injury"
     },
     {
      "name": "C. Gardner",
@@ -1495,12 +1465,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "D. Duffy",
-     "position": "MID",
-     "status": "injured",
-     "news": "Calf Injury"
     },
     {
      "name": "W. Dickson",
@@ -3179,25 +3143,9 @@
      "summary": "Started 7 of 7 (100%), playing at home."
     },
     {
-     "name": "F. Tavares",
-     "position": "FWD",
-     "rating": 72.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), playing at home."
-    },
-    {
      "name": "B. Cover",
      "position": "MID",
      "rating": 71.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "E. Otoo",
-     "position": "MID",
-     "rating": 70.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
@@ -3217,9 +3165,37 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "D. Hall",
+     "position": "DEF",
+     "rating": 67.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Buyabu",
+     "position": "DEF",
+     "rating": 66.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "F. Tavares",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "E. Otoo",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "G. Sebine",
      "position": "FWD",
@@ -3231,12 +3207,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury, expected back 23 Oct"
-    },
-    {
-     "name": "M. Kaleta",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
     },
     {
      "name": "H. Duncan",
@@ -3537,6 +3507,18 @@
    ],
    "unavailable": [
     {
+     "name": "Z. Medley",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "J. Hunt",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "J. Stones",
      "position": "FWD",
      "status": "injured",
@@ -3690,18 +3672,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury, expected back 1 Dec"
-    },
-    {
-     "name": "J. Batty",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Leg Injury"
-    },
-    {
-     "name": "K. Hughes",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -3838,13 +3808,19 @@
      "name": "A. Evans",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Hamstring injury, expected back 31 Dec"
     },
     {
      "name": "H. Williams",
      "position": "DEF",
      "status": "injured",
      "news": "Achilles Tendon Rupture injury"
+    },
+    {
+     "name": "A. Pattison",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 10 Jan"
     }
    ],
    "cardRisk": []
@@ -5059,12 +5035,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "D. Rodney",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
     },
     {
      "name": "S. Beckwith",
@@ -7644,12 +7614,6 @@
     },
     {
      "name": "M. Jolliffe",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "R. Harvey",
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
