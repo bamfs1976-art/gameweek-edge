@@ -1,8 +1,10 @@
 # Referee appointments — investigated, and declined
 
 **Decision, 13 August 2026: not building this. Do not scrape efl.com.**
-**Reaffirmed 25 September 2026** against a new source (BSD); see the bottom
-of "What would have to change to revisit".
+**Reaffirmed 25 September 2026** against both reopening conditions: the
+football-data plan now names officials, but only on matches already played,
+and a new source (BSD) was weighed without being called. Both are at the
+bottom of "What would have to change to revisit".
 
 Closed by the site's owner. This file is the record of what was asked, what
 was found, and what would have to change for the answer to be different — so
@@ -30,12 +32,12 @@ official is a different risk from the same player in front of a lenient one.
 EFL puts appointments on its own site; the 11 August article covered 14–20
 August fixtures. That is comfortably inside the window the panel would need.
 
-**football-data.org cannot supply them, and never will on this plan.** The
+**football-data.org cannot supply them ahead of kick-off on this plan.** The
 `referees` key is present on all 552 Championship and 380 Premier League
-matches and populated on **none** of them. Present-but-never-filled is a tier
-limit, not a schema gap — waiting for the season to start would not have
-changed it. This is the finding that stays useful, and it is recorded in the
-proxy's own comment.
+matches and, in August, populated on **none** of them. Present-but-never-
+filled is a tier limit, not a schema gap. This is the finding that stays
+useful, and it is recorded in the proxy's own comment. See the 25 September
+re-check below, which changed the count and not the conclusion.
 
 **The EFL's page would have been readable.** Nuxt 2, content embedded in the
 payload rather than fetched after load, and `/sitemap.xml` lists every
@@ -49,14 +51,41 @@ things it is offered, not pages it takes.
 
 One of:
 
-- football-data.org starts populating `referees` on the plan in use — cheap
-  to re-check by hand, no probe required: call
-  `/api/football-data/matchday?competition=ELC` and look at any match.
+- football-data.org starts naming an official on a fixture that has **not
+  been played** — cheap to re-check by hand, no probe required: call
+  `/api/football-data/matchday?competition=ELC` and look at the `status` of
+  any match that carries a name. Counting how many are filled is not the
+  check; see the 25 September re-check below for why.
 - The EFL, or anyone else, offers referee appointments as a feed or an API
   that we are invited to consume.
 
 Neither is worth polling for. If either happens it will be noticed by
 someone reading, not by a scheduled job.
+
+### Re-checked 25 September 2026: the count moved, the answer did not
+
+The first condition was tested for the first time, from a session that could
+finally reach the deployed proxy. The raw counts have changed since August:
+
+| | Premier League | Championship |
+|---|---|---|
+| Matches carrying a referee | 50 of 380 | 67 of 552 |
+| Of those, status FINISHED | 50 | 67 |
+| Fixtures still to be played | 330 | 457 |
+| **Of those, carrying a referee** | **0** | **0** |
+
+So the plan now fills the field retrospectively, as a record of who refereed
+a match that has been played, and still publishes nothing in advance. The
+condition is met on its old wording and not met on its purpose, so the
+wording above has been tightened to say "has not been played".
+
+Worth keeping, because it is the same failure this file already records
+twice, arriving from the other direction. The first look returned "117 of 932
+populated, up from nil", which is true and would have reopened a closed
+question. The number that decides anything is the one filtered by status, and
+it is nil. The lesson generalises as the mirror of the one at the bottom of
+this file: when a check finds something, the question is whether it found the
+thing you needed.
 
 ### Considered and left declined: BSD, 25 September 2026
 

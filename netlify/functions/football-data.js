@@ -103,7 +103,8 @@ const ROUTES = {
          then do not move", and the half-hour cache was justified by it.
 
          Two things were wrong with that. First, THIS FEED does not carry
-         them: probed on 13 Aug 2026 through this very endpoint, not one of
+         them AHEAD OF KICK-OFF, which is the only time they would be any
+         use. Probed on 13 Aug 2026 through this very endpoint, not one of
          552 Championship or 380 Premier League matches had a referee named,
          including twelve inside four days of kick-off.
 
@@ -113,12 +114,26 @@ const ROUTES = {
          to nine days ahead on its own site. The feed's silence was a fact
          about the feed, and it got told as a fact about football.
 
-         So: no referee data here. 13 Aug 2026: the referee panel was
+         RE-CHECKED 25 Sep 2026, and the raw count has changed while the
+         answer has not. 50 of 380 Premier League and 67 of 552 Championship
+         matches now carry a name, where in August none did. Every one of
+         them has status FINISHED. Of the 330 Premier League and 457
+         Championship fixtures still to be played, the count with a referee
+         is ZERO and ZERO.
+
+         So the plan fills the field retrospectively, as a record of who
+         refereed, and still publishes nothing in advance. Do not read a
+         rising count as the question reopening: the number a quick look
+         gives you is 117, and the number that decides anything is nil.
+         Check the STATUS of the matches that carry a name, not how many do.
+
+         So: no usable referee data here. 13 Aug 2026: the referee panel was
          investigated and DECLINED — the site reads feeds it is offered, not
          pages it takes — so this is a closed question, not a pending one.
-         See docs/scope-referee-source.md. If this plan ever starts filling
-         the array, that would be the thing that reopens it, and it is
-         checked by looking rather than by a scheduled job.
+         See docs/scope-referee-source.md. If this plan ever names an
+         official on a fixture that has NOT been played, that would be the
+         thing that reopens it, and it is checked by looking rather than by
+         a scheduled job.
 
          The half hour stays, on different grounds: kick-off times and match
          status do move, and half an hour is a reasonable staleness for a
