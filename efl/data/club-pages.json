@@ -1,12 +1,12 @@
 {
- "built": "2026-09-25T17:13:18.315Z",
+ "built": "2026-09-25T21:36:08.978Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-25T17:13:18.315Z",
+  "generatedAt": "2026-09-25T21:36:08.978Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -310,6 +310,12 @@
     {
      "name": "A. Hartridge",
      "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
+     "name": "O. Oseni",
+     "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury"
     },
@@ -2613,6 +2619,12 @@
    ],
    "unavailable": [
     {
+     "name": "C. Perry",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
      "name": "S. McLoughlin",
      "position": "MID",
      "status": "injured",
@@ -3520,12 +3532,6 @@
    "unavailable": [
     {
      "name": "Z. Medley",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "J. Hunt",
      "position": "DEF",
      "status": "injured",
      "news": "Unknown injury"
@@ -4864,6 +4870,12 @@
      "news": "Toe Injury"
     },
     {
+     "name": "L. Maguire",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "B. Bilongo",
      "position": "DEF",
      "status": "injured",
@@ -5039,12 +5051,6 @@
     {
      "name": "I. Sinclair",
      "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury"
-    },
-    {
-     "name": "K. Mooney",
-     "position": "FWD",
      "status": "injured",
      "news": "ACL Knee Injury"
     }
@@ -8883,34 +8889,40 @@
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "K. Lofthouse",
-     "position": "DEF",
-     "rating": 59.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "T. Sibbick",
      "position": "DEF",
      "rating": 59,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "C. Tilt",
+     "position": "DEF",
+     "rating": 56.2,
+     "status": "available",
+     "minutesShare": 86,
+     "summary": "Started 6 of 7 (86%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
     {
-     "name": "F. Delap",
+     "name": "K. Lofthouse",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knock"
     },
     {
      "name": "G. Evans",
      "position": "MID",
      "status": "injured",
      "news": "Foot Injury"
+    },
+    {
+     "name": "J. Lewis",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Broken Toe injury"
     },
     {
      "name": "C. Gilligan",
@@ -9502,6 +9514,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "B. Khela",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "T. O'Connor",
      "position": "MID",
