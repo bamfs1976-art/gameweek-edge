@@ -1,12 +1,12 @@
 {
- "built": "2026-09-25T04:59:17.769Z",
+ "built": "2026-09-25T11:52:35.454Z",
  "round": 7,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-25T04:59:17.769Z",
+  "generatedAt": "2026-09-25T11:52:35.454Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2476,6 +2476,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Key",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
     {
      "name": "R. Stewart",
      "position": "FWD",
@@ -7871,14 +7877,6 @@
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "S. McCallum",
-     "position": "DEF",
-     "rating": 69.8,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "P. Bamford",
      "position": "FWD",
      "rating": 68.1,
@@ -7893,9 +7891,23 @@
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "T. Cannon",
+     "position": "FWD",
+     "rating": 66.6,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), playing at home."
     }
    ],
    "unavailable": [
+    {
+     "name": "S. McCallum",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury, expected back 11 Oct"
+    },
     {
      "name": "F. Seriki",
      "position": "DEF",
