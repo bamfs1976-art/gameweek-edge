@@ -1,6 +1,8 @@
 # Referee appointments — investigated, and declined
 
 **Decision, 13 August 2026: not building this. Do not scrape efl.com.**
+**Reaffirmed 25 September 2026** against a new source (BSD); see the bottom
+of "What would have to change to revisit".
 
 Closed by the site's owner. This file is the record of what was asked, what
 was found, and what would have to change for the answer to be different — so
@@ -55,6 +57,39 @@ One of:
 
 Neither is worth polling for. If either happens it will be noticed by
 someone reading, not by a scheduled job.
+
+### Considered and left declined: BSD, 25 September 2026
+
+A free API key for **BSD** (`sports.bzzoiro.com`) was offered, and it was
+weighed against the second condition above. It is an API with a token that
+invites consumption, it advertises 30+ leagues with per-match sub-resources
+including `incidents`, and it is therefore the *shape* the condition
+describes. That is not the same as meeting it.
+
+**Nothing was called.** The host is denied by this environment's egress
+policy and the key was not in the environment, so no response was seen. The
+condition is that someone *offers referee appointments*, and an API existing
+is not evidence that it carries them — which is precisely the trap recorded
+above, where `referees` was present on 932 matches and populated on none.
+Assuming the data is there because the marketing lists the leagues would be
+the same error with the sign flipped.
+
+So the decision stands unchanged. What would settle it is one call: fetch a
+Premier League fixture from BSD's `/events/{id}` and look at whether an
+official is named. Until someone has read that response, this stays declined,
+and the second condition stays open rather than met.
+
+### A note for the next reader of football-data.js
+
+The proxy's file header spends forty lines on the rate limit before the
+`matchday` route records that the feed carries no referees at all. A reader
+who stops at the header comes away believing there is a working referee
+source in need of shoring up, and on 19 September 2026 that is exactly what
+happened: the dependency was described as fragile-but-working and a fallback
+was proposed for it. The finding is in the right place for an implementer; it
+is simply below the point where a skim stops. If it happens a third time, put
+a pointer to this file at the top of that header rather than trusting the
+reading order.
 
 ## A note on how this was investigated
 
