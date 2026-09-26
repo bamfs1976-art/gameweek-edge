@@ -1,12 +1,12 @@
 {
- "built": "2026-09-26T21:11:37.928Z",
+ "built": "2026-09-26T23:38:13.525Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-26T21:11:37.928Z",
+  "generatedAt": "2026-09-26T23:38:13.525Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -300,23 +300,35 @@
      "summary": "Started 8 of 8 (100%), playing at home."
     },
     {
-     "name": "N. Ramming",
-     "position": "GK",
-     "rating": 67.9,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "H. Gilmour",
      "position": "MID",
      "rating": 67.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "E. Francis",
+     "position": "MID",
+     "rating": 62.5,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "N. Ramming",
+     "position": "GK",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "D. Moss",
+     "position": "DEF",
+     "status": "injured",
+     "news": "ACL Knee Injury"
+    },
     {
      "name": "E. Ebanks-Landell",
      "position": "DEF",
@@ -495,6 +507,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "S. McWilliams",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hand Injury"
+    },
     {
      "name": "F. Onukwuli",
      "position": "MID",
@@ -933,6 +951,12 @@
    ],
    "unavailable": [
     {
+     "name": "M. Shelton",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "J. Andrews",
      "position": "FWD",
      "status": "injured",
@@ -1246,6 +1270,18 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "W. Goodwin",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "E. King",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
     {
      "name": "Z. Obiero",
      "position": "MID",
@@ -1866,7 +1902,7 @@
      "name": "J. Stones",
      "position": "FWD",
      "status": "injured",
-     "news": "Back Injury, expected back 5 Oct"
+     "news": "Back Injury, expected back 12 Oct"
     },
     {
      "name": "H. Boateng",
@@ -2606,7 +2642,7 @@
      "name": "F. Tavares",
      "position": "FWD",
      "status": "injured",
-     "news": "Achilles Strain"
+     "news": "Achilles Tendon Rupture injury, expected back 1 Jul"
     },
     {
      "name": "G. Sebine",
@@ -2927,6 +2963,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Ankle Injury"
+    },
+    {
+     "name": "J. Turner",
+     "position": "GK",
+     "status": "injured",
+     "news": "Shoulder Injury"
     },
     {
      "name": "K. Patten",
@@ -7242,14 +7284,6 @@
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "L. Coyle",
-     "position": "MID",
-     "rating": 69.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "J. Anderson",
      "position": "DEF",
      "rating": 68.6,
@@ -7272,6 +7306,14 @@
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), playing at home."
+    },
+    {
+     "name": "D. Love",
+     "position": "DEF",
+     "rating": 63,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -7280,6 +7322,18 @@
      "position": "FWD",
      "status": "injured",
      "news": "Toe Injury"
+    },
+    {
+     "name": "L. Coyle",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "T. Walton",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "F. Rawson",
@@ -8827,6 +8881,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "D. Andrew",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury"
+    },
     {
      "name": "A. Cannon",
      "position": "MID",
