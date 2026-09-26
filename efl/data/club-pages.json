@@ -1,12 +1,12 @@
 {
- "built": "2026-09-26T16:25:38.457Z",
+ "built": "2026-09-26T21:11:37.928Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-26T16:25:38.457Z",
+  "generatedAt": "2026-09-26T21:11:37.928Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -511,13 +511,13 @@
    "slug": "salford-city",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 14,
+   "position": 7,
    "points": 0,
    "played": 0,
    "form": [
     "W",
-    "D",
-    "W"
+    "W",
+    "D"
    ],
    "rating": 64,
    "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -590,18 +590,34 @@
     {
      "name": "J. Powell",
      "position": "MID",
-     "rating": 73.8,
+     "rating": 75.3,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 3 goals and 1 assist."
+     "summary": "Started 8 of 8 (100%), 3 goals and 2 assists."
     },
     {
      "name": "A. Oluwo",
      "position": "DEF",
-     "rating": 70,
+     "rating": 71.7,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "K. N'Mai",
+     "position": "MID",
+     "rating": 71,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "W. Norris",
+     "position": "GK",
+     "rating": 70.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     },
     {
      "name": "M. Langstaff",
@@ -609,40 +625,18 @@
      "rating": 69.7,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), playing at home."
+     "summary": "Started 8 of 8 (100%), playing at home."
     },
-    {
-     "name": "W. Norris",
-     "position": "GK",
-     "rating": 69.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "K. N'Mai",
-     "position": "MID",
-     "rating": 68.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Grant",
-     "position": "MID",
-     "rating": 65.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
     {
      "name": "B. Wiredu",
      "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
+     "rating": 68.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
     {
      "name": "M. Rose",
      "position": "DEF",
@@ -789,6 +783,18 @@
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury"
+    },
+    {
+     "name": "Y. Mosquera",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
+     "name": "R. Saïd",
+     "position": "FWD",
+     "status": "injured",
+     "news": "MCL Knee Injury"
     }
    ],
    "cardRisk": []
@@ -948,7 +954,7 @@
    "slug": "chesterfield",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 10,
+   "position": 11,
    "points": 0,
    "played": 0,
    "form": [
@@ -1114,7 +1120,7 @@
    "slug": "gillingham",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 7,
+   "position": 8,
    "points": 0,
    "played": 0,
    "form": [
@@ -1401,10 +1407,34 @@
    ],
    "unavailable": [
     {
+     "name": "J. Veltman",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Muscle Injury, expected back 10 Oct"
+    },
+    {
+     "name": "A. Boiro",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "T. Soucek",
      "position": "MID",
      "status": "injured",
      "news": "Ankle Injury, expected back 10 Oct"
+    },
+    {
+     "name": "A. Areola",
+     "position": "GK",
+     "status": "injured",
+     "news": "Dead Leg injury, expected back 10 Oct"
+    },
+    {
+     "name": "F. Herrick",
+     "position": "GK",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -2440,7 +2470,7 @@
    "slug": "rotherham-united",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 12,
+   "position": 13,
    "points": 0,
    "played": 0,
    "form": [
@@ -4764,6 +4794,12 @@
      "news": "Thigh Injury, expected back 8 Nov"
     },
     {
+     "name": "L. Cacace",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Calf Injury, expected back 11 Oct"
+    },
+    {
      "name": "S. Revan",
      "position": "MID",
      "status": "injured",
@@ -4927,7 +4963,7 @@
    "slug": "crewe-alexandra",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 8,
+   "position": 9,
    "points": 0,
    "played": 0,
    "form": [
@@ -6971,7 +7007,7 @@
    "slug": "tranmere-rovers",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 9,
+   "position": 10,
    "points": 0,
    "played": 0,
    "form": [
@@ -7113,7 +7149,7 @@
    "slug": "accrington-stanley",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 20,
+   "position": 19,
    "points": 0,
    "played": 0,
    "form": [
@@ -8025,7 +8061,7 @@
    "slug": "swindon-town",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 11,
+   "position": 12,
    "points": 0,
    "played": 0,
    "form": [
@@ -8665,7 +8701,7 @@
    "slug": "fleetwood-town",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 13,
+   "position": 14,
    "points": 0,
    "played": 0,
    "form": [
@@ -10105,7 +10141,7 @@
    "slug": "oldham-athletic",
    "division": "league-two",
    "divisionName": "League Two",
-   "position": 19,
+   "position": 20,
    "points": 0,
    "played": 0,
    "form": [
@@ -10184,50 +10220,50 @@
     {
      "name": "C. Kavanagh",
      "position": "FWD",
-     "rating": 64,
+     "rating": 66.4,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 3 goals and 3 assists."
-    },
-    {
-     "name": "M. Hudson",
-     "position": "GK",
-     "rating": 62.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), 4 goals and 3 assists."
     },
     {
      "name": "O. Norburn",
      "position": "MID",
-     "rating": 61.7,
+     "rating": 62.9,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), 0 goals and 1 assist."
+    },
+    {
+     "name": "M. Hudson",
+     "position": "GK",
+     "rating": 62.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "J. Robson",
      "position": "DEF",
-     "rating": 60.2,
+     "rating": 60.4,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "K. Appiah-Forson",
      "position": "MID",
-     "rating": 58.4,
+     "rating": 59.4,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "D. Daniels",
-     "position": "DEF",
-     "rating": 57.9,
+     "name": "M. Fondop",
+     "position": "FWD",
+     "rating": 58.1,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
