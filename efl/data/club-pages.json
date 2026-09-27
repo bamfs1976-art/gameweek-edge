@@ -1,12 +1,12 @@
 {
- "built": "2026-09-26T23:38:13.525Z",
+ "built": "2026-09-27T05:20:18.679Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-26T23:38:13.525Z",
+  "generatedAt": "2026-09-27T05:20:18.679Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2601,7 +2601,7 @@
     {
      "name": "D. Hall",
      "position": "DEF",
-     "rating": 57.7,
+     "rating": 57.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -2609,7 +2609,7 @@
     {
      "name": "J. Buyabu",
      "position": "DEF",
-     "rating": 57.1,
+     "rating": 56.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -2765,7 +2765,7 @@
     {
      "name": "W. Boyle",
      "position": "DEF",
-     "rating": 61.4,
+     "rating": 61.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -7302,7 +7302,7 @@
     {
      "name": "C. Stockton",
      "position": "FWD",
-     "rating": 63.3,
+     "rating": 63,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), playing at home."
