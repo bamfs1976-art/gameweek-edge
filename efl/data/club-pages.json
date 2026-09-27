@@ -1,12 +1,12 @@
 {
- "built": "2026-09-27T12:04:38.768Z",
+ "built": "2026-09-27T16:59:33.506Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-27T12:04:38.768Z",
+  "generatedAt": "2026-09-27T16:59:33.506Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -345,7 +345,7 @@
      "name": "L. Maguire",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Calf Injury, expected back 6 Dec"
     },
     {
      "name": "B. Bilongo",
