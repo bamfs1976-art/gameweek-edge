@@ -17906,5 +17906,148 @@
       "3448": 26
     }
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-09-27T12:04:36.359Z",
+    "attribution": "clean",
+    "window": {
+      "lastKickoff": "2026-09-26T16:30:00.000Z",
+      "nextRoundKickoff": "2026-10-03T11:30:00.000Z"
+    },
+    "fixtures": {
+      "played": 14,
+      "total": 20
+    },
+    "pointsField": "totalPoints",
+    "clubBasis": "official-points",
+    "crowdClubs": {
+      "ids": [
+        "42",
+        "53"
+      ],
+      "value": 3
+    },
+    "squad": {
+      "players": [
+        {
+          "id": "229415",
+          "name": "J. McCracken",
+          "club": "Bradford City",
+          "position": "GK",
+          "points": 0
+        },
+        {
+          "id": "178186",
+          "name": "J. Bowen",
+          "club": "West Ham United",
+          "position": "FWD",
+          "points": null
+        },
+        {
+          "id": "185126",
+          "name": "C. Larin",
+          "club": "Southampton",
+          "position": "FWD",
+          "points": null
+        },
+        {
+          "id": "134382",
+          "name": "L. Jones",
+          "club": "Charlton Athletic",
+          "position": "DEF",
+          "points": null
+        },
+        {
+          "id": "197203",
+          "name": "A. Baldwin",
+          "club": "Bradford City",
+          "position": "DEF",
+          "points": 0
+        },
+        {
+          "id": "232416",
+          "name": "F. Azaz",
+          "club": "Southampton",
+          "position": "MID",
+          "points": null
+        },
+        {
+          "id": "232496",
+          "name": "O. Cooper",
+          "club": "Notts County",
+          "position": "MID",
+          "points": 0
+        }
+      ],
+      "total": 0,
+      "unresolved": 4,
+      "formation": "1-2-2-2"
+    },
+    "captain": null,
+    "clubs": {
+      "basis": "official-points",
+      "total": 0,
+      "perClub": [
+        {
+          "id": "55",
+          "value": 0,
+          "outcome": null
+        },
+        {
+          "id": "76",
+          "value": 0,
+          "outcome": {
+            "played": 1,
+            "wins": 0,
+            "draws": 0,
+            "losses": 1,
+            "goalsFor": 0,
+            "goalsAgainst": 1,
+            "cleanSheets": 0,
+            "leaguePoints": 0
+          }
+        }
+      ],
+      "fieldMean": 3.9285714285714284,
+      "fieldMeanTwo": 7.857142857142857,
+      "bestTwo": 20,
+      "percentile": 0.14285714285714285
+    },
+    "baselines": {
+      "randomMean": 4.8365,
+      "randomMedian": 3,
+      "randomSamples": 2000,
+      "percentile": 0.12475,
+      "naive": 18,
+      "ceiling": 97,
+      "ceilingFormation": "1-3-2-1",
+      "fieldMean": 0.6935704514363885,
+      "fieldMeanSeven": 4.85499316005472
+    },
+    "model": {
+      "n": 2193,
+      "rho": 0.4932854480012895,
+      "topDecileLift": 3.8316716651806217,
+      "byPosition": {
+        "GK": {
+          "n": 216,
+          "rho": 0.5062452029878677
+        },
+        "DEF": {
+          "n": 678,
+          "rho": 0.5017895169933794
+        },
+        "MID": {
+          "n": 752,
+          "rho": 0.48330935235792627
+        },
+        "FWD": {
+          "n": 547,
+          "rho": 0.51849101003208
+        }
+      }
+    },
+    "universe": {
+      "players": 2193
+    }
+  }
 }
