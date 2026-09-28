@@ -1,12 +1,12 @@
 {
- "built": "2026-09-28T13:57:57.316Z",
+ "built": "2026-09-28T21:14:42.001Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-28T13:57:57.316Z",
+  "generatedAt": "2026-09-28T21:14:42.001Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1460,12 +1460,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Veltman",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 10 Oct"
-    },
     {
      "name": "A. Boiro",
      "position": "DEF",
