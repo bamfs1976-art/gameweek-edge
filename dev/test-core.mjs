@@ -107,7 +107,17 @@ const pieces = [
   'const GAME={id:"fpl"};\nfunction noteData(){}\n'
     + 'const __LS={};\nconst localStorage={getItem:(k)=>(k in __LS?__LS[k]:null),'
     + 'setItem:(k,v)=>{__LS[k]=String(v);},removeItem:(k)=>{delete __LS[k];}};\n'
-    + 'function __lsKeys(){return Object.keys(__LS);}',
+    + 'function __lsKeys(){return Object.keys(__LS);}\n'
+    + 'function __lsClear(){Object.keys(__LS).forEach((k)=>delete __LS[k]);}',
+  /* The consent gate. Pure over the storage stub above, so the whole
+     question "was anything written before a choice" is answerable here
+     rather than only in a browser. */
+  extractLine(html, /const CONSENT_KEY='ge-consent';/),
+  extractFn(html, 'analyticsConsent'),
+  extractFn(html, 'consentGiven'),
+  extractFn(html, 'setAnalyticsConsent'),
+  extractFn(html, 'anonId'),
+  extractFn(html, 'attribSrc'),
   extractLine(html, /const MEM=\{\};/),
   extractFn(html, 'ck'),
   extractFn(html, 'cached'),
@@ -425,7 +435,7 @@ const pieces = [
 ];
 const core = new Function(
   pieces.join('\n') +
-  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS};'
+  '\nreturn {SCORING, SCORING_FALLBACK, fplScoring, cmdkSearch, cmdkSearchFallback, CMDK_KEYS, CMDK_FUSE, sparkPoints, sparkColor, transferMovers, gwPackEvent, gwPackLine, gwStatsPack, gwDefcon, managerCard, socRowFont, SOC_ROW_H, socLadderItemX, SOC_LADDER_X, SOC_LADDER_LEFT, gwPackWhy, GW_PACK_DIFF, bonusForFixture, provBonusPts, gwDayStatus, boardDeadline, plsimMatch, esc, nativeXP, xP, priceChangeProb, fplPriceMove, priceLocked, priceSource, fixtureOver, fixtureToCome, gwAnchor, gwsPlayedOut, bootBehind, gwMoved, __setPeek, __resetRecheck, BOOT_RECHECK_MS, cached, clearLiveCache, ck, MEM, __lsKeys, BOOT_TTL, raceSpread, gwsRemaining, titleRace, RACE_SD_PRIOR, squadMatchday, leagueEO, leagueAwards, LEAGUE_SORTS, leagueSortSpec, sortLeagueRows, leagueStdRow, leagueLivePos, PANEL_NEW, NEW_DAYS, panelIsNew, gwMonths, compManager, COMP_TIES, compTieSpec, compRank, tcCaptainGain, COMP_UNNORMALISED, managerDetail, freeTransfers, rivalChipSummary, CHIP_SHORT, leagueSwing, gwFixturesByTeam, teamGwState, playerGwStates, suspCutoff, suspRisk, bestXI, minutesSecurity, projectXI, lgScoreGrid, lgCleanSheets, plannerBudget, tilePoints, squadDiff, plannerMoves, draftValidate, draftCanAdd, draftBuild, draftFillGaps, fitJSON, bestTransfer, MIN_TR_GAIN, gwPhase, fixtureStuck, MATCH_MAX_MS, BLIND_LIVE_MS, confTier, captainEligible, captainBand, captainModel, captainConfidence, transferFrame, eventShape, capHintFrom, chipAdvice, captainFeatures, transferFeatures, chipFeatures, fdrAttack, fdrDefence, STRENGTH_KEYS, STRENGTH_BANDS, teamStrength, strengthEdge, strengthGrade, setPieceConfidence, benchBoostReadiness, lineupCheck, communityAggregate, topSelectedByPos, differentials, rotationPairs, bestFixtureRun, fdrGrade, fdrPatchFor, FDR_PATCH_MAX, chipSwings, chipPlaysByGw, timeAgo, latestNews, seasonKeyFrom, plsimPrior, eloPrior, eloMean, fdrCellValue, fdrRunTotal, fdrLens, FDR_LENS, fdrOfficial, dcRate90, dcThreshold, dcReal, dcHasBasis, dcHitRate, dcHitLabel, oopThreat, oopQuantile, oopBenchmarks, oopFlag, OOP_MIN_MINUTES, OOP_PCTL, OOP_MIN_POOL, setPieceByClub, setPieceClubRows, rotationChain, ROT_SWITCH, clubSplit, poorAttacks, clubVsPoorAttacks, OPP_SPLIT_MIN, venueSplit, valueFit, valueResiduals, VALUE_MIN_FIT, clubVenueVerdict, clubLean, SPLIT_MIN_GAMES, clubDepth, DEPTH_TIE, DEPTH_FRINGE, DEPTH_MAX, PLSIM_PROMOTED, PLSIM, PLSIM_ALIAS, bundleSeasonStale, recentMinutes, minutesModel, concedePts, savePts, dcHitProb, effGoalRate, negRate90, pointsDist, fixtureXP, horizonXPreal, recencyWeight, availAttackMult, squadSim, normCdf, effEdge, edgeDelta, rankEV, rankOptimiser, calibration, resolveDisplayMode, DISPLAY_MODES, urlQuery, urlQueryString, mergeQuery, urlHref, urlPick, urlIdList, __setUrl, urlEntryOnce, __enter, PANEL_ALIAS, PANEL_SYNONYMS, resolvePanel, panelAliases, retryBtn, hubFailText, tableCellValue, tableSortValue, tableFilterable, TBL_FILTER_MAX, CMP_METRICS, CMP_DEFAULT, CMP_SERIES, cmpNum, cmpPer90, cmpMetric, cmpParseMetrics, cmpFmt, cmpRows, cmpBestIndex, cmpBarsSvg, cmpRadarSvg, cmpLegendHtml, FDR_RAMP, fdrBg, fdrInk, HM_METRICS, HM_PRICE_BANDS, HM_OWN_BANDS, HM_SORTS, HM_STEPS, HM_ROW_H, HM_VIRTUAL_CELLS, HM_DEFAULT_SPAN, hmMetric, hmBand, hmInBand, hmParseRange, hmStats, hmRows, hmSort, hmBin, hmWindow, hmFmt, hmLastGw, CHIP_API_LABEL, srTeamId, srSeasonCurves, srCaptaincy, srOwnership, srChipEffect, srDecisions, srLineSvg, TP_CHIPS, TP_HORIZON, TP_FT_MAX, TP_HIT, tpHalf, tpChipAvailable, tpBestXI, tpEvaluate, tpModelSquad, tpMergeDrafts, lgParseIds, lgCustomRows, lgCaptains, lgWeekTransfers, lgDifferentials, lgOvertake, lgOverlap, PR_FLOW_HOURS, PR_HISTORY_DAYS, priceBarSpec, priceBarHtml, fmtCountdown, priceFlowFor, priceMomentum, priceMomentumBoard, prFold, priceHistoryDays, histCols, shSeasons, shSeasonRow, shRows, shFilter, shCareer, SH_SEASONS_MAX, SH_POS, CONSENT_KEY, analyticsConsent, consentGiven, setAnalyticsConsent, anonId, attribSrc, __lsClear};'
 )();
 
 /* ── tiny assertion harness ─────────────────────────────── */
@@ -2665,6 +2675,72 @@ section('tcCaptainGain: one multiple, from what actually happened');
   ok(core.tcCaptainGain(null, LIVE) === null, 'missing picks do not throw');
   ok(core.tcCaptainGain(picks([{ element: 5, multiplier: 3 }]), null) === null,
      'and a missing live feed is unknown rather than nought');
+}
+
+section('the analytics gate: nothing is stored before a choice');
+{
+  /* The finding this was built for: track() wrote a random id to
+     localStorage and fired on the first panel view, with no consent
+     anywhere. Under PECR reg 6 that is storage on someone's device that
+     they did not ask for, and first-party analytics are not exempt.
+
+     The assertion that matters is not "track returns early". It is that
+     NOTHING WAS WRITTEN, which is why every check below reads the key list
+     off the storage stub rather than trusting a return value. */
+  core.__lsClear();
+
+  ok(core.analyticsConsent() === null, 'unasked reads as null, not as a no');
+  ok(core.consentGiven() === false, 'and null is treated as no');
+  ok(core.anonId() === null, 'anonId hands back nothing before a choice');
+  ok(core.__lsKeys().length === 0,
+     'and wrote nothing at all doing it (' + core.__lsKeys().join(',') + ')');
+  ok(core.attribSrc() === null, 'the attribution tag is withheld too');
+  ok(core.__lsKeys().length === 0, 'still nothing written');
+
+  /* A decline is a decision, and it must be remembered, or the bar asks
+     again on every load and the answer stops meaning anything. */
+  core.setAnalyticsConsent('no');
+  ok(core.analyticsConsent() === 'no', 'a decline is remembered');
+  ok(core.consentGiven() === false, 'and still counts as no');
+  ok(core.anonId() === null, 'no identifier after a decline');
+  ok(core.__lsKeys().join(',') === 'ge-consent',
+     'the only thing on the device is the choice itself (' + core.__lsKeys().join(',') + ')');
+
+  /* Consent turns it on, and only then does an identifier exist. */
+  core.setAnalyticsConsent('yes');
+  const id = core.anonId();
+  ok(typeof id === 'string' && id.length > 6, 'consent produces an identifier');
+  ok(core.anonId() === id, 'and the same one on the next call, not a new one each time');
+  ok(core.__lsKeys().includes('ge-anon'), 'which is now stored');
+
+  /* Withdrawal has to undo something. Stopping new sends while leaving the
+     identifier behind would be theatre. */
+  core.setAnalyticsConsent('no');
+  ok(!core.__lsKeys().includes('ge-anon'),
+     'withdrawing deletes the identifier rather than merely muting it');
+  ok(core.analyticsConsent() === 'no', 'and records the new choice');
+
+  /* Anything that is not the string yes is a no. A typo must fail closed. */
+  core.setAnalyticsConsent('YES');
+  ok(core.consentGiven() === false, 'only the exact string yes grants consent');
+  core.setAnalyticsConsent(true);
+  ok(core.consentGiven() === false, 'a truthy non-string does not either');
+
+  /* The attribution tag rides in memory until consent, then persists once. */
+  core.__lsClear();
+  globalThis.window = { __GE_SRC: 'reddit' };
+  ok(core.attribSrc() === null, 'a tag in memory is not read before consent');
+  ok(core.__lsKeys().length === 0, 'and is not written before consent');
+  core.setAnalyticsConsent('yes');
+  ok(core.__lsKeys().includes('ge-src'), 'consent persists the tag');
+  ok(core.attribSrc() === 'reddit', 'and it reads back');
+  globalThis.window = { __GE_SRC: 'x' };
+  core.setAnalyticsConsent('yes');
+  ok(core.attribSrc() === 'reddit', 'first tag wins, as it always did');
+  core.setAnalyticsConsent('no');
+  ok(!core.__lsKeys().includes('ge-src'), 'and a decline deletes it with the rest');
+  delete globalThis.window;
+  core.__lsClear();
 }
 
 section('panelIsNew: a badge that takes itself down');
