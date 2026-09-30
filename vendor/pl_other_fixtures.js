@@ -5,8 +5,8 @@
  * source   bamfs1976-art/pl-bookings  data/pl_other_fixtures.js
  * commit   eb9c75acc2809be6e8c06859f1a962f1c6775f1f
  * branch   main
- * sha256   a7c2bfaa8c0b177036e09432c2d05613590da268854a29e3584bf06bb8205d17
- * fetched  2026-09-19
+ * sha256   b1900c7a13d9941f42cf9cd58f974a2cdbd0c740aad059a7aff6c76ed06639d2
+ * fetched  2026-09-30
  *
  * Re-vendor with: node scripts/vendor-rotation.mjs
  * Verify with:    node scripts/vendor-rotation.mjs --check
@@ -133,19 +133,19 @@ const PL_OTHER_FIXTURES = [
   {c:"SUN",d:"2026-10-22T16:45:00+00:00",comp:"UEL",v:"A"},
   {c:"BOU",d:"2026-10-22T19:00:00+00:00",comp:"UEL",v:"H"},
   {c:"CRY",d:"2026-10-22T19:00:00+00:00",comp:"UEL",v:"A"},
-  {c:"ARS",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
+  {c:"ARS",d:"2026-10-27T20:00:00+00:00",comp:"LCUP",v:"A"},
+  {c:"BHA",d:"2026-10-28T19:30:00+00:00",comp:"LCUP",v:"A"},
+  {c:"MCI",d:"2026-10-28T19:30:00+00:00",comp:"LCUP",v:"H"},
   {c:"AVL",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
-  {c:"BHA",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"BOU",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"H"},
   {c:"BRE",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
-  {c:"CHE",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"CRY",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
-  {c:"EVE",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"H"},
   {c:"FUL",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"LIV",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"MCI",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"H"},
-  {c:"NEW",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"SUN",d:"2026-10-28T19:45:00+00:00",comp:"LCUP",v:"H"},
+  {c:"CHE",d:"2026-10-28T20:00:00+00:00",comp:"LCUP",v:"A"},
+  {c:"LIV",d:"2026-10-28T20:00:00+00:00",comp:"LCUP",v:"H"},
+  {c:"EVE",d:"2026-10-29T19:45:00+00:00",comp:"LCUP",v:"H"},
+  {c:"NEW",d:"2026-10-29T19:45:00+00:00",comp:"LCUP",v:"A"},
   {c:"AVL",d:"2026-11-03T20:00:00+00:00",comp:"UCL",v:"A"},
   {c:"MUN",d:"2026-11-03T20:00:00+00:00",comp:"UCL",v:"H"},
   {c:"LIV",d:"2026-11-04T17:45:00+00:00",comp:"UCL",v:"A"},
