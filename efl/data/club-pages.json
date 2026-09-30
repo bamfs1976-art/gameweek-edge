@@ -1,12 +1,12 @@
 {
- "built": "2026-09-29T22:16:57.760Z",
+ "built": "2026-09-30T05:34:32.833Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-09-29T22:16:57.760Z",
+  "generatedAt": "2026-09-30T05:34:32.833Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -9444,12 +9444,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury"
-    },
-    {
-     "name": "J. Cullen",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 30 Sept"
     },
     {
      "name": "A. Barnes",
