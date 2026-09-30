@@ -82,14 +82,28 @@ section('one source of links');
 {
   const links = siteLinks(html);
   ok(links && 'discord' in links && 'leagueCode' in links && 'contact' in links && 'terms' in links, 'SITE_LINKS in index.html has the four keys');
-  ok(Object.values(links).every((v) => v === ''), 'every value is empty until the owner fills it (the scaffold)');
+  /* `contact` was filled on 29 Sep 2026: the same address privacy.html has
+     always published, so committing it here discloses nothing new and the
+     footer keeps the promise the policy makes about deletion requests.
+
+     The three that stay empty stay empty for a reason, and an empty value
+     renders no row at all, so a half-filled entry can never become a dead
+     link. `terms` in particular waits on a terms page existing. The check
+     is therefore no longer "all empty" but "empty unless there is something
+     real to point at", which is the rule that actually matters. */
+  ok(links.contact === 'bamfs1976@gmail.com', 'contact is the address the privacy policy publishes');
+  ok(links.terms === '', 'terms stays empty until a terms page exists, so the link is never dead');
+  ok(links.discord === '' && links.leagueCode === '', 'the community links are still the unfilled scaffold');
   /* The tools link is unconditional: it points at pages that always exist,
      unlike the community links, which render only once they have a value.
      It is the one path from every built page into the generated set. */
-  ok(footerLinks(links).map((x) => x.label).join('|') === 'Privacy|FPL tools',
-     'with nothing filled the privacy and tools links still render, got ' + footerLinks(links).map((x) => x.label).join('|'));
-  ok(footerLinks(links, { skipTools: true }).length === 1,
+  const bare = { discord: '', leagueCode: '', contact: '', terms: '' };
+  ok(footerLinks(bare).map((x) => x.label).join('|') === 'Privacy|FPL tools',
+     'with nothing filled the privacy and tools links still render, got ' + footerLinks(bare).map((x) => x.label).join('|'));
+  ok(footerLinks(bare, { skipTools: true }).length === 1,
      'and a page that already carries its own tools link can suppress it');
+  ok(footerLinks(links).map((x) => x.label).join('|') === 'Contact|Privacy|FPL tools',
+     'as shipped, the footer is contact, privacy and tools');
   ok(footerLinks(links).some((x) => x.href === '/tools/'), 'the tools link is the index, with its trailing slash');
   const all = footerLinks(L);
   ok(all.map((x) => x.label).join('|') === 'Contact|Privacy|Discord|Official mini-league|FPL tools' && all[3].href === LEAGUE_JOIN + 'xyz12', 'filled values render in one order everywhere');

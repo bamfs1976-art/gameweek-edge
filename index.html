@@ -46,11 +46,18 @@ try{
      and the newcomer it sends to the pitch is exactly the visitor the tag
      was for. First visit wins: a later tagged link does not rewrite it.
      track() attaches it to every event; the sign-up and Pro-conversion
-     events are what the weekly view in supabase/ reads. */
+     events are what the weekly view in supabase/ reads.
+
+     HELD IN MEMORY, NOT WRITTEN. An attribution tag is not storage the
+     reader asked for, so under PECR it needs consent like any other
+     non-essential write. It rides on window.__GE_SRC until the analytics
+     choice is made, and setAnalyticsConsent() persists it only on a yes.
+     The redirect below carries it in the URL so the pitch page can hand it
+     back, which is why capture still happens here and not later. */
   try{
     var sm = location.search.match(/[?&]src=([a-z]+)/);
-    if(sm && /^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(sm[1]) && !ls.getItem('ge-src')){
-      ls.setItem('ge-src', sm[1]);
+    if(sm && /^(x|reddit|threads|bluesky|linkedin|email|creator|seo)$/.test(sm[1])){
+      window.__GE_SRC = sm[1];
     }
   }catch(_){}
 
@@ -104,7 +111,12 @@ try{
     return true;
   }
 
-  if(isNewcomer()){ location.replace('/welcome'); return; }
+  if(isNewcomer()){
+    /* Carry the tag across: the query string is dropped by the redirect and
+       the tag is no longer in storage to survive it. */
+    location.replace('/welcome' + (window.__GE_SRC ? '?src=' + window.__GE_SRC : ''));
+    return;
+  }
   /* Got through, so this device has now seen the app. Marking it here (rather
      than only on landing) means the deep links and the Stripe return above
      also count as a visit — none of them should route to the pitch later. */
@@ -1720,6 +1732,31 @@ a.sb-game-btn:focus-visible{outline:2px solid var(--green-bright);outline-offset
 /* ── BOTTOM NAV (mobile) ───────────────────────────────── */
 .bottom-nav{display:none}
 
+/* THE ANALYTICS CHOICE, and why it looks like this.
+   Not a wall: the app is already usable behind it, so it sits at the bottom
+   and is dismissible by either answer. Both buttons carry the same weight,
+   size and contrast, because a decline styled as the quiet option is the
+   dark pattern the ICO names, and a consent collected that way is not
+   consent. Above the bottom nav on a phone, and clear of the home
+   indicator. */
+.consent-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:180;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:14px 18px calc(14px + env(safe-area-inset-bottom,0px));
+  background:var(--surface-2);border-top:1px solid var(--border-2);
+  box-shadow:0 -6px 24px rgba(0,0,0,.28);
+}
+.consent-bar[hidden]{display:none}
+.consent-txt{flex:1 1 280px;min-width:0;font-size:.84rem;line-height:1.5;color:var(--text-2);margin:0}
+.consent-txt a{color:var(--green-bright);text-decoration:underline}
+.consent-acts{display:flex;gap:10px;flex-shrink:0}
+.consent-acts .btn{min-height:44px}
+@media(max-width:560px){
+  .consent-bar{bottom:calc(var(--bottomnav-h) + env(safe-area-inset-bottom,0px));padding-bottom:14px}
+  .consent-acts{width:100%}
+  .consent-acts .btn{flex:1;justify-content:center}
+}
+
 /* ── RESPONSIVE ────────────────────────────────────────── */
 @media(max-width:1080px){
   .g-4{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -3187,6 +3224,11 @@ body.gw-live .live-ping{display:block;animation:tkpulse 1.6s infinite}
 
 <!-- ═══ BOTTOM NAV (mobile) ═══ -->
 <nav class="bottom-nav" id="bottom-nav" aria-label="Quick navigation"></nav>
+<!-- The analytics choice. Empty until renderConsentBar fills it, and only
+     when nobody has chosen yet. role=region rather than dialog on purpose:
+     it does not trap focus and it does not block the app, because a reader
+     who ignores it is choosing no and is entitled to use the site anyway. -->
+<div id="consent-bar" class="consent-bar" role="region" aria-label="Analytics choice" hidden></div>
 
 <!-- ═══ EXPLAIN-THIS-PICK DRAWER ═══ -->
 <div class="xp-drawer" id="xp-drawer" role="dialog" aria-modal="true" aria-label="Why this pick">
@@ -3594,24 +3636,114 @@ function fdCongestionFor(list, clubName){
   return (Array.isArray(list) ? list : []).filter(e => fdSameClub(e.club, clubName));
 }
 
-/* ── First-party analytics ─────────────────────────────────
-   A tiny fire-and-forget event ping to our own /api/track function
-   (no third-party scripts, no cookies). anon_id is a random id kept
-   in localStorage so funnels can be counted without identifying
-   anyone. The server no-ops when analytics isn't configured. */
+/* ── First-party analytics, and the consent it waits for ─────
+   A tiny fire-and-forget event ping to our own /api/track function. No
+   third-party scripts and no cookies, which is worth saying and is NOT
+   what makes it lawful.
+
+   PECR regulation 6 is about storing information on someone's device, not
+   about cookies and not about who receives it. A random analytics id is
+   not storage the reader asked for, so it needs consent whoever owns the
+   server it reports to. The ICO says first-party analytics are not exempt.
+   So nothing is written and nothing is sent until the reader has chosen.
+
+   WHERE THE LINE IS DRAWN, because "strictly necessary" is the whole
+   argument and a later reader deserves to see the reasoning rather than
+   re-derive it:
+
+     NEEDS CONSENT  ge-anon  the analytics id
+                    ge-src   the marketing attribution tag
+     STRICTLY NECESSARY, so written freely:
+                    ge-theme, ge-mode, ge-density   settings the reader set
+                    ge-mid, ge-watch, ge-rivals     the service itself
+                    ge-tier, ge-alert-prefs         what they bought and chose
+                    ge-c-*                          a cache of the same data
+                    ge-visited, ge-onboard          which first run to show
+                    ge-consent                      this choice; storing a
+                                                    preference not to be
+                                                    tracked cannot itself
+                                                    require consent
+
+   Three states, and null is not a no. Null means unasked, which is why the
+   bar shows; 'no' means asked and declined, and the bar stays down. */
+const CONSENT_KEY='ge-consent';
+function analyticsConsent(){
+  try{const v=localStorage.getItem(CONSENT_KEY);return v==='yes'||v==='no'?v:null;}
+  catch(_){return null;}
+}
+function consentGiven(){return analyticsConsent()==='yes';}
+/* Withdrawal has to be as easy as consent (GDPR art 7(3)), and it has to
+   actually undo something: a no purges the identifiers a previous yes
+   wrote, rather than merely stopping new sends. */
+function setAnalyticsConsent(v){
+  const val=v==='yes'?'yes':'no';
+  try{
+    localStorage.setItem(CONSENT_KEY,val);
+    if(val==='yes'){
+      /* The tag the head script held in memory can be persisted now, and
+         only now. First tag wins, as it always did. */
+      const src=(typeof window!=='undefined'&&window.__GE_SRC)||null;
+      if(src&&!localStorage.getItem('ge-src'))localStorage.setItem('ge-src',src);
+    }else{
+      localStorage.removeItem('ge-anon');
+      localStorage.removeItem('ge-src');
+    }
+  }catch(_){}
+  return val;
+}
+/* Returns null rather than a placeholder when there is no consent, and
+   writes nothing. A caller that gets null must not send. */
 function anonId(){
+  if(!consentGiven())return null;
   try{
     let a=localStorage.getItem('ge-anon');
     if(!a){a=Math.random().toString(36).slice(2)+Date.now().toString(36);localStorage.setItem('ge-anon',a);}
     return a;
-  }catch(_){return 'anon';}
+  }catch(_){return null;}
 }
-/* The channel this device first arrived from (?src=…), or null. Set once by
-   the head script; never rewritten. */
-function attribSrc(){try{return localStorage.getItem('ge-src')||null;}catch(_){return null;}}
-function track(event,props){
+/* The channel this device first arrived from, or null. Persisted only once
+   consent was given; window.__GE_SRC covers the same page view. */
+function attribSrc(){
+  if(!consentGiven())return null;
   try{
-    const body={event:String(event),props:props||null,anon_id:anonId()};
+    const w=(typeof window!=='undefined'&&window)||null;
+    return localStorage.getItem('ge-src')||(w&&w.__GE_SRC)||null;
+  }catch(_){return null;}
+}
+/* The bar itself. Rendered only when nobody has chosen; either answer takes
+   it down for good. Plain language, because "we value your privacy" above
+   an accept button tells a reader nothing about what is being asked. */
+function consentBarHtml(){
+  return '<p class="consent-txt">Can we count anonymous usage, so we know which parts of the app to improve? '+
+    'No ads, no third-party trackers, and nothing that identifies you. '+
+    '<a href="/privacy.html">What we collect</a></p>'+
+    '<div class="consent-acts">'+
+      '<button type="button" class="btn btn-ghost" id="consent-no">No thanks</button>'+
+      '<button type="button" class="btn btn-primary" id="consent-yes">Allow</button>'+
+    '</div>';
+}
+function renderConsentBar(){
+  const el=document.getElementById('consent-bar');
+  if(!el)return;
+  if(analyticsConsent()!=null){el.hidden=true;el.innerHTML='';return;}
+  el.innerHTML=consentBarHtml();
+  el.hidden=false;
+  const done=v=>{
+    setAnalyticsConsent(v);
+    el.hidden=true;el.innerHTML='';
+    /* A yes earns the opening event it would otherwise have missed. */
+    if(v==='yes')track('consent_granted');
+  };
+  const yes=document.getElementById('consent-yes'),no=document.getElementById('consent-no');
+  if(yes)yes.addEventListener('click',()=>done('yes'));
+  if(no)no.addEventListener('click',()=>done('no'));
+}
+function track(event,props){
+  if(!consentGiven())return;
+  try{
+    const id=anonId();
+    if(!id)return;
+    const body={event:String(event),props:props||null,anon_id:id};
     const src=attribSrc();if(src)body.src=src;
     fetch(apiBase()+'/api/track',{method:'POST',keepalive:true,
       headers:{'Content-Type':'application/json'},
@@ -4788,11 +4920,11 @@ function openAccount(){
       '<h3 id="acct-title">'+(window.GE_OWNER?'Owner: full access':'You’re signed in')+'</h3>'+
       '<p style="text-align:center;color:var(--text-2);font-size:.86rem;margin-bottom:6px">'+esc(SESSION.user.email||'')+'</p>'+
       '<p class="modal-hint" style="text-align:center;margin:0 0 16px">'+(window.GE_OWNER?'Every Pro feature is unlocked on this account, on every device you sign in on.':'Your Manager ID, tier, watchlist and rivals sync across every device you sign in on.')+'</p>'+
-      modeSwitchHtml()+
+      modeSwitchHtml()+consentSwitchHtml()+
       '<button class="btn btn-primary" style="width:100%;justify-content:center" id="acct-signout">Sign out</button>'+
       '<div class="modal-row"><button class="btn btn-ghost" data-acct-close>Close</button></div>';
     document.getElementById('acct-signout').addEventListener('click',doSignOut);
-    wireModeSwitch(body);
+    wireModeSwitch(body);wireConsentSwitch(body);
   }else{
     body.innerHTML=
       '<span class="pro-chip">'+svg(ICON.team,'width="12" height="12"')+' Account</span>'+
@@ -4805,8 +4937,8 @@ function openAccount(){
       '<div class="modal-row"><button class="btn btn-ghost" id="acct-create">Create account</button>'+
         '<button class="btn btn-primary" id="acct-signin">Sign in</button></div>'+
       '<button class="acct-link" id="acct-reset">Forgot password?</button>'+
-      modeSwitchHtml();
-    wireModeSwitch(body);
+      modeSwitchHtml()+consentSwitchHtml();
+    wireModeSwitch(body);wireConsentSwitch(body);
     document.getElementById('acct-signin').addEventListener('click',()=>doAuth('in'));
     document.getElementById('acct-create').addEventListener('click',()=>doAuth('up'));
     document.getElementById('acct-reset').addEventListener('click',doReset);
@@ -4826,6 +4958,30 @@ function modeSwitchHtml(){
     '<div class="seg mode-seg">'+opt('simple','Simple','Five panels in the rail; everything else under More')+
       opt('terminal','Terminal','Every panel, the full app')+'</div>'+
     '<p class="modal-hint" style="margin:6px 0 12px">Saved on this device'+(SESSION?' and on your account':'; sign in to carry it across devices')+'.</p></div>';
+}
+/* CHANGING YOUR MIND, in the same place the display mode lives.
+   Withdrawal has to be as easy as consent, so it is two taps from anywhere
+   rather than an email to us. Rendered in both the signed-in and signed-out
+   branches, because the choice belongs to the device, not the account. */
+function consentSwitchHtml(){
+  const c=analyticsConsent();
+  const opt=(v,label,why)=>'<button type="button" class="seg-b mode-opt'+(c===v?' on':'')+'" data-consent-opt="'+v+'" aria-pressed="'+(c===v?'true':'false')+'">'+
+    '<b>'+label+'</b><span>'+why+'</span></button>';
+  return '<div class="mode-switch" role="group" aria-label="Usage analytics">'+
+    '<div class="mode-switch-h">Usage analytics</div>'+
+    '<div class="seg mode-seg">'+opt('no','Off','Nothing is counted and no identifier is stored')+
+      opt('yes','On','Anonymous counts of which panels get used')+'</div>'+
+    '<p class="modal-hint" style="margin:6px 0 12px">'+
+      (c==null?'You have not chosen yet, so it is off.':'Turning it off deletes the identifier from this device.')+
+      ' <a href="/privacy.html" style="color:var(--green-bright)">What we collect</a></p></div>';
+}
+function wireConsentSwitch(root){
+  Array.prototype.forEach.call(root.querySelectorAll('[data-consent-opt]'),btn=>
+    btn.addEventListener('click',()=>{
+      setAnalyticsConsent(btn.dataset.consentOpt);
+      root.querySelectorAll('[data-consent-opt]').forEach(x=>{const on=x===btn;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on?'true':'false');});
+      try{renderConsentBar();}catch(_){}
+    }));
 }
 function wireModeSwitch(root){
   Array.prototype.forEach.call(root.querySelectorAll('[data-mode-opt]'),btn=>
@@ -5370,7 +5526,7 @@ function wireUXButtons(){
   const d=document.getElementById('density-btn');if(d&&!d._w){d._w=1;d.textContent='Depth: '+densityLabel(getDensity());
     d.addEventListener('click',function(){setDensity(getDensity()==='beginner'?'expert':'beginner');});}
 }
-(function(){function ux(){applyDensity(getDensity());wireUXButtons();buildRightRail();try{renderSiteLinks();}catch(_){}}
+(function(){function ux(){applyDensity(getDensity());wireUXButtons();buildRightRail();try{renderSiteLinks();}catch(_){}try{renderConsentBar();}catch(_){}}
   if(document.readyState!=='loading')ux();else document.addEventListener('DOMContentLoaded',ux);
   window.addEventListener('resize',function(){if(!_railBuilt&&railWanted())buildRightRail();});})();
 
@@ -6322,7 +6478,15 @@ const SITE_URL='https://gameweekedge.co.uk';
    pages and the articles, all of which read this constant (the static
    pages at build time, through scripts/site/links.mjs). Fill a value and
    every footer gains the link on the next build; nothing is hand-copied. */
-const SITE_LINKS={discord:'',leagueCode:'',contact:'',terms:''};
+/* The public-facing links. Empty means the row is not rendered at all, so a
+   half-filled entry never becomes a dead link in the footer.
+
+   `contact` is the address already published in privacy.html, so filling it
+   here discloses nothing new and makes the footer keep the promise the
+   policy makes about deletion requests. `terms` stays empty deliberately:
+   there is no terms page yet, and a Terms link pointing nowhere is worse
+   than no Terms link. Fill it the day the page exists. */
+const SITE_LINKS={discord:'',leagueCode:'',contact:'bamfs1976@gmail.com',terms:''};
 const LEAGUE_JOIN='https://fantasy.premierleague.com/leagues/auto-join/';
 function siteFooterLinks(){
   const l=SITE_LINKS,out=[];

@@ -1540,6 +1540,37 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
 | `ge-modelwatch` | last model snapshot for change alerts |
 | `ge-api-base` | override API base (native/testing) |
 | `ge-c-*` | cached API responses (per‑key TTL) |
+| `ge-consent` | the analytics choice: `yes`, `no`, or absent for unasked |
+| `ge-anon` | analytics identifier. **Written only after consent**, deleted on withdrawal |
+| `ge-src` | marketing attribution tag. Same rule: held in memory until consent, deleted on withdrawal |
+
+### Which of these need consent, and why
+
+PECR regulation 6 is about storing information on someone's device. It is not
+about cookies, and it is not about who receives the data, so "first party" and
+"localStorage rather than a cookie" are both beside the point. The ICO is
+explicit that first-party analytics are not exempt.
+
+The line drawn in `index.html`, above `anonId()`:
+
+| Needs consent | Strictly necessary, written freely |
+|---|---|
+| `ge-anon`, `ge-src` | settings the reader chose (`ge-theme`, `ge-mode`, `ge-density`) |
+| | the service itself (`ge-mid`, `ge-watch`, `ge-rivals`, `ge-tier`, `ge-alert-prefs`) |
+| | a cache of the same data (`ge-c-*`) |
+| | which first run to show (`ge-visited`, `ge-onboard`) |
+| | `ge-consent`, because storing a preference not to be tracked cannot itself require consent |
+
+Nothing is written and no event is sent until the reader answers the bar, and
+no answer means no. Withdrawal sits beside the display mode in Account &
+settings, and it deletes the identifiers rather than merely muting the sends,
+because withdrawal has to be as easy as consent and has to undo something.
+
+`dev/test-core.mjs` asserts the storage rule over a stub, reading the key list
+rather than trusting a return value. `dev/test-ui.mjs` asserts in a real
+browser that no `/api/track` request goes out before a choice, that the two
+answers are the same height so neither is the quiet one, and that a decline
+survives a reload.
 
 ## Appendix B — File layout (web)
 
