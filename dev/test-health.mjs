@@ -54,5 +54,51 @@ ok(hStale.status === 'stale' && !hStale.healthy, 'deadline passed with no writes
 const hOldOnly = computeHealth(boot2627, { '2025/26': { n: 5000, graded: 5000, lastWrite: '2026-05-20T00:00:00Z' } }, Date.parse('2026-08-18T00:00:00Z'));
 ok(hOldOnly.status === 'expected-soon' && hOldOnly.predictions === 0, 'only prior-season rows → current season still shows nothing logged');
 
-console.log('\n' + passes + ' passed, ' + failures + ' failed');
-if (failures) process.exit(1);
+/* Paging past the PostgREST response cap. The server returns at most 1,000
+   rows per request whatever .limit() asks for, so both reads of
+   gwedge_predictions must page with .range() until a short page. The fake
+   client enforces that cap: a single unpaged read would see 1,000 rows. */
+(async () => {
+  console.log('• paging gwedge_predictions past the 1,000-row cap');
+  const { fetchGraded } = require(join(ROOT, 'netlify', 'functions', 'model-calibration.js'));
+  const { fetchAll } = require(join(ROOT, 'netlify', 'functions', 'predictions-health.js'));
+  const CAP = 1000;
+  const fakeSb = (rows, failAt) => ({ from: () => {
+    let graded = false, calls = 0;
+    const q = {
+      select: () => q, order: () => q,
+      not: () => { graded = true; return q; },
+      limit: (n) => Promise.resolve({ data: rows.slice(0, Math.min(n, CAP)), error: null }),
+      range: (a, b) => {
+        calls++;
+        if (failAt != null && a >= failAt) return Promise.resolve({ data: null, error: { message: 'boom' } });
+        const src = graded ? rows.filter((r) => r.actual != null) : rows;
+        return Promise.resolve({ data: src.slice(a, Math.min(b + 1, a + CAP)), error: null });
+      },
+    };
+    return q;
+  } });
+
+  /* 2,663 rows logged, 2,273 graded: the live shape after GW5 of 2026/27. */
+  const rows = [];
+  for (let i = 0; i < 2663; i++) rows.push({ season: '2026/27', gw: 1 + Math.floor(i / 533), element: i, xp: 2, haul_prob: 0.05, actual: i < 2273 ? 1 : null, created_at: '2026-09-' + String(1 + (i % 28)).padStart(2, '0') + 'T00:00:00Z' });
+
+  const single = await fakeSb(rows).from().select().not().limit(50000);
+  ok(single.data.length === CAP, 'control: an unpaged .limit(50000) read stops at the 1,000-row cap');
+
+  const g = await fetchGraded(fakeSb(rows));
+  ok(!g.error && g.rows.length === 2273, 'calibration reads every graded row (2,273), not the first 1,000');
+  const a = await fetchAll(fakeSb(rows));
+  ok(!a.error && a.rows.length === 2663, 'health check counts every logged row (2,663)');
+  ok(a.rows.filter((r) => r.actual != null).length === 2273, 'health check graded count is the full 2,273');
+
+  const exact = await fetchGraded(fakeSb(rows.slice(0, 2000)));
+  ok(exact.rows.length === 2000, 'a table that is an exact multiple of the page size is read in full');
+  const empty = await fetchGraded(fakeSb([]));
+  ok(!empty.error && empty.rows.length === 0, 'an empty table returns no rows and no error');
+  const failed = await fetchAll(fakeSb(rows, 1000));
+  ok(failed.error && !failed.rows, 'an error on a later page is reported, not a silent partial count');
+
+  console.log('\n' + passes + ' passed, ' + failures + ' failed');
+  if (failures) process.exit(1);
+})();

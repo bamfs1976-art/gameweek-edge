@@ -66,6 +66,10 @@ Same as deadline week, and for the same reasons:
 | **Deadline day** | ~2h before the deadline, live | same |
 | **Matchday** | mid-15:00 block, live | same |
 
+Length: every X caption here fits the standard 280 characters (X counts the
+link as 23), so it posts from an account without Premium. The Debrief and
+Captaincy captions were trimmed to fit on 1 Oct 2026. Bluesky allows 300.
+
 Hashtags: `#FPL` on Bluesky, none on X. The Bluesky tag is what gets you into
 the custom feeds; on X the algorithm reads the text and the tag only leaks
 attention away.
@@ -94,9 +98,9 @@ choice, the bench and each squad pick."
 **X**
 > My gameweek, marked.
 >
-> The debrief scores every decision against what the model would have done — the captain, the bench, each of the fifteen. Not a leaderboard: the counterfactual, in points.
+> The debrief scores every decision against what the model would have done: captain, bench, all fifteen. The counterfactual, in points.
 >
-> It's free, for everyone, every week. It's also the only honest way to find out whether you're good at this or just owned the right striker.
+> Free, every week. The honest test of whether you're good at this or just owned the right striker.
 >
 > gameweekedge.co.uk
 
@@ -121,7 +125,7 @@ points."
 **X**
 > Captaincy, two days out.
 >
-> The Lab ranks every armband option by predicted points and shows the ceiling and the floor on each — because two players on the same projection can be very different bets. One is a steady six; the other is a two or a fifteen.
+> The Lab ranks every armband option by predicted points, with the ceiling and the floor. Two players on the same projection can be very different bets: one a steady six, the other a two or a fifteen.
 >
 > Pick with your eyes open 👇
 >

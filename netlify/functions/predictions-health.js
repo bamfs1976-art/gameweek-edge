@@ -68,6 +68,25 @@ function computeHealth(boot, stats, nowMs) {
   };
 }
 
+/* Page through the whole table. PostgREST caps each response (1,000 rows by
+   default) whatever .limit() asks for, so a single read undercounted the
+   season and could miss the latest write once the table passed 1,000 rows. */
+const PAGE = 1000, MAX_PAGES = 200;
+async function fetchAll(sb) {
+  const rows = [];
+  for (let p = 0; p < MAX_PAGES; p++) {
+    const from = p * PAGE;
+    const { data, error } = await sb.from('gwedge_predictions')
+      .select('season,actual,created_at')
+      .order('season').order('gw').order('element')
+      .range(from, from + PAGE - 1);
+    if (error) return { error };
+    rows.push(...(data || []));
+    if (!data || data.length < PAGE) break;
+  }
+  return { rows };
+}
+
 exports.handler = async () => {
   let boot;
   try { boot = await fplGet('bootstrap-static/'); }
@@ -78,7 +97,7 @@ exports.handler = async () => {
 
   const { createClient } = require('@supabase/supabase-js');
   const sb = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
-  const { data, error } = await sb.from('gwedge_predictions').select('season,actual,created_at').limit(50000);
+  const { rows: data, error } = await fetchAll(sb);
   if (error) return json({ status: 'db-error', healthy: false, season: seasonLabel(boot.events) }, 120);
 
   const stats = {};
@@ -92,3 +111,4 @@ exports.handler = async () => {
 
 module.exports.computeHealth = computeHealth;
 module.exports.seasonLabel = seasonLabel;
+module.exports.fetchAll = fetchAll;
