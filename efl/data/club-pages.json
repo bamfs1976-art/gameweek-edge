@@ -1,12 +1,12 @@
 {
- "built": "2026-10-01T00:34:11.109Z",
+ "built": "2026-10-01T10:10:43.446Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-01T00:34:11.109Z",
+  "generatedAt": "2026-10-01T10:10:43.446Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1921,12 +1921,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Back Injury, expected back 12 Oct"
-    },
-    {
-     "name": "H. Boateng",
-     "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 1 Oct"
     }
    ],
    "cardRisk": []
