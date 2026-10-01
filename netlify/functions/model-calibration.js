@@ -13,6 +13,28 @@ const json = (o, maxAge) => ({
   body: JSON.stringify(o),
 });
 
+/* Page through every graded row. PostgREST caps each response (1,000 rows by
+   default) whatever .limit() asks for, so a single .limit(50000) read came
+   back with the first 1,000 rows in no set order and the public record was
+   graded on that sample: n 1000 against 2,273 graded rows by GW5 of 2026/27.
+   Ordering on the logger's upsert key (season, gw, element) keeps the pages
+   stable, and a short page means the table is exhausted. */
+const PAGE = 1000, MAX_PAGES = 200;
+async function fetchGraded(sb) {
+  const rows = [];
+  for (let p = 0; p < MAX_PAGES; p++) {
+    const from = p * PAGE;
+    const { data, error } = await sb.from('gwedge_predictions')
+      .select('season,gw,xp,haul_prob,actual').not('actual', 'is', null)
+      .order('season').order('gw').order('element')
+      .range(from, from + PAGE - 1);
+    if (error) return { error };
+    rows.push(...(data || []));
+    if (!data || data.length < PAGE) break;
+  }
+  return { rows };
+}
+
 exports.handler = async () => {
   const supaUrl = process.env.SUPABASE_URL, supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supaUrl || !supaKey) return json({ configured: false, n: 0 }, 60);
@@ -20,8 +42,7 @@ exports.handler = async () => {
   const { createClient } = require('@supabase/supabase-js');
   const sb = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
 
-  const { data: all, error } = await sb.from('gwedge_predictions')
-    .select('season,gw,xp,haul_prob,actual').not('actual', 'is', null).limit(50000);
+  const { rows: all, error } = await fetchGraded(sb);
   if (error || !all || !all.length) return json({ n: 0 }, 300);
 
   /* Report the latest season that has graded data, so the accuracy card
@@ -60,3 +81,5 @@ exports.handler = async () => {
     buckets,
   }, 1800);
 };
+
+module.exports.fetchGraded = fetchGraded;
