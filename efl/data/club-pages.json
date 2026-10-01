@@ -1,12 +1,12 @@
 {
- "built": "2026-10-01T10:10:43.446Z",
+ "built": "2026-10-01T18:26:11.303Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-01T10:10:43.446Z",
+  "generatedAt": "2026-10-01T18:26:11.303Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1274,13 +1274,13 @@
      "name": "R. Hale",
      "position": "FWD",
      "status": "injured",
-     "news": "Rib Injury"
+     "news": "Rib Injury, expected back 3 Oct"
     },
     {
      "name": "W. Goodwin",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Leg Injury"
     },
     {
      "name": "L. Sillah",
@@ -1316,7 +1316,7 @@
      "name": "A. Little",
      "position": "MID",
      "status": "injured",
-     "news": "Muscle Injury"
+     "news": "Hamstring injury, expected back 10 Oct"
     },
     {
      "name": "T. Holtam",
@@ -5165,7 +5165,13 @@
      "name": "R. Hutchinson",
      "position": "DEF",
      "status": "injured",
-     "news": "Calf Injury"
+     "news": "Calf Injury, expected back 3 Oct"
+    },
+    {
+     "name": "M. Demetriou",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "O. Taylor",
@@ -5486,6 +5492,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury, expected back 12 Nov"
+    },
+    {
+     "name": "J. Aitchison",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 15 Nov"
     }
    ],
    "cardRisk": []
@@ -5624,22 +5636,28 @@
    ],
    "unavailable": [
     {
+     "name": "K. Vincent-Young",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Achilles Strain"
+    },
+    {
      "name": "J. Leake",
      "position": "DEF",
      "status": "injured",
-     "news": "Dislocated Shoulder injury"
-    },
-    {
-     "name": "T. Bishop",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Dislocated Shoulder injury, expected back 1 Jan"
     },
     {
      "name": "M. Jolliffe",
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
+    },
+    {
+     "name": "T. Smith",
+     "position": "GK",
+     "status": "injured",
+     "news": "Thigh Injury"
     }
    ],
    "cardRisk": []
@@ -8812,10 +8830,22 @@
    ],
    "unavailable": [
     {
+     "name": "A. Oluwabori",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "S. Cox",
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury"
+    },
+    {
+     "name": "A. Matthews",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
