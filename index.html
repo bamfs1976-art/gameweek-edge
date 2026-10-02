@@ -15739,7 +15739,7 @@ function teamSheetCard(b,gwFx,gws,squad){
     '<p class="dl-sub" style="margin-top:6px"><b>Only the first column is a team sheet.</b> Beyond the next deadline this is a plan, not a prediction: it assumes today’s squad, today’s fitness and no transfers, and it cannot see rotation or a press conference. Treat the later weeks as where your fixtures point, not as a lineup.</p></div>';
 }
 
-function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
+function planValuer(b,gwFx,gws){
   const memo=new Map();
   const perGw=(e,g)=>{                       /* one player's xP in one GW (0 on a blank, 2 fixtures on a double) */
     const k=e.id+':'+g;if(memo.has(k))return memo.get(k);
@@ -15775,6 +15775,27 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
     const xiIds=new Set(best.xi.map(s=>s.el.id));
     return best.total+benchValue(sq,xiIds,e=>perGw(e,g));
   };
+  /* A finished plan, replayed: each week's squad after its moves, its XI,
+     discounted bench and captain, less the hits, plus the transfers banked
+     at the end against those held at the start. The yardstick both solvers
+     are compared on. */
+  const scorePlan=(sq0,bank0,ft0,plan,decay)=>{
+    const dk=decay==null?DECAY_BASE:decay;
+    let sq=sq0.slice(),f=Math.max(1,ft0||1),score=0;
+    (plan||[]).forEach((st,gi)=>{
+      (st.moves||[]).forEach(m=>{sq=sq.filter(e=>e.id!==m.o.id).concat([m.c]);});
+      const n=(st.moves||[]).length,hit=Math.max(0,n-f)*4;
+      f=Math.min(ftCap(),Math.max(0,f-n)+1);
+      const g=gws[gi],best=bestXI(sq.map(e=>({el:e,p:perGw(e,g)})));
+      const cap=best?Math.max(...best.xi.map(s2=>s2.p)):0;
+      score+=(squadXP(sq,g)+cap-hit)*Math.pow(dk,gi);
+    });
+    return score+ftValue(f)-ftValue(ft0);
+  };
+  return {perGw,restXP,xiXP,squadXP,scorePlan};
+}
+function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
+  const {perGw,restXP,squadXP}=planValuer(b,gwFx,gws);
   const byPos={1:[],2:[],3:[],4:[]};
   b.elements.filter(e=>e.status==='a'&&(e.minutes||0)>0).forEach(e=>byPos[e.element_type].push(e));
   for(const k in byPos)byPos[k]=byPos[k].sort((a,c)=>restXP(c,0)-restXP(a,0)).slice(0,30);
@@ -15849,6 +15870,162 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   const best=beam[0]||null;
   return {best,baseline,gain:best?best.score-baseline:0};
 }
+/* ── The exact plan (MILP) ──────────────────────────────────
+   The beam search above is fast and usually right, but it is a heuristic:
+   it keeps eight candidate squads a week and can miss a sequence that only
+   pays off two moves later. This states the same problem as a mixed-integer
+   programme and hands it to HiGHS, which either proves the best plan or
+   says how close it got.
+
+   The SAME valuation as the beam, so the two can be compared: the best XI
+   each week, the bench at BENCH_W in sub order, −4 per hit beyond the free
+   transfers, DECAY_BASE per week, and FT_LADDER for the transfers banked at
+   the end. One thing the beam leaves out and this counts: the captain, whose
+   points double. Selling prices are current prices, the beam's caveat too.
+
+   Free transfers are modelled without binaries. h ≥ moves − free, and next
+   week's free count f' ≤ f − moves + h + 1, capped. The solver always wants
+   more free transfers, so it sets f' to its bound, which is exactly
+   max(f − moves, 0) + 1. The ladder is concave, so its pieces fill in order.
+
+   The engine (vendor/highs.js, 3.5 MB of WebAssembly) loads only when
+   someone asks for an exact plan, never with the app. */
+function milpPlanLP(ctx){
+  const R=ctx.rules||RULES_FALLBACK,T=ctx.gws.length,P=ctx.pool;
+  const W=ctx.benchW||BENCH_W,dec=ctx.decay==null?DECAY_BASE:ctx.decay,lad=ctx.ladder||FT_LADDER,cap=ctx.ftCap||5;
+  const f=(x)=>{const v=Math.round(x*1e4)/1e4;return (v<0?'- ':'+ ')+Math.abs(v);};
+  /* Objective terms are summed per variable before they are written: the LP
+     format does not add a variable that appears twice, it keeps one of the
+     two, which silently dropped every starting goalkeeper's points. */
+  const objC=new Map(),add=(v,c)=>objC.set(v,(objC.get(v)||0)+c);
+  const rows=[],bins=[],ints=[],bounds=[];let rn=0;
+  const row=(terms,op,rhs)=>{const t=terms.filter(Boolean);if(!t.length)return;
+    const lines=[];for(let i=0;i<t.length;i+=12)lines.push(t.slice(i,i+12).join(' '));
+    rows.push(' r'+(rn++)+': '+lines.join('\n  ')+' '+op+' '+rhs);};
+  P.forEach((p,k)=>{for(let t=0;t<T;t++){
+    const n=k+'_'+t,w=Math.pow(dec,t),xp=p.xp[t]||0;
+    bins.push('x'+n,'l'+n,'c'+n,'i'+n,'o'+n);
+    if(p.type!==1)bins.push('a'+n,'b'+n,'d'+n);
+    /* XI points, the captain's second share, and the bench in sub order. */
+    if(xp){add('l'+n,w*xp);add('c'+n,w*xp);
+      if(p.type===1){add('x'+n,w*xp*W.gk);add('l'+n,-w*xp*W.gk);}
+      else{add('a'+n,w*xp*W.out[0]);add('b'+n,w*xp*W.out[1]);add('d'+n,w*xp*(W.out[2]||0));}}
+    const prev=t===0?(ctx.squadIds.has(p.id)?1:0):null;
+    if(t===0)row(['+ x'+n,'- i'+n,'+ o'+n],'=',prev);
+    else row(['+ x'+n,'- x'+k+'_'+(t-1),'- i'+n,'+ o'+n],'=',0);
+    row(['+ i'+n,'+ o'+n],'<=',1);
+    row(['+ l'+n,'- x'+n],'<=',0);
+    row(['+ c'+n,'- l'+n],'<=',0);
+    if(p.type!==1)row(['+ a'+n,'+ b'+n,'+ d'+n,'+ l'+n,'- x'+n],'<=',0);
+  }});
+  for(let t=0;t<T;t++){
+    const all=P.map((p,k)=>'+ x'+k+'_'+t);
+    row(all,'=',R.squadSize);
+    for(const ty of [1,2,3,4]){
+      row(P.map((p,k)=>p.type===ty?'+ x'+k+'_'+t:null),'=',R.need[ty]);
+      const xi=P.map((p,k)=>p.type===ty?'+ l'+k+'_'+t:null);
+      row(xi,'>=',R.minPlay[ty]);row(xi,'<=',R.maxPlay[ty]);
+    }
+    row(P.map((p,k)=>'+ l'+k+'_'+t),'=',R.xiSize);
+    row(P.map((p,k)=>'+ c'+k+'_'+t),'=',1);
+    for(const sl of ['a','b','d'])row(P.map((p,k)=>p.type!==1?'+ '+sl+k+'_'+t:null),'=',1);
+    const clubs={};P.forEach((p,k)=>{(clubs[p.team]||(clubs[p.team]=[])).push('+ x'+k+'_'+t);});
+    Object.values(clubs).forEach(c=>{if(c.length>R.teamLimit)row(c,'<=',R.teamLimit);});
+    /* Money, in tenths of a million: what is sold funds what is bought. */
+    const money=P.map((p,k)=>(p.price?f(p.price)+' i'+k+'_'+t+' '+f(-p.price)+' o'+k+'_'+t:null));
+    row(money.concat(t?['- m'+(t-1)]:[]).concat(['+ m'+t]),'=',t?0:ctx.bank);
+    bounds.push(' m'+t+' >= 0');
+    /* Free transfers and hits. */
+    const ins=P.map((p,k)=>'+ i'+k+'_'+t);
+    row(ins.concat(['- h'+t,t?'- f'+t:null]),'<=',t?0:ctx.ft);
+    row(['+ f'+(t+1),'- h'+t].concat(ins).concat(t?['- f'+t]:[]),'<=',t?1:ctx.ft+1);
+    ints.push('h'+t,'f'+(t+1));
+    bounds.push(' 0 <= h'+t+' <= 15',' 1 <= f'+(t+1)+' <= '+cap);
+    add('h'+t,-4*Math.pow(dec,t));
+  }
+  /* The transfers banked at the end, each worth its rung of the ladder. */
+  const zs=[];for(let k=1;k<cap&&k<lad.length;k++){zs.push('+ z'+k);add('z'+k,lad[k]);bounds.push(' 0 <= z'+k+' <= 1');}
+  row(['+ f'+T].concat(zs.map(z=>z.replace('+','-'))),'=',1);
+  const wrap=a=>{const o=[];for(let i=0;i<a.length;i+=12)o.push(' '+a.slice(i,i+12).join(' '));return o.join('\n');};
+  const obj=[...objC].filter(([,c])=>Math.abs(c)>=1e-6).map(([v,c])=>f(c)+' '+v);
+  return 'Maximize\n obj: '+wrap(obj).trim()+'\nSubject To\n'+rows.join('\n')+
+    '\nBounds\n'+bounds.join('\n')+'\nGeneral\n'+wrap(ints)+'\nBinary\n'+wrap(bins)+'\nEnd\n';
+}
+/* Read the solver's answer back into the beam's plan shape. */
+function milpPlanDecode(cols,ctx){
+  const v=n=>((cols[n]||{}).Primal||0)>0.5;
+  const P=ctx.pool,T=ctx.gws.length,plan=[];
+  for(let t=0;t<T;t++){
+    const ins=P.filter((p,k)=>v('i'+k+'_'+t)),outs=P.filter((p,k)=>v('o'+k+'_'+t));
+    const moves=[];
+    outs.slice().sort((a,c)=>a.type-c.type).forEach(o=>{
+      const j=ins.findIndex(c=>c.type===o.type);
+      if(j>=0){const c=ins.splice(j,1)[0];moves.push({o:o.el,c:c.el,gain:(c.rest||0)-(o.rest||0)});}
+    });
+    const hit=Math.max(0,Math.round(((cols['h'+t]||{}).Primal)||0))*4;
+    const cap=P.find((p,k)=>v('c'+k+'_'+t));
+    plan.push({gw:ctx.gws[t],moves,hit,captain:cap?cap.el:null});
+  }
+  return plan;
+}
+let HIGHS_P=null;
+/* The solver runs in a Worker (lib/highs-worker.js) so a long solve never
+   freezes the page; where Workers are unavailable it loads on the page.
+   Either way the caller gets an object whose solve() returns a promise. */
+function loadHighs(){
+  if(HIGHS_P)return HIGHS_P;
+  HIGHS_P=new Promise((res,rej)=>{
+    if(typeof Worker==='function'){
+      try{
+        const w=new Worker('lib/highs-worker.js');let seq=0;const wait=new Map();
+        w.onmessage=ev=>{const m=ev.data||{},p=wait.get(m.id);if(!p)return;wait.delete(m.id);
+          if(m.error)p.rej(new Error(m.error));else p.res(m.result);};
+        w.onerror=ev=>{const e=new Error((ev&&ev.message)||'The solver worker failed');wait.forEach(p=>p.rej(e));wait.clear();HIGHS_P=null;};
+        return res({solve:(lp,options)=>new Promise((r2,j2)=>{const id=++seq;wait.set(id,{res:r2,rej:j2});w.postMessage({id,lp,options});})});
+      }catch(_){/* fall through to the page */}
+    }
+    const done=()=>{try{window.HiGHSLoader({locateFile:f=>'vendor/'+f}).then(res,rej);}catch(e){rej(e);}};
+    if(window.HiGHSLoader)return done();
+    const sc=document.createElement('script');sc.src='vendor/highs.js';sc.async=true;
+    sc.onload=done;sc.onerror=()=>rej(new Error('Could not load the solver'));
+    document.head.appendChild(sc);
+  }).catch(e=>{HIGHS_P=null;throw e;});
+  return HIGHS_P;
+}
+/* Build the pool, solve, decode, and score the result on the beam's own
+   valuation so the two can be shown side by side. */
+async function solvePlanExact(b,gwFx,gws,squad,bank,ft,highs,decay){
+  /* The model starts from the squad it is given and must keep the game's
+     shape every week; a squad that does not have it (a stale or partial
+     read) would be "fixed" with hits nobody asked for. Say so instead. */
+  const R=RULES||RULES_FALLBACK,cnt={1:0,2:0,3:0,4:0};
+  (squad||[]).forEach(e=>{cnt[e.element_type]=(cnt[e.element_type]||0)+1;});
+  if((squad||[]).length!==R.squadSize||[1,2,3,4].some(t=>cnt[t]!==R.need[t]))
+    return {error:'Your squad as loaded does not match the game\u2019s shape ('+cnt[1]+' GK, '+cnt[2]+' DEF, '+cnt[3]+' MID, '+cnt[4]+' FWD), so there is nothing exact to plan from. Refresh and try again.'};
+  const V=planValuer(b,gwFx,gws);
+  const pool=new Map();
+  squad.forEach(e=>pool.set(e.id,e));
+  const byPos={1:[],2:[],3:[],4:[]};
+  b.elements.filter(e=>e.status==='a'&&(e.minutes||0)>0).forEach(e=>byPos[e.element_type].push(e));
+  /* The same candidates the beam considers (30 a position), so the two
+     solve one problem and differ only in how they search it. */
+  for(const k in byPos)byPos[k].sort((a,c)=>V.restXP(c,0)-V.restXP(a,0)).slice(0,30).forEach(e=>pool.set(e.id,e));
+  const ctx={gws,bank,ft:Math.max(1,ft||1),rules:RULES,decay,ftCap:ftCap(),squadIds:new Set(squad.map(e=>e.id)),
+    pool:[...pool.values()].map(e=>({id:e.id,el:e,type:e.element_type,team:e.team,price:e.now_cost||0,
+      xp:gws.map(g=>V.perGw(e,g)),rest:V.restXP(e,0)}))};
+  const t0=Date.now();
+  /* A short plan is solved to proof; a long one stops at 10 seconds or
+     0.5% of the bound, whichever comes first, and says which it was. */
+  const long=gws.length>4;
+  const res=await (highs||await loadHighs()).solve(milpPlanLP(ctx),{output_flag:false,time_limit:long?10:20,mip_rel_gap:long?0.005:0.001});
+  const ms=Date.now()-t0;
+  if(!res||!/Optimal|Time limit/i.test(res.Status||'')||!res.Columns)return {error:'The solver stopped without a plan ('+(res&&res.Status||'no answer')+').'};
+  const plan=milpPlanDecode(res.Columns,ctx);
+  /* Replay the plan on the beam's valuation, captain included for both. */
+  const score=V.scorePlan(squad,bank,ft,plan,decay);
+  const hold=V.scorePlan(squad,bank,ft,gws.map(()=>({moves:[]})),decay);
+  return {plan,score,hold,gain:score-hold,ms,proven:/Optimal/i.test(res.Status),status:res.Status,objective:res.ObjectiveValue};
+}
 function renderSolver3(){
   const S=window._solver;if(!S||!S.fixtures)return;
   const box=document.getElementById('solver3-out');if(!box)return;
@@ -15883,6 +16060,50 @@ function renderSolver3(){
     Math.pow(DECAY_BASE,3).toFixed(2)+' of a point now: partly because a distant projection is less certain, '+
     'and partly because a move whose payoff is all in the future is one you can still make later, with more information. '+
     '<b>Caveat:</b> selling prices are approximated as current price, your exact selling price needs an FPL login, which the public API doesn’t allow, so budgets can be slightly optimistic on players who rose in price.</div>';
+}
+/* The exact plan (Pro). Three weeks is the beam's own problem, solved
+   exactly; eight weeks is the horizon the beam cannot search, undiscounted,
+   because that is what measured best over eight (dev/fit-decay.mjs). The
+   engine is fetched on the first tap and cached by the browser after. */
+function solverExactCard(){
+  const inner='<p class="dl-sub" style="margin-bottom:10px">The same problem as the plan above, handed to an optimisation solver that either proves the best sequence or says how close it got. It also counts your captain, and can look eight gameweeks ahead.</p>'+
+    '<div class="modal-row" style="gap:8px;flex-wrap:wrap">'+
+      '<button class="btn btn-primary btn-sm" onclick="runExactPlan(3)">Exact plan: 3 gameweeks</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="runExactPlan(8)">Exact plan: 8 gameweeks</button></div>'+
+    '<div id="solverx-out" role="status" style="margin-top:10px"></div>';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Exact plan</div>'+
+    (isPro()?inner:proLockWrap(inner,null,'Pro solves your transfer plan exactly, captain included, up to eight gameweeks ahead.'))+'</div>';
+}
+async function runExactPlan(h){
+  if(!isPro()){openUpgrade();return;}
+  const S=window._solver,box=document.getElementById('solverx-out');if(!S||!S.fixtures||!box)return;
+  const ft=parseInt((document.getElementById('solver-ft')||{}).value||'1',10);
+  const gws=S.b.events.filter(e=>!e.finished).slice(0,h).map(e=>e.id);
+  if(gws.length<2){box.innerHTML='<div class="dl-sub">Not enough gameweeks left for a multi-week plan.</div>';return;}
+  const decay=h>3?1:DECAY_BASE;
+  box.innerHTML='<div class="dl-sub">'+(HIGHS_P?'Solving…':'Loading the solver (about 1 MB, first time only), then solving…')+'</div>';
+  track('exact_plan',{h});
+  let r;
+  try{
+    const highs=await loadHighs();
+    r=await solvePlanExact(S.b,buildGwFixtures(S.b,S.fixtures,gws),gws,S.squad,S.bank,ft,highs,decay);
+  }catch(e){r={error:'The solver could not run here ('+(e&&e.message||'unknown error')+').'};}
+  if(r.error){box.innerHTML='<div class="dl-sub">'+esc(r.error)+'</div>';return;}
+  const moved=r.plan.some(st=>st.moves.length);
+  const rows=r.plan.map(st=>'<div class="card-title" style="margin-top:12px">GW'+st.gw+
+      (st.hit?' <span class="badge badge-amber">−'+st.hit+'</span>':'')+
+      (st.captain?' <span class="badge badge-green">C '+esc(st.captain.web_name)+'</span>':'')+'</div>'+
+    (st.moves.length?st.moves.map(m=>'<div class="dl-row"><span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(m.o.web_name)+'  →  '+esc(m.c.web_name)+'</span>'+
+        '<span class="dl-sub">'+teamShort(S.b,m.o.team)+' out · '+teamShort(S.b,m.c.team)+' in · '+money(m.c.now_cost)+'</span></span>'+
+        '<span class="dl-col mono" style="color:var(--'+(m.gain>=0?'green':'amber')+')">'+(m.gain>=0?'+':'')+m.gain.toFixed(1)+'</span></div>').join('')
+      :'<div class="dl-row"><span class="dl-grow"><span class="dl-sub">Roll: bank the free transfer</span></span></div>')).join('');
+  box.innerHTML='<div class="statgrid mb-14">'+
+      '<div class="stat"><div class="stat-l">Gain over holding</div><div class="stat-v" style="color:var(--green)">'+(r.gain>=0?'+':'')+r.gain.toFixed(1)+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Solver</div><div class="stat-v">'+(r.proven?'Proven best':'Best found')+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Time</div><div class="stat-v">'+(r.ms/1000).toFixed(1)+'s</div></div></div>'+
+    (moved?rows:'<div class="dl-sub">Holding is the best plan: no sequence of moves over these '+gws.length+' gameweeks pays for itself.</div>')+
+    '<div class="dl-sub" style="margin-top:10px">'+(h>3?'Eight gameweeks, undiscounted: over a long horizon every discount tested lost points, so none is applied. ':'Future gameweeks discounted at '+DECAY_BASE+' a week, as in the plan above. ')+
+    'Counts the best XI, the bench in sub order, your captain, −4 hits and the free transfers you bank. Same selling-price caveat as above.</div>';
 }
 function solver3Card(){
   return '<div class="card mb-20"><div class="card-title">'+svg(ICON.calendar,'width="15" height="15"')+' 3-GW plan: sequenced transfers</div>'+
@@ -16016,7 +16237,7 @@ async function hydrateTransfers(host){
         const sgws=b.events.filter(e=>!e.finished).slice(0,5).map(e=>e.id);
         if(sgws.length)sheetCard=teamSheetCard(b,buildGwFixtures(b,fixtures,sgws),sgws,squad);
       }catch(_){}
-      replacer=recCard+sheetCard+rankCard+solverCard()+solver3Card();
+      replacer=recCard+sheetCard+rankCard+solverCard()+solver3Card()+solverExactCard();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement: next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+

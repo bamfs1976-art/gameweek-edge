@@ -1,0 +1,8 @@
+{
+  "version": "1.15.3",
+  "integrity": "sha512-5rzjBlAkqRxr7FOv+iZjxF8nNfKsEt8uOaP3S6gls6yRf4+Jv4BqBIE3iPFsgfOHutQBMNxRE9jWhxRAM7Oycw==",
+  "files": {
+    "highs.js": "cc5622c7182946aadc6c017b07b6071c143c59b3d128143f29e408322fda554d",
+    "highs.wasm": "528be4365bea1d4188988646b244263f50320df55782e14d6af5bce7cd45c840"
+  }
+}

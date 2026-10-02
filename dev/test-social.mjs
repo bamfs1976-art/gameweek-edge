@@ -93,7 +93,7 @@ const { squadOptimise, bestXI, RULES_FALLBACK, SCORING_FALLBACK, fplScoring, fpl
   '\nconst fixtureXP=(b,el,fx)=>fx.xp*(el.chance_of_playing_next_round==null?1:el.chance_of_playing_next_round/100);\n' + grabFn('teamSheet') + '\n' + grabFn('neverStarts') +
   /* The plan solver, on the same stubbed xP: what is under test is the
      sequencing and the discounting, not the projection underneath. */
-  '\n' + grabConst('DECAY_BASE') + '\n' + grabFn('solvePlanMulti') +
+  '\n' + grabConst('DECAY_BASE') + '\n' + grabFn('planValuer') + '\n' + grabFn('solvePlanMulti') +
   '\nreturn {squadOptimise,bestXI,RULES_FALLBACK,SCORING_FALLBACK,fplScoring,fplRules,ftCap,minClubsForXi,setRules:(r)=>{RULES=r;},'+
   'ftValue,benchValue,BENCH_W,FT_LADDER,FT_CAP,teamSheet,neverStarts,solvePlanMulti,DECAY_BASE};'
 )();
