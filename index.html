@@ -15657,11 +15657,12 @@ function buildGwFixtures(b,fixtures,gws){
    bench: that is what the squad scores, not what it is worth. Bench value
    belongs to the transfer solver, which is a different question. */
 function teamSheet(b,gwFx,gws,squad){
+  /* Availability lives in fixtureXP, once (MODEL_REVIEW F3). This used to
+     multiply by the chance of playing again, charging a 50% doubt as 25%. */
   const perGw=(e,g)=>{
     const fxs=(gwFx[e.team]||{})[g]||[];
-    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
     let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
-    return t*(ch/100);
+    return t;
   };
   const posOrder=s=>s.el.element_type;
   return gws.map((g,i)=>{
@@ -15743,9 +15744,10 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   const perGw=(e,g)=>{                       /* one player's xP in one GW (0 on a blank, 2 fixtures on a double) */
     const k=e.id+':'+g;if(memo.has(k))return memo.get(k);
     const fxs=(gwFx[e.team]||{})[g]||[];
-    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
+    /* Availability lives in fixtureXP, once (MODEL_REVIEW F3); this copy
+       used to multiply by the chance of playing a second time. */
     let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
-    t*=(ch/100);memo.set(k,t);return t;
+    memo.set(k,t);return t;
   };
   const restMemo=new Map();
   /* Points further out are worth less TODAY, and the solver has to say so or

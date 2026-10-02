@@ -88,7 +88,9 @@ const { squadOptimise, bestXI, RULES_FALLBACK, SCORING_FALLBACK, fplScoring, fpl
      armband, who never starts. The xP model underneath it has its own
      suite, so it is stubbed here: a fixture is worth whatever the test
      plants on it, and the sheet's logic is what gets graded. */
-  '\nconst fixtureXP=(b,el,fx)=>fx.xp;\n' + grabFn('teamSheet') + '\n' + grabFn('neverStarts') +
+  /* The stub carries availability as the real fixtureXP does (minutesModel
+     / availScale), so the sheet is checked for NOT applying it a second time. */
+  '\nconst fixtureXP=(b,el,fx)=>fx.xp*(el.chance_of_playing_next_round==null?1:el.chance_of_playing_next_round/100);\n' + grabFn('teamSheet') + '\n' + grabFn('neverStarts') +
   /* The plan solver, on the same stubbed xP: what is under test is the
      sequencing and the discounting, not the projection underneath. */
   '\n' + grabConst('DECAY_BASE') + '\n' + grabFn('solvePlanMulti') +
@@ -1415,7 +1417,9 @@ console.log('• team sheet: the same fifteen, week by week');
   ok(doubled[0].cap.team === star.team, 'a double gameweek takes the armband');
   ok(near(doubled[0].xi.find((s) => s.el.id === star.id).p, 6), 'and is worth both fixtures');
 
-  /* Availability is a multiplier, not a veto — a 25% doubt still projects. */
+  /* Availability is a multiplier, not a veto — a 25% doubt still projects —
+     and it is applied once, inside fixtureXP. The sheet used to multiply by
+     the chance again, which made this 0.1875. */
   const doubt = squad.map((e) => e.id === star.id ? { ...e, chance_of_playing_next_round: 25 } : e);
   const hurt = teamSheet({}, flat(gws), gws, doubt);
   ok(near(hurt[0].xi.concat(hurt[0].bench).find((s) => s.el.id === star.id).p, 0.75),
