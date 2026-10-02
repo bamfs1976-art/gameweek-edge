@@ -11875,10 +11875,15 @@ function repNav(step){
    look identical to a panel having been retired. The Live hub learned this
    the same way, which is why LV_VIEWS carries its tiers as data.
    KEEP ON ONE LINE — the test reads it with a balanced-bracket scan. */
-const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'free',needs:['seasonHistory']},{id:'chips',label:'Chip effectiveness',tier:'paid'},{id:'decisions',label:'Decision timeline',tier:'paid'},{id:'narrative',label:'Season narrative',tier:'paid'}];
+const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'free',needs:['seasonHistory']},{id:'chips',label:'Chip effectiveness',tier:'paid'},{id:'decisions',label:'Decision timeline',tier:'paid'},{id:'narrative',label:'Season narrative',tier:'paid'},{id:'clubbias',label:'Club loyalty',tier:'free'}];
 function reportSection(id){return REPORT_SECTIONS.filter(x=>x.id===id)[0]||null;}
 function reportShell(host,debriefHtml){
   const sec=reportSection('season');
+  /* Club loyalty: free, on demand, because it reads every gameweek. */
+  const bias='<div class="card-title" style="margin:24px 0 10px">'+esc((reportSection('clubbias')||{}).label||'Club loyalty')+'</div>'+
+    '<div id="mr-bias" class="card"><p class="dl-sub" style="margin-bottom:10px">Does your favourite club cost you points? This checks every gameweek you have played: how often you started their players, what they scored for you, and what your other picks scored.</p>'+
+    '<button class="btn btn-ghost btn-sm" onclick="clubBiasRun()">Check my club loyalty</button></div>';
+  debriefHtml=debriefHtml+bias;
   if(!sec||!capsMet(sec.needs)){host.innerHTML=debriefHtml;return;}
   const locked=sec.tier==='paid'&&!isPro();
   host.innerHTML=debriefHtml+
@@ -11893,6 +11898,77 @@ function reportShell(host,debriefHtml){
     seasonHost.innerHTML=stateBox('calendar','Season review unavailable',
       'Your gameweek history could not be loaded from FPL just now. This usually clears within a minute. Try again.',retryBtn());
   });
+}
+/* ── Club loyalty ──────────────────────────────────────────
+   The question every manager half-asks: am I picking my own club's players
+   because they are good, or because they are mine? FPL records a favourite
+   club on each team, so it can be answered from the season itself.
+
+   Per started player-gameweek (the captain's points counted once, so the
+   armband does not decide it): points per start for favourite-club picks
+   against everyone else you started, and the share of your starts they
+   took against the share of the game's ownership the club has. "Cost" is
+   what those starts would have scored at your other picks' rate. A rough
+   read, and labelled as one: fewer than eight starts says nothing. */
+const BIAS_MIN_STARTS=8;
+function clubBias(weeks,fav,clubOwnShare){
+  let fs=0,fp=0,os=0,op=0,favCap=0,caps=0;
+  (weeks||[]).forEach(w=>{
+    (w.picks||[]).forEach(p=>{
+      if(!(p.multiplier>0))return;
+      const pts=w.pts[p.element]||0,mine=w.team[p.element]===fav;
+      if(mine){fs++;fp+=pts;}else{os++;op+=pts;}
+      if(p.is_captain){caps++;if(mine)favCap++;}
+    });
+  });
+  const fpps=fs?fp/fs:null,opps=os?op/os:null;
+  const share=(fs+os)?fs/(fs+os):0;
+  return {favStarts:fs,favPts:fp,favPerStart:fpps,otherPerStart:opps,share,fieldShare:clubOwnShare,
+    favCaptain:favCap,captaincies:caps,enough:fs>=BIAS_MIN_STARTS,
+    cost:(fs&&opps!=null)?Math.round((opps-fpps)*fs*10)/10:null};
+}
+async function clubBiasRun(){
+  const box=document.getElementById('mr-bias');if(!box)return;
+  const mid=repMid();if(!mid)return;
+  box.innerHTML='<div class="dl-sub">Reading your season…</div>';
+  track('club_bias');
+  try{
+    const [b,entry]=await Promise.all([boot(),loadEntry(mid)]);
+    const fav=entry&&entry.favourite_team;
+    if(!fav){box.innerHTML='<p class="dl-sub">This team has no favourite club set on FPL, so there is nothing to compare. You can set one in your FPL account details.</p>';return;}
+    const gws=b.events.filter(e=>e.finished).map(e=>e.id);
+    const team={};b.elements.forEach(e=>{team[e.id]=e.team;});
+    const weeks=[];
+    for(let i=0;i<gws.length;i+=4){
+      const part=await Promise.all(gws.slice(i,i+4).map(async g=>{
+        try{const [pk,lv]=await Promise.all([loadPicks(mid,g),loadLive(g)]);
+          const pts={};(lv.elements||[]).forEach(x=>{pts[x.id]=x.stats?x.stats.total_points:0;});
+          return {gw:g,picks:pk.picks||[],pts,team};}catch(_){return null;}}));
+      part.forEach(w=>{if(w)weeks.push(w);});
+    }
+    const own=e=>parseFloat(e.selected_by_percent)||0;
+    const all=b.elements.reduce((t,e)=>t+own(e),0)||1;
+    const clubShare=b.elements.filter(e=>e.team===fav).reduce((t,e)=>t+own(e),0)/all;
+    const r=clubBias(weeks,fav,clubShare);
+    const club=(b.teams[fav]||{}).name||'your club';
+    const pct=v=>Math.round(v*100)+'%';
+    if(!r.enough){
+      box.innerHTML='<p class="dl-sub">'+esc(club)+' players started '+r.favStarts+' time'+(r.favStarts===1?'':'s')+' for you over '+weeks.length+' gameweeks. That is too few to say anything fair; it takes at least '+BIAS_MIN_STARTS+'. No bias worth worrying about so far.</p>';
+      return;
+    }
+    const verdict=r.cost>5?'Your loyalty is costing you: '+esc(club)+' picks scored '+r.cost.toFixed(0)+' points fewer than your other picks would have in the same starts.'
+      :r.cost<-5?'Your loyalty is paying: '+esc(club)+' picks scored '+(-r.cost).toFixed(0)+' points more than your other picks would have.'
+      :'No real cost: '+esc(club)+' picks have scored about as well as the rest of your team.';
+    box.innerHTML='<div class="statgrid mb-14">'+
+        '<div class="stat"><div class="stat-l">'+esc(club)+' starts</div><div class="stat-v">'+r.favStarts+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Share of your starts</div><div class="stat-v">'+pct(r.share)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">The game overall</div><div class="stat-v">'+pct(r.fieldShare)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Points per start</div><div class="stat-v">'+r.favPerStart.toFixed(1)+' <span class="dl-sub">vs '+r.otherPerStart.toFixed(1)+'</span></div></div>'+
+      '</div><p style="margin:0 0 8px"><b>'+verdict+'</b></p>'+
+      '<p class="dl-sub">'+(r.share>r.fieldShare*1.5?'You start their players far more often than the game does ('+pct(r.share)+' of your starts against '+pct(r.fieldShare)+' of all ownership). ':'')+
+      (r.favCaptain?'You captained one of them '+r.favCaptain+' time'+(r.favCaptain===1?'':'s')+' out of '+r.captaincies+'. ':'')+
+      'A rough read over '+weeks.length+' gameweeks: points per start count the captain once, and a few big hauls move it a lot.</p>';
+  }catch(_){box.innerHTML='<p class="dl-sub">Your season could not be loaded from FPL just now. Try again in a minute.</p><button class="btn btn-ghost btn-sm" onclick="clubBiasRun()">Try again</button>';}
 }
 async function hydrateGwreport(host){
   const entered=urlEntryOnce('gwreport');

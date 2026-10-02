@@ -1320,6 +1320,22 @@ match the free transfers, and it never scores below the beam. On seeded
 leagues the beam is already optimal at three weeks most of the time; the
 exact plan wins clearly over eight (196.6 vs 193.7 in the test league).
 
+### Club loyalty and squad screenshots (free)
+
+- **Club loyalty** (Manager Report, on demand): reads the favourite club
+  FPL stores on the team, then every finished gameweek's picks and points.
+  Points per start for that club's players against the rest of your
+  starters (captain counted once), their share of your starts against the
+  club's share of all ownership, and what those starts would have scored at
+  your other picks' rate. Silent below eight starts. `clubBias`,
+  `dev/test-clubbias.mjs`.
+- **From a screenshot** (Squad Planner, signed in): a team screenshot is
+  shrunk on the device, Claude Opus 5.5 reads the names into strict JSON
+  (`ai.js`, task `scan`, inside the daily AI quota), `matchScan` finds each
+  in the live player list (display name, then surname or full name, by club
+  and position, accents ignored, no player twice), and nothing loads until
+  the manager confirms. `dev/test-scan.mjs`.
+
 ### Start chance and your team news (Pro)
 
 The learned minutes model (§4) drives every projection for everyone. Pro is
