@@ -49,8 +49,8 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const constLine = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); };
 const constBlock = (n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n};', i) + 3); };
 const app = new Function([
-  ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH', 'MINUTES_BENCHED'].map(constLine),
-  constBlock('MINUTES_W'),
+  ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH', 'MINUTES_BENCHED', 'MINUTES_SUB60'].map(constLine),
+  constLine('MINUTES_W'),
   extractBlock(html, html.indexOf('function congestionFactor(')),
   ...['recentMinutes', 'minutesFeatures', 'minutesProbs', 'minutesLegacy', 'overrideLive', 'minutesModel'].map((n) => extractFn(html, n)),
 ].join('\n') + '\nreturn {recentMinutes, minutesModel, overrideLive};')();

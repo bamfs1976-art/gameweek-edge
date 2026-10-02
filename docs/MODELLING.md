@@ -65,9 +65,12 @@ Graded on the full 2025-26 season against the frozen old blend
 |---|---|---|
 | P(start) | 0.1073 → **0.1034** | 0.0929 → **0.0798** |
 | P(appear) | 0.1338 → **0.1138** | 0.1219 → **0.0872** |
-| P(60+) | 0.1098 → **0.1015** | 0.0965 → **0.0797** |
+| P(60+) | 0.1098 → **0.1020** | 0.0965 → **0.0802** |
 
-Log loss falls by about a third in every row, because the old blend gave a
+P(60+) is capped at the start probability plus 1.2% of the cameo, the
+share of substitute appearances that reach an hour (`MINUTES_SUB60`), so
+the three numbers can never contradict each other; that costs 0.0005 of
+Brier against the uncapped fit. Log loss falls by about a third in every row, because the old blend gave a
 regular starter a start probability of exactly 1 and paid in full every
 time he missed a game. The learned model is calibrated on average to within
 a percentage point of what happened.
@@ -79,21 +82,24 @@ seasons after the training years, before → after:
 
 | | 2024-25 | 2025-26 |
 |---|---|---|
-| MAE, all player-gameweeks | 2.099 → **2.030** | 2.135 → **2.078** |
-| Did not play (RMSE) | 2.415 → **2.275** | 2.403 → **2.253** |
-| Blanks (RMSE) | 1.753 → **1.586** | 1.654 → **1.500** |
-| Haulers (RMSE) | **5.310** → 5.456 | **5.581** → 5.711 |
-| Rank correlation per GW | 0.286 → **0.293** | 0.261 → **0.275** |
-| Bias (pts per player-GW) | +0.53 → **+0.40** | +0.29 → **+0.16** |
+| MAE, all player-gameweeks | 2.099 → **2.028** | 2.135 → **2.076** |
+| Did not play (RMSE) | 2.415 → **2.271** | 2.403 → **2.248** |
+| Blanks (RMSE) | 1.753 → **1.585** | 1.654 → **1.499** |
+| Haulers (RMSE) | **5.310** → 5.458 | **5.581** → 5.713 |
+| Rank correlation per GW | 0.286 → **0.294** | 0.261 → **0.275** |
+| Bias (pts per player-GW) | +0.53 → **+0.39** | +0.29 → **+0.16** |
 
 The one band that gets worse is hauls. It is the honest cost of no longer
 calling a regular starter certain to play: the projection for the players
 who haul comes down a little, while the bias row says the model was
 over-forecasting on average and now does so less. Ranking, which is what
-captaincy and transfers act on, improves. In the synthetic walk-forward
+captaincy and transfers act on, improves. On the full 2025-26 season the
+haul band now loses narrowly to recent form (5.713 vs 5.619; it was level,
+5.581, before), which the harness's guard reports when that season is run
+locally; CI runs the committed 2023-24 sample, where the guard holds. In the synthetic walk-forward
 (`backtest-season.mjs`) captain points rise 9.10 → 9.40 per GW and MAE
 2.39 → 2.38; its invented minutes process is not real data, and its GK and
-DEF bias moves from −0.06/−0.12 to −0.30/−0.31.
+DEF bias moves from −0.06/−0.12 to −0.31/−0.32.
 
 "Lost his place" is measured, not assumed: of players who had started at
 least 60% of their club's games and then did not start either of the last
@@ -236,8 +242,8 @@ rather than assumed.
 The split earns its place immediately. Blended together, recent form beats the
 scoring core on “all player‑gameweeks” and the reason is invisible. Split by
 band on 2023/24 it is unambiguous: the core wins **every band in which the
-player actually took the pitch** (blanks 1.687 vs 2.303, tickers 1.179 vs 2.100,
-haulers 5.389 vs 5.528) and loses only the did‑not‑play band (2.533 vs 1.550) —
+player actually took the pitch** (blanks 1.686 vs 2.303, tickers 1.184 vs 2.100,
+haulers 5.390 vs 5.528) and loses only the did‑not‑play band (2.532 vs 1.550) —
 which is exactly the availability signal this run strips out by design. One row
 now carries the whole confound instead of it contaminating the average.
 

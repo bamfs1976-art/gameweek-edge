@@ -1299,6 +1299,29 @@ rather than merging.
 
 ---
 
+### Start chance and your team news (Pro)
+
+The learned minutes model (§4) drives every projection for everyone. Pro is
+the view of it, and the note that overrides it:
+
+- **Start chance** on the player card: P(start), P(60+ minutes) and P(plays
+  at all) for the next game, with the reasons in words (his last game, his
+  recent run, his season, an FPL flag, a congested week). The same numbers
+  sit on **My Squad** as a list of all fifteen, riskiest first, and as the
+  **Start%** column in the Players table's Rotation lens (season totals, as
+  the table does not fetch every player's recent games).
+- **Your team news**: mark a player **out** (until a date, or until cleared)
+  or **benched** (lost his place). Out zeroes him. Benched uses what dropped
+  regulars went on to do, measured on three seasons: they started the next
+  game 22.9% of the time and appeared 41.9%. Notes save on the device and,
+  for a signed-in Pro reader, to `gwedge_overrides` (Supabase, RLS, one row
+  per player per season), newest note winning across devices, a clear
+  included. They change only their owner's projections: the public model
+  record, the prediction logger and the MCP tools never read them.
+
+Free readers see both blurred behind the Pro strip. Tests:
+`dev/test-overrides.mjs`, `dev/backtest-minutes.mjs`.
+
 ## 4. The model
 
 ### Team‑strength engine (`plsim*` in `index.html`, mirrors the Plsimulator repo)
@@ -1540,6 +1563,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
 | `ge-watch` | watchlist player ids |
 | `ge-draft-v1` | saved pre‑season draft (player ids) |
 | `ge-rivals` | rival manager ids |
+| `ge-overrides` | Pro: your own team-news notes per player for the season (`out` / `benched` / `clear`, optional date); synced to `gwedge_overrides` when signed in |
 | `ge-alert-prefs` | alert toggles |
 | `ge-journey-{gw}` | "plan my week" progress |
 | `ge-modelwatch` | last model snapshot for change alerts |

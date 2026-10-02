@@ -4201,6 +4201,7 @@ async function boot(){
     const te=await loadTeamElo();
     if(te&&te.elo&&Object.keys(te.elo).length){idx.elo=te.elo;idx.eloSeason=te.season;}
   }catch(_){/* offline-fitted priors only */}
+  ovrApply(idx);
   MEM._idx=idx;return idx;
 }
 
@@ -4662,7 +4663,7 @@ const PRO_BENEFITS=[
 function getTier(){try{return localStorage.getItem('ge-tier')==='pro'?'pro':'free';}catch(_){return 'free';}}
 function isPro(){return getTier()==='pro';}
 function setTier(t){const v=t==='pro'?'pro':'free';try{localStorage.setItem('ge-tier',v);}catch(_){}reflectTier();cloudProfile({tier:v});}
-function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());}
+function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());if(MEM._idx)ovrApply(MEM._idx);}
 
 /* The value preview shown to free users on a Pro panel. */
 function proPreview(panel,content){
@@ -4687,7 +4688,8 @@ function openUpgrade(){
   const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
     '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
     ['Scout AI &amp; Ask the Scout','Rival Scout: overtake your league','Ownership: your EO and the template',
-     'Simulators: season and what-if','Live DEFCON &amp; the Set Piece Register']
+     'Simulators: season and what-if','Live DEFCON &amp; the Set Piece Register',
+     'Start chance for every player, and your own team news']
       .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">–</span><span class="y">✓</span></div>').join('')+
     '</div>';
   document.getElementById('pro-body').innerHTML=
@@ -4895,6 +4897,8 @@ async function syncOnLogin(){
     const addR=unionR.filter(x=>!cloudR.includes(x));
     if(addR.length)await sb.from('gwedge_rivals').upsert(addR.map(r=>({user_id:id,rival_manager_id:Number(r)})));
     saveRivals(unionR);
+    /* A Pro manager's own team news: merged, newest note per player wins. */
+    if(getTier()==='pro')await ovrSyncLogin();
     /* Note: alert preferences persist server-side via the push
        subscription (gwedge_push_subs.prefs, through syncPushPrefs), so
        there is no separate alert-rules sync here. */
@@ -4908,6 +4912,152 @@ async function syncOnLogin(){
 function cloudProfile(patch){if(sb&&uid())sb.from('gwedge_profiles').upsert(Object.assign({user_id:uid()},patch)).then(()=>{},()=>{});}
 function cloudWatchAdd(pid){if(sb&&uid())sb.from('gwedge_watchlist').upsert({user_id:uid(),player_id:pid}).then(()=>{},()=>{});}
 function cloudWatchDel(pid){if(sb&&uid())sb.from('gwedge_watchlist').delete().eq('user_id',uid()).eq('player_id',pid).then(()=>{},()=>{});}
+
+/* ── Your team news (Pro) ──────────────────────────────────
+   A manager who has read the press conference knows things the FPL flags
+   do not say yet. Two notes, both measured rather than guessed:
+     out      he will not play, until a date or until cleared;
+     benched  he has lost his place: the model uses what dropped players
+              went on to do (MINUTES_BENCHED), not zero.
+   Saved on the device and, for a signed-in Pro reader, to the account
+   (gwedge_overrides), so the note follows them to every device. They change
+   only the projections their owner sees: the public record, the prediction
+   logger and the MCP tools never read them. */
+const OVR_KEY='ge-overrides';
+const OVR_KINDS=['out','benched','clear'];
+function ovrNormalise(o){
+  if(!o||OVR_KINDS.indexOf(o.kind)<0)return null;
+  const until=typeof o.until==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.until)?o.until:null;
+  return {kind:o.kind,until,updated:Number(o.updated)||0};
+}
+/* `season` is passed while the index is still being built, before
+   curSeason() can answer, so last season's notes never apply to this one. */
+function ovrLoadStore(season){
+  try{const o=JSON.parse(localStorage.getItem(OVR_KEY)||'null');
+    if(o&&o.items&&typeof o.items==='object'){const sn=season||curSeason();
+      if(o.season&&sn&&o.season!==sn)return {season:sn,items:{}};
+      const items={};for(const k of Object.keys(o.items)){const v=ovrNormalise(o.items[k]);if(v)items[k]=v;}
+      return {season:o.season||sn,items};}
+  }catch(_){}
+  return {season:season||curSeason(),items:{}};
+}
+function ovrSaveStore(st){try{localStorage.setItem(OVR_KEY,JSON.stringify(st));}catch(_){}}
+/* Newest note per player wins, a 'clear' included, so clearing on one
+   device is not undone by another device that still holds the old note. */
+function ovrMerge(local,cloud){
+  const out={};
+  for(const src of [local||{},cloud||{}])for(const k of Object.keys(src)){
+    const v=ovrNormalise(src[k]);if(!v)continue;
+    if(!out[k]||v.updated>out[k].updated)out[k]=v;
+  }
+  return out;
+}
+/* Attach the live notes to the players the model reads. Pro only: a lapsed
+   subscription stops applying them but never deletes them. */
+function ovrApply(idx){
+  if(!idx||!idx.els)return;
+  const items=isPro()?ovrLoadStore(idx.season).items:{};
+  for(const k of Object.keys(idx.els)){
+    const el=idx.els[k],o=items[k];
+    if(o&&o.kind!=='clear'&&overrideLive(o))el._ovr=o;else if(el._ovr)delete el._ovr;
+  }
+}
+function ovrRow(id,o){return {user_id:uid(),season:curSeason(),element_id:Number(id),kind:o.kind,until:o.until,updated_at:new Date(o.updated||Date.now()).toISOString()};}
+async function ovrCloudPull(){
+  if(!sb||!uid()||!isPro()||!curSeason())return null;
+  try{const {data,error}=await sb.from('gwedge_overrides').select('element_id,kind,until,updated_at').eq('user_id',uid()).eq('season',curSeason());
+    if(error||!data)return null;
+    const items={};data.forEach(r=>{items[r.element_id]={kind:r.kind,until:r.until||null,updated:r.updated_at?new Date(r.updated_at).getTime():0};});
+    return items;
+  }catch(_){return null;}
+}
+async function ovrCloudPush(rows){
+  if(!sb||!uid()||!isPro()||!curSeason()||!rows.length)return false;
+  try{const {error}=await sb.from('gwedge_overrides').upsert(rows);return !error;}catch(_){return false;}
+}
+async function ovrSyncLogin(){
+  const cloud=await ovrCloudPull();
+  if(!cloud)return;
+  const st=ovrLoadStore(),merged=ovrMerge(st.items,cloud);
+  const up=Object.keys(merged).filter(k=>!cloud[k]||merged[k].updated>cloud[k].updated).map(k=>ovrRow(k,merged[k]));
+  st.items=merged;ovrSaveStore(st);
+  if(up.length)await ovrCloudPush(up);
+  if(MEM._idx)ovrApply(MEM._idx);
+}
+/* Set or clear a note, then redraw whatever is showing it. The date input
+   is optional: an empty one means "until I clear it". */
+async function ovrSet(id,kind){
+  if(!isPro()){openUpgrade();return;}
+  if(OVR_KINDS.indexOf(kind)<0)return;
+  const inp=document.getElementById('ovr-until');
+  const until=kind==='clear'?null:((inp&&inp.value)||null);
+  const st=ovrLoadStore();
+  st.items[id]=ovrNormalise({kind,until,updated:Date.now()});
+  ovrSaveStore(st);
+  if(MEM._idx)ovrApply(MEM._idx);
+  track('override_'+kind);
+  pdStartRefresh(id,'saving');
+  const synced=await ovrCloudPush([ovrRow(id,st.items[id])]);
+  pdStartRefresh(id,synced?'synced':'local');
+  renderPage(currentPanel);
+}
+
+/* ── Start chance (Pro) ─────────────────────────────────────
+   The learned minutes model's three numbers for one player, and the facts
+   behind them in words. The numbers already drive every projection for
+   everyone; Pro is the view of them and the note that overrides them. */
+let PD_START=null;   /* {id, n}: the open player card's next fixture context */
+function startReasons(e,gp,m,n){
+  const out=[];
+  const r=e._recent;
+  if(e._ovr&&overrideLive(e._ovr))out.push(e._ovr.kind==='out'
+    ?'Your team news: out'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):' until you clear it')+'.'
+    :'Your team news: lost his place'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):'')+'. Dropped regulars start the next game about '+Math.round(MINUTES_BENCHED.start*100)+'% of the time.');
+  const ch=e.chance_of_playing_next_round;
+  if(e.status&&e.status!=='a')out.push('FPL flag: '+(ch==null?(STATUS_LABEL[e.status]||'unavailable'):ch+'% chance of playing')+'.');
+  if(r&&r.n){
+    out.push((r.lastStart?'Started':'Did not start')+' his last game'+(r.lastStart?'':(r.lastApp?' (came off the bench)':''))+'.');
+    const starts=Math.round(r.startShare*r.n);
+    if(r.n>1)out.push('Recent run: started about '+starts+' of his last '+r.n+'.');
+  }else out.push('Recent games are still loading, so this reads his season totals only.');
+  out.push('Season: started '+(e.starts||0)+' of '+gp+' club game'+(gp===1?'':'s')+'.');
+  if(n&&n.congest&&congestionFactor(n.congest,Math.min(1,(e.starts||0)/gp))<0.98)
+    out.push('His club played a few days earlier, so rotation is more likely.');
+  return out;
+}
+function fmtShortDate(ymd){const d=new Date(ymd+'T12:00:00');return isNaN(d)?ymd:d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+function startChanceInner(b,id,sync){
+  id=Number(id);
+  const e=b.els[id],n=PD_START&&PD_START.id===id?PD_START.n:null;
+  const gp=(n&&n.gp)||0;
+  if(gp<1)return '<div class="dl-sub">Start chances appear once his club has played a league game this season.</div>';
+  const m=minutesModel(e,gp,n&&n.congest);
+  const pct=v=>Math.round(v*100)+'%';
+  const stat=(l,v)=>'<div class="pd-stat"><span class="pd-sl">'+l+'</span><span class="pd-sv">'+pct(v)+'</span></div>';
+  const o=e._ovr&&overrideLive(e._ovr)?e._ovr:null;
+  const syncTxt=sync==='synced'?'Saved to your account.':sync==='local'?'Saved on this device. Sign in to sync it.':sync==='saving'?'Saving…':'';
+  return '<div class="pd-grid">'+stat('Starts',m.pStart)+stat('Plays 60+ mins',m.p60)+stat('Plays at all',m.pAppear)+'</div>'+
+    '<ul class="dl-sub" style="margin:8px 0 0;padding-left:18px">'+startReasons(e,gp,m,n).map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>'+
+    '<div class="card-title" style="margin-top:12px">Your team news</div>'+
+    '<div class="dl-sub">Heard something FPL has not flagged yet? Record it and every projection you see uses it.</div>'+
+    '<div class="modal-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end">'+
+      '<label class="dl-sub" style="display:flex;flex-direction:column;gap:4px">Expected back (optional)'+
+        '<input class="modal-in" type="date" id="ovr-until" value="'+esc(o&&o.until||'')+'"></label>'+
+      '<button class="btn btn-ghost btn-sm" onclick="ovrSet('+id+',\'out\')"'+(o&&o.kind==='out'?' aria-pressed="true"':'')+'>Mark out</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="ovrSet('+id+',\'benched\')"'+(o&&o.kind==='benched'?' aria-pressed="true"':'')+'>Mark benched</button>'+
+      (o?'<button class="btn btn-ghost btn-sm" onclick="ovrSet('+id+',\'clear\')">Clear</button>':'')+
+    '</div>'+
+    '<div class="dl-sub" id="ovr-sync" role="status">'+esc(syncTxt)+'</div>';
+}
+function startChanceCard(b,id,sync){
+  const inner=startChanceInner(b,id,sync);
+  const body=isPro()?inner:proLockWrap(inner,null,'Pro shows how likely he is to start, why, and lets you record your own team news.');
+  return '<div class="card pd-sec"><div class="card-title">Start chance</div>'+body+'</div>';
+}
+function pdStartRefresh(id,sync){
+  const slot=document.getElementById('pd-start'),b=MEM._idx;
+  if(slot&&b&&b.els[id])slot.innerHTML=startChanceCard(b,id,sync);
+}
 function cloudRivalAdd(rid){if(sb&&uid())sb.from('gwedge_rivals').upsert({user_id:uid(),rival_manager_id:Number(rid)}).then(()=>{},()=>{});}
 function cloudRivalDel(rid){if(sb&&uid())sb.from('gwedge_rivals').delete().eq('user_id',uid()).eq('rival_manager_id',Number(rid)).then(()=>{},()=>{});}
 
@@ -8837,7 +8987,27 @@ async function hydrateSquad(host){
         (proj&&proj.mean>0?'<div class="dl-sub" style="margin-top:12px">Projected next GW (correlated sim): median <b>'+proj.p50+'</b> · range <b>'+proj.p10+'–'+proj.p90+'</b> · captain doubled.</div>':'')+
         (picks.active_chip?'<div class="dl-sub" style="margin-top:8px">Active chip: <b>'+esc(picks.active_chip)+'</b></div>':'')+
       '</div>'+
-    '</div>';
+    '</div>'+
+    squadStartCard(b,picks.picks,nf);
+}
+/* Start chance for the whole squad, riskiest first: the fifteen numbers the
+   projections above already use, shown so a doubt is spotted before the
+   deadline rather than after. A manager's own note is marked. Pro. */
+function squadStartCard(b,picks,nf){
+  const rows=picks.map(pk=>{const el=b.els[pk.element];if(!el)return null;const n=nf[el.team];
+    if(!n||!n.gp)return null;return {el,pk,m:minutesModel(el,n.gp,n.congest)};}).filter(Boolean)
+    .sort((a,c)=>a.m.pStart-c.m.pStart);
+  if(!rows.length)return '';
+  const pct=v=>Math.round(v*100)+'%';
+  const col=v=>v>=0.75?'green':v>=0.5?'amber':'red';
+  const inner='<div class="dl">'+rows.map(r=>'<div class="dl-row dl-click" onclick="openPlayer('+r.el.id+')">'+
+      '<span style="flex:1">'+esc(r.el.web_name)+(r.pk.position>11?' <span class="badge badge-grey">Bench</span>':'')+
+        (r.m.src==='override'?' <span class="badge badge-amber">Your note: '+(r.el._ovr.kind==='out'?'out':'benched')+'</span>':'')+'</span>'+
+      '<span style="width:64px;text-align:right;color:var(--'+col(r.m.pStart)+')">'+pct(r.m.pStart)+'</span>'+
+      '<span class="dl-sub" style="width:84px;text-align:right">60+: '+pct(r.m.p60)+'</span></div>').join('')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Chance each player starts the next game, from the learned minutes model. Tap a player to see why, or to record your own team news.</div>';
+  return '<div class="card mb-20">'+cardHead('Start chance','<span class="badge badge-grey">Next game</span>')+
+    (isPro()?inner:proLockWrap(inner,null,'Pro shows how likely each of your players is to start, and lets you record your own team news.'))+'</div>';
 }
 
 /* ── Shareable gameweek card ─────────────────────────────
@@ -13126,6 +13296,11 @@ function plCols(b,xpMap,ctx){
      d:e=>dcOK(e)?dcHitLabel(e):'–'},
     {k:'setp',l:'SetP',num:1,tier:'paid',v:e=>setPieceConfidence(e).value,
      d:e=>{const s=setPieceConfidence(e);return s.value?'<span class="badge '+(s.value>=70?'badge-green':s.value>=50?'badge-amber':'badge-grey')+'" title="'+esc(s.roles.join(', '))+'">'+s.value+'</span>':'–';}},
+    /* The learned model's P(start) for the next game, from season totals (the
+       table does not fetch every player's recent games). Pro, like the card. */
+    {k:'pstart',l:'Start%',num:1,tier:'paid',v:e=>(games[e.team]||0)<1?-1:Math.round(minutesModel(e,games[e.team],null).pStart*100),
+     d:e=>{if((games[e.team]||0)<1)return '–';const v=Math.round(minutesModel(e,games[e.team],null).pStart*100);
+       return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'%</span>';}},
     {k:'minsec',l:'Mins%',num:1,v:e=>minutesSecurity(e,games[e.team]||0),
      d:e=>{const v=minutesSecurity(e,games[e.team]||0);
        return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'</span>';}},
@@ -13206,7 +13381,7 @@ const PL_LENSES=[
   /* Free, deliberately: its sort column is free, so gating the lens would
      buy nothing except the three clicks it takes to rebuild by hand. */
   {id:'rotation',label:'Rotation',tier:'free',sort:'minsec',dir:1,
-   cols:['minsec','chance','minutes','selected_by_percent','now_cost'],
+   cols:['minsec','pstart','chance','minutes','selected_by_percent','now_cost'],
    filter:e=>(e.now_cost||0)>=60&&(parseFloat(e.selected_by_percent)||0)>=3,
    desc:'Minutes security for the players enough managers own to be hurt by. Starts share, minutes share and availability. Lowest first.'}
 ];
@@ -14914,7 +15089,10 @@ function openPlayer(id){
   m.classList.add('show');
   loadFixtures().then(fixtures=>{
     body.innerHTML=playerDetailHTML(b,fixtures,id);
+    pdStartRefresh(id);
     loadSummary(id).then(sum=>{const slot=document.getElementById('pd-summary');
+      if(sum&&sum.history&&!b.els[id]._recent)b.els[id]._recent=recentMinutes(sum.history,5);
+      pdStartRefresh(id);
       if(slot)slot.innerHTML=summarySections(b,sum,id);})
       .catch(()=>{const slot=document.getElementById('pd-summary');if(slot)slot.innerHTML='';});
     loadLeagueCtx().then(ctx=>{const slot=document.getElementById('pd-league');
@@ -15131,6 +15309,7 @@ function playerDetailHTML(b,fixtures,id){
   const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5),n=nf[e.team];
   const price=(e.now_cost||0)/10,xp=xP(b,e,n),hxp=horizonXP(b,e,hz);
   const mins=e.minutes||0,gp=(n&&n.gp)||0;
+  PD_START={id:Number(id),n};
   const gpBasis=minutesBasis(b,fixtures)(e.team);
   const per=v=>mins>=90?(parseFloat(v||0)*90/mins).toFixed(2):'–';
   const badge=e.status&&e.status!=='a'
@@ -15174,7 +15353,7 @@ function playerDetailHTML(b,fixtures,id){
     '<div class="pd-tick">'+fx.map(f=>'<span class="pd-fx fdr-'+f.diff+'">'+esc(f.opp)+'<b>'+(f.home?'H':'A')+'</b></span>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Colour = our model’s difficulty (green easy → red hard), from expected goals and clean-sheet odds.</div></div>':'';
   /* Filled asynchronously from element-summary (form graph, splits, seasons). */
-  const summarySlot='<div id="pd-summary">'+skel(2)+'</div>';
+  const summarySlot='<div id="pd-start"></div><div id="pd-summary">'+skel(2)+'</div>';
   const leagueSlot='<div id="pd-league"></div>';
   /* Fields the feed always sent and the card never showed. Rendered only when
      the player actually has them, so this section disappears rather than
@@ -18454,7 +18633,7 @@ async function hydrateRotation(host){
 function xP(b,el,nf){
   let base=parseFloat(el.ep_next||'0');
   if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
-  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
+  const chance=availScale(el)*100;
   let p=base;
   if(nf&&nf.lam!=null){
     const f=el.element_type<=2
@@ -18509,8 +18688,7 @@ function fixtureXP(b,el,fx){
   let base=parseFloat(el.ep_next||'0');
   if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
   const f=el.element_type<=2?0.72+1.0*fx.cs:Math.pow(fx.lam/1.47,0.8);
-  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
-  return base*Math.max(0.6,Math.min(1.5,f))*(chance/100);
+  return base*Math.max(0.6,Math.min(1.5,f))*availScale(el);
 }
 /* Cumulative expected points over a player's next-N fixture horizon. */
 function horizonXP(b,el,hz){
@@ -18984,6 +19162,7 @@ function congestionFactor(load,startShare){
    as before, because the training data carried none of them. Weights are
    regenerated, never hand-edited: node dev/fit-minutes.mjs --write. */
 const MINUTES_W={base:{start:[-2.5277,0.4805,0.3926,1.8105,0.09,0.7786,-0.1895,-0.127,0.2553],app:[0.2155,-0.0486,0.826,0.9276,0.2626,-0.4722,-0.8526,0.1552,0.8481],p60:[-1.143,0.0243,0.8395,0.8123,0.0717,0.0392,-0.0514,-0.1175,0.204]},recent:{start:[-3.5391,0.2962,0.0238,1.1852,0.1292,0.7344,-0.0073,-0.165,0.2127,0.1433,0.0717,0.2863,1.1669,0.9352,0.3472],app:[-0.9548,0.109,0.1854,0.5176,0.2505,-0.1091,-0.7095,0.092,0.7864,-0.2333,0.4689,-0.2552,1.7519,0.5811,0.2138],p60:[-2.3418,0.0929,0.2356,0.4031,0.0792,0.2377,0.1268,-0.1593,0.2341,-0.1404,0.3922,-0.0761,0.8841,1.3451,0.2748]}};
+const MINUTES_SUB60=0.012;   /* share of substitute appearances that reach 60 minutes (2024-25, n=3,206) */
 const MINUTES_FEATURES={
   base:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price'],
   recent:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price',
@@ -19007,9 +19186,12 @@ function minutesProbs(el,gp){
   const start=p(W.start),app=p(W.app),p60=p(W.p60);
   if(start==null||app==null||p60==null)return null;
   /* Three separate fits can disagree at the margin; the events nest, so
-     their probabilities must too. */
+     their probabilities must too. Sixty minutes is almost only reached by
+     starting: a substitute got there in 1.2% of his appearances (2024-25),
+     so P(60+) is held to the start probability plus that sliver of the
+     cameo, however the separate fit reads an unusual history. */
   const a=Math.max(app,start);
-  return {set:f.set,start,app:a,p60:Math.min(p60,a)};
+  return {set:f.set,start,app:a,p60:Math.min(p60,start+MINUTES_SUB60*(a-start))};
 }
 function minutesModel(el,gp,congest){
   gp=Math.max(1,gp||1);
@@ -19062,6 +19244,19 @@ function minutesLegacy(el,gp){
   const cameo=Math.max(0,minShare-startEff*perStart);
   const start=Math.min(1,startEff);
   return {set:'legacy',start,app:Math.min(1,start+cameo),p60:Math.min(1,start*Math.max(0.8,perStart/0.9))};
+}
+/* The scale FPL's own ep_next is multiplied by where the native model is
+   not used: the chance-of-playing flag, unless a manager's override says
+   otherwise. "Out" is zero; "benched" is the expected share of a match a
+   dropped player plays (a start, or a cameo of about a quarter of the game),
+   the same arithmetic minutesModel uses for minFrac. */
+function availScale(el){
+  const o=el._ovr;
+  if(o&&overrideLive(o)){
+    if(o.kind==='out')return 0;
+    return MINUTES_BENCHED.start+0.28*Math.max(0,MINUTES_BENCHED.app-MINUTES_BENCHED.start);
+  }
+  return el.chance_of_playing_next_round==null?1:el.chance_of_playing_next_round/100;
 }
 /* An override is live until its date passes, or forever if it has none. The
    date is the first day the player is expected back, so it expires at the

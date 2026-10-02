@@ -1605,11 +1605,13 @@ console.log('• the column gate: a Pro column is locked, unsortable and unexpor
   const byK = (cs) => Object.fromEntries(cs.map((c) => [c.k, c]));
   const F = byK(colsFree), P = byK(colsPro);
 
-  /* Exactly three paid columns, and they are the three that exist nowhere
-     else free. If a fourth ever appears this fails, on purpose. */
+  /* Exactly four paid columns, and they are the four that exist nowhere
+     else free. Start% joined them with the learned minutes model: the
+     player card and squad view that show it are Pro too. If a fifth ever
+     appears this fails, on purpose. */
   const paid = colsFree.filter((c) => c.tier === 'paid').map((c) => c.k).sort();
-  ok(paid.join(',') === 'eo,setp,tmpl',
-    'exactly three columns carry tier:paid — got ' + paid.join(','));
+  ok(paid.join(',') === 'eo,pstart,setp,tmpl',
+    'exactly four columns carry tier:paid — got ' + paid.join(','));
 
   /* The two that had to STAY free, because the app already gives them away:
      DC hit% on the Scout Board's defender brackets, minutes security on

@@ -117,8 +117,8 @@ export function binder(src) {
    fallback and the override expiry rule. Every harness that evaluates the
    model in a bare context appends this, so a new dependency is added here
    once rather than in six files. */
-export const MINUTES_SUPPORT_CONSTS = ['MINUTES_W', 'MINUTES_BENCHED'];
-export const MINUTES_SUPPORT_FNS = ['minutesFeatures', 'minutesProbs', 'minutesLegacy', 'overrideLive'];
+export const MINUTES_SUPPORT_CONSTS = ['MINUTES_W', 'MINUTES_BENCHED', 'MINUTES_SUB60'];
+export const MINUTES_SUPPORT_FNS = ['minutesFeatures', 'minutesProbs', 'minutesLegacy', 'overrideLive', 'availScale'];
 export function minutesSupport(src) {
   return [...MINUTES_SUPPORT_CONSTS.map((n) => extractDecl(src, n)),
     ...MINUTES_SUPPORT_FNS.map((n) => extractFn(src, n))].join('\n');
