@@ -7544,7 +7544,9 @@ async function hydrateAccountability(host){
           '<div class="stat"><div class="stat-l">Gameweeks</div><div class="stat-v">'+cal.gws+'</div></div>'+
           '<div class="stat"><div class="stat-l">Points MAE</div><div class="stat-v">'+cal.mae.toFixed(2)+'</div></div>'+
           (cal.brier!=null?'<div class="stat"><div class="stat-l">Haul Brier</div><div class="stat-v">'+cal.brier.toFixed(3)+'</div></div>':'')+
-        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). The model, graded on live results.</div></div>';
+          (cal.rankCorr!=null?'<div class="stat"><div class="stat-l">Rank correlation</div><div class="stat-v">'+cal.rankCorr.toFixed(2)+'</div></div>':'')+
+          (cal.top10Hit!=null?'<div class="stat"><div class="stat-l">Top-10 hit rate</div><div class="stat-v">'+Math.round(cal.top10Hit*100)+'%</div></div>':'')+
+        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). Rank correlation (1 is perfect, 0 is random) says how well it ordered the players each gameweek; the top-10 hit rate is how many of its ten highest projections finished among the week\u2019s ten best scores. The model, graded on live results.</div></div>';
     }
   }catch(_){}
   /* Prediction-logger health — shown until graded accuracy exists, so you
