@@ -112,6 +112,28 @@ those who did start, 93.6% reached an hour. Hence `MINUTES_BENCHED` =
 start 0.10, appear 0.594, 60+ 0.10. (An earlier cut of the same proxy said
 22.9%; it counted injured players as "dropped".)
 
+### Hauls: no correction earns its place (P11, studied and not shipped)
+
+The haul band is the model's largest error, so the obvious fix was tried:
+lift the projection of players who have hauled before, by a shrunk haul
+rate (hauls over appearances plus K), fitted per position on 2022-23 and
+2023-24 and graded on 2024-25 and 2025-26 with deadline flags.
+
+| Test seasons, flags applied | MAE | Haul RMSE | Rank corr. | Top-10 pts |
+|---|---|---|---|---|
+| **Shipped** | **1.746** | 5.616 | 0.490 | **4.93** |
+| Haul-history lift (K=6) | 1.762 | **5.569** | **0.493** | 4.77 |
+
+It trims the haul error a little and costs the picks that matter: the top
+ten by projection score 0.17 points fewer each. The premise was wrong too.
+Among players who played an hour, the shortfall is smallest for the most
+frequent haulers (mean residual +0.69 in the top quintile of haul rate
+against +0.73 to +1.23 below it), so past haulers are not under-forecast;
+the haul band is mostly the variance any single-number forecast carries.
+The defensible levers are the ones that change the distribution rather
+than the mean, `pointsDist` and `squadSim`, which already price hauls for
+captaincy and rank.
+
 ### FPL flags, measured (P10, studied and not shipped)
 
 `dev/fetch-flags.mjs` rebuilds what a manager saw at every deadline since
@@ -210,6 +232,7 @@ work below.
 | **8** | **Consistency pass over the scoring rules and the accountability loop.** Four defects found by reviewing the model against itself rather than against a harness that grades the same code: (a) `pointsDist` / `squadSim` gated scoring on an appearance draw and then still scaled by the *unconditional* `minFrac`, charging the absence twice — every distribution ran 12-20% light, and 29% for a rotation risk, biting hardest on exactly the players the rank tools weigh; (b) goalkeeper saves were credited as `E[S]/3` rather than `E[floor(S/3)]`, a flat +0.33 pts/GW on every keeper (`savePts`, mirroring `concedePts`); (c) the defensive-contribution term used a hand-picked logistic in `nativeXP` and a Poisson threshold in the simulators — now one `dcHitProb` in both, so the point estimate is the expectation of the event simulated; (d) `horizonXP` applied availability a second time on top of `nativeXP`, charging a 50% doubt as 25% across the whole solver and transfer surface, while every other `fixtureXP` caller left the fallback branch unscaled — availability now lives in `fixtureXP`, once. Plus deductions drawn as whole points instead of shaved off an integer score, which had been silently deleting the entire probability mass at exactly 10 from every haul figure. **The accountability loop was also grading a different model than ships**: `log-predictions.js` built its bootstrap with no Elo map and no European calendar, so promoted clubs were logged on the generic prior and every club in Europe without its congestion discount; and it compared a single-fixture projection against a whole-gameweek actual, booking a phantom miss on every double. | **done** |
 | **9** | **Learned minutes model.** `minutesModel` reads P(start), P(appear) and P(60+) from three logistic regressions fitted on 2022-23 to 2024-25 and graded on 2025-26 (`dev/fit-minutes.mjs`, `dev/backtest-minutes.mjs`), replacing the hand-weighted blend. Brier improves on all three targets with and without recent fixtures, and the real-actuals MAE falls on both seasons after the training years. See "Minutes: a learned model" above. | **done** |
 | **10** | **FPL flags, measured (studied, not shipped).** Deadline flags for 2022-23 onward from fplcache (`dev/fetch-flags.mjs`); both backtests now grade with them, and the points model beats recent form on every player-gameweek. Measured flag effects and a refit on fit players were tried and lost end to end; see "FPL flags, measured". | **studied** |
+| **11** | **Haul correction (studied, not shipped).** A haul-history lift trimmed haul RMSE 5.616 to 5.569 but cut the top-10 picks by 0.17 pts each and raised MAE; past haulers are not under-forecast. See "Hauls: no correction earns its place". | **studied** |
 
 The strategic payoff is P3–P4: forecasting **distributions** rather than
 point estimates, then optimising for **expected rank** vs the field (given
