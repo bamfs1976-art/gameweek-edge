@@ -51,7 +51,11 @@ export function loadRows(path) {
 
 /* recentMinutes is the app's own (extracted from index.html), so the history
    summary the model is fitted on is the one it is fed live. */
-export function examples(rows, recentMinutes) {
+/* `flags` (optional) is a dev/fixtures/flags/<season>.json document: the
+   FPL status and chance of playing each player carried at that gameweek's
+   deadline. Unflagged players are status 'a' with no chance set, as in the
+   live feed. */
+export function examples(rows, recentMinutes, flags) {
   const teamGames = {}, seen = new Set(), P = {}, out = [];
   for (let i = 0; i < rows.length;) {
     let j = i; while (j < rows.length && rows[j].t === rows[i].t) j++;
@@ -65,7 +69,8 @@ export function examples(rows, recentMinutes) {
       out.push({
         gp, type: r.type,
         el: { starts: p.st, minutes: p.min, element_type: r.type, now_cost: r.val,
-          _recent: hist.length ? recentMinutes(hist, 5) : null },
+          _recent: hist.length ? recentMinutes(hist, 5) : null,
+          ...flagOf(flags, r.gw, r.el) },
         y: { start: r.st > 0 ? 1 : 0, app: r.min > 0 ? 1 : 0, p60: r.min >= 60 ? 1 : 0 },
       });
     }
@@ -78,6 +83,12 @@ export function examples(rows, recentMinutes) {
     i = j;
   }
   return out;
+}
+
+function flagOf(flags, gw, el) {
+  const g = flags && flags.gws && flags.gws[gw];
+  const f = g && g.flags[el];
+  return f ? { status: f[0], chance_of_playing_next_round: f[1] } : { status: 'a', chance_of_playing_next_round: null };
 }
 
 /* Log loss, Brier score and AUC for probabilities `ps` against 0/1 `ys`. */

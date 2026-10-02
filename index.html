@@ -5012,7 +5012,7 @@ function startReasons(e,gp,m,n){
   const r=e._recent;
   if(e._ovr&&overrideLive(e._ovr))out.push(e._ovr.kind==='out'
     ?'Your team news: out'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):' until you clear it')+'.'
-    :'Your team news: lost his place'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):'')+'. Dropped regulars start the next game about '+Math.round(MINUTES_BENCHED.start*100)+'% of the time.');
+    :'Your team news: lost his place'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):'')+'. Taken at your word, with a '+Math.round(MINUTES_BENCHED.start*100)+'% chance the news is wrong; dropped regulars still come off the bench about half the time.');
   const ch=e.chance_of_playing_next_round;
   if(e.status&&e.status!=='a')out.push('FPL flag: '+(ch==null?(STATUS_LABEL[e.status]||'unavailable'):ch+'% chance of playing')+'.');
   if(r&&r.n){
@@ -19164,6 +19164,20 @@ function congestionFactor(load,startShare){
    as before, because the training data carried none of them. Weights are
    regenerated, never hand-edited: node dev/fit-minutes.mjs --write. */
 const MINUTES_W={base:{start:[-2.5277,0.4805,0.3926,1.8105,0.09,0.7786,-0.1895,-0.127,0.2553],app:[0.2155,-0.0486,0.826,0.9276,0.2626,-0.4722,-0.8526,0.1552,0.8481],p60:[-1.143,0.0243,0.8395,0.8123,0.0717,0.0392,-0.0514,-0.1175,0.204]},recent:{start:[-3.5391,0.2962,0.0238,1.1852,0.1292,0.7344,-0.0073,-0.165,0.2127,0.1433,0.0717,0.2863,1.1669,0.9352,0.3472],app:[-0.9548,0.109,0.1854,0.5176,0.2505,-0.1091,-0.7095,0.092,0.7864,-0.2333,0.4689,-0.2552,1.7519,0.5811,0.2138],p60:[-2.3418,0.0929,0.2356,0.4031,0.0792,0.2377,0.1268,-0.1593,0.2341,-0.1404,0.3922,-0.0761,0.8841,1.3451,0.2748]}};
+/* FPL's own flags, measured: for each doubtful flag, how flagged players'
+   real start / appear / 60-minute rates compared with the model
+   (dev/fit-minutes.mjs, three seasons of deadline snapshots from fplcache).
+   EMPTY ON PURPOSE. The measured effects did no better than the
+   chance-of-playing rule on 2025-26 and made the points forecast slightly
+   worse end to end, so every flag keeps that rule. The hook stays so a
+   refit can switch them on (FLAG_EFFECTS=1) once it wins. */
+const MINUTES_FLAG={};
+function flagKey(el){
+  const ch=el.chance_of_playing_next_round;
+  if(el.status==='a')return null;   /* a fit player; FPL leaves a past flag's 100 in place */
+  if(el.status==='d'&&(ch===75||ch===50||ch===25))return 'd'+ch;
+  return null;
+}
 const MINUTES_SUB60=0.012;   /* share of substitute appearances that reach 60 minutes (2024-25, n=3,206) */
 const MINUTES_FEATURES={
   base:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price'],
@@ -19217,19 +19231,26 @@ function minutesModel(el,gp,congest){
      the last half-hour, so the start probability congestion takes away is
      partly returned as a cameo, and pAppear falls much less than pStart. */
   const cf=congestionFactor(congest,startShare);
-  const uncong=Math.min(1,L.start*avail);
+  /* A flag a manager can see: its measured effect where we have one, the
+     chance-of-playing scale where we do not. A manager's "benched" note is
+     already the whole answer, so a flag is not applied on top of it. */
+  const fk=out||(ovr&&ovr.kind==='benched')?null:flagKey(el),fm=fk?MINUTES_FLAG[fk]:null;
+  const sA=fm?Math.min(1,L.start*fm.start):L.start*avail;
+  const aA=fm?Math.min(1,Math.max(sA,L.app*fm.app)):L.app*avail;
+  const p6A=fm?Math.min(1,L.p60*fm.p60):L.p60*avail;
+  const uncong=Math.min(1,sA);
   const pStart=Math.min(1,uncong*cf);
-  const cameo=Math.min(1,Math.max(0,L.app-L.start)*avail+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
+  const cameo=Math.min(1,Math.max(0,aA-sA)+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
   const pAppear=out?0:Math.min(1,pStart+cameo);
-  const p60=Math.min(pAppear,L.p60*avail*cf);
+  const p60=Math.min(pAppear,p6A*cf);
   const minFrac=Math.min(1,pStart*perStart+cameo*0.28);
-  return {avail,pStart,pAppear,p60,minFrac,src:ovr?'override':L.set};
+  return {avail,pStart,pAppear,p60,minFrac,src:ovr?'override':L.set,flag:fm?fk:null};
 }
 /* What a manager means by "lost his place": measured, not assumed. Rates on
    the next fixture for players who had started most of their season and then
    did not start either of their last two, from the same seasons the model is
    fitted on (dev/fit-minutes.mjs prints them). */
-const MINUTES_BENCHED={set:'override',start:0.229,app:0.419,p60:0.216};
+const MINUTES_BENCHED={set:'override',start:0.1,app:0.594,p60:0.1};
 /* The previous hand-weighted blend, kept only as the fallback should the
    weights ever fail to match the features (a guard, never the normal path).
    dev/backtest-minutes.mjs grades the learned model against a frozen copy. */

@@ -1311,9 +1311,10 @@ the view of it, and the note that overrides it:
   **Start%** column in the Players table's Rotation lens (season totals, as
   the table does not fetch every player's recent games).
 - **Your team news**: mark a player **out** (until a date, or until cleared)
-  or **benched** (lost his place). Out zeroes him. Benched uses what dropped
-  regulars went on to do, measured on three seasons: they started the next
-  game 22.9% of the time and appeared 41.9%. Notes save on the device and,
+  or **benched** (lost his place). Out zeroes him. Benched takes the
+  manager at their word (10% doubt that the news is wrong) and uses what
+  history can measure: a dropped regular who does not start still comes on
+  54.9% of the time. Notes save on the device and,
   for a signed-in Pro reader, to `gwedge_overrides` (Supabase, RLS, one row
   per player per season), newest note winning across devices, a clear
   included. They change only their owner's projections: the public model

@@ -4338,7 +4338,9 @@ const nailed = core.minutesModel({ starts: 6, minutes: 540, status: 'a', chance_
 ok(nailed.pStart > 0.95 && nailed.p60 > 0.95 && nailed.minFrac > 0.95, 'a nailed-on starter is ~certain to start and last 60');
 const doubt = core.minutesModel({ starts: 6, minutes: 540, status: 'd', chance_of_playing_next_round: 50 }, 6);
 /* The learned model never says a certain 1, so the doubt is checked as a
-   ratio of the same player fully fit, not against 0.5. */
+   ratio of the same player fully fit. A 50% flag keeps the chance-of-playing
+   rule: its measured effect was studied and did not beat it (MINUTES_FLAG
+   is empty, dev/fit-minutes.mjs says why). */
 ok(Math.abs(doubt.pStart / nailed.pStart - 0.5) < 0.01, 'a 50% doubt halves the start probability');
 ok(doubt.minFrac < nailed.minFrac, 'a doubt lowers expected minutes');
 const outPl = core.minutesModel({ starts: 6, minutes: 540, status: 'i', chance_of_playing_next_round: 0 }, 6);

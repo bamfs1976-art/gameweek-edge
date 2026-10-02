@@ -112,7 +112,17 @@ const maxGw = rows.reduce((m, r) => Math.max(m, r.gw), 0);
 const agg = {};   // element -> sums up to (but not including) the current gw
 const cur = (el) => agg[el] || (agg[el] = { g: 0, min: 0, st: 0, xg: 0, xa: 0, xgc: 0, bon: 0, sv: 0, gl: 0, yc: 0, rc: 0, og: 0, pm: 0, last: [] });
 
-const NEUTRAL_NF = { gp: 0, lam: 1, lamAvg: 1, cs: 0.28 };   // fx = 1, league-average clean sheet prior
+const NEUTRAL_NF = { gp: 0, lam: 1, lamAvg: 1, cs: 0.28 };
+
+/* The FPL flags a manager saw at each deadline (dev/fetch-flags.mjs), when
+   the season has them, so the model is graded on the information the app
+   actually has. Without the file every player is treated as fit, as before. */
+const flagsPath = join(ROOT, 'dev', 'fixtures', 'flags', season + '.json');
+const FLAGS = existsSync(flagsPath) ? JSON.parse(readFileSync(flagsPath, 'utf8')) : null;
+const flagOf = (gw, el) => {
+  const f = FLAGS && FLAGS.gws[gw] && FLAGS.gws[gw].flags[el];
+  return f ? { status: f[0], chance_of_playing_next_round: f[1] } : { status: 'a', chance_of_playing_next_round: null };
+};   // fx = 1, league-average clean sheet prior
 
 /* Two buckets. `all` scores every eligible player-gameweek — where raw MAE is
    dominated by the minutes lottery (rotation, benchings, injuries), which a
@@ -157,7 +167,7 @@ for (let gw = 1; gw <= maxGw; gw++) {
     if (!(a.g >= 5 && a.min / a.g >= 20)) continue;
     const per90 = a.min > 0 ? 90 / a.min : 0;
     const el = {
-      element_type: r.type, status: 'a', chance_of_playing_next_round: null,
+      element_type: r.type, ...flagOf(gw, r.element),
       minutes: a.min, starts: a.st,
       expected_goals_per_90: String(a.xg * per90), expected_assists_per_90: String(a.xa * per90),
       expected_goals_conceded_per_90: String(a.xgc * per90), defensive_contribution_per_90: '0',
@@ -199,7 +209,7 @@ for (let gw = 1; gw <= maxGw; gw++) {
 const r3 = (x) => Math.round(x * 1000) / 1000;
 const line = (label, b) => console.log(
   `  ${label.padEnd(24)} n=${String(b.n).padStart(6)}  model ${r3(b.model / b.n)}  ·  form ${r3(b.form / b.n)}  ·  PPG ${r3(b.ppg / b.n)}  ·  beats form: ${b.model < b.form ? 'YES' : 'no'}`);
-console.log(`• vaastav real-actuals backtest — ${season} (${path.endsWith('sample.csv') ? 'committed sample' : 'full season'})`);
+console.log(`• vaastav real-actuals backtest — ${season} (${path.endsWith('sample.csv') ? 'committed sample' : 'full season'}${FLAGS ? ', deadline flags' : ', no flags'})`);
 console.log('  MAE vs real total_points (fixture conditioning neutralised — grades the per-90 scoring core):');
 line('appearance-conditional', appear);
 line('all player-gameweeks', all);
@@ -265,7 +275,15 @@ ok(Number.isFinite(bandRmse.haulers) && bandRmse.haulers < 8,
 for (const k of ['blanks', 'tickers', 'haulers']) {
   ok(bandRmse[k] <= bandForm[k] + 0.05, `scoring core beats recent form on ${k}`);
 }
-ok(bandRmse.zeros > bandForm.zeros,
-  'and loses the did-not-play band, which is exactly the availability signal this run removes');
+/* Without flags this run has no availability signal, and the did-not-play
+   band is the one recent form wins. With the deadline flags it has what the
+   app has, and the model should beat form on every player-gameweek, not
+   only on those who played. */
+if (FLAGS) {
+  ok(all.model < all.form, `with deadline flags the model beats recent form on all player-gameweeks (${r3(all.model / all.n)} vs ${r3(all.form / all.n)})`);
+} else {
+  ok(bandRmse.zeros > bandForm.zeros,
+    'and loses the did-not-play band, which is exactly the availability signal this run removes');
+}
 console.log(failures ? `\n${failures} check(s) failed` : '\nchecks passed');
 process.exit(failures ? 1 : 0);
