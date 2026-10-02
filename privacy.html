@@ -104,7 +104,9 @@ ul{padding-left:20px;margin:8px 0}
     local storage on your device. Account, push and analytics data live in our Supabase
     (PostgreSQL) database. Serverless functions run on Netlify. AI features send only the
     match/squad statistics shown in the app to Anthropic's Claude API to generate a
-    response; no account identifiers are included in that context.</p>
+    response; no account identifiers are included in that context. If you load a squad
+    from a screenshot, that image is sent to the same API to read the player names, and
+    we do not store it. Crop out anything personal you would rather not send.</p>
 
     <h2>Your choices</h2>
     <ul>
