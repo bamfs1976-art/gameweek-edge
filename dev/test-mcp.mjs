@@ -27,7 +27,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import assert from 'node:assert/strict';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync, rmSync, readFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -180,6 +180,39 @@ section('the price-move curve is the one the app shows');
   ok(high > low, 'the same net transfers move a low-owned player sooner, because the threshold scales with owners');
   ok(priceChangeProb(el(99e6, 1), 10e6).prob <= 95 && priceChangeProb(el(1, 99), 10e6).prob >= 5,
     'the probability is clamped, because this is an estimate of an algorithm the game has never published');
+}
+
+section('fpl_start_chance answers from the learned minutes model');
+{
+  const fn = require(join(ROOT, 'netlify', 'functions', 'mcp.js'));
+  const boot = JSON.parse(readFileSync(join(ROOT, 'dev', 'fixtures', 'fpl-mock-bootstrap.json'), 'utf8'));
+  const fixtures = JSON.parse(readFileSync(join(ROOT, 'dev', 'fixtures', 'fpl-mock-fixtures.json'), 'utf8'));
+  const realFetch = globalThis.fetch;
+  const summaries = [];
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    const body = u.endsWith('bootstrap-static/') ? boot : u.endsWith('fixtures/') ? fixtures
+      : /element-summary\/\d+\/$/.test(u) ? (summaries.push(u), { history: [
+          { round: 1, starts: 1, minutes: 90 }, { round: 2, starts: 1, minutes: 88 }] })
+      : null;
+    if (!body) return { ok: false, status: 404, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => body };
+  };
+  try {
+    const name = boot.elements[0].web_name;
+    const res = await fn.handler({ httpMethod: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 9,
+      method: 'tools/call', params: { name: 'fpl_start_chance', arguments: { players: [name, 'Nobody At All'] } } }) });
+    const r = JSON.parse(res.body).result;
+    ok(!r.isError, 'the tool runs: ' + (r.isError ? r.content[0].text : 'ok'));
+    const sc = r.structuredContent, p0 = sc.players[0];
+    ok(p0 && typeof p0.start_chance === 'number' && p0.start_chance > 0 && p0.start_chance <= 100,
+      'and returns a start chance as a percentage (' + (p0 && p0.start_chance) + ')');
+    ok(p0.sixty_minutes_chance <= p0.plays_at_all_chance && p0.start_chance <= p0.plays_at_all_chance,
+      'the three numbers nest: nobody plays 60 minutes more often than he plays at all');
+    ok(summaries.length === 1, 'it reads recent fixtures for the named player only, one request');
+    ok(Array.isArray(p0.reasons) && /last game/.test(p0.reasons[0]), 'and says why, starting from his last game');
+    ok(sc.not_found.includes('Nobody At All'), 'a name it cannot place is reported back');
+  } finally { globalThis.fetch = realFetch; }
 }
 
 /* ── 4. The production bundle ─────────────────────────

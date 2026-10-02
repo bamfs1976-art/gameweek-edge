@@ -413,6 +413,98 @@ const TOOLS = [
   },
 
   {
+    name: 'fpl_start_chance',
+    title: 'Will he start?',
+    description: 'The chance a named Fantasy Premier League player starts the next game, plays 60 '
+      + 'minutes (which unlocks clean-sheet points) and plays at all, from the learned minutes model '
+      + 'Gameweek Edge fits on real seasons, with the facts behind it. Use this for rotation, '
+      + 'injury-return and "is he nailed" questions, or before recommending a transfer or captain.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        players: {
+          type: 'array', minItems: 1, maxItems: 10, items: { type: 'string' },
+          description: 'Player names, for example ["Haaland", "Bukayo Saka"].',
+        },
+      },
+      required: ['players'],
+      additionalProperties: false,
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        gameweek: { type: ['integer', 'null'] },
+        players: { type: 'array', items: { type: 'object' } },
+        not_found: { type: 'array', items: { type: 'string' } },
+        method: { type: 'string' },
+      },
+      required: ['players'],
+      additionalProperties: true,
+    },
+    annotations: READ_ONLY,
+    async run(args) {
+      const names = Array.isArray(args.players) ? args.players : [];
+      if (!names.length) return toolFailure('Name at least one player, for example {"players": ["Saka"]}.');
+      const html = readIndexHtml();
+      if (!html) return toolFailure('The model could not be loaded on the server, so start chances are unavailable.');
+      const { boot, fixtures, teams } = await snapshot();
+      const picked = [], missing = [];
+      for (const name of names.slice(0, 10)) {
+        const found = findPlayers(boot, name)
+          .sort((a, b) => (Number(b.selected_by_percent) || 0) - (Number(a.selected_by_percent) || 0));
+        if (!found.length) { missing.push(String(name)); continue; }
+        picked.push({ el: found[0], others: found.slice(1, 5).map((el) => el.web_name) });
+      }
+      /* Recent fixtures, one request per named player (ten at most), so the
+         sharper of the two weight sets applies, as it does for a squad in the
+         app. A failed summary falls back to season totals and says so. */
+      const histories = await Promise.all(picked.map((p) =>
+        cached('summary:' + p.el.id, () => fplGet('element-summary/' + p.el.id + '/'))
+          .then((s) => (s && s.history) || null).catch(() => null)));
+      const sideInput = async (handler, event) => {
+        try { const r = await handler(event || {}); return r && r.statusCode === 200 ? JSON.parse(r.body) : null; }
+        catch (_) { return null; }
+      };
+      const upcomingId = ((boot.events || []).find((e) => !e.finished) || {}).id || 1;
+      const [eloRes, euroRes] = await Promise.all([
+        sideInput(require('./team-elo.js').handler),
+        sideInput(require('./euro-fixtures.js').handler,
+          { queryStringParameters: { from: String(Math.max(1, upcomingId - 1)), n: '3' } }),
+      ]);
+      const { computeStartChances } = require('./log-predictions.js');
+      const res = computeStartChances(html, boot, fixtures, (eloRes && eloRes.elo) || null, euroRes,
+        picked.map((p, i) => ({ el: p.el, history: histories[i] })));
+      const pct = (v) => Math.round(v * 1000) / 10;
+      const players = res.rows.map((r, i) => {
+        const el = r.el;
+        const row = { player: el.web_name, team: (teams[el.team] || {}).short_name || '?',
+          status: STATUS[el.status] || el.status };
+        if (el.news) row.news = el.news;
+        if (picked[i].others.length) row.other_matches = picked[i].others;
+        if (!r.available) { row.start_chance = null; row.note = 'No upcoming fixture, or his club has not played yet this season.'; return row; }
+        row.start_chance = pct(r.p_start);
+        row.sixty_minutes_chance = pct(r.p_60);
+        row.plays_at_all_chance = pct(r.p_appear);
+        const why = [];
+        if (r.recent && r.recent.n) {
+          why.push((r.recent.lastStart ? 'Started' : 'Did not start') + ' his last game.');
+          why.push('Started about ' + Math.round(r.recent.startShare * r.recent.n) + ' of his last ' + r.recent.n + '.');
+        } else why.push('Recent games were unavailable, so this reads season totals only.');
+        why.push('Season: started ' + (el.starts || 0) + ' of ' + r.gp + ' club games.');
+        if (el.chance_of_playing_next_round != null) why.push('FPL flag: ' + el.chance_of_playing_next_round + '% chance of playing.');
+        row.reasons = why;
+        return row;
+      });
+      return {
+        gameweek: res.gw, players, not_found: missing,
+        method: 'Three logistic regressions fitted on every player-fixture of 2022-23 to 2024-25 and graded '
+          + 'on 2025-26, which they never saw; FPL availability flags and midweek congestion are applied on '
+          + 'top. Percentages are probabilities, not promises. Details: ' + SITE + '/record/.',
+      };
+    },
+  },
+
+  {
     name: 'fpl_suspension_watch',
     title: 'Who is one booking from a ban',
     description: 'Fantasy Premier League players standing one yellow card away from a suspension, '

@@ -9,8 +9,12 @@
 -- These rows never reach the model record, the prediction logger or the MCP
 -- tools: they change only the projections their owner sees.
 --
--- Run in the Supabase SQL editor (idempotent). NOT YET APPLIED: until it is,
--- overrides save on the device and the player card says so.
+-- Run in the Supabase SQL editor (idempotent).
+--
+-- APPLIED 2 Oct 2026 to project knodunjnsxelmpziupwk, statement by statement
+-- through execute_sql (apply_migration timed out twice), so it is NOT in the
+-- tracked migration history. Kept here as the source of truth. Verified after:
+-- RLS on, four policies, no anon privileges.
 
 create table if not exists public.gwedge_overrides (
   user_id    uuid not null references auth.users (id) on delete cascade,
@@ -28,10 +32,10 @@ drop policy if exists "own overrides: read"   on public.gwedge_overrides;
 drop policy if exists "own overrides: insert" on public.gwedge_overrides;
 drop policy if exists "own overrides: update" on public.gwedge_overrides;
 drop policy if exists "own overrides: delete" on public.gwedge_overrides;
-create policy "own overrides: read"   on public.gwedge_overrides for select using (auth.uid() = user_id);
-create policy "own overrides: insert" on public.gwedge_overrides for insert with check (auth.uid() = user_id);
-create policy "own overrides: update" on public.gwedge_overrides for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own overrides: delete" on public.gwedge_overrides for delete using (auth.uid() = user_id);
+create policy "own overrides: read"   on public.gwedge_overrides for select using ((select auth.uid()) = user_id);
+create policy "own overrides: insert" on public.gwedge_overrides for insert with check ((select auth.uid()) = user_id);
+create policy "own overrides: update" on public.gwedge_overrides for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy "own overrides: delete" on public.gwedge_overrides for delete using ((select auth.uid()) = user_id);
 
 grant select, insert, update, delete on table public.gwedge_overrides to authenticated;
 revoke all on table public.gwedge_overrides from anon;

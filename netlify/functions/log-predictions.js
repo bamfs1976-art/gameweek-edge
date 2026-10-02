@@ -73,7 +73,7 @@ function buildModel(html) {
     ...['MINUTES_W', 'MINUTES_BENCHED', 'MINUTES_SUB60']
       .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
     grabFn(html, 'minutesFeatures'), grabFn(html, 'minutesProbs'), grabFn(html, 'minutesLegacy'), grabFn(html, 'overrideLive'), grabFn(html, 'availScale'),
-    grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
+    grabFn(html, 'recentMinutes'), grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
     grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'), grabFn(html, 'negRate90'),
     grabFn(html, 'nativeXP'), grabFn(html, 'xP'), grabFn(html, 'fixtureXP'), grabFn(html, 'pointsDist'),
   ];
@@ -88,7 +88,7 @@ function buildModel(html) {
     + [...['SCORING_FALLBACK'].map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
        'let SCORING = SCORING_FALLBACK;'].join('\n') + '\n'
     + pieces.join('\n')
-    + '\nreturn {buildNextFix,buildGwFixtures,euroIndex,xP,fixtureXP,pointsDist};')();
+    + '\nreturn {buildNextFix,buildGwFixtures,euroIndex,xP,fixtureXP,pointsDist,minutesModel,recentMinutes};')();
 }
 
 /* Index the bootstrap the way boot() does, minimally. `elo` and `euroFeed`
@@ -289,6 +289,29 @@ exports.handler = async () => {
   return { statusCode: 200, body: JSON.stringify({ logged, graded }) };
 };
 
+/* Start chances for a handful of named players: the learned minutes model,
+   fed each player's recent fixtures (element-summary history, fetched by
+   the caller) exactly as the app feeds it for a squad. Pure, like the above.
+   `players` is [{ el, history }]; a player with no fixture this gameweek, or
+   whose club has not played yet, comes back with `available: false`. */
+function computeStartChances(html, boot, fixtures, elo, euroFeed, players) {
+  const M = buildModel(html);
+  const euro = euroFeed && euroFeed.rows && euroFeed.rows.length ? M.euroIndex(euroFeed) : null;
+  const b = indexBoot(boot, elo, euro);
+  const gw = b.upcoming ? b.upcoming.id : null;
+  const nf = M.buildNextFix(b, fixtures);
+  return { gw, rows: (players || []).map(({ el, history }) => {
+    const f = nf[el.team];
+    if (!f || !f.gp) return { el, available: false };
+    const e = Object.assign({}, el);
+    if (Array.isArray(history) && history.length) e._recent = M.recentMinutes(history, 5);
+    const m = M.minutesModel(e, f.gp, f.congest);
+    return { el, available: true, gp: f.gp, event: f.event, recent: e._recent || null, congest: f.congest || null,
+      p_start: m.pStart, p_60: m.p60, p_appear: m.pAppear, basis: m.src };
+  }) };
+}
+
 module.exports.computePredictions = computePredictions;
+module.exports.computeStartChances = computeStartChances;
 module.exports.buildModel = buildModel;
 module.exports.seasonLabel = seasonLabel;
