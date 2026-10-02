@@ -17406,6 +17406,7 @@ async function hydrateAlerts(host){
     '<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Push alerts</div>'+
       '<p class="dl-sub" id="push-status" style="margin-bottom:10px">Checking…</p>'+
       '<button class="btn btn-primary btn-sm" id="push-toggle">Enable push alerts</button></div>'+
+    '<div id="chan-card"></div>'+
     deadline+
     (owned?'':'<div class="dl-sub" style="margin-bottom:12px">Link your team to tune these alerts to your squad.</div>')+
     feed('Fitness flags'+(owned?' in your squad':''),injuries,e=>
@@ -17437,6 +17438,73 @@ async function hydrateAlerts(host){
   Array.prototype.forEach.call(host.querySelectorAll('[data-pref]'),cb=>
     cb.addEventListener('change',()=>{setAlertPref(cb.dataset.pref,cb.checked);syncPushPrefs();}));
   refreshPushUI();
+  renderChannels();
+}
+
+/* ── Email and Telegram alerts ─────────────────────────────
+   For people web push does not reach (an iPhone without the app installed,
+   or anyone who would rather have an email). Deadline reminders at 24h, 6h
+   and about an hour are free; the squad's new fitness flags are Pro. Sent
+   by netlify/functions/alerts-channels.js; settings live in
+   gwedge_alert_channels, one row per account. Telegram is linked by a
+   one-time code the bot receives, so the browser never writes a chat id. */
+let CHAN_CFG=null;
+async function chanRow(){
+  if(!sb||!uid())return null;
+  try{const {data}=await sb.from('gwedge_alert_channels').select('email_on,telegram_on,telegram_chat_id,windows,flags_on,link_code').eq('user_id',uid()).maybeSingle();return data||{};}
+  catch(_){return null;}
+}
+async function chanSave(patch){
+  if(!sb||!uid())return false;
+  const mid=Number(getMid())||null;
+  try{const {error}=await sb.from('gwedge_alert_channels').upsert(Object.assign({user_id:uid(),manager_id:mid,updated_at:new Date().toISOString()},patch),{onConflict:'user_id'});return !error;}
+  catch(_){return false;}
+}
+async function renderChannels(msg){
+  const box=document.getElementById('chan-card');if(!box)return;
+  const head='<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Email and Telegram</div>';
+  if(!CHAN_CFG)CHAN_CFG=await fetch(apiBase()+'/api/alerts-config').then(r=>r.json()).catch(()=>({}));
+  if(!CHAN_CFG.email&&!CHAN_CFG.telegramBot){box.innerHTML='';return;}
+  if(!uid()){box.innerHTML=head+'<p class="dl-sub">Deadline reminders by email or Telegram, for when push alerts do not reach you. Sign in to switch them on.</p></div>';return;}
+  const r=await chanRow();
+  if(r==null){box.innerHTML=head+'<p class="dl-sub">Could not load your settings. Try again in a moment.</p></div>';return;}
+  const w=r.windows||{d24:true,d6:true,d1:true};
+  const tog=(id,label,on,dis)=>'<label class="alert-tog"><span>'+label+'</span><input type="checkbox" data-chan="'+id+'"'+(on?' checked':'')+(dis?' disabled':'')+'></label>';
+  const linked=!!r.telegram_chat_id;
+  box.innerHTML=head+
+    '<p class="dl-sub" style="margin-bottom:8px">For when push alerts do not reach you, for example on an iPhone without the app installed.</p>'+
+    (CHAN_CFG.email?tog('email_on','Email me (to your account address)',r.email_on):'')+
+    (CHAN_CFG.telegramBot?(linked?tog('telegram_on','Message me on Telegram',r.telegram_on)
+      :'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Telegram</span><span class="dl-sub">Not linked yet</span></span>'+
+        '<button class="btn btn-ghost btn-sm" onclick="chanLinkTelegram()">Link Telegram</button></div>'):'')+
+    '<div class="dl-sub" style="margin:12px 0 8px">Deadline reminders</div>'+
+    tog('w_d24','24 hours before',w.d24!==false)+tog('w_d6','6 hours before',w.d6!==false)+tog('w_d1','About an hour before',w.d1!==false)+
+    '<div class="dl-sub" style="margin:12px 0 8px">Your squad</div>'+
+    tog('flags_on','New fitness flags on your players'+(isPro()?'':' (Pro)'),r.flags_on&&isPro(),!isPro())+
+    (getMid()?'':'<div class="dl-sub">Link your team for squad alerts.</div>')+
+    '<div class="dl-sub" id="chan-msg" role="status" style="margin-top:8px">'+esc(msg||'')+'</div></div>';
+  Array.prototype.forEach.call(box.querySelectorAll('[data-chan]'),cb=>cb.addEventListener('change',async()=>{
+    const k=cb.dataset.chan,patch={};
+    if(k.startsWith('w_')){const nw=Object.assign({d24:true,d6:true,d1:true},w);nw[k.slice(2)]=cb.checked;patch.windows=nw;Object.assign(w,nw);}
+    else patch[k]=cb.checked;
+    if(k==='flags_on'&&!isPro()){openUpgrade();cb.checked=false;return;}
+    const okSave=await chanSave(patch);
+    const m=document.getElementById('chan-msg');if(m)m.textContent=okSave?'Saved.':'Could not save. Try again.';
+    track('alerts_channel',{k,on:cb.checked});
+  }));
+}
+async function chanLinkTelegram(){
+  if(!CHAN_CFG||!CHAN_CFG.telegramBot)return;
+  const a=new Uint8Array(12);crypto.getRandomValues(a);
+  const code=Array.from(a,x=>'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'[x%56]).join('');
+  if(!await chanSave({link_code:code})){renderChannels('Could not start linking. Try again.');return;}
+  const link='https://t.me/'+encodeURIComponent(CHAN_CFG.telegramBot)+'?start='+code;
+  const box=document.getElementById('chan-card');if(!box)return;
+  box.innerHTML='<div class="card mb-20"><div class="card-title">Link Telegram</div>'+
+    '<p class="dl-sub">Open the bot and tap Start. It links this account to your Telegram and confirms in the chat.</p>'+
+    '<div class="modal-row" style="gap:8px;flex-wrap:wrap"><a class="btn btn-primary btn-sm" href="'+esc(link)+'" target="_blank" rel="noopener">Open @'+esc(CHAN_CFG.telegramBot)+'</a>'+
+    '<button class="btn btn-ghost btn-sm" onclick="renderChannels()">Done</button></div>'+
+    '<p class="dl-sub" style="margin-top:8px">On another device? Send the bot: /start '+esc(code)+'</p></div>';
 }
 
 /* ═══════════════════════════════════════════════════════════
