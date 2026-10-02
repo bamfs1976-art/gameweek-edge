@@ -1,12 +1,12 @@
 {
- "built": "2026-10-02T00:48:19.316Z",
+ "built": "2026-10-02T09:48:02.955Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-02T00:48:19.316Z",
+  "generatedAt": "2026-10-02T09:48:02.955Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -8366,12 +8366,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "J. McGregor",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 2 Oct"
     },
     {
      "name": "G. Kilkenny",
