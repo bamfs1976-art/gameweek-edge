@@ -154,6 +154,61 @@ async function checkQuota(supaUrl, serviceKey, userId) {
   } catch (_) { return true; /* metering must never take the feature down */ }
 }
 
+/* ── Squad screenshot import ──────────────────────────────
+   A photo of an FPL team (the official app, the website, a friend's
+   screenshot) read into fifteen names, so a beginner can load a squad
+   without hunting for a team ID. Claude only READS the picture: matching
+   each name to a real FPL player happens in the app, against the live
+   player list, and the manager confirms before anything is loaded.
+   Free for signed-in users (it is the front door), inside the same daily
+   quota as every AI call. Structured output, so the reply is always the
+   JSON below; the server-side fallback answers if the model declines. */
+const SCAN_MODEL = 'claude-opus-5-5';
+const SCAN_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const SCAN_MAX_B64 = 6.5e6;   /* about 5 MB of image; the app sends ~300 KB */
+const SCAN_SCHEMA = {
+  type: 'object',
+  properties: {
+    is_fpl_squad: { type: 'boolean' },
+    players: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          club: { type: 'string' },
+          position: { type: 'string', enum: ['GK', 'DEF', 'MID', 'FWD', 'unknown'] },
+          captain: { type: 'boolean' },
+          bench: { type: 'boolean' },
+        },
+        required: ['name', 'club', 'position', 'captain', 'bench'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['is_fpl_squad', 'players'],
+  additionalProperties: false,
+};
+function buildScanRequest(image) {
+  if (!image || SCAN_TYPES.indexOf(image.media_type) < 0 || typeof image.data !== 'string'
+    || !image.data.length || image.data.length > SCAN_MAX_B64 || !/^[A-Za-z0-9+/=]+$/.test(image.data)) return null;
+  return {
+    model: SCAN_MODEL,
+    max_tokens: 4000,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: SCAN_SCHEMA } },
+    fallbacks: 'default',
+    messages: [{ role: 'user', content: [
+      { type: 'image', source: { type: 'base64', media_type: image.media_type, data: image.data } },
+      { type: 'text', text: 'This should be a screenshot of a Fantasy Premier League team. List every player shown, '
+        + 'the starting eleven and the bench, exactly as the names are written on the image. For each: the name, '
+        + 'the club as shown (a shirt, badge or three-letter code; empty string if not shown), the position '
+        + '(GK, DEF, MID, FWD, or unknown), whether he wears the captain armband, and whether he is on the bench. '
+        + 'Read only what is on the image; do not guess players who are not visible. If this is not an FPL team, '
+        + 'set is_fpl_squad to false and return no players.' },
+    ] }],
+  };
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: CORS, body: '' };
   if (event.httpMethod !== 'POST') return json(405, { error: 'Method Not Allowed' });
@@ -173,6 +228,30 @@ exports.handler = async (event) => {
 
   let body;
   try { body = JSON.parse(event.body || '{}'); } catch (_) { return json(400, { error: 'Bad request' }); }
+  if (body.task === 'scan') {
+    const req = buildScanRequest(body.image);
+    if (!req) return json(400, { error: 'Send a JPEG, PNG or WebP screenshot under 5 MB.' });
+    if (!(await checkQuota(supaUrl, serviceKey, user.id))) {
+      return json(429, { error: 'You have reached today’s AI limit (' + DAILY_QUOTA + ' calls). It resets at midnight UTC.' });
+    }
+    try {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01', 'content-type': 'application/json' },
+        body: JSON.stringify(req),
+      });
+      const data = await r.json();
+      if (!r.ok) return json(502, { error: 'AI service error', detail: (data && data.error && data.error.message) || null });
+      if (data.stop_reason === 'refusal') return json(422, { error: 'That image could not be read as an FPL team.' });
+      if (data.stop_reason === 'max_tokens') return json(502, { error: 'The screenshot was too busy to read in one go. Try a tighter crop of the pitch.' });
+      const text = (data.content || []).filter((c) => c.type === 'text').map((c) => c.text).join('');
+      let out; try { out = JSON.parse(text); } catch (_) { return json(502, { error: 'The reply could not be read. Try again.' }); }
+      const players = (Array.isArray(out.players) ? out.players : []).slice(0, 20);
+      return json(200, { is_fpl_squad: !!out.is_fpl_squad, players });
+    } catch (_) {
+      return json(502, { error: 'Upstream request failed' });
+    }
+  }
   const t = TASKS[body.task];
   if (!t) return json(400, { error: 'Unknown task' });
 
@@ -226,3 +305,5 @@ exports.handler = async (event) => {
     return json(502, { error: 'Upstream request failed' });
   }
 };
+
+exports.buildScanRequest = buildScanRequest;

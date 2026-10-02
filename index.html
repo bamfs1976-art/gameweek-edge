@@ -27572,6 +27572,93 @@ async function draftImportLive(){
     renderDraft();
   }catch(_){toast('Live picks aren’t available yet. They appear once the game launches');}
 }
+/* ── Load a squad from a screenshot ───────────────────────
+   For a beginner who has a team but not its ID: pick a screenshot, Claude
+   reads the names (netlify/functions/ai.js, task "scan"), and matchScan
+   finds each one in the live player list. Nothing loads until the manager
+   has seen the matches and confirmed. The image is shrunk on the device
+   first, so a 4 MB phone screenshot goes up as ~300 KB. */
+function scanNorm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();}
+const SCAN_POS={GK:1,DEF:2,MID:3,FWD:4};
+/* Each read name to at most one player: exact display name first, then
+   surname or full name, narrowed by club and position when the image gave
+   them, and the most-owned on a tie (the likeliest pick). A player is used
+   once, so two "Gabriel"s land on two players or one stays unmatched. */
+function matchScan(b,players){
+  const teamByShort={},teamByName={};
+  (b.raw&&b.raw.teams||[]).forEach(t=>{teamByShort[scanNorm(t.short_name)]=t.id;teamByName[scanNorm(t.name)]=t.id;});
+  const used=new Set(),ids=[],rows=[];
+  const own=e=>parseFloat(e.selected_by_percent)||0;
+  for(const p of (players||[]).slice(0,20)){
+    const n=scanNorm(p.name);if(!n){continue;}
+    const club=scanNorm(p.club),team=teamByShort[club]||teamByName[club]||
+      Object.keys(teamByName).filter(k=>club&&(k.startsWith(club)||club.startsWith(k))).map(k=>teamByName[k])[0]||null;
+    const pos=SCAN_POS[p.position]||null;
+    const tiers=[e=>scanNorm(e.web_name)===n,
+      e=>scanNorm(e.second_name)===n||scanNorm(e.known_name)===n||scanNorm(e.first_name+' '+e.second_name)===n,
+      e=>{const full=scanNorm(e.first_name+' '+e.second_name);return n.length>=4&&(full.indexOf(n)>=0||n.indexOf(scanNorm(e.web_name))>=0);}];
+    let hit=null;
+    for(const f of tiers){
+      let c=b.elements.filter(e=>!used.has(e.id)&&f(e));
+      if(team){const ct=c.filter(e=>e.team===team);if(ct.length)c=ct;}
+      if(pos){const cp=c.filter(e=>e.element_type===pos);if(cp.length)c=cp;}
+      if(c.length){hit=c.sort((a,x)=>own(x)-own(a))[0];break;}
+    }
+    if(hit){used.add(hit.id);ids.push(hit.id);}
+    rows.push({read:p,el:hit});
+  }
+  return {ids,rows,unmatched:rows.filter(r=>!r.el).length};
+}
+function scanShrink(file,max){
+  return new Promise((res,rej)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{const k=Math.min(1,(max||1600)/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg',0.85).split(',')[1]);};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('Not an image'));};
+    img.src=url;
+  });
+}
+function draftScanPick(){
+  if(!aiToken()){toast('Sign in to read a screenshot');openAccount();return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/png,image/jpeg,image/webp';
+  inp.onchange=()=>{if(inp.files&&inp.files[0])draftScanRun(inp.files[0]);};
+  inp.click();
+}
+async function draftScanRun(file){
+  const S=window._draft;if(!S)return;
+  const modal=document.getElementById('player-modal'),body=document.getElementById('player-body');
+  const show=html=>{if(!modal||!body)return;body.innerHTML=html;modal.classList.add('show');};
+  show('<div class="ge-state">'+svg(ICON.spark)+'<b>Reading your screenshot…</b><p>This takes a few seconds.</p></div>');
+  track('draft_scan');
+  let res;
+  try{
+    const data=await scanShrink(file,1600);
+    const r=await fetch(apiBase()+'/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiToken()},
+      body:JSON.stringify({task:'scan',image:{media_type:'image/jpeg',data}})});
+    if(!r.ok){show('<p class="dl-sub" style="padding:8px">'+esc(await aiErrText(r)||'Could not read that screenshot.')+'</p><div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>');return;}
+    res=await r.json();
+  }catch(_){show('<p class="dl-sub" style="padding:8px">Could not read that image. Try a PNG or JPEG screenshot.</p><div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>');return;}
+  if(!res.is_fpl_squad||!res.players||!res.players.length){
+    show('<p class="dl-sub" style="padding:8px">That does not look like an FPL team. Try a screenshot of the Pick Team or Points page.</p><div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>');return;}
+  const m=matchScan(S.b,res.players);
+  window._scan=m;
+  show('<h3 id="player-title">Found '+m.ids.length+' of '+m.rows.length+' players</h3>'+
+    '<div class="dl">'+m.rows.map(r=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(r.read.name)+'</span>'+
+      '<span class="dl-sub">'+(r.el?'→ '+esc(r.el.web_name)+' · '+teamShort(S.b,r.el.team)+' · '+money(r.el.now_cost):'No match. Add him by hand after loading')+'</span></span>'+
+      '<span class="dl-col">'+(r.el?'✓':'–')+'</span></div>').join('')+'</div>'+
+    '<p class="dl-sub" style="margin-top:8px">Check the matches, then load them into the draft. You can swap anyone afterwards.</p>'+
+    '<div class="modal-row"><button class="btn btn-primary" onclick="draftScanApply()"'+(m.ids.length?'':' disabled')+'>Load '+m.ids.length+' players</button>'+
+    '<button class="btn btn-ghost" data-player-close>Cancel</button></div>');
+}
+function draftScanApply(){
+  const m=window._scan;if(!m||!m.ids.length)return;
+  DRAFT_IDS=m.ids.slice(0,15);
+  track('draft_scan_loaded',{n:DRAFT_IDS.length});
+  closePlayer();toast(DRAFT_IDS.length+' players loaded from your screenshot');
+  renderDraft();
+}
 /* Small detail popover for a drafted / pool player: predicted price,
    xP6, minutes security, first-6 fixtures with difficulty colouring. */
 function openDraftPlayer(id){
@@ -27697,8 +27784,9 @@ async function hydrateDraft(host){
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
   const S=window._draft={b,m,ctx,pool,xp6,prior,hIdx,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,
     nf:buildNextFix(b,fixtures),hz:buildHorizon(b,fixtures,3),mySquad,myFt};
-  const importBtn=(getMid()&&b.liveSeason)
-    ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
+  const importBtn=((getMid()&&b.liveSeason)
+    ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'')+
+    '<button class="btn btn-ghost btn-sm" onclick="draftScanPick()">From a screenshot</button>';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
   const wizard=
