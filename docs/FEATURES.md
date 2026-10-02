@@ -1299,6 +1299,27 @@ rather than merging.
 
 ---
 
+### Exact plan (Pro)
+
+Under the 3-GW plan in the Transfer Planner. The beam search's problem,
+stated as a mixed-integer programme (`milpPlanLP`) and solved by HiGHS
+(`vendor/highs.js` + `highs.wasm`, MIT) in a Web Worker
+(`lib/highs-worker.js`), so a long solve never freezes the page. The 3.5 MB
+engine is fetched on the first tap only, never with the app. The Content
+Security Policy carries `'wasm-unsafe-eval'` for it.
+
+- **3 gameweeks**: the beam's own problem, discounted 0.9 a week, solved to
+  proof. It also counts the captain, which the beam leaves out.
+- **8 gameweeks, undiscounted**: the horizon the beam cannot search; over
+  eight weeks every discount tested lost points (`dev/fit-decay.mjs`).
+  Stops at 10 seconds or 0.5% of the bound and says which.
+
+Both solvers are replayed on one yardstick (`planValuer().scorePlan`).
+`dev/test-milp.mjs` checks every exact plan is legal week by week, its hits
+match the free transfers, and it never scores below the beam. On seeded
+leagues the beam is already optimal at three weeks most of the time; the
+exact plan wins clearly over eight (196.6 vs 193.7 in the test league).
+
 ### Start chance and your team news (Pro)
 
 The learned minutes model (§4) drives every projection for everyone. Pro is
@@ -1534,7 +1555,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
   stats + full sortable list, transfer solver, live bonus projector, DefCon,
   auto blog, Team of the Week, H2H.
 - **Possible next steps:**
-  - Full MILP transfer optimiser vs the current beam-search 3-GW plan.
+  - ~~Full MILP transfer optimiser~~ shipped (Pro): **Exact plan** in the Transfer Planner, HiGHS in a Web Worker, 3 or 8 gameweeks, captain included. See §3 and `dev/test-milp.mjs`.
   - Authenticated `my-team` integration for exact selling price (the free‑transfer
     balance is already reconstructed from transfer history — see Transfer ledger).
   - Native push depth (fpl.team / LiveFPL parity).

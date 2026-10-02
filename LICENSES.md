@@ -235,3 +235,30 @@ fails the build if a threshold is typed here again.
   and Team Reveal cards, Social Studio and the CSV exports.
 - **Verified by** `scripts/vendor-share.mjs --check` and `--check --remote`,
   and `scripts/check-share.mjs`, all in CI.
+
+---
+
+## HiGHS (highs-js) — the exact transfer plan
+
+- **Licence** MIT (highs-js and the HiGHS solver itself)
+- **Copyright** © the HiGHS authors (University of Edinburgh); highs-js © Ophir Lojkine
+- **Source** https://github.com/lovasoa/highs-js, npm `highs` 1.15.3, pinned by
+  version and by the tarball's published sha512 integrity
+- **Files**
+  - `vendor/highs.js` ← `build/highs.js`, wrapped to publish
+    `window.HiGHSLoader` instead of a page-wide `Module`; otherwise verbatim.
+  - `vendor/highs.wasm` ← `build/highs.wasm`, verbatim (3.5 MB).
+- **Used for** the Exact plan in the Transfer Planner (Pro). Loaded on demand
+  in a Web Worker (`lib/highs-worker.js`, first-party), never at start-up and
+  not precached by the service worker.
+- **Verified by** `scripts/vendor-highs.mjs --check` in `npm test`, and
+  `dev/test-milp.mjs`, which runs the vendored engine.
+
+## fplcache — deadline flags for the backtests (data, not shipped)
+
+- **Licence** public domain (The Unlicense)
+- **Source** https://github.com/Randdalf/fplcache
+- **Used for** `dev/fixtures/flags/<season>.json`: each gameweek's FPL
+  status and chance of playing from the last snapshot before the deadline,
+  extracted by `dev/fetch-flags.mjs`. Development data for the minutes and
+  points backtests; nothing from it ships in the app.
