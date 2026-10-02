@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { createRequire } from 'node:module';
-import { extractBlock, extractFn } from './extract.mjs';
+import { extractBlock, extractFn, minutesSupport } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -38,7 +38,7 @@ const API = new Function(
   grabConst('CONGEST_COMP') + '\n' +
   grabFn('euroIndex') + '\n' + grabFn('congestionLoad') + '\n' +
   grabFn('congestionGames') + '\n' + grabFn('congestionClubs') + '\n' +
-  grabFn('congestionFactor') + '\n' + grabFn('minutesModel') + '\n' +
+  grabFn('congestionFactor') + '\n' + minutesSupport(html) + '\n' + grabFn('minutesModel') + '\n' +
   'return {euroIndex,congestionLoad,congestionGames,congestionClubs,congestionFactor,minutesModel,' +
   'CONGEST_FULL,CONGEST_FADE,CONGEST_MAX,CONGEST_NAILED};'
 )();

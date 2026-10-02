@@ -38,7 +38,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { extractBlock, extractFn, extractDecl } from './extract.mjs';
+import { extractBlock, extractFn, extractDecl, minutesSupport } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -56,7 +56,7 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
    game publishes today. */
 const scoringSrc = extractDecl(html, 'SCORING_FALLBACK') + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
-  [scoringSrc, congestSrc, grab('minutesModel'), grab('concedePts'), grab('savePts'), grab('dcHitProb'), grab('effGoalRate'), grab('negRate90'),
+  [scoringSrc, congestSrc, minutesSupport(html), grab('minutesModel'), grab('concedePts'), grab('savePts'), grab('dcHitProb'), grab('effGoalRate'), grab('negRate90'),
     grab('nativeXP'), grab('xP'), grab('pointsDist')].join('\n') +
   '\nreturn { minutesModel, nativeXP, xP, pointsDist };'
 )();

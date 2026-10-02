@@ -30,7 +30,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { extractBlock, extractDecl } from './extract.mjs';
+import { extractBlock, extractDecl, minutesSupport } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
@@ -49,7 +49,7 @@ const helperSrc = ['concedePts', 'savePts', 'dcHitProb', 'effGoalRate', 'negRate
    the moment it is called. The FALLBACK table, because this harness grades
    the model's own formula rather than a live gameweek. */
 const scoringSrc = extractDecl(html, 'SCORING_FALLBACK') + '\nlet SCORING = SCORING_FALLBACK;';
-const nativeXP = new Function(scoringSrc + '\n' + congestSrc + '\n' + helperSrc + '\n' + minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
+const nativeXP = new Function(scoringSrc + '\n' + congestSrc + '\n' + helperSrc + '\n' + minutesSupport(html) + '\n' + minutesModelSrc + '\n' + nativeXPsrc + '\nreturn nativeXP;')();
 
 /* The ORIGINAL model, before the P1 additions — for the A/B comparison. */
 function nativeXPold(el, nf) {

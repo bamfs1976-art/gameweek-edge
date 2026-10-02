@@ -18693,7 +18693,13 @@ function recentMinutes(history,window){
     wm+=wt*Math.min(1,(h[i].minutes||0)/90);
     wsum+=wt;
   }
-  return {startShare:ws/wsum,minShare:wm/wsum,n:h.length};
+  /* The last two fixtures on their own as well: the learned minutes model
+     found "did he start last time" the single strongest sign of whether he
+     starts next, stronger than any weighted share. */
+  const last=h[h.length-1],prev=h.length>1?h[h.length-2]:null;
+  return {startShare:ws/wsum,minShare:wm/wsum,n:h.length,
+    lastStart:(last.starts||0)>0?1:0,lastApp:(last.minutes||0)>0?1:0,
+    lastMin:Math.min(1,(last.minutes||0)/90),prevStart:prev&&(prev.starts||0)>0?1:0};
 }
 /* Enrich a bounded set of players (the linked squad + candidates) with recent
    minutes from element-summary, so their projections use current form, not
@@ -18958,50 +18964,113 @@ function congestionFactor(load,startShare){
   const bite=CONGEST_NAILED+(1-CONGEST_NAILED)*exposure;
   return Math.max(0.5,1-CONGEST_MAX*Math.min(1,load)*bite);
 }
+/* ── Learned minutes model ────────────────────────────────
+   Three logistic regressions, P(start), P(appear) and P(60+ minutes), fitted
+   by dev/fit-minutes.mjs on three real seasons (2022-23 to 2024-25, vaastav,
+   every player-fixture, strictly point-in-time) and graded on 2025-26, a
+   season the fit never saw. They replace a hand-weighted blend of start and
+   minutes share that was overconfident at both ends: a nailed starter was
+   given a start probability of 1, and the season it missed a game the log
+   loss paid for it in full.
+
+   Two weight sets, because the app has two kinds of player. Most of the pool
+   has only the bootstrap season totals ('base'); the linked squad and
+   transfer candidates also carry recent fixtures from element-summary
+   (el._recent, 'recent'), and with them the model is much sharper. A set fitted
+   with history and then fed none would be wrong, so each case has its own.
+
+   The probabilities here are BEFORE availability. A flag, a congested week
+   and a manager's own override are applied on top, in minutesModel, exactly
+   as before, because the training data carried none of them. Weights are
+   regenerated, never hand-edited: node dev/fit-minutes.mjs --write. */
+const MINUTES_W={base:{start:[-2.5277,0.4805,0.3926,1.8105,0.09,0.7786,-0.1895,-0.127,0.2553],app:[0.2155,-0.0486,0.826,0.9276,0.2626,-0.4722,-0.8526,0.1552,0.8481],p60:[-1.143,0.0243,0.8395,0.8123,0.0717,0.0392,-0.0514,-0.1175,0.204]},recent:{start:[-3.5391,0.2962,0.0238,1.1852,0.1292,0.7344,-0.0073,-0.165,0.2127,0.1433,0.0717,0.2863,1.1669,0.9352,0.3472],app:[-0.9548,0.109,0.1854,0.5176,0.2505,-0.1091,-0.7095,0.092,0.7864,-0.2333,0.4689,-0.2552,1.7519,0.5811,0.2138],p60:[-2.3418,0.0929,0.2356,0.4031,0.0792,0.2377,0.1268,-0.1593,0.2341,-0.1404,0.3922,-0.0761,0.8841,1.3451,0.2748]}};
+const MINUTES_FEATURES={
+  base:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price'],
+  recent:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price',
+    'recent start share','recent minutes share','started last game','played last game','minutes last game','started the game before']
+};
+function minutesFeatures(el,gp){
+  gp=Math.max(1,gp||1);
+  const lg=p=>{p=Math.min(0.98,Math.max(0.02,p));return Math.log(p/(1-p));};
+  const st=el.starts||0,mn=el.minutes||0;
+  const x=[1,lg(Math.min(1,st/gp)),lg(Math.min(1,mn/(gp*90))),st>0?Math.min(1,mn/(st*90)):0.9,
+    gp<3?1:0,Math.min(gp,10)/10,el.element_type===1?1:0,el.element_type===4?1:0,
+    Math.log(Math.max(40,el.now_cost||50)/50)];
+  const r=el._recent;
+  if(!(r&&r.n>=1&&r.lastStart!=null))return {set:'base',x};
+  x.push(lg(r.startShare),lg(r.minShare),r.lastStart,r.lastApp,r.lastMin,r.prevStart||0);
+  return {set:'recent',x};
+}
+function minutesProbs(el,gp){
+  const f=minutesFeatures(el,gp),W=MINUTES_W[f.set];
+  const p=w=>{if(!w||w.length!==f.x.length)return null;let z=0;for(let i=0;i<w.length;i++)z+=w[i]*f.x[i];return 1/(1+Math.exp(-z));};
+  const start=p(W.start),app=p(W.app),p60=p(W.p60);
+  if(start==null||app==null||p60==null)return null;
+  /* Three separate fits can disagree at the margin; the events nest, so
+     their probabilities must too. */
+  const a=Math.max(app,start);
+  return {set:f.set,start,app:a,p60:Math.min(p60,a)};
+}
 function minutesModel(el,gp,congest){
   gp=Math.max(1,gp||1);
-  const out=el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
+  /* A manager's own team news (Pro, set in the player card) outranks the
+     feed: they have read the press conference and FPL has not caught up. */
+  const ovr=el._ovr&&overrideLive(el._ovr)?el._ovr:null;
+  const out=(ovr&&ovr.kind==='out')||el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
   /* Availability: the next-round chance, falling back to this-round when the
      next-round flag is not yet set (FPL populates this_round earlier around a
      live gameweek). (API-fix 3: chance_of_playing_this_round.) */
   let ch=el.chance_of_playing_next_round;
   if(ch==null&&el.chance_of_playing_this_round!=null)ch=el.chance_of_playing_this_round;
   const avail=out?0:(ch==null?1:Math.max(0,Math.min(1,ch/100)));
+  const startShare=Math.min(1,(el.starts||0)/gp);
+  const perStart=(el.starts||0)>0?Math.min(1,(el.minutes||0)/(el.starts*90)):0.9;
+  /* Before availability: the learned model, or for a player the manager has
+     marked as dropped, what dropped players went on to do in the data. */
+  const L=ovr&&ovr.kind==='benched'?MINUTES_BENCHED:(minutesProbs(el,gp)||minutesLegacy(el,gp));
+  /* Congestion suppresses the START, not the appearance. A rested player is
+     on the bench, not out of the squad, and a good share of him comes on for
+     the last half-hour, so the start probability congestion takes away is
+     partly returned as a cameo, and pAppear falls much less than pStart. */
+  const cf=congestionFactor(congest,startShare);
+  const uncong=Math.min(1,L.start*avail);
+  const pStart=Math.min(1,uncong*cf);
+  const cameo=Math.min(1,Math.max(0,L.app-L.start)*avail+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
+  const pAppear=out?0:Math.min(1,pStart+cameo);
+  const p60=Math.min(pAppear,L.p60*avail*cf);
+  const minFrac=Math.min(1,pStart*perStart+cameo*0.28);
+  return {avail,pStart,pAppear,p60,minFrac,src:ovr?'override':L.set};
+}
+/* What a manager means by "lost his place": measured, not assumed. Rates on
+   the next fixture for players who had started most of their season and then
+   did not start either of their last two, from the same seasons the model is
+   fitted on (dev/fit-minutes.mjs prints them). */
+const MINUTES_BENCHED={set:'override',start:0.229,app:0.419,p60:0.216};
+/* The previous hand-weighted blend, kept only as the fallback should the
+   weights ever fail to match the features (a guard, never the normal path).
+   dev/backtest-minutes.mjs grades the learned model against a frozen copy. */
+function minutesLegacy(el,gp){
   let startShare=Math.min(1,(el.starts||0)/gp);
   let minShare=Math.min(1,(el.minutes||0)/(gp*90));
-  /* Recent-form minutes from element-summary (API-fix 1): el._recent carries
-     recency-weighted start/minute share over the last few gameweeks. Blend it
-     in, weighted up as more recent games accrue, so a newly nailed or newly
-     benched player is caught long before the season average moves. */
   if(el._recent&&el._recent.n>=2){
     const w=Math.min(0.6,0.15*el._recent.n);
     startShare=(1-w)*startShare+w*el._recent.startShare;
     minShare=(1-w)*minShare+w*el._recent.minShare;
   }
-  /* Two-state mixture (P3.1): a start plus a possible cameo, rather than a
-     flat minutes-share scale. perStart is how complete a match the player
-     logs when they DO start (early subs pull it below 1); cameo is the
-     bench-appearance minutes not explained by starts. This separates a
-     nailed 90-minute man from a 60-and-hooked starter and from a regular
-     sub — three very different p60 and expected-minutes profiles a single
-     minutes-share cannot tell apart. */
-  /* Minutes imply a start floor: you cannot log most of a match from the
-     bench, so infer starts from the minutes share when the start count
-     lags it (and to stay robust if starts is absent). */
   const startEff=Math.max(startShare,Math.max(0,(minShare-0.15)/0.85));
   const perStart=(el.starts||0)>0?Math.min(1,(el.minutes||0)/(el.starts*90)):0.9;
-  const cameo0=Math.max(0,minShare-startEff*perStart);
-  /* Congestion suppresses the START, not the appearance. A rested player is
-     on the bench, not out of the squad, and a good share of him comes on for
-     the last half-hour — so the start probability congestion takes away is
-     partly returned as a cameo, and pAppear falls much less than pStart. */
-  const uncong=Math.min(1,startEff*avail);
-  const pStart=Math.min(1,startEff*avail*congestionFactor(congest,startShare));
-  const cameo=Math.min(1,cameo0+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
-  const pAppear=Math.min(1,(pStart+cameo)*(out?0:1));
-  const p60=Math.min(1,pStart*Math.max(0.8,perStart/0.9));
-  const minFrac=Math.min(1,pStart*perStart+cameo*0.28*avail);
-  return {avail,pStart,pAppear,p60,minFrac};
+  const cameo=Math.max(0,minShare-startEff*perStart);
+  const start=Math.min(1,startEff);
+  return {set:'legacy',start,app:Math.min(1,start+cameo),p60:Math.min(1,start*Math.max(0.8,perStart/0.9))};
+}
+/* An override is live until its date passes, or forever if it has none. The
+   date is the first day the player is expected back, so it expires at the
+   start of that day, local time. */
+function overrideLive(o,now){
+  if(!o||(o.kind!=='out'&&o.kind!=='benched'))return false;
+  if(!o.until)return true;
+  const t=Date.parse(o.until+'T00:00:00');
+  return !isFinite(t)||(now==null?Date.now():now)<t;
 }
 /* Expected FPL points a GK or DEF loses to conceded goals in a full match.
    The team clean-sheet probability cs = P(0 conceded) = exp(-lamC) gives one

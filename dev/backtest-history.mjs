@@ -38,7 +38,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { SEASONS, parseCsv, num, str, detectEra } from '../scripts/history/lib.mjs';
-import { extractBlock, extractFn } from './extract.mjs';
+import { extractBlock, extractFn, minutesSupport } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'dev', 'fixtures', 'vaastav');
@@ -73,7 +73,7 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
 const scoringSrc = (() => { const i = html.indexOf('const SCORING_FALLBACK='); return html.slice(i, html.indexOf('\n', i)); })()
   + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
-  [scoringSrc, congestSrc, grabFn('minutesModel'), grabFn('concedePts'), grabFn('savePts'),
+  [scoringSrc, congestSrc, minutesSupport(html), grabFn('minutesModel'), grabFn('concedePts'), grabFn('savePts'),
     grabFn('dcHitProb'), grabFn('effGoalRate'),
     grabFn('negRate90'), grabFn('nativeXP')].join('\n') + '\nreturn {nativeXP};',
 )();

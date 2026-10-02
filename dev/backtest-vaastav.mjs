@@ -35,7 +35,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { extractBlock, extractFn } from './extract.mjs';
+import { extractBlock, extractFn, minutesSupport } from './extract.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const season = process.argv[2] || '2023-24';
@@ -64,7 +64,7 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
 const scoringSrc = (() => { const i = html.indexOf('const SCORING_FALLBACK='); return html.slice(i, html.indexOf('\n', i)); })()
   + '\nlet SCORING = SCORING_FALLBACK;';
 const model = new Function(
-  [scoringSrc, congestSrc, grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
+  [scoringSrc, congestSrc, minutesSupport(html), grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
    grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'),
    grabFn(html, 'negRate90'), grabFn(html, 'nativeXP')].join('\n') + '\nreturn {nativeXP};'
 )();

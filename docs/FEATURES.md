@@ -1320,9 +1320,9 @@ rather than merging.
   minutes × expected goal involvement per 90 × fixture strength, plus
   clean‑sheet points from the match model, scaled by chance‑of‑playing.
 - **Native model validation:** on real historical returns, appearance‑conditional
-  MAE **2.15** vs 2.37 for a 3‑GW form baseline and 2.18 for season PPG
+  MAE **2.08** vs 2.37 for a 3‑GW form baseline and 2.18 for season PPG
   (`dev/backtest-vaastav.mjs`); walk‑forward against a mis‑specified generator,
-  MAE **2.39** vs 2.79 form and 2.58 PPG (`dev/backtest-season.mjs`). See
+  MAE **2.38** vs 2.79 form and 2.58 PPG (`dev/backtest-season.mjs`). See
   `docs/MODELLING.md` for the full breakdown by outcome band.
 - `horizonXP` sums `fixtureXP` over the next N fixtures — the currency for the
   Transfer Solver, replacement finder and Fixture Planner. Availability is
@@ -1330,6 +1330,11 @@ rather than merging.
 - **Playing‑style vectors:** per‑90 xG, xA, threat, creativity, influence, shots,
   defensive actions — z‑scored within position; cosine similarity powers the
   style‑twin and "closest style" transfer mode.
+- **Learned minutes model** (`minutesModel`, P9) — P(start), P(appear) and
+  P(60+) from three logistic regressions fitted on three real seasons and
+  graded on a fourth (`dev/fit-minutes.mjs`, `dev/backtest-minutes.mjs`).
+  Flags, congestion and a Pro manager's own override apply on top. See
+  `docs/MODELLING.md`, "Minutes: a learned model".
 - **Minutes security** (`minutesSecurity`) — a pure 0–100 score: 65% starts
   share + 35% minutes share, scaled by availability (status flag +
   chance‑of‑playing). Tiers: **secure ≥75 / watch 50–74 / risky <50**. The same
