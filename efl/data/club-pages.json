@@ -1,12 +1,12 @@
 {
- "built": "2026-10-02T17:52:51.182Z",
+ "built": "2026-10-02T22:15:29.450Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-02T17:52:51.182Z",
+  "generatedAt": "2026-10-02T22:15:29.450Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -175,6 +175,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Neufville",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
     {
      "name": "T. Wright",
      "position": "FWD",
@@ -3419,14 +3425,6 @@
      "summary": "Started 8 of 8 (100%), 1 goal and 2 assists."
     },
     {
-     "name": "J. Pleguezuelo",
-     "position": "DEF",
-     "rating": 64.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 3 clean sheets plus 2 attacking returns."
-    },
-    {
      "name": "A. Mitchell",
      "position": "DEF",
      "rating": 62.3,
@@ -3441,9 +3439,23 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Pepple",
+     "position": "FWD",
+     "rating": 58.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Pleguezuelo",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
     {
      "name": "A. Hartridge",
      "position": "DEF",
@@ -5956,6 +5968,12 @@
    ],
    "unavailable": [
     {
+     "name": "G. Earthy",
+     "position": "MID",
+     "status": "injured",
+     "news": "Foot Injury"
+    },
+    {
      "name": "S. Patton",
      "position": "FWD",
      "status": "injured",
@@ -6112,12 +6130,6 @@
     {
      "name": "G. Arubi",
      "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "C. Gilligan",
-     "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
     }
