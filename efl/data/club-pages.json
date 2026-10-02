@@ -1,12 +1,12 @@
 {
- "built": "2026-10-01T18:26:11.303Z",
+ "built": "2026-10-02T00:48:19.316Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-01T18:26:11.303Z",
+  "generatedAt": "2026-10-02T00:48:19.316Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2678,7 +2678,7 @@
      "name": "K. Lolos",
      "position": "MID",
      "status": "injured",
-     "news": "Thigh Injury"
+     "news": "Thigh Injury, expected back 12 Oct"
     }
    ],
    "cardRisk": []
@@ -2820,7 +2820,7 @@
      "name": "J. Ruffels",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Unknown injury, expected back 3 Oct"
     },
     {
      "name": "S. Proctor",
@@ -8310,9 +8310,9 @@
      "summary": "In and out of the side (6 starts in 8), 0 goals and 1 assist."
     },
     {
-     "name": "O. Clarke",
+     "name": "A. Munda",
      "position": "MID",
-     "rating": 53.4,
+     "rating": 52.4,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
@@ -8320,10 +8320,16 @@
    ],
    "unavailable": [
     {
+     "name": "O. Clarke",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "B. Middlemas",
      "position": "MID",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 15 Jan"
     },
     {
      "name": "R. Tafazolli",
@@ -8341,13 +8347,25 @@
      "name": "J. Snowdon",
      "position": "MID",
      "status": "injured",
-     "news": "Groin Injury"
+     "news": "Groin Injury, expected back 10 Oct"
+    },
+    {
+     "name": "P. Glatzel",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
     },
     {
      "name": "O. Palmer",
      "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury"
+    },
+    {
+     "name": "M. Virtue",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
     },
     {
      "name": "J. McGregor",
