@@ -560,6 +560,31 @@ the form XI: too early to call either way.
 
 ## Recorded validations
 
+### Plsimulator rating shrinkage 15 → 5, end to end (October 2026)
+
+Plsimulator shrank every club's fitted rating towards average with 15
+pseudo-matches. Its own walk-forward (`tools/backtest_shrink.py` in that
+repo) found 5 better: RPS −0.0023, 95% interval −0.0036 to −0.0011 over
+1,140 matches of 2023/24 to 2025/26. That improves the ratings the
+simulator publishes in `model.json` every week.
+
+Here the ratings only enter as `PLSIM.priors`, eight pseudo-matches that
+the live refit (`plsimRatings`) then updates with this season's results.
+Season-start priors fitted both ways, run through the shipped
+`plsimRatings` and `plsimMatch` over the same 1,140 matches:
+
+| Shrink 15 → 5 | 2023-24 | 2024-25 | 2025-26 | All |
+|---|---|---|---|---|
+| RPS | −0.0010 | −0.0009 | +0.0008 | −0.0004 [−0.0010, +0.0002] |
+| Clean-sheet Brier | +0.0005 | +0.0000 | −0.0001 | +0.0001 [−0.0003, +0.0005] |
+
+Neutral: the live refit washes the prior out within about ten gameweeks
+(matchdays 1-10 alone: −0.0017 [−0.0036, +0.0002]; 11-38: +0.0001).
+Clean sheets, which the player model leans on most, do not move. So
+`PLSIM.priors` stay as they are for 2026/27; refresh them from the
+simulator at the next pre-season refit as usual, when they will carry the
+new setting.
+
 ### DECAY_BASE — fitted (and a first attempt that had to be thrown away)
 
 `solvePlanMulti` discounts future gameweeks by `DECAY_BASE^n`. The value (0.9)
