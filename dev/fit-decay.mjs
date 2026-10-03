@@ -59,7 +59,7 @@ const API = new Function(
   'let DECAY_BASE=0.9;\n' +
   /* The projection is injected: fx carries the number this harness computed. */
   'const fixtureXP=(b,el,fx)=>fx.xp;\n' +
-  grabFn('solvePlanMulti') +
+  grabFn('planValuer') + grabFn('solvePlanMulti') +
   '\nreturn {solvePlanMulti,bestXI,setDecay:(v)=>{DECAY_BASE=v;},getDecay:()=>DECAY_BASE};'
 )();
 

@@ -226,7 +226,7 @@ Add it in Claude under Settings, Connectors, Add custom connector, and paste
 `https://gameweekedge.co.uk/api/mcp`. Open the same URL in a browser and it
 describes itself.
 
-Seven tools, all read-only and all unauthenticated, because everything they
+Eight tools, all read-only and all unauthenticated, because everything they
 return is already public. Two games, and the prefix says which:
 
 | Tool | Answers |
@@ -234,6 +234,7 @@ return is already public. Two games, and the prefix says which:
 | `fpl_player_projection` | projected points, haul and blank chance for named players |
 | `fpl_captain_options` | captain candidates ranked, optionally within your squad or under an ownership cap |
 | `fpl_price_predictions` | who rises or falls tonight, with a probability |
+| `fpl_start_chance` | chance a named player starts, plays 60 minutes and plays at all, with the reasons, from the learned minutes model |
 | `fpl_suspension_watch` | who is one booking from a ban, and how long |
 | `fpl_model_record` | the model's own graded accuracy, so the answer to "why trust this" is evidence |
 | `efl_round_picks` | a legal Fantasy EFL seven for this round, the captain, the two club picks and a Max Captain read |

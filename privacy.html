@@ -54,7 +54,13 @@ ul{padding-left:20px;margin:8px 0}
       knows the ID. Your Manager ID is stored on your device.</li>
       <li><b>Optional account data.</b> If you create an account (email + password via
       Supabase), we store your email, your linked Manager ID, your tier (free/Pro), your
-      watchlist and your rivals list so they sync across devices. Rows are protected by
+      watchlist and your rivals list so they sync across devices. Pro members who record
+      their own team news on a player (out, or lost his place) also have those notes
+      stored, so they follow them to every device; they are never shared or used for
+      anyone else's projections. If you switch on email or Telegram alerts, we store
+      those settings and, for Telegram, the chat ID the bot receives when you link it;
+      reminders are emailed to your account address through our email provider
+      (Resend), and every email has a one-click unsubscribe. Rows are protected by
       row-level security: each user can only read and write their own data.</li>
       <li><b>Billing.</b> Payments are handled entirely by Stripe. We never see or store
       your card details: only whether your subscription is active.</li>
@@ -98,13 +104,15 @@ ul{padding-left:20px;margin:8px 0}
     local storage on your device. Account, push and analytics data live in our Supabase
     (PostgreSQL) database. Serverless functions run on Netlify. AI features send only the
     match/squad statistics shown in the app to Anthropic's Claude API to generate a
-    response; no account identifiers are included in that context.</p>
+    response; no account identifiers are included in that context. If you load a squad
+    from a screenshot, that image is sent to the same API to read the player names, and
+    we do not store it. Crop out anything personal you would rather not send.</p>
 
     <h2>Your choices</h2>
     <ul>
       <li>Use the app without an account. Everything stays on your device.</li>
       <li>Delete your account data: sign in and contact us (below) and we'll remove your
-      profile, watchlist, rivals and push subscriptions.</li>
+      profile, watchlist, rivals, team-news notes, alert settings and push subscriptions.</li>
       <li>Clear local data any time via your browser's site-data settings.</li>
     </ul>
 

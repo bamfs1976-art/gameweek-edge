@@ -4201,6 +4201,7 @@ async function boot(){
     const te=await loadTeamElo();
     if(te&&te.elo&&Object.keys(te.elo).length){idx.elo=te.elo;idx.eloSeason=te.season;}
   }catch(_){/* offline-fitted priors only */}
+  ovrApply(idx);
   MEM._idx=idx;return idx;
 }
 
@@ -4662,7 +4663,7 @@ const PRO_BENEFITS=[
 function getTier(){try{return localStorage.getItem('ge-tier')==='pro'?'pro':'free';}catch(_){return 'free';}}
 function isPro(){return getTier()==='pro';}
 function setTier(t){const v=t==='pro'?'pro':'free';try{localStorage.setItem('ge-tier',v);}catch(_){}reflectTier();cloudProfile({tier:v});}
-function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());}
+function reflectTier(){document.documentElement.classList.toggle('is-pro',isPro());if(MEM._idx)ovrApply(MEM._idx);}
 
 /* The value preview shown to free users on a Pro panel. */
 function proPreview(panel,content){
@@ -4687,7 +4688,8 @@ function openUpgrade(){
   const compare='<p class="modal-hint" style="margin:0 0 10px">Everything in Standard stays free. The Edge adds:</p>'+
     '<div class="pro-cmp"><div class="pro-cmp-row pro-cmp-head"><span>The Edge adds</span><span>Std</span><span>Edge</span></div>'+
     ['Scout AI &amp; Ask the Scout','Rival Scout: overtake your league','Ownership: your EO and the template',
-     'Simulators: season and what-if','Live DEFCON &amp; the Set Piece Register']
+     'Simulators: season and what-if','Live DEFCON &amp; the Set Piece Register',
+     'Start chance for every player, and your own team news']
       .map(f=>'<div class="pro-cmp-row"><span>'+f+'</span><span class="x">–</span><span class="y">✓</span></div>').join('')+
     '</div>';
   document.getElementById('pro-body').innerHTML=
@@ -4895,6 +4897,8 @@ async function syncOnLogin(){
     const addR=unionR.filter(x=>!cloudR.includes(x));
     if(addR.length)await sb.from('gwedge_rivals').upsert(addR.map(r=>({user_id:id,rival_manager_id:Number(r)})));
     saveRivals(unionR);
+    /* A Pro manager's own team news: merged, newest note per player wins. */
+    if(getTier()==='pro')await ovrSyncLogin();
     /* Note: alert preferences persist server-side via the push
        subscription (gwedge_push_subs.prefs, through syncPushPrefs), so
        there is no separate alert-rules sync here. */
@@ -4908,6 +4912,152 @@ async function syncOnLogin(){
 function cloudProfile(patch){if(sb&&uid())sb.from('gwedge_profiles').upsert(Object.assign({user_id:uid()},patch)).then(()=>{},()=>{});}
 function cloudWatchAdd(pid){if(sb&&uid())sb.from('gwedge_watchlist').upsert({user_id:uid(),player_id:pid}).then(()=>{},()=>{});}
 function cloudWatchDel(pid){if(sb&&uid())sb.from('gwedge_watchlist').delete().eq('user_id',uid()).eq('player_id',pid).then(()=>{},()=>{});}
+
+/* ── Your team news (Pro) ──────────────────────────────────
+   A manager who has read the press conference knows things the FPL flags
+   do not say yet. Two notes, both measured rather than guessed:
+     out      he will not play, until a date or until cleared;
+     benched  he has lost his place: the model uses what dropped players
+              went on to do (MINUTES_BENCHED), not zero.
+   Saved on the device and, for a signed-in Pro reader, to the account
+   (gwedge_overrides), so the note follows them to every device. They change
+   only the projections their owner sees: the public record, the prediction
+   logger and the MCP tools never read them. */
+const OVR_KEY='ge-overrides';
+const OVR_KINDS=['out','benched','clear'];
+function ovrNormalise(o){
+  if(!o||OVR_KINDS.indexOf(o.kind)<0)return null;
+  const until=typeof o.until==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(o.until)?o.until:null;
+  return {kind:o.kind,until,updated:Number(o.updated)||0};
+}
+/* `season` is passed while the index is still being built, before
+   curSeason() can answer, so last season's notes never apply to this one. */
+function ovrLoadStore(season){
+  try{const o=JSON.parse(localStorage.getItem(OVR_KEY)||'null');
+    if(o&&o.items&&typeof o.items==='object'){const sn=season||curSeason();
+      if(o.season&&sn&&o.season!==sn)return {season:sn,items:{}};
+      const items={};for(const k of Object.keys(o.items)){const v=ovrNormalise(o.items[k]);if(v)items[k]=v;}
+      return {season:o.season||sn,items};}
+  }catch(_){}
+  return {season:season||curSeason(),items:{}};
+}
+function ovrSaveStore(st){try{localStorage.setItem(OVR_KEY,JSON.stringify(st));}catch(_){}}
+/* Newest note per player wins, a 'clear' included, so clearing on one
+   device is not undone by another device that still holds the old note. */
+function ovrMerge(local,cloud){
+  const out={};
+  for(const src of [local||{},cloud||{}])for(const k of Object.keys(src)){
+    const v=ovrNormalise(src[k]);if(!v)continue;
+    if(!out[k]||v.updated>out[k].updated)out[k]=v;
+  }
+  return out;
+}
+/* Attach the live notes to the players the model reads. Pro only: a lapsed
+   subscription stops applying them but never deletes them. */
+function ovrApply(idx){
+  if(!idx||!idx.els)return;
+  const items=isPro()?ovrLoadStore(idx.season).items:{};
+  for(const k of Object.keys(idx.els)){
+    const el=idx.els[k],o=items[k];
+    if(o&&o.kind!=='clear'&&overrideLive(o))el._ovr=o;else if(el._ovr)delete el._ovr;
+  }
+}
+function ovrRow(id,o){return {user_id:uid(),season:curSeason(),element_id:Number(id),kind:o.kind,until:o.until,updated_at:new Date(o.updated||Date.now()).toISOString()};}
+async function ovrCloudPull(){
+  if(!sb||!uid()||!isPro()||!curSeason())return null;
+  try{const {data,error}=await sb.from('gwedge_overrides').select('element_id,kind,until,updated_at').eq('user_id',uid()).eq('season',curSeason());
+    if(error||!data)return null;
+    const items={};data.forEach(r=>{items[r.element_id]={kind:r.kind,until:r.until||null,updated:r.updated_at?new Date(r.updated_at).getTime():0};});
+    return items;
+  }catch(_){return null;}
+}
+async function ovrCloudPush(rows){
+  if(!sb||!uid()||!isPro()||!curSeason()||!rows.length)return false;
+  try{const {error}=await sb.from('gwedge_overrides').upsert(rows);return !error;}catch(_){return false;}
+}
+async function ovrSyncLogin(){
+  const cloud=await ovrCloudPull();
+  if(!cloud)return;
+  const st=ovrLoadStore(),merged=ovrMerge(st.items,cloud);
+  const up=Object.keys(merged).filter(k=>!cloud[k]||merged[k].updated>cloud[k].updated).map(k=>ovrRow(k,merged[k]));
+  st.items=merged;ovrSaveStore(st);
+  if(up.length)await ovrCloudPush(up);
+  if(MEM._idx)ovrApply(MEM._idx);
+}
+/* Set or clear a note, then redraw whatever is showing it. The date input
+   is optional: an empty one means "until I clear it". */
+async function ovrSet(id,kind){
+  if(!isPro()){openUpgrade();return;}
+  if(OVR_KINDS.indexOf(kind)<0)return;
+  const inp=document.getElementById('ovr-until');
+  const until=kind==='clear'?null:((inp&&inp.value)||null);
+  const st=ovrLoadStore();
+  st.items[id]=ovrNormalise({kind,until,updated:Date.now()});
+  ovrSaveStore(st);
+  if(MEM._idx)ovrApply(MEM._idx);
+  track('override_'+kind);
+  pdStartRefresh(id,'saving');
+  const synced=await ovrCloudPush([ovrRow(id,st.items[id])]);
+  pdStartRefresh(id,synced?'synced':'local');
+  renderPage(currentPanel);
+}
+
+/* ── Start chance (Pro) ─────────────────────────────────────
+   The learned minutes model's three numbers for one player, and the facts
+   behind them in words. The numbers already drive every projection for
+   everyone; Pro is the view of them and the note that overrides them. */
+let PD_START=null;   /* {id, n}: the open player card's next fixture context */
+function startReasons(e,gp,m,n){
+  const out=[];
+  const r=e._recent;
+  if(e._ovr&&overrideLive(e._ovr))out.push(e._ovr.kind==='out'
+    ?'Your team news: out'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):' until you clear it')+'.'
+    :'Your team news: lost his place'+(e._ovr.until?' until '+fmtShortDate(e._ovr.until):'')+'. Taken at your word, with a '+Math.round(MINUTES_BENCHED.start*100)+'% chance the news is wrong; dropped regulars still come off the bench about half the time.');
+  const ch=e.chance_of_playing_next_round;
+  if(e.status&&e.status!=='a')out.push('FPL flag: '+(ch==null?(STATUS_LABEL[e.status]||'unavailable'):ch+'% chance of playing')+'.');
+  if(r&&r.n){
+    out.push((r.lastStart?'Started':'Did not start')+' his last game'+(r.lastStart?'':(r.lastApp?' (came off the bench)':''))+'.');
+    const starts=Math.round(r.startShare*r.n);
+    if(r.n>1)out.push('Recent run: started about '+starts+' of his last '+r.n+'.');
+  }else out.push('Recent games are still loading, so this reads his season totals only.');
+  out.push('Season: started '+(e.starts||0)+' of '+gp+' club game'+(gp===1?'':'s')+'.');
+  if(n&&n.congest&&congestionFactor(n.congest,Math.min(1,(e.starts||0)/gp))<0.98)
+    out.push('His club played a few days earlier, so rotation is more likely.');
+  return out;
+}
+function fmtShortDate(ymd){const d=new Date(ymd+'T12:00:00');return isNaN(d)?ymd:d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+function startChanceInner(b,id,sync){
+  id=Number(id);
+  const e=b.els[id],n=PD_START&&PD_START.id===id?PD_START.n:null;
+  const gp=(n&&n.gp)||0;
+  if(gp<1)return '<div class="dl-sub">Start chances appear once his club has played a league game this season.</div>';
+  const m=minutesModel(e,gp,n&&n.congest);
+  const pct=v=>Math.round(v*100)+'%';
+  const stat=(l,v)=>'<div class="pd-stat"><span class="pd-sl">'+l+'</span><span class="pd-sv">'+pct(v)+'</span></div>';
+  const o=e._ovr&&overrideLive(e._ovr)?e._ovr:null;
+  const syncTxt=sync==='synced'?'Saved to your account.':sync==='local'?'Saved on this device. Sign in to sync it.':sync==='saving'?'Saving…':'';
+  return '<div class="pd-grid">'+stat('Starts',m.pStart)+stat('Plays 60+ mins',m.p60)+stat('Plays at all',m.pAppear)+'</div>'+
+    '<ul class="dl-sub" style="margin:8px 0 0;padding-left:18px">'+startReasons(e,gp,m,n).map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>'+
+    '<div class="card-title" style="margin-top:12px">Your team news</div>'+
+    '<div class="dl-sub">Heard something FPL has not flagged yet? Record it and every projection you see uses it.</div>'+
+    '<div class="modal-row" style="flex-wrap:wrap;gap:8px;align-items:flex-end">'+
+      '<label class="dl-sub" style="display:flex;flex-direction:column;gap:4px">Expected back (optional)'+
+        '<input class="modal-in" type="date" id="ovr-until" value="'+esc(o&&o.until||'')+'"></label>'+
+      '<button class="btn btn-ghost btn-sm" onclick="ovrSet('+id+',\'out\')"'+(o&&o.kind==='out'?' aria-pressed="true"':'')+'>Mark out</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="ovrSet('+id+',\'benched\')"'+(o&&o.kind==='benched'?' aria-pressed="true"':'')+'>Mark benched</button>'+
+      (o?'<button class="btn btn-ghost btn-sm" onclick="ovrSet('+id+',\'clear\')">Clear</button>':'')+
+    '</div>'+
+    '<div class="dl-sub" id="ovr-sync" role="status">'+esc(syncTxt)+'</div>';
+}
+function startChanceCard(b,id,sync){
+  const inner=startChanceInner(b,id,sync);
+  const body=isPro()?inner:proLockWrap(inner,null,'Pro shows how likely he is to start, why, and lets you record your own team news.');
+  return '<div class="card pd-sec"><div class="card-title">Start chance</div>'+body+'</div>';
+}
+function pdStartRefresh(id,sync){
+  const slot=document.getElementById('pd-start'),b=MEM._idx;
+  if(slot&&b&&b.els[id])slot.innerHTML=startChanceCard(b,id,sync);
+}
 function cloudRivalAdd(rid){if(sb&&uid())sb.from('gwedge_rivals').upsert({user_id:uid(),rival_manager_id:Number(rid)}).then(()=>{},()=>{});}
 function cloudRivalDel(rid){if(sb&&uid())sb.from('gwedge_rivals').delete().eq('user_id',uid()).eq('rival_manager_id',Number(rid)).then(()=>{},()=>{});}
 
@@ -7394,7 +7544,9 @@ async function hydrateAccountability(host){
           '<div class="stat"><div class="stat-l">Gameweeks</div><div class="stat-v">'+cal.gws+'</div></div>'+
           '<div class="stat"><div class="stat-l">Points MAE</div><div class="stat-v">'+cal.mae.toFixed(2)+'</div></div>'+
           (cal.brier!=null?'<div class="stat"><div class="stat-l">Haul Brier</div><div class="stat-v">'+cal.brier.toFixed(3)+'</div></div>':'')+
-        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). The model, graded on live results.</div></div>';
+          (cal.rankCorr!=null?'<div class="stat"><div class="stat-l">Rank correlation</div><div class="stat-v">'+cal.rankCorr.toFixed(2)+'</div></div>':'')+
+          (cal.top10Hit!=null?'<div class="stat"><div class="stat-l">Top-10 hit rate</div><div class="stat-v">'+Math.round(cal.top10Hit*100)+'%</div></div>':'')+
+        '</div><div class="dl-sub" style="margin-top:10px">Mean absolute error of our predicted points against actual returns across every logged gameweek, and how well our haul probabilities are calibrated (Brier score, lower is better). Rank correlation (1 is perfect, 0 is random) says how well it ordered the players each gameweek; the top-10 hit rate is how many of its ten highest projections finished among the week\u2019s ten best scores. The model, graded on live results.</div></div>';
     }
   }catch(_){}
   /* Prediction-logger health — shown until graded accuracy exists, so you
@@ -8837,7 +8989,27 @@ async function hydrateSquad(host){
         (proj&&proj.mean>0?'<div class="dl-sub" style="margin-top:12px">Projected next GW (correlated sim): median <b>'+proj.p50+'</b> · range <b>'+proj.p10+'–'+proj.p90+'</b> · captain doubled.</div>':'')+
         (picks.active_chip?'<div class="dl-sub" style="margin-top:8px">Active chip: <b>'+esc(picks.active_chip)+'</b></div>':'')+
       '</div>'+
-    '</div>';
+    '</div>'+
+    squadStartCard(b,picks.picks,nf);
+}
+/* Start chance for the whole squad, riskiest first: the fifteen numbers the
+   projections above already use, shown so a doubt is spotted before the
+   deadline rather than after. A manager's own note is marked. Pro. */
+function squadStartCard(b,picks,nf){
+  const rows=picks.map(pk=>{const el=b.els[pk.element];if(!el)return null;const n=nf[el.team];
+    if(!n||!n.gp)return null;return {el,pk,m:minutesModel(el,n.gp,n.congest)};}).filter(Boolean)
+    .sort((a,c)=>a.m.pStart-c.m.pStart);
+  if(!rows.length)return '';
+  const pct=v=>Math.round(v*100)+'%';
+  const col=v=>v>=0.75?'green':v>=0.5?'amber':'red';
+  const inner='<div class="dl">'+rows.map(r=>'<div class="dl-row dl-click" onclick="openPlayer('+r.el.id+')">'+
+      '<span style="flex:1">'+esc(r.el.web_name)+(r.pk.position>11?' <span class="badge badge-grey">Bench</span>':'')+
+        (r.m.src==='override'?' <span class="badge badge-amber">Your note: '+(r.el._ovr.kind==='out'?'out':'benched')+'</span>':'')+'</span>'+
+      '<span style="width:64px;text-align:right;color:var(--'+col(r.m.pStart)+')">'+pct(r.m.pStart)+'</span>'+
+      '<span class="dl-sub" style="width:84px;text-align:right">60+: '+pct(r.m.p60)+'</span></div>').join('')+'</div>'+
+    '<div class="dl-sub" style="margin-top:8px">Chance each player starts the next game, from the learned minutes model. Tap a player to see why, or to record your own team news.</div>';
+  return '<div class="card mb-20">'+cardHead('Start chance','<span class="badge badge-grey">Next game</span>')+
+    (isPro()?inner:proLockWrap(inner,null,'Pro shows how likely each of your players is to start, and lets you record your own team news.'))+'</div>';
 }
 
 /* ── Shareable gameweek card ─────────────────────────────
@@ -11703,10 +11875,15 @@ function repNav(step){
    look identical to a panel having been retired. The Live hub learned this
    the same way, which is why LV_VIEWS carries its tiers as data.
    KEEP ON ONE LINE — the test reads it with a balanced-bracket scan. */
-const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'free',needs:['seasonHistory']},{id:'chips',label:'Chip effectiveness',tier:'paid'},{id:'decisions',label:'Decision timeline',tier:'paid'},{id:'narrative',label:'Season narrative',tier:'paid'}];
+const REPORT_SECTIONS=[{id:'debrief',label:'This gameweek',tier:'free'},{id:'season',label:'Your season',tier:'free',needs:['seasonHistory']},{id:'chips',label:'Chip effectiveness',tier:'paid'},{id:'decisions',label:'Decision timeline',tier:'paid'},{id:'narrative',label:'Season narrative',tier:'paid'},{id:'clubbias',label:'Club loyalty',tier:'free'}];
 function reportSection(id){return REPORT_SECTIONS.filter(x=>x.id===id)[0]||null;}
 function reportShell(host,debriefHtml){
   const sec=reportSection('season');
+  /* Club loyalty: free, on demand, because it reads every gameweek. */
+  const bias='<div class="card-title" style="margin:24px 0 10px">'+esc((reportSection('clubbias')||{}).label||'Club loyalty')+'</div>'+
+    '<div id="mr-bias" class="card"><p class="dl-sub" style="margin-bottom:10px">Does your favourite club cost you points? This checks every gameweek you have played: how often you started their players, what they scored for you, and what your other picks scored.</p>'+
+    '<button class="btn btn-ghost btn-sm" onclick="clubBiasRun()">Check my club loyalty</button></div>';
+  debriefHtml=debriefHtml+bias;
   if(!sec||!capsMet(sec.needs)){host.innerHTML=debriefHtml;return;}
   const locked=sec.tier==='paid'&&!isPro();
   host.innerHTML=debriefHtml+
@@ -11721,6 +11898,77 @@ function reportShell(host,debriefHtml){
     seasonHost.innerHTML=stateBox('calendar','Season review unavailable',
       'Your gameweek history could not be loaded from FPL just now. This usually clears within a minute. Try again.',retryBtn());
   });
+}
+/* ── Club loyalty ──────────────────────────────────────────
+   The question every manager half-asks: am I picking my own club's players
+   because they are good, or because they are mine? FPL records a favourite
+   club on each team, so it can be answered from the season itself.
+
+   Per started player-gameweek (the captain's points counted once, so the
+   armband does not decide it): points per start for favourite-club picks
+   against everyone else you started, and the share of your starts they
+   took against the share of the game's ownership the club has. "Cost" is
+   what those starts would have scored at your other picks' rate. A rough
+   read, and labelled as one: fewer than eight starts says nothing. */
+const BIAS_MIN_STARTS=8;
+function clubBias(weeks,fav,clubOwnShare){
+  let fs=0,fp=0,os=0,op=0,favCap=0,caps=0;
+  (weeks||[]).forEach(w=>{
+    (w.picks||[]).forEach(p=>{
+      if(!(p.multiplier>0))return;
+      const pts=w.pts[p.element]||0,mine=w.team[p.element]===fav;
+      if(mine){fs++;fp+=pts;}else{os++;op+=pts;}
+      if(p.is_captain){caps++;if(mine)favCap++;}
+    });
+  });
+  const fpps=fs?fp/fs:null,opps=os?op/os:null;
+  const share=(fs+os)?fs/(fs+os):0;
+  return {favStarts:fs,favPts:fp,favPerStart:fpps,otherPerStart:opps,share,fieldShare:clubOwnShare,
+    favCaptain:favCap,captaincies:caps,enough:fs>=BIAS_MIN_STARTS,
+    cost:(fs&&opps!=null)?Math.round((opps-fpps)*fs*10)/10:null};
+}
+async function clubBiasRun(){
+  const box=document.getElementById('mr-bias');if(!box)return;
+  const mid=repMid();if(!mid)return;
+  box.innerHTML='<div class="dl-sub">Reading your season…</div>';
+  track('club_bias');
+  try{
+    const [b,entry]=await Promise.all([boot(),loadEntry(mid)]);
+    const fav=entry&&entry.favourite_team;
+    if(!fav){box.innerHTML='<p class="dl-sub">This team has no favourite club set on FPL, so there is nothing to compare. You can set one in your FPL account details.</p>';return;}
+    const gws=b.events.filter(e=>e.finished).map(e=>e.id);
+    const team={};b.elements.forEach(e=>{team[e.id]=e.team;});
+    const weeks=[];
+    for(let i=0;i<gws.length;i+=4){
+      const part=await Promise.all(gws.slice(i,i+4).map(async g=>{
+        try{const [pk,lv]=await Promise.all([loadPicks(mid,g),loadLive(g)]);
+          const pts={};(lv.elements||[]).forEach(x=>{pts[x.id]=x.stats?x.stats.total_points:0;});
+          return {gw:g,picks:pk.picks||[],pts,team};}catch(_){return null;}}));
+      part.forEach(w=>{if(w)weeks.push(w);});
+    }
+    const own=e=>parseFloat(e.selected_by_percent)||0;
+    const all=b.elements.reduce((t,e)=>t+own(e),0)||1;
+    const clubShare=b.elements.filter(e=>e.team===fav).reduce((t,e)=>t+own(e),0)/all;
+    const r=clubBias(weeks,fav,clubShare);
+    const club=(b.teams[fav]||{}).name||'your club';
+    const pct=v=>Math.round(v*100)+'%';
+    if(!r.enough){
+      box.innerHTML='<p class="dl-sub">'+esc(club)+' players started '+r.favStarts+' time'+(r.favStarts===1?'':'s')+' for you over '+weeks.length+' gameweeks. That is too few to say anything fair; it takes at least '+BIAS_MIN_STARTS+'. No bias worth worrying about so far.</p>';
+      return;
+    }
+    const verdict=r.cost>5?'Your loyalty is costing you: '+esc(club)+' picks scored '+r.cost.toFixed(0)+' points fewer than your other picks would have in the same starts.'
+      :r.cost<-5?'Your loyalty is paying: '+esc(club)+' picks scored '+(-r.cost).toFixed(0)+' points more than your other picks would have.'
+      :'No real cost: '+esc(club)+' picks have scored about as well as the rest of your team.';
+    box.innerHTML='<div class="statgrid mb-14">'+
+        '<div class="stat"><div class="stat-l">'+esc(club)+' starts</div><div class="stat-v">'+r.favStarts+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Share of your starts</div><div class="stat-v">'+pct(r.share)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">The game overall</div><div class="stat-v">'+pct(r.fieldShare)+'</div></div>'+
+        '<div class="stat"><div class="stat-l">Points per start</div><div class="stat-v">'+r.favPerStart.toFixed(1)+' <span class="dl-sub">vs '+r.otherPerStart.toFixed(1)+'</span></div></div>'+
+      '</div><p style="margin:0 0 8px"><b>'+verdict+'</b></p>'+
+      '<p class="dl-sub">'+(r.share>r.fieldShare*1.5?'You start their players far more often than the game does ('+pct(r.share)+' of your starts against '+pct(r.fieldShare)+' of all ownership). ':'')+
+      (r.favCaptain?'You captained one of them '+r.favCaptain+' time'+(r.favCaptain===1?'':'s')+' out of '+r.captaincies+'. ':'')+
+      'A rough read over '+weeks.length+' gameweeks: points per start count the captain once, and a few big hauls move it a lot.</p>';
+  }catch(_){box.innerHTML='<p class="dl-sub">Your season could not be loaded from FPL just now. Try again in a minute.</p><button class="btn btn-ghost btn-sm" onclick="clubBiasRun()">Try again</button>';}
 }
 async function hydrateGwreport(host){
   const entered=urlEntryOnce('gwreport');
@@ -13126,6 +13374,11 @@ function plCols(b,xpMap,ctx){
      d:e=>dcOK(e)?dcHitLabel(e):'–'},
     {k:'setp',l:'SetP',num:1,tier:'paid',v:e=>setPieceConfidence(e).value,
      d:e=>{const s=setPieceConfidence(e);return s.value?'<span class="badge '+(s.value>=70?'badge-green':s.value>=50?'badge-amber':'badge-grey')+'" title="'+esc(s.roles.join(', '))+'">'+s.value+'</span>':'–';}},
+    /* The learned model's P(start) for the next game, from season totals (the
+       table does not fetch every player's recent games). Pro, like the card. */
+    {k:'pstart',l:'Start%',num:1,tier:'paid',v:e=>(games[e.team]||0)<1?-1:Math.round(minutesModel(e,games[e.team],null).pStart*100),
+     d:e=>{if((games[e.team]||0)<1)return '–';const v=Math.round(minutesModel(e,games[e.team],null).pStart*100);
+       return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'%</span>';}},
     {k:'minsec',l:'Mins%',num:1,v:e=>minutesSecurity(e,games[e.team]||0),
      d:e=>{const v=minutesSecurity(e,games[e.team]||0);
        return '<span style="color:var(--'+(v>=75?'green':v>=50?'amber':'red')+')">'+v+'</span>';}},
@@ -13206,7 +13459,7 @@ const PL_LENSES=[
   /* Free, deliberately: its sort column is free, so gating the lens would
      buy nothing except the three clicks it takes to rebuild by hand. */
   {id:'rotation',label:'Rotation',tier:'free',sort:'minsec',dir:1,
-   cols:['minsec','chance','minutes','selected_by_percent','now_cost'],
+   cols:['minsec','pstart','chance','minutes','selected_by_percent','now_cost'],
    filter:e=>(e.now_cost||0)>=60&&(parseFloat(e.selected_by_percent)||0)>=3,
    desc:'Minutes security for the players enough managers own to be hurt by. Starts share, minutes share and availability. Lowest first.'}
 ];
@@ -14914,7 +15167,10 @@ function openPlayer(id){
   m.classList.add('show');
   loadFixtures().then(fixtures=>{
     body.innerHTML=playerDetailHTML(b,fixtures,id);
+    pdStartRefresh(id);
     loadSummary(id).then(sum=>{const slot=document.getElementById('pd-summary');
+      if(sum&&sum.history&&!b.els[id]._recent)b.els[id]._recent=recentMinutes(sum.history,5);
+      pdStartRefresh(id);
       if(slot)slot.innerHTML=summarySections(b,sum,id);})
       .catch(()=>{const slot=document.getElementById('pd-summary');if(slot)slot.innerHTML='';});
     loadLeagueCtx().then(ctx=>{const slot=document.getElementById('pd-league');
@@ -15131,6 +15387,7 @@ function playerDetailHTML(b,fixtures,id){
   const nf=buildNextFix(b,fixtures),hz=buildHorizon(b,fixtures,5),n=nf[e.team];
   const price=(e.now_cost||0)/10,xp=xP(b,e,n),hxp=horizonXP(b,e,hz);
   const mins=e.minutes||0,gp=(n&&n.gp)||0;
+  PD_START={id:Number(id),n};
   const gpBasis=minutesBasis(b,fixtures)(e.team);
   const per=v=>mins>=90?(parseFloat(v||0)*90/mins).toFixed(2):'–';
   const badge=e.status&&e.status!=='a'
@@ -15174,7 +15431,7 @@ function playerDetailHTML(b,fixtures,id){
     '<div class="pd-tick">'+fx.map(f=>'<span class="pd-fx fdr-'+f.diff+'">'+esc(f.opp)+'<b>'+(f.home?'H':'A')+'</b></span>').join('')+'</div>'+
     '<div class="dl-sub" style="margin-top:8px">Colour = our model’s difficulty (green easy → red hard), from expected goals and clean-sheet odds.</div></div>':'';
   /* Filled asynchronously from element-summary (form graph, splits, seasons). */
-  const summarySlot='<div id="pd-summary">'+skel(2)+'</div>';
+  const summarySlot='<div id="pd-start"></div><div id="pd-summary">'+skel(2)+'</div>';
   const leagueSlot='<div id="pd-league"></div>';
   /* Fields the feed always sent and the card never showed. Rendered only when
      the player actually has them, so this section disappears rather than
@@ -15476,11 +15733,12 @@ function buildGwFixtures(b,fixtures,gws){
    bench: that is what the squad scores, not what it is worth. Bench value
    belongs to the transfer solver, which is a different question. */
 function teamSheet(b,gwFx,gws,squad){
+  /* Availability lives in fixtureXP, once (MODEL_REVIEW F3). This used to
+     multiply by the chance of playing again, charging a 50% doubt as 25%. */
   const perGw=(e,g)=>{
     const fxs=(gwFx[e.team]||{})[g]||[];
-    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
     let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
-    return t*(ch/100);
+    return t;
   };
   const posOrder=s=>s.el.element_type;
   return gws.map((g,i)=>{
@@ -15557,14 +15815,15 @@ function teamSheetCard(b,gwFx,gws,squad){
     '<p class="dl-sub" style="margin-top:6px"><b>Only the first column is a team sheet.</b> Beyond the next deadline this is a plan, not a prediction: it assumes today’s squad, today’s fitness and no transfers, and it cannot see rotation or a press conference. Treat the later weeks as where your fixtures point, not as a lineup.</p></div>';
 }
 
-function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
+function planValuer(b,gwFx,gws){
   const memo=new Map();
   const perGw=(e,g)=>{                       /* one player's xP in one GW (0 on a blank, 2 fixtures on a double) */
     const k=e.id+':'+g;if(memo.has(k))return memo.get(k);
     const fxs=(gwFx[e.team]||{})[g]||[];
-    const ch=e.chance_of_playing_next_round==null?100:e.chance_of_playing_next_round;
+    /* Availability lives in fixtureXP, once (MODEL_REVIEW F3); this copy
+       used to multiply by the chance of playing a second time. */
     let t=0;fxs.forEach(fx=>t+=fixtureXP(b,e,fx));
-    t*=(ch/100);memo.set(k,t);return t;
+    memo.set(k,t);return t;
   };
   const restMemo=new Map();
   /* Points further out are worth less TODAY, and the solver has to say so or
@@ -15592,6 +15851,27 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
     const xiIds=new Set(best.xi.map(s=>s.el.id));
     return best.total+benchValue(sq,xiIds,e=>perGw(e,g));
   };
+  /* A finished plan, replayed: each week's squad after its moves, its XI,
+     discounted bench and captain, less the hits, plus the transfers banked
+     at the end against those held at the start. The yardstick both solvers
+     are compared on. */
+  const scorePlan=(sq0,bank0,ft0,plan,decay)=>{
+    const dk=decay==null?DECAY_BASE:decay;
+    let sq=sq0.slice(),f=Math.max(1,ft0||1),score=0;
+    (plan||[]).forEach((st,gi)=>{
+      (st.moves||[]).forEach(m=>{sq=sq.filter(e=>e.id!==m.o.id).concat([m.c]);});
+      const n=(st.moves||[]).length,hit=Math.max(0,n-f)*4;
+      f=Math.min(ftCap(),Math.max(0,f-n)+1);
+      const g=gws[gi],best=bestXI(sq.map(e=>({el:e,p:perGw(e,g)})));
+      const cap=best?Math.max(...best.xi.map(s2=>s2.p)):0;
+      score+=(squadXP(sq,g)+cap-hit)*Math.pow(dk,gi);
+    });
+    return score+ftValue(f)-ftValue(ft0);
+  };
+  return {perGw,restXP,xiXP,squadXP,scorePlan};
+}
+function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
+  const {perGw,restXP,squadXP}=planValuer(b,gwFx,gws);
   const byPos={1:[],2:[],3:[],4:[]};
   b.elements.filter(e=>e.status==='a'&&(e.minutes||0)>0).forEach(e=>byPos[e.element_type].push(e));
   for(const k in byPos)byPos[k]=byPos[k].sort((a,c)=>restXP(c,0)-restXP(a,0)).slice(0,30);
@@ -15666,6 +15946,162 @@ function solvePlanMulti(b,gwFx,gws,squad,bank,ft){
   const best=beam[0]||null;
   return {best,baseline,gain:best?best.score-baseline:0};
 }
+/* ── The exact plan (MILP) ──────────────────────────────────
+   The beam search above is fast and usually right, but it is a heuristic:
+   it keeps eight candidate squads a week and can miss a sequence that only
+   pays off two moves later. This states the same problem as a mixed-integer
+   programme and hands it to HiGHS, which either proves the best plan or
+   says how close it got.
+
+   The SAME valuation as the beam, so the two can be compared: the best XI
+   each week, the bench at BENCH_W in sub order, −4 per hit beyond the free
+   transfers, DECAY_BASE per week, and FT_LADDER for the transfers banked at
+   the end. One thing the beam leaves out and this counts: the captain, whose
+   points double. Selling prices are current prices, the beam's caveat too.
+
+   Free transfers are modelled without binaries. h ≥ moves − free, and next
+   week's free count f' ≤ f − moves + h + 1, capped. The solver always wants
+   more free transfers, so it sets f' to its bound, which is exactly
+   max(f − moves, 0) + 1. The ladder is concave, so its pieces fill in order.
+
+   The engine (vendor/highs.js, 3.5 MB of WebAssembly) loads only when
+   someone asks for an exact plan, never with the app. */
+function milpPlanLP(ctx){
+  const R=ctx.rules||RULES_FALLBACK,T=ctx.gws.length,P=ctx.pool;
+  const W=ctx.benchW||BENCH_W,dec=ctx.decay==null?DECAY_BASE:ctx.decay,lad=ctx.ladder||FT_LADDER,cap=ctx.ftCap||5;
+  const f=(x)=>{const v=Math.round(x*1e4)/1e4;return (v<0?'- ':'+ ')+Math.abs(v);};
+  /* Objective terms are summed per variable before they are written: the LP
+     format does not add a variable that appears twice, it keeps one of the
+     two, which silently dropped every starting goalkeeper's points. */
+  const objC=new Map(),add=(v,c)=>objC.set(v,(objC.get(v)||0)+c);
+  const rows=[],bins=[],ints=[],bounds=[];let rn=0;
+  const row=(terms,op,rhs)=>{const t=terms.filter(Boolean);if(!t.length)return;
+    const lines=[];for(let i=0;i<t.length;i+=12)lines.push(t.slice(i,i+12).join(' '));
+    rows.push(' r'+(rn++)+': '+lines.join('\n  ')+' '+op+' '+rhs);};
+  P.forEach((p,k)=>{for(let t=0;t<T;t++){
+    const n=k+'_'+t,w=Math.pow(dec,t),xp=p.xp[t]||0;
+    bins.push('x'+n,'l'+n,'c'+n,'i'+n,'o'+n);
+    if(p.type!==1)bins.push('a'+n,'b'+n,'d'+n);
+    /* XI points, the captain's second share, and the bench in sub order. */
+    if(xp){add('l'+n,w*xp);add('c'+n,w*xp);
+      if(p.type===1){add('x'+n,w*xp*W.gk);add('l'+n,-w*xp*W.gk);}
+      else{add('a'+n,w*xp*W.out[0]);add('b'+n,w*xp*W.out[1]);add('d'+n,w*xp*(W.out[2]||0));}}
+    const prev=t===0?(ctx.squadIds.has(p.id)?1:0):null;
+    if(t===0)row(['+ x'+n,'- i'+n,'+ o'+n],'=',prev);
+    else row(['+ x'+n,'- x'+k+'_'+(t-1),'- i'+n,'+ o'+n],'=',0);
+    row(['+ i'+n,'+ o'+n],'<=',1);
+    row(['+ l'+n,'- x'+n],'<=',0);
+    row(['+ c'+n,'- l'+n],'<=',0);
+    if(p.type!==1)row(['+ a'+n,'+ b'+n,'+ d'+n,'+ l'+n,'- x'+n],'<=',0);
+  }});
+  for(let t=0;t<T;t++){
+    const all=P.map((p,k)=>'+ x'+k+'_'+t);
+    row(all,'=',R.squadSize);
+    for(const ty of [1,2,3,4]){
+      row(P.map((p,k)=>p.type===ty?'+ x'+k+'_'+t:null),'=',R.need[ty]);
+      const xi=P.map((p,k)=>p.type===ty?'+ l'+k+'_'+t:null);
+      row(xi,'>=',R.minPlay[ty]);row(xi,'<=',R.maxPlay[ty]);
+    }
+    row(P.map((p,k)=>'+ l'+k+'_'+t),'=',R.xiSize);
+    row(P.map((p,k)=>'+ c'+k+'_'+t),'=',1);
+    for(const sl of ['a','b','d'])row(P.map((p,k)=>p.type!==1?'+ '+sl+k+'_'+t:null),'=',1);
+    const clubs={};P.forEach((p,k)=>{(clubs[p.team]||(clubs[p.team]=[])).push('+ x'+k+'_'+t);});
+    Object.values(clubs).forEach(c=>{if(c.length>R.teamLimit)row(c,'<=',R.teamLimit);});
+    /* Money, in tenths of a million: what is sold funds what is bought. */
+    const money=P.map((p,k)=>(p.price?f(p.price)+' i'+k+'_'+t+' '+f(-p.price)+' o'+k+'_'+t:null));
+    row(money.concat(t?['- m'+(t-1)]:[]).concat(['+ m'+t]),'=',t?0:ctx.bank);
+    bounds.push(' m'+t+' >= 0');
+    /* Free transfers and hits. */
+    const ins=P.map((p,k)=>'+ i'+k+'_'+t);
+    row(ins.concat(['- h'+t,t?'- f'+t:null]),'<=',t?0:ctx.ft);
+    row(['+ f'+(t+1),'- h'+t].concat(ins).concat(t?['- f'+t]:[]),'<=',t?1:ctx.ft+1);
+    ints.push('h'+t,'f'+(t+1));
+    bounds.push(' 0 <= h'+t+' <= 15',' 1 <= f'+(t+1)+' <= '+cap);
+    add('h'+t,-4*Math.pow(dec,t));
+  }
+  /* The transfers banked at the end, each worth its rung of the ladder. */
+  const zs=[];for(let k=1;k<cap&&k<lad.length;k++){zs.push('+ z'+k);add('z'+k,lad[k]);bounds.push(' 0 <= z'+k+' <= 1');}
+  row(['+ f'+T].concat(zs.map(z=>z.replace('+','-'))),'=',1);
+  const wrap=a=>{const o=[];for(let i=0;i<a.length;i+=12)o.push(' '+a.slice(i,i+12).join(' '));return o.join('\n');};
+  const obj=[...objC].filter(([,c])=>Math.abs(c)>=1e-6).map(([v,c])=>f(c)+' '+v);
+  return 'Maximize\n obj: '+wrap(obj).trim()+'\nSubject To\n'+rows.join('\n')+
+    '\nBounds\n'+bounds.join('\n')+'\nGeneral\n'+wrap(ints)+'\nBinary\n'+wrap(bins)+'\nEnd\n';
+}
+/* Read the solver's answer back into the beam's plan shape. */
+function milpPlanDecode(cols,ctx){
+  const v=n=>((cols[n]||{}).Primal||0)>0.5;
+  const P=ctx.pool,T=ctx.gws.length,plan=[];
+  for(let t=0;t<T;t++){
+    const ins=P.filter((p,k)=>v('i'+k+'_'+t)),outs=P.filter((p,k)=>v('o'+k+'_'+t));
+    const moves=[];
+    outs.slice().sort((a,c)=>a.type-c.type).forEach(o=>{
+      const j=ins.findIndex(c=>c.type===o.type);
+      if(j>=0){const c=ins.splice(j,1)[0];moves.push({o:o.el,c:c.el,gain:(c.rest||0)-(o.rest||0)});}
+    });
+    const hit=Math.max(0,Math.round(((cols['h'+t]||{}).Primal)||0))*4;
+    const cap=P.find((p,k)=>v('c'+k+'_'+t));
+    plan.push({gw:ctx.gws[t],moves,hit,captain:cap?cap.el:null});
+  }
+  return plan;
+}
+let HIGHS_P=null;
+/* The solver runs in a Worker (lib/highs-worker.js) so a long solve never
+   freezes the page; where Workers are unavailable it loads on the page.
+   Either way the caller gets an object whose solve() returns a promise. */
+function loadHighs(){
+  if(HIGHS_P)return HIGHS_P;
+  HIGHS_P=new Promise((res,rej)=>{
+    if(typeof Worker==='function'){
+      try{
+        const w=new Worker('lib/highs-worker.js');let seq=0;const wait=new Map();
+        w.onmessage=ev=>{const m=ev.data||{},p=wait.get(m.id);if(!p)return;wait.delete(m.id);
+          if(m.error)p.rej(new Error(m.error));else p.res(m.result);};
+        w.onerror=ev=>{const e=new Error((ev&&ev.message)||'The solver worker failed');wait.forEach(p=>p.rej(e));wait.clear();HIGHS_P=null;};
+        return res({solve:(lp,options)=>new Promise((r2,j2)=>{const id=++seq;wait.set(id,{res:r2,rej:j2});w.postMessage({id,lp,options});})});
+      }catch(_){/* fall through to the page */}
+    }
+    const done=()=>{try{window.HiGHSLoader({locateFile:f=>'vendor/'+f}).then(res,rej);}catch(e){rej(e);}};
+    if(window.HiGHSLoader)return done();
+    const sc=document.createElement('script');sc.src='vendor/highs.js';sc.async=true;
+    sc.onload=done;sc.onerror=()=>rej(new Error('Could not load the solver'));
+    document.head.appendChild(sc);
+  }).catch(e=>{HIGHS_P=null;throw e;});
+  return HIGHS_P;
+}
+/* Build the pool, solve, decode, and score the result on the beam's own
+   valuation so the two can be shown side by side. */
+async function solvePlanExact(b,gwFx,gws,squad,bank,ft,highs,decay){
+  /* The model starts from the squad it is given and must keep the game's
+     shape every week; a squad that does not have it (a stale or partial
+     read) would be "fixed" with hits nobody asked for. Say so instead. */
+  const R=RULES||RULES_FALLBACK,cnt={1:0,2:0,3:0,4:0};
+  (squad||[]).forEach(e=>{cnt[e.element_type]=(cnt[e.element_type]||0)+1;});
+  if((squad||[]).length!==R.squadSize||[1,2,3,4].some(t=>cnt[t]!==R.need[t]))
+    return {error:'Your squad as loaded does not match the game\u2019s shape ('+cnt[1]+' GK, '+cnt[2]+' DEF, '+cnt[3]+' MID, '+cnt[4]+' FWD), so there is nothing exact to plan from. Refresh and try again.'};
+  const V=planValuer(b,gwFx,gws);
+  const pool=new Map();
+  squad.forEach(e=>pool.set(e.id,e));
+  const byPos={1:[],2:[],3:[],4:[]};
+  b.elements.filter(e=>e.status==='a'&&(e.minutes||0)>0).forEach(e=>byPos[e.element_type].push(e));
+  /* The same candidates the beam considers (30 a position), so the two
+     solve one problem and differ only in how they search it. */
+  for(const k in byPos)byPos[k].sort((a,c)=>V.restXP(c,0)-V.restXP(a,0)).slice(0,30).forEach(e=>pool.set(e.id,e));
+  const ctx={gws,bank,ft:Math.max(1,ft||1),rules:RULES,decay,ftCap:ftCap(),squadIds:new Set(squad.map(e=>e.id)),
+    pool:[...pool.values()].map(e=>({id:e.id,el:e,type:e.element_type,team:e.team,price:e.now_cost||0,
+      xp:gws.map(g=>V.perGw(e,g)),rest:V.restXP(e,0)}))};
+  const t0=Date.now();
+  /* A short plan is solved to proof; a long one stops at 10 seconds or
+     0.5% of the bound, whichever comes first, and says which it was. */
+  const long=gws.length>4;
+  const res=await (highs||await loadHighs()).solve(milpPlanLP(ctx),{output_flag:false,time_limit:long?10:20,mip_rel_gap:long?0.005:0.001});
+  const ms=Date.now()-t0;
+  if(!res||!/Optimal|Time limit/i.test(res.Status||'')||!res.Columns)return {error:'The solver stopped without a plan ('+(res&&res.Status||'no answer')+').'};
+  const plan=milpPlanDecode(res.Columns,ctx);
+  /* Replay the plan on the beam's valuation, captain included for both. */
+  const score=V.scorePlan(squad,bank,ft,plan,decay);
+  const hold=V.scorePlan(squad,bank,ft,gws.map(()=>({moves:[]})),decay);
+  return {plan,score,hold,gain:score-hold,ms,proven:/Optimal/i.test(res.Status),status:res.Status,objective:res.ObjectiveValue};
+}
 function renderSolver3(){
   const S=window._solver;if(!S||!S.fixtures)return;
   const box=document.getElementById('solver3-out');if(!box)return;
@@ -15700,6 +16136,50 @@ function renderSolver3(){
     Math.pow(DECAY_BASE,3).toFixed(2)+' of a point now: partly because a distant projection is less certain, '+
     'and partly because a move whose payoff is all in the future is one you can still make later, with more information. '+
     '<b>Caveat:</b> selling prices are approximated as current price, your exact selling price needs an FPL login, which the public API doesn’t allow, so budgets can be slightly optimistic on players who rose in price.</div>';
+}
+/* The exact plan (Pro). Three weeks is the beam's own problem, solved
+   exactly; eight weeks is the horizon the beam cannot search, undiscounted,
+   because that is what measured best over eight (dev/fit-decay.mjs). The
+   engine is fetched on the first tap and cached by the browser after. */
+function solverExactCard(){
+  const inner='<p class="dl-sub" style="margin-bottom:10px">The same problem as the plan above, handed to an optimisation solver that either proves the best sequence or says how close it got. It also counts your captain, and can look eight gameweeks ahead.</p>'+
+    '<div class="modal-row" style="gap:8px;flex-wrap:wrap">'+
+      '<button class="btn btn-primary btn-sm" onclick="runExactPlan(3)">Exact plan: 3 gameweeks</button>'+
+      '<button class="btn btn-ghost btn-sm" onclick="runExactPlan(8)">Exact plan: 8 gameweeks</button></div>'+
+    '<div id="solverx-out" role="status" style="margin-top:10px"></div>';
+  return '<div class="card mb-20"><div class="card-title">'+svg(ICON.target,'width="15" height="15"')+' Exact plan</div>'+
+    (isPro()?inner:proLockWrap(inner,null,'Pro solves your transfer plan exactly, captain included, up to eight gameweeks ahead.'))+'</div>';
+}
+async function runExactPlan(h){
+  if(!isPro()){openUpgrade();return;}
+  const S=window._solver,box=document.getElementById('solverx-out');if(!S||!S.fixtures||!box)return;
+  const ft=parseInt((document.getElementById('solver-ft')||{}).value||'1',10);
+  const gws=S.b.events.filter(e=>!e.finished).slice(0,h).map(e=>e.id);
+  if(gws.length<2){box.innerHTML='<div class="dl-sub">Not enough gameweeks left for a multi-week plan.</div>';return;}
+  const decay=h>3?1:DECAY_BASE;
+  box.innerHTML='<div class="dl-sub">'+(HIGHS_P?'Solving…':'Loading the solver (about 1 MB, first time only), then solving…')+'</div>';
+  track('exact_plan',{h});
+  let r;
+  try{
+    const highs=await loadHighs();
+    r=await solvePlanExact(S.b,buildGwFixtures(S.b,S.fixtures,gws),gws,S.squad,S.bank,ft,highs,decay);
+  }catch(e){r={error:'The solver could not run here ('+(e&&e.message||'unknown error')+').'};}
+  if(r.error){box.innerHTML='<div class="dl-sub">'+esc(r.error)+'</div>';return;}
+  const moved=r.plan.some(st=>st.moves.length);
+  const rows=r.plan.map(st=>'<div class="card-title" style="margin-top:12px">GW'+st.gw+
+      (st.hit?' <span class="badge badge-amber">−'+st.hit+'</span>':'')+
+      (st.captain?' <span class="badge badge-green">C '+esc(st.captain.web_name)+'</span>':'')+'</div>'+
+    (st.moves.length?st.moves.map(m=>'<div class="dl-row"><span class="dl-grow" style="display:block"><span class="dl-nm">'+esc(m.o.web_name)+'  →  '+esc(m.c.web_name)+'</span>'+
+        '<span class="dl-sub">'+teamShort(S.b,m.o.team)+' out · '+teamShort(S.b,m.c.team)+' in · '+money(m.c.now_cost)+'</span></span>'+
+        '<span class="dl-col mono" style="color:var(--'+(m.gain>=0?'green':'amber')+')">'+(m.gain>=0?'+':'')+m.gain.toFixed(1)+'</span></div>').join('')
+      :'<div class="dl-row"><span class="dl-grow"><span class="dl-sub">Roll: bank the free transfer</span></span></div>')).join('');
+  box.innerHTML='<div class="statgrid mb-14">'+
+      '<div class="stat"><div class="stat-l">Gain over holding</div><div class="stat-v" style="color:var(--green)">'+(r.gain>=0?'+':'')+r.gain.toFixed(1)+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Solver</div><div class="stat-v">'+(r.proven?'Proven best':'Best found')+'</div></div>'+
+      '<div class="stat"><div class="stat-l">Time</div><div class="stat-v">'+(r.ms/1000).toFixed(1)+'s</div></div></div>'+
+    (moved?rows:'<div class="dl-sub">Holding is the best plan: no sequence of moves over these '+gws.length+' gameweeks pays for itself.</div>')+
+    '<div class="dl-sub" style="margin-top:10px">'+(h>3?'Eight gameweeks, undiscounted: over a long horizon every discount tested lost points, so none is applied. ':'Future gameweeks discounted at '+DECAY_BASE+' a week, as in the plan above. ')+
+    'Counts the best XI, the bench in sub order, your captain, −4 hits and the free transfers you bank. Same selling-price caveat as above.</div>';
 }
 function solver3Card(){
   return '<div class="card mb-20"><div class="card-title">'+svg(ICON.calendar,'width="15" height="15"')+' 3-GW plan: sequenced transfers</div>'+
@@ -15833,7 +16313,7 @@ async function hydrateTransfers(host){
         const sgws=b.events.filter(e=>!e.finished).slice(0,5).map(e=>e.id);
         if(sgws.length)sheetCard=teamSheetCard(b,buildGwFixtures(b,fixtures,sgws),sgws,squad);
       }catch(_){}
-      replacer=recCard+sheetCard+rankCard+solverCard()+solver3Card();
+      replacer=recCard+sheetCard+rankCard+solverCard()+solver3Card()+solverExactCard();
       const opts=squad.map(e=>'<option value="'+e.id+'">'+esc(e.web_name)+' ('+posShort(b,e.element_type)+' '+money(e.now_cost)+')</option>').join('');
       replacer+='<div class="card mb-20"><div class="card-title">Find a replacement: next '+hzN+' gameweeks</div>'+
         '<p class="dl-sub" style="margin-bottom:10px">Pick a player to move on; rank alternatives within your budget by projected points or by playing style.</p>'+
@@ -17002,6 +17482,7 @@ async function hydrateAlerts(host){
     '<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Push alerts</div>'+
       '<p class="dl-sub" id="push-status" style="margin-bottom:10px">Checking…</p>'+
       '<button class="btn btn-primary btn-sm" id="push-toggle">Enable push alerts</button></div>'+
+    '<div id="chan-card"></div>'+
     deadline+
     (owned?'':'<div class="dl-sub" style="margin-bottom:12px">Link your team to tune these alerts to your squad.</div>')+
     feed('Fitness flags'+(owned?' in your squad':''),injuries,e=>
@@ -17033,6 +17514,73 @@ async function hydrateAlerts(host){
   Array.prototype.forEach.call(host.querySelectorAll('[data-pref]'),cb=>
     cb.addEventListener('change',()=>{setAlertPref(cb.dataset.pref,cb.checked);syncPushPrefs();}));
   refreshPushUI();
+  renderChannels();
+}
+
+/* ── Email and Telegram alerts ─────────────────────────────
+   For people web push does not reach (an iPhone without the app installed,
+   or anyone who would rather have an email). Deadline reminders at 24h, 6h
+   and about an hour are free; the squad's new fitness flags are Pro. Sent
+   by netlify/functions/alerts-channels.js; settings live in
+   gwedge_alert_channels, one row per account. Telegram is linked by a
+   one-time code the bot receives, so the browser never writes a chat id. */
+let CHAN_CFG=null;
+async function chanRow(){
+  if(!sb||!uid())return null;
+  try{const {data}=await sb.from('gwedge_alert_channels').select('email_on,telegram_on,telegram_chat_id,windows,flags_on,link_code').eq('user_id',uid()).maybeSingle();return data||{};}
+  catch(_){return null;}
+}
+async function chanSave(patch){
+  if(!sb||!uid())return false;
+  const mid=Number(getMid())||null;
+  try{const {error}=await sb.from('gwedge_alert_channels').upsert(Object.assign({user_id:uid(),manager_id:mid,updated_at:new Date().toISOString()},patch),{onConflict:'user_id'});return !error;}
+  catch(_){return false;}
+}
+async function renderChannels(msg){
+  const box=document.getElementById('chan-card');if(!box)return;
+  const head='<div class="card mb-20"><div class="card-title">'+svg(ICON.bell,'width="15" height="15"')+' Email and Telegram</div>';
+  if(!CHAN_CFG)CHAN_CFG=await fetch(apiBase()+'/api/alerts-config').then(r=>r.json()).catch(()=>({}));
+  if(!CHAN_CFG.email&&!CHAN_CFG.telegramBot){box.innerHTML='';return;}
+  if(!uid()){box.innerHTML=head+'<p class="dl-sub">Deadline reminders by email or Telegram, for when push alerts do not reach you. Sign in to switch them on.</p></div>';return;}
+  const r=await chanRow();
+  if(r==null){box.innerHTML=head+'<p class="dl-sub">Could not load your settings. Try again in a moment.</p></div>';return;}
+  const w=r.windows||{d24:true,d6:true,d1:true};
+  const tog=(id,label,on,dis)=>'<label class="alert-tog"><span>'+label+'</span><input type="checkbox" data-chan="'+id+'"'+(on?' checked':'')+(dis?' disabled':'')+'></label>';
+  const linked=!!r.telegram_chat_id;
+  box.innerHTML=head+
+    '<p class="dl-sub" style="margin-bottom:8px">For when push alerts do not reach you, for example on an iPhone without the app installed.</p>'+
+    (CHAN_CFG.email?tog('email_on','Email me (to your account address)',r.email_on):'')+
+    (CHAN_CFG.telegramBot?(linked?tog('telegram_on','Message me on Telegram',r.telegram_on)
+      :'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">Telegram</span><span class="dl-sub">Not linked yet</span></span>'+
+        '<button class="btn btn-ghost btn-sm" onclick="chanLinkTelegram()">Link Telegram</button></div>'):'')+
+    '<div class="dl-sub" style="margin:12px 0 8px">Deadline reminders</div>'+
+    tog('w_d24','24 hours before',w.d24!==false)+tog('w_d6','6 hours before',w.d6!==false)+tog('w_d1','About an hour before',w.d1!==false)+
+    '<div class="dl-sub" style="margin:12px 0 8px">Your squad</div>'+
+    tog('flags_on','New fitness flags on your players'+(isPro()?'':' (Pro)'),r.flags_on&&isPro(),!isPro())+
+    (getMid()?'':'<div class="dl-sub">Link your team for squad alerts.</div>')+
+    '<div class="dl-sub" id="chan-msg" role="status" style="margin-top:8px">'+esc(msg||'')+'</div></div>';
+  Array.prototype.forEach.call(box.querySelectorAll('[data-chan]'),cb=>cb.addEventListener('change',async()=>{
+    const k=cb.dataset.chan,patch={};
+    if(k.startsWith('w_')){const nw=Object.assign({d24:true,d6:true,d1:true},w);nw[k.slice(2)]=cb.checked;patch.windows=nw;Object.assign(w,nw);}
+    else patch[k]=cb.checked;
+    if(k==='flags_on'&&!isPro()){openUpgrade();cb.checked=false;return;}
+    const okSave=await chanSave(patch);
+    const m=document.getElementById('chan-msg');if(m)m.textContent=okSave?'Saved.':'Could not save. Try again.';
+    track('alerts_channel',{k,on:cb.checked});
+  }));
+}
+async function chanLinkTelegram(){
+  if(!CHAN_CFG||!CHAN_CFG.telegramBot)return;
+  const a=new Uint8Array(12);crypto.getRandomValues(a);
+  const code=Array.from(a,x=>'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'[x%56]).join('');
+  if(!await chanSave({link_code:code})){renderChannels('Could not start linking. Try again.');return;}
+  const link='https://t.me/'+encodeURIComponent(CHAN_CFG.telegramBot)+'?start='+code;
+  const box=document.getElementById('chan-card');if(!box)return;
+  box.innerHTML='<div class="card mb-20"><div class="card-title">Link Telegram</div>'+
+    '<p class="dl-sub">Open the bot and tap Start. It links this account to your Telegram and confirms in the chat.</p>'+
+    '<div class="modal-row" style="gap:8px;flex-wrap:wrap"><a class="btn btn-primary btn-sm" href="'+esc(link)+'" target="_blank" rel="noopener">Open @'+esc(CHAN_CFG.telegramBot)+'</a>'+
+    '<button class="btn btn-ghost btn-sm" onclick="renderChannels()">Done</button></div>'+
+    '<p class="dl-sub" style="margin-top:8px">On another device? Send the bot: /start '+esc(code)+'</p></div>';
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -18454,7 +19002,7 @@ async function hydrateRotation(host){
 function xP(b,el,nf){
   let base=parseFloat(el.ep_next||'0');
   if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
-  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
+  const chance=availScale(el)*100;
   let p=base;
   if(nf&&nf.lam!=null){
     const f=el.element_type<=2
@@ -18509,8 +19057,7 @@ function fixtureXP(b,el,fx){
   let base=parseFloat(el.ep_next||'0');
   if(!base)base=parseFloat(el.form||'0')*0.6+parseFloat(el.points_per_game||'0')*0.4;
   const f=el.element_type<=2?0.72+1.0*fx.cs:Math.pow(fx.lam/1.47,0.8);
-  const chance=el.chance_of_playing_next_round==null?100:el.chance_of_playing_next_round;
-  return base*Math.max(0.6,Math.min(1.5,f))*(chance/100);
+  return base*Math.max(0.6,Math.min(1.5,f))*availScale(el);
 }
 /* Cumulative expected points over a player's next-N fixture horizon. */
 function horizonXP(b,el,hz){
@@ -18693,7 +19240,13 @@ function recentMinutes(history,window){
     wm+=wt*Math.min(1,(h[i].minutes||0)/90);
     wsum+=wt;
   }
-  return {startShare:ws/wsum,minShare:wm/wsum,n:h.length};
+  /* The last two fixtures on their own as well: the learned minutes model
+     found "did he start last time" the single strongest sign of whether he
+     starts next, stronger than any weighted share. */
+  const last=h[h.length-1],prev=h.length>1?h[h.length-2]:null;
+  return {startShare:ws/wsum,minShare:wm/wsum,n:h.length,
+    lastStart:(last.starts||0)>0?1:0,lastApp:(last.minutes||0)>0?1:0,
+    lastMin:Math.min(1,(last.minutes||0)/90),prevStart:prev&&(prev.starts||0)>0?1:0};
 }
 /* Enrich a bounded set of players (the linked squad + candidates) with recent
    minutes from element-summary, so their projections use current form, not
@@ -18958,50 +19511,151 @@ function congestionFactor(load,startShare){
   const bite=CONGEST_NAILED+(1-CONGEST_NAILED)*exposure;
   return Math.max(0.5,1-CONGEST_MAX*Math.min(1,load)*bite);
 }
+/* ── Learned minutes model ────────────────────────────────
+   Three logistic regressions, P(start), P(appear) and P(60+ minutes), fitted
+   by dev/fit-minutes.mjs on three real seasons (2022-23 to 2024-25, vaastav,
+   every player-fixture, strictly point-in-time) and graded on 2025-26, a
+   season the fit never saw. They replace a hand-weighted blend of start and
+   minutes share that was overconfident at both ends: a nailed starter was
+   given a start probability of 1, and the season it missed a game the log
+   loss paid for it in full.
+
+   Two weight sets, because the app has two kinds of player. Most of the pool
+   has only the bootstrap season totals ('base'); the linked squad and
+   transfer candidates also carry recent fixtures from element-summary
+   (el._recent, 'recent'), and with them the model is much sharper. A set fitted
+   with history and then fed none would be wrong, so each case has its own.
+
+   The probabilities here are BEFORE availability. A flag, a congested week
+   and a manager's own override are applied on top, in minutesModel, exactly
+   as before, because the training data carried none of them. Weights are
+   regenerated, never hand-edited: node dev/fit-minutes.mjs --write. */
+const MINUTES_W={base:{start:[-2.5277,0.4805,0.3926,1.8105,0.09,0.7786,-0.1895,-0.127,0.2553],app:[0.2155,-0.0486,0.826,0.9276,0.2626,-0.4722,-0.8526,0.1552,0.8481],p60:[-1.143,0.0243,0.8395,0.8123,0.0717,0.0392,-0.0514,-0.1175,0.204]},recent:{start:[-3.5391,0.2962,0.0238,1.1852,0.1292,0.7344,-0.0073,-0.165,0.2127,0.1433,0.0717,0.2863,1.1669,0.9352,0.3472],app:[-0.9548,0.109,0.1854,0.5176,0.2505,-0.1091,-0.7095,0.092,0.7864,-0.2333,0.4689,-0.2552,1.7519,0.5811,0.2138],p60:[-2.3418,0.0929,0.2356,0.4031,0.0792,0.2377,0.1268,-0.1593,0.2341,-0.1404,0.3922,-0.0761,0.8841,1.3451,0.2748]}};
+/* FPL's own flags, measured: for each doubtful flag, how flagged players'
+   real start / appear / 60-minute rates compared with the model
+   (dev/fit-minutes.mjs, three seasons of deadline snapshots from fplcache).
+   EMPTY ON PURPOSE. The measured effects did no better than the
+   chance-of-playing rule on 2025-26 and made the points forecast slightly
+   worse end to end, so every flag keeps that rule. The hook stays so a
+   refit can switch them on (FLAG_EFFECTS=1) once it wins. */
+const MINUTES_FLAG={};
+function flagKey(el){
+  const ch=el.chance_of_playing_next_round;
+  if(el.status==='a')return null;   /* a fit player; FPL leaves a past flag's 100 in place */
+  if(el.status==='d'&&(ch===75||ch===50||ch===25))return 'd'+ch;
+  return null;
+}
+const MINUTES_SUB60=0.012;   /* share of substitute appearances that reach 60 minutes (2024-25, n=3,206) */
+const MINUTES_FEATURES={
+  base:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price'],
+  recent:['bias','start share','minutes share','minutes per start','first two games','games played','goalkeeper','forward','price',
+    'recent start share','recent minutes share','started last game','played last game','minutes last game','started the game before']
+};
+function minutesFeatures(el,gp){
+  gp=Math.max(1,gp||1);
+  const lg=p=>{p=Math.min(0.98,Math.max(0.02,p));return Math.log(p/(1-p));};
+  const st=el.starts||0,mn=el.minutes||0;
+  const x=[1,lg(Math.min(1,st/gp)),lg(Math.min(1,mn/(gp*90))),st>0?Math.min(1,mn/(st*90)):0.9,
+    gp<3?1:0,Math.min(gp,10)/10,el.element_type===1?1:0,el.element_type===4?1:0,
+    Math.log(Math.max(40,el.now_cost||50)/50)];
+  const r=el._recent;
+  if(!(r&&r.n>=1&&r.lastStart!=null))return {set:'base',x};
+  x.push(lg(r.startShare),lg(r.minShare),r.lastStart,r.lastApp,r.lastMin,r.prevStart||0);
+  return {set:'recent',x};
+}
+function minutesProbs(el,gp){
+  const f=minutesFeatures(el,gp),W=MINUTES_W[f.set];
+  const p=w=>{if(!w||w.length!==f.x.length)return null;let z=0;for(let i=0;i<w.length;i++)z+=w[i]*f.x[i];return 1/(1+Math.exp(-z));};
+  const start=p(W.start),app=p(W.app),p60=p(W.p60);
+  if(start==null||app==null||p60==null)return null;
+  /* Three separate fits can disagree at the margin; the events nest, so
+     their probabilities must too. Sixty minutes is almost only reached by
+     starting: a substitute got there in 1.2% of his appearances (2024-25),
+     so P(60+) is held to the start probability plus that sliver of the
+     cameo, however the separate fit reads an unusual history. */
+  const a=Math.max(app,start);
+  return {set:f.set,start,app:a,p60:Math.min(p60,start+MINUTES_SUB60*(a-start))};
+}
 function minutesModel(el,gp,congest){
   gp=Math.max(1,gp||1);
-  const out=el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
+  /* A manager's own team news (Pro, set in the player card) outranks the
+     feed: they have read the press conference and FPL has not caught up. */
+  const ovr=el._ovr&&overrideLive(el._ovr)?el._ovr:null;
+  const out=(ovr&&ovr.kind==='out')||el.status==='i'||el.status==='s'||el.status==='u'||el.status==='n';
   /* Availability: the next-round chance, falling back to this-round when the
      next-round flag is not yet set (FPL populates this_round earlier around a
      live gameweek). (API-fix 3: chance_of_playing_this_round.) */
   let ch=el.chance_of_playing_next_round;
   if(ch==null&&el.chance_of_playing_this_round!=null)ch=el.chance_of_playing_this_round;
   const avail=out?0:(ch==null?1:Math.max(0,Math.min(1,ch/100)));
+  const startShare=Math.min(1,(el.starts||0)/gp);
+  const perStart=(el.starts||0)>0?Math.min(1,(el.minutes||0)/(el.starts*90)):0.9;
+  /* Before availability: the learned model, or for a player the manager has
+     marked as dropped, what dropped players went on to do in the data. */
+  const L=ovr&&ovr.kind==='benched'?MINUTES_BENCHED:(minutesProbs(el,gp)||minutesLegacy(el,gp));
+  /* Congestion suppresses the START, not the appearance. A rested player is
+     on the bench, not out of the squad, and a good share of him comes on for
+     the last half-hour, so the start probability congestion takes away is
+     partly returned as a cameo, and pAppear falls much less than pStart. */
+  const cf=congestionFactor(congest,startShare);
+  /* A flag a manager can see: its measured effect where we have one, the
+     chance-of-playing scale where we do not. A manager's "benched" note is
+     already the whole answer, so a flag is not applied on top of it. */
+  const fk=out||(ovr&&ovr.kind==='benched')?null:flagKey(el),fm=fk?MINUTES_FLAG[fk]:null;
+  const sA=fm?Math.min(1,L.start*fm.start):L.start*avail;
+  const aA=fm?Math.min(1,Math.max(sA,L.app*fm.app)):L.app*avail;
+  const p6A=fm?Math.min(1,L.p60*fm.p60):L.p60*avail;
+  const uncong=Math.min(1,sA);
+  const pStart=Math.min(1,uncong*cf);
+  const cameo=Math.min(1,Math.max(0,aA-sA)+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
+  const pAppear=out?0:Math.min(1,pStart+cameo);
+  const p60=Math.min(pAppear,p6A*cf);
+  const minFrac=Math.min(1,pStart*perStart+cameo*0.28);
+  return {avail,pStart,pAppear,p60,minFrac,src:ovr?'override':L.set,flag:fm?fk:null};
+}
+/* What a manager means by "lost his place": measured, not assumed. Rates on
+   the next fixture for players who had started most of their season and then
+   did not start either of their last two, from the same seasons the model is
+   fitted on (dev/fit-minutes.mjs prints them). */
+const MINUTES_BENCHED={set:'override',start:0.1,app:0.594,p60:0.1};
+/* The previous hand-weighted blend, kept only as the fallback should the
+   weights ever fail to match the features (a guard, never the normal path).
+   dev/backtest-minutes.mjs grades the learned model against a frozen copy. */
+function minutesLegacy(el,gp){
   let startShare=Math.min(1,(el.starts||0)/gp);
   let minShare=Math.min(1,(el.minutes||0)/(gp*90));
-  /* Recent-form minutes from element-summary (API-fix 1): el._recent carries
-     recency-weighted start/minute share over the last few gameweeks. Blend it
-     in, weighted up as more recent games accrue, so a newly nailed or newly
-     benched player is caught long before the season average moves. */
   if(el._recent&&el._recent.n>=2){
     const w=Math.min(0.6,0.15*el._recent.n);
     startShare=(1-w)*startShare+w*el._recent.startShare;
     minShare=(1-w)*minShare+w*el._recent.minShare;
   }
-  /* Two-state mixture (P3.1): a start plus a possible cameo, rather than a
-     flat minutes-share scale. perStart is how complete a match the player
-     logs when they DO start (early subs pull it below 1); cameo is the
-     bench-appearance minutes not explained by starts. This separates a
-     nailed 90-minute man from a 60-and-hooked starter and from a regular
-     sub — three very different p60 and expected-minutes profiles a single
-     minutes-share cannot tell apart. */
-  /* Minutes imply a start floor: you cannot log most of a match from the
-     bench, so infer starts from the minutes share when the start count
-     lags it (and to stay robust if starts is absent). */
   const startEff=Math.max(startShare,Math.max(0,(minShare-0.15)/0.85));
   const perStart=(el.starts||0)>0?Math.min(1,(el.minutes||0)/(el.starts*90)):0.9;
-  const cameo0=Math.max(0,minShare-startEff*perStart);
-  /* Congestion suppresses the START, not the appearance. A rested player is
-     on the bench, not out of the squad, and a good share of him comes on for
-     the last half-hour — so the start probability congestion takes away is
-     partly returned as a cameo, and pAppear falls much less than pStart. */
-  const uncong=Math.min(1,startEff*avail);
-  const pStart=Math.min(1,startEff*avail*congestionFactor(congest,startShare));
-  const cameo=Math.min(1,cameo0+CONGEST_TO_BENCH*Math.max(0,uncong-pStart));
-  const pAppear=Math.min(1,(pStart+cameo)*(out?0:1));
-  const p60=Math.min(1,pStart*Math.max(0.8,perStart/0.9));
-  const minFrac=Math.min(1,pStart*perStart+cameo*0.28*avail);
-  return {avail,pStart,pAppear,p60,minFrac};
+  const cameo=Math.max(0,minShare-startEff*perStart);
+  const start=Math.min(1,startEff);
+  return {set:'legacy',start,app:Math.min(1,start+cameo),p60:Math.min(1,start*Math.max(0.8,perStart/0.9))};
+}
+/* The scale FPL's own ep_next is multiplied by where the native model is
+   not used: the chance-of-playing flag, unless a manager's override says
+   otherwise. "Out" is zero; "benched" is the expected share of a match a
+   dropped player plays (a start, or a cameo of about a quarter of the game),
+   the same arithmetic minutesModel uses for minFrac. */
+function availScale(el){
+  const o=el._ovr;
+  if(o&&overrideLive(o)){
+    if(o.kind==='out')return 0;
+    return MINUTES_BENCHED.start+0.28*Math.max(0,MINUTES_BENCHED.app-MINUTES_BENCHED.start);
+  }
+  return el.chance_of_playing_next_round==null?1:el.chance_of_playing_next_round/100;
+}
+/* An override is live until its date passes, or forever if it has none. The
+   date is the first day the player is expected back, so it expires at the
+   start of that day, local time. */
+function overrideLive(o,now){
+  if(!o||(o.kind!=='out'&&o.kind!=='benched'))return false;
+  if(!o.until)return true;
+  const t=Date.parse(o.until+'T00:00:00');
+  return !isFinite(t)||(now==null?Date.now():now)<t;
 }
 /* Expected FPL points a GK or DEF loses to conceded goals in a full match.
    The team clean-sheet probability cs = P(0 conceded) = exp(-lamC) gives one
@@ -26994,6 +27648,93 @@ async function draftImportLive(){
     renderDraft();
   }catch(_){toast('Live picks aren’t available yet. They appear once the game launches');}
 }
+/* ── Load a squad from a screenshot ───────────────────────
+   For a beginner who has a team but not its ID: pick a screenshot, Claude
+   reads the names (netlify/functions/ai.js, task "scan"), and matchScan
+   finds each one in the live player list. Nothing loads until the manager
+   has seen the matches and confirmed. The image is shrunk on the device
+   first, so a 4 MB phone screenshot goes up as ~300 KB. */
+function scanNorm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();}
+const SCAN_POS={GK:1,DEF:2,MID:3,FWD:4};
+/* Each read name to at most one player: exact display name first, then
+   surname or full name, narrowed by club and position when the image gave
+   them, and the most-owned on a tie (the likeliest pick). A player is used
+   once, so two "Gabriel"s land on two players or one stays unmatched. */
+function matchScan(b,players){
+  const teamByShort={},teamByName={};
+  (b.raw&&b.raw.teams||[]).forEach(t=>{teamByShort[scanNorm(t.short_name)]=t.id;teamByName[scanNorm(t.name)]=t.id;});
+  const used=new Set(),ids=[],rows=[];
+  const own=e=>parseFloat(e.selected_by_percent)||0;
+  for(const p of (players||[]).slice(0,20)){
+    const n=scanNorm(p.name);if(!n){continue;}
+    const club=scanNorm(p.club),team=teamByShort[club]||teamByName[club]||
+      Object.keys(teamByName).filter(k=>club&&(k.startsWith(club)||club.startsWith(k))).map(k=>teamByName[k])[0]||null;
+    const pos=SCAN_POS[p.position]||null;
+    const tiers=[e=>scanNorm(e.web_name)===n,
+      e=>scanNorm(e.second_name)===n||scanNorm(e.known_name)===n||scanNorm(e.first_name+' '+e.second_name)===n,
+      e=>{const full=scanNorm(e.first_name+' '+e.second_name);return n.length>=4&&(full.indexOf(n)>=0||n.indexOf(scanNorm(e.web_name))>=0);}];
+    let hit=null;
+    for(const f of tiers){
+      let c=b.elements.filter(e=>!used.has(e.id)&&f(e));
+      if(team){const ct=c.filter(e=>e.team===team);if(ct.length)c=ct;}
+      if(pos){const cp=c.filter(e=>e.element_type===pos);if(cp.length)c=cp;}
+      if(c.length){hit=c.sort((a,x)=>own(x)-own(a))[0];break;}
+    }
+    if(hit){used.add(hit.id);ids.push(hit.id);}
+    rows.push({read:p,el:hit});
+  }
+  return {ids,rows,unmatched:rows.filter(r=>!r.el).length};
+}
+function scanShrink(file,max){
+  return new Promise((res,rej)=>{
+    const img=new Image(),url=URL.createObjectURL(file);
+    img.onload=()=>{const k=Math.min(1,(max||1600)/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg',0.85).split(',')[1]);};
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('Not an image'));};
+    img.src=url;
+  });
+}
+function draftScanPick(){
+  if(!aiToken()){toast('Sign in to read a screenshot');openAccount();return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='image/png,image/jpeg,image/webp';
+  inp.onchange=()=>{if(inp.files&&inp.files[0])draftScanRun(inp.files[0]);};
+  inp.click();
+}
+async function draftScanRun(file){
+  const S=window._draft;if(!S)return;
+  const modal=document.getElementById('player-modal'),body=document.getElementById('player-body');
+  const show=html=>{if(!modal||!body)return;body.innerHTML=html;modal.classList.add('show');};
+  show('<div class="ge-state">'+svg(ICON.spark)+'<b>Reading your screenshot…</b><p>This takes a few seconds.</p></div>');
+  track('draft_scan');
+  let res;
+  try{
+    const data=await scanShrink(file,1600);
+    const r=await fetch(apiBase()+'/api/ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+aiToken()},
+      body:JSON.stringify({task:'scan',image:{media_type:'image/jpeg',data}})});
+    if(!r.ok){show('<p class="dl-sub" style="padding:8px">'+esc(await aiErrText(r)||'Could not read that screenshot.')+'</p><div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>');return;}
+    res=await r.json();
+  }catch(_){show('<p class="dl-sub" style="padding:8px">Could not read that image. Try a PNG or JPEG screenshot.</p><div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>');return;}
+  if(!res.is_fpl_squad||!res.players||!res.players.length){
+    show('<p class="dl-sub" style="padding:8px">That does not look like an FPL team. Try a screenshot of the Pick Team or Points page.</p><div class="modal-row"><button class="btn btn-ghost" data-player-close>Close</button></div>');return;}
+  const m=matchScan(S.b,res.players);
+  window._scan=m;
+  show('<h3 id="player-title">Found '+m.ids.length+' of '+m.rows.length+' players</h3>'+
+    '<div class="dl">'+m.rows.map(r=>'<div class="dl-row"><span class="dl-grow"><span class="dl-nm">'+esc(r.read.name)+'</span>'+
+      '<span class="dl-sub">'+(r.el?'→ '+esc(r.el.web_name)+' · '+teamShort(S.b,r.el.team)+' · '+money(r.el.now_cost):'No match. Add him by hand after loading')+'</span></span>'+
+      '<span class="dl-col">'+(r.el?'✓':'–')+'</span></div>').join('')+'</div>'+
+    '<p class="dl-sub" style="margin-top:8px">Check the matches, then load them into the draft. You can swap anyone afterwards.</p>'+
+    '<div class="modal-row"><button class="btn btn-primary" onclick="draftScanApply()"'+(m.ids.length?'':' disabled')+'>Load '+m.ids.length+' players</button>'+
+    '<button class="btn btn-ghost" data-player-close>Cancel</button></div>');
+}
+function draftScanApply(){
+  const m=window._scan;if(!m||!m.ids.length)return;
+  DRAFT_IDS=m.ids.slice(0,15);
+  track('draft_scan_loaded',{n:DRAFT_IDS.length});
+  closePlayer();toast(DRAFT_IDS.length+' players loaded from your screenshot');
+  renderDraft();
+}
 /* Small detail popover for a drafted / pool player: predicted price,
    xP6, minutes security, first-6 fixtures with difficulty colouring. */
 function openDraftPlayer(id){
@@ -27119,8 +27860,9 @@ async function hydrateDraft(host){
   const tmplTotal=tmpl.reduce((s,e)=>s+(xp6[e.id]||0),0);
   const S=window._draft={b,m,ctx,pool,xp6,prior,hIdx,gp,tmplTotal,q:'',posF:0,priceMax:150,ownMin:0,
     nf:buildNextFix(b,fixtures),hz:buildHorizon(b,fixtures,3),mySquad,myFt};
-  const importBtn=(getMid()&&b.liveSeason)
-    ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'';
+  const importBtn=((getMid()&&b.liveSeason)
+    ?'<button class="btn btn-ghost btn-sm" onclick="draftImportLive()">Import my live team</button>':'')+
+    '<button class="btn btn-ghost btn-sm" onclick="draftScanPick()">From a screenshot</button>';
   const clubOpts=b.raw.teams.filter(t=>okTeams.has(t.id)).sort((a,c)=>String(a.name).localeCompare(c.name))
     .map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('');
   const wizard=

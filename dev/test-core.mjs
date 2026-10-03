@@ -17,7 +17,7 @@ import { dirname, join } from 'node:path';
    mock of it — the whole point of the change was typo tolerance, and a
    mock would happily "tolerate" whatever we told it to. */
 import Fuse from 'fuse.js';
-import { extractArrayConst, extractBlock, extractConst, extractFn, extractLine } from './extract.mjs';
+import { extractArrayConst, extractBlock, extractConst, extractFn, extractLine, MINUTES_SUPPORT_CONSTS, minutesSupport } from './extract.mjs';
 import { createRequire } from 'node:module';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -52,6 +52,7 @@ const pieces = [
   ...['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH']
     .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
   extractFn(html, 'congestionFactor'),
+  minutesSupport(html),
   extractFn(html, 'minutesModel'),
   extractFn(html, 'concedePts'),
   extractFn(html, 'savePts'),
@@ -613,7 +614,10 @@ section('extractBlock: the harness must not corrupt what it measures');
       try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch (_) { /* reported below */ }
       ok(src.length > 0, rel + ' is readable');
       for (const g of needed) {
-        ok(src.includes(g), rel + ' supplies ' + g + ' to the model it evaluates');
+        /* The minutes model's own constants arrive through the shared
+           minutesSupport() helper in dev/extract.mjs, which lifts them by name. */
+        const viaHelper = MINUTES_SUPPORT_CONSTS.includes(g) && src.includes('minutesSupport(');
+        ok(src.includes(g) || viaHelper, rel + ' supplies ' + g + ' to the model it evaluates');
       }
     }
   }
@@ -4333,7 +4337,11 @@ section('minutesModel: availability reshapes the minutes');
 const nailed = core.minutesModel({ starts: 6, minutes: 540, status: 'a', chance_of_playing_next_round: null }, 6);
 ok(nailed.pStart > 0.95 && nailed.p60 > 0.95 && nailed.minFrac > 0.95, 'a nailed-on starter is ~certain to start and last 60');
 const doubt = core.minutesModel({ starts: 6, minutes: 540, status: 'd', chance_of_playing_next_round: 50 }, 6);
-ok(Math.abs(doubt.pStart - 0.5) < 0.02, 'a 50% doubt halves the start probability');
+/* The learned model never says a certain 1, so the doubt is checked as a
+   ratio of the same player fully fit. A 50% flag keeps the chance-of-playing
+   rule: its measured effect was studied and did not beat it (MINUTES_FLAG
+   is empty, dev/fit-minutes.mjs says why). */
+ok(Math.abs(doubt.pStart / nailed.pStart - 0.5) < 0.01, 'a 50% doubt halves the start probability');
 ok(doubt.minFrac < nailed.minFrac, 'a doubt lowers expected minutes');
 const outPl = core.minutesModel({ starts: 6, minutes: 540, status: 'i', chance_of_playing_next_round: 0 }, 6);
 ok(outPl.avail === 0 && outPl.pStart === 0 && outPl.minFrac === 0, 'an injured-out player is zeroed');
@@ -4351,10 +4359,15 @@ ok(turnedNailed.startShare > 0.55, 'a newly nailed player reads above 0.5 (recen
 
 section('minutesModel: recent form + this-round availability');
 const seasonRota = { starts: 3, minutes: 360, status: 'a', chance_of_playing_next_round: null };
-ok(core.minutesModel({ ...seasonRota, _recent: { startShare: 1, minShare: 1, n: 5 } }, 6).pStart > core.minutesModel(seasonRota, 6).pStart,
+/* Recent history as the app builds it, through recentMinutes, which also
+   carries the last two fixtures the learned model reads. */
+const recentOf = (st, mn) => core.recentMinutes([1, 2, 3, 4, 5].map((r) => ({ round: r, starts: st, minutes: mn })), 5);
+ok(core.minutesModel({ ...seasonRota, _recent: recentOf(1, 90) }, 6).pStart > core.minutesModel(seasonRota, 6).pStart,
   'recent starts lift the start probability above the season average');
-ok(core.minutesModel({ ...seasonRota, _recent: { startShare: 0, minShare: 0, n: 5 } }, 6).pStart < core.minutesModel(seasonRota, 6).pStart,
+ok(core.minutesModel({ ...seasonRota, _recent: recentOf(0, 0) }, 6).pStart < core.minutesModel(seasonRota, 6).pStart,
   'a recent benching pulls it below the season average');
+ok(core.minutesModel({ ...seasonRota, _recent: { startShare: 1, minShare: 1, n: 5 } }, 6).src === 'base',
+  'a recent summary without the last-two-fixture fields falls back to the season-totals weights');
 const thisRoundDoubt = core.minutesModel({ starts: 6, minutes: 540, status: 'd', chance_of_playing_next_round: null, chance_of_playing_this_round: 25 }, 6);
 ok(thisRoundDoubt.pStart < 0.3, 'a this-round doubt is applied when the next-round flag is unset');
 

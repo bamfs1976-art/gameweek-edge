@@ -99,6 +99,20 @@ ok(hOldOnly.status === 'expected-soon' && hOldOnly.predictions === 0, 'only prio
   const failed = await fetchAll(fakeSb(rows, 1000));
   ok(failed.error && !failed.rows, 'an error on a later page is reported, not a silent partial count');
 
+  console.log('• ranking accuracy: rank correlation and top-10 hit rate');
+  const { rankStats } = require(join(ROOT, 'netlify', 'functions', 'model-calibration.js'));
+  const gwRows = (gw, f) => Array.from({ length: 40 }, (_, i) => ({ gw, xp: 40 - i, actual: f(i) }));
+  const perfect = rankStats(gwRows(1, (i) => 40 - i));
+  ok(perfect.rankCorr === 1 && perfect.top10Hit === 1, 'a perfect ordering scores 1 and 10 of 10');
+  const reversed = rankStats(gwRows(1, (i) => i));
+  ok(reversed.rankCorr === -1 && reversed.top10Hit === 0, 'a reversed ordering scores -1 and none of 10');
+  const ties = rankStats(gwRows(1, (i) => (i < 5 ? 10 : 2)));
+  ok(ties.top10Hit === 1, 'players tied at the tenth-best score count as hits, not misses');
+  const thin = rankStats(Array.from({ length: 10 }, (_, i) => ({ gw: 1, xp: i, actual: i })));
+  ok(thin.rankCorr === null && thin.rankGws === 0, 'a gameweek with under 20 graded players is skipped as too thin');
+  const two = rankStats([...gwRows(1, (i) => 40 - i), ...gwRows(2, (i) => i)]);
+  ok(two.rankCorr === 0 && two.rankGws === 2, 'gameweeks are graded separately and then averaged');
+
   console.log('\n' + passes + ' passed, ' + failures + ' failed');
   if (failures) process.exit(1);
 })();

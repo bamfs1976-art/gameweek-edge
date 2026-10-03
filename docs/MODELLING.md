@@ -43,6 +43,132 @@ sheet with the −1-per-2-conceded downside (from the match model's concede
 rate), and the negatives term subtracts expected cards / own goals /
 penalty misses from the realised rates.
 
+### Minutes: a learned model (P9)
+
+`minutesModel` used to turn a player's start and minutes share into
+P(start), P(appear) and P(60+) with a hand-weighted blend. It now uses
+three logistic regressions fitted on real data (`dev/fit-minutes.mjs`):
+every player-fixture of 2022-23, 2023-24 and 2024-25 from the vaastav
+dataset, built strictly point-in-time (`dev/minutes-data.mjs`), and graded
+on 2025-26, a season the fit never saw.
+
+Two weight sets, because the app has two kinds of player. Most of the pool
+has only bootstrap season totals; the linked squad and transfer candidates
+also carry their last five fixtures from `element-summary`. The second set
+reads those too, and "did he start last time" turns out to be the single
+strongest sign of whether he starts next.
+
+Graded on the full 2025-26 season against the frozen old blend
+(`dev/backtest-minutes.mjs`, Brier score, lower is better):
+
+| | Season totals only | With recent fixtures |
+|---|---|---|
+| P(start) | 0.1073 → **0.1034** | 0.0929 → **0.0798** |
+| P(appear) | 0.1338 → **0.1138** | 0.1219 → **0.0872** |
+| P(60+) | 0.1098 → **0.1020** | 0.0965 → **0.0802** |
+
+P(60+) is capped at the start probability plus 1.2% of the cameo, the
+share of substitute appearances that reach an hour (`MINUTES_SUB60`), so
+the three numbers can never contradict each other; that costs 0.0005 of
+Brier against the uncapped fit. Log loss falls by about a third in every row, because the old blend gave a
+regular starter a start probability of exactly 1 and paid in full every
+time he missed a game. The learned model is calibrated on average to within
+a percentage point of what happened.
+
+Availability flags, congestion and a manager's own override are applied on
+top exactly as before; vaastav carries no flags, so the fit never sees
+them. The real-actuals backtest (`dev/backtest-vaastav.mjs`) on the two
+seasons after the training years, before → after:
+
+| | 2024-25 | 2025-26 |
+|---|---|---|
+| MAE, all player-gameweeks | 2.099 → **2.028** | 2.135 → **2.076** |
+| Did not play (RMSE) | 2.415 → **2.271** | 2.403 → **2.248** |
+| Blanks (RMSE) | 1.753 → **1.585** | 1.654 → **1.499** |
+| Haulers (RMSE) | **5.310** → 5.458 | **5.581** → 5.713 |
+| Rank correlation per GW | 0.286 → **0.294** | 0.261 → **0.275** |
+| Bias (pts per player-GW) | +0.53 → **+0.39** | +0.29 → **+0.16** |
+
+The one band that gets worse is hauls. It is the honest cost of no longer
+calling a regular starter certain to play: the projection for the players
+who haul comes down a little, while the bias row says the model was
+over-forecasting on average and now does so less. Ranking, which is what
+captaincy and transfers act on, improves. On the full 2025-26 season the
+haul band now loses narrowly to recent form (5.713 vs 5.619; it was level,
+5.581, before), which the harness's guard reports when that season is run
+locally; CI runs the committed 2023-24 sample, where the guard holds. In the synthetic walk-forward
+(`backtest-season.mjs`) captain points rise 9.10 → 9.40 per GW and MAE
+2.39 → 2.38; its invented minutes process is not real data, and its GK and
+DEF bias moves from −0.06/−0.12 to −0.31/−0.32.
+
+A manager's **"benched"** note is taken at their word. History cannot say
+"he has lost his place": fit regulars who did not start their last two (or
+three) games started the next one about 40% of the time however the rule
+was drawn (n = 707), because a rotation and a dropping look the same in the
+data. So the override means what the manager means, he will not start, with
+10% doubt that the news is wrong, and measures only what history can say:
+of those dropped regulars who did not start, 54.9% still came on, and of
+those who did start, 93.6% reached an hour. Hence `MINUTES_BENCHED` =
+start 0.10, appear 0.594, 60+ 0.10. (An earlier cut of the same proxy said
+22.9%; it counted injured players as "dropped".)
+
+### Hauls: no correction earns its place (P11, studied and not shipped)
+
+The haul band is the model's largest error, so the obvious fix was tried:
+lift the projection of players who have hauled before, by a shrunk haul
+rate (hauls over appearances plus K), fitted per position on 2022-23 and
+2023-24 and graded on 2024-25 and 2025-26 with deadline flags.
+
+| Test seasons, flags applied | MAE | Haul RMSE | Rank corr. | Top-10 pts |
+|---|---|---|---|---|
+| **Shipped** | **1.746** | 5.616 | 0.490 | **4.93** |
+| Haul-history lift (K=6) | 1.762 | **5.569** | **0.493** | 4.77 |
+
+It trims the haul error a little and costs the picks that matter: the top
+ten by projection score 0.17 points fewer each. The premise was wrong too.
+Among players who played an hour, the shortfall is smallest for the most
+frequent haulers (mean residual +0.69 in the top quintile of haul rate
+against +0.73 to +1.23 below it), so past haulers are not under-forecast;
+the haul band is mostly the variance any single-number forecast carries.
+The defensible levers are the ones that change the distribution rather
+than the mean, `pointsDist` and `squadSim`, which already price hauls for
+captaincy and rank.
+
+### FPL flags, measured (P10, studied and not shipped)
+
+`dev/fetch-flags.mjs` rebuilds what a manager saw at every deadline since
+2022-23 from [fplcache](https://github.com/Randdalf/fplcache) (public
+domain, the bootstrap cached four times a day): the last snapshot before
+each deadline, every flagged player's status and chance of playing
+(`dev/fixtures/flags/`). The minutes and points backtests now read it, so
+they grade the model on the information the app actually has. With it, the
+points model **beats recent form on every player-gameweek**, not only on
+those who played, on all three seasons (2025-26: MAE 1.779 vs form 1.997).
+
+What the flags taught, against the rule the app applies (multiply by the
+chance of playing): it is about right on starts and too harsh on
+appearances, because a doubtful player often comes off the bench (75%
+flags appeared 52% of the time; the rule said 38%). Two attempts to use
+that, both graded end to end on the points forecast:
+
+| 2025-26, flags applied | MAE | Rank corr. | Top-10 pts |
+|---|---|---|---|
+| **Shipped: weights on everyone, chance rule** | **1.779** | **0.483** | **4.74** |
+| Weights on fit players, measured flag effects | 1.871 | 0.477 | 4.61 |
+| Weights on everyone, measured flag effects | 1.789 | 0.474 | 4.72 |
+
+The fit-players version has the better minutes probabilities (lower Brier
+on every target) but a worse points forecast: the scoring layer above it
+over-forecasts the players who do not reach an hour (+0.73 points per
+player-GW for 1-59 minutes), and the old, slightly low minutes had been
+hiding that. So the shipped model is unchanged, `MINUTES_FLAG` is empty and
+every flag keeps the chance rule. The cost, recorded in
+`dev/backtest-minutes.mjs`: with flags applied the app's appearance
+probabilities average 0.33-0.35 against 0.39 observed, because the weights
+already absorb injuries and the rule counts them again. Fixing the scoring
+layer's sub-hour bias first, then refitting on fit players, is the next step.
+
+
 `xP` blends `nativeXP` with FPL's own `ep_next`, **sample-adaptively**
 (native weight 0.475 at 5 games → capped 0.70 by mid-season) and scales
 by chance-of-playing. It returns `null` until a player has ≥5 games and
@@ -104,6 +230,9 @@ work below.
 | **7** | **Advanced data ingestion (open source).** Goalkeeper `goals_prevented` from the [FPL Core Insights](https://github.com/olbauday/FPL-Core-Insights) mirror sharpens `nativeXP`'s keeper term (~1 pt per goal prevented / 90, coefficient set by `dev/model-validate.mjs`; inert without the mirror). Plus a **real‑actuals backtest** (`dev/backtest-vaastav.mjs`) against a historical season from the MIT‑licensed [vaastav dataset](https://github.com/vaastav/Fantasy-Premier-League), so accuracy is no longer graded only on synthetic data. | **done** |
 
 | **8** | **Consistency pass over the scoring rules and the accountability loop.** Four defects found by reviewing the model against itself rather than against a harness that grades the same code: (a) `pointsDist` / `squadSim` gated scoring on an appearance draw and then still scaled by the *unconditional* `minFrac`, charging the absence twice — every distribution ran 12-20% light, and 29% for a rotation risk, biting hardest on exactly the players the rank tools weigh; (b) goalkeeper saves were credited as `E[S]/3` rather than `E[floor(S/3)]`, a flat +0.33 pts/GW on every keeper (`savePts`, mirroring `concedePts`); (c) the defensive-contribution term used a hand-picked logistic in `nativeXP` and a Poisson threshold in the simulators — now one `dcHitProb` in both, so the point estimate is the expectation of the event simulated; (d) `horizonXP` applied availability a second time on top of `nativeXP`, charging a 50% doubt as 25% across the whole solver and transfer surface, while every other `fixtureXP` caller left the fallback branch unscaled — availability now lives in `fixtureXP`, once. Plus deductions drawn as whole points instead of shaved off an integer score, which had been silently deleting the entire probability mass at exactly 10 from every haul figure. **The accountability loop was also grading a different model than ships**: `log-predictions.js` built its bootstrap with no Elo map and no European calendar, so promoted clubs were logged on the generic prior and every club in Europe without its congestion discount; and it compared a single-fixture projection against a whole-gameweek actual, booking a phantom miss on every double. | **done** |
+| **9** | **Learned minutes model.** `minutesModel` reads P(start), P(appear) and P(60+) from three logistic regressions fitted on 2022-23 to 2024-25 and graded on 2025-26 (`dev/fit-minutes.mjs`, `dev/backtest-minutes.mjs`), replacing the hand-weighted blend. Brier improves on all three targets with and without recent fixtures, and the real-actuals MAE falls on both seasons after the training years. See "Minutes: a learned model" above. | **done** |
+| **10** | **FPL flags, measured (studied, not shipped).** Deadline flags for 2022-23 onward from fplcache (`dev/fetch-flags.mjs`); both backtests now grade with them, and the points model beats recent form on every player-gameweek. Measured flag effects and a refit on fit players were tried and lost end to end; see "FPL flags, measured". | **studied** |
+| **11** | **Haul correction (studied, not shipped).** A haul-history lift trimmed haul RMSE 5.616 to 5.569 but cut the top-10 picks by 0.17 pts each and raised MAE; past haulers are not under-forecast. See "Hauls: no correction earns its place". | **studied** |
 
 The strategic payoff is P3–P4: forecasting **distributions** rather than
 point estimates, then optimising for **expected rank** vs the field (given
@@ -134,7 +263,7 @@ neutralised (it isolates the per‑90 scoring core; the Dixon‑Coles layer is
 covered end‑to‑end by `backtest-season.mjs`), and vaastav's own `xP` column is
 dropped for its documented lookahead bias. On 2023/24, **conditional on the
 player appearing** the scoring core beats the 3‑GW form baseline on real
-actuals (MAE 2.145 vs 2.37, and season PPG 2.176). On *all* player‑gameweeks raw MAE is
+actuals (MAE 2.080 vs 2.37, and season PPG 2.176; 2.145 before the learned minutes model, P9). On *all* player‑gameweeks raw MAE is
 minutes‑dominated — recent form implicitly encodes rotation that a pure
 scoring model omits — which is precisely the gap the separately‑validated
 `minutesModel` closes in the live app. A trimmed sample season is committed so
@@ -177,8 +306,8 @@ rather than assumed.
 The split earns its place immediately. Blended together, recent form beats the
 scoring core on “all player‑gameweeks” and the reason is invisible. Split by
 band on 2023/24 it is unambiguous: the core wins **every band in which the
-player actually took the pitch** (blanks 1.848 vs 2.303, tickers 1.201 vs 2.100,
-haulers 5.242 vs 5.528) and loses only the did‑not‑play band (2.737 vs 1.550) —
+player actually took the pitch** (blanks 1.686 vs 2.303, tickers 1.184 vs 2.100,
+haulers 5.390 vs 5.528) and loses only the did‑not‑play band (2.532 vs 1.550) —
 which is exactly the availability signal this run strips out by design. One row
 now carries the whole confound instead of it contaminating the average.
 
@@ -200,7 +329,7 @@ fixture conditioning to grade the per‑90 core alone. Their numbers are the
 shape to expect across bands, not a scoreboard.
 
 **What holds up:**
-- `nativeXP` MAE **beats a 3-GW form baseline** (2.39 vs 2.79 synthetic; 2.145
+- `nativeXP` MAE **beats a 3-GW form baseline** (2.38 vs 2.79 synthetic; 2.080
   vs 2.37 on real appearance‑conditional actuals) and season‑PPG, so the added
   categories earn their place.
 - `pointsDist` haul-probability is **well calibrated** (Brier 0.0711, reliability

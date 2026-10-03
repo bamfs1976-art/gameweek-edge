@@ -132,6 +132,9 @@ export const ENGINE_FNS = [
      how a midweek fixture three days earlier changes that. Competition-blind
      by construction — it counts matches, it does not care whose they are. */
   'recentMinutes', 'minutesModel', 'minutesSecurity', 'congestionLoad', 'congestionFactor',
+  /* The learned start / appear / 60-minute probabilities minutesModel reads,
+     its fallback, and the expiry rule for a manager's own override. */
+  'minutesFeatures', 'minutesProbs', 'minutesLegacy', 'overrideLive', 'availScale', 'flagKey',
 
   /* Who else is at the club for that shirt. A club preview lives on this:
      when two centre-backs leave in a window, the ones who remain are nailed,
@@ -190,6 +193,9 @@ export const ENGINE_CONSTS = [
   'ELO_SCALE', 'ELO_ATT', 'ELO_DEF', 'ELO_CLAMP',
   /* Fixture congestion: how a midweek match suppresses the next start. */
   'CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAILED', 'CONGEST_TO_BENCH',
+  /* Learned minutes model weights (dev/fit-minutes.mjs) and the measured
+     next-game rates for a player who has lost his place. */
+  'MINUTES_W', 'MINUTES_BENCHED', 'MINUTES_SUB60', 'MINUTES_FLAG',
   /* Out-of-position thresholds. */
   'OOP_MIN_MINUTES', 'OOP_PCTL', 'OOP_STRONG_PCTL', 'OOP_MID_PCTL',
   'OOP_MID_STRONG_PCTL', 'OOP_LOW_PCTL', 'OOP_MIN_POOL',

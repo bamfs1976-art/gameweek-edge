@@ -42,7 +42,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://resources.premierleague.com; connect-src 'self' https://knodunjnsxelmpziupwk.supabase.co https://plsimulation.netlify.app; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://resources.premierleague.com; connect-src 'self' https://knodunjnsxelmpziupwk.supabase.co https://plsimulation.netlify.app; worker-src 'self'; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 
 # The build stamp the running app checks itself against. An installed PWA is
 # resumed rather than reloaded, so this is the one request that has to reach
@@ -272,6 +272,26 @@
   status = 200
   force = true
 
+# Email and Telegram alerts: the channel config the app reads, the signed
+# one-click unsubscribe, and the Telegram bot's webhook.
+[[redirects]]
+  from = "/api/alerts-config"
+  to = "/.netlify/functions/alerts-config"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/alerts-unsubscribe"
+  to = "/.netlify/functions/alerts-unsubscribe"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/telegram-webhook"
+  to = "/.netlify/functions/telegram-webhook"
+  status = 200
+  force = true
+
 # Club Elo keyed by FPL team id — a club-specific prior for the match model
 # where we have no offline-fitted one.
 [[redirects]]
@@ -390,6 +410,10 @@
 # rest keep working.
 [functions."mcp"]
   included_files = ["index.html", "vendor/suspension_core.js", "vendor/suspension_scheme.js"]
+
+# Email and Telegram alerts: deadline reminders and Pro squad flags.
+[functions."alerts-channels"]
+  schedule = "@hourly"
 
 [functions."push-cron"]
   schedule = "@hourly"

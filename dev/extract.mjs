@@ -111,3 +111,15 @@ export function binder(src) {
     line: (re) => extractLine(src, re),
   };
 }
+
+/* Everything minutesModel reads beyond the congestion helpers: the learned
+   weights, the measured "lost his place" rates, the feature builder, the
+   fallback and the override expiry rule. Every harness that evaluates the
+   model in a bare context appends this, so a new dependency is added here
+   once rather than in six files. */
+export const MINUTES_SUPPORT_CONSTS = ['MINUTES_W', 'MINUTES_BENCHED', 'MINUTES_SUB60', 'MINUTES_FLAG'];
+export const MINUTES_SUPPORT_FNS = ['minutesFeatures', 'minutesProbs', 'minutesLegacy', 'overrideLive', 'availScale', 'flagKey'];
+export function minutesSupport(src) {
+  return [...MINUTES_SUPPORT_CONSTS.map((n) => extractDecl(src, n)),
+    ...MINUTES_SUPPORT_FNS.map((n) => extractFn(src, n))].join('\n');
+}

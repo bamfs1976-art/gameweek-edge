@@ -1299,6 +1299,67 @@ rather than merging.
 
 ---
 
+### Exact plan (Pro)
+
+Under the 3-GW plan in the Transfer Planner. The beam search's problem,
+stated as a mixed-integer programme (`milpPlanLP`) and solved by HiGHS
+(`vendor/highs.js` + `highs.wasm`, MIT) in a Web Worker
+(`lib/highs-worker.js`), so a long solve never freezes the page. The 3.5 MB
+engine is fetched on the first tap only, never with the app. The Content
+Security Policy carries `'wasm-unsafe-eval'` for it.
+
+- **3 gameweeks**: the beam's own problem, discounted 0.9 a week, solved to
+  proof. It also counts the captain, which the beam leaves out.
+- **8 gameweeks, undiscounted**: the horizon the beam cannot search; over
+  eight weeks every discount tested lost points (`dev/fit-decay.mjs`).
+  Stops at 10 seconds or 0.5% of the bound and says which.
+
+Both solvers are replayed on one yardstick (`planValuer().scorePlan`).
+`dev/test-milp.mjs` checks every exact plan is legal week by week, its hits
+match the free transfers, and it never scores below the beam. On seeded
+leagues the beam is already optimal at three weeks most of the time; the
+exact plan wins clearly over eight (196.6 vs 193.7 in the test league).
+
+### Club loyalty and squad screenshots (free)
+
+- **Club loyalty** (Manager Report, on demand): reads the favourite club
+  FPL stores on the team, then every finished gameweek's picks and points.
+  Points per start for that club's players against the rest of your
+  starters (captain counted once), their share of your starts against the
+  club's share of all ownership, and what those starts would have scored at
+  your other picks' rate. Silent below eight starts. `clubBias`,
+  `dev/test-clubbias.mjs`.
+- **From a screenshot** (Squad Planner, signed in): a team screenshot is
+  shrunk on the device, Claude Opus 5.5 reads the names into strict JSON
+  (`ai.js`, task `scan`, inside the daily AI quota), `matchScan` finds each
+  in the live player list (display name, then surname or full name, by club
+  and position, accents ignored, no player twice), and nothing loads until
+  the manager confirms. `dev/test-scan.mjs`.
+
+### Start chance and your team news (Pro)
+
+The learned minutes model (§4) drives every projection for everyone. Pro is
+the view of it, and the note that overrides it:
+
+- **Start chance** on the player card: P(start), P(60+ minutes) and P(plays
+  at all) for the next game, with the reasons in words (his last game, his
+  recent run, his season, an FPL flag, a congested week). The same numbers
+  sit on **My Squad** as a list of all fifteen, riskiest first, and as the
+  **Start%** column in the Players table's Rotation lens (season totals, as
+  the table does not fetch every player's recent games).
+- **Your team news**: mark a player **out** (until a date, or until cleared)
+  or **benched** (lost his place). Out zeroes him. Benched takes the
+  manager at their word (10% doubt that the news is wrong) and uses what
+  history can measure: a dropped regular who does not start still comes on
+  54.9% of the time. Notes save on the device and,
+  for a signed-in Pro reader, to `gwedge_overrides` (Supabase, RLS, one row
+  per player per season), newest note winning across devices, a clear
+  included. They change only their owner's projections: the public model
+  record, the prediction logger and the MCP tools never read them.
+
+Free readers see both blurred behind the Pro strip. Tests:
+`dev/test-overrides.mjs`, `dev/backtest-minutes.mjs`.
+
 ## 4. The model
 
 ### Team‑strength engine (`plsim*` in `index.html`, mirrors the Plsimulator repo)
@@ -1320,9 +1381,9 @@ rather than merging.
   minutes × expected goal involvement per 90 × fixture strength, plus
   clean‑sheet points from the match model, scaled by chance‑of‑playing.
 - **Native model validation:** on real historical returns, appearance‑conditional
-  MAE **2.15** vs 2.37 for a 3‑GW form baseline and 2.18 for season PPG
+  MAE **2.08** vs 2.37 for a 3‑GW form baseline and 2.18 for season PPG
   (`dev/backtest-vaastav.mjs`); walk‑forward against a mis‑specified generator,
-  MAE **2.39** vs 2.79 form and 2.58 PPG (`dev/backtest-season.mjs`). See
+  MAE **2.38** vs 2.79 form and 2.58 PPG (`dev/backtest-season.mjs`). See
   `docs/MODELLING.md` for the full breakdown by outcome band.
 - `horizonXP` sums `fixtureXP` over the next N fixtures — the currency for the
   Transfer Solver, replacement finder and Fixture Planner. Availability is
@@ -1330,6 +1391,11 @@ rather than merging.
 - **Playing‑style vectors:** per‑90 xG, xA, threat, creativity, influence, shots,
   defensive actions — z‑scored within position; cosine similarity powers the
   style‑twin and "closest style" transfer mode.
+- **Learned minutes model** (`minutesModel`, P9) — P(start), P(appear) and
+  P(60+) from three logistic regressions fitted on three real seasons and
+  graded on a fourth (`dev/fit-minutes.mjs`, `dev/backtest-minutes.mjs`).
+  Flags, congestion and a Pro manager's own override apply on top. See
+  `docs/MODELLING.md`, "Minutes: a learned model".
 - **Minutes security** (`minutesSecurity`) — a pure 0–100 score: 65% starts
   share + 35% minutes share, scaled by availability (status flag +
   chance‑of‑playing). Tiers: **secure ≥75 / watch 50–74 / risky <50**. The same
@@ -1505,7 +1571,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
   stats + full sortable list, transfer solver, live bonus projector, DefCon,
   auto blog, Team of the Week, H2H.
 - **Possible next steps:**
-  - Full MILP transfer optimiser vs the current beam-search 3-GW plan.
+  - ~~Full MILP transfer optimiser~~ shipped (Pro): **Exact plan** in the Transfer Planner, HiGHS in a Web Worker, 3 or 8 gameweeks, captain included. See §3 and `dev/test-milp.mjs`.
   - Authenticated `my-team` integration for exact selling price (the free‑transfer
     balance is already reconstructed from transfer history — see Transfer ledger).
   - Native push depth (fpl.team / LiveFPL parity).
@@ -1535,6 +1601,7 @@ Premier Fantasy Tools, Fantasy Football Hub/Fix):
 | `ge-watch` | watchlist player ids |
 | `ge-draft-v1` | saved pre‑season draft (player ids) |
 | `ge-rivals` | rival manager ids |
+| `ge-overrides` | Pro: your own team-news notes per player for the season (`out` / `benched` / `clear`, optional date); synced to `gwedge_overrides` when signed in |
 | `ge-alert-prefs` | alert toggles |
 | `ge-journey-{gw}` | "plan my week" progress |
 | `ge-modelwatch` | last model snapshot for change alerts |
