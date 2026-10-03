@@ -1,12 +1,12 @@
 {
- "built": "2026-10-02T22:15:29.450Z",
+ "built": "2026-10-03T05:21:00.651Z",
  "round": 8,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-02T22:15:29.450Z",
+  "generatedAt": "2026-10-03T05:21:00.651Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1235,6 +1235,14 @@
      "summary": "Started 8 of 8 (100%), 3 goals and 0 assists."
     },
     {
+     "name": "R. Hale",
+     "position": "FWD",
+     "rating": 75.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), playing at home."
+    },
+    {
      "name": "O. Beckles",
      "position": "DEF",
      "rating": 71.9,
@@ -1265,23 +1273,9 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "R. McKenzie",
-     "position": "DEF",
-     "rating": 68.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "R. Hale",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Rib Injury, expected back 3 Oct"
-    },
     {
      "name": "W. Goodwin",
      "position": "FWD",
@@ -2822,18 +2816,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "J. Ruffels",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury, expected back 3 Oct"
-    },
-    {
-     "name": "M. Golding",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury, expected back 3 Oct"
-    },
     {
      "name": "S. Proctor",
      "position": "GK",
@@ -5173,12 +5155,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "R. Hutchinson",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury, expected back 3 Oct"
-    },
     {
      "name": "M. Demetriou",
      "position": "DEF",
