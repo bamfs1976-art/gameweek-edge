@@ -13,6 +13,7 @@ import { readLedger, ROOT } from './lib.mjs';
 import { seasonSummary } from './metrics.mjs';
 
 const r1 = (v) => (Number.isFinite(v) ? Math.round(v * 10) / 10 : null);
+const margin = (m) => (m ? { mean: r1(m.mean), lo: r1(m.lo), hi: r1(m.hi), gws: m.gws, thin: m.thin, verdict: m.verdict } : null);
 const r3 = (v) => (Number.isFinite(v) ? Math.round(v * 1000) / 1000 : null);
 
 export function buildPublicRecord(entries, generatedAt = new Date().toISOString()) {
@@ -56,7 +57,8 @@ export function buildPublicRecord(entries, generatedAt = new Date().toISOString(
   const season = {
     recorded: s.recorded, graded: s.graded,
     totw: { meanPoints: r1(s.totw.meanPoints), meanAverage: r1(s.totw.meanAverage), beatAverage: s.totw.beatAverage,
-      averageGraded: s.totw.averageGraded, meanNaive: r1(s.totw.meanNaive), beatNaive: s.totw.beatNaive, naiveGraded: s.totw.naiveGraded },
+      averageGraded: s.totw.averageGraded, meanNaive: r1(s.totw.meanNaive), beatNaive: s.totw.beatNaive, naiveGraded: s.totw.naiveGraded,
+      marginAverage: margin(s.totw.marginAverage), marginNaive: margin(s.totw.marginNaive) },
     captain: s.captain,
     prices: { graded: s.prices.graded, hits: s.prices.hits, rate: r3(s.prices.rate) }
   };
@@ -71,6 +73,7 @@ export function buildPublicRecord(entries, generatedAt = new Date().toISOString(
     method: {
       recorded: 'inside the 36 hours before each deadline, from the same functions the app runs; never after a deadline, never overwritten',
       totw: 'the sum of the eleven players\' official gameweek points, no captain doubling, against the average manager score FPL publishes and against a form XI fixed at the same moment',
+      margins: 'the XI\'s average margin per gameweek over each bar, with a 95% range from resampling whole gameweeks 2,000 times; a lead counts as real only when the whole range is above zero, and no range is published before eight graded gameweeks',
       captain: 'his rank by official points among every player who took the field that gameweek',
       prices: 'a hit is a price that moved the way the model said, between the record and the grade',
       notGraded: 'a null field means the official feed did not publish the input; nothing is estimated'

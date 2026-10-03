@@ -129,6 +129,31 @@ ok('the season summary counts what was graded and nothing else', () => {
   assert.equal(s.prices.hits, 1);
 });
 
+ok('the margin has no published range before eight graded gameweeks', () => {
+  const m = metrics.marginInterval([5, -3, 8]);
+  assert.equal(m.gws, 3); assert.equal(m.thin, true);
+  assert.equal(m.lo, null); assert.equal(m.hi, null); assert.equal(m.verdict, 'unclear');
+  assert.ok(Math.abs(m.mean - 10 / 3) < 1e-12);
+  assert.equal(metrics.marginInterval([]), null);
+});
+ok('a steady lead over a season is called real, a coin flip is not', () => {
+  const lead = metrics.marginInterval([6, 4, 9, 3, 7, 5, 8, 2, 6, 4, 7, 5]);
+  assert.equal(lead.thin, false); assert.equal(lead.verdict, 'better'); assert.ok(lead.lo > 0);
+  const flip = metrics.marginInterval([12, -10, 9, -11, 8, -9, 10, -12, 11, -8]);
+  assert.equal(flip.verdict, 'unclear'); assert.ok(flip.lo < 0 && flip.hi > 0);
+  const behind = metrics.marginInterval([-6, -4, -9, -3, -7, -5, -8, -2]);
+  assert.equal(behind.verdict, 'worse');
+});
+ok('the season summary carries the margins from graded gameweeks only', () => {
+  const s = metrics.seasonSummary([{ ...entry, result: res }, { ...entry, gw: 5, result: null }]);
+  assert.equal(s.totw.marginNaive.gws, 1);
+  assert.equal(s.totw.marginNaive.mean, res.totw.total - res.totw.naive);
+  assert.equal(s.totw.marginAverage.mean, res.totw.total - res.totw.average);
+  const pub = publish.buildPublicRecord([{ ...entry, result: res }]);
+  assert.equal(pub.season.totw.marginNaive.thin, true);
+  assert.ok(pub.method.margins);
+});
+
 /* ── 3. The published shape ──────────────────────────── */
 ok('the public record carries picks, points and the season, and no universe', () => {
   const pub = publish.buildPublicRecord([{ ...entry, universe: { columns: [], rows: [[1]] }, result: res }], '2026-09-14T10:00:00Z');

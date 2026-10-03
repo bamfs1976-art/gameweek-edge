@@ -502,7 +502,88 @@ and is verified against exhaustive enumeration.
 **`wiscostret/fplscrapR`** — R convenience wrappers over the same public JSON
 API we already call directly.
 
+## Confidence intervals: is a gain real, or luck?
+
+Every comparison above is one season of one model against another, and a
+smaller average error on one season can still be noise. Since October 2026
+each claim carries a 95% interval from a **paired gameweek-block
+bootstrap** (`scripts/confidence.mjs`, adopted from Prem Predict,
+github.com/GiwinEdwin09/FPL-Predictor, MIT):
+
+- **Paired.** Both forecasts are scored on the same player-gameweeks, so the
+  luck of the week cancels and only the difference is left.
+- **Whole gameweeks.** One gameweek's surprises move hundreds of rows
+  together. Resampling rows one at a time would count those as separate
+  evidence and give an interval several times too narrow (the unit test
+  `dev/test-confidence.mjs` shows this). The unit is the gameweek.
+- **Strict.** A change is "better" only when the whole interval is on the
+  right side of zero. Anything else is reported as "unclear". 2,000
+  resamples, seeded, so a rerun prints the same interval.
+
+Results on the full seasons, current harness (deadline flags on). Negative
+is better for error, positive for rank correlation:
+
+| Claim | 2023-24 | 2024-25 | 2025-26 |
+|---|---|---|---|
+| Model vs 3-GW form, MAE when he played | −0.263 [−0.295, −0.233] | −0.289 [−0.324, −0.256] | −0.343 [−0.374, −0.314] |
+| Model vs 3-GW form, MAE all | −0.150 [−0.196, −0.107] | −0.150 [−0.192, −0.109] | −0.219 [−0.258, −0.183] |
+| Learned vs old minutes (P9), MAE all | −0.044 [−0.047, −0.040] | −0.042 [−0.046, −0.038] | −0.032 [−0.035, −0.029] |
+| Learned vs old minutes (P9), rank corr per GW | +0.004 [+0.002, +0.007] | +0.006 [+0.003, +0.008] | +0.009 [+0.006, +0.012] |
+
+Every one clears the noise. 2023-24 is a training season for the minutes
+model, so the clean claim rests on the two seasons after it. The MAE levels
+here (2025-26: 1.811 → 1.779) are lower than the P9 table above (2.135 →
+2.076) because the harness has since been given the deadline flags, which
+take most injured players out of both forecasts. The gain is smaller in
+absolute terms for the same reason, and still well outside the noise.
+
+The minutes backtest (`dev/backtest-minutes.mjs`, 2025-26, deadline flags)
+clears the noise on every Brier and log-loss row except one: **P(60+) on
+season totals only**, Brier 0.0896 → 0.0894, interval −0.0011 to +0.0006.
+That is the honest finding the interval exists for. The log loss on the same
+row improves clearly (−0.121 [−0.157, −0.089]), so the learned model is no
+longer overconfident there, but its squared error is no better than the old
+blend's. With recent fixtures known (squad and transfer candidates, the case
+that matters most) all three targets clear on both measures.
+
+The guards in both backtests are "never worse beyond the noise", so the
+committed samples, with a fifth of the players and wider intervals, never
+fail CI on an interval that straddles zero.
+
+**The public record** (`/record/`) now publishes the Team of the Week's
+average margin per gameweek over the average manager and over the form XI,
+with the same interval. No range is published before eight graded
+gameweeks, because fewer are too few to tell skill from luck; the page
+shows the margin alone and says so. After two graded gameweeks of 2026/27
+the margins are −4.0 points against the average manager and +2.0 against
+the form XI: too early to call either way.
+
 ## Recorded validations
+
+### Plsimulator rating shrinkage 15 → 5, end to end (October 2026)
+
+Plsimulator shrank every club's fitted rating towards average with 15
+pseudo-matches. Its own walk-forward (`tools/backtest_shrink.py` in that
+repo) found 5 better: RPS −0.0023, 95% interval −0.0036 to −0.0011 over
+1,140 matches of 2023/24 to 2025/26. That improves the ratings the
+simulator publishes in `model.json` every week.
+
+Here the ratings only enter as `PLSIM.priors`, eight pseudo-matches that
+the live refit (`plsimRatings`) then updates with this season's results.
+Season-start priors fitted both ways, run through the shipped
+`plsimRatings` and `plsimMatch` over the same 1,140 matches:
+
+| Shrink 15 → 5 | 2023-24 | 2024-25 | 2025-26 | All |
+|---|---|---|---|---|
+| RPS | −0.0010 | −0.0009 | +0.0008 | −0.0004 [−0.0010, +0.0002] |
+| Clean-sheet Brier | +0.0005 | +0.0000 | −0.0001 | +0.0001 [−0.0003, +0.0005] |
+
+Neutral: the live refit washes the prior out within about ten gameweeks
+(matchdays 1-10 alone: −0.0017 [−0.0036, +0.0002]; 11-38: +0.0001).
+Clean sheets, which the player model leans on most, do not move. So
+`PLSIM.priors` stay as they are for 2026/27; refresh them from the
+simulator at the next pre-season refit as usual, when they will carry the
+new setting.
 
 ### DECAY_BASE — fitted (and a first attempt that had to be thrown away)
 
@@ -670,6 +751,10 @@ These complement — do not replace — the double/blank calls in `chipAdvice`.
   committed trimmed sample offline; pull a full season for a fuller run.
 - `node dev/simulate-gameweek.mjs [--html out.html]` — the model's
   gameweek outputs.
+- `scripts/confidence.mjs` — the paired gameweek-block bootstrap behind every
+  interval above (`pairedDelta`, `meanOfBlocks`, `verdict`). Use it for any
+  new model comparison: a change ships only when its interval is clear of
+  zero.
 
 > Harness note: the unit-test extractor matches functions by brace, and
 > does not skip comments — so **model function comments must avoid

@@ -67,7 +67,7 @@ export function examples(rows, recentMinutes, flags) {
       if (gp < 1) continue;                       /* no club history yet: the app has nothing to say either */
       const hist = p.hist.slice(-5);
       out.push({
-        gp, type: r.type,
+        gp, type: r.type, gw: r.gw,
         el: { starts: p.st, minutes: p.min, element_type: r.type, now_cost: r.val,
           _recent: hist.length ? recentMinutes(hist, 5) : null,
           ...flagOf(flags, r.gw, r.el) },
@@ -89,6 +89,13 @@ function flagOf(flags, gw, el) {
   const g = flags && flags.gws && flags.gws[gw];
   const f = g && g.flags[el];
   return f ? { status: f[0], chance_of_playing_next_round: f[1] } : { status: 'a', chance_of_playing_next_round: null };
+}
+
+/* One row's Brier and log loss, on the same clipping as score(), so a
+   per-gameweek resample of these reproduces score()'s means exactly. */
+export function rowLoss(p, y) {
+  const q = Math.min(1 - 1e-6, Math.max(1e-6, p));
+  return { brier: (q - y) ** 2, ll: -(y * Math.log(q) + (1 - y) * Math.log(1 - q)) };
 }
 
 /* Log loss, Brier score and AUC for probabilities `ps` against 0/1 `ys`. */
