@@ -18,7 +18,8 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { extractBlock, extractFn } from './extract.mjs';
-import { parseCsvLine, loadRows, examples, score, MINUTES_COLUMNS } from './minutes-data.mjs';
+import { parseCsvLine, loadRows, examples, score, rowLoss, MINUTES_COLUMNS } from './minutes-data.mjs';
+import { pairedDelta, verdict, describe } from '../scripts/confidence.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SEASON = '2025-26';
@@ -106,6 +107,19 @@ for (const [label, rows, strip] of [
     console.log(`    ${tgt.padEnd(5)} Brier ${f4(o.brier)} -> ${f4(n.brier)}   log loss ${f4(o.ll)} -> ${f4(n.ll)}   AUC ${o.auc.toFixed(3)} -> ${n.auc.toFixed(3)}   mean ${meanP.toFixed(3)} vs actual ${meanY.toFixed(3)}`);
     ok(n.brier < o.brier, `${label}: ${tgt} Brier beats the old blend`);
     ok(n.ll < o.ll, `${label}: ${tgt} log loss beats the old blend`);
+    /* Is the gain real? Resample whole gameweeks (scripts/confidence.mjs).
+       Guarded as "never worse": an interval that straddles zero is printed
+       as unclear rather than failing CI, because the committed sample has a
+       fifth of the players and wider intervals. On the full 2025-26 season
+       every row clears the noise except P(60+) on season totals with the
+       deadline flags, whose Brier gain is too small to call
+       (docs/MODELLING.md, "Confidence intervals"). */
+    const paired = rows.map((e, i) => ({ gw: e.gw, o: rowLoss(O[i][tgt], ys[i]), n: rowLoss(L[i][key], ys[i]) }));
+    for (const m of ['brier', 'll']) {
+      const d = pairedDelta(paired, { block: (r) => r.gw, a: (r) => r.o[m], b: (r) => r.n[m] });
+      console.log(`          ${m === 'brier' ? 'Brier   ' : 'log loss'} change ${describe(d, { digits: 4 })}`);
+      ok(verdict(d) !== 'worse', `${label}: ${tgt} ${m === 'brier' ? 'Brier' : 'log loss'} is not worse than the old blend beyond the noise (${describe(d, { digits: 4 })})`);
+    }
     /* Calibration is guarded with the flags taken off, the question the
        weights were fitted to answer. With the deadline flags applied the
        app's appearance and 60-minute numbers run a few points low: the

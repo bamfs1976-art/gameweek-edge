@@ -191,14 +191,27 @@ td.num,th.num{text-align:right;font-family:var(--font-mono);font-variant-numeric
 
   function card(label,value,detail){return '<div class="card"><div class="lab">'+esc(label)+'</div><div class="big">'+value+'</div><div class="sub">'+detail+'</div></div>';}
 
+  /* Is the lead real? The margin per gameweek with its 95% range, built in
+     the ledger (scripts/record/metrics.mjs); the page only words it. */
+  function sgn(v){return Number.isFinite(v)?(v>0?'+':v<0?'\u2212':'')+Math.abs(Math.round(v*10)/10).toFixed(1):'\u2013';}
+  function marginLine(m){
+    if(!m)return '';
+    var head=' Average margin '+sgn(m.mean)+' points a gameweek';
+    if(m.thin||m.lo==null)return head+'. A 95% range appears after 8 graded gameweeks, because fewer are too few to tell skill from luck.';
+    var range=' (95% range '+sgn(m.lo)+' to '+sgn(m.hi)+').';
+    if(m.verdict==='better')return head+range+' The whole range is above zero, so the lead is unlikely to be luck.';
+    if(m.verdict==='worse')return head+range+' The whole range is below zero, so the XI is behind.';
+    return head+range+' The range includes zero, so it is too early to call.';
+  }
+
   function seasonCards(s){
     if(!s||!s.graded)return '<p class="note">No gameweek has been graded yet. The first scorecard appears once a recorded gameweek has been scored by FPL.</p>';
     var t=s.totw,c=s.captain,p=s.prices;
     return '<div class="grid">'+
       card('Team of the Week vs the average manager',t.averageGraded?int(t.beatAverage)+' / '+int(t.averageGraded):NG,
-        t.averageGraded?'gameweeks in which the model XI outscored the average manager. XI averaged '+n1(t.meanPoints)+' points against an average score of '+n1(t.meanAverage)+'.':'FPL has not published an average score for a graded gameweek yet.')+
+        t.averageGraded?'gameweeks in which the model XI outscored the average manager. XI averaged '+n1(t.meanPoints)+' points against an average score of '+n1(t.meanAverage)+'.'+marginLine(t.marginAverage):'FPL has not published an average score for a graded gameweek yet.')+
       card('Team of the Week vs a form XI',t.naiveGraded?int(t.beatNaive)+' / '+int(t.naiveGraded):NG,
-        t.naiveGraded?'gameweeks in which the model XI beat an eleven picked on form alone. This is the bar that has to fall.':'No form XI could be fixed yet; there is no form before the first gameweek.')+
+        t.naiveGraded?'gameweeks in which the model XI beat an eleven picked on form alone. This is the bar that has to fall.'+marginLine(t.marginNaive):'No form XI could be fixed yet; there is no form before the first gameweek.')+
       card('Captain rank',c.graded?int(c.medianRank):NG,
         c.graded?'median rank of the model captain among every player who played. Top scorer '+int(c.top)+' time'+(c.top===1?'':'s')+', top ten '+int(c.top10)+' of '+int(c.graded)+'.':'No captain graded yet.')+
       card('Price calls',p.graded?pct(p.rate):NG,

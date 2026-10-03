@@ -36,6 +36,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { extractBlock, extractFn, minutesSupport } from './extract.mjs';
+import { pairedDelta, meanOfBlocks, verdict, describe } from '../scripts/confidence.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const season = process.argv[2] || '2023-24';
@@ -63,11 +64,15 @@ const congestSrc = ['CONGEST_FULL', 'CONGEST_FADE', 'CONGEST_MAX', 'CONGEST_NAIL
    under whatever the live game happens to publish today. */
 const scoringSrc = (() => { const i = html.indexOf('const SCORING_FALLBACK='); return html.slice(i, html.indexOf('\n', i)); })()
   + '\nlet SCORING = SCORING_FALLBACK;';
-const model = new Function(
-  [scoringSrc, congestSrc, minutesSupport(html), grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
-   grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'),
-   grabFn(html, 'negRate90'), grabFn(html, 'nativeXP')].join('\n') + '\nreturn {nativeXP};'
-)();
+const modelSrc = [scoringSrc, congestSrc, minutesSupport(html), grabFn(html, 'minutesModel'), grabFn(html, 'concedePts'), grabFn(html, 'savePts'),
+  grabFn(html, 'dcHitProb'), grabFn(html, 'effGoalRate'),
+  grabFn(html, 'negRate90'), grabFn(html, 'nativeXP')].join('\n');
+const model = new Function(modelSrc + '\nreturn {nativeXP};')();
+/* The same model on the minutes blend the learned model replaced (P9):
+   with no learned probabilities minutesModel falls back to minutesLegacy,
+   which is that blend kept verbatim. Everything else is identical, so the
+   difference between the two is the minutes model alone. */
+const modelOldMinutes = new Function(modelSrc + '\nminutesProbs = function () { return null; };\nreturn {nativeXP};')();
 
 /* ── load the fixture ───────────────────────────────────── */
 function parseCsvLine(line) {
@@ -156,6 +161,8 @@ const BANDS = [
 const band = {};
 for (const b of BANDS) band[b.key] = { n: 0, model: 0, form: 0, ppg: 0 };
 let bandOverlaps = 0;   /* rows matching zero or more than one band */
+/* One record per scored player-gameweek, for the confidence intervals. */
+const scored = [];
 const rowsByGw = new Map();
 for (const r of rows) { (rowsByGw.get(r.gw) || rowsByGw.set(r.gw, []).get(r.gw)).push(r); }
 
@@ -178,6 +185,8 @@ for (let gw = 1; gw <= maxGw; gw++) {
     if (xp == null) continue;
     const form = a.last.length ? a.last.reduce((s, x) => s + x, 0) / a.last.length : 0;   // mean of last <=3 gw points
     const ppg = a.g ? (a._pts || 0) / a.g : 0;                                             // season points-per-game
+    const xpOld = modelOldMinutes.nativeXP(el, { ...NEUTRAL_NF, gp: a.g });
+    scored.push({ gw, played: r.minutes > 0, y: r.total_points, xp, xpOld, form });
     for (const bkt of (r.minutes > 0 ? [all, appear] : [all])) {
       bkt.n++; bkt.model += Math.abs(xp - r.total_points);
       bkt.form += Math.abs(form - r.total_points); bkt.ppg += Math.abs(ppg - r.total_points);
@@ -236,6 +245,36 @@ console.log('  they forecast a real gameweek with real fixtures and minutes — 
 console.log('  minutes-prediction result, not a scoring one — while this run neutralises fixture conditioning');
 console.log('  to grade the per-90 scoring core alone. Treat their numbers as the shape to expect, not a scoreboard.');
 
+/* ── is it real? gameweek-block bootstrap ───────────────── */
+/* Each comparison is paired on the same player-gameweeks and resampled by
+   whole gameweek (scripts/confidence.mjs). Negative is better for errors,
+   positive for rank correlation. "better" means the whole 95% interval is
+   on the right side of zero. */
+const ae = (p) => (r) => Math.abs(r[p] - r.y);
+const byGw = { block: (r) => r.gw };
+const vsForm = pairedDelta(scored.filter((r) => r.played), { ...byGw, a: ae('form'), b: ae('xp') });
+const vsFormAll = pairedDelta(scored, { ...byGw, a: ae('form'), b: ae('xp') });
+const vsOld = pairedDelta(scored, { ...byGw, a: ae('xpOld'), b: ae('xp') });
+function spearman(x, y) {
+  const rk = (v) => { const o = v.map((x2, i) => [x2, i]).sort((p, q) => p[0] - q[0]); const r = new Array(v.length);
+    for (let i = 0; i < o.length;) { let j = i; while (j < o.length && o[j][0] === o[i][0]) j++; for (let k = i; k < j; k++) r[o[k][1]] = (i + j - 1) / 2; i = j; } return r; };
+  const a = rk(x), b = rk(y), n = a.length, m = (n - 1) / 2;
+  let c = 0, va = 0, vb = 0;
+  for (let i = 0; i < n; i++) { c += (a[i] - m) * (b[i] - m); va += (a[i] - m) ** 2; vb += (b[i] - m) ** 2; }
+  return va && vb ? c / Math.sqrt(va * vb) : NaN;
+}
+const gwGroups = new Map();
+for (const r of scored) (gwGroups.get(r.gw) || gwGroups.set(r.gw, []).get(r.gw)).push(r);
+const rankGain = meanOfBlocks([...gwGroups.values()].filter((g) => g.length >= 20).map((g) => {
+  const ys = g.map((r) => r.y);
+  return spearman(g.map((r) => r.xp), ys) - spearman(g.map((r) => r.xpOld), ys);
+}));
+console.log('\n  Is it real? 95% intervals, resampling whole gameweeks (scripts/confidence.mjs):');
+console.log(`  model vs form, MAE when he played   ${describe(vsForm)}  ${r3(vsForm.meanA)} → ${r3(vsForm.meanB)}`);
+console.log(`  model vs form, MAE all              ${describe(vsFormAll)}  ${r3(vsFormAll.meanA)} → ${r3(vsFormAll.meanB)}`);
+console.log(`  learned vs old minutes, MAE all     ${describe(vsOld)}  ${r3(vsOld.meanA)} → ${r3(vsOld.meanB)}`);
+console.log(`  learned vs old minutes, rank corr   ${describe(rankGain, { lowerIsBetter: false })}`);
+
 /* Guard rails: a meaningful sample, a sane MAE, and — the headline claim — the
    scoring core beating recent form once availability is controlled for. Kept
    with a small tolerance so ordinary season-to-season variation never
@@ -246,6 +285,11 @@ const maeModel = appear.model / appear.n;
 ok(appear.n >= 200, 'scored a meaningful appearance sample (>=200 player-gameweeks)');
 ok(Number.isFinite(maeModel) && maeModel > 0 && maeModel < 4, 'model MAE is finite and sane (<4 pts on real actuals)');
 ok(appear.model <= appear.form + 0.05, 'scoring core beats the 3-GW form baseline (appearance-conditional)');
+/* The learned minutes model (P9) must never be worse than the blend it
+   replaced beyond the noise. 2023-24, the committed sample, is one of its
+   training seasons, so a clean "better" is only claimed on the two seasons
+   after them (docs/MODELLING.md). */
+ok(verdict(vsOld) !== 'worse', `learned minutes model is not worse than the old blend beyond the noise (${describe(vsOld)})`);
 
 /* The bands partition the population `all` scores, so they must account for
    every scored player-gameweek exactly once. If that ever stops holding, the

@@ -25,6 +25,8 @@
    is null, which the page renders as "not graded" — never an estimate.
    ═══════════════════════════════════════════════════════════ */
 
+import { meanOfBlocks, verdict } from '../confidence.mjs';
+
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
 
 /** Points per element from the live document: { id: total_points } and who played. */
@@ -120,6 +122,26 @@ export function gradeEntry(entry, live, bootNow, gradedAt = new Date().toISOStri
   };
 }
 
+/* ── Is the lead real? ─────────────────────────────────── */
+/* The XI's margin over a bar, one value per graded gameweek, with a 95%
+   interval from resampling whole gameweeks (scripts/confidence.mjs). A
+   count like "beat the form XI in 5 of 8" says nothing about luck; this
+   does. "better" only when the whole interval is above zero. Under eight
+   gameweeks the interval is too coarse to publish, so `thin` is set and
+   the page shows the margin with no range. */
+export function marginInterval(margins) {
+  const ci = meanOfBlocks(margins);
+  if (!ci.blocks) return null;
+  return {
+    mean: ci.estimate,
+    lo: ci.thin ? null : ci.lo,
+    hi: ci.thin ? null : ci.hi,
+    gws: ci.blocks,
+    thin: ci.thin,
+    verdict: ci.thin ? 'unclear' : verdict(ci, { lowerIsBetter: false })
+  };
+}
+
 /* ── The season ───────────────────────────────────────── */
 export function seasonSummary(entries) {
   const graded = (entries || []).filter((e) => e && e.result);
@@ -142,7 +164,9 @@ export function seasonSummary(entries) {
       averageGraded: withAvg.length,
       meanNaive: withNaive.length ? mean(withNaive.map((e) => e.result.totw.naive)) : null,
       beatNaive: withNaive.filter((e) => e.result.totw.beatNaive).length,
-      naiveGraded: withNaive.length
+      naiveGraded: withNaive.length,
+      marginAverage: marginInterval(withAvg.map((e) => e.result.totw.total - e.result.totw.average)),
+      marginNaive: marginInterval(withNaive.map((e) => e.result.totw.total - e.result.totw.naive))
     },
     captain: {
       graded: capRanks.length,

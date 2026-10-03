@@ -7623,6 +7623,7 @@ async function hydrateAccountability(host){
           ?'<b>'+sn.graded+' of '+sn.recorded+' recorded gameweeks graded.</b> '+
             (t.averageGraded?'The model Team of the Week outscored the average manager in '+t.beatAverage+' of '+t.averageGraded+'. ':'The average manager score has not been published for a graded gameweek yet. ')+
             (t.naiveGraded?'It beat an XI picked on form alone in '+t.beatNaive+' of '+t.naiveGraded+'. ':'')+
+            (t.marginNaive&&!t.marginNaive.thin&&t.marginNaive.lo!=null?'Its average margin over the form XI is '+t.marginNaive.mean+' points a gameweek, 95% range '+t.marginNaive.lo+' to '+t.marginNaive.hi+(t.marginNaive.verdict==='better'?', clear of luck. ':t.marginNaive.verdict==='worse'?', so it is behind. ':', too early to call. '):'')+
             (c.graded?'The captain\u2019s median rank among every player who played was '+c.medianRank+', and he was the top scorer '+c.top+' time'+(c.top===1?'':'s')+'. ':'')+
             (pr.graded?Math.round((pr.rate||0)*100)+'% of the price calls happened.':'')
           :'<b>'+sn.recorded+' gameweek'+(sn.recorded===1?'':'s')+' recorded, none graded yet.</b> The first grade lands once FPL has scored a recorded gameweek.')
