@@ -1,12 +1,12 @@
 {
- "built": "2026-10-05T14:42:50.639Z",
+ "built": "2026-10-05T22:01:54.927Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-05T14:42:50.639Z",
+  "generatedAt": "2026-10-05T22:01:54.927Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -824,12 +824,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Calf Injury, expected back 6 Dec"
-    },
-    {
-     "name": "B. Bilongo",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
     },
     {
      "name": "W. Jenkins",
@@ -4978,12 +4972,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Back Injury, expected back 11 Oct"
-    },
-    {
-     "name": "A. Kargbo",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -6298,166 +6286,6 @@
    "cardRisk": []
   },
   {
-   "id": "290",
-   "name": "Doncaster Rovers",
-   "short": "DON",
-   "slug": "doncaster-rovers",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 21,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "L",
-    "L"
-   ],
-   "rating": 48.5,
-   "summary": "Next 3 rated 2.8 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.33
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.55
-    },
-    {
-     "label": "Home matches",
-     "value": 0.75
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 9,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Burton Albion",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 10,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Leicester City",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Stockport County",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Sheffield Wednesday",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "J. Senior",
-     "position": "DEF",
-     "rating": 69.7,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "R. Gotts",
-     "position": "MID",
-     "rating": 68.9,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), 0 goals and 1 assist."
-    },
-    {
-     "name": "A. May",
-     "position": "FWD",
-     "rating": 68.2,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), playing at home."
-    },
-    {
-     "name": "O. Bailey",
-     "position": "MID",
-     "rating": 68.2,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "I. Hutchinson",
-     "position": "MID",
-     "rating": 67.8,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "T. Simkin",
-     "position": "GK",
-     "rating": 67.5,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "H. Clifton",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hernia injury"
-    },
-    {
-     "name": "J. Sterry",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "M. Pearson",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "J. Collins",
-     "position": "FWD",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 4 Nov"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "51",
    "name": "Crewe Alexandra",
    "short": "CRE",
@@ -7105,6 +6933,171 @@
      "position": "MID",
      "status": "injured",
      "news": "ACL Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "290",
+   "name": "Doncaster Rovers",
+   "short": "DON",
+   "slug": "doncaster-rovers",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 21,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "L",
+    "L"
+   ],
+   "rating": 46.6,
+   "summary": "Next 3 rated 2.9 of 5 on average. 2 double rounds in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.33
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.52
+    },
+    {
+     "label": "Home matches",
+     "value": 0.6
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 9,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Burton Albion",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 10,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Leicester City",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Stockport County",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Sheffield Wednesday",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Luton Town",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "J. Senior",
+     "position": "DEF",
+     "rating": 73.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. Gotts",
+     "position": "MID",
+     "rating": 73.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 0 goals and 1 assist."
+    },
+    {
+     "name": "A. May",
+     "position": "FWD",
+     "rating": 72.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), playing at home."
+    },
+    {
+     "name": "O. Bailey",
+     "position": "MID",
+     "rating": 72.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "I. Hutchinson",
+     "position": "MID",
+     "rating": 72.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "T. Simkin",
+     "position": "GK",
+     "rating": 71.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "H. Clifton",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hernia injury"
+    },
+    {
+     "name": "J. Sterry",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "M. Pearson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "J. Collins",
+     "position": "FWD",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -8249,18 +8242,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Thigh Injury"
-    },
-    {
-     "name": "J. Donacien",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "E. List",
-     "position": "MID",
-     "status": "injured",
-     "news": "Muscle Injury"
     },
     {
      "name": "J. Perkins",
@@ -9513,12 +9494,6 @@
    ],
    "unavailable": [
     {
-     "name": "E. Agyei",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Muscle Injury, expected back 11 Oct"
-    },
-    {
      "name": "A. Ramsey",
      "position": "MID",
      "status": "injured",
@@ -9565,6 +9540,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
+    },
+    {
+     "name": "J. Cullen",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 11 Oct"
     }
    ],
    "cardRisk": []
@@ -10276,6 +10257,177 @@
    "cardRisk": []
   },
   {
+   "id": "102",
+   "name": "Luton Town",
+   "short": "LUT",
+   "slug": "luton-town",
+   "division": "league-one",
+   "divisionName": "League One",
+   "position": 16,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "L",
+    "D"
+   ],
+   "rating": 37.3,
+   "summary": "Next 3 rated 2.9 of 5 on average. 2 double rounds in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.52
+    },
+    {
+     "label": "Home matches",
+     "value": 0.6
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 9,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Wycombe Wanderers",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 10,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "MK Dons",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Barnsley",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Leicester City",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Doncaster Rovers",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "K. Palmer",
+     "position": "MID",
+     "rating": 66.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 2 goals and 2 assists."
+    },
+    {
+     "name": "J. Richards",
+     "position": "MID",
+     "rating": 63,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 1 goal and 3 assists."
+    },
+    {
+     "name": "G. Johnston",
+     "position": "DEF",
+     "rating": 60.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "N. Wells",
+     "position": "FWD",
+     "rating": 59.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), 4 goals and 1 assist."
+    },
+    {
+     "name": "L. Walsh",
+     "position": "MID",
+     "rating": 59.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Keeley",
+     "position": "GK",
+     "rating": 56.4,
+     "status": "available",
+     "minutesShare": 86,
+     "summary": "Started 6 of 7 (86%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "B. Benagr",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "S. Baptiste",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury"
+    },
+    {
+     "name": "S. Sandal",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "J. Luker",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "S. Morris",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "24",
    "name": "Derby County",
    "short": "DER",
@@ -10630,172 +10782,6 @@
     },
     {
      "name": "D. Taylor",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "102",
-   "name": "Luton Town",
-   "short": "LUT",
-   "slug": "luton-town",
-   "division": "league-one",
-   "divisionName": "League One",
-   "position": 16,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "L",
-    "D"
-   ],
-   "rating": 36,
-   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 9,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Wycombe Wanderers",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 10,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "MK Dons",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Barnsley",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Leicester City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "K. Palmer",
-     "position": "MID",
-     "rating": 62.4,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), 2 goals and 2 assists."
-    },
-    {
-     "name": "J. Richards",
-     "position": "MID",
-     "rating": 58.7,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), 1 goal and 3 assists."
-    },
-    {
-     "name": "G. Johnston",
-     "position": "DEF",
-     "rating": 56.4,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "N. Wells",
-     "position": "FWD",
-     "rating": 55.5,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), 4 goals and 1 assist."
-    },
-    {
-     "name": "L. Walsh",
-     "position": "MID",
-     "rating": 55,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Keeley",
-     "position": "GK",
-     "rating": 52.9,
-     "status": "available",
-     "minutesShare": 75,
-     "summary": "In and out of the side (6 starts in 8), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "B. Benagr",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "S. Baptiste",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury"
-    },
-    {
-     "name": "S. Sandal",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knee Injury"
-    },
-    {
-     "name": "J. Luker",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "S. Morris",
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury"
