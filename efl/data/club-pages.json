@@ -1,12 +1,12 @@
 {
- "built": "2026-10-04T23:57:42.645Z",
+ "built": "2026-10-05T05:43:16.119Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-04T23:57:42.645Z",
+  "generatedAt": "2026-10-05T05:43:16.119Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -4631,12 +4631,6 @@
      "news": "Unknown injury"
     },
     {
-     "name": "K. Etete",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 5 Oct"
-    },
-    {
      "name": "J. Crole",
      "position": "FWD",
      "status": "injured",
@@ -8503,12 +8497,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "L. McGee",
-     "position": "GK",
-     "status": "injured",
-     "news": "Groin Injury, expected back 5 Oct"
     },
     {
      "name": "C. Jennings",
