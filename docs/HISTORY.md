@@ -118,11 +118,12 @@ never blends:
   shape and excluded from the pooled headline.
 
 The model beat the three-gameweek form baseline in **all ten** seasons. Pooled
-appearance-conditional MAE across the four shipping seasons is **2.095** over
-34,505 player-gameweeks.
+appearance-conditional MAE across the four shipping seasons is **2.033** over
+34,505 player-gameweeks (2.095 before the learned minutes model shipped in
+October 2026).
 
-The 2023-24 figure reproduces `dev/backtest-vaastav.mjs` exactly (2.157,
-n=8,501) — a cross-check that the multi-season runner grades the same model the
+The 2023-24 figure reproduces `dev/backtest-vaastav.mjs` without deadline
+flags exactly (2.086, n=8,501; 2.157 before the learned minutes model) — a cross-check that the multi-season runner grades the same model the
 same way. `dev/test-history.mjs` asserts it.
 
 ### 3. Career shape — floor versus ceiling
