@@ -324,8 +324,13 @@ console.log('• the multi-season backtest separates what it can grade from what
     /* Cross-check against the single-season backtest that already ships: the
        two runners must agree on the season they share, or one of them is
        wrong about the model. */
+    /* The figure moves whenever the model does: update it to what
+       `node dev/backtest-vaastav.mjs 2023-24` prints for the
+       appearance-conditional row with no deadline flags (move
+       dev/fixtures/flags/2023-24.json aside), which is how this runner
+       grades. 2.157 before the learned minutes model (P9), 2.086 after. */
     const s2324 = B.seasons.find((s) => s.season === '2023-24');
-    ok(s2324 && Math.abs(s2324.appear.model - 2.157) < 0.01,
+    ok(s2324 && Math.abs(s2324.appear.model - 2.086) < 0.01,
       'the 2023-24 figure reproduces dev/backtest-vaastav.mjs');
   }
 }
