@@ -1,12 +1,12 @@
 {
- "built": "2026-10-06T15:58:05.464Z",
+ "built": "2026-10-06T22:39:57.351Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-06T15:58:05.464Z",
+  "generatedAt": "2026-10-06T22:39:57.351Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1273,7 +1273,7 @@
      "name": "J. Roberts",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Groin Injury"
     },
     {
      "name": "T. Taylor",
@@ -7204,14 +7204,6 @@
      "summary": "Started 7 of 9 (78%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "C. Paterson",
-     "position": "FWD",
-     "rating": 62.1,
-     "status": "available",
-     "minutesShare": 78,
-     "summary": "Started 7 of 9 (78%), playing at home."
-    },
-    {
      "name": "C. Goode",
      "position": "DEF",
      "rating": 61.4,
@@ -7226,9 +7218,41 @@
      "status": "available",
      "minutesShare": 78,
      "summary": "Started 7 of 9 (78%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "S. Nombe",
+     "position": "FWD",
+     "rating": 60.5,
+     "status": "available",
+     "minutesShare": 78,
+     "summary": "Started 7 of 9 (78%), playing at home."
     }
    ],
    "unavailable": [
+    {
+     "name": "C. Paterson",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
+     "name": "A. Gilbey",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "J. Matete",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "R. Hepburn-Murphy",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
     {
      "name": "K. Wilson",
      "position": "DEF",
@@ -9340,16 +9364,16 @@
    ],
    "unavailable": [
     {
-     "name": "B. Cargill",
-     "position": "DEF",
+     "name": "L. Akins",
+     "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury"
     },
     {
-     "name": "G. Abbott",
+     "name": "B. Cargill",
      "position": "DEF",
      "status": "injured",
-     "news": "Thigh Injury"
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -11521,46 +11545,10 @@
    ],
    "unavailable": [
     {
-     "name": "B. Khela",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "T. O'Connor",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
      "name": "V. Masara",
      "position": "FWD",
      "status": "injured",
      "news": "Knock"
-    },
-    {
-     "name": "S. Hughes",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Achilles Strain"
-    },
-    {
-     "name": "R. Adebisi",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "M. Garbett",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "D. Frith",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury"
     }
    ],
    "cardRisk": []
