@@ -1,12 +1,12 @@
 {
- "built": "2026-10-06T06:23:08.606Z",
+ "built": "2026-10-06T15:58:05.464Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-06T06:23:08.606Z",
+  "generatedAt": "2026-10-06T15:58:05.464Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1565,12 +1565,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "M. Roerslev",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Achilles Strain"
-    },
     {
      "name": "C. Jander",
      "position": "MID",
