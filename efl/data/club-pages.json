@@ -1,12 +1,12 @@
 {
- "built": "2026-10-07T06:02:14.029Z",
+ "built": "2026-10-07T13:26:43.166Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-07T06:02:14.029Z",
+  "generatedAt": "2026-10-07T13:26:43.166Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -3276,6 +3276,12 @@
     {
      "name": "S. Goma",
      "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "H. Hedges",
+     "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
     },
@@ -8089,12 +8095,6 @@
      "news": "Groin Injury"
     },
     {
-     "name": "M. Bola",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 11 Oct"
-    },
-    {
      "name": "J. Ngakia",
      "position": "DEF",
      "status": "injured",
@@ -9177,18 +9177,6 @@
      "position": "DEF",
      "status": "doubtful",
      "news": "Ankle Injury, expected back 11 Oct"
-    },
-    {
-     "name": "M. Mbick",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "B. Koumetio",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury"
     },
     {
      "name": "C. Sichenje",
@@ -10569,7 +10557,7 @@
      "name": "C. Taylor",
      "position": "DEF",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 7 Nov"
     },
     {
      "name": "J. Widell Zetterström",
