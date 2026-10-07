@@ -1,12 +1,12 @@
 {
- "built": "2026-10-07T13:26:43.166Z",
+ "built": "2026-10-07T20:38:17.354Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-07T13:26:43.166Z",
+  "generatedAt": "2026-10-07T20:38:17.354Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -917,14 +917,6 @@
    ],
    "players": [
     {
-     "name": "E. Galbraith",
-     "position": "MID",
-     "rating": 83,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 3 goals and 1 assist."
-    },
-    {
      "name": "E. Bocat",
      "position": "DEF",
      "rating": 80.6,
@@ -963,9 +955,23 @@
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "L. Graham",
+     "position": "DEF",
+     "rating": 66.6,
+     "status": "available",
+     "minutesShare": 75,
+     "summary": "In and out of the side (6 starts in 8), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "E. Galbraith",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 11 Oct"
+    },
     {
      "name": "J. McGlynn",
      "position": "MID",
@@ -2349,7 +2355,7 @@
      "name": "N. Tavares",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Hand Injury, expected back 10 Oct"
     },
     {
      "name": "K. Smith",
@@ -4148,12 +4154,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury, expected back 23 Oct"
-    },
-    {
-     "name": "H. Duncan",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 14 Oct"
     },
     {
      "name": "K. Lolos",
@@ -6268,6 +6268,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 15 Nov"
+    },
+    {
+     "name": "A. Kilgour",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -6581,7 +6587,7 @@
      "name": "A. Matthews",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Leg Injury"
     }
    ],
    "cardRisk": []
@@ -10031,26 +10037,7 @@
      "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
     }
    ],
-   "unavailable": [
-    {
-     "name": "S. Duke-McKenna",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury"
-    },
-    {
-     "name": "K. Jennings",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "V. Mannone",
-     "position": "GK",
-     "status": "injured",
-     "news": "Hand Injury"
-    }
-   ],
+   "unavailable": [],
    "cardRisk": []
   },
   {
