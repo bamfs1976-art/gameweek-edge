@@ -1,12 +1,12 @@
 {
- "built": "2026-10-06T22:39:57.351Z",
+ "built": "2026-10-07T06:02:14.029Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-06T22:39:57.351Z",
+  "generatedAt": "2026-10-07T06:02:14.029Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -464,6 +464,14 @@
      "summary": "Started 8 of 8 (100%), 4 goals and 4 assists."
     },
     {
+     "name": "M. Solomon",
+     "position": "MID",
+     "rating": 78.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), 2 goals and 2 assists."
+    },
+    {
      "name": "K. Mavropanos",
      "position": "DEF",
      "rating": 77.8,
@@ -494,24 +502,9 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "D. Mukasa",
-     "position": "MID",
-     "rating": 72.3,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), even fixture (rated 3 of 5)."
     }
    ],
-   "unavailable": [
-    {
-     "name": "M. Solomon",
-     "position": "MID",
-     "status": "injured",
-     "news": "Back Injury"
-    }
-   ],
+   "unavailable": [],
    "cardRisk": []
   },
   {
@@ -2977,12 +2970,6 @@
      "position": "GK",
      "status": "injured",
      "news": "Hand Injury"
-    },
-    {
-     "name": "R. Sotiriou",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Calf Injury, expected back 7 Oct"
     },
     {
      "name": "W. Dickson",
