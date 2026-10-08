@@ -1,12 +1,12 @@
 {
- "built": "2026-10-07T20:38:17.354Z",
+ "built": "2026-10-08T01:01:25.808Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-07T20:38:17.354Z",
+  "generatedAt": "2026-10-08T01:01:25.808Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
