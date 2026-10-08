@@ -1,12 +1,12 @@
 {
- "built": "2026-10-08T01:01:25.808Z",
+ "built": "2026-10-08T10:37:06.696Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-08T01:01:25.808Z",
+  "generatedAt": "2026-10-08T10:37:06.696Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1523,14 +1523,6 @@
      "summary": "Started 8 of 8 (100%), 3 goals and 5 assists."
     },
     {
-     "name": "C. Larin",
-     "position": "FWD",
-     "rating": 82.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 7 goals and 0 assists."
-    },
-    {
      "name": "L. Scienza",
      "position": "MID",
      "rating": 77.6,
@@ -1561,9 +1553,29 @@
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), 1 goal and 2 assists."
+    },
+    {
+     "name": "R. Manning",
+     "position": "DEF",
+     "rating": 71.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "C. Larin",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Back Injury, expected back 12 Oct"
+    },
+    {
+     "name": "D. Peretz",
+     "position": "GK",
+     "status": "injured",
+     "news": "Groin Injury, expected back 12 Oct"
+    },
     {
      "name": "C. Jander",
      "position": "MID",
