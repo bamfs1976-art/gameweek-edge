@@ -1,12 +1,12 @@
 {
- "built": "2026-10-09T01:14:01.015Z",
+ "built": "2026-10-09T10:36:01.797Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-09T01:14:01.015Z",
+  "generatedAt": "2026-10-09T10:36:01.797Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2832,8 +2832,8 @@
     {
      "name": "A. Jones",
      "position": "DEF",
-     "status": "doubtful",
-     "news": "Calf Injury, expected back 14 Oct"
+     "status": "injured",
+     "news": "Calf Injury, expected back 24 Oct"
     }
    ],
    "cardRisk": []
