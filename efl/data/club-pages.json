@@ -1,12 +1,12 @@
 {
- "built": "2026-10-08T18:51:45.512Z",
+ "built": "2026-10-09T01:14:01.015Z",
  "round": 9,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-08T18:51:45.512Z",
+  "generatedAt": "2026-10-09T01:14:01.015Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -982,7 +982,7 @@
      "name": "S. Ingelsson",
      "position": "MID",
      "status": "injured",
-     "news": "Muscle Injury, expected back 11 Oct"
+     "news": "Muscle Injury, expected back 4 Nov"
     },
     {
      "name": "A. Cresswell",
@@ -2832,8 +2832,8 @@
     {
      "name": "A. Jones",
      "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury, expected back 11 Oct"
+     "status": "doubtful",
+     "news": "Calf Injury, expected back 14 Oct"
     }
    ],
    "cardRisk": []
@@ -10126,28 +10126,10 @@
      "news": "Toe Injury"
     },
     {
-     "name": "P. Glatzel",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury"
-    },
-    {
      "name": "O. Palmer",
      "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury"
-    },
-    {
-     "name": "J. Snowdon",
-     "position": "MID",
-     "status": "injured",
-     "news": "Groin Injury, expected back 10 Oct"
-    },
-    {
-     "name": "M. Virtue",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
     },
     {
      "name": "H. Smith",
@@ -10160,12 +10142,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 2 Dec"
-    },
-    {
-     "name": "J. McGregor",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Ankle Injury"
     },
     {
      "name": "G. Kilkenny",
