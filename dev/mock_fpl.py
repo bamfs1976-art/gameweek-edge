@@ -679,6 +679,19 @@ def own_api(path):
     if path == "/api/team-elo":
         return {"season": "mock", "elo": {str(t["id"]): 1650 + 22 * i
                                           for i, t in enumerate(teams)}}
+    if path == "/api/match-odds":
+        # Bookmaker prices for the first half of the next round, so local runs
+        # show both priced ("odds") and model-only fixtures side by side.
+        gw = (next((e["id"] for e in events if not e.get("finished")), 1))
+        name = {t["id"]: t["name"] for t in teams}
+        rows = []
+        for i, f in enumerate([f for f in fixtures if f.get("event") == gw and not f.get("finished")][:5]):
+            ph = 0.30 + 0.08 * (i % 4)
+            rows.append({"date": (f["kickoff_time"] or "")[:10], "time": "15:00",
+                         "home": name[f["team_h"]], "away": name[f["team_a"]],
+                         "pH": round(ph, 4), "pD": 0.26, "pA": round(1 - ph - 0.26, 4),
+                         "pOver": round(0.48 + 0.04 * (i % 3), 4)})
+        return {"source": "football-data.co.uk", "fetchedAt": "mock", "matches": rows}
     if path.startswith("/api/euro-fixtures"):
         gw = (next((e["id"] for e in events if not e.get("finished")), 1))
         comps = ["UCL", "UEL", "UECL", "EFL"]

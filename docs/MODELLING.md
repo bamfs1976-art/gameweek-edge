@@ -560,6 +560,55 @@ the form XI: too early to call either way.
 
 ## Recorded validations
 
+### Market odds for priced fixtures (P12, shipped October 2026)
+
+Plsimulator measured it first: Pinnacle's closing odds beat the fitted match
+model by about 0.007 RPS. That is the largest single accuracy gap left in the
+match layer, and clean sheets, the part of a fixture the player model leans
+on hardest, sit downstream of it.
+
+**The test.** 1,140 Premier League matches, 2023-24 to 2025-26, run through
+the shipped `plsimRatings` and `plsimMatch` with shrink-5 season-start priors.
+Market prices are the bookmaker average from football-data.co.uk (archived in
+the premier-league-data mirror), taken at its pre-round collection, close to
+the FPL deadline, not at kickoff. Goal rates are the pair whose Dixon-Coles
+grid reproduces the market's home, away and over 2.5 chances (fit error RMS
+0.0024). Blends are geometric on the goal rates.
+
+| Market weight | RPS | Log loss | Clean-sheet Brier |
+|---|---|---|---|
+| 0 (model) | 0.2017 | 0.9843 | 0.1711 |
+| 0.25 | 0.1994 | 0.9770 | 0.1698 |
+| 0.5 | 0.1976 | 0.9712 | 0.1689 |
+| 0.75 | 0.1962 | 0.9670 | 0.1682 |
+| **1 (market)** | **0.1954** | **0.9643** | **0.1678** |
+
+Against the model alone, 95% intervals resampling whole matchdays: RPS
+−0.0063 [−0.0088, −0.0038], clean-sheet Brier −0.0033 [−0.0048, −0.0019].
+Every blend weight clears the noise and more market is always better, so the
+market takes the whole weight. By season the clean-sheet gain is clear in all
+three (2023-24 −0.0032, 2024-25 −0.0028, 2025-26 −0.0040); the result gain is
+clear in two, with 2024-25 −0.0035 [−0.0079, +0.0009]. Closing odds would be
+sharper again (clean-sheet Brier −0.0008 more), but the app only ever has the
+earlier price.
+
+**What ships.** `netlify/functions/match-odds.js` reads football-data.co.uk's
+`fixtures.csv` (free, refreshed before each round). `marketRates` matches
+each row to an unfinished FPL fixture between the same clubs within a day of
+the bookmakers' date and turns the prices into goal rates with `mktImplied`;
+`plsimRatings` attaches them and `plsimMatch` prefers them, marking the result
+`src: 'market'`. Fixtures the market has not priced, which is everything
+beyond the next round, keep the fit, so a planner horizon mixes the two. The
+key-attacker availability cut is not applied on top of market rates: the
+price already carries the team news. The prediction logger and the MCP tools
+load the same feed, so logged projections are the ones the app shows. The
+public record's Team of the Week script (`scripts/record`) still runs
+without odds, as it already ran without Elo and the European calendar.
+
+No live odds are reachable from the development sandbox, so the feed parser
+is tested against the published column layout; check `/api/match-odds` once
+deployed.
+
 ### Plsimulator rating shrinkage 15 → 5, end to end (October 2026)
 
 Plsimulator shrank every club's fitted rating towards average with 15

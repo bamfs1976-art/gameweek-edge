@@ -54,6 +54,10 @@ function buildModel(html) {
       .map((n) => { const i = html.indexOf('const ' + n + '='); return html.slice(i, html.indexOf('\n', i)); }),
     grabFn(html, 'eloMean'), grabFn(html, 'eloPrior'),
     grabFn(html, 'plsimPrior'), grabFn(html, 'plsimMatch'),
+    /* Market odds into goal rates (P12): plsimRatings attaches them when the
+       logger supplies the same odds the client loads, so the public record
+       grades the projections the app actually shows. */
+    grabConst(html, 'MKT_ALIAS'), grabFn(html, 'mktImplied'), grabFn(html, 'mktTeamId'), grabFn(html, 'marketRates'),
     grabFn(html, 'recencyWeight'), grabFn(html, 'availAttackMult'), grabFn(html, 'plsimRatings'),
     grabFn(html, 'plsimDiff'), grabFn(html, 'teamShort'),
     /* Fixture congestion: buildNextFix scores it onto each fixture and
@@ -99,7 +103,7 @@ function buildModel(html) {
    prior, and every club in Europe with no congestion discount. Both stay
    optional, so a failed fetch degrades to the old behaviour rather than
    blocking the run. */
-function indexBoot(boot, elo, euro) {
+function indexBoot(boot, elo, euro, odds) {
   const teams = {}, els = {};
   (boot.teams || []).forEach((t) => { teams[t.id] = t; });
   (boot.elements || []).forEach((e) => { els[e.id] = e; });
@@ -110,6 +114,7 @@ function indexBoot(boot, elo, euro) {
   const b = { raw: boot, teams, els, elements: boot.elements || [], events: boot.events || [], upcoming, cur };
   if (elo && Object.keys(elo).length) b.elo = elo;
   if (euro && Object.keys(euro).length) b.euro = euro;
+  if (odds && odds.length) b.odds = odds;
   return b;
 }
 
@@ -128,11 +133,12 @@ function seasonLabel(boot) {
 
 /* Pure core: given the app source + live data, produce the prediction
    rows for the upcoming gameweek. No network, no database — unit-tested.
-   `elo` and `euroFeed` are optional and mirror the client. */
-function computePredictions(html, boot, fixtures, elo, euroFeed) {
+   `elo`, `euroFeed` and `odds` (the /api/match-odds rows) are optional and
+   mirror the client. */
+function computePredictions(html, boot, fixtures, elo, euroFeed, odds) {
   const M = buildModel(html);
   const euro = euroFeed && euroFeed.rows && euroFeed.rows.length ? M.euroIndex(euroFeed) : null;
-  const b = indexBoot(boot, elo, euro);
+  const b = indexBoot(boot, elo, euro, odds);
   const gw = b.upcoming ? b.upcoming.id : null;
   const deadline = b.upcoming ? b.upcoming.deadline_time : null;
   const season = seasonLabel(boot);
@@ -223,12 +229,14 @@ exports.handler = async () => {
     } catch (_) { return null; }
   };
   const upcomingId = ((boot.events || []).find((e) => !e.finished) || {}).id || 1;
-  const [eloRes, euroRes] = await Promise.all([
+  const [eloRes, euroRes, oddsRes] = await Promise.all([
     sideInput(require('./team-elo.js').handler),
     sideInput(require('./euro-fixtures.js').handler,
       { queryStringParameters: { from: String(Math.max(1, upcomingId - 1)), n: '3' } }),
+    sideInput(require('./match-odds.js').handler),
   ]);
   const elo = (eloRes && eloRes.elo) || null;
+  const odds = (oddsRes && oddsRes.matches) || null;
 
   const { createClient } = require('@supabase/supabase-js');
   const sb = createClient(supaUrl, supaKey, { auth: { persistSession: false } });
@@ -239,7 +247,7 @@ exports.handler = async () => {
         deadline is still ahead (freeze once the GW locks). */
   const season = seasonLabel(boot);
   try {
-    const { gw, deadline, rows } = computePredictions(html, boot, fixtures, elo, euroRes);
+    const { gw, deadline, rows } = computePredictions(html, boot, fixtures, elo, euroRes, odds);
     if (gw && deadline && Date.now() < new Date(deadline).getTime() && rows.length) {
       for (let i = 0; i < rows.length; i += 500) {
         await upsertPredictions(sb, rows.slice(i, i + 500));

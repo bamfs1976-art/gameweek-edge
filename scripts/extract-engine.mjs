@@ -126,6 +126,9 @@ export const ENGINE_FNS = [
   /* Match model: Poisson + Dixon-Coles, and the fixture-difficulty lens
      built on top of it. Pure maths over fixtures and results. */
   'poisson', 'plsimRatings', 'plsimMatch', 'plsimPrior', 'eloPrior', 'eloMean',
+  /* Market odds into goal rates, which plsimRatings attaches when an app
+     supplies b.odds (P12). Absent odds, they never run. */
+  'mktImplied', 'mktTeamId', 'marketRates',
   'lgScoreGrid', 'lgCleanSheets', 'fdrAttack', 'fdrDefence',
 
   /* Minutes and congestion: how likely a player is to be on the pitch, and
@@ -188,7 +191,7 @@ export const ENGINE_CONSTS = [
      corner research for. */
   'CORNER_XP',
   /* Match model coefficients and the score-grid size. */
-  'PLSIM', 'PLSIM_PROMOTED', 'PLSIM_ALIAS', 'LG_GRID',
+  'PLSIM', 'PLSIM_PROMOTED', 'PLSIM_ALIAS', 'LG_GRID', 'MKT_ALIAS',
   /* Elo-derived priors for clubs with no offline fit. */
   'ELO_SCALE', 'ELO_ATT', 'ELO_DEF', 'ELO_CLAMP',
   /* Fixture congestion: how a midweek match suppresses the next start. */

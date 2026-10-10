@@ -104,13 +104,15 @@ async function projections() {
     const upcomingId = ((boot.events || []).find((e) => !e.finished) || {}).id || 1;
     /* Static require strings: esbuild traces the bundle statically, so a
        computed path would pass every local test and throw in production. */
-    const [eloRes, euroRes] = await Promise.all([
+    const [eloRes, euroRes, oddsRes] = await Promise.all([
       sideInput(require('./team-elo.js').handler),
       sideInput(require('./euro-fixtures.js').handler,
         { queryStringParameters: { from: String(Math.max(1, upcomingId - 1)), n: '3' } }),
+      sideInput(require('./match-odds.js').handler),
     ]);
     const { computePredictions } = require('./log-predictions.js');
-    const out = computePredictions(html, boot, fixtures, (eloRes && eloRes.elo) || null, euroRes);
+    const out = computePredictions(html, boot, fixtures, (eloRes && eloRes.elo) || null, euroRes,
+      (oddsRes && oddsRes.matches) || null);
     const byId = new Map();
     for (const r of out.rows) byId.set(r.element, r);
     return { gw: out.gw, deadline: out.deadline, season: out.season, byId };

@@ -83,6 +83,20 @@ const xpOf = (rs, id) => (rs.find((r) => r.element === id) || {}).xp;
 ok(xpOf(resElo.rows, 1) === xpOf(res.rows, 1), 'a club with a fitted prior is untouched by Elo');
 ok(xpOf(resElo.rows, 9) !== xpOf(res.rows, 9), 'a club with no fitted prior takes the Elo-derived prior');
 
+/* Market odds (P12): a priced fixture takes its goal rates from the
+   bookmakers, so the clubs in it move and the others do not. Matching needs
+   a kickoff within a day of the odds date, as the live feed gives. */
+const fixturesK = fixtures.map((f) => (f.event === 2 ? { ...f, kickoff_time: '2999-01-02T15:00:00Z' } : f));
+const oddsRows = [{ date: '2999-01-02', home: 'Arsenal', away: 'Man City', pH: 0.2, pD: 0.25, pA: 0.55, pOver: 0.62 }];
+const resK = computePredictions(html, boot, fixturesK);
+const resOdds = computePredictions(html, boot, fixturesK, null, null, oddsRows);
+ok(resOdds.rows.length === resK.rows.length, 'odds change projections, not which players are logged');
+ok(xpOf(resOdds.rows, 2) !== xpOf(resK.rows, 2), 'a defender in a priced fixture is projected from the odds');
+ok(xpOf(resOdds.rows, 10) === xpOf(resK.rows, 10), 'a defender in an unpriced fixture is untouched');
+ok(xpOf(resOdds.rows, 2) < xpOf(resK.rows, 2), 'odds making Arsenal underdogs lower an Arsenal defender');
+const resStale = computePredictions(html, boot, fixturesK, null, null, [{ ...oddsRows[0], date: '2999-01-09' }]);
+ok(xpOf(resStale.rows, 2) === xpOf(resK.rows, 2), 'odds dated a week away from the kickoff are ignored');
+
 /* Congestion reaches the projection through minutesModel, which only runs
    once nativeXP is live — so this needs a season with enough games behind it
    than the two-fixture league above. Six finished gameweeks, then a seventh
