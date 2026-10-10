@@ -161,6 +161,14 @@ const ROUTES = {
     return { path: `/teams/${q.id}`, ttl: 86400 };
   },
 
+  /* One match in full. Added to answer one question: does this plan carry
+     confirmed line-ups (lineup, bench) before kick-off? Ten minutes, since
+     a team sheet lands about an hour before kick-off. */
+  match(q) {
+    if (!isId(q.id)) return null;
+    return { path: `/matches/${q.id}`, ttl: 600 };
+  },
+
   /* Head-to-head history for one fixture. */
   h2h(q) {
     if (!isId(q.id)) return null;
