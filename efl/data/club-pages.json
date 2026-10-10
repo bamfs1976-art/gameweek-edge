@@ -1,12 +1,12 @@
 {
- "built": "2026-10-10T00:52:52.651Z",
+ "built": "2026-10-10T09:52:20.689Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-10T00:52:52.651Z",
+  "generatedAt": "2026-10-10T09:52:20.689Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2203,12 +2203,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "N. Tavares",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hand Injury, expected back 10 Oct"
-    },
     {
      "name": "K. Smith",
      "position": "DEF",
@@ -7679,7 +7673,7 @@
     {
      "name": "R. Edwards",
      "position": "DEF",
-     "rating": 63,
+     "rating": 62.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
@@ -7719,22 +7713,10 @@
    ],
    "unavailable": [
     {
-     "name": "I. Chair",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Unknown injury, expected back 10 Oct"
-    },
-    {
      "name": "R. Burrell",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury, expected back 1 Nov"
-    },
-    {
-     "name": "K. Dembélé",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 10 Oct"
     }
    ],
    "cardRisk": []
