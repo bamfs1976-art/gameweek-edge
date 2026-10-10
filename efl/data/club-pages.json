@@ -1,12 +1,12 @@
 {
- "built": "2026-10-10T17:21:01.977Z",
+ "built": "2026-10-10T21:45:59.996Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-10T17:21:01.977Z",
+  "generatedAt": "2026-10-10T21:45:59.996Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -647,6 +647,12 @@
    ],
    "unavailable": [
     {
+     "name": "S. Gallagher",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "S. Ingelsson",
      "position": "MID",
      "status": "injured",
@@ -657,6 +663,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 30 Dec"
+    },
+    {
+     "name": "A. Ampah",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -2640,14 +2652,6 @@
      "summary": "Started 8 of 8 (100%), away from home."
     },
     {
-     "name": "R. Gomes",
-     "position": "DEF",
-     "rating": 76.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "M. Munetsi",
      "position": "MID",
      "rating": 75.3,
@@ -2678,9 +2682,23 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Armstrong",
+     "position": "FWD",
+     "rating": 70.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), away from home."
     }
    ],
    "unavailable": [
+    {
+     "name": "R. Gomes",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Foot Injury"
+    },
     {
      "name": "R. Jiménez",
      "position": "FWD",
@@ -2688,10 +2706,16 @@
      "news": "Knee Injury"
     },
     {
-     "name": "Y. Mosquera",
-     "position": "DEF",
+     "name": "B. Traoré",
+     "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Calf Injury"
+    },
+    {
+     "name": "B. Traoré",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -9648,7 +9672,7 @@
      "name": "M. Johnston",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 2 Jan"
     }
    ],
    "cardRisk": []
@@ -10118,6 +10142,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Gibson",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 14 Oct"
+    },
     {
      "name": "C. Wiley",
      "position": "DEF",
