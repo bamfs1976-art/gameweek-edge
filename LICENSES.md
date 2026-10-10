@@ -262,3 +262,19 @@ fails the build if a threshold is typed here again.
   status and chance of playing from the last snapshot before the deadline,
   extracted by `dev/fetch-flags.mjs`. Development data for the minutes and
   points backtests; nothing from it ships in the app.
+
+## football-data.co.uk — bookmaker odds for the next fixtures (data)
+
+- **Terms** free to use, with credit to the source
+- **Source** https://www.football-data.co.uk (`fixtures.csv`)
+- **Used for** `netlify/functions/match-odds.js` reads the market average
+  1X2 and over/under 2.5 prices for upcoming Premier League fixtures. The
+  app turns them into goal rates (`marketRates` in `index.html`) and credits
+  the source under the Match outlook wherever a fixture uses them.
+
+## premier-league-data — archived odds for the market backtest (data, not shipped)
+
+- **Source** https://github.com/AnishKhetani/premier-league-data (a
+  football-data.co.uk mirror)
+- **Used for** the 2023-26 market-blend backtest recorded in
+  `docs/MODELLING.md` (P12). Nothing from it ships in the app.

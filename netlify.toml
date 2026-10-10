@@ -300,6 +300,14 @@
   status = 200
   force = true
 
+# Bookmaker odds for the next fixtures (football-data.co.uk), turned into
+# goal rates by the app's match model where the market has priced a game.
+[[redirects]]
+  from = "/api/match-odds"
+  to = "/.netlify/functions/match-odds"
+  status = 200
+  force = true
+
 # Ten seasons of reduced FPL history (data/fpl-history.json, built offline by
 # scripts/history/build-history.mjs from the open vaastav dataset). A static
 # file rather than a function — it changes once a season, not once a request.

@@ -1375,6 +1375,17 @@ Free readers see both blurred behind the Pro strip. Tests:
   win probability, and a 1–5 model FDR.
 - **Validation:** walk‑forward RPS ≈ **0.2123** (vs de‑vigged Pinnacle market
   ≈ 0.1994) — competitive with the bookmaker and ahead of a uniform baseline.
+- **Market odds (P12, October 2026).** Where bookmakers have priced a fixture,
+  usually the next gameweek, its goal rates come from the market instead:
+  `/api/match-odds` (football-data.co.uk, refreshed before each round) gives
+  the average home, draw, away and over 2.5 chances, and `mktImplied` finds the
+  goal rates whose Dixon-Coles grid reproduces them. `plsimMatch` prefers those
+  rates; fixtures with no price keep the fit. The prediction logger and the MCP
+  tools load the same odds, so the public record grades what the app shows.
+  Backtest: result RPS −0.0063 and clean-sheet Brier −0.0033 over 1,140 matches,
+  both clear of the noise (`docs/MODELLING.md`).
+- **Scoreline grid.** Every Match outlook row opens to a 6 × 6 table of likely
+  scores, each cell labelled with its chance and the most likely score outlined.
 
 ### Player expected points (`xP`, `nativeXP`)
 - `xP` blends the FPL `ep_next` estimate with a **native** model:
