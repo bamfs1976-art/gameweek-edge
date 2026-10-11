@@ -1,12 +1,12 @@
 {
- "built": "2026-10-11T05:49:14.769Z",
+ "built": "2026-10-11T12:52:39.895Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-11T05:49:14.769Z",
+  "generatedAt": "2026-10-11T12:52:39.895Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2812,34 +2812,42 @@
     {
      "name": "F. Azaz",
      "position": "MID",
-     "rating": 79.6,
+     "rating": 80.8,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 3 goals and 5 assists."
+     "summary": "Started 9 of 9 (100%), 3 goals and 6 assists."
     },
     {
      "name": "C. Larin",
      "position": "FWD",
-     "rating": 79.2,
+     "rating": 79.5,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), playing at home."
-    },
-    {
-     "name": "L. Scienza",
-     "position": "MID",
-     "rating": 74.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 2 goals and 2 assists."
+     "summary": "Started 9 of 9 (100%), 7 goals and 0 assists."
     },
     {
      "name": "F. Downes",
      "position": "MID",
-     "rating": 73.4,
+     "rating": 75.2,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 0 goals and 2 assists."
+     "summary": "Started 9 of 9 (100%), 0 goals and 2 assists."
+    },
+    {
+     "name": "L. Scienza",
+     "position": "MID",
+     "rating": 74.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), 2 goals and 2 assists."
+    },
+    {
+     "name": "J. Ward-Prowse",
+     "position": "MID",
+     "rating": 72,
+     "status": "available",
+     "minutesShare": 89,
+     "summary": "Started 8 of 9 (89%), 1 goal and 2 assists."
     },
     {
      "name": "K. Matsuki",
@@ -2847,25 +2855,10 @@
      "rating": 71.5,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Ward-Prowse",
-     "position": "MID",
-     "rating": 70.6,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), 1 goal and 2 assists."
+     "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
     }
    ],
-   "unavailable": [
-    {
-     "name": "C. Jander",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 12 Oct"
-    }
-   ],
+   "unavailable": [],
    "cardRisk": []
   },
   {
@@ -5292,7 +5285,15 @@
      "rating": 67.6,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), 1 goal and 1 assist."
+     "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
+    },
+    {
+     "name": "Z. Swanson",
+     "position": "DEF",
+     "rating": 63.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "A. Segecic",
@@ -5300,31 +5301,15 @@
      "rating": 63.6,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "Z. Swanson",
-     "position": "DEF",
-     "rating": 63.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "R. Shein",
-     "position": "MID",
-     "rating": 58.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "T. Devlin",
      "position": "MID",
-     "rating": 58.6,
+     "rating": 59.2,
      "status": "available",
-     "minutesShare": 86,
-     "summary": "Started 6 of 7 (86%), tough fixture (rated 4 of 5)."
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "A. Kamara",
@@ -5332,7 +5317,15 @@
      "rating": 58.5,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 7 of 7 (100%), tough fixture (rated 4 of 5)."
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "R. Kavuma-McQueen",
+     "position": "FWD",
+     "rating": 58.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -5347,12 +5340,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Back Injury, expected back 27 Dec"
-    },
-    {
-     "name": "Marezi",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Calf Injury, expected back 12 Oct"
     },
     {
      "name": "L. Brooke-Smith",
@@ -5377,12 +5364,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "K. Anderson",
-     "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury, expected back 12 Oct"
     },
     {
      "name": "M. Kosznovszky",
@@ -7352,7 +7333,14 @@
      "summary": "Started 8 of 9 (89%), 4 goals and 1 assist."
     }
    ],
-   "unavailable": [],
+   "unavailable": [
+    {
+     "name": "F. Seriki",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 15 Oct"
+    }
+   ],
    "cardRisk": []
   },
   {
