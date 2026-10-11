@@ -1,12 +1,12 @@
 {
- "built": "2026-10-11T12:52:39.895Z",
+ "built": "2026-10-11T19:34:09.253Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-11T12:52:39.895Z",
+  "generatedAt": "2026-10-11T19:34:09.253Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1448,7 +1448,7 @@
    "slug": "blackburn-rovers",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 12,
+   "position": 13,
    "points": 0,
    "played": 0,
    "form": [
@@ -2733,12 +2733,12 @@
    "slug": "southampton",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 16,
+   "position": 11,
    "points": 0,
    "played": 0,
    "form": [
-    "L",
     "W",
+    "L",
     "W"
    ],
    "rating": 54.7,
@@ -5192,201 +5192,6 @@
    "cardRisk": []
   },
   {
-   "id": "47",
-   "name": "Portsmouth",
-   "short": "POR",
-   "slug": "portsmouth",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 19,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "D",
-    "D",
-    "W"
-   ],
-   "rating": 50.3,
-   "summary": "5 points from the last 3 — steady, next 3 rated 3.1 of 5 on average. 2 double rounds in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.56
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.48
-    },
-    {
-     "label": "Home matches",
-     "value": 0.4
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Norwich City",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Wolverhampton Wanderers",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Millwall",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Burnley",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Swansea City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "E. Adams",
-     "position": "MID",
-     "rating": 67.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
-    },
-    {
-     "name": "Z. Swanson",
-     "position": "DEF",
-     "rating": 63.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "A. Segecic",
-     "position": "MID",
-     "rating": 63.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "T. Devlin",
-     "position": "MID",
-     "rating": 59.2,
-     "status": "available",
-     "minutesShare": 88,
-     "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "A. Kamara",
-     "position": "FWD",
-     "rating": 58.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "R. Kavuma-McQueen",
-     "position": "FWD",
-     "rating": 58.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "C. Shaughnessy",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 12 Oct"
-    },
-    {
-     "name": "B. Arthur",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Back Injury, expected back 27 Dec"
-    },
-    {
-     "name": "L. Brooke-Smith",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 2 May"
-    },
-    {
-     "name": "J. Murphy",
-     "position": "MID",
-     "status": "injured",
-     "news": "Groin Injury, expected back 12 Oct"
-    },
-    {
-     "name": "C. Ogilvie",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 12 Oct"
-    },
-    {
-     "name": "H. Blair",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "M. Kosznovszky",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 31 Dec"
-    },
-    {
-     "name": "T. Waddingham",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 4 Nov"
-    },
-    {
-     "name": "F. Umeh-Chibueze",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 4 Nov"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "19",
    "name": "Sheffield Wednesday",
    "short": "SHW",
@@ -5807,14 +5612,6 @@
    ],
    "players": [
     {
-     "name": "Z. Amdouni",
-     "position": "FWD",
-     "rating": 73.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), playing at home."
-    },
-    {
      "name": "M. Alleyne",
      "position": "DEF",
      "rating": 69.4,
@@ -5824,14 +5621,6 @@
     },
     {
      "name": "J. Laurent",
-     "position": "MID",
-     "rating": 65.8,
-     "status": "available",
-     "minutesShare": 89,
-     "summary": "Started 8 of 9 (89%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "U. Raghouber",
      "position": "MID",
      "rating": 65.8,
      "status": "available",
@@ -5853,6 +5642,22 @@
      "status": "available",
      "minutesShare": 78,
      "summary": "Started 7 of 9 (78%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Pires",
+     "position": "DEF",
+     "rating": 59.3,
+     "status": "available",
+     "minutesShare": 67,
+     "summary": "In and out of the side (6 starts in 9), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Ramazani",
+     "position": "FWD",
+     "rating": 58.5,
+     "status": "available",
+     "minutesShare": 67,
+     "summary": "In and out of the side (6 starts in 9), playing at home."
     }
    ],
    "unavailable": [
@@ -5861,6 +5666,18 @@
      "position": "FWD",
      "status": "doubtful",
      "news": "Knock, expected back 17 Oct"
+    },
+    {
+     "name": "Z. Amdouni",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 14 Oct"
+    },
+    {
+     "name": "U. Raghouber",
+     "position": "MID",
+     "status": "injured",
+     "news": "Heel Injury, expected back 14 Oct"
     },
     {
      "name": "A. Ramsey",
@@ -6246,7 +6063,7 @@
    "slug": "wrexham",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 14,
+   "position": 15,
    "points": 0,
    "played": 0,
    "form": [
@@ -7208,7 +7025,7 @@
    "slug": "sheffield-united",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 13,
+   "position": 14,
    "points": 0,
    "played": 0,
    "form": [
@@ -7477,10 +7294,22 @@
    ],
    "unavailable": [
     {
+     "name": "I. Chair",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Unknown injury, expected back 15 Oct"
+    },
+    {
      "name": "R. Burrell",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury, expected back 1 Nov"
+    },
+    {
+     "name": "K. Dembélé",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 15 Oct"
     }
    ],
    "cardRisk": []
@@ -7492,7 +7321,7 @@
    "slug": "lincoln-city",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 15,
+   "position": 16,
    "points": 0,
    "played": 0,
    "form": [
@@ -7601,23 +7430,29 @@
      "summary": "Started 9 of 9 (100%), 0 goals and 0 assists."
     },
     {
-     "name": "R. Hackett",
-     "position": "MID",
-     "rating": 58.8,
-     "status": "available",
-     "minutesShare": 89,
-     "summary": "Started 8 of 9 (89%), 2 goals and 1 assist."
-    },
-    {
      "name": "T. Bayliss",
      "position": "MID",
      "rating": 58.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "R. Towler",
+     "position": "DEF",
+     "rating": 58.4,
+     "status": "available",
+     "minutesShare": 89,
+     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "R. Hackett",
+     "position": "MID",
+     "status": "injured",
+     "news": "Concussion injury, expected back 15 Oct"
+    },
     {
      "name": "T. Darikwa",
      "position": "DEF",
@@ -8543,6 +8378,12 @@
      "news": "Knee Injury, expected back 1 Nov"
     },
     {
+     "name": "M. Johnston",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 25 Oct"
+    },
+    {
      "name": "C. Forsyth",
      "position": "DEF",
      "status": "injured",
@@ -8582,7 +8423,7 @@
    "slug": "charlton-athletic",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 11,
+   "position": 12,
    "points": 0,
    "played": 0,
    "form": [
@@ -9045,6 +8886,201 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "47",
+   "name": "Portsmouth",
+   "short": "POR",
+   "slug": "portsmouth",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 19,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "D",
+    "D"
+   ],
+   "rating": 41,
+   "summary": "Next 3 rated 3.1 of 5 on average. 2 double rounds in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.22
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.48
+    },
+    {
+     "label": "Home matches",
+     "value": 0.4
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Norwich City",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Wolverhampton Wanderers",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Millwall",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Burnley",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Swansea City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "E. Adams",
+     "position": "MID",
+     "rating": 67.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
+    },
+    {
+     "name": "Z. Swanson",
+     "position": "DEF",
+     "rating": 63.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Segecic",
+     "position": "MID",
+     "rating": 63.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "T. Devlin",
+     "position": "MID",
+     "rating": 59.2,
+     "status": "available",
+     "minutesShare": 88,
+     "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Kamara",
+     "position": "FWD",
+     "rating": 58.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "R. Kavuma-McQueen",
+     "position": "FWD",
+     "rating": 58.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "C. Shaughnessy",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Groin Injury, expected back 15 Oct"
+    },
+    {
+     "name": "B. Arthur",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Back Injury, expected back 27 Dec"
+    },
+    {
+     "name": "L. Brooke-Smith",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 2 May"
+    },
+    {
+     "name": "J. Murphy",
+     "position": "MID",
+     "status": "injured",
+     "news": "Groin Injury, expected back 15 Oct"
+    },
+    {
+     "name": "C. Ogilvie",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 15 Oct"
+    },
+    {
+     "name": "H. Blair",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "M. Kosznovszky",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 31 Dec"
+    },
+    {
+     "name": "T. Waddingham",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 4 Nov"
+    },
+    {
+     "name": "F. Umeh-Chibueze",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
@@ -10919,7 +10955,7 @@
      "name": "M. Touré",
      "position": "FWD",
      "status": "injured",
-     "news": "Shoulder Injury"
+     "news": "Shoulder Injury, expected back 2 Jan"
     },
     {
      "name": "P. Diallo",
@@ -10932,6 +10968,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "M. Topic",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 4 Nov"
     }
    ],
    "cardRisk": []
