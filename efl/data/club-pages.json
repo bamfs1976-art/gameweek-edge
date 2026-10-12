@@ -1,12 +1,12 @@
 {
- "built": "2026-10-12T00:33:37.872Z",
+ "built": "2026-10-12T10:52:39.481Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-12T00:33:37.872Z",
+  "generatedAt": "2026-10-12T10:52:39.481Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1893,12 +1893,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "M. Demetriou",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Unknown injury, expected back 12 Oct"
     },
     {
      "name": "O. Taylor",
@@ -5342,12 +5336,6 @@
      "news": "Groin Injury"
     },
     {
-     "name": "M. Lowe",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 12 Oct"
-    },
-    {
      "name": "S. Swinkels",
      "position": "DEF",
      "status": "injured",
@@ -5862,12 +5850,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Knee Injury, expected back 1 Mar"
-    },
-    {
-     "name": "Z. Hemming",
-     "position": "GK",
-     "status": "injured",
-     "news": "Hand Injury, expected back 12 Oct"
     }
    ],
    "cardRisk": []
@@ -8981,7 +8963,7 @@
     {
      "name": "E. Adams",
      "position": "MID",
-     "rating": 67.6,
+     "rating": 67.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
