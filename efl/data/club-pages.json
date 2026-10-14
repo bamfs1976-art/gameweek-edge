@@ -1,12 +1,12 @@
 {
- "built": "2026-10-14T00:18:52.176Z",
+ "built": "2026-10-14T05:01:41.805Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-14T00:18:52.176Z",
+  "generatedAt": "2026-10-14T05:01:41.805Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1437,12 +1437,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Achilles Tendon Rupture injury, expected back 2 Jan"
-    },
-    {
-     "name": "M. Litherland",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Back Injury, expected back 14 Oct"
     }
    ],
    "cardRisk": []
@@ -3286,18 +3280,6 @@
    ],
    "unavailable": [
     {
-     "name": "Y. Salech",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Shoulder Injury, expected back 14 Oct"
-    },
-    {
-     "name": "R. Colwill",
-     "position": "MID",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 14 Oct"
-    },
-    {
      "name": "C. Chambers",
      "position": "DEF",
      "status": "injured",
@@ -4938,6 +4920,14 @@
    ],
    "players": [
     {
+     "name": "Z. Amdouni",
+     "position": "FWD",
+     "rating": 70.2,
+     "status": "available",
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), playing at home."
+    },
+    {
      "name": "M. Alleyne",
      "position": "DEF",
      "rating": 68.8,
@@ -4976,14 +4966,6 @@
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 8 of 10 (80%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "L. Ramazani",
-     "position": "FWD",
-     "rating": 61.1,
-     "status": "available",
-     "minutesShare": 70,
-     "summary": "In and out of the side (7 starts in 10), playing at home."
     }
    ],
    "unavailable": [
@@ -4992,12 +4974,6 @@
      "position": "FWD",
      "status": "doubtful",
      "news": "Knock, expected back 17 Oct"
-    },
-    {
-     "name": "Z. Amdouni",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 14 Oct"
     },
     {
      "name": "A. Ramsey",
@@ -5016,12 +4992,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 25 Oct"
-    },
-    {
-     "name": "A. Barnes",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 14 Oct"
     },
     {
      "name": "J. Cullen",
@@ -6019,22 +5989,10 @@
      "news": "Thigh Injury"
     },
     {
-     "name": "R. Esse",
-     "position": "MID",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 14 Oct"
-    },
-    {
      "name": "M. Servais",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury"
-    },
-    {
-     "name": "M. Ivanovic",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Broken Foot injury, expected back 14 Oct"
     }
    ],
    "cardRisk": []
@@ -6197,12 +6155,6 @@
      "news": "Thigh Injury, expected back 8 Nov"
     },
     {
-     "name": "B. Sheaf",
-     "position": "MID",
-     "status": "injured",
-     "news": "Groin Injury, expected back 14 Oct"
-    },
-    {
      "name": "L. Cacace",
      "position": "DEF",
      "status": "injured",
@@ -6350,18 +6302,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "L. Tolaj",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Muscle Injury, expected back 14 Oct"
-    },
-    {
-     "name": "N. Eile",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Illness, expected back 14 Oct"
-    },
     {
      "name": "R. Dickie",
      "position": "DEF",
@@ -7140,29 +7080,23 @@
      "summary": "Started 9 of 9 (100%), away from home."
     },
     {
+     "name": "R. Gomes",
+     "position": "DEF",
+     "rating": 72,
+     "status": "available",
+     "minutesShare": 89,
+     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "J. Sá",
      "position": "GK",
      "rating": 70.7,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "A. Armstrong",
-     "position": "FWD",
-     "rating": 70.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), away from home."
     }
    ],
    "unavailable": [
-    {
-     "name": "R. Gomes",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Foot Injury, expected back 14 Oct"
-    },
     {
      "name": "R. Jiménez",
      "position": "FWD",
@@ -10196,34 +10130,16 @@
    ],
    "unavailable": [
     {
-     "name": "H. Clarke",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 14 Oct"
-    },
-    {
      "name": "J. Kenny",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
     },
     {
-     "name": "C. Wiley",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 14 Oct"
-    },
-    {
      "name": "A. McCann",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 18 Oct"
-    },
-    {
-     "name": "B. Potts",
-     "position": "MID",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 14 Oct"
     },
     {
      "name": "T. Carroll",
