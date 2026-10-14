@@ -1,12 +1,12 @@
 {
- "built": "2026-10-14T05:01:41.805Z",
+ "built": "2026-10-14T11:55:02.160Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-14T05:01:41.805Z",
+  "generatedAt": "2026-10-14T11:55:02.160Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -453,7 +453,7 @@
     {
      "name": "M. Yeo",
      "position": "MID",
-     "rating": 75,
+     "rating": 75.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), 3 goals and 0 assists."
@@ -1418,7 +1418,7 @@
      "name": "Y. Ribeiro",
      "position": "DEF",
      "status": "injured",
-     "news": "Hamstring injury, expected back 25 Oct"
+     "news": "Hamstring injury, expected back 4 Nov"
     },
     {
      "name": "A. Forshaw",
@@ -1719,12 +1719,12 @@
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "A. Priske",
+     "name": "C. Vicente",
      "position": "FWD",
-     "rating": 71.5,
+     "rating": 71.6,
      "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), playing at home."
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
     }
    ],
    "unavailable": [
@@ -3280,6 +3280,24 @@
    ],
    "unavailable": [
     {
+     "name": "Y. Salech",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Shoulder Injury, expected back 18 Oct"
+    },
+    {
+     "name": "R. Colwill",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "Ankle Injury, expected back 18 Oct"
+    },
+    {
+     "name": "D. Lawlor",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
      "name": "C. Chambers",
      "position": "DEF",
      "status": "injured",
@@ -3674,7 +3692,7 @@
     {
      "name": "E. Galbraith",
      "position": "MID",
-     "rating": 69.6,
+     "rating": 70.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), 3 goals and 2 assists."
@@ -5971,6 +5989,12 @@
    ],
    "unavailable": [
     {
+     "name": "T. Arconte",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 18 Oct"
+    },
+    {
      "name": "J. Coburn",
      "position": "FWD",
      "status": "injured",
@@ -5989,10 +6013,22 @@
      "news": "Thigh Injury"
     },
     {
+     "name": "R. Esse",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 18 Oct"
+    },
+    {
      "name": "M. Servais",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury"
+    },
+    {
+     "name": "M. Ivanovic",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Broken Foot injury, expected back 18 Oct"
     }
    ],
    "cardRisk": []
@@ -6302,6 +6338,18 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "L. Tolaj",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Muscle Injury, expected back 18 Oct"
+    },
+    {
+     "name": "N. Eile",
+     "position": "DEF",
+     "status": "doubtful",
+     "news": "Illness, expected back 18 Oct"
+    },
     {
      "name": "R. Dickie",
      "position": "DEF",
@@ -7251,6 +7299,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "B. Stewart",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Head Injury"
+    },
     {
      "name": "N. Galves",
      "position": "DEF",
@@ -8616,20 +8670,20 @@
      "summary": "Started 9 of 10 (90%), 3 clean sheets."
     },
     {
-     "name": "C. Coventry",
-     "position": "MID",
-     "rating": 60.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "T. Campbell",
      "position": "FWD",
      "rating": 60.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), 4 goals and 1 assist."
+    },
+    {
+     "name": "C. Coventry",
+     "position": "MID",
+     "rating": 59.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "I. Mesík",
@@ -9131,8 +9185,8 @@
     {
      "name": "C. Shaughnessy",
      "position": "DEF",
-     "status": "doubtful",
-     "news": "Groin Injury, expected back 15 Oct"
+     "status": "injured",
+     "news": "Groin Injury, expected back 18 Oct"
     },
     {
      "name": "B. Arthur",
@@ -9150,13 +9204,13 @@
      "name": "J. Murphy",
      "position": "MID",
      "status": "injured",
-     "news": "Groin Injury, expected back 15 Oct"
+     "news": "Groin Injury, expected back 25 Oct"
     },
     {
      "name": "C. Ogilvie",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 15 Oct"
+     "news": "Knee Injury, expected back 18 Oct"
     },
     {
      "name": "H. Blair",
@@ -10130,16 +10184,34 @@
    ],
    "unavailable": [
     {
+     "name": "H. Clarke",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
      "name": "J. Kenny",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knock"
+    },
+    {
+     "name": "C. Wiley",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 18 Oct"
     },
     {
      "name": "A. McCann",
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 18 Oct"
+    },
+    {
+     "name": "B. Potts",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 18 Oct"
     },
     {
      "name": "T. Carroll",
@@ -10892,6 +10964,12 @@
    ],
    "unavailable": [
     {
+     "name": "M. Topic",
+     "position": "MID",
+     "status": "doubtful",
+     "news": "ACL Knee Injury, expected back 17 Oct"
+    },
+    {
      "name": "K. McLean",
      "position": "MID",
      "status": "injured",
@@ -10901,7 +10979,7 @@
      "name": "M. Touré",
      "position": "FWD",
      "status": "injured",
-     "news": "Shoulder Injury, expected back 2 Jan"
+     "news": "Shoulder Injury, expected back 2 May"
     },
     {
      "name": "P. Diallo",
@@ -10916,10 +10994,10 @@
      "news": "ACL Knee Injury, expected back 2 May"
     },
     {
-     "name": "M. Topic",
+     "name": "G. Forsyth",
      "position": "MID",
      "status": "injured",
-     "news": "ACL Knee Injury, expected back 4 Nov"
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
