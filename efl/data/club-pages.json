@@ -1,12 +1,12 @@
 {
- "built": "2026-10-13T19:18:21.348Z",
+ "built": "2026-10-14T00:18:52.176Z",
  "round": 10,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-13T19:18:21.348Z",
+  "generatedAt": "2026-10-14T00:18:52.176Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -443,25 +443,25 @@
    ],
    "players": [
     {
-     "name": "M. Yeo",
-     "position": "MID",
-     "rating": 75.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 3 goals and 0 assists."
-    },
-    {
      "name": "L. Vigouroux",
      "position": "GK",
-     "rating": 74.7,
+     "rating": 76.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
+     "name": "M. Yeo",
+     "position": "MID",
+     "rating": 75,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 3 goals and 0 assists."
+    },
+    {
      "name": "F. Lissah",
      "position": "DEF",
-     "rating": 73.7,
+     "rating": 74.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -469,7 +469,7 @@
     {
      "name": "J. Tymon",
      "position": "DEF",
-     "rating": 73.2,
+     "rating": 73.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -477,27 +477,21 @@
     {
      "name": "Z. Vipotnik",
      "position": "FWD",
-     "rating": 72.4,
+     "rating": 72.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), playing at home."
     },
     {
-     "name": "M. Stamenic",
-     "position": "MID",
-     "rating": 70.5,
+     "name": "S. Welsh",
+     "position": "DEF",
+     "rating": 72.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "A. Idah",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Knee Injury, expected back 14 Oct"
-    },
     {
      "name": "J. Key",
      "position": "DEF",
@@ -515,166 +509,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Achilles Tendon Rupture injury, expected back 2 May"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "110",
-   "name": "Stoke City",
-   "short": "STO",
-   "slug": "stoke-city",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 4,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "W",
-    "W"
-   ],
-   "rating": 64,
-   "summary": "9 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 1
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Derby County",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Bristol City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Preston North End",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Blackburn Rovers",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "E. Galbraith",
-     "position": "MID",
-     "rating": 70.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 3 goals and 2 assists."
-    },
-    {
-     "name": "V. Johansson",
-     "position": "GK",
-     "rating": 67.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 2 clean sheets."
-    },
-    {
-     "name": "E. Bocat",
-     "position": "DEF",
-     "rating": 66.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 3 clean sheets plus 4 attacking returns."
-    },
-    {
-     "name": "B. Wilmot",
-     "position": "DEF",
-     "rating": 62.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "D. Soumaré",
-     "position": "MID",
-     "rating": 59.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "B. Johnson",
-     "position": "DEF",
-     "rating": 59,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "S. Gallagher",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock, expected back 1 Nov"
-    },
-    {
-     "name": "S. Ingelsson",
-     "position": "MID",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 4 Nov"
-    },
-    {
-     "name": "A. Cresswell",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 30 Dec"
-    },
-    {
-     "name": "A. Ampah",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -1454,13 +1288,13 @@
    "slug": "blackburn-rovers",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 13,
+   "position": 7,
    "points": 0,
    "played": 0,
    "form": [
     "W",
-    "D",
-    "W"
+    "W",
+    "D"
    ],
    "rating": 57.8,
    "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -1533,59 +1367,53 @@
     {
      "name": "K. Montgomery",
      "position": "MID",
-     "rating": 68.4,
+     "rating": 68.5,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), 1 goal and 0 assists."
     },
     {
+     "name": "S. McLoughlin",
+     "position": "DEF",
+     "rating": 66.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 2 clean sheets plus 2 attacking returns."
+    },
+    {
      "name": "T. Cantwell",
      "position": "MID",
-     "rating": 64.7,
+     "rating": 64.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), 2 goals and 0 assists."
     },
     {
-     "name": "S. McLoughlin",
-     "position": "DEF",
-     "rating": 64.6,
+     "name": "R. Morishita",
+     "position": "MID",
+     "rating": 62.1,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 1 clean sheet plus 1 attacking return."
+     "summary": "Started 10 of 10 (100%), 2 goals and 2 assists."
     },
     {
      "name": "O. Afolayan",
      "position": "FWD",
-     "rating": 59.6,
+     "rating": 61.1,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 3 goals and 2 assists."
+     "summary": "Started 10 of 10 (100%), 4 goals and 2 assists."
     },
     {
      "name": "R. Alebiosu",
      "position": "DEF",
-     "rating": 58.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "S. Morsy",
-     "position": "MID",
-     "rating": 57.8,
+     "rating": 59.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
-    {
-     "name": "R. Morishita",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "Knock, expected back 14 Oct"
-    },
     {
      "name": "Y. Ribeiro",
      "position": "DEF",
@@ -1620,19 +1448,173 @@
    "cardRisk": []
   },
   {
+   "id": "25",
+   "name": "Middlesbrough",
+   "short": "MID",
+   "slug": "middlesbrough",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 2,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "W",
+    "D"
+   ],
+   "rating": 57.8,
+   "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.78
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.5
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Cardiff City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Bolton Wanderers",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Charlton Athletic",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Wrexham",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "W. Lankshear",
+     "position": "FWD",
+     "rating": 82.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 8 goals and 1 assist."
+    },
+    {
+     "name": "S. Berhalter",
+     "position": "MID",
+     "rating": 75.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 2 goals and 1 assist."
+    },
+    {
+     "name": "C. Brittain",
+     "position": "DEF",
+     "rating": 73.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. Vítek",
+     "position": "GK",
+     "rating": 70.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. McGree",
+     "position": "MID",
+     "rating": 70.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "A. Morris",
+     "position": "MID",
+     "rating": 70.1,
+     "status": "available",
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), 1 goal and 0 assists."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "A. Jones",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Calf Injury, expected back 24 Oct"
+    },
+    {
+     "name": "D. Strelec",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "R. Pukstas",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 5 Nov"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "41",
    "name": "Birmingham City",
    "short": "BIR",
    "slug": "birmingham-city",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 7,
+   "position": 3,
    "points": 0,
    "played": 0,
    "form": [
     "W",
-    "D",
-    "W"
+    "W",
+    "D"
    ],
    "rating": 57.8,
    "summary": "7 points from the last 3, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -1705,15 +1687,15 @@
     {
      "name": "P. Neumann",
      "position": "DEF",
-     "rating": 78,
+     "rating": 78.2,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 2 clean sheets plus 4 attacking returns."
+     "summary": "Started 10 of 10 (100%), 3 clean sheets plus 4 attacking returns."
     },
     {
      "name": "C. Klarer",
      "position": "DEF",
-     "rating": 72.6,
+     "rating": 73.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -1721,7 +1703,7 @@
     {
      "name": "J. Beadle",
      "position": "GK",
-     "rating": 71.7,
+     "rating": 73.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -1729,7 +1711,7 @@
     {
      "name": "J. Stansfield",
      "position": "FWD",
-     "rating": 71.3,
+     "rating": 72.4,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), playing at home."
@@ -1737,18 +1719,18 @@
     {
      "name": "A. Cochrane",
      "position": "DEF",
-     "rating": 70.7,
+     "rating": 71.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "T. Iwata",
-     "position": "MID",
-     "rating": 69.6,
+     "name": "A. Priske",
+     "position": "FWD",
+     "rating": 71.5,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), playing at home."
     }
    ],
    "unavailable": [
@@ -2568,178 +2550,13 @@
    "cardRisk": []
   },
   {
-   "id": "39",
-   "name": "Wolverhampton Wanderers",
-   "short": "WOL",
-   "slug": "wolverhampton-wanderers",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 5,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "W",
-    "W"
-   ],
-   "rating": 55.9,
-   "summary": "6 points from the last 3 — steady, next 3 rated 2.9 of 5 on average. 2 double rounds in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.67
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.52
-    },
-    {
-     "label": "Home matches",
-     "value": 0.6
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Burnley",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Portsmouth",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Watford",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Cardiff City",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Bristol City",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "F. López",
-     "position": "FWD",
-     "rating": 78.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), away from home."
-    },
-    {
-     "name": "André",
-     "position": "MID",
-     "rating": 74.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "M. Mané",
-     "position": "FWD",
-     "rating": 72.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), away from home."
-    },
-    {
-     "name": "M. Munetsi",
-     "position": "MID",
-     "rating": 70.8,
-     "status": "available",
-     "minutesShare": 89,
-     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Sá",
-     "position": "GK",
-     "rating": 70.7,
-     "status": "available",
-     "minutesShare": 89,
-     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "A. Armstrong",
-     "position": "FWD",
-     "rating": 70.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), away from home."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "R. Gomes",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Foot Injury, expected back 14 Oct"
-    },
-    {
-     "name": "R. Jiménez",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knee Injury"
-    },
-    {
-     "name": "B. Traoré",
-     "position": "MID",
-     "status": "injured",
-     "news": "Calf Injury"
-    },
-    {
-     "name": "B. Traoré",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Calf Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "20",
    "name": "Southampton",
    "short": "SOU",
    "slug": "southampton",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 11,
+   "position": 13,
    "points": 0,
    "played": 0,
    "form": [
@@ -2816,14 +2633,6 @@
    ],
    "players": [
     {
-     "name": "F. Azaz",
-     "position": "MID",
-     "rating": 79.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), 3 goals and 6 assists."
-    },
-    {
      "name": "C. Larin",
      "position": "FWD",
      "rating": 79.5,
@@ -2832,9 +2641,17 @@
      "summary": "Started 9 of 9 (100%), 7 goals and 0 assists."
     },
     {
+     "name": "F. Azaz",
+     "position": "MID",
+     "rating": 79.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), 3 goals and 6 assists."
+    },
+    {
      "name": "F. Downes",
      "position": "MID",
-     "rating": 74.5,
+     "rating": 74.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 0 goals and 2 assists."
@@ -2842,7 +2659,7 @@
     {
      "name": "L. Scienza",
      "position": "MID",
-     "rating": 74.2,
+     "rating": 73.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 2 goals and 2 assists."
@@ -2850,15 +2667,15 @@
     {
      "name": "J. Ward-Prowse",
      "position": "MID",
-     "rating": 71.2,
+     "rating": 70.8,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 1 goal and 2 assists."
     },
     {
-     "name": "J. Bree",
-     "position": "DEF",
-     "rating": 71,
+     "name": "K. Matsuki",
+     "position": "MID",
+     "rating": 70.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
@@ -2874,12 +2691,12 @@
    "slug": "bolton-wanderers",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 17,
+   "position": 14,
    "points": 0,
    "played": 0,
    "form": [
-    "L",
     "W",
+    "L",
     "W"
    ],
    "rating": 54.7,
@@ -2953,18 +2770,34 @@
     {
      "name": "J. Sheehan",
      "position": "MID",
-     "rating": 64.4,
+     "rating": 66,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 0 goals and 0 assists."
+     "summary": "Started 10 of 10 (100%), 1 goal and 0 assists."
     },
     {
      "name": "M. Conway",
      "position": "DEF",
-     "rating": 60.3,
+     "rating": 62.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "S. Dalby",
+     "position": "FWD",
+     "rating": 59.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "G. Larrazabal",
+     "position": "DEF",
+     "rating": 59.1,
      "status": "available",
      "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), 3 clean sheets plus 1 attacking return."
+     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "T. Gale",
@@ -2975,28 +2808,12 @@
      "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "G. Larrazabal",
-     "position": "DEF",
-     "rating": 58.7,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "E. Erhahon",
      "position": "MID",
-     "rating": 58,
+     "rating": 58.3,
      "status": "available",
      "minutesShare": 90,
      "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "S. Iling-Junior",
-     "position": "FWD",
-     "rating": 54.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -3336,6 +3153,160 @@
    "cardRisk": []
   },
   {
+   "id": "97",
+   "name": "Cardiff City",
+   "short": "CAR",
+   "slug": "cardiff-city",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 18,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "L",
+    "W"
+   ],
+   "rating": 54.7,
+   "summary": "6 points from the last 3 — steady, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.67
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.5
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Middlesbrough",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Birmingham City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Wolverhampton Wanderers",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "West Ham United",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "J. Moylan",
+     "position": "MID",
+     "rating": 70.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 5 goals and 2 assists."
+    },
+    {
+     "name": "A. Robertson",
+     "position": "MID",
+     "rating": 67.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 0 goals and 0 assists."
+    },
+    {
+     "name": "N. Trott",
+     "position": "GK",
+     "rating": 64.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Bagan",
+     "position": "DEF",
+     "rating": 60.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "P. Ng",
+     "position": "DEF",
+     "rating": 60.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "O. Tanner",
+     "position": "FWD",
+     "rating": 59.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 1 goal and 3 assists."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "Y. Salech",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Shoulder Injury, expected back 14 Oct"
+    },
+    {
+     "name": "R. Colwill",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 14 Oct"
+    },
+    {
+     "name": "C. Chambers",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "101",
    "name": "Cambridge United",
    "short": "CAM",
@@ -3631,6 +3602,166 @@
      "position": "FWD",
      "status": "injured",
      "news": "Leg Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "110",
+   "name": "Stoke City",
+   "short": "STO",
+   "slug": "stoke-city",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 6,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "W",
+    "W"
+   ],
+   "rating": 54.7,
+   "summary": "6 points from the last 3 — steady, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.67
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.5
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Derby County",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Bristol City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Preston North End",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Blackburn Rovers",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "E. Galbraith",
+     "position": "MID",
+     "rating": 69.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 3 goals and 2 assists."
+    },
+    {
+     "name": "V. Johansson",
+     "position": "GK",
+     "rating": 68,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 2 clean sheets."
+    },
+    {
+     "name": "E. Bocat",
+     "position": "DEF",
+     "rating": 65.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 3 clean sheets plus 4 attacking returns."
+    },
+    {
+     "name": "B. Wilmot",
+     "position": "DEF",
+     "rating": 62.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "D. Soumaré",
+     "position": "MID",
+     "rating": 59.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Johnson",
+     "position": "DEF",
+     "rating": 58.1,
+     "status": "available",
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "S. Gallagher",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knock, expected back 1 Nov"
+    },
+    {
+     "name": "S. Ingelsson",
+     "position": "MID",
+     "status": "injured",
+     "news": "Muscle Injury, expected back 4 Nov"
+    },
+    {
+     "name": "A. Cresswell",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 30 Dec"
+    },
+    {
+     "name": "A. Ampah",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -4428,7 +4559,7 @@
    "slug": "west-ham-united",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 3,
+   "position": 5,
    "points": 0,
    "played": 0,
    "form": [
@@ -4521,33 +4652,33 @@
      "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "K. Mavropanos",
-     "position": "DEF",
-     "rating": 63.7,
-     "status": "available",
-     "minutesShare": 89,
-     "summary": "Started 8 of 9 (89%), 2 clean sheets plus 4 attacking returns."
-    },
-    {
      "name": "M. Solomon",
      "position": "MID",
-     "rating": 63.5,
+     "rating": 63.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 2 goals and 2 assists."
     },
     {
+     "name": "K. Mavropanos",
+     "position": "DEF",
+     "rating": 62.4,
+     "status": "available",
+     "minutesShare": 89,
+     "summary": "Started 8 of 9 (89%), 2 clean sheets plus 4 attacking returns."
+    },
+    {
      "name": "M. Kilman",
      "position": "DEF",
-     "rating": 63.2,
+     "rating": 62.3,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), 2 clean sheets plus 1 attacking return."
+     "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "M. Kanté",
      "position": "MID",
-     "rating": 58.8,
+     "rating": 58.5,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 3 goals and 1 assist."
@@ -4559,160 +4690,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury, expected back 18 Oct"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "25",
-   "name": "Middlesbrough",
-   "short": "MID",
-   "slug": "middlesbrough",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 2,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "D"
-   ],
-   "rating": 51.6,
-   "summary": "5 points from the last 3 — steady, next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.56
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Cardiff City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Bolton Wanderers",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Charlton Athletic",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Wrexham",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "W. Lankshear",
-     "position": "FWD",
-     "rating": 80.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 7 goals and 1 assist."
-    },
-    {
-     "name": "S. Berhalter",
-     "position": "MID",
-     "rating": 75.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 2 goals and 1 assist."
-    },
-    {
-     "name": "C. Brittain",
-     "position": "DEF",
-     "rating": 72.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "R. Vítek",
-     "position": "GK",
-     "rating": 70.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "A. Malanda",
-     "position": "DEF",
-     "rating": 69.4,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "A. Morris",
-     "position": "MID",
-     "rating": 69,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "A. Jones",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Calf Injury, expected back 24 Oct"
-    },
-    {
-     "name": "D. Strelec",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "R. Pukstas",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 5 Nov"
     }
    ],
    "cardRisk": []
@@ -4878,18 +4855,18 @@
    "cardRisk": []
   },
   {
-   "id": "103",
-   "name": "Millwall",
-   "short": "MIL",
-   "slug": "millwall",
+   "id": "90",
+   "name": "Burnley",
+   "short": "BUR",
+   "slug": "burnley",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 8,
+   "position": 21,
    "points": 0,
    "played": 0,
    "form": [
-    "W",
     "D",
+    "W",
     "D"
    ],
    "rating": 51.6,
@@ -4923,7 +4900,7 @@
      "double": false,
      "matches": [
       {
-       "opponent": "Lincoln City",
+       "opponent": "Wolverhampton Wanderers",
        "home": true,
        "rating": 3
       }
@@ -4935,7 +4912,7 @@
      "double": false,
      "matches": [
       {
-       "opponent": "Portsmouth",
+       "opponent": "Lincoln City",
        "home": false,
        "rating": 4
       }
@@ -4947,12 +4924,12 @@
      "double": true,
      "matches": [
       {
-       "opponent": "Derby County",
+       "opponent": "Portsmouth",
        "home": true,
        "rating": 3
       },
       {
-       "opponent": "Birmingham City",
+       "opponent": "Queens Park Rangers",
        "home": false,
        "rating": 4
       }
@@ -4961,90 +4938,96 @@
    ],
    "players": [
     {
-     "name": "C. Taylor",
+     "name": "M. Alleyne",
      "position": "DEF",
-     "rating": 78.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 4 clean sheets plus 3 attacking returns."
-    },
-    {
-     "name": "C. Neghli",
-     "position": "FWD",
-     "rating": 75.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), playing at home."
-    },
-    {
-     "name": "J. Cooper",
-     "position": "DEF",
-     "rating": 75.3,
+     "rating": 68.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "L. Dykes",
+     "name": "J. Bruun Larsen",
      "position": "FWD",
-     "rating": 74.9,
+     "rating": 67.6,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), playing at home."
+     "minutesShare": 80,
+     "summary": "Started 8 of 10 (80%), playing at home."
     },
     {
-     "name": "Z. Sturge",
-     "position": "DEF",
-     "rating": 74.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Metcalfe",
+     "name": "J. Laurent",
      "position": "MID",
-     "rating": 71.9,
+     "rating": 66.8,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "U. Raghouber",
+     "position": "MID",
+     "rating": 62.2,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 8 of 10 (80%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "K. Walker",
+     "position": "DEF",
+     "rating": 61.7,
+     "status": "available",
+     "minutesShare": 80,
+     "summary": "Started 8 of 10 (80%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Ramazani",
+     "position": "FWD",
+     "rating": 61.1,
+     "status": "available",
+     "minutesShare": 70,
+     "summary": "In and out of the side (7 starts in 10), playing at home."
     }
    ],
    "unavailable": [
     {
-     "name": "J. Coburn",
+     "name": "J. Banel",
      "position": "FWD",
-     "status": "injured",
-     "news": "Foot Injury, expected back 25 Oct"
+     "status": "doubtful",
+     "news": "Knock, expected back 17 Oct"
     },
     {
-     "name": "C. De Norre",
-     "position": "MID",
-     "status": "injured",
-     "news": "Calf Injury, expected back 25 Oct"
-    },
-    {
-     "name": "L. Jensen",
-     "position": "GK",
-     "status": "injured",
-     "news": "Thigh Injury"
-    },
-    {
-     "name": "R. Esse",
-     "position": "MID",
+     "name": "Z. Amdouni",
+     "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury, expected back 14 Oct"
     },
     {
-     "name": "M. Servais",
+     "name": "A. Ramsey",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 1 Nov"
     },
     {
-     "name": "M. Ivanovic",
+     "name": "H. Mejbri",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 30 Dec"
+    },
+    {
+     "name": "B. Humphreys",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 25 Oct"
+    },
+    {
+     "name": "A. Barnes",
      "position": "FWD",
      "status": "injured",
-     "news": "Broken Foot injury, expected back 14 Oct"
+     "news": "Muscle Injury, expected back 14 Oct"
+    },
+    {
+     "name": "J. Cullen",
+     "position": "MID",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 25 Oct"
     }
    ],
    "cardRisk": []
@@ -5553,190 +5536,6 @@
    "cardRisk": []
   },
   {
-   "id": "90",
-   "name": "Burnley",
-   "short": "BUR",
-   "slug": "burnley",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 22,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "D",
-    "L"
-   ],
-   "rating": 48.4,
-   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.44
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Wolverhampton Wanderers",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Lincoln City",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Portsmouth",
-       "home": true,
-       "rating": 3
-      },
-      {
-       "opponent": "Queens Park Rangers",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "M. Alleyne",
-     "position": "DEF",
-     "rating": 69.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Laurent",
-     "position": "MID",
-     "rating": 65.8,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Bruun Larsen",
-     "position": "FWD",
-     "rating": 65.8,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 8 of 10 (80%), playing at home."
-    },
-    {
-     "name": "K. Walker",
-     "position": "DEF",
-     "rating": 61.7,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 8 of 10 (80%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "L. Pires",
-     "position": "DEF",
-     "rating": 60.4,
-     "status": "available",
-     "minutesShare": 70,
-     "summary": "In and out of the side (7 starts in 10), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "L. Ramazani",
-     "position": "FWD",
-     "rating": 59.6,
-     "status": "available",
-     "minutesShare": 70,
-     "summary": "In and out of the side (7 starts in 10), playing at home."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "J. Banel",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Knock, expected back 17 Oct"
-    },
-    {
-     "name": "Z. Amdouni",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 14 Oct"
-    },
-    {
-     "name": "U. Raghouber",
-     "position": "MID",
-     "status": "injured",
-     "news": "Heel Injury, expected back 14 Oct"
-    },
-    {
-     "name": "A. Ramsey",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 1 Nov"
-    },
-    {
-     "name": "H. Mejbri",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 30 Dec"
-    },
-    {
-     "name": "B. Humphreys",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury, expected back 25 Oct"
-    },
-    {
-     "name": "A. Barnes",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 14 Oct"
-    },
-    {
-     "name": "J. Cullen",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 25 Oct"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "98",
    "name": "Chesterfield",
    "short": "CHF",
@@ -6030,12 +5829,6 @@
      "news": "Leg Injury"
     },
     {
-     "name": "G. McCleary",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Back Injury"
-    },
-    {
      "name": "E. King",
      "position": "MID",
      "status": "injured",
@@ -6075,19 +5868,191 @@
    "cardRisk": []
   },
   {
+   "id": "103",
+   "name": "Millwall",
+   "short": "MIL",
+   "slug": "millwall",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 10,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "W",
+    "D"
+   ],
+   "rating": 48.4,
+   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.44
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.5
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Lincoln City",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Portsmouth",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Derby County",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Birmingham City",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "C. Taylor",
+     "position": "DEF",
+     "rating": 77.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "C. Neghli",
+     "position": "FWD",
+     "rating": 75.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
+    },
+    {
+     "name": "L. Dykes",
+     "position": "FWD",
+     "rating": 74.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
+    },
+    {
+     "name": "J. Cooper",
+     "position": "DEF",
+     "rating": 74.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "Z. Sturge",
+     "position": "DEF",
+     "rating": 73.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Metcalfe",
+     "position": "MID",
+     "rating": 71.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "J. Coburn",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Foot Injury, expected back 25 Oct"
+    },
+    {
+     "name": "C. De Norre",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury, expected back 25 Oct"
+    },
+    {
+     "name": "L. Jensen",
+     "position": "GK",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
+    {
+     "name": "R. Esse",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 14 Oct"
+    },
+    {
+     "name": "M. Servais",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "M. Ivanovic",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Broken Foot injury, expected back 14 Oct"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "109",
    "name": "Wrexham",
    "short": "WRE",
    "slug": "wrexham",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 15,
+   "position": 16,
    "points": 0,
    "played": 0,
    "form": [
+    "L",
     "D",
-    "W",
-    "L"
+    "W"
    ],
    "rating": 48.4,
    "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -6160,7 +6125,7 @@
     {
      "name": "K. Moore",
      "position": "FWD",
-     "rating": 74.6,
+     "rating": 76.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), playing at home."
@@ -6174,17 +6139,17 @@
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "D. Hyam",
-     "position": "DEF",
-     "rating": 71.3,
+     "name": "B. Whiteman",
+     "position": "MID",
+     "rating": 70.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "B. Whiteman",
-     "position": "MID",
-     "rating": 70.2,
+     "name": "D. Hyam",
+     "position": "DEF",
+     "rating": 70.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -6192,27 +6157,21 @@
     {
      "name": "L. O'Brien",
      "position": "MID",
-     "rating": 67,
+     "rating": 70.3,
      "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
-    {
-     "name": "J. Ekomié",
-     "position": "DEF",
-     "rating": 66.5,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 8 of 10 (80%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
     {
      "name": "C. Doyle",
      "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 14 Oct"
-    },
+     "rating": 68.8,
+     "status": "available",
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
     {
      "name": "J. Windass",
      "position": "MID",
@@ -6265,13 +6224,13 @@
    "slug": "bristol-city",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 10,
+   "position": 11,
    "points": 0,
    "played": 0,
    "form": [
+    "L",
     "D",
-    "W",
-    "L"
+    "W"
    ],
    "rating": 48.4,
    "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -6352,7 +6311,7 @@
     {
      "name": "J. Knight",
      "position": "MID",
-     "rating": 72.5,
+     "rating": 72.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -6360,15 +6319,23 @@
     {
      "name": "R. Cardines",
      "position": "DEF",
-     "rating": 70,
+     "rating": 72.2,
      "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "Y. Hirakawa",
+     "position": "FWD",
+     "rating": 70.3,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
     },
     {
      "name": "S. Twine",
      "position": "MID",
-     "rating": 69.3,
+     "rating": 69.1,
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 8 of 10 (80%), 3 goals and 0 assists."
@@ -6380,14 +6347,6 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), playing at home."
-    },
-    {
-     "name": "S. Tickle",
-     "position": "GK",
-     "rating": 67.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
@@ -7061,13 +7020,326 @@
    "cardRisk": []
   },
   {
+   "id": "39",
+   "name": "Wolverhampton Wanderers",
+   "short": "WOL",
+   "slug": "wolverhampton-wanderers",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 9,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "L",
+    "W"
+   ],
+   "rating": 46.6,
+   "summary": "Next 3 rated 2.9 of 5 on average. 2 double rounds in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.33
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.52
+    },
+    {
+     "label": "Home matches",
+     "value": 0.6
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Burnley",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Portsmouth",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Watford",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "Cardiff City",
+       "home": true,
+       "rating": 3
+      },
+      {
+       "opponent": "Bristol City",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "F. López",
+     "position": "FWD",
+     "rating": 78.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), away from home."
+    },
+    {
+     "name": "André",
+     "position": "MID",
+     "rating": 75,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "M. Munetsi",
+     "position": "MID",
+     "rating": 74.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "M. Mané",
+     "position": "FWD",
+     "rating": 72.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), away from home."
+    },
+    {
+     "name": "J. Sá",
+     "position": "GK",
+     "rating": 70.7,
+     "status": "available",
+     "minutesShare": 89,
+     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "A. Armstrong",
+     "position": "FWD",
+     "rating": 70.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), away from home."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "R. Gomes",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Foot Injury, expected back 14 Oct"
+    },
+    {
+     "name": "R. Jiménez",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "B. Traoré",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury"
+    },
+    {
+     "name": "B. Traoré",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Calf Injury"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "35",
+   "name": "West Bromwich Albion",
+   "short": "WBA",
+   "slug": "west-bromwich-albion",
+   "division": "championship",
+   "divisionName": "the Championship",
+   "position": 4,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "W",
+    "L",
+    "L"
+   ],
+   "rating": 45.3,
+   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.33
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.5
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 10,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Blackburn Rovers",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 11,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Preston North End",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 12,
+     "blank": false,
+     "double": true,
+     "matches": [
+      {
+       "opponent": "West Ham United",
+       "home": false,
+       "rating": 4
+      },
+      {
+       "opponent": "Southampton",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "I. Price",
+     "position": "MID",
+     "rating": 79.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 3 goals and 2 assists."
+    },
+    {
+     "name": "C. Styles",
+     "position": "MID",
+     "rating": 76.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), 2 goals and 0 assists."
+    },
+    {
+     "name": "J. Morgan",
+     "position": "FWD",
+     "rating": 75.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
+    },
+    {
+     "name": "M. O'Leary",
+     "position": "GK",
+     "rating": 75.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "O. Diakité",
+     "position": "MID",
+     "rating": 71.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "N. Phillips",
+     "position": "DEF",
+     "rating": 71,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "N. Galves",
+     "position": "DEF",
+     "status": "injured",
+     "news": "ACL Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "M. Johnston",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 2 Jan"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "49",
    "name": "Sheffield United",
    "short": "SHU",
    "slug": "sheffield-united",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 14,
+   "position": 15,
    "points": 0,
    "played": 0,
    "form": [
@@ -7154,7 +7426,7 @@
     {
      "name": "J. Tanganga",
      "position": "DEF",
-     "rating": 65.9,
+     "rating": 64.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 3 clean sheets plus 1 attacking return."
@@ -7162,7 +7434,7 @@
     {
      "name": "S. Peck",
      "position": "MID",
-     "rating": 64.7,
+     "rating": 64.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 1 goal and 2 assists."
@@ -7170,7 +7442,7 @@
     {
      "name": "S. McCallum",
      "position": "DEF",
-     "rating": 62.1,
+     "rating": 60.9,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 4 clean sheets plus 2 attacking returns."
@@ -7178,7 +7450,7 @@
     {
      "name": "H. Choudhury",
      "position": "MID",
-     "rating": 57.6,
+     "rating": 57.4,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
@@ -7209,7 +7481,7 @@
    "slug": "queens-park-rangers",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 6,
+   "position": 8,
    "points": 0,
    "played": 0,
    "form": [
@@ -7296,7 +7568,7 @@
     {
      "name": "R. Edwards",
      "position": "DEF",
-     "rating": 61.9,
+     "rating": 61.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
@@ -7304,7 +7576,7 @@
     {
      "name": "A. Mbengue",
      "position": "DEF",
-     "rating": 59.5,
+     "rating": 58.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
@@ -7312,7 +7584,7 @@
     {
      "name": "N. Madsen",
      "position": "MID",
-     "rating": 58.8,
+     "rating": 58.5,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 1 goal and 0 assists."
@@ -7320,7 +7592,7 @@
     {
      "name": "J. Dunne",
      "position": "DEF",
-     "rating": 58.1,
+     "rating": 57.3,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
@@ -7328,7 +7600,7 @@
     {
      "name": "G. Kamara",
      "position": "MID",
-     "rating": 56.8,
+     "rating": 56.5,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
@@ -7375,7 +7647,7 @@
    "slug": "lincoln-city",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 16,
+   "position": 17,
    "points": 0,
    "played": 0,
    "form": [
@@ -7460,44 +7732,44 @@
      "summary": "Started 9 of 9 (100%), 4 clean sheets."
     },
     {
-     "name": "D. Elerewe",
-     "position": "DEF",
-     "rating": 64,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), 4 clean sheets."
-    },
-    {
      "name": "A. Reach",
      "position": "MID",
-     "rating": 63.5,
+     "rating": 63.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 1 goal and 1 assist."
     },
     {
+     "name": "D. Elerewe",
+     "position": "DEF",
+     "rating": 63,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "C. McGrandles",
      "position": "MID",
-     "rating": 62.4,
+     "rating": 62.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 0 goals and 0 assists."
     },
     {
-     "name": "R. Towler",
-     "position": "DEF",
-     "rating": 58.4,
-     "status": "available",
-     "minutesShare": 89,
-     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "T. Bayliss",
      "position": "MID",
-     "rating": 58.3,
+     "rating": 58.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "R. Hackett",
+     "position": "MID",
+     "rating": 57.9,
+     "status": "available",
+     "minutesShare": 89,
+     "summary": "Started 8 of 9 (89%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -7654,12 +7926,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Unknown injury"
-    },
-    {
-     "name": "S. McWilliams",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hand Injury"
     },
     {
      "name": "F. Onukwuli",
@@ -7820,166 +8086,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Hamstring injury, expected back 15 Nov"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "97",
-   "name": "Cardiff City",
-   "short": "CAR",
-   "slug": "cardiff-city",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 21,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "W",
-    "L"
-   ],
-   "rating": 45.3,
-   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.33
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Middlesbrough",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Birmingham City",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "Wolverhampton Wanderers",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "West Ham United",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "J. Moylan",
-     "position": "MID",
-     "rating": 68.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 4 goals and 2 assists."
-    },
-    {
-     "name": "A. Robertson",
-     "position": "MID",
-     "rating": 67,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 0 goals and 0 assists."
-    },
-    {
-     "name": "N. Trott",
-     "position": "GK",
-     "rating": 64.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "P. Ng",
-     "position": "DEF",
-     "rating": 59.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Bagan",
-     "position": "DEF",
-     "rating": 58.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "C. Willock",
-     "position": "MID",
-     "rating": 58,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "Y. Salech",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Shoulder Injury, expected back 14 Oct"
-    },
-    {
-     "name": "R. Colwill",
-     "position": "MID",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 14 Oct"
-    },
-    {
-     "name": "D. Lawlor",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury"
-    },
-    {
-     "name": "C. Chambers",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
@@ -8378,7 +8484,7 @@
     {
      "name": "B. Clark",
      "position": "MID",
-     "rating": 77.7,
+     "rating": 77.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 2 goals and 2 assists."
@@ -8386,7 +8492,7 @@
     {
      "name": "S. Szmodics",
      "position": "MID",
-     "rating": 71.5,
+     "rating": 71.1,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 3 goals and 1 assist."
@@ -8394,7 +8500,7 @@
     {
      "name": "A. Mowatt",
      "position": "MID",
-     "rating": 71.2,
+     "rating": 70.8,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 0 goals and 0 assists."
@@ -8402,7 +8508,7 @@
     {
      "name": "S. Langås",
      "position": "DEF",
-     "rating": 70.5,
+     "rating": 69.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
@@ -8418,7 +8524,7 @@
     {
      "name": "D. Sanderson",
      "position": "DEF",
-     "rating": 65.3,
+     "rating": 64.8,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), even fixture (rated 3 of 5)."
@@ -8488,8 +8594,8 @@
    "played": 0,
    "form": [
     "D",
-    "L",
-    "D"
+    "D",
+    "L"
    ],
    "rating": 42.2,
    "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -8562,10 +8668,10 @@
     {
      "name": "L. Jones",
      "position": "DEF",
-     "rating": 68,
+     "rating": 67.6,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 3 clean sheets plus 2 attacking returns."
+     "summary": "Started 10 of 10 (100%), 3 clean sheets plus 3 attacking returns."
     },
     {
      "name": "A. Okonkwo",
@@ -8576,36 +8682,36 @@
      "summary": "Started 9 of 10 (90%), 3 clean sheets."
     },
     {
+     "name": "C. Coventry",
+     "position": "MID",
+     "rating": 60.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
      "name": "T. Campbell",
      "position": "FWD",
-     "rating": 59.9,
+     "rating": 60.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), 4 goals and 1 assist."
     },
     {
-     "name": "C. Coventry",
-     "position": "MID",
-     "rating": 58.6,
+     "name": "I. Mesík",
+     "position": "DEF",
+     "rating": 58.9,
      "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+     "minutesShare": 90,
+     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
     },
     {
      "name": "K. Grant",
      "position": "FWD",
-     "rating": 57.8,
+     "rating": 58.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "D. McNamara",
-     "position": "DEF",
-     "rating": 56.3,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -8957,7 +9063,7 @@
    "slug": "portsmouth",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 19,
+   "position": 20,
    "points": 0,
    "played": 0,
    "form": [
@@ -9041,7 +9147,7 @@
     {
      "name": "E. Adams",
      "position": "MID",
-     "rating": 67.1,
+     "rating": 66.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), 1 goal and 1 assist."
@@ -9049,7 +9155,7 @@
     {
      "name": "Z. Swanson",
      "position": "DEF",
-     "rating": 63.6,
+     "rating": 63.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -9057,7 +9163,7 @@
     {
      "name": "A. Segecic",
      "position": "MID",
-     "rating": 63.1,
+     "rating": 62.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 8 of 8 (100%), tough fixture (rated 4 of 5)."
@@ -9065,7 +9171,7 @@
     {
      "name": "T. Devlin",
      "position": "MID",
-     "rating": 58.8,
+     "rating": 58.6,
      "status": "available",
      "minutesShare": 88,
      "summary": "Started 7 of 8 (88%), tough fixture (rated 4 of 5)."
@@ -9625,154 +9731,6 @@
    "cardRisk": []
   },
   {
-   "id": "35",
-   "name": "West Bromwich Albion",
-   "short": "WBA",
-   "slug": "west-bromwich-albion",
-   "division": "championship",
-   "divisionName": "the Championship",
-   "position": 9,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "L",
-    "D"
-   ],
-   "rating": 39.1,
-   "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.11
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.5
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 10,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Blackburn Rovers",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 11,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Preston North End",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 12,
-     "blank": false,
-     "double": true,
-     "matches": [
-      {
-       "opponent": "West Ham United",
-       "home": false,
-       "rating": 4
-      },
-      {
-       "opponent": "Southampton",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "C. Styles",
-     "position": "MID",
-     "rating": 76.5,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 2 goals and 0 assists."
-    },
-    {
-     "name": "I. Price",
-     "position": "MID",
-     "rating": 76.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 2 goals and 1 assist."
-    },
-    {
-     "name": "M. O'Leary",
-     "position": "GK",
-     "rating": 75.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Morgan",
-     "position": "FWD",
-     "rating": 71.8,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), playing at home."
-    },
-    {
-     "name": "O. Diakité",
-     "position": "MID",
-     "rating": 68.7,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "R. Nzingoula",
-     "position": "MID",
-     "rating": 68.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "N. Galves",
-     "position": "DEF",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 2 May"
-    },
-    {
-     "name": "M. Johnston",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 2 Jan"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
    "id": "46",
    "name": "Swindon Town",
    "short": "SWI",
@@ -10116,8 +10074,8 @@
    "played": 0,
    "form": [
     "L",
-    "D",
-    "L"
+    "L",
+    "D"
    ],
    "rating": 39.1,
    "summary": "Next 3 rated 3.0 of 5 on average. 1 double round in the next 3.",
@@ -10190,15 +10148,7 @@
     {
      "name": "D. Iversen",
      "position": "GK",
-     "rating": 62.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Thompson",
-     "position": "MID",
-     "rating": 60.9,
+     "rating": 63.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
@@ -10206,7 +10156,23 @@
     {
      "name": "A. Devine",
      "position": "MID",
-     "rating": 60.6,
+     "rating": 61.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Thompson",
+     "position": "MID",
+     "rating": 60.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "C. Lang",
+     "position": "FWD",
+     "rating": 58.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
@@ -10214,23 +10180,15 @@
     {
      "name": "L. Leroy",
      "position": "MID",
-     "rating": 57.2,
+     "rating": 57.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "A. Vukcevic",
-     "position": "DEF",
-     "rating": 53.9,
-     "status": "available",
-     "minutesShare": 80,
-     "summary": "Started 8 of 10 (80%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Storey",
-     "position": "DEF",
-     "rating": 51.8,
+     "name": "S. Mills",
+     "position": "MID",
+     "rating": 54.3,
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 8 of 10 (80%), tough fixture (rated 4 of 5)."
@@ -10238,40 +10196,22 @@
    ],
    "unavailable": [
     {
-     "name": "L. Gibson",
-     "position": "DEF",
-     "status": "doubtful",
-     "news": "Illness, expected back 14 Oct"
-    },
-    {
-     "name": "C. Lang",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock, expected back 14 Oct"
-    },
-    {
-     "name": "S. Mills",
-     "position": "MID",
-     "status": "injured",
-     "news": "Knock, expected back 14 Oct"
-    },
-    {
      "name": "H. Clarke",
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 14 Oct"
     },
     {
-     "name": "C. Wiley",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 14 Oct"
-    },
-    {
      "name": "J. Kenny",
      "position": "FWD",
      "status": "injured",
      "news": "Unknown injury"
+    },
+    {
+     "name": "C. Wiley",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 14 Oct"
     },
     {
      "name": "A. McCann",
@@ -10909,7 +10849,7 @@
    "slug": "norwich-city",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 18,
+   "position": 19,
    "points": 0,
    "played": 0,
    "form": [
@@ -10988,7 +10928,7 @@
     {
      "name": "A. Brooks",
      "position": "MID",
-     "rating": 79.1,
+     "rating": 78.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 2 goals and 3 assists."
@@ -10996,7 +10936,7 @@
     {
      "name": "P. Mattsson",
      "position": "MID",
-     "rating": 78.8,
+     "rating": 78.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), 0 goals and 1 assist."
@@ -11004,7 +10944,7 @@
     {
      "name": "J. Wright",
      "position": "MID",
-     "rating": 70.9,
+     "rating": 70.6,
      "status": "available",
      "minutesShare": 89,
      "summary": "Started 8 of 9 (89%), 2 goals and 2 assists."
@@ -11012,7 +10952,7 @@
     {
      "name": "J. Córdoba",
      "position": "DEF",
-     "rating": 68.3,
+     "rating": 67.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
@@ -11229,7 +11169,7 @@
    "slug": "watford",
    "division": "championship",
    "divisionName": "the Championship",
-   "position": 20,
+   "position": 22,
    "points": 0,
    "played": 0,
    "form": [
@@ -11308,23 +11248,39 @@
     {
      "name": "H. Kyprianou",
      "position": "MID",
-     "rating": 75.1,
+     "rating": 76.9,
      "status": "available",
      "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), 0 goals and 0 assists."
+     "summary": "Started 10 of 10 (100%), 1 goal and 0 assists."
     },
     {
      "name": "E. Kayembe",
      "position": "MID",
-     "rating": 72.2,
+     "rating": 72.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
     },
     {
+     "name": "A. Nabizada",
+     "position": "FWD",
+     "rating": 72.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
+    },
+    {
+     "name": "I. Bravo",
+     "position": "FWD",
+     "rating": 71.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 10 of 10 (100%), playing at home."
+    },
+    {
      "name": "M. Pollock",
      "position": "DEF",
-     "rating": 71.6,
+     "rating": 71.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -11332,26 +11288,10 @@
     {
      "name": "F. Ravaglia",
      "position": "GK",
-     "rating": 70.1,
+     "rating": 70.9,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "O. Maamma",
-     "position": "FWD",
-     "rating": 69.3,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 10 of 10 (100%), playing at home."
-    },
-    {
-     "name": "A. Nabizada",
-     "position": "FWD",
-     "rating": 69,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), playing at home."
     }
    ],
    "unavailable": [
