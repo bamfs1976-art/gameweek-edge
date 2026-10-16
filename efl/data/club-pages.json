@@ -1,12 +1,12 @@
 {
- "built": "2026-10-15T21:24:34.473Z",
+ "built": "2026-10-16T04:34:05.171Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-15T21:24:34.473Z",
+  "generatedAt": "2026-10-16T04:34:05.171Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1367,10 +1367,10 @@
    ],
    "unavailable": [
     {
-     "name": "J. Pleguezuelo",
+     "name": "J. Edwards",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Hamstring injury"
     },
     {
      "name": "M. Boateng",
@@ -2630,6 +2630,12 @@
      "position": "MID",
      "status": "injured",
      "news": "MCL Knee Injury"
+    },
+    {
+     "name": "J. Spaven",
+     "position": "GK",
+     "status": "injured",
+     "news": "Unknown injury"
     }
    ],
    "cardRisk": []
@@ -3071,6 +3077,12 @@
    ],
    "unavailable": [
     {
+     "name": "T. Shade",
+     "position": "FWD",
+     "status": "doubtful",
+     "news": "Unknown injury, expected back 18 Oct"
+    },
+    {
      "name": "C. Shaughnessy",
      "position": "DEF",
      "status": "injured",
@@ -3116,7 +3128,7 @@
      "name": "C. Ogilvie",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury, expected back 18 Oct"
+     "news": "Knee Injury, expected back 22 Nov"
     },
     {
      "name": "M. Kosznovszky",
@@ -4068,14 +4080,6 @@
      "summary": "Started 8 of 9 (89%), 6 goals and 1 assist."
     },
     {
-     "name": "R. Balker",
-     "position": "DEF",
-     "rating": 72.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "A. Fletcher",
      "position": "FWD",
      "rating": 71.2,
@@ -4084,23 +4088,43 @@
      "summary": "Started 9 of 9 (100%), playing at home."
     },
     {
-     "name": "M. Wallace",
-     "position": "DEF",
-     "rating": 70.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "M. Harness",
      "position": "FWD",
      "rating": 70.1,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 9 of 9 (100%), playing at home."
+    },
+    {
+     "name": "M. Young",
+     "position": "GK",
+     "rating": 69.8,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "I. Bowat",
+     "position": "DEF",
+     "rating": 69.5,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 9 of 9 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "R. Balker",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "M. Wallace",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
     {
      "name": "M. McGuane",
      "position": "MID",
@@ -4508,14 +4532,6 @@
      "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "Z. Amdouni",
-     "position": "FWD",
-     "rating": 53.8,
-     "status": "available",
-     "minutesShare": 90,
-     "summary": "Started 9 of 10 (90%), tough fixture (rated 4 of 5)."
-    },
-    {
      "name": "K. Walker",
      "position": "DEF",
      "rating": 52.1,
@@ -4538,6 +4554,14 @@
      "status": "available",
      "minutesShare": 80,
      "summary": "Started 8 of 10 (80%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "L. Pires",
+     "position": "DEF",
+     "rating": 50.6,
+     "status": "available",
+     "minutesShare": 70,
+     "summary": "In and out of the side (7 starts in 10), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -4546,6 +4570,12 @@
      "position": "FWD",
      "status": "doubtful",
      "news": "Knock, expected back 17 Oct"
+    },
+    {
+     "name": "Z. Amdouni",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 17 Oct"
     },
     {
      "name": "A. Ramsey",
@@ -4570,6 +4600,12 @@
      "position": "MID",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 25 Oct"
+    },
+    {
+     "name": "A. Barnes",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Muscle Injury, expected back 17 Oct"
     }
    ],
    "cardRisk": []
@@ -6280,13 +6316,13 @@
      "name": "B. Traoré",
      "position": "MID",
      "status": "injured",
-     "news": "Calf Injury"
+     "news": "Calf Injury, expected back 1 Nov"
     },
     {
      "name": "B. Traoré",
      "position": "FWD",
      "status": "injured",
-     "news": "Calf Injury"
+     "news": "Hamstring injury"
     }
    ],
    "cardRisk": []
@@ -7490,12 +7526,6 @@
     {
      "name": "J. Lewis",
      "position": "DEF",
-     "status": "injured",
-     "news": "Broken Toe injury"
-    },
-    {
-     "name": "M. O’Mahony",
-     "position": "FWD",
      "status": "injured",
      "news": "Broken Toe injury"
     }
@@ -9895,10 +9925,28 @@
      "news": "Toe Injury"
     },
     {
+     "name": "D. Butterworth",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury"
+    },
+    {
+     "name": "P. Glatzel",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury, expected back 15 Nov"
+    },
+    {
      "name": "O. Palmer",
      "position": "FWD",
      "status": "injured",
      "news": "Ankle Injury"
+    },
+    {
+     "name": "S. Inwood",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Gluteal Strain"
     },
     {
      "name": "G. Kilkenny",
