@@ -1,12 +1,12 @@
 {
- "built": "2026-10-17T04:28:49.447Z",
+ "built": "2026-10-17T10:46:22.911Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-17T04:28:49.447Z",
+  "generatedAt": "2026-10-17T10:46:22.911Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -6432,7 +6432,7 @@
     {
      "name": "L. Pires",
      "position": "DEF",
-     "rating": 52.2,
+     "rating": 52.4,
      "status": "available",
      "minutesShare": 73,
      "summary": "In and out of the side (8 starts in 11), tough fixture (rated 4 of 5)."
