@@ -1,12 +1,12 @@
 {
- "built": "2026-10-16T23:36:57.646Z",
+ "built": "2026-10-17T04:28:49.447Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-16T23:36:57.646Z",
+  "generatedAt": "2026-10-17T04:28:49.447Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -6448,18 +6448,6 @@
    ],
    "unavailable": [
     {
-     "name": "J. Banel",
-     "position": "FWD",
-     "status": "doubtful",
-     "news": "Knock, expected back 17 Oct"
-    },
-    {
-     "name": "Z. Amdouni",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 17 Oct"
-    },
-    {
      "name": "A. Ramsey",
      "position": "MID",
      "status": "injured",
@@ -6482,12 +6470,6 @@
      "position": "MID",
      "status": "injured",
      "news": "ACL Knee Injury, expected back 25 Oct"
-    },
-    {
-     "name": "A. Barnes",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Muscle Injury, expected back 17 Oct"
     }
    ],
    "cardRisk": []
@@ -10707,12 +10689,6 @@
      "position": "GK",
      "status": "doubtful",
      "news": "Concussion injury, expected back 25 Oct"
-    },
-    {
-     "name": "M. Topic",
-     "position": "MID",
-     "status": "doubtful",
-     "news": "ACL Knee Injury, expected back 17 Oct"
     },
     {
      "name": "K. McLean",
