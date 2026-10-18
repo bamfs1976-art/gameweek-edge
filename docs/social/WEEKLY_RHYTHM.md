@@ -70,6 +70,16 @@ Length: every X caption here fits the standard 280 characters (X counts the
 link as 23), so it posts from an account without Premium. The Debrief and
 Captaincy captions were trimmed to fit on 1 Oct 2026. Bluesky allows 300.
 
+Automatic posting (owner decision, 18 Oct 2026): from GW8 the evening posts
+go out by themselves from Typefully, as text only. Nothing is reviewed on the
+day, so the scheduled captions name no players, quote no numbers and make no
+claim about how the model did. The image versions above stay manual. The
+live DefCon post is never scheduled, because a scheduled post cannot know
+the games are in progress. The Daily Content workflow is unchanged and still
+posts nothing. Typefully's plan allows 10 posts a month, so the automatic
+rhythm keeps Captaincy and the Debrief every week and adds Price watch where
+the month has room.
+
 Hashtags: `#FPL` on Bluesky, none on X. The Bluesky tag is what gets you into
 the custom feeds; on X the algorithm reads the text and the tag only leaks
 attention away.
