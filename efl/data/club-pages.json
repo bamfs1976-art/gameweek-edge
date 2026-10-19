@@ -1,12 +1,12 @@
 {
- "built": "2026-10-19T04:42:35.392Z",
+ "built": "2026-10-19T13:19:24.586Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-19T04:42:35.392Z",
+  "generatedAt": "2026-10-19T13:19:24.586Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -175,6 +175,12 @@
     }
    ],
    "unavailable": [
+    {
+     "name": "P. Seung-Ho",
+     "position": "MID",
+     "status": "injured",
+     "news": "Knock, expected back 25 Oct"
+    },
     {
      "name": "M. Leonard",
      "position": "MID",
@@ -866,15 +872,21 @@
      "summary": "Started 10 of 11 (91%), playing at home."
     },
     {
-     "name": "R. Morishita",
+     "name": "S. Morsy",
      "position": "MID",
-     "rating": 71.6,
+     "rating": 69.3,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 11 of 11 (100%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "R. Morishita",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
     {
      "name": "Y. Ribeiro",
      "position": "DEF",
@@ -1171,6 +1183,18 @@
    ],
    "unavailable": [
     {
+     "name": "C. Bishop",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Knee Injury"
+    },
+    {
+     "name": "C. Shaughnessy",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury"
+    },
+    {
      "name": "B. Arthur",
      "position": "DEF",
      "status": "injured",
@@ -1210,7 +1234,7 @@
      "name": "T. Waddingham",
      "position": "FWD",
      "status": "injured",
-     "news": "Ankle Injury, expected back 4 Nov"
+     "news": "Ankle Injury, expected back 25 Oct"
     },
     {
      "name": "F. Umeh-Chibueze",
@@ -1669,10 +1693,22 @@
    ],
    "unavailable": [
     {
+     "name": "J. Shackleton",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
      "name": "F. Seriki",
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 25 Oct"
+    },
+    {
+     "name": "M. Doherty",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 31 Oct"
     }
    ],
    "cardRisk": []
@@ -2860,10 +2896,34 @@
    ],
    "unavailable": [
     {
+     "name": "P. Ng",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "Y. Salech",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Shoulder Injury, expected back 25 Oct"
+    },
+    {
+     "name": "R. Colwill",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 25 Oct"
+    },
+    {
      "name": "D. Lawlor",
      "position": "DEF",
      "status": "injured",
      "news": "Hamstring injury"
+    },
+    {
+     "name": "C. Chambers",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knee Injury, expected back 25 Oct"
     }
    ],
    "cardRisk": []
@@ -5417,10 +5477,22 @@
    ],
    "unavailable": [
     {
+     "name": "N. Chalobah",
+     "position": "MID",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
+    {
      "name": "C. Sichenje",
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 2 May"
+    },
+    {
+     "name": "M. Godden",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hamstring injury"
     },
     {
      "name": "R. Apter",
@@ -6045,6 +6117,18 @@
    ],
    "unavailable": [
     {
+     "name": "F. Marschall",
+     "position": "GK",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
+     "name": "T. Arconte",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury"
+    },
+    {
      "name": "J. Coburn",
      "position": "FWD",
      "status": "injured",
@@ -6067,6 +6151,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury"
+    },
+    {
+     "name": "M. Ivanovic",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Broken Foot injury"
     }
    ],
    "cardRisk": []
@@ -8443,14 +8533,6 @@
      "summary": "Started 10 of 11 (91%), tough fixture (rated 4 of 5)."
     },
     {
-     "name": "A. Mowatt",
-     "position": "MID",
-     "rating": 55.9,
-     "status": "available",
-     "minutesShare": 82,
-     "summary": "Started 9 of 11 (82%), 0 goals and 0 assists."
-    },
-    {
      "name": "J. Ward",
      "position": "MID",
      "rating": 55.7,
@@ -8465,6 +8547,14 @@
      "status": "available",
      "minutesShare": 91,
      "summary": "Started 10 of 11 (91%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "L. Salvesen",
+     "position": "FWD",
+     "rating": 51.7,
+     "status": "available",
+     "minutesShare": 91,
+     "summary": "Started 10 of 11 (91%), tough fixture (rated 4 of 5)."
     }
    ],
    "unavailable": [
@@ -8473,6 +8563,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Groin Injury, expected back 17 Jan"
+    },
+    {
+     "name": "A. Mowatt",
+     "position": "MID",
+     "status": "injured",
+     "news": "Foot Injury"
     },
     {
      "name": "J. Widell Zetterström",
@@ -8491,6 +8587,12 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury, expected back 1 Nov"
+    },
+    {
+     "name": "L. Travis",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury, expected back 25 Oct"
     },
     {
      "name": "C. Forsyth",
@@ -9980,6 +10082,12 @@
      "news": "Ankle Injury"
     },
     {
+     "name": "A. Musaba",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Illness, expected back 25 Oct"
+    },
+    {
      "name": "M. Touré",
      "position": "FWD",
      "status": "injured",
@@ -10001,7 +10109,7 @@
      "name": "G. Forsyth",
      "position": "MID",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knee Injury"
     }
    ],
    "cardRisk": []
