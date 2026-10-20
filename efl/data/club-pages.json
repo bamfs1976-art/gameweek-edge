@@ -1,12 +1,12 @@
 {
- "built": "2026-10-19T20:36:11.357Z",
+ "built": "2026-10-20T00:21:42.591Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-19T20:36:11.357Z",
+  "generatedAt": "2026-10-20T00:21:42.591Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -10553,7 +10553,7 @@
      "name": "G. Sebine",
      "position": "FWD",
      "status": "injured",
-     "news": "Calf Injury, expected back 21 Oct"
+     "news": "Calf Injury, expected back 31 Oct"
     },
     {
      "name": "L. Agbaire",
