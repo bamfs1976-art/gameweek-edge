@@ -2967,5 +2967,121 @@
       ]
     ]
   },
-  "result": null
+  "result": {
+    "gradedAt": "2026-10-20T17:29:20.945Z",
+    "totw": {
+      "players": [
+        {
+          "id": "124",
+          "points": 5
+        },
+        {
+          "id": "397",
+          "points": 1
+        },
+        {
+          "id": "400",
+          "points": 6
+        },
+        {
+          "id": "399",
+          "points": 0
+        },
+        {
+          "id": "115",
+          "points": 6
+        },
+        {
+          "id": "236",
+          "points": 2
+        },
+        {
+          "id": "176",
+          "points": 0
+        },
+        {
+          "id": "504",
+          "points": 11
+        },
+        {
+          "id": "229",
+          "points": 0
+        },
+        {
+          "id": "249",
+          "points": 2
+        },
+        {
+          "id": "385",
+          "points": 2
+        }
+      ],
+      "total": 35,
+      "unresolved": 0,
+      "withCaptain": 40,
+      "average": 59,
+      "highest": 122,
+      "beatAverage": false,
+      "naive": 35,
+      "beatNaive": false
+    },
+    "captain": {
+      "points": 5,
+      "rank": 57,
+      "of": 305,
+      "played": true
+    },
+    "prices": {
+      "rows": [
+        {
+          "id": "101",
+          "dir": "rise",
+          "prob": 95,
+          "costThen": 49,
+          "costNow": 49,
+          "moved": 0,
+          "hit": false
+        },
+        {
+          "id": "400",
+          "dir": "rise",
+          "prob": 95,
+          "costThen": 74,
+          "costNow": 75,
+          "moved": 1,
+          "hit": true
+        },
+        {
+          "id": "53",
+          "dir": "rise",
+          "prob": 92,
+          "costThen": 59,
+          "costNow": 60,
+          "moved": 1,
+          "hit": true
+        },
+        {
+          "id": "166",
+          "dir": "rise",
+          "prob": 91,
+          "costThen": 66,
+          "costNow": 66,
+          "moved": 0,
+          "hit": false
+        },
+        {
+          "id": "526",
+          "dir": "rise",
+          "prob": 87,
+          "costThen": 58,
+          "costNow": 58,
+          "moved": 0,
+          "hit": false
+        }
+      ],
+      "hits": 2,
+      "graded": 5,
+      "rate": 0.4
+    }
+  }
 }
