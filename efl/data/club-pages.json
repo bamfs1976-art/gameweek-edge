@@ -1,12 +1,12 @@
 {
- "built": "2026-10-20T08:34:20.021Z",
+ "built": "2026-10-20T14:19:11.991Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-20T08:34:20.021Z",
+  "generatedAt": "2026-10-20T14:19:11.991Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -5236,12 +5236,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "N. Opoku",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Knock"
-    },
     {
      "name": "J. Perkins",
      "position": "MID",
