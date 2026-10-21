@@ -1,12 +1,12 @@
 {
- "built": "2026-10-20T23:53:57.884Z",
+ "built": "2026-10-21T04:50:45.905Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-20T23:53:57.884Z",
+  "generatedAt": "2026-10-21T04:50:45.905Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -4290,12 +4290,6 @@
     }
    ],
    "unavailable": [
-    {
-     "name": "A. Armstrong",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Back Injury, expected back 21 Oct"
-    },
     {
      "name": "R. Gomes",
      "position": "DEF",
