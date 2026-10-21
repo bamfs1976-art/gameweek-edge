@@ -1,12 +1,12 @@
 {
- "built": "2026-10-21T04:50:45.905Z",
+ "built": "2026-10-21T11:51:29.805Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-21T04:50:45.905Z",
+  "generatedAt": "2026-10-21T11:51:29.805Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -182,6 +182,12 @@
      "news": "Knock, expected back 25 Oct"
     },
     {
+     "name": "K. Lund",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Knock, expected back 25 Oct"
+    },
+    {
      "name": "M. Leonard",
      "position": "MID",
      "status": "injured",
@@ -276,7 +282,7 @@
     {
      "name": "E. Adams",
      "position": "MID",
-     "rating": 76.3,
+     "rating": 76.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 11 of 11 (100%), 2 goals and 1 assist."
@@ -284,7 +290,7 @@
     {
      "name": "A. Segecic",
      "position": "MID",
-     "rating": 73.7,
+     "rating": 74.2,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 11 of 11 (100%), 2 goals and 3 assists."
@@ -370,12 +376,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury, expected back 22 Nov"
-    },
-    {
-     "name": "T. Waddingham",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Ankle Injury, expected back 25 Oct"
     },
     {
      "name": "F. Umeh-Chibueze",
@@ -820,7 +820,7 @@
      "name": "R. Morishita",
      "position": "MID",
      "status": "injured",
-     "news": "Ankle Injury"
+     "news": "Ankle Injury, expected back 1 Nov"
     },
     {
      "name": "Y. Ribeiro",
@@ -1743,7 +1743,7 @@
      "name": "E. Bocat",
      "position": "DEF",
      "status": "injured",
-     "news": "Unknown injury"
+     "news": "Knee Injury"
     },
     {
      "name": "S. Gallagher",
@@ -1909,7 +1909,7 @@
      "name": "C. Larin",
      "position": "FWD",
      "status": "doubtful",
-     "news": "Leg Injury, expected back 25 Oct"
+     "news": "Hamstring injury, expected back 25 Oct"
     },
     {
      "name": "F. Downes",
@@ -3261,7 +3261,7 @@
      "name": "A. Mbengue",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "ACL Knee Injury"
     },
     {
      "name": "R. Burrell",
@@ -3693,7 +3693,7 @@
     {
      "name": "J. March",
      "position": "FWD",
-     "rating": 58.5,
+     "rating": 58.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
@@ -3981,7 +3981,7 @@
     {
      "name": "D. Phillips",
      "position": "MID",
-     "rating": 70.3,
+     "rating": 69.8,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -4251,7 +4251,7 @@
     {
      "name": "André",
      "position": "MID",
-     "rating": 73,
+     "rating": 72.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 11 of 11 (100%), even fixture (rated 3 of 5)."
@@ -4451,6 +4451,12 @@
    ],
    "unavailable": [
     {
+     "name": "J. Windass",
+     "position": "MID",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 31 Oct"
+    },
+    {
      "name": "M. Cleworth",
      "position": "DEF",
      "status": "injured",
@@ -4472,7 +4478,7 @@
      "name": "B. Sheaf",
      "position": "MID",
      "status": "injured",
-     "news": "Groin Injury"
+     "news": "Groin Injury, expected back 31 Oct"
     },
     {
      "name": "L. Cacace",
@@ -4484,7 +4490,7 @@
      "name": "S. Revan",
      "position": "MID",
      "status": "injured",
-     "news": "Hamstring injury"
+     "news": "Hamstring injury, expected back 2 Jan"
     }
    ],
    "cardRisk": []
@@ -4737,10 +4743,18 @@
     {
      "name": "M. Pennington",
      "position": "DEF",
-     "rating": 63.2,
+     "rating": 63,
      "status": "available",
      "minutesShare": 91,
      "summary": "Started 10 of 11 (91%), 8 clean sheets plus 1 attacking return."
+    },
+    {
+     "name": "A. Sarcevic",
+     "position": "MID",
+     "rating": 62.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 11 of 11 (100%), 2 goals and 0 assists."
     },
     {
      "name": "C. Connolly",
@@ -4749,14 +4763,6 @@
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 11 of 11 (100%), 0 goals and 1 assist."
-    },
-    {
-     "name": "A. Sarcevic",
-     "position": "MID",
-     "rating": 62.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 11 of 11 (100%), 2 goals and 0 assists."
     }
    ],
    "unavailable": [
@@ -4874,7 +4880,7 @@
     {
      "name": "L. Jenkins",
      "position": "DEF",
-     "rating": 61.5,
+     "rating": 61.6,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 12 of 12 (100%), tough fixture (rated 4 of 5)."
@@ -5883,12 +5889,6 @@
      "news": "Knee Injury, expected back 25 Oct"
     },
     {
-     "name": "J. Cullen",
-     "position": "MID",
-     "status": "injured",
-     "news": "ACL Knee Injury, expected back 25 Oct"
-    },
-    {
      "name": "A. Barnes",
      "position": "FWD",
      "status": "injured",
@@ -6800,6 +6800,12 @@
    ],
    "unavailable": [
     {
+     "name": "L. Sillah",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Hand Injury"
+    },
+    {
      "name": "W. Goodwin",
      "position": "FWD",
      "status": "injured",
@@ -6810,6 +6816,12 @@
      "position": "MID",
      "status": "injured",
      "news": "Knee Injury"
+    },
+    {
+     "name": "B. Dack",
+     "position": "MID",
+     "status": "injured",
+     "news": "Calf Injury, expected back 24 Oct"
     },
     {
      "name": "K. Harris",
@@ -7963,7 +7975,7 @@
     {
      "name": "A. Morgan",
      "position": "MID",
-     "rating": 71.9,
+     "rating": 71.7,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 10 of 10 (100%), even fixture (rated 3 of 5)."
@@ -8751,13 +8763,19 @@
      "name": "H. Clarke",
      "position": "DEF",
      "status": "injured",
-     "news": "Knee Injury"
+     "news": "Knee Injury, expected back 20 Dec"
     },
     {
      "name": "L. Gibbs",
      "position": "MID",
      "status": "injured",
      "news": "Thigh Injury, expected back 17 Jan"
+    },
+    {
+     "name": "C. Wiley",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Groin Injury, expected back 25 Oct"
     },
     {
      "name": "A. McCann",
@@ -9126,6 +9144,12 @@
      "position": "FWD",
      "status": "injured",
      "news": "Thigh Injury, expected back 25 Oct"
+    },
+    {
+     "name": "E. Wheatley",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Ankle Injury, expected back 25 Oct"
     }
    ],
    "cardRisk": []
@@ -9707,7 +9731,7 @@
     {
      "name": "J. Tucker",
      "position": "DEF",
-     "rating": 58.9,
+     "rating": 59,
      "status": "available",
      "minutesShare": 100,
      "summary": "Started 11 of 11 (100%), tough fixture (rated 4 of 5)."
@@ -9878,7 +9902,7 @@
     {
      "name": "C. Tilt",
      "position": "DEF",
-     "rating": 70.3,
+     "rating": 70.1,
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
