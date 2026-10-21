@@ -1,12 +1,12 @@
 {
- "built": "2026-10-21T11:51:29.805Z",
+ "built": "2026-10-21T17:14:07.320Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-21T11:51:29.805Z",
+  "generatedAt": "2026-10-21T17:14:07.320Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2312,14 +2312,6 @@
      "summary": "Started 12 of 12 (100%), even fixture (rated 3 of 5)."
     },
     {
-     "name": "J. Doyle-Hayes",
-     "position": "MID",
-     "rating": 69.5,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
-    },
-    {
      "name": "C. Cummins",
      "position": "MID",
      "rating": 68.9,
@@ -2342,9 +2334,23 @@
      "status": "available",
      "minutesShare": 92,
      "summary": "Started 11 of 12 (92%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "L. Woodhouse",
+     "position": "MID",
+     "rating": 66.1,
+     "status": "available",
+     "minutesShare": 83,
+     "summary": "Started 10 of 12 (83%), even fixture (rated 3 of 5)."
     }
    ],
    "unavailable": [
+    {
+     "name": "J. Doyle-Hayes",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
     {
      "name": "G. Edwards",
      "position": "MID",
