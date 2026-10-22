@@ -1,12 +1,12 @@
 {
- "built": "2026-10-22T17:12:15.391Z",
+ "built": "2026-10-22T21:37:08.730Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-22T17:12:15.391Z",
+  "generatedAt": "2026-10-22T21:37:08.730Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -2057,13 +2057,13 @@
      "name": "A. Jones",
      "position": "DEF",
      "status": "injured",
-     "news": "Calf Injury, expected back 24 Oct"
+     "news": "Calf Injury, expected back 1 Nov"
     },
     {
      "name": "D. Strelec",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury, expected back 24 Oct"
+     "news": "Unknown injury, expected back 1 Nov"
     },
     {
      "name": "R. Pukstas",
@@ -4285,22 +4285,16 @@
      "news": "Hand Injury"
     },
     {
-     "name": "C. Forino",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Groin Injury, expected back 24 Oct"
-    },
-    {
      "name": "J. Nelson",
      "position": "FWD",
      "status": "injured",
-     "news": "Unknown injury, expected back 24 Oct"
+     "news": "Groin Injury, expected back 6 Dec"
     },
     {
      "name": "T. Ritchie",
      "position": "MID",
      "status": "injured",
-     "news": "Concussion injury, expected back 24 Oct"
+     "news": "Concussion injury, expected back 1 Nov"
     }
    ],
    "cardRisk": []
