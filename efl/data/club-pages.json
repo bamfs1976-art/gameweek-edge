@@ -1,12 +1,12 @@
 {
- "built": "2026-10-22T21:37:08.730Z",
+ "built": "2026-10-23T04:52:17.279Z",
  "round": 11,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-22T21:37:08.730Z",
+  "generatedAt": "2026-10-23T04:52:17.279Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -6972,12 +6972,6 @@
      "news": "ACL Knee Injury, expected back 1 Jul"
     },
     {
-     "name": "Z. Obiero",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 23 Oct"
-    },
-    {
      "name": "L. Gordon",
      "position": "DEF",
      "status": "injured",
@@ -10270,12 +10264,6 @@
      "position": "FWD",
      "status": "injured",
      "news": "Calf Injury, expected back 31 Oct"
-    },
-    {
-     "name": "L. Agbaire",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 23 Oct"
     },
     {
      "name": "M. Kaleta",
