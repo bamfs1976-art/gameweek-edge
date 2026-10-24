@@ -1,12 +1,12 @@
 {
- "built": "2026-10-24T15:58:15.159Z",
+ "built": "2026-10-24T20:51:47.028Z",
  "round": 12,
  "source": {
   "id": "efl-official",
   "live": true,
   "label": "Official Fantasy EFL data",
   "description": "Clubs, players and fixtures from the official game's public feed. All ratings and scores on this site are still modelled here, not official.",
-  "generatedAt": "2026-10-24T15:58:15.159Z",
+  "generatedAt": "2026-10-24T20:51:47.028Z",
   "coverage": {
    "playerMatchHistory": false,
    "playerDetailedStats": true,
@@ -1863,6 +1863,143 @@
    "cardRisk": []
   },
   {
+   "id": "74",
+   "name": "Shrewsbury Town",
+   "short": "SHR",
+   "slug": "shrewsbury-town",
+   "division": "league-two",
+   "divisionName": "League Two",
+   "position": 10,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "D",
+    "W",
+    "W"
+   ],
+   "rating": 57.7,
+   "summary": "7 points from the last 3. 1 blank round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.75
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.4
+    },
+    {
+     "label": "Home matches",
+     "value": 1
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 12,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Gillingham",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Oldham Athletic",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "G. Lloyd",
+     "position": "FWD",
+     "rating": 73.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
+     "name": "W. Boyle",
+     "position": "DEF",
+     "rating": 73.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Davison",
+     "position": "FWD",
+     "rating": 71.4,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), playing at home."
+    },
+    {
+     "name": "T. Sang",
+     "position": "DEF",
+     "rating": 69.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "W. Brook",
+     "position": "GK",
+     "rating": 69,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "K. Berkoe",
+     "position": "DEF",
+     "rating": 68.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "J. Price",
+     "position": "MID",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 29 Oct"
+    },
+    {
+     "name": "S. Proctor",
+     "position": "GK",
+     "status": "injured",
+     "news": "Knock"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "13",
    "name": "Leicester City",
    "short": "LEI",
@@ -2150,143 +2287,6 @@
      "position": "DEF",
      "status": "injured",
      "news": "Knee Injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "74",
-   "name": "Shrewsbury Town",
-   "short": "SHR",
-   "slug": "shrewsbury-town",
-   "division": "league-two",
-   "divisionName": "League Two",
-   "position": 10,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "W",
-    "W",
-    "L"
-   ],
-   "rating": 54.2,
-   "summary": "6 points from the last 3 — steady. 1 blank round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.63
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.4
-    },
-    {
-     "label": "Home matches",
-     "value": 1
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 12,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Gillingham",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Oldham Athletic",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "G. Lloyd",
-     "position": "FWD",
-     "rating": 73.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), playing at home."
-    },
-    {
-     "name": "W. Boyle",
-     "position": "DEF",
-     "rating": 73.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Davison",
-     "position": "FWD",
-     "rating": 71.4,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), playing at home."
-    },
-    {
-     "name": "T. Sang",
-     "position": "DEF",
-     "rating": 69.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "W. Brook",
-     "position": "GK",
-     "rating": 69,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "K. Berkoe",
-     "position": "DEF",
-     "rating": 68.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "J. Price",
-     "position": "MID",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 29 Oct"
-    },
-    {
-     "name": "S. Proctor",
-     "position": "GK",
-     "status": "injured",
-     "news": "Knock"
     }
    ],
    "cardRisk": []
@@ -2587,8 +2587,8 @@
    "played": 0,
    "form": [
     "W",
-    "D",
-    "W"
+    "W",
+    "D"
    ],
    "rating": 52.3,
    "summary": "7 points from the last 3. 1 blank round in the next 3.",
@@ -3790,143 +3790,6 @@
      "position": "MID",
      "status": "injured",
      "news": "Unknown injury"
-    }
-   ],
-   "cardRisk": []
-  },
-  {
-   "id": "2048",
-   "name": "Fleetwood Town",
-   "short": "FLE",
-   "slug": "fleetwood-town",
-   "division": "league-two",
-   "divisionName": "League Two",
-   "position": 18,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "L",
-    "W",
-    "D"
-   ],
-   "rating": 47.2,
-   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0.38
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.4
-    },
-    {
-     "label": "Home matches",
-     "value": 1
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 12,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Bristol Rovers",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    },
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Tranmere Rovers",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "C. Evans",
-     "position": "FWD",
-     "rating": 72.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), playing at home."
-    },
-    {
-     "name": "F. Potter",
-     "position": "DEF",
-     "rating": 71.7,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "J. Lynch",
-     "position": "GK",
-     "rating": 71.2,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "S. Rooney",
-     "position": "DEF",
-     "rating": 70.9,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    },
-    {
-     "name": "R. Coughlan",
-     "position": "FWD",
-     "rating": 70.2,
-     "status": "available",
-     "minutesShare": 85,
-     "summary": "Started 11 of 13 (85%), playing at home."
-    },
-    {
-     "name": "M. Helm",
-     "position": "MID",
-     "rating": 70,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "A. Cannon",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury"
-    },
-    {
-     "name": "K. Thompson-Sommers",
-     "position": "MID",
-     "status": "injured",
-     "news": "Unknown injury, expected back 1 Dec"
     }
    ],
    "cardRisk": []
@@ -5725,6 +5588,143 @@
      "position": "MID",
      "status": "injured",
      "news": "Hamstring injury, expected back 2 Jan"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
+   "id": "2048",
+   "name": "Fleetwood Town",
+   "short": "FLE",
+   "slug": "fleetwood-town",
+   "division": "league-two",
+   "divisionName": "League Two",
+   "position": 18,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "L",
+    "L",
+    "W"
+   ],
+   "rating": 43.7,
+   "summary": "Next 3 rated 3.4 of 5 on average. 1 blank round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.25
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.4
+    },
+    {
+     "label": "Home matches",
+     "value": 1
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 12,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Bristol Rovers",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    },
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Tranmere Rovers",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "C. Evans",
+     "position": "FWD",
+     "rating": 72.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), playing at home."
+    },
+    {
+     "name": "F. Potter",
+     "position": "DEF",
+     "rating": 71.7,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "J. Lynch",
+     "position": "GK",
+     "rating": 71.2,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "S. Rooney",
+     "position": "DEF",
+     "rating": 70.9,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    },
+    {
+     "name": "R. Coughlan",
+     "position": "FWD",
+     "rating": 70.2,
+     "status": "available",
+     "minutesShare": 85,
+     "summary": "Started 11 of 13 (85%), playing at home."
+    },
+    {
+     "name": "M. Helm",
+     "position": "MID",
+     "rating": 70,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), even fixture (rated 3 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "A. Cannon",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury"
+    },
+    {
+     "name": "K. Thompson-Sommers",
+     "position": "MID",
+     "status": "injured",
+     "news": "Unknown injury, expected back 1 Dec"
     }
    ],
    "cardRisk": []
@@ -8479,6 +8479,161 @@
    "cardRisk": []
   },
   {
+   "id": "72",
+   "name": "Rotherham United",
+   "short": "ROT",
+   "slug": "rotherham-united",
+   "division": "league-two",
+   "divisionName": "League Two",
+   "position": 22,
+   "points": 0,
+   "played": 0,
+   "form": [
+    "D",
+    "D",
+    "L"
+   ],
+   "rating": 34.8,
+   "summary": "Next 3 rated 3.7 of 5 on average. 1 blank round in the next 3.",
+   "factors": [
+    {
+     "label": "Recent form",
+     "value": 0.13
+    },
+    {
+     "label": "Goals scored",
+     "value": 0.5
+    },
+    {
+     "label": "Goals conceded",
+     "value": 0.5
+    },
+    {
+     "label": "Upcoming fixtures",
+     "value": 0.33
+    },
+    {
+     "label": "Home matches",
+     "value": 0.5
+    }
+   ],
+   "fixtures": [
+    {
+     "round": 12,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Swindon Town",
+       "home": false,
+       "rating": 4
+      }
+     ]
+    },
+    {
+     "round": 13,
+     "blank": true,
+     "double": false,
+     "matches": []
+    },
+    {
+     "round": 14,
+     "blank": false,
+     "double": false,
+     "matches": [
+      {
+       "opponent": "Crawley Town",
+       "home": true,
+       "rating": 3
+      }
+     ]
+    }
+   ],
+   "players": [
+    {
+     "name": "P. Mullin",
+     "position": "FWD",
+     "rating": 63.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), 8 goals and 0 assists."
+    },
+    {
+     "name": "D. Hall",
+     "position": "DEF",
+     "rating": 57.4,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "S. Aljofree",
+     "position": "DEF",
+     "rating": 56.3,
+     "status": "available",
+     "minutesShare": 92,
+     "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "J. Buyabu",
+     "position": "DEF",
+     "rating": 56.1,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "T. Bradshaw",
+     "position": "FWD",
+     "rating": 54.6,
+     "status": "available",
+     "minutesShare": 100,
+     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
+    },
+    {
+     "name": "B. Cover",
+     "position": "MID",
+     "rating": 53.8,
+     "status": "available",
+     "minutesShare": 77,
+     "summary": "Started 10 of 13 (77%), tough fixture (rated 4 of 5)."
+    }
+   ],
+   "unavailable": [
+    {
+     "name": "O. Ashley",
+     "position": "MID",
+     "status": "injured",
+     "news": "Foot Injury, expected back 11 Dec"
+    },
+    {
+     "name": "E. Otoo",
+     "position": "MID",
+     "status": "injured",
+     "news": "Thigh Injury"
+    },
+    {
+     "name": "F. Tavares",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Achilles Tendon Rupture injury, expected back 1 Jul"
+    },
+    {
+     "name": "G. Sebine",
+     "position": "FWD",
+     "status": "injured",
+     "news": "Calf Injury, expected back 31 Oct"
+    },
+    {
+     "name": "M. Kaleta",
+     "position": "DEF",
+     "status": "injured",
+     "news": "Hamstring injury, expected back 10 Nov"
+    }
+   ],
+   "cardRisk": []
+  },
+  {
    "id": "437",
    "name": "Newport County",
    "short": "NPT",
@@ -9693,161 +9848,6 @@
     }
    ],
    "unavailable": [],
-   "cardRisk": []
-  },
-  {
-   "id": "72",
-   "name": "Rotherham United",
-   "short": "ROT",
-   "slug": "rotherham-united",
-   "division": "league-two",
-   "divisionName": "League Two",
-   "position": 22,
-   "points": 0,
-   "played": 0,
-   "form": [
-    "D",
-    "L",
-    "L"
-   ],
-   "rating": 31.3,
-   "summary": "Next 3 rated 3.7 of 5 on average. 1 blank round in the next 3.",
-   "factors": [
-    {
-     "label": "Recent form",
-     "value": 0
-    },
-    {
-     "label": "Goals scored",
-     "value": 0.5
-    },
-    {
-     "label": "Goals conceded",
-     "value": 0.5
-    },
-    {
-     "label": "Upcoming fixtures",
-     "value": 0.33
-    },
-    {
-     "label": "Home matches",
-     "value": 0.5
-    }
-   ],
-   "fixtures": [
-    {
-     "round": 12,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Swindon Town",
-       "home": false,
-       "rating": 4
-      }
-     ]
-    },
-    {
-     "round": 13,
-     "blank": true,
-     "double": false,
-     "matches": []
-    },
-    {
-     "round": 14,
-     "blank": false,
-     "double": false,
-     "matches": [
-      {
-       "opponent": "Crawley Town",
-       "home": true,
-       "rating": 3
-      }
-     ]
-    }
-   ],
-   "players": [
-    {
-     "name": "P. Mullin",
-     "position": "FWD",
-     "rating": 63.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), 8 goals and 0 assists."
-    },
-    {
-     "name": "D. Hall",
-     "position": "DEF",
-     "rating": 57.4,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "S. Aljofree",
-     "position": "DEF",
-     "rating": 56.3,
-     "status": "available",
-     "minutesShare": 92,
-     "summary": "Started 12 of 13 (92%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "J. Buyabu",
-     "position": "DEF",
-     "rating": 56.1,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "T. Bradshaw",
-     "position": "FWD",
-     "rating": 54.6,
-     "status": "available",
-     "minutesShare": 100,
-     "summary": "Started 13 of 13 (100%), tough fixture (rated 4 of 5)."
-    },
-    {
-     "name": "B. Cover",
-     "position": "MID",
-     "rating": 53.8,
-     "status": "available",
-     "minutesShare": 77,
-     "summary": "Started 10 of 13 (77%), tough fixture (rated 4 of 5)."
-    }
-   ],
-   "unavailable": [
-    {
-     "name": "O. Ashley",
-     "position": "MID",
-     "status": "injured",
-     "news": "Foot Injury, expected back 11 Dec"
-    },
-    {
-     "name": "E. Otoo",
-     "position": "MID",
-     "status": "injured",
-     "news": "Thigh Injury"
-    },
-    {
-     "name": "F. Tavares",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Achilles Tendon Rupture injury, expected back 1 Jul"
-    },
-    {
-     "name": "G. Sebine",
-     "position": "FWD",
-     "status": "injured",
-     "news": "Calf Injury, expected back 31 Oct"
-    },
-    {
-     "name": "M. Kaleta",
-     "position": "DEF",
-     "status": "injured",
-     "news": "Hamstring injury, expected back 10 Nov"
-    }
-   ],
    "cardRisk": []
   },
   {
