@@ -545,7 +545,7 @@ section('panels render with data behind them, rather than their error state');
     const host = document.querySelector('#pages') || document.body;
     return { txt: (host.innerText || '').slice(0, 3000),
       rows: document.querySelectorAll('table tr').length,
-      lenses: [...document.querySelectorAll('#fdr-view .seg-b')].map((b) => b.textContent.trim()) };
+      lenses: [...document.querySelectorAll('#fdr-view .tkb-o')].map((b) => b.textContent.trim()) };
   });
   ok(!grid.err, 'opening the fixtures panel did not throw (' + (grid.err || '') + ')');
   ok(!/Could not load this view/i.test(grid.txt || ''),
@@ -589,7 +589,7 @@ section('panels render with data behind them, rather than their error state');
     };
     const texts = () => grid() ? [...grid().querySelectorAll('td')].map((t) => t.textContent.trim()) : [];
     const before = texts();
-    const btn = [...document.querySelectorAll('#fdr-view .seg-b')]
+    const btn = [...document.querySelectorAll('#fdr-view .tkb-o')]
       .find((b) => /strength/i.test(b.textContent));
     if (!btn) return { found: false };
     btn.click();
@@ -598,7 +598,7 @@ section('panels render with data behind them, rather than their error state');
     /* A cell reads "1.00FUL (a)" — the lens number then the opponent — so the
        ratio is matched anywhere in the cell, not anchored to the whole of it. */
     return { found: true,
-      active: [...document.querySelectorAll('#fdr-view .seg-b')]
+      active: [...document.querySelectorAll('#fdr-view .tkb-o')]
         .filter((b) => b.classList.contains('on')).map((b) => b.textContent.trim()).join(','),
       ratios: after.filter((c) => /\d\.\d\d/.test(c)).length,
       dashes: after.filter((c) => c === '—').length,
@@ -718,8 +718,8 @@ section('my squad rows, and a double gameweek that is visible as one');
     const t = window.__grid();
     return {
       hasToggle: !!document.getElementById('fdr-rows'),
-      labels: [...document.querySelectorAll('#fdr-rows .seg-b')].map((b) => b.textContent.trim()),
-      on: [...document.querySelectorAll('#fdr-rows .seg-b.on')].map((b) => b.textContent.trim()).join(','),
+      labels: [...document.querySelectorAll('#fdr-rows .tkb-o')].map((b) => b.textContent.trim()),
+      on: [...document.querySelectorAll('#fdr-rows .tkb-o.on')].map((b) => b.textContent.trim()).join(','),
       firstHead: t ? (t.querySelector('th') || {}).textContent : null,
       teamFilter: !!document.getElementById('fdr-teams'),
       /* #fdr-tbody, not 'tbody tr': the header row is emitted as a bare
@@ -758,7 +758,7 @@ section('my squad rows, and a double gameweek that is visible as one');
 
   const squad = await sp.evaluate(async (fnSrc) => {
     const grid = eval(fnSrc);
-    const btn = [...document.querySelectorAll('#fdr-rows .seg-b')].find((b) => /squad/i.test(b.textContent));
+    const btn = [...document.querySelectorAll('#fdr-rows .tkb-o')].find((b) => /squad/i.test(b.textContent));
     if (!btn) return { found: false };
     btn.click();
     await new Promise((r) => setTimeout(r, 1400));
@@ -767,7 +767,7 @@ section('my squad rows, and a double gameweek that is visible as one');
     const playerRows = rows.filter((r) => r.querySelector('td.tm-px'));
     return {
       found: true,
-      on: [...document.querySelectorAll('#fdr-rows .seg-b.on')].map((b) => b.textContent.trim()).join(','),
+      on: [...document.querySelectorAll('#fdr-rows .tkb-o.on')].map((b) => b.textContent.trim()).join(','),
       heads: t ? [...t.querySelectorAll('th')].slice(0, 2).map((h) => h.textContent.trim()) : [],
       playerRows: playerRows.length,
       prices: playerRows.map((r) => r.querySelector('td.tm-px').textContent.trim()),
@@ -817,7 +817,7 @@ section('my squad rows, and a double gameweek that is visible as one');
      the mock's real arithmetic: ARS 3 + 2 = 5, AVL 2 + 4 = 6. */
   const fpl = await sp.evaluate(async (fnSrc) => {
     const grid = eval(fnSrc);
-    [...document.querySelectorAll('#fdr-view .seg-b')].find((b) => /FPL/i.test(b.textContent)).click();
+    [...document.querySelectorAll('#fdr-view .tkb-o')].find((b) => /FPL/i.test(b.textContent)).click();
     await new Promise((r) => setTimeout(r, 1000));
     const t = grid();
     const cells = [...t.querySelectorAll('td.fdr-dgw')];
@@ -853,7 +853,7 @@ section('my squad rows, and a double gameweek that is visible as one');
   /* Back again: a toggle that only goes one way is half a control. */
   const back = await sp.evaluate(async (fnSrc) => {
     const grid = eval(fnSrc);
-    [...document.querySelectorAll('#fdr-rows .seg-b')].find((b) => /clubs/i.test(b.textContent)).click();
+    [...document.querySelectorAll('#fdr-rows .tkb-o')].find((b) => /clubs/i.test(b.textContent)).click();
     await new Promise((r) => setTimeout(r, 1400));
     const t = grid();
     return { head: t ? (t.querySelector('th') || {}).textContent : null,
@@ -908,8 +908,8 @@ section('a saved draft stands in when the deadline has not passed');
     const grid = eval(fnSrc);
     try { openPanel('fixtures'); } catch (e) { return { err: e.message }; }
     await new Promise((r) => setTimeout(r, 2500));
-    const labels = [...document.querySelectorAll('#fdr-rows .seg-b')].map((b) => b.textContent.trim());
-    const btn = [...document.querySelectorAll('#fdr-rows .seg-b')].find((b) => /draft|squad/i.test(b.textContent));
+    const labels = [...document.querySelectorAll('#fdr-rows .tkb-o')].map((b) => b.textContent.trim());
+    const btn = [...document.querySelectorAll('#fdr-rows .tkb-o')].find((b) => /draft|squad/i.test(b.textContent));
     if (btn) btn.click();
     await new Promise((r) => setTimeout(r, 1400));
     const t = grid();

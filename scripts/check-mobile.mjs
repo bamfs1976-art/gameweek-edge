@@ -74,7 +74,7 @@ assert.ok(/input,select,textarea\{[^}]*font-size:16px/.test(coarse) || /(input|s
   'form controls are not raised to 16px under a coarse pointer, so iOS zooms the page when one takes focus');
 assert.ok(/select[^{]*\{[^}]*max-width:100%/.test(coarse),
   'controls are raised to 16px without capping select width — a select sizes to its longest option and Safari shrinks the page to fit');
-for (const sel of ['.btn', '.area-tab', '.lensbtn', '.seg-b', '.bn-item', '.nav-area-btn', '.more-it', '.tchip', '.tbm-row', '.acct-btn', '.theme-toggle', '.hamburger', '.ltf-browse', '.mode-opt', '.acct-link']) {
+for (const sel of ['.btn', '.area-tab', '.lensbtn', '.seg-b', '.bn-item', '.nav-area-btn', '.more-it', '.tchip', '.tbm-row', '.tkb-s', '.tkb-o', '.acct-btn', '.theme-toggle', '.hamburger', '.ltf-browse', '.mode-opt', '.acct-link']) {
   const hit = coarseBlocks.some((b) => new RegExp('(^|[,{\\s])' + sel.replace('.', '\\.') + '(\\s*,|[^{]*\\{[^}]*min-height:44px)').test(b))
     || new RegExp(sel.replace('.', '\\.') + '\\{[^}]*min-height:44px').test(css);
   assert.ok(hit, `${sel} has no 44px minimum under a coarse pointer`);
