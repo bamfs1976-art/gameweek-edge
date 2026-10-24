@@ -51,6 +51,10 @@ exports.handler = async (event) => {
   const qs = event.rawQuery ? '?' + event.rawQuery : '';
   const url = 'https://fantasy.premierleague.com/api/' + sub + '/' + qs;
   const isLive = /\/live$|\/picks$|^entry\/\d+$|^event-status$/.test(sub);
+  /* One gameweek's fixtures is what the app asks for while a match is in
+     play, for the live minute and score, so it gets a one-minute edge cache
+     instead of the five (plus ten stale) the full list has. */
+  const isLiveFix = sub === 'fixtures' && /(^|&)event=\d+(&|$)/.test(event.rawQuery || '');
 
   try {
     const r = await fetch(url, {
@@ -66,7 +70,9 @@ exports.handler = async (event) => {
         ...CORS,
         'Content-Type': 'application/json',
         /* Bootstrap / fixtures cache for 5 min at the edge; live data never. */
-        'Cache-Control': isLive ? 'no-store' : 'public, max-age=300, stale-while-revalidate=600'
+        'Cache-Control': isLive ? 'no-store'
+          : isLiveFix ? 'public, max-age=60, stale-while-revalidate=30'
+          : 'public, max-age=300, stale-while-revalidate=600'
       },
       body
     };

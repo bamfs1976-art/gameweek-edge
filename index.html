@@ -4120,6 +4120,12 @@ const BOOT_TTL=60*60e3;
 const loadBootstrap=()=>cached('boot',BOOT_TTL,()=>api('bootstrap-static'));
 const FIXTURES_TTL=10*60e3;
 const loadFixtures =()=>cached('fixtures',FIXTURES_TTL,()=>api('fixtures'));
+/* One gameweek's fixtures, fresh. Only fetched while a match on screen is
+   live: the full list above can be ten minutes old, which put the live
+   minute a quarter of an hour behind the broadcast. Ten fixtures, a minute's
+   cache here and at the edge. */
+const LIVE_FIX_TTL=60e3;
+const loadGwFixtures=gw=>cached('fixtures-ev'+gw,LIVE_FIX_TTL,()=>api('fixtures?event='+gw));
 const loadEntry    =id=>api('entry/'+id);
 const loadHistory  =id=>api('entry/'+id+'/history');
 const loadPicks    =(id,gw)=>api('entry/'+id+'/event/'+gw+'/picks');
@@ -26850,8 +26856,15 @@ async function hydrateResults(host){
     if(myPicks&&myPicks.picks)owned=new Set(myPicks.picks.map(x=>x.element));
   }
   const md=squadMatchday(myPicks,fixtures,b.els,gw);
-  const fx=fixtures.filter(f=>f.event===gw).slice()
+  let fx=fixtures.filter(f=>f.event===gw).slice()
     .sort((a,c)=>new Date(a.kickoff_time||0)-new Date(c.kickoff_time||0));
+  /* A match in play: swap in this gameweek's fresh rows so the minute, the
+     score and full time are current. Best-effort; the list above stands if
+     the fetch fails. */
+  if(fx.some(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f))){
+    try{const fresh=await loadGwFixtures(gw);
+      if(Array.isArray(fresh)){const byId=new Map(fresh.map(f=>[f.id,f]));fx=fx.map(f=>byId.get(f.id)||f);}}catch(_){}
+  }
   /* Live is a property of the gameweek ON SCREEN, not of whichever one FPL
      calls current — with the default above those are routinely different
      now, and the old test would have stopped marking live at all. The rule
@@ -26959,7 +26972,7 @@ async function hydrateResults(host){
 
   const badge=f=>fixtureOver(f)?'<span class="badge badge-grey">FT</span>'
     :f.started?(()=>{const mm=mcMinute(f);
-      return '<span class="badge badge-red" aria-label="Live, '+esc(mm.spoken)+'">'+
+      return '<span class="badge badge-red" aria-label="Live, '+esc(mm.spoken)+' on FPL\u2019s match clock" title="FPL\u2019s match clock, which can run a few minutes behind the broadcast">'+
         (mm.label?'<span class="mc-lw">LIVE </span>'+mm.label:'LIVE')+'</span>';})()
     :'<span class="dl-sub" style="font-size:.7rem">'+(f.kickoff_time?new Date(f.kickoff_time).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'TBC')+'</span>';
   /* How many of your squad are in this match, on the collapsed header, so
@@ -27013,6 +27026,7 @@ async function hydrateResults(host){
       '<button class="btn btn-ghost btn-sm" aria-label="Next gameweek" onclick="resNav(1)"'+(gw>=38?' disabled':'')+'>›</button>')+
     '<div class="dl-sub" style="margin-bottom:4px">Tap a match for scorers, cards, saves, defensive contributions and the bonus race.'+
       (fx.some(f=>!f.started)?' Before kick-off, the figures under the <b>v</b> are our model\u2019s expected goals.':'')+
+      (fx.some(f=>f.started&&!fixtureOver(f)&&!fixtureStuck(f))?' The live minute is FPL\u2019s match clock, which can run a few minutes behind the broadcast.':'')+
       (owned.size?' <span class="mc-you">●</span> marks your players.':'')+'</div>'+
     (list||'<div class="ge-state">'+svg(ICON.calendar)+'<b>No fixtures</b><p>Nothing scheduled in this gameweek.</p></div>')+
     '</div>';
