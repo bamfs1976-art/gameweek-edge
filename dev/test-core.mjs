@@ -4009,6 +4009,12 @@ section('lgForm: last-five form pills against the league average');
   ok(f.rows[1].every(c => c.above) && f.rows[2].every(c => !c.above), 'marks above and below the league average');
   ok(f.rows[3][0] === null, 'a gameweek a manager has no score for is a gap, not a zero');
   ok(core.lgForm({}).gws.length === 0, 'no histories, no pills');
+  /* A gameweek still being played is half-written in FPL's history: most
+     rows read 0. Capped at the last finished gameweek, it never shows. */
+  const live = { 1: hist[1].concat([h(7, 0)]), 2: hist[2].concat([h(7, 12)]) };
+  const capped = core.lgForm(live, 5, 6);
+  ok(capped.gws.join(',') === '2,3,4,5,6', 'the gameweek in play is left out of the five');
+  ok(core.lgForm(live).gws.join(',') === '3,4,5,6,7', 'without a cap every gameweek present counts');
   const html5 = core.lgFormHtml(f.rows[1]);
   ok(/role="img"/.test(html5) && /above the league average/.test(html5), 'the pill row carries a spoken summary, so colour is not the only signal');
   ok((html5.match(/lg-pill up/g) || []).length === 5, 'five pills, all marked above');

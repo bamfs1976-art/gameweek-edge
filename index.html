@@ -25029,8 +25029,9 @@ async function renderLeagueStandings(host,leagueId,mid,type){
      the table must not wait on eleven calls it does not need. */
   if(!h2h&&!custom)genAwards(leagueId);
   if(!h2h&&!detailShown){
-    let gwNow=0;try{gwNow=((await boot()).cur||{}).id||0;}catch(_){}
-    lgFillForm(resSorted.map(r=>r.entry),gwNow).catch(()=>{});
+    let gwNow=0,lastDone=null;
+    try{const cur=(await boot()).cur||{};gwNow=cur.id||0;lastDone=cur.finished?gwNow:gwNow-1;}catch(_){}
+    lgFillForm(resSorted.map(r=>r.entry),gwNow,lastDone).catch(()=>{});
   }
   if(LG_FIND_PENDING){LG_FIND_PENDING=false;requestAnimationFrame(()=>lgFindMe());}
   const sortSel=host.querySelector('#lg-sort');
@@ -25067,19 +25068,26 @@ async function renderLeagueStandings(host,leagueId,mid,type){
    the comparison a mini-league actually argues about, so the yardstick is
    the league, not the game. Pure: histories in, pills out.
 
+   Only finished gameweeks count. While a gameweek is being played FPL's
+   history row for it is half-written (most managers read 0, a few read a
+   partial score), so including it painted a red 0 at the end of nearly
+   every row on a Saturday afternoon. `lastDone` caps the window at the
+   last finished gameweek; omit it and every gameweek present counts.
+
    histories: {entryId: history.current array}. Returns
    {gws:[...], avg:{gw:mean}, rows:{entryId:[{gw,pts,above}|null]}}; a
    null cell is a gameweek that manager has no score for. */
 const LG_FORM_N=5;
-function lgForm(histories,n){
+function lgForm(histories,n,lastDone){
   n=n||LG_FORM_N;
   const ids=Object.keys(histories||{});
+  const cap=lastDone!=null?lastDone:Infinity;
   let maxEv=0;
-  ids.forEach(id=>(histories[id]||[]).forEach(h=>{if(h&&h.event>maxEv)maxEv=h.event;}));
+  ids.forEach(id=>(histories[id]||[]).forEach(h=>{if(h&&h.event<=cap&&h.event>maxEv)maxEv=h.event;}));
   const gws=[];for(let g=Math.max(1,maxEv-n+1);g<=maxEv;g++)gws.push(g);
   const net=h=>(h.points||0)-(h.event_transfers_cost||0);
   const score={};
-  ids.forEach(id=>{score[id]={};(histories[id]||[]).forEach(h=>{if(h&&h.event)score[id][h.event]=net(h);});});
+  ids.forEach(id=>{score[id]={};(histories[id]||[]).forEach(h=>{if(h&&h.event&&h.event<=cap)score[id][h.event]=net(h);});});
   const avg={};
   gws.forEach(g=>{const v=ids.map(id=>score[id][g]).filter(x=>x!=null);
     avg[g]=v.length?v.reduce((a,c)=>a+c,0)/v.length:null;});
@@ -25098,12 +25106,12 @@ function lgFormHtml(cells){
    the placeholders. After the table, never before it: the standings must
    not wait on fifty calls they do not need. Each history is cached for ten
    minutes, so a sort, a search or a view toggle costs nothing. */
-async function lgFillForm(entries,gw){
+async function lgFillForm(entries,gw,lastDone){
   const boxes=document.querySelectorAll('[data-form-entry]');
   if(!boxes.length||!entries.length)return;
   const hist=await mapLimit(entries,6,id=>cached('lgh-'+id+'-'+gw,10*60e3,()=>loadHistory(id)).catch(()=>null));
   const map={};entries.forEach((id,i)=>{const h=hist[i];if(h&&Array.isArray(h.current))map[id]=h.current;});
-  const f=lgForm(map);
+  const f=lgForm(map,LG_FORM_N,lastDone);
   document.querySelectorAll('[data-form-entry]').forEach(el=>{
     const cells=f.rows[el.dataset.formEntry];
     el.innerHTML=cells?lgFormHtml(cells):'';
